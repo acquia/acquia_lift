@@ -1,0 +1,65 @@
+/**
+ * @file
+ * Styles for integrating Personalize with the Navbar module.
+ */
+
+/**
+ * Personalize top-level icon.
+ */
+.navbar-bar .navbar-icon-acquia-lift:before {
+  background-image: url("../images/bebebe/rocket.svg");
+}
+.no-svg .navbar-bar .navbar-icon-acquia-lift:before {
+  background-image: url("../images/bebebe/rocket.png");
+}
+.navbar-bar .navbar-icon-acquia-lift:active:before,
+.navbar-bar .navbar-icon-acquia-lift.navbar-active:before {
+  background-image: url("../images/ffffff/rocket.svg");
+}
+.no-svg .navbar-bar .navbar-icon-acquia-lift:active:before,
+.no-svg .navbar-bar .navbar-icon-acquia-lift.navbar-active:before {
+  background-image: url("../images/ffffff/rocket.png");
+}
+
+#navbar-administration .acquia-lift-active,
+#navbar-administration .acquia-lift-active .acquia-lift-campaign {
+  font-weight: bold;
+}
+#navbar-administration .acquia-lift-campaigns .navbar-box {
+  display: inline-block;
+}
+#navbar-administration .acquia-lift-campaigns .acquia-lift-campaign {
+  padding: 1em 0.667em 1em 1.333em;
+}
+#navbar-administration.navbar-oriented .acquia-lift-campaign {
+  padding-right: 0; /* LTR */
+}
+
+/* Horizontal dropdowns */
+
+#navbar-administration .navbar-tray-acquia-lift.navbar-tray-horizontal .menu li:hover ul {
+  display: block;
+}
+#navbar-administration .navbar-tray-acquia-lift.navbar-tray-horizontal .navbar-level-1 > ul {
+  border-color: #dddddd;
+  border-style: solid;
+  border-width: 0 1px 1px;
+  box-shadow: 0px 0px 2px 0px rgba(0, 0, 0, 0.3333);
+  margin-left: -1px;
+  position: absolute;
+  top: 100%;
+}
+#navbar-administration .navbar-tray-acquia-lift.navbar-tray-horizontal .menu ul ul {
+  border-bottom: 1px solid #dddddd;
+  border-top: 1px solid #dddddd;
+}
+#navbar-administration .navbar-tray-acquia-lift.navbar-tray-horizontal .navbar-level-1 li {
+  float: none;
+}
+#navbar-administration .navbar-tray-acquia-lift.navbar-tray-horizontal .navbar-level-2 > ul,
+#navbar-administration .navbar-tray-acquia-lift.navbar-tray-horizontal .navbar-level-2 > * > ul {
+  margin-left: 1em; /* LTR */
+}
+#navbar-administration .acquia-lift-campaigns .navbar-level-2 > * > *:last-child {
+  padding-right: 1.667em;
+}

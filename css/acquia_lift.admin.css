@@ -1,0 +1,14 @@
+/* Acquia Lift options form administrative styles */
+#edit-agent-basic-info-options-acquia-lift-decision-style .form-item-agent-basic-info-options-acquia-lift-decision-style {
+    display: inline;
+}
+#edit-agent-basic-info-options-acquia-lift-decision-style .form-item-agent-basic-info-options-acquia-lift-decision-style label {
+    margin-right: 10px;
+}
+
+.personalize-in-context-link:before {
+    content: "+";
+    display: inline-block;
+    margin-right: .3em; /* LTR */
+    font-size: 1.3em;
+}

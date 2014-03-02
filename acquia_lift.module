@@ -1,0 +1,942 @@
+<?php
+
+/**
+ * @file acquia_lift.module
+ * Provides Acquia Lift-specific personalization functionality.
+ */
+
+define('ACQUIA_LIFT_DEFAULT_AGENT_NAME', 'drupal-default');
+
+/**
+ * Implements hook_menu().
+ */
+function acquia_lift_menu() {
+  $items = array();
+  $items['admin/config/content/personalize/acquia_lift'] = array(
+    'type' => MENU_LOCAL_TASK,
+    'title' => 'Acquia Lift',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('acquia_lift_admin_form'),
+    'access arguments' => array('administer personalize configuration'),
+    'file' => 'acquia_lift.admin.inc'
+  );
+
+  $items['admin/acquia_lift'] = array(
+    'title' => 'Acquia Lift',
+    'description' => 'Manage Acquia Lift campaigns.',
+    'position' => 'right',
+    'weight' => 0,
+    'page callback' => 'acquia_lift_root_page',
+    'access arguments' => array('manage personalized content'),
+    'file' => 'acquia_lift.ui.inc',
+  );
+  $items['acquia_lift/controls/assets'] = array(
+    'page callback' => 'acquia_lift_controls_assets_callback',
+    'access arguments' => array('manage personalized content'),
+    'delivery callback' => 'ajax_deliver',
+    'theme callback' => 'ajax_base_page_theme',
+    'type' => MENU_CALLBACK,
+    'file' => 'acquia_lift.ui.inc',
+  );
+  $items['acquia_lift/personalize_in_context/start'] = array(
+    'page callback' => 'personalize_in_context_start',
+    'access arguments' => array('manage personalized content'),
+    'type' => MENU_CALLBACK,
+    'file' => 'acquia_lift.ui.inc',
+  );
+  $items['acquia_lift/personalize_in_context/stop'] = array(
+    'page callback' => 'acquia_lift_edit_mode_disable',
+    'access arguments' => array('manage personalized content'),
+    'type' => MENU_CALLBACK,
+    'file' => 'acquia_lift.ui.inc',
+  );
+  // Ajax callback for processing the queue.
+  $items['acquia_lift/queue'] = array(
+    'type' => MENU_CALLBACK,
+    'page callback' => 'acquia_lift_process_queue',
+    // We don't need an access check here as the queue will only get
+    // processed if a particular session variable is set.
+    // @see acquia_lift_process_queue()
+    'access callback' => TRUE,
+  );
+  $items['admin/acquia_lift_report/ajax'] = array(
+    'page callback' => 'acquia_lift_report_ajax',
+    'access arguments' => array('manage personalize content'),
+    'type' => MENU_CALLBACK,
+    'file' => 'acquia_lift.admin.inc',
+  );
+  return $items;
+}
+
+/**
+ * Implements hook_theme().
+ */
+function acquia_lift_theme() {
+  $path = drupal_get_path('module', 'acquia_lift');
+  return array(
+    'acquia_lift_personalizable_field_form' => array(
+      'render element' => 'element',
+      'path' => $path . '/theme',
+      'file' => 'acquia_lift.theme.inc',
+    ),
+    'acquia_lift_personalize_field_weight_field_wrapper' => array(
+      'render element' => 'element',
+      'path' => $path . '/theme',
+      'file' => 'acquia_lift.theme.inc',
+    ),
+    'acquia_lift_edit_mode_personalize_in_context_links' => array(
+      'render element' => 'elements',
+      'path' => $path . '/theme',
+      'file' => 'acquia_lift.theme.inc',
+    ),
+    'acquia_lift_tabbed_report' => array(
+      'render element' => 'element',
+      'path' => $path . '/theme',
+      'file' => 'acquia_lift.theme.inc',
+    ),
+    'acquia_lift_date_filter_links' => array(
+      'render element' => 'element',
+      'path' => $path . '/theme',
+      'file' => 'acquia_lift.theme.inc',
+    ),
+    'acquia_lift_feature_filter_links' => array(
+      'render element' => 'element',
+      'path' => $path . '/theme',
+      'file' => 'acquia_lift.theme.inc',
+    ),
+    'acquia_lift_report_tablinks' => array(
+      'render element' => 'tabset',
+      'path' => $path . '/theme',
+      'file' => 'acquia_lift.theme.inc',
+    ),
+  );
+}
+
+/**
+ * Implements hook_init().
+ */
+function acquia_lift_init() {
+  // This session variable is set to indicate that there are configuration
+  // changes that have been queued for syncing with Acquia Lift.
+  if (!empty($_SESSION['acquia_lift_queue_trigger'])) {
+    drupal_add_js(array('acquia_lift' => array('sync_queue' => 1)), array('type' => 'setting'));
+    drupal_add_js(drupal_get_path('module', 'acquia_lift') . '/js/acquia_lift_queue.js', array('preprocess' => FALSE));
+  }
+  elseif (path_is_admin(current_path()) && user_access('manage personalized content')) {
+    // Check to see if there are items in the Acquia Lift queue and if so
+    // warn the user that their configuration has not been fully sync'd.
+    $queue = DrupalQueue::get('acquia_lift_sync');
+    if ($queue->numberOfItems() > 0) {
+      $message = t('At least one of your agents has configuration that has not been fully sync\'d to Acquia Lift. This should resolve itself on the next cron run.');
+      if (user_access('administer site configuration')) {
+        $message .= t(' Click here to <a href="@cron">run cron manually</a>.', array('@cron' => url('admin/reports/status/run-cron')));
+      }
+      drupal_set_message($message, 'warning');
+    }
+  }
+  if (path_is_admin(current_path()) && user_access('manage personalized content')) {
+    module_load_include('inc', 'acquia_lift', 'acquia_lift.ui');
+    if (acquia_lift_nav_message_is_set()) {
+      // The user navigated to the admin UI without exiting normally fro the "personalize
+      // in context" flow. Unset the nav message.
+      acquia_lift_unset_nav_message();
+    }
+  }
+}
+
+/**
+ * Implements hook_page_build().
+ */
+function acquia_lift_page_build(&$page) {
+  if (user_access('manage personalized content')) {
+    module_load_include('inc', 'acquia_lift', 'acquia_lift.ui');
+    acquia_lift_build_page($page);
+  }
+}
+
+/**
+ * Implements hook_cron_queue_info().
+ */
+function acquia_lift_cron_queue_info() {
+  $queues['acquia_lift_sync'] = array(
+    'worker callback' => 'acquia_lift_sync_item',
+  );
+  return $queues;
+}
+
+/**
+ * Implements hook_personalize_agent_type().
+ */
+function acquia_lift_personalize_agent_type() {
+  $info = array();
+  $path = drupal_get_path('module', 'acquia_lift') . '/plugins';
+  $info['acquia_lift'] = array(
+    'path' => $path . '/agent_types',
+    'handler' => array(
+      'file' => 'AcquiaLiftAgent.inc',
+      'class' => 'AcquiaLiftAgent',
+    ),
+  );
+  return $info;
+}
+
+/**
+ * Implements hook_personalize_visitor_contexts().
+ */
+function acquia_lift_personalize_visitor_context() {
+  $info = array();
+  $path = drupal_get_path('module', 'acquia_lift') . '/plugins';
+  $info['acquia_lift_context'] = array(
+    'path' => $path . '/visitor_context',
+    'handler' => array(
+      'file' => 'AcquiaLiftContext.inc',
+      'class' => 'AcquiaLiftContext',
+    ),
+  );
+  return $info;
+}
+
+/**
+ * Implements hook_personalize_option_set_save().
+ */
+function acquia_lift_personalize_option_set_save($option_set) {
+  $agent = personalize_agent_load($option_set->agent);
+  if (!$agent || $agent->plugin != 'acquia_lift') {
+    return;
+  }
+  // Acquia Lift agents store their option set info in the db so that they can
+  // sync any changes with Acquia Lift.
+  $old_option_sets = isset($agent->data['decisions']) ? $agent->data['decisions'] : array();
+  // We can't rely on the fact that the only difference between what we previously
+  // stored and the current set of option sets is the option set now being saved,
+  // as option sets may have been altered outside of the save/delete api calls.
+  // Reload the option sets for this agent.
+  $new_option_sets = personalize_option_set_load_by_agent($agent->machine_name, TRUE);
+  // Take the data on this option set from what was passed in, rather than from the
+  // db.
+  $new_option_sets[$option_set->osid] = $option_set;
+  if ($old_option_sets == $new_option_sets) {
+    return;
+  }
+  acquia_lift_sync_option_sets($agent, $old_option_sets, $new_option_sets);
+}
+
+/**
+ * Implements hook_personalize_option_set_delete().
+ */
+function acquia_lift_personalize_option_set_delete($option_set) {
+  $agent = personalize_agent_load($option_set->agent);
+  if (!$agent || $agent->plugin != 'acquia_lift') {
+    return;
+  }
+  // Acquia Lift agents store their option set info in the db so that they can
+  // sync any changes with Acquia Lift.
+  $old_option_sets = isset($agent->data['decisions']) ? $agent->data['decisions'] : array();
+  // We can't rely on the fact that the only difference between what we previously
+  // stored and the current set of option sets is the option set now being saved,
+  // as option sets may have been altered outside of the save/delete api calls.
+  // Reload the option sets for this agent.
+  $new_option_sets = personalize_option_set_load_by_agent($agent->machine_name);
+  // Take the data on this option set from what was passed in, rather than from the
+  // db.
+  if (isset($new_option_sets[$option_set->osid])) {
+    unset($new_option_sets[$option_set->osid]);
+  }
+  acquia_lift_sync_option_sets($agent, $old_option_sets, $new_option_sets);
+}
+
+/**
+ * Makes sure all option set changes are sync'd to Acquia Lift.
+ *
+ * @param $agent
+ *   The agent whose option sets have changed.
+ * @param $old_option_sets
+ *   THe old option sets that Acquia Lift knew about.
+ * @param $new_option_sets
+ *   The new option sets.
+ */
+function acquia_lift_sync_option_sets($agent, $old_option_sets, $new_option_sets) {
+  if ($agent_instance = personalize_agent_load_agent($agent->machine_name)) {
+    try {
+      // Tell Acquia Lift about the change to the decision structure.
+      $old_decisions = AcquiaLiftAgent::convertOptionSetsToDecisions($old_option_sets);
+      $new_decisions = AcquiaLiftAgent::convertOptionSetsToDecisions($new_option_sets);
+      $agent_instance->syncDecisions($old_decisions, $new_decisions);
+      // Tell Acquia Lift about the fixed targeting for the option sets.
+      $agent_instance->syncFixedTargeting($new_option_sets);
+
+      // Save the agent data to the db.
+      $agent->data['decisions'] = $new_option_sets;
+      personalize_agent_save($agent);
+    }
+    catch (Exception $e) {
+      drupal_set_message($e->getMessage(), 'error');
+    }
+  }
+}
+
+/**
+ * Implements hook_personalize_goal_save().
+ */
+function acquia_lift_personalize_goal_save($goal_info) {
+  $agent = personalize_agent_load($goal_info['agent']);
+  if (!$agent || $agent->plugin != 'acquia_lift') {
+    return;
+  }
+  $old_goals = isset($agent->data['goals']) ? $agent->data['goals'] : array();
+  $current_goals = personalize_goal_load_by_conditions(array('agent' => $agent->machine_name));
+  foreach ($current_goals as $goal) {
+    $new_goals[$goal['action']] = $goal['value'];
+  }
+  // For the current goal, take the info from what was passed in, rather
+  // than from the db.
+  $new_goals[$goal_info['name']] = $goal_info['value'];
+  if ($new_goals == $old_goals) {
+    return;
+  }
+  if ($agent_instance = personalize_agent_load_agent($agent->machine_name)) {
+    try {
+      // Now tell Acquia Lift about the change to the goals.
+      $agent_instance->syncGoals($old_goals, $new_goals);
+
+      // Save the agent data to the db.
+      $agent->data['goals'] = $new_goals;
+      personalize_agent_save($agent);
+    }
+    catch (Exception $e) {
+      drupal_set_message($e->getMessage(), 'error');
+    }
+  }
+}
+
+/**
+ * Queue callback function for making a request to Acquia Lift.
+ *
+ * @param $item
+ *   The queue item to process. It should be an array with the following keys:
+ *   - method The method to call on the AcquiaLiftAPI instance
+ *   - args The args to pass to the method.
+ */
+function acquia_lift_sync_item($item) {
+  try {
+    $acquia_lift_api = AcquiaLiftAPI::getInstance(variable_get('acquia_lift_account_info', array()));
+    call_user_func_array(array($acquia_lift_api, $item['method']), $item['args']);
+  }
+  catch (AcquiaLiftException $e) {
+    watchdog('Acquia Lift', 'Could not call the method @method with args @args', array('@method' => $item['method'], '@args' => implode(',', $item['args'])));
+  }
+}
+
+/**
+ * Implements hook_personalize_campaign_report().
+ */
+function acquia_lift_personalize_campaign_report($agent_data) {
+  module_load_include('inc', 'acquia_lift', 'acquia_lift.admin');
+  return drupal_get_form('acquia_lift_report', $agent_data);
+}
+
+/**
+ * Creates an Acquia Lift agent if none exists yet.
+ *
+ * Does not yet create the agent on the Acquia Lift side as no decisions will
+ * have been set up for it yet.
+ */
+function acquia_lift_ensure_default_agent($account_info) {
+  $agents = personalize_agent_load_by_type('acquia_lift');
+  if (empty($agents)) {
+    // Create a new agent. It will not get sent to Conductrucs until it has
+    // at least one option set added to it.
+    $agent_data = new stdClass();
+    $clean_site_name = drupal_clean_css_identifier(strtolower(variable_get('site_name')));
+    $new_name = ACQUIA_LIFT_DEFAULT_AGENT_NAME . '-' . $clean_site_name;
+    // Although no Acquia Lift agents exist yet on the Drupal site, there may
+    // be agents set up on the Acquia Lift side so we need to be sure not to
+    // clash.
+    try {
+      $existing_acquia_lift = AcquiaLiftAPI::getInstance($account_info)->getExistingAgents();
+    }
+    catch (AcquiaLiftException $e) {
+      // Creds have not yet been set up.
+      $existing_acquia_lift = array();
+    }
+    $index = 0;
+    while(in_array($new_name, array_keys($existing_acquia_lift))) {
+      $index++;
+      $new_name .= '-' . $index;
+    }
+    $agent_data->machine_name = $new_name;
+    $agent_data->plugin = 'acquia_lift';
+    $agent_data->label = 'Default Acquia Lift Agent';
+    $agent_data->data = array('decision_style' => 'adaptive');
+    personalize_agent_save($agent_data);
+  }
+}
+
+/**
+ * Implements hook_personalize_form_ajax_submit().
+ */
+function acquia_lift_personalize_form_ajax_submit($agent_data) {
+  acquia_lift_process_queue(FALSE);
+}
+
+/**
+ * Page callback - runs the Acquia Lift queue.
+ */
+function acquia_lift_process_queue($exit_on_finish = TRUE) {
+  // Clear the session variable so the JS is no longer added to the page.
+  if (!isset($_SESSION['acquia_lift_queue_trigger'])) {
+    if ($exit_on_finish) {
+      drupal_exit();
+    }
+    else {
+      return;
+    }
+  }
+  unset($_SESSION['acquia_lift_queue_trigger']);
+  // Allow execution to continue even if the request gets canceled.
+  @ignore_user_abort(TRUE);
+
+  // Try to allocate enough time to process the entire queue. It should
+  // get through everything within a minute.
+  drupal_set_time_limit(60);
+
+  $queues = module_invoke('acquia_lift', 'cron_queue_info');
+  $queue_name = 'acquia_lift_sync';
+  $info = $queues[$queue_name];
+
+  $function = $info['worker callback'];
+  $end = time() + (isset($info['time']) ? $info['time'] : 15);
+  $queue = DrupalQueue::get($queue_name);
+  while (time() < $end && ($item = $queue->claimItem())) {
+    $function($item->data);
+    $queue->deleteItem($item);
+  }
+
+  if ($exit_on_finish) {
+    drupal_exit();
+  }
+  else {
+    return;
+  }
+}
+
+/**
+ * Implements hook_library().
+ */
+function acquia_lift_library() {
+  $path = drupal_get_path('module', 'acquia_lift');
+  $options = array(
+    'scope' => 'footer',
+    'defer' => TRUE,
+  );
+
+  // Controls and actions for site builders.
+  $libraries['acquia_lift.controls'] = array(
+    'title' => 'Acquia Lift controls',
+    'website' => '',
+    'version' => VERSION,
+    'js' => array(
+      $path . '/js/acquia_lift.controls.js' => $options,
+    ),
+    'dependencies' => array(
+      array('system', 'jquery'),
+      array('system', 'jquery.once'),
+      array('system', 'drupal.ajax'),
+      array('system', 'ui.dialog'),
+    ),
+  );
+
+  // Option set preview.
+  $libraries['acquia_lift.personalize'] = array(
+    'title' => 'Assets for preview option sets',
+    'website' => '',
+    'version' => VERSION,
+    'js' => array(
+      $path . '/js/acquia_lift.personalize.js' => $options,
+      array(
+        'data' => array(
+          'personalize' => array(
+            'links' => array(
+              'campaigns' => array(
+                'getActive' => '/personalize/campaign_context',
+                'setActive' => '/personalize/campaign_context/%personalize_agent',
+              )
+            )
+          ),
+        ),
+        'type' => 'setting'
+      ),
+    ),
+    'css' => array(
+      $path . '/css/acquia_lift.personalize.css' => array(),
+    ),
+    'dependencies' => array(
+      array('system', 'jquery'),
+      array('system', 'jquery.once'),
+      array('system', 'drupal.ajax'),
+      array('acquia_lift', 'underscore'),
+      array('acquia_lift', 'backbone'),
+    ),
+  );
+
+  $libraries['acquia_lift.fields'] = array(
+    'title' => 'Add navigation to personalizable fields',
+    'website' => '',
+    'version' => VERSION,
+    'js' => array(
+      $path . '/js/acquia_lift.fields.js' => $options,
+    ),
+    'css' => array(
+      $path . '/css/acquia_lift.fields.theme.css' => array(),
+      $path . '/css/acquia_lift.fields.admin.css' => array(),
+    ),
+    'dependencies' => array(
+      array('system', 'jquery'),
+      array('system', 'jquery.once'),
+    ),
+  );
+
+  // Navbar module integration.
+  $libraries['acquia_lift.navbar'] = array(
+    'title' => 'Assets for integration with the Navbar module',
+    'website' => 'http://drupal.org/project/navbar',
+    'version' => '1.0',
+    'js' => array(
+      $path . '/js/acquia_lift.navbar.js' => $options,
+    ),
+    'css' => array(
+      $path . '/css/acquia_lift.navbar.css' => array(),
+    ),
+    'dependencies' => array(
+      array('system', 'jquery'),
+      array('system', 'jquery.once'),
+    ),
+  );
+
+  // Underscore
+  $libraries['underscore'] = _acquia_lift_convert_libraries_to_library(libraries_detect('underscore'), array(
+    'group' => JS_LIBRARY,
+    'weight' => -20,
+  ));
+
+  // Backbone
+  $libraries['backbone'] = _acquia_lift_convert_libraries_to_library(libraries_detect('backbone'), array(
+    'group' => JS_LIBRARY,
+    'weight' => -19,
+  ));
+
+  return $libraries;
+}
+
+
+/**
+ * Implements hook_library_alter().
+ *
+ * Backport a couple of things from jQuery that are required.
+ */
+function acquia_lift_library_alter(&$libraries, $module) {
+  $jquery_version = &drupal_static(__FUNCTION__, NULL);
+  if ($module == 'system') {
+    $jquery_version = $libraries['jquery']['version'];
+  }
+  if ($jquery_version && $module == 'acquia_lift') {
+    $path = drupal_get_path('module', 'acquia_lift');
+    // If the version of jQuery is old, we need to add `on` and `off`.
+    if ($jquery_version < '1.7') {
+      $libraries['acquia_lift.personalize']['js'][$path . '/js/jquery/ducktape.events.js'] = array('group' => JS_LIBRARY);
+    }
+  }
+}
+
+/**
+ * Implements hook_libraries_info().
+ *
+ * Takes the same approach as used in navbar project.
+ *
+ * @see Libraries module.
+ */
+function acquia_lift_libraries_info() {
+  $libraries['underscore'] = array(
+    'name' => 'Underscore',
+    'vendor url' => 'http://documentcloud.github.io/backbone/',
+    'download url' => 'https://github.com/jashkenas/underscore/archive/1.5.2.zip',
+    'version callback' => '_acquia_lift_libraries_get_version',
+    'variant order' => array('minified', 'source'),
+    'version arguments' => array(
+      'variants' => array(
+        'source' => array(
+          'file' => 'underscore.js',
+          'pattern' => '#VERSION *\W *[\'\"]{1}(.*?)[\'\"]{1}#',
+          // In the unminified Underscore.js 1.5.2, the version is defined on
+          // line 68.
+          'lines' => 100,
+        ),
+        'minified' => array(
+          'file' => 'underscore-min.js',
+          'pattern' => '#VERSION *\W *[\'\"]{1}(.*?)[\'\"]{1}#',
+        ),
+      ),
+    ),
+    'versions' => array(
+      // Means ">=1.5.0": matches 1.5.0, 1.5.2, etc.
+      '1.5.0' => array(
+        'variants' => array(
+          'source' => array(
+            'files' => array(
+              'js' => array(
+                'underscore.js',
+              ),
+            ),
+            // Without a variant callback, the variant is assumed to be
+            // installed.
+            'variant callback' => '_acquia_lift_libraries_variant_exists',
+            'variant arguments' => array('underscore.js'),
+          ),
+          'minified' => array(
+            'files' => array(
+              'js' => array(
+                'underscore-min.js',
+              ),
+            ),
+            // Without a variant callback, the variant is assumed to be
+            // installed.
+            'variant callback' => '_acquia_lift_libraries_variant_exists',
+            'variant arguments' => array('underscore-min.js'),
+          ),
+        ),
+      ),
+    ),
+  );
+
+  $libraries['backbone'] = array(
+    'name' => 'Backbone',
+    'vendor url' => 'http://documentcloud.github.io/backbone/',
+    'download url' => 'https://github.com/jashkenas/backbone/archive/1.1.0.zip',
+    'version callback' => '_acquia_lift_libraries_get_version',
+    'variant order' => array('minified', 'source'),
+    'version arguments' => array(
+      'variants' => array(
+        'source' => array(
+          'file' => 'backbone.js',
+          'pattern' => '#VERSION *\W *[\'\"]{1}(.*?)[\'\"]{1}#',
+          // In the unminified Backbone.js 1.1.0, the version is defined on line
+          // 38.
+          'lines' => 50,
+        ),
+        'minified' => array(
+          'file' => 'backbone-min.js',
+          'pattern' => '#VERSION *\W *[\'\"]{1}(.*?)[\'\"]{1}#',
+        ),
+      ),
+    ),
+    'versions' => array(
+      // Means ">=1.0.0": matches 1.0.0, 1.1.0, etc.
+      '1.0.0' => array(
+        'variants' => array(
+          'source' => array(
+            'name' => 'Backbone',
+            'files' => array(
+              'js' => array(
+                'backbone.js',
+              ),
+            ),
+            // Without a variant callback, the variant is assumed to be
+            // installed.
+            'variant callback' => '_acquia_lift_libraries_variant_exists',
+            'variant arguments' => array('backbone.js'),
+            'dependencies' => array('underscore (>=1.5.0)'),
+          ),
+          'minified' => array(
+            'name' => 'Backbone',
+            'files' => array(
+              'js' => array(
+                'backbone-min.js',
+              ),
+            ),
+            // Without a variant callback, the variant is assumed to be
+            // installed.
+            'variant callback' => '_acquia_lift_libraries_variant_exists',
+            'variant arguments' => array('backbone-min.js'),
+            'dependencies' => array('underscore (>=1.5.0)'),
+          ),
+        ),
+      ),
+    ),
+  );
+
+  return $libraries;
+}
+
+/**
+ * Determines the version of a library.
+ *
+ * This is used in case different variants of the library are shipped separately
+ * and, thus, different variants can contain different versions.
+ *
+ * @param array $library
+ *   An associative array containing all information about the library. The
+ *   library is assumed to have the following non-standard keys:
+ *   - variant order: An array of variant names, ordered from the most preferred
+ *     variant to the least preferred.
+ * @param array $options
+ *   An associative array with the following keys:
+ *   - variants: An array of options for libraries_get_version() keyed by
+ *     variant name.
+ *
+ */
+function _acquia_lift_libraries_get_version(&$library, $options = array()) {
+  $versions = array();
+  foreach ($library['variant order'] as $variant_name) {
+    $variant = $library['version arguments']['variants'][$variant_name];
+    // Use the libraries get version function to determine the version string.
+    $versions[$variant_name] = libraries_get_version($library, $variant);
+  }
+
+  // If no versions could be found for any of the variant, there is no version
+  // to return. If different versions have been found, there is no way to
+  // determine the correct one. We cannot use the information on the preferred
+  // variants because we cannot guarantee that a less preferred variant will not
+  // be loaded. Null values are fine. Either that variant file doesn't exist
+  // or id doesn't contain version information. As long as the there is no
+  // conflicting version information, the check should pass.
+  $versions = array_filter($versions, '_acquia_lift_libraries_filter_null_values');
+  $version = array_unique($versions);
+  $vcount = count($version);
+  if ($vcount == 1) {
+    // A version number exists, so suppress any errors that any individual
+    // variant might have raised.
+    unset($library['error']);
+    unset($library['error message']);
+    return array_shift($version);
+  }
+  elseif ($vcount > 1) {
+    $output = array();
+    foreach ($versions as $name => $v) {
+      $output[] = t('@name (@v)', array(
+        '@name' => $name,
+        '@v' => $v,
+      ));
+    }
+
+    $library['error'] = 'inconsistent versions';
+    $library['error message'] = t('The library\'s variants returned inconsistent versions: @variant_info', array(
+      '@variant_info' => implode(', ', $output),
+    ));
+  }
+  // If the version count is zero, then let the error from libraries_get_version
+  // propagate through.
+}
+
+/**
+ * Determines if an item is empty or not.
+ *
+ * @param string $item
+ *   A version number string.
+ * @return boolean
+ *   Whether the $item's value is empty or not.
+ */
+function _acquia_lift_libraries_filter_null_values($item) {
+  return !empty($item);
+}
+
+/**
+ * Converts a libraries module array to a hook_library array.
+ *
+ * @todo Libraries API should automatically register all libraries in
+ *   hook_library(). See https://drupal.org/node/1386368
+ *
+ * @return Array
+ *  Returns a standard Drupal library definition structure.
+ */
+function _acquia_lift_convert_libraries_to_library($library, $options = array()) {
+  // If the library wasn't installed, don't bother converting it.
+  if (!$library['installed']) {
+    return array();
+  }
+
+  $converted = array();
+  $files = array();
+
+  // Get the library files from one of the installed variants.
+  if ($name = _acquia_lift_libraries_get_preferred_variant_name($library)) {
+    $files = $library['variants'][$name]['files'];
+  }
+
+  // Define the library if files exist for it.
+  if (!empty($files)) {
+    // This is the basic structure expected by hook_library().
+    $converted = array(
+      'title' => $library['name'],
+      'website' => $library['vendor url'],
+      'version' => $library['version'],
+    );
+    foreach ($files as $type => $paths) {
+      foreach($paths as $filename => $data) {
+        $converted[$type][$library['library path'] . '/' . $filename] = $options;
+      }
+    }
+  }
+
+  return $converted;
+}
+
+/**
+ * Libraries API variant callback.
+ */
+function _acquia_lift_libraries_variant_exists($library, $variant_name, $required_file) {
+  return file_exists($library['library path'] . '/' . $required_file);;
+}
+
+/**
+ * Returns the variant that should be loaded based on order preference.
+ *
+ * @param array $library
+ *   A libraries module library definition array.
+ * @return string
+ *   The name of the variant that should be loaded.
+ */
+function _acquia_lift_libraries_get_preferred_variant_name($library) {
+  if (!empty($library['variant order'])) {
+    foreach ($library['variant order'] as $name) {
+      if ($variant = $library['variants'][$name]) {
+        if ($variant['installed']) {
+          return $name;
+        }
+      }
+    }
+  }
+  return NULL;
+}
+
+/**
+ * Implements hook_navbar().
+ */
+function acquia_lift_navbar() {
+  $items = array();
+
+  $menu = menu_tree_all_data('acquia-lift-controls');
+
+  if (!empty($menu)) {
+    $items['acquia_lift'] = array(
+      '#access' => user_access('manage personalized content'),
+      '#type' => 'navbar_item',
+      'tab' => array(
+        '#type' => 'link',
+        '#title' => t('Acquia Lift'),
+        '#href' => 'admin/structure/personalize',
+        '#options' => array(
+          'attributes' => array(
+            'title' => t('Personalization settings'),
+            // @todo, the .navbar-tab class is provided here because Demo
+            // Framework is on an older version of Navbar (dd542e1). Once
+            // DF is updated to the latest Navbar release, the .navbar-tab
+            // class can be removed here. The class should be added in
+            // template_preprocess_navbar_tab_wrapper, which only add a class
+            // .tab in older versions.
+            'class' => array('navbar-icon', 'navbar-icon-acquia-lift', 'navbar-tab'),
+          ),
+        ),
+      ),
+      'tray' => array(
+        '#heading' => t('Personalization controls'),
+        'navbar_personalization' => array(
+          '#type' => 'container',
+          '#attributes' => array(
+            'class' => array('navbar-menu-acquia-lift-controls', 'acquia-lift-controls'),
+          ),
+          'personalization' => menu_tree_output($menu),
+        ),
+        '#wrapper_attributes' => array(
+          'class' => array('navbar-tray-acquia-lift'),
+        ),
+      ),
+      '#attached' => array(
+        'library' => array(
+          array('acquia_lift', 'acquia_lift.navbar')
+        ),
+      ),
+      '#weight' => 20,
+    );
+  }
+
+  return $items;
+}
+
+/**
+ * Implements hook_form_FORM_ID_alter().
+ */
+function acquia_lift_form_personalize_agent_form_alter(&$form, &$form_state) {
+  module_load_include('inc', 'acquia_lift', 'acquia_lift.ui');
+  acquia_lift_chosenify_element($form['agent_form']['agent_fieldset']['visitor_context']);
+}
+
+/**
+ * Implements hook_form_FORM_ID_alter().
+ */
+function acquia_lift_form_personalize_agent_option_sets_form_alter(&$form, &$form_state) {
+  if (!empty($form['#agent']) && isset($form['#agent']->machine_name)) {
+    $option_sets_section = &$form['variations']['primary']['option_sets'];
+    // Add a link for personalizing existing content. This is based on the
+    // "Add goal in context link" and the whole functionality is based on
+    // visitor_actions_ui module's "Add action in context" functionality.
+    $option_sets_section['create_option_sets']['add_in_context'] = array(
+      '#markup' => l(t('Personalize existing content'), 'acquia_lift/personalize_in_context/start', array(
+          'query' => array('destination' => "admin/structure/personalize/manage/{$form['#agent']->machine_name}/edit"),
+          'attributes' => array('class' => array('personalize-in-context-link')),
+        )
+      ),
+      '#attached' => array(
+        'css' => array(drupal_get_path('module', 'acquia_lift') . '/css/acquia_lift.admin.css'),
+      ),
+    );
+    module_load_include('inc', 'acquia_lift', 'acquia_lift.ui');
+    foreach (element_children($option_sets_section) as $name) {
+      // Look for the explicit targeting select box for each option so we can
+      // chosenify it.
+      if (isset($option_sets_section[$name]['options'])) {
+        foreach ($option_sets_section[$name]['options'] as $option_id => &$sub_elements) {
+          if (isset($sub_elements['explicit_targeting']) && is_array($sub_elements['explicit_targeting']) && isset($sub_elements['explicit_targeting']['mapping'])) {
+            $select = &$sub_elements['explicit_targeting']['mapping'];
+            acquia_lift_chosenify_element($select);
+          }
+        }
+      }
+    }
+  }
+}
+
+/**
+ * Implements hook_form_FORM_ID_alter().
+ */
+function acquia_lift_form_personalize_admin_form_alter(&$form, &$form_state) {
+  module_load_include('inc', 'acquia_lift', 'acquia_lift.ui');
+  acquia_lift_chosenify_element($form['personalize_visitor_context_disabled']);
+}
+
+/**
+ * Implements hook_personalize_fields_form_element_alter().
+ */
+function acquia_lift_personalize_fields_form_element_alter(&$element, $lang) {
+  $element['#attributes']['class'][] = 'personalizable-field';
+  if ($element[$lang]['#theme'] == 'field_multiple_value_form') {
+    $element[$lang]['#theme'] = 'acquia_lift_personalizable_field_form';
+  }
+  $element['#attached']['library'][] = array('acquia_lift', 'acquia_lift.fields');
+}
+
+/**
+ * Implements hook_help().
+ */
+function acquia_lift_help($path, $arg) {
+  switch ($path) {
+    case 'admin/help#acquia_lift':
+    case 'admin/acquia_lift':
+      $output = '<h3>' . t('About') . '</h3>';
+      $output .= '<p>' . t('The Acquia Lift module provides machine-learning-based personalization for Drupal sites.') . '</p>';
+      $output .= '<h3>' . t('Configuration') . '</h3>';
+      $output .= '<p>' . t('Go to the !configlink to configure your Acquia Lift credentials.', array('!configlink' => l(t('configuration settings page'), 'admin/config/content/personalize/acquia_lift'))) . '</p>';
+      $output .= '<h3>' . t('Manage your campaigns') . '</h3>';
+      $output .= '<p>' . t('You can manage all of your Acquia Lift campaigns from the !campaignslink.', array('!campaignslink' => l(t('campaign listing page'), 'admin/structure/personalize/manage'))) . '</p>';
+      return $output;
+  }
+}

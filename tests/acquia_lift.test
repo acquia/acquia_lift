@@ -1,0 +1,1004 @@
+<?php
+
+require_once(dirname(__FILE__) . '/../includes/acquia_lift.classes.inc');
+
+/**
+ * @file
+ * Integration tests for Acquia Lift module.
+ */
+
+class AcquiaLiftWebTest extends DrupalWebTestCase {
+  /**
+   * The string to use as the runtime API key.
+   *
+   * @var string
+   */
+  protected $liftAPIKey = 'api-key-123';
+
+  /**
+   * The string to use as the admin API key.
+   *
+   * @var string
+   */
+  protected $liftAdminKey = 'admin-key-123';
+
+  /**
+   * The string to use as the owner code.
+   *
+   * @var string
+   */
+  protected $liftAOwnerCode = 'Some_valid-owner123-code';
+
+  protected $adminUser;
+
+  protected $managerUser;
+
+  protected $personalizedQueue;
+
+  public static function getInfo() {
+    return array(
+      'name' => t('Acquia Lift Web Tests'),
+      'description' => t('Tests basic functionality of Acquia Lift module.'),
+      'group' => t('Personalize'),
+    );
+  }
+
+  public function setUp() {
+    parent::setUp(array('ctools', 'personalize', 'acquia_lift', 'personalize_blocks'));
+
+    $this->adminUser = $this->drupalCreateUser(array('access administration pages', 'administer personalize configuration'));
+
+    $this->managerUser = $this->drupalCreateUser(array('access administration pages', 'manage personalized content', 'administer visitor actions'));
+    $this->drupalLogin($this->managerUser);
+
+    $this->personalizedQueue = DrupalQueue::get('acquia_lift_sync');
+
+    variable_set('acquia_lift_account_info', array(
+      'owner_code' => $this->liftAOwnerCode,
+      'api_key' => $this->liftAPIKey,
+      'admin_key' => $this->liftAdminKey,
+    ));
+  }
+
+  public function testConfigForm() {
+    $this->drupalLogin($this->adminUser);
+    // Try entering an invalid owner code.
+    $edit = array(
+      'acquia_lift_account_info[owner_code]' => 'some invalid string',
+      'acquia_lift_account_info[api_key]' => $this->liftAPIKey,
+      'acquia_lift_account_info[admin_key]' => $this->liftAdminKey,
+      'acquia_lift_account_info[api_url]' => 'http://some.valid.url',
+    );
+    $this->drupalPost('admin/config/content/personalize/acquia_lift', $edit, $this->getButton('config'));
+    $this->assertText('You must enter a valid owner code');
+
+    // Now try with a valid code.
+    $edit['acquia_lift_account_info[owner_code]'] = $this->liftAOwnerCode;
+    $this->drupalPost('admin/config/content/personalize/acquia_lift', $edit, $this->getButton('config'));
+    $this->assertNoText('You must enter a valid owner code');
+    $account_info = variable_get('acquia_lift_account_info', array());
+    $this->assertEqual($account_info['owner_code'], $this->liftAOwnerCode);
+    $this->assertEqual($account_info['api_key'], $this->liftAPIKey);
+    $this->assertEqual($account_info['admin_key'], $this->liftAdminKey);
+    $this->assertEqual($account_info['api_url'], 'http://some.valid.url');
+    // Try entering an invalid API url.
+    $edit['acquia_lift_account_info[api_url]'] = 'some\\invalid\\url';
+    $this->drupalPost('admin/config/content/personalize/acquia_lift', $edit, $this->getButton('config'));
+    $this->assertText('You must enter a valid URL');
+    // Try a valid URL with no scheme.
+    $edit['acquia_lift_account_info[api_url]'] = 'some.valid.url';
+    $this->drupalPost('admin/config/content/personalize/acquia_lift', $edit, $this->getButton('config'));
+    $this->assertNoText('You must enter a valid URL');
+    // Try a valid URL with scheme.
+    $edit['acquia_lift_account_info[api_url]'] = 'https://some.valid.url';
+    $this->drupalPost('admin/config/content/personalize/acquia_lift', $edit, $this->getButton('config'));
+    $this->assertNoText('You must enter a valid URL');
+    $this->resetAll();
+    $account_info = variable_get('acquia_lift_account_info', array());
+    $this->assertEqual($account_info['api_url'], 'https://some.valid.url');
+  }
+
+  public function testSaveAgent() {
+    // Create a new agent via the UI.
+    $agent = $this->createTestAgent(array('control_rate' => 90));
+
+    $agent_name = $agent->getTitle();
+    $machine_name = $agent->getMachineName();
+    $expected_queue_items = $option_set_queue_items = array();
+    // Add some dummy option sets to this agent.
+    $option_set_values = array(
+      array('agent' => $machine_name, 'plugin' => 'type1', 'num_options' => 3),
+      array('agent' => $machine_name, 'plugin' => 'type2', 'num_options' => 2),
+    );
+
+    foreach ($option_set_values as $i => $values) {
+      list($option_set, $new_queues) = $this->createOptionSet($i, $values);
+
+      $expected_queue_items = array_merge($expected_queue_items, $new_queues);
+
+      // We need to keep track of the option set items that get added to the
+      // queue separately from the other items as we need them again later.
+      // Dirty way to avoid 'saveAgent' method be included to $option_set_queue_items
+      $option_set_queue_items = array_merge($option_set_queue_items, $new_queues);
+      $expected_queue_items[] = array(
+        'method' => 'saveFixedTargetingMapping',
+        'args' => array(
+          $machine_name,
+          personalize_get_decision_point_name_for_option_set($option_set),
+          array()
+        )
+      );
+      if ($i == 0) {
+        $expected_queue_items[] = array(
+          'method' => 'saveAgent',
+          'args' => array(
+            $machine_name,
+            $agent_name,
+            'adaptive',
+            'enabled',
+            0.1,
+          )
+        );
+      }
+    }
+
+    $this->assertQueueItems($expected_queue_items);
+    $this->personalizedQueue->deleteQueue();
+    $expected_queue_items = array();
+    // Save a goal for the agent.
+    $goal_name = 'form_submit';
+    personalize_goal_save($machine_name, $goal_name, 2);
+    $expected_queue_items[] = array(
+      'method' => 'saveGoal',
+      'args' => array(
+        $machine_name,
+        $goal_name
+      )
+    );
+    $expected_queue_items[] = array(
+      'method' => 'saveAgent',
+      'args' => array(
+        $machine_name,
+        $agent_name,
+        'adaptive',
+        'enabled',
+        0.1,
+      )
+    );
+    $this->assertQueueItems($expected_queue_items);
+    $this->personalizedQueue->deleteQueue();
+    $expected_queue_items = array();
+    $this->drupalPost("admin/structure/personalize/manage/$machine_name/edit", array(), $this->getButton('agent'));
+    $expected_queue_items = array(
+      array(
+        'method' => 'saveAgent',
+        'args' => array(
+          $machine_name,
+          $agent_name,
+          'adaptive',
+          'enabled',
+          0.1
+        )
+      )
+    );
+    $this->assertQueueItems($expected_queue_items);
+    $this->personalizedQueue->deleteQueue();
+    $expected_queue_items = array();
+    $this->drupalPost("admin/structure/personalize/manage/$machine_name/edit", array(), $this->getButton('agent'));
+    // Now the only thing that should get added is an item for the agent
+    // because neither goals nor option sets will have changed.
+    $expected_queue_items[] = array(
+      'method' => 'saveAgent',
+      'args' => array(
+        $machine_name,
+        $agent_name,
+        'adaptive',
+        'enabled',
+        0.1,
+      )
+    );
+    $this->assertQueueItems($expected_queue_items);
+    $this->personalizedQueue->deleteQueue();
+
+    // Create an MVT and add the two option sets to it.
+    $mvt_label = $this->randomName();
+    $mvt_machine_name = personalize_generate_machine_name($mvt_label, 'personalize_mvt_machine_name_exists');
+    $edit = array(
+      'mvt[add][mvt_basic_info][label]' => $mvt_machine_name,
+      'mvt[add][mvt_basic_info][option_sets][]' => array(1, 2),
+    );
+    $this->drupalPost("admin/structure/personalize/manage/{$machine_name}/edit", $edit, $this->getButton('mvt'));
+    // The option sets will get added to the queue
+    foreach ($option_set_queue_items as &$item) {
+      // The second argument, which is the decision point name, will have
+      // changed to the MVT name.
+      $item['args'][1] = $mvt_machine_name;
+    }
+    $expected_queue_items = array_slice($option_set_queue_items, 0, 5);
+    // @todo Commenting this out as for some reason after saving the new
+    // point and decision/choices for osid-1, it saves the old point and
+    // decision/choices for osid-2, before deleting the old osid-1 point,
+    // saving the second decision and deleting the osid-2 point.
+    //$this->assertQueueItems($expected_queue_items);
+  }
+
+  public function testSaveAutoTargetingRule() {
+    $agent = $this->createTestAgent();
+
+    // as acquia_lift_context options are fetched from Acquia Lift via webservice - use hardcoded ones in tests
+
+    module_load_include('inc', 'personalize', 'personalize.admin');
+
+    $agentStructure = _personalize_agent_from_form_values(array(
+      'machine_name' => $agent->getMachineName(),
+      'title' => $agent->getTitle(),
+      'agent_type' => $agent->getType(),
+      'data' => $agent->getData(),
+    ));
+
+    $agentStructure->data['visitor_context'] = array(
+      // fake condutrcis context to check saveAutoTargetingRule method queue
+      'acquia_lift_context' => array(
+        'some_acquia_lift_context' => 'some_acquia_lift_context',
+      ),
+    );
+
+    $this->drupalGet('admin/structure/personalize/manage/' . $agent->getMachineName() . '/edit');
+    personalize_agent_save($agentStructure);
+    $this->drupalGet('admin/structure/personalize/manage/' . $agent->getMachineName() . '/edit');
+    $agent = personalize_agent_load_agent($agent->getMachineName(), TRUE);
+
+    $agentData = $agent->getData();
+    $expected_queues = array(
+      array(
+        'method' => 'saveAgent',
+        'args' => array(
+          $agent->getMachineName(),
+          $agent->getTitle(),
+          $agentData['decision_style'],
+          'enabled',
+          0
+        ),
+      ),
+      array(
+        'method' => 'saveAutoTargetingRule',
+        'args' => array(
+          $agent->getMachineName(),
+          array_keys(array_filter($agentData['visitor_context']['acquia_lift_context']))
+        ),
+      ),
+    );
+
+    $this->assertQueueItems($expected_queues);
+    $this->personalizedQueue->deleteQueue();
+
+    // Now remove the acquia_lift_context items and we should be sending a delete call
+    // to Acquia Lift.
+    $agentStructure->data['visitor_context'] = array(
+      'acquia_lift_context' => array(),
+    );
+
+    $this->drupalGet('admin/structure/personalize/manage/' . $agent->getMachineName() . '/edit');
+    personalize_agent_save($agentStructure);
+    $this->drupalGet('admin/structure/personalize/manage/' . $agent->getMachineName() . '/edit');
+    $agent = personalize_agent_load_agent($agent->getMachineName(), TRUE);
+
+    $agentData = $agent->getData();
+    $expected_queues = array(
+      array(
+        'method' => 'saveAgent',
+        'args' => array(
+          $agent->getMachineName(),
+          $agent->getTitle(),
+          $agentData['decision_style'],
+          'enabled',
+          0
+        ),
+      ),
+      array(
+        'method' => 'deleteAutoTargetingRule',
+        'args' => array(
+          $agent->getMachineName(),
+        ),
+      ),
+    );
+
+    $this->assertQueueItems($expected_queues);
+
+  }
+
+  public function testSyncOptionSets() {
+    $agent = $this->createTestAgent();
+
+    $field = array(
+      'field_name' => 'field_' . drupal_strtolower($this->randomName()),
+      'type' => 'list_integer',
+      'cardinality' => 1,
+      'settings' => array(
+        'allowed_values' => array(1 => 'One', 2 => 'Two', 3 => 'Three'),
+      ),
+    );
+
+    field_create_field($field);
+    $fieldInstance = array(
+      'field_name' => $field['field_name'],
+      'entity_type' => 'user',
+      'bundle' => 'user',
+      'widget' => array(
+        'type' => 'options_select',
+      ),
+    );
+
+    field_create_instance($fieldInstance);
+    // @todo uncomment when find a way to add acquia_lift context via UI
+//    $edit = array(
+//      'visitor_context[select][]' => 'user_profile_context__' . $field['field_name'],
+//    );
+//    $this->drupalPost('admin/structure/personalize/manage/' . $agent->getMachineName() . '/edit', $edit, t('Save'));
+
+    // include _personalize_agent_from_form_values() function to build agent Data
+    module_load_include('inc', 'personalize', 'personalize.admin');
+
+    $agentStructure = _personalize_agent_from_form_values(array(
+      'machine_name' => $agent->getMachineName(),
+      'title' => $agent->getTitle(),
+      'agent_type' => $agent->getType(),
+      'data' => $agent->getData(),
+    ));
+
+    $agentStructure->data['visitor_context'] = array(
+      // choose user field as user profile context to use it for explicit targeting test
+      'user_profile_context' => array (
+        str_replace('field_', '', $field['field_name']) => str_replace('field_', '', $field['field_name']),
+      ),
+    );
+
+    personalize_agent_save($agentStructure);
+    $agent = personalize_agent_load_agent($agent->getMachineName(), TRUE);
+
+    $agentData = $agent->getData();
+    $expected_queues = array(
+      array(
+        'method' => 'saveAgent',
+        'args' => array(
+          $agent->getMachineName(),
+          $agent->getTitle(),
+          $agentData['decision_style'],
+          'enabled',
+          (100 - $agentData['control_rate']) / 100,
+        ),
+      ),
+    );
+
+    $this->assertQueueItems($expected_queues);
+    $this->personalizedQueue->deleteQueue();
+    $expected_queue_items = array();
+
+    $personalized_blocks_form_state = array(
+      'values' => array(
+        'agent_select' => $agent->getMachineName(),
+        'title' => $this->randomName(),
+        'blocks' => array(
+          array(
+            'option_label' => 'Option A',
+            'option_id' => 'option-A',
+            'weight' => 0,
+            'bid' => 'comment_delta_recent',
+            'remove' => 'remove_0',
+          ),
+          array(
+            'option_label' => 'Option B',
+            'option_id' => 'option-B',
+            'weight' => 1,
+            'bid' => 'system_delta_main',
+            'remove' => 'remove_1',
+          ),
+          array(
+            'option_label' => 'Option C',
+            'option_id' => 'option-C',
+            'weight' => 2,
+            'bid' => 'system_delta_help',
+            'remove' => 'remove_2',
+          ),
+        ),
+      ),
+    );
+
+    personalize_option_set_save(_personalize_blocks_convert_form_to_personalized_block($personalized_blocks_form_state));
+
+    $option_sets = personalize_option_set_load_by_agent($agent->getMachineName(), TRUE);
+    $agent = personalize_agent_load_agent($agent->getMachineName(), TRUE);
+    $agentData = $agent->getData();
+
+    $this->assertTrue(isset($agentData['decisions']) && isset($agentData['decisions'][1]));
+    $attemptNumber = 0;
+    foreach ($option_sets as $option_set) {
+      $expected_queue_items[] = array(
+        'method' => 'savePoint',
+        'args' => array(
+          $agent->getMachineName(),
+          personalize_get_decision_point_name_for_option_set($option_set),
+        )
+      );
+
+      // An item will be added to the queue to save the decision.
+      $expected_queue_items[] = array(
+        'method' => 'saveDecision',
+        'args' => array(
+          $agent->getMachineName(),
+          personalize_get_decision_point_name_for_option_set($option_set),
+          personalize_get_decision_name_for_option_set($option_set)
+        )
+      );
+
+      foreach ($option_set->options as $key => $option) {
+        $expected_queue_items[] = array(
+          'method' => 'saveChoice',
+          'args' => array(
+            $agent->getMachineName(),
+            personalize_get_decision_point_name_for_option_set($option_set),
+            personalize_get_decision_name_for_option_set($option_set),
+            personalize_generate_option_id($key)
+          )
+        );
+      }
+      $expected_queue_items[] = array(
+        'method' => 'saveFixedTargetingMapping',
+        'args' => array(
+          $agent->getMachineName(),
+          personalize_get_decision_point_name_for_option_set($option_set),
+          array()
+        )
+      );
+      if ($attemptNumber == 0) {
+        $expected_queue_items[] = array(
+          'method' => 'saveAgent',
+          'args' => array(
+            $agent->getMachineName(),
+            $agent->getTitle(),
+            $agentData['decision_style'],
+            'enabled',
+            (100 - $agentData['control_rate']) / 100,
+          ),
+        );
+      }
+
+      $attemptNumber++;
+    }
+
+    $this->assertQueueItems($expected_queue_items);
+    $this->personalizedQueue->deleteQueue();
+    $expected_queue_items = array();
+
+    $this->drupalGet('admin/structure/personalize/manage/' . $agent->getMachineName() . '/edit');
+
+    $edit = array(
+      'option_sets[option_set_1][options][option-A][explicit_targeting][mapping][]' => array(
+        str_replace('field_', '', $field['field_name']) . '--1' => str_replace('field_', '', $field['field_name']) . '--1',
+      ),
+    );
+
+    $this->drupalPost('admin/structure/personalize/manage/' . $agent->getMachineName() . '/edit', $edit , $this->getButton('option'));
+    $this->drupalGet('admin/structure/personalize/manage/' . $agent->getMachineName() . '/edit');
+
+    $option_sets = personalize_option_set_load_by_agent($agent->getMachineName(), TRUE);
+    $agent = personalize_agent_load_agent($agent->getMachineName(), TRUE);
+    $agentData = $agent->getData();
+
+    $this->assertTrue(isset($agentData['decisions']) && isset($agentData['decisions'][1]));
+    $attemptNumber = 0;
+    foreach ($option_sets as $option_set) {
+      $expected_queue_items[] = array(
+        'method' => 'savePoint',
+        'args' => array(
+          $agent->getMachineName(),
+          personalize_get_decision_point_name_for_option_set($option_set),
+        )
+      );
+
+      // An item will be added to the queue to save the decision.
+      $expected_queue_items[] = array(
+        'method' => 'saveDecision',
+        'args' => array(
+          $agent->getMachineName(),
+          personalize_get_decision_point_name_for_option_set($option_set),
+          personalize_get_decision_name_for_option_set($option_set)
+        )
+      );
+
+      foreach ($option_set->options as $key => $option) {
+        $expected_queue_items[] = array(
+          'method' => 'saveChoice',
+          'args' => array(
+            $agent->getMachineName(),
+            personalize_get_decision_point_name_for_option_set($option_set),
+            personalize_get_decision_name_for_option_set($option_set),
+            personalize_generate_option_id($key)
+          )
+        );
+      }
+      $expected_queue_items[] = array(
+        'method' => 'saveFixedTargetingMapping',
+        'args' => array(
+          $agent->getMachineName(),
+          personalize_get_decision_point_name_for_option_set($option_set),
+          array()
+        )
+      );
+
+      if ($attemptNumber == 0) {
+        $expected_queue_items[] = array(
+          'method' => 'saveAgent',
+          'args' => array(
+            $agent->getMachineName(),
+            $agent->getTitle(),
+            $agentData['decision_style'],
+            'enabled',
+            (100 - $agentData['control_rate']) / 100
+          ),
+        );
+      }
+
+      $attemptNumber++;
+    }
+
+    foreach ($option_sets as $option_set) {
+      // An item will be added to teh queue to save each option.
+      foreach ($option_set->options as $key => $option) {
+        if (!empty($option['fixed_targeting'])) {
+          $mappings = array();
+          foreach ($option['fixed_targeting'] as $feature) {
+            $mappings[$option_set->decision_name][] = array(
+              'feature' => $feature,
+              'decision' => $option_set->decision_name . ':' . $option['option_id']
+            );
+          }
+          foreach ($mappings as $point_name => $map) {
+            if (!empty($map)) {
+              $expected_queue_items[] = array(
+                'method' => 'saveFixedTargetingMapping',
+                'args' => array(
+                  $agent->getMachineName(),
+                  $point_name,
+                  $map
+                )
+              );
+            }
+          }
+        }
+      }
+    }
+
+    $this->assertQueueItems($expected_queue_items);
+    $this->personalizedQueue->deleteQueue();
+    // @todo uncomment it when realise how to delete options from option_sets via UI
+//    $expected_queue_items = array();
+//
+//    // Remove blocks[1][bid]
+//    $edit = array(
+//      'title' => $this->randomName(),
+//      'blocks[0][bid]' => 'comment_delta_recent',
+//      'blocks[2][bid]' => 'system_delta_help',
+//    );
+//
+//    $this->drupalPost('admin/structure/personalize-blocks/manage/' . $option_sets[1]->osid . '/edit', $edit, t('Save'));
+//
+//    $this->assertQueueItems($expected_queue_items);
+//    $this->personalizedQueue->deleteQueue();
+  }
+
+  public function testSyncGoalsFromCampaignUI() {
+    $agent = $this->createTestAgent();
+
+    $edit = array(
+      'goals[0][triggers][action_name]' => 'form_submit',
+      'goals[0][triggers][value]' => '20',
+    );
+
+    $this->drupalPost('admin/structure/personalize/manage/' . $agent->getMachineName() . '/edit', $edit, $this->getButton('goal'));
+
+    $expected_queues = array(
+      array(
+        'method' => 'saveGoal',
+        'args' => array(
+          $agent->getMachineName(),
+          'form_submit',
+        ),
+      ),
+      array(
+        'method' => 'saveAgent',
+        'args' => array(
+          $agent->getMachineName(),
+          $agent->getTitle(),
+          'adaptive',
+          'enabled',
+          0,
+        ),
+      ),
+    );
+
+    $this->assertQueueItems($expected_queues);
+    $this->personalizedQueue->deleteQueue();
+
+    $this->drupalPost('admin/structure/personalize/manage/' . $agent->getMachineName() . '/edit', array(), $this->getButton('goal'));
+
+    // As we're triggering only goals form and do not change anything
+    // saveAgent won't be invoked also
+    $expected_queues = array();
+
+    $this->assertQueueItems($expected_queues);
+    $this->personalizedQueue->deleteQueue();
+  }
+
+  public function testSyncGoalsFromVisitorUI() {
+    // include visitor_actions_action_name_exists() function to validate action machine name
+    module_load_include('inc', 'visitor_actions', 'visitor_actions.admin');
+
+    $agent = $this->createTestAgent();
+
+    $actionTitle = $this->randomName();
+    $actionMachineName = personalize_generate_machine_name($actionTitle, 'visitor_actions_action_name_exists');
+
+    // Create new Visitor Action but WITHOUT connection to active agent
+    $edit = array(
+      'title' => $actionTitle,
+      'machine_name' => $actionMachineName,
+      'actionable_element' => 'form',
+      'identifier[form]' => 'some_form_id',
+      'event[form]' => 'server::submit_server',
+      'personalize_goal' => FALSE,
+      'personalize_goal_value' => 50,
+    );
+
+    $this->drupalPost('admin/structure/visitor_actions/add', $edit, $this->getButton());
+
+    // Without connection to the agent we should run any acquia_lift' syncing
+    // @see personalize_visitor_action_form_submit()
+    $expected_queues = array();
+
+    $this->assertQueueItems($expected_queues);
+
+    // Try to create new with connection to the agent
+    $actionTitle = $this->randomName();
+    $actionMachineName = personalize_generate_machine_name($actionTitle, 'visitor_actions_action_name_exists');
+
+    // Create new Visitor Action but WITH connection to active agent
+    $edit = array(
+      'title' => $actionTitle,
+      'machine_name' => $actionMachineName,
+      'actionable_element' => 'form',
+      'identifier[form]' => 'some_form_id',
+      'event[form]' => 'server::submit_server',
+      'personalize_goal' => TRUE,
+      'personalize_goal_value' => 50,
+    );
+
+    $this->drupalPost('admin/structure/visitor_actions/add', $edit, $this->getButton());
+
+    // With connection to the agent we should run AcquiaLiftAgent->syncGoals
+    $expected_queues = array(
+      array(
+        'method' => 'saveGoal',
+        'args' => array(
+          $agent->getMachineName(),
+          $actionMachineName,
+        ),
+      ),
+      array(
+        'method' => 'saveAgent',
+        'args' => array(
+          $agent->getMachineName(),
+          $agent->getTitle(),
+          'adaptive',
+          'enabled',
+          0,
+        ),
+      ),
+    );
+
+    $this->assertQueueItems($expected_queues);
+    $this->personalizedQueue->deleteQueue();
+
+    // Remove machine name from post because it's not available as a field in the edit form.
+    unset($edit['machine_name']);
+    // Try to modify with same goal value to check that anything won't be synced
+    $this->drupalPost('admin/structure/visitor_actions/manage/' . $actionMachineName . '/edit', $edit, $this->getButton());
+
+    // With connection to the agent but with old goal value we should not run AcquiaLiftAgent->syncGoals or saveAgent
+    $expected_queues = array();
+
+    $this->assertQueueItems($expected_queues);
+    $this->personalizedQueue->deleteQueue();
+
+    // If goal value is changed syncGoals and saveAgent should be invoked
+    $edit['personalize_goal_value'] += 10;
+    $this->drupalPost('admin/structure/visitor_actions/manage/' . $actionMachineName . '/edit', $edit, $this->getButton());
+
+    // With connection to the agent but with old goal value we should not run AcquiaLiftAgent->syncGoals or saveAgent
+    $expected_queues = array(
+      array(
+        'method' => 'saveGoal',
+        'args' => array(
+          $agent->getMachineName(),
+          $actionMachineName,
+        ),
+      ),
+      array(
+        'method' => 'saveAgent',
+        'args' => array(
+          $agent->getMachineName(),
+          $agent->getTitle(),
+          'adaptive',
+          'enabled',
+          0,
+        ),
+      ),
+    );
+
+    $this->assertQueueItems($expected_queues);
+    $this->personalizedQueue->deleteQueue();
+
+    // Verify that agent has last visitor action data
+    $agentGoals = personalize_goal_load_by_conditions(array('agent' => $agent->getMachineName()));
+
+    $this->assertEqual($agentGoals[0]['action'], $actionMachineName);
+    $this->assertEqual($agentGoals[0]['value'], $edit['personalize_goal_value']);
+
+    // Try to delete goal that connected to Agent from Visitor Action UI
+    $this->drupalPost('admin/structure/visitor_actions/manage/' . $actionMachineName . '/delete', array(), t('Delete'));
+
+    $expected_queues = array();
+
+    // @todo uncomment or remove it after goal deletion decision
+//    $expected_queues = array(
+//      array(
+//        'method' => 'saveAgent',
+//        'args' => array(
+//          $agent->getMachineName(),
+//          $agent->getTitle(),
+//          'adaptive',
+//          'enabled',
+//           0,
+//        ),
+//      ),
+//    );
+
+    $this->assertQueueItems($expected_queues);
+    $this->personalizedQueue->deleteQueue();
+
+    // No goal should be attached after deletion
+    $agentGoals = personalize_goal_load_by_conditions(array('agent' => $agent->getMachineName()));
+
+    $this->assertEqual($agentGoals, array());
+  }
+
+  public function testDeleteAgentGoals() {
+    // @todo implement or remove it after goal deletion decision
+  }
+
+  public function testAcquiaLiftQueue() {
+    $marketer = $this->drupalCreateUser(array('access administration pages', 'manage personalized content'));
+    $this->drupalLogin($marketer);
+    // Create a new agent via the UI.
+    $agent = $this->createTestAgent(array(), FALSE);
+    $agent_name = $agent->getTitle();
+    $machine_name = $agent->getMachineName();
+
+    // There should now be a js setting for triggering queue processing.
+    $settings = $this->drupalGetSettings();
+    $expected_settings = array(
+      'sync_queue' => 1,
+    );
+    $this->assertEqual($expected_settings, $settings['acquia_lift']);
+    $expected_queue_items = array();
+    $queued_agent_item = array(
+      'method' => 'saveAgent',
+      'args' => array(
+        $machine_name,
+        $agent_name,
+        'adaptive',
+        'enabled',
+        0,
+      )
+    );
+    $expected_queue_items[] = $queued_agent_item;
+    $this->assertQueueItems($expected_queue_items);
+    // Now cause the queue to be processed, which would normally happen
+    // via an ajax request.
+    $this->drupalGet('acquia_lift/queue');
+    // Confirm that the queue is now empty.
+    $this->assertQueueItems(array());
+    $this->drupalGet('admin/structure/personalize');
+    $this->assertNoText(t('At least one of your agents has configuration that has not been fully sync\'d to Acquia Lift. This should resolve itself on the next cron run.'));
+
+    // Now save it again but don't process the queue.
+    $this->drupalPost("admin/structure/personalize/manage/$machine_name/edit", array(), $this->getButton('agent'));
+    // Save a goal for the agent.
+    $goal_name = 'form_submit';
+    personalize_goal_save($machine_name, $goal_name, 2);
+    $expected_queue_items = array();
+    $expected_queue_items[] = $queued_agent_item;
+    $expected_queue_items[] = array(
+      'method' => 'saveGoal',
+      'args' => array(
+        $machine_name,
+        $goal_name
+      )
+    );
+    $expected_queue_items[] = $queued_agent_item;
+    $this->assertQueueItems($expected_queue_items);
+
+    // Since we can't simulate the queued requests timing out during a web
+    // test, we simply unset the queue trigger session without processing
+    // the queue.
+    $this->assertTrue(isset($_SESSION['acquia_lift_queue_trigger']));
+    // Log the user out and back in again to get rid of the session variable.
+    $this->drupalLogout();
+    $this->drupalLogin($marketer);
+
+    // Now they should get a message warning them that there are items that
+    // need to get sync'd to Acquia Lift.
+    $this->drupalGet('admin/structure/personalize');
+    $this->assertText(t('At least one of your agents has configuration that has not been fully sync\'d to Acquia Lift. This should resolve itself on the next cron run.'));
+
+    $this->drupalLogout();
+    $admin_user = $this->drupalCreateUser(array('administer site configuration', 'access administration pages', 'manage personalized content'));
+    $this->drupalLogin($admin_user);
+    $this->drupalGet('admin/structure/personalize');
+    $this->assertRaw(t('At least one of your agents has configuration that has not been fully sync\'d to Acquia Lift. This should resolve itself on the next cron run.') . t(' Click here to <a href="@cron">run cron manually</a>.', array('@cron' => url('admin/reports/status/run-cron'))));
+    // Now run cron
+    $this->drupalGet('admin/reports/status/run-cron');
+    $this->assertQueueItems(array());
+  }
+
+  /**
+   * Asserts that the expected items are in the queue.
+   *
+   * @param $expected_items
+   *   An array of queued items.
+   */
+  protected function assertQueueItems($expected_items) {
+    $actual_items = array();
+    $result = db_query('SELECT data FROM {queue} q WHERE name = \'acquia_lift_sync\' ORDER BY created ASC');
+    foreach ($result as $row) {
+      $actual_items[] = unserialize($row->data);
+    }
+    $this->assertEqual($expected_items, $actual_items);
+  }
+
+  /**
+   * Help function to create and test queue creation of Personalize Agent
+   *
+   * @param array $data
+   *  array (
+   *    'name' => Agent title
+   *    'machine_name' => string processed by personalize_generate_machine_name()
+   *  )
+   * @param bool $cleanQueue Clean or not Drupal queue after 'saveAgent' queue testing
+   * @return NULL|PersonalizeAgentInterface
+   *
+   * @see personalize_generate_machine_name()
+   * @see testSaveAgent()
+   */
+  protected function createTestAgent($data = array(), $cleanQueue = TRUE) {
+    $data += array(
+      'name' => $this->randomName(),
+      'agent_type' => 'acquia_lift',
+      'decision_style' => 'adaptive',
+      'control_rate' => 100,
+    );
+
+    $data +=  array('machine_name' => personalize_generate_machine_name($data['name'], 'personalize_agent_machine_name_exists'));
+    $edit = array(
+      'agent_basic_info[title]' => $data['name'],
+      'agent_basic_info[machine_name]' => $data['machine_name'],
+      'agent_basic_info[agent_type]' => $data['agent_type'],
+      'agent_basic_info[options][acquia_lift][decision_style]' => $data['decision_style'],
+      'agent_basic_info[options][acquia_lift][control_rate]' => $data['control_rate'],
+    );
+
+    $this->drupalPost('admin/structure/personalize/add', $edit, $this->getButton('agent'));
+    $agent = personalize_agent_load_agent($data['machine_name'], TRUE);
+
+    $this->assertTrue($agent instanceof AcquiaLiftAgent);
+    $expected_queue_items = array(
+      array(
+        'method' => 'saveAgent',
+        'args' => array(
+          $data['machine_name'],
+          $data['name'],
+          'adaptive',
+          'enabled',
+          isset($data['control_rate']) ? (100 - $data['control_rate']) / 100 : 0,
+        )
+      )
+    );
+    $this->assertQueueItems($expected_queue_items);
+
+    if ($cleanQueue) {
+      $this->personalizedQueue->deleteQueue();
+    }
+
+    return $agent;
+  }
+
+  protected function createOptionSet($index, $optionData) {
+    $option_set = array(
+      'plugin' => $optionData['plugin'],
+      'label' => 'Option Set ' . ($index + 1),
+      'agent' => $optionData['agent'],
+    );
+    $options = array();
+    $choice_ids = array();
+    for ($j = 0; $j < $optionData['num_options']; $j++) {
+      $option_id = personalize_generate_option_id($j);
+      $choice_ids[] = $option_id;
+      $options[$j] = array(
+        'option_id' => $option_id,
+        'option_label' => personalize_generate_option_label($j),
+      );
+    }
+    $option_set['options'] = $options;
+    $option_set = (object) $option_set;
+    personalize_option_set_save($option_set);
+
+    $expected_queue_items[] = array(
+      'method' => 'savePoint',
+      'args' => array(
+        $optionData['agent'],
+        personalize_get_decision_point_name_for_option_set($option_set),
+      )
+    );
+    // An item will be added to the queue to save the decision.
+    $expected_queue_items[] = array(
+      'method' => 'saveDecision',
+      'args' => array(
+        $optionData['agent'],
+        personalize_get_decision_point_name_for_option_set($option_set),
+        personalize_get_decision_name_for_option_set($option_set)
+      )
+    );
+    // An item will be added to teh queue to save each option.
+    foreach ($choice_ids as $choice) {
+      $expected_queue_items[] = array(
+        'method' => 'saveChoice',
+        'args' => array(
+          $optionData['agent'],
+          personalize_get_decision_point_name_for_option_set($option_set),
+          personalize_get_decision_name_for_option_set($option_set),
+          $choice
+        )
+      );
+    }
+
+    return array($option_set, $expected_queue_items);
+  }
+
+  /**
+   * Helper method to move buttons names to one pace to simplify
+   * it's maintaining
+   *
+   * Kind of Page Objects Patterns
+   *
+   * @param $type string
+   * @return string
+   */
+  protected function getButton($type = '') {
+    switch ($type) {
+      case 'agent':
+        return t('Save Campaign settings');
+      case 'goal':
+        return t('Save Goals');
+      case 'option':
+        return t('Save content variations');
+      case 'mvt':
+        return t('Save MVT');
+      case 'delete':
+        return t('Delete');
+      case 'config':
+        return t('Save configuration');
+      default:
+        return t('Save');
+    }
+  }
+}

@@ -25,3 +25,6 @@
 .acquia-lift-controls-dialog {
   border: 1px solid #aaa
 }
+.acquia-lift-personalize-type-count {
+  display: none;
+}

@@ -29,6 +29,7 @@ function acquia_lift_install() {
       ),
       'html' => FALSE,
     ),
+    'expanded' => 1,
     'weight' => 1,
   );
   $item_campaign = menu_link_save($item);
@@ -47,6 +48,7 @@ function acquia_lift_install() {
       ),
       'html' => FALSE,
     ),
+    'expanded' => 1,
     'weight' => 1,
     'plid' => $item_campaign,
   );
@@ -65,6 +67,7 @@ function acquia_lift_install() {
       'html' => FALSE,
       'fragment' => 'option-sets',
     ),
+    'expanded' => 1,
     'weight' => 2,
   );
   $item_cv = menu_link_save($item);
@@ -84,6 +87,7 @@ function acquia_lift_install() {
       'html' => FALSE,
       'fragment' => 'content-variations',
     ),
+    'expanded' => 1,
     'weight' => 3,
     'plid' => $item_cv,
   );
@@ -101,6 +105,7 @@ function acquia_lift_install() {
       ),
       'html' => FALSE,
     ),
+    'expanded' => 1,
     'weight' => 3,
   );
   $item_goal = menu_link_save($item);
@@ -117,6 +122,7 @@ function acquia_lift_install() {
       ),
       'html' => FALSE,
     ),
+    'expanded' => 1,
     'weight' => 3,
     'plid' => $item_goal,
   );
@@ -134,6 +140,7 @@ function acquia_lift_install() {
       ),
       'html' => FALSE,
     ),
+    'expanded' => 1,
     'weight' => 20,
   );
   menu_link_save($item);
@@ -258,4 +265,25 @@ function acquia_lift_requirements($phase) {
   }
 
   return $requirements;
+}
+
+/**
+ * Expand the acquia-lift-controls menu items by default.
+ */
+function acquia_lift_update_7001() {
+  $items = db_select('menu_links', 'ml')
+    ->fields('ml')
+    ->condition('module', 'menu')
+    ->condition('menu_name', 'acquia-lift-controls')
+    ->execute()->fetchAllAssoc('mlid', PDO::FETCH_ASSOC);
+  if (!empty($items)) {
+    foreach ($items as $item) {
+      $item['options'] = unserialize($item['options']);
+      $item['expanded'] = 1;
+      menu_link_save($item);
+    }
+  }
+
+  // Update the menu router information.
+  menu_rebuild();
 }

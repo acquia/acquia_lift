@@ -40,6 +40,14 @@ Drupal.behaviors.acquiaLiftNavbarMenu = {
           }
         });
     }
+    // Hide object counts in vertical navbar try orientation.
+    var $onceler = $('body').once('acquia-lift-navbar');
+    if ($onceler.length) {
+      $(document).on('drupalNavbarOrientationChange.acquiaLift', function (event, orientation) {
+        var hide = (orientation === 'horizontal') ? false : true;
+        $('.acquia-lift-personalize-type-count').toggleClass('acquia-lift-hidden', hide);
+      });
+    }
   }
 };
 

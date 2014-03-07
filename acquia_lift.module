@@ -344,7 +344,7 @@ function acquia_lift_personalize_campaign_report($agent_data) {
 function acquia_lift_ensure_default_agent($account_info) {
   $agents = personalize_agent_load_by_type('acquia_lift');
   if (empty($agents)) {
-    // Create a new agent. It will not get sent to Conductrucs until it has
+    // Create a new agent. It will not get sent to Acquia Lift until it has
     // at least one option set added to it.
     $agent_data = new stdClass();
     $clean_site_name = drupal_clean_css_identifier(strtolower(variable_get('site_name')));
@@ -658,6 +658,54 @@ function acquia_lift_libraries_info() {
             'variant callback' => '_acquia_lift_libraries_variant_exists',
             'variant arguments' => array('backbone-min.js'),
             'dependencies' => array('underscore (>=1.5.0)'),
+          ),
+        ),
+      ),
+    ),
+  );
+
+  $libraries['chosen'] = array(
+    'name' => 'Chosen',
+    'vendor url' => 'http://harvesthq.github.io/chosen/',
+    'download url' => 'https://github.com/harvesthq/chosen/releases/download/v1.1.0/chosen_v1.1.0.zip',
+    'version callback' => '_acquia_lift_libraries_get_version',
+    'variant order' => array('minified', 'source'),
+    'version arguments' => array(
+      'variants' => array(
+        'source' => array(
+          'file' => 'chosen.jquery.js',
+          'pattern' => '/Version (1\.\d\.\d)+/',
+        ),
+        'minified' => array(
+          'file' => 'chosen.jquery.min.js',
+          'pattern' => '/v(1\.\d\.\d)+/',
+        ),
+      ),
+    ),
+    'versions' => array(
+      '1.0.0' => array(
+        'variants' => array(
+          'source' => array(
+            'files' => array(
+              'js' => array(
+                'chosen.jquery.js',
+              ),
+            ),
+            // Without a variant callback, the variant is assumed to be
+            // installed.
+            'variant callback' => '_acquia_lift_libraries_variant_exists',
+            'variant arguments' => array('chosen.jquery.js'),
+          ),
+          'minified' => array(
+            'files' => array(
+              'js' => array(
+                'chosen.jquery.min.js',
+              ),
+            ),
+            // Without a variant callback, the variant is assumed to be
+            // installed.
+            'variant callback' => '_acquia_lift_libraries_variant_exists',
+            'variant arguments' => array('chosen.jquery.min.js'),
           ),
         ),
       ),

@@ -279,6 +279,20 @@ class AcquiaLiftAPI implements PersonalizeLoggerAwareInterface {
   }
 
   /**
+   * Tests the connection to Acquia Lift.
+   *
+   * @return bool
+   *   TRUE if the connection succeeded, FALSE otherwise.
+   */
+  public function pingTest() {
+    // We use the list-agents endpoint for our ping test, in the absence of
+    // an endpoint specifically provided for this purpose.
+    $url = $this->generateEndpoint("/list-agents");
+    $response = $this->httpClient()->get($url, array('Accept' => 'application/json'));
+    return $response->code == 200;
+  }
+
+  /**
    * Saves an agent to Acquia Lift.
    *
    * @param $machine_name

@@ -126,6 +126,30 @@ class AcquiaLiftTest extends DrupalUnitTestCase {
   }
 
   /**
+   * Test AcquiaLiftAPI->pingTest()
+   */
+  public function testPingTest() {
+    $lift_api = $this->getAcquiaLiftAPI();
+    $ping_test = $lift_api->pingTest();
+    $this->assertTrue($ping_test);
+    $expected = array(
+      array(
+        'type' => 'get',
+        'uri' => "{$lift_api->getApiUrl()}/{$lift_api->getOwnerCode()}/list-agents?apikey={$lift_api->getAdminKey()}",
+        'headers' => array('Accept' => 'application/json'),
+        'options' => array(),
+        'body' => NULL,
+      )
+    );
+    $this->assertAPIRequests($expected);
+    // Now test with a broken connection.
+    $lift_api = $this->getAcquiaLiftAPI(TRUE);
+    $ping_test = $lift_api->pingTest();
+    $this->assertFALSE($ping_test);
+    $this->assertAPIRequests($expected);
+  }
+
+  /**
    * Test AcquiaLiftAPI->savePoint()
    */
   public function testSavePoint() {

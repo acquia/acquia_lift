@@ -11,6 +11,25 @@
 function acquia_lift_admin_form($form, &$form_state) {
   $account_info = variable_get('acquia_lift_account_info', array());
   $account_info_provided = !empty($account_info['owner_code']) && !empty($account_info['api_key']);
+  if ($account_info_provided) {
+    // Add a button for checking the connection.
+    $form['ping_test_wrapper'] = array(
+      '#theme_wrappers' => array('container'),
+      '#attributes' => array('id' => 'acquia-lift-config-messages'),
+    );
+    $form['ping_test'] = array(
+      '#type' => 'submit',
+      '#value' => t('Test connection to Acquia Lift'),
+      '#attributes' => array('title' => t('Click here to check your Acquia Lift connection.')),
+      '#submit' => array('acquia_lift_ping_test_submit'),
+      '#ajax' => array(
+        'callback' => 'acquia_lift_ping_test_ajax_callback',
+        'wrapper' => 'acquia-lift-ping-test',
+        'effect' => 'fade',
+      ),
+      '#limit_validation_errors' => array(),
+    );
+  }
 
   $form['acquia_lift_account_info'] = array(
     '#type' => 'fieldset',
@@ -68,6 +87,32 @@ function acquia_lift_admin_form($form, &$form_state) {
     'acquia_lift_admin_form_submit',
   );
   return system_settings_form($form);
+}
+
+/**
+ * Submit callback for the ping test button.
+ */
+function acquia_lift_ping_test_submit($form, &$form_state) {
+  $api = AcquiaLiftAPI::getInstance(variable_get('acquia_lift_account_info', array()));
+  if ($api->pingTest()) {
+    drupal_set_message(t('Successfully connected to the Acquia Lift service'));
+  }
+  else {
+    drupal_set_message(t('There was a problem connecting to the Acquia Lift service. Please check your credentials'), 'error');
+  }
+}
+
+/**
+ * Ajax callback for the ping test button.
+ */
+function acquia_lift_ping_test_ajax_callback($form, &$form_state) {
+  $commands = array();
+  // Show status messages.
+  $commands[] = ajax_command_replace('#acquia-lift-config-messages', '<div id="acquia-lift-config-messages">' . theme('status_messages') . '</div>');
+  return array(
+    '#type' => 'ajax',
+    '#commands' => $commands,
+  );
 }
 
 /**

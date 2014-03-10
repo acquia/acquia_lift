@@ -505,10 +505,11 @@ $.extend(Drupal.acquiaLiftUI, {
      */
     onClick: function (event) {
       var optionid = $(event.target).data('acquia-lift-personalize-option-set-option');
+      var selector = $(event.target).data('acquia-lift-personalize-option-set-selector');
       var osid = this.model.get('osid');
 
       // Swaps the current option in an option set for the indicated option.
-      Drupal.personalize.executors[this.model.get('executor')].execute($('#personalize-' + osid), optionid, null, this.model.get('osid'));
+      Drupal.personalize.executors[this.model.get('executor')].execute($(selector), optionid, this.model.get('osid'));
       event.preventDefault();
       event.stopPropagation();
     },
@@ -521,12 +522,10 @@ $.extend(Drupal.acquiaLiftUI, {
      *   A reference to the jQuery-wrapped option set DOM element.
      * @param string choice_name
      *   The name of the selected choice.
-     * @param string choice_index
-     *   The array index of the selected choice with the options array.
      * @param string osid
      *   The id of the option set to which this choice belongs.
      */
-    onOptionShow: function (event, $option_set, choice_name, choice_index, osid) {
+    onOptionShow: function (event, $option_set, choice_name, osid) {
       if (this.model.get('osid') === osid) {
         this.model.set('activeOption', choice_name);
       }
@@ -1052,11 +1051,13 @@ Drupal.theme.acquiaLiftPersonalizeMenu = function (options) {
   var menu = '<ul class="menu">' + "\n";
   var osID = options.osID;
   var os = options.os;
+  var os_selector = os.selector;
   looper(options.os.options || {}, function (obj, key) {
     menu += Drupal.theme('acquiaLiftPreviewMenuItem', {
       id: obj.option_id,
       label: obj.option_label,
-      osID: osID
+      osID: osID,
+      osSelector: os_selector
     });
   });
   menu += '</ul>\n';
@@ -1099,6 +1100,7 @@ Drupal.theme.acquiaLiftPersonalizeGoal = function (options) {
  *   - id: The id of the option set option.
  *   - label: The label of the option set option.
  *   - osID: The ID of the option set.
+ *   - osSelector: The selector representing the option set.
  *
  * @return string
  */
@@ -1109,6 +1111,7 @@ Drupal.theme.acquiaLiftPreviewMenuItem = function (options) {
     'class="acquia-lift-preview-option acquia-lift-preview-option--' + formatClass(options.id) + ' visitor-actions-ui-ignore"',
     'href="' + generateHref(options) + '"',
     'data-acquia-lift-personalize-option-set="' + options.osID + '"',
+    'data-acquia-lift-personalize-option-set-selector="' + options.osSelector + '"',
     'data-acquia-lift-personalize-option-set-option="' + options.id + '"',
     'aria-role="button"',
     'aria-pressed="false"'

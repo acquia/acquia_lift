@@ -915,6 +915,146 @@ class AcquiaLiftAPI implements PersonalizeLoggerAwareInterface {
   }
 
   /**
+   * Returns the number or runtime API calls that were made during the specified period.
+   *
+   * @param $date_start
+   *   The start date in the format YYYY-MM-DD.
+   * @param $date_end
+   *   The end date in the format YYYY-MM-DD.
+   * @return int
+   */
+  public function getAPICallsForPeriod($date_start, $date_end) {
+    $date_str = $this->getDateString($date_start, $date_end);
+    $url = $this->generateEndpoint("/-/report/system-usage{$date_str}");
+    $headers = array('Accept' => 'application/json');
+    $response = $this->httpClient()->get($url, $headers, array('timeout' => self::GET_REQUEST_TIMEOUT_VALUE));
+    if ($response->code != 200) {
+      $msg = 'Problem retrieving API call counts.';
+      $this->logger()->log(PersonalizeLogLevel::ERROR, $msg);
+      throw new AcquiaLiftException($msg);
+    }
+    $result = json_decode($response->data, TRUE);
+    if (!isset($result['data']) || !isset($result['data'][0]) || !isset($result['data'][0]['calls'])) {
+      return array();
+    }
+    return $result['data'][0]['calls'];
+  }
+
+  /*
+   * Converts an associative array of call counts to a count of the total number of
+   * calls. Calls categorized as "other" (reporting, admin calls) are excluded by
+   * default.
+   */
+  protected function convertCallCountsToTotalCount($counts, $exclude = array('other')) {
+    $total_count = 0;
+    foreach ($counts as $type => $count) {
+      if (in_array($type, $exclude)) {
+        continue;
+      }
+      $total_count += $count;
+    }
+    return $total_count;
+  }
+
+  /**
+   * Returns the counts of API calls for the month prior to the date provided.
+   *
+   * @param $timestamp
+   *   The timestamp representing the date from which to calculate the previous
+   *   month's API calls.
+   *
+   * @return array
+   *   An associative array with type of call as keys and counts for each type
+   *   as values, e.g.
+   *   array(
+   *     'decisions' => 1000,
+   *     'goals' => 100,
+   *     'expires' => 2,
+   *     'webactions' => 0,
+   *     'other' => 10
+   *   )
+   */
+  public function getCallsForPreviousMonth($timestamp) {
+    $date = getdate($timestamp);
+    $current_month = $date['mon'];
+    $current_month_year = $last_month_year = $date['year'];
+
+    if ($current_month == 1) {
+      $last_month = 12;
+      $last_month_year = $current_month_year - 1;
+    }
+    else {
+      $last_month = $current_month - 1;
+      if ($last_month < 10) {
+        $last_month = '0' . $last_month;
+      }
+    }
+    $num_days_last_month = cal_days_in_month(CAL_GREGORIAN, $last_month, $last_month_year);
+    $last_date = $num_days_last_month >= 10 ? $num_days_last_month : '0' . $num_days_last_month;
+    $date_start = $last_month_year . '-' . $last_month . '-01';
+    $date_end = $last_month_year . '-' . $last_month . '-' . $last_date;
+    $calls_last_month = $this->getAPICallsForPeriod($date_start, $date_end);
+    return $calls_last_month;
+  }
+
+  /**
+   * Returns the total number of runtimeAPI calls for the month prior to the date
+   * provided.
+   *
+   * @param $timestamp
+   *   The timestamp representing the date from which to calculate the previous
+   *   month's API calls.
+
+   * @return int
+   */
+  public function getTotalRuntimeCallsForPreviousMonth($timestamp) {
+    $calls_last_month = $this->getCallsForPreviousMonth($timestamp);
+    return $this->convertCallCountsToTotalCount($calls_last_month);
+  }
+
+  /**
+   * Returns counts of API calls from the 1st to the date provided.
+   *
+   * @param $timestamp
+   *   The timestamp representing the date up to which to show API calls
+   *   from the start of that month. For example, passing in a timestamp
+   *   representing the date October 17th 2013 would return the number of
+   *   API calls made from October 1st 2013 to October 17th 2013.
+   *
+   * @return array
+   *   An associative array with type of call as keys and counts for each type
+   *   as values, e.g.
+   *   array(
+   *     'decisions' => 1000,
+   *     'goals' => 100,
+   *     'expires' => 2,
+   *     'webactions' => 0,
+   *     'other' => 10
+   *   )
+   */
+  public function getCallsForMonthToDate($timestamp) {
+    $date_start = date('Y', $timestamp) . '-' . date('m', $timestamp) . '-01';
+    $date_end = date('Y-m-d', $timestamp);
+    $calls_this_month = $this->getAPICallsForPeriod($date_start, $date_end);
+    return $calls_this_month;
+  }
+
+  /**
+   * Returns the total number of runtimeAPI calls for the month prior to the date
+   * provided.
+   *
+   * @param $timestamp
+   *   The timestamp representing the date from which to calculate the previous
+   *   month's API calls.
+
+   * @return int
+   */
+  public function getTotalRuntimeCallsForMonthToDate($timestamp) {
+    $calls_last_month = $this->getCallsForMonthToDate($timestamp);
+    return $this->convertCallCountsToTotalCount($calls_last_month);
+  }
+
+  /**
    * Returns the timeframe portion of a report API url for the specified dates.
    *
    * @param $date_start

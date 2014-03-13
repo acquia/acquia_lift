@@ -1106,12 +1106,13 @@ Drupal.theme.acquiaLiftPersonalizeGoal = function (options) {
  */
 Drupal.theme.acquiaLiftPreviewMenuItem = function (options) {
   var item = '';
-
+  // Prepare the selector string to be passed as a data attribute.
+  var selector = options.osSelector.replace(/\"/g, '\'');
   var attrs = [
     'class="acquia-lift-preview-option acquia-lift-preview-option--' + formatClass(options.id) + ' visitor-actions-ui-ignore"',
     'href="' + generateHref(options) + '"',
     'data-acquia-lift-personalize-option-set="' + options.osID + '"',
-    'data-acquia-lift-personalize-option-set-selector="' + options.osSelector + '"',
+    'data-acquia-lift-personalize-option-set-selector="' + selector + '"',
     'data-acquia-lift-personalize-option-set-option="' + options.id + '"',
     'aria-role="button"',
     'aria-pressed="false"'

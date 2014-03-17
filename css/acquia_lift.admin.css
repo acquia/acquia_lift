@@ -12,3 +12,26 @@
     margin-right: .3em; /* LTR */
     font-size: 1.3em;
 }
+
+.acquia-lift-more-information.horizontal .form-item {
+  float: left;
+  margin: 1em;
+  width: 40%;
+}
+
+.acquia-lift-more-information.horizontal .form-item label {
+  display: inline;
+}
+
+.acquia-lift-toggle-text {
+  float: right;
+  margin-left: 1em;
+}
+
+.form-disabled input.form-text.acquia-lift-percentage-rest {
+  color: inherit;
+  border: inherit;
+  background-color: inherit;
+  font-size: 1em;
+  width: 1.5em;
+}

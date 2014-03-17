@@ -100,7 +100,7 @@ class AcquiaLiftWebTest extends DrupalWebTestCase {
 
   public function testSaveAgent() {
     // Create a new agent via the UI.
-    $agent = $this->createTestAgent(array('control_rate' => 90));
+    $agent = $this->createTestAgent(array('control_rate' => 10, 'explore_rate' => 30));
 
     $agent_name = $agent->getTitle();
     $machine_name = $agent->getMachineName();
@@ -137,6 +137,7 @@ class AcquiaLiftWebTest extends DrupalWebTestCase {
             'adaptive',
             'enabled',
             0.1,
+            0.3,
           )
         );
       }
@@ -163,6 +164,7 @@ class AcquiaLiftWebTest extends DrupalWebTestCase {
         'adaptive',
         'enabled',
         0.1,
+        0.3,
       )
     );
     $this->assertQueueItems($expected_queue_items);
@@ -177,7 +179,8 @@ class AcquiaLiftWebTest extends DrupalWebTestCase {
           $agent_name,
           'adaptive',
           'enabled',
-          0.1
+          0.1,
+          0.3,
         )
       )
     );
@@ -195,6 +198,7 @@ class AcquiaLiftWebTest extends DrupalWebTestCase {
         'adaptive',
         'enabled',
         0.1,
+        0.3,
       )
     );
     $this->assertQueueItems($expected_queue_items);
@@ -257,7 +261,8 @@ class AcquiaLiftWebTest extends DrupalWebTestCase {
           $agent->getTitle(),
           $agentData['decision_style'],
           'enabled',
-          0
+          0.1,
+          0.2,
         ),
       ),
       array(
@@ -292,7 +297,8 @@ class AcquiaLiftWebTest extends DrupalWebTestCase {
           $agent->getTitle(),
           $agentData['decision_style'],
           'enabled',
-          0
+          0.1,
+          0.2,
         ),
       ),
       array(
@@ -357,6 +363,7 @@ class AcquiaLiftWebTest extends DrupalWebTestCase {
     $agent = personalize_agent_load_agent($agent->getMachineName(), TRUE);
 
     $agentData = $agent->getData();
+    debug($agentData);
     $expected_queues = array(
       array(
         'method' => 'saveAgent',
@@ -365,7 +372,8 @@ class AcquiaLiftWebTest extends DrupalWebTestCase {
           $agent->getTitle(),
           $agentData['decision_style'],
           'enabled',
-          (100 - $agentData['control_rate']) / 100,
+          ($agentData['control']['control_rate'] / 100),
+          ($agentData['distribution']['explore_rate'] / 100),
         ),
       ),
     );
@@ -458,7 +466,8 @@ class AcquiaLiftWebTest extends DrupalWebTestCase {
             $agent->getTitle(),
             $agentData['decision_style'],
             'enabled',
-            (100 - $agentData['control_rate']) / 100,
+            $agentData['control']['control_rate'] / 100,
+            ($agentData['distribution']['explore_rate'] / 100),
           ),
         );
       }
@@ -534,7 +543,8 @@ class AcquiaLiftWebTest extends DrupalWebTestCase {
             $agent->getTitle(),
             $agentData['decision_style'],
             'enabled',
-            (100 - $agentData['control_rate']) / 100
+            $agentData['control']['control_rate'] / 100,
+            ($agentData['distribution']['explore_rate'] / 100),
           ),
         );
       }
@@ -612,7 +622,8 @@ class AcquiaLiftWebTest extends DrupalWebTestCase {
           $agent->getTitle(),
           'adaptive',
           'enabled',
-          0,
+          0.1,
+          0.2,
         ),
       ),
     );
@@ -691,7 +702,8 @@ class AcquiaLiftWebTest extends DrupalWebTestCase {
           $agent->getTitle(),
           'adaptive',
           'enabled',
-          0,
+          0.1,
+          0.2,
         ),
       ),
     );
@@ -730,7 +742,8 @@ class AcquiaLiftWebTest extends DrupalWebTestCase {
           $agent->getTitle(),
           'adaptive',
           'enabled',
-          0,
+          0.1,
+          0.2,
         ),
       ),
     );
@@ -798,7 +811,8 @@ class AcquiaLiftWebTest extends DrupalWebTestCase {
         $agent_name,
         'adaptive',
         'enabled',
-        0,
+        0.1,
+        0.2,
       )
     );
     $expected_queue_items[] = $queued_agent_item;
@@ -885,7 +899,8 @@ class AcquiaLiftWebTest extends DrupalWebTestCase {
       'name' => $this->randomName(),
       'agent_type' => 'acquia_lift',
       'decision_style' => 'adaptive',
-      'control_rate' => 100,
+      'control_rate' => 10,
+      'explore_rate' => 20,
     );
 
     $data +=  array('machine_name' => personalize_generate_machine_name($data['name'], 'personalize_agent_machine_name_exists'));
@@ -894,7 +909,8 @@ class AcquiaLiftWebTest extends DrupalWebTestCase {
       'agent_basic_info[machine_name]' => $data['machine_name'],
       'agent_basic_info[agent_type]' => $data['agent_type'],
       'agent_basic_info[options][acquia_lift][decision_style]' => $data['decision_style'],
-      'agent_basic_info[options][acquia_lift][control_rate]' => $data['control_rate'],
+      'agent_basic_info[options][acquia_lift][control][control_rate]' => $data['control_rate'],
+      'agent_basic_info[options][acquia_lift][explore_rate]' => $data['explore_rate'],
     );
 
     $this->drupalPost('admin/structure/personalize/add', $edit, $this->getButton('agent'));
@@ -909,7 +925,8 @@ class AcquiaLiftWebTest extends DrupalWebTestCase {
           $data['name'],
           'adaptive',
           'enabled',
-          isset($data['control_rate']) ? (100 - $data['control_rate']) / 100 : 0,
+          isset($data['control']['control_rate']) ? $data['control']['control_rate'] / 100 : .1,
+          isset($data['distribution']['explore_rate']) ? ($data['distribution']['explore_rate'] / 100) : .2,
         )
       )
     );

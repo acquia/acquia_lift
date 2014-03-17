@@ -1370,7 +1370,8 @@ class AcquiaLiftTest extends DrupalUnitTestCase {
           'name' => 'Some Test Agent',
           'selection-mode' => 'adaptive',
           'status' => 'enabled',
-          'control-rate' => 0,
+          'control-rate' => 0.1,
+          'explore-rate' => 0.2,
         )
       )
     );
@@ -1386,7 +1387,7 @@ class AcquiaLiftTest extends DrupalUnitTestCase {
     $this->assertLogs($logs);
     $this->logger->clearLogs();
 
-    $lift_api->saveAgent('some-test-agent', 'Some Test Agent', 'adaptive', 'enabled', 0.1);
+    $lift_api->saveAgent('some-test-agent', 'Some Test Agent', 'adaptive', 'enabled', 0.1, 0.4);
     // Define the requests we expect to have been made to our dummy http
     // client for this operation.
     $requests = array(
@@ -1400,6 +1401,7 @@ class AcquiaLiftTest extends DrupalUnitTestCase {
           'selection-mode' => 'adaptive',
           'status' => 'enabled',
           'control-rate' => 0.1,
+          'explore-rate' => 0.4,
         )
       )
     );
@@ -1410,7 +1412,7 @@ class AcquiaLiftTest extends DrupalUnitTestCase {
 
     // Now try with a broken http client.
     $lift_api = $this->getAcquiaLiftAPI(TRUE);
-    $lift_api->saveAgent('some-test-agent', 'Some Test Agent', 'adaptive', 'enabled', 0.1);
+    $lift_api->saveAgent('some-test-agent', 'Some Test Agent', 'adaptive', 'enabled', 0.1, 0.4);
     // The same requests should be made.
     $this->assertAPIRequests($requests);
     // Confirm the expected error message was logged.

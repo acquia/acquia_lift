@@ -993,9 +993,8 @@ class AcquiaLiftAPI implements PersonalizeLoggerAwareInterface {
     $ts_last_month = strtotime("$last_month/01/$last_month_year");
     // Use this timestamp to get the number of days in that month.
     $num_days_last_month = date('t', $ts_last_month);
-    $last_date = $num_days_last_month >= 10 ? $num_days_last_month : '0' . $num_days_last_month;
     $date_start = $last_month_year . '-' . $last_month . '-01';
-    $date_end = $last_month_year . '-' . $last_month . '-' . $last_date;
+    $date_end = $last_month_year . '-' . $last_month . '-' . $num_days_last_month;
     $calls_last_month = $this->getAPICallsForPeriod($date_start, $date_end);
     return $calls_last_month;
   }

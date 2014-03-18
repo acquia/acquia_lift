@@ -29,6 +29,25 @@ function acquia_lift_admin_form($form, &$form_state) {
       ),
       '#limit_validation_errors' => array(),
     );
+    // Add info about number of API calls made last month and current month
+    // to date.
+    try {
+      $api = AcquiaLiftAPI::getInstance(variable_get('acquia_lift_account_info', array()));
+      $ts = time();
+      $calls_last_month = $api->getTotalRuntimeCallsForPreviousMonth($ts);
+      $form['calls_last_month'] = array(
+        '#type' => 'markup',
+        '#markup' => '<div>' . t('Number of API calls made last month: ') . $calls_last_month . '</div>',
+      );
+      $calls_this_month = $api->getTotalRuntimeCallsForMonthToDate($ts);
+      $form['calls_this_month'] = array(
+        '#type' => 'markup',
+        '#markup' => '<div>' . t('Number of API calls made so far this month: ') . $calls_this_month . '</div>',
+      );
+    }
+    catch (Exception $e) {
+      drupal_set_message($e->getMessage());
+    }
   }
 
   $form['acquia_lift_account_info'] = array(

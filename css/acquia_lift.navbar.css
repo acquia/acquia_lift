@@ -21,6 +21,17 @@
   background-image: url("../images/ffffff/rocket.png");
 }
 
+/**
+ * Personalize second-level icon.
+ */
+
+.navbar-box .navbar-icon-acquia-lift:before {
+  background-image: url("../images/707070/rocket.svg");
+}
+.no-svg .navbar-box .navbar-icon-acquia-lift:before {
+  background-image: url("../images/707070/rocket.png");
+}
+
 #navbar-administration .acquia-lift-active,
 #navbar-administration .acquia-lift-active .acquia-lift-campaign {
   font-weight: bold;

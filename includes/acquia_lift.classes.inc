@@ -306,16 +306,20 @@ class AcquiaLiftAPI implements PersonalizeLoggerAwareInterface {
    * @param $control_rate
    *   A number between 0 and 1 inclusive representing the percentage to use as a
    *   control group.
+   * @param $explore_rate
+   *   A number between 0 and 1 inclusive representing the percentage to use as
+   *   the continuous experiment group.
    * @return boolean
    *   TRUE if the agent has been saved to Acquia Lift, FALSE otherwise.
    */
-  public function saveAgent($machine_name, $label, $decision_style, $status = 'enabled', $control_rate = 0) {
+  public function saveAgent($machine_name, $label, $decision_style, $status = 'enabled', $control_rate = 0.1, $explore_rate = .2) {
     $url = $this->generateEndpoint("/agent-api/$machine_name");
     $agent = array(
       'name' => $label,
       'selection-mode' => $decision_style,
       'status' => $status,
       'control-rate' => $control_rate,
+      'explore-rate' => $explore_rate,
     );
     $response = $this->httpClient()->put($url, array('Content-Type' => 'application/json; charset=utf-8', 'Accept' => 'application/json'), $agent);
     $data = json_decode($response->data, TRUE);

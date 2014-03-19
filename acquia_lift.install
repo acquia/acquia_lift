@@ -287,3 +287,22 @@ function acquia_lift_update_7001() {
   // Update the menu router information.
   menu_rebuild();
 }
+
+/**
+ * Fix control rate percentage to not be the inverse percentage.
+ */
+function acquia_lift_update_7002() {
+  $result = db_select('personalize_agent', 'a')
+    ->fields('a', array('machine_name', 'data'))
+    ->execute();
+  foreach ($result as $row) {
+    $data = unserialize($row->data);
+    if (isset($data['control_rate'])) {
+      $data['control_rate'] = 100 - $data['control_rate'];
+    }
+    db_update('personalize_agent')
+      ->condition('machine_name', $row->machine_name)
+      ->fields(array('data' => serialize($data)))
+      ->execute();
+  }
+}

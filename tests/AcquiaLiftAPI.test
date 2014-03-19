@@ -1331,30 +1331,6 @@ class AcquiaLiftTest extends DrupalUnitTestCase {
     $this->assertLogs($logs);
   }
 
-  /**
-   * Returns a AcquiaLiftAPI instance that can be used to test methods.
-   *
-   * @param bool $broken
-   *   Whether the HTTP client used by the API class should be broken, simulating
-   *   500 responses from Acquia Lift.
-   * @return AcquiaLiftAPI
-   *   A AcquiaLiftAPI instance.
-   */
-  protected function getAcquiaLiftAPI($broken = FALSE) {
-    $lift_api = AcquiaLiftAPI::getInstance(array('api_key' => $this->liftAPIKey, 'admin_key' => $this->liftAdminKey, 'owner_code' => $this->liftOwnerCode));
-    // Create a dummy http client for the Acquia Lift API to use. All
-    // requests to it will be logged and retrievable for checking later.
-    $this->httpClient = new DummyAcquiaLiftHttpClient($broken);
-    $lift_api->setHttpClient($this->httpClient);
-    if ($this->logger === NULL) {
-      // Create a dummy logger instance which will maintain a log in memory
-      // that we can retrieve for checking later.
-      $this->logger = new AcquiaLiftTestLogger();
-    }
-    $lift_api->setLogger($this->logger);
-    return $lift_api;
-  }
-
   function testSaveAgent() {
     $lift_api = $this->getAcquiaLiftAPI();
     $lift_api->saveAgent('some-test-agent', 'Some Test Agent', 'adaptive', 'enabled');
@@ -1426,34 +1402,7 @@ class AcquiaLiftTest extends DrupalUnitTestCase {
     $this->logger->clearLogs();
   }
 
-  /**
-   * @todo Add tests like testAcquiaLiftAPISaveAgent for all the
-   *  other save/delete operations.
-   */
-
-  /**
-   * Asserts that the expected requests were made to the http client.
-   *
-   * @param $expected_requests
-   */
-  protected function assertAPIRequests($expected_requests) {
-    $logged_requests = $this->httpClient->getLoggedRequests();
-    $this->assertEqual($expected_requests, $logged_requests);
-    $this->httpClient->removeLoggedRequests();
-  }
-
-  /**
-   * Asserts that the expected messages were logged to the logger.
-   *
-   * @param $expected_logs
-   */
-  protected function assertLogs($expected_logs) {
-    $logs = $this->logger->getLogs();
-    $this->assertEqual($expected_logs, $logs);
-    $this->logger->clearLogs();
-  }
-
-  function testAcquiaLiftAPIGetAgents() {
+  function testGetAgents() {
     $lift_api = AcquiaLiftAPI::getInstance(array('api_key' => 'asdf', 'admin_key' => 'fasfasfs', 'owner_code' => 'Some_valid-owner123-code'));
     // Pass some dummy agent data to our dummy http client and
     // confirm that we get it back via the getExistingAgents()
@@ -1487,4 +1436,136 @@ class AcquiaLiftTest extends DrupalUnitTestCase {
       $this->assertEqual('Error retrieving agent list from Acquia Lift', $e->getMessage());
     }
   }
+
+  /**
+   * Test the testGetCallsForPreviousMonth() method.
+   */
+  public function testGetCallsForPreviousMonth() {
+    $lift_api = $this->getAcquiaLiftAPI();
+    $timestamps = array(
+      // Timestamp representing March 12th 2014
+      1394652611 => array(
+        'start' => '2014-02-01',
+        'end' => '2014-02-28'
+      ),
+      // Timestamp representing January 2nd 2014
+      1388695528 => array(
+        'start' => '2013-12-01',
+        'end' => '2013-12-31'
+      ),
+      // Timestamp representing December 31st 2013
+      1388522626 => array(
+        'start' => '2013-11-01',
+        'end' => '2013-11-30'
+      ),
+      // Timestamp representing October 9th 2013
+      1381348094 => array(
+        'start' => '2013-09-01',
+        'end' => '2013-09-30'
+      )
+    );
+    foreach ($timestamps as $timestamp => $expected_dates) {
+      $count = $lift_api->getCallsForPreviousMonth($timestamp);
+      // Define the requests we expect to have been made to our dummy http
+      // client for this operation.
+      $requests = array(
+        array(
+          'type' => 'get',
+          'uri' => "http://api.lift.acquia.com/{$this->liftOwnerCode}/-/report/system-usage/{$expected_dates['start']}/{$expected_dates['end']}?apikey={$this->liftAdminKey}",
+          'headers' => array('Accept' => 'application/json'),
+          'options' => array('timeout' => AcquiaLiftAPI::GET_REQUEST_TIMEOUT_VALUE),
+          'body' => NULL,
+        )
+      );
+      // Confirm the expected requests were made.
+      $this->assertAPIRequests($requests);
+    }
+  }
+
+  /**
+   * Test the testGetCallsForPreviousMonth() method.
+   */
+  public function testGetCallsForMonthToDate() {
+    $lift_api = $this->getAcquiaLiftAPI();
+    $timestamps = array(
+      // Timestamp representing March 12th 2014
+      1394652611 => array(
+        'start' => '2014-03-01',
+        'end' => '2014-03-12'
+      ),
+      // Timestamp representing January 2nd 2014
+      1388695528 => array(
+        'start' => '2014-01-01',
+        'end' => '2014-01-02'
+      ),
+      // Timestamp representing December 31st 2013
+      1388522626 => array(
+        'start' => '2013-12-01',
+        'end' => '2013-12-31'
+      ),
+    );
+    foreach ($timestamps as $timestamp => $expected_dates) {
+      $count = $lift_api->getCallsForMonthToDate($timestamp);
+      // Define the requests we expect to have been made to our dummy http
+      // client for this operation.
+      $requests = array(
+        array(
+          'type' => 'get',
+          'uri' => "http://api.lift.acquia.com/{$this->liftOwnerCode}/-/report/system-usage/{$expected_dates['start']}/{$expected_dates['end']}?apikey={$this->liftAdminKey}",
+          'headers' => array('Accept' => 'application/json'),
+          'options' => array('timeout' => AcquiaLiftAPI::GET_REQUEST_TIMEOUT_VALUE),
+          'body' => NULL,
+        )
+      );
+      // Confirm the expected requests were made.
+      $this->assertAPIRequests($requests);
+    }
+  }
+
+  /**
+   * Returns a AcquiaLiftAPI instance that can be used to test methods.
+   *
+   * @param bool $broken
+   *   Whether the HTTP client used by the API class should be broken, simulating
+   *   500 responses from Acquia Lift.
+   * @return AcquiaLiftAPI
+   *   A AcquiaLiftAPI instance.
+   */
+  protected function getAcquiaLiftAPI($broken = FALSE) {
+    $lift_api = AcquiaLiftAPI::getInstance(array('api_key' => $this->liftAPIKey, 'admin_key' => $this->liftAdminKey, 'owner_code' => $this->liftOwnerCode));
+    // Create a dummy http client for the Acquia Lift API to use. All
+    // requests to it will be logged and retrievable for checking later.
+    $this->httpClient = new DummyAcquiaLiftHttpClient($broken);
+    $lift_api->setHttpClient($this->httpClient);
+    if ($this->logger === NULL) {
+      // Create a dummy logger instance which will maintain a log in memory
+      // that we can retrieve for checking later.
+      $this->logger = new AcquiaLiftTestLogger();
+    }
+    $lift_api->setLogger($this->logger);
+    return $lift_api;
+  }
+
+  /**
+   * Asserts that the expected requests were made to the http client.
+   *
+   * @param $expected_requests
+   */
+  protected function assertAPIRequests($expected_requests) {
+    $logged_requests = $this->httpClient->getLoggedRequests();
+    $this->assertEqual($expected_requests, $logged_requests);
+    $this->httpClient->removeLoggedRequests();
+  }
+
+  /**
+   * Asserts that the expected messages were logged to the logger.
+   *
+   * @param $expected_logs
+   */
+  protected function assertLogs($expected_logs) {
+    $logs = $this->logger->getLogs();
+    $this->assertEqual($expected_logs, $logs);
+    $this->logger->clearLogs();
+  }
+
 }

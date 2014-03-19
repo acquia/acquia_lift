@@ -406,35 +406,47 @@ class AcquiaLiftAgent extends PersonalizeAgentBase implements AcquiaLiftAgentInt
     $build = array();
     $confidenceReport = $this->liftAPI->getConfidenceReport($this->machineName, $date_start, $date_end, $decision_point, array($feature));
     $data = $this->extractConfidenceReportData($confidenceReport['data']['items']);
-    $header = array(
-      t('Variation'), t('Shown to'), t('Goals'), t('Goals per visitor')
+
+    $column_headings = array(
+      'choice_id' => t('Variation'),
+      'decisions' => t('Decisions'),
+      'goals' => t('Goals'),
+      'value' => t('Value'),
+      'goals_per_decision' => t('Goals / visitor'),
+      'value_per_decision' => t('Value / visitor'),
+      'estimated_value' => t('Estimated Value'),
+      'lift_default' => t('Lift over default'),
+      'lift_random' => t('Lift over random'),
+      'confidence' => t('Confidence')
     );
-    // We only show the lift over default if we are using a non-zero percentage of
-    // users as a control group.
-    $show_default = isset($this->data['control_rate']) && (int) $this->data['control_rate'] > 0;
-    if ($show_default) {
-      $header[] = t('Lift over default');
+    // Not all of these columns will be shown, depending on certain factors.
+    $exclude_columns = array();
+    if (isset($this->data['control_rate']) && (int) $this->data['control_rate'] == 0) {
+      $exclude_columns[] = 'lift_default';
     }
-    $header[] = t('Lift over random');
-    $rows = array();
-    foreach ($data['choices'] as $choice => $c) {
-      $choice_id = $choice;
-      if (strpos($choice, ':') !== FALSE) {
-        list($decision_name, $option_id) = explode(':', $choice);
-        if ($option_label = personalize_get_option_label_for_decision_and_choice($decision_name, $option_id)) {
-          $choice_id = $option_label;
+    if (!$data['goal_value_differential']) {
+      $exclude_columns = array_merge($exclude_columns, array(
+        'value',
+        'value_per_decision',
+      ));
+    }
+
+    // Build the header and rows.
+    $header = $rows = array();
+    foreach ($column_headings as $key => $heading) {
+      if (in_array($key, $exclude_columns)) {
+        continue;
+      }
+      $header[] = $heading;
+    }
+    foreach ($data['choices'] as $choice) {
+      $row = array();
+      foreach ($column_headings as $key => $heading) {
+        if (in_array($key, $exclude_columns)) {
+          continue;
         }
+        $row[] = $choice[$key];
       }
-      $goals_per_decision = $c['decisions'] == 0 ? 0 : round($c['goals'] / $c['decisions'], 3);
-      //$estimated_value = $c['selections'] == 0 ? 0 : $c['value'] / $c['selections'];
-      $times_shown = format_plural($c['decisions'], '1 visitor', '@count visitors');
-      $row = array(
-        $choice_id, $times_shown, $c['goals'], $goals_per_decision
-      );
-      if ($show_default) {
-        $row[] = $c['lift_default'] . '%';
-      }
-      $row[] = $c['lift_random'] . '%';
       $rows[] = $row;
     }
 
@@ -462,25 +474,39 @@ class AcquiaLiftAgent extends PersonalizeAgentBase implements AcquiaLiftAgentInt
     }
     $data = array(
       'point' => $items[0]['point'],
-      'choices' => array()
+      'choices' => array(),
+      'goal_value_differential' => FALSE,
     );
-    foreach ($items as $item) {
+    foreach ($items as $i => $item) {
       $choice = $item['choice'];
       if (isset($data['choices'][$choice])) {
         // The totals without segment/feature breakout come first and are the
         // only piece we're interested in for this report.
         continue;
       }
+      $choice_id = $choice;
+      if (strpos($choice, ':') !== FALSE) {
+        list($decision_name, $option_id) = explode(':', $choice);
+        if ($option_label = personalize_get_option_label_for_decision_and_choice($decision_name, $option_id)) {
+          $choice_id = $option_label;
+        }
+      }
       $data['choices'][$choice] = array(
+        'choice_id' => $choice_id,
         'decisions' => $item['totals']['count'],
         'goals' => $item['totals']['goals'],
-        'value' => $item['val'],
+        'value' => $item['totals']['val'],
+        'estimated_value' => $item['vMean'],
+        'goals_per_decision' => $item['totals']['goalsPerDecision'],
+        'value_per_decision' => $item['totals']['valPerDecision'],
         'selections' => $item['count'],
-        'confidence' => $item['confidence'],
-        'lift_default' => $item['lift']['default'],
-        'lift_random' => $item['lift']['random']
+        'confidence' => $item['confidence'] . '%',
+        'lift_default' => $i == 0 ? '--' : $item['lift']['default'] . '%',
+        'lift_random' => $item['lift']['random'] . '%',
       );
-
+      if (!$data['goal_value_differential'] && ($item['totals']['goals'] != $item['totals']['val'])) {
+        $data['goal_value_differential'] = TRUE;
+      }
     }
     return $data;
   }
@@ -493,13 +519,17 @@ class AcquiaLiftAgent extends PersonalizeAgentBase implements AcquiaLiftAgentInt
     $report = $this->liftAPI->getTargetingImpactReport($this->machineName, $date_start, $date_end, $decision_point);
     $data = $this->extractTargetingReportData($report['data']['items']);
     $header = array(
-      t('Context'), t('Best Variation'), t('Percent of Traffic'), t('Stability')
+      t('Context'), t('Best Variation'), t('Percent of Traffic'), t('Predicted Value'), t('Stability')
     );
     $rows = array();
     foreach ($data as $feature => $f) {
       if (strpos($f['label'], '[share-alt]') === FALSE) {
         $rows[] = array(
-          $feature, $f['favored_selection'], round($f['percent_traffic'], 2), round($f['stability'], 2)
+          $feature,
+          $f['favored_selection'],
+          round($f['percent_traffic'] * 100, 2) . '%',
+          round($f['predicted_value'], 2),
+          round($f['stability'], 2)
         );
       }
 
@@ -540,6 +570,7 @@ class AcquiaLiftAgent extends PersonalizeAgentBase implements AcquiaLiftAgentInt
         'label' => $item['label'],
         'favored_selection' =>  $item['choices'][$favored_selection]['label'],
         'percent_traffic' => $item['percentTraffic'],
+        'predicted_value' => $item['averageResponseValue'],
         'stability' => $item['stability'],
       );
     }

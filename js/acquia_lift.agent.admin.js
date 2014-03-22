@@ -5,12 +5,18 @@
    */
   Drupal.behaviors.acquiaLiftAgentPercentageControls = {
     attach: function(context, settings) {
-      $('.acquia-lift-agent-percentage-adjust', context).once(function() {
-        var restId = $(this).attr('data-acquia-lift-percentage-rest');
-        var $rest = $('#' + restId, context);
+      $('div.acquia-lift-percentage-control', context).once(function() {
+        var $rest = $('.acquia-lift-percentage-rest-display', this);
+        var $input = $('input.acquia-lift-percentage-control', this);
+
+        var updateRest = function() {
+          var newPercent = $input.val();
+          var newRest = 100 - newPercent;
+          $rest.text(newRest + '%');
+        }
 
         // Limit input to numbers and decimal sign.
-        $(this).keyup(function(e) {
+        $('input.acquia-lift-percentage-control',this).keyup(function(e) {
           var code = e.keyCode || e.which;
           // Don't apply behavior to tab, enter, or arrow keys.
           if (code == 9 || code == 13 || (code >= 37 && code <= 40)) { return; }
@@ -19,41 +25,47 @@
         });
 
         // Update the "rest" percentage box when percentage changes.
-        $(this).change(function(e) {
-          var newPercent = $(this).val();
-          var newRest = 100 - $(this).val();
-          $rest.val(newRest);
-        });
+        $('input.acquia-lift-percentage-control', this).change(updateRest);
+
+        // Set initial "rest" percentage value.
+        updateRest();
       })
     }
   };
 
+  /**
+   * Adds collapsible functionality into a container.
+   * @type {{attach: attach}}
+   */
   Drupal.behaviors.acquiaLiftShowHide = {
     attach: function(context, settings) {
-      $('.acquia-lift-more-information').once(function() {
-        var $parent = $(this);
-        if (this.tagName.toLowerCase() == 'fieldset') {
-          $parent = $('.fieldset-wrapper', this);
-        }
-        $parent.prepend('<a class="acquia-lift-toggle-text" href="#">' + Drupal.t('Info') + '</span>');
+      var showText = Drupal.t('Info');
+      var hideText = Drupal.t('Hide info');
+      $('.acquia-lift-collapsible', context).once(function() {
+        var $container = $(this);
+        $container.prepend('<a class="acquia-lift-toggle-text" href="#"></a>');
 
         $('.acquia-lift-toggle-text', this).click(function(e) {
-          if ($(this).hasClass('collapsed')) {
+          if ($container.hasClass('collapsed')) {
             // Open and show additional details.
-            $('.description', $parent).slideDown();
-            $(this).removeClass('collapsed');
+            $('.description', $container).slideDown();
+            $container.removeClass('collapsed');
             $(this).text(Drupal.t('Hide info'));
           } else {
-            $(this).addClass('collapsed');
-            $('.description', $parent).slideUp();
+            $container.addClass('collapsed');
+            $('.description', $container).slideUp();
             $(this).text(Drupal.t('Info'));
           }
           return false;
         });
 
-        // Hide all the descriptions by default
-        $('.acquia-lift-toggle-text', this).addClass('collapsed');
-        $('.description', $parent).hide();
+        // Hide descriptions if collapsed by default.
+        if ($container.hasClass('collapsed')) {
+          $('.description', $container).hide();
+          $('.acquia-lift-toggle-text', this).text(showText);
+        } else {
+          $('.acquia-lift-toggle-text', this).text(hideText);
+        }
       });
     }
   }

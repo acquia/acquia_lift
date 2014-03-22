@@ -109,6 +109,11 @@ function acquia_lift_theme() {
       'path' => $path . '/theme',
       'file' => 'acquia_lift.theme.inc',
     ),
+    'acquia_lift_percentage' => array(
+      'render element' => 'element',
+      'path' => $path . '/theme',
+      'file' => 'acquia_lift.theme.inc',
+    ),
   );
 }
 
@@ -152,6 +157,19 @@ function acquia_lift_page_build(&$page) {
     module_load_include('inc', 'acquia_lift', 'acquia_lift.ui');
     acquia_lift_build_page($page);
   }
+}
+
+/**
+ * Implements hook_element_info().
+ */
+function acquia_lift_element_info() {
+  return array(
+    'acquia_lift_percentage' => array(
+      '#input' => TRUE,
+      '#element_validate' => 'acquia_lift_percentage_validate',
+      '#theme' => 'acquia_lift_percentage',
+    ),
+  );
 }
 
 /**

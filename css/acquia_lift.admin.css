@@ -13,25 +13,24 @@
     font-size: 1.3em;
 }
 
-.acquia-lift-more-information.horizontal .form-item {
+.acquia-lift-percentage-control .form-item {
   float: left;
   margin: 1em;
-  width: 40%;
+  width: 30%;
+  min-width: 250px;
 }
-
-.acquia-lift-more-information.horizontal .form-item label {
+.acquia-lift-percentage-control .form-item label {
   display: inline;
 }
-
+.acquia-lift-percentage-rest-label {
+  margin: 0;
+  padding: 0;
+  font-weight: bold;
+}
+.acquia-lift-percentage-rest-display {
+  margin: 0 5px;
+}
 .acquia-lift-toggle-text {
   float: right;
   margin-left: 1em;
-}
-
-.form-disabled input.form-text.acquia-lift-percentage-rest {
-  color: inherit;
-  border: inherit;
-  background-color: inherit;
-  font-size: 1em;
-  width: 1.5em;
 }

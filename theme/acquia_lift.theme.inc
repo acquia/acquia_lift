@@ -186,3 +186,45 @@ function theme_acquia_lift_tabbed_report($variables) {
   $output .= '</div>';
   return $output;
 }
+
+/**
+ * Theme function to output a control for entering percentage values.
+ *
+ * @ingroup themeable
+ */
+function theme_acquia_lift_percentage($variables) {
+  $element = $variables['element'];
+
+  // Add classes for percentage control and collapsible details.
+  $element['#attributes']['class'][] = 'acquia-lift-percentage-control';
+  if (isset($element['#collapsible']) && $element['#collapsible']) {
+    $element['#attributes']['class'][] = 'acquia-lift-collapsible';
+    if (isset($element['#collapsed']) && $element['#collapsed']) {
+      $element['#attributes']['class'][] = 'collapsed';
+    }
+  }
+  // Output a wrapping div.
+  $output = '<div ' . drupal_attributes($element['#attributes']) . '>';
+
+  // Render the initial control as a textfield within a form element.
+  if (!isset($element['#autocomplete_path'])) {
+    $element['#autocomplete_path'] = '';
+  }
+  $textfield = theme('textfield', array('element' => $element));
+  $element['#children'] = $textfield;
+  $output .= theme('form_element', array('element' => $element));
+
+  // Add the "rest" percentage indicator if metadata available.
+  if (isset($element['#rest_title'])) {
+    $output .= '<div class="form-item acquia-lift-percentage-rest">';
+    $output .= '<span class="acquia-lift-percentage-rest-label">' . $element['#rest_title'] . '</span>';
+    $output .= '<span class="acquia-lift-percentage-rest-display"></span>';
+    if (isset($element['#rest_description'])) {
+      $output .= '<div class="description">' . $element['#rest_description'] . '</div>';
+    }
+    $output .= '</div>';
+  }
+  // Close the wrapping div.
+  $output .= '</div>';
+  return $output;
+}

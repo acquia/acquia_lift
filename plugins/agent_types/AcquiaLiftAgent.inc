@@ -196,39 +196,22 @@ class AcquiaLiftAgent extends PersonalizeAgentBase implements AcquiaLiftAgentInt
       '#tree' => FALSE,
       '#collapsible' => TRUE,
       '#collapsed' => TRUE,
-      '#attributes' => array('class' => array(
-        'horizontal',
-        'acquia-lift-more-information',
-      )),
       '#title' => t('Control'),
     );
     $control_rate_parents = $option_parents;
     $control_rate_parents[] = 'control_rate';
     $form['control']['control_rate'] = array(
-      '#type' => 'textfield',
+      '#type' => 'acquia_lift_percentage',
       '#parents' => $control_rate_parents,
       '#title' => t('Control Group'),
       '#field_suffix' => '%',
       '#size' => 3,
       '#description' => t('A fixed baseline variation will be shown, by default the first variation in the set.'),
       '#default_value' => isset($agent_data->data['control_rate']) ? $agent_data->data['control_rate'] : 10,
-      '#attributes' => array(
-        'class' => array('acquia-lift-agent-percentage-adjust'),
-        'data-acquia-lift-percentage-rest' => 'acquia-lift-control-rate-rest',
-      ),
-    );
-    $form['control']['group_rate'] = array(
-      '#type' => 'textfield',
-      '#title' => t('Test Group'),
-      '#field_suffix' => '%',
-      '#size' => 3,
-      '#description' => t('Personalized variations will be shown.'),
-      '#default_value' => isset($agent_data->data['control_rate']) ? (100 - $agent_data->data['control_rate']) : 90,
-      '#disabled' => TRUE,
-      '#attributes' => array(
-        'id' => 'acquia-lift-control-rate-rest',
-        'class' => array('acquia-lift-percentage-rest'),
-      ),
+      '#rest_title' => t('Test Group'),
+      '#rest_description' => t('Personalized variations will be shown.'),
+      '#collapsible' => TRUE,
+      '#collapsed' => TRUE,
     );
     $form['decision_style'] = array(
       '#type' => 'radios',
@@ -243,10 +226,6 @@ class AcquiaLiftAgent extends PersonalizeAgentBase implements AcquiaLiftAgentInt
       '#tree' => FALSE,
       '#collapsible' => TRUE,
       '#collapsed' => TRUE,
-      '#attributes' => array('class' => array(
-        'horizontal',
-        'acquia-lift-more-information',
-      )),
       '#title' => t('Distribution'),
       '#states' => array(
         'visible' => array(
@@ -257,30 +236,17 @@ class AcquiaLiftAgent extends PersonalizeAgentBase implements AcquiaLiftAgentInt
     $explore_rate_parents = $option_parents;
     $explore_rate_parents[] = 'explore_rate';
     $form['distribution']['explore_rate'] = array(
-      '#type' => 'textfield',
+      '#type' => 'acquia_lift_percentage',
       '#parents' => $explore_rate_parents,
       '#title' => t('Random Group'),
       '#field_suffix' => '%',
       '#description' => t('Variations will be shown randomly and tracked to adjust for false positives.'),
       '#size' => 3,
       '#default_value' => isset($agent_data->data['explore_rate']) ? $agent_data->data['explore_rate'] : 20,
-      '#attributes' => array(
-        'class' => array('acquia-lift-agent-percentage-adjust'),
-        'data-acquia-lift-percentage-rest' => 'acquia-lift-explore-rate-rest',
-      ),
-    );
-    $form['distribution']['exploit_rate'] = array(
-      '#type' => 'textfield',
-      '#title' => t('Personalized Group'),
-      '#field_suffix' => '%',
-      '#size' => 3,
-      '#description' => t('The "best" variation will be shown for each visitor based on our algorithm.'),
-      '#default_value' => isset($agent_data->data['explore_rate']) ? (100 - $agent_data->data['explore_rate']) : 80,
-      '#disabled' => TRUE,
-      '#attributes' => array(
-        'id' => 'acquia-lift-explore-rate-rest',
-        'class' => array('acquia-lift-percentage-rest'),
-      )
+      '#rest_title' => t('Personalized Group'),
+      '#rest_description' => t('The "best" variation will be shown for each visitor based on our algorithm.'),
+      '#collapsible' => TRUE,
+      '#collapsed' => TRUE,
     );
     return $form;
   }

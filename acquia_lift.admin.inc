@@ -162,6 +162,9 @@ function acquia_lift_report($form, &$form_state, $agent_data) {
   if (!$agent = personalize_agent_load_agent($agent_data->machine_name)) {
     return array();
   }
+  if (!$agent instanceof AcquiaLiftAgent) {
+    return array();
+  }
   // If this agent is not currently enabled in Acquia Lift, there are no reports
   // to show.
   if (!$agent->verify()) {
@@ -260,7 +263,6 @@ function acquia_lift_report($form, &$form_state, $agent_data) {
   $form['confidence_report']['report'] = array(
     '#markup' => drupal_render($confidence_report)
   );
-
 
   // Decision point dropdown for targeting report.
   $decision_point_targeting_report = isset($form_state['values']['targeting_report']['decision_point']) ? $form_state['values']['targeting_report']['decision_point'] : key($decisions);

@@ -963,15 +963,15 @@ function acquia_lift_form_personalize_agent_option_sets_form_alter(&$form, &$for
     // Add a link for personalizing existing content. This is based on the
     // "Add goal in context link" and the whole functionality is based on
     // visitor_actions_ui module's "Add action in context" functionality.
-    $option_sets_section['create_option_sets']['add_in_context'] = array(
+    $option_sets_section['header']['add_existing'] = array(
+      '#type' => 'markup',
       '#markup' => l(t('Personalize existing content'), 'acquia_lift/personalize_in_context/start', array(
-          'query' => array('destination' => "admin/structure/personalize/manage/{$form['#agent']->machine_name}/edit"),
-          'attributes' => array('class' => array('personalize-in-context-link')),
-        )
-      ),
-      '#attached' => array(
-        'css' => array(drupal_get_path('module', 'acquia_lift') . '/css/acquia_lift.admin.css'),
-      ),
+        'query' => array('destination' => "admin/structure/personalize/manage/{$form['#agent']->machine_name}/edit"),
+        'attributes' => array('class' => array('personalize-in-context-link')),
+      )),
+    );
+    $option_sets_section['header']['#attached'] = array(
+      'css' => array(drupal_get_path('module', 'acquia_lift') . '/css/acquia_lift.admin.css'),
     );
     module_load_include('inc', 'acquia_lift', 'acquia_lift.ui');
     foreach (element_children($option_sets_section) as $name) {

@@ -191,12 +191,13 @@ class AcquiaLiftAgent extends PersonalizeAgentBase implements AcquiaLiftAgentInt
       ),
     );
     $option_parents = array('agent_basic_info', 'options', 'acquia_lift');
+    $control_rate = isset($agent_data->data['control_rate']) ? $agent_data->data['control_rate'] : 10;
     $form['control'] = array(
       '#type' => 'fieldset',
       '#tree' => FALSE,
       '#collapsible' => TRUE,
       '#collapsed' => TRUE,
-      '#title' => t('Control'),
+      '#title' => t('Control (@control_rate%)', array('@control_rate' => $control_rate)),
     );
     $control_rate_parents = $option_parents;
     $control_rate_parents[] = 'control_rate';
@@ -207,7 +208,7 @@ class AcquiaLiftAgent extends PersonalizeAgentBase implements AcquiaLiftAgentInt
       '#field_suffix' => '%',
       '#size' => 3,
       '#description' => t('A fixed baseline variation will be shown, by default the first variation in the set.'),
-      '#default_value' => isset($agent_data->data['control_rate']) ? $agent_data->data['control_rate'] : 10,
+      '#default_value' => $control_rate,
       '#rest_title' => t('Test Group'),
       '#rest_description' => t('Personalized variations will be shown.'),
       '#collapsible' => TRUE,
@@ -221,12 +222,16 @@ class AcquiaLiftAgent extends PersonalizeAgentBase implements AcquiaLiftAgentInt
       '#description' => t('Auto personalize chooses the best option over time, test just shows variations and reports results'),
       '#title_display' => 'invisible',
     );
+    $explore_rate = isset($agent_data->data['explore_rate']) ? $agent_data->data['explore_rate'] : 20;
     $form['distribution'] = array(
       '#type' => 'fieldset',
       '#tree' => FALSE,
       '#collapsible' => TRUE,
       '#collapsed' => TRUE,
-      '#title' => t('Distribution'),
+      '#title' => t('Distribution (@explore_rate/@rest)', array(
+        '@explore_rate' => $explore_rate,
+        '@rest' => (100 - $explore_rate),
+      )),
       '#states' => array(
         'visible' => array(
           ':input[name="agent_basic_info[options][acquia_lift][decision_style]"]' => array('value' => 'adaptive'),

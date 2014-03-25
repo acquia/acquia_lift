@@ -54,21 +54,24 @@ Drupal.acquiaLift = (function() {
   }
 
   function convertContextToFeatureString(name, value) {
-    var prefix, val, feature_string;
+    var prefix, val, feature_string, separator = settings.featureStringSeparator;
     prefix = cleanString(name);
     val = cleanString(value);
-    feature_string = prefix + '--' + val;
-    // Make a string of the visitor context item in the form name--value
+    // Make a string of the visitor context item in the format Acquia Lift can
+    // consume.
+    feature_string = prefix + separator + val;
+
+    var prefixMaxLength = Math.floor((settings.featureStringMaxLength - separator.length) / 2);
     while (feature_string.length > settings.featureStringMaxLength) {
-      // Acquia Lift has a hard character limit for feature strings so
-      // if our name--value string is too long, start by whittling down the
-      // length of the name part and remove it if necessary.
-      if (prefix.length > 1) {
-        prefix = prefix.slice(0, prefix.length-1);
-        feature_string = prefix + '--' + val;
+      // Acquia Lift has a hard character limit for feature strings.
+      if (prefix.length > prefixMaxLength) {
+        // Start by truncating the prefix down to half the max length.
+        prefix = prefix.slice(0, prefixMaxLength);
+        feature_string = prefix + separator + val;
       }
       else {
-        feature_string = val.slice(0, settings.featureStringMaxLength);
+        // Otherwise just truncate the whole thing down to the max length.
+        feature_string = feature_string.slice(0, settings.featureStringMaxLength);
       }
     }
     return feature_string;

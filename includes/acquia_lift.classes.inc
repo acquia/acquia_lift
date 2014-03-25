@@ -14,6 +14,10 @@ class AcquiaLiftAPI implements PersonalizeLoggerAwareInterface {
 
   const FEATURE_STRING_MAX_LENGTH = 50;
 
+  const FEATURE_STRING_SEPARATOR_MUTEX = ':';
+
+  const FEATURE_STRING_SEPARATOR_NONMUTEX = '::';
+
   const VALID_NAME_MATCH_PATTERN = '[A-Za-z0-9_-]';
 
   const GET_REQUEST_TIMEOUT_VALUE = 8.0;
@@ -743,6 +747,76 @@ class AcquiaLiftAPI implements PersonalizeLoggerAwareInterface {
   }
 
   /**
+   * Gets array of possible targeting values in the format expected by the plugin.
+   *
+   * @param $agent_name
+   *   The name of the agent to get targeting values for.
+   * @param $mutex_separator
+   *   The string used as a separator for mutually exclusive context values. This
+   *   parameter is provided so that the logic can be unit tested.
+   * @param $non_mutex_separator
+   *   The string used as a separator for non-mutually exclusive context values. This
+   *   parameter is provided so that the logic can be unit tested.
+   * @return array
+   *   An associative array of targeting values with feature names as keys and an
+   *   associative array structured as follows for each value:
+   *    array(
+   *      'mutex' => TRUE, // If values for this feature type are mutually exclusive.
+   *      'values' => array(
+   *        'some-feature-value-code' => 'Some feature value friendly name'
+   *       )
+   *     )
+   */
+  public function getPossibleValues($agent_name, $mutex_separator = NULL, $non_mutex_separator = NULL) {
+    $possible_values = array();
+    // We make these separators injectable so that we can write unit tests to test the
+    // logic here.
+    if (empty($mutex_separator)) {
+      $mutex_separator = self::FEATURE_STRING_SEPARATOR_MUTEX;
+    }
+    if (empty($non_mutex_separator)) {
+      $non_mutex_separator = self::FEATURE_STRING_SEPARATOR_NONMUTEX;
+    }
+    $result = $this->getPotentialTargetingValues($agent_name);
+    if (isset($result['data']['potential']['features']) && !empty($result['data']['potential']['features'])) {
+      // To determine whether values are mutually exclusive we need to check whether
+      // they contain the separator that designates them as such, but the separator that
+      // designates them as non-mutex could be contained in this so we need some logic
+      // here to figure out how to check for this.
+      $check = $non_mutex_separator;
+      if (strpos($mutex_separator, $non_mutex_separator) !== FALSE) {
+        // The mutex separator contains the non-mutex separator so we should use that
+        // for our check.
+        $check = $mutex_separator;
+      }
+      foreach ($result['data']['potential']['features'] as $feature) {
+        $code = $feature['code'];
+        // This logic is seriously gnarly. The absence of the string we check for signifies
+        // something different depending on what that string was. E.g. if we are checking for
+        // the presence of the non-mutex separator, then its absence means we are dealing with
+        // mutex values.
+        $mutex = (strpos($code, $check) === FALSE) ? $check === $non_mutex_separator : $check === $mutex_separator;
+        $separator = $mutex ? $mutex_separator : $non_mutex_separator;
+        $separated = explode($separator, $code);
+        if (count($separated) !== 2) {
+          continue;
+        }
+        list($name, $value) = $separated;
+        $name = trim($name);
+        $value = trim($value);
+        if (!isset($possible_values[$name])) {
+          $possible_values[$name] = array(
+            'mutex' => $mutex,
+            'values' => array(),
+          );
+        }
+        $possible_values[$name]['values'][$value] = $feature['name'];
+      }
+    }
+    return $possible_values;
+  }
+
+  /**
    * Saves a mapping of targeting features to options for explicity targeting.
    *
    * @param $agent_name
@@ -1339,6 +1413,11 @@ class DummyAcquiaLiftHttpClient implements AcquiaLiftDrupalHttpClientInterface {
     }
     elseif (strpos($uri, 'transforms-options') !== FALSE) {
       $data['data']['options'] = isset($this->data['options']) ? $this->data['options'] : array();
+    }
+    elseif (strpos($uri, 'potential-targeting') !== FALSE) {
+      $data['data']['potential'] = array(
+        'features' => isset($this->data['features']) ? $this->data['features'] : array()
+      );
     }
     return $this->generateDummyResponse($data);
   }

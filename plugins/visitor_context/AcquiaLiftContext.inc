@@ -94,17 +94,11 @@ class AcquiaLiftContext extends PersonalizeContextBase {
     }
     $possible_values = array();
     try {
-      $result = $this->liftAPI->getPotentialTargetingValues($this->agent->getMachineName());
-      if (isset($result['data']['potential']['features']) && !empty($result['data']['potential']['features'])) {
-        foreach ($result['data']['potential']['features'] as $feature) {
-          $possible_values[$feature['code']] = $feature['name'];
-        }
-      }
+      $possible_values = $this->liftAPI->getPossibleValues($this->agent->getMachineName());
     }
     catch (AcquiaLiftException $e) {
       drupal_set_message($e->getMessage(), 'error');
     }
-
     return $possible_values;
   }
 }

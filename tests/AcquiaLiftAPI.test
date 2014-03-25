@@ -1437,6 +1437,84 @@ class AcquiaLiftTest extends DrupalUnitTestCase {
     }
   }
 
+  function testGetPossibleValues() {
+    $lift_api = AcquiaLiftAPI::getInstance(array('api_key' => 'asdf', 'admin_key' => 'fasfasfs', 'owner_code' => 'Some_valid-owner123-code'));
+    $lift_api->setLogger(new AcquiaLiftTestLogger());
+    // Pass some dummy feature codes to our dummy http client.
+    $features = array(
+      array(
+        'code' => '(none)',
+        'name' => '(Any Visitor)',
+      ),
+      array(
+        'code' => 'first-mutex: Some Value',
+        'name' => 'Some Friendly Name',
+      ),
+      array(
+        'code' => 'first-mutex: Other Value',
+        'name' => 'Other Friendly Name',
+      ),
+      array(
+        'code' => 'first-non-mutex:: Some Nonmutex Value',
+        'name' => 'Some Friendly Nonmutex Name',
+      ),
+      array(
+        'code' => 'first-non-mutex:: Other Nonmutex Value',
+        'name' => 'Other Friendly Nonmutex Name',
+      ),
+    );
+
+    $lift_api->setHttpClient(new DummyAcquiaLiftHttpClient(FALSE, array('features' => $features)));
+    $possible_values = $lift_api->getPossibleValues('some-agent', ':', '::');
+    $expected = array(
+      'first-mutex' => array(
+        'mutex' => TRUE,
+        'values' => array(
+          'Some Value' => 'Some Friendly Name',
+          'Other Value' => 'Other Friendly Name'
+        )
+      ),
+      'first-non-mutex' => array(
+        'mutex' => FALSE,
+        'values' => array(
+          'Some Nonmutex Value' => 'Some Friendly Nonmutex Name',
+          'Other Nonmutex Value' => 'Other Friendly Nonmutex Name'
+        )
+      )
+    );
+    $this->assertEqual($expected, $possible_values);
+    // If the mutex vs non-mutex separators were ever to change, the getPossibleValues()
+    // method should still work fine.
+    $features = array(
+      array(
+        'code' => '(none)',
+        'name' => '(Any Visitor)',
+      ),
+      array(
+        'code' => 'first-mutex:: Some Value',
+        'name' => 'Some Friendly Name',
+      ),
+      array(
+        'code' => 'first-mutex:: Other Value',
+        'name' => 'Other Friendly Name',
+      ),
+      array(
+        'code' => 'first-non-mutex: Some Nonmutex Value',
+        'name' => 'Some Friendly Nonmutex Name',
+      ),
+      array(
+        'code' => 'first-non-mutex: Other Nonmutex Value',
+        'name' => 'Other Friendly Nonmutex Name',
+      ),
+    );
+
+    $lift_api->setHttpClient(new DummyAcquiaLiftHttpClient(FALSE, array('features' => $features)));
+    // We switch around the mutex and non-mutex separators so it can handle this change.
+    $possible_values = $lift_api->getPossibleValues('some-agent', '::', ':');
+    // We still expect the exact same set of values to be returned.
+    $this->assertEqual($expected, $possible_values);
+  }
+
   /**
    * Test the testGetCallsForPreviousMonth() method.
    */

@@ -457,7 +457,7 @@ class AcquiaLiftAgent extends PersonalizeAgentBase implements AcquiaLiftAgentInt
     try {
       $confidenceReport = $this->liftAPI->getConfidenceReport($this->machineName, $date_start, $date_end, $option_set->decision_point, array('(none)'));
       if (!isset($confidenceReport['data']['items'])) {
-        return '';
+        return array();
       }
       $data = $this->extractConfidenceReportData($confidenceReport['data']['items']);
       $decisions = $goals = 0;
@@ -471,12 +471,14 @@ class AcquiaLiftAgent extends PersonalizeAgentBase implements AcquiaLiftAgentInt
         $decisions += $info['decisions'];
         $goals += $info['goals'];
       }
-      return t('Shown/goals: @decisions/@goals', array('@decisions' => $decisions, '@goals' => $goals));
+      $report[] = format_plural($decisions, '1 view', '@count views');
+      $report[] = format_plural($goals, '1 goal', '@count goals');
+      return $report;
     }
     catch (AcquiaLiftException $e) {
       // The agent probably hasn't been enabled yet on the Acquia Lift end, just
-      // return an empty string.
-      return '';
+      // return an empty report.
+      return array();
     }
   }
 

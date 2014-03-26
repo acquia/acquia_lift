@@ -469,21 +469,27 @@ class AcquiaLiftAgent extends PersonalizeAgentBase implements AcquiaLiftAgentInt
       $date_to = time();
     }
     $date_end = date('Y-m-d', $date_to);
-
-    $confidenceReport = $this->liftAPI->getConfidenceReport($this->machineName, $date_start, $date_end, $option_set->decision_point, array('(none)'));
-    $data = $this->extractConfidenceReportData($confidenceReport['data']['items']);
-    $decisions = $goals = 0;
-    // Get a total count of all decisions made for this Option Set and all
-    // goals received.
-    foreach ($data['choices'] as $choice => $info) {
-      list($decision_name, $option_id) = explode(':', $choice);
-      if ($decision_name != $option_set->decision_name) {
-        continue;
+    try {
+      $confidenceReport = $this->liftAPI->getConfidenceReport($this->machineName, $date_start, $date_end, $option_set->decision_point, array('(none)'));
+      $data = $this->extractConfidenceReportData($confidenceReport['data']['items']);
+      $decisions = $goals = 0;
+      // Get a total count of all decisions made for this Option Set and all
+      // goals received.
+      foreach ($data['choices'] as $choice => $info) {
+        list($decision_name, $option_id) = explode(':', $choice);
+        if ($decision_name != $option_set->decision_name) {
+          continue;
+        }
+        $decisions += $info['decisions'];
+        $goals += $info['goals'];
       }
-      $decisions += $info['decisions'];
-      $goals += $info['goals'];
+      return t('Shown/goals: @decisions/@goals', array('@decisions' => $decisions, '@goals' => $goals));
     }
-    return t('Shown/goals: @decisions/@goals', array('@decisions' => $decisions, '@goals' => $goals));
+    catch (AcquiaLiftException $e) {
+      // The agent probably hasn't been enabled yet on the Acquia Lift end, just
+      // return an empty string.
+      return '';
+    }
   }
 
   /**

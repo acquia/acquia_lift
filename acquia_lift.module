@@ -965,7 +965,7 @@ function acquia_lift_form_personalize_agent_option_sets_form_alter(&$form, &$for
     // visitor_actions_ui module's "Add action in context" functionality.
     $option_sets_section['header']['add_existing'] = array(
       '#type' => 'markup',
-      '#markup' => l(t('Personalize existing content'), 'acquia_lift/personalize_in_context/start', array(
+      '#markup' => l(t('Personalize existing'), 'acquia_lift/personalize_in_context/start', array(
         'query' => array('destination' => "admin/structure/personalize/manage/{$form['#agent']->machine_name}/edit"),
         'attributes' => array('class' => array('personalize-in-context-link')),
       )),

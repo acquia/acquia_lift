@@ -217,10 +217,15 @@ class AcquiaLiftAgent extends PersonalizeAgentBase implements AcquiaLiftAgentInt
     $form['decision_style'] = array(
       '#type' => 'radios',
       '#title' => t('Decision Style'),
-      '#options' => array('adaptive' => t('Auto-personalize'), 'random' => t('Test only')),
+      '#options' => array('adaptive' => t('Auto-personalize'), 'random' => t('A/B test')),
       '#default_value' => isset($agent_data->data['decision_style']) ? $agent_data->data['decision_style'] : 'adaptive',
-      '#description' => t('Auto personalize chooses the best option over time, test just shows variations and reports results'),
       '#title_display' => 'invisible',
+    );
+    $form['decision_style']['adaptive'] = array(
+      '#description' => t('Adapts to users and chooses the best option over time.'),
+    );
+    $form['decision_style']['random'] = array(
+      '#description' => t('Tests variations and reports results.'),
     );
     $explore_rate = isset($agent_data->data['explore_rate']) ? $agent_data->data['explore_rate'] : 20;
     $form['distribution'] = array(

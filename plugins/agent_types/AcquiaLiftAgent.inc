@@ -150,6 +150,8 @@ class AcquiaLiftAgent extends PersonalizeAgentBase implements AcquiaLiftAgentInt
               'baseUrl' => $this->liftAPI->getApiUrl(),
               'featureStringReplacePattern' => AcquiaLiftAPI::FEATURE_STRING_REPLACE_PATTERN,
               'featureStringMaxLength' => AcquiaLiftAPI::FEATURE_STRING_MAX_LENGTH,
+              // @todo Add support for mutually exclusive values.
+              'featureStringSeparator' => AcquiaLiftAPI::FEATURE_STRING_SEPARATOR_NONMUTEX,
             )
           )
         ),
@@ -376,24 +378,30 @@ class AcquiaLiftAgent extends PersonalizeAgentBase implements AcquiaLiftAgentInt
 
   /**
    * Implements PersonalizeAgentInterface::convertContextToFeatureString().
+   *
+   * This is essentially a PHP version of the js in the convertContextToFeatureString
+   * function in acquia_lift.js
    */
-  public static function convertContextToFeatureString($name, $value) {
-    // This is essentially a PHP version of the js in the convertContextToFeatureString
-    // function acquia_lift.js
+  public static function convertContextToFeatureString($name, $value, $is_mutex = FALSE) {
+    $separator = $is_mutex ? AcquiaLiftAPI::FEATURE_STRING_SEPARATOR_MUTEX : AcquiaLiftAPI::FEATURE_STRING_SEPARATOR_NONMUTEX;
+    $prefix_max_length = floor((AcquiaLiftAPI::FEATURE_STRING_MAX_LENGTH - strlen($separator)) / 2);
+
     $prefix = AcquiaLiftAPI::cleanFeatureString($name);
     $value = AcquiaLiftAPI::cleanFeatureString($value);
-    $feature_string = $prefix . '--' . $value;
-    // Make a string of the visitor context item in the form name--value
+    // Make a string of the visitor context item in the format Acquia Lift can
+    // consume.
+    $feature_string = $prefix . $separator . $value;
+
     while (strlen($feature_string) > AcquiaLiftAPI::FEATURE_STRING_MAX_LENGTH) {
-      // AcquiaLift has a hard limit of 25 characters for feature strings so
-      // if our name--value string is too long, start by whittling down the
-      // length of the name part and remove it if necessary.
-      if (strlen($prefix) > 1) {
-        $prefix = substr($prefix, 0, strlen($prefix));
-        $feature_string = $prefix . '--' . $value;
+      // Acquia Lift has a hard character limit for feature strings.
+      if (strlen($prefix) > $prefix_max_length) {
+        // Start by truncating the prefix down to half the max length.
+        $prefix = substr($prefix, 0, $prefix_max_length);
+        $feature_string = $prefix . $separator . $value;
       }
       else {
-        $feature_string = substr($value, 0, AcquiaLiftAPI::FEATURE_STRING_MAX_LENGTH);
+        // Otherwise just truncate the whole thing down to the max length.
+        $feature_string = substr($feature_string, 0, AcquiaLiftAPI::FEATURE_STRING_MAX_LENGTH);
       }
     }
     return $feature_string;
@@ -469,8 +477,12 @@ class AcquiaLiftAgent extends PersonalizeAgentBase implements AcquiaLiftAgentInt
       $date_to = time();
     }
     $date_end = date('Y-m-d', $date_to);
+
     try {
       $confidenceReport = $this->liftAPI->getConfidenceReport($this->machineName, $date_start, $date_end, $option_set->decision_point, array('(none)'));
+      if (!isset($confidenceReport['data']['items'])) {
+        return '';
+      }
       $data = $this->extractConfidenceReportData($confidenceReport['data']['items']);
       $decisions = $goals = 0;
       // Get a total count of all decisions made for this Option Set and all

@@ -483,7 +483,7 @@ class AcquiaLiftWebTest extends DrupalWebTestCase {
 
     $edit = array(
       'option_sets[option_set_1][options][option-A][explicit_targeting][mapping][]' => array(
-        str_replace('field_', '', $field['field_name']) . '--1' => str_replace('field_', '', $field['field_name']) . '--1',
+        str_replace('field_', '', $field['field_name']) . '::1' => str_replace('field_', '', $field['field_name']) . '::1',
       ),
     );
 
@@ -863,6 +863,31 @@ class AcquiaLiftWebTest extends DrupalWebTestCase {
     // Now run cron
     $this->drupalGet('admin/reports/status/run-cron');
     $this->assertQueueItems(array());
+  }
+
+  /**
+   * Tests the logic in AcquiaLiftAgent's implementation of convertContextToFeatureString().
+   */
+  public function testConvertContextToFeatureString() {
+    // No truncation should happen if name and value are short enough.
+    $name = $this->randomName(20);
+    $value = $this->randomName(20);
+    $string = AcquiaLiftAgent::convertContextToFeatureString($name, $value);
+    $expected = $name . '::' . $value;
+    $this->assertEqual($expected, $string);
+    $string = AcquiaLiftAgent::convertContextToFeatureString($name, $value, TRUE);
+    $expected = $name . ':' . $value;
+    $this->assertEqual($expected, $string);
+    // If we have a really long name and value test that they are truncated
+    // correctly.
+    $long_name = $this->randomName(40);
+    $long_value = $this->randomName(40);
+    $string = AcquiaLiftAgent::convertContextToFeatureString($long_name, $long_value);
+    $expected = substr($long_name, 0, 24) . '::' . substr($long_value, 0, 24);
+    $this->assertEqual($expected, $string);
+    $string = AcquiaLiftAgent::convertContextToFeatureString($long_name, $long_value, TRUE);
+    $expected = substr($long_name, 0, 24) . ':' . substr($long_value, 0, 25);
+    $this->assertEqual($expected, $string);
   }
 
   /**

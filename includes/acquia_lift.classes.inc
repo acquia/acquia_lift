@@ -334,7 +334,6 @@ class AcquiaLiftAPI implements PersonalizeLoggerAwareInterface {
     }
   }
 
-
   /**
    * Saves a decision point for an agent.
    *
@@ -404,6 +403,26 @@ class AcquiaLiftAPI implements PersonalizeLoggerAwareInterface {
     $success_msg = 'The decision choice {choicename} for point {decpoint} was pushed to the Acquia Lift campaign {agent}';
     $fail_msg = 'Could not save decision choice {choicename} for point {decpoint} to the Acquia Lift campaign {agent}';
     if ($response->code == 200 && $data['status'] == 'ok') {
+      $this->logger()->log(PersonalizeLogLevel::INFO, $success_msg, $vars);
+    }
+    else {
+      $this->logger()->log(PersonalizeLogLevel::ERROR, $fail_msg, $vars);
+    }
+  }
+
+  /**
+   * Deletes an agent.
+   *
+   * @param $agent_name
+   *   The name of the agent to delete.
+   */
+  public function deleteAgent($agent_name) {
+    $url = $this->generateEndpoint("/agent-api/$agent_name");
+    $response = $this->httpClient()->delete($url);
+    $vars = array('agent' => $agent_name);
+    $success_msg = 'The Acquia Lift campaign {agent} was deleted';
+    $fail_msg = 'Could not delete Acquia Lift campaign {agent}';
+    if ($response->code == 200) {
       $this->logger()->log(PersonalizeLogLevel::INFO, $success_msg, $vars);
     }
     else {
@@ -1227,8 +1246,8 @@ class AcquiaLiftQueue extends SystemQueue {
         self::$items[] = $data['hash'];
         unset($data['hash']);
       }
-      parent::createItem($data);
     }
+    parent::createItem($data);
   }
 
   public function deleteQueue() {

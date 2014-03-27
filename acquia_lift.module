@@ -197,6 +197,24 @@ function acquia_lift_personalize_visitor_context() {
 }
 
 /**
+ * Implements hook_personalize_agent_delete().
+ */
+function acquia_lift_personalize_agent_delete($agent_data) {
+  if ($agent_data->plugin != 'acquia_lift') {
+    return;
+  }
+  $queue = DrupalQueue::get('acquia_lift_sync');
+  $queue->createItem(array(
+    'method' => 'deleteAgent',
+    'args' => array(
+      $agent_data->machine_name,
+    )
+  ));
+  // Make sure the queue gets triggered on the next request.
+  $_SESSION['acquia_lift_queue_trigger'] = 1;
+}
+
+/**
  * Implements hook_personalize_option_set_save().
  */
 function acquia_lift_personalize_option_set_save($option_set) {

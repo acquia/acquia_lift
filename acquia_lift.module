@@ -166,10 +166,25 @@ function acquia_lift_element_info() {
   return array(
     'acquia_lift_percentage' => array(
       '#input' => TRUE,
-      '#element_validate' => 'acquia_lift_percentage_validate',
+      '#element_validate' => array('element_validate_number', 'acquia_lift_percentage_validate'),
       '#theme' => 'acquia_lift_percentage',
     ),
   );
+}
+
+/**
+ * Element validator for acquia_lift_percentage custom element.
+ *
+ * Values submitted as percentages must be numbers between 0 and 100.
+ * It is assumed that the value is already validated as a number.
+ *
+ * @see acquia_lift_element_info().
+ */
+function acquia_lift_percentage_validate($element, &$form_state) {
+  $value = $element['#value'];
+  if ($value < 0 || $value > 100) {
+    form_error($element, t('%name must be a number between 0 and 100.', array('%name' => $element['#title'])));
+  }
 }
 
 /**

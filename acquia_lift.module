@@ -366,9 +366,9 @@ function acquia_lift_sync_item($item) {
 /**
  * Implements hook_personalize_campaign_report().
  */
-function acquia_lift_personalize_campaign_report($agent_data) {
+function acquia_lift_personalize_campaign_report($agent_data, $option_set) {
   module_load_include('inc', 'acquia_lift', 'acquia_lift.admin');
-  return drupal_get_form('acquia_lift_report', $agent_data);
+  return drupal_get_form('acquia_lift_report', $agent_data, $option_set);
 }
 
 /**

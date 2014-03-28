@@ -34,8 +34,7 @@
   };
 
   /**
-   * Adds collapsible functionality into a container.
-   * @type {{attach: attach}}
+   * Adds ability to collapse description for form elements.
    */
   Drupal.behaviors.acquiaLiftShowHide = {
     attach: function(context, settings) {

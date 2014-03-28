@@ -44,7 +44,7 @@ class AcquiaLiftWebTest extends DrupalWebTestCase {
   }
 
   public function setUp() {
-    parent::setUp(array('ctools', 'personalize', 'acquia_lift', 'personalize_blocks'));
+    parent::setUp(array('ctools', 'personalize', 'acquia_lift', 'personalize_blocks', 'personalize_test'));
 
     $this->adminUser = $this->drupalCreateUser(array('access administration pages', 'administer personalize configuration'));
 
@@ -313,36 +313,18 @@ class AcquiaLiftWebTest extends DrupalWebTestCase {
 
   }
 
+
+  /**
+   * Tests syncing of Option Set information to Acquia Lift.
+   */
   public function testSyncOptionSets() {
     $agent = $this->createTestAgent();
 
-    $field = array(
-      'field_name' => 'field_' . drupal_strtolower($this->randomName()),
-      'type' => 'list_integer',
-      'cardinality' => 1,
-      'settings' => array(
-        'allowed_values' => array(1 => 'One', 2 => 'Two', 3 => 'Three'),
-      ),
-    );
+    // Create a couple of user profile fields for targeting.
+    $user_profile_field_1 = $this->createUserProfileField();
+    $user_profile_field_2 = $this->createUserProfileField();
 
-    field_create_field($field);
-    $fieldInstance = array(
-      'field_name' => $field['field_name'],
-      'entity_type' => 'user',
-      'bundle' => 'user',
-      'widget' => array(
-        'type' => 'options_select',
-      ),
-    );
-
-    field_create_instance($fieldInstance);
-    // @todo uncomment when find a way to add acquia_lift context via UI
-//    $edit = array(
-//      'visitor_context[select][]' => 'user_profile_context__' . $field['field_name'],
-//    );
-//    $this->drupalPost('admin/structure/personalize/manage/' . $agent->getMachineName() . '/edit', $edit, t('Save'));
-
-    // include _personalize_agent_from_form_values() function to build agent Data
+    // Include _personalize_agent_from_form_values() function to build agent data.
     module_load_include('inc', 'personalize', 'personalize.admin');
 
     $agentStructure = _personalize_agent_from_form_values(array(
@@ -352,10 +334,11 @@ class AcquiaLiftWebTest extends DrupalWebTestCase {
       'data' => $agent->getData(),
     ));
 
+    // Add the user profile fields as context.
     $agentStructure->data['visitor_context'] = array(
-      // choose user field as user profile context to use it for explicit targeting test
       'user_profile_context' => array (
-        str_replace('field_', '', $field['field_name']) => str_replace('field_', '', $field['field_name']),
+        str_replace('field_', '', $user_profile_field_1['field_name']) => str_replace('field_', '', $user_profile_field_1['field_name']),
+        str_replace('field_', '', $user_profile_field_2['field_name']) => str_replace('field_', '', $user_profile_field_2['field_name']),
       ),
     );
 
@@ -363,25 +346,26 @@ class AcquiaLiftWebTest extends DrupalWebTestCase {
     $agent = personalize_agent_load_agent($agent->getMachineName(), TRUE);
 
     $agentData = $agent->getData();
-    debug($agentData);
-    $expected_queues = array(
-      array(
-        'method' => 'saveAgent',
-        'args' => array(
-          $agent->getMachineName(),
-          $agent->getTitle(),
-          $agentData['decision_style'],
-          'enabled',
-          ($agentData['control_rate'] / 100),
-          ($agentData['explore_rate'] / 100),
-        ),
+    $agent_queue_item = array(
+      'method' => 'saveAgent',
+      'args' => array(
+        $agent->getMachineName(),
+        $agent->getTitle(),
+        $agentData['decision_style'],
+        'enabled',
+        ($agentData['control_rate'] / 100),
+        ($agentData['explore_rate'] / 100),
       ),
+    );
+    $expected_queues = array(
+      $agent_queue_item,
     );
 
     $this->assertQueueItems($expected_queues);
     $this->personalizedQueue->deleteQueue();
     $expected_queue_items = array();
 
+    // Now add an option set to the agent.
     $personalized_blocks_form_state = array(
       'values' => array(
         'agent_select' => $agent->getMachineName(),
@@ -415,186 +399,122 @@ class AcquiaLiftWebTest extends DrupalWebTestCase {
     personalize_option_set_save(_personalize_blocks_convert_form_to_personalized_block($personalized_blocks_form_state));
 
     $option_sets = personalize_option_set_load_by_agent($agent->getMachineName(), TRUE);
+    $osid = key($option_sets);
+    $option_set = $option_sets[$osid];
+    $point_name = personalize_get_decision_point_name_for_option_set($option_set);
+    $decision_name = personalize_get_decision_name_for_option_set($option_set);
+
     $agent = personalize_agent_load_agent($agent->getMachineName(), TRUE);
     $agentData = $agent->getData();
 
-    $this->assertTrue(isset($agentData['decisions']) && isset($agentData['decisions'][1]));
-    $attemptNumber = 0;
-    foreach ($option_sets as $option_set) {
-      $expected_queue_items[] = array(
-        'method' => 'savePoint',
+    $this->assertTrue(isset($agentData['decisions']) && isset($agentData['decisions'][$osid]));
+
+    $expected_queue_items['point'] = array(
+      'method' => 'savePoint',
+      'args' => array(
+        $agent->getMachineName(),
+        $point_name,
+      )
+    );
+    $expected_queue_items['decision'] = array(
+      'method' => 'saveDecision',
+      'args' => array(
+        $agent->getMachineName(),
+        $point_name,
+        $decision_name
+      )
+    );
+    foreach ($option_set->options as $key => $option) {
+      $expected_queue_items[$option['option_id']] = array(
+        'method' => 'saveChoice',
         'args' => array(
           $agent->getMachineName(),
-          personalize_get_decision_point_name_for_option_set($option_set),
+          $point_name,
+          $decision_name,
+          personalize_generate_option_id($key)
         )
       );
-
-      // An item will be added to the queue to save the decision.
-      $expected_queue_items[] = array(
-        'method' => 'saveDecision',
-        'args' => array(
-          $agent->getMachineName(),
-          personalize_get_decision_point_name_for_option_set($option_set),
-          personalize_get_decision_name_for_option_set($option_set)
-        )
-      );
-
-      foreach ($option_set->options as $key => $option) {
-        $expected_queue_items[] = array(
-          'method' => 'saveChoice',
-          'args' => array(
-            $agent->getMachineName(),
-            personalize_get_decision_point_name_for_option_set($option_set),
-            personalize_get_decision_name_for_option_set($option_set),
-            personalize_generate_option_id($key)
-          )
-        );
-      }
-      $expected_queue_items[] = array(
-        'method' => 'saveFixedTargetingMapping',
-        'args' => array(
-          $agent->getMachineName(),
-          personalize_get_decision_point_name_for_option_set($option_set),
-          array()
-        )
-      );
-      if ($attemptNumber == 0) {
-        $expected_queue_items[] = array(
-          'method' => 'saveAgent',
-          'args' => array(
-            $agent->getMachineName(),
-            $agent->getTitle(),
-            $agentData['decision_style'],
-            'enabled',
-            $agentData['control_rate'] / 100,
-            ($agentData['explore_rate'] / 100),
-          ),
-        );
-      }
-
-      $attemptNumber++;
     }
+    $expected_queue_items['targeting'] = array(
+      'method' => 'saveFixedTargetingMapping',
+      'args' => array(
+        $agent->getMachineName(),
+        $point_name,
+        array()
+      )
+    );
+    $expected_queue_items['agent'] = $agent_queue_item;
 
-    $this->assertQueueItems($expected_queue_items);
+    $this->assertQueueItems(array_values($expected_queue_items));
     $this->personalizedQueue->deleteQueue();
-    $expected_queue_items = array();
 
-    $this->drupalGet('admin/structure/personalize/manage/' . $agent->getMachineName() . '/edit');
-
+    // Set up fixed targeting on Option A with two features OR'd together.
+    $targeting_feature_1 = str_replace('field_', '', $user_profile_field_1['field_name']) . '::2';
+    $targeting_feature_2 = str_replace('field_', '', $user_profile_field_2['field_name']) . '::3';
     $edit = array(
+      'option_sets[option_set_1][options][option-A][enable_explicit_targeting]' => TRUE,
       'option_sets[option_set_1][options][option-A][explicit_targeting][mapping][]' => array(
-        str_replace('field_', '', $field['field_name']) . '::1' => str_replace('field_', '', $field['field_name']) . '::1',
+        $targeting_feature_1 => $targeting_feature_1,
+        $targeting_feature_2 => $targeting_feature_2,
       ),
+      'option_sets[option_set_1][options][option-A][explicit_targeting][strategy]' => 'OR'
     );
 
     $this->drupalPost('admin/structure/personalize/manage/' . $agent->getMachineName() . '/edit', $edit , $this->getButton('option'));
-    $this->drupalGet('admin/structure/personalize/manage/' . $agent->getMachineName() . '/edit');
 
-    $option_sets = personalize_option_set_load_by_agent($agent->getMachineName(), TRUE);
-    $agent = personalize_agent_load_agent($agent->getMachineName(), TRUE);
-    $agentData = $agent->getData();
+    $expected_queue_items['targeting']['args'][2] = array(
+      array(
+        'feature' => $targeting_feature_1,
+        'decision' => $decision_name . ':option-A'
+      ),
+      array(
+        'feature' => $targeting_feature_2,
+        'decision' => $decision_name . ':option-A'
+      ),
+    );
 
-    $this->assertTrue(isset($agentData['decisions']) && isset($agentData['decisions'][1]));
-    $attemptNumber = 0;
-    foreach ($option_sets as $option_set) {
-      $expected_queue_items[] = array(
-        'method' => 'savePoint',
-        'args' => array(
-          $agent->getMachineName(),
-          personalize_get_decision_point_name_for_option_set($option_set),
-        )
-      );
-
-      // An item will be added to the queue to save the decision.
-      $expected_queue_items[] = array(
-        'method' => 'saveDecision',
-        'args' => array(
-          $agent->getMachineName(),
-          personalize_get_decision_point_name_for_option_set($option_set),
-          personalize_get_decision_name_for_option_set($option_set)
-        )
-      );
-
-      foreach ($option_set->options as $key => $option) {
-        $expected_queue_items[] = array(
-          'method' => 'saveChoice',
-          'args' => array(
-            $agent->getMachineName(),
-            personalize_get_decision_point_name_for_option_set($option_set),
-            personalize_get_decision_name_for_option_set($option_set),
-            personalize_generate_option_id($key)
-          )
-        );
-      }
-      $expected_queue_items[] = array(
-        'method' => 'saveFixedTargetingMapping',
-        'args' => array(
-          $agent->getMachineName(),
-          personalize_get_decision_point_name_for_option_set($option_set),
-          array()
-        )
-      );
-
-      if ($attemptNumber == 0) {
-        $expected_queue_items[] = array(
-          'method' => 'saveAgent',
-          'args' => array(
-            $agent->getMachineName(),
-            $agent->getTitle(),
-            $agentData['decision_style'],
-            'enabled',
-            $agentData['control_rate'] / 100,
-            ($agentData['explore_rate'] / 100),
-          ),
-        );
-      }
-
-      $attemptNumber++;
-    }
-
-    foreach ($option_sets as $option_set) {
-      // An item will be added to teh queue to save each option.
-      foreach ($option_set->options as $key => $option) {
-        if (!empty($option['fixed_targeting'])) {
-          $mappings = array();
-          foreach ($option['fixed_targeting'] as $feature) {
-            $mappings[$option_set->decision_name][] = array(
-              'feature' => $feature,
-              'decision' => $option_set->decision_name . ':' . $option['option_id']
-            );
-          }
-          foreach ($mappings as $point_name => $map) {
-            if (!empty($map)) {
-              $expected_queue_items[] = array(
-                'method' => 'saveFixedTargetingMapping',
-                'args' => array(
-                  $agent->getMachineName(),
-                  $point_name,
-                  $map
-                )
-              );
-            }
-          }
-        }
-      }
-    }
-
-    $this->assertQueueItems($expected_queue_items);
+    $this->assertQueueItems(array_values($expected_queue_items));
     $this->personalizedQueue->deleteQueue();
-    // @todo uncomment it when realise how to delete options from option_sets via UI
-//    $expected_queue_items = array();
-//
-//    // Remove blocks[1][bid]
-//    $edit = array(
-//      'title' => $this->randomName(),
-//      'blocks[0][bid]' => 'comment_delta_recent',
-//      'blocks[2][bid]' => 'system_delta_help',
-//    );
-//
-//    $this->drupalPost('admin/structure/personalize-blocks/manage/' . $option_sets[1]->osid . '/edit', $edit, t('Save'));
-//
-//    $this->assertQueueItems($expected_queue_items);
-//    $this->personalizedQueue->deleteQueue();
+
+    // Change the fixed targeting strategy to AND the features together.
+    $edit = array(
+      'option_sets[option_set_1][options][option-A][explicit_targeting][strategy]' => 'AND'
+    );
+
+    $this->drupalPost('admin/structure/personalize/manage/' . $agent->getMachineName() . '/edit', $edit , $this->getButton('option'));
+
+    // Now the fixed targeting mapping should have a single mapping with
+    // comma-separated features.
+    $expected_queue_items['targeting']['args'][2] = array(
+      array(
+        'feature' => $targeting_feature_1 . ',' . $targeting_feature_2,
+        'decision' => $decision_name . ':option-A'
+      ),
+    );
+    $this->assertQueueItems(array_values($expected_queue_items));
+    $this->personalizedQueue->deleteQueue();
+
+    // Remove Option B
+    $this->drupalGet('admin/structure/personalize-blocks/manage/' . $osid . '/edit');
+    $this->drupalPost(NULL, array(), 'remove_1');
+    $this->drupalPost(NULL, array(), t('Save'));
+    $expected_queue_items['delete-B'] = array(
+      'method' => 'deleteChoice',
+      'args' => array(
+        $agent->getMachineName(),
+        $point_name,
+        $decision_name,
+        'option-B',
+      ),
+    );
+    $new_queue_items = array();
+    $expected_order = array('point', 'decision', 'option-A', 'option-C', 'delete-B', 'targeting', 'agent');
+    foreach ($expected_order as $key) {
+      $new_queue_items[$key] = $expected_queue_items[$key];
+    }
+
+    $this->assertQueueItems(array_values($new_queue_items));
+    $this->personalizedQueue->deleteQueue();
   }
 
   public function testSyncGoalsFromCampaignUI() {
@@ -1014,6 +934,36 @@ class AcquiaLiftWebTest extends DrupalWebTestCase {
     }
 
     return array($option_set, $expected_queue_items);
+  }
+
+  /**
+   * Creates a user profile field which can be used for targeting.
+   *
+   * @return array
+   *   An associative array representing the field.
+   */
+  protected function createUserProfileField() {
+    $field = array(
+      'field_name' => 'field_' . drupal_strtolower($this->randomName()),
+      'type' => 'list_integer',
+      'cardinality' => 1,
+      'settings' => array(
+        'allowed_values' => array(1 => 'One', 2 => 'Two', 3 => 'Three'),
+      ),
+    );
+
+    field_create_field($field);
+    $fieldInstance = array(
+      'field_name' => $field['field_name'],
+      'entity_type' => 'user',
+      'bundle' => 'user',
+      'widget' => array(
+        'type' => 'options_select',
+      ),
+    );
+
+    field_create_instance($fieldInstance);
+    return $field;
   }
 
   /**

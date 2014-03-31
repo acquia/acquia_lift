@@ -601,8 +601,8 @@ class AcquiaLiftWebTest extends DrupalWebTestCase {
     $agent = $this->createTestAgent();
 
     $edit = array(
-      'goals[0][triggers][action_name]' => 'form_submit',
-      'goals[0][triggers][value]' => '20',
+      'goals[0][action_name]' => 'form_submit',
+      'goals[0][value]' => '20',
     );
 
     $this->drupalPost('admin/structure/personalize/manage/' . $agent->getMachineName() . '/edit', $edit, $this->getButton('goal'));
@@ -1028,13 +1028,13 @@ class AcquiaLiftWebTest extends DrupalWebTestCase {
   protected function getButton($type = '') {
     switch ($type) {
       case 'agent':
-        return t('Save Campaign settings');
+        return t('Save campaign settings');
       case 'goal':
-        return t('Save Goals');
+        return t('Save goals');
       case 'option':
-        return t('Save content variations');
+        return t('Save variation sets');
       case 'mvt':
-        return t('Save MVT');
+        return t('Save test');
       case 'delete':
         return t('Delete');
       case 'config':

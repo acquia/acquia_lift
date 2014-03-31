@@ -157,8 +157,13 @@ function acquia_lift_admin_form_submit($form, &$form_state) {
 
 /**
  * Form build function for the Acquia Lift report, which has filters.
+ *
+ * @param stdClass $agent_data
+ *   The campaign agent data for this report.
+ * @param stdClass $option_set
+ *   (optional) The content variation to show in the default view.
  */
-function acquia_lift_report($form, &$form_state, $agent_data) {
+function acquia_lift_report($form, &$form_state, $agent_data, $option_set) {
   if (!$agent = personalize_agent_load_agent($agent_data->machine_name)) {
     return array();
   }
@@ -213,7 +218,12 @@ function acquia_lift_report($form, &$form_state, $agent_data) {
   foreach ($decisions as $name => $decision) {
     $decision_options[$name] = personalize_get_label_for_decision_point_name($name);
   }
-  $decision_point_confidence_report = isset($form_state['values']['confidence_report']['decision_point']) ? $form_state['values']['confidence_report']['decision_point'] : key($decisions);
+  if (isset($form_state['values']['confidence_report']['decision_point'])) {
+    $decision_point_confidence_report = $form_state['values']['confidence_report']['decision_point'];
+  }
+  else {
+    $decision_point_confidence_report = !empty($option_set) ? $option_set->decision_name : key($decisions);
+  }
   $form['confidence_report']['decision_point'] = acquia_lift_report_decision_point_dropdown('confidence', $decision_options, $decision_point_confidence_report);
 
   // Date buttons for confidence report.

@@ -109,7 +109,7 @@ function acquia_lift_chosenify_element(&$element) {
 function acquia_lift_edit_mode_personalize_in_context() {
   $build = array(
     'message' => array(
-      '#markup' => '<p>' . t('To perosnalize content in context, navigate to the page where the content you wish to personalize is, then press the %link link.', array('%link' => 'Personalize')) . '</p>',
+      '#markup' => '<p>' . t('To personalize content in context, navigate to the page where the content you wish to personalize is, then press the %link link.', array('%link' => 'Personalize')) . '</p>',
     ),
     'actions' => array(
       '#theme' => 'acquia_lift_edit_mode_personalize_in_context_links',

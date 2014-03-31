@@ -109,6 +109,11 @@ function acquia_lift_theme() {
       'path' => $path . '/theme',
       'file' => 'acquia_lift.theme.inc',
     ),
+    'acquia_lift_percentage' => array(
+      'render element' => 'element',
+      'path' => $path . '/theme',
+      'file' => 'acquia_lift.theme.inc',
+    ),
   );
 }
 
@@ -151,6 +156,34 @@ function acquia_lift_page_build(&$page) {
   if (user_access('manage personalized content')) {
     module_load_include('inc', 'acquia_lift', 'acquia_lift.ui');
     acquia_lift_build_page($page);
+  }
+}
+
+/**
+ * Implements hook_element_info().
+ */
+function acquia_lift_element_info() {
+  return array(
+    'acquia_lift_percentage' => array(
+      '#input' => TRUE,
+      '#element_validate' => array('element_validate_number', 'acquia_lift_percentage_validate'),
+      '#theme' => 'acquia_lift_percentage',
+    ),
+  );
+}
+
+/**
+ * Element validator for acquia_lift_percentage custom element.
+ *
+ * Values submitted as percentages must be numbers between 0 and 100.
+ * It is assumed that the value is already validated as a number.
+ *
+ * @see acquia_lift_element_info().
+ */
+function acquia_lift_percentage_validate($element, &$form_state) {
+  $value = $element['#value'];
+  if ($value < 0 || $value > 100) {
+    form_error($element, t('%name must be a number between 0 and 100.', array('%name' => $element['#title'])));
   }
 }
 
@@ -348,9 +381,9 @@ function acquia_lift_sync_item($item) {
 /**
  * Implements hook_personalize_campaign_report().
  */
-function acquia_lift_personalize_campaign_report($agent_data) {
+function acquia_lift_personalize_campaign_report($agent_data, $option_set) {
   module_load_include('inc', 'acquia_lift', 'acquia_lift.admin');
-  return drupal_get_form('acquia_lift_report', $agent_data);
+  return drupal_get_form('acquia_lift_report', $agent_data, $option_set);
 }
 
 /**
@@ -945,15 +978,15 @@ function acquia_lift_form_personalize_agent_option_sets_form_alter(&$form, &$for
     // Add a link for personalizing existing content. This is based on the
     // "Add goal in context link" and the whole functionality is based on
     // visitor_actions_ui module's "Add action in context" functionality.
-    $option_sets_section['create_option_sets']['add_in_context'] = array(
-      '#markup' => l(t('Personalize existing content'), 'acquia_lift/personalize_in_context/start', array(
-          'query' => array('destination' => "admin/structure/personalize/manage/{$form['#agent']->machine_name}/edit"),
-          'attributes' => array('class' => array('personalize-in-context-link')),
-        )
-      ),
-      '#attached' => array(
-        'css' => array(drupal_get_path('module', 'acquia_lift') . '/css/acquia_lift.admin.css'),
-      ),
+    $option_sets_section['header']['add_existing'] = array(
+      '#type' => 'markup',
+      '#markup' => l(t('Personalize existing'), 'acquia_lift/personalize_in_context/start', array(
+        'query' => array('destination' => "admin/structure/personalize/manage/{$form['#agent']->machine_name}/edit"),
+        'attributes' => array('class' => array('personalize-in-context-link')),
+      )),
+    );
+    $option_sets_section['header']['#attached'] = array(
+      'css' => array(drupal_get_path('module', 'acquia_lift') . '/css/acquia_lift.admin.css'),
     );
     module_load_include('inc', 'acquia_lift', 'acquia_lift.ui');
     foreach (element_children($option_sets_section) as $name) {

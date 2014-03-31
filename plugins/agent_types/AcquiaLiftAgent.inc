@@ -185,6 +185,7 @@ class AcquiaLiftAgent extends PersonalizeAgentBase implements AcquiaLiftAgentInt
     $form['#attached'] = array(
       'css' => array(
         drupal_get_path('module', 'acquia_lift') . '/css/personalize_acquia_lift_admin.css',
+        drupal_get_path('module', 'acquia_lift') . '/css/acquia_lift.admin.css',
       ),
       'js' => array(
         drupal_get_path('module', 'acquia_lift') . '/js/acquia_lift.agent.admin.js',

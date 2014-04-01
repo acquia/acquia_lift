@@ -101,6 +101,9 @@ class AcquiaLiftAPI implements PersonalizeLoggerAwareInterface {
         $url_scheme = ($is_https) ? 'https://' : 'http://';
         $api_url = $url_scheme . $api_url;
       }
+      if (substr($api_url, -1) === '/') {
+        $api_url = substr($api_url, 0, -1);
+      }
 
       self::$instance = new self($account_info['api_key'], $account_info['admin_key'], $account_info['owner_code'], $api_url);
     }
@@ -242,10 +245,7 @@ class AcquiaLiftAPI implements PersonalizeLoggerAwareInterface {
    *   The $path to the endpoint at the API base url.
    */
   protected function generateEndpoint($path) {
-    $endpoint = $this->api_url;
-    if (substr($endpoint, -1) !== '/') {
-      $endpoint = $this->api_url . '/';
-    }
+    $endpoint = $this->api_url . '/';
     $endpoint .= $this->owner_code;
     if (substr($path, 0, 1) !== '/') {
       $endpoint .= '/';

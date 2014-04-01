@@ -22,6 +22,10 @@
 .acquia-lift-percentage-control .form-item label {
   display: inline;
 }
+.acquia-lift-percentage-control .form-item input {
+  padding: 2px;
+  margin: 0;
+}
 .acquia-lift-percentage-rest-label {
   margin: 0;
   padding: 0;

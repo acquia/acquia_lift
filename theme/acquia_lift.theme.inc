@@ -200,7 +200,7 @@ function theme_acquia_lift_percentage($variables) {
   if (isset($element['#collapsible']) && $element['#collapsible']) {
     $element['#attributes']['class'][] = 'acquia-lift-collapsible';
     if (isset($element['#collapsed']) && $element['#collapsed']) {
-      $element['#attributes']['class'][] = 'collapsed';
+      $element['#attributes']['class'][] = 'acquia-lift-collapsed';
     }
   }
   // Output a wrapping div.

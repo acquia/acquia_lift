@@ -45,13 +45,13 @@
         $container.prepend('<a class="acquia-lift-toggle-text" href="#"></a>');
 
         $('.acquia-lift-toggle-text', this).click(function(e) {
-          if ($container.hasClass('collapsed')) {
+          if ($container.hasClass('acquia-lift-collapsed')) {
             // Open and show additional details.
             $('.description', $container).slideDown();
-            $container.removeClass('collapsed');
+            $container.removeClass('acquia-lift-collapsed');
             $(this).text(Drupal.t('Hide info'));
           } else {
-            $container.addClass('collapsed');
+            $container.addClass('acquia-lift-collapsed');
             $('.description', $container).slideUp();
             $(this).text(Drupal.t('Info'));
           }
@@ -59,7 +59,7 @@
         });
 
         // Hide descriptions if collapsed by default.
-        if ($container.hasClass('collapsed')) {
+        if ($container.hasClass('acquia-lift-collapsed')) {
           $('.description', $container).hide();
           $('.acquia-lift-toggle-text', this).text(showText);
         } else {

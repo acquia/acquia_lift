@@ -836,7 +836,7 @@ class AcquiaLiftAPI implements PersonalizeLoggerAwareInterface {
   }
 
   /**
-   * Saves a mapping of targeting features to options for explicity targeting.
+   * Saves a mapping of targeting features to options for explicit targeting.
    *
    * @param $agent_name
    *   The name of the agent this mapping is for.

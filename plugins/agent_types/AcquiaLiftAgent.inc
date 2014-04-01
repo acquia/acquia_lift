@@ -350,7 +350,7 @@ class AcquiaLiftAgent extends PersonalizeAgentBase implements AcquiaLiftAgentInt
    * Implements PersonalizeExplicitTargetingInterface::explicitTargetingSupportMultiple().
    */
   public static function explicitTargetingSupportMultiple() {
-    return PersonalizeExplicitTargetingInterface::EXPLICIT_TARGETING_MULTIPLE_OR;
+    return PersonalizeExplicitTargetingInterface::EXPLICIT_TARGETING_MULTIPLE_BOTH;
   }
 
   /**
@@ -804,11 +804,22 @@ class AcquiaLiftAgent extends PersonalizeAgentBase implements AcquiaLiftAgentInt
       $mappings[$point_name] = isset($mappings[$point_name]) ? $mappings[$point_name] : array();
       foreach ($option_set->options as $option) {
         if (isset($option['fixed_targeting'])) {
-          foreach ($option['fixed_targeting'] as $feature) {
+          // Check if we're supposed to AND or OR mulitple features together.
+          if (isset($option['fixed_targeting_strategy']) && $option['fixed_targeting_strategy'] == 'AND') {
+            // Create a single mapping, with a comma-separated list of features.
             $mappings[$point_name][] = array(
-              'feature' => $feature,
+              'feature' => implode(',', $option['fixed_targeting']),
               'decision' => $decision_name . ':' . $option['option_id']
             );
+          }
+          else {
+            // Create a mapping for each feature and they will be OR'd together.
+            foreach ($option['fixed_targeting'] as $feature) {
+              $mappings[$point_name][] = array(
+                'feature' => $feature,
+                'decision' => $decision_name . ':' . $option['option_id']
+              );
+            }
           }
         }
       }

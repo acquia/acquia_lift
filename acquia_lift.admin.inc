@@ -275,7 +275,12 @@ function acquia_lift_report($form, &$form_state, $agent_data, $option_set) {
   );
 
   // Decision point dropdown for targeting report.
-  $decision_point_targeting_report = isset($form_state['values']['targeting_report']['decision_point']) ? $form_state['values']['targeting_report']['decision_point'] : key($decisions);
+  if (isset($form_state['values']['targeting_report']['decision_point'])) {
+    $decision_point_targeting_report = $form_state['values']['targeting_report']['decision_point'];
+  }
+  else {
+    $decision_point_targeting_report = !empty($option_set) ? $option_set->decision_name : key($decisions);
+  }
   $form['targeting_report']['decision_point'] = acquia_lift_report_decision_point_dropdown('targeting', $decision_options, $decision_point_targeting_report);
 
   // Date buttons for targeting report.

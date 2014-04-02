@@ -623,24 +623,25 @@ class AcquiaLiftAgent extends PersonalizeAgentBase implements AcquiaLiftAgentInt
   }
 
   /**
-   * Implements PersonalizeAgentInterface::verify().
+   * Implements PersonalizeAgentInterface::errors().
    */
-  public function verify() {
+  public function errors() {
+    $errors = array();
     $acquia_lift_agent = $this->liftAPI->getAgent($this->machineName);
     if (!$acquia_lift_agent || $acquia_lift_agent['status'] !== 'enabled') {
-      return FALSE;
+      $errors[] = t('The status of the Acquia Lift agent is @status', array('@status' => $acquia_lift_agent['status']));
     }
     // Make sure Acquia Lift knows about the agent's goals.
     $goals = personalize_goal_load_by_conditions(array('agent' => $this->machineName));
     $acquia_lift_goals = $this->liftAPI->getGoalsForAgent($this->machineName);
     if (empty($goals) || empty($acquia_lift_goals)) {
       // Acquia Lift agents need goals.
-      return FALSE;
+      $errors[] = t('No goals have been set up for this agent');
     }
 
     foreach($goals as $goal) {
       if (!in_array($goal['action'], $acquia_lift_goals)) {
-        return FALSE;
+        $errors[] = t('Goal @goal has not been sync\'d to the Acquia Lift agent', array('@goal' => $goal['action']));
       }
     }
     // Make sure all decision points are known by Acquia Lift.
@@ -649,23 +650,23 @@ class AcquiaLiftAgent extends PersonalizeAgentBase implements AcquiaLiftAgentInt
     $acquia_lift_points = $this->liftAPI->getPointsForAgent($this->machineName);
     foreach ($decision_tree as $point => $decisions) {
       if (!in_array($point, $acquia_lift_points)) {
-        return FALSE;
+        $errors[] = t('Point @point has not been sync\'d to the Acquia Lift agent', array('@point' => $point));
       }
       $acquia_lift_decisions = $this->liftAPI->getDecisionsForPoint($this->machineName, $point);
       foreach ($decisions as $decision_name => $options) {
         if (!in_array($decision_name, $acquia_lift_decisions)) {
-          return FALSE;
+          $errors[] = t('Decision @decision has not been sync\'d to the Acquia Lift agent', array('@decision' => $decision_name));
         }
         $acquia_lift_choices = $this->liftAPI->getChoicesForDecision($this->machineName, $point, $decision_name);
         foreach ($options as $option) {
           if (!in_array($option, $acquia_lift_choices)) {
-            return FALSE;
+            $errors[] = t('Option @choice has not been sync\'d to the Acquia Lift agent', array('@choice' => $option));
           }
         }
       }
       // @todo Check the fixed targeting for each decision point.
     }
-    return TRUE;
+    return $errors;
   }
 
   /**

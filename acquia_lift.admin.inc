@@ -318,79 +318,34 @@ function acquia_lift_report($form, &$form_state, $agent_data, $option_set) {
   return $form;
 }
 
-
 /**
- * Menu callback for pulling reports via ajax (from filter links).
+ * Returns a date filter for the reports.
  *
- * @param $agent_name
- *   The name of the agent this report is for.
- * @param $report_name
- *   The name of the report.
- * @param $date
- *   The date to use for the report (either "today" or a start date for all dates
- *   from the start date up to today).
- * @param null $feature
- *   A feature to filter the report by.
- */
-function acquia_lift_report_ajax($agent_name, $report_name, $date, $feature = NULL) {
-  if ($date !== 'today') {
-    $date_start = date('Y-m-d', $date);
-    $date_end = date('Y-m-d');
-  }
-  else {
-    $date_start = date('Y-m-d');
-    $date_end = NULL;
-  }
-  $agent = personalize_agent_load_agent($agent_name);
-  $confidence_report = $agent->buildConfidenceReport($date_start, $date_end, $feature);
-
-  $selector = "#acquia-lift-$report_name-report .acquia-lift-tabbed-report";
-  $commands = array(
-    ajax_command_replace($selector, drupal_render($confidence_report)),
-  );
-  $page = array('#type' => 'ajax', '#commands' => $commands);
-  ajax_deliver($page);
-}
-
-/**
- * Returns a button for changing the timeframe of the report.
- *
- * @param $title
- *   The text to display on the button
- * @param $type
- *   Either 'all' or 'today'
- * @param $disabled
- *   Whether the button should be disabled or not.
+ * @param $selected
+ *   The selected date option.
  * @return array
- *   An array representing the button element.
+ *   An array representing the form input.
  */
-function acquia_lift_report_date_filter_button($title, $type, $disabled) {
+function acquia_lift_report_date_filter($selected = 'all') {
   return array(
-    '#type' => 'submit',
-    '#tag' => 'button',
-    '#text' => $title,
-    '#value' => $type,
-    '#theme_wrappers' => array('personalize_html_tag'),
-    '#attributes' => array(
-      // The ID is necessary for the AJAX replace to function correctly.
-      'id' => "edit-report-date-$type",
-      'class' => array('acquia-lift-report-date-filter', 'form-submit',),
-      'title' => $title,
+    '#type' => 'select',
+    '#options' => array(
+      'today' => t('Today only'),
+      'all' => t('All dates'),
     ),
-    '#disabled' => $disabled,
-    '#submit' => array('acquia_lift_report_date_filter_submit'),
+    '#default_value' => $selected,
     '#ajax' => array(
       'callback' => "acquia_lift_report_ajax_callback",
       'wrapper' => "acquia-lift-reports",
-    )
+    ),
+    '#title_display' => 'invisible',
   );
 }
+
 
 /**
  * Returns a dropdown for filtering by decision point.
  *
- * @param string $report_type
- *   The type of report this is for, e.g. 'confidence' or 'targeting'.
  * @param array $options
  *   The different decision point options.
  * @param $selected

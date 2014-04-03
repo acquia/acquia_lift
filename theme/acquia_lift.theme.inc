@@ -110,25 +110,6 @@ function theme_acquia_lift_edit_mode_personalize_in_context_links($variables) {
 }
 
 /**
- * Theme function to output links for filtering reports by date.
- *
- * @ingroup themeable
- */
-function theme_acquia_lift_date_filter_links($variables) {
-  $element = $variables['element'];
-  $output = '<div>Filter by date: ';
-
-  $rendered = array();
-  foreach ($element['links'] as $link) {
-    $rendered[] = drupal_render($link);
-  }
-  $output .= implode (' | ', $rendered);
-
-  $output .= '</div>';
-  return $output;
-}
-
-/**
  * Theme function to output links for filtering by feature,
  *
  * @ingroup themeable
@@ -161,29 +142,6 @@ function theme_acquia_lift_report_tablinks($vars) {
     }
   }
   $output .= '</ul>';
-  return $output;
-}
-
-/**
- * Theme function to output content for jQuery UI style tabs.
- *
- * @ingroup themeable
- */
-function theme_acquia_lift_tabbed_report($variables) {
-  $element = $variables['element'];
-  $output = '<div '. drupal_attributes($element['#options']['attributes']) .'>';
-  $output .= drupal_render($element['tabs']);
-
-  if (isset($element['active'])) {
-    $output .= drupal_render($element['active']);
-  }
-  else {
-    foreach ($element['divs'] as $div) {
-      $output .= drupal_render($div);
-    }
-  }
-
-  $output .= '</div>';
   return $output;
 }
 

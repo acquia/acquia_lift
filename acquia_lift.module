@@ -59,12 +59,6 @@ function acquia_lift_menu() {
     // @see acquia_lift_process_queue()
     'access callback' => TRUE,
   );
-  $items['admin/acquia_lift_report/ajax'] = array(
-    'page callback' => 'acquia_lift_report_ajax',
-    'access arguments' => array('manage personalize content'),
-    'type' => MENU_CALLBACK,
-    'file' => 'acquia_lift.admin.inc',
-  );
   return $items;
 }
 
@@ -89,23 +83,8 @@ function acquia_lift_theme() {
       'path' => $path . '/theme',
       'file' => 'acquia_lift.theme.inc',
     ),
-    'acquia_lift_tabbed_report' => array(
-      'render element' => 'element',
-      'path' => $path . '/theme',
-      'file' => 'acquia_lift.theme.inc',
-    ),
-    'acquia_lift_date_filter_links' => array(
-      'render element' => 'element',
-      'path' => $path . '/theme',
-      'file' => 'acquia_lift.theme.inc',
-    ),
     'acquia_lift_feature_filter_links' => array(
       'render element' => 'element',
-      'path' => $path . '/theme',
-      'file' => 'acquia_lift.theme.inc',
-    ),
-    'acquia_lift_report_tablinks' => array(
-      'render element' => 'tabset',
       'path' => $path . '/theme',
       'file' => 'acquia_lift.theme.inc',
     ),

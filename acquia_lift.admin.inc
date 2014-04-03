@@ -206,46 +206,35 @@ function acquia_lift_report($form, &$form_state, $agent_data, $option_set) {
   else {
     $decision_point = !empty($option_set) ? $option_set->decision_name : key($decisions);
   }
-  $form['decision_point'] = acquia_lift_report_decision_point_dropdown('confidence', $decision_options, $decision_point);
+  $form['decision_point'] = acquia_lift_report_decision_point_dropdown($decision_options, $decision_point);
 
-  // Date buttons filters.
+  $form['date_filters'] = acquia_lift_report_date_filter(isset($form_state['values']['date_filters']) ? $form_state['values']['date_filters'] : 'all');
+
   // Default to showing the complete history of the campaign.
   $date_start_report = date('Y-m-d', $agent_data->started);
   $date_end_report = $date_end_targeting = date('Y-m-d');
-
-  $form['date_filters'] = array(
-    '#prefix' => '<div class="acquia-lift-report-date-filters">',
-    '#suffix' => '</div>',
-  );
-  $today_only = FALSE;
-  if (isset($form_state['report_start_date'])) {
-    if ($form_state['report_start_date'] == 'today') {
-      $today_only = TRUE;
-      $date_start_report = date('Y-m-d');
-      $date_end_report = NULL;
-    }
+  if (isset($form_state['date_filters']) && $form_state['date_filters'] === 'today') {
+    $date_start_report = date('Y-m-d');
+    $date_end_report = NULL;
   }
-  $form['date_all'] = acquia_lift_report_date_filter_button(t('Complete history'), 'all', !$today_only);
-  $form['date_today'] = acquia_lift_report_date_filter_button(t('Today only'), 'today', $today_only);
-
 
   // Confidence report section.
   $form['confidence_report'] = array(
-    '#prefix' => '<div id="acquia-lift-confidence-report-replace">',
-    '#suffix' => '</div>',
     '#tree' => TRUE,
     'confidence_report_title' => array(
       '#markup' => '<h2>Lift Report</h2>',
     ),
+    '#theme_wrappers' => array('container'),
+    '#id' => 'acquia-lift-confidence-report',
   );
   // Targeting report section.
   $form['targeting_report'] = array(
-    '#prefix' => '<div id="acquia-lift-targeting-report-replace">',
-    '#suffix' => '</div>',
     '#tree' => TRUE,
     'targeting_report_title' => array(
       '#markup' => '<h2>Context relevance</h2>',
     ),
+    '#theme_wrappers' => array('container'),
+    '#id' => 'acquia-lift-targeting-report',
   );
 
   // Features dropdown for confidence report.
@@ -270,14 +259,17 @@ function acquia_lift_report($form, &$form_state, $agent_data, $option_set) {
     '#options' => $context_values,
     '#default_value' => $selected_value,
     '#ajax' => array(
-      'callback' => 'acquia_lift_confidence_report_ajax_callback',
-      'wrapper' => 'acquia-lift-confidence-report-replace',
+      'callback' => 'acquia_lift_report_ajax_callback',
+      'wrapper' => 'acquia-lift-confidence-report',
     ),
+    '#return_element' => 'confidence_report',
   );
   // Get the confidence report.
   $confidence_report = $agent->buildConfidenceReport($date_start_report, $date_end_report, $decision_point, $selected_value);
   $form['confidence_report']['report'] = array(
-    '#markup' => drupal_render($confidence_report)
+    '#markup' => drupal_render($confidence_report),
+    '#theme_wrappers' => array('container'),
+    '#id' => 'acquia-lift-confidence-report-data',
   );
 
   // Decision point dropdown for targeting report.
@@ -308,7 +300,9 @@ function acquia_lift_report($form, &$form_state, $agent_data, $option_set) {
   // Get the targeting report.
   $targeting_report = $agent->buildTargetingFeaturesReport($date_start_report, $date_end_report, $decision_point);
   $form['targeting_report']['report'] = array(
-    '#markup' => drupal_render($targeting_report)
+    '#markup' => drupal_render($targeting_report),
+    '#theme_wrappers' => array('container'),
+    '#id' => 'acquia-lift-targeting-report-data',
   );
   // We have to specify the include file so as not to lose it during rendering from ajax.
   // @see drupal_retrieve_form():734
@@ -353,38 +347,21 @@ function acquia_lift_report_date_filter($selected = 'all') {
  * @return array
  *   An array representing a dropdown select list.
  */
-function acquia_lift_report_decision_point_dropdown($report_type, $options, $selected) {
+function acquia_lift_report_decision_point_dropdown($options, $selected) {
   return array(
-    '#prefix' => '<div class="acquia-lift-report-decision-point-filter">',
-    '#suffix' => '</div>',
-    '#title' => t('Variation set: '),
     '#type' => 'select',
     '#options' => $options,
     '#default_value' => $selected,
     '#ajax' => array(
       'callback' => "acquia_lift_report_ajax_callback",
       'wrapper' => "acquia-lift-reports",
-    )
+    ),
+    '#id' => 'acquia-lift-report-decision-point-filter',
   );
 }
 
 /**
- * Submit callback for the confidence report's date filter.
- */
-function acquia_lift_report_date_filter_submit($form, &$form_state) {
-  switch($form_state['values']['op']) {
-    case 'today':
-      $form_state['report_start_date'] = 'today';
-      break;
-    case 'all':
-      $form_state['report_start_date'] = 'all';
-      break;
-  }
-  $form_state['rebuild'] = TRUE;
-}
-
-/**
- * Ajax callback for the decision point dropdown in the targeting report.
+ * Ajax callback for filtering options.
  */
 function acquia_lift_report_ajax_callback($form, &$form_state) {
   return $form;

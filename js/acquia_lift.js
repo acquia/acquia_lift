@@ -3,9 +3,9 @@
 Drupal.personalize = Drupal.personalize || {};
 Drupal.personalize.agents = Drupal.personalize.agents || {};
 Drupal.personalize.agents.acquia_lift = {
-  'getDecisionsForPoint': function(agent_name, visitor_context, choices, decision_point, callback) {
+  'getDecisionsForPoint': function(agent_name, visitor_context, choices, decision_point, fallbacks, callback) {
     // Our decision point may have multiple decisions, if doing MVT.
-    Drupal.acquiaLift.getDecision(agent_name, visitor_context, choices, decision_point, callback);
+    Drupal.acquiaLift.getDecision(agent_name, visitor_context, choices, decision_point, fallbacks, callback);
   },
   'sendGoalToAgent': function(agent_name, goal_name, goal_value, jsEvent) {
     Drupal.acquiaLift.sendGoal(agent_name, goal_name, goal_value, jsEvent);
@@ -83,11 +83,11 @@ Drupal.acquiaLift = (function() {
     'processWaitingDecisions': function() {
       while (waitingDecisions.length > 0) {
         var decision = waitingDecisions.shift();
-        this.getDecision(decision.agent_name, decision.visitor_context, decision.choices, decision.point, decision.callback);
+        this.getDecision(decision.agent_name, decision.visitor_context, decision.choices, decision.point, decision.fallbacks, decision.callback);
       }
     },
     // Processes all decisions for a given decision point.
-    'getDecision': function(agent_name, visitor_context, choices, point, callback) {
+    'getDecision': function(agent_name, visitor_context, choices, point, fallbacks, callback) {
       var self = this;
       if (!initialized && !initializingSession) {
         init();
@@ -99,6 +99,7 @@ Drupal.acquiaLift = (function() {
           'visitor_context' : visitor_context,
           'choices' : choices,
           'point' : point,
+          'fallbacks' : fallbacks,
           'callback' : callback
         });
         return;
@@ -127,7 +128,15 @@ Drupal.acquiaLift = (function() {
         options.features = data.join(',');
       }
 
-      api.decision(agent_name, options, function(selection, session) {
+      // Format the fallbacks object into the structure required by the Acquia Lift
+      // client.
+      var fb = {};
+      for (var key in fallbacks) {
+        if (fallbacks.hasOwnProperty(key) && choices.hasOwnProperty(key)) {
+          fb[key] = {code: choices[key][fallbacks[key]]}
+        }
+      }
+      api.decision(agent_name, options, fb, function(selection, session) {
         if (window.console) {
           console.log(selection);
         }

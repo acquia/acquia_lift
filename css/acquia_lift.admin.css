@@ -42,3 +42,36 @@
 #personalize-acquia-lift-reset {
   display: inline;
 }
+
+/* Reports */
+.acquia-lift-report-filters div {
+  float: left;
+  margin-right: 10px;
+}
+.acquia-lift-report-filters div.form-item-date-filters {
+  margin-top: 1.5em;
+}
+
+#acquia-lift-overview-report .form-wrapper > div {
+  float: left;
+  margin-right: 2em;
+}
+#acquia-lift-overview-report .acquia-lift-overview-item {
+  font-size: larger;
+  font-weight: bold;
+}
+#acquia-lift-overview-report .acquia-lift-report-positive .acquia-lift-overview-item {
+  color: #85B200;
+  background: transparent url('../images/85b200/confirm.png') no-repeat;
+  background-size: 18px 18px;
+  padding-left: 20px;
+}
+#acquia-lift-overview-report .acquia-lift-report-negative .acquia-lift-overview-item {
+  color: #FF8000;
+  background: transparent url('../images/FF8000/alert.png') no-repeat;
+  padding-left: 20px;
+}
+
+#acquia-lift-confidence-report {
+  margin: 25px 0;
+}

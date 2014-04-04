@@ -192,6 +192,14 @@ function acquia_lift_report($form, &$form_state, $agent_data, $option_set) {
     ),
   );
 
+  $form['filters'] = array(
+    '#type' => 'container',
+    '#tree' => FALSE,
+    '#attributes' => array(
+      'class' => array('acquia-lift-report-filters', 'clearfix'),
+    ),
+  );
+
   // Get the decision points for this agent so we can provide a filter on this.
   $decisions = AcquiaLiftAgent::convertOptionSetsToDecisions($data['decisions']);
   $decision_options = array();
@@ -206,9 +214,9 @@ function acquia_lift_report($form, &$form_state, $agent_data, $option_set) {
   else {
     $decision_point = !empty($option_set) ? $option_set->decision_name : key($decisions);
   }
-  $form['decision_point'] = acquia_lift_report_decision_point_dropdown($decision_options, $decision_point);
+  $form['filters']['decision_point'] = acquia_lift_report_decision_point_dropdown($decision_options, $decision_point);
 
-  $form['date_filters'] = acquia_lift_report_date_filter(isset($form_state['values']['date_filters']) ? $form_state['values']['date_filters'] : 'all');
+  $form['filters']['date_filters'] = acquia_lift_report_date_filter(isset($form_state['values']['date_filters']) ? $form_state['values']['date_filters'] : 'all');
 
   // Default to showing the complete history of the campaign.
   $date_start_report = date('Y-m-d', $agent_data->started);
@@ -217,6 +225,18 @@ function acquia_lift_report($form, &$form_state, $agent_data, $option_set) {
     $date_start_report = date('Y-m-d');
     $date_end_report = NULL;
   }
+
+  // Overview report section.
+  $form['overview_report'] = array(
+    'overview_report_title' => array(
+      '#markup' => '<h2>Overview</h2>',
+    ),
+    '#theme_wrappers' => array('container'),
+    '#id' => 'acquia-lift-overview-report',
+    '#attributes' => array(
+      'class' => array('clearfix'),
+    ),
+  );
 
   // Confidence report section.
   $form['confidence_report'] = array(
@@ -235,6 +255,13 @@ function acquia_lift_report($form, &$form_state, $agent_data, $option_set) {
     ),
     '#theme_wrappers' => array('container'),
     '#id' => 'acquia-lift-targeting-report',
+  );
+
+  $overview_report = $agent->buildOverviewReport($date_start_report, $date_end_report, (isset($form_state['values']['date_filter']) && $form_state['values']['date_filter'] === 'today'));
+  $form['overview_report']['report'] = array(
+    '#markup' => drupal_render($overview_report),
+    '#theme_wrappers' => array('container'),
+    '#id' => 'acquia-lift-overview-report-data',
   );
 
   // Features dropdown for confidence report.
@@ -349,6 +376,7 @@ function acquia_lift_report_date_filter($selected = 'all') {
  */
 function acquia_lift_report_decision_point_dropdown($options, $selected) {
   return array(
+    '#title' => t('Variation Set'),
     '#type' => 'select',
     '#options' => $options,
     '#default_value' => $selected,

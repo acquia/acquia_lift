@@ -129,23 +129,6 @@ function theme_acquia_lift_feature_filter_links($variables) {
 }
 
 /**
- * Theme function to output tablinks for jQuery UI style tabs.
- *
- * @ingroup themeable
- */
-function theme_acquia_lift_report_tablinks($vars) {
-
-  $output = '<ul>';
-  foreach ($vars['tabset']['tablinks'] as $i => $tab) {
-    if (is_array($tab)) {
-      $output .= '<li>'. drupal_render($tab) .'</li>';
-    }
-  }
-  $output .= '</ul>';
-  return $output;
-}
-
-/**
  * Theme function to output a control for entering percentage values.
  *
  * @ingroup themeable
@@ -184,5 +167,17 @@ function theme_acquia_lift_percentage($variables) {
   }
   // Close the wrapping div.
   $output .= '</div>';
+  return $output;
+}
+
+/**
+ * Theme function for formatting a report overview item
+ */
+function theme_acquia_lift_report_overview($variables) {
+  $element = $variables['element'];
+  $output = '<div class="acquia-lift-overview-item">' . $element['#title'] . '</div>';
+  if (!empty($element['#description'])) {
+    $output .= '<div class="acquia-lift-overview-caption">' . $element['#description'] . '</div>';
+  }
   return $output;
 }

@@ -68,6 +68,18 @@ interface AcquiaLiftAgentInterface {
   public function buildTargetingFeaturesReport($date_start, $date_end, $decision_point);
 
   /**
+   * Returns a render array representing the overview report for the given dates.
+   *
+   * @param $date_start
+   *   The start date of the report
+   * @param $date_end
+   *   The end date of the report
+   * @return array
+   *   A render array representing the overview report.
+   */
+  public function buildOverviewReport($date_start, $date_end);
+
+  /**
    * Organizes an array of option sets into decision points.
    *
    * @param $option_sets
@@ -82,6 +94,8 @@ interface AcquiaLiftAgentInterface {
 }
 
 class AcquiaLiftAgent extends PersonalizeAgentBase implements AcquiaLiftAgentInterface, PersonalizeExplicitTargetingInterface, PersonalizeAgentReportInterface {
+
+  static public $lift_threshold = .5;
 
   /**
    * An object containing the agent data.
@@ -388,11 +402,7 @@ class AcquiaLiftAgent extends PersonalizeAgentBase implements AcquiaLiftAgentInt
    * Implements AcquiaLiftAgent::buildConfidenceReport().
    */
   public function buildConfidenceReport($date_start, $date_end, $decision_point, $feature = NULL) {
-    $build = array();
-    $confidenceReport = $this->liftAPI->getConfidenceReport($this->machineName, $date_start, $date_end, $decision_point, array($feature));
-    $data = $this->extractConfidenceReportData($confidenceReport['data']['items']);
-
-    $column_headings = array(
+    $fields = array(
       'choice_id' => t('Variation'),
       'decisions' => t('Decisions'),
       'goals' => t('Goals'),
@@ -404,6 +414,49 @@ class AcquiaLiftAgent extends PersonalizeAgentBase implements AcquiaLiftAgentInt
       'lift_random' => t('Lift over random'),
       'confidence' => t('Confidence')
     );
+
+    // Determine if we have sorting parameters
+    $args = func_get_args();
+    $last_arg = array_pop($args);
+    $order = 'asc';
+    $default_sort_field = $sort_field = 'choice_id';
+    if ($last_arg === 'asc' || $last_arg === 'desc') {
+      $order = $last_arg;
+    }
+    $last_arg = array_pop($args);
+    if (in_array($last_arg, array_keys($fields))) {
+      $order = $last_arg;
+    }
+
+    $build = array();
+    $confidenceReport = $this->liftAPI->getConfidenceReport($this->machineName, $date_start, $date_end, $decision_point, array($feature));
+    $data = $this->extractConfidenceReportData($confidenceReport['data']['items']);
+
+    // Sort the data if not provided in the requested sort order.
+    if ($default_sort_field !== $sort_field) {
+      usort($data, function($a, $b) use ($sort_field, $order) {
+        if ($a[$sort_field] == $b[$sort_field]) {
+          return 0;
+        }
+        else if ($a[$sort_field] > $b[$sort_field]) {
+         return ($order === 'asc') ? 1 : -1;
+        }
+        else {
+          return ($order === 'asc' ? -1 : 1);
+        }
+      });
+    }
+
+    // Define table column headings.
+    foreach($fields as $field_name => $display) {
+      $column_headings[$field_name] = array(
+        'data' => $display,
+        'field' => $field_name,
+      );
+      if ($sort_field === $field_name) {
+        $column_headings[$field_name]['sort'] = $order;
+      }
+    }
     // Not all of these columns will be shown, depending on certain factors.
     $exclude_columns = array();
     if (isset($this->data['control_rate']) && (int) $this->data['control_rate'] == 0) {
@@ -442,6 +495,102 @@ class AcquiaLiftAgent extends PersonalizeAgentBase implements AcquiaLiftAgentInt
         '#rows' => $rows,
       )
     );
+    return $build;
+  }
+
+  /**
+   * Implements AcquiaLiftAgent::buildOverviewReport().
+   */
+  public function buildOverviewReport($date_start, $date_end, $today_only = FALSE) {
+    if ($today_only) {
+      $num_days = 1;
+    }
+    else {
+      $interval = date_diff(date_create($date_start), date_create($date_end));
+      $num_days = $interval->days;
+    }
+    try {
+      $overviewReport = $this->liftAPI->getAgentStatusReport(array($this->machineName), $num_days);
+      if (!isset($overviewReport['data'][$this->machineName])) {
+        return array();
+      }
+    }
+    catch (AcquiaLiftException $e) {
+      return array();
+    }
+    $report = $this->extractOverviewReportData($overviewReport['data'][$this->machineName], $date_start, $date_end);
+
+    $build = array();
+    $build['test_type'] = array(
+      '#type' => 'container',
+      '#theme' => 'acquia_lift_report_overview',
+      '#title' => $report['decision_style'] === 'adaptive' ? t('Auto-personalize') : 'A/B',
+      '#description' => t('test type'),
+      '#attributes' => array(
+        'id' => 'acquia-lift-overview-type',
+      )
+    );
+    $build['total_running'] = array(
+      '#type' => 'container',
+      '#theme' => 'acquia_lift_report_overview',
+      '#attributes' => array(
+        'id' => 'acquia-lift-overview-running',
+      ),
+      '#title' => isset($interval) ? $interval->format('%mm, %dd') : '1d',
+      '#description' => t('total time running'),
+     );
+     $build['shown'] = array(
+       '#type' => 'container',
+       '#theme' => 'acquia_lift_report_overview',
+       '#attributes' => array(
+         'id' => 'acquia-lift-overview-shown',
+       ),
+       '#title' => $today_only ? $report['today_shown'] : $report['total_shown'],
+       '#description' => t('times shown'),
+     );
+     $total_goals = $today_only ? $report['today_goals'] : $report['total_goals'];
+     $build['goals'] = array(
+       '#type' => 'container',
+       '#theme' => 'acquia_lift_report_overview',
+       '#attributes' => array(
+         'id' => 'acquia-lift-overview-goals',
+       ),
+       '#title' => $total_goals,
+       '#description' => t('goals met'),
+     );
+     if ($total_goals > 0) {
+       $build['goals']['#attributes']['class'] = array('acquia-lift-report-positive');
+     }
+    $lift = $today_only ? $report['today_lift'] : $report['total_lift'];
+     $build['lift'] = array(
+       '#type' => 'container',
+       '#theme' => 'acquia_lift_report_overview',
+       '#attributes' => array(
+         'id' => 'acquia-lift-overview-lift',
+       ),
+       '#title' => ($lift*100) . '%',
+       '#description' => t('Predicted lift/control'),
+       '#attributes' => array(
+         'class' => array(
+           $lift > self::$lift_threshold ? 'acquia-lift-report-positive' : 'acquia-lift-report-negative',
+         ),
+       ),
+     );
+     $total_confident = 2; // @todo placeholder
+     $build['confidence'] = array(
+       '#type' => 'container',
+       '#theme' => 'acquia_lift_report_overview',
+       '#attributes' => array(
+         'id' => 'acquia-lift-overview-confidence',
+       ),
+       '#title' => t('Confidence'),
+       '#description' =>  $total_confident > 0 ? format_plural($total_confident, 'High confidence, 1 var.', 'High confidence, @count vars.') : t('Low confidence'),
+       '#attributes' => array(
+         'class' => array(
+           $total_confident > 0 ? 'acquia-lift-report-positive' : 'acquia-lift-report-negative',
+         ),
+       ),
+     );
     return $build;
   }
 
@@ -535,6 +684,34 @@ class AcquiaLiftAgent extends PersonalizeAgentBase implements AcquiaLiftAgentInt
   }
 
   /**
+   * Extracts the required overview data from the report data returned by
+   * Acquia Lift.
+   *
+   * @param $items
+   *   An array of items as returned from Acquia Lift.
+   * @param $date_start
+   *   Start date for reporting.
+   * @param date_end
+   *   End date for reporting.
+   * @return array
+   *   An associative array with information for today's and the total overview.
+   */
+  protected function extractOverviewReportData($items, $date_start, $date_end) {
+    $agent_data = $this->getData();
+    $report['decision_style'] = $agent_data['decision_style'];
+    $report['date_start']= $date_start;
+    $report['date_end'] = $date_end;
+    $report['total_shown'] = $items['totals']['sessions']['count'];
+    $report['total_goals'] = $items['totals']['goals']['count'];
+    $report['today_shown'] = $items['today']['sessionCount'];
+    $report['today_goals'] = $items['today']['goalCount'];
+    $report['total_lift'] = $items['today']['liftOverDefaultUsingGoalsToDate'];
+    $report['today_lift'] = $items['today']['liftOverDefaultUsingGoals'];
+    $report['total_variations'] = count($agent_data['decisions']);
+    return $report;
+  }
+
+  /**
    * Implements AcquiaLiftAgent::buildTargetingFeaturesReport().
    */
   public function buildTargetingFeaturesReport($date_start, $date_end, $decision_point) {
@@ -566,6 +743,10 @@ class AcquiaLiftAgent extends PersonalizeAgentBase implements AcquiaLiftAgentInt
     );
     return $build;
   }
+
+  /**
+   *
+   */
 
   /**
    * Extracts the required targeting report data from the items returned by Acquia Lift.

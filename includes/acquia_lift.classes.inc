@@ -335,6 +335,7 @@ class AcquiaLiftAPI implements PersonalizeLoggerAwareInterface {
     }
     else {
       $this->logger()->log(PersonalizeLogLevel::ERROR, $fail_msg, $vars);
+      throw new AcquiaLiftException($fail_msg);
     }
   }
 
@@ -358,6 +359,7 @@ class AcquiaLiftAPI implements PersonalizeLoggerAwareInterface {
     }
     else {
       $this->logger()->log(PersonalizeLogLevel::ERROR, $fail_msg, $vars);
+      throw new AcquiaLiftException($fail_msg);
     }
   }
 
@@ -383,6 +385,7 @@ class AcquiaLiftAPI implements PersonalizeLoggerAwareInterface {
     }
     else {
       $this->logger()->log(PersonalizeLogLevel::ERROR, $fail_msg, $vars);
+      throw new AcquiaLiftException($fail_msg);
     }
   }
 
@@ -411,6 +414,27 @@ class AcquiaLiftAPI implements PersonalizeLoggerAwareInterface {
     }
     else {
       $this->logger()->log(PersonalizeLogLevel::ERROR, $fail_msg, $vars);
+      throw new AcquiaLiftException($fail_msg);
+    }
+  }
+
+  /**
+   * Resets the data for an agent.
+   *
+   * @param $agent_name
+   */
+  public function resetAgentData($agent_name) {
+    $url = $this->generateEndpoint("/$agent_name/data");
+    $response = $this->httpClient()->delete($url);
+    $vars = array('agent' => $agent_name);
+    $success_msg = 'The data for Acquia Lift campaign {agent} was reset';
+    $fail_msg = 'Could not reset data for Acquia Lift campaign {agent}';
+    if ($response->code == 200) {
+      $this->logger()->log(PersonalizeLogLevel::INFO, $success_msg, $vars);
+    }
+    else {
+      $this->logger()->log(PersonalizeLogLevel::ERROR, $fail_msg, $vars);
+      throw new AcquiaLiftException($fail_msg);
     }
   }
 
@@ -431,6 +455,7 @@ class AcquiaLiftAPI implements PersonalizeLoggerAwareInterface {
     }
     else {
       $this->logger()->log(PersonalizeLogLevel::ERROR, $fail_msg, $vars);
+      throw new AcquiaLiftException($fail_msg);
     }
   }
 
@@ -454,6 +479,7 @@ class AcquiaLiftAPI implements PersonalizeLoggerAwareInterface {
     }
     else {
       $this->logger()->log(PersonalizeLogLevel::ERROR, $fail_msg, $vars);
+      throw new AcquiaLiftException($fail_msg);
     }
   }
 
@@ -479,6 +505,7 @@ class AcquiaLiftAPI implements PersonalizeLoggerAwareInterface {
     }
     else {
       $this->logger()->log(PersonalizeLogLevel::ERROR, $fail_msg, $vars);
+      throw new AcquiaLiftException($fail_msg);
     }
   }
 
@@ -507,6 +534,7 @@ class AcquiaLiftAPI implements PersonalizeLoggerAwareInterface {
     }
     else {
       $this->logger()->log(PersonalizeLogLevel::ERROR, $fail_msg, $vars);
+      throw new AcquiaLiftException($fail_msg);
     }
   }
 
@@ -532,6 +560,7 @@ class AcquiaLiftAPI implements PersonalizeLoggerAwareInterface {
     }
     else {
       $this->logger()->log(PersonalizeLogLevel::ERROR, $fail_msg, $vars);
+      throw new AcquiaLiftException($fail_msg);
     }
   }
 
@@ -710,6 +739,7 @@ class AcquiaLiftAPI implements PersonalizeLoggerAwareInterface {
     }
     else {
       $this->logger()->log(PersonalizeLogLevel::ERROR, $fail_msg, $vars);
+      throw new AcquiaLiftException($fail_msg);
     }
   }
 
@@ -731,6 +761,7 @@ class AcquiaLiftAPI implements PersonalizeLoggerAwareInterface {
     }
     else {
       $this->logger()->log(PersonalizeLogLevel::ERROR, $fail_msg, $vars);
+      throw new AcquiaLiftException($fail_msg);
     }
   }
 
@@ -865,7 +896,7 @@ class AcquiaLiftAPI implements PersonalizeLoggerAwareInterface {
     }
     else {
       $this->logger()->log(PersonalizeLogLevel::ERROR, $fail_msg, $vars);
-      throw new AcquiaLiftException("The mapping could not be saved.");
+      throw new AcquiaLiftException($fail_msg);
     }
   }
 

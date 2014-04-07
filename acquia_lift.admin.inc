@@ -172,7 +172,8 @@ function acquia_lift_report($form, &$form_state, $agent_data, $option_set) {
   }
   // If this agent is not currently enabled in Acquia Lift, there are no reports
   // to show.
-  if (!$agent->verify()) {
+  $errors = $agent->errors();
+  if (!empty($errors)) {
     return array(
       'no_report' => array(
         '#markup'=> t('This agent is not properly configured, no reports to show.')

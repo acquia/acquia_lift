@@ -40,8 +40,12 @@ class AcquiaLiftContext extends PersonalizeContextBase {
         // Only options with providesFeatures set to TRUE can be used for
         // automatic targeting.
         if (isset($option['providesFeatures']) && $option['providesFeatures']) {
-          $group = 'Acquia Lift'; // Default group for Acquia Lift features.
           if (isset($option['tags'])) {
+            if (in_array('Referer', $option['tags'])) {
+              // We don't want to include any of the Referer-related tags as we
+              // provide this functionality via the Personalize URL Context module.
+              continue;
+            }
             // Find the first category that exists in this option's tags
             // and use that as the group.
             foreach (array_keys($category_tags) as $tag) {
@@ -53,9 +57,11 @@ class AcquiaLiftContext extends PersonalizeContextBase {
           }
 
           $options[$option['code']] = array(
-            'name' => $option['name'],
-            'group' => $group,
+            'name' => $option['name']
           );
+          if (isset($group)) {
+            $options[$option['code']]['group'] = $group;
+          }
         }
       }
     }

@@ -823,9 +823,12 @@ class AcquiaLiftAPI implements PersonalizeLoggerAwareInterface {
         list($name, $value) = $separated;
         $name = trim($name);
         $value = trim($value);
+        $friendly_name = isset($feature['typeName']) ? $feature['typeName'] : $name;
+
         if (!isset($possible_values[$name])) {
           $possible_values[$name] = array(
             'mutex' => $mutex,
+            'friendly name' => $friendly_name,
             'values' => array(),
           );
         }

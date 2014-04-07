@@ -1449,18 +1449,22 @@ class AcquiaLiftTest extends DrupalUnitTestCase {
       array(
         'code' => 'first-mutex: Some Value',
         'name' => 'Some Friendly Name',
+        'typeName' => 'First Mutex'
       ),
       array(
         'code' => 'first-mutex: Other Value',
         'name' => 'Other Friendly Name',
+        'typeName' => 'First Mutex'
       ),
       array(
         'code' => 'first-non-mutex:: Some Nonmutex Value',
         'name' => 'Some Friendly Nonmutex Name',
+        'typeName' => 'First Non-Mutex'
       ),
       array(
         'code' => 'first-non-mutex:: Other Nonmutex Value',
         'name' => 'Other Friendly Nonmutex Name',
+        'typeName' => 'First Non-Mutex'
       ),
     );
 
@@ -1469,6 +1473,7 @@ class AcquiaLiftTest extends DrupalUnitTestCase {
     $expected = array(
       'first-mutex' => array(
         'mutex' => TRUE,
+        'friendly name' => 'First Mutex',
         'values' => array(
           'Some Value' => 'Some Friendly Name',
           'Other Value' => 'Other Friendly Name'
@@ -1476,6 +1481,7 @@ class AcquiaLiftTest extends DrupalUnitTestCase {
       ),
       'first-non-mutex' => array(
         'mutex' => FALSE,
+        'friendly name' => 'First Non-Mutex',
         'values' => array(
           'Some Nonmutex Value' => 'Some Friendly Nonmutex Name',
           'Other Nonmutex Value' => 'Other Friendly Nonmutex Name'
@@ -1493,18 +1499,22 @@ class AcquiaLiftTest extends DrupalUnitTestCase {
       array(
         'code' => 'first-mutex:: Some Value',
         'name' => 'Some Friendly Name',
+        'typeName' => 'First Mutex'
       ),
       array(
         'code' => 'first-mutex:: Other Value',
         'name' => 'Other Friendly Name',
+        'typeName' => 'First Mutex'
       ),
       array(
         'code' => 'first-non-mutex: Some Nonmutex Value',
         'name' => 'Some Friendly Nonmutex Name',
+        'typeName' => 'First Non-Mutex'
       ),
       array(
         'code' => 'first-non-mutex: Other Nonmutex Value',
         'name' => 'Other Friendly Nonmutex Name',
+        'typeName' => 'First Non-Mutex'
       ),
     );
 

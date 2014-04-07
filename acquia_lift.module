@@ -967,6 +967,58 @@ function acquia_lift_navbar() {
 function acquia_lift_form_personalize_agent_form_alter(&$form, &$form_state) {
   module_load_include('inc', 'acquia_lift', 'acquia_lift.ui');
   acquia_lift_chosenify_element($form['agent_form']['agent_fieldset']['visitor_context']);
+  // If we're editing an existing agent, add a "Reset data" button next to
+  // the Pause/Resume button.
+  if (isset($form['agent_form']['agent_fieldset']['header']['toggle_form'])) {
+    $subform = array(
+      '#prefix' => '<div id="personalize-acquia-lift-reset-form">',
+      '#suffix' => '</div>'
+    );
+    $subform['actions']['reset'] = array(
+      '#prefix' => '<div id="personalize-acquia-lift-reset">',
+      '#suffix' => '</div>',
+      '#type' => 'submit',
+      '#name' => 'reset_submit',
+      '#value' => t('Reset data'),
+      '#attributes' => array(
+        'class' => array('action-item-primary-active'),
+      ),
+      '#ajax' => array(
+        'callback' => 'personalize_acquiq_lift_ajax_callback',
+        'wrapper' => 'personalize-acquia-lift-reset-form',
+        'effect' => 'fade',
+      )
+    );
+  }
+  $subform['actions']['reset']['#submit'] = array('acquia_lift_reset_submit');
+  $form['agent_form']['agent_fieldset']['header']['reset_lift_agent'] = $subform;
+}
+
+/**
+ * Ajax callback for the "Reset data" button.
+ */
+function personalize_acquiq_lift_ajax_callback($form, $form_state) {
+  return $form['agent_form']['agent_fieldset']['header']['reset_lift_agent'];
+}
+
+/**
+ * Submit callback for the "Reset data" button.
+ */
+function acquia_lift_reset_submit($form, $form_state) {
+  acquia_lift_reset_agent($form_state['values']['agent']);
+}
+
+/**
+ * Resets the data for the specified agent.
+ */
+function acquia_lift_reset_agent($agent_name) {
+  try {
+    $api = AcquiaLiftAPI::getInstance(variable_get('acquia_lift_account_info', array()));
+    $api->resetAgentData($agent_name);
+  }
+  catch (Exception $e) {
+    drupal_set_message(t('The data for the specified agent could not be reset'), 'error');
+  }
 }
 
 /**

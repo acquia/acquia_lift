@@ -286,8 +286,7 @@ function acquia_lift_report($form, &$form_state, $agent_data, $option_set) {
 
   // Context report section.
   $context_select = $agent->buildReportContextSelection($date_start_report, $date_end_report, $decision_point, 'context');
-  acquia_lift_chosenify_element($context_select, 'half');
-  $context_select['#attributes']['class'][] = 'acquia-lift-report-context-select';
+  acquia_lift_chosenify_element($context_select, array('acquia-lift-chosen-select-half', 'acquia-lift-report-context-select'));
   $form['context_report'] = array(
     '#tree' => TRUE,
     'title' => array(
@@ -323,8 +322,7 @@ function acquia_lift_report($form, &$form_state, $agent_data, $option_set) {
 
   // Stability report section.
   $context_select = $agent->buildReportContextSelection($date_start_report, $date_end_report, $decision_point, 'stability');
-  acquia_lift_chosenify_element($context_select, 'half');
-  $context_select['#attributes']['class'][] = 'acquia-lift-report-context-select';
+  acquia_lift_chosenify_element($context_select, array('acquia-lift-chosen-select-half', 'acquia-lift-report-context-select'));
   $form['stability_report'] = array(
     '#tree' => TRUE,
     'title' => array(

@@ -1024,7 +1024,18 @@ class AcquiaLiftAgent extends PersonalizeAgentBase implements AcquiaLiftAgentInt
       'features' => array(),
       'goal_value_differential' => FALSE,
     );
+    $last_group = '';
+    $counter = 1;
     foreach ($items as $i => $item) {
+      // Check to see if we are in a new grouping of choices.
+      $check = $item['feature'] . '|' . $item['point'];
+      if ($last_group !== $check) {
+        $last_group = $check;
+        $counter = 1;
+      }
+      else {
+        $counter++;
+      }
       $choice = $option_id = $item['choice'];
       $choice_id = $choice;
       if (strpos($choice, ':') !== FALSE) {
@@ -1034,7 +1045,7 @@ class AcquiaLiftAgent extends PersonalizeAgentBase implements AcquiaLiftAgentInt
         }
       }
       $data['features'][$item['feature']][$choice] = array(
-        'counter' => personalize_generate_variation_number($choice_id),
+        'counter' => $counter,
         'choice_id' => $choice_id,
         'raw_label' => $option_id,
         'decisions' => $item['totals']['count'],

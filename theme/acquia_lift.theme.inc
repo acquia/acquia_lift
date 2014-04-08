@@ -171,6 +171,61 @@ function theme_acquia_lift_percentage($variables) {
 }
 
 /**
+ * Theme function to show a percentage difference as a label.
+ *
+ * The percentage is shown as a line filled to the set percentage with optional
+ * labels for the percentage indicated (and rest of percentage).
+ *
+ * @param $variables
+ *   The theme variables that will include:
+ *   - percent_label: The label for the main percentage selected
+ *   - rest_label: The label for the rest of the percentage selected
+ *   - percent: The required percentage selected as a float.
+ */
+function theme_acquia_lift_percentage_label($variables) {
+  $percent = round($variables['percent'], 2);
+  $rest_percent = 100 - $percent;
+
+  $output = '<div class="acquia-lift-distribution">';
+  if (!empty($variables['percent_label'])) {
+    $output .= '<div class="distribution-set">';
+    $output .= $variables['percent_label'] . ' (' . $variables['percent'] . '%)';
+    $output .= '</div>';
+  }
+  if (!empty($variables['rest_label'])) {
+    $output .= '<div class="distribution-rest">';
+    $output .= $variables['rest_label'] . ' (' . $rest_percent . '%)';
+    $output .= '</div>';
+  }
+  $output .= '<div class="distribution-graphic">';
+  $output .= '<div class="fill" data-acquia-lift-fill="' . $percent . '"></div>';
+  $output .= '</div>';
+  $output .= '</div>';
+  return $output;
+}
+
+/**
+ * Theme function for generating the mark-up to display a high-low value.
+ *
+ * @param $variables
+ *   The theme variables that will include
+ *   - value: The mean value to display
+ *   - high: The high value to display
+ *   - low: The low value to display
+ */
+function theme_acquia_lift_high_low($variables) {
+  $high = is_numeric($variables['high']) ? $variables['high'] : 0;
+  $low = is_numeric($variables['low']) ? $variables['low'] : 0;
+  $output = '<div class="acquia-lift-hilo-estimate">';
+  $output .= '<div class="acquia-lift-hilo-background">';
+  $output .= '<div class="acquia-lift-hilo-bounds" data-acquia-lift-high="' . $high . '" data-acquia-lift-low="' . $low . '">';
+  $output .= '<div class="acquia-lift-estimate">';
+  $output .= '<span class="acquia-lift-badge">' . $variables['value'] . '</span>';
+  $output .= '</div></div></div></div>';
+  return $output;
+}
+
+/**
  * Theme function for formatting a report overview item
  */
 function theme_acquia_lift_report_overview($variables) {

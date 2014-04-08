@@ -69,15 +69,21 @@ function acquia_lift_build_page(&$page) {
  *
  * @param array $element
  *   An array representing a multi-select form element.
+ * @param string $size
+ *   The size of the chosen element to create: one of 'full', 'half'.
  */
-function acquia_lift_chosenify_element(&$element) {
+function acquia_lift_chosenify_element(&$element, $size = 'full') {
   $chosen_path = libraries_get_path('chosen');
+  $class = array('acquia-lift-chosen-select');
+  if ($size === 'half') {
+    $class[] = 'acquia-lift-chosen-select-half';
+  }
   $options = array(
     'scope' => 'footer',
     'defer' => TRUE,
   );
   $element['#attributes'] = array(
-    'class' => array('acquia-lift-chosen-select'),
+    'class' => $class,
     'data-placeholder' => t('Choose a context...'),
   );
   $element['#attached'] = array(

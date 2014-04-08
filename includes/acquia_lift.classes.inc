@@ -976,6 +976,10 @@ class AcquiaLiftAPI implements PersonalizeLoggerAwareInterface {
    *   a single day.
    * @param string $point
    *   An optional decision point to limit the report to.
+   * @param array $features
+   *   An array of features to include data for in the report.
+   *   The default "none" features option is used by default.
+   *   Passing "all" will return all features for the test.
    * @return array
    *   The report as an associative array with the structure as defined at
    *   https://console.lift.acquia.com/docs/abc/reporting-api under "Option
@@ -988,7 +992,12 @@ class AcquiaLiftAPI implements PersonalizeLoggerAwareInterface {
    */
   public function getConfidenceReport($agent_name, $date_start = NULL, $date_end = NULL, $point = NULL, $features = NULL) {
     $date_str = $this->getDateString($date_start, $date_end);
-    $features = $features === NULL ? "(none)" : implode(',', $features);
+    if ($features === 'all') {
+      $features = '';
+    }
+    else {
+      $features = $features === NULL ? "(none)" : implode(',', $features);
+    }
     $url = $this->generateEndpoint("/{$agent_name}/report/confidence{$date_str}?features=$features");
     $headers = array('Accept' => 'application/json');
     if ($point !== NULL) {

@@ -188,11 +188,14 @@ function acquia_lift_report($form, &$form_state, $agent_data, $option_set) {
     '#attached' => array(
       'css' => array(
         drupal_get_path('module', 'acquia_lift') . '/css/acquia_lift.admin.css',
-      )
+      ),
+      'js' => array(
+        drupal_get_path('module', 'acquia_lift') . '/js/acquia_lift.admin.js',
+      ),
     ),
   );
 
-  $form['filters'] = array(
+  $form['report_filters'] = array(
     '#type' => 'container',
     '#tree' => FALSE,
     '#attributes' => array(
@@ -214,9 +217,9 @@ function acquia_lift_report($form, &$form_state, $agent_data, $option_set) {
   else {
     $decision_point = !empty($option_set) ? $option_set->decision_name : key($decisions);
   }
-  $form['filters']['decision_point'] = acquia_lift_report_decision_point_dropdown($decision_options, $decision_point);
+  $form['report_filters']['decision_point'] = acquia_lift_report_decision_point_dropdown($decision_options, $decision_point);
 
-  $form['filters']['date_filters'] = acquia_lift_report_date_filter(isset($form_state['values']['date_filters']) ? $form_state['values']['date_filters'] : 'all');
+  $form['report_filters']['date_filters'] = acquia_lift_report_date_filter(isset($form_state['values']['date_filters']) ? $form_state['values']['date_filters'] : 'all');
 
   // Default to showing the complete history of the campaign.
   $date_start_report = date('Y-m-d', $agent_data->started);
@@ -226,115 +229,168 @@ function acquia_lift_report($form, &$form_state, $agent_data, $option_set) {
     $date_end_report = NULL;
   }
 
+  // Generate mark-up for adaptive style report labels.
+  $report_title_additional = '';
+  if ($data['decision_style'] === 'adaptive') {
+    $report_title_additional = theme('acquia_lift_percentage_label', array(
+      'percent_label' => t('Random'),
+      'rest_label' => 'Personalized',
+      'percent' => $data['explore_rate']
+    ));
+  }
+
   // Overview report section.
   $form['overview_report'] = array(
     'overview_report_title' => array(
       '#markup' => '<h2>Overview</h2>',
     ),
     '#theme_wrappers' => array('container'),
-    '#id' => 'acquia-lift-overview-report',
     '#attributes' => array(
-      'class' => array('clearfix'),
+      'id' => 'acquia-lift-overview-report',
+      'class' => array('acquia-lift-report-section', 'clearfix'),
     ),
   );
 
-  // Confidence report section.
-  $form['confidence_report'] = array(
+  // Experiment details section.
+  $form['experiment_report'] = array(
     '#tree' => TRUE,
-    'confidence_report_title' => array(
-      '#markup' => '<h2>Lift Report</h2>',
+    'title' => array(
+      '#type' => 'container',
+      '#attributes' => array(
+        'class' => array('acquia-lift-report-section-title'),
+      ),
+      'experiment_report_title' => array(
+        '#markup' => '<h2>Experiment</h2>',
+      ),
     ),
     '#theme_wrappers' => array('container'),
-    '#id' => 'acquia-lift-confidence-report',
-  );
-  // Targeting report section.
-  $form['targeting_report'] = array(
-    '#tree' => TRUE,
-    'targeting_report_title' => array(
-      '#markup' => '<h2>Context relevance</h2>',
+    '#attributes' => array(
+      'id' => 'acquia-lift-experiment-report',
+      'class' => array('acquia-lift-report-section'),
     ),
-    '#theme_wrappers' => array('container'),
-    '#id' => 'acquia-lift-targeting-report',
   );
+  if (!empty($report_title_additional)) {
+    $form['experiment_report']['title']['experiment_report_subtitle'] = array(
+      '#markup' => 'random group',
+    );
+    $form['experiment_report']['experiment_report_additional'] = array(
+      '#type' => 'container',
+      '#attributes' => array(
+        'class' => array('acquia-lift-report-controls'),
+      ),
+      'distribution' => array(
+        '#markup' => $report_title_additional,
+      )
+    );
+  }
 
-  $overview_report = $agent->buildOverviewReport($date_start_report, $date_end_report, (isset($form_state['values']['date_filter']) && $form_state['values']['date_filter'] === 'today'));
+  // Context report section.
+  $context_select = $agent->buildReportContextSelection($date_start_report, $date_end_report, $decision_point, 'context');
+  acquia_lift_chosenify_element($context_select, 'half');
+  $context_select['#attributes']['class'][] = 'acquia-lift-report-context-select';
+  $form['context_report'] = array(
+    '#tree' => TRUE,
+    'title' => array(
+      '#type' => 'container',
+      '#attributes' => array(
+        'class' => array('acquia-lift-report-section-title'),
+      ),
+      'context_report_title' => array(
+        '#markup' => '<h2>Context</h2>',
+      ),
+    ),
+    '#theme_wrappers' => array('container'),
+    '#attributes' => array(
+      'id' => 'acquia-lift-context-report',
+      'class' => array('acquia-lift-report-section'),
+    )
+  );
+  if (!empty($report_title_additional)) {
+    $form['context_report']['title']['context_report_subtitle'] = array(
+      '#markup' => 'random and personalized groups',
+    );
+    $form['context_report']['context_report_additional'] = array(
+      '#type' => 'container',
+      '#attributes' => array(
+        'class' => array('acquia-lift-report-controls', 'clearfix'),
+      ),
+      'distribution' => array(
+        '#markup' => $report_title_additional,
+      ),
+    );
+  }
+  $form['context_report']['context_report_additional']['context_report_context'] = $context_select;
+
+  // Stability report section.
+  $context_select = $agent->buildReportContextSelection($date_start_report, $date_end_report, $decision_point, 'stability');
+  acquia_lift_chosenify_element($context_select, 'half');
+  $context_select['#attributes']['class'][] = 'acquia-lift-report-context-select';
+  $form['stability_report'] = array(
+    '#tree' => TRUE,
+    'title' => array(
+      '#type' => 'container',
+      '#attributes' => array(
+        'class' => array('acquia-lift-report-section-title'),
+      ),
+      'stability_report_title' => array(
+        '#markup' => '<h2>Stability</h2>',
+      ),
+    ),
+    '#theme_wrappers' => array('container'),
+    '#attributes' => array(
+      'id' => 'acquia-lift-stability-report',
+      'class' => array('acquia-lift-report-section'),
+    ),
+  );
+  if (!empty($report_title_additional)) {
+    $form['stability_report']['title']['stability_report_subtitle'] = array(
+      '#markup' => 'random and personalized groups',
+    );
+    $form['stability_report']['stability_report_additional'] = array(
+      '#type' => 'container',
+      '#attributes' => array(
+        'class' => array('acquia-lift-report-controls'),
+      ),
+      'distribution' => array(
+        '#markup' => $report_title_additional,
+      ),
+    );
+  }
+  $form['stability_report']['stability_report_additional']['stability_report_context'] = $context_select;
+
+  $overview_report = $agent->buildOverviewReport($date_start_report, $date_end_report, $agent_data->started, $decision_point);
   $form['overview_report']['report'] = array(
     '#markup' => drupal_render($overview_report),
     '#theme_wrappers' => array('container'),
     '#id' => 'acquia-lift-overview-report-data',
   );
 
-  // Features dropdown for confidence report.
-  $context_values = array();
-  try {
-    // Get the possible feature values to filter by.
-    $result = AcquiaLiftAPI::getInstance(variable_get('acquia_lift_account_info', array()))->getPotentialTargetingValues($agent_data->machine_name);
-    if (isset($result['data']['potential']['features']) && !empty($result['data']['potential']['features'])) {
-      foreach ($result['data']['potential']['features'] as $feature) {
-        $context_values[$feature['code']] = $feature['name'];
-      }
-    }
-  }
-  catch (AcquiaLiftException $e) {
-    drupal_set_message($e->getMessage(), 'error');
-  }
-  // Context value filter.
-  $selected_value = isset($form_state['values']['confidence_report']['feature_links']) ? $form_state['values']['confidence_report']['feature_links'] : key($context_values);
-  $form['confidence_report']['feature_links'] = array(
-    '#title' => t('Filter by visitor context: '),
-    '#type' => 'select',
-    '#options' => $context_values,
-    '#default_value' => $selected_value,
-    '#ajax' => array(
-      'callback' => 'acquia_lift_report_ajax_callback',
-      'wrapper' => 'acquia-lift-confidence-report',
-    ),
-    '#return_element' => 'confidence_report',
-  );
-  // Get the confidence report.
-  $confidence_report = $agent->buildConfidenceReport($date_start_report, $date_end_report, $decision_point, $selected_value);
-  $form['confidence_report']['report'] = array(
-    '#markup' => drupal_render($confidence_report),
+  $experiment_report = $agent->buildExperimentReport($date_start_report, $date_end_report, $decision_point);
+  $form['experiment_report']['report'] = array(
+    '#markup' => drupal_render($experiment_report),
     '#theme_wrappers' => array('container'),
-    '#id' => 'acquia-lift-confidence-report-data',
+    '#id' => 'acquia-lift-experiment-report-data',
   );
 
-  // Decision point dropdown for targeting report.
-  if (isset($form_state['values']['targeting_report']['decision_point'])) {
-    $decision_point_targeting_report = $form_state['values']['targeting_report']['decision_point'];
-  }
-  else {
-    $decision_point_targeting_report = !empty($option_set) ? $option_set->decision_name : key($decisions);
-  }
-  $form['targeting_report']['decision_point'] = acquia_lift_report_decision_point_dropdown('targeting', $decision_options, $decision_point_targeting_report);
-
-  // Date buttons for targeting report.
-  $form['targeting_report']['date_filters'] = array(
-    '#prefix' => '<div class="acquia-lift-report-date-filters">',
-    '#suffix' => '</div>',
-  );
-  $today_only_targeting = FALSE;
-  if (isset($form_state['targeting_report_start_date'])) {
-    if ($form_state['targeting_report_start_date'] == 'today') {
-      $today_only_targeting = TRUE;
-      $date_start_targeting = date('Y-m-d');
-      $date_end_targeting = NULL;
-    }
-  }
-  $form['targeting_report']['date_all'] = acquia_lift_report_date_filter_button(t('Complete history'), 'all', 'targeting', !$today_only_targeting);
-  $form['targeting_report']['date_today'] = acquia_lift_report_date_filter_button(t('Today only'), 'today', 'targeting', $today_only_targeting);
-
-  // Get the targeting report.
-  $targeting_report = $agent->buildTargetingFeaturesReport($date_start_report, $date_end_report, $decision_point);
-  $form['targeting_report']['report'] = array(
-    '#markup' => drupal_render($targeting_report),
+  $context_report = $agent->buildContextReport($date_start_report, $date_end_report, $decision_point);
+  $form['context_report']['report'] = array(
+    '#markup' => drupal_render($context_report),
     '#theme_wrappers' => array('container'),
-    '#id' => 'acquia-lift-targeting-report-data',
+    '#id' => 'acquia-lift-context-report-data',
   );
+
+  $stability_report = $agent->buildStabilityReport($date_start_report, $date_end_report, $decision_point);
+  $form['stability_report']['report'] = array(
+    '#markup' => drupal_render($stability_report),
+    '#theme_wrappers' => array('container'),
+    '#id' => 'acquia-lift-stability-report-data',
+  );
+
   // We have to specify the include file so as not to lose it during rendering from ajax.
   // @see drupal_retrieve_form():734
   $form_state['build_info']['files'] = array(
     drupal_get_path('module', 'acquia_lift') . '/acquia_lift.admin.inc',
+    drupal_get_path('module', 'acquia_lift') . '/acquia_lift.ui.inc',
   );
   return $form;
 }
@@ -359,7 +415,7 @@ function acquia_lift_report_date_filter($selected = 'all') {
       'callback' => "acquia_lift_report_ajax_callback",
       'wrapper' => "acquia-lift-reports",
     ),
-    '#title_display' => 'invisible',
+    '#title' => '&nbsp;',
   );
 }
 

@@ -42,21 +42,8 @@ interface AcquiaLiftAgentInterface {
   public function syncFixedTargeting($option_sets);
 
   /**
-   * Returns a render array representing the confidence report for the given dates/features.
-   *
-   * @param $date_start
-   *   The start date of the report
-   * @param $date_end
-   *   The end date of the report
-   * @param null $feature
-   *   A feature to filter by or NULL to show data across all features.
-   * @return array
-   *   A render array representing the confidence report
-   */
-  public function buildConfidenceReport($date_start, $date_end, $decision_point, $feature = NULL);
-
-  /**
-   * Returns a render array representing the targeting report for the given dates.
+   * Returns a render array representing the stability report for targeting
+   * features for the given dates.
    *
    * @param $date_start
    *   The start date of the report
@@ -65,7 +52,67 @@ interface AcquiaLiftAgentInterface {
    * @return array
    *   A render array representing the targeting report
    */
-  public function buildTargetingFeaturesReport($date_start, $date_end, $decision_point);
+  public function buildStabilityReport($date_start, $date_end, $decision_point);
+
+  /**
+   * Returns a render array representing the overview report for the given dates.
+   *
+   * @param $date_start
+   *   The start date of the report
+   * @param $date_end
+   *   The end date of the report
+   * @param $agent_start_date
+   *   The starting date for the agent.
+   * @param $decision_point
+   *   The decision point to filter report data.
+   * @return array
+   *   A render array representing the overview report.
+   */
+  public function buildOverviewReport($date_start, $date_end, $agent_start_date, $decision_point);
+
+  /**
+   * Returns a render array for the content set variation experiment report.
+   *
+   * @param $date_start
+   *   The start date of the report.
+   * @param $date_end
+   *   The end date of hte report.
+   * @param $decision_point
+   *   The decision point to use to filter report data.
+   * @return array
+   *   A render array representing the variation set report.
+   */
+  public function buildExperimentReport($date_start, $date_end, $decision_point);
+
+  /**
+   * Returns a render array representing the context report.
+   *
+   * @param $date_start
+   *   The start date of the report.
+   * @param $date_end
+   *   The end date of hte report.
+   * @param $decision_point
+   *   The decision point to use to filter report data.
+   * @return array
+   *   A render array representing the variation set report.
+   */
+  public function buildContextReport($date_start, $date_end, $decision_point);
+
+  /**
+   * Returns a form input array for the context selector.
+   *
+   * @param $date_start
+   *   The start date of the report.
+   * @param $date_end
+   *   The end date of hte report.
+   * @param $decision_point
+   *   The decision point to use to filter report data.
+   * @param array @selected
+   *   The selected context codes.
+   * @return array
+   *   A render array representing the variation set report.
+   */
+  public function buildReportContextSelection($date_start, $date_end, $decision_point);
 
   /**
    * Organizes an array of option sets into decision points.
@@ -82,6 +129,26 @@ interface AcquiaLiftAgentInterface {
 }
 
 class AcquiaLiftAgent extends PersonalizeAgentBase implements AcquiaLiftAgentInterface, PersonalizeExplicitTargetingInterface, PersonalizeAgentReportInterface {
+
+  /**
+   * The threshold to use above which lift percentage will be positively noted.
+   */
+  const LIFT_THRESHHOLD = 0;
+
+  /**
+   * The threshold to use above which stability will be positively noted.
+   */
+  const STABILITY_THRESHOLD = 25;
+
+  /**
+   * The value to show when report data is not applicable.
+   */
+  const DATA_NA = '&mdash;';
+
+  /**
+   * The value representing no features applied to an experiment.
+   */
+  const NO_FEATURES = '(none)';
 
   /**
    * An object containing the agent data.
@@ -385,64 +452,499 @@ class AcquiaLiftAgent extends PersonalizeAgentBase implements AcquiaLiftAgentInt
   }
 
   /**
-   * Implements AcquiaLiftAgent::buildConfidenceReport().
+   * Loads all of the data necessary to generate the reports for the agent.
+   *
+   * @param $date_start
+   *   The starting date for report data in Y-m-d format.
+   * @param $date_end
+   *   The ending date for report data in Y-m-d format.
+   * $param $agent_date_start
+   *   The starting date for the agent.
+   * @param $decision_point
+   *   (Optional) decision point name to limit results.
+   * @return array
+   *   The reporting data for the date range as an array with keys for
+   *   - status: The general agent status report data
+   *   - confidence: The confidence report data
+   *   - targeting: The targeting report data
    */
-  public function buildConfidenceReport($date_start, $date_end, $decision_point, $feature = NULL) {
-    $build = array();
-    $confidenceReport = $this->liftAPI->getConfidenceReport($this->machineName, $date_start, $date_end, $decision_point, array($feature));
-    $data = $this->extractConfidenceReportData($confidenceReport['data']['items']);
+  protected function loadReportData($date_start, $date_end, $decision_point = NULL) {
+    $report_data = &drupal_static(__FUNCTION__);
+    $key = 'S' . $date_start . 'E' . $date_end;
+    $machine_name = $this->machineName;
 
-    $column_headings = array(
-      'choice_id' => t('Variation'),
-      'decisions' => t('Decisions'),
-      'goals' => t('Goals'),
-      'value' => t('Value'),
-      'goals_per_decision' => t('Goals / visitor'),
-      'value_per_decision' => t('Value / visitor'),
-      'estimated_value' => t('Estimated Value'),
+    if (!isset($report_data[$key])) {
+      $today_only = $date_start === date('Y-m-d') && is_null($date_end);
+
+      // Get all context filtering values
+      try {
+        $contextFilters = $this->liftAPI->getPotentialTargetingValues($machine_name);
+        $report_data[$key]['potential_context'] = $this->extractPotentialTargetingValues($contextFilters['data']);
+      }
+      catch (Exception $e) {
+        $report_data[$key]['potential_context'] = FALSE;
+      }
+
+      // Agent status report data.
+      try {
+        if ($today_only) {
+          $num_days = 1;
+        }
+        else {
+          $interval = date_diff(date_create($date_start), date_create($date_end));
+          $num_days = $interval->days;
+        }
+        $overviewReport = $this->liftAPI->getAgentStatusReport(array($machine_name), $num_days);
+        $report_data[$key]['status'] = $this->extractOverviewReportData($overviewReport['data'][$machine_name]);
+      }
+      catch (AcquiaLiftException $e) {
+        $report_data[$key]['status'] = FALSE;
+      }
+
+      // Confidence report data.
+      try {
+        $confidenceReport = $this->liftAPI->getConfidenceReport($machine_name, $date_start, $date_end, $decision_point, "all");
+        $report_data[$key]['confidence'] = $this->extractConfidenceReportData($confidenceReport['data']['items']);
+      }
+      catch (AcquiaLiftException $e) {
+        $report_data[$key]['confidence'] = FALSE;
+      }
+
+      // Targeting report data.
+      try {
+        $targetingReport = $this->liftAPI->getTargetingImpactReport($machine_name, $date_start, $date_end, $decision_point);
+        $report_data[$key]['targeting'] = $this->extractTargetingReportData($targetingReport['data']['items']);
+      }
+      catch (AcquiaLiftException $e) {
+        $report_data[$key]['targeting'] = FALSE;
+      }
+    }
+    return $report_data[$key];
+  }
+
+  /**
+   * Implements AcquiaLiftAgent::buildOverviewReport().
+   */
+  public function buildOverviewReport($date_start, $date_end, $agent_start_date, $decision_point) {
+    $report_data = $this->loadReportData($date_start, $date_end, $decision_point);
+    $report = $report_data['status'];
+    if ($report === FALSE) {
+      return array();
+    }
+
+    // Determine the life of the agent as an interval.
+    $today_only = ($date_start == date('Y-m-d'));
+    $interval_start = new DateTime();
+    $interval_start->setTimestamp($agent_start_date);
+    $interval = date_diff($interval_start, date_create());
+
+    // Determine overall confidence based on confidence in choices.
+    $confidence = $report_data['confidence'];
+    $total_confident = 0;
+    if (is_array($confidence)) {
+      foreach($confidence['features'][self::NO_FEATURES] as $choice) {
+        if ($choice['significant'] == TRUE) {
+          $total_confident++;
+        }
+      }
+    }
+
+    // Create report renderable.
+    $build = array();
+    $build['test_type'] = array(
+      '#type' => 'container',
+      '#theme' => 'acquia_lift_report_overview',
+      '#title' => $report['decision_style'] === 'adaptive' ? t('Auto-personalize') : 'A/B',
+      '#description' => t('test type'),
+      '#attributes' => array(
+        'id' => 'acquia-lift-overview-type',
+      )
+    );
+    $build['total_running'] = array(
+      '#type' => 'container',
+      '#theme' => 'acquia_lift_report_overview',
+      '#attributes' => array(
+        'id' => 'acquia-lift-overview-running',
+      ),
+      '#title' => isset($interval) ? $interval->format('%mm, %dd') : '1d',
+      '#description' => t('total time running'),
+    );
+    $shown = $today_only ? $report['today_shown'] : $report['total_shown'];
+    $build['shown'] = array(
+      '#type' => 'container',
+      '#theme' => 'acquia_lift_report_overview',
+      '#attributes' => array(
+        'id' => 'acquia-lift-overview-shown',
+      ),
+      '#title' => $this->formatReportNumber($shown),
+      '#description' => format_plural($shown, 'time shown', 'times shown'),
+    );
+    $total_goals = $today_only ? $report['today_goals'] : $report['total_goals'];
+    $build['goals'] = array(
+      '#type' => 'container',
+      '#theme' => 'acquia_lift_report_overview',
+      '#attributes' => array(
+        'id' => 'acquia-lift-overview-goals',
+      ),
+      '#title' => $this->formatReportNumber($total_goals),
+      '#description' => t('goals met'),
+    );
+    if ($total_goals > 0) {
+      $build['goals']['#attributes']['class'] = array('acquia-lift-report-positive');
+    }
+    $lift = $today_only ? $report['today_lift'] : $report['total_lift'];
+    $build['lift'] = array(
+      '#type' => 'container',
+      '#theme' => 'acquia_lift_report_overview',
+      '#attributes' => array(
+        'id' => 'acquia-lift-overview-lift',
+      ),
+      '#title' => $this->formatReportPercentage($lift),
+      '#description' => t('Predicted lift/control'),
+      '#attributes' => array(
+        'class' => array(
+          $lift > self::LIFT_THRESHHOLD && $total_confident > 0 ? 'acquia-lift-report-positive' : 'acquia-lift-report-negative',
+        ),
+      ),
+    );
+    $build['confidence'] = array(
+      '#type' => 'container',
+      '#theme' => 'acquia_lift_report_overview',
+      '#attributes' => array(
+        'id' => 'acquia-lift-overview-confidence',
+      ),
+      '#title' => t('Confidence'),
+      '#description' =>  $total_confident > 0 ? format_plural($total_confident, 'High confidence, 1 var.', 'High confidence, @count vars.') : t('Low confidence'),
+      '#attributes' => array(
+        'class' => array(
+          $total_confident > 0 ? 'acquia-lift-report-positive' : 'acquia-lift-report-negative',
+        ),
+      ),
+    );
+    return $build;
+  }
+
+  /**
+   * Implements AcquiaLiftAgent::buildExperimentReport().
+   */
+  public function buildExperimentReport($date_start, $date_end, $decision_point) {
+    $build = array();
+    $report_data = $this->loadReportData($date_start, $date_end, $decision_point);
+    if ($report_data['confidence'] === FALSE) {
+      return $build;
+    }
+
+    // Determine possible goal value for entire campaign
+    $goals = personalize_goal_load_by_conditions(array('agent' => $this->machineName));
+    $total_goal_value = 0;
+    foreach($goals as $goal) {
+      $total_goal_value += $goal['value'];
+    }
+
+    $set_data = $report_data['confidence'];
+    $fields = array(
+      'counter' => t('Var.'),
+      'choice_id' => t('Name'),
+      'decisions' => t('Shown'),
+      'estimated_value' => t('Predicted goal value'),
       'lift_default' => t('Lift over default'),
       'lift_random' => t('Lift over random'),
-      'confidence' => t('Confidence')
+      'confidence' => t('Confidence'),
     );
+
+    // Columns that should not be sortable.
+    $exclude_sort = array('choice_id', 'confidence');
+
     // Not all of these columns will be shown, depending on certain factors.
     $exclude_columns = array();
-    if (isset($this->data['control_rate']) && (int) $this->data['control_rate'] == 0) {
+    if ((isset($this->data['control_rate']) && (int) $this->data['control_rate'] === 0)) {
       $exclude_columns[] = 'lift_default';
     }
-    if (!$data['goal_value_differential']) {
-      $exclude_columns = array_merge($exclude_columns, array(
-        'value',
-        'value_per_decision',
-      ));
-    }
 
-    // Build the header and rows.
-    $header = $rows = array();
-    foreach ($column_headings as $key => $heading) {
-      if (in_array($key, $exclude_columns)) {
+    // Generate the headers.
+    foreach ($fields as $field_name => $display) {
+      if (in_array($field_name, $exclude_columns)) {
         continue;
       }
-      $header[] = $heading;
+      if (in_array($field_name, $exclude_sort)) {
+        $header[] = $display;
+      }
+      else {
+        // Handles displaying the sortable columns in standard Drupal theme.
+        $header[] = array(
+          'data' => $display,
+          //'field' => $field_name,
+        );
+      }
     }
-    foreach ($data['choices'] as $choice) {
+
+    // Generate the table data.
+    $rows = array();
+    foreach ($set_data['features'][self::NO_FEATURES] as $choice) {
       $row = array();
-      foreach ($column_headings as $key => $heading) {
-        if (in_array($key, $exclude_columns)) {
+      foreach ($fields as $field_name => $display) {
+        if (in_array($field_name, $exclude_columns)) {
           continue;
         }
-        $row[] = $choice[$key];
+        switch ($field_name) {
+          case 'confidence':
+            $row[] = array(
+              'data' => $this->formatReportNumber($choice[$field_name]),
+              'class' => $this->getGraphLevelClass($choice[$field_name]/100),
+            );
+            break;
+          case 'decisions':
+            $row[] = format_plural($choice[$field_name], '1 time', '@count times');
+            break;
+          case 'lift_default':
+          case 'lift_random':
+            $row[] = array(
+              'data' => $this->formatReportNumber($choice[$field_name], FALSE),
+              'class' => $choice[$field_name] > self::LIFT_THRESHHOLD ? array('acquia-lift-report-positive') : array('acquia-lift-report-negative'),
+            );
+            break;
+          case 'goals_per_decision':
+          case 'value_per_decision':
+            $row[] = $this->formatReportNumber($choice[$field_name], FALSE);
+            break;
+          case 'estimated_value': {
+            /*
+            $row[] = theme('acquia_lift_high_low', array(
+              'high' => $choice['estimated_lower'],
+              'low' => $choice['estimated_lower'],
+              'value' => $this->formatReportNumber($choice['estimated_value'], TRUE, 4),
+            ));
+            */
+            $row[] = $this->formatReportNumber($choice['estimated_value'], TRUE, 4);
+            break;
+          }
+          default:
+            $row[] = $choice[$field_name];
+        }
       }
-      $rows[] = $row;
+      if ($choice['control'] === TRUE) {
+        $rows[] = array(
+          'data' => $row,
+          'class' => array('acquia-lift-report-control'),
+          'no_striping' => TRUE,
+        );
+      }
+      else {
+        $rows[] = $row;
+      }
+    }
+    // Add the final row to display the total goal value
+    $rows[] = array(
+      'data' => array(
+        '',
+        '',
+        '',
+        array (
+          'data' => t('Out of a possible @goal_value', array('@goal_value' => $total_goal_value)),
+          'class' => array('acquia-lift-experiment-goal-total'),
+        ),
+        '',
+        '',
+        '',
+      ),
+      'class' => array('acquia-lift-experiment-footer-row'),
+      'no_striping' => TRUE,
+    );
+    $build['content'] = array(
+      '#theme' => 'table',
+      '#header' => $header,
+      '#rows' => $rows,
+    );
+    return $build;
+  }
+
+  /**
+   * Implements AcquiaLiftAgent::buildContextReport().
+   */
+  public function buildContextReport($date_start, $date_end, $decision_point) {
+    $build = array();
+    $report_data = $this->loadReportData($date_start, $date_end, $decision_point);
+
+    if ($report_data['confidence'] === FALSE) {
+      return array();
+    }
+    $header = array(
+      array(
+        'data' => t('Var.'),
+        //'field' => 'counter',
+      ),
+      t('Name'),
+      array(
+        'data' => t('Context'),
+        //'field' => 'feature',
+        //'sort' => 'asc',
+      ),
+      array(
+        'data' => t('Shown'),
+        //'field' => 'decisions',
+      ),
+      array(
+        'data' => t('Lift/control'),
+        //'field' => 'lift_default',
+      ),
+      array(
+        'data' => t('Lift/random'),
+        //'field' => 'lift_random'
+      )
+    );
+    $rows = array();
+    foreach($report_data['confidence']['features'] as $feature_string => $feature) {
+      // Get the user-friendly feature label from the possible contextual values.
+      $feature_label = $feature_string;
+      if (isset($report_data['potential_context'][$feature_string])) {
+        $feature_label = $report_data['potential_context'][$feature_string]['label'];
+      }
+
+      // This report only shows features that can be targeted.
+      if (!isset($report_data['targeting'][$feature_string])) {
+        continue;
+      }
+
+      // Get the data from the targeting report for this feature.
+      $targeting_data = $report_data['targeting'][$feature_string];
+
+      // Don't show system-defined features.
+      if ($targeting_data['system'] === TRUE) {
+        continue;
+      }
+      foreach($feature as $choice) {
+        $row = array();
+        $row[] = $choice['counter'];
+        $row[] = $choice['choice_id'];
+        $row[] = array(
+          'data' => $targeting_data['favored_selection'] === $choice['raw_label'] ? $feature_label . ' <span class="acquia-lift-best">' . t('best') . '</span>' : $feature_label,
+          'class' => $targeting_data['favored_selection'] === $choice['raw_label'] ? array('acquia-lift-context-best') : array(),
+        );
+        $row[] = format_plural($choice['decisions'], '1 time', '@count times');
+        if ($choice['control'] === TRUE) {
+          $row[] = self::DATA_NA;
+        }
+        else {
+          $row[] = array(
+            'data' => $this->formatReportPercentage($choice['lift_default'], TRUE),
+            'class' => $choice['lift_random'] > self::LIFT_THRESHHOLD ? array('acquia-lift-report-positive') : array('acquia-lift-report-negative'),
+          );
+        }
+        $row[] = array(
+          'data' => $this->formatReportPercentage($choice['lift_random'], TRUE),
+          'class' => $choice['lift_random'] > self::LIFT_THRESHHOLD ? array('acquia-lift-report-positive') : array('acquia-lift-report-negative'),
+        );
+
+        $rows[] = array(
+          'data' => $row,
+          'class' => $choice['control'] ? array('acquia-lift-report-control') : array(),
+          'no_striping' => $choice['control'],
+          'data-acquia-lift-feature' => $feature_string,
+        );
+      }
     }
 
     $build['content'] = array(
-      'content' =>  array(
-        '#theme' => 'table',
-        '#header' => $header,
-        '#rows' => $rows,
-      )
+      '#theme' => 'table',
+      '#header' => $header,
+      '#rows' => $rows,
     );
     return $build;
+  }
+
+  /**
+   * Implements AcquiaLiftAgent::buildStabilityReport().
+   */
+  public function buildStabilityReport($date_start, $date_end, $decision_point) {
+    $build = array();
+    $report_data = $this->loadReportData($date_start, $date_end, $decision_point);
+    if ($report_data['targeting'] === FALSE) {
+      return array();
+    }
+
+    $data = $report_data['targeting'];
+    $header = array(
+      array(
+        'data' => t('Context'),
+        //'field' => 'feature',
+        //'sort' => 'asc',
+      ),
+      array(
+        'data' => t('Best Variation'),
+        //'field' => 'feature',
+      ),
+      array(
+        'data' => t('Percent of Traffic'),
+        //'field' => 'percent_traffic',
+      ),
+      t('Stability'),
+    );
+    $rows = array();
+    foreach ($data as $feature => $f) {
+      // Don't include system-defined features.
+      if (!$f['system']) {
+        // Get the user-friendly feature label from the possible contextual values.
+        $feature_label = $feature;
+        if (isset($report_data['potential_context'][$feature])) {
+          $feature_label = $report_data['potential_context'][$feature]['label'];
+        }
+
+        $rows[] = array(
+          'data' => array(
+            $feature_label,
+            $f['favored_selection_number'],
+            array(
+              'data' => $this->formatReportPercentage($f['percent_traffic']),
+              'class' => array($this->getGraphLevelClass($f['percent_traffic'])),
+            ),
+            array(
+              'data' => $this->formatReportNumber($f['stability']),
+              'class' => $f['stability'] > self::STABILITY_THRESHOLD ? array('acquia-lift-report-positive') : array('acquia-lift-report-negative'),
+            ),
+          ),
+          'data-acquia-lift-feature' => $feature,
+        );
+      }
+    }
+    $build['content'] = array(
+      '#theme' => 'table',
+      '#header' => $header,
+      '#rows' => $rows,
+    );
+    return $build;
+  }
+
+  /**
+   * Implements AcquiaLiftAgent::buildReportContextSelection().
+   */
+  public function buildReportContextSelection($date_start, $date_end, $decision_point) {
+    $report_data = $this->loadReportData($date_start, $date_end, $decision_point);
+    if ($report_data['potential_context'] === FALSE || $report_data['targeting'] === FALSE) {
+      return array();
+    }
+    $context_values = array();
+    foreach($report_data['targeting'] as $code => $feature) {
+      if ($feature['system'] === TRUE) {
+        continue;
+      }
+      if (isset($report_data['potential_context'][$code])) {
+        $type = empty($report_data['potential_context'][$code]['type']) ? t('Other') : $report_data['potential_context'][$code]['type'];
+        $context_values[$type][$code] = $report_data['potential_context'][$code]['name'];
+      }
+      else {
+        $type = t('Other');
+        $context_values[$type][$code] = $code;
+      }
+    }
+    if (count($context_values) <= 1) {
+      return array();
+    }
+    return array(
+      '#title' => t('Context: '),
+      '#type' => 'select',
+      '#options' => $context_values,
+      '#multiple' => TRUE,
+    );
   }
 
   /**
@@ -456,7 +958,7 @@ class AcquiaLiftAgent extends PersonalizeAgentBase implements AcquiaLiftAgentInt
     $date_end = date('Y-m-d', $date_to);
 
     try {
-      $confidenceReport = $this->liftAPI->getConfidenceReport($this->machineName, $date_start, $date_end, $option_set->decision_point, array('(none)'));
+      $confidenceReport = $this->liftAPI->getConfidenceReport($this->machineName, $date_start, $date_end, $option_set->decision_point, array(self::NO_FEATURES));
       if (!isset($confidenceReport['data']['items'])) {
         return array();
       }
@@ -464,7 +966,7 @@ class AcquiaLiftAgent extends PersonalizeAgentBase implements AcquiaLiftAgentInt
       $decisions = $goals = 0;
       // Get a total count of all decisions made for this Option Set and all
       // goals received.
-      foreach ($data['choices'] as $choice => $info) {
+      foreach ($data['features'][self::NO_FEATURES] as $choice => $info) {
         list($decision_name, $option_id) = explode(':', $choice);
         if ($decision_name != $option_set->decision_name) {
           continue;
@@ -484,6 +986,28 @@ class AcquiaLiftAgent extends PersonalizeAgentBase implements AcquiaLiftAgentInt
   }
 
   /**
+   * Extracts the required overview data from the report data returned by
+   * Acquia Lift.
+   *
+   * @param $items
+   *   An array of items as returned from Acquia Lift.
+   * @return array
+   *   An associative array with information for today's and the total overview.
+   */
+  protected function extractOverviewReportData($items) {
+    $agent_data = $this->getData();
+    $report['decision_style'] = $agent_data['decision_style'];
+    $report['total_shown'] = $items['totals']['sessions']['count'];
+    $report['total_goals'] = $items['totals']['goals']['count'];
+    $report['today_shown'] = $items['today']['sessionCount'];
+    $report['today_goals'] = $items['today']['goalCount'];
+    $report['total_lift'] = $items['today']['liftOverDefaultUsingGoalsToDate'];
+    $report['today_lift'] = $items['today']['liftOverDefaultUsingGoals'];
+    $report['total_variations'] = count($agent_data['decisions']);
+    return $report;
+  }
+
+  /**
    * Extracts the required confidence report data from the items returned by Acquia Lift.
    *
    * @param $items
@@ -497,16 +1021,22 @@ class AcquiaLiftAgent extends PersonalizeAgentBase implements AcquiaLiftAgentInt
     }
     $data = array(
       'point' => $items[0]['point'],
-      'choices' => array(),
+      'features' => array(),
       'goal_value_differential' => FALSE,
     );
+    $last_group = '';
+    $counter = 1;
     foreach ($items as $i => $item) {
-      $choice = $item['choice'];
-      if (isset($data['choices'][$choice])) {
-        // The totals without segment/feature breakout come first and are the
-        // only piece we're interested in for this report.
-        continue;
+      // Check to see if we are in a new grouping of choices.
+      $check = $item['feature'] . '|' . $item['point'];
+      if ($last_group !== $check) {
+        $last_group = $check;
+        $counter = 1;
       }
+      else {
+        $counter++;
+      }
+      $choice = $option_id = $item['choice'];
       $choice_id = $choice;
       if (strpos($choice, ':') !== FALSE) {
         list($decision_name, $option_id) = explode(':', $choice);
@@ -514,57 +1044,30 @@ class AcquiaLiftAgent extends PersonalizeAgentBase implements AcquiaLiftAgentInt
           $choice_id = $option_label;
         }
       }
-      $data['choices'][$choice] = array(
+      $data['features'][$item['feature']][$choice] = array(
+        'counter' => $counter,
         'choice_id' => $choice_id,
+        'raw_label' => $option_id,
         'decisions' => $item['totals']['count'],
         'goals' => $item['totals']['goals'],
         'value' => $item['totals']['val'],
         'estimated_value' => $item['vMean'],
-        'goals_per_decision' => $item['totals']['goalsPerDecision'],
-        'value_per_decision' => $item['totals']['valPerDecision'],
+        'estimated_lower' => $item['bLo'],
+        'estimated_higher' => $item['bHi'],
+        'goals_per_decision' => $item['totals']['goals'] == 0 ? self::DATA_NA : $item['totals']['goalsPerDecision'],
+        'value_per_decision' => $item['totals']['goals'] == 0 ? self::DATA_NA : $item['totals']['valPerDecision'],
         'selections' => $item['count'],
-        'confidence' => $item['confidence'] . '%',
-        'lift_default' => $i == 0 ? '--' : $item['lift']['default'] . '%',
-        'lift_random' => $item['lift']['random'] . '%',
+        'confidence' => $item['confidence'],
+        'lift_default' => $item['lift']['default'],
+        'lift_random' => $item['lift']['random'],
+        'significant' => $item['signif'],
+        'control' => $option_id === 'option-a' ? TRUE : FALSE,
       );
       if (!$data['goal_value_differential'] && ($item['totals']['goals'] != $item['totals']['val'])) {
         $data['goal_value_differential'] = TRUE;
       }
     }
     return $data;
-  }
-
-  /**
-   * Implements AcquiaLiftAgent::buildTargetingFeaturesReport().
-   */
-  public function buildTargetingFeaturesReport($date_start, $date_end, $decision_point) {
-    $build = array();
-    $report = $this->liftAPI->getTargetingImpactReport($this->machineName, $date_start, $date_end, $decision_point);
-    $data = $this->extractTargetingReportData($report['data']['items']);
-    $header = array(
-      t('Context'), t('Best Variation'), t('Percent of Traffic'), t('Predicted Value'), t('Stability')
-    );
-    $rows = array();
-    foreach ($data as $feature => $f) {
-      if (strpos($f['label'], '[share-alt]') === FALSE) {
-        $rows[] = array(
-          $feature,
-          $f['favored_selection'],
-          round($f['percent_traffic'] * 100, 2) . '%',
-          round($f['predicted_value'], 2),
-          round($f['stability'], 2)
-        );
-      }
-
-    }
-    $build['content'] = array(
-      'content' =>  array(
-        '#theme' => 'table',
-        '#header' => $header,
-        '#rows' => $rows,
-      )
-    );
-    return $build;
   }
 
   /**
@@ -590,15 +1093,114 @@ class AcquiaLiftAgent extends PersonalizeAgentBase implements AcquiaLiftAgentInt
         }
       }
       $data[$feature] = array(
-        'label' => $item['label'],
+        'raw_label' => $item['label'],
+        'label' => $item['labelText'],
         'favored_selection' =>  $item['choices'][$favored_selection]['label'],
+        'favored_selection_number' => $favored_selection + 1,
         'percent_traffic' => $item['percentTraffic'],
         'predicted_value' => $item['averageResponseValue'],
         'stability' => $item['stability'],
+        'stability_level' => $item['stabilityLevel'],
+        'system' => strpos($item['label'], '[share-alt]') === FALSE ? FALSE : TRUE,
       );
     }
     return $data;
   }
+
+  /**
+   * Extracts potential targeting values from the raw data returned by Acquia
+   * Lift.
+   *
+   * @param $items
+   *   An array of raw potential values.
+   * $return array
+   *   An associative array of potential targeting features keyed by code.
+   */
+  protected function extractPotentialTargetingValues($items) {
+    $data = array();
+    if (isset($items['potential']['features']) && !empty($items['potential']['features'])) {
+      foreach ($items['potential']['features'] as $feature) {
+        $data[$feature['code']] = array(
+          'type' => isset($feature['typeName']) ? $feature['typeName'] : '',
+          'name' => ($feature['name'] === '-' || $feature['name'] === '0') ? $feature['code'] : $feature['name'],
+        );
+        $data[$feature['code']]['label'] = empty($data[$feature['code']]['type']) ? $data[$feature['code']]['name'] : $data[$feature['code']]['type'] . ': ' . $data[$feature['code']]['name'];
+      }
+    }
+    return $data;
+  }
+
+  /**
+   * Formats a percentage value for use in reports.
+   *
+   * @param $value
+   *   The number to show as a percentage.
+   * @param bool $include_sign
+   *   True to include positive/negative sign indicators.
+   * @return string
+   *   The formatted number to display.
+   */
+  protected function formatReportPercentage($value, $include_sign = FALSE) {
+    $percent = (float) $value * 100;
+    if ($percent > 0 && $include_sign) {
+      return '+' . $this->formatReportNumber($percent) . '%';
+    }
+    return $this->formatReportNumber($percent) . '%';
+  }
+
+  /**
+   * Formats a number value for use in reports.
+   *
+   * @param $value
+   *   The number of format (or an empty value).
+   * @param $trim
+   *   Boolean indicating whether the number should be trimmed of trailing 0s.
+   * @param $decimals
+   *   The number of decimal places to display.
+   * @return string
+   *   The formatted number to display.
+   */
+  protected function formatReportNumber($value, $trim = TRUE, $decimals = 2) {
+    if (is_numeric($value)) {
+      $value = number_format($value, $decimals);
+      if ($trim) {
+          $value = rtrim(trim($value, '0'), '.');
+      }
+      if (strlen($value) === 0) {
+        $value = 0;
+      }
+      return $value;
+    }
+    return $value;
+  }
+
+  /**
+   * Gets the appropriate class name for a graph indicating percentage.
+   *
+   * @param $value
+   *   The percentage value expressed as a number between 0 and 1.
+   */
+  protected function getGraphLevelClass($value) {
+    if ($value >= 1) {
+      return 'acquia-lift-graph-level-5';
+    }
+    else if ($value >= .8) {
+      return 'acquia-lift-graph-level-4';
+    }
+    else if ($value >= .6 && $value < .8) {
+      return 'acquia-lift-graph-level-3';
+    }
+    else if ($value >= .4 && $value < .6) {
+      return 'acquia-lift-graph-level-2';
+    }
+    else if ($value >= .2 && $value < .4) {
+      return 'acquia-lift-graph-level-1';
+    }
+    else {
+      return 'acquia-lift-graph-level-0';
+    }
+  }
+
 
   /**
    * Implements AcquiaLiftAgent::convertOptionSetsToDecisions().

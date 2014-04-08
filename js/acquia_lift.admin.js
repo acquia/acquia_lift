@@ -6,14 +6,37 @@
   Drupal.behaviors.acquia_lift_admin = {
     attach: function (context, settings) {
       $('.acquia-lift-chosen-select', context).each(function() {
+        var chosenWidth = '940px';
+        if ($(this).hasClass('acquia-lift-chosen-select-half')) {
+          chosenWidth = '470px';
+        }
         var options = {
-          width: '940px'
+          width: chosenWidth
         };
         $(this).chosen(options);
       });
+
+      // Listener for context selection.
+      $('.acquia-lift-report-section .acquia-lift-report-context-select', context).once().chosen().change(function(e) {
+        var selected = $(this).val(),
+          num = selected ? selected.length : 0,
+          selectors = [],
+          $report = $(this).parents('.acquia-lift-report-section').find('table tbody');
+
+        // If nothing is selected, then show all.
+        if (num == 0) {
+          $report.find('tr').show();
+          return;
+        }
+        for (var i=0; i<num; i++) {
+          selectors.push('tr[data-acquia-lift-feature="' + selected[i] + '"]');
+        }
+        var selector = selectors.join(', ');
+        $report.find('tr').not(selector).hide();
+        $report.find(selector).show();
+      });
     }
   };
-
 
   /**
    * Campaign edit form behaviors.
@@ -30,6 +53,41 @@
             return false;
           }
         }
+      });
+    }
+  }
+
+  /**
+   * Adjust fills for percentage line fill components.
+   */
+  Drupal.behaviors.acquia_lift_percentage_label = {
+    attach: function(context, settings) {
+      $('.acquia-lift-distribution .distribution-graphic .fill', context).once().each(function() {
+        var percent = $(this).attr('data-acquia-lift-fill');
+        if (isNaN(parseFloat(percent))) {
+          return;
+        }
+        $(this).css('width', percent + '%');
+      });
+    }
+  }
+
+  /**
+   * Adjusts the display of high-low components.
+   */
+  Drupal.behaviors.acquia_lift_high_low = {
+    attach: function(context, settings) {
+      $('.acquia-lift-hilo-estimate', context).once().each(function() {
+        var $bounds = $('.acquia-lift-hilo-bounds', this);
+        var high = parseFloat($bounds.attr('data-acquia-lift-high'));
+        var low = parseFloat($bounds.attr('data-acquia-lift-low'));
+        var estimate = parseFloat($('.acquia-lift-badge', this).text());
+        if (isNaN(high) || isNaN(low) || isNaN(estimate) || (high === 0 && low === 0)) {
+          $bounds.css('height', 0);
+          return;
+        }
+        //@todo: Complete calculations to determine bound with and margin based
+        // on low/high estimates.
       });
     }
   }

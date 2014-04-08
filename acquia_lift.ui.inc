@@ -69,15 +69,19 @@ function acquia_lift_build_page(&$page) {
  *
  * @param array $element
  *   An array representing a multi-select form element.
+ * @param array $classes
+ *   An array of classes to be included on this element.
  */
-function acquia_lift_chosenify_element(&$element) {
+function acquia_lift_chosenify_element(&$element, $classes = array()) {
   $chosen_path = libraries_get_path('chosen');
+  $classes[] = 'acquia-lift-chosen-select';
+
   $options = array(
     'scope' => 'footer',
     'defer' => TRUE,
   );
   $element['#attributes'] = array(
-    'class' => array('acquia-lift-chosen-select'),
+    'class' => $classes,
     'data-placeholder' => t('Choose a context...'),
   );
   $element['#attached'] = array(

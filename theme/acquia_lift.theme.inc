@@ -110,25 +110,6 @@ function theme_acquia_lift_edit_mode_personalize_in_context_links($variables) {
 }
 
 /**
- * Theme function to output links for filtering reports by date.
- *
- * @ingroup themeable
- */
-function theme_acquia_lift_date_filter_links($variables) {
-  $element = $variables['element'];
-  $output = '<div>Filter by date: ';
-
-  $rendered = array();
-  foreach ($element['links'] as $link) {
-    $rendered[] = drupal_render($link);
-  }
-  $output .= implode (' | ', $rendered);
-
-  $output .= '</div>';
-  return $output;
-}
-
-/**
  * Theme function to output links for filtering by feature,
  *
  * @ingroup themeable
@@ -142,46 +123,6 @@ function theme_acquia_lift_feature_filter_links($variables) {
     $rendered[] = drupal_render($link);
   }
   $output .= implode (' | ', $rendered);
-
-  $output .= '</div>';
-  return $output;
-}
-
-/**
- * Theme function to output tablinks for jQuery UI style tabs.
- *
- * @ingroup themeable
- */
-function theme_acquia_lift_report_tablinks($vars) {
-
-  $output = '<ul>';
-  foreach ($vars['tabset']['tablinks'] as $i => $tab) {
-    if (is_array($tab)) {
-      $output .= '<li>'. drupal_render($tab) .'</li>';
-    }
-  }
-  $output .= '</ul>';
-  return $output;
-}
-
-/**
- * Theme function to output content for jQuery UI style tabs.
- *
- * @ingroup themeable
- */
-function theme_acquia_lift_tabbed_report($variables) {
-  $element = $variables['element'];
-  $output = '<div '. drupal_attributes($element['#options']['attributes']) .'>';
-  $output .= drupal_render($element['tabs']);
-
-  if (isset($element['active'])) {
-    $output .= drupal_render($element['active']);
-  }
-  else {
-    foreach ($element['divs'] as $div) {
-      $output .= drupal_render($div);
-    }
-  }
 
   $output .= '</div>';
   return $output;
@@ -226,5 +167,72 @@ function theme_acquia_lift_percentage($variables) {
   }
   // Close the wrapping div.
   $output .= '</div>';
+  return $output;
+}
+
+/**
+ * Theme function to show a percentage difference as a label.
+ *
+ * The percentage is shown as a line filled to the set percentage with optional
+ * labels for the percentage indicated (and rest of percentage).
+ *
+ * @param $variables
+ *   The theme variables that will include:
+ *   - percent_label: The label for the main percentage selected
+ *   - rest_label: The label for the rest of the percentage selected
+ *   - percent: The required percentage selected as a float.
+ */
+function theme_acquia_lift_percentage_label($variables) {
+  $percent = round($variables['percent'], 2);
+  $rest_percent = 100 - $percent;
+
+  $output = '<div class="acquia-lift-distribution">';
+  if (!empty($variables['percent_label'])) {
+    $output .= '<div class="distribution-set">';
+    $output .= $variables['percent_label'] . ' (' . $variables['percent'] . '%)';
+    $output .= '</div>';
+  }
+  if (!empty($variables['rest_label'])) {
+    $output .= '<div class="distribution-rest">';
+    $output .= $variables['rest_label'] . ' (' . $rest_percent . '%)';
+    $output .= '</div>';
+  }
+  $output .= '<div class="distribution-graphic">';
+  $output .= '<div class="fill" data-acquia-lift-fill="' . $percent . '"></div>';
+  $output .= '</div>';
+  $output .= '</div>';
+  return $output;
+}
+
+/**
+ * Theme function for generating the mark-up to display a high-low value.
+ *
+ * @param $variables
+ *   The theme variables that will include
+ *   - value: The mean value to display
+ *   - high: The high value to display
+ *   - low: The low value to display
+ */
+function theme_acquia_lift_high_low($variables) {
+  $high = is_numeric($variables['high']) ? $variables['high'] : 0;
+  $low = is_numeric($variables['low']) ? $variables['low'] : 0;
+  $output = '<div class="acquia-lift-hilo-estimate">';
+  $output .= '<div class="acquia-lift-hilo-background">';
+  $output .= '<div class="acquia-lift-hilo-bounds" data-acquia-lift-high="' . $high . '" data-acquia-lift-low="' . $low . '">';
+  $output .= '<div class="acquia-lift-estimate">';
+  $output .= '<span class="acquia-lift-badge">' . $variables['value'] . '</span>';
+  $output .= '</div></div></div></div>';
+  return $output;
+}
+
+/**
+ * Theme function for formatting a report overview item
+ */
+function theme_acquia_lift_report_overview($variables) {
+  $element = $variables['element'];
+  $output = '<div class="acquia-lift-overview-item">' . $element['#title'] . '</div>';
+  if (!empty($element['#description'])) {
+    $output .= '<div class="acquia-lift-overview-caption">' . $element['#description'] . '</div>';
+  }
   return $output;
 }

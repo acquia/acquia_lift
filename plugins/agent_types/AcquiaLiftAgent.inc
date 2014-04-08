@@ -132,27 +132,23 @@ class AcquiaLiftAgent extends PersonalizeAgentBase implements AcquiaLiftAgentInt
 
   /**
    * The threshold to use above which lift percentage will be positively noted.
-   * @var int
    */
-  static public $lift_threshold = 0;
+  const LIFT_THRESHHOLD = 0;
 
   /**
    * The threshold to use above which stability will be positively noted.
-   * @var int
    */
-  static public $stability_threshold = 25;
+  const STABILITY_THRESHOLD = 25;
 
   /**
    * The value to show when report data is not applicable.
-   * @var string
    */
-  static public $data_na = '&mdash;';
+  const DATA_NA = '&mdash;';
 
   /**
    * The value representing no features applied to an experiment.
-   * $var string
    */
-  static public $no_features = '(none)';
+  const NO_FEATURES = '(none)';
 
   /**
    * An object containing the agent data.
@@ -546,7 +542,7 @@ class AcquiaLiftAgent extends PersonalizeAgentBase implements AcquiaLiftAgentInt
     $confidence = $report_data['confidence'];
     $total_confident = 0;
     if (is_array($confidence)) {
-      foreach($confidence['features'][self::$no_features] as $choice) {
+      foreach($confidence['features'][self::NO_FEATURES] as $choice) {
         if ($choice['significant'] == TRUE) {
           $total_confident++;
         }
@@ -607,7 +603,7 @@ class AcquiaLiftAgent extends PersonalizeAgentBase implements AcquiaLiftAgentInt
       '#description' => t('Predicted lift/control'),
       '#attributes' => array(
         'class' => array(
-          $lift > self::$lift_threshold && $total_confident > 0 ? 'acquia-lift-report-positive' : 'acquia-lift-report-negative',
+          $lift > self::LIFT_THRESHHOLD && $total_confident > 0 ? 'acquia-lift-report-positive' : 'acquia-lift-report-negative',
         ),
       ),
     );
@@ -684,7 +680,7 @@ class AcquiaLiftAgent extends PersonalizeAgentBase implements AcquiaLiftAgentInt
 
     // Generate the table data.
     $rows = array();
-    foreach ($set_data['features'][self::$no_features] as $choice) {
+    foreach ($set_data['features'][self::NO_FEATURES] as $choice) {
       $row = array();
       foreach ($fields as $field_name => $display) {
         if (in_array($field_name, $exclude_columns)) {
@@ -704,7 +700,7 @@ class AcquiaLiftAgent extends PersonalizeAgentBase implements AcquiaLiftAgentInt
           case 'lift_random':
             $row[] = array(
               'data' => $this->formatReportNumber($choice[$field_name], FALSE),
-              'class' => $choice[$field_name] > self::$lift_threshold ? array('acquia-lift-report-positive') : array('acquia-lift-report-negative'),
+              'class' => $choice[$field_name] > self::LIFT_THRESHHOLD ? array('acquia-lift-report-positive') : array('acquia-lift-report-negative'),
             );
             break;
           case 'goals_per_decision':
@@ -826,17 +822,17 @@ class AcquiaLiftAgent extends PersonalizeAgentBase implements AcquiaLiftAgentInt
         );
         $row[] = format_plural($choice['decisions'], '1 time', '@count times');
         if ($choice['control'] === TRUE) {
-          $row[] = self::$data_na;
+          $row[] = self::DATA_NA;
         }
         else {
           $row[] = array(
             'data' => $this->formatReportPercentage($choice['lift_default'], TRUE),
-            'class' => $choice['lift_random'] > self::$lift_threshold ? array('acquia-lift-report-positive') : array('acquia-lift-report-negative'),
+            'class' => $choice['lift_random'] > self::LIFT_THRESHHOLD ? array('acquia-lift-report-positive') : array('acquia-lift-report-negative'),
           );
         }
         $row[] = array(
           'data' => $this->formatReportPercentage($choice['lift_random'], TRUE),
-          'class' => $choice['lift_random'] > self::$lift_threshold ? array('acquia-lift-report-positive') : array('acquia-lift-report-negative'),
+          'class' => $choice['lift_random'] > self::LIFT_THRESHHOLD ? array('acquia-lift-report-positive') : array('acquia-lift-report-negative'),
         );
 
         $rows[] = array(
@@ -903,7 +899,7 @@ class AcquiaLiftAgent extends PersonalizeAgentBase implements AcquiaLiftAgentInt
             ),
             array(
               'data' => $this->formatReportNumber($f['stability']),
-              'class' => $f['stability'] > self::$stability_threshold ? array('acquia-lift-report-positive') : array('acquia-lift-report-negative'),
+              'class' => $f['stability'] > self::STABILITY_THRESHOLD ? array('acquia-lift-report-positive') : array('acquia-lift-report-negative'),
             ),
           ),
           'data-acquia-lift-feature' => $feature,
@@ -962,7 +958,7 @@ class AcquiaLiftAgent extends PersonalizeAgentBase implements AcquiaLiftAgentInt
     $date_end = date('Y-m-d', $date_to);
 
     try {
-      $confidenceReport = $this->liftAPI->getConfidenceReport($this->machineName, $date_start, $date_end, $option_set->decision_point, array(self::$no_features));
+      $confidenceReport = $this->liftAPI->getConfidenceReport($this->machineName, $date_start, $date_end, $option_set->decision_point, array(self::NO_FEATURES));
       if (!isset($confidenceReport['data']['items'])) {
         return array();
       }
@@ -970,7 +966,7 @@ class AcquiaLiftAgent extends PersonalizeAgentBase implements AcquiaLiftAgentInt
       $decisions = $goals = 0;
       // Get a total count of all decisions made for this Option Set and all
       // goals received.
-      foreach ($data['features'][self::$no_features] as $choice => $info) {
+      foreach ($data['features'][self::NO_FEATURES] as $choice => $info) {
         list($decision_name, $option_id) = explode(':', $choice);
         if ($decision_name != $option_set->decision_name) {
           continue;
@@ -1047,8 +1043,8 @@ class AcquiaLiftAgent extends PersonalizeAgentBase implements AcquiaLiftAgentInt
         'estimated_value' => $item['vMean'],
         'estimated_lower' => $item['bLo'],
         'estimated_higher' => $item['bHi'],
-        'goals_per_decision' => $item['totals']['goals'] == 0 ? self::$data_na : $item['totals']['goalsPerDecision'],
-        'value_per_decision' => $item['totals']['goals'] == 0 ? self::$data_na : $item['totals']['valPerDecision'],
+        'goals_per_decision' => $item['totals']['goals'] == 0 ? self::DATA_NA : $item['totals']['goalsPerDecision'],
+        'value_per_decision' => $item['totals']['goals'] == 0 ? self::DATA_NA : $item['totals']['valPerDecision'],
         'selections' => $item['count'],
         'confidence' => $item['confidence'],
         'lift_default' => $item['lift']['default'],

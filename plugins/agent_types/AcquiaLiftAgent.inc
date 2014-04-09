@@ -128,7 +128,7 @@ interface AcquiaLiftAgentInterface {
 
 }
 
-class AcquiaLiftAgent extends PersonalizeAgentBase implements AcquiaLiftAgentInterface, PersonalizeExplicitTargetingInterface, PersonalizeAgentReportInterface {
+class AcquiaLiftAgent extends PersonalizeAgentBase implements PersonalizeAgentGoalInterface, AcquiaLiftAgentInterface, PersonalizeExplicitTargetingInterface, PersonalizeAgentReportInterface {
 
   /**
    * The threshold to use above which lift percentage will be positively noted.
@@ -229,12 +229,15 @@ class AcquiaLiftAgent extends PersonalizeAgentBase implements AcquiaLiftAgentInt
     );
   }
 
+  /**
+   * Implements PersonalizeAgentGoalInterface::useClientSideGoalDelivery().
+   */
   public function useClientSideGoalDelivery() {
     return variable_get('acquia_lift_client_side_goals', TRUE);
   }
 
   /**
-   * Implements PersonalizeAgentInterface::sendGoal().
+   * Implements PersonalizeAgentGoalInterface::sendGoal().
    */
   public function sendGoal($goal_name, $value = NULL) {
     // @todo Implement server-side goal delivery.

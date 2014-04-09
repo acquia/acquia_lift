@@ -5,38 +5,55 @@
 #edit-agent-basic-info-options-acquia-lift-decision-style .form-item-agent-basic-info-options-acquia-lift-decision-style label {
     margin-right: 10px;
 }
-
-.personalize-in-context-link:before {
-    content: "+";
-    display: inline-block;
-    margin-right: .3em; /* LTR */
-    font-size: 1.3em;
+/* added selector, decrerase-KO */
+.personalize-in-context-link:before,
+html.js div.ctools-dropdown a:before  { 
+  content: "+";
+  font-weight: bold; /* added bold -KO */
+  display: inline-block;
+  margin-right: .2em; 
+  font-size: 1.6em; 
 }
-
+/* only need margin-right to push sibling away, adjusted width, min width, added inline block and v align to  all form items and labels -KO */
 .acquia-lift-percentage-control .form-item {
   float: left;
-  margin: 1em;
-  width: 30%;
-  min-width: 250px;
+  margin-right: 1em; 
+  width: 20%; 
+  min-width: 200px; 
+  display: inline-block; 
+  vertical-align: middle; 
 }
 .acquia-lift-percentage-control .form-item label {
-  display: inline;
+  display: inline-block; 
+  vertical-align: middle; 
+  margin: 0;
+  line-height: 2em; /* balances height of text field so the descriptions align to one another -KO */
 }
 .acquia-lift-percentage-control .form-item input {
   padding: 2px;
   margin: 0;
 }
+div.acquia-lift-percentage-rest { /* added selector -KO */
+  display: inline-block; 
+  vertical-align: middle; 
+  margin: 0;
+}
 .acquia-lift-percentage-rest-label {
+  display: inline-block;
+  vertical-align: middle; 
   margin: 0;
   padding: 0;
   font-weight: bold;
+  line-height: 2em; /* balances height of text field so the descriptions align to one another -KO */
 }
 .acquia-lift-percentage-rest-display {
   margin: 0 5px;
+  vertical-align: middle; /* removes slight misalignment -KO */
 }
-.acquia-lift-toggle-text {
-  float: right;
-  margin-left: 1em;
+.acquia-lift-toggle-text { /* removed float and margin because toggle was not discoverable -KO */
+  display: inline-block;
+  vertical-align: middle; 
+  line-height: 2em; /* aligns toggle to the form items -KO */
 }
 
 #personalize-acquia-lift-reset {

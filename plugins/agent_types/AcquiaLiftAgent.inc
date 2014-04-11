@@ -72,7 +72,7 @@ class AcquiaLiftAgent extends PersonalizeAgentBase implements PersonalizeAgentGo
   protected $liftAPI;
 
   /**
-   * An instance of AcquiaLiftReportingInterface.
+   * An instance of PersonalizeAgentReportInterface.
    *
    * The agent acts as a facade to the reporting class for reporting requests.
    *

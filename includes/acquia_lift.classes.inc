@@ -1006,7 +1006,7 @@ class AcquiaLiftAPI implements PersonalizeLoggerAwareInterface {
     // Use a timeout of 8 seconds for retrieving the transform options.
     $response = $this->httpClient()->get($url, $headers, array('timeout' => self::GET_REQUEST_TIMEOUT_VALUE));
     if ($response->code != 200) {
-      $msg = "Problem retrieving confidence report for $agent_name.";
+      $msg = 'Problem retrieving confidence report.';
       $this->logger()->log(PersonalizeLogLevel::ERROR, $msg);
       throw new AcquiaLiftException($msg);
     }

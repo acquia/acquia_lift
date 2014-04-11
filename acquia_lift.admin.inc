@@ -180,6 +180,15 @@ function acquia_lift_report($form, &$form_state, $agent_data, $option_set) {
       )
     );
   }
+  // If this agent doesn't implement the reporting interface then there are no
+  // reports to show.
+  if (!$agent instanceof PersonalizeAgentReportInterface) {
+    return array(
+      'no_report' => array(
+        '#markup' => t('This agent does not support reporting.')
+      )
+    );
+  }
   $data = $agent->getData();
 
   $form = array(
@@ -215,7 +224,7 @@ function acquia_lift_report($form, &$form_state, $agent_data, $option_set) {
     $decision_point = $form_state['values']['decision_point'];
   }
   else {
-    $decision_point = !empty($option_set) ? $option_set->decision_name : key($decisions);
+    $decision_point = !empty($option_set) ? personalize_get_decision_name_for_option_set($option_set) : key($decisions);
   }
   $form['report_filters']['decision_point'] = acquia_lift_report_decision_point_dropdown($decision_options, $decision_point);
 
@@ -228,6 +237,8 @@ function acquia_lift_report($form, &$form_state, $agent_data, $option_set) {
     $date_start_report = date('Y-m-d');
     $date_end_report = NULL;
   }
+
+  $reports = $agent->buildCampaignReports($decision_point, $date_start_report, $date_end_report);
 
   // Generate mark-up for adaptive style report labels.
   $report_title_additional = '';
@@ -249,6 +260,11 @@ function acquia_lift_report($form, &$form_state, $agent_data, $option_set) {
       'id' => 'acquia-lift-overview-report',
       'class' => array('acquia-lift-report-section', 'clearfix'),
     ),
+  );
+  $form['overview_report']['report'] = array(
+    '#markup' => drupal_render($reports['overview']),
+    '#theme_wrappers' => array('container'),
+    '#id' => 'acquia-lift-overview-report-data',
   );
 
   // Experiment details section.
@@ -283,9 +299,14 @@ function acquia_lift_report($form, &$form_state, $agent_data, $option_set) {
       )
     );
   }
+  $form['experiment_report']['report'] = array(
+    '#markup' => drupal_render($reports['experiment']),
+    '#theme_wrappers' => array('container'),
+    '#id' => 'acquia-lift-experiment-report-data',
+  );
 
   // Context report section.
-  $context_select = $agent->buildReportContextSelection($date_start_report, $date_end_report, $decision_point, 'context');
+  $context_select = $reports['targeting'];
   acquia_lift_chosenify_element($context_select, array('acquia-lift-chosen-select-half', 'acquia-lift-report-context-select'));
   $form['context_report'] = array(
     '#tree' => TRUE,
@@ -319,9 +340,14 @@ function acquia_lift_report($form, &$form_state, $agent_data, $option_set) {
     );
   }
   $form['context_report']['context_report_additional']['context_report_context'] = $context_select;
+  $form['context_report']['report'] = array(
+    '#markup' => drupal_render($reports['context']),
+    '#theme_wrappers' => array('container'),
+    '#id' => 'acquia-lift-context-report-data',
+  );
 
   // Stability report section.
-  $context_select = $agent->buildReportContextSelection($date_start_report, $date_end_report, $decision_point, 'stability');
+  $context_select = $reports['targeting'];
   acquia_lift_chosenify_element($context_select, array('acquia-lift-chosen-select-half', 'acquia-lift-report-context-select'));
   $form['stability_report'] = array(
     '#tree' => TRUE,
@@ -355,31 +381,8 @@ function acquia_lift_report($form, &$form_state, $agent_data, $option_set) {
     );
   }
   $form['stability_report']['stability_report_additional']['stability_report_context'] = $context_select;
-
-  $overview_report = $agent->buildOverviewReport($date_start_report, $date_end_report, $agent_data->started, $decision_point);
-  $form['overview_report']['report'] = array(
-    '#markup' => drupal_render($overview_report),
-    '#theme_wrappers' => array('container'),
-    '#id' => 'acquia-lift-overview-report-data',
-  );
-
-  $experiment_report = $agent->buildExperimentReport($date_start_report, $date_end_report, $decision_point);
-  $form['experiment_report']['report'] = array(
-    '#markup' => drupal_render($experiment_report),
-    '#theme_wrappers' => array('container'),
-    '#id' => 'acquia-lift-experiment-report-data',
-  );
-
-  $context_report = $agent->buildContextReport($date_start_report, $date_end_report, $decision_point);
-  $form['context_report']['report'] = array(
-    '#markup' => drupal_render($context_report),
-    '#theme_wrappers' => array('container'),
-    '#id' => 'acquia-lift-context-report-data',
-  );
-
-  $stability_report = $agent->buildStabilityReport($date_start_report, $date_end_report, $decision_point);
   $form['stability_report']['report'] = array(
-    '#markup' => drupal_render($stability_report),
+    '#markup' => drupal_render($reports['stability']),
     '#theme_wrappers' => array('container'),
     '#id' => 'acquia-lift-stability-report-data',
   );

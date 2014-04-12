@@ -170,6 +170,14 @@ function acquia_lift_report($form, &$form_state, $agent_data, $option_set) {
   if (!$agent instanceof AcquiaLiftAgent) {
     return array();
   }
+  if ($agent_data->started == 0) {
+    return array(
+      'no_report' => array(
+        '#markup'=> t('This agent has not started running yet, no reports to show.')
+      )
+    );
+  }
+
   // If this agent is not currently enabled in Acquia Lift, there are no reports
   // to show.
   $errors = $agent->errors();

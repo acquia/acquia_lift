@@ -1197,6 +1197,44 @@ class AcquiaLiftAPI implements PersonalizeLoggerAwareInterface {
   }
 
   /**
+   * Returns a unique agent name based on the name passed in.
+   *
+   * Check existing agents in Acquia Lift and adds a suffix if the
+   * passed in name already exists. Also ensure the name is within
+   * the max
+   *
+   * @param $agent_name
+   *   The desired agent name.
+   *
+   * @param $max_length
+   *   The max length restriction other than that imposed by Acquia
+   *   Lift itself. The function will use the smaller of the two
+   *   max length restrictions.
+
+   * @return string
+   *   A machine-readable name for the agent that does not exist yet
+   *   in Acquia Lift.
+   */
+  public function ensureUniqueAgentName($agent_name, $max_length) {
+    if ($max_length > self::FEATURE_STRING_MAX_LENGTH) {
+      $max_length = self::FEATURE_STRING_MAX_LENGTH;
+    }
+    $agent_name = substr($agent_name, 0, $max_length);
+
+    $existing = $this->getExistingAgents();
+    $index = 0;
+    $suffix = '';
+    while(in_array($agent_name . $suffix, array_keys($existing))) {
+      $suffix = '-' . $index;
+      while (strlen($agent_name . $suffix) > $max_length) {
+        $agent_name = substr($agent_name, 0, -1);
+      }
+      $index++;
+    }
+    return $agent_name . $suffix;
+  }
+
+  /**
    * Returns the timeframe portion of a report API url for the specified dates.
    *
    * @param $date_start

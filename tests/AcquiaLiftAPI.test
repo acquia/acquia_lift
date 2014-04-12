@@ -1716,6 +1716,54 @@ class AcquiaLiftTest extends DrupalUnitTestCase {
     $this->logger->clearLogs();
   }
 
+  function testEnsureUniqueAgentName() {
+    $lift_api = AcquiaLiftAPI::getInstance(array('api_key' => 'asdf', 'admin_key' => 'fasfasfs', 'owner_code' => 'Some_valid-owner123-code'));
+    // Pass some dummy agent data to our dummy http client.
+    $agents = array();
+    $agent_codes = array(
+      'first-agent',
+      'first-agent-0',
+      'first-agent-1',
+      'abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwx',
+      'abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuv-0',
+      'abcdefghijklmnopqrstuvwxyzabcdef',
+      'abcdefghijklmnopqrstuvwxyzabcd-0',
+      'abcdefghijklmnopqrstuvwxyzabcd-1',
+      'abcdefghijklmnopqrstuvwxyzabcd-2',
+      'abcdefghijklmnopqrstuvwxyzabcd-3',
+      'abcdefghijklmnopqrstuvwxyzabcd-4',
+      'abcdefghijklmnopqrstuvwxyzabcd-5',
+      'abcdefghijklmnopqrstuvwxyzabcd-6',
+      'abcdefghijklmnopqrstuvwxyzabcd-7',
+      'abcdefghijklmnopqrstuvwxyzabcd-8',
+      'abcdefghijklmnopqrstuvwxyzabcd-9',
+    );
+    foreach ($agent_codes as $code) {
+      $agent = new stdClass();
+      $agent->code = $code;
+      $agent->decisions = array();
+      $agent->goals = array();
+      $agents[] = $agent;
+    }
+
+    $lift_api->setHttpClient(new DummyAcquiaLiftHttpClient(FALSE, array('agents' => $agents)));
+    $lift_api->setLogger(new AcquiaLiftTestLogger());
+    // Try to get a unique name based on 'first-agent'
+    $new_name = $lift_api->ensureUniqueAgentName($agent_codes[0], 64);
+    $this->assertEqual('first-agent-2', $new_name);
+    // Try to get a unique name based on a long string.
+    $new_name = $lift_api->ensureUniqueAgentName('abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz', 64);
+    $this->assertEqual('abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuv-1', $new_name);
+
+    // Now try with a max length restriction that is shorter than the one
+    // for Acquia Lift
+    $new_name = $lift_api->ensureUniqueAgentName('abcdefghijklmnopqrstuvwxyzabcde1f', 32);
+    $this->assertEqual('abcdefghijklmnopqrstuvwxyzabcde1', $new_name);
+    $new_name = $lift_api->ensureUniqueAgentName('abcdefghijklmnopqrstuvwxyzabcdef', 32);
+    $this->assertEqual('abcdefghijklmnopqrstuvwxyzabc-10', $new_name);
+
+  }
+
   /**
    * Returns a AcquiaLiftAPI instance that can be used to test methods.
    *

@@ -38,9 +38,32 @@
 }
 #navbar-administration .acquia-lift-campaigns .navbar-box {
   display: inline-block;
+  width: 100%;
+}
+#navbar-administration .acquia-lift-campaigns li > div {
+  position: relative;
 }
 #navbar-administration .acquia-lift-campaigns .acquia-lift-campaign {
-  padding: 1em 0.667em 1em 1.333em;
+  padding: 1em 0.667em 1em 0;
+  margin-left: 3.333em; /* edit link indent + width + spacing between */
+}
+#navbar-administration .acquia-lift-campaigns .acquia-lift-campaign-edit {
+  background-image: url("../images/29AAE1/edit.png");
+  background-image: url("../images/29AAE1/edit.svg"), none;
+  background-size: 24px 24px;
+  background-position: left center;
+  display: inline-block;
+  text-indent: -999px;
+  width: 2em;
+  height: 100%;
+  position: absolute;
+  left: 1em;
+}
+#navbar-administration .acquia-lift-campaigns li:hover .acquia-lift-campaign-edit,
+#navbar-administration .acquia-lift-campaigns li:active .acquia-lift-campaign-edit,
+#navbar-administration .acquia-lift-campaigns li.acquia-lift-active .acquia-lift-campaign-edit {
+  background-image: url("../images/F05A26/edit_active.png");
+  background-image: url("../images/F05A26/edit_active.svg"), none;
 }
 #navbar-administration.navbar-oriented .acquia-lift-campaign {
   padding-right: 0; /* LTR */

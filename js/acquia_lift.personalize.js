@@ -1154,9 +1154,9 @@ Drupal.theme.acquiaLiftPersonalizeCampaignMenuItem = function (options) {
     'href="' + options.edit.href + '"'
   ];
 
-  item += '<div>\n<a ' + linkAttrs.join(' ') + '>' + options.link.label + '</a>\n';
-  item += ' | ';
+  item += '<div>\n'
   item += '<a ' + editAttrs.join(' ') + '>' + Drupal.t('edit') + '</a>\n';
+  item += '<a ' + linkAttrs.join(' ') + '>' + options.link.label + '</a>\n';
   item += '</div>\n';
 
   return item;

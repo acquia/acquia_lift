@@ -854,7 +854,7 @@ class AcquiaLiftReport implements PersonalizeAgentReportInterface {
 
     // Determine the life of the agent as an interval.
     $interval_start = new DateTime();
-    $interval_start->setTimestamp($this->agent->getStarted());
+    $interval_start->setTimestamp($this->agent->getStartTime());
     $interval = date_diff($interval_start, date_create());
 
     // Determine overall confidence based on confidence in choices.

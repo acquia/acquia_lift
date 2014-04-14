@@ -299,6 +299,30 @@ function acquia_lift_report($form, &$form_state, $agent_data, $option_set) {
       )
     );
   }
+  // Determine possible goal value for entire campaign
+  $goals = personalize_goal_load_by_conditions(array('agent' => $agent_data->machine_name));
+  $total_goal_value = 0;
+  foreach($goals as $goal) {
+    $total_goal_value += $goal['value'];
+  }
+  // Add the final goals value total row to the report.
+  $reports['experiment']['content']['#rows'][] = array(
+    'data' => array(
+      '',
+      '',
+      '',
+      array (
+        'data' => t('Out of a possible @goal_value', array('@goal_value' => $total_goal_value)),
+        'class' => array('acquia-lift-experiment-goal-total'),
+      ),
+      '',
+      '',
+      '',
+    ),
+    'class' => array('acquia-lift-experiment-footer-row'),
+    'no_striping' => TRUE,
+  );
+  // Render the report.
   $form['experiment_report']['report'] = array(
     '#markup' => drupal_render($reports['experiment']),
     '#theme_wrappers' => array('container'),

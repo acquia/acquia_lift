@@ -385,7 +385,7 @@ class AcquiaLiftAgent extends PersonalizeAgentBase implements PersonalizeAgentGo
    *
    * A facade to the reporting class.
    */
-  public function buildCampaignReports($decision_name = NULL, $date_from = NULL, $date_to = NULL) {
+  public function buildCampaignReports($decision_name = NULL, $date_from = NULL, $date_to = NULL, $option_label_callback = NULL) {
     return $this->reporting->buildCampaignReports($decision_name, $date_from, $date_to);
   }
 
@@ -756,8 +756,8 @@ class AcquiaLiftReport implements PersonalizeAgentReportInterface {
   /**
    * Implements PersonalizeAgentReportInterface::buildCampaignReports().
    */
-  public function buildCampaignReports($decision_name = NULL, $date_from = NULL, $date_to = NULL) {
-    $report_data = $this->loadReportData($decision_name, $date_from, $date_to);
+  public function buildCampaignReports($decision_name = NULL, $date_from = NULL, $date_to = NULL, $option_label_callback = NULL) {
+    $report_data = $this->loadReportData($decision_name, $date_from, $date_to, $option_label_callback);
     $reports = array(
       'overview' => $this->buildOverviewReport($report_data),
       'experiment' => $this->buildExperimentReport($report_data),
@@ -778,13 +778,16 @@ class AcquiaLiftReport implements PersonalizeAgentReportInterface {
    *   start date.
    * @param $date_to
    *   The ending date for report data in Y-m-d format, or null for today.
+   * @param $option_label_callback
+   *   A callback function to use to determine an option label given a decision
+   *   name and option id.
    * @return array
    *   The reporting data for the date range as an array with keys for
    *   - status: The general agent status report data
    *   - confidence: The confidence report data
    *   - targeting: The targeting report data
    */
-  protected function loadReportData($decision_name = NULL, $date_from = NULL, $date_to = NULL) {
+  protected function loadReportData($decision_name = NULL, $date_from = NULL, $date_to = NULL, $option_label_callback = NULL) {
     $key = 'S' . $date_from . 'E' . $date_to;
     $machine_name = $this->agent->getMachineName();
 
@@ -827,7 +830,7 @@ class AcquiaLiftReport implements PersonalizeAgentReportInterface {
       // Confidence report data.
       try {
         $confidenceReport = $this->liftAPI->getConfidenceReport($machine_name, $date_from, $date_to, $decision_name, "all");
-        $this->report_data[$key]['confidence'] = $this->extractConfidenceReportData($confidenceReport['data']['items']);
+        $this->report_data[$key]['confidence'] = $this->extractConfidenceReportData($confidenceReport['data']['items'], $option_label_callback);
       }
       catch (AcquiaLiftException $e) {
         $this->report_data[$key]['confidence'] = FALSE;
@@ -964,13 +967,6 @@ class AcquiaLiftReport implements PersonalizeAgentReportInterface {
       return $build;
     }
 
-    // Determine possible goal value for entire campaign
-    $goals = personalize_goal_load_by_conditions(array('agent' => $this->agent->getMachineName()));
-    $total_goal_value = 0;
-    foreach($goals as $goal) {
-      $total_goal_value += $goal['value'];
-    }
-
     $set_data = $report_data['confidence'];
     $fields = array(
       'counter' => t('Var.'),
@@ -1063,23 +1059,6 @@ class AcquiaLiftReport implements PersonalizeAgentReportInterface {
         $rows[] = $row;
       }
     }
-    // Add the final row to display the total goal value
-    $rows[] = array(
-      'data' => array(
-        '',
-        '',
-        '',
-        array (
-          'data' => t('Out of a possible @goal_value', array('@goal_value' => $total_goal_value)),
-          'class' => array('acquia-lift-experiment-goal-total'),
-        ),
-        '',
-        '',
-        '',
-      ),
-      'class' => array('acquia-lift-experiment-footer-row'),
-      'no_striping' => TRUE,
-    );
     $build['content'] = array(
       '#theme' => 'table',
       '#header' => $header,
@@ -1317,10 +1296,13 @@ class AcquiaLiftReport implements PersonalizeAgentReportInterface {
    *
    * @param $items
    *   An array of items as return from Acquia Lift.
+   * @param $option_label_callback
+   *   A callback function to use to determine an option label given a decision
+   *   name and option id.
    * @return array
    *   An associative array with information about the performance of each choice.
    */
-  protected function extractConfidenceReportData($items) {
+  protected function extractConfidenceReportData($items, $option_label_callback = NULL) {
     if (empty($items)) {
       return array();
     }
@@ -1345,7 +1327,7 @@ class AcquiaLiftReport implements PersonalizeAgentReportInterface {
       $choice_id = $choice;
       if (strpos($choice, ':') !== FALSE) {
         list($decision_name, $option_id) = explode(':', $choice);
-        if ($option_label = personalize_get_option_label_for_decision_and_choice($decision_name, $option_id)) {
+        if (!empty($option_label_callback) && $option_label = call_user_func($option_label_callback, $decision_name, $option_id)) {
           $choice_id = $option_label;
         }
       }

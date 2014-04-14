@@ -397,23 +397,12 @@ function acquia_lift_ensure_default_agent($account_info) {
     // at least one option set added to it.
     $agent_data = new stdClass();
     $clean_site_name = drupal_clean_css_identifier(strtolower(variable_get('site_name')));
-    $new_name = ACQUIA_LIFT_DEFAULT_AGENT_NAME . '-' . $clean_site_name;
+    $agent_name = ACQUIA_LIFT_DEFAULT_AGENT_NAME . '-' . $clean_site_name;
     // Although no Acquia Lift agents exist yet on the Drupal site, there may
     // be agents set up on the Acquia Lift side so we need to be sure not to
     // clash.
-    try {
-      $existing_acquia_lift = AcquiaLiftAPI::getInstance($account_info)->getExistingAgents();
-    }
-    catch (AcquiaLiftException $e) {
-      // Creds have not yet been set up.
-      $existing_acquia_lift = array();
-    }
-    $index = 0;
-    while(in_array($new_name, array_keys($existing_acquia_lift))) {
-      $index++;
-      $new_name .= '-' . $index;
-    }
-    $agent_data->machine_name = $new_name;
+    $agent_name = AcquiaLiftAPI::getInstance($account_info)->ensureUniqueAgentName($agent_name, PERSONALIZE_MACHINE_NAME_MAXLENGTH);
+    $agent_data->machine_name = $agent_name;
     $agent_data->plugin = 'acquia_lift';
     $agent_data->label = 'Default Acquia Lift Agent';
     $agent_data->data = array('decision_style' => 'adaptive');

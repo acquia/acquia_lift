@@ -177,6 +177,18 @@ Drupal.behaviors.acquiaLiftPersonalize = {
         }
       });
 
+      // Build View for the current campaign.
+      if ($('.acquia-lift-current-campaign.navbar-menu-item').length == 0) {
+        var $currentli = $('<li><div class="navbar-box"><a href="" class="acquia-lift-current-campaign visitor-actions-ui-ignore navbar-menu-item acquia-lift-active">Current</a></div></li>');
+        ui.views.push(new ui.MenuCurrentCampaignView({
+          el: $currentli.find('.navbar-box'),
+          model: ui.collections['campaigns'],
+          collection: ui.collections['campaigns']
+        }));
+        $('.acquia-lift-campaigns').closest('li').after($currentli);
+      }
+
+
       // Build Views for the Option Set groups.
       var $optionSetGroups = $('[data-acquia-lift-personalize-agent].acquia-lift-preview-option-set').once('acquia-lift-personalize-option-sets');
       if ($optionSetGroups.length) {
@@ -196,7 +208,7 @@ Drupal.behaviors.acquiaLiftPersonalize = {
         }
       }
 
-      // Create Views for the results link.
+      // Create View for the results link.
       $('[href="' + reportPath + '"]')
         .once('acquia-lift-personalize-report')
         .each(function (index, element) {
@@ -795,6 +807,45 @@ $.extend(Drupal.acquiaLiftUI, {
           .find('a[href]')
           .attr('href', activeCampaign.get('links').report)
           .text(Drupal.t('Results for !agent', {'!agent': label}))
+          .end()
+          .show();
+      }
+    }
+  }),
+
+  MenuCurrentCampaignView: ViewBase.extend({
+    /*
+     * {@inheritdoc}
+     */
+    initialize: function (options) {
+      this.collection = options.collection;
+      if (!this.model) {
+        return;
+      }
+      this.model.on('change', this.render, this);
+      this.render(this.model);
+    },
+
+    /*
+     * {@inheritdoc}
+     */
+    render: function (model) {
+      var activeCampaign = this.collection.findWhere({'isActive': true});
+      if (!activeCampaign) {
+        this.$el
+          .find('a[href]')
+          .attr('href', '')
+          .text('Current')
+          .end()
+          .hide();
+      }
+      else {
+        var name = activeCampaign.get('name');
+        var label = activeCampaign.get('label');
+        this.$el
+          .find('a[href]')
+          .attr('href', activeCampaign.get('links').edit)
+          .text(Drupal.t('Current: !agent', {'!agent': label}))
           .end()
           .show();
       }

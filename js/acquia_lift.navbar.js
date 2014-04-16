@@ -13,7 +13,7 @@ Drupal.behaviors.acquiaLiftNavbarMenu = {
       $('.navbar-menu-acquia-lift-controls')
         .children('.menu')
         .drupalNavbarMenu({
-          twisties: false,
+          activeTrail: false,
           findItem: function ($list, $menu) {
             var $items = $list.children('li');
             var $wrappedItems = $list.children().not('li').children('li');

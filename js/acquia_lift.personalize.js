@@ -133,7 +133,7 @@ Drupal.behaviors.acquiaLiftPersonalize = {
                 switch (type) {
                   case 'option_sets':
                     // If the menu already has a link for this setting, abort.
-                    if (!$menu.find('[data-acquia-lift-personalize-agent="' + obj.agent + '"][data-acquia-lift-personalize-id="' + key + '"].acquia-lift-preview-option-set').length) {
+                    if (!$menu.find('[data-acquia-lift-personalize-agent="' + obj.agent + '"][data-acquia-lift-personalize-id="' + key + '"]. acquia-lift-preview-option-set').length) {
                       var campaign = obj.agent;
                       model = ui.collections[type][campaign].findWhere({'osid': key});
                     }
@@ -504,6 +504,9 @@ $.extend(Drupal.acquiaLiftUI, {
      * @param jQuery.Event event
      */
     onClick: function (event) {
+      if (!$(event.target).hasClass('acquia-lift-preview-option')) {
+        return;
+      }
       var optionid = $(event.target).data('acquia-lift-personalize-option-set-option');
       var selector = $(event.target).data('acquia-lift-personalize-option-set-selector');
       var osid = this.model.get('osid');
@@ -1028,10 +1031,10 @@ Drupal.theme.acquiaLiftOptionSetItem = function (options) {
   ];
 
   var item = '';
-  item += '<div ' + attrs.join(' ') + '>\n';
+  //item += '<div ' + attrs.join(' ') + '>\n';
   item += '<span>' + Drupal.checkPlain(options.os.label) + '</span>';
   item += Drupal.theme('acquiaLiftPersonalizeMenu', options);
-  item += '</div>\n';
+  //item += '</div>\n';
   return item;
 };
 

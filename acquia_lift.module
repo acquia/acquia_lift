@@ -1040,8 +1040,8 @@ function acquia_lift_form_personalize_agent_option_sets_form_alter(&$form, &$for
       // chosenify it.
       if (isset($option_sets_section[$name]['options'])) {
         foreach ($option_sets_section[$name]['options'] as $option_id => &$sub_elements) {
-          if (isset($sub_elements['explicit_targeting']) && is_array($sub_elements['explicit_targeting']) && isset($sub_elements['explicit_targeting']['mapping'])) {
-            $select = &$sub_elements['explicit_targeting']['mapping'];
+          if (isset($sub_elements['explicit_targeting']) && is_array($sub_elements['explicit_targeting']) && isset($sub_elements['explicit_targeting']['predefined'])) {
+            $select = &$sub_elements['explicit_targeting']['predefined'];
             acquia_lift_chosenify_element($select);
           }
         }

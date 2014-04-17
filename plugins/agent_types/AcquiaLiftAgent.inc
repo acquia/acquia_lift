@@ -1111,6 +1111,8 @@ class AcquiaLiftReport implements PersonalizeAgentReportInterface {
    */
   protected function buildContextReport($report_data) {
     $build = array();
+    $agent_data = $this->agent->getData();
+    $isAdaptive = $agent_data['decision_style'] === 'adaptive';
 
     if ($report_data['confidence'] === FALSE) {
       return array();
@@ -1164,8 +1166,8 @@ class AcquiaLiftReport implements PersonalizeAgentReportInterface {
         $row[] = $choice['counter'];
         $row[] = $choice['choice_id'];
         $row[] = array(
-          'data' => $targeting_data['favored_selection'] === $choice['raw_label'] ? $feature_label . ' <span class="acquia-lift-best">' . t('best') . '</span>' : $feature_label,
-          'class' => $targeting_data['favored_selection'] === $choice['raw_label'] ? array('acquia-lift-context-best') : array(),
+          'data' => ($isAdaptive && $targeting_data['favored_selection'] === $choice['raw_label']) ? $feature_label . ' <span class="acquia-lift-best">' . t('best') . '</span>' : $feature_label,
+          'class' => ($isAdaptive && $targeting_data['favored_selection'] === $choice['raw_label']) ? array('acquia-lift-context-best') : array(),
         );
         $row[] = format_plural($choice['decisions'], '1 time', '@count times');
         if ($choice['control'] === TRUE) {
@@ -1215,22 +1217,14 @@ class AcquiaLiftReport implements PersonalizeAgentReportInterface {
     }
 
     $data = $report_data['targeting'];
-    $header = array(
-      array(
-        'data' => t('Context'),
-        //'field' => 'feature',
-        //'sort' => 'asc',
-      ),
-      array(
-        'data' => t('Best Variation'),
-        //'field' => 'feature',
-      ),
-      array(
-        'data' => t('Percent of Traffic'),
-        //'field' => 'percent_traffic',
-      ),
-      t('Stability'),
-    );
+    $agent_data = $this->agent->getData();
+    $isAdaptive = $agent_data['decision_style'] === 'adaptive';
+    $header[] = t('Context');
+    if ($isAdaptive) {
+      $header[] = t('Best Variation');
+    }
+    $header[] = t('Percent of Traffic');
+    $header[] = t('Stability');
     $rows = array();
     foreach ($data as $feature => $f) {
       // Don't include system-defined features.
@@ -1240,20 +1234,20 @@ class AcquiaLiftReport implements PersonalizeAgentReportInterface {
         if (isset($report_data['potential_context'][$feature])) {
           $feature_label = $report_data['potential_context'][$feature]['label'];
         }
-
+        $row_data = array($feature_label);
+        if ($isAdaptive) {
+          $row_data[] = $f['favored_selection_number'];
+        }
+        $row_data[] = array(
+          'data' => $this->formatReportPercentage($f['percent_traffic']),
+          'class' => array($this->getGraphLevelClass($f['percent_traffic'])),
+        );
+        $row_data[] = array(
+          'data' => $this->formatReportNumber($f['stability']),
+          'class' => $f['stability'] > self::STABILITY_THRESHOLD ? array('acquia-lift-report-positive') : array('acquia-lift-report-negative'),
+        );
         $rows[] = array(
-          'data' => array(
-            $feature_label,
-            $f['favored_selection_number'],
-            array(
-              'data' => $this->formatReportPercentage($f['percent_traffic']),
-              'class' => array($this->getGraphLevelClass($f['percent_traffic'])),
-            ),
-            array(
-              'data' => $this->formatReportNumber($f['stability']),
-              'class' => $f['stability'] > self::STABILITY_THRESHOLD ? array('acquia-lift-report-positive') : array('acquia-lift-report-negative'),
-            ),
-          ),
+          'data' => $row_data,
           'data-acquia-lift-feature' => $feature,
         );
       }

@@ -1033,8 +1033,8 @@ class AcquiaLiftReport implements PersonalizeAgentReportInterface {
         switch ($field_name) {
           case 'confidence':
             $row[] = array(
-              'data' => $this->formatReportNumber($choice[$field_name]),
-              'class' => $this->getGraphLevelClass($choice[$field_name]/100),
+              'data' => $this->formatReportNumber($choice[$field_name], FALSE, 2, 5),
+              'class' => $choice['significant'] ? array('acquia-lift-report-positive') : array('acquia-lift-report-negative'),
             );
             break;
           case 'decisions':
@@ -1042,9 +1042,11 @@ class AcquiaLiftReport implements PersonalizeAgentReportInterface {
             break;
           case 'lift_default':
           case 'lift_random':
+            $classes = $choice['significant'] ? array('acquia-lift-report-positive') : array('acquia-lift-report-negative');
+            $classes[] = $this->getGraphLevelClass($choice[$field_name]/100);
             $row[] = array(
-              'data' => $this->formatReportNumber($choice[$field_name], FALSE),
-              'class' => $choice[$field_name] > self::LIFT_THRESHHOLD ? array('acquia-lift-report-positive') : array('acquia-lift-report-negative'),
+              'data' => $this->formatReportPercentage($choice[$field_name]/100, TRUE),
+              'class' => $classes,
             );
             break;
           case 'goals_per_decision':
@@ -1475,14 +1477,21 @@ class AcquiaLiftReport implements PersonalizeAgentReportInterface {
    *   Boolean indicating whether the number should be trimmed of trailing 0s.
    * @param $decimals
    *   The number of decimal places to display.
+   * @param $padding
+   *   The total number of characters (including decimal) for padding of the
+   *   final number.  This allows numbers to align properly  in column views.
+   *   This will have no effect if trim is set to true.
    * @return string
    *   The formatted number to display.
    */
-  protected function formatReportNumber($value, $trim = TRUE, $decimals = 2) {
+  protected function formatReportNumber($value, $trim = TRUE, $decimals = 2, $padding = 0) {
     if (is_numeric($value)) {
       $value = number_format($value, $decimals);
       if ($trim) {
         $value = rtrim(trim($value, '0'), '.');
+      }
+      else if ($padding > 0) {
+        $value = str_pad($value, $padding, '0', STR_PAD_LEFT);
       }
       if (strlen($value) === 0) {
         $value = 0;

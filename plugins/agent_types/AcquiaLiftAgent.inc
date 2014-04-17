@@ -773,6 +773,9 @@ class AcquiaLiftReport implements PersonalizeAgentReportInterface {
       'stability' => $this->buildStabilityReport($report_data),
       'targeting' => $this->buildReportContextSelection($report_data),
     );
+    if ($reports['overview']['confidence']['#total_confident'] == 0) {
+      drupal_set_message(t('This test has insufficient confidence and stability to be reliable.  Let the test run longer to increase confidence.  Consider changing contexts for more stability.'), 'warning');
+    }
     return $reports;
   }
 
@@ -954,6 +957,7 @@ class AcquiaLiftReport implements PersonalizeAgentReportInterface {
           $total_confident > 0 ? 'acquia-lift-report-positive' : 'acquia-lift-report-negative',
         ),
       ),
+      '#total_confident' => $total_confident,
     );
     return $build;
   }

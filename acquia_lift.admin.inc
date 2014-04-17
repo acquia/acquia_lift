@@ -300,7 +300,7 @@ function acquia_lift_report($form, &$form_state, $agent_data, $option_set) {
     $form['experiment_report']['experiment_report_additional'] = array(
       '#type' => 'container',
       '#attributes' => array(
-        'class' => array('acquia-lift-report-controls'),
+        'class' => array('acquia-lift-report-controls', 'clearfix'),
       ),
       'distribution' => array(
         '#markup' => $report_title_additional,
@@ -381,7 +381,7 @@ function acquia_lift_report($form, &$form_state, $agent_data, $option_set) {
     $form['stability_report']['stability_report_additional'] = array(
       '#type' => 'container',
       '#attributes' => array(
-        'class' => array('acquia-lift-report-controls'),
+        'class' => array('acquia-lift-report-controls', 'clearfix'),
       ),
       'distribution' => array(
         '#markup' => $report_title_additional,

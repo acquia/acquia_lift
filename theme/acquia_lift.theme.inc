@@ -186,7 +186,7 @@ function theme_acquia_lift_percentage_label($variables) {
   $percent = round($variables['percent'], 2);
   $rest_percent = 100 - $percent;
 
-  $output = '<div class="acquia-lift-distribution">';
+  $output = '<div class="acquia-lift-distribution form-item">';
   if (!empty($variables['percent_label'])) {
     $output .= '<div class="distribution-set">';
     $output .= $variables['percent_label'] . ' (' . $variables['percent'] . '%)';

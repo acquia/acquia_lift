@@ -1083,7 +1083,7 @@ class AcquiaLiftReport implements PersonalizeAgentReportInterface {
         '',
         '',
         array (
-          'data' => t('Out of a possible @goal_value', array('@goal_value' => $total_goal_value)),
+          'data' => theme('acquia_lift_goal_total', array('goal_total' => $total_goal_value)),
           'class' => array('acquia-lift-experiment-goal-total'),
         ),
         '',

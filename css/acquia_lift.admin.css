@@ -207,6 +207,7 @@ tr.acquia-lift-report-control {
   width: 100%;
   text-align: center;
 }
+#acquia-lift-experiment-report .acquia-lift-experiment-footer-row .acquia-lift-experiment-goal-total-wrapper .acquia-lift-experiment-goal-total-value,
 .acquia-lift-hilo-estimate .acquia-lift-badge {
   position: relative;
   background: white;
@@ -215,8 +216,10 @@ tr.acquia-lift-report-control {
   border-radius: 10px;
   border: 1px solid #2FA6E5;
   padding: 2px 4px;
-  top: -12px;
   font-weight: bold;
+}
+.acquia-lift-hilo-estimate .acquia-lift-badge {
+  top: -12px;
 }
 
 /* Reporting: Static bar graphs to show percentage */
@@ -259,4 +262,8 @@ tr.acquia-lift-report-control {
 .acquia-lift-report-positive.acquia-lift-graph-level-5,
 .acquia-lift-graph-level-5 {
   background-image: url('../images/graph-5.png');
+}
+#acquia-lift-experiment-report .acquia-lift-experiment-footer-row .acquia-lift-experiment-goal-total-wrapper {
+  width: 210px;
+  text-align: right;
 }

@@ -226,6 +226,19 @@ function theme_acquia_lift_high_low($variables) {
 }
 
 /**
+ * @param $variables
+ *   An associative array of variables including:
+ *   - goal_total: The total goal value
+ * @return the rendered output
+ */
+function theme_acquia_lift_goal_total($variables) {
+  $output = '<div class="acquia-lift-experiment-goal-total-wrapper">';
+  $output .= t('Out of a possible ') . '<span class="acquia-lift-experiment-goal-total-value">' . $variables['goal_total'] . '</span>';
+  $output .= '</div>';
+  return $output;
+}
+
+/**
  * Theme function for formatting a report overview item
  */
 function theme_acquia_lift_report_overview($variables) {

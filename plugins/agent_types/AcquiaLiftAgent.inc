@@ -1048,14 +1048,11 @@ class AcquiaLiftReport implements PersonalizeAgentReportInterface {
             $row[] = $this->formatReportNumber($choice[$field_name], FALSE);
             break;
           case 'estimated_value': {
-            /*
             $row[] = theme('acquia_lift_high_low', array(
-              'high' => $choice['estimated_lower'],
+              'high' => $choice['estimated_higher'],
               'low' => $choice['estimated_lower'],
               'value' => $this->formatReportNumber($choice['estimated_value'], TRUE, 4),
             ));
-            */
-            $row[] = $this->formatReportNumber($choice['estimated_value'], TRUE, 4);
             break;
           }
           default:

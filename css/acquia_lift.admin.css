@@ -189,26 +189,23 @@ tr.acquia-lift-report-control {
 /* High-low goal value display */
 .acquia-lift-hilo-estimate {
   width: 200px;
-  border-left: 1px solid #000;
-  border-right: 1px solid #000;
-  height: 19px;
-  margin-bottom: 15px;
+  border-left: 1px solid #999;
+  border-right: 1px solid #999;
+  height: 24px;
 }
 .acquia-lift-hilo-estimate .acquia-lift-hilo-background {
-  background-color: #000;
+  background-color: #999;
   height: 1px;
   vertical-align: middle;
-  margin-top: 15px;
   position: relative;
-  top: 9px;
+  top: 12px;
 }
 .acquia-lift-hilo-estimate .acquia-lift-hilo-bounds {
   height: 5px;
-  margin-top: 12px;
   overflow: visible;
   background-color: #2FA6E5;
   position: relative;
-  top: -1em;
+  top: -2px;
   display: inline-block;
 }
 .acquia-lift-hilo-estimate .acquia-lift-estimate {
@@ -222,8 +219,8 @@ tr.acquia-lift-report-control {
   -webkit-border-radius: 10px;
   border-radius: 10px;
   border: 1px solid #2FA6E5;
-  padding: 3px 6px;
-  top: -10px;
+  padding: 2px 4px;
+  top: -12px;
   font-weight: bold;
 }
 

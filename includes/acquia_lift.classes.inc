@@ -22,6 +22,11 @@ class AcquiaLiftAPI implements PersonalizeLoggerAwareInterface {
 
   const GET_REQUEST_TIMEOUT_VALUE = 8.0;
 
+  /*
+   * Determines the confidence level required for reporting significance.
+   */
+  const CONFIDENCE_MEASURE = 0.8;
+
   /**
    * The Acquia Lift API key to use.
    *
@@ -998,7 +1003,8 @@ class AcquiaLiftAPI implements PersonalizeLoggerAwareInterface {
     else {
       $features = $features === NULL ? "(none)" : implode(',', $features);
     }
-    $url = $this->generateEndpoint("/{$agent_name}/report/confidence{$date_str}?features=$features");
+    // Tricky: if a confidence-measure isn't passed, then low/high values for predicted value are null.
+    $url = $this->generateEndpoint("/{$agent_name}/report/confidence{$date_str}?features=$features&confidence-measure=" . self::CONFIDENCE_MEASURE);
     $headers = array('Accept' => 'application/json');
     if ($point !== NULL) {
       $headers['x-mpath-point'] = $point;

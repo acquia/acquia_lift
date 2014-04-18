@@ -1,7 +1,5 @@
 <?php
 
-require_once(dirname(__FILE__) . '/../includes/acquia_lift.classes.inc');
-
 /**
  * @file
  * Integration tests for Acquia Lift module.
@@ -44,6 +42,8 @@ class AcquiaLiftWebTest extends DrupalWebTestCase {
   }
 
   public function setUp() {
+    require_once(dirname(__FILE__) . '/../includes/acquia_lift.classes.inc');
+
     parent::setUp(array('ctools', 'personalize', 'acquia_lift', 'personalize_blocks', 'personalize_test'));
 
     $this->adminUser = $this->drupalCreateUser(array('access administration pages', 'administer personalize configuration'));

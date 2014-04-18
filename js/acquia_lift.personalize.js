@@ -254,7 +254,7 @@ Drupal.behaviors.acquiaLiftContentVariations = {
       // is enabled.
       $(document).bind('visitorActionsUIEditMode', function (event, isActive) {
         if (isActive) {
-          // Prevent infintie loops of updating models triggering change events
+          // Prevent infinite loops of updating models triggering change events
           // by delaying this update to the next evaluation cycle.
           window.setTimeout(function () {
             ui.models.contentVariationModel.set('isActive', false);

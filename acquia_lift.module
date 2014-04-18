@@ -140,7 +140,7 @@ function acquia_lift_init() {
   if (path_is_admin(current_path()) && user_access('manage personalized content')) {
     module_load_include('inc', 'acquia_lift', 'acquia_lift.ui');
     if (acquia_lift_nav_message_is_set()) {
-      // The user navigated to the admin UI without exiting normally fro the "personalize
+      // The user navigated to the admin UI without exiting normally from the "personalize
       // in context" flow. Unset the nav message.
       acquia_lift_unset_nav_message();
     }

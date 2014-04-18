@@ -1,6 +1,6 @@
 /**
  * @file
- * Add navigation to personizable fields.
+ * Add navigation to personalizable fields.
  */
 
 (function ($) {
@@ -41,7 +41,7 @@
     // Retain the cleaned ID for updating the widget settings.
     widget.data('id', widgetID);
 
-    // Update the count to accomodate for new option fields.
+    // Update the count to accommodate for new option fields.
     status.total = optionCount;
 
     // Set the active item to the fist item on page load, and the last item
@@ -185,7 +185,7 @@
   };
 
   /**
-   * Returns the navigation markup for personizable field navigation.
+   * Returns the navigation markup for personalizable field navigation.
    */
   Drupal.theme.personalizeFieldsNavigation = function () {
     var output = '';

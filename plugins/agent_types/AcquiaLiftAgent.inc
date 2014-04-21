@@ -1112,21 +1112,18 @@ class AcquiaLiftReport implements PersonalizeAgentReportInterface {
         if (in_array($field_name, $exclude_columns)) {
           continue;
         }
-        $significant_indicator_classes = array();
-        if (!$choice['control']) {
-          $significant_indicator_classes = $choice['significant'] ? array('acquia-lift-report-positive') : array('acquia-lift-report-negative');
-        }
+        $significant_indicator_classes = $choice['significant'] ? array('acquia-lift-report-positive') : array('acquia-lift-report-negative');
         switch ($field_name) {
           case 'confidence':
             $row[] = array(
               'data' => $choice[$field_name],
-              'class' => $significant_indicator_classes,
+              'class' => $choice['control'] ? array() : $significant_indicator_classes,
             );
             break;
           case 'lift_default':
             $row[] = array(
               'data' => $choice[$field_name],
-              'class' => $significant_indicator_classes,
+              'class' => $choice['control'] ? array() : $significant_indicator_classes,
             );
             break;
           case 'lift_random':
@@ -1147,6 +1144,7 @@ class AcquiaLiftReport implements PersonalizeAgentReportInterface {
             $row[] = $choice[$field_name];
         }
       }
+      // Allow for special styling of the control row.
       if ($choice['control'] === TRUE) {
         $rows[] = array(
           'data' => $row,
@@ -1154,6 +1152,7 @@ class AcquiaLiftReport implements PersonalizeAgentReportInterface {
           'no_striping' => TRUE,
         );
       }
+      // Just add the data to the rows to display.
       else {
         $rows[] = $row;
       }

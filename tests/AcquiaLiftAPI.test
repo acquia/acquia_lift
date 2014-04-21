@@ -1,7 +1,5 @@
 <?php
 
-require_once(dirname(__FILE__) . '/../includes/acquia_lift.classes.inc');
-
 /**
  * @file
  * Unit tests for Acquia Lift module.
@@ -15,6 +13,11 @@ class AcquiaLiftTest extends DrupalUnitTestCase {
       'description' => t('Unit tests for AcquiaLiftAPI methods.'),
       'group' => t('Personalize'),
     );
+  }
+
+  protected function setUp() {
+    require_once(dirname(__FILE__) . '/../includes/acquia_lift.classes.inc');
+    parent::setUp();
   }
 
   /**

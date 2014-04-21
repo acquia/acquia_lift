@@ -1097,7 +1097,7 @@ class AcquiaLiftReport implements PersonalizeAgentReportInterface {
       'choice_id' => t('Name'),
       'decisions' => t('Shown'),
       'estimated_value' => t('Predicted goal value'),
-      'lift_default' => t('Lift over default'),
+      'lift_default' => t('Lift over control'),
       'lift_random' => t('Lift over random'),
       'confidence' => t('Confidence'),
     );
@@ -1219,8 +1219,8 @@ class AcquiaLiftReport implements PersonalizeAgentReportInterface {
       t('Name'),
       t('Context'),
       t('Shown'),
-      t('Lift/control'),
-      t('Lift/random'),
+      t('Lift over control'),
+      t('Lift over random'),
     );
     $rows = array();
     foreach($report_data['context']['features'] as $feature_string => $feature) {
@@ -1455,9 +1455,9 @@ class AcquiaLiftReport implements PersonalizeAgentReportInterface {
         'value_per_decision' => $item['totals']['goals'] == 0 ? self::DATA_NA : $this->formatReportNumber($item['totals']['valPerDecision'], FALSE),
         'selections' => $item['count'],
         'confidence' => $this->formatReportNumber($item['confidence'], FALSE, 2, 5),
-        'lift_default' => $item['lift']['default'],
+        'lift_default' => $this->formatReportPercentage($item['lift']['default']/100, TRUE),
         'lift_default_graph' => $this->getGraphLevelClass($item['lift']['default']/100),
-        'lift_random' => $item['lift']['random'],
+        'lift_random' => $this->formatReportPercentage($item['lift']['random']/100, TRUE),
         'lift_random_graph' => $this->getGraphLevelClass($item['lift']['random']/100),
         'significant' => $item['signif'],
         'control' => $counter === 1 ? TRUE : FALSE,

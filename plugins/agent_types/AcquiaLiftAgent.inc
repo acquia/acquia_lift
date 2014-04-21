@@ -945,6 +945,8 @@ class AcquiaLiftReport implements PersonalizeAgentReportInterface {
           'lift_random_positive' => $choice['unformatted']['lift_random'] > self::LIFT_THRESHHOLD ? self::POSITIVE : self::NEGATIVE,
           'control' => $choice['control'],
           'feature_label' => $feature_label,
+          'goals' => $choice['goals'],
+          'conversion' => $choice['conversion'],
         );
       }
     }
@@ -1083,6 +1085,8 @@ class AcquiaLiftReport implements PersonalizeAgentReportInterface {
       'counter' => t('Var.'),
       'choice_id' => t('Name'),
       'decisions' => t('Shown'),
+      'goals' => t('Goals'),
+      'conversion' => t('Conversion rate'),
       'estimated_value' => t('Predicted goal value'),
       'lift_default' => t('Lift over control'),
       'lift_random' => t('Lift over random'),
@@ -1184,6 +1188,8 @@ class AcquiaLiftReport implements PersonalizeAgentReportInterface {
       t('Name'),
       t('Context'),
       t('Shown'),
+      t('Goals'),
+      t('Conversion rate'),
       t('Lift over control'),
       t('Lift over random'),
     );
@@ -1205,6 +1211,8 @@ class AcquiaLiftReport implements PersonalizeAgentReportInterface {
           'class' => $choice['best'] ? array('acquia-lift-context-best') : array(),
         );
         $row[] = $choice['decisions'];
+        $row[] = $choice['goals'];
+        $row[] = $choice['conversion'];
         $row[] = array(
           'data' => $choice['lift_default'],
           'class' => $lift_default_classes,
@@ -1419,6 +1427,7 @@ class AcquiaLiftReport implements PersonalizeAgentReportInterface {
         'goals_per_decision' => $item['totals']['goals'] == 0 ? self::DATA_NA : $this->formatReportNumber($item['totals']['goalsPerDecision'], FALSE),
         'value_per_decision' => $item['totals']['goals'] == 0 ? self::DATA_NA : $this->formatReportNumber($item['totals']['valPerDecision'], FALSE),
         'selections' => $item['count'],
+        'conversion' => $item['totals']['goals'] > 0 ? $this->formatReportPercentage($item['totals']['goals'] / $item['totals']['count']) : self::DATA_NA,
         'confidence' => $counter === 1 ? self::DATA_NA : $this->formatReportPercentage($item['confidence']/100),
         'lift_default' => $counter === 1 ? self::DATA_NA : $this->formatReportPercentage($item['lift']['default']/100, TRUE),
         'lift_random' => $this->formatReportPercentage($item['lift']['random']/100, TRUE),

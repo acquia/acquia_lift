@@ -179,9 +179,10 @@ Drupal.behaviors.acquiaLiftPersonalize = {
 
       // Build View for the current campaign.
       if ($('.acquia-lift-current-campaign.navbar-menu-item').length == 0) {
-        var $currentli = $('<li><div class="navbar-box"><a href="" class="acquia-lift-current-campaign visitor-actions-ui-ignore navbar-menu-item acquia-lift-active">Current</a></div></li>');
+        var $currentli = $('<li><a href="" class="acquia-lift-current-campaign visitor-actions-ui-ignore navbar-menu-item acquia-lift-active">' + Drupal.t('Current') + '</a></li>');
+        $currentli.append('<ul class="menu"><li class="first last leaf"><a href="">' + Drupal.t('Edit campaign') + '</a></li></ul>');
         ui.views.push(new ui.MenuCurrentCampaignView({
-          el: $currentli.find('.navbar-box'),
+          el: $currentli,
           model: ui.collections['campaigns'],
           collection: ui.collections['campaigns']
         }));
@@ -835,7 +836,6 @@ $.extend(Drupal.acquiaLiftUI, {
         this.$el
           .find('a[href]')
           .attr('href', '')
-          .text('Current')
           .end()
           .hide();
       }
@@ -845,9 +845,9 @@ $.extend(Drupal.acquiaLiftUI, {
         this.$el
           .find('a[href]')
           .attr('href', activeCampaign.get('links').edit)
-          .text(Drupal.t('Current: !agent', {'!agent': label}))
           .end()
           .show();
+        this.$el.find('a[href]').first().text(Drupal.t('Current: !agent', {'!agent': label}))
       }
     }
   }),

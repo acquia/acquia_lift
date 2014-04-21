@@ -110,7 +110,7 @@ class AcquiaLiftAgent extends PersonalizeAgentBase implements PersonalizeAgentGo
    *   An instance of the AcquiaLiftAPI class.
    */
   public function __construct($machine_name, $title, $data, $status, $started, AcquiaLiftAPI $acquia_lift_api) {
-    parent::__construct($machine_name, $title, $data, $status, $started = NULL);
+    parent::__construct($machine_name, $title, $data, $status, $started);
     $this->liftAPI = $acquia_lift_api;
     $this->reporting = new AcquiaLiftReport($this, $this->liftAPI);
   }

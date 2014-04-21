@@ -131,7 +131,7 @@ function acquia_lift_install() {
 
   // Create a link to the results page.
   $item = array(
-    'link_title' => 'Results',
+    'link_title' => 'Reports',
     'link_path' => 'admin/structure/personalize/manage/acquia-lift-placeholder/report',
     'menu_name' => $menu_name,
     'options' => array(
@@ -314,4 +314,5 @@ function acquia_lift_update_7003() {
   // Change the add campaign link title.
   menu_link_maintain('menu', 'update', 'admin/structure/personalize/add', 'Add campaign');
   menu_link_maintain('menu', 'update', 'admin/structure/personalize', 'All campaigns');
+  menu_link_maintain('menu', 'update', 'admin/structure/personalize/manage/acquia-lift-placeholder/report', 'Reports');
 }

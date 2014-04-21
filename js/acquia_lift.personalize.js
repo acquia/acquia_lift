@@ -806,7 +806,7 @@ $.extend(Drupal.acquiaLiftUI, {
         this.$el
           .find('a[href]')
           .attr('href', activeCampaign.get('links').report)
-          .text(Drupal.t('Results for !agent', {'!agent': label}))
+          .text(Drupal.t('Reports'))
           .end()
           .show();
       }

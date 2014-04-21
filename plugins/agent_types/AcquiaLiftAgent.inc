@@ -941,9 +941,7 @@ class AcquiaLiftReport implements PersonalizeAgentReportInterface {
           'decisions' => $choice['decisions'],
           'lift_default' => $choice['control'] ? self::DATA_NA : $choice['lift_default'],
           'lift_default_positive' => $lift_default_positive,
-          'lift_default_graph' => $choice['control'] ? '' : $choice['lift_default_graph'],
           'lift_random' => $choice['lift_random'],
-          'lift_random_graph' => $choice['lift_random_graph'],
           'lift_random_positive' => $choice['unformatted']['lift_random'] > self::LIFT_THRESHHOLD ? self::POSITIVE : self::NEGATIVE,
           'control' => $choice['control'],
           'feature_label' => $feature_label,
@@ -1114,31 +1112,27 @@ class AcquiaLiftReport implements PersonalizeAgentReportInterface {
         if (in_array($field_name, $exclude_columns)) {
           continue;
         }
+        $significant_indicator_classes = array();
+        if (!$choice['control']) {
+          $significant_indicator_classes = $choice['significant'] ? array('acquia-lift-report-positive') : array('acquia-lift-report-negative');
+        }
         switch ($field_name) {
           case 'confidence':
             $row[] = array(
               'data' => $choice[$field_name],
-              'class' => $choice['significant'] ? array('acquia-lift-report-positive') : array('acquia-lift-report-negative'),
+              'class' => $significant_indicator_classes,
             );
             break;
           case 'lift_default':
-            $classes = array(
-              $choice['lift_default_graph'],
-              $choice['significant'] ? 'acquia-lift-report-positive' : 'acquia-lift-report-negative',
-            );
             $row[] = array(
               'data' => $choice[$field_name],
-              'class' => $classes,
+              'class' => $significant_indicator_classes,
             );
             break;
           case 'lift_random':
-            $classes = array(
-              $choice['lift_random_graph'],
-              $choice['significant'] ? 'acquia-lift-report-positive' : 'acquia-lift-report-negative',
-            );
             $row[] = array(
               'data' => $choice[$field_name],
-              'class' => $classes,
+              'class' => $significant_indicator_classes,
             );
             break;
           case 'estimated_value': {
@@ -1426,11 +1420,9 @@ class AcquiaLiftReport implements PersonalizeAgentReportInterface {
         'goals_per_decision' => $item['totals']['goals'] == 0 ? self::DATA_NA : $this->formatReportNumber($item['totals']['goalsPerDecision'], FALSE),
         'value_per_decision' => $item['totals']['goals'] == 0 ? self::DATA_NA : $this->formatReportNumber($item['totals']['valPerDecision'], FALSE),
         'selections' => $item['count'],
-        'confidence' => $this->formatReportNumber($item['confidence'], FALSE, 2, 5),
-        'lift_default' => $this->formatReportPercentage($item['lift']['default']/100, TRUE),
-        'lift_default_graph' => $this->getGraphLevelClass($item['lift']['default']/100),
+        'confidence' => $counter === 1 ? self::DATA_NA : $this->formatReportPercentage($item['confidence']/100),
+        'lift_default' => $counter === 1 ? self::DATA_NA : $this->formatReportPercentage($item['lift']['default']/100, TRUE),
         'lift_random' => $this->formatReportPercentage($item['lift']['random']/100, TRUE),
-        'lift_random_graph' => $this->getGraphLevelClass($item['lift']['random']/100),
         'significant' => $item['signif'],
         'control' => $counter === 1 ? TRUE : FALSE,
       );

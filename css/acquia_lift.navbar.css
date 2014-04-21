@@ -38,25 +38,10 @@
 }
 #navbar-administration .acquia-lift-campaigns .navbar-box {
   display: inline-block;
+  width: 100%;
 }
-#navbar-administration .acquia-lift-campaigns .acquia-lift-campaign {
-  padding: 1em 0.667em 1em 2.333em;
-  background-image: url("../images/29AAE1/edit.svg");
-  background-size: 24px 24px;
-  background-position: left center;
-}
-.no-svg #navbar-administration .acquia-lift-campaigns .acquia-lift-campaign {
-  background-image: url("../images/29AAE1/edit.png");
-}
-#navbar-administration .acquia-lift-campaigns li:hover .acquia-lift-campaign,
-#navbar-administration .acquia-lift-campaigns li:active .acquia-lift-campaign,
-#navbar-administration .acquia-lift-campaigns li.acquia-lift-active .acquia-lift-campaign {
-  background-image: url("../images/F05A26/edit_active.svg");
-}
-.no-svg #navbar-administration .acquia-lift-campaigns li:hover .acquia-lift-campaign,
-.no-svg #navbar-administration .acquia-lift-campaigns li:active .acquia-lift-campaign,
-.no-svg #navbar-administration .acquia-lift-campaigns li.acquia-lift-active .acquia-lift-campaign {
-  background-image: url("../images/F05A26/edit_active.png");
+#navbar-administration .navbar-tray-vertical .acquia-lift-campaigns .navbar-box .acquia-lift-campaign {
+  margin-right: 0;
 }
 #navbar-administration.navbar-oriented .acquia-lift-campaign {
   padding-right: 0; /* LTR */

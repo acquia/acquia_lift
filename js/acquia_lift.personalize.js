@@ -1202,17 +1202,7 @@ Drupal.theme.acquiaLiftPersonalizeCampaignMenuItem = function (options) {
     'aria-pressed="false"'
   ];
 
-  var editAttrs = [
-    'class="acquia-lift-campaign-edit"',
-    'title="' + Drupal.t('Edit the @campaign campaign', {'@campaign': options.link.label}) + '"',
-    'href="' + options.edit.href + '"'
-  ];
-
-  item += '<div>\n'
   item += '<a ' + linkAttrs.join(' ') + '>' + options.link.label + '</a>\n';
-  item += ' | ';
-  item += '<a ' + editAttrs.join(' ') + '>' + Drupal.t('configure') + '</a>\n';
-  item += '</div>\n';
 
   return item;
 };

@@ -233,7 +233,7 @@ function theme_acquia_lift_high_low($variables) {
  */
 function theme_acquia_lift_goal_total($variables) {
   $output = '<div class="acquia-lift-experiment-goal-total-wrapper">';
-  $output .= t('Out of a possible ') . '<span class="acquia-lift-experiment-goal-total-value">' . $variables['goal_total'] . '</span>';
+  $output .= t('Total possible goal value: ') . '<span class="acquia-lift-experiment-goal-total-value">' . $variables['goal_total'] . '</span>';
   $output .= '</div>';
   return $output;
 }

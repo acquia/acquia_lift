@@ -216,7 +216,11 @@ function theme_acquia_lift_percentage_label($variables) {
 function theme_acquia_lift_high_low($variables) {
   $high = is_numeric($variables['high']) ? $variables['high'] : 0;
   $low = is_numeric($variables['low']) ? $variables['low'] : 0;
-  $output = '<div class="acquia-lift-hilo-estimate">';
+  $title = t('It is predicted that the goal value using this option will be between @low and @high.', array(
+    '@low' => $low,
+    '@high' => $high,
+  ));
+  $output = '<div class="acquia-lift-hilo-estimate" title="' . $title . '">';
   $output .= '<div class="acquia-lift-hilo-background">';
   $output .= '<div class="acquia-lift-hilo-bounds" data-acquia-lift-high="' . $high . '" data-acquia-lift-low="' . $low . '">';
   $output .= '<div class="acquia-lift-estimate">';

@@ -1510,15 +1510,23 @@ class AcquiaLiftReport implements PersonalizeAgentReportInterface {
    *   The number to show as a percentage.
    * @param bool $include_sign
    *   True to include positive/negative sign indicators.
+   * @param $trim
+   *   Boolean indicating whether the number should be trimmed of trailing 0s.
+   * @param $decimals
+   *   The number of decimal places to display.
+   * @param $padding
+   *   The total number of characters (including decimal) for padding of the
+   *   final number.  This allows numbers to align properly  in column views.
+   *   This will have no effect if trim is set to true.
    * @return string
    *   The formatted number to display.
    */
-  protected function formatReportPercentage($value, $include_sign = FALSE) {
+  protected function formatReportPercentage($value, $include_sign = FALSE, $trim = TRUE, $decimals = 2, $padding = 1) {
     $percent = (float) $value * 100;
     if ($percent > 0 && $include_sign) {
-      return '+' . $this->formatReportNumber($percent) . '%';
+      return '+' . $this->formatReportNumber($percent, $trim, $decimals, $padding) . '%';
     }
-    return $this->formatReportNumber($percent) . '%';
+    return $this->formatReportNumber($percent, $trim, $decimals, $padding) . '%';
   }
 
   /**
@@ -1531,19 +1539,17 @@ class AcquiaLiftReport implements PersonalizeAgentReportInterface {
    * @param $decimals
    *   The number of decimal places to display.
    * @param $padding
-   *   The total number of characters (including decimal) for padding of the
-   *   final number.  This allows numbers to align properly  in column views.
-   *   This will have no effect if trim is set to true.
+   *   The total number of characters to pad to the left of the decimal point.
    * @return string
    *   The formatted number to display.
    */
-  protected function formatReportNumber($value, $trim = TRUE, $decimals = 2, $padding = 0) {
+  protected function formatReportNumber($value, $trim = TRUE, $decimals = 2, $padding = 1) {
     if (is_numeric($value)) {
       $value = number_format($value, $decimals);
       if ($trim) {
-        $value = rtrim(trim($value, '0'), '.');
+        $value = rtrim(rtrim($value, '0'), '.');
       }
-      else if ($padding > 0) {
+      if ($padding > 0) {
         $value = str_pad($value, $padding, '0', STR_PAD_LEFT);
       }
       if (strlen($value) === 0) {

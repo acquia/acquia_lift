@@ -899,15 +899,6 @@ class AcquiaLiftReport implements PersonalizeAgentReportInterface {
     $interval_start->setTimestamp($this->agent->getStartTime());
     $interval = date_diff($interval_start, date_create());
 
-    // Determine possible goal value for entire campaign
-    // @todo: Would like to get rid of this function call in order to make
-    // the class unit-testable.
-    $goals = personalize_goal_load_by_conditions(array('agent' => $this->agent->getMachineName()));
-    $total_goal_value = 0;
-    foreach($goals as $goal) {
-      $total_goal_value += $goal['value'];
-    }
-
     // Update the status report data (used for overview report).
     foreach($report_data['status'] as &$report) {
       $report['total_lift_positive'] = $report['unformatted']['total_lift'] > self::LIFT_THRESHHOLD && $total_confident > 0 ? self::POSITIVE : self::NEGATIVE;
@@ -959,11 +950,9 @@ class AcquiaLiftReport implements PersonalizeAgentReportInterface {
         );
       }
     }
-    $report_data['context']['total_goal_value'] = $total_goal_value;
 
     // Build the experiment report data
     $report_data['experiment']['choices'] = $report_data['confidence']['features'][self::NO_FEATURES];
-    $report_data['experiment']['total_goal_value'] = $total_goal_value;
 
     // Build the stability report data
     foreach ($report_data['targeting'] as $feature_string => &$feature) {
@@ -1175,23 +1164,6 @@ class AcquiaLiftReport implements PersonalizeAgentReportInterface {
         $rows[] = $row;
       }
     }
-    // Add the final row to display the total goal value
-    $rows[] = array(
-      'data' => array(
-        '',
-        '',
-        '',
-        array (
-          'data' => theme('acquia_lift_goal_total', array('goal_total' => $set_data['total_goal_value'])),
-          'class' => array('acquia-lift-experiment-goal-total'),
-        ),
-        '',
-        '',
-        '',
-      ),
-      'class' => array('acquia-lift-experiment-footer-row'),
-      'no_striping' => TRUE,
-    );
     $build['content'] = array(
       '#theme' => 'table',
       '#header' => $header,

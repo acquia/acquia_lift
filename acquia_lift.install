@@ -165,7 +165,7 @@ function acquia_lift_enable() {
   if (!empty($items)) {
     foreach ($items as $item) {
       $item['options'] = unserialize($item['options']);
-      $item['hidden'] = 1;
+      $item['hidden'] = 0;
       menu_link_save($item);
     }
     // Update the menu router information.

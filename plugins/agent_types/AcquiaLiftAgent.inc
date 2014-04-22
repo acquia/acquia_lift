@@ -1092,7 +1092,7 @@ class AcquiaLiftReport implements PersonalizeAgentReportInterface {
       'estimated_value' => t('Predicted goal value'),
       'lift_default' => t('Lift over control'),
       'lift_random' => t('Lift over random'),
-      'confidence' => t('Confidence'),
+      'confidence' => t('Chance to beat control'),
     );
 
     // Not all of these columns will be shown, depending on certain factors.
@@ -1146,6 +1146,14 @@ class AcquiaLiftReport implements PersonalizeAgentReportInterface {
             ));
             break;
           }
+          case 'choice_id':
+            if ($choice['control']) {
+              $row[] = t('Control: ') . $choice[$field_name];
+            }
+            else {
+              $row[] = $choice[$field_name];
+            }
+            break;
           default:
             $row[] = $choice[$field_name];
         }
@@ -1207,7 +1215,12 @@ class AcquiaLiftReport implements PersonalizeAgentReportInterface {
         }
         $row = array();
         $row[] = $choice['counter'];
-        $row[] = $choice['choice_id'];
+        if ($choice['control']) {
+          $row[] = t('Control: ') . $choice['choice_id'];
+        }
+        else {
+          $row[] = $choice['choice_id'];
+        }
         $row[] = array(
           'data' => $choice['best'] ?  $choice['feature_label'] . ' <span class="acquia-lift-best">' . t('best') . '</span>' : $choice['feature_label'],
           'class' => $choice['best'] ? array('acquia-lift-context-best') : array(),

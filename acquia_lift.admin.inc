@@ -307,6 +307,13 @@ function acquia_lift_report($form, &$form_state, $agent_data, $option_set) {
       )
     );
   }
+  $form['experiment_report']['title']['experiment_report_summary'] = array(
+    '#theme_wrappers' => array('container'),
+    '#markup' => t('See which content variations are winning'),
+    '#attributes' => array(
+      'class' => array('acquia-lift-report-summary'),
+    ),
+  );
   $form['experiment_report']['report'] = array(
     '#markup' => drupal_render($reports['experiment']),
     '#theme_wrappers' => array('container'),
@@ -347,6 +354,13 @@ function acquia_lift_report($form, &$form_state, $agent_data, $option_set) {
       ),
     );
   }
+  $form['context_report']['title']['context_report_summary'] = array(
+    '#theme_wrappers' => array('container'),
+    '#markup' => t('See who converts best for each content variation'),
+    '#attributes' => array(
+      'class' => array('acquia-lift-report-summary'),
+    ),
+  );
   $form['context_report']['context_report_additional']['context_report_context'] = $context_select;
   $form['context_report']['report'] = array(
     '#markup' => drupal_render($reports['context']),

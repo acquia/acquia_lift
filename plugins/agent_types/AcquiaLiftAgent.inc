@@ -908,6 +908,7 @@ class AcquiaLiftReport implements PersonalizeAgentReportInterface {
     }
 
     // Update context report data.
+    $option_numbers = array();
     foreach ($report_data['confidence']['features'] as $feature_string => $feature) {
       // Get the user-friendly feature label from the possible contextual values.
       $feature_label = $feature_string;
@@ -923,6 +924,7 @@ class AcquiaLiftReport implements PersonalizeAgentReportInterface {
       // Get the data from the targeting report for this feature.
       $targeting_data = $report_data['targeting'][$feature_string];
 
+      // Create a hash of choice numbers for stability report.
       // Don't show system-defined features.
       if ($targeting_data['system'] === TRUE) {
         continue;
@@ -948,6 +950,7 @@ class AcquiaLiftReport implements PersonalizeAgentReportInterface {
           'goals' => $choice['goals'],
           'conversion' => $choice['conversion'],
         );
+        $option_numbers[$feature_string . '|' . $choice['raw_label']] = $choice['counter'];
       }
     }
 
@@ -964,6 +967,9 @@ class AcquiaLiftReport implements PersonalizeAgentReportInterface {
       $feature['feature_label'] = $feature;
       if (isset($report_data['potential_context'][$feature_string])) {
         $feature['feature_label'] = $report_data['potential_context'][$feature_string]['label'];
+      }
+      if (isset($option_numbers[$feature_string . '|' . $feature['favored_selection']])) {
+        $feature['favored_selection_number'] = $option_numbers[$feature_string . '|' . $feature['favored_selection']];
       }
       if (!$isAdaptive) {
         unset($feature['favored_selection_number']);
@@ -1477,6 +1483,7 @@ class AcquiaLiftReport implements PersonalizeAgentReportInterface {
       $feature = $item['feature'];
       $favored_selection = 0;
       foreach ($item['choices'] as $i => $choice) {
+        // Note: Choices are not in order of option.
         if ($choice['score'] > $item['choices'][$favored_selection]['score']) {
           $favored_selection = $i;
         }
@@ -1485,7 +1492,6 @@ class AcquiaLiftReport implements PersonalizeAgentReportInterface {
         'raw_label' => $item['label'],
         'label' => $item['labelText'],
         'favored_selection' =>  $item['choices'][$favored_selection]['label'],
-        'favored_selection_number' => $favored_selection + 1,
         'percent_traffic' => $this->formatReportPercentage($item['percentTraffic']),
         'percent_traffic_graph' => $this->getGraphLevelClass($item['percentTraffic']),
         'predicted_value' => $item['averageResponseValue'],

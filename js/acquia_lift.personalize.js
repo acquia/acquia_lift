@@ -133,7 +133,7 @@ Drupal.behaviors.acquiaLiftPersonalize = {
                 switch (type) {
                   case 'option_sets':
                     // If the menu already has a link for this setting, abort.
-                    if (!$menu.find('[data-acquia-lift-personalize-agent="' + obj.agent + '"][data-acquia-lift-personalize-id="' + key + '"].acquia-lift-preview-option-set').length) {
+                    if (!$menu.find('[data-acquia-lift-personalize-agent="' + obj.agent + '"][data-acquia-lift-personalize-id="' + key + '"]. acquia-lift-preview-option-set').length) {
                       var campaign = obj.agent;
                       model = ui.collections[type][campaign].findWhere({'osid': key});
                     }
@@ -177,6 +177,19 @@ Drupal.behaviors.acquiaLiftPersonalize = {
         }
       });
 
+      // Build View for the current campaign.
+      if ($('.acquia-lift-current-campaign.navbar-menu-item').length == 0) {
+        var $currentli = $('<li><a href="" class="acquia-lift-current-campaign visitor-actions-ui-ignore navbar-menu-item acquia-lift-active">' + Drupal.t('Current') + '</a></li>');
+        $currentli.append('<ul class="menu"><li class="first last leaf"><a href="">' + Drupal.t('Edit campaign') + '</a></li></ul>');
+        ui.views.push(new ui.MenuCurrentCampaignView({
+          el: $currentli,
+          model: ui.collections['campaigns'],
+          collection: ui.collections['campaigns']
+        }));
+        $('.acquia-lift-campaigns').closest('li').after($currentli);
+      }
+
+
       // Build Views for the Option Set groups.
       var $optionSetGroups = $('[data-acquia-lift-personalize-agent].acquia-lift-preview-option-set').once('acquia-lift-personalize-option-sets');
       if ($optionSetGroups.length) {
@@ -196,7 +209,7 @@ Drupal.behaviors.acquiaLiftPersonalize = {
         }
       }
 
-      // Create Views for the results link.
+      // Create View for the results link.
       $('[href="' + reportPath + '"]')
         .once('acquia-lift-personalize-report')
         .each(function (index, element) {
@@ -504,6 +517,9 @@ $.extend(Drupal.acquiaLiftUI, {
      * @param jQuery.Event event
      */
     onClick: function (event) {
+      if (!$(event.target).hasClass('acquia-lift-preview-option')) {
+        return;
+      }
       var optionid = $(event.target).data('acquia-lift-personalize-option-set-option');
       var selector = $(event.target).data('acquia-lift-personalize-option-set-selector');
       var osid = this.model.get('osid');
@@ -791,9 +807,47 @@ $.extend(Drupal.acquiaLiftUI, {
         this.$el
           .find('a[href]')
           .attr('href', activeCampaign.get('links').report)
-          .text(Drupal.t('Results for !agent', {'!agent': label}))
+          .text(Drupal.t('Reports'))
           .end()
           .show();
+      }
+    }
+  }),
+
+  MenuCurrentCampaignView: ViewBase.extend({
+    /*
+     * {@inheritdoc}
+     */
+    initialize: function (options) {
+      this.collection = options.collection;
+      if (!this.model) {
+        return;
+      }
+      this.model.on('change', this.render, this);
+      this.render(this.model);
+    },
+
+    /*
+     * {@inheritdoc}
+     */
+    render: function (model) {
+      var activeCampaign = this.collection.findWhere({'isActive': true});
+      if (!activeCampaign) {
+        this.$el
+          .find('a[href]')
+          .attr('href', '')
+          .end()
+          .hide();
+      }
+      else {
+        var name = activeCampaign.get('name');
+        var label = activeCampaign.get('label');
+        this.$el
+          .find('a[href]')
+          .attr('href', activeCampaign.get('links').edit)
+          .end()
+          .show();
+        this.$el.find('a[href]').first().text(Drupal.t('Current: !agent', {'!agent': label}))
       }
     }
   }),
@@ -1028,10 +1082,10 @@ Drupal.theme.acquiaLiftOptionSetItem = function (options) {
   ];
 
   var item = '';
-  item += '<div ' + attrs.join(' ') + '>\n';
+  //item += '<div ' + attrs.join(' ') + '>\n';
   item += '<span>' + Drupal.checkPlain(options.os.label) + '</span>';
   item += Drupal.theme('acquiaLiftPersonalizeMenu', options);
-  item += '</div>\n';
+  //item += '</div>\n';
   return item;
 };
 
@@ -1148,16 +1202,7 @@ Drupal.theme.acquiaLiftPersonalizeCampaignMenuItem = function (options) {
     'aria-pressed="false"'
   ];
 
-  var editAttrs = [
-    'class="acquia-lift-campaign-edit"',
-    'title="' + Drupal.t('Edit the @campaign campaign', {'@campaign': options.link.label}) + '"',
-    'href="' + options.edit.href + '"'
-  ];
-
-  item += '<div>\n<a ' + linkAttrs.join(' ') + '>' + options.link.label + '</a>\n';
-  item += ' | ';
-  item += '<a ' + editAttrs.join(' ') + '>' + Drupal.t('edit') + '</a>\n';
-  item += '</div>\n';
+  item += '<a ' + linkAttrs.join(' ') + '>' + options.link.label + '</a>\n';
 
   return item;
 };

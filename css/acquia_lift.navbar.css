@@ -38,9 +38,10 @@
 }
 #navbar-administration .acquia-lift-campaigns .navbar-box {
   display: inline-block;
+  width: 100%;
 }
-#navbar-administration .acquia-lift-campaigns .acquia-lift-campaign {
-  padding: 1em 0.667em 1em 1.333em;
+#navbar-administration .navbar-tray-vertical .acquia-lift-campaigns .navbar-box .acquia-lift-campaign {
+  margin-right: 0;
 }
 #navbar-administration.navbar-oriented .acquia-lift-campaign {
   padding-right: 0; /* LTR */

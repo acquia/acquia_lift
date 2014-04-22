@@ -1175,6 +1175,7 @@ class AcquiaLiftReport implements PersonalizeAgentReportInterface {
       '#theme' => 'table',
       '#header' => $header,
       '#rows' => $rows,
+      '#sticky' => FALSE,
     );
     return $build;
   }
@@ -1249,6 +1250,7 @@ class AcquiaLiftReport implements PersonalizeAgentReportInterface {
       '#theme' => 'table',
       '#header' => $header,
       '#rows' => $rows,
+      '#sticky' => FALSE,
     );
     return $build;
   }
@@ -1301,6 +1303,7 @@ class AcquiaLiftReport implements PersonalizeAgentReportInterface {
       '#theme' => 'table',
       '#header' => $header,
       '#rows' => $rows,
+      '#sticky' => FALSE,
     );
     return $build;
   }

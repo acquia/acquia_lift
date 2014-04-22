@@ -788,8 +788,8 @@ class AcquiaLiftReport implements PersonalizeAgentReportInterface {
       'stability' => $this->buildStabilityReport($report_data),
       'targeting' => $this->buildReportContextSelection($report_data),
     );
-    if ($reports['overview']['confidence']['#total_confident'] == 0) {
-      drupal_set_message(t('This test has insufficient confidence and stability to be reliable.  Let the test run longer to increase confidence.  Consider changing contexts for more stability.'), 'warning');
+    if ($report_data['status']['all']['total_confident'] == 0) {
+      drupal_set_message(t('This test has insufficient confidence.  Consider letting the test run longer before making a decision about how to use these results.'), 'warning');
     }
     return $reports;
   }
@@ -1034,6 +1034,7 @@ class AcquiaLiftReport implements PersonalizeAgentReportInterface {
     if ($overview_report['total_goals_positive'] === self::POSITIVE) {
       $build['goals']['#attributes']['class'] = array('acquia-lift-report-positive');
     }
+    /*
     $build['lift'] = array(
       '#type' => 'container',
       '#theme' => 'acquia_lift_report_overview',
@@ -1063,6 +1064,7 @@ class AcquiaLiftReport implements PersonalizeAgentReportInterface {
       ),
       '#total_confident' => $overview_report['total_confident'],
     );
+    */
     return $build;
   }
 

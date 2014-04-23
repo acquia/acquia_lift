@@ -788,7 +788,10 @@ class AcquiaLiftReport implements PersonalizeAgentReportInterface {
       'stability' => $this->buildStabilityReport($report_data),
       'targeting' => $this->buildReportContextSelection($report_data),
     );
-    if ($report_data['status']['all']['total_confident'] == 0) {
+    if (!is_array($report_data['status']) || !is_array($report_data['confidence']) || !is_array($report_data['targeting']) || !is_array($report_data['potential_context'])) {
+      drupal_set_message(t('There was a problem retrieving the report data.  Please try again later.'), 'error');
+    }
+    else if ($report_data['status']['all']['total_confident'] == 0) {
       drupal_set_message(t('This test has insufficient confidence.  Consider letting the test run longer before making a decision about how to use these results.'), 'warning');
     }
     return $reports;
@@ -875,9 +878,17 @@ class AcquiaLiftReport implements PersonalizeAgentReportInterface {
   }
 
   /**
-   * Alter the report data returned from API calls to be presentation ready for
-   * individual campaign reports.
-   * @param $report_data
+   * Alter the report data returned from API calls to combine into data that is
+   * ready for presentation within individual campaign reports.
+   *
+   * @param array $report_data
+   *   The report data loaded and formatted from Acquia Lift.
+   *
+   * @see loadReportData()
+   * @see extractOverviewReportData()
+   * @see extractConfidenceReportData()
+   * @see extractPotentialTargetingValues()
+   * @see extractTargetingReportData()
    */
   protected function extractCampaignReportData(&$report_data) {
     if (!is_array($report_data['status']) || !is_array($report_data['confidence']) || !is_array($report_data['targeting']) || !is_array($report_data['potential_context'])) {
@@ -1041,6 +1052,8 @@ class AcquiaLiftReport implements PersonalizeAgentReportInterface {
       $build['goals']['#attributes']['class'] = array('acquia-lift-report-positive');
     }
     /*
+     * @todo: Figure out a way to present and explain this information so
+     * that we can include these figures.
     $build['lift'] = array(
       '#type' => 'container',
       '#theme' => 'acquia_lift_report_overview',

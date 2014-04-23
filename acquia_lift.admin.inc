@@ -241,7 +241,7 @@ function acquia_lift_report($form, &$form_state, $agent_data, $option_set) {
   // Default to showing the complete history of the campaign.
   $date_start_report = date('Y-m-d', $agent_data->started);
   $date_end_report = $date_end_targeting = date('Y-m-d');
-  if (isset($form_state['date_filters']) && $form_state['date_filters'] === 'today') {
+  if (isset($form_state['values']['date_filters']) && $form_state['values']['date_filters'] === 'today') {
     $date_start_report = date('Y-m-d');
     $date_end_report = NULL;
   }

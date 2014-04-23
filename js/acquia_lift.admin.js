@@ -84,8 +84,7 @@
         var lo = parseFloat($(this).attr('data-acquia-lift-low'));
         if (isNaN(minBound)) {
           minBound = lo;
-        }
-        else {
+        } else {
           minBound = Math.min(minBound, lo);
         }
         maxBound = Math.max(maxBound, parseFloat($(this).attr('data-acquia-lift-high')));
@@ -101,8 +100,6 @@
           $bounds.css('height', 0);
           return;
         }
-        //@todo: Complete calculations to determine bound with and margin based
-        // on low/high estimates.
         var scale = $(this).width() / (maxBound - minBound);
         var scaleLow = (low - minBound) * scale;
         var scaleHigh = (high - minBound) * scale;

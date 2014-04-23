@@ -154,19 +154,13 @@ tr.acquia-lift-report-control {
 }
 
 /* Reporting: Report heading */
-.acquia-lift-report-section-title {
-  float: left;
-}
 .acquia-lift-report-summary {
   font-style: italic;
 }
-
 /* Reporting: Distribution labels */
 .acquia-lift-distribution {
   width: 350px;
-  float: left;
   font-size: smaller;
-  clear: left;
 }
 .acquia-lift-distribution .distribution-set {
   float: left;
@@ -191,14 +185,15 @@ tr.acquia-lift-report-control {
 #acquia-lift-experiment-report .acquia-lift-distribution .distribution-rest {
   color: #999;
 }
-
+/* Reporting: Header summary */
+.acquia-lift-report-header-summary {
+  float: left;
+}
 /* Reporting: Context select */
-.form-item-context-report-context-report-additional-context-report-context,
-.form-item-stability-report-stability-report-additional-stability-report-context {
+.acquia-lift-report-controls {
   float: right;
 }
-.form-item-context-report-context-report-additional-context-report-context label,
-.form-item-stability-report-stability-report-additional-stability-report-context label {
+.acquia-lift-report-controls .form-type-select label {
   margin: 0;
   display: inline;
 }
@@ -254,33 +249,21 @@ tr.acquia-lift-report-control {
   background-position: left center;
   padding-left: 30px;
 }
-.acquia-lift-report-negative.acquia-lift-graph-level-0,
-.acquia-lift-report-positive.acquia-lift-graph-level-0,
 .acquia-lift-graph-level-0 {
   background-image: url('../images/graph-0.png');
 }
-.acquia-lift-report-negative.acquia-lift-graph-level-1,
-.acquia-lift-report-positive.acquia-lift-graph-level-1,
 .acquia-lift-graph-level-1 {
   background-image: url('../images/graph-1.png');
 }
-.acquia-lift-report-negative.acquia-lift-graph-level-2,
-.acquia-lift-report-positive.acquia-lift-graph-level-2,
 .acquia-lift-graph-level-2 {
   background-image: url('../images/graph-2.png');
 }
-.acquia-lift-report-negative.acquia-lift-graph-level-3,
-.acquia-lift-report-positive.acquia-lift-graph-level-3,
 .acquia-lift-graph-level-3 {
   background-image: url('../images/graph-3.png');
 }
-.acquia-lift-report-negative.acquia-lift-graph-level-4,
-.acquia-lift-report-positive.acquia-lift-graph-level-4,
 .acquia-lift-graph-level-4 {
   background-image: url('../images/graph-4.png');
 }
-.acquia-lift-report-negative.acquia-lift-graph-level-5,
-.acquia-lift-report-positive.acquia-lift-graph-level-5,
 .acquia-lift-graph-level-5 {
   background-image: url('../images/graph-5.png');
 }

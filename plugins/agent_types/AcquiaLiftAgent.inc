@@ -697,21 +697,6 @@ class AcquiaLiftReport implements PersonalizeAgentReportInterface {
   const NO_FEATURES = '(none)';
 
   /**
-   * Used to indicate that a reporting value is positive.
-   */
-  const POSITIVE = TRUE;
-
-  /**
-   * Used to indicate that a reporting value is negative.
-   */
-  const NEGATIVE = FALSE;
-
-  /**
-   * Used to indicate that a reporting value is not positive or negative.
-   */
-  const NEUTRAL = '';
-
-  /**
    * The Acquia Lift agent instance for reporting on.
    *
    * @var AcquiaLiftAgent
@@ -900,7 +885,7 @@ class AcquiaLiftReport implements PersonalizeAgentReportInterface {
     // Determine overall confidence based on confidence in choices.
     $total_confident = 0;
     foreach($report_data['confidence']['features'][self::NO_FEATURES] as $choice) {
-      if ($choice['significant'] == TRUE) {
+      if ($choice['significant']) {
         $total_confident++;
       }
     }
@@ -912,7 +897,7 @@ class AcquiaLiftReport implements PersonalizeAgentReportInterface {
 
     // Update the status report data (used for overview report).
     foreach($report_data['status'] as &$report) {
-      $report['total_lift_positive'] = $report['unformatted']['total_lift'] > self::LIFT_THRESHHOLD && $total_confident > 0 ? self::POSITIVE : self::NEGATIVE;
+      $report['total_lift_positive'] = $report['unformatted']['total_lift'] > self::LIFT_THRESHHOLD && $total_confident > 0 ? TRUE : FALSE;
       $report['total_confident'] = $total_confident;
       $report['confidence_level'] = $total_confident > 0 ? 'high' : 'low';
       $report['time_running'] = isset($interval) ? $interval->format('%mm, %dd') : '1d';
@@ -941,21 +926,15 @@ class AcquiaLiftReport implements PersonalizeAgentReportInterface {
         continue;
       }
       foreach($feature as $choice_id => $choice) {
-        if ($choice['control']) {
-          $lift_default_positive = self::NEUTRAL;
-        }
-        else {
-          $lift_default_positive = $choice['unformatted']['lift_default'] > self::LIFT_THRESHHOLD ? self::POSITIVE : self::NEGATIVE;
-        }
         $report_data['context']['features'][$feature_string][$choice_id] = array(
           'counter' => $choice['counter'],
           'choice_id' => $choice['choice_id'],
           'best' => ($isAdaptive && $targeting_data['favored_selection'] === $choice['raw_label']) ? TRUE : FALSE,
           'decisions' => $choice['decisions'],
           'lift_default' => $choice['control'] ? self::DATA_NA : $choice['lift_default'],
-          'lift_default_positive' => $lift_default_positive,
+          'lift_default_positive' => $choice['unformatted']['lift_default'] > self::LIFT_THRESHHOLD ? TRUE : FALSE,
           'lift_random' => $choice['lift_random'],
-          'lift_random_positive' => $choice['unformatted']['lift_random'] > self::LIFT_THRESHHOLD ? self::POSITIVE : self::NEGATIVE,
+          'lift_random_positive' => $choice['unformatted']['lift_random'] > self::LIFT_THRESHHOLD ? TRUE : FALSE,
           'control' => $choice['control'],
           'feature_label' => $feature_label,
           'goals' => $choice['goals'],
@@ -1048,7 +1027,7 @@ class AcquiaLiftReport implements PersonalizeAgentReportInterface {
       '#title' => $overview_report['total_goals'],
       '#description' => t('goals met'),
     );
-    if ($overview_report['total_goals_positive'] === self::POSITIVE) {
+    if ($overview_report['total_goals_positive']) {
       $build['goals']['#attributes']['class'] = array('acquia-lift-report-positive');
     }
     /*
@@ -1064,7 +1043,7 @@ class AcquiaLiftReport implements PersonalizeAgentReportInterface {
       '#description' => t('Predicted lift/control'),
       '#attributes' => array(
         'class' => array(
-          $overview_report['total_lift_positive'] === self::POSITIVE ? 'acquia-lift-report-positive' : 'acquia-lift-report-negative',
+          $overview_report['total_lift_positive'] ? 'acquia-lift-report-positive' : 'acquia-lift-report-negative',
         ),
       ),
     );
@@ -1227,11 +1206,8 @@ class AcquiaLiftReport implements PersonalizeAgentReportInterface {
     foreach($report_data['context']['features'] as $feature_string => $feature) {
       foreach($feature as $choice) {
         $lift_default_classes = array();
-        if ($choice['lift_default_positive'] === self::POSITIVE) {
-          $lift_default_classes[] = 'acquia-lift-report-positive';
-        }
-        else if ($choice['lift_default_positive'] === self::NEGATIVE) {
-          $lift_default_classes[] = 'acquia-lift-report-negative';
+        if (!$choice['control']) {
+          $lift_default_classes = $choice['lift_default_positive'] ? 'acquia-lift-report-positive' : 'acquia-lift-report-negative';
         }
         $row = array();
         $row[] = $choice['counter'];
@@ -1254,7 +1230,7 @@ class AcquiaLiftReport implements PersonalizeAgentReportInterface {
         );
         $row[] = array(
           'data' => $choice['lift_random'],
-          'class' => $choice['lift_random_positive'] === self::POSITIVE ? array('acquia-lift-report-positive') : array('acquia-lift-report-negative'),
+          'class' => $choice['lift_random_positive'] ? array('acquia-lift-report-positive') : array('acquia-lift-report-negative'),
         );
         $rows[] = array(
           'data' => $row,
@@ -1305,7 +1281,7 @@ class AcquiaLiftReport implements PersonalizeAgentReportInterface {
       );
       $row_data[] = array(
         'data' => $f['stability'],
-        'class' => $f['stability_positive'] === self::POSITIVE ? array('acquia-lift-report-positive') : array('acquia-lift-report-negative'),
+        'class' => $f['stability_positive'] ? array('acquia-lift-report-positive') : array('acquia-lift-report-negative'),
       );
       $rows[] = array(
         'data' => $row_data,
@@ -1388,7 +1364,7 @@ class AcquiaLiftReport implements PersonalizeAgentReportInterface {
       'test_type' => $decision_style,
       'total_shown' => $this->formatReportNumber($items['today']['liftOverDefaultUsingGoals']),
       'total_goals' => $this->formatReportNumber($items['today']['goalCount']),
-      'total_goals_positive' => $items['today']['goalCount'] > 0 ? self::POSITIVE : self::NEGATIVE,
+      'total_goals_positive' => $items['today']['goalCount'] > 0 ? TRUE : FALSE,
       'total_lift' => $this->formatReportPercentage($items['today']['liftOverDefaultUsingGoals']),
       'total_variations' => $total_variations,
     );
@@ -1401,7 +1377,7 @@ class AcquiaLiftReport implements PersonalizeAgentReportInterface {
       'test_type' => $decision_style,
       'total_shown' => $this->formatReportNumber($items['totals']['sessions']['count']),
       'total_goals' => $this->formatReportNumber($items['totals']['goals']['count']),
-      'total_goals_positive' => $items['totals']['goals']['count'] > 0 ? self::POSITIVE : self::NEGATIVE,
+      'total_goals_positive' => $items['totals']['goals']['count'] > 0 ? TRUE : FALSE,
       'total_lift' => $this->formatReportPercentage($items['today']['liftOverDefaultUsingGoalsToDate']),
       'total_variations' => $total_variations,
     );
@@ -1509,7 +1485,7 @@ class AcquiaLiftReport implements PersonalizeAgentReportInterface {
         'percent_traffic_graph' => $this->getGraphLevelClass($item['percentTraffic']),
         'predicted_value' => $item['averageResponseValue'],
         'stability' => $this->formatReportNumber($item['stability']),
-        'stability_positive' => $item['stability'] > self::STABILITY_THRESHOLD ? self::POSITIVE : self::NEGATIVE,
+        'stability_positive' => $item['stability'] > self::STABILITY_THRESHOLD ? TRUE : FALSE,
         'stability_level' => $item['stabilityLevel'],
         'system' => strpos($item['label'], '[share-alt]') === FALSE ? FALSE : TRUE,
       );

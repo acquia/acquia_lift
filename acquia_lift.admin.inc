@@ -417,7 +417,7 @@ function acquia_lift_report($form, &$form_state, $agent_data, $option_set) {
       ),
     ),
     '#attributes' => array(
-      'id' => 'acquia-lift-stability-reort',
+      'id' => 'acquia-lift-stability-report',
       'class' => array('acquia-lift-report-section'),
     ),
   );

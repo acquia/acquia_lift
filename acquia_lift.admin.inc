@@ -300,6 +300,7 @@ function acquia_lift_report($form, &$form_state, $agent_data, $option_set) {
       )
     ),
     '#attributes' => array(
+      'id' => 'acquia-lift-experiment-report',
       'class' => array('acquia-lift-report-section'),
     ),
   );
@@ -352,6 +353,7 @@ function acquia_lift_report($form, &$form_state, $agent_data, $option_set) {
       ),
     ),
     '#attributes' => array(
+      'id' => 'acquia-lift-context-report',
       'class' => array('acquia-lift-report-section'),
     )
   );
@@ -415,6 +417,7 @@ function acquia_lift_report($form, &$form_state, $agent_data, $option_set) {
       ),
     ),
     '#attributes' => array(
+      'id' => 'acquia-lift-stability-reort',
       'class' => array('acquia-lift-report-section'),
     ),
   );

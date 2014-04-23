@@ -1075,8 +1075,13 @@ function getVisitorActionsAppModel () {
  * @return string
  */
 Drupal.theme.acquiaLiftOptionSetItem = function (options) {
+  var attrs = [
+    'class="acquia-lift-preview-option-set acquia-lift-preview-option-set-' + formatClass(options.osID)  + '"',
+    'data-acquia-lift-personalize-id="' + options.osID + '"',
+    'data-acquia-lift-personalize-agent="' + options.os.agent + '"'
+  ];
   var item = '';
-  item += '<span>' + Drupal.checkPlain(options.os.label) + '</span>';
+  item += '<span ' + attrs.join(' ') + '>' + Drupal.checkPlain(options.os.label) + '</span>';
   item += Drupal.theme('acquiaLiftPersonalizeMenu', options);
   return item;
 };

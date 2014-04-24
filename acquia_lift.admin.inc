@@ -241,7 +241,7 @@ function acquia_lift_report($form, &$form_state, $agent_data, $option_set) {
   // Default to showing the complete history of the campaign.
   $date_start_report = date('Y-m-d', $agent_data->started);
   $date_end_report = $date_end_targeting = date('Y-m-d');
-  if (isset($form_state['date_filters']) && $form_state['date_filters'] === 'today') {
+  if (isset($form_state['values']['date_filters']) && $form_state['values']['date_filters'] === 'today') {
     $date_start_report = date('Y-m-d');
     $date_end_report = NULL;
   }
@@ -277,36 +277,49 @@ function acquia_lift_report($form, &$form_state, $agent_data, $option_set) {
 
   // Experiment details section.
   $form['experiment_report'] = array(
-    '#tree' => TRUE,
-    'title' => array(
+    '#type' => 'container',
+    'header' => array(
       '#type' => 'container',
       '#attributes' => array(
-        'class' => array('acquia-lift-report-section-title'),
+        'class' => array('acquia-lift-report-section-header', 'clearfix'),
       ),
-      'experiment_report_title' => array(
-        '#markup' => '<h2>Experiment</h2>',
+      'title' => array(
+        '#type' => 'container',
+        '#attributes' => array(
+          'class' => array('acquia-lift-report-section-title'),
+        ),
+        'report_title' => array(
+          '#markup' => '<h2>Experiment</h2>',
+        ),
       ),
     ),
-    '#theme_wrappers' => array('container'),
+    'summary' => array(
+      '#type' => 'container',
+      '#attributes' => array(
+        'class' => array('acquia-lift-report-header-summary'),
+      )
+    ),
     '#attributes' => array(
       'id' => 'acquia-lift-experiment-report',
       'class' => array('acquia-lift-report-section'),
     ),
   );
   if (!empty($report_title_additional)) {
-    $form['experiment_report']['title']['experiment_report_subtitle'] = array(
+    $form['experiment_report']['header']['title']['groups'] = array(
       '#markup' => 'random group',
     );
-    $form['experiment_report']['experiment_report_additional'] = array(
-      '#type' => 'container',
-      '#attributes' => array(
-        'class' => array('acquia-lift-report-controls'),
-      ),
-      'distribution' => array(
-        '#markup' => $report_title_additional,
-      )
+    $form['experiment_report']['header']['summary']['distribution'] = array(
+      '#markup' => $report_title_additional,
+      '#theme_wrappers' => array('container'),
     );
   }
+  $form['experiment_report']['header']['summary']['report_summary'] = array(
+    '#theme_wrappers' => array('container'),
+    '#markup' => t('See which content variations are winning'),
+    '#attributes' => array(
+      'class' => array('acquia-lift-report-summary'),
+    ),
+  );
   $form['experiment_report']['report'] = array(
     '#markup' => drupal_render($reports['experiment']),
     '#theme_wrappers' => array('container'),
@@ -317,37 +330,56 @@ function acquia_lift_report($form, &$form_state, $agent_data, $option_set) {
   $context_select = $reports['targeting'];
   acquia_lift_chosenify_element($context_select, array('acquia-lift-chosen-select-half', 'acquia-lift-report-context-select'));
   $form['context_report'] = array(
-    '#tree' => TRUE,
-    'title' => array(
+    '#type' => 'container',
+    'header' => array(
       '#type' => 'container',
       '#attributes' => array(
-        'class' => array('acquia-lift-report-section-title'),
+        'class' => array('acquia-lift-report-section-header', 'clearfix'),
       ),
-      'context_report_title' => array(
-        '#markup' => '<h2>Context</h2>',
+      'title' => array(
+        '#type' => 'container',
+        '#attributes' => array(
+          'class' => array('acquia-lift-report-section-title'),
+        ),
+        'report_title' => array(
+          '#markup' => '<h2>' . t('Context') . '</h2>',
+        ),
+      ),
+      'summary' => array(
+        '#type' => 'container',
+        '#attributes' => array(
+          'class' => array('acquia-lift-report-header-summary'),
+        ),
       ),
     ),
-    '#theme_wrappers' => array('container'),
     '#attributes' => array(
       'id' => 'acquia-lift-context-report',
       'class' => array('acquia-lift-report-section'),
     )
   );
   if (!empty($report_title_additional)) {
-    $form['context_report']['title']['context_report_subtitle'] = array(
+    $form['context_report']['header']['title']['groups'] = array(
       '#markup' => 'random and personalized groups',
     );
-    $form['context_report']['context_report_additional'] = array(
-      '#type' => 'container',
-      '#attributes' => array(
-        'class' => array('acquia-lift-report-controls', 'clearfix'),
-      ),
-      'distribution' => array(
-        '#markup' => $report_title_additional,
-      ),
+    $form['context_report']['header']['summary']['distribution'] = array(
+      '#markup' => $report_title_additional,
+      '#theme_wrappers' => array('container'),
     );
   }
-  $form['context_report']['context_report_additional']['context_report_context'] = $context_select;
+  $form['context_report']['header']['summary']['report_summary'] = array(
+    '#theme_wrappers' => array('container'),
+    '#markup' => t('See who converts best for each content variation'),
+    '#attributes' => array(
+      'class' => array('acquia-lift-report-summary'),
+    ),
+  );
+  $form['context_report']['header']['controls'] = array(
+    '#type' => 'container',
+    '#attributes' => array(
+      'class' => array('acquia-lift-report-controls'),
+    ),
+    'context' => $context_select,
+  );
   $form['context_report']['report'] = array(
     '#markup' => drupal_render($reports['context']),
     '#theme_wrappers' => array('container'),
@@ -357,39 +389,55 @@ function acquia_lift_report($form, &$form_state, $agent_data, $option_set) {
   // Stability report section.
   $context_select = $reports['targeting'];
   acquia_lift_chosenify_element($context_select, array('acquia-lift-chosen-select-half', 'acquia-lift-report-context-select'));
-  $form['stability_report'] = array(
-    '#tree' => TRUE,
-    'title' => array(
+  $form['advanced_reports'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Advanced reporting'),
+    '#collapsible' => TRUE,
+    '#collapsed' => TRUE,
+  );
+  $form['advanced_reports']['stability_report'] = array(
+    '#type' => 'container',
+    'header' => array(
       '#type' => 'container',
-      '#attributes' => array(
-        'class' => array('acquia-lift-report-section-title'),
+      '#attributes' => array('acquia-lift-report-section-header', 'clearfix'),
+      'title' => array(
+        '#type' => 'container',
+        '#attributes' => array(
+          'class' => array('acquia-lift-report-section-title'),
+        ),
+        'report_title' => array(
+          '#markup' => '<h2>Context Stability</h2>',
+        ),
       ),
-      'stability_report_title' => array(
-        '#markup' => '<h2>Stability</h2>',
+      'summary' => array(
+        '#type' => 'container',
+        '#attributes' => array(
+          'class' => array('acquia-lift-report-header-summary'),
+        ),
       ),
     ),
-    '#theme_wrappers' => array('container'),
     '#attributes' => array(
       'id' => 'acquia-lift-stability-report',
       'class' => array('acquia-lift-report-section'),
     ),
   );
   if (!empty($report_title_additional)) {
-    $form['stability_report']['title']['stability_report_subtitle'] = array(
+    $form['advanced_reports']['stability_report']['header']['title']['groups'] = array(
       '#markup' => 'random and personalized groups',
     );
-    $form['stability_report']['stability_report_additional'] = array(
-      '#type' => 'container',
-      '#attributes' => array(
-        'class' => array('acquia-lift-report-controls'),
-      ),
-      'distribution' => array(
-        '#markup' => $report_title_additional,
-      ),
+    $form['advanced_reports']['stability_report']['header']['summary']['distribution'] = array(
+      '#markup' => $report_title_additional,
+      '#theme_wrappers' => array('container'),
     );
   }
-  $form['stability_report']['stability_report_additional']['stability_report_context'] = $context_select;
-  $form['stability_report']['report'] = array(
+  $form['advanced_reports']['stability_report']['header']['controls'] = array(
+    '#type' => 'container',
+    '#attributes' => array(
+      'class' => array('acquia-lift-report-controls'),
+    ),
+    'context' => $context_select,
+  );
+  $form['advanced_reports']['stability_report']['report'] = array(
     '#markup' => drupal_render($reports['stability']),
     '#theme_wrappers' => array('container'),
     '#id' => 'acquia-lift-stability-report-data',

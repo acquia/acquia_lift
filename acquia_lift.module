@@ -112,6 +112,9 @@ function acquia_lift_theme() {
       'low' => 0,
       'value' => 0,
     ),
+    'acquia_lift_goal_total' => array(
+      'goal_total' => 0,
+    ),
   );
 }
 

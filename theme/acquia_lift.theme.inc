@@ -186,7 +186,7 @@ function theme_acquia_lift_percentage_label($variables) {
   $percent = round($variables['percent'], 2);
   $rest_percent = 100 - $percent;
 
-  $output = '<div class="acquia-lift-distribution">';
+  $output = '<div class="acquia-lift-distribution form-item">';
   if (!empty($variables['percent_label'])) {
     $output .= '<div class="distribution-set">';
     $output .= $variables['percent_label'] . ' (' . $variables['percent'] . '%)';
@@ -216,12 +216,29 @@ function theme_acquia_lift_percentage_label($variables) {
 function theme_acquia_lift_high_low($variables) {
   $high = is_numeric($variables['high']) ? $variables['high'] : 0;
   $low = is_numeric($variables['low']) ? $variables['low'] : 0;
-  $output = '<div class="acquia-lift-hilo-estimate">';
+  $title = t('It is predicted that the goal value using this option will be between @low and @high.', array(
+    '@low' => $low,
+    '@high' => $high,
+  ));
+  $output = '<div class="acquia-lift-hilo-estimate" title="' . $title . '">';
   $output .= '<div class="acquia-lift-hilo-background">';
   $output .= '<div class="acquia-lift-hilo-bounds" data-acquia-lift-high="' . $high . '" data-acquia-lift-low="' . $low . '">';
   $output .= '<div class="acquia-lift-estimate">';
   $output .= '<span class="acquia-lift-badge">' . $variables['value'] . '</span>';
   $output .= '</div></div></div></div>';
+  return $output;
+}
+
+/**
+ * @param $variables
+ *   An associative array of variables including:
+ *   - goal_total: The total goal value
+ * @return the rendered output
+ */
+function theme_acquia_lift_goal_total($variables) {
+  $output = '<div class="acquia-lift-experiment-goal-total-wrapper">';
+  $output .= t('Total possible goal value: ') . '<span class="acquia-lift-experiment-goal-total-value">' . $variables['goal_total'] . '</span>';
+  $output .= '</div>';
   return $output;
 }
 

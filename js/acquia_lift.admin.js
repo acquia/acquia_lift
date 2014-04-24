@@ -77,7 +77,21 @@
    */
   Drupal.behaviors.acquia_lift_high_low = {
     attach: function(context, settings) {
-      $('.acquia-lift-hilo-estimate', context).once().each(function() {
+      // Determine the min and max bounds for the component.
+      var maxBound = 0;
+      var minBound = NaN; // Don't set this to 0 or it will always be the min.
+      $('.acquia-lift-hilo-bounds').each(function() {
+        var lo = parseFloat($(this).attr('data-acquia-lift-low'));
+        if (isNaN(minBound)) {
+          minBound = lo;
+        } else {
+          minBound = Math.min(minBound, lo);
+        }
+        maxBound = Math.max(maxBound, parseFloat($(this).attr('data-acquia-lift-high')));
+      });
+
+      // Now adjust the bounds display for each high-low component.
+      $('.acquia-lift-hilo-estimate', context).each(function() {
         var $bounds = $('.acquia-lift-hilo-bounds', this);
         var high = parseFloat($bounds.attr('data-acquia-lift-high'));
         var low = parseFloat($bounds.attr('data-acquia-lift-low'));
@@ -86,8 +100,12 @@
           $bounds.css('height', 0);
           return;
         }
-        //@todo: Complete calculations to determine bound with and margin based
-        // on low/high estimates.
+        var scale = $(this).width() / (maxBound - minBound);
+        var scaleLow = (low - minBound) * scale;
+        var scaleHigh = (high - minBound) * scale;
+        var width = Math.max((scaleHigh - scaleLow), 20);
+        $bounds.css('width', width + 'px');
+        $bounds.css('left', scaleLow + 'px');
       });
     }
   }

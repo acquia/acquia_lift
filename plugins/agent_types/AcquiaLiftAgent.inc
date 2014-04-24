@@ -897,7 +897,7 @@ class AcquiaLiftReport implements PersonalizeAgentReportInterface {
 
     // Update the status report data (used for overview report).
     foreach($report_data['status'] as &$report) {
-      $report['total_lift_positive'] = $report['unformatted']['total_lift'] > self::LIFT_THRESHHOLD && $total_confident > 0 ? TRUE : FALSE;
+      $report['total_lift_positive'] = $report['unformatted']['total_lift'] > self::LIFT_THRESHHOLD && $total_confident > 0;
       $report['total_confident'] = $total_confident;
       $report['confidence_level'] = $total_confident > 0 ? 'high' : 'low';
       $report['time_running'] = isset($interval) ? $interval->format('%mm, %dd') : '1d';
@@ -929,12 +929,12 @@ class AcquiaLiftReport implements PersonalizeAgentReportInterface {
         $report_data['context']['features'][$feature_string][$choice_id] = array(
           'counter' => $choice['counter'],
           'choice_id' => $choice['choice_id'],
-          'best' => ($isAdaptive && $targeting_data['favored_selection'] === $choice['raw_label']) ? TRUE : FALSE,
+          'best' => ($isAdaptive && $targeting_data['favored_selection'] === $choice['raw_label']),
           'decisions' => $choice['decisions'],
           'lift_default' => $choice['control'] ? self::DATA_NA : $choice['lift_default'],
-          'lift_default_positive' => $choice['unformatted']['lift_default'] > self::LIFT_THRESHHOLD ? TRUE : FALSE,
+          'lift_default_positive' => $choice['unformatted']['lift_default'] > self::LIFT_THRESHHOLD,
           'lift_random' => $choice['lift_random'],
-          'lift_random_positive' => $choice['unformatted']['lift_random'] > self::LIFT_THRESHHOLD ? TRUE : FALSE,
+          'lift_random_positive' => $choice['unformatted']['lift_random'] > self::LIFT_THRESHHOLD,
           'control' => $choice['control'],
           'feature_label' => $feature_label,
           'goals' => $choice['goals'],
@@ -1364,7 +1364,7 @@ class AcquiaLiftReport implements PersonalizeAgentReportInterface {
       'test_type' => $decision_style,
       'total_shown' => $this->formatReportNumber($items['today']['liftOverDefaultUsingGoals']),
       'total_goals' => $this->formatReportNumber($items['today']['goalCount']),
-      'total_goals_positive' => $items['today']['goalCount'] > 0 ? TRUE : FALSE,
+      'total_goals_positive' => $items['today']['goalCount'] > 0,
       'total_lift' => $this->formatReportPercentage($items['today']['liftOverDefaultUsingGoals']),
       'total_variations' => $total_variations,
     );
@@ -1377,7 +1377,7 @@ class AcquiaLiftReport implements PersonalizeAgentReportInterface {
       'test_type' => $decision_style,
       'total_shown' => $this->formatReportNumber($items['totals']['sessions']['count']),
       'total_goals' => $this->formatReportNumber($items['totals']['goals']['count']),
-      'total_goals_positive' => $items['totals']['goals']['count'] > 0 ? TRUE : FALSE,
+      'total_goals_positive' => $items['totals']['goals']['count'] > 0,
       'total_lift' => $this->formatReportPercentage($items['today']['liftOverDefaultUsingGoalsToDate']),
       'total_variations' => $total_variations,
     );
@@ -1445,7 +1445,7 @@ class AcquiaLiftReport implements PersonalizeAgentReportInterface {
         'lift_default' => $counter === 1 ? self::DATA_NA : $this->formatReportPercentage($item['lift']['default']/100, TRUE),
         'lift_random' => $this->formatReportPercentage($item['lift']['random']/100, TRUE),
         'significant' => $item['signif'],
-        'control' => $counter === 1 ? TRUE : FALSE,
+        'control' => $counter === 1,
       );
       if (!$data['goal_value_differential'] && ($item['totals']['goals'] != $item['totals']['val'])) {
         $data['goal_value_differential'] = TRUE;
@@ -1485,9 +1485,9 @@ class AcquiaLiftReport implements PersonalizeAgentReportInterface {
         'percent_traffic_graph' => $this->getGraphLevelClass($item['percentTraffic']),
         'predicted_value' => $item['averageResponseValue'],
         'stability' => $this->formatReportNumber($item['stability']),
-        'stability_positive' => $item['stability'] > self::STABILITY_THRESHOLD ? TRUE : FALSE,
+        'stability_positive' => $item['stability'] > self::STABILITY_THRESHOLD,
         'stability_level' => $item['stabilityLevel'],
-        'system' => strpos($item['label'], '[share-alt]') === FALSE ? FALSE : TRUE,
+        'system' => strpos($item['label'], '[share-alt]') !== FALSE,
       );
     }
     return $data;

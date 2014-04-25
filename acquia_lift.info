@@ -1,5 +1,6 @@
 name = Acquia Lift
 description = Extension to Personalize module that provides integration to the Acquia Lift service for machine-learning-based personalization.
+configure = admin/config/content/personalize/acquia_lift
 
 dependencies[] = libraries
 dependencies[] = personalize

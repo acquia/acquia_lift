@@ -42,6 +42,15 @@ function attachControlsLoadHandler () {
             open: function () {
               Drupal.attachBehaviors();
             },
+            create: function (event) {
+              $(event.target).parent().css('position', 'fixed');
+            },
+            resizeStart: function (event) {
+              $(event.target).parent().css('position', 'fixed');
+            },
+            resizeStop: function (event) {
+              $(event.target).parent().css('position', 'fixed');
+            },
             minWidth: 360,
             dialogClass: 'acquia-lift-controls-dialog'
           })

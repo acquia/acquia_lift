@@ -51,6 +51,36 @@ function attachControlsLoadHandler () {
 }
 
 /**
+ * Adjusts the Acquia Lift controls markup to create an accordion pane
+ * within the dialog of control options.
+ */
+Drupal.behaviors.acquiaLiftControlsDialog = {
+  attach: function (context, settings) {
+    // Organize the menu list into a divs suitable for an accordion control.
+    $('.acquia-lift-controls-dialog .menu:first', context).once().each(function() {
+      var output = '<div class="accordion">';
+      $(this).children('li').each(function() {
+        output += '<h3>' + $(this)[0].firstChild.textContent + '</h3>';
+        if ($(this).children('ul').length > 0) {
+          output += '<div><ul class="menu">' + $(this).children('ul').html() + '</ul></div>';
+        } else {
+          output += '<div><ul class="menu"><li>';
+          output += $(this).html();
+          output += '</li></ul></div>';
+        }
+      });
+      output += '</div>';
+      $(this).html(output);
+      $('.accordion', this).accordion({
+        autoHeight: false,
+        collapsible: true,
+        active: false
+      });
+    });
+  }
+}
+
+/**
  * Detaches the click handler on the Acquia Lift link in the Toolbar.
  */
 function detachControlsLoadHandler () {

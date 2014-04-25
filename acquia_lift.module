@@ -487,6 +487,7 @@ function acquia_lift_library() {
       array('system', 'jquery.once'),
       array('system', 'drupal.ajax'),
       array('system', 'ui.dialog'),
+      array('system', 'ui.accordion'),
     ),
   );
 

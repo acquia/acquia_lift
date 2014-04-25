@@ -375,21 +375,27 @@ class AcquiaLiftWebTest extends DrupalWebTestCase {
             'option_label' => 'Option A',
             'option_id' => 'option-A',
             'weight' => 0,
-            'bid' => 'comment_delta_recent',
+            'block' => array(
+              'bid' => 'comment_delta_recent',
+            ),
             'remove' => 'remove_0',
           ),
           array(
             'option_label' => 'Option B',
             'option_id' => 'option-B',
             'weight' => 1,
-            'bid' => 'system_delta_main',
+            'block' => array(
+              'bid' => 'system_delta_main',
+            ),
             'remove' => 'remove_1',
           ),
           array(
             'option_label' => 'Option C',
             'option_id' => 'option-C',
             'weight' => 2,
-            'bid' => 'system_delta_help',
+            'block' => array(
+              'bid' => 'system_delta_help',
+            ),
             'remove' => 'remove_2',
           ),
         ),

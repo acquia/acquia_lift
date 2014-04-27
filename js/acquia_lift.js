@@ -9,6 +9,13 @@ Drupal.personalize.agents.acquia_lift = {
   },
   'sendGoalToAgent': function(agent_name, goal_name, goal_value, jsEvent) {
     Drupal.acquiaLift.sendGoal(agent_name, goal_name, goal_value, jsEvent);
+  },
+  'featureToContext': function(featureString) {
+    var contextArray = featureString.split(Drupal.settings.acquia_lift.featureStringSeparator);
+    return {
+      'key': contextArray[0],
+      'value': contextArray[1]
+    };
   }
 };
 
@@ -107,8 +114,6 @@ Drupal.acquiaLift = (function() {
 
       // Prepare the options for our decision.
       var options = {
-        // Acquia Lift won't accept a string with slashes in it as a
-        // point code. Convert to double underscore.
         point: cleanString(point),
         choices: choices
       };
@@ -116,13 +121,16 @@ Drupal.acquiaLift = (function() {
         options.session = sessionID;
       }
       // Process visitor_context
-      var data = [], i, feature_string;
+      var data = [], i, j, feature_string;
       for (i in visitor_context) {
         if (visitor_context.hasOwnProperty(i)) {
-          feature_string = convertContextToFeatureString(i, visitor_context[i]);
-          data.push(feature_string);
+          for (j in visitor_context[i]) {
+            if (visitor_context[i].hasOwnProperty(j)) {
+              feature_string = convertContextToFeatureString(i, visitor_context[i][j]);
+              data.push(feature_string);
+            }
+          }
         }
-
       }
       if (data.length > 0) {
         options.features = data.join(',');

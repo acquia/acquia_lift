@@ -67,19 +67,26 @@ Drupal.behaviors.acquiaLiftControlsDialog = {
   attach: function (context, settings) {
     // Organize the menu list into a divs suitable for an accordion control.
     $('.acquia-lift-controls-dialog .menu:first', context).once().each(function() {
-      var output = '<div class="accordion">';
+      var $output = $('<div class="accordion"></div>');
       $(this).children('li').each(function() {
-        output += '<h3>' + $(this)[0].firstChild.textContent + '</h3>';
+        $output.append('<h3>' + $(this)[0].firstChild.textContent + '</h3>');
+        var $listitem = $(this).detach();
         if ($(this).children('ul').length > 0) {
-          output += '<div><ul class="menu">' + $(this).children('ul').html() + '</ul></div>';
+          var list = $listitem.children('ul');
+          var subheader = $listitem.find('a').first().detach();
+          // Create the accordion pane header and pane structure.
+          $output.append('<div><h4></h4><div></div></div>');
+          $output.children('div').last().find('h4').append(subheader);
+          $output.children('div').last().find('div').append(list);
         } else {
-          output += '<div><ul class="menu"><li>';
-          output += $(this).html();
-          output += '</li></ul></div>';
+          $output.append('<div><ul class="menu"></ul></div>');
+          $output.children('div').last().children('ul').append($listitem);
         }
       });
-      output += '</div>';
-      $(this).html(output);
+      $('.acquia-lift-controls .menu:first').detach();
+      $('.acquia-lift-controls').append($output);
+
+      // Now turn the new structure into an accordion.
       $('.accordion', this).accordion({
         autoHeight: false,
         collapsible: true,

@@ -30,17 +30,18 @@
  .acquia-lift-controls-dialog .ui-dialog-title {
    display: block;
    margin: 0;
-   line-height: 1.5em;
-   font-size: 2.25em;
-   font-family: "Helvetica Neue", helvetica, "Segoe UI", segoe, "Ubuntu", "Droid Sans", "Arial", sans-serif;
+   line-height: 1em;
+   font-size: 2em;
+   font-family: "Helvetica Neue", "helvetica-neue", zurich, helvetica, "Arial", liberation Sans, sans-serif;
    font-weight: 200;
  }
  .acquia-lift-controls-dialog .ui-dialog-titlebar {
    position: relative;
-   padding: 0.70711em 1em 0;
+   padding: 1em 0;
    border: none;
-   color: #848484;
+   color: #999;
    background: #303030;
+   border: none;
  }
  .acquia-lift-controls-dialog .ui-dialog-titlebar-close {
    position: absolute;
@@ -72,10 +73,11 @@
    background: none;
    overflow: auto;
    zoom: 1;
+   padding: 0;
  }
  .acquia-lift-controls-dialog .ui-dialog-buttonpane {
    text-align: left;
-   border-width: 1px 0 0 0;
+   border: none;
    background-image: none;
    margin: .5em 0 0 0;
    padding: .3em 1em .5em .4em;
@@ -103,7 +105,35 @@
  }
  @media (min-width: 28.57143em) {
    .acquia-lift-controls-dialog .ui-dialog-titlebar {
-     padding-right: 2em;
-     padding-left: 2em;
+     padding-right: 1em;
+     padding-left: 1em;
    }
  }
+
+.ui-accordion .ui-accordion-header {
+  margin: 0;
+}
+.ui-accordion .ui-accordion-icons {
+  padding-left: 2.2rem;
+}
+.ui-accordion .ui-accordion-content {
+  padding: 1em 2.2em;
+  border: none;
+  border-bottom: 1px solid #ddd;
+  -webkit-border-radius: 0;
+  -moz-border-radius: 0;
+  -ms-border-radius: 0;
+  -o-border-radius: 0;
+  border-radius: 0;
+  height: auto;
+  font-family: "Helvetica Neue", "helvetica-neue", zurich, helvetica, "Arial", liberation Sans, sans-serif;
+}
+.ui-state-default, .ui-widget-content .ui-state-default, .ui-widget-header .ui-state-default {
+  font-family: "Helvetica Neue", "helvetica-neue", zurich, helvetica, "Arial", liberation Sans, sans-serif;
+  font-size: 1.5em;
+  color: #29aae1;
+  font-weight: 300;
+  background: none;
+  border: none;
+  border-bottom: 1px solid #ddd;
+}

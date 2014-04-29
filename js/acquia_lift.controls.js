@@ -42,12 +42,53 @@ function attachControlsLoadHandler () {
             open: function () {
               Drupal.attachBehaviors();
             },
+            create: function (event) {
+              $(event.target).parent().css('position', 'fixed');
+            },
+            resizeStart: function (event) {
+              $(event.target).parent().css('position', 'fixed');
+            },
+            resizeStop: function (event) {
+              $(event.target).parent().css('position', 'fixed');
+            },
             minWidth: 360,
             dialogClass: 'acquia-lift-controls-dialog'
           })
           .show();
       });
     });
+}
+
+/**
+ * Adjusts the Acquia Lift controls markup to create an accordion pane
+ * within the dialog of control options.
+ */
+Drupal.behaviors.acquiaLiftControlsDialog = {
+  attach: function (context, settings) {
+    // Organize the menu list into content suitable for an accordion control.
+    $('.acquia-lift-controls-dialog', context).once().find('ul.menu:first').each(function() {
+      // Mark the list items that should be the accordion headers.
+      $(this).children('li').children('a').wrap('<h3></h3>');
+      $(this).children('li').children('h3').addClass('acquia-lift-accordion-header');
+
+      // Add links in for those that aren't repeated within the nested list.
+      var $allCampaigns = $('li a.acquia-lift-campaign-list', this);
+      $('li a.acquia-lift-campaign-list', this).parent().next('ul').prepend('<li><a href="' + $allCampaigns.attr('href') + '">' + $allCampaigns.text() + '</a></li>');
+      var $reports = $('li a.acquia-lift-results-list', this);
+      $('li h3 a.acquia-lift-results-list', this).parent().after('<ul class="menu"><li><a href="' + $reports.attr('href') + '">' + $reports.text() + '</a></li></ul>');
+      $('li > h3 > a', this).removeClass('acquia-lift-active');
+
+      // Now turn the updated structure into an accordion.
+      $(this).accordion({
+        header: '.acquia-lift-accordion-header',
+        heightStyle: "content",
+        autoHeight: false,
+        clearStyle: true,
+        collapsible: true,
+        active: false
+      });
+    });
+  }
 }
 
 /**

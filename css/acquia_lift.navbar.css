@@ -79,7 +79,8 @@
   background-color: #85A810;
   border-radius: 1em;
   color: white;
-  padding: 0 0.4545em;
+  padding: 0 0.35em;
+  font-weight: bold;
 }
 #navbar-administration .navbar-tray-acquia-lift.navbar-tray-horizontal .acquia-lift-personalize-type-count.acquia-lift-empty span {
   background-color: gray;

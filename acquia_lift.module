@@ -479,11 +479,15 @@ function acquia_lift_library() {
     'js' => array(
       $path . '/js/acquia_lift.controls.js' => $options,
     ),
+    'css' => array(
+      $path . '/css/acquia_lift.controls.css',
+    ),
     'dependencies' => array(
       array('system', 'jquery'),
       array('system', 'jquery.once'),
       array('system', 'drupal.ajax'),
       array('system', 'ui.dialog'),
+      array('system', 'ui.accordion'),
     ),
   );
 

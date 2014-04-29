@@ -139,6 +139,10 @@
   border: none;
   border-bottom: 1px solid #ddd;
 }
+.acquia-lift-controls-dialog .ui-accordion-header a,
+.ui-state-default a, .ui-widget-content .ui-state-default a, .ui-widget-header .ui-state-default a {
+  color: #29aae1;
+}
 .acquia-lift-controls-dialog .acquia-lift-controls ul.menu li li {
   margin-left: 2.2em;
   line-height: 1.4em;

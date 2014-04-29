@@ -65,30 +65,25 @@ function attachControlsLoadHandler () {
  */
 Drupal.behaviors.acquiaLiftControlsDialog = {
   attach: function (context, settings) {
-    // Organize the menu list into a divs suitable for an accordion control.
-    $('.acquia-lift-controls-dialog .menu:first', context).once().each(function() {
-      var $output = $('<div class="accordion"></div>');
-      $(this).children('li').each(function() {
-        $output.append('<h3>' + $(this)[0].firstChild.textContent + '</h3>');
-        var $listitem = $(this).detach();
-        if ($(this).children('ul').length > 0) {
-          var list = $listitem.children('ul');
-          var subheader = $listitem.find('a').first().detach();
-          // Create the accordion pane header and pane structure.
-          $output.append('<div><h4></h4><div></div></div>');
-          $output.children('div').last().find('h4').append(subheader);
-          $output.children('div').last().find('div').append(list);
-        } else {
-          $output.append('<div><ul class="menu"></ul></div>');
-          $output.children('div').last().children('ul').append($listitem);
-        }
-      });
-      $('.acquia-lift-controls .menu:first').detach();
-      $('.acquia-lift-controls').append($output);
+    // Organize the menu list into content suitable for an accordion control.
+    $('.acquia-lift-controls-dialog', context).once().find('ul.menu:first').each(function() {
+      // Mark the list items that should be the accordion headers.
+      $(this).children('li').children('a').wrap('<h3></h3>');
+      $(this).children('li').children('h3').addClass('acquia-lift-accordion-header');
 
-      // Now turn the new structure into an accordion.
-      $('.accordion', this).accordion({
+      // Add links in for those that aren't repeated within the nested list.
+      var $allCampaigns = $('li a.acquia-lift-campaign-list', this);
+      $('li a.acquia-lift-campaign-list', this).parent().next('ul').prepend('<li><a href="' + $allCampaigns.attr('href') + '">' + $allCampaigns.text() + '</a></li>');
+      var $reports = $('li a.acquia-lift-results-list', this);
+      $('li h3 a.acquia-lift-results-list', this).parent().after('<ul class="menu"><li><a href="' + $reports.attr('href') + '">' + $reports.text() + '</a></li></ul>');
+      $('li > h3 > a', this).removeClass('acquia-lift-active');
+
+      // Now turn the updated structure into an accordion.
+      $(this).accordion({
+        header: '.acquia-lift-accordion-header',
+        heightStyle: "content",
         autoHeight: false,
+        clearStyle: true,
         collapsible: true,
         active: false
       });

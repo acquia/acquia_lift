@@ -110,6 +110,7 @@
    }
  }
 
+/* Accordion pane within controls dialog */
 .ui-accordion .ui-accordion-header {
   margin: 0;
 }
@@ -128,7 +129,7 @@
   height: auto;
   font-family: "Helvetica Neue", "helvetica-neue", zurich, helvetica, "Arial", liberation Sans, sans-serif;
 }
-.acquia-lift-controls-dialog h3.ui-accordion-header,
+.acquia-lift-controls-dialog .ui-accordion-header,
 .ui-state-default, .ui-widget-content .ui-state-default, .ui-widget-header .ui-state-default {
   font-family: "Helvetica Neue", "helvetica-neue", zurich, helvetica, "Arial", liberation Sans, sans-serif;
   font-size: 1.5em;
@@ -138,7 +139,14 @@
   border: none;
   border-bottom: 1px solid #ddd;
 }
-
-.acquia-lift-controls-dialog .ui-icon {
-  background: none;
+.acquia-lift-controls-dialog .acquia-lift-controls ul.menu li li {
+  margin-left: 2.2em;
+  line-height: 1.4em;
+}
+.acquia-lift-controls-dialog .acquia-lift-controls ul.menu > li > span {
+  display: block;
+}
+.acquia-lift-controls-dialog .acquia-lift-controls ul.menu li ul.menu {
+  padding-top: 1em;
+  padding-bottom: 1em;
 }

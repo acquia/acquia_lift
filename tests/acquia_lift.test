@@ -241,7 +241,7 @@ class AcquiaLiftWebTest extends DrupalWebTestCase {
     ));
 
     $agentStructure->data['visitor_context'] = array(
-      // fake condutrcis context to check saveAutoTargetingRule method queue
+      // Fake Aquia Lift context to check saveAutoTargetingRule method queue
       'acquia_lift_context' => array(
         'some_acquia_lift_context' => 'some_acquia_lift_context',
       ),
@@ -378,7 +378,6 @@ class AcquiaLiftWebTest extends DrupalWebTestCase {
             'block' => array(
               'bid' => 'comment_delta_recent',
             ),
-            'remove' => 'remove_0',
           ),
           array(
             'option_label' => 'Option B',
@@ -387,7 +386,6 @@ class AcquiaLiftWebTest extends DrupalWebTestCase {
             'block' => array(
               'bid' => 'system_delta_main',
             ),
-            'remove' => 'remove_1',
           ),
           array(
             'option_label' => 'Option C',
@@ -396,7 +394,6 @@ class AcquiaLiftWebTest extends DrupalWebTestCase {
             'block' => array(
               'bid' => 'system_delta_help',
             ),
-            'remove' => 'remove_2',
           ),
         ),
       ),
@@ -454,27 +451,33 @@ class AcquiaLiftWebTest extends DrupalWebTestCase {
     $this->assertQueueItems(array_values($expected_queue_items));
     $this->personalizedQueue->deleteQueue();
 
+    $this->drupalGet('admin/structure/personalize/manage/' . $agent->getMachineName() . '/edit');
+    $this->drupalPost(NULL, array(), t('Add context to option-A'));
     // Set up fixed targeting on Option A with two features OR'd together.
-    $targeting_feature_1 = str_replace('field_', '', $user_profile_field_1['field_name']) . '::2';
-    $targeting_feature_2 = str_replace('field_', '', $user_profile_field_2['field_name']) . '::3';
+    $context_1 = str_replace('field_', '', $user_profile_field_1['field_name']);
+    $context_2 = str_replace('field_', '', $user_profile_field_2['field_name']);
     $edit = array(
       'option_sets[option_set_1][options][option-A][enable_explicit_targeting]' => TRUE,
-      'option_sets[option_set_1][options][option-A][explicit_targeting][mapping][]' => array(
-        $targeting_feature_1 => $targeting_feature_1,
-        $targeting_feature_2 => $targeting_feature_2,
-      ),
+      'option_sets[option_set_1][options][option-A][explicit_targeting][mapping][contexts][0][context]' => $context_1,
+      'option_sets[option_set_1][options][option-A][explicit_targeting][mapping][contexts][0][value][operator]' => 'equals',
+      'option_sets[option_set_1][options][option-A][explicit_targeting][mapping][contexts][0][value][match]' => 'some value',
+      'option_sets[option_set_1][options][option-A][explicit_targeting][mapping][contexts][1][context]' => $context_2,
+      'option_sets[option_set_1][options][option-A][explicit_targeting][mapping][contexts][1][value][operator]' => 'contains',
+      'option_sets[option_set_1][options][option-A][explicit_targeting][mapping][contexts][1][value][match]' => 'some other value',
       'option_sets[option_set_1][options][option-A][explicit_targeting][strategy]' => 'OR'
     );
 
-    $this->drupalPost('admin/structure/personalize/manage/' . $agent->getMachineName() . '/edit', $edit , $this->getButton('option'));
+    $this->drupalPost(NULL, $edit , $this->getButton('option'));
 
+    $feature_1 = $context_1 . '::some-value';
+    $feature_2 = $context_2 . '::sc-some-other-value';
     $expected_queue_items['targeting']['args'][2] = array(
       array(
-        'feature' => $targeting_feature_1,
+        'feature' => $feature_1,
         'decision' => $decision_name . ':option-A'
       ),
       array(
-        'feature' => $targeting_feature_2,
+        'feature' => $feature_2,
         'decision' => $decision_name . ':option-A'
       ),
     );
@@ -493,7 +496,7 @@ class AcquiaLiftWebTest extends DrupalWebTestCase {
     // comma-separated features.
     $expected_queue_items['targeting']['args'][2] = array(
       array(
-        'feature' => $targeting_feature_1 . ',' . $targeting_feature_2,
+        'feature' => $feature_1 . ',' . $feature_2,
         'decision' => $decision_name . ':option-A'
       ),
     );
@@ -951,11 +954,8 @@ class AcquiaLiftWebTest extends DrupalWebTestCase {
   protected function createUserProfileField() {
     $field = array(
       'field_name' => 'field_' . drupal_strtolower($this->randomName()),
-      'type' => 'list_integer',
+      'type' => 'text',
       'cardinality' => 1,
-      'settings' => array(
-        'allowed_values' => array(1 => 'One', 2 => 'Two', 3 => 'Three'),
-      ),
     );
 
     field_create_field($field);
@@ -963,8 +963,8 @@ class AcquiaLiftWebTest extends DrupalWebTestCase {
       'field_name' => $field['field_name'],
       'entity_type' => 'user',
       'bundle' => 'user',
-      'widget' => array(
-        'type' => 'options_select',
+      'settings' => array(
+        'user_register_form' => FALSE,
       ),
     );
 

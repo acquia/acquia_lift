@@ -1189,7 +1189,7 @@ class AcquiaLiftReport implements PersonalizeAgentReportInterface {
   protected function buildContextReport($report_data) {
     $build = array();
 
-    if ($report_data['confidence'] === FALSE) {
+    if ($report_data['confidence'] === FALSE || !isset($report_data['confidence']['context'])) {
       return array();
     }
     $header = array(

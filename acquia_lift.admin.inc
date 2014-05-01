@@ -326,6 +326,12 @@ function acquia_lift_report($form, &$form_state, $agent_data, $option_set) {
     '#id' => 'acquia-lift-experiment-report-data',
   );
 
+  // The context and stability reports are only relevant if there is context
+  // targeting in place for this campaign.
+  if (empty($reports['targeting'])) {
+    return $form;
+  }
+
   // Context report section.
   $context_select = $reports['targeting'];
   acquia_lift_chosenify_element($context_select, array('acquia-lift-chosen-select-half', 'acquia-lift-report-context-select'));

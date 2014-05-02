@@ -102,6 +102,16 @@ function acquia_lift_admin_form($form, &$form_state) {
     '#required' => TRUE,
   );
 
+  $form['acquia_lift_confidence_measure'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Confidence measure'),
+    '#size' => 3,
+    '#field_suffix' => '%',
+    '#required' => TRUE,
+    '#default_value' => variable_get('acquia_lift_confidence_measure', 95),
+    '#description' => t('The confidence percentage at which a test is considered statistically significant.'),
+    '#element_validate' => array('element_validate_number'),
+  );
   $form['#submit'] = array(
     'acquia_lift_admin_form_submit',
   );
@@ -144,6 +154,9 @@ function acquia_lift_admin_form_validate($form, &$form_state) {
   if (!valid_url($form_state['values']['acquia_lift_account_info']['api_url'])) {
     form_set_error('acquia_lift_account_info][api_url', t('You must enter a valid URL'));
   }
+  if ($form_state['values']['acquia_lift_confidence_measure'] <= 0 || $form_state['values']['acquia_lift_confidence_measure'] >= 100) {
+    form_set_error('acquia_lift_confidence_measure', t('Confidence measure must be a value between 0 and 100.'));
+  }
 }
 
 /**
@@ -153,6 +166,10 @@ function acquia_lift_admin_form_validate($form, &$form_state) {
  */
 function acquia_lift_admin_form_submit($form, &$form_state) {
   acquia_lift_ensure_default_agent($form_state['values']['acquia_lift_account_info']);
+
+  if ($form_state['values']['acquia_lift_confidence_measure'] < 95) {
+    drupal_set_message(t('A minimum confidence measure of 95% is recommended to ensure proper evaluation of test results.'), 'warning');
+  }
 }
 
 /**
@@ -197,8 +214,11 @@ function acquia_lift_report($form, &$form_state, $agent_data, $option_set) {
       )
     );
   }
-  $data = $agent->getData();
+  // Set the desired confidence measure.
+  $agent->setConfidenceMeasure(variable_get('acquia_lift_confidence_measure', 95));
 
+  // Generate report filters.
+  $data = $agent->getData();
   $form = array(
     '#prefix' => '<div id="acquia-lift-reports">',
     '#suffix' => '</div>',

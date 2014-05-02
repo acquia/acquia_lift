@@ -53,6 +53,21 @@ interface AcquiaLiftAgentInterface {
    */
   public static function convertOptionSetsToDecisions($option_sets);
 
+  /**
+   * Get the confidence measure for determining the statistical significance
+   * of tests.
+   */
+  public function getConfidenceMeasure();
+
+  /**
+   * Set the confidence measure for determining the statistical significance
+   * of tests.
+   *
+   * @param $value
+   *   The value as a number between 0 and 100.
+   */
+  public function setConfidenceMeasure($value);
+
 }
 
 class AcquiaLiftAgent extends PersonalizeAgentBase implements PersonalizeAgentGoalInterface, AcquiaLiftAgentInterface, PersonalizeExplicitTargetingInterface, PersonalizeAgentReportInterface {
@@ -86,6 +101,11 @@ class AcquiaLiftAgent extends PersonalizeAgentBase implements PersonalizeAgentGo
    * @var DrupalQueueInterface
    */
   protected $queue;
+
+  /**
+   * The confidence measure for determining statistical significance.
+   */
+  protected $confidence_measure = 95;
 
   /**
    * Implements PersonalizeAgentInterface::create().
@@ -417,6 +437,26 @@ class AcquiaLiftAgent extends PersonalizeAgentBase implements PersonalizeAgentGo
       }
     }
     return $points;
+  }
+
+  /**
+   * Implements PersonalizeAgentInterface()::getConfidenceMeasure().
+   */
+  public function getConfidenceMeasure() {
+    return $this->confidence_measure;
+  }
+
+  /**
+   * Implements PersonalizeAgentInterface()::setConfidenceMeasure().
+   */
+  public function setConfidenceMeasure($value) {
+    if ($value < 0) {
+      $value = 0;
+    }
+    if ($value > 100) {
+      $value = 100;
+    }
+    $this->confidence_measure = $value;
   }
 
   /**
@@ -803,6 +843,10 @@ class AcquiaLiftReport implements PersonalizeAgentReportInterface {
     $machine_name = $this->agent->getMachineName();
 
     if (!isset($this->report_data[$key])) {
+      $confidence_measure = $this->agent->getConfidenceMeasure();
+      // Convert the confidence measure from a percentage to a value between
+      // 0 and 1 as expected by the Lift API.
+      $confidence_measure /= 100;
       $today_only = $date_from === date('Y-m-d') && empty($date_to);
       $date_from = empty($date_from) ? date('Y-m-d', $this->agent->started) : $date_from;
       $date_to = empty($date_to) ? date('Y-m-d') : $date_to;
@@ -840,7 +884,7 @@ class AcquiaLiftReport implements PersonalizeAgentReportInterface {
 
       // Confidence report data.
       try {
-        $confidenceReport = $this->liftAPI->getConfidenceReport($machine_name, $date_from, $date_to, $decision_name, "all");
+        $confidenceReport = $this->liftAPI->getConfidenceReport($machine_name, $date_from, $date_to, $decision_name, "all", $confidence_measure);
         $this->report_data[$key]['confidence'] = $this->extractConfidenceReportData($confidenceReport['data']['items']);
       }
       catch (AcquiaLiftException $e) {

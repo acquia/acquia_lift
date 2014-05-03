@@ -1034,19 +1034,6 @@ function acquia_lift_form_personalize_agent_option_sets_form_alter(&$form, &$for
     $option_sets_section['header']['#attached'] = array(
       'css' => array(drupal_get_path('module', 'acquia_lift') . '/css/acquia_lift.admin.css'),
     );
-    module_load_include('inc', 'acquia_lift', 'acquia_lift.ui');
-    foreach (element_children($option_sets_section) as $name) {
-      // Look for the explicit targeting select box for each option so we can
-      // chosenify it.
-      if (isset($option_sets_section[$name]['options'])) {
-        foreach ($option_sets_section[$name]['options'] as $option_id => &$sub_elements) {
-          if (isset($sub_elements['explicit_targeting']) && is_array($sub_elements['explicit_targeting']) && isset($sub_elements['explicit_targeting']['mapping'])) {
-            $select = &$sub_elements['explicit_targeting']['mapping'];
-            acquia_lift_chosenify_element($select);
-          }
-        }
-      }
-    }
   }
 }
 

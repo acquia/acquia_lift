@@ -1527,6 +1527,7 @@ class AcquiaLiftTest extends DrupalUnitTestCase {
     $possible_values = $lift_api->getPossibleValues('some-agent', ':', '::');
     $expected = array(
       'first-mutex' => array(
+        'value type' => 'predefined',
         'mutex' => TRUE,
         'friendly name' => 'First Mutex',
         'values' => array(
@@ -1535,6 +1536,7 @@ class AcquiaLiftTest extends DrupalUnitTestCase {
         )
       ),
       'first-non-mutex' => array(
+        'value type' => 'predefined',
         'mutex' => FALSE,
         'friendly name' => 'First Non-Mutex',
         'values' => array(

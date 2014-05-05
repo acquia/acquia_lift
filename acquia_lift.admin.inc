@@ -214,8 +214,6 @@ function acquia_lift_report($form, &$form_state, $agent_data, $option_set) {
       )
     );
   }
-  // Set the desired confidence measure.
-  $agent->setConfidenceMeasure(variable_get('acquia_lift_confidence_measure', 95));
 
   // Generate report filters.
   $data = $agent->getData();

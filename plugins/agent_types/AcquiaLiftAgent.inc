@@ -52,7 +52,9 @@ interface AcquiaLiftAgentInterface {
    *   arrays with decision names as keys and an array of choices as values.
    */
   public static function convertOptionSetsToDecisions($option_sets);
+}
 
+interface AcquiaLiftReportInterface {
   /**
    * Get the confidence measure for determining the statistical significance
    * of tests.
@@ -68,6 +70,28 @@ interface AcquiaLiftAgentInterface {
    */
   public function setConfidenceMeasure($value);
 
+}
+
+/**
+ * Factory class to create a report object for Acquia Lift.
+ */
+class AcquiaLiftReportFactory {
+
+  /**
+   * Creates an instance of the Acquia Lift Report class.
+   *
+   * @param $agent_instance
+   *   The Acquia Lift agent that the reporting is for.
+   * @param $api_instance
+   *   The Acquia Lift API classes in use.
+   * @return
+   *   The AcquiaLiftReport class to use.
+   */
+  public static function create($agent_instance, $api_instance) {
+    $report = new AcquiaLiftReport($agent_instance, $api_instance);
+    $report->setConfidenceMeasure(variable_get('acquia_lift_confidence_measure', 95));
+    return $report;
+  }
 }
 
 class AcquiaLiftAgent extends PersonalizeAgentBase implements PersonalizeAgentGoalInterface, AcquiaLiftAgentInterface, PersonalizeExplicitTargetingInterface, PersonalizeAgentReportInterface {
@@ -103,11 +127,6 @@ class AcquiaLiftAgent extends PersonalizeAgentBase implements PersonalizeAgentGo
   protected $queue;
 
   /**
-   * The confidence measure for determining statistical significance.
-   */
-  protected $confidence_measure = 95;
-
-  /**
    * Implements PersonalizeAgentInterface::create().
    */
   public static function create($agent_data) {
@@ -132,7 +151,6 @@ class AcquiaLiftAgent extends PersonalizeAgentBase implements PersonalizeAgentGo
   public function __construct($machine_name, $title, $data, $status, $started, AcquiaLiftAPI $acquia_lift_api) {
     parent::__construct($machine_name, $title, $data, $status, $started);
     $this->liftAPI = $acquia_lift_api;
-    $this->reporting = new AcquiaLiftReport($this, $this->liftAPI);
   }
 
   public function getType() {
@@ -400,12 +418,24 @@ class AcquiaLiftAgent extends PersonalizeAgentBase implements PersonalizeAgentGo
   }
 
   /**
+   * Get a reference to this agent's reporting class.
+   *
+   * Allows for delayed instantiation of reporting class.
+   */
+  protected function getReporting() {
+    if (empty($this->reporting)) {
+      $this->reporting = AcquiaLiftReportFactory::create($this, $this->liftAPI);
+    }
+    return $this->reporting;
+  }
+
+  /**
    * Implements PersonalizeAgentReportInterface::renderStatsForOptionSet().
    *
    * A facade to the reporting class.
    */
   public function renderStatsForOptionSet($option_set, $date_from, $date_to = NULL) {
-    return $this->reporting->renderStatsForOptionSet($option_set, $date_from, $date_to);
+    return $this->getReporting()->renderStatsForOptionSet($option_set, $date_from, $date_to);
   }
 
   /**
@@ -414,7 +444,7 @@ class AcquiaLiftAgent extends PersonalizeAgentBase implements PersonalizeAgentGo
    * A facade to the reporting class.
    */
   public function buildCampaignReports($decision_name = NULL, $date_from = NULL, $date_to = NULL) {
-    return $this->reporting->buildCampaignReports($decision_name, $date_from, $date_to);
+    return $this->getReporting()->buildCampaignReports($decision_name, $date_from, $date_to);
   }
 
   /**
@@ -437,26 +467,6 @@ class AcquiaLiftAgent extends PersonalizeAgentBase implements PersonalizeAgentGo
       }
     }
     return $points;
-  }
-
-  /**
-   * Implements PersonalizeAgentInterface()::getConfidenceMeasure().
-   */
-  public function getConfidenceMeasure() {
-    return $this->confidence_measure;
-  }
-
-  /**
-   * Implements PersonalizeAgentInterface()::setConfidenceMeasure().
-   */
-  public function setConfidenceMeasure($value) {
-    if ($value < 0) {
-      $value = 0;
-    }
-    if ($value > 100) {
-      $value = 100;
-    }
-    $this->confidence_measure = $value;
   }
 
   /**
@@ -714,7 +724,7 @@ class AcquiaLiftAgent extends PersonalizeAgentBase implements PersonalizeAgentGo
 /**
  * Responsible retrieving and generating reports on the Acquia Lift agent.
  */
-class AcquiaLiftReport implements PersonalizeAgentReportInterface {
+class AcquiaLiftReport implements PersonalizeAgentReportInterface, AcquiaLiftReportInterface {
 
   /**
    * The threshold to use above which lift percentage will be positively noted.
@@ -751,6 +761,11 @@ class AcquiaLiftReport implements PersonalizeAgentReportInterface {
   protected $liftAPI;
 
   /**
+   * The confidence measure for determining statistical significance.
+   */
+  protected $confidence_measure = 95;
+
+  /**
    * The extracted report data for each of the Acquia Lift API calls keyed
    * by date/feature set requested.
    *
@@ -761,6 +776,26 @@ class AcquiaLiftReport implements PersonalizeAgentReportInterface {
   function __construct($agent, $liftAPI) {
     $this->agent = $agent;
     $this->liftAPI = $liftAPI;
+  }
+
+  /**
+   * Implements AcquiaLiftReportInterface()::getConfidenceMeasure().
+   */
+  public function getConfidenceMeasure() {
+    return $this->confidence_measure;
+  }
+
+  /**
+   * Implements AcquiaLiftReportInterface()::setConfidenceMeasure().
+   */
+  public function setConfidenceMeasure($value) {
+    if ($value < 0) {
+      $value = 0;
+    }
+    if ($value > 100) {
+      $value = 100;
+    }
+    $this->confidence_measure = $value;
   }
 
   /**
@@ -843,7 +878,7 @@ class AcquiaLiftReport implements PersonalizeAgentReportInterface {
     $machine_name = $this->agent->getMachineName();
 
     if (!isset($this->report_data[$key])) {
-      $confidence_measure = $this->agent->getConfidenceMeasure();
+      $confidence_measure = $this->getConfidenceMeasure();
       // Convert the confidence measure from a percentage to a value between
       // 0 and 1 as expected by the Lift API.
       $confidence_measure /= 100;

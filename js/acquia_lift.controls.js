@@ -14,30 +14,39 @@ var assetsLoader;
  */
 Drupal.behaviors.acquiaLiftControls = {
   attach: function (context) {
-    var $anchor = $('#toolbar-link-admin-acquia_lift').once('acquiaLiftOverride')
+    var $anchor = this.getAdminMenu().once('acquiaLiftOverride').find('a[href~="/admin/acquia_lift"]');
 
     if ($anchor.length) {
       $anchor.bind('click.acquiaLiftOverride', function (event) {
         event.stopPropagation();
         event.preventDefault();
       });
-      attachControlsLoadHandler();
+      $anchor.attachControlsLoadHandler();
     }
+  },
+  // Helper method to get admin menu container,
+  // override it to provide support of custom admin menu.
+  // By default supports https://drupal.org/project/admin_menu, https://drupal.org/project/admin
+  // and default toolbar core module.
+  // https://drupal.org/project/navbar is supported @see acquia_lift.navbar.js
+  getAdminMenu: function () {
+    return $('#admin-toolbar, #admin-menu, #toolbar');
   }
 }
 
 /*
  * Attaches a click handler to the Acquia Lift link in the Toolbar.
  */
-function attachControlsLoadHandler () {
-  $('#toolbar-link-admin-acquia_lift').once('acquia-lift-controls').bind('click.acquia-lift', function (event) {
+$.fn.attachControlsLoadHandler = function () {
+    var $thisLink = $(this);
+    $thisLink.once('acquia-lift-controls').bind('click.acquia-lift', function (event) {
       loadAssets($(this), function ($controls) {
         $controls
           .dialog({
             title: Drupal.t('Acquia Lift controls'),
             close: function () {
               $(this).dialog('destroy').remove();
-              attachControlsLoadHandler();
+              $thisLink.attachControlsLoadHandler();
             },
             open: function () {
               Drupal.attachBehaviors();
@@ -95,7 +104,7 @@ Drupal.behaviors.acquiaLiftControlsDialog = {
  * Detaches the click handler on the Acquia Lift link in the Toolbar.
  */
 function detachControlsLoadHandler () {
-  $('#toolbar-link-admin-acquia_lift').unbind('click.acquia-lift').removeOnce('acquia-lift-controls');
+  Drupal.behaviors.acquiaLiftControls.getAdminMenu().find('a[href~="/admin/acquia_lift"]').unbind('click.acquia-lift').removeOnce('acquia-lift-controls');
 }
 
 /**

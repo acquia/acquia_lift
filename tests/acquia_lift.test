@@ -96,6 +96,32 @@ class AcquiaLiftWebTest extends DrupalWebTestCase {
     $this->resetAll();
     $account_info = variable_get('acquia_lift_account_info', array());
     $this->assertEqual($account_info['api_url'], 'https://some.valid.url');
+
+    // Submit bogus confidence measures.
+    $bad_measures = array(
+      'abcd' => t('Confidence measure must be a number.'),
+      145 => t('Confidence measure must be a value between 0 and 100.'),
+      -45 => t('Confidence measure must be a value between 0 and 100.'),
+    );
+    foreach ($bad_measures as $measure => $message) {
+      $edit['acquia_lift_confidence_measure'] = $measure;
+      $this->drupalPost('admin/config/content/personalize/acquia_lift', $edit, $this->getButton('config'));
+      $this->assertText($message);
+      $this->assertNoText(t('A minimum confidence measure of 80% is recommended to ensure proper evaluation of test results.'));
+      $this->assertNoText(t('The configuration options have been saved.'));
+    }
+
+    // Submit a low confidence measure and test warning.
+    $edit['acquia_lift_confidence_measure'] = '10';
+    $this->drupalPost('admin/config/content/personalize/acquia_lift', $edit, $this->getButton('config'));
+    $this->assertText(t('A minimum confidence measure of 95% is recommended to ensure proper evaluation of test results.'));
+    $this->assertText(t('The configuration options have been saved.'));
+
+    // Submit a valid measure and confirm it is saved without warning.
+    $edit['acquia_lift_confidence_measure'] = '95';
+    $this->drupalPost('admin/config/content/personalize/acquia_lift', $edit, $this->getButton('config'));
+    $this->assertNoText(t('A minimum confidence measure of 95% is recommended to ensure proper evaluation of test results.'));
+    $this->assertText(t('The configuration options have been saved.'));
   }
 
   public function testSaveAgent() {

@@ -981,6 +981,8 @@ class AcquiaLiftAPI implements PersonalizeLoggerAwareInterface {
    *   An array of features to include data for in the report.
    *   The default "none" features option is used by default.
    *   Passing "all" will return all features for the test.
+   * @param float $confidence_measure
+   *   The confidence measure to use to determine statistical significance.
    * @return array
    *   The report as an associative array with the structure as defined at
    *   https://console.lift.acquia.com/docs/abc/reporting-api under "Option
@@ -991,7 +993,7 @@ class AcquiaLiftAPI implements PersonalizeLoggerAwareInterface {
    *
    * @throws AcquiaLiftException
    */
-  public function getConfidenceReport($agent_name, $date_start = NULL, $date_end = NULL, $point = NULL, $features = NULL) {
+  public function getConfidenceReport($agent_name, $date_start = NULL, $date_end = NULL, $point = NULL, $features = NULL, $confidence_measure = 0.95) {
     $date_str = $this->getDateString($date_start, $date_end);
     if ($features === 'all') {
       $features = '';
@@ -999,7 +1001,7 @@ class AcquiaLiftAPI implements PersonalizeLoggerAwareInterface {
     else {
       $features = $features === NULL ? "(none)" : implode(',', $features);
     }
-    $url = $this->generateEndpoint("/{$agent_name}/report/confidence{$date_str}?features=$features");
+    $url = $this->generateEndpoint("/{$agent_name}/report/confidence{$date_str}?features=$features&confidence-measure=$confidence_measure");
     $headers = array('Accept' => 'application/json');
     if ($point !== NULL) {
       $headers['x-mpath-point'] = $point;

@@ -94,7 +94,7 @@ class AcquiaLiftReportFactory {
   }
 }
 
-class AcquiaLiftAgent extends PersonalizeAgentBase implements PersonalizeAgentGoalInterface, AcquiaLiftAgentInterface, PersonalizeExplicitTargetingInterface, PersonalizeAgentReportInterface {
+class AcquiaLiftAgent extends PersonalizeAgentBase implements PersonalizeAgentGoalInterface, AcquiaLiftAgentInterface, PersonalizeExplicitTargetingInterface, PersonalizeAutoTargetingInterface, PersonalizeAgentReportInterface {
 
   /**
    * An object containing the agent data.
@@ -384,6 +384,13 @@ class AcquiaLiftAgent extends PersonalizeAgentBase implements PersonalizeAgentGo
    */
   public static function explicitTargetingSupportMultiple() {
     return PersonalizeExplicitTargetingInterface::EXPLICIT_TARGETING_MULTIPLE_BOTH;
+  }
+
+  /**
+   * Implements PersonalizeAutoTargetingInterface::explicitTargetingLimitedToAutoTargetingContext().
+   */
+  public static function explicitTargetingLimitedToAutoTargetingContext() {
+    return TRUE;
   }
 
   /**

@@ -525,7 +525,7 @@ $.extend(Drupal.acquiaLiftUI, {
       var osid = this.model.get('osid');
 
       // Swaps the current option in an option set for the indicated option.
-      Drupal.personalize.executors[this.model.get('executor')].execute($(selector), optionid, this.model.get('osid'));
+      Drupal.personalize.executors[this.model.get('executor')].execute($(selector), optionid, this.model.get('osid'), true);
       event.preventDefault();
       event.stopPropagation();
     },

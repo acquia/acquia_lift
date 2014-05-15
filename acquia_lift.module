@@ -12,7 +12,7 @@ define('ACQUIA_LIFT_DEFAULT_AGENT_NAME', 'drupal-default');
  */
 function acquia_lift_menu() {
   $items = array();
-  $items['admin/config/content/personalize/acquia_lift'] = array(
+  /*$items['admin/config/content/personalize/acquia_lift'] = array(
     'type' => MENU_LOCAL_TASK,
     'title' => 'Acquia Lift',
     'page callback' => 'drupal_get_form',
@@ -58,7 +58,7 @@ function acquia_lift_menu() {
     // processed if a particular session variable is set.
     // @see acquia_lift_process_queue()
     'access callback' => TRUE,
-  );
+  );*/
   return $items;
 }
 
@@ -124,7 +124,7 @@ function acquia_lift_theme() {
 function acquia_lift_init() {
   // This session variable is set to indicate that there are configuration
   // changes that have been queued for syncing with Acquia Lift.
-  if (!empty($_SESSION['acquia_lift_queue_trigger'])) {
+/*  if (!empty($_SESSION['acquia_lift_queue_trigger'])) {
     drupal_add_js(array('acquia_lift' => array('sync_queue' => 1)), array('type' => 'setting'));
     drupal_add_js(drupal_get_path('module', 'acquia_lift') . '/js/acquia_lift_queue.js', array('preprocess' => FALSE));
   }
@@ -147,30 +147,30 @@ function acquia_lift_init() {
       // in context" flow. Unset the nav message.
       acquia_lift_unset_nav_message();
     }
-  }
+  }*/
 }
 
 /**
  * Implements hook_page_build().
  */
-function acquia_lift_page_build(&$page) {
+/*function acquia_lift_page_build(&$page) {
   if (user_access('manage personalized content')) {
     module_load_include('inc', 'acquia_lift', 'acquia_lift.ui');
     acquia_lift_build_page($page);
   }
-}
+}*/
 
 /**
  * Implements hook_element_info().
  */
 function acquia_lift_element_info() {
-  return array(
+/*  return array(
     'acquia_lift_percentage' => array(
       '#input' => TRUE,
       '#element_validate' => array('element_validate_number', 'acquia_lift_percentage_validate'),
       '#theme' => 'acquia_lift_percentage',
     ),
-  );
+  );*/
 }
 
 /**
@@ -191,44 +191,14 @@ function acquia_lift_percentage_validate($element, &$form_state) {
 /**
  * Implements hook_cron_queue_info().
  */
-function acquia_lift_cron_queue_info() {
+/*function acquia_lift_cron_queue_info() {
   $queues['acquia_lift_sync'] = array(
     'worker callback' => 'acquia_lift_sync_item',
   );
   return $queues;
-}
+}*/
 
-/**
- * Implements hook_personalize_agent_type().
- */
-function acquia_lift_personalize_agent_type() {
-  $info = array();
-  $path = drupal_get_path('module', 'acquia_lift') . '/plugins';
-  $info['acquia_lift'] = array(
-    'path' => $path . '/agent_types',
-    'handler' => array(
-      'file' => 'AcquiaLiftAgent.inc',
-      'class' => 'AcquiaLiftAgent',
-    ),
-  );
-  return $info;
-}
 
-/**
- * Implements hook_personalize_visitor_contexts().
- */
-function acquia_lift_personalize_visitor_context() {
-  $info = array();
-  $path = drupal_get_path('module', 'acquia_lift') . '/plugins';
-  $info['acquia_lift_context'] = array(
-    'path' => $path . '/visitor_context',
-    'handler' => array(
-      'file' => 'AcquiaLiftContext.inc',
-      'class' => 'AcquiaLiftContext',
-    ),
-  );
-  return $info;
-}
 
 /**
  * Implements hook_personalize_agent_delete().
@@ -237,7 +207,7 @@ function acquia_lift_personalize_agent_delete($agent_data) {
   if ($agent_data->plugin != 'acquia_lift') {
     return;
   }
-  $queue = DrupalQueue::get('acquia_lift_sync');
+/*  $queue = DrupalQueue::get('acquia_lift_sync');
   $queue->createItem(array(
     'method' => 'deleteAgent',
     'args' => array(
@@ -245,7 +215,7 @@ function acquia_lift_personalize_agent_delete($agent_data) {
     )
   ));
   // Make sure the queue gets triggered on the next request.
-  $_SESSION['acquia_lift_queue_trigger'] = 1;
+  $_SESSION['acquia_lift_queue_trigger'] = 1;*/
 }
 
 /**
@@ -958,7 +928,7 @@ function acquia_lift_navbar() {
 /**
  * Implements hook_form_FORM_ID_alter().
  */
-function acquia_lift_form_personalize_agent_form_alter(&$form, &$form_state) {
+/*function acquia_lift_form_personalize_agent_form_alter(&$form, &$form_state) {
   module_load_include('inc', 'acquia_lift', 'acquia_lift.ui');
   acquia_lift_chosenify_element($form['agent_form']['agent_fieldset']['visitor_context']);
   // If we're editing an existing agent, add a "Reset data" button next to
@@ -986,7 +956,7 @@ function acquia_lift_form_personalize_agent_form_alter(&$form, &$form_state) {
   }
   $subform['actions']['reset']['#submit'] = array('acquia_lift_reset_submit');
   $form['agent_form']['agent_fieldset']['header']['reset_lift_agent'] = $subform;
-}
+}*/
 
 /**
  * Ajax callback for the "Reset data" button.
@@ -1059,7 +1029,7 @@ function acquia_lift_personalize_fields_form_element_alter(&$element, $lang) {
 /**
  * Implements hook_help().
  */
-function acquia_lift_help($path, $arg) {
+/*function acquia_lift_help($path, $arg) {
   switch ($path) {
     case 'admin/help#acquia_lift':
     case 'admin/acquia_lift':
@@ -1071,4 +1041,4 @@ function acquia_lift_help($path, $arg) {
       $output .= '<p>' . t('You can manage all of your Acquia Lift campaigns from the !campaignslink.', array('!campaignslink' => l(t('campaign listing page'), 'admin/structure/personalize/manage'))) . '</p>';
       return $output;
   }
-}
+}*/

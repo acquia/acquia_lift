@@ -1,0 +1,4 @@
+services:
+  acquia_lift_api:
+    class: Drupal\acquia_lift\AcquiaLiftAPI
+    arguments: ['@config.factory', '@http_client']

@@ -554,7 +554,7 @@ class AcquiaLiftWebTest extends DrupalWebTestCase {
     $this->personalizedQueue->deleteQueue();
 
     // Remove Option B
-    $this->drupalGet('admin/structure/personalize-blocks/manage/' . $osid . '/edit');
+    $this->drupalGet('admin/structure/personalize/variations/personalize-blocks/manage/' . $osid . '/edit');
     $this->drupalPost(NULL, array(), 'remove_1');
     $this->drupalPost(NULL, array(), t('Save'));
     $expected_queue_items['delete-B'] = array(

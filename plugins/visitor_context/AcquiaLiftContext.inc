@@ -93,8 +93,11 @@ class AcquiaLiftContext extends PersonalizeContextBase {
 
   /**
    * Implements PersonalizeAgentInterface::getPossibleValues().
+   *
+   * The Acquia Lift API does not allow values that aren't already selected
+   * for agent context.  Therefore $limit is always treated as true.
    */
-  public function getPossibleValues() {
+  public function getPossibleValues($limit = FALSE) {
     if ($this->agent->getType() != 'acquia_lift') {
       return array();
     }

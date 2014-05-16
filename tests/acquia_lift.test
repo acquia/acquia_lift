@@ -501,11 +501,11 @@ class AcquiaLiftWebTest extends DrupalWebTestCase {
                   'mapping' => array(
                     'contexts' => array(
                       array(
-                        'context' => $context_1,
+                        'context' => 'user_profile_context' . PERSONALIZE_TARGETING_ADMIN_SEPARATOR . $context_1,
                         'value' => array('match' => 'some value', 'operator' => 'equals'),
                       ),
                       array(
-                        'context' => $context_2,
+                        'context' => 'user_profile_context' . PERSONALIZE_TARGETING_ADMIN_SEPARATOR . $context_2,
                         'value' => array('match' => 'some other value', 'operator' => 'contains'),
                       )
                     )

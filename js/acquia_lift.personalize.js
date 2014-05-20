@@ -105,14 +105,17 @@ Drupal.behaviors.acquiaLiftPersonalize = {
                 break;
               case 'goals':
                 // Loop through the campaigns and add an empty count for each one.
-                _.each(ui.collections.campaigns.models, function (campaignModel) {
-                  $element = $(Drupal.theme('aquiaLiftCount'));
-                  ui.views.push((new ui[ui.objectMap[category] + 'CountView']({
-                    el: $element.get(0),
-                    model: campaignModel,
-                  })));
-                  $element.prependTo($link);
-                });
+                if (ui.collections.campaigns) {
+                  _.each(ui.collections.campaigns.models, function (campaignModel) {
+                    $element = $(Drupal.theme('aquiaLiftCount'));
+                    ui.views.push((new ui[ui.objectMap[category] + 'CountView']({
+                      el: $element.get(0),
+                      model: campaignModel,
+                    })));
+                    $element.prependTo($link);
+                  });
+                }
+                break;
             }
           }
         });
@@ -209,16 +212,20 @@ Drupal.behaviors.acquiaLiftPersonalize = {
         }
       }
 
-      // Create View for the results link.
-      $('[href="' + reportPath + '"]')
-        .once('acquia-lift-personalize-report')
-        .each(function (index, element) {
-          ui.views.push((new ui.MenuResultsView({
-            el: element.parentNode,
-            model: ui.collections['campaigns'],
-            collection: ui.collections['campaigns']
-          })));
-        });
+      // Create View for the Report link.
+      if (ui.collections.campaigns) {
+        $('[href="' + reportPath + '"]')
+          .once('acquia-lift-personalize-report')
+          .each(function (index, element) {
+            ui.views.push((new ui.MenuResultsView({
+              el: element.parentNode,
+              model: ui.collections['campaigns'],
+              collection: ui.collections['campaigns']
+            })));
+          });
+      } else {
+        $('[href="' + reportPath + '"]').hide();
+      }
 
       // Refresh event delegation. This is necessary to rebind event delegation
       // to HTML that's been moved inside a jQuery dialog.

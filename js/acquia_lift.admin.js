@@ -17,24 +17,27 @@
       });
 
       // Listener for context selection.
-      $('.acquia-lift-report-section .acquia-lift-report-context-select', context).once().chosen().change(function(e) {
-        var selected = $(this).val(),
-          num = selected ? selected.length : 0,
-          selectors = [],
-          $report = $(this).parents('.acquia-lift-report-section').find('table tbody');
+      $contextSelect = $('.acquia-lift-report-section .acquia-lift-report-context-select', context);
+      if ($contextSelect.length > 0) {
+        $contextSelect.once().chosen().change(function(e) {
+          var selected = $(this).val(),
+            num = selected ? selected.length : 0,
+            selectors = [],
+            $report = $(this).parents('.acquia-lift-report-section').find('table tbody');
 
-        // If nothing is selected, then show all.
-        if (num == 0) {
-          $report.find('tr').show();
-          return;
-        }
-        for (var i=0; i<num; i++) {
-          selectors.push('tr[data-acquia-lift-feature="' + selected[i] + '"]');
-        }
-        var selector = selectors.join(', ');
-        $report.find('tr').not(selector).hide();
-        $report.find(selector).show();
-      });
+          // If nothing is selected, then show all.
+          if (num == 0) {
+            $report.find('tr').show();
+            return;
+          }
+          for (var i=0; i<num; i++) {
+            selectors.push('tr[data-acquia-lift-feature="' + selected[i] + '"]');
+          }
+          var selector = selectors.join(', ');
+          $report.find('tr').not(selector).hide();
+          $report.find(selector).show();
+        });
+      }
     }
   };
 

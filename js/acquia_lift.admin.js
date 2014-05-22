@@ -112,4 +112,17 @@
       });
     }
   }
+
+  /**
+   * Remove any duplicated message display areas.
+   */
+  Drupal.behaviors.acquiaLiftDSM = {
+    attach: function(context, settings) {
+      $newMessages = $('div.messages', context);
+      if ($newMessages.length === 0) {
+        return;
+      }
+      $priorMessages = $('div.messages').not($newMessages).hide();
+    }
+  }
 })(jQuery);

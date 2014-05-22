@@ -1441,7 +1441,7 @@ class AcquiaLiftReport implements PersonalizeAgentReportInterface, AcquiaLiftRep
         'total_goals' => $items['today']['goalCount'],
       ),
       'test_type' => $decision_style,
-      'total_shown' => $this->formatReportNumber($items['today']['liftOverDefaultUsingGoals']),
+      'total_shown' => $this->formatReportNumber($items['today']['sessionCount']),
       'total_goals' => $this->formatReportNumber($items['today']['goalCount']),
       'total_goals_positive' => $items['today']['goalCount'] > 0,
       'total_lift' => $this->formatReportPercentage($items['today']['liftOverDefaultUsingGoals']),

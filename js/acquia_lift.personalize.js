@@ -242,8 +242,19 @@ Drupal.behaviors.acquiaLiftPersonalize = {
         }
         // If the activeOption has not been set, set it to a default.
         if (!model.get('activeOption')) {
+          // Default the active option to the first/control option.
           var index = 0;
-          if (obj.winner !== null && obj.winner !== undefined) {
+          if (Drupal.settings.personalize.preselected && Drupal.settings.personalize.preselected.hasOwnProperty(model.get('decision_name'))) {
+            // If there is an option pre-selected, then it should be the default active option.
+            var preselectedOptionName = Drupal.settings.personalize.preselected[model.get('decision_name')];
+            if (preselectedOptionName) {
+              index = model.get('option_names').indexOf(preselectedOptionName);
+              if (index < 0) {
+                index = 0;
+              }
+            }
+          } else if (obj.winner !== null && obj.winner !== undefined) {
+            // Otherwise a winner should be the default if one has been defined.
             index = obj.winner;
           }
           model.set('activeOption', obj.options[index].option_id);

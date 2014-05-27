@@ -387,9 +387,9 @@ class AcquiaLiftAgent extends PersonalizeAgentBase implements PersonalizeAgentGo
   }
 
   /**
-   * Implements PersonalizeAutoTargetingInterface::explicitTargetingLimitedToAutoTargetingContext().
+   * Implements PersonalizeAutoTargetingInterface::constrainExplicitTargetingContexts().
    */
-  public static function explicitTargetingLimitedToAutoTargetingContext() {
+  public static function constrainExplicitTargetingContexts() {
     return TRUE;
   }
 

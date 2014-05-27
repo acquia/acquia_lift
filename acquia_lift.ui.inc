@@ -7,11 +7,9 @@
 
 /**
  * Menu callback; Provide the top-level access point.
- *
- * Content is provided by acquia_lift_help().
  */
 function acquia_lift_root_page() {
-  return '';
+  drupal_goto('admin/structure/personalize');
 }
 
 /**

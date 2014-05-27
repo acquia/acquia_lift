@@ -1062,7 +1062,6 @@ function acquia_lift_personalize_fields_form_element_alter(&$element, $lang) {
 function acquia_lift_help($path, $arg) {
   switch ($path) {
     case 'admin/help#acquia_lift':
-    case 'admin/acquia_lift':
       $output = '<h3>' . t('About') . '</h3>';
       $output .= '<p>' . t('The Acquia Lift module provides machine-learning-based personalization for Drupal sites.') . '</p>';
       $output .= '<h3>' . t('Configuration') . '</h3>';

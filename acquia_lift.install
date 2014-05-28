@@ -184,7 +184,7 @@ function _acquia_lift_build_menu($menu_name) {
   // Create a link for attaching option sets.
   $item = array(
     'link_title' => 'Content variations',
-    'link_path' => 'admin/help/acquia_lift',
+    'link_path' => 'admin/structure/personalize/variations',
     'menu_name' => $menu_name,
     'options' => array(
       'attributes' => array(
@@ -192,7 +192,6 @@ function _acquia_lift_build_menu($menu_name) {
         'class' => array('acquia-lift-option-sets-list', 'visitor-actions-ui-ignore'),
       ),
       'html' => FALSE,
-      'fragment' => 'option-sets',
     ),
     'expanded' => 1,
     'weight' => 2,
@@ -202,7 +201,7 @@ function _acquia_lift_build_menu($menu_name) {
   // Create a link for attaching option set preview triggers.
   $item = array(
     'link_title' => 'Add content variation',
-    'link_path' => 'admin/help/acquia_lift',
+    'link_path' => 'admin/structure/personalize/variations',
     'menu_name' => $menu_name,
     'options' => array(
       'attributes' => array(
@@ -223,7 +222,7 @@ function _acquia_lift_build_menu($menu_name) {
   // Create a link for listing Goals.
   $item = array(
     'link_title' => 'Goals',
-    'link_path' => 'admin/structure/visitor_actions',
+    'link_path' => 'admin/structure/personalize/goals',
     'menu_name' => $menu_name,
     'options' => array(
       'attributes' => array(
@@ -339,5 +338,13 @@ function acquia_lift_update_7004() {
   menu_link_delete(NULL, 'admin/structure/visitor_actions');
   menu_link_delete(NULL, 'admin/structure/visitor_actions/add');
   menu_link_delete(NULL, 'admin/structure/personalize/manage/acquia-lift-placeholder/report');
+  _acquia_lift_build_menu('acquia-lift-controls');
+}
+
+/**
+ * Update Acquia Lift control links to simplified IA structure.
+ */
+function acquia_lift_update_7005() {
+  menu_delete_links('acquia-lift-controls');
   _acquia_lift_build_menu('acquia-lift-controls');
 }

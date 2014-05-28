@@ -922,14 +922,14 @@ $.extend(Drupal.acquiaLiftUI, {
       this.$el.toggleClass('acquia-lift-content-variation-candidate', isActive);
       // Pull the Personalize contextual link out of the list and highlight it.
       if (isActive) {
-        var $wrapper = this.$el.find('.contextual-links-wrapper');
+        var $wrapper = this.$el.find('.contextual-links-wrapper:first');
         var $link = $wrapper.find('.personalize-this-contextual-link').detach();
         $wrapper.children('.contextual-links-trigger').addClass('acquia-lift-hidden');
         $wrapper.prepend($link);
       }
       // Repair the contextual links.
       else {
-        var $wrapper = this.$el.find('.contextual-links-wrapper');
+        var $wrapper = this.$el.find('.contextual-links-wrapper:first');
         var $link = $wrapper.find('.personalize-this-contextual-link')
         $wrapper.find('.contextual-links .personalize').append($link);
         $wrapper.children('.contextual-links-trigger').removeClass('acquia-lift-hidden');

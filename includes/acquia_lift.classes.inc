@@ -313,10 +313,13 @@ class AcquiaLiftAPI implements PersonalizeLoggerAwareInterface {
    * @param $explore_rate
    *   A number between 0 and 1 inclusive representing the percentage to use as
    *   the continuous experiment group.
+   * @param $sticky
+   *   Boolean indicating whether decisions made by the agent should stick for each
+   *   visitor.
    * @return boolean
    *   TRUE if the agent has been saved to Acquia Lift, FALSE otherwise.
    */
-  public function saveAgent($machine_name, $label, $decision_style, $status = 'enabled', $control_rate = 0.1, $explore_rate = .2) {
+  public function saveAgent($machine_name, $label, $decision_style, $status = 'enabled', $control_rate = 0.1, $explore_rate = .2, $sticky = TRUE) {
     $url = $this->generateEndpoint("/agent-api/$machine_name");
     $agent = array(
       'name' => $label,
@@ -324,6 +327,7 @@ class AcquiaLiftAPI implements PersonalizeLoggerAwareInterface {
       'status' => $status,
       'control-rate' => $control_rate,
       'explore-rate' => $explore_rate,
+      'decision-stickiness' => $sticky ? 'session' : 'none'
     );
     $response = $this->httpClient()->put($url, array('Content-Type' => 'application/json; charset=utf-8', 'Accept' => 'application/json'), $agent);
     $data = json_decode($response->data, TRUE);

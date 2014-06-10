@@ -346,6 +346,7 @@ class AcquiaLiftAgent extends PersonalizeAgentBase implements PersonalizeAgentGo
         'enabled',
         $acquia_lift_control_rate,
         $acquia_lift_explore_rate,
+        isset($this->data['cache_decisions']) && $this->data['cache_decisions']
       ),
     );
     $acquia_lift_context_needs_deleting = isset($old_data->data['visitor_context']['acquia_lift_context']);

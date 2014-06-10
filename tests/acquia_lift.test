@@ -164,6 +164,7 @@ class AcquiaLiftWebTest extends DrupalWebTestCase {
             'enabled',
             0.1,
             0.3,
+            1
           )
         );
       }
@@ -191,6 +192,7 @@ class AcquiaLiftWebTest extends DrupalWebTestCase {
         'enabled',
         0.1,
         0.3,
+        1
       )
     );
     $this->assertQueueItems($expected_queue_items);
@@ -207,6 +209,7 @@ class AcquiaLiftWebTest extends DrupalWebTestCase {
           'enabled',
           0.1,
           0.3,
+          1
         )
       )
     );
@@ -225,6 +228,7 @@ class AcquiaLiftWebTest extends DrupalWebTestCase {
         'enabled',
         0.1,
         0.3,
+        1
       )
     );
     $this->assertQueueItems($expected_queue_items);
@@ -289,6 +293,7 @@ class AcquiaLiftWebTest extends DrupalWebTestCase {
           'enabled',
           0.1,
           0.2,
+          1
         ),
       ),
       array(
@@ -325,6 +330,7 @@ class AcquiaLiftWebTest extends DrupalWebTestCase {
           'enabled',
           0.1,
           0.2,
+          1
         ),
       ),
       array(
@@ -381,6 +387,7 @@ class AcquiaLiftWebTest extends DrupalWebTestCase {
         'enabled',
         ($agentData['control_rate'] / 100),
         ($agentData['explore_rate'] / 100),
+        isset($agentData['cache_decisions']) && $agentData['cache_decisions']
       ),
     );
     $expected_queues = array(
@@ -603,6 +610,7 @@ class AcquiaLiftWebTest extends DrupalWebTestCase {
           'enabled',
           0.1,
           0.2,
+          1
         ),
       ),
     );
@@ -683,6 +691,7 @@ class AcquiaLiftWebTest extends DrupalWebTestCase {
           'enabled',
           0.1,
           0.2,
+          1
         ),
       ),
     );
@@ -723,6 +732,7 @@ class AcquiaLiftWebTest extends DrupalWebTestCase {
           'enabled',
           0.1,
           0.2,
+          1
         ),
       ),
     );
@@ -792,6 +802,7 @@ class AcquiaLiftWebTest extends DrupalWebTestCase {
         'enabled',
         0.1,
         0.2,
+        1
       )
     );
     $expected_queue_items[] = $queued_agent_item;
@@ -905,6 +916,7 @@ class AcquiaLiftWebTest extends DrupalWebTestCase {
       'decision_style' => 'adaptive',
       'control_rate' => 10,
       'explore_rate' => 20,
+      'cache_decisions' => 1
     );
 
     $data +=  array('machine_name' => personalize_generate_machine_name($data['name'], 'personalize_agent_machine_name_exists'));
@@ -915,6 +927,7 @@ class AcquiaLiftWebTest extends DrupalWebTestCase {
       'agent_basic_info[options][acquia_lift][decision_style]' => $data['decision_style'],
       'agent_basic_info[options][acquia_lift][control_rate]' => $data['control_rate'],
       'agent_basic_info[options][acquia_lift][explore_rate]' => $data['explore_rate'],
+      'cache_decisions' => $data['cache_decisions']
     );
 
     $this->drupalPost('admin/structure/personalize/add', $edit, $this->getButton('agent'));
@@ -931,6 +944,7 @@ class AcquiaLiftWebTest extends DrupalWebTestCase {
           'enabled',
           isset($data['control_rate']) ? $data['control_rate'] / 100 : .1,
           isset($data['explore_rate']) ? ($data['explore_rate'] / 100) : .2,
+          isset($data['cache_decisions']) && $data['cache_decisions']
         )
       )
     );

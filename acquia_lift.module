@@ -1050,7 +1050,7 @@ function acquia_lift_form_personalize_admin_form_alter(&$form, &$form_state) {
  */
 function acquia_lift_personalize_fields_form_element_alter(&$element, $lang) {
   $element['#attributes']['class'][] = 'personalizable-field';
-  if ($element[$lang]['#theme'] == 'field_multiple_value_form') {
+  if (isset($element[$lang]['#theme']) && $element[$lang]['#theme'] == 'field_multiple_value_form') {
     $element[$lang]['#theme'] = 'acquia_lift_personalizable_field_form';
   }
   $element['#attached']['library'][] = array('acquia_lift', 'acquia_lift.fields');

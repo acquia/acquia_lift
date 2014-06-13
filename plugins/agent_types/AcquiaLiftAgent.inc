@@ -132,7 +132,8 @@ class AcquiaLiftAgent extends PersonalizeAgentBase implements PersonalizeAgentGo
   public static function create($agent_data) {
     try {
       $acquia_lift_api = AcquiaLiftAPI::getInstance(variable_get('acquia_lift_account_info', array()));
-      return new self($agent_data->machine_name, $agent_data->label, $agent_data->data, $agent_data->status, !empty($agent_data->started) ? $agent_data->started : NULL, $acquia_lift_api);
+      $status = personalize_agent_get_status($agent_data->machine_name);
+      return new self($agent_data->machine_name, $agent_data->label, $agent_data->data, $status, !empty($agent_data->started) ? $agent_data->started : NULL, $acquia_lift_api);
     }
     catch (AcquiaLiftException $e) {
       watchdog('Acquia Lift', 'Unable to instantiate Acquia Lift Agent');

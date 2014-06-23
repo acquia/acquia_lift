@@ -126,11 +126,6 @@ function acquia_lift_theme() {
       'path' => $path . '/theme',
       'file' => 'acquia_lift.navbar.theme.inc',
     ),
-    'acquia_lift_navbar_tab_wrapper' => array(
-      'render element' => 'element',
-      'path' => $path . '/theme',
-      'file' => 'acquia_lift.navbar.theme.inc',
-    ),
     'acquia_lift_navbar_tray_wrapper' => array(
       'render element' => 'element',
       'path' => $path . '/theme',
@@ -201,11 +196,7 @@ function acquia_lift_element_info() {
     '#theme' => 'acquia_lift_percentage',
   );
 
-  // Elements necessary for the unified navbar.  Only in use if the navbar
-  // module is not enabled.
-  if (!_acquia_lift_using_unified_navbar()) {
-    return $elements;
-  }
+  // Elements necessary for the unified navbar.
   // Note that we keep the CSS selectors the same as those used by navbar
   // in order to use the same set of CSS.
   $elements['acquia_lift_navbar'] = array(
@@ -230,7 +221,7 @@ function acquia_lift_element_info() {
     ),
     // Metadata for the administration bar.
     '#bar' => array(
-      '#heading' => t('Navbar items'),
+      '#heading' => t('Acquia Lift Navigation'),
       '#attributes' => array(
         'id' => 'navbar-bar',
         'class' => array('navbar-bar', 'clearfix'),
@@ -245,13 +236,8 @@ function acquia_lift_element_info() {
   $elements['acquia_lift_navbar_item'] = array(
     '#pre_render' => array('acquia_lift_navbar_pre_render_item'),
     '#theme' => 'acquia_lift_navbar_item',
-    '#theme_wrappers' => array('acquia_lift_navbar_tab_wrapper'),
-    'tab' => array(
-      '#type' => 'link',
-      '#title' => NULL,
-      '#href' => '',
-    ),
   );
+
   return $elements;
 }
 
@@ -1122,7 +1108,7 @@ function acquia_lift_navbar() {
   if (!empty($menu)) {
     $items['acquia_lift'] = array(
       '#access' => user_access('manage personalized content'),
-      '#type' => 'navbar_item',
+      '#type' => 'acquia_lift_navbar_item',
       'tray' => array(
         '#heading' => t('Personalization controls'),
         'navbar_personalization' => array(
@@ -1139,15 +1125,7 @@ function acquia_lift_navbar() {
       '#weight' => 20,
     );
 
-    if (_acquia_lift_using_unified_navbar()) {
-      // Add the unified library.
-      $items['acquia_lift']['#attached'] = array(
-        'library' => array(
-          array('acquia_lift', 'acquia_lift.unified.navbar'),
-        ),
-      );
-    }
-    else {
+    if (!_acquia_lift_using_unified_navbar()) {
       // Add the tab trigger for the tray.
       $items['acquia_lift']['tab'] = array(
         '#type' => 'link',

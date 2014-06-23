@@ -1,6 +1,7 @@
 /**
  * @file
- * Defines the behavior of the Drupal administration navbar.
+ * Defines the behavior of the Acquia Lift unified navibation bar.
+ * This borrows *heavily* from navbar.
  */
 
 (function ($, Backbone, Drupal) {
@@ -40,7 +41,7 @@ Drupal.behaviors.navbar = {
             'wide': ''
           }
         },
-        Drupal.settings.navbar,
+        Drupal.settings.acquia_lift.unified_navbar,
         // Merge strings on top of drupalSettings so that they are not mutable.
         {
           strings: {
@@ -53,7 +54,7 @@ Drupal.behaviors.navbar = {
       // Establish the navbar models and views.
       var model = Drupal.navbar.models.navbarModel = new Drupal.navbar.NavbarModel({
         locked: JSON.parse(localStorage.getItem('Drupal.navbar.trayVerticalLocked')) || false,
-        activeTab: JSON.parse(localStorage.getItem('Drupal.navbar.activeTab'))
+        activeTray: '#navbar-item-tray'
       });
       Drupal.navbar.views.navbarVisualView = new Drupal.navbar.NavbarVisualView({
         el: this,
@@ -70,28 +71,6 @@ Drupal.behaviors.navbar = {
         model: model
       });
 
-      // Render collapsible menus.
-      var menuModel = Drupal.navbar.models.menuModel = new Drupal.navbar.MenuModel();
-      Drupal.navbar.views.menuVisualView = new Drupal.navbar.MenuVisualView({
-        el: $(this).find('.navbar-menu-administration').get(0),
-        model: menuModel,
-        strings: options.strings
-      });
-
-      // Handle the resolution of Drupal.navbar.setSubtrees.
-      // This is handled with a deferred so that the function may be invoked
-      // asynchronously.
-      Drupal.navbar.setSubtrees.done(function (subtrees) {
-        menuModel.set('subtrees', subtrees);
-        localStorage.setItem('Drupal.navbar.subtrees', JSON.stringify(subtrees));
-        // Indicate on the navbarModel that subtrees are now loaded.
-        model.set('areSubtreesLoaded', true);
-      });
-      // Resolve this immediately since we're simply loading all the submenu
-      // items right from the server each time until we can resolve the JSONP
-      // loading issue in Drupal 7.
-      Drupal.navbar.setSubtrees.resolve(null);
-
       // Attach a listener to the configured media query breakpoints.
       for (var label in options.breakpoints) {
         if (options.breakpoints.hasOwnProperty(label)) {
@@ -105,15 +84,6 @@ Drupal.behaviors.navbar = {
           Drupal.navbar.mediaQueryChangeHandler.call(null, model, label, mql);
         }
       }
-
-      // Trigger an initial attempt to load menu subitems. This first attempt
-      // is made after the media query handlers have had an opportunity to
-      // process. The navbar starts in the vertical orientation by default,
-      // unless the viewport is wide enough to accomodate a horizontal
-      // orientation. Thus we give the Navbar a chance to determine if it
-      // should be set to horizontal orientation before attempting to load menu
-      // subtrees.
-      Drupal.navbar.views.navbarVisualView.loadSubtrees();
 
       $(document)
         // Update the model when the viewport offset changes.
@@ -135,17 +105,10 @@ Drupal.behaviors.navbar = {
         .on('change:orientation', function (model, orientation) {
           $(document).trigger('drupalNavbarOrientationChange', orientation);
         })
-        .on('change:activeTab', function (model, tab) {
-          $(document).trigger('drupalNavbarTabChange', tab);
-        })
         .on('change:activeTray', function (model, tray) {
           $(document).trigger('drupalNavbarTrayChange', tray);
         });
     });
-
-    // Invoke the Navbar menu script for core modules.
-    $('.navbar-menu-user').drupalNavbarMenu();
-    $('.navbar-menu-shortcuts .navbar-lining > .menu').drupalNavbarMenu();
   }
 };
 
@@ -179,27 +142,6 @@ Drupal.navbar = {
 
   // A hash of MediaQueryList objects tracked by the navbar.
   mql: {},
-
-  /**
-   * Accepts a list of subtree menu elements.
-   *
-   * A deferred object that is resolved by an inlined JavaScript callback.
-   *
-   * JSONP callback.
-   * @see navbar_subtrees_jsonp().
-   *
-   * Let's build our own $.Deferred()!
-   */
-  setSubtrees: (function () {
-    return {
-      resolve: function (subtrees) {
-        this.callback.call(null, subtrees);
-      },
-      done: function (callback) {
-        this.callback = callback;
-      }
-    };
-  }()),
 
   /**
    * Respond to configured narrow media query changes.
@@ -242,10 +184,6 @@ Drupal.navbar = {
    */
   NavbarModel: Backbone.Model.extend({
     defaults: {
-      // The active navbar tab. All other tabs should be inactive under
-      // normal circumstances. It will remain active across page loads. The
-      // active item is stored as an ID selector e.g. '#navbar-item--1'.
-      activeTab: null,
       // Represents whether a tray is open or not. Stored as an ID selector e.g.
       // '#navbar-item--1-tray'.
       activeTray: null,
@@ -255,9 +193,6 @@ Drupal.navbar = {
       // Indicates whether the navbar is positioned absolute (false) or fixed
       // (true).
       isFixed: false,
-      // Menu subtrees are loaded through an AJAX request only when the Navbar
-      // is set to a vertical orientation.
-      areSubtreesLoaded: false,
       // If the viewport overflow becomes constrained, such as when the overlay
       // is open, isFixed must be true so that elements in the trays aren't
       // lost offscreen and impossible to get to.
@@ -361,7 +296,7 @@ Drupal.navbar = {
     initialize: function (options) {
       this.strings = options.strings;
 
-      this.model.on('change:activeTab change:orientation change:isOriented change:isTrayToggleVisible', this.render, this);
+      this.model.on('change:orientation change:isOriented change:isTrayToggleVisible', this.render, this);
       this.model.on('change:mqMatches', this.onMediaQueryChange, this);
       this.model.on('change:offsets', this.adjustPlacement, this);
 
@@ -370,33 +305,16 @@ Drupal.navbar = {
         .find('.navbar-tray .navbar-lining')
         .append(Drupal.theme('navbarOrientationToggle'));
 
-      // Trigger an activeTab change so that listening scripts can respond on
-      // page load. This will call render.
-      this.model.trigger('change:activeTab');
+      // Render the visual view.
+      this.render();
     },
 
     /**
      * {@inheritdoc}
      */
     render: function () {
-      this.updateTabs();
       this.updateTrayOrientation();
       this.updateBarAttributes();
-      // Load the subtrees if the orientation of the navbar is changed to
-      // vertical. This condition responds to the case that the navbar switches
-      // from horizontal to vertical orientation. The navbar starts in a
-      // vertical orientation by default and then switches to horizontal during
-      // initialization if the media query conditions are met. Simply checking
-      // that the orientation is vertical here would result in the subtrees
-      // always being loaded, even when the navbar initialization ultimately
-      // results in a horizontal orientation.
-      //
-      // @see Drupal.behaviors.navbar.attach() where admin menu subtrees
-      // loading is invoked during initialization after media query conditions
-      // have been processed.
-      if (this.model.changed.orientation === 'vertical' || this.model.changed.activeTab) {
-        this.loadSubtrees();
-      }
       // Trigger a recalculation of viewport displacing elements. Use setTimeout
       // to ensure this recalculation happens after changes to visual elements
       // have processed.
@@ -404,25 +322,6 @@ Drupal.navbar = {
         Drupal.displace(true);
       }, 0);
       return this;
-    },
-
-    /**
-     * Responds to a navbar tab click.
-     *
-     * @param jQuery.Event event
-     */
-    onTabClick: function (event) {
-      // If this tab has a tray associated with it, it is considered an
-      // activatable tab.
-      if (event.target.hasAttribute('data-navbar-tray')) {
-        var activeTab = this.model.get('activeTab');
-        var id = event.target.id;
-        // Set the event target as the active item if it is not already.
-        this.model.set('activeTab', (!activeTab || id !== activeTab) ? id : null);
-
-        event.preventDefault();
-        event.stopPropagation();
-      }
     },
 
     /**
@@ -454,49 +353,6 @@ Drupal.navbar = {
 
         event.preventDefault();
         event.stopPropagation();
-      }
-    },
-
-    /**
-     * Updates the display of the tabs: toggles a tab and the associated tray.
-     */
-    updateTabs: function () {
-      var $tab = $('#' + this.model.get('activeTab'));
-      // Deactivate the previous tab.
-      $('#' + this.model.previous('activeTab'))
-        .removeClass('navbar-active')
-        .attr('aria-pressed', false);
-      // Deactivate the previous tray.
-      $(this.model.previous('activeTray'))
-        .removeClass('navbar-active');
-
-      // Activate the selected tab.
-      if ($tab.length > 0) {
-        $tab
-          .addClass('navbar-active')
-          // Mark the tab as pressed.
-          .attr('aria-pressed', true);
-        var name = $tab.attr('data-navbar-tray');
-        // Store the active tab name or remove the setting.
-        var id = $tab.get(0).id;
-        if (id) {
-          localStorage.setItem('Drupal.navbar.activeTab', JSON.stringify(id));
-        }
-        // Activate the associated tray.
-        var $tray = this.$el.find('[data-navbar-tray="' + name + '"].navbar-tray');
-        if ($tray.length) {
-          $tray.addClass('navbar-active');
-          this.model.set('activeTray', $tray.get(0));
-        }
-        else {
-          // There is no active tray.
-          this.model.set('activeTray', null);
-        }
-      }
-      else {
-        // There is no active tray.
-        this.model.set('activeTray', null);
-        localStorage.removeItem('Drupal.navbar.activeTab');
       }
     },
 
@@ -569,92 +425,6 @@ Drupal.navbar = {
         $trays.css('padding-top', this.$el.find('.navbar-bar').outerHeight());
       }
     },
-
-    /**
-     * Calls the endpoint URI that will return rendered subtrees with JSONP.
-     *
-     * The rendered admin menu subtrees HTML is cached on the client in
-     * localStorage until the cache of the admin menu subtrees on the server-
-     * side is invalidated. The subtreesHash is stored in localStorage as well
-     * and compared to the subtreesHash in drupalSettings to determine when the
-     * admin menu subtrees cache has been invalidated.
-     */
-    loadSubtrees: function () {
-      var $activeTab = $('#' + this.model.get('activeTab'));
-      var orientation = this.model.get('orientation');
-      // Only load and render the admin menu subtrees if:
-      //   (1) They have not been loaded yet.
-      //   (2) The active tab is the administration menu tab, indicated by the
-      //       presence of the data-drupal-subtrees attribute.
-      //   (3) The orientation of the tray is vertical.
-      if (!this.model.get('areSubtreesLoaded') && $activeTab.data('drupal-subtrees') !== undefined && orientation === 'vertical') {
-        var subtreesHash = drupalSettings.navbar.subtreesHash;
-        var endpoint = Drupal.url('navbar/subtrees/' + subtreesHash);
-        var cachedSubtreesHash = localStorage.getItem('Drupal.navbar.subtreesHash');
-        var cachedSubtrees = JSON.parse(localStorage.getItem('Drupal.navbar.subtrees'));
-        var isVertical = this.model.get('orientation') === 'vertical';
-        // If we have the subtrees in localStorage and the subtree hash has not
-        // changed, then use the cached data.
-        if (isVertical && subtreesHash === cachedSubtreesHash && cachedSubtrees) {
-          Drupal.navbar.setSubtrees.resolve(cachedSubtrees);
-        }
-        // Only make the call to get the subtrees if the orientation of the
-        // navbar is vertical.
-        else if (isVertical) {
-          // Remove the cached menu information.
-          localStorage.removeItem('Drupal.navbar.subtreesHash');
-          localStorage.removeItem('Drupal.navbar.subtrees');
-          // The response from the server will call the resolve method of the
-          // Drupal.navbar.setSubtrees Promise.
-          $.ajax(endpoint);
-          // Cache the hash for the subtrees locally.
-          localStorage.setItem('Drupal.navbar.subtreesHash', subtreesHash);
-        }
-      }
-    }
-  }),
-
-  /**
-   * Backbone Model for collapsible menus.
-   */
-  MenuModel: Backbone.Model.extend({
-    defaults: {
-      subtrees: {}
-    }
-  }),
-
-  /**
-   * Backbone View for collapsible menus.
-   */
-  MenuVisualView: Backbone.View.extend({
-    /**
-     * {@inheritdoc}
-     */
-    initialize: function () {
-      this.model.on('change:subtrees', this.render, this);
-    },
-
-    /**
-     * {@inheritdoc}
-     */
-    render: function () {
-      var subtrees = this.model.get('subtrees');
-      // Add subtrees.
-      for (var id in subtrees) {
-        if (subtrees.hasOwnProperty(id)) {
-          this.$el
-            .find('#navbar-link-' + id)
-            .once('navbar-subtrees')
-            .after(subtrees[id]);
-        }
-      }
-      // Render the main menu as a nested, collapsible accordion.
-      if ('drupalNavbarMenu' in $.fn) {
-        this.$el
-          .children('.menu')
-          .drupalNavbarMenu();
-      }
-    }
   }),
 
   /**

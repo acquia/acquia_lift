@@ -20,30 +20,22 @@ function theme_acquia_lift_navbar(&$variables) {
     $element = $variables['element'];
     $trays = '';
     foreach (element_children($element) as $key) {
+      $element[$key]['tray']['#printed'] = FALSE;
       $trays .= drupal_render($element[$key]['tray']);
     }
-    return '<nav' . drupal_attributes($element['#attributes']) . '>'
+    $output = '<nav' . drupal_attributes($element['#attributes']) . '>'
     . '<div' . drupal_attributes($element['#bar']['#attributes']) . '>'
     . '<h2 class="element-invisible">' . $element['#bar']['#heading'] . '</h2>'
     . $element['#children'] . '</div>' . $trays . '</nav>';
+    return $output;
   }
-}
-
-/**
- * Implements template_preprocess_HOOK().
- */
-function template_preprocess_acquia_lift_navbar_tab_wrapper(&$variables) {
-  if (!isset($variables['element']['#wrapper_attributes'])) {
-    $variables['element']['#wrapper_attributes'] = array();
-  }
-  $variables['element']['#wrapper_attributes']['class'][] = 'navbar-tab';
 }
 
 /**
  * Returns HTML for a navbar item.
  *
- * This theme function only renders the tab portion of the navbar item. The
- * tray portion will be rendered later.
+ * This theme function returns empty because the tray portion will be rendered
+ * later.
  *
  * @param array $variables
  *   An associative array containing:
@@ -54,24 +46,7 @@ function template_preprocess_acquia_lift_navbar_tab_wrapper(&$variables) {
  * @see theme_navbar().
  */
 function theme_acquia_lift_navbar_item(&$variables) {
-  return drupal_render($variables['element']['tab']);
-}
-
-/**
- * Returns HTML for wrapping a navbar tab.
- *
- * Navbar tabs have a common styling and placement with the navbar's bar area.
- *
- * @param array $variables
- *   An associative array containing:
- *   - element: An associative array containing the properties and children of
- *     the tray. Properties used: #children and #attributes.
- */
-function theme_acquia_lift_navbar_tab_wrapper(&$variables) {
-  if (!empty($variables['element']['#children'])) {
-    $element = $variables['element'];
-    return '<div' . drupal_attributes($element['#wrapper_attributes']) . '>' . $element['#children'] . '</div>';
-  }
+  return '';
 }
 
 /**

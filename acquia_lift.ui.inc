@@ -49,11 +49,11 @@ function acquia_lift_build_page(&$page) {
     }
   }
 
-  // Attach client-side controls for managing personalized content.
   $page['page_top']['acquia_lift']['#access'] = user_access('manage personalized content');
   $page['page_top']['acquia_lift']['#attached']['library'][] = array('acquia_lift', 'acquia_lift.personalize');
+  // Attach client-side controls for managing personalized content.
   if (_acquia_lift_using_unified_navbar()) {
-    $page['page_top']['acquia_lift']['#type'] = 'acquia_lift_navbar';
+    $page['page_top']['acquia_lift']['nav']['#type'] = 'acquia_lift_navbar';
   }
 }
 
@@ -365,7 +365,6 @@ function acquia_lift_navbar_library() {
       array('acquia_lift', 'acquia_lift.navbar.displace'),
     ),
   );
-
   return $libraries;
 }
 
@@ -437,26 +436,8 @@ function acquia_lift_navbar_ui_pre_render_item($element) {
   // Assign each item a unique ID.
   $id = drupal_html_id('navbar-item');
 
-  // Provide attributes for a navbar item.
-  $attributes = array(
-    'id' => $id,
-  );
-
   // If tray content is present, markup the tray and its associated trigger.
   if (!empty($element['tray'])) {
-    // Provide attributes necessary for trays.
-    $attributes += array(
-      'data-navbar-tab-trigger' => '',
-      'data-navbar-tray' => $id . '-tray',
-      'aria-owns' => $id,
-      'role' => 'button',
-      'aria-pressed' => 'false',
-    );
-
-    // Merge in module-provided attributes.
-    $element['tab'] += array('#attributes' => array());
-    $element['tab']['#attributes'] += $attributes;
-
     // Provide attributes for the tray theme wrapper.
     $attributes = array(
       'id' => $id . '-tray',
@@ -470,15 +451,18 @@ function acquia_lift_navbar_ui_pre_render_item($element) {
     }
     $element['tray']['#wrapper_attributes'] += $attributes;
     $element['tray']['#wrapper_attributes']['class'][] = 'navbar-tray';
+    // Normally navbar dynamically adds and removes the active class, but it is
+    // set statically here because there is only one tray in the unified nav.
+    $element['tray']['#wrapper_attributes']['class'][] = 'navbar-active';
 
     if (!isset($element['tray']['#theme_wrappers'])) {
       $element['tray']['#theme_wrappers'] = array();
     }
     // Add the standard theme_wrapper for trays.
-    array_unshift($element['tray']['#theme_wrappers'], 'navbar_tray_wrapper');
+    array_unshift($element['tray']['#theme_wrappers'], 'acquia_lift_navbar_tray_wrapper');
     // If a #heading is provided for the tray, provided a #theme_wrapper
     // function to append it.
-    array_unshift($element['tray']['#theme_wrappers'], 'navbar_tray_heading_wrapper');
+    array_unshift($element['tray']['#theme_wrappers'], 'acquia_lift_navbar_tray_heading_wrapper');
   }
 
   return $element;

@@ -100,22 +100,8 @@ function acquia_lift_requirements($phase) {
   $requirements = array();
 
   if ($phase == 'runtime') {
-    $requirements['acquia_lift_chosen'] = array(
-      'title' => t('Acquia Lift: Chosen library'),
-      'value' => t('The chosen library is not present'),
-      'severity' => REQUIREMENT_ERROR,
-    );
-    if (function_exists('libraries_detect')) {
-      if (($library = libraries_detect('chosen')) && !empty($library['installed'])) {
-        $requirements['acquia_lift_chosen']['value'] = $library['version'];
-        $requirements['acquia_lift_chosen']['severity'] = REQUIREMENT_OK;
-      }
-      else if (!empty($library['error'])) {
-        $requirements['acquia_lift_chosen']['value'] = $library['error message'];
-      }
-    }
-    // Underscore and Backbone.
-    $libraries = array('underscore', 'backbone');
+    // Required JavaScript libraries.
+    $libraries = array('underscore', 'backbone', 'modernizr', 'chosen');
     foreach ($libraries as $lib) {
       $requirements['acquia_lift_' . $lib] = array(
         'title' => t('Acquia Lift: @library', array('@library' => $lib)),

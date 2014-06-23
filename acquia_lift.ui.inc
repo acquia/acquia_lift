@@ -233,3 +233,141 @@ function acquia_lift_nav_message_is_set() {
 function acquia_lift_unset_nav_message() {
   unset($_SESSION['acquia_lift_personalize_set_message']);
 }
+
+/**
+ * =======================================================================
+ *  F U N C T I O N S  B A S E D  O N  N A V B A R
+ * These functions are only used/useful when navbar is not included.
+ * =======================================================================
+ */
+/**
+ * Gets the library definitions for hook_library.
+ */
+function acquia_lift_navbar_library() {
+  $libraries = array();
+  if (module_exists('navbar')) {
+    return $libraries;
+  }
+  $path = drupal_get_path('module', 'acquia_lift');
+
+  $libraries['acquia_lift.unified.navbar'] = array(
+    'title' => 'Unified navbar',
+    'version' => VERSION,
+    'js' => array(
+      $path . '/js/acquia_lift.unified_navbar.js' => array(),
+    ),
+    'css' => array(
+      $path . '/css/navbar/navbar.module.css',
+      $path . '/css/navbar/navbar.theme.css',
+      $path . '/css/navbar/navbar.icons.css',
+    ),
+    'dependencies' => array(
+      array('acquia_lift', 'modernizr'),
+      array('system', 'jquery'),
+      array('acquia_lift', 'underscore'),
+      array('acquia_lift', 'backbone'),
+      array('acquia_lift', 'acquia_lift.navbar.matchmedia'),
+      array('system', 'jquery.once'),
+      array('acquia_lift', 'acquia_lift.navbar.debounce'),
+      array('acquia_lift', 'acquia_lift.navbar.announce'),
+      array('acquia_lift', 'acquia_lift.navbar.displace'),
+      array('acquia_lift', 'acquia_lift.navbar.menu'),
+    ),
+  );
+
+  // Only load navbar.overlay if overlay is enabled.
+  if (module_exists('overlay')) {
+    $libraries['navbar']['dependencies'][] = array('navbar', 'navbar.overlay');
+  }
+
+  $libraries['acquia_lift.navbar.menu'] = array(
+    'title' => 'Navbar nested accordion menus.',
+    'version' => VERSION,
+    'js' => array(
+      $path . '/js/navbar/navbar.menu.js' => array(),
+    ),
+    'css' => array(
+      $path . '/css/navbar/navbar.menu.css',
+    ),
+    'dependencies' => array(
+      array('system', 'jquery'),
+      array('system', 'jquery.once'),
+    ),
+  );
+
+  // Backport of D8 matchMedia polyfill.
+  $libraries['acquia_lift.navbar.matchmedia'] = array(
+    'title' => 'window.matchMedia polyfill',
+    'website' => 'http://drupal.org/node/1815602',
+    'version' => VERSION,
+    'js' => array(
+      $path . '/js/navbar/matchmedia.js' => array(),
+    ),
+  );
+
+  // A utility function to limit calls to a function with a given time.
+  $libraries['acquia_lift.navbar.debounce'] = array(
+    'title' => 'Navbar debounce',
+    'version' => VERSION,
+    'js' => array(
+      $path . '/js/navbar/debounce.js' => array('group' => JS_LIBRARY),
+    ),
+  );
+
+  // A utility function determine viewport offset distances.
+  $libraries['acquia_lift.navbar.displace'] = array(
+    'title' => 'Navbar displace',
+    'version' => VERSION,
+    'js' => array(
+      $path . '/js/navbar/displace.js' => array('group' => JS_LIBRARY),
+    ),
+    'dependencies' => array(
+      array('system', 'jquery'),
+      array('acquia_lift', 'acquia_lift.navbar.debounce'),
+    ),
+  );
+
+  // A utility for writing text to a common aria-live region.
+  $libraries['acquia_lift.navbar.announce'] = array(
+    'title' => 'Navbar announce',
+    'version' => VERSION,
+    'js' => array(
+      $path . '/js/navbar/announce.js' => array('group' => JS_LIBRARY),
+    ),
+    'dependencies' => array(
+      array('acquia_lift', 'acquia_lift.navbar.debounce'),
+    ),
+  );
+
+  // Override Overlay methods to support displacement.
+  $libraries['acquia_lift.navbar.overlay'] = array(
+    'title' => 'Overlay method overrides to support D8 viewport displacement.',
+    'version' => VERSION,
+    'js' => array(
+      // Load this file well after Overlay code has loaded.
+      $path . '/js/navbar/navbar-overlay.js' => array('weight' => 100),
+    ),
+    'dependencies' => array(
+      array('system', 'jquery'),
+      array('acquia_lift', 'acquia_lift.navbar.displace'),
+    ),
+  );
+
+  // Support Tableheader displacement.
+  $libraries['acquia_lift.navbar.tableheader'] = array(
+    'title' => 'Tableheader method to support D8 viewport displacement.',
+    'version' => VERSION,
+    'js' => array(
+      // Load this file well after Overlay code has loaded.
+      $path . '/js/navbar/navbar-tableheader.js' => array('weight' => 100),
+      array(
+        'data' => array('tableHeaderOffset' => 'Drupal.navbar.height'),
+        'type' => 'setting'
+      ),
+    ),
+    'dependencies' => array(
+      array('system', 'jquery'),
+      array('acquia_lift', 'acquia_lift.navbar.displace'),
+    ),
+  );
+}

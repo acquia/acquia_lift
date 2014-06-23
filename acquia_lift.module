@@ -470,26 +470,9 @@ function acquia_lift_library() {
     'scope' => 'footer',
     'defer' => TRUE,
   );
-
-  // Controls and actions for site builders.
-  $libraries['acquia_lift.controls'] = array(
-    'title' => 'Acquia Lift controls',
-    'website' => '',
-    'version' => VERSION,
-    'js' => array(
-      $path . '/js/acquia_lift.controls.js' => $options,
-    ),
-    'css' => array(
-      $path . '/css/acquia_lift.controls.css',
-    ),
-    'dependencies' => array(
-      array('system', 'jquery'),
-      array('system', 'jquery.once'),
-      array('system', 'drupal.ajax'),
-      array('system', 'ui.dialog'),
-      array('system', 'ui.accordion'),
-    ),
-  );
+  // Add the unified navbar library and dependency declarations.
+  module_load_include('inc', 'acquia_lift', 'acquia_lift.ui');
+  $libraries = acquia_lift_navbar_library();
 
   // Option set preview.
   $libraries['acquia_lift.personalize'] = array(
@@ -558,6 +541,14 @@ function acquia_lift_library() {
     ),
   );
 
+  // Ensure that each 3rd party library dependency has a default variant.
+  // Convert Libraries module data structures to library data structures.
+  // Modernizr
+  $libraries['modernizr'] = _navbar_convert_libraries_to_library(libraries_detect('modernizr'), array(
+    'group' => JS_LIBRARY,
+    'weight' => -100,
+  ));
+
   // Underscore
   $libraries['underscore'] = _acquia_lift_convert_libraries_to_library(libraries_detect('underscore'), array(
     'group' => JS_LIBRARY,
@@ -591,6 +582,15 @@ function acquia_lift_library_alter(&$libraries, $module) {
       $libraries['acquia_lift.personalize']['js'][$path . '/js/jquery/ducktape.events.js'] = array('group' => JS_LIBRARY);
     }
   }
+
+  // If we are using the unified navbar, then fix the behavior with overlay module.
+  if ($module === 'overlay' && _acquia_lift_using_unified_navbar() && !empty($libraries)) {
+    // Unset the child CSS file from Overlay and add our own.
+    if (!empty($libraries['child']['css'])) {
+      unset($libraries['child']['css']['modules/overlay/overlay-child.css']);
+    }
+    $libraries['child']['css'][drupal_get_path('module', 'acquia_lift') . '/css/navbar/navbar-overlay-child.css'] = array();
+  }
 }
 
 /**
@@ -601,6 +601,56 @@ function acquia_lift_library_alter(&$libraries, $module) {
  * @see Libraries module.
  */
 function acquia_lift_libraries_info() {
+  $libraries['modernizr'] = array(
+    'name' => 'Modernizr',
+    'vendor url' => 'https://github.com/Modernizr/Modernizr',
+    'download url' => 'http://modernizr.com/download/#-inputtypes-svg-touch-cssclasses-addtest-teststyles-prefixes-elem_details',
+    'version callback' => '_acquia_lift_libraries_get_version',
+    'variant order' => array('minified', 'source'),
+    'version arguments' => array(
+      'variants' => array(
+        'source' => array(
+          'file' => 'modernizr.js',
+          // @todo Document an actual example version string.
+          'pattern' => '#Modernizr\s+[Vv]?([0-9\.]+)#',
+        ),
+        'minified' => array(
+          'file' => 'modernizr-min.js',
+          'pattern' => '#Modernizr\s+[Vv]?([0-9\.]+)#',
+        ),
+      ),
+    ),
+    'versions' => array(
+      // Means ">=2.6.2": matches 2.6.2, 2.7.1, etc.
+      '2.6.2' => array(
+        'variants' => array(
+          'source' => array(
+            'files' => array(
+              'js' => array(
+                'modernizr.js',
+              ),
+            ),
+            // Without a variant callback, the variant is assumed to be
+            // installed.
+            'variant callback' => '_navbar_libraries_variant_exists',
+            'variant arguments' => array('modernizr.js')
+          ),
+          'minified' => array(
+            'files' => array(
+              'js' => array(
+                'modernizr-min.js',
+              ),
+            ),
+            // Without a variant callback, the variant is assumed to be
+            // installed.
+            'variant callback' => '_navbar_libraries_variant_exists',
+            'variant arguments' => array('modernizr-min.js')
+          ),
+        ),
+      ),
+    ),
+  );
+
   $libraries['underscore'] = array(
     'name' => 'Underscore',
     'vendor url' => 'http://documentcloud.github.io/backbone/',
@@ -899,6 +949,17 @@ function _acquia_lift_libraries_get_preferred_variant_name($library) {
     }
   }
   return NULL;
+}
+
+/**
+ * Helper function to determine if the site is using the Acquia Lift unified
+ * navigation bar.
+ *
+ * @return bool
+ *   True if using it, false if using navbar.
+ */
+function _acquia_lift_using_unified_navbar() {
+  return !module_exists('navbar');
 }
 
 /**

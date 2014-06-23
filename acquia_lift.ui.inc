@@ -52,13 +52,8 @@ function acquia_lift_build_page(&$page) {
   // Attach client-side controls for managing personalized content.
   $page['page_top']['acquia_lift']['#access'] = user_access('manage personalized content');
   $page['page_top']['acquia_lift']['#attached']['library'][] = array('acquia_lift', 'acquia_lift.personalize');
-  // The controls JavaScript file is only necessary if the Navbar module is
-  // not installed.
-  if (!module_exists('navbar')) {
-    // Don't add the dialog behavior to admin pages either.
-    if (!path_is_admin(current_path()) && preg_match('/^admin\/structure\/block\/demo\//', current_path()) == 0) {
-      $page['page_top']['acquia_lift']['#attached']['library'][] = array('acquia_lift', 'acquia_lift.controls');
-    }
+  if (_acquia_lift_using_unified_navbar()) {
+    $page['page_top']['acquia_lift']['#type'] = 'acquia_lift_navbar';
   }
 }
 
@@ -370,4 +365,121 @@ function acquia_lift_navbar_library() {
       array('acquia_lift', 'acquia_lift.navbar.displace'),
     ),
   );
+
+  return $libraries;
+}
+
+/**
+ * Builds the unified navbar as a structured array ready for drupal_render().
+ *
+ * @param array $element
+ *   A renderable array
+ *
+ * @return
+ *   A renderable array.
+ *
+ * @see navbar_pre_render().
+ * @see acquia_lift_page_build().
+ */
+function acquia_lift_navbar_ui_pre_render($element) {
+  // Define the breakpoints to switch from vertical to horizontal
+  // navbar presentation.
+  $breakpoints = array(
+    'narrow' => 'only screen and (min-width: 16.5em)',
+    'standard' => 'only screen and (min-width: 38.125em)',
+    'wide' => 'only screen and (min-width: 50em)',
+  );
+  // Allow for altering of the breakpoints.
+  drupal_alter('acquia_lift_breakpoints', $breakpoints);
+
+  if (!empty($breakpoints)) {
+    $element['#attached']['js'][] = array(
+      'data' => array(
+        'acquia_lift' => array(
+          'unified_navbar' => array(
+            'breakpoints' => $breakpoints,
+          ),
+        ),
+      ),
+      'type' => 'setting',
+    );
+  }
+
+  // Get the navigation items as defined for the navbar implementation.
+  $items = acquia_lift_navbar();
+  // Sort the children.
+  uasort($items, 'element_sort');
+
+  // Merge in the original navbar values.
+  $element = array_merge($element, $items);
+
+  // Render the children.
+  $element['#children'] = drupal_render_children($element);
+
+  return $element;
+}
+
+/**
+ * Provides markup for associating a tray trigger with a tray element.
+ *
+ * A tray is a responsive container that wraps renderable content. Trays present
+ * content well on small and large screens alike.
+ *
+ * @param array $element
+ *   A renderable array.
+ *
+ * @return
+ *   A renderable array.
+ *
+ * @see navbar_pre_render_item().
+ */
+function acquia_lift_navbar_ui_pre_render_item($element) {
+  // Assign each item a unique ID.
+  $id = drupal_html_id('navbar-item');
+
+  // Provide attributes for a navbar item.
+  $attributes = array(
+    'id' => $id,
+  );
+
+  // If tray content is present, markup the tray and its associated trigger.
+  if (!empty($element['tray'])) {
+    // Provide attributes necessary for trays.
+    $attributes += array(
+      'data-navbar-tab-trigger' => '',
+      'data-navbar-tray' => $id . '-tray',
+      'aria-owns' => $id,
+      'role' => 'button',
+      'aria-pressed' => 'false',
+    );
+
+    // Merge in module-provided attributes.
+    $element['tab'] += array('#attributes' => array());
+    $element['tab']['#attributes'] += $attributes;
+
+    // Provide attributes for the tray theme wrapper.
+    $attributes = array(
+      'id' => $id . '-tray',
+      'data-navbar-tray' => $id . '-tray',
+      'aria-owned-by' => $id,
+    );
+
+    // Merge in module-provided attributes.
+    if (!isset($element['tray']['#wrapper_attributes'])) {
+      $element['tray']['#wrapper_attributes'] = array();
+    }
+    $element['tray']['#wrapper_attributes'] += $attributes;
+    $element['tray']['#wrapper_attributes']['class'][] = 'navbar-tray';
+
+    if (!isset($element['tray']['#theme_wrappers'])) {
+      $element['tray']['#theme_wrappers'] = array();
+    }
+    // Add the standard theme_wrapper for trays.
+    array_unshift($element['tray']['#theme_wrappers'], 'navbar_tray_wrapper');
+    // If a #heading is provided for the tray, provided a #theme_wrapper
+    // function to append it.
+    array_unshift($element['tray']['#theme_wrappers'], 'navbar_tray_heading_wrapper');
+  }
+
+  return $element;
 }

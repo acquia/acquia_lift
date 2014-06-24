@@ -15,7 +15,7 @@ Drupal.behaviors.acquiaLiftPersonalize = {
     if (settings) {
       // Build models for menus that don't have them yet.
       if (!ui.collections['campaigns']) {
-        ui.collections['campaigns'] = new ui.MenuCampaignsCollection([]);
+        ui.collections['campaigns'] = new ui.MenuCampaignCollection([]);
       }
       looper(settings.campaigns, function (obj, key) {
         if (!ui.collections['campaigns'].findWhere({name: obj.name})) {
@@ -171,19 +171,6 @@ Drupal.behaviors.acquiaLiftPersonalize = {
           }
         }
       });
-
-      // Build View for the current campaign.
-      if ($('.acquia-lift-current-campaign.navbar-menu-item').length == 0) {
-        var $currentli = $('<li><a href="" class="acquia-lift-current-campaign visitor-actions-ui-ignore navbar-menu-item acquia-lift-active">' + Drupal.t('Current') + '</a></li>');
-        $currentli.append('<ul class="menu"><li class="first last leaf"><a href="">' + Drupal.t('Edit campaign') + '</a></li></ul>');
-        ui.views.push(new ui.MenuCurrentCampaignView({
-          el: $currentli,
-          model: ui.collections['campaigns'],
-          collection: ui.collections['campaigns']
-        }));
-        $('.acquia-lift-campaigns').closest('li').after($currentli);
-      }
-
 
       // Build Views for the Option Set groups.
       var $optionSetGroups = $('[data-acquia-lift-personalize-agent].acquia-lift-preview-option-set').once('acquia-lift-personalize-option-sets');
@@ -353,7 +340,7 @@ $.extend(Drupal.acquiaLiftUI, {
   // Common View/Model name components.
   objectMap: {
     option_sets: 'MenuOption',
-    campaigns: 'MenuCampaigns',
+    campaigns: 'MenuCampaign',
     goals: 'MenuGoals'
   },
 
@@ -399,9 +386,9 @@ $.extend(Drupal.acquiaLiftUI, {
   },
 
   /**
-   * The model for a menu of campaign links.
+   * The model for a campaign.
    */
-  MenuCampaignsModel: Backbone.Model.extend({
+  MenuCampaignModel: Backbone.Model.extend({
     defaults: {
       label: '',
       links: {},
@@ -559,9 +546,9 @@ $.extend(Drupal.acquiaLiftUI, {
   }),
 
   /**
-   * Backbone View/Controller for campaigns.
+   * Backbone View/Controller for a single campaigns.
    */
-  MenuCampaignsView: ViewBase.extend({
+  MenuCampaignView: ViewBase.extend({
 
     events: {
       'click': 'onClick'
@@ -676,7 +663,7 @@ $.extend(Drupal.acquiaLiftUI, {
   /**
    * Display the count of campaigns.
    */
-  MenuCampaignsCountView: ViewBase.extend({
+  MenuCampaignCountView: ViewBase.extend({
     /**
      * {@inheritdoc}
      */
@@ -824,43 +811,6 @@ $.extend(Drupal.acquiaLiftUI, {
     }
   }),
 
-  MenuCurrentCampaignView: ViewBase.extend({
-    /*
-     * {@inheritdoc}
-     */
-    initialize: function (options) {
-      this.collection = options.collection;
-      if (this.model) {
-        this.model.on('change', this.render, this);
-      }
-      this.render(this.model);
-    },
-
-    /*
-     * {@inheritdoc}
-     */
-    render: function (model) {
-      var activeCampaign = typeof(model) === 'undefined' ? false : this.collection.findWhere({'isActive': true});
-      if (!activeCampaign) {
-        this.$el
-          .find('a[href]')
-          .attr('href', '')
-          .end()
-          .hide();
-      }
-      else {
-        var name = activeCampaign.get('name');
-        var label = activeCampaign.get('label');
-        this.$el
-          .find('a[href]')
-          .attr('href', activeCampaign.get('links').edit)
-          .end()
-          .show();
-        this.$el.find('a[href]').first().text(Drupal.t('Current: !agent', {'!agent': label}))
-      }
-    }
-  }),
-
   /**
    * Toggles the 'add content variation' trigger.
    */
@@ -944,8 +894,8 @@ $.extend(Drupal.acquiaLiftUI, {
   /**
    * Provides campaign model management.
    */
-  MenuCampaignsCollection: Backbone.Collection.extend({
-    model: Drupal.acquiaLiftUI.MenuCampaignsModel,
+  MenuCampaignCollection: Backbone.Collection.extend({
+    model: Drupal.acquiaLiftUI.MenuCampaignModel,
     initialize: function () {
       this.on('change:isActive', this.changeVisibility, this);
     },

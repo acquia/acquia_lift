@@ -14,32 +14,23 @@ Drupal.behaviors.acquiaLiftPersonalize = {
     var ui = Drupal.acquiaLiftUI;
     if (settings) {
       // Build models for menus that don't have them yet.
-      _.each(['option_sets', 'campaigns'], function (type) {
-        if (settings[type]) {
-          looper(settings[type], function (obj, key) {
-            // Create a collection for groups of option sets in the same campaign.
-            switch (type) {
-              case 'option_sets':
-                var campaign = obj.agent;
-                if (!ui.collections[type][campaign]) {
-                  ui.collections[type][campaign] = new Backbone.Collection([], {
-                    model: ui[ui.objectMap[type] + 'Model']
-                  });
-                }
-                if (!ui.collections[type][campaign].findWhere({osid: obj.osid})) {
-                  ui.collections[type][campaign].add(obj);
-                }
-                break;
-              case 'campaigns':
-                if (!ui.collections[type]) {
-                  ui.collections[type] = new ui.MenuCampaignsCollection([]);
-                }
-                if (!ui.collections[type].findWhere({name: obj.name})) {
-                  ui.collections[type].add(obj);
-                }
-                break;
-            }
+      if (!ui.collections['campaigns']) {
+        ui.collections['campaigns'] = new ui.MenuCampaignsCollection([]);
+      }
+      looper(settings.campaigns, function (obj, key) {
+        if (!ui.collections['campaigns'].findWhere({name: obj.name})) {
+          ui.collections['campaigns'].add(obj);
+        }
+      });
+      looper(settings.option_sets, function (obj, key) {
+        var campaign = obj.agent;
+        if (!ui.collections['option_sets'][campaign]) {
+          ui.collections['option_sets'][campaign] = new Backbone.Collection([], {
+            model: ui[ui.objectMap['option_sets'] + 'Model']
           });
+        }
+        if (!ui.collections['option_sets'][campaign].findWhere({osid: obj.osid})) {
+          ui.collections['option_sets'][campaign].add(obj);
         }
       });
 
@@ -50,7 +41,6 @@ Drupal.behaviors.acquiaLiftPersonalize = {
           // Option menus.
           var $link = $(item);
           var type = $link.data('acquia-lift-personalize');
-          var text = $link.text();
           var $controls = $link.closest('li').removeClass('leaf').addClass('expanded');
           var $element, collection;
           // Load the preview assets.

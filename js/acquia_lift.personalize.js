@@ -61,6 +61,12 @@ Drupal.behaviors.acquiaLiftPersonalize = {
                     el: $element.get(0),
                     model: collection
                   })));
+                  // Create the view to show the selected name.
+                  ui.views.push(new ui.MenuCampaignsView({
+                    el: $link,
+                    collection: collection
+                  }));
+
                 }
                 $element.prependTo($link);
                 break;
@@ -428,7 +434,7 @@ $.extend(Drupal.acquiaLiftUI, {
   }),
 
   /**
-   * View for groups of options, essentially the option set.
+   * View for an option set (which contains options).
    */
   MenuOptionSetView: ViewBase.extend({
 
@@ -452,7 +458,7 @@ $.extend(Drupal.acquiaLiftUI, {
   }),
 
   /**
-   * Backbone View/Controller for options sets.
+   * Backbone View/Controller for an option within an option set.
    */
   MenuOptionView: ViewBase.extend({
 
@@ -541,6 +547,39 @@ $.extend(Drupal.acquiaLiftUI, {
     onOptionShow: function (event, $option_set, choice_name, osid) {
       if (this.model.get('osid') === osid) {
         this.model.set('activeOption', choice_name);
+      }
+    }
+  }),
+
+  /**
+   * View/controller for the campaign menu header.
+   */
+  MenuCampaignsView: ViewBase.extend({
+
+    /**
+     * {@inheritdoc}
+     */
+    initialize: function (options) {
+      this.collection = options.collection;
+      this.collection.on('change', this.render, this);
+    },
+
+    /**
+     * {@inheritdoc}
+     *
+     * @todo: Move count into this view instead of detaching and re-adding.
+     */
+    render: function () {
+      var activeCampaign = this.collection.findWhere({'isActive': true});
+      var $count = this.$el.find('i.acquia-lift-personalize-type-count').detach();
+      if (!activeCampaign) {
+        var label = Drupal.t('All campaigns');
+      } else {
+        var label = Drupal.theme.acquiaLiftCampaignContext({'label': activeCampaign.get('label')});
+      }
+      this.$el.html(label);
+      if ($count.length > 0) {
+        this.$el.prepend($count);
       }
     }
   }),
@@ -794,7 +833,6 @@ $.extend(Drupal.acquiaLiftUI, {
         this.$el
           .find('a[href]')
           .attr('href', '')
-          .text('Results')
           .end()
           .hide();
       }
@@ -1169,6 +1207,15 @@ Drupal.theme.acquiaLiftPersonalizeCampaignMenuItem = function (options) {
 Drupal.theme.aquiaLiftCount = function (options) {
   return '<i class="acquia-lift-personalize-type-count acquia-lift-empty"><span>0</span>&nbsp;</i>';
 };
+
+/**
+ * Returns the HTML for the selected campaign context label.
+ */
+Drupal.theme.acquiaLiftCampaignContext = function (options) {
+  var label = Drupal.t('Selected: ');
+  label += '<span class="acquia-lift-active">' + options.label + '</span>';
+  return label;
+}
 
 /**
  * Throbber.

@@ -86,10 +86,9 @@ Drupal.behaviors.acquiaLiftPersonalize = {
                     })));
                     $element.prependTo($link);
                   });
-                }
-                // Or if no campaigns exist, just state zero.
-                else {
-                  $(Drupal.theme('aquiaLiftCount')).prependTo($link);;
+                } else {
+                  // If there are no campaigns then hide the option sets menu.
+                  $(this).parent().hide();
                 }
                 // Loop through the option set models, keyed by campaign, and
                 // create a view for each.
@@ -110,10 +109,13 @@ Drupal.behaviors.acquiaLiftPersonalize = {
                     $element = $(Drupal.theme('aquiaLiftCount'));
                     ui.views.push((new ui[ui.objectMap[category] + 'CountView']({
                       el: $element.get(0),
-                      model: campaignModel,
+                      model: campaignModel
                     })));
                     $element.prependTo($link);
                   });
+                } else {
+                  // If there are no campaigns then hide the goals menu.
+                  $(this).parent().hide();
                 }
                 break;
             }
@@ -838,10 +840,9 @@ $.extend(Drupal.acquiaLiftUI, {
      */
     initialize: function (options) {
       this.collection = options.collection;
-      if (!this.model) {
-        return;
+      if (this.model) {
+        this.model.on('change', this.render, this);
       }
-      this.model.on('change', this.render, this);
       this.render(this.model);
     },
 
@@ -849,7 +850,7 @@ $.extend(Drupal.acquiaLiftUI, {
      * {@inheritdoc}
      */
     render: function (model) {
-      var activeCampaign = this.collection.findWhere({'isActive': true});
+      var activeCampaign = typeof(model) === 'undefined' ? false : this.collection.findWhere({'isActive': true});
       if (!activeCampaign) {
         this.$el
           .find('a[href]')

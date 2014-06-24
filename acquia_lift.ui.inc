@@ -253,11 +253,14 @@ function acquia_lift_navbar_library() {
     'version' => VERSION,
     'js' => array(
       $path . '/js/acquia_lift.unified_navbar.js' => array(),
+      // The regular navbar file generates the drop-downs.
+      $path . '/js/acquia_lift.navbar.js' => array(),
     ),
     'css' => array(
       $path . '/css/navbar/navbar.module.css',
       $path . '/css/navbar/navbar.theme.css',
       $path . '/css/navbar/navbar.icons.css',
+      $path . '/css/acquia_lift.navbar.css',
       $path . '/css/acquia_lift.unified_navbar.css',
     ),
     'dependencies' => array(

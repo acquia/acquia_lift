@@ -1,0 +1,11 @@
+/* Handle placement of unified navigation in relation to other navigation modules */
+
+/* Default Drupal 7 toolbar module */
+#toolbar + #navbar-administration {
+  position: relative;
+}
+body.navbar-fixed #toolbar + #navbar-administration.navbar-oriented,
+#toolbar + #navbar-administration.navbar-oriented .navbar-bar,
+#toolbar + #navbar-administration.navbar-oriented .navbar-tray {
+  top: 65px;
+}

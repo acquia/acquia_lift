@@ -424,7 +424,7 @@ Drupal.navbar = {
         // the container for the trays.
         $trays.css('padding-top', this.$el.find('.navbar-bar').outerHeight());
       }
-    },
+    }
   }),
 
   /**

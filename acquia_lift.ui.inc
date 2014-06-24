@@ -54,6 +54,9 @@ function acquia_lift_build_page(&$page) {
   // Attach client-side controls for managing personalized content.
   if (_acquia_lift_using_unified_navbar()) {
     $page['page_top']['acquia_lift']['nav']['#type'] = 'acquia_lift_navbar';
+    // Make the Acquia Lift tool bar show up after other content.
+    $page['page_top']['acquia_lift']['#weight'] = 100;
+    $page['page_top']['#sorted'] = FALSE;
   }
 }
 
@@ -255,6 +258,7 @@ function acquia_lift_navbar_library() {
       $path . '/css/navbar/navbar.module.css',
       $path . '/css/navbar/navbar.theme.css',
       $path . '/css/navbar/navbar.icons.css',
+      $path . '/css/acquia_lift.unified_navbar.css',
     ),
     'dependencies' => array(
       array('acquia_lift', 'modernizr'),

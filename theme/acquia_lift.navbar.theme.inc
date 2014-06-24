@@ -20,7 +20,6 @@ function theme_acquia_lift_navbar(&$variables) {
     $element = $variables['element'];
     $trays = '';
     foreach (element_children($element) as $key) {
-      $element[$key]['tray']['#printed'] = FALSE;
       $trays .= drupal_render($element[$key]['tray']);
     }
     $output = '<nav' . drupal_attributes($element['#attributes']) . '>'

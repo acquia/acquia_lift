@@ -132,7 +132,7 @@ function acquia_lift_requirements($phase) {
 function _acquia_lift_build_menu($menu_name) {
   // Create a link for attaching option set preview triggers.
   $item = array(
-    'link_title' => 'All campaigns',
+    'link_title' => 'Campaigns',
     'link_path' => 'admin/structure/personalize',
     'menu_name' => $menu_name,
     'options' => array(
@@ -149,7 +149,7 @@ function _acquia_lift_build_menu($menu_name) {
 
   // Create a new campaign link.
   $item = array(
-    'link_title' => 'Add campaign',
+    'link_title' => 'Create a campaign',
     'link_path' => 'admin/structure/personalize/add',
     'menu_name' => $menu_name,
     'options' => array(
@@ -333,4 +333,12 @@ function acquia_lift_update_7004() {
 function acquia_lift_update_7005() {
   menu_delete_links('acquia-lift-controls');
   _acquia_lift_build_menu('acquia-lift-controls');
+}
+
+/**
+ * Update Acquia Lift links for usability.
+ */
+function acquia_lift_update_7006() {
+  menu_link_maintain('menu', 'update', 'admin/structure/personalize/add', 'Create a campaign');
+  menu_link_maintain('menu', 'update', 'admin/structure/personalize', 'Campaigns');
 }

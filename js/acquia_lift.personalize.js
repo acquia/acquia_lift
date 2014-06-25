@@ -90,9 +90,6 @@ Drupal.behaviors.acquiaLiftPersonalize = {
                     })));
                     $element.prependTo($link);
                   });
-                } else {
-                  // If there are no campaigns then hide the option sets menu.
-                  $(this).parent().hide();
                 }
                 // Loop through the option set models, keyed by campaign, and
                 // create a view for each.
@@ -117,9 +114,6 @@ Drupal.behaviors.acquiaLiftPersonalize = {
                     })));
                     $element.prependTo($link);
                   });
-                } else {
-                  // If there are no campaigns then hide the goals menu.
-                  $(this).parent().hide();
                 }
                 break;
             }
@@ -265,6 +259,14 @@ Drupal.behaviors.acquiaLiftPersonalize = {
       } else {
         $('[href="' + statusPath + '"]').hide();
       }
+
+      // Create the menu view to handle general show/hide functionality for
+      // whole menu sections.
+      var menu = $('.navbar-menu-acquia-lift-controls .menu', context).get(0);
+      ui.views.push(new ui.MenuView({
+        collection: ui.collections.campaigns,
+        el: menu
+      }));
 
       // Refresh event delegation. This is necessary to rebind event delegation
       // to HTML that's been moved inside a jQuery dialog.
@@ -652,6 +654,38 @@ $.extend(Drupal.acquiaLiftUI, {
     onOptionShow: function (event, $option_set, choice_name, osid) {
       if (this.model.get('osid') === osid) {
         this.model.set('activeOption', choice_name);
+      }
+    }
+  }),
+
+  /**
+   * View/controller for full menu list.
+   */
+  MenuView: ViewBase.extend({
+
+    /**
+     * {@inheritdoc}
+     */
+    initialize: function (options) {
+      // The campaign collection.
+      this.collection = options.collection;
+      this.collection.on('change', this.render, this);
+      this.render();
+    },
+
+    /**
+     * {@inheritdoc}
+     */
+    render: function() {
+      var hasCampaigns = this.collection.length > 0;
+      var activeCampaign = this.collection.findWhere({'isActive': true});
+      // Show or hide relevant menus.
+      if (hasCampaigns && activeCampaign) {
+        this.$el.find('[data-acquia-lift-personalize="goals"]').parents('li').show();
+        this.$el.find('[data-acquia-lift-personalize="option_sets"]').parents('li').show();
+      } else {
+        this.$el.find('[data-acquia-lift-personalize="goals"]').parents('li').hide();
+        this.$el.find('[data-acquia-lift-personalize="option_sets"]').parents('li').hide();
       }
     }
   }),

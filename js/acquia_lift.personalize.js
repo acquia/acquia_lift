@@ -1185,7 +1185,11 @@ Drupal.theme.acquiaLiftPreviewMenuItem = function (options) {
  * @return string
  */
 Drupal.theme.acquiaLiftPersonalizeCampaignMenuItem = function (options) {
-  var item = '';
+  var editAttrs = [
+    'class="acquia-lift-campaign-edit acquia-lift-menu-link"',
+    'title="' + Drupal.t('Edit the @campaign campaign', {'@campaign': options.link.label}) + '"',
+    'href="' + options.edit.href + '"'
+  ];
 
   var linkAttrs = [
     'class="acquia-lift-campaign acquia-lift-campaign--' + formatClass(options.link.id) + ' visitor-actions-ui-ignore"',
@@ -1196,7 +1200,10 @@ Drupal.theme.acquiaLiftPersonalizeCampaignMenuItem = function (options) {
     'aria-pressed="false"'
   ];
 
-  item += '<a ' + linkAttrs.join(' ') + '>' + options.link.label + '</a>\n';
+  var item = '<div class="acquia-lift-menu-item"><a ' + linkAttrs.join(' ') + '>' + options.link.label + '</a>';
+  item += '<a ' + editAttrs.join(' ') + '>' + Drupal.t('Edit') + '</a>\n';
+  item += '</div>\n';
+  //item += '<a ' + linkAttrs.join(' ') + '>' + options.link.label + '</a>\n';
 
   return item;
 };

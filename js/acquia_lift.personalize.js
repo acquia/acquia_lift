@@ -409,24 +409,6 @@ $.extend(Drupal.acquiaLiftUI, {
   },
 
   /**
-   * Toggle the display of the menu.
-   *
-   * Can be called by other integrating menus to toggle the display of the
-   * Acquia Lift campaign management unified toolbar.
-   *
-   * @param show
-   *   Optionally indicate if should be shown (true) or hidden (false).
-   */
-  toggleMenu: function(show) {
-    if (this.hasOwnProperty('menuView')) {
-      if (typeof(show) == 'undefined') {
-        show = !this.menuView.getMenuActive();
-      }
-      this.menuView.setMenuActive(show);
-    }
-  },
-
-  /**
    * Finds the model of the active campaign sets isActive to true.
    *
    * @param string activeCampaign

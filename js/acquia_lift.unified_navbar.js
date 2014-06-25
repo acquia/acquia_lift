@@ -1,7 +1,10 @@
 /**
  * @file
- * Defines the behavior of the Acquia Lift unified navibation bar.
+ * Defines the behavior of the Acquia Lift unified navigation bar.
  * This borrows *heavily* from navbar.
+ *
+ * The navbar namespace is left in place for ease of maintnence.  The modules
+ * would never be used at the same time so there should not be conflicts.
  */
 
 (function ($, Backbone, Drupal) {
@@ -52,9 +55,13 @@ Drupal.behaviors.navbar = {
       );
 
       // Establish the navbar models and views.
+      var isTrayActive = localStorage.getItem('Drupal.acquia_lift.isTrayActive');
+      // Values read from localStorage are always strings.
+      isTrayActive = isTrayActive != null ? isTrayActive == 'true' : false;
       var model = Drupal.navbar.models.navbarModel = new Drupal.navbar.NavbarModel({
         locked: JSON.parse(localStorage.getItem('Drupal.navbar.trayVerticalLocked')) || false,
-        activeTray: '#navbar-item-tray'
+        activeTray: $('#navbar-item-tray').get(0),
+        isTrayActive: isTrayActive
       });
       Drupal.navbar.views.navbarVisualView = new Drupal.navbar.NavbarVisualView({
         el: this,
@@ -180,6 +187,22 @@ Drupal.navbar = {
   },
 
   /**
+   * Toggles the display of the unified navbar.
+   *
+   * @param show
+   *   True to show the navbar and false to hide it.
+   */
+  toggleUnifiedNavbar: function(show) {
+    // Activate the associated tray.
+    var model = Drupal.navbar.models.navbarModel;
+    if (typeof(show) == 'undefined') {
+      show = !model.get('isTrayActive');
+    }
+    model.set('isTrayActive', show);
+    localStorage.setItem('Drupal.acquia_lift.isTrayActive', show);
+  },
+
+  /**
    * Backbone model for the navbar.
    */
   NavbarModel: Backbone.Model.extend({
@@ -187,6 +210,9 @@ Drupal.navbar = {
       // Represents whether a tray is open or not. Stored as an ID selector e.g.
       // '#navbar-item--1-tray'.
       activeTray: null,
+      // Acquia lift specific value to indicate whether the entire unified tray
+      // is active or not.
+      isTrayActive: false,
       // Indicates whether the navbar is displayed in an oriented fashion,
       // either horizontal or vertical.
       isOriented: false,
@@ -296,7 +322,7 @@ Drupal.navbar = {
     initialize: function (options) {
       this.strings = options.strings;
 
-      this.model.on('change:orientation change:isOriented change:isTrayToggleVisible', this.render, this);
+      this.model.on('change:isTrayActive change:orientation change:isOriented change:isTrayToggleVisible', this.render, this);
       this.model.on('change:mqMatches', this.onMediaQueryChange, this);
       this.model.on('change:offsets', this.adjustPlacement, this);
 
@@ -313,6 +339,7 @@ Drupal.navbar = {
      * {@inheritdoc}
      */
     render: function () {
+      this.updateTray();
       this.updateTrayOrientation();
       this.updateBarAttributes();
       // Trigger a recalculation of viewport displacing elements. Use setTimeout
@@ -353,6 +380,18 @@ Drupal.navbar = {
 
         event.preventDefault();
         event.stopPropagation();
+      }
+    },
+
+    /**
+     * Updates the tray attributes.
+     */
+    updateTray: function () {
+      var tray = this.model.get('activeTray');
+      if (this.model.get('isTrayActive')) {
+        $(tray).addClass('navbar-active');
+      } else {
+        $(tray).removeClass('navbar-active');
       }
     },
 

@@ -57,6 +57,9 @@ function acquia_lift_build_page(&$page) {
     // Make the Acquia Lift tool bar show up after other content.
     $page['page_top']['acquia_lift']['#weight'] = 100;
     $page['page_top']['#sorted'] = FALSE;
+    if (module_exists('toolbar')) {
+      $page['page_top']['acquia_lift']['#attached']['library'][] = array('acquia_lift', 'acquia_lift.toolbar');
+    }
   }
 }
 
@@ -321,9 +324,6 @@ function acquia_lift_navbar_ui_pre_render_item($element) {
     }
     $element['tray']['#wrapper_attributes'] += $attributes;
     $element['tray']['#wrapper_attributes']['class'][] = 'navbar-tray';
-    // Normally navbar dynamically adds and removes the active class, but it is
-    // set statically here because there is only one tray in the unified nav.
-    $element['tray']['#wrapper_attributes']['class'][] = 'navbar-active';
 
     if (!isset($element['tray']['#theme_wrappers'])) {
       $element['tray']['#theme_wrappers'] = array();

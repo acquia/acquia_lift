@@ -606,6 +606,20 @@ function acquia_lift_library() {
     ),
   );
 
+  // Toolbar module integration.
+  $libraries['acquia_lift.toolbar'] = array(
+    'title' => 'Assets for integration with toolbar module',
+    'website' => 'https://www.drupal.org/project/toolbar',
+    'version' => '1.0',
+    'js' => array(
+      $path . '/js/acquia_lift.toolbar.unified_navbar.js' => array(),
+    ),
+    'css' => array(
+      $path . '/css/acquia_lift.toolbar.unified_navbar.css',
+    ),
+  );
+
+  // Unified navigation bar.
   $libraries['acquia_lift.unified.navbar'] = array(
     'title' => 'Unified navbar',
     'version' => VERSION,
@@ -619,7 +633,6 @@ function acquia_lift_library() {
       $path . '/css/navbar/navbar.theme.css',
       $path . '/css/navbar/navbar.icons.css',
       $path . '/css/acquia_lift.navbar.css',
-      $path . '/css/acquia_lift.unified_navbar.css',
     ),
     'dependencies' => array(
       array('acquia_lift', 'modernizr'),

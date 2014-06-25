@@ -35,6 +35,16 @@ Drupal.behaviors.acquiaLiftPersonalize = {
         }
       });
 
+      // Create the menu view to handle general show/hide functionality for
+      // whole menu sections.
+      if (!ui.hasOwnProperty('menuView')) {
+        var menu = $('.navbar-tray-acquia-lift', context).get(0);
+        ui.menuView = new ui.MenuView({
+          collection: ui.collections.campaigns,
+          el: menu
+        });
+      }
+
       // Process the Campaigns, Content Variations and Goals top-level links
       // in the Acquia Lift menu.
       _.each(['campaigns', 'option_sets', 'goals'], function (category) {
@@ -260,14 +270,6 @@ Drupal.behaviors.acquiaLiftPersonalize = {
         $('[href="' + statusPath + '"]').hide();
       }
 
-      // Create the menu view to handle general show/hide functionality for
-      // whole menu sections.
-      var menu = $('.navbar-menu-acquia-lift-controls .menu', context).get(0);
-      ui.views.push(new ui.MenuView({
-        collection: ui.collections.campaigns,
-        el: menu
-      }));
-
       // Refresh event delegation. This is necessary to rebind event delegation
       // to HTML that's been moved inside a jQuery dialog.
       _.each(ui.views, function (view) {
@@ -404,6 +406,24 @@ $.extend(Drupal.acquiaLiftUI, {
     option_sets: 'MenuOption',
     campaigns: 'MenuCampaign',
     goals: 'MenuGoals'
+  },
+
+  /**
+   * Toggle the display of the menu.
+   *
+   * Can be called by other integrating menus to toggle the display of the
+   * Acquia Lift campaign management unified toolbar.
+   *
+   * @param show
+   *   Optionally indicate if should be shown (true) or hidden (false).
+   */
+  toggleMenu: function(show) {
+    if (this.hasOwnProperty('menuView')) {
+      if (typeof(show) == 'undefined') {
+        show = !this.menuView.getMenuActive();
+      }
+      this.menuView.setMenuActive(show);
+    }
   },
 
   /**
@@ -686,6 +706,18 @@ $.extend(Drupal.acquiaLiftUI, {
       } else {
         this.$el.find('[data-acquia-lift-personalize="goals"]').parents('li').hide();
         this.$el.find('[data-acquia-lift-personalize="option_sets"]').parents('li').hide();
+      }
+    },
+
+    getMenuActive: function() {
+      return this.$el.hasClass('navbar-active');
+    },
+
+    setMenuActive: function(isActive) {
+      if (isActive) {
+        this.$el.addClass('navbar-active');
+      } else {
+        this.$el.removeClass('navbar-active');
       }
     }
   }),

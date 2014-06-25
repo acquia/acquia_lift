@@ -103,6 +103,8 @@
 #navbar-administration .menu .menu a.acquia-lift-menu-link:active {
   color: #007ec0;
 }
+
+/** Create links */
 #navbar-administration .navbar-tray-horizontal .acquia-lift-menu-create {
   border-top: 1px solid #ddd;
   padding: .2em 1.3333em 1em 1.3333em;
@@ -119,4 +121,9 @@
 }
 #navbar-administration .navbar-tray-acquia-lift.navbar-tray-horizontal .menu ul ul:last-child {
   border-bottom: none;
+}
+
+/* General text */
+#navbar-administration .acquia-lift-menu-disabled {
+  color: #c6c6c6;
 }

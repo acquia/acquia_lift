@@ -240,7 +240,7 @@ Drupal.behaviors.acquiaLiftPersonalize = {
         $('[href="' + reportPath + '"]')
           .once('acquia-lift-personalize-report')
           .each(function (index, element) {
-            ui.views.push((new ui.MenuResultsView({
+            ui.views.push((new ui.MenuReportsView({
               el: element.parentNode,
               model: ui.collections['campaigns'],
               collection: ui.collections['campaigns']
@@ -886,7 +886,7 @@ $.extend(Drupal.acquiaLiftUI, {
   /**
    * Updates the results link to reflect the active campaign.
    */
-  MenuResultsView: ViewBase.extend({
+  MenuReportsView: ViewBase.extend({
 
     /**
      * {@inheritdoc}
@@ -913,11 +913,20 @@ $.extend(Drupal.acquiaLiftUI, {
           .hide();
       }
       else {
+        // The report link will be empty if reports are not available for this
+        // campaign agent type.
+        var reportLink = activeCampaign.get('links').report;
+        if (reportLink.length == 0) {
+          reportLink = 'javascript:void(0);';
+          this.$el.find('a[href]').addClass('acquia-lift-menu-disabled');
+        } else {
+          this.$el.find('a[href]').removeClass('acquia-lift-menu-disabled');
+        }
         var name = activeCampaign.get('name');
         var label = activeCampaign.get('label');
         this.$el
           .find('a[href]')
-          .attr('href', activeCampaign.get('links').report)
+          .attr('href', reportLink)
           .text(Drupal.t('Reports'))
           .end()
           .show();

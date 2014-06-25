@@ -124,6 +124,14 @@
 }
 
 /* General text */
-#navbar-administration .acquia-lift-menu-disabled {
+#navbar-administration .navbar-tray .acquia-lift-menu-disabled {
+  color: #c6c6c6;
+}
+#navbar-administration .navbar-tray a.acquia-lift-menu-disabled {
+  pointer-events: none;
+  cursor: default;
+}
+#navbar-administration .navbar-tray a.acquia-lift-menu-disabled:hover,
+#navbar-administration .navbar-tray a.acquia-lift-menu-disabled:active {
   color: #c6c6c6;
 }

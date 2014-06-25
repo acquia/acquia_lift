@@ -7,6 +7,7 @@
 var pathRegex = /^(?:[\/\?\#])*(.*)/;
 
 var reportPath = '/admin/structure/personalize/manage/acquia-lift-placeholder/report';
+var statusPath = '/admin/structure/personalize/manage/acquia-lift-placeholder/status';
 
 Drupal.behaviors.acquiaLiftPersonalize = {
   attach: function (context) {
@@ -250,6 +251,21 @@ Drupal.behaviors.acquiaLiftPersonalize = {
         $('[href="' + reportPath + '"]').hide();
       }
 
+      // Create a View for the Status link.
+      if (ui.collections.campaigns) {
+        $('[href="' + statusPath + '"]')
+          .once('acquia-lift-personalize-status')
+          .each(function (index, element) {
+            ui.views.push(new ui.MenuStatusView({
+              el: element.parentNode,
+              model: ui.collections['campaigns'],
+              collection: ui.collections['campaigns']
+            }));
+          });
+      } else {
+        $('[href="' + statusPath + '"]').hide();
+      }
+
       // Refresh event delegation. This is necessary to rebind event delegation
       // to HTML that's been moved inside a jQuery dialog.
       _.each(ui.views, function (view) {
@@ -437,7 +453,34 @@ $.extend(Drupal.acquiaLiftUI, {
       label: '',
       links: {},
       name: '',
-      isActive: false
+      isActive: false,
+      verified: false
+    },
+
+    /**
+     * Updates the status of a campaign.
+     *
+     * @param newStatus
+     *   The new status value for the campaign.
+     */
+    updateStatus: function (newStatus) {
+      var updateUrl = '/admin/structure/personalize/manage/' + this.get('name') + '/ajax_status/' + newStatus;
+      var model = this;
+      $.getJSON( updateUrl, function( data ) {
+        if (data.success) {
+          // Update the model current and next status values.
+          model.set('status', data.currentStatus);
+          model.set('nextStatus', data.nextStatus);
+
+          // We also need to update the status value of the campaign in the
+          // Drupal.setttings object.
+          // @todo: Make this an event dispatch that is handled outside of this
+          // application scope.
+          // Leaving for now since the reliance on drupal settings is all over
+          // the application so it's not horrible.
+          Drupal.settings.personalize.campaigns[model.get('name')].status = data.currentStatus;
+        }
+      });
     }
   }),
 
@@ -933,6 +976,87 @@ $.extend(Drupal.acquiaLiftUI, {
       }
     }
   }),
+
+  /**
+   * Updates the status link to the correct verb for each campaign.
+   *
+   * Also handles Ajax submission to change the status of the selected campaign.
+   */
+  MenuStatusView: ViewBase.extend({
+
+    events: {
+      'click .acquia-lift-status-update': 'updateStatus'
+    },
+
+    /**
+     * {@inheritdoc}
+     */
+    initialize: function (options) {
+      _.bindAll(this, "updateStatus");
+      this.collection = options.collection;
+      if (!this.model) {
+        return;
+      }
+      this.model.on('change', this.render, this);
+      this.render(this.model);
+    },
+
+    /**
+     * {@inheritdoc}
+     */
+    render: function (model) {
+      var activeCampaign = this.collection.findWhere({'isActive': true});
+      if (!activeCampaign) {
+        this.$el.hide();
+      }
+      else {
+        var nextStatus = activeCampaign.get('nextStatus');
+        this.$el
+          .find('a[href]')
+          .attr('href', 'javascript:void(0);')
+          .text(nextStatus.text)
+          .data('acquia-lift-campaign-status', nextStatus.status)
+          .removeClass('acquia-lift-menu-disabled')
+          .end()
+          .show();
+        // The campaign must be verified in order to change the status.
+        if (activeCampaign.get('verified') == true) {
+          this.$el.find('a[href]').removeClass('acquia-lift-menu-disabled');
+        } else {
+          this.$el.find('a[href]').addClass('acquia-lift-menu-disabled');
+        }
+      }
+    },
+
+    /**
+     * {@inheritdoc}
+     */
+    build: function(model) {
+      this.$el
+        .find('a[href]')
+        .attr('href', 'javascript:void(0)')
+        .addClass('acquia-lift-status-update');
+    },
+
+    /**
+     * Update the status of the current campaign to its next status value.
+     *
+     * @param event
+     *   Click event that triggered this function.
+     */
+    updateStatus: function(event) {
+      var newStatus = $(event.target).data('acquia-lift-campaign-status');
+      var activeModel = this.collection.findWhere({'isActive': true});
+      if (!newStatus || !activeModel || activeModel.get('verified') == false) {
+        return;
+      }
+      // Make link disabled while update happens.
+      // The disabled class will be removed when re-rendered.
+      this.$el.find('a[href]').addClass('acquia-lift-menu-disabled');
+      activeModel.updateStatus(newStatus);
+    }
+  }),
+
 
   /**
    * Toggles the 'add content variation' trigger.

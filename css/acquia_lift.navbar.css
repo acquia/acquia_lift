@@ -96,9 +96,14 @@
 #navbar-administration .acquia-lift-menu-item .acquia-lift-campaign-edit {
   float: right;
 }
+
+/* Displayed as links within menus */
+#navbar-administration .navbar-tray .acquia-lift-menu-link,
 #navbar-administration .menu .menu a.acquia-lift-menu-link {
   color: #29aae1;
 }
+#navbar-administration .navbar-tray .acquia-lift-menu-link:hover,
+#navbar-administration .navbar-tray .acquia-lift-menu-link:active,
 #navbar-administration .menu .menu a.acquia-lift-menu-link:hover,
 #navbar-administration .menu .menu a.acquia-lift-menu-link:active {
   color: #007ec0;

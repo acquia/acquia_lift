@@ -96,27 +96,27 @@
 #navbar-administration .acquia-lift-menu-item .acquia-lift-campaign-edit {
   float: right;
 }
-#navbar-administration .menu .menu a.acquia-lift-campaign-new,
 #navbar-administration .menu .menu a.acquia-lift-menu-link {
   color: #29aae1;
 }
-#navbar-administration .menu .menu a.acquia-lift-campaign-new:hover,
-#navbar-administration .menu .menu a.acquia-lift-campaign-new:active,
 #navbar-administration .menu .menu a.acquia-lift-menu-link:hover,
 #navbar-administration .menu .menu a.acquia-lift-menu-link:active {
   color: #007ec0;
 }
-#navbar-administration .navbar-tray-horizontal .acquia-lift-campaign-new {
+#navbar-administration .navbar-tray-horizontal .acquia-lift-menu-create {
   border-top: 1px solid #ddd;
   padding: .2em 1.3333em 1em 1.3333em;
 }
-#navbar-administration .navbar-tray-horizontal .menu ul.acquia-lift-campaigns li.last {
+#navbar-administration .navbar-tray-horizontal .menu ul li.last {
   padding-top: .6em;
 }
-#navbar-administration .acquia-lift-campaign-new:before {
+#navbar-administration .acquia-lift-menu-create:before {
   content: '+';
   font-weight: bold;
   font-size: 1.667em;
   padding-right: 0.2em;
   vertical-align: text-bottom;
+}
+#navbar-administration .navbar-tray-acquia-lift.navbar-tray-horizontal .menu ul ul:last-child {
+  border-bottom: none;
 }

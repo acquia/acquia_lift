@@ -157,7 +157,7 @@ function _acquia_lift_build_menu($menu_name) {
         'data-acquia-lift-personalize-mode' => 'campaign',
         'aria-role' => 'button',
         'aria-pressed' => 'false',
-        'class' => array('acquia-lift-campaign-new', 'visitor-actions-ui-ignore'),
+        'class' => array('acquia-lift-campaign-new', 'visitor-actions-ui-ignore', 'acquia-lift-menu-create', 'acquia-lift-menu-link'),
       ),
       'html' => FALSE,
     ),
@@ -169,7 +169,7 @@ function _acquia_lift_build_menu($menu_name) {
 
   // Create a link for attaching option sets.
   $item = array(
-    'link_title' => 'Content variations',
+    'link_title' => 'Variation sets',
     'link_path' => 'admin/structure/personalize/variations',
     'menu_name' => $menu_name,
     'options' => array(
@@ -186,7 +186,7 @@ function _acquia_lift_build_menu($menu_name) {
 
   // Create a link for attaching option set preview triggers.
   $item = array(
-    'link_title' => 'Add content variation',
+    'link_title' => 'Create variation set',
     'link_path' => 'admin/structure/personalize/variations',
     'menu_name' => $menu_name,
     'options' => array(
@@ -194,7 +194,7 @@ function _acquia_lift_build_menu($menu_name) {
         'data-acquia-lift-personalize-mode' => 'content-variation',
         'role' => 'button',
         'aria-pressed' => 'false',
-        'class' => array('acquia-lift-option-sets-new', 'visitor-actions-ui-ignore'),
+        'class' => array('acquia-lift-option-sets-new', 'visitor-actions-ui-ignore', 'acquia-lift-menu-create', 'acquia-lift-menu-link'),
       ),
       'html' => FALSE,
       'fragment' => 'content-variations',
@@ -224,13 +224,13 @@ function _acquia_lift_build_menu($menu_name) {
 
   // Create a link for attaching Goals.
   $item = array(
-    'link_title' => 'Add goal',
+    'link_title' => 'Create a goal',
     'link_path' => 'admin/structure/visitor_actions/add',
     'menu_name' => $menu_name,
     'options' => array(
       'attributes' => array(
         'data-acquia-lift-personalize-mode' => 'goals',
-        'class' => array('acquia-lift-goals-new', 'visitor-actions-ui-ignore'),
+        'class' => array('acquia-lift-goals-new', 'visitor-actions-ui-ignore', 'acquia-lift-menu-create', 'acquia-lift-menu-link'),
       ),
       'html' => FALSE,
     ),
@@ -339,6 +339,6 @@ function acquia_lift_update_7005() {
  * Update Acquia Lift links for usability.
  */
 function acquia_lift_update_7006() {
-  menu_link_maintain('menu', 'update', 'admin/structure/personalize/add', 'Create a campaign');
-  menu_link_maintain('menu', 'update', 'admin/structure/personalize', 'Campaigns');
+  menu_delete_links('acquia-lift-controls');
+  _acquia_lift_build_menu('acquia-lift-controls');
 }

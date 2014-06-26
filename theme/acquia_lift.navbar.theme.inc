@@ -24,8 +24,8 @@ function theme_acquia_lift_navbar(&$variables) {
     }
     $output = '<nav' . drupal_attributes($element['#attributes']) . '>'
     . '<div' . drupal_attributes($element['#bar']['#attributes']) . '>'
-    . '<h2 class="element-invisible">' . $element['#bar']['#heading'] . '</h2>'
-    . $element['#children'] . '</div>' . $trays . '</nav>';
+    . '<h2 class="element-invisible">' . $element['#bar']['#heading'] . '</h2></div>'
+    . $element['#children'] . $trays . '</nav>';
     return $output;
   }
 }

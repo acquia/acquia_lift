@@ -25,6 +25,7 @@
       // Update the padding offset of the unified navbar when the toolbar
       // height changes.
       $(window).bind('resize.acquiaLiftToolbarResize', debounce(this.updateUnifiedToolbarPosition, 200));
+      $(document).bind('drupalNavbarOrientationChange', this.updateUnifiedToolbarPosition);
       // Call it once to set the initial position.
       this.updateUnifiedToolbarPosition();
     },
@@ -43,7 +44,6 @@
       $('body.navbar-horizontal #toolbar + #navbar-administration.navbar-oriented').css('top', heightCss);
       $('body.navbar-horizontal #toolbar + #navbar-administration.navbar-oriented .navbar-bar').css('top', heightCss);
       $('body #toolbar + #navbar-administration.navbar-oriented .navbar-tray').css('top', heightCss);
-      console.log('updated height: ' + heightCss);
       displace(true);
     },
 

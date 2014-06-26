@@ -621,6 +621,7 @@ function acquia_lift_library() {
       array('system', 'jquery'),
       array('system', 'jquery.once'),
       array('acquia_lift', 'acquia_lift.navbar.debounce'),
+      array('acquia_lift', 'acquia_lift.navbar.displace'),
     ),
   );
 

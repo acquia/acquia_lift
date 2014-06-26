@@ -5,7 +5,7 @@
  * Provides functionality to integrate the "toolbar" module with the Acquia
  * Lift unified navigation bar.
  */
-(function (Drupal, $, debounce) {
+(function (Drupal, $, debounce, displace) {
   Drupal.navbar = Drupal.navbar || {};
   Drupal.behaviors.acquiaLiftUnifiedNavbarIntegration = {
     attach: function (context, settings) {
@@ -39,7 +39,12 @@
      */
     updateUnifiedToolbarPosition: function(e) {
       var heightCss = self.getAdminMenu().css('height');
+      // @todo: doesn't seem right to adjust all three.
+      $('body.navbar-horizontal #toolbar + #navbar-administration.navbar-oriented').css('top', heightCss);
+      $('body.navbar-horizontal #toolbar + #navbar-administration.navbar-oriented .navbar-bar').css('top', heightCss);
       $('body #toolbar + #navbar-administration.navbar-oriented .navbar-tray').css('top', heightCss);
+      console.log('updated height: ' + heightCss);
+      displace(true);
     },
 
     // Helper method to get admin menu container,
@@ -53,4 +58,4 @@
   }
   var self = Drupal.behaviors.acquiaLiftUnifiedNavbarIntegration;
 
-}(Drupal, jQuery, Drupal.debounce));
+}(Drupal, jQuery, Drupal.debounce, Drupal.displace));

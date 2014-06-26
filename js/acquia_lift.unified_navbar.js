@@ -476,7 +476,7 @@ Drupal.navbar = {
      * {@inheritdoc}
      */
     initialize: function () {
-      this.model.on('change:orientation change:offsets change:activeTray change:isOriented change:isFixed change:isViewportOverflowConstrained', this.render, this);
+      this.model.on('change:orientation change:offsets change:isTrayActive change:activeTray change:isOriented change:isFixed change:isViewportOverflowConstrained', this.render, this);
     },
 
     /**
@@ -486,6 +486,7 @@ Drupal.navbar = {
       var $body = $('body');
       var orientation = this.model.get('orientation');
       var isOriented = this.model.get('isOriented');
+      var isTrayActive = this.model.get('isTrayActive');
       var isViewportOverflowConstrained = this.model.get('isViewportOverflowConstrained');
 
       $body
@@ -496,13 +497,13 @@ Drupal.navbar = {
         // If we drive the CSS from classes added through JavaScript,
         // then the CSS becomes simpler and more robust.
         .toggleClass('navbar-vertical', (orientation === 'vertical'))
-        .toggleClass('navbar-horizontal', (isOriented && orientation === 'horizontal'))
+        .toggleClass('navbar-horizontal', (isOriented && orientation === 'horizontal' && isTrayActive))
         // When the navbar is fixed, it will not scroll with page scrolling.
         .toggleClass('navbar-fixed', (isViewportOverflowConstrained || this.model.get('isFixed')))
         // Toggle the navbar-tray-open class on the body element. The class is
         // applied when a navbar tray is active. Padding might be applied to
         // the body element to prevent the tray from overlapping content.
-        .toggleClass('navbar-tray-open', !!this.model.get('activeTray'))
+        .toggleClass('navbar-tray-open', !!this.model.get('activeTray') && isTrayActive)
         // Apply padding to the top of the body to offset the placement of the
         // navbar bar element.
         .css('padding-top', this.model.get('offsets').top);

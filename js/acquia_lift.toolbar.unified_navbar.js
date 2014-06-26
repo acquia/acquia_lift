@@ -23,11 +23,11 @@
       }
 
       // Update the padding offset of the unified navbar when the toolbar
-      // height changes.
+      // height changes or re-orients.
       $(window).bind('resize.acquiaLiftToolbarResize', debounce(this.updateUnifiedToolbarPosition, 200));
       $(document).bind('drupalNavbarOrientationChange', this.updateUnifiedToolbarPosition);
       // Call it once to set the initial position.
-      this.updateUnifiedToolbarPosition();
+      this.updateUnifiedToolbarPosition(null, false);
     },
 
     /**
@@ -35,16 +35,22 @@
      * unified toolbar beneath the main toolbar (which could have resized).
      *
      * Note that only the window broadcast resize events (not divs).
+     *
      * @param e
      *   The event object.
+     * @param dispatch
+     *   True to dispatch displacement changes, false to ignore.
      */
-    updateUnifiedToolbarPosition: function(e) {
+    updateUnifiedToolbarPosition: function(e, dispatch) {
       var heightCss = self.getAdminMenu().css('height');
       // @todo: doesn't seem right to adjust all three.
       $('body.navbar-horizontal #toolbar + #navbar-administration.navbar-oriented').css('top', heightCss);
       $('body.navbar-horizontal #toolbar + #navbar-administration.navbar-oriented .navbar-bar').css('top', heightCss);
       $('body #toolbar + #navbar-administration.navbar-oriented .navbar-tray').css('top', heightCss);
-      displace(true);
+      dispatch = typeof(dispatch) == 'undefined' ? true : dispatch;
+      if (dispatch) {
+        displace(true);
+      }
     },
 
     // Helper method to get admin menu container,

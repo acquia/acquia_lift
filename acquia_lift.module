@@ -1240,11 +1240,12 @@ function acquia_lift_navbar() {
   $items = array();
 
   $menu = menu_tree_all_data('acquia-lift-controls');
+  $usingUnifiedNavbar = _acquia_lift_using_unified_navbar();
 
   if (!empty($menu)) {
     $items['acquia_lift'] = array(
       '#access' => user_access('manage personalized content'),
-      '#type' => 'acquia_lift_navbar_item',
+      '#type' => $usingUnifiedNavbar ? 'acquia_lift_navbar_item' : 'navbar_item',
       'tray' => array(
         '#heading' => t('Personalization controls'),
         'navbar_personalization' => array(
@@ -1261,7 +1262,7 @@ function acquia_lift_navbar() {
       '#weight' => 20,
     );
 
-    if (!_acquia_lift_using_unified_navbar()) {
+    if (!$usingUnifiedNavbar) {
       // Add the tab trigger for the tray.
       $items['acquia_lift']['tab'] = array(
         '#type' => 'link',

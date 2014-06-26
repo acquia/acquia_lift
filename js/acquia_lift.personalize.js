@@ -300,6 +300,12 @@ Drupal.behaviors.acquiaLiftPersonalize = {
             // Otherwise a winner should be the default if one has been defined.
             index = obj.winner;
           }
+          // The first option key isn't always 0.
+          if (!obj.options.hasOwnProperty(index)) {
+            var keys = _.keys(obj.options);
+            keys.sort;
+            index = keys[0];
+          }
           model.set('activeOption', obj.options[index].option_id);
         }
       });

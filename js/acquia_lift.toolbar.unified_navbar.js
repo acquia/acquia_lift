@@ -9,7 +9,7 @@
   Drupal.navbar = Drupal.navbar || {};
   Drupal.behaviors.acquiaLiftUnifiedNavbarIntegration = {
     attach: function (context, settings) {
-
+      var self = this;
       // Make the "Acquia Lift" top level navigation item toggle the
       // unified navbar.
       var $anchor = this.getAdminMenu().once('acquiaLiftOverride').find('a[href~="/admin/acquia_lift"]');
@@ -19,15 +19,18 @@
           event.preventDefault();
           // Toggle the Acquia Lift unified navigation.
           Drupal.navbar.toggleUnifiedNavbar();
+          self.updateUnifiedToolbarPosition(null, false);
         });
       }
 
-      // Update the padding offset of the unified navbar when the toolbar
-      // height changes or re-orients.
-      $(window).bind('resize.acquiaLiftToolbarResize', debounce(this.updateUnifiedToolbarPosition, 200));
-      $(document).bind('drupalNavbarOrientationChange', this.updateUnifiedToolbarPosition);
-      // Call it once to set the initial position.
-      this.updateUnifiedToolbarPosition(null, false);
+      $('#navbar-administration').once('acquiaLiftToolbarIntegration', function() {
+        // Update the padding offset of the unified navbar when the toolbar
+        // height changes or re-orients.
+        $(window).bind('resize.acquiaLiftToolbarResize', debounce(self.updateUnifiedToolbarPosition, 200));
+        $(document).bind('drupalNavbarOrientationChange', self.updateUnifiedToolbarPosition);
+        // Call it once to set the initial position.
+        self.updateUnifiedToolbarPosition(null, false);
+      });
     },
 
     /**
@@ -47,6 +50,7 @@
       $('body.navbar-horizontal #toolbar + #navbar-administration.navbar-oriented').css('top', heightCss);
       $('body.navbar-horizontal #toolbar + #navbar-administration.navbar-oriented .navbar-bar').css('top', heightCss);
       $('body #toolbar + #navbar-administration.navbar-oriented .navbar-tray').css('top', heightCss);
+      $('#navbar-bar.navbar-bar').attr('data-offset-top', parseInt(heightCss));
       dispatch = typeof(dispatch) == 'undefined' ? true : dispatch;
       if (dispatch) {
         displace(true);

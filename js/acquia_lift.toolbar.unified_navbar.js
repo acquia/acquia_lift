@@ -5,12 +5,14 @@
  * Provides functionality to integrate the "toolbar" module with the Acquia
  * Lift unified navigation bar.
  */
-(function (Drupal, $) {
+(function (Drupal, $, debounce) {
   Drupal.navbar = Drupal.navbar || {};
   Drupal.behaviors.acquiaLiftUnifiedNavbarIntegration = {
     attach: function (context, settings) {
-      var $anchor = this.getAdminMenu().once('acquiaLiftOverride').find('a[href~="/admin/acquia_lift"]');
 
+      // Make the "Acquia Lift" top level navigation item toggle the
+      // unified navbar.
+      var $anchor = this.getAdminMenu().once('acquiaLiftOverride').find('a[href~="/admin/acquia_lift"]');
       if ($anchor.length && Drupal.navbar.hasOwnProperty('toggleUnifiedNavbar')) {
         $anchor.bind('click.acquiaLiftOverride', function (event) {
           event.stopPropagation();
@@ -19,6 +21,29 @@
           Drupal.navbar.toggleUnifiedNavbar();
         });
       }
+
+      // Update the padding offset of the unified navbar when the toolbar
+      // height changes.
+      $(window).bind('resize.acquiaLiftToolbarResize', debounce(this.updateUnifiedToolbarPosition, 200));
+      // Call it once to set the initial position.
+      this.updateUnifiedToolbarPosition();
+    },
+
+    /**
+     * Called when the window resizes to recalculate the placement of the
+     * unified toolbar beneath the main toolbar (which could have resized).
+     *
+     * Note that only the window broadcast resize events (not divs).
+     * @param e
+     *   The event object.
+     */
+    updateUnifiedToolbarPosition: function(e) {
+      var heightCss = self.getAdminMenu().css('height');
+      // @todo: reword css so that only the main #navbar-administration needs
+      // adjustment.
+      $('body.navbar-fixed #toolbar + #navbar-administration.navbar-oriented').css('top', heightCss);
+      $('#toolbar + #navbar-administration.navbar-oriented .navbar-bar').css('top', heightCss);
+      $('#toolbar + #navbar-administration.navbar-oriented .navbar-tray').css('top', heightCss);
     },
 
     // Helper method to get admin menu container,
@@ -30,4 +55,6 @@
       return $('#admin-toolbar, #admin-menu, #toolbar');
     }
   }
-}(Drupal, jQuery));
+  var self = Drupal.behaviors.acquiaLiftUnifiedNavbarIntegration;
+
+}(Drupal, jQuery, Drupal.debounce));

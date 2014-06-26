@@ -617,6 +617,11 @@ function acquia_lift_library() {
     'css' => array(
       $path . '/css/acquia_lift.toolbar.unified_navbar.css',
     ),
+    'dependencies' => array(
+      array('system', 'jquery'),
+      array('system', 'jquery.once'),
+      array('acquia_lift', 'acquia_lift.navbar.debounce'),
+    ),
   );
 
   // Unified navigation bar.

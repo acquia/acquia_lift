@@ -39,11 +39,7 @@
      */
     updateUnifiedToolbarPosition: function(e) {
       var heightCss = self.getAdminMenu().css('height');
-      // @todo: reword css so that only the main #navbar-administration needs
-      // adjustment.
-      $('body.navbar-fixed #toolbar + #navbar-administration.navbar-oriented').css('top', heightCss);
-      $('#toolbar + #navbar-administration.navbar-oriented .navbar-bar').css('top', heightCss);
-      $('#toolbar + #navbar-administration.navbar-oriented .navbar-tray').css('top', heightCss);
+      $('body #toolbar + #navbar-administration.navbar-oriented .navbar-tray').css('top', heightCss);
     },
 
     // Helper method to get admin menu container,

@@ -61,7 +61,8 @@ Drupal.behaviors.navbar = {
       var model = Drupal.navbar.models.navbarModel = new Drupal.navbar.NavbarModel({
         locked: JSON.parse(localStorage.getItem('Drupal.navbar.trayVerticalLocked')) || false,
         activeTray: $('#navbar-item-tray').get(0),
-        isTrayActive: isTrayActive
+        isTrayActive: isTrayActive,
+        isFixed: true
       });
       Drupal.navbar.views.navbarVisualView = new Drupal.navbar.NavbarVisualView({
         el: this,

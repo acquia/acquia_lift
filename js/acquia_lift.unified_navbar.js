@@ -21,7 +21,7 @@
  */
 Drupal.behaviors.navbar = {
 
-  attach: function (context) {
+  attach: function (context, settings) {
     // Verify that the user agent understands media queries. Complex admin
     // navbar layouts require media query support.
     if (!window.matchMedia('only screen').matches) {
@@ -56,12 +56,13 @@ Drupal.behaviors.navbar = {
 
       // Establish the navbar models and views.
       var isTrayActive = localStorage.getItem('Drupal.acquia_lift.isTrayActive');
+      var hideTrayDefault = Drupal.settings.acquia_lift.hideTrayDefault || false;
       // Values read from localStorage are always strings.
-      isTrayActive = isTrayActive != null ? isTrayActive == 'true' : false;
+      isTrayActive = isTrayActive != null ? isTrayActive === 'true' : false;
       var model = Drupal.navbar.models.navbarModel = new Drupal.navbar.NavbarModel({
         locked: JSON.parse(localStorage.getItem('Drupal.navbar.trayVerticalLocked')) || false,
         activeTray: $('#navbar-item-tray').get(0),
-        isTrayActive: isTrayActive,
+        isTrayActive: !hideTrayDefault && isTrayActive,
         isFixed: true
       });
       Drupal.navbar.views.navbarVisualView = new Drupal.navbar.NavbarVisualView({

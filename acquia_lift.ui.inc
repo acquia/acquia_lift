@@ -40,8 +40,9 @@ function acquia_lift_build_page(&$page) {
   // Attach the editor app toggle code on all non-admin pages.
   // A special case is made for the block demo page which is not properly
   // marked as an admin page by path_is_admin().
+  $is_admin = TRUE;
   if (!path_is_admin(current_path()) && preg_match('/^admin\/structure\/block\/demo\//', current_path()) == 0) {
-
+    $is_admin = FALSE;
     // If the user is personalizing content in context, provide a DSM with actions
     // to personalize or cancel out of this 'mode'.
     if (acquia_lift_nav_message_is_set()) {
@@ -63,6 +64,10 @@ function acquia_lift_build_page(&$page) {
     else if (module_exists('admin_menu')) {
       $page['page_top']['acquia_lift']['#attached']['library'][] = array('acquia_lift', 'acquia_lift.admin_menu');
     }
+    $page['page_top']['acquia_lift']['#attached']['js'][] = array(
+      'data' => array('acquia_lift' => array('hideTrayDefault' => $is_admin)),
+      'type' => 'setting',
+    );
   }
 }
 

@@ -1,6 +1,0 @@
-/* Styles specific to the unified navigation bar when used with toolbar module. */
-
-/* Default Drupal 7 toolbar module */
-#toolbar + #navbar-administration {
-  position: relative;
-}

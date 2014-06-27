@@ -612,12 +612,10 @@ function acquia_lift_library() {
     'website' => 'https://www.drupal.org/project/toolbar',
     'version' => '1.0',
     'js' => array(
-      $path . '/js/acquia_lift.toolbar.unified_navbar.js' => array(),
-    ),
-    'css' => array(
-      $path . '/css/acquia_lift.toolbar.unified_navbar.css',
+      $path . '/js/acquia_lift.unified_navbar.toolbar.js' => array(),
     ),
     'dependencies' => array(
+      array('acquia_lift', 'acquia_lift.unified.navbar'),
       array('system', 'jquery'),
       array('system', 'jquery.once'),
       array('acquia_lift', 'acquia_lift.navbar.debounce'),
@@ -631,12 +629,10 @@ function acquia_lift_library() {
     'website' => 'https://www.drupal.org/project/admin_menu',
     'version' => '1.0',
     'js' => array(
-      $path . '/js/acquia_lift.admin_menu.unified_navbar.js' => array(),
-    ),
-    'css' => array(
-      $path . '/css/acquia_lift.admin_menu.unified_navbar.css',
+      $path . '/js/acquia_lift.unified_navbar.admin_menu.js' => array(),
     ),
     'dependencies' => array(
+      array('acquia_lift', 'acquia_lift.unified.navbar'),
       array('system', 'jquery'),
       array('system', 'jquery.once'),
       array('acquia_lift', 'acquia_lift.navbar.debounce'),
@@ -654,6 +650,7 @@ function acquia_lift_library() {
       $path . '/js/acquia_lift.navbar.js' => array(),
     ),
     'css' => array(
+      $path . '/css/acquia_lift.unified_navbar.css',
       $path . '/css/navbar/navbar.module.css',
       $path . '/css/navbar/navbar.theme.css',
       $path . '/css/navbar/navbar.icons.css',
@@ -678,6 +675,31 @@ function acquia_lift_library() {
     $libraries['acquia_lift.unified.navbar']['dependencies'][] = array('acquia_lift', 'acquia_lift.navbar.overlay');
   }
 
+  /*** 3rd PARTY LIBRARY DEPENDENCIES ***/
+  // Ensure that each 3rd party library dependency has a default variant.
+  // Convert Libraries module data structures to library data structures.
+
+  // Modernizr - required by Unified Navbar.
+  $libraries['modernizr'] = _acquia_lift_convert_libraries_to_library(libraries_detect('modernizr'), array(
+    'group' => JS_LIBRARY,
+    'weight' => -100,
+  ));
+
+  // Underscore
+  $libraries['underscore'] = _acquia_lift_convert_libraries_to_library(libraries_detect('underscore'), array(
+    'group' => JS_LIBRARY,
+    'weight' => -20,
+  ));
+
+  // Backbone
+  $libraries['backbone'] = _acquia_lift_convert_libraries_to_library(libraries_detect('backbone'), array(
+    'group' => JS_LIBRARY,
+    'weight' => -19,
+  ));
+
+  /*** REQUIRED BY ACQUIA LIFT UNIFIED NAVBAR ***/
+  // All libraries below this point are dependencies for the unified navbar.
+  // These are identical to navbar dependencies.
   $libraries['acquia_lift.navbar.menu'] = array(
     'title' => 'Navbar nested accordion menus.',
     'version' => VERSION,
@@ -768,27 +790,6 @@ function acquia_lift_library() {
       array('acquia_lift', 'acquia_lift.navbar.displace'),
     ),
   );
-
-
-  // Ensure that each 3rd party library dependency has a default variant.
-  // Convert Libraries module data structures to library data structures.
-  // Modernizr
-  $libraries['modernizr'] = _acquia_lift_convert_libraries_to_library(libraries_detect('modernizr'), array(
-    'group' => JS_LIBRARY,
-    'weight' => -100,
-  ));
-
-  // Underscore
-  $libraries['underscore'] = _acquia_lift_convert_libraries_to_library(libraries_detect('underscore'), array(
-    'group' => JS_LIBRARY,
-    'weight' => -20,
-  ));
-
-  // Backbone
-  $libraries['backbone'] = _acquia_lift_convert_libraries_to_library(libraries_detect('backbone'), array(
-    'group' => JS_LIBRARY,
-    'weight' => -19,
-  ));
 
   return $libraries;
 }

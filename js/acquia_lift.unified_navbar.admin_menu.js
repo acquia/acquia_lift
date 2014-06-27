@@ -1,6 +1,5 @@
 /**
- * @file
- * acquia_lift.admin_menu.unified_navbar.js
+ * @file acquia_lift.unified_navbar.admin_menu.js
  *
  * Provides functionality to integrate the "admin_menu" module with the Acquia
  * Lift unified navigation bar.
@@ -82,9 +81,7 @@
     updateUnifiedToolbarPosition: function(e, dispatch) {
       var heightCss = self.getAdminMenu().css('height');
       var $tray = $('div#navbar-item-tray.navbar-tray-acquia-lift.navbar-tray');
-      // @todo: doesn't seem right to adjust all three.
       $('body.navbar-horizontal #navbar-administration.navbar-oriented').css('top', heightCss);
-      //$('body.navbar-horizontal #navbar-administration.navbar-oriented .navbar-bar').css('top', heightCss);
       $('body #navbar-administration.navbar-oriented .navbar-tray').css('top', heightCss);
       // Because the admin_menu is positioned via margins we need to ignore
       // it when specifying the displacement for body content and explicitly

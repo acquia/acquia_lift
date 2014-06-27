@@ -186,7 +186,7 @@ function _acquia_lift_build_menu($menu_name) {
 
   // Create a link for attaching option set preview triggers.
   $item = array(
-    'link_title' => 'Create variation set',
+    'link_title' => 'Create a variation set',
     'link_path' => 'admin/structure/personalize/variations',
     'menu_name' => $menu_name,
     'options' => array(

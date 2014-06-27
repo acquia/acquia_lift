@@ -31,28 +31,39 @@
      * Attach the Acquia Lift navbar listeners once the admin menu is present.
      *
      * @param e
-     * @param dispatch
+     *   The triggering event.
      */
     checkForAdminMenu: function (e) {
       var adminMenu = self.getAdminMenu();
       if (adminMenu.length == 0) {
         return;
       }
-      $(window).unbind('resize.AcquiaLiftAdminMenuWait', self.checkForAdminMenu);
+      // If the link is found and not processed, then go ahead and add
+      // listeners.
       var $anchor = adminMenu.find('a[href~="/admin/acquia_lift"]');
-      if ($anchor.length && Drupal.navbar.hasOwnProperty('toggleUnifiedNavbar')) {
-        $anchor.bind('click.acquiaLiftOverride', function (event) {
-          event.stopPropagation();
-          event.preventDefault();
-          // Toggle the Acquia Lift unified navigation.
-          Drupal.navbar.toggleUnifiedNavbar();
-          self.updateUnifiedToolbarPosition(null, false);
-        });
+      if ($anchor.length == 0 || !Drupal.navbar.hasOwnProperty('toggleUnifiedNavbar')) {
+        return;
       }
+      // Must use "live" event delegation here as the admin menu can be
+      // attached multiple times when pulled from cache.
+      $anchor.live('click', function acquiaLiftClickHandler(event) {
+        // Make sure this is triggered by the right link (side-effect of method
+        // and multiple menus).
+        if (!event.target.hasOwnProperty('href') || event.target.href.indexOf('admin/acquia_lift') < 0) {
+          return;
+        }
+        event.preventDefault();
+        // Toggle the Acquia Lift unified navigation.
+        Drupal.navbar.toggleUnifiedNavbar();
+        self.updateUnifiedToolbarPosition(null, false);
+      });
+      $(window).unbind('resize.AcquiaLiftAdminMenuWait', self.checkForAdminMenu);
+
       // Update the padding offset of the unified navbar when the admin_menu
       // height changes or re-orients.
       $(window).bind('resize.acquiaLiftAdminMenuResize', debounce(self.updateUnifiedToolbarPosition, 200));
       $(document).bind('drupalNavbarOrientationChange', self.updateUnifiedToolbarPosition);
+      $(document).bind('drupalNavbarTrayActiveChange', self.updateUnifiedToolbarPosition);
       // Call it once to set the initial position.
       self.updateUnifiedToolbarPosition(null, false);
     },
@@ -70,8 +81,7 @@
      */
     updateUnifiedToolbarPosition: function(e, dispatch) {
       var heightCss = self.getAdminMenu().css('height');
-      var $horizontal = $('div#navbar-item-tray.navbar-tray-acquia-lift.navbar-tray.navbar-active.navbar-tray-horizontal');
-      var $vertical = $('div#navbar-item-tray.navbar-tray-acquia-lift.navbar-tray.navbar-active.navbar-tray-vertical');
+      var $tray = $('div#navbar-item-tray.navbar-tray-acquia-lift.navbar-tray');
       // @todo: doesn't seem right to adjust all three.
       $('body.navbar-horizontal #navbar-administration.navbar-oriented').css('top', heightCss);
       //$('body.navbar-horizontal #navbar-administration.navbar-oriented .navbar-bar').css('top', heightCss);
@@ -80,12 +90,10 @@
       // it when specifying the displacement for body content and explicitly
       // define the displacement top based on the size of the unified navbar.
       $('#navbar-bar.navbar-bar').attr('data-offset-top', 0);
-      if ($horizontal.length > 0) {
-        $horizontal.attr('data-offset-top', $horizontal.height());
-        console.log('set tray top offset to ' + $horizontal.height());
-      } else if ($vertical.length > 0) {
-        $vertical.removeAttr('data-offset-top');
-        console.log('removing tray offset');
+      if ($tray.hasClass('navbar-tray-horizontal') && $tray.hasClass('navbar-active')) {
+        $tray.attr('data-offset-top', $tray.height());
+      } else {
+        $tray.removeAttr('data-offset-top');
       }
       dispatch = typeof(dispatch) == 'undefined' ? true : dispatch;
       if (dispatch) {

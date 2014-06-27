@@ -60,6 +60,9 @@ function acquia_lift_build_page(&$page) {
     if (module_exists('toolbar')) {
       $page['page_top']['acquia_lift']['#attached']['library'][] = array('acquia_lift', 'acquia_lift.toolbar');
     }
+    else if (module_exists('admin_menu')) {
+      $page['page_top']['acquia_lift']['#attached']['library'][] = array('acquia_lift', 'acquia_lift.admin_menu');
+    }
   }
 }
 
@@ -284,7 +287,6 @@ function acquia_lift_navbar_ui_pre_render($element) {
 
   // Merge in the original navbar values.
   $element = array_merge($element, $items);
-
   // Render the children.
   $element['#children'] = drupal_render_children($element);
 
@@ -334,6 +336,5 @@ function acquia_lift_navbar_ui_pre_render_item($element) {
     // function to append it.
     array_unshift($element['tray']['#theme_wrappers'], 'acquia_lift_navbar_tray_heading_wrapper');
   }
-
   return $element;
 }

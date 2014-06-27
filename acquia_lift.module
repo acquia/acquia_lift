@@ -625,6 +625,25 @@ function acquia_lift_library() {
     ),
   );
 
+  // Admin_menu module integration.
+  $libraries['acquia_lift.admin_menu'] = array(
+    'title' => 'Assets for integration with admin_menu module',
+    'website' => 'https://www.drupal.org/project/admin_menu',
+    'version' => '1.0',
+    'js' => array(
+      $path . '/js/acquia_lift.admin_menu.unified_navbar.js' => array(),
+    ),
+    'css' => array(
+      $path . '/css/acquia_lift.admin_menu.unified_navbar.css',
+    ),
+    'dependencies' => array(
+      array('system', 'jquery'),
+      array('system', 'jquery.once'),
+      array('acquia_lift', 'acquia_lift.navbar.debounce'),
+      array('acquia_lift', 'acquia_lift.navbar.displace'),
+    ),
+  );
+
   // Unified navigation bar.
   $libraries['acquia_lift.unified.navbar'] = array(
     'title' => 'Unified navbar',

@@ -204,6 +204,18 @@ Drupal.navbar = {
   },
 
   /**
+   * Updates to indicate if the offset should be dynamically calculated or if
+   * it is handled externally to this component.
+   *
+   * @param dynamic
+   *   If true, calculate dynamically, if false, do not calculate.
+   */
+  calculateDynamicOffset: function(calculate) {
+    var model = Drupal.navbar.models.navbarModel;
+    model.set('calculateOffset', calculate);
+  },
+
+  /**
    * Backbone model for the navbar.
    */
   NavbarModel: Backbone.Model.extend({
@@ -243,7 +255,10 @@ Drupal.navbar = {
         right: 0,
         bottom: 0,
         left: 0
-      }
+      },
+      // Determines if the offset for this navbar used by Drupal.displace should
+      // be calculated dynamically.
+      calculateOffset: true
     },
 
     /**
@@ -401,11 +416,14 @@ Drupal.navbar = {
      */
     updateBarAttributes: function () {
       var isOriented = this.model.get('isOriented');
-      if (isOriented) {
-        this.$el.find('.navbar-bar').attr('data-offset-top', '');
-      }
-      else {
-        this.$el.find('.navbar-bar').removeAttr('data-offset-top');
+      var calculateOffset = this.model.get('calculateOffset');
+      if (calculateOffset) {
+        if (isOriented) {
+          this.$el.find('.navbar-bar').attr('data-offset-top', '');
+        }
+        else {
+          this.$el.find('.navbar-bar').removeAttr('data-offset-top');
+        }
       }
       // Toggle between a basic vertical view and a more sophisticated
       // horizontal and vertical display of the navbar bar and trays.
@@ -416,6 +434,7 @@ Drupal.navbar = {
      * Updates the orientation of the active tray if necessary.
      */
     updateTrayOrientation: function () {
+      var calculateOffset = this.model.get('calculateOffset');
       var orientation = this.model.get('orientation');
       // The antiOrientation is used to render the view of action buttons like
       // the tray orientation toggle.
@@ -439,15 +458,17 @@ Drupal.navbar = {
       // Update data offset attributes for the trays.
       var dir = document.documentElement.dir;
       var edge = (dir === 'rtl') ? 'right' : 'left';
-      // Remove data-offset attributes from the trays so they can be refreshed.
-      $trays
-        .removeAttr('data-offset-left')
-        .removeAttr('data-offset-right')
-        .removeAttr('data-offset-top');
-      // If an active vertical tray exists, mark it as an offset element.
-      $trays.filter('.navbar-tray-vertical.navbar-active').attr('data-offset-' + edge, '');
-      // If an active horizontal tray exists, mark it as an offset element.
-      $trays.filter('.navbar-tray-horizontal.navbar-active').attr('data-offset-top', '');
+      if (calculateOffset) {
+        // Remove data-offset attributes from the trays so they can be refreshed.
+        $trays
+          .removeAttr('data-offset-left')
+          .removeAttr('data-offset-right')
+          .removeAttr('data-offset-top');
+        // If an active vertical tray exists, mark it as an offset element.
+        $trays.filter('.navbar-tray-vertical.navbar-active').attr('data-offset-' + edge, '');
+        // If an active horizontal tray exists, mark it as an offset element.
+        $trays.filter('.navbar-tray-horizontal.navbar-active').attr('data-offset-top', '');
+      }
     },
 
     /**

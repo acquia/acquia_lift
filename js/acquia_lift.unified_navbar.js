@@ -116,7 +116,10 @@ Drupal.behaviors.navbar = {
         })
         .on('change:activeTray', function (model, tray) {
           $(document).trigger('drupalNavbarTrayChange', tray);
-        });
+        })
+      .on('change:isTrayActive', function (model, tray) {
+        $(document).trigger('drupalNavbarTrayActiveChange', tray);
+      });
     });
   }
 };
@@ -170,9 +173,11 @@ Drupal.navbar = {
         }
         break;
       case 'standard':
+        /*
         model.set({
           'isFixed': mql.matches
         });
+        */
         break;
       case 'wide':
         model.set({

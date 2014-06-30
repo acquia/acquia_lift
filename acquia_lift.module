@@ -1186,10 +1186,47 @@ function _acquia_lift_libraries_get_preferred_variant_name($library) {
  * navigation bar.
  *
  * @return bool
- *   True if using it, false if using navbar.
+ *   True if using a module that is supported by the unified navigation bar.
  */
 function _acquia_lift_using_unified_navbar() {
-  return !module_exists('navbar');
+  $supported_modules = array('admin_menu', 'toolbar');
+  foreach ($supported_modules as $module_name) {
+    if (module_exists($module_name)) {
+      return TRUE;
+    }
+  }
+}
+
+/**
+ * Create and attach the assets for Acquia Lift navigation to an element on the
+ * page.
+ *
+ * @param $element
+ *   The element to attach assets to.
+ * @param $hide
+ *   Indicates if the navigation should be hidden by default.
+ */
+function _acquia_lift_navigation_attach_assets(&$element, $hide = FALSE) {
+  $element['acquia_lift']['#access'] = user_access('manage personalized content');
+  $element['acquia_lift']['#attached']['library'][] = array('acquia_lift', 'acquia_lift.personalize');
+
+  if (_acquia_lift_using_unified_navbar()) {
+    $element['acquia_lift']['nav']['#type'] = 'acquia_lift_navbar';
+    // Make the Acquia Lift tool bar show up after other content.
+    $element['acquia_lift']['#weight'] = 100;
+    $element['#sorted'] = FALSE;
+    // Specific module integration libraries.
+    if (module_exists('admin_menu')) {
+      $element['acquia_lift']['#attached']['library'][] = array('acquia_lift', 'acquia_lift.admin_menu');
+    }
+    else if (module_exists('toolbar')) {
+      $element['acquia_lift']['#attached']['library'][] = array('acquia_lift', 'acquia_lift.toolbar');
+    }
+    $element['acquia_lift']['#attached']['js'][] = array(
+      'data' => array('acquia_lift' => array('hideTrayDefault' => $hide)),
+      'type' => 'setting',
+    );
+  }
 }
 
 /**

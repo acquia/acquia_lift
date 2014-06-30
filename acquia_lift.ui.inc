@@ -50,25 +50,8 @@ function acquia_lift_build_page(&$page) {
     }
   }
 
-  $page['page_top']['acquia_lift']['#access'] = user_access('manage personalized content');
-  $page['page_top']['acquia_lift']['#attached']['library'][] = array('acquia_lift', 'acquia_lift.personalize');
   // Attach client-side controls for managing personalized content.
-  if (_acquia_lift_using_unified_navbar()) {
-    $page['page_top']['acquia_lift']['nav']['#type'] = 'acquia_lift_navbar';
-    // Make the Acquia Lift tool bar show up after other content.
-    $page['page_top']['acquia_lift']['#weight'] = 100;
-    $page['page_top']['#sorted'] = FALSE;
-    if (module_exists('toolbar')) {
-      $page['page_top']['acquia_lift']['#attached']['library'][] = array('acquia_lift', 'acquia_lift.toolbar');
-    }
-    else if (module_exists('admin_menu')) {
-      $page['page_top']['acquia_lift']['#attached']['library'][] = array('acquia_lift', 'acquia_lift.admin_menu');
-    }
-    $page['page_top']['acquia_lift']['#attached']['js'][] = array(
-      'data' => array('acquia_lift' => array('hideTrayDefault' => $is_admin)),
-      'type' => 'setting',
-    );
-  }
+  _acquia_lift_navigation_attach_assets($page['page_top'], $is_admin);
 }
 
 /**

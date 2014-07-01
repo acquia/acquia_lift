@@ -63,7 +63,7 @@
     // and default toolbar core module.
     // https://drupal.org/project/navbar is supported @see acquia_lift.navbar.js
     getAdminMenu: function () {
-      return $('#admin-toolbar, #admin-menu, #toolbar');
+      return $('#toolbar');
     }
   }
   var self = Drupal.behaviors.acquiaLiftUnifiedNavbarIntegration;

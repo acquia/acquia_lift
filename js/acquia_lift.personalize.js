@@ -173,7 +173,7 @@ Drupal.behaviors.acquiaLiftPersonalize = {
                     var $goalsMenu = $('[data-acquia-lift-personalize-type="goals"]');
                     var modelGoals = model.get('goals');
                     if (modelGoals) {
-                      looper(model.get('goals') || {}, function (obj, key) {
+                      looper(modelGoals, function (obj, key) {
                         element = document.createElement('li');
                         ui.views.push((new ui[ui.objectMap['goals'] + 'View']({
                           el: element,

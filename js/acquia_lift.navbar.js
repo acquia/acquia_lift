@@ -23,7 +23,7 @@ Drupal.behaviors.acquiaLiftNavbarMenu = {
             }
           },
           findItemElement: function ($item, $menu) {
-            var $campaigns = $item.children('div').children('a.acquia-lift-campaign')
+            var $campaigns = $item.children('div.acquia-lift-menu-item');
             var $contentVariations = $item.children('.acquia-lift-preview-option-set').children('span');
             var $handle = $campaigns.add($contentVariations);
             if ($handle.length) {

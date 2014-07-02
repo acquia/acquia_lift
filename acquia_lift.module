@@ -115,6 +115,27 @@ function acquia_lift_theme() {
     'acquia_lift_goal_total' => array(
       'goal_total' => 0,
     ),
+    // Unified navbar themes.
+    'acquia_lift_navbar' => array(
+      'render element' => 'element',
+      'path' => $path . '/theme',
+      'file' => 'acquia_lift.navbar.theme.inc',
+    ),
+    'acquia_lift_navbar_item' => array(
+      'render element' => 'element',
+      'path' => $path . '/theme',
+      'file' => 'acquia_lift.navbar.theme.inc',
+    ),
+    'acquia_lift_navbar_tray_wrapper' => array(
+      'render element' => 'element',
+      'path' => $path . '/theme',
+      'file' => 'acquia_lift.navbar.theme.inc',
+    ),
+    'acquia_lift_navbar_tray_heading_wrapper' => array(
+      'render element' => 'element',
+      'path' => $path . '/theme',
+      'file' => 'acquia_lift.navbar.theme.inc',
+    ),
   );
 }
 
@@ -162,15 +183,62 @@ function acquia_lift_page_build(&$page) {
 
 /**
  * Implements hook_element_info().
+ *
+ * @see navbar_element_info().
  */
 function acquia_lift_element_info() {
-  return array(
-    'acquia_lift_percentage' => array(
-      '#input' => TRUE,
-      '#element_validate' => array('element_validate_number', 'acquia_lift_percentage_validate'),
-      '#theme' => 'acquia_lift_percentage',
+  $elements = array();
+  // A percentage input element for entering percentage values and seeing
+  // the resultant percent left.
+  $elements['acquia_lift_percentage'] = array(
+    '#input' => TRUE,
+    '#element_validate' => array('element_validate_number', 'acquia_lift_percentage_validate'),
+    '#theme' => 'acquia_lift_percentage',
+  );
+
+  // Elements necessary for the unified navbar.
+  // Note that we keep the CSS selectors the same as those used by navbar
+  // in order to use the same set of CSS.
+  $elements['acquia_lift_navbar'] = array(
+    '#pre_render' => array('acquia_lift_navbar_pre_render'),
+    '#theme' => 'acquia_lift_navbar',
+    '#attached' => array(
+      'library' => array(
+        array('acquia_lift', 'acquia_lift.unified.navbar'),
+      ),
+    ),
+    // Metadata for the navbar wrapping element.
+    '#attributes' => array(
+      // The id cannot be simply "navbar" or it will clash with the simpletest
+      // tests listing which produces a checkbox with attribute id="navbar"
+      'id' => 'navbar-administration',
+      // The 'overlay-displace-top' class is necessary in overlay-parent so that
+      // the drupalOverlayResize and drupalOverlayClose events will be bound
+      // to the document. The navbar does not use this class. It is present
+      // to enable compatibility with the Overlay module.
+      'class' => array('drupal-navbar', 'overlay-displace-top'),
+      'role' => 'navigation',
+    ),
+    // Metadata for the administration bar.
+    '#bar' => array(
+      '#heading' => t('Acquia Lift Navigation'),
+      '#attributes' => array(
+        'id' => 'navbar-bar',
+        'class' => array('navbar-bar', 'clearfix'),
+      ),
     ),
   );
+
+  // A navbar item is wrapped in markup for common styling.  The 'tray'
+  // property contains a renderable array. theme_acquia_lift_navbar_tab() is a light
+  // wrapper around the l() function. The contents of tray are rendered in
+  // theme_acquia_lift_navbar_tab().
+  $elements['acquia_lift_navbar_item'] = array(
+    '#pre_render' => array('acquia_lift_navbar_pre_render_item'),
+    '#theme' => 'acquia_lift_navbar_item',
+  );
+
+  return $elements;
 }
 
 /**
@@ -471,29 +539,9 @@ function acquia_lift_library() {
     'defer' => TRUE,
   );
 
-  // Controls and actions for site builders.
-  $libraries['acquia_lift.controls'] = array(
-    'title' => 'Acquia Lift controls',
-    'website' => '',
-    'version' => VERSION,
-    'js' => array(
-      $path . '/js/acquia_lift.controls.js' => $options,
-    ),
-    'css' => array(
-      $path . '/css/acquia_lift.controls.css',
-    ),
-    'dependencies' => array(
-      array('system', 'jquery'),
-      array('system', 'jquery.once'),
-      array('system', 'drupal.ajax'),
-      array('system', 'ui.dialog'),
-      array('system', 'ui.accordion'),
-    ),
-  );
-
-  // Option set preview.
+  // Acquia lift campaign management toolbar.
   $libraries['acquia_lift.personalize'] = array(
-    'title' => 'Assets for preview option sets',
+    'title' => 'Acquia lift navigation',
     'website' => '',
     'version' => VERSION,
     'js' => array(
@@ -558,6 +606,85 @@ function acquia_lift_library() {
     ),
   );
 
+  // Toolbar module integration.
+  $libraries['acquia_lift.toolbar'] = array(
+    'title' => 'Assets for integration with toolbar module',
+    'website' => 'https://www.drupal.org/project/toolbar',
+    'version' => '1.0',
+    'js' => array(
+      $path . '/js/acquia_lift.unified_navbar.toolbar.js' => array(),
+    ),
+    'dependencies' => array(
+      array('acquia_lift', 'acquia_lift.unified.navbar'),
+      array('system', 'jquery'),
+      array('system', 'jquery.once'),
+      array('acquia_lift', 'acquia_lift.navbar.debounce'),
+      array('acquia_lift', 'acquia_lift.navbar.displace'),
+    ),
+  );
+
+  // Admin_menu module integration.
+  $libraries['acquia_lift.admin_menu'] = array(
+    'title' => 'Assets for integration with admin_menu module',
+    'website' => 'https://www.drupal.org/project/admin_menu',
+    'version' => '1.0',
+    'js' => array(
+      $path . '/js/acquia_lift.unified_navbar.admin_menu.js' => array(),
+    ),
+    'dependencies' => array(
+      array('acquia_lift', 'acquia_lift.unified.navbar'),
+      array('system', 'jquery'),
+      array('system', 'jquery.once'),
+      array('acquia_lift', 'acquia_lift.navbar.debounce'),
+      array('acquia_lift', 'acquia_lift.navbar.displace'),
+    ),
+  );
+
+  // Unified navigation bar.
+  $libraries['acquia_lift.unified.navbar'] = array(
+    'title' => 'Unified navbar',
+    'version' => VERSION,
+    'js' => array(
+      $path . '/js/acquia_lift.unified_navbar.js' => array(),
+      // The regular navbar file generates the drop-downs.
+      $path . '/js/acquia_lift.navbar.js' => array(),
+    ),
+    'css' => array(
+      $path . '/css/acquia_lift.unified_navbar.css',
+      $path . '/css/navbar/navbar.module.css',
+      $path . '/css/navbar/navbar.theme.css',
+      $path . '/css/navbar/navbar.icons.css',
+      $path . '/css/acquia_lift.navbar.css',
+    ),
+    'dependencies' => array(
+      array('acquia_lift', 'modernizr'),
+      array('system', 'jquery'),
+      array('acquia_lift', 'underscore'),
+      array('acquia_lift', 'backbone'),
+      array('acquia_lift', 'acquia_lift.navbar.matchmedia'),
+      array('system', 'jquery.once'),
+      array('acquia_lift', 'acquia_lift.navbar.debounce'),
+      array('acquia_lift', 'acquia_lift.navbar.announce'),
+      array('acquia_lift', 'acquia_lift.navbar.displace'),
+      array('acquia_lift', 'acquia_lift.navbar.menu'),
+    ),
+  );
+
+  // Only load navbar.overlay if overlay is enabled.
+  if (module_exists('overlay')) {
+    $libraries['acquia_lift.unified.navbar']['dependencies'][] = array('acquia_lift', 'acquia_lift.navbar.overlay');
+  }
+
+  /*** 3rd PARTY LIBRARY DEPENDENCIES ***/
+  // Ensure that each 3rd party library dependency has a default variant.
+  // Convert Libraries module data structures to library data structures.
+
+  // Modernizr - required by Unified Navbar.
+  $libraries['modernizr'] = _acquia_lift_convert_libraries_to_library(libraries_detect('modernizr'), array(
+    'group' => JS_LIBRARY,
+    'weight' => -100,
+  ));
+
   // Underscore
   $libraries['underscore'] = _acquia_lift_convert_libraries_to_library(libraries_detect('underscore'), array(
     'group' => JS_LIBRARY,
@@ -569,6 +696,100 @@ function acquia_lift_library() {
     'group' => JS_LIBRARY,
     'weight' => -19,
   ));
+
+  /*** REQUIRED BY ACQUIA LIFT UNIFIED NAVBAR ***/
+  // All libraries below this point are dependencies for the unified navbar.
+  // These are identical to navbar dependencies.
+  $libraries['acquia_lift.navbar.menu'] = array(
+    'title' => 'Navbar nested accordion menus.',
+    'version' => VERSION,
+    'js' => array(
+      $path . '/js/navbar/navbar.menu.js' => array(),
+    ),
+    'css' => array(
+      $path . '/css/navbar/navbar.menu.css',
+    ),
+    'dependencies' => array(
+      array('system', 'jquery'),
+      array('system', 'jquery.once'),
+    ),
+  );
+
+  // Backport of D8 matchMedia polyfill.
+  $libraries['acquia_lift.navbar.matchmedia'] = array(
+    'title' => 'window.matchMedia polyfill',
+    'website' => 'http://drupal.org/node/1815602',
+    'version' => VERSION,
+    'js' => array(
+      $path . '/js/navbar/matchmedia.js' => array(),
+    ),
+  );
+
+  // A utility function to limit calls to a function with a given time.
+  $libraries['acquia_lift.navbar.debounce'] = array(
+    'title' => 'Navbar debounce',
+    'version' => VERSION,
+    'js' => array(
+      $path . '/js/navbar/debounce.js' => array('group' => JS_LIBRARY),
+    ),
+  );
+
+  // A utility function determine viewport offset distances.
+  $libraries['acquia_lift.navbar.displace'] = array(
+    'title' => 'Navbar displace',
+    'version' => VERSION,
+    'js' => array(
+      $path . '/js/navbar/displace.js' => array('group' => JS_LIBRARY),
+    ),
+    'dependencies' => array(
+      array('system', 'jquery'),
+      array('acquia_lift', 'acquia_lift.navbar.debounce'),
+    ),
+  );
+
+  // A utility for writing text to a common aria-live region.
+  $libraries['acquia_lift.navbar.announce'] = array(
+    'title' => 'Navbar announce',
+    'version' => VERSION,
+    'js' => array(
+      $path . '/js/navbar/announce.js' => array('group' => JS_LIBRARY),
+    ),
+    'dependencies' => array(
+      array('acquia_lift', 'acquia_lift.navbar.debounce'),
+    ),
+  );
+
+  // Override Overlay methods to support displacement.
+  $libraries['acquia_lift.navbar.overlay'] = array(
+    'title' => 'Overlay method overrides to support D8 viewport displacement.',
+    'version' => VERSION,
+    'js' => array(
+      // Load this file well after Overlay code has loaded.
+      $path . '/js/navbar/navbar-overlay.js' => array('weight' => 100),
+    ),
+    'dependencies' => array(
+      array('system', 'jquery'),
+      array('acquia_lift', 'acquia_lift.navbar.displace'),
+    ),
+  );
+
+  // Support Tableheader displacement.
+  $libraries['acquia_lift.navbar.tableheader'] = array(
+    'title' => 'Tableheader method to support D8 viewport displacement.',
+    'version' => VERSION,
+    'js' => array(
+      // Load this file well after Overlay code has loaded.
+      $path . '/js/navbar/navbar-tableheader.js' => array('weight' => 100),
+      array(
+        'data' => array('tableHeaderOffset' => 'Drupal.navbar.height'),
+        'type' => 'setting'
+      ),
+    ),
+    'dependencies' => array(
+      array('system', 'jquery'),
+      array('acquia_lift', 'acquia_lift.navbar.displace'),
+    ),
+  );
 
   return $libraries;
 }
@@ -591,6 +812,15 @@ function acquia_lift_library_alter(&$libraries, $module) {
       $libraries['acquia_lift.personalize']['js'][$path . '/js/jquery/ducktape.events.js'] = array('group' => JS_LIBRARY);
     }
   }
+
+  // If we are using the unified navbar, then fix the behavior with overlay module.
+  if ($module === 'overlay' && _acquia_lift_using_unified_navbar() && !empty($libraries)) {
+    // Unset the child CSS file from Overlay and add our own.
+    if (!empty($libraries['child']['css'])) {
+      unset($libraries['child']['css']['modules/overlay/overlay-child.css']);
+    }
+    $libraries['child']['css'][drupal_get_path('module', 'acquia_lift') . '/css/navbar/navbar-overlay-child.css'] = array();
+  }
 }
 
 /**
@@ -601,6 +831,56 @@ function acquia_lift_library_alter(&$libraries, $module) {
  * @see Libraries module.
  */
 function acquia_lift_libraries_info() {
+  $libraries['modernizr'] = array(
+    'name' => 'Modernizr',
+    'vendor url' => 'https://github.com/Modernizr/Modernizr',
+    'download url' => 'http://modernizr.com/download/#-inputtypes-svg-touch-cssclasses-addtest-teststyles-prefixes-elem_details',
+    'version callback' => '_acquia_lift_libraries_get_version',
+    'variant order' => array('minified', 'source'),
+    'version arguments' => array(
+      'variants' => array(
+        'source' => array(
+          'file' => 'modernizr.js',
+          // @todo Document an actual example version string.
+          'pattern' => '#Modernizr\s+[Vv]?([0-9\.]+)#',
+        ),
+        'minified' => array(
+          'file' => 'modernizr-min.js',
+          'pattern' => '#Modernizr\s+[Vv]?([0-9\.]+)#',
+        ),
+      ),
+    ),
+    'versions' => array(
+      // Means ">=2.6.2": matches 2.6.2, 2.7.1, etc.
+      '2.6.2' => array(
+        'variants' => array(
+          'source' => array(
+            'files' => array(
+              'js' => array(
+                'modernizr.js',
+              ),
+            ),
+            // Without a variant callback, the variant is assumed to be
+            // installed.
+            'variant callback' => '_acquia_lift_libraries_variant_exists',
+            'variant arguments' => array('modernizr.js')
+          ),
+          'minified' => array(
+            'files' => array(
+              'js' => array(
+                'modernizr-min.js',
+              ),
+            ),
+            // Without a variant callback, the variant is assumed to be
+            // installed.
+            'variant callback' => '_acquia_lift_libraries_variant_exists',
+            'variant arguments' => array('modernizr-min.js')
+          ),
+        ),
+      ),
+    ),
+  );
+
   $libraries['underscore'] = array(
     'name' => 'Underscore',
     'vendor url' => 'http://documentcloud.github.io/backbone/',
@@ -902,18 +1182,152 @@ function _acquia_lift_libraries_get_preferred_variant_name($library) {
 }
 
 /**
+ * Helper function to determine if the site is using the Acquia Lift unified
+ * navigation bar.
+ *
+ * @return bool
+ *   True if using a module that is supported by the unified navigation bar.
+ */
+function _acquia_lift_using_unified_navbar() {
+  $supported_modules = array('admin_menu', 'toolbar');
+  foreach ($supported_modules as $module_name) {
+    if (module_exists($module_name)) {
+      return TRUE;
+    }
+  }
+}
+
+/**
+ * Create and attach the assets for Acquia Lift navigation to an element on the
+ * page.
+ *
+ * @param $element
+ *   The element to attach assets to.
+ * @param $hide
+ *   Indicates if the navigation should be hidden by default.
+ */
+function _acquia_lift_navigation_attach_assets(&$element, $hide = FALSE) {
+  $element['acquia_lift']['#access'] = user_access('manage personalized content');
+  $element['acquia_lift']['#attached']['library'][] = array('acquia_lift', 'acquia_lift.personalize');
+
+  if (_acquia_lift_using_unified_navbar()) {
+    $element['acquia_lift']['nav']['#type'] = 'acquia_lift_navbar';
+    // Make the Acquia Lift tool bar show up after other content.
+    $element['acquia_lift']['#weight'] = 100;
+    $element['#sorted'] = FALSE;
+    // Specific module integration libraries.
+    if (module_exists('admin_menu')) {
+      $element['acquia_lift']['#attached']['library'][] = array('acquia_lift', 'acquia_lift.admin_menu');
+    }
+    else if (module_exists('toolbar')) {
+      $element['acquia_lift']['#attached']['library'][] = array('acquia_lift', 'acquia_lift.toolbar');
+    }
+    $element['acquia_lift']['#attached']['js'][] = array(
+      'data' => array('acquia_lift' => array('hideTrayDefault' => $hide)),
+      'type' => 'setting',
+    );
+  }
+}
+
+/**
+ * Pre-render function for Acquia Lift unified navbar element.
+ */
+function acquia_lift_navbar_pre_render($element) {
+  module_load_include('inc', 'acquia_lift', 'acquia_lift.ui');
+  return acquia_lift_navbar_ui_pre_render($element);
+}
+
+/**
+ * Pre-render function for an item within the unified navbar element.
+ */
+function acquia_lift_navbar_pre_render_item($element) {
+  module_load_include('inc', 'acquia_lift', 'acquia_lift.ui');
+  return acquia_lift_navbar_ui_pre_render_item($element);
+}
+
+/**
+ * Implements hook_system_info_alter().
+ *
+ * Indicate that the 'page_top' region (in which the navbar will be displayed)
+ * is an overlay supplemental region that should be refreshed whenever its
+ * content is updated.
+ *
+ * This information is provided for any module that might need to use it, not
+ * just the core Overlay module.
+ *
+ * @see navbar_system_info_alter().
+ */
+function acquia_lift_system_info_alter(&$info, $file, $type) {
+  if ($type == 'theme' && _acquia_lift_using_unified_navbar()) {
+    $info['overlay_supplemental_regions'][] = 'page_top';
+  }
+}
+
+/**
+ * Implements hook_js_alter().
+ *
+ * @see navbar_js_alter().
+ */
+function acquia_lift_js_alter(&$javascript) {
+  // Only load the tableheader offset script if the core tableheader script
+  // is loaded.
+  if (isset($javascript['misc/tableheader.js']) && _acquia_lift_using_unified_navbar()) {
+    drupal_add_library('acquia_lift', 'acquia_lift.navbar.tableheader');
+  }
+}
+
+/**
+ * Implements hook_modernizr_info().
+ */
+function acquia_lift_modernizr_info() {
+  $tests = array();
+
+  // Feature tests
+  $tests[] = 'inputtypes';
+  $tests[] = 'svg';
+  $tests[] = 'touch';
+  $tests[] = 'elem_details';
+
+  // Extensibility
+  $tests[] = 'addtest';
+  $tests[] = 'teststyles';
+  $tests[] = 'prefixes';
+
+  return $tests;
+}
+
+/**
  * Implements hook_navbar().
  */
 function acquia_lift_navbar() {
   $items = array();
 
   $menu = menu_tree_all_data('acquia-lift-controls');
+  $usingUnifiedNavbar = _acquia_lift_using_unified_navbar();
 
   if (!empty($menu)) {
     $items['acquia_lift'] = array(
       '#access' => user_access('manage personalized content'),
-      '#type' => 'navbar_item',
-      'tab' => array(
+      '#type' => $usingUnifiedNavbar ? 'acquia_lift_navbar_item' : 'navbar_item',
+      'tray' => array(
+        '#heading' => t('Personalization controls'),
+        'navbar_personalization' => array(
+          '#type' => 'container',
+          '#attributes' => array(
+            'class' => array('navbar-menu-acquia-lift-controls', 'acquia-lift-controls'),
+          ),
+          'personalization' => menu_tree_output($menu),
+        ),
+        '#wrapper_attributes' => array(
+          'class' => array('navbar-tray-acquia-lift'),
+        ),
+      ),
+      '#weight' => 20,
+    );
+
+    if (!$usingUnifiedNavbar) {
+      // Add the tab trigger for the tray.
+      $items['acquia_lift']['tab'] = array(
         '#type' => 'link',
         '#title' => t('Acquia Lift'),
         '#href' => 'admin/structure/personalize',
@@ -929,27 +1343,14 @@ function acquia_lift_navbar() {
             'class' => array('navbar-icon', 'navbar-icon-acquia-lift', 'navbar-tab'),
           ),
         ),
-      ),
-      'tray' => array(
-        '#heading' => t('Personalization controls'),
-        'navbar_personalization' => array(
-          '#type' => 'container',
-          '#attributes' => array(
-            'class' => array('navbar-menu-acquia-lift-controls', 'acquia-lift-controls'),
-          ),
-          'personalization' => menu_tree_output($menu),
-        ),
-        '#wrapper_attributes' => array(
-          'class' => array('navbar-tray-acquia-lift'),
-        ),
-      ),
-      '#attached' => array(
+      );
+      // Add the library for the navbar integration.
+      $items['acquia_lift']['#attached'] = array(
         'library' => array(
           array('acquia_lift', 'acquia_lift.navbar')
         ),
-      ),
-      '#weight' => 20,
-    );
+      );
+    }
   }
 
   return $items;

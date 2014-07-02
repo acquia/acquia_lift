@@ -7,6 +7,7 @@
 var pathRegex = /^(?:[\/\?\#])*(.*)/;
 
 var reportPath = '/admin/structure/personalize/manage/acquia-lift-placeholder/report';
+var statusPath = '/admin/structure/personalize/manage/acquia-lift-placeholder/status';
 
 Drupal.behaviors.acquiaLiftPersonalize = {
   attach: function (context) {
@@ -14,34 +15,35 @@ Drupal.behaviors.acquiaLiftPersonalize = {
     var ui = Drupal.acquiaLiftUI;
     if (settings) {
       // Build models for menus that don't have them yet.
-      _.each(['option_sets', 'campaigns'], function (type) {
-        if (settings[type]) {
-          looper(settings[type], function (obj, key) {
-            // Create a collection for groups of option sets in the same campaign.
-            switch (type) {
-              case 'option_sets':
-                var campaign = obj.agent;
-                if (!ui.collections[type][campaign]) {
-                  ui.collections[type][campaign] = new Backbone.Collection([], {
-                    model: ui[ui.objectMap[type] + 'Model']
-                  });
-                }
-                if (!ui.collections[type][campaign].findWhere({osid: obj.osid})) {
-                  ui.collections[type][campaign].add(obj);
-                }
-                break;
-              case 'campaigns':
-                if (!ui.collections[type]) {
-                  ui.collections[type] = new ui.MenuCampaignsCollection([]);
-                }
-                if (!ui.collections[type].findWhere({name: obj.name})) {
-                  ui.collections[type].add(obj);
-                }
-                break;
-            }
-          });
+      if (!ui.collections['campaigns']) {
+        ui.collections['campaigns'] = new ui.MenuCampaignCollection([]);
+      }
+      looper(settings.campaigns, function (obj, key) {
+        if (!ui.collections['campaigns'].findWhere({name: obj.name})) {
+          ui.collections['campaigns'].add(obj);
         }
       });
+      looper(settings.option_sets, function (obj, key) {
+        var campaign = obj.agent;
+        if (!ui.collections['option_sets'][campaign]) {
+          ui.collections['option_sets'][campaign] = new Backbone.Collection([], {
+            model: ui[ui.objectMap['option_sets'] + 'Model']
+          });
+        }
+        if (!ui.collections['option_sets'][campaign].findWhere({osid: obj.osid})) {
+          ui.collections['option_sets'][campaign].add(obj);
+        }
+      });
+
+      // Create the menu view to handle general show/hide functionality for
+      // whole menu sections.
+      if (!ui.hasOwnProperty('menuView')) {
+        var menu = $('.navbar-tray-acquia-lift', context).get(0);
+        ui.menuView = new ui.MenuView({
+          collection: ui.collections.campaigns,
+          el: menu
+        });
+      }
 
       // Process the Campaigns, Content Variations and Goals top-level links
       // in the Acquia Lift menu.
@@ -50,7 +52,6 @@ Drupal.behaviors.acquiaLiftPersonalize = {
           // Option menus.
           var $link = $(item);
           var type = $link.data('acquia-lift-personalize');
-          var text = $link.text();
           var $controls = $link.closest('li').removeClass('leaf').addClass('expanded');
           var $element, collection;
           // Load the preview assets.
@@ -66,17 +67,30 @@ Drupal.behaviors.acquiaLiftPersonalize = {
               case 'campaigns':
                 collection = ui.collections[category];
                 $element = $(Drupal.theme('aquiaLiftCount'));
-                if (collection) {
+                if (collection && collection.length > 0) {
                   ui.views.push((new ui[ui.objectMap[category] + 'CountView']({
                     el: $element.get(0),
                     model: collection
                   })));
+                  // Create the view to show the selected name.
+                  ui.views.push(new ui.MenuCampaignsView({
+                    el: $link,
+                    collection: collection
+                  }));
+                } else {
+                  // There are no campaigns.
+                  element = document.createElement('li');
+                  ui.views.push((new ui.MenuCampaignView({
+                    el: element,
+                    model: null
+                  })));
+                  $('[data-acquia-lift-personalize-type="campaigns"]').prepend(element);
                 }
                 $element.prependTo($link);
                 break;
               case 'option_sets':
                 // Loop through the campaigns and add an empty count for each one.
-                if (ui.collections.campaigns) {
+                if (ui.collections.campaigns && ui.collections.campaigns.length > 0) {
                   _.each(ui.collections.campaigns.models, function (campaignModel) {
                     $element = $(Drupal.theme('aquiaLiftCount'));
                     ui.views.push((new ui[ui.objectMap[category] + 'CountEmptyView']({
@@ -86,10 +100,6 @@ Drupal.behaviors.acquiaLiftPersonalize = {
                     })));
                     $element.prependTo($link);
                   });
-                }
-                // Or if no campaigns exist, just state zero.
-                else {
-                  $(Drupal.theme('aquiaLiftCount')).prependTo($link);;
                 }
                 // Loop through the option set models, keyed by campaign, and
                 // create a view for each.
@@ -105,12 +115,12 @@ Drupal.behaviors.acquiaLiftPersonalize = {
                 break;
               case 'goals':
                 // Loop through the campaigns and add an empty count for each one.
-                if (ui.collections.campaigns) {
+                if (ui.collections.campaigns && ui.collections.campaigns.length > 0) {
                   _.each(ui.collections.campaigns.models, function (campaignModel) {
                     $element = $(Drupal.theme('aquiaLiftCount'));
                     ui.views.push((new ui[ui.objectMap[category] + 'CountView']({
                       el: $element.get(0),
-                      model: campaignModel,
+                      model: campaignModel
                     })));
                     $element.prependTo($link);
                   });
@@ -125,19 +135,21 @@ Drupal.behaviors.acquiaLiftPersonalize = {
       // top-level links in the Acquia Lift menu.
       _.each(['campaigns', 'option_sets'], function (category) {
         var $typeMenus = $('[data-acquia-lift-personalize-type="' + category + '"]').once('acquia-lift-personalize-menu-contents');
+        var campaignsWithOptions = {};
         if ($typeMenus.length) {
           $typeMenus
             .each(function (index, element) {
               var $menu = $(element);
               var type = $menu.data('acquia-lift-personalize-type');
               var model, element;
-              looper(settings[type], function (obj, key) {
+                looper(settings[type], function (obj, key) {
                 // Find the right model.
                 switch (type) {
                   case 'option_sets':
                     // If the menu already has a link for this setting, abort.
                     if (!$menu.find('[data-acquia-lift-personalize-agent="' + obj.agent + '"][data-acquia-lift-personalize-id="' + key + '"].acquia-lift-preview-option-set').length) {
                       var campaign = obj.agent;
+                      campaignsWithOptions[obj.agent] = obj.agent;
                       model = ui.collections[type][campaign].findWhere({'osid': key});
                     }
                     break;
@@ -159,19 +171,48 @@ Drupal.behaviors.acquiaLiftPersonalize = {
                   // Build a view for campaign goals.
                   if (type === 'campaigns') {
                     var $goalsMenu = $('[data-acquia-lift-personalize-type="goals"]');
-                    looper(model.get('goals') || {}, function (obj, key) {
+                    var modelGoals = model.get('goals');
+                    if (modelGoals) {
+                      looper(modelGoals, function (obj, key) {
+                        element = document.createElement('li');
+                        ui.views.push((new ui[ui.objectMap['goals'] + 'View']({
+                          el: element,
+                          model: model,
+                          goalID: key,
+                          goalLabel: obj
+                        })));
+                        $goalsMenu.prepend(element);
+                      });
+                    } else {
+                      // Build an empty campaign goal view.
                       element = document.createElement('li');
                       ui.views.push((new ui[ui.objectMap['goals'] + 'View']({
                         el: element,
                         model: model,
-                        goalID: key,
-                        goalLabel: obj
+                        goalID: null,
+                        goalLabel: null
                       })));
                       $goalsMenu.prepend(element);
-                    });
+                    }
                   }
                 }
               });
+
+              if (category === 'option_sets') {
+                looper(settings.campaigns, function (obj, key) {
+                  if (!campaignsWithOptions.hasOwnProperty(key)) {
+                    // Add a view to indicate that there are no option sets for
+                    // a campaign.
+                    model = ui.collections.campaigns.findWhere({'name': key});
+                    element = document.createElement('li');
+                    ui.views.push((new ui.MenuOptionEmptyView({
+                      el: element,
+                      model: model
+                    })));
+                    $menu.prepend(element);
+                  }
+                })
+              }
             });
           // If Navbar module is enabled, process the links.
           if (Drupal.behaviors.acquiaLiftNavbarMenu) {
@@ -179,19 +220,6 @@ Drupal.behaviors.acquiaLiftPersonalize = {
           }
         }
       });
-
-      // Build View for the current campaign.
-      if ($('.acquia-lift-current-campaign.navbar-menu-item').length == 0) {
-        var $currentli = $('<li><a href="" class="acquia-lift-current-campaign visitor-actions-ui-ignore navbar-menu-item acquia-lift-active">' + Drupal.t('Current') + '</a></li>');
-        $currentli.append('<ul class="menu"><li class="first last leaf"><a href="">' + Drupal.t('Edit campaign') + '</a></li></ul>');
-        ui.views.push(new ui.MenuCurrentCampaignView({
-          el: $currentli,
-          model: ui.collections['campaigns'],
-          collection: ui.collections['campaigns']
-        }));
-        $('.acquia-lift-campaigns').closest('li').after($currentli);
-      }
-
 
       // Build Views for the Option Set groups.
       var $optionSetGroups = $('[data-acquia-lift-personalize-agent].acquia-lift-preview-option-set').once('acquia-lift-personalize-option-sets');
@@ -217,7 +245,7 @@ Drupal.behaviors.acquiaLiftPersonalize = {
         $('[href="' + reportPath + '"]')
           .once('acquia-lift-personalize-report')
           .each(function (index, element) {
-            ui.views.push((new ui.MenuResultsView({
+            ui.views.push((new ui.MenuReportsView({
               el: element.parentNode,
               model: ui.collections['campaigns'],
               collection: ui.collections['campaigns']
@@ -225,6 +253,21 @@ Drupal.behaviors.acquiaLiftPersonalize = {
           });
       } else {
         $('[href="' + reportPath + '"]').hide();
+      }
+
+      // Create a View for the Status link.
+      if (ui.collections.campaigns) {
+        $('[href="' + statusPath + '"]')
+          .once('acquia-lift-personalize-status')
+          .each(function (index, element) {
+            ui.views.push(new ui.MenuStatusView({
+              el: element.parentNode,
+              model: ui.collections['campaigns'],
+              collection: ui.collections['campaigns']
+            }));
+          });
+      } else {
+        $('[href="' + statusPath + '"]').hide();
       }
 
       // Refresh event delegation. This is necessary to rebind event delegation
@@ -256,6 +299,12 @@ Drupal.behaviors.acquiaLiftPersonalize = {
           } else if (obj.winner !== null && obj.winner !== undefined) {
             // Otherwise a winner should be the default if one has been defined.
             index = obj.winner;
+          }
+          // The first option key isn't always 0.
+          if (!obj.options.hasOwnProperty(index)) {
+            var keys = _.keys(obj.options);
+            keys.sort;
+            index = keys[0];
           }
           model.set('activeOption', obj.options[index].option_id);
         }
@@ -361,7 +410,7 @@ $.extend(Drupal.acquiaLiftUI, {
   // Common View/Model name components.
   objectMap: {
     option_sets: 'MenuOption',
-    campaigns: 'MenuCampaigns',
+    campaigns: 'MenuCampaign',
     goals: 'MenuGoals'
   },
 
@@ -407,14 +456,41 @@ $.extend(Drupal.acquiaLiftUI, {
   },
 
   /**
-   * The model for a menu of campaign links.
+   * The model for a campaign.
    */
-  MenuCampaignsModel: Backbone.Model.extend({
+  MenuCampaignModel: Backbone.Model.extend({
     defaults: {
       label: '',
       links: {},
       name: '',
-      isActive: false
+      isActive: false,
+      verified: false
+    },
+
+    /**
+     * Updates the status of a campaign.
+     *
+     * @param newStatus
+     *   The new status value for the campaign.
+     */
+    updateStatus: function (newStatus) {
+      var updateUrl = '/admin/structure/personalize/manage/' + this.get('name') + '/ajax_status/' + newStatus;
+      var model = this;
+      $.getJSON( updateUrl, function( data ) {
+        if (data.success) {
+          // Update the model current and next status values.
+          model.set('status', data.currentStatus);
+          model.set('nextStatus', data.nextStatus);
+
+          // We also need to update the status value of the campaign in the
+          // Drupal.setttings object.
+          // @todo: Make this an event dispatch that is handled outside of this
+          // application scope.
+          // Leaving for now since the reliance on drupal settings is all over
+          // the application so it's not horrible.
+          Drupal.settings.personalize.campaigns[model.get('name')].status = data.currentStatus;
+        }
+      });
     }
   }),
 
@@ -449,7 +525,7 @@ $.extend(Drupal.acquiaLiftUI, {
   }),
 
   /**
-   * View for groups of options, essentially the option set.
+   * View for an option set (which contains options).
    */
   MenuOptionSetView: ViewBase.extend({
 
@@ -473,7 +549,31 @@ $.extend(Drupal.acquiaLiftUI, {
   }),
 
   /**
-   * Backbone View/Controller for options sets.
+   * View to show when there are no option sets for a campaign.
+   */
+  MenuOptionEmptyView: ViewBase.extend({
+    initialize: function (options) {
+      this.model.on('change:isActive', this.render, this);
+
+      this.build();
+      this.render(this.model, this.model.get('isActive'));
+    },
+
+    build: function () {
+      var html = '';
+      html += Drupal.theme('acquiaLiftPersonalizeNoMenuItem', {
+        type: 'variation sets'
+      });
+      this.$el.html(html);
+    },
+
+    render: function(model, isActive) {
+      this.$el.toggle(isActive);
+    }
+  }),
+
+  /**
+   * Backbone View/Controller for an option within an option set.
    */
   MenuOptionView: ViewBase.extend({
 
@@ -567,9 +667,86 @@ $.extend(Drupal.acquiaLiftUI, {
   }),
 
   /**
-   * Backbone View/Controller for campaigns.
+   * View/controller for full menu list.
+   */
+  MenuView: ViewBase.extend({
+
+    /**
+     * {@inheritdoc}
+     */
+    initialize: function (options) {
+      // The campaign collection.
+      this.collection = options.collection;
+      this.collection.on('change', this.render, this);
+      this.render();
+    },
+
+    /**
+     * {@inheritdoc}
+     */
+    render: function() {
+      var hasCampaigns = this.collection.length > 0;
+      var activeCampaign = this.collection.findWhere({'isActive': true});
+      // Show or hide relevant menus.
+      if (hasCampaigns && activeCampaign) {
+        this.$el.find('[data-acquia-lift-personalize="goals"]').parents('li').show();
+        this.$el.find('[data-acquia-lift-personalize="option_sets"]').parents('li').show();
+      } else {
+        this.$el.find('[data-acquia-lift-personalize="goals"]').parents('li').hide();
+        this.$el.find('[data-acquia-lift-personalize="option_sets"]').parents('li').hide();
+      }
+    },
+
+    getMenuActive: function() {
+      return this.$el.hasClass('navbar-active');
+    },
+
+    setMenuActive: function(isActive) {
+      if (isActive) {
+        this.$el.addClass('navbar-active');
+      } else {
+        this.$el.removeClass('navbar-active');
+      }
+    }
+  }),
+
+  /**
+   * View/controller for the campaign menu header.
    */
   MenuCampaignsView: ViewBase.extend({
+
+    /**
+     * {@inheritdoc}
+     */
+    initialize: function (options) {
+      this.collection = options.collection;
+      this.collection.on('change', this.render, this);
+    },
+
+    /**
+     * {@inheritdoc}
+     *
+     * @todo: Move count into this view instead of detaching and re-adding.
+     */
+    render: function () {
+      var activeCampaign = this.collection.findWhere({'isActive': true});
+      var $count = this.$el.find('i.acquia-lift-personalize-type-count').detach();
+      if (!activeCampaign) {
+        var label = Drupal.t('All campaigns');
+      } else {
+        var label = Drupal.theme.acquiaLiftCampaignContext({'label': activeCampaign.get('label')});
+      }
+      this.$el.html(label);
+      if ($count.length > 0) {
+        this.$el.prepend($count);
+      }
+    }
+  }),
+
+  /**
+   * Backbone View/Controller for a single campaigns.
+   */
+  MenuCampaignView: ViewBase.extend({
 
     events: {
       'click': 'onClick'
@@ -579,11 +756,13 @@ $.extend(Drupal.acquiaLiftUI, {
      * {@inheritdoc}
      */
     initialize: function (options) {
-      this.model.on('change:isActive', this.render, this);
-      this.model.on('destroy', this.remove, this);
+      if (this.model) {
+        this.model.on('change:isActive', this.render, this);
+        this.model.on('destroy', this.remove, this);
+      }
 
       this.build(this.model);
-      this.render(this.model, this.model.get('isActive'));
+      this.render(this.model, this.model ? this.model.get('isActive') : false);
     },
 
     /**
@@ -601,16 +780,22 @@ $.extend(Drupal.acquiaLiftUI, {
      */
     build: function (model) {
       var html = '';
-      html += Drupal.theme('acquiaLiftPersonalizeCampaignMenuItem', {
-        link: {
-          'id': model.get('name'),
-          'label': model.get('label'),
-          'href': model.get('links').view
-        },
-        edit: {
-          'href': model.get('links').edit
-        }
-      });
+      if (model) {
+        html += Drupal.theme('acquiaLiftPersonalizeCampaignMenuItem', {
+          link: {
+            'id': model.get('name'),
+            'label': model.get('label'),
+            'href': model.get('links').view
+          },
+          edit: {
+            'href': model.get('links').edit
+          }
+        });
+      } else {
+        html += Drupal.theme('acquiaLiftPersonalizeNoMenuItem', {
+          'type': 'campaigns'
+        });
+      }
       this.$el.html(html);
     },
 
@@ -672,11 +857,17 @@ $.extend(Drupal.acquiaLiftUI, {
      */
     build: function (model) {
       var html = '';
-      html += Drupal.theme('acquiaLiftPersonalizeGoal', {
-        campaignID: model.get('name'),
-        name: this.goalID,
-        label: this.goalLabel
-      });
+      if (this.goalID) {
+        html += Drupal.theme('acquiaLiftPersonalizeGoal', {
+          campaignID: model.get('name'),
+          name: this.goalID,
+          label: this.goalLabel
+        });
+      } else {
+        html += Drupal.theme('acquiaLiftPersonalizeNoMenuItem', {
+          type: 'goals'
+        });
+      }
       this.$el.html(html);
     }
   }),
@@ -684,7 +875,7 @@ $.extend(Drupal.acquiaLiftUI, {
   /**
    * Display the count of campaigns.
    */
-  MenuCampaignsCountView: ViewBase.extend({
+  MenuCampaignCountView: ViewBase.extend({
     /**
      * {@inheritdoc}
      */
@@ -792,7 +983,7 @@ $.extend(Drupal.acquiaLiftUI, {
   /**
    * Updates the results link to reflect the active campaign.
    */
-  MenuResultsView: ViewBase.extend({
+  MenuReportsView: ViewBase.extend({
 
     /**
      * {@inheritdoc}
@@ -815,16 +1006,24 @@ $.extend(Drupal.acquiaLiftUI, {
         this.$el
           .find('a[href]')
           .attr('href', '')
-          .text('Results')
           .end()
           .hide();
       }
       else {
+        // The report link will be empty if reports are not available for this
+        // campaign agent type.
+        var reportLink = activeCampaign.get('links').report;
+        if (reportLink.length == 0) {
+          reportLink = 'javascript:void(0);';
+          this.$el.find('a[href]').addClass('acquia-lift-menu-disabled');
+        } else {
+          this.$el.find('a[href]').removeClass('acquia-lift-menu-disabled');
+        }
         var name = activeCampaign.get('name');
         var label = activeCampaign.get('label');
         this.$el
           .find('a[href]')
-          .attr('href', activeCampaign.get('links').report)
+          .attr('href', reportLink)
           .text(Drupal.t('Reports'))
           .end()
           .show();
@@ -832,11 +1031,22 @@ $.extend(Drupal.acquiaLiftUI, {
     }
   }),
 
-  MenuCurrentCampaignView: ViewBase.extend({
-    /*
+  /**
+   * Updates the status link to the correct verb for each campaign.
+   *
+   * Also handles Ajax submission to change the status of the selected campaign.
+   */
+  MenuStatusView: ViewBase.extend({
+
+    events: {
+      'click .acquia-lift-status-update': 'updateStatus'
+    },
+
+    /**
      * {@inheritdoc}
      */
     initialize: function (options) {
+      _.bindAll(this, "updateStatus");
       this.collection = options.collection;
       if (!this.model) {
         return;
@@ -845,30 +1055,62 @@ $.extend(Drupal.acquiaLiftUI, {
       this.render(this.model);
     },
 
-    /*
+    /**
      * {@inheritdoc}
      */
     render: function (model) {
       var activeCampaign = this.collection.findWhere({'isActive': true});
       if (!activeCampaign) {
-        this.$el
-          .find('a[href]')
-          .attr('href', '')
-          .end()
-          .hide();
+        this.$el.hide();
       }
       else {
-        var name = activeCampaign.get('name');
-        var label = activeCampaign.get('label');
+        var nextStatus = activeCampaign.get('nextStatus');
         this.$el
           .find('a[href]')
-          .attr('href', activeCampaign.get('links').edit)
+          .attr('href', 'javascript:void(0);')
+          .text(nextStatus.text)
+          .data('acquia-lift-campaign-status', nextStatus.status)
+          .removeClass('acquia-lift-menu-disabled')
           .end()
           .show();
-        this.$el.find('a[href]').first().text(Drupal.t('Current: !agent', {'!agent': label}))
+        // The campaign must be verified in order to change the status.
+        if (activeCampaign.get('verified') == true) {
+          this.$el.find('a[href]').removeClass('acquia-lift-menu-disabled');
+        } else {
+          this.$el.find('a[href]').addClass('acquia-lift-menu-disabled');
+        }
       }
+    },
+
+    /**
+     * {@inheritdoc}
+     */
+    build: function(model) {
+      this.$el
+        .find('a[href]')
+        .attr('href', 'javascript:void(0)')
+        .addClass('acquia-lift-status-update');
+    },
+
+    /**
+     * Update the status of the current campaign to its next status value.
+     *
+     * @param event
+     *   Click event that triggered this function.
+     */
+    updateStatus: function(event) {
+      var newStatus = $(event.target).data('acquia-lift-campaign-status');
+      var activeModel = this.collection.findWhere({'isActive': true});
+      if (!newStatus || !activeModel || activeModel.get('verified') == false) {
+        return;
+      }
+      // Make link disabled while update happens.
+      // The disabled class will be removed when re-rendered.
+      this.$el.find('a[href]').addClass('acquia-lift-menu-disabled');
+      activeModel.updateStatus(newStatus);
     }
   }),
+
 
   /**
    * Toggles the 'add content variation' trigger.
@@ -953,8 +1195,8 @@ $.extend(Drupal.acquiaLiftUI, {
   /**
    * Provides campaign model management.
    */
-  MenuCampaignsCollection: Backbone.Collection.extend({
-    model: Drupal.acquiaLiftUI.MenuCampaignsModel,
+  MenuCampaignCollection: Backbone.Collection.extend({
+    model: Drupal.acquiaLiftUI.MenuCampaignModel,
     initialize: function () {
       this.on('change:isActive', this.changeVisibility, this);
     },
@@ -1162,6 +1404,21 @@ Drupal.theme.acquiaLiftPersonalizeGoal = function (options) {
 };
 
 /**
+ * Returns an empty campaign menu item.
+ */
+Drupal.theme.acquiaLiftPersonalizeNoMenuItem = function (options) {
+  var attrs = [
+    'class="acquia-lift-menu-disabled"'
+  ];
+
+  var item = '\n<span ' + attrs.join(' ') + '>\n';
+  item += Drupal.t('No @type', {'@type': options.type}) + '\n';
+  item += '</span>\n';
+
+  return item;
+}
+
+/**
  * Returns a menu item that contains a link to an option set option.
  *
  * @param object options
@@ -1206,7 +1463,11 @@ Drupal.theme.acquiaLiftPreviewMenuItem = function (options) {
  * @return string
  */
 Drupal.theme.acquiaLiftPersonalizeCampaignMenuItem = function (options) {
-  var item = '';
+  var editAttrs = [
+    'class="acquia-lift-campaign-edit acquia-lift-menu-link"',
+    'title="' + Drupal.t('Edit the @campaign campaign', {'@campaign': options.link.label}) + '"',
+    'href="' + options.edit.href + '"'
+  ];
 
   var linkAttrs = [
     'class="acquia-lift-campaign acquia-lift-campaign--' + formatClass(options.link.id) + ' visitor-actions-ui-ignore"',
@@ -1217,7 +1478,10 @@ Drupal.theme.acquiaLiftPersonalizeCampaignMenuItem = function (options) {
     'aria-pressed="false"'
   ];
 
-  item += '<a ' + linkAttrs.join(' ') + '>' + options.link.label + '</a>\n';
+  var item = '<div class="acquia-lift-menu-item"><a ' + linkAttrs.join(' ') + '>' + options.link.label + '</a>';
+  item += '<a ' + editAttrs.join(' ') + '>' + Drupal.t('Edit') + '</a>\n';
+  item += '</div>\n';
+  //item += '<a ' + linkAttrs.join(' ') + '>' + options.link.label + '</a>\n';
 
   return item;
 };
@@ -1228,6 +1492,15 @@ Drupal.theme.acquiaLiftPersonalizeCampaignMenuItem = function (options) {
 Drupal.theme.aquiaLiftCount = function (options) {
   return '<i class="acquia-lift-personalize-type-count acquia-lift-empty"><span>0</span>&nbsp;</i>';
 };
+
+/**
+ * Returns the HTML for the selected campaign context label.
+ */
+Drupal.theme.acquiaLiftCampaignContext = function (options) {
+  var label = Drupal.t('Selected: ');
+  label += '<span class="acquia-lift-active">' + options.label + '</span>';
+  return label;
+}
 
 /**
  * Throbber.

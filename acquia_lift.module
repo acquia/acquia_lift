@@ -597,6 +597,22 @@ function acquia_lift_library() {
     ),
   );
 
+  // Message box
+  $libraries['acquia_lift.message_box'] = array(
+    'title' => 'Assets to display a message box.',
+    'website' => '',
+    'version' => VERSION,
+    'js' => array(
+      $path . '/js/acquia_lift.messagebox.js' => $options,
+    ),
+    'css' => array(
+      $path . '/css/acquia_lift.messagebox.css' => array(),
+    ),
+    'dependencies' => array(
+      array('system', 'jquery'),
+    ),
+  );
+
   // Navbar module integration.
   $libraries['acquia_lift.navbar'] = array(
     'title' => 'Assets for integration with the Navbar module',

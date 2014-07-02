@@ -52,6 +52,13 @@ function acquia_lift_build_page(&$page) {
 
   // Attach client-side controls for managing personalized content.
   _acquia_lift_navigation_attach_assets($page['page_top'], $is_admin);
+
+  // Necessary ctools integration for modal windows.  These are used only for
+  // administrative functionality.
+  if (user_access('manage personalized content')) {
+    ctools_include('modal');
+    ctools_modal_add_js();
+  }
 }
 
 /**
@@ -325,4 +332,89 @@ function acquia_lift_navbar_ui_pre_render_item($element) {
     array_unshift($element['tray']['#theme_wrappers'], 'acquia_lift_navbar_tray_heading_wrapper');
   }
   return $element;
+}
+/**
+ * =======================================================================
+ *  C A M P A I G N  M A N A G E M E N T  F L O W
+ * =======================================================================
+ */
+
+/**
+ * Create form callback.  Handles including the necessary files in order to
+ * load the campaign creation files relevant to AJAX calls.
+ *
+ * @param bool $ajax
+ *   Indicates if form is called with ajax support.
+ */
+function acquia_lift_create_campaign_callback($ajax) {
+  module_load_include('inc', 'personalize', 'personalize.admin');
+  return _acquia_lift_modal_get_form(
+    t('Create a campaign'),
+    'acquia_lift_create_campaign_form',
+    'personlize_agent_form',
+    $ajax
+  );
+}
+
+/**
+ * Loads the "create a campaign" simplified worklow window.
+ *
+ * @param bool $ajax
+ *   Indicates if the form is called via AJAX support.
+ */
+function acquia_lift_create_campaign_form($form, &$form_state) {
+  module_load_include('inc', 'personalize', 'personalize.admin');
+  $form = personalize_agent_build_basic_form(NULL, FALSE, NULL, TRUE);
+  return $simplified;
+}
+
+/**
+ * Helper function to load any form in a modal window.
+ *
+ * @param $model_title
+ *   The title to display in the modal window.
+ * @param $form_id
+ *   The form id to retrieve for the modal window.
+ * @param $alternate_form_id
+ *   The alternate form that should be shown in case of no AJAX.
+ * @param ...
+ *   Any parameters to be passed along to drupal_get_form with the form_id.
+ * @param bool $ajax
+ *   Indicates if this is called with ajax support.
+ * @return mixed
+ *   The page to be displayed or the AJAX commands.
+ */
+function _acquia_lift_modal_get_form() {
+  $args = func_get_args();
+  $modal_title = array_shift($args);
+  $form_id = array_shift($args);
+  $alternate_form_id = array_shift($args);
+  $ajax = array_pop($args);
+
+  // If not AJAX-enabled, then just return the regular form.
+  if (!$ajax) {
+    array_unshift($args, $alternate_form_id);
+    return call_user_func_array('drupal_get_form', $args);
+  }
+
+  ctools_include('ajax');
+  ctools_include('modal');
+
+  $form_state = array(
+    'ajax' => TRUE,
+    'title' => $modal_title,
+  );
+
+  $commands = ctools_modal_form_wrapper($form_id, $form_state);
+  if (empty($commands)) {
+    $commands[] = ctools_modal_command_loading();
+    if (!empty($_GET['destination'])) {
+      $commands[] = ctools_ajax_command_redirect($_GET['destination']);
+    }
+    else {
+      $commands[] = ctools_modal_command_dismiss();
+    }
+  }
+  $page = array('#type' => 'ajax', '#commands' => $commands);
+  ajax_deliver($page);
 }

@@ -59,6 +59,14 @@ function acquia_lift_menu() {
     // @see acquia_lift_process_queue()
     'access callback' => TRUE,
   );
+  // Ajax callback to open the create campaign screen in a modal window.
+  $items['admin/structure/personalize/add/%ctools_js'] = array(
+    'page callback' => 'acquia_lift_create_campaign_callback',
+    'page arguments' => array(4),
+    'access arguments' => array('manage personalized content'),
+    'type' => MENU_CALLBACK,
+    'file' => 'acquia_lift.ui.inc',
+  );
   return $items;
 }
 

@@ -510,6 +510,7 @@ class AcquiaLiftAgent extends PersonalizeAgentBase implements PersonalizeAgentGo
       if (!in_array($point, $acquia_lift_points)) {
         $errors[] = t('Point @point has not been sync\'d to the Acquia Lift agent.', array('@point' => $point));
         $discrepancies = TRUE;
+        continue;
       }
       $acquia_lift_decisions = $this->liftAPI->getDecisionsForPoint($this->machineName, $point);
       foreach ($decisions as $decision_name => $options) {

@@ -788,10 +788,7 @@ class AcquiaLiftWebTest extends DrupalWebTestCase {
 
     // There should now be a js setting for triggering queue processing.
     $settings = $this->drupalGetSettings();
-    $expected_settings = array(
-      'sync_queue' => 1,
-    );
-    $this->assertEqual($expected_settings, $settings['acquia_lift']);
+    $this->assertEqual(1, $settings['acquia_lift']['sync_queue']);
     $expected_queue_items = array();
     $queued_agent_item = array(
       'method' => 'saveAgent',

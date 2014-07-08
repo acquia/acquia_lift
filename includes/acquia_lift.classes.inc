@@ -1527,6 +1527,16 @@ class DummyAcquiaLiftHttpClient implements AcquiaLiftDrupalHttpClientInterface {
         'features' => isset($this->data['features']) ? $this->data['features'] : array()
       );
     }
+    elseif (strpos($uri, 'agent-api') !== FALSE) {
+      $parsed = drupal_parse_url($uri);
+      $url_parts = explode('/', $parsed['path']);
+      $machine_name = array_pop($url_parts);
+
+      $data = array(
+        'machine-name' => $machine_name,
+        'status' => PERSONALIZE_STATUS_NOT_STARTED,
+      );
+    }
     return $this->generateDummyResponse($data);
   }
 

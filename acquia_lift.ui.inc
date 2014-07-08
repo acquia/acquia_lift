@@ -352,7 +352,7 @@ function acquia_lift_create_campaign_callback($ajax) {
   return _acquia_lift_modal_get_form(
     t('Create a campaign'),
     'acquia_lift_create_campaign_form',
-    'personlize_agent_form',
+    'personalize_agent_form',
     $ajax
   );
 }
@@ -365,9 +365,53 @@ function acquia_lift_create_campaign_callback($ajax) {
  */
 function acquia_lift_create_campaign_form($form, &$form_state) {
   module_load_include('inc', 'personalize', 'personalize.admin');
-  $form = personalize_agent_build_basic_form(NULL, FALSE, NULL, TRUE);
-  return $simplified;
+  $basic_form = personalize_agent_build_basic_form(NULL, FALSE, array('agent'), TRUE);
+  $form['agent'] = $basic_form;
+  $form['actions']['submit_form'] = array(
+    '#type' => 'submit',
+    '#attributes' => array(
+      'class' => array('action-item-primary-active'),
+    ),
+    '#value' => t('Save campaign settings'),
+    '#ajax' => array(
+      'callback' => 'acquia_lift_create_campaign_form_ajax_submit',
+      'wrapper' => 'acquia-lift-create-campaign-form',
+      'effect' => 'fade',
+    ),
+  );
+  $form['actions']['reset'] = array(
+    '#type' => 'button',
+    '#button_type' => 'reset',
+    '#value' => t('Cancel'),
+    '#attributes' => array(
+      'class' => array('acquia-lift-cancel-button'),
+    ),
+    '#validate' => array(),
+    '#limit_validation_errors' => array(),
+    '#ajax' => array(
+      'callback' => 'acquia_lift_campaign_flow_cancel',
+      'wrapper' => 'acquia-lift-create-campaign-form',
+      'effect' => 'fade',
+    ),
+  );
+  return $form;
 }
+
+function acquia_lift_create_campaign_form_validate($form, &$form_state) {
+  module_load_include('inc', 'personalize', 'personalize.admin');
+  personalize_agent_form_validate($form, $form_state);
+}
+
+/**
+ * Submit handler to create a campaign from the Acquia Lift UI flow.
+ */
+function acquia_lift_create_campaign_form_submit($form, &$form_state) {
+  module_load_include('inc', 'personalize', 'personalize.admin');
+  $agent_data = _personalize_agent_from_form_values($form_state['values']['agent']['agent_basic_info']);
+  personalize_agent_save($agent_data);
+}
+
+
 
 /**
  * Helper function to load any form in a modal window.
@@ -418,6 +462,15 @@ function _acquia_lift_modal_get_form() {
   }
   $page = array('#type' => 'ajax', '#commands' => $commands);
   ajax_deliver($page);
+}
+
+/**
+ * AJAX callback to cancel the campaign creation flow.
+ */
+function acquia_lift_campaign_flow_cancel($form, &$form_state) {
+  ctools_include('modal');
+  $commands[] = ctools_modal_command_dismiss();
+  return $commands;
 }
 
 /**

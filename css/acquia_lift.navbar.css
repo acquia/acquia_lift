@@ -85,9 +85,6 @@
 #navbar-administration .navbar-tray-acquia-lift.navbar-tray-horizontal .acquia-lift-personalize-type-count.acquia-lift-empty span {
   background-color: gray;
 }
-#navbar-administration .acquia-lift-campaigns .navbar-level-2 > * > *:last-child {
-  padding-right: 1.667em;
-}
 
 /* Campaign drop-down */
 #navbar-administration .acquia-lift-menu-item .acquia-lift-campaign {
@@ -95,6 +92,7 @@
 }
 #navbar-administration .acquia-lift-menu-item .acquia-lift-campaign-edit {
   float: right;
+  margin-left: 1.667em;
 }
 
 /* Displayed as links within menus */

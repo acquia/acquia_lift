@@ -664,6 +664,22 @@ function acquia_lift_library() {
     ),
   );
 
+  // Message box
+  $libraries['acquia_lift.message_box'] = array(
+    'title' => 'Assets to display a message box.',
+    'website' => '',
+    'version' => VERSION,
+    'js' => array(
+      $path . '/js/acquia_lift.messagebox.js' => $options,
+    ),
+    'css' => array(
+      $path . '/css/acquia_lift.messagebox.css' => array(),
+    ),
+    'dependencies' => array(
+      array('system', 'jquery'),
+    ),
+  );
+
   // Navbar module integration.
   $libraries['acquia_lift.navbar'] = array(
     'title' => 'Assets for integration with the Navbar module',
@@ -1284,6 +1300,7 @@ function _acquia_lift_using_unified_navbar() {
 function _acquia_lift_navigation_attach_assets(&$element, $hide = FALSE) {
   $element['acquia_lift']['#access'] = user_access('manage personalized content');
   $element['acquia_lift']['#attached']['library'][] = array('acquia_lift', 'acquia_lift.personalize');
+  $element['acquia_lift']['#attached']['library'][] = array('acquia_lift', 'acquia_lift.message_box');
 
   if (_acquia_lift_using_unified_navbar()) {
     $element['acquia_lift']['nav']['#type'] = 'acquia_lift_navbar';

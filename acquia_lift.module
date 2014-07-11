@@ -65,7 +65,23 @@ function acquia_lift_menu() {
     'page arguments' => array(4),
     'access arguments' => array('manage personalized content'),
     'type' => MENU_CALLBACK,
-    'file' => 'acquia_lift.ui.inc',
+    'file' => 'acquia_lift.admin.inc',
+  );
+  // AJAX callback to create a new campaign in a modal window.
+  $items['admin/structure/acquia_lift/add/%/%ctools_js'] = array(
+    'page callback' => 'acquia_lift_create_campaign_type_callback',
+    'page arguments' => array(4, 5),
+    'access arguments' => array('manage personalized content'),
+    'type' => MENU_CALLBACK,
+    'file' => 'acquia_lift.admin.inc',
+  );
+  // AJAX callback to cancel a modal creation flow.
+  $items['admin/structure/acquia_lift/cancel/%ctools_js'] = array(
+    'page callback' => 'acquia_lift_campaign_flow_cancel',
+    'page arguments' => array(4),
+    'access arguments' => array('manage personalized content'),
+    'type' => MENU_CALLBACK,
+    'file' => 'acquia_lift.admin.inc',
   );
   return $items;
 }
@@ -122,6 +138,18 @@ function acquia_lift_theme() {
     ),
     'acquia_lift_goal_total' => array(
       'goal_total' => 0,
+    ),
+    // Campaign creation flow.
+    'acquia_lift_campaign_type_list' => array(
+      'path' => $path . '/theme',
+      'file' => 'acquia_lift.theme.inc',
+      'items' => array(),
+    ),
+    'acquia_lift_campaign_type_change' => array(
+      'path' => $path . '/theme',
+      'file' => 'acquia_lift.theme.inc',
+      'type' => '',
+      'change_link' => '',
     ),
     // Unified navbar themes.
     'acquia_lift_navbar' => array(

@@ -58,7 +58,6 @@ function acquia_lift_build_page(&$page) {
   if (user_access('manage personalized content')) {
     ctools_include('modal');
     ctools_modal_add_js();
-    $page['page_top']['#attached']['library'][] = array('acquia_lift', 'acquia_lift.message_box');
   }
 }
 
@@ -471,22 +470,4 @@ function acquia_lift_campaign_flow_cancel($form, &$form_state) {
   ctools_include('modal');
   $commands[] = ctools_modal_command_dismiss();
   return $commands;
-}
-
-/**
- * Returns an AJAX command to display a message box.
- *
- * @param $message
- *   The string message to display.  This message may include HTML text.
- * @return array
- *   A command array that can be returned via AJAX.
- */
-function acquia_lift_command_messagebox($message) {
-  if (is_array($message)) {
-    $message = drupal_render($message);
-  }
-  return array(
-    'command' => 'acquia_lift_message_box',
-    'data' => $message,
-  );
 }

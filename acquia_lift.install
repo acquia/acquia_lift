@@ -157,7 +157,7 @@ function _acquia_lift_build_menu($menu_name) {
         'data-acquia-lift-personalize-mode' => 'campaign',
         'aria-role' => 'button',
         'aria-pressed' => 'false',
-        'class' => array('acquia-lift-campaign-new', 'visitor-actions-ui-ignore', 'ctools-use-modal'),
+        'class' => array('acquia-lift-campaign-new', 'visitor-actions-ui-ignore', 'ctools-use-modal', 'acquia-lift-menu-create', 'acquia-lift-menu-link'),
       ),
       'html' => FALSE,
     ),
@@ -358,6 +358,12 @@ function acquia_lift_update_7006() {
   menu_delete_links('acquia-lift-controls');
   _acquia_lift_build_menu('acquia-lift-controls');
 }
- /*
- * Update the campaigns menu to use a ctools modal.
+
+/**
+ * Update the campaigns menu to use simplified campaign modal process.
  */
+function acquia_lift_update_7007() {
+  menu_delete_links('acquia-lift-controls');
+  _acquia_lift_build_menu('acquia-lift-controls');
+}
+

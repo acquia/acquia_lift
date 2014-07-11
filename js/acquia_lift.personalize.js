@@ -1052,6 +1052,7 @@ $.extend(Drupal.acquiaLiftUI, {
         return;
       }
       this.model.on('change', this.render, this);
+      this.build(this.model);
       this.render(this.model);
     },
 

@@ -609,7 +609,10 @@ function acquia_lift_create_campaign_type_callback($type, $ajax) {
   if ($form_state['executed']) {
     $output = array(
       ctools_modal_command_dismiss(),
-      // @todo add a command to refresh the settings
+      ajax_command_settings(array('personalize' => array(
+        'activeCampaign' => personalize_get_campaign_context(),
+        'campaigns' => personalize_agent_get_settings(),
+      )), TRUE),
     );
   }
   $page = array('#type' => 'ajax', '#commands' => $output);
@@ -705,7 +708,7 @@ function acquia_lift_create_campaign_type_form_submit($form, &$form_state) {
   // Generate the machine name based on the name the user selected.
   $agent_data->machine_name = personalize_generate_machine_name($agent_data->label, 'personalize_agent_machine_name_exists');
   $agent = personalize_agent_save($agent_data);
-  personalize_set_campaign_context($agent);
+  personalize_set_campaign_context($agent->machine_name);
 }
 
 /**

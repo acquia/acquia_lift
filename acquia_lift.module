@@ -625,6 +625,44 @@ function acquia_lift_library() {
     ),
   );
 
+  // Note that there is an additional CSS file: acquia_lift.ctools.modal.css.
+  // It needs to be loaded separately in order to be processed after CTools
+  // default modal CSS.
+  $libraries['acquia_lift.modal'] = array(
+    'title' => 'Acquia Lift modal campaign management',
+    'website' => '',
+    'version' => VERSION,
+    'js' => array(
+      $path . '/js/acquia_lift.modal.js' => $options,
+      array(
+        'data' => array(
+          'acquia-lift-style' => array(
+            'modalSize' => array(
+              'type' => 'fixed',
+              'width' => 600,
+              'height' => 400,
+              'addWidth' => 0,
+              'addHeight' => 0,
+              'contentRight' => 0,
+              'contentBottom' => 0,
+            ),
+            'modalOptions' => array(
+              'background-color' => '#000000',
+            ),
+            'animation' => 'fadeIn',
+            'closeImage' => theme('image', array('path' => ctools_image_path('close.png', 'acquia_lift'), 'alt' => t('Close window'), 'title' => t('Close window'))),
+            'closeText' => '',
+          ),
+        ),
+        'type' => 'setting',
+      ),
+    ),
+    'dependencies' => array(
+      array('system', 'jquery'),
+      array('system', 'jquery.once'),
+    ),
+  );
+
   // Navbar module integration.
   $libraries['acquia_lift.navbar'] = array(
     'title' => 'Assets for integration with the Navbar module',

@@ -559,17 +559,28 @@ function acquia_lift_create_campaign_callback($ajax) {
   ctools_include('modal');
   ctools_modal_add_js();
 
+  $path = drupal_get_path('module', 'acquia_lift');
   $output = theme('acquia_lift_campaign_type_list', array(
     'items' => array(
       'ab' => array(
         'title' => t('A/B test'),
         'description' => t('Create variations of the content on your site to compare against each other.'),
         'url' => 'admin/structure/acquia_lift/add/ab',
+        'logo' => theme('image', array(
+          'path' => $path . '/images/campaign-type-ab.png',
+          'alt' => t('A/B test'),
+          'title' => t('Select this option to create an A/B test.'),
+        )),
       ),
       'custom' => array(
         'title' => t('Custom Lift campaign'),
         'description' => t('Custom campaigns allow you to create a content targeting or multi-variate campaign using the legacy campaign creation system.'),
         'url' => 'admin/structure/personalize/add/',
+        'logo' => theme('image', array(
+          'path' => $path . '/images/campaign-type-custom.png',
+          'alt' => t('Custom Lift campaign'),
+          'title' => t('Select this option to create a custom Lift campaign.'),
+        ))
       ),
     ),
   ));
@@ -632,7 +643,7 @@ function acquia_lift_create_campaign_type_form($form, &$form_state, $type) {
 
   ctools_add_js('ajax-responder');
 
-  $change_link = ctools_modal_text_button(t('Change type of test'), 'admin/structure/personalize/add/nojs', t('Change type of test'));
+  $change_link = ctools_modal_text_button(t('Change type of test'), 'admin/structure/personalize/add/nojs', t('Change type of test'), 'ctools-modal-acquia-lift-style');
   // Add individual forms specific to the type of campaign being created.
   switch ($type) {
     case 'ab':

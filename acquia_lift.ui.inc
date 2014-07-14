@@ -57,7 +57,13 @@ function acquia_lift_build_page(&$page) {
   // administrative functionality.
   if (user_access('manage personalized content')) {
     ctools_include('modal');
+    ctools_include('ajax');
     ctools_modal_add_js();
+
+    // Have to add styling here.  When added as part of a library it is always
+    // added before ctools and therefore cannot override styles.
+    $page['page_top']['#attached']['library'][] = array('acquia_lift', 'acquia_lift.modal');
+    ctools_add_css('acquia_lift.ctools.modal', 'acquia_lift');
   }
 }
 

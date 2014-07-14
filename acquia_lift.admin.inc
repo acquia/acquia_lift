@@ -723,13 +723,6 @@ function acquia_lift_create_campaign_type_form_submit($form, &$form_state) {
 }
 
 /**
- * AJAX submit handler for creating a new campaign.
- */
-function acquia_lift_create_campaign_type_form_ajax_submit($form, &$form_state) {
-  // Close the ctools modal and reload the campaign settings for the unibar.
-}
-
-/**
  * AJAX callback to cancel the campaign creation flow.
  *
  * @param $ajax

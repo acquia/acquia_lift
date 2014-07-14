@@ -69,16 +69,15 @@ Drupal.behaviors.acquiaLiftPersonalize = {
               case 'campaigns':
                 collection = ui.collections[category];
                 $element = $(Drupal.theme('acquiaLiftCount'));
-                //if (collection && collection.length > 0) {
-                  ui.views.push((new ui[ui.objectMap[category] + 'CountView']({
-                    el: $element.get(0),
-                    model: collection
-                  })));
-                  // Create the view to show the selected name.
-                  ui.views.push(new ui.MenuCampaignsView({
-                    el: $link,
-                    collection: collection
-                  }));
+                ui.views.push((new ui[ui.objectMap[category] + 'CountView']({
+                  el: $element.get(0),
+                  model: collection
+                })));
+                // Create the view to show the selected name.
+                ui.views.push(new ui.MenuCampaignsView({
+                  el: $link,
+                  collection: collection
+                }));
                 if (collection.length == 0) {
                   // There are no campaigns.
                   element = document.createElement('li');

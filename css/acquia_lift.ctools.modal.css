@@ -35,7 +35,7 @@ div.ctools-modal-content .modal-content .acquia-lift-campaign-type {
 }
 
 div.ctools-modal-content .modal-content .acquia-lift-campaign-type:hover {
-  background-color: #dcdcdc;
+  background-color: white;
 }
 
 div.ctools-modal-content .modal-content .acquia-lift-campaign-type:last-child {
@@ -76,24 +76,39 @@ div.ctools-modal-content .modal-content .acquia-lift-form-type {
 /* Button stylings from Ember theme to use for buttons within modal admin */
 div.ctools-modal-content .modal-content input[type="submit"],
 div.ctools-modal-content .modal-content .acquia-lift-cancel-button {
-  font-weight: 700;
+  -webkit-appearance: none;
+  display: inline-block;
+  -webkit-box-sizing: border-box;
+  -moz-box-sizing: border-box;
+  box-sizing: border-box;
+  margin: 0.2963em;
+  max-width: 100%;
+  overflow: visible;
+  line-height: 1.25em;
+  vertical-align: baseline;
+  border: none;
   -webkit-border-radius: 2px;
   -moz-border-radius: 2px;
   -ms-border-radius: 2px;
   -o-border-radius: 2px;
   border-radius: 2px;
-  border: none;
-  line-height: 1.25em;
-  vertical-align: middle;
-  margin: 0.2963em;
-  display: inline-block;
-  overflow: visible;
+  /* Reset all button fonts to a similar baseline in webkit. */
+  font: -webkit-small-control;
+  font-family: "Helvetica Neue", helvetica, "Segoe UI", segoe, "Ubuntu", "Droid Sans", "Arial", sans-serif;
+  font-weight: 700;
+  text-align: center;
+  text-decoration: none;
   cursor: pointer;
   outline: none;
-  text-decoration: none;
-  text-align: center;
-  box-sizing: border-box;
   padding: 0.70711em 1em;
+  font-size: 1em;
+}
+
+div.ctools-modal-content .modal-content input[type="submit"]:active {
+  text-decoration: none;
+  -webkit-box-shadow: 0 0 0 0.2963em rgba(221, 221, 221, 0.4);
+  -moz-box-shadow: 0 0 0 0.2963em rgba(221, 221, 221, 0.4);
+  box-shadow: 0 0 0 0.2963em rgba(221, 221, 221, 0.4);
 }
 
 div.ctools-modal-content .modal-content .action-item-primary-active {
@@ -102,7 +117,21 @@ div.ctools-modal-content .modal-content .action-item-primary-active {
   text-shadow: 0 1px 0 #002a42;
 }
 
+div.ctools-modal-content .modal-content .action-item-primary-active:hover,
+div.ctools-modal-content .modal-content .action-item-primary-active:active {
+  color: white;
+  background: #58b7ea;
+  text-shadow: 0 1px 0 #1a3646;
+}
+
 div.ctools-modal-content .modal-content .acquia-lift-cancel-button {
+  color: black;
+  background: #dddddd;
+  text-shadow: 0 1px 0 #f4f4f4;
+}
+
+div.ctools-modal-content .modal-content .acquia-lift-cancel-button:hover,
+div.ctools-modal-content .modal-content .acquia-lift-cancel-button:active {
   color: #303030;
   background: #e3e3e3;
   text-shadow: 0 1px 0 #f6f6f6;

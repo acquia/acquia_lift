@@ -69,7 +69,7 @@ Drupal.behaviors.acquiaLiftPersonalize = {
               case 'campaigns':
                 collection = ui.collections[category];
                 $element = $(Drupal.theme('acquiaLiftCount'));
-                if (collection && collection.length > 0) {
+                //if (collection && collection.length > 0) {
                   ui.views.push((new ui[ui.objectMap[category] + 'CountView']({
                     el: $element.get(0),
                     model: collection
@@ -79,13 +79,13 @@ Drupal.behaviors.acquiaLiftPersonalize = {
                     el: $link,
                     collection: collection
                   }));
-                } else {
+                if (collection.length == 0) {
                   // There are no campaigns.
                   element = document.createElement('li');
-                  ui.views.push((new ui.MenuCampaignView({
+                  ui.views.noCampaignsView = new ui.MenuCampaignView({
                     el: element,
-                    model: null
-                  })));
+                    model: null,
+                  });
                   $('[data-acquia-lift-personalize-type="campaigns"]').prepend(element);
                 }
                 $element.prependTo($link);
@@ -138,6 +138,11 @@ Drupal.behaviors.acquiaLiftPersonalize = {
           });
         }
       });
+
+      // Remove any empty campaign views if the campaigns are now populated.
+      if (ui.collections.campaigns.length > 0 && ui.views.hasOwnProperty('noCampaignsView')) {
+        ui.views.noCampaignsView.remove();
+      }
 
       // Build Views for contents of the Campaigns, Content Variations and Goals
       // top-level links in the Acquia Lift menu.
@@ -250,7 +255,7 @@ Drupal.behaviors.acquiaLiftPersonalize = {
       }
 
       // Create View for the Report link.
-      if (ui.collections.campaigns) {
+      if (ui.collections.campaigns.length > 0) {
         $('[href="' + reportPath + '"]')
           .once('acquia-lift-personalize-report')
           .each(function (index, element) {
@@ -265,7 +270,7 @@ Drupal.behaviors.acquiaLiftPersonalize = {
       }
 
       // Create a View for the Status link.
-      if (ui.collections.campaigns) {
+      if (ui.collections.campaigns.length > 0) {
         $('[href="' + statusPath + '"]')
           .once('acquia-lift-personalize-status')
           .each(function (index, element) {

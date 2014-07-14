@@ -275,7 +275,7 @@ function theme_acquia_lift_campaign_type_list($variables) {
   foreach ($items as $typestr => $campaign_type) {
     $html .= '<div class="acquia-lift-campaign-type clearfix">';
     $html .= '<div class="acquia-lift-campaign-logo">' . $campaign_type['logo'] . '</div>';
-    $html .= '<strong>';
+    $html .= '<div class="acquia-lift-campaign-title">';
     // Custom campaign types always go to a full campaign edit page.
     if ($typestr === 'custom') {
       $html .= l($campaign_type['title'], $campaign_type['url'], array('attributes' => array('class' => array('acquia-lift-campaign-select'))));
@@ -290,7 +290,7 @@ function theme_acquia_lift_campaign_type_list($variables) {
       $campaign_url = implode('/', $url_parts);
       $html .= ctools_modal_text_button($campaign_type['title'], $campaign_url, $campaign_type['title'], 'acquia-lift-campaign-select ctools-modal-acquia-lift-style');
     }
-    $html .= '</strong>';
+    $html .= '</div>';
     $html .= '<p>' . $campaign_type['description'] . '</p>';
     $html .= '</div>';
   }

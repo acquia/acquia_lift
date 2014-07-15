@@ -659,6 +659,7 @@ function acquia_lift_library() {
       ),
     ),
     'dependencies' => array(
+      array('acquia_lift', 'acquia_lift.message_box'),
       array('system', 'jquery'),
       array('system', 'jquery.once'),
     ),

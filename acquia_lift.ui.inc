@@ -339,21 +339,3 @@ function acquia_lift_navbar_ui_pre_render_item($element) {
   }
   return $element;
 }
-
-/**
- * Returns an AJAX command to display a message box.
- *
- * @param $message
- *   The string message to display.  This message may include HTML text.
- * @return array
- *   A command array that can be returned via AJAX.
- */
-function acquia_lift_command_messagebox($message) {
-  if (is_array($message)) {
-    $message = drupal_render($message);
-  }
-  return array(
-    'command' => 'acquia_lift_message_box',
-    'data' => $message,
-  );
-}

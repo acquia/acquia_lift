@@ -16,23 +16,24 @@ Drupal.behaviors.acquiaLiftPersonalize = {
     var addedCampaigns = {};
     if (settings) {
       // Build models for menus that don't have them yet.
-      if (!ui.collections['campaigns']) {
-        ui.collections['campaigns'] = new ui.MenuCampaignCollection([]);
+      if (!ui.collections.campaigns) {
+        ui.collections.campaigns = new ui.MenuCampaignCollection([]);
       }
       looper(settings.campaigns, function (obj, key) {
-        if (!ui.collections['campaigns'].findWhere({name: obj.name})) {
-          addedCampaigns[obj.name] = ui.collections['campaigns'].add(obj);
+        if (!ui.collections.campaigns.findWhere({name: obj.name})) {
+          ui.collections.campaigns.add(obj);
+          addedCampaigns[obj.name] = ui.collections.campaigns.findWhere({name: obj.name});
         }
       });
       looper(settings.option_sets, function (obj, key) {
         var campaign = obj.agent;
-        if (!ui.collections['option_sets'][campaign]) {
-          ui.collections['option_sets'][campaign] = new Backbone.Collection([], {
+        if (!ui.collections.option_sets[campaign]) {
+          ui.collections.option_sets[campaign] = new Backbone.Collection([], {
             model: ui[ui.objectMap['option_sets'] + 'Model']
           });
         }
-        if (!ui.collections['option_sets'][campaign].findWhere({osid: obj.osid})) {
-          ui.collections['option_sets'][campaign].add(obj);
+        if (!ui.collections.option_sets[campaign].findWhere({osid: obj.osid})) {
+          ui.collections.option_sets[campaign].add(obj);
         }
       });
 

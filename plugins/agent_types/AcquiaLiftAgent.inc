@@ -202,6 +202,10 @@ class AcquiaLiftAgent extends PersonalizeAgentBase implements PersonalizeAgentGo
   /**
    * Gets a simplified version of the optionsForm for use when
    * creating a simple A/B test.
+   *
+   * @todo: Split the simple A/B test functionality into it's own agent.  It
+   * will likely need other restrictions on it such as limiting the number
+   * of variations, etc.
    */
   public static function simpleABOptionsForm($agent_data) {
     return self::buildOptionsForm($agent_data, TRUE);

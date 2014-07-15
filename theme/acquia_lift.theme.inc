@@ -253,3 +253,61 @@ function theme_acquia_lift_report_overview($variables) {
   }
   return $output;
 }
+
+/**
+ * Theme function for a campaign type list.
+ *
+ * @param $variables
+ *   An associative array of variables including:
+ *   - items: An array of campaign types with the following keys
+ *     - type:  What to display for the type of campaign
+ *     - description: What to display as the description of the type
+ *     - url: The url to create a new campaign of that type.
+ *     - logo: Logo to denote the campaign type.
+ */
+function theme_acquia_lift_campaign_type_list($variables) {
+  ctools_include('modal');
+  ctools_include('ajax');
+  ctools_modal_add_js();
+
+  $items = $variables['items'];
+  $html = '<div class="acquia-lift-campaign-type-list">';
+  foreach ($items as $typestr => $campaign_type) {
+    $html .= '<div class="acquia-lift-campaign-type clearfix">';
+    $html .= '<div class="acquia-lift-campaign-logo">' . $campaign_type['logo'] . '</div>';
+    $html .= '<div class="acquia-lift-campaign-title">';
+    // Custom campaign types always go to a full campaign edit page.
+    if ($typestr === 'custom') {
+      $html .= l($campaign_type['title'], $campaign_type['url'], array('attributes' => array('class' => array('acquia-lift-campaign-select'))));
+    }
+    // All other campaign types open a form in a new modal.
+    else {
+      $url_parts = explode('/', $campaign_type['url']);
+      end($url_parts);
+      if (key($url_parts) != 'nojs') {
+        $url_parts[] = 'nojs';
+      }
+      $campaign_url = implode('/', $url_parts);
+      $html .= ctools_modal_text_button($campaign_type['title'], $campaign_url, $campaign_type['title'], 'acquia-lift-campaign-select ctools-modal-acquia-lift-style');
+    }
+    $html .= '</div>';
+    $html .= '<p>' . $campaign_type['description'] . '</p>';
+    $html .= '</div>';
+  }
+  $html .= '</div>';
+  return $html;
+}
+
+/**
+ * Theme function to change the type of form shown in the campaign creation
+ * process.
+ *
+ * @param $variables
+ *   An associative array of variables including:
+ *   - type:  The title of the type of form to display
+ *   - change_link: A change link to change the type shown
+ */
+function theme_acquia_lift_campaign_type_change($variables) {
+  $html = '<span class="acquia-lift-form-type">' . $variables['type'] . '</span>&nbsp;' . $variables['change_link'];
+  return $html;
+}

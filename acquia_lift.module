@@ -659,8 +659,25 @@ function acquia_lift_library() {
       ),
     ),
     'dependencies' => array(
+      array('acquia_lift', 'acquia_lift.message_box'),
       array('system', 'jquery'),
       array('system', 'jquery.once'),
+    ),
+  );
+
+  // Message box
+  $libraries['acquia_lift.message_box'] = array(
+    'title' => 'Assets to display a message box.',
+    'website' => '',
+    'version' => VERSION,
+    'js' => array(
+      $path . '/js/acquia_lift.messagebox.js' => $options,
+    ),
+    'css' => array(
+      $path . '/css/acquia_lift.messagebox.css' => array(),
+    ),
+    'dependencies' => array(
+      array('system', 'jquery'),
     ),
   );
 
@@ -1284,6 +1301,7 @@ function _acquia_lift_using_unified_navbar() {
 function _acquia_lift_navigation_attach_assets(&$element, $hide = FALSE) {
   $element['acquia_lift']['#access'] = user_access('manage personalized content');
   $element['acquia_lift']['#attached']['library'][] = array('acquia_lift', 'acquia_lift.personalize');
+  $element['acquia_lift']['#attached']['library'][] = array('acquia_lift', 'acquia_lift.message_box');
 
   if (_acquia_lift_using_unified_navbar()) {
     $element['acquia_lift']['nav']['#type'] = 'acquia_lift_navbar';
@@ -1546,4 +1564,22 @@ function acquia_lift_help($path, $arg) {
       $output .= '<p>' . t('You can manage all of your Acquia Lift campaigns from the !campaignslink.', array('!campaignslink' => l(t('campaign listing page'), 'admin/structure/personalize/manage'))) . '</p>';
       return $output;
   }
+}
+
+/**
+ * Returns an AJAX command to display a message box.
+ *
+ * @param $message
+ *   The string message to display.  This message may include HTML text.
+ * @return array
+ *   A command array that can be returned via AJAX.
+ */
+function acquia_lift_command_messagebox($message) {
+  if (is_array($message)) {
+    $message = drupal_render($message);
+  }
+  return array(
+    'command' => 'acquia_lift_message_box',
+    'data' => $message,
+  );
 }

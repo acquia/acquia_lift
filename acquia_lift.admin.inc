@@ -624,6 +624,9 @@ function acquia_lift_create_campaign_type_callback($type, $ajax) {
         'activeCampaign' => personalize_get_campaign_context(),
         'campaigns' => personalize_agent_get_settings(),
       )), TRUE),
+      acquia_lift_command_messagebox(t('Campaign %campaign has been created.', array(
+        '%campaign' => $form_state['values']['agent_basic_info']['title'],
+      ))),
     );
   }
   $page = array('#type' => 'ajax', '#commands' => $output);

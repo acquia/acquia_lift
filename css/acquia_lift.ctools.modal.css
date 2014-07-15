@@ -1,0 +1,138 @@
+/* Styles to override the CTools modals */
+
+div.ctools-modal-content {
+  padding: 1em 2em;
+  color: #333;
+  border-color: #555;
+}
+
+div.ctools-modal-content .modal-header {
+  background-color: #fff;
+  padding: 0 0 1em 0;
+}
+
+div.ctools-modal-content .modal-title {
+  font-family: "Helvetica Neue", helvetica, "Segoe UI", segoe, "Ubuntu", "Droid Sans", "Arial", sans-serif;
+  font-size: 2.2em;
+  font-weight: normal;
+  color: #333;
+}
+
+div.ctools-modal-content .modal-content {
+  padding: 0;
+  color: #666;
+  font-family: "Helvetica Neue", helvetica, "Segoe UI", segoe, "Ubuntu", "Droid Sans", "Arial", sans-serif;
+}
+
+/* Styles specific to Acquia Lift's modal content */
+/* Campaign select modal */
+div.ctools-modal-content .modal-content .acquia-lift-campaign-type {
+  border: 1px solid #CCC;
+  padding: 1.4em;
+  background-color: #F5F5F5;
+  margin-bottom: 1.4em;
+  cursor: pointer;
+}
+
+div.ctools-modal-content .modal-content .acquia-lift-campaign-type:hover {
+  background-color: white;
+}
+
+div.ctools-modal-content .modal-content .acquia-lift-campaign-type:last-child {
+  margin-bottom: 0;
+}
+
+div.ctools-modal-content .modal-content .acquia-lift-campaign-title {
+  font-weight: bold;
+  font-size: 1.2em;
+  margin-bottom: 0.4em;
+}
+
+div.ctools-modal-content .modal-content .acquia-lift-campaign-logo {
+  float: left;
+  width: 125px; /* Width of largest logo image */
+  padding-right: 1.4em;
+  text-align: center;
+}
+
+div.ctools-modal-content .modal-content a.acquia-lift-campaign-select,
+div.ctools-modal-content .modal-content a.acquia-lift-campaign-select:hover,
+div.ctools-modal-content .modal-content a.acquia-lift-campaign-select:active {
+  color: #333;
+  text-decoration: none;
+}
+
+/* Styles specific to the campaign creation form */
+div.ctools-modal-content .modal-content label {
+  float: none;
+}
+
+div.ctools-modal-content .modal-content .acquia-lift-form-type {
+  display: inline-block;
+  margin: 0 1em .75em 0;
+  font-size: 1.4em;
+}
+
+/* Button stylings from Ember theme to use for buttons within modal admin */
+div.ctools-modal-content .modal-content input[type="submit"],
+div.ctools-modal-content .modal-content .acquia-lift-cancel-button {
+  -webkit-appearance: none;
+  display: inline-block;
+  -webkit-box-sizing: border-box;
+  -moz-box-sizing: border-box;
+  box-sizing: border-box;
+  margin: 0.2963em;
+  max-width: 100%;
+  overflow: visible;
+  line-height: 1.25em;
+  vertical-align: baseline;
+  border: none;
+  -webkit-border-radius: 2px;
+  -moz-border-radius: 2px;
+  -ms-border-radius: 2px;
+  -o-border-radius: 2px;
+  border-radius: 2px;
+  /* Reset all button fonts to a similar baseline in webkit. */
+  font: -webkit-small-control;
+  font-family: "Helvetica Neue", helvetica, "Segoe UI", segoe, "Ubuntu", "Droid Sans", "Arial", sans-serif;
+  font-weight: 700;
+  text-align: center;
+  text-decoration: none;
+  cursor: pointer;
+  outline: none;
+  padding: 0.70711em 1em;
+  font-size: 1em;
+}
+
+div.ctools-modal-content .modal-content input[type="submit"]:active {
+  text-decoration: none;
+  -webkit-box-shadow: 0 0 0 0.2963em rgba(221, 221, 221, 0.4);
+  -moz-box-shadow: 0 0 0 0.2963em rgba(221, 221, 221, 0.4);
+  box-shadow: 0 0 0 0.2963em rgba(221, 221, 221, 0.4);
+}
+
+div.ctools-modal-content .modal-content .action-item-primary-active {
+  color: white;
+  background: #008fdc;
+  text-shadow: 0 1px 0 #002a42;
+}
+
+div.ctools-modal-content .modal-content .action-item-primary-active:hover,
+div.ctools-modal-content .modal-content .action-item-primary-active:active {
+  color: white;
+  background: #58b7ea;
+  text-shadow: 0 1px 0 #1a3646;
+}
+
+div.ctools-modal-content .modal-content .acquia-lift-cancel-button {
+  color: black;
+  background: #dddddd;
+  text-shadow: 0 1px 0 #f4f4f4;
+}
+
+div.ctools-modal-content .modal-content .acquia-lift-cancel-button:hover,
+div.ctools-modal-content .modal-content .acquia-lift-cancel-button:active {
+  color: #303030;
+  background: #e3e3e3;
+  text-shadow: 0 1px 0 #f6f6f6;
+}

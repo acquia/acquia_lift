@@ -59,6 +59,32 @@ function acquia_lift_menu() {
     // @see acquia_lift_process_queue()
     'access callback' => TRUE,
   );
+  // Ajax callback to open the create campaign screen in a modal window.
+  $items['admin/structure/personalize/add/%ctools_js'] = array(
+    'page callback' => 'acquia_lift_create_campaign_callback',
+    'page arguments' => array(4),
+    'access arguments' => array('manage personalized content'),
+    'type' => MENU_CALLBACK,
+    'file' => 'acquia_lift.admin.inc',
+    'theme callback' => 'ajax_base_page_theme',
+  );
+  // AJAX callback to create a new campaign in a modal window.
+  $items['admin/structure/acquia_lift/add/%/%ctools_js'] = array(
+    'page callback' => 'acquia_lift_create_campaign_type_callback',
+    'page arguments' => array(4, 5),
+    'access arguments' => array('manage personalized content'),
+    'type' => MENU_CALLBACK,
+    'file' => 'acquia_lift.admin.inc',
+    'theme callback' => 'ajax_base_page_theme',
+  );
+  // AJAX callback to cancel a modal creation flow.
+  $items['admin/structure/acquia_lift/cancel/%ctools_js'] = array(
+    'page callback' => 'acquia_lift_campaign_flow_cancel',
+    'page arguments' => array(4),
+    'access arguments' => array('manage personalized content'),
+    'type' => MENU_CALLBACK,
+    'file' => 'acquia_lift.admin.inc',
+  );
   return $items;
 }
 
@@ -114,6 +140,18 @@ function acquia_lift_theme() {
     ),
     'acquia_lift_goal_total' => array(
       'goal_total' => 0,
+    ),
+    // Campaign creation flow.
+    'acquia_lift_campaign_type_list' => array(
+      'path' => $path . '/theme',
+      'file' => 'acquia_lift.theme.inc',
+      'items' => array(),
+    ),
+    'acquia_lift_campaign_type_change' => array(
+      'path' => $path . '/theme',
+      'file' => 'acquia_lift.theme.inc',
+      'type' => '',
+      'change_link' => '',
     ),
     // Unified navbar themes.
     'acquia_lift_navbar' => array(
@@ -582,6 +620,43 @@ function acquia_lift_library() {
     'css' => array(
       $path . '/css/acquia_lift.fields.theme.css' => array(),
       $path . '/css/acquia_lift.fields.admin.css' => array(),
+    ),
+    'dependencies' => array(
+      array('system', 'jquery'),
+      array('system', 'jquery.once'),
+    ),
+  );
+
+  // Note that there is an additional CSS file: acquia_lift.ctools.modal.css.
+  // It needs to be loaded separately in order to be processed after CTools
+  // default modal CSS.
+  $libraries['acquia_lift.modal'] = array(
+    'title' => 'Acquia Lift modal campaign management',
+    'website' => '',
+    'version' => VERSION,
+    'js' => array(
+      $path . '/js/acquia_lift.modal.js' => $options,
+      array(
+        'data' => array(
+          'acquia-lift-style' => array(
+            'modalSize' => array(
+              'type' => 'fixed',
+              'width' => 600,
+              'height' => 400,
+              'addWidth' => 0,
+              'addHeight' => 0,
+              'contentRight' => 0,
+              'contentBottom' => 0,
+            ),
+            'modalOptions' => array(
+              'background-color' => '#000000',
+            ),
+            'closeImage' => theme('image', array('path' => ctools_image_path('close.png', 'acquia_lift'), 'alt' => t('Close window'), 'title' => t('Close window'))),
+            'closeText' => '',
+          ),
+        ),
+        'type' => 'setting',
+      ),
     ),
     'dependencies' => array(
       array('system', 'jquery'),

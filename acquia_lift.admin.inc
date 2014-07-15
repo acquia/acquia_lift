@@ -173,6 +173,12 @@ function acquia_lift_admin_form_submit($form, &$form_state) {
 }
 
 /**
+ * =======================================================================
+ *  A C Q U I A  L I F T  A G E N T  R E P O R T I N G
+ * =======================================================================
+ */
+
+/**
  * Form build function for the Acquia Lift report, which has filters.
  *
  * @param stdClass $agent_data
@@ -530,4 +536,207 @@ function acquia_lift_report_decision_point_dropdown($options, $selected) {
  */
 function acquia_lift_report_ajax_callback($form, &$form_state) {
   return $form;
+}
+
+/**
+ * =======================================================================
+ *  C A M P A I G N  M A N A G E M E N T  F L O W
+ * =======================================================================
+ */
+
+/**
+ * Page callback to start the create a campaign process.  The first step is to select
+ * the type of
+ * @param bool $ajax
+ *   Indicates if form is called with ajax support.
+ */
+function acquia_lift_create_campaign_callback($ajax) {
+  if (!$ajax) {
+    drupal_goto('admin/structure/personalize/add');
+    return;
+  }
+  // Show the campaign type selection form in a modal.
+  ctools_include('modal');
+  ctools_modal_add_js();
+
+  $path = drupal_get_path('module', 'acquia_lift');
+  $output = theme('acquia_lift_campaign_type_list', array(
+    'items' => array(
+      'ab' => array(
+        'title' => t('A/B test'),
+        'description' => t('Create variations of the content on your site to compare against each other.'),
+        'url' => 'admin/structure/acquia_lift/add/ab',
+        'logo' => theme('image', array(
+          'path' => $path . '/images/campaign-type-ab.png',
+          'alt' => t('A/B test'),
+          'title' => t('Select this option to create an A/B test.'),
+        )),
+      ),
+      'custom' => array(
+        'title' => t('Custom Lift campaign'),
+        'description' => t('Custom campaigns allow you to create a content targeting or multi-variate campaign using the legacy campaign creation system.'),
+        'url' => 'admin/structure/personalize/add/',
+        'logo' => theme('image', array(
+          'path' => $path . '/images/campaign-type-custom.png',
+          'alt' => t('Custom Lift campaign'),
+          'title' => t('Select this option to create a custom Lift campaign.'),
+        ))
+      ),
+    ),
+  ));
+  return ctools_modal_render(t('Create a campaign'), $output);
+}
+
+/**
+ * Page callback to generate the ctools modal form to create a campaign
+ * of a specific type.
+ *
+ * @param $type
+ *   The type of campaign to create.  Current supported choices:  'ab'
+ * @param $ajax
+ *   Indicates if AJAX is supported
+ */
+function acquia_lift_create_campaign_type_callback($type, $ajax) {
+  // If the campaign type is not supported or AJAX is not supported then go to the full campaign
+  // creation process.
+  if (!$ajax || !in_array($type, array('ab'))) {
+    drupal_goto('admin/structure/personalize/add');
+    return;
+  }
+  ctools_include('modal');
+  ctools_include('ajax');
+  ctools_modal_add_js();
+
+  $form_state = array(
+    'ajax' => TRUE,
+    'title' => t('Create a campaign'),
+  );
+
+  // ctools_modal_form_wrapper doesn't provide any way to pass parameters to the form builder function.
+  $form_state['build_info']['args']['type'] = $type;
+
+  $output = ctools_modal_form_wrapper('acquia_lift_create_campaign_type_form', $form_state);
+  // Form has been processed so close it.
+  if ($form_state['executed']) {
+    $output = array(
+      ctools_modal_command_dismiss(),
+      ajax_command_settings(array('personalize' => array(
+        'activeCampaign' => personalize_get_campaign_context(),
+        'campaigns' => personalize_agent_get_settings(),
+      )), TRUE),
+    );
+  }
+  $page = array('#type' => 'ajax', '#commands' => $output);
+  ajax_deliver($page);
+}
+
+/**
+ * Form builder function to create a new campaign in the modal process
+ * of a specific type.
+ *
+ * @param $type
+ *   The type of campaign to create.  Current supported choices: 'ab'
+ */
+function acquia_lift_create_campaign_type_form($form, &$form_state, $type) {
+  ctools_include('modal');
+  ctools_include('ajax');
+
+  ctools_add_js('ajax-responder');
+
+  $change_link = ctools_modal_text_button(t('Change type of test'), 'admin/structure/personalize/add/nojs', t('Change type of test'), 'ctools-modal-acquia-lift-style');
+  // Add individual forms specific to the type of campaign being created.
+  switch ($type) {
+    case 'ab':
+      $form['campaign_type'] = array(
+        '#markup' => theme('acquia_lift_campaign_type_change', array(
+          'type' => t('A/B test'),
+          'change_link' => $change_link,
+        )),
+      );
+      $form['agent'] = _acquia_lift_create_ab_campaign_form();
+      break;
+  }
+  // Add common actions.
+  $form['actions']['submit_form'] = array(
+    '#type' => 'submit',
+    '#attributes' => array(
+      'class' => array('action-item-primary-active'),
+    ),
+    '#value' => t('Create campaign'),
+  );
+  $form['actions']['reset'] = array(
+    '#markup' => ctools_ajax_text_button(t('Cancel'), 'admin/structure/acquia_lift/cancel/nojs', t('Cancel'), 'acquia-lift-cancel-button'),
+  );
+  return $form;
+}
+
+/**
+ * Loads the simplified campaign creation form for an A/B test with an
+ * Acquia Lift agent.
+ */
+function _acquia_lift_create_ab_campaign_form() {
+  ctools_include('plugins');
+
+  if ($agent_class = ctools_plugin_load_class('personalize', 'agent_type', 'acquia_lift', 'handler')) {
+    $options_form = call_user_func_array(array($agent_class, 'simpleABOptionsForm'), array(array()));
+  }
+  else {
+    drupal_set_message(t('There is a problem accessing the Acquia Lift agent. Acquia Lift campaigns can not be created until you configure your account info !here', array('!here' => l('here', 'admin/config/content/personalize/acquia_lift'))), 'error');
+    return array();
+  }
+  // Recreate a basic campaign form with the appropriate AB options.
+  // @see personalize_agent_build_basic_form.
+  $form['agent_basic_info'] = array(
+    '#tree' => TRUE,
+  );
+  $form['agent_basic_info']['title'] = array(
+    '#title' => t('Name'),
+    '#type' => 'textfield',
+    '#required' => TRUE,
+  );
+  $form['agent_basic_info']['agent_type'] = array(
+    '#type' => 'value',
+    '#value' => 'acquia_lift',
+  );
+  $form['agent_basic_info']['options'] = array(
+    '#tree' => TRUE,
+  );
+  $form['agent_basic_info']['options']['acquia_lift'] = $options_form;
+  return $form;
+}
+
+function acquia_lift_create_campaign_type_form_validate($form, &$form_state) {
+  module_load_include('inc', 'personalize', 'personalize.admin');
+  personalize_agent_form_validate($form, $form_state);
+}
+
+/**
+ * Submit handler to create a campaign from the Acquia Lift UI flow.
+ */
+function acquia_lift_create_campaign_type_form_submit($form, &$form_state) {
+  module_load_include('inc', 'personalize', 'personalize.admin');
+  $agent_data = _personalize_agent_from_form_values($form_state['values']['agent_basic_info']);
+  // Generate the machine name based on the name the user selected.
+  $agent_data->machine_name = personalize_generate_machine_name($agent_data->label, 'personalize_agent_machine_name_exists');
+  $agent = personalize_agent_save($agent_data);
+  personalize_set_campaign_context($agent->machine_name);
+}
+
+/**
+ * AJAX callback to cancel the campaign creation flow.
+ *
+ * @param $ajax
+ *   Indicates if AJAX is supported.
+ */
+function acquia_lift_campaign_flow_cancel($ajax = NULL) {
+  if (!$ajax) {
+    // We should never be here out of ajax context.
+    return MENU_NOT_FOUND;
+  }
+
+  ctools_include('modal');
+  ctools_include('ajax');
+
+  $commands = array(ctools_modal_command_dismiss());
+  print ajax_render($commands);
 }

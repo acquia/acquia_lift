@@ -13,25 +13,27 @@ Drupal.behaviors.acquiaLiftPersonalize = {
   attach: function (context) {
     var settings = Drupal.settings.personalize;
     var ui = Drupal.acquiaLiftUI;
+    var addedCampaigns = {};
     if (settings) {
       // Build models for menus that don't have them yet.
-      if (!ui.collections['campaigns']) {
-        ui.collections['campaigns'] = new ui.MenuCampaignCollection([]);
+      if (!ui.collections.campaigns) {
+        ui.collections.campaigns = new ui.MenuCampaignCollection([]);
       }
       looper(settings.campaigns, function (obj, key) {
-        if (!ui.collections['campaigns'].findWhere({name: obj.name})) {
-          ui.collections['campaigns'].add(obj);
+        if (!ui.collections.campaigns.findWhere({name: obj.name})) {
+          ui.collections.campaigns.add(obj);
+          addedCampaigns[obj.name] = ui.collections.campaigns.findWhere({name: obj.name});
         }
       });
       looper(settings.option_sets, function (obj, key) {
         var campaign = obj.agent;
-        if (!ui.collections['option_sets'][campaign]) {
-          ui.collections['option_sets'][campaign] = new Backbone.Collection([], {
+        if (!ui.collections.option_sets[campaign]) {
+          ui.collections.option_sets[campaign] = new Backbone.Collection([], {
             model: ui[ui.objectMap['option_sets'] + 'Model']
           });
         }
-        if (!ui.collections['option_sets'][campaign].findWhere({osid: obj.osid})) {
-          ui.collections['option_sets'][campaign].add(obj);
+        if (!ui.collections.option_sets[campaign].findWhere({osid: obj.osid})) {
+          ui.collections.option_sets[campaign].add(obj);
         }
       });
 
@@ -47,6 +49,7 @@ Drupal.behaviors.acquiaLiftPersonalize = {
 
       // Process the Campaigns, Content Variations and Goals top-level links
       // in the Acquia Lift menu.
+      // This is processing that runs only once for the lifetime of the page.
       _.each(['campaigns', 'option_sets', 'goals'], function (category) {
         $('[data-acquia-lift-personalize="' + category + '"]').once('acquia-lift-personalize-menu-controls').each(function (index, item) {
           // Option menus.
@@ -60,108 +63,119 @@ Drupal.behaviors.acquiaLiftPersonalize = {
               .addClass(['acquia-lift-' + type.replace('_', '-'), 'menu'].join(' '))
               .attr('data-acquia-lift-personalize-type', type);
           }
-          // Attach a view to each link that will report the number of items
-          // under that category if this link is in the Navbar.
+          // Attach a view that will report the number of campaigns
+          // if this link is in the Navbar.
           if ($link.closest('.navbar-tray').length) {
             switch (category) {
               case 'campaigns':
                 collection = ui.collections[category];
-                $element = $(Drupal.theme('aquiaLiftCount'));
-                if (collection && collection.length > 0) {
-                  ui.views.push((new ui[ui.objectMap[category] + 'CountView']({
-                    el: $element.get(0),
-                    model: collection
-                  })));
-                  // Create the view to show the selected name.
-                  ui.views.push(new ui.MenuCampaignsView({
-                    el: $link,
-                    collection: collection
-                  }));
-                } else {
+                $element = $(Drupal.theme('acquiaLiftCount'));
+                ui.views.push((new ui[ui.objectMap[category] + 'CountView']({
+                  el: $element.get(0),
+                  model: collection
+                })));
+                // Create the view to show the selected name.
+                ui.views.push(new ui.MenuCampaignsView({
+                  el: $link,
+                  collection: collection
+                }));
+                if (collection.length == 0) {
                   // There are no campaigns.
                   element = document.createElement('li');
-                  ui.views.push((new ui.MenuCampaignView({
+                  ui.views.noCampaignsView = new ui.MenuCampaignView({
                     el: element,
-                    model: null
-                  })));
+                    model: null,
+                  });
                   $('[data-acquia-lift-personalize-type="campaigns"]').prepend(element);
                 }
                 $element.prependTo($link);
-                break;
-              case 'option_sets':
-                // Loop through the campaigns and add an empty count for each one.
-                if (ui.collections.campaigns && ui.collections.campaigns.length > 0) {
-                  _.each(ui.collections.campaigns.models, function (campaignModel) {
-                    $element = $(Drupal.theme('aquiaLiftCount'));
-                    ui.views.push((new ui[ui.objectMap[category] + 'CountEmptyView']({
-                      el: $element.get(0),
-                      model: campaignModel,
-                      optionSetCollections: ui.collections[category]
-                    })));
-                    $element.prependTo($link);
-                  });
-                }
-                // Loop through the option set models, keyed by campaign, and
-                // create a view for each.
-                looper(ui.collections[category], function (collection, campaign) {
-                  $element = $(Drupal.theme('aquiaLiftCount'));
-                  ui.views.push((new ui[ui.objectMap[category] + 'CountView']({
-                    el: $element.get(0),
-                    model: collection,
-                    campaignModel: ui.collections.campaigns.findWhere({name: campaign})
-                  })));
-                  $element.prependTo($link);
-                });
-                break;
-              case 'goals':
-                // Loop through the campaigns and add an empty count for each one.
-                if (ui.collections.campaigns && ui.collections.campaigns.length > 0) {
-                  _.each(ui.collections.campaigns.models, function (campaignModel) {
-                    $element = $(Drupal.theme('aquiaLiftCount'));
-                    ui.views.push((new ui[ui.objectMap[category] + 'CountView']({
-                      el: $element.get(0),
-                      model: campaignModel
-                    })));
-                    $element.prependTo($link);
-                  });
-                }
                 break;
             }
           }
         });
       });
 
+      // Add an option set count view for each newly added campaign model.
+      $('[data-acquia-lift-personalize="option_sets"]').each(function (index, item) {
+        var $link = $(item);
+        if ($link.closest('.navbar-tray').length) {
+          _.each(addedCampaigns, function (campaignModel, key) {
+            // Add an empty count for each campaign's set of options.
+            $element = $(Drupal.theme('acquiaLiftCount'));
+            ui.views.push((new ui['MenuOptionCountEmptyView']({
+              el: $element.get(0),
+              model: campaignModel,
+              optionSetCollections: ui.collections['option_sets']
+            })));
+            $element.prependTo($link);
+
+            // Create a view for each campaign with options.
+            if (ui.collections.option_sets.hasOwnProperty(key)) {
+              $element = $(Drupal.theme('acquiaLiftCount'));
+              ui.views.push((new ui['MenuOptionCountView']({
+                el: $element.get(0),
+                model: ui.collections.option_sets[key],
+                campaignModel: campaignModel
+              })));
+              $element.prependTo($link);
+            }
+          });
+        }
+      });
+
+      // Add a goals count view for each newly added campaign model.
+      $('[data-acquia-lift-personalize="goals"]').each(function (index, item) {
+        var $link = $(item);
+        if ($link.closest('.navbar-tray').length) {
+          // Loop through the campaigns and add an empty count for each one.
+          _.each(addedCampaigns, function (campaignModel, key) {
+            $element = $(Drupal.theme('acquiaLiftCount'));
+            ui.views.push((new ui['MenuGoalsCountView']({
+              el: $element.get(0),
+              model: campaignModel
+            })));
+            $element.prependTo($link);
+          });
+        }
+      });
+
+      // Remove any empty campaign views if the campaigns are now populated.
+      if (ui.collections.campaigns.length > 0 && ui.views.hasOwnProperty('noCampaignsView')) {
+        ui.views.noCampaignsView.remove();
+      }
+
       // Build Views for contents of the Campaigns, Content Variations and Goals
       // top-level links in the Acquia Lift menu.
       _.each(['campaigns', 'option_sets'], function (category) {
-        var $typeMenus = $('[data-acquia-lift-personalize-type="' + category + '"]').once('acquia-lift-personalize-menu-contents');
+        var $typeMenus = $('[data-acquia-lift-personalize-type="' + category + '"]');
         var campaignsWithOptions = {};
         if ($typeMenus.length) {
           $typeMenus
             .each(function (index, element) {
               var $menu = $(element);
               var type = $menu.data('acquia-lift-personalize-type');
-              var model, element;
+              var model, element, campaignName;
                 looper(settings[type], function (obj, key) {
                 // Find the right model.
                 switch (type) {
                   case 'option_sets':
                     // If the menu already has a link for this setting, abort.
                     if (!$menu.find('[data-acquia-lift-personalize-agent="' + obj.agent + '"][data-acquia-lift-personalize-id="' + key + '"].acquia-lift-preview-option-set').length) {
-                      var campaign = obj.agent;
+                      campaignName = obj.agent;
                       campaignsWithOptions[obj.agent] = obj.agent;
-                      model = ui.collections[type][campaign].findWhere({'osid': key});
+                      model = ui.collections[type][campaignName].findWhere({'osid': key});
                     }
                     break;
                   case 'campaigns':
                       // If the menu already has a link for this setting, abort.
                     if (!$menu.find('[data-acquia-lift-personalize-agent="' + key + '"].acquia-lift-campaign').length) {
+                      campaignName = key;
                       model = ui.collections[type].findWhere({'name': key});
                     }
                     break;
                 }
-                // Create a model for the menu item.
-                if (model) {
+                // Create views for the campaign model if it was just added.
+                if (model && addedCampaigns.hasOwnProperty(campaignName)) {
                   element = document.createElement('li');
                   ui.views.push((new ui[ui.objectMap[type] + 'View']({
                     el: element,
@@ -200,7 +214,7 @@ Drupal.behaviors.acquiaLiftPersonalize = {
 
               if (category === 'option_sets') {
                 looper(settings.campaigns, function (obj, key) {
-                  if (!campaignsWithOptions.hasOwnProperty(key)) {
+                  if (addedCampaigns.hasOwnProperty(key) && !campaignsWithOptions.hasOwnProperty(key)) {
                     // Add a view to indicate that there are no option sets for
                     // a campaign.
                     model = ui.collections.campaigns.findWhere({'name': key});
@@ -241,7 +255,7 @@ Drupal.behaviors.acquiaLiftPersonalize = {
       }
 
       // Create View for the Report link.
-      if (ui.collections.campaigns) {
+      if (ui.collections.campaigns.length > 0) {
         $('[href="' + reportPath + '"]')
           .once('acquia-lift-personalize-report')
           .each(function (index, element) {
@@ -256,7 +270,7 @@ Drupal.behaviors.acquiaLiftPersonalize = {
       }
 
       // Create a View for the Status link.
-      if (ui.collections.campaigns) {
+      if (ui.collections.campaigns.length > 0) {
         $('[href="' + statusPath + '"]')
           .once('acquia-lift-personalize-status')
           .each(function (index, element) {
@@ -312,7 +326,15 @@ Drupal.behaviors.acquiaLiftPersonalize = {
       if (!ui.collections['campaigns']) {
         return;
       }
-      var activeCampaign = ui.collections['campaigns'].findWhere({'isActive': true}) || settings.activeCampaign;
+      var activeCampaign = '';
+      // If it was just added and is set as the active campaign then it takes
+      // priority over a campaign that was previously set as active.
+      if (addedCampaigns.hasOwnProperty(settings.activeCampaign)) {
+        activeCampaign = settings.activeCampaign;
+      } else {
+        // Use the current if set, otherwise read from settings.
+        activeCampaign = ui.collections['campaigns'].findWhere({'isActive': true}) || settings.activeCampaign;
+      }
       Drupal.acquiaLiftUI.setActiveCampaign(activeCampaign);
     }
   }
@@ -1490,7 +1512,7 @@ Drupal.theme.acquiaLiftPersonalizeCampaignMenuItem = function (options) {
 /**
  * Returns HTML for a count display element.
  */
-Drupal.theme.aquiaLiftCount = function (options) {
+Drupal.theme.acquiaLiftCount = function (options) {
   return '<i class="acquia-lift-personalize-type-count acquia-lift-empty"><span>0</span>&nbsp;</i>';
 };
 

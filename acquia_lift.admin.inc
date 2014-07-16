@@ -170,6 +170,9 @@ function acquia_lift_admin_form_submit($form, &$form_state) {
   if ($form_state['values']['acquia_lift_confidence_measure'] < 95) {
     drupal_set_message(t('A minimum confidence measure of 95% is recommended to ensure proper evaluation of test results.'), 'warning');
   }
+
+  // Clear the ctools plugin "agent_type" cache for personalize.
+  cache_clear_all('plugins:personalize:agent_type', 'cache');
 }
 
 /**

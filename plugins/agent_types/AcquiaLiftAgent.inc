@@ -233,7 +233,7 @@ class AcquiaLiftAgent extends PersonalizeAgentBase implements PersonalizeAgentGo
   protected static function buildOptionsForm($agent_data, $simplified = FALSE) {
     $account_info = variable_get('acquia_lift_account_info', array());
     if (empty($account_info)) {
-      drupal_set_message(t('Your Acquia Lift account info has not been configured. Any Acquia Lift campaigns you create here will not work until you configure your account info !here', array('!here' => l('here', 'admin/config/content/personalize/acquia-lift'))), 'error');
+      drupal_set_message(t('Your Acquia Lift account info has not been configured. Any Acquia Lift campaigns you create here will not work until you configure your account info !here', array('!here' => l('here', 'admin/config/content/personalize/acquia_lift'))), 'error');
     }
     $form = array();
     $form['#attached'] = array(

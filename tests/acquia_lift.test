@@ -21,6 +21,13 @@ class AcquiaLiftWebTest extends DrupalWebTestCase {
   protected $liftAdminKey = 'admin-key-123';
 
   /**
+   * The string to use as the admin API URL.
+   *
+   * @var string
+   */
+  protected $liftAPIUrl = 'http://some.valid.url';
+
+  /**
    * The string to use as the owner code.
    *
    * @var string
@@ -60,6 +67,29 @@ class AcquiaLiftWebTest extends DrupalWebTestCase {
     ));
   }
 
+  public function testLiftAgentAvailibility() {
+    // remove the account information
+    $lift_info = variable_get('acquia_lift_account_info', array());
+    variable_del('acquia_lift_account_info');
+    $this->resetAll();
+
+    // Try to add a new campaign and verify that the Acquia Lift agent isn't presented.
+    $this->drupalGet('admin/structure/personalize/add');
+    $this->assertText(t('Your Acquia Lift account info has not been configured.'));
+    $this->assertNoRaw('<option value="acquia_lift">acquia_lift</option>');
+
+    // Add the configuration information for the Lift account.
+    $this->configureAcquiaLiftAccount();
+
+    $this->drupalLogin($this->managerUser);
+
+    // Now confirm that Acquia Lift is an option for new campaigns.
+    $this->drupalLogin($this->managerUser);
+    $this->drupalGet('admin/structure/personalize/add');
+    $this->assertNoText(t('Your Acquia Lift account info has not been configured.'));
+    $this->assertRaw('<option value="acquia_lift">acquia_lift</option>');
+  }
+
   public function testConfigForm() {
     $this->drupalLogin($this->adminUser);
     // Try entering an invalid owner code.
@@ -67,7 +97,7 @@ class AcquiaLiftWebTest extends DrupalWebTestCase {
       'acquia_lift_account_info[owner_code]' => 'some invalid string',
       'acquia_lift_account_info[api_key]' => $this->liftAPIKey,
       'acquia_lift_account_info[admin_key]' => $this->liftAdminKey,
-      'acquia_lift_account_info[api_url]' => 'http://some.valid.url',
+      'acquia_lift_account_info[api_url]' => $this->liftAPIUrl,
     );
     $this->drupalPost('admin/config/content/personalize/acquia_lift', $edit, $this->getButton('config'));
     $this->assertText('You must enter a valid owner code');
@@ -907,6 +937,9 @@ class AcquiaLiftWebTest extends DrupalWebTestCase {
    * @see testSaveAgent()
    */
   protected function createTestAgent($data = array(), $cleanQueue = TRUE) {
+    $this->configureAcquiaLiftAccount();
+    $this->drupalLogin($this->managerUser);
+
     $data += array(
       'name' => $this->randomName(),
       'agent_type' => 'acquia_lift',
@@ -1059,5 +1092,21 @@ class AcquiaLiftWebTest extends DrupalWebTestCase {
       default:
         return t('Save');
     }
+  }
+
+  /**
+   * Helper method to configure an Acquia Lift account.
+   */
+  protected function configureAcquiaLiftAccount() {
+    $edit = array(
+      'acquia_lift_account_info[owner_code]' => $this->liftAOwnerCode,
+      'acquia_lift_account_info[api_key]' => $this->liftAPIKey,
+      'acquia_lift_account_info[admin_key]' => $this->liftAdminKey,
+      'acquia_lift_account_info[api_url]' => $this->liftAPIUrl,
+    );
+    $this->drupalLogin($this->adminUser);
+    $this->drupalPost('admin/config/content/personalize/acquia_lift', $edit, $this->getButton('config'));
+
+    $this->resetAll();
   }
 }

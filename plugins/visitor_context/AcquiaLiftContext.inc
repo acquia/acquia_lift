@@ -27,6 +27,9 @@ class AcquiaLiftContext extends PersonalizeContextBase {
     $options = array();
     try {
       $transform_options = AcquiaLiftAPI::getInstance(variable_get('acquia_lift_account_info', array()))->getTransformOptions();
+      if (empty($transform_options)) {
+        return $transform_options;
+      }
       // @todo Once more visitor_context plugins have been developed it may
       //   make sense to define some of these categories at a higher
       //   level and have multiple plugins add to them. We could define

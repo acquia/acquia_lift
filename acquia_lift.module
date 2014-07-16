@@ -309,14 +309,22 @@ function acquia_lift_cron_queue_info() {
  */
 function acquia_lift_personalize_agent_type() {
   $info = array();
+  $account_info = variable_get('acquia_lift_account_info', array());
   $path = drupal_get_path('module', 'acquia_lift') . '/plugins';
-  $info['acquia_lift'] = array(
-    'path' => $path . '/agent_types',
-    'handler' => array(
-      'file' => 'AcquiaLiftAgent.inc',
-      'class' => 'AcquiaLiftAgent',
-    ),
-  );
+
+  // Only return acquia_list as a plugin if account has been setup. If not an
+  // exception is thrown. Not to mention it's extremely confusing if it's the
+  // only personalize_agent_type available.
+  if (!empty($account_info)) {
+    $info['acquia_lift'] = array(
+      'path' => $path . '/agent_types',
+      'handler' => array(
+        'file' => 'AcquiaLiftAgent.inc',
+        'class' => 'AcquiaLiftAgent',
+      ),
+    );
+  }
+
   return $info;
 }
 
@@ -1455,6 +1463,12 @@ function acquia_lift_navbar() {
 function acquia_lift_form_personalize_agent_form_alter(&$form, &$form_state) {
   module_load_include('inc', 'acquia_lift', 'acquia_lift.ui');
   acquia_lift_chosenify_element($form['agent_form']['agent_fieldset']['visitor_context']);
+
+  $account_info = variable_get('acquia_lift_account_info', array());
+  if (empty($account_info)) {
+    drupal_set_message(t('Your Acquia Lift account info has not been configured. Acquia Lift campaigns can not be created until you configure your account info !here', array('!here' => l('here', 'admin/config/content/personalize/acquia_lift'))), 'error');
+  }
+
   // If we're editing an existing agent, add a "Reset data" button next to
   // the Pause/Resume button.
   if (isset($form['agent_form']['agent_fieldset']['header']['toggle_form'])) {

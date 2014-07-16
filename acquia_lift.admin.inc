@@ -355,7 +355,7 @@ function acquia_lift_report($form, &$form_state, $agent_data, $option_set) {
 
   // The context and stability reports are only relevant if there is context
   // targeting in place for this campaign.
-  if (empty($reports['targeting'])) {
+  if (!isset($reports['targeting'])) {
     return $form;
   }
 

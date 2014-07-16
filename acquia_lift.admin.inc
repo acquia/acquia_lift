@@ -659,7 +659,7 @@ function acquia_lift_create_campaign_type_form($form, &$form_state, $type) {
           'change_link' => $change_link,
         )),
       );
-      $form['agent'] = _acquia_lift_create_ab_campaign_form();
+      $form['agent'] = _acquia_lift_create_simplified_campaign_form('acquia_lift_simple_ab');
       break;
   }
   // Add common actions.
@@ -680,11 +680,12 @@ function acquia_lift_create_campaign_type_form($form, &$form_state, $type) {
  * Loads the simplified campaign creation form for an A/B test with an
  * Acquia Lift agent.
  */
-function _acquia_lift_create_ab_campaign_form() {
+function _acquia_lift_create_simplified_campaign_form($agent_type) {
   ctools_include('plugins');
 
-  if ($agent_class = ctools_plugin_load_class('personalize', 'agent_type', 'acquia_lift', 'handler')) {
-    $options_form = call_user_func_array(array($agent_class, 'simpleABOptionsForm'), array(array()));
+  if ($agent_class = ctools_plugin_load_class('personalize', 'agent_type', $agent_type, 'handler')) {
+    $method = is_subclass_of($agent_class, 'AcquiaLiftSimplifiedAgentInterface') ? 'simplifiedForm' : 'optionsForm';
+    $options_form = call_user_func_array(array($agent_class, $method), array(array()));
   }
   else {
     drupal_set_message(t('There is a problem accessing the Acquia Lift agent. Acquia Lift campaigns can not be created until you configure your account info !here', array('!here' => l('here', 'admin/config/content/personalize/acquia_lift'))), 'error');
@@ -702,16 +703,17 @@ function _acquia_lift_create_ab_campaign_form() {
   );
   $form['agent_basic_info']['agent_type'] = array(
     '#type' => 'value',
-    '#value' => 'acquia_lift',
+    '#value' => $agent_type,
   );
   $form['agent_basic_info']['options'] = array(
     '#tree' => TRUE,
   );
-  $form['agent_basic_info']['options']['acquia_lift'] = $options_form;
+  $form['agent_basic_info']['options'][$agent_type] = $options_form;
   return $form;
 }
 
 function acquia_lift_create_campaign_type_form_validate($form, &$form_state) {
+  $form_state['values']['agent_basic_info']['machine_name'] = personalize_generate_machine_name($form_state['values']['agent_basic_info']['title'], 'personalize_agent_machine_name_exists');
   module_load_include('inc', 'personalize', 'personalize.admin');
   personalize_agent_form_validate($form, $form_state);
 }
@@ -722,8 +724,6 @@ function acquia_lift_create_campaign_type_form_validate($form, &$form_state) {
 function acquia_lift_create_campaign_type_form_submit($form, &$form_state) {
   module_load_include('inc', 'personalize', 'personalize.admin');
   $agent_data = _personalize_agent_from_form_values($form_state['values']['agent_basic_info']);
-  // Generate the machine name based on the name the user selected.
-  $agent_data->machine_name = personalize_generate_machine_name($agent_data->label, 'personalize_agent_machine_name_exists');
   $agent = personalize_agent_save($agent_data);
   personalize_set_campaign_context($agent->machine_name);
 }

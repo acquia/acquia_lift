@@ -90,6 +90,32 @@ function acquia_lift_menu() {
 }
 
 /**
+ * Implements hook_menu_alter().
+ */
+function acquia_lift_menu_alter(&$items) {
+  $items['admin/structure/personalize/manage/%personalize_agent']['page callback'] = 'acquia_lift_agent_edit_callback';
+}
+
+/**
+ * Replacement menu callback for the agent edit page.
+ *
+ * Calls the original menu callback for any agent that's not of the
+ * Simple AB type. For the later, just redirects to the homepage as
+ * these agents are supposed to be managed from the front-end.
+ *
+ * @param $agent_data
+ *   An object representing the agent being edited.
+ */
+function acquia_lift_agent_edit_callback($agent_data) {
+  if ($agent_data->plugin !== 'acquia_lift_simple_ab') {
+    return personalize_agent_page($agent_data);
+  }
+  // Set the campaign context and go to the home page.
+  personalize_set_campaign_context($agent_data->machine_name);
+  drupal_goto('');
+}
+
+/**
  * Implements hook_theme().
  */
 function acquia_lift_theme() {
@@ -306,26 +332,53 @@ function acquia_lift_cron_queue_info() {
 }
 
 /**
+ * Returns the agent types this module provides.
+ *
+ * @return array
+ *   An associative array with agent plugin names as keys and class names
+ *   as values.
+ */
+function acquia_lift_get_agent_types() {
+  return array(
+    'acquia_lift' => 'AcquiaLiftAgent',
+    'acquia_lift_simple_ab' => 'AcquiaLiftSimpleAB',
+  );
+}
+
+/**
+ * Returns whether or not the passed in agent is owned by this module.
+ *
+ * @param $agent
+ *   An object representing the agent.
+ * @return bool
+ *   TRUE if the object is an Acquia Lift owned agent, FALSE otherwise.
+ */
+function acquia_lift_owns_agent($agent) {
+  $agent_types = acquia_lift_get_agent_types();
+  return in_array($agent->plugin, array_keys($agent_types));
+}
+
+/**
  * Implements hook_personalize_agent_type().
  */
 function acquia_lift_personalize_agent_type() {
   $info = array();
   $account_info = variable_get('acquia_lift_account_info', array());
-  $path = drupal_get_path('module', 'acquia_lift') . '/plugins';
-
-  // Only return acquia_list as a plugin if account has been setup. If not an
+  // Only return plugin info if account has been setup. If not an
   // exception is thrown. Not to mention it's extremely confusing if it's the
   // only personalize_agent_type available.
   if (!empty($account_info)) {
-    $info['acquia_lift'] = array(
-      'path' => $path . '/agent_types',
-      'handler' => array(
-        'file' => 'AcquiaLiftAgent.inc',
-        'class' => 'AcquiaLiftAgent',
-      ),
-    );
+    $path = drupal_get_path('module', 'acquia_lift') . '/plugins/agent_types';
+    foreach (acquia_lift_get_agent_types() as $type_name => $class_name) {
+      $info[$type_name] = array(
+        'path' => $path,
+        'handler' => array(
+          'file' => 'AcquiaLiftAgent.inc',
+          'class' => $class_name,
+        ),
+      );
+    }
   }
-
   return $info;
 }
 
@@ -349,7 +402,7 @@ function acquia_lift_personalize_visitor_context() {
  * Implements hook_personalize_agent_delete().
  */
 function acquia_lift_personalize_agent_delete($agent_data) {
-  if ($agent_data->plugin != 'acquia_lift') {
+  if (!acquia_lift_owns_agent($agent_data)) {
     return;
   }
   $queue = DrupalQueue::get('acquia_lift_sync');
@@ -364,11 +417,26 @@ function acquia_lift_personalize_agent_delete($agent_data) {
 }
 
 /**
+ * Implements hook_personalize_option_set_presave().
+ */
+function acquia_lift_personalize_option_set_presave($option_set) {
+  $agent = personalize_agent_load($option_set->agent);
+  // We are only concerned here with SimpleAB agents.
+  if (!$agent || $agent->plugin != 'acquia_lift_simple_ab') {
+    return;
+  }
+  // SimpleAB agents can only have one variation set, meaning all option
+  // sets for that agent are part of the same variation set, as specified
+  // by the decision name. We name the decision after the agent.
+  $option_set->decision_name = $option_set->agent;
+}
+
+/**
  * Implements hook_personalize_option_set_save().
  */
 function acquia_lift_personalize_option_set_save($option_set) {
   $agent = personalize_agent_load($option_set->agent);
-  if (!$agent || $agent->plugin != 'acquia_lift') {
+  if (!acquia_lift_owns_agent($agent)) {
     return;
   }
   // Acquia Lift agents store their option set info in the db so that they can
@@ -393,7 +461,7 @@ function acquia_lift_personalize_option_set_save($option_set) {
  */
 function acquia_lift_personalize_option_set_delete($option_set) {
   $agent = personalize_agent_load($option_set->agent);
-  if (!$agent || $agent->plugin != 'acquia_lift') {
+  if (!acquia_lift_owns_agent($agent)) {
     return;
   }
   // Acquia Lift agents store their option set info in the db so that they can
@@ -447,7 +515,7 @@ function acquia_lift_sync_option_sets($agent, $old_option_sets, $new_option_sets
  */
 function acquia_lift_personalize_goal_save($goal_info) {
   $agent = personalize_agent_load($goal_info['agent']);
-  if (!$agent || $agent->plugin != 'acquia_lift') {
+  if (!acquia_lift_owns_agent($agent)) {
     return;
   }
   $old_goals = isset($agent->data['goals']) ? $agent->data['goals'] : array();

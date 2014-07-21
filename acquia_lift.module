@@ -84,6 +84,7 @@ function acquia_lift_menu() {
     'access arguments' => array('manage personalized content'),
     'type' => MENU_CALLBACK,
     'file' => 'acquia_lift.admin.inc',
+    'theme callback' => 'ajax_base_page_theme',
   );
   return $items;
 }

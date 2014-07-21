@@ -157,15 +157,38 @@
   /**
    * Add DOMSelector to jQuery and protect against multiple instantiations.
    */
-  $.fn.DOMSelector = function(options) {
-    this.each(function() {
-      if (!$.data(this, 'plugin_' + pluginName)) {
-        $.data(this, 'plugin_' + pluginName, new Plugin(this, options));
-      }
-    });
-    // Chain for jQuery functions.
-    return this;
-  }
+  $.fn.DOMSelector = function (options) {
+    var args = arguments;
+    // Create a new plugin.
+    if (options === undefined || typeof options === 'object') {
+      return this.each(function () {
+        // Only allow the plugin to be instantiated once.
+        if (!$.data(this, 'plugin_' + pluginName)) {
+          $.data(this, 'plugin_' + pluginName, new Plugin(this, options));
+        }
+      });
+      // If the first parameter is a string and it doesn't start
+      // with an underscore or "contains" the `init`-function,
+      // treat this as a call to a public method.
+    } else if (typeof options === 'string' && options[0] !== '_' && options !== 'init') {
+      var returns;
+
+      this.each(function () {
+        var instance = $.data(this, 'plugin_' + pluginName);
+        if (instance instanceof Plugin && typeof instance[options] === 'function') {
+          returns = instance[options].apply( instance, Array.prototype.slice.call( args, 1 ) );
+        }
+
+        // Allow instances to be destroyed via the 'destroy' method
+        if (options === 'destroy') {
+          $.data(this, 'plugin_' + pluginName, null);
+        }
+      });
+
+      return returns !== undefined ? returns : this;
+    }
+  };
+
 
   /**
    * Utility function to test if a string value empty.

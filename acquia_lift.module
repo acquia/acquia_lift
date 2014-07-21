@@ -644,6 +644,7 @@ function acquia_lift_library() {
     'version' => VERSION,
     'js' => array(
       $path . '/js/acquia_lift.modal.js' => $options,
+      $path . '/js/acquia_lift.dom_selector.js' => $options,
       array(
         'data' => array(
           'acquia-lift-style' => array(

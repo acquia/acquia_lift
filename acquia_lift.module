@@ -669,6 +669,7 @@ function acquia_lift_library() {
     ),
     'dependencies' => array(
       array('acquia_lift', 'acquia_lift.message_box'),
+      array('acquia_lift', 'qtip'),
       array('system', 'jquery'),
       array('system', 'jquery.once'),
     ),
@@ -796,6 +797,11 @@ function acquia_lift_library() {
   $libraries['backbone'] = _acquia_lift_convert_libraries_to_library(libraries_detect('backbone'), array(
     'group' => JS_LIBRARY,
     'weight' => -19,
+  ));
+
+  $libraries['qtip'] = _acquia_lift_convert_libraries_to_library(libraries_detect('qtip'), array(
+    'group' => JS_LIBRARY,
+    'weight' => -15,
   ));
 
   /*** REQUIRED BY ACQUIA LIFT UNIFIED NAVBAR ***/
@@ -1132,6 +1138,57 @@ function acquia_lift_libraries_info() {
             // installed.
             'variant callback' => '_acquia_lift_libraries_variant_exists',
             'variant arguments' => array('chosen.jquery.min.js'),
+          ),
+        ),
+      ),
+    ),
+  );
+
+  // @todo version detection assumes a version pattern within the same filename
+  // but QTip has version-specific filenames and this needs to be better
+  // addressed.
+  $libraries['qtip'] = array(
+    'name' => 'QTip',
+    'vendor url' => 'http://craigsworks.com/projects/qtip/',
+    'download url' => 'http://craigsworks.com/projects/qtip/download/',
+    'version callback' => '_acquia_lift_libraries_get_version',
+    'variant order' => array('minified', 'source'),
+    'version arguments' => array(
+      'variants' => array(
+        'source' => array(
+          'file' => 'jquery.qtip-1.0.0-rc3.js',
+          'pattern' => '/Version : (1\.\d\.\d)+/',
+        ),
+        'minified' => array(
+          'file' => 'jquery.qtip-1.0.0-rc3.min.js',
+          'pattern' => '/Version : (1\.\d\.\d)+/',
+        ),
+      ),
+    ),
+    'versions' => array(
+      '1.0.0' => array(
+        'variants' => array(
+          'source' => array(
+            'files' => array(
+              'js' => array(
+                'jquery.qtip-1.0.0-rc3.js',
+              ),
+            ),
+            // Without a variant callback, the variant is assumed to be
+            // installed.
+            'variant callback' => '_acquia_lift_libraries_variant_exists',
+            'variant arguments' => array('jquery.qtip-1.0.0-rc3.min.js'),
+          ),
+          'minified' => array(
+            'files' => array(
+              'js' => array(
+                'jquery.qtip-1.0.0-rc3.min.js',
+              ),
+            ),
+            // Without a variant callback, the variant is assumed to be
+            // installed.
+            'variant callback' => '_acquia_lift_libraries_variant_exists',
+            'variant arguments' => array('jquery.qtip-1.0.0-rc3.min.js'),
           ),
         ),
       ),

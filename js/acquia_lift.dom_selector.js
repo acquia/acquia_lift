@@ -46,6 +46,28 @@
     watchDOM: function() {
       this.$element.bind('mousemove', $.proxy(this, 'onMouseMove'));
       this.$element.bind('click', $.proxy(this, 'onClick'));
+      this.$element.find('*').each(function() {
+        $(this).qtip({
+          content: getSelector(this),
+          position: {
+            corner: {
+              target: 'topMiddle',
+              tooltip: 'bottomMiddle'
+            },
+            adjust: {
+              y: 10
+            }
+          },
+          show: {
+            delay: 0
+          },
+          hide: {
+            effect: {
+              type: null
+            }
+          }
+        });
+      });
       return this.$element;
     },
 
@@ -58,6 +80,9 @@
       this.hovered.unhighlight();
       this.$element.unbind('mousemove', this.onMouseMove);
       this.$element.unbind('click', this.onClick);
+      this.$element.find('*').each(function() {
+        $(this).qtip('destroy');
+      });
       return this.$element;
     },
 
@@ -66,41 +91,43 @@
      */
     hovered: {
       // The element that is currently hovered.
-      element: null,
+      $element: null,
       // The background css for the hovered element so that it can be returned
       // to its original state after hover.
       originalCss: {},
       // The CSS for the element on hover.
       hoverCss: {},
 
-
       // Unhighlight the element.
       unhighlight: function() {
-        if (this.element != null) {
-          this.element.css(this.originalCss)
+        if (this.$element != null) {
+          this.$element.css(this.originalCss);
+          console.log('hide qtip: ' + getSelector(this.$element[0]));
+          this.$element.qtip("hide");
         }
         this.originalCss = {};
-        return this.element = null;
+        return this.$element = null;
       },
 
       // Highlight the element.
       highlight: function() {
-        if (this.element != null) {
+        if (this.$element != null) {
           for (var prop in this.hoverCss) {
-            this.originalCss[prop] = this.element.css(prop);
+            this.originalCss[prop] = this.$element.css(prop);
           }
-          return this.element.css(this.hoverCss);
+          this.$element.qtip("show");
+          console.log('show qtip: ' + getSelector(this.$element[0]));
+          return this.$element.css(this.hoverCss);
         }
       },
 
       // Update what element is the current for hover functionality.
       update: function(target) {
-        if (target === null || typeof target === 'undefined' || target === this.element) {
+        if (target === null || typeof target === 'undefined' || (this.$element && target === this.$element[0])) {
           return;
         }
-
         this.unhighlight();
-        this.element = $(target);
+        this.$element = $(target);
         this.highlight();
       }
     },
@@ -118,7 +145,7 @@
      * Event listener for an element click event.
      */
     onClick: function(event) {
-      this.settings.onElementSelect.call(this, this.hovered.element[0], getSelector(this.hovered.element[0]));
+      this.settings.onElementSelect.call(this, this.hovered.$element[0], getSelector(this.hovered.$element[0]));
       event.preventDefault();
       event.stopPropagation();
       event.cancelBubble = true;

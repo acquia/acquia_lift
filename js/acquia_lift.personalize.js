@@ -101,7 +101,7 @@ Drupal.behaviors.acquiaLiftPersonalize = {
         if ($link.closest('.navbar-tray').length) {
           _.each(addedCampaigns, function (campaignModel, key) {
             // Add an empty count for each campaign's set of options.
-            $element = $(Drupal.theme('acquiaLiftCount'));
+            var $element = $(Drupal.theme('acquiaLiftCount'));
             ui.views.push((new ui['MenuOptionCountEmptyView']({
               el: $element.get(0),
               model: campaignModel,
@@ -129,7 +129,7 @@ Drupal.behaviors.acquiaLiftPersonalize = {
         if ($link.closest('.navbar-tray').length) {
           // Loop through the campaigns and add an empty count for each one.
           _.each(addedCampaigns, function (campaignModel, key) {
-            $element = $(Drupal.theme('acquiaLiftCount'));
+            var $element = $(Drupal.theme('acquiaLiftCount'));
             ui.views.push((new ui['MenuGoalsCountView']({
               el: $element.get(0),
               model: campaignModel

@@ -35,7 +35,7 @@
      * Initialization logic.
      */
     init: function() {
-      this.hovered.hoverCss = this.settings.hoverCss;
+      this._hovered.hoverCss = this.settings.hoverCss;
     },
 
     /**
@@ -43,31 +43,40 @@
      *
      * @returns the current jQuery element.
      */
-    watchDOM: function() {
-      this.$element.bind('mousemove', $.proxy(this, 'onMouseMove'));
-      this.$element.bind('click', $.proxy(this, 'onClick'));
+    startWatching: function() {
+      this.$element.bind('mousemove', $.proxy(this, '_onMouseMove'));
+      this.$element.bind('click', $.proxy(this, '_onClick'));
+      var time = new Date().getTime();
       this.$element.find('*').each(function() {
         $(this).qtip({
           content: getSelector(this),
+          solo: true,
           position: {
-            corner: {
-              target: 'topMiddle',
-              tooltip: 'bottomMiddle'
-            },
+            target: 'mouse',
             adjust: {
-              y: 10
+              mouse: true
             }
           },
           show: {
-            delay: 0
+            delay: 0,
+            when: false,
+            effect: {
+              type: 'show',
+              length: 0
+            }
           },
           hide: {
+            delay: 0,
+            when: false,
             effect: {
-              type: null
+              type: 'hide',
+              length: 0
             }
           }
         });
       });
+      var total = new Date().getTime() - time;
+      console.log('total to watch: ' + total);
       return this.$element;
     },
 
@@ -76,20 +85,23 @@
      *
      * @returns the current jQuery element.
      */
-    unwatchDOM: function() {
-      this.hovered.unhighlight();
-      this.$element.unbind('mousemove', this.onMouseMove);
-      this.$element.unbind('click', this.onClick);
+    stopWatching: function() {
+      var time = new Date().getTime();
+      this._hovered.unhighlight();
+      this.$element.unbind('mousemove', this._onMouseMove);
+      this.$element.unbind('click', this._onClick);
       this.$element.find('*').each(function() {
         $(this).qtip('destroy');
       });
+      var total = new Date().getTime() - time;
+      console.log('total to unwatch: ' + total);
       return this.$element;
     },
 
     /**
      * Highlight functionality for a hovered element.
      */
-    hovered: {
+    _hovered: {
       // The element that is currently hovered.
       $element: null,
       // The background css for the hovered element so that it can be returned
@@ -101,9 +113,8 @@
       // Unhighlight the element.
       unhighlight: function() {
         if (this.$element != null) {
-          this.$element.css(this.originalCss);
-          console.log('hide qtip: ' + getSelector(this.$element[0]));
           this.$element.qtip("hide");
+          this.$element.css(this.originalCss);
         }
         this.originalCss = {};
         return this.$element = null;
@@ -116,7 +127,6 @@
             this.originalCss[prop] = this.$element.css(prop);
           }
           this.$element.qtip("show");
-          console.log('show qtip: ' + getSelector(this.$element[0]));
           return this.$element.css(this.hoverCss);
         }
       },
@@ -137,19 +147,19 @@
      *
      * Update the hover element to the current element being moused over.
      */
-    onMouseMove: function(event) {
-      this.hovered.update(event.target);
+    _onMouseMove: function(event) {
+      this._hovered.update(event.target);
     },
 
     /**
      * Event listener for an element click event.
      */
-    onClick: function(event) {
-      this.settings.onElementSelect.call(this, this.hovered.$element[0], getSelector(this.hovered.$element[0]));
+    _onClick: function(event) {
+      this.settings.onElementSelect.call(this, this._hovered.$element[0], getSelector(this._hovered.$element[0]));
       event.preventDefault();
       event.stopPropagation();
       event.cancelBubble = true;
-      this.unwatchDOM();
+      this.stopWatching();
       return false;
     }
   })
@@ -168,7 +178,7 @@
         }
       });
       // If the first parameter is a string and it doesn't start
-      // with an underscore or "contains" the `init`-function,
+      // with an underscore and isn't the init function,
       // treat this as a call to a public method.
     } else if (typeof options === 'string' && options[0] !== '_' && options !== 'init') {
       var returns;

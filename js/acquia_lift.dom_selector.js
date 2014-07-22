@@ -46,7 +46,6 @@
     startWatching: function() {
       this.$element.bind('mousemove', $.proxy(this, '_onMouseMove'));
       this.$element.bind('click', $.proxy(this, '_onClick'));
-      var time = new Date().getTime();
       this.$element.find('*').each(function() {
         $(this).qtip({
           content: getSelector(this),
@@ -75,8 +74,6 @@
           }
         });
       });
-      var total = new Date().getTime() - time;
-      console.log('total to watch: ' + total);
       return this.$element;
     },
 
@@ -86,15 +83,12 @@
      * @returns the current jQuery element.
      */
     stopWatching: function() {
-      var time = new Date().getTime();
       this._hovered.unhighlight();
       this.$element.unbind('mousemove', this._onMouseMove);
       this.$element.unbind('click', this._onClick);
       this.$element.find('*').each(function() {
         $(this).qtip('destroy');
       });
-      var total = new Date().getTime() - time;
-      console.log('total to unwatch: ' + total);
       return this.$element;
     },
 

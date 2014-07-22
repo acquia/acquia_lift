@@ -63,7 +63,7 @@ Drupal.acquiaLift = (function() {
   function convertContextToFeatureString(name, value) {
     var prefix, val, feature_string, separator = settings.featureStringSeparator;
     prefix = cleanString(name);
-    val = cleanString(value);
+    val = isNaN(value) ? cleanString(value) : value;
     // Make a string of the visitor context item in the format Acquia Lift can
     // consume.
     feature_string = prefix + separator + val;

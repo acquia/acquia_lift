@@ -1178,7 +1178,7 @@ function acquia_lift_libraries_info() {
             // Without a variant callback, the variant is assumed to be
             // installed.
             'variant callback' => '_acquia_lift_libraries_variant_exists',
-            'variant arguments' => array('jquery.qtip-1.0.0-rc3.min.js'),
+            'variant arguments' => array('jquery.qtip-1.0.0-rc3.js'),
           ),
           'minified' => array(
             'files' => array(

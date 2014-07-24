@@ -17,8 +17,11 @@
         color: '#fff',
         cursor: 'pointer'
       },
-      onElementSelect: function(element, selector) {
+      onElementSelect: function (element, selector) {
         console.log('selected: ' + selector);
+      },
+      onError: function (message) {
+        console.log(message);
       }
     };
 
@@ -158,7 +161,12 @@
      * Event listener for an element click event.
      */
     _onClick: function(event) {
-      this.settings.onElementSelect.call(this, this._hovered.$element[0], getSelector(this._hovered.$element[0]));
+      var selected = this._hovered.$element[0];
+      if ($(selected).length != 1) {
+        this.settings.onError.call(this, Drupal.t('Invalid element selector.'));
+      } else {
+        this.settings.onElementSelect.call(this, selected, getSelector(selected));
+      }
       event.preventDefault();
       event.stopPropagation();
       event.cancelBubble = true;

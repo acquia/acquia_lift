@@ -662,6 +662,22 @@ function acquia_lift_library() {
             'closeImage' => theme('image', array('path' => ctools_image_path('close.png', 'acquia_lift'), 'alt' => t('Close window'), 'title' => t('Close window'))),
             'closeText' => '',
           ),
+          'acquia-lift-style-short' => array(
+            'modalSize' => array(
+              'type' => 'fixed',
+              'width' => 600,
+              'height' => 225,
+              'addWidth' => 0,
+              'addHeight' => 0,
+              'contentRight' => 0,
+              'contentBottom' => 0,
+            ),
+            'modalOptions' => array(
+              'background-color' => '#000000',
+            ),
+            'closeImage' => theme('image', array('path' => ctools_image_path('close.png', 'acquia_lift'), 'alt' => t('Close window'), 'title' => t('Close window'))),
+            'closeText' => '',
+          ),
         ),
         'type' => 'setting',
       ),

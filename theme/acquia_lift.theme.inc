@@ -288,7 +288,7 @@ function theme_acquia_lift_campaign_type_list($variables) {
         $url_parts[] = 'nojs';
       }
       $campaign_url = implode('/', $url_parts);
-      $html .= ctools_modal_text_button($campaign_type['title'], $campaign_url, $campaign_type['title'], 'acquia-lift-campaign-select ctools-modal-acquia-lift-style');
+      $html .= ctools_modal_text_button($campaign_type['title'], $campaign_url, $campaign_type['title'], 'acquia-lift-campaign-select ctools-modal-acquia-lift-style-short');
     }
     $html .= '</div>';
     $html .= '<p>' . $campaign_type['description'] . '</p>';

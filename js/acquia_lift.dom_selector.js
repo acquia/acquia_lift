@@ -56,9 +56,11 @@
               mouse: true
             }
           },
+          // Let the show event remain at mouseover to allow for deferred
+          // instantiation, but handle only showing when highlighted via the
+          // beforeShow callback.
           show: {
             delay: 0,
-            when: false,
             effect: {
               type: 'show',
               length: 0
@@ -70,6 +72,11 @@
             effect: {
               type: 'hide',
               length: 0
+            }
+          },
+          api: {
+            beforeShow: function() {
+              return this.elements.target.hasClass('acquia-lift-active-element');
             }
           }
         });
@@ -109,6 +116,7 @@
         if (this.$element != null) {
           this.$element.qtip("hide");
           this.$element.css(this.originalCss);
+          this.$element.removeClass('acquia-lift-active-element');
         }
         this.originalCss = {};
         return this.$element = null;
@@ -120,6 +128,7 @@
           for (var prop in this.hoverCss) {
             this.originalCss[prop] = this.$element.css(prop);
           }
+          this.$element.addClass('acquia-lift-active-element');
           this.$element.qtip("show");
           return this.$element.css(this.hoverCss);
         }

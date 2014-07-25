@@ -10,6 +10,8 @@
    * jQuery plugin definition.
    */
   var pluginName = 'DOMSelector',
+    indicatorClass = 'acquia-lift-active-element',
+    qtipCreated = false,
     defaults = {
       hoverCss: {
         background: '#666',
@@ -49,41 +51,45 @@
     startWatching: function() {
       this.$element.bind('mousemove', $.proxy(this, '_onMouseMove'));
       this.$element.bind('click', $.proxy(this, '_onClick'));
-      this.$element.find('*').each(function() {
-        $(this).qtip({
-          content: getSelector(this),
-          solo: true,
-          position: {
-            target: 'mouse',
-            adjust: {
-              mouse: true
+      if (qtipCreated) {
+        this.$element.find('*').qtip('enable');
+      } else {
+        this.$element.find('*').each(function() {
+          $(this).qtip({
+            content: getSelector(this),
+            solo: true,
+            position: {
+              target: 'mouse',
+              adjust: {
+                mouse: true
+              }
+            },
+            // Let the show event remain at mouseover to allow for deferred
+            // instantiation, but handle only showing when highlighted via the
+            // beforeShow callback.
+            show: {
+              delay: 0,
+              effect: {
+                type: 'show',
+                length: 0
+              }
+            },
+            hide: {
+              delay: 0,
+              when: false,
+              effect: {
+                type: 'hide',
+                length: 0
+              }
+            },
+            api: {
+              beforeShow: function() {
+                return this.elements.target.hasClass(indicatorClass);
+              }
             }
-          },
-          // Let the show event remain at mouseover to allow for deferred
-          // instantiation, but handle only showing when highlighted via the
-          // beforeShow callback.
-          show: {
-            delay: 0,
-            effect: {
-              type: 'show',
-              length: 0
-            }
-          },
-          hide: {
-            delay: 0,
-            when: false,
-            effect: {
-              type: 'hide',
-              length: 0
-            }
-          },
-          api: {
-            beforeShow: function() {
-              return this.elements.target.hasClass('acquia-lift-active-element');
-            }
-          }
+          });
         });
-      });
+      }
       return this.$element;
     },
 
@@ -96,9 +102,7 @@
       this._hovered.unhighlight();
       this.$element.unbind('mousemove', this._onMouseMove);
       this.$element.unbind('click', this._onClick);
-      this.$element.find('*').each(function() {
-        $(this).qtip('destroy');
-      });
+      this.$element.find('*').qtip('disable');
       return this.$element;
     },
 
@@ -119,7 +123,7 @@
         if (this.$element != null) {
           this.$element.qtip("hide");
           this.$element.css(this.originalCss);
-          this.$element.removeClass('acquia-lift-active-element');
+          this.$element.removeClass(indicatorClass);
         }
         this.originalCss = {};
         return this.$element = null;
@@ -131,7 +135,7 @@
           for (var prop in this.hoverCss) {
             this.originalCss[prop] = this.$element.css(prop);
           }
-          this.$element.addClass('acquia-lift-active-element');
+          this.$element.addClass(indicatorClass);
           this.$element.qtip("show");
           return this.$element.css(this.hoverCss);
         }
@@ -161,11 +165,13 @@
      * Event listener for an element click event.
      */
     _onClick: function(event) {
-      var selected = this._hovered.$element[0];
-      if ($(selected).length != 1) {
+      var $selected = this._hovered.$element;
+      if ($selected.length != 1) {
         this.settings.onError.call(this, Drupal.t('Invalid element selector.'));
       } else {
-        this.settings.onElementSelect.call(this, selected, getSelector(selected));
+        // Remove the indicator class so it doesn't show in the final selector.
+        $selected.removeClass(indicatorClass);
+        this.settings.onElementSelect.call(this, $selected[0], getSelector($selected[0]));
       }
       event.preventDefault();
       event.stopPropagation();
@@ -212,7 +218,7 @@
 
 
   /**
-   * Utility function to test if a string value empty.
+   * Utility function to test if a string value is empty.
    *
    * @param stringValue
    *   String value to test

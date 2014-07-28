@@ -202,6 +202,31 @@ function acquia_lift_theme() {
 }
 
 /**
+ * Implements hook_preprocess_menu_link().
+ *
+ * Used to remove ctools functionality and adjust the link to the standard
+ * campaign creation flow when simplified flows are not enabled.
+ */
+function acquia_lift_preprocess_menu_link(&$variables) {
+  if (variable_get('acquia_lift_simplified_campaign_enabled', FALSE)) {
+    return;
+  }
+  foreach($variables as &$link) {
+    if (!isset($link['#href']) || $link['#href'] !== 'admin/structure/personalize/add/nojs') {
+      continue;
+    }
+
+    foreach ($link['#localized_options']['attributes']['class'] as $i => $class_name) {
+      if (strpos($class_name, 'ctools-') !== FALSE) {
+        unset($link['#localized_options']['attributes']['class'][$i]);
+      }
+    }
+    $link['#href'] = 'admin/structure/personalize/add';
+    return;
+  }
+}
+
+/**
  * Implements hook_init().
  */
 function acquia_lift_init() {
@@ -336,10 +361,13 @@ function acquia_lift_cron_queue_info() {
  *   as values.
  */
 function acquia_lift_get_agent_types() {
-  return array(
+  $types = array(
     'acquia_lift' => 'AcquiaLiftAgent',
-    'acquia_lift_simple_ab' => 'AcquiaLiftSimpleAB',
   );
+  if (variable_get('acquia_lift_simplified_campaign_enabled', FALSE)) {
+    $types['acquia_lift_simple_ab'] = 'AcquiaLiftSimpleAB';
+  }
+  return $types;
 }
 
 /**

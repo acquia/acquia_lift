@@ -37,7 +37,7 @@ class ALProfilesWebTest extends DrupalWebTestCase {
       'acquia_lift_profiles_secret_key' => 'xyz987',
       'acquia_lift_profiles_js_path' => 'acquia_lift_profiles.example.com/path/to.js',
     );
-    $this->drupalPost('admin/config/content/acquia_lift_profiles', $edit, t('Save'));
+    $this->drupalPost('admin/config/content/personalize/acquia_lift_profiles', $edit, t('Save'));
 
     // Since this is not a system_settings_form we need to assert that the
     // variables do in fact get set.
@@ -79,7 +79,7 @@ class ALProfilesWebTest extends DrupalWebTestCase {
     $edit = array(
       'acquia_lift_profiles_capture_identity' => TRUE,
     );
-    $this->drupalPost('admin/config/content/acquia_lift_profiles', $edit, t('Save'));
+    $this->drupalPost('admin/config/content/personalize/acquia_lift_profiles', $edit, t('Save'));
     $this->drupalLogout();
     $this->resetAll();
 
@@ -205,14 +205,14 @@ class ALProfilesWebTest extends DrupalWebTestCase {
     $this->configureALProfiles();
     $this->drupalLogin($this->admin_user);
     // Test configuring Acquia Lift Profiles to track a couple of actions.
-    $this->drupalPost('admin/config/content/acquia_lift_profiles', array('acquia_lift_profiles_tracked_actions[]' => array('user_login', 'user_register')), t('Save'));
+    $this->drupalPost('admin/config/content/personalize/acquia_lift_profiles', array('acquia_lift_profiles_tracked_actions[]' => array('user_login', 'user_register')), t('Save'));
     $this->assertText('The event user_login has been saved to Acquia Lift Profiles');
     $this->assertText('The event user_register has been saved to Acquia Lift Profiles');
     $tracked_actions = variable_get('acquia_lift_profiles_tracked_actions', array());
     $this->assertEqual(array('user_login', 'user_register'), $tracked_actions);
 
     // Now remove one of those actions.
-    $this->drupalPost('admin/config/content/acquia_lift_profiles', array('acquia_lift_profiles_tracked_actions[]' => array('user_login')), t('Save'));
+    $this->drupalPost('admin/config/content/personalize/acquia_lift_profiles', array('acquia_lift_profiles_tracked_actions[]' => array('user_login')), t('Save'));
     $this->assertNoText('The event user_login has been saved to Acquia Lift Profiles');
     $this->assertText('The event user_register was deleted from Acquia Lift Profiles');
     $tracked_actions = variable_get('acquia_lift_profiles_tracked_actions', array());
@@ -220,7 +220,7 @@ class ALProfilesWebTest extends DrupalWebTestCase {
 
     // Remove the other one. There should be no call to delete the one we already
     // deleted.
-    $this->drupalPost('admin/config/content/acquia_lift_profiles', array('acquia_lift_profiles_tracked_actions[]' => array('form_submit')), t('Save'));
+    $this->drupalPost('admin/config/content/personalize/acquia_lift_profiles', array('acquia_lift_profiles_tracked_actions[]' => array('form_submit')), t('Save'));
     $this->assertText('The event form_submit has been saved to Acquia Lift Profiles');
     $this->assertText('The event user_login was deleted from Acquia Lift Profiles');
     $this->assertNoText('The event user_register was deleted from Acquia Lift Profiles');
@@ -238,7 +238,7 @@ class ALProfilesWebTest extends DrupalWebTestCase {
       'acquia_lift_profiles_udf_mappings[person][person_udf1]' => 'user_profile_context__test_user_field_1',
       'acquia_lift_profiles_udf_mappings[touch][touch_udf20]' => 'user_profile_context__test_user_field_2'
     );
-    $this->drupalPost('admin/config/content/acquia_lift_profiles', $edit, t('Save'));
+    $this->drupalPost('admin/config/content/personalize/acquia_lift_profiles', $edit, t('Save'));
     $this->drupalGet('');
     $settings = $this->drupalGetSettings();
     $expected = array(
@@ -265,7 +265,7 @@ class ALProfilesWebTest extends DrupalWebTestCase {
       'acquia_lift_profiles_access_key' => 'abc123',
       'acquia_lift_profiles_secret_key' => 'xyz987',
     );
-    $this->drupalPost('admin/config/content/acquia_lift_profiles', $edit, t('Save'));
+    $this->drupalPost('admin/config/content/personalize/acquia_lift_profiles', $edit, t('Save'));
     $this->drupalLogout();
   }
 

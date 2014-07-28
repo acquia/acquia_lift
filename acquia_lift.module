@@ -90,18 +90,15 @@ function acquia_lift_menu() {
 }
 
 /**
- * Implements hook_menu_alter().
- */
-function acquia_lift_menu_alter(&$items) {
-  $items['admin/structure/personalize/manage/%personalize_agent']['page callback'] = 'acquia_lift_agent_edit_callback';
-}
-
-/**
  * Replacement menu callback for the agent edit page.
  *
  * Calls the original menu callback for any agent that's not of the
- * Simple AB type. For the later, just redirects to the homepage as
+ * Simple AB type. For the latter, just redirects to the homepage as
  * these agents are supposed to be managed from the front-end.
+ *
+ * @todo Implement hook_menu_alter and point the agent edit callback
+ *   to this function once we have support for adding variations from
+ *   the front end.
  *
  * @param $agent_data
  *   An object representing the agent being edited.
@@ -354,6 +351,9 @@ function acquia_lift_get_agent_types() {
  *   TRUE if the object is an Acquia Lift owned agent, FALSE otherwise.
  */
 function acquia_lift_owns_agent($agent) {
+  if (empty($agent)) {
+    return FALSE;
+  }
   $agent_types = acquia_lift_get_agent_types();
   return in_array($agent->plugin, array_keys($agent_types));
 }

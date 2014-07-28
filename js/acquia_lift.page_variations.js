@@ -282,10 +282,17 @@
     PageVariationMenuListItemView: Backbone.View.extend({
       tagName: 'li',
 
+      /**
+       * {@inheritDoc}
+       */
       initialize: function(options) {
         _.bindAll(this, 'clicked');
       },
 
+      /**
+       * Event definitions: defines click handler when a variation type link
+       * is clicked.
+       */
       events: {
         "click a": "clicked"
       },

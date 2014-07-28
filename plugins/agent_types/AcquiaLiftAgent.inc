@@ -54,6 +54,10 @@ interface AcquiaLiftAgentInterface {
   public static function convertOptionSetsToDecisions($option_sets);
 }
 
+interface AcquiaLiftSimplifiedAgentInterface {
+  public static function simplifiedForm($agent_data);
+}
+
 interface AcquiaLiftReportInterface {
   /**
    * Get the confidence measure for determining the statistical significance
@@ -197,18 +201,6 @@ class AcquiaLiftAgent extends PersonalizeAgentBase implements PersonalizeAgentGo
    */
   public function sendGoal($goal_name, $value = NULL) {
     // @todo Implement server-side goal delivery.
-  }
-
-  /**
-   * Gets a simplified version of the optionsForm for use when
-   * creating a simple A/B test.
-   *
-   * @todo: Split the simple A/B test functionality into it's own agent.  It
-   * will likely need other restrictions on it such as limiting the number
-   * of variations, etc.
-   */
-  public static function simpleABOptionsForm($agent_data) {
-    return self::buildOptionsForm($agent_data, TRUE);
   }
 
   /**
@@ -782,6 +774,24 @@ class AcquiaLiftAgent extends PersonalizeAgentBase implements PersonalizeAgentGo
       $_SESSION['acquia_lift_queue_trigger'] = 1;
     }
   }
+}
+
+/**
+ * Class AcquiaLiftSimpleAB
+ *
+ * This is the class for agents of type 'acquia_lift_simple_ab'. For now it only
+ * differs from the regular Acquia Lift agent class in the options form it presents
+ * to users.
+ */
+class AcquiaLiftSimpleAB extends AcquiaLiftAgent implements AcquiaLiftSimplifiedAgentInterface {
+
+  /**
+   * Implements PersonalizeAgentInterface::optionsForm().
+   */
+  public static function simplifiedForm($agent_data) {
+    return self::buildOptionsForm($agent_data, TRUE);
+  }
+
 }
 
 /**

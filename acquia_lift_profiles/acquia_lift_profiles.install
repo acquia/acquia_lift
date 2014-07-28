@@ -11,7 +11,7 @@ function acquia_lift_profiles_install() {
   $menu_name = 'acquia-lift-controls';
   // Create a link for accessing the Profiles web admin.
   $item = array(
-    'link_title' => 'Acquia Lift Profiles Web Admin',
+    'link_title' => 'Acquia Lift Web Admin',
     'link_path' => 'http://lift.acquia.com',
     'menu_name' => $menu_name,
     'options' => array(

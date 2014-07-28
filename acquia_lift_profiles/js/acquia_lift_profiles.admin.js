@@ -1,0 +1,36 @@
+(function ($) {
+  /**
+   * Vertical tab display within content types.
+   */
+  Drupal.behaviors.AcquiaLiftProfilesContentTypes = {
+    attach: function (context) {
+      // Provide the vertical tab summaries.
+      $('fieldset[id^="edit-acquia_lift_profiles"]', context).drupalSetSummary(function(context) {
+        var val = 'Image thumbnail: ';
+        val += $('select[name="acquia_lift_profiles[thumbnail]"] option:selected', context).text();
+        return val;
+      });
+      // Code to show/hide extra UDF mapping elements.
+      $('div.acquia_lift_profiles-hidden-udfs').once(function(){
+        $(this).hide();
+      });
+      $('input.acquia_lift_profiles-udf-show-all').once(function(){
+        $(this).bind('click', function() {
+          var action, text;
+          if ($(this).val() == Drupal.t('Show all')) {
+            action = 'show';
+            text = Drupal.t('Show fewer');
+          }
+          else {
+            action = 'hide';
+            text = Drupal.t('Show all');
+          }
+          $(this).parent().find('div.acquia_lift_profiles-hidden-udfs')[action]();
+          $(this).val(text);
+          return false;
+        });
+      });
+    }
+  };
+
+})(jQuery);

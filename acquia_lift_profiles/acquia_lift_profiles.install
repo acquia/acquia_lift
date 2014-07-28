@@ -1,0 +1,45 @@
+<?php
+
+/**
+ * @file Visitor Actions - Installation file.
+ */
+
+/**
+ * Implements hook_uninstall().
+ */
+function acquia_lift_profiles_uninstall() {
+  variable_del('acquia_lift_profiles_account_name');
+  variable_del('acquia_lift_profiles_api_url');
+  variable_del('acquia_lift_profiles_access_key');
+  variable_del('acquia_lift_profiles_secret_key');
+  variable_del('acquia_lift_profiles_capture_identity');
+  variable_del('acquia_lift_profiles_js_path');
+  variable_del('acquia_lift_profiles_vocabulary_mappings');
+  variable_del('acquia_lift_profiles_tracked_actions');
+  variable_del('acquia_lift_profiles_udf_mappings');
+}
+
+/**
+ * Implements hook_enable().
+ */
+function acquia_lift_profiles_enable() {
+  // If the module were previously enabled and actions set to be tracked,
+  // the list of subscribers to those actions will need to be rebuilt.
+  rebuild_subscribers_for_tracked_actions();
+}
+
+/**
+ * Implements hook_disable().
+ */
+function acquia_lift_profiles_disable() {
+  rebuild_subscribers_for_tracked_actions();
+}
+
+/**
+ * Rebuilds the list of subscribers for each action tracked.
+ */
+function rebuild_subscribers_for_tracked_actions() {
+  foreach (variable_get('acquia_lift_profiles_tracked_actions', array()) as $action) {
+    visitor_actions_clear_subscribers($action);
+  }
+}

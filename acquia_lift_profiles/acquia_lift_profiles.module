@@ -1,0 +1,668 @@
+<?php
+
+/**
+ * @file acquia_lift_profiles.module
+ * Provides Acquia Lift Profiles integration.
+ */
+
+define('ACQUIA_LIFT_PROFILES_THUMBNAIL_WIDGET_SEPARATOR', '|');
+
+/**
+ * Implements hook_menu().
+ */
+function acquia_lift_profiles_menu() {
+  $items = array();
+  $items['admin/config/content/personalize/acquia_lift_profiles'] = array(
+    'type' => MENU_LOCAL_TASK,
+    'title' => 'Acquia Lift Profiles',
+    'description' => 'Configuration settings for the Acquia Lift Profiles integration module.',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('acquia_lift_profiles_admin_form'),
+    'access arguments' => array('administer acquia_lift_profiles configuration'),
+    'file' => 'acquia_lift_profiles.admin.inc'
+  );
+  return $items;
+}
+
+/**
+ * Implements hook_permission().
+ */
+function acquia_lift_profiles_permission() {
+  $permissions = array(
+    'administer acquia_lift_profiles configuration' => array(
+      'title' => t('Administer acquia_lift_profiles settings'),
+      'description' => t('Administer configuration settings for Acquia Lift Profiles.'),
+    ),
+  );
+
+  return $permissions;
+}
+
+/**
+ * Returns whether or not Acquia Lift Profiles has been configured.
+ *
+ * @param bool $api_only
+ *   Whether to only take API configuration settings into account.
+ *
+ * @return bool
+ *   TRUE if all relevant configuration settings have been set, FALSE
+ *   otherwise.
+ */
+function acquia_lift_profiles_is_configured($api_only = FALSE) {
+  $api_configured = TRUE;
+  foreach (array('acquia_lift_profiles_account_name','acquia_lift_profiles_api_url', 'acquia_lift_profiles_access_key', 'acquia_lift_profiles_secret_key') as $api_config) {
+    $val = variable_get($api_config, '');
+    if (empty($val)) {
+      $api_configured = FALSE;
+    }
+  }
+
+  if ($api_only) {
+    return $api_configured;
+  }
+  $js_path = variable_get('acquia_lift_profiles_js_path', '');
+  return $api_configured && !empty($js_path);
+}
+
+/**
+ * Refreshes the cached list of available Acquia Lift Profiles segments.
+ *
+ * @return bool
+ *   TRUE if the list was successfully refreshed, FALSE otherwise.
+ */
+function acquia_lift_profiles_refresh_segments_cache() {
+  if (!acquia_lift_profiles_is_configured(TRUE)) {
+    return FALSE;
+  }
+  try {
+    $segments = ALProfilesAPI::getInstance(variable_get('acquia_lift_profiles_account_name', ''), variable_get('acquia_lift_profiles_api_url', ''))->getSegments();
+    variable_set('acquia_lift_profiles_segments', $segments);
+    return TRUE;
+  }
+  catch(Exception $e) {
+    watchdog('acquia_lift_profiles', $e->getMessage());
+    return FALSE;
+  }
+}
+
+/**
+ * Returns the list of availble segments.
+ *
+ * @return array
+ *   An array of segment IDs.
+ */
+function acquia_lift_profiles_get_segments() {
+  $segments = &drupal_static(__FUNCTION__, NULL);
+  if ($segments === NULL) {
+    $cached = variable_get('acquia_lift_profiles_segments', NULL);
+    if ($cached === NULL) {
+      // The segments have never been retrieved from Acquia Lift Profiles.
+      acquia_lift_profiles_refresh_segments_cache();
+      $cached = variable_get('acquia_lift_profiles_segments', array());
+    }
+    $segments = $cached;
+  }
+  return $segments;
+}
+
+/**
+ * Implements hook_page_build().
+ */
+function acquia_lift_profiles_page_build(&$page) {
+  global $base_root;
+  if (path_is_admin(current_path())) {
+    return;
+  }
+  // Bail if Acquia Lift Profiles has not yet been configured.
+  if (!acquia_lift_profiles_is_configured()) {
+    return;
+  }
+  $js_path = variable_get('acquia_lift_profiles_js_path', '');
+  $account_name = variable_get('acquia_lift_profiles_account_name', '');
+
+  $segments = acquia_lift_profiles_get_segments();
+  $settings = array(
+    'request_url' => $base_root . request_uri(),
+    'available_segments' => $segments,
+    'account_name' => $account_name,
+    'currentPath' => current_path(),
+    'captureIdentity' => variable_get('acquia_lift_profiles_capture_identity', FALSE),
+    'udfMappings' => variable_get('acquia_lift_profiles_udf_mappings', array()),
+    // Since we are using the same separator as provided by personalize
+    // module for targeting values, we need to tell our JS settings about
+    // it.
+    'udfMappingContextSeparator' => PERSONALIZE_TARGETING_ADMIN_SEPARATOR,
+  );
+
+  $page_context = acquia_lift_profiles_get_page_context();
+  foreach ($page_context as $name => $value) {
+    if (is_array($value)) {
+      $page_context[$name] = implode(',', $value);
+    }
+  }
+  $settings['pageContext'] = $page_context;
+
+  global $user;
+  if ($user->uid > 0) {
+    // If this is an administrator, add an admin mode setting so that
+    // no interactions happen with decision agents.
+    if (user_access('administer acquia_lift_profiles configuration')) {
+      $settings['adminMode'] = TRUE;
+    }
+  }
+  $account_name = $settings['account_name'];
+
+  $init = <<<EOT
+var _tcaq = _tcaq || [];
+var _tcwq = _tcwq || [];
+_tcaq.push(['setAccount', '$account_name']);
+(function() {
+  function async_load()
+  {
+    var s = document.createElement('script');
+    s.type = 'text/javascript';
+    s.async = true;
+    s.src = ('https:' == document.location.protocol ? 'https' : 'http')
+      + '://$js_path';
+    var x = document.getElementsByTagName('script')[0];
+    x.parentNode.insertBefore(s, x);
+  }
+  if (window.attachEvent)
+    window.attachEvent('onload', async_load);
+  else
+    window.addEventListener('load', async_load, false);
+})();
+EOT;
+
+  $page['page_top']['acquia_lift_profiles'] = array(
+    '#attached' => array(
+      'js' => array(
+        drupal_get_path('module', 'acquia_lift_profiles') . '/js/acquia_lift_profiles.js' => array(
+          'weight' => JS_DEFAULT - 10
+        ),
+        array(
+          'data' => array('acquia_lift_profiles' => $settings),
+          'type' => 'setting'
+        ),
+        array(
+          'data' => $init,
+          'type' => 'inline'
+        )
+      ),
+      'library' => array(
+        array('system', 'jquery.cookie'),
+      ),
+    )
+  );
+  acquia_lift_profiles_process_server_side_actions($page);
+}
+
+/**
+ * Implements hook_personalize_agent_save().
+ */
+function acquia_lift_profiles_personalize_agent_save($agent) {
+  // This is a good time to refresh the segments cache even if the agent
+  // in question doesn't use acquia_lift_profiles segments.
+  acquia_lift_profiles_refresh_segments_cache();
+}
+
+/**
+ * Implements hook_visitor_actions_page_build().
+ */
+function acquia_lift_profiles_visitor_actions_page_build(&$page, $actions) {
+  // If we are tracking client-side triggered actions, we need to add this
+  // information to Drupal.settings so that our client-side action listener
+  // can process them.
+  $client_side_actions = array();
+  if (!empty($actions)) {
+    $tracked_actions = variable_get('acquia_lift_profiles_tracked_actions', array());
+    foreach ($tracked_actions as $action) {
+      if (in_array($action, $actions)) {
+        $client_side_actions[] = $action;
+      }
+    }
+  }
+
+  if (!empty($client_side_actions)) {
+    $page['page_top']['acquia_lift_profiles_actions'] = array(
+      '#attached' => array(
+        'js' => array(
+          array(
+            'data' => array(
+              'acquia_lift_profiles' => array(
+                'tracked_actions' => $client_side_actions,
+              ),
+            ),
+            'type' => 'setting'
+          ),
+        ),
+      )
+    );
+  }
+}
+
+/**
+ * Implements hook_node_view().
+ */
+function acquia_lift_profiles_node_view($node, $view_mode, $langcode) {
+  acquia_lift_profiles_node_page_context($node, $view_mode == 'full');
+}
+
+/**
+ * Implements hook_form_FORM_ID_alter().
+ */
+function acquia_lift_profiles_form_node_type_form_alter(&$form, &$form_state) {
+  if (!isset($form['#node_type']->type)) {
+    return;
+  }
+
+  $type = 'node';
+  $bundle = $form['#node_type']->type;
+
+  // Add a thumbnail image fieldset.
+  form_load_include($form_state, 'inc', 'acquia_lift_profiles', 'acquia_lift_profiles.admin');
+  acquia_lift_profiles_thumbnail_entity_settings_form($form, $form_state, 'node', entity_get_info('node'), $bundle);
+
+  // Adjust the fieldset.
+  $form['acquia_lift_profiles']['#title'] = t('Acquia Lift Profiles');
+  $form['acquia_lift_profiles']['#group'] = 'additional_settings';
+}
+
+/**
+ * Implements hook_form_FORM_ID_alter().
+ */
+function acquia_lift_profiles_form_visitor_actions_form_alter(&$form, &$form_state) {
+  $default_value = 0;
+  $tracked_actions = variable_get('acquia_lift_profiles_tracked_actions', array());
+  if ($form['machine_name']['#disabled']) {
+    $action_name = $form['machine_name']['#value'];
+    $default_value = in_array($action_name, $tracked_actions);
+  }
+  $form['advanced']['acquia_lift_profiles'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Track this action in Acquia Lift Profiles'),
+    '#default_value' => $default_value,
+  );
+
+  $form['#submit'][] = 'acquia_lift_profiles_visitor_action_form_submit';
+
+}
+
+/**
+ * Submit callback for the user action creation form.
+ *
+ * Adds the new action to Acquia Lift Profiles.
+ */
+function acquia_lift_profiles_visitor_action_form_submit($form, &$form_state) {
+  $values = $form_state['values'];
+  $tracked_actions = variable_get('acquia_lift_profiles_tracked_actions', array());
+  if (isset($values['acquia_lift_profiles'])) {
+    acquia_lift_profiles_sync_action($values['machine_name'], $tracked_actions, $values['acquia_lift_profiles']);
+  }
+  variable_set('acquia_lift_profiles_tracked_actions', $tracked_actions);
+}
+
+/**
+ * Saves an action for Acquia Lift Profiles tracking
+ *
+ * @param string $machine_name
+ *   THe name of the action to sync.
+ * @param boolean $track
+ *   Whether the action should or should not be tracked. If this is set to FALSE
+ *   and the item was previously being tracked, it will be deleted from Acquia Lift Profiles.
+ */
+function acquia_lift_profiles_sync_action($action_name, &$tracked_actions, $track = TRUE) {
+  if ($track && !in_array($action_name, $tracked_actions)) {
+    acquia_lift_profiles_put_action($action_name, $tracked_actions);
+  }
+  elseif (!$track) {
+    acquia_lift_profiles_delete_action($action_name, $tracked_actions);
+  }
+  $tracked_actions = array_values($tracked_actions);
+}
+
+/**
+ * Calls the Acquia Lift Profiles API to create/update an event corresponding to a Visitor Actions action.
+ *
+ * @param $action_name
+ *   The name of the action to save to Acquia Lift Profiles.
+ */
+function acquia_lift_profiles_put_action($action_name, &$tracked_actions) {
+  $acquia_lift_profiles_api = ALProfilesAPI::getInstance(variable_get('acquia_lift_profiles_account_name', ''), variable_get('acquia_lift_profiles_api_url', ''));
+  try {
+    $acquia_lift_profiles_api->saveEvent($action_name);
+    if (!in_array($action_name, $tracked_actions)) {
+      $tracked_actions[] = $action_name;
+    }
+  }
+  catch (ALProfilesException $e) {
+    drupal_set_message(t('There was a problem saving the action @action to Acquia Lift Profiles. Please try again later.', array('@action' => $action_name)), 'error');
+  }
+}
+
+/**
+ * Calls the Acquia Lift Profiles API to delete an event corresponding to a
+ * Visitor Actions action
+ *
+ * @param $action_name
+ *   The name of the action to delete from Acquia Lift Profiles.
+ */
+function acquia_lift_profiles_delete_action($action_name, &$tracked_actions) {
+  $acquia_lift_profiles_api = ALProfilesAPI::getInstance(variable_get('acquia_lift_profiles_account_name', ''), variable_get('acquia_lift_profiles_api_url', ''));
+  try {
+    $acquia_lift_profiles_api->deleteEvent($action_name);
+    $pos = array_search($action_name, $tracked_actions);
+    if ($pos !== FALSE) {
+      unset($tracked_actions[$pos]);
+    }
+  }
+  catch (ALProfilesException $e) {
+    drupal_set_message(t('There was a problem deleting the action @action from Acquia Lift Profiles. Please try again later.', array('@action' => $action_name)), 'error');
+  }
+}
+
+/**
+ * Implements hook_visitor_actions_delete_action().
+ */
+function acquia_lift_profiles_visitor_actions_delete_action($action) {
+  $acquia_lift_profiles_tracked_actions = variable_get('acquia_lift_profiles_tracked_actions', array());
+  if (in_array($action['machine_name'], $acquia_lift_profiles_tracked_actions)) {
+    acquia_lift_profiles_delete_action($action['machine_name'], $acquia_lift_profiles_tracked_actions);
+  }
+  variable_set('acquia_lift_profiles_tracked_actions', $acquia_lift_profiles_tracked_actions);
+}
+
+/**
+ * Implements hook_ctools_render_alter().
+ *
+ * This provides support for panelizer nodes, which don't fire hook_view_alter.
+ */
+function acquia_lift_profiles_ctools_render_alter(&$info, &$page, &$context) {
+  $task = $context['task'];
+  if ($page && $task['module'] == 'page_manager' && $task['name'] == 'node_view' && !empty($context['args'])) {
+    $nid = $context['args'][0];
+    if (isset($context['contexts']['argument_entity_id:node_1']) && $context['contexts']['argument_entity_id:node_1']->argument == $nid) {
+      $node = $context['contexts']['argument_entity_id:node_1']->data;
+      acquia_lift_profiles_node_page_context($node, TRUE);
+    }
+  }
+}
+
+/**
+ * Handles the node-specific page context request data.
+ *
+ * @param $node
+ *   (optional) If passed then the taxonomy terms for the selected node
+ *   are added to the page taxonomy context.
+ * @param bool $primary
+ *   True if this is the primary node displayed for the page, false otherwise.
+ * @return array
+ *   Returns the taxonomy context for the page.
+ */
+function acquia_lift_profiles_node_page_context($node = NULL, $primary = FALSE) {
+  // For each vocabulary, add any terms that are applied to the viewed node.
+  $page_context = &drupal_static(__FUNCTION__);
+  $mappings = variable_get('acquia_lift_profiles_vocabulary_mappings', array());
+  $flipped = array_flip($mappings);
+  if (!isset($page_context)) {
+    $page_context = array();
+    foreach ($mappings as $name => $vid) {
+      $page_context[$name] = array();
+    }
+  }
+
+  // Add the content type of the page if this is the primary node displayed.
+  if ($primary && empty($page_context['post_id'])) {
+    $page_context['content_type'] = $node->type;
+    $page_context['content_title'] = $node->title;
+    $page_context['published_date'] = $node->created;
+    $page_context['post_id'] = $node->nid;
+    $account = user_load($node->uid);
+    $page_context['author'] = $account->name;
+    $page_context['page_type'] = 'node page';
+    // Add the node's taxonomy to the context.
+    if (isset($node)) {
+      $results = db_query('SELECT tid FROM {taxonomy_index} WHERE nid = :nid', array(':nid' => $node->nid));
+      $terms = taxonomy_term_load_multiple($results->fetchCol());
+      foreach($terms as $term) {
+        if (isset($flipped[$term->vid])) {
+          $name = $flipped[$term->vid];
+          if (!in_array($term->name, $page_context[$name])) {
+            $page_context[$name][] = $term->name;
+          }
+        }
+      }
+    }
+    // Add the thumbnail image if specified in the content type and supplied.
+    $page_context['thumbnail_url'] = acquia_lift_profiles_thumbnail_image('node', $node, $node->type);
+  }
+  return $page_context;
+}
+
+/**
+ * Gets the page context data.
+ *
+ * @return
+ *   An array of page context data.
+ */
+function acquia_lift_profiles_get_page_context() {
+  // Add node-specific page context
+  $page_context = acquia_lift_profiles_node_page_context();
+  if (!isset($page_context['content_title'])) {
+    $page_context['content_title'] = drupal_get_title();
+  }
+  // Allow other modules to alter the page context to include additional data.
+  drupal_alter('acquia_lift_profiles_page_context', $page_context);
+  return $page_context;
+}
+
+/**
+ * Implements hook_personalize_visitor_contexts().
+ */
+function acquia_lift_profiles_personalize_visitor_context() {
+  $info = array();
+  $path = drupal_get_path('module', 'acquia_lift_profiles') . '/plugins';
+  $info['acquia_lift_profiles_context'] = array(
+    'path' => $path . '/visitor_context',
+    'handler' => array(
+      'file' => 'ALProfilesContext.inc',
+      'class' => 'ALProfilesContext',
+    ),
+  );
+  return $info;
+}
+
+/**
+ * Implements hook_visitor_action_subscribe().
+ */
+function acquia_lift_profiles_visitor_action_subscribe($name) {
+  $subscribers = array();
+  if (acquia_lift_profiles_subscribed_action($name)) {
+    $subscribers[] = 'acquia_lift_profiles_action_subscriber';
+  }
+  return $subscribers;
+}
+
+/**
+ * Server-side action subscriber.
+ */
+function acquia_lift_profiles_action_subscriber($name, $context) {
+  if (acquia_lift_profiles_subscribed_action($name)) {
+    acquia_lift_profiles_set_server_side_action($name, $context);
+  }
+}
+
+/**
+ * Returns whether or not the passed in action should be tracked.
+ *
+ * @param $action
+ *   The name of the action.
+ * @return bool
+ *   TRUE if Acquia Lift Profiles should track the action, FALSE otherwise.
+ */
+function acquia_lift_profiles_subscribed_action($action) {
+  $tracked_actions = variable_get('acquia_lift_profiles_tracked_actions', array());
+  if (variable_get('acquia_lift_profiles_capture_identity', FALSE)) {
+    $tracked_actions += array('user_login', 'user_register');
+  }
+  if (in_array($action, $tracked_actions)) {
+    return TRUE;
+  }
+  return FALSE;
+}
+
+/**
+ * Sets a server-side action to be processed via JS.
+ *
+ * @param $action_name
+ *   The name of the action.
+ * @param $context
+ *   The action context.
+ * @see acquia_lift_profiles_process_server_side_actions().
+ */
+function acquia_lift_profiles_set_server_side_action($action_name, $context) {
+  if (!isset($_SESSION['acquia_lift_profiles_actions'])) {
+    $_SESSION['acquia_lift_profiles_actions'] = array();
+  }
+  $_SESSION['acquia_lift_profiles_actions'][$action_name][] = $context;
+}
+
+/**
+ * Retrieves all unprocessed actions that have been fired server-side.
+ *
+ * @return an array of actions or NULL.
+ */
+function acquia_lift_profiles_get_server_side_actions() {
+  return (isset($_SESSION['acquia_lift_profiles_actions']) ? $_SESSION['acquia_lift_profiles_actions'] : NULL);
+}
+
+/**
+ * Clears the list of actions so they don't get processed again.
+ */
+function acquia_lift_profiles_clear_server_side_actions() {
+  unset($_SESSION['acquia_lift_profiles_actions']);
+}
+
+/**
+ * Adds the list of actions to Drupal.settings.
+ */
+function acquia_lift_profiles_process_server_side_actions(&$page) {
+  if ($actions = acquia_lift_profiles_get_server_side_actions()) {
+    $page['page_top']['acquia_lift_profiles']['#attached']['js'][] = array(
+      'type' => 'setting',
+      'data' => array(
+        'acquia_lift_profiles' => array(
+          'serverSideActions' => $actions,
+        ),
+      ),
+    );
+    acquia_lift_profiles_clear_server_side_actions();
+  }
+}
+
+/**
+ * Given an entity type and bundle, get its content recommendation image or NULL.
+ *
+ * @param $entity_type
+ *   The type of entity to check, e.g., node.
+ * @param $bundle_name
+ *   The name of hte bundle to check, e.g., article.
+ * @param $reset
+ *   True to recalculate, false to retrieve from cache when available.
+ */
+function acquia_lift_profiles_thumbnail_get_field($entity_type, $bundle_name, $reset = FALSE) {
+  $fields = &drupal_static(__FUNCTION__);
+  $fields = $reset || is_null($fields) ? array() : $fields;
+
+  if (!array_key_exists($entity_type . '_' . $bundle_name, $fields)) {
+    module_load_include('inc', 'acquia_lift_profiles', 'acquia_lift_profiles.admin');
+    $field = variable_get('acquia_lift_profiles_thumbnail_field_' . $entity_type . '_' . $bundle_name, '');
+    $fields[$entity_type . '_' . $bundle_name] = array_key_exists($field, acquia_lift_profiles_thumbnail_available_fields($entity_type, $bundle_name)) ? $field : NULL;
+  }
+
+  return $fields[$entity_type . '_' . $bundle_name];
+}
+
+/**
+ * Set the default field for a given node.
+ */
+function acquia_lift_profiles_thumbnail_set_field($entity_type, $bundle, $field) {
+  variable_set('acquia_lift_profiles_thumbnail_field_' . $entity_type . '_' . $bundle, $field);
+}
+
+/**
+ * Given an entity type and bundle, get its content recommendation image style.
+ *
+ * @param $entity_type
+ *   The type of entity to check, e.g., node.
+ * @param $bundle_name
+ *   The name of the bundle to check, e.g., article.
+ */
+function acquia_lift_profiles_thumbnail_get_style_field($entity_type, $bundle_name) {
+  return variable_get('acquia_lift_profiles_thumbnail_style_field_' . $entity_type . '_' . $bundle_name, '');
+}
+
+/**
+ * Set the default field for a given node.
+ */
+function acquia_lift_profiles_thumbnail_set_style_field($entity_type, $bundle_name, $field) {
+  variable_set('acquia_lift_profiles_thumbnail_style_field_' . $entity_type . '_' . $bundle_name, $field);
+}
+
+/**
+ * Given an entity and entity type, returns a thumbnail image.
+ *
+ * @param $entity_type
+ *   The type of entity to load, e.g., node.
+ * @param $entity
+ *   The entity object (i.e., from node_load, etc.).
+ * @param $bundle
+ *   The bundle to load, e.g., article.
+ *
+ * @return
+ *   Acquia Lift Profiles thumbnail image as a full absolute URL or empty string.
+ */
+function acquia_lift_profiles_thumbnail_image($entity_type, $entity, $bundle) {
+  $image = '';
+  $thumbnail = acquia_lift_profiles_thumbnail_get_field($entity_type, $bundle);
+  if (empty($thumbnail)) {
+    return $image;
+  }
+  list($field, $widget) = explode(ACQUIA_LIFT_PROFILES_THUMBNAIL_WIDGET_SEPARATOR, $thumbnail);
+  $style = acquia_lift_profiles_thumbnail_get_style_field($entity_type, $bundle);
+  if ($field) {
+    $field_items = field_get_items($entity_type, $entity, $field);
+    if (is_array($field_items) && count($field_items) && isset($field_items[0]['uri'])) {
+      // If an image style is specified then use it.
+      if ($style) {
+        $image = image_style_url($style, $field_items[0]['uri']);
+      }
+      else {
+        $image = file_create_url($field_items[0]['uri']);
+      }
+    }
+  }
+  return $image;
+}
+
+/**
+ * Returns the list of UDFs that can be mapped to.
+ *
+ * @return array
+ *   An array of UDFs defined in Acquia Lift Profiles.
+ */
+function acquia_lift_profiles_get_udfs() {
+  $udfs = array('person' => array(),'touch' => array(), 'event' => array());
+  $counts = array(
+    'person' => 50,
+    'touch' => 20,
+    'event' => 20,
+  );
+
+  foreach ($counts as $type => $count) {
+    for ($i = 1; $i <= $count; $i++) {
+      $udfs[$type][] = $type . '_udf' . $i;
+    }
+  }
+  return $udfs;
+}

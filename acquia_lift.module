@@ -361,10 +361,13 @@ function acquia_lift_cron_queue_info() {
  *   as values.
  */
 function acquia_lift_get_agent_types() {
-  return array(
+  $types = array(
     'acquia_lift' => 'AcquiaLiftAgent',
-    'acquia_lift_simple_ab' => 'AcquiaLiftSimpleAB',
   );
+  if (variable_get('acquia_lift_simplified_campaign_enabled', FALSE)) {
+    $types['acquia_lift_simple_ab'] = 'AcquiaLiftSimpleAB';
+  }
+  return $types;
 }
 
 /**

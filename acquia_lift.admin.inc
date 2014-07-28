@@ -746,3 +746,35 @@ function acquia_lift_campaign_flow_cancel($ajax = NULL) {
   $commands = array(ctools_modal_command_dismiss());
   print ajax_render($commands);
 }
+
+/**
+ * Form handler for a page variation details form.
+ *
+ * @param string $variation_type
+ *   The variation type that defines the type of details to include.  This
+ *   is a key defined as a personalize_elements variaton.
+ * @see hook_personalize_elements_variation_types
+ */
+function acquia_lift_page_variation_details($form, &$form_state, $variation_type) {
+  $types = module_invoke_all('personalize_elements_variation_types');
+  if (!isset($types[$variation_type]['contextual']['formitem'])) {
+    $form['error'] = array(
+      '#markup' => t('Invalid page variation type.  Please close this message and create a new variation.'),
+    );
+    return $form;
+  }
+  $form['details'] = $types[$variation_type]['contextual']['formitem'];
+  $form['actions'] = array(
+    '#type' => 'actions',
+  );
+  $form['actions']['submit'] = array(
+    '#type' => 'submit',
+    '#value' => t('Save'),
+  );
+  $form['actions']['cancel'] = array(
+    '#type' => 'button',
+    '#button_type' => 'cancel',
+    '#value' => t('Cancel'),
+  );
+  return $form;
+}

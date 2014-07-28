@@ -86,6 +86,16 @@ function acquia_lift_menu() {
     'file' => 'acquia_lift.admin.inc',
     'theme callback' => 'ajax_base_page_theme',
   );
+  // AJAX callback to retrieve a page variation details form.
+  $items['admin/structure/acquia_lift/pagevariation/%'] = array(
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('acquia_lift_page_variation_details', 4),
+    'access arguments' => array('manage personalized content'),
+    'type' => MENU_CALLBACK,
+    'file' => 'acquia_lift.admin.inc',
+    'delivery callback' => 'ajax_deliver',
+    'theme callback' => 'ajax_base_page_theme',
+  );
   return $items;
 }
 

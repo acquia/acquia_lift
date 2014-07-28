@@ -5,6 +5,7 @@ configure = admin/config/content/personalize/acquia_lift
 dependencies[] = libraries
 dependencies[] = personalize
 dependencies[] = personalize_blocks
+dependencies[] = personalize_elements
 dependencies[] = personalize_fields
 dependencies[] = visitor_actions
 dependencies[] = visitor_actions_ui

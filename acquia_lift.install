@@ -101,7 +101,7 @@ function acquia_lift_requirements($phase) {
 
   if ($phase == 'runtime') {
     // Required JavaScript libraries.
-    $libraries = array('underscore', 'backbone', 'modernizr', 'chosen');
+    $libraries = array('underscore', 'backbone', 'modernizr', 'chosen', 'qtip');
     foreach ($libraries as $lib) {
       $requirements['acquia_lift_' . $lib] = array(
         'title' => t('Acquia Lift: @library', array('@library' => $lib)),

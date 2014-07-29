@@ -789,6 +789,9 @@ function acquia_lift_library() {
         'type' => 'setting',
       ),
     ),
+    'css' => array(
+      $path . '/css/acquia_lift.buttons.css' => array(),
+    ),
     'dependencies' => array(
       array('system', 'jquery'),
       array('system', 'jquery.once'),
@@ -807,6 +810,7 @@ function acquia_lift_library() {
     ),
     'css' => array(
       $path . '/css/acquia_lift.dialog.css' => array(),
+      $path . '/css/acquia_lift.buttons.css' => array(),
     ),
     'dependencies' => array(
       array('system', 'jquery'),

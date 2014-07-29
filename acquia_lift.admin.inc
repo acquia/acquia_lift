@@ -667,7 +667,7 @@ function acquia_lift_create_campaign_type_form($form, &$form_state, $type) {
   $form['actions']['submit_form'] = array(
     '#type' => 'submit',
     '#attributes' => array(
-      'class' => array('action-item-primary-active'),
+      'class' => array('action-item-primary-active', 'acquia-lift-submit-button'),
     ),
     '#value' => t('Create campaign'),
   );
@@ -777,7 +777,7 @@ function acquia_lift_page_variation_details($form, &$form_state, $variation_type
     '#type' => 'submit',
     '#value' => t('Save'),
     '#attributes' => array(
-      'class' => array('action-item-primary-active'),
+      'class' => array('action-item-primary-active', 'acquia-lift-submit-button'),
     ),
   );
   $form['actions']['cancel_form'] = array(

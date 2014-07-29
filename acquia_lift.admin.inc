@@ -832,7 +832,7 @@ function acquia_lift_page_variation_details($form, &$form_state, $variation_type
   // Add a cancel button for AJAX-loaded forms.
   $form['actions']['cancel_form'] = array(
     '#type' => 'button',
-    '#button_type' => 'reset',
+    '#button_type' => 'cancel',
     '#value' => t('Cancel'),
     '#attributes' => array(
       'class' => array('acquia-lift-cancel-button'),

@@ -26,7 +26,7 @@ var _tcwq = _tcwq || [];
   /**
    * Handles storage and retrieval of segments in the cache.
    */
-  var acquia_lift_profilesSegmentCache = (function() {
+  var segmentCache = (function() {
     var visitorSegments = null;
     return {
       'store': function(segments) {
@@ -78,7 +78,7 @@ var _tcwq = _tcwq || [];
       var i, j, context_values = {};
       // First check to see if we have the acquia_lift_profiles segments already stored
       // locally, either in our closure variable or in localStorage.
-      var cached = acquia_lift_profilesSegmentCache.retrieve(Drupal.settings.acquia_lift_profiles);
+      var cached = segmentCache.retrieve(Drupal.settings.acquia_lift_profiles);
       if (cached) {
         for (i in enabled) {
           if (enabled.hasOwnProperty(i) && cached.hasOwnProperty(i)) {
@@ -93,7 +93,7 @@ var _tcwq = _tcwq || [];
         // for the current visitor and add them to the visitorSegments object.
         var segmentsCallback = function (segmentIds, captureInfo) {
           if (captureInfo.x['trackingId'] == trackingId) {
-            var allSegments = acquia_lift_profilesSegmentCache.store(segmentIds);
+            var allSegments = segmentCache.store(segmentIds);
             for (j in enabled) {
               if (enabled.hasOwnProperty(j) && allSegments.hasOwnProperty(j)) {
                 context_values[j] = allSegments[j];

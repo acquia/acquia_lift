@@ -46,7 +46,7 @@ function acquia_lift_profiles_admin_form($form, &$form_state) {
   $form['acquia_lift_profiles_capture_identity'] = array(
     '#type' => 'checkbox',
     '#title' => t('Capture Identity'),
-    '#description' => t('Check this if you want Acquia Lift Profiles to capture the identity of the user upon login or registration. This means sending their email address to Acquia Lift Profiles.'),
+    '#description' => t('Check this if you want Acquia Lift Profiles to capture the identity of the user upon login or registration. This means sending their email address to the Acquia Lift Profile Manager.'),
     '#default_value' => variable_get('acquia_lift_profiles_capture_identity', FALSE),
   );
   $vocabularies = taxonomy_get_vocabularies();
@@ -132,7 +132,7 @@ function acquia_lift_profiles_admin_form($form, &$form_state) {
         $select['#title'] = t('Context to map to the @field field', array('@field' => $udf));
         $form['acquia_lift_profiles_udf_mappings'][$type][$udf] = $select;
         if ($i == $min) {
-          $form['acquia_lift_profiles_udf_mappings'][$type][$udf]['#prefix'] = '<div class="acquia_lift_profiles-hidden-udfs">';
+          $form['acquia_lift_profiles_udf_mappings'][$type][$udf]['#prefix'] = '<div class="acquia-lift-profiles-hidden-udfs">';
         }
         elseif ($i == $max - 1) {
           $form['acquia_lift_profiles_udf_mappings'][$type][$udf]['#suffix'] = '</div>';
@@ -141,7 +141,7 @@ function acquia_lift_profiles_admin_form($form, &$form_state) {
       if ($min < $max) {
         $form['acquia_lift_profiles_udf_mappings'][$type]['button__show_all'] = array(
           '#attributes' => array(
-            'class' => array('acquia_lift_profiles-udf-show-all'),
+            'class' => array('acquia-lift-profiles-udf-show-all'),
           ),
           '#type' => 'button',
           '#value' => t('Show all')
@@ -284,7 +284,8 @@ function acquia_lift_profiles_thumbnail_entity_settings_form(&$form, &$form_stat
   );
   // If no available fields support styles then hide the style selector.
   if (empty($image_style_fields)) {
-    $form['acquia_lift_profiles']['style']['#type'] = 'hidden';
+    $form['acquia_lift_profiles']['style']['#type'] = 'value';
+    $form['acquia_lift_profiles']['style']['#value'] = '';
   }
   else {
     // Hide the image style field if the thumbnail isn't in the fields that
@@ -301,7 +302,8 @@ function acquia_lift_profiles_thumbnail_entity_settings_form(&$form, &$form_stat
     $form['acquia_lift_profiles']['thumbnail']['#disabled'] = TRUE;
     $form['acquia_lift_profiles']['thumbnail']['#description'] = t('You must define at least one image field to enable the content recommendations thumbnail image.');
     // Make the style hidden completely.
-    $form['acquia_lift_profiles']['style']['#type'] = 'hidden';
+    $form['acquia_lift_profiles']['style']['#type'] = 'value';
+    $form['acquia_lift_profiles']['style']['#value'] = '';
   }
 
   $form['#submit'][] = 'acquia_lift_profiles_entity_settings_form_submit';

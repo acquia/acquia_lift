@@ -11,10 +11,10 @@
         return val;
       });
       // Code to show/hide extra UDF mapping elements.
-      $('div.acquia_lift_profiles-hidden-udfs').once(function(){
+      $('div.acquia-lift-profiles-hidden-udfs').once(function(){
         $(this).hide();
       });
-      $('input.acquia_lift_profiles-udf-show-all').once(function(){
+      $('input.acquia-lift-profiles-udf-show-all').once(function(){
         $(this).bind('click', function() {
           var action, text;
           if ($(this).val() == Drupal.t('Show all')) {
@@ -25,7 +25,7 @@
             action = 'hide';
             text = Drupal.t('Show all');
           }
-          $(this).parent().find('div.acquia_lift_profiles-hidden-udfs')[action]();
+          $(this).parent().find('div.acquia-lift-profiles-hidden-udfs')[action]();
           $(this).val(text);
           return false;
         });

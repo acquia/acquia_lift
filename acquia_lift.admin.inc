@@ -785,14 +785,59 @@ function acquia_lift_page_variation_details($form, &$form_state, $variation_type
     '#attributes' => array(
       'class' => array('action-item-primary-active', 'acquia-lift-submit-button'),
     ),
+    '#ajax' => array(
+      'callback' => 'acquia_lift_page_variation_details_ajax_callback',
+      'wrapper' => 'acquia-lift-page-variation-details',
+    ),
   );
+  // Add a cancel button for AJAX-loaded forms.
   $form['actions']['cancel_form'] = array(
     '#type' => 'button',
-    '#button_type' => 'reset',
+    '#button_type' => 'cancel',
     '#value' => t('Cancel'),
     '#attributes' => array(
       'class' => array('acquia-lift-cancel-button'),
     ),
+    '#ajax' => array(
+      'callback' => 'acquia_lift_page_variation_details_ajax_callback',
+      'wrapper' => 'acquia-lift-page-variation-details',
+    ),
+    // Turn off validation.
+    '#limit_validation_errors' => array(),
+    '#submit' => array(),
   );
+
   return $form;
+}
+
+/**
+ * Form submit handler for acquia_lift_page_variation_details.
+ */
+function acquia_lift_page_variation_details_submit($form, &$form_state) {
+
+}
+
+/**
+ * Responds to AJAX submission of a variation type details page.
+ */
+function acquia_lift_page_variation_details_ajax_callback($form, &$form_state) {
+  $op = isset($form_state['values']['op']) ? $form_state['values']['op'] : '';
+  $commands = array();
+  if ($op == t('Save')) {
+    $errors = form_get_errors();
+    // If validation errors exist, return the form.
+    if (!empty($errors)) {
+      return $form;
+    }
+    // Otherwise the form submitted so stop creating a page variation
+    // and show a confirmation message.
+    $commands[] = acquia_lift_command_page_variation_toggle(FALSE);
+    $commands[] = acquia_lift_command_messagebox(t('The variation has been created.  Track your conversions by adding goals.'));
+  }
+  else if ($op === t('Cancel')) {
+    // Turn off edit mode and redirect them.
+    $commands[] = acquia_lift_command_page_variation_toggle(FALSE);
+  }
+
+  return array('#type' => 'ajax', '#commands' => $commands);
 }

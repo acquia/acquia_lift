@@ -67,6 +67,10 @@
      * Backbone View for the full page variation flow.
      */
     AppView: Backbone.View.extend({
+      contextualMenuModel: null,
+      variationTypeFormModel: null,
+      anchor: null,
+
       initialize: function (options) {
         _.bindAll(this, 'createContextualMenu');
 
@@ -78,14 +82,50 @@
         });
         Backbone.on('acquiaLiftPageVariationType', this.createVariationTypeDialog, this);
         this.listenTo(this.model, 'change:editMode', this.render);
+        this.listenTo(this.model, 'change:editMode', this.updateEditMode)
         this.render(this.model, this.model.get('editMode'));
       },
 
+      /**
+       * {@inheritDoc}
+       */
       render: function (model, editMode) {
         if (editMode) {
           this.$el.DOMSelector("startWatching");
         } else {
           this.$el.DOMSelector("stopWatching");
+        }
+      },
+
+      /**
+       * Handles showing/hiding a highlight around the anchoring element.
+       * @param bool show
+       *   True if showing the highlight, false if no highlight should be shown.
+       */
+      highlightAnchor: function(show) {
+        var highlightClass = 'acquia-lift-page-variation-item';
+        if (!this.anchor) {
+          return;
+        }
+        if (show) {
+          $(this.anchor).addClass(highlightClass);
+        } else {
+          $(this.anchor).removeClass(highlightClass);
+        }
+      },
+
+      /**
+       * Updates the application based on changes in edit mode.
+       */
+      updateEditMode: function(model, editMode) {
+        if (this.contextualMenuModel) {
+          this.contextualMenuModel.set('active', editMode);
+        }
+        if (this.variationTypeFormModel) {
+          this.variationTypeFormModel.set('active', editMode);
+        }
+        if (!editMode) {
+          this.highlightAnchor(false);
         }
       },
 
@@ -101,15 +141,17 @@
        * element.
        */
       createContextualMenu: function (element, selector) {
-        var dialogModel = new Drupal.visitorActions.ui.dialog.models.DialogModel({
+        this.anchor = element;
+        this.highlightAnchor(true);
+        this.contextualMenuModel = new Drupal.visitorActions.ui.dialog.models.DialogModel({
           selector: selector,
           id: this.getTemporaryID()
         });
         var dialogView = new Drupal.acquiaLiftPageVariations.views.PageVariationMenuView({
           el: element,
-          model: dialogModel
+          model: this.contextualMenuModel
         });
-        dialogModel.set('active', this.model.get('editMode'));
+        this.contextualMenuModel.set('active', this.model.get('editMode'));
       },
 
       /**
@@ -125,7 +167,7 @@
           'admin/structure/acquia_lift/pagevariation/' +
           Drupal.encodePath(event.data.id) +
           '?path=' + Drupal.encodePath(Drupal.settings.visitor_actions.currentPath);
-        var dialogModel = new Drupal.acquiaLiftPageVariations.models.VariationTypeFormModel({
+        this.variationTypeFormModel = new Drupal.acquiaLiftPageVariations.models.VariationTypeFormModel({
           selector: event.data.selector,
           id: this.getTemporaryID(),
           formPath: formPath,
@@ -134,9 +176,9 @@
         });
         var dialogView = new Drupal.acquiaLiftPageVariations.views.VariationTypeFormView({
           el: event.data.anchor,
-          model: dialogModel
+          model: this.variationTypeFormModel
         });
-        dialogModel.set('active', this.model.get('editMode'));
+        this.variationTypeFormModel.set('active', this.model.get('editMode'));
       },
 
       /**
@@ -167,9 +209,6 @@
        */
       render: function(model, active) {
         var that = this;
-        if (!$(this.anchor).hasClass('acquia-lift-page-variation-item')) {
-          $(this.anchor).addClass('acquia-lift-page-variation-item');
-        }
         this.parent('render', model, active);
         // Add a title to this dialog.
         var title = Drupal.theme('acquiaLiftPageVariationsTypeFormTitle', {
@@ -185,7 +224,7 @@
       formSuccessHandler: function (ajax, response, status) {
         this.parent('formSuccessHandler', ajax, response, status);
         this.$el.find('[name="selector"]').val(this.model.get('selector'));
-        this.$el.find(['name="pages"]']).val(Drupal.settings.visitor_actions.currentPath);
+        this.$el.find('[name="pages"]').val(Drupal.settings.visitor_actions.currentPath);
       },
 
       /**
@@ -218,9 +257,6 @@
        */
       render: function (model, active) {
         var that = this;
-        if (!$(this.anchor).hasClass('acquia-lift-page-variation-item')) {
-          $(this.anchor).addClass('acquia-lift-page-variation-item');
-        }
         this.parent('render', model, active);
         // Generate the contextual menu HTML.
         var titleHtml = Drupal.theme('acquiaLiftPageVariationsMenuTitle', {

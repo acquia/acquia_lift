@@ -161,19 +161,12 @@
      * create.
      */
     PageVariationMenuView: Dialog.views.ElementDialogView.extend({
+      className: 'acquia-lift-context-menu',
 
       /**
        * {@inheritDoc}
        */
       initialize: function (options) {
-        options.myHorizontalEdge = 'left';
-        options.anchorHorizontalEdge = 'right';
-        options.myVerticalEdge = 'top';
-        options.anchorVerticalEdge = 'top';
-        options.delay = 100;
-        // @todo Need to figure out appropriate collision type, flipfit isn't
-        // working in this scenario for some reason.
-        options.collision = 'none';
         this.parent('inherit', options);
         Backbone.on('acquiaLiftPageVariationTypeSelected', this.onVariationTypeSelected, this);
         this.list = null;
@@ -186,11 +179,9 @@
         var that = this;
         this.parent('render', model, active);
         // Generate the contextual menu HTML.
-        var html = Drupal.theme('acquiaLiftPageVariationsMenuTitle', {
+        var titleHtml = Drupal.theme('acquiaLiftPageVariationsMenuTitle', {
           elementType: this.anchor.nodeName
         });
-        // Add it to the dialog view.
-        this.$el.find('.visitor-actions-ui-placeholder').html(html);
 
         // Generate the collection of options.
         var collection = new Drupal.acquiaLiftPageVariations.collections.ElementVariationCollection();
@@ -200,7 +191,7 @@
         collection.add(modelAttributes);
         this.list = new Drupal.acquiaLiftPageVariations.views.PageVariationMenuListView({collection: collection});
         this.list.render();
-        this.$el.append(this.list.el);
+        this.$el.find('.visitor-actions-ui-dialog-content').html(titleHtml).append(this.list.el);
         this.position(function () {
           that.show();
         });
@@ -330,7 +321,7 @@
    *   An object of options with a key for elementType.
    */
   Drupal.theme.acquiaLiftPageVariationsMenuTitle = function (options) {
-    return '<h2>' + options.elementType + '</h2>';
+    return '<h2>&lt;' + options.elementType + ' &gt;</h2>';
   }
 
   /**

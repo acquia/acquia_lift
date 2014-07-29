@@ -1,0 +1,18 @@
+/**
+ * @file acquia_lift.dialog.css
+ */
+.acquia-lift-context-menu.visitor-actions-ui-dialog .visitor-actions-ui-dialog-content {
+  padding: .75em 0;
+}
+.acquia-lift-context-menu.visitor-actions-ui-dialog .visitor-actions-ui-dialog-content h2 {
+  color: #ffffff;
+  border-bottom: 1px solid #CCCCCC;
+  padding: 0 .75em .75em .75em;
+  margin: 0;
+}
+
+.acquia-lift-context-menu.visitor-actions-ui-dialog .visitor-actions-ui-dialog-content ul {
+  padding: .75em;
+  list-style-type: none;
+  margin: 0;
+}

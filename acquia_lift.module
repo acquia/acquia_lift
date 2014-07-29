@@ -805,6 +805,9 @@ function acquia_lift_library() {
       $path . '/js/acquia_lift.page_variations.js' => $options,
       $path . '/js/acquia_lift.dom_selector.js' => $options,
     ),
+    'css' => array(
+      $path . '/css/acquia_lift.dialog.css' => array(),
+    ),
     'dependencies' => array(
       array('system', 'jquery'),
       array('system', 'jquery.once'),

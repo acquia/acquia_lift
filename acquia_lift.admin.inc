@@ -764,15 +764,21 @@ function acquia_lift_page_variation_details($form, &$form_state, $variation_type
     );
     return $form;
   }
-  // This form item will be populated by the front-end code.
+  // These form item will be populated by the front-end code.
   $form['selector'] = array(
     '#type' => 'hidden',
     '#value' => '',
   );
+  $form['pages'] = array(
+    '#type' => 'hidden',
+    '#value' => '',
+  );
+  // Now include the details specific to this variation type.
   $form['details'] = $types[$variation_type]['contextual']['formitem'];
   $form['actions'] = array(
     '#type' => 'actions',
   );
+  // Form actions.
   $form['actions']['submit_form'] = array(
     '#type' => 'submit',
     '#value' => t('Save'),

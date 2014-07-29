@@ -257,6 +257,9 @@
        */
       render: function (model, active) {
         var that = this;
+        if (!$(this.anchor).hasClass('acquia-lift-page-variation-item')) {
+          $(this.anchor).addClass('acquia-lift-page-variation-item');
+        }
         this.parent('render', model, active);
         // Generate the contextual menu HTML.
         var titleHtml = Drupal.theme('acquiaLiftPageVariationsMenuTitle', {

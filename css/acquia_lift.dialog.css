@@ -1,6 +1,7 @@
 /**
  * @file acquia_lift.dialog.css
  */
+/* Contextual variation type selection menu */
 .acquia-lift-context-menu.visitor-actions-ui-dialog .visitor-actions-ui-dialog-content {
   padding: .75em 0;
 }
@@ -10,9 +11,91 @@
   padding: 0 .75em .75em .75em;
   margin: 0;
 }
-
 .acquia-lift-context-menu.visitor-actions-ui-dialog .visitor-actions-ui-dialog-content ul {
   padding: .75em;
   list-style-type: none;
   margin: 0;
 }
+
+/* Variation type form */
+.acquia-lift-variation-type-form.visitor-actions-ui-dialog .visitor-actions-ui-dialog-content h2 {
+  margin-top: 0;
+  color: #ffffff;
+}
+.acquia-lift-variation-type-form.visitor-actions-ui-dialog .visitor-actions-ui-dialog-content label {
+  color: #CCCCCC;
+  font-weight: normal;
+}
+
+/* Selected item for variation */
+.acquia-lift-page-variation-item {
+  box-sizing: border-box;
+  -moz-box-sizing: border-box;
+  border: 1px solid #008fdc;
+}
+
+/** Button styles from Ember theme **/
+/** @todo Move these into a common CSS file to use for modals and dialogs */
+.acquia-lift-variation-type-form.visitor-actions-ui-dialog .visitor-actions-ui-dialog-content input[type="submit"],
+.acquia-lift-variation-type-form.visitor-actions-ui-dialog .visitor-actions-ui-dialog-content.acquia-lift-cancel-button {
+  -webkit-appearance: none;
+  display: inline-block;
+  -webkit-box-sizing: border-box;
+  -moz-box-sizing: border-box;
+  box-sizing: border-box;
+  margin: 0.2963em;
+  max-width: 100%;
+  overflow: visible;
+  line-height: 1.25em;
+  vertical-align: baseline;
+  border: none;
+  -webkit-border-radius: 2px;
+  -moz-border-radius: 2px;
+  -ms-border-radius: 2px;
+  -o-border-radius: 2px;
+  border-radius: 2px;
+  /* Reset all button fonts to a similar baseline in webkit. */
+  font: -webkit-small-control;
+  font-family: "Helvetica Neue", helvetica, "Segoe UI", segoe, "Ubuntu", "Droid Sans", "Arial", sans-serif;
+  font-weight: 700;
+  text-align: center;
+  text-decoration: none;
+  cursor: pointer;
+  outline: none;
+  padding: 0.70711em 1em;
+  font-size: 1em;
+}
+
+.acquia-lift-variation-type-form.visitor-actions-ui-dialog .visitor-actions-ui-dialog-content input[type="submit"]:active {
+  text-decoration: none;
+  -webkit-box-shadow: 0 0 0 0.2963em rgba(221, 221, 221, 0.4);
+  -moz-box-shadow: 0 0 0 0.2963em rgba(221, 221, 221, 0.4);
+  box-shadow: 0 0 0 0.2963em rgba(221, 221, 221, 0.4);
+}
+
+.acquia-lift-variation-type-form.visitor-actions-ui-dialog .visitor-actions-ui-dialog-content .action-item-primary-active {
+  color: white;
+  background: #008fdc;
+  text-shadow: 0 1px 0 #002a42;
+}
+
+.acquia-lift-variation-type-form.visitor-actions-ui-dialog .visitor-actions-ui-dialog-content .action-item-primary-active:hover,
+.acquia-lift-variation-type-form.visitor-actions-ui-dialog .visitor-actions-ui-dialog-content .action-item-primary-active:active {
+  color: white;
+  background: #58b7ea;
+  text-shadow: 0 1px 0 #1a3646;
+}
+
+.acquia-lift-variation-type-form.visitor-actions-ui-dialog .visitor-actions-ui-dialog-content .acquia-lift-cancel-button {
+  color: black;
+  background: #dddddd;
+  text-shadow: 0 1px 0 #f4f4f4;
+}
+
+.acquia-lift-variation-type-form.visitor-actions-ui-dialog .visitor-actions-ui-dialog-content .acquia-lift-cancel-button:hover,
+.acquia-lift-variation-type-form.visitor-actions-ui-dialog .visitor-actions-ui-dialog-content .acquia-lift-cancel-button:active {
+  color: #303030;
+  background: #e3e3e3;
+  text-shadow: 0 1px 0 #f6f6f6;
+}
+

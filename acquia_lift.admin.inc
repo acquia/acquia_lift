@@ -764,18 +764,29 @@ function acquia_lift_page_variation_details($form, &$form_state, $variation_type
     );
     return $form;
   }
+  // This form item will be populated by the front-end code.
+  $form['selector'] = array(
+    '#type' => 'hidden',
+    '#value' => '',
+  );
   $form['details'] = $types[$variation_type]['contextual']['formitem'];
   $form['actions'] = array(
     '#type' => 'actions',
   );
-  $form['actions']['submit'] = array(
+  $form['actions']['submit_form'] = array(
     '#type' => 'submit',
     '#value' => t('Save'),
+    '#attributes' => array(
+      'class' => array('action-item-primary-active'),
+    ),
   );
-  $form['actions']['cancel'] = array(
+  $form['actions']['cancel_form'] = array(
     '#type' => 'button',
-    '#button_type' => 'cancel',
+    '#button_type' => 'reset',
     '#value' => t('Cancel'),
+    '#attributes' => array(
+      'class' => array('acquia-lift-cancel-button'),
+    ),
   );
   return $form;
 }

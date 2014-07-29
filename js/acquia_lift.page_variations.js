@@ -32,8 +32,23 @@
      * Backbone model representing a single page element variation type
      * that can be presented within a contextual menu.
      */
-    ElementVariationModel: Backbone.Model.extend({})
-  }
+    ElementVariationModel: Backbone.Model.extend({}),
+
+
+    /**
+     * Backbone model for a variation type form.
+     */
+    VariationTypeFormModel: Dialog.models.DialogModel.extend({
+      defaults: _.extend({}, Dialog.models.DialogModel.prototype.defaults,
+        {
+          // A type of variation, e.g. 'editHTML', 'prependHTML'
+          type: null,
+          // The label for the variation type.
+          typeLabel: null
+        }
+      )
+    })
+  };
 
   /*******************************************************************
    * C O L L E C T I O N S
@@ -110,10 +125,12 @@
           'admin/structure/acquia_lift/pagevariation/' +
           Drupal.encodePath(event.data.id) +
           '?path=' + Drupal.encodePath(Drupal.settings.visitor_actions.currentPath);
-        var dialogModel = new Drupal.visitorActions.ui.dialog.models.DialogModel({
+        var dialogModel = new Drupal.acquiaLiftPageVariations.models.VariationTypeFormModel({
           selector: event.data.selector,
           id: this.getTemporaryID(),
-          formPath: formPath
+          formPath: formPath,
+          type: event.data.id,
+          typeLabel: event.data.name
         });
         var dialogView = new Drupal.acquiaLiftPageVariations.views.VariationTypeFormView({
           el: event.data.anchor,
@@ -135,16 +152,39 @@
      * page variation of a specific variation type.
      */
     VariationTypeFormView: Dialog.views.ElementDialogView.extend({
-
+      className: 'acquia-lift-variation-type-form',
       /**
        * {@inheritDoc}
        */
       initialize: function (options) {
         options.myVerticalEdge = 'top';
         options.anchorVerticalEdge = 'bottom';
-        options.delay = 100;
-        options.collision = 'none'; // TODO: change to flipfit.
         this.parent('inherit', options);
+      },
+
+      /**
+       * {@inheritDoc}
+       */
+      render: function(model, active) {
+        var that = this;
+        if (!$(this.anchor).hasClass('acquia-lift-page-variation-item')) {
+          $(this.anchor).addClass('acquia-lift-page-variation-item');
+        }
+        this.parent('render', model, active);
+        // Add a title to this dialog.
+        var title = Drupal.theme('acquiaLiftPageVariationsTypeFormTitle', {
+          variationType: this.model.get('typeLabel'),
+          elementType: this.anchor.nodeName
+        });
+        this.$el.find('.visitor-actions-ui-dialog-content').prepend($(title));
+      },
+
+      /**
+       * {@inheritDoc}
+       */
+      formSuccessHandler: function (ajax, response, status) {
+        this.parent('formSuccessHandler', ajax, response, status);
+        this.$el.find('[name="selector"]').val(this.model.get('selector'));
       },
 
       /**
@@ -177,6 +217,9 @@
        */
       render: function (model, active) {
         var that = this;
+        if (!$(this.anchor).hasClass('acquia-lift-page-variation-item')) {
+          $(this.anchor).addClass('acquia-lift-page-variation-item');
+        }
         this.parent('render', model, active);
         // Generate the contextual menu HTML.
         var titleHtml = Drupal.theme('acquiaLiftPageVariationsMenuTitle', {
@@ -334,6 +377,18 @@
    */
   Drupal.theme.acquiaLiftPageVariationsMenuItem = function (item) {
     return '<a href="#" data-id="' + item.id + '">' + item.name + '</a>';
+  }
+
+  /**
+   * Theme function to generate the title element for a variation type form.
+   *
+   * @param object item
+   *   An object with the following keys:
+   *   - elementType: the type of element that is being action on.
+   *   - variationType: the type of variation to apply to the element.
+   */
+  Drupal.theme.acquiaLiftPageVariationsTypeFormTitle = function (item) {
+    return '<h2>' + item.variationType + ': ' + '&lt;' + item.elementType + '&gt;</h2>';
   }
 
   /**

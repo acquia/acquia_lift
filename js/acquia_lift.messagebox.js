@@ -29,7 +29,7 @@
    * Close the message box.
    *
    * @param e
-   *   The event that triggered the close.
+   *   (optional) The event that triggered the close.
    */
   function closeMessageBox(e) {
     $messageBox = getMessageBox();
@@ -38,7 +38,9 @@
       // Take off the height/opacity styles - only used for animation.
       $(this).removeAttr('style');
     });
-    e.stopPropagation();
+    if (e && e.stopPropagation) {
+      e.stopPropagation();
+    }
   }
 
   /**
@@ -54,8 +56,12 @@
    * Shows the requested message within a message box.
    *
    * @param message
+   *   The message to show.
+   * @param seconds
+   *   The number of seconds to show for.  If value = 0, then the message
+   *   is shown until the user clicks to close it.
    */
-  function showMessageBox(message) {
+  function showMessageBox(message, seconds) {
     var $messageBox = createMessageBox();
     $messageBox.find('.message').html(message);
     // Measure the final height while the box is still hidden.
@@ -71,12 +77,20 @@
     $(document).one('click', function(e) {
       closeMessageBox(e);
     });
+
+    if (seconds > 0) {
+      setTimeout(closeMessageBox, seconds*1000);
+    }
   }
 
   /**
    * A Drupal AJAX command to display a message box.
    */
   Drupal.ajax.prototype.commands.acquia_lift_message_box = function (ajax, response, status) {
-    showMessageBox(response.data);
+    var seconds = response.data.seconds || 0;
+    var message = response.data.message || '';
+    if (message.length >0) {
+      showMessageBox(response.data.message, seconds);
+    }
   };
 })(jQuery, Drupal);

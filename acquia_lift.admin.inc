@@ -629,7 +629,7 @@ function acquia_lift_create_campaign_type_callback($type, $ajax) {
       )), TRUE),
       acquia_lift_command_messagebox(t('Campaign %campaign has been created.', array(
         '%campaign' => $form_state['values']['agent_basic_info']['title'],
-      ))),
+      )), 5),
       acquia_lift_command_page_variation_toggle(),
     );
   }

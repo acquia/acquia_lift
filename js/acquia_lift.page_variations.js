@@ -225,6 +225,7 @@
         this.parent('formSuccessHandler', ajax, response, status);
         this.$el.find('[name="selector"]').val(this.model.get('selector'));
         this.$el.find('[name="pages"]').val(Drupal.settings.visitor_actions.currentPath);
+        this.$el.find('[name="agent"]').val(Drupal.settings.personalize.activeCampaign);
       },
 
       /**

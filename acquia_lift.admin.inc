@@ -627,8 +627,9 @@ function acquia_lift_create_campaign_type_callback($type, $ajax) {
         'activeCampaign' => personalize_get_campaign_context(),
         'campaigns' => personalize_agent_get_settings(),
       )), TRUE),
-      acquia_lift_command_messagebox(t('Campaign %campaign has been created.', array(
+      acquia_lift_command_messagebox(t('Click on an element in your site to create %variation in %campaign.', array(
         '%campaign' => $form_state['values']['agent_basic_info']['title'],
+        '%variation' => 'Variation #1',
       )), 5),
       acquia_lift_command_page_variation_toggle(),
     );
@@ -817,11 +818,23 @@ function acquia_lift_page_variation_details($form, &$form_state, $variation_type
 
 /**
  * Form submit handler for acquia_lift_page_variation_details.
+ *
+ * This creates a page variation set if it does not yet exist and the variation
+ * for that page.  For a simple A/B test, there is only a single variation set
+ * allowed per campaign and therefore it is named for the campaign/agent.
+ *
+ * A variation set is similar to a decision name concept and groups together
+ * option sets for a particular agent to be considered as a group.
+ * A variation is comprised of all of the options of the same index across
+ * all option sets in a variation set (decision name).
+ * In other words, an option set handles the changes for a single element of
+ * the variation and includes how that element is shown for each variation as
+ * its options.
  */
 function acquia_lift_page_variation_details_submit($form, &$form_state) {
-  //@todo Fix default variation name handling.
-  $option_set = personalize_elements_get_option_set_for_variation('Variation #1', $form_state['values']['agent'], $form_state['values']['selector'], $form_state['values']['variation_type'], $form_state['values']['pages']);
-  personalize_create_page_variation('Variation #1', $option_set, array('personalize_elements_content' => $form_state['values']['personalize_elements_content']));
+  $agent_name = $variation_set_name = $form_state['values']['agent'];
+  $option_set = personalize_elements_get_option_set_for_variation($variation_set_name, $agent_name, $form_state['values']['selector'], $form_state['values']['variation_type'], $form_state['values']['pages']);
+  personalize_create_page_variation($variation_set_name, $option_set, array('personalize_elements_content' => $form_state['values']['personalize_elements_content']));
 }
 
 /**
@@ -840,6 +853,10 @@ function acquia_lift_page_variation_details_ajax_callback($form, &$form_state) {
     // and show a confirmation message.
     $commands[] = acquia_lift_command_page_variation_toggle(FALSE);
     $commands[] = acquia_lift_command_messagebox(t('The variation has been created.  Track your conversions by adding goals.'));
+    // @todo: Need to return the updated option set data for use within the
+    // unibar using ajax_command_settings.
+    // Also need to load the relevant JavaScript assets for the new option set
+    // so that preview functionality will work.
   }
   else if ($op === t('Cancel')) {
     // Turn off edit mode and redirect them.

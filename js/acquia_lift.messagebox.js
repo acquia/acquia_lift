@@ -32,7 +32,7 @@
    *   (optional) The event that triggered the close.
    */
   function closeMessageBox(e) {
-    $messageBox = getMessageBox();
+    var $messageBox = getMessageBox();
     $messageBox.animate({ height:0, opacity:0 }, "slow", function() {
       $(this).addClass('element-hidden');
       // Take off the height/opacity styles - only used for animation.
@@ -41,6 +41,7 @@
     if (e && e.stopPropagation) {
       e.stopPropagation();
     }
+    $(document).off('click', closeMessageBox);
   }
 
   /**
@@ -74,9 +75,7 @@
     $messageBox.animate({height: fullHeight + 'px', opacity: 1}, 'slow');
 
     // Close the message box by clicking anywhere on the page.
-    $(document).one('click', function(e) {
-      closeMessageBox(e);
-    });
+    $(document).on('click', closeMessageBox);
 
     if (seconds > 0) {
       setTimeout(closeMessageBox, seconds*1000);
@@ -87,6 +86,7 @@
    * A Drupal AJAX command to display a message box.
    */
   Drupal.ajax.prototype.commands.acquia_lift_message_box = function (ajax, response, status) {
+    response.data = response.data || {};
     var seconds = response.data.seconds || 0;
     var message = response.data.message || '';
     if (message.length >0) {

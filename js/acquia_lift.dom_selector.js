@@ -41,6 +41,7 @@
      */
     init: function() {
       this._hovered.hoverCss = this.settings.hoverCss;
+      this._watching = false;
     },
 
     /**
@@ -90,6 +91,7 @@
           });
         });
       }
+      this._watching = true;
       return this.$element;
     },
 
@@ -103,7 +105,15 @@
       this.$element.unbind('mousemove', this._onMouseMove);
       this.$element.unbind('click', this._onClick);
       this.$element.find('*').qtip('disable');
+      this._watching = false;
       return this.$element;
+    },
+
+    /**
+     * Returns if the selector is currently watching the DOM.
+     */
+    isWatching: function() {
+      return this._watching;
     },
 
     /**

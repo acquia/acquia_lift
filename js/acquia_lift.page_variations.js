@@ -165,8 +165,7 @@
       createVariationTypeDialog: function(event) {
         var formPath = Drupal.settings.basePath +
           'admin/structure/acquia_lift/pagevariation/' +
-          Drupal.encodePath(event.data.id) +
-          '?path=' + Drupal.encodePath(Drupal.settings.visitor_actions.currentPath);
+          Drupal.encodePath(event.data.id);
         this.variationTypeFormModel = new Drupal.acquiaLiftPageVariations.models.VariationTypeFormModel({
           selector: event.data.selector,
           id: this.getTemporaryID(),
@@ -288,8 +287,8 @@
       onVariationTypeSelected: function(event) {
         event.data.anchor = this.anchor;
         event.data.selector = this.model.get('selector');
-        Backbone.trigger('acquiaLiftPageVariationType', {data: event.data});
         this.remove();
+        Backbone.trigger('acquiaLiftPageVariationType', {data: event.data});
       },
 
       /**
@@ -311,6 +310,7 @@
      */
     PageVariationMenuListView: Backbone.View.extend({
       tagName: 'ul',
+      className: 'acquia-lift-page-variation-list',
 
       /**
        * {@inheritDoc}

@@ -4,7 +4,7 @@
  *
  * Inspired by https://github.com/conductrics/dom-selector
  */
-;(function ($) {
+;(function ($, Utilities) {
 
   /**
    * jQuery plugin definition.
@@ -57,7 +57,7 @@
       } else {
         this.$element.find('*').each(function() {
           $(this).qtip({
-            content: getSelector(this),
+            content: Utilities.getSelector(this),
             solo: true,
             position: {
               target: 'mouse',
@@ -181,7 +181,7 @@
       } else {
         // Remove the indicator class so it doesn't show in the final selector.
         $selected.removeClass(indicatorClass);
-        this.settings.onElementSelect.call(this, $selected[0], getSelector($selected[0]));
+        this.settings.onElementSelect.call(this, $selected[0], Utilities.getSelector($selected[0]));
       }
       event.preventDefault();
       event.stopPropagation();
@@ -225,100 +225,4 @@
       return returns !== undefined ? returns : this;
     }
   };
-
-
-  /**
-   * Utility function to test if a string value is empty.
-   *
-   * @param stringValue
-   *   String value to test
-   * @returns {boolean}
-   *   True if not empty, false if null or empty.
-   */
-  function notEmpty(stringValue) {
-    return (stringValue != null ? stringValue.length : void 0) > 0;
-  };
-
-  /**
-   * Determines the element selector for a child element based on element
-   * name.
-
-   * @param element
-   *   The element to use for determination
-   * @returns string
-   *   The selector string to use
-   */
-  function nthChild(element) {
-    if (element == null || element.ownerDocument == null || element === document || element === document.body || element === document.head) {
-      return "";
-    }
-    var parent = element.parentNode || null;
-    if (parent) {
-      var nthStack = [];
-      var num = parent.childNodes.length;
-      for (var i = 0; i < num; i++) {
-        var nthName = parent.childNodes[i].nodeName.toLowerCase();
-        if (nthName === "#text") {
-          continue;
-        }
-        nthStack.push(nthName);
-        if (parent.childNodes[i] === element) {
-          if (nthStack.length > 1) {
-            nthStack[0] += ":first-child";
-          }
-          return nthStack.join(" + ");
-        }
-      }
-    }
-    return element.nodeName.toLowerCase();
-  }
-
-  /**
-   * Determines the unique selector for an element.
-   */
-  function getSelector(element) {
-    var hasId = notEmpty(element.id),
-      hasClass = notEmpty(element.className),
-      isElement = element.nodeType === 1,
-      isRoot = element.parentNode === element.ownerDocument,
-      hasParent = element.parentNode != null,
-      selector = '';
-
-    if (!isRoot && isElement) {
-      if (hasId) {
-        selector = '#' + element.id;
-      } else if (hasClass) {
-        selector = "." + element.className.split(" ").join(".").replace(/\.$/, '');
-      } else {
-        selector = nthChild(element);
-      }
-    }
-
-    if (hasId) {
-      return selector;
-    } else if (hasParent) {
-      return getSelector(element.parentNode) + " > " + selector;
-    }
-    return selector;
-  }
-
-  /**
-   * Determine whether a node contains a target node.
-   *
-   * @param node
-   *   The node to check as a possible container of the target.
-   * @param target
-   *   The target node to check if contained within node.
-   * @returns {boolean}
-   *   True if target is within node, and false if not.
-   */
-  function nodeContains(node, target) {
-    for (var child in node.childNodes) {
-      if (child === target || nodeContains(child, target)) {
-        return true;
-      }
-    }
-    return false;
-  };
-
-})(jQuery);
+})(jQuery, Drupal.utilities);

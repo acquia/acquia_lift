@@ -16,7 +16,7 @@ function acquia_lift_profiles_install() {
     'menu_name' => $menu_name,
     'options' => array(
       'attributes' => array(
-        'class' => array('visitor-actions-ui-ignore'),
+        'class' => array('visitor-actions-ui-ignore', 'acquia-lift-menu-link'),
         'target' => '_blank'
       ),
       'html' => FALSE,

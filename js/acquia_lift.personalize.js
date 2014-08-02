@@ -155,7 +155,7 @@
                 var $menu = $(element);
                 var type = $menu.data('acquia-lift-personalize-type');
                 var model, element, campaignName;
-                  looper(settings[type], function (obj, key) {
+                looper(settings[type], function (obj, key) {
                   // Find the right model.
                   switch (type) {
                     case 'option_sets':
@@ -167,7 +167,7 @@
                       }
                       break;
                     case 'campaigns':
-                        // If the menu already has a link for this setting, abort.
+                      // If the menu already has a link for this setting, abort.
                       if (!$menu.find('[data-acquia-lift-personalize-agent="' + key + '"].acquia-lift-campaign').length) {
                         campaignName = key;
                         model = ui.collections[type].findWhere({'name': key});

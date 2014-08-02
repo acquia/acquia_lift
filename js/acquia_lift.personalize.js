@@ -107,7 +107,7 @@
                     element = document.createElement('li');
                     ui.views.noCampaignsView = new ui.MenuCampaignView({
                       el: element,
-                      model: null,
+                      model: null
                     });
                     $('[data-acquia-lift-personalize-type="campaigns"]').prepend(element);
                   }
@@ -140,7 +140,7 @@
               var $element = $(Drupal.theme('acquiaLiftCount'));
               ui.views.push((new ui['MenuContentVariationsCountView']({
                 el: $element.get(0),
-                model: campaignModel,
+                model: campaignModel
               })));
               $element.prependTo($link);
             });
@@ -2395,7 +2395,7 @@
     _.each(variation.options, function (option, index, list) {
       hrefOptions.push({
         osID: option.osid,
-        id: option.option.option_id,
+        id: option.option.option_id
       });
     });
     var attrs = [

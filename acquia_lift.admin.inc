@@ -5,6 +5,12 @@
  * Provides functions needed for the admin UI.
  */
 
+function acquia_lift_configuration_page() {
+  $build['main_config'] = drupal_get_form('acquia_lift_admin_form');
+  $build['batch_sync'] = drupal_get_form('acquia_lift_batch_sync_form');
+  return $build;
+}
+
 /**
  * Admin form for configuring personalization backends.
  */
@@ -116,6 +122,18 @@ function acquia_lift_admin_form($form, &$form_state) {
     'acquia_lift_admin_form_submit',
   );
   return system_settings_form($form);
+}
+
+function acquia_lift_batch_sync_form($form, &$form_state) {
+  $form['submit'] = array(
+    '#type' => 'submit',
+    '#value' => t('Sync all campaigns to Lift')
+  );
+  return $form;
+}
+
+function acquia_lift_batch_sync_form_submit($form, &$form_state) {
+  acquia_lift_batch_sync_campaigns();
 }
 
 /**

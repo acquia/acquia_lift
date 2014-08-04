@@ -364,6 +364,21 @@ class AcquiaLiftAgent extends PersonalizeAgentBase implements PersonalizeAgentGo
    * Implements PersonalizeAgentInterface::postSave().
    */
   public function postSave($old_data) {
+    $items = $this->getAgentSyncOperations(isset($old_data->data['visitor_context']['acquia_lift_context']));
+
+    $this->queueItems($items);
+  }
+
+  /**
+   * Returns the operations needed to sync an age t to Acquia Lift.
+   *
+   * @param $targeting_rule_exists
+   *   Whether the existing agent in Lift has a targeting rule set up that may
+   *   need to be deleted.
+   * @return array
+   *   An array of items representing API calls to be made to Acquia Lift.
+   */
+  public function getAgentSyncOperations($targeting_rule_exists = FALSE) {
     $items = array();
     $acquia_lift_control_rate = .1;
     $acquia_lift_explore_rate = .2;
@@ -386,7 +401,7 @@ class AcquiaLiftAgent extends PersonalizeAgentBase implements PersonalizeAgentGo
     $items[] = array(
       'method' => 'saveAgent',
       'args' => array(
-        $this->machineName, 
+        $this->machineName,
         $this->title,
         $this->data['decision_style'],
         'enabled',
@@ -395,7 +410,7 @@ class AcquiaLiftAgent extends PersonalizeAgentBase implements PersonalizeAgentGo
         isset($this->data['cache_decisions']) && $this->data['cache_decisions']
       ),
     );
-    $acquia_lift_context_needs_deleting = isset($old_data->data['visitor_context']['acquia_lift_context']);
+    $acquia_lift_context_needs_deleting = $targeting_rule_exists;
     if (isset($this->data['visitor_context']['acquia_lift_context'])) {
       // Whereas non-Acquia Lift visitor_context plugins operate by adding extra
       // info at the time of getting a decision, Acquia Lift targeting needs to
@@ -423,7 +438,7 @@ class AcquiaLiftAgent extends PersonalizeAgentBase implements PersonalizeAgentGo
         ),
       );
     }
-    $this->queueItems($items);
+    return $items;
   }
 
   /**
@@ -657,6 +672,21 @@ class AcquiaLiftAgent extends PersonalizeAgentBase implements PersonalizeAgentGo
    * Implements AcquiaLiftAgentInterface::syncDecisions().
    */
   public function syncDecisions($old_decisions, $new_decisions) {
+    $items = $this->getDecisionSyncOperations($old_decisions, $new_decisions);
+    $this->queueItems($items);
+  }
+
+  /**
+   * Returns the operations needed to sync decisions to Acquia Lift.
+   *
+   * @param $old_decisions
+   *   An array representing the old decisions Acquia Lift knows about.
+   * @param $new_decisions
+   *   An array representing the new decisions.
+   * @return array
+   *   An array of items representing API calls to be made to Acquia Lift.
+   */
+  public function getDecisionSyncOperations($old_decisions, $new_decisions) {
     $items = array();
     // Save everything in $new_decisions to Acquia Lift.
     foreach ($new_decisions as $point => $decisions) {
@@ -733,13 +763,28 @@ class AcquiaLiftAgent extends PersonalizeAgentBase implements PersonalizeAgentGo
         }
       }
     }
-    $this->queueItems($items);
+    return $items;
   }
 
   /**
    * Implements AcquiaLiftAgentInterface::syncGoals().
    */
   public function syncGoals($old_goals, $new_goals) {
+    $items = $this->getGoalSyncOperations($old_goals, $new_goals);
+    $this->queueItems($items);
+  }
+
+  /**
+   * Returns the operations needed to sync goals to Acquia Lift.
+   *
+   * @param $old_goals
+   *   An array representing the old goals Acquia Lift knows about.
+   * @param $new_goals
+   *   An array representing the new goals.
+   * @return array
+   *   An array of items representing API calls to be made to Acquia Lift.
+   */
+  public function getGoalSyncOperations($old_goals, $new_goals) {
     $items = array();
     // Save the new goals to Acquia Lift
     foreach ($new_goals as $goal_name => $goal_value) {
@@ -751,13 +796,18 @@ class AcquiaLiftAgent extends PersonalizeAgentBase implements PersonalizeAgentGo
         )
       );
     }
-    $this->queueItems($items);
+    return $items;
   }
 
   /**
    * Implements AcquiaLiftAgentInterface::syncFixedTargeting().
    */
   public function syncFixedTargeting($option_sets) {
+    $items = $this->getFixedTargetingSyncOperations($option_sets);
+    $this->queueItems($items);
+  }
+
+  public function getFixedTargetingSyncOperations($option_sets) {
     $items = array();
     // If any of this agent's option sets has explicit targeting mappings configured,
     // we need to send these mappings to Acquia Lift.
@@ -800,7 +850,7 @@ class AcquiaLiftAgent extends PersonalizeAgentBase implements PersonalizeAgentGo
         )
       );
     }
-    $this->queueItems($items);
+    return $items;
   }
 
   /**

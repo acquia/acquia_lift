@@ -6,6 +6,7 @@
  */
 
 define('ACQUIA_LIFT_DEFAULT_AGENT_NAME', 'drupal-default');
+define('ACQUIA_LIFT_OPERATION_ERROR_PREFIX', 'Errors: ');
 
 /**
  * Implements hook_menu().
@@ -15,8 +16,7 @@ function acquia_lift_menu() {
   $items['admin/config/content/personalize/acquia_lift'] = array(
     'type' => MENU_LOCAL_TASK,
     'title' => 'Acquia Lift',
-    'page callback' => 'drupal_get_form',
-    'page arguments' => array('acquia_lift_admin_form'),
+    'page callback' => 'acquia_lift_configuration_page',
     'access arguments' => array('administer personalize configuration'),
     'file' => 'acquia_lift.admin.inc'
   );
@@ -548,6 +548,155 @@ function acquia_lift_sync_option_sets($agent, $old_option_sets, $new_option_sets
   }
 }
 
+function acquia_lift_batch_sync_campaigns() {
+  $agents = personalize_agent_load_by_type('acquia_lift_simple_ab');
+  $agent_name = key($agents);
+  $agent = reset($agents);
+  $operations = acquia_lift_get_sync_operations_for_agents(array($agent_name => $agent));
+  $batch_operations = array();
+  foreach ($operations as $operation) {
+    $batch_operations[] = array('acquia_lift_batch_process_item', array($operation));
+  }
+  $batch = array(
+    'operations' => $batch_operations,
+    'finished' => 'acquia_lift_batch_finished',
+    'title' => t('Syncing campaigns to Acquia Lift'),
+    'init_message' => t('Starting campaign sync.'),
+    'progress_message' => t('Processed @current out of @total.'),
+    'error_message' => t('Lift campaign sync has encountered an error.'),
+  );
+
+  batch_set($batch);
+}
+
+/**
+ * Batch API callback to process an API call to Lift.
+ *
+ * @param $item
+ *   An array representing an API call that can be passed directly to
+ *   acquia_lift_sync_item().
+ *
+ * @param &$context
+ *   Parameter passed in by Batch API to allow keeping track of operation
+ *   progress.
+ */
+function acquia_lift_batch_process_item($item, &$context) {
+  if (!isset($context['sandbox']['progress'])) {
+    $context['sandbox']['progress'] = 0;
+  }
+  if (!isset($context['sandbox']['retries'])) {
+    $context['sandbox']['retries'] = 0;
+  }
+  $errors = array();
+  acquia_lift_sync_item($item, $errors);
+  if (empty($errors)) {
+    $context['results'][] = t('Method @method called successfully', array('@method' => $item['method']));
+    $context['sandbox']['progress']++;
+  }
+  else {
+    // We allow one retry per operation.
+    if (!$context['sandbox']['retries']) {
+      $context['finished'] = 0.5;
+      $context['sandbox']['retries'] = 1;
+    }
+    else {
+      $context['results'][] = ACQUIA_LIFT_OPERATION_ERROR_PREFIX . implode(',', $errors);
+      $context['sandbox']['progress']++;
+      // Reset retries for the next operation.
+      $context['sandbox']['retries'] = 0;
+    }
+  }
+}
+
+/**
+ * Batch API callback for when processing of all items is complete.
+ *
+ * @param $success
+ *   Whether or not the batch completed successfully.
+ * @param $results
+ *   An array holding the results of each operation.
+ * @param $operations
+ *   An array of unprocessed operations.
+ */
+function acquia_lift_batch_finished($success, $results, $operations) {
+  if ($success) {
+    // Here we do something meaningful with the results.
+    $errors = array();
+    foreach ($results as $result) {
+      if (strpos($result, ACQUIA_LIFT_OPERATION_ERROR_PREFIX) === 0) {
+        $errors[] = substr($result, strlen(ACQUIA_LIFT_OPERATION_ERROR_PREFIX));
+      }
+    }
+    if (empty($errors)) {
+      $message = t('Sync operation completed successfully.');
+      $message_type = 'status';
+    }
+    else {
+      $message_type = 'error';
+      $message = t('Some errors occurred while syncing campaigns to Acquia Lift:');
+      $message .= theme('item_list', array('items' => $errors));
+    }
+    drupal_set_message($message, $message_type);
+  }
+  else {
+    // An error occurred.
+    // $operations contains the operations that remained unprocessed.
+    $error_operation = reset($operations);
+    $message = t('An error occurred while processing %error_operation with arguments: @arguments', array('%error_operation' => $error_operation[0], '@arguments' => print_r($error_operation[1], TRUE)));
+    drupal_set_message($message, 'error');
+  }
+}
+
+/**
+ * Gets the required operations for syncing the specified agents to Lift.
+ *
+ * @param $agents
+ *   An array of agents with agent names as keys and stdClass objects rep-
+ *   resenting the agents as values.
+ * @return array
+ *   An array of operation arrays, each with a 'method' key and an 'args'
+ *   key, that can be processed by acquia_lift_sync_item().
+ */
+function acquia_lift_get_sync_operations_for_agents($agents) {
+  $operations = array();
+
+  foreach ($agents as $agent_name => $agent) {
+    if (!acquia_lift_owns_agent($agent)) {
+      continue;
+    }
+    if ($agent_instance = personalize_agent_load_agent($agent_name)) {
+      if (!$agent_instance instanceof AcquiaLiftAgent) {
+        continue;
+      }
+      // First sync the agent itself.
+      // @todo First check whether the agent exists in Lift.
+      $operations = array_merge($operations, $agent_instance->getAgentSyncOperations(FALSE));
+
+      // Now go through all option sets and sync those.
+      $option_sets = personalize_option_set_load_by_agent($agent_name);
+      if (!empty($option_sets)) {
+        $decisions = AcquiaLiftAgent::convertOptionSetsToDecisions($option_sets);
+        // @todo First check whether there are existing decisions for this agent in Lift.
+        $old_decisions = array();
+        $operations = array_merge($operations, $agent_instance->getDecisionSyncOperations($old_decisions, $decisions));
+
+        // Tell Acquia Lift about the fixed targeting for the option sets.
+        $operations = array_merge($operations, $agent_instance->getFixedTargetingSyncOperations($option_sets));
+      }
+      $goals = personalize_goal_load_by_conditions(array('agent' => $agent_name));
+      foreach ($goals as $goal) {
+        $new_goals[$goal['action']] = $goal['value'];
+      }
+      if (!empty($new_goals)) {
+        // @todo First check whether there are existing goals for this agent in Lift.
+        $old_goals = array();
+        $operations = array_merge($operations, $agent_instance->getGoalSyncOperations($old_goals, $new_goals));
+      }
+    }
+  }
+  return $operations;
+}
+
 /**
  * Implements hook_personalize_goal_save().
  */
@@ -590,13 +739,14 @@ function acquia_lift_personalize_goal_save($goal_info) {
  *   - method The method to call on the AcquiaLiftAPI instance
  *   - args The args to pass to the method.
  */
-function acquia_lift_sync_item($item) {
+function acquia_lift_sync_item($item, &$errors = array()) {
   try {
     $acquia_lift_api = AcquiaLiftAPI::getInstance(variable_get('acquia_lift_account_info', array()));
     call_user_func_array(array($acquia_lift_api, $item['method']), $item['args']);
   }
   catch (AcquiaLiftException $e) {
     watchdog('Acquia Lift', 'Could not call the method @method with args @args', array('@method' => $item['method'], '@args' => implode(',', $item['args'])));
+    $errors[] = $e->getMessage();
   }
 }
 

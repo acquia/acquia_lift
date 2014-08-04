@@ -9,8 +9,6 @@
   var reportPath = '/admin/structure/personalize/manage/acquia-lift-placeholder/report';
   var statusPath = '/admin/structure/personalize/manage/acquia-lift-placeholder/status';
 
-  var AGENT_AB_SIMPLE = 'acquia_lift_simple_ab';
-
   Drupal.behaviors.acquiaLiftPersonalize = {
     attach: function (context) {
       var settings = Drupal.settings.personalize;
@@ -147,7 +145,7 @@
                   switch (type) {
                     case 'option_sets':
                       // If the menu already has a link for this setting, abort.
-                      if (!$menu.find('[data-acquia-lift-personalize-agent="' + obj.agent + '"][data-acquia-lift-personalize-id="' + key + '"].acquia-lift-preview-option-set').length) {
+                      if (!$menu.find('[data-acquia-lift-personalize-agent="' + obj.agent + '"][data-acquia-lift-personalize-id="' + key + '"].acquia-lift-preview-page-variation').length) {
                         campaignName = obj.agent;
                         campaignsWithOptions[obj.agent] = obj.agent;
                         campaignModel = ui.collections.campaigns.findWhere({'name': campaignName});
@@ -160,7 +158,7 @@
                       // If the menu already has a link for this setting, abort.
                       if (!$menu.find('[data-acquia-lift-personalize-agent="' + key + '"].acquia-lift-campaign').length) {
                         campaignName = key;
-                        model = ui.collections[type].findWhere({'name': key});
+                        campaignModel = model = ui.collections[type].findWhere({'name': key});
                         viewName = 'MenuCampaignView';
                       }
                       break;
@@ -174,7 +172,7 @@
                         model: model
                       }));
                     } else {
-                      ui.views.push(ui.factories.MenuViewFactory.createContentVariationView(model, element));
+                      ui.views.push(ui.factories.MenuViewFactory.createContentVariationView(model, campaignModel, element));
                     }
                     $menu.prepend(element);
                     // Build a view for campaign goals.
@@ -231,7 +229,7 @@
         });
 
         // Build Views for all content variations within the campaign.
-        var $contentVariations = $('[data-acquia-lift-personalize-agent].acquia-lift-preview-option-set').once('acquia-lift-personalize-option-sets');
+        var $contentVariations = $('[data-acquia-lift-personalize-agent].acquia-lift-content-variation').once('acquia-lift-personalize-option-sets');
         if ($contentVariations.length) {
           $contentVariations
             .each(function (index, element) {
@@ -472,7 +470,8 @@
         links: {},
         name: '',
         isActive: false,
-        verified: false
+        verified: false,
+        type: ''
       },
 
       /**
@@ -480,6 +479,27 @@
        */
       initialize: function(options) {
         this.set('optionSets', new Drupal.acquiaLiftUI.MenuOptionSetCollection());
+      },
+
+      /**
+       * Helper function to determine if this campaign is for an A/B test.
+       */
+      isABTest: function() {
+        return this.get('type') == 'acquia_lift_simple_ab';
+      },
+
+      /**
+       * Helper function to get the number of variations tos how based on the
+       * type of model.
+       */
+       getNumberOfVariations: function () {
+        var optionSets = this.get('optionSets');
+        if (this.isABTest()) {
+          variations = optionSets.getVariations().length;
+        } else {
+          variations = optionSets.length;
+        }
+        return variations;
       },
 
       /**
@@ -587,6 +607,115 @@
 
       render: function(model, isActive) {
         this.$el.toggle(isActive);
+      }
+    }),
+
+    /**
+     * Backbone View/Controller for the page variations of a campaign.
+     */
+    MenuPageVariationsView: ViewBase.extend({
+      events: {
+        'click .acquia-lift-preview-option': 'onClick'
+      },
+
+      /**
+       * {@inheritDoc}
+       */
+      initialize: function (options) {
+        // the model is the campaign model.
+        this.listenTo(this.model, 'destroy', this.remove);
+        this.listenTo(this.model, 'change:isActive', this.render);
+        this.listenTo(this.model, 'change:optionSets', this.rebuild);
+
+        this.onOptionShowProxy = $.proxy(this.onOptionShow, this);
+        $(document).on('personalizeOptionChange', this.onOptionShowProxy);
+
+        this.build(this.model);
+        this.render(this.model);
+      },
+
+      /**
+       * {@inheritDoc}
+       */
+      render: function(model) {
+        this.$el
+          .find('[data-acquia-lift-personalize-page-variation]')
+          .removeClass('acquia-lift-active')
+          .attr('aria-pressed', 'false');
+        this.$el
+          .find('[data-acquia-lift-personalize-page-variation="' + model.get('activeVariation') + '"]')
+          .addClass('acquia-lift-active')
+          .attr('aria-pressed', 'true');
+      },
+
+      /**
+       * Regenerates the list HTML and adds to the element.
+       * This is necessary when the option set collection changes.
+       *
+       * @param model
+       */
+      rebuild: function(model) {
+        build(model);
+        render(model);
+      },
+
+      /**
+       * {@inheritDoc}
+       */
+      build: function(model) {
+        var html = '';
+        html += Drupal.theme('acquiaLiftPageVariationsItem', model);
+        this.$el.html(html);
+      },
+
+      /**
+       * {@inheritdoc}
+       */
+      remove: function () {
+        $(document).off('personalizeOptionChange', this.onOptionShowProxy);
+        ViewBase.prototype.remove.call(this);
+      },
+
+      /**
+       * Responds to clicks.
+       *
+       * @param jQuery.Event event
+       */
+      onClick: function (event) {
+        if (!$(event.target).hasClass('acquia-lift-preview-option')) {
+          return;
+        }
+        var variation_index = $(event.target).data('acquia-lift-personalize-page-variation');
+        var variations = this.model.get('optionSets').getVariations();
+        if (variation_index >= variations.length) {
+          return;
+        }
+        var variation = variations[variation_index];
+        var i, num = variation.options.length, current;
+        // Run the executor for each option in the variation.
+        for (i=0; i < num; i++) {
+          current = variation.options[i];
+          Drupal.personalize.executors[current.executor].execute($(current.selector), current.option.option_id, current.osid);
+        }
+        event.preventDefault();
+        event.stopPropagation();
+      },
+
+      /**
+       * Responds to personalizeOptionChange change events.
+       *
+       * @param jQuery event
+       * @param jQuery $option_set
+       *   A reference to the jQuery-wrapped option set DOM element.
+       * @param string choice_name
+       *   The name of the selected choice.
+       * @param string osid
+       *   The id of the option set to which this choice belongs.
+       */
+      onOptionShow: function (event, $option_set, choice_name, osid) {
+        if (this.model.get('osid') === osid) {
+          this.model.set('activeOption', choice_name);
+        }
       }
     }),
 
@@ -932,11 +1061,11 @@
        * {@inheritdoc}
        */
       render: function () {
-        var optionSets = this.model.get('optionSets');
+        var variations = this.model.getNumberOfVariations();
         this.$el
           .toggle(this.model.get('isActive'))
-          .toggleClass('acquia-lift-empty', !optionSets.length)
-          .find('span').text(optionSets.length);
+          .toggleClass('acquia-lift-empty', !variations)
+          .find('span').text(variations);
       }
     }),
 
@@ -1186,35 +1315,28 @@
      *
      * @param Drupal.acquiaLiftUI.MenuOptionSetModel model
      *   The model that will be the base for this view.
+     * @param Drupal.acquiaLiftUI.MenuCampaignModel model
+     *   The campaign model that owns the option set.
      * @param element
      *   The DOM element for the Backbone view.
      */
-    createContentVariationView: function (model, element) {
-      var agent = model.get('agent_info');
-      var type = agent.type || '';
-      var view;
-      switch (type) {
-        /*
-        case AGENT_AB_SIMPLE:
-          // There is only one view per page, but there may be multiple models
-          // due to each page variation being made up of multiple option sets.
-          if (Drupal.acquiaLiftUI.views.pageVariationView) {
-            Drupal.acquiaLiftUI.views.pageVariationView.collection.add(model);
-          } else {
-            view = new Drupal.acquiaLiftUI.MenuPageVariationsView({
-              collection: new Drupal.acquiaLiftUI.MenuCampaignCollection([model]),
-              el: element
-            });
-          }
-          break;
-        */
-
-        default:
-          view = new Drupal.acquiaLiftUI.MenuOptionSetView({
-            model: model,
+    createContentVariationView: function (model, campaignModel, element) {
+      if (campaignModel.isABTest()) {
+        // There is only one page variation view per page per campaign, but
+        // this may be called multiple times due to multiple option sets.
+        Drupal.acquiaLiftUI.views.pageVariations = Drupal.acquiaLiftUI.views.pageVariations || {};
+        var campaignName = campaignModel.get('name');
+        if (!Drupal.acquiaLiftUI.views.pageVariations.hasOwnProperty(campaignName)) {
+          Drupal.acquiaLiftUI.views.pageVariations[campaignName] = new Drupal.acquiaLiftUI.MenuPageVariationsView({
+            model: campaignModel,
             el: element
           });
-          break;
+        }
+      } else {
+        view = new Drupal.acquiaLiftUI.MenuOptionSetView({
+          model: model,
+          el: element
+        });
       }
       return view;
     }
@@ -1250,8 +1372,60 @@
       }
     }),
 
+    /**
+     * A collection of option sets within a model.
+     */
     MenuOptionSetCollection: Backbone.Collection.extend({
-      model: Drupal.acquiaLiftUI.MenuOptionSetModel
+      model: Drupal.acquiaLiftUI.MenuOptionSetModel,
+
+      getVariations: function() {
+        if (this.length == 0) {
+          return [];
+        }
+
+        var i,
+          sample = this.at(0),
+          sampleOptions = sample ? sample.get('options') : null,
+          num = sampleOptions ? sampleOptions.length : 0,
+          variations = [],
+          variation,
+          options,
+          option,
+          valid,
+          variationNum;
+        for (i=0; i < num; i++) {
+          valid = true;
+          variationNum = i+1;
+          variation = {
+            index: i,
+            options: []
+          };
+          this.each(function (model) {
+            options = model.get('options');
+            if (options.length <= i) {
+              // This variation is invalid because it does not have an option
+              // in each option set.
+              valid = false;
+            }
+            option = {
+              decision_name: model.get('decision_name'),
+              executor: model.get('executor'),
+              osid: model.get('osid'),
+              plugin: model.get('plugin'),
+              selector: model.get('selector'),
+              stateful: model.get('stateful'),
+              winner: model.get('winner'),
+              option: options[i]
+            };
+            variation.label = options[i].option_label;
+            variation.options.push(option);
+          });
+          if (valid) {
+            variations.push(variation);
+          }
+        }
+        return variations;
+      }
     })
   });
 
@@ -1372,6 +1546,36 @@
   }
 
   /**
+   * Themes a list of page variations for a campaign.
+   *
+   * @param MenuCampaignModel model
+   *   The campaign model to create page variations display for.
+   */
+  Drupal.theme.acquiaLiftPageVariationsItem = function (model) {
+    var optionSets = model.get('optionSets');
+    var variations = optionSets.getVariations();
+
+    var attrs = [
+      'class="acquia-lift-preview-page-variation acquia-lift-content-variation"' +
+      'data-acquia-lift-personalize-agent="' + model.get('name') + '"'
+    ];
+    var item = '';
+    item += '<span ' + attrs.join(' ') + '>';
+    // Handle empty page variations.
+    if (variations.length == 0) {
+      item += Drupal.theme('acquiaLiftPersonalizeNoMenuItem', {type: 'page variations'});
+    } else {
+      item += Drupal.t('Page variations') + '</span>';
+      item += '<ul class="menu">' + "\n";
+      _.each(variations, function (variation, index, list) {
+        item += Drupal.theme('acquiaLiftPreviewPageVariationMenuItem', variation);
+      });
+      item += '</ul>\n';
+    }
+    return item;
+  }
+
+  /**
    * Returns a list item that contains links to preview option set options.
    *
    * @param object options
@@ -1385,7 +1589,7 @@
    */
   Drupal.theme.acquiaLiftOptionSetItem = function (options) {
     var attrs = [
-      'class="acquia-lift-preview-option-set acquia-lift-preview-option-set-' + formatClass(options.osID)  + '"',
+      'class="acquia-lift-preview-option-set acquia-lift-content-variation acquia-lift-preview-option-set-' + formatClass(options.osID)  + '"',
       'data-acquia-lift-personalize-id="' + options.osID + '"',
       'data-acquia-lift-personalize-agent="' + options.os.agent + '"'
     ];
@@ -1499,6 +1703,30 @@
 
     return item;
   };
+
+  Drupal.theme.acquiaLiftPreviewPageVariationMenuItem = function (variation) {
+    var item = '';
+    var hrefOptions = [];
+    _.each(variation.options, function (option, index, list) {
+      hrefOptions.push({
+        osID: option.osid,
+        id: option.option.option_id,
+      });
+    });
+    var attrs = [
+      'class="acquia-lift-preview-option acquia-lift-preview-page-variation--' + variation.index + ' visitor-actions-ui-ignore"',
+      'href="' + generateHref(hrefOptions) + '"',
+      'data-acquia-lift-personalize-page-variation="' + variation.index + '"',
+      'aria-role="button"',
+      'aria-pressed="false"'
+    ];
+
+    item += '<li>\n<a ' + attrs.join(' ') + '>\n';
+    item += Drupal.t('Preview @text', {'@text': variation.label}) + '\n';
+    item += '</a>\n</li>\n';
+
+    return item;
+  }
 
   /**
    * Returns a menu item that contains a link to a campaign.

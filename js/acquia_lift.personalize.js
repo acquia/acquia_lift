@@ -2188,7 +2188,7 @@
      * Factory method to create the correct type of content variation set view
      * based on the type of data displayed.
      *
-     * @param Drupal.acquiaLiftUI.MenuOptionModel model
+     * @param Drupal.acquiaLiftUI.MenuOptionSetModel model
      *   The model that will be the base for this view.
      * @param element
      *   The DOM element for the Backbone view.
@@ -2214,7 +2214,7 @@
         */
 
         default:
-          view = new Drupal.acquiaLiftUI.MenuOptionView({
+          view = new Drupal.acquiaLiftUI.MenuOptionSetView({
             model: model,
             el: element
           });

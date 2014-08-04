@@ -556,10 +556,33 @@ class AcquiaLiftAPI implements PersonalizeLoggerAwareInterface {
     $url = $this->generateEndpoint("/agent-api/$agent_name/goals/$goal_name");
     $response = $this->httpClient()->put($url, array('Content-Type' => 'application/json; charset=utf-8', 'Accept' => 'application/json'), $data);
     $data = json_decode($response->data, TRUE);
-    $vars = array('agent' => $agent_name, 'goal' => $goal_name);
-    $success_msg = 'The goal {goal} was pushed to the Acquia Lift campaign {agent}';
-    $fail_msg = 'Could not save the goal {goal} to the Acquia Lift campaign {agent}';
+    $vars = array('agent' => $agent_name, 'goalname' => $goal_name);
+    $success_msg = 'The goal {goalname} was pushed to the Acquia Lift campaign {agent}';
+    $fail_msg = 'Could not save the goal {goalname} to the Acquia Lift campaign {agent}';
     if ($response->code == 200 && $data['status'] == 'ok') {
+      $this->logger()->log(PersonalizeLogLevel::INFO, $success_msg, $vars);
+    }
+    else {
+      $this->logger()->log(PersonalizeLogLevel::ERROR, $fail_msg, $vars);
+      throw new AcquiaLiftException($fail_msg);
+    }
+  }
+
+  /**
+   * Deletes a goal from an agent.
+   *
+   * @param $agent_name
+   *   The agent to delete the goal from.
+   * @param $goal_name
+   *   The name of the goal.
+   */
+  public function deleteGoal($agent_name, $goal_name) {
+    $url = $this->generateEndpoint("/agent-api/$agent_name/goals/$goal_name");
+    $response = $this->httpClient()->delete($url);
+    $vars = array('agent' => $agent_name, 'goalname' => $goal_name);
+    $success_msg = 'The goal {goalname} was deleted from the Acquia Lift campaign {agent}';
+    $fail_msg = 'Could not delete the goal {goalname} from the Acquia Lift campaign {agent}';
+    if ($response->code == 200) {
       $this->logger()->log(PersonalizeLogLevel::INFO, $success_msg, $vars);
     }
     else {
@@ -782,6 +805,32 @@ class AcquiaLiftAPI implements PersonalizeLoggerAwareInterface {
       $this->logger()->log(PersonalizeLogLevel::ERROR, $fail_msg, $vars);
       throw new AcquiaLiftException($fail_msg);
     }
+  }
+
+  /**
+   * Returns whether or not a targeting rule exists for the given agent.
+   *
+   * @param $agent_name
+   *   The name of the agent to check.
+   * @return bool
+   *   TRUE if the specified agent has a targeting rule set up, FALSE otherwise.
+   */
+  public function hasAutoTargetingRule($agent_name) {
+    $rule_name = $agent_name . '-auto-targeting';
+    $url = $this->generateEndpoint("/transforms-list");
+    $response = $this->httpClient()->get($url, array('Accept' => 'application/json'), array('timeout' => self::GET_REQUEST_TIMEOUT_VALUE));
+    if ($response->code == 200) {
+      $response = json_decode($response->data, TRUE);
+      if (!isset($response['data']) || !isset($response['data']['transforms'])) {
+        return FALSE;
+      }
+      foreach ($response['data']['transforms'] as $rule) {
+        if ($rule['code'] == $rule_name) {
+          return TRUE;
+        }
+      }
+    }
+    return FALSE;
   }
 
   /**

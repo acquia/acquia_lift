@@ -796,6 +796,18 @@ class AcquiaLiftAgent extends PersonalizeAgentBase implements PersonalizeAgentGo
         )
       );
     }
+    // Now delete any old goals that are not in the new goals array.
+    foreach ($old_goals as $goal_name => $goal_value) {
+      if (!isset($new_goals[$goal_name])) {
+        $items[] = array(
+          'method' => 'deleteGoal',
+          'args' => array(
+            $this->machineName,
+            $goal_name
+          )
+        );
+      }
+    }
     return $items;
   }
 

@@ -1103,7 +1103,6 @@
         if (!optionSet) {
           return;
         }
-        var options = optionSet.get('options');
         var option = options.findWhere({'option_id': choice_name});
         var variationIndex = options.indexOf(option);
         if (variationIndex < 0) {
@@ -1162,53 +1161,6 @@
           }
         }
         this.model.set('activeVariation', variation_index);
-      },
-
-      /**
-       * Response to a change in edit mode for the page variation application.
-       *
-       * @param event
-       *   The jQuery event object
-       * @param data
-       *   An object of event data including the keys:
-       *   - start: true if edit mode started, false if ended.
-       *   - campaign: the machine name of the campaign holding variations.
-       *   - variationIndex: the index of the variation for editing or -1
-       *     if adding a new variation.
-       */
-      onPageVariationEditMode: function (event, data) {
-        // Make sure it's for this campaign.
-        if (this.model.get('name') !== data.campaign) {
-          return;
-        }
-        if (data.start) {
-          if (data.variationIndex < 0) {
-            // If add mode, then create a temporary variation listing.
-            var nextIndex = this.model.getNumberOfVariations();
-            // The first option is always control so the numbering displayed
-            // actually matches the index number.
-            var variationNumber = Math.max(nextIndex, 1);
-            if (nextIndex == 0) {
-              // Add a control variation display as well.
-              this.$el.find('ul.menu').append(Drupal.theme('acquiaLiftNewVariationMenuItem', -1));
-            }
-            this.$el.find('ul.menu').append(Drupal.theme('acquiaLiftNewVariationMenuItem', variationNumber));
-            this.$el.find('ul.menu li.acquia-lift-empty').hide();
-            // Indicate in the model that we are adding.
-            this.model.set('activeVariation', -1);
-            this.render(this.model);
-          } else {
-            // If in edit mode, make sure that the edited variation index is
-            // indicated.
-            var $li = this.$el.find('[data-acquia-lift-personalize-page-variation="' + data.variationIndex + '"]');
-            $li.trigger('click');
-          }
-          updateNavbar();
-        } else {
-          // If exiting, remove any temporary variation listings.
-          this.$el.find('ul.menu li.acquia-lift-empty').show();
-          this.$el.find('.acquia-lift-page-variation-new').closest('li').remove();
-        }
       }
     }),
 

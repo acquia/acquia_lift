@@ -30,9 +30,7 @@
         looper(settings.option_sets, function (obj, key) {
           var campaign = obj.agent;
           if (!ui.collections.option_sets[campaign]) {
-            ui.collections.option_sets[campaign] = new Backbone.Collection([], {
-              model: ui.MenuOptionModel
-            });
+            ui.collections.option_sets[campaign] = new ui.MenuOptionSetCollection([]);
           }
           if (!ui.collections.option_sets[campaign].findWhere({osid: obj.osid})) {
             ui.collections.option_sets[campaign].add(obj);
@@ -104,7 +102,7 @@
             _.each(addedCampaigns, function (campaignModel, key) {
               // Add an empty count for each campaign's set of options.
               var $element = $(Drupal.theme('acquiaLiftCount'));
-              ui.views.push((new ui['MenuOptionCountEmptyView']({
+              ui.views.push((new ui['MenuContentVariationsCountEmptyView']({
                 el: $element.get(0),
                 model: campaignModel,
                 optionSetCollections: ui.collections['option_sets']
@@ -114,7 +112,7 @@
               // Create a view for each campaign with options.
               if (ui.collections.option_sets.hasOwnProperty(key)) {
                 $element = $(Drupal.theme('acquiaLiftCount'));
-                ui.views.push((new ui['MenuOptionCountView']({
+                ui.views.push((new ui['MenuContentVariationsCountView']({
                   el: $element.get(0),
                   model: ui.collections.option_sets[key],
                   campaignModel: campaignModel
@@ -228,7 +226,7 @@
                       // a campaign.
                       model = ui.collections.campaigns.findWhere({'name': key});
                       element = document.createElement('li');
-                      ui.views.push((new ui.MenuOptionEmptyView({
+                      ui.views.push((new ui.MenuOptionSetEmptyView({
                         el: element,
                         model: model
                       })));
@@ -577,7 +575,7 @@
     /**
      * View to show when there are no option sets for a campaign.
      */
-    MenuOptionEmptyView: ViewBase.extend({
+    MenuOptionSetEmptyView: ViewBase.extend({
       initialize: function (options) {
         this.model.on('change:isActive', this.render, this);
 
@@ -925,7 +923,7 @@
     /**
      * Display the content variation count for the active campaign.
      */
-    MenuOptionCountView: ViewBase.extend({
+    MenuContentVariationsCountView: ViewBase.extend({
       /**
        * {@inheritdoc}
        */
@@ -955,7 +953,7 @@
      * Listens to changes in a Campaign model; renders a zero count on the
      * Content Variations link.
      */
-    MenuOptionCountEmptyView: ViewBase.extend({
+    MenuContentVariationsCountEmptyView: ViewBase.extend({
       /**
        * {@inheritdoc}
        */
@@ -1287,6 +1285,10 @@
             model.set('isActive', false);
           });
       }
+    }),
+
+    MenuOptionSetCollection: Backbone.Collection.extend({
+      model: Drupal.acquiaLiftUI.MenuOptionSetModel
     })
   });
 

@@ -1987,6 +1987,7 @@
       var type = agent.type || '';
       var view;
       switch (type) {
+        /*
         case AGENT_AB_SIMPLE:
           // There is only one view per page, but there may be multiple models
           // due to each page variation being made up of multiple option sets.
@@ -1999,6 +2000,7 @@
             });
           }
           break;
+        */
 
         default:
           view = new Drupal.acquiaLiftUI.MenuOptionView({

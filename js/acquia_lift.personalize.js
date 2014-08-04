@@ -244,15 +244,15 @@
           }
         });
 
-        // Build Views for the Option Set groups.
-        var $optionSetGroups = $('[data-acquia-lift-personalize-agent].acquia-lift-preview-option-set').once('acquia-lift-personalize-option-sets');
-        if ($optionSetGroups.length) {
-          $optionSetGroups
+        // Build Views for all content variations within the campaign.
+        var $contentVariations = $('[data-acquia-lift-personalize-agent].acquia-lift-preview-option-set').once('acquia-lift-personalize-option-sets');
+        if ($contentVariations.length) {
+          $contentVariations
             .each(function (index, element) {
               var $group = $(element);
               var campaign = $group.data('acquia-lift-personalize-agent');
               var model = ui.collections['campaigns'].findWhere({'name': campaign});
-              ui.views.push((new ui.MenuOptionSetView({
+              ui.views.push((new ui.MenuContentVariationsView({
                 el: $group.closest('li').get(0),
                 model: model
               })));
@@ -354,8 +354,8 @@
       var settings = Drupal.settings.personalize;
       var ui = Drupal.acquiaLiftUI;
       // Create a model for a Content Variation management state.
-      if (!ui.models.contentVariationModel) {
-        ui.models.contentVariationModel = new ui.MenuContentVariationModel();
+      if (!ui.models.contentVariatonModeModel) {
+        ui.models.contentVariatonModeModel = new ui.MenuContentVariationModeModel();
       }
 
       // Keep the in-context content variation editing and in-context goal
@@ -368,12 +368,12 @@
             // Prevent infinite loops of updating models triggering change events
             // by delaying this update to the next evaluation cycle.
             window.setTimeout(function () {
-              ui.models.contentVariationModel.set('isActive', false);
+              ui.models.contentVariatonModeModel.set('isActive', false);
             }, 0);
           }
         });
         // Signal when content variation highlighting is active.
-        ui.models.contentVariationModel.on('change:isActive', function (model, isActive) {
+        ui.models.contentVariatonModeModel.on('change:isActive', function (model, isActive) {
           if (isActive) {
             $(document).trigger('visitorActionsUIShutdown');
           }
@@ -386,7 +386,7 @@
         .each(function (index, element) {
           ui.views.push((new ui.MenuAddContentVariationTriggerView({
             el: element,
-            model: ui.models.contentVariationModel
+            model: ui.models.contentVariatonModeModel
           })));
         });
       // Find content variation candidates.
@@ -395,7 +395,7 @@
         .each(function (index, element) {
           ui.views.push((new ui.MenuContentVariationCandidateView({
             el: element,
-            model: ui.models.contentVariationModel
+            model: ui.models.contentVariatonModeModel
           })));
         });
     }
@@ -521,7 +521,7 @@
     /**
      * The model for a menu of option set links.
      */
-    MenuOptionModel: Backbone.Model.extend({
+    MenuOptionSetModel: Backbone.Model.extend({
       defaults: {
         name: '',
         agent: '',
@@ -542,16 +542,18 @@
     /**
      * The Model for a 'add content variation' state.
      */
-    MenuContentVariationModel: Backbone.Model.extend({
+    MenuContentVariationModeModel: Backbone.Model.extend({
       defaults: {
         isActive: false
       }
     }),
 
     /**
-     * View for an option set (which contains options).
+     * View for all content variations in a campaign.
+     *
+     * The model in this view is actually the campaign model.
      */
-    MenuOptionSetView: ViewBase.extend({
+    MenuContentVariationsView: ViewBase.extend({
 
       /**
        * {@inheritdoc}
@@ -597,9 +599,9 @@
     }),
 
     /**
-     * Backbone View/Controller for an option within an option set.
+     * Backbone View/Controller for an option set within a campaign.
      */
-    MenuOptionView: ViewBase.extend({
+    MenuOptionSetView: ViewBase.extend({
 
       events: {
         'click .acquia-lift-preview-option': 'onClick'
@@ -1221,7 +1223,7 @@
      * Factory method to create the correct type of content variation set view
      * based on the type of data displayed.
      *
-     * @param Drupal.acquiaLiftUI.MenuOptionModel model
+     * @param Drupal.acquiaLiftUI.MenuOptionSetModel model
      *   The model that will be the base for this view.
      * @param element
      *   The DOM element for the Backbone view.
@@ -1247,7 +1249,7 @@
         */
 
         default:
-          view = new Drupal.acquiaLiftUI.MenuOptionView({
+          view = new Drupal.acquiaLiftUI.MenuOptionSetView({
             model: model,
             el: element
           });
@@ -1424,7 +1426,7 @@
     ];
     var item = '';
     item += '<span ' + attrs.join(' ') + '>' + Drupal.checkPlain(options.os.label) + '</span>';
-    item += Drupal.theme('acquiaLiftPersonalizeMenu', options);
+    item += Drupal.theme('acquiaLiftOptionSetMenu', options);
     return item;
   };
 
@@ -1440,13 +1442,13 @@
    *
    * @return string
    */
-  Drupal.theme.acquiaLiftPersonalizeMenu = function (options) {
+  Drupal.theme.acquiaLiftOptionSetMenu = function (options) {
     var menu = '<ul class="menu">' + "\n";
     var osID = options.osID;
     var os = options.os;
     var os_selector = os.selector;
     looper(options.os.options || {}, function (obj, key) {
-      menu += Drupal.theme('acquiaLiftPreviewMenuItem', {
+      menu += Drupal.theme('acquiaLiftPreviewOptionMenuItem', {
         id: obj.option_id,
         label: obj.option_label,
         osID: osID,
@@ -1512,7 +1514,7 @@
    *
    * @return string
    */
-  Drupal.theme.acquiaLiftPreviewMenuItem = function (options) {
+  Drupal.theme.acquiaLiftPreviewOptionMenuItem = function (options) {
     var item = '';
     // Prepare the selector string to be passed as a data attribute.
     var selector = options.osSelector.replace(/\"/g, '\'');

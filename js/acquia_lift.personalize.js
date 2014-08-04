@@ -1307,8 +1307,9 @@
    *
    * The URL fragment is maintained.
    *
-   * @param object options
-   *   Keys:
+   * @param mixed options
+   *   An array of options for preselection or a single options object.
+   *   Each option object has the following keys:
    *   - osID: The ID of the option set.
    *   - os: The option set object.
    *
@@ -1319,15 +1320,26 @@
     var path = location.pathname && pathRegex.exec(location.pathname)[1] || '';
     var param = Drupal.settings.personalize.optionPreselectParam;
 
-    var href = base + path;
-    href += '?' + param + '=' + options.osID + '--' + options.id;
+    var href = base + path + '?' + param + '=';
+    if (!options instanceof Array) {
+      options = [options];
+    }
+    var params = [];
+    var osids = [];
+    _.each(options, function (element, index, list) {
+      osids.push(element.osID);
+      params.push(element.osID + '--' + element.id);
+    });
+    href += params.join();
+
     // Now we need to add on any other Option Sets for which a preview option
     // had been selected so that we can preview more than one at a time.
     var existingSelection = decodeURI(window.location.search.replace(new RegExp("^(?:.*[&\\?]" + encodeURI(param).replace(/[\.\+\*]/g, "\\$&") + "(?:\\=([^&]*))?)?.*$", "i"), "$1"));
     if (existingSelection.length > 0) {
       looper(existingSelection.split(','), function (str, key) {
         // Exclude any preselection for the Option Set we're generating a link for.
-        if (str.indexOf(options.osID + '--') == -1) {
+        var existingOsid = str.split('--')[0];
+        if (osids.indexOf(existingOsid) == -1) {
           href += ',' + str;
         }
       });

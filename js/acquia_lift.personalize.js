@@ -31,7 +31,7 @@
           var campaign = obj.agent;
           if (!ui.collections.option_sets[campaign]) {
             ui.collections.option_sets[campaign] = new Backbone.Collection([], {
-              model: ui[ui.objectMap['option_sets'] + 'Model']
+              model: ui.MenuOptionModel
             });
           }
           if (!ui.collections.option_sets[campaign].findWhere({osid: obj.osid})) {
@@ -72,7 +72,7 @@
                 case 'campaigns':
                   collection = ui.collections[category];
                   $element = $(Drupal.theme('acquiaLiftCount'));
-                  ui.views.push((new ui[ui.objectMap[category] + 'CountView']({
+                  ui.views.push((new ui.MenuCampaignCountView({
                     el: $element.get(0),
                     model: collection
                   })));
@@ -151,6 +151,7 @@
         _.each(['campaigns', 'option_sets'], function (category) {
           var $typeMenus = $('[data-acquia-lift-personalize-type="' + category + '"]');
           var campaignsWithOptions = {};
+          var viewName = null;
           if ($typeMenus.length) {
             $typeMenus
               .each(function (index, element) {
@@ -166,6 +167,7 @@
                         campaignName = obj.agent;
                         campaignsWithOptions[obj.agent] = obj.agent;
                         model = ui.collections[type][campaignName].findWhere({'osid': key});
+                        viewName = 'MenuOptionView';
                       }
                       break;
                     case 'campaigns':
@@ -173,20 +175,20 @@
                       if (!$menu.find('[data-acquia-lift-personalize-agent="' + key + '"].acquia-lift-campaign').length) {
                         campaignName = key;
                         model = ui.collections[type].findWhere({'name': key});
+                        viewName = 'MenuCampaignView';
                       }
                       break;
                   }
                   // Create views for the campaign model if it was just added.
                   if (model && addedCampaigns.hasOwnProperty(campaignName)) {
                     element = document.createElement('li');
-                    // Use the factory method if one exists for this view type.
-                    if (ui.factoryMap.views.hasOwnProperty(type)) {
-                      ui.views.push(ui.factories.MenuViewFactory[ui.factoryMap.views[type]].call(this, model, element));
-                    } else {
-                      ui.views.push((new ui[ui.objectMap[type] + 'View']({
+                    if (type == 'campaigns') {
+                      ui.views.push(new ui.MenuCampaignView({
                         el: element,
                         model: model
-                      })));
+                      }));
+                    } else {
+                      ui.views.push(ui.factories.MenuViewFactory.createContentVariationView(model, element));
                     }
                     $menu.prepend(element);
                     // Build a view for campaign goals.
@@ -196,7 +198,7 @@
                       if (modelGoals) {
                         looper(modelGoals, function (obj, key) {
                           element = document.createElement('li');
-                          ui.views.push((new ui[ui.objectMap['goals'] + 'View']({
+                          ui.views.push((new ui.MenuGoalsView({
                             el: element,
                             model: model,
                             goalID: key,
@@ -207,7 +209,7 @@
                       } else {
                         // Build an empty campaign goal view.
                         element = document.createElement('li');
-                        ui.views.push((new ui[ui.objectMap['goals'] + 'View']({
+                        ui.views.push((new ui.MenuGoalsView({
                           el: element,
                           model: model,
                           goalID: null,
@@ -436,19 +438,6 @@
   });
 
   $.extend(Drupal.acquiaLiftUI, {
-    // Common View/Model name components.
-    objectMap: {
-      option_sets: 'MenuOption',
-      campaigns: 'MenuCampaign',
-      goals: 'MenuGoals'
-    },
-    // Factory methods defined for objects.
-    factoryMap: {
-      views: {
-        option_sets: 'createContentVariationView'
-      }
-    },
-
     /**
      * Finds the model of the active campaign sets isActive to true.
      *
@@ -1242,6 +1231,7 @@
       var type = agent.type || '';
       var view;
       switch (type) {
+        /*
         case AGENT_AB_SIMPLE:
           // There is only one view per page, but there may be multiple models
           // due to each page variation being made up of multiple option sets.
@@ -1254,6 +1244,7 @@
             });
           }
           break;
+        */
 
         default:
           view = new Drupal.acquiaLiftUI.MenuOptionView({

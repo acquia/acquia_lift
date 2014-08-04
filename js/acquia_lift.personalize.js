@@ -464,6 +464,12 @@
     startEditMode: function (variationIndex) {
       this.set('isActive', true);
     },
+    // Factory methods defined for objects.
+    factoryMap: {
+      views: {
+        option_sets: 'createContentVariationView'
+      }
+    },
 
     /**
      * Helper function to end editing mode for a page variation.
@@ -2170,6 +2176,49 @@
       } else {
         return new Drupal.acquiaLiftUI.MenuCampaignModel(data);
       }
+    }
+  };
+
+  /**
+   * Factory methods.
+   */
+  Drupal.acquiaLiftUI.factories = Drupal.acquiaLiftUI.factories || {};
+  Drupal.acquiaLiftUI.factories.MenuViewFactory = Drupal.acquiaLiftUI.factories.MenuViewFactory || {
+    /**
+     * Factory method to create the correct type of content variation set view
+     * based on the type of data displayed.
+     *
+     * @param Drupal.acquiaLiftUI.MenuOptionModel model
+     *   The model that will be the base for this view.
+     * @param element
+     *   The DOM element for the Backbone view.
+     */
+    createContentVariationView: function (model, element) {
+      var agent = model.get('agent_info');
+      var type = agent.type || '';
+      var view;
+      switch (type) {
+        case AGENT_AB_SIMPLE:
+          // There is only one view per page, but there may be multiple models
+          // due to each page variation being made up of multiple option sets.
+          if (Drupal.acquiaLiftUI.views.pageVariationView) {
+            Drupal.acquiaLiftUI.views.pageVariationView.collection.add(model);
+          } else {
+            view = new Drupal.acquiaLiftUI.MenuPageVariationsView({
+              collection: new Drupal.acquiaLiftUI.MenuCampaignCollection([model]),
+              el: element
+            });
+          }
+          break;
+
+        default:
+          view = new Drupal.acquiaLiftUI.MenuOptionView({
+            model: model,
+            el: element
+          });
+          break;
+      }
+      return view;
     }
   };
 

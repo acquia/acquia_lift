@@ -641,6 +641,27 @@
       },
 
       /**
+       * Helper function to determine if this campaign is for an A/B test.
+       */
+      isABTest: function() {
+        return this.get('type') == 'acquia_lift_simple_ab';
+      },
+
+      /**
+       * Helper function to get the number of variations tos how based on the
+       * type of model.
+       */
+       getNumberOfVariations: function () {
+        var optionSets = this.get('optionSets');
+        if (this.isABTest()) {
+          variations = optionSets.getVariations().length;
+        } else {
+          variations = optionSets.length;
+        }
+        return variations;
+      },
+
+      /**
        * Updates the status of a campaign.
        *
        * @param newStatus
@@ -2190,35 +2211,28 @@
      *
      * @param Drupal.acquiaLiftUI.MenuOptionSetModel model
      *   The model that will be the base for this view.
+     * @param Drupal.acquiaLiftUI.MenuCampaignModel model
+     *   The campaign model that owns the option set.
      * @param element
      *   The DOM element for the Backbone view.
      */
-    createContentVariationView: function (model, element) {
-      var agent = model.get('agent_info');
-      var type = agent.type || '';
-      var view;
-      switch (type) {
-        /*
-        case AGENT_AB_SIMPLE:
-          // There is only one view per page, but there may be multiple models
-          // due to each page variation being made up of multiple option sets.
-          if (Drupal.acquiaLiftUI.views.pageVariationView) {
-            Drupal.acquiaLiftUI.views.pageVariationView.collection.add(model);
-          } else {
-            view = new Drupal.acquiaLiftUI.MenuPageVariationsView({
-              collection: new Drupal.acquiaLiftUI.MenuCampaignCollection([model]),
-              el: element
-            });
-          }
-          break;
-        */
-
-        default:
-          view = new Drupal.acquiaLiftUI.MenuOptionSetView({
-            model: model,
+    createContentVariationView: function (model, campaignModel, element) {
+      if (campaignModel.isABTest()) {
+        // There is only one page variation view per page per campaign, but
+        // this may be called multiple times due to multiple option sets.
+        Drupal.acquiaLiftUI.views.pageVariations = Drupal.acquiaLiftUI.views.pageVariations || {};
+        var campaignName = campaignModel.get('name');
+        if (!Drupal.acquiaLiftUI.views.pageVariations.hasOwnProperty(campaignName)) {
+          Drupal.acquiaLiftUI.views.pageVariations[campaignName] = new Drupal.acquiaLiftUI.MenuPageVariationsView({
+            model: campaignModel,
             el: element
           });
-          break;
+        }
+      } else {
+        view = new Drupal.acquiaLiftUI.MenuOptionSetView({
+          model: model,
+          el: element
+        });
       }
       return view;
     }
@@ -2648,6 +2662,30 @@
 
     return item;
   };
+
+  Drupal.theme.acquiaLiftPreviewPageVariationMenuItem = function (variation) {
+    var item = '';
+    var hrefOptions = [];
+    _.each(variation.options, function (option, index, list) {
+      hrefOptions.push({
+        osID: option.osid,
+        id: option.option.option_id
+      });
+    });
+    var attrs = [
+      'class="acquia-lift-preview-option acquia-lift-preview-page-variation--' + variation.index + ' visitor-actions-ui-ignore"',
+      'href="' + generateHref(hrefOptions) + '"',
+      'data-acquia-lift-personalize-page-variation="' + variation.index + '"',
+      'aria-role="button"',
+      'aria-pressed="false"'
+    ];
+
+    item += '<li>\n<a ' + attrs.join(' ') + '>\n';
+    item += Drupal.t('Preview @text', {'@text': variation.label}) + '\n';
+    item += '</a>\n</li>\n';
+
+    return item;
+  }
 
   /**
    * Themes a list item for a page variation within the list of variations.

@@ -912,6 +912,7 @@
         this.listenTo(this.model, 'destroy', this.remove);
         this.listenTo(this.model, 'change:isActive', this.render);
         this.listenTo(this.model, 'change:variations', this.rebuild);
+        this.listenTo(this.model, 'change:optionSets', this.rebuild);
         this.listenTo(this.model, 'change:activeVariation', this.render);
 
         this.onOptionShowProxy = $.proxy(this.onOptionShow, this);
@@ -1088,6 +1089,7 @@
             this.model.set('activeVariation', 0);
           }
         }
+        this.model.set('activeVariation', variation_index);
       }
     }),
 

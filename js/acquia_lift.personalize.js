@@ -28,12 +28,10 @@
           }
         });
         looper(settings.option_sets, function (obj, key) {
-          var campaign = obj.agent;
-          if (!ui.collections.option_sets[campaign]) {
-            ui.collections.option_sets[campaign] = new ui.MenuOptionSetCollection([]);
-          }
-          if (!ui.collections.option_sets[campaign].findWhere({osid: obj.osid})) {
-            ui.collections.option_sets[campaign].add(obj);
+          var campaignModel = ui.collections.campaigns.findWhere({name: obj.agent});
+          var optionSets = campaignModel.get('optionSets');
+          if (!optionSets.findWhere({osid: obj.osid})) {
+            optionSets.add(obj);
           }
         });
 
@@ -102,23 +100,11 @@
             _.each(addedCampaigns, function (campaignModel, key) {
               // Add an empty count for each campaign's set of options.
               var $element = $(Drupal.theme('acquiaLiftCount'));
-              ui.views.push((new ui['MenuContentVariationsCountEmptyView']({
+              ui.views.push((new ui['MenuContentVariationsCountView']({
                 el: $element.get(0),
                 model: campaignModel,
-                optionSetCollections: ui.collections['option_sets']
               })));
               $element.prependTo($link);
-
-              // Create a view for each campaign with options.
-              if (ui.collections.option_sets.hasOwnProperty(key)) {
-                $element = $(Drupal.theme('acquiaLiftCount'));
-                ui.views.push((new ui['MenuContentVariationsCountView']({
-                  el: $element.get(0),
-                  model: ui.collections.option_sets[key],
-                  campaignModel: campaignModel
-                })));
-                $element.prependTo($link);
-              }
             });
           }
         });
@@ -155,7 +141,7 @@
               .each(function (index, element) {
                 var $menu = $(element);
                 var type = $menu.data('acquia-lift-personalize-type');
-                var model, element, campaignName;
+                var model, element, campaignName, campaignModel, optionSets;
                 looper(settings[type], function (obj, key) {
                   // Find the right model.
                   switch (type) {
@@ -164,7 +150,9 @@
                       if (!$menu.find('[data-acquia-lift-personalize-agent="' + obj.agent + '"][data-acquia-lift-personalize-id="' + key + '"].acquia-lift-preview-option-set').length) {
                         campaignName = obj.agent;
                         campaignsWithOptions[obj.agent] = obj.agent;
-                        model = ui.collections[type][campaignName].findWhere({'osid': key});
+                        campaignModel = ui.collections.campaigns.findWhere({'name': campaignName});
+                        optionSets = campaignModel.get('optionSets');
+                        model = optionSets.findWhere({'osid': key});
                         viewName = 'MenuOptionView';
                       }
                       break;
@@ -297,38 +285,36 @@
           view.delegateEvents();
         });
         // Refresh the model data for option sets.
-        looper(settings['option_sets'], function (obj, key) {
-          // Find the right model.
-          var campaign = obj.agent;
-          var model = ui.collections['option_sets'][campaign].findWhere({'osid': key});
-          if (!model) {
-            return;
-          }
-          // If the activeOption has not been set, set it to a default.
-          if (!model.get('activeOption')) {
-            // Default the active option to the first/control option.
-            var index = 0;
-            if (Drupal.settings.personalize.preselected && Drupal.settings.personalize.preselected.hasOwnProperty(model.get('decision_name'))) {
-              // If there is an option pre-selected, then it should be the default active option.
-              var preselectedOptionName = Drupal.settings.personalize.preselected[model.get('decision_name')];
-              if (preselectedOptionName) {
-                index = model.get('option_names').indexOf(preselectedOptionName);
-                if (index < 0) {
-                  index = 0;
+        ui.collections.campaigns.each(function (campaignModel) {
+          var optionSets = campaignModel.get('optionSets');
+          optionSets.each(function (model) {
+            // If the activeOption has not been set, set it to a default.
+            if (!model.get('activeOption')) {
+              // Default the active option to the first/control option.
+              var index = 0;
+              if (Drupal.settings.personalize.preselected && Drupal.settings.personalize.preselected.hasOwnProperty(model.get('decision_name'))) {
+                // If there is an option pre-selected, then it should be the default active option.
+                var preselectedOptionName = Drupal.settings.personalize.preselected[model.get('decision_name')];
+                if (preselectedOptionName) {
+                  index = model.get('option_names').indexOf(preselectedOptionName);
+                  if (index < 0) {
+                    index = 0;
+                  }
                 }
+              } else if (model.get('winner') !== null) {
+                // Otherwise a winner should be the default if one has been defined.
+                index = model.get('winner');
               }
-            } else if (obj.winner !== null && obj.winner !== undefined) {
-              // Otherwise a winner should be the default if one has been defined.
-              index = obj.winner;
+              // The first option key isn't always 0.
+              var options = model.get('options');
+              if (!options.hasOwnProperty(index)) {
+                var keys = _.keys(options);
+                keys.sort;
+                index = keys[0];
+              }
+              model.set('activeOption', options[index].option_id);
             }
-            // The first option key isn't always 0.
-            if (!obj.options.hasOwnProperty(index)) {
-              var keys = _.keys(obj.options);
-              keys.sort;
-              index = keys[0];
-            }
-            model.set('activeOption', obj.options[index].option_id);
-          }
+          });
         });
         if (!ui.collections['campaigns']) {
           return;
@@ -490,6 +476,13 @@
       },
 
       /**
+       * {@inheritDoc}
+       */
+      initialize: function(options) {
+        this.set('optionSets', new Drupal.acquiaLiftUI.MenuOptionSetCollection());
+      },
+
+      /**
        * Updates the status of a campaign.
        *
        * @param newStatus
@@ -533,7 +526,8 @@
         activeOption: null,
         osid: '',
         stateful: 1,
-        type: null
+        type: null,
+        winner: null
       }
     }),
 
@@ -928,12 +922,8 @@
        * {@inheritdoc}
        */
       initialize: function (options) {
-
-        this.campaignModel = options.campaignModel;
-
-        this.model.on('add', this.render, this);
-        this.model.on('remove', this.render, this);
-        this.campaignModel.on('change:isActive', this.render, this);
+        this.listenTo(this.model, 'change:isActive', this.render);
+        this.listenTo(this.model, 'change:optionSets', this.render);
 
         this.render();
       },
@@ -942,38 +932,11 @@
        * {@inheritdoc}
        */
       render: function () {
+        var optionSets = this.model.get('optionSets');
         this.$el
-          .toggle(this.campaignModel.get('isActive'))
-          .toggleClass('acquia-lift-empty', !this.model.length)
-          .find('span').text(this.model.length);
-      }
-    }),
-
-    /**
-     * Listens to changes in a Campaign model; renders a zero count on the
-     * Content Variations link.
-     */
-    MenuContentVariationsCountEmptyView: ViewBase.extend({
-      /**
-       * {@inheritdoc}
-       */
-      initialize: function (options) {
-        this.optionSetCollections = options.optionSetCollections;
-
-        this.model.on('change:isActive', this.render, this);
-
-        this.render();
-      },
-
-      /**
-       * {@inheritdoc}
-       */
-      render: function () {
-        var isActive = this.model.get('isActive');
-        var name = this.model.get('name');
-        var isEmpty = !(this.optionSetCollections && this.optionSetCollections[name] && this.optionSetCollections[name].length);
-        this.$el.toggle(isActive && isEmpty);
-        this.$el.toggleClass('acquia-lift-empty', isEmpty);
+          .toggle(this.model.get('isActive'))
+          .toggleClass('acquia-lift-empty', !optionSets.length)
+          .find('span').text(optionSets.length);
       }
     }),
 

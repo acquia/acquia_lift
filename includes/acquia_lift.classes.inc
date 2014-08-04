@@ -819,15 +819,19 @@ class AcquiaLiftAPI implements PersonalizeLoggerAwareInterface {
     $rule_name = $agent_name . '-auto-targeting';
     $url = $this->generateEndpoint("/transforms-list");
     $response = $this->httpClient()->get($url, array('Accept' => 'application/json'), array('timeout' => self::GET_REQUEST_TIMEOUT_VALUE));
-    if ($response->code == 200) {
-      $response = json_decode($response->data, TRUE);
-      if (!isset($response['data']) || !isset($response['data']['transforms'])) {
-        return FALSE;
-      }
-      foreach ($response['data']['transforms'] as $rule) {
-        if ($rule['code'] == $rule_name) {
-          return TRUE;
-        }
+    if ($response->code != 200) {
+      $msg = 'Problem retrieving auto-targeting rules';
+      $this->logger()->log(PersonalizeLogLevel::ERROR, $msg);
+      throw new AcquiaLiftException($msg);
+    }
+
+    $response = json_decode($response->data, TRUE);
+    if (!isset($response['data']) || !isset($response['data']['transforms'])) {
+      return FALSE;
+    }
+    foreach ($response['data']['transforms'] as $rule) {
+      if ($rule['code'] == $rule_name) {
+        return TRUE;
       }
     }
     return FALSE;

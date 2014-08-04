@@ -629,6 +629,63 @@ class AcquiaLiftTest extends DrupalUnitTestCase {
     $this->assertLogs($logs);
   }
 
+
+  /**
+   * Test AcquiaLiftAPI->deleteGoal()
+   */
+  public function testDeleteGoal() {
+    $lift_api = $this->getAcquiaLiftAPI();
+
+    $agentName = 'some-test-agent';
+    $goalName = 'goal-1';
+
+    $lift_api->deleteGoal($agentName, $goalName);
+
+    // Define the requests we expect to have been made to our dummy http
+    // client for this operation.
+    $requests = array(
+      array(
+        'type' => 'delete',
+        'uri' => "{$lift_api->getApiUrl()}/{$lift_api->getOwnerCode()}/agent-api/$agentName/goals/$goalName?apikey={$lift_api->getAdminKey()}",
+        'headers' => NULL,
+        'options' => array(),
+        'body' => NULL,
+      )
+    );
+
+    // Confirm the expected requests were made.
+    $this->assertAPIRequests($requests);
+
+    $logs = array(
+      array(
+        'level' => PersonalizeLogLevel::INFO,
+        'message' => "The goal $goalName was deleted from the Acquia Lift campaign $agentName",
+      )
+    );
+
+    $this->assertLogs($logs);
+
+    $lift_api = $this->getAcquiaLiftAPI(TRUE);
+    try {
+      $lift_api->deleteGoal($agentName, $goalName);
+    }
+    catch (Exception $e) {
+      $this->assertTrue($e instanceof AcquiaLiftException);
+    }
+
+    // Confirm the expected requests were made.
+    $this->assertAPIRequests($requests);
+
+    $logs = array(
+      array(
+        'level' => PersonalizeLogLevel::ERROR,
+        'message' => "Could not delete the goal $goalName from the Acquia Lift campaign $agentName",
+      )
+    );
+
+    $this->assertLogs($logs);
+  }
+
   /**
    * Test AcquiaLiftAPI->getAgent()
    */
@@ -995,6 +1052,57 @@ class AcquiaLiftTest extends DrupalUnitTestCase {
       array(
         'level' => PersonalizeLogLevel::ERROR,
         'message' => "The targeting rule could not be saved for campaign $agentName",
+      )
+    );
+
+    $this->assertLogs($logs);
+  }
+
+  /**
+   * Test AcquiaLiftAPI->testHasAutoTargetingRule()
+   */
+  public function testHasAutoTargetingRule() {
+    $lift_api = $this->getAcquiaLiftAPI();
+    $agentName = 'some-agent-name';
+    $result = $lift_api->hasAutoTargetingRule($agentName);
+    // Define the requests we expect to have been made to our dummy http
+    // client for this operation.
+    $requests = array(
+      array(
+        'type' => 'get',
+        'uri' => "{$lift_api->getApiUrl()}/{$lift_api->getOwnerCode()}/transforms-list?apikey={$lift_api->getAdminKey()}",
+        'headers' => array('Accept' => 'application/json'),
+        'options' => array('timeout' => AcquiaLiftAPI::GET_REQUEST_TIMEOUT_VALUE),
+        'body' => NULL,
+      )
+    );
+
+    // Confirm the expected requests were made.
+    $this->assertAPIRequests($requests);
+    // Confirm that we received a boolean false as the result.
+    $this->assertTrue($result === FALSE);
+
+    $logs = array();
+    $this->assertLogs($logs);
+
+    $lift_api = $this->getAcquiaLiftAPI(TRUE);
+    $msg = 'Problem retrieving auto-targeting rules';
+    try {
+      $lift_api->hasAutoTargetingRule($agentName);
+      $this->fail("Should not reach here");
+    }
+    catch (Exception $e) {
+      $this->assertTrue($e instanceof AcquiaLiftException);
+      $this->assertEqual($msg, $e->getMessage());
+    }
+
+    // Confirm the expected requests were made.
+    $this->assertAPIRequests($requests);
+
+    $logs = array(
+      array(
+        'level' => PersonalizeLogLevel::ERROR,
+        'message' => $msg,
       )
     );
 

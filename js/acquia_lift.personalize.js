@@ -626,6 +626,7 @@
         this.listenTo(this.model, 'destroy', this.remove);
         this.listenTo(this.model, 'change:isActive', this.render);
         this.listenTo(this.model, 'change:optionSets', this.rebuild);
+        this.listenTo(this.model, 'change:activeVariation', this.render);
 
         this.onOptionShowProxy = $.proxy(this.onOptionShow, this);
         $(document).on('personalizeOptionChange', this.onOptionShowProxy);
@@ -713,9 +714,17 @@
        *   The id of the option set to which this choice belongs.
        */
       onOptionShow: function (event, $option_set, choice_name, osid) {
-        if (this.model.get('osid') === osid) {
-          this.model.set('activeOption', choice_name);
+        var optionSets = this.model.get('optionSets');
+        var optionSet = optionSets.findWhere({osid: osid});
+        if (!optionSet) {
+          return;
         }
+        var choices = _.pluck(optionSet.get('options'), 'option_id');
+        var variation_index = _.indexOf(choices, choice_name);
+        if (variation_index < 0) {
+          return;
+        }
+        this.model.set('activeVariation', variation_index);
       }
     }),
 

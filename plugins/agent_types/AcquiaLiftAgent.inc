@@ -528,42 +528,70 @@ class AcquiaLiftAgent extends PersonalizeAgentBase implements PersonalizeAgentGo
    */
   public function errors() {
     $errors = array();
-    $acquia_lift_agent = $this->liftAPI->getAgent($this->machineName);
-    if (!$acquia_lift_agent || $acquia_lift_agent['status'] !== 'enabled') {
+    try {
+      $acquia_lift_agent = $this->liftAPI->getAgent($this->machineName);
+    }
+    catch (AcquiaLiftException $e) {
+      return $this->convertAgentExceptionToErrors($e, $errors);
+    }
+
+    if ($acquia_lift_agent['status'] !== 'enabled') {
       $errors[] = t('The status of the Acquia Lift agent is @status', array('@status' => $acquia_lift_agent['status']));
     }
     // Make sure Acquia Lift knows about the agent's goals.
     $goals = personalize_goal_load_by_conditions(array('agent' => $this->machineName));
-    $acquia_lift_goals = $this->liftAPI->getGoalsForAgent($this->machineName);
+    $discrepancies = FALSE;
     if (empty($goals)) {
       // Acquia Lift agents need goals.
       $errors[] = t('No goals have been set up for this agent');
     }
 
-    $discrepancies = FALSE;
+    try {
+      $acquia_lift_goals = $this->liftAPI->getGoalsForAgent($this->machineName);
+    }
+    catch (AcquiaLiftException $e) {
+      return $this->convertAgentExceptionToErrors($e, $errors);
+    }
     foreach($goals as $goal) {
       if (!in_array($goal['action'], $acquia_lift_goals)) {
         $errors[] = t('Goal @goal has not been sync\'d to the Acquia Lift agent.', array('@goal' => $goal['action']));
         $discrepancies = TRUE;
       }
     }
+
     // Make sure all decision points are known by Acquia Lift.
     $option_sets = personalize_option_set_load_by_agent($this->machineName);
     $decision_tree = self::convertOptionSetsToDecisions($option_sets);
-    $acquia_lift_points = $this->liftAPI->getPointsForAgent($this->machineName);
+    try {
+      $acquia_lift_points = $this->liftAPI->getPointsForAgent($this->machineName);
+    }
+    catch (AcquiaLiftException $e) {
+      return $this->convertAgentExceptionToErrors($e, $errors);
+    }
     foreach ($decision_tree as $point => $decisions) {
       if (!in_array($point, $acquia_lift_points)) {
         $errors[] = t('Point @point has not been sync\'d to the Acquia Lift agent.', array('@point' => $point));
         $discrepancies = TRUE;
         continue;
       }
-      $acquia_lift_decisions = $this->liftAPI->getDecisionsForPoint($this->machineName, $point);
+      try {
+        $acquia_lift_decisions = $this->liftAPI->getDecisionsForPoint($this->machineName, $point);
+      }
+      catch (AcquiaLiftException $e) {
+        return $this->convertAgentExceptionToErrors($e, $errors);
+      }
       foreach ($decisions as $decision_name => $options) {
         if (!in_array($decision_name, $acquia_lift_decisions)) {
           $errors[] = t('Decision @decision has not been sync\'d to the Acquia Lift agent.', array('@decision' => $decision_name));
           $discrepancies = TRUE;
         }
-        $acquia_lift_choices = $this->liftAPI->getChoicesForDecision($this->machineName, $point, $decision_name);
+        try {
+          $acquia_lift_choices = $this->liftAPI->getChoicesForDecision($this->machineName, $point, $decision_name);
+        }
+        catch (AcquiaLiftException $e) {
+          return $this->convertAgentExceptionToErrors($e, $errors);
+        }
+
         foreach ($options as $option) {
           if (!in_array($option, $acquia_lift_choices)) {
             $errors[] = t('Option @choice has not been sync\'d to the Acquia Lift agent.', array('@choice' => $option));
@@ -580,6 +608,26 @@ class AcquiaLiftAgent extends PersonalizeAgentBase implements PersonalizeAgentGo
         $message .= t(' If that still does not resolve it, try <a href="@cron">running cron</a>.', array('@cron' => url('admin/reports/status/run-cron')));
       }
       $errors[] = $message;
+    }
+    return $errors;
+  }
+
+  /**
+   * Converts an exception thrown by the API class into errors added to the passed in array.
+   *
+   * @param AcquiaLiftException $e
+   *   The excetion that was thrown.
+   * @param $errors
+   *   An array of errors to add to.
+   * @return array
+   *   The new errors array.
+   */
+  protected function convertAgentExceptionToErrors(AcquiaLiftException $e, &$errors) {
+    if ($e instanceof AcquiaLiftNotFoundException) {
+      $errors[] = t('This agent has not yet been pushed to Acquia Lift');
+    }
+    else {
+      $errors[] = t('There was a problem communicating with the Acquia Lift server.');
     }
     return $errors;
   }

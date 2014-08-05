@@ -651,20 +651,22 @@ class AcquiaLiftTest extends DrupalUnitTestCase {
       )
     );
 
-    // Confirm the expected requests were made.
+    // Confirm the expected requests and logs.
     $this->assertAPIRequests($requests);
-
     $logs = array();
-
     $this->assertLogs($logs);
 
     $lift_api = $this->getAcquiaLiftAPI(TRUE);
-    $lift_api->getAgent($machineName);
-    // Confirm the expected requests were made.
+    try {
+      $lift_api->getAgent($machineName);
+      $this->fail('Should not reach here');
+    }
+    catch (AcquiaLiftException $e) {
+
+    }
+    // Confirm the expected requests and logs.
     $this->assertAPIRequests($requests);
-
     $logs = array();
-
     $this->assertLogs($logs);
   }
 
@@ -690,20 +692,23 @@ class AcquiaLiftTest extends DrupalUnitTestCase {
       )
     );
 
-    // Confirm the expected requests were made.
+    // Confirm the expected requests and logs.
     $this->assertAPIRequests($requests);
-
     $logs = array();
-
     $this->assertLogs($logs);
 
     $lift_api = $this->getAcquiaLiftAPI(TRUE);
-    $lift_api->getGoalsForAgent($agentName);
-    // Confirm the expected requests were made.
+    try {
+      $lift_api->getGoalsForAgent($agentName);
+      $this->fail('Should not reach here');
+    }
+    catch (AcquiaLiftException $e) {
+
+    }
+
+    // Confirm the expected requests and logs.
     $this->assertAPIRequests($requests);
-
     $logs = array();
-
     $this->assertLogs($logs);
   }
 
@@ -729,16 +734,20 @@ class AcquiaLiftTest extends DrupalUnitTestCase {
       )
     );
 
-    // Confirm the expected requests were made.
+    // Confirm the expected requests and logs.
     $this->assertAPIRequests($requests);
-
     $logs = array();
-
     $this->assertLogs($logs);
 
     $lift_api = $this->getAcquiaLiftAPI(TRUE);
-    $lift_api->getPointsForAgent($agentName);
-    // Confirm the expected requests were made.
+    try {
+      $lift_api->getPointsForAgent($agentName);
+      $this->fail('Should not reach here');
+    }
+    catch (AcquiaLiftException $e) {
+
+    }
+    // Confirm the expected requests and logs.
     $this->assertAPIRequests($requests);
 
     $logs = array();
@@ -769,20 +778,22 @@ class AcquiaLiftTest extends DrupalUnitTestCase {
       )
     );
 
-    // Confirm the expected requests were made.
+    // Confirm the expected requests and logs.
     $this->assertAPIRequests($requests);
-
     $logs = array();
-
     $this->assertLogs($logs);
 
     $lift_api = $this->getAcquiaLiftAPI(TRUE);
-    $lift_api->getDecisionsForPoint($agentName, $pointName);
-    // Confirm the expected requests were made.
+    try {
+      $lift_api->getDecisionsForPoint($agentName, $pointName);
+      $this->fail('Should not reach here');
+    }
+    catch (AcquiaLiftException $e) {
+
+    }
+    // Confirm the expected requests and logs.
     $this->assertAPIRequests($requests);
-
     $logs = array();
-
     $this->assertLogs($logs);
   }
 
@@ -810,20 +821,22 @@ class AcquiaLiftTest extends DrupalUnitTestCase {
       )
     );
 
-    // Confirm the expected requests were made.
+    // Confirm the expected requests and logs.
     $this->assertAPIRequests($requests);
-
     $logs = array();
-
     $this->assertLogs($logs);
 
     $lift_api = $this->getAcquiaLiftAPI(TRUE);
-    $lift_api->getChoicesForDecision($agentName, $pointName, $decisionName);
-    // Confirm the expected requests were made.
+    try {
+      $lift_api->getChoicesForDecision($agentName, $pointName, $decisionName);
+      $this->fail('Should not reach here');
+    }
+    catch (AcquiaLiftException $e) {
+
+    }
+    // Confirm the expected requests and logs.
     $this->assertAPIRequests($requests);
-
     $logs = array();
-
     $this->assertLogs($logs);
   }
 
@@ -847,11 +860,9 @@ class AcquiaLiftTest extends DrupalUnitTestCase {
       )
     );
 
-    // Confirm the expected requests were made.
+    // Confirm the expected requests and logs.
     $this->assertAPIRequests($requests);
-
     $logs = array();
-
     $this->assertLogs($logs);
 
     $lift_api = $this->getAcquiaLiftAPI(TRUE);
@@ -861,16 +872,14 @@ class AcquiaLiftTest extends DrupalUnitTestCase {
     catch (Exception $e) {
       $this->assertTrue($e instanceof AcquiaLiftException);
     }
-    // Confirm the expected requests were made.
+    // Confirm the expected requests and logs.
     $this->assertAPIRequests($requests);
-
     $logs = array(
       array(
         'level' => PersonalizeLogLevel::ERROR,
         'message' => 'Error retrieving agent list from Acquia Lift',
       )
     );
-
     $this->assertLogs($logs);
   }
 

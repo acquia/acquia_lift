@@ -580,10 +580,13 @@ class AcquiaLiftAPI implements PersonalizeLoggerAwareInterface {
   public function getAgent($machine_name) {
     $url = $this->generateEndpoint("/agent-api/$machine_name");
     $response = $this->httpClient()->get($url, array('Accept' => 'application/json'), array('timeout' => self::GET_REQUEST_TIMEOUT_VALUE));
-    if ($response->code == 200) {
-      return json_decode($response->data, TRUE);
+    if ($response->code == 404) {
+      throw new AcquiaLiftNotFoundException('No such agent');
     }
-    return FALSE;
+    if ($response->code != 200) {
+      throw new AcquiaLiftException('Could not retrieve agent from Acquia Lift');
+    }
+    return json_decode($response->data, TRUE);
   }
 
   /**
@@ -597,10 +600,13 @@ class AcquiaLiftAPI implements PersonalizeLoggerAwareInterface {
   public function getGoalsForAgent($agent_name) {
     $url = $this->generateEndpoint("/agent-api/$agent_name/goals");
     $response = $this->httpClient()->get($url, array('Accept' => 'application/json'), array('timeout' => self::GET_REQUEST_TIMEOUT_VALUE));
-    if ($response->code == 200) {
-      return json_decode($response->data, TRUE);
+    if ($response->code == 404) {
+      throw new AcquiaLiftNotFoundException('No such agent');
     }
-    return FALSE;
+    if ($response->code != 200) {
+      throw new AcquiaLiftException('Could not retrieve goals from Acquia Lift');
+    }
+    return json_decode($response->data, TRUE);
   }
 
   /**
@@ -614,10 +620,13 @@ class AcquiaLiftAPI implements PersonalizeLoggerAwareInterface {
   public function getPointsForAgent($agent_name) {
     $url = $this->generateEndpoint("/agent-api/$agent_name/points");
     $response = $this->httpClient()->get($url, array('Accept' => 'application/json'), array('timeout' => self::GET_REQUEST_TIMEOUT_VALUE));
-    if ($response->code == 200) {
-      return json_decode($response->data, TRUE);
+    if ($response->code == 404) {
+      throw new AcquiaLiftNotFoundException('No such agent');
     }
-    return FALSE;
+    if ($response->code != 200) {
+      throw new AcquiaLiftException('Could not retrieve decision points from Acquia Lift');
+    }
+    return json_decode($response->data, TRUE);
   }
 
   /**
@@ -634,10 +643,13 @@ class AcquiaLiftAPI implements PersonalizeLoggerAwareInterface {
   public function getDecisionsForPoint($agent_name, $point_name) {
     $url = $this->generateEndpoint("/agent-api/$agent_name/points/{$point_name}/decisions");
     $response = $this->httpClient()->get($url, array('Accept' => 'application/json'), array('timeout' => self::GET_REQUEST_TIMEOUT_VALUE));
-    if ($response->code == 200) {
-      return json_decode($response->data, TRUE);
+    if ($response->code == 404) {
+      throw new AcquiaLiftNotFoundException('No such decision point');
     }
-    return FALSE;
+    if ($response->code != 200) {
+      throw new AcquiaLiftException('Could not retrieve decisions from Acquia Lift');
+    }
+    return json_decode($response->data, TRUE);
   }
 
   /**
@@ -656,10 +668,13 @@ class AcquiaLiftAPI implements PersonalizeLoggerAwareInterface {
   public function getChoicesForDecision($agent_name, $point_name, $decision_name) {
     $url = $this->generateEndpoint("/agent-api/$agent_name/points/{$point_name}/decisions/$decision_name/choices");
     $response = $this->httpClient()->get($url, array('Accept' => 'application/json'), array('timeout' => self::GET_REQUEST_TIMEOUT_VALUE));
-    if ($response->code == 200) {
-      return json_decode($response->data, TRUE);
+    if ($response->code == 404) {
+      throw new AcquiaLiftNotFoundException('No such decision');
     }
-    return FALSE;
+    if ($response->code != 200) {
+      throw new AcquiaLiftException('Could not retrieve decisions from Acquia Lift');
+    }
+    return json_decode($response->data, TRUE);
   }
 
   /**
@@ -1420,6 +1435,7 @@ class AcquiaLiftQueue extends SystemQueue {
 }
 
 class AcquiaLiftException extends Exception {}
+class AcquiaLiftNotFoundException extends AcquiaLiftException {}
 class AcquiaLiftCredsException extends AcquiaLiftException {}
 
 /**

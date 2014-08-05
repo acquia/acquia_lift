@@ -886,10 +886,17 @@ function acquia_lift_page_variation_details_ajax_callback($form, &$form_state) {
     // and show a confirmation message.
     $commands[] = acquia_lift_command_page_variation_toggle(FALSE);
     $commands[] = acquia_lift_command_messagebox(t('The variation has been created.  Track your conversions by adding goals.'));
-    // @todo: Need to return the updated option set data for use within the
-    // unibar using ajax_command_settings.
-    // Also need to load the relevant JavaScript assets for the new option set
-    // so that preview functionality will work.
+    // Get the updated option sets for the page variation.
+    $variation_set_name = $form_state['values']['agent'];
+    $option_sets = $option_sets = personalize_option_set_load_multiple(array(), array('decision_name' => $variation_set_name));
+    $option_set_settings = array_map('_personalize_convert_option_set_to_js_setting', $option_sets);
+    foreach($option_set_settings as $option_set_setting) {
+      $settings['personalize']['option_sets'][key($option_set_setting)] = reset($option_set_setting);
+    }
+    $commands[] = ajax_command_settings($settings, TRUE);
+    // Note: JavaScript assets for personalize elements are included in
+    // personalize_elements_page_build when the module is enabled and therefore
+    // do not need to be explicitly added here.
   }
   else if ($op === t('Cancel')) {
     // Turn off edit mode and redirect them.

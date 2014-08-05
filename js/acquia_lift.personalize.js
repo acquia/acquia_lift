@@ -9,6 +9,13 @@
   var reportPath = '/admin/structure/personalize/manage/acquia-lift-placeholder/report';
   var statusPath = '/admin/structure/personalize/manage/acquia-lift-placeholder/status';
 
+  var updateNavbar = function() {
+    if (initialized && Drupal.behaviors.acquiaLiftNavbarMenu) {
+      Drupal.behaviors.acquiaLiftNavbarMenu.attach();
+    }
+  }
+  var initialized = false;
+
   Drupal.behaviors.acquiaLiftPersonalize = {
     attach: function (context) {
       var settings = Drupal.settings.personalize;
@@ -29,9 +36,7 @@
         looper(settings.option_sets, function (obj, key) {
           var campaignModel = ui.collections.campaigns.findWhere({name: obj.agent});
           var optionSets = campaignModel.get('optionSets');
-          if (!optionSets.findWhere({osid: obj.osid})) {
-            optionSets.add(obj);
-          }
+          optionSets.add(obj,  {merge: true});
         });
 
         // Create the menu view to handle general show/hide functionality for
@@ -223,9 +228,7 @@
                 }
               });
             // If Navbar module is enabled, process the links.
-            if (Drupal.behaviors.acquiaLiftNavbarMenu) {
-              Drupal.behaviors.acquiaLiftNavbarMenu.attach();
-            }
+            updateNavbar();
           }
         });
 
@@ -243,9 +246,7 @@
               })));
             });
           // If Navbar module is enabled, process the links.
-          if (Drupal.behaviors.acquiaLiftNavbarMenu) {
-            Drupal.behaviors.acquiaLiftNavbarMenu.attach();
-          }
+          updateNavbar();
         }
 
         // Create View for the Report link.
@@ -297,9 +298,16 @@
           activeCampaign = settings.activeCampaign;
         } else {
           // Use the current if set, otherwise read from settings.
-          activeCampaign = ui.collections['campaigns'].findWhere({'isActive': true}) || settings.activeCampaign;
+          var current = ui.collections['campaigns'].findWhere({'isActive': true});
+          if (current) {
+            activeCampaign = current.get('name');
+          } else {
+            activeCampaign = settings.activeCampaign;
+          }
         }
         Drupal.acquiaLiftUI.setActiveCampaign(activeCampaign);
+        initialized = true;
+        updateNavbar();
       }
     }
   };
@@ -406,6 +414,7 @@
           Drupal.acquiaLiftUI.collections['campaigns'].findWhere({'name': key}).set('isActive', true);
         }
       });
+      Drupal.settings.personalize.activeCampaign = activeCampaign;
     },
 
     /**
@@ -452,6 +461,11 @@
        */
       initialize: function(options) {
         this.set('optionSets', new Drupal.acquiaLiftUI.MenuOptionSetCollection());
+        this.listenTo(this.get('optionSets'), 'add', this.triggerOptionSetChange);
+      },
+
+      triggerOptionSetChange: function (event) {
+        this.trigger('change:optionSets');
       },
 
       /**
@@ -652,9 +666,11 @@
        *
        * @param model
        */
-      rebuild: function(model) {
-        build(model);
-        render(model);
+      rebuild: function() {
+        this.build(this.model);
+        this.render(this.model);
+        // Re-run navbar handling to pick up new menu options.
+        _.debounce(updateNavbar, 300);
       },
 
       /**
@@ -1342,8 +1358,8 @@
         // active option.
         // NOTE you cannot break out of each functions, so the found variable.
         optionSets.each(function(optionSet) {
-          if (!found) {
-            var preselectedOptionName = Drupal.settings.personalize.preselected[optionSet.get('osid')];
+          if (!found && Drupal.settings.personalize.preselected) {
+            var preselectedOptionName = Drupal.settings.personalize.preselected[optionSet.get('osid')] || null;
             if (preselectedOptionName) {
               index = optionSet.get('option_names').indexOf(preselectedOptionName);
               if (index < 0) {
@@ -1458,6 +1474,16 @@
      */
     MenuOptionSetCollection: Backbone.Collection.extend({
       model: Drupal.acquiaLiftUI.MenuOptionSetModel,
+
+      initialize: function() {
+        // Allow certain model changes to trigger a general change event for
+        // the entire collection.
+        this.on('change:options', this.triggerChange);
+      },
+
+      triggerChange: function() {
+        this.trigger('change');
+      },
 
       getVariations: function() {
         if (this.length == 0) {
@@ -1637,16 +1663,16 @@
     var variations = optionSets.getVariations();
 
     var attrs = [
-      'class="acquia-lift-preview-page-variation acquia-lift-content-variation"' +
+      'class="acquia-lift-preview-page-variation acquia-lift-content-variation navbar-menu-item"' +
       'data-acquia-lift-personalize-agent="' + model.get('name') + '"'
     ];
     var item = '';
     item += '<span ' + attrs.join(' ') + '>';
     // Handle empty page variations.
     if (variations.length == 0) {
-      item += Drupal.theme('acquiaLiftPersonalizeNoMenuItem', {type: 'page variations'});
+      item += Drupal.theme('acquiaLiftPersonalizeNoMenuItem', {type: 'page variations'}) + '</span>';
     } else {
-      item += Drupal.t('Page variations') + '</span>';
+      item += Drupal.formatPlural(variations.length, 'Page variation', 'Page variations') + '</span>';
       item += '<ul class="menu">' + "\n";
       _.each(variations, function (variation, index, list) {
         item += Drupal.theme('acquiaLiftPreviewPageVariationMenuItem', variation);

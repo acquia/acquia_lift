@@ -1459,6 +1459,13 @@ class DummyAcquiaLiftHttpClient implements AcquiaLiftDrupalHttpClientInterface {
   protected $broken;
 
   /**
+   * An array of data simulating resources than can be returned.
+   *
+   * @var array
+   */
+  protected $data = array();
+
+  /**
    * Generates a dummy response based on the passed in data.
    *
    * @param array $data
@@ -1483,7 +1490,7 @@ class DummyAcquiaLiftHttpClient implements AcquiaLiftDrupalHttpClientInterface {
    */
   public function __construct($broken = FALSE, $data = array()) {
     $this->broken = $broken;
-    $this->data = $data;
+    $this->data += $data;
   }
 
   /**
@@ -1588,8 +1595,20 @@ class DummyAcquiaLiftHttpClient implements AcquiaLiftDrupalHttpClientInterface {
 class AcquiaLiftTestLogger implements PersonalizeLoggerInterface {
   protected $logs = array();
 
+  public function __construct($output = FALSE) {
+    $this->output = $output;
+  }
+
   public function log($level, $message, array $context = array())
   {
+    foreach ($context as $key => $value) {
+      if (strpos($message, '{' . $key . '}') !== FALSE) {
+        $message = str_replace('{' . $key . '}', $value, $message);
+      }
+    }
+    if ($this->output && function_exists('drupal_set_message')) {
+      drupal_set_message($message, $level);
+    }
     $this->logs[] = array(
       'level' => $level,
       'message' => $message,

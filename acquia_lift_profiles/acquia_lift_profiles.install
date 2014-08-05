@@ -1,0 +1,106 @@
+<?php
+
+/**
+ * @file Acquia Lift Profiles - Installation file.
+ */
+
+/**
+ * Implements hook_install().
+ */
+function acquia_lift_profiles_install() {
+  $menu_name = 'acquia-lift-controls';
+  // Create a link for accessing the Profiles web admin.
+  $item = array(
+    'link_title' => 'Acquia Lift Web Admin',
+    'link_path' => 'http://lift.acquia.com',
+    'menu_name' => $menu_name,
+    'options' => array(
+      'attributes' => array(
+        'class' => array('visitor-actions-ui-ignore', 'acquia-lift-menu-link', 'acquia-lift-web-admin'),
+        'target' => '_blank'
+      ),
+      'html' => FALSE,
+    ),
+    'expanded' => 1,
+    'weight' => 99,
+  );
+  menu_link_save($item);
+  menu_rebuild();
+}
+
+/**
+ * Implements hook_enable().
+ */
+function acquia_lift_profiles_enable() {
+  // If the module were previously enabled and actions set to be tracked,
+  // the list of subscribers to those actions will need to be rebuilt.
+  rebuild_subscribers_for_tracked_actions();
+  // Unhide the menu link if it's hidden.
+  $item = _acquia_lift_profiles_get_menu_link();
+  if (!empty($item) && $item['hidden'] == 1) {
+    $item['options'] = unserialize($item['options']);
+    $item['hidden'] = 0;
+    menu_link_save($item);
+    // Update the menu router information.
+    menu_rebuild();
+  }
+}
+
+/**
+ * Implements hook_disable().
+ */
+function acquia_lift_profiles_disable() {
+  rebuild_subscribers_for_tracked_actions();
+
+  // Disable the Profiles web admin link.
+  $item = _acquia_lift_profiles_get_menu_link();
+  if (!empty($item) && $item['hidden'] == 0) {
+    $item['options'] = unserialize($item['options']);
+    $item['hidden'] = 1;
+    menu_link_save($item);
+    menu_rebuild();
+  }
+}
+
+/**
+ * Implements hook_uninstall().
+ */
+function acquia_lift_profiles_uninstall() {
+  variable_del('acquia_lift_profiles_account_name');
+  variable_del('acquia_lift_profiles_api_url');
+  variable_del('acquia_lift_profiles_access_key');
+  variable_del('acquia_lift_profiles_secret_key');
+  variable_del('acquia_lift_profiles_capture_identity');
+  variable_del('acquia_lift_profiles_js_path');
+  variable_del('acquia_lift_profiles_vocabulary_mappings');
+  variable_del('acquia_lift_profiles_tracked_actions');
+  variable_del('acquia_lift_profiles_udf_mappings');
+
+  // Delete the menu link
+  $item = _acquia_lift_profiles_get_menu_link();
+  if (!empty($item)) {
+    menu_link_delete($item['mlid']);
+  }
+}
+
+/**
+ * Rebuilds the list of subscribers for each action tracked.
+ */
+function rebuild_subscribers_for_tracked_actions() {
+  foreach (variable_get('acquia_lift_profiles_tracked_actions', array()) as $action) {
+    visitor_actions_clear_subscribers($action);
+  }
+}
+
+/**
+ * Retrieves the row corresponding to the menu link item for the web admin.
+ */
+function _acquia_lift_profiles_get_menu_link() {
+  $item = db_select('menu_links', 'ml')
+    ->fields('ml')
+    ->condition('module', 'menu')
+    ->condition('menu_name', 'acquia-lift-controls')
+    ->condition('link_path', 'http://lift.acquia.com')
+    ->execute()->fetchAssoc();
+  return $item;
+}

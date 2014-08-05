@@ -1,0 +1,74 @@
+; Rename this file to acquia_lift.make and and place in the location where you
+; want to build a Lift-enabled site. Then call it like this:
+; drush make --working-copy acquia_lift.make acquia_lift
+
+api = 2
+core = 7.x
+
+projects[drupal][type] = core
+projects[drupal][version] = "7.30"
+
+; Modules =====================================================================
+
+; Contrib module: personalize
+; ---------------------------------------
+projects[personalize][subdir] = contrib
+projects[personalize][version] = 1.0-beta11
+
+; Contrib module: visitor_actions
+; ---------------------------------------
+projects[visitor_actions][subdir] = contrib
+projects[visitor_actions][version] = 1.0-beta5
+
+; Contrib module: acquia_lift
+; ---------------------------------------
+projects[acquia_lift][subdir] = contrib
+projects[acquia_lift][version] = 1.0-beta11
+
+; Contrib module: ctools
+; ---------------------------------------
+projects[ctools][subdir] = contrib
+projects[ctools][version] = 1.4
+
+; Contrib module: libraries
+; ---------------------------------------
+projects[libraries][subdir] = contrib
+projects[libraries][version] = "2.2"
+
+; Libraries ======================================================================
+
+; Library: backbone
+; ---------------------------------------
+libraries[backbone][destination] = "libraries"
+libraries[backbone][download][type] = "get"
+libraries[backbone][download][url] = "http://backbonejs.org/backbone-min.js"
+libraries[backbone][directory] = "backbone"
+
+; Library: underscore
+; ---------------------------------------
+libraries[underscore][destination] = "libraries"
+libraries[underscore][download][type] = "get"
+libraries[underscore][download][url] = "http://underscorejs.org/underscore-min.js"
+libraries[underscore][directory] = "underscore"
+
+; Library: chosen
+; ---------------------------------------
+libraries[chosen][destination] = "libraries"
+libraries[chosen][download][type] = "get"
+libraries[chosen][download][url] = "https://github.com/harvesthq/chosen/releases/download/1.0.0/chosen_v1.0.0.zip"
+libraries[chosen][directory] = "chosen"
+
+; Library: qtip
+; ---------------------------------------
+libraries[qtip][destination] = "libraries"
+libraries[qtip][download][type] = "get"
+libraries[qtip][download][url] = "https://raw.githubusercontent.com/Craga89/qTip1/master/1.0.0-rc3/jquery.qtip-1.0.0-rc3.min.js"
+libraries[qtip][directory] = "qtip"
+
+; Library: modernizr
+; ---------------------------------------
+libraries[modernizr][destination] = "libraries"
+libraries[modernizr][download][type] = git
+libraries[modernizr][download][url] = https://github.com/BrianGilbert/modernizer-navbar.git
+libraries[modernizr][download][revision] = 5b89d9225320e88588f1cdc43b8b1e373fa4c60f
+libraries[modernizr][directory] = "modernizr"

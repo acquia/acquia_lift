@@ -595,24 +595,48 @@
       },
 
       /**
-       * Helper function to determine if this campaign is for an A/B test.
-       */
-      isABTest: function() {
-        return this.get('type') == 'acquia_lift_simple_ab';
-      },
-
-      /**
        * Helper function to get the number of variations tos how based on the
        * type of model.
        */
        getNumberOfVariations: function () {
         var optionSets = this.get('optionSets');
-        if (this.isABTest()) {
-          variations = optionSets.getVariations().length;
-        } else {
-          variations = optionSets.length;
-        }
-        return variations;
+        return optionSets.length;
+      },
+
+      /**
+       * Refreshes the active option selected for a campaign's options ets.
+       */
+      refreshData: function () {
+        var that = this;
+        var optionSets = this.get('optionSets');
+        optionSets.each(function (model) {
+          // If the activeOption has not been set, set it to a default.
+          if (!model.get('activeOption')) {
+            // Default the active option to the first/control option.
+            var index = 0;
+            if (Drupal.settings.personalize.preselected && Drupal.settings.personalize.preselected.hasOwnProperty(model.get('decision_name'))) {
+              // If there is an option pre-selected, then it should be the default active option.
+              var preselectedOptionName = Drupal.settings.personalize.preselected[model.get('decision_name')];
+              if (preselectedOptionName) {
+                index = model.get('option_names').indexOf(preselectedOptionName);
+                if (index < 0) {
+                  index = 0;
+                }
+              }
+            } else if (model.get('winner') !== null) {
+              // Otherwise a winner should be the default if one has been defined.
+              index = model.get('winner');
+            }
+            // The first option key isn't always 0.
+            var options = model.get('options');
+            if (!options.hasOwnProperty(index)) {
+              var keys = _.keys(options);
+              keys.sort;
+              index = keys[0];
+            }
+            model.set('activeOption', options[index].option_id);
+          }
+        });
       },
 
       /**
@@ -1819,7 +1843,6 @@
      * The model for a simple A/B test campaign.
      */
     MenuCampaignABModel: Drupal.acquiaLiftUI.MenuCampaignModel.extend({
-
       /**
        * {@inheritDoc}
        */
@@ -1995,7 +2018,7 @@
    * Factory methods.
    */
   Drupal.acquiaLiftUI.factories = Drupal.acquiaLiftUI.factories || {};
-  Drupal.acquiaLiftUI.factories.MenuViewFactory = Drupal.acquiaLiftUI.factories.MenuViewFactory || {
+  Drupal.acquiaLiftUI.factories.MenuFactory = Drupal.acquiaLiftUI.factories.MenuFactory || {
     /**
      * Factory method to create the correct type of content variation set view
      * based on the type of data displayed.
@@ -2008,7 +2031,7 @@
      *   The DOM element for the Backbone view.
      */
     createContentVariationView: function (model, campaignModel, element) {
-      if (campaignModel.isABTest()) {
+      if (campaignModel instanceof Drupal.acquiaLiftUI.MenuCampaignABModel) {
         // There is only one page variation view per page per campaign, but
         // this may be called multiple times due to multiple option sets.
         Drupal.acquiaLiftUI.views.pageVariations = Drupal.acquiaLiftUI.views.pageVariations || {};
@@ -2026,6 +2049,21 @@
         });
       }
       return view;
+    },
+
+    /**
+     * Factory method to create the correct type of campaign model based
+     * on the type of data.
+     *
+     * @param object data
+     *   The data to create the model from.
+     */
+    createCampaignModel: function (data) {
+      if (data.type == 'acquia_lift_simple_ab') {
+        return new Drupal.acquiaLiftUI.MenuCampaignABModel(data);
+      } else {
+        return new Drupal.acquiaLiftUI.MenuCampaignModel(data);
+      }
     }
   };
 
@@ -2453,7 +2491,7 @@
     _.each(variation.options, function (option, index, list) {
       hrefOptions.push({
         osID: option.osid,
-        id: option.option.option_id,
+        id: option.option.option_id
       });
     });
     var attrs = [

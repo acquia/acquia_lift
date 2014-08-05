@@ -1837,7 +1837,6 @@ function acquia_lift_command_page_variation_toggle($start = TRUE) {
     'command' => 'acquia_lift_page_variation_toggle',
     'data' => array(
       'start' => $start,
-      'wrapper' => '#page-wrapper',
     ),
   );
 }

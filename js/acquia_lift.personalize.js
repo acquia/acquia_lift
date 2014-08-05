@@ -21,8 +21,9 @@
         }
         looper(settings.campaigns, function (obj, key) {
           if (!ui.collections.campaigns.findWhere({name: obj.name})) {
-            ui.collections.campaigns.add(obj);
-            addedCampaigns[obj.name] = ui.collections.campaigns.findWhere({name: obj.name});
+            var model = Drupal.acquiaLiftUI.factories.MenuFactory.createCampaignModel(obj);
+            ui.collections.campaigns.add(model);
+            addedCampaigns[obj.name] = model;
           }
         });
         looper(settings.option_sets, function (obj, key) {
@@ -172,7 +173,7 @@
                         model: model
                       }));
                     } else {
-                      ui.views.push(ui.factories.MenuViewFactory.createContentVariationView(model, campaignModel, element));
+                      ui.views.push(ui.factories.MenuFactory.createContentVariationView(model, campaignModel, element));
                     }
                     $menu.prepend(element);
                     // Build a view for campaign goals.
@@ -284,35 +285,7 @@
         });
         // Refresh the model data for option sets.
         ui.collections.campaigns.each(function (campaignModel) {
-          var optionSets = campaignModel.get('optionSets');
-          optionSets.each(function (model) {
-            // If the activeOption has not been set, set it to a default.
-            if (!model.get('activeOption')) {
-              // Default the active option to the first/control option.
-              var index = 0;
-              if (Drupal.settings.personalize.preselected && Drupal.settings.personalize.preselected.hasOwnProperty(model.get('decision_name'))) {
-                // If there is an option pre-selected, then it should be the default active option.
-                var preselectedOptionName = Drupal.settings.personalize.preselected[model.get('decision_name')];
-                if (preselectedOptionName) {
-                  index = model.get('option_names').indexOf(preselectedOptionName);
-                  if (index < 0) {
-                    index = 0;
-                  }
-                }
-              } else if (model.get('winner') !== null) {
-                // Otherwise a winner should be the default if one has been defined.
-                index = model.get('winner');
-              }
-              // The first option key isn't always 0.
-              var options = model.get('options');
-              if (!options.hasOwnProperty(index)) {
-                var keys = _.keys(options);
-                keys.sort;
-                index = keys[0];
-              }
-              model.set('activeOption', options[index].option_id);
-            }
-          });
+          campaignModel.refreshData();
         });
         if (!ui.collections['campaigns']) {
           return;
@@ -482,24 +455,48 @@
       },
 
       /**
-       * Helper function to determine if this campaign is for an A/B test.
-       */
-      isABTest: function() {
-        return this.get('type') == 'acquia_lift_simple_ab';
-      },
-
-      /**
        * Helper function to get the number of variations tos how based on the
        * type of model.
        */
        getNumberOfVariations: function () {
         var optionSets = this.get('optionSets');
-        if (this.isABTest()) {
-          variations = optionSets.getVariations().length;
-        } else {
-          variations = optionSets.length;
-        }
-        return variations;
+        return optionSets.length;
+      },
+
+      /**
+       * Refreshes the active option selected for a campaign's options ets.
+       */
+      refreshData: function () {
+        var that = this;
+        var optionSets = this.get('optionSets');
+        optionSets.each(function (model) {
+          // If the activeOption has not been set, set it to a default.
+          if (!model.get('activeOption')) {
+            // Default the active option to the first/control option.
+            var index = 0;
+            if (Drupal.settings.personalize.preselected && Drupal.settings.personalize.preselected.hasOwnProperty(model.get('decision_name'))) {
+              // If there is an option pre-selected, then it should be the default active option.
+              var preselectedOptionName = Drupal.settings.personalize.preselected[model.get('decision_name')];
+              if (preselectedOptionName) {
+                index = model.get('option_names').indexOf(preselectedOptionName);
+                if (index < 0) {
+                  index = 0;
+                }
+              }
+            } else if (model.get('winner') !== null) {
+              // Otherwise a winner should be the default if one has been defined.
+              index = model.get('winner');
+            }
+            // The first option key isn't always 0.
+            var options = model.get('options');
+            if (!options.hasOwnProperty(index)) {
+              var keys = _.keys(options);
+              keys.sort;
+              index = keys[0];
+            }
+            model.set('activeOption', options[index].option_id);
+          }
+        });
       },
 
       /**
@@ -1313,11 +1310,71 @@
     })
   });
 
+  $.extend(Drupal.acquiaLiftUI, {
+    /**
+     * The model for a simple A/B test campaign.
+     */
+    MenuCampaignABModel: Drupal.acquiaLiftUI.MenuCampaignModel.extend({
+      /**
+       * {@inheritDoc}
+       */
+      getNumberOfVariations: function () {
+        var optionSets = this.get('optionSets');
+        return optionSets.getVariations().length;
+      },
+
+      /**
+       * {@inheritDoc}
+       */
+      refreshData: function () {
+        var that = this;
+        var optionSets = this.get('optionSets');
+        if (optionSets.length > 0) {
+          var sample = optionSets.at(0);
+          var decisionName = sample.get('decision_name');
+        } else {
+          return;
+        }
+        // Default the selected variation to the first/control option.
+        var index = 0;
+        var found = false;
+        // If there is an option pre-selected, then it should be the default
+        // active option.
+        // NOTE you cannot break out of each functions, so the found variable.
+        optionSets.each(function(optionSet) {
+          if (!found) {
+            var preselectedOptionName = Drupal.settings.personalize.preselected[optionSet.get('osid')];
+            if (preselectedOptionName) {
+              index = optionSet.get('option_names').indexOf(preselectedOptionName);
+              if (index < 0) {
+                index = 0;
+              } else {
+                found = true;
+              }
+            }
+          }
+        });
+        if (!found && sample.get('winner') != null) {
+          // Otherwise a winner should be the default if one has been defined.
+          index = sample.get('winner');
+        }
+        // The first option key isn't always 0.
+        var options = sample.get('options');
+        if (!options.hasOwnProperty(index)) {
+          var keys = _.keys(options);
+          keys.sort;
+          index = keys[0];
+        }
+        this.set('activeVariation', index);
+      }
+    })
+  });
+
   /**
    * Factory methods.
    */
   Drupal.acquiaLiftUI.factories = Drupal.acquiaLiftUI.factories || {};
-  Drupal.acquiaLiftUI.factories.MenuViewFactory = Drupal.acquiaLiftUI.factories.MenuViewFactory || {
+  Drupal.acquiaLiftUI.factories.MenuFactory = Drupal.acquiaLiftUI.factories.MenuFactory || {
     /**
      * Factory method to create the correct type of content variation set view
      * based on the type of data displayed.
@@ -1330,7 +1387,7 @@
      *   The DOM element for the Backbone view.
      */
     createContentVariationView: function (model, campaignModel, element) {
-      if (campaignModel.isABTest()) {
+      if (campaignModel instanceof Drupal.acquiaLiftUI.MenuCampaignABModel) {
         // There is only one page variation view per page per campaign, but
         // this may be called multiple times due to multiple option sets.
         Drupal.acquiaLiftUI.views.pageVariations = Drupal.acquiaLiftUI.views.pageVariations || {};
@@ -1348,6 +1405,21 @@
         });
       }
       return view;
+    },
+
+    /**
+     * Factory method to create the correct type of campaign model based
+     * on the type of data.
+     *
+     * @param object data
+     *   The data to create the model from.
+     */
+    createCampaignModel: function (data) {
+      if (data.type == 'acquia_lift_simple_ab') {
+        return new Drupal.acquiaLiftUI.MenuCampaignABModel(data);
+      } else {
+        return new Drupal.acquiaLiftUI.MenuCampaignModel(data);
+      }
     }
   };
 

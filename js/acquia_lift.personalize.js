@@ -1084,10 +1084,14 @@
        */
       render: function () {
         var variations = this.model.getNumberOfVariations();
-        this.$el
-          .toggle(this.model.get('isActive'))
-          .toggleClass('acquia-lift-empty', !variations)
-          .find('span').text(variations);
+        if (this.model.get('isActive')) {
+          this.$el
+            .toggleClass('acquia-lift-empty', !variations)
+            .css('display', 'inline-block')
+            .find('span').text(variations);
+        } else {
+          this.$el.css('display', 'none');
+        }
       }
     }),
 
@@ -1110,10 +1114,14 @@
        */
       render: function (model) {
         var count = size(model.get('goals'));
-        this.$el
-          .toggle(model.get('isActive'))
-          .toggleClass('acquia-lift-empty', !count)
-          .find('span').text(count);
+        if (model.get('isActive')) {
+          this.$el
+            .toggleClass('acquia-lift-empty', !count)
+            .css('display', 'inline-block')
+            .find('span').text(count);
+        } else {
+          this.$el.css('display', 'none');
+        }
 
       }
     }),

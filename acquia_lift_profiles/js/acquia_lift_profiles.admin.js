@@ -2,14 +2,17 @@
   /**
    * Vertical tab display within content types.
    */
-  Drupal.behaviors.AcquiaLiftProfilesContentTypes = {
+  Drupal.behaviors.AcquiaLiftProfilesAdmin = {
     attach: function (context) {
-      // Provide the vertical tab summaries.
-      $('fieldset[id^="edit-acquia_lift_profiles"]', context).drupalSetSummary(function(context) {
-        var val = 'Image thumbnail: ';
-        val += $('select[name="acquia_lift_profiles[thumbnail]"] option:selected', context).text();
-        return val;
-      });
+      if ($.fn.drupalSetSummary) {
+        // Provide the vertical tab summaries.
+        $('fieldset[id^="edit-acquia-lift-profiles"]', context).drupalSetSummary(function(context) {
+          var val = 'Image thumbnail: ';
+          val += $('select[name="acquia_lift_profiles[thumbnail]"] option:selected', context).text();
+          return val;
+        });
+      }
+
       // Code to show/hide extra UDF mapping elements.
       $('div.acquia-lift-profiles-hidden-udfs').once(function(){
         $(this).hide();
@@ -29,6 +32,14 @@
           $(this).val(text);
           return false;
         });
+      });
+
+      // Positions the Web Admin menu link to the right.
+      $('a.acquia-lift-web-admin').once(function() {
+        var $parentLi = $(this).parents('li');
+        var $previousLi = $parentLi.prev('li');
+        $parentLi.addClass('acquia-lift-navbar-secondary');
+        $previousLi.addClass('acquia-lift-navbar-marker');
       });
     }
   };

@@ -110,6 +110,20 @@ function acquia_lift_profiles_get_segments() {
  */
 function acquia_lift_profiles_page_build(&$page) {
   global $base_root;
+  if (user_access('manage personalized content')) {
+    // Add js and css for positioning the Web Admin link in the navbar.
+    $page['page_top']['acquia_lift_profiles_admin'] = array(
+      '#attached' => array(
+        'js' => array(
+          drupal_get_path('module', 'acquia_lift_profiles') . '/js/acquia_lift_profiles.admin.js' => array()
+        ),
+        'css' => array(
+          drupal_get_path('module', 'acquia_lift_profiles') . '/css/acquia_lift_profiles.admin.css' => array()
+        )
+      )
+    );
+  }
+
   if (path_is_admin(current_path())) {
     return;
   }

@@ -431,6 +431,15 @@
 
   /**
    * A command to trigger the page element selection process.
+   *
+   * The response should include a data object with the following keys:
+   * - start: Boolean indicating if page variation mode should be on (true)
+   *   or off (false).
+   * - wrapper: The jQuery selector for the region for DOM selection.  This is
+   *   used to limit DOM selection options to the content portion rather than
+   *   the administrative interface.
+   * - variationIndex: The variation index to edit.  This can be the index of
+   *   a variation to create in this step or an existing variation to edit.
    */
   Drupal.ajax.prototype.commands.acquia_lift_page_variation_toggle = function (ajax, response, status) {
     if (response.data.start) {

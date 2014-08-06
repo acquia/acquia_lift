@@ -153,6 +153,11 @@
             this.variationTypeFormModel = null;
           }
         }
+        data.started = editMode;
+        data.mode = (variationIndex == -1) ? 'add' : 'edit';
+        data.campaign = Drupal.settings.personalize.activeCampaign;
+        data.variationIndex = variationIndex;
+        $(document).trigger('acquiaLiftPageVariationsMode', data);
       },
 
       /**

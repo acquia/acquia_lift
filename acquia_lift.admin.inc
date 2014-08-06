@@ -812,6 +812,9 @@ function acquia_lift_page_variation_details($form, &$form_state, $variation_type
   $form['agent'] = array(
     '#type' => 'hidden',
   );
+  $form['variation_number'] = array(
+    '#type' => 'hidden',
+  );
   // Now include the details specific to this variation type.
   $form['personalize_elements_content'] = $types[$variation_type]['contextual']['formitem'];
   $form['actions'] = array(
@@ -867,7 +870,23 @@ function acquia_lift_page_variation_details($form, &$form_state, $variation_type
 function acquia_lift_page_variation_details_submit($form, &$form_state) {
   $agent_name = $variation_set_name = $form_state['values']['agent'];
   $option_set = personalize_elements_get_option_set_for_variation($variation_set_name, $agent_name, $form_state['values']['selector'], $form_state['values']['variation_type'], $form_state['values']['pages']);
-  personalize_create_page_variation($variation_set_name, $option_set, array('personalize_elements_content' => $form_state['values']['personalize_elements_content']));
+
+  $variation_number = NULL;
+  if (is_numeric($form_state['values']['variation_number']) && $form_state['values']['variation_number'] >= 0) {
+    $variation_number = $form_state['values']['variation_number'];
+  }
+  /*
+  $debug = array(
+    'variation_set_name' => $variation_set_name,
+    'option_set' => $option_set,
+    'option_data' => array(
+      'personalize_elements_content' => $form_state['values']['personalize_elements_content'],
+    ),
+    'variation_number' => $variation_number,
+  );
+  watchdog('acquia-lift-debug', 'Adding page variation: <pre>' . print_r($debug, TRUE) . '</pre>');
+  */
+  personalize_create_page_variation($variation_set_name, $option_set, array('personalize_elements_content' => $form_state['values']['personalize_elements_content']), $variation_number);
 }
 
 /**

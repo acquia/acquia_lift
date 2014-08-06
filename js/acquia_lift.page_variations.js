@@ -51,7 +51,9 @@
           // A type of variation, e.g. 'editHTML', 'prependHTML'
           type: null,
           // The label for the variation type.
-          typeLabel: null
+          typeLabel: null,
+          selector: null,
+          variationIndex: -1
         }
       )
     })
@@ -186,7 +188,8 @@
           id: this.getTemporaryID(),
           formPath: formPath,
           type: event.data.id,
-          typeLabel: event.data.name
+          typeLabel: event.data.name,
+          variationIndex: this.model.get('variationIndex')
         });
         var dialogView = new Drupal.acquiaLiftPageVariations.views.VariationTypeFormView({
           el: event.data.anchor,
@@ -240,6 +243,7 @@
         this.$el.find('[name="selector"]').val(this.model.get('selector'));
         this.$el.find('[name="pages"]').val(Drupal.settings.visitor_actions.currentPath);
         this.$el.find('[name="agent"]').val(Drupal.settings.personalize.activeCampaign);
+        this.$el.find('[name="variation_number"]').val(this.model.get('variationIndex'));
       },
 
       /**

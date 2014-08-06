@@ -1845,19 +1845,20 @@
               // This variation is invalid because it does not have an option
               // in each option set.
               valid = false;
+            } else {
+              option = {
+                decision_name: model.get('decision_name'),
+                executor: model.get('executor'),
+                osid: model.get('osid'),
+                plugin: model.get('plugin'),
+                selector: model.get('selector'),
+                stateful: model.get('stateful'),
+                winner: model.get('winner'),
+                option: options[i]
+              };
+              variation.label = options[i].option_label;
+              variation.options.push(option);
             }
-            option = {
-              decision_name: model.get('decision_name'),
-              executor: model.get('executor'),
-              osid: model.get('osid'),
-              plugin: model.get('plugin'),
-              selector: model.get('selector'),
-              stateful: model.get('stateful'),
-              winner: model.get('winner'),
-              option: options[i]
-            };
-            variation.label = options[i].option_label;
-            variation.options.push(option);
           });
           if (valid) {
             variations.push(variation);

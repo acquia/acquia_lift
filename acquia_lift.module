@@ -718,6 +718,7 @@ function acquia_lift_library() {
     ),
     'css' => array(
       $path . '/css/acquia_lift.personalize.css' => array(),
+      $path . '/css/acquia_lift.personalize.theme.css' => array(),
     ),
     'dependencies' => array(
       array('system', 'jquery'),

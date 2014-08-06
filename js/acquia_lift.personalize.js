@@ -39,6 +39,11 @@
           optionSets.add(obj,  {merge: true});
         });
 
+        // Create a model for page variation management state
+        if (!ui.models.pageVariationModeModel) {
+          ui.models.pageVariationModeModel = new ui.MenuPageVariationModeModel();
+        }
+
         // Create the menu view to handle general show/hide functionality for
         // whole menu sections.
         if (!ui.hasOwnProperty('menuView')) {
@@ -92,6 +97,15 @@
                   }
                   $element.prependTo($link);
                   break;
+                case 'option_sets': {
+                  $element = $(Drupal.theme('acquiaLiftPageVariationToggle'));
+                  ui.views.pageVariationToggle = new ui.MenuPageVariationsToggleView({
+                    model: ui.models.pageVariationModeModel,
+                    campaignCollection: ui.collections.campaigns,
+                    el: $element.get(0)
+                  });
+                  $link.after($element);
+                }
               }
             }
           });
@@ -1423,6 +1437,71 @@
     }),
 
     /**
+     * The toggle functionality for editing page variations.
+     */
+    MenuPageVariationsToggleView: ViewBase.extend({
+      events: {
+        'click': 'onClick'
+      },
+
+      /**
+       * @{inheritDoc}
+       *
+       * The model is the page variations mode model.
+       */
+      initialize: function (options) {
+        this.campaignCollection = options.campaignCollection;
+        this.listenTo(this.campaignCollection, 'change:isActive', this.render);
+        this.listenTo(this.campaignCollection, 'change:activeVariation', this.render);
+        this.listenTo(this.model, 'change:isActive', this.render);
+        this.build();
+        this.render();
+      },
+
+      /**
+       * {@inheritDoc}
+       */
+      render: function() {
+        var currentCampaign = this.campaignCollection.findWhere({'isActive': true});
+        if (!currentCampaign) {
+          return;
+        }
+        this.$el
+          .toggleClass('acquia-lift-page-variation-toggle-disabled', currentCampaign.get('activeVariation') == 0) // There is no toggle available for the control variation.
+          .toggleClass('acquia-lift-page-variation-toggle-active', this.model.get('isActive'))
+          .toggle(currentCampaign instanceof Drupal.acquiaLiftUI.MenuCampaignABModel);
+      },
+
+      /**
+       * {@inheritDoc}
+       */
+      build: function() {
+        this.$el.text(Drupal.t('Toggle edit variation'));
+      },
+
+      /**
+       * Event handler for clicking on the toggle link.
+       * @param event
+       */
+      onClick: function (event) {
+        var currentCampaign = this.campaignCollection.findWhere({'isActive': true});
+        if (!currentCampaign) {
+          return;
+        }
+        if (this.model.get('isActive')) {
+          this.model.endEditMode();
+        } else {
+          var currentVariationIndex = currentCampaign.get('activeVariation');
+          if (currentVariationIndex == 0) {
+            // Cannot edit the control variation.
+            return;
+          }
+          this.model.startEditMode(currentVariationIndex);
+        }
+      }
+    }),
+
+    /**
      * Toggles the 'add content variation' trigger.
      */
     MenuContentVariationTriggerView: ViewBase.extend({
@@ -1449,6 +1528,9 @@
         this.listenTo(this.contentVariationModel, 'change:isActive', this.render);
         this.listenTo(this.pageVariationModel, 'change:isActive', this.render);
         this.listenTo(this.campaignCollection, 'change:isActive', this.onCampaignChange);
+
+        this.onPageVariationEditModeProxy = $.proxy(this.onPageVariationEditMode, this);
+        $(document).on('acquiaLiftPageVariationMode', this.onPageVariationEditModeProxy, this);
 
         this.render(this.model);
       },
@@ -1501,6 +1583,13 @@
           }
           this.render(this.model);
         }
+      },
+
+      /**
+       * Listens to changes broadcast from the page variation application.
+       */
+      onPageVariationEditMode: function (event, data) {
+        this.pageVariationModel.set('isActive', data.start);
       }
     }),
 
@@ -2168,6 +2257,14 @@
     var label = Drupal.t('Selected: ');
     label += '<span class="acquia-lift-active">' + options.label + '</span>';
     return label;
+  }
+
+  /**
+   * Returns the HTML for the page variation edit toggle link.
+   */
+  Drupal.theme.acquiaLiftPageVariationToggle = function () {
+    var label = Drupal.t('Toggle variation mode');
+    return '<a class="acquia-lift-page-variation-toggle">' + label + '</a>';
   }
 
   /**

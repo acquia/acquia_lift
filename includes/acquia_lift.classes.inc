@@ -74,7 +74,7 @@ class AcquiaLiftAPI implements PersonalizeLoggerAwareInterface {
   public static function getInstance($account_info) {
     if (empty(self::$instance)) {
       if (drupal_valid_test_ua()) {
-        self::$instance = self::getTestInstance();
+        self::setTestInstance();
         return self::$instance;
       }
       foreach (array('api_key', 'admin_key', 'owner_code') as $key) {
@@ -124,13 +124,12 @@ class AcquiaLiftAPI implements PersonalizeLoggerAwareInterface {
    *
    * This is used during simpletest web tests.
    */
-  protected static function getTestInstance() {
-    $instance = new self('test-api-key', 'test-admin-key', 'test-owner-code', 'http://api.example.com');
+  public static function setTestInstance($broken_http_client = FALSE) {
+    self::$instance = new self('test-api-key', 'test-admin-key', 'test-owner-code', 'http://api.example.com');
     // This method is only ever called within the context of a simpletest web
     // test, so the call to variable_get() is ok here.
     $test_data = variable_get('acquia_lift_web_test_data', array());
-    $instance->setHttpClient(new DummyAcquiaLiftHttpClient(FALSE, $test_data));
-    return $instance;
+    self::$instance->setHttpClient(new DummyAcquiaLiftHttpClient($broken_http_client, $test_data));
   }
 
   /**
@@ -1655,7 +1654,7 @@ class DummyAcquiaLiftHttpClient implements AcquiaLiftDrupalHttpClientInterface {
                 // This is a request for choices for a decision.
                 $point_name = $path_parts[3];
                 $decision_name = $path_parts[5];
-                return isset($this->data['choices'][$agent_name][$point_name][$decision_name]) ? $$this->data['choices'][$agent_name][$point_name][$decision_name] : array();
+                return isset($this->data['choices'][$agent_name][$point_name][$decision_name]) ? $this->data['choices'][$agent_name][$point_name][$decision_name] : array();
             }
             return array();
           case 'goals':

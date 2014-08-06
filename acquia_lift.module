@@ -677,7 +677,20 @@ function acquia_lift_get_sync_operations_for_agents($agents) {
       }
       // If we're dealing with an agent that already exists in Lift
       // then we may need to delete some of its components.
-      $existing_agent = $lift_api->getAgent($agent_name);
+      try {
+        $existing_agent = $lift_api->getAgent($agent_name);
+      }
+      catch (AcquiaLiftException $e) {
+        if ($e instanceof AcquiaLiftNotFoundException) {
+          $existing_agent = FALSE;
+        }
+        else {
+          // Any other exception means we can't communicate with Lift so just
+          // return an empty operations array.
+          return array();
+        }
+      }
+
       // First sync the agent itself. We need to know if Lift
       // already has a targeting rule set up for an agent with
       // this name. It will need to be deleted if the version of

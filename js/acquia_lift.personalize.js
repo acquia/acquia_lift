@@ -464,12 +464,6 @@
     startEditMode: function (variationIndex) {
       this.set('isActive', true);
     },
-    // Factory methods defined for objects.
-    factoryMap: {
-      views: {
-        option_sets: 'createContentVariationView'
-      }
-    },
 
     /**
      * Helper function to end editing mode for a page variation.
@@ -1094,6 +1088,46 @@
           }
         }
         this.model.set('activeVariation', variation_index);
+      },
+
+      /**
+       * Response to a change in edit mode for the page variation application.
+       *
+       * @param event
+       *   The jQuery event object
+       * @param data
+       *   An object of event data including the keys:
+       *   - start: true if edit mode started, false if ended.
+       *   - campaign: the machine name of the campaign holding variations.
+       *   - variationIndex: the index of the variation for editing or -1
+       *     if adding a new variation.
+       */
+      onPageVariationEditMode: function (event, data) {
+        // Make sure it's for this campaign.
+        if (this.model.get('name') !== data.campaign) {
+          return;
+        }
+        if (data.start) {
+          if (data.variationIndex < 0) {
+            // If add mode, then create a temporary variation listing.
+            var nextIndex = this.model.getNumberOfVariations();
+            // The first option is always control so the numbering displayed
+            // actually matches the index number.
+            var variationNumber = Math.max(nextIndex, 1);
+            this.$el.find('ul.menu').append(Drupal.theme('acquiaLiftNewVariationMenuItem', variationNumber));
+            // Indicate in the model that we are adding.
+            this.model.set('activeVariation', -1);
+          } else {
+            // If in edit mode, make sure that the edited variation index is
+            // indicated.
+            var $li = this.$el.find('[data-acquia-lift-personalize-page-variation="' + data.variationIndex + '"]');
+            $li.trigger('click');
+          }
+          updateNavbar();
+        } else {
+          // If exiting, remove any temporary variation listings.
+          this.$el.find('.acquia-lift-page-variation-new').closest('li').remove();
+        }
       }
     }),
 
@@ -2486,66 +2520,6 @@
 
     return item;
   };
-
-  Drupal.theme.acquiaLiftPreviewPageVariationMenuItem = function (variation) {
-    var item = '';
-    var hrefOptions = [];
-    _.each(variation.options, function (option, index, list) {
-      hrefOptions.push({
-        osID: option.osid,
-        id: option.option.option_id
-      });
-    });
-    var attrs = [
-      'class="acquia-lift-preview-option acquia-lift-preview-page-variation--' + variation.index + ' visitor-actions-ui-ignore"',
-      'href="' + generateHref(hrefOptions) + '"',
-      'data-acquia-lift-personalize-page-variation="' + variation.index + '"',
-      'aria-role="button"',
-      'aria-pressed="false"'
-    ];
-
-    item += '<li>\n<a ' + attrs.join(' ') + '>\n';
-    item += Drupal.t('Preview @text', {'@text': variation.label}) + '\n';
-    item += '</a>\n</li>\n';
-
-    return item;
-  }
-
-  /**
-   * Themes a list item for a page variation within the list of variations.
-   *
-   * @param object variation
-   *   The variation details including:
-   *   - agent: the name of the agent/campaign for this variation
-   *   - options: an array of variation options
-   *   - index: the variation index value
-   *   - label: the variation label
-   *   - original_index: the original index in the options array (which may skip
-   *     index positions).
-   */
-  Drupal.theme.acquiaLiftPreviewPageVariationMenuItem = function (variation) {
-    var item = '';
-    var hrefOptions = [];
-    _.each(variation.options, function (option, index, list) {
-      hrefOptions.push({
-        osID: option.osid,
-        id: option.option.option_id
-      });
-    });
-    var attrs = [
-      'class="acquia-lift-preview-option acquia-lift-preview-page-variation--' + variation.index + ' visitor-actions-ui-ignore"',
-      'href="' + generateHref(hrefOptions) + '"',
-      'data-acquia-lift-personalize-page-variation="' + variation.index + '"',
-      'aria-role="button"',
-      'aria-pressed="false"'
-    ];
-
-    item += '<li>\n<a ' + attrs.join(' ') + '>\n';
-    item += Drupal.checkPlain(variation.label) + '\n';
-    item += '</a>\n</li>\n';
-
-    return item;
-  }
 
   /**
    * Themes a list item for a page variation within the list of variations.

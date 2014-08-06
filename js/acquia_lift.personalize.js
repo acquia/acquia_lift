@@ -1114,6 +1114,46 @@
           }
         }
         this.model.set('activeVariation', variation_index);
+      },
+
+      /**
+       * Response to a change in edit mode for the page variation application.
+       *
+       * @param event
+       *   The jQuery event object
+       * @param data
+       *   An object of event data including the keys:
+       *   - start: true if edit mode started, false if ended.
+       *   - campaign: the machine name of the campaign holding variations.
+       *   - variationIndex: the index of the variation for editing or -1
+       *     if adding a new variation.
+       */
+      onPageVariationEditMode: function (event, data) {
+        // Make sure it's for this campaign.
+        if (this.model.get('name') !== data.campaign) {
+          return;
+        }
+        if (data.start) {
+          if (data.variationIndex < 0) {
+            // If add mode, then create a temporary variation listing.
+            var nextIndex = this.model.getNumberOfVariations();
+            // The first option is always control so the numbering displayed
+            // actually matches the index number.
+            var variationNumber = Math.max(nextIndex, 1);
+            this.$el.find('ul.menu').append(Drupal.theme('acquiaLiftNewVariationMenuItem', variationNumber));
+            // Indicate in the model that we are adding.
+            this.model.set('activeVariation', -1);
+          } else {
+            // If in edit mode, make sure that the edited variation index is
+            // indicated.
+            var $li = this.$el.find('[data-acquia-lift-personalize-page-variation="' + data.variationIndex + '"]');
+            $li.trigger('click');
+          }
+          updateNavbar();
+        } else {
+          // If exiting, remove any temporary variation listings.
+          this.$el.find('.acquia-lift-page-variation-new').closest('li').remove();
+        }
       }
     }),
 
@@ -2485,6 +2525,15 @@
     return item;
   };
 
+  /**
+   * Themes a list item for a page variation within the list of variations.
+   *
+   * @param object variation
+   *   The variation details including:
+   *   - options: an array of variation options
+   *   - index: the variation index value
+   *   - label: the variation label
+   */
   Drupal.theme.acquiaLiftPreviewPageVariationMenuItem = function (variation) {
     var item = '';
     var hrefOptions = [];

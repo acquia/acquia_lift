@@ -347,7 +347,7 @@
       $('[data-acquia-lift-personalize-mode="content-variation"]')
         .once('acquia-lift-personalize-trigger')
         .each(function (index, element) {
-          ui.views.push((new ui.MenuAddContentVariationTriggerView({
+          ui.views.push((new ui.MenuContentVariationTriggerView({
             el: element,
             model: ui.models.contentVariatonModeModel
           })));
@@ -1262,7 +1262,7 @@
     /**
      * Toggles the 'add content variation' trigger.
      */
-    MenuAddContentVariationTriggerView: ViewBase.extend({
+    MenuContentVariationTriggerView: ViewBase.extend({
       events: {
         'click': 'onClick'
       },

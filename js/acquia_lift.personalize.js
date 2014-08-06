@@ -1140,9 +1140,15 @@
             // The first option is always control so the numbering displayed
             // actually matches the index number.
             var variationNumber = Math.max(nextIndex, 1);
+            if (nextIndex == 0) {
+              // Add a control variation display as well.
+              this.$el.find('ul.menu').append(Drupal.theme('acquiaLiftNewVariationMenuItem', -1));
+            }
             this.$el.find('ul.menu').append(Drupal.theme('acquiaLiftNewVariationMenuItem', variationNumber));
+            this.$el.find('ul.menu li.acquia-lift-empty').hide();
             // Indicate in the model that we are adding.
             this.model.set('activeVariation', -1);
+            this.render(this.model);
           } else {
             // If in edit mode, make sure that the edited variation index is
             // indicated.
@@ -1152,6 +1158,7 @@
           updateNavbar();
         } else {
           // If exiting, remove any temporary variation listings.
+          this.$el.find('ul.menu li.acquia-lift-empty').show();
           this.$el.find('.acquia-lift-page-variation-new').closest('li').remove();
         }
       }
@@ -2074,7 +2081,6 @@
       if (campaignModel instanceof Drupal.acquiaLiftUI.MenuCampaignABModel) {
         // There is only one page variation view per page per campaign, but
         // this may be called multiple times due to multiple option sets.
-        Drupal.acquiaLiftUI.views.pageVariations = Drupal.acquiaLiftUI.views.pageVariations || {};
         var campaignName = campaignModel.get('name');
         if (!Drupal.acquiaLiftUI.views.pageVariations.hasOwnProperty(campaignName)) {
           Drupal.acquiaLiftUI.views.pageVariations[campaignName] = new Drupal.acquiaLiftUI.MenuPageVariationsView({
@@ -2089,6 +2095,29 @@
         });
       }
       return view;
+    },
+
+    /**
+     * Factory method to create the correct type of content variation set view
+     * for a campaign with no content variations yet created.
+     *
+     * @param Drupal.acquiaLiftUI.MenuCampaignModel model
+     *   The campaign model that owns the option set.
+     * @param element
+     *   The DOM element for the Backbone view.
+     */
+    createEmptyContentVariationView: function (model, element) {
+      if (model instanceof Drupal.acquiaLiftUI.MenuCampaignABModel) {
+        Drupal.acquiaLiftUI.views.pageVariations[model.get('name')] = new Drupal.acquiaLiftUI.MenuPageVariationsView({
+          model: model,
+          el: element
+        });
+      } else {
+        Drupal.acquiaLiftUI.views.push(new Drupal.acquiaLiftUI.MenuOptionSetEmptyView({
+          el: element,
+          model: model
+        }));
+      }
     },
 
     /**

@@ -84,7 +84,6 @@ class AcquiaLiftWebTest extends DrupalWebTestCase {
     $this->drupalLogin($this->managerUser);
 
     // Now confirm that Acquia Lift is an option for new campaigns.
-    $this->drupalLogin($this->managerUser);
     $this->drupalGet('admin/structure/personalize/add');
     $this->assertNoText(t('Your Acquia Lift account info has not been configured.'));
     $this->assertRaw('<option value="acquia_lift">acquia_lift</option>');
@@ -995,14 +994,26 @@ class AcquiaLiftWebTest extends DrupalWebTestCase {
     );
     $options = array();
     $choice_ids = array();
-    for ($j = 0; $j < $optionData['num_options']; $j++) {
-      $option_id = personalize_generate_option_id($j);
-      $choice_ids[] = $option_id;
-      $options[$j] = array(
-        'option_id' => $option_id,
-        'option_label' => personalize_generate_option_label($j),
-      );
+    if (!isset($optionData['option_ids'])) {
+      for ($j = 0; $j < $optionData['num_options']; $j++) {
+        $option_id = personalize_generate_option_id($j);
+        $choice_ids[] = $option_id;
+        $options[$j] = array(
+          'option_id' => $option_id,
+          'option_label' => personalize_generate_option_label($j),
+        );
+      }
     }
+    else {
+      foreach ($optionData['option_ids'] as $i => $option_id) {
+        $choice_ids[] = $option_id;
+        $options[$i] = array(
+          'option_id' => $option_id,
+          'option_label' => personalize_generate_option_label($i),
+        );
+      }
+    }
+
     $option_set['options'] = $options;
     $option_set = (object) $option_set;
     personalize_option_set_save($option_set);

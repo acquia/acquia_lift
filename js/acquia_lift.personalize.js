@@ -214,14 +214,11 @@
                 if (category === 'option_sets') {
                   looper(settings.campaigns, function (obj, key) {
                     if (addedCampaigns.hasOwnProperty(key) && !campaignsWithOptions.hasOwnProperty(key)) {
-                      // Add a view to indicate that there are no option sets for
-                      // a campaign.
+                      // Add a content variations view for any campaigns that don't have existing
+                      // option sets (and therefore would have been missed).
                       model = ui.collections.campaigns.findWhere({'name': key});
                       element = document.createElement('li');
-                      ui.views.push((new ui.MenuOptionSetEmptyView({
-                        el: element,
-                        model: model
-                      })));
+                      ui.factories.MenuFactory.createEmptyContentVariationView(model, element);
                       $menu.prepend(element);
                     }
                   })
@@ -772,13 +769,8 @@
           .removeClass('acquia-lift-active')
           .attr('aria-pressed', 'false');
         var activeVariation = model.get('activeVariation');
-        var $activeLink = '';
-        if (isNaN(activeVariation) || activeVariation == -1) {
-          $activeLink = this.$el.find('.acquia-lift-page-variation-new');
-        } else {
-          $activeLink = this.$el.find('[data-acquia-lift-personalize-page-variation="' + activeVariation + '"]');
-        }
-        $activeLink
+        var variationData = (isNaN(activeVariation) || activeVariation == -1) ? 'new' : activeVariation;
+        this.$el.find('[data-acquia-lift-personalize-page-variation="' + variationData + '"]')
           .addClass('acquia-lift-active')
           .attr('aria-pressed', 'true');
       },
@@ -889,9 +881,15 @@
             // The first option is always control so the numbering displayed
             // actually matches the index number.
             var variationNumber = Math.max(nextIndex, 1);
+            if (nextIndex == 0) {
+              // Add a control variation display as well.
+              this.$el.find('ul.menu').append(Drupal.theme('acquiaLiftNewVariationMenuItem', -1));
+            }
             this.$el.find('ul.menu').append(Drupal.theme('acquiaLiftNewVariationMenuItem', variationNumber));
+            this.$el.find('ul.menu li.acquia-lift-empty').hide();
             // Indicate in the model that we are adding.
             this.model.set('activeVariation', -1);
+            this.render(this.model);
           } else {
             // If in edit mode, make sure that the edited variation index is
             // indicated.
@@ -901,6 +899,7 @@
           updateNavbar();
         } else {
           // If exiting, remove any temporary variation listings.
+          this.$el.find('ul.menu li.acquia-lift-empty').show();
           this.$el.find('.acquia-lift-page-variation-new').closest('li').remove();
         }
       }
@@ -1610,6 +1609,7 @@
   /**
    * Factory methods.
    */
+  Drupal.acquiaLiftUI.views.pageVariations = Drupal.acquiaLiftUI.views.pageVariations || {};
   Drupal.acquiaLiftUI.factories = Drupal.acquiaLiftUI.factories || {};
   Drupal.acquiaLiftUI.factories.MenuFactory = Drupal.acquiaLiftUI.factories.MenuFactory || {
     /**
@@ -1627,7 +1627,6 @@
       if (campaignModel instanceof Drupal.acquiaLiftUI.MenuCampaignABModel) {
         // There is only one page variation view per page per campaign, but
         // this may be called multiple times due to multiple option sets.
-        Drupal.acquiaLiftUI.views.pageVariations = Drupal.acquiaLiftUI.views.pageVariations || {};
         var campaignName = campaignModel.get('name');
         if (!Drupal.acquiaLiftUI.views.pageVariations.hasOwnProperty(campaignName)) {
           Drupal.acquiaLiftUI.views.pageVariations[campaignName] = new Drupal.acquiaLiftUI.MenuPageVariationsView({
@@ -1642,6 +1641,29 @@
         });
       }
       return view;
+    },
+
+    /**
+     * Factory method to create the correct type of content variation set view
+     * for a campaign with no content variations yet created.
+     *
+     * @param Drupal.acquiaLiftUI.MenuCampaignModel model
+     *   The campaign model that owns the option set.
+     * @param element
+     *   The DOM element for the Backbone view.
+     */
+    createEmptyContentVariationView: function (model, element) {
+      if (model instanceof Drupal.acquiaLiftUI.MenuCampaignABModel) {
+        Drupal.acquiaLiftUI.views.pageVariations[model.get('name')] = new Drupal.acquiaLiftUI.MenuPageVariationsView({
+          model: model,
+          el: element
+        });
+      } else {
+        Drupal.acquiaLiftUI.views.push(new Drupal.acquiaLiftUI.MenuOptionSetEmptyView({
+          el: element,
+          model: model
+        }));
+      }
     },
 
     /**
@@ -1889,17 +1911,19 @@
     ];
     var item = '';
     item += '<span ' + attrs.join(' ') + '>';
+    item += Drupal.formatPlural(variations.length, 'Page variation', 'Page variations');
+    item += '</span>\n';
+
+    item += '<ul class="menu">' + "\n";
     // Handle empty page variations.
     if (variations.length == 0) {
-      item += Drupal.theme('acquiaLiftPersonalizeNoMenuItem', {type: 'page variations'}) + '</span>';
+      item += '<li class="acquia-lift-empty">' + Drupal.theme('acquiaLiftPersonalizeNoMenuItem', {type: 'page variations'}) + '</li>\n';
     } else {
-      item += Drupal.formatPlural(variations.length, 'Page variation', 'Page variations') + '</span>';
-      item += '<ul class="menu">' + "\n";
       _.each(variations, function (variation, index, list) {
         item += Drupal.theme('acquiaLiftPreviewPageVariationMenuItem', variation);
       });
-      item += '</ul>\n';
     }
+    item += '</ul>\n';
     return item;
   }
 
@@ -2069,19 +2093,26 @@
    * Themes a list item for a new page variation that has not yet been saved.
    *
    * @param variation_number
-   *   The number to display for this variation.
+   *   The number to display for this variation.  -1 is passed to indicate a
+   *   temporary control variation option display.
    */
   Drupal.theme.acquiaLiftNewVariationMenuItem = function (variation_number) {
+    var isControl = variation_number == -1;
     var attrs = [
       'class="acquia-lift-preview-option acquia-lift-page-variation-new',
-      'data-acquia-lift-personalize-page-variation="new"',
       'aria-role="button"',
       'aria-pressed="false"'
     ];
+    var variationLabel = isControl ? Drupal.t(Drupal.settings.personalize.controlOptionLabel) : Drupal.t('Variation #@varnum', {'@varnum': variation_number});
+    if (isControl) {
+      attrs.push('data-acquia-lift-personalize-page-variation="control"');
+    } else {
+      attrs.push('data-acquia-lift-personalize-page-variation="new"');
+    }
 
     var item = '';
     item += '<li>\n<a ' + attrs.join(' ') + '>\n';
-    item += Drupal.t('Variation #@varnum', {'@varnum': variation_number}) + '\n';
+    item += variationLabel + '\n';
     item += '</a>\n</li>\n';
 
     return item;

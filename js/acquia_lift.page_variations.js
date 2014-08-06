@@ -23,7 +23,8 @@
       defaults: {
         // If this app is being loaded, it is because it is being launched into
         // an edit mode.
-        editMode: true
+        editMode: true,
+        variationIndex: -1
       },
 
       /**
@@ -88,7 +89,7 @@
         });
         Backbone.on('acquiaLiftPageVariationType', this.createVariationTypeDialog, this);
         this.listenTo(this.model, 'change:editMode', this.render);
-        this.listenTo(this.model, 'change:editMode', this.updateEditMode)
+        this.listenTo(this.model, 'change:editMode', this.updateEditMode);
         this.render(this.model, this.model.get('editMode'));
       },
 
@@ -124,6 +125,9 @@
        * Updates the application based on changes in edit mode.
        */
       updateEditMode: function(model, editMode) {
+        var data = {};
+        var variationIndex = model.get('variationIndex');
+        variationIndex = isNaN(variationIndex) ? -1 : variationIndex;
         if (this.contextualMenuModel) {
           this.contextualMenuModel.set('active', editMode);
         }
@@ -133,6 +137,11 @@
         if (!editMode) {
           this.highlightAnchor(false);
         }
+        data.started = editMode;
+        data.mode = (variationIndex == -1) ? 'add' : 'edit';
+        data.campaign = Drupal.settings.personalize.activeCampaign;
+        data.variationIndex = variationIndex;
+        $(document).trigger('acquiaLiftPageVariationsMode', data);
       },
 
       /**
@@ -441,8 +450,8 @@
    * The response should include a data object with the following keys:
    * - start: Boolean indicating if page variation mode should be on (true)
    *   or off (false).
-   * - variationIndex: The variation index to edit.  This can be the index of
-   *   a variation to create in this step or an existing variation to edit.
+   * - variationIndex: The variation index to edit.  This can be an existing
+   *   variation index to edit, or -1 to create a new variation.
    */
   Drupal.ajax.prototype.commands.acquia_lift_page_variation_toggle = function (ajax, response, status) {
     if (response.data.start) {
@@ -457,11 +466,30 @@
           el: $wrapper[0]
         });
       }
+      var editVariation = response.data.variationIndex || -1;
+      Drupal.acquiaLiftPageVariations.app.appModel.set('variationIndex', editVariation);
       Drupal.acquiaLiftPageVariations.app.appModel.set('editMode', true);
     } else {
       if (Drupal.acquiaLiftPageVariations.app.appModel) {
         Drupal.acquiaLiftPageVariations.app.appModel.set('editMode', false);
       }
     }
+    // Notify that the mode has actually been changed.
+    response.data.campaign = Drupal.settings.personalize.activeCampaign;
+    $(document).trigger('acquiaLiftPageVariationMode', [response.data]);
   };
-}(jQuery, Drupal, Drupal.visitorActions.ui.dialog, Backbone, _));
+
+  /**
+   * Add an event listener for a page variation mode trigger request.
+   *
+   * This utilizes the custom toggle command in order to allow front-end and
+   * back-end requests for the functionality to be handled the same way.
+   */
+  $(document).on('acquiaLiftPageVariationModeTrigger', function(e, data) {
+    var response = {
+      data: data
+    };
+    Drupal.ajax.prototype.commands.acquia_lift_page_variation_toggle(Drupal.ajax, response, 200);
+  });
+
+  }(jQuery, Drupal, Drupal.visitorActions.ui.dialog, Backbone, _));

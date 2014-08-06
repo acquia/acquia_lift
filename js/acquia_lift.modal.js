@@ -2,7 +2,7 @@
  * Functionality related specifically to the modal campaign management
  * procedures.
  */
-(function ($) {
+(function ($, Drupal) {
   Drupal.behaviors.acquiaLiftCampaignTypeModal = {
     attach: function (context, settings) {
       // Make the whole campaign type div clickable.
@@ -20,4 +20,4 @@
       });
     }
   }
-}(jQuery));
+}(jQuery, Drupal));

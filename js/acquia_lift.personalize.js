@@ -227,8 +227,6 @@
                   })
                 }
               });
-            // If Navbar module is enabled, process the links.
-            updateNavbar();
           }
         });
 
@@ -245,8 +243,6 @@
                 model: model
               })));
             });
-          // If Navbar module is enabled, process the links.
-          updateNavbar();
         }
 
         // Create View for the Report link.
@@ -317,12 +313,16 @@
       var settings = Drupal.settings.personalize;
       var ui = Drupal.acquiaLiftUI;
       // Create a model for a Content Variation management state.
-      if (!ui.models.contentVariatonModeModel) {
-        ui.models.contentVariatonModeModel = new ui.MenuContentVariationModeModel();
+      if (!ui.models.contentVariationModeModel) {
+        ui.models.contentVariationModeModel = new ui.MenuContentVariationModeModel();
+      }
+      // Create a model for page variation management state
+      if (!ui.models.pageVariationModeModel) {
+        ui.models.pageVariationModeModel = new ui.MenuPageVariationModeModel();
       }
 
-      // Keep the in-context content variation editing and in-context goal
-      // creation in mutually exclusive active states.
+      // Keep the in-context content variation editing, page variation editing,
+      // and in-context goal creation in mutually exclusive active states.
       $('body').once('acquia-lift-personalize', function () {
         // Turn off content variations highlighting if visitor actions editing
         // is enabled.
@@ -331,13 +331,23 @@
             // Prevent infinite loops of updating models triggering change events
             // by delaying this update to the next evaluation cycle.
             window.setTimeout(function () {
-              ui.models.contentVariatonModeModel.set('isActive', false);
+              ui.models.contentVariationModeModel.endEditMode();
+              ui.models.pageVariationModeModel.endEditMode();
             }, 0);
           }
         });
         // Signal when content variation highlighting is active.
-        ui.models.contentVariatonModeModel.on('change:isActive', function (model, isActive) {
+        ui.models.contentVariationModeModel.on('change:isActive', function (model, isActive) {
           if (isActive) {
+            $(document).trigger('visitorActionsUIShutdown');
+            ui.models.pageVariationModeModel.endEditMode();
+          }
+        });
+        // Turn off content variation and visitor actions modes when entering
+        // page variation mode.
+        $(document).bind('acquiaLiftPageVariationMode', function (event, data) {
+          if (data.start) {
+            ui.models.contentVariationModeModel.endEditMode();
             $(document).trigger('visitorActionsUIShutdown');
           }
         });
@@ -349,7 +359,9 @@
         .each(function (index, element) {
           ui.views.push((new ui.MenuContentVariationTriggerView({
             el: element,
-            model: ui.models.contentVariatonModeModel
+            contentVariationModel: ui.models.contentVariationModeModel,
+            pageVariationModel: ui.models.pageVariationModeModel,
+            campaignCollection: ui.collections.campaigns
           })));
         });
       // Find content variation candidates.
@@ -358,7 +370,7 @@
         .each(function (index, element) {
           ui.views.push((new ui.MenuContentVariationCandidateView({
             el: element,
-            model: ui.models.contentVariatonModeModel
+            model: ui.models.contentVariationModeModel
           })));
         });
     }
@@ -397,6 +409,36 @@
       }
 
       Backbone.View.prototype.remove.call(this);
+    }
+  });
+
+  var contentModeModelBase = Backbone.Model.extend({
+    defaults: {
+      isActive: false
+    },
+
+    /**
+     * Helper function to start adding a content variation.
+     */
+    startAddMode: function () {
+      this.set('isActive', true);
+    },
+
+    /**
+     * Helper function to start editing a content variation.
+     *
+     * @param variationIndex
+     *   Index of the variation to edit within the current campaign context.
+     */
+    startEditMode: function (variationIndex) {
+      this.set('isActive', true);
+    },
+
+    /**
+     * Helper function to end editing mode for a page variation.
+     */
+    endEditMode: function () {
+      this.set('isActive', false);
     }
   });
 
@@ -565,9 +607,81 @@
     /**
      * The Model for a 'add content variation' state.
      */
-    MenuContentVariationModeModel: Backbone.Model.extend({
+    MenuContentVariationModeModel: contentModeModelBase.extend({}),
+
+    /**
+     * The model for 'add page variation' state.
+     */
+    MenuPageVariationModeModel: contentModeModelBase.extend({
       defaults: {
-        isActive: false
+        isActive: false,
+        isEditMode: false,
+        variationIndex: -1
+      },
+
+      /**
+       * Helper function to start adding a page variation.
+       *
+       * This handles setting all the correct model parameters and sending an
+       * event notification.
+       */
+      startAddMode: function () {
+        // Don't restart if alredy in create mode.
+        if (this.get('isActive') && !this.get('isEditMode')) {
+          return;
+        }
+        this.set('variationIndex', -1);
+        this.set('isEditMode', false);
+        this.set('isActive', true);
+        this.notifyTrigger();
+      },
+
+      /**
+       * Helper function to start editing a page variation.
+       *
+       * This handles setting all the correct model parameters and sending an
+       * event notification.
+       *
+       * @param variationIndex
+       *   Index of the variation to edit within the current campaign context.
+       */
+      startEditMode: function (variationIndex) {
+        // Don't do anything if we are already editing the same variation.
+        if (this.get('isActive') && this.get('variationIndex') == variationIndex) {
+          return;
+        }
+        this.set('variationIndex', variationIndex);
+        this.set('isEditMode', true);
+        this.set('isActive', true);
+        this.notifyTrigger();
+      },
+
+      /**
+       * Helper function to end editing mode for a page variation.
+       *
+       * This handles setting all the correct model parameters back and sending
+       * an event notification.
+       */
+      endEditMode: function () {
+        // If editing mode isn't already active, then just return.
+        if (!this.get('isActive')) {
+          return;
+        }
+        this.set('variationIndex', -1);
+        this.set('isEditMode', false);
+        this.set('isActive', false);
+        this.notifyTrigger();
+      },
+
+      /**
+       * Send a notification of the trigger in variation mode change.
+       */
+      notifyTrigger: function () {
+        var data = {
+          start: this.get('isActive'),
+          variationIndex: this.get('variationIndex')
+        };
+        $(document).trigger('acquiaLiftPageVariationModeTrigger', [data]);
       }
     }),
 
@@ -640,7 +754,10 @@
         this.listenTo(this.model, 'change:activeVariation', this.render);
 
         this.onOptionShowProxy = $.proxy(this.onOptionShow, this);
+        this.onPageVariationEditModeProxy = $.proxy(this.onPageVariationEditMode, this);
+
         $(document).on('personalizeOptionChange', this.onOptionShowProxy);
+        $(document).on('acquiaLiftPageVariationMode', this.onPageVariationEditModeProxy, this);
 
         this.build(this.model);
         this.render(this.model);
@@ -654,8 +771,14 @@
           .find('[data-acquia-lift-personalize-page-variation]')
           .removeClass('acquia-lift-active')
           .attr('aria-pressed', 'false');
-        this.$el
-          .find('[data-acquia-lift-personalize-page-variation="' + model.get('activeVariation') + '"]')
+        var activeVariation = model.get('activeVariation');
+        var $activeLink = '';
+        if (isNaN(activeVariation) || activeVariation == -1) {
+          $activeLink = this.$el.find('.acquia-lift-page-variation-new');
+        } else {
+          $activeLink = this.$el.find('[data-acquia-lift-personalize-page-variation="' + activeVariation + '"]');
+        }
+        $activeLink
           .addClass('acquia-lift-active')
           .attr('aria-pressed', 'true');
       },
@@ -687,6 +810,7 @@
        */
       remove: function () {
         $(document).off('personalizeOptionChange', this.onOptionShowProxy);
+        $(document).off('acquiaLiftPageVariationMode', this.onPageVariationEditModeProxy);
         ViewBase.prototype.remove.call(this);
       },
 
@@ -704,6 +828,7 @@
         if (variation_index >= variations.length) {
           return;
         }
+        this.model.set('activeVariation', variation_index);
         var variation = variations[variation_index];
         var i, num = variation.options.length, current;
         // Run the executor for each option in the variation.
@@ -738,6 +863,46 @@
           return;
         }
         this.model.set('activeVariation', variation_index);
+      },
+
+      /**
+       * Response to a change in edit mode for the page variation application.
+       *
+       * @param event
+       *   The jQuery event object
+       * @param data
+       *   An object of event data including the keys:
+       *   - start: true if edit mode started, false if ended.
+       *   - campaign: the machine name of the campaign holding variations.
+       *   - variationIndex: the index of the variation for editing or -1
+       *     if adding a new variation.
+       */
+      onPageVariationEditMode: function (event, data) {
+        // Make sure it's for this campaign.
+        if (this.model.get('name') !== data.campaign) {
+          return;
+        }
+        if (data.start) {
+          if (data.variationIndex < 0) {
+            // If add mode, then create a temporary variation listing.
+            var nextIndex = this.model.getNumberOfVariations();
+            // The first option is always control so the numbering displayed
+            // actually matches the index number.
+            var variationNumber = Math.max(nextIndex, 1);
+            this.$el.find('ul.menu').append(Drupal.theme('acquiaLiftNewVariationMenuItem', variationNumber));
+            // Indicate in the model that we are adding.
+            this.model.set('activeVariation', -1);
+          } else {
+            // If in edit mode, make sure that the edited variation index is
+            // indicated.
+            var $li = this.$el.find('[data-acquia-lift-personalize-page-variation="' + data.variationIndex + '"]');
+            $li.trigger('click');
+          }
+          updateNavbar();
+        } else {
+          // If exiting, remove any temporary variation listings.
+          this.$el.find('.acquia-lift-page-variation-new').closest('li').remove();
+        }
       }
     }),
 
@@ -1258,7 +1423,6 @@
       }
     }),
 
-
     /**
      * Toggles the 'add content variation' trigger.
      */
@@ -1266,11 +1430,27 @@
       events: {
         'click': 'onClick'
       },
+
       /**
        * {@inheritdoc}
        */
       initialize: function (options) {
-        this.model.on('change', this.render, this);
+        this.contentVariationModel = options.contentVariationModel;
+        this.pageVariationModel = options.pageVariationModel;
+        this.campaignCollection = options.campaignCollection;
+
+        // Model property holds a reference to the relevant type of creation
+        // mode model based on the type of campaign selected.
+        if (this.campaignCollection.findWhere({'isActive': true}) instanceof Drupal.acquiaLiftUI.MenuCampaignABModel) {
+          this.model = this.pageVariationModel;
+        } else {
+          this.model = this.contentVariationModel;
+        }
+
+        this.listenTo(this.contentVariationModel, 'change:isActive', this.render);
+        this.listenTo(this.pageVariationModel, 'change:isActive', this.render);
+        this.listenTo(this.campaignCollection, 'change:isActive', this.onCampaignChange);
+
         this.render(this.model);
       },
 
@@ -1278,7 +1458,15 @@
        * {@inheritdoc}
        */
       render: function (model) {
-        this.$el.toggleClass('acquia-lift-active', model.get('isActive'));
+        var isActive = model.get('isActive');
+        var text = '';
+        if (isActive) {
+          text = model instanceof Drupal.acquiaLiftUI.MenuPageVariationModeModel ? Drupal.t('Exit add variation mode') : Drupal.t('Exit add variation set mode');
+        } else {
+          text = model instanceof Drupal.acquiaLiftUI.MenuPageVariationModeModel ? Drupal.t('Add a variation') : Drupal.t('Add a variation set');
+        }
+        this.$el.toggleClass('acquia-lift-active', isActive);
+        this.$el.text(text);
       },
 
       /**
@@ -1288,7 +1476,32 @@
        */
       onClick: function (event) {
         event.preventDefault();
-        this.model.set('isActive', !this.model.get('isActive'));
+
+        if (this.model.get('isActive')) {
+          this.model.endEditMode();
+        } else {
+          this.model.startAddMode();
+        }
+      },
+
+      /**
+       * Change handler when a new campaign is selected.
+       *
+       * @param model
+       *   The campaign model that was selected.
+       * @param isActive
+       *   The new active status.
+       */
+      onCampaignChange: function(model, isActive) {
+        this.model.endEditMode();
+        if (isActive) {
+          if (model instanceof Drupal.acquiaLiftUI.MenuCampaignABModel) {
+            this.model = this.pageVariationModel;
+          } else {
+            this.model = this.contentVariationModel;
+          }
+          this.render(this.model);
+        }
       }
     }),
 
@@ -1819,6 +2032,15 @@
     return item;
   };
 
+  /**
+   * Themes a list item for a page variation within the list of variations.
+   *
+   * @param object variation
+   *   The variation details including:
+   *   - options: an array of variation options
+   *   - index: the variation index value
+   *   - label: the variation label
+   */
   Drupal.theme.acquiaLiftPreviewPageVariationMenuItem = function (variation) {
     var item = '';
     var hrefOptions = [];
@@ -1842,6 +2064,29 @@
 
     return item;
   }
+
+  /**
+   * Themes a list item for a new page variation that has not yet been saved.
+   *
+   * @param variation_number
+   *   The number to display for this variation.
+   */
+  Drupal.theme.acquiaLiftNewVariationMenuItem = function (variation_number) {
+    var attrs = [
+      'class="acquia-lift-preview-option acquia-lift-page-variation-new',
+      'data-acquia-lift-personalize-page-variation="new"',
+      'aria-role="button"',
+      'aria-pressed="false"'
+    ];
+
+    var item = '';
+    item += '<li>\n<a ' + attrs.join(' ') + '>\n';
+    item += Drupal.t('Variation #@varnum', {'@varnum': variation_number}) + '\n';
+    item += '</a>\n</li>\n';
+
+    return item;
+  }
+
 
   /**
    * Returns a menu item that contains a link to a campaign.

@@ -5,6 +5,14 @@
  * Provides functions needed for the admin UI.
  */
 
+/**
+ * Menu callback for the Acquia Lift settings page.
+ *
+ * Consists of multiple forms.
+ *
+ * @return array
+ *   A render array for the page.
+ */
 function acquia_lift_configuration_page() {
   $build['main_config'] = drupal_get_form('acquia_lift_admin_form');
   $build['batch_sync'] = drupal_get_form('acquia_lift_batch_sync_form');
@@ -124,6 +132,9 @@ function acquia_lift_admin_form($form, &$form_state) {
   return system_settings_form($form);
 }
 
+/**
+ * Simple form for initiating batch syncing of agents to Lift.
+ */
 function acquia_lift_batch_sync_form($form, &$form_state) {
   $form['submit'] = array(
     '#type' => 'submit',
@@ -132,6 +143,9 @@ function acquia_lift_batch_sync_form($form, &$form_state) {
   return $form;
 }
 
+/**
+ * Submit callback for the batch sync form.
+ */
 function acquia_lift_batch_sync_form_submit($form, &$form_state) {
   acquia_lift_batch_sync_campaigns();
 }

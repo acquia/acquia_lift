@@ -4,7 +4,7 @@
  * Provides an agent type for Acquia Lift
  */
 
-class AcquiaLiftAPI implements PersonalizeLoggerAwareInterface {
+class AcquiaLiftAPI implements PersonalizeLoggerAwareInterface, AcquiaLiftReportDataSourceInterface {
 
   const API_URL = 'api.lift.acquia.com';
 
@@ -976,23 +976,7 @@ class AcquiaLiftAPI implements PersonalizeLoggerAwareInterface {
   }
 
   /**
-   * Returns a targeting impact report for the specified agent and timeframe.
-   *
-   * @param $agent_name
-   *   The name of the agent.
-   * @param string $date_start
-   *   The start date in the format YYYY-MM-DD or null to use today's date.
-   * @param string $date_end
-   *   The end date in the format YYYY-MM-DD or null to get a report for just
-   *   a single day.
-   * @param string $point
-   *   An optional decision point to limit the report to.
-   * @return array
-   *   The report as an associative array with the structure as defined at
-   *   https://console.lift.acquia.com/docs/abc/reporting-api under "Option
-   *   Confidence Report Data"
-   *
-   * @throws AcquiaLiftException
+   * Implements AcquiaLiftReportDataSourceInterface::getTargetingImpactReport().
    */
   public function getTargetingImpactReport($agent_name, $date_start = NULL, $date_end = NULL, $point = NULL) {
     $date_str = $this->getDateString($date_start, $date_end);
@@ -1011,20 +995,7 @@ class AcquiaLiftAPI implements PersonalizeLoggerAwareInterface {
   }
 
   /**
-   * Returns status reports for the specified agents and number of days.
-   *
-   * @param $agent_names
-   *   An array of agent names to return status reports for.
-   * @param null $num_days
-   *   Number of days to return reports for, or NULL to get the default
-   *   14 days.
-   *
-   * @return array
-   *   The report as an associative array with the structure as defined at
-   *   https://console.lift.acquia.com/docs/abc/reporting-api under "Agent
-   *   Status Report Data"
-   *
-   * @throws AcquiaLiftException
+   * Implements AcquiaLiftReportDataSourceInterface::getAgentStatusReport().
    */
   public function getAgentStatusReport($agent_names, $num_days = NULL) {
     $codes = implode(',', $agent_names);
@@ -1040,32 +1011,7 @@ class AcquiaLiftAPI implements PersonalizeLoggerAwareInterface {
   }
 
   /**
-   * Returns a confidence report for the specified agent and timeframe.
-   *
-   * @param $agent_name
-   *   The name of the agent.
-   * @param string $date_start
-   *   The start date in the format YYYY-MM-DD or null to use today's date.
-   * @param string $date_end
-   *   The end date in the format YYYY-MM-DD or null to get a report for just
-   *   a single day.
-   * @param string $point
-   *   An optional decision point to limit the report to.
-   * @param array $features
-   *   An array of features to include data for in the report.
-   *   The default "none" features option is used by default.
-   *   Passing "all" will return all features for the test.
-   * @param float $confidence_measure
-   *   The confidence measure to use to determine statistical significance.
-   * @return array
-   *   The report as an associative array with the structure as defined at
-   *   https://console.lift.acquia.com/docs/abc/reporting-api under "Option
-   *   Confidence Report Data"
-   *
-   * @todo Add support for the other optional parameters, i.e. 'confidence-
-   *   measure', 'comparison-decision' and 'use-bonferroni'
-   *
-   * @throws AcquiaLiftException
+   * Implements AcquiaLiftReportDataSourceInterface::getConfidenceReport().
    */
   public function getConfidenceReport($agent_name, $date_start = NULL, $date_end = NULL, $point = NULL, $features = NULL, $confidence_measure = 0.95) {
     $date_str = $this->getDateString($date_start, $date_end);
@@ -1091,27 +1037,14 @@ class AcquiaLiftAPI implements PersonalizeLoggerAwareInterface {
   }
 
   /**
-   * Returns raw data about the accumulated value of options for the specified
-   * agent.
-   *
-   * @param $agent_name
-   *   The name of the agent.
-   * @param string $date_start
-   *   The start date in the format YYYY-MM-DD or null to use today's date.
-   * @param string $date_end
-   *   The end date in the format YYYY-MM-DD or null to get a report for just
-   *   a single day.
-   * @param string $point
-   *   An optional decision point to limit the report to.
-   * @return array
-   *   The report as an associative array with the structure as defined at
-   *   https://console.acquia_lift.com/docs/abc/reporting-api under "Raw
-   *   Learning Report Data"
-   *
-   * @todo Add support for the other optional parameters, i.e. 'confidence-
-   *   measure', 'comparison-decision' and 'use-bonferroni'
-   *
-   * @throws AcquiaLiftException
+   * Implements AcquiaLiftReportDataSourceInterface::getContextFilters().
+   */
+  public function getContextFilters($agent_name) {
+    return $this->getPotentialTargetingValues($agent_name);
+  }
+
+  /**
+   * Implements AcquiaLiftReportDataSourceInterface::getRawLearningReport().
    */
   public function getRawLearningReport($agent_name, $date_start = NULL, $date_end = NULL, $point = NULL) {
     $date_str = $this->getDateString($date_start, $date_end);
@@ -1333,6 +1266,309 @@ class AcquiaLiftAPI implements PersonalizeLoggerAwareInterface {
     return $date_str;
   }
 
+}
+
+interface AcquiaLiftReportDataSourceInterface {
+  /**
+   * Returns a confidence report for the specified agent and timeframe.
+   *
+   * @param $agent_name
+   *   The name of the agent.
+   * @param string $date_start
+   *   The start date in the format YYYY-MM-DD or null to use today's date.
+   * @param string $date_end
+   *   The end date in the format YYYY-MM-DD or null to get a report for just
+   *   a single day.
+   * @param string $point
+   *   An optional decision point to limit the report to.
+   * @param array $features
+   *   An array of features to include data for in the report.
+   *   The default "none" features option is used by default.
+   *   Passing "all" will return all features for the test.
+   * @param float $confidence_measure
+   *   The confidence measure to use to determine statistical significance.
+   * @return array
+   *   The report as an associative array with the structure as defined at
+   *   https://console.lift.acquia.com/docs/abc/reporting-api under "Option
+   *   Confidence Report Data"
+   *
+   * @todo Add support for the other optional parameters, i.e. 'confidence-
+   *   measure', 'comparison-decision' and 'use-bonferroni'
+   *
+   * @throws AcquiaLiftException
+   */
+  public function getConfidenceReport($agent_name, $date_start = NULL, $date_end = NULL, $point = NULL, $features = NULL, $confidence_measure = 0.95);
+
+  /**
+   * Returns a targeting impact report for the specified agent and timeframe.
+   *
+   * @param $agent_name
+   *   The name of the agent.
+   * @param string $date_start
+   *   The start date in the format YYYY-MM-DD or null to use today's date.
+   * @param string $date_end
+   *   The end date in the format YYYY-MM-DD or null to get a report for just
+   *   a single day.
+   * @param string $point
+   *   An optional decision point to limit the report to.
+   * @return array
+   *   The report as an associative array with the structure as defined at
+   *   https://console.lift.acquia.com/docs/abc/reporting-api under "Option
+   *   Confidence Report Data"
+   *
+   * @throws AcquiaLiftException
+   */
+  public function getTargetingImpactReport($agent_name, $date_start = NULL, $date_end = NULL, $point = NULL);
+
+  /**
+   * Returns status reports for the specified agents and number of days.
+   *
+   * @param $agent_names
+   *   An array of agent names to return status reports for.
+   * @param null $num_days
+   *   Number of days to return reports for, or NULL to get the default
+   *   14 days.
+   *
+   * @return array
+   *   The report as an associative array with the structure as defined at
+   *   https://console.lift.acquia.com/docs/abc/reporting-api under "Agent
+   *   Status Report Data"
+   *
+   * @throws AcquiaLiftException
+   */
+  public function getAgentStatusReport($agent_names, $num_days = NULL);
+
+  /**
+   * Returns raw data about the accumulated value of options for the specified
+   * agent.
+   *
+   * @param $agent_name
+   *   The name of the agent.
+   * @param string $date_start
+   *   The start date in the format YYYY-MM-DD or null to use today's date.
+   * @param string $date_end
+   *   The end date in the format YYYY-MM-DD or null to get a report for just
+   *   a single day.
+   * @param string $point
+   *   An optional decision point to limit the report to.
+   * @return array
+   *   The report as an associative array with the structure as defined at
+   *   https://console.acquia_lift.com/docs/abc/reporting-api under "Raw
+   *   Learning Report Data"
+   *
+   * @todo Add support for the other optional parameters, i.e. 'confidence-
+   *   measure', 'comparison-decision' and 'use-bonferroni'
+   *
+   * @throws AcquiaLiftException
+   */
+  public function getRawLearningReport($agent_name, $date_start = NULL, $date_end = NULL, $point = NULL);
+
+
+  /**
+   * Returns the context values to use in a report.
+   * @param $agent_name
+   */
+  public function getContextFilters($agent_name);
+
+}
+
+class AcquiaLiftReportDataFromFile implements AcquiaLiftReportDataSourceInterface {
+
+  /**
+   * An array representing a targeting report.
+   *
+   * @var array
+   */
+  protected $targetingReport;
+
+  /**
+   * An array representing a confidence report.
+   *
+   * @var array
+   */
+  protected $confidenceReport;
+
+  /**
+   * An array representing a agent status report.
+   *
+   * @var array
+   */
+  protected $agentStatusReport;
+
+  /**
+   * An array representing a raw learning report.
+   *
+   * @var array
+   */
+  protected $rawLearningReport;
+
+  /**
+   * An array representing the context filters to be used in reports.
+   *
+   * @var array
+   */
+  protected $contextFilters;
+
+  protected $fileLocation;
+
+  protected $reports;
+
+  public function __construct($file_location, AcquiaLiftReportCacheInterface $cache = NULL) {
+    $this->fileLocation = $file_location;
+    $this->cache = $cache;
+  }
+
+  /**
+   * Retrieves a particular report for the specifed agent.
+   *
+   * @param $agent_name
+   *   The name of the agent to retrieve a report for.
+   * @param $report_name
+   *   The name of teh report to retrieve, one of 'targeting-impact', 'confidence',
+   *   'agent-status', 'raw-learning', or 'context-filters'.
+   * @return array
+   *   An array representing the report.
+   */
+  protected function getReport($agent_name, $report_name) {
+
+    // First see if we already have the reports in memory.
+    if ($this->reports) {
+      return isset($this->reports[$report_name]) ? $this->reports[$report_name] : array();
+    }
+    // Check the cache if available
+    if ($this->cache && $reports = $this->cache->getCachedReports($agent_name)) {
+      $this->reports = $reports;
+      return isset($reports[$report_name]) ? $reports[$report_name] : array();
+    }
+    // Otherwise resort to reading from a file.
+    else {
+      $file_name = $this->fileLocation;
+      if (strpos($file_name, '://') === FALSE) {
+        // If not given full URL, assume it's an absolute path for
+        // the current site.
+        global $base_url;
+        $file_name = $base_url . $file_name;
+      }
+
+      if ($str = file_get_contents($file_name)) {
+        $parsed = json_decode($str, TRUE);
+        $this->reports = $parsed['reports'];
+        if ($this->cache) {
+          $this->cache->cacheReports($agent_name, $this->reports);
+        }
+        return $this->reports;
+      }
+    }
+    return array();
+  }
+
+  /**
+   * Implements AcquiaLiftReportDataSourceInterface::getTargetingImpactReport().
+   */
+  public function getTargetingImpactReport($agent_name, $date_start = NULL, $date_end = NULL, $point = NULL) {
+    return $this->getReport($agent_name, 'targeting-impact');
+  }
+
+  /**
+   * Implements AcquiaLiftReportDataSourceInterface::getAgentStatusReport().
+   */
+  public function getAgentStatusReport($agent_names, $num_days = NULL) {
+    $agent_name = reset($agent_names);
+    return $this->getReport($agent_name, 'agent-status');
+  }
+
+  /**
+   * Implements AcquiaLiftReportDataSourceInterface::getConfidenceReport().
+   */
+  public function getConfidenceReport($agent_name, $date_start = NULL, $date_end = NULL, $point = NULL, $features = NULL, $confidence_measure = 0.95) {
+    return $this->getReport($agent_name, 'confidence');
+  }
+
+  /**
+   * Implements AcquiaLiftReportDataSourceInterface::getRawLearningReport().
+   */
+  public function getRawLearningReport($agent_name, $date_start = NULL, $date_end = NULL, $point = NULL) {
+    return $this->getReport($agent_name, 'raw-learning');
+  }
+
+  /**
+   * Implements AcquiaLiftReportDataSourceInterface::getContextFilters().
+   */
+  public function getContextFilters($agent_name) {
+    $context_filters = $this->getReport($agent_name, 'context-filters');
+    return !empty($context_filters) ? $context_filters : array(
+      'data' => array(
+        'potential' => array(
+          'features' => array()
+        )
+      )
+    );
+  }
+}
+
+interface AcquiaLiftReportCacheInterface {
+  /**
+   * Retrieve reports from the cache for a particular agent.
+   *
+   * @param $agent_name
+   *   The name of the agent to retrieve reports for.
+   * @return mixed
+   *   An array representing the reports or NULL of not found.
+   */
+  public function getCachedReports($agent_name);
+
+  /**
+   * Store reports for a particular agent in the cache.
+   *
+   * @param $agent_name
+   *   The name of the agent to store reports for.
+   * @param $data
+   *   An array representing the reports.
+   */
+  public function cacheReports($agent_name, $data);
+}
+
+/**
+ * Class AcquiaLiftReportCache
+ *
+ * An OOP wrapper around cache_get() and cache_set().
+ */
+class AcquiaLiftReportCache implements AcquiaLiftReportCacheInterface {
+  /**
+   * Holds the reports retrieved from the cache.
+   *
+   * @var array
+   */
+  protected $cache = array();
+
+  /**
+   * The cache bin to use.
+   *
+   * @var string
+   */
+  protected $bin = 'cache_acquia_lift_reports';
+
+  /**
+   * Implements AcquiaLiftReportCacheInterface::getCachedReports().
+   */
+  public function getCachedReports($agent_name) {
+    if (!isset($this->cache[$agent_name])) {
+      if ($get = cache_get($agent_name, $this->bin)) {
+        $this->cache[$agent_name] = $get->data;
+      }
+      else {
+        $this->cache[$agent_name] = FALSE;
+      }
+    }
+    return $this->cache[$agent_name];
+  }
+
+  /**
+   * Implements AcquiaLiftReportCacheInterface::cacheReports().
+   */
+  public function cacheReports($agent_name, $data) {
+    cache_set($agent_name, $data, $this->bin);
+  }
 }
 
 /**

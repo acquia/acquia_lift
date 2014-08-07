@@ -90,8 +90,17 @@ function acquia_lift_uninstall() {
     // Update the menu router information.
     menu_rebuild();
   }
+  // @todo Cleanup variables used for report sources.
 }
 
+/**
+ * Implements hook_requirements().
+ */
+function acquia_lift_schema() {
+  return array(
+    'cache_acquia_lift_reports' => acquia_lift_get_report_cache_table_schema()
+  );
+}
 
 /**
  * Implements hook_requirements().
@@ -367,3 +376,19 @@ function acquia_lift_update_7007() {
   _acquia_lift_build_menu('acquia-lift-controls');
 }
 
+/**
+ * Add a cache table for reporting data.
+ */
+function acquia_lift_update_7008() {
+  $schema = acquia_lift_get_report_cache_table_schema();
+  db_create_table('cache_acquia_lift_reports', $schema);
+}
+
+/**
+ * Helper to get the schema for the cache table.
+ */
+function acquia_lift_get_report_cache_table_schema() {
+  $table_schema = drupal_get_schema_unprocessed('system', 'cache');
+  $table_schema['description'] = 'Cache table for Acquia Lift to store reporting data.';
+  return $table_schema;
+}

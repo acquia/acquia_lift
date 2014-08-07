@@ -777,7 +777,7 @@ function acquia_lift_library() {
             'modalSize' => array(
               'type' => 'fixed',
               'width' => 600,
-              'height' => 225,
+              'height' => 305,
               'addWidth' => 0,
               'addHeight' => 0,
               'contentRight' => 0,

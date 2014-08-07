@@ -1154,7 +1154,7 @@ class AcquiaLiftReport implements PersonalizeAgentReportInterface, AcquiaLiftRep
         continue;
       }
       // Get the user-friendly feature label from the possible contextual values.
-      $feature['feature_label'] = $feature;
+      $feature['feature_label'] = $feature['label'];
       if (isset($report_data['potential_context'][$feature_string])) {
         $feature['feature_label'] = $report_data['potential_context'][$feature_string]['label'];
       }

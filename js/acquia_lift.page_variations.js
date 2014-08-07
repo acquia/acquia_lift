@@ -479,8 +479,12 @@
       }
     }
     // Notify that the mode has actually been changed.
+    response.data.variationIndex = editVariation;
     response.data.campaign = Drupal.settings.personalize.activeCampaign;
-    $(document).trigger('acquiaLiftPageVariationMode', [response.data]);
+    // Let the other menu stuff clear out before we set a new variation mode.
+    _.defer(function () {
+      $(document).trigger('acquiaLiftPageVariationMode', [response.data]);
+    });
   };
 
   /**

@@ -627,9 +627,11 @@ function acquia_lift_create_campaign_type_callback($type, $ajax) {
         'activeCampaign' => personalize_get_campaign_context(),
         'campaigns' => personalize_agent_get_settings(),
       )), TRUE),
-      acquia_lift_command_messagebox(t('Campaign %campaign has been created.', array(
+      acquia_lift_command_messagebox(t('Click on an element in your site to create %variation in %campaign.', array(
         '%campaign' => $form_state['values']['agent_basic_info']['title'],
-      ))),
+        '%variation' => 'Variation #1',
+      )), 5),
+      acquia_lift_command_page_variation_toggle(),
     );
   }
   $page = array('#type' => 'ajax', '#commands' => $output);
@@ -666,7 +668,7 @@ function acquia_lift_create_campaign_type_form($form, &$form_state, $type) {
   $form['actions']['submit_form'] = array(
     '#type' => 'submit',
     '#attributes' => array(
-      'class' => array('action-item-primary-active'),
+      'class' => array('action-item-primary-active', 'acquia-lift-submit-button'),
     ),
     '#value' => t('Create campaign'),
   );
@@ -745,4 +747,121 @@ function acquia_lift_campaign_flow_cancel($ajax = NULL) {
 
   $commands = array(ctools_modal_command_dismiss());
   print ajax_render($commands);
+}
+
+/**
+ * Form handler for a page variation details form.
+ *
+ * @param string $variation_type
+ *   The variation type that defines the type of details to include.  This
+ *   is a key defined as a personalize_elements variaton.
+ * @see hook_personalize_elements_variation_types
+ */
+function acquia_lift_page_variation_details($form, &$form_state, $variation_type) {
+  $types = module_invoke_all('personalize_elements_variation_types');
+  if (!isset($types[$variation_type]['contextual']['formitem'])) {
+    $form['error'] = array(
+      '#markup' => t('Invalid page variation type.  Please close this message and create a new variation.'),
+    );
+    return $form;
+  }
+  $form['variation_type'] = array(
+    '#type' => 'value',
+    '#value' => $variation_type,
+  );
+  // These form item will be populated by the front-end code.
+  $form['selector'] = array(
+    '#type' => 'hidden',
+  );
+  $form['pages'] = array(
+    '#type' => 'hidden',
+  );
+  $form['agent'] = array(
+    '#type' => 'hidden',
+  );
+  // Now include the details specific to this variation type.
+  $form['personalize_elements_content'] = $types[$variation_type]['contextual']['formitem'];
+  $form['actions'] = array(
+    '#type' => 'actions',
+  );
+  // Form actions.
+  $form['actions']['submit_form'] = array(
+    '#type' => 'submit',
+    '#value' => t('Save'),
+    '#attributes' => array(
+      'class' => array('action-item-primary-active', 'acquia-lift-submit-button'),
+    ),
+    '#ajax' => array(
+      'callback' => 'acquia_lift_page_variation_details_ajax_callback',
+      'wrapper' => 'acquia-lift-page-variation-details',
+    ),
+  );
+  // Add a cancel button for AJAX-loaded forms.
+  $form['actions']['cancel_form'] = array(
+    '#type' => 'button',
+    '#button_type' => 'cancel',
+    '#value' => t('Cancel'),
+    '#attributes' => array(
+      'class' => array('acquia-lift-cancel-button'),
+    ),
+    '#ajax' => array(
+      'callback' => 'acquia_lift_page_variation_details_ajax_callback',
+      'wrapper' => 'acquia-lift-page-variation-details',
+    ),
+    // Turn off validation.
+    '#limit_validation_errors' => array(),
+    '#submit' => array(),
+  );
+
+  return $form;
+}
+
+/**
+ * Form submit handler for acquia_lift_page_variation_details.
+ *
+ * This creates a page variation set if it does not yet exist and the variation
+ * for that page.  For a simple A/B test, there is only a single variation set
+ * allowed per campaign and therefore it is named for the campaign/agent.
+ *
+ * A variation set is similar to a decision name concept and groups together
+ * option sets for a particular agent to be considered as a group.
+ * A variation is comprised of all of the options of the same index across
+ * all option sets in a variation set (decision name).
+ * In other words, an option set handles the changes for a single element of
+ * the variation and includes how that element is shown for each variation as
+ * its options.
+ */
+function acquia_lift_page_variation_details_submit($form, &$form_state) {
+  $agent_name = $variation_set_name = $form_state['values']['agent'];
+  $option_set = personalize_elements_get_option_set_for_variation($variation_set_name, $agent_name, $form_state['values']['selector'], $form_state['values']['variation_type'], $form_state['values']['pages']);
+  personalize_create_page_variation($variation_set_name, $option_set, array('personalize_elements_content' => $form_state['values']['personalize_elements_content']));
+}
+
+/**
+ * Responds to AJAX submission of a variation type details page.
+ */
+function acquia_lift_page_variation_details_ajax_callback($form, &$form_state) {
+  $op = isset($form_state['values']['op']) ? $form_state['values']['op'] : '';
+  $commands = array();
+  if ($op == t('Save')) {
+    $errors = form_get_errors();
+    // If validation errors exist, return the form.
+    if (!empty($errors)) {
+      return $form;
+    }
+    // Otherwise the form submitted so stop creating a page variation
+    // and show a confirmation message.
+    $commands[] = acquia_lift_command_page_variation_toggle(FALSE);
+    $commands[] = acquia_lift_command_messagebox(t('The variation has been created.  Track your conversions by adding goals.'));
+    // @todo: Need to return the updated option set data for use within the
+    // unibar using ajax_command_settings.
+    // Also need to load the relevant JavaScript assets for the new option set
+    // so that preview functionality will work.
+  }
+  else if ($op === t('Cancel')) {
+    // Turn off edit mode and redirect them.
+    $commands[] = acquia_lift_command_page_variation_toggle(FALSE);
+  }
+
+  return array('#type' => 'ajax', '#commands' => $commands);
 }

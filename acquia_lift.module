@@ -86,6 +86,16 @@ function acquia_lift_menu() {
     'file' => 'acquia_lift.admin.inc',
     'theme callback' => 'ajax_base_page_theme',
   );
+  // AJAX callback to retrieve a page variation details form.
+  $items['admin/structure/acquia_lift/pagevariation/%'] = array(
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('acquia_lift_page_variation_details', 4),
+    'access arguments' => array('manage personalized content'),
+    'type' => MENU_CALLBACK,
+    'file' => 'acquia_lift.admin.inc',
+    'delivery callback' => 'ajax_deliver',
+    'theme callback' => 'ajax_base_page_theme',
+  );
   return $items;
 }
 
@@ -741,7 +751,6 @@ function acquia_lift_library() {
     'version' => VERSION,
     'js' => array(
       $path . '/js/acquia_lift.modal.js' => $options,
-      $path . '/js/acquia_lift.dom_selector.js' => $options,
       array(
         'data' => array(
           'acquia-lift-style' => array(
@@ -780,8 +789,47 @@ function acquia_lift_library() {
         'type' => 'setting',
       ),
     ),
+    'css' => array(
+      $path . '/css/acquia_lift.buttons.css' => array(),
+    ),
     'dependencies' => array(
+      array('system', 'jquery'),
+      array('system', 'jquery.once'),
       array('acquia_lift', 'acquia_lift.message_box'),
+      array('acquia_lift', 'acquia_lift.page_variations'),
+    ),
+  );
+
+  $libraries['acquia_lift.page_variations'] = array(
+    'title' => 'Page variation UI components',
+    'website' => '',
+    'version' => VERSION,
+    'js' => array(
+      $path . '/js/acquia_lift.page_variations.js' => $options,
+      $path . '/js/acquia_lift.dom_selector.js' => $options,
+    ),
+    'css' => array(
+      $path . '/css/acquia_lift.dialog.css' => array(),
+      $path . '/css/acquia_lift.buttons.css' => array(),
+    ),
+    'dependencies' => array(
+      array('system', 'jquery'),
+      array('system', 'jquery.once'),
+      array('visitor_actions_ui', 'ui.element_dialog'),
+      array('visitor_actions_ui', 'utilities.element_selector'),
+      array('acquia_lift', 'acquia_lift.dom_selector'),
+      array('acquia_lift', 'underscore'),
+      array('acquia_lift', 'backbone'),
+    )
+  );
+
+  $libraries['acquia_lift.dom_selector'] = array(
+    'title' => 'DOM selection library',
+    'version' => VERSION,
+    'js' => array(
+      $path . '/js/acquia_lift.dom_selector.js' => $options,
+    ),
+    'dependencies' => array(
       array('acquia_lift', 'qtip'),
       array('system', 'jquery'),
       array('system', 'jquery.once'),
@@ -1756,15 +1804,37 @@ function acquia_lift_help($path, $arg) {
  *
  * @param $message
  *   The string message to display.  This message may include HTML text.
+ * @param $seconds
+ *   (optional) The number of seconds before the message box should be hidden.
+ *   If 0 (default) then the box is shown until the user clicks to close it.
  * @return array
  *   A command array that can be returned via AJAX.
  */
-function acquia_lift_command_messagebox($message) {
+function acquia_lift_command_messagebox($message, $seconds = 0) {
   if (is_array($message)) {
     $message = drupal_render($message);
   }
   return array(
     'command' => 'acquia_lift_message_box',
-    'data' => $message,
+    'data' => array(
+      'message' => $message,
+      'seconds' => $seconds,
+    ),
+  );
+}
+
+/**
+ * Returns an AJAX command to toggle the page variation element selector.
+ *
+ * @param bool $start
+ *   True to start the page variation mode, FALSE to stop it.
+ */
+function acquia_lift_command_page_variation_toggle($start = TRUE) {
+  return array(
+    'command' => 'acquia_lift_page_variation_toggle',
+    'data' => array(
+      'start' => $start,
+      'wrapper' => '#page-wrapper',
+    ),
   );
 }

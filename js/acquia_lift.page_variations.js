@@ -126,7 +126,7 @@
       /**
        * Updates the application based on changes in edit mode in model.
        */
-      updateEditMode: function(model, editMode) {   
+      updateEditMode: function(model, editMode) {
         var data = {};
         var variationIndex = model.get('variationIndex');
         if (editMode) {
@@ -485,15 +485,15 @@
       // Notify that the mode has actually been changed.
       response.data.variationIndex = editVariation;
       response.data.campaign = Drupal.settings.personalize.activeCampaign;
-      // Let the other menu stuff clear out before we set a new variation mode.
-      _.defer(function () {
-        $(document).trigger('acquiaLiftPageVariationMode', [response.data]);
-      });
     } else {
       if (Drupal.acquiaLiftPageVariations.app.appModel) {
         Drupal.acquiaLiftPageVariations.app.appModel.set('editMode', false);
       }
     }
+    // Let the other menu stuff clear out before we set a new variation mode.
+    _.defer(function () {
+      $(document).trigger('acquiaLiftPageVariationMode', [response.data]);
+    });
   };
 
   /**

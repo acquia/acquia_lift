@@ -1819,13 +1819,14 @@
       if (campaignModel instanceof Drupal.acquiaLiftUI.MenuCampaignABModel) {
         // There is only one page variation view per page per campaign, but
         // this may be called multiple times due to multiple option sets.
-        var campaignName = campaignModel.get('name');
+        var view, campaignName = campaignModel.get('name');
         if (!Drupal.acquiaLiftUI.views.pageVariations.hasOwnProperty(campaignName)) {
-          Drupal.acquiaLiftUI.views.pageVariations[campaignName] = new Drupal.acquiaLiftUI.MenuPageVariationsView({
+          view = Drupal.acquiaLiftUI.views.pageVariations[campaignName] = new Drupal.acquiaLiftUI.MenuPageVariationsView({
             model: campaignModel,
             el: element
           });
         }
+        view = Drupal.acquiaLiftUI.views.pageVariations[campaignName];
       } else {
         view = new Drupal.acquiaLiftUI.MenuOptionSetView({
           model: model,

@@ -126,7 +126,7 @@
       /**
        * Updates the application based on changes in edit mode in model.
        */
-      updateEditMode: function(model, editMode) {
+      updateEditMode: function(model, editMode) {   
         var data = {};
         var variationIndex = model.get('variationIndex');
         if (editMode) {
@@ -153,11 +153,6 @@
             this.variationTypeFormModel = null;
           }
         }
-        data.started = editMode;
-        data.mode = (variationIndex == -1) ? 'add' : 'edit';
-        data.campaign = Drupal.settings.personalize.activeCampaign;
-        data.variationIndex = variationIndex;
-        $(document).trigger('acquiaLiftPageVariationsMode', data);
       },
 
       /**

@@ -52,45 +52,48 @@
     startWatching: function() {
       this.$element.bind('mousemove', $.proxy(this, '_onMouseMove'));
       this.$element.bind('click', $.proxy(this, '_onClick'));
-      if (qtipCreated) {
-        this.$element.find('*').qtip('enable');
-      } else {
-        this.$element.find('*').each(function() {
-          $(this).qtip({
-            content: Utilities.getSelector(this),
-            solo: true,
-            position: {
-              target: 'mouse',
-              adjust: {
-                mouse: true
-              }
-            },
-            // Let the show event remain at mouseover to allow for deferred
-            // instantiation, but handle only showing when highlighted via the
-            // beforeShow callback.
-            show: {
-              delay: 0,
-              effect: {
-                type: 'show',
-                length: 0
-              }
-            },
-            hide: {
-              delay: 0,
-              when: false,
-              effect: {
-                type: 'hide',
-                length: 0
-              }
-            },
-            api: {
-              beforeShow: function() {
-                return this.elements.target.hasClass(indicatorClass);
-              }
+      this.$element.find('*').each(function() {
+        $(this).qtip({
+          content: Utilities.getSelector(this),
+          solo: true,
+          position: {
+            target: 'mouse',
+            adjust: {
+              mouse: true
             }
-          });
+          },
+          // Let the show event remain at mouseover to allow for deferred
+          // instantiation, but handle only showing when highlighted via the
+          // beforeShow callback.
+          show: {
+            delay: 0,
+            effect: {
+              type: 'show',
+              length: 0
+            },
+            when: {
+              event: 'mouseover.qtip'
+            }
+          },
+          hide: {
+            delay: 0,
+            when: false,
+            effect: {
+              type: 'hide',
+              length: 0
+            },
+            when: {
+              event: 'mouseover.qtip'
+            }
+          },
+          api: {
+            beforeShow: function() {
+              console.log(this.elements.target + ' has indicator? ' + this.elements.target.hasClass(indicatorClass));
+              return this.elements.target.hasClass(indicatorClass);
+            }
+          }
         });
-      }
+      });
       this._watching = true;
       return this.$element;
     },
@@ -104,7 +107,14 @@
       this._hovered.unhighlight();
       this.$element.unbind('mousemove', this._onMouseMove);
       this.$element.unbind('click', this._onClick);
-      this.$element.find('*').qtip('disable');
+      this.$element.find('*').qtip('destroy');
+      // QTip has some problems fully removing itself so help it.
+      // NOTE that QTips don't properly re-enable so disabling is not an option.
+      this.$element.find('*').unbind('mouseover.qtip');
+      this.$element.find('*').unbind('mousedown.qtip');
+      this.$element.find('*').unbind('mouseout.qtip');
+      $.fn.qtip.interfaces.length = 0;
+
       this._watching = false;
       return this.$element;
     },

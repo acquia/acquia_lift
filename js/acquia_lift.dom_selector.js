@@ -88,7 +88,6 @@
           },
           api: {
             beforeShow: function() {
-              console.log(this.elements.target + ' has indicator? ' + this.elements.target.hasClass(indicatorClass));
               return this.elements.target.hasClass(indicatorClass);
             }
           }
@@ -107,12 +106,16 @@
       this._hovered.unhighlight();
       this.$element.unbind('mousemove', this._onMouseMove);
       this.$element.unbind('click', this._onClick);
-      this.$element.find('*').qtip('destroy');
       // QTip has some problems fully removing itself so help it.
       // NOTE that QTips don't properly re-enable so disabling is not an option.
-      this.$element.find('*').unbind('mouseover.qtip');
-      this.$element.find('*').unbind('mousedown.qtip');
-      this.$element.find('*').unbind('mouseout.qtip');
+      this.$element.find('*').each(function() {
+        if (typeof $(this).data('qtip') !== 'undefined') {
+          $(this).qtip('destroy');
+          $(this).unbind('mouseover.qtip');
+          $(this).unbind('mousedown.qtip');
+          $(this).unbind('mouseout.qtip');
+        }
+      });
       $.fn.qtip.interfaces.length = 0;
 
       this._watching = false;

@@ -36,7 +36,23 @@
         looper(settings.option_sets, function (obj, key) {
           var campaignModel = ui.collections.campaigns.findWhere({name: obj.agent});
           var optionSets = campaignModel.get('optionSets');
-          optionSets.add(obj,  {merge: true});
+          var optionSet = optionSets.findWhere({'osid': key});
+          // Merge doesn't work in this case so we need to manually merge.
+          if (optionSet) {
+            for (var prop in obj) {
+              if (obj.hasOwnProperty(prop)) {
+                optionSet.set(prop, obj[prop]);
+              }
+            }
+          } else {
+            optionSets.add(obj);
+          }
+        });
+        // Clear the variations for all page variation campaigns.
+        ui.collections.campaigns.each(function (model) {
+          if (model instanceof Drupal.acquiaLiftUI.MenuCampaignABModel) {
+            model.get('optionSets').resetVariations();
+          }
         });
 
         // Create a model for page variation management state
@@ -830,6 +846,10 @@
           return;
         }
         var variation_index = $(event.target).data('acquia-lift-personalize-page-variation');
+        // Clicked new variation name when in add mode.
+        if (isNaN(variation_index)) {
+          return;
+        }
         var variations = this.model.get('optionSets').getVariations();
         if (variation_index >= variations.length) {
           return;
@@ -853,9 +873,10 @@
        *   The variation index to show.
        */
       selectVariation: function (variationIndex) {
-        this.model.set('activeVariation');
         var variationData = variationIndex < 0 ? 'new' : variationIndex;
-        this.$el.find('[data-acquia-lift-personalize-page-variation="' + variationData + '"]').trigger('click');
+        _.defer(function($context, variationId) {
+          $context.find('[data-acquia-lift-personalize-page-variation="' + variationId + '"]').trigger('click');
+        }, this.$el, variationData)
       },
 
       /**
@@ -1838,20 +1859,14 @@
       initialize: function() {
         // Allow certain model changes to trigger a general change event for
         // the entire collection.
-        this.on('change:options', this.triggerChange);
         this.variations = null;
       },
 
       /**
-       * Event handler when the options change for a model within option set
-       * collection.
-       *
-       * Handles triggering a change event.
+       * Causes the cached variation list to be reset.
        */
-      triggerChange: function() {
-        // Require re-creating of the variations listing.
+      resetVariations: function() {
         this.variations = null;
-        this.trigger('change');
       },
 
       /**
@@ -1868,7 +1883,6 @@
         if (this.length == 0) {
           return [];
         }
-
         var i,
           sample = this.at(0),
           sampleOptions = sample ? sample.get('options') : null,

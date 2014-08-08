@@ -895,7 +895,7 @@ function acquia_lift_page_variation_details_ajax_callback($form, &$form_state) {
     // Otherwise the form submitted so stop creating a page variation
     // and show a confirmation message.
     $commands[] = acquia_lift_command_page_variation_toggle(FALSE);
-    $commands[] = acquia_lift_command_messagebox(t('The variation has been created.  Track your conversions by adding goals.'));
+    $commands[] = acquia_lift_command_messagebox(t('The variation has been created.  Track your conversions by adding goals.'), 5);
     // Get the updated option sets for the page variation.
     $variation_set_name = $form_state['values']['agent'];
     $option_sets = $option_sets = personalize_option_set_load_multiple(array(), array('decision_name' => $variation_set_name));
@@ -903,6 +903,8 @@ function acquia_lift_page_variation_details_ajax_callback($form, &$form_state) {
     foreach($option_set_settings as $option_set_setting) {
       $settings['personalize']['option_sets'][key($option_set_setting)] = reset($option_set_setting);
     }
+    // Also get the updated personalize elements options.
+    $settings['personalize_elements']['elements'] = personalize_elements_element_settings($option_sets, $form_state['values']['pages']);
     // Note: JavaScript assets for personalize elements are included in
     // personalize_elements_page_build when the module is enabled and therefore
     // do not need to be explicitly added here.

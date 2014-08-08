@@ -484,12 +484,12 @@
       Drupal.acquiaLiftPageVariations.app.appModel.set('editMode', true);
       // Notify that the mode has actually been changed.
       response.data.variationIndex = editVariation;
-      response.data.campaign = Drupal.settings.personalize.activeCampaign;
     } else {
       if (Drupal.acquiaLiftPageVariations.app.appModel) {
         Drupal.acquiaLiftPageVariations.app.appModel.set('editMode', false);
       }
     }
+    response.data.campaign = Drupal.settings.personalize.activeCampaign;
     // Let the other menu stuff clear out before we set a new variation mode.
     _.defer(function () {
       $(document).trigger('acquiaLiftPageVariationMode', [response.data]);

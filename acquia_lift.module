@@ -1317,7 +1317,7 @@ function acquia_lift_libraries_info() {
     'vendor url' => 'http://craigsworks.com/projects/qtip/',
     'download url' => 'http://craigsworks.com/projects/qtip/download/',
     'version callback' => '_acquia_lift_libraries_get_version',
-    'variant order' => array('minified', 'source'),
+    'variant order' => array('source','minified', 'source'),
     'version arguments' => array(
       'variants' => array(
         'source' => array(

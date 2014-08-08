@@ -2192,10 +2192,7 @@
       },
 
       /**
-       * Event handler when the options change for a model within option set
-       * collection.
-       *
-       * Handles triggering a change event.
+       * Causes the cached variation list to be reset.
        */
       triggerChange: function() {
         this.trigger('change:variations');

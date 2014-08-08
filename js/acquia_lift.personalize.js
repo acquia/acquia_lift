@@ -114,6 +114,10 @@
                   $element.prependTo($link);
                   break;
                 case 'option_sets': {
+                  Drupal.acquiaLiftUI.views.variationSetsMenuView = new Drupal.acquiaLiftUI.MenuContentVariationsMenuView({
+                    campaignCollection: ui.collections.campaigns,
+                    el: $link[0]
+                  });
                   $element = $(Drupal.theme('acquiaLiftPageVariationToggle'));
                   ui.views.pageVariationToggle = new ui.MenuPageVariationsToggleView({
                     model: ui.models.pageVariationModeModel,
@@ -709,6 +713,43 @@
           variationIndex: this.get('variationIndex')
         };
         $(document).trigger('acquiaLiftPageVariationModeTrigger', [data]);
+      }
+    }),
+
+    /**
+     * View for the top-level content variations menu.
+     */
+    MenuContentVariationsMenuView: ViewBase.extend({
+
+      /**
+       * {@inheritDoc}
+       */
+      initialize: function(options) {
+        this.campaignCollection = options.campaignCollection;
+        this.listenTo(this.campaignCollection, 'change:isActive', this.render);
+        this.listenTo(this.campaignCollection, 'change:activeVariation', this.render);
+      },
+
+      /**
+       * {@inheritDoc}
+       */
+      render: function() {
+        var currentCampaign = this.campaignCollection.findWhere({'isActive': true});
+        var text = Drupal.t('Variation Sets');
+        if (!currentCampaign) {
+          return;
+        }
+        if (currentCampaign instanceof Drupal.acquiaLiftUI.MenuCampaignABModel) {
+          var currentVariation = currentCampaign.getCurrentVariation();
+          if (currentVariation) {
+            text = Drupal.t('Variation: @variationLabel', {
+              '@variationLabel': currentVariation.label
+            });
+          } else {
+            text = Drupal.t('Variations');
+          }
+        }
+        this.$el.text(text);
       }
     }),
 
@@ -1575,7 +1616,7 @@
         var isActive = model.get('isActive');
         var text = '';
         if (isActive) {
-          text = model instanceof Drupal.acquiaLiftUI.MenuPageVariationModeModel ? Drupal.t('Exit add variation mode') : Drupal.t('Exit add variation set mode');
+          text = Drupal.t('Exit edit mode');
         } else {
           text = model instanceof Drupal.acquiaLiftUI.MenuPageVariationModeModel ? Drupal.t('Add a variation') : Drupal.t('Add a variation set');
         }
@@ -1688,6 +1729,22 @@
       getNumberOfVariations: function () {
         var optionSets = this.get('optionSets');
         return optionSets.getVariations().length;
+      },
+
+      /**
+       * Get the current variation shown.
+       */
+      getCurrentVariation: function() {
+        var variationIndex = this.get('activeVariation');
+        if (isNaN(variationIndex) || variationIndex < 0) {
+          return null;
+        }
+        var optionSets = this.get('optionSets');
+        var variations = optionSets.getVariations();
+        if (variations.length > variationIndex) {
+          return variations[variationIndex];
+        }
+        return null;
       },
 
       /**
@@ -2317,7 +2374,7 @@
    * Returns the HTML for the selected campaign context label.
    */
   Drupal.theme.acquiaLiftCampaignContext = function (options) {
-    var label = Drupal.t('Selected: ');
+    var label = Drupal.t('Campaign: ');
     label += '<span class="acquia-lift-active">' + options.label + '</span>';
     return label;
   }

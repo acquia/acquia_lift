@@ -84,7 +84,6 @@ class AcquiaLiftWebTest extends DrupalWebTestCase {
     $this->drupalLogin($this->managerUser);
 
     // Now confirm that Acquia Lift is an option for new campaigns.
-    $this->drupalLogin($this->managerUser);
     $this->drupalGet('admin/structure/personalize/add');
     $this->assertNoText(t('Your Acquia Lift account info has not been configured.'));
     $this->assertRaw('<option value="acquia_lift">acquia_lift</option>');
@@ -907,6 +906,287 @@ class AcquiaLiftWebTest extends DrupalWebTestCase {
     $this->assertEqual($expected, $string);
   }
 
+
+  /**
+   * Tests that new agents on the site cannot override existing agents in Lift.
+   */
+  public function testMachineNameValidation() {
+    $test_data = array(
+      'agents' => array(
+        array('code' => 'my-existing-agent'),
+      ),
+    );
+    variable_set('acquia_lift_web_test_data', $test_data);
+
+    // Try to create a new agent with the same name as one that exists in Lift.
+    $this->createTestAgent(array('name' => 'my-existing-agent', 'control_rate' => 10, 'explore_rate' => 30), TRUE, FALSE);
+    $this->resetAll();
+    $agent = personalize_agent_load_agent('my-existing-agent');
+    $this->assertNull($agent);
+    $agent = personalize_agent_load_agent('my-existing-agent-0');
+    $this->assertTrue($agent instanceof AcquiaLiftAgentInterface);
+  }
+
+  /**
+   * Tests the function that gathers operations for syncing of agents and their
+   * components to Lift.
+   */
+  public function testBatchSyncOperations() {
+    // Create an agent on the site with a couple of option sets.
+    // Note: we do this part first rather than loading the test data to
+    // the server because otherwise it wouldn't allow us to create an
+    // agent with the same name as an existing one.
+    $control_rate = 10;
+    $explore_rate = 30;
+    $this->createTestAgent(array('name' => 'first-existing-agent', 'control_rate' => $control_rate, 'explore_rate' => $explore_rate));
+    $option_set_values = array(
+      array('agent' => 'first-existing-agent', 'plugin' => 'type1', 'option_ids' => array('option-1', 'option-2')),
+      array('agent' => 'first-existing-agent', 'plugin' => 'type2', 'option_ids' => array('option-a', 'option-b', 'option-c')),
+    );
+    foreach ($option_set_values as $i => $values) {
+      $this->createOptionSet($i, $values);
+    }
+    // Add a goal.
+    personalize_goal_save('first-existing-agent', 'new-goal', 2);
+    $this->resetAll();
+
+    // Set up some test data to be returned by the dummy http client.
+    $test_data = array(
+      'agents' => array(
+        array('code' => 'first-existing-agent'),
+      ),
+      'points' => array(
+        'first-existing-agent' => array(
+          // The agent on the Drupal site will have this point.
+          'osid-1',
+          // The agent on the Drupal site will not have this point so it
+          // should get deleted upon sync.
+          'second-point',
+        ),
+      ),
+      'decisions' => array(
+        'first-existing-agent' => array(
+          'osid-1' => array(
+            'osid-1',
+            // This decision should get deleted upon sync.
+            'another-decision'
+          )
+        )
+      ),
+      'choices' => array(
+        'first-existing-agent' => array(
+          'osid-1' => array(
+            'osid-1' => array(
+              'option-1',
+              'option-2',
+              // These choices should get deleted upon sync.
+              'option-3',
+              'last-option'
+            )
+          )
+        )
+      ),
+      'goals' => array(
+        'first-existing-agent' => array(
+          // This goal should get deleted upon sync.
+          'first-goal'
+        )
+      ),
+    );
+    variable_set('acquia_lift_web_test_data', $test_data);
+
+    // Now try syncing this agent to Lift.
+    $agents = personalize_agent_load_multiple(array('first-existing-agent'));
+    // Ensure the test API client is used during the call for operations.
+    AcquiaLiftAPI::setTestInstance();
+    module_load_include('inc', 'acquia_lift', 'acquia_lift.batch');
+    // Confirm that the correct operations will be performed.
+    $operations = acquia_lift_get_sync_operations_for_agents($agents);
+    $expected_operations = array (
+      array (
+        'method' => 'saveAgent',
+        'args' =>
+          array (
+            'first-existing-agent',
+            'first-existing-agent',
+            'adaptive',
+            'enabled',
+            $control_rate / 100,
+            $explore_rate / 100,
+            true,
+          ),
+      ),
+      // PUT requests for all the points, decisions and choices that exist
+      // in the agent being sync'd, regardless of whether they already exist
+      // in Lift.
+      array (
+        'method' => 'savePoint',
+        'args' =>
+          array (
+            'first-existing-agent',
+            'osid-1',
+          ),
+      ),
+      array (
+        'method' => 'saveDecision',
+        'args' =>
+          array (
+            'first-existing-agent',
+            'osid-1',
+            'osid-1',
+          ),
+      ),
+      array (
+        'method' => 'saveChoice',
+        'args' =>
+          array (
+            'first-existing-agent',
+            'osid-1',
+            'osid-1',
+            'option-1',
+          ),
+      ),
+      array (
+        'method' => 'saveChoice',
+        'args' =>
+          array (
+            'first-existing-agent',
+            'osid-1',
+            'osid-1',
+            'option-2',
+          ),
+      ),
+      array (
+        'method' => 'savePoint',
+        'args' =>
+          array (
+            'first-existing-agent',
+            'osid-2',
+          ),
+      ),
+      array (
+        'method' => 'saveDecision',
+        'args' =>
+          array (
+            'first-existing-agent',
+            'osid-2',
+            'osid-2',
+          ),
+      ),
+
+      array (
+        'method' => 'saveChoice',
+        'args' =>
+          array (
+            'first-existing-agent',
+            'osid-2',
+            'osid-2',
+            'option-a',
+          ),
+      ),
+      array (
+        'method' => 'saveChoice',
+        'args' =>
+          array (
+            'first-existing-agent',
+            'osid-2',
+            'osid-2',
+            'option-b',
+          ),
+      ),
+      array (
+        'method' => 'saveChoice',
+        'args' =>
+          array (
+            'first-existing-agent',
+            'osid-2',
+            'osid-2',
+            'option-c',
+          ),
+      ),
+      // DELETE request for non-existent choices.
+      array (
+        'method' => 'deleteChoice',
+        'args' =>
+          array (
+            'first-existing-agent',
+            'osid-1',
+            'osid-1',
+            'option-3',
+          ),
+      ),
+      array (
+        'method' => 'deleteChoice',
+        'args' =>
+          array (
+            'first-existing-agent',
+            'osid-1',
+            'osid-1',
+            'last-option',
+          ),
+      ),
+      // DELETE request for non-existent decision.
+      array (
+        'method' => 'deleteDecision',
+        'args' =>
+          array (
+            'first-existing-agent',
+            'osid-1',
+            'another-decision',
+          ),
+      ),
+      // DELETE request for non-existent decision point.
+      array (
+        'method' => 'deletePoint',
+        'args' =>
+          array (
+            'first-existing-agent',
+            'second-point',
+          ),
+      ),
+      // PUT request for targeting mapping for osid-1
+      array (
+        'method' => 'saveFixedTargetingMapping',
+        'args' =>
+          array (
+            'first-existing-agent',
+            'osid-1',
+            array (),
+          ),
+      ),
+      // PUT request for targeting mapping for osid-2
+      array (
+        'method' => 'saveFixedTargetingMapping',
+        'args' =>
+          array (
+            'first-existing-agent',
+            'osid-2',
+            array (),
+          ),
+      ),
+      // PUT request for the new goal
+      array (
+        'method' => 'saveGoal',
+        'args' =>
+          array (
+            'first-existing-agent',
+            'new-goal',
+          ),
+      ),
+      // DELETE request for the goal that exists in Lift but not in the agent
+      // being sync'd.
+      array (
+        'method' => 'deleteGoal',
+        'args' =>
+          array (
+            'first-existing-agent',
+            'first-goal',
+          ),
+      ),
+    );
+    $this->assertEqual($expected_operations, $operations);
+  }
+
   /**
    * Asserts that the expected items are in the queue.
    *
@@ -936,7 +1216,7 @@ class AcquiaLiftWebTest extends DrupalWebTestCase {
    * @see personalize_generate_machine_name()
    * @see testSaveAgent()
    */
-  protected function createTestAgent($data = array(), $cleanQueue = TRUE) {
+  protected function createTestAgent($data = array(), $cleanQueue = TRUE, $assertResults = TRUE) {
     $this->configureAcquiaLiftAccount();
     $this->drupalLogin($this->managerUser);
 
@@ -963,7 +1243,10 @@ class AcquiaLiftWebTest extends DrupalWebTestCase {
     $this->drupalPost('admin/structure/personalize/add', $edit, $this->getButton('agent'));
     $agent = personalize_agent_load_agent($data['machine_name'], TRUE);
 
-    $this->assertTrue($agent instanceof AcquiaLiftAgent);
+    if ($assertResults) {
+      $this->assertTrue($agent instanceof AcquiaLiftAgent);
+    }
+
     $expected_queue_items = array(
       array(
         'method' => 'saveAgent',
@@ -978,7 +1261,9 @@ class AcquiaLiftWebTest extends DrupalWebTestCase {
         )
       )
     );
-    $this->assertQueueItems($expected_queue_items);
+    if ($assertResults) {
+      $this->assertQueueItems($expected_queue_items);
+    }
 
     if ($cleanQueue) {
       $this->personalizedQueue->deleteQueue();
@@ -995,14 +1280,26 @@ class AcquiaLiftWebTest extends DrupalWebTestCase {
     );
     $options = array();
     $choice_ids = array();
-    for ($j = 0; $j < $optionData['num_options']; $j++) {
-      $option_id = personalize_generate_option_id($j);
-      $choice_ids[] = $option_id;
-      $options[$j] = array(
-        'option_id' => $option_id,
-        'option_label' => personalize_generate_option_label($j),
-      );
+    if (!isset($optionData['option_ids'])) {
+      for ($j = 0; $j < $optionData['num_options']; $j++) {
+        $option_id = personalize_generate_option_id($j);
+        $choice_ids[] = $option_id;
+        $options[$j] = array(
+          'option_id' => $option_id,
+          'option_label' => personalize_generate_option_label($j),
+        );
+      }
     }
+    else {
+      foreach ($optionData['option_ids'] as $i => $option_id) {
+        $choice_ids[] = $option_id;
+        $options[$i] = array(
+          'option_id' => $option_id,
+          'option_label' => personalize_generate_option_label($i),
+        );
+      }
+    }
+
     $option_set['options'] = $options;
     $option_set = (object) $option_set;
     personalize_option_set_save($option_set);

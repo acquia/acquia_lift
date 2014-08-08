@@ -6,6 +6,7 @@
  */
 
 define('ACQUIA_LIFT_DEFAULT_AGENT_NAME', 'drupal-default');
+define('ACQUIA_LIFT_OPERATION_ERROR_PREFIX', 'Errors: ');
 
 /**
  * Implements hook_menu().
@@ -15,8 +16,7 @@ function acquia_lift_menu() {
   $items['admin/config/content/personalize/acquia_lift'] = array(
     'type' => MENU_LOCAL_TASK,
     'title' => 'Acquia Lift',
-    'page callback' => 'drupal_get_form',
-    'page arguments' => array('acquia_lift_admin_form'),
+    'page callback' => 'acquia_lift_configuration_page',
     'access arguments' => array('administer personalize configuration'),
     'file' => 'acquia_lift.admin.inc'
   );
@@ -589,14 +589,17 @@ function acquia_lift_personalize_goal_save($goal_info) {
  *   The queue item to process. It should be an array with the following keys:
  *   - method The method to call on the AcquiaLiftAPI instance
  *   - args The args to pass to the method.
+ * @param &$errors
+ *   An array passed by reference to add any errors to.
  */
-function acquia_lift_sync_item($item) {
+function acquia_lift_sync_item($item, &$errors = array()) {
   try {
     $acquia_lift_api = AcquiaLiftAPI::getInstance(variable_get('acquia_lift_account_info', array()));
     call_user_func_array(array($acquia_lift_api, $item['method']), $item['args']);
   }
   catch (AcquiaLiftException $e) {
     watchdog('Acquia Lift', 'Could not call the method @method with args @args', array('@method' => $item['method'], '@args' => implode(',', $item['args'])));
+    $errors[] = $e->getMessage();
   }
 }
 

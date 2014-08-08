@@ -6,6 +6,20 @@
  */
 
 /**
+ * Menu callback for the Acquia Lift settings page.
+ *
+ * Consists of multiple forms.
+ *
+ * @return array
+ *   A render array for the page.
+ */
+function acquia_lift_configuration_page() {
+  $build['main_config'] = drupal_get_form('acquia_lift_admin_form');
+  $build['batch_sync'] = drupal_get_form('acquia_lift_batch_sync_form');
+  return $build;
+}
+
+/**
  * Admin form for configuring personalization backends.
  */
 function acquia_lift_admin_form($form, &$form_state) {
@@ -116,6 +130,25 @@ function acquia_lift_admin_form($form, &$form_state) {
     'acquia_lift_admin_form_submit',
   );
   return system_settings_form($form);
+}
+
+/**
+ * Simple form for initiating batch syncing of agents to Lift.
+ */
+function acquia_lift_batch_sync_form($form, &$form_state) {
+  $form['submit'] = array(
+    '#type' => 'submit',
+    '#value' => t('Sync all campaigns to Lift')
+  );
+  return $form;
+}
+
+/**
+ * Submit callback for the batch sync form.
+ */
+function acquia_lift_batch_sync_form_submit($form, &$form_state) {
+  module_load_include('inc', 'acquia_lift', 'acquia_lift.batch');
+  acquia_lift_batch_sync_campaigns();
 }
 
 /**

@@ -74,7 +74,7 @@ class AcquiaLiftAPI implements PersonalizeLoggerAwareInterface {
   public static function getInstance($account_info) {
     if (empty(self::$instance)) {
       if (drupal_valid_test_ua()) {
-        self::$instance = self::getTestInstance();
+        self::setTestInstance();
         return self::$instance;
       }
       foreach (array('api_key', 'admin_key', 'owner_code') as $key) {
@@ -124,10 +124,12 @@ class AcquiaLiftAPI implements PersonalizeLoggerAwareInterface {
    *
    * This is used during simpletest web tests.
    */
-  protected static function getTestInstance() {
-    $instance = new self('test-api-key', 'test-admin-key', 'test-owner-code', 'http://api.example.com');
-    $instance->setHttpClient(new DummyAcquiaLiftHttpClient());
-    return $instance;
+  public static function setTestInstance($broken_http_client = FALSE) {
+    self::$instance = new self('test-api-key', 'test-admin-key', 'test-owner-code', 'http://api.example.com');
+    // This method is only ever called within the context of a simpletest web
+    // test, so the call to variable_get() is ok here.
+    $test_data = variable_get('acquia_lift_web_test_data', array());
+    self::$instance->setHttpClient(new DummyAcquiaLiftHttpClient($broken_http_client, $test_data));
   }
 
   /**
@@ -556,10 +558,33 @@ class AcquiaLiftAPI implements PersonalizeLoggerAwareInterface {
     $url = $this->generateEndpoint("/agent-api/$agent_name/goals/$goal_name");
     $response = $this->httpClient()->put($url, array('Content-Type' => 'application/json; charset=utf-8', 'Accept' => 'application/json'), $data);
     $data = json_decode($response->data, TRUE);
-    $vars = array('agent' => $agent_name, 'goal' => $goal_name);
-    $success_msg = 'The goal {goal} was pushed to the Acquia Lift campaign {agent}';
-    $fail_msg = 'Could not save the goal {goal} to the Acquia Lift campaign {agent}';
+    $vars = array('agent' => $agent_name, 'goalname' => $goal_name);
+    $success_msg = 'The goal {goalname} was pushed to the Acquia Lift campaign {agent}';
+    $fail_msg = 'Could not save the goal {goalname} to the Acquia Lift campaign {agent}';
     if ($response->code == 200 && $data['status'] == 'ok') {
+      $this->logger()->log(PersonalizeLogLevel::INFO, $success_msg, $vars);
+    }
+    else {
+      $this->logger()->log(PersonalizeLogLevel::ERROR, $fail_msg, $vars);
+      throw new AcquiaLiftException($fail_msg);
+    }
+  }
+
+  /**
+   * Deletes a goal from an agent.
+   *
+   * @param $agent_name
+   *   The agent to delete the goal from.
+   * @param $goal_name
+   *   The name of the goal.
+   */
+  public function deleteGoal($agent_name, $goal_name) {
+    $url = $this->generateEndpoint("/agent-api/$agent_name/goals/$goal_name");
+    $response = $this->httpClient()->delete($url);
+    $vars = array('agent' => $agent_name, 'goalname' => $goal_name);
+    $success_msg = 'The goal {goalname} was deleted from the Acquia Lift campaign {agent}';
+    $fail_msg = 'Could not delete the goal {goalname} from the Acquia Lift campaign {agent}';
+    if ($response->code == 200) {
       $this->logger()->log(PersonalizeLogLevel::INFO, $success_msg, $vars);
     }
     else {
@@ -782,6 +807,36 @@ class AcquiaLiftAPI implements PersonalizeLoggerAwareInterface {
       $this->logger()->log(PersonalizeLogLevel::ERROR, $fail_msg, $vars);
       throw new AcquiaLiftException($fail_msg);
     }
+  }
+
+  /**
+   * Returns whether or not a targeting rule exists for the given agent.
+   *
+   * @param $agent_name
+   *   The name of the agent to check.
+   * @return bool
+   *   TRUE if the specified agent has a targeting rule set up, FALSE otherwise.
+   */
+  public function hasAutoTargetingRule($agent_name) {
+    $rule_name = $agent_name . '-auto-targeting';
+    $url = $this->generateEndpoint("/transforms-list");
+    $response = $this->httpClient()->get($url, array('Accept' => 'application/json'), array('timeout' => self::GET_REQUEST_TIMEOUT_VALUE));
+    if ($response->code != 200) {
+      $msg = 'Problem retrieving auto-targeting rules';
+      $this->logger()->log(PersonalizeLogLevel::ERROR, $msg);
+      throw new AcquiaLiftException($msg);
+    }
+
+    $response = json_decode($response->data, TRUE);
+    if (!isset($response['data']) || !isset($response['data']['transforms'])) {
+      return FALSE;
+    }
+    foreach ($response['data']['transforms'] as $rule) {
+      if ($rule['code'] == $rule_name) {
+        return TRUE;
+      }
+    }
+    return FALSE;
   }
 
   /**
@@ -1532,34 +1587,91 @@ class DummyAcquiaLiftHttpClient implements AcquiaLiftDrupalHttpClientInterface {
   }
 
   /**
+   * Returns the expected data array for a given uri.
+   *
+   * @param string $uri
+   *   An absolute url for an API endpoint, e.g. http://example.com/owner-code/list-agents
+   * @return array
+   *   An array of data to be returned in the response.
+   */
+  protected function getDataForURI($uri) {
+    $parsed = parse_url($uri);
+    $path_parts = explode('/', $parsed['path']);
+    // The first element of the $path_parts array will be an empty string and the second
+    // will be the owner code, which we don't need here.
+    $path_parts = array_slice($path_parts, 2);
+    switch($path_parts[0]) {
+      case 'list-agents':
+        return array(
+          'data' => array(
+            'agents' => isset($this->data['agents']) ? $this->data['agents'] : array()
+          )
+        );
+      case 'transforms-options':
+        return array(
+          'data' => array(
+            'options' => isset($this->data['options']) ? $this->data['options'] : array()
+          )
+        );
+      case '-':
+        // For some reason the endpoint for getting targeting values is '/-/potential-targeting'
+        if ($path_parts[1] != 'potential-targeting') {
+          return array();
+        }
+        return array(
+          'data' => array(
+            'potential' => array(
+              'features' => isset($this->data['features']) ? $this->data['features'] : array()
+            )
+          )
+        );
+      case 'agent-api':
+        $agent_name = $path_parts[1];
+        if (count($path_parts) == 2) {
+          return array(
+            'machine-name' => $agent_name,
+            'status' => PERSONALIZE_STATUS_NOT_STARTED,
+          );
+        }
+        switch ($path_parts[2]) {
+          case 'points':
+            // This request must be for the list of points for an agent, or the list of decisions
+            // for a point, or the list of choices for a decision. Use a regex to figure out which.
+            $matches = array();
+            $pattern = '/agent\-api\/[a-zA-Z0-9-_]+(\/points\/[a-zA-Z0-9-_]+\/decisions(\/[a-zA-Z0-9-_]+\/choices)?)?/';
+            if (!preg_match($pattern, $parsed['path'], $matches)) {
+              return array();
+            }
+            switch (count($matches)) {
+              case 1:
+                // This is a request for points for an agent.
+                return isset($this->data['points'][$agent_name]) ? $this->data['points'][$agent_name] : array();
+              case 2:
+                // This is a request for decisions for a point.
+                $point_name = $path_parts[3];
+                return isset($this->data['decisions'][$agent_name][$point_name]) ? $this->data['decisions'][$agent_name][$point_name] : array();
+              case 3:
+                // This is a request for choices for a decision.
+                $point_name = $path_parts[3];
+                $decision_name = $path_parts[5];
+                return isset($this->data['choices'][$agent_name][$point_name][$decision_name]) ? $this->data['choices'][$agent_name][$point_name][$decision_name] : array();
+            }
+            return array();
+          case 'goals':
+            return isset($this->data['goals'][$agent_name]) ? $this->data['goals'][$agent_name] : array();
+        }
+        break;
+    }
+    return array();
+  }
+
+  /**
    * Implements AcquiaLiftDrupalHttpClientInterface::get().
    */
   public function get($uri = null, $headers = null, array $options = array())
   {
     $this->logRequest('get', $uri, $headers, $options);
-
-    $data = array('data' => array());
-    if (strpos($uri, 'list-agents') !== FALSE) {
-      $data['data']['agents'] = isset($this->data['agents']) ? $this->data['agents'] : array();
-    }
-    elseif (strpos($uri, 'transforms-options') !== FALSE) {
-      $data['data']['options'] = isset($this->data['options']) ? $this->data['options'] : array();
-    }
-    elseif (strpos($uri, 'potential-targeting') !== FALSE) {
-      $data['data']['potential'] = array(
-        'features' => isset($this->data['features']) ? $this->data['features'] : array()
-      );
-    }
-    elseif (strpos($uri, 'agent-api') !== FALSE) {
-      $parsed = drupal_parse_url($uri);
-      $url_parts = explode('/', $parsed['path']);
-      $machine_name = array_pop($url_parts);
-
-      $data = array(
-        'machine-name' => $machine_name,
-        'status' => PERSONALIZE_STATUS_NOT_STARTED,
-      );
-    }
+    $data = $this->getDataForURI($uri);
     return $this->generateDummyResponse($data);
   }
 

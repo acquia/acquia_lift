@@ -147,6 +147,7 @@ function acquia_lift_batch_sync_form($form, &$form_state) {
  * Submit callback for the batch sync form.
  */
 function acquia_lift_batch_sync_form_submit($form, &$form_state) {
+  module_load_include('inc', 'acquia_lift', 'acquia_lift.batch');
   acquia_lift_batch_sync_campaigns();
 }
 

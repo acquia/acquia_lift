@@ -999,7 +999,8 @@ class AcquiaLiftWebTest extends DrupalWebTestCase {
     $agents = personalize_agent_load_multiple(array('first-existing-agent'));
     // Ensure the test API client is used during the call for operations.
     AcquiaLiftAPI::setTestInstance();
-    // First confirm the correct operations will be performed.
+    module_load_include('inc', 'acquia_lift', 'acquia_lift.batch');
+    // Confirm that the correct operations will be performed.
     $operations = acquia_lift_get_sync_operations_for_agents($agents);
     $expected_operations = array (
       array (

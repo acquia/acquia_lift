@@ -370,7 +370,7 @@ class AcquiaLiftAgent extends PersonalizeAgentBase implements PersonalizeAgentGo
   }
 
   /**
-   * Returns the operations needed to sync an age t to Acquia Lift.
+   * Returns the operations needed to sync an agent to Acquia Lift.
    *
    * @param $targeting_rule_exists
    *   Whether the existing agent in Lift has a targeting rule set up that may
@@ -819,6 +819,14 @@ class AcquiaLiftAgent extends PersonalizeAgentBase implements PersonalizeAgentGo
     $this->queueItems($items);
   }
 
+  /**
+   * Returns the operations needed to sync goals to Acquia Lift.
+   *
+   * @param $option_sets
+   *   An array representing the option sets whose targeting rules need to be sync'd.
+   * @return array
+   *    An array of items representing API calls to be made to Acquia Lift.
+   */
   public function getFixedTargetingSyncOperations($option_sets) {
     $items = array();
     // If any of this agent's option sets has explicit targeting mappings configured,

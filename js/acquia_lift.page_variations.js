@@ -124,26 +124,35 @@
       },
 
       /**
-       * Updates the application based on changes in edit mode.
+       * Updates the application based on changes in edit mode in model.
        */
-      updateEditMode: function(model, editMode) {
+      updateEditMode: function(model, editMode) {   
         var data = {};
         var variationIndex = model.get('variationIndex');
-        variationIndex = isNaN(variationIndex) ? -1 : variationIndex;
-        if (this.contextualMenuModel) {
-          this.contextualMenuModel.set('active', editMode);
-        }
-        if (this.variationTypeFormModel) {
-          this.variationTypeFormModel.set('active', editMode);
-        }
-        if (!editMode) {
+        if (editMode) {
+          variationIndex = isNaN(variationIndex) ? -1 : variationIndex;
+          if (this.contextualMenuModel) {
+            this.contextualMenuModel.set('active', true);
+          }
+          if (this.variationTypeFormModel) {
+            this.variationTypeFormModel.set('active', true);
+          }
+          data.started = editMode;
+          data.mode = (variationIndex == -1) ? 'add' : 'edit';
+          data.campaign = Drupal.settings.personalize.activeCampaign;
+          data.variationIndex = variationIndex;
+          $(document).trigger('acquiaLiftPageVariationsMode', data);
+        } else {
           this.highlightAnchor(false);
+          if (this.contextualMenuModel) {
+            this.contextualMenuModel.destroy();
+            this.contextualMenuModel = null;
+          }
+          if (this.variationTypeFormModel) {
+            this.variationTypeFormModel.destroy();
+            this.variationTypeFormModel = null;
+          }
         }
-        data.started = editMode;
-        data.mode = (variationIndex == -1) ? 'add' : 'edit';
-        data.campaign = Drupal.settings.personalize.activeCampaign;
-        data.variationIndex = variationIndex;
-        $(document).trigger('acquiaLiftPageVariationsMode', data);
       },
 
       /**
@@ -473,18 +482,18 @@
       var editVariation = response.data.variationIndex || -1;
       Drupal.acquiaLiftPageVariations.app.appModel.set('variationIndex', editVariation);
       Drupal.acquiaLiftPageVariations.app.appModel.set('editMode', true);
+      // Notify that the mode has actually been changed.
+      response.data.variationIndex = editVariation;
+      response.data.campaign = Drupal.settings.personalize.activeCampaign;
+      // Let the other menu stuff clear out before we set a new variation mode.
+      _.defer(function () {
+        $(document).trigger('acquiaLiftPageVariationMode', [response.data]);
+      });
     } else {
       if (Drupal.acquiaLiftPageVariations.app.appModel) {
         Drupal.acquiaLiftPageVariations.app.appModel.set('editMode', false);
       }
     }
-    // Notify that the mode has actually been changed.
-    response.data.variationIndex = editVariation;
-    response.data.campaign = Drupal.settings.personalize.activeCampaign;
-    // Let the other menu stuff clear out before we set a new variation mode.
-    _.defer(function () {
-      $(document).trigger('acquiaLiftPageVariationMode', [response.data]);
-    });
   };
 
   /**

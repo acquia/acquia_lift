@@ -126,7 +126,7 @@
       /**
        * Updates the application based on changes in edit mode in model.
        */
-      updateEditMode: function(model, editMode) {   
+      updateEditMode: function(model, editMode) {
         var data = {};
         var variationIndex = model.get('variationIndex');
         if (editMode) {

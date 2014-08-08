@@ -1832,17 +1832,39 @@
     MenuOptionSetCollection: Backbone.Collection.extend({
       model: Drupal.acquiaLiftUI.MenuOptionSetModel,
 
+      /**
+       * {@inheritDoc}
+       */
       initialize: function() {
         // Allow certain model changes to trigger a general change event for
         // the entire collection.
         this.on('change:options', this.triggerChange);
+        this.variations = null;
       },
 
+      /**
+       * Event handler when the options change for a model within option set
+       * collection.
+       *
+       * Handles triggering a change event.
+       */
       triggerChange: function() {
+        // Require re-creating of the variations listing.
+        this.variations = null;
         this.trigger('change');
       },
 
+      /**
+       * Generates the variations listing for page variations made up of the
+       * option sets within this collection.
+       *
+       * The results are cached within a local variable that is invalidated
+       * when the variations/options change.
+       */
       getVariations: function() {
+        if (this.variations !== null) {
+          return this.variations;
+        }
         if (this.length == 0) {
           return [];
         }
@@ -1889,7 +1911,8 @@
             variations.push(variation);
           }
         }
-        return variations;
+        this.variations = variations;
+        return this.variations;
       }
     })
   });

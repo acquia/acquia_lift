@@ -1890,6 +1890,15 @@
      * The model for a simple A/B test campaign.
      */
     MenuCampaignABModel: Drupal.acquiaLiftUI.MenuCampaignModel.extend({
+
+      /**
+       * {@inheritDoc}
+       */
+      initialize: function() {
+        this.parent('inherit');
+        this.set('activeVariation', NaN);
+      },
+
       /**
        * {@inheritDoc}
        */

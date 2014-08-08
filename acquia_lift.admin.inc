@@ -875,17 +875,8 @@ function acquia_lift_page_variation_details_submit($form, &$form_state) {
   if (is_numeric($form_state['values']['variation_number']) && $form_state['values']['variation_number'] >= 0) {
     $variation_number = $form_state['values']['variation_number'];
   }
-  /*
-  $debug = array(
-    'variation_set_name' => $variation_set_name,
-    'option_set' => $option_set,
-    'option_data' => array(
-      'personalize_elements_content' => $form_state['values']['personalize_elements_content'],
-    ),
-    'variation_number' => $variation_number,
-  );
-  watchdog('acquia-lift-debug', 'Adding page variation: <pre>' . print_r($debug, TRUE) . '</pre>');
-  */
+  // Save this for the Ajax callback.
+  $form_state['storage']['variation_number'] = $variation_number;
   personalize_create_page_variation($variation_set_name, $option_set, array('personalize_elements_content' => $form_state['values']['personalize_elements_content']), $variation_number);
 }
 
@@ -912,10 +903,14 @@ function acquia_lift_page_variation_details_ajax_callback($form, &$form_state) {
     foreach($option_set_settings as $option_set_setting) {
       $settings['personalize']['option_sets'][key($option_set_setting)] = reset($option_set_setting);
     }
-    $commands[] = ajax_command_settings($settings, TRUE);
     // Note: JavaScript assets for personalize elements are included in
     // personalize_elements_page_build when the module is enabled and therefore
     // do not need to be explicitly added here.
+    $commands[] = ajax_command_settings($settings, TRUE);
+    // Determine the index to preview.  If creating a new variation, then the
+    // first index is 1 because 0 is the control variation.
+    $preview_variation_index = (!is_numeric($form_state['storage']['variation_number']) || $form_state['storage']['variation_number'] < 1) ? 1 : $form_state['storage']['variation_number'];
+    $commands[] = acquia_lift_command_page_variation_preview($form_state['values']['agent'], $preview_variation_index);
   }
   else if ($op === t('Cancel')) {
     // Turn off edit mode and redirect them.

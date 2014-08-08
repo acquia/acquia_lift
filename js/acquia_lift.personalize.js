@@ -847,6 +847,18 @@
       },
 
       /**
+       * Select a specific variation to show.
+       *
+       * @param number variationIndex
+       *   The variation index to show.
+       */
+      selectVariation: function (variationIndex) {
+        this.model.set('activeVariation');
+        var variationData = variationIndex < 0 ? 'new' : variationIndex;
+        this.$el.find('[data-acquia-lift-personalize-page-variation="' + variationData + '"]').trigger('click');
+      },
+
+      /**
        * Responds to personalizeOptionChange change events.
        *
        * @param jQuery event
@@ -1640,6 +1652,15 @@
      * The model for a simple A/B test campaign.
      */
     MenuCampaignABModel: Drupal.acquiaLiftUI.MenuCampaignModel.extend({
+
+      /**
+       * {@inheritDoc}
+       */
+      initialize: function() {
+        this.parent('inherit');
+        this.set('activeVariation', NaN);
+      },
+
       /**
        * {@inheritDoc}
        */
@@ -1660,7 +1681,11 @@
         } else {
           return;
         }
-        // Default the selected variation to the first/control option.
+        // Default the selected variation to the first/control option if it
+        // has not yet already been set.
+        if (!isNaN(this.get('activeVariation'))) {
+          return;
+        }
         var index = 0;
         var found = false;
         // If there is an option pre-selected, then it should be the default
@@ -2274,5 +2299,18 @@
   Drupal.theme.acquiaLiftThrobber = function () {
     return '<div class="ajax-progress ajax-progress-throbber"><div class="throbber">&nbsp;</div></div>';
   };
+
+  /**
+   * Custom AJAX command to preview a specific page variation.
+   *
+   * The response should include a data object with the following keys:
+   * - agentName: The name of the campaign for this page variation.
+   * - variationIndex: The variation index to edit.  This can be an existing
+   *   variation index to edit, or -1 to create a new variation.
+   */
+  Drupal.ajax.prototype.commands.acquia_lift_page_variation_preview = function (ajax, response, status) {
+    var view = Drupal.acquiaLiftUI.views.pageVariations[response.data.agentName]
+    view.selectVariation(response.data.variationIndex);
+  }
 
 }(Drupal, jQuery, _, Backbone));

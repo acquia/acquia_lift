@@ -2191,6 +2191,12 @@
         this.on('change:options', this.triggerChange, this);
       },
 
+      /**
+       * Event handler when the options change for a model within option set
+       * collection.
+       *
+       * Handles triggering a change event.
+       */
       triggerChange: function() {
         this.trigger('change:variations');
       },

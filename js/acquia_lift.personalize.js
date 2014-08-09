@@ -2594,7 +2594,7 @@
     ];
 
     item += '<li>\n<a ' + attrs.join(' ') + '>\n';
-    item += Drupal.t('Preview @text', {'@text': variation.label}) + '\n';
+    item += Drupal.checkPlain(variation.label) + '\n';
     item += '</a>\n</li>\n';
 
     return item;

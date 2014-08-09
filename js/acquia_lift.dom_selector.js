@@ -11,7 +11,8 @@
    */
   var pluginName = 'DOMSelector',
     indicatorClass = 'acquia-lift-active-element',
-    qtipCreated = false,
+    selectorIgnoreClasses = null,
+    selectorIgnoreId = /^visitorActionsUIDialog-([0-9]*$)/ig,
     defaults = {
       hoverCss: {
         background: '#666',
@@ -54,7 +55,7 @@
       this.$element.bind('click', $.proxy(this, '_onClick'));
       this.$element.find('*').each(function() {
         $(this).qtip({
-          content: Utilities.getSelector(this),
+          content: Utilities.getSelector(this, selectorIgnoreId, selectorIgnoreClasses),
           solo: true,
           position: {
             target: 'mouse',
@@ -194,7 +195,7 @@
       } else {
         // Remove the indicator class so it doesn't show in the final selector.
         $selected.removeClass(indicatorClass);
-        this.settings.onElementSelect.call(this, $selected[0], Utilities.getSelector($selected[0]));
+        this.settings.onElementSelect.call(this, $selected[0], Utilities.getSelector($selected[0], selectorIgnoreId, selectorIgnoreClasses));
       }
       event.preventDefault();
       event.stopPropagation();

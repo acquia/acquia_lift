@@ -136,6 +136,7 @@ class ALProfilesAPI {
    * This is used during simpletest web tests.
    */
   protected static function getTestInstance() {
+    module_load_include('inc', 'acquia_lift_profiles', 'tests/acquia_lift_profiles.test_classes');
     $instance = new self('TESTACCOUNT', 'http://api.example.com', 'testUser', 'testPass');
     $instance->setHttpClient(new DummyALProfilesHttpClient());
     $instance->setLogger(new AcquiaLiftTestLogger(TRUE));
@@ -385,33 +386,3 @@ class ALProfilesAPI {
 
 class ALProfilesException extends Exception {};
 class ALProfilesCredsException extends ALProfilesException {};
-
-/**
- * Classes used for testing.
- */
-class DummyALProfilesHttpClient extends  DummyAcquiaLiftHttpClient {
-
-  /**
-   * Prepopulate some dummy data for the API to return.
-   *
-   * @var array
-   */
-  protected $data = array('segments' => array('segment1', 'segment2'), 'events' => array());
-
-  /**
-   * Implements AcquiaLiftDrupalHttpClientInterface::get().
-   */
-  public function get($uri = null, $headers = null, array $options = array())
-  {
-    $this->logRequest('get', $uri, $headers, $options);
-    $data = array();
-    if (strpos($uri, 'segments') !== FALSE) {
-      $data = isset($this->data['segments']) ? $this->data['segments'] : array();
-    }
-    elseif (strpos($uri, 'events') !== FALSE) {
-      $data = isset($this->data['events']) ? $this->data['events'] : array();
-    }
-    return $this->generateDummyResponse($data);
-  }
-}
-

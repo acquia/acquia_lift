@@ -1188,91 +1188,117 @@ class AcquiaLiftWebTest extends DrupalWebTestCase {
     $this->assertEqual($expected_operations, $operations);
   }
 
+
   public function testReadReportsFromFile() {
     $this->drupalLogin($this->managerUser);
-    $agent_name = 'new-test-agent';
+    $first_agent = 'new-test-agent';
+    $second_agent = 'second-test-agent';
     $control_rate = 10;
     $explore_rate = 30;
-    $this->createTestAgent(array('name' => $agent_name, 'control_rate' => $control_rate, 'explore_rate' => $explore_rate));
-    $this->createOptionSet(0, array('agent' => $agent_name, 'plugin' => 'type1', 'option_ids' => array('option-1', 'option-2')));
-    // Add a goal.
-    personalize_goal_save($agent_name, 'new-goal', 1);
-    // We need to bypass the personalize_agent_set_status() function because it
-    // does the verification check, which would fail.
-    variable_set(_personalize_agent_get_status_variable($agent_name), PERSONALIZE_STATUS_RUNNING);
-    // Set the started time of the agent to now.
-    $agent = personalize_agent_load($agent_name);
-    $started = time();
-    $agent->started = $started;
-    personalize_agent_save($agent);
-    $this->resetAll();
-    $test_data = array(
-      // We need to replicate this test agent on the server so that the errors()
-      // check will pass.
-      'agents' => array(
-        array('code' => $agent_name),
-      ),
-      'points' => array(
-        $agent_name => array(
-          'osid-1',
+    $this->createTestAgent(array('name' => $first_agent, 'control_rate' => $control_rate, 'explore_rate' => $explore_rate));
+    // Our second agent will continu to read reports from the API when our first switches
+    // to reading from a file.
+    $this->createTestAgent(array('name' => $second_agent, 'control_rate' => $control_rate, 'explore_rate' => $explore_rate));
+    $test_data = array();
+    // Set each agent up with an option set with 2 options, and a goal, and set it to
+    // running.
+    foreach (array($first_agent, $second_agent) as $i => $agent_name) {
+      $this->createOptionSet($i, array('agent' => $agent_name, 'plugin' => 'type1', 'option_ids' => array('option-1', 'option-2')));
+      // Add a goal.
+      personalize_goal_save($agent_name, 'new-goal', 1);
+
+      // We need to bypass the personalize_agent_set_status() function because it
+      // does the verification check, which would fail.
+      variable_set(_personalize_agent_get_status_variable($agent_name), PERSONALIZE_STATUS_RUNNING);
+      // Set the started time of the agent to now.
+      $agent = personalize_agent_load($agent_name);
+      $started = time();
+      $agent->started = $started;
+      personalize_agent_save($agent);
+      // Add some test data so that calls to get reports for this agent will
+      // return basic reports.
+      $test_data = array_merge_recursive($test_data, array(
+        // We need to replicate this test agent on the server so that the errors()
+        // check will pass.
+        'agents' => array(
+          array('code' => $agent_name),
         ),
-      ),
-      'decisions' => array(
-        $agent_name => array(
-          'osid-1' => array(
+        'points' => array(
+          $agent_name => array(
             'osid-1',
-          )
-        )
-      ),
-      'choices' => array(
-        $agent_name => array(
-          'osid-1' => array(
+          ),
+        ),
+        'decisions' => array(
+          $agent_name => array(
             'osid-1' => array(
-              'option-1',
-              'option-2',
+              'osid-1',
             )
           )
+        ),
+        'choices' => array(
+          $agent_name => array(
+            'osid-1' => array(
+              'osid-1' => array(
+                'option-1',
+                'option-2',
+              )
+            )
+          )
+        ),
+        'goals' => array(
+          $agent_name => array(
+            // This goal should get deleted upon sync.
+            'new-goal'
+          )
+        ),
+        // Now add the reports.
+        'reports' => array(
+          $agent_name => array(
+            'confidence' => AcquiaLiftTestReports::getBasicConfidenceReport($agent_name),
+            'targeting-features' => AcquiaLiftTestReports::getBasicTargetingReport($agent_name),
+            'learning' => array(),
+            'agent-status' => AcquiaLiftTestReports::getBasicStatusReport($agent_name),
+            'context-filters' => AcquiaLiftTestReports::getBasicContextFilters()
+          )
         )
-      ),
-      'goals' => array(
-        $agent_name => array(
-          // This goal should get deleted upon sync.
-          'new-goal'
-        )
-      ),
-      // Now add the reports.
-      'reports' => array(
-        $agent_name => array(
-          'confidence' => AcquiaLiftTestReports::getBasicConfidenceReport($agent_name),
-          'targeting-features' => AcquiaLiftTestReports::getBasicTargetingReport($agent_name),
-          'learning' => array(),
-          'agent-status' => AcquiaLiftTestReports::getBasicStatusReport($agent_name),
-          'context-filters' => AcquiaLiftTestReports::getBasicContextFilters()
-        )
-      )
-    );
+      ));
+    }
+    variable_set('acquia_lift_web_test_data', $test_data);
+    $this->resetAll();
+
     // We use the date that the test report was created.
     $report_start_date = 1407499650;
-    variable_set('acquia_lift_web_test_data', $test_data);
     AcquiaLiftAPI::setTestInstance();
-    $agent_instance = personalize_agent_load_agent($agent_name);
+    $agent_instance = personalize_agent_load_agent($first_agent);
     $report = $agent_instance->buildCampaignReports('osid-1', $report_start_date);
 
     // The experiment report should show that Option A was shown 0 times.
     $this->assertEqual("Control: Option A", $report['experiment']['content']['#rows'][0]['data'][1]);
     $this->assertEqual("0 times", $report['experiment']['content']['#rows'][0]['data'][2]);
 
+    // The report for the second agent will be identical
+    $agent_instance = personalize_agent_load_agent($second_agent);
+    $report = $agent_instance->buildCampaignReports('osid-1', $report_start_date);
+    $this->assertEqual("Control: Option A", $report['experiment']['content']['#rows'][0]['data'][1]);
+    $this->assertEqual("0 times", $report['experiment']['content']['#rows'][0]['data'][2]);
+
     $agent_instance = NULL;
     $this->resetAll();
-    $agent_instance = personalize_agent_load_agent($agent_name);
-    // Now set this campaign to use a report from a file.
+    // Now set the first agent to use a report from a file.
     $path = drupal_get_path('module', 'acquia_lift');
-    variable_set("acquia_lift_report_source_$agent_name", "/" . $path . '/tests/test_reports.json');
+    variable_set("acquia_lift_report_source_$first_agent", "/" . $path . '/tests/test_reports.json');
+    $agent_instance = personalize_agent_load_agent($first_agent);
     $report = $agent_instance->buildCampaignReports('osid-1', $report_start_date);
 
     // Now the experiment report should show that Option A was shown 9 times.
     $this->assertEqual("Control: Option A", $report['experiment']['content']['#rows'][0]['data'][1]);
     $this->assertEqual("9 times", $report['experiment']['content']['#rows'][0]['data'][2]);
+
+    // The report for the second agent should still show the basic report data.
+    $agent_instance = personalize_agent_load_agent($second_agent);
+    $report = $agent_instance->buildCampaignReports('osid-1', $report_start_date);
+    $this->assertEqual("Control: Option A", $report['experiment']['content']['#rows'][0]['data'][1]);
+    $this->assertEqual("0 times", $report['experiment']['content']['#rows'][0]['data'][2]);
   }
 
   /**

@@ -22,6 +22,7 @@ class ALProfilesWebTest extends DrupalWebTestCase {
 
   function setUp() {
     parent::setUp(array('ctools', 'visitor_actions', 'acquia_lift_profiles'));
+    require_once(dirname(__FILE__) . '/acquia_lift_profiles.test_classes.inc');
     variable_set('user_register', USER_REGISTER_VISITORS);
     variable_set('user_email_verification', FALSE);
     $this->admin_user = $this->drupalCreateUser(array('access administration pages', 'administer acquia_lift_profiles configuration', 'administer content types', 'administer nodes', 'bypass node access'));

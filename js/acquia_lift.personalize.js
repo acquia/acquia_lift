@@ -663,20 +663,28 @@
 
       setOptions: function (options) {
         var current,
+          triggerChange = false,
           optionsCollection = this.get('options') || new Drupal.acquiaLiftUI.MenuOptionCollection();
 
         _.each(options, function(option, index) {
           // Update the model properties if the model is already in options.
           if (current = optionsCollection.findWhere({'option_id': option.option_id})) {
-            _.each(option, function(optionProp, optionValue) {
-              current.set(optionProp, optionValue);
+            _.each(option, function(optionValue, optionProp) {
+              if (current.get(optionProp) !== optionValue) {
+                current.set(optionProp, optionValue);
+                triggerChange = true;
+              }
             });
           } else {
             // Otherwise just add the new option.
             option.original_index = index;
             optionsCollection.add(option);
+            triggerChange = true;
           }
         });
+        if (triggerChange) {
+          this.triggerChange();
+        }
         return optionsCollection;
       },
 
@@ -792,6 +800,7 @@
         this.campaignCollection = options.campaignCollection;
         this.listenTo(this.campaignCollection, 'change:isActive', this.render);
         this.listenTo(this.campaignCollection, 'change:activeVariation', this.render);
+        this.listenTo(this.campaignCollection, 'change:variations', this.render);
       },
 
       /**
@@ -1797,6 +1806,7 @@
       initialize: function() {
         this.parent('inherit');
         this.set('activeVariation', 0);
+        this.listenTo(this, 'change:variations', this.triggerVariationChange);
         this.listenTo(this.get('optionSets'), 'change:variations', this.triggerVariationChange);
       },
 

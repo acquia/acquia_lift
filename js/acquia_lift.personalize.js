@@ -654,9 +654,12 @@
         // Tricky - the initial creation from object model data passes all data
         // to this function first.
         if (typeof property == 'object' && property.hasOwnProperty('options')) {
-          property.options = this.setOptions(property.options);
-        } else if (property === 'options' && value instanceof Array) {
-          value = this.setOptions(value);
+          this.setOptions(property.options);
+          // Remove this property so the rest can still be processed.
+          delete property.options;
+        } else if (property === 'options' && !(value instanceof Drupal.acquiaLiftUI.MenuOptionCollection)) {
+          this.setOptions(value);
+          return;
         }
         this.parent('set', property, value);
       },
@@ -664,9 +667,15 @@
       setOptions: function (options) {
         var current,
           triggerChange = false,
-          optionsCollection = this.get('options') || new Drupal.acquiaLiftUI.MenuOptionCollection();
+          option_ids = [],
+          optionsCollection = this.get('options');
+        if (!optionsCollection) {
+          this.set('options', new Drupal.acquiaLiftUI.MenuOptionCollection());
+          optionsCollection = this.get('options');
+        }
 
-        _.each(options, function(option, index) {
+        _.each(options, function(option, option_index) {
+          option_ids.push(option.option_id);
           // Update the model properties if the model is already in options.
           if (current = optionsCollection.findWhere({'option_id': option.option_id})) {
             _.each(option, function(optionValue, optionProp) {
@@ -677,8 +686,16 @@
             });
           } else {
             // Otherwise just add the new option.
-            option.original_index = index;
+            option.original_index = option_index;
             optionsCollection.add(option);
+            triggerChange = true;
+          }
+        });
+        // Check to see if any options have been removed.
+        optionsCollection.each(function (optionModel) {
+          if (_.indexOf(option_ids, optionModel.get('option_id')) == -1) {
+            // This is no longer in the options for the option set.
+            optionsCollection.remove(optionModel);
             triggerChange = true;
           }
         });
@@ -2058,6 +2075,7 @@
           variationNum = i+1;
           variation = {
             index: i,
+            original_index: i,
             options: [],
             agent: sample.get('agent')
           };
@@ -2083,6 +2101,7 @@
               };
               variation.label = options[i].option_label;
               variation.options.push(option);
+              variation.original_index = options[i].original_index;
             }
           });
           if (valid) {
@@ -2400,6 +2419,8 @@
    *   - options: an array of variation options
    *   - index: the variation index value
    *   - label: the variation label
+   *   - original_index: the original index in the options array (which may skip
+   *     index positions).
    */
   Drupal.theme.acquiaLiftPreviewPageVariationMenuItem = function (variation) {
     var item = '';
@@ -2418,7 +2439,7 @@
       'aria-pressed="false"'
     ];
 
-    var renameHref = Drupal.settings.basePath + 'admin/structure/acquia_lift/pagevariation/rename/' + variation.agent + '/' + variation.index + '/nojs';
+    var renameHref = Drupal.settings.basePath + 'admin/structure/acquia_lift/pagevariation/rename/' + variation.agent + '/' + variation.original_index + '/nojs';
     var renameAttrs = [
       'class="acquia-lift-variation-rename acquia-lift-menu-link ctools-use-modal ctools-modal-acquia-lift-style-short"',
       'title="' + Drupal.t('Rename Variation #@num', {'@num': variation.index}) + '"',
@@ -2427,9 +2448,19 @@
       'href="' + renameHref + '"'
     ];
 
+    var deleteHref = Drupal.settings.basePath + 'admin/structure/acquia_lift/pagevariation/delete/' + variation.agent + '/' + variation.original_index + '/nojs';
+    var deleteAttrs = [
+      'class="acquia-lift-variation-delete acquia-lift-menu-link ctools-use-modal ctools-modal-acquia-lift-style-short"',
+      'title="' + Drupal.t('Delete Variation #@num', {'@num': variation.index}) + '"',
+      'aria-role="button"',
+      'aria-pressed="false"',
+      'href="' + deleteHref + '"'
+    ];
+
     item += '<li>\n<div class="acquia-lift-menu-item">';
     item += '<a ' + attrs.join(' ') + '>' + Drupal.checkPlain(variation.label) + '</a> \n';
     if (variation.index > 0) {
+      item += '<a ' + deleteAttrs.join(' ') + '>' + Drupal.t('Delete') + '</a>\n';
       item += '<a ' + renameAttrs.join(' ') + '>' + Drupal.t('Rename') + '</a>\n';
     }
     item += '</div>';
@@ -2544,6 +2575,25 @@
   Drupal.ajax.prototype.commands.acquia_lift_page_variation_preview = function (ajax, response, status) {
     var view = Drupal.acquiaLiftUI.views.pageVariations[response.data.agentName]
     view.selectVariation(response.data.variationIndex);
+  }
+
+  /**
+   * Custom AJAX command to indicate a deleted page variation.
+   *
+   * The response should include a data object with the following keys:
+   * - option_sets:  An updated array of option sets.
+   */
+  Drupal.ajax.prototype.commands.acquia_lift_option_set_updates = function (ajax, response, status) {
+    var osid, option_sets = response.data.option_sets;
+
+    if (option_sets) {
+      for (osid in option_sets) {
+        if (option_sets.hasOwnProperty(osid)) {
+          Drupal.settings.personalize.option_sets[osid] = option_sets[osid];
+        }
+      }
+    }
+    Drupal.attachBehaviors();
   }
 
 }(Drupal, jQuery, _, Backbone));

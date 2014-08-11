@@ -96,6 +96,15 @@ function acquia_lift_menu() {
     'delivery callback' => 'ajax_deliver',
     'theme callback' => 'ajax_base_page_theme',
   );
+  // AJAX callback to rename a page variation.
+  $items['admin/structure/acquia_lift/pagevariation/rename/%/%/%ctools_js'] = array(
+    'page callback' => 'acquia_lift_page_variation_rename_callback',
+    'page arguments' => array(5, 6),
+    'access arguments' => array('manage personalized content'),
+    'type' => MENU_CALLBACK,
+    'file' => 'acquia_lift.admin.inc',
+    'theme callback' => 'ajax_base_page_theme',
+  );
   return $items;
 }
 

@@ -1007,6 +1007,7 @@ function acquia_lift_page_variation_rename($form, &$form_state, $agent_name, $va
     '#title' => t('New name'),
     '#default_value' => personalize_page_variation_get_name($agent_name, $agent_name, $variation_index),
     '#required' => TRUE,
+    '#maxlength' => PERSONALIZE_MACHINE_NAME_MAXLENGTH,
   );
   $form['actions']['submit_form'] = array(
     '#type' => 'submit',

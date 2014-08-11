@@ -98,7 +98,7 @@ function acquia_lift_uninstall() {
 }
 
 /**
- * Implements hook_requirements().
+ * Implements hook_schema().
  */
 function acquia_lift_schema() {
   return array(

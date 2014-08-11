@@ -953,16 +953,17 @@ function acquia_lift_page_variation_rename_callback($agent_name, $variation_inde
   $output = ctools_modal_form_wrapper('acquia_lift_page_variation_rename', $form_state);
 
   if ($form_state['executed']) {
+    $settings = array();
     $option_sets = $option_sets = personalize_option_set_load_multiple(array(), array('decision_name' => $form_state['values']['variation_set_name']));
     $option_set_settings = array_map('_personalize_convert_option_set_to_js_setting', $option_sets);
     foreach($option_set_settings as $option_set_setting) {
-      $settings['personalize']['option_sets'][key($option_set_setting)] = reset($option_set_setting);
+      $settings[key($option_set_setting)] = reset($option_set_setting);
     }
     // form processing is complete.
     $output = array(
       ctools_modal_command_dismiss(),
       acquia_lift_command_messagebox(t('The variation has been renamed.'), 5),
-      ajax_command_settings($settings, TRUE),
+      acquia_lift_command_option_set_updates($settings),
     );
   }
   $page = array('#type' => 'ajax', '#commands' => $output);
@@ -1028,6 +1029,110 @@ function acquia_lift_page_variation_rename($form, &$form_state, $agent_name, $va
  * Submit handler for acquia_lift_page_variation_rename().
  */
 function acquia_lift_page_variation_rename_submit($form, &$form_state) {
-  watchdog('acquia_lift_debug', 'renaming variation ' . $form_state['values']['variation_number'] . ' in ' . $form_state['values']['variation_set_name'] . ' to ' . $form_state['values']['variation_name']);
   personalize_page_variation_rename($form_state['values']['variation_set_name'], $form_state['values']['agent_name'], $form_state['values']['variation_index'], $form_state['values']['variation_name']);
+}
+
+/**
+ * Page callback to generate a page variation delete confirm modal window.
+ *
+ * @param string $agent_name
+ *   The name of the campaign to edit.
+ * @param string $variation_index
+ *   The index of the variation to rename.
+ */
+function acquia_lift_page_variation_delete_callback($agent_name, $variation_index) {
+  ctools_include('modal');
+  ctools_include('ajax');
+  ctools_modal_add_js();
+
+  $form_state = array(
+    'ajax' => TRUE,
+    'title' => t('Delete a variation'),
+  );
+
+  $form_state['build_info']['args']['agent_name'] = $agent_name;
+  $form_state['build_info']['args']['variation_index'] = $variation_index;
+
+  $output = ctools_modal_form_wrapper('acquia_lift_page_variation_delete', $form_state);
+
+  if ($form_state['executed']) {
+    $settings = array();
+    $option_sets = $option_sets = personalize_option_set_load_multiple(array(), array('decision_name' => $form_state['values']['variation_set_name']));
+    $option_set_settings = array_map('_personalize_convert_option_set_to_js_setting', $option_sets);
+    foreach($option_set_settings as $option_set_setting) {
+      $settings[key($option_set_setting)] = reset($option_set_setting);
+    }
+    // form processing is complete.
+    $output = array(
+      ctools_modal_command_dismiss(),
+      acquia_lift_command_messagebox(t('The variation has been deleted.'), 5),
+      acquia_lift_command_option_set_updates($settings),
+    );
+  }
+  $page = array('#type' => 'ajax', '#commands' => $output);
+  ajax_deliver($page);
+}
+
+/**
+ * Form handler to generate a confirmation form to delete a variation.
+ *
+ * This form is called within a ctools modal window.
+ *
+ * @param string $agent_name
+ *   The name of the campaign to edit.
+ * @param string $variation_index
+ *   The index of the variation to rename.
+ */
+function acquia_lift_page_variation_delete($form, &$form_state, $agent_name, $variation_index) {
+  $variation_set_name = $agent_name;
+  $variation_name = personalize_page_variation_get_name($variation_set_name, $agent_name, $variation_index);
+
+  ctools_include('modal');
+  ctools_include('ajax');
+  ctools_add_js('ajax-responder');
+
+  $form = array();
+  $form['agent_name'] = array(
+    '#type' => 'value',
+    '#value' => $agent_name,
+  );
+  $form['variation_set_name'] = array(
+    '#type' => 'value',
+    '#value' => $variation_set_name,
+  );
+  $form['variation_index'] = array(
+    '#type' => 'value',
+    '#value' => $variation_index,
+  );
+  if ($variation_index == 0) {
+    $form['message'] = array(
+      '#markup' => t('The control variation cannot be renamed.'),
+    );
+    return $form;
+  }
+  $form['confirm'] = array(
+    '#prefix' => '<div>',
+    '#suffix' => '</div>',
+    '#markup' => t('Are you sure you want to delete %variation?', array(
+      '%variation' => $variation_name,
+    )),
+  );
+  $form['actions']['submit_form'] = array(
+    '#type' => 'submit',
+    '#attributes' => array(
+      'class' => array('action-item-primary-active', 'acquia-lift-submit-button'),
+    ),
+    '#value' => t('Delete variation'),
+  );
+  $form['actions']['reset'] = array(
+    '#markup' => ctools_ajax_text_button(t('Cancel'), 'admin/structure/acquia_lift/cancel/nojs', t('Cancel'), 'acquia-lift-cancel-button'),
+  );
+  return $form;
+}
+
+/**
+ * Submit handler for acquia_lift_page_variation_rename().
+ */
+function acquia_lift_page_variation_delete_submit($form, &$form_state) {
+  personalize_page_variation_delete($form_state['values']['variation_set_name'], $form_state['values']['agent_name'], $form_state['values']['variation_index']);
 }

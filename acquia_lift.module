@@ -105,6 +105,15 @@ function acquia_lift_menu() {
     'file' => 'acquia_lift.admin.inc',
     'theme callback' => 'ajax_base_page_theme',
   );
+  // AJAX callback to delete a page variation.
+  $items['admin/structure/acquia_lift/pagevariation/delete/%/%/%ctools_js'] = array(
+    'page callback' => 'acquia_lift_page_variation_delete_callback',
+    'page arguments' => array(5, 6),
+    'access arguments' => array('manage personalized content'),
+    'type' => MENU_CALLBACK,
+    'file' => 'acquia_lift.admin.inc',
+    'theme callback' => 'ajax_base_page_theme',
+  );
   return $items;
 }
 
@@ -1865,6 +1874,22 @@ function acquia_lift_command_page_variation_preview($agent_name, $variation_inde
     'data' => array(
       'agentName' => $agent_name,
       'variationIndex' => $variation_index,
+    ),
+  );
+}
+
+/**
+ * Returns an AJAX command to force the update of option set data and then
+ * reattach behaviors.
+ *
+ * @param array $option_sets
+ *   An array of updated option set settings keyed by the osid.
+ */
+function acquia_lift_command_option_set_updates($option_sets) {
+  return array(
+    'command' => 'acquia_lift_option_set_updates',
+    'data' => array(
+      'option_sets' => $option_sets,
     ),
   );
 }

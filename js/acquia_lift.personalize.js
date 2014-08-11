@@ -2433,6 +2433,7 @@
    *
    * @param object variation
    *   The variation details including:
+   *   - agent: the name of the agent/campaign for this variation
    *   - options: an array of variation options
    *   - index: the variation index value
    *   - label: the variation label

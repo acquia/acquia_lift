@@ -2439,7 +2439,11 @@
       'aria-pressed="false"'
     ];
 
+<<<<<<< HEAD
     var renameHref = Drupal.settings.basePath + 'admin/structure/acquia_lift/pagevariation/rename/' + variation.agent + '/' + variation.original_index + '/nojs';
+=======
+    var renameHref = Drupal.settings.basePath + 'admin/structure/acquia_lift/pagevariation/rename/' + variation.agent + '/' + variation.index + '/nojs';
+>>>>>>> Open page variation rename form from menu.
     var renameAttrs = [
       'class="acquia-lift-variation-rename acquia-lift-menu-link ctools-use-modal ctools-modal-acquia-lift-style-short"',
       'title="' + Drupal.t('Rename Variation #@num', {'@num': variation.index}) + '"',
@@ -2448,6 +2452,7 @@
       'href="' + renameHref + '"'
     ];
 
+<<<<<<< HEAD
     var deleteHref = Drupal.settings.basePath + 'admin/structure/acquia_lift/pagevariation/delete/' + variation.agent + '/' + variation.original_index + '/nojs';
     var deleteAttrs = [
       'class="acquia-lift-variation-delete acquia-lift-menu-link ctools-use-modal ctools-modal-acquia-lift-style-short"',
@@ -2461,6 +2466,11 @@
     item += '<a ' + attrs.join(' ') + '>' + Drupal.checkPlain(variation.label) + '</a> \n';
     if (variation.index > 0) {
       item += '<a ' + deleteAttrs.join(' ') + '>' + Drupal.t('Delete') + '</a>\n';
+=======
+    item += '<li>\n<div class="acquia-lift-menu-item">';
+    item += '<a ' + attrs.join(' ') + '>' + Drupal.checkPlain(variation.label) + '</a> \n';
+    if (variation.index > 0) {
+>>>>>>> Open page variation rename form from menu.
       item += '<a ' + renameAttrs.join(' ') + '>' + Drupal.t('Rename') + '</a>\n';
     }
     item += '</div>';

@@ -875,18 +875,9 @@ function acquia_lift_page_variation_details_submit($form, &$form_state) {
   if (is_numeric($form_state['values']['variation_number']) && $form_state['values']['variation_number'] >= 0) {
     $variation_number = $form_state['values']['variation_number'];
   }
-  /*
-  $debug = array(
-    'variation set name' => $variation_set_name,
-    'option_set' => $option_set,
-    'option info' => array('personalize_elements_content' => $form_state['values']['personalize_elements_content']),
-    'variation number' => $variation_number,
-  );
-  */
   $variation_number = personalize_create_page_variation($variation_set_name, $option_set, array('personalize_elements_content' => $form_state['values']['personalize_elements_content']), $variation_number);
   // Save this for the Ajax callback.
   $form_state['storage']['variation_number'] = $variation_number;
-  //watchdog('acquia_lift_debug', 'Create page variation ' . $variation_number . ': <pre>' . print_r($debug, TRUE) . '</pre>');
 }
 
 /**
@@ -907,7 +898,7 @@ function acquia_lift_page_variation_details_ajax_callback($form, &$form_state) {
     $commands[] = acquia_lift_command_messagebox(t('The variation has been created.  Track your conversions by adding goals.'), 5);
     // Get the updated option sets for the page variation.
     $variation_set_name = $form_state['values']['agent'];
-    $option_sets = $option_sets = personalize_option_set_load_multiple(array(), array('decision_name' => $variation_set_name));
+    $option_sets = personalize_option_set_load_multiple(array(), array('decision_name' => $variation_set_name));
     $option_set_settings = array_map('_personalize_convert_option_set_to_js_setting', $option_sets);
     foreach($option_set_settings as $option_set_setting) {
       $settings['personalize']['option_sets'][key($option_set_setting)] = reset($option_set_setting);

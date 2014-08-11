@@ -946,8 +946,7 @@
         $(document).on('personalizeOptionChange', this.onOptionShowProxy);
         $(document).on('acquiaLiftPageVariationMode', this.onPageVariationEditModeProxy, this);
 
-        this.build(this.model);
-        this.render(this.model);
+        this.rebuild();
       },
 
       /**
@@ -976,6 +975,7 @@
         this.render(this.model);
         // Re-run navbar handling to pick up new menu options.
         _.debounce(updateNavbar, 300);
+        _.debounce(Drupal.attachBehaviors(this.$el), 300);
       },
 
       /**
@@ -2241,7 +2241,8 @@
           variationNum = i+1;
           variation = {
             index: i,
-            options: []
+            options: [],
+            agent: sample.get('agent')
           };
           this.each(function (model) {
             options = model.get('options');
@@ -2578,6 +2579,7 @@
    *
    * @param object variation
    *   The variation details including:
+   *   - agent: the name of the agent/campaign for this variation
    *   - options: an array of variation options
    *   - index: the variation index value
    *   - label: the variation label
@@ -2632,9 +2634,21 @@
       'aria-pressed="false"'
     ];
 
-    item += '<li>\n<a ' + attrs.join(' ') + '>\n';
-    item += Drupal.checkPlain(variation.label) + '\n';
-    item += '</a>\n</li>\n';
+    var renameHref = Drupal.settings.basePath + 'admin/structure/acquia_lift/pagevariation/rename/' + variation.agent + '/' + variation.index + '/nojs';
+    var renameAttrs = [
+      'class="acquia-lift-variation-rename acquia-lift-menu-link ctools-use-modal ctools-modal-acquia-lift-style-short"',
+      'title="' + Drupal.t('Rename Variation #@num', {'@num': variation.index}) + '"',
+      'aria-role="button"',
+      'aria-pressed="false"',
+      'href="' + renameHref + '"'
+    ];
+
+    item += '<li>\n<div class="acquia-lift-menu-item">';
+    item += '<a ' + attrs.join(' ') + '>' + Drupal.checkPlain(variation.label) + '</a> \n';
+    if (variation.index > 0) {
+      item += '<a ' + renameAttrs.join(' ') + '>' + Drupal.t('Rename') + '</a>\n';
+    }
+    item += '</div>';
 
     return item;
   }

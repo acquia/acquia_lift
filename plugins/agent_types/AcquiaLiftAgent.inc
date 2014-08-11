@@ -93,6 +93,8 @@ class AcquiaLiftReportFactory {
    */
   public static function create(PersonalizeAgentInterface $agent_instance, $api_instance) {
     $agent_name = $agent_instance->getMachineName();
+    // Check if this agent is set up to read reports from a file instead of
+    // calling the API.
     $report_file = variable_get("acquia_lift_report_source_$agent_name", '');
     if (!empty($report_file)) {
       $report_source = new AcquiaLiftReportDataFromFile($report_file, new AcquiaLiftReportCache());

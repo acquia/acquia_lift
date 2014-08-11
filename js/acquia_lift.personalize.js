@@ -629,12 +629,13 @@
             }
             // The first option key isn't always 0.
             var options = model.get('options');
-            if (!options.hasOwnProperty(index)) {
-              var keys = _.keys(options);
-              keys.sort;
-              index = keys[0];
+            var activeOption = options.findWhere({'original_index': index});
+            if (!activeOption) {
+              activeOption = options.at(0);
             }
-            model.set('activeOption', options[index].option_id);
+            if (activeOption) {
+              model.set('activeOption', activeOption.get('option_id'));
+            }
           }
         });
       },
@@ -1897,6 +1898,11 @@
       initialize: function() {
         this.parent('inherit');
         this.set('activeVariation', NaN);
+        this.listenTo(this.get('optionSets'), 'change:variations', this.triggerVariationChange);
+      },
+
+      triggerOptionSetChange: function (event) {
+        this.trigger('change:variations');
       },
 
       /**

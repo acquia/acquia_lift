@@ -875,9 +875,18 @@ function acquia_lift_page_variation_details_submit($form, &$form_state) {
   if (is_numeric($form_state['values']['variation_number']) && $form_state['values']['variation_number'] >= 0) {
     $variation_number = $form_state['values']['variation_number'];
   }
+  /*
+  $debug = array(
+    'variation set name' => $variation_set_name,
+    'option_set' => $option_set,
+    'option info' => array('personalize_elements_content' => $form_state['values']['personalize_elements_content']),
+    'variation number' => $variation_number,
+  );
+  */
+  $variation_number = personalize_create_page_variation($variation_set_name, $option_set, array('personalize_elements_content' => $form_state['values']['personalize_elements_content']), $variation_number);
   // Save this for the Ajax callback.
   $form_state['storage']['variation_number'] = $variation_number;
-  personalize_create_page_variation($variation_set_name, $option_set, array('personalize_elements_content' => $form_state['values']['personalize_elements_content']), $variation_number);
+  //watchdog('acquia_lift_debug', 'Create page variation ' . $variation_number . ': <pre>' . print_r($debug, TRUE) . '</pre>');
 }
 
 /**

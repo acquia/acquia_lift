@@ -45,7 +45,7 @@
               }
             }
           } else {
-            optionSets.add(obj);
+            optionSets.add(new Drupal.acquiaLiftUI.MenuOptionSetModel(obj));
           }
         });
         // Clear the variations for all page variation campaigns.
@@ -535,6 +535,7 @@
       initialize: function(options) {
         this.set('optionSets', new Drupal.acquiaLiftUI.MenuOptionSetCollection());
         this.listenTo(this.get('optionSets'), 'add', this.triggerOptionSetChange);
+        this.listenTo(this.get('optionSets'), 'remove', this.triggerOptionSetChange);
       },
 
       triggerOptionSetChange: function (event) {
@@ -574,14 +575,14 @@
               // Otherwise a winner should be the default if one has been defined.
               index = model.get('winner');
             }
-            // The first option key isn't always 0.
             var options = model.get('options');
-            if (!options.hasOwnProperty(index)) {
-              var keys = _.keys(options);
-              keys.sort;
-              index = keys[0];
+            var activeOption = options.findWhere({'original_index': index});
+            if (!activeOption) {
+              activeOption = options.at(0);
             }
-            model.set('activeOption', options[index].option_id);
+            if (activeOption) {
+              model.set('activeOption', activeOption.get('option_id'));
+            }
           }
         });
       },
@@ -626,12 +627,73 @@
         label: '',
         mvt: '',
         option_names: [],
-        options: [],
         activeOption: null,
         osid: '',
         stateful: 1,
         type: null,
         winner: null
+      },
+
+      /**
+       * {@inheritDoc}
+       */
+      initialize: function(options) {
+        this.parent('inherit', options);
+        if (!this.get('options')) {
+          this.set('options', new Drupal.acquiaLiftUI.MenuOptionCollection());
+        }
+        this.listenTo(this.get('options'), 'add', this.triggerChange);
+        this.listenTo(this.get('options'), 'remove', this.triggerChange);
+      },
+
+      /**
+       * {@inheritDoc}
+       */
+      set: function (property, value) {
+        // Tricky - the initial creation from object model data passes all data
+        // to this function first.
+        if (typeof property == 'object' && property.hasOwnProperty('options')) {
+          property.options = this.setOptions(property.options);
+        } else if (property === 'options' && value instanceof Array) {
+          value = this.setOptions(value);
+        }
+        this.parent('set', property, value);
+      },
+
+      setOptions: function (options) {
+        var current,
+          optionsCollection = this.get('options') || new Drupal.acquiaLiftUI.MenuOptionCollection();
+
+        _.each(options, function(option) {
+          // Update the model properties if the model is already in options.
+          if (current = optionsCollection.findWhere({'option_id': option.option_id})) {
+            _.each(option, function(optionProp, optionValue) {
+              current.set(optionProp, optionValue);
+            });
+          } else {
+            // Otherwise just add the new option.
+            optionsCollection.add(option);
+          }
+        });
+        return optionsCollection;
+      },
+
+      /**
+       * Force a change event whenever the options collection changes.
+       */
+      triggerChange: function (event) {
+        this.trigger('change:options');
+      }
+    }),
+
+    /**
+     * The model for a single option within an option set or page variation.
+     */
+    MenuOptionModel: Backbone.Model.extend({
+      defaults: {
+        option_id: '',
+        option_label: '',
+        original_index: null
       }
     }),
 
@@ -818,7 +880,7 @@
         // the model is the campaign model.
         this.listenTo(this.model, 'destroy', this.remove);
         this.listenTo(this.model, 'change:isActive', this.render);
-        this.listenTo(this.model, 'change:optionSets', this.rebuild);
+        this.listenTo(this.model, 'change:variations', this.rebuild);
         this.listenTo(this.model, 'change:activeVariation', this.render);
 
         this.onOptionShowProxy = $.proxy(this.onOptionShow, this);
@@ -937,12 +999,13 @@
         if (!optionSet) {
           return;
         }
-        var choices = _.pluck(optionSet.get('options'), 'option_id');
-        var variation_index = _.indexOf(choices, choice_name);
-        if (variation_index < 0) {
+        var options = optionSet.get('options');
+        var option = options.findWhere({'option_id': choice_name});
+        var variationIndex = options.indexOf(option);
+        if (variationIndex < 0) {
           return;
         }
-        this.model.set('activeVariation', variation_index);
+        this.model.set('activeVariation', variationIndex);
       },
 
       /**
@@ -1721,6 +1784,11 @@
       initialize: function() {
         this.parent('inherit');
         this.set('activeVariation', NaN);
+        this.listenTo(this.get('optionSets'), 'change:variations', this.triggerVariationChange);
+      },
+
+      triggerOptionSetChange: function (event) {
+        this.trigger('change:variations');
       },
 
       /**
@@ -1918,6 +1986,11 @@
         // Allow certain model changes to trigger a general change event for
         // the entire collection.
         this.variations = null;
+        this.on('change:options', this.triggerChange, this);
+      },
+
+      triggerChange: function() {
+        this.trigger('change:variations');
       },
 
       /**
@@ -1960,6 +2033,9 @@
           };
           this.each(function (model) {
             options = model.get('options');
+            if (options instanceof Backbone.Collection) {
+              options = options.toJSON();
+            }
             if (options.length <= i) {
               // This variation is invalid because it does not have an option
               // in each option set.
@@ -1985,6 +2061,25 @@
         }
         this.variations = variations;
         return this.variations;
+      }
+    }),
+
+    /**
+     *  A collection of options.
+     */
+    MenuOptionCollection: Backbone.Collection.extend({
+      model: Drupal.acquiaLiftUI.MenuOptionModel,
+
+      /**
+       * Remember the original index for an option within the option set.
+       */
+      add: function(models, options) {
+        if (_.isArray(models)) {
+          _.each(models, function (model, index) {
+            model.original_index = index;
+          });
+        }
+        Backbone.Collection.prototype.add.call(this, models, options);
       }
     })
   });
@@ -2178,10 +2273,10 @@
     var osID = options.osID;
     var os = options.os;
     var os_selector = os.selector;
-    looper(options.os.options || {}, function (obj, key) {
+    options.os.options.each(function(model) {
       menu += Drupal.theme('acquiaLiftPreviewOptionMenuItem', {
-        id: obj.option_id,
-        label: obj.option_label,
+        id: model.get('option_id'),
+        label: model.get('option_label'),
         osID: osID,
         osSelector: os_selector
       });

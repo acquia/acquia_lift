@@ -16,7 +16,15 @@
           if ($link.hasClass('ctools-use-modal')) {
             $link.trigger('click');
           } else {
-            window.location = $link.attr('href');
+            if ($link.attr('href') == '/visitor_actions_ui/edit-mode-toggle') {
+              $.ajax({
+                url: $link.attr('href')
+              });
+              Drupal.CTools.Modal.dismiss();
+              e.preventDefault();
+            } else {
+              window.location = $link.attr('href');
+            }
           }
         })
       });

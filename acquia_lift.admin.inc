@@ -696,7 +696,7 @@ function acquia_lift_create_campaign_type_form($form, &$form_state, $type) {
   switch ($type) {
     case 'ab':
       $form['campaign_type'] = array(
-        '#markup' => theme('acquia_lift_campaign_type_change', array(
+        '#markup' => theme('acquia_lift_create_type_change', array(
           'type' => t('A/B test'),
           'change_link' => $change_link,
         )),
@@ -1166,7 +1166,7 @@ function acquia_lift_create_goal_callback($ajax) {
         'description' => t('Add a goal to this campaign that has been defined by the %module module.', array('%module' => 'visitor actions')),
         'url' => 'admin/structure/acquia_lift/goal/add/existing',
         'modal' => TRUE,
-        'ctools_style' => 'ctools-modal-acquia-lift-style',
+        'ctools_style' => 'ctools-modal-acquia-lift-style-short',
         'logo' => theme('image', array(
           'path' => $path . '/images/campaign-type-ab.png',
           'alt' => t('Pre-existing goal'),
@@ -1176,7 +1176,7 @@ function acquia_lift_create_goal_callback($ajax) {
       'element' => array(
         'title' => t('Element goal'),
         'description' => t('Add a "click" or "hover" goal to an element on your site.'),
-        'url' => 'admin/structure/acquia_lift/goal/add/element',
+        'url' => 'visitor_actions_ui/edit-mode-toggle',
         'modal' => FALSE,
         'logo' => theme('image', array(
           'path' => $path . '/images/campaign-type-custom.png',
@@ -1189,7 +1189,7 @@ function acquia_lift_create_goal_callback($ajax) {
         'description' => t('Add page level goals like "engagement" or "scroll to bottom" to this campaign.'),
         'url' => 'admin/structure/acquia_lift/goal/add/page',
         'modal' => TRUE,
-        'ctools_style' => 'ctools-modal-acquia-lift-style',
+        'ctools_style' => 'ctools-modal-acquia-lift-style-long',
         'logo' => theme('image', array(
           'path' => $path . '/images/campaign-type-custom.png',
           'alt' => t('Page goal'),
@@ -1199,4 +1199,160 @@ function acquia_lift_create_goal_callback($ajax) {
     ),
   ));
   return ctools_modal_render(t('Add a goal'), $output);
+}
+
+/**
+ * Page callback to generate the ctools modal form to create a goal of a
+ * specific type.
+ *
+ * @param $type
+ *   The type of goal to create.  Current supported choices: 'existing', 'page'
+ *   Note that element is handled via JavaScript.
+ * @param $ajax
+ *   Indicates if AJAX is supported.
+ */
+function acquia_lift_create_goal_type_callback($type, $ajax) {
+  if (!in_array($type, array('existing', 'page'))) {
+    drupal_goto('admin/structure/personalize/goals');
+    return;
+  }
+  ctools_include('modal');
+  ctools_include('ajax');
+  ctools_modal_add_js();
+
+  $form_state = array(
+    'ajax' => TRUE,
+    'title' => t('Add a goal'),
+  );
+  $form_state['build_info']['args']['type'] = $type;
+
+  $output = ctools_modal_form_wrapper('acquia_lift_create_goal_type_form', $form_state);
+  if ($form_state['executed']) {
+    // Form is processed.
+    $agent = personalize_agent_load($form_state['values']['agent_name']);
+    $output = array(
+      ctools_modal_command_dismiss(),
+      ajax_command_settings(array('personalize' => array(
+        'campaigns' => personalize_agent_get_settings(),
+      )), TRUE),
+      acquia_lift_command_messagebox(t('%goal added to %campaign as a goal.', array(
+        '%goal' => $form_state['acquia_lift']['goal_name'],
+        '%campaign' => $agent->label,
+      )), 5),
+    );
+  }
+  $page = array('#type' => 'ajax', '#commands' => $output);
+  ajax_deliver($page);
+}
+
+/**
+ * Form builder function to create a new goal in the modal process of a
+ * specific type.
+ *
+ * @param type
+ *   The type of goal to create.  Current supported choices: 'page', 'existing'
+ */
+function acquia_lift_create_goal_type_form($form, &$form_state, $type) {
+  ctools_include('modal');
+  ctools_include('ajax');
+  ctools_add_js();
+
+  $agent_name = personalize_get_campaign_context();
+  $agent = personalize_agent_load($agent_name);
+  if (empty($agent)) {
+    $form['message'] = array(
+      '#markup' => t('You must select a campaign before adding goals.'),
+    );
+    return $form;
+  }
+
+  $form['agent'] = array(
+    '#type' => 'value',
+    '#value' => $agent,
+  );
+  $change_link = ctools_modal_text_button(t('Change type of goal'), 'admin/structure/acquia_lift/goal/add/nojs', t('Change type of test'), 'ctools-modal-acquia-lift-style-long');
+  // Add individual forms specific to the type of goal being created.
+  switch ($type) {
+    case 'existing':
+      $form['goal_type'] = array(
+        '#markup' => theme('acquia_lift_create_type_change', array(
+          'type' => t('Pre-existing goal'),
+          'change_link' => $change_link,
+        )),
+      );
+      $form['goal'] = _acquia_lift_create_existing_goal_form($agent);
+      break;
+    case 'page':
+      $form['goal_type'] = array(
+        '#markup' => theme('acquia_lift_create_type_change', array(
+          'type' => t('Page goal'),
+          'change_link' => $change_link,
+        )),
+      );
+      $form['goal'] = _acquia_lift_create_page_goal_form($agent);
+      break;
+  }
+  // Common actions.
+  $form['actions']['submit_form'] = array(
+    '#type' => 'submit',
+    '#attributes' => array(
+      'class' => array('action-item-primary-active', 'acquia-lift-submit-button'),
+    ),
+    '#value' => t('Add goal'),
+  );
+  $form['actions']['reset'] = array(
+    '#markup' => ctools_ajax_text_button(t('Cancel'), 'admin/structure/acquia_lift/cancel/nojs', t('Cancel'), 'acquia-lift-cancel-button'),
+  );
+  return $form;
+}
+
+/**
+ * Loads the existing goal selection form for a campaign.
+ *
+ * @param $agent
+ *   The agent data for the campaign that this goal will belong to.
+ */
+function _acquia_lift_create_existing_goal_form($agent) {
+  // Exclude any actions already used in this campaign.
+  $exclude = array();
+  $goals = personalize_goal_load_by_conditions(array('agent' => $agent->machine_name));
+  foreach ($goals as $goal) {
+    $exclude[$goal['action']] = $goal['action'];
+  }
+  module_load_include('inc', 'personalize', 'personalize.admin');
+  $all_goal_options = personalize_goals_options();
+  $goal_options = array_diff_key($all_goal_options, $exclude);
+  $form['goal_name'] = array(
+    '#type' => 'select',
+    '#title' => t('Goal'),
+    '#options' => $goal_options,
+    '#empty_option' => t('-Select-'),
+  );
+  return $form;
+}
+
+/**
+ * Loads the page goals selection form for a campaign.
+ *
+ * @param $agent
+ *   The agent data for the campaign that this goal will belong to.
+ */
+function _acquia_lift_create_page_goal_form($agent) {
+  $form['actionable_element'] = array(
+    '#type' => 'value',
+    '#value' => 'page',
+  );
+  $form['title'] = array(
+    '#title' => t('Title'),
+    '#description' => t('Name'),
+    '#type' => 'textfield',
+    '#required' => TRUE,
+  );
+  // Needed by the visitor actions form for structure.
+  $form['event'] = array(
+    '#tree' => TRUE
+  );
+  module_load_include('inc', 'visitor_actions', 'visitor_actions.admin');
+  visitor_actions_get_form_options('page', $form);
+  return $form;
 }

@@ -311,7 +311,7 @@ function theme_acquia_lift_type_list($variables) {
  *   - type:  The title of the type of form to display
  *   - change_link: A change link to change the type shown
  */
-function theme_acquia_lift_campaign_type_change($variables) {
+function theme_acquia_lift_create_type_change($variables) {
   $html = '<span class="acquia-lift-form-type">' . $variables['type'] . '</span>&nbsp;' . $variables['change_link'];
   return $html;
 }

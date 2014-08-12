@@ -536,6 +536,7 @@
         this.set('optionSets', new Drupal.acquiaLiftUI.MenuOptionSetCollection());
         this.listenTo(this.get('optionSets'), 'add', this.triggerOptionSetChange);
         this.listenTo(this.get('optionSets'), 'remove', this.triggerOptionSetChange);
+        this.listenTo(this.get('optionSets'), 'change:variations', this.triggerOptionSetChange);
       },
 
       triggerOptionSetChange: function (event) {
@@ -664,7 +665,7 @@
         var current,
           optionsCollection = this.get('options') || new Drupal.acquiaLiftUI.MenuOptionCollection();
 
-        _.each(options, function(option) {
+        _.each(options, function(option, index) {
           // Update the model properties if the model is already in options.
           if (current = optionsCollection.findWhere({'option_id': option.option_id})) {
             _.each(option, function(optionProp, optionValue) {
@@ -672,6 +673,7 @@
             });
           } else {
             // Otherwise just add the new option.
+            option.original_index = index;
             optionsCollection.add(option);
           }
         });

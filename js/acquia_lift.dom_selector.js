@@ -55,7 +55,7 @@
       this.$element.bind('click', $.proxy(this, '_onClick'));
       this.$element.find('*').each(function() {
         $(this).qtip({
-          content: Utilities.getSelector(this, selectorIgnoreId, selectorIgnoreClasses),
+          content: '&lt;' + this.nodeName + '&gt;',
           solo: true,
           position: {
             target: 'mouse',

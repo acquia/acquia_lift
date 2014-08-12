@@ -114,6 +114,15 @@ function acquia_lift_menu() {
     'file' => 'acquia_lift.admin.inc',
     'theme callback' => 'ajax_base_page_theme',
   );
+  // Ajax callback to open the add a goal selection in a modal window.
+  $items['admin/structure/acquia_lift/goal/add/%ctools_js'] = array(
+    'page callback' => 'acquia_lift_create_goal_callback',
+    'page arguments' => array(5),
+    'access arguments' => array('manage personalized content'),
+    'type' => MENU_CALLBACK,
+    'file' => 'acquia_lift.admin.inc',
+    'theme callback' => 'ajax_base_page_theme',
+  );
   return $items;
 }
 
@@ -194,7 +203,7 @@ function acquia_lift_theme() {
       'goal_total' => 0,
     ),
     // Campaign creation flow.
-    'acquia_lift_campaign_type_list' => array(
+    'acquia_lift_type_list' => array(
       'path' => $path . '/theme',
       'file' => 'acquia_lift.theme.inc',
       'items' => array(),
@@ -796,6 +805,22 @@ function acquia_lift_library() {
               'type' => 'fixed',
               'width' => 600,
               'height' => 305,
+              'addWidth' => 0,
+              'addHeight' => 0,
+              'contentRight' => 0,
+              'contentBottom' => 0,
+            ),
+            'modalOptions' => array(
+              'background-color' => '#000000',
+            ),
+            'closeImage' => theme('image', array('path' => ctools_image_path('close.png', 'acquia_lift'), 'alt' => t('Close window'), 'title' => t('Close window'))),
+            'closeText' => '',
+          ),
+          'acquia-lift-style-long' => array(
+            'modalSize' => array(
+              'type' => 'fixed',
+              'width' => 600,
+              'height' => 550,
               'addWidth' => 0,
               'addHeight' => 0,
               'contentRight' => 0,

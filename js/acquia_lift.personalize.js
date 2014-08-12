@@ -802,11 +802,9 @@
           return;
         }
         if (currentCampaign instanceof Drupal.acquiaLiftUI.MenuCampaignABModel) {
-          var currentVariation = currentCampaign.getCurrentVariation();
+          var currentVariation = currentCampaign.getCurrentVariationLabel();
           if (currentVariation) {
-            text = Drupal.t('Variation: @variationLabel', {
-              '@variationLabel': currentVariation.label
-            });
+            text = Drupal.t('Variation: @variation', {'@variation': currentVariation});
           } else {
             text = Drupal.t('Variations');
           }
@@ -1052,6 +1050,10 @@
           // If exiting, remove any temporary variation listings.
           this.$el.find('ul.menu li.acquia-lift-empty').show();
           this.$el.find('.acquia-lift-page-variation-new').closest('li').remove();
+          // If the model is set at adding, change it back to the control option.
+          if (this.model.get('activeVariation') == -1) {
+            this.model.set('activeVariation', 0);
+          }
         }
       }
     }),
@@ -1783,7 +1785,7 @@
        */
       initialize: function() {
         this.parent('inherit');
-        this.set('activeVariation', NaN);
+        this.set('activeVariation', 0);
         this.listenTo(this.get('optionSets'), 'change:variations', this.triggerVariationChange);
       },
 
@@ -1802,15 +1804,19 @@
       /**
        * Get the current variation shown.
        */
-      getCurrentVariation: function() {
+      getCurrentVariationLabel: function() {
         var variationIndex = this.get('activeVariation');
-        if (isNaN(variationIndex) || variationIndex < 0) {
-          return null;
+        if (variationIndex < 0) {
+          // Currently adding a new variation
+          var currentNum = this.getNumberOfVariations();
+          // Don't need to add 1 to the current total because of the control
+          // option at position 0.
+          return Drupal.t('Variation #@num', {'@num': currentNum});
         }
         var optionSets = this.get('optionSets');
         var variations = optionSets.getVariations();
         if (variations.length > variationIndex) {
-          return variations[variationIndex];
+          return variations[variationIndex].label;
         }
         return null;
       },

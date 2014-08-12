@@ -2216,7 +2216,7 @@
     ];
     var item = '';
     item += '<span ' + attrs.join(' ') + '>';
-    item += Drupal.formatPlural(variations.length, 'Page variation', 'Page variations');
+    item += Drupal.t('Variations');
     item += '</span>\n';
 
     item += '<ul class="menu">' + "\n";

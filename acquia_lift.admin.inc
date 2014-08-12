@@ -663,7 +663,7 @@ function acquia_lift_create_campaign_type_callback($type, $ajax) {
       acquia_lift_command_messagebox(t('Click on an element in your site to create %variation in %campaign.', array(
         '%campaign' => $form_state['values']['agent_basic_info']['title'],
         '%variation' => 'Variation #1',
-      )), 5),
+      )), 10),
       acquia_lift_command_page_variation_toggle(),
     );
   }
@@ -895,7 +895,7 @@ function acquia_lift_page_variation_details_ajax_callback($form, &$form_state) {
     // Otherwise the form submitted so stop creating a page variation
     // and show a confirmation message.
     $commands[] = acquia_lift_command_page_variation_toggle(FALSE);
-    $commands[] = acquia_lift_command_messagebox(t('The variation has been created.  Track your conversions by adding goals.'), 5);
+    $commands[] = acquia_lift_command_messagebox(t('The variation has been created.  Track your conversions by adding goals.'), 10);
     // Get the updated option sets for the page variation.
     $variation_set_name = $form_state['values']['agent'];
     $option_sets = personalize_option_set_load_multiple(array(), array('decision_name' => $variation_set_name));

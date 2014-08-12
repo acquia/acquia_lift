@@ -17,6 +17,7 @@ class AcquiaLiftTest extends DrupalUnitTestCase {
 
   protected function setUp() {
     require_once(dirname(__FILE__) . '/../includes/acquia_lift.classes.inc');
+    require_once(dirname(__FILE__) . '/acquia_lift.test_classes.inc');
     parent::setUp();
   }
 

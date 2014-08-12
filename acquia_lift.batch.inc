@@ -27,6 +27,7 @@ function acquia_lift_batch_sync_campaigns() {
     'init_message' => t('Starting campaign sync.'),
     'progress_message' => t('Processed @current out of @total.'),
     'error_message' => t('Lift campaign sync has encountered an error.'),
+    'file' => drupal_get_path('module', 'acquia_lift') . '/acquia_lift.batch.inc'
   );
 
   batch_set($batch);

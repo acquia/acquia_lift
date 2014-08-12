@@ -798,6 +798,7 @@
       render: function() {
         var currentCampaign = this.campaignCollection.findWhere({'isActive': true});
         var text = Drupal.t('Variation Sets');
+        var $count = this.$el.find('i.acquia-lift-personalize-type-count').detach();
         if (!currentCampaign) {
           return;
         }
@@ -810,6 +811,9 @@
           }
         }
         this.$el.text(text);
+        if ($count) {
+          this.$el.prepend($count);
+        }
       }
     }),
 
@@ -1392,6 +1396,7 @@
       initialize: function (options) {
         this.listenTo(this.model, 'change:isActive', this.render);
         this.listenTo(this.model, 'change:optionSets', this.render);
+        this.listenTo(this.model, 'change:activeVariation', this.render);
 
         this.render();
       },
@@ -1401,6 +1406,10 @@
        */
       render: function () {
         var variations = this.model.getNumberOfVariations();
+        if (this.model instanceof Drupal.acquiaLiftUI.MenuCampaignABModel && this.model.get('activeVariation') == -1) {
+          // We are in add mode so adjust the number to show.
+          variations++;
+        }
         if (this.model.get('isActive')) {
           this.$el
             .toggleClass('acquia-lift-empty', !variations)

@@ -123,6 +123,15 @@ function acquia_lift_menu() {
     'file' => 'acquia_lift.admin.inc',
     'theme callback' => 'ajax_base_page_theme',
   );
+  // Ajax callback to create a goal of a specific type.
+  $items['admin/structure/acquia_lift/goal/add/%/%ctools_js'] = array(
+    'page callback' => 'acquia_lift_create_goal_type_callback',
+    'page arguments' => array(5, 6),
+    'access arguments' => array('manage personalized content'),
+    'type' => MENU_CALLBACK,
+    'file' => 'acquia_lift.admin.inc',
+    'theme callback' => 'ajax_base_page_theme',
+  );
   return $items;
 }
 
@@ -208,7 +217,7 @@ function acquia_lift_theme() {
       'file' => 'acquia_lift.theme.inc',
       'items' => array(),
     ),
-    'acquia_lift_campaign_type_change' => array(
+    'acquia_lift_create_type_change' => array(
       'path' => $path . '/theme',
       'file' => 'acquia_lift.theme.inc',
       'type' => '',

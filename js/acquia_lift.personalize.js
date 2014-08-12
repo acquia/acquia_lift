@@ -1897,7 +1897,7 @@
        */
       initialize: function() {
         this.parent('inherit');
-        this.set('activeVariation', NaN);
+        this.set('activeVariation', 0);
         this.listenTo(this.get('optionSets'), 'change:variations', this.triggerVariationChange);
       },
 

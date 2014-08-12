@@ -91,8 +91,19 @@ class AcquiaLiftReportFactory {
    * @return
    *   The AcquiaLiftReport class to use.
    */
-  public static function create($agent_instance, $api_instance) {
-    $report = new AcquiaLiftReport($agent_instance, $api_instance);
+  public static function create(PersonalizeAgentInterface $agent_instance, $api_instance) {
+    $agent_name = $agent_instance->getMachineName();
+    // Check if this agent is set up to read reports from a file instead of
+    // calling the API.
+    $report_file = variable_get("acquia_lift_report_source_$agent_name", '');
+    if (!empty($report_file)) {
+      $report_source = new AcquiaLiftReportDataFromFile($report_file, new AcquiaLiftReportCache());
+    }
+    else {
+      $report_source = $api_instance;
+    }
+
+    $report = new AcquiaLiftReport($agent_instance, $report_source);
     $report->setConfidenceMeasure(variable_get('acquia_lift_confidence_measure', 95));
     return $report;
   }
@@ -964,9 +975,18 @@ class AcquiaLiftReport implements PersonalizeAgentReportInterface, AcquiaLiftRep
    */
   protected $report_data;
 
-  function __construct($agent, $liftAPI) {
+  /**
+   * Constructs an AcquiaLiftReport object
+   *
+   * @param PersonalizeAgentInterface $agent
+   *   The agent the report is for.
+   *
+   * @param AcquiaLiftReportDataSourceInterface $report_data_src
+   *   The source for the report data.
+   */
+  function __construct(PersonalizeAgentInterface $agent, AcquiaLiftReportDataSourceInterface $report_data_src) {
     $this->agent = $agent;
-    $this->liftAPI = $liftAPI;
+    $this->reportDataSrc = $report_data_src;
   }
 
   /**
@@ -1000,7 +1020,7 @@ class AcquiaLiftReport implements PersonalizeAgentReportInterface, AcquiaLiftRep
     $date_end = date('Y-m-d', $date_to);
 
     try {
-      $confidenceReport = $this->liftAPI->getConfidenceReport($this->agent->getMachineName(), $date_start, $date_end, $option_set->decision_point, array(self::NO_FEATURES));
+      $confidenceReport = $this->reportDataSrc->getConfidenceReport($this->agent->getMachineName(), $date_start, $date_end, $option_set->decision_point, array(self::NO_FEATURES));
       if (!isset($confidenceReport['data']['items'])) {
         return array();
       }
@@ -1085,7 +1105,7 @@ class AcquiaLiftReport implements PersonalizeAgentReportInterface, AcquiaLiftRep
 
       // Get all context filtering values
       try {
-        $contextFilters = $this->liftAPI->getPotentialTargetingValues($machine_name);
+        $contextFilters = $this->reportDataSrc->getContextFilters($machine_name);
         $this->report_data[$key]['potential_context'] = $this->extractPotentialTargetingValues($contextFilters['data']);
       }
       catch (Exception $e) {
@@ -1101,7 +1121,7 @@ class AcquiaLiftReport implements PersonalizeAgentReportInterface, AcquiaLiftRep
           $interval = date_diff(date_create($date_from), date_create($date_to));
           $num_days = $interval->days;
         }
-        $overviewReport = $this->liftAPI->getAgentStatusReport(array($machine_name), $num_days);
+        $overviewReport = $this->reportDataSrc->getAgentStatusReport(array($machine_name), $num_days);
         $this->report_data[$key]['status'] = $this->extractOverviewReportData($overviewReport['data'][$machine_name]);
       }
       catch (AcquiaLiftException $e) {
@@ -1110,7 +1130,7 @@ class AcquiaLiftReport implements PersonalizeAgentReportInterface, AcquiaLiftRep
 
       // Confidence report data.
       try {
-        $confidenceReport = $this->liftAPI->getConfidenceReport($machine_name, $date_from, $date_to, $decision_name, "all", $confidence_measure);
+        $confidenceReport = $this->reportDataSrc->getConfidenceReport($machine_name, $date_from, $date_to, $decision_name, "all", $confidence_measure);
         $this->report_data[$key]['confidence'] = $this->extractConfidenceReportData($confidenceReport['data']['items']);
       }
       catch (AcquiaLiftException $e) {
@@ -1119,7 +1139,7 @@ class AcquiaLiftReport implements PersonalizeAgentReportInterface, AcquiaLiftRep
 
       // Targeting report data.
       try {
-        $targetingReport = $this->liftAPI->getTargetingImpactReport($machine_name, $date_from, $date_to, $decision_name);
+        $targetingReport = $this->reportDataSrc->getTargetingImpactReport($machine_name, $date_from, $date_to, $decision_name);
         $this->report_data[$key]['targeting'] = $this->extractTargetingReportData($targetingReport['data']['items']);
       }
       catch (AcquiaLiftException $e) {

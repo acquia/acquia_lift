@@ -1819,7 +1819,9 @@
           // Currently adding a new variation
           var currentNum = this.getNumberOfVariations();
           // Don't need to add 1 to the current total because of the control
-          // option at position 0.
+          // option at position 0 unless it's new in which case it should say
+          // "Variation #1" rather than 0.
+          currentNum = currentNum == 0 ? 1 : currentNum;
           return Drupal.t('Variation #@num', {'@num': currentNum});
         }
         var optionSets = this.get('optionSets');

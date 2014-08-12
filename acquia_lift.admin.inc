@@ -600,12 +600,14 @@ function acquia_lift_create_campaign_callback($ajax) {
   ctools_modal_add_js();
 
   $path = drupal_get_path('module', 'acquia_lift');
-  $output = theme('acquia_lift_campaign_type_list', array(
+  $output = theme('acquia_lift_type_list', array(
     'items' => array(
       'ab' => array(
         'title' => t('A/B test'),
         'description' => t('Create variations of the content on your site to compare against each other.'),
         'url' => 'admin/structure/acquia_lift/add/ab',
+        'modal' => TRUE,
+        'ctools_style' => 'ctools-modal-acquia-lift-style-short',
         'logo' => theme('image', array(
           'path' => $path . '/images/campaign-type-ab.png',
           'alt' => t('A/B test'),
@@ -616,6 +618,7 @@ function acquia_lift_create_campaign_callback($ajax) {
         'title' => t('Custom Lift campaign'),
         'description' => t('Custom campaigns allow you to create a content targeting or multi-variate campaign using the legacy campaign creation system.'),
         'url' => 'admin/structure/personalize/add/',
+        'modal' => FALSE,
         'logo' => theme('image', array(
           'path' => $path . '/images/campaign-type-custom.png',
           'alt' => t('Custom Lift campaign'),
@@ -1137,4 +1140,63 @@ function acquia_lift_page_variation_delete($form, &$form_state, $agent_name, $va
  */
 function acquia_lift_page_variation_delete_submit($form, &$form_state) {
   personalize_page_variation_delete($form_state['values']['variation_set_name'], $form_state['values']['agent_name'], $form_state['values']['variation_index']);
+}
+
+/**
+ * Page callback to create a new goal by selecting the type of goal to create.
+ *
+ * @param bool $ajax
+ *   Indicates if the form is called with ajax support.
+ */
+function acquia_lift_create_goal_callback($ajax) {
+  if (!$ajax) {
+    drupal_goto('admin/structure/personalize/goals');
+    return;
+  }
+
+  // Show the goal type selection form in a modal.
+  ctools_include('modal');
+  ctools_modal_add_js();
+
+  $path = drupal_get_path('module', 'acquia_lift');
+  $output = theme('acquia_lift_type_list', array(
+    'items' => array(
+      'existing' => array(
+        'title' => t('Pre-existing goal'),
+        'description' => t('Add a goal to this campaign that has been defined by the %module module.', array('%module' => 'visitor actions')),
+        'url' => 'admin/structure/acquia_lift/goal/add/existing',
+        'modal' => TRUE,
+        'ctools_style' => 'ctools-modal-acquia-lift-style',
+        'logo' => theme('image', array(
+          'path' => $path . '/images/campaign-type-ab.png',
+          'alt' => t('Pre-existing goal'),
+          'title' => t('Select this option to create a goal from a pre-existing visitor action.'),
+        )),
+      ),
+      'element' => array(
+        'title' => t('Element goal'),
+        'description' => t('Add a "click" or "hover" goal to an element on your site.'),
+        'url' => 'admin/structure/acquia_lift/goal/add/element',
+        'modal' => FALSE,
+        'logo' => theme('image', array(
+          'path' => $path . '/images/campaign-type-custom.png',
+          'alt' => t('Element goal'),
+          'title' => t('Select this option to create an element goal.'),
+        ))
+      ),
+      'page' => array(
+        'title' => t('Page goal'),
+        'description' => t('Add page level goals like "engagement" or "scroll to bottom" to this campaign.'),
+        'url' => 'admin/structure/acquia_lift/goal/add/page',
+        'modal' => TRUE,
+        'ctools_style' => 'ctools-modal-acquia-lift-style',
+        'logo' => theme('image', array(
+          'path' => $path . '/images/campaign-type-custom.png',
+          'alt' => t('Page goal'),
+          'title' => t('Select this option to create a page goal.'),
+        ))
+      ),
+    ),
+  ));
+  return ctools_modal_render(t('Add a goal'), $output);
 }

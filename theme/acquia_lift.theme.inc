@@ -255,43 +255,47 @@ function theme_acquia_lift_report_overview($variables) {
 }
 
 /**
- * Theme function for a campaign type list.
+ * Theme function for a type selection list.
+ *
+ * This is used by the campaign A/B flow to allow a wizard-like selection of
+ * campaign types and goal types.
  *
  * @param $variables
  *   An associative array of variables including:
- *   - items: An array of campaign types with the following keys
- *     - type:  What to display for the type of campaign
+ *   - items: An array of types with the following keys
+ *     - type:  What to display for the type
  *     - description: What to display as the description of the type
- *     - url: The url to create a new campaign of that type.
- *     - logo: Logo to denote the campaign type.
+ *     - url: The url to create a new item of that type.
+ *     - logo: Logo to denote the type.
+ *     - modal: true if url should continue in a modal, false if a new page
+ *     - ctools_style: The ctools modal style to use for the next url (if
+ *       modal = true).
  */
-function theme_acquia_lift_campaign_type_list($variables) {
+function theme_acquia_lift_type_list($variables) {
   ctools_include('modal');
   ctools_include('ajax');
   ctools_modal_add_js();
 
   $items = $variables['items'];
-  $html = '<div class="acquia-lift-campaign-type-list">';
-  foreach ($items as $typestr => $campaign_type) {
-    $html .= '<div class="acquia-lift-campaign-type clearfix">';
-    $html .= '<div class="acquia-lift-campaign-logo">' . $campaign_type['logo'] . '</div>';
-    $html .= '<div class="acquia-lift-campaign-title">';
-    // Custom campaign types always go to a full campaign edit page.
-    if ($typestr === 'custom') {
-      $html .= l($campaign_type['title'], $campaign_type['url'], array('attributes' => array('class' => array('acquia-lift-campaign-select'))));
-    }
-    // All other campaign types open a form in a new modal.
-    else {
-      $url_parts = explode('/', $campaign_type['url']);
+  $html = '<div class="acquia-lift-type-list">';
+  foreach ($items as $typestr => $current_type) {
+    $html .= '<div class="acquia-lift-type clearfix">';
+    $html .= '<div class="acquia-lift-type-logo">' . $current_type['logo'] . '</div>';
+    $html .= '<div class="acquia-lift-type-title">';
+    if ($current_type['modal']) {
+      $url_parts = explode('/', $current_type['url']);
       end($url_parts);
       if (key($url_parts) != 'nojs') {
         $url_parts[] = 'nojs';
       }
-      $campaign_url = implode('/', $url_parts);
-      $html .= ctools_modal_text_button($campaign_type['title'], $campaign_url, $campaign_type['title'], 'acquia-lift-campaign-select ctools-modal-acquia-lift-style-short');
+      $current_url = implode('/', $url_parts);
+      $html .= ctools_modal_text_button($current_type['title'], $current_url, $current_type['title'], 'acquia-lift-type-select ' . $current_type['ctools_style']);
+    }
+    else {
+      $html .= l($current_type['title'], $current_type['url'], array('attributes' => array('class' => array('acquia-lift-type-select'))));
     }
     $html .= '</div>';
-    $html .= '<p>' . $campaign_type['description'] . '</p>';
+    $html .= '<p>' . $current_type['description'] . '</p>';
     $html .= '</div>';
   }
   $html .= '</div>';

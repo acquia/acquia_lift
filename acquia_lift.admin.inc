@@ -1189,7 +1189,7 @@ function acquia_lift_create_goal_callback($ajax) {
         'description' => t('Add page level goals like "engagement" or "scroll to bottom" to this campaign.'),
         'url' => 'admin/structure/acquia_lift/goal/add/page',
         'modal' => TRUE,
-        'ctools_style' => 'ctools-modal-acquia-lift-style-long',
+        'ctools_style' => 'ctools-modal-acquia-lift-style',
         'logo' => theme('image', array(
           'path' => $path . '/images/campaign-type-custom.png',
           'alt' => t('Page goal'),
@@ -1353,13 +1353,33 @@ function _acquia_lift_create_page_goal_form($agent) {
     '#type' => 'textfield',
     '#required' => TRUE,
   );
+  // To be filled in on the client-side.
+  $form['pages'] = array(
+    '#type' => 'hidden',
+  );
   // Needed by the visitor actions form for structure.
   $form['event'] = array(
     '#tree' => TRUE
   );
+  $form['options'] = array(
+    '#tree' => TRUE,
+  );
+
+  $form['#validate']['_acquia_lift_create_page_goal_form_validate'];
   module_load_include('inc', 'visitor_actions', 'visitor_actions.admin');
-  visitor_actions_get_form_options('page', $form);
+  visitor_actions_get_form_options('page', $form, FALSE);
   return $form;
+}
+
+/**
+ * Form validation for creating a new page goal simplified form.
+ */
+function _acquia_lift_create_page_goal_form_validate($form, &$form_state) {
+  // Allow the plugin to validate the form values.
+  ctools_include('plugins');
+  if ($class = ctools_plugin_load_class('visitor_actions', 'actionable_element', $form_state['values']['actionable_element'], 'handler')) {
+    call_user_func_array(array($class, 'validate'), array($form_state['values']));
+  }
 }
 
 /**
@@ -1367,6 +1387,8 @@ function _acquia_lift_create_page_goal_form($agent) {
  */
 function acquia_lift_create_goal_type_form_submit($form, &$form_state) {
   $action_name = $goal_name = '';
+  $agent_data = $form_state['values']['agent'];
+
   switch ($form_state['values']['goal_type']) {
     case 'existing':
       $action_name = $form_state['values']['action_name'];
@@ -1374,9 +1396,31 @@ function acquia_lift_create_goal_type_form_submit($form, &$form_state) {
       $goal_name = $action['label'];
       break;
     case 'page':
+      $plugin = $form_state['values']['actionable_element'];
+      list($type, $event) = explode('::', $form_state['values']['event'][$plugin]);
+      $goal_name = $form_state['values']['title'];
+      $action_name = personalize_generate_machine_name($goal_name, visitor_actions_action_name_exists);
+      $action = array(
+        'label' => $goal_name,
+        'machine_name' => $action_name,
+        'plugin' => $plugin,
+        'client_side' => $type == 'client' ? 1 : 0,
+        'identifier' => '',
+        'event' => $event,
+        'pages' => $form_state['values']['pages'],
+        // The data array gets populated with the plugin-specific
+        // info for the action.
+        'data' => isset($form_state['values']['options'][$plugin]) ? $form_state['values']['options'][$plugin] : array(),
+      );
+      watchdog('acquia_lift_debug', '<pre>' . print_r($form_state['values'], TRUE) . '</pre>');
+      // Allow the plugin to modify the action before saving.
+      ctools_include('plugins');
+      if ($class = ctools_plugin_load_class('visitor_actions', 'actionable_element', $action['plugin'], 'handler')) {
+        $action = call_user_func_array(array($class, 'actionPresave'), array($action));
+      }
+      visitor_actions_save_action($action);
       break;
   }
-  $agent_data = $form_state['values']['agent'];
   personalize_goal_save($agent_data->machine_name, $action_name, 1);
   $form_state['acquia_lift']['goal_name'] = $goal_name;
 }

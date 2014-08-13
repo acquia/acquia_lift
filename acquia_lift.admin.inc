@@ -138,7 +138,11 @@ function acquia_lift_admin_form($form, &$form_state) {
 function acquia_lift_batch_sync_form($form, &$form_state) {
   $form['submit'] = array(
     '#type' => 'submit',
-    '#value' => t('Sync all campaigns to Lift')
+    '#value' => t('Synchronize with Acquia Lift service')
+  );
+  $form['explanation'] = array(
+    '#type' => 'markup',
+    '#markup' => '<div>' . t('Sends your local campaign information to the hosted Acquia Lift service. Use this feature if you change your Acquia Lift credentials after creating one or more campaigns.') . '</div>'
   );
   return $form;
 }

@@ -27,7 +27,14 @@
           ui.collections.campaigns = new ui.MenuCampaignCollection([]);
         }
         looper(settings.campaigns, function (obj, key) {
-          if (!ui.collections.campaigns.findWhere({name: obj.name})) {
+          var currentModel = ui.collections.campaigns.findWhere({name: obj.name});
+          if (currentModel) {
+            for (var prop in obj) {
+              if (obj.hasOwnProperty(prop)) {
+                currentModel.set(prop, obj[prop]);
+              }
+            }
+          } else {
             var model = Drupal.acquiaLiftUI.factories.MenuFactory.createCampaignModel(obj);
             ui.collections.campaigns.add(model);
             addedCampaigns[obj.name] = model;
@@ -218,26 +225,11 @@
                     // Build a view for campaign goals.
                     if (type === 'campaigns') {
                       var $goalsMenu = $('[data-acquia-lift-personalize-type="goals"]');
-                      var modelGoals = model.get('goals');
-                      if (modelGoals.length > 0) {
-                        modelGoals.each(function (goalModel) {
-                          element = document.createElement('li');
-                          ui.views.push((new ui.MenuGoalsView({
-                            el: element,
-                            model: goalModel,
-                            campaignModel: model
-                          })));
-                          $goalsMenu.prepend(element);
-                        });
-                      } else {
-                        // Build an empty campaign goal view.
-                        element = document.createElement('li');
-                        ui.views.push((new ui.MenuGoalsView({
-                          el: element,
-                          campaignModel: model
-                        })));
-                        $goalsMenu.prepend(element);
-                      }
+                      var goalsView = new ui.MenuGoalsView({
+                        model: model
+                      });
+                      ui.views.push(goalsView);
+                      $goalsMenu.prepend(goalsView.el);
                     }
                   }
                 });
@@ -537,6 +529,8 @@
         this.listenTo(this.get('optionSets'), 'add', this.triggerOptionSetChange);
         this.listenTo(this.get('optionSets'), 'remove', this.triggerOptionSetChange);
         this.listenTo(this.get('optionSets'), 'change:variations', this.triggerOptionSetChange);
+        this.listenTo(this.get('goals'), 'add', this.triggerGoalsChange);
+        this.listenTo(this.get('goals'), 'remove', this.triggerGoalsChange);
       },
 
       /**
@@ -576,8 +570,19 @@
         })
       },
 
+      /**
+       * Triggers a change notification for option sets.
+       */
       triggerOptionSetChange: function (event) {
         this.trigger('change:optionSets');
+      },
+
+      /**
+       * Triggers a change notification for goals
+       */
+      triggerGoalsChange: function() {
+        console.log('trigger goals change');
+        this.trigger('change:goals');
       },
 
       /**
@@ -991,6 +996,7 @@
         this.render(this.model);
         // Re-run navbar handling to pick up new menu options.
         _.debounce(updateNavbar, 300);
+        // Re-attach behaviors to allow ctools modal integration.
         _.debounce(Drupal.attachBehaviors(this.$el), 300);
       },
 
@@ -1385,18 +1391,25 @@
     }),
 
     /**
-     * Renders a campaign goal item.
+     * Renders the goals for a campaign.
      */
     MenuGoalsView: ViewBase.extend({
+      tagName: 'ul',
+      className: 'innerMenuList',
 
       /**
        * {@inheritdoc}
        */
       initialize: function (options) {
+        this.listenTo(this.model, 'change:isActive', this.render);
+        this.listenTo(this.model, 'change:goals', this.rebuild);
+        this.rebuild();
+      },
 
-        this.campaignModel = options.campaignModel;
-        this.listenTo(this.campaignModel, 'change:isActive', this.render);
-
+      /**
+       * Regenerates the list HTML and adds to the element.
+       */
+      rebuild: function() {
         this.build();
         this.render();
       },
@@ -1408,25 +1421,14 @@
         this.$el
           // Toggle visibility of the goal set based on the active status of the
           // associated campaign.
-          .toggle(this.campaignModel.get('isActive'));
+          .toggle(this.model.get('isActive'));
       },
 
       /**
        * {@inheritdoc}
        */
       build: function () {
-        var html = '';
-        if (this.model) {
-          html += Drupal.theme('acquiaLiftPersonalizeGoal', {
-            campaignID: this.campaignModel.get('name'),
-            name: this.model.get('id'),
-            label: this.model.get('name')
-          });
-        } else {
-          html += Drupal.theme('acquiaLiftPersonalizeNoMenuItem', {
-            type: 'goals'
-          });
-        }
+        var html = Drupal.theme('acquiaLiftCampaignGoals', this.model);
         this.$el.html(html);
       }
     }),
@@ -1501,15 +1503,15 @@
         this.model.on('change:goals', this.render, this);
         this.model.on('change:isActive', this.render, this);
 
-        this.render(this.model);
+        this.render();
       },
 
       /**
        * {@inheritdoc}
        */
-      render: function (model) {
-        var count = model.get('goals').length;
-        if (model.get('isActive')) {
+      render: function () {
+        var count = this.model.get('goals').length;
+        if (this.model.get('isActive')) {
           this.$el
             .toggleClass('acquia-lift-empty', !count)
             .css('display', 'inline-block')
@@ -2595,6 +2597,36 @@
 
     return item;
   };
+
+  /**
+   * Returns the HTML for the goals list for a campaign.
+   *
+   * @param MenuCampaignModel model
+   *   The campaign model to create goals display for.
+   */
+  Drupal.theme.acquiaLiftCampaignGoals = function (model) {
+    var goals = model.get('goals');
+    var html = '';
+
+    if (goals.length == 0) {
+      html += '<li>';
+      html += Drupal.theme('acquiaLiftPersonalizeNoMenuItem', {
+        type: 'goals'
+      });
+      html += '</li>';
+      return html;
+    }
+    goals.each(function (goalModel) {
+      html += '<li>';
+      html += Drupal.theme('acquiaLiftPersonalizeGoal', {
+        campaignID: model.get('name'),
+        name: goalModel.get('id'),
+        label: goalModel.get('name')
+      });
+      html += '</li>';
+    });
+    return html;
+  }
 
   /**
    * Returns HTML for a count display element.

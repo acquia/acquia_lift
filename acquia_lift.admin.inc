@@ -804,7 +804,9 @@ function acquia_lift_page_variation_details($form, &$form_state, $variation_type
   );
   // These form item will be populated by the front-end code.
   $form['selector'] = array(
-    '#type' => 'hidden',
+    '#type' => 'textfield',
+    '#title' => t('Selector'),
+    '#required' => TRUE,
   );
   $form['pages'] = array(
     '#type' => 'hidden',

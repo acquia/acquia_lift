@@ -219,14 +219,13 @@
                     if (type === 'campaigns') {
                       var $goalsMenu = $('[data-acquia-lift-personalize-type="goals"]');
                       var modelGoals = model.get('goals');
-                      if (modelGoals) {
-                        looper(modelGoals, function (obj, key) {
+                      if (modelGoals.length > 0) {
+                        modelGoals.each(function (goalModel) {
                           element = document.createElement('li');
                           ui.views.push((new ui.MenuGoalsView({
                             el: element,
-                            model: model,
-                            goalID: key,
-                            goalLabel: obj
+                            model: goalModel,
+                            campaignModel: model
                           })));
                           $goalsMenu.prepend(element);
                         });
@@ -235,9 +234,7 @@
                         element = document.createElement('li');
                         ui.views.push((new ui.MenuGoalsView({
                           el: element,
-                          model: model,
-                          goalID: null,
-                          goalLabel: null
+                          campaignModel: model
                         })));
                         $goalsMenu.prepend(element);
                       }
@@ -533,10 +530,50 @@
        * {@inheritDoc}
        */
       initialize: function(options) {
+        if (!(this.get('goals') instanceof Backbone.Collection)) {
+          this.set('goals', new Drupal.acquiaLiftUI.MenuGoalCollection());
+        }
         this.set('optionSets', new Drupal.acquiaLiftUI.MenuOptionSetCollection());
         this.listenTo(this.get('optionSets'), 'add', this.triggerOptionSetChange);
         this.listenTo(this.get('optionSets'), 'remove', this.triggerOptionSetChange);
         this.listenTo(this.get('optionSets'), 'change:variations', this.triggerOptionSetChange);
+      },
+
+      /**
+       * {@inheritDoc}
+       */
+      set: function (property, value) {
+        if (property.hasOwnProperty('goals')) {
+          this.setGoals(property.goals);
+          delete property.goals;
+        } else if (property === 'goals' && !(value instanceof Backbone.Collection)) {
+          this.setGoals(value);
+          return;
+        }
+        Backbone.Model.prototype.set.call(this, property, value);
+      },
+
+      /**
+       * Updates the goals collection based on an array/object of goal data.
+       * @param goals
+       *   An object of goal labels keyed by goal ids.
+       */
+      setGoals: function (goals) {
+        var goalCollection = this.get('goals');
+        if (!goalCollection) {
+          this.set('goals', new Drupal.acquiaLiftUI.MenuGoalCollection());
+          goalCollection = this.get('goals');
+        }
+
+        var current = this.get('goals');
+        _.each(goals, function(goalLabel, goalId) {
+          if (!current.findWhere({'id': goalId})) {
+            current.add(new Drupal.acquiaLiftUI.MenuGoalModel({
+              id: goalId,
+              name: goalLabel
+            }));
+          }
+        })
       },
 
       triggerOptionSetChange: function (event) {
@@ -723,6 +760,11 @@
         original_index: null
       }
     }),
+
+    /**
+     * The model for a single goal.
+     */
+    MenuGoalModel: Backbone.Model.extend({}),
 
     /**
      * The Model for a 'add content variation' state.
@@ -1352,35 +1394,33 @@
        */
       initialize: function (options) {
 
-        this.goalID = options.goalID;
-        this.goalLabel = options.goalLabel;
+        this.campaignModel = options.campaignModel;
+        this.listenTo(this.campaignModel, 'change:isActive', this.render);
 
-        this.model.on('change:isActive', this.render, this);
-
-        this.build(this.model);
-        this.render(this.model, this.model.get('isActive'));
+        this.build();
+        this.render();
       },
 
       /**
        * {@inheritdoc}
        */
-      render: function (model, isActive) {
+      render: function () {
         this.$el
           // Toggle visibility of the goal set based on the active status of the
           // associated campaign.
-          .toggle(isActive);
+          .toggle(this.campaignModel.get('isActive'));
       },
 
       /**
        * {@inheritdoc}
        */
-      build: function (model) {
+      build: function () {
         var html = '';
-        if (this.goalID) {
+        if (this.model) {
           html += Drupal.theme('acquiaLiftPersonalizeGoal', {
-            campaignID: model.get('name'),
-            name: this.goalID,
-            label: this.goalLabel
+            campaignID: this.campaignModel.get('name'),
+            name: this.model.get('id'),
+            label: this.model.get('name')
           });
         } else {
           html += Drupal.theme('acquiaLiftPersonalizeNoMenuItem', {
@@ -1468,7 +1508,7 @@
        * {@inheritdoc}
        */
       render: function (model) {
-        var count = size(model.get('goals'));
+        var count = model.get('goals').length;
         if (model.get('isActive')) {
           this.$el
             .toggleClass('acquia-lift-empty', !count)
@@ -2148,6 +2188,13 @@
         }
         Backbone.Collection.prototype.add.call(this, models, options);
       }
+    }),
+
+    /**
+     * A collection of goals (used for a campaign).
+     */
+    MenuGoalCollection: Backbone.Collection.extend({
+      model: Drupal.acquiaLiftUI.MenuGoalModel
     })
   });
 

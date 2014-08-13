@@ -237,7 +237,7 @@ function _acquia_lift_build_menu($menu_name) {
 
   // Create a link for attaching Goals.
   $item = array(
-    'link_title' => 'Create a goal',
+    'link_title' => 'Add a goal',
     'link_path' => 'admin/structure/acquia_lift/goal/add/nojs',
     'menu_name' => $menu_name,
     'options' => array(

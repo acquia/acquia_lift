@@ -138,6 +138,13 @@
           });
         });
 
+        // Add the "Add a goal" functionality.
+        $('.acquia-lift-goals-new').once('acquia-lift-personalize-menu-add-goal', function() {
+          ui.views.push(new ui.MenuGoalAddView({
+            el: this
+          }))
+        });
+
         // Add an option set count view for each newly added campaign model.
         $('[data-acquia-lift-personalize="option_sets"]').each(function (index, item) {
           var $link = $(item);
@@ -1716,6 +1723,74 @@
             return;
           }
           this.model.startEditMode(currentVariationIndex);
+        }
+      }
+    }),
+
+    /**
+     * The "add a goal" link.
+     */
+    MenuGoalAddView: ViewBase.extend({
+      events: {
+        'click': 'onClick'
+      },
+
+      /**
+       * {@inheritDoc}
+       */
+      initialize: function(options) {
+        this.addLabel = this.$el.text();
+        this.onVisitorActionsEditModeProxy = $.proxy(this.onVisitorActionsEditMode, this);
+        $(document).on('visitorActionsUIEditMode', this.onVisitorActionsEditModeProxy);
+
+        this.build();
+        this.render();
+      },
+
+      /**
+       * {@inheritDoc}
+       */
+      render: function() {
+        var visitorActionsModel = getVisitorActionsAppModel();
+        if (visitorActionsModel && visitorActionsModel.get('editMode')) {
+          this.$el.text(Drupal.t('Exit goals mode'));
+        } else {
+          this.$el.text(this.addLabel);
+        }
+      },
+
+      /**
+       * {@inheritDoc}
+       *
+       * Tricky: The visitor actions ui shutdown code works by just triggering
+       * the click on a processed add goals link - but there isn't one on the
+       * page because it only exists within the ctools modal window.
+       */
+      build: function() {
+        $('body').append('<div id="acquiaLiftVisitorActionsConnector"><a href="/admin/structure/visitor_actions/add" class="element-hidden">' + Drupal.t('Add goals') + '</a></div>');
+        Drupal.attachBehaviors($('#acquiaLiftVisitorActionsConnector'));
+      },
+
+      /**
+       * Responds when the visitor actions edit mode is triggered.
+       */
+      onVisitorActionsEditMode: function(event, editMode) {
+        this.render();
+      },
+
+      /**
+       * Responds to clicks on the link.
+       *
+       * If goal selection is currently on, then trigger and event to turn it
+       * off - otherwise let the default handling take care of things.
+       */
+      onClick: function(e) {
+        var visitorActionsModel = getVisitorActionsAppModel();
+        if (visitorActionsModel && visitorActionsModel.get('editMode')) {
+          console.log('click event on add goals edit mode is true');
+          $(document).trigger('visitorActionsUIShutdown');
+          e.stopPropagation();
+          e.preventDefault();
         }
       }
     }),

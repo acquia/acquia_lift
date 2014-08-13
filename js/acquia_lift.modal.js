@@ -11,20 +11,15 @@
       $('div.ctools-modal-content .modal-content .acquia-lift-type', context).once(function() {
         $(this).on('click', function(e) {
           var $link = $(this).find('a.acquia-lift-type-select');
-          // If it's a modal process, then we only need to trigger the handlers.
-          // If it's a regular link, then we also need to set the new location.
-          if ($link.hasClass('ctools-use-modal')) {
-            $link.trigger('click');
+          if ($link.hasClass('visitor-actions-ui-launcher-processed')) {
+            Drupal.CTools.Modal.dismiss();
+          }
+          if ($link.hasClass('ctools-use-modal') || $link.hasClass('visitor-actions-ui-launcher-processed')) {
+            // Let the event bubble on to the next handler.
+            return;
           } else {
-            if ($link.attr('href') == '/visitor_actions_ui/edit-mode-toggle') {
-              $.ajax({
-                url: $link.attr('href')
-              });
-              Drupal.CTools.Modal.dismiss();
-              e.preventDefault();
-            } else {
-              window.location = $link.attr('href');
-            }
+            // If it's a regular link, then we also need to set the new location.
+            window.location = $link.attr('href');
           }
         })
       });
@@ -46,6 +41,14 @@
         });
         $selector.hide();
         $variationTypeForm.addClass('acquia-lift-processed');
+      }
+
+      // Populate the pages input with the current page.
+      // The form is sent as the context so we can't check within it.
+      var $pageGoalForm = $('#acquia-lift-create-goal-type-form').not('acquia-lift-processed');
+      if ($pageGoalForm.length > 0) {
+        $pageGoalForm.find('input[name="pages"]').val(Drupal.settings.visitor_actions.currentPath);
+        $pageGoalForm.addClass('acquia-lift-processed');
       }
     }
   }

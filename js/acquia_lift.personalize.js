@@ -33,6 +33,12 @@
             addedCampaigns[obj.name] = model;
           }
         });
+        // Clear the variations for all page variation campaigns.
+        ui.collections.campaigns.each(function (model) {
+          if (model instanceof Drupal.acquiaLiftUI.MenuCampaignABModel) {
+            model.get('optionSets').resetVariations();
+          }
+        });
         looper(settings.option_sets, function (obj, key) {
           var campaignModel = ui.collections.campaigns.findWhere({name: obj.agent});
           var optionSets = campaignModel.get('optionSets');
@@ -46,12 +52,6 @@
             }
           } else {
             optionSets.add(new Drupal.acquiaLiftUI.MenuOptionSetModel(obj));
-          }
-        });
-        // Clear the variations for all page variation campaigns.
-        ui.collections.campaigns.each(function (model) {
-          if (model instanceof Drupal.acquiaLiftUI.MenuCampaignABModel) {
-            model.get('optionSets').resetVariations();
           }
         });
 
@@ -2036,6 +2036,7 @@
       },
 
       triggerChange: function() {
+        this.resetVariations();
         this.trigger('change:variations');
       },
 

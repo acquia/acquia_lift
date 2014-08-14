@@ -11,10 +11,12 @@
       $('div.ctools-modal-content .modal-content .acquia-lift-type', context).once(function() {
         $(this).on('click', function(e) {
           var $link = $(this).find('a.acquia-lift-type-select');
-          if ($link.hasClass('visitor-actions-ui-launcher-processed')) {
+          if ($link.attr('href') == '/admin/structure/visitor_actions') {
+            $('#acquiaLiftVisitorActionsConnector').find('a').trigger('click');
             Drupal.CTools.Modal.dismiss();
-          }
-          if ($link.hasClass('ctools-use-modal') || $link.hasClass('visitor-actions-ui-launcher-processed')) {
+            e.preventDefault();
+            e.stopImmediatePropagation();
+          } else if ($link.hasClass('ctools-use-modal')) {
             // Let the event bubble on to the next handler.
             return;
           } else {
@@ -23,6 +25,22 @@
           }
         })
       });
+
+      // The visitor actions ui application expects there to always be a
+      // trigger link on the page, but with the modal process the trigger would
+      // disappear when the modal closes.  We create a hidden trigger link
+      // to handle the edit mode toggle.
+      var $connector = $('#acquiaLiftVisitorActionsConnector');
+      if ($connector.length == 0) {
+        $('body').append('<div id="acquiaLiftVisitorActionsConnector"><a href="/admin/structure/visitor_actions/add" class="element-hidden">' + Drupal.t('Add goals') + '</a></div>');
+        // Allow visitor actions UI to process the link.
+        Drupal.attachBehaviors($('#acquiaLiftVisitorActionsConnector'));
+
+        $(document).on('acquiaLiftVisitorActionsConnectorToggle', function(e) {
+          $('#acquiaLiftVisitorActionsConnector').find('a').trigger('click');
+        });
+      }
+
 
       // Provide method to hide full selector in variation type details form
       // until the user selects to edit.

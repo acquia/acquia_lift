@@ -1176,7 +1176,7 @@ function acquia_lift_create_goal_callback($ajax) {
       'element' => array(
         'title' => t('Element goal'),
         'description' => t('Add a "click" or "hover" goal to an element on your site.'),
-        'url' => 'visitor_actions_ui/edit-mode-toggle',
+        'url' => 'admin/structure/visitor_actions',
         'modal' => FALSE,
         'logo' => theme('image', array(
           'path' => $path . '/images/campaign-type-custom.png',

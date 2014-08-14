@@ -17,6 +17,11 @@
             e.preventDefault();
             e.stopImmediatePropagation();
           } else if ($link.hasClass('ctools-use-modal')) {
+            // It needs to be the link that is triggered if we want CTools to
+            // take over.
+            if (!$(e.currentTarget).is('a')) {
+              $link.trigger('click');
+            }
             // Let the event bubble on to the next handler.
             return;
           } else {

@@ -447,12 +447,6 @@
     defaults: {
       isActive: false
     },
-    // Factory methods defined for objects.
-    factoryMap: {
-      views: {
-        option_sets: 'createContentVariationView'
-      }
-    },
 
     /**
      * Helper function to start adding a content variation.

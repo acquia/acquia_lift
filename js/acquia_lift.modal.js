@@ -25,6 +25,16 @@
           }
         })
       });
+      hidePageVisitorActionsButton();
+      // When visitor actions is activated, remove the page actions button
+      // because the user is selecting this through the modal process.
+      $('body').once('acquiaLiftVisitorActionsHidePage', function() {
+        $(document).bind('visitorActionsUIEditMode', function (event, isActive) {
+          if (isActive) {
+            hidePageVisitorActionsButton();
+          }
+        });
+      });
 
       // The visitor actions ui application expects there to always be a
       // trigger link on the page, but with the modal process the trigger would
@@ -35,7 +45,6 @@
         $('body').append('<div id="acquiaLiftVisitorActionsConnector"><a href="/admin/structure/visitor_actions/add" class="element-hidden">' + Drupal.t('Add goals') + '</a></div>');
         // Allow visitor actions UI to process the link.
         Drupal.attachBehaviors($('#acquiaLiftVisitorActionsConnector'));
-
         $(document).on('acquiaLiftVisitorActionsConnectorToggle', function(e) {
           $('#acquiaLiftVisitorActionsConnector').find('a').trigger('click');
         });
@@ -69,5 +78,9 @@
         $pageGoalForm.addClass('acquia-lift-processed');
       }
     }
+  }
+
+  function hidePageVisitorActionsButton() {
+    $('#visitor-actions-ui-actionable-elements-without-identifiers').hide();
   }
 }(jQuery, Drupal));

@@ -1746,7 +1746,9 @@
         this.onVisitorActionsEditModeProxy = $.proxy(this.onVisitorActionsEditMode, this);
         $(document).on('visitorActionsUIEditMode', this.onVisitorActionsEditModeProxy);
 
-        this.render();
+        var visitorActionsModel = getVisitorActionsAppModel();
+        var startingInEdit = visitorActionsModel && visitorActionsModel.get('editMode');
+        this.onVisitorActionsEditMode(null, startingInEdit);
       },
 
       /**
@@ -1766,6 +1768,18 @@
        */
       onVisitorActionsEditMode: function(event, editMode) {
         this.render();
+        if (editMode) {
+          // The next time we click the link we want it to just shut down
+          // visitor actions and not open a modal window.
+          this.$el.off();
+          this.$el.on('click', this.onClick);
+          // It has been essentially "unprocessed" so let it get re-processed
+          // again later.
+          this.$el.removeClass('ctools-use-modal-processed');
+        } else {
+          // Next time this link is clicked it should open the modal.
+          Drupal.attachBehaviors(this.$el.parent());
+        }
       },
 
       /**
@@ -1781,18 +1795,8 @@
           // we work through a connector toggle process.
           // @see acquia_lift.modal.js
           $(document).trigger('acquiaLiftVisitorActionsConnectorToggle');
-          // Next time this link is clicked it should open the modal.
-          Drupal.attachBehaviors(this.$el.parent());
-          e.preventDefault();
-        } else {
-          // We are toggling into the goals mode so we want to remove the
-          // CTools handler from the link because the next time it is clicked it
-          // should only exit goals mode and not open ctools.
-          $(e.currentTarget).off();
-          // It has been essentially "unprocessed" so let it get re-processed
-          // again later.
-          $(e.currentTarget).removeClass('ctools-use-modal-processed');
         }
+        e.preventDefault();
       }
     }),
 

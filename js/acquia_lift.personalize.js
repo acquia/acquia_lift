@@ -357,25 +357,29 @@
           if (isActive) {
             // Prevent infinite loops of updating models triggering change events
             // by delaying this update to the next evaluation cycle.
-            window.setTimeout(function () {
+            _.delay(function () {
               ui.models.contentVariationModeModel.endEditMode();
               ui.models.pageVariationModeModel.endEditMode();
-            }, 0);
+            });
           }
         });
         // Signal when content variation highlighting is active.
         ui.models.contentVariationModeModel.on('change:isActive', function (model, isActive) {
           if (isActive) {
-            $(document).trigger('visitorActionsUIShutdown');
-            ui.models.pageVariationModeModel.endEditMode();
+            _.delay(function() {
+              $(document).trigger('visitorActionsUIShutdown');
+              ui.models.pageVariationModeModel.endEditMode();
+            });
           }
         });
         // Turn off content variation and visitor actions modes when entering
         // page variation mode.
         $(document).bind('acquiaLiftPageVariationMode', function (event, data) {
           if (data.start) {
-            ui.models.contentVariationModeModel.endEditMode();
-            $(document).trigger('visitorActionsUIShutdown');
+            _.delay(function() {
+              ui.models.contentVariationModeModel.endEditMode();
+              $(document).trigger('visitorActionsUIShutdown');
+            });
           }
         });
       });
@@ -588,7 +592,6 @@
        * Triggers a change notification for goals
        */
       triggerGoalsChange: function() {
-        console.log('trigger goals change');
         this.trigger('change:goals');
       },
 
@@ -1743,7 +1746,6 @@
         this.onVisitorActionsEditModeProxy = $.proxy(this.onVisitorActionsEditMode, this);
         $(document).on('visitorActionsUIEditMode', this.onVisitorActionsEditModeProxy);
 
-        this.build();
         this.render();
       },
 
@@ -1757,18 +1759,6 @@
         } else {
           this.$el.text(this.addLabel);
         }
-      },
-
-      /**
-       * {@inheritDoc}
-       *
-       * Tricky: The visitor actions ui shutdown code works by just triggering
-       * the click on a processed add goals link - but there isn't one on the
-       * page because it only exists within the ctools modal window.
-       */
-      build: function() {
-        $('body').append('<div id="acquiaLiftVisitorActionsConnector"><a href="/admin/structure/visitor_actions/add" class="element-hidden">' + Drupal.t('Add goals') + '</a></div>');
-        Drupal.attachBehaviors($('#acquiaLiftVisitorActionsConnector'));
       },
 
       /**
@@ -1787,10 +1777,21 @@
       onClick: function(e) {
         var visitorActionsModel = getVisitorActionsAppModel();
         if (visitorActionsModel && visitorActionsModel.get('editMode')) {
-          console.log('click event on add goals edit mode is true');
-          $(document).trigger('visitorActionsUIShutdown');
-          e.stopPropagation();
+          // Note that sending shutdown here causes a loop of events so
+          // we work through a connector toggle process.
+          // @see acquia_lift.modal.js
+          $(document).trigger('acquiaLiftVisitorActionsConnectorToggle');
+          // Next time this link is clicked it should open the modal.
+          Drupal.attachBehaviors(this.$el.parent());
           e.preventDefault();
+        } else {
+          // We are toggling into the goals mode so we want to remove the
+          // CTools handler from the link because the next time it is clicked it
+          // should only exit goals mode and not open ctools.
+          $(e.currentTarget).off();
+          // It has been essentially "unprocessed" so let it get re-processed
+          // again later.
+          $(e.currentTarget).removeClass('ctools-use-modal-processed');
         }
       }
     }),

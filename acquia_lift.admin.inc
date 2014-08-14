@@ -667,7 +667,7 @@ function acquia_lift_create_campaign_type_callback($type, $ajax) {
       acquia_lift_command_messagebox(t('Click on an element in your site to create %variation in %campaign.', array(
         '%campaign' => $form_state['values']['agent_basic_info']['title'],
         '%variation' => 'Variation #1',
-      )), 5),
+      )), 10),
       acquia_lift_command_page_variation_toggle(),
     );
   }
@@ -808,12 +808,17 @@ function acquia_lift_page_variation_details($form, &$form_state, $variation_type
   );
   // These form item will be populated by the front-end code.
   $form['selector'] = array(
-    '#type' => 'hidden',
+    '#type' => 'textfield',
+    '#title' => t('Selector'),
+    '#required' => TRUE,
   );
   $form['pages'] = array(
     '#type' => 'hidden',
   );
   $form['agent'] = array(
+    '#type' => 'hidden',
+  );
+  $form['variation_number'] = array(
     '#type' => 'hidden',
   );
   // Now include the details specific to this variation type.
@@ -871,7 +876,14 @@ function acquia_lift_page_variation_details($form, &$form_state, $variation_type
 function acquia_lift_page_variation_details_submit($form, &$form_state) {
   $agent_name = $variation_set_name = $form_state['values']['agent'];
   $option_set = personalize_elements_get_option_set_for_variation($variation_set_name, $agent_name, $form_state['values']['selector'], $form_state['values']['variation_type'], $form_state['values']['pages']);
-  personalize_create_page_variation($variation_set_name, $option_set, array('personalize_elements_content' => $form_state['values']['personalize_elements_content']));
+
+  $variation_number = NULL;
+  if (is_numeric($form_state['values']['variation_number']) && $form_state['values']['variation_number'] >= 0) {
+    $variation_number = $form_state['values']['variation_number'];
+  }
+  $variation_number = personalize_create_page_variation($variation_set_name, $option_set, array('personalize_elements_content' => $form_state['values']['personalize_elements_content']), $variation_number);
+  // Save this for the Ajax callback.
+  $form_state['storage']['variation_number'] = $variation_number;
 }
 
 /**
@@ -889,11 +901,25 @@ function acquia_lift_page_variation_details_ajax_callback($form, &$form_state) {
     // Otherwise the form submitted so stop creating a page variation
     // and show a confirmation message.
     $commands[] = acquia_lift_command_page_variation_toggle(FALSE);
-    $commands[] = acquia_lift_command_messagebox(t('The variation has been created.  Track your conversions by adding goals.'));
-    // @todo: Need to return the updated option set data for use within the
-    // unibar using ajax_command_settings.
-    // Also need to load the relevant JavaScript assets for the new option set
-    // so that preview functionality will work.
+    $commands[] = acquia_lift_command_messagebox(t('The variation has been created.  Track your conversions by adding goals.'), 10);
+    // Get the updated option sets for the page variation.
+    $variation_set_name = $form_state['values']['agent'];
+    $option_sets = personalize_option_set_load_multiple(array(), array('decision_name' => $variation_set_name));
+    $option_set_settings = array_map('_personalize_convert_option_set_to_js_setting', $option_sets);
+    foreach($option_set_settings as $option_set_setting) {
+      $settings['personalize']['option_sets'][key($option_set_setting)] = reset($option_set_setting);
+    }
+    // Also get the updated personalize elements options.
+    personalize_elements_limit_option_sets_by_path($option_sets, $form_state['values']['pages']);
+    $settings['personalize_elements']['elements'] = personalize_elements_element_settings($option_sets);
+    // Note: JavaScript assets for personalize elements are included in
+    // personalize_elements_page_build when the module is enabled and therefore
+    // do not need to be explicitly added here.
+    $commands[] = ajax_command_settings($settings, TRUE);
+    // Determine the index to preview.  If creating a new variation, then the
+    // first index is 1 because 0 is the control variation.
+    $preview_variation_index = (!is_numeric($form_state['storage']['variation_number']) || $form_state['storage']['variation_number'] < 1) ? 1 : $form_state['storage']['variation_number'];
+    $commands[] = acquia_lift_command_page_variation_preview($form_state['values']['agent'], $preview_variation_index);
   }
   else if ($op === t('Cancel')) {
     // Turn off edit mode and redirect them.

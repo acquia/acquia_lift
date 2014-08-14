@@ -148,7 +148,7 @@ class AcquiaLiftAgent extends PersonalizeAgentBase implements PersonalizeAgentGo
     try {
       $acquia_lift_api = AcquiaLiftAPI::getInstance(variable_get('acquia_lift_account_info', array()));
       $status = personalize_agent_get_status($agent_data->machine_name);
-      return new self($agent_data->machine_name, $agent_data->label, $agent_data->data, $status, !empty($agent_data->started) ? $agent_data->started : NULL, $acquia_lift_api);
+      return new static($agent_data->machine_name, $agent_data->label, $agent_data->data, $status, !empty($agent_data->started) ? $agent_data->started : NULL, $acquia_lift_api);
     }
     catch (AcquiaLiftException $e) {
       watchdog('Acquia Lift', 'Unable to instantiate Acquia Lift Agent');
@@ -169,6 +169,9 @@ class AcquiaLiftAgent extends PersonalizeAgentBase implements PersonalizeAgentGo
     $this->liftAPI = $acquia_lift_api;
   }
 
+  /**
+   * Implements PersonalizeAgentInterface::getType();
+   */
   public function getType() {
     return 'acquia_lift';
   }
@@ -921,6 +924,12 @@ class AcquiaLiftSimpleAB extends AcquiaLiftAgent implements AcquiaLiftSimplified
     return self::buildOptionsForm($agent_data, TRUE);
   }
 
+  /**
+   * Implements PersonalizeAgentInterface::getType().
+   */
+  public function getType() {
+    return 'acquia_lift_simple_ab';
+  }
 }
 
 /**

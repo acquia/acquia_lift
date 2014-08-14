@@ -3,6 +3,12 @@
  */
 (function($, Drupal, Dialog, Backbone, _) {
 
+  /**
+   * Selector for element to use as DOM selector wrapping element.
+   * @type {string}
+   */
+  var pageWrapper = '#page-wrapper';
+
   Drupal.acquiaLiftPageVariations = Drupal.acquiaLiftPageVariations || {};
   Drupal.acquiaLiftPageVariations.app = Drupal.acquiaLiftPageVariations.app || {};
 
@@ -17,7 +23,8 @@
       defaults: {
         // If this app is being loaded, it is because it is being launched into
         // an edit mode.
-        editMode: true
+        editMode: true,
+        variationIndex: -1
       },
 
       /**
@@ -44,7 +51,9 @@
           // A type of variation, e.g. 'editHTML', 'prependHTML'
           type: null,
           // The label for the variation type.
-          typeLabel: null
+          typeLabel: null,
+          selector: null,
+          variationIndex: -1
         }
       )
     })
@@ -82,7 +91,7 @@
         });
         Backbone.on('acquiaLiftPageVariationType', this.createVariationTypeDialog, this);
         this.listenTo(this.model, 'change:editMode', this.render);
-        this.listenTo(this.model, 'change:editMode', this.updateEditMode)
+        this.listenTo(this.model, 'change:editMode', this.updateEditMode);
         this.render(this.model, this.model.get('editMode'));
       },
 
@@ -115,17 +124,34 @@
       },
 
       /**
-       * Updates the application based on changes in edit mode.
+       * Updates the application based on changes in edit mode in model.
        */
       updateEditMode: function(model, editMode) {
-        if (this.contextualMenuModel) {
-          this.contextualMenuModel.set('active', editMode);
-        }
-        if (this.variationTypeFormModel) {
-          this.variationTypeFormModel.set('active', editMode);
-        }
-        if (!editMode) {
+        var data = {};
+        var variationIndex = model.get('variationIndex');
+        if (editMode) {
+          variationIndex = isNaN(variationIndex) ? -1 : variationIndex;
+          if (this.contextualMenuModel) {
+            this.contextualMenuModel.set('active', true);
+          }
+          if (this.variationTypeFormModel) {
+            this.variationTypeFormModel.set('active', true);
+          }
+          data.started = editMode;
+          data.mode = (variationIndex == -1) ? 'add' : 'edit';
+          data.campaign = Drupal.settings.personalize.activeCampaign;
+          data.variationIndex = variationIndex;
+          $(document).trigger('acquiaLiftPageVariationsMode', data);
+        } else {
           this.highlightAnchor(false);
+          if (this.contextualMenuModel) {
+            this.contextualMenuModel.destroy();
+            this.contextualMenuModel = null;
+          }
+          if (this.variationTypeFormModel) {
+            this.variationTypeFormModel.destroy();
+            this.variationTypeFormModel = null;
+          }
         }
       },
 
@@ -171,7 +197,8 @@
           id: this.getTemporaryID(),
           formPath: formPath,
           type: event.data.id,
-          typeLabel: event.data.name
+          typeLabel: event.data.name,
+          variationIndex: this.model.get('variationIndex')
         });
         var dialogView = new Drupal.acquiaLiftPageVariations.views.VariationTypeFormView({
           el: event.data.anchor,
@@ -225,6 +252,7 @@
         this.$el.find('[name="selector"]').val(this.model.get('selector'));
         this.$el.find('[name="pages"]').val(Drupal.settings.visitor_actions.currentPath);
         this.$el.find('[name="agent"]').val(Drupal.settings.personalize.activeCampaign);
+        this.$el.find('[name="variation_number"]').val(this.model.get('variationIndex'));
       },
 
       /**
@@ -431,27 +459,54 @@
 
   /**
    * A command to trigger the page element selection process.
+   *
+   * The response should include a data object with the following keys:
+   * - start: Boolean indicating if page variation mode should be on (true)
+   *   or off (false).
+   * - variationIndex: The variation index to edit.  This can be an existing
+   *   variation index to edit, or -1 to create a new variation.
    */
   Drupal.ajax.prototype.commands.acquia_lift_page_variation_toggle = function (ajax, response, status) {
     if (response.data.start) {
       if (!Drupal.acquiaLiftPageVariations.app.appModel) {
         Drupal.acquiaLiftPageVariations.app.appModel = new Drupal.acquiaLiftPageVariations.models.AppModel();
       }
-      if (Drupal.acquiaLiftPageVariations.app.appView) {
-        Drupal.acquiaLiftPageVariations.app.appView.deactivate();
-      }
-      var $wrapper = $(response.data.wrapper);
-      if ($wrapper.length) {
+      var $wrapper = $(pageWrapper);
+      if ($wrapper.length && !Drupal.acquiaLiftPageVariations.app.appView) {
         Drupal.acquiaLiftPageVariations.app.appView = new Drupal.acquiaLiftPageVariations.views.AppView({
           model: Drupal.acquiaLiftPageVariations.app.appModel,
           $el: $wrapper,
           el: $wrapper[0]
         });
       }
+      var editVariation = response.data.variationIndex || -1;
+      Drupal.acquiaLiftPageVariations.app.appModel.set('variationIndex', editVariation);
+      Drupal.acquiaLiftPageVariations.app.appModel.set('editMode', true);
+      // Notify that the mode has actually been changed.
+      response.data.variationIndex = editVariation;
     } else {
       if (Drupal.acquiaLiftPageVariations.app.appModel) {
         Drupal.acquiaLiftPageVariations.app.appModel.set('editMode', false);
       }
     }
+    response.data.campaign = Drupal.settings.personalize.activeCampaign;
+    // Let the other menu stuff clear out before we set a new variation mode.
+    _.defer(function () {
+      $(document).trigger('acquiaLiftPageVariationMode', [response.data]);
+    });
   };
-}(jQuery, Drupal, Drupal.visitorActions.ui.dialog, Backbone, _));
+
+  /**
+   * Add an event listener for a page variation mode trigger request.
+   *
+   * This utilizes the custom toggle command in order to allow front-end and
+   * back-end requests for the functionality to be handled the same way.
+   */
+  $(document).on('acquiaLiftPageVariationModeTrigger', function(e, data) {
+    var response = {
+      data: data
+    };
+    Drupal.ajax.prototype.commands.acquia_lift_page_variation_toggle(Drupal.ajax, response, 200);
+  });
+
+  }(jQuery, Drupal, Drupal.visitorActions.ui.dialog, Backbone, _));

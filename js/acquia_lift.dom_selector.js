@@ -11,7 +11,8 @@
    */
   var pluginName = 'DOMSelector',
     indicatorClass = 'acquia-lift-active-element',
-    qtipCreated = false,
+    selectorIgnoreClasses = null,
+    selectorIgnoreId = /^visitorActionsUIDialog-([0-9]*$)/ig,
     defaults = {
       hoverCss: {
         background: '#666',
@@ -52,45 +53,47 @@
     startWatching: function() {
       this.$element.bind('mousemove', $.proxy(this, '_onMouseMove'));
       this.$element.bind('click', $.proxy(this, '_onClick'));
-      if (qtipCreated) {
-        this.$element.find('*').qtip('enable');
-      } else {
-        this.$element.find('*').each(function() {
-          $(this).qtip({
-            content: Utilities.getSelector(this),
-            solo: true,
-            position: {
-              target: 'mouse',
-              adjust: {
-                mouse: true
-              }
-            },
-            // Let the show event remain at mouseover to allow for deferred
-            // instantiation, but handle only showing when highlighted via the
-            // beforeShow callback.
-            show: {
-              delay: 0,
-              effect: {
-                type: 'show',
-                length: 0
-              }
-            },
-            hide: {
-              delay: 0,
-              when: false,
-              effect: {
-                type: 'hide',
-                length: 0
-              }
-            },
-            api: {
-              beforeShow: function() {
-                return this.elements.target.hasClass(indicatorClass);
-              }
+      this.$element.find('*').each(function() {
+        $(this).qtip({
+          content: '&lt;' + this.nodeName + '&gt;',
+          solo: true,
+          position: {
+            target: 'mouse',
+            adjust: {
+              mouse: true
             }
-          });
+          },
+          // Let the show event remain at mouseover to allow for deferred
+          // instantiation, but handle only showing when highlighted via the
+          // beforeShow callback.
+          show: {
+            delay: 0,
+            effect: {
+              type: 'show',
+              length: 0
+            },
+            when: {
+              event: 'mouseover.qtip'
+            }
+          },
+          hide: {
+            delay: 0,
+            when: false,
+            effect: {
+              type: 'hide',
+              length: 0
+            },
+            when: {
+              event: 'mouseover.qtip'
+            }
+          },
+          api: {
+            beforeShow: function() {
+              return this.elements.target.hasClass(indicatorClass);
+            }
+          }
         });
-      }
+      });
       this._watching = true;
       return this.$element;
     },
@@ -104,7 +107,18 @@
       this._hovered.unhighlight();
       this.$element.unbind('mousemove', this._onMouseMove);
       this.$element.unbind('click', this._onClick);
-      this.$element.find('*').qtip('disable');
+      // QTip has some problems fully removing itself so help it.
+      // NOTE that QTips don't properly re-enable so disabling is not an option.
+      this.$element.find('*').each(function() {
+        if (typeof $(this).data('qtip') !== 'undefined') {
+          $(this).qtip('destroy');
+          $(this).unbind('mouseover.qtip');
+          $(this).unbind('mousedown.qtip');
+          $(this).unbind('mouseout.qtip');
+        }
+      });
+      $.fn.qtip.interfaces.length = 0;
+
       this._watching = false;
       return this.$element;
     },
@@ -181,7 +195,7 @@
       } else {
         // Remove the indicator class so it doesn't show in the final selector.
         $selected.removeClass(indicatorClass);
-        this.settings.onElementSelect.call(this, $selected[0], Utilities.getSelector($selected[0]));
+        this.settings.onElementSelect.call(this, $selected[0], Utilities.getSelector($selected[0], selectorIgnoreId, selectorIgnoreClasses));
       }
       event.preventDefault();
       event.stopPropagation();

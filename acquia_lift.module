@@ -718,6 +718,7 @@ function acquia_lift_library() {
     ),
     'css' => array(
       $path . '/css/acquia_lift.personalize.css' => array(),
+      $path . '/css/acquia_lift.personalize.theme.css' => array(),
     ),
     'dependencies' => array(
       array('system', 'jquery'),
@@ -776,7 +777,7 @@ function acquia_lift_library() {
             'modalSize' => array(
               'type' => 'fixed',
               'width' => 600,
-              'height' => 225,
+              'height' => 305,
               'addWidth' => 0,
               'addHeight' => 0,
               'contentRight' => 0,
@@ -1837,7 +1838,24 @@ function acquia_lift_command_page_variation_toggle($start = TRUE) {
     'command' => 'acquia_lift_page_variation_toggle',
     'data' => array(
       'start' => $start,
-      'wrapper' => '#page-wrapper',
+    ),
+  );
+}
+
+/**
+ * Returns an AJAX command to preview a specific page variation.
+ *
+ * @param string $agent_name
+ *   The name of the campaign/agent to which the variation belongs.
+ * @param int $variation_index
+ *   The index of the variation to preview.
+ */
+function acquia_lift_command_page_variation_preview($agent_name, $variation_index) {
+  return array(
+    'command' => 'acquia_lift_page_variation_preview',
+    'data' => array(
+      'agentName' => $agent_name,
+      'variationIndex' => $variation_index,
     ),
   );
 }

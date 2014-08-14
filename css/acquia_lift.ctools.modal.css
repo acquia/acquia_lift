@@ -72,3 +72,11 @@ div.ctools-modal-content .modal-content .acquia-lift-form-type {
   margin: 0 1em .75em 0;
   font-size: 1.4em;
 }
+
+/* Variation type details form */
+.acquia-lift-variation-type-form a.acquia-lift-selector-edit {
+  font-size: .8em;
+  vertical-align: top;
+  margin-left: .3em; /* LTR */
+  cursor: pointer;
+}

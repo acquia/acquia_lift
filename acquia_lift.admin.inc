@@ -963,7 +963,7 @@ function acquia_lift_page_variation_rename_callback($agent_name, $variation_inde
     // form processing is complete.
     $output = array(
       ctools_modal_command_dismiss(),
-      acquia_lift_command_messagebox(t('The variation has been renamed.'), 5),
+      acquia_lift_command_messagebox(t('The variation has been renamed.'), 10),
       acquia_lift_command_option_set_updates($settings),
     );
   }
@@ -1067,7 +1067,7 @@ function acquia_lift_page_variation_delete_callback($agent_name, $variation_inde
     // form processing is complete.
     $output = array(
       ctools_modal_command_dismiss(),
-      acquia_lift_command_messagebox(t('The variation has been deleted.'), 5),
+      acquia_lift_command_messagebox(t('The variation has been deleted.'), 10),
       acquia_lift_command_option_set_updates($settings),
     );
   }

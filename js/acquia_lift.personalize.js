@@ -1088,6 +1088,7 @@
         if (!optionSet) {
           return;
         }
+        var options = optionSet.get('options');
         var option = options.findWhere({'option_id': choice_name});
         var variationIndex = options.indexOf(option);
         if (variationIndex < 0) {

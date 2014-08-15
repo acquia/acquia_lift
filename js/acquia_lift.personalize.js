@@ -1482,6 +1482,7 @@
       initialize: function (options) {
         this.listenTo(this.model, 'change:isActive', this.render);
         this.listenTo(this.model, 'change:optionSets', this.render);
+        this.listenTo(this.model, 'change:variations', this.render);
         this.listenTo(this.model, 'change:activeVariation', this.render);
 
         this.render();

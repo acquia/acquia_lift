@@ -827,7 +827,11 @@ function acquia_lift_page_variation_details($form, &$form_state, $variation_type
     '#type' => 'actions',
   );
   // Form actions.
-  $form['actions']['submit_form'] = array(
+  // TRICKY: These must have ids that are different from our CTools loaded
+  // modal forms or else their submit buttons will be processed via Drupal ajax
+  // rather than the main URL callbacks leading to a 200 response with an
+  // empty response body.
+  $form['actions']['variation_type_submit_form'] = array(
     '#type' => 'submit',
     '#value' => t('Save'),
     '#attributes' => array(
@@ -839,7 +843,7 @@ function acquia_lift_page_variation_details($form, &$form_state, $variation_type
     ),
   );
   // Add a cancel button for AJAX-loaded forms.
-  $form['actions']['cancel_form'] = array(
+  $form['actions']['variation_type_cancel_form'] = array(
     '#type' => 'button',
     '#button_type' => 'cancel',
     '#value' => t('Cancel'),

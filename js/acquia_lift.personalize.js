@@ -1663,13 +1663,16 @@
 
         if (activeCampaign.get('status') == 1) {
           // Not yet started.
+          this.$el
+            .find('a')
+            .attr('href', startPath + activeCampaign.get('name'));
+
           if (this.$el.find('a').hasClass('ctools-use-modal')) {
-            // The link is already set up as a modal so nothing more to do.
+            // The link is already set up as a modal so just update the href.
             return;
           }
           this.$el
             .find('a')
-            .attr('href', startPath + activeCampaign.get('name'))
             .addClass('ctools-use-modal')
             .addClass('ctools-modal-acquia-lift-style')
             .off();

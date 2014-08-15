@@ -767,25 +767,6 @@ function acquia_lift_create_campaign_type_form_submit($form, &$form_state) {
 }
 
 /**
- * AJAX callback to cancel the campaign creation flow.
- *
- * @param $ajax
- *   Indicates if AJAX is supported.
- */
-function acquia_lift_campaign_flow_cancel($ajax = NULL) {
-  if (!$ajax) {
-    // We should never be here out of ajax context.
-    return MENU_NOT_FOUND;
-  }
-
-  ctools_include('modal');
-  ctools_include('ajax');
-
-  $commands = array(ctools_modal_command_dismiss());
-  print ajax_render($commands);
-}
-
-/**
  * Form handler for a page variation details form.
  *
  * @param string $variation_type
@@ -1428,6 +1409,130 @@ function acquia_lift_create_goal_type_form_submit($form, &$form_state) {
 }
 
 /**
+ * Page callback to generate a start campaign screen.
+ */
+function acquia_lift_start_campaign_callback($agent_name) {
+  $agent_data = personalize_agent_load($agent_name);
+  acquia_lift_create_ctools_form(
+    t('Start campaign %campaign', array('%campaign' => $agent_data->label)),
+    'acquia_lift_start_campaign',
+    array('agent_data' => $agent_data),
+    'acquia_lift_start_campaign_complete_callback'
+  );
+}
+
+/**
+ * Form handler to start a new campaign.
+ *
+ * @param stdClass $agent_data
+ *   The data for the agent to start.
+ */
+function acquia_lift_start_campaign($form, &$form_state, $agent_data) {
+  ctools_include('modal');
+  ctools_include('ajax');
+  ctools_add_js('ajax-responder');
+
+  $end_variable = _personalize_agent_get_stoptime_variable($agent_data->machine_name);
+  $agent_end = $default_end = variable_get($end_variable, 0);
+  if ($agent_end == 0) {
+    $default_end = strtotime('+1 month');
+  }
+  $agent_end_date = array('year' => date('Y', $default_end), 'month' => intval(date('m', $default_end)), 'day' => date('d', $default_end));
+  $form['agent'] = array(
+    '#type' => 'value',
+    '#value' => $agent_data,
+  );
+  $form['decision_style'] = array(
+    '#type' => 'checkboxes',
+    '#title' => t('Automatically determine a winner'),
+    '#options' => array(
+      'adaptive' => t('Acquia Lift will determine a winner and present the best option to visitors.'),
+    ),
+    '#default_value' => array($agent_data->data['decision_style']),
+  );
+  $form['campaign_end'] = array(
+    '#type' => 'radios',
+    '#title' => t('Campaign end date'),
+    '#options' => array(
+      'none' => t('Run until I stop campaign'),
+      'specified' => t('Select date'),
+    ),
+    '#default_value' => $agent_end == 0 ? 'none' : 'specified',
+  );
+  $form['campaign_end_date'] = array(
+    '#type' => 'date',
+    '#default_value' => $agent_end_date,
+    '#states' => array(
+      'visible' => array(
+        ':input[name="campaign_end"]' => array('value' => 'specified'),
+      ),
+    ),
+  );
+  $form['actions']['submit_form'] = array(
+    '#type' => 'submit',
+    '#attributes' => array(
+      'class' => array('action-item-primary-active', 'acquia-lift-submit-button'),
+    ),
+    '#value' => t('Start campaign'),
+  );
+  $form['actions']['reset'] = array(
+    '#markup' => ctools_ajax_text_button(t('Cancel'), 'admin/structure/acquia_lift/cancel/nojs', t('Cancel'), 'acquia-lift-cancel-button'),
+  );  return $form;
+}
+
+/**
+ * Form validator for acquia_lift_start_campaign().
+ */
+function acquia_lift_start_campaign_validate($form, &$form_state) {
+  if ($form_state['values']['campaign_end'] === 'specified') {
+    $end_date = strtotime($form_state['values']['campaign_end_date']['year'] . '-' . $form_state['values']['campaign_end_date']['month'] . '-' . $form_state['values']['campaign_end_date']['day']);
+    if ($end_date < time()) {
+      form_set_error('campaign_end_date', t('When provided, the end date for the campaign must be in the future.'));
+    }
+  }
+}
+
+/**
+ * Form submit handler for acquia_lift_start_campaign().
+ */
+function acquia_lift_start_campaign_submit($form, &$form_state) {
+  // Set the decision style.
+  $agent_data = $form_state['values']['agent'];
+  $agent_data->data['decision_style'] = empty($form_state['values']['decision_style']) ? 'random' : $form_state['values']['decision_style'];
+  personalize_agent_save($agent_data);
+
+  // Set the end date.
+  if ($form_state['values']['campaign_end'] === 'specified') {
+    $end_date = strtotime($form_state['values']['campaign_end_date']['year'] . '-' . $form_state['values']['campaign_end_date']['month'] . '-' . $form_state['values']['campaign_end_date']['day']);
+  }
+  else {
+    $end_date = 0;
+  }
+  $varname = _personalize_agent_get_stoptime_variable($agent_data->machine_name);
+  variable_set($varname, $end_date);
+
+  // Start the campaign.
+  personalize_agent_set_status($agent_data->machine_name, PERSONALIZE_STATUS_RUNNING);
+}
+
+/**
+ * Form complete callback for the acquia_lift_start_campaign form.
+ * @see acquia_lift_create_ctools_form().
+ */
+function acquia_lift_start_campaign_complete_callback($form, $form_state) {
+  $agent_data = $form_state['values']['agent'];
+  return array(
+    ctools_modal_command_dismiss(),
+    ajax_command_settings(array('personalize' => array(
+      'campaigns' => personalize_agent_get_settings(),
+    )), TRUE),
+    acquia_lift_command_messagebox(t('The %campaign campaign has been started', array(
+      '%campaign' => $agent_data->label,
+    )), 10),
+  );
+}
+
+/**
  * Handles generating a CTools form window for a particular form.
 
  * @param string $title
@@ -1471,4 +1576,23 @@ function acquia_lift_create_ctools_form($title, $form_name, $args = array(), $ca
   }
   $page = array('#type' => 'ajax', '#commands' => $output);
   ajax_deliver($page);
+}
+
+/**
+ * AJAX callback to cancel the campaign creation flow.
+ *
+ * @param $ajax
+ *   Indicates if AJAX is supported.
+ */
+function acquia_lift_campaign_flow_cancel($ajax = NULL) {
+  if (!$ajax) {
+    // We should never be here out of ajax context.
+    return MENU_NOT_FOUND;
+  }
+
+  ctools_include('modal');
+  ctools_include('ajax');
+
+  $commands = array(ctools_modal_command_dismiss());
+  print ajax_render($commands);
 }

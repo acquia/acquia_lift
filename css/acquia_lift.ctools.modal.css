@@ -80,3 +80,16 @@ div.ctools-modal-content .modal-content .acquia-lift-form-type {
   margin-left: .3em; /* LTR */
   cursor: pointer;
 }
+
+/* Start campaign form */
+#acquia-lift-start-campaign .form-type-checkboxes label {
+  width: inherit;
+}
+#acquia-lift-start-campaign .form-type-checkboxes .form-type-checkbox,
+#acquia-lift-start-campaign .form-type-radios .form-type-radio,
+  #acquia-lift-start-campaign .form-item-campaign-end-date {
+  padding: 0 10px;
+}
+#acquia-lift-start-campaign .form-item-campaign-end-date .form-item {
+  margin-right: 0;
+}

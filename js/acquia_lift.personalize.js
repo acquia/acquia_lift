@@ -6,8 +6,9 @@
   // Removes leading '/', '?' and '#' characters from a string.
   var pathRegex = /^(?:[\/\?\#])*(.*)/;
 
-  var reportPath = '/admin/structure/personalize/manage/acquia-lift-placeholder/report';
-  var statusPath = '/admin/structure/personalize/manage/acquia-lift-placeholder/status';
+  var reportPath = Drupal.settings.basePath + 'admin/structure/personalize/manage/acquia-lift-placeholder/report';
+  var statusPath = Drupal.settings.basePath + 'admin/structure/personalize/manage/acquia-lift-placeholder/status';
+  var startPath = Drupal.settings.basePath + 'admin/structure/acquia_lift/start/';
 
   var updateNavbar = function() {
     if (initialized && Drupal.behaviors.acquiaLiftNavbarMenu) {
@@ -1625,7 +1626,6 @@
           var nextStatus = activeCampaign.get('nextStatus');
           this.$el
             .find('a[href]')
-            .attr('href', 'javascript:void(0);')
             .text(nextStatus.text)
             .data('acquia-lift-campaign-status', nextStatus.status)
             .removeClass('acquia-lift-menu-disabled')
@@ -1637,6 +1637,7 @@
           } else {
             this.$el.find('a[href]').addClass('acquia-lift-menu-disabled');
           }
+          this.updateListeners();
         }
       },
 
@@ -1648,6 +1649,45 @@
           .find('a[href]')
           .attr('href', 'javascript:void(0)')
           .addClass('acquia-lift-status-update');
+      },
+
+      /**
+       * Update click listeners based on the status of a campaign.
+       */
+      updateListeners: function() {
+        var activeCampaign = this.collection.findWhere({'isActive': true});
+        if (!activeCampaign) {
+          return;
+        }
+
+        if (activeCampaign.get('status') == 1) {
+          // Not yet started.
+          if (this.$el.find('a').hasClass('ctools-use-modal')) {
+            // The link is already set up as a modal so nothing more to do.
+            return;
+          }
+          this.$el
+            .find('a')
+            .attr('href', startPath + activeCampaign.get('name'))
+            .addClass('ctools-use-modal')
+            .addClass('ctools-modal-acquia-lift-style')
+            .off();
+          Drupal.attachBehaviors(this.$el.parent());
+        } else {
+          // All other status can just get immediately changed.
+          if (!this.$el.find('a').hasClass('ctools-use-modal')) {
+            // Already set up as a plain click handler.
+            return;
+          }
+          this.$el
+            .find('a')
+            .attr('href', 'javascript:void(0);')
+            .removeClass('ctools-use-modal')
+            .removeClass('ctools-modal-acquia-lift-style')
+            .removeClass('ctools-use-modal-processed')
+            .off()
+            .bind('click', this.updateStatus);
+        }
       },
 
       /**

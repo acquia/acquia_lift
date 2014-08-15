@@ -192,7 +192,7 @@ function acquia_lift_get_sync_operations_for_agents($agents) {
       $goals = personalize_goal_load_by_conditions(array('agent' => $agent_name));
       $new_goals = $old_goals = array();
       foreach ($goals as $goal) {
-        $new_goals[$goal['action']] = $goal['value'];
+        $new_goals[$goal->action] = $goal->value;
       }
       if ($existing_agent && ($existing_goals = $lift_api->getGoalsForAgent($agent_name))) {
         // If it's an existing agent there may be goals that need

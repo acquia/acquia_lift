@@ -156,3 +156,11 @@
 #navbar-administration .navbar-tray-acquia-lift.navbar-tray-horizontal .menu ul ul.innerMenuList {
   border: none;
 }
+
+/* Additional edit links are only available in horizontal view */
+#navbar-administration .navbar-tray-vertical .acquia-lift-campaign-edit,
+#navbar-administration .navbar-tray-vertical .acquia-lift-variation-delete,
+#navbar-administration .navbar-tray-vertical .acquia-lift-variation-rename,
+#navbar-administration .navbar-tray-vertical .acquia-lift-page-variation-toggle {
+  display: none !important;
+}

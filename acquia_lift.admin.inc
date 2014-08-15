@@ -646,36 +646,32 @@ function acquia_lift_create_campaign_type_callback($type, $ajax) {
     drupal_goto('admin/structure/personalize/add');
     return;
   }
-  ctools_include('modal');
-  ctools_include('ajax');
-  ctools_modal_add_js();
-
-  $form_state = array(
-    'ajax' => TRUE,
-    'title' => t('Create a campaign'),
+  acquia_lift_create_ctools_form(
+    t('Create a campaign'),
+    'acquia_lift_create_campaign_type_form',
+    array('type' => $type),
+    'acquia_lift_create_campaign_type_complete_callback'
   );
+}
 
-  // ctools_modal_form_wrapper doesn't provide any way to pass parameters to the form builder function.
-  $form_state['build_info']['args']['type'] = $type;
-
-  $output = ctools_modal_form_wrapper('acquia_lift_create_campaign_type_form', $form_state);
-  // Form has been processed so close it.
-  if ($form_state['executed']) {
-    $output = array(
-      ctools_modal_command_dismiss(),
-      ajax_command_settings(array('personalize' => array(
-        'activeCampaign' => personalize_get_campaign_context(),
-        'campaigns' => personalize_agent_get_settings(),
-      )), TRUE),
-      acquia_lift_command_messagebox(t('Click on an element in your site to create %variation in %campaign.', array(
-        '%campaign' => $form_state['values']['agent_basic_info']['title'],
-        '%variation' => 'Variation #1',
-      )), 10),
-      acquia_lift_command_page_variation_toggle(),
-    );
-  }
-  $page = array('#type' => 'ajax', '#commands' => $output);
-  ajax_deliver($page);
+/**
+ * Ctools form processing complete handler for the creation of a new campaign
+ * by type.
+ * @see acquia_lift_create_ctools_form().
+ */
+function acquia_lift_create_campaign_type_complete_callback($form, $form_state) {
+  return array(
+    ctools_modal_command_dismiss(),
+    ajax_command_settings(array('personalize' => array(
+      'activeCampaign' => personalize_get_campaign_context(),
+      'campaigns' => personalize_agent_get_settings(),
+    )), TRUE),
+    acquia_lift_command_messagebox(t('Click on an element in your site to create %variation in %campaign.', array(
+      '%campaign' => $form_state['values']['agent_basic_info']['title'],
+      '%variation' => 'Variation #1',
+    )), 10),
+    acquia_lift_command_page_variation_toggle(),
+  );
 }
 
 /**
@@ -858,7 +854,8 @@ function acquia_lift_page_variation_details($form, &$form_state, $variation_type
     '#limit_validation_errors' => array(),
     '#submit' => array(),
   );
-
+  $form_state['cache'] = TRUE;
+  $form_state['nocache'] = '';
   return $form;
 }
 
@@ -942,36 +939,35 @@ function acquia_lift_page_variation_details_ajax_callback($form, &$form_state) {
  *   The index of the variation to rename.
  */
 function acquia_lift_page_variation_rename_callback($agent_name, $variation_index) {
-  ctools_include('modal');
-  ctools_include('ajax');
-  ctools_modal_add_js();
-
-  $form_state = array(
-    'ajax' => TRUE,
-    'title' => t('Rename a variation'),
+  acquia_lift_create_ctools_form(
+    t('Rename a variation'),
+    'acquia_lift_page_variation_rename',
+    array(
+      'agent_name' => $agent_name,
+      'variation_index' => $variation_index,
+    ),
+    'acquia_lift_page_variation_rename_complete_callback'
   );
+}
 
-  $form_state['build_info']['args']['agent_name'] = $agent_name;
-  $form_state['build_info']['args']['variation_index'] = $variation_index;
-
-  $output = ctools_modal_form_wrapper('acquia_lift_page_variation_rename', $form_state);
-
-  if ($form_state['executed']) {
-    $settings = array();
-    $option_sets = $option_sets = personalize_option_set_load_multiple(array(), array('decision_name' => $form_state['values']['variation_set_name']));
-    $option_set_settings = array_map('_personalize_convert_option_set_to_js_setting', $option_sets);
-    foreach($option_set_settings as $option_set_setting) {
-      $settings[key($option_set_setting)] = reset($option_set_setting);
-    }
-    // form processing is complete.
-    $output = array(
-      ctools_modal_command_dismiss(),
-      acquia_lift_command_messagebox(t('The variation has been renamed.'), 10),
-      acquia_lift_command_option_set_updates($settings),
-    );
+/**
+ * Ctools form processing complete handler for the renaming of a page
+ * variation.
+ * @see acquia_lift_create_ctools_form().
+ */
+function acquia_lift_page_variation_rename_complete_callback($form, $form_state) {
+  $settings = array();
+  $option_sets = $option_sets = personalize_option_set_load_multiple(array(), array('decision_name' => $form_state['values']['variation_set_name']));
+  $option_set_settings = array_map('_personalize_convert_option_set_to_js_setting', $option_sets);
+  foreach($option_set_settings as $option_set_setting) {
+    $settings[key($option_set_setting)] = reset($option_set_setting);
   }
-  $page = array('#type' => 'ajax', '#commands' => $output);
-  ajax_deliver($page);
+  $commands = array(
+    ctools_modal_command_dismiss(),
+    acquia_lift_command_messagebox(t('The variation has been renamed.'), 10),
+    acquia_lift_command_option_set_updates($settings),
+  );
+  return $commands;
 }
 
 /**
@@ -1046,36 +1042,34 @@ function acquia_lift_page_variation_rename_submit($form, &$form_state) {
  *   The index of the variation to rename.
  */
 function acquia_lift_page_variation_delete_callback($agent_name, $variation_index) {
-  ctools_include('modal');
-  ctools_include('ajax');
-  ctools_modal_add_js();
-
-  $form_state = array(
-    'ajax' => TRUE,
-    'title' => t('Delete a variation'),
+  acquia_lift_create_ctools_form(
+    t('Delete a variation'),
+    'acquia_lift_page_variation_delete',
+    array(
+      'agent_name' => $agent_name,
+      'variation_index' => $variation_index,
+    ),
+    'acquia_lift_page_variation_delete_complete_callback'
   );
+}
 
-  $form_state['build_info']['args']['agent_name'] = $agent_name;
-  $form_state['build_info']['args']['variation_index'] = $variation_index;
-
-  $output = ctools_modal_form_wrapper('acquia_lift_page_variation_delete', $form_state);
-
-  if ($form_state['executed']) {
-    $settings = array();
-    $option_sets = $option_sets = personalize_option_set_load_multiple(array(), array('decision_name' => $form_state['values']['variation_set_name']));
-    $option_set_settings = array_map('_personalize_convert_option_set_to_js_setting', $option_sets);
-    foreach($option_set_settings as $option_set_setting) {
-      $settings[key($option_set_setting)] = reset($option_set_setting);
-    }
-    // form processing is complete.
-    $output = array(
-      ctools_modal_command_dismiss(),
-      acquia_lift_command_messagebox(t('The variation has been deleted.'), 10),
-      acquia_lift_command_option_set_updates($settings),
-    );
+/**
+ * Ctools form processing complete handler for deletion of a page variation.
+ * @see acquia_lift_create_ctools_form().
+ */
+function acquia_lift_page_variation_delete_complete_callback($form, $form_state) {
+  $settings = array();
+  $option_sets = $option_sets = personalize_option_set_load_multiple(array(), array('decision_name' => $form_state['values']['variation_set_name']));
+  $option_set_settings = array_map('_personalize_convert_option_set_to_js_setting', $option_sets);
+  foreach($option_set_settings as $option_set_setting) {
+    $settings[key($option_set_setting)] = reset($option_set_setting);
   }
-  $page = array('#type' => 'ajax', '#commands' => $output);
-  ajax_deliver($page);
+  $commands = array(
+    ctools_modal_command_dismiss(),
+    acquia_lift_command_messagebox(t('The variation has been deleted.'), 10),
+    acquia_lift_command_option_set_updates($settings),
+  );
+  return $commands;
 }
 
 /**
@@ -1225,6 +1219,7 @@ function acquia_lift_create_goal_type_callback($type, $ajax) {
     'title' => t('Add a goal'),
   );
   $form_state['build_info']['args']['type'] = $type;
+  $form_state['cache'] = TRUE;
 
   $output = ctools_modal_form_wrapper('acquia_lift_create_goal_type_form', $form_state);
   if ($form_state['executed']) {
@@ -1423,4 +1418,50 @@ function acquia_lift_create_goal_type_form_submit($form, &$form_state) {
   }
   personalize_goal_save($agent_data->machine_name, $action_name, 1);
   $form_state['acquia_lift']['goal_name'] = $goal_name;
+}
+
+/**
+ * Handles generating a CTools form window for a particular form.
+
+ * @param string $title
+ *   The title for the modal window.
+ * @param $form_name
+ *   The name of the form to retrieve.
+ * @param null $args
+ *   An array of form arguments to pass to the form.
+ * @param null $callback
+ *   A callback to call when the form has been executed.
+ *   The callback will receive the $form and $form_state arguments and should
+ *   return the array of AJAX commands to execute.
+ *   If empty then the modal will simply be dismissed.
+ */
+function acquia_lift_create_ctools_form($title, $form_name, $args = array(), $callback = NULL) {
+  ctools_include('modal');
+  ctools_include('ajax');
+  ctools_modal_add_js();
+
+  $form_state = array(
+    'ajax' => TRUE,
+    'title' => $title,
+    'cache' => TRUE,
+    'nocache' => '',
+    'build_info' => array(
+      'args' => $args,
+    )
+  );
+
+  $output = ctools_modal_form_wrapper($form_name, $form_state);
+
+  if ($form_state['executed']) {
+    // Form has been processed to generate the output commands.
+    if (is_callable($callback)) {
+      $output = $callback($form, $form_state);
+    } else {
+      $output = array(
+        ctools_modal_command_dismiss(),
+      );
+    }
+  }
+  $page = array('#type' => 'ajax', '#commands' => $output);
+  ajax_deliver($page);
 }

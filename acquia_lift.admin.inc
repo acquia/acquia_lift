@@ -885,6 +885,7 @@ function acquia_lift_page_variation_details_submit($form, &$form_state) {
   $variation_number = personalize_page_variation_create($variation_set_name, $option_set, array('personalize_elements_content' => $form_state['values']['personalize_elements_content']), $variation_number);
   // Save this for the Ajax callback.
   $form_state['storage']['variation_number'] = $variation_number;
+  acquia_lift_process_queue(FALSE);
 }
 
 /**
@@ -1134,6 +1135,7 @@ function acquia_lift_page_variation_delete($form, &$form_state, $agent_name, $va
  */
 function acquia_lift_page_variation_delete_submit($form, &$form_state) {
   personalize_page_variation_delete($form_state['values']['variation_set_name'], $form_state['values']['agent_name'], $form_state['values']['variation_index']);
+  acquia_lift_process_queue(FALSE);
 }
 
 /**
@@ -1417,6 +1419,7 @@ function acquia_lift_create_goal_type_form_submit($form, &$form_state) {
       break;
   }
   personalize_goal_save($agent_data->machine_name, $action_name, 1);
+  acquia_lift_process_queue(FALSE);
   $form_state['acquia_lift']['goal_name'] = $goal_name;
 }
 

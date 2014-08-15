@@ -604,7 +604,7 @@ function acquia_lift_create_campaign_callback($ajax) {
     'items' => array(
       'ab' => array(
         'title' => t('A/B test'),
-        'description' => t('Create variations of the content on your site to compare against each other.'),
+        'description' => t('Create and compare content variations.'),
         'url' => 'admin/structure/acquia_lift/add/ab',
         'modal' => TRUE,
         'ctools_style' => 'ctools-modal-acquia-lift-style-short',
@@ -616,7 +616,7 @@ function acquia_lift_create_campaign_callback($ajax) {
       ),
       'custom' => array(
         'title' => t('Custom Lift campaign'),
-        'description' => t('Custom campaigns allow you to create a content targeting or multi-variate campaign using the legacy campaign creation system.'),
+        'description' => t('Create a content targeting or multivariate campaign using the Drupal-integrated campaign tools.'),
         'url' => 'admin/structure/personalize/add/',
         'modal' => FALSE,
         'logo' => theme('image', array(
@@ -666,7 +666,7 @@ function acquia_lift_create_campaign_type_complete_callback($form, $form_state) 
       'activeCampaign' => personalize_get_campaign_context(),
       'campaigns' => personalize_agent_get_settings(),
     )), TRUE),
-    acquia_lift_command_messagebox(t('Click on an element in your site to create %variation in %campaign.', array(
+    acquia_lift_command_messagebox(t('Click the element you want to change in %variation.', array(
       '%campaign' => $form_state['values']['agent_basic_info']['title'],
       '%variation' => 'Variation #1',
     )), 10),
@@ -888,7 +888,7 @@ function acquia_lift_page_variation_details_ajax_callback($form, &$form_state) {
     // Otherwise the form submitted so stop creating a page variation
     // and show a confirmation message.
     $commands[] = acquia_lift_command_page_variation_toggle(FALSE);
-    $commands[] = acquia_lift_command_messagebox(t('The variation has been created.  Track your conversions by adding goals.'), 10);
+    $commands[] = acquia_lift_command_messagebox(t('The variation has been created. Add one or more goals by clicking Goals &gt; Add goal.'), 10);
     // Get the updated option sets for the page variation.
     $variation_set_name = $form_state['values']['agent'];
     $option_sets = personalize_option_set_load_multiple(array(), array('decision_name' => $variation_set_name));
@@ -1144,7 +1144,7 @@ function acquia_lift_create_goal_callback($ajax) {
     'items' => array(
       'existing' => array(
         'title' => t('Pre-existing goal'),
-        'description' => t('Add a goal to this campaign that has been defined by the %module module.', array('%module' => 'visitor actions')),
+        'description' => t('Visitor actions already defined by Acquia Lift'),
         'url' => 'admin/structure/acquia_lift/goal/add/existing',
         'modal' => TRUE,
         'ctools_style' => 'ctools-modal-acquia-lift-style-short',
@@ -1156,7 +1156,7 @@ function acquia_lift_create_goal_callback($ajax) {
       ),
       'element' => array(
         'title' => t('Element goal'),
-        'description' => t('Add a "click" or "hover" goal to an element on your site.'),
+        'description' => t('Element-level visitor action, such as clicking a link or hovering over an image'),
         'url' => 'admin/structure/visitor_actions',
         'modal' => FALSE,
         'logo' => theme('image', array(
@@ -1167,7 +1167,7 @@ function acquia_lift_create_goal_callback($ajax) {
       ),
       'page' => array(
         'title' => t('Page goal'),
-        'description' => t('Add page level goals like "engagement" or "scroll to bottom" to this campaign.'),
+        'description' => t('Page-level visitor action, such as scrolling to the bottom of the page'),
         'url' => 'admin/structure/acquia_lift/goal/add/page',
         'modal' => TRUE,
         'ctools_style' => 'ctools-modal-acquia-lift-style',
@@ -1193,38 +1193,36 @@ function acquia_lift_create_goal_callback($ajax) {
  *   Indicates if AJAX is supported.
  */
 function acquia_lift_create_goal_type_callback($type, $ajax) {
-  if (!in_array($type, array('existing', 'page'))) {
-    drupal_goto('admin/structure/personalize/goals');
-    return;
-  }
-  ctools_include('modal');
-  ctools_include('ajax');
-  ctools_modal_add_js();
-
-  $form_state = array(
-    'ajax' => TRUE,
-    'title' => t('Add a goal'),
+  acquia_lift_create_ctools_form(
+    t('Add a goal'),
+    'acquia_lift_create_goal_type_form',
+    array('type' => $type),
+    'acquia_lift_create_goal_type_completed_callback'
   );
-  $form_state['build_info']['args']['type'] = $type;
-  $form_state['cache'] = TRUE;
+}
 
-  $output = ctools_modal_form_wrapper('acquia_lift_create_goal_type_form', $form_state);
-  if ($form_state['executed']) {
-    // Form is processed.
-    $agent = $form_state['values']['agent'];
-    $output = array(
-      ctools_modal_command_dismiss(),
-      ajax_command_settings(array('personalize' => array(
-        'campaigns' => personalize_agent_get_settings(),
-      )), TRUE),
-      acquia_lift_command_messagebox(t('%goal added to %campaign as a goal.', array(
-        '%goal' => $form_state['acquia_lift']['goal_name'],
-        '%campaign' => $agent->label,
-      )), 5),
-    );
+/**
+ * Ctools form processing complete handler for the creation of a new goal by
+ * type.
+ * @see acquia_lift_create_ctools_form().
+ */
+function acquia_lift_create_goal_type_completed_callback($form, &$form_state) {
+  $agent = $form_state['values']['agent'];
+  $settings = personalize_agent_get_settings();
+  if ($settings[$agent->machine_name]['verified'] && personalize_agent_get_status($agent->machine_name) === PERSONALIZE_STATUS_NOT_STARTED) {
+    $message = t('Goal added.  You can now start the campaign.');
   }
-  $page = array('#type' => 'ajax', '#commands' => $output);
-  ajax_deliver($page);
+  else {
+    $message = t('%goal goal added to campaign.', array('%goal' => $form_state['acquia_lift']['goal_name']));
+  }
+  $commands = array(
+    ctools_modal_command_dismiss(),
+    ajax_command_settings(array('personalize' => array(
+      'campaigns' => $settings,
+    )), TRUE),
+    acquia_lift_command_messagebox($message, 10),
+  );
+  return $commands;
 }
 
 /**

@@ -21,6 +21,8 @@
       var settings = Drupal.settings.personalize;
       var ui = Drupal.acquiaLiftUI;
       var addedCampaigns = {};
+      var activeCampaign = '';
+
       if (settings) {
         // Build models for menus that don't have them yet.
         if (!ui.collections.campaigns) {
@@ -40,6 +42,20 @@
             addedCampaigns[obj.name] = model;
           }
         });
+        // If it was just added and is set as the active campaign then it takes
+        // priority over a campaign that was previously set as active.
+        if (addedCampaigns.hasOwnProperty(settings.activeCampaign)) {
+          activeCampaign = settings.activeCampaign;
+        } else {
+          // Use the current if set, otherwise read from settings.
+          var current = ui.collections['campaigns'].findWhere({'isActive': true});
+          if (current) {
+            activeCampaign = current.get('name');
+          } else {
+            activeCampaign = settings.activeCampaign;
+          }
+        }
+
         // Clear the variations for all page variation campaigns.
         ui.collections.campaigns.each(function (model) {
           if (model instanceof Drupal.acquiaLiftUI.MenuCampaignABModel) {
@@ -314,20 +330,7 @@
         if (!ui.collections['campaigns']) {
           return;
         }
-        var activeCampaign = '';
-        // If it was just added and is set as the active campaign then it takes
-        // priority over a campaign that was previously set as active.
-        if (addedCampaigns.hasOwnProperty(settings.activeCampaign)) {
-          activeCampaign = settings.activeCampaign;
-        } else {
-          // Use the current if set, otherwise read from settings.
-          var current = ui.collections['campaigns'].findWhere({'isActive': true});
-          if (current) {
-            activeCampaign = current.get('name');
-          } else {
-            activeCampaign = settings.activeCampaign;
-          }
-        }
+        // Update the active campaign.
         Drupal.acquiaLiftUI.setActiveCampaign(activeCampaign);
         initialized = true;
         updateNavbar();
@@ -1135,6 +1138,7 @@
             // indicated.
             var $li = this.$el.find('[data-acquia-lift-personalize-page-variation="' + data.variationIndex + '"]');
             $li.trigger('click');
+            this.model.set('activeVariation', data.variationIndex);
           }
           updateNavbar();
         } else {
@@ -1146,7 +1150,6 @@
             this.model.set('activeVariation', 0);
           }
         }
-        this.model.set('activeVariation', variation_index);
       }
     }),
 

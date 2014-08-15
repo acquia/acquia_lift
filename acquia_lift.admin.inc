@@ -1510,7 +1510,7 @@ function acquia_lift_start_campaign_submit($form, &$form_state) {
   variable_set($varname, $end_date);
 
   // Start the campaign.
-  personalize_agent_set_status($agent_data->machine_name, PERSONALIZE_STATUS_RUNNING);
+  $form_state['acquia_lift']['started'] = personalize_agent_set_status($agent_data->machine_name, PERSONALIZE_STATUS_RUNNING);
 }
 
 /**
@@ -1519,14 +1519,20 @@ function acquia_lift_start_campaign_submit($form, &$form_state) {
  */
 function acquia_lift_start_campaign_complete_callback($form, $form_state) {
   $agent_data = $form_state['values']['agent'];
+  if ($form_state['acquia_lift']['started']) {
+    $message = t('The %campaign campaign has been started', array(
+      '%campaign' => $agent_data->label,
+    ));
+  }
+  else {
+    $message = t('There was a problem starting your campaign.');
+  }
   return array(
     ctools_modal_command_dismiss(),
     ajax_command_settings(array('personalize' => array(
       'campaigns' => personalize_agent_get_settings(),
     )), TRUE),
-    acquia_lift_command_messagebox(t('The %campaign campaign has been started', array(
-      '%campaign' => $agent_data->label,
-    )), 10),
+    acquia_lift_command_messagebox($message, 10),
   );
 }
 

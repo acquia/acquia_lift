@@ -132,6 +132,15 @@ function acquia_lift_menu() {
     'file' => 'acquia_lift.admin.inc',
     'theme callback' => 'ajax_base_page_theme',
   );
+  // Callback to show the start campaign form.
+  $items['admin/structure/acquia_lift/start/%'] = array(
+    'page callback' => 'acquia_lift_start_campaign_callback',
+    'page arguments' => array(4),
+    'access arguments' => array('manage personalized content'),
+    'type' => MENU_CALLBACK,
+    'file' => 'acquia_lift.admin.inc',
+    'theme callback' => 'ajax_base_page_theme',
+  );
   return $items;
 }
 

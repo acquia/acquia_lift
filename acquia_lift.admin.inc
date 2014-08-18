@@ -821,6 +821,10 @@ function acquia_lift_page_variation_details($form, &$form_state, $variation_type
     '#ajax' => array(
       'callback' => 'acquia_lift_page_variation_details_ajax_callback',
       'wrapper' => 'acquia-lift-page-variation-details',
+      'progress' => array(
+        'message' => NULL,
+        'type' => 'throbber',
+      ),
     ),
   );
   // Add a cancel button for AJAX-loaded forms.
@@ -834,6 +838,10 @@ function acquia_lift_page_variation_details($form, &$form_state, $variation_type
     '#ajax' => array(
       'callback' => 'acquia_lift_page_variation_details_ajax_callback',
       'wrapper' => 'acquia-lift-page-variation-details',
+      'progress' => array(
+        'message' => NULL,
+        'type' => 'throbber',
+      ),
     ),
     // Turn off validation.
     '#limit_validation_errors' => array(),

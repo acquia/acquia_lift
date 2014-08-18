@@ -1155,7 +1155,7 @@ function acquia_lift_create_goal_callback($ajax) {
         )),
       ),
       'element' => array(
-        'title' => t('Element goal'),
+        'title' => t('New element goal'),
         'description' => t('Element-level visitor action, such as clicking a link or hovering over an image'),
         'url' => 'admin/structure/visitor_actions',
         'modal' => FALSE,
@@ -1166,7 +1166,7 @@ function acquia_lift_create_goal_callback($ajax) {
         ))
       ),
       'page' => array(
-        'title' => t('Page goal'),
+        'title' => t('New page goal'),
         'description' => t('Page-level visitor action, such as scrolling to the bottom of the page'),
         'url' => 'admin/structure/acquia_lift/goal/add/page',
         'modal' => TRUE,

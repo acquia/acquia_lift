@@ -1665,6 +1665,7 @@
           // Not yet started.
           this.$el
             .find('a')
+            .addClass('acquia-lift-menu-status-advanced')
             .attr('href', startPath + activeCampaign.get('name'));
 
           if (this.$el.find('a').hasClass('ctools-use-modal')) {
@@ -1686,6 +1687,7 @@
           this.$el
             .find('a')
             .attr('href', 'javascript:void(0);')
+            .removeClass('acquia-lift-menu-status-advanced')
             .removeClass('ctools-use-modal')
             .removeClass('ctools-modal-acquia-lift-style')
             .removeClass('ctools-use-modal-processed')

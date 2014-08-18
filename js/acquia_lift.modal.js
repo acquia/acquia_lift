@@ -66,10 +66,9 @@
         var $selector =  $variationTypeForm.find('input[name="selector"]').closest('div');
         $variationTypeForm.parent().find('h2').append(editLink);
         $variationTypeForm.parent().find('.acquia-lift-selector-edit').on('click', function(e) {
-          $selector.slideDown(function() {
-            $(this).find('input[name="selector"]').focus();
-          });
-          $(this).fadeOut();
+          var newText = $(this).text() == Drupal.t('Edit selector') ? Drupal.t('Hide selector') : Drupal.t('Edit selector');
+          $selector.slideToggle();
+          $(this).text(newText);
         });
         $selector.hide();
         $variationTypeForm.addClass('acquia-lift-processed');

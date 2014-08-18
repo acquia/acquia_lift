@@ -1627,7 +1627,7 @@
           var nextStatus = activeCampaign.get('nextStatus');
           this.$el
             .find('a[href]')
-            .text(nextStatus.text)
+            .text(Drupal.t('@status campaign', {'@status': nextStatus.text}))
             .data('acquia-lift-campaign-status', nextStatus.status)
             .removeClass('acquia-lift-menu-disabled')
             .end()

@@ -46,6 +46,18 @@
     },
 
     /**
+     * Determine tip content for an element
+     * @returns {*|HTMLElement}
+     */
+    getTipContent: function (element) {
+      if (element.hasOwnProperty('id') && element.id.length > 0 && element.id.match(selectorIgnoreId) == null) {
+        return element.id;
+      } else {
+        return '&lt;' + element.nodeName.toLowerCase() + '&gt;';
+      }
+    },
+
+    /**
      * Enables DOM watching capabilities.
      *
      * @returns the current jQuery element.
@@ -55,7 +67,7 @@
       this.$element.bind('click', $.proxy(this, '_onClick'));
       this.$element.find('*').each(function() {
         $(this).qtip({
-          content: '&lt;' + this.nodeName + '&gt;',
+          content: Plugin.prototype.getTipContent(this),
           solo: true,
           position: {
             target: 'mouse',

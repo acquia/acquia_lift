@@ -296,7 +296,6 @@ class AcquiaLiftAgent extends PersonalizeAgentBase implements PersonalizeAgentGo
       );
     }
     $decision_style = isset($agent_data->data['decision_style']) ? $agent_data->data['decision_style'] : 'adaptive';
-    $decision_style = is_array($decision_style) ? current($decision_style) : $decision_style;
     if ($simplified) {
       $form['decision_style'] = array(
         '#type' => 'value',

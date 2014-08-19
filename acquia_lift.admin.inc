@@ -1243,7 +1243,7 @@ function acquia_lift_create_goal_type_completed_callback($form, &$form_state) {
 function acquia_lift_create_goal_type_form($form, &$form_state, $type) {
   ctools_include('modal');
   ctools_include('ajax');
-  ctools_add_js();
+  ctools_add_js('ajax-responder');
 
   $agent_name = personalize_get_campaign_context();
   $agent = personalize_agent_load($agent_name);
@@ -1504,7 +1504,7 @@ function acquia_lift_start_campaign_validate($form, &$form_state) {
 function acquia_lift_start_campaign_submit($form, &$form_state) {
   // Set the decision style.
   $agent_data = $form_state['values']['agent'];
-  $agent_data->data['decision_style'] = empty($form_state['values']['decision_style']) ? 'random' : $form_state['values']['decision_style'];
+  $agent_data->data['decision_style'] = empty($form_state['values']['decision_style']) ? 'random' : current($form_state['values']['decision_style']);
   personalize_agent_save($agent_data);
 
   // Set the end date.
@@ -1579,7 +1579,7 @@ function acquia_lift_create_ctools_form($title, $form_name, $args = array(), $ca
   if ($form_state['executed']) {
     // Form has been processed to generate the output commands.
     if (is_callable($callback)) {
-      $output = $callback($form, $form_state);
+      $output = $callback($output, $form_state);
     } else {
       $output = array(
         ctools_modal_command_dismiss(),

@@ -907,6 +907,8 @@ function acquia_lift_page_variation_details_ajax_callback($form, &$form_state) {
     // Also get the updated personalize elements options.
     personalize_elements_limit_option_sets_by_path($option_sets, $form_state['values']['pages']);
     $settings['personalize_elements']['elements'] = personalize_elements_element_settings($option_sets);
+    // We need to update the campaigns as well in case a campaign was paused by this action.
+    $settings['personalize']['campaigns'] = personalize_agent_get_settings();
     // Note: JavaScript assets for personalize elements are included in
     // personalize_elements_page_build when the module is enabled and therefore
     // do not need to be explicitly added here.
@@ -1058,10 +1060,12 @@ function acquia_lift_page_variation_delete_complete_callback($form, $form_state)
   foreach($option_set_settings as $option_set_setting) {
     $settings[key($option_set_setting)] = reset($option_set_setting);
   }
+  $campaign_settings['personalize']['campaigns'] = personalize_agent_get_settings();
   $commands = array(
     ctools_modal_command_dismiss(),
     acquia_lift_command_messagebox(t('The variation has been deleted.'), 10),
     acquia_lift_command_option_set_updates($settings),
+    ajax_command_settings($campaign_settings),
   );
   return $commands;
 }

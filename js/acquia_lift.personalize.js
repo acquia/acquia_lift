@@ -666,6 +666,7 @@
             // Leaving for now since the reliance on drupal settings is all over
             // the application so it's not horrible.
             Drupal.settings.personalize.campaigns[model.get('name')].status = data.currentStatus;
+            Drupal.settings.personalize.campaigns[model.get('name')].nextStatus = data.nextStatus;
           }
         });
       }

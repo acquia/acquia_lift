@@ -1464,12 +1464,6 @@ function acquia_lift_start_campaign($form, &$form_state, $agent_data) {
   ctools_include('ajax');
   ctools_add_js('ajax-responder');
 
-  $end_variable = _personalize_agent_get_stoptime_variable($agent_data->machine_name);
-  $agent_end = $default_end = variable_get($end_variable, 0);
-  if ($agent_end == 0) {
-    $default_end = strtotime('+1 month');
-  }
-  $agent_end_date = array('year' => date('Y', $default_end), 'month' => intval(date('m', $default_end)), 'day' => date('d', $default_end));
   $form['agent'] = array(
     '#type' => 'value',
     '#value' => $agent_data,
@@ -1482,24 +1476,9 @@ function acquia_lift_start_campaign($form, &$form_state, $agent_data) {
     ),
     '#default_value' => array($agent_data->data['decision_style']),
   );
-  $form['campaign_end'] = array(
-    '#type' => 'radios',
-    '#title' => t('Campaign end date'),
-    '#options' => array(
-      'none' => t('Run until I stop campaign'),
-      'specified' => t('Select date'),
-    ),
-    '#default_value' => $agent_end == 0 ? 'none' : 'specified',
-  );
-  $form['campaign_end_date'] = array(
-    '#type' => 'date',
-    '#default_value' => $agent_end_date,
-    '#states' => array(
-      'visible' => array(
-        ':input[name="campaign_end"]' => array('value' => 'specified'),
-      ),
-    ),
-  );
+  module_load_include('inc', 'personalize', 'personalize.admin');
+  $form['campaign_end'] = personalize_agent_end_date_form($agent_data->machine_name);
+
   $form['actions']['submit_form'] = array(
     '#type' => 'submit',
     '#attributes' => array(
@@ -1516,12 +1495,8 @@ function acquia_lift_start_campaign($form, &$form_state, $agent_data) {
  * Form validator for acquia_lift_start_campaign().
  */
 function acquia_lift_start_campaign_validate($form, &$form_state) {
-  if ($form_state['values']['campaign_end'] === 'specified') {
-    $end_date = strtotime($form_state['values']['campaign_end_date']['year'] . '-' . $form_state['values']['campaign_end_date']['month'] . '-' . $form_state['values']['campaign_end_date']['day']);
-    if ($end_date < time()) {
-      form_set_error('campaign_end_date', t('When provided, the end date for the campaign must be in the future.'));
-    }
-  }
+  module_load_include('inc', 'personalize', 'personalize.admin');
+  personalize_agent_end_date_form_validate($form_state['values']['campaign_end']);
 }
 
 /**
@@ -1534,14 +1509,8 @@ function acquia_lift_start_campaign_submit($form, &$form_state) {
   personalize_agent_save($agent_data);
 
   // Set the end date.
-  if ($form_state['values']['campaign_end'] === 'specified') {
-    $end_date = strtotime($form_state['values']['campaign_end_date']['year'] . '-' . $form_state['values']['campaign_end_date']['month'] . '-' . $form_state['values']['campaign_end_date']['day']);
-  }
-  else {
-    $end_date = 0;
-  }
-  $varname = _personalize_agent_get_stoptime_variable($agent_data->machine_name);
-  variable_set($varname, $end_date);
+  module_load_include('inc', 'personalize', 'personalize.admin');
+  personalize_agent_end_date_form_submit($agent_data->machine_name, $form_state['values']['campaign_end']);
 
   // Start the campaign.
   $form_state['acquia_lift']['started'] = personalize_agent_set_status($agent_data->machine_name, PERSONALIZE_STATUS_RUNNING);

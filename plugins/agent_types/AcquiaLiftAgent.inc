@@ -284,6 +284,7 @@ class AcquiaLiftAgent extends PersonalizeAgentBase implements PersonalizeAgentGo
       );
     }
     $decision_style = isset($agent_data->data['decision_style']) ? $agent_data->data['decision_style'] : 'adaptive';
+    $decision_style = is_array($decision_style) ? current($decision_style) : $decision_style;
     if ($simplified) {
       $form['decision_style'] = array(
         '#type' => 'value',
@@ -294,7 +295,7 @@ class AcquiaLiftAgent extends PersonalizeAgentBase implements PersonalizeAgentGo
       $form['decision_style'] = array(
         '#type' => 'radios',
         '#title' => t('Decision Style'),
-        '#options' => array('adaptive' => t('Auto-personalize'), 'random' => t('A/B test')),
+        '#options' => array('adaptive' => t('Auto-personalize'), 'random' => t('Test only')),
         '#default_value' => $decision_style,
         '#title_display' => 'invisible',
       );
@@ -324,7 +325,7 @@ class AcquiaLiftAgent extends PersonalizeAgentBase implements PersonalizeAgentGo
         )),
         '#states' => array(
           'visible' => array(
-            ':input[name="agent_basic_info[options][acquia_lift][decision_style]"]' => array('value' => 'adaptive'),
+            ':input[name="agent_basic_info[options][' . $agent_data->plugin . '][decision_style]"]' => array('value' => 'adaptive'),
           ),
         ),
       );

@@ -1452,7 +1452,7 @@ function acquia_lift_start_campaign($form, &$form_state, $agent_data) {
     '#type' => 'checkboxes',
     '#title' => t('Automatically determine a winner'),
     '#options' => array(
-      'adaptive' => t('Acquia Lift will determine a winner and present the best option to visitors.'),
+      'adaptive' => t('Acquia Lift will adapt to visitors to choose the best option over time.'),
     ),
     '#default_value' => array($agent_data->data['decision_style']),
   );

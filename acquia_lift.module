@@ -1880,10 +1880,25 @@ function acquia_lift_command_messagebox($message, $seconds = 0) {
   if (is_array($message)) {
     $message = drupal_render($message);
   }
+
+  // Add any messages set by drupal_set_message().
+  $full_message = '';
+  $queued_messages = drupal_get_messages();
+  $delimiter = '<br />';
+  foreach ($queued_messages as $messages) {
+    $full_message .= implode($messages, $delimiter);
+  }
+  if (!empty($message)) {
+    if (!empty($full_message)) {
+      $full_message .= $delimiter;
+    }
+    $full_message .= $message;
+  }
+
   return array(
     'command' => 'acquia_lift_message_box',
     'data' => array(
-      'message' => $message,
+      'message' => $full_message,
       'seconds' => $seconds,
     ),
   );

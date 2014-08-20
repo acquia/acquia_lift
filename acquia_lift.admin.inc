@@ -747,6 +747,11 @@ function _acquia_lift_create_simplified_campaign_form($agent_type) {
     '#tree' => TRUE,
   );
   $form['agent_basic_info']['options'][$agent_type] = $options_form;
+  // Defaults to caching decisions.
+  $form['cache_decisions'] = array(
+    '#type' => 'value',
+    '#value' => 1,
+  );
   return $form;
 }
 
@@ -762,6 +767,7 @@ function acquia_lift_create_campaign_type_form_validate($form, &$form_state) {
 function acquia_lift_create_campaign_type_form_submit($form, &$form_state) {
   module_load_include('inc', 'personalize', 'personalize.admin');
   $agent_data = _personalize_agent_from_form_values($form_state['values']['agent_basic_info']);
+  $agent_data->data['cache_decisions'] = $form_state['values']['cache_decisions'];
   $agent = personalize_agent_save($agent_data);
   personalize_set_campaign_context($agent->machine_name);
 }

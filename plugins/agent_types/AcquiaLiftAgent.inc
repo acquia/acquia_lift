@@ -52,11 +52,6 @@ interface AcquiaLiftAgentInterface {
    *   arrays with decision names as keys and an array of choices as values.
    */
   public static function convertOptionSetsToDecisions($option_sets);
-
-  /**
-   * Get the form type to use when examining an agent form tree.
-   */
-  public static function getFormTreeType();
 }
 
 interface AcquiaLiftSimplifiedAgentInterface {
@@ -178,13 +173,6 @@ class AcquiaLiftAgent extends PersonalizeAgentBase implements PersonalizeAgentGo
    * Implements PersonalizeAgentInterface::getType();
    */
   public function getType() {
-    return 'acquia_lift';
-  }
-
-  /**
-   * Implements AcquiaLiftAgentInterface::getFormTreeType();
-   */
-  public static function getFormTreeType() {
     return 'acquia_lift';
   }
 
@@ -336,7 +324,7 @@ class AcquiaLiftAgent extends PersonalizeAgentBase implements PersonalizeAgentGo
         )),
         '#states' => array(
           'visible' => array(
-            ':input[name="agent_basic_info[options][' . self::getFormTreeType() . '][decision_style]"]' => array('value' => 'adaptive'),
+            ':input[name="agent_basic_info[options][acquia_lift][decision_style]"]' => array('value' => 'adaptive'),
           ),
         ),
       );
@@ -937,16 +925,9 @@ class AcquiaLiftSimpleAB extends AcquiaLiftAgent implements AcquiaLiftSimplified
   }
 
   /**
-   * Implements PersonalizeAgentInterface::getType().
+   * Implements PersonalizeAgentInterface::getSpecificType();
    */
-  public function getType() {
-    return 'acquia_lift_simple_ab';
-  }
-
-  /**
-   * Implements AcquiaLiftAgentInterface::getFormTreeType();
-   */
-  public static function getFormTreeType() {
+  public function getSpecificType() {
     return 'acquia_lift_simple_ab';
   }
 }

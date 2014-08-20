@@ -1155,13 +1155,13 @@ function acquia_lift_create_goal_callback($ajax) {
   $output = theme('acquia_lift_type_list', array(
     'items' => array(
       'existing' => array(
-        'title' => t('Pre-existing goal'),
+        'title' => t('Predefined goal'),
         'description' => t('Visitor actions already defined by Acquia Lift'),
         'url' => 'admin/structure/acquia_lift/goal/add/existing',
         'modal' => TRUE,
         'ctools_style' => 'ctools-modal-acquia-lift-style-short',
         'logo' => theme('image', array(
-          'path' => $path . '/images/campaign-type-ab.png',
+          'path' => $path . '/images/goal-type-predefined.png',
           'alt' => t('Pre-existing goal'),
           'title' => t('Select this option to create a goal from a pre-existing visitor action.'),
         )),
@@ -1172,7 +1172,7 @@ function acquia_lift_create_goal_callback($ajax) {
         'url' => 'admin/structure/visitor_actions',
         'modal' => FALSE,
         'logo' => theme('image', array(
-          'path' => $path . '/images/campaign-type-custom.png',
+          'path' => $path . '/images/goal-type-element.png',
           'alt' => t('Element goal'),
           'title' => t('Select this option to create an element goal.'),
         ))
@@ -1184,7 +1184,7 @@ function acquia_lift_create_goal_callback($ajax) {
         'modal' => TRUE,
         'ctools_style' => 'ctools-modal-acquia-lift-style',
         'logo' => theme('image', array(
-          'path' => $path . '/images/campaign-type-custom.png',
+          'path' => $path . '/images/goal-type-page.png',
           'alt' => t('Page goal'),
           'title' => t('Select this option to create a page goal.'),
         ))

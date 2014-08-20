@@ -90,6 +90,273 @@ class AcquiaLiftWebTest extends DrupalWebTestCase {
     $this->assertRaw('<option value="acquia_lift">acquia_lift</option>');
   }
 
+  function testPersonalizeElementsVariationSets() {
+    $agent_name = 'test-agent';
+    // Variation 1 (only one element).
+    $os1 = personalize_elements_get_option_set_for_variation('my first os', $agent_name, 'div.some-class', 'addClass', 'node');
+    acquia_lift_page_variation_create('my_first_varset', $os1, array('personalize_elements_content' => 'test-class'));
+
+    // Variation 2 (2 elements).
+    $os2 = personalize_elements_get_option_set_for_variation('my second os', $agent_name, 'div.some-class', 'appendHtml', 'node');
+    acquia_lift_page_variation_create('my_first_varset', $os2, array('personalize_elements_content' => 'appended html'));
+    $os3 = personalize_elements_get_option_set_for_variation('my first os', $agent_name, 'div.some-class', 'addClass', 'node');
+    acquia_lift_page_variation_create('my_first_varset', $os3, array('personalize_elements_content' => 'other-class'), 2);
+
+
+    $this->resetAll();
+    $option_sets = personalize_option_set_load_multiple(array(), array('agent' => $agent_name));
+    $this->assertEqual(2, count($option_sets));
+    foreach ($option_sets as $osid => $option_set) {
+      $this->assertEqual('my_first_varset', $option_set->decision_name);
+      $this->assertEqual(3, count($option_set->options));
+    }
+    $expected_options_os1 = array(
+      array(
+        'option_id' => PERSONALIZE_CONTROL_OPTION_ID,
+        'option_label' => PERSONALIZE_CONTROL_OPTION_LABEL,
+        'personalize_elements_content' => '',
+      ),
+      array(
+        'option_id' => 'variation-1',
+        'option_label' => 'Variation #1',
+        'personalize_elements_content' => 'test-class'
+      ),
+      array(
+        'option_id' => 'variation-2',
+        'option_label' => 'Variation #2',
+        'personalize_elements_content' => 'other-class'
+      ),
+    );
+    $this->assertEqual($expected_options_os1, $option_sets[1]->options);
+    $expected_options_os2 = array(
+      array(
+        'option_id' => PERSONALIZE_CONTROL_OPTION_ID,
+        'option_label' => PERSONALIZE_CONTROL_OPTION_LABEL,
+        'personalize_elements_content' => '',
+      ),
+      array(
+        'option_id' => 'variation-1',
+        'option_label' => 'Variation #1',
+      ),
+      array(
+        'option_id' => 'variation-2',
+        'option_label' => 'Variation #2',
+        'personalize_elements_content' => 'appended html'
+      ),
+    );
+    $this->assertEqual($expected_options_os2, $option_sets[2]->options);
+  }
+
+  /**
+   * Tests variation set creation.
+   *
+   * A variation set can be made up of multiple option sets.
+   */
+  function testVariationSets() {
+    $admin_user = $this->drupalCreateUser(array('access administration pages', 'manage personalized content', 'administer blocks'));
+    $this->drupalLogin($admin_user);
+
+    // Create some custom blocks to use as variations.
+    $deltas = $this->createCustomBlocks(10);
+    // Create a new agent via the UI.
+    $agent_name = $this->randomName();
+    $machine_name = personalize_generate_machine_name($agent_name, 'personalize_agent_machine_name_exists');
+    $edit = array(
+      'agent_basic_info[title]' => $agent_name,
+      'agent_basic_info[machine_name]' => $machine_name,
+      'agent_basic_info[agent_type]' => 'test_agent',
+    );
+    $this->drupalPost('admin/structure/personalize/add', $edit, $this->getButton('agent'));
+    $os = array(
+      'agent' => $agent_name,
+      'plugin' => 'block',
+      'executor' => 'show',
+      'options' => array(
+        array('option_id' => PERSONALIZE_CONTROL_OPTION_ID, 'option_label' => PERSONALIZE_CONTROL_OPTION_LABEL, 'bid' => array_shift($deltas))
+      ),
+      'data' => array(
+        'block_title' => 'My personalized block'
+      )
+    );
+    $option_set = (object) $os;
+    $var_num = acquia_lift_page_variation_create('first_variation_set', $option_set, array('bid' => array_shift($deltas)));
+    $this->assertEqual(1, $var_num);
+
+    // Now create another block-based option set and use it for the second variation.
+    $os2 = array(
+      'agent' => $agent_name,
+      'plugin' => 'block',
+      'executor' => 'show',
+      'options' => array(
+        array('option_id' => PERSONALIZE_CONTROL_OPTION_ID, 'option_label' => PERSONALIZE_CONTROL_OPTION_LABEL, 'bid' => array_shift($deltas))
+      ),
+      'data' => array(
+        'block_title' => 'My personalized block'
+      )
+    );
+    $option_set_2 = (object) $os2;
+    $var_num = acquia_lift_page_variation_create('first_variation_set', $option_set_2, array('bid' => array_shift($deltas)));
+    $this->assertEqual(2, $var_num);
+
+    // Now use the first option set for variation 3.
+    $os_1 = personalize_option_set_load(1, TRUE);
+    $var_num = acquia_lift_page_variation_create('first_variation_set', $os_1, array('bid' => array_shift($deltas)));
+    $this->assertEqual(3, $var_num);
+
+    // Now add a different option to both blocks for variation 4.
+    $os_1 = personalize_option_set_load(1, TRUE);
+    $var_num = acquia_lift_page_variation_create('first_variation_set', $os_1, array('bid' => array_shift($deltas)));
+    $this->assertEqual(4, $var_num);
+
+    // Rename the third variation to test if the new names persist across changes.
+    acquia_lift_page_variation_rename('first_variation_set', $agent_name, 3, 'three');
+
+    $os_2 = personalize_option_set_load(2, TRUE);
+    $var_num = acquia_lift_page_variation_create('first_variation_set', $os_2, array('bid' => array_shift($deltas)), 4);
+    $this->assertEqual(4, $var_num);
+
+    // Try to create variation 6, it should correct it to 5.
+    $var_num = acquia_lift_page_variation_create('first_variation_set', $os_2, array('bid' => array_shift($deltas)), 6);
+    $this->assertEqual(5, $var_num);
+
+    // Create another block-based option set and add it to variation 1. (We need to
+    // make sure an option gets created for each subsequent variation.)
+    $os3 = array(
+      'agent' => $agent_name,
+      'plugin' => 'block',
+      'executor' => 'show',
+      'options' => array(
+        array('option_id' => PERSONALIZE_CONTROL_OPTION_ID, 'option_label' => PERSONALIZE_CONTROL_OPTION_LABEL, 'bid' => array_shift($deltas))
+      ),
+      'data' => array(
+        'block_title' => 'My personalized block'
+      )
+    );
+    $option_set_3 = (object) $os3;
+    $var_num = acquia_lift_page_variation_create('first_variation_set', $option_set_3, array('bid' => array_shift($deltas)), 1);
+    $this->assertEqual(1, $var_num);
+
+    $this->resetAll();
+    $option_sets = personalize_option_set_load_multiple(array(), array('agent' => $agent_name));
+    $this->assertEqual(3, count($option_sets));
+    foreach ($option_sets as $osid => $option_set) {
+      $this->assertEqual('first_variation_set', $option_set->decision_name);
+      $this->assertEqual(6, count($option_set->options));
+    }
+    $expected_options_os1 = array(
+      array(
+        'option_id' => PERSONALIZE_CONTROL_OPTION_ID,
+        'option_label' => PERSONALIZE_CONTROL_OPTION_LABEL,
+        'bid' => 'block_delta_1',
+      ),
+      array(
+        'option_id' => 'variation-1',
+        'option_label' => 'Variation #1',
+        'bid' => 'block_delta_2'
+      ),
+      array(
+        'option_id' => 'variation-2',
+        'option_label' => 'Variation #2',
+      ),
+      array(
+        'option_id' => 'variation-3',
+        'option_label' => 'three',
+        'bid' => 'block_delta_5'
+      ),
+      array(
+        'option_id' => 'variation-4',
+        'option_label' => 'Variation #4',
+        'bid' => 'block_delta_6'
+      ),
+      array(
+        'option_id' => 'variation-5',
+        'option_label' => 'Variation #5',
+      ),
+    );
+    $this->assertEqual($expected_options_os1, $option_sets[1]->options);
+    $expected_options_os2 = array(
+      array(
+        'option_id' => PERSONALIZE_CONTROL_OPTION_ID,
+        'option_label' => PERSONALIZE_CONTROL_OPTION_LABEL,
+        'bid' => 'block_delta_3',
+      ),
+      array(
+        'option_id' => 'variation-1',
+        'option_label' => 'Variation #1',
+      ),
+      array(
+        'option_id' => 'variation-2',
+        'option_label' => 'Variation #2',
+        'bid' => 'block_delta_4'
+      ),
+      array(
+        'option_id' => 'variation-3',
+        'option_label' => 'three',
+      ),
+      array(
+        'option_id' => 'variation-4',
+        'option_label' => 'Variation #4',
+        'bid' => 'block_delta_7'
+      ),
+      array(
+        'option_id' => 'variation-5',
+        'option_label' => 'Variation #5',
+        'bid' => 'block_delta_8'
+      ),
+    );
+    $this->assertEqual($expected_options_os2, $option_sets[2]->options);
+    $expected_options_os3 = array(
+      array(
+        'option_id' => PERSONALIZE_CONTROL_OPTION_ID,
+        'option_label' => PERSONALIZE_CONTROL_OPTION_LABEL,
+        'bid' => 'block_delta_9',
+
+      ),
+      array(
+        'option_id' => 'variation-1',
+        'option_label' => 'Variation #1',
+        'bid' => 'block_delta_10',
+      ),
+      array(
+        'option_id' => 'variation-2',
+        'option_label' => 'Variation #2',
+      ),
+      array(
+        'option_id' => 'variation-3',
+        'option_label' => 'three',
+      ),
+      array(
+        'option_id' => 'variation-4',
+        'option_label' => 'Variation #4',
+      ),
+      array(
+        'option_id' => 'variation-5',
+        'option_label' => 'Variation #5',
+      ),
+    );
+    $this->assertEqual($expected_options_os3, $option_sets[3]->options);
+
+    // Rename the second variation.
+    acquia_lift_page_variation_rename('first_variation_set', $agent_name, 2, 'Hello');
+    $expected_options_os1[2]['option_label'] = 'Hello';
+    $expected_options_os2[2]['option_label'] = 'Hello';
+    $expected_options_os3[2]['option_label'] = 'Hello';
+    $option_sets = personalize_option_set_load_multiple(array(), array('decision_name' => 'first_variation_set', 'agent' => $agent_name));
+    $this->assertEqual($expected_options_os1, $option_sets[1]->options);
+    $this->assertEqual($expected_options_os2, $option_sets[2]->options);
+    $this->assertEqual($expected_options_os3, $option_sets[3]->options);
+
+    // Delete the third variation.
+    acquia_lift_page_variation_delete('first_variation_set', $agent_name, 3);
+    unset($expected_options_os1[3]);
+    unset($expected_options_os2[3]);
+    unset($expected_options_os3[3]);
+    $option_sets = personalize_option_set_load_multiple(array(), array('decision_name' => 'first_variation_set', 'agent' => $agent_name));
+    $this->assertEqual($expected_options_os1, $option_sets[1]->options);
+    $this->assertEqual($expected_options_os2, $option_sets[2]->options);
+    $this->assertEqual($expected_options_os3, $option_sets[3]->options);
+  }
+
   public function testConfigForm() {
     $this->drupalLogin($this->adminUser);
     // Try entering an invalid owner code.

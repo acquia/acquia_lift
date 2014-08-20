@@ -780,7 +780,7 @@ function acquia_lift_create_campaign_type_form_submit($form, &$form_state) {
  *   is a key defined as a personalize_elements variaton.
  * @see hook_personalize_elements_variation_types
  */
-function acquia_lift_page_variation_details($form, &$form_state, $variation_type) {
+function acquia_lift_page_variation_details_form($form, &$form_state, $variation_type) {
   $types = module_invoke_all('personalize_elements_variation_types');
   if (!isset($types[$variation_type]['contextual']['formitem'])) {
     $form['error'] = array(
@@ -880,7 +880,7 @@ function acquia_lift_page_variation_details_submit($form, &$form_state) {
   if (is_numeric($form_state['values']['variation_number']) && $form_state['values']['variation_number'] >= 0) {
     $variation_number = $form_state['values']['variation_number'];
   }
-  $variation_number = personalize_page_variation_create($variation_set_name, $option_set, array('personalize_elements_content' => $form_state['values']['personalize_elements_content']), $variation_number);
+  $variation_number = acquia_lift_page_variation_create($variation_set_name, $option_set, array('personalize_elements_content' => $form_state['values']['personalize_elements_content']), $variation_number);
   // Save this for the Ajax callback.
   $form_state['storage']['variation_number'] = $variation_number;
   acquia_lift_process_queue(FALSE);
@@ -957,7 +957,7 @@ function acquia_lift_page_variation_details_ajax_callback($form, &$form_state) {
 function acquia_lift_page_variation_rename_callback($agent_name, $variation_index) {
   acquia_lift_create_ctools_form(
     t('Rename a variation'),
-    'acquia_lift_page_variation_rename',
+    'acquia_lift_page_variation_rename_form',
     array(
       'agent_name' => $agent_name,
       'variation_index' => $variation_index,
@@ -999,7 +999,7 @@ function acquia_lift_page_variation_rename_complete_callback($form, $form_state)
  * @param string $variation_index
  *   The index of the variation to rename.
  */
-function acquia_lift_page_variation_rename($form, &$form_state, $agent_name, $variation_index) {
+function acquia_lift_page_variation_rename_form($form, &$form_state, $agent_name, $variation_index) {
   $variation_set_name = $agent_name;
 
   ctools_include('modal');
@@ -1028,7 +1028,7 @@ function acquia_lift_page_variation_rename($form, &$form_state, $agent_name, $va
   $form['variation_name'] = array(
     '#type' => 'textfield',
     '#title' => t('New name'),
-    '#default_value' => personalize_page_variation_get_name($agent_name, $agent_name, $variation_index),
+    '#default_value' => acquia_lift_page_variation_get_name($agent_name, $agent_name, $variation_index),
     '#required' => TRUE,
     '#maxlength' => PERSONALIZE_MACHINE_NAME_MAXLENGTH,
   );
@@ -1049,7 +1049,7 @@ function acquia_lift_page_variation_rename($form, &$form_state, $agent_name, $va
  * Submit handler for acquia_lift_page_variation_rename().
  */
 function acquia_lift_page_variation_rename_submit($form, &$form_state) {
-  personalize_page_variation_rename($form_state['values']['variation_set_name'], $form_state['values']['agent_name'], $form_state['values']['variation_index'], $form_state['values']['variation_name']);
+  acquia_lift_page_variation_rename($form_state['values']['variation_set_name'], $form_state['values']['agent_name'], $form_state['values']['variation_index'], $form_state['values']['variation_name']);
 }
 
 /**
@@ -1063,7 +1063,7 @@ function acquia_lift_page_variation_rename_submit($form, &$form_state) {
 function acquia_lift_page_variation_delete_callback($agent_name, $variation_index) {
   acquia_lift_create_ctools_form(
     t('Delete a variation'),
-    'acquia_lift_page_variation_delete',
+    'acquia_lift_page_variation_delete_form',
     array(
       'agent_name' => $agent_name,
       'variation_index' => $variation_index,
@@ -1103,9 +1103,9 @@ function acquia_lift_page_variation_delete_complete_callback($form, $form_state)
  * @param string $variation_index
  *   The index of the variation to rename.
  */
-function acquia_lift_page_variation_delete($form, &$form_state, $agent_name, $variation_index) {
+function acquia_lift_page_variation_delete_form($form, &$form_state, $agent_name, $variation_index) {
   $variation_set_name = $agent_name;
-  $variation_name = personalize_page_variation_get_name($variation_set_name, $agent_name, $variation_index);
+  $variation_name = acquia_lift_page_variation_get_name($variation_set_name, $agent_name, $variation_index);
 
   ctools_include('modal');
   ctools_include('ajax');
@@ -1154,7 +1154,7 @@ function acquia_lift_page_variation_delete($form, &$form_state, $agent_name, $va
  * Submit handler for acquia_lift_page_variation_rename().
  */
 function acquia_lift_page_variation_delete_submit($form, &$form_state) {
-  personalize_page_variation_delete($form_state['values']['variation_set_name'], $form_state['values']['agent_name'], $form_state['values']['variation_index']);
+  acquia_lift_page_variation_delete($form_state['values']['variation_set_name'], $form_state['values']['agent_name'], $form_state['values']['variation_index']);
   acquia_lift_process_queue(FALSE);
 }
 
@@ -1447,7 +1447,7 @@ function acquia_lift_start_campaign_callback($agent_name) {
   $agent_data = personalize_agent_load($agent_name);
   acquia_lift_create_ctools_form(
     t('Start campaign %campaign', array('%campaign' => $agent_data->label)),
-    'acquia_lift_start_campaign',
+    'acquia_lift_start_campaign_form',
     array('agent_data' => $agent_data),
     'acquia_lift_start_campaign_complete_callback'
   );
@@ -1459,7 +1459,7 @@ function acquia_lift_start_campaign_callback($agent_name) {
  * @param stdClass $agent_data
  *   The data for the agent to start.
  */
-function acquia_lift_start_campaign($form, &$form_state, $agent_data) {
+function acquia_lift_start_campaign_form($form, &$form_state, $agent_data) {
   ctools_include('modal');
   ctools_include('ajax');
   ctools_add_js('ajax-responder');
@@ -1601,3 +1601,191 @@ function acquia_lift_campaign_flow_cancel($ajax = NULL) {
   $commands = array(ctools_modal_command_dismiss());
   print ajax_render($commands);
 }
+
+/**
+ * =======================================================================
+ *  P A G E  V A R I A T I O N  M A N A G E M E N T
+ * =======================================================================
+ */
+
+/**
+ * Creates an option set option for a page variation based on the passed in option info.
+ *
+ * @param $variation_set_name
+ *   The variation set this belongs to.
+ * @param $option_set
+ *   The option set object to add the option to
+ * @param $option_info
+ *   The information about the individual option to be added for this variation.
+ * @param $variation_number
+ *   The variation number to add this option to. If unspecified it will be created as a
+ *   new variation.
+ * @return number
+ *   The variation number that was created or added to.
+ */
+function acquia_lift_page_variation_create($variation_set_name, $option_set, $option_info, $variation_number = NULL) {
+  // Find all other option sets in this variation set (i.e. with the same
+  // decision name and agent.)
+  $option_sets = personalize_option_set_load_multiple(array(), array('decision_name' => $variation_set_name, 'agent' => $option_set->agent));
+
+  // To figure out the variation number, check the number of options in the first
+  // existing option set and the number of options in the passed in option set and
+  // use whichever is higher.
+  if (!empty($option_sets)) {
+    $first_os = reset($option_sets);
+    $count = count($first_os->options);
+  }
+  else {
+    $count = 0;
+  }
+  $max_variation_number = max(array(1, $count, count($option_set->options)));
+  if ($variation_number === NULL || $variation_number > $max_variation_number) {
+    $variation_number = $max_variation_number;
+  }
+
+  $option_set->decision_name = $variation_set_name;
+  $has_control_option = FALSE;
+  $new_option_id = 'variation-' . $variation_number;
+  $new_option_label = t('Variation #@num', array('@num' => $variation_number));
+  $i = 0;
+  foreach ($option_set->options as $i => $option) {
+    // Check for the control variation.
+    if ($option['option_id'] == PERSONALIZE_CONTROL_OPTION_ID) {
+      if ($i !== 0) {
+        // The control option has to be index 0.
+        unset($option_set->options[$i]);
+      }
+      else {
+        $has_control_option = TRUE;
+      }
+    }
+  }
+  $next_option = $i + 1;
+  // Add any missing options before adding the one for this variation.
+  for ($j = $next_option; $j < $variation_number; $j++) {
+    $option_label = empty($first_os) || !isset($first_os->options[$j]) ? t('Variation #@num', array('@num' => $j)) : $first_os->options[$j]['option_label'];
+    $option_set->options[$j] = array('option_id' => 'variation-' . $j, 'option_label' => $option_label);
+  }
+  // Now add the option for this variation.
+  $option_set->options[$variation_number] = array('option_id' => $new_option_id, 'option_label' => $new_option_label) + $option_info;
+  $control_option = array('option_label' => PERSONALIZE_CONTROL_OPTION_LABEL, 'option_id' => PERSONALIZE_CONTROL_OPTION_ID);
+  if (!$has_control_option) {
+    array_unshift($option_set->options, $control_option);
+  }
+  // If the variation set contains variations with higher numbers than this, make
+  // sure options exist in this option set for those variation numbers.
+  for ($k = $variation_number + 1; $k < $max_variation_number; $k++) {
+    if (!isset($option_set->options[$k])) {
+      $option_label = empty($first_os) || !isset($first_os->options[$k]) ? t('Variation #@num', array('@num' => $k)) : $first_os->options[$k]['option_label'];
+      $option_set->options[$k] = array('option_id' => 'variation-' . $k, 'option_label' => $option_label);
+    }
+  }
+
+  $option_set = personalize_option_set_save($option_set);
+  // Go through the other option sets in the variation set to update their options.
+  foreach ($option_sets as $osid => $os) {
+    if (isset($option_set->osid) && $osid == $option_set->osid) {
+      continue;
+    }
+    // Make sure we have a control option.
+    if (!isset($os->options[0])) {
+      $os->options[0] = array();
+    }
+    $os->options[0] = array_merge($os->options[0], $control_option);
+    // Add empty options for any missing indexes up to and including the variation number.
+    for ($i = 1; $i <= $variation_number; $i++) {
+      if (!isset($os->options[$i])) {
+        $op_id = 'variation-' . $i;
+        $op_label = empty($first_os) || !isset($first_os->options[$i]) ? t('Variation #@num', array('@num' => $i)) : $first_os->options[$i]['option_label'];
+        $os->options[$i] = array('option_id' => $op_id, 'option_label' => $op_label);
+      }
+    }
+    personalize_option_set_save($os);
+  }
+  return $variation_number;
+}
+
+/**
+ * Rename a page variation.
+ *
+ * To rename a page variation, re-label all options that match the variation.
+ *
+ * @param string $variation_set_name
+ *   The name of the variation set that this variation belongs to.
+ * @param string $agent_name
+ *   The name of the campaign/agent for this page variation.
+ * @param number $variation_number
+ *   The number of variation within the variation set to rename
+ * @param string $variation_name
+ *   The new variation name.
+ */
+function acquia_lift_page_variation_rename($variation_set_name, $agent_name, $variation_number, $variation_name) {
+  // Cannot rename the control variation.
+  if ($variation_number == 0) {
+    return;
+  }
+  $option_sets = personalize_option_set_load_multiple(array(), array('decision_name' => $variation_set_name, 'agent' => $agent_name));
+  foreach ($option_sets as $option_set) {
+    if (isset($option_set->options[$variation_number])) {
+      $option_set->options[$variation_number]['option_label'] = $variation_name;
+      personalize_option_set_save($option_set);
+    }
+  }
+}
+
+/**
+ * Gets the name of a specific page variation set variation.
+ *
+ * @param string $variation_set_name
+ *   The name of the variation set that this variation belongs to.
+ * @param string $agent_name
+ *   The name of the campaign/agent for this page variation.
+ * @param number $variation_number
+ *   The number of variation within the variation set to retrieve.
+ */
+function acquia_lift_page_variation_get_name($variation_set_name, $agent_name, $variation_number) {
+  $option_sets = personalize_option_set_load_multiple(array(), array('decision_name' => $variation_set_name, 'agent' => $agent_name));
+  $option_set = current($option_sets);
+  if ($option_set) {
+    if (isset($option_set->options[$variation_number])) {
+      return check_plain($option_set->options[$variation_number]['option_label']);
+    }
+  }
+  return '';
+}
+
+/**
+ * Gets the page for the variations within a variation set.
+ *
+ * Assumption: All page variations are on the same path for a single variation set.
+ */
+function acquia_lift_page_variation_get_path($variation_set_name, $agent_name) {
+  $option_sets = personalize_option_set_load_multiple(array(), array('decision_name' => $variation_set_name, 'agent' => $agent_name));
+  $option_set = current($option_sets);
+  if ($option_set && isset($option_set->data)) {
+    return isset($option_set->data['pages']) ? $option_set->data['pages'] : '';
+  }
+  return '';
+}
+
+/**
+ * Delete a page variation.
+ *
+ * @param string $variation_set_name
+ *   The name of the variation set that contains the variation to be removed.
+ * @param string $agent_name
+ *   The name of the campaign/agent for the page variation.
+ * @param number $variation_number
+ *   The number for the variation to delete.
+ */
+function acquia_lift_page_variation_delete($variation_set_name, $agent_name, $variation_number) {
+  $option_sets = personalize_option_set_load_multiple(array(), array('decision_name' => $variation_set_name, 'agent' => $agent_name));
+  foreach ($option_sets as $option_set) {
+    if (isset($option_set->options[$variation_number])) {
+      unset($option_set->options[$variation_number]);
+      personalize_option_set_save($option_set);
+    }
+  }
+}
+
+

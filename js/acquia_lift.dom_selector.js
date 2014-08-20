@@ -63,9 +63,15 @@
      * @returns the current jQuery element.
      */
     startWatching: function() {
+      var $matched;
       this.$element.bind('mousemove', $.proxy(this, '_onMouseMove'));
       this.$element.bind('click', $.proxy(this, '_onClick'));
-      this.$element.find('*').each(function() {
+      if (this.$element.addBack) {
+        $matched = this.$element.find('*').addBack();
+      } else {
+        $matched = this.$element.find('*').andSelf();
+      }
+      $matched.each(function() {
         $(this).qtip({
           content: Plugin.prototype.getTipContent(this),
           solo: true,

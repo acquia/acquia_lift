@@ -7,7 +7,9 @@
    * Selector for element to use as DOM selector wrapping element.
    * @type {string}
    */
-  var pageWrapper = '#page-wrapper';
+  // @todo Need to generalize this and/or allow it to be set by site owner.
+  var pageWrapper = $('#page-wrapper').length > 0 ? '#page-wrapper' : 'div.page';
+
 
   Drupal.acquiaLiftPageVariations = Drupal.acquiaLiftPageVariations || {};
   Drupal.acquiaLiftPageVariations.app = Drupal.acquiaLiftPageVariations.app || {};

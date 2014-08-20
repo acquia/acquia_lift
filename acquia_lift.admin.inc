@@ -893,12 +893,8 @@ function acquia_lift_page_variation_details_ajax_callback($form, &$form_state) {
     if (!empty($errors)) {
       return $form;
     }
-    // Otherwise the form submitted so stop creating a page variation
-    // and show a confirmation message.
-    $commands[] = acquia_lift_command_page_variation_toggle(FALSE);
-    $commands[] = acquia_lift_command_messagebox(t('The variation has been created. Add one or more goals by clicking Goals &gt; Add goal.'), 10);
     // Get the updated option sets for the page variation.
-    $variation_set_name = $form_state['values']['agent'];
+    $variation_set_name = $agent_name = $form_state['values']['agent'];
     $option_sets = personalize_option_set_load_multiple(array(), array('decision_name' => $variation_set_name));
     $option_set_settings = array_map('_personalize_convert_option_set_to_js_setting', $option_sets);
     foreach($option_set_settings as $option_set_setting) {
@@ -917,6 +913,25 @@ function acquia_lift_page_variation_details_ajax_callback($form, &$form_state) {
     // first index is 1 because 0 is the control variation.
     $preview_variation_index = (!is_numeric($form_state['storage']['variation_number']) || $form_state['storage']['variation_number'] < 1) ? 1 : $form_state['storage']['variation_number'];
     $commands[] = acquia_lift_command_page_variation_preview($form_state['values']['agent'], $preview_variation_index);
+    // Otherwise the form submitted so stop creating a page variation
+    // and show a confirmation message.
+    $commands[] = acquia_lift_command_page_variation_toggle(FALSE);
+    // Show a confirmation message.
+    $current_status = personalize_agent_get_status($agent_name);
+    if ($current_status === PERSONALIZE_STATUS_NOT_STARTED) {
+      if ($settings['personalize']['campaigns'][$agent_name]['verified'] && $current_status === PERSONALIZE_STATUS_NOT_STARTED) {
+        $message = t('Variation added.  You can now start the campaign.');
+      }
+      else {
+        $message = t('The variation has been created. Add one or more goals by clicking Goals &gt; Add goal.');
+      }
+    }
+    else {
+      $message = t('The variation has been created.');
+    }
+    $commands[] = acquia_lift_command_messagebox($message, 10);
+
+
   }
   else if ($op === t('Cancel')) {
     // Turn off edit mode and redirect them.

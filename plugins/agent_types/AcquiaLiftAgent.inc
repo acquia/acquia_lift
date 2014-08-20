@@ -58,6 +58,12 @@ interface AcquiaLiftSimplifiedAgentInterface {
   public static function simplifiedForm($agent_data);
 }
 
+/**
+ * An interface to implement when an agent handles page-level variations such
+ * as a simple A/B test.
+ */
+interface AcquiaLiftPageVariationInterface { };
+
 interface AcquiaLiftReportInterface {
   /**
    * Get the confidence measure for determining the statistical significance
@@ -915,7 +921,7 @@ class AcquiaLiftAgent extends PersonalizeAgentBase implements PersonalizeAgentGo
  * differs from the regular Acquia Lift agent class in the options form it presents
  * to users.
  */
-class AcquiaLiftSimpleAB extends AcquiaLiftAgent implements AcquiaLiftSimplifiedAgentInterface, PersonalizePageVariationInterface {
+class AcquiaLiftSimpleAB extends AcquiaLiftAgent implements AcquiaLiftSimplifiedAgentInterface, AcquiaLiftPageVariationInterface {
 
   /**
    * Implements PersonalizeAgentInterface::optionsForm().

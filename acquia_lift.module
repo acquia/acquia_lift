@@ -1732,6 +1732,26 @@ function acquia_lift_form_personalize_agent_form_alter(&$form, &$form_state) {
 }
 
 /**
+ * Implements hook_personalize_agent_page_alter().
+ */
+function acquia_lift_personalize_agent_page_alter(&$build, &$agent_data) {
+  // Add a link to return to the page for variations if this is a page variation
+  // campaign.
+  $agent_instance = personalize_agent_load_agent($agent_data->machine_name);
+  if ($agent_instance instanceof AcquiaLiftPageVariationInterface) {
+    $build['return_link'] = array(
+      'link' => array(
+        '#type' => 'link',
+        '#title' => t('Go to %campaign campaign', array('%campaign' => $agent_data->label)),
+        '#href' => acquia_lift_page_variation_get_path($agent_data->machine_name, $agent_data->machine_name),
+        '#html' => TRUE,
+        '#weight' => -100,
+      ),
+    );
+  }
+}
+
+/**
  * Ajax callback for the "Reset data" button.
  */
 function personalize_acquia_lift_ajax_callback($form, $form_state) {

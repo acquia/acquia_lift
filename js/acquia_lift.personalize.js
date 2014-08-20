@@ -148,6 +148,8 @@
                     campaignCollection: ui.collections.campaigns,
                     el: $element.get(0)
                   });
+                  $link.wrap('<div class="navbar-box">');
+                  $link.addClass('navbar-menu-item');
                   $link.after($element);
                 }
               }
@@ -895,12 +897,12 @@
         if (currentCampaign instanceof Drupal.acquiaLiftUI.MenuCampaignABModel) {
           var currentVariation = currentCampaign.getCurrentVariationLabel();
           if (currentVariation) {
-            text = Drupal.t('Variation: @variation', {'@variation': currentVariation});
+            text = Drupal.theme.acquiaLiftSelectedContext({'label': currentVariation, 'category': Drupal.t('Variation')});
           } else {
             text = Drupal.t('Variations');
           }
         }
-        this.$el.text(text);
+        this.$el.html(text);
         if ($count) {
           this.$el.prepend($count);
         }
@@ -969,6 +971,8 @@
        * {@inheritDoc}
        */
       initialize: function (options) {
+        var that = this;
+
         // the model is the campaign model.
         this.listenTo(this.model, 'destroy', this.remove);
         this.listenTo(this.model, 'change:isActive', this.render);
@@ -979,8 +983,12 @@
         this.onOptionShowProxy = $.proxy(this.onOptionShow, this);
         this.onPageVariationEditModeProxy = $.proxy(this.onPageVariationEditMode, this);
 
-        $(document).on('personalizeOptionChange', this.onOptionShowProxy);
-        $(document).on('acquiaLiftPageVariationMode', this.onPageVariationEditModeProxy, this);
+        $(document).on('personalizeOptionChange', function (event, data) {
+          that.onOptionShowProxy(event, data);
+        });
+        $(document).on('acquiaLiftPageVariationMode', function (event, data) {
+          that.onPageVariationEditModeProxy(event, data);
+        });
 
         this.rebuild();
       },
@@ -1168,11 +1176,16 @@
        * {@inheritdoc}
        */
       initialize: function (options) {
+        var that = this;
+
         this.model.on('change', this.render, this);
         this.model.on('destroy', this.remove, this);
 
         this.onOptionShowProxy = $.proxy(this.onOptionShow, this);
-        $(document).on('personalizeOptionChange', this.onOptionShowProxy);
+        $(document).on('personalizeOptionChange', function (event, $option_set, choice_name, osid) {
+          that.onOptionShowProxy(event, $option_set, choice_name, osid);
+        });
+
 
         this.build(this.model);
         this.render(this.model);
@@ -1317,7 +1330,7 @@
         if (!activeCampaign) {
           var label = Drupal.t('All campaigns');
         } else {
-          var label = Drupal.theme.acquiaLiftCampaignContext({'label': activeCampaign.get('label')});
+          var label = Drupal.theme.acquiaLiftSelectedContext({'label': activeCampaign.get('label'), 'category': Drupal.t('Campaign')});
         }
         this.$el.html(label);
         if ($count.length > 0) {
@@ -1793,9 +1806,13 @@
        * {@inheritDoc}
        */
       initialize: function(options) {
+        var that = this;
+
         this.addLabel = this.$el.text();
         this.onVisitorActionsEditModeProxy = $.proxy(this.onVisitorActionsEditMode, this);
-        $(document).on('visitorActionsUIEditMode', this.onVisitorActionsEditModeProxy);
+        $(document).on('visitorActionsUIEditMode', function (event, data) {
+          that.onVisitorActionsEditModeProxy(event, data);
+        });
 
         var visitorActionsModel = getVisitorActionsAppModel();
         var startingInEdit = visitorActionsModel && visitorActionsModel.get('editMode');
@@ -1863,6 +1880,8 @@
        * {@inheritdoc}
        */
       initialize: function (options) {
+        var that = this;
+
         this.contentVariationModel = options.contentVariationModel;
         this.pageVariationModel = options.pageVariationModel;
         this.campaignCollection = options.campaignCollection;
@@ -1880,7 +1899,9 @@
         this.listenTo(this.campaignCollection, 'change:isActive', this.onCampaignChange);
 
         this.onPageVariationEditModeProxy = $.proxy(this.onPageVariationEditMode, this);
-        $(document).on('acquiaLiftPageVariationMode', this.onPageVariationEditModeProxy, this);
+        $(document).on('acquiaLiftPageVariationMode', function (event, data) {
+          that.onPageVariationEditModeProxy(event, data);
+        });
 
         this.render(this.model);
       },
@@ -2767,10 +2788,14 @@
   };
 
   /**
-   * Returns the HTML for the selected campaign context label.
+   * Returns the HTML for the selected context label.
+   *
+   * @param $options
+   * - label: The label of the selected context
+   * - category: The type of context
    */
-  Drupal.theme.acquiaLiftCampaignContext = function (options) {
-    var label = Drupal.t('Campaign: ');
+  Drupal.theme.acquiaLiftSelectedContext = function (options) {
+    var label = options.category + ': ';
     label += '<span class="acquia-lift-active">' + options.label + '</span>';
     return label;
   }

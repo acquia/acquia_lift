@@ -4,7 +4,7 @@
   vertical-align: middle;
 }
 #navbar-administration a.acquia-lift-page-variation-toggle {
-  display: inline-block !important;
+  display: inline-block;
   text-indent: -99999px;
   width: 30px;
   height: 30px;

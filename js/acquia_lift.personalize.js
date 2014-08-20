@@ -2490,7 +2490,7 @@
     item += '<ul class="menu">' + "\n";
     // Handle empty page variations.
     if (variations.length == 0) {
-      item += '<li class="acquia-lift-empty">' + Drupal.theme('acquiaLiftPersonalizeNoMenuItem', {type: 'page variations'}) + '</li>\n';
+      item += '<li class="acquia-lift-empty">' + Drupal.theme('acquiaLiftPersonalizeNoMenuItem', {type: 'variations'}) + '</li>\n';
     } else {
       _.each(variations, function (variation, index, list) {
         item += Drupal.theme('acquiaLiftPreviewPageVariationMenuItem', variation);

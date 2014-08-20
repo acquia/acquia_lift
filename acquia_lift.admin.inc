@@ -847,8 +847,7 @@ function acquia_lift_page_variation_details($form, &$form_state, $variation_type
     '#limit_validation_errors' => array(),
     '#submit' => array(),
   );
-  $form_state['cache'] = TRUE;
-  $form_state['nocache'] = '';
+
   return $form;
 }
 
@@ -1586,8 +1585,6 @@ function acquia_lift_create_ctools_form($title, $form_name, $args = array(), $ca
   $form_state = array(
     'ajax' => TRUE,
     'title' => $title,
-    'cache' => TRUE,
-    'nocache' => '',
     'build_info' => array(
       'args' => $args,
     )

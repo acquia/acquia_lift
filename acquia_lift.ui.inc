@@ -64,6 +64,9 @@ function acquia_lift_build_page(&$page) {
     // added before ctools and therefore cannot override styles.
     $page['page_top']['#attached']['library'][] = array('acquia_lift', 'acquia_lift.modal');
     ctools_add_css('acquia_lift.ctools.modal', 'acquia_lift');
+
+    $settings['acquia_lift']['dom_selector_root'] = acquia_lift_generate_editable_selector();
+    drupal_add_js($settings, 'setting');
   }
 }
 
@@ -96,6 +99,19 @@ function acquia_lift_chosenify_element(&$element, $classes = array()) {
       $chosen_path . '/chosen.css' => array(),
     )
   );
+}
+
+/**
+ * Generates a selector for all of the editable page content for this site.
+ */
+function acquia_lift_generate_editable_selector() {
+  global $theme;
+  $regions = system_region_list($theme, REGIONS_VISIBLE);
+  $classes = array();
+  foreach ($regions as $region_name => $region_label) {
+    $classes[] = '.' . drupal_region_class($region_name);
+  }
+  return implode(', ', $classes);
 }
 
 /**

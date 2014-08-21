@@ -18,6 +18,7 @@ Drupal.personalize.agents.acquia_lift = {
     };
   }
 };
+Drupal.personalize.agents.acquia_lift_simple_ab = Drupal.personalize.agents.acquia_lift;
 
 /**
  * Adapter for the Acquia Lift API.

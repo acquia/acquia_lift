@@ -38,7 +38,6 @@
     }
 
     this.$element = $matched;
-    console.log(this.$element.length + ' elements');
     this.settings = $.extend({}, defaults, options);
     this._defaults = defaults;
     this._name = pluginName;
@@ -75,7 +74,6 @@
       this.$element.bind('mousemove', $.proxy(this, '_onMouseMove'));
       this.$element.bind('click', $.proxy(this, '_onClick'));
       this.$element.each(function() {
-        console.log('added');
         $(this).qtip({
           content: Plugin.prototype.getTipContent(this),
           solo: true,
@@ -133,7 +131,6 @@
       // NOTE that QTips don't properly re-enable so disabling is not an option.
       this.$element.each(function() {
         if (typeof $(this).data('qtip') !== 'undefined') {
-          console.log('removed');
           $(this).qtip('destroy');
           $(this).unbind('.qtip');
           // Sadly just unbinding qtip namespaced events doesn't grab it all.

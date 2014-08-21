@@ -924,7 +924,7 @@ function acquia_lift_page_variation_details_ajax_callback($form, &$form_state) {
     // Show a confirmation message.
     $current_status = personalize_agent_get_status($agent_name);
     if ($current_status === PERSONALIZE_STATUS_NOT_STARTED) {
-      if ($settings['personalize']['campaigns'][$agent_name]['verified'] && $current_status === PERSONALIZE_STATUS_NOT_STARTED) {
+      if ($settings['personalize']['campaigns'][$agent_name]['verified']) {
         $message = t('Variation added.  You can now start the campaign.');
       }
       else {
@@ -1424,7 +1424,6 @@ function acquia_lift_create_goal_type_form_submit($form, &$form_state) {
         // info for the action.
         'data' => isset($form_state['values']['options'][$plugin]) ? $form_state['values']['options'][$plugin] : array(),
       );
-      watchdog('acquia_lift_debug', '<pre>' . print_r($form_state['values'], TRUE) . '</pre>');
       // Allow the plugin to modify the action before saving.
       ctools_include('plugins');
       if ($class = ctools_plugin_load_class('visitor_actions', 'actionable_element', $action['plugin'], 'handler')) {

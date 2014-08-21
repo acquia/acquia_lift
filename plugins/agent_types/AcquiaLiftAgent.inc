@@ -923,13 +923,6 @@ class AcquiaLiftSimpleAB extends AcquiaLiftAgent implements AcquiaLiftSimplified
   public static function simplifiedForm($agent_data) {
     return self::buildOptionsForm($agent_data, TRUE);
   }
-
-  /**
-   * Implements PersonalizeAgentInterface::getSpecificType();
-   */
-  public function getSpecificType() {
-    return 'acquia_lift_simple_ab';
-  }
 }
 
 /**

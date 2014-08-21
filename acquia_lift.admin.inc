@@ -978,10 +978,13 @@ function acquia_lift_page_variation_rename_complete_callback($form, $form_state)
   foreach($option_set_settings as $option_set_setting) {
     $settings[key($option_set_setting)] = reset($option_set_setting);
   }
+  // We need to update the campaigns as well in case a campaign was paused by this action.
+  $campaign_settings['personalize']['campaigns'] = personalize_agent_get_settings();
   $commands = array(
     ctools_modal_command_dismiss(),
     acquia_lift_command_messagebox(t('The variation has been renamed.'), 10),
     acquia_lift_command_option_set_updates($settings),
+    ajax_command_settings($campaign_settings, TRUE),
   );
   return $commands;
 }
@@ -1085,7 +1088,7 @@ function acquia_lift_page_variation_delete_complete_callback($form, $form_state)
     ctools_modal_command_dismiss(),
     acquia_lift_command_messagebox(t('The variation has been deleted.'), 10),
     acquia_lift_command_option_set_updates($settings),
-    ajax_command_settings($campaign_settings),
+    ajax_command_settings($campaign_settings, TRUE),
   );
   return $commands;
 }

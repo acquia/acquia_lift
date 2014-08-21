@@ -1735,9 +1735,11 @@ function acquia_lift_form_personalize_agent_form_alter(&$form, &$form_state) {
   // @see acquia_lift_personalize_agent_page_alter().
   if (!empty($form['agent_form']['agent_fieldset']['agent_basic']['#agent'])) {
     $agent = $form['agent_form']['agent_fieldset']['agent_basic']['#agent'];
-    $agent_instance = personalize_agent_load_agent($agent->machine_name);
-    if ($agent_instance instanceof AcquiaLiftPageVariationInterface) {
-      $form['agent_form']['agent_fieldset']['#collapsed'] = FALSE;
+    if (!empty($agent->machine_name)) {
+      $agent_instance = personalize_agent_load_agent($agent->machine_name);
+      if ($agent_instance instanceof AcquiaLiftPageVariationInterface) {
+        $form['agent_form']['agent_fieldset']['#collapsed'] = FALSE;
+      }
     }
   }
 }

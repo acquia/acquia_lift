@@ -91,6 +91,8 @@ class AcquiaLiftWebTest extends DrupalWebTestCase {
   }
 
   function testPersonalizeElementsVariationSets() {
+    module_load_include('inc', 'acquia_lift', 'acquia_lift.admin');
+
     $agent_name = 'test-agent';
     // Variation 1 (only one element).
     $os1 = personalize_elements_get_option_set_for_variation('my first os', $agent_name, 'div.some-class', 'addClass', 'node');
@@ -114,7 +116,6 @@ class AcquiaLiftWebTest extends DrupalWebTestCase {
       array(
         'option_id' => PERSONALIZE_CONTROL_OPTION_ID,
         'option_label' => PERSONALIZE_CONTROL_OPTION_LABEL,
-        'personalize_elements_content' => '',
       ),
       array(
         'option_id' => 'variation-1',
@@ -132,7 +133,6 @@ class AcquiaLiftWebTest extends DrupalWebTestCase {
       array(
         'option_id' => PERSONALIZE_CONTROL_OPTION_ID,
         'option_label' => PERSONALIZE_CONTROL_OPTION_LABEL,
-        'personalize_elements_content' => '',
       ),
       array(
         'option_id' => 'variation-1',
@@ -151,8 +151,14 @@ class AcquiaLiftWebTest extends DrupalWebTestCase {
    * Tests variation set creation.
    *
    * A variation set can be made up of multiple option sets.
+   *
+   * @todo This should probably be combined with
+   * testPersonalizeElementsVariationSets() above and simplified to just
+   * personalize_elements elements (but with the complexity of this test).
    */
   function testVariationSets() {
+    module_load_include('inc', 'acquia_lift', 'acquia_lift.admin');
+
     $admin_user = $this->drupalCreateUser(array('access administration pages', 'manage personalized content', 'administer blocks'));
     $this->drupalLogin($admin_user);
 
@@ -1786,5 +1792,32 @@ class AcquiaLiftWebTest extends DrupalWebTestCase {
     $this->drupalPost('admin/config/content/personalize/acquia_lift', $edit, $this->getButton('config'));
 
     $this->resetAll();
+  }
+
+  /**
+   * Creates the required number of custom blocks.
+   *
+   * @param int $num
+   *   The number of blocks to create.
+   *
+   * @return array
+   *   An array of block deltas for use in personalized blocks.
+   */
+  protected function createCustomBlocks($num = 1) {
+    $deltas = array();
+    module_load_include('inc', 'personalize_blocks', 'personalize_blocks.admin');
+    for ($i = 1; $i <= $num; $i++) {
+      $title = t('Custom block @num', array('@num' => $i));
+      $values = array(
+        'title' => $title,
+        'info' => $title,
+        'body' => array(
+          'format' => 'filtered_html',
+          'value' => 'Some value',
+        )
+      );
+      $deltas[] = _personalize_blocks_add_custom_block($values);
+    }
+    return $deltas;
   }
 }

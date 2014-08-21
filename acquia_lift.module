@@ -1729,6 +1729,17 @@ function acquia_lift_form_personalize_agent_form_alter(&$form, &$form_state) {
   }
   $subform['actions']['reset']['#submit'] = array('acquia_lift_reset_submit');
   $form['agent_form']['agent_fieldset']['header']['reset_lift_agent'] = $subform;
+
+  // Show the campaign fieldset by default when editing a page variation
+  // campaign as the option set form is hidden by default.
+  // @see acquia_lift_personalize_agent_page_alter().
+  if (!empty($form['agent_form']['agent_fieldset']['agent_basic']['#agent'])) {
+    $agent = $form['agent_form']['agent_fieldset']['agent_basic']['#agent'];
+    $agent_instance = personalize_agent_load_agent($agent->machine_name);
+    if ($agent_instance instanceof AcquiaLiftPageVariationInterface) {
+      $form['agent_form']['agent_fieldset']['#collapsed'] = FALSE;
+    }
+  }
 }
 
 /**
@@ -1737,6 +1748,7 @@ function acquia_lift_form_personalize_agent_form_alter(&$form, &$form_state) {
 function acquia_lift_personalize_agent_page_alter(&$build, &$agent_data) {
   // Add a link to return to the page for variations if this is a page variation
   // campaign.
+  module_load_include('inc', 'acquia_lift', 'acquia_lift.admin');
   $agent_instance = personalize_agent_load_agent($agent_data->machine_name);
   if ($agent_instance instanceof AcquiaLiftPageVariationInterface) {
     $build['return_link'] = array(
@@ -1744,10 +1756,16 @@ function acquia_lift_personalize_agent_page_alter(&$build, &$agent_data) {
         '#type' => 'link',
         '#title' => t('Go to %campaign campaign', array('%campaign' => $agent_data->label)),
         '#href' => acquia_lift_page_variation_get_path($agent_data->machine_name, $agent_data->machine_name),
-        '#html' => TRUE,
-        '#weight' => -100,
+        '#options' => array('html' => TRUE),
       ),
+      '#weight' => -10,
     );
+    // Fix the weights for re-sort.
+    $build['option_sets']['#access'] = FALSE;
+    $build['mvt']['#access'] = FALSE;
+    $build['personalize_messages']['#weight'] = 10;
+    $build['agent']['#weight'] = 20;
+    $build['goals']['#weight'] = 40;
   }
 }
 

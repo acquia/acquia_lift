@@ -29,7 +29,15 @@
     };
 
   function Plugin (element, options) {
-    this.$element = $(element);
+    var $matched;
+    if ($(element).addBack) {
+      $matched = $(element).find('*').addBack();
+    } else {
+      $matched = $(element).find('*').andSelf();
+    }
+
+    this.$element = $matched;
+    console.log(this.$element.length + ' elements');
     this.settings = $.extend({}, defaults, options);
     this._defaults = defaults;
     this._name = pluginName;
@@ -63,15 +71,10 @@
      * @returns the current jQuery element.
      */
     startWatching: function() {
-      var $matched;
       this.$element.bind('mousemove', $.proxy(this, '_onMouseMove'));
       this.$element.bind('click', $.proxy(this, '_onClick'));
-      if (this.$element.addBack) {
-        $matched = this.$element.find('*').addBack();
-      } else {
-        $matched = this.$element.find('*').andSelf();
-      }
-      $matched.each(function() {
+      this.$element.each(function() {
+        console.log('added');
         $(this).qtip({
           content: Plugin.prototype.getTipContent(this),
           solo: true,
@@ -91,7 +94,7 @@
               length: 0
             },
             when: {
-              event: 'mouseover.qtip'
+              event: 'mouseover'
             }
           },
           hide: {
@@ -102,7 +105,7 @@
               length: 0
             },
             when: {
-              event: 'mouseover.qtip'
+              event: 'mouseout'
             }
           },
           api: {
@@ -127,12 +130,16 @@
       this.$element.unbind('click', this._onClick);
       // QTip has some problems fully removing itself so help it.
       // NOTE that QTips don't properly re-enable so disabling is not an option.
-      this.$element.find('*').each(function() {
+      this.$element.each(function() {
         if (typeof $(this).data('qtip') !== 'undefined') {
+          console.log('removed');
           $(this).qtip('destroy');
-          $(this).unbind('mouseover.qtip');
-          $(this).unbind('mousedown.qtip');
-          $(this).unbind('mouseout.qtip');
+          $(this).unbind('.qtip');
+          // Sadly just unbinding qtip namespaced events doesn't grab it all.
+          // Would rather than just unbind mouseover but since this only happens
+          // in administration of a variation it will do for now.
+          // @todo Find a way to preserve the origin element's mouseover event.
+          $(this).unbind('mouseover');
         }
       });
       $.fn.qtip.interfaces.length = 0;
@@ -218,7 +225,6 @@
       event.preventDefault();
       event.stopPropagation();
       event.cancelBubble = true;
-      this.stopWatching();
       return false;
     }
   })

@@ -7,8 +7,7 @@
    * Selector for element to use as DOM selector wrapping element.
    * @type {string}
    */
-  // @todo Need to generalize this and/or allow it to be set by site owner.
-  var pageWrapper = $('#page-wrapper').length > 0 ? '#page-wrapper' : 'div.page';
+  var pageWrapper = Drupal.settings.acquia_lift.dom_selector_root;
 
 
   Drupal.acquiaLiftPageVariations = Drupal.acquiaLiftPageVariations || {};
@@ -81,14 +80,17 @@
       contextualMenuModel: null,
       variationTypeFormModel: null,
       anchor: null,
+      // An array of jQuery instances that are available to the DOM selector.
+      $regions: null,
 
       initialize: function (options) {
-        _.bindAll(this, 'createContextualMenu');
+        _.bindAll(this, 'createContextualMenu', 'onElementSelected');
 
         var that = this;
-        this.$el.DOMSelector({
+        this.$regions = options.$regions;
+        this.$regions.DOMSelector({
           onElementSelect: function (element, selector) {
-            that.createContextualMenu(element, selector);
+            that.onElementSelected(element, selector);
           }
         });
         Backbone.on('acquiaLiftPageVariationType', this.createVariationTypeDialog, this);
@@ -102,9 +104,9 @@
        */
       render: function (model, editMode) {
         if (editMode) {
-          this.$el.DOMSelector("startWatching");
+          this.$regions.DOMSelector("startWatching");
         } else {
-          this.$el.DOMSelector("stopWatching");
+          this.$regions.DOMSelector("stopWatching");
         }
       },
 
@@ -161,7 +163,15 @@
        * Deactivates the view and the page variation process.
        */
       deactivate: function () {
-        this.$el.DOMSelector("stopWatching");
+        this.$regions.DOMSelector("stopWatching");
+      },
+
+      /**
+       * Event callback for when an element is selected in the DOM selector.
+       */
+      onElementSelected: function (element, selector) {
+        this.$regions.DOMSelector('stopWatching');
+        this.createContextualMenu(element, selector);
       },
 
       /**
@@ -477,8 +487,7 @@
       if ($wrapper.length && !Drupal.acquiaLiftPageVariations.app.appView) {
         Drupal.acquiaLiftPageVariations.app.appView = new Drupal.acquiaLiftPageVariations.views.AppView({
           model: Drupal.acquiaLiftPageVariations.app.appModel,
-          $el: $wrapper,
-          el: $wrapper[0]
+          $regions: $wrapper
         });
       }
       var editVariation = response.data.variationIndex || -1;

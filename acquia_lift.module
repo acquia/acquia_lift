@@ -559,7 +559,7 @@ function acquia_lift_personalize_goal_save($goal_info) {
   $old_goals = isset($agent->data['goals']) ? $agent->data['goals'] : array();
   $current_goals = personalize_goal_load_by_conditions(array('agent' => $agent->machine_name));
   foreach ($current_goals as $goal) {
-    $new_goals[$goal['action']] = $goal['value'];
+    $new_goals[$goal->action] = $goal->value;
   }
   // For the current goal, take the info from what was passed in, rather
   // than from the db.

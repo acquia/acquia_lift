@@ -769,12 +769,12 @@ class AcquiaLiftWebTest extends DrupalWebTestCase {
 
     $this->assertQueueItems($expected_queues);
     $this->personalizedQueue->deleteQueue();
-
+    $this->resetAll();
     // Verify that agent has last visitor action data
     $agentGoals = personalize_goal_load_by_conditions(array('agent' => $agent->getMachineName()));
-
-    $this->assertEqual($agentGoals[0]['action'], $actionMachineName);
-    $this->assertEqual($agentGoals[0]['value'], $edit['personalize_goal_value']);
+    $firstGoal = reset($agentGoals);
+    $this->assertEqual($firstGoal->action, $actionMachineName);
+    $this->assertEqual($firstGoal->value, $edit['personalize_goal_value']);
 
     // Try to delete goal that connected to Agent from Visitor Action UI
     $this->drupalPost('admin/structure/visitor_actions/manage/' . $actionMachineName . '/delete', array(), t('Delete'));
@@ -797,7 +797,7 @@ class AcquiaLiftWebTest extends DrupalWebTestCase {
 
     $this->assertQueueItems($expected_queues);
     $this->personalizedQueue->deleteQueue();
-
+    $this->resetAll();
     // No goal should be attached after deletion
     $agentGoals = personalize_goal_load_by_conditions(array('agent' => $agent->getMachineName()));
 

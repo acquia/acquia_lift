@@ -582,8 +582,8 @@ class AcquiaLiftAgent extends PersonalizeAgentBase implements PersonalizeAgentGo
       return $this->convertAgentExceptionToErrors($e, $errors);
     }
     foreach($goals as $goal) {
-      if (!in_array($goal['action'], $acquia_lift_goals)) {
-        $errors[] = t('Goal @goal has not been sync\'d to the Acquia Lift agent.', array('@goal' => $goal['action']));
+      if (!in_array($goal->action, $acquia_lift_goals)) {
+        $errors[] = t('Goal @goal has not been sync\'d to the Acquia Lift agent.', array('@goal' => $goal->action));
         $discrepancies = TRUE;
       }
     }

@@ -114,6 +114,33 @@ function acquia_lift_menu() {
     'file' => 'acquia_lift.admin.inc',
     'theme callback' => 'ajax_base_page_theme',
   );
+  // Ajax callback to open the add a goal selection in a modal window.
+  $items['admin/structure/acquia_lift/goal/add/%ctools_js'] = array(
+    'page callback' => 'acquia_lift_create_goal_callback',
+    'page arguments' => array(5),
+    'access arguments' => array('manage personalized content'),
+    'type' => MENU_CALLBACK,
+    'file' => 'acquia_lift.admin.inc',
+    'theme callback' => 'ajax_base_page_theme',
+  );
+  // Ajax callback to create a goal of a specific type.
+  $items['admin/structure/acquia_lift/goal/add/%/%ctools_js'] = array(
+    'page callback' => 'acquia_lift_create_goal_type_callback',
+    'page arguments' => array(5, 6),
+    'access arguments' => array('manage personalized content'),
+    'type' => MENU_CALLBACK,
+    'file' => 'acquia_lift.admin.inc',
+    'theme callback' => 'ajax_base_page_theme',
+  );
+  // Callback to show the start campaign form.
+  $items['admin/structure/acquia_lift/start/%'] = array(
+    'page callback' => 'acquia_lift_start_campaign_callback',
+    'page arguments' => array(4),
+    'access arguments' => array('manage personalized content'),
+    'type' => MENU_CALLBACK,
+    'file' => 'acquia_lift.admin.inc',
+    'theme callback' => 'ajax_base_page_theme',
+  );
   return $items;
 }
 
@@ -194,12 +221,12 @@ function acquia_lift_theme() {
       'goal_total' => 0,
     ),
     // Campaign creation flow.
-    'acquia_lift_campaign_type_list' => array(
+    'acquia_lift_type_list' => array(
       'path' => $path . '/theme',
       'file' => 'acquia_lift.theme.inc',
       'items' => array(),
     ),
-    'acquia_lift_campaign_type_change' => array(
+    'acquia_lift_create_type_change' => array(
       'path' => $path . '/theme',
       'file' => 'acquia_lift.theme.inc',
       'type' => '',
@@ -227,31 +254,6 @@ function acquia_lift_theme() {
       'file' => 'acquia_lift.navbar.theme.inc',
     ),
   );
-}
-
-/**
- * Implements hook_preprocess_menu_link().
- *
- * Used to remove ctools functionality and adjust the link to the standard
- * campaign creation flow when simplified flows are not enabled.
- */
-function acquia_lift_preprocess_menu_link(&$variables) {
-  if (variable_get('acquia_lift_simplified_campaign_enabled', FALSE)) {
-    return;
-  }
-  foreach($variables as &$link) {
-    if (!isset($link['#href']) || $link['#href'] !== 'admin/structure/personalize/add/nojs') {
-      continue;
-    }
-
-    foreach ($link['#localized_options']['attributes']['class'] as $i => $class_name) {
-      if (strpos($class_name, 'ctools-') !== FALSE) {
-        unset($link['#localized_options']['attributes']['class'][$i]);
-      }
-    }
-    $link['#href'] = 'admin/structure/personalize/add';
-    return;
-  }
 }
 
 /**
@@ -391,10 +393,8 @@ function acquia_lift_cron_queue_info() {
 function acquia_lift_get_agent_types() {
   $types = array(
     'acquia_lift' => 'AcquiaLiftAgent',
+    'acquia_lift_simple_ab' => 'AcquiaLiftSimpleAB',
   );
-  if (variable_get('acquia_lift_simplified_campaign_enabled', FALSE)) {
-    $types['acquia_lift_simple_ab'] = 'AcquiaLiftSimpleAB';
-  }
   return $types;
 }
 
@@ -807,6 +807,22 @@ function acquia_lift_library() {
             'closeImage' => theme('image', array('path' => ctools_image_path('close.png', 'acquia_lift'), 'alt' => t('Close window'), 'title' => t('Close window'))),
             'closeText' => '',
           ),
+          'acquia-lift-style-long' => array(
+            'modalSize' => array(
+              'type' => 'fixed',
+              'width' => 600,
+              'height' => 550,
+              'addWidth' => 0,
+              'addHeight' => 0,
+              'contentRight' => 0,
+              'contentBottom' => 0,
+            ),
+            'modalOptions' => array(
+              'background-color' => '#000000',
+            ),
+            'closeImage' => theme('image', array('path' => ctools_image_path('close.png', 'acquia_lift'), 'alt' => t('Close window'), 'title' => t('Close window'))),
+            'closeText' => '',
+          ),
         ),
         'type' => 'setting',
       ),
@@ -817,6 +833,7 @@ function acquia_lift_library() {
     'dependencies' => array(
       array('system', 'jquery'),
       array('system', 'jquery.once'),
+      array('system', 'drupal.states'),
       array('acquia_lift', 'acquia_lift.message_box'),
       array('acquia_lift', 'acquia_lift.page_variations'),
     ),
@@ -1836,10 +1853,25 @@ function acquia_lift_command_messagebox($message, $seconds = 0) {
   if (is_array($message)) {
     $message = drupal_render($message);
   }
+
+  // Add any messages set by drupal_set_message().
+  $full_message = '';
+  $queued_messages = drupal_get_messages();
+  $delimiter = '<br />';
+  foreach ($queued_messages as $messages) {
+    $full_message .= implode($messages, $delimiter);
+  }
+  if (!empty($message)) {
+    if (!empty($full_message)) {
+      $full_message .= $delimiter;
+    }
+    $full_message .= $message;
+  }
+
   return array(
     'command' => 'acquia_lift_message_box',
     'data' => array(
-      'message' => $message,
+      'message' => $full_message,
       'seconds' => $seconds,
     ),
   );

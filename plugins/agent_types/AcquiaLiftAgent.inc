@@ -294,7 +294,7 @@ class AcquiaLiftAgent extends PersonalizeAgentBase implements PersonalizeAgentGo
       $form['decision_style'] = array(
         '#type' => 'radios',
         '#title' => t('Decision Style'),
-        '#options' => array('adaptive' => t('Auto-personalize'), 'random' => t('A/B test')),
+        '#options' => array('adaptive' => t('Auto-personalize'), 'random' => t('Test only')),
         '#default_value' => $decision_style,
         '#title_display' => 'invisible',
       );
@@ -922,13 +922,6 @@ class AcquiaLiftSimpleAB extends AcquiaLiftAgent implements AcquiaLiftSimplified
    */
   public static function simplifiedForm($agent_data) {
     return self::buildOptionsForm($agent_data, TRUE);
-  }
-
-  /**
-   * Implements PersonalizeAgentInterface::getType().
-   */
-  public function getType() {
-    return 'acquia_lift_simple_ab';
   }
 }
 

@@ -28,3 +28,7 @@
 .navbar-tray-vertical .acquia-lift-personalize-type-count {
   display: none !important;
 }
+
+.acquia-lift-menu-status-advanced:after {
+  content: '…';
+}

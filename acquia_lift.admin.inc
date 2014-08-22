@@ -600,12 +600,14 @@ function acquia_lift_create_campaign_callback($ajax) {
   ctools_modal_add_js();
 
   $path = drupal_get_path('module', 'acquia_lift');
-  $output = theme('acquia_lift_campaign_type_list', array(
+  $output = theme('acquia_lift_type_list', array(
     'items' => array(
       'ab' => array(
         'title' => t('A/B test'),
-        'description' => t('Create variations of the content on your site to compare against each other.'),
+        'description' => t('Create and compare content variations.'),
         'url' => 'admin/structure/acquia_lift/add/ab',
+        'modal' => TRUE,
+        'ctools_style' => 'ctools-modal-acquia-lift-style-short',
         'logo' => theme('image', array(
           'path' => $path . '/images/campaign-type-ab.png',
           'alt' => t('A/B test'),
@@ -614,8 +616,9 @@ function acquia_lift_create_campaign_callback($ajax) {
       ),
       'custom' => array(
         'title' => t('Custom Lift campaign'),
-        'description' => t('Custom campaigns allow you to create a content targeting or multi-variate campaign using the legacy campaign creation system.'),
+        'description' => t('Create a content targeting or multivariate campaign using the Drupal-integrated campaign tools.'),
         'url' => 'admin/structure/personalize/add/',
+        'modal' => FALSE,
         'logo' => theme('image', array(
           'path' => $path . '/images/campaign-type-custom.png',
           'alt' => t('Custom Lift campaign'),
@@ -643,36 +646,32 @@ function acquia_lift_create_campaign_type_callback($type, $ajax) {
     drupal_goto('admin/structure/personalize/add');
     return;
   }
-  ctools_include('modal');
-  ctools_include('ajax');
-  ctools_modal_add_js();
-
-  $form_state = array(
-    'ajax' => TRUE,
-    'title' => t('Create a campaign'),
+  acquia_lift_create_ctools_form(
+    t('Create a campaign'),
+    'acquia_lift_create_campaign_type_form',
+    array('type' => $type),
+    'acquia_lift_create_campaign_type_complete_callback'
   );
+}
 
-  // ctools_modal_form_wrapper doesn't provide any way to pass parameters to the form builder function.
-  $form_state['build_info']['args']['type'] = $type;
-
-  $output = ctools_modal_form_wrapper('acquia_lift_create_campaign_type_form', $form_state);
-  // Form has been processed so close it.
-  if ($form_state['executed']) {
-    $output = array(
-      ctools_modal_command_dismiss(),
-      ajax_command_settings(array('personalize' => array(
-        'activeCampaign' => personalize_get_campaign_context(),
-        'campaigns' => personalize_agent_get_settings(),
-      )), TRUE),
-      acquia_lift_command_messagebox(t('Click on an element in your site to create %variation in %campaign.', array(
-        '%campaign' => $form_state['values']['agent_basic_info']['title'],
-        '%variation' => 'Variation #1',
-      )), 10),
-      acquia_lift_command_page_variation_toggle(),
-    );
-  }
-  $page = array('#type' => 'ajax', '#commands' => $output);
-  ajax_deliver($page);
+/**
+ * Ctools form processing complete handler for the creation of a new campaign
+ * by type.
+ * @see acquia_lift_create_ctools_form().
+ */
+function acquia_lift_create_campaign_type_complete_callback($form, $form_state) {
+  return array(
+    ctools_modal_command_dismiss(),
+    ajax_command_settings(array('personalize' => array(
+      'activeCampaign' => personalize_get_campaign_context(),
+      'campaigns' => personalize_agent_get_settings(),
+    )), TRUE),
+    acquia_lift_command_messagebox(t('Click the element you want to change in %variation.', array(
+      '%campaign' => $form_state['values']['agent_basic_info']['title'],
+      '%variation' => 'Variation #1',
+    )), 10),
+    acquia_lift_command_page_variation_toggle(),
+  );
 }
 
 /**
@@ -693,7 +692,7 @@ function acquia_lift_create_campaign_type_form($form, &$form_state, $type) {
   switch ($type) {
     case 'ab':
       $form['campaign_type'] = array(
-        '#markup' => theme('acquia_lift_campaign_type_change', array(
+        '#markup' => theme('acquia_lift_create_type_change', array(
           'type' => t('A/B test'),
           'change_link' => $change_link,
         )),
@@ -748,6 +747,11 @@ function _acquia_lift_create_simplified_campaign_form($agent_type) {
     '#tree' => TRUE,
   );
   $form['agent_basic_info']['options'][$agent_type] = $options_form;
+  // Defaults to caching decisions.
+  $form['cache_decisions'] = array(
+    '#type' => 'value',
+    '#value' => 1,
+  );
   return $form;
 }
 
@@ -763,27 +767,9 @@ function acquia_lift_create_campaign_type_form_validate($form, &$form_state) {
 function acquia_lift_create_campaign_type_form_submit($form, &$form_state) {
   module_load_include('inc', 'personalize', 'personalize.admin');
   $agent_data = _personalize_agent_from_form_values($form_state['values']['agent_basic_info']);
+  $agent_data->data['cache_decisions'] = $form_state['values']['cache_decisions'];
   $agent = personalize_agent_save($agent_data);
   personalize_set_campaign_context($agent->machine_name);
-}
-
-/**
- * AJAX callback to cancel the campaign creation flow.
- *
- * @param $ajax
- *   Indicates if AJAX is supported.
- */
-function acquia_lift_campaign_flow_cancel($ajax = NULL) {
-  if (!$ajax) {
-    // We should never be here out of ajax context.
-    return MENU_NOT_FOUND;
-  }
-
-  ctools_include('modal');
-  ctools_include('ajax');
-
-  $commands = array(ctools_modal_command_dismiss());
-  print ajax_render($commands);
 }
 
 /**
@@ -828,7 +814,11 @@ function acquia_lift_page_variation_details($form, &$form_state, $variation_type
     '#type' => 'actions',
   );
   // Form actions.
-  $form['actions']['submit_form'] = array(
+  // TRICKY: These must have ids that are different from our CTools loaded
+  // modal forms or else their submit buttons will be processed via Drupal ajax
+  // rather than the main URL callbacks leading to a 200 response with an
+  // empty response body.
+  $form['actions']['variation_type_submit_form'] = array(
     '#type' => 'submit',
     '#value' => t('Save'),
     '#attributes' => array(
@@ -837,10 +827,14 @@ function acquia_lift_page_variation_details($form, &$form_state, $variation_type
     '#ajax' => array(
       'callback' => 'acquia_lift_page_variation_details_ajax_callback',
       'wrapper' => 'acquia-lift-page-variation-details',
+      'progress' => array(
+        'message' => NULL,
+        'type' => 'throbber',
+      ),
     ),
   );
   // Add a cancel button for AJAX-loaded forms.
-  $form['actions']['cancel_form'] = array(
+  $form['actions']['variation_type_cancel_form'] = array(
     '#type' => 'button',
     '#button_type' => 'cancel',
     '#value' => t('Cancel'),
@@ -850,6 +844,10 @@ function acquia_lift_page_variation_details($form, &$form_state, $variation_type
     '#ajax' => array(
       'callback' => 'acquia_lift_page_variation_details_ajax_callback',
       'wrapper' => 'acquia-lift-page-variation-details',
+      'progress' => array(
+        'message' => NULL,
+        'type' => 'throbber',
+      ),
     ),
     // Turn off validation.
     '#limit_validation_errors' => array(),
@@ -885,6 +883,7 @@ function acquia_lift_page_variation_details_submit($form, &$form_state) {
   $variation_number = personalize_page_variation_create($variation_set_name, $option_set, array('personalize_elements_content' => $form_state['values']['personalize_elements_content']), $variation_number);
   // Save this for the Ajax callback.
   $form_state['storage']['variation_number'] = $variation_number;
+  acquia_lift_process_queue(FALSE);
 }
 
 /**
@@ -899,12 +898,8 @@ function acquia_lift_page_variation_details_ajax_callback($form, &$form_state) {
     if (!empty($errors)) {
       return $form;
     }
-    // Otherwise the form submitted so stop creating a page variation
-    // and show a confirmation message.
-    $commands[] = acquia_lift_command_page_variation_toggle(FALSE);
-    $commands[] = acquia_lift_command_messagebox(t('The variation has been created.  Track your conversions by adding goals.'), 10);
     // Get the updated option sets for the page variation.
-    $variation_set_name = $form_state['values']['agent'];
+    $variation_set_name = $agent_name = $form_state['values']['agent'];
     $option_sets = personalize_option_set_load_multiple(array(), array('decision_name' => $variation_set_name));
     $option_set_settings = array_map('_personalize_convert_option_set_to_js_setting', $option_sets);
     foreach($option_set_settings as $option_set_setting) {
@@ -913,6 +908,8 @@ function acquia_lift_page_variation_details_ajax_callback($form, &$form_state) {
     // Also get the updated personalize elements options.
     personalize_elements_limit_option_sets_by_path($option_sets, $form_state['values']['pages']);
     $settings['personalize_elements']['elements'] = personalize_elements_element_settings($option_sets);
+    // We need to update the campaigns as well in case a campaign was paused by this action.
+    $settings['personalize']['campaigns'] = personalize_agent_get_settings();
     // Note: JavaScript assets for personalize elements are included in
     // personalize_elements_page_build when the module is enabled and therefore
     // do not need to be explicitly added here.
@@ -921,6 +918,25 @@ function acquia_lift_page_variation_details_ajax_callback($form, &$form_state) {
     // first index is 1 because 0 is the control variation.
     $preview_variation_index = (!is_numeric($form_state['storage']['variation_number']) || $form_state['storage']['variation_number'] < 1) ? 1 : $form_state['storage']['variation_number'];
     $commands[] = acquia_lift_command_page_variation_preview($form_state['values']['agent'], $preview_variation_index);
+    // Otherwise the form submitted so stop creating a page variation
+    // and show a confirmation message.
+    $commands[] = acquia_lift_command_page_variation_toggle(FALSE);
+    // Show a confirmation message.
+    $current_status = personalize_agent_get_status($agent_name);
+    if ($current_status === PERSONALIZE_STATUS_NOT_STARTED) {
+      if ($settings['personalize']['campaigns'][$agent_name]['verified']) {
+        $message = t('Variation added.  You can now start the campaign.');
+      }
+      else {
+        $message = t('The variation has been created. Add one or more goals by clicking Goals &gt; Add goal.');
+      }
+    }
+    else {
+      $message = t('The variation has been created.');
+    }
+    $commands[] = acquia_lift_command_messagebox($message, 10);
+
+
   }
   else if ($op === t('Cancel')) {
     // Turn off edit mode and redirect them.
@@ -939,36 +955,38 @@ function acquia_lift_page_variation_details_ajax_callback($form, &$form_state) {
  *   The index of the variation to rename.
  */
 function acquia_lift_page_variation_rename_callback($agent_name, $variation_index) {
-  ctools_include('modal');
-  ctools_include('ajax');
-  ctools_modal_add_js();
-
-  $form_state = array(
-    'ajax' => TRUE,
-    'title' => t('Rename a variation'),
+  acquia_lift_create_ctools_form(
+    t('Rename a variation'),
+    'acquia_lift_page_variation_rename',
+    array(
+      'agent_name' => $agent_name,
+      'variation_index' => $variation_index,
+    ),
+    'acquia_lift_page_variation_rename_complete_callback'
   );
+}
 
-  $form_state['build_info']['args']['agent_name'] = $agent_name;
-  $form_state['build_info']['args']['variation_index'] = $variation_index;
-
-  $output = ctools_modal_form_wrapper('acquia_lift_page_variation_rename', $form_state);
-
-  if ($form_state['executed']) {
-    $settings = array();
-    $option_sets = $option_sets = personalize_option_set_load_multiple(array(), array('decision_name' => $form_state['values']['variation_set_name']));
-    $option_set_settings = array_map('_personalize_convert_option_set_to_js_setting', $option_sets);
-    foreach($option_set_settings as $option_set_setting) {
-      $settings[key($option_set_setting)] = reset($option_set_setting);
-    }
-    // form processing is complete.
-    $output = array(
-      ctools_modal_command_dismiss(),
-      acquia_lift_command_messagebox(t('The variation has been renamed.'), 10),
-      acquia_lift_command_option_set_updates($settings),
-    );
+/**
+ * Ctools form processing complete handler for the renaming of a page
+ * variation.
+ * @see acquia_lift_create_ctools_form().
+ */
+function acquia_lift_page_variation_rename_complete_callback($form, $form_state) {
+  $settings = array();
+  $option_sets = $option_sets = personalize_option_set_load_multiple(array(), array('decision_name' => $form_state['values']['variation_set_name']));
+  $option_set_settings = array_map('_personalize_convert_option_set_to_js_setting', $option_sets);
+  foreach($option_set_settings as $option_set_setting) {
+    $settings[key($option_set_setting)] = reset($option_set_setting);
   }
-  $page = array('#type' => 'ajax', '#commands' => $output);
-  ajax_deliver($page);
+  // We need to update the campaigns as well in case a campaign was paused by this action.
+  $campaign_settings['personalize']['campaigns'] = personalize_agent_get_settings();
+  $commands = array(
+    ctools_modal_command_dismiss(),
+    acquia_lift_command_messagebox(t('The variation has been renamed.'), 10),
+    acquia_lift_command_option_set_updates($settings),
+    ajax_command_settings($campaign_settings, TRUE),
+  );
+  return $commands;
 }
 
 /**
@@ -1043,36 +1061,36 @@ function acquia_lift_page_variation_rename_submit($form, &$form_state) {
  *   The index of the variation to rename.
  */
 function acquia_lift_page_variation_delete_callback($agent_name, $variation_index) {
-  ctools_include('modal');
-  ctools_include('ajax');
-  ctools_modal_add_js();
-
-  $form_state = array(
-    'ajax' => TRUE,
-    'title' => t('Delete a variation'),
+  acquia_lift_create_ctools_form(
+    t('Delete a variation'),
+    'acquia_lift_page_variation_delete',
+    array(
+      'agent_name' => $agent_name,
+      'variation_index' => $variation_index,
+    ),
+    'acquia_lift_page_variation_delete_complete_callback'
   );
+}
 
-  $form_state['build_info']['args']['agent_name'] = $agent_name;
-  $form_state['build_info']['args']['variation_index'] = $variation_index;
-
-  $output = ctools_modal_form_wrapper('acquia_lift_page_variation_delete', $form_state);
-
-  if ($form_state['executed']) {
-    $settings = array();
-    $option_sets = $option_sets = personalize_option_set_load_multiple(array(), array('decision_name' => $form_state['values']['variation_set_name']));
-    $option_set_settings = array_map('_personalize_convert_option_set_to_js_setting', $option_sets);
-    foreach($option_set_settings as $option_set_setting) {
-      $settings[key($option_set_setting)] = reset($option_set_setting);
-    }
-    // form processing is complete.
-    $output = array(
-      ctools_modal_command_dismiss(),
-      acquia_lift_command_messagebox(t('The variation has been deleted.'), 10),
-      acquia_lift_command_option_set_updates($settings),
-    );
+/**
+ * Ctools form processing complete handler for deletion of a page variation.
+ * @see acquia_lift_create_ctools_form().
+ */
+function acquia_lift_page_variation_delete_complete_callback($form, $form_state) {
+  $settings = array();
+  $option_sets = $option_sets = personalize_option_set_load_multiple(array(), array('decision_name' => $form_state['values']['variation_set_name']));
+  $option_set_settings = array_map('_personalize_convert_option_set_to_js_setting', $option_sets);
+  foreach($option_set_settings as $option_set_setting) {
+    $settings[key($option_set_setting)] = reset($option_set_setting);
   }
-  $page = array('#type' => 'ajax', '#commands' => $output);
-  ajax_deliver($page);
+  $campaign_settings['personalize']['campaigns'] = personalize_agent_get_settings();
+  $commands = array(
+    ctools_modal_command_dismiss(),
+    acquia_lift_command_messagebox(t('The variation has been deleted.'), 10),
+    acquia_lift_command_option_set_updates($settings),
+    ajax_command_settings($campaign_settings, TRUE),
+  );
+  return $commands;
 }
 
 /**
@@ -1137,4 +1155,480 @@ function acquia_lift_page_variation_delete($form, &$form_state, $agent_name, $va
  */
 function acquia_lift_page_variation_delete_submit($form, &$form_state) {
   personalize_page_variation_delete($form_state['values']['variation_set_name'], $form_state['values']['agent_name'], $form_state['values']['variation_index']);
+  acquia_lift_process_queue(FALSE);
+}
+
+/**
+ * Page callback to create a new goal by selecting the type of goal to create.
+ *
+ * @param bool $ajax
+ *   Indicates if the form is called with ajax support.
+ */
+function acquia_lift_create_goal_callback($ajax) {
+  if (!$ajax) {
+    drupal_goto('admin/structure/personalize/goals');
+    return;
+  }
+
+  // Show the goal type selection form in a modal.
+  ctools_include('modal');
+  ctools_modal_add_js();
+
+  $path = drupal_get_path('module', 'acquia_lift');
+  $output = theme('acquia_lift_type_list', array(
+    'items' => array(
+      'existing' => array(
+        'title' => t('Predefined goal'),
+        'description' => t('Visitor actions already defined by Acquia Lift'),
+        'url' => 'admin/structure/acquia_lift/goal/add/existing',
+        'modal' => TRUE,
+        'ctools_style' => 'ctools-modal-acquia-lift-style-short',
+        'logo' => theme('image', array(
+          'path' => $path . '/images/goal-type-predefined.png',
+          'alt' => t('Pre-existing goal'),
+          'title' => t('Select this option to create a goal from a pre-existing visitor action.'),
+        )),
+      ),
+      'element' => array(
+        'title' => t('New element goal'),
+        'description' => t('Element-level visitor action, such as clicking a link or hovering over an image'),
+        'url' => 'admin/structure/visitor_actions',
+        'modal' => FALSE,
+        'logo' => theme('image', array(
+          'path' => $path . '/images/goal-type-element.png',
+          'alt' => t('Element goal'),
+          'title' => t('Select this option to create an element goal.'),
+        ))
+      ),
+      'page' => array(
+        'title' => t('New page goal'),
+        'description' => t('Page-level visitor action, such as scrolling to the bottom of the page'),
+        'url' => 'admin/structure/acquia_lift/goal/add/page',
+        'modal' => TRUE,
+        'ctools_style' => 'ctools-modal-acquia-lift-style',
+        'logo' => theme('image', array(
+          'path' => $path . '/images/goal-type-page.png',
+          'alt' => t('Page goal'),
+          'title' => t('Select this option to create a page goal.'),
+        ))
+      ),
+    ),
+  ));
+  return ctools_modal_render(t('Add a goal'), $output);
+}
+
+/**
+ * Page callback to generate the ctools modal form to create a goal of a
+ * specific type.
+ *
+ * @param $type
+ *   The type of goal to create.  Current supported choices: 'existing', 'page'
+ *   Note that element is handled via JavaScript.
+ * @param $ajax
+ *   Indicates if AJAX is supported.
+ */
+function acquia_lift_create_goal_type_callback($type, $ajax) {
+  acquia_lift_create_ctools_form(
+    t('Add a goal'),
+    'acquia_lift_create_goal_type_form',
+    array('type' => $type),
+    'acquia_lift_create_goal_type_completed_callback'
+  );
+}
+
+/**
+ * Ctools form processing complete handler for the creation of a new goal by
+ * type.
+ * @see acquia_lift_create_ctools_form().
+ */
+function acquia_lift_create_goal_type_completed_callback($form, &$form_state) {
+  $agent = $form_state['values']['agent'];
+  $settings = personalize_agent_get_settings();
+  if ($settings[$agent->machine_name]['verified'] && personalize_agent_get_status($agent->machine_name) === PERSONALIZE_STATUS_NOT_STARTED) {
+    $message = t('Goal added.  You can now start the campaign.');
+  }
+  else {
+    $message = t('%goal goal added to campaign.', array('%goal' => $form_state['acquia_lift']['goal_name']));
+  }
+  $commands = array(
+    ctools_modal_command_dismiss(),
+    ajax_command_settings(array('personalize' => array(
+      'campaigns' => $settings,
+    )), TRUE),
+    acquia_lift_command_messagebox($message, 10),
+  );
+  return $commands;
+}
+
+/**
+ * Form builder function to create a new goal in the modal process of a
+ * specific type.
+ *
+ * @param type
+ *   The type of goal to create.  Current supported choices: 'page', 'existing'
+ */
+function acquia_lift_create_goal_type_form($form, &$form_state, $type) {
+  ctools_include('modal');
+  ctools_include('ajax');
+  ctools_add_js('ajax-responder');
+
+  $agent_name = personalize_get_campaign_context();
+  $agent = personalize_agent_load($agent_name);
+  if (empty($agent)) {
+    $form['message'] = array(
+      '#markup' => t('You must select a campaign before adding goals.'),
+    );
+    return $form;
+  }
+
+  $form['agent'] = array(
+    '#type' => 'value',
+    '#value' => $agent,
+  );
+  $form['goal_type'] = array(
+    '#type' => 'value',
+    '#value' => $type,
+  );
+  $change_link = ctools_modal_text_button(t('Change type of goal'), 'admin/structure/acquia_lift/goal/add/nojs', t('Change type of test'), 'ctools-modal-acquia-lift-style-long');
+  // Add individual forms specific to the type of goal being created.
+  switch ($type) {
+    case 'existing':
+      $form['goal_type_change'] = array(
+        '#markup' => theme('acquia_lift_create_type_change', array(
+          'type' => t('Pre-existing goal'),
+          'change_link' => $change_link,
+        )),
+      );
+      $form['goal'] = _acquia_lift_create_existing_goal_form($agent);
+      break;
+    case 'page':
+      $form['goal_type_change'] = array(
+        '#markup' => theme('acquia_lift_create_type_change', array(
+          'type' => t('Page goal'),
+          'change_link' => $change_link,
+        )),
+      );
+      $form['goal'] = _acquia_lift_create_page_goal_form($agent);
+      break;
+  }
+  // Common actions.
+  $form['actions']['submit_form'] = array(
+    '#type' => 'submit',
+    '#attributes' => array(
+      'class' => array('action-item-primary-active', 'acquia-lift-submit-button'),
+    ),
+    '#value' => t('Add goal'),
+  );
+  $form['actions']['reset'] = array(
+    '#markup' => ctools_ajax_text_button(t('Cancel'), 'admin/structure/acquia_lift/cancel/nojs', t('Cancel'), 'acquia-lift-cancel-button'),
+  );
+  return $form;
+}
+
+/**
+ * Loads the existing goal selection form for a campaign.
+ *
+ * @param $agent
+ *   The agent data for the campaign that this goal will belong to.
+ */
+function _acquia_lift_create_existing_goal_form($agent) {
+  // Exclude any actions already used in this campaign.
+  $exclude = array();
+  $goals = personalize_goal_load_by_conditions(array('agent' => $agent->machine_name));
+  foreach ($goals as $goal) {
+    $exclude[$goal['action']] = $goal['action'];
+  }
+  module_load_include('inc', 'personalize', 'personalize.admin');
+  $all_goal_options = personalize_goals_options();
+  $goal_options = array_diff_key($all_goal_options, $exclude);
+  $form['action_name'] = array(
+    '#type' => 'select',
+    '#title' => t('Goal'),
+    '#options' => $goal_options,
+    '#empty_option' => t('-Select-'),
+    '#required' => TRUE,
+  );
+  return $form;
+}
+
+/**
+ * Loads the page goals selection form for a campaign.
+ *
+ * @param $agent
+ *   The agent data for the campaign that this goal will belong to.
+ */
+function _acquia_lift_create_page_goal_form($agent) {
+  $form['actionable_element'] = array(
+    '#type' => 'value',
+    '#value' => 'page',
+  );
+  $form['title'] = array(
+    '#title' => t('Title'),
+    '#description' => t('Name'),
+    '#type' => 'textfield',
+    '#required' => TRUE,
+  );
+  // To be filled in on the client-side.
+  $form['pages'] = array(
+    '#type' => 'hidden',
+  );
+  // Needed by the visitor actions form for structure.
+  $form['event'] = array(
+    '#tree' => TRUE
+  );
+  $form['options'] = array(
+    '#tree' => TRUE,
+  );
+
+  $form['#validate']['_acquia_lift_create_page_goal_form_validate'];
+  module_load_include('inc', 'visitor_actions', 'visitor_actions.admin');
+  visitor_actions_get_form_options('page', $form, FALSE);
+  return $form;
+}
+
+/**
+ * Form validation for creating a new page goal simplified form.
+ */
+function _acquia_lift_create_page_goal_form_validate($form, &$form_state) {
+  // Allow the plugin to validate the form values.
+  ctools_include('plugins');
+  if ($class = ctools_plugin_load_class('visitor_actions', 'actionable_element', $form_state['values']['actionable_element'], 'handler')) {
+    call_user_func_array(array($class, 'validate'), array($form_state['values']));
+  }
+}
+
+/**
+ * Submit handler to create a new goal for a campaign.
+ */
+function acquia_lift_create_goal_type_form_submit($form, &$form_state) {
+  $action_name = $goal_name = '';
+  $agent_data = $form_state['values']['agent'];
+
+  switch ($form_state['values']['goal_type']) {
+    case 'existing':
+      $action_name = $form_state['values']['action_name'];
+      $action = visitor_actions_custom_load($action_name);
+      $goal_name = $action['label'];
+      break;
+    case 'page':
+      $plugin = $form_state['values']['actionable_element'];
+      list($type, $event) = explode('::', $form_state['values']['event'][$plugin]);
+      $goal_name = $form_state['values']['title'];
+      $action_name = personalize_generate_machine_name($goal_name, visitor_actions_action_name_exists);
+      $action = array(
+        'label' => $goal_name,
+        'machine_name' => $action_name,
+        'plugin' => $plugin,
+        'client_side' => $type == 'client' ? 1 : 0,
+        'identifier' => '',
+        'event' => $event,
+        'pages' => $form_state['values']['pages'],
+        // The data array gets populated with the plugin-specific
+        // info for the action.
+        'data' => isset($form_state['values']['options'][$plugin]) ? $form_state['values']['options'][$plugin] : array(),
+      );
+      // Allow the plugin to modify the action before saving.
+      ctools_include('plugins');
+      if ($class = ctools_plugin_load_class('visitor_actions', 'actionable_element', $action['plugin'], 'handler')) {
+        $action = call_user_func_array(array($class, 'actionPresave'), array($action));
+      }
+      visitor_actions_save_action($action);
+      break;
+  }
+  personalize_goal_save($agent_data->machine_name, $action_name, 1);
+  acquia_lift_process_queue(FALSE);
+  $form_state['acquia_lift']['goal_name'] = $goal_name;
+}
+
+/**
+ * Page callback to generate a start campaign screen.
+ */
+function acquia_lift_start_campaign_callback($agent_name) {
+  $agent_data = personalize_agent_load($agent_name);
+  acquia_lift_create_ctools_form(
+    t('Start campaign %campaign', array('%campaign' => $agent_data->label)),
+    'acquia_lift_start_campaign',
+    array('agent_data' => $agent_data),
+    'acquia_lift_start_campaign_complete_callback'
+  );
+}
+
+/**
+ * Form handler to start a new campaign.
+ *
+ * @param stdClass $agent_data
+ *   The data for the agent to start.
+ */
+function acquia_lift_start_campaign($form, &$form_state, $agent_data) {
+  ctools_include('modal');
+  ctools_include('ajax');
+  ctools_add_js('ajax-responder');
+
+  $end_variable = _personalize_agent_get_stoptime_variable($agent_data->machine_name);
+  $agent_end = $default_end = variable_get($end_variable, 0);
+  if ($agent_end == 0) {
+    $default_end = strtotime('+1 month');
+  }
+  $agent_end_date = array('year' => date('Y', $default_end), 'month' => intval(date('m', $default_end)), 'day' => date('d', $default_end));
+  $form['agent'] = array(
+    '#type' => 'value',
+    '#value' => $agent_data,
+  );
+  $form['decision_style'] = array(
+    '#type' => 'checkboxes',
+    '#title' => t('Automatically determine a winner'),
+    '#options' => array(
+      'adaptive' => t('Acquia Lift will adapt to visitors to choose the best option over time.'),
+    ),
+    '#default_value' => array($agent_data->data['decision_style']),
+  );
+  $form['campaign_end'] = array(
+    '#type' => 'radios',
+    '#title' => t('Campaign end date'),
+    '#options' => array(
+      'none' => t('Run until I stop campaign'),
+      'specified' => t('Select date'),
+    ),
+    '#default_value' => $agent_end == 0 ? 'none' : 'specified',
+  );
+  $form['campaign_end_date'] = array(
+    '#type' => 'date',
+    '#default_value' => $agent_end_date,
+    '#states' => array(
+      'visible' => array(
+        ':input[name="campaign_end"]' => array('value' => 'specified'),
+      ),
+    ),
+  );
+  $form['actions']['submit_form'] = array(
+    '#type' => 'submit',
+    '#attributes' => array(
+      'class' => array('action-item-primary-active', 'acquia-lift-submit-button'),
+    ),
+    '#value' => t('Start campaign'),
+  );
+  $form['actions']['reset'] = array(
+    '#markup' => ctools_ajax_text_button(t('Cancel'), 'admin/structure/acquia_lift/cancel/nojs', t('Cancel'), 'acquia-lift-cancel-button'),
+  );  return $form;
+}
+
+/**
+ * Form validator for acquia_lift_start_campaign().
+ */
+function acquia_lift_start_campaign_validate($form, &$form_state) {
+  if ($form_state['values']['campaign_end'] === 'specified') {
+    $end_date = strtotime($form_state['values']['campaign_end_date']['year'] . '-' . $form_state['values']['campaign_end_date']['month'] . '-' . $form_state['values']['campaign_end_date']['day']);
+    if ($end_date < time()) {
+      form_set_error('campaign_end_date', t('When provided, the end date for the campaign must be in the future.'));
+    }
+  }
+}
+
+/**
+ * Form submit handler for acquia_lift_start_campaign().
+ */
+function acquia_lift_start_campaign_submit($form, &$form_state) {
+  // Set the decision style.
+  $agent_data = $form_state['values']['agent'];
+  $agent_data->data['decision_style'] = empty($form_state['values']['decision_style']) ? 'random' : current($form_state['values']['decision_style']);
+  personalize_agent_save($agent_data);
+
+  // Set the end date.
+  if ($form_state['values']['campaign_end'] === 'specified') {
+    $end_date = strtotime($form_state['values']['campaign_end_date']['year'] . '-' . $form_state['values']['campaign_end_date']['month'] . '-' . $form_state['values']['campaign_end_date']['day']);
+  }
+  else {
+    $end_date = 0;
+  }
+  $varname = _personalize_agent_get_stoptime_variable($agent_data->machine_name);
+  variable_set($varname, $end_date);
+
+  // Start the campaign.
+  $form_state['acquia_lift']['started'] = personalize_agent_set_status($agent_data->machine_name, PERSONALIZE_STATUS_RUNNING);
+}
+
+/**
+ * Form complete callback for the acquia_lift_start_campaign form.
+ * @see acquia_lift_create_ctools_form().
+ */
+function acquia_lift_start_campaign_complete_callback($form, $form_state) {
+  $agent_data = $form_state['values']['agent'];
+  if ($form_state['acquia_lift']['started']) {
+    $message = t('The %campaign campaign has been started', array(
+      '%campaign' => $agent_data->label,
+    ));
+  }
+  else {
+    $message = t('There was a problem starting your campaign.');
+  }
+  return array(
+    ctools_modal_command_dismiss(),
+    ajax_command_settings(array('personalize' => array(
+      'campaigns' => personalize_agent_get_settings(),
+    )), TRUE),
+    acquia_lift_command_messagebox($message, 10),
+  );
+}
+
+/**
+ * Handles generating a CTools form window for a particular form.
+
+ * @param string $title
+ *   The title for the modal window.
+ * @param $form_name
+ *   The name of the form to retrieve.
+ * @param null $args
+ *   An array of form arguments to pass to the form.
+ * @param null $callback
+ *   A callback to call when the form has been executed.
+ *   The callback will receive the $form and $form_state arguments and should
+ *   return the array of AJAX commands to execute.
+ *   If empty then the modal will simply be dismissed.
+ */
+function acquia_lift_create_ctools_form($title, $form_name, $args = array(), $callback = NULL) {
+  ctools_include('modal');
+  ctools_include('ajax');
+  ctools_modal_add_js();
+
+  $form_state = array(
+    'ajax' => TRUE,
+    'title' => $title,
+    'build_info' => array(
+      'args' => $args,
+    )
+  );
+
+  $output = ctools_modal_form_wrapper($form_name, $form_state);
+
+  if ($form_state['executed']) {
+    // Form has been processed to generate the output commands.
+    if (is_callable($callback)) {
+      $output = $callback($output, $form_state);
+    } else {
+      $output = array(
+        ctools_modal_command_dismiss(),
+      );
+    }
+  }
+  $page = array('#type' => 'ajax', '#commands' => $output);
+  ajax_deliver($page);
+}
+
+/**
+ * AJAX callback to cancel the campaign creation flow.
+ *
+ * @param $ajax
+ *   Indicates if AJAX is supported.
+ */
+function acquia_lift_campaign_flow_cancel($ajax = NULL) {
+  if (!$ajax) {
+    // We should never be here out of ajax context.
+    return MENU_NOT_FOUND;
+  }
+
+  ctools_include('modal');
+  ctools_include('ajax');
+
+  $commands = array(ctools_modal_command_dismiss());
+  print ajax_render($commands);
 }

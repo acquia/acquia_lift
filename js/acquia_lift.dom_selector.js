@@ -12,8 +12,9 @@
   var pluginName = 'DOMSelector',
     indicatorClass = 'acquia-lift-active-element',
     selectorIgnoreClasses = null,
-    selectorIgnoreId = /^visitorActionsUIDialog-([0-9]*$)/ig,
-    defaults = {
+    selectorIgnoreId = /^(visitorActionsUI-)|(visitorActionsUIDialog-)/;
+
+  defaults = {
       hoverCss: {
         background: '#666',
         opacity: .6,
@@ -29,7 +30,20 @@
     };
 
   function Plugin (element, options) {
-    this.$element = $(element);
+    // Allow the initializer to specify the elements to watch or just default
+    // to the element and all of its children.
+    if (options.$watchElements) {
+      this.$element = options.$watchElements;
+    } else {
+      var $matched;
+      if ($(element).addBack) {
+        $matched = $(element).find('*').addBack();
+      } else {
+        $matched = $(element).find('*').andSelf();
+      }
+      this.$element = $matched;
+    }
+
     this.settings = $.extend({}, defaults, options);
     this._defaults = defaults;
     this._name = pluginName;
@@ -46,6 +60,18 @@
     },
 
     /**
+     * Determine tip content for an element
+     * @returns {*|HTMLElement}
+     */
+    getTipContent: function (element) {
+      if (element.hasOwnProperty('id') && element.id.length > 0 && element.id.match(selectorIgnoreId) == null) {
+        return element.id;
+      } else {
+        return '&lt;' + element.nodeName.toLowerCase() + '&gt;';
+      }
+    },
+
+    /**
      * Enables DOM watching capabilities.
      *
      * @returns the current jQuery element.
@@ -53,9 +79,9 @@
     startWatching: function() {
       this.$element.bind('mousemove', $.proxy(this, '_onMouseMove'));
       this.$element.bind('click', $.proxy(this, '_onClick'));
-      this.$element.find('*').each(function() {
+      this.$element.each(function() {
         $(this).qtip({
-          content: '&lt;' + this.nodeName + '&gt;',
+          content: Plugin.prototype.getTipContent(this),
           solo: true,
           position: {
             target: 'mouse',
@@ -73,7 +99,7 @@
               length: 0
             },
             when: {
-              event: 'mouseover.qtip'
+              event: 'mouseover'
             }
           },
           hide: {
@@ -84,7 +110,7 @@
               length: 0
             },
             when: {
-              event: 'mouseover.qtip'
+              event: 'mouseout'
             }
           },
           api: {
@@ -109,12 +135,15 @@
       this.$element.unbind('click', this._onClick);
       // QTip has some problems fully removing itself so help it.
       // NOTE that QTips don't properly re-enable so disabling is not an option.
-      this.$element.find('*').each(function() {
+      this.$element.each(function() {
         if (typeof $(this).data('qtip') !== 'undefined') {
           $(this).qtip('destroy');
-          $(this).unbind('mouseover.qtip');
-          $(this).unbind('mousedown.qtip');
-          $(this).unbind('mouseout.qtip');
+          $(this).unbind('.qtip');
+          // Sadly just unbinding qtip namespaced events doesn't grab it all.
+          // Would rather than just unbind mouseover but since this only happens
+          // in administration of a variation it will do for now.
+          // @todo Find a way to preserve the origin element's mouseover event.
+          $(this).unbind('mouseover');
         }
       });
       $.fn.qtip.interfaces.length = 0;
@@ -170,6 +199,11 @@
         if (target === null || typeof target === 'undefined' || (this.$element && target === this.$element[0])) {
           return;
         }
+        // If the element wasn't initialized with a qTip, then it's not one of
+        // the elements available for selection.
+        if (!$(target).data('qtip')) {
+          return;
+        }
         this.unhighlight();
         this.$element = $(target);
         this.highlight();
@@ -200,7 +234,6 @@
       event.preventDefault();
       event.stopPropagation();
       event.cancelBubble = true;
-      this.stopWatching();
       return false;
     }
   })

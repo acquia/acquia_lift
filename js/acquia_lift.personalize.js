@@ -1814,9 +1814,13 @@
           that.onVisitorActionsEditModeProxy(event, data);
         });
 
-        var visitorActionsModel = getVisitorActionsAppModel();
-        var startingInEdit = visitorActionsModel && visitorActionsModel.get('editMode');
-        this.onVisitorActionsEditMode(null, startingInEdit);
+        // Give the goals model a chance to load and then check for the initial
+        // state.
+        _.delay(function() {
+          var visitorActionsModel = getVisitorActionsAppModel();
+          var startingInEdit = visitorActionsModel && visitorActionsModel.get('editMode');
+          that.onVisitorActionsEditMode(null, startingInEdit);
+        })
       },
 
       /**

@@ -30,14 +30,20 @@
     };
 
   function Plugin (element, options) {
-    var $matched;
-    if ($(element).addBack) {
-      $matched = $(element).find('*').addBack();
+    // Allow the initializer to specify the elements to watch or just default
+    // to the element and all of its children.
+    if (options.$watchElements) {
+      this.$element = options.$watchElements;
     } else {
-      $matched = $(element).find('*').andSelf();
+      var $matched;
+      if ($(element).addBack) {
+        $matched = $(element).find('*').addBack();
+      } else {
+        $matched = $(element).find('*').andSelf();
+      }
+      this.$element = $matched;
     }
 
-    this.$element = $matched;
     this.settings = $.extend({}, defaults, options);
     this._defaults = defaults;
     this._name = pluginName;
@@ -191,6 +197,11 @@
       // Update what element is the current for hover functionality.
       update: function(target) {
         if (target === null || typeof target === 'undefined' || (this.$element && target === this.$element[0])) {
+          return;
+        }
+        // If the element wasn't initialized with a qTip, then it's not one of
+        // the elements available for selection.
+        if (!$(target).data('qtip')) {
           return;
         }
         this.unhighlight();

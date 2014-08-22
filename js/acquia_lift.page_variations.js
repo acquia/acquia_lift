@@ -4,10 +4,43 @@
 (function($, Drupal, Dialog, Backbone, _) {
 
   /**
-   * Selector for element to use as DOM selector wrapping element.
-   * @type {string}
+   * Gets a jQuery element array of all elements available for the DOM
+   * selector.
    */
-  var pageWrapper = Drupal.settings.acquia_lift.dom_selector_root;
+  function getAvailableElements() {
+    var ignoreRegions = Drupal.settings.acquia_lift.dom_selector_ignore;
+
+    // Reduce the ignore region class list to a selector that includes
+    // each region and all of its children, for example:
+    // .page-top, .page-top *, .page-bottom, .page-bottom *
+    var ignoreSelector = _.reduce(ignoreRegions, function (memo, current) {
+      if (memo.length > 0) {
+        memo += ', ';
+      }
+      return memo + '.' + current + ', .' + current + ' *';
+    }, '');
+    var $available = $('body').find('*').not(ignoreSelector).not('script, br, wbr, noscript').filter(function () {
+      var el = this;
+      var id = el.id || '';
+      var className = typeof this.className === 'string' && this.className || '';
+      var href = this.attributes['href'] && this.attributes['href'].value || '';
+      // Eliminate any visitor actions components.
+      var rVA = /^visitor-actions/;
+      // Eliminate local tasks and contextual links.
+      var rTask = /local-task|contextual/;
+      // Eliminate admin links.
+      var rAdmin = /^\/?admin/;
+      // Eliminate node action links.
+      var rNode = /^\/?node(\/)?(\d)*(?=\/add|\/edit|\/delete)/;
+      // Reject the element if any tests match.
+      if (rVA.test(id) || rTask.test(className) || rAdmin.test(href) || rNode.test(href)) {
+        return false;
+      }
+      // Keep the element as the default.
+      return true;
+    })
+    return $available;
+  }
 
 
   Drupal.acquiaLiftPageVariations = Drupal.acquiaLiftPageVariations || {};
@@ -81,14 +114,15 @@
       variationTypeFormModel: null,
       anchor: null,
       // An array of jQuery instances that are available to the DOM selector.
-      $regions: null,
+      $watchElements: null,
 
       initialize: function (options) {
         _.bindAll(this, 'createContextualMenu', 'onElementSelected');
 
         var that = this;
-        this.$regions = options.$regions;
-        this.$regions.DOMSelector({
+        this.$watchElements = options.$watchElements;
+        this.$el.DOMSelector({
+          $watchElements: this.$watchElements,
           onElementSelect: function (element, selector) {
             that.onElementSelected(element, selector);
           }
@@ -104,9 +138,9 @@
        */
       render: function (model, editMode) {
         if (editMode) {
-          this.$regions.DOMSelector("startWatching");
+          this.$el.DOMSelector("startWatching");
         } else {
-          this.$regions.DOMSelector("stopWatching");
+          this.$el.DOMSelector("stopWatching");
         }
       },
 
@@ -163,14 +197,14 @@
        * Deactivates the view and the page variation process.
        */
       deactivate: function () {
-        this.$regions.DOMSelector("stopWatching");
+        this.$watchElements.DOMSelector("stopWatching");
       },
 
       /**
        * Event callback for when an element is selected in the DOM selector.
        */
       onElementSelected: function (element, selector) {
-        this.$regions.DOMSelector('stopWatching');
+        this.$el.DOMSelector('stopWatching');
         this.createContextualMenu(element, selector);
       },
 
@@ -483,12 +517,15 @@
       if (!Drupal.acquiaLiftPageVariations.app.appModel) {
         Drupal.acquiaLiftPageVariations.app.appModel = new Drupal.acquiaLiftPageVariations.models.AppModel();
       }
-      var $wrapper = $(pageWrapper);
-      if ($wrapper.length && !Drupal.acquiaLiftPageVariations.app.appView) {
-        Drupal.acquiaLiftPageVariations.app.appView = new Drupal.acquiaLiftPageVariations.views.AppView({
-          model: Drupal.acquiaLiftPageVariations.app.appModel,
-          $regions: $wrapper
-        });
+      if (!Drupal.acquiaLiftPageVariations.app.appView) {
+        var $elements = getAvailableElements();
+        if ($elements.length > 0) {
+          Drupal.acquiaLiftPageVariations.app.appView = new Drupal.acquiaLiftPageVariations.views.AppView({
+            model: Drupal.acquiaLiftPageVariations.app.appModel,
+            $watchElements: $elements,
+            $el: $('body')
+          });
+        }
       }
       var editVariation = response.data.variationIndex || -1;
       Drupal.acquiaLiftPageVariations.app.appModel.set('variationIndex', editVariation);

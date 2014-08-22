@@ -65,7 +65,7 @@ function acquia_lift_build_page(&$page) {
     $page['page_top']['#attached']['library'][] = array('acquia_lift', 'acquia_lift.modal');
     ctools_add_css('acquia_lift.ctools.modal', 'acquia_lift');
 
-    $settings['acquia_lift']['dom_selector_root'] = acquia_lift_generate_editable_selector();
+    $settings['acquia_lift']['dom_selector_ignore'] = acquia_lift_generate_ignore_selector();
     drupal_add_js($settings, 'setting');
   }
 }
@@ -102,16 +102,18 @@ function acquia_lift_chosenify_element(&$element, $classes = array()) {
 }
 
 /**
- * Generates a selector for all of the editable page content for this site.
+ * Generates a selector for all of the regions of this page to ignore when
+ * selecting elements from the DOM.
  */
-function acquia_lift_generate_editable_selector() {
+function acquia_lift_generate_ignore_selector() {
   global $theme;
-  $regions = system_region_list($theme, REGIONS_VISIBLE);
-  $classes = array();
-  foreach ($regions as $region_name => $region_label) {
-    $classes[] = '.' . drupal_region_class($region_name);
+  $all_regions = system_region_list($theme, REGIONS_ALL);
+  $visible_regions = system_region_list($theme, REGIONS_VISIBLE);
+  $invisible_regions = array_diff($all_regions, $visible_regions);
+  foreach ($invisible_regions as $region_name => $region_label) {
+    $classes[] = drupal_region_class($region_name);
   }
-  return implode(', ', $classes);
+  return $classes;
 }
 
 /**

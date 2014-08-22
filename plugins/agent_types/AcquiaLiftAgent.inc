@@ -932,24 +932,10 @@ class AcquiaLiftSimpleAB extends AcquiaLiftAgent implements AcquiaLiftSimplified
 }
 
 /**
- * Responsible retrieving and generating reports on the Acquia Lift agent.
+ * Base class providing report data loading functionality common to all
+ * Acquia Lift Reports.
  */
-class AcquiaLiftReport implements PersonalizeAgentReportInterface, AcquiaLiftReportInterface {
-
-  /**
-   * The threshold to use above which lift percentage will be positively noted.
-   */
-  const LIFT_THRESHHOLD = 0;
-
-  /**
-   * The threshold to use above which stability will be positively noted.
-   */
-  const STABILITY_THRESHOLD = 25;
-
-  /**
-   * The value to show when report data is not applicable.
-   */
-  const DATA_NA = '&mdash;';
+abstract class AcquiaLiftReportBase implements PersonalizeAgentReportInterface, AcquiaLiftReportInterface {
 
   /**
    * The value representing no features applied to an experiment.
@@ -1016,6 +1002,177 @@ class AcquiaLiftReport implements PersonalizeAgentReportInterface, AcquiaLiftRep
     }
     $this->confidence_measure = $value;
   }
+
+  /**
+   * Generates the general report configuration that is used to load any report.
+   *
+   * @param $decision_name
+   *   (Optional) decision point name to limit results.
+   * @param $date_from
+   *   The starting date for report data in Y-m-d format, or null for agent
+   *   start date.
+   * @param $date_to
+   *   The ending date for report data in Y-m-d format, or null for today.
+   * @return array
+   *   The basic reporting configuration.
+   */
+  protected function generateReportConfiguration($decision_name = NULL, $date_from = NULL, $date_to = NULL) {
+    $key = 'S' . $date_from . 'E' . $date_to;
+    $machine_name = $this->agent->getMachineName();
+
+    if (!isset($this->report_data[$key])) {
+      $confidence_measure = $this->getConfidenceMeasure();
+      // Convert the confidence measure from a percentage to a value between
+      // 0 and 1 as expected by the Lift API.
+      $confidence_measure /= 100;
+      $today_only = $date_from === date('Y-m-d') && empty($date_to);
+      $date_from = empty($date_from) ? date('Y-m-d', $this->agent->started) : $date_from;
+      $date_to = empty($date_to) ? date('Y-m-d') : $date_to;
+
+      // Save basic report generation information with the data.
+      $this->report_data[$key]['today_only'] = $today_only;
+      $this->report_data[$key]['date_from'] = $date_from;
+      $this->report_data[$key]['date_to'] = $date_to;
+      $this->report_data[$key]['decision_name'] = $decision_name;
+      $this->report_data[$key]['machine_name'] = $machine_name;
+      $this->report_data[$key]['confidence_measure'] = $confidence_measure;
+    }
+    return $this->report_data[$key];
+  }
+
+
+  /**
+   * Loads the context filter raw values into the report data.
+   *
+   * @param $report_data
+   *   The current reporting array by reference.
+   * @return array
+   *   The updated reporting data for chaining purposes.  Note that the
+   *   reporting data is updated by reference as well.
+   */
+  protected function loadContextFilterData(&$report_data) {
+    // Check and see if it is already loaded.
+    if (isset($report_data['raw']['potential_context'])) {
+      return $report_data;
+    }
+    // Load it from the report source.
+    try {
+      $report_data['raw']['potential_context'] = $this->reportDataSrc->getContextFilters($report_data['machine_name']);
+    }
+    catch (Exception $e) {
+      $report_data['raw']['potential_context']['error'] = $e->getMessage();
+    }
+    return $report_data;
+  }
+
+  /**
+   * Loads the agent status raw reporting data.
+   *
+   * @param $report_data
+   *   The current reporting array by reference.
+   * @return array
+   *   The updated reporting data for chaining purposes.  Note that the
+   *   reporting data is updated by reference as well.
+   */
+  protected function loadAgentStatusData(&$report_data) {
+    // Check and see if it is already loaded.
+    if (isset($report_data['raw']['status'])) {
+      return $report_data;
+    }
+    try {
+      if ($report_data['today_only']) {
+        $num_days = 1;
+      }
+      else {
+        $interval = date_diff(date_create($report_data['date_from']), date_create($report_data['date_to']));
+        $num_days = $interval->days;
+      }
+      $report_data['raw']['status'] = $this->reportDataSrc->getAgentStatusReport(array($report_data['machine_name']), $num_days);
+    }
+    catch (Exception $e) {
+      $report_data['raw']['potential_context']['error'] = $e->getMessage();
+    }
+    return $report_data;
+  }
+
+  /**
+   * Loads the agent confidence raw reporting data.
+   *
+   * @param $report_data
+   *   The current reporting array by reference.
+   * @return array
+   *   The updated reporting data for chaining purposes.  Note that the
+   *   reporting data is updated by reference as well.
+   */
+  protected function loadConfidenceData(&$report_data) {
+    // Check and see if it is already loaded.
+    if (isset($report_data['raw']['confidence'])) {
+      return $report_data;
+    }
+    try {
+      $report_data['raw']['confidence'] = $this->reportDataSrc->getConfidenceReport(
+        $report_data['machine_name'],
+        $report_data['date_from'],
+        $report_data['date_to'],
+        $report_data['decision_name'],
+        'all',
+        $report_data['confidence_measure']
+      );
+    }
+    catch (Exception $e) {
+      $report_data['raw']['confidence']['error'] = $e->getMessage();
+    }
+    return $report_data;
+  }
+
+  /**
+   * Loads the agent targeting raw reporting data.
+   *
+   * @param $report_data
+   *   The current reporting array by reference.
+   * @return array
+   *   The updated reporting data for chaining purposes.  Note that the
+   *   reporting data is updated by reference as well.
+   */
+  protected function loadTargetingData(&$report_data) {
+    // Check and see if it is already loaded.
+    if (isset($report_data['raw']['targeting'])) {
+      return $report_data;
+    }
+    try {
+      $report_data['raw']['targeting'] = $this->reportDataSrc->getTargetingImpactReport(
+        $report_data['machine_name'],
+        $report_data['date_from'],
+        $report_data['date_to'],
+        $report_data['decision_name']
+      );
+    }
+    catch (Exception $e) {
+      $report_data['raw']['confidence']['error'] = $e->getMessage();
+    }
+    return $report_data;
+  }
+}
+
+/**
+ * Responsible retrieving and generating reports on the Acquia Lift agent.
+ */
+class AcquiaLiftReport extends AcquiaLiftReportBase {
+
+  /**
+   * The threshold to use above which lift percentage will be positively noted.
+   */
+  const LIFT_THRESHHOLD = 0;
+
+  /**
+   * The threshold to use above which stability will be positively noted.
+   */
+  const STABILITY_THRESHOLD = 25;
+
+  /**
+   * The value to show when report data is not applicable.
+   */
+  const DATA_NA = '&mdash;';
 
   /**
    * Implements PersonalizeAgentReportInterface::renderStatsForOptionSet().
@@ -1093,71 +1250,52 @@ class AcquiaLiftReport implements PersonalizeAgentReportInterface, AcquiaLiftRep
    *   - targeting: The targeting report data
    */
   protected function loadReportData($decision_name = NULL, $date_from = NULL, $date_to = NULL) {
-    $key = 'S' . $date_from . 'E' . $date_to;
-    $machine_name = $this->agent->getMachineName();
-
-    if (!isset($this->report_data[$key])) {
-      $confidence_measure = $this->getConfidenceMeasure();
-      // Convert the confidence measure from a percentage to a value between
-      // 0 and 1 as expected by the Lift API.
-      $confidence_measure /= 100;
-      $today_only = $date_from === date('Y-m-d') && empty($date_to);
-      $date_from = empty($date_from) ? date('Y-m-d', $this->agent->started) : $date_from;
-      $date_to = empty($date_to) ? date('Y-m-d') : $date_to;
-
-      // Save basic report generation information with the data.
-      $this->report_data[$key]['today_only'] = $today_only;
-      $this->report_data[$key]['date_from'] = $date_from;
-      $this->report_data[$key]['date_to'] = $date_to;
-      $this->report_data[$key]['decision_name'] = $decision_name;
-
-      // Get all context filtering values
-      try {
-        $contextFilters = $this->reportDataSrc->getContextFilters($machine_name);
-        $this->report_data[$key]['potential_context'] = $this->extractPotentialTargetingValues($contextFilters['data']);
+    $report_data = $this->generateReportConfiguration($decision_name, $date_from, $date_to);
+    // Context filters.
+    if (!isset($report_data['potential_context'])) {
+      $this->loadContextFilterData($report_data);
+      if (isset($report_data['raw']['potential_context']['error'])) {
+        $report_data['potential_context'] = FALSE;
       }
-      catch (Exception $e) {
-        $this->report_data[$key]['potential_context'] = FALSE;
+      else {
+        $report_data['potential_context'] = $this->extractPotentialTargetingValues($report_data['raw']['potential_context']['data']);
       }
-
-      // Agent status report data.
-      try {
-        if ($today_only) {
-          $num_days = 1;
-        }
-        else {
-          $interval = date_diff(date_create($date_from), date_create($date_to));
-          $num_days = $interval->days;
-        }
-        $overviewReport = $this->reportDataSrc->getAgentStatusReport(array($machine_name), $num_days);
-        $this->report_data[$key]['status'] = $this->extractOverviewReportData($overviewReport['data'][$machine_name]);
-      }
-      catch (AcquiaLiftException $e) {
-        $this->report_data[$key]['status'] = FALSE;
-      }
-
-      // Confidence report data.
-      try {
-        $confidenceReport = $this->reportDataSrc->getConfidenceReport($machine_name, $date_from, $date_to, $decision_name, "all", $confidence_measure);
-        $this->report_data[$key]['confidence'] = $this->extractConfidenceReportData($confidenceReport['data']['items']);
-      }
-      catch (AcquiaLiftException $e) {
-        $this->report_data[$key]['confidence'] = FALSE;
-      }
-
-      // Targeting report data.
-      try {
-        $targetingReport = $this->reportDataSrc->getTargetingImpactReport($machine_name, $date_from, $date_to, $decision_name);
-        $this->report_data[$key]['targeting'] = $this->extractTargetingReportData($targetingReport['data']['items']);
-      }
-      catch (AcquiaLiftException $e) {
-        $this->report_data[$key]['targeting'] = FALSE;
-      }
-
-      // Combine data to form all campaign report data.
-      $this->extractCampaignReportData($this->report_data[$key]);
     }
-    return $this->report_data[$key];
+    // Agent status
+    if (!isset($report_data['status'])) {
+      $this->loadAgentStatusData($report_data);
+      if (isset($report_data['raw']['status']['error'])) {
+        $report_data['status'] = FALSE;
+      }
+      else {
+        $report_data['status'] = $this->extractOverviewReportData($report_data['raw']['status']['data'][$report_data['machine_name']]);
+      }
+    }
+    // Confidence report data.
+    if (!isset($report_data['confidence'])) {
+      $this->loadConfidenceData($report_data);
+      if (isset($report_data['raw']['confidence']['error'])) {
+        $report_data['confidence'] = FALSE;
+      }
+      else {
+        $report_data['confidence'] = $this->extractConfidenceReportData($report_data['raw']['confidence']['data']['items']);
+      }
+    }
+    // Targeting report data.
+    if (!isset($report_data['targeting'])) {
+      $this->loadTargetingData($report_data);
+      if (isset($report_data['raw']['targeting']['error'])) {
+        $report_data['targeting'] = FALSE;
+      }
+      else {
+        $report_data['targeting'] = $this->extractTargetingReportData($report_data['raw']['targeting']['data']['items']);
+      }
+    }
+    if (!isset($report_data['extracted_total'])) {
+      // Combine data to form all campaign report data.
+      $this->extractCampaignReportData($report_data);
+    }
+    return $report_data;
   }
 
   /**
@@ -1174,6 +1312,7 @@ class AcquiaLiftReport implements PersonalizeAgentReportInterface, AcquiaLiftRep
    * @see extractTargetingReportData()
    */
   protected function extractCampaignReportData(&$report_data) {
+    $report_data['extracted_total'] = TRUE;
     if (!is_array($report_data['status']) || !is_array($report_data['confidence']) || !is_array($report_data['targeting']) || !is_array($report_data['potential_context'])) {
       return;
     }

@@ -109,7 +109,12 @@ class AcquiaLiftReportFactory {
       $report_source = $api_instance;
     }
 
-    $report = new AcquiaLiftReport($agent_instance, $report_source);
+    if ($agent_instance instanceof AcquiaLiftSimpleAB) {
+      $report = new AcquiaLiftABReport($agent_instance, $report_source);
+    }
+    else {
+      $report = new AcquiaLiftReport($agent_instance, $report_source);
+    }
     $report->setConfidenceMeasure(variable_get('acquia_lift_confidence_measure', 95));
     return $report;
   }
@@ -1100,23 +1105,29 @@ abstract class AcquiaLiftReportBase implements PersonalizeAgentReportInterface, 
    *
    * @param $report_data
    *   The current reporting array by reference.
+   * @param $options
+   *   An array of options to pass to the report source.
    * @return array
    *   The updated reporting data for chaining purposes.  Note that the
    *   reporting data is updated by reference as well.
    */
-  protected function loadConfidenceData(&$report_data) {
+  protected function loadConfidenceData(&$report_data, $options) {
     // Check and see if it is already loaded.
     if (isset($report_data['raw']['confidence'])) {
       return $report_data;
     }
     try {
+      $defaults = array(
+        'features' => 'all',
+        'confidence-measure' => $report_data['confidence_measure'],
+      );
+      $options = array_merge($defaults, $options);
       $report_data['raw']['confidence'] = $this->reportDataSrc->getConfidenceReport(
         $report_data['machine_name'],
         $report_data['date_from'],
         $report_data['date_to'],
         $report_data['decision_name'],
-        'all',
-        $report_data['confidence_measure']
+        $options
       );
     }
     catch (Exception $e) {
@@ -1152,6 +1163,216 @@ abstract class AcquiaLiftReportBase implements PersonalizeAgentReportInterface, 
     }
     return $report_data;
   }
+
+  /**
+   * Formats a percentage value for use in reports.
+   *
+   * @param $value
+   *   The number to show as a percentage.
+   * @param bool $include_sign
+   *   True to include positive/negative sign indicators.
+   * @param $trim
+   *   Boolean indicating whether the number should be trimmed of trailing 0s.
+   * @param $decimals
+   *   The number of decimal places to display.
+   * @param $padding
+   *   The total number of characters (including decimal) for padding of the
+   *   final number.  This allows numbers to align properly  in column views.
+   *   This will have no effect if trim is set to true.
+   * @return string
+   *   The formatted number to display.
+   */
+  protected function formatReportPercentage($value, $include_sign = FALSE, $trim = TRUE, $decimals = 2, $padding = 1) {
+    $percent = (float) $value * 100;
+    if ($percent > 0 && $include_sign) {
+      return '+' . $this->formatReportNumber($percent, $trim, $decimals, $padding) . '%';
+    }
+    return $this->formatReportNumber($percent, $trim, $decimals, $padding) . '%';
+  }
+
+  /**
+   * Formats a number value for use in reports.
+   *
+   * @param $value
+   *   The number of format (or an empty value).
+   * @param $trim
+   *   Boolean indicating whether the number should be trimmed of trailing 0s.
+   * @param $decimals
+   *   The number of decimal places to display.
+   * @param $padding
+   *   The total number of characters to pad to the left of the decimal point.
+   * @return string
+   *   The formatted number to display.
+   */
+  protected function formatReportNumber($value, $trim = TRUE, $decimals = 2, $padding = 1) {
+    if (is_numeric($value)) {
+      $value = number_format($value, $decimals);
+      if ($trim) {
+        $value = rtrim(rtrim($value, '0'), '.');
+      }
+      if ($padding > 0) {
+        $value = str_pad($value, $padding, '0', STR_PAD_LEFT);
+      }
+      if (strlen($value) === 0) {
+        $value = 0;
+      }
+      return $value;
+    }
+    return $value;
+  }
+}
+
+/**
+ * Responsible for retrieving and generating Acquia Lift AB Reports.
+ */
+class AcquiaLiftABReport extends AcquiaLiftReportBase {
+
+  /**
+   * Implements PersonalizeAgentReportInterface::renderStatusForOptionSet().
+   */
+  public function renderStatsForOptionSet($option_set, $date_from, $date_to = NULL) {
+    // Not applicable to A/B tests made up of page variations.
+    return array();
+  }
+
+  /**
+   * Implements PersonalizeAgentReportInterface::buildCampaignReports().
+   */
+  public function buildCampaignReports($decision_name = NULL, $date_from = NULL, $date_to = NULL) {
+    $report_data = $this->loadReportData($decision_name, $date_from, $date_to);
+    $reports = array(
+      'metrics' => $this->buildABMetricsReport($report_data),
+      'summary' => $this->buildSummaryReport($report_data),
+    );
+    if (!is_array($report_data['metrics']) || !is_array($report_data['summary'])) {
+      drupal_set_message(t('There was a problem retrieving the report data.  Please try again later.'), 'error');
+    }
+    return $reports;
+  }
+
+  /**
+   * Loads and formats the necessary reporting data in order to generate an
+   * A/B report.
+   *
+   * @param $decision_name
+   *   The decision that the data is for.
+   * @param $date_from
+   *   The start date for the date range.
+   * @param $date_to
+   *   The end date for the date range.
+   */
+  protected function loadReportData($decision_name, $date_from, $date_to) {
+    $report_data = $this->generateReportConfiguration($decision_name, $date_from, $date_to);
+    if (!isset($report_data['confidence'])) {
+      $this->loadConfidenceData($report_data, array('aggregated-over-dates' => 'false'));
+      if (isset($report_data['raw']['confidence']['error'])) {
+        $report_data['confidence'] = FALSE;
+      }
+      else {
+        $report_data['confidence'] = $this->extractConfidenceReportData($report_data['raw']['confidence']['data']['items']);
+      }
+    }
+    $this->loadConfidenceData($report_data, array(
+      'aggregated-over-dates' => 'false',
+       'features' => 'all',
+    ));
+  }
+
+  /**
+   * Extracts data from the raw confidence report that is prepared for use
+   * within the report rendering process.
+   *
+   * @param $items
+   *   An array of items as return from Acquia Lift.
+   * @return array
+   *   An associative array with information about the performance of each choice.
+   */
+  protected function extractConfidenceReportData($items) {
+    if (empty($items)) {
+      return array();
+    }
+    $data = array();
+    foreach ($items as $item) {
+      $choice = $option_id = $item['choice'];
+      $choice_id = $choice;
+      if (strpos($choice, ':') !== FALSE) {
+        list($decision_name, $option_id) = explode(':', $choice);
+      }
+      if ($option_label = personalize_get_option_label_for_decision_and_choice($decision_name, $option_id)) {
+        $choice_id = $option_label;
+      }
+      $goals = $item['totals']['goals'];
+      $count = $item['totals']['count'];
+      $rate = $count > 0 ? ($goals/count) * 100 : 0;
+      $margin = (($item['bHi'] - $item['bLo'])/2) * 100;
+
+      $data[$choice] = array(
+        'choice_id' => $choice_id,
+        'raw_label' => $option_id,
+        'goals' => $goals,
+        'count' => $count,
+        'date' => $item['date'],
+        'timestamp' => strtotime($item['date']),
+        'conversion' => $this->formatReportNumber($rate),
+        'estimated_value' => $this->formatReportNumber($item['vMean'], TRUE, 4),
+        'margin_error' => $this->formatReportNumber($margin, TRUE, 4),
+      );
+    }
+    return $data;
+  }
+
+  /**
+   * Builds the render array for the metrics portion of the report.
+   *
+   * @param array $report_data
+   *   All of the loaded reporting data.
+   * @param array|bool
+   *   A render array for the report or FALSE if it cannot be generated.
+   */
+  protected function buildABMetricsReport($report_data) {
+    if ($report_data['confidence'] === FALSE) {
+      return FALSE;
+    }
+    $headers = array(
+      t('Date'),
+      t('Content variation'),
+      t('Conversion rate (%)'),
+      t('Estimated value'),
+      t('Margin of error (%)'),
+    );
+    foreach ($report_data['confidence'] as $data) {
+      $rows[] = array(
+        array(
+          'data' => $data['timestamp'],
+        ),
+        array(
+          'data' => $data['choice_id'],
+        ),
+        array(
+          'data' => $data['conversion'],
+        ),
+        array(
+          'data' => $data['estimated_value'],
+        ),
+        array(
+          'data' => $data['margin_error'],
+        ),
+      );
+    }
+    $build['metric_table'] = array(
+      '#markup' => theme('table', array(
+        'header' => $headers,
+        'rows' => $rows,
+        'attributes' => array(
+          'data-lift-statistics' => '',
+          'data-liftGraph-columnName' => '2',
+          'data-liftGraph-columnX' => '1',
+          'data-liftGraph-renderer' => 'line',
+        )
+      )),
+    );
+    return $build;
+  }
 }
 
 /**
@@ -1184,32 +1405,30 @@ class AcquiaLiftReport extends AcquiaLiftReportBase {
     }
     $date_end = date('Y-m-d', $date_to);
 
-    try {
-      $confidenceReport = $this->reportDataSrc->getConfidenceReport($this->agent->getMachineName(), $date_start, $date_end, $option_set->decision_point, array(self::NO_FEATURES));
-      if (!isset($confidenceReport['data']['items'])) {
+    if (!isset($report_data['confidence'])) {
+      $this->loadConfidenceData($report_data);
+      if (isset($report_data['raw']['confidence']['error'])) {
         return array();
       }
-      $data = $this->extractConfidenceReportData($confidenceReport['data']['items']);
-      $decisions = $goals = 0;
-      // Get a total count of all decisions made for this Option Set and all
-      // goals received.
-      foreach ($data['features'][self::NO_FEATURES] as $choice => $info) {
-        list($decision_name, $option_id) = explode(':', $choice);
-        if ($decision_name != $option_set->decision_name) {
-          continue;
-        }
-        $decisions += $info['decisions'];
-        $goals += $info['goals'];
+      else {
+        $data = $this->extractConfidenceReportData($report_data['raw']['confidence']['data']['items']);
       }
-      $report[] = format_plural($decisions, '1 view', '@count views');
-      $report[] = format_plural($goals, '1 goal', '@count goals');
-      return $report;
     }
-    catch (AcquiaLiftException $e) {
-      // The agent probably hasn't been enabled yet on the Acquia Lift end, just
-      // return an empty report.
-      return array();
+
+    $decisions = $goals = 0;
+    // Get a total count of all decisions made for this Option Set and all
+    // goals received.
+    foreach ($data['features'][self::NO_FEATURES] as $choice => $info) {
+      list($decision_name, $option_id) = explode(':', $choice);
+      if ($decision_name != $option_set->decision_name) {
+        continue;
+      }
+      $decisions += $info['decisions'];
+      $goals += $info['goals'];
     }
+    $report[] = format_plural($decisions, '1 view', '@count views');
+    $report[] = format_plural($goals, '1 goal', '@count goals');
+    return $report;
   }
 
   /**
@@ -1951,63 +2170,6 @@ class AcquiaLiftReport extends AcquiaLiftReportBase {
       }
     }
     return $data;
-  }
-
-  /**
-   * Formats a percentage value for use in reports.
-   *
-   * @param $value
-   *   The number to show as a percentage.
-   * @param bool $include_sign
-   *   True to include positive/negative sign indicators.
-   * @param $trim
-   *   Boolean indicating whether the number should be trimmed of trailing 0s.
-   * @param $decimals
-   *   The number of decimal places to display.
-   * @param $padding
-   *   The total number of characters (including decimal) for padding of the
-   *   final number.  This allows numbers to align properly  in column views.
-   *   This will have no effect if trim is set to true.
-   * @return string
-   *   The formatted number to display.
-   */
-  protected function formatReportPercentage($value, $include_sign = FALSE, $trim = TRUE, $decimals = 2, $padding = 1) {
-    $percent = (float) $value * 100;
-    if ($percent > 0 && $include_sign) {
-      return '+' . $this->formatReportNumber($percent, $trim, $decimals, $padding) . '%';
-    }
-    return $this->formatReportNumber($percent, $trim, $decimals, $padding) . '%';
-  }
-
-  /**
-   * Formats a number value for use in reports.
-   *
-   * @param $value
-   *   The number of format (or an empty value).
-   * @param $trim
-   *   Boolean indicating whether the number should be trimmed of trailing 0s.
-   * @param $decimals
-   *   The number of decimal places to display.
-   * @param $padding
-   *   The total number of characters to pad to the left of the decimal point.
-   * @return string
-   *   The formatted number to display.
-   */
-  protected function formatReportNumber($value, $trim = TRUE, $decimals = 2, $padding = 1) {
-    if (is_numeric($value)) {
-      $value = number_format($value, $decimals);
-      if ($trim) {
-        $value = rtrim(rtrim($value, '0'), '.');
-      }
-      if ($padding > 0) {
-        $value = str_pad($value, $padding, '0', STR_PAD_LEFT);
-      }
-      if (strlen($value) === 0) {
-        $value = 0;
-      }
-      return $value;
-    }
-    return $value;
   }
 
   /**

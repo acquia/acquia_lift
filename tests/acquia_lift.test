@@ -389,7 +389,7 @@ class AcquiaLiftWebTest extends DrupalWebTestCase {
     // Delete the last and verify that all variations (including control) are
     // removed.
     acquia_lift_page_variation_delete('first_variation_set', $agent_name, 5);
-    $option_sets = personalize_option_set_load_multiple(array(), array('decision_name' => 'first_variation_set', 'agent' => $agent_name));
+    $option_sets = personalize_option_set_load_multiple(array(), array('decision_name' => 'first_variation_set', 'agent' => $agent_name), TRUE);
     $this->assertTrue(count($option_sets) === 0);
   }
 

@@ -65,17 +65,19 @@
         });
         looper(settings.option_sets, function (obj, key) {
           var campaignModel = ui.collections.campaigns.findWhere({name: obj.agent});
-          var optionSets = campaignModel.get('optionSets');
-          var optionSet = optionSets.findWhere({'osid': key});
-          // Merge doesn't work in this case so we need to manually merge.
-          if (optionSet) {
-            for (var prop in obj) {
-              if (obj.hasOwnProperty(prop)) {
-                optionSet.set(prop, obj[prop]);
+          if (campaignModel) {
+            var optionSets = campaignModel.get('optionSets');
+            var optionSet = optionSets.findWhere({'osid': key});
+            // Merge doesn't work in this case so we need to manually merge.
+            if (optionSet) {
+              for (var prop in obj) {
+                if (obj.hasOwnProperty(prop)) {
+                  optionSet.set(prop, obj[prop]);
+                }
               }
+            } else {
+              optionSets.add(new Drupal.acquiaLiftUI.MenuOptionSetModel(obj));
             }
-          } else {
-            optionSets.add(new Drupal.acquiaLiftUI.MenuOptionSetModel(obj));
           }
         });
 
@@ -222,9 +224,13 @@
                         campaignName = obj.agent;
                         campaignsWithOptions[obj.agent] = obj.agent;
                         campaignModel = ui.collections.campaigns.findWhere({'name': campaignName});
-                        optionSets = campaignModel.get('optionSets');
-                        model = optionSets.findWhere({'osid': key});
-                        viewName = 'MenuOptionView';
+                        if (campaignModel) {
+                          optionSets = campaignModel.get('optionSets');
+                          model = optionSets.findWhere({'osid': key});
+                          viewName = 'MenuOptionView';
+                        } else {
+                          model = optionSets = viewName = null;
+                        }
                       }
                       break;
                     case 'campaigns':

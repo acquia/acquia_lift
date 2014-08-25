@@ -12,7 +12,7 @@
   var pluginName = 'DOMSelector',
     indicatorClass = 'acquia-lift-active-element',
     selectorIgnoreClasses = null,
-    selectorIgnoreId = /^(visitorActionsUI-)|(visitorActionsUIDialog-)/;
+    selectorIgnoreId = /^(visitorActionsUI-)|(visitorActionsUIDialog-)|(panels-ipe-)/;
 
   defaults = {
       hoverCss: {

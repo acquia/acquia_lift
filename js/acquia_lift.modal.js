@@ -60,7 +60,7 @@
       // until the user selects to edit.
       // Note that the form is sent as the new context so we can't just check
       // within the context.
-      var $variationTypeForm = $('#acquia-lift-page-variation-details').not('.acquia-lift-processed');
+      var $variationTypeForm = $('#acquia-lift-page-variation-details-form').not('.acquia-lift-processed');
       if ($variationTypeForm.length > 0) {
         var editLink = '<a class="acquia-lift-selector-edit">' + Drupal.t('Edit selector') + '</a>';
         var $selector =  $variationTypeForm.find('input[name="selector"]').closest('div');

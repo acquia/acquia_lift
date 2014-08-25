@@ -660,17 +660,24 @@ function acquia_lift_create_campaign_type_callback($type, $ajax) {
  * @see acquia_lift_create_ctools_form().
  */
 function acquia_lift_create_campaign_type_complete_callback($form, $form_state) {
+  $agent_name = personalize_get_campaign_context();
   return array(
     ctools_modal_command_dismiss(),
     ajax_command_settings(array('personalize' => array(
-      'activeCampaign' => personalize_get_campaign_context(),
+      'activeCampaign' => $agent_name,
       'campaigns' => personalize_agent_get_settings(),
+      'agent_map' => array(
+        $agent_name => personalize_agent_get_map_settings($agent_name),
+      )
     )), TRUE),
     acquia_lift_command_messagebox(t('Click the element you want to change in %variation.', array(
       '%campaign' => $form_state['values']['agent_basic_info']['title'],
       '%variation' => 'Variation #1',
     )), 10),
     acquia_lift_command_page_variation_toggle(),
+    // @todo add this back in when the campaigns can be processed along with
+    // variation set creation.
+    // acquia_lift_command_process_queue(),
   );
 }
 
@@ -770,6 +777,8 @@ function acquia_lift_create_campaign_type_form_submit($form, &$form_state) {
   $agent_data->data['cache_decisions'] = $form_state['values']['cache_decisions'];
   $agent = personalize_agent_save($agent_data);
   personalize_set_campaign_context($agent->machine_name);
+  // @todo find out how to remove this in favor of asynchronous processing.
+  acquia_lift_process_queue(FALSE);
 }
 
 /**
@@ -825,8 +834,8 @@ function acquia_lift_page_variation_details_form($form, &$form_state, $variation
       'class' => array('action-item-primary-active', 'acquia-lift-submit-button'),
     ),
     '#ajax' => array(
-      'callback' => 'acquia_lift_page_variation_details_ajax_callback',
-      'wrapper' => 'acquia-lift-page-variation-details',
+      'callback' => 'acquia_lift_page_variation_details_form_ajax_callback',
+      'wrapper' => 'acquia-lift-page-variation-details-form',
       'progress' => array(
         'message' => NULL,
         'type' => 'throbber',
@@ -842,8 +851,8 @@ function acquia_lift_page_variation_details_form($form, &$form_state, $variation
       'class' => array('acquia-lift-cancel-button'),
     ),
     '#ajax' => array(
-      'callback' => 'acquia_lift_page_variation_details_ajax_callback',
-      'wrapper' => 'acquia-lift-page-variation-details',
+      'callback' => 'acquia_lift_page_variation_details_form_ajax_callback',
+      'wrapper' => 'acquia-lift-page-variation-details-form',
       'progress' => array(
         'message' => NULL,
         'type' => 'throbber',
@@ -858,7 +867,7 @@ function acquia_lift_page_variation_details_form($form, &$form_state, $variation
 }
 
 /**
- * Form submit handler for acquia_lift_page_variation_details.
+ * Form submit handler for acquia_lift_page_variation_details_form.
  *
  * This creates a page variation set if it does not yet exist and the variation
  * for that page.  For a simple A/B test, there is only a single variation set
@@ -872,7 +881,7 @@ function acquia_lift_page_variation_details_form($form, &$form_state, $variation
  * the variation and includes how that element is shown for each variation as
  * its options.
  */
-function acquia_lift_page_variation_details_submit($form, &$form_state) {
+function acquia_lift_page_variation_details_form_submit($form, &$form_state) {
   $agent_name = $variation_set_name = $form_state['values']['agent'];
   $option_set = personalize_elements_get_option_set_for_variation($variation_set_name, $agent_name, $form_state['values']['selector'], $form_state['values']['variation_type'], $form_state['values']['pages']);
 
@@ -883,13 +892,12 @@ function acquia_lift_page_variation_details_submit($form, &$form_state) {
   $variation_number = acquia_lift_page_variation_create($variation_set_name, $option_set, array('personalize_elements_content' => $form_state['values']['personalize_elements_content']), $variation_number);
   // Save this for the Ajax callback.
   $form_state['storage']['variation_number'] = $variation_number;
-  acquia_lift_process_queue(FALSE);
 }
 
 /**
  * Responds to AJAX submission of a variation type details page.
  */
-function acquia_lift_page_variation_details_ajax_callback($form, &$form_state) {
+function acquia_lift_page_variation_details_form_ajax_callback($form, &$form_state) {
   $op = isset($form_state['values']['op']) ? $form_state['values']['op'] : '';
   $commands = array();
   if ($op == t('Save')) {
@@ -935,8 +943,7 @@ function acquia_lift_page_variation_details_ajax_callback($form, &$form_state) {
       $message = t('The variation has been created.');
     }
     $commands[] = acquia_lift_command_messagebox($message, 10);
-
-
+    $commands[] = acquia_lift_command_process_queue();
   }
   else if ($op === t('Cancel')) {
     // Turn off edit mode and redirect them.
@@ -985,6 +992,7 @@ function acquia_lift_page_variation_rename_complete_callback($form, $form_state)
     acquia_lift_command_messagebox(t('The variation has been renamed.'), 10),
     acquia_lift_command_option_set_updates($settings),
     ajax_command_settings($campaign_settings, TRUE),
+    acquia_lift_command_process_queue(),
   );
   return $commands;
 }
@@ -1048,7 +1056,7 @@ function acquia_lift_page_variation_rename_form($form, &$form_state, $agent_name
 /**
  * Submit handler for acquia_lift_page_variation_rename().
  */
-function acquia_lift_page_variation_rename_submit($form, &$form_state) {
+function acquia_lift_page_variation_rename_form_submit($form, &$form_state) {
   acquia_lift_page_variation_rename($form_state['values']['variation_set_name'], $form_state['values']['agent_name'], $form_state['values']['variation_index'], $form_state['values']['variation_name']);
 }
 
@@ -1089,6 +1097,7 @@ function acquia_lift_page_variation_delete_complete_callback($form, $form_state)
     acquia_lift_command_messagebox(t('The variation has been deleted.'), 10),
     acquia_lift_command_option_set_updates($settings),
     ajax_command_settings($campaign_settings, TRUE),
+    acquia_lift_command_process_queue(),
   );
   return $commands;
 }
@@ -1153,9 +1162,8 @@ function acquia_lift_page_variation_delete_form($form, &$form_state, $agent_name
 /**
  * Submit handler for acquia_lift_page_variation_rename().
  */
-function acquia_lift_page_variation_delete_submit($form, &$form_state) {
+function acquia_lift_page_variation_delete_form_submit($form, &$form_state) {
   acquia_lift_page_variation_delete($form_state['values']['variation_set_name'], $form_state['values']['agent_name'], $form_state['values']['variation_index']);
-  acquia_lift_process_queue(FALSE);
 }
 
 /**
@@ -1256,6 +1264,7 @@ function acquia_lift_create_goal_type_completed_callback($form, &$form_state) {
       'campaigns' => $settings,
     )), TRUE),
     acquia_lift_command_messagebox($message, 10),
+    acquia_lift_command_process_queue(),
   );
   return $commands;
 }
@@ -1336,7 +1345,7 @@ function _acquia_lift_create_existing_goal_form($agent) {
   $exclude = array();
   $goals = personalize_goal_load_by_conditions(array('agent' => $agent->machine_name));
   foreach ($goals as $goal) {
-    $exclude[$goal['action']] = $goal['action'];
+    $exclude[$goal->action] = $goal->action;
   }
   module_load_include('inc', 'personalize', 'personalize.admin');
   $all_goal_options = personalize_goals_options();
@@ -1436,7 +1445,6 @@ function acquia_lift_create_goal_type_form_submit($form, &$form_state) {
       break;
   }
   personalize_goal_save($agent_data->machine_name, $action_name, 1);
-  acquia_lift_process_queue(FALSE);
   $form_state['acquia_lift']['goal_name'] = $goal_name;
 }
 
@@ -1494,7 +1502,7 @@ function acquia_lift_start_campaign_form($form, &$form_state, $agent_data) {
 /**
  * Form validator for acquia_lift_start_campaign().
  */
-function acquia_lift_start_campaign_validate($form, &$form_state) {
+function acquia_lift_start_campaign_form_validate($form, &$form_state) {
   module_load_include('inc', 'personalize', 'personalize.admin');
   personalize_agent_end_date_form_validate($form_state['values']['campaign_end']);
 }
@@ -1502,7 +1510,7 @@ function acquia_lift_start_campaign_validate($form, &$form_state) {
 /**
  * Form submit handler for acquia_lift_start_campaign().
  */
-function acquia_lift_start_campaign_submit($form, &$form_state) {
+function acquia_lift_start_campaign_form_submit($form, &$form_state) {
   // Set the decision style.
   $agent_data = $form_state['values']['agent'];
   $agent_data->data['decision_style'] = empty($form_state['values']['decision_style']) ? 'random' : current($form_state['values']['decision_style']);
@@ -1784,6 +1792,16 @@ function acquia_lift_page_variation_delete($variation_set_name, $agent_name, $va
     if (isset($option_set->options[$variation_number])) {
       unset($option_set->options[$variation_number]);
       personalize_option_set_save($option_set);
+    }
+  }
+  // If the only variation left is the control variation, then delete
+  // all of the option sets for this variation.
+  if (count($option_set->options) === 1) {
+    $last_option = current($option_set->options);
+    if ($last_option['option_id'] === PERSONALIZE_CONTROL_OPTION_ID) {
+      foreach ($option_sets as $option_set) {
+        personalize_option_set_delete($option_set->osid);
+      }
     }
   }
 }

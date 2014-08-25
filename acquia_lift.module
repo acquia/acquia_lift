@@ -237,6 +237,11 @@ function acquia_lift_theme() {
  * Implements hook_init().
  */
 function acquia_lift_init() {
+  // If the user can manage content, then they may need to trigger the queue
+  // process from the front-end campaign creation flow.
+  if (user_access('manage personalized content')) {
+    drupal_add_js(drupal_get_path('module', 'acquia_lift') . '/js/acquia_lift_queue.js', array('preprocess' => FALSE));
+  }
   // This session variable is set to indicate that there are configuration
   // changes that have been queued for syncing with Acquia Lift.
   if (!empty($_SESSION['acquia_lift_queue_trigger'])) {
@@ -674,6 +679,13 @@ function acquia_lift_process_queue($exit_on_finish = TRUE) {
   _personalize_agent_verification_cache_clear();
 
   if ($exit_on_finish) {
+    $commands = array(
+      ajax_command_settings(array('personalize' => array(
+        'campaigns' => personalize_agent_get_settings(),
+      )), TRUE),
+    );
+    $page = array('#type' => 'ajax', '#commands' => $commands);
+    ajax_deliver($page);
     drupal_exit();
   }
   else {
@@ -1941,5 +1953,15 @@ function acquia_lift_command_option_set_updates($option_sets) {
     'data' => array(
       'option_sets' => $option_sets,
     ),
+  );
+}
+
+/**
+ * Returns an AJAX command to trigger the Acquia Lift queue processing.
+ */
+function acquia_lift_command_process_queue() {
+  return array(
+    'command' => 'acquia_lift_process_queue',
+    'data' => array(),
   );
 }

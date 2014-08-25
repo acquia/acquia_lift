@@ -361,6 +361,36 @@ class AcquiaLiftWebTest extends DrupalWebTestCase {
     $this->assertEqual($expected_options_os1, $option_sets[1]->options);
     $this->assertEqual($expected_options_os2, $option_sets[2]->options);
     $this->assertEqual($expected_options_os3, $option_sets[3]->options);
+
+    // Delete another out of order and verify.
+    acquia_lift_page_variation_delete('first_variation_set', $agent_name, 1);
+    unset($expected_options_os1[1]);
+    unset($expected_options_os2[1]);
+    unset($expected_options_os3[1]);
+    $option_sets = personalize_option_set_load_multiple(array(), array('decision_name' => 'first_variation_set', 'agent' => $agent_name));
+    $this->assertEqual($expected_options_os1, $option_sets[1]->options);
+    $this->assertEqual($expected_options_os2, $option_sets[2]->options);
+    $this->assertEqual($expected_options_os3, $option_sets[3]->options);
+
+    // Now delete down to one left
+    acquia_lift_page_variation_delete('first_variation_set', $agent_name, 2);
+    acquia_lift_page_variation_delete('first_variation_set', $agent_name, 4);
+    unset($expected_options_os1[2]);
+    unset($expected_options_os2[2]);
+    unset($expected_options_os3[2]);
+    unset($expected_options_os1[4]);
+    unset($expected_options_os2[4]);
+    unset($expected_options_os3[4]);
+    $option_sets = personalize_option_set_load_multiple(array(), array('decision_name' => 'first_variation_set', 'agent' => $agent_name));
+    $this->assertEqual($expected_options_os1, $option_sets[1]->options);
+    $this->assertEqual($expected_options_os2, $option_sets[2]->options);
+    $this->assertEqual($expected_options_os3, $option_sets[3]->options);
+
+    // Delete the last and verify that all variations (including control) are
+    // removed.
+    acquia_lift_page_variation_delete('first_variation_set', $agent_name, 5);
+    $option_sets = personalize_option_set_load_multiple(array(), array('decision_name' => 'first_variation_set', 'agent' => $agent_name));
+    $this->assertTrue(count($option_sets) === 0);
   }
 
   public function testConfigForm() {

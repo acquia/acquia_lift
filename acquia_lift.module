@@ -671,6 +671,7 @@ function acquia_lift_process_queue($exit_on_finish = TRUE) {
     $function($item->data);
     $queue->deleteItem($item);
   }
+  _personalize_agent_verification_cache_clear();
 
   if ($exit_on_finish) {
     drupal_exit();

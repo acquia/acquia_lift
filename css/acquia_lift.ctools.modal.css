@@ -25,8 +25,8 @@ div.ctools-modal-content .modal-content {
 }
 
 /* Styles specific to Acquia Lift's modal content */
-/* Campaign select modal */
-div.ctools-modal-content .modal-content .acquia-lift-campaign-type {
+/* Type select modal */
+div.ctools-modal-content .modal-content .acquia-lift-type {
   border: 1px solid #CCC;
   padding: 1.4em;
   background-color: #F5F5F5;
@@ -34,30 +34,30 @@ div.ctools-modal-content .modal-content .acquia-lift-campaign-type {
   cursor: pointer;
 }
 
-div.ctools-modal-content .modal-content .acquia-lift-campaign-type:hover {
+div.ctools-modal-content .modal-content .acquia-lift-type:hover {
   background-color: white;
 }
 
-div.ctools-modal-content .modal-content .acquia-lift-campaign-type:last-child {
+div.ctools-modal-content .modal-content .acquia-lift-type:last-child {
   margin-bottom: 0;
 }
 
-div.ctools-modal-content .modal-content .acquia-lift-campaign-title {
+div.ctools-modal-content .modal-content .acquia-lift-type-title {
   font-weight: bold;
   font-size: 1.2em;
   margin-bottom: 0.4em;
 }
 
-div.ctools-modal-content .modal-content .acquia-lift-campaign-logo {
+div.ctools-modal-content .modal-content .acquia-lift-type-logo {
   float: left;
   width: 125px; /* Width of largest logo image */
   padding-right: 1.4em;
   text-align: center;
 }
 
-div.ctools-modal-content .modal-content a.acquia-lift-campaign-select,
-div.ctools-modal-content .modal-content a.acquia-lift-campaign-select:hover,
-div.ctools-modal-content .modal-content a.acquia-lift-campaign-select:active {
+div.ctools-modal-content .modal-content a.acquia-lift-type-select,
+div.ctools-modal-content .modal-content a.acquia-lift-type-select:hover,
+div.ctools-modal-content .modal-content a.acquia-lift-type-select:active {
   color: #333;
   text-decoration: none;
 }
@@ -79,4 +79,17 @@ div.ctools-modal-content .modal-content .acquia-lift-form-type {
   vertical-align: top;
   margin-left: .3em; /* LTR */
   cursor: pointer;
+}
+
+/* Start campaign form */
+#acquia-lift-start-campaign .form-type-checkboxes label {
+  width: inherit;
+}
+#acquia-lift-start-campaign .form-type-checkboxes .form-type-checkbox,
+#acquia-lift-start-campaign .form-type-radios .form-type-radio,
+  #acquia-lift-start-campaign .form-item-campaign-end-date {
+  padding: 0 10px;
+}
+#acquia-lift-start-campaign .form-item-campaign-end-date .form-item {
+  margin-right: 0;
 }

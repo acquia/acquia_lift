@@ -95,6 +95,19 @@
   margin-left: 1.667em;
 }
 
+/* Page variation links */
+#navbar-administration .acquia-lift-menu-item .acquia-lift-preview-option {
+  float: left;
+}
+#navbar-administration .acquia-lift-menu-item .acquia-lift-variation-rename {
+  float: right;
+  margin-left: 1.667em;
+}
+#navbar-administration .acquia-lift-menu-item .acquia-lift-variation-delete {
+  float: right;
+  margin-left: .667em;
+}
+
 /* Displayed as links within menus */
 #navbar-administration .navbar-tray .acquia-lift-menu-link,
 #navbar-administration .menu .menu a.acquia-lift-menu-link {
@@ -137,4 +150,17 @@
 #navbar-administration .navbar-tray a.acquia-lift-menu-disabled:hover,
 #navbar-administration .navbar-tray a.acquia-lift-menu-disabled:active {
   color: #c6c6c6;
+}
+
+/* Nested menu uls for data grouping (rather than visual grouping) */
+#navbar-administration .navbar-tray-acquia-lift.navbar-tray-horizontal .menu ul ul.innerMenuList {
+  border: none;
+}
+
+/* Additional edit links are only available in horizontal view */
+#navbar-administration .navbar-tray-vertical .acquia-lift-campaign-edit,
+#navbar-administration .navbar-tray-vertical .acquia-lift-variation-delete,
+#navbar-administration .navbar-tray-vertical .acquia-lift-variation-rename,
+#navbar-administration .navbar-tray-vertical .acquia-lift-page-variation-toggle {
+  display: none !important;
 }

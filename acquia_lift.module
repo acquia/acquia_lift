@@ -89,37 +89,59 @@ function acquia_lift_menu() {
   // AJAX callback to retrieve a page variation details form.
   $items['admin/structure/acquia_lift/pagevariation/%'] = array(
     'page callback' => 'drupal_get_form',
-    'page arguments' => array('acquia_lift_page_variation_details', 4),
+    'page arguments' => array('acquia_lift_page_variation_details_form', 4),
     'access arguments' => array('manage personalized content'),
     'type' => MENU_CALLBACK,
     'file' => 'acquia_lift.admin.inc',
     'delivery callback' => 'ajax_deliver',
     'theme callback' => 'ajax_base_page_theme',
   );
+  // AJAX callback to rename a page variation.
+  $items['admin/structure/acquia_lift/pagevariation/rename/%/%/%ctools_js'] = array(
+    'page callback' => 'acquia_lift_page_variation_rename_callback',
+    'page arguments' => array(5, 6),
+    'access arguments' => array('manage personalized content'),
+    'type' => MENU_CALLBACK,
+    'file' => 'acquia_lift.admin.inc',
+    'theme callback' => 'ajax_base_page_theme',
+  );
+  // AJAX callback to delete a page variation.
+  $items['admin/structure/acquia_lift/pagevariation/delete/%/%/%ctools_js'] = array(
+    'page callback' => 'acquia_lift_page_variation_delete_callback',
+    'page arguments' => array(5, 6),
+    'access arguments' => array('manage personalized content'),
+    'type' => MENU_CALLBACK,
+    'file' => 'acquia_lift.admin.inc',
+    'theme callback' => 'ajax_base_page_theme',
+  );
+  // Ajax callback to open the add a goal selection in a modal window.
+  $items['admin/structure/acquia_lift/goal/add/%ctools_js'] = array(
+    'page callback' => 'acquia_lift_create_goal_callback',
+    'page arguments' => array(5),
+    'access arguments' => array('manage personalized content'),
+    'type' => MENU_CALLBACK,
+    'file' => 'acquia_lift.admin.inc',
+    'theme callback' => 'ajax_base_page_theme',
+  );
+  // Ajax callback to create a goal of a specific type.
+  $items['admin/structure/acquia_lift/goal/add/%/%ctools_js'] = array(
+    'page callback' => 'acquia_lift_create_goal_type_callback',
+    'page arguments' => array(5, 6),
+    'access arguments' => array('manage personalized content'),
+    'type' => MENU_CALLBACK,
+    'file' => 'acquia_lift.admin.inc',
+    'theme callback' => 'ajax_base_page_theme',
+  );
+  // Callback to show the start campaign form.
+  $items['admin/structure/acquia_lift/start/%'] = array(
+    'page callback' => 'acquia_lift_start_campaign_callback',
+    'page arguments' => array(4),
+    'access arguments' => array('manage personalized content'),
+    'type' => MENU_CALLBACK,
+    'file' => 'acquia_lift.admin.inc',
+    'theme callback' => 'ajax_base_page_theme',
+  );
   return $items;
-}
-
-/**
- * Replacement menu callback for the agent edit page.
- *
- * Calls the original menu callback for any agent that's not of the
- * Simple AB type. For the latter, just redirects to the homepage as
- * these agents are supposed to be managed from the front-end.
- *
- * @todo Implement hook_menu_alter and point the agent edit callback
- *   to this function once we have support for adding variations from
- *   the front end.
- *
- * @param $agent_data
- *   An object representing the agent being edited.
- */
-function acquia_lift_agent_edit_callback($agent_data) {
-  if ($agent_data->plugin !== 'acquia_lift_simple_ab') {
-    return personalize_agent_page($agent_data);
-  }
-  // Set the campaign context and go to the home page.
-  personalize_set_campaign_context($agent_data->machine_name);
-  drupal_goto('');
 }
 
 /**
@@ -176,12 +198,12 @@ function acquia_lift_theme() {
       'goal_total' => 0,
     ),
     // Campaign creation flow.
-    'acquia_lift_campaign_type_list' => array(
+    'acquia_lift_type_list' => array(
       'path' => $path . '/theme',
       'file' => 'acquia_lift.theme.inc',
       'items' => array(),
     ),
-    'acquia_lift_campaign_type_change' => array(
+    'acquia_lift_create_type_change' => array(
       'path' => $path . '/theme',
       'file' => 'acquia_lift.theme.inc',
       'type' => '',
@@ -212,34 +234,14 @@ function acquia_lift_theme() {
 }
 
 /**
- * Implements hook_preprocess_menu_link().
- *
- * Used to remove ctools functionality and adjust the link to the standard
- * campaign creation flow when simplified flows are not enabled.
- */
-function acquia_lift_preprocess_menu_link(&$variables) {
-  if (variable_get('acquia_lift_simplified_campaign_enabled', FALSE)) {
-    return;
-  }
-  foreach($variables as &$link) {
-    if (!isset($link['#href']) || $link['#href'] !== 'admin/structure/personalize/add/nojs') {
-      continue;
-    }
-
-    foreach ($link['#localized_options']['attributes']['class'] as $i => $class_name) {
-      if (strpos($class_name, 'ctools-') !== FALSE) {
-        unset($link['#localized_options']['attributes']['class'][$i]);
-      }
-    }
-    $link['#href'] = 'admin/structure/personalize/add';
-    return;
-  }
-}
-
-/**
  * Implements hook_init().
  */
 function acquia_lift_init() {
+  // If the user can manage content, then they may need to trigger the queue
+  // process from the front-end campaign creation flow.
+  if (user_access('manage personalized content')) {
+    drupal_add_js(drupal_get_path('module', 'acquia_lift') . '/js/acquia_lift_queue.js', array('preprocess' => FALSE));
+  }
   // This session variable is set to indicate that there are configuration
   // changes that have been queued for syncing with Acquia Lift.
   if (!empty($_SESSION['acquia_lift_queue_trigger'])) {
@@ -373,10 +375,8 @@ function acquia_lift_cron_queue_info() {
 function acquia_lift_get_agent_types() {
   $types = array(
     'acquia_lift' => 'AcquiaLiftAgent',
+    'acquia_lift_simple_ab' => 'AcquiaLiftSimpleAB',
   );
-  if (variable_get('acquia_lift_simplified_campaign_enabled', FALSE)) {
-    $types['acquia_lift_simple_ab'] = 'AcquiaLiftSimpleAB';
-  }
   return $types;
 }
 
@@ -676,8 +676,16 @@ function acquia_lift_process_queue($exit_on_finish = TRUE) {
     $function($item->data);
     $queue->deleteItem($item);
   }
+  _personalize_agent_verification_cache_clear();
 
   if ($exit_on_finish) {
+    $commands = array(
+      ajax_command_settings(array('personalize' => array(
+        'campaigns' => personalize_agent_get_settings(),
+      )), TRUE),
+    );
+    $page = array('#type' => 'ajax', '#commands' => $commands);
+    ajax_deliver($page);
     drupal_exit();
   }
   else {
@@ -789,6 +797,22 @@ function acquia_lift_library() {
             'closeImage' => theme('image', array('path' => ctools_image_path('close.png', 'acquia_lift'), 'alt' => t('Close window'), 'title' => t('Close window'))),
             'closeText' => '',
           ),
+          'acquia-lift-style-long' => array(
+            'modalSize' => array(
+              'type' => 'fixed',
+              'width' => 600,
+              'height' => 550,
+              'addWidth' => 0,
+              'addHeight' => 0,
+              'contentRight' => 0,
+              'contentBottom' => 0,
+            ),
+            'modalOptions' => array(
+              'background-color' => '#000000',
+            ),
+            'closeImage' => theme('image', array('path' => ctools_image_path('close.png', 'acquia_lift'), 'alt' => t('Close window'), 'title' => t('Close window'))),
+            'closeText' => '',
+          ),
         ),
         'type' => 'setting',
       ),
@@ -799,6 +823,7 @@ function acquia_lift_library() {
     'dependencies' => array(
       array('system', 'jquery'),
       array('system', 'jquery.once'),
+      array('system', 'drupal.states'),
       array('acquia_lift', 'acquia_lift.message_box'),
       array('acquia_lift', 'acquia_lift.page_variations'),
     ),
@@ -1717,6 +1742,46 @@ function acquia_lift_form_personalize_agent_form_alter(&$form, &$form_state) {
   }
   $subform['actions']['reset']['#submit'] = array('acquia_lift_reset_submit');
   $form['agent_form']['agent_fieldset']['header']['reset_lift_agent'] = $subform;
+
+  // Show the campaign fieldset by default when editing a page variation
+  // campaign as the option set form is hidden by default.
+  // @see acquia_lift_personalize_agent_page_alter().
+  if (!empty($form['agent_form']['agent_fieldset']['agent_basic']['#agent'])) {
+    $agent = $form['agent_form']['agent_fieldset']['agent_basic']['#agent'];
+    if (!empty($agent->machine_name)) {
+      $agent_instance = personalize_agent_load_agent($agent->machine_name);
+      if ($agent_instance instanceof AcquiaLiftPageVariationInterface) {
+        $form['agent_form']['agent_fieldset']['#collapsed'] = FALSE;
+      }
+    }
+  }
+}
+
+/**
+ * Implements hook_personalize_agent_page_alter().
+ */
+function acquia_lift_personalize_agent_page_alter(&$build, &$agent_data) {
+  // Add a link to return to the page for variations if this is a page variation
+  // campaign.
+  module_load_include('inc', 'acquia_lift', 'acquia_lift.admin');
+  $agent_instance = personalize_agent_load_agent($agent_data->machine_name);
+  if ($agent_instance instanceof AcquiaLiftPageVariationInterface) {
+    $build['return_link'] = array(
+      'link' => array(
+        '#type' => 'link',
+        '#title' => t('Go to %campaign campaign', array('%campaign' => $agent_data->label)),
+        '#href' => acquia_lift_page_variation_get_path($agent_data->machine_name, $agent_data->machine_name),
+        '#options' => array('html' => TRUE),
+      ),
+      '#weight' => -10,
+    );
+    // Fix the weights for re-sort.
+    $build['option_sets']['#access'] = FALSE;
+    $build['mvt']['#access'] = FALSE;
+    $build['personalize_messages']['#weight'] = 10;
+    $build['agent']['#weight'] = 20;
+    $build['goals']['#weight'] = 40;
+  }
 }
 
 /**
@@ -1818,10 +1883,25 @@ function acquia_lift_command_messagebox($message, $seconds = 0) {
   if (is_array($message)) {
     $message = drupal_render($message);
   }
+
+  // Add any messages set by drupal_set_message().
+  $full_message = '';
+  $queued_messages = drupal_get_messages();
+  $delimiter = '<br />';
+  foreach ($queued_messages as $messages) {
+    $full_message .= implode($messages, $delimiter);
+  }
+  if (!empty($message)) {
+    if (!empty($full_message)) {
+      $full_message .= $delimiter;
+    }
+    $full_message .= $message;
+  }
+
   return array(
     'command' => 'acquia_lift_message_box',
     'data' => array(
-      'message' => $message,
+      'message' => $full_message,
       'seconds' => $seconds,
     ),
   );
@@ -1857,5 +1937,31 @@ function acquia_lift_command_page_variation_preview($agent_name, $variation_inde
       'agentName' => $agent_name,
       'variationIndex' => $variation_index,
     ),
+  );
+}
+
+/**
+ * Returns an AJAX command to force the update of option set data and then
+ * reattach behaviors.
+ *
+ * @param array $option_sets
+ *   An array of updated option set settings keyed by the osid.
+ */
+function acquia_lift_command_option_set_updates($option_sets) {
+  return array(
+    'command' => 'acquia_lift_option_set_updates',
+    'data' => array(
+      'option_sets' => $option_sets,
+    ),
+  );
+}
+
+/**
+ * Returns an AJAX command to trigger the Acquia Lift queue processing.
+ */
+function acquia_lift_command_process_queue() {
+  return array(
+    'command' => 'acquia_lift_process_queue',
+    'data' => array(),
   );
 }

@@ -1387,42 +1387,17 @@ interface AcquiaLiftReportDataSourceInterface {
 class AcquiaLiftReportDataFromFile implements AcquiaLiftReportDataSourceInterface {
 
   /**
-   * An array representing a targeting report.
+   * The path to the file that acts as the reporting source.
    *
-   * @var array
+   * @var string
    */
-  protected $targetingReport;
-
-  /**
-   * An array representing a confidence report.
-   *
-   * @var array
-   */
-  protected $confidenceReport;
-
-  /**
-   * An array representing a agent status report.
-   *
-   * @var array
-   */
-  protected $agentStatusReport;
-
-  /**
-   * An array representing a raw learning report.
-   *
-   * @var array
-   */
-  protected $rawLearningReport;
-
-  /**
-   * An array representing the context filters to be used in reports.
-   *
-   * @var array
-   */
-  protected $contextFilters;
-
   protected $fileLocation;
 
+  /**
+   * An array of reports to act as a request length storage for the reports.
+   *
+   * @var array
+   */
   protected $reports;
 
   public function __construct($file_location, AcquiaLiftReportCacheInterface $cache = NULL) {
@@ -1468,7 +1443,7 @@ class AcquiaLiftReportDataFromFile implements AcquiaLiftReportDataSourceInterfac
         if ($this->cache) {
           $this->cache->cacheReports($agent_name, $this->reports);
         }
-        return isset($this->reports[$report_name]) ? $this->reports[$report_name] : array();;
+        return isset($this->reports[$report_name]) ? $this->reports[$report_name] : array();
       }
     }
     return array();
@@ -1493,7 +1468,13 @@ class AcquiaLiftReportDataFromFile implements AcquiaLiftReportDataSourceInterfac
    * Implements AcquiaLiftReportDataSourceInterface::getConfidenceReport().
    */
   public function getConfidenceReport($agent_name, $date_start = NULL, $date_end = NULL, $point = NULL, $options = array()) {
-    return $this->getReport($agent_name, 'confidence');
+    $report_name = 'confidence';
+    // Note that the value is the string false for use in JSON rather than
+    // the boolean value.
+    if (isset($options['aggregated-over-dates']) && $options['aggregated-over-dates'] === 'false') {
+      $report_name = 'confidence_aggregate';
+    }
+    return $this->getReport($agent_name, $report_name);
   }
 
   /**

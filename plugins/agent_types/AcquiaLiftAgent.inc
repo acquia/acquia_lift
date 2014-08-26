@@ -1341,19 +1341,21 @@ class AcquiaLiftABReport extends AcquiaLiftReportBase {
     if (empty($items)) {
       return array();
     }
-    $last_group = '';
-    $counter = 1;
+    $shown = array();
+    $counter = NAN;
     $data = array();
     foreach ($items as $item) {
       // Check to see if we are in a new grouping of choices.
-      $check = $item['feature'] . '|' . $item['point'];
-      if ($last_group !== $check) {
-        $last_group = $check;
-        $counter = 1;
+      $check = $item['choice'];
+      if (is_nan($counter) || isset($shown[$check])) {
+        $shown = array();
+        $counter = 0;
       }
       else {
         $counter++;
       }
+      $shown[$check] = $check;
+
       $choice = $option_id = $item['choice'];
       $choice_id = $choice;
       if (strpos($choice, ':') !== FALSE) {
@@ -1378,7 +1380,7 @@ class AcquiaLiftABReport extends AcquiaLiftReportBase {
         'estimated_value' => $this->formatReportNumber($item['vMean'], TRUE, 4),
         'margin_error' => $this->formatReportNumber($margin, TRUE, 4),
         'counter' => $counter,
-        'control' => $counter === 1,
+        'control' => $counter === 0,
       );
     }
     return $data;
@@ -1397,22 +1399,26 @@ class AcquiaLiftABReport extends AcquiaLiftReportBase {
     if (empty($items)) {
       return array();
     }
-    $last_group = '';
-    $counter = 1;
+    $shown = array();
+    $counter = NAN;
     $data = array();
     $confidence = TRUE;
     $winner = '';
     $winning_value = NAN;
     foreach ($items as $item) {
       // Check to see if we are in a new grouping of choices.
-      $check = $item['feature'] . '|' . $item['point'];
-      if ($last_group !== $check) {
-        $last_group = $check;
-        $counter = 1;
+      $check = $item['choice'];
+      // First item in the loop so this is the control.
+      if (is_nan($counter) || isset($shown[$check])) {
+        $shown = array();
+        $counter = 0;
       }
+      // One of the non-control variations.
       else {
         $counter++;
       }
+      $shown[$check] = $check;
+
       $choice = $option_id = $item['choice'];
       $choice_id = $choice;
       if (strpos($choice, ':') !== FALSE) {
@@ -1451,7 +1457,7 @@ class AcquiaLiftABReport extends AcquiaLiftReportBase {
         'estimated_lower' => $this->formatReportNumber($item['bLo'], TRUE, 4),
         'margin_error' => $this->formatReportNumber($margin, TRUE, 4),
         'significant' => $item['signif'],
-        'control' => $counter === 1,
+        'control' => $counter === 0,
         'confidence' => $counter === 1 ? self::DATA_NA : $this->formatReportPercentage($item['confidence']/100),
         'lift_default' => $counter === 1 ? self::DATA_NA : $this->formatReportPercentage($item['lift']['default']/100, TRUE),
         'lift_random' => $this->formatReportPercentage($item['lift']['random']/100, TRUE),
@@ -1549,7 +1555,7 @@ class AcquiaLiftABReport extends AcquiaLiftReportBase {
         'data' => array(
           array(
             'data' => $data['choice_id'],
-            'data-acquia-lift-variation-label' => $this->getVariationLabel($data['choice_id'], $data['counter'], $data['control']),
+            'data-acquia-lift-variation-label' => $this->getVariationLabel($data['counter'], $data['control']),
           ),
           array(
             'data' => $data['goals'],

@@ -1385,6 +1385,114 @@ function acquia_lift_libraries_info() {
     ),
   );
 
+  // NOTE: Rickshaw does not declare a version.
+  $libraries['rickshaw'] = array(
+    'name' => 'Rickshaw',
+    'vendor url' => 'http://code.shutterstock.com/rickshaw/',
+    'download url' => 'https://github.com/shutterstock/rickshaw',
+    'version callback' => '_acquia_lift_libraries_get_version',
+    'variant order' => array('minified', 'source'),
+    'version arguments' => array(
+      'variants' => array(
+        'source' => array(
+          'file' => 'rickshaw.js',
+          'pattern' => '/(Rickshaw)/',
+        ),
+        'minified' => array(
+          'file' => 'rickshaw.min.js',
+          'pattern' => '/(Rickshow)/',
+        ),
+      ),
+    ),
+    'versions' => array(
+      // Rickshaw does not define versions but this will at least test to see
+      // if it is installed.
+      'Rickshaw' => array(
+        'variants' => array(
+          'source' => array(
+            'name' => 'Rickshaw',
+            'files' => array(
+              'js' => array(
+                'rickshaw.js',
+              ),
+              'css' => array(
+                'rickshaw.css',
+              )
+            ),
+            'variant callback' => '_acquia_lift_libraries_variant_exists',
+            'variant arguments' => array('rickshaw.js'),
+            'dependencies' => array('d3 (>=3.3.6)'),
+          ),
+          'minified' => array(
+            'name' => 'Rickshaw',
+            'files' => array(
+              'js' => array(
+                'rickshaw.min.js',
+              ),
+              'css' => array(
+                'rickshaw.min.css',
+              )
+            ),
+            'variant callback' => '_acquia_lift_libraries_variant_exists',
+            'variant arguments' => array('rickshaw.min.js'),
+            'dependencies' => array('d3 (>=3.3.6)'),
+          ),
+        ),
+      ),
+    ),
+  );
+
+  $libraries['d3'] = array(
+    'name' => 'D3',
+    'vendor url' => 'http://d3js.org',
+    'download url' => 'https://github.com/mbostock/d3',
+    'version callback' => '_acquia_lift_libraries_get_version',
+    'variant order' => array('minified', 'source'),
+    'version arguments' => array(
+      'variants' => array(
+        'source' => array(
+          'file' => 'd3.js',
+          'pattern' => '/version: "(\d\.\d{1,2}\.\d{0,3})"/',
+        ),
+        'minified' => array(
+          'file' => 'd3.min.js',
+          'pattern' => '/{version:"(\d\.\d{1,2}\.\d{0,3})"}/',
+        ),
+      ),
+    ),
+    'versions' => array(
+      // Means ">=1.0.0": matches 1.0.0, 1.1.0, etc.
+      '3.3.6' => array(
+        'variants' => array(
+          'source' => array(
+            'name' => 'D3',
+            'files' => array(
+              'js' => array(
+                'd3.js',
+              ),
+            ),
+            // Without a variant callback, the variant is assumed to not be
+            // installed.
+            'variant callback' => '_acquia_lift_libraries_variant_exists',
+            'variant arguments' => array('d3.js'),
+          ),
+          'minified' => array(
+            'name' => 'D3',
+            'files' => array(
+              'js' => array(
+                'd3.min.js',
+              ),
+            ),
+            // Without a variant callback, the variant is assumed to not be
+            // installed.
+            'variant callback' => '_acquia_lift_libraries_variant_exists',
+            'variant arguments' => array('d3.min.js'),
+          ),
+        ),
+      ),
+    ),
+  );
+
   return $libraries;
 }
 

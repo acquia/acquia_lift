@@ -1570,13 +1570,19 @@ class AcquiaLiftABReport extends AcquiaLiftReportBase {
         'no_striping' => TRUE,
       );
     }
-    $build['summary_table'] = array(
+    $build['summary_holder'] = array(
+      '#type' => 'container',
+      '#attributes' => array(
+        'class' => array('lift-graph-result'),
+      ),
+    );
+    $build['summary_holder']['summary_table'] = array(
       '#theme' => 'table',
       '#header' => $headers,
       '#rows' => $rows,
       '#sticky' => FALSE,
       '#attributes' => array(
-        'class' => array('lift-graph-results'),
+        'class' => array('lift-graph-result-data'),
       ),
     );
     return $build;

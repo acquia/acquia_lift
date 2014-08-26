@@ -967,6 +967,25 @@ function acquia_lift_library() {
     $libraries['acquia_lift.unified.navbar']['dependencies'][] = array('acquia_lift', 'acquia_lift.navbar.overlay');
   }
 
+  // Reporting
+  $libraries['acquia_lift.reports.ab'] = array(
+    'title' => 'Acquia Lift Reporting',
+    'version' => VERSION,
+    'js' => array(
+      $path . '/js/acquia_lift.report.ab.js' => array(),
+      $path . '/js/acquia_lift.reports.js' => array(),
+    ),
+    'css' => array(
+      $path . '/css/acquia_lift.report.ab.css',
+    ),
+    'dependencies' => array(
+      array('system', 'jquery'),
+      array('system', 'ui.slider'),
+      array('acquia_lift', 'd3'),
+      array('acquia_lift', 'rickshaw'),
+    ),
+  );
+
   /*** 3rd PARTY LIBRARY DEPENDENCIES ***/
   // Ensure that each 3rd party library dependency has a default variant.
   // Convert Libraries module data structures to library data structures.
@@ -989,7 +1008,20 @@ function acquia_lift_library() {
     'weight' => -19,
   ));
 
+  // QTip
   $libraries['qtip'] = _acquia_lift_convert_libraries_to_library(libraries_detect('qtip'), array(
+    'group' => JS_LIBRARY,
+    'weight' => -15,
+  ));
+
+  // D3
+  $libraries['d3'] = _acquia_lift_convert_libraries_to_library(libraries_detect('d3'), array(
+    'group' => JS_LIBRARY,
+    'weight' => -18,
+  ));
+
+  // Rickshaw
+  $libraries['rickshaw'] = _acquia_lift_convert_libraries_to_library(libraries_detect('rickshaw'), array(
     'group' => JS_LIBRARY,
     'weight' => -15,
   ));

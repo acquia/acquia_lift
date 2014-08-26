@@ -614,6 +614,7 @@ function acquia_lift_report_ab($form, &$form_state, $agent, $agent_data) {
   // Acquia Lift A/B reports have a decision name that is the same as the
   // campaign machine name.
   $reports = $agent->buildCampaignReports($agent_data->machine_name, $date_start_report, $date_end_report);
+  $reports['#attached']['library'][] = array('acquia_lift', 'acquia_lift.reports.ab');
 
   return $reports;
 }

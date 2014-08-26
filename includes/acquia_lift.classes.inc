@@ -1472,7 +1472,7 @@ class AcquiaLiftReportDataFromFile implements AcquiaLiftReportDataSourceInterfac
     // Note that the value is the string false for use in JSON rather than
     // the boolean value.
     if (isset($options['aggregated-over-dates']) && $options['aggregated-over-dates'] === 'false') {
-      $report_name = 'confidence_aggregate';
+      $report_name = 'confidence_detail';
     }
     return $this->getReport($agent_name, $report_name);
   }

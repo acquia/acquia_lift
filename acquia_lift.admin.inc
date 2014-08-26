@@ -607,7 +607,7 @@ function acquia_lift_report_ajax_callback($form, &$form_state) {
  * @param stdClass $agent_data
  *   The campaign agent data for this report.
  */
-function acquia_lift_report_ab($form, &$form_state, $agent, $agent_data, $option_set) {
+function acquia_lift_report_ab($form, &$form_state, $agent, $agent_data) {
   // Default to showing the complete history of the campaign.
   $date_start_report = date('Y-m-d', $agent_data->started);
   $date_end_report = $date_end_targeting = date('Y-m-d');
@@ -615,7 +615,7 @@ function acquia_lift_report_ab($form, &$form_state, $agent, $agent_data, $option
   // campaign machine name.
   $reports = $agent->buildCampaignReports($agent_data->machine_name, $date_start_report, $date_end_report);
 
-  return $form;
+  return $reports;
 }
 
 /**

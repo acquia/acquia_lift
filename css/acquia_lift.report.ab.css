@@ -113,6 +113,8 @@
 .lift-graph-axis-x {
   clear: both;
   width: 100%; }
+.lift-graph-axis-x .rickshaw_graph {
+  max-width: 100%; }
 .lift-graph-axis-y {
   float: left;
   width: 3em;

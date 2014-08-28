@@ -16,6 +16,24 @@
       left: 3em;
     }
     font-family: sans-serif;
+
+    .y-axis-label,
+    .tick text,
+    .tick line {
+      color: #666;
+      fill: #666;
+      opacity: 1;
+    }
+
+    .x_ticks_d3 .tick text {
+      fill: #666;
+      stroke: transparent;
+      stroke-width: 0;
+    }
+
+    .y_ticks > .tick:first-child {
+      display: none;
+    }
   }
 
   &-graph {
@@ -213,6 +231,7 @@
 
     th,
     td {
+      padding: .2em .4em;
       text-align: left;
       background: none;
 

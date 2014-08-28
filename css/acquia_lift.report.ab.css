@@ -154,7 +154,6 @@
   margin: 1.3em 0;
   border-color: #bbb;
   border-collapse: collapse;
-  font-family: sans-serif;
   font-size: .88em; }
 .lift-graph-result th, .lift-graph-result td {
   text-align: left; }
@@ -167,8 +166,10 @@
   display: inline-block;
   width: .9em;
   height: .9em;
-  margin-right: .9em;
+  margin-right: .6em;
   border-radius: 50%; }
+.lift-graph-result .label {
+  font-weight: bold; }
 .lift-graph-result .toggle-enabled .line {
   cursor: pointer; }
 .lift-graph-result .toggle-enabled .line.disabled .action {

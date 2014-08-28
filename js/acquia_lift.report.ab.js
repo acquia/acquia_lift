@@ -283,7 +283,7 @@ Rickshaw.Graph.ClickDetail = Rickshaw.Class.create(Rickshaw.Graph.HoverDetail, {
               variations = '';
 
           for (var i = 0; i < self.graph.series.length; i++) {
-            variations = variations + '<th style="background-color: ' + self.graph.series[i].color + ';">' + self.graph.series[i].shortName + '</th>';
+            variations += '<th style="background-color: ' + self.graph.series[i].color + ';">' + self.graph.series[i].shortName + '</th>';
           }
 
           return '<thead><tr>' + date + variations + '</tr></thead>';
@@ -296,7 +296,7 @@ Rickshaw.Graph.ClickDetail = Rickshaw.Class.create(Rickshaw.Graph.HoverDetail, {
               output = output + '<td class="active">' + data.data[i].value + '</td>';
             }
             else {
-              output = output + '<td>' + data.data[i].value + '</td>';
+              output += '<td>' + data.data[i].value + '</td>';
             }
           }
 
@@ -309,7 +309,7 @@ Rickshaw.Graph.ClickDetail = Rickshaw.Class.create(Rickshaw.Graph.HoverDetail, {
           for (var key = 0; key < data[series.name].length; key++) {
             if (data[series.name][key][xKey] == x) {
               for (var property in data[series.name][key]) {
-                if (data[series.name][key].hasOwnProperty(property) && property != xKey && property != nameKey) {
+                if (data[series.name][key].hasOwnProperty(property) && property != xKey && property != nameKey && property != nameKey + ' label') {
                   var rowData = {property: property, data: []};
 
                   for (var group in data) {
@@ -322,7 +322,7 @@ Rickshaw.Graph.ClickDetail = Rickshaw.Class.create(Rickshaw.Graph.HoverDetail, {
                     }
                   }
 
-                  output = output + row(rowData);
+                  output += row(rowData);
                 };
               };
             };
@@ -691,6 +691,12 @@ Rickshaw.Graph.TableLegend = Rickshaw.Class.create(Rickshaw.Graph.Legend, {
 
       $(this).children('td').each(function (i) {
         data[row][columns[i]] = $(this).text();
+
+        var label = $(this).attr('data-acquia-lift-variation-label');
+
+        if (label && label.length > 0) {
+          data[row][columns[i] + ' label'] = label;
+        }
       });
     });
 
@@ -710,10 +716,11 @@ Rickshaw.Graph.TableLegend = Rickshaw.Class.create(Rickshaw.Graph.Legend, {
   }
 
   // Build graphing coordinates.
-  liftGraph.prototype.buildSeries = function (columnX, columnY) {
+  liftGraph.prototype.buildSeries = function (columnX, columnY, columnName) {
     var groups = this.groups,
         xKey = this.columns[columnX - 1],
         yKey = this.columns[columnY - 1],
+        nameKey = this.columns[columnName - 1],
         series = [],
         results = $('.lift-graph-results > tbody > tr > td:first-child'),
         counter = 0;
@@ -733,7 +740,7 @@ Rickshaw.Graph.TableLegend = Rickshaw.Class.create(Rickshaw.Graph.Legend, {
           name: key,
           color: this.palette.color(),
           data: data,
-          shortName: key.substring(0, 7) == 'control' ? 'Control' : 'V' + (counter + 1)
+          shortName: groups[key][0][nameKey + ' label'] || key
         };
 
         counter++;
@@ -921,7 +928,7 @@ Rickshaw.Graph.TableLegend = Rickshaw.Class.create(Rickshaw.Graph.Legend, {
   liftGraph.prototype.render = function () {
     this.getData();
     this.getPalette();
-    this.buildSeries(this.options.columnX, this.options.columnY);
+    this.buildSeries(this.options.columnX, this.options.columnY, this.options.columnName);
     this.build();
     this.getGraph();
     this.setAxisX();

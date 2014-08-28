@@ -93,6 +93,12 @@
 
       $(this).children('td').each(function (i) {
         data[row][columns[i]] = $(this).text();
+
+        var label = $(this).attr('data-acquia-lift-variation-label');
+
+        if (label && label.length > 0) {
+          data[row][columns[i] + ' label'] = label;
+        }
       });
     });
 
@@ -112,10 +118,11 @@
   }
 
   // Build graphing coordinates.
-  liftGraph.prototype.buildSeries = function (columnX, columnY) {
+  liftGraph.prototype.buildSeries = function (columnX, columnY, columnName) {
     var groups = this.groups,
         xKey = this.columns[columnX - 1],
         yKey = this.columns[columnY - 1],
+        nameKey = this.columns[columnName - 1],
         series = [],
         results = $('.lift-graph-results > tbody > tr > td:first-child'),
         counter = 0;
@@ -135,7 +142,7 @@
           name: key,
           color: this.palette.color(),
           data: data,
-          shortName: key.substring(0, 7) == 'control' ? 'Control' : 'V' + (counter + 1)
+          shortName: groups[key][0][nameKey + ' label'] || key
         };
 
         counter++;
@@ -323,7 +330,7 @@
   liftGraph.prototype.render = function () {
     this.getData();
     this.getPalette();
-    this.buildSeries(this.options.columnX, this.options.columnY);
+    this.buildSeries(this.options.columnX, this.options.columnY, this.options.columnName);
     this.build();
     this.getGraph();
     this.setAxisX();

@@ -54,7 +54,7 @@ Rickshaw.Graph.ClickDetail = Rickshaw.Class.create(Rickshaw.Graph.HoverDetail, {
               variations = '';
 
           for (var i = 0; i < self.graph.series.length; i++) {
-            variations = variations + '<th style="background-color: ' + self.graph.series[i].color + ';">' + self.graph.series[i].shortName + '</th>';
+            variations += '<th style="background-color: ' + self.graph.series[i].color + ';">' + self.graph.series[i].shortName + '</th>';
           }
 
           return '<thead><tr>' + date + variations + '</tr></thead>';
@@ -67,7 +67,7 @@ Rickshaw.Graph.ClickDetail = Rickshaw.Class.create(Rickshaw.Graph.HoverDetail, {
               output = output + '<td class="active">' + data.data[i].value + '</td>';
             }
             else {
-              output = output + '<td>' + data.data[i].value + '</td>';
+              output += '<td>' + data.data[i].value + '</td>';
             }
           }
 
@@ -80,7 +80,7 @@ Rickshaw.Graph.ClickDetail = Rickshaw.Class.create(Rickshaw.Graph.HoverDetail, {
           for (var key = 0; key < data[series.name].length; key++) {
             if (data[series.name][key][xKey] == x) {
               for (var property in data[series.name][key]) {
-                if (data[series.name][key].hasOwnProperty(property) && property != xKey && property != nameKey) {
+                if (data[series.name][key].hasOwnProperty(property) && property != xKey && property != nameKey && property != nameKey + ' label') {
                   var rowData = {property: property, data: []};
 
                   for (var group in data) {
@@ -93,7 +93,7 @@ Rickshaw.Graph.ClickDetail = Rickshaw.Class.create(Rickshaw.Graph.HoverDetail, {
                     }
                   }
 
-                  output = output + row(rowData);
+                  output += row(rowData);
                 };
               };
             };

@@ -197,16 +197,34 @@
     &-data {
       margin: 0;
       border: none;
+      border-collapse: collapse;
+      border-spacing: 0;
+      font-size: 1em;
     }
 
-    tbody {
+    .inactive & {
+      pointer-events: none;
+    }
+
+    tbody,
+    thead {
       border: none;
     }
 
     th,
     td {
       text-align: left;
-      border: none;
+      background: none;
+
+      &,
+      &:first-child,
+      &:last-child {
+        border: none;
+      }
+    }
+
+    th {
+      text-transform: none;
     }
 
     [style^="background-color"] {

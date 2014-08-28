@@ -123,12 +123,21 @@
   overflow-x: auto; }
 .lift-graph-detail-data {
   margin: 0;
-  border: none; }
-.lift-graph-detail tbody {
+  border: none;
+  border-collapse: collapse;
+  border-spacing: 0;
+  font-size: 1em; }
+.inactive .lift-graph-detail {
+  pointer-events: none; }
+.lift-graph-detail tbody, .lift-graph-detail thead {
   border: none; }
 .lift-graph-detail th, .lift-graph-detail td {
   text-align: left;
+  background: none; }
+.lift-graph-detail th, .lift-graph-detail th:first-child, .lift-graph-detail th:last-child, .lift-graph-detail td, .lift-graph-detail td:first-child, .lift-graph-detail td:last-child {
   border: none; }
+.lift-graph-detail th {
+  text-transform: none; }
 .lift-graph-detail [style^="background-color"] {
   color: #fff;
   font-weight: normal;

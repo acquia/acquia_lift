@@ -183,6 +183,10 @@
   &-axis-x {
     clear: both;
     width: 100%;
+
+    .rickshaw_graph {
+      max-width: 100%;
+    }
   }
 
   &-axis-y {

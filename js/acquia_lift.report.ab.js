@@ -927,10 +927,7 @@ Rickshaw.Graph.TableLegend = Rickshaw.Class.create(Rickshaw.Graph.Legend, {
     this.setAxisX();
     this.setAxisY();
     this.setLegend();
-    this.setRangeSlider();
     this.setHoverDetail();
-    this.setSeriesHighlight();
-    this.setSeriesToggle();
     this.graph.render();
     this.hideTable();
   }

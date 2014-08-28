@@ -11,6 +11,16 @@
   padding-right: 1em;
   padding-left: 3em;
   font-family: sans-serif; }
+.lift-graph-container .y-axis-label, .lift-graph-container .tick text, .lift-graph-container .tick line {
+  color: #666;
+  fill: #666;
+  opacity: 1; }
+.lift-graph-container .x_ticks_d3 .tick text {
+  fill: #666;
+  stroke: transparent;
+  stroke-width: 0; }
+.lift-graph-container .y_ticks > .tick:first-child {
+  display: none; }
 .lift-graph-graph {
   float: left;
   width: 100%;
@@ -132,6 +142,7 @@
 .lift-graph-detail tbody, .lift-graph-detail thead {
   border: none; }
 .lift-graph-detail th, .lift-graph-detail td {
+  padding: .2em .4em;
   text-align: left;
   background: none; }
 .lift-graph-detail th, .lift-graph-detail th:first-child, .lift-graph-detail th:last-child, .lift-graph-detail td, .lift-graph-detail td:first-child, .lift-graph-detail td:last-child {

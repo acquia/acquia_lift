@@ -329,10 +329,7 @@
     this.setAxisX();
     this.setAxisY();
     this.setLegend();
-    this.setRangeSlider();
     this.setHoverDetail();
-    this.setSeriesHighlight();
-    this.setSeriesToggle();
     this.graph.render();
     this.hideTable();
   }

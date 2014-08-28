@@ -6,6 +6,38 @@
 Rickshaw.namespace('Rickshaw.Graph.ClickDetail');
 
 Rickshaw.Graph.ClickDetail = Rickshaw.Class.create(Rickshaw.Graph.HoverDetail, {
+  initialize: function(args) {
+
+		var graph = this.graph = args.graph;
+
+    this.tooltipTimeout;
+    this.wiggleTimeout;
+    this.tooltipPinned = false;
+
+		this.xFormatter = args.xFormatter || function(x) {
+			return new Date( x * 1000 ).toUTCString();
+		};
+
+		this.yFormatter = args.yFormatter || function(y) {
+			return y === null ? y : y.toFixed(2);
+		};
+
+		var element = this.element = document.createElement('div');
+		element.className = 'detail inactive';
+
+		this.visible = true;
+		graph.element.appendChild(element);
+
+		this.lastEvent = null;
+		this._addListeners();
+
+		this.onShow = args.onShow;
+		this.onHide = args.onHide;
+		this.onRender = args.onRender;
+
+		this.formatter = args.formatter || this.formatter;
+
+	},
   formatter: function(series, x, y, formattedX, formattedY, d) {
     var self = this,
         options = this.graph.rawData.options,
@@ -182,15 +214,65 @@ Rickshaw.Graph.ClickDetail = Rickshaw.Class.create(Rickshaw.Graph.HoverDetail, {
     return layout;
   },
   _addListeners: function() {
+    var $ = jQuery,
+        self = this,
+        $element = $(this.element);
+
+		this.graph.element.addEventListener(
+			'mousemove',
+			function(e) {
+        if (this.tooltipPinned === false && $element.hasClass('inactive')) {
+          clearTimeout(this.tooltipTimeout);
+          this.tooltipTimeout = window.setTimeout(function () {
+            self.visible = true;
+            self.update(e);
+          }, 350);
+        }
+        else if (this.tooltipPinned === false) {
+          this.wiggleTimeout = window.setTimeout(function () {
+            if (!$element.is(':hover')) {
+              self.hide();
+            }
+          }, 120);
+        }
+			}.bind(this),
+			false
+		);
+
     this.graph.element.addEventListener(
       'click',
       function(e) {
-        this.visible = true;
-        this.update(e);
+        if (this.tooltipPinned === false) {
+          this.tooltipPinned = true;
+          clearTimeout(this.tooltipTimeout);
+          this.visible = true;
+          this.update(e);
+        }
+        else {
+          this.tooltipPinned = false;
+          this.hide();
+        }
       }.bind(this),
       false
     );
 
-    this.graph.onUpdate( function() { this.update() }.bind(this) );
-  }
+		this.graph.onUpdate( function() { this.update() }.bind(this) );
+
+		this.graph.element.addEventListener(
+			'mouseout',
+			function(e) {
+        if (this.tooltipPinned === false) {
+          var self = this;
+
+  				if (e.relatedTarget && !(e.relatedTarget.compareDocumentPosition(this.graph.element) & Node.DOCUMENT_POSITION_CONTAINS)) {
+            clearTimeout(this.tooltipTimeout);
+            this.tooltipTimeout = window.setTimeout(function () {
+              self.hide();
+            }, 500);
+  				}
+        }
+			}.bind(this),
+			false
+		);
+	}
 });

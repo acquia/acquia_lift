@@ -13,18 +13,15 @@ QUnit.test('Make decision', function(assert) {
   };
 
   var callback = sinon.spy();
-
-  Drupal.acquiaLift.getDecision('my-agent', {'some-feature': ['some,value', 'sc-some,value']}, {'first-decision': ['option-1', 'option-2']}, 'my-decision-point', {'first-decision': 0}, callback);
+  Drupal.acquiaLift.getDecision('my-agent', {'some-feature': ['some-value', 'sc-some-value'],'other-feature': ['some,value'] }, {'first-decision': ['option-1', 'option-2']}, 'my-decision-point', {'first-decision': 0}, callback);
 
   equal(sinon.requests.length, 1);
-  console.log(sinon.requests[0]);
   var parsed = parseUri(sinon.requests[0].url);
-  console.log(parsed);
 
   equal(parsed.host, 'api.example.com');
   equal(parsed.path, "/someOwner/my-agent/decisions/first-decision:option-1,option-2");
   equal(parsed.queryKey.apikey, "xyz123");
-  equal(parsed.queryKey.features, "some-feature%3A%3Asome-value");
+  equal(parsed.queryKey.features, "some-feature%3A%3Asome-value%2Csome-feature%3A%3Asc-some-value%2Cother-feature%3A%3Asome-value");
   equal(parsed.queryKey.session, "some-session-ID");
 
   requests[0].respond(200, { "Content-Type": "application/json" }, '{"decisions": {"first-decision":"option-2"}, "session": "1234678"}');

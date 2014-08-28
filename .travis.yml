@@ -1,0 +1,14 @@
+language: php
+
+php:
+  - 5.4
+
+before_install:
+  - "wget https://raw.githubusercontent.com/jonkemp/qunit-phantomjs-runner/master/runner.js"
+
+script:
+  - phantomjs runner.js qunit/core_personalization.html
+
+branches:
+  only:
+    - CH-744

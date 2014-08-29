@@ -1670,6 +1670,54 @@ function _acquia_lift_libraries_get_preferred_variant_name($library) {
 }
 
 /**
+ * Helper function to display a message when a missing library is detected.
+ *
+ * This can provide targeted messaging on pages that require a JavaScript
+ * library in order to be useful.
+ *
+ * @param $required_libraries
+ *   An array of required library names based on the names used in the
+ *   hook_libraries_info method.
+ * @param $missing_message
+ *   The basic message to print before a listing of missing libraries and their
+ *   download links.
+ * @return bool
+ *   True if a library was missing, false if no missing libraries.
+ */
+function _acquia_lift_missing_library_warning($required_libraries, $missing_message) {
+  $libraries = module_invoke('acquia_lift', 'libraries_info');
+  $missing = array();
+  foreach ($required_libraries as $required) {
+    $detected = libraries_detect($required);
+    if (empty($detected['installed'])) {
+      $missing[] = array(
+        'name' => $libraries[$required]['name'],
+        'download_url' => $libraries[$required]['download url'],
+      );
+    }
+    else if (!empty($detected['error'])) {
+      drupal_set_message($detected['error message'], 'error');
+    }
+  }
+  if (!empty($missing)) {
+    $items = array();
+    foreach($missing as $lib) {
+      $items[] = t('%libname - <a href="!download_url" target="_blank">download</a>', array(
+        '%libname' => $lib['name'],
+        '!download_url' => $lib['download_url'],
+      ));
+    }
+    drupal_set_message(theme('item_list', array(
+      'type' => 'ul',
+      'title' => $missing_message,
+      'items' => $items,
+    )), 'error');
+    return TRUE;
+  }
+  return FALSE;
+}
+
+/**
  * Helper function to determine if the site is using the Acquia Lift unified
  * navigation bar.
  *

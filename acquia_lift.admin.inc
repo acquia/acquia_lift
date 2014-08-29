@@ -608,6 +608,11 @@ function acquia_lift_report_ajax_callback($form, &$form_state) {
  *   The campaign agent data for this report.
  */
 function acquia_lift_report_ab($form, &$form_state, $agent, $agent_data) {
+  // Check for Rickshaw and D3 libraries and alert users if not exist.
+  if (_acquia_lift_missing_library_warning(array('rickshaw', 'd3'), t('The following libraries are required in order to view the Acquia Lift reports:'))) {
+    return array();
+  }
+
   // Default to showing the complete history of the campaign.
   $date_start_report = date('Y-m-d', $agent_data->started);
   $date_end_report = $date_end_targeting = date('Y-m-d');

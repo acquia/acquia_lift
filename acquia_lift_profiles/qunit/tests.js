@@ -71,7 +71,6 @@ QUnit.module("Acquia Lift Profiles", {
             // On subsequent calls we'll send back another segment
             values = ['segment1', 'segment2'];
           }
-
           var captureInfo = {
             x: {
               trackingId: Drupal.acquia_lift_profiles.getTrackingID()
@@ -83,7 +82,6 @@ QUnit.module("Acquia Lift Profiles", {
       }
     };
   }
-
 });
 
 QUnit.asyncTest( "init test", function( assert ) {
@@ -112,6 +110,22 @@ QUnit.asyncTest( "init test", function( assert ) {
       udfMappingContextSeparator: '__'
     }
   };
+
+  // We need to mock the getVisitorContexts() method as this is called by the
+  // init method, which we're testing here. We just need to make it call the
+  // callback that will be passed into it with the values for the contexts
+  // specified.
+  Drupal.personalize.getVisitorContexts = function(plugins, callback) {
+    var values = {
+      'my_first_plugin': {
+        'some-context': 'some-value'
+      },
+      'my_promise_plugin': {
+        'some-other-context': 'some-other-value'
+      }
+    };
+    callback.call(null, values);
+  };
   Drupal.acquia_lift_profiles.init(settings);
 });
 
@@ -137,14 +151,13 @@ QUnit.asyncTest("Get context values no cache", function( assert ) {
 });
 
 QUnit.test("get context values with cache", function( assert ) {
-  //expect(6);
+  expect(3);
   Drupal.acquia_lift_profiles.clearSegmentMemoryCache();
   Drupal.personalize.visitor_context_write('segment1', 'acquia_lift_profiles_context', 1);
   Drupal.personalize.visitor_context_write('segment2', 'acquia_lift_profiles_context', 1);
   var contextResult = Drupal.personalize.visitor_context.acquia_lift_profiles_context.getContext({'segment1':'segment1', 'segment2':'segment2'});
-  console.log(contextResult);
+
   assert.ok(!(contextResult instanceof Promise), 'Got the segments from the cache');
   assert.equal(contextResult['segment1'], 1, 'Segment1 has value 1');
   assert.equal(contextResult['segment2'], 1, 'Segment2 has value 1');
-
 });

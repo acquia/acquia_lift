@@ -5,6 +5,5 @@
     "learning": {},
     "context-filters": {"data":{"potential":{"features":[{"code":"(none)","name":"(Any Visitor)"},{"code":"c-time-ldp:time-afternoon","name":"Weekend","type":"c-time-ldp","typeName":"Day Part (visitor time)"},{"code":"c-time-ldp:time-evening","name":"Evening","type":"c-time-ldp","typeName":"Day Part (visitor time)"},{"code":"c-time-ldp:time-morning","name":"Morning","type":"c-time-ldp","typeName":"Day Part (visitor time)"},{"code":"c-time-ldp:time-night","name":"Night","type":"c-time-ldp","typeName":"Day Part (visitor time)"},{"code":"c-ua-bn:Chrome","type":"c-ua-bn","name":"Chrome"},{"code":"utm_campaign:first-campaign","type":"utm_campaign","name":"first-campaign"},{"code":"utm_campaign:second-campaign","type":"utm_campaign","name":"second-campaign"}]}}}
   }
-
 }
 

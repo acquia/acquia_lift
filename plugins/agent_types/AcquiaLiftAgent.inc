@@ -1134,7 +1134,7 @@ abstract class AcquiaLiftReportBase implements PersonalizeAgentReportInterface, 
    *   reporting data is updated by reference as well.
    */
   protected function loadConfidenceData(&$report_data, $options = array()) {
-    if (isset($options['aggregated-over-dates']) && $options['aggregated-over-dates'] == 'false') {
+    if (isset($options['aggregated-over-dates']) && $options['aggregated-over-dates'] == FALSE) {
       $report_name = 'confidence_detail';
     }
     else {
@@ -1176,7 +1176,7 @@ abstract class AcquiaLiftReportBase implements PersonalizeAgentReportInterface, 
    *   reporting data is updated by reference as well.
    */
   protected function loadConfidenceDetailData(&$report_data, $options = array()) {
-    $options['aggregated-over-dates'] = 'false';
+    $options['aggregated-over-dates'] = FALSE;
     return $this->loadConfidenceData($report_data, $options);
   }
 
@@ -1329,7 +1329,7 @@ class AcquiaLiftABReport extends AcquiaLiftReportBase {
   }
 
   /**
-   * Extracts data from the raw confidence report that is prepared for use
+   * Extracts data from the raw confidence detail report that is prepared for use
    * within the report rendering process.
    *
    * @param $items

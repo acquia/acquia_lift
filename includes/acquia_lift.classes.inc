@@ -1020,7 +1020,7 @@ class AcquiaLiftAPI implements PersonalizeLoggerAwareInterface, AcquiaLiftReport
       'aggregated-over-dates' => true,
       'features' => NULL,
     );
-    $options = array_merge($options, $default_options);
+    $options = array_merge($default_options, $options);
     $date_str = $this->getDateString($date_start, $date_end);
     if ($options['features'] === 'all') {
       $features = '';
@@ -1032,7 +1032,7 @@ class AcquiaLiftAPI implements PersonalizeLoggerAwareInterface, AcquiaLiftReport
 
     $url = $this->generateEndpoint("/{$agent_name}/report/confidence{$date_str}?features=$features");
     foreach ($options as $param => $value) {
-      $url .= "&$param=$value";
+      $url .= "&$param=" . var_export($value, TRUE);
     }
     $headers = array('Accept' => 'application/json');
     if ($point !== NULL) {
@@ -1471,7 +1471,7 @@ class AcquiaLiftReportDataFromFile implements AcquiaLiftReportDataSourceInterfac
     $report_name = 'confidence';
     // Note that the value is the string false for use in JSON rather than
     // the boolean value.
-    if (isset($options['aggregated-over-dates']) && $options['aggregated-over-dates'] === 'false') {
+    if (isset($options['aggregated-over-dates']) && $options['aggregated-over-dates'] === FALSE) {
       $report_name = 'confidence_detail';
     }
     return $this->getReport($agent_name, $report_name);

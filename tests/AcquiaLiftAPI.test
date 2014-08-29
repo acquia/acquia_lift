@@ -1422,6 +1422,16 @@ class AcquiaLiftTest extends DrupalUnitTestCase {
     $logs = array();
     $this->assertLogs($logs);
 
+    // Get detail report.
+    $options['aggregated-over-dates'] = FALSE;
+    $lift_api->getConfidenceReport($agentName, $startDate, $endDate, $point_name, $options);
+
+    // Confirm the expected requests were made.
+    $test_request['uri'] = "{$lift_api->getApiUrl()}/{$lift_api->getOwnerCode()}/{$agentName}/report/confidence/{$startDate}/{$endDate}?features={$features_str}&apikey={$lift_api->getAdminKey()}&confidence-measure={$confidence_measure}&aggregated-over-dates=false";
+    $this->assertAPIRequests(array($test_request));
+    $logs = array();
+    $this->assertLogs($logs);
+
     $lift_api = $this->getAcquiaLiftAPI(TRUE);
     try {
       $lift_api->getConfidenceReport($agentName, $startDate, $endDate, $point_name, $options);

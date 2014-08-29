@@ -1429,8 +1429,9 @@ class AcquiaLiftABReport extends AcquiaLiftReportBase {
       }
       $goals = $item['totals']['goals'];
       $count = $item['totals']['count'];
-      $rate = $count > 0 ? ($goals/$count) * 100 : 0;
-      $margin = (($item['bHi'] - $item['bLo'])/2) * 100;
+      // The format for percentages will already multiply by 100.
+      $rate = $count > 0 ? ($goals/$count) : 0;
+      $margin = (($item['bHi'] - $item['bLo'])/2);
 
       if ($item['signif']) {
         if (is_nan($winning_value) || $item['lift']['default'] > $winning_value) {

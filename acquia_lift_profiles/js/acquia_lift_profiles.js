@@ -12,7 +12,7 @@ var _tcwq = _tcwq || [];
       });
     return uuid;
   }
-  var trackingId = generateTrackingId(), plugin = 'acquia_lift_profiles_context';
+  var trackingId = generateTrackingId(), plugin = 'acquia_lift_profiles_context', callbackRegistered = false;
 
 
   Drupal.behaviors.acquia_lift_profiles = {
@@ -20,6 +20,7 @@ var _tcwq = _tcwq || [];
       Drupal.acquia_lift_profiles.init(settings);
       Drupal.acquia_lift_profiles.addActionListener(settings);
       processServerSideActions(settings);
+      Drupal.acquia_lift_profiles.registerSegmentsCallback();
     }
   };
 
@@ -67,6 +68,9 @@ var _tcwq = _tcwq || [];
           }
         }
         return visitorSegments;
+      },
+      'reset': function() {
+        visitorSegments = null;
       }
     }
   })();
@@ -77,7 +81,7 @@ var _tcwq = _tcwq || [];
     'getContext': function(enabled) {
       var i, j, context_values = {};
       // First check to see if we have the acquia_lift_profiles segments already stored
-      // locally, either in our closure variable or in localStorage.
+      // locally.
       var cached = segmentCache.retrieve(Drupal.settings.acquia_lift_profiles);
       if (cached) {
         for (i in enabled) {
@@ -90,7 +94,7 @@ var _tcwq = _tcwq || [];
 
       return new Promise(function(resolve, reject){
         // Define a callback function to receive information about the segments
-        // for the current visitor and add them to the visitorSegments object.
+        // for the current visitor.
         var segmentsCallback = function (segmentIds, captureInfo) {
           if (captureInfo.x['trackingId'] == trackingId) {
             var allSegments = segmentCache.store(segmentIds);
@@ -105,6 +109,7 @@ var _tcwq = _tcwq || [];
 
         // Register our callback for receiving segments.
         _tcwq.push(["onLoad", segmentsCallback]);
+        callbackRegistered = true;
       });
     }
   };
@@ -210,6 +215,27 @@ var _tcwq = _tcwq || [];
         };
         Drupal.personalize.getVisitorContexts(plugins, callback);
       },
+      'getTrackingID': function () {
+        return trackingId;
+      },
+      'registerSegmentsCallback': function() {
+        if (!callbackRegistered) {
+          // Define a callback function to receive information about the segments
+          // for the current visitor and add them to the visitorSegments object.
+          var segmentsCallback = function (segmentIds, captureInfo) {
+            if (captureInfo.x['trackingId'] == trackingId) {
+              segmentCache.store(segmentIds);
+            }
+          };
+
+          // Register our callback for receiving segments.
+          _tcwq.push(["onLoad", segmentsCallback]);
+          callbackRegistered = true;
+        }
+      },
+      'clearSegmentMemoryCache': function() {
+        segmentCache.reset();
+      },
       /**
        * Sends an event to TC.
        *
@@ -280,6 +306,5 @@ var _tcwq = _tcwq || [];
       }
     }
   }
-
 
 })(jQuery);

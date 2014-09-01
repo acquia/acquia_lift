@@ -2,7 +2,21 @@
  * @file libraries.js
  */
 
-QUnit.module("Acquia Lift service calls");
+QUnit.module("Acquia Lift service calls", {
+  'setup': function() {
+    Drupal.personalize.initializeSessionID = function() {
+      return 'some-session-ID';
+    };
+    Drupal.settings.personalize = Drupal.settings.personalize || {};
+    Drupal.settings.acquia_lift = Drupal.settings.acquia_lift || {};
+    Drupal.settings.acquia_lift.baseUrl = 'http://api.example.com';
+    Drupal.settings.acquia_lift.owner = 'someOwner';
+    Drupal.settings.acquia_lift.apiKey = 'xyz123';
+    Drupal.settings.acquia_lift.featureStringSeparator = '::';
+    Drupal.settings.acquia_lift.featureStringMaxLength = 50;
+    Drupal.settings.acquia_lift.featureStringReplacePattern = '[^A-Za-z0-9_-]';
+  }
+});
 
 QUnit.test('Make decision', function(assert) {
   var xhr = sinon.useFakeXMLHttpRequest();

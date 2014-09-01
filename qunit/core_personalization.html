@@ -7,15 +7,7 @@
 </head>
 <body>
 <div id="qunit"></div>
-<div id="qunit-fixture">
-    <!-- HTML required for DOM tests -->
-    <div class="region-page-top"></div>
-    <div id="watch">
-        <div id="mousehere">Mouse element</div>
-        <div id="another">Another element</div>
-    </div>
-    <div id="nowatch">No DOM watching allowed here.</div>
-</div>
+<div id="qunit-fixture"></div>
 
 
 <script src="http://code.jquery.com/qunit/qunit-1.14.0.js"></script>
@@ -30,17 +22,6 @@
     Drupal.settings = Drupal.settings || {};
     Drupal.theme = Drupal.theme || {};
     Drupal.personalize = Drupal.personalize || {};
-    Drupal.personalize.initializeSessionID = function() {
-      return 'some-session-ID';
-    };
-    Drupal.settings.personalize = Drupal.settings.personalize || {};
-    Drupal.settings.acquia_lift = Drupal.settings.acquia_lift || {};
-    Drupal.settings.acquia_lift.baseUrl = 'http://api.example.com';
-    Drupal.settings.acquia_lift.owner = 'someOwner';
-    Drupal.settings.acquia_lift.apiKey = 'xyz123';
-    Drupal.settings.acquia_lift.featureStringSeparator = '::';
-    Drupal.settings.acquia_lift.featureStringMaxLength = 50;
-    Drupal.settings.acquia_lift.featureStringReplacePattern = '[^A-Za-z0-9_-]';
 </script>
 <script src="../js/acquia-lift-js-wrapper-min.js"></script>
 <script src="../js/acquia_lift.js"></script>

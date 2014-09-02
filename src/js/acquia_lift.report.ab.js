@@ -62,14 +62,18 @@
     return liftGraph.DEFAULTS;
   }
 
-  // Reset the table.
-  liftGraph.prototype.destroy = function () {
-    this.hide().$element.off('.' + this.type).removeData('lift.' + this.type);
-  }
-
   // Get options.
   liftGraph.prototype.getOptions = function (options) {
     options = $.extend({}, this.getDefaults(), options);
+    for (var i in options) {
+      options[i] = this.dataAttr(i) || options[i];
+    }
+    return options;
+  }
+
+  // Update options.
+  liftGraph.prototype.updateOptions = function () {
+    var options = this.options;
     for (var i in options) {
       options[i] = this.dataAttr(i) || options[i];
     }
@@ -305,7 +309,7 @@
     this.$graph = $('<div class="lift-graph-graph" role="presentation"></div>');
     this.$axisY = $('<div class="lift-graph-axis-y" role="presentation"></div>');
     this.$axisX = $('<div class="lift-graph-axis-x" role="presentation"></div>');
-    this.$legend = $('table.lift-graph-result-data');
+    this.$legend = this.$element.siblings('.lift-graph-result').children('table.lift-graph-result-data');
     this.$rangeSlider = $('<div class="lift-graph-range-slider" role="presentation"></div>');
 
     this.$element.addClass('lift-graph-table')
@@ -341,18 +345,32 @@
     this.hideTable();
   }
 
+  liftGraph.prototype.update = function () {
+    this.options = this.updateOptions();
+    this.getData();
+    this.getPalette();
+    this.buildSeries(this.options.columnX, this.options.columnY, this.options.columnName);
+
+    var graph = this.graph,
+        series = this.series;
+
+    $(graph.series).each(function(i){
+        graph.series[i] = series[i];
+    });
+
+    this.graph.update();
+  }
+
   // Define the jQuery plugin.
   var old = $.fn.railroad;
 
-  $.fn.liftGraph = function (options) {
+  $.fn.liftGraph = function (option) {
     return this.each(function () {
       var $this = $(this),
-          data = $this.data('lift.graph'),
-          options = typeof options == 'object' && option;
+          data = $this.data('lift.graph');
 
-      if (!data && options == 'destroy') return;
-      if (!data) $this.data('lift.graph', (data = new liftGraph(this, options)));
-      if (typeof option == 'string') data[option]();
+      if (!data) $this.data('lift.graph', (data = new liftGraph(this, option)));
+      if (typeof option == 'string') data[option]($this);
     });
   }
 

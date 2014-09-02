@@ -2,6 +2,34 @@
  * General styles for lift graph implementations.
  * ----------------------------------------------------------------------------
  */
+.lift-statistic-category {
+  -webkit-transition: opacity .4s, position .4s 0 step-start, width .4s 0 step-start, height .4s 0 step-start;
+          transition: opacity .4s, position .4s 0 step-start, width .4s 0 step-start, height .4s 0 step-start;
+}
+
+.lift-switches .form-item {
+  display: inline-block;
+  margin-right: 1em;
+}
+
+.lift-statistic-category.active,
+.lift-data-switch.active {
+  visibility: visible;
+  opacity: 1;
+  width: auto;
+  height: auto;
+}
+.lift-statistic-category.inactive,
+.lift-data-switch.inactive {
+  position: absolute;
+  margin: 0;
+  overflow: hidden;
+  visibility: hidden;
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
 .lift-graph {
   font-family: sans-serif;
 }

@@ -22,7 +22,8 @@
   margin-top: 0;
   color: #ffffff;
 }
-.acquia-lift-variation-type-form.visitor-actions-ui-dialog .visitor-actions-ui-dialog-content label {
+.acquia-lift-variation-type-form.visitor-actions-ui-dialog .visitor-actions-ui-dialog-content label,
+.acquia-lift-variation-type-form.visitor-actions-ui-dialog .visitor-actions-ui-dialog-content .description {
   color: #CCCCCC;
   font-weight: normal;
 }

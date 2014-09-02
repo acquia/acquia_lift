@@ -114,9 +114,6 @@
             .removeClass('active');
         });
 
-        console.log(children);
-        console.log(dataSelectors);
-
         // Add all switches to the page.
         $switches
           .append(formItem('Goals', $chooser))

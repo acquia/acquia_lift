@@ -346,6 +346,7 @@
   }
 
   liftGraph.prototype.update = function () {
+    // Rebuild the data.
     this.options = this.updateOptions();
     this.getData();
     this.getPalette();
@@ -354,9 +355,13 @@
     var graph = this.graph,
         series = this.series;
 
+    // Update the series manually as Rickshaw does not do that by itself.
     $(graph.series).each(function(i){
         graph.series[i] = series[i];
     });
+
+    // Update the Y axis label.
+    this.axisY.label = this.columns[this.options.columnY - 1];
 
     this.graph.update();
   }

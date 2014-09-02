@@ -1526,6 +1526,7 @@ class AcquiaLiftABReport extends AcquiaLiftReportBase {
         'data-liftGraph-columnName' => '2',
         'data-liftGraph-columnX' => '1',
         'data-liftGraph-renderer' => 'line',
+        'data-liftGraph-excluded' => '5',
       )
     );
     return $build;

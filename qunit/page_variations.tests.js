@@ -68,6 +68,7 @@ QUnit.test('Application view', function (assert) {
     anchor: $anchor[0]
   }
   // @todo: this will throw errors because we are not coming from a Drupal path and therefore there is no existing base theme.
+  // This prevents any additional tests being run on the variation type form dialog.
   appView.createVariationTypeDialog({data: data});
   assert.equal(appView.variationTypeFormModel.get('selector'), data.selector, 'Variation type form model selector set successfully.');
   assert.ok(appView.variationTypeFormModel.get('id'), 'Variation type form model ID set successfully.');

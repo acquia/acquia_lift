@@ -296,12 +296,18 @@
        */
       formSuccessHandler: function (ajax, response, status) {
         this.parent('formSuccessHandler', ajax, response, status);
-        this.$el.find('[name="selector"]').val(this.model.get('selector'));
+
+        var selector = this.model.get('selector');
+        var type = this.model.get('type');
+        var $input = this.$el.find('[name=personalize_elements_content]');
+        var variationNumber = this.model.get('variationIndex');
+
+        this.$el.find('[name="selector"]').val(selector);
         this.$el.find('[name="pages"]').val(Drupal.settings.visitor_actions.currentPath);
         this.$el.find('[name="agent"]').val(Drupal.settings.personalize.activeCampaign);
-        this.$el.find('[name="variation_number"]').val(this.model.get('variationIndex'));
+        this.$el.find('[name="variation_number"]').val(variationNumber);
         // Call any variation type specific callbacks.
-        Drupal.personalize.executors.personalizeElements.editInContext(this.model.get('type'), this.model.get('selector'), this.$el.find('[name=personalize_elements_content]'));
+        $(document).trigger('acquiaLiftVariationTypeForm', [type, selector, $input]);
       },
 
       /**
@@ -558,6 +564,19 @@
       data: data
     };
     Drupal.ajax.prototype.commands.acquia_lift_page_variation_toggle(Drupal.ajax, response, 200);
+  });
+
+  Drupal.personalize = Drupal.personalize || {};
+  Drupal.personalize.executors = Drupal.personalize.executors || {};
+  Drupal.personalize.executors.personalizeElements = Drupal.personalize.executors.personalizeElements || {};
+  /**
+   * Whenever a variation type form is complete, call the personalize elements
+   * editInContext callbacks.
+   */
+  $(document).on('acquiaLiftVariationTypeForm', function(e, type, selector, $input) {
+    if (Drupal.personalize.executors.personalizeElements.editInContext && typeof Drupal.personalize.executors.personalizeElements.editInContext === 'function') {
+      Drupal.personalize.executors.personalizeElements.editInContext(type, selector, $input);
+    }
   });
 
   }(jQuery, Drupal, Drupal.visitorActions.ui.dialog, Backbone, _));

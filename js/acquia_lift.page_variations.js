@@ -299,6 +299,8 @@
         this.$el.find('[name="pages"]').val(Drupal.settings.visitor_actions.currentPath);
         this.$el.find('[name="agent"]').val(Drupal.settings.personalize.activeCampaign);
         this.$el.find('[name="variation_number"]').val(this.model.get('variationIndex'));
+        // Call any variation type specific callbacks.
+        Drupal.personalize.executors.personalizeElements.editInContext(this.model.get('type'), this.model.get('selector'), this.$el.find('[name=personalize_elements_content]'));
       },
 
       /**

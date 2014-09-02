@@ -157,7 +157,8 @@
         if (show) {
           $(this.anchor).addClass(highlightClass);
         } else {
-          $(this.anchor).removeClass(highlightClass);
+          $('.' + highlightClass).removeClass(highlightClass);
+//          $(this.anchor).removeClass(highlightClass);
         }
       },
 

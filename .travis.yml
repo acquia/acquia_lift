@@ -8,6 +8,7 @@ before_install:
 
 script:
   - phantomjs runner.js qunit/core_personalization.html
+  - phantomjs runner.js acquia_lift_profiles/qunit/test.html
 
 branches:
   only:

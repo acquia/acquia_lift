@@ -13,7 +13,7 @@ QUnit.test('DOM Selection', function(assert) {
   var current = null;
   var currentSelector = '';
 
-  expect(11);
+  expect(10);
 
   function testCallback(element, selector) {
     assert.equal(element, current, 'Callback triggered from selecting ' + selector);
@@ -45,7 +45,6 @@ QUnit.test('DOM Selection', function(assert) {
   $another.trigger('click');
 
   assert.ok(!$another.hasClass(indicatorClass), 'Highlight removed after selection');
-  assert.ok(!$watch.DOMSelector("isWatching"), 'DOM Selector has stopped watching after selection.');
 });
 
 QUnit.module("Acquia Lift message box tests");

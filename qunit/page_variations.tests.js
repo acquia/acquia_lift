@@ -79,8 +79,8 @@ QUnit.test('Application view', function (assert) {
   appModel.set('editMode', false);
   assert.ok(!$view.DOMSelector("isWatching"), "View is no longer watching when model is taken out of edit mode.");
   assert.ok(!$anchor.hasClass('acquia-lift-page-variation-item'), 'Anchor element highlight has been removed.');
-  assert.ok(!appView.contextualMenuModel.get('active'), 'Contextual menu has been made inactive.');
-  assert.ok(!appView.variationTypeFormModel.get('active'), 'Contextual menu has been made inactive.');
+  assert.ok(!appView.contextualMenuModel, 'Contextual menu has been removed.');
+  assert.ok(!appView.variationTypeFormModel, 'Contextual menu has been removed.');
 });
 
 QUnit.asyncTest('Contextual menu view', function (assert) {

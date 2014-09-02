@@ -39,7 +39,7 @@
 }
 .lift-graph-container {
   padding-right: 1em;
-  padding-left: 3em;
+  padding-left: 5em;
   font-family: sans-serif;
 }
 .lift-graph-container .y-axis-label,
@@ -173,9 +173,9 @@
 }
 .lift-graph-axis-y {
   float: left;
-  width: 3em;
+  width: 5em;
   height: 20em;
-  margin-left: -3em;
+  margin-left: -5em;
 }
 .lift-graph-legend {
   clear: both;
@@ -210,7 +210,7 @@
 }
 .lift-graph-detail th,
 .lift-graph-detail td {
-  padding: .2em .4em;
+  padding: .2em .5em;
   text-align: left;
   background: none;
 }

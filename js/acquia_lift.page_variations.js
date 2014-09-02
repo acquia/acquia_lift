@@ -157,8 +157,9 @@
         if (show) {
           $(this.anchor).addClass(highlightClass);
         } else {
+          // Remove the highlight from anywhere (the anchor may have been
+          // changed).
           $('.' + highlightClass).removeClass(highlightClass);
-//          $(this.anchor).removeClass(highlightClass);
         }
       },
 

@@ -1309,8 +1309,19 @@ class AcquiaLiftABReport extends AcquiaLiftReportBase {
     if ($reports['all'] == FALSE) {
       drupal_set_message(t('There was a problem retrieving the report data.  Please try again later.'), 'error');
     }
-    $reports['#attributes']['class'][] = 'lift-statistics';
-    return $reports;
+    $build['reports'] = array(
+      '#type' => 'container',
+      '#attributes' => array(
+        'class' => array('lift-statistics'),
+      ),
+    );
+    $build['reports']['titles'] = array(
+      '#theme' => 'html_tag',
+      '#tag' => 'h2',
+      '#value' => $this->agent->getTitle(),
+    );
+    $build['reports']['all'] = $reports['all'];
+    return $build;
   }
 
   /**
@@ -1710,7 +1721,7 @@ class AcquiaLiftABReport extends AcquiaLiftReportBase {
     $build = array();
     $build['reports']['title'] = array(
       '#theme' => 'html_tag',
-      '#tag' => 'h2',
+      '#tag' => 'h3',
       '#value' => $report_data['name'],
       '#attributes' => array('class' => array('li-statistic-category-name')),
     );

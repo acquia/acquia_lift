@@ -1620,10 +1620,11 @@ class AcquiaLiftReport extends AcquiaLiftReportBase {
     $date_to = time();
     }
     $date_end = date('Y-m-d', $date_to);
+    $report_data = $this->generateReportConfiguration(NULL, $date_start, $date_end);
 
     if (!isset($report_data['confidence'])) {
       $this->loadConfidenceData($report_data);
-      if (isset($report_data['raw']['confidence']['error'])) {
+      if (isset($report_data['raw']['confidence']['error']) || !isset($report_data['raw']['confidence']['data'])) {
         return array();
       }
       else {

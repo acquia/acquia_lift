@@ -1032,7 +1032,8 @@ class AcquiaLiftAPI implements PersonalizeLoggerAwareInterface, AcquiaLiftReport
 
     $url = $this->generateEndpoint("/{$agent_name}/report/confidence{$date_str}?features=$features");
     foreach ($options as $param => $value) {
-      $url .= "&$param=" . var_export($value, TRUE);
+      $param_value = is_bool($value) ? var_export($value, TRUE) : (string)$value;
+      $url .= "&$param=" . $param_value;
     }
     $headers = array('Accept' => 'application/json');
     if ($point !== NULL) {

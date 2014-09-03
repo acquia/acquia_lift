@@ -1461,10 +1461,11 @@ class AcquiaLiftReportDataFromFile implements AcquiaLiftReportDataSourceInterfac
    */
   public function getConfidenceReport($agent_name, $date_start = NULL, $date_end = NULL, $point = NULL, $options = array()) {
     $report_name = 'confidence';
-    // Note that the value is the string false for use in JSON rather than
-    // the boolean value.
+    if (!empty($options['goal'])) {
+      $report_name .= '_goal' . rand(1, 2);
+    }
     if (isset($options['aggregated-over-dates']) && $options['aggregated-over-dates'] === FALSE) {
-      $report_name = 'confidence_detail';
+      $report_name .= '_detail';
     }
     return $this->getReport($agent_name, $report_name);
   }

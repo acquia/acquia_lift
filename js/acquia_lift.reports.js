@@ -7,7 +7,7 @@
   Drupal.behaviors.acquiaLiftReports = {
     attach: function (context, settings) {
       // Generate graphs and switches for the A/B statistics.
-      $('.lift-statisics').once('acquiaLiftReports', function () {
+      $('.lift-statistics').once('acquiaLiftReports', function () {
         var $statistics = $(this),
             $switches = $('<div class="lift-switches">'),
             $chooser = $('<select class="lift-graph-switch">'),

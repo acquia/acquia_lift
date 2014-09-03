@@ -3,6 +3,35 @@
  * ----------------------------------------------------------------------------
  */
 
+ .lift-statistic-category {
+   transition: opacity .4s, position .4s 0 step-start, width .4s 0 step-start, height .4s 0 step-start;
+ }
+
+ .lift-switches .form-item {
+   display: inline-block;
+   margin-right: 1em;
+ }
+
+ .lift-statistic-category,
+ .lift-data-switch {
+   &.active {
+     visibility: visible;
+     opacity: 1;
+     width: auto;
+     height: auto;
+   }
+
+   &.inactive {
+     position: absolute;
+     margin: 0;
+     overflow: hidden;
+     visibility: hidden;
+     opacity: 0;
+     width: 0;
+     height: 0;
+   }
+ }
+
 .lift-graph {
   font-family: sans-serif;
 
@@ -13,7 +42,7 @@
   &-container {
     padding: {
       right: 1em;
-      left: 3em;
+      left: 5em;
     }
     font-family: sans-serif;
 
@@ -191,9 +220,9 @@
 
   &-axis-y {
     float: left;
-    width: 3em;
+    width: 5em;
     height: 20em;
-    margin-left: -3em;
+    margin-left: -5em;
   }
 
   &-legend {
@@ -235,7 +264,7 @@
 
     th,
     td {
-      padding: .2em .4em;
+      padding: .2em .5em;
       text-align: left;
       background: none;
 

@@ -1851,5 +1851,3 @@ function acquia_lift_page_variation_delete($variation_set_name, $agent_name, $va
     }
   }
 }
-
-

@@ -2,6 +2,34 @@
  * General styles for lift graph implementations.
  * ----------------------------------------------------------------------------
  */
+.lift-statistic-category {
+  -webkit-transition: opacity .4s, position .4s 0 step-start, width .4s 0 step-start, height .4s 0 step-start;
+          transition: opacity .4s, position .4s 0 step-start, width .4s 0 step-start, height .4s 0 step-start;
+}
+
+.lift-switches .form-item {
+  display: inline-block;
+  margin-right: 1em;
+}
+
+.lift-statistic-category.active,
+.lift-data-switch.active {
+  visibility: visible;
+  opacity: 1;
+  width: auto;
+  height: auto;
+}
+.lift-statistic-category.inactive,
+.lift-data-switch.inactive {
+  position: absolute;
+  margin: 0;
+  overflow: hidden;
+  visibility: hidden;
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
 .lift-graph {
   font-family: sans-serif;
 }
@@ -11,7 +39,7 @@
 }
 .lift-graph-container {
   padding-right: 1em;
-  padding-left: 3em;
+  padding-left: 5em;
   font-family: sans-serif;
 }
 .lift-graph-container .y-axis-label,
@@ -145,9 +173,9 @@
 }
 .lift-graph-axis-y {
   float: left;
-  width: 3em;
+  width: 5em;
   height: 20em;
-  margin-left: -3em;
+  margin-left: -5em;
 }
 .lift-graph-legend {
   clear: both;
@@ -182,7 +210,7 @@
 }
 .lift-graph-detail th,
 .lift-graph-detail td {
-  padding: .2em .4em;
+  padding: .2em .5em;
   text-align: left;
   background: none;
 }

@@ -1601,6 +1601,7 @@ class AcquiaLiftABReport extends AcquiaLiftReportBase {
           'data-liftGraph-columnName' => '2',
           'data-liftGraph-columnX' => '1',
           'data-liftGraph-renderer' => 'line',
+          'data-liftGraph-exclude' => '5',
         )
       );
     }
@@ -1703,7 +1704,7 @@ class AcquiaLiftABReport extends AcquiaLiftReportBase {
       '#theme' => 'html_tag',
       '#tag' => 'h2',
       '#value' => $report_data['name'],
-      '#attributes' => array('class' => array('li-statistic-category-name')),
+      '#attributes' => array('class' => array('lift-statistic-category-name')),
     );
     $build['reports']['detail'] = $this->buildABMetricsReport($report_data['detail']);
     $build['reports']['summary'] = $this->buildSummaryReport($report_data['summary'], $confidence, $winner);

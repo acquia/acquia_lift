@@ -3,6 +3,11 @@
  * ----------------------------------------------------------------------------
  */
 .lift-statistic-category {
+  padding: 1.4em 1em 1em;
+  border-style: solid;
+  border-color: #ccc;
+  border-width: 1px 0;
+  background: #fff;
   -webkit-transition: opacity .4s, position .4s 0 step-start, width .4s 0 step-start, height .4s 0 step-start;
           transition: opacity .4s, position .4s 0 step-start, width .4s 0 step-start, height .4s 0 step-start;
 }
@@ -28,6 +33,18 @@
   opacity: 0;
   width: 0;
   height: 0;
+}
+
+.lift-switches {
+  padding: .5em 1em;
+  border-style: solid;
+  border-color: #ccc;
+  border-width: 1px 0 0 0;
+  background-color: #eee;
+}
+.lift-switches .form-item label,
+.lift-switches .form-item select {
+  display: inline-block;
 }
 
 .lift-graph {
@@ -240,7 +257,7 @@
   width: 100%;
   max-width: 100%;
   margin: 1.3em 0;
-  border-color: #bbb;
+  border-color: #ccc;
   border-collapse: collapse;
   font-size: .88em;
 }

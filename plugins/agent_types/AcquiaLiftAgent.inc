@@ -1315,11 +1315,6 @@ class AcquiaLiftABReport extends AcquiaLiftReportBase {
         'class' => array('lift-statistics'),
       ),
     );
-    $build['reports']['titles'] = array(
-      '#theme' => 'html_tag',
-      '#tag' => 'h2',
-      '#value' => $this->agent->getTitle(),
-    );
     $build['reports']['all'] = $reports['all'];
     $build['reports']['goals'] = $reports['goals'];
     return $build;

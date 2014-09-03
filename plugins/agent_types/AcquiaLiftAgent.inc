@@ -1669,7 +1669,7 @@ class AcquiaLiftABReport extends AcquiaLiftReportBase {
             'data' => $data['lift_default'],
           ),
           array(
-            'data' => ($confidence && $winner == $data['counter']) ? t('Winner') : '',
+            'data' => ($confidence && $winner == $data['counter']) ? '<span class="lift-winner">' . t('Winner') . '</span>' : '',
           ),
         ),
         'no_striping' => TRUE,

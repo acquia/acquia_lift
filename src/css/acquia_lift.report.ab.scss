@@ -15,6 +15,7 @@ $shadow-offset: .2em !default;
 $pointer-size: .5em !default;
 $pointer-shadow-size: ($pointer-size + $shadow-offset) !default;
 $margin-horizontal: -1em !default;
+$winner-color: #85b200 !default;
 
 .lift-statistic-category {
   padding: 1.4em 1em 1em;
@@ -66,6 +67,24 @@ $margin-horizontal: -1em !default;
     select {
       display: inline-block;
     }
+  }
+}
+
+.lift-winner {
+  display: inline-block;
+  padding: .3em .8em;
+  line-height: 1em;
+  font-weight: bold;
+  border-radius: .9em;
+  color: $text-color-alternate;
+  background-color: $winner-color;
+  box-shadow: 0 $shadow-offset 0 $border-color;
+
+  &:after {
+    content: '\2713';
+    display: inline-block;
+    margin-left: .4em;
+    font-size: 1.2em;
   }
 }
 

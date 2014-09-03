@@ -47,6 +47,23 @@
   display: inline-block;
 }
 
+.lift-winner {
+  display: inline-block;
+  padding: .3em .8em;
+  line-height: 1em;
+  font-weight: bold;
+  border-radius: .9em;
+  color: #fff;
+  background-color: #85b200;
+  box-shadow: 0 0.2em 0 #ccc;
+}
+.lift-winner:after {
+  content: '\2713';
+  display: inline-block;
+  margin-left: .4em;
+  font-size: 1.2em;
+}
+
 .lift-graph {
   font-family: sans-serif;
 }

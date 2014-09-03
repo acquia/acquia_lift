@@ -42,6 +42,9 @@
               $option = $('<option value="' + graphKey + '">' + name + '</option>'),
               $dataSelector = $('<select class="lift-data-switch">');
 
+          // The data-liftgraph-excluded attribute is a comma delimited list of
+          // column numbers starting at 1. It needs a bit of extra processing
+          // to make the individual strings from the split integers.
           for (var i = 0; i < attr.length; i++) {
             attr[i] = parseFloat(attr[i]);
           }

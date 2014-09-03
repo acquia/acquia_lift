@@ -1321,6 +1321,7 @@ class AcquiaLiftABReport extends AcquiaLiftReportBase {
       '#value' => $this->agent->getTitle(),
     );
     $build['reports']['all'] = $reports['all'];
+    $build['reports']['goals'] = $reports['goals'];
     return $build;
   }
 

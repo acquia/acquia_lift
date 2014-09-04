@@ -1869,6 +1869,17 @@ function acquia_lift_help($path, $arg) {
 }
 
 /**
+ * Implements hook_visitor_actions_selector_ignore
+ */
+function acquia_lift_visitor_actions_selector_ignore() {
+  return array(
+    'classes' => array(
+      'acquia-lift-[a-zA-Z0-9\_\-]+',
+    ),
+  );
+}
+
+/**
  * Returns an AJAX command to display a message box.
  *
  * @param $message

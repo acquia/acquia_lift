@@ -11,8 +11,8 @@
    */
   var pluginName = 'DOMSelector',
     indicatorClass = 'acquia-lift-active-element',
-    selectorIgnoreClasses = null,
-    selectorIgnoreId = /^(visitorActionsUI-)|(visitorActionsUIDialog-)|(panels-ipe-)/;
+    selectorIgnoreClasses = new RegExp(Drupal.settings.visitor_actions.ignoreClasses, 'g'),
+    selectorIgnoreId = new RegExp(Drupal.settings.visitor_actions.ignoreIds);
 
   defaults = {
       hoverCss: {

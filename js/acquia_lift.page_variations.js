@@ -73,7 +73,11 @@
      * Backbone model representing a single page element variation type
      * that can be presented within a contextual menu.
      */
-    ElementVariationModel: Backbone.Model.extend({}),
+    ElementVariationModel: Backbone.Model.extend({
+      defaults: {
+        limitByChildrenType: ''
+      }
+    }),
 
 
     /**
@@ -98,7 +102,29 @@
    *******************************************************************/
   Drupal.acquiaLiftPageVariations.collections = Drupal.acquiaLiftPageVariations.collections || {
     ElementVariationCollection: Backbone.Collection.extend({
-      model: Drupal.acquiaLiftPageVariations.models.ElementVariationModel
+      model: Drupal.acquiaLiftPageVariations.models.ElementVariationModel,
+
+      applicableToElement: function ($element) {
+        // Get all the node types of the children for the element.
+        var childrenNodeTypes = _.pluck($element.find('*'), 'nodeType');
+
+        return _(this.filter(function(data) {
+          var limitByChildrenType = data.get('limitByChildrenType');
+
+          // If there is a limit on the children type, make sure that every
+          // child passes the test.
+          if (limitByChildrenType && !isNaN(limitByChildrenType)) {
+            return _.every(childrenNodeTypes, function(type) {return type == limitByChildrenType});
+          }
+          // No limits in place so include by default.
+          return true;
+        }))
+      },
+      currentStatus : function(status){
+        return _(this.filter(function(data) {
+          return data.get("completed") == status;
+        }));
+      },
     })
   };
 
@@ -351,11 +377,15 @@
 
         // Generate the collection of options.
         var collection = new Drupal.acquiaLiftPageVariations.collections.ElementVariationCollection();
-        var modelAttributes = _.map(Drupal.settings.personalize_elements.contextualVariationTypes, function(label, type) {
-          return {id: type, name: label}
+        var modelAttributes = _.map(Drupal.settings.personalize_elements.contextualVariationTypes, function(data, type) {
+          return {
+            id: type,
+            name: data.name,
+            limitByChildrenType: data.limitByChildrenType
+          };
         });
         collection.add(modelAttributes);
-        this.list = new Drupal.acquiaLiftPageVariations.views.PageVariationMenuListView({collection: collection});
+        this.list = new Drupal.acquiaLiftPageVariations.views.PageVariationMenuListView({collection: collection.applicableToElement($(this.anchor))});
         this.list.render();
         this.$el.find('.visitor-actions-ui-dialog-content').html(titleHtml).append(this.list.el);
         this.position(function () {

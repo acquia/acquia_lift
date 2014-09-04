@@ -32,10 +32,22 @@ QUnit.module("Acquia Lift page variation views", {
     Drupal.settings.basePath = '/';
     Drupal.settings.personalize_elements = Drupal.settings.personalize_elements || {};
     Drupal.settings.personalize_elements.contextualVariationTypes = Drupal.settings.personalize_elements.contextualVariationTypes || {
-      'addCss': 'Add CSS class',
-      'replaceHTML': 'Replace HTML',
-      'appendHTML': 'Append HTML',
-      'prependHTML': 'Prepend HTML'
+      'addCss': {
+        name: 'Add CSS class'
+      },
+      'editHtml': {
+        name: 'Edit HTML'
+      },
+      'editText': {
+        name: 'Edit text',
+        limitByChildrenType: 3
+      },
+      'appendHtml': {
+        name: 'Append HTML'
+      },
+      'prependHtml': {
+        name: 'Prepend HTML'
+      }
     };
     Drupal.settings.visitor_actions = Drupal.settings.visitor_actions || {};
     Drupal.settings.visitor_actions.currentPath = 'node';

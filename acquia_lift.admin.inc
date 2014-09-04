@@ -261,8 +261,6 @@ function acquia_lift_report($form, &$form_state, $agent_data, $option_set) {
     );
   }
 
-  // @todo change this to the interface once simplified campaign creation code
-  // has been merged into the main branch.
   if ($agent instanceof AcquiaLiftSimpleAB) {
     return acquia_lift_report_ab($form, $form_state, $agent, $agent_data);
   }

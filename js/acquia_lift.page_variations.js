@@ -120,9 +120,7 @@
         _.bindAll(this, 'createContextualMenu', 'onElementSelected');
 
         var that = this;
-        this.$watchElements = options.$watchElements;
         this.$el.DOMSelector({
-          $watchElements: this.$watchElements,
           onElementSelect: function (element, selector) {
             that.onElementSelected(element, selector);
           }
@@ -138,6 +136,10 @@
        */
       render: function (model, editMode) {
         if (editMode) {
+          // Must update the watched elements as the page DOM structure can
+          // be changed in between each call.
+          this.$watchElements = getAvailableElements();
+          this.$el.DOMSelector("updateElements", this.$watchElements);
           this.$el.DOMSelector("startWatching");
         } else {
           this.$el.DOMSelector("stopWatching");
@@ -528,14 +530,10 @@
         Drupal.acquiaLiftPageVariations.app.appModel = new Drupal.acquiaLiftPageVariations.models.AppModel();
       }
       if (!Drupal.acquiaLiftPageVariations.app.appView) {
-        var $elements = getAvailableElements();
-        if ($elements.length > 0) {
-          Drupal.acquiaLiftPageVariations.app.appView = new Drupal.acquiaLiftPageVariations.views.AppView({
-            model: Drupal.acquiaLiftPageVariations.app.appModel,
-            $watchElements: $elements,
-            $el: $('body')
-          });
-        }
+        Drupal.acquiaLiftPageVariations.app.appView = new Drupal.acquiaLiftPageVariations.views.AppView({
+          model: Drupal.acquiaLiftPageVariations.app.appModel,
+          $el: $('body')
+        });
       }
       var editVariation = response.data.variationIndex || -1;
       Drupal.acquiaLiftPageVariations.app.appModel.set('variationIndex', editVariation);

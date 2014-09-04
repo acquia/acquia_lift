@@ -11,8 +11,8 @@
    */
   var pluginName = 'DOMSelector',
     indicatorClass = 'acquia-lift-active-element',
-    selectorIgnoreClasses = new RegExp(Drupal.settings.visitor_actions.ignoreClasses, 'g'),
-    selectorIgnoreId = new RegExp(Drupal.settings.visitor_actions.ignoreIds);
+    selectorIgnoreClasses = /(messages|contextual-links-[a-zA-Z/-/_])/g;
+    selectorIgnoreId = null;
 
   defaults = {
       hoverCss: {
@@ -157,6 +157,13 @@
      */
     isWatching: function() {
       return this._watching;
+    },
+
+    /**
+     * Update the watched elements
+     */
+    updateElements: function($updated) {
+      this.$element = $updated;
     },
 
     /**

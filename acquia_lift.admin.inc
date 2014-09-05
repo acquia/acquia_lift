@@ -1672,7 +1672,7 @@ function acquia_lift_page_variation_create($variation_set_name, $option_set, $op
   // Add any missing options before adding the one for this variation.
   for ($j = $next_option; $j < $variation_number; $j++) {
     $option_label = empty($first_os) || !isset($first_os->options[$j]) ? t('Variation #@num', array('@num' => $j)) : $first_os->options[$j]['option_label'];
-    $option_set->options[$j] = array('option_id' => 'variation-' . $j, 'option_label' => $option_label);
+    $option_set->options[$j] = array('option_id' => 'variation-' . $j, 'option_label' => $option_label, 'personalize_elements_content' => '');
   }
   // Now add the option for this variation.
   $option_set->options[$variation_number] = array('option_id' => $new_option_id, 'option_label' => $new_option_label) + $option_info;
@@ -1685,7 +1685,7 @@ function acquia_lift_page_variation_create($variation_set_name, $option_set, $op
   for ($k = $variation_number + 1; $k < $max_variation_number; $k++) {
     if (!isset($option_set->options[$k])) {
       $option_label = empty($first_os) || !isset($first_os->options[$k]) ? t('Variation #@num', array('@num' => $k)) : $first_os->options[$k]['option_label'];
-      $option_set->options[$k] = array('option_id' => 'variation-' . $k, 'option_label' => $option_label);
+      $option_set->options[$k] = array('option_id' => 'variation-' . $k, 'option_label' => $option_label, 'personalize_elements_content' => '');
     }
   }
 
@@ -1705,7 +1705,7 @@ function acquia_lift_page_variation_create($variation_set_name, $option_set, $op
       if (!isset($os->options[$i])) {
         $op_id = 'variation-' . $i;
         $op_label = empty($first_os) || !isset($first_os->options[$i]) ? t('Variation #@num', array('@num' => $i)) : $first_os->options[$i]['option_label'];
-        $os->options[$i] = array('option_id' => $op_id, 'option_label' => $op_label);
+        $os->options[$i] = array('option_id' => $op_id, 'option_label' => $op_label, 'personalize_elements_content' => '');
       }
     }
     personalize_option_set_save($os);

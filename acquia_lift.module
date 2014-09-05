@@ -1432,7 +1432,7 @@ function acquia_lift_libraries_info() {
         ),
         'minified' => array(
           'file' => 'rickshaw.min.js',
-          'pattern' => '/(Rickshow)/',
+          'pattern' => '/(Rickshaw)/',
         ),
       ),
     ),

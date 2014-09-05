@@ -1021,7 +1021,7 @@ abstract class AcquiaLiftReportBase implements PersonalizeAgentReportInterface, 
    * @param $is_control
    *   True if this is the control option.
    */
-  function getVariationLabel($counter, $is_control) {
+  protected function getVariationLabel($counter, $is_control) {
     if ($is_control) {
       return t('Control');
     }

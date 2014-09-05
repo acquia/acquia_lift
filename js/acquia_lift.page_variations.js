@@ -124,7 +124,7 @@
         return _(this.filter(function(data) {
           return data.get("completed") == status;
         }));
-      },
+      }
     })
   };
 
@@ -546,6 +546,25 @@
   }
 
   /**
+   * Define editInContext behaviors to define what happens when creating
+   * a particular persaonlize_element page variation in context.
+   */
+  Drupal.acquiaLiftPageVariations.personalizeElements = Drupal.acquiaLiftPageVariations.personalizeElements || {};
+  Drupal.acquiaLiftPageVariations.personalizeElements.editHtml = {
+    editInContext : function(selector, $contentInput) {
+      var editString = Drupal.personalizeElements.editHtml.getOuterHtml($(selector));
+      $contentInput.val(editString);
+    }
+  };
+
+  Drupal.acquiaLiftPageVariations.personalizeElements.editText = {
+    editInContext : function(selector, $contentInput) {
+      var editString = $(selector).text();
+      $contentInput.val(editString);
+    }
+  };
+
+  /**
    * A command to trigger the page element selection process.
    *
    * The response should include a data object with the following keys:
@@ -595,16 +614,15 @@
     Drupal.ajax.prototype.commands.acquia_lift_page_variation_toggle(Drupal.ajax, response, 200);
   });
 
-  Drupal.personalize = Drupal.personalize || {};
-  Drupal.personalize.executors = Drupal.personalize.executors || {};
-  Drupal.personalize.executors.personalizeElements = Drupal.personalize.executors.personalizeElements || {};
   /**
    * Whenever a variation type form is complete, call the personalize elements
    * editInContext callbacks.
    */
   $(document).on('acquiaLiftVariationTypeForm', function(e, type, selector, $input) {
-    if (Drupal.personalize.executors.personalizeElements.editInContext && typeof Drupal.personalize.executors.personalizeElements.editInContext === 'function') {
-      Drupal.personalize.executors.personalizeElements.editInContext(type, selector, $input);
+    if (Drupal.acquiaLiftPageVariations.personalizeElements.hasOwnProperty(type)
+      && Drupal.acquiaLiftPageVariations.personalizeElements[type].hasOwnProperty('editInContext')
+      && typeof Drupal.acquiaLiftPageVariations.personalizeElements[type].editInContext === 'function') {
+      Drupal.acquiaLiftPageVariations.personalizeElements[type].editInContext(selector, $input);
     }
   });
 

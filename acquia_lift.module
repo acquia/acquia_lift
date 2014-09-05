@@ -973,7 +973,6 @@ function acquia_lift_library() {
     'version' => VERSION,
     'js' => array(
       $path . '/js/acquia_lift.report.ab.js' => array(),
-      $path . '/js/acquia_lift.reports.js' => array(),
     ),
     'css' => array(
       $path . '/css/acquia_lift.report.ab.css',

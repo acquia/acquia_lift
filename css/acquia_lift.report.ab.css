@@ -16,6 +16,10 @@
   display: inline-block;
   margin-right: 1em;
 }
+html[dir="rtl"] .lift-switches .form-item {
+  margin-right: auto;
+  margin-left: 1em;
+}
 
 .lift-statistic-category.active,
 .lift-data-switch.active {
@@ -63,6 +67,10 @@
   margin-left: .4em;
   font-size: 1.2em;
 }
+html[dir="rtl"] .lift-winner:after {
+  margin-right: .4em;
+  margin-left: auto;
+}
 
 .lift-graph {
   font-family: sans-serif;
@@ -75,6 +83,14 @@
   padding-right: 1em;
   padding-left: 5em;
   font-family: sans-serif;
+}
+html[dir="rtl"] .lift-graph-container {
+  padding-right: 5em;
+  padding-left: 1em;
+}
+html[dir="rtl"] .lift-graph-container .y_axis .y_ticks text,
+html[dir="rtl"] .lift-graph-container .lift-graph-graph .tick text {
+  text-anchor: end !important;
 }
 .lift-graph-container .y-axis-label,
 .lift-graph-container .tick text,
@@ -107,8 +123,6 @@
   font-size: 0.85714em;
   line-height: 1.3em;
   box-shadow: 0 0.2em 0 rgba(204, 204, 204, 0.6);
-  -webkit-transition: left .1s ease, right .1s ease;
-          transition: left .1s ease, right .1s ease;
 }
 .lift-graph-graph .detail .item.active {
   background: rgba(255, 255, 255, 0.8);
@@ -122,6 +136,10 @@
   height: 1em;
   margin-right: .3em;
   border-radius: 50%;
+}
+html[dir="rtl"] .lift-graph-graph .detail .item .swatch {
+  margin-right: auto;
+  margin-left: .3em;
 }
 .lift-graph-graph .detail .item:before, .lift-graph-graph .detail .item:after {
   display: block;
@@ -198,6 +216,10 @@
   border-radius: 50%;
   box-shadow: none;
 }
+html[dir="rtl"] .lift-graph-graph .detail .dot {
+  margin-right: -.35em;
+  margin-left: auto;
+}
 .lift-graph-axis-x {
   clear: both;
   width: 100%;
@@ -210,6 +232,11 @@
   width: 5em;
   height: 20em;
   margin-left: -5em;
+}
+html[dir="rtl"] .lift-graph-axis-y {
+  float: right;
+  margin-right: -5em;
+  margin-left: auto;
 }
 .lift-graph-legend {
   clear: both;
@@ -248,6 +275,10 @@
   text-align: left;
   background: none;
 }
+html[dir="rtl"] .lift-graph-detail th, html[dir="rtl"]
+.lift-graph-detail td {
+  text-align: right;
+}
 .lift-graph-detail th, .lift-graph-detail th:first-child, .lift-graph-detail th:last-child,
 .lift-graph-detail td,
 .lift-graph-detail td:first-child,
@@ -260,6 +291,8 @@
 .lift-graph-detail [style^="background-color"] {
   color: #fff;
   font-weight: normal;
+}
+html[dir] .lift-graph-detail [style^="background-color"] {
   text-align: center;
 }
 .lift-graph-detail .active {
@@ -282,6 +315,10 @@
 .lift-graph-result td {
   text-align: left;
 }
+html[dir="rtl"] .lift-graph-result th, html[dir="rtl"]
+.lift-graph-result td {
+  text-align: right;
+}
 .lift-graph-result th:last-child,
 .lift-graph-result td:last-child {
   text-align: center;
@@ -290,6 +327,10 @@
   margin-right: .6em;
   cursor: pointer;
 }
+html[dir="rtl"] .lift-graph-result .action {
+  margin-right: auto;
+  margin-left: .6em;
+}
 .lift-graph-result .swatch {
   display: inline-block;
   width: .9em;
@@ -297,8 +338,18 @@
   margin-right: .6em;
   border-radius: 50%;
 }
+html[dir="rtl"] .lift-graph-result .swatch {
+  margin-right: auto;
+  margin-left: .6em;
+}
 .lift-graph-result .label {
+  display: inline-block;
+  margin-right: .2em;
   font-weight: bold;
+}
+html[dir="rtl"] .lift-graph-result .label {
+  margin-right: auto;
+  margin-left: .2em;
 }
 .lift-graph-result .toggle-enabled .line {
   cursor: pointer;

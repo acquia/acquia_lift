@@ -51,7 +51,7 @@ Rickshaw.Graph.TableLegend = Rickshaw.Class.create(Rickshaw.Graph.Legend, {
 
         var label = document.createElement('span');
         label.className = 'label';
-        label.innerHTML = (series.shortName || series.name) + ': ';
+        label.innerHTML = (series.shortName || series.name) + ':';
 
         $cell.prepend(label);
 

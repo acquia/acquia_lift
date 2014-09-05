@@ -1,6 +1,7 @@
 /**
  * Functionality related specifically to the Acquia Lift reports.
  */
+
 (function ($, Drupal) {
   "use strict";
 

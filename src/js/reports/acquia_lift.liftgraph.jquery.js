@@ -256,9 +256,11 @@
 
   // Get the y-axis.
   liftGraph.prototype.setAxisY = function () {
+    var orientation = $('html').attr('dir') == 'rtl' ? 'right' : 'left';
+
     this.axisY = new Rickshaw.Graph.Axis.LabeledY({
       element: this.$axisY[0],
-      orientation: 'left',
+      orientation: orientation,
       label: this.columns[this.options.columnY - 1],
       graph: this.graph
     });

@@ -3,19 +3,7 @@
  * ----------------------------------------------------------------------------
  */
 
-$border-color: #ccc !default;
-$background-color: #fff !default;
-$background-color-alternate: #eee !default;
-$text-color: #333 !default;
-$text-color-alternate: #fff !default;
-$axis-color: #666 !default;
-$border-size: .1em !default;
-$shadow-opacity: .6 !default;
-$shadow-offset: .2em !default;
-$pointer-size: .5em !default;
-$pointer-shadow-size: ($pointer-size + $shadow-offset) !default;
-$margin-horizontal: -1em !default;
-$winner-color: #85b200 !default;
+@import "base";
 
 .lift-statistic-category {
   padding: 1.4em 1em 1em;
@@ -31,6 +19,13 @@ $winner-color: #85b200 !default;
 .lift-switches .form-item {
   display: inline-block;
   margin-right: 1em;
+
+  html[dir="rtl"] & {
+    margin: {
+      right: auto;
+      left: 1em;
+    }
+  }
 }
 
 .lift-statistic-category,
@@ -85,6 +80,13 @@ $winner-color: #85b200 !default;
     display: inline-block;
     margin-left: .4em;
     font-size: 1.2em;
+
+    html[dir="rtl"] & {
+      margin: {
+        right: .4em;
+        left: auto;
+      }
+    }
   }
 }
 
@@ -101,6 +103,20 @@ $winner-color: #85b200 !default;
       left: 5em;
     }
     font-family: sans-serif;
+
+    html[dir="rtl"] & {
+      padding: {
+        right: 5em;
+        left: 1em;
+      }
+
+      .y_axis .y_ticks,
+      .lift-graph-graph .tick {
+        text {
+          text-anchor: end !important; // Force text to align properly with RTL
+        }
+      }
+    }
 
     .y-axis-label,
     .tick text,
@@ -137,7 +153,6 @@ $winner-color: #85b200 !default;
         font-size: (12px / 14px) * 1em;
         line-height: 1.3em;
         box-shadow: 0 $shadow-offset 0 rgba($border-color, $shadow-opacity);
-        transition: left .1s ease, right .1s ease;
 
         &.active {
           background: rgba($background-color, .8);
@@ -152,6 +167,13 @@ $winner-color: #85b200 !default;
           height: 1em;
           margin-right: .3em;
           border-radius: 50%;
+
+          html[dir="rtl"] & {
+            margin: {
+              right: auto;
+              left: .3em;
+            }
+          }
         }
 
         &:before,
@@ -253,6 +275,13 @@ $winner-color: #85b200 !default;
         border-width: .2em;
         border-radius: 50%;
         box-shadow: none;
+
+        html[dir="rtl"] & {
+          margin: {
+            right: -.35em;
+            left: auto;
+          }
+        }
       }
     }
   }
@@ -271,6 +300,14 @@ $winner-color: #85b200 !default;
     width: 5em;
     height: 20em;
     margin-left: -5em;
+
+    html[dir="rtl"] & {
+      float: right;
+      margin: {
+        right: -5em;
+        left: auto;
+      }
+    }
   }
 
   &-legend {
@@ -316,6 +353,10 @@ $winner-color: #85b200 !default;
       text-align: left;
       background: none;
 
+      html[dir="rtl"] & {
+        text-align: right;
+      }
+
       &,
       &:first-child,
       &:last-child {
@@ -330,7 +371,10 @@ $winner-color: #85b200 !default;
     [style^="background-color"] {
       color: $text-color-alternate;
       font-weight: normal;
-      text-align: center;
+
+      html[dir] & {
+        text-align: center;
+      }
     }
 
     .active {
@@ -356,6 +400,10 @@ $winner-color: #85b200 !default;
     td {
       text-align: left;
 
+      html[dir="rtl"] & {
+        text-align: right;
+      }
+
       &:last-child {
         text-align: center;
       }
@@ -364,6 +412,13 @@ $winner-color: #85b200 !default;
     .action {
       margin-right: .6em;
       cursor: pointer;
+
+      html[dir="rtl"] & {
+        margin: {
+          right: auto;
+          left: .6em;
+        }
+      }
     }
 
     .swatch {
@@ -372,10 +427,27 @@ $winner-color: #85b200 !default;
       height: .9em;
       margin-right: .6em;
       border-radius: 50%;
+
+      html[dir="rtl"] & {
+        margin: {
+          right: auto;
+          left: .6em;
+        }
+      }
     }
 
     .label {
+      // Allows the text to align properly when the direction is RTL.
+      display: inline-block;
+      margin-right: .2em;
       font-weight: bold;
+
+      html[dir="rtl"] & {
+        margin: {
+          right: auto;
+          left: .2em;
+        }
+      }
     }
 
     .toggle-enabled .line {

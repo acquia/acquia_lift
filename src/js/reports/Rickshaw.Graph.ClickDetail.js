@@ -167,14 +167,14 @@ Rickshaw.Graph.ClickDetail = Rickshaw.Class.create(Rickshaw.Graph.HoverDetail, {
     var alignment = this._calcLayout(item);
 
     if (alignment.left > alignment.right) {
-      item.style.left = 'auto';
+      item.style.left = '';
       item.classList.remove('center');
       item.classList.remove('right');
       item.classList.add('left');
     }
 
     if (alignment.right > alignment.left) {
-      item.style.left = 'auto';
+      item.style.left = '';
       item.classList.remove('center');
       item.classList.remove('left');
       item.classList.add('right');

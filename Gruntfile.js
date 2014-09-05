@@ -2,11 +2,12 @@ module.exports = function(grunt) {
   require('time-grunt')(grunt);
 
   var reportABjs = [
-        'src/js/Rickshaw.Graph.Axis.TimeElement.js',
-        'src/js/Rickshaw.Graph.Axis.LabeledY.js',
-        'src/js/Rickshaw.Graph.ClickDetail.js',
-        'src/js/Rickshaw.Graph.TableLegend.js',
-        'src/js/acquia_lift.report.ab.js'
+        'src/js/reports/Rickshaw.Graph.Axis.TimeElement.js',
+        'src/js/reports/Rickshaw.Graph.Axis.LabeledY.js',
+        'src/js/reports/Rickshaw.Graph.ClickDetail.js',
+        'src/js/reports/Rickshaw.Graph.TableLegend.js',
+        'src/js/reports/acquia_lift.liftgraph.jquery.js',
+        'src/js/reports/acquia_lift.reports.js'
       ];
 
   // Project configuration.

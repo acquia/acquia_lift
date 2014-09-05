@@ -12,7 +12,8 @@
   var pluginName = 'DOMSelector',
     indicatorClass = 'acquia-lift-active-element',
     selectorIgnoreClasses = /(messages|contextual-links-[a-zA-Z/-/_])/g;
-    selectorIgnoreId = null;
+    selectorIgnoreId = null,
+    tipIgnoreId = new RegExp(Drupal.settings.visitor_actions.ignoreIds);
 
   defaults = {
       hoverCss: {
@@ -64,7 +65,7 @@
      * @returns {*|HTMLElement}
      */
     getTipContent: function (element) {
-      if (element.hasOwnProperty('id') && element.id.length > 0 && element.id.match(selectorIgnoreId) == null) {
+      if (element.hasOwnProperty('id') && element.id.length > 0 && !tipIgnoreId.test(element.id)) {
         return element.id;
       } else {
         return '&lt;' + element.nodeName.toLowerCase() + '&gt;';

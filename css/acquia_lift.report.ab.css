@@ -244,3 +244,8 @@
 .lift-graph-result .toggle-enabled .line.disabled .action {
   opacity: .4;
 }
+
+.acquia-lift-report-warning {
+  text-align: right;
+  width: 100%;
+}

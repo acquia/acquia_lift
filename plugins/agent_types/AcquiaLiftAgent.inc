@@ -1543,6 +1543,15 @@ class AcquiaLiftABReport extends AcquiaLiftReportBase {
     if ($report_data['confidence'] === FALSE) {
       return FALSE;
     }
+    if ($report_data['confidence']['overview']['confidence'] === FALSE) {
+      $build['message'] = array(
+        '#type' => 'container',
+        '#attributes' => array('class' => array('acquia-lift-report-warning')),
+        'text' => array(
+          '#markup' => t('This test has insufficient confidence. Consider letting the test run longer before making a decision about how to use these results.'),
+        ),
+      );
+    }
     $headers = array(
       t('Variation'),
       t('Total goals met'),

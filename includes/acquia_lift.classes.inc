@@ -1303,9 +1303,7 @@ interface AcquiaLiftReportDataSourceInterface {
    *     - aggregated-over-dates: Aggregates the data over the time span or
    *       reports on individual dates
    * @return array
-   *   The report as an associative array with the structure as defined at
-   *   https://console.lift.acquia.com/docs/abc/reporting-api under "Option
-   *   Confidence Report Data"
+   *   The report as an associative array
    *
    * @throws AcquiaLiftException
    */
@@ -1324,9 +1322,7 @@ interface AcquiaLiftReportDataSourceInterface {
    * @param string $point
    *   An optional decision point to limit the report to.
    * @return array
-   *   The report as an associative array with the structure as defined at
-   *   https://console.lift.acquia.com/docs/abc/reporting-api under "Option
-   *   Confidence Report Data"
+   *   The report as an associative array
    *
    * @throws AcquiaLiftException
    */
@@ -1342,9 +1338,7 @@ interface AcquiaLiftReportDataSourceInterface {
    *   14 days.
    *
    * @return array
-   *   The report as an associative array with the structure as defined at
-   *   https://console.lift.acquia.com/docs/abc/reporting-api under "Agent
-   *   Status Report Data"
+   *   The report as an associative array
    *
    * @throws AcquiaLiftException
    */
@@ -1364,9 +1358,7 @@ interface AcquiaLiftReportDataSourceInterface {
    * @param string $point
    *   An optional decision point to limit the report to.
    * @return array
-   *   The report as an associative array with the structure as defined at
-   *   https://console.acquia_lift.com/docs/abc/reporting-api under "Raw
-   *   Learning Report Data"
+   *   The report as an associative array
    *
    * @todo Add support for the other optional parameters, i.e. 'confidence-
    *   measure', 'comparison-decision' and 'use-bonferroni'

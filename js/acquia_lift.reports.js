@@ -1,6 +1,5 @@
 /**
- * Functionality related specifically to the modal campaign management
- * procedures.
+ * Functionality related specifically to the Acquia Lift reports.
  */
 (function ($, Drupal) {
   "use strict";

@@ -1854,6 +1854,35 @@ function acquia_lift_personalize_fields_form_element_alter(&$element, $lang) {
 }
 
 /**
+ * Implements hook_form_FORM_ID_alter().
+ */
+function acquia_lift_form_field_ui_field_edit_form_alter(&$form, &$form_state, $form_id) {
+  if (!empty($form['field']['settings']['personalize']['enabled'])) {
+    // Due to the way the Acquia Lift JS widget works for personalized fields,
+    // we actually have to enforce (for now) that when Acquia Lift is enabled,
+    // only fields with unlimited cardinality may be personalized.
+    $form['field']['settings']['personalize']['enabled']['#states'] = array(
+      'enabled' => array(':input[name="field[cardinality]"]' => array('value' => -1)),
+      'valid' => array(':input[name="field[cardinality]"]' => array('value' => -1)),
+    );
+    $form['field']['settings']['personalize']['enabled']['#description'] = t('This setting is only valid for fields with unlimited cardinality.');
+  }
+}
+
+/**
+ * Implements hook_module_implements_alter().
+ */
+function acquia_lift_module_implements_alter(&$implementations, $hook) {
+  if ($hook == 'form_alter') {
+    // Ensure that our hook_form_field_ui_field_edit_form_alter implementation
+    // runs last (after personalize_fields.module).
+    $group = $implementations['acquia_lift'];
+    unset($implementations['acquia_lift']);
+    $implementations['acquia_lift'] = $group;
+  }
+}
+
+/**
  * Implements hook_help().
  */
 function acquia_lift_help($path, $arg) {

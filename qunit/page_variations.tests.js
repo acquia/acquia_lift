@@ -120,13 +120,59 @@ QUnit.asyncTest('Contextual menu view', function (assert) {
   var dialogTitle = Drupal.theme.acquiaLiftPageVariationsMenuTitle({elementType: 'DIV'});
   assert.equal(dialogHtml.search(dialogTitle), 0, 'Dialog title created and at start of content.');
   assert.ok(view.list instanceof Drupal.acquiaLiftPageVariations.views.PageVariationMenuListView, 'Dialog list component is a PageVariationMenuListView.');
-  assert.equal($dialog.find('.visitor-actions-ui-dialog-content ul.acquia-lift-page-variation-list li').length, 4, 'Dialog list is rendered with one list item per variation type.');
+  assert.equal($dialog.find('.visitor-actions-ui-dialog-content ul.acquia-lift-page-variation-list li').length, 5, 'Dialog list is rendered with one list item per variation type.');
 
   QUnit.stop();
   // Callback for individual type click.
   Backbone.on('acquiaLiftPageVariationType', function(e) {
     QUnit.start();
     assert.equal(e.data.anchor.id, 'mousehere', 'Variation type selected triggered with correct anchor element.');
+    assert.equal(e.data.selector, anchorSelector, 'Variation type selected triggered with correct anchor element.');
+    assert.equal(e.data.id, 'addCss', 'Variation type selected with correct variation type id.');
+    assert.equal(e.data.name, 'Add CSS class', 'Variation type selected with correction variation type name.');
+    Backbone.off('acquiaLiftPageVariationType');
+    QUnit.stop();
+    // Give the dialog time to close.
+    setTimeout(function() {
+      QUnit.start();
+      $dialog = jQuery('#' + id + '-dialog');
+      assert.equal($dialog.length, 0, 'Contextual menu view has been removed.');
+    }, 1000)
+  })
+  $dialog.find('.visitor-actions-ui-dialog-content ul.acquia-lift-page-variation-list li:first-child a').trigger('click');
+})
+
+QUnit.asyncTest('Contextual menu limited by children node types', function (assert) {
+  QUnit.start();
+  expect(11);
+  var anchorSelector = '#another';
+  var $anchor = jQuery(anchorSelector);
+  var id = 'testing-' + new Date().getTime();
+  var model = new Drupal.visitorActions.ui.dialog.models.DialogModel({
+    selector: anchorSelector,
+    id: id
+  });
+  var view = new Drupal.acquiaLiftPageVariations.views.PageVariationMenuView({
+    el: $anchor[0],
+    model: model
+  });
+  model.set('active', true);
+  var $dialog = jQuery('#' + id + '-dialog');
+  assert.equal($dialog.length, 1, 'Dialog created with specified id.');
+  assert.ok($dialog.hasClass(view.className), 'Dialog created with view class.');
+  assert.equal($dialog.find('.visitor-actions-ui-dialog-content').length, 1, 'Dialog content created.');
+
+  var dialogHtml = $dialog.find('.visitor-actions-ui-dialog-content').html();
+  var dialogTitle = Drupal.theme.acquiaLiftPageVariationsMenuTitle({elementType: 'DIV'});
+  assert.equal(dialogHtml.search(dialogTitle), 0, 'Dialog title created and at start of content.');
+  assert.ok(view.list instanceof Drupal.acquiaLiftPageVariations.views.PageVariationMenuListView, 'Dialog list component is a PageVariationMenuListView.');
+  assert.equal($dialog.find('.visitor-actions-ui-dialog-content ul.acquia-lift-page-variation-list li').length, 4, 'Dialog list is rendered with one list item per variation type.');
+
+  QUnit.stop();
+  // Callback for individual type click.
+  Backbone.on('acquiaLiftPageVariationType', function(e) {
+    QUnit.start();
+    assert.equal(e.data.anchor.id, 'another', 'Variation type selected triggered with correct anchor element.');
     assert.equal(e.data.selector, anchorSelector, 'Variation type selected triggered with correct anchor element.');
     assert.equal(e.data.id, 'addCss', 'Variation type selected with correct variation type id.');
     assert.equal(e.data.name, 'Add CSS class', 'Variation type selected with correction variation type name.');

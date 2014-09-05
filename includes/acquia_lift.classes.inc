@@ -1463,6 +1463,8 @@ class AcquiaLiftReportDataFromFile implements AcquiaLiftReportDataSourceInterfac
   public function getConfidenceReport($agent_name, $date_start = NULL, $date_end = NULL, $point = NULL, $options = array()) {
     $report_name = 'confidence';
     if (!empty($options['goal'])) {
+      // There are two sample goal reports included in the test file structure.
+      // Pick one at random to show for the selected goal.
       $report_name .= '_goal' . rand(1, 2);
     }
     if (isset($options['aggregated-over-dates']) && $options['aggregated-over-dates'] === FALSE) {

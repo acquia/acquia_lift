@@ -1459,8 +1459,8 @@ class AcquiaLiftABReport extends AcquiaLiftReportBase {
         'margin_error' => $this->formatReportNumber($margin, TRUE, 4),
         'significant' => $item['signif'],
         'control' => $counter === 0,
-        'confidence' => $counter === 1 ? self::DATA_NA : $this->formatReportPercentage($item['confidence']/100),
-        'lift_default' => $counter === 1 ? self::DATA_NA : $this->formatReportPercentage($item['lift']['default']/100, TRUE),
+        'confidence' => $counter === 0 ? self::DATA_NA : $this->formatReportPercentage($item['confidence']/100),
+        'lift_default' => $counter === 0 ? self::DATA_NA : $this->formatReportPercentage($item['lift']['default']/100, TRUE),
         'lift_random' => $this->formatReportPercentage($item['lift']['random']/100, TRUE),
       );
     }

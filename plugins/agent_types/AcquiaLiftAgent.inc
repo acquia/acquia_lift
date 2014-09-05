@@ -1434,7 +1434,7 @@ class AcquiaLiftABReport extends AcquiaLiftReportBase {
       $margin = (($item['bHi'] - $item['bLo'])/2);
 
       if ($item['signif']) {
-        if (is_nan($winning_value) || $item['lift']['default'] > $winning_value) {
+        if (is_nan($winning_value) || $item['confidence'] > $winning_value) {
           $winning_value = $item['lift']['default'];
           $winner = $counter;
         }

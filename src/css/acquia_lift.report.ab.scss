@@ -1,0 +1,317 @@
+/**
+ * General styles for lift graph implementations.
+ * ----------------------------------------------------------------------------
+ */
+
+.lift-graph {
+  font-family: sans-serif;
+
+  * {
+    box-sizing: border-box;
+  }
+
+  &-container {
+    padding: {
+      right: 1em;
+      left: 3em;
+    }
+    font-family: sans-serif;
+
+    .y-axis-label,
+    .tick text,
+    .tick line {
+      color: #666;
+      fill: #666;
+      opacity: 1;
+    }
+
+    .x_ticks_d3 .tick text {
+      fill: #666;
+      stroke: transparent;
+      stroke-width: 0;
+    }
+
+    .y_ticks > .tick:first-child {
+      display: none;
+    }
+  }
+
+  &-graph {
+    float: left;
+    width: 100%;
+    height: 20em;
+
+    .detail {
+      width: .2em;
+      margin-left: -.1em;
+      background: rgba(#ddd, .5);
+
+      .item {
+        $border-color: #ccc;
+        $border-size: .1em;
+        $shadow-opacity: .6;
+        $shadow-offset: .2em;
+        $pointer-size: .5em;
+        $pointer-shadow-size: ($pointer-size + $shadow-offset);
+        $margin-horizontal: -1em;
+
+        margin: 1.6em $margin-horizontal;
+        padding: .1em;
+        font-size: (12px / 14px) * 1em;
+        line-height: 1.3em;
+        box-shadow: 0 $shadow-offset 0 rgba($border-color, $shadow-opacity);
+        transition: left .1s ease, right .1s ease;
+
+        &.active {
+          background: rgba(#fff, .8);
+          color: #333;
+          border: $border-size solid $border-color;
+          border-radius: .3em;
+        }
+
+        .swatch {
+          display: inline-block;
+          width: 1em;
+          height: 1em;
+          margin-right: .3em;
+          border-radius: 50%;
+        }
+
+        &:before,
+        &:after {
+          display: block;
+          content: " ";
+          position: absolute;
+          top: auto; // Override default Rickshaw styles.
+          right: 50%;
+          width: 0;
+          height: 0;
+          overflow: hidden;
+          border-style: solid;
+          border-color: transparent;
+        }
+
+        &:before {
+          bottom: -(($pointer-shadow-size * 2) + $shadow-offset - $border-size);
+          border-width: $pointer-shadow-size;
+          border-top-color: rgba($border-color, $shadow-opacity);
+          margin-right: ($margin-horizontal - ($shadow-offset / 2) - $pointer-size);
+        }
+
+        &:after {
+          border-width: $pointer-size;
+          border-top-color: #fff;
+          border-left-color: transparent; // Override default Rickshaw styles.
+          bottom: -($pointer-size * 2);
+          margin-right: -1.5em;
+        }
+
+        &.left {
+          &:before,
+          &:after {
+            top: auto;
+            right: auto;
+            margin: 0;
+          }
+
+          &:before {
+            left: (($margin-horizontal + $pointer-shadow-size) * -1);
+          }
+
+          &:after {
+            left: (($margin-horizontal + $pointer-size) * -1);
+            border-width: .5em;
+            border-top-color: #fff;
+            border-right-color: transparent;
+          }
+        }
+
+        &.right {
+          &:before,
+          &:after {
+            top: auto;
+            margin: 0;
+          }
+
+          &:before {
+            right: (($margin-horizontal + $pointer-shadow-size) * -1) ;
+          }
+
+          &:after {
+            right: (($margin-horizontal + $pointer-size) * -1);
+            border-width: $pointer-size;
+            border-top-color: #fff;
+            border-left-color: transparent;
+          }
+        }
+
+        &.top {
+          &:before,
+          &:after {
+            bottom: auto;
+            border-top-color: transparent;
+          }
+
+          &:before {
+            top: -(($pointer-size + $border-size) * 2);
+            border-width: $pointer-size + $border-size;
+            border-bottom-color: $border-color;
+          }
+
+          &:after {
+            top: -($pointer-size * 2);
+            border-bottom-color: #fff;
+          }
+        }
+      }
+
+      .dot {
+        width: .5em;
+        height: .5em;
+        margin: {
+          top: -.35em;
+          left: -.35em;
+        }
+        line-height: .5em;
+        border-width: .2em;
+        border-radius: 50%;
+        box-shadow: none;
+      }
+    }
+  }
+
+  &-axis-x {
+    clear: both;
+    width: 100%;
+
+    .rickshaw_graph {
+      max-width: 100%;
+    }
+  }
+
+  &-axis-y {
+    float: left;
+    width: 3em;
+    height: 20em;
+    margin-left: -3em;
+  }
+
+  &-legend {
+    clear: both;
+    background-color: transparent;
+    color: #333;
+
+    li {
+      display: inline-block;
+    }
+
+    .line .swatch {
+      border-radius: 50%;
+    }
+  }
+
+  &-detail {
+    pointer-events: auto;
+    width: 100%;
+    max-width: 100%;
+    overflow-x: auto;
+
+    &-data {
+      margin: 0;
+      border: none;
+      border-collapse: collapse;
+      border-spacing: 0;
+      font-size: 1em;
+    }
+
+    .inactive & {
+      pointer-events: none;
+    }
+
+    tbody,
+    thead {
+      border: none;
+    }
+
+    th,
+    td {
+      padding: .2em .4em;
+      text-align: left;
+      background: none;
+
+      &,
+      &:first-child,
+      &:last-child {
+        border: none;
+      }
+    }
+
+    th {
+      text-transform: none;
+    }
+
+    [style^="background-color"] {
+      color: #fff;
+      font-weight: normal;
+      text-align: center;
+    }
+
+    .active {
+      background-color: #eee;
+    }
+  }
+
+  &-result {
+    width: 100%;
+    max-width: 100%;
+    overflow-x: auto;
+
+    &-data {
+      width: 100%;
+      max-width: 100%;
+      margin: 1.3em 0;
+      border-color: #bbb;
+      border-collapse: collapse;
+      font-size: .88em;
+    }
+
+    th,
+    td {
+      text-align: left;
+
+      &:last-child {
+        text-align: center;
+      }
+    }
+
+    .action {
+      margin-right: .6em;
+      cursor: pointer;
+    }
+
+    .swatch {
+      display: inline-block;
+      width: .9em;
+      height: .9em;
+      margin-right: .6em;
+      border-radius: 50%;
+    }
+
+    .label {
+      font-weight: bold;
+    }
+
+    .toggle-enabled .line {
+      cursor: pointer;
+
+      &.disabled .action {
+        opacity: .4;
+      }
+    }
+  }
+}
+
+.acquia-lift-report-warning {
+  text-align: right;
+  width: 100%;
+}

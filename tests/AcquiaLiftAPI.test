@@ -1299,7 +1299,7 @@ class AcquiaLiftTest extends DrupalUnitTestCase {
   /**
    * Test AcquiaLiftAPI->getAgentStatusReport()
    */
-  public function testGetAgentStatusReportg() {
+  public function testGetAgentStatusReport() {
     $lift_api = $this->getAcquiaLiftAPI();
 
     $agentNamesArray = array('some-agent-name', 'some-another-name');
@@ -1367,7 +1367,7 @@ class AcquiaLiftTest extends DrupalUnitTestCase {
 
     // Confirm the expected requests were made.
     $dateStr = date('Y-m-d');
-    $test_request['uri'] = "{$lift_api->getApiUrl()}/{$lift_api->getOwnerCode()}/{$agentName}/report/confidence/{$dateStr}?features=(none)&confidence-measure={$default_confidence}&apikey={$lift_api->getAdminKey()}";
+    $test_request['uri'] = "{$lift_api->getApiUrl()}/{$lift_api->getOwnerCode()}/{$agentName}/report/confidence/{$dateStr}?features=(none)&apikey={$lift_api->getAdminKey()}&confidence-measure={$default_confidence}&aggregated-over-dates=true";
 
     $this->assertAPIRequests(array($test_request));
     $logs = array();
@@ -1379,7 +1379,7 @@ class AcquiaLiftTest extends DrupalUnitTestCase {
     $lift_api->getConfidenceReport($agentName, $startDate, $endDate);
 
     // Confirm the expected requests were made.
-    $test_request['uri'] = "{$lift_api->getApiUrl()}/{$lift_api->getOwnerCode()}/{$agentName}/report/confidence/{$startDate}/{$endDate}?features=(none)&confidence-measure={$default_confidence}&apikey={$lift_api->getAdminKey()}";
+    $test_request['uri'] = "{$lift_api->getApiUrl()}/{$lift_api->getOwnerCode()}/{$agentName}/report/confidence/{$startDate}/{$endDate}?features=(none)&apikey={$lift_api->getAdminKey()}&confidence-measure={$default_confidence}&aggregated-over-dates=true";
     $this->assertAPIRequests(array($test_request));
     $logs = array();
     $this->assertLogs($logs);
@@ -1394,11 +1394,16 @@ class AcquiaLiftTest extends DrupalUnitTestCase {
     $logs = array();
     $this->assertLogs($logs);
 
+    // Confidence report options for the rest of tests.
+    $options = array();
+
     // Send features.
     $features = array('feature1', 'feature2');
     $features_str = implode(',', $features);
-    $lift_api->getConfidenceReport($agentName, $startDate, $endDate, $point_name, $features);
-    $test_request['uri'] = "{$lift_api->getApiUrl()}/{$lift_api->getOwnerCode()}/{$agentName}/report/confidence/{$startDate}/{$endDate}?features={$features_str}&confidence-measure={$default_confidence}&apikey={$lift_api->getAdminKey()}";
+    $options['features'] = $features;
+
+    $lift_api->getConfidenceReport($agentName, $startDate, $endDate, $point_name, $options);
+    $test_request['uri'] = "{$lift_api->getApiUrl()}/{$lift_api->getOwnerCode()}/{$agentName}/report/confidence/{$startDate}/{$endDate}?features={$features_str}&apikey={$lift_api->getAdminKey()}&confidence-measure={$default_confidence}&aggregated-over-dates=true";
 
     // Confirm the expected requests were made.
     $test_request['headers']['x-mpath-point'] = $point_name;
@@ -1408,17 +1413,28 @@ class AcquiaLiftTest extends DrupalUnitTestCase {
 
     // Send confidence measure.
     $confidence_measure = .99;
-    $lift_api->getConfidenceReport($agentName, $startDate, $endDate, $point_name, $features, $confidence_measure);
+    $options['confidence-measure'] = $confidence_measure;
+    $lift_api->getConfidenceReport($agentName, $startDate, $endDate, $point_name, $options);
 
     // Confirm the expected requests were made.
-    $test_request['uri'] = "{$lift_api->getApiUrl()}/{$lift_api->getOwnerCode()}/{$agentName}/report/confidence/{$startDate}/{$endDate}?features={$features_str}&confidence-measure={$confidence_measure}&apikey={$lift_api->getAdminKey()}";
+    $test_request['uri'] = "{$lift_api->getApiUrl()}/{$lift_api->getOwnerCode()}/{$agentName}/report/confidence/{$startDate}/{$endDate}?features={$features_str}&apikey={$lift_api->getAdminKey()}&confidence-measure={$confidence_measure}&aggregated-over-dates=true";
+    $this->assertAPIRequests(array($test_request));
+    $logs = array();
+    $this->assertLogs($logs);
+
+    // Get detail report.
+    $options['aggregated-over-dates'] = FALSE;
+    $lift_api->getConfidenceReport($agentName, $startDate, $endDate, $point_name, $options);
+
+    // Confirm the expected requests were made.
+    $test_request['uri'] = "{$lift_api->getApiUrl()}/{$lift_api->getOwnerCode()}/{$agentName}/report/confidence/{$startDate}/{$endDate}?features={$features_str}&apikey={$lift_api->getAdminKey()}&confidence-measure={$confidence_measure}&aggregated-over-dates=false";
     $this->assertAPIRequests(array($test_request));
     $logs = array();
     $this->assertLogs($logs);
 
     $lift_api = $this->getAcquiaLiftAPI(TRUE);
     try {
-      $lift_api->getConfidenceReport($agentName, $startDate, $endDate, $point_name, $features, $confidence_measure);
+      $lift_api->getConfidenceReport($agentName, $startDate, $endDate, $point_name, $options);
     }
     catch (Exception $e) {
       $this->assertTrue($e instanceof AcquiaLiftException);

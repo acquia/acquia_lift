@@ -261,6 +261,25 @@ function acquia_lift_report($form, &$form_state, $agent_data, $option_set) {
     );
   }
 
+  if ($agent instanceof AcquiaLiftSimpleAB) {
+    return acquia_lift_report_ab($form, $form_state, $agent, $agent_data);
+  }
+  else {
+    return acquia_lift_report_custom($form, $form_state, $agent, $agent_data, $option_set);
+  }
+}
+
+/**
+ * Form build function for a custom Acquia Lift agent report.
+ *
+ * @param AcquiaLiftAgentInterface $agent
+ *   The plugin agent for the selected campaign.
+ * @param stdClass $agent_data
+ *   The campaign agent data for this report.
+ * @param stdClass $option_set
+ *   (optional) The content variation to show in the default view.
+ */
+function acquia_lift_report_custom($form, &$form_state, $agent, $agent_data, $option_set) {
   // Generate report filters.
   $data = $agent->getData();
   $form = array(
@@ -576,6 +595,31 @@ function acquia_lift_report_decision_point_dropdown($options, $selected) {
  */
 function acquia_lift_report_ajax_callback($form, &$form_state) {
   return $form;
+}
+
+/**
+ * Form build function for an A/B Acquia Lift agent report.
+ *
+ * @param AcquiaLiftAgentInterface $agent
+ *   The plugin agent for the selected campaign.
+ * @param stdClass $agent_data
+ *   The campaign agent data for this report.
+ */
+function acquia_lift_report_ab($form, &$form_state, $agent, $agent_data) {
+  // Check for Rickshaw and D3 libraries and alert users if not exist.
+  if (_acquia_lift_missing_library_warning(array('rickshaw', 'd3'), t('The following libraries are required in order to view the Acquia Lift reports:'))) {
+    return array();
+  }
+
+  // Default to showing the complete history of the campaign.
+  $date_start_report = date('Y-m-d', $agent_data->started);
+  $date_end_report = $date_end_targeting = date('Y-m-d');
+  // Acquia Lift A/B reports have a decision name that is the same as the
+  // campaign machine name.
+  $reports = $agent->buildCampaignReports($agent_data->machine_name, $date_start_report, $date_end_report);
+  $reports['#attached']['library'][] = array('acquia_lift', 'acquia_lift.reports.ab');
+
+  return $reports;
 }
 
 /**

@@ -1631,7 +1631,7 @@ class AcquiaLiftABReport extends AcquiaLiftReportBase {
     if ($report_data === FALSE) {
       return FALSE;
     }
-    if ($report_data['confidence']['overview']['confidence'] === FALSE) {
+    if ($report_data['overview']['confidence'] === FALSE) {
       $build['message'] = array(
         '#type' => 'container',
         '#attributes' => array('class' => array('acquia-lift-report-warning')),

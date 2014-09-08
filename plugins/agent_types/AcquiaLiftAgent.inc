@@ -1295,13 +1295,13 @@ class AcquiaLiftABReport extends AcquiaLiftReportBase {
    */
   public function buildCampaignReports($decision_name = NULL, $date_from = NULL, $date_to = NULL) {
     $report_data = $this->loadReportData($decision_name, $date_from, $date_to);
-    $confidence = $report_data['confidence']['overview']['confidence'];
-    $winner = $report_data['confidence']['overview']['winner'];
+    $confidence = $report_data['all']['summary']['overview']['confidence'];
+    $winner = $report_data['all']['summary']['overview']['winner'];
     $reports = array();
     $reports['all'] = $this->buildConfidenceReports(array(
       'name' => t('All goals'),
-      'detail' => $report_data['confidence_detail'],
-      'summary' => $report_data['confidence'],
+      'detail' => $report_data['all']['detail'],
+      'summary' => $report_data['all']['summary'],
     ), $confidence, $winner);
     foreach ($report_data['goals'] as $goal_id => $goal_data) {
       $reports['goals'][$goal_id] = $this->buildConfidenceReports($goal_data, $confidence, $winner);
@@ -1330,28 +1330,42 @@ class AcquiaLiftABReport extends AcquiaLiftReportBase {
    *   True if the report should be a detailed report and false for summary.
    * @param array $options
    *   An array of report options such as a goal for limiting.
-   * @return array|bool
-   *   An array of loaded and extracted data if the data can be loaded.
-   *   True if the data already exists
-   *   False if the data loaded in error.
    */
-  protected function loadConfidenceReportHelper($report_data, $detail, $options = array()) {
+  protected function loadConfidenceReportHelper(&$report_data, $detail, $options = array()) {
     if ($detail) {
       $options = array_merge($options, $this->getConfidenceDetailReportOptions());
     }
     $report_name = $this->getConfidenceReportRawName($options);
-    if (isset($report_data['raw'][$report_name])) {
+    if (isset($report_data[$report_name])) {
       return TRUE;
     }
-    $this->loadConfidenceData($report_data, $options);
-    if (isset($report_data['raw'][$report_name]['error'])) {
-      return FALSE;
+    if (!isset($report_data['raw'][$report_name])) {
+      $this->loadConfidenceData($report_data, $options);
+      if (isset($report_data['raw'][$report_name]['error'])) {
+        $report_data[$report_name] = FALSE;
+        return;
+      }
+    }
+    if (isset($options['goal'])) {
+      $report_data['goal_reports'][] = $report_name;
     }
     if ($detail) {
-      return $this->extractConfidenceReportData($report_data['raw'][$report_name]['data']['items']);
+      $extracted = $this->extractConfidenceReportData($report_data['raw'][$report_name]['data']['items']);
+      if (isset($options['goal'])) {
+        $report_data['goals'][$options['goal']]['detail'] = $extracted;
+      }
+      else {
+        $report_data['all']['detail'] = $extracted;
+      }
     }
     else {
-      return $this->extractConfidenceSummaryData($report_data['raw'][$report_name]['data']['items']);
+      $extracted = $this->extractConfidenceSummaryData($report_data['raw'][$report_name]['data']['items']);
+      if (isset($options['goal'])) {
+        $report_data['goals'][$options['goal']]['summary'] = $extracted;
+      }
+      else {
+        $report_data['all']['summary'] = $extracted;
+      }
     }
   }
 
@@ -1370,17 +1384,11 @@ class AcquiaLiftABReport extends AcquiaLiftReportBase {
     $report_data = $this->generateReportConfiguration($decision_name, $date_from, $date_to);
     // All goals - summary report.
     if (!isset($report_data['confidence'])) {
-      $data = $this->loadConfidenceReportHelper($report_data, FALSE);
-      if ($data !== TRUE) {
-        $report_data['confidence'] = $data;
-      }
+      $this->loadConfidenceReportHelper($report_data, FALSE);
     }
     // All goals - detail report.
     if (!isset($report_data['confidence_detail'])) {
-      $data = $this->loadConfidenceReportHelper($report_data, TRUE);
-      if ($data !== TRUE) {
-        $report_data['confidence_detail'] = $data;
-      }
+      $this->loadConfidenceReportHelper($report_data, TRUE);
     }
     // Load the detail and summary reports for each goal.
     if (!isset($report_data['goals'])) {
@@ -1392,15 +1400,9 @@ class AcquiaLiftABReport extends AcquiaLiftReportBase {
           $report_data['goals'][$goal_id]['name'] = $actions[$goal_id]['label'];
           $options['goal'] = $goal_id;
           // Summary report.
-          $data = $this->loadConfidenceReportHelper($report_data, FALSE, $options);
-          if ($report_data !== TRUE) {
-            $report_data['goals'][$goal_id]['summary'] = $data;
-          }
+          $this->loadConfidenceReportHelper($report_data, FALSE, $options);
           // Detail report.
-          $data = $this->loadConfidenceReportHelper($report_data, TRUE, $options);
-          if ($report_data !== TRUE) {
-            $report_data['goals'][$goal_id]['detail'] = $data;
-          }
+          $this->loadConfidenceReportHelper($report_data, TRUE, $options);
         }
       }
     }
@@ -1711,7 +1713,7 @@ class AcquiaLiftABReport extends AcquiaLiftReportBase {
    * @return array|bool
    *   The render array for the reports or false if invalid data.
    */
-  function buildConfidenceReports($report_data, $confidence, $winner) {
+  protected function buildConfidenceReports($report_data, $confidence, $winner) {
     if ($report_data['detail'] == FALSE || $report_data['summary'] == FALSE) {
       return FALSE;
     }

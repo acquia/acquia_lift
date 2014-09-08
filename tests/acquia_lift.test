@@ -137,7 +137,6 @@ class AcquiaLiftWebTest extends DrupalWebTestCase {
       array(
         'option_id' => 'variation-1',
         'option_label' => 'Variation #1',
-        'personalize_elements_content' => '',
       ),
       array(
         'option_id' => 'variation-2',
@@ -229,7 +228,6 @@ class AcquiaLiftWebTest extends DrupalWebTestCase {
       array(
         'option_id' => 'variation-2',
         'option_label' => 'Variation #2',
-        'personalize_elements_content' => '',
       ),
       array(
         'option_id' => 'variation-3',
@@ -244,7 +242,6 @@ class AcquiaLiftWebTest extends DrupalWebTestCase {
       array(
         'option_id' => 'variation-5',
         'option_label' => 'Variation #5',
-        'personalize_elements_content' => '',
       ),
     );
     $this->assertEqual($expected_options_os1, $option_sets[1]->options);
@@ -256,7 +253,6 @@ class AcquiaLiftWebTest extends DrupalWebTestCase {
       array(
         'option_id' => 'variation-1',
         'option_label' => 'Variation #1',
-        'personalize_elements_content' => '',
       ),
       array(
         'option_id' => 'variation-2',
@@ -266,7 +262,6 @@ class AcquiaLiftWebTest extends DrupalWebTestCase {
       array(
         'option_id' => 'variation-3',
         'option_label' => 'three',
-        'personalize_elements_content' => '',
       ),
       array(
         'option_id' => 'variation-4',
@@ -294,22 +289,18 @@ class AcquiaLiftWebTest extends DrupalWebTestCase {
       array(
         'option_id' => 'variation-2',
         'option_label' => 'Variation #2',
-        'personalize_elements_content' => '',
       ),
       array(
         'option_id' => 'variation-3',
         'option_label' => 'three',
-        'personalize_elements_content' => '',
       ),
       array(
         'option_id' => 'variation-4',
         'option_label' => 'Variation #4',
-        'personalize_elements_content' => '',
       ),
       array(
         'option_id' => 'variation-5',
         'option_label' => 'Variation #5',
-        'personalize_elements_content' => '',
       ),
     );
     $this->assertEqual($expected_options_os3, $option_sets[3]->options);

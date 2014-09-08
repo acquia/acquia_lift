@@ -408,6 +408,13 @@
         text-align: center;
       }
     }
+    
+    td.acquia-lift-ab-winner {
+      max-width: 20%;
+      width: 150px;
+      background: $background-color-alternate;
+    }
+
 
     .action {
       margin-right: .6em;
@@ -458,9 +465,4 @@
       }
     }
   }
-}
-
-.acquia-lift-report-warning {
-  text-align: right;
-  width: 100%;
 }

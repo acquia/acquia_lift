@@ -323,6 +323,11 @@ html[dir="rtl"] .lift-graph-result th, html[dir="rtl"]
 .lift-graph-result td:last-child {
   text-align: center;
 }
+.lift-graph-result td.acquia-lift-ab-winner {
+  max-width: 20%;
+  width: 150px;
+  background: #eee;
+}
 .lift-graph-result .action {
   margin-right: .6em;
   cursor: pointer;
@@ -356,9 +361,4 @@ html[dir="rtl"] .lift-graph-result .label {
 }
 .lift-graph-result .toggle-enabled .line.disabled .action {
   opacity: .4;
-}
-
-.acquia-lift-report-warning {
-  text-align: right;
-  width: 100%;
 }

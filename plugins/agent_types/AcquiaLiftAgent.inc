@@ -1014,6 +1014,18 @@ abstract class AcquiaLiftReportBase implements PersonalizeAgentReportInterface, 
   }
 
   /**
+   * Generates a message to show when there is insufficient confidence in the
+   * test results.
+   *
+   * @return string
+   */
+  protected function getLowConfidenceMessage() {
+    return t('There is not enough data to declare a winner with @confidence% confidence. Consider letting the test run longer before using the results.', array(
+      '@confidence' => $this->getConfidenceMeasure(),
+    ));
+  }
+
+  /**
    * Generates the variation abbreviated label.
    *
    * @param $counter
@@ -1633,52 +1645,58 @@ class AcquiaLiftABReport extends AcquiaLiftReportBase {
     if ($report_data === FALSE) {
       return FALSE;
     }
-    if ($report_data['overview']['confidence'] === FALSE) {
-      $build['message'] = array(
-        '#type' => 'container',
-        '#attributes' => array('class' => array('acquia-lift-report-warning')),
-        'text' => array(
-          '#markup' => t('This test has insufficient confidence. Consider letting the test run longer before making a decision about how to use these results.'),
-        ),
-      );
-    }
     $headers = array(
       t('Variation'),
       t('Total goals met'),
       t('Total conversion rate'),
       t('Chance to beat control'),
       t('Lift'),
-      t('Winner'),
+      array(
+        'data' => t('Winner'),
+        'class' => array('acquia-lift-ab-winner'),
+      ),
     );
     $rows = array();
     foreach ($report_data['data'] as $data) {
-      $rows[] = array(
-        'data' => array(
-          array(
-            'data' => $data['choice_id'],
-            'data-acquia-lift-variation-label' => $this->getVariationLabel($data['counter'], $data['control']),
-          ),
-          array(
-            'data' => $data['goals'],
-          ),
-          array(
-            'data' => $data['conversion'],
-          ),
-          array(
-            'data' => $data['confidence'],
-          ),
-          array(
-            'data' => $data['lift_default'],
-          ),
-          array(
-            'data' => ($confidence && $winner == $data['counter']) ? '<span class="lift-winner">' . t('Winner') . '</span>' : '',
-          ),
+      $data = array(
+        array(
+          'data' => $data['choice_id'],
+          'data-acquia-lift-variation-label' => $this->getVariationLabel($data['counter'], $data['control']),
         ),
+        array(
+          'data' => $data['goals'],
+        ),
+        array(
+          'data' => $data['conversion'],
+        ),
+        array(
+          'data' => $data['confidence'],
+        ),
+        array(
+          'data' => $data['lift_default'],
+        ),
+      );
+      // Add the winner column data.
+      if (empty($rows) && $report_data['overview']['confidence'] === FALSE) {
+        // If there is low confidence then show the message throughout the
+        // winner column.
+        $data[] = array(
+          'data' => $this->getLowConfidenceMessage(),
+          'rowspan' => count($report_data['data']),
+          'class' => array('acquia-lift-ab-winner'),
+        );
+      }
+      else {
+        // Show the winner indicator if this is the winning variation.
+        $data[] = $confidence && $winner == $data['counter'] ? '<span class="lift-winner">' . t('Winner') . '</span>' : '';
+      }
+      $rows[] = array(
+        'data' => $data,
         'no_striping' => TRUE,
       );
     }
     if (empty($rows)) {
-      return $build;
+      return array();
     }
     $build['summary_holder'] = array(
       '#type' => 'container',
@@ -1800,7 +1818,7 @@ class AcquiaLiftReport extends AcquiaLiftReportBase {
       drupal_set_message(t('There was a problem retrieving the report data.  Please try again later.'), 'error');
     }
     else if ($report_data['status']['all']['total_confident'] == 0) {
-      drupal_set_message(t('This test has insufficient confidence.  Consider letting the test run longer before making a decision about how to use these results.'), 'warning');
+      drupal_set_message($this->getLowConfidenceMessage(), 'warning');
     }
     return $reports;
   }

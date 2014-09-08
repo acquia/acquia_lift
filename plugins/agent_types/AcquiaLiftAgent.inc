@@ -226,8 +226,8 @@ class AcquiaLiftAgent extends PersonalizeAgentBase implements PersonalizeAgentGo
   /**
    * Implements PersonalizeAgentInterface::optionsForm().
    */
-  public static function optionsForm($agent_data) {
-    return self::buildOptionsForm($agent_data);
+  public static function optionsForm($agent_data, $option_parents = array()) {
+    return self::buildOptionsForm($agent_data, FALSE, $option_parents);
   }
 
   /**
@@ -242,7 +242,7 @@ class AcquiaLiftAgent extends PersonalizeAgentBase implements PersonalizeAgentGo
    * @return array
    *   The form render array.
    */
-  protected static function buildOptionsForm($agent_data, $simplified = FALSE) {
+  protected static function buildOptionsForm($agent_data, $simplified = FALSE, $option_parents = array()) {
     $account_info = variable_get('acquia_lift_account_info', array());
     if (empty($account_info)) {
       drupal_set_message(t('Your Acquia Lift account info has not been configured. Any Acquia Lift campaigns you create here will not work until you configure your account info !here', array('!here' => l('here', 'admin/config/content/personalize/acquia_lift'))), 'error');
@@ -257,7 +257,10 @@ class AcquiaLiftAgent extends PersonalizeAgentBase implements PersonalizeAgentGo
         drupal_get_path('module', 'acquia_lift') . '/js/acquia_lift.agent.admin.js',
       ),
     );
-    $option_parents = array('agent_basic_info', 'options', 'acquia_lift');
+    if (empty($option_parents)) {
+      $option_parents = array('agent_basic_info', 'options', 'acquia_lift');
+    }
+
     $control_rate = isset($agent_data->data['control_rate']) ? $agent_data->data['control_rate'] : 10;
     if ($simplified) {
       $form['control_rate'] = array(
@@ -319,6 +322,12 @@ class AcquiaLiftAgent extends PersonalizeAgentBase implements PersonalizeAgentGo
       );
     }
     else {
+      $decision_style_parents = $option_parents;
+      $decision_style_parents[] = 'decision_style';
+      $decision_style_form_element = '';
+      foreach ($decision_style_parents as $i => $parent_name) {
+        $decision_style_form_element .= ($i ? '[' . $parent_name . ']' : $parent_name);
+      }
       $form['distribution'] = array(
         '#type' => 'fieldset',
         '#tree' => FALSE,
@@ -330,7 +339,7 @@ class AcquiaLiftAgent extends PersonalizeAgentBase implements PersonalizeAgentGo
         )),
         '#states' => array(
           'visible' => array(
-            ':input[name="agent_basic_info[options][acquia_lift][decision_style]"]' => array('value' => 'adaptive'),
+            ':input[name="' . $decision_style_form_element . '"]' => array('value' => 'adaptive'),
           ),
         ),
       );

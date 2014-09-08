@@ -421,6 +421,25 @@ function acquia_lift_personalize_agent_type() {
 }
 
 /**
+ * Implements hook_personalize_agent_presave().
+ */
+function acquia_lift_personalize_agent_presave($agent) {
+  if (!acquia_lift_owns_agent($agent)) {
+    return;
+  }
+  // Make sure the required configurations are set.
+  if (!isset($agent->data['decision_style'])) {
+    $agent->data['decision_style'] = 'adaptive';
+  }
+  if (!isset($agent->data['control_rate'])) {
+    $agent->data['control_rate'] = 10;
+  }
+  if (!isset($agent->data['explore_rate'])) {
+    $agent->data['explore_rate'] = 20;
+  }
+}
+
+/**
  * Implements hook_personalize_visitor_contexts().
  */
 function acquia_lift_personalize_visitor_context() {

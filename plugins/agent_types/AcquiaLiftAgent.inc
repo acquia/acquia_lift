@@ -1665,7 +1665,9 @@ class AcquiaLiftABReport extends AcquiaLiftReportBase {
       ),
       array(
         'data' => t('Winner'),
-        'data-help-tooltip' => t('Most effective variation for visitors based on a 95% confidence level.'),
+        'data-help-tooltip' => t('Most effective variation for visitors based on a @confidence% confidence level.', array(
+          '@confidence' => $this->getConfidenceMeasure(),
+        )),
       ),
     );
     $rows = array();

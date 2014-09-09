@@ -201,7 +201,15 @@ Rickshaw.Graph.Axis.LabeledY = Rickshaw.Class.create(Rickshaw.Graph.Axis.Y, {
 
     if (this.orientation == 'left') {
       var berth = this.height * this.berthRate,
-          transform = 'translate(' + this.width + ', ' + berth + ')';
+          transform = 'translate(' + this.width + ', ' + berth + ')',
+          labelX = this.height / 4 * -1,
+          labelY = this.width / 3,
+          labelTransform = 'rotate(-90 50 50)';
+    }
+    else if (this.orientation == 'right') {
+      var labelX = this.height / 2,
+          labelY = this.width / 3 * 2,
+          labelTransform = 'rotate(90 50 50)';
     }
 
     if (this.element) {
@@ -217,10 +225,10 @@ Rickshaw.Graph.Axis.LabeledY = Rickshaw.Class.create(Rickshaw.Graph.Axis.Y, {
     label = this.vis
       .append("svg:text")
       .attr('class', 'y-axis-label')
-      .attr('x', this.height / 4 * -1)
-      .attr('y', this.width / 3)
+      .attr('x', labelX)
+      .attr('y', labelY)
       .attr('text-anchor', 'middle')
-      .attr('transform', 'rotate(-90 50 50)')
+      .attr('transform', labelTransform)
       .text(this.label);
 
     return axis;
@@ -396,14 +404,14 @@ Rickshaw.Graph.ClickDetail = Rickshaw.Class.create(Rickshaw.Graph.HoverDetail, {
     var alignment = this._calcLayout(item);
 
     if (alignment.left > alignment.right) {
-      item.style.left = 'auto';
+      item.style.left = '';
       item.classList.remove('center');
       item.classList.remove('right');
       item.classList.add('left');
     }
 
     if (alignment.right > alignment.left) {
-      item.style.left = 'auto';
+      item.style.left = '';
       item.classList.remove('center');
       item.classList.remove('left');
       item.classList.add('right');
@@ -559,7 +567,7 @@ Rickshaw.Graph.TableLegend = Rickshaw.Class.create(Rickshaw.Graph.Legend, {
 
         var label = document.createElement('span');
         label.className = 'label';
-        label.innerHTML = (series.shortName || series.name) + ': ';
+        label.innerHTML = (series.shortName || series.name) + ':';
 
         $cell.prepend(label);
 
@@ -654,14 +662,18 @@ Rickshaw.Graph.TableLegend = Rickshaw.Class.create(Rickshaw.Graph.Legend, {
     return liftGraph.DEFAULTS;
   }
 
-  // Reset the table.
-  liftGraph.prototype.destroy = function () {
-    this.hide().$element.off('.' + this.type).removeData('lift.' + this.type);
-  }
-
   // Get options.
   liftGraph.prototype.getOptions = function (options) {
     options = $.extend({}, this.getDefaults(), options);
+    for (var i in options) {
+      options[i] = this.dataAttr(i) || options[i];
+    }
+    return options;
+  }
+
+  // Update options.
+  liftGraph.prototype.updateOptions = function () {
+    var options = this.options;
     for (var i in options) {
       options[i] = this.dataAttr(i) || options[i];
     }
@@ -844,9 +856,11 @@ Rickshaw.Graph.TableLegend = Rickshaw.Class.create(Rickshaw.Graph.Legend, {
 
   // Get the y-axis.
   liftGraph.prototype.setAxisY = function () {
+    var orientation = $('html').attr('dir') == 'rtl' ? 'right' : 'left';
+
     this.axisY = new Rickshaw.Graph.Axis.LabeledY({
       element: this.$axisY[0],
-      orientation: 'left',
+      orientation: orientation,
       label: this.columns[this.options.columnY - 1],
       graph: this.graph
     });
@@ -897,7 +911,7 @@ Rickshaw.Graph.TableLegend = Rickshaw.Class.create(Rickshaw.Graph.Legend, {
     this.$graph = $('<div class="lift-graph-graph" role="presentation"></div>');
     this.$axisY = $('<div class="lift-graph-axis-y" role="presentation"></div>');
     this.$axisX = $('<div class="lift-graph-axis-x" role="presentation"></div>');
-    this.$legend = $('table.lift-graph-result-data');
+    this.$legend = this.$element.siblings('.lift-graph-result').children('table.lift-graph-result-data');
     this.$rangeSlider = $('<div class="lift-graph-range-slider" role="presentation"></div>');
 
     this.$element.addClass('lift-graph-table')
@@ -933,18 +947,37 @@ Rickshaw.Graph.TableLegend = Rickshaw.Class.create(Rickshaw.Graph.Legend, {
     this.hideTable();
   }
 
+  liftGraph.prototype.update = function () {
+    // Rebuild the data.
+    this.options = this.updateOptions();
+    this.getData();
+    this.getPalette();
+    this.buildSeries(this.options.columnX, this.options.columnY, this.options.columnName);
+
+    var graph = this.graph,
+        series = this.series;
+
+    // Update the series manually as Rickshaw does not do that by itself.
+    $(graph.series).each(function(i){
+        graph.series[i] = series[i];
+    });
+
+    // Update the Y axis label.
+    this.axisY.label = this.columns[this.options.columnY - 1];
+
+    this.graph.update();
+  }
+
   // Define the jQuery plugin.
   var old = $.fn.railroad;
 
-  $.fn.liftGraph = function (options) {
+  $.fn.liftGraph = function (option) {
     return this.each(function () {
       var $this = $(this),
-          data = $this.data('lift.graph'),
-          options = typeof options == 'object' && option;
+          data = $this.data('lift.graph');
 
-      if (!data && options == 'destroy') return;
-      if (!data) $this.data('lift.graph', (data = new liftGraph(this, options)));
-      if (typeof option == 'string') data[option]();
+      if (!data) $this.data('lift.graph', (data = new liftGraph(this, option)));
+      if (typeof option == 'string') data[option]($this);
     });
   }
 
@@ -955,5 +988,136 @@ Rickshaw.Graph.TableLegend = Rickshaw.Class.create(Rickshaw.Graph.Legend, {
     return this;
   }
 }(jQuery);
+
+/**
+ * Functionality related specifically to the Acquia Lift reports.
+ */
+
+(function ($, Drupal) {
+  "use strict";
+
+  Drupal.behaviors.acquiaLiftReports = {
+    attach: function (context, settings) {
+      // Generate graphs and switches for the A/B statistics.
+      $('.lift-statistics').once('acquiaLiftReports', function () {
+        var $statistics = $(this),
+            $switches = $('<div class="lift-switches">'),
+            $chooser = $('<select class="lift-graph-switch">'),
+            $categories = $statistics.find('.lift-statistic-category'),
+            graphs = {},
+            children = [],
+            dataSelectors = [],
+            formItem = function(label, input) {
+              var $wrapper = $('<div class="form-item">');
+
+              $wrapper
+                .append('<label>' + label + '</label>' + "\n");
+
+              for (var i = 0; i < input.length; i++) {
+                $wrapper
+                  .append(input[i]);
+              }
+
+              return $wrapper;
+            };
+
+        // Process the data in all tables.
+        $categories.each(function (graphKey) {
+          var $this = $(this),
+              $graph = $this.find('table[data-lift-statistics]'),
+              dataLabels = [],
+              name = $this.children('.lift-statistic-category-name').addClass('element-invisible').text(),
+              variationColumn = $graph.attr('data-liftgraph-columnname') - 1,
+              xColumn = $graph.attr('data-liftgraph-columnx') - 1,
+              attr = typeof $graph.attr('data-liftgraph-excluded') !== 'undefined' ? $graph.attr('data-liftgraph-excluded').split(',') : [],
+              $option = $('<option value="' + graphKey + '">' + name + '</option>'),
+              $dataSelector = $('<select class="lift-data-switch">');
+
+          // The data-liftgraph-excluded attribute is a comma delimited list of
+          // column numbers starting at 1. It needs a bit of extra processing
+          // to make the individual strings from the split integers.
+          for (var i = 0; i < attr.length; i++) {
+            attr[i] = parseFloat(attr[i]);
+          }
+
+          $chooser.append($option);
+          $graph.liftGraph();
+
+          if (graphKey !== 0) {
+            $this.addClass('inactive')
+          }
+          else {
+            $this.addClass('active')
+          }
+
+          graphs[name] = $graph;
+          children[graphKey] = $this;
+
+          // Collect the data able to be fed to the y-axis.
+          $graph.find('thead > tr > th').each(function (dataKey) {
+            if (attr.indexOf(dataKey + 1) === -1) {
+              var label = $(this).text(),
+                  $dataOption = $('<option value="' + dataKey + '">' + label + '</option>');
+
+              dataLabels.push($(this).text());
+
+              if (dataKey !== variationColumn && dataKey !== xColumn) {
+                $dataSelector.append($dataOption);
+              }
+            }
+          });
+
+          if (graphKey !== 0) {
+            $dataSelector
+              .addClass('inactive')
+          }
+          else {
+            $dataSelector
+              .addClass('active')
+          }
+
+          // Change the data fed to the y-axis and update the graph.
+          $dataSelector.change(function () {
+            $graph.attr('data-liftgraph-columny', parseFloat($(this).val()) + 1)
+              .liftGraph('update');
+          })
+
+          dataSelectors[graphKey] = $dataSelector;
+          $this.addClass('acquia-lift-processed');
+        });
+
+        // Change the displayed data when the select changes.
+        $chooser.change(function () {
+          var option = $(this).val(),
+              text = this.options[this.selectedIndex].text;
+
+          children[option]
+            .addClass('active')
+            .removeClass('inactive');
+          dataSelectors[option]
+            .addClass('active')
+            .removeClass('inactive');
+          graphs[text]
+            .liftGraph('update');
+          children[option]
+            .siblings('.lift-statistic-category')
+            .addClass('inactive')
+            .removeClass('active');
+          dataSelectors[option]
+            .siblings('.lift-data-switch')
+            .addClass('inactive')
+            .removeClass('active');
+        });
+
+        // Add all switches to the page.
+        $switches
+          .append(formItem('Goals', $chooser))
+          .append(formItem('Metrics', dataSelectors));
+        $statistics
+          .before($switches);
+      });
+    }
+  }
+}(jQuery, Drupal));
 
 //# sourceMappingURL=acquia_lift.report.ab.js.map

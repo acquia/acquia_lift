@@ -52,7 +52,15 @@ Rickshaw.Graph.Axis.LabeledY = Rickshaw.Class.create(Rickshaw.Graph.Axis.Y, {
 
     if (this.orientation == 'left') {
       var berth = this.height * this.berthRate,
-          transform = 'translate(' + this.width + ', ' + berth + ')';
+          transform = 'translate(' + this.width + ', ' + berth + ')',
+          labelX = this.height / 4 * -1,
+          labelY = this.width / 3,
+          labelTransform = 'rotate(-90 50 50)';
+    }
+    else if (this.orientation == 'right') {
+      var labelX = this.height / 2,
+          labelY = this.width / 3 * 2,
+          labelTransform = 'rotate(90 50 50)';
     }
 
     if (this.element) {
@@ -68,10 +76,10 @@ Rickshaw.Graph.Axis.LabeledY = Rickshaw.Class.create(Rickshaw.Graph.Axis.Y, {
     label = this.vis
       .append("svg:text")
       .attr('class', 'y-axis-label')
-      .attr('x', this.height / 4 * -1)
-      .attr('y', this.width / 3)
+      .attr('x', labelX)
+      .attr('y', labelY)
       .attr('text-anchor', 'middle')
-      .attr('transform', 'rotate(-90 50 50)')
+      .attr('transform', labelTransform)
       .text(this.label);
 
     return axis;

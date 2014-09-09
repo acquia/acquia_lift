@@ -3,6 +3,93 @@
  * ----------------------------------------------------------------------------
  */
 
+@import "base";
+
+.lift-statistic-category {
+  padding: 1.4em 1em 1em;
+  border: {
+    style: solid;
+    color: $border-color;
+    width: 1px 0;
+  };
+  background: $background-color;
+  transition: opacity .4s, position .4s 0 step-start, width .4s 0 step-start, height .4s 0 step-start;
+}
+
+.lift-switches .form-item {
+  display: inline-block;
+  margin-right: 1em;
+
+  html[dir="rtl"] & {
+    margin: {
+      right: auto;
+      left: 1em;
+    }
+  }
+}
+
+.lift-statistic-category,
+.lift-data-switch {
+  &.active {
+    visibility: visible;
+    opacity: 1;
+    width: auto;
+    height: auto;
+  }
+
+  &.inactive {
+    position: absolute;
+    margin: 0;
+    overflow: hidden;
+    visibility: hidden;
+    opacity: 0;
+    width: 0;
+    height: 0;
+  }
+}
+
+.lift-switches {
+  padding: .5em 1em;
+  border: {
+    style: solid;
+    color: $border-color;
+    width: 1px 0 0 0;
+  }
+  background-color: $background-color-alternate;
+
+  .form-item {
+    label,
+    select {
+      display: inline-block;
+    }
+  }
+}
+
+.lift-winner {
+  display: inline-block;
+  padding: .3em .8em;
+  line-height: 1em;
+  font-weight: bold;
+  border-radius: .9em;
+  color: $text-color-alternate;
+  background-color: $winner-color;
+  box-shadow: 0 $shadow-offset 0 $border-color;
+
+  &:after {
+    content: '\2713';
+    display: inline-block;
+    margin-left: .4em;
+    font-size: 1.2em;
+
+    html[dir="rtl"] & {
+      margin: {
+        right: .4em;
+        left: auto;
+      }
+    }
+  }
+}
+
 .lift-graph {
   font-family: sans-serif;
 
@@ -13,20 +100,34 @@
   &-container {
     padding: {
       right: 1em;
-      left: 3em;
+      left: 5em;
     }
     font-family: sans-serif;
+
+    html[dir="rtl"] & {
+      padding: {
+        right: 5em;
+        left: 1em;
+      }
+
+      .y_axis .y_ticks,
+      .lift-graph-graph .tick {
+        text {
+          text-anchor: end !important; // Force text to align properly with RTL
+        }
+      }
+    }
 
     .y-axis-label,
     .tick text,
     .tick line {
-      color: #666;
-      fill: #666;
+      color: $axis-color;
+      fill: $axis-color;
       opacity: 1;
     }
 
     .x_ticks_d3 .tick text {
-      fill: #666;
+      fill: $axis-color;
       stroke: transparent;
       stroke-width: 0;
     }
@@ -47,24 +148,15 @@
       background: rgba(#ddd, .5);
 
       .item {
-        $border-color: #ccc;
-        $border-size: .1em;
-        $shadow-opacity: .6;
-        $shadow-offset: .2em;
-        $pointer-size: .5em;
-        $pointer-shadow-size: ($pointer-size + $shadow-offset);
-        $margin-horizontal: -1em;
-
         margin: 1.6em $margin-horizontal;
         padding: .1em;
         font-size: (12px / 14px) * 1em;
         line-height: 1.3em;
         box-shadow: 0 $shadow-offset 0 rgba($border-color, $shadow-opacity);
-        transition: left .1s ease, right .1s ease;
 
         &.active {
-          background: rgba(#fff, .8);
-          color: #333;
+          background: rgba($background-color, .8);
+          color: $text-color;
           border: $border-size solid $border-color;
           border-radius: .3em;
         }
@@ -75,6 +167,13 @@
           height: 1em;
           margin-right: .3em;
           border-radius: 50%;
+
+          html[dir="rtl"] & {
+            margin: {
+              right: auto;
+              left: .3em;
+            }
+          }
         }
 
         &:before,
@@ -100,7 +199,7 @@
 
         &:after {
           border-width: $pointer-size;
-          border-top-color: #fff;
+          border-top-color: $text-color-alternate;
           border-left-color: transparent; // Override default Rickshaw styles.
           bottom: -($pointer-size * 2);
           margin-right: -1.5em;
@@ -121,7 +220,7 @@
           &:after {
             left: (($margin-horizontal + $pointer-size) * -1);
             border-width: .5em;
-            border-top-color: #fff;
+            border-top-color: $text-color-alternate;
             border-right-color: transparent;
           }
         }
@@ -140,7 +239,7 @@
           &:after {
             right: (($margin-horizontal + $pointer-size) * -1);
             border-width: $pointer-size;
-            border-top-color: #fff;
+            border-top-color: $text-color-alternate;
             border-left-color: transparent;
           }
         }
@@ -160,7 +259,7 @@
 
           &:after {
             top: -($pointer-size * 2);
-            border-bottom-color: #fff;
+            border-bottom-color: $text-color-alternate;
           }
         }
       }
@@ -176,6 +275,13 @@
         border-width: .2em;
         border-radius: 50%;
         box-shadow: none;
+
+        html[dir="rtl"] & {
+          margin: {
+            right: -.35em;
+            left: auto;
+          }
+        }
       }
     }
   }
@@ -191,15 +297,23 @@
 
   &-axis-y {
     float: left;
-    width: 3em;
+    width: 5em;
     height: 20em;
-    margin-left: -3em;
+    margin-left: -5em;
+
+    html[dir="rtl"] & {
+      float: right;
+      margin: {
+        right: -5em;
+        left: auto;
+      }
+    }
   }
 
   &-legend {
     clear: both;
     background-color: transparent;
-    color: #333;
+    color: $text-color;
 
     li {
       display: inline-block;
@@ -235,9 +349,13 @@
 
     th,
     td {
-      padding: .2em .4em;
+      padding: .2em .5em;
       text-align: left;
       background: none;
+
+      html[dir="rtl"] & {
+        text-align: right;
+      }
 
       &,
       &:first-child,
@@ -251,13 +369,16 @@
     }
 
     [style^="background-color"] {
-      color: #fff;
+      color: $text-color-alternate;
       font-weight: normal;
-      text-align: center;
+
+      html[dir] & {
+        text-align: center;
+      }
     }
 
     .active {
-      background-color: #eee;
+      background-color: $background-color-alternate;
     }
   }
 
@@ -270,7 +391,7 @@
       width: 100%;
       max-width: 100%;
       margin: 1.3em 0;
-      border-color: #bbb;
+      border-color: $border-color;
       border-collapse: collapse;
       font-size: .88em;
     }
@@ -279,14 +400,32 @@
     td {
       text-align: left;
 
+      html[dir="rtl"] & {
+        text-align: right;
+      }
+
       &:last-child {
         text-align: center;
       }
     }
+    
+    td.acquia-lift-ab-winner {
+      max-width: 20%;
+      width: 150px;
+      background: $background-color-alternate;
+    }
+
 
     .action {
       margin-right: .6em;
       cursor: pointer;
+
+      html[dir="rtl"] & {
+        margin: {
+          right: auto;
+          left: .6em;
+        }
+      }
     }
 
     .swatch {
@@ -295,10 +434,27 @@
       height: .9em;
       margin-right: .6em;
       border-radius: 50%;
+
+      html[dir="rtl"] & {
+        margin: {
+          right: auto;
+          left: .6em;
+        }
+      }
     }
 
     .label {
+      // Allows the text to align properly when the direction is RTL.
+      display: inline-block;
+      margin-right: .2em;
       font-weight: bold;
+
+      html[dir="rtl"] & {
+        margin: {
+          right: auto;
+          left: .2em;
+        }
+      }
     }
 
     .toggle-enabled .line {
@@ -309,9 +465,4 @@
       }
     }
   }
-}
-
-.acquia-lift-report-warning {
-  text-align: right;
-  width: 100%;
 }

@@ -1363,94 +1363,53 @@ class AcquiaLiftTest extends DrupalUnitTestCase {
     );
 
     $agentName = 'some-agent-name';
-    $lift_api->getConfidenceReport($agentName);
+    $params = array();
+    $params[] = $agentName;
 
     // Confirm the expected requests were made.
     $dateStr = date('Y-m-d');
     $test_request['uri'] = "{$lift_api->getApiUrl()}/{$lift_api->getOwnerCode()}/{$agentName}/report/confidence/{$dateStr}?features=(none)&apikey={$lift_api->getAdminKey()}&confidence-measure={$default_confidence}&aggregated-over-dates=true";
-
-    $this->assertAPIRequests(array($test_request));
-    $logs = array();
-    $this->assertLogs($logs);
+    $this->assertConfidenceReportAPI($params, $test_request, $lift_api);
 
     // Test date range.
     $startDate = '2014-01-01';
     $endDate = '2014-01-02';
-    $lift_api->getConfidenceReport($agentName, $startDate, $endDate);
-
-    // Confirm the expected requests were made.
+    $params[] = $startDate;
+    $params[] = $endDate;
     $test_request['uri'] = "{$lift_api->getApiUrl()}/{$lift_api->getOwnerCode()}/{$agentName}/report/confidence/{$startDate}/{$endDate}?features=(none)&apikey={$lift_api->getAdminKey()}&confidence-measure={$default_confidence}&aggregated-over-dates=true";
-    $this->assertAPIRequests(array($test_request));
-    $logs = array();
-    $this->assertLogs($logs);
+    $this->assertConfidenceReportAPI($params, $test_request, $lift_api);
 
     // Test sending point name.
     $point_name = 'decision_point';
-    $lift_api->getConfidenceReport($agentName, $startDate, $endDate, $point_name);
-
-    // Confirm the expected requests were made.
     $test_request['headers']['x-mpath-point'] = $point_name;
-    $this->assertAPIRequests(array($test_request));
-    $logs = array();
-    $this->assertLogs($logs);
-
-    // Confidence report options for the rest of tests.
-    $options = array();
+    $params[] = $point_name;
+    $this->assertConfidenceReportAPI($params, $test_request, $lift_api);
 
     // Send features.
     $features = array('feature1', 'feature2');
     $features_str = implode(',', $features);
-    $options['features'] = $features;
-
-    $lift_api->getConfidenceReport($agentName, $startDate, $endDate, $point_name, $options);
+    $params[] = array('features' => $features);
     $test_request['uri'] = "{$lift_api->getApiUrl()}/{$lift_api->getOwnerCode()}/{$agentName}/report/confidence/{$startDate}/{$endDate}?features={$features_str}&apikey={$lift_api->getAdminKey()}&confidence-measure={$default_confidence}&aggregated-over-dates=true";
-
-    // Confirm the expected requests were made.
-    $test_request['headers']['x-mpath-point'] = $point_name;
-    $this->assertAPIRequests(array($test_request));
-    $logs = array();
-    $this->assertLogs($logs);
+    $this->assertConfidenceReportAPI($params, $test_request, $lift_api);
 
     // Send confidence measure.
     $confidence_measure = .99;
-    $options['confidence-measure'] = $confidence_measure;
-    $lift_api->getConfidenceReport($agentName, $startDate, $endDate, $point_name, $options);
-
-    // Confirm the expected requests were made.
+    $params[4]['confidence-measure'] = $confidence_measure;
     $test_request['uri'] = "{$lift_api->getApiUrl()}/{$lift_api->getOwnerCode()}/{$agentName}/report/confidence/{$startDate}/{$endDate}?features={$features_str}&apikey={$lift_api->getAdminKey()}&confidence-measure={$confidence_measure}&aggregated-over-dates=true";
-    $this->assertAPIRequests(array($test_request));
-    $logs = array();
-    $this->assertLogs($logs);
+    $this->assertConfidenceReportAPI($params, $test_request, $lift_api);
 
     // Get detail report.
-    $options['aggregated-over-dates'] = FALSE;
-    $lift_api->getConfidenceReport($agentName, $startDate, $endDate, $point_name, $options);
-
-    // Confirm the expected requests were made.
+    $params[4]['aggregated-over-dates'] = FALSE;
     $test_request['uri'] = "{$lift_api->getApiUrl()}/{$lift_api->getOwnerCode()}/{$agentName}/report/confidence/{$startDate}/{$endDate}?features={$features_str}&apikey={$lift_api->getAdminKey()}&confidence-measure={$confidence_measure}&aggregated-over-dates=false";
-    $this->assertAPIRequests(array($test_request));
-    $logs = array();
-    $this->assertLogs($logs);
+    $this->assertConfidenceReportAPI($params, $test_request, $lift_api);
+
+    // Get a detail report with a specific goal.
+    $params[4]['goal'] = 'some_goal';
+    $test_request['uri'] = "{$lift_api->getApiUrl()}/{$lift_api->getOwnerCode()}/{$agentName}/report/confidence/{$startDate}/{$endDate}?features={$features_str}&apikey={$lift_api->getAdminKey()}&confidence-measure={$confidence_measure}&aggregated-over-dates=false&goal=some_goal";
+    $this->assertConfidenceReportAPI($params, $test_request, $lift_api);
 
     $lift_api = $this->getAcquiaLiftAPI(TRUE);
-    try {
-      $lift_api->getConfidenceReport($agentName, $startDate, $endDate, $point_name, $options);
-    }
-    catch (Exception $e) {
-      $this->assertTrue($e instanceof AcquiaLiftException);
-    }
-
-    // Confirm the expected requests were made.
-    $this->assertAPIRequests(array($test_request));
-
-    $logs = array(
-      array(
-        'level' => PersonalizeLogLevel::ERROR,
-        'message' => 'Problem retrieving confidence report.',
-      )
-    );
-
-    $this->assertLogs($logs);
+    $this->assertConfidenceReportAPI($params, $test_request, $lift_api);
   }
 
   /**
@@ -1949,6 +1908,38 @@ class AcquiaLiftTest extends DrupalUnitTestCase {
     }
     $lift_api->setLogger($this->logger);
     return $lift_api;
+  }
+
+  /**
+   * Helper function to call the confidence report endpoint and verify the API
+   * request.
+   *
+   * @param $params
+   *   The indexed parameter array to pass to the api call.
+   * @param $request
+   *   The expected request values.
+   * @param $lift_api
+   *   (Optional) the lift api instance to use for tests.
+   */
+  protected function assertConfidenceReportAPI($params, $request, $lift_api) {
+    $logs = array();
+    if (empty($lift_api)) {
+      $lift_api = $this->getAcquiaLiftAPI();
+    }
+    try {
+      call_user_func_array(array($lift_api, 'getConfidenceReport'), $params);
+    } catch (Exception $e) {
+      $logs = array(
+        array(
+          'level' => PersonalizeLogLevel::ERROR,
+          'message' => 'Problem retrieving confidence report.',
+        ),
+      );
+      $this->assertTrue($e instanceof AcquiaLiftException);
+    }
+
+    $this->assertAPIRequests(array($request));
+    $this->assertLogs($logs);
   }
 
   /**

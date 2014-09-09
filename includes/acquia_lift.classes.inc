@@ -1032,7 +1032,8 @@ class AcquiaLiftAPI implements PersonalizeLoggerAwareInterface, AcquiaLiftReport
 
     $url = $this->generateEndpoint("/{$agent_name}/report/confidence{$date_str}?features=$features");
     foreach ($options as $param => $value) {
-      $url .= "&$param=" . var_export($value, TRUE);
+      $param_value = is_bool($value) ? var_export($value, TRUE) : (string)$value;
+      $url .= "&$param=" . $param_value;
     }
     $headers = array('Accept' => 'application/json');
     if ($point !== NULL) {
@@ -1461,10 +1462,13 @@ class AcquiaLiftReportDataFromFile implements AcquiaLiftReportDataSourceInterfac
    */
   public function getConfidenceReport($agent_name, $date_start = NULL, $date_end = NULL, $point = NULL, $options = array()) {
     $report_name = 'confidence';
-    // Note that the value is the string false for use in JSON rather than
-    // the boolean value.
+    if (!empty($options['goal'])) {
+      // There are two sample goal reports included in the test file structure.
+      // Pick one at random to show for the selected goal.
+      $report_name .= '_goal' . rand(1, 2);
+    }
     if (isset($options['aggregated-over-dates']) && $options['aggregated-over-dates'] === FALSE) {
-      $report_name = 'confidence_detail';
+      $report_name .= '_detail';
     }
     return $this->getReport($agent_name, $report_name);
   }

@@ -2,11 +2,12 @@ module.exports = function(grunt) {
   require('time-grunt')(grunt);
 
   var reportABjs = [
-        'src/js/Rickshaw.Graph.Axis.TimeElement.js',
-        'src/js/Rickshaw.Graph.Axis.LabeledY.js',
-        'src/js/Rickshaw.Graph.ClickDetail.js',
-        'src/js/Rickshaw.Graph.TableLegend.js',
-        'src/js/acquia_lift.report.ab.js'
+        'src/js/reports/Rickshaw.Graph.Axis.TimeElement.js',
+        'src/js/reports/Rickshaw.Graph.Axis.LabeledY.js',
+        'src/js/reports/Rickshaw.Graph.ClickDetail.js',
+        'src/js/reports/Rickshaw.Graph.TableLegend.js',
+        'src/js/reports/acquia_lift.liftgraph.jquery.js',
+        'src/js/reports/acquia_lift.reports.js'
       ];
 
   // Project configuration.
@@ -25,6 +26,10 @@ module.exports = function(grunt) {
       reportAB: {
         src: reportABjs,
         dest: 'js/acquia_lift.report.ab.js'
+      },
+      help: {
+        src: ['src/js/help/acquia_lift.help.js'],
+        dest: 'js/acquia_lift.help.js'
       }
     },
     concurrent: {
@@ -35,7 +40,10 @@ module.exports = function(grunt) {
         options: {
           style: 'expanded'
         },
-        files: {'css/acquia_lift.report.ab.css': 'src/css/acquia_lift.report.ab.scss'}
+        files: {
+          'css/acquia_lift.help.css': 'src/css/acquia_lift.help.scss',
+          'css/acquia_lift.report.ab.css': 'src/css/acquia_lift.report.ab.scss'
+        }
       }
     },
     watch: {

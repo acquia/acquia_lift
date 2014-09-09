@@ -228,7 +228,6 @@ tr.acquia-lift-report-control {
   position: relative;
   background: white;
   display: inline-block;
-  -webkit-border-radius: 10px;
   border-radius: 10px;
   border: 1px solid #2FA6E5;
   padding: 2px 4px;

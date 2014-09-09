@@ -72,3 +72,17 @@ libraries[modernizr][download][type] = git
 libraries[modernizr][download][url] = https://github.com/BrianGilbert/modernizer-navbar.git
 libraries[modernizr][download][revision] = 5b89d9225320e88588f1cdc43b8b1e373fa4c60f
 libraries[modernizr][directory] = "modernizr"
+
+; Library: D3
+; ---------------------------------------
+libraries[d3][destination] = "libraries"
+libraries[d3][download][type] = "get"
+libraries[d3][download][url] = https://github.com/mbostock/d3/releases/download/v3.4.11/d3.zip
+libraries[d3][directory] = "d3"
+
+; Library: Rickshaw
+; ---------------------------------------
+libraries[rickshaw][destination] = "libraries"
+libraries[rickshaw][download][type] = "get"
+libraries[rickshaw][download][url] = https://github.com/shutterstock/rickshaw/archive/v1.5.0.zip
+libraries[rickshaw][directory] = "rickshaw"

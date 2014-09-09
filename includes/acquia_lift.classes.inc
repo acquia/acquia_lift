@@ -1014,15 +1014,27 @@ class AcquiaLiftAPI implements PersonalizeLoggerAwareInterface, AcquiaLiftReport
   /**
    * Implements AcquiaLiftReportDataSourceInterface::getConfidenceReport().
    */
-  public function getConfidenceReport($agent_name, $date_start = NULL, $date_end = NULL, $point = NULL, $features = NULL, $confidence_measure = 0.95) {
+  public function getConfidenceReport($agent_name, $date_start = NULL, $date_end = NULL, $point = NULL, $options = array()) {
+    $default_options = array(
+      'confidence-measure' => 0.95,
+      'aggregated-over-dates' => true,
+      'features' => NULL,
+    );
+    $options = array_merge($default_options, $options);
     $date_str = $this->getDateString($date_start, $date_end);
-    if ($features === 'all') {
+    if ($options['features'] === 'all') {
       $features = '';
     }
     else {
-      $features = $features === NULL ? "(none)" : implode(',', $features);
+      $features = is_array($options['features']) ? implode(',', $options['features']) : "(none)";
     }
-    $url = $this->generateEndpoint("/{$agent_name}/report/confidence{$date_str}?features=$features&confidence-measure=$confidence_measure");
+    unset($options['features']);
+
+    $url = $this->generateEndpoint("/{$agent_name}/report/confidence{$date_str}?features=$features");
+    foreach ($options as $param => $value) {
+      $param_value = is_bool($value) ? var_export($value, TRUE) : (string)$value;
+      $url .= "&$param=" . $param_value;
+    }
     $headers = array('Accept' => 'application/json');
     if ($point !== NULL) {
       $headers['x-mpath-point'] = $point;
@@ -1282,23 +1294,21 @@ interface AcquiaLiftReportDataSourceInterface {
    *   a single day.
    * @param string $point
    *   An optional decision point to limit the report to.
-   * @param array $features
-   *   An array of features to include data for in the report.
-   *   The default "none" features option is used by default.
-   *   Passing "all" will return all features for the test.
-   * @param float $confidence_measure
-   *   The confidence measure to use to determine statistical significance.
+   * @param array $options
+   *   An array of report options to be passed to Acquia Lift where the keys
+   *   are the parameter names and the values are the parameter values.
+   *   Support includes:
+   *     - features: An array of features to include in the report.
+   *       Defaults to "none" but can also be set to "all" for all features.
+   *     - confidence-measure: The confidence measure to use between 0 and 1.
+   *     - aggregated-over-dates: Aggregates the data over the time span or
+   *       reports on individual dates
    * @return array
-   *   The report as an associative array with the structure as defined at
-   *   https://console.lift.acquia.com/docs/abc/reporting-api under "Option
-   *   Confidence Report Data"
-   *
-   * @todo Add support for the other optional parameters, i.e. 'confidence-
-   *   measure', 'comparison-decision' and 'use-bonferroni'
+   *   The report as an associative array
    *
    * @throws AcquiaLiftException
    */
-  public function getConfidenceReport($agent_name, $date_start = NULL, $date_end = NULL, $point = NULL, $features = NULL, $confidence_measure = 0.95);
+  public function getConfidenceReport($agent_name, $date_start = NULL, $date_end = NULL, $point = NULL, $options = array());
 
   /**
    * Returns a targeting impact report for the specified agent and timeframe.
@@ -1313,9 +1323,7 @@ interface AcquiaLiftReportDataSourceInterface {
    * @param string $point
    *   An optional decision point to limit the report to.
    * @return array
-   *   The report as an associative array with the structure as defined at
-   *   https://console.lift.acquia.com/docs/abc/reporting-api under "Option
-   *   Confidence Report Data"
+   *   The report as an associative array
    *
    * @throws AcquiaLiftException
    */
@@ -1331,9 +1339,7 @@ interface AcquiaLiftReportDataSourceInterface {
    *   14 days.
    *
    * @return array
-   *   The report as an associative array with the structure as defined at
-   *   https://console.lift.acquia.com/docs/abc/reporting-api under "Agent
-   *   Status Report Data"
+   *   The report as an associative array
    *
    * @throws AcquiaLiftException
    */
@@ -1353,9 +1359,7 @@ interface AcquiaLiftReportDataSourceInterface {
    * @param string $point
    *   An optional decision point to limit the report to.
    * @return array
-   *   The report as an associative array with the structure as defined at
-   *   https://console.acquia_lift.com/docs/abc/reporting-api under "Raw
-   *   Learning Report Data"
+   *   The report as an associative array
    *
    * @todo Add support for the other optional parameters, i.e. 'confidence-
    *   measure', 'comparison-decision' and 'use-bonferroni'
@@ -1376,42 +1380,17 @@ interface AcquiaLiftReportDataSourceInterface {
 class AcquiaLiftReportDataFromFile implements AcquiaLiftReportDataSourceInterface {
 
   /**
-   * An array representing a targeting report.
+   * The path to the file that acts as the reporting source.
    *
-   * @var array
+   * @var string
    */
-  protected $targetingReport;
-
-  /**
-   * An array representing a confidence report.
-   *
-   * @var array
-   */
-  protected $confidenceReport;
-
-  /**
-   * An array representing a agent status report.
-   *
-   * @var array
-   */
-  protected $agentStatusReport;
-
-  /**
-   * An array representing a raw learning report.
-   *
-   * @var array
-   */
-  protected $rawLearningReport;
-
-  /**
-   * An array representing the context filters to be used in reports.
-   *
-   * @var array
-   */
-  protected $contextFilters;
-
   protected $fileLocation;
 
+  /**
+   * An array of reports to act as a request length storage for the reports.
+   *
+   * @var array
+   */
   protected $reports;
 
   public function __construct($file_location, AcquiaLiftReportCacheInterface $cache = NULL) {
@@ -1457,7 +1436,7 @@ class AcquiaLiftReportDataFromFile implements AcquiaLiftReportDataSourceInterfac
         if ($this->cache) {
           $this->cache->cacheReports($agent_name, $this->reports);
         }
-        return isset($this->reports[$report_name]) ? $this->reports[$report_name] : array();;
+        return isset($this->reports[$report_name]) ? $this->reports[$report_name] : array();
       }
     }
     return array();
@@ -1481,8 +1460,17 @@ class AcquiaLiftReportDataFromFile implements AcquiaLiftReportDataSourceInterfac
   /**
    * Implements AcquiaLiftReportDataSourceInterface::getConfidenceReport().
    */
-  public function getConfidenceReport($agent_name, $date_start = NULL, $date_end = NULL, $point = NULL, $features = NULL, $confidence_measure = 0.95) {
-    return $this->getReport($agent_name, 'confidence');
+  public function getConfidenceReport($agent_name, $date_start = NULL, $date_end = NULL, $point = NULL, $options = array()) {
+    $report_name = 'confidence';
+    if (!empty($options['goal'])) {
+      // There are two sample goal reports included in the test file structure.
+      // Pick one at random to show for the selected goal.
+      $report_name .= '_goal' . rand(1, 2);
+    }
+    if (isset($options['aggregated-over-dates']) && $options['aggregated-over-dates'] === FALSE) {
+      $report_name .= '_detail';
+    }
+    return $this->getReport($agent_name, $report_name);
   }
 
   /**

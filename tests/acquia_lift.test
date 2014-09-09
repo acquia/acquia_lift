@@ -162,8 +162,6 @@ class AcquiaLiftWebTest extends DrupalWebTestCase {
     $admin_user = $this->drupalCreateUser(array('access administration pages', 'manage personalized content', 'administer blocks'));
     $this->drupalLogin($admin_user);
 
-    // Create some custom blocks to use as variations.
-    $deltas = $this->createCustomBlocks(10);
     // Create a new agent via the UI.
     $agent_name = $this->randomName();
     $machine_name = personalize_generate_machine_name($agent_name, 'personalize_agent_machine_name_exists');
@@ -173,73 +171,41 @@ class AcquiaLiftWebTest extends DrupalWebTestCase {
       'agent_basic_info[agent_type]' => 'test_agent',
     );
     $this->drupalPost('admin/structure/personalize/add', $edit, $this->getButton('agent'));
-    $os = array(
-      'agent' => $agent_name,
-      'plugin' => 'block',
-      'executor' => 'show',
-      'options' => array(
-        array('option_id' => PERSONALIZE_CONTROL_OPTION_ID, 'option_label' => PERSONALIZE_CONTROL_OPTION_LABEL, 'bid' => array_shift($deltas))
-      ),
-      'data' => array(
-        'block_title' => 'My personalized block'
-      )
-    );
-    $option_set = (object) $os;
-    $var_num = acquia_lift_page_variation_create('first_variation_set', $option_set, array('bid' => array_shift($deltas)));
+
+    $option_set = personalize_elements_get_option_set_for_variation('option-1', $agent_name, '#selector1', 'addCss', 'page1');
+    $var_num = acquia_lift_page_variation_create('first_variation_set', $option_set, array('personalize_elements_content' => 'test-class'));
     $this->assertEqual(1, $var_num);
 
-    // Now create another block-based option set and use it for the second variation.
-    $os2 = array(
-      'agent' => $agent_name,
-      'plugin' => 'block',
-      'executor' => 'show',
-      'options' => array(
-        array('option_id' => PERSONALIZE_CONTROL_OPTION_ID, 'option_label' => PERSONALIZE_CONTROL_OPTION_LABEL, 'bid' => array_shift($deltas))
-      ),
-      'data' => array(
-        'block_title' => 'My personalized block'
-      )
-    );
-    $option_set_2 = (object) $os2;
-    $var_num = acquia_lift_page_variation_create('first_variation_set', $option_set_2, array('bid' => array_shift($deltas)));
+    // Now create another option set and use it for the second variation.
+    $option_set_2 = personalize_elements_get_option_set_for_variation('option-2', $agent_name, '#selector2', 'editHtml', 'page1');
+    $var_num = acquia_lift_page_variation_create('first_variation_set', $option_set_2, array('personalize_elements_content' => '<p>some html</p>'));
     $this->assertEqual(2, $var_num);
 
     // Now use the first option set for variation 3.
     $os_1 = personalize_option_set_load(1, TRUE);
-    $var_num = acquia_lift_page_variation_create('first_variation_set', $os_1, array('bid' => array_shift($deltas)));
+    $var_num = acquia_lift_page_variation_create('first_variation_set', $os_1, array('personalize_elements_content' => 'another-test-class'));
     $this->assertEqual(3, $var_num);
 
-    // Now add a different option to both blocks for variation 4.
+    // Now add a different option to both for variation 4.
     $os_1 = personalize_option_set_load(1, TRUE);
-    $var_num = acquia_lift_page_variation_create('first_variation_set', $os_1, array('bid' => array_shift($deltas)));
+    $var_num = acquia_lift_page_variation_create('first_variation_set', $os_1, array('personalize_elements_content' => 'third-test-class'));
     $this->assertEqual(4, $var_num);
 
     // Rename the third variation to test if the new names persist across changes.
     acquia_lift_page_variation_rename('first_variation_set', $agent_name, 3, 'three');
 
     $os_2 = personalize_option_set_load(2, TRUE);
-    $var_num = acquia_lift_page_variation_create('first_variation_set', $os_2, array('bid' => array_shift($deltas)), 4);
+    $var_num = acquia_lift_page_variation_create('first_variation_set', $os_2, array('personalize_elements_content' => '<p>some other html</p>'), 4);
     $this->assertEqual(4, $var_num);
 
     // Try to create variation 6, it should correct it to 5.
-    $var_num = acquia_lift_page_variation_create('first_variation_set', $os_2, array('bid' => array_shift($deltas)), 6);
+    $var_num = acquia_lift_page_variation_create('first_variation_set', $os_2, array('personalize_elements_content' => '<p>third html</p>'), 6);
     $this->assertEqual(5, $var_num);
 
-    // Create another block-based option set and add it to variation 1. (We need to
+    // Create another option set and add it to variation 1. (We need to
     // make sure an option gets created for each subsequent variation.)
-    $os3 = array(
-      'agent' => $agent_name,
-      'plugin' => 'block',
-      'executor' => 'show',
-      'options' => array(
-        array('option_id' => PERSONALIZE_CONTROL_OPTION_ID, 'option_label' => PERSONALIZE_CONTROL_OPTION_LABEL, 'bid' => array_shift($deltas))
-      ),
-      'data' => array(
-        'block_title' => 'My personalized block'
-      )
-    );
-    $option_set_3 = (object) $os3;
-    $var_num = acquia_lift_page_variation_create('first_variation_set', $option_set_3, array('bid' => array_shift($deltas)), 1);
+    $option_set_3 = personalize_elements_get_option_set_for_variation('option-3', $agent_name, '#selector3', 'editText', 'page1');
+    $var_num = acquia_lift_page_variation_create('first_variation_set', $option_set_3, array('personalize_elements_content' => 'edited text'), 1);
     $this->assertEqual(1, $var_num);
 
     $this->resetAll();
@@ -253,12 +219,11 @@ class AcquiaLiftWebTest extends DrupalWebTestCase {
       array(
         'option_id' => PERSONALIZE_CONTROL_OPTION_ID,
         'option_label' => PERSONALIZE_CONTROL_OPTION_LABEL,
-        'bid' => 'block_delta_1',
       ),
       array(
         'option_id' => 'variation-1',
         'option_label' => 'Variation #1',
-        'bid' => 'block_delta_2'
+        'personalize_elements_content' => 'test-class'
       ),
       array(
         'option_id' => 'variation-2',
@@ -267,12 +232,12 @@ class AcquiaLiftWebTest extends DrupalWebTestCase {
       array(
         'option_id' => 'variation-3',
         'option_label' => 'three',
-        'bid' => 'block_delta_5'
+        'personalize_elements_content' => 'another-test-class',
       ),
       array(
         'option_id' => 'variation-4',
         'option_label' => 'Variation #4',
-        'bid' => 'block_delta_6'
+        'personalize_elements_content' => 'third-test-class',
       ),
       array(
         'option_id' => 'variation-5',
@@ -284,7 +249,6 @@ class AcquiaLiftWebTest extends DrupalWebTestCase {
       array(
         'option_id' => PERSONALIZE_CONTROL_OPTION_ID,
         'option_label' => PERSONALIZE_CONTROL_OPTION_LABEL,
-        'bid' => 'block_delta_3',
       ),
       array(
         'option_id' => 'variation-1',
@@ -293,7 +257,7 @@ class AcquiaLiftWebTest extends DrupalWebTestCase {
       array(
         'option_id' => 'variation-2',
         'option_label' => 'Variation #2',
-        'bid' => 'block_delta_4'
+        'personalize_elements_content' => '<p>some html</p>',
       ),
       array(
         'option_id' => 'variation-3',
@@ -302,12 +266,12 @@ class AcquiaLiftWebTest extends DrupalWebTestCase {
       array(
         'option_id' => 'variation-4',
         'option_label' => 'Variation #4',
-        'bid' => 'block_delta_7'
+        'personalize_elements_content' => '<p>some other html</p>',
       ),
       array(
         'option_id' => 'variation-5',
         'option_label' => 'Variation #5',
-        'bid' => 'block_delta_8'
+        'personalize_elements_content' => '<p>third html</p>',
       ),
     );
     $this->assertEqual($expected_options_os2, $option_sets[2]->options);
@@ -315,13 +279,12 @@ class AcquiaLiftWebTest extends DrupalWebTestCase {
       array(
         'option_id' => PERSONALIZE_CONTROL_OPTION_ID,
         'option_label' => PERSONALIZE_CONTROL_OPTION_LABEL,
-        'bid' => 'block_delta_9',
 
       ),
       array(
         'option_id' => 'variation-1',
         'option_label' => 'Variation #1',
-        'bid' => 'block_delta_10',
+        'personalize_elements_content' => 'edited text',
       ),
       array(
         'option_id' => 'variation-2',

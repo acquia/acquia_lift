@@ -12,7 +12,7 @@
     <div class="region-page-top"></div>
     <div id="watch">
         <div id="mousehere">Mouse element</div>
-        <div id="another">Another element</div>
+        <div id="another">Another element with <span class="some-class">a span element inside.</span></div>
     </div>
     <div id="nowatch">No DOM watching allowed here.</div>
 </div>
@@ -30,17 +30,20 @@
 <script src="../../visitor_actions/modules/visitor_actions_ui/js/visitor_actions_ui.selector.js"></script>
 <script src="../../visitor_actions/modules/visitor_actions_ui//js/visitor_actions_ui.dialog.js"></script>
 <script src="/sites/all/libraries/qtip/jquery.qtip-1.0.0-rc3.js"></script>
-<script src="../js/acquia_lift.dom_selector.js"></script>
-<script src="../js/acquia_lift.messagebox.js"></script>
-
 
 <script type="text/javascript">
     var Drupal = Drupal || {};
     Drupal.behaviors = Drupal.behaviors || {};
     Drupal.settings = Drupal.settings || {};
     Drupal.theme = Drupal.theme || {};
+    Drupal.settings.acquia_lift = Drupal.settings.acquia_lift || {};
+    Drupal.settings.acquia_lift.dom_selector_ignore = 'region-page-top';
     Drupal.settings.personalize = Drupal.settings.personalize || {};
+    Drupal.settings.visitor_actions = Drupal.settings.visitor_actions || {};
+    Drupal.settings.visitor_actions.ignoreIds = '/(^nowatch)';
 </script>
+<script src="../js/acquia_lift.dom_selector.js"></script>
+<script src="../js/acquia_lift.messagebox.js"></script>
 
 <script src="../js/acquia_lift.page_variations.js"></script>
 <script src="page_variations.tests.js"></script>

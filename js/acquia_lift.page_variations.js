@@ -73,7 +73,11 @@
      * Backbone model representing a single page element variation type
      * that can be presented within a contextual menu.
      */
-    ElementVariationModel: Backbone.Model.extend({}),
+    ElementVariationModel: Backbone.Model.extend({
+      defaults: {
+        limitByChildrenType: ''
+      }
+    }),
 
 
     /**
@@ -98,7 +102,29 @@
    *******************************************************************/
   Drupal.acquiaLiftPageVariations.collections = Drupal.acquiaLiftPageVariations.collections || {
     ElementVariationCollection: Backbone.Collection.extend({
-      model: Drupal.acquiaLiftPageVariations.models.ElementVariationModel
+      model: Drupal.acquiaLiftPageVariations.models.ElementVariationModel,
+
+      applicableToElement: function ($element) {
+        // Get all the node types of the children for the element.
+        var childrenNodeTypes = _.pluck($element.find('*'), 'nodeType');
+
+        return _(this.filter(function(data) {
+          var limitByChildrenType = data.get('limitByChildrenType');
+
+          // If there is a limit on the children type, make sure that every
+          // child passes the test.
+          if (limitByChildrenType && !isNaN(limitByChildrenType)) {
+            return _.every(childrenNodeTypes, function(type) {return type == limitByChildrenType});
+          }
+          // No limits in place so include by default.
+          return true;
+        }))
+      },
+      currentStatus : function(status){
+        return _(this.filter(function(data) {
+          return data.get("completed") == status;
+        }));
+      }
     })
   };
 
@@ -120,9 +146,7 @@
         _.bindAll(this, 'createContextualMenu', 'onElementSelected');
 
         var that = this;
-        this.$watchElements = options.$watchElements;
         this.$el.DOMSelector({
-          $watchElements: this.$watchElements,
           onElementSelect: function (element, selector) {
             that.onElementSelected(element, selector);
           }
@@ -138,6 +162,10 @@
        */
       render: function (model, editMode) {
         if (editMode) {
+          // Must update the watched elements as the page DOM structure can
+          // be changed in between each call.
+          this.$watchElements = getAvailableElements();
+          this.$el.DOMSelector("updateElements", this.$watchElements);
           this.$el.DOMSelector("startWatching");
         } else {
           this.$el.DOMSelector("stopWatching");
@@ -157,7 +185,9 @@
         if (show) {
           $(this.anchor).addClass(highlightClass);
         } else {
-          $(this.anchor).removeClass(highlightClass);
+          // Remove the highlight from anywhere (the anchor may have been
+          // changed).
+          $('.' + highlightClass).removeClass(highlightClass);
         }
       },
 
@@ -295,10 +325,18 @@
        */
       formSuccessHandler: function (ajax, response, status) {
         this.parent('formSuccessHandler', ajax, response, status);
-        this.$el.find('[name="selector"]').val(this.model.get('selector'));
+
+        var selector = this.model.get('selector');
+        var type = this.model.get('type');
+        var $input = this.$el.find('[name=personalize_elements_content]');
+        var variationNumber = this.model.get('variationIndex');
+
+        this.$el.find('[name="selector"]').val(selector);
         this.$el.find('[name="pages"]').val(Drupal.settings.visitor_actions.currentPath);
         this.$el.find('[name="agent"]').val(Drupal.settings.personalize.activeCampaign);
-        this.$el.find('[name="variation_number"]').val(this.model.get('variationIndex'));
+        this.$el.find('[name="variation_number"]').val(variationNumber);
+        // Call any variation type specific callbacks.
+        $(document).trigger('acquiaLiftVariationTypeForm', [type, selector, $input]);
       },
 
       /**
@@ -339,11 +377,15 @@
 
         // Generate the collection of options.
         var collection = new Drupal.acquiaLiftPageVariations.collections.ElementVariationCollection();
-        var modelAttributes = _.map(Drupal.settings.personalize_elements.contextualVariationTypes, function(label, type) {
-          return {id: type, name: label}
+        var modelAttributes = _.map(Drupal.settings.personalize_elements.contextualVariationTypes, function(data, type) {
+          return {
+            id: type,
+            name: data.name,
+            limitByChildrenType: data.limitByChildrenType
+          };
         });
         collection.add(modelAttributes);
-        this.list = new Drupal.acquiaLiftPageVariations.views.PageVariationMenuListView({collection: collection});
+        this.list = new Drupal.acquiaLiftPageVariations.views.PageVariationMenuListView({collection: collection.applicableToElement($(this.anchor))});
         this.list.render();
         this.$el.find('.visitor-actions-ui-dialog-content').html(titleHtml).append(this.list.el);
         this.position(function () {
@@ -504,6 +546,59 @@
   }
 
   /**
+   * Define editInContext behaviors to define what happens when creating
+   * a particular persaonlize_element page variation in context.
+   */
+  Drupal.acquiaLiftPageVariations.personalizeElements = Drupal.acquiaLiftPageVariations.personalizeElements || {};
+  Drupal.acquiaLiftPageVariations.personalizeElements.editHtml = {
+    getOuterHtml: function($element) {
+      if ($element.length > 1) {
+        $element = $element.first();
+      }
+      // jQuery doesn't have an outerHTML so we need to clone the child and
+      // give it a parent so that we can call that parent's html function.
+      // This ensures we get only the html of the $selector and not siblings.
+      var $element = $element.clone().wrap('<div>').parent();
+      // Remove any extraneous acquia lift / visitor actions stuff.
+      var removeClasses = new RegExp(Drupal.settings.visitor_actions.ignoreClasses, 'g');
+      var removeId = new RegExp(Drupal.settings.visitor_actions.ignoreIds);
+      var removeTags = 'script';
+
+      // Remove any invalid ids.
+      $element.find('[id]').filter(function() {
+        return removeId.test(this.id);
+      }).removeAttr('id');
+
+      // Remove any classes that are marked for ignore.
+      $element.find('[class]').each(function() {
+        var stripClasses = this.className.match(removeClasses) || [];
+        $(this).removeClass(stripClasses.join(' '));
+        if (this.className.length == 0) {
+          $(this).removeAttr('class');
+        }
+      });
+      // Remove any styling added directly from jQuery.
+      $element.find('[style]').removeAttr('style');
+      // Remove any inappropriate tags
+      $element.find(removeTags).remove();
+
+      // Now return the cleaned up html.
+      return $element.html();
+    },
+    editInContext : function(selector, $contentInput) {
+      var editString = this.getOuterHtml($(selector));
+      $contentInput.val(editString);
+    }
+  };
+
+  Drupal.acquiaLiftPageVariations.personalizeElements.editText = {
+    editInContext : function(selector, $contentInput) {
+      var editString = $(selector).text();
+      $contentInput.val(editString);
+    }
+  };
+
+  /**
    * A command to trigger the page element selection process.
    *
    * The response should include a data object with the following keys:
@@ -518,14 +613,10 @@
         Drupal.acquiaLiftPageVariations.app.appModel = new Drupal.acquiaLiftPageVariations.models.AppModel();
       }
       if (!Drupal.acquiaLiftPageVariations.app.appView) {
-        var $elements = getAvailableElements();
-        if ($elements.length > 0) {
-          Drupal.acquiaLiftPageVariations.app.appView = new Drupal.acquiaLiftPageVariations.views.AppView({
-            model: Drupal.acquiaLiftPageVariations.app.appModel,
-            $watchElements: $elements,
-            $el: $('body')
-          });
-        }
+        Drupal.acquiaLiftPageVariations.app.appView = new Drupal.acquiaLiftPageVariations.views.AppView({
+          model: Drupal.acquiaLiftPageVariations.app.appModel,
+          $el: $('body')
+        });
       }
       var editVariation = response.data.variationIndex || -1;
       Drupal.acquiaLiftPageVariations.app.appModel.set('variationIndex', editVariation);
@@ -555,6 +646,18 @@
       data: data
     };
     Drupal.ajax.prototype.commands.acquia_lift_page_variation_toggle(Drupal.ajax, response, 200);
+  });
+
+  /**
+   * Whenever a variation type form is complete, call the personalize elements
+   * editInContext callbacks.
+   */
+  $(document).on('acquiaLiftVariationTypeForm', function(e, type, selector, $input) {
+    if (Drupal.acquiaLiftPageVariations.personalizeElements.hasOwnProperty(type)
+      && Drupal.acquiaLiftPageVariations.personalizeElements[type].hasOwnProperty('editInContext')
+      && typeof Drupal.acquiaLiftPageVariations.personalizeElements[type].editInContext === 'function') {
+      Drupal.acquiaLiftPageVariations.personalizeElements[type].editInContext(selector, $input);
+    }
   });
 
   }(jQuery, Drupal, Drupal.visitorActions.ui.dialog, Backbone, _));

@@ -985,6 +985,22 @@ function acquia_lift_library() {
     ),
   );
 
+  // Help tooltips
+  $libraries['acquia_lift.help'] = array(
+    'title' => 'Acquia Lift Help Tooltips',
+    'version' => VERSION,
+    'js' => array(
+      $path . '/js/acquia_lift.help.js' => array(),
+    ),
+    'css' => array(
+      $path . '/css/acquia_lift.help.css',
+    ),
+    'dependencies' => array(
+      array('system', 'jquery'),
+      array('acquia_lift', 'qtip'),
+    ),
+  );
+
   /*** 3rd PARTY LIBRARY DEPENDENCIES ***/
   // Ensure that each 3rd party library dependency has a default variant.
   // Convert Libraries module data structures to library data structures.

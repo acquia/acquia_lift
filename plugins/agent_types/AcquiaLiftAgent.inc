@@ -1647,13 +1647,27 @@ class AcquiaLiftABReport extends AcquiaLiftReportBase {
     }
     $headers = array(
       t('Variation'),
-      t('Total goals met'),
-      t('Total conversion rate'),
-      t('Chance to beat control'),
-      t('Lift'),
+      array(
+        'data' => t('Total goals met'),
+        'data-help-tooltip' => t('Number of times visitors completed a goal after viewing the variation.'),
+      ),
+      array(
+        'data' => t('Total conversion rate'),
+        'data-help-tooltip' => t('Percentage of goals met for each display of the variation.'),
+      ),
+      array(
+        'data' => t('Chance to beat control'),
+        'data-help-tooltip' => t('Likelihood visitors will complete goals for a variation compared to the control.'),
+      ),
+      array(
+        'data' => t('Lift'),
+        'data-help-tooltip' => t('Likelihood visitors will complete goals for a variation compared to a random variation.'),
+      ),
       array(
         'data' => t('Winner'),
-        'class' => array('acquia-lift-ab-winner'),
+        'data-help-tooltip' => t('Most effective variation for visitors based on a @confidence% confidence level.', array(
+          '@confidence' => $this->getConfidenceMeasure(),
+        )),
       ),
     );
     $rows = array();
@@ -1711,6 +1725,11 @@ class AcquiaLiftABReport extends AcquiaLiftReportBase {
       '#sticky' => FALSE,
       '#attributes' => array(
         'class' => array('lift-graph-result-data'),
+      ),
+      '#attached' => array(
+        'library' => array(
+          array('acquia_lift', 'acquia_lift.help'),
+        ),
       ),
     );
     return $build;

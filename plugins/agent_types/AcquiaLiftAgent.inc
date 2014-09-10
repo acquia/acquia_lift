@@ -1452,6 +1452,8 @@ class AcquiaLiftABReport extends AcquiaLiftReportBase {
     $shown = array();
     $counter = NAN;
     $data = array();
+
+    $total_count = $total_goals = $total_val = array();
     foreach ($items as $item) {
       // Check to see if we are in a new grouping of choices.
       $check = $item['choice'];
@@ -1474,17 +1476,24 @@ class AcquiaLiftABReport extends AcquiaLiftReportBase {
       }
       $goals = $item['totals']['goals'];
       $count = $item['totals']['count'];
-      $rate = $count > 0 ? ($goals/$count) * 100 : 0;
+      $val = $item['totals']['val'];
+      $total_count[$counter] = isset($total_count[$counter]) ? $total_count[$counter] + $count : $count;
+      $total_goals[$counter] = isset($total_goals[$counter]) ? $total_goals[$counter] + $goals : $goals;
+      $total_val[$counter] = isset($total_val[$counter]) ? $total_val[$counter] + $val : $val;
+
+      $rate = $total_count[$counter] > 0 ? ($total_goals[$counter]/$total_count[$counter]) * 100 : 0;
+      $val_rate = $total_count[$counter] > 0 ? ($total_val[$counter]/$total_count[$counter]) : 0;
       $margin = (($item['bHi'] - $item['bLo'])/2) * 100;
 
       $data[] = array(
         'choice_id' => $choice_id,
         'raw_label' => $option_id,
-        'goals' => $goals,
-        'count' => $count,
+        'goals' => $total_goals[$counter],
+        'count' => $total_count[$counter],
         'date' => $item['date'],
         'timestamp' => strtotime($item['date']),
-        'conversion' => $this->formatReportNumber($rate),
+        'conversion' => $this->formatReportNumber($rate, TRUE, 4),
+        'conversion_value' => $this->formatReportNumber($val_rate, TRUE, 4),
         'estimated_value' => $this->formatReportNumber($item['vMean'], TRUE, 4),
         'margin_error' => $this->formatReportNumber($margin, TRUE, 4),
         'counter' => $counter,
@@ -1598,7 +1607,7 @@ class AcquiaLiftABReport extends AcquiaLiftReportBase {
       t('Date'),
       t('Content variation'),
       t('Conversion rate (%)'),
-      t('Estimated value'),
+      t('Conversion value'),
       t('Margin of error (%)'),
     );
     $rows = array();
@@ -1616,7 +1625,7 @@ class AcquiaLiftABReport extends AcquiaLiftReportBase {
             'data' => $data['conversion'],
           ),
           array(
-            'data' => $data['estimated_value'],
+            'data' => $data['conversion_value'],
           ),
           array(
             'data' => $data['margin_error'],

@@ -119,9 +119,11 @@
         });
 
         // Add all switches to the page.
-        $switches
-          .append(formItem('Goals', $chooser))
-          .append(formItem('Metrics', dataSelectors));
+        if ($chooser.find('option').length > 1) {
+          $switches.append(formItem('Goals', $chooser));
+        }
+        $switches.append(formItem('Metrics', dataSelectors));
+
         $statistics
           .before($switches);
       });

@@ -1337,7 +1337,9 @@ class AcquiaLiftABReport extends AcquiaLiftReportBase {
       ),
     );
     $build['reports']['all'] = $reports['all'];
-    $build['reports']['goals'] = $reports['goals'];
+    if (!empty($reports['goals'])) {
+      $build['reports']['goals'] = $reports['goals'];
+    }
     return $build;
   }
 
@@ -1413,17 +1415,20 @@ class AcquiaLiftABReport extends AcquiaLiftReportBase {
     }
     // Load the detail and summary reports for each goal.
     if (!isset($report_data['goals'])) {
+      $report_data['goals'] = array();
       $goals = personalize_goal_load_by_conditions(array('agent' => $this->agent->getMachineName()));
-      $actions = visitor_actions_get_actions();
-      foreach ($goals as $goal) {
-        $goal_id = $goal->action;
-        if (!isset($report_data['goals'][$goal_id])) {
-          $report_data['goals'][$goal_id]['name'] = $actions[$goal_id]['label'];
-          $options['goal'] = $goal_id;
-          // Summary report.
-          $this->loadConfidenceReportHelper($report_data, FALSE, $options);
-          // Detail report.
-          $this->loadConfidenceReportHelper($report_data, TRUE, $options);
+      if (count($goals) > 1) {
+        $actions = visitor_actions_get_actions();
+        foreach ($goals as $goal) {
+          $goal_id = $goal->action;
+          if (!isset($report_data['goals'][$goal_id])) {
+            $report_data['goals'][$goal_id]['name'] = $actions[$goal_id]['label'];
+            $options['goal'] = $goal_id;
+            // Summary report.
+            $this->loadConfidenceReportHelper($report_data, FALSE, $options);
+            // Detail report.
+            $this->loadConfidenceReportHelper($report_data, TRUE, $options);
+          }
         }
       }
     }

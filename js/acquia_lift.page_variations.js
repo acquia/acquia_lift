@@ -114,7 +114,19 @@
           // If there is a limit on the children type, make sure that every
           // child passes the test.
           if (limitByChildrenType && !isNaN(limitByChildrenType)) {
-            return _.every(childrenNodeTypes, function(type) {return type == limitByChildrenType});
+            var childMatch = _.every(childrenNodeTypes, function(type) {return type == limitByChildrenType});
+            // Special limitations by node type.
+            switch (parseInt(limitByChildrenType)) {
+              case 3: {
+                // Text nodes only - check for text within the parent element
+                // if no child elements.
+                return childrenNodeTypes.length == 0 ? $element.get(0).textContent.length > 0 : childMatch;
+                break;
+              }
+              default: {
+                return childMatch;
+              }
+            }
           }
           // No limits in place so include by default.
           return true;

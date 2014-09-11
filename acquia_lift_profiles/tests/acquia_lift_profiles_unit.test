@@ -1,16 +1,17 @@
 <?php
+use Drupal\acquia_lift_profiles\AcquiaLiftProfilesAPI;
 
 /**
  * @file
  * Unit tests for Acquia Lift Profiles module.
  */
 
-class ALProfilesAPITest extends DrupalUnitTestCase {
+class AcquiaLiftProfilesAPITest extends DrupalUnitTestCase {
 
   public static function getInfo() {
     return array(
       'name' => t('Acquia Lift Profiles Unit Tests'),
-      'description' => t('Unit tests for ALProfilesAPI methods.'),
+      'description' => t('Unit tests for AcquiaLiftProfilesAPI methods.'),
       'group' => t('Personalize'),
     );
   }
@@ -27,7 +28,7 @@ class ALProfilesAPITest extends DrupalUnitTestCase {
   protected $logger = NULL;
 
   /**
-   * @var DummyALProfilesHttpClient
+   * @var DummyAcquiaLiftProfilesHttpClient
    */
   protected $httpClient = NULL;
 
@@ -60,7 +61,7 @@ class ALProfilesAPITest extends DrupalUnitTestCase {
   protected $apiUrl = 'http://api.acquia_lift_profiles.example.com';
 
   /**
-   * Tests getting ALProfilesAPI instance with invalid and valid credentials.
+   * Tests getting AcquiaLiftProfilesAPI instance with invalid and valid credentials.
    */
   function testGetInstance() {
     // Make sure calls to variable_get() for the account name and api url return
@@ -72,22 +73,22 @@ class ALProfilesAPITest extends DrupalUnitTestCase {
     $conf['acquia_lift_profiles_access_key'] = '';
     $conf['acquia_lift_profiles_secret_key'] = '';
     try {
-      $acquia_lift_profiles_api = ALProfilesAPI::getInstance('', 'ohai');
+      $acquia_lift_profiles_api = AcquiaLiftProfilesAPI::getInstance('', 'ohai');
       $this->fail('Should never reach here.');
     }
     catch (Exception $e) {
-      $this->assertTrue($e instanceof ALProfilesCredsException);
+      $this->assertTrue($e instanceof AcquiaLiftProfilesCredsException);
       $this->assertEqual('Missing acquia_lift_profiles account information.', $e->getMessage());
       try {
-        $acquia_lift_profiles_api = ALProfilesAPI::getInstance($this->accountName, 'some\\invalid\\url', $this->accessKey, $this->secretKey);
+        $acquia_lift_profiles_api = AcquiaLiftProfilesAPI::getInstance($this->accountName, 'some\\invalid\\url', $this->accessKey, $this->secretKey);
         $this->fail('Should never reach here.');
       }
       catch (Exception $e) {
-        $this->assertTrue($e instanceof ALProfilesCredsException);
+        $this->assertTrue($e instanceof AcquiaLiftProfilesCredsException);
         $this->assertEqual('API URL is not a valid URL.', $e->getMessage());
         try {
           // Here we pass valid creds.
-          $acquia_lift_profiles_api = ALProfilesAPI::getInstance($this->accountName, $this->apiUrl, $this->accessKey, $this->secretKey);
+          $acquia_lift_profiles_api = AcquiaLiftProfilesAPI::getInstance($this->accountName, $this->apiUrl, $this->accessKey, $this->secretKey);
           $acquia_lift_profiles_api->setLogger(new AcquiaLiftTestLogger());
           $this->assertEqual($this->apiUrl, $acquia_lift_profiles_api->getApiUrl());
         }
@@ -96,13 +97,13 @@ class ALProfilesAPITest extends DrupalUnitTestCase {
         }
       }
     }
-    ALProfilesAPI::reset();
+    AcquiaLiftProfilesAPI::reset();
     // Put back our original conf settings.
     $conf = $original_conf;
   }
 
-  function testGetSegements() {
-    $acquia_lift_profiles_api = $this->getALProfilesAPI();
+  function testGetSegments() {
+    $acquia_lift_profiles_api = $this->getAcquiaLiftProfilesAPI();
     $acquia_lift_profiles_api->getSegments();
 
     // Define the requests we expect to have been made to our dummy http
@@ -126,21 +127,21 @@ class ALProfilesAPITest extends DrupalUnitTestCase {
     $this->assertLogs($logs);
 
     // Now try with a broken http client (simulating a bad response).
-    $acquia_lift_profiles_api = $this->getALProfilesAPI(TRUE);
+    $acquia_lift_profiles_api = $this->getAcquiaLiftProfilesAPI(TRUE);
     $acquia_lift_profiles_api->getSegments();
     // Confirm the expected requests were made.
     $this->assertAPIRequests($requests);
     $logs = array();
     $this->assertLogs($logs);
 
-    ALProfilesAPI::reset();
+    AcquiaLiftProfilesAPI::reset();
   }
 
   /**
-   * Test ALProfilesAPI->saveEvent()
+   * Test AcquiaLiftProfilesAPI->saveEvent()
    */
   public function testSaveEvent() {
-    $acquia_lift_profiles_api = $this->getALProfilesAPI();
+    $acquia_lift_profiles_api = $this->getAcquiaLiftProfilesAPI();
     $event_name = 'test_event';
     $acquia_lift_profiles_api->saveEvent($event_name);
 
@@ -171,12 +172,12 @@ class ALProfilesAPITest extends DrupalUnitTestCase {
     $this->assertLogs($logs);
 
     // Now try with a broken client.
-    $acquia_lift_profiles_api = $this->getALProfilesAPI(TRUE);
+    $acquia_lift_profiles_api = $this->getAcquiaLiftProfilesAPI(TRUE);
     try {
       $acquia_lift_profiles_api->saveEvent($event_name);
     }
     catch (Exception $e) {
-      $this->assertTrue($e instanceof ALProfilesException);
+      $this->assertTrue($e instanceof AcquiaLiftProfilesException);
     }
 
     // Confirm the expected requests were made.
@@ -189,15 +190,15 @@ class ALProfilesAPITest extends DrupalUnitTestCase {
     );
     $this->assertLogs($logs);
 
-    ALProfilesAPI::reset();
+    AcquiaLiftProfilesAPI::reset();
   }
 
 
   /**
-   * Test ALProfilesAPI->deleteEvent()
+   * Test AcquiaLiftProfilesAPI->deleteEvent()
    */
   public function testDeleteEvent() {
-    $acquia_lift_profiles_api = $this->getALProfilesAPI();
+    $acquia_lift_profiles_api = $this->getAcquiaLiftProfilesAPI();
     $event_name = 'test_event';
     $acquia_lift_profiles_api->deleteEvent($event_name);
 
@@ -227,12 +228,12 @@ class ALProfilesAPITest extends DrupalUnitTestCase {
     $this->assertLogs($logs);
 
     // Now try with a broken client.
-    $acquia_lift_profiles_api = $this->getALProfilesAPI(TRUE);
+    $acquia_lift_profiles_api = $this->getAcquiaLiftProfilesAPI(TRUE);
     try {
       $acquia_lift_profiles_api->deleteEvent($event_name);
     }
     catch (Exception $e) {
-      $this->assertTrue($e instanceof ALProfilesException);
+      $this->assertTrue($e instanceof AcquiaLiftProfilesException);
     }
 
     // Confirm the expected requests were made.
@@ -245,7 +246,7 @@ class ALProfilesAPITest extends DrupalUnitTestCase {
     );
     $this->assertLogs($logs);
 
-    ALProfilesAPI::reset();
+    AcquiaLiftProfilesAPI::reset();
   }
 
   /**
@@ -260,7 +261,7 @@ class ALProfilesAPITest extends DrupalUnitTestCase {
       'Accept' => 'text/plain',
       'Host' => 'example.com',
     );
-    $acquia_lift_profiles_api = $this->getALProfilesAPI();
+    $acquia_lift_profiles_api = $this->getAcquiaLiftProfilesAPI();
     $expected = "GET\naccept:text/plain\nhost:example.com\nuser-agent:Drupal\n/some/path?another=moar-stuff&last-param=yet-moar-stuff&param=stuff";
 
     $str = $acquia_lift_profiles_api->canonicalizeRequest($method, $path, $parameters, $headers, FALSE);
@@ -277,19 +278,19 @@ class ALProfilesAPITest extends DrupalUnitTestCase {
   }
 
   /**
-   * Returns a ALProfilesAPI instance that can be used to test methods.
+   * Returns a AcquiaLiftProfilesAPI instance that can be used to test methods.
    *
    * @param bool $broken
    *   Whether the HTTP client used by the API class should be broken, simulating
    *   500 responses from Acquia Lift Profiles.
-   * @return ALProfilesAPI
-   *   A ALProfilesAPI instance.
+   * @return AcquiaLiftProfilesAPI
+   *   A AcquiaLiftProfilesAPI instance.
    */
-  protected function getALProfilesAPI($broken = FALSE) {
-    $acquia_lift_profiles_api = ALProfilesAPI::getInstance($this->accountName, $this->apiUrl, $this->accessKey, $this->secretKey);
+  protected function getAcquiaLiftProfilesAPI($broken = FALSE) {
+    $acquia_lift_profiles_api = AcquiaLiftProfilesAPI::getInstance($this->accountName, $this->apiUrl, $this->accessKey, $this->secretKey);
     // Create a dummy http client for the Acquia Lift Profiles API to use. All
     // requests to it will be logged and retrievable for checking later.
-    $this->httpClient = new DummyALProfilesHttpClient($broken);
+    $this->httpClient = new DummyAcquiaLiftProfilesHttpClient($broken);
     $acquia_lift_profiles_api->setHttpClient($this->httpClient);
     if ($this->logger === NULL) {
       // Create a dummy logger instance which will maintain a log in memory

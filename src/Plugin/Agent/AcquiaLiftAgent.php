@@ -2,6 +2,7 @@
 
 namespace Drupal\acquia_lift\Plugin\Agent;
 
+use Drupal\Core\Form\FormStateInterface;
 use Drupal\personalize\AgentBase;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 
@@ -39,7 +40,7 @@ class AcquiaLiftAgent extends AgentBase {
    *
    * @see \Drupal\block\BlockBase::blockForm()
    */
-  public function buildConfigurationForm(array $form, array &$form_state) {
+  public function buildConfigurationForm(array $form, FormStateInterface $form_state) {
     $form['moar_stuff'] = array(
       '#title' => 'err',
       '#type' => 'textfield',
@@ -56,7 +57,7 @@ class AcquiaLiftAgent extends AgentBase {
    *
    * @see \Drupal\block\BlockBase::blockValidate()
    */
-  public function validateConfigurationForm(array &$form, array &$form_state) {
+  public function validateConfigurationForm(array &$form, FormStateInterface $form_state) {
 
   }
 
@@ -68,7 +69,7 @@ class AcquiaLiftAgent extends AgentBase {
    *
    * @see \Drupal\block\BlockBase::blockSubmit()
    */
-  public function submitConfigurationForm(array &$form, array &$form_state) {
+  public function submitConfigurationForm(array &$form, FormStateInterface $form_state) {
 /*    // Process the block's submission handling if no errors occurred only.
     if (!form_get_errors($form_state)) {
       $this->configuration['label'] = $form_state['values']['label'];

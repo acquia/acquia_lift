@@ -4,17 +4,22 @@
  * Provides a context plugin for Acquia Lift Profiles
  */
 
-class ALProfilesContext extends PersonalizeContextBase {
+namespace Drupal\acquia_lift_profiles\AcquiaLiftProfilesContext;
+
+use Drupal\acquia_lift_profiles\AcquiaLiftProfilesAPI;
+
+class AcquiaLiftProfilesContext extends PersonalizeContextBase {
 
   /**
    * Implements PersonalizeContextInterface::create().
    */
   public static function create(PersonalizeAgentInterface $agent, $selected_context) {
     try {
-      $acquia_lift_profiles_api = ALProfilesAPI::getInstance();
-      return new self($agent, $selected_context, $acquia_lift_profiles_api);
+      /** @var \Drupal\acquia_lift_profiles\AcquiaLiftProfilesAPI $acquia_lift_profiles */
+      $acquia_lift_profiles = \Drupal::service('acquia_lift_profiles');
+      return new self($agent, $selected_context, $acquia_lift_profiles);
     }
-    catch (Exception $e) {
+    catch (\Exception $e) {
       \Drupal::logger('Acquia Lift Profiles')->notice($e->getMessage(), array());
       return NULL;
     }
@@ -26,8 +31,9 @@ class ALProfilesContext extends PersonalizeContextBase {
   public static function getOptions() {
     $options = array();
     try {
-      $acquia_lift_profiles_api = ALProfilesAPI::getInstance();
-      $segments = $acquia_lift_profiles_api->getSegments();
+      /** @var \Drupal\acquia_lift_profiles\AcquiaLiftProfilesAPI $acquia_lift_profiles */
+      $acquia_lift_profiles = \Drupal::service('acquia_lift_profiles');
+      $segments = $acquia_lift_profiles->getSegments();
       if (!empty($segments)) {
         foreach ($segments as $segment) {
           $options[$segment] = array(
@@ -46,12 +52,12 @@ class ALProfilesContext extends PersonalizeContextBase {
   }
 
   /**
-   * Constructs an ALProfilesContext object.
+   * Constructs an AcquiaLiftProfilesContext object.
    *
    * @param $selected_context
-   * @param ALProfilesAPI $acquia_lift_profiles_api
+   * @param AcquiaLiftProfilesAPI $acquia_lift_profiles_api
    */
-  public function __construct(PersonalizeAgentInterface $agent, $selected_context, ALProfilesAPI $acquia_lift_profiles_api) {
+  public function __construct(PersonalizeAgentInterface $agent, $selected_context, AcquiaLiftProfilesAPI $acquia_lift_profiles_api) {
     parent::__construct($agent, $selected_context);
     $this->acquia_lift_profilesAPI = $acquia_lift_profiles_api;
   }

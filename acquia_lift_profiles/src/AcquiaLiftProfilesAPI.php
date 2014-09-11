@@ -1,14 +1,30 @@
 <?php
+
 /**
  * @file
  * Provides an agent type for Acquia Lift Profiles
  */
+namespace Drupal\acquia_lift_profiles;
 
-class ALProfilesAPI {
+use Drupal\acquia_lift\Exception\AcquiaLiftCredsException;
+use Drupal\acquia_lift\Utility\AcquiaLiftTestLogger;
+use Drupal\acquia_lift_profiles\Client\DummyAcquiaLiftProfilesHttpClient;
+use Drupal\acquia_lift_profiles\Exception\AcquiaLiftProfilesCredsException;
+use Drupal\acquia_lift_profiles\Exception\AcquiaLiftProfilesException;
+use Drupal\Component\Utility\UrlHelper;
+use Drupal\acquia_lift\Client\AcquiaLiftDrupalHttpClientInterface;
+use Drupal\acquia_lift\Client\AcquiaLiftDrupalHttpClient;
+use PersonalizeLogLevel;
+use Drupal\Core\Config\ConfigFactory;
+use GuzzleHttp\ClientInterface;
+
+
+class AcquiaLiftProfilesAPI {
+
   /**
    * An http client for making calls to Acquia Lift Profiles.
    *
-   * @var AcquiaLiftDrupalHttpClientInterface
+   * @var ClientInterface
    */
   protected $httpClient;
 
@@ -61,9 +77,48 @@ class ALProfilesAPI {
   /**
    * The singleton instance.
    *
-   * @var ALProfilesAPI
+   * @var AcquiaLiftProfilesAPI
    */
   private static $instance;
+
+  /**
+   * Constructor.
+   * @param ConfigFactory $config_factory
+   * @param ClientInterface $http_client
+   * @throws AcquiaLiftCredsException
+   */
+  public function __construct(ConfigFactory $config_factory, ClientInterface $http_client) {
+    $config = $config_factory->get('acquia_lift_profiles.settings');
+
+    $this->accountName = $config->get('acquia_lift_profiles_account_name');
+    $this->apiUrl = $config->get('acquia_lift_profiles_api_url');
+    $this->accessKey = $config->get('acquia_lift_profiles_access_key');
+    $this->secretKey = $config->get('acquia_lift_profiles_secret_key');
+
+    // If either account name or API URL is still missing, bail.
+    if (empty($this->apiUrl) || empty($this->accountName) || empty($this->accessKey) || empty($this->secretKey)) {
+      throw new AcquiaLiftProfilesCredsException('Missing acquia_lift_profiles account information.');
+    }
+    if (!UrlHelper::isValid($this->apiUrl)) {
+      throw new AcquiaLiftProfilesCredsException('API URL is not a valid URL.');
+    }
+
+    $this->httpClient = $http_client;
+
+    // @todo Add Drupal 8 support for this
+    /*$needs_scheme = TRUE;
+    if ($needs_scheme) {
+      global $is_https;
+      // Use the same scheme for Acquia Lift as we are using here.
+      $url_scheme = ($is_https) ? 'https://' : 'http://';
+      $api_url = $url_scheme . $api_url;
+    }
+    if (substr($api_url, -1) === '/') {
+      $api_url = substr($api_url, 0, -1);
+    }*/
+
+  }
+
 
   /**
    * Singleton factory method.
@@ -77,7 +132,7 @@ class ALProfilesAPI {
    * @param $secret_key
    *   The secret key to use for authorization.
    *
-   * @return ALProfilesAPI
+   * @return AcquiaLiftProfilesAPI
    */
   public static function getInstance($account_name = '', $api_url = '', $access_key = '', $secret_key = '') {
     if (empty(self::$instance)) {
@@ -88,23 +143,12 @@ class ALProfilesAPI {
       // If no account name or api url has been passed in, fallback to getting them
       // from the variables.
       if (empty($account_name)) {
-        $account_name = \Drupal::config('acquia_lift_profiles.settings')->get('acquia_lift_profiles_account_name');
       }
       if (empty($api_url)) {
-        $api_url = \Drupal::config('acquia_lift_profiles.settings')->get('acquia_lift_profiles_api_url');
       }
       if (empty($access_key)) {
-        $access_key = \Drupal::config('acquia_lift_profiles.settings')->get('acquia_lift_profiles_access_key');
       }
       if (empty($secret_key)) {
-        $secret_key = \Drupal::config('acquia_lift_profiles.settings')->get('acquia_lift_profiles_secret_key');
-      }
-      // If either account name or API URL is still missing, bail.
-      if (empty($api_url) || empty($account_name) || empty($access_key) || empty($secret_key)) {
-        throw new ALProfilesCredsException('Missing acquia_lift_profiles account information.');
-      }
-      if (!valid_url($api_url)) {
-        throw new ALProfilesCredsException('API URL is not a valid URL.');
       }
       $needs_scheme = strpos($api_url, '://') === FALSE;
       if ($needs_scheme) {
@@ -116,7 +160,6 @@ class ALProfilesAPI {
       if (substr($api_url, -1) === '/') {
         $api_url = substr($api_url, 0, -1);
       }
-      self::$instance = new self($account_name, $api_url, $access_key, $secret_key);
     }
     return self::$instance;
   }
@@ -131,14 +174,14 @@ class ALProfilesAPI {
   }
 
   /**
-   * Returns a ALProfilesAPI instance with dummy creds and a dummy HttpClient.
+   * Returns a AcquiaLiftProfilesAPI instance with dummy creds and a dummy HttpClient.
    *
    * This is used during simpletest web tests.
    */
   protected static function getTestInstance() {
     module_load_include('inc', 'acquia_lift_profiles', 'tests/acquia_lift_profiles.test_classes');
     $instance = new self('TESTACCOUNT', 'http://api.example.com', 'testUser', 'testPass');
-    $instance->setHttpClient(new DummyALProfilesHttpClient());
+    $instance->setHttpClient(new DummyAcquiaLiftProfilesHttpClient());
     $instance->setLogger(new AcquiaLiftTestLogger(TRUE));
     return $instance;
   }
@@ -314,7 +357,7 @@ class ALProfilesAPI {
    *   The type of event, can be one of 'CAMPAIGN_ACTION', 'CAMPAIGN_CLICK_THROUGH',
    *   'CAMPAIGN_CONVERSION', or 'OTHER' (default).
    *
-   * @throws ALProfilesException
+   * @throws AcquiaLiftProfilesException
    */
   public function saveEvent($event_name, $event_type = 'OTHER') {
     // First get our Authorization header.
@@ -332,7 +375,7 @@ class ALProfilesAPI {
     }
     else {
       $this->logger()->log(PersonalizeLogLevel::ERROR, $fail_msg, $vars);
-      throw new ALProfilesException($fail_msg);
+      throw new AcquiaLiftProfilesException($fail_msg);
     }
   }
 
@@ -342,7 +385,7 @@ class ALProfilesAPI {
    * @param $event_name
    *   The name of the event.
    *
-   * @throws ALProfilesException
+   * @throws AcquiaLiftProfilesException
    */
   public function deleteEvent($event_name) {
     // First get our Authorization header.
@@ -358,7 +401,7 @@ class ALProfilesAPI {
     }
     else {
       $this->logger()->log(PersonalizeLogLevel::ERROR, $fail_msg, $vars);
-      throw new ALProfilesException($fail_msg);
+      throw new AcquiaLiftProfilesException($fail_msg);
     }
   }
 
@@ -383,6 +426,3 @@ class ALProfilesAPI {
   }
 
 }
-
-class ALProfilesException extends Exception {};
-class ALProfilesCredsException extends ALProfilesException {};

@@ -1,10 +1,16 @@
 <?php
 /**
  * @file
- * Provides an agent type for Acquia Lift
+ * Provides an agent type for AcquiaLift
  */
+namespace Drupal\acquia_lift;
 
-class AcquiaLiftAPI implements PersonalizeLoggerAwareInterface {
+use Drupal\acquia_lift\Exception\AcquiaLiftCredsException;
+use Drupal\Core\Config\ConfigFactory;
+use GuzzleHttp\ClientInterface;
+use Drupal\Component\Utility\UrlHelper;
+
+class AcquiaLiftAPI {
 
   const API_URL = 'api.lift.acquia.com';
 
@@ -53,82 +59,11 @@ class AcquiaLiftAPI implements PersonalizeLoggerAwareInterface {
   /**
    * An http client for making calls to Acquia Lift.
    *
-   * @var AcquiaLiftDrupalHttpClientInterface
+   * @var ClientInterface
    */
   protected $httpClient;
 
-  /**
-   * The singleton instance.
-   *
-   * @var AcquiaLiftAPI
-   */
-  private static $instance;
-
   protected $logger = NULL;
-
-  /**
-   * Singleton factory method.
-   *
-   * @return AcquiaLiftAPI
-   */
-  public static function getInstance($account_info) {
-    if (empty(self::$instance)) {
-      if (drupal_valid_test_ua()) {
-        self::$instance = self::getTestInstance();
-        return self::$instance;
-      }
-      foreach (array('api_key', 'admin_key', 'owner_code') as $key) {
-        if (!isset($account_info[$key])) {
-          throw new AcquiaLiftCredsException('Acquia Lift account info is not complete.');
-        }
-      }
-      if (!self::codeIsValid($account_info['owner_code'])) {
-        throw new AcquiaLiftCredsException('Acquia Lift owner code is invalid.');
-      }
-
-      $api_url = self::API_URL;
-      $needs_scheme = TRUE;
-      if (!empty($account_info['api_url'])) {
-        if (!valid_url($account_info['api_url'])) {
-          throw new AcquiaLiftCredsException('Acquia Lift API URL is not a valid URL.');
-        }
-        $api_url = $account_info['api_url'];
-        $needs_scheme = strpos($api_url, '://') === FALSE;
-      }
-      if ($needs_scheme) {
-        global $is_https;
-        // Use the same scheme for Acquia Lift as we are using here.
-        $url_scheme = ($is_https) ? 'https://' : 'http://';
-        $api_url = $url_scheme . $api_url;
-      }
-      if (substr($api_url, -1) === '/') {
-        $api_url = substr($api_url, 0, -1);
-      }
-
-      self::$instance = new self($account_info['api_key'], $account_info['admin_key'], $account_info['owner_code'], $api_url);
-    }
-    return self::$instance;
-  }
-
-  /**
-   * Resets the singleton instance.
-   *
-   * Used in unit tests.
-   */
-  public static function reset() {
-    self::$instance = NULL;
-  }
-
-  /**
-   * Returns an AcquiaLiftAPI instance with dummy creds and a dummy HttpClient.
-   *
-   * This is used during simpletest web tests.
-   */
-  protected static function getTestInstance() {
-    $instance = new self('test-api-key', 'test-admin-key', 'test-owner-code', 'http://api.example.com');
-    $instance->setHttpClient(new DummyAcquiaLiftHttpClient());
-    return $instance;
-  }
 
   /**
    * Determines whether the passed in string is valid as an owner code.
@@ -140,41 +75,42 @@ class AcquiaLiftAPI implements PersonalizeLoggerAwareInterface {
    *   otherwise.
    */
   public static function codeIsValid($str) {
-    return (bool) preg_match('/^' . self::VALID_NAME_MATCH_PATTERN . '+$/', $str);
+    return (bool) preg_match('/^[0-9A-Za-z_-]+$/', $str);
   }
 
   /**
-   * Returns a "clean" version of the passed in string.
+   * Constructor.
    *
-   * @param $str
-   *   The string to be cleaned.
-   * @return string
-   *   The clean string.
+   * @param \Drupal\Core\Config\ConfigFactory $config_factory
    */
-  public static function cleanFeatureString($str) {
-    $string = preg_replace('/' . self::FEATURE_STRING_REPLACE_PATTERN . '/', '-', $str);
-    // Get rid of instances of multiple '-' characters after replacement.
-    $string = preg_replace('/\-{2,}/', '-', $string);
-    return $string;
-  }
+  public function __construct(ConfigFactory $config_factory, ClientInterface $http_client) {
+    $config = $config_factory->get('acquia_lift.settings');
+    $this->owner_code = $config->get('owner_code');
+    $this->api_key = $config->get('api_key');
+    $this->admin_key = $config->get('admin_key');
 
-  /**
-   * Private constructor as this is a singleton.
-   *
-   * @param string $api_key
-   *   A string representing an Acquia Lift API key.
-   * @param string $admin_key
-   *   A string representing an Acquia Lift admin key.
-   * @param string $owner_code
-   *   A string representing an Acquia Lift owner code.
-   * @param string $api_url
-   *   A string representing an Acquia Lift API url.
-   */
-  private function __construct($api_key, $admin_key, $owner_code, $api_url) {
-    $this->api_key = $api_key;
-    $this->admin_key = $admin_key;
-    $this->owner_code = $owner_code;
+    $api_url = self::API_URL;
+    $needs_scheme = TRUE;
+    $url = $config->get('api_url');
+    if (!empty($url)) {
+      if (!UrlHelper::isValid($url)) {
+        throw new AcquiaLiftCredsException('Acquia Lift API URL is not a valid URL.');
+      }
+      $api_url = $url;
+      $needs_scheme = strpos($api_url, '://') === FALSE;
+    }
+    if ($needs_scheme) {
+      global $is_https;
+      // Use the same scheme for Acquia Lift as we are using here.
+      $url_scheme = ($is_https) ? 'https://' : 'http://';
+      $api_url = $url_scheme . $api_url;
+    }
+    if (substr($api_url, -1) === '/') {
+      $api_url = substr($api_url, 0, -1);
+    }
+
     $this->api_url = $api_url;
+    $this->httpClient = $http_client;
   }
 
   /**
@@ -214,28 +150,6 @@ class AcquiaLiftAPI implements PersonalizeLoggerAwareInterface {
   }
 
   /**
-   * Returns an http client to use for Acquia Lift calls.
-   *
-   * @return AcquiaLiftDrupalHttpClientInterface
-   */
-  protected function httpClient() {
-    if (!isset($this->httpClient)) {
-      $this->httpClient = new AcquiaLiftDrupalHttpClient();
-    }
-    return $this->httpClient;
-  }
-
-  /**
-   * Setter for the httpClient property.
-   *
-   * @param AcquiaLiftDrupalHttpClientInterface $client
-   *   The http client to use.
-   */
-  public function setHttpClient(AcquiaLiftDrupalHttpClientInterface $client) {
-    $this->httpClient = $client;
-  }
-
-  /**
    * Returns the fully qualified URL to use to connect to API.
    *
    * This function handles personalizing the endpoint to the client by
@@ -263,26 +177,6 @@ class AcquiaLiftAPI implements PersonalizeLoggerAwareInterface {
   }
 
   /**
-   * Returns the logger to use.
-   *
-   * @return PersonalizeLoggerInterface
-   */
-  protected function logger() {
-    if ($this->logger !== NULL) {
-      return $this->logger;
-    }
-    return new PersonalizeLogger();
-  }
-
-  /**
-   * Implements PersonalizeLoggerAwareInterface::setLogger().
-   */
-  public function setLogger(PersonalizeLoggerInterface $logger)
-  {
-    $this->logger = $logger;
-  }
-
-  /**
    * Tests the connection to Acquia Lift.
    *
    * @return bool
@@ -292,8 +186,8 @@ class AcquiaLiftAPI implements PersonalizeLoggerAwareInterface {
     // We use the list-agents endpoint for our ping test, in the absence of
     // an endpoint specifically provided for this purpose.
     $url = $this->generateEndpoint("/list-agents");
-    $response = $this->httpClient()->get($url, array('Accept' => 'application/json'));
-    return $response->code == 200;
+    $response = $this->httpClient->get($url, array('headers' => array('Accept' => 'application/json')));
+    return $response->getStatusCode() == 200;
   }
 
   /**
@@ -325,16 +219,16 @@ class AcquiaLiftAPI implements PersonalizeLoggerAwareInterface {
       'control-rate' => $control_rate,
       'explore-rate' => $explore_rate,
     );
-    $response = $this->httpClient()->put($url, array('Content-Type' => 'application/json; charset=utf-8', 'Accept' => 'application/json'), $agent);
+    $response = $this->httpClient->put($url, array('headers' => array('Content-Type' => 'application/json; charset=utf-8', 'Accept' => 'application/json'), 'body' => $agent));
     $data = json_decode($response->data, TRUE);
     $vars = array('agent' => $machine_name);
     $success_msg = 'The campaign {agent} was pushed to Acquia Lift';
     $fail_msg = 'The campaign {agent} could not be pushed to Acquia Lift';
-    if ($response->code == 200 && $data['status'] == 'ok') {
-      $this->logger()->log(PersonalizeLogLevel::INFO, $success_msg, $vars);
+    if ($response->getStatusCode() == 200 && $data['status'] == 'ok') {
+      //$this->logger()->log(PersonalizeLogLevel::INFO, $success_msg, $vars);
     }
     else {
-      $this->logger()->log(PersonalizeLogLevel::ERROR, $fail_msg, $vars);
+      //$this->logger()->log(PersonalizeLogLevel::ERROR, $fail_msg, $vars);
       throw new AcquiaLiftException($fail_msg);
     }
   }
@@ -349,16 +243,16 @@ class AcquiaLiftAPI implements PersonalizeLoggerAwareInterface {
    */
   public function savePoint($agent_name, $point_name) {
     $url = $this->generateEndpoint("/agent-api/$agent_name/points/$point_name");
-    $response = $this->httpClient()->put($url, array('Content-Type' => 'application/json; charset=utf-8', 'Accept' => 'application/json'));
+    $response = $this->httpClient->put($url, array('headers' => array('Content-Type' => 'application/json; charset=utf-8', 'Accept' => 'application/json')));
     $data = json_decode($response->data, TRUE);
     $vars = array('agent' => $agent_name, 'decpoint' => $point_name);
     $success_msg = 'The point {decpoint} was pushed to the Acquia Lift campaign {agent}';
     $fail_msg = 'Could not save the point {decpoint} to the Acquia Lift campaign {agent}';
-    if ($response->code == 200 && $data['status'] == 'ok') {
-      $this->logger()->log(PersonalizeLogLevel::INFO, $success_msg, $vars);
+    if ($response->getStatusCode() == 200 && $data['status'] == 'ok') {
+      //$this->logger()->log(PersonalizeLogLevel::INFO, $success_msg, $vars);
     }
     else {
-      $this->logger()->log(PersonalizeLogLevel::ERROR, $fail_msg, $vars);
+      //$this->logger()->log(PersonalizeLogLevel::ERROR, $fail_msg, $vars);
       throw new AcquiaLiftException($fail_msg);
     }
   }
@@ -375,16 +269,16 @@ class AcquiaLiftAPI implements PersonalizeLoggerAwareInterface {
    */
   public function saveDecision($agent_name, $point_name, $decision_name, $data = array()) {
     $url = $this->generateEndpoint("/agent-api/$agent_name/points/$point_name/decisions/$decision_name");
-    $response = $this->httpClient()->put($url, array('Content-Type' => 'application/json; charset=utf-8', 'Accept' => 'application/json'), $data);
+    $response = $this->httpClient->put($url, array('headers' => array('Content-Type' => 'application/json; charset=utf-8', 'Accept' => 'application/json'), 'body' => $data));
     $data = json_decode($response->data, TRUE);
     $vars = array('agent' => $agent_name, 'decpoint' => $point_name, 'decname' => $decision_name);
     $success_msg = 'The decision {decname} for point {decpoint} was pushed to the Acquia Lift campaign {agent}';
     $fail_msg = 'Could not save decision {decname} for point {decpoint} to the Acquia Lift campaign {agent}';
-    if ($response->code == 200 && $data['status'] == 'ok') {
-      $this->logger()->log(PersonalizeLogLevel::INFO, $success_msg, $vars);
+    if ($response->getStatusCode() == 200 && $data['status'] == 'ok') {
+      //$this->logger()->log(PersonalizeLogLevel::INFO, $success_msg, $vars);
     }
     else {
-      $this->logger()->log(PersonalizeLogLevel::ERROR, $fail_msg, $vars);
+      //$this->logger()->log(PersonalizeLogLevel::ERROR, $fail_msg, $vars);
       throw new AcquiaLiftException($fail_msg);
     }
   }
@@ -404,16 +298,16 @@ class AcquiaLiftAPI implements PersonalizeLoggerAwareInterface {
    */
   public function saveChoice($agent_name, $point_name, $decision_name, $choice, $data = array()) {
     $url = $this->generateEndpoint("/agent-api/$agent_name/points/$point_name/decisions/$decision_name/choices/$choice");
-    $response = $this->httpClient()->put($url, array('Content-Type' => 'application/json; charset=utf-8', 'Accept' => 'application/json'), $data);
+    $response = $this->httpClient->put($url, array('headers' => array('Content-Type' => 'application/json; charset=utf-8', 'Accept' => 'application/json'), 'body' => $data));
     $data = json_decode($response->data, TRUE);
     $vars = array('agent' => $agent_name, 'decpoint' => $point_name, 'choicename' => $decision_name . ': ' . $choice);
     $success_msg = 'The decision choice {choicename} for point {decpoint} was pushed to the Acquia Lift campaign {agent}';
     $fail_msg = 'Could not save decision choice {choicename} for point {decpoint} to the Acquia Lift campaign {agent}';
-    if ($response->code == 200 && $data['status'] == 'ok') {
-      $this->logger()->log(PersonalizeLogLevel::INFO, $success_msg, $vars);
+    if ($response->getStatusCode() == 200 && $data['status'] == 'ok') {
+      //$this->logger()->log(PersonalizeLogLevel::INFO, $success_msg, $vars);
     }
     else {
-      $this->logger()->log(PersonalizeLogLevel::ERROR, $fail_msg, $vars);
+      //$this->logger()->log(PersonalizeLogLevel::ERROR, $fail_msg, $vars);
       throw new AcquiaLiftException($fail_msg);
     }
   }
@@ -425,15 +319,15 @@ class AcquiaLiftAPI implements PersonalizeLoggerAwareInterface {
    */
   public function resetAgentData($agent_name) {
     $url = $this->generateEndpoint("/$agent_name/data");
-    $response = $this->httpClient()->delete($url);
+    $response = $this->httpClient->delete($url);
     $vars = array('agent' => $agent_name);
     $success_msg = 'The data for Acquia Lift campaign {agent} was reset';
     $fail_msg = 'Could not reset data for Acquia Lift campaign {agent}';
-    if ($response->code == 200) {
-      $this->logger()->log(PersonalizeLogLevel::INFO, $success_msg, $vars);
+    if ($response->getStatusCode() == 200) {
+      //$this->logger()->log(PersonalizeLogLevel::INFO, $success_msg, $vars);
     }
     else {
-      $this->logger()->log(PersonalizeLogLevel::ERROR, $fail_msg, $vars);
+      //$this->logger()->log(PersonalizeLogLevel::ERROR, $fail_msg, $vars);
       throw new AcquiaLiftException($fail_msg);
     }
   }
@@ -446,15 +340,15 @@ class AcquiaLiftAPI implements PersonalizeLoggerAwareInterface {
    */
   public function deleteAgent($agent_name) {
     $url = $this->generateEndpoint("/agent-api/$agent_name");
-    $response = $this->httpClient()->delete($url);
+    $response = $this->httpClient->delete($url);
     $vars = array('agent' => $agent_name);
     $success_msg = 'The Acquia Lift campaign {agent} was deleted';
     $fail_msg = 'Could not delete Acquia Lift campaign {agent}';
-    if ($response->code == 200) {
-      $this->logger()->log(PersonalizeLogLevel::INFO, $success_msg, $vars);
+    if ($response->getStatusCode() == 200) {
+      //$this->logger()->log(PersonalizeLogLevel::INFO, $success_msg, $vars);
     }
     else {
-      $this->logger()->log(PersonalizeLogLevel::ERROR, $fail_msg, $vars);
+      //$this->logger()->log(PersonalizeLogLevel::ERROR, $fail_msg, $vars);
       throw new AcquiaLiftException($fail_msg);
     }
   }
@@ -469,16 +363,16 @@ class AcquiaLiftAPI implements PersonalizeLoggerAwareInterface {
    */
   public function deletePoint($agent_name, $point_name) {
     $url = $this->generateEndpoint("/agent-api/$agent_name/points/$point_name");
-    $response = $this->httpClient()->delete($url);
+    $response = $this->httpClient->delete($url);
     $data = json_decode($response->data, TRUE);
     $vars = array('agent' => $agent_name, 'decpoint' => $point_name);
     $success_msg = 'The decision point {decpoint} was deleted from the Acquia Lift campaign {agent}';
     $fail_msg = 'Could not delete decision point {decpoint} from the Acquia Lift campaign {agent}';
-    if ($response->code == 200 && $data['status'] == 'ok') {
-      $this->logger()->log(PersonalizeLogLevel::INFO, $success_msg, $vars);
+    if ($response->getStatusCode() == 200 && $data['status'] == 'ok') {
+      //$this->logger()->log(PersonalizeLogLevel::INFO, $success_msg, $vars);
     }
     else {
-      $this->logger()->log(PersonalizeLogLevel::ERROR, $fail_msg, $vars);
+      //$this->logger()->log(PersonalizeLogLevel::ERROR, $fail_msg, $vars);
       throw new AcquiaLiftException($fail_msg);
     }
   }
@@ -495,16 +389,16 @@ class AcquiaLiftAPI implements PersonalizeLoggerAwareInterface {
    */
   public function deleteDecision($agent_name, $point_name, $decision_name) {
     $url = $this->generateEndpoint("/agent-api/$agent_name/points/$point_name/decisions/$decision_name");
-    $response = $this->httpClient()->delete($url);
+    $response = $this->httpClient->delete($url);
     $data = json_decode($response->data, TRUE);
     $vars = array('agent' => $agent_name, 'decpoint' => $point_name, 'decname' => $decision_name);
     $success_msg = 'The decision {decname} for point {decpoint} was deleted from the Acquia Lift campaign {agent}';
     $fail_msg = 'Could not delete decision {decname} for point {decpoint} from the Acquia Lift campaign {agent}';
-    if ($response->code == 200 && $data['status'] == 'ok') {
-      $this->logger()->log(PersonalizeLogLevel::INFO, $success_msg, $vars);
+    if ($response->getStatusCode() == 200 && $data['status'] == 'ok') {
+      //$this->logger()->log(PersonalizeLogLevel::INFO, $success_msg, $vars);
     }
     else {
-      $this->logger()->log(PersonalizeLogLevel::ERROR, $fail_msg, $vars);
+      //$this->logger()->log(PersonalizeLogLevel::ERROR, $fail_msg, $vars);
       throw new AcquiaLiftException($fail_msg);
     }
   }
@@ -524,16 +418,16 @@ class AcquiaLiftAPI implements PersonalizeLoggerAwareInterface {
    */
   public function deleteChoice($agent_name, $point_name, $decision_name, $choice) {
     $url = $this->generateEndpoint("/agent-api/$agent_name/points/$point_name/decisions/$decision_name/choices/$choice");
-    $response = $this->httpClient()->delete($url);
+    $response = $this->httpClient->delete($url);
     $data = json_decode($response->data, TRUE);
     $vars = array('agent' => $agent_name, 'decpoint' => $point_name, 'choicename' => $decision_name . ': ' . $choice);
     $success_msg = 'The decision choice {choicename} for point {decpoint} was deleted from the Acquia Lift campaign {agent}';
     $fail_msg = 'Could not delete decision choice {choicename} for point {decpoint} from the Acquia Lift campaign {agent}';
-    if ($response->code == 200 && $data['status'] == 'ok') {
-      $this->logger()->log(PersonalizeLogLevel::INFO, $success_msg, $vars);
+    if ($response->getStatusCode() == 200 && $data['status'] == 'ok') {
+      //$this->logger()->log(PersonalizeLogLevel::INFO, $success_msg, $vars);
     }
     else {
-      $this->logger()->log(PersonalizeLogLevel::ERROR, $fail_msg, $vars);
+      //$this->logger()->log(PersonalizeLogLevel::ERROR, $fail_msg, $vars);
       throw new AcquiaLiftException($fail_msg);
     }
   }
@@ -550,16 +444,16 @@ class AcquiaLiftAPI implements PersonalizeLoggerAwareInterface {
    */
   public function saveGoal($agent_name, $goal_name, $data = array()) {
     $url = $this->generateEndpoint("/agent-api/$agent_name/goals/$goal_name");
-    $response = $this->httpClient()->put($url, array('Content-Type' => 'application/json; charset=utf-8', 'Accept' => 'application/json'), $data);
+    $response = $this->httpClient->put($url, array('headers' => array('Content-Type' => 'application/json; charset=utf-8', 'Accept' => 'application/json'), 'body' => $data));
     $data = json_decode($response->data, TRUE);
     $vars = array('agent' => $agent_name, 'goal' => $goal_name);
     $success_msg = 'The goal {goal} was pushed to the Acquia Lift campaign {agent}';
     $fail_msg = 'Could not save the goal {goal} to the Acquia Lift campaign {agent}';
-    if ($response->code == 200 && $data['status'] == 'ok') {
-      $this->logger()->log(PersonalizeLogLevel::INFO, $success_msg, $vars);
+    if ($response->getStatusCode() == 200 && $data['status'] == 'ok') {
+      //$this->logger()->log(PersonalizeLogLevel::INFO, $success_msg, $vars);
     }
     else {
-      $this->logger()->log(PersonalizeLogLevel::ERROR, $fail_msg, $vars);
+      //$this->logger()->log(PersonalizeLogLevel::ERROR, $fail_msg, $vars);
       throw new AcquiaLiftException($fail_msg);
     }
   }
@@ -575,8 +469,8 @@ class AcquiaLiftAPI implements PersonalizeLoggerAwareInterface {
    */
   public function getAgent($machine_name) {
     $url = $this->generateEndpoint("/agent-api/$machine_name");
-    $response = $this->httpClient()->get($url, array('Accept' => 'application/json'), array('timeout' => self::GET_REQUEST_TIMEOUT_VALUE));
-    if ($response->code == 200) {
+    $response = $this->httpClient->get($url, array('headers' => array('Accept' => 'application/json'), 'timeout' => self::GET_REQUEST_TIMEOUT_VALUE));
+    if ($response->getStatusCode() == 200) {
       return json_decode($response->data, TRUE);
     }
     return FALSE;
@@ -592,8 +486,8 @@ class AcquiaLiftAPI implements PersonalizeLoggerAwareInterface {
    */
   public function getGoalsForAgent($agent_name) {
     $url = $this->generateEndpoint("/agent-api/$agent_name/goals");
-    $response = $this->httpClient()->get($url, array('Accept' => 'application/json'), array('timeout' => self::GET_REQUEST_TIMEOUT_VALUE));
-    if ($response->code == 200) {
+    $response = $this->httpClient->get($url, array('headers' => array('Accept' => 'application/json'), 'timeout' => self::GET_REQUEST_TIMEOUT_VALUE));
+    if ($response->getStatusCode() == 200) {
       return json_decode($response->data, TRUE);
     }
     return FALSE;
@@ -609,8 +503,8 @@ class AcquiaLiftAPI implements PersonalizeLoggerAwareInterface {
    */
   public function getPointsForAgent($agent_name) {
     $url = $this->generateEndpoint("/agent-api/$agent_name/points");
-    $response = $this->httpClient()->get($url, array('Accept' => 'application/json'), array('timeout' => self::GET_REQUEST_TIMEOUT_VALUE));
-    if ($response->code == 200) {
+    $response = $this->httpClient->get($url, array('headers' => array('Accept' => 'application/json'), 'timeout' => self::GET_REQUEST_TIMEOUT_VALUE));
+    if ($response->getStatusCode() == 200) {
       return json_decode($response->data, TRUE);
     }
     return FALSE;
@@ -629,8 +523,8 @@ class AcquiaLiftAPI implements PersonalizeLoggerAwareInterface {
    */
   public function getDecisionsForPoint($agent_name, $point_name) {
     $url = $this->generateEndpoint("/agent-api/$agent_name/points/{$point_name}/decisions");
-    $response = $this->httpClient()->get($url, array('Accept' => 'application/json'), array('timeout' => self::GET_REQUEST_TIMEOUT_VALUE));
-    if ($response->code == 200) {
+    $response = $this->httpClient->get($url, array('headers' => array('Accept' => 'application/json'), 'timeout' => self::GET_REQUEST_TIMEOUT_VALUE));
+    if ($response->getStatusCode() == 200) {
       return json_decode($response->data, TRUE);
     }
     return FALSE;
@@ -651,8 +545,8 @@ class AcquiaLiftAPI implements PersonalizeLoggerAwareInterface {
    */
   public function getChoicesForDecision($agent_name, $point_name, $decision_name) {
     $url = $this->generateEndpoint("/agent-api/$agent_name/points/{$point_name}/decisions/$decision_name/choices");
-    $response = $this->httpClient()->get($url, array('Accept' => 'application/json'), array('timeout' => self::GET_REQUEST_TIMEOUT_VALUE));
-    if ($response->code == 200) {
+    $response = $this->httpClient->get($url, array('headers' => array('Accept' => 'application/json'), 'timeout' => self::GET_REQUEST_TIMEOUT_VALUE));
+    if ($response->getStatusCode() == 200) {
       return json_decode($response->data, TRUE);
     }
     return FALSE;
@@ -668,8 +562,8 @@ class AcquiaLiftAPI implements PersonalizeLoggerAwareInterface {
    */
   public function getExistingAgents() {
     $url = $this->generateEndpoint("/list-agents");
-    $response = $this->httpClient()->get($url, array('Accept' => 'application/json'), array('timeout' => self::GET_REQUEST_TIMEOUT_VALUE));
-    if ($response->code == 200) {
+    $response = $this->httpClient->get($url, array('headers' => array('Accept' => 'application/json'), 'timeout' => self::GET_REQUEST_TIMEOUT_VALUE));
+    if ($response->getStatusCode() == 200) {
       $response = json_decode($response->data, TRUE);
       if (!isset($response['data']['agents'])) {
         return array();
@@ -682,7 +576,7 @@ class AcquiaLiftAPI implements PersonalizeLoggerAwareInterface {
     }
     else {
       $msg = 'Error retrieving agent list from Acquia Lift';
-      $this->logger()->log(PersonalizeLogLevel::ERROR, $msg);
+      //$this->logger()->log(PersonalizeLogLevel::ERROR, $msg);
       throw new AcquiaLiftException($msg);
     }
   }
@@ -695,14 +589,14 @@ class AcquiaLiftAPI implements PersonalizeLoggerAwareInterface {
   public function getTransformOptions() {
     $url = $this->generateEndpoint("/transforms-options");
     // Use a timeout of 8 seconds for retrieving the transform options.
-    $response = $this->httpClient()->get($url, array('Accept' => 'application/json'), array('timeout' => self::GET_REQUEST_TIMEOUT_VALUE));
-    if ($response->code == 200) {
+    $response = $this->httpClient->get($url, array('headers' => array('Accept' => 'application/json'), 'timeout' => self::GET_REQUEST_TIMEOUT_VALUE));
+    if ($response->getStatusCode() == 200) {
       $response = json_decode($response->data, TRUE);
       return $response['data']['options'];
     }
     else {
       $msg = 'Error retrieving list of transforms options';
-      $this->logger()->log(PersonalizeLogLevel::ERROR, $msg);
+      //$this->logger()->log(PersonalizeLogLevel::ERROR, $msg);
       throw new AcquiaLiftException($msg);
     }
   }
@@ -730,15 +624,15 @@ class AcquiaLiftAPI implements PersonalizeLoggerAwareInterface {
         'feature' => implode(',', $auto_features),
       )
     );
-    $response = $this->httpClient()->post($url, array('Content-Type' => 'application/json; charset=utf-8', 'Accept' => 'application/json'), $body);
+    $response = $this->httpClient->post($url, array('headers' => array('Content-Type' => 'application/json; charset=utf-8', 'Accept' => 'application/json'), 'body' => $body));
     $vars = array('agent' => $agent_name);
     $success_msg = 'The targeting rule for campaign {agent} was saved successfully';
     $fail_msg = 'The targeting rule could not be saved for campaign {agent}';
-    if ($response->code == 200) {
-      $this->logger()->log(PersonalizeLogLevel::INFO, $success_msg, $vars);
+    if ($response->getStatusCode() == 200) {
+      //$this->logger()->log(PersonalizeLogLevel::INFO, $success_msg, $vars);
     }
     else {
-      $this->logger()->log(PersonalizeLogLevel::ERROR, $fail_msg, $vars);
+      //$this->logger()->log(PersonalizeLogLevel::ERROR, $fail_msg, $vars);
       throw new AcquiaLiftException($fail_msg);
     }
   }
@@ -752,15 +646,15 @@ class AcquiaLiftAPI implements PersonalizeLoggerAwareInterface {
   public function deleteAutoTargetingRule($agent_name) {
     $rule_name = $agent_name . '-auto-targeting';
     $url = $this->generateEndpoint("/transform-rule/$rule_name");
-    $response = $this->httpClient()->delete($url, array('Content-Type' => 'application/json; charset=utf-8', 'Accept' => 'application/json'));
+    $response = $this->httpClient->delete($url, array('headers' => array('Content-Type' => 'application/json; charset=utf-8', 'Accept' => 'application/json')));
     $vars = array('agent' => $agent_name);
     $success_msg = 'The targeting rule for campaign {agent} was deleted successfully';
     $fail_msg = 'The targeting rule could not be deleted for campaign {agent}';
-    if ($response->code == 200) {
-      $this->logger()->log(PersonalizeLogLevel::INFO, $success_msg, $vars);
+    if ($response->getStatusCode() == 200) {
+      //$this->logger()->log(PersonalizeLogLevel::INFO, $success_msg, $vars);
     }
     else {
-      $this->logger()->log(PersonalizeLogLevel::ERROR, $fail_msg, $vars);
+      //$this->logger()->log(PersonalizeLogLevel::ERROR, $fail_msg, $vars);
       throw new AcquiaLiftException($fail_msg);
     }
   }
@@ -787,10 +681,10 @@ class AcquiaLiftAPI implements PersonalizeLoggerAwareInterface {
   public function getPotentialTargetingValues($agent_name) {
     $url = $this->generateEndpoint("/-/potential-targeting?agent={$agent_name}&include-current=true");
     $headers = array('Accept' => 'application/json');
-    $response = $this->httpClient()->get($url, $headers, array('timeout' => self::GET_REQUEST_TIMEOUT_VALUE));
-    if ($response->code != 200) {
+    $response = $this->httpClient->get($url, array('headers' => $headers, 'timeout' => self::GET_REQUEST_TIMEOUT_VALUE));
+    if ($response->getStatusCode() != 200) {
       $msg = 'Problem retrieving potential targeting values';
-      $this->logger()->log(PersonalizeLogLevel::ERROR, $msg);
+      //$this->logger()->log(PersonalizeLogLevel::ERROR, $msg);
       throw new AcquiaLiftException('Problem retrieving potential targeting values');
     }
     return json_decode($response->data, TRUE);
@@ -887,16 +781,16 @@ class AcquiaLiftAPI implements PersonalizeLoggerAwareInterface {
    */
   public function saveFixedTargetingMapping($agent_name, $point_name, $map) {
     $url = $this->generateEndpoint("/agent-api/$agent_name/points/$point_name/fixed-targeting");
-    $response = $this->httpClient()->put($url, array('Content-Type' => 'application/json; charset=utf-8', 'Accept' => 'application/json'), $map);
+    $response = $this->httpClient->put($url, array('headers' => array('Content-Type' => 'application/json; charset=utf-8', 'Accept' => 'application/json'), 'body' => $map));
     $data = json_decode($response->data, TRUE);
     $vars = array('agent' => $agent_name, 'decpoint' => $point_name);
     $success_msg = 'The fixed targeting mapping for point {decpoint} was successfully saved for campaign {agent}';
     $fail_msg = 'The fixed targeting mapping for point {decpoint} could not be saved for campaign {agent}';
-    if ($response->code == 200 && $data['status'] == 'ok') {
-      $this->logger()->log(PersonalizeLogLevel::INFO, $success_msg, $vars);
+    if ($response->getStatusCode() == 200 && $data['status'] == 'ok') {
+      //$this->logger()->log(PersonalizeLogLevel::INFO, $success_msg, $vars);
     }
     else {
-      $this->logger()->log(PersonalizeLogLevel::ERROR, $fail_msg, $vars);
+      //$this->logger()->log(PersonalizeLogLevel::ERROR, $fail_msg, $vars);
       throw new AcquiaLiftException($fail_msg);
     }
   }
@@ -927,10 +821,10 @@ class AcquiaLiftAPI implements PersonalizeLoggerAwareInterface {
     if ($point !== NULL) {
       $headers['x-mpath-point'] = $point;
     }
-    $response = $this->httpClient()->get($url, $headers, array('timeout' => self::GET_REQUEST_TIMEOUT_VALUE));
-    if ($response->code != 200) {
+    $response = $this->httpClient->get($url, array('headers' => $headers, 'timeout' => self::GET_REQUEST_TIMEOUT_VALUE));
+    if ($response->getStatusCode() != 200) {
       $msg = 'Problem retrieving targeting impact report.';
-      $this->logger()->log(PersonalizeLogLevel::ERROR, $msg);
+      //$this->logger()->log(PersonalizeLogLevel::ERROR, $msg);
       throw new AcquiaLiftException($msg);
     }
     return json_decode($response->data, TRUE);
@@ -956,10 +850,10 @@ class AcquiaLiftAPI implements PersonalizeLoggerAwareInterface {
     $codes = implode(',', $agent_names);
     $days = (is_null($num_days) || !is_numeric($num_days)) ? '' : '&days=' . $num_days;
     $url = $this->generateEndpoint("/report/status?codes={$codes}{$days}");
-    $response = $this->httpClient()->get($url, array('Accept' => 'application/json'), array('timeout' => self::GET_REQUEST_TIMEOUT_VALUE));
-    if ($response->code != 200) {
+    $response = $this->httpClient->get($url, array('headers' => array('Accept' => 'application/json'), 'timeout' => self::GET_REQUEST_TIMEOUT_VALUE));
+    if ($response->getStatusCode() != 200) {
       $msg = 'Problem retrieving targeting impact report.';
-      $this->logger()->log(PersonalizeLogLevel::ERROR, $msg);
+      //$this->logger()->log(PersonalizeLogLevel::ERROR, $msg);
       throw new AcquiaLiftException('Problem retrieving targeting impact report');
     }
     return json_decode($response->data, TRUE);
@@ -1007,10 +901,10 @@ class AcquiaLiftAPI implements PersonalizeLoggerAwareInterface {
       $headers['x-mpath-point'] = $point;
     }
     // Use a timeout of 8 seconds for retrieving the transform options.
-    $response = $this->httpClient()->get($url, $headers, array('timeout' => self::GET_REQUEST_TIMEOUT_VALUE));
-    if ($response->code != 200) {
+    $response = $this->httpClient->get($url, array('headers' => $headers, 'timeout' => self::GET_REQUEST_TIMEOUT_VALUE));
+    if ($response->getStatusCode() != 200) {
       $msg = 'Problem retrieving confidence report.';
-      $this->logger()->log(PersonalizeLogLevel::ERROR, $msg);
+      //$this->logger()->log(PersonalizeLogLevel::ERROR, $msg);
       throw new AcquiaLiftException($msg);
     }
     return json_decode($response->data, TRUE);
@@ -1047,11 +941,11 @@ class AcquiaLiftAPI implements PersonalizeLoggerAwareInterface {
       $headers['x-mpath-point'] = $point;
     }
     // Use a timeout of 8 seconds for retrieving the transform options.
-    $response = $this->httpClient()->get($url, $headers, array('timeout' => self::GET_REQUEST_TIMEOUT_VALUE));
+    $response = $this->httpClient->get($url, array('headers' => $headers, 'timeout' => self::GET_REQUEST_TIMEOUT_VALUE));
 
-    if ($response->code != 200) {
+    if ($response->getStatusCode() != 200) {
       $msg = 'Problem retrieving learning report.';
-      $this->logger()->log(PersonalizeLogLevel::ERROR, $msg);
+      //$this->logger()->log(PersonalizeLogLevel::ERROR, $msg);
       throw new AcquiaLiftException($msg);
     }
     return json_decode($response->data, TRUE);
@@ -1070,10 +964,10 @@ class AcquiaLiftAPI implements PersonalizeLoggerAwareInterface {
     $date_str = $this->getDateString($date_start, $date_end);
     $url = $this->generateEndpoint("/-/report/system-usage{$date_str}");
     $headers = array('Accept' => 'application/json');
-    $response = $this->httpClient()->get($url, $headers, array('timeout' => self::GET_REQUEST_TIMEOUT_VALUE));
-    if ($response->code != 200) {
+    $response = $this->httpClient->get($url, array('headers' => $headers));
+    if ($response->getStatusCode() != 200) {
       $msg = 'Problem retrieving API call counts.';
-      $this->logger()->log(PersonalizeLogLevel::ERROR, $msg);
+      //$this->logger()->log(PersonalizeLogLevel::ERROR, $msg);
       throw new AcquiaLiftException($msg);
     }
     $result = json_decode($response->data, TRUE);
@@ -1258,319 +1152,5 @@ class AcquiaLiftAPI implements PersonalizeLoggerAwareInterface {
     }
     return $date_str;
   }
-
 }
 
-/**
- * A simple interface for http clients.
- *
- * The point of this is to make our AcquiaLiftAPI class unit testable. It
- * is modeled after Guzzle's ClientInterface. The AcquiaLiftAPI class relies
- * on an object implementing this interface to make calls to the Acquia Lift
- * service. For tests we can pass in a dummy http client so that no calls
- * are actually made.
- *
- * This also makes our code more maintainable between D7 and D8.
- *
- * @see tests/acquia_lift.test
- */
-interface AcquiaLiftDrupalHttpClientInterface {
-
-  /**
-   * Create a GET request for the client
-   *
-   * @param string|array     $uri     Resource URI
-   * @param array|Collection $headers HTTP headers
-   * @param array            $options Options to apply to the request. For BC compatibility, you can also pass a
-   *                                  string to tell Guzzle to download the body of the response to a particular
-   *                                  location. Use the 'body' option instead for forward compatibility.
-   */
-  public function get($uri = null, $headers = null, array $options = array());
-
-  /**
-   * Create a PUT request for the client
-   *
-   * @param string|array                        $uri     Resource URI
-   * @param array|Collection                    $headers HTTP headers
-   * @param string|resource|EntityBodyInterface $body    Body to send in the request
-   * @param array                               $options Options to apply to the request
-   */
-  public function put($uri = null, $headers = null, $body = null, array $options = array());
-
-  /**
-   * Create a POST request for the client
-   *
-   * @param string|array                                $uri      Resource URI
-   * @param array|Collection                            $headers  HTTP headers
-   * @param array|Collection|string|EntityBodyInterface $postBody POST body. Can be a string, EntityBody, or
-   *                                                    associative array of POST fields to send in the body of the
-   *                                                    request. Prefix a value in the array with the @ symbol to
-   *                                                    reference a file.
-   * @param array                                       $options Options to apply to the request
-   */
-  public function post($uri = null, $headers = null, $body = null, array $options = array());
-  /**
-   * Create a DELETE request for the client
-   *
-   * @param string|array                        $uri     Resource URI
-   * @param array|Collection                    $headers HTTP headers
-   * @param string|resource|EntityBodyInterface $body    Body to send in the request
-   * @param array                               $options Options to apply to the request
-   */
-  public function delete($uri = null, $headers = null, $body = null, array $options = array());
-}
-
-/**
- * This is just an OOP wrapper around drupal_http_request.
- */
-class AcquiaLiftDrupalHttpClient implements AcquiaLiftDrupalHttpClientInterface {
-
-  protected function encodeBody($body) {
-    if (is_string($body)) {
-      $data = $body;
-    }
-    else {
-      $data = drupal_json_encode($body);
-    }
-    return $data;
-  }
-
-  /**
-   * Implements AcquiaLiftDrupalHttpClientInterface::get().
-   */
-  public function get($uri = NULL, $headers = NULL, array $options = array()) {
-    $headers = $headers ? $headers : array();
-    $options = array('method' => 'GET', 'headers' => $headers) + $options;
-    return drupal_http_request($uri, $options);
-  }
-
-  /**
-   * Implements AcquiaLiftDrupalHttpClientInterface::put().
-   */
-  public function put($uri = NULL, $headers = NULL, $body = NULL, array $options = array()) {
-    $data = ($body === NULL ? NULL : $this->encodeBody($body));
-    $headers = $headers ? $headers : array();
-    $options = array('method' => 'PUT', 'data' => $data, 'headers' => $headers) + $options;
-    return drupal_http_request($uri, $options);
-  }
-
-  /**
-   * Implements AcquiaLiftDrupalHttpClientInterface::post().
-   */
-  public function post($uri = NULL, $headers = NULL, $body = NULL, array $options = array()) {
-    $data = $body ? $this->encodeBody($body) : NULL;
-    $headers = $headers ? $headers : array();
-    $options = array('method' => 'POST', 'data' => $data, 'headers' => $headers) + $options;
-    return drupal_http_request($uri, $options);
-  }
-
-  /**
-   * Implements AcquiaLiftDrupalHttpClientInterface::delete().
-   */
-  public function delete($uri = null, $headers = null, $body = null, array $options = array()) {
-    $data = $body ? $this->encodeBody($body) : NULL;
-    $headers = $headers ? $headers : array();
-    $options = array('method' => 'DELETE', 'data' => $data, 'headers' => $headers) + $options;
-    return drupal_http_request($uri, $options);
-  }
-}
-
-/**
- * Class AcquiaLiftQueue
- *
- * This class is used for queueing http requests to Acquia Lift. It
- * prevents duplicate items from being added during a request, which
- * can happen when there are multiple calls to the agent save or option
- * set save or delete functions.
- */
-class AcquiaLiftQueue extends SystemQueue {
-
-  public static $items = array();
-
-  /**
-   * Overrides SystemQueue::createItem().
-   *
-   * Prevents duplicate requests from being queued up during the same
-   * page request.
-   *
-   * @param $data
-   * @return bool|void
-   */
-  public function createItem($data) {
-    if (isset($data['hash'])) {
-      if (in_array($data['hash'], self::$items)) {
-        return;
-      }
-      else {
-        self::$items[] = $data['hash'];
-        unset($data['hash']);
-      }
-    }
-    parent::createItem($data);
-  }
-
-  public function deleteQueue() {
-    parent::deleteQueue();
-    self::$items = array();
-  }
-}
-
-class AcquiaLiftException extends Exception {}
-class AcquiaLiftCredsException extends AcquiaLiftException {}
-
-/**
- * Classes used for testing.
- */
-class DummyAcquiaLiftHttpClient implements AcquiaLiftDrupalHttpClientInterface {
-
-  /**
-   * Stores all requests that have been received.
-   *
-   * @var array
-   *   An array of requests.
-   */
-  protected $requests_received;
-
-  /**
-   * Whether or not this http client should return 500 errors.
-   *
-   * @var bool
-   */
-  protected $broken;
-
-  /**
-   * Generates a dummy response based on the passed in data.
-   *
-   * @param array $data
-   *   An array of data for the response.
-   * @return stdClass
-   *   An object representing a response from the server.
-   */
-  protected function generateDummyResponse($data) {
-    $response = new stdClass();
-    $response->code = $this->broken ? 500 : 200;
-    $response->data = drupal_json_encode($data);
-    return $response;
-  }
-
-  /**
-   * Constructor
-   *
-   * @param bool $broken
-   *   Whether or not this http client should just get 500 errors.
-   * @param array $data
-   *   An array of dummy data that can be returned in responses.
-   */
-  public function __construct($broken = FALSE, $data = array()) {
-    $this->broken = $broken;
-    $this->data = $data;
-  }
-
-  /**
-   * Logs the request internally.
-   *
-   * @param $type
-   *   The type of request, e.g. 'get'
-   * @param $uri
-   *   The uri of the request.
-   * @param $headers
-   *   The array of headers.
-   * @param $options
-   *   An array of options
-   * @param null $body
-   *   (optional) The body of the request.
-   */
-  protected function logRequest($type, $uri, $headers, $options, $body = NULL) {
-    $this->requests_received[] = array(
-      'type' => $type,
-      'uri' => $uri,
-      'headers' => $headers,
-      'options' => $options,
-      'body' => $body
-    );
-  }
-
-  /**
-   * Returns all requests that have been made to this client.
-   *
-   * @return array
-   *   An array of requests
-   */
-  public function getLoggedRequests() {
-    return $this->requests_received;
-  }
-
-  public function removeLoggedRequests() {
-    $this->requests_received = array();
-  }
-
-  /**
-   * Implements AcquiaLiftDrupalHttpClientInterface::get().
-   */
-  public function get($uri = null, $headers = null, array $options = array())
-  {
-    $this->logRequest('get', $uri, $headers, $options);
-
-    $data = array('data' => array());
-    if (strpos($uri, 'list-agents') !== FALSE) {
-      $data['data']['agents'] = isset($this->data['agents']) ? $this->data['agents'] : array();
-    }
-    elseif (strpos($uri, 'transforms-options') !== FALSE) {
-      $data['data']['options'] = isset($this->data['options']) ? $this->data['options'] : array();
-    }
-    elseif (strpos($uri, 'potential-targeting') !== FALSE) {
-      $data['data']['potential'] = array(
-        'features' => isset($this->data['features']) ? $this->data['features'] : array()
-      );
-    }
-    return $this->generateDummyResponse($data);
-  }
-
-  /**
-   * Implements AcquiaLiftDrupalHttpClientInterface::put().
-   */
-  public function put($uri = null, $headers = null, $body = null, array $options = array())
-  {
-    $this->logRequest('put', $uri, $headers, $options, $body);
-    return $this->generateDummyResponse(array('status' => 'ok'));
-  }
-
-  /**
-   * Implements AcquiaLiftDrupalHttpClientInterface::post().
-   */
-  public function post($uri = null, $headers = null, $body = null, array $options = array())
-  {
-    $this->logRequest('post', $uri, $headers, $options, $body);
-    return $this->generateDummyResponse(array('status' => 'ok'));
-  }
-
-  /**
-   * Implements AcquiaLiftDrupalHttpClientInterface::delete().
-   */
-  public function delete($uri = null, $headers = null, $body = null, array $options = array())
-  {
-    $this->logRequest('delete', $uri, $headers, $options, $body);
-    return $this->generateDummyResponse(array('status' => 'ok'));
-  }
-
-}
-
-class AcquiaLiftTestLogger implements PersonalizeLoggerInterface {
-  protected $logs = array();
-
-  public function log($level, $message, array $context = array())
-  {
-    $this->logs[] = array(
-      'level' => $level,
-      'message' => $message,
-    );
-  }
-
-  public function clearLogs() {
-    $this->logs = array();
-  }
-
-  public function getLogs() {
-    return $this->logs;
-  }
-}

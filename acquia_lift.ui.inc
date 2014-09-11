@@ -107,6 +107,7 @@ function acquia_lift_chosenify_element(&$element, $classes = array()) {
  */
 function acquia_lift_generate_ignore_selector() {
   global $theme;
+  $classes = array();
   $all_regions = system_region_list($theme, REGIONS_ALL);
   $visible_regions = system_region_list($theme, REGIONS_VISIBLE);
   $invisible_regions = array_diff($all_regions, $visible_regions);

@@ -66,15 +66,15 @@ function acquia_lift_profiles_disable() {
  * Implements hook_uninstall().
  */
 function acquia_lift_profiles_uninstall() {
-  variable_del('acquia_lift_profiles_account_name');
-  variable_del('acquia_lift_profiles_api_url');
-  variable_del('acquia_lift_profiles_access_key');
-  variable_del('acquia_lift_profiles_secret_key');
-  variable_del('acquia_lift_profiles_capture_identity');
-  variable_del('acquia_lift_profiles_js_path');
-  variable_del('acquia_lift_profiles_vocabulary_mappings');
-  variable_del('acquia_lift_profiles_tracked_actions');
-  variable_del('acquia_lift_profiles_udf_mappings');
+  \Drupal::config('acquia_lift_profiles.settings')->clear('acquia_lift_profiles_account_name');
+  \Drupal::config('acquia_lift_profiles.settings')->clear('acquia_lift_profiles_api_url');
+  \Drupal::config('acquia_lift_profiles.settings')->clear('acquia_lift_profiles_access_key');
+  \Drupal::config('acquia_lift_profiles.settings')->clear('acquia_lift_profiles_secret_key');
+  \Drupal::config('acquia_lift_profiles.settings')->clear('acquia_lift_profiles_capture_identity');
+  \Drupal::config('acquia_lift_profiles.settings')->clear('acquia_lift_profiles_js_path');
+  \Drupal::config('acquia_lift_profiles.settings')->clear('acquia_lift_profiles_vocabulary_mappings');
+  \Drupal::config('acquia_lift_profiles.settings')->clear('acquia_lift_profiles_tracked_actions');
+  \Drupal::config('acquia_lift_profiles.settings')->clear('acquia_lift_profiles_udf_mappings');
 
   // Delete the menu link
   $item = _acquia_lift_profiles_get_menu_link();
@@ -87,7 +87,7 @@ function acquia_lift_profiles_uninstall() {
  * Rebuilds the list of subscribers for each action tracked.
  */
 function rebuild_subscribers_for_tracked_actions() {
-  foreach (variable_get('acquia_lift_profiles_tracked_actions', array()) as $action) {
+  foreach (\Drupal::config('acquia_lift_profiles.settings')->get('acquia_lift_profiles_tracked_actions') as $action) {
     visitor_actions_clear_subscribers($action);
   }
 }

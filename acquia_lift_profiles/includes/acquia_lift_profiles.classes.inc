@@ -88,16 +88,16 @@ class ALProfilesAPI {
       // If no account name or api url has been passed in, fallback to getting them
       // from the variables.
       if (empty($account_name)) {
-        $account_name = variable_get('acquia_lift_profiles_account_name', '');
+        $account_name = \Drupal::config('acquia_lift_profiles.settings')->get('acquia_lift_profiles_account_name');
       }
       if (empty($api_url)) {
-        $api_url = variable_get('acquia_lift_profiles_api_url', '');
+        $api_url = \Drupal::config('acquia_lift_profiles.settings')->get('acquia_lift_profiles_api_url');
       }
       if (empty($access_key)) {
-        $access_key = variable_get('acquia_lift_profiles_access_key', '');
+        $access_key = \Drupal::config('acquia_lift_profiles.settings')->get('acquia_lift_profiles_access_key');
       }
       if (empty($secret_key)) {
-        $secret_key = variable_get('acquia_lift_profiles_secret_key', '');
+        $secret_key = \Drupal::config('acquia_lift_profiles.settings')->get('acquia_lift_profiles_secret_key');
       }
       // If either account name or API URL is still missing, bail.
       if (empty($api_url) || empty($account_name) || empty($access_key) || empty($secret_key)) {

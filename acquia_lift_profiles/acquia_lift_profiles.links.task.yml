@@ -1,0 +1,3 @@
+acquia_lift_profiles.admin_form:
+  route_name: acquia_lift_profiles.admin_form
+  title: 'Acquia Lift Profiles'

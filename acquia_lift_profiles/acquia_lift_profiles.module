@@ -110,7 +110,7 @@ function acquia_lift_profiles_get_segments() {
  */
 function acquia_lift_profiles_page_build(&$page) {
   global $base_root;
-  if (user_access('manage personalized content')) {
+  if (\Drupal::currentUser()->hasPermission('manage personalized content')) {
     // Add js and css for positioning the Web Admin link in the navbar.
     $page['page_top']['acquia_lift_profiles_admin'] = array(
       '#attached' => array(
@@ -156,11 +156,11 @@ function acquia_lift_profiles_page_build(&$page) {
   }
   $settings['pageContext'] = $page_context;
 
-  global $user;
+  $user = \Drupal::currentUser();
   if ($user->uid > 0) {
     // If this is an administrator, add an admin mode setting so that
     // no interactions happen with decision agents.
-    if (user_access('administer acquia_lift_profiles configuration')) {
+    if (\Drupal::currentUser()->hasPermission('administer acquia_lift_profiles configuration')) {
       $settings['adminMode'] = TRUE;
     }
   }
@@ -466,10 +466,10 @@ function acquia_lift_profiles_get_page_context() {
   // Add node-specific page context
   $page_context = acquia_lift_profiles_node_page_context();
   if (!isset($page_context['content_title'])) {
-    $page_context['content_title'] = drupal_get_title();
+    $page_context['content_title'] = \Drupal::service("title_resolver")->getTitle(\Drupal::request(), \Drupal::routeMatch()->getRouteObject())();
   }
   // Allow other modules to alter the page context to include additional data.
-  drupal_alter('acquia_lift_profiles_page_context', $page_context);
+  \Drupal::moduleHandler()->alter('acquia_lift_profiles_page_context', $page_context);
   return $page_context;
 }
 

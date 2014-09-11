@@ -15,7 +15,7 @@ class ALProfilesContext extends PersonalizeContextBase {
       return new self($agent, $selected_context, $acquia_lift_profiles_api);
     }
     catch (Exception $e) {
-      watchdog('Acquia Lift Profiles', $e->getMessage());
+      \Drupal::logger('Acquia Lift Profiles')->notice($e->getMessage(), array());
       return NULL;
     }
   }

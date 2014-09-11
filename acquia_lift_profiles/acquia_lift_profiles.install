@@ -24,8 +24,8 @@ function acquia_lift_profiles_install() {
     'expanded' => 1,
     'weight' => 99,
   );
-  menu_link_save($item);
-  menu_rebuild();
+  //menu_link_save($item);
+  //menu_rebuild();
 }
 
 /**

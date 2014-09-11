@@ -49,7 +49,9 @@ function acquia_lift_profiles_admin_form($form, &$form_state) {
     '#description' => t('Check this if you want Acquia Lift Profiles to capture the identity of the user upon login or registration. This means sending their email address to the Acquia Lift Profile Manager.'),
     '#default_value' => \Drupal::config('acquia_lift_profiles.settings')->get('acquia_lift_profiles_capture_identity'),
   );
-  $vocabularies = taxonomy_get_vocabularies();
+  //$vocabularies = taxonomy_get_vocabularies();
+  // @todo make this work in drupal 8
+  $vocabularies = array();
   $mappings = \Drupal::config('acquia_lift_profiles.settings')->get('acquia_lift_profiles_vocabulary_mappings');
   $vocab_options = array('' => t('Select...'));
   foreach ($vocabularies as $vid => $voc) {

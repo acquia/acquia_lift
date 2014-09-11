@@ -1,0 +1,5 @@
+acquia_lift_profiles.admin_form:
+  title: 'Acquia Lift Profiles'
+  parent: system.admin_config_content
+  description: 'Configure security, connection and data mapping information for Acquia Lift Profiles functionality.'
+  route_name: acquia_lift_profiles.admin_form

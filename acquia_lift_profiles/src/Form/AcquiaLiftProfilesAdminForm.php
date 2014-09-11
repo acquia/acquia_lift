@@ -5,10 +5,10 @@
 
 namespace Drupal\acquia_lift_profiles\Form;
 
-use Drupal\Core\Form\FormBase;
+use Drupal\Core\Form\ConfigFormBase;
 use Drupal\Core\Form\FormStateInterface;
 
-class AcquiaLiftProfilesAdminForm extends FormBase {
+class AcquiaLiftProfilesAdminForm extends ConfigFormBase {
 
   /**
    * {@inheritdoc}
@@ -21,37 +21,39 @@ class AcquiaLiftProfilesAdminForm extends FormBase {
    * Admin form for configuring acquia_lift_profiles behavior.
    */
   function buildForm(array $form, FormStateInterface $form_state) {
+    $config = $this->config('acquia_lift_profiles.settings');
+
     $form['#attached']['js'][] = drupal_get_path('module', 'acquia_lift_profiles') . '/js/acquia_lift_profiles.admin.js';
     $form['acquia_lift_profiles_account_name'] = array(
       '#type' => 'textfield',
       '#title' => t('Acquia Lift Profiles Account Name'),
-      '#default_value' => \Drupal::config('acquia_lift_profiles.settings')->get('acquia_lift_profiles_account_name'),
+      '#default_value' => $config->get('acquia_lift_profiles_account_name'),
       '#required' => TRUE,
     );
     $form['acquia_lift_profiles_api_url'] = array(
       '#type' => 'textfield',
       '#title' => t('Acquia Lift Profiles API URL'),
       '#field_prefix' => 'http(s)://',
-      '#default_value' => \Drupal::config('acquia_lift_profiles.settings')->get('acquia_lift_profiles_api_url'),
+      '#default_value' => $config->get('acquia_lift_profiles_api_url'),
       '#required' => TRUE,
     );
     $form['acquia_lift_profiles_access_key'] = array(
       '#type' => 'textfield',
       '#title' => t('Acquia Lift Profiles API Access Key'),
-      '#default_value' => \Drupal::config('acquia_lift_profiles.settings')->get('acquia_lift_profiles_access_key'),
+      '#default_value' => $config->get('acquia_lift_profiles_access_key'),
       '#required' => TRUE,
     );
     $form['acquia_lift_profiles_secret_key'] = array(
       '#type' => 'textfield',
       '#title' => t('Acquia Lift Profiles API Secret Key'),
-      '#default_value' => \Drupal::config('acquia_lift_profiles.settings')->get('acquia_lift_profiles_secret_key'),
+      '#default_value' => $config->get('acquia_lift_profiles_secret_key'),
       '#required' => TRUE,
     );
     $form['acquia_lift_profiles_js_path'] = array(
       '#type' => 'textfield',
       '#title' => t('Acquia Lift Profiles JavaScript path'),
       '#field_prefix' => 'http(s)://',
-      '#default_value' => \Drupal::config('acquia_lift_profiles.settings')->get('acquia_lift_profiles_js_path'),
+      '#default_value' => $config->get('acquia_lift_profiles_js_path'),
       '#required' => TRUE,
     );
 
@@ -59,12 +61,12 @@ class AcquiaLiftProfilesAdminForm extends FormBase {
       '#type' => 'checkbox',
       '#title' => t('Capture Identity'),
       '#description' => t('Check this if you want Acquia Lift Profiles to capture the identity of the user upon login or registration. This means sending their email address to the Acquia Lift Profile Manager.'),
-      '#default_value' => \Drupal::config('acquia_lift_profiles.settings')->get('acquia_lift_profiles_capture_identity'),
+      '#default_value' => $config->get('acquia_lift_profiles_capture_identity'),
     );
     //$vocabularies = taxonomy_get_vocabularies();
     // @todo make this work in drupal 8
     $vocabularies = array();
-    $mappings = \Drupal::config('acquia_lift_profiles.settings')->get('acquia_lift_profiles_vocabulary_mappings');
+    $mappings = $config->get('acquia_lift_profiles_vocabulary_mappings');
     $vocab_options = array('' => t('Select...'));
     foreach ($vocabularies as $vid => $voc) {
       $vocab_options[$vid] = $voc->name;
@@ -97,8 +99,8 @@ class AcquiaLiftProfilesAdminForm extends FormBase {
     );
     // Only show the "Tracked actions" selector if acquia_lift_profiles has already been
     // configured for API connections.
-    if (acquia_lift_profiles_is_configured(TRUE)) {
-      $action_settings = \Drupal::config('acquia_lift_profiles.settings')->get('acquia_lift_profiles_tracked_actions');
+    /*if (acquia_lift_profiles_is_configured(TRUE)) {
+      $action_settings = $config->get('acquia_lift_profiles_tracked_actions');
       $actions = visitor_actions_get_actions();
       $options = array();
       foreach ($actions as $name => $info) {
@@ -114,7 +116,7 @@ class AcquiaLiftProfilesAdminForm extends FormBase {
       );
       module_load_include('inc', 'personalize', 'personalize.admin');
       $groups = personalize_get_grouped_context_options(NULL, TRUE, array('acquia_lift_profiles_context', 'acquia_lift_context'));
-      $udf_mappings = \Drupal::config('acquia_lift_profiles.settings')->get('acquia_lift_profiles_udf_mappings');
+      $udf_mappings = $config->get('acquia_lift_profiles_udf_mappings');
       $form['acquia_lift_profiles_udf_mappings'] = array(
         '#title' => t('User Defined Field Mappings'),
         '#description' => t('For each user defined field available in Acquia Lift Profiles, you can map a visitor context, whose value will then be sent as the value for that user defined field.'),
@@ -162,7 +164,7 @@ class AcquiaLiftProfilesAdminForm extends FormBase {
           );
         }
       }
-    }
+    }*/
 
     $form['submit'] = array(
       '#type' => 'submit',
@@ -176,7 +178,16 @@ class AcquiaLiftProfilesAdminForm extends FormBase {
    * @param FormStateInterface $form_state
    */
   public function submitForm(array &$form, FormStateInterface $form_state) {
-    $form_state->setRedirect('acquia_lift_profiles.admin_form');
+      $this->config('acquia_lift_profiles.settings')
+          ->set('acquia_lift_profiles_account_name', $form_state['values']['acquia_lift_profiles_account_name'])
+          ->set('acquia_lift_profiles_api_url', $form_state['values']['acquia_lift_profiles_api_url'])
+          ->set('acquia_lift_profiles_access_key', $form_state['values']['acquia_lift_profiles_access_key'])
+          ->set('acquia_lift_profiles_secret_key', $form_state['values']['acquia_lift_profiles_secret_key'])
+          ->set('acquia_lift_profiles_js_path', $form_state['values']['acquia_lift_profiles_js_path'])
+          ->set('acquia_lift_profiles_capture_identity', $form_state['values']['acquia_lift_profiles_capture_identity'])
+          ->save();
+
+      parent::submitForm($form, $form_state);
   }
 
 }

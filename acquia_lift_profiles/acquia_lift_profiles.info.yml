@@ -3,7 +3,7 @@ description: 'The Acquia Lift Profiles module provides integration with the Acqu
 dependencies:
   - acquia_lift
   - personalize
-  - visitor_actions
+
 package: Personalization
 core: 8.x
 type: module

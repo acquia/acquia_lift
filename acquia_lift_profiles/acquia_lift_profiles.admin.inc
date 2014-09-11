@@ -159,22 +159,6 @@ function acquia_lift_profiles_admin_form($form, &$form_state) {
   return $form;
 }
 
-/**
- * Returns a visitor context single select box.
- */
-function acquia_lift_profiles_admin_build_visitor_context_select($groups, $default_value) {
-  if (count($groups) == 0) {
-    return FALSE;
-  }
-  $element = array(
-    '#type' => 'select',
-    '#empty_option' => t('- Not mapped -'),
-    '#options' => $groups,
-    '#default_value' => $default_value,
-  );
-  return $element;
-}
-
 
 /**
  * Submit handler for the configuration form.

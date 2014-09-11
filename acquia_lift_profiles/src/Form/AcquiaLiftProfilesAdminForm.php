@@ -99,9 +99,11 @@ class AcquiaLiftProfilesAdminForm extends ConfigFormBase {
     );
     // Only show the "Tracked actions" selector if acquia_lift_profiles has already been
     // configured for API connections.
-    /*if (acquia_lift_profiles_is_configured(TRUE)) {
+    if (acquia_lift_profiles_is_configured(TRUE)) {
       $action_settings = $config->get('acquia_lift_profiles_tracked_actions');
-      $actions = visitor_actions_get_actions();
+      //$actions = visitor_actions_get_actions();
+      // @todo Make this work in Drupal 8
+      $actions = array();
       $options = array();
       foreach ($actions as $name => $info) {
         $options[$name] = $info['label'];
@@ -114,8 +116,10 @@ class AcquiaLiftProfilesAdminForm extends ConfigFormBase {
         '#default_value' => $action_settings,
         '#size' => count($options),
       );
-      module_load_include('inc', 'personalize', 'personalize.admin');
-      $groups = personalize_get_grouped_context_options(NULL, TRUE, array('acquia_lift_profiles_context', 'acquia_lift_context'));
+      //module_load_include('inc', 'personalize', 'personalize.admin');
+      //$groups = personalize_get_grouped_context_options(NULL, TRUE, array('acquia_lift_profiles_context', 'acquia_lift_context'));
+      $groups = array('acquia_lift_profiles_context', 'acquia_lift_context');
+      // @todo Make this work better in Drupal 8
       $udf_mappings = $config->get('acquia_lift_profiles_udf_mappings');
       $form['acquia_lift_profiles_udf_mappings'] = array(
         '#title' => t('User Defined Field Mappings'),
@@ -144,7 +148,7 @@ class AcquiaLiftProfilesAdminForm extends ConfigFormBase {
         foreach ($udfs as $i => $udf) {
 
           $default_value = isset($udf_mappings[$type][$udf]) ? $udf_mappings[$type][$udf] : NULL;
-          $select = acquia_lift_profiles_admin_build_visitor_context_select($groups, $default_value);
+          $select = $this->acquia_lift_profiles_admin_build_visitor_context_select($groups, $default_value);
           $select['#title'] = t('Context to map to the @field field', array('@field' => $udf));
           $form['acquia_lift_profiles_udf_mappings'][$type][$udf] = $select;
           if ($i == $min) {
@@ -164,30 +168,41 @@ class AcquiaLiftProfilesAdminForm extends ConfigFormBase {
           );
         }
       }
-    }*/
-
-    $form['submit'] = array(
-      '#type' => 'submit',
-      '#value' => t('Save'),
-    );
-    return $form;
+    }
+    return parent::buildForm($form, $form_state);
   }
 
   /**
-   * @param array $form
-   * @param FormStateInterface $form_state
+   * {@inheritdoc}
    */
   public function submitForm(array &$form, FormStateInterface $form_state) {
-      $this->config('acquia_lift_profiles.settings')
-          ->set('acquia_lift_profiles_account_name', $form_state['values']['acquia_lift_profiles_account_name'])
-          ->set('acquia_lift_profiles_api_url', $form_state['values']['acquia_lift_profiles_api_url'])
-          ->set('acquia_lift_profiles_access_key', $form_state['values']['acquia_lift_profiles_access_key'])
-          ->set('acquia_lift_profiles_secret_key', $form_state['values']['acquia_lift_profiles_secret_key'])
-          ->set('acquia_lift_profiles_js_path', $form_state['values']['acquia_lift_profiles_js_path'])
-          ->set('acquia_lift_profiles_capture_identity', $form_state['values']['acquia_lift_profiles_capture_identity'])
-          ->save();
+    $config = $this->config('acquia_lift_profiles.settings');
+    $config
+      ->set('acquia_lift_profiles_account_name', $form_state->getValue('acquia_lift_profiles_account_name'))
+      ->set('acquia_lift_profiles_api_url', $form_state->getValue('acquia_lift_profiles_api_url'))
+      ->set('acquia_lift_profiles_access_key', $form_state->getValue('acquia_lift_profiles_access_key'))
+      ->set('acquia_lift_profiles_secret_key', $form_state->getValue('acquia_lift_profiles_secret_key'))
+      ->set('acquia_lift_profiles_js_path', $form_state->getValue('acquia_lift_profiles_js_path'))
+      ->set('acquia_lift_profiles_capture_identity', $form_state->getValue('acquia_lift_profiles_capture_identity'))
+      ->set('acquia_lift_profiles_udf_mappings', $form_state->getValue('acquia_lift_profiles_udf_mappings'));
 
-      parent::submitForm($form, $form_state);
+    $config->save();
+    parent::submitForm($form, $form_state);
   }
 
+  /**
+   * Returns a visitor context single select box.
+   */
+  private function acquia_lift_profiles_admin_build_visitor_context_select($groups, $default_value) {
+    if (count($groups) == 0) {
+      return FALSE;
+    }
+    $element = array(
+      '#type' => 'select',
+      '#empty_option' => t('- Not mapped -'),
+      '#options' => $groups,
+      '#default_value' => $default_value,
+    );
+    return $element;
+  }
 }

@@ -9,6 +9,7 @@ namespace Drupal\acquia_lift\Form;
 
 use Drupal\acquia_lift\AcquiaLiftAPI;
 use Drupal\Core\Form\ConfigFormBase;
+use Drupal\Core\Form\FormStateInterface;
 
 /**
  * Form builder for the admin display defaults page.
@@ -25,7 +26,7 @@ class SettingsForm extends ConfigFormBase {
   /**
    * {@inheritdoc}
    */
-  public function buildForm(array $form, array &$form_state) {
+  public function buildForm(array $form, FormStateInterface $form_state) {
     $form = parent::buildForm($form, $form_state);
 
     $config = $this->configFactory()->get('acquia_lift.settings');
@@ -132,7 +133,7 @@ class SettingsForm extends ConfigFormBase {
   /**
    * {@inheritdoc}
    */
-  public function validateForm(array &$form, array &$form_state) {
+  public function validateForm(array &$form, FormStateInterface $form_state) {
     if (!AcquiaLiftAPI::codeIsValid($form_state['values']['acquia_lift_account_info']['owner_code'])) {
       \Drupal::formBuilder()->setErrorByName('acquia_lift_account_info][owner_code', $form_state, "Invalid owner code");
     }
@@ -141,7 +142,7 @@ class SettingsForm extends ConfigFormBase {
   /**
    * {@inheritdoc}
    */
-  public function submitForm(array &$form, array &$form_state) {
+  public function submitForm(array &$form, FormStateInterface $form_state) {
     $this->configFactory()->get('acquia_lift.settings')
       ->set('owner_code', $form_state['values']['acquia_lift_account_info']['owner_code'])
       ->set('api_key', $form_state['values']['acquia_lift_account_info']['api_key'])

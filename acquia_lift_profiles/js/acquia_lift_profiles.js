@@ -18,9 +18,6 @@ var _tcwq = _tcwq || [];
   Drupal.behaviors.acquia_lift_profiles = {
     'attach': function (context, settings) {
       Drupal.acquia_lift_profiles.init(settings);
-      Drupal.acquia_lift_profiles.addActionListener(settings);
-      processServerSideActions(settings);
-      Drupal.acquia_lift_profiles.registerSegmentsCallback();
     }
   };
 
@@ -174,46 +171,26 @@ var _tcwq = _tcwq || [];
           }
         }
 
-        var callback = function(contextValues) {
-          for (var pluginName in contextValues) {
-            if (contextValues.hasOwnProperty(pluginName)) {
-              for (var contextName in contextValues[pluginName]) {
-                if (contextValues[pluginName].hasOwnProperty(contextName)) {
-                  var fullContextName = pluginName + context_separator + contextName;
-                  if (reverseMapping.hasOwnProperty(fullContextName)) {
-                    // Set this is as the value for all UDFs that use this context.
-                    for (var i in reverseMapping[fullContextName]) {
-                      if (reverseMapping[fullContextName].hasOwnProperty(i)) {
-                        udfValues[reverseMapping[fullContextName][i]] = contextValues[pluginName][contextName];
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          }
 
-          // Ensure sensible defaults for our capture data.
-          var pageInfo = $.extend({
-            'content_title': 'Untitled',
-            'content_type': 'page',
-            'page_type': 'content page',
-            'content_section': '',
-            'content_keywords': '',
-            'post_id': '',
-            'published_date': '',
-            'thumbnail_url': '',
-            'persona': '',
-            'engagement_score':'1',
-            'author':'',
-            'evalSegments': true,
-            'trackingId': trackingId
-          }, settings.acquia_lift_profiles.pageContext, udfValues);
-          _tcaq.push( [ 'captureView', 'Content View', pageInfo ] );
+        // Ensure sensible defaults for our capture data.
+        var pageInfo = $.extend({
+          'content_title': 'Untitled',
+          'content_type': 'page',
+          'page_type': 'content page',
+          'content_section': '',
+          'content_keywords': '',
+          'post_id': '',
+          'published_date': '',
+          'thumbnail_url': '',
+          'persona': '',
+          'engagement_score':'1',
+          'author':'',
+          'evalSegments': true,
+          'trackingId': trackingId
+        }, settings.acquia_lift_profiles.pageContext, udfValues);
+        _tcaq.push( [ 'captureView', 'Content View', pageInfo ] );
 
-          initialized = true;
-        };
-        Drupal.personalize.getVisitorContexts(plugins, callback);
+        initialized = true;
       },
       'getTrackingID': function () {
         return trackingId;

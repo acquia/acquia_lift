@@ -464,13 +464,13 @@ function acquia_lift_profiles_node_page_context($node = NULL, $primary = FALSE) 
  */
 function acquia_lift_profiles_get_page_context() {
   // Add node-specific page context
-  $page_context = acquia_lift_profiles_node_page_context();
+/*  $page_context = acquia_lift_profiles_node_page_context();
   if (!isset($page_context['content_title'])) {
     $page_context['content_title'] = \Drupal::service("title_resolver")->getTitle(\Drupal::request(), \Drupal::routeMatch()->getRouteObject())();
   }
   // Allow other modules to alter the page context to include additional data.
   \Drupal::moduleHandler()->alter('acquia_lift_profiles_page_context', $page_context);
-  return $page_context;
+  return $page_context;*/
 }
 
 /**

@@ -4,6 +4,17 @@
  * @file
  * Provides an agent type for Acquia Lift Profiles
  */
+namespace Drupal\acquia_lift_profiles;
+
+use Drupal\acquia_lift\Utility\AcquiaLiftTestLogger;
+use Drupal\acquia_lift_profiles\Client\DummyALProfilesHttpClient;
+use Drupal\acquia_lift_profiles\Exception\ALProfilesCredsException;
+use Drupal\acquia_lift_profiles\Exception\ALProfilesException;
+use Drupal\Component\Utility\UrlHelper;
+use Drupal\acquia_lift\Client\AcquiaLiftDrupalHttpClientInterface;
+use Drupal\acquia_lift\Client\AcquiaLiftDrupalHttpClient;
+use PersonalizeLogLevel;
+
 
 class ALProfilesAPI {
   /**
@@ -104,7 +115,7 @@ class ALProfilesAPI {
       if (empty($api_url) || empty($account_name) || empty($access_key) || empty($secret_key)) {
         throw new ALProfilesCredsException('Missing acquia_lift_profiles account information.');
       }
-      if (!valid_url($api_url)) {
+      if (!UrlHelper::isValid($api_url)) {
         throw new ALProfilesCredsException('API URL is not a valid URL.');
       }
       $needs_scheme = strpos($api_url, '://') === FALSE;

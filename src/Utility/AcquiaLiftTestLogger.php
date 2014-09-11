@@ -1,5 +1,7 @@
 <?php
 
+namespace Drupal\acquia_lift\Utility;
+
 /**
  * Class AcquiaLiftTestLogger
  */

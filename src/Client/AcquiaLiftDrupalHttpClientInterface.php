@@ -1,5 +1,7 @@
 <?php
 
+namespace Drupal\acquia_lift\Client;
+
 /**
  * A simple interface for http clients.
  *

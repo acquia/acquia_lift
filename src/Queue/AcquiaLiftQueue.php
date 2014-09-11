@@ -1,5 +1,7 @@
 <?php
 
+namespace Drupal\acquia_lift\Queue;
+
 use Drupal\Core\Queue\DatabaseQueue;
 
 /**

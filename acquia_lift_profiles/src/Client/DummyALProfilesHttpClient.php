@@ -1,6 +1,7 @@
 <?php
 
-require_once(dirname(__FILE__) . '/../../tests/acquia_lift.test_classes.inc');
+namespace Drupal\acquia_lift_profiles\Client;
+use Drupal\acquia_lift\Client\DummyAcquiaLiftHttpClient;
 
 /**
  * Classes used for testing.

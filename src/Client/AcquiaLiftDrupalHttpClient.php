@@ -1,5 +1,7 @@
 <?php
 
+namespace Drupal\acquia_lift\Client;
+
 /**
  * This is just an OOP wrapper around drupal_http_request.
  */
@@ -21,7 +23,8 @@ class AcquiaLiftDrupalHttpClient implements AcquiaLiftDrupalHttpClientInterface 
   public function get($uri = NULL, $headers = NULL, array $options = array()) {
     $headers = $headers ? $headers : array();
     $options = array('method' => 'GET', 'headers' => $headers) + $options;
-    return drupal_http_request($uri, $options);
+    //return drupal_http_request($uri, $options);
+    return "";
   }
 
   /**
@@ -31,7 +34,8 @@ class AcquiaLiftDrupalHttpClient implements AcquiaLiftDrupalHttpClientInterface 
     $data = ($body === NULL ? NULL : $this->encodeBody($body));
     $headers = $headers ? $headers : array();
     $options = array('method' => 'PUT', 'data' => $data, 'headers' => $headers) + $options;
-    return drupal_http_request($uri, $options);
+    //return drupal_http_request($uri, $options);
+    return "";
   }
 
   /**
@@ -41,7 +45,8 @@ class AcquiaLiftDrupalHttpClient implements AcquiaLiftDrupalHttpClientInterface 
     $data = $body ? $this->encodeBody($body) : NULL;
     $headers = $headers ? $headers : array();
     $options = array('method' => 'POST', 'data' => $data, 'headers' => $headers) + $options;
-    return drupal_http_request($uri, $options);
+    //return drupal_http_request($uri, $options);
+    return "";
   }
 
   /**
@@ -51,7 +56,8 @@ class AcquiaLiftDrupalHttpClient implements AcquiaLiftDrupalHttpClientInterface 
     $data = $body ? $this->encodeBody($body) : NULL;
     $headers = $headers ? $headers : array();
     $options = array('method' => 'DELETE', 'data' => $data, 'headers' => $headers) + $options;
-    return drupal_http_request($uri, $options);
+    //return drupal_http_request($uri, $options);
+    return "";
   }
 }
 

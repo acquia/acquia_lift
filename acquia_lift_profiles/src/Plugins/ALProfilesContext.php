@@ -4,6 +4,8 @@
  * Provides a context plugin for Acquia Lift Profiles
  */
 
+namespace Drupal\acquia_lift_profiles\ALProfilesContext;
+
 class ALProfilesContext extends PersonalizeContextBase {
 
   /**

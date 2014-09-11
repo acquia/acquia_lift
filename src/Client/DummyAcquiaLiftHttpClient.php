@@ -1,5 +1,7 @@
 <?php
 
+namespace Drupal\acquia_lift\Client;
+
 /**
  * Classes used for testing.
  */

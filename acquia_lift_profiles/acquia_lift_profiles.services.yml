@@ -1,0 +1,4 @@
+services:
+  acquia_lift_profiles:
+    class: Drupal\acquia_lift_profiles\AcquiaLiftProfilesAPI
+    arguments: ['@config.factory', '@http_client']

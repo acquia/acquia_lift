@@ -5,6 +5,7 @@
  */
 namespace Drupal\acquia_lift;
 
+use Drupal\acquia_lift\Exception\AcquiaLiftCredsException;
 use Drupal\Core\Config\ConfigFactory;
 use GuzzleHttp\ClientInterface;
 use Drupal\Component\Utility\UrlHelper;
@@ -80,7 +81,7 @@ class AcquiaLiftAPI {
   /**
    * Constructor.
    *
-   * @param Drupal\Core\Config\ConfigFactory $config_factory
+   * @param \Drupal\Core\Config\ConfigFactory $config_factory
    */
   public function __construct(ConfigFactory $config_factory, ClientInterface $http_client) {
     $config = $config_factory->get('acquia_lift.settings');

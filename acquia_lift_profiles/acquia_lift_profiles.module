@@ -5,8 +5,8 @@
  * Provides Acquia Lift Profiles integration.
  */
 
-
-use Drupal\acquia_lift_profiles\ALProfilesAPI;
+use Drupal\acquia_lift_profiles\AcquiaLiftProfilesAPI;
+use Drupal\acquia_lift_profiles\Exception\AcquiaLiftProfilesException;
 
 define('ACQUIA_LIFT_PROFILES_THUMBNAIL_WIDGET_SEPARATOR', '|');
 
@@ -78,10 +78,10 @@ function acquia_lift_profiles_refresh_segments_cache() {
     return FALSE;
   }
   try {
+    /** @var \Drupal\acquia_lift_profiles\AcquiaLiftProfilesAPI $acquia_lift_profiles */
+    $acquia_lift_profiles = \Drupal::service('acquia_lift_profiles');
+    $acquia_lift_profiles->getSegments();
     $config = \Drupal::config('acquia_lift_profiles.settings');
-    $account_name = $config->get('acquia_lift_profiles_account_name', '');
-    $api_url = $config->get('acquia_lift_profiles_api_url', '');
-    $segments = ALProfilesAPI::getInstance($account_name, $api_url)->getSegments();
     $config->set('acquia_lift_profiles_segments', $segments);
     return TRUE;
   }
@@ -356,15 +356,14 @@ function acquia_lift_profiles_sync_action($action_name, &$tracked_actions, $trac
  */
 function acquia_lift_profiles_put_action($action_name, &$tracked_actions) {
   try {
-    $account_name = \Drupal::config('acquia_lift_profiles.settings')->get('acquia_lift_profiles_account_name', '');
-    $api_url = \Drupal::config('acquia_lift_profiles.settings')->get('acquia_lift_profiles_api_url', '');
-    $acquia_lift_profiles_api = ALProfilesAPI::getInstance($account_name, $api_url);
-    $acquia_lift_profiles_api->saveEvent($action_name);
+    /** @var \Drupal\acquia_lift_profiles\AcquiaLiftProfilesAPI $acquia_lift_profiles */
+    $acquia_lift_profiles = \Drupal::service('acquia_lift_profiles');
+    $acquia_lift_profiles->saveEvent($action_name);
     if (!in_array($action_name, $tracked_actions)) {
       $tracked_actions[] = $action_name;
     }
   }
-  catch (ALProfilesException $e) {
+  catch (AcquiaLiftProfilesException $e) {
     drupal_set_message(t('There was a problem saving the action @action to Acquia Lift Profiles. Please try again later.', array('@action' => $action_name)), 'error');
   }
 }
@@ -378,16 +377,15 @@ function acquia_lift_profiles_put_action($action_name, &$tracked_actions) {
  */
 function acquia_lift_profiles_delete_action($action_name, &$tracked_actions) {
   try {
-    $account_name = \Drupal::config('acquia_lift_profiles.settings')->get('acquia_lift_profiles_account_name', '');
-    $api_url = \Drupal::config('acquia_lift_profiles.settings')->get('acquia_lift_profiles_api_url', '');
-    $acquia_lift_profiles_api = ALProfilesAPI::getInstance($account_name, $api_url);
-    $acquia_lift_profiles_api->deleteEvent($action_name);
+    /** @var \Drupal\acquia_lift_profiles\AcquiaLiftProfilesAPI $acquia_lift_profiles */
+    $acquia_lift_profiles = \Drupal::service('acquia_lift_profiles');
+    $acquia_lift_profiles->deleteEvent($action_name);
     $pos = array_search($action_name, $tracked_actions);
     if ($pos !== FALSE) {
       unset($tracked_actions[$pos]);
     }
   }
-  catch (ALProfilesException $e) {
+  catch (AcquiaLiftProfilesException $e) {
     drupal_set_message(t('There was a problem deleting the action @action from Acquia Lift Profiles. Please try again later.', array('@action' => $action_name)), 'error');
   }
 }
@@ -500,8 +498,8 @@ function acquia_lift_profiles_personalize_visitor_context() {
   $info['acquia_lift_profiles_context'] = array(
     'path' => $path . '/visitor_context',
     'handler' => array(
-      'file' => 'ALProfilesContext.inc',
-      'class' => 'ALProfilesContext',
+      'file' => 'AcquiaLiftProfilesContext.inc',
+      'class' => 'AcquiaLiftProfilesContext',
     ),
   );
   return $info;

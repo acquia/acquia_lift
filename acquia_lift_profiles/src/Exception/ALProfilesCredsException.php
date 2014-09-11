@@ -2,6 +2,6 @@
 
 namespace Drupal\acquia_lift_profiles\Exception;
 
-class ALProfilesCredsException extends ALProfilesException {
+class AcquiaLiftProfilesCredsException extends AcquiaLiftProfilesException {
 
 }

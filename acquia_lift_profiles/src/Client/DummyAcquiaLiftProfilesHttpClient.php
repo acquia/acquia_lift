@@ -6,7 +6,7 @@ use Drupal\acquia_lift\Client\DummyAcquiaLiftHttpClient;
 /**
  * Classes used for testing.
  */
-class DummyALProfilesHttpClient extends DummyAcquiaLiftHttpClient {
+class DummyAcquiaLiftProfilesHttpClient extends DummyAcquiaLiftHttpClient {
 
   /**
    * Prepopulate some dummy data for the API to return.

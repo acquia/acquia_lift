@@ -8,7 +8,7 @@
 /**
  * Tests Acquia Lift Profiles functionality.
  */
-class ALProfilesWebTest extends DrupalWebTestCase {
+class AcquiaLiftProfilesWebTest extends DrupalWebTestCase {
 
   protected $admin_user;
 
@@ -48,8 +48,8 @@ class ALProfilesWebTest extends DrupalWebTestCase {
     }
   }
 
-  function testALProfilesJSSettings() {
-    $this->configureALProfiles();
+  function testAcquiaLiftProfilesJSSettings() {
+    $this->configureAcquiaLiftProfiles();
 
     // Register as a new user, identity should not be captured.
     $user_name_1 = $this->randomName();
@@ -109,7 +109,7 @@ class ALProfilesWebTest extends DrupalWebTestCase {
   }
 
   function testThumbnailImage() {
-    $this->configureALProfiles();
+    $this->configureAcquiaLiftProfiles();
     $this->drupalLogin($this->admin_user);
 
     // Create a new article node of this type.
@@ -188,7 +188,7 @@ class ALProfilesWebTest extends DrupalWebTestCase {
    * Tests that available segments are added to the page.
    */
   function testSegments() {
-    $this->configureALProfiles();
+    $this->configureAcquiaLiftProfiles();
     $this->drupalLogin($this->admin_user);
     $this->drupalGet('');
     // The dummy http client used during web tests has two segments set up that
@@ -203,7 +203,7 @@ class ALProfilesWebTest extends DrupalWebTestCase {
   // Tests that configuring events to track in Acquia Lift Profiles makes the required calls to
   // the Acquia Lift Profiles API.
   function testSyncEvents() {
-    $this->configureALProfiles();
+    $this->configureAcquiaLiftProfiles();
     $this->drupalLogin($this->admin_user);
     // Test configuring Acquia Lift Profiles to track a couple of actions.
     $this->drupalPost('admin/config/content/personalize/acquia_lift_profiles', array('acquia_lift_profiles_tracked_actions[]' => array('user_login', 'user_register')), t('Save'));
@@ -230,7 +230,7 @@ class ALProfilesWebTest extends DrupalWebTestCase {
   }
 
   function testUDFMappings() {
-    $this->configureALProfiles();
+    $this->configureAcquiaLiftProfiles();
     $this->drupalLogin($this->admin_user);
     $this->createUserProfileField('test_user_field_1');
     $this->createUserProfileField('test_user_field_2');
@@ -256,7 +256,7 @@ class ALProfilesWebTest extends DrupalWebTestCase {
   /**
    * Helper function to configure acquia_lift_profiles settings.
    */
-  function configureALProfiles() {
+  function configureAcquiaLiftProfiles() {
     $this->drupalLogin($this->admin_user);
 
     $edit = array(

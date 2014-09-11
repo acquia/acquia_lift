@@ -51,7 +51,7 @@ function acquia_lift_profiles_permission() {
 function acquia_lift_profiles_is_configured($api_only = FALSE) {
   $api_configured = TRUE;
   foreach (array('acquia_lift_profiles_account_name','acquia_lift_profiles_api_url', 'acquia_lift_profiles_access_key', 'acquia_lift_profiles_secret_key') as $api_config) {
-    $val = variable_get($api_config, '');
+    $val = \Drupal::config('acquia_lift_profiles.settings')->get($api_config, '');
     if (empty($val)) {
       $api_configured = FALSE;
     }
@@ -60,7 +60,7 @@ function acquia_lift_profiles_is_configured($api_only = FALSE) {
   if ($api_only) {
     return $api_configured;
   }
-  $js_path = variable_get('acquia_lift_profiles_js_path', '');
+  $js_path = \Drupal::config('acquia_lift_profiles.settings')->get('acquia_lift_profiles_js_path', '');
   return $api_configured && !empty($js_path);
 }
 
@@ -75,8 +75,10 @@ function acquia_lift_profiles_refresh_segments_cache() {
     return FALSE;
   }
   try {
-    $segments = ALProfilesAPI::getInstance(variable_get('acquia_lift_profiles_account_name', ''), variable_get('acquia_lift_profiles_api_url', ''))->getSegments();
-    variable_set('acquia_lift_profiles_segments', $segments);
+    $account_name = \Drupal::config('acquia_lift_profiles.settings')->get('acquia_lift_profiles_account_name', '');
+    $api_url = \Drupal::config('acquia_lift_profiles.settings')->get('acquia_lift_profiles_api_url', '');
+    $segments = ALProfilesAPI::getInstance($account_name, $api_url)->getSegments();
+    \Drupal::config('acquia_lift_profiles.settings')->set('acquia_lift_profiles_segments', $segments);
     return TRUE;
   }
   catch(Exception $e) {
@@ -94,11 +96,11 @@ function acquia_lift_profiles_refresh_segments_cache() {
 function acquia_lift_profiles_get_segments() {
   $segments = &drupal_static(__FUNCTION__, NULL);
   if ($segments === NULL) {
-    $cached = variable_get('acquia_lift_profiles_segments', NULL);
+    $cached = \Drupal::config('acquia_lift_profiles.settings')->get('acquia_lift_profiles_segments', NULL);
     if ($cached === NULL) {
       // The segments have never been retrieved from Acquia Lift Profiles.
       acquia_lift_profiles_refresh_segments_cache();
-      $cached = variable_get('acquia_lift_profiles_segments', array());
+      $cached = \Drupal::config('acquia_lift_profiles.settings')->get('acquia_lift_profiles_segments', array());
     }
     $segments = $cached;
   }
@@ -131,17 +133,20 @@ function acquia_lift_profiles_page_build(&$page) {
   if (!acquia_lift_profiles_is_configured()) {
     return;
   }
-  $js_path = variable_get('acquia_lift_profiles_js_path', '');
-  $account_name = variable_get('acquia_lift_profiles_account_name', '');
+  $js_path = \Drupal::config('acquia_lift_profiles.settings')->get('acquia_lift_profiles_js_path', '');
+  $account_name = \Drupal::config('acquia_lift_profiles.settings')->get('acquia_lift_profiles_account_name', '');
+  $capture_identity = \Drupal::config('acquia_lift_profiles.settings')->get('acquia_lift_profiles_capture_identity', FALSE);
+  $udf_mappings = \Drupal::config('acquia_lift_profiles.settings')->get('acquia_lift_profiles_udf_mappings', array());
 
   $segments = acquia_lift_profiles_get_segments();
+
   $settings = array(
     'request_url' => $base_root . request_uri(),
     'available_segments' => $segments,
     'account_name' => $account_name,
     'currentPath' => current_path(),
-    'captureIdentity' => variable_get('acquia_lift_profiles_capture_identity', FALSE),
-    'udfMappings' => variable_get('acquia_lift_profiles_udf_mappings', array()),
+    'captureIdentity' => $capture_identity,
+    'udfMappings' => $udf_mappings,
     // Since we are using the same separator as provided by personalize
     // module for targeting values, we need to tell our JS settings about
     // it.
@@ -229,7 +234,8 @@ function acquia_lift_profiles_visitor_actions_page_build(&$page, $actions) {
   // can process them.
   $client_side_actions = array();
   if (!empty($actions)) {
-    $tracked_actions = variable_get('acquia_lift_profiles_tracked_actions', array());
+
+    $tracked_actions = \Drupal::config('acquia_lift_profiles.settings')->get('acquia_lift_profiles_tracked_actions', array());
     foreach ($tracked_actions as $action) {
       if (in_array($action, $actions)) {
         $client_side_actions[] = $action;
@@ -290,7 +296,7 @@ function acquia_lift_profiles_form_visitor_actions_form_alter(&$form, &$form_sta
     return;
   }
   $default_value = 0;
-  $tracked_actions = variable_get('acquia_lift_profiles_tracked_actions', array());
+  $tracked_actions = \Drupal::config('acquia_lift_profiles.settings')->get('acquia_lift_profiles_tracked_actions', array());
   if ($form['machine_name']['#disabled']) {
     $action_name = $form['machine_name']['#value'];
     $default_value = in_array($action_name, $tracked_actions);
@@ -312,11 +318,11 @@ function acquia_lift_profiles_form_visitor_actions_form_alter(&$form, &$form_sta
  */
 function acquia_lift_profiles_visitor_action_form_submit($form, &$form_state) {
   $values = $form_state['values'];
-  $tracked_actions = variable_get('acquia_lift_profiles_tracked_actions', array());
+  $tracked_actions = \Drupal::config('acquia_lift_profiles.settings')->get('acquia_lift_profiles_tracked_actions', array());
   if (isset($values['acquia_lift_profiles'])) {
     acquia_lift_profiles_sync_action($values['machine_name'], $tracked_actions, $values['acquia_lift_profiles']);
   }
-  variable_set('acquia_lift_profiles_tracked_actions', $tracked_actions);
+  \Drupal::config('acquia_lift_profiles.settings')->set('acquia_lift_profiles_tracked_actions', $tracked_actions);
 }
 
 /**
@@ -346,7 +352,9 @@ function acquia_lift_profiles_sync_action($action_name, &$tracked_actions, $trac
  */
 function acquia_lift_profiles_put_action($action_name, &$tracked_actions) {
   try {
-    $acquia_lift_profiles_api = ALProfilesAPI::getInstance(variable_get('acquia_lift_profiles_account_name', ''), variable_get('acquia_lift_profiles_api_url', ''));
+    $account_name = \Drupal::config('acquia_lift_profiles.settings')->get('acquia_lift_profiles_account_name', '');
+    $api_url = \Drupal::config('acquia_lift_profiles.settings')->get('acquia_lift_profiles_api_url', '');
+    $acquia_lift_profiles_api = ALProfilesAPI::getInstance($account_name, $api_url);
     $acquia_lift_profiles_api->saveEvent($action_name);
     if (!in_array($action_name, $tracked_actions)) {
       $tracked_actions[] = $action_name;
@@ -366,7 +374,9 @@ function acquia_lift_profiles_put_action($action_name, &$tracked_actions) {
  */
 function acquia_lift_profiles_delete_action($action_name, &$tracked_actions) {
   try {
-    $acquia_lift_profiles_api = ALProfilesAPI::getInstance(variable_get('acquia_lift_profiles_account_name', ''), variable_get('acquia_lift_profiles_api_url', ''));
+    $account_name = \Drupal::config('acquia_lift_profiles.settings')->get('acquia_lift_profiles_account_name', '');
+    $api_url = \Drupal::config('acquia_lift_profiles.settings')->get('acquia_lift_profiles_api_url', '');
+    $acquia_lift_profiles_api = ALProfilesAPI::getInstance($account_name, $api_url);
     $acquia_lift_profiles_api->deleteEvent($action_name);
     $pos = array_search($action_name, $tracked_actions);
     if ($pos !== FALSE) {
@@ -382,11 +392,12 @@ function acquia_lift_profiles_delete_action($action_name, &$tracked_actions) {
  * Implements hook_visitor_actions_delete_action().
  */
 function acquia_lift_profiles_visitor_actions_delete_action($action) {
-  $acquia_lift_profiles_tracked_actions = variable_get('acquia_lift_profiles_tracked_actions', array());
+  $acquia_lift_profiles_tracked_actions = \Drupal::config('acquia_lift_profiles.settings')->get('acquia_lift_profiles_tracked_actions', '');
+
   if (in_array($action['machine_name'], $acquia_lift_profiles_tracked_actions)) {
     acquia_lift_profiles_delete_action($action['machine_name'], $acquia_lift_profiles_tracked_actions);
   }
-  variable_set('acquia_lift_profiles_tracked_actions', $acquia_lift_profiles_tracked_actions);
+  \Drupal::config('acquia_lift_profiles.settings')->set('acquia_lift_profiles_tracked_actions', $acquia_lift_profiles_tracked_actions);
 }
 
 /**
@@ -419,7 +430,9 @@ function acquia_lift_profiles_ctools_render_alter(&$info, &$page, &$context) {
 function acquia_lift_profiles_node_page_context($node = NULL, $primary = FALSE) {
   // For each vocabulary, add any terms that are applied to the viewed node.
   $page_context = &drupal_static(__FUNCTION__);
-  $mappings = variable_get('acquia_lift_profiles_vocabulary_mappings', array());
+
+  $mappings = \Drupal::config('acquia_lift_profiles.settings')->get('acquia_lift_profiles_vocabulary_mappings', array());
+
   $flipped = array_flip($mappings);
   if (!isset($page_context)) {
     $page_context = array();
@@ -466,7 +479,7 @@ function acquia_lift_profiles_get_page_context() {
   // Add node-specific page context
 /*  $page_context = acquia_lift_profiles_node_page_context();
   if (!isset($page_context['content_title'])) {
-    $page_context['content_title'] = \Drupal::service("title_resolver")->getTitle(\Drupal::request(), \Drupal::routeMatch()->getRouteObject())();
+    $page_context['content_title'] = \Drupal::service("title_resolver")->getTitle(\Drupal::request(), \Drupal::routeMatch()->getRouteObject());
   }
   // Allow other modules to alter the page context to include additional data.
   \Drupal::moduleHandler()->alter('acquia_lift_profiles_page_context', $page_context);
@@ -518,8 +531,11 @@ function acquia_lift_profiles_action_subscriber($name, $context) {
  *   TRUE if Acquia Lift Profiles should track the action, FALSE otherwise.
  */
 function acquia_lift_profiles_subscribed_action($action) {
-  $tracked_actions = variable_get('acquia_lift_profiles_tracked_actions', array());
-  if (variable_get('acquia_lift_profiles_capture_identity', FALSE)) {
+
+  $tracked_actions = \Drupal::config('acquia_lift_profiles.settings')->get('acquia_lift_profiles_tracked_actions', array());
+  $capture_identity = \Drupal::config('acquia_lift_profiles.settings')->get('acquia_lift_profiles_capture_identity', FALSE);
+
+  if ($capture_identity) {
     $tracked_actions += array('user_login', 'user_register');
   }
   if (in_array($action, $tracked_actions)) {
@@ -593,7 +609,7 @@ function acquia_lift_profiles_thumbnail_get_field($entity_type, $bundle_name, $r
 
   if (!array_key_exists($entity_type . '_' . $bundle_name, $fields)) {
     module_load_include('inc', 'acquia_lift_profiles', 'acquia_lift_profiles.admin');
-    $field = variable_get('acquia_lift_profiles_thumbnail_field_' . $entity_type . '_' . $bundle_name, '');
+    $field = \Drupal::config('acquia_lift_profiles.settings')->get('acquia_lift_profiles_thumbnail_field_' . $entity_type . '_' . $bundle_name, '');
     $fields[$entity_type . '_' . $bundle_name] = array_key_exists($field, acquia_lift_profiles_thumbnail_available_fields($entity_type, $bundle_name)) ? $field : NULL;
   }
 
@@ -604,7 +620,7 @@ function acquia_lift_profiles_thumbnail_get_field($entity_type, $bundle_name, $r
  * Set the default field for a given node.
  */
 function acquia_lift_profiles_thumbnail_set_field($entity_type, $bundle, $field) {
-  variable_set('acquia_lift_profiles_thumbnail_field_' . $entity_type . '_' . $bundle, $field);
+  \Drupal::config('acquia_lift_profiles.settings')->set('acquia_lift_profiles_thumbnail_field_' . $entity_type . '_' . $bundle, $field);
 }
 
 /**
@@ -616,14 +632,15 @@ function acquia_lift_profiles_thumbnail_set_field($entity_type, $bundle, $field)
  *   The name of the bundle to check, e.g., article.
  */
 function acquia_lift_profiles_thumbnail_get_style_field($entity_type, $bundle_name) {
-  return variable_get('acquia_lift_profiles_thumbnail_style_field_' . $entity_type . '_' . $bundle_name, '');
+  $thumbnail_style_field = \Drupal::config('acquia_lift_profiles.settings')->get('acquia_lift_profiles_thumbnail_style_field_' . $entity_type . '_' . $bundle_name, '');
+  return $thumbnail_style_field;
 }
 
 /**
  * Set the default field for a given node.
  */
 function acquia_lift_profiles_thumbnail_set_style_field($entity_type, $bundle_name, $field) {
-  variable_set('acquia_lift_profiles_thumbnail_style_field_' . $entity_type . '_' . $bundle_name, $field);
+  \Drupal::config('acquia_lift_profiles.settings')->set('acquia_lift_profiles_thumbnail_style_field_' . $entity_type . '_' . $bundle_name, $field);
 }
 
 /**

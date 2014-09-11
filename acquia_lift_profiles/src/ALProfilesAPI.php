@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @file
  * Provides an agent type for Acquia Lift Profiles
@@ -383,6 +384,3 @@ class ALProfilesAPI {
   }
 
 }
-
-class ALProfilesException extends Exception {};
-class ALProfilesCredsException extends ALProfilesException {};

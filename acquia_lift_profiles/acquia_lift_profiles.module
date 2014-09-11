@@ -5,6 +5,7 @@
  * Provides Acquia Lift Profiles integration.
  */
 
+
 define('ACQUIA_LIFT_PROFILES_THUMBNAIL_WIDGET_SEPARATOR', '|');
 
 /**

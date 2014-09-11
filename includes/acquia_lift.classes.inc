@@ -1,6 +1,0 @@
-<?php
-
-/** Moved to src/... */
-
-
-

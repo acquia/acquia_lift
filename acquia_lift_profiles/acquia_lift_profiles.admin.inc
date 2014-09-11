@@ -13,33 +13,33 @@ function acquia_lift_profiles_admin_form($form, &$form_state) {
   $form['acquia_lift_profiles_account_name'] = array(
     '#type' => 'textfield',
     '#title' => t('Acquia Lift Profiles Account Name'),
-    '#default_value' => variable_get('acquia_lift_profiles_account_name', ''),
+    '#default_value' => \Drupal::config('acquia_lift_profiles.settings')->get('acquia_lift_profiles_account_name'),
     '#required' => TRUE,
   );
   $form['acquia_lift_profiles_api_url'] = array(
     '#type' => 'textfield',
     '#title' => t('Acquia Lift Profiles API URL'),
     '#field_prefix' => 'http(s)://',
-    '#default_value' => variable_get('acquia_lift_profiles_api_url', ''),
+    '#default_value' => \Drupal::config('acquia_lift_profiles.settings')->get('acquia_lift_profiles_api_url'),
     '#required' => TRUE,
   );
   $form['acquia_lift_profiles_access_key'] = array(
     '#type' => 'textfield',
     '#title' => t('Acquia Lift Profiles API Access Key'),
-    '#default_value' => variable_get('acquia_lift_profiles_access_key', ''),
+    '#default_value' => \Drupal::config('acquia_lift_profiles.settings')->get('acquia_lift_profiles_access_key'),
     '#required' => TRUE,
   );
   $form['acquia_lift_profiles_secret_key'] = array(
     '#type' => 'textfield',
     '#title' => t('Acquia Lift Profiles API Secret Key'),
-    '#default_value' => variable_get('acquia_lift_profiles_secret_key', ''),
+    '#default_value' => \Drupal::config('acquia_lift_profiles.settings')->get('acquia_lift_profiles_secret_key'),
     '#required' => TRUE,
   );
   $form['acquia_lift_profiles_js_path'] = array(
     '#type' => 'textfield',
     '#title' => t('Acquia Lift Profiles JavaScript path'),
     '#field_prefix' => 'http(s)://',
-    '#default_value' => variable_get('acquia_lift_profiles_js_path', ''),
+    '#default_value' => \Drupal::config('acquia_lift_profiles.settings')->get('acquia_lift_profiles_js_path'),
     '#required' => TRUE,
   );
 
@@ -47,10 +47,10 @@ function acquia_lift_profiles_admin_form($form, &$form_state) {
     '#type' => 'checkbox',
     '#title' => t('Capture Identity'),
     '#description' => t('Check this if you want Acquia Lift Profiles to capture the identity of the user upon login or registration. This means sending their email address to the Acquia Lift Profile Manager.'),
-    '#default_value' => variable_get('acquia_lift_profiles_capture_identity', FALSE),
+    '#default_value' => \Drupal::config('acquia_lift_profiles.settings')->get('acquia_lift_profiles_capture_identity'),
   );
   $vocabularies = taxonomy_get_vocabularies();
-  $mappings = variable_get('acquia_lift_profiles_vocabulary_mappings', array());
+  $mappings = \Drupal::config('acquia_lift_profiles.settings')->get('acquia_lift_profiles_vocabulary_mappings');
   $vocab_options = array('' => t('Select...'));
   foreach ($vocabularies as $vid => $voc) {
     $vocab_options[$vid] = $voc->name;
@@ -84,7 +84,7 @@ function acquia_lift_profiles_admin_form($form, &$form_state) {
   // Only show the "Tracked actions" selector if acquia_lift_profiles has already been
   // configured for API connections.
   if (acquia_lift_profiles_is_configured(TRUE)) {
-    $action_settings = variable_get('acquia_lift_profiles_tracked_actions', array());
+    $action_settings = \Drupal::config('acquia_lift_profiles.settings')->get('acquia_lift_profiles_tracked_actions');
     $actions = visitor_actions_get_actions();
     $options = array();
     foreach ($actions as $name => $info) {
@@ -100,7 +100,7 @@ function acquia_lift_profiles_admin_form($form, &$form_state) {
     );
     module_load_include('inc', 'personalize', 'personalize.admin');
     $groups = personalize_get_grouped_context_options(NULL, TRUE, array('acquia_lift_profiles_context', 'acquia_lift_context'));
-    $udf_mappings = variable_get('acquia_lift_profiles_udf_mappings', array());
+    $udf_mappings = \Drupal::config('acquia_lift_profiles.settings')->get('acquia_lift_profiles_udf_mappings');
     $form['acquia_lift_profiles_udf_mappings'] = array(
       '#title' => t('User Defined Field Mappings'),
       '#description' => t('For each user defined field available in Acquia Lift Profiles, you can map a visitor context, whose value will then be sent as the value for that user defined field.'),
@@ -180,13 +180,13 @@ function acquia_lift_profiles_admin_build_visitor_context_select($groups, $defau
 function acquia_lift_profiles_admin_form_submit($form, &$form_state) {
   // If the "capture identity" setting has changed we need to make sure the visitor
   // actions subscribers are cleared for the login and register actions.
-  $capture_identity = variable_get('acquia_lift_profiles_capture_identity', FALSE);
+  $capture_identity = \Drupal::config('acquia_lift_profiles.settings')->get('acquia_lift_profiles_capture_identity');
   if ($capture_identity != $form_state['values']['acquia_lift_profiles_capture_identity']) {
     visitor_actions_clear_subscribers('user_login');
     visitor_actions_clear_subscribers('user_register');
   }
   foreach (array('acquia_lift_profiles_account_name', 'acquia_lift_profiles_api_url', 'acquia_lift_profiles_access_key', 'acquia_lift_profiles_secret_key', 'acquia_lift_profiles_js_path', 'acquia_lift_profiles_capture_identity', 'acquia_lift_profiles_vocabulary_mappings') as $key) {
-    variable_set($key, $form_state['values'][$key]);
+    \Drupal::config('acquia_lift_profiles.settings')->set($key, $form_state['values'][$key]);
   }
 
   // Refresh the segments from Acquia Lift Profiles.
@@ -194,7 +194,7 @@ function acquia_lift_profiles_admin_form_submit($form, &$form_state) {
   if (isset($form_state['values']['acquia_lift_profiles_tracked_actions'])) {
     $actions = array_filter($form_state['values']['acquia_lift_profiles_tracked_actions']);
     // Check for actions that should be deleted from Acquia Lift Profiles.
-    $tracked_actions = variable_get('acquia_lift_profiles_tracked_actions', array());
+    $tracked_actions = \Drupal::config('acquia_lift_profiles.settings')->get('acquia_lift_profiles_tracked_actions');
     foreach ($tracked_actions as $action_name) {
       if (!isset($actions[$action_name])) {
         acquia_lift_profiles_sync_action($action_name, $tracked_actions, FALSE);
@@ -205,7 +205,7 @@ function acquia_lift_profiles_admin_form_submit($form, &$form_state) {
     foreach ($actions as $action_name => $action) {
       acquia_lift_profiles_sync_action($action_name, $tracked_actions, TRUE);
     }
-    variable_set('acquia_lift_profiles_tracked_actions', $tracked_actions);
+    \Drupal::config('acquia_lift_profiles.settings')->set('acquia_lift_profiles_tracked_actions', $tracked_actions);
   }
   if (isset($form_state['values']['acquia_lift_profiles_udf_mappings'])) {
     $mapped_contexts = array();
@@ -219,7 +219,7 @@ function acquia_lift_profiles_admin_form_submit($form, &$form_state) {
         }
       }
     }
-    variable_set('acquia_lift_profiles_udf_mappings', $mapped_contexts);
+    \Drupal::config('acquia_lift_profiles.settings')->set('acquia_lift_profiles_udf_mappings', $mapped_contexts);
   }
 
 }

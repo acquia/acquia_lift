@@ -1684,7 +1684,7 @@ class AcquiaLiftABReport extends AcquiaLiftReportBase {
       ),
       array(
         'data' => t('Lift'),
-        'data-help-tooltip' => t('Likelihood visitors will complete goals for a variation compared to a random variation.'),
+        'data-help-tooltip' => t('Likelihood visitors will complete goals for a variation compared to the control.'),
       ),
       array(
         'data' => t('Winner'),
@@ -2156,7 +2156,7 @@ class AcquiaLiftReport extends AcquiaLiftReportBase {
       'decisions' => t('Shown'),
       'goals' => t('Goals'),
       'conversion' => t('Conversion rate'),
-      'estimated_value' => t('Predicted goal value'),
+      'estimated_value' => t('Conversion value'),
       'lift_default' => t('Lift over control'),
       'lift_random' => t('Lift over random'),
       'confidence' => t('Chance to beat control'),

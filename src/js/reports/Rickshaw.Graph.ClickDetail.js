@@ -256,9 +256,13 @@ Rickshaw.Graph.ClickDetail = Rickshaw.Class.create(Rickshaw.Graph.HoverDetail, {
       false
     );
 
-		this.graph.onUpdate( function() { this.update() }.bind(this) );
+    this.graph.onUpdate( function() {
+      this.tooltipPinned = false;
+      this.hide();
+      this.update();
+    }.bind(this) );
 
-		this.graph.element.addEventListener(
+    this.graph.element.addEventListener(
 			'mouseout',
 			function(e) {
         if (this.tooltipPinned === false) {

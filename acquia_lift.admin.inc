@@ -1488,7 +1488,11 @@ function acquia_lift_create_goal_type_form_submit($form, &$form_state) {
       visitor_actions_save_action($action);
       break;
   }
-  personalize_goal_save($agent_data->machine_name, $action_name, 1);
+  try {
+    personalize_goal_save($agent_data->machine_name, $action_name, 1);
+  } catch (Exception $e) {
+    drupal_set_message($e->getMessage(), 'error');
+  }
   $form_state['acquia_lift']['goal_name'] = $goal_name;
 }
 

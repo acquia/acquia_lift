@@ -1289,9 +1289,14 @@
       render: function() {
         var hasCampaigns = this.collection.length > 0;
         var activeCampaign = this.collection.findWhere({'isActive': true});
+        var supportsGoals = activeCampaign && activeCampaign.get('supportsGoals');
         // Show or hide relevant menus.
         if (hasCampaigns && activeCampaign) {
-          this.$el.find('[data-acquia-lift-personalize="goals"]').parents('li').show();
+          if (supportsGoals) {
+            this.$el.find('[data-acquia-lift-personalize="goals"]').parents('li').show();
+          } else {
+            this.$el.find('[data-acquia-lift-personalize="goals').parents('li').hide();
+          }
           this.$el.find('[data-acquia-lift-personalize="option_sets"]').parents('li').show();
         } else {
           this.$el.find('[data-acquia-lift-personalize="goals"]').parents('li').hide();

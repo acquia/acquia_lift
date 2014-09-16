@@ -2037,7 +2037,8 @@ class AcquiaLiftReport extends AcquiaLiftReportBase {
    */
   protected function extractCampaignReportData(&$report_data) {
     $report_data['extracted_total'] = TRUE;
-    if (!is_array($report_data['status']) || !is_array($report_data['confidence']) || !is_array($report_data['targeting']) || !is_array($report_data['potential_context'])) {
+    $confidence_data = empty($report_data['all']['summary']) ? NULL : $report_data['all']['summary'];
+    if (!is_array($report_data['status']) || !is_array($confidence_data) || !is_array($report_data['targeting']) || !is_array($report_data['potential_context'])) {
       return;
     }
     $agent_data = $this->agent->getData();
@@ -2045,7 +2046,7 @@ class AcquiaLiftReport extends AcquiaLiftReportBase {
 
     // Determine overall confidence based on confidence in choices.
     $total_confident = 0;
-    foreach($report_data['confidence']['features'][self::NO_FEATURES] as $choice) {
+    foreach($confidence_data['features'][self::NO_FEATURES] as $choice) {
       if ($choice['significant']) {
         $total_confident++;
       }
@@ -2066,7 +2067,7 @@ class AcquiaLiftReport extends AcquiaLiftReportBase {
 
     // Update context report data.
     $option_numbers = array();
-    foreach ($report_data['confidence']['features'] as $feature_string => $feature) {
+    foreach ($confidence_data['features'] as $feature_string => $feature) {
       // Get the user-friendly feature label from the possible contextual values.
       $feature_label = $feature_string;
       if (isset($report_data['potential_context'][$feature_string])) {

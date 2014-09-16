@@ -2058,6 +2058,45 @@ function acquia_lift_form_field_ui_field_edit_form_alter(&$form, &$form_state, $
       'valid' => array(':input[name="field[cardinality]"]' => array('value' => -1)),
     );
     $form['field']['settings']['personalize']['enabled']['#description'] = t('This setting is only valid for fields with unlimited cardinality.');
+    // Add a state to the form elements to make sure they only appear when the
+    // personalizable checkbox is checked.
+    $state = array(':input[name="field[settings][personalize][enabled]"]' => array('checked' => TRUE));
+
+    // Checkbox for auto creation of a goal should only be visible if the selected
+    // campaign type supports goals.
+    $visible_states = array();
+    $acquia_lift_agent_types = acquia_lift_get_agent_types();
+    foreach (array_keys($acquia_lift_agent_types) as $type) {
+      $visible_states[] = array('value' => $type);
+    }
+    $form['field']['settings']['personalize']['create_goal'] = array(
+      '#type' => 'checkbox',
+      '#title' => t('Auto-create goal'),
+      '#default_value' => isset($field['settings']['personalize']['create_goal']) ? $field['settings']['personalize']['create_goal'] : 1,
+      '#description' => t('Should a goal of "clicks the field" automatically get created for this campaign?'),
+      '#states' => array(
+        'visible' => array(
+          ':input[name="field[settings][personalize][agent_type]"]' => $visible_states,
+        ),
+      )
+    );
+    personalize_form_element_add_states($state, $form['field']['settings']['personalize']['create_goal']);
+
+    // Checkbox for auto-starting the campaign should only be visible if the chosen agent
+    // type is a Lift agent type and the auto-create goal box is checked.
+    $form['field']['settings']['personalize']['auto_start'] = array(
+      '#type' => 'checkbox',
+      '#title' => t('Auto-start the campaign'),
+      '#default_value' => isset($field['settings']['personalize']['auto_start']) ? $field['settings']['personalize']['auto_start'] : 1,
+      '#description' => t('Should the campaign be set to running automatically after creation?'),
+      '#states' => array(
+        'visible' => array(
+          ':input[name="field[settings][personalize][agent_type]"]' => $visible_states,
+          ':input[name="field[settings][personalize][create_goal]"]' => array('checked' => TRUE),
+        ),
+      )
+    );
+    personalize_form_element_add_states($state, $form['field']['settings']['personalize']['auto_start']);
   }
 }
 
@@ -2065,7 +2104,7 @@ function acquia_lift_form_field_ui_field_edit_form_alter(&$form, &$form_state, $
  * Implements hook_module_implements_alter().
  */
 function acquia_lift_module_implements_alter(&$implementations, $hook) {
-  if ($hook == 'form_alter' && isset($implementations['acquia_lift'])) {
+  if (in_array($hook, array('form_alter', 'form_field_ui_field_edit_form_alter')) && isset($implementations['acquia_lift'])) {
     // Ensure that our hook_form_field_ui_field_edit_form_alter implementation
     // runs last (after personalize_fields.module).
     $group = $implementations['acquia_lift'];

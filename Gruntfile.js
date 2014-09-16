@@ -1,7 +1,7 @@
 module.exports = function(grunt) {
   require('time-grunt')(grunt);
 
-  var reportABjs = [
+  var reportjs = [
         'src/js/reports/Rickshaw.Graph.Axis.TimeElement.js',
         'src/js/reports/Rickshaw.Graph.Axis.LabeledY.js',
         'src/js/reports/Rickshaw.Graph.ClickDetail.js',
@@ -23,9 +23,9 @@ module.exports = function(grunt) {
         sourceMap: true,
         separator: "\n"
       },
-      reportAB: {
-        src: reportABjs,
-        dest: 'js/acquia_lift.report.ab.js'
+      reports: {
+        src: reportjs,
+        dest: 'js/acquia_lift.reports.js'
       },
       help: {
         src: ['src/js/help/acquia_lift.help.js'],
@@ -42,7 +42,7 @@ module.exports = function(grunt) {
         },
         files: {
           'css/acquia_lift.help.css': 'src/css/acquia_lift.help.scss',
-          'css/acquia_lift.report.ab.css': 'src/css/acquia_lift.report.ab.scss'
+          'css/acquia_lift.reports.css': 'src/css/acquia_lift.reports.scss'
         }
       }
     },

@@ -987,14 +987,14 @@ function acquia_lift_library() {
   }
 
   // Reporting
-  $libraries['acquia_lift.reports.ab'] = array(
+  $libraries['acquia_lift.reports'] = array(
     'title' => 'Acquia Lift Reporting',
     'version' => VERSION,
     'js' => array(
-      $path . '/js/acquia_lift.report.ab.js' => array(),
+      $path . '/js/acquia_lift.reports.js' => array(),
     ),
     'css' => array(
-      $path . '/css/acquia_lift.report.ab.css',
+      $path . '/css/acquia_lift.reports.css',
     ),
     'dependencies' => array(
       array('system', 'jquery'),

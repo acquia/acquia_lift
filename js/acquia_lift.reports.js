@@ -1126,4 +1126,4 @@ Rickshaw.Graph.TableLegend = Rickshaw.Class.create(Rickshaw.Graph.Legend, {
   }
 }(jQuery, Drupal));
 
-//# sourceMappingURL=acquia_lift.report.ab.js.map
+//# sourceMappingURL=acquia_lift.reports.js.map

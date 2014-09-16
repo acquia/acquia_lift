@@ -298,7 +298,7 @@ function acquia_lift_report_custom($form, &$form_state, $agent, $agent_data, $op
         drupal_get_path('module', 'acquia_lift') . '/js/acquia_lift.admin.js',
       ),
       'library' => array(
-        array('acquia_lift', 'acquia_lift.reports.ab'),
+        array('acquia_lift', 'acquia_lift.reports'),
       ),
     ),
   );
@@ -594,7 +594,7 @@ function acquia_lift_report_ab($form, &$form_state, $agent, $agent_data) {
   // Acquia Lift A/B reports have a decision name that is the same as the
   // campaign machine name.
   $reports = $agent->buildCampaignReports($agent_data->machine_name, $date_start_report, $date_end_report);
-  $reports['#attached']['library'][] = array('acquia_lift', 'acquia_lift.reports.ab');
+  $reports['#attached']['library'][] = array('acquia_lift', 'acquia_lift.reports');
 
   return $reports;
 }

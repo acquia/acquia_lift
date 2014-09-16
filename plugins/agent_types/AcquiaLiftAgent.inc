@@ -1296,38 +1296,29 @@ abstract class AcquiaLiftReportBase implements PersonalizeAgentReportInterface, 
     }
     return $value;
   }
-}
-
-/**
- * Responsible for retrieving and generating Acquia Lift AB Reports.
- */
-class AcquiaLiftABReport extends AcquiaLiftReportBase {
 
   /**
-   * Implements PersonalizeAgentReportInterface::renderStatusForOptionSet().
+   * Builds the conversion reports to show basic conversion metrics for all
+   * goals within a campaign.
+   *
+   * @param array $report_data
+   *   The loaded report data for the selection decision and dates.
+   * @return array
+   *   The render array for the report.
    */
-  public function renderStatsForOptionSet($option_set, $date_from, $date_to = NULL) {
-    // Not applicable to A/B tests made up of page variations.
-    return array();
-  }
-
-  /**
-   * Implements PersonalizeAgentReportInterface::buildCampaignReports().
-   */
-  public function buildCampaignReports($decision_name = NULL, $date_from = NULL, $date_to = NULL) {
-    $report_data = $this->loadReportData($decision_name, $date_from, $date_to);
-    $confidence = $report_data['all']['summary']['overview']['confidence'];
-    $winner = $report_data['all']['summary']['overview']['winner'];
+  protected function buildAllConversionReports($report_data) {
+    $confidence = $report_data['conversion_all']['summary']['overview']['confidence'];
+    $winner = $report_data['conversion_all']['summary']['overview']['winner'];
     $reports = array();
-    $reports['all'] = $this->buildConfidenceReports(array(
+    $reports['conversion_all'] = $this->buildConversionReports(array(
       'name' => t('All goals'),
-      'detail' => $report_data['all']['detail'],
-      'summary' => $report_data['all']['summary'],
+      'detail' => $report_data['conversion_all']['detail'],
+      'summary' => $report_data['conversion_all']['summary'],
     ), $confidence, $winner);
-    foreach ($report_data['goals'] as $goal_id => $goal_data) {
-      $reports['goals'][$goal_id] = $this->buildConfidenceReports($goal_data, $confidence, $winner);
+    foreach ($report_data['conversion_goals'] as $goal_id => $goal_data) {
+      $reports['conversion_goals'][$goal_id] = $this->buildConversionReports($goal_data, $confidence, $winner);
     }
-    if ($reports['all'] == FALSE) {
+    if ($reports['conversion_all'] == FALSE) {
       drupal_set_message(t('There was a problem retrieving the report data.  Please try again later.'), 'error');
     }
     $build['reports'] = array(
@@ -1336,16 +1327,15 @@ class AcquiaLiftABReport extends AcquiaLiftReportBase {
         'class' => array('lift-statistics'),
       ),
     );
-    $build['reports']['all'] = $reports['all'];
-    if (!empty($reports['goals'])) {
-      $build['reports']['goals'] = $reports['goals'];
+    $build['reports']['all'] = $reports['conversion_all'];
+    if (!empty($reports['conversion_goals'])) {
+      $build['reports']['goals'] = $reports['conversion_goals'];
     }
     return $build;
   }
 
   /**
-   * Handles all of the logic to load and extract a confidence report for an
-   * A/B test.
+   * Handles all of the logic to load and extract a conversion report.
    *
    * @param $report_data
    *   The array of existing report data.
@@ -1354,7 +1344,7 @@ class AcquiaLiftABReport extends AcquiaLiftReportBase {
    * @param array $options
    *   An array of report options such as a goal for limiting.
    */
-  protected function loadConfidenceReportHelper(&$report_data, $detail, $options = array()) {
+  protected function loadConversionReportHelper(&$report_data, $detail, $options = array()) {
     if ($detail) {
       $options = array_merge($options, $this->getConfidenceDetailReportOptions());
     }
@@ -1373,79 +1363,35 @@ class AcquiaLiftABReport extends AcquiaLiftReportBase {
       $report_data['goal_reports'][] = $report_name;
     }
     if ($detail) {
-      $extracted = $this->extractConfidenceReportData($report_data['raw'][$report_name]['data']['items']);
+      $extracted = $this->extractConversionReportData($report_data['raw'][$report_name]['data']['items']);
       if (isset($options['goal'])) {
-        $report_data['goals'][$options['goal']]['detail'] = $extracted;
+        $report_data['conversion_goals'][$options['goal']]['detail'] = $extracted;
       }
       else {
-        $report_data['all']['detail'] = $extracted;
+        $report_data['conversion_all']['detail'] = $extracted;
       }
     }
     else {
-      $extracted = $this->extractConfidenceSummaryData($report_data['raw'][$report_name]['data']['items']);
+      $extracted = $this->extractConversionSummaryData($report_data['raw'][$report_name]['data']['items']);
       if (isset($options['goal'])) {
-        $report_data['goals'][$options['goal']]['summary'] = $extracted;
+        $report_data['conversion_goals'][$options['goal']]['summary'] = $extracted;
       }
       else {
-        $report_data['all']['summary'] = $extracted;
+        $report_data['conversion_all']['summary'] = $extracted;
       }
     }
-  }
-
-  /**
-   * Loads and formats the necessary reporting data in order to generate an
-   * A/B report.
-   *
-   * @param $decision_name
-   *   The decision that the data is for.
-   * @param $date_from
-   *   The start date for the date range.
-   * @param $date_to
-   *   The end date for the date range.
-   */
-  protected function loadReportData($decision_name, $date_from, $date_to) {
-    $report_data = $this->generateReportConfiguration($decision_name, $date_from, $date_to);
-    // All goals - summary report.
-    if (!isset($report_data['confidence'])) {
-      $this->loadConfidenceReportHelper($report_data, FALSE);
-    }
-    // All goals - detail report.
-    if (!isset($report_data['confidence_detail'])) {
-      $this->loadConfidenceReportHelper($report_data, TRUE);
-    }
-    // Load the detail and summary reports for each goal.
-    if (!isset($report_data['goals'])) {
-      $report_data['goals'] = array();
-      $goals = personalize_goal_load_by_conditions(array('agent' => $this->agent->getMachineName()));
-      if (count($goals) > 1) {
-        $actions = visitor_actions_get_actions();
-        foreach ($goals as $goal) {
-          $goal_id = $goal->action;
-          if (!isset($report_data['goals'][$goal_id])) {
-            $report_data['goals'][$goal_id]['name'] = $actions[$goal_id]['label'];
-            $options['goal'] = $goal_id;
-            // Summary report.
-            $this->loadConfidenceReportHelper($report_data, FALSE, $options);
-            // Detail report.
-            $this->loadConfidenceReportHelper($report_data, TRUE, $options);
-          }
-        }
-      }
-    }
-
-    return $report_data;
   }
 
   /**
    * Extracts data from the raw confidence detail report that is prepared for use
-   * within the report rendering process.
+   * within the conversion report rendering process.
    *
    * @param $items
    *   An array of items as return from Acquia Lift.
    * @return array
    *   An associative array with information about the performance of each choice.
    */
-  protected function extractConfidenceReportData($items) {
+  protected function extractConversionReportData($items) {
     if (empty($items)) {
       return array();
     }
@@ -1504,6 +1450,43 @@ class AcquiaLiftABReport extends AcquiaLiftReportBase {
   }
 
   /**
+   * Loads and formats the necessary reporting data in order to generate a
+   * conversion metrics graph/report.
+   *
+   * @param array
+   *   The report data object to load conversion report data into.
+   */
+  protected function loadConversionReportData(&$report_data) {
+    // All goals - summary report.
+    if (!isset($report_data['conversion'])) {
+      $this->loadConversionReportHelper($report_data, FALSE);
+    }
+    // All goals - detail report.
+    if (!isset($report_data['conversion_detail'])) {
+      $this->loadConversionReportHelper($report_data, TRUE);
+    }
+    // Load the detail and summary reports for each goal.
+    if (!isset($report_data['conversion_goals'])) {
+      $report_data['conversion_goals'] = array();
+      $goals = personalize_goal_load_by_conditions(array('agent' => $this->agent->getMachineName()));
+      if (count($goals) > 1) {
+        $actions = visitor_actions_get_actions();
+        foreach ($goals as $goal) {
+          $goal_id = $goal->action;
+          if (!isset($report_data['conversion_goals'][$goal_id])) {
+            $report_data['conversion_goals'][$goal_id]['name'] = $actions[$goal_id]['label'];
+            $options['goal'] = $goal_id;
+            // Summary report.
+            $this->loadConversionReportHelper($report_data, FALSE, $options);
+            // Detail report.
+            $this->loadConversionReportHelper($report_data, TRUE, $options);
+          }
+        }
+      }
+    }
+  }
+
+  /**
    * Extracts data from the raw aggregate confidence report that is prepared for
    * use within the report rendering process.
    *
@@ -1512,7 +1495,7 @@ class AcquiaLiftABReport extends AcquiaLiftReportBase {
    * @return array
    *   An associative array with information about the performance of each choice.
    */
-  protected function extractConfidenceSummaryData($items) {
+  protected function extractConversionSummaryData($items) {
     if (empty($items)) {
       return array();
     }
@@ -1599,7 +1582,7 @@ class AcquiaLiftABReport extends AcquiaLiftReportBase {
    * @param array|bool
    *   A render array for the report or FALSE if it cannot be generated.
    */
-  protected function buildABMetricsReport($report_data) {
+  protected function buildConversionDetailReport($report_data) {
     if ($report_data === FALSE) {
       return FALSE;
     }
@@ -1664,7 +1647,7 @@ class AcquiaLiftABReport extends AcquiaLiftReportBase {
    * @param array|bool
    *   A render array for the report or FALSE if it cannot be generated.
    */
-  protected function buildSummaryReport($report_data, $confidence, $winner) {
+  protected function buildConversionSummaryReport($report_data, $confidence, $winner) {
     if ($report_data === FALSE) {
       return FALSE;
     }
@@ -1773,7 +1756,7 @@ class AcquiaLiftABReport extends AcquiaLiftReportBase {
    * @return array|bool
    *   The render array for the reports or false if invalid data.
    */
-  protected function buildConfidenceReports($report_data, $confidence, $winner) {
+  protected function buildConversionReports($report_data, $confidence, $winner) {
     if ($report_data['detail'] == FALSE || $report_data['summary'] == FALSE) {
       return FALSE;
     }
@@ -1784,11 +1767,34 @@ class AcquiaLiftABReport extends AcquiaLiftReportBase {
       '#value' => $report_data['name'],
       '#attributes' => array('class' => array('lift-statistic-category-name')),
     );
-    $build['reports']['detail'] = $this->buildABMetricsReport($report_data['detail']);
-    $build['reports']['summary'] = $this->buildSummaryReport($report_data['summary'], $confidence, $winner);
+    $build['reports']['detail'] = $this->buildConversionDetailReport($report_data['detail']);
+    $build['reports']['summary'] = $this->buildConversionSummaryReport($report_data['summary'], $confidence, $winner);
     $build['reports']['#theme_wrappers'] = array('container');
     $build['reports']['#attributes'] = array('class' => array('lift-statistic-category'));
     return $build;
+  }
+}
+
+/**
+ * Responsible for retrieving and generating Acquia Lift AB Reports.
+ */
+class AcquiaLiftABReport extends AcquiaLiftReportBase {
+
+  /**
+   * Implements PersonalizeAgentReportInterface::renderStatusForOptionSet().
+   */
+  public function renderStatsForOptionSet($option_set, $date_from, $date_to = NULL) {
+    // Not applicable to A/B tests made up of page variations.
+    return array();
+  }
+
+  /**
+   * Implements PersonalizeAgentReportInterface::buildCampaignReports().
+   */
+  public function buildCampaignReports($decision_name = NULL, $date_from = NULL, $date_to = NULL) {
+    $report_data = $this->generateReportConfiguration($decision_name, $date_from, $date_to);
+    $this->loadConversionReportData($report_data);
+    return $this->buildAllConversionReports($report_data);
   }
 }
 
@@ -1851,7 +1857,7 @@ class AcquiaLiftReport extends AcquiaLiftReportBase {
     $report_data = $this->loadReportData($decision_name, $date_from, $date_to);
     $reports = array(
       'overview' => $this->buildOverviewReport($report_data),
-      'experiment' => $this->buildExperimentReport($report_data),
+      'experiment' => $this->buildAllConversionReports($report_data),
       'context' => $this->buildContextReport($report_data),
       'stability' => $this->buildStabilityReport($report_data),
       'targeting' => $this->buildReportContextSelection($report_data),
@@ -1883,6 +1889,8 @@ class AcquiaLiftReport extends AcquiaLiftReportBase {
    */
   protected function loadReportData($decision_name = NULL, $date_from = NULL, $date_to = NULL) {
     $report_data = $this->generateReportConfiguration($decision_name, $date_from, $date_to);
+    $this->loadConversionReportData($report_data);
+
     // Context filters.
     if (!isset($report_data['potential_context'])) {
       $this->loadContextFilterData($report_data);
@@ -1945,7 +1953,8 @@ class AcquiaLiftReport extends AcquiaLiftReportBase {
    */
   protected function extractCampaignReportData(&$report_data) {
     $report_data['extracted_total'] = TRUE;
-    if (!is_array($report_data['status']) || !is_array($report_data['confidence']) || !is_array($report_data['targeting']) || !is_array($report_data['potential_context'])) {
+    $confidence_data = empty($report_data['all']['summary']) ? NULL : $report_data['all']['summary'];
+    if (!is_array($report_data['status']) || !is_array($confidence_data) || !is_array($report_data['targeting']) || !is_array($report_data['potential_context'])) {
       return;
     }
     $agent_data = $this->agent->getData();
@@ -1953,7 +1962,7 @@ class AcquiaLiftReport extends AcquiaLiftReportBase {
 
     // Determine overall confidence based on confidence in choices.
     $total_confident = 0;
-    foreach($report_data['confidence']['features'][self::NO_FEATURES] as $choice) {
+    foreach($confidence_data['features'][self::NO_FEATURES] as $choice) {
       if ($choice['significant']) {
         $total_confident++;
       }
@@ -1974,7 +1983,7 @@ class AcquiaLiftReport extends AcquiaLiftReportBase {
 
     // Update context report data.
     $option_numbers = array();
-    foreach ($report_data['confidence']['features'] as $feature_string => $feature) {
+    foreach ($confidence_data['features'] as $feature_string => $feature) {
       // Get the user-friendly feature label from the possible contextual values.
       $feature_label = $feature_string;
       if (isset($report_data['potential_context'][$feature_string])) {
@@ -2132,118 +2141,6 @@ class AcquiaLiftReport extends AcquiaLiftReportBase {
       '#total_confident' => $overview_report['total_confident'],
     );
     */
-    return $build;
-  }
-
-  /**
-   * Returns a render array for the content set variation experiment report.
-   *
-   * @param array $report_data
-   *   An array of report data for the given dates and decision.
-   * @return array
-   *   A render array representing the variation set report.
-   */
-  protected function buildExperimentReport($report_data) {
-    $build = array();
-    if ($report_data['confidence'] === FALSE) {
-      return $build;
-    }
-
-    $set_data = $report_data['experiment'];
-    $fields = array(
-      'counter' => t('Var.'),
-      'choice_id' => t('Name'),
-      'decisions' => t('Shown'),
-      'goals' => t('Goals'),
-      'conversion' => t('Conversion rate'),
-      'estimated_value' => t('Conversion value'),
-      'lift_default' => t('Lift over control'),
-      'lift_random' => t('Lift over random'),
-      'confidence' => t('Chance to beat control'),
-    );
-
-    // Not all of these columns will be shown, depending on certain factors.
-    $exclude_columns = array();
-    if ((isset($this->data['control_rate']) && (int) $this->data['control_rate'] === 0)) {
-      $exclude_columns[] = 'lift_default';
-    }
-
-    // Generate the headers.
-    foreach ($fields as $field_name => $display) {
-      if (in_array($field_name, $exclude_columns)) {
-        continue;
-      }
-      $header[] = $display;
-    }
-
-    // Generate the table data.
-    $rows = array();
-
-    foreach ($set_data['choices'] as $choice) {
-      $row = array();
-      foreach ($fields as $field_name => $display) {
-        if (in_array($field_name, $exclude_columns)) {
-          continue;
-        }
-        $significant_indicator_classes = $choice['significant'] ? array('acquia-lift-report-positive') : array('acquia-lift-report-negative');
-        switch ($field_name) {
-          case 'confidence':
-            $row[] = array(
-              'data' => $choice[$field_name],
-              'class' => $choice['control'] ? array() : $significant_indicator_classes,
-            );
-            break;
-          case 'lift_default':
-            $row[] = array(
-              'data' => $choice[$field_name],
-              'class' => $choice['control'] ? array() : $significant_indicator_classes,
-            );
-            break;
-          case 'lift_random':
-            $row[] = array(
-              'data' => $choice[$field_name],
-              'class' => $significant_indicator_classes,
-            );
-            break;
-          case 'estimated_value': {
-            $row[] = theme('acquia_lift_high_low', array(
-              'high' => $choice['estimated_higher'],
-              'low' => $choice['estimated_lower'],
-              'value' => $choice[$field_name],
-            ));
-            break;
-          }
-          case 'choice_id':
-            if ($choice['control']) {
-              $row[] = t('Control: ') . $choice[$field_name];
-            }
-            else {
-              $row[] = $choice[$field_name];
-            }
-            break;
-          default:
-            $row[] = $choice[$field_name];
-        }
-      }
-      // Allow for special styling of the control row.
-      if ($choice['control'] === TRUE) {
-        $rows[] = array(
-          'data' => $row,
-          'class' => array('acquia-lift-report-control'),
-          'no_striping' => TRUE,
-        );
-      }
-      // Just add the data to the rows to display.
-      else {
-        $rows[] = $row;
-      }
-    }
-    $build['content'] = array(
-      '#theme' => 'table',
-      '#header' => $header,
-      '#rows' => $rows,
-      '#sticky' => FALSE,
-    );
     return $build;
   }
 

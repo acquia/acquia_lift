@@ -48,7 +48,7 @@
       $anchor.live('click', function acquiaLiftClickHandler(event) {
         // Make sure this is triggered by the right link (side-effect of method
         // and multiple menus).
-        if (!event.target.hasOwnProperty('href') || event.target.href.indexOf('admin/acquia_lift') < 0) {
+        if (!event.target.href || event.target.href.indexOf('admin/acquia_lift') < 0) {
           return;
         }
         event.preventDefault();

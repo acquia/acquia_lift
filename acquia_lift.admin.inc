@@ -280,6 +280,11 @@ function acquia_lift_report($form, &$form_state, $agent_data, $option_set) {
  *   (optional) The content variation to show in the default view.
  */
 function acquia_lift_report_custom($form, &$form_state, $agent, $agent_data, $option_set) {
+  // Check for Rickshaw and D3 libraries and alert users if not exist.
+  if (_acquia_lift_missing_library_warning(array('rickshaw', 'd3'), t('The following libraries are required in order to view the Acquia Lift reports:'))) {
+    return array();
+  }
+
   // Generate report filters.
   $data = $agent->getData();
   $form = array(
@@ -291,6 +296,9 @@ function acquia_lift_report_custom($form, &$form_state, $agent, $agent_data, $op
       ),
       'js' => array(
         drupal_get_path('module', 'acquia_lift') . '/js/acquia_lift.admin.js',
+      ),
+      'library' => array(
+        array('acquia_lift', 'acquia_lift.reports.ab'),
       ),
     ),
   );
@@ -319,15 +327,9 @@ function acquia_lift_report_custom($form, &$form_state, $agent, $agent_data, $op
   }
   $form['report_filters']['decision_point'] = acquia_lift_report_decision_point_dropdown($decision_options, $decision_point);
 
-  $form['report_filters']['date_filters'] = acquia_lift_report_date_filter(isset($form_state['values']['date_filters']) ? $form_state['values']['date_filters'] : 'all');
-
   // Default to showing the complete history of the campaign.
   $date_start_report = date('Y-m-d', $agent_data->started);
   $date_end_report = $date_end_targeting = date('Y-m-d');
-  if (isset($form_state['values']['date_filters']) && $form_state['values']['date_filters'] === 'today') {
-    $date_start_report = date('Y-m-d');
-    $date_end_report = NULL;
-  }
 
   $reports = $agent->buildCampaignReports($decision_point, $date_start_report, $date_end_report);
 
@@ -358,7 +360,7 @@ function acquia_lift_report_custom($form, &$form_state, $agent, $agent_data, $op
     '#id' => 'acquia-lift-overview-report-data',
   );
 
-  // Experiment details section.
+  // Conversion details section.
   $form['experiment_report'] = array(
     '#type' => 'container',
     'header' => array(
@@ -540,31 +542,6 @@ function acquia_lift_report_custom($form, &$form_state, $agent, $agent_data, $op
   );
   return $form;
 }
-
-/**
- * Returns a date filter for the reports.
- *
- * @param $selected
- *   The selected date option.
- * @return array
- *   An array representing the form input.
- */
-function acquia_lift_report_date_filter($selected = 'all') {
-  return array(
-    '#type' => 'select',
-    '#options' => array(
-      'today' => t('Today only'),
-      'all' => t('All dates'),
-    ),
-    '#default_value' => $selected,
-    '#ajax' => array(
-      'callback' => "acquia_lift_report_ajax_callback",
-      'wrapper' => "acquia-lift-reports",
-    ),
-    '#title' => '&nbsp;',
-  );
-}
-
 
 /**
  * Returns a dropdown for filtering by decision point.

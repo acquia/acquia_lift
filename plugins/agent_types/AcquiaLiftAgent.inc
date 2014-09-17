@@ -1060,7 +1060,7 @@ abstract class AcquiaLiftReportBase implements PersonalizeAgentReportInterface, 
    * @returns string
    *   The name of a report to reference within the raw reporting data.
    */
-  function getConfidenceReportRawName($options = array()) {
+  protected function getConfidenceReportRawName($options = array()) {
     $report_name = 'confidence';
     if (!empty($options['goal'])) {
       $report_name .= '_' . $options['goal'];
@@ -1078,7 +1078,7 @@ abstract class AcquiaLiftReportBase implements PersonalizeAgentReportInterface, 
    * @returns array
    *   An array of confidence report options.
    */
-  function getConfidenceDetailReportOptions() {
+  protected function getConfidenceDetailReportOptions() {
     $options['aggregated-over-dates'] = FALSE;
     return $options;
   }
@@ -1097,17 +1097,17 @@ abstract class AcquiaLiftReportBase implements PersonalizeAgentReportInterface, 
    *   The basic reporting configuration.
    */
   protected function generateReportConfiguration($decision_name = NULL, $date_from = NULL, $date_to = NULL) {
-    $key = 'S' . $date_from . 'E' . $date_to;
     $machine_name = $this->agent->getMachineName();
+    $today_only = $date_from === date('Y-m-d') && empty($date_to);
+    $date_from = empty($date_from) ? date('Y-m-d', $this->agent->started) : $date_from;
+    $date_to = empty($date_to) ? date('Y-m-d') : $date_to;
+    $key = 'S' . $date_from . 'E' . $date_to;
 
     if (!isset($this->report_data[$key])) {
       $confidence_measure = $this->getConfidenceMeasure();
       // Convert the confidence measure from a percentage to a value between
       // 0 and 1 as expected by the Lift API.
       $confidence_measure /= 100;
-      $today_only = $date_from === date('Y-m-d') && empty($date_to);
-      $date_from = empty($date_from) ? date('Y-m-d', $this->agent->started) : $date_from;
-      $date_to = empty($date_to) ? date('Y-m-d') : $date_to;
 
       // Save basic report generation information with the data.
       $this->report_data[$key]['today_only'] = $today_only;
@@ -1345,41 +1345,42 @@ abstract class AcquiaLiftReportBase implements PersonalizeAgentReportInterface, 
    *   An array of report options such as a goal for limiting.
    */
   protected function loadConversionReportHelper(&$report_data, $detail, $options = array()) {
+    // Limit report results to the experimental group.
+    $options['policies'] = 'explore';
     if ($detail) {
       $options = array_merge($options, $this->getConfidenceDetailReportOptions());
     }
     $report_name = $this->getConfidenceReportRawName($options);
-    if (isset($report_data[$report_name])) {
-      return TRUE;
+    if (isset($options['goal'])) {
+      // Add the report name for this goal to track which goals are included.
+      $report_data['goal_reports'][] = $report_name;
+      // Determine the parent for reports added by this helper.
+      if (!isset($report_data['conversion_goals'])) {
+        $report_data['conversion_goals'][$options['goal']] = FALSE;
+      }
+      $detail_report = &$report_data['conversion_goals'][$options['goal']];
     }
+    else {
+      // Determine the parent for reports added by this helper.
+      if (!isset($report_data['conversion_all'])) {
+        $report_data['conversion_all'] = FALSE;
+      }
+      $detail_report = &$report_data['conversion_all'];
+    }
+    // Check if the report is already loaded.
+    $subreport_name = $detail ? 'detail' : 'summary';
+    if (isset($detail_report[$subreport_name])) {
+      return;
+    }
+    // Load the raw report data.
     if (!isset($report_data['raw'][$report_name])) {
       $this->loadConfidenceData($report_data, $options);
       if (isset($report_data['raw'][$report_name]['error'])) {
-        $report_data[$report_name] = FALSE;
         return;
       }
     }
-    if (isset($options['goal'])) {
-      $report_data['goal_reports'][] = $report_name;
-    }
-    if ($detail) {
-      $extracted = $this->extractConversionReportData($report_data['raw'][$report_name]['data']['items']);
-      if (isset($options['goal'])) {
-        $report_data['conversion_goals'][$options['goal']]['detail'] = $extracted;
-      }
-      else {
-        $report_data['conversion_all']['detail'] = $extracted;
-      }
-    }
-    else {
-      $extracted = $this->extractConversionSummaryData($report_data['raw'][$report_name]['data']['items']);
-      if (isset($options['goal'])) {
-        $report_data['conversion_goals'][$options['goal']]['summary'] = $extracted;
-      }
-      else {
-        $report_data['conversion_all']['summary'] = $extracted;
-      }
-    }
+    // Extract the data into full report data from the raw data.
+    $detail_report[$subreport_name] = $detail ? $this->extractConversionReportData($report_data['raw'][$report_name]['data']['items']) : $this->extractConversionSummaryData($report_data['raw'][$report_name]['data']['items']);
   }
 
   /**

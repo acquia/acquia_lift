@@ -52,6 +52,22 @@ interface AcquiaLiftAgentInterface {
    *   arrays with decision names as keys and an array of choices as values.
    */
   public static function convertOptionSetsToDecisions($option_sets);
+
+  /**
+   * Retrieves a conversion report.
+   *
+   * @param $decision_name
+   *   (Optional) The decision to get conversion report for.
+   * @param $goal
+   *   (Optional) The goal for limiting the report, defaults to all goals.
+   * @param $date_from
+   *   (Optional) The start time for report data in Y-m-d format.  Defaults to
+   *   agent start.
+   * @param $date_to
+   *   (Optional) The end time for report data in Y-m-d format.  Defaults to
+   *   the current date.
+   */
+  public function buildConversionReport($decision_name = NULL, $goal = NULL, $date_from = NULL, $date_to = NULL);
 }
 
 interface AcquiaLiftSimplifiedAgentInterface {
@@ -80,6 +96,21 @@ interface AcquiaLiftReportInterface {
    */
   public function setConfidenceMeasure($value);
 
+  /**
+   * Retrieves a conversion report.
+   *
+   * @param $decision_name
+   *   (Optional) The decision to get conversion report for.
+   * @param $goal
+   *   (Optional) The goal for limiting the report, defaults to all goals.
+   * @param $date_from
+   *   (Optional) The start time for report data in Y-m-d format.  Defaults to
+   *   the agent start.
+   * @param $date_to
+   *   (Optional) The end time for report data in Y-m-d format.  Defaults to
+   *   the current date.
+   */
+  public function buildConversionReport($decision_name = NULL, $goal = NULL, $date_from = NULL, $date_to = NULL);
 }
 
 /**
@@ -548,6 +579,13 @@ class AcquiaLiftAgent extends PersonalizeAgentBase implements PersonalizeAgentGo
    */
   public function buildCampaignReports($decision_name = NULL, $date_from = NULL, $date_to = NULL) {
     return $this->getReporting()->buildCampaignReports($decision_name, $date_from, $date_to);
+  }
+
+  /**
+   * Implements AcquiaLiftReportInterface()::buildConversionReport().
+   */
+  public function buildConversionReport($decision_name = NULL, $goal = NULL, $date_from = NULL, $date_to = NULL) {
+    return $this->getReporting()->buildConversionReport($decision_name, $goal, $date_from, $date_to);
   }
 
   /**
@@ -1023,6 +1061,41 @@ abstract class AcquiaLiftReportBase implements PersonalizeAgentReportInterface, 
   }
 
   /**
+   * Implements AcquiaLiftReportInterface()::buildConversionReport().
+   */
+  public function buildConversionReport($decision_name = NULL, $goal = NULL, $date_from = NULL, $date_to = NULL) {
+    $report_data = $this->generateReportConfiguration($decision_name, $date_from, $date_to);
+    $report_name = t('All goals');
+
+    $options = array();
+    if (!empty($goal)) {
+      // Get the summary data for the whole campaign in order to have overall
+      // statistics.
+      $this->loadConversionReportHelper($report_data, FALSE, $options);
+      $options['goal'] = $goal;
+      $actions = visitor_actions_get_actions();
+      $report_name = $actions[$goal]['label'];
+    }
+    $this->loadConversionReportHelper($report_data, TRUE, $options);
+    $this->loadConversionReportHelper($report_data, FALSE, $options);
+
+    if ($report_data['conversion_all'] == FALSE) {
+      return array(
+        '#markup' => t('There was a problem generating the conversion report.'),
+      );
+    }
+
+    $confidence = $report_data['conversion_all']['summary']['overview']['confidence'];
+    $winner = $report_data['conversion_all']['summary']['overview']['winner'];
+    $reports = $this->buildConversionReports(array(
+      'name' => $report_name,
+      'detail' => empty($goal) ? $report_data['conversion_all']['detail'] : $report_data['conversion_goals'][$goal]['detail'],
+      'summary' => empty($goal) ? $report_data['conversion_all']['summary'] : $report_data['conversion_goals'][$goal]['summary'],
+    ), $confidence, $winner);
+    return $reports;
+  }
+
+  /**
    * Generates a message to show when there is insufficient confidence in the
    * test results.
    *
@@ -1088,6 +1161,7 @@ abstract class AcquiaLiftReportBase implements PersonalizeAgentReportInterface, 
    *
    * @param $decision_name
    *   (Optional) decision point name to limit results.
+   *   (Optional) decision point name to limit results.
    * @param $date_from
    *   The starting date for report data in Y-m-d format, or null for agent
    *   start date.
@@ -1099,7 +1173,7 @@ abstract class AcquiaLiftReportBase implements PersonalizeAgentReportInterface, 
   protected function generateReportConfiguration($decision_name = NULL, $date_from = NULL, $date_to = NULL) {
     $machine_name = $this->agent->getMachineName();
     $today_only = $date_from === date('Y-m-d') && empty($date_to);
-    $date_from = empty($date_from) ? date('Y-m-d', $this->agent->started) : $date_from;
+    $date_from = empty($date_from) ? date('Y-m-d', $this->agent->getStartTime()) : $date_from;
     $date_to = empty($date_to) ? date('Y-m-d') : $date_to;
     $key = 'S' . $date_from . 'E' . $date_to;
 
@@ -1348,6 +1422,7 @@ abstract class AcquiaLiftReportBase implements PersonalizeAgentReportInterface, 
     if ($detail) {
       $options = array_merge($options, $this->getConfidenceDetailReportOptions());
     }
+    $new_report = array();
     $report_name = $this->getConfidenceReportRawName($options);
     if (isset($options['goal'])) {
       // Add the report name for this goal to track which goals are included.

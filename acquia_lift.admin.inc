@@ -600,6 +600,44 @@ function acquia_lift_report_ab($form, &$form_state, $agent, $agent_data) {
 }
 
 /**
+ * AJAX callback to return the tabular HTML for conversion reports.
+ *
+ * The following parameters are supplied within the query string:
+ *   - campaign: the machine name of the campaign
+ *   - decision: the decision name to get data
+ *   - start: (optional) the timestamp to use as start date
+ *   - end: (optional) the timestamp to use as the end date
+ *   - goal: (optional) a goal name to limit results (defaults to all goals)
+ */
+function acquia_lift_report_conversion() {
+  $params = drupal_get_query_parameters();
+  $agent_name = empty($params['campaign']) ? NULL : filter_xss($params['campaign']);
+  $decision = empty($params['decision']) ? NULL : filter_xss($params['decision']);
+  $goal = empty($params['goal']) ? NULL : filter_xss($params['goal']);
+  $start = empty($params['start']) ? NULL : check_plain($params['start']);
+  $end = empty($params['end']) ? NULL : check_plain($params['end']);
+  $agent = personalize_agent_load($agent_name);
+
+  if (!acquia_lift_owns_agent($agent)) {
+    return array();
+  }
+  $date_from = $date_to = NULL;
+  if (is_numeric($start)) {
+    $date_from = date('Y-m-d', $start);
+  }
+  if (is_numeric($end)) {
+    $date_to = date('Y-m-d', $end);
+  }
+
+  $reports = array();
+  if ($plugin = personalize_agent_load_agent($agent_name)) {
+    $reports = $plugin->buildConversionReport($decision, $goal, $date_from, $date_to);
+  }
+  $reports['#type'] = 'ajax';
+  return $reports;
+}
+
+/**
  * =======================================================================
  *  C A M P A I G N  M A N A G E M E N T  F L O W
  * =======================================================================

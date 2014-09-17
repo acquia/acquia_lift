@@ -1289,10 +1289,9 @@ abstract class AcquiaLiftReportBase implements PersonalizeAgentReportInterface, 
       if ($padding > 0) {
         $value = str_pad($value, $padding, '0', STR_PAD_LEFT);
       }
-      if (strlen($value) === 0) {
-        $value = 0;
-      }
-      return $value;
+    }
+    if (empty($value)) {
+      $value = 0;
     }
     return $value;
   }

@@ -12,18 +12,27 @@ projects[drupal][version] = "7.31"
 
 ; Contrib module: personalize
 ; ---------------------------------------
+projects[personalize][type] = "module"
+projects[personalize][download][type] = "git"
+projects[personalize][download][url] = "http://git.drupal.org/project/personalize.git"
+projects[personalize][download][branch] = "7.x-1.x"
 projects[personalize][subdir] = contrib
-projects[personalize][version] = 1.0-beta13
 
 ; Contrib module: visitor_actions
 ; ---------------------------------------
+projects[visitor_actions][type] = "module"
+projects[visitor_actions][download][type] = "git"
+projects[visitor_actions][download][url] = "http://git.drupal.org/project/visitor_actions.git"
+projects[visitor_actions][download][branch] = "7.x-1.x"
 projects[visitor_actions][subdir] = contrib
-projects[visitor_actions][version] = 1.0-beta7
 
 ; Contrib module: acquia_lift
 ; ---------------------------------------
+projects[acquia_lift][type] = "module"
+projects[acquia_lift][download][type] = "git"
+projects[acquia_lift][download][url] = "http://git.drupal.org/project/acquia_lift.git"
+projects[acquia_lift][download][branch] = "7.x-1.x"
 projects[acquia_lift][subdir] = contrib
-projects[acquia_lift][version] = 1.0-beta13
 
 ; Contrib module: ctools
 ; ---------------------------------------

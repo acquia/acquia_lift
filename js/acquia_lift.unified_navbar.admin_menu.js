@@ -39,7 +39,7 @@
       }
       // If the link is found and not processed, then go ahead and add
       // listeners.
-      var $anchor = adminMenu.find('a[href~="/admin/acquia_lift"]');
+      var $anchor = adminMenu.find('a[href*="/admin/acquia_lift"]');
       if ($anchor.length == 0 || !Drupal.navbar.hasOwnProperty('toggleUnifiedNavbar')) {
         return;
       }

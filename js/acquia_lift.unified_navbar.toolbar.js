@@ -12,7 +12,7 @@
       var self = this;
       // Make the "Acquia Lift" top level navigation item toggle the
       // unified navbar.
-      var $anchor = this.getAdminMenu().once('acquiaLiftOverride').find('a[href~="/admin/acquia_lift"]');
+      var $anchor = this.getAdminMenu().once('acquiaLiftOverride').find('a[href*="/admin/acquia_lift"]');
       if ($anchor.length && Drupal.navbar.hasOwnProperty('toggleUnifiedNavbar')) {
         $anchor.bind('click.acquiaLiftOverride', function (event) {
           event.stopPropagation();

@@ -935,7 +935,7 @@ class AcquiaLiftAgent extends PersonalizeAgentBase implements PersonalizeAgentGo
  * differs from the regular Acquia Lift agent class in the options form it presents
  * to users.
  */
-class AcquiaLiftSimpleAB extends AcquiaLiftAgent implements AcquiaLiftSimplifiedAgentInterface, AcquiaLiftPageVariationInterface {
+class AcquiaLiftSimpleAB extends AcquiaLiftAgent implements AcquiaLiftSimplifiedAgentInterface, AcquiaLiftPageVariationInterface, PersonalizeAutoTargetingInterface {
 
   /**
    * Implements PersonalizeAgentInterface::optionsForm().

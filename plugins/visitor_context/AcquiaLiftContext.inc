@@ -79,7 +79,7 @@ class AcquiaLiftContext extends PersonalizeContextBase {
    * Implements PersonalizeContextInterface::allowedFromAgent().
    */
   public static function allowedFromAgent(StdClass $agent) {
-    return !empty($agent->plugin) && $agent->plugin === 'acquia_lift';
+    return !empty($agent->plugin) && preg_match('/^acquia_lift/', $agent->plugin);
   }
 
 

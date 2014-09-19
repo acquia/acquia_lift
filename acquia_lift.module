@@ -545,6 +545,16 @@ function acquia_lift_personalize_option_set_save($option_set) {
       }
       if (visitor_actions_save_action($action)) {
         personalize_goal_save($option_set->agent, $action_name, 1);
+        // We also need to make sure the agent is set to running after everything
+        // has been sync'd up.
+        $queue = DrupalQueue::get('acquia_lift_sync');
+        $queue->createItem(array(
+          'callback' => 'personalize_agent_set_status',
+          'args' => array(
+            $agent->machine_name,
+            PERSONALIZE_STATUS_RUNNING
+          )
+        ));
       }
     }
   }
@@ -648,8 +658,15 @@ function acquia_lift_personalize_goal_save($goal_info) {
  *   - args The args to pass to the method.
  */
 function acquia_lift_sync_item($item) {
-  $acquia_lift_api = AcquiaLiftAPI::getInstance(variable_get('acquia_lift_account_info', array()));
-  call_user_func_array(array($acquia_lift_api, $item['method']), $item['args']);
+  // The item is either a method to be called on the LiftAPI class or a regular
+  // function.
+  if (isset($item['method'])) {
+    $acquia_lift_api = AcquiaLiftAPI::getInstance(variable_get('acquia_lift_account_info', array()));
+    call_user_func_array(array($acquia_lift_api, $item['method']), $item['args']);
+  }
+  else {
+    call_user_func_array($item['callback'], $item['args']);
+  }
 }
 
 /**

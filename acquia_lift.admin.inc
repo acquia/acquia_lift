@@ -651,7 +651,7 @@ function acquia_lift_create_campaign_callback($ajax) {
         'description' => t('Create and compare content variations.'),
         'url' => 'admin/structure/acquia_lift/add/ab',
         'modal' => TRUE,
-        'ctools_style' => 'ctools-modal-acquia-lift-style-short',
+        'ctools_style' => 'ctools-modal-acquia-lift-style',
         'logo' => theme('image', array(
           'path' => $path . '/images/campaign-type-ab.png',
           'alt' => t('A/B test'),
@@ -1234,7 +1234,7 @@ function acquia_lift_create_goal_callback($ajax) {
         'description' => t('Visitor actions already defined by Acquia Lift'),
         'url' => 'admin/structure/acquia_lift/goal/add/existing',
         'modal' => TRUE,
-        'ctools_style' => 'ctools-modal-acquia-lift-style-short',
+        'ctools_style' => 'ctools-modal-acquia-lift-style',
         'logo' => theme('image', array(
           'path' => $path . '/images/goal-type-predefined.png',
           'alt' => t('Pre-existing goal'),
@@ -1342,7 +1342,7 @@ function acquia_lift_create_goal_type_form($form, &$form_state, $type) {
     '#type' => 'value',
     '#value' => $type,
   );
-  $change_link = ctools_modal_text_button(t('Change type of goal'), 'admin/structure/acquia_lift/goal/add/nojs', t('Change type of test'), 'ctools-modal-acquia-lift-style-long');
+  $change_link = ctools_modal_text_button(t('Change type of goal'), 'admin/structure/acquia_lift/goal/add/nojs', t('Change type of test'), 'ctools-modal-acquia-lift-style');
   // Add individual forms specific to the type of goal being created.
   switch ($type) {
     case 'existing':

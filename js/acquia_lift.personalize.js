@@ -2673,7 +2673,7 @@
 
     var renameHref = Drupal.settings.basePath + 'admin/structure/acquia_lift/pagevariation/rename/' + variation.agent + '/' + variation.original_index + '/nojs';
     var renameAttrs = [
-      'class="acquia-lift-variation-rename acquia-lift-menu-link ctools-use-modal ctools-modal-acquia-lift-style-short"',
+      'class="acquia-lift-variation-rename acquia-lift-menu-link ctools-use-modal ctools-modal-acquia-lift-style"',
       'title="' + Drupal.t('Rename Variation #@num', {'@num': variation.index}) + '"',
       'aria-role="button"',
       'aria-pressed="false"',
@@ -2682,7 +2682,7 @@
 
     var deleteHref = Drupal.settings.basePath + 'admin/structure/acquia_lift/pagevariation/delete/' + variation.agent + '/' + variation.original_index + '/nojs';
     var deleteAttrs = [
-      'class="acquia-lift-variation-delete acquia-lift-menu-link ctools-use-modal ctools-modal-acquia-lift-style-short"',
+      'class="acquia-lift-variation-delete acquia-lift-menu-link ctools-use-modal ctools-modal-acquia-lift-style"',
       'title="' + Drupal.t('Delete Variation #@num', {'@num': variation.index}) + '"',
       'aria-role="button"',
       'aria-pressed="false"',

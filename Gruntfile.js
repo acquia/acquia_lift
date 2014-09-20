@@ -10,6 +10,12 @@ module.exports = function(grunt) {
         'src/js/reports/acquia_lift.reports.js'
       ];
 
+  var flowjs = [
+        'src/js/flow/acquia_lift.modal.js',
+        'src/js/flow/acquia_lift.page_variations.js',
+        'src/js/flow/acquia_lift.ctools.modal.js'
+      ];
+
   // Project configuration.
   grunt.initConfig({
     pkg: grunt.file.readJSON('package.json'),
@@ -30,10 +36,14 @@ module.exports = function(grunt) {
       help: {
         src: ['src/js/help/acquia_lift.help.js'],
         dest: 'js/acquia_lift.help.js'
+      },
+      flow: {
+        src: flowjs,
+        dest: 'js/acquia_lift.flow.js'
       }
     },
     concurrent: {
-      all: ['style', 'script'],
+      all: ['style', 'script']
     },
     sass: {
       dist: {

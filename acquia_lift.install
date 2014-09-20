@@ -243,7 +243,7 @@ function _acquia_lift_build_menu($menu_name) {
     'options' => array(
       'attributes' => array(
         'data-acquia-lift-personalize-mode' => 'goals',
-        'class' => array('acquia-lift-goals-new', 'visitor-actions-ui-ignore', 'acquia-lift-menu-create', 'acquia-lift-menu-link', 'ctools-use-modal', 'ctools-modal-acquia-lift-style-long'),
+        'class' => array('acquia-lift-goals-new', 'visitor-actions-ui-ignore', 'acquia-lift-menu-create', 'acquia-lift-menu-link', 'ctools-use-modal', 'ctools-modal-acquia-lift-style'),
       ),
       'html' => FALSE,
     ),
@@ -391,6 +391,14 @@ function acquia_lift_update_7008() {
  * Update the goals menu to use simplified campaign modal process.
  */
 function acquia_lift_update_7009() {
+  menu_delete_links('acquia-lift-controls');
+  _acquia_lift_build_menu('acquia-lift-controls');
+}
+
+/**
+ * Update the goals menu to take advantage of dynamically resized modals.
+ */
+function acquia_lift_update_7010() {
   menu_delete_links('acquia-lift-controls');
   _acquia_lift_build_menu('acquia-lift-controls');
 }

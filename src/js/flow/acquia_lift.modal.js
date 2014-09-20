@@ -87,4 +87,5 @@
   function hidePageVisitorActionsButton() {
     $('#visitor-actions-ui-actionable-elements-without-identifiers').hide();
   }
+
 }(jQuery, Drupal));

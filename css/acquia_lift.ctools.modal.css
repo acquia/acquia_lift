@@ -1,14 +1,14 @@
 /* Styles to override the CTools modals */
 
 div.ctools-modal-content {
-  padding: 1em 2em;
+  padding: 1em;
   color: #333;
   border-color: #555;
 }
 
 div.ctools-modal-content .modal-header {
   background-color: #fff;
-  padding: 0 0 1em 0;
+  padding: 0;
 }
 
 div.ctools-modal-content .modal-title {

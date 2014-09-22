@@ -2334,7 +2334,8 @@ function acquia_lift_set_pending_status($agent_name, $agent_label) {
  *   An array of agents with machine names as keys and human-readable names
  *   as values.
  */
-function acquia_lift_get_pending_agents($clear = TRUE) {
+function acquia_lift_get_pending_agents($clear = TRUE)
+{
   if (!isset($_SESSION['acquia_lift_pending_agents'])) {
     return array();
   }
@@ -2343,4 +2344,30 @@ function acquia_lift_get_pending_agents($clear = TRUE) {
     unset($_SESSION['acquia_lift_pending_agents']);
   }
   return $pending;
+}
+
+/**
+ * Calculates and returns the minimum runtime for campaigns in seconds.
+ *
+ * @return int
+ *   The minium number of seconds all campaigns must be allowed to run
+ *   for before being stopped automatically when a winner is found.
+ */
+function acquia_lift_config_min_runtime() {
+  $num = variable_get('acquia_lift_min_runtime_num', 0);
+  if (empty($num)) {
+    return 0;
+  }
+  $unit = variable_get('acquia_lift_min_runtime_unit', 'day');
+  switch ($unit) {
+    case 'minute':
+      return $num * 60;
+    case 'hour':
+      return $num * 60 * 60;
+    case 'day':
+      return $num * 60 * 60 * 24;
+    case 'week':
+      return $num * 60 * 60 * 24 * 7;
+  }
+  return 0;
 }

@@ -704,7 +704,7 @@ class AcquiaLiftTest extends DrupalUnitTestCase {
         'type' => 'get',
         'uri' => "{$lift_api->getApiUrl()}/{$lift_api->getOwnerCode()}/agent-api/$machineName?apikey={$lift_api->getAdminKey()}",
         'headers' => array('Accept' => 'application/json'),
-        'options' => array('timeout' => AcquiaLiftAPI::GET_REQUEST_TIMEOUT_VALUE),
+        'options' => array(),
         'body' => NULL,
       )
     );
@@ -745,7 +745,7 @@ class AcquiaLiftTest extends DrupalUnitTestCase {
         'type' => 'get',
         'uri' => "{$lift_api->getApiUrl()}/{$lift_api->getOwnerCode()}/agent-api/$agentName/goals?apikey={$lift_api->getAdminKey()}",
         'headers' => array('Accept' => 'application/json'),
-        'options' => array('timeout' => AcquiaLiftAPI::GET_REQUEST_TIMEOUT_VALUE),
+        'options' => array(),
         'body' => NULL,
       )
     );
@@ -787,7 +787,7 @@ class AcquiaLiftTest extends DrupalUnitTestCase {
         'type' => 'get',
         'uri' => "{$lift_api->getApiUrl()}/{$lift_api->getOwnerCode()}/agent-api/$agentName/points?apikey={$lift_api->getAdminKey()}",
         'headers' => array('Accept' => 'application/json'),
-        'options' => array('timeout' => AcquiaLiftAPI::GET_REQUEST_TIMEOUT_VALUE),
+        'options' => array(),
         'body' => NULL,
       )
     );
@@ -831,7 +831,7 @@ class AcquiaLiftTest extends DrupalUnitTestCase {
         'type' => 'get',
         'uri' => "{$lift_api->getApiUrl()}/{$lift_api->getOwnerCode()}/agent-api/$agentName/points/{$pointName}/decisions?apikey={$lift_api->getAdminKey()}",
         'headers' => array('Accept' => 'application/json'),
-        'options' => array('timeout' => AcquiaLiftAPI::GET_REQUEST_TIMEOUT_VALUE),
+        'options' => array(),
         'body' => NULL,
       )
     );
@@ -874,7 +874,7 @@ class AcquiaLiftTest extends DrupalUnitTestCase {
         'type' => 'get',
         'uri' => "{$lift_api->getApiUrl()}/{$lift_api->getOwnerCode()}/agent-api/$agentName/points/{$pointName}/decisions/{$decisionName}/choices?apikey={$lift_api->getAdminKey()}",
         'headers' => array('Accept' => 'application/json'),
-        'options' => array('timeout' => AcquiaLiftAPI::GET_REQUEST_TIMEOUT_VALUE),
+        'options' => array(),
         'body' => NULL,
       )
     );
@@ -913,7 +913,7 @@ class AcquiaLiftTest extends DrupalUnitTestCase {
         'type' => 'get',
         'uri' => "{$lift_api->getApiUrl()}/{$lift_api->getOwnerCode()}/list-agents?apikey={$lift_api->getAdminKey()}",
         'headers' => array('Accept' => 'application/json'),
-        'options' => array('timeout' => AcquiaLiftAPI::GET_REQUEST_TIMEOUT_VALUE),
+        'options' => array(),
         'body' => NULL,
       )
     );
@@ -956,7 +956,7 @@ class AcquiaLiftTest extends DrupalUnitTestCase {
         'type' => 'get',
         'uri' => "{$lift_api->getApiUrl()}/{$lift_api->getOwnerCode()}/transforms-options?apikey={$lift_api->getAdminKey()}",
         'headers' => array('Accept' => 'application/json'),
-        'options' => array('timeout' => AcquiaLiftAPI::GET_REQUEST_TIMEOUT_VALUE),
+        'options' => array(),
         'body' => NULL,
       )
     );
@@ -1073,7 +1073,7 @@ class AcquiaLiftTest extends DrupalUnitTestCase {
         'type' => 'get',
         'uri' => "{$lift_api->getApiUrl()}/{$lift_api->getOwnerCode()}/transforms-list?apikey={$lift_api->getAdminKey()}",
         'headers' => array('Accept' => 'application/json'),
-        'options' => array('timeout' => AcquiaLiftAPI::GET_REQUEST_TIMEOUT_VALUE),
+        'options' => array(),
         'body' => NULL,
       )
     );
@@ -1127,7 +1127,7 @@ class AcquiaLiftTest extends DrupalUnitTestCase {
         'type' => 'get',
         'uri' => "{$lift_api->getApiUrl()}/{$lift_api->getOwnerCode()}/-/potential-targeting?agent={$agentName}&include-current=true&apikey={$lift_api->getAdminKey()}",
         'headers' => array('Accept' => 'application/json'),
-        'options' => array('timeout' => AcquiaLiftAPI::GET_REQUEST_TIMEOUT_VALUE),
+        'options' => array(),
         'body' => NULL,
       )
     );
@@ -1239,7 +1239,7 @@ class AcquiaLiftTest extends DrupalUnitTestCase {
         'type' => 'get',
         'uri' => "{$lift_api->getApiUrl()}/{$lift_api->getOwnerCode()}/{$agentName}/report/targeting-features/{$dateStr}?apikey={$lift_api->getAdminKey()}",
         'headers' => array('Accept' => 'application/json'),
-        'options' => array('timeout' => AcquiaLiftAPI::GET_REQUEST_TIMEOUT_VALUE),
+        'options' => array(),
         'body' => NULL,
       )
     );
@@ -1262,7 +1262,7 @@ class AcquiaLiftTest extends DrupalUnitTestCase {
         'type' => 'get',
         'uri' => "{$lift_api->getApiUrl()}/{$lift_api->getOwnerCode()}/{$agentName}/report/targeting-features/{$startDate}/$endDate?apikey={$lift_api->getAdminKey()}",
         'headers' => array('Accept' => 'application/json'),
-        'options' => array('timeout' => AcquiaLiftAPI::GET_REQUEST_TIMEOUT_VALUE),
+        'options' => array(),
         'body' => NULL,
       )
     );
@@ -1315,7 +1315,7 @@ class AcquiaLiftTest extends DrupalUnitTestCase {
         'type' => 'get',
         'uri' => "{$lift_api->getApiUrl()}/{$lift_api->getOwnerCode()}/report/status?codes={$agentNames}&days={$dayNumber}&apikey={$lift_api->getAdminKey()}",
         'headers' => array('Accept' => 'application/json'),
-        'options' => array('timeout' => AcquiaLiftAPI::GET_REQUEST_TIMEOUT_VALUE),
+        'options' => array(),
         'body' => NULL,
       )
     );
@@ -1358,7 +1358,7 @@ class AcquiaLiftTest extends DrupalUnitTestCase {
     $test_request = array(
       'type' => 'get',
       'headers' => array('Accept' => 'application/json'),
-      'options' => array('timeout' => AcquiaLiftAPI::GET_REQUEST_TIMEOUT_VALUE),
+      'options' => array(),
       'body' => NULL,
     );
 
@@ -1430,7 +1430,7 @@ class AcquiaLiftTest extends DrupalUnitTestCase {
         'type' => 'get',
         'uri' => "{$lift_api->getApiUrl()}/{$lift_api->getOwnerCode()}/{$agentName}/report/learning/{$dateStr}?apikey={$lift_api->getAdminKey()}",
         'headers' => array('Accept' => 'application/json'),
-        'options' => array('timeout' => AcquiaLiftAPI::GET_REQUEST_TIMEOUT_VALUE),
+        'options' => array(),
         'body' => NULL,
       )
     );
@@ -1453,7 +1453,7 @@ class AcquiaLiftTest extends DrupalUnitTestCase {
         'type' => 'get',
         'uri' => "{$lift_api->getApiUrl()}/{$lift_api->getOwnerCode()}/{$agentName}/report/learning/{$startDate}/$endDate?apikey={$lift_api->getAdminKey()}",
         'headers' => array('Accept' => 'application/json'),
-        'options' => array('timeout' => AcquiaLiftAPI::GET_REQUEST_TIMEOUT_VALUE),
+        'options' => array(),
         'body' => NULL,
       )
     );
@@ -1735,7 +1735,7 @@ class AcquiaLiftTest extends DrupalUnitTestCase {
           'type' => 'get',
           'uri' => "http://api.lift.acquia.com/{$this->liftOwnerCode}/-/report/system-usage/{$expected_dates['start']}/{$expected_dates['end']}?apikey={$this->liftAdminKey}",
           'headers' => array('Accept' => 'application/json'),
-          'options' => array('timeout' => AcquiaLiftAPI::GET_REQUEST_TIMEOUT_VALUE),
+          'options' => array(),
           'body' => NULL,
         )
       );
@@ -1775,7 +1775,7 @@ class AcquiaLiftTest extends DrupalUnitTestCase {
           'type' => 'get',
           'uri' => "http://api.lift.acquia.com/{$this->liftOwnerCode}/-/report/system-usage/{$expected_dates['start']}/{$expected_dates['end']}?apikey={$this->liftAdminKey}",
           'headers' => array('Accept' => 'application/json'),
-          'options' => array('timeout' => AcquiaLiftAPI::GET_REQUEST_TIMEOUT_VALUE),
+          'options' => array(),
           'body' => NULL,
         )
       );

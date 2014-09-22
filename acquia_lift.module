@@ -361,6 +361,10 @@ function acquia_lift_percentage_validate($element, &$form_state) {
 function acquia_lift_cron_queue_info() {
   $queues['acquia_lift_sync'] = array(
     'worker callback' => 'acquia_lift_sync_item',
+    // All of the items in this queue will be making a PUT, POST, or DELETE
+    // request to the Lift API, so the timeout here should match the timeout
+    // we use for those http requests.
+    'time' => AcquiaLiftDrupalHttpClient::REQUEST_TIMEOUT_VALUE_DEFAULT
   );
   return $queues;
 }
@@ -608,13 +612,24 @@ function acquia_lift_personalize_goal_save($goal_info) {
  *   The queue item to process. It should be an array with the following keys:
  *   - method The method to call on the AcquiaLiftAPI instance
  *   - args The args to pass to the method.
+ */
+function acquia_lift_sync_item($item) {
+  $acquia_lift_api = AcquiaLiftAPI::getInstance(variable_get('acquia_lift_account_info', array()));
+  call_user_func_array(array($acquia_lift_api, $item['method']), $item['args']);
+}
+
+/**
+ * Wrapper function around acquia_lift_sync_item that catches and logs exceptions thrown.
+ *
+ * @param $item
+ *   The item to process
  * @param &$errors
  *   An array passed by reference to add any errors to.
+ *
  */
-function acquia_lift_sync_item($item, &$errors = array()) {
+function acquia_lift_batch_sync_item($item, &$errors = array()) {
   try {
-    $acquia_lift_api = AcquiaLiftAPI::getInstance(variable_get('acquia_lift_account_info', array()));
-    call_user_func_array(array($acquia_lift_api, $item['method']), $item['args']);
+    acquia_lift_sync_item($item);
   }
   catch (AcquiaLiftException $e) {
     watchdog('Acquia Lift', 'Could not call the method @method with args @args', array('@method' => $item['method'], '@args' => implode(',', $item['args'])));
@@ -667,7 +682,6 @@ function acquia_lift_personalize_form_ajax_submit($agent_data) {
  * Page callback - runs the Acquia Lift queue.
  */
 function acquia_lift_process_queue($exit_on_finish = TRUE) {
-  // Clear the session variable so the JS is no longer added to the page.
   if (!isset($_SESSION['acquia_lift_queue_trigger'])) {
     if ($exit_on_finish) {
       drupal_exit();
@@ -676,6 +690,7 @@ function acquia_lift_process_queue($exit_on_finish = TRUE) {
       return;
     }
   }
+  // Clear the session variable so the JS is no longer added to the page.
   unset($_SESSION['acquia_lift_queue_trigger']);
   // Allow execution to continue even if the request gets canceled.
   @ignore_user_abort(TRUE);
@@ -692,8 +707,14 @@ function acquia_lift_process_queue($exit_on_finish = TRUE) {
   $end = time() + (isset($info['time']) ? $info['time'] : 15);
   $queue = DrupalQueue::get($queue_name);
   while (time() < $end && ($item = $queue->claimItem())) {
-    $function($item->data);
-    $queue->deleteItem($item);
+    try {
+      $function($item->data);
+      $queue->deleteItem($item);
+    }
+    catch (AcquiaLiftException $e) {
+      $queue->releaseItem($item);
+    }
+
   }
   _personalize_agent_verification_cache_clear();
 

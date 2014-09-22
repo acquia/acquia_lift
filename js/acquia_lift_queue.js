@@ -1,10 +1,15 @@
 (function ($) {
 
+  var queueIsProcessing = false;
   /**
    * Actually trigger the Acquia Lift queue processing and let
    * Drupal handle any command results.
    */
   var processQueue = function() {
+    if (queueIsProcessing) {
+      return;
+    }
+    queueIsProcessing = true;
     var queue_url = Drupal.settings.basePath + 'acquia_lift/queue';
     $.ajax({
       url: queue_url,
@@ -21,6 +26,7 @@
         if (processed) {
           Drupal.attachBehaviors();
         }
+        queueIsProcessing = false;
       }
     });
   }

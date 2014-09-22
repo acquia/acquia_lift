@@ -52,7 +52,7 @@ function acquia_lift_batch_process_item($item, &$context) {
     $context['sandbox']['retries'] = 0;
   }
   $errors = array();
-  acquia_lift_sync_item($item, $errors);
+  acquia_lift_batch_sync_item($item, $errors);
   if (empty($errors)) {
     $context['results'][] = t('Method @method called successfully', array('@method' => $item['method']));
     $context['sandbox']['progress']++;

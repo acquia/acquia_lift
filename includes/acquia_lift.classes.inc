@@ -20,8 +20,6 @@ class AcquiaLiftAPI implements PersonalizeLoggerAwareInterface, AcquiaLiftReport
 
   const VALID_NAME_MATCH_PATTERN = '[A-Za-z0-9_-]';
 
-  const GET_REQUEST_TIMEOUT_VALUE = 8.0;
-
   /**
    * The Acquia Lift API key to use.
    *
@@ -605,7 +603,7 @@ class AcquiaLiftAPI implements PersonalizeLoggerAwareInterface, AcquiaLiftReport
    */
   public function getAgent($machine_name) {
     $url = $this->generateEndpoint("/agent-api/$machine_name");
-    $response = $this->httpClient()->get($url, array('Accept' => 'application/json'), array('timeout' => self::GET_REQUEST_TIMEOUT_VALUE));
+    $response = $this->httpClient()->get($url, array('Accept' => 'application/json'));
     if ($response->code == 404) {
       throw new AcquiaLiftNotFoundException('No such agent');
     }
@@ -625,7 +623,7 @@ class AcquiaLiftAPI implements PersonalizeLoggerAwareInterface, AcquiaLiftReport
    */
   public function getGoalsForAgent($agent_name) {
     $url = $this->generateEndpoint("/agent-api/$agent_name/goals");
-    $response = $this->httpClient()->get($url, array('Accept' => 'application/json'), array('timeout' => self::GET_REQUEST_TIMEOUT_VALUE));
+    $response = $this->httpClient()->get($url, array('Accept' => 'application/json'));
     if ($response->code == 404) {
       throw new AcquiaLiftNotFoundException('No such agent');
     }
@@ -645,7 +643,7 @@ class AcquiaLiftAPI implements PersonalizeLoggerAwareInterface, AcquiaLiftReport
    */
   public function getPointsForAgent($agent_name) {
     $url = $this->generateEndpoint("/agent-api/$agent_name/points");
-    $response = $this->httpClient()->get($url, array('Accept' => 'application/json'), array('timeout' => self::GET_REQUEST_TIMEOUT_VALUE));
+    $response = $this->httpClient()->get($url, array('Accept' => 'application/json'));
     if ($response->code == 404) {
       throw new AcquiaLiftNotFoundException('No such agent');
     }
@@ -668,7 +666,7 @@ class AcquiaLiftAPI implements PersonalizeLoggerAwareInterface, AcquiaLiftReport
    */
   public function getDecisionsForPoint($agent_name, $point_name) {
     $url = $this->generateEndpoint("/agent-api/$agent_name/points/{$point_name}/decisions");
-    $response = $this->httpClient()->get($url, array('Accept' => 'application/json'), array('timeout' => self::GET_REQUEST_TIMEOUT_VALUE));
+    $response = $this->httpClient()->get($url, array('Accept' => 'application/json'));
     if ($response->code == 404) {
       throw new AcquiaLiftNotFoundException('No such decision point');
     }
@@ -693,7 +691,7 @@ class AcquiaLiftAPI implements PersonalizeLoggerAwareInterface, AcquiaLiftReport
    */
   public function getChoicesForDecision($agent_name, $point_name, $decision_name) {
     $url = $this->generateEndpoint("/agent-api/$agent_name/points/{$point_name}/decisions/$decision_name/choices");
-    $response = $this->httpClient()->get($url, array('Accept' => 'application/json'), array('timeout' => self::GET_REQUEST_TIMEOUT_VALUE));
+    $response = $this->httpClient()->get($url, array('Accept' => 'application/json'));
     if ($response->code == 404) {
       throw new AcquiaLiftNotFoundException('No such decision');
     }
@@ -713,7 +711,7 @@ class AcquiaLiftAPI implements PersonalizeLoggerAwareInterface, AcquiaLiftReport
    */
   public function getExistingAgents() {
     $url = $this->generateEndpoint("/list-agents");
-    $response = $this->httpClient()->get($url, array('Accept' => 'application/json'), array('timeout' => self::GET_REQUEST_TIMEOUT_VALUE));
+    $response = $this->httpClient()->get($url, array('Accept' => 'application/json'));
     if ($response->code == 200) {
       $response = json_decode($response->data, TRUE);
       if (!isset($response['data']['agents'])) {
@@ -740,7 +738,7 @@ class AcquiaLiftAPI implements PersonalizeLoggerAwareInterface, AcquiaLiftReport
   public function getTransformOptions() {
     $url = $this->generateEndpoint("/transforms-options");
     // Use a timeout of 8 seconds for retrieving the transform options.
-    $response = $this->httpClient()->get($url, array('Accept' => 'application/json'), array('timeout' => self::GET_REQUEST_TIMEOUT_VALUE));
+    $response = $this->httpClient()->get($url, array('Accept' => 'application/json'));
     if ($response->code == 200) {
       $response = json_decode($response->data, TRUE);
       return $response['data']['options'];
@@ -821,7 +819,7 @@ class AcquiaLiftAPI implements PersonalizeLoggerAwareInterface, AcquiaLiftReport
   public function hasAutoTargetingRule($agent_name) {
     $rule_name = $agent_name . '-auto-targeting';
     $url = $this->generateEndpoint("/transforms-list");
-    $response = $this->httpClient()->get($url, array('Accept' => 'application/json'), array('timeout' => self::GET_REQUEST_TIMEOUT_VALUE));
+    $response = $this->httpClient()->get($url, array('Accept' => 'application/json'));
     if ($response->code != 200) {
       $msg = 'Problem retrieving auto-targeting rules';
       $this->logger()->log(PersonalizeLogLevel::ERROR, $msg);
@@ -862,7 +860,7 @@ class AcquiaLiftAPI implements PersonalizeLoggerAwareInterface, AcquiaLiftReport
   public function getPotentialTargetingValues($agent_name) {
     $url = $this->generateEndpoint("/-/potential-targeting?agent={$agent_name}&include-current=true");
     $headers = array('Accept' => 'application/json');
-    $response = $this->httpClient()->get($url, $headers, array('timeout' => self::GET_REQUEST_TIMEOUT_VALUE));
+    $response = $this->httpClient()->get($url, $headers);
     if ($response->code != 200) {
       $msg = 'Problem retrieving potential targeting values';
       $this->logger()->log(PersonalizeLogLevel::ERROR, $msg);
@@ -986,7 +984,7 @@ class AcquiaLiftAPI implements PersonalizeLoggerAwareInterface, AcquiaLiftReport
     if ($point !== NULL) {
       $headers['x-mpath-point'] = $point;
     }
-    $response = $this->httpClient()->get($url, $headers, array('timeout' => self::GET_REQUEST_TIMEOUT_VALUE));
+    $response = $this->httpClient()->get($url, $headers);
     if ($response->code != 200) {
       $msg = 'Problem retrieving targeting impact report.';
       $this->logger()->log(PersonalizeLogLevel::ERROR, $msg);
@@ -1002,7 +1000,7 @@ class AcquiaLiftAPI implements PersonalizeLoggerAwareInterface, AcquiaLiftReport
     $codes = implode(',', $agent_names);
     $days = (is_null($num_days) || !is_numeric($num_days)) ? '' : '&days=' . $num_days;
     $url = $this->generateEndpoint("/report/status?codes={$codes}{$days}");
-    $response = $this->httpClient()->get($url, array('Accept' => 'application/json'), array('timeout' => self::GET_REQUEST_TIMEOUT_VALUE));
+    $response = $this->httpClient()->get($url, array('Accept' => 'application/json'));
     if ($response->code != 200) {
       $msg = 'Problem retrieving targeting impact report.';
       $this->logger()->log(PersonalizeLogLevel::ERROR, $msg);
@@ -1040,7 +1038,7 @@ class AcquiaLiftAPI implements PersonalizeLoggerAwareInterface, AcquiaLiftReport
       $headers['x-mpath-point'] = $point;
     }
     // Use a timeout of 8 seconds for retrieving the transform options.
-    $response = $this->httpClient()->get($url, $headers, array('timeout' => self::GET_REQUEST_TIMEOUT_VALUE));
+    $response = $this->httpClient()->get($url, $headers);
     if ($response->code != 200) {
       $msg = 'Problem retrieving confidence report.';
       $this->logger()->log(PersonalizeLogLevel::ERROR, $msg);
@@ -1067,7 +1065,7 @@ class AcquiaLiftAPI implements PersonalizeLoggerAwareInterface, AcquiaLiftReport
       $headers['x-mpath-point'] = $point;
     }
     // Use a timeout of 8 seconds for retrieving the transform options.
-    $response = $this->httpClient()->get($url, $headers, array('timeout' => self::GET_REQUEST_TIMEOUT_VALUE));
+    $response = $this->httpClient()->get($url, $headers);
 
     if ($response->code != 200) {
       $msg = 'Problem retrieving learning report.';
@@ -1090,7 +1088,7 @@ class AcquiaLiftAPI implements PersonalizeLoggerAwareInterface, AcquiaLiftReport
     $date_str = $this->getDateString($date_start, $date_end);
     $url = $this->generateEndpoint("/-/report/system-usage{$date_str}");
     $headers = array('Accept' => 'application/json');
-    $response = $this->httpClient()->get($url, $headers, array('timeout' => self::GET_REQUEST_TIMEOUT_VALUE));
+    $response = $this->httpClient()->get($url, $headers);
     if ($response->code != 200) {
       $msg = 'Problem retrieving API call counts.';
       $this->logger()->log(PersonalizeLogLevel::ERROR, $msg);
@@ -1624,6 +1622,10 @@ interface AcquiaLiftDrupalHttpClientInterface {
  */
 class AcquiaLiftDrupalHttpClient implements AcquiaLiftDrupalHttpClientInterface {
 
+  // Some constants for our timeout values.
+  const REQUEST_TIMEOUT_VALUE_GET = 8.0;
+  const REQUEST_TIMEOUT_VALUE_DEFAULT = 15.0;
+
   protected function encodeBody($body) {
     if (is_string($body)) {
       $data = $body;
@@ -1639,6 +1641,9 @@ class AcquiaLiftDrupalHttpClient implements AcquiaLiftDrupalHttpClientInterface 
    */
   public function get($uri = NULL, $headers = NULL, array $options = array()) {
     $headers = $headers ? $headers : array();
+    $options += array(
+      'timeout' => self::REQUEST_TIMEOUT_VALUE_GET
+    );
     $options = array('method' => 'GET', 'headers' => $headers) + $options;
     return drupal_http_request($uri, $options);
   }
@@ -1649,6 +1654,9 @@ class AcquiaLiftDrupalHttpClient implements AcquiaLiftDrupalHttpClientInterface 
   public function put($uri = NULL, $headers = NULL, $body = NULL, array $options = array()) {
     $data = ($body === NULL ? NULL : $this->encodeBody($body));
     $headers = $headers ? $headers : array();
+    $options += array(
+      'timeout' => self::REQUEST_TIMEOUT_VALUE_DEFAULT
+    );
     $options = array('method' => 'PUT', 'data' => $data, 'headers' => $headers) + $options;
     return drupal_http_request($uri, $options);
   }
@@ -1659,6 +1667,9 @@ class AcquiaLiftDrupalHttpClient implements AcquiaLiftDrupalHttpClientInterface 
   public function post($uri = NULL, $headers = NULL, $body = NULL, array $options = array()) {
     $data = $body ? $this->encodeBody($body) : NULL;
     $headers = $headers ? $headers : array();
+    $options += array(
+      'timeout' => self::REQUEST_TIMEOUT_VALUE_DEFAULT
+    );
     $options = array('method' => 'POST', 'data' => $data, 'headers' => $headers) + $options;
     return drupal_http_request($uri, $options);
   }
@@ -1669,6 +1680,9 @@ class AcquiaLiftDrupalHttpClient implements AcquiaLiftDrupalHttpClientInterface 
   public function delete($uri = null, $headers = null, $body = null, array $options = array()) {
     $data = $body ? $this->encodeBody($body) : NULL;
     $headers = $headers ? $headers : array();
+    $options += array(
+      'timeout' => self::REQUEST_TIMEOUT_VALUE_DEFAULT
+    );
     $options = array('method' => 'DELETE', 'data' => $data, 'headers' => $headers) + $options;
     return drupal_http_request($uri, $options);
   }
@@ -1685,6 +1699,10 @@ class AcquiaLiftDrupalHttpClient implements AcquiaLiftDrupalHttpClientInterface 
 class AcquiaLiftQueue extends SystemQueue {
 
   public static $items = array();
+
+  public static $retries = array();
+
+  const MAX_RETRIES = 15;
 
   /**
    * Overrides SystemQueue::createItem().
@@ -1708,6 +1726,29 @@ class AcquiaLiftQueue extends SystemQueue {
     parent::createItem($data);
   }
 
+  /**
+   * Overrides SystemQueue::releaseItem().
+   *
+   * Imposes a maximum number of retries for released items.
+   *
+   * @param $data
+   * @return bool|void
+   */
+  public function releaseItem($item) {
+    if (!isset($retries[$item->item_id])) {
+      $retries[$item->item_id] = 0;
+    }
+    elseif($retries[$item->item_id] >= self::MAX_RETRIES) {
+      $this->deleteItem($item);
+      return;
+    }
+    parent::releaseItem($item);
+    $retries[$item->item_id]++;
+  }
+
+  /**
+   * Overrides SystemQueue::deleteQueue().
+   */
   public function deleteQueue() {
     parent::deleteQueue();
     self::$items = array();

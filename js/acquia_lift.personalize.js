@@ -1295,7 +1295,7 @@
           if (supportsGoals) {
             this.$el.find('[data-acquia-lift-personalize="goals"]').parents('li').show();
           } else {
-            this.$el.find('[data-acquia-lift-personalize="goals').parents('li').hide();
+            this.$el.find('[data-acquia-lift-personalize="goals"]').parents('li').hide();
           }
           this.$el.find('[data-acquia-lift-personalize="option_sets"]').parents('li').show();
         } else {

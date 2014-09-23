@@ -152,6 +152,8 @@ class AcquiaLiftAgent extends PersonalizeAgentBase implements PersonalizeAgentGo
    */
   protected $queue;
 
+  protected $globalConfig;
+
   /**
    * Implements PersonalizeAgentInterface::create().
    */
@@ -159,7 +161,12 @@ class AcquiaLiftAgent extends PersonalizeAgentBase implements PersonalizeAgentGo
     try {
       $acquia_lift_api = AcquiaLiftAPI::getInstance(variable_get('acquia_lift_account_info', array()));
       $status = personalize_agent_get_status($agent_data->machine_name);
-      return new static($agent_data->machine_name, $agent_data->label, $agent_data->data, $status, !empty($agent_data->started) ? $agent_data->started : NULL, $acquia_lift_api);
+      $config = array(
+        'confidence_measure' => variable_get('acquia_lift_confidence_measure', 95),
+        'minimum_runtime' => acquia_lift_config_min_runtime(),
+        'minimum_decisions' => variable_get('acquia_lift_min_decisions', 0)
+      );
+      return new static($agent_data->machine_name, $agent_data->label, $agent_data->data, $status, !empty($agent_data->started) ? $agent_data->started : NULL, $acquia_lift_api, $config);
     }
     catch (AcquiaLiftException $e) {
       watchdog('Acquia Lift', 'Unable to instantiate Acquia Lift Agent');
@@ -175,9 +182,10 @@ class AcquiaLiftAgent extends PersonalizeAgentBase implements PersonalizeAgentGo
    * @param $acquia_lift_api
    *   An instance of the AcquiaLiftAPI class.
    */
-  public function __construct($machine_name, $title, $data, $status, $started, AcquiaLiftAPI $acquia_lift_api) {
+  public function __construct($machine_name, $title, $data, $status, $started, AcquiaLiftAPI $acquia_lift_api, $global_config) {
     parent::__construct($machine_name, $title, $data, $status, $started);
     $this->liftAPI = $acquia_lift_api;
+    $this->globalConfig = $global_config;
   }
 
   /**
@@ -365,6 +373,11 @@ class AcquiaLiftAgent extends PersonalizeAgentBase implements PersonalizeAgentGo
         '#collapsed' => TRUE,
       );
     }
+    // This will get overridden by the 'campaign_end' dropdown.
+    $form['stop_on_winner'] = array(
+      '#type' => 'value',
+      '#value' => 0
+    );
     return $form;
   }
 
@@ -392,6 +405,11 @@ class AcquiaLiftAgent extends PersonalizeAgentBase implements PersonalizeAgentGo
     if ($is_new) {
       $agent_name = AcquiaLiftAPI::getInstance(variable_get('acquia_lift_account_info', array()))->ensureUniqueAgentName($values['machine_name'], PERSONALIZE_MACHINE_NAME_MAXLENGTH);
       $form_state['values']['agent_basic_info']['machine_name'] = $agent_name;
+    }
+    // If "Run until a winner is found" was selected, we need to add this to the agent's
+    // data property.
+    if ($form_state['values']['campaign_end'] == 'winner') {
+      $form_state['values']['agent_basic_info']['options']['acquia_lift']['stop_on_winner'] = 1;
     }
   }
 
@@ -661,6 +679,7 @@ class AcquiaLiftAgent extends PersonalizeAgentBase implements PersonalizeAgentGo
     }
     return $errors;
   }
+
 
   /**
    * Converts an exception thrown by the API class into errors added to the passed in array.
@@ -943,6 +962,60 @@ class AcquiaLiftSimpleAB extends AcquiaLiftAgent implements AcquiaLiftSimplified
    */
   public static function simplifiedForm($agent_data) {
     return self::buildOptionsForm($agent_data, TRUE);
+  }
+
+  /**
+   * Implements PersonalizeAgentInterface::stopNow().
+   */
+  public function stopNow() {
+    if (!isset($this->data['stop_on_winner']) || !$this->data['stop_on_winner']) {
+      return parent::stopNow();
+    }
+
+    $option_sets = personalize_option_set_load_by_agent($this->machineName);
+    if (empty($option_sets)) {
+      return FALSE;
+    }
+
+    $os = reset($option_sets);
+    // Get the confidence report directly from Lift.
+    $date_to = time();
+    $options = array(
+      'confidence-measure' => $this->globalConfig['confidence_measure'],
+      'aggregated-over-dates' => TRUE,
+      'features' => NULL,
+    );
+    $confidence_report = $this->liftAPI->getConfidenceReport(
+      $this->machineName,
+      $this->startTime,
+      $date_to,
+      $os->decision_point,
+      $options
+    );
+    $items = $confidence_report['data']['items'];
+    if (empty($items)) {
+      return FALSE;
+    }
+    $counter = 0;
+    $confidence = TRUE;
+    $winner = '';
+    $winning_value = NAN;
+    foreach ($items as $item) {
+      if ($item['signif']) {
+        if (is_nan($winning_value) || $item['confidence'] > $winning_value) {
+          $winning_value = $item['lift']['default'];
+          $winner = $counter;
+        }
+      } else {
+        // If any row is not significant, then the whole test isn't confident yet.
+        $confidence = FALSE;
+      }
+      $counter++;
+    }
+    if (!$confidence || empty($winner)) {
+      return FALSE;
+    }
+    $this->globalConfig['minimum_runtime'];
   }
 }
 

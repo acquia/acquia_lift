@@ -2076,6 +2076,29 @@ function acquia_lift_reset_agent($agent_name) {
   }
 }
 
+
+/**
+ * Implements hook_personalize_agent_end_date_form_alter().
+ */
+function acquia_lift_personalize_agent_end_date_form_alter(&$form, $agent_name) {
+  if (empty($agent_name)) {
+    return;
+  }
+  $agent = personalize_agent_load_agent($agent_name);
+  if ($agent instanceof AcquiaLiftSimpleAB) {
+    $data = $agent->getData();
+    $options = $form['campaign_end']['#options'];
+    $specified = $options['specified'];
+    unset($options['specified']);
+    $options['winner'] = t('Run until a winner is found');
+    $options['specified'] = $specified;
+    $form['campaign_end']['#options'] = $options;
+    if (isset($data['stop_on_winner']) && $data['stop_on_winner']) {
+      $form['campaign_end']['#default_value'] = 'winner';
+    }
+  }
+}
+
 /**
  * Implements hook_form_FORM_ID_alter().
  */

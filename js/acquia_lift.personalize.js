@@ -137,6 +137,15 @@
                     });
                     $('[data-acquia-lift-personalize-type="campaigns"]').prepend(element);
                   }
+                  else {
+                    // Create a new ul element to hold the list of campaigns so
+                    // they can scroll independently of the "Add campaign"
+                    // link.
+                    var $menu = $('[data-acquia-lift-personalize-type="campaigns"]');
+                    var scrollable = document.createElement('ul');
+                    scrollable.className += "menu acquia-lift-scrollable";
+                    $menu.wrap('<div class="menu-wrapper">').before(scrollable);
+                  }
                   $element.prependTo($link);
                   break;
                 case 'option_sets': {
@@ -207,6 +216,8 @@
         // top-level links in the Acquia Lift menu.
         _.each(['campaigns', 'option_sets'], function (category) {
           var $typeMenus = $('[data-acquia-lift-personalize-type="' + category + '"]');
+          var $scrollable = $typeMenus.siblings('.acquia-lift-scrollable');
+          var $holder = $scrollable.length > 0 ? $scrollable : $menu;
           var campaignsWithOptions = {};
           var viewName = null;
           if ($typeMenus.length) {
@@ -253,7 +264,9 @@
                     } else {
                       ui.views.push(ui.factories.MenuFactory.createContentVariationView(model, campaignModel, element));
                     }
-                    $menu.prepend(element);
+
+                    $holder.prepend(element);
+
                     // Build a view for campaign goals.
                     if (type === 'campaigns') {
                       var $goalsMenu = $('[data-acquia-lift-personalize-type="goals"]');

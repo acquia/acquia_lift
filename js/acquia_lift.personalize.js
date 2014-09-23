@@ -217,7 +217,6 @@
         _.each(['campaigns', 'option_sets'], function (category) {
           var $typeMenus = $('[data-acquia-lift-personalize-type="' + category + '"]');
           var $scrollable = $typeMenus.siblings('.acquia-lift-scrollable');
-          var $holder = $scrollable.length > 0 ? $scrollable : $menu;
           var campaignsWithOptions = {};
           var viewName = null;
           if ($typeMenus.length) {
@@ -226,6 +225,7 @@
                 var $menu = $(element);
                 var type = $menu.data('acquia-lift-personalize-type');
                 var model, element, campaignName, campaignModel, optionSets;
+                var $holder = $scrollable.length > 0 ? $scrollable : $menu;
                 looper(settings[type], function (obj, key) {
                   // Find the right model.
                   switch (type) {

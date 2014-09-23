@@ -51,6 +51,7 @@ class AcquiaLiftWebTest extends DrupalWebTestCase {
   public function setUp() {
     require_once(dirname(__FILE__) . '/../includes/acquia_lift.classes.inc');
     require_once(dirname(__FILE__) . '/acquia_lift.test_classes.inc');
+    require_once(dirname(__FILE__) . '/../plugins/agent_types/AcquiaLiftAgent.inc');
 
     parent::setUp(array('ctools', 'personalize', 'acquia_lift', 'personalize_blocks', 'personalize_test'));
 

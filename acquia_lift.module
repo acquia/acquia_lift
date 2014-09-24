@@ -500,6 +500,14 @@ function acquia_lift_personalize_option_set_save($option_set) {
   if (!acquia_lift_owns_agent($agent)) {
     return;
   }
+  $new_os = FALSE;
+  if (isset($option_set->is_new)) {
+    // We don't want to save the "is_new" property but we do need to know later on
+    // if we're dealing a new option set. We'll put the property back when we're
+    // done in case any other code needs it.
+    $new_os = TRUE;
+    unset($option_set->is_new);
+  }
   // Acquia Lift agents store their option set info in the db so that they can
   // sync any changes with Acquia Lift.
   $old_option_sets = isset($agent->data['decisions']) ? $agent->data['decisions'] : array();
@@ -516,6 +524,10 @@ function acquia_lift_personalize_option_set_save($option_set) {
   }
   acquia_lift_sync_option_sets($agent, $old_option_sets, $new_option_sets);
 
+  // Put back the is_new property if it was there.
+  if ($new_os) {
+    $option_set->is_new = TRUE;
+  }
   // Unless this is a new fields-based option set, we're done.
   if ($option_set->plugin !== 'fields' || !isset($option_set->is_new)) {
     return;
@@ -2107,6 +2119,7 @@ function acquia_lift_personalize_fields_form_element_alter(&$element, $lang) {
  */
 function acquia_lift_form_field_ui_field_edit_form_alter(&$form, &$form_state, $form_id) {
   if (!empty($form['field']['settings']['personalize']['enabled'])) {
+    $field = $form['#field'];
     // Due to the way the Acquia Lift JS widget works for personalized fields,
     // we actually have to enforce (for now) that when Acquia Lift is enabled,
     // only fields with unlimited cardinality may be personalized.

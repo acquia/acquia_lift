@@ -680,6 +680,107 @@ class AcquiaLiftAgent extends PersonalizeAgentBase implements PersonalizeAgentGo
     return $errors;
   }
 
+  /**
+   * Implements PersonalizeAgentInterface::stopNow().
+   */
+  public function stopNow() {
+    // Check whether the agent is configured to stop once a winner's been found.
+    if (!isset($this->data['stop_on_winner']) || !$this->data['stop_on_winner']) {
+      return parent::stopNow();
+    }
+
+    // No point checking for a winner if the campaign hasn't been running for the
+    // minimum runtime.
+    $time_now = time();
+    if ($this->globalConfig['minimum_runtime']) {
+      $runtime = $time_now - $this->startTime;
+      if ($runtime < $this->globalConfig['minimum_runtime']) {
+        // Campaign has not been running long enough.
+        return FALSE;
+      }
+    }
+
+    // Need to go through each option set for this agent and establish whether each
+    // of them satifisfies the minimum number of decisions made, if this has been set,
+    // and has a winner.
+    $option_sets = $this->data['decisions'];
+    if (empty($option_sets)) {
+      return FALSE;
+    }
+    $decision_points = self::convertOptionSetsToDecisions($option_sets);
+    $winners = array();
+
+    foreach ($decision_points as $point => $decisions) {
+      if (count($decisions) > 1) {
+        // @todo Figure out how to support MVTs.
+        return FALSE;
+      }
+      $decision_name = key($decisions);
+      $winners[$point] = FALSE;
+      $num_decisions[$point] = 0;
+      // Get the confidence report directly from Lift.
+      $report_options = array(
+        'confidence-measure' => $this->globalConfig['confidence_measure'],
+        'aggregated-over-dates' => TRUE,
+        'features' => NULL,
+      );
+      $confidence_report = $this->liftAPI->getConfidenceReport(
+        $this->machineName,
+        $this->startTime,
+        $time_now,
+        $point,
+        $report_options
+      );
+
+      $items = $confidence_report['data']['items'];
+      if (empty($items)) {
+        return FALSE;
+      }
+      $counter = 0;
+      $confidence = TRUE;
+      $winner = '';
+      $winning_value = NAN;
+      foreach ($items as $item) {
+        $choice = $item['choice'];
+        if (strpos($choice, ':') !== FALSE) {
+          list($decision_name, $option_id) = explode(':', $choice);
+        }
+        $winners[$point][$decision_name] = FALSE;
+        $num_decisions[$point] += $item['totals']['count'];
+        if ($item['signif']) {
+          if (is_nan($winning_value) || $item['confidence'] > $winning_value) {
+            $winning_value = $item['lift']['default'];
+            $winner = $counter;
+          }
+        } else {
+          // If any row is not significant, then the whole test isn't confident yet.
+          $confidence = FALSE;
+        }
+        $counter++;
+      }
+      if ($this->globalConfig['minimum_decisions']) {
+        foreach ($num_decisions as $count) {
+          // If any of the decision points has fewer than the required minimum number
+          // of decisions, don't stop the campaign.
+          if ($count < $this->globalConfig['minimum_decisions']) {
+            return FALSE;
+          }
+        }
+
+      }
+      // If any option set does not have a winner, we just return FALSE.
+      if (!$confidence || empty($winner)) {
+        return FALSE;
+      }
+      $winners[$point] = $winner;
+    }
+
+    // If we reach here, we have a winner at each decision point and have satisfied all
+    // criteria for choosing a winner and pausing the campaign.
+    dpm($winners);
+    return TRUE;
+
+  }
 
   /**
    * Converts an exception thrown by the API class into errors added to the passed in array.
@@ -964,59 +1065,6 @@ class AcquiaLiftSimpleAB extends AcquiaLiftAgent implements AcquiaLiftSimplified
     return self::buildOptionsForm($agent_data, TRUE);
   }
 
-  /**
-   * Implements PersonalizeAgentInterface::stopNow().
-   */
-  public function stopNow() {
-    if (!isset($this->data['stop_on_winner']) || !$this->data['stop_on_winner']) {
-      return parent::stopNow();
-    }
-
-    $option_sets = personalize_option_set_load_by_agent($this->machineName);
-    if (empty($option_sets)) {
-      return FALSE;
-    }
-
-    $os = reset($option_sets);
-    // Get the confidence report directly from Lift.
-    $date_to = time();
-    $options = array(
-      'confidence-measure' => $this->globalConfig['confidence_measure'],
-      'aggregated-over-dates' => TRUE,
-      'features' => NULL,
-    );
-    $confidence_report = $this->liftAPI->getConfidenceReport(
-      $this->machineName,
-      $this->startTime,
-      $date_to,
-      $os->decision_point,
-      $options
-    );
-    $items = $confidence_report['data']['items'];
-    if (empty($items)) {
-      return FALSE;
-    }
-    $counter = 0;
-    $confidence = TRUE;
-    $winner = '';
-    $winning_value = NAN;
-    foreach ($items as $item) {
-      if ($item['signif']) {
-        if (is_nan($winning_value) || $item['confidence'] > $winning_value) {
-          $winning_value = $item['lift']['default'];
-          $winner = $counter;
-        }
-      } else {
-        // If any row is not significant, then the whole test isn't confident yet.
-        $confidence = FALSE;
-      }
-      $counter++;
-    }
-    if (!$confidence || empty($winner)) {
-      return FALSE;
-    }
-    $this->globalConfig['minimum_runtime'];
-  }
 }
 
 /**

@@ -664,6 +664,8 @@ function acquia_lift_personalize_goal_save($goal_info) {
 function acquia_lift_sync_item($item) {
   // The item is either a method to be called on the LiftAPI class or a regular
   // function.
+  // @todo This conditional is a bit gross, figure out a way to handle the different types
+  //   of callables better.
   if (isset($item['method'])) {
     $acquia_lift_api = AcquiaLiftAPI::getInstance(variable_get('acquia_lift_account_info', array()));
     call_user_func_array(array($acquia_lift_api, $item['method']), $item['args']);
@@ -2118,7 +2120,7 @@ function acquia_lift_form_field_ui_field_edit_form_alter(&$form, &$form_state, $
     $state = array(':input[name="field[settings][personalize][enabled]"]' => array('checked' => TRUE));
 
     // Checkbox for auto creation of a goal should only be visible if the selected
-    // campaign type supports goals.
+    // campaign type is one of the Lift campaign types.
     $visible_states = array();
     $acquia_lift_agent_types = acquia_lift_get_agent_types();
     foreach (array_keys($acquia_lift_agent_types) as $type) {

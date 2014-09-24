@@ -500,6 +500,14 @@ function acquia_lift_personalize_option_set_save($option_set) {
   if (!acquia_lift_owns_agent($agent)) {
     return;
   }
+  $new_os = FALSE;
+  if (isset($option_set->is_new)) {
+    // We don't want to save the "is_new" property but we do need to know later on
+    // if we're dealing a new option set. We'll put the property back when we're
+    // done in case any other code needs it.
+    $new_os = TRUE;
+    unset($option_set->is_new);
+  }
   // Acquia Lift agents store their option set info in the db so that they can
   // sync any changes with Acquia Lift.
   $old_option_sets = isset($agent->data['decisions']) ? $agent->data['decisions'] : array();
@@ -515,6 +523,58 @@ function acquia_lift_personalize_option_set_save($option_set) {
     return;
   }
   acquia_lift_sync_option_sets($agent, $old_option_sets, $new_option_sets);
+
+  // Put back the is_new property if it was there.
+  if ($new_os) {
+    $option_set->is_new = TRUE;
+  }
+  // Unless this is a new fields-based option set, we're done.
+  if ($option_set->plugin !== 'fields' || !isset($option_set->is_new)) {
+    return;
+  }
+
+  // For fields-based option sets, we need to auto-create a goal.
+  $field = field_info_field($option_set->data['personalize_fields_field_name']);
+  if (isset($field['settings']['personalize']) && $field['settings']['personalize']['enabled'] && isset($field['settings']['personalize']['create_goal']) && $field['settings']['personalize']['create_goal']) {
+
+    $goals = personalize_goal_load_by_conditions(array('agent' => $agent->machine_name));
+    if (empty($goals)) {
+      $js_id = personalize_stringify_osid($option_set->osid);
+      $plugin = 'link';
+      $action_label = t('Clicks @option_set', array('@option_set' => $option_set->label));
+      $action_name = personalize_generate_machine_name($action_label, 'visitor_actions_machine_name_exists');
+      $action = array(
+        'label' => $action_label,
+        'machine_name' => $action_name,
+        'plugin' => $plugin,
+        'client_side' => 1,
+        'identifier' => '[data-personalize=' . $js_id . ']',
+        'event' => 'click',
+        'pages' => '',
+        'data' => array()
+      );
+      // Allow the plugin to modify the action before saving.
+      if ($class = ctools_plugin_load_class('visitor_actions', 'actionable_element', $plugin, 'handler')) {
+        $action = call_user_func_array(array($class, 'actionPresave'), array($action));
+      }
+      if (visitor_actions_save_action($action)) {
+        personalize_goal_save($option_set->agent, $action_name, 1);
+        if ($field['settings']['personalize']['auto_start']) {
+          // We also need to make sure the agent is set to running after everything
+          // has been sync'd up.
+          $queue = DrupalQueue::get('acquia_lift_sync');
+          $queue->createItem(array(
+            'callback' => 'personalize_agent_set_status',
+            'args' => array(
+              $agent->machine_name,
+              PERSONALIZE_STATUS_RUNNING
+            )
+          ));
+        }
+      }
+    }
+  }
+
 }
 
 /**
@@ -614,8 +674,17 @@ function acquia_lift_personalize_goal_save($goal_info) {
  *   - args The args to pass to the method.
  */
 function acquia_lift_sync_item($item) {
-  $acquia_lift_api = AcquiaLiftAPI::getInstance(variable_get('acquia_lift_account_info', array()));
-  call_user_func_array(array($acquia_lift_api, $item['method']), $item['args']);
+  // The item is either a method to be called on the LiftAPI class or a regular
+  // function.
+  // @todo This conditional is a bit gross, figure out a way to handle the different types
+  //   of callables better.
+  if (isset($item['method'])) {
+    $acquia_lift_api = AcquiaLiftAPI::getInstance(variable_get('acquia_lift_account_info', array()));
+    call_user_func_array(array($acquia_lift_api, $item['method']), $item['args']);
+  }
+  else {
+    call_user_func_array($item['callback'], $item['args']);
+  }
 }
 
 /**
@@ -2050,6 +2119,7 @@ function acquia_lift_personalize_fields_form_element_alter(&$element, $lang) {
  */
 function acquia_lift_form_field_ui_field_edit_form_alter(&$form, &$form_state, $form_id) {
   if (!empty($form['field']['settings']['personalize']['enabled'])) {
+    $field = $form['#field'];
     // Due to the way the Acquia Lift JS widget works for personalized fields,
     // we actually have to enforce (for now) that when Acquia Lift is enabled,
     // only fields with unlimited cardinality may be personalized.
@@ -2058,6 +2128,45 @@ function acquia_lift_form_field_ui_field_edit_form_alter(&$form, &$form_state, $
       'valid' => array(':input[name="field[cardinality]"]' => array('value' => -1)),
     );
     $form['field']['settings']['personalize']['enabled']['#description'] = t('This setting is only valid for fields with unlimited cardinality.');
+    // Add a state to the form elements to make sure they only appear when the
+    // personalizable checkbox is checked.
+    $state = array(':input[name="field[settings][personalize][enabled]"]' => array('checked' => TRUE));
+
+    // Checkbox for auto creation of a goal should only be visible if the selected
+    // campaign type is one of the Lift campaign types.
+    $visible_states = array();
+    $acquia_lift_agent_types = acquia_lift_get_agent_types();
+    foreach (array_keys($acquia_lift_agent_types) as $type) {
+      $visible_states[] = array('value' => $type);
+    }
+    $form['field']['settings']['personalize']['create_goal'] = array(
+      '#type' => 'checkbox',
+      '#title' => t('Auto-create goal'),
+      '#default_value' => isset($field['settings']['personalize']['create_goal']) ? $field['settings']['personalize']['create_goal'] : 1,
+      '#description' => t('Should a goal of "clicks the field" automatically get created for this campaign?'),
+      '#states' => array(
+        'visible' => array(
+          ':input[name="field[settings][personalize][agent_type]"]' => $visible_states,
+        ),
+      )
+    );
+    personalize_form_element_add_states($state, $form['field']['settings']['personalize']['create_goal']);
+
+    // Checkbox for auto-starting the campaign should only be visible if the chosen agent
+    // type is a Lift agent type and the auto-create goal box is checked.
+    $form['field']['settings']['personalize']['auto_start'] = array(
+      '#type' => 'checkbox',
+      '#title' => t('Auto-start the campaign'),
+      '#default_value' => isset($field['settings']['personalize']['auto_start']) ? $field['settings']['personalize']['auto_start'] : 1,
+      '#description' => t('Should the campaign be set to running automatically after creation?'),
+      '#states' => array(
+        'visible' => array(
+          ':input[name="field[settings][personalize][agent_type]"]' => $visible_states,
+          ':input[name="field[settings][personalize][create_goal]"]' => array('checked' => TRUE),
+        ),
+      )
+    );
+    personalize_form_element_add_states($state, $form['field']['settings']['personalize']['auto_start']);
   }
 }
 
@@ -2065,7 +2174,7 @@ function acquia_lift_form_field_ui_field_edit_form_alter(&$form, &$form_state, $
  * Implements hook_module_implements_alter().
  */
 function acquia_lift_module_implements_alter(&$implementations, $hook) {
-  if ($hook == 'form_alter' && isset($implementations['acquia_lift'])) {
+  if (in_array($hook, array('form_alter', 'form_field_ui_field_edit_form_alter')) && isset($implementations['acquia_lift'])) {
     // Ensure that our hook_form_field_ui_field_edit_form_alter implementation
     // runs last (after personalize_fields.module).
     $group = $implementations['acquia_lift'];

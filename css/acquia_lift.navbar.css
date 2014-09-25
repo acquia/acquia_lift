@@ -73,6 +73,7 @@
 #navbar-administration .navbar-tray-acquia-lift.navbar-tray-horizontal .acquia-lift-scrollable {
   max-height: 70vh;
   overflow-y: auto;
+  padding-bottom: .3em;
 }
 #navbar-administration .navbar-tray-acquia-lift.navbar-tray-horizontal .menu ul ul {
   border-bottom: 1px solid #dddddd;

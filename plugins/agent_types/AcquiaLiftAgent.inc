@@ -2184,7 +2184,7 @@ class AcquiaLiftReport extends AcquiaLiftReportBase {
           $lift_default_classes = $choice['lift_default_positive'] ? 'acquia-lift-report-positive' : 'acquia-lift-report-negative';
         }
         $row = array();
-        $row[] = $choice['counter'];
+        $row[] = $this->getVariationLabel(($choice['counter']-1), $choice['control']);
         if ($choice['control']) {
           $row[] = t('Control: ') . $choice['choice_id'];
         }
@@ -2247,7 +2247,7 @@ class AcquiaLiftReport extends AcquiaLiftReportBase {
       $row_data = array($f['feature_label']);
       if (isset($f['favored_selection_number'])) {
         $show_favored_selection = TRUE;
-        $row_data[] = $f['favored_selection_number'];
+        $row_data[] = $this->getVariationLabel(($f['favored_selection_number']-1), ($f['favored_selection_number'] == 1));
       }
       $row_data[] = array(
         'data' => $f['percent_traffic'],

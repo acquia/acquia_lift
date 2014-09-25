@@ -1116,6 +1116,7 @@ abstract class AcquiaLiftReportBase implements PersonalizeAgentReportInterface, 
       $this->report_data[$key]['decision_name'] = $decision_name;
       $this->report_data[$key]['machine_name'] = $machine_name;
       $this->report_data[$key]['confidence_measure'] = $confidence_measure;
+      $this->report_data[$key]['features'] = array(AcquiaLiftReportBase::NO_FEATURES);
     }
     return $this->report_data[$key];
   }
@@ -1306,16 +1307,14 @@ abstract class AcquiaLiftReportBase implements PersonalizeAgentReportInterface, 
    *   The render array for the report.
    */
   protected function buildAllConversionReports($report_data) {
-    $confidence = $report_data['conversion_all']['summary']['overview']['confidence'];
-    $winner = $report_data['conversion_all']['summary']['overview']['winner'];
     $reports = array();
     $reports['conversion_all'] = $this->buildConversionReports(array(
       'name' => t('All goals'),
       'detail' => $report_data['conversion_all']['detail'],
       'summary' => $report_data['conversion_all']['summary'],
-    ), $confidence, $winner);
+    ), $report_data);
     foreach ($report_data['conversion_goals'] as $goal_id => $goal_data) {
-      $reports['conversion_goals'][$goal_id] = $this->buildConversionReports($goal_data, $confidence, $winner);
+      $reports['conversion_goals'][$goal_id] = $this->buildConversionReports($goal_data, $report_data);
     }
     if ($reports['conversion_all'] == FALSE) {
       drupal_set_message(t('There was a problem retrieving the report data.  Please try again later.'), 'error');
@@ -1431,7 +1430,7 @@ abstract class AcquiaLiftReportBase implements PersonalizeAgentReportInterface, 
       $val_rate = $total_count[$counter] > 0 ? ($total_val[$counter]/$total_count[$counter]) : 0;
       $margin = (($item['bHi'] - $item['bLo'])/2) * 100;
 
-      $data[] = array(
+      $data[$item['feature']][] = array(
         'choice_id' => $choice_id,
         'raw_label' => $option_id,
         'goals' => $total_goals[$counter],
@@ -1544,7 +1543,7 @@ abstract class AcquiaLiftReportBase implements PersonalizeAgentReportInterface, 
         $confidence = FALSE;
       }
 
-      $data[] = array(
+      $data[$item['feature']][] = array(
         'counter' => $counter,
         'choice_id' => $choice_id,
         'raw_label' => $option_id,
@@ -1579,10 +1578,12 @@ abstract class AcquiaLiftReportBase implements PersonalizeAgentReportInterface, 
    *
    * @param array $report_data
    *   All of the reporting data for this AB report.
+   * @param array $all_report_data
+   *   The report data for all reports to be build including overview data.
    * @param array|bool
    *   A render array for the report or FALSE if it cannot be generated.
    */
-  protected function buildConversionDetailReport($report_data) {
+  protected function buildConversionDetailReport($report_data, $all_report_data) {
     if ($report_data === FALSE) {
       return FALSE;
     }
@@ -1594,28 +1595,33 @@ abstract class AcquiaLiftReportBase implements PersonalizeAgentReportInterface, 
       t('Margin of error (%)'),
     );
     $rows = array();
-    foreach ($report_data as $data) {
-      $rows[] = array(
-        'data' => array(
-          array(
-            'data' => $data['timestamp'],
+    foreach ($report_data as $feature => $feature_data) {
+      if (!in_array($feature, $all_report_data['features'])) {
+        continue;
+      }
+      foreach($feature_data as $data) {
+        $rows[] = array(
+          'data' => array(
+            array(
+              'data' => $data['timestamp'],
+            ),
+            array(
+              'data' => $data['choice_id'],
+              'data-acquia-lift-variation-label' => $this->getVariationLabel($data['counter'], $data['control']),
+            ),
+            array(
+              'data' => $data['conversion'],
+            ),
+            array(
+              'data' => $data['conversion_value'],
+            ),
+            array(
+              'data' => $data['margin_error'],
+            ),
           ),
-          array(
-            'data' => $data['choice_id'],
-            'data-acquia-lift-variation-label' => $this->getVariationLabel($data['counter'], $data['control']),
-          ),
-          array(
-            'data' => $data['conversion'],
-          ),
-          array(
-            'data' => $data['conversion_value'],
-          ),
-          array(
-            'data' => $data['margin_error'],
-          ),
-        ),
-        'no_striping' => TRUE,
-      );
+          'no_striping' => TRUE,
+        );
+      }
     }
     if (!empty($rows)) {
       $build['metric_table'] = array(
@@ -1640,17 +1646,17 @@ abstract class AcquiaLiftReportBase implements PersonalizeAgentReportInterface, 
    *
    * @param array $report_data
    *   Reporting data for this summary report.
-   * @param bool $confidence
-   *   Indicates if confidence has been reached for this test.
-   * @param int $winner
-   *   The variation number that is the winner of the test.
+   * @param array $all_report_data
+   *   The report data for all reports to be build including overview data.
    * @param array|bool
    *   A render array for the report or FALSE if it cannot be generated.
    */
-  protected function buildConversionSummaryReport($report_data, $confidence, $winner) {
+  protected function buildConversionSummaryReport($report_data, $all_report_data) {
     if ($report_data === FALSE) {
       return FALSE;
     }
+    $confidence = $all_report_data['conversion_all']['summary']['overview']['confidence'];
+    $winner = $all_report_data['conversion_all']['summary']['overview']['winner'];
     $headers = array(
       t('Variation'),
       array(
@@ -1677,43 +1683,48 @@ abstract class AcquiaLiftReportBase implements PersonalizeAgentReportInterface, 
       ),
     );
     $rows = array();
-    foreach ($report_data['data'] as $data) {
-      $data = array(
-        array(
-          'data' => $data['choice_id'],
-          'data-acquia-lift-variation-label' => $this->getVariationLabel($data['counter'], $data['control']),
-        ),
-        array(
-          'data' => $data['goals'],
-        ),
-        array(
-          'data' => $data['conversion'],
-        ),
-        array(
-          'data' => $data['confidence'],
-        ),
-        array(
-          'data' => $data['lift_default'],
-        ),
-      );
-      // Add the winner column data.
-      if (empty($rows) && $report_data['overview']['confidence'] === FALSE) {
-        // If there is low confidence then show the message throughout the
-        // winner column.
-        $data[] = array(
-          'data' => $this->getLowConfidenceMessage(),
-          'rowspan' => count($report_data['data']),
-          'class' => array('acquia-lift-ab-winner'),
+    foreach ($report_data['data'] as $feature => $feature_data) {
+      if (!in_array($feature, $all_report_data['features'])) {
+        continue;
+      }
+      foreach ($feature_data as $data) {
+        $data = array(
+          array(
+            'data' => $data['choice_id'],
+            'data-acquia-lift-variation-label' => $this->getVariationLabel($data['counter'], $data['control']),
+          ),
+          array(
+            'data' => $data['goals'],
+          ),
+          array(
+            'data' => $data['conversion'],
+          ),
+          array(
+            'data' => $data['confidence'],
+          ),
+          array(
+            'data' => $data['lift_default'],
+          ),
+        );
+        // Add the winner column data.
+        if (empty($rows) && $report_data['overview']['confidence'] === FALSE) {
+          // If there is low confidence then show the message throughout the
+          // winner column.
+          $data[] = array(
+            'data' => $this->getLowConfidenceMessage(),
+            'rowspan' => count($report_data['data']),
+            'class' => array('acquia-lift-ab-winner'),
+          );
+        }
+        else {
+          // Show the winner indicator if this is the winning variation.
+          $data[] = $confidence && $winner == $data['counter'] ? '<span class="lift-winner">' . t('Winner') . '</span>' : '';
+        }
+        $rows[] = array(
+          'data' => $data,
+          'no_striping' => TRUE,
         );
       }
-      else {
-        // Show the winner indicator if this is the winning variation.
-        $data[] = $confidence && $winner == $data['counter'] ? '<span class="lift-winner">' . t('Winner') . '</span>' : '';
-      }
-      $rows[] = array(
-        'data' => $data,
-        'no_striping' => TRUE,
-      );
     }
     if (empty($rows)) {
       return array();
@@ -1749,14 +1760,12 @@ abstract class AcquiaLiftReportBase implements PersonalizeAgentReportInterface, 
    *   - name: The name of the section
    *   - detail:  The detail report data
    *   - summary: The summary report data
-   * @param bool $confidence
-   *   Indicates if confidence has been reached for this test.
-   * @param int $winner
-   *   The variation number that is the winner of the test.
+   * @param array $all_report_data
+   *   The full report data for all reports including overview information.
    * @return array|bool
    *   The render array for the reports or false if invalid data.
    */
-  protected function buildConversionReports($report_data, $confidence, $winner) {
+  protected function buildConversionReports($report_data, $all_report_data) {
     if ($report_data['detail'] == FALSE || $report_data['summary'] == FALSE) {
       return FALSE;
     }
@@ -1767,8 +1776,8 @@ abstract class AcquiaLiftReportBase implements PersonalizeAgentReportInterface, 
       '#value' => $report_data['name'],
       '#attributes' => array('class' => array('lift-statistic-category-name')),
     );
-    $build['reports']['detail'] = $this->buildConversionDetailReport($report_data['detail']);
-    $build['reports']['summary'] = $this->buildConversionSummaryReport($report_data['summary'], $confidence, $winner);
+    $build['reports']['detail'] = $this->buildConversionDetailReport($report_data['detail'], $all_report_data);
+    $build['reports']['summary'] = $this->buildConversionSummaryReport($report_data['summary'], $all_report_data);
     $build['reports']['#theme_wrappers'] = array('container');
     $build['reports']['#attributes'] = array('class' => array('lift-statistic-category'));
     return $build;

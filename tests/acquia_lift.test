@@ -51,7 +51,6 @@ class AcquiaLiftWebTest extends DrupalWebTestCase {
   public function setUp() {
     require_once(dirname(__FILE__) . '/../includes/acquia_lift.classes.inc');
     require_once(dirname(__FILE__) . '/acquia_lift.test_classes.inc');
-    require_once(dirname(__FILE__) . '/../plugins/agent_types/AcquiaLiftAgent.inc');
 
     parent::setUp(array('ctools', 'personalize', 'acquia_lift', 'personalize_blocks', 'personalize_test'));
 
@@ -1206,10 +1205,22 @@ class AcquiaLiftWebTest extends DrupalWebTestCase {
     // agent with the same name as an existing one.
     $control_rate = 10;
     $explore_rate = 30;
-    $this->createTestAgent(array('name' => 'first-existing-agent', 'control_rate' => $control_rate, 'explore_rate' => $explore_rate));
+    $this->createTestAgent(array(
+        'name' => 'first-existing-agent',
+        'control_rate' => $control_rate,
+        'explore_rate' => $explore_rate
+      ));
     $option_set_values = array(
-      array('agent' => 'first-existing-agent', 'plugin' => 'type1', 'option_ids' => array('option-1', 'option-2')),
-      array('agent' => 'first-existing-agent', 'plugin' => 'type2', 'option_ids' => array('option-a', 'option-b', 'option-c')),
+      array(
+        'agent' => 'first-existing-agent',
+        'plugin' => 'type1',
+        'option_ids' => array('option-1', 'option-2')
+      ),
+      array(
+        'agent' => 'first-existing-agent',
+        'plugin' => 'type2',
+        'option_ids' => array('option-a', 'option-b', 'option-c')
+      ),
     );
     foreach ($option_set_values as $i => $values) {
       $this->createOptionSet($i, $values);
@@ -1270,102 +1281,101 @@ class AcquiaLiftWebTest extends DrupalWebTestCase {
     module_load_include('inc', 'acquia_lift', 'acquia_lift.batch');
     // Confirm that the correct operations will be performed.
     $operations = acquia_lift_get_sync_operations_for_agents($agents);
-    $expected_operations = array (
-      array (
+    $expected_operations = array(
+      array(
         'method' => 'saveAgent',
         'args' =>
-          array (
+          array(
             'first-existing-agent',
             'first-existing-agent',
             'adaptive',
             'enabled',
             $control_rate / 100,
             $explore_rate / 100,
-            true,
+            TRUE,
           ),
       ),
       // PUT requests for all the points, decisions and choices that exist
       // in the agent being sync'd, regardless of whether they already exist
       // in Lift.
-      array (
+      array(
         'method' => 'savePoint',
         'args' =>
-          array (
+          array(
             'first-existing-agent',
             'osid-1',
           ),
       ),
-      array (
+      array(
         'method' => 'saveDecision',
         'args' =>
-          array (
+          array(
             'first-existing-agent',
             'osid-1',
             'osid-1',
           ),
       ),
-      array (
+      array(
         'method' => 'saveChoice',
         'args' =>
-          array (
+          array(
             'first-existing-agent',
             'osid-1',
             'osid-1',
             'option-1',
           ),
       ),
-      array (
+      array(
         'method' => 'saveChoice',
         'args' =>
-          array (
+          array(
             'first-existing-agent',
             'osid-1',
             'osid-1',
             'option-2',
           ),
       ),
-      array (
+      array(
         'method' => 'savePoint',
         'args' =>
-          array (
+          array(
             'first-existing-agent',
             'osid-2',
           ),
       ),
-      array (
+      array(
         'method' => 'saveDecision',
         'args' =>
-          array (
+          array(
             'first-existing-agent',
             'osid-2',
             'osid-2',
           ),
       ),
-
-      array (
+      array(
         'method' => 'saveChoice',
         'args' =>
-          array (
+          array(
             'first-existing-agent',
             'osid-2',
             'osid-2',
             'option-a',
           ),
       ),
-      array (
+      array(
         'method' => 'saveChoice',
         'args' =>
-          array (
+          array(
             'first-existing-agent',
             'osid-2',
             'osid-2',
             'option-b',
           ),
       ),
-      array (
+      array(
         'method' => 'saveChoice',
         'args' =>
-          array (
+          array(
             'first-existing-agent',
             'osid-2',
             'osid-2',
@@ -1373,20 +1383,20 @@ class AcquiaLiftWebTest extends DrupalWebTestCase {
           ),
       ),
       // DELETE request for non-existent choices.
-      array (
+      array(
         'method' => 'deleteChoice',
         'args' =>
-          array (
+          array(
             'first-existing-agent',
             'osid-1',
             'osid-1',
             'option-3',
           ),
       ),
-      array (
+      array(
         'method' => 'deleteChoice',
         'args' =>
-          array (
+          array(
             'first-existing-agent',
             'osid-1',
             'osid-1',
@@ -1394,59 +1404,59 @@ class AcquiaLiftWebTest extends DrupalWebTestCase {
           ),
       ),
       // DELETE request for non-existent decision.
-      array (
+      array(
         'method' => 'deleteDecision',
         'args' =>
-          array (
+          array(
             'first-existing-agent',
             'osid-1',
             'another-decision',
           ),
       ),
       // DELETE request for non-existent decision point.
-      array (
+      array(
         'method' => 'deletePoint',
         'args' =>
-          array (
+          array(
             'first-existing-agent',
             'second-point',
           ),
       ),
       // PUT request for targeting mapping for osid-1
-      array (
+      array(
         'method' => 'saveFixedTargetingMapping',
         'args' =>
-          array (
+          array(
             'first-existing-agent',
             'osid-1',
-            array (),
+            array(),
           ),
       ),
       // PUT request for targeting mapping for osid-2
-      array (
+      array(
         'method' => 'saveFixedTargetingMapping',
         'args' =>
-          array (
+          array(
             'first-existing-agent',
             'osid-2',
-            array (),
+            array(),
           ),
       ),
       // PUT request for the new goal
-      array (
+      array(
         'method' => 'saveGoal',
         'args' =>
-          array (
+          array(
             'first-existing-agent',
             'new-goal',
           ),
       ),
       // DELETE request for the goal that exists in Lift but not in the agent
       // being sync'd.
-      array (
+      array(
         'method' => 'deleteGoal',
         'args' =>
-          array (
+          array(
             'first-existing-agent',
             'first-goal',
           ),
@@ -1454,7 +1464,6 @@ class AcquiaLiftWebTest extends DrupalWebTestCase {
     );
     $this->assertEqual($expected_operations, $operations);
   }
-
 
   public function testReadReportsFromFile() {
     $this->drupalLogin($this->managerUser);
@@ -1539,15 +1548,17 @@ class AcquiaLiftWebTest extends DrupalWebTestCase {
     $agent_instance = personalize_agent_load_agent($first_agent);
     $report = $agent_instance->buildCampaignReports('osid-1', $report_start_date);
 
-    // The experiment report should show that Option A was shown 0 times.
-    $this->assertEqual("Control: Option A", $report['experiment']['content']['#rows'][0]['data'][1]);
-    $this->assertEqual("0 times", $report['experiment']['content']['#rows'][0]['data'][2]);
+    // The experiment report should show that Option A has a 0% conversion rate.
+    $this->assertEqual("Option A", $report['experiment']['reports']['all']['reports']['summary']['summary_holder']['summary_table']['#rows'][0]['data'][0]['data']);
+    $this->assertEqual("Control", $report['experiment']['reports']['all']['reports']['summary']['summary_holder']['summary_table']['#rows'][0]['data'][0]['data-acquia-lift-variation-label']);
+    $this->assertEqual("0%", $report['experiment']['reports']['all']['reports']['summary']['summary_holder']['summary_table']['#rows'][0]['data'][2]['data']);
 
     // The report for the second agent will be identical
     $agent_instance = personalize_agent_load_agent($second_agent);
     $report = $agent_instance->buildCampaignReports('osid-1', $report_start_date);
-    $this->assertEqual("Control: Option A", $report['experiment']['content']['#rows'][0]['data'][1]);
-    $this->assertEqual("0 times", $report['experiment']['content']['#rows'][0]['data'][2]);
+    $this->assertEqual("Option A", $report['experiment']['reports']['all']['reports']['summary']['summary_holder']['summary_table']['#rows'][0]['data'][0]['data']);
+    $this->assertEqual("Control", $report['experiment']['reports']['all']['reports']['summary']['summary_holder']['summary_table']['#rows'][0]['data'][0]['data-acquia-lift-variation-label']);
+    $this->assertEqual("0%", $report['experiment']['reports']['all']['reports']['summary']['summary_holder']['summary_table']['#rows'][0]['data'][2]['data']);
 
     $agent_instance = NULL;
     $this->resetAll();
@@ -1557,15 +1568,17 @@ class AcquiaLiftWebTest extends DrupalWebTestCase {
     $agent_instance = personalize_agent_load_agent($first_agent);
     $report = $agent_instance->buildCampaignReports('osid-1', $report_start_date);
 
-    // Now the experiment report should show that Option A was shown 9 times.
-    $this->assertEqual("Control: Option A", $report['experiment']['content']['#rows'][0]['data'][1]);
-    $this->assertEqual("9 times", $report['experiment']['content']['#rows'][0]['data'][2]);
+    // Now the experiment report should show that Option A has a conversion rate of .19%
+    $this->assertEqual("osid-76:Option A", $report['experiment']['reports']['all']['reports']['summary']['summary_holder']['summary_table']['#rows'][0]['data'][0]['data']);
+    $this->assertEqual("Control", $report['experiment']['reports']['all']['reports']['summary']['summary_holder']['summary_table']['#rows'][0]['data'][0]['data-acquia-lift-variation-label']);
+    $this->assertEqual("0.19%", $report['experiment']['reports']['all']['reports']['summary']['summary_holder']['summary_table']['#rows'][0]['data'][2]['data']);
 
     // The report for the second agent should still show the basic report data.
     $agent_instance = personalize_agent_load_agent($second_agent);
     $report = $agent_instance->buildCampaignReports('osid-1', $report_start_date);
-    $this->assertEqual("Control: Option A", $report['experiment']['content']['#rows'][0]['data'][1]);
-    $this->assertEqual("0 times", $report['experiment']['content']['#rows'][0]['data'][2]);
+    $this->assertEqual("Option A", $report['experiment']['reports']['all']['reports']['summary']['summary_holder']['summary_table']['#rows'][0]['data'][0]['data']);
+    $this->assertEqual("Control", $report['experiment']['reports']['all']['reports']['summary']['summary_holder']['summary_table']['#rows'][0]['data'][0]['data-acquia-lift-variation-label']);
+    $this->assertEqual("0%", $report['experiment']['reports']['all']['reports']['summary']['summary_holder']['summary_table']['#rows'][0]['data'][2]['data']);
   }
 
   /**

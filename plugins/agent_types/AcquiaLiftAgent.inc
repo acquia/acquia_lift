@@ -1170,7 +1170,7 @@ abstract class AcquiaLiftReportBase implements PersonalizeAgentReportInterface, 
       $report_data['raw']['status'] = $this->reportDataSrc->getAgentStatusReport(array($report_data['machine_name']), $num_days);
     }
     catch (Exception $e) {
-      $report_data['raw']['potential_context']['error'] = $e->getMessage();
+      $report_data['raw']['status']['error'] = $e->getMessage();
     }
     return $report_data;
   }

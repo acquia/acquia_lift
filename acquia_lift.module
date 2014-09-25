@@ -2086,7 +2086,7 @@ function acquia_lift_personalize_agent_end_date_form_alter(&$form, $agent_name) 
   }
   $agent = personalize_agent_load($agent_name);
   if (acquia_lift_owns_agent($agent)) {
-    $data = $agent->getData();
+    $data = $agent->data;
     $options = $form['campaign_end']['#options'];
     $specified = $options['specified'];
     unset($options['specified']);

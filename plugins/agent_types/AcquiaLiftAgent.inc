@@ -722,7 +722,7 @@ class AcquiaLiftAgent extends PersonalizeAgentBase implements PersonalizeAgentGo
       $report_options = array(
         'confidence-measure' => $this->globalConfig['confidence_measure'],
         'aggregated-over-dates' => TRUE,
-        'features' => NULL,
+        'features' => "(none)",
       );
       $confidence_report = $this->liftAPI->getConfidenceReport(
         $this->machineName,

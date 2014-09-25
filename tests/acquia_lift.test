@@ -1493,6 +1493,7 @@ class AcquiaLiftWebTest extends DrupalWebTestCase {
       personalize_agent_save($agent);
       // Add some test data so that calls to get reports for this agent will
       // return basic reports.
+      // Use a date that will match
       $test_data = array_merge_recursive($test_data, array(
         // We need to replicate this test agent on the server so that the errors()
         // check will pass.
@@ -1533,7 +1534,7 @@ class AcquiaLiftWebTest extends DrupalWebTestCase {
             'confidence' => AcquiaLiftTestReports::getBasicConfidenceReport($agent_name),
             'targeting-features' => AcquiaLiftTestReports::getBasicTargetingReport($agent_name),
             'learning' => array(),
-            'agent-status' => AcquiaLiftTestReports::getBasicStatusReport($agent_name),
+            'agent-status' => AcquiaLiftTestReports::getBasicStatusReport($agent_name, $started, 1),
             'context-filters' => AcquiaLiftTestReports::getBasicContextFilters()
           )
         )

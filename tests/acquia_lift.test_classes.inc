@@ -400,6 +400,121 @@ class AcquiaLiftTestReports {
     return $report;
   }
 
+  public static function getConfidenceReportForDates($agent_name, $last_ts, $num_days = 1) {
+    $ts_from = $last_ts;
+    $all_dates = array();
+    for ($i = $num_days; $i > 1; $i--) {
+      // Timestamp for the previous day
+      $ts_from -= (24 * 60 * 60);
+      // Add this to the array of timestamps we are reporting on.
+      array_unshift($all_dates, $ts_from);
+    }
+    // Now add the latest timestamp on the end.
+    $all_dates[] = $last_ts;
+    $date_from = date('Y-m-d', $ts_from);
+    $date_to = date('Y-m-d', $last_ts);
+    $report = array (
+      'agent' => $agent_name,
+      'dateFrom' => $date_from,
+      'dateThru' => $date_to,
+      'data' =>
+        array (
+          'items' =>
+            array (
+              0 =>
+                array (
+                  'owner' => 'test-owner-code',
+                  'agent' => $agent_name,
+                  'point' => 'osid-1',
+                  'choice' => 'osid-1:option-1',
+                  'seg' => '(none)',
+                  'feature' => '(none)',
+                  'goal' => NULL,
+                  'count' => 0,
+                  'val' => 0,
+                  'valSq' => 0,
+                  'goals' => 0,
+                  'goalsSq' => 0,
+                  'date' => '2014-08-08',
+                  'totals' =>
+                    array (
+                      'count' => 0,
+                      'goals' => 0,
+                      'val' => 0,
+                      'goalsPerDecision' => 0,
+                      'valPerDecision' => 0,
+                      'valPerGoal' => 0,
+                    ),
+                  'label' => 'option-1',
+                  'bLo' => 0,
+                  'bHi' => 0,
+                  'vVari' => 0,
+                  'vMean' => 0,
+                  'stdDev' => 0,
+                  'tScore' => 0,
+                  'dgFree' => 0,
+                  'pValue' => -1,
+                  'signif' => false,
+                  'confidence' => '0.0',
+                  'confidenceLevel' => 0,
+                  'lift' =>
+                    array (
+                      'default' => 0,
+                      'random' => 0,
+                    ),
+                  'ts' => 1407456000,
+                ),
+              1 =>
+                array (
+                  'owner' => 'test-owner-code',
+                  'agent' => $agent_name,
+                  'point' => 'osid-1',
+                  'choice' => 'osid-1:option-2',
+                  'seg' => '(none)',
+                  'feature' => '(none)',
+                  'goal' => NULL,
+                  'count' => 0,
+                  'val' => 0,
+                  'valSq' => 0,
+                  'goals' => 0,
+                  'goalsSq' => 0,
+                  'date' => '2014-08-08',
+                  'totals' =>
+                    array (
+                      'count' => 0,
+                      'goals' => 0,
+                      'val' => 0,
+                      'goalsPerDecision' => 0,
+                      'valPerDecision' => 0,
+                      'valPerGoal' => 0,
+                    ),
+                  'label' => 'option-2',
+                  'bLo' => 0,
+                  'bHi' => 0,
+                  'vVari' => 0,
+                  'vMean' => 0,
+                  'stdDev' => 0,
+                  'tScore' => 0,
+                  'dgFree' => 0,
+                  'pValue' => -1,
+                  'signif' => false,
+                  'confidence' => '0.0',
+                  'confidenceLevel' => 0,
+                  'lift' =>
+                    array (
+                      'default' => 0,
+                      'random' => 0,
+                    ),
+                  'ts' => 1407456000,
+                ),
+            ),
+          'bLo' => NULL,
+          'bHi' => NULL,
+        ),
+    );
+    return $report;
+  }
+
   public static function getBasicTargetingReport($agent_name) {
     $report = array (
       'agent' => $agent_name,
@@ -418,7 +533,7 @@ class AcquiaLiftTestReports {
     return $report;
   }
 
-  public static function getBasicStatusReport($agent_name) {
+  public static function getBasicStatusReport($agent_name, $today, $num_days) {
     $report = array (
       'data' =>
         array (

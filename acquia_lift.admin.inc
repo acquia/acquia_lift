@@ -634,7 +634,7 @@ function acquia_lift_report_conversion() {
     $reports = $plugin->buildConversionReport($decision, $goal, $date_from, $date_to);
   }
   $reports['#type'] = 'ajax';
-  return $reports;
+  return drupal_json_output(drupal_render($reports));
 }
 
 /**

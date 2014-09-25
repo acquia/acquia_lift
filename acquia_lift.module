@@ -65,8 +65,6 @@ function acquia_lift_menu() {
     'page callback' => 'acquia_lift_report_conversion',
     'access arguments' => array('manage personalized content'),
     'file' => 'acquia_lift.admin.inc',
-    'delivery callback' => 'ajax_deliver',
-    'theme callback' => 'ajax_base_page_theme',
   );
   // Ajax callback to open the create campaign screen in a modal window.
   $items['admin/structure/personalize/add/%ctools_js'] = array(

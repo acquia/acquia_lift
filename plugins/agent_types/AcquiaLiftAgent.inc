@@ -1085,13 +1085,11 @@ abstract class AcquiaLiftReportBase implements PersonalizeAgentReportInterface, 
       );
     }
 
-    $confidence = $report_data['conversion_all']['summary']['overview']['confidence'];
-    $winner = $report_data['conversion_all']['summary']['overview']['winner'];
     $reports = $this->buildConversionReports(array(
       'name' => $report_name,
       'detail' => empty($goal) ? $report_data['conversion_all']['detail'] : $report_data['conversion_goals'][$goal]['detail'],
       'summary' => empty($goal) ? $report_data['conversion_all']['summary'] : $report_data['conversion_goals'][$goal]['summary'],
-    ), $confidence, $winner);
+    ), $report_data);
     return $reports;
   }
 

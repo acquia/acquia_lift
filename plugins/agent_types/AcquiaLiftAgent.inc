@@ -204,6 +204,7 @@ class AcquiaLiftAgent extends PersonalizeAgentBase implements PersonalizeAgentGo
               'featureStringMaxLength' => AcquiaLiftAPI::FEATURE_STRING_MAX_LENGTH,
               // @todo Add support for mutually exclusive values.
               'featureStringSeparator' => AcquiaLiftAPI::FEATURE_STRING_SEPARATOR_NONMUTEX,
+              'batchMode' => variable_get('acquia_lift_batch_decisions', FALSE)
             )
           )
         ),

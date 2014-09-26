@@ -115,7 +115,12 @@ function acquia_lift_admin_form($form, &$form_state) {
     '#description' => t("Paste in your Acquia Lift API URL"),
     '#required' => TRUE,
   );
-
+  $form['acquia_lift_batch_decisions'] = array(
+    '#type' => 'checkbox',
+    '#default_value' => variable_get('acquia_lift_batch_decisions', FALSE),
+    '#title' => t('Enable batch mode'),
+    '#description' => t('Check this if all decisions for the current page should be requested at once instead of one at a time')
+  );
   $form['acquia_lift_confidence_measure'] = array(
     '#type' => 'textfield',
     '#title' => t('Confidence measure'),

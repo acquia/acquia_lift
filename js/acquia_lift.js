@@ -58,7 +58,9 @@ Drupal.acquiaLift = (function() {
     );
 
     $(document).bind('personalizeDecisionsEnd', function(e) {
-      api.batchSend();
+      if (settings.batchMode) {
+        api.batchSend();
+      }
     });
     initialized = true;
   }

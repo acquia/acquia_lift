@@ -34,6 +34,9 @@ Drupal.acquiaLift = (function() {
         'scodestore': false,
         'server': settings.baseUrl
     };
+    if (settings.batchMode) {
+      options.batching = 'manual';
+    }
     if (!sessionID) {
       sessionID = Drupal.personalize.initializeSessionID();
     }
@@ -53,6 +56,12 @@ Drupal.acquiaLift = (function() {
       settings.apiKey,
       options
     );
+
+    $(document).bind('personalizeDecisionsEnd', function(e) {
+      if (settings.batchMode) {
+        api.batchSend();
+      }
+    });
     initialized = true;
   }
 
@@ -190,6 +199,13 @@ Drupal.acquiaLift = (function() {
           console.log(response);
         }
       });
+    },
+    'reset': function() {
+      api = null;
+      initialized = false;
+      initializingSession = false;
+      sessionID = false;
+      waitingDecisions = [];
     }
   }
 })();

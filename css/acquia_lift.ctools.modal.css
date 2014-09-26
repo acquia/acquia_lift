@@ -24,6 +24,10 @@ div.ctools-modal-content .modal-content {
   font-family: "Helvetica Neue", helvetica, "Segoe UI", segoe, "Ubuntu", "Droid Sans", "Arial", sans-serif;
 }
 
+div.ctools-modal-content .form-item label {
+  width: auto;
+}
+
 /* Styles specific to Acquia Lift's modal content */
 /* Type select modal */
 div.ctools-modal-content .modal-content .acquia-lift-type {
@@ -82,14 +86,11 @@ div.ctools-modal-content .modal-content .acquia-lift-form-type {
 }
 
 /* Start campaign form */
-#acquia-lift-start-campaign .form-type-checkboxes label {
-  width: inherit;
-}
-#acquia-lift-start-campaign .form-type-checkboxes .form-type-checkbox,
-#acquia-lift-start-campaign .form-type-radios .form-type-radio,
-  #acquia-lift-start-campaign .form-item-campaign-end-date {
+#acquia-lift-start-campaign-form .form-type-checkboxes .form-type-checkbox,
+#acquia-lift-start-campaign-form .form-type-radios .form-type-radio,
+#acquia-lift-start-campaign-form .form-item-campaign-end-date {
   padding: 0 10px;
 }
-#acquia-lift-start-campaign .form-item-campaign-end-date .form-item {
+#acquia-lift-start-campaign-form .form-item-campaign-end-date .form-item {
   margin-right: 0;
 }

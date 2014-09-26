@@ -71,6 +71,8 @@ function acquia_lift_disable() {
 function acquia_lift_uninstall() {
   variable_del('acquia_lift_account_info');
   variable_del('acquia_lift_client_side_goals');
+  variable_del('acquia_lift_batch_decisions');
+  variable_del('acquia_lift_confidence_measure');
   variable_del('queue_class_acquia_lift_sync');
 
   if ($menu = menu_load('acquia-lift-controls')) {

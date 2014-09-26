@@ -1000,6 +1000,37 @@ Rickshaw.Graph.TableLegend = Rickshaw.Class.create(Rickshaw.Graph.Legend, {
 (function ($, Drupal) {
   "use strict";
 
+  /**
+   * Load a new graph report and format it as a graph.
+   *
+   * @params
+   * - $container: A jQuery object that the report will be appended to.
+   * - args: An object of filters to be applied to the results.
+   *    - campaign: The machine name for the campaign data to load.
+   *    - decision: The machine name for the desision to load.
+   *    - goal: The machine name of the goal to load.
+   *    - start: The unix timestamp for the start date of the report.
+   *    - end: The unix timestamp for the end date of the report.
+   */
+  var acquiaLiftLoadReport = function ($container, args) {
+    // Construct the GET path.
+    var path = Drupal.settings.basePath + 'acquia_lift/reports/conversion';
+    for (var arg in args) {
+      if (args.hasOwnProperty(arg)) {
+        path += '?' + arg + '=' + args[arg];
+      }
+    }
+
+    // Get the new report and replace the existing report(s) with it.
+    $.get(path, function (data) {
+      var $data = $(data);
+
+      $container.find('.lift-statistic-category').remove();
+      $container.prepend($data);
+      $data.find('table[data-lift-statistics]').liftGraph();
+    });
+  }
+
   Drupal.behaviors.acquiaLiftReports = {
     attach: function (context, settings) {
       // Generate graphs and switches for the A/B statistics.
@@ -1124,6 +1155,7 @@ Rickshaw.Graph.TableLegend = Rickshaw.Class.create(Rickshaw.Graph.Legend, {
       });
     }
   }
+
 }(jQuery, Drupal));
 
 //# sourceMappingURL=acquia_lift.reports.js.map

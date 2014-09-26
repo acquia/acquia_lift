@@ -118,8 +118,8 @@ function acquia_lift_admin_form($form, &$form_state) {
   $form['acquia_lift_batch_decisions'] = array(
     '#type' => 'checkbox',
     '#default_value' => variable_get('acquia_lift_batch_decisions', FALSE),
-    '#title' => t('Enable batch mode'),
-    '#description' => t('Check this if all decisions for the current page should be requested at once instead of one at a time')
+    '#title' => t('Make all decisions on a page in one call'),
+    '#description' => t('If this is enabled, Lift will look at every decision to be made on the page and make it in a single request. If disabled, there will be a separate HTTP request per decision.')
   );
   $form['acquia_lift_confidence_measure'] = array(
     '#type' => 'textfield',

@@ -66,7 +66,7 @@
     var $messageBox = createMessageBox();
     $messageBox.find('.message').html(message);
     // Measure the final height while the box is still hidden.
-    var fullHeight = $messageBox.height();
+    var fullHeight = $messageBox.outerHeight();
     // Reset the properties to animate so that it starts hidden.
     $messageBox.css('height', '0px');
     $messageBox.css('opacity', '0');

@@ -1,5 +1,17 @@
 (function ($, Drupal) {
 
+  var pendingMessagesShown = false;
+
+  Drupal.behaviors.AcquiaLiftMessageBox = {
+    'attach': function(context, settings) {
+      // If any messages have been set to display on page load, show them.
+      if (!pendingMessagesShown && settings.acquia_lift.pendingMessage && settings.acquia_lift.pendingMessage.length > 0) {
+        showMessageBox(settings.acquia_lift.pendingMessage, 0);
+        pendingMessagesShown = true;
+      }
+    }
+  };
+
   /**
    * JavaScript regarding the message box that is used for administrative
    * messages.

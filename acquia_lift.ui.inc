@@ -66,6 +66,12 @@ function acquia_lift_build_page(&$page) {
     ctools_add_css('acquia_lift.ctools.modal', 'acquia_lift');
 
     $settings['acquia_lift']['dom_selector_ignore'] = acquia_lift_generate_ignore_selector();
+    $pending_agents = acquia_lift_get_pending_agents();
+
+    if (!empty($pending_agents)) {
+      $settings['acquia_lift']['pendingMessage'] = t('The following campaigns are being synced to Lift and will be started shortly: %agents', array('%agents' => implode(', ', $pending_agents)));
+      $page['page_top']['#attached']['library'][] = array('acquia_lift', 'acquia_lift.messagebox');
+    }
     drupal_add_js($settings, 'setting');
   }
 }

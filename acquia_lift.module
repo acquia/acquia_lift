@@ -533,10 +533,11 @@ function acquia_lift_personalize_option_set_save($option_set) {
     return;
   }
 
-  // For fields-based option sets, we need to auto-create a goal.
+  // For fields-based option sets, we need to check the field settings and see if a goal
+  // needs to be created.
   $field = field_info_field($option_set->data['personalize_fields_field_name']);
   if (isset($field['settings']['personalize']) && $field['settings']['personalize']['enabled'] && isset($field['settings']['personalize']['create_goal']) && $field['settings']['personalize']['create_goal']) {
-
+    // Only go ahead with goal creation if no goal exists for this agent already.
     $goals = personalize_goal_load_by_conditions(array('agent' => $agent->machine_name));
     if (empty($goals)) {
       $js_id = personalize_stringify_osid($option_set->osid);
@@ -570,6 +571,8 @@ function acquia_lift_personalize_option_set_save($option_set) {
               PERSONALIZE_STATUS_RUNNING
             )
           ));
+          // Mark this agent as "pending" as it will be started once the queue runs.
+          acquia_lift_set_pending_status($agent->machine_name, $agent->label);
         }
       }
     }
@@ -2306,4 +2309,38 @@ function acquia_lift_command_process_queue() {
     'command' => 'acquia_lift_process_queue',
     'data' => array(),
   );
+}
+
+/**
+ * Sets a temporary "pending" status on the passed in agent.
+ *
+ * @param $agent_name
+ *   The machine name of the agent.
+ *
+ * @param $agent_label
+ *   The human-readable name of the agent.
+ */
+function acquia_lift_set_pending_status($agent_name, $agent_label) {
+  $_SESSION['acquia_lift_pending_agents'][$agent_name] = $agent_label;
+}
+
+/**
+ * Gets the list of currently  "pending" agents.
+ *
+ * @param bool $clear
+ *   Whether to clear the list.
+ *
+ * @return array
+ *   An array of agents with machine names as keys and human-readable names
+ *   as values.
+ */
+function acquia_lift_get_pending_agents($clear = TRUE) {
+  if (!isset($_SESSION['acquia_lift_pending_agents'])) {
+    return array();
+  }
+  $pending = $_SESSION['acquia_lift_pending_agents'];
+  if ($clear) {
+    unset($_SESSION['acquia_lift_pending_agents']);
+  }
+  return $pending;
 }

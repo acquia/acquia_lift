@@ -19,144 +19,79 @@
    */
   var acquiaLiftLoadReport = function ($container, args) {
     // Construct the GET path.
-    var path = Drupal.settings.basePath + 'acquia_lift/reports/conversion';
+    var path = Drupal.settings.basePath + 'acquia_lift/reports/conversion',
+        position = 0;
     for (var arg in args) {
       if (args.hasOwnProperty(arg)) {
-        path += '?' + arg + '=' + args[arg];
+        if (args[arg].length >= 0) {
+          var prefix = position === 0 ? '?' : '&';
+          path += prefix + arg + '=' + args[arg];
+        }
       }
+      position++;
     }
 
     // Get the new report and replace the existing report(s) with it.
     $.get(path, function (data) {
       var $data = $(data);
-
       $container.find('.lift-statistic-category').remove();
       $container.prepend($data);
       $data.find('table[data-lift-statistics]').liftGraph();
     });
-  }
+  };
 
   Drupal.behaviors.acquiaLiftReports = {
     attach: function (context, settings) {
       // Generate graphs and switches for the A/B statistics.
       $('.lift-statistics').once('acquiaLiftReports', function () {
         var $statistics = $(this),
-            $switches = $('<div class="lift-switches">'),
-            $chooser = $('<select class="lift-graph-switch">'),
-            $categories = $statistics.find('.lift-statistic-category'),
-            graphs = {},
-            children = [],
-            dataSelectors = [],
-            formItem = function(label, input) {
-              var $wrapper = $('<div class="form-item">');
+            $data = $statistics.find('table[data-lift-statistics]'),
+            campaign = $data.attr('data-acquia-lift-campaign'),
+            attr = typeof $data.attr('data-liftgraph-excluded') !== 'undefined' ? $data.attr('data-liftgraph-excluded').split(',') : [],
+            variationColumn = $data.attr('data-liftgraph-columnname') - 1,
+            xColumn = $data.attr('data-liftgraph-columnx') - 1,
+            name = $data.attr('data-liftgraph-columnname') - 1,
+            $goalSelect = $('.acquia-lift-report-section-options .form-item-goal select'),
+            $metricSelect = $('.acquia-lift-report-section-options .form-item-metric select'),
+            metric = $metricSelect.val(),
+            $metricOptions = $metricSelect.children('option');
 
-              $wrapper
-                .append('<label>' + label + '</label>' + "\n");
+        // Format the initial data.
+        $data.liftGraph();
 
-              for (var i = 0; i < input.length; i++) {
-                $wrapper
-                  .append(input[i]);
-              }
-
-              return $wrapper;
-            };
-
-        // Process the data in all tables.
-        $categories.each(function (graphKey) {
-          var $this = $(this),
-              $graph = $this.find('table[data-lift-statistics]'),
-              dataLabels = [],
-              name = $this.children('.lift-statistic-category-name').addClass('element-invisible').text(),
-              variationColumn = $graph.attr('data-liftgraph-columnname') - 1,
-              xColumn = $graph.attr('data-liftgraph-columnx') - 1,
-              attr = typeof $graph.attr('data-liftgraph-excluded') !== 'undefined' ? $graph.attr('data-liftgraph-excluded').split(',') : [],
-              $option = $('<option value="' + graphKey + '">' + name + '</option>'),
-              $dataSelector = $('<select class="lift-data-switch">');
-
-          // The data-liftgraph-excluded attribute is a comma delimited list of
-          // column numbers starting at 1. It needs a bit of extra processing
-          // to make the individual strings from the split integers.
-          for (var i = 0; i < attr.length; i++) {
-            attr[i] = parseFloat(attr[i]);
-          }
-
-          $chooser.append($option);
-          $graph.liftGraph();
-
-          if (graphKey !== 0) {
-            $this.addClass('inactive')
-          }
-          else {
-            $this.addClass('active')
-          }
-
-          graphs[name] = $graph;
-          children[graphKey] = $this;
-
-          // Collect the data able to be fed to the y-axis.
-          $graph.find('thead > tr > th').each(function (dataKey) {
-            if (attr.indexOf(dataKey + 1) === -1) {
-              var label = $(this).text(),
-                  $dataOption = $('<option value="' + dataKey + '">' + label + '</option>');
-
-              dataLabels.push($(this).text());
-
-              if (dataKey !== variationColumn && dataKey !== xColumn) {
-                $dataSelector.append($dataOption);
-              }
-            }
-          });
-
-          if (graphKey !== 0) {
-            $dataSelector
-              .addClass('inactive')
-          }
-          else {
-            $dataSelector
-              .addClass('active')
-          }
-
-          // Change the data fed to the y-axis and update the graph.
-          $dataSelector.change(function () {
-            $graph.attr('data-liftgraph-columny', parseFloat($(this).val()) + 1)
-              .liftGraph('update');
-          })
-
-          dataSelectors[graphKey] = $dataSelector;
-          $this.addClass('acquia-lift-processed');
-        });
-
-        // Change the displayed data when the select changes.
-        $chooser.change(function () {
-          var option = $(this).val(),
-              text = this.options[this.selectedIndex].text;
-
-          children[option]
-            .addClass('active')
-            .removeClass('inactive');
-          dataSelectors[option]
-            .addClass('active')
-            .removeClass('inactive');
-          graphs[text]
-            .liftGraph('update');
-          children[option]
-            .siblings('.lift-statistic-category')
-            .addClass('inactive')
-            .removeClass('active');
-          dataSelectors[option]
-            .siblings('.lift-data-switch')
-            .addClass('inactive')
-            .removeClass('active');
-        });
-
-        // Add all switches to the page.
-        if ($chooser.find('option').length > 1) {
-          $switches.append(formItem('Goals', $chooser));
+        // The data-liftgraph-excluded attribute is a comma delimited list of
+        // column numbers starting at 1. It needs a bit of extra processing
+        // to make the individual strings from the split integers.
+        for (var i = 0; i < attr.length; i++) {
+          attr[i] = parseFloat(attr[i]);
         }
-        $switches.append(formItem('Metrics', dataSelectors));
 
-        $statistics
-          .before($switches);
+        // Load a new report if the goal is changed.
+        $goalSelect.change(function() {
+          acquiaLiftLoadReport($statistics, {campaign: campaign, goal: $(this).val()});
+        })
+
+        // Attach a data column to a metric option.
+        // Change the data fed to the y-axis and update the graph.
+        $metricSelect.change(function () {
+          var value = $(this).val(),
+              $heads = $data.find('thead > tr > th'),
+              match = 0,
+              i = 1;
+
+          while (i < $heads.length) {
+            if ($heads.attr('data-conversion-metric') === value) {
+              match = i + 1;
+              break;
+            }
+            i++;
+          }
+
+          console.log(match);
+
+          $data.attr('data-liftgraph-columny', parseFloat(match))
+            .liftGraph('update');
+        })
       });
     }
   }

@@ -155,13 +155,13 @@ function acquia_lift_admin_form($form, &$form_state) {
     '#type' => 'textfield',
     '#size' => 3,
     '#required' => TRUE,
-    '#default_value' => variable_get('acquia_lift_min_runtime_num', 0),
+    '#default_value' => variable_get('acquia_lift_min_runtime_num', 2),
     '#element_validate' => array('element_validate_number'),
   );
   $form['minimum_runtime']['acquia_lift_min_runtime_unit'] = array(
     '#type' => 'select',
     '#required' => TRUE,
-    '#default_value' => variable_get('acquia_lift_min_runtime_unit', 'day'),
+    '#default_value' => variable_get('acquia_lift_min_runtime_unit', 'week'),
     '#options' => array(
       'minute' => t('minutes'),
       'hour' => t('hours'),
@@ -178,7 +178,7 @@ function acquia_lift_admin_form($form, &$form_state) {
     '#title' => t('Minimum number of decisions'),
     '#size' => 3,
     '#required' => TRUE,
-    '#default_value' => variable_get('acquia_lift_min_decisions', 0),
+    '#default_value' => variable_get('acquia_lift_min_decisions', 1000),
     '#description' => t('Minimum number of decisions before campaign can be stopped automatically. Only affects campaigns that are set to stop automatically when a winner is found.'),
     '#element_validate' => array('element_validate_number'),
   );

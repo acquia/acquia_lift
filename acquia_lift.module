@@ -533,51 +533,54 @@ function acquia_lift_personalize_option_set_save($option_set) {
     return;
   }
 
-  // For fields-based option sets, we need to check the field settings and see if a goal
-  // needs to be created.
+  // For fields-based option sets, we need to do some more set-up, depending on the
+  // field settings.
   $field = field_info_field($option_set->data['personalize_fields_field_name']);
-  if (isset($field['settings']['personalize']) && $field['settings']['personalize']['enabled'] && isset($field['settings']['personalize']['create_goal']) && $field['settings']['personalize']['create_goal']) {
-    // Only go ahead with goal creation if no goal exists for this agent already.
-    $goals = personalize_goal_load_by_conditions(array('agent' => $agent->machine_name));
-    if (empty($goals)) {
-      $js_id = personalize_stringify_osid($option_set->osid);
-      $plugin = 'link';
-      $action_label = t('Clicks @option_set', array('@option_set' => $option_set->label));
-      $action_name = personalize_generate_machine_name($action_label, 'visitor_actions_machine_name_exists');
-      $action = array(
-        'label' => $action_label,
-        'machine_name' => $action_name,
-        'plugin' => $plugin,
-        'client_side' => 1,
-        'identifier' => '[data-personalize=' . $js_id . ']',
-        'event' => 'click',
-        'pages' => '',
-        'data' => array()
-      );
-      // Allow the plugin to modify the action before saving.
-      if ($class = ctools_plugin_load_class('visitor_actions', 'actionable_element', $plugin, 'handler')) {
-        $action = call_user_func_array(array($class, 'actionPresave'), array($action));
-      }
-      if (visitor_actions_save_action($action)) {
-        personalize_goal_save($option_set->agent, $action_name, 1);
-        if ($field['settings']['personalize']['auto_start']) {
-          // We also need to make sure the agent is set to running after everything
-          // has been sync'd up.
-          $queue = DrupalQueue::get('acquia_lift_sync');
-          $queue->createItem(array(
-            'callback' => 'personalize_agent_set_status',
-            'args' => array(
-              $agent->machine_name,
-              PERSONALIZE_STATUS_RUNNING
-            )
-          ));
-          // Mark this agent as "pending" as it will be started once the queue runs.
-          acquia_lift_set_pending_status($agent->machine_name, $agent->label);
+  if (isset($field['settings']['personalize']) && $field['settings']['personalize']['enabled']) {
+    if (isset($field['settings']['personalize']['stop_on_winner']) && $field['settings']['personalize']['stop_on_winner']) {
+      // We need to set the 'stop_on_winner' property on the newly created agent.
+      $agent->data['stop_on_winner'] = 1;
+      personalize_agent_save($agent);
+    }
+    if (isset($field['settings']['personalize']['create_goal']) && $field['settings']['personalize']['create_goal']) {
+      $goals = personalize_goal_load_by_conditions(array('agent' => $agent->machine_name));
+      if (empty($goals)) {
+        $js_id = personalize_stringify_osid($option_set->osid);
+        $plugin = 'link';
+        $action_label = t('Clicks @option_set', array('@option_set' => $option_set->label));
+        $action_name = personalize_generate_machine_name($action_label, 'visitor_actions_machine_name_exists');
+        $action = array(
+          'label' => $action_label,
+          'machine_name' => $action_name,
+          'plugin' => $plugin,
+          'client_side' => 1,
+          'identifier' => '[data-personalize=' . $js_id . ']',
+          'event' => 'click',
+          'pages' => '',
+          'data' => array()
+        );
+        // Allow the plugin to modify the action before saving.
+        if ($class = ctools_plugin_load_class('visitor_actions', 'actionable_element', $plugin, 'handler')) {
+          $action = call_user_func_array(array($class, 'actionPresave'), array($action));
+        }
+        if (visitor_actions_save_action($action)) {
+          personalize_goal_save($option_set->agent, $action_name, 1);
+          if ($field['settings']['personalize']['auto_start']) {
+            // We also need to make sure the agent is set to running after everything
+            // has been sync'd up.
+            $queue = DrupalQueue::get('acquia_lift_sync');
+            $queue->createItem(array(
+              'callback' => 'personalize_agent_set_status',
+              'args' => array(
+                $agent->machine_name,
+                PERSONALIZE_STATUS_RUNNING
+              )
+            ));
+          }
         }
       }
     }
   }
-
 }
 
 /**
@@ -2193,6 +2196,20 @@ function acquia_lift_form_field_ui_field_edit_form_alter(&$form, &$form_state, $
       )
     );
     personalize_form_element_add_states($state, $form['field']['settings']['personalize']['auto_start']);
+
+    // Add a checkbox for automatically stopping the campaign once a winner has been found.
+    $form['field']['settings']['personalize']['stop_on_winner'] = array(
+      '#type' => 'checkbox',
+      '#title' => t('Only run until a winner is found'),
+      '#default_value' => isset($field['settings']['personalize']['stop_on_winner']) ? $field['settings']['personalize']['stop_on_winner'] : 0,
+      '#description' => t('Should the created campaign be stopped when a winner has been found?'),
+      '#states' => array(
+        'visible' => array(
+          ':input[name="field[settings][personalize][agent_type]"]' => $visible_states,
+        ),
+      )
+    );
+    personalize_form_element_add_states($state, $form['field']['settings']['personalize']['stop_on_winner']);
   }
 }
 
@@ -2377,11 +2394,11 @@ function acquia_lift_get_pending_agents($clear = TRUE)
  *   for before being stopped automatically when a winner is found.
  */
 function acquia_lift_config_min_runtime() {
-  $num = variable_get('acquia_lift_min_runtime_num', 0);
+  $num = variable_get('acquia_lift_min_runtime_num', 2);
   if (empty($num)) {
     return 0;
   }
-  $unit = variable_get('acquia_lift_min_runtime_unit', 'day');
+  $unit = variable_get('acquia_lift_min_runtime_unit', 'week');
   switch ($unit) {
     case 'minute':
       return $num * 60;

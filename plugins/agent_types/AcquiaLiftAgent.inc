@@ -164,7 +164,7 @@ class AcquiaLiftAgent extends PersonalizeAgentBase implements PersonalizeAgentGo
       $config = array(
         'confidence_measure' => variable_get('acquia_lift_confidence_measure', 95),
         'minimum_runtime' => acquia_lift_config_min_runtime(),
-        'minimum_decisions' => variable_get('acquia_lift_min_decisions', 0)
+        'minimum_decisions' => variable_get('acquia_lift_min_decisions', 1000)
       );
       return new static($agent_data->machine_name, $agent_data->label, $agent_data->data, $status, !empty($agent_data->started) ? $agent_data->started : NULL, $acquia_lift_api, $config);
     }
@@ -701,7 +701,7 @@ class AcquiaLiftAgent extends PersonalizeAgentBase implements PersonalizeAgentGo
     }
 
     // Need to go through each option set for this agent and establish whether each
-    // of them satifisfies the minimum number of decisions made, if this has been set,
+    // of them satisfies the minimum number of decisions made, if this has been set,
     // and has a winner.
     $option_sets = $this->data['decisions'];
     if (empty($option_sets)) {
@@ -715,9 +715,8 @@ class AcquiaLiftAgent extends PersonalizeAgentBase implements PersonalizeAgentGo
         // @todo Figure out how to support MVTs.
         return FALSE;
       }
-      $decision_name = key($decisions);
-      $winners[$point] = FALSE;
-      $num_decisions[$point] = 0;
+
+      $num_decisions = 0;
       // Get the confidence report directly from Lift.
       $report_options = array(
         'confidence-measure' => $this->globalConfig['confidence_measure'],
@@ -736,48 +735,59 @@ class AcquiaLiftAgent extends PersonalizeAgentBase implements PersonalizeAgentGo
       if (empty($items)) {
         return FALSE;
       }
-      $counter = 0;
-      $confidence = TRUE;
-      $winner = '';
-      $winning_value = NAN;
+
+      $bLos = $vMeans = array();
       foreach ($items as $item) {
         $choice = $item['choice'];
-        if (strpos($choice, ':') !== FALSE) {
+        $vMeans[$choice] = $item['vMean'];
+        // Key the bLos array by the bLo value so that it's easy to
+        // sort.
+        $bLos[$item['bLo']] = $choice;
+
+/*        if (strpos($choice, ':') !== FALSE) {
           list($decision_name, $option_id) = explode(':', $choice);
-        }
-        $winners[$point][$decision_name] = FALSE;
-        $num_decisions[$point] += $item['totals']['count'];
-        if ($item['signif']) {
-          if (is_nan($winning_value) || $item['confidence'] > $winning_value) {
-            $winning_value = $item['lift']['default'];
-            $winner = $counter;
-          }
-        } else {
-          // If any row is not significant, then the whole test isn't confident yet.
-          $confidence = FALSE;
-        }
-        $counter++;
+        }*/
+        $num_decisions += $item['totals']['count'];
       }
       if ($this->globalConfig['minimum_decisions']) {
-        foreach ($num_decisions as $count) {
-          // If any of the decision points has fewer than the required minimum number
-          // of decisions, don't stop the campaign.
-          if ($count < $this->globalConfig['minimum_decisions']) {
-            return FALSE;
-          }
+        // If any of the decision points has fewer than the required minimum number
+        // of decisions, don't stop the campaign.
+        if ($num_decisions < $this->globalConfig['minimum_decisions']) {
+          return FALSE;
         }
-
       }
-      // If any option set does not have a winner, we just return FALSE.
-      if (!$confidence || empty($winner)) {
-        return FALSE;
+      // Find the variation with the highest bLo value.
+      krsort($bLos);
+      $highest_bLo_value = key($bLos);
+      $highest_bLo_choice = array_shift($bLos);
+      // Go through the vMeans of the rest of the choices and see if our highest
+      // bLo is higher than all of them.
+      foreach ($bLos as $choice) {
+        if (!$highest_bLo_value > $vMeans[$choice]) {
+          return FALSE;
+        }
       }
-      $winners[$point] = $winner;
+      // If we got here, we have a winner for this decision point.
+      $winners[$point] = $highest_bLo_choice;
     }
 
     // If we reach here, we have a winner at each decision point and have satisfied all
-    // criteria for choosing a winner and pausing the campaign.
-    dpm($winners);
+    // criteria for choosing a winner and pausing the campaign. Get all option sets for the
+    // agent and set the winner for each one.
+    $option_sets = personalize_option_set_load_by_agent($this->machineName);
+    foreach ($winners as $point => $choice) {
+      $decisions = explode(',', $choice);
+      foreach ($decisions as $decision) {
+        list($decision_name, $option_id) = explode(':', $decision);
+        // Get all option sets for this decision name.
+        foreach ($option_sets as $osid => $option_set) {
+          if ($option_set->decision_point == $point && $option_set->decision_name == $decision_name) {
+            $option_set->winner = $choice;
+            personalize_option_set_save($option_set);
+          }
+        }
+      }
+    }
     return TRUE;
 
   }

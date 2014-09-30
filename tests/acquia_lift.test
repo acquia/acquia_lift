@@ -68,6 +68,11 @@ class AcquiaLiftWebTest extends DrupalWebTestCase {
     ));
   }
 
+  public function tearDown() {
+    variable_del('acquia_lift_web_test_data');
+    parent::tearDown();
+  }
+
   public function testLiftAgentAvailibility() {
     // remove the account information
     $lift_info = variable_get('acquia_lift_account_info', array());
@@ -1842,6 +1847,68 @@ class AcquiaLiftWebTest extends DrupalWebTestCase {
       ),
     );
     $this->assertQueueItems($expected_queue_items);
+  }
+
+  function testAutoDeclareWinner() {
+    // Create a new agent via the UI.
+    $agent = $this->createTestAgent(array('control_rate' => 10, 'explore_rate' => 30));
+
+    $agent_name = $agent->getTitle();
+    $machine_name = $agent->getMachineName();
+    // Add some dummy option sets to this agent.
+    $option_set_values = array(
+      array('agent' => $machine_name, 'plugin' => 'type1', 'num_options' => 3),
+      array('agent' => $machine_name, 'plugin' => 'type2', 'num_options' => 2),
+      array('agent' => $machine_name, 'plugin' => 'type2', 'num_options' => 3),
+    );
+
+    foreach ($option_set_values as $i => $values) {
+      list($option_set, $new_queues) = $this->createOptionSet($i, $values);
+      $option_sets[$option_set->osid] = $option_set;
+    }
+    // Create an MVT and add two of the option sets to it.
+    $mvt_label = $this->randomName();
+    $mvt_machine_name = personalize_generate_machine_name($mvt_label, 'personalize_mvt_machine_name_exists');
+    $edit = array(
+      'mvt[add][mvt_basic_info][label]' => $mvt_machine_name,
+      'mvt[add][mvt_basic_info][option_sets][]' => array(2, 3),
+    );
+    $this->drupalPost("admin/structure/personalize/manage/{$machine_name}/edit", $edit, $this->getButton('mvt'));
+    // Set up our report for these choices
+    $points = array(
+      'osid-1' => array(
+        'osid-1:option-A',
+        'osid-1:option-B',
+        'osid-1:option-C'
+      ),
+      $mvt_machine_name => array(
+        'osid-2:option-A,osid-3:option-A',
+        'osid-2:option-A,osid-3:option-B',
+        'osid-2:option-A,osid-3:option-C',
+        'osid-2:option-B,osid-3:option-A',
+        'osid-2:option-B,osid-3:option-B',
+        'osid-2:option-B,osid-3:option-C',
+      )
+    );
+    // Add some test data so that calls to get reports for this agent will
+    // return basic reports.
+    // Use a date that will match
+
+    $test_data = array(
+      // Now add the reports.
+      'reports' => array(
+        $agent_name => array(
+          'confidence' => AcquiaLiftTestReports::getConfidenceReportWithWinners($machine_name, $points, array('osid-1' => 'osid-1:option-B', $mvt_machine_name => 'osid-2:option-A,osid-3:option-C')),
+        )
+      )
+    );
+    variable_set('acquia_lift_web_test_data', $test_data);
+    $this->resetAll();
+
+    // We use the date that the test report was created.
+    $report_start_date = 1407499650;
+    AcquiaLiftAPI::setTestInstance();
+
   }
 
   /**

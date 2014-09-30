@@ -2088,9 +2088,13 @@ function acquia_lift_personalize_agent_end_date_form_alter(&$form, $agent_name) 
     return;
   }
   $agent = personalize_agent_load($agent_name);
+  // If this is a Lift agent, we need to add the "Run until a winner is found"
+  // option to the campaign end dropdown.
   if (acquia_lift_owns_agent($agent)) {
     $data = $agent->data;
     $options = $form['campaign_end']['#options'];
+    // The "specified" needs to be the last option, because of the date
+    // picker element that goes with it.
     $specified = $options['specified'];
     unset($options['specified']);
     $options['winner'] = t('Run until a winner is found');
@@ -2374,8 +2378,7 @@ function acquia_lift_set_pending_status($agent_name, $agent_label) {
  *   An array of agents with machine names as keys and human-readable names
  *   as values.
  */
-function acquia_lift_get_pending_agents($clear = TRUE)
-{
+function acquia_lift_get_pending_agents($clear = TRUE) {
   if (!isset($_SESSION['acquia_lift_pending_agents'])) {
     return array();
   }

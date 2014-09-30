@@ -1498,7 +1498,6 @@ class AcquiaLiftWebTest extends DrupalWebTestCase {
       personalize_agent_save($agent);
       // Add some test data so that calls to get reports for this agent will
       // return basic reports.
-      // Use a date that will match
       $test_data = array_merge_recursive($test_data, array(
         // We need to replicate this test agent on the server so that the errors()
         // check will pass.
@@ -1539,7 +1538,7 @@ class AcquiaLiftWebTest extends DrupalWebTestCase {
             'confidence' => AcquiaLiftTestReports::getBasicConfidenceReport($agent_name),
             'targeting-features' => AcquiaLiftTestReports::getBasicTargetingReport($agent_name),
             'learning' => array(),
-            'agent-status' => AcquiaLiftTestReports::getBasicStatusReport($agent_name, $started, 1),
+            'agent-status' => AcquiaLiftTestReports::getBasicStatusReport($agent_name),
             'context-filters' => AcquiaLiftTestReports::getBasicContextFilters()
           )
         )
@@ -1886,7 +1885,9 @@ class AcquiaLiftWebTest extends DrupalWebTestCase {
     // Make sure we are using a test instance of the API client.
     AcquiaLiftAPI::setTestInstance();
     $stop = $agent->stopNow();
+    // The call should return FALSE as there is no winner.
     $this->assertFalse($stop);
+    // No winner should have been set on the option set.
     $option_set = personalize_option_set_load(1, TRUE);
     $this->assertNull($option_set->winner);
 
@@ -1903,7 +1904,9 @@ class AcquiaLiftWebTest extends DrupalWebTestCase {
     $agent_instance = personalize_agent_load_agent($machine_name, TRUE);
     AcquiaLiftAPI::setTestInstance();
     $stop = $agent_instance->stopNow();
+    // Now we should get TRUE as a winner will have been found.
     $this->assertTrue($stop);
+    // Confirm the winner has been set on the option set.
     $option_set = personalize_option_set_load(1, TRUE);
     $this->assertEqual('option-B', $option_set->winner);
     // Setting the minimum number of decisions to 50 will mean we won't have enough
@@ -1968,7 +1971,7 @@ class AcquiaLiftWebTest extends DrupalWebTestCase {
     );
     $this->drupalPost("admin/structure/personalize/manage/{$machine_name}/edit", $edit, $this->getButton('mvt'));
     // Generate the reporting data to be returned by the dummy http client for this
-    // agent. All possible choices at each decision point need to be account for in
+    // agent. All possible choices at each decision point need to be accounted for in
     // the report.
     $points = array(
       'osid-1' => array(
@@ -2096,7 +2099,7 @@ class AcquiaLiftWebTest extends DrupalWebTestCase {
       'agent_basic_info[options][acquia_lift][decision_style]' => $data['decision_style'],
       'agent_basic_info[options][acquia_lift][control_rate]' => $data['control_rate'],
       'agent_basic_info[options][acquia_lift][explore_rate]' => $data['explore_rate'],
-      'cache_decisions' => $data['cache_decisions'],
+      'cache_decisions' => $data['cache_decisions']
     );
 
     $this->drupalPost('admin/structure/personalize/add', $edit, $this->getButton('agent'));

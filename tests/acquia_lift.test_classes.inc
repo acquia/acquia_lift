@@ -413,6 +413,35 @@ class AcquiaLiftTestReports {
     return $report;
   }
 
+  /**
+   * Generates confidence report data based on the passed in parameters.
+   *
+   * @param $agent_name
+   *   The name of the agent to generate a report for.
+   *
+   * @param array $choices
+   *   An array of options for which data should be generated, keyed by decision point
+   *   name and with an array of all possible winning options or combinations of options
+   *   as values. For multiple decisions at one point, i.e. an MVT, the choices should be
+   *   flattened into decision combinations, e.g. 'dec-1:option-a,dec-2:option-b'. E.g.
+   *   array(
+   *     'my-first-decision-point' => array(
+   *       'my-first-decision:option-A',
+   *       'my-first-decision:option-B'
+   *     ),
+   *     'my-MVT-decision-point' => array(
+   *       'dec-1:option-a,dec-2:option-a',
+   *       'dec-1:option-a,dec-2:option-b',
+   *       'dec-1:option-b,dec-2:option-a',
+   *       'dec-1:option-b,dec-2:option-b',
+   *      )
+   *    )
+   * @param array $winners
+   *   Optionally specify a winning choice or combination for each decision point. The
+   *   report data generated will then be such that that option or combination represents
+   *   a winner.
+   * @return array
+   */
   public static function generateConfidenceReportWithWinners($agent_name, $choices, $winners = array()) {
     $today = time();
     $date_from = date('Y-m-d', $today);
@@ -443,6 +472,9 @@ class AcquiaLiftTestReports {
         );
       }
       if (isset($winners[$point])) {
+        // For the winning option, we need to make sure the bLo, vMean and bHi
+        // values are going to be clear winners (the bLo needs to be higher than
+        // all other vMeans).
         $winning_blo = $vmean + (.001 * (count($options) + 1));
         $winning_vmean = $winning_blo + .001;
         $winning_vhi = $winning_vmean + .001;
@@ -483,7 +515,7 @@ class AcquiaLiftTestReports {
     return $report;
   }
 
-  public static function getBasicStatusReport($agent_name, $today, $num_days) {
+  public static function getBasicStatusReport($agent_name) {
     $report = array (
       'data' =>
         array (

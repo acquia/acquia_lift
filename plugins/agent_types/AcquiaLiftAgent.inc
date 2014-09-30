@@ -782,7 +782,6 @@ class AcquiaLiftAgent extends PersonalizeAgentBase implements PersonalizeAgentGo
       }
     }
     return TRUE;
-
   }
 
   /**

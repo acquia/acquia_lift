@@ -232,6 +232,9 @@
      */
     _onClick: function(event) {
       var $selected = this._hovered.$element;
+      if (!$selected) {
+        return;
+      }
       if ($selected.length != 1) {
         this.settings.onError.call(this, Drupal.t('Invalid element selector.'));
       } else {

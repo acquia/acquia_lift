@@ -16,6 +16,7 @@ QUnit.module("Acquia Lift service calls", {
     Drupal.settings.acquia_lift.featureStringSeparator = '::';
     Drupal.settings.acquia_lift.featureStringMaxLength = 50;
     Drupal.settings.acquia_lift.featureStringReplacePattern = '[^A-Za-z0-9_-]';
+    Drupal.settings.acquia_lift.batchMode = 0;
   }
 });
 
@@ -132,6 +133,70 @@ QUnit.test('Make batched decisions', function(assert) {
 
   assert.ok(callback.called);
 
+});
+
+QUnit.test('Send goal', function(assert) {
+  var xhr = sinon.useFakeXMLHttpRequest();
+  var requests = sinon.requests = [];
+
+  xhr.onCreate = function (request) {
+    requests.push(request);
+  };
+
+  // Need to mock this function that gets called by sendGoal.
+  Drupal.visitorActions = Drupal.visitorActions || {};
+  Drupal.visitorActions.preventDefaultCallback = function(event) {};
+  Drupal.acquiaLift.sendGoal('my-agent', 'some-goal', 2);
+
+  assert.equal(sinon.requests.length, 1);
+  var parsed = parseUri(sinon.requests[0].url);
+  console.log(parsed);
+  assert.equal(parsed.host, 'api.example.com');
+  assert.equal(parsed.path, "/someOwner/my-agent/goal/some-goal");
+  assert.equal(parsed.queryKey.apikey, "xyz123");
+  // For some reason the URI parser has trouble with the first param in a querystring
+  assert.ok(parsed.query.indexOf('reward=2') != -1);
+
+  requests[0].respond(200, { "Content-Type": "application/json" }, '{"agent": my-agent, "session": "1234678", "reward":2, "goal": "some-goal"}');
+});
+
+QUnit.test('Send goal in batch mode', function(assert) {
+  Drupal.settings.acquia_lift.batchMode = true;
+  var xhr = sinon.useFakeXMLHttpRequest();
+  var requests = sinon.requests = [];
+
+  xhr.onCreate = function (request) {
+    requests.push(request);
+  };
+
+  // Need to mock this function that gets called by sendGoal.
+  Drupal.visitorActions = Drupal.visitorActions || {};
+  Drupal.visitorActions.preventDefaultCallback = function(event) {};
+  Drupal.acquiaLift.sendGoal('my-agent', 'some-goal', 2);
+
+  assert.equal(sinon.requests.length, 1);
+  var requestBody = JSON.parse(sinon.requests[0].requestBody);
+  var expectedRequestBody = [
+    {
+      'agent': 'my-agent',
+      'goal': "some-goal",
+      'query': {
+        '_t': 0,
+        'apikey': 'xyz123',
+        'reward': 2,
+        'session': 'some-session-ID'
+      },
+      'type': 'goal'
+    },
+  ];
+  assert.deepEqual(expectedRequestBody, requestBody);
+  var parsedUri = parseUri(sinon.requests[0].url);
+  console.log(parsedUri);
+
+  assert.equal(parsedUri.host, 'api.example.com');
+  assert.equal(parsedUri.path, "/someOwner/-/batch");
+
+  requests[0].respond(200, { "Content-Type": "application/json" }, '[{"status": 200, "data": {"agent": "my-agent", "session": "1234678", "reward":2, "goal":"some-goal"}}]');
 });
 
 // Helper for parsing the ajax request URI

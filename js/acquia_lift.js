@@ -199,6 +199,7 @@ Drupal.acquiaLift = (function() {
           console.log(response);
         }
       });
+      api.batchSend();
     },
     'reset': function() {
       api = null;

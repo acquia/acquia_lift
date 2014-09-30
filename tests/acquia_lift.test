@@ -1465,6 +1465,42 @@ class AcquiaLiftWebTest extends DrupalWebTestCase {
     $this->assertEqual($expected_operations, $operations);
   }
 
+  public function testConversionReportAjaxEndpoint() {
+    $this->drupalLogin($this->managerUser);
+
+    $agent = $this->createTestAgent(array(), TRUE, FALSE);
+    $agent_name = $agent->getMachineName();
+
+    // Set the agent to read report data from the test file.
+    $path = drupal_get_path('module', 'acquia_lift');
+    variable_set("acquia_lift_report_source_" . $agent_name, "/" . $path . '/tests/test_reports.json');
+
+    // Call the conversion report endpoint.
+    $report = $this->drupalGet('acquia_lift/reports/conversion', array('query' => array(
+      'campaign' => $agent_name,
+      'decision' => 'osid-1',
+    )));
+
+    $report = drupal_json_decode($report);
+
+    $pattern = '/class="lift-statistic-category"/';
+    preg_match($pattern, $report, $matches);
+    $this->assertEqual(count($matches), 1, 'Only one category of results returned.');
+
+    $pattern = '/(<table)/';
+    preg_match($pattern, $report, $matches);
+    $this->assertEqual(count($matches), 2, 'Only two tables returned.');
+
+    $pattern = '/data-acquia-lift-campaign=\"([a-z0-9\_\-]+)\"/';
+    preg_match($pattern, $report, $matches);
+
+    $this->assertEqual($matches[1], $agent_name, 'Campaign name was passed in tabular data.');
+
+    $pattern = '/data-acquia-lift-decision-name=\"([a-z0-9\_\-]+)\"/';
+    preg_match($pattern, $report, $matches);
+    $this->assertEqual($matches[1], 'osid-1', 'Decision name was passed in tabular data.');
+  }
+
   public function testReadReportsFromFile() {
     $this->drupalLogin($this->managerUser);
     $first_agent = 'new-test-agent';

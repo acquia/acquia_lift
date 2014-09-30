@@ -708,15 +708,11 @@ class AcquiaLiftAgent extends PersonalizeAgentBase implements PersonalizeAgentGo
       return FALSE;
     }
     $decision_points = self::convertOptionSetsToDecisions($option_sets);
+    $points = array_keys($decision_points);
     $winners = array();
-
-    foreach ($decision_points as $point => $decisions) {
-      if (count($decisions) > 1) {
-        // @todo Figure out how to support MVTs.
-        return FALSE;
-      }
-
+    foreach ($points as $point) {
       $num_decisions = 0;
+      $bLos = $vMeans = array();
       // Get the confidence report directly from Lift.
       $report_options = array(
         'confidence-measure' => $this->globalConfig['confidence_measure'],
@@ -736,17 +732,10 @@ class AcquiaLiftAgent extends PersonalizeAgentBase implements PersonalizeAgentGo
         return FALSE;
       }
 
-      $bLos = $vMeans = array();
       foreach ($items as $item) {
         $choice = $item['choice'];
         $vMeans[$choice] = $item['vMean'];
-        // Key the bLos array by the bLo value so that it's easy to
-        // sort.
-        $bLos[$item['bLo']] = $choice;
-
-/*        if (strpos($choice, ':') !== FALSE) {
-          list($decision_name, $option_id) = explode(':', $choice);
-        }*/
+        $bLos[$choice] = $item['bLo'];
         $num_decisions += $item['totals']['count'];
       }
       if ($this->globalConfig['minimum_decisions']) {
@@ -756,13 +745,14 @@ class AcquiaLiftAgent extends PersonalizeAgentBase implements PersonalizeAgentGo
           return FALSE;
         }
       }
+
       // Find the variation with the highest bLo value.
-      krsort($bLos);
-      $highest_bLo_value = key($bLos);
-      $highest_bLo_choice = array_shift($bLos);
+      arsort($bLos);
+      $highest_bLo_choice = key($bLos);
+      $highest_bLo_value = array_shift($bLos);
       // Go through the vMeans of the rest of the choices and see if our highest
       // bLo is higher than all of them.
-      foreach ($bLos as $choice) {
+      foreach (array_keys($bLos) as $choice) {
         if (!$highest_bLo_value > $vMeans[$choice]) {
           return FALSE;
         }
@@ -775,14 +765,17 @@ class AcquiaLiftAgent extends PersonalizeAgentBase implements PersonalizeAgentGo
     // criteria for choosing a winner and pausing the campaign. Get all option sets for the
     // agent and set the winner for each one.
     $option_sets = personalize_option_set_load_by_agent($this->machineName);
+
     foreach ($winners as $point => $choice) {
+      // The "winner" at any decision point might be a single decision or a combination
+      // of decisions, in which case they'll be separated by a comma.
       $decisions = explode(',', $choice);
       foreach ($decisions as $decision) {
         list($decision_name, $option_id) = explode(':', $decision);
         // Get all option sets for this decision name.
         foreach ($option_sets as $osid => $option_set) {
           if ($option_set->decision_point == $point && $option_set->decision_name == $decision_name) {
-            $option_set->winner = $choice;
+            $option_set->winner = $option_id;
             personalize_option_set_save($option_set);
           }
         }

@@ -105,7 +105,7 @@ class DummyAcquiaLiftHttpClient implements AcquiaLiftDrupalHttpClientInterface {
    * @return array
    *   An array of data to be returned in the response.
    */
-  protected function getDataForURI($uri) {
+  protected function getDataForURI($uri, $headers = array()) {
     $parsed = parse_url($uri);
     $path_parts = explode('/', $parsed['path']);
     // The first element of the $path_parts array will be an empty string and the second
@@ -213,6 +213,19 @@ class DummyAcquiaLiftHttpClient implements AcquiaLiftDrupalHttpClientInterface {
       }
       $agent_name = $matches[1];
       $report_type = $matches[2];
+      if ($report_type == 'confidence' && isset($headers['x-mpath-point'])) {
+        // We're getting a confidence report for a particular decision point.
+        if (isset($this->data['reports'][$agent_name]['confidence'])) {
+          $confidence_report = $this->data['reports'][$agent_name]['confidence'];
+          foreach ($confidence_report['data']['items'] as $i => $item) {
+            if ($item['point'] !== $headers['x-mpath-point']) {
+              unset($confidence_report['data']['items'][$i]);
+            }
+          }
+          $confidence_report['data']['items'] = array_values($confidence_report['data']['items']);
+          return $confidence_report;
+        }
+      }
       return isset($this->data['reports'][$agent_name][$report_type]) ? $this->data['reports'][$agent_name][$report_type] : array();
     }
     return array();
@@ -224,7 +237,7 @@ class DummyAcquiaLiftHttpClient implements AcquiaLiftDrupalHttpClientInterface {
   public function get($uri = null, $headers = null, array $options = array())
   {
     $this->logRequest('get', $uri, $headers, $options);
-    $data = $this->getDataForURI($uri);
+    $data = $this->getDataForURI($uri, $headers);
     return $this->generateDummyResponse($data);
   }
 
@@ -400,35 +413,42 @@ class AcquiaLiftTestReports {
     return $report;
   }
 
-  public static function getConfidenceReportWithWinners($agent_name, $choices, $winners = array()) {
+  public static function generateConfidenceReportWithWinners($agent_name, $choices, $winners = array()) {
     $today = time();
     $date_from = date('Y-m-d', $today);
     $date_to = date('Y-m-d', $today);
     $items = array();
 
-    foreach ($choices as $point => $choices) {
+    foreach ($choices as $point => $options) {
       // Start with dummy values which we'll just increment for each choice.
-      $blo = 0.01615007001786055;
-      $vmean = 0.01713888406049018;
-      $bhi = 0.01812769810311981;
-      foreach ($choices as $i => $choice) {
-        $blo += .01 * $i;
-        $vmean += .01 * $i;
-        $bhi += .01 * $i;
-        $items[] = array(
+      $blo = 0.016;
+      $vmean = 0.017;
+      $bhi = 0.018;
+      $num_decisions = 10;
+      $num_goals = 100;
+      foreach ($options as $i => $choice) {
+        $items[$choice] = array(
           'owner' => 'test-owner-code',
           'agent' => $agent_name,
           'point' => $point,
           'choice' => $choice,
           'totals' =>
             array (
-              'count' => 10,
-              'goals' => 0,
+              'count' => $num_decisions + (10 * $i),
+              'goals' => $num_goals + (10 * $i),
             ),
-          'bLo' => $blo,
-          'bHi' => $bhi,
-          'vMean' => $vmean,
+          'bLo' => $blo + (.001 * $i),
+          'bHi' => $bhi + (.001 * $i),
+          'vMean' => $vmean + (.001 * $i),
         );
+      }
+      if (isset($winners[$point])) {
+        $winning_blo = $vmean + (.001 * (count($options) + 1));
+        $winning_vmean = $winning_blo + .001;
+        $winning_vhi = $winning_vmean + .001;
+        $items[$winners[$point]]['bLo'] = $winning_blo;
+        $items[$winners[$point]]['vMean'] = $winning_vmean;
+        $items[$winners[$point]]['bHi'] = $winning_vhi;
       }
     }
     $report = array (
@@ -437,7 +457,7 @@ class AcquiaLiftTestReports {
       'dateThru' => $date_to,
       'data' =>
         array (
-          'items' => $items,
+          'items' => array_values($items),
           'bLo' => NULL,
           'bHi' => NULL,
         ),

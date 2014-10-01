@@ -2460,7 +2460,7 @@
     var param = Drupal.settings.personalize.optionPreselectParam;
 
     var href = base + path + '?' + param + '=';
-    if (!options instanceof Array) {
+    if (!(options instanceof Array)) {
       options = [options];
     }
     var params = [];

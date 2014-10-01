@@ -191,6 +191,7 @@ class AcquiaLiftAgent extends PersonalizeAgentBase implements PersonalizeAgentGo
    * Implements PersonalizeAgentInterface::getAssets().
    */
   public function getAssets() {
+    $path = drupal_get_path('module', 'acquia_lift');
     return array(
       'js' => array(
         array(
@@ -209,9 +210,11 @@ class AcquiaLiftAgent extends PersonalizeAgentBase implements PersonalizeAgentGo
           )
         ),
         // Add the Acquia Lift API js wrapper and the Acquia Lift integration js.
-        drupal_get_path('module', 'acquia_lift') . '/js/acquia-lift-js-wrapper-min.js' => array('type' => 'file', 'scope' => 'header'),
-        drupal_get_path('module', 'acquia_lift') . '/js/acquia_lift.js' => array('type' => 'file', 'scope' => 'footer', 'defer' => TRUE),
-      )
+        $path . '/js/acquia_lift.js' => array('type' => 'file', 'scope' => 'footer', 'defer' => TRUE),
+      ),
+      'library' => array(
+        array('acquia_lift', 'acquia_lift.agent_api'),
+      ),
     );
   }
 

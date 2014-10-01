@@ -358,28 +358,20 @@
      *   True if successful, false if error.
      */
     function processGoalItem(queueItem) {
-      if (!acquiaLiftAPI) {
+      var api = Drupal.AcquiaLiftAPI.getInstance();
+      if (!api) {
         return false;
       }
       var goal = convertQueueDataToGoal(queueItem.getData());
-      acquiaLiftAPI.goal(goal.agentName, goal.options, function(response, textStatus, jqXHR) {
-        if (window.console) {
-          console.log(response);
-        }
-        return (response === 200);
+      api.goal(goal.agentName, goal.options, function(response, textStatus, jqXHR) {
+        return response;
       });
+      if (api.isManualBatch()) {
+        api.batchSend();
+      }
     }
 
     return {
-      /**
-       * Initialize the goal queue.
-       *
-       * @param api
-       *   An instance of the Acquia Lift API.
-       */
-      'initialize': function (api) {
-        acquiaLiftAPI = api;
-      },
       /**
        * Adds goal data to the persistent queue.
        *
@@ -393,15 +385,15 @@
         // Add the data to the persistent queue.
         Drupal.acquiaLiftUtility.Queue.add(data);
         // Now attempt to process the queue.
-        processQueue();
+        this.processQueue();
       },
 
       /**
        * Process the queue by sending goals to the Acquia Lift agent.
        *
        * @param reset
-       *   True if the queue should be reset such that all items are tried
-       *   (such as in an initial processing for the page request).
+       *   (Optional) True if the queue should be reset such that all items are
+       *   tried (such as in an initial processing for the page request).
        */
       'processQueue': function (reset) {
         reset = reset || false;
@@ -429,4 +421,4 @@
 
 }(jQuery, Drupal));
 
-//# sourceMappingURL=acquia_lift.agent.js.map
+//# sourceMappingURL=acquia_lift.goals_queue.js.map

@@ -16,9 +16,9 @@ module.exports = function(grunt) {
         'src/js/flow/acquia_lift.ctools.modal.js'
       ];
 
-  var agentjs = [
+  var goalqueuejs = [
         'src/js/agent/acquia_lift.utility.queue.js',
-        'src/js/agent/acquia_lift.agent.goal_queue.js'
+        'src/js/agent/acquia_lift.agent.goal_queue.js',
       ];
 
   // Project configuration.
@@ -47,8 +47,8 @@ module.exports = function(grunt) {
         dest: 'js/acquia_lift.flow.js'
       },
       agent: {
-        src: agentjs,
-        dest: 'js/acquia_lift.agent.js'
+        src: goalqueuejs,
+        dest: 'js/acquia_lift.goals_queue.js'
       }
     },
     concurrent: {

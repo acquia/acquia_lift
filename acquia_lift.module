@@ -274,6 +274,7 @@ function acquia_lift_init() {
  * Implements hook_page_build().
  */
 function acquia_lift_page_build(&$page) {
+  $page['page_top']['#attached']['library'][] = array('acquia_lift', 'acquia_lift.page');
   if (user_access('manage personalized content')) {
     module_load_include('inc', 'acquia_lift', 'acquia_lift.ui');
     acquia_lift_build_page($page);
@@ -847,6 +848,32 @@ function acquia_lift_library() {
       array('acquia_lift', 'underscore'),
       array('acquia_lift', 'backbone'),
       array('visitor_actions_ui', 'utilities.backbone_parent'),
+    ),
+  );
+
+  $libraries['acquia_lift.page'] = array(
+    'title' => 'Adds Acquia Lift page processing necessary for all page views.',
+    'version' => VERSION,
+    'js' => array(
+      $path . '/js/acquia_lift.page.js' => $options,
+    ),
+    'dependencies' => array(
+      array('system', 'jquery'),
+      array('system', 'jquery.once'),
+      array('acquia_lift', 'acquia_lift.agent_api'),
+    ),
+  );
+
+  $libraries['acquia_lift.agent_api'] = array(
+    'title' => 'Adds the Acquia Lift API files.',
+    'version' => VERSION,
+    'js' => array(
+      $path . '/js/acquia_lift.goals_queue.js' => $options,
+      $path . '/js/acquia-lift-js-wrapper-min.js' => array('type' => 'file', 'scope' => 'header'),
+      $path . '/js/acquia_lift.api.js' => $options,
+    ),
+    'dependencies' => array(
+      array('system', 'jquery'),
     ),
   );
 

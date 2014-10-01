@@ -736,7 +736,7 @@ class AcquiaLiftAgent extends PersonalizeAgentBase implements PersonalizeAgentGo
         $choice = $item['choice'];
         $vMeans[$choice] = $item['vMean'];
         $bLos[$choice] = $item['bLo'];
-        $num_decisions += $item['totals']['count'];
+        $num_decisions += $item['count'];
       }
       if ($this->globalConfig['minimum_decisions']) {
         // If any of the decision points has fewer than the required minimum number

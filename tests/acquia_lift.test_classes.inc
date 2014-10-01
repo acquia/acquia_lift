@@ -461,11 +461,7 @@ class AcquiaLiftTestReports {
           'agent' => $agent_name,
           'point' => $point,
           'choice' => $choice,
-          'totals' =>
-            array (
-              'count' => $num_decisions + (10 * $i),
-              'goals' => $num_goals + (10 * $i),
-            ),
+          'count' => $num_decisions + (10 * $i),
           'bLo' => $blo + (.001 * $i),
           'bHi' => $bhi + (.001 * $i),
           'vMean' => $vmean + (.001 * $i),

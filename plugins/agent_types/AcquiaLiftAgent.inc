@@ -1860,7 +1860,7 @@ abstract class AcquiaLiftReportBase implements PersonalizeAgentReportInterface, 
       '#theme' => 'html_tag',
       '#tag' => 'h3',
       '#value' => $report_data['name'],
-      '#attributes' => array('class' => array('lift-statistic-category-name')),
+      '#attributes' => array('class' => array('lift-statistic-category-name', 'element-invisible')),
     );
     $build['reports']['detail'] = $this->buildConversionDetailReport($report_data['detail'], $all_report_data);
     $build['reports']['summary'] = $this->buildConversionSummaryReport($report_data['summary'], $all_report_data);

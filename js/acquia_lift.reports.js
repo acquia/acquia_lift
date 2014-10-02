@@ -1053,6 +1053,9 @@ Rickshaw.Graph.TableLegend = Rickshaw.Class.create(Rickshaw.Graph.Legend, {
             .liftGraph('update');
         })
       });
+
+      // Hide the submit button.
+      $('.acquia-lift-report-section-options .form-submit').hide();
     }
   }
 

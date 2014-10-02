@@ -58,6 +58,9 @@
             .liftGraph('update');
         })
       });
+
+      // Hide the submit button.
+      $('.acquia-lift-report-section-options .form-submit').hide();
     }
   }
 

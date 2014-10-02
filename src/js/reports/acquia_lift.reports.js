@@ -15,21 +15,12 @@
             $goalSelect = $('.acquia-lift-report-section-options .form-item-goal select'),
             $metricSelect = $('.acquia-lift-report-section-options .form-item-metric select'),
             metric = $metricSelect.val(),
-            $metricOptions = $metricSelect.children('option'),
-            // Find the tqble column that matches the metric value.
+            // Find the table column that matches the metric value.
             metricColumn = function() {
               var $heads = $data.find('thead > tr > th'),
-                  match = 0,
-                  i = 1;
-              while (i < $heads.length) {
-                if ($($heads[i]).attr('data-conversion-metric') === metric) {
-                  match = i + 1;
-                  break;
-                }
-                i++;
-              }
+                  column = $data.find('thead > tr > th[data-conversion-metric="' + metric + '"]')[0];
 
-              return parseFloat(match);
+              return $heads.index(column) + 1;
             };
 
         // Format the initial data.
@@ -38,21 +29,11 @@
         // Load a new report if the goal is changed.
         $goalSelect.change(function() {
           // Construct the GET path.
-          var path = Drupal.settings.basePath + 'acquia_lift/reports/conversion',
-              position = 0,
-              args = {
+          var args = {
                 campaign: campaign,
                 goal: $(this).val()
-              };
-          for (var arg in args) {
-            if (args.hasOwnProperty(arg)) {
-              if (args[arg].length >= 0) {
-                var prefix = position === 0 ? '?' : '&';
-                path += prefix + arg + '=' + args[arg];
-              }
-            }
-            position++;
-          }
+              },
+              path = Drupal.settings.basePath + 'acquia_lift/reports/conversion?' + $.param(args);
 
           // Get the new report and replace the existing report(s) with it.
           $.get(path, function (html) {

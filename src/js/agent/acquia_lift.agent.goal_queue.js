@@ -35,9 +35,14 @@
      *   - options: An object of goal options to be sent with the goal.
      */
     function convertQueueDataToGoal(item) {
+      if (!item.a || !item.o) {
+        return {};
+      }
+      // Make a deep copy of the object data as the goal data will be
+      // transformed and updated by the API call.
       return {
         'agentName': item.a,
-        'options': item.o
+        'options': $.extend(true, {}, item.o)
       };
     }
 
@@ -46,17 +51,22 @@
      *
      * @param queueItem
      *   The item to process.
-     * @return boolean
-     *   True if successful, false if error.
+     * @param callback
+     *   A callback function to be used for notification when processing is
+     *   complete.  The callback will receive:
+     *   - an instance of the QueueItem processed
+     *   - a boolean indicating if the processing was successful.
      */
-    function processGoalItem(queueItem) {
-      var api = Drupal.AcquiaLiftAPI.getInstance();
-      if (!api) {
-        return false;
-      }
+    function processGoalItem(queueItem, callback) {
+      var api = Drupal.acquiaLiftAPI.getInstance();
       var goal = convertQueueDataToGoal(queueItem.getData());
+      if (!goal.agentName || !goal.options) {
+        throw new Error('Invalid goal data.');
+      }
       api.goal(goal.agentName, goal.options, function(response, textStatus, jqXHR) {
-        return response;
+        if (callback && typeof callback === 'function') {
+          callback(queueItem, response);
+        }
       });
       if (api.isManualBatch()) {
         api.batchSend();
@@ -71,13 +81,19 @@
        *   The name of the agent for the goal.
        * @param options
        *   Goal options to send with the goal.
+       *  @param process
+       *    Boolean indicating if goals should be immediately processed,
+       *    defaults to true.
        */
-      'addGoal': function (agentName, options) {
+      'addGoal': function (agentName, options, process) {
         var data = convertGoalToQueueData({'agentName': agentName, 'options': options});
+        var process = process == undefined ? true : process;
         // Add the data to the persistent queue.
         Drupal.acquiaLiftUtility.Queue.add(data);
         // Now attempt to process the queue.
-        this.processQueue();
+        if (process) {
+          this.processQueue();
+        }
       },
 
       /**
@@ -93,19 +109,43 @@
         if (reset) {
           Drupal.acquiaLiftUtility.Queue.reset();
         }
-        var item = Drupal.acquiaLiftUtility.Queue.getNext();
-        while (item) {
-          var success = processGoalItem(item);
-          if (success) {
-            // Only remove from the queue if processing was successful.
-            Drupal.acquiaLiftUtility.Queue.remove(item);
+
+        var failed = [];
+
+        // Function to kick off the processing for the next goal.
+        function processNext () {
+          var item = Drupal.acquiaLiftUtility.Queue.getNext();
+          if (item) {
+            try {
+              processGoalItem(item, processComplete);
+            }
+            catch (e) {
+              // If there was an exception, then this goal data cannot be
+              // processed so remove it and move on.
+              Drupal.acquiaLiftUtility.Queue.remove(item);
+              processNext();
+            }
           } else {
-            // Otherwise mark it for re-processing.
-            Drupal.acquiaLiftUtility.Queue.addBack(item);
+            // We are all done with processing the queue.  Add back in any
+            // failures to try again the next time the queue is processed.
+            var i, num = failed.length;
+            for (i = 0; i < num; i++) {
+              Drupal.acquiaLiftUtility.Queue.add(failed[i]);
+            }
           }
-          item = Drupal.acquiaLiftUtility.Queue.getNext();
         }
 
+        // Callback for when a single goal processing call is complete.
+        function processComplete (item, success) {
+          if (success) {
+            Drupal.acquiaLiftUtility.Queue.remove(item)
+          } else {
+            failed.push(item);
+          }
+          processNext();
+        }
+        // Kick off the queue.
+        processNext();
       }
     }
   }($));

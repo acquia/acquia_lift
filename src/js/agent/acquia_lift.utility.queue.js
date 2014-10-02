@@ -8,110 +8,89 @@
 
   Drupal.acquiaLiftUtility = Drupal.acquiaLiftUtility || {};
 
-  Drupal.acquiaLiftUtility.QueueItem = Drupal.acquiaLiftUtility.QueueItem || (function($) {
+  Drupal.acquiaLiftUtility.QueueItem = function (params) {
     var queueItemUid,
       queueItemData,
       queueItemProcessing = false;
 
     /**
-     * Generates a unique ID for this queue item.
-     *
-     * @return
-     *   An id to use that is unique across the browser instance.
+     * Returns the unique ID assigned to this queue item.
      */
-    function generateUniqueId() {
-      return 'acquia-lift-ts-' + $.now();
+    this.getId = function () {
+      return queueItemUid;
+    };
+    this.setId = function (value) {
+      queueItemUid = value;
     }
 
     /**
-     * Reads the QueueItem from a simple object.
-     *
-     * @param params
-     *   Either the data for this queue item or an object with keys:
-     *   - id:  The unique id for this item
-     *   - data: The data for this item
-     *   - pflag: The processing flag for this item.
+     * Returns the data that is held by this queue item.
      */
-    function fromObject(params) {
-      queueItemUid = params.id ? params.id : generateUniqueId();
-      queueItemData = params.data ? params.data : data;
-      queueItemProcessing = params.pflag ? params.pflag : false;
+    this.getData = function () {
+      return queueItemData;
+    };
+    this.setData = function (value) {
+      queueItemData = value;
     }
+;
+    /**
+     * Deteremines if this queue item is currently processing.
+     */
+    this.isProcessing = function () {
+      return queueItemProcessing;
+    };
+    this.setProcessing = function (isProcessing) {
+      queueItemProcessing = isProcessing;
+    };
 
-    return {
-      /**
-       * Initialize a new QueueItem from initial parameters.
-       *
-       * @param params
-       *   Either the data for this queue item or an object with keys:
-       *   - id:  The unique id for this item
-       *   - data: The data for this item
-       *   - pflag: The processing flag for this item.
-       */
-      'initialize': function (params) {
-        fromObject(params);
-      },
+    // Constructor handling.
+    if (params.hasOwnProperty('id')
+      && params.hasOwnProperty('data')
+      && params.hasOwnProperty('pflag')) {
+      this.setId(params.id);
+      this.setData(params.data);
+      this.setProcessing(params.pflag);
+    } else {
+      var uid = 'acquia-lift-ts-' + new Date().getTime();
+      this.setId(uid);
+      this.setData(params);
+      this.setProcessing(false);
+    }
+  };
 
-      /**
-       * Returns the unique ID assigned to this queue item.
-       */
-      'getId': function () {
-        return queueItemId;
-      },
+  Drupal.acquiaLiftUtility.QueueItem.prototype = {
+    constructor: Drupal.acquiaLiftUtility.QueueItem,
 
-      /**
-       * Returns the data that is held by this queue item.
-       */
-      'getData': function() {
-        return queueItemData;
-      },
+    /**
+     * Determines if QueueItem is equal to the current QueueItem.
+     *
+     * @param queueItem
+     *   The item to check against.
+     * @returns
+     *   True if equal, false if unequal.
+     */
+    'equals': function (queueItem) {
+      return (queueItem instanceof Drupal.acquiaLiftUtility.QueueItem && queueItem.getId() == this.getId());
+    },
 
-      /**
-       * Deteremines if this queue item is currently processing.
-       */
-      'isProcessing': function () {
-        return queueItemProcessing;
-      },
+    /**
+     * Resets the processing flag on this queue item.
+     */
+    'reset': function() {
+      this.setProcessing(false);
+    },
 
-      /**
-       * Sets the current processing flag.
-       */
-      'setProcessing': function (isProcessing) {
-        queueItemProcessing = isProcessing;
-      },
-
-      /**
-       * Determines if QueueItem is equal to the current QueueItem.
-       *
-       * @param queueItem
-       *   The item to check against.
-       * @returns
-       *   True if equal, false if unequal.
-       */
-      'equals': function (queueItem) {
-        return (queueItem.getId() == queueItemUid);
-      },
-
-      /**
-       * Resets the processing flag on this queue item.
-       */
-      'reset': function() {
-        this.setProcessing(false);
-      },
-
-      /**
-       * Parses the QueueItem into a simple object.
-       */
-      'toObject': function () {
+    /**
+     * Parses the QueueItem into a simple object.
+     */
+    'toObject': function () {
       return {
-        'id': queueItemUid,
-        'data': queueItemData,
-        'pflag': queueItemProcessing
+        'id': this.getId(),
+        'data': this.getData(),
+        'pflag': this.isProcessing()
       };
     }
-
   }
-  }($));
 
   Drupal.acquiaLiftUtility.Queue = Drupal.acquiaLiftUtility.Queue || (function($) {
     // @todo: Would be cool if we could swap out back-ends to local storage or
@@ -150,7 +129,7 @@
     function getAll() {
       var unserialized = readQueue(), i, num = unserialized.length, queue = [];
       for (i = 0; i < num; i++) {
-        queue.push(Drupal.acquiaLiftUtility.QueueItem.initialize(unserialized[i]));
+        queue.push(new Drupal.acquiaLiftUtility.QueueItem(unserialized[i]));
       }
       return queue;
     }
@@ -161,7 +140,7 @@
     function getFirstUnprocessed() {
       var unserialized = readQueue(), i, num = unserialized.length, item;
       for (i = 0; i < num; i++) {
-        item = Drupal.acquiaLiftUtility.QueueItem.initialize(unserialized[i]);
+        item = new Drupal.acquiaLiftUtility.QueueItem(unserialized[i]);
         if (!item.isProcessing()) {
           return item;
         }
@@ -185,7 +164,7 @@
         test;
       // Only initialize as many as we have to in order to find a match.
       for (i = 0; i < num; i++) {
-        test = Drupal.acquiaLiftUtility.QueueItem.initialize(queue[i]);
+        test = new Drupal.acquiaLiftUtility.QueueItem(queue[i]);
         if (test.equals(item)) {
           return i;
         }
@@ -213,22 +192,31 @@
       }
       // Serialize if necessary.
       if (!cookieHandlesSerialization()) {
-        queue = $.toJSON(queue);
+        queueData = JSON.stringify(queueData);
       }
       // Write to the cookie.
-      $.cookie(cookieName, queue);
+      $.cookie(cookieName, queueData);
     }
 
     /**
      * Adds an existing QueueItem back to the queue for re-processing.
      *
+     * @param queueItem
+     *   The item to add back into the queue.
+     * @param reset
+     *   Boolean indicates if the processing flag should be reset, defaults
+     *   false..
+     *
      * @todo think about and possibly implement a retry count
      */
-    function addBack(queueItem) {
+    function addBack(queueItem, reset) {
       var queue = readQueue();
-      var index = indexAt(queue, queueItem);
-      queueItem.reset();
-      if (index >= 0) {
+      var index = indexOf(queue, queueItem);
+
+      if (reset && reset == true) {
+        queueItem.reset();
+      }
+      if (index >= 0) {
         queue.splice(index, 1, queueItem);
       } else {
         queue.push(queueItem);
@@ -248,14 +236,18 @@
        *
        * @param data
        *   Data or a QueueItem to add to the queue.
+       * @param reset
+       *   Indicates if the processing should be reset (defaults to true).
        */
-      'add': function (data) {
+      'add': function (data, reset) {
+        reset = reset == undefined ? true : reset;
+
         if (data instanceof Drupal.acquiaLiftUtility.QueueItem) {
-          addBack(data);
+          addBack(data, reset);
           return;
         }
         var queue = readQueue();
-        queue.push(Drupal.acquiaLiftUtility.QueueItem.initialize(data));
+        queue.push(new Drupal.acquiaLiftUtility.QueueItem(data));
         writeQueue(queue);
       },
 
@@ -266,8 +258,12 @@
        */
       'getNext': function () {
         var item = getFirstUnprocessed();
-        item.setProcessing(true);
-
+        if (item) {
+          item.setProcessing(true);
+          // Save the updated item back into the queue (will overwrite).
+          this.add(item, false);
+        }
+        return item;
       },
 
       /**
@@ -282,7 +278,7 @@
         var queue = readQueue();
         var index = indexOf(queue, queueItem);
         if (index >= 0) {
-          queue[i].splice(index, 1);
+          queue.splice(index, 1);
           writeQueue(queue);
           return true;
         }
@@ -300,6 +296,13 @@
           queue[i].reset();
         }
         writeQueue(queue);
+      },
+
+      /**
+       * Empties the queue of all options (typcially used for testing purposes).
+       */
+      'empty': function() {
+        writeQueue([]);
       }
     }
   }($));

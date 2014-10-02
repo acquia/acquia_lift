@@ -9,7 +9,7 @@
 
   var AcquiaLiftAPI = (function () {
 
-    var instance, api = null;
+    var instance, api = null, sessionID;
 
     /**
      * The Singleton API instance.  All callers will be accessing the functions
@@ -19,9 +19,9 @@
     function SingletonAPI()  {
       this.initializingSession = false;
 
-      var settings, sessionID = Drupal.personalize.initializeSessionID();
+      var settings = Drupal.settings.acquia_lift;
+      sessionID = Drupal.personalize.initializeSessionID();
 
-      settings = Drupal.settings.acquia_lift;
       var options = {
         'cookies': null, // we provide our own cookie support
         'scodestore': false,
@@ -59,13 +59,27 @@
         api.batchSend();
       },
       decision: function (agent_name, options, callback) {
+        if (sessionID) {
+          options.session = sessionID;
+        }
         api.decision(agent_name, options, callback);
       },
       goal: function(agent_name, options, callback) {
-        api.goal(goal.agentName, goal.options, callback);
+        api.goal(agent_name, options, callback);
       },
       isManualBatch: function () {
         return (api.opts.batching && api.opts.batching === 'manual');
+      },
+      getSessionID: function () {
+        return sessionID;
+      },
+      setSessionID: function (id) {
+        sessionID = id;
+      },
+      reset: function () {
+        this.initializingSession = false;
+        sessionID = null;
+        api = instance = undefined;
       }
     }
 

@@ -101,9 +101,6 @@
           point: cleanString(point),
           choices: choices
         };
-        if (sessionID) {
-          options.session = sessionID;
-        }
         // Process visitor_context
         var data = [], i, j, feature_string;
         for (i in visitor_context) {
@@ -133,8 +130,8 @@
           if (window.console) {
             console.log(selection);
           }
-          if (!sessionID && session) {
-            sessionID = session;
+          if (!api.getSessionID() && session) {
+            api.setSessionID(session);
             Drupal.personalize.saveSessionID(session);
           }
 
@@ -159,7 +156,7 @@
         if (!initialized) {
           init();
         }
-        options = {
+        var options = {
           reward: value,
           goal: goal_name
         };
@@ -167,8 +164,8 @@
       },
       'reset': function() {
         // Reset the initialization of the shared instance.
-        if (api && api.initializingSession) {
-          api.initializingSession = false;
+        if (api) {
+          api.reset();
         }
         // Reset the reference.
         api = null;

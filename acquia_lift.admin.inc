@@ -587,6 +587,16 @@ function acquia_lift_report_custom($form, &$form_state, $agent, $agent_data, $op
  *   An array representing a dropdown select list.
  */
 function acquia_lift_report_decision_point_dropdown($options, $selected) {
+  if (empty($options)) {
+    return array();
+  }
+  if (count($options) == 1) {
+    $option = key($options);
+    return array(
+      '#type' => 'hidden',
+      '#value' => $option,
+    );
+  }
   return array(
     '#title' => t('Variation Set'),
     '#type' => 'select',
@@ -617,9 +627,10 @@ function acquia_lift_report_goal_dropdown($agent_name, $selected = NULL) {
     return array();
   }
   if (count($goals) == 1) {
+    $goal = current($goals);
     return array(
       '#type' => 'hidden',
-      '#value' => $goals[0]->action,
+      '#value' => $goal->action,
     );
   }
   else {

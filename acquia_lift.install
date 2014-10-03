@@ -69,11 +69,19 @@ function acquia_lift_disable() {
  * Implements hook_uninstall().
  */
 function acquia_lift_uninstall() {
-  variable_del('acquia_lift_account_info');
-  variable_del('acquia_lift_client_side_goals');
-  variable_del('acquia_lift_batch_decisions');
-  variable_del('acquia_lift_confidence_measure');
-  variable_del('queue_class_acquia_lift_sync');
+  $vars = array(
+    'acquia_lift_account_info',
+    'acquia_lift_client_side_goals',
+    'acquia_lift_batch_decisions',
+    'acquia_lift_confidence_measure',
+    'queue_class_acquia_lift_sync',
+    'acquia_lift_min_runtime_num',
+    'acquia_lift_min_runtime_unit',
+    'acquia_lift_min_decisions',
+  );
+  foreach ($vars as $var) {
+    variable_del($var);
+  }
 
   if ($menu = menu_load('acquia-lift-controls')) {
     // Delete the menu items.

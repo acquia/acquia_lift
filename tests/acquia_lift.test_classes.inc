@@ -105,7 +105,7 @@ class DummyAcquiaLiftHttpClient implements AcquiaLiftDrupalHttpClientInterface {
    * @return array
    *   An array of data to be returned in the response.
    */
-  protected function getDataForURI($uri) {
+  protected function getDataForURI($uri, $headers = array()) {
     $parsed = parse_url($uri);
     $path_parts = explode('/', $parsed['path']);
     // The first element of the $path_parts array will be an empty string and the second
@@ -213,6 +213,19 @@ class DummyAcquiaLiftHttpClient implements AcquiaLiftDrupalHttpClientInterface {
       }
       $agent_name = $matches[1];
       $report_type = $matches[2];
+      if ($report_type == 'confidence' && isset($headers['x-mpath-point'])) {
+        // We're getting a confidence report for a particular decision point.
+        if (isset($this->data['reports'][$agent_name]['confidence'])) {
+          $confidence_report = $this->data['reports'][$agent_name]['confidence'];
+          foreach ($confidence_report['data']['items'] as $i => $item) {
+            if ($item['point'] !== $headers['x-mpath-point']) {
+              unset($confidence_report['data']['items'][$i]);
+            }
+          }
+          $confidence_report['data']['items'] = array_values($confidence_report['data']['items']);
+          return $confidence_report;
+        }
+      }
       return isset($this->data['reports'][$agent_name][$report_type]) ? $this->data['reports'][$agent_name][$report_type] : array();
     }
     return array();
@@ -224,7 +237,7 @@ class DummyAcquiaLiftHttpClient implements AcquiaLiftDrupalHttpClientInterface {
   public function get($uri = null, $headers = null, array $options = array())
   {
     $this->logRequest('get', $uri, $headers, $options);
-    $data = $this->getDataForURI($uri);
+    $data = $this->getDataForURI($uri, $headers);
     return $this->generateDummyResponse($data);
   }
 
@@ -393,6 +406,86 @@ class AcquiaLiftTestReports {
                   'ts' => 1407456000,
                 ),
             ),
+          'bLo' => NULL,
+          'bHi' => NULL,
+        ),
+    );
+    return $report;
+  }
+
+  /**
+   * Generates confidence report data based on the passed in parameters.
+   *
+   * @param $agent_name
+   *   The name of the agent to generate a report for.
+   *
+   * @param array $choices
+   *   An array of options for which data should be generated, keyed by decision point
+   *   name and with an array of all possible winning options or combinations of options
+   *   as values. For multiple decisions at one point, i.e. an MVT, the choices should be
+   *   flattened into decision combinations, e.g. 'dec-1:option-a,dec-2:option-b'. E.g.
+   *   array(
+   *     'my-first-decision-point' => array(
+   *       'my-first-decision:option-A',
+   *       'my-first-decision:option-B'
+   *     ),
+   *     'my-MVT-decision-point' => array(
+   *       'dec-1:option-a,dec-2:option-a',
+   *       'dec-1:option-a,dec-2:option-b',
+   *       'dec-1:option-b,dec-2:option-a',
+   *       'dec-1:option-b,dec-2:option-b',
+   *      )
+   *    )
+   * @param array $winners
+   *   Optionally specify a winning choice or combination for each decision point. The
+   *   report data generated will then be such that that option or combination represents
+   *   a winner.
+   * @return array
+   */
+  public static function generateConfidenceReportWithWinners($agent_name, $choices, $winners = array()) {
+    $today = time();
+    $date_from = date('Y-m-d', $today);
+    $date_to = date('Y-m-d', $today);
+    $items = array();
+
+    foreach ($choices as $point => $options) {
+      // Start with dummy values which we'll just increment for each choice.
+      $blo = 0.016;
+      $vmean = 0.017;
+      $bhi = 0.018;
+      $num_decisions = 10;
+      $num_goals = 100;
+      foreach ($options as $i => $choice) {
+        $items[$choice] = array(
+          'owner' => 'test-owner-code',
+          'agent' => $agent_name,
+          'point' => $point,
+          'choice' => $choice,
+          'count' => $num_decisions + (10 * $i),
+          'bLo' => $blo + (.001 * $i),
+          'bHi' => $bhi + (.001 * $i),
+          'vMean' => $vmean + (.001 * $i),
+        );
+      }
+      if (isset($winners[$point])) {
+        // For the winning option, we need to make sure the bLo, vMean and bHi
+        // values are going to be clear winners (the bLo needs to be higher than
+        // all other vMeans).
+        $winning_blo = $vmean + (.001 * (count($options) + 1));
+        $winning_vmean = $winning_blo + .001;
+        $winning_vhi = $winning_vmean + .001;
+        $items[$winners[$point]]['bLo'] = $winning_blo;
+        $items[$winners[$point]]['vMean'] = $winning_vmean;
+        $items[$winners[$point]]['bHi'] = $winning_vhi;
+      }
+    }
+    $report = array (
+      'agent' => $agent_name,
+      'dateFrom' => $date_from,
+      'dateThru' => $date_to,
+      'data' =>
+        array (
+          'items' => array_values($items),
           'bLo' => NULL,
           'bHi' => NULL,
         ),

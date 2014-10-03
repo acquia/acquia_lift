@@ -152,6 +152,8 @@ class AcquiaLiftAgent extends PersonalizeAgentBase implements PersonalizeAgentGo
    */
   protected $queue;
 
+  protected $globalConfig;
+
   /**
    * Implements PersonalizeAgentInterface::create().
    */
@@ -159,7 +161,12 @@ class AcquiaLiftAgent extends PersonalizeAgentBase implements PersonalizeAgentGo
     try {
       $acquia_lift_api = AcquiaLiftAPI::getInstance(variable_get('acquia_lift_account_info', array()));
       $status = personalize_agent_get_status($agent_data->machine_name);
-      return new static($agent_data->machine_name, $agent_data->label, $agent_data->data, $status, !empty($agent_data->started) ? $agent_data->started : NULL, $acquia_lift_api);
+      $config = array(
+        'confidence_measure' => variable_get('acquia_lift_confidence_measure', 95),
+        'minimum_runtime' => acquia_lift_config_min_runtime(),
+        'minimum_decisions' => variable_get('acquia_lift_min_decisions', 1000)
+      );
+      return new static($agent_data->machine_name, $agent_data->label, $agent_data->data, $status, !empty($agent_data->started) ? $agent_data->started : NULL, $acquia_lift_api, $config);
     }
     catch (AcquiaLiftException $e) {
       watchdog('Acquia Lift', 'Unable to instantiate Acquia Lift Agent');
@@ -175,9 +182,10 @@ class AcquiaLiftAgent extends PersonalizeAgentBase implements PersonalizeAgentGo
    * @param $acquia_lift_api
    *   An instance of the AcquiaLiftAPI class.
    */
-  public function __construct($machine_name, $title, $data, $status, $started, AcquiaLiftAPI $acquia_lift_api) {
+  public function __construct($machine_name, $title, $data, $status, $started, AcquiaLiftAPI $acquia_lift_api, $global_config) {
     parent::__construct($machine_name, $title, $data, $status, $started);
     $this->liftAPI = $acquia_lift_api;
+    $this->globalConfig = $global_config;
   }
 
   /**
@@ -365,6 +373,11 @@ class AcquiaLiftAgent extends PersonalizeAgentBase implements PersonalizeAgentGo
         '#collapsed' => TRUE,
       );
     }
+    // This will get overridden by the 'campaign_end' dropdown.
+    $form['stop_on_winner'] = array(
+      '#type' => 'value',
+      '#value' => 0
+    );
     return $form;
   }
 
@@ -392,6 +405,11 @@ class AcquiaLiftAgent extends PersonalizeAgentBase implements PersonalizeAgentGo
     if ($is_new) {
       $agent_name = AcquiaLiftAPI::getInstance(variable_get('acquia_lift_account_info', array()))->ensureUniqueAgentName($values['machine_name'], PERSONALIZE_MACHINE_NAME_MAXLENGTH);
       $form_state['values']['agent_basic_info']['machine_name'] = $agent_name;
+    }
+    // If "Run until a winner is found" was selected, we need to add this to the agent's
+    // data property.
+    if ($form_state['values']['campaign_end'] == 'winner') {
+      $form_state['values']['agent_basic_info']['options']['acquia_lift']['stop_on_winner'] = 1;
     }
   }
 
@@ -660,6 +678,110 @@ class AcquiaLiftAgent extends PersonalizeAgentBase implements PersonalizeAgentGo
       $errors[] = $message;
     }
     return $errors;
+  }
+
+  /**
+   * Implements PersonalizeAgentInterface::stopNow().
+   */
+  public function stopNow() {
+    // Check whether the agent is configured to stop once a winner's been found.
+    if (!isset($this->data['stop_on_winner']) || !$this->data['stop_on_winner']) {
+      return parent::stopNow();
+    }
+
+    // No point checking for a winner if the campaign hasn't been running for the
+    // minimum runtime.
+    $time_now = time();
+    if ($this->globalConfig['minimum_runtime']) {
+      $runtime = $time_now - $this->startTime;
+      if ($runtime < $this->globalConfig['minimum_runtime']) {
+        // Campaign has not been running long enough.
+        return FALSE;
+      }
+    }
+
+    // Need to go through each option set for this agent and establish whether each
+    // of them satisfies the minimum number of decisions made, if this has been set,
+    // and has a winner.
+    $option_sets = $this->data['decisions'];
+    if (empty($option_sets)) {
+      return FALSE;
+    }
+    $decision_points = self::convertOptionSetsToDecisions($option_sets);
+    $points = array_keys($decision_points);
+    $winners = array();
+    foreach ($points as $point) {
+      $num_decisions = 0;
+      $bLos = $vMeans = array();
+      // Get the confidence report directly from Lift.
+      $report_options = array(
+        'confidence-measure' => $this->globalConfig['confidence_measure'],
+        'aggregated-over-dates' => TRUE,
+        'features' => "(none)",
+      );
+      $confidence_report = $this->liftAPI->getConfidenceReport(
+        $this->machineName,
+        $this->startTime,
+        $time_now,
+        $point,
+        $report_options
+      );
+
+      $items = $confidence_report['data']['items'];
+      if (empty($items)) {
+        return FALSE;
+      }
+
+      foreach ($items as $item) {
+        $choice = $item['choice'];
+        $vMeans[$choice] = $item['vMean'];
+        $bLos[$choice] = $item['bLo'];
+        $num_decisions += $item['count'];
+      }
+      if ($this->globalConfig['minimum_decisions']) {
+        // If any of the decision points has fewer than the required minimum number
+        // of decisions, don't stop the campaign.
+        if ($num_decisions < $this->globalConfig['minimum_decisions']) {
+          return FALSE;
+        }
+      }
+
+      // Find the variation with the highest bLo value.
+      arsort($bLos);
+      $highest_bLo_choice = key($bLos);
+      $highest_bLo_value = array_shift($bLos);
+      // Go through the vMeans of the rest of the choices and see if our highest
+      // bLo is higher than all of them.
+      foreach (array_keys($bLos) as $choice) {
+        if (!$highest_bLo_value > $vMeans[$choice]) {
+          return FALSE;
+        }
+      }
+      // If we got here, we have a winner for this decision point.
+      $winners[$point] = $highest_bLo_choice;
+    }
+
+    // If we reach here, we have a winner at each decision point and have satisfied all
+    // criteria for choosing a winner and pausing the campaign. Get all option sets for the
+    // agent and set the winner for each one.
+    $option_sets = personalize_option_set_load_by_agent($this->machineName);
+
+    foreach ($winners as $point => $choice) {
+      // The "winner" at any decision point might be a single decision or a combination
+      // of decisions, in which case they'll be separated by a comma.
+      $decisions = explode(',', $choice);
+      foreach ($decisions as $decision) {
+        list($decision_name, $option_id) = explode(':', $decision);
+        // Get all option sets for this decision name.
+        foreach ($option_sets as $osid => $option_set) {
+          if ($option_set->decision_point == $point && $option_set->decision_name == $decision_name) {
+            $option_set->winner = $option_id;
+            personalize_option_set_save($option_set);
+          }
+        }
+      }
+    }
+    return TRUE;
   }
 
   /**
@@ -944,6 +1066,7 @@ class AcquiaLiftSimpleAB extends AcquiaLiftAgent implements AcquiaLiftSimplified
   public static function simplifiedForm($agent_data) {
     return self::buildOptionsForm($agent_data, TRUE);
   }
+
 }
 
 /**

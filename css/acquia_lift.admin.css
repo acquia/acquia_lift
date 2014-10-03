@@ -266,3 +266,22 @@ tr.acquia-lift-report-control {
 .acquia-lift-graph-level-5 {
   background-image: url('../images/graph-5.png');
 }
+
+/* Acquia Lift configuration form */
+.acquia-lift-config-minimum-runtime {
+    clear: both;
+    margin-bottom: .5em;
+    width: 100%;
+    display: inline-block;
+}
+.acquia-lift-config-minimum-runtime div.form-item {
+    float: left;
+    padding-top: 1px;
+    padding-bottom: 5px;
+    margin-bottom: 0px;
+    padding-right: 10px;
+}
+
+.acquia-lift-config-minimum-runtime div.description {
+    clear: both;
+}

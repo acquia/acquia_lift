@@ -23,6 +23,13 @@ function acquia_lift_configuration_page() {
  * Admin form for configuring personalization backends.
  */
 function acquia_lift_admin_form($form, &$form_state) {
+  $form = array(
+    '#attached' => array(
+      'css' => array(
+        drupal_get_path('module', 'acquia_lift') . '/css/acquia_lift.admin.css',
+      ),
+    ),
+  );
   $account_info = variable_get('acquia_lift_account_info', array());
   $account_info_provided = !empty($account_info['owner_code']) && !empty($account_info['api_key']);
   if ($account_info_provided) {
@@ -131,6 +138,51 @@ function acquia_lift_admin_form($form, &$form_state) {
     '#description' => t('The confidence percentage at which a test is considered statistically significant.'),
     '#element_validate' => array('element_validate_number'),
   );
+
+  $form['minimum_runtime'] = array(
+    '#type' => 'container',
+    '#tree' => FALSE,
+    '#attributes' => array(
+      'class' => array('acquia-lift-config-minimum-runtime'),
+    ),
+
+  );
+  $form['minimum_runtime']['acquia_lift_min_runtime_title'] = array(
+    '#type' => 'markup',
+    '#markup' => '<label for="acquia_lift_min_runtime_num">' . t('Minimum Time to Run') . '<span class="form-required" title="This field is required.">*</span></label>',
+  );
+  $form['minimum_runtime']['acquia_lift_min_runtime_num'] = array(
+    '#type' => 'textfield',
+    '#size' => 3,
+    '#required' => TRUE,
+    '#default_value' => variable_get('acquia_lift_min_runtime_num', 2),
+    '#element_validate' => array('element_validate_number'),
+  );
+  $form['minimum_runtime']['acquia_lift_min_runtime_unit'] = array(
+    '#type' => 'select',
+    '#required' => TRUE,
+    '#default_value' => variable_get('acquia_lift_min_runtime_unit', 'week'),
+    '#options' => array(
+      'minute' => t('minutes'),
+      'hour' => t('hours'),
+      'day' => t('days'),
+      'week' => t('weeks')
+    ),
+  );
+  $form['minimum_runtime']['acquia_lift_min_runtime_desc'] = array(
+    '#type' => 'markup',
+    '#markup' => '<div class="description">' . t('The minimum amount of time a campaign should be left to run for. Only affects campaigns that are set to stop automatically when a winner is found.') . '</div>',
+  );
+  $form['acquia_lift_min_decisions'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Minimum number of decisions'),
+    '#size' => 3,
+    '#required' => TRUE,
+    '#default_value' => variable_get('acquia_lift_min_decisions', 1000),
+    '#description' => t('Minimum number of decisions before campaign can be stopped automatically. Only affects campaigns that are set to stop automatically when a winner is found.'),
+    '#element_validate' => array('element_validate_number'),
+  );
+
   $form['#submit'] = array(
     'acquia_lift_admin_form_submit',
   );

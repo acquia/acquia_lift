@@ -220,6 +220,16 @@ QUnit.test('Make decision', function(assert) {
 });
 
 QUnit.test('Multiple decisions no batching', function(assert) {
+  setSessionID(true);
+  testMultipleDecisionsNoBatch(assert, true);
+});
+
+QUnit.test('Multiple decisions no session', function(assert) {
+  setSessionID(false);
+  testMultipleDecisionsNoBatch(assert, false);
+});
+
+function testMultipleDecisionsNoBatch(assert, known) {
   var xhr = sinon.useFakeXMLHttpRequest();
   var requests = sinon.requests = [];
 
@@ -229,7 +239,10 @@ QUnit.test('Multiple decisions no batching', function(assert) {
 
   var callback = sinon.spy();
   Drupal.acquiaLift.getDecision('my-agent', {'some-feature': ['some-value', 'sc-some-value'],'other-feature': ['some,value'] }, {'first-decision': ['option-1', 'option-2']}, 'my-decision-point', {'first-decision': 0}, callback);
+  requests[0].respond(200, { "Content-Type": "application/json" }, '{"decisions": {"first-decision":"option-2"}, "session": "some-session-ID"}');
+
   Drupal.acquiaLift.getDecision('my-agent', {'some-feature': ['some-value', 'sc-some-value'],'other-feature': ['some,value'] }, {'second-decision': ['option-1', 'option-2']}, 'other-decision-point', {'second-decision': 0}, callback);
+  requests[1].respond(200, { "Content-Type": "application/json" }, '{"decisions": {"second-decision":"option-2"}, "session": "some-session-ID"}');
 
   equal(sinon.requests.length, 2);
 
@@ -238,7 +251,9 @@ QUnit.test('Multiple decisions no batching', function(assert) {
   equal(parsedUri1.path, "/someOwner/my-agent/decisions/first-decision:option-1,option-2");
   equal(parsedUri1.queryKey.apikey, "xyz123");
   equal(parsedUri1.queryKey.features, "some-feature%3A%3Asome-value%2Csome-feature%3A%3Asc-some-value%2Cother-feature%3A%3Asome-value");
-  equal(parsedUri1.queryKey.session, "some-session-ID");
+  if (known) {
+    equal(parsedUri1.queryKey.session, "some-session-ID");
+  }
 
   var parsedUri2 = parseUri(sinon.requests[1].url);
   equal(parsedUri2.host, 'api.example.com');
@@ -247,15 +262,22 @@ QUnit.test('Multiple decisions no batching', function(assert) {
   equal(parsedUri2.queryKey.features, "some-feature%3A%3Asome-value%2Csome-feature%3A%3Asc-some-value%2Cother-feature%3A%3Asome-value");
   equal(parsedUri2.queryKey.session, "some-session-ID");
 
-  requests[0].respond(200, { "Content-Type": "application/json" }, '{"decisions": {"first-decision":"option-2"}, "session": "some-session-ID"}');
-  requests[1].respond(200, { "Content-Type": "application/json" }, '{"decisions": {"second-decision":"option-2"}, "session": "some-session-ID"}');
-  ok(callback.called);
+  ok(callback.callCount, 2);
 
   cleanUp();
-});
+}
 
 QUnit.test('Make batched decisions', function(assert) {
+  setSessionID(true);
+  testBatchDecisions(assert, true);
+});
 
+QUnit.test('Make batched decisions no session', function(assert) {
+  setSessionID(false);
+  testBatchDecisions(assert, false);
+});
+
+function testBatchDecisions(assert, known) {
   Drupal.settings.acquia_lift.batchMode = true;
   var xhr = sinon.useFakeXMLHttpRequest();
   var requests = sinon.requests = [];
@@ -270,48 +292,77 @@ QUnit.test('Make batched decisions', function(assert) {
   Drupal.acquiaLift.getDecision('my-agent', {'some-feature': ['some-value', 'sc-some-value'],'other-feature': ['some,value'] }, {'second-decision': ['option-1', 'option-2']}, 'other-decision-point', {'second-decision': 0}, callback);
   // This event lets the Lift js know there are no more decisions to wait for.
   $(document).trigger('personalizeDecisionsEnd');
+  // Confirm a single request is made with the expected request body.
+  assert.equal(sinon.requests.length, 1);
 
   // Mock a response from the server so that the request completes.
   requests[0].respond(200, { "Content-Type": "application/json" }, '[{"status": 200, "data": {"agent": "my-agent", "decisions": {"first-decision":"option-2"}, "session": "some-session-ID"}}, {"status": 200, "data": {"agent": "my-agent", "decisions": {"second-decision":"option-2"}, "session": "some-session-ID"}}]');
-  // Confirm a single request is made with the expected request body.
-  assert.equal(sinon.requests.length, 1);
   var parsedUri = parseUri(sinon.requests[0].url);
   var requestBody = JSON.parse(sinon.requests[0].requestBody);
-  var expectedRequestBody = [
-    {
-      'agent': 'my-agent',
-      'choices': "first-decision:option-1,option-2",
-      'query': {
-        '_t': 0,
-        'apikey': 'xyz123',
-        'features': "some-feature::some-value,some-feature::sc-some-value,other-feature::some-value",
-        'point': 'my-decision-point',
-        'session': 'some-session-ID'
+  if (known) {
+    var expectedRequestBody = [
+      {
+        'agent': 'my-agent',
+        'choices': "first-decision:option-1,option-2",
+        'query': {
+          '_t': 0,
+          'apikey': 'xyz123',
+          'features': "some-feature::some-value,some-feature::sc-some-value,other-feature::some-value",
+          'point': 'my-decision-point',
+          'session': 'some-session-ID'
+        },
+        'type': 'decisions'
       },
-      'type': 'decisions'
-    },
-    {
-      'agent': 'my-agent',
-      'choices': "second-decision:option-1,option-2",
-      'query': {
-        '_t': 0,
-        'apikey': 'xyz123',
-        'features': "some-feature::some-value,some-feature::sc-some-value,other-feature::some-value",
-        'point': 'other-decision-point',
-        'session': 'some-session-ID'
+      {
+        'agent': 'my-agent',
+        'choices': "second-decision:option-1,option-2",
+        'query': {
+          '_t': 0,
+          'apikey': 'xyz123',
+          'features': "some-feature::some-value,some-feature::sc-some-value,other-feature::some-value",
+          'point': 'other-decision-point',
+          'session': 'some-session-ID'
+        },
+        'type': 'decisions'
+      }
+    ];
+  } else {
+    var expectedRequestBody = [
+      {
+        'agent': 'my-agent',
+        'choices': "first-decision:option-1,option-2",
+        'query': {
+          '_t': 0,
+          'apikey': 'xyz123',
+          'features': "some-feature::some-value,some-feature::sc-some-value,other-feature::some-value",
+          'point': 'my-decision-point'
+        },
+        'type': 'decisions'
       },
-      'type': 'decisions'
-    }
-  ];
-  assert.deepEqual(expectedRequestBody, requestBody);
+      {
+        'agent': 'my-agent',
+        'choices': "second-decision:option-1,option-2",
+        'query': {
+          '_t': 0,
+          'apikey': 'xyz123',
+          'features': "some-feature::some-value,some-feature::sc-some-value,other-feature::some-value",
+          'point': 'other-decision-point'
+        },
+        'type': 'decisions'
+      }
+    ];
+  }
+  assert.deepEqual(requestBody, expectedRequestBody);
   assert.equal(parsedUri.host, 'api.example.com');
   assert.equal(parsedUri.path, "/someOwner/-/batch");
-  assert.equal(parsedUri.queryKey.session, "some-session-ID");
+  if (known) {
+    assert.equal(parsedUri.queryKey.session, "some-session-ID");
+  }
 
   assert.ok(callback.called);
 
   cleanUp();
-});
+}
 
 QUnit.test('Send goal', function(assert) {
   var xhr = sinon.useFakeXMLHttpRequest();
@@ -375,6 +426,44 @@ QUnit.test('Send goal in batch mode', function(assert) {
   cleanUp();
 });
 
+QUnit.test('Make decision after goal without session', function(assert) {
+  var xhr = sinon.useFakeXMLHttpRequest();
+  var requests = sinon.requests = [];
+  initializeLiftSettings();
+
+  xhr.onCreate = function (request) {
+    requests.push(request);
+  };
+
+  // Update so that no session id is returned from the module.
+  setSessionID(false);
+
+  // Send goal.
+  Drupal.acquiaLift.sendGoal('my-agent', 'some-goal', 2);
+
+  assert.equal(sinon.requests.length, 1);
+
+  // Now make decision requests and ensure that the session id is stored.
+  var callback = sinon.spy();
+  Drupal.acquiaLift.getDecision('my-agent', {'some-feature': ['some-value', 'sc-some-value'],'other-feature': ['some,value'] }, {'first-decision': ['option-1', 'option-2']}, 'my-decision-point', {'first-decision': 0}, callback);
+  requests[1].respond(200, { "Content-Type": "application/json" }, '{"decisions": {"first-decision":"option-2"}, "session": "12345678"}');
+
+  // The second decision should include the new session returned from the server.
+  Drupal.acquiaLift.getDecision('my-agent', {'some-feature': ['some-value', 'sc-some-value'],'other-feature': ['some,value'] }, {'second-decision': ['option-1', 'option-2']}, 'other-decision-point', {'second-decision': 0}, callback);
+  var parsedUri2 = parseUri(sinon.requests[2].url);
+  equal(parsedUri2.host, 'api.example.com');
+  equal(parsedUri2.path, "/someOwner/my-agent/decisions/second-decision:option-1,option-2");
+  equal(parsedUri2.queryKey.apikey, "xyz123");
+  equal(parsedUri2.queryKey.features, "some-feature%3A%3Asome-value%2Csome-feature%3A%3Asc-some-value%2Cother-feature%3A%3Asome-value");
+  equal(parsedUri2.queryKey.session, "12345678");
+
+  requests[2].respond(200, { "Content-Type": "application/json" }, '{"decisions": {"second-decision":"option-2"}, "session": "12345678"}');
+  equal(callback.callCount, 2);
+  equal(sinon.requests.length, 3);
+
+  cleanUp();
+});
+
 // Helper for parsing the ajax request URI
 
 // parseUri 1.2.2
@@ -417,9 +506,6 @@ function readCookieQueue() {
 // Helper function to initialize the lift API settings.
 function initializeLiftSettings() {
   Drupal.acquiaLift.reset();
-  Drupal.personalize.initializeSessionID = function() {
-    return 'some-session-ID';
-  };
   Drupal.settings.personalize = Drupal.settings.personalize || {};
   Drupal.settings.acquia_lift = Drupal.settings.acquia_lift || {};
   Drupal.settings.acquia_lift.baseUrl = 'http://api.example.com';
@@ -429,6 +515,18 @@ function initializeLiftSettings() {
   Drupal.settings.acquia_lift.featureStringMaxLength = 50;
   Drupal.settings.acquia_lift.featureStringReplacePattern = '[^A-Za-z0-9_-]';
   Drupal.settings.acquia_lift.batchMode = 0;
+  setSessionID(true);
+}
+
+// Helper function to mimic a known or unknown session.
+function setSessionID(known) {
+  if (known) {
+    Drupal.personalize.initializeSessionID = function() {
+      return 'some-session-ID';
+    };
+  } else {
+    Drupal.personalize.initializeSessionID = function() { return null };
+  }
 }
 
 // Helper function to clean up after tests.

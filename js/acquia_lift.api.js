@@ -35,12 +35,6 @@
       if (sessionID) {
         options.session = sessionID;
       }
-      else {
-        // This variable ensures subsequent requests for decisions will get
-        // queued up until the first decision comes back from Acquia Lift
-        // and the session ID gets set.
-        this.initializingSession = true;
-      }
       api = new AcquiaLiftJS(
         settings.owner,
         settings.apiKey,
@@ -72,6 +66,17 @@
       },
       getSessionID: function () {
         return sessionID;
+      },
+      initializeSessionID: function () {
+        if (!sessionID) {
+          sessionID = Drupal.personalize.initializeSessionID();
+          this.initializingSession = !Boolean(sessionID);
+        } else {
+          // This variable ensures subsequent requests for decisions will get
+          // queued up until the first decision comes back from Acquia Lift
+          // and the session ID gets set.
+          this.initializingSession = true;
+        }
       },
       setSessionID: function (id) {
         sessionID = id;

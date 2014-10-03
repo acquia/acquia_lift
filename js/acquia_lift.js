@@ -27,9 +27,22 @@
 
     var settings, api, initialized = false, waitingDecisions = [];
 
-    function init() {
+    /**
+     * Initialize the API and page level processing.
+     *
+     * @param initializeSession
+     *   If true, also trigger the setting of the session.  This should
+     *   only be done by the decisions function and not by the goals function
+     *   as the decision functionality allows for setting of the session ID upon
+     *   the api result, whereas the goals functionality will not.
+     */
+    function init(initializeSession) {
       settings = Drupal.settings.acquia_lift;
       api = Drupal.acquiaLiftAPI.getInstance();
+
+      if (initializeSession) {
+        api.initializeSessionID();
+      }
 
       $(document).bind('personalizeDecisionsEnd', function(e) {
         if (settings.batchMode) {
@@ -81,9 +94,8 @@
       'getDecision': function(agent_name, visitor_context, choices, point, fallbacks, callback) {
         var self = this;
         if (!initialized) {
-          init();
-        }
-        if (api.initializingSession) {
+          init(true);
+        } else if (api.initializingSession && !api.isManualBatch()) {
           // Add this decision to the queue of waiting decisions.
           waitingDecisions.push({
             'agent_name' : agent_name,
@@ -154,7 +166,7 @@
       // Sends a goal to an agent.
       'sendGoal': function(agent_name, goal_name, value, jsEvent) {
         if (!initialized) {
-          init();
+          init(false);
         }
         var options = {
           reward: value,

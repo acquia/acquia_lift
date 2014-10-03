@@ -132,7 +132,7 @@ var _tcwq = _tcwq || [];
     if (identityCaptured || !(DrupalSettings.captureIdentity && context['mail'])) {
       return;
     }
-    _tcaq.push( [ 'captureIdentity', context['mail'], 'email' ] );
+    _tcaq.push( [ 'captureIdentity', context['mail'], 'email', {'evalSegments': true}] );
     identityCaptured = true;
   };
 
@@ -243,7 +243,7 @@ var _tcwq = _tcwq || [];
        */
       'processEvent': function(eventName, settings, context) {
         // Send to acquia_lift_profiles.
-        _tcaq.push(['capture', eventName]);
+        _tcaq.push(['capture', eventName, {'evalSegments': true}]);
         // If it's a special event with some other callback associated with it, call that
         // callback as well.
         if (typeof this.specialEvents[eventName] == 'function') {

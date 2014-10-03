@@ -16,6 +16,11 @@ module.exports = function(grunt) {
         'src/js/flow/acquia_lift.ctools.modal.js'
       ];
 
+  var goalqueuejs = [
+        'src/js/agent/acquia_lift.utility.queue.js',
+        'src/js/agent/acquia_lift.agent.goal_queue.js',
+      ];
+
   // Project configuration.
   grunt.initConfig({
     pkg: grunt.file.readJSON('package.json'),
@@ -40,6 +45,10 @@ module.exports = function(grunt) {
       flow: {
         src: flowjs,
         dest: 'js/acquia_lift.flow.js'
+      },
+      agent: {
+        src: goalqueuejs,
+        dest: 'js/acquia_lift.goals_queue.js'
       }
     },
     concurrent: {

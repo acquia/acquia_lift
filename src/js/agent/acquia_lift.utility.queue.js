@@ -19,6 +19,10 @@
     this.getId = function () {
       return queueItemUid;
     };
+
+    /**
+     * Sets the unique ID assigned to this queue item.
+     */
     this.setId = function (value) {
       queueItemUid = value;
     }
@@ -29,6 +33,10 @@
     this.getData = function () {
       return queueItemData;
     };
+
+    /**
+     * Setter for the data held by this queue item.
+     */
     this.setData = function (value) {
       queueItemData = value;
     }
@@ -39,6 +47,10 @@
     this.isProcessing = function () {
       return queueItemProcessing;
     };
+
+    /**
+     * Setter for the processing flag for this queue item.
+     */
     this.setProcessing = function (isProcessing) {
       queueItemProcessing = isProcessing;
     };
@@ -51,7 +63,7 @@
       this.setData(params.data);
       this.setProcessing(params.pflag);
     } else {
-      var uid = 'acquia-lift-ts-' + new Date().getTime();
+      var uid = 'acquia-lift-ts-' + new Date().getTime() + Math.random();
       this.setId(uid);
       this.setData(params);
       this.setProcessing(false);

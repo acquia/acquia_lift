@@ -1,7 +1,7 @@
 /**
  * Contains the definition of the Acquia Lift API.
  *
- * The abstraction of the API wrapper into it's own singleton allows different
+ * The abstraction of the API wrapper into its own singleton allows different
  * parts of the system to initialize and use the API.
  */
 

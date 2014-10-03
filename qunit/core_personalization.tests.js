@@ -2,27 +2,200 @@
  * @file libraries.js
  */
 
+QUnit.module("Acquia Lift Cookie Queue", {
+  setup: function() {
+    initializeLiftSettings();
+  }
+});
+
+QUnit.test("QueueItem unit tests", function(assert) {
+  expect(10);
+
+  var itemData = {
+    'testid': 'abc',
+    'testdata': 'foo'
+  };
+  var item = new Drupal.acquiaLiftUtility.QueueItem(itemData);
+  assert.ok(item instanceof Drupal.acquiaLiftUtility.QueueItem, 'Queue item identifies itself as the correct type.');
+  assert.equal(item.getId().indexOf('acquia-lift-ts-'), 0, 'Queue item has auto-generated id.');
+  assert.equal(item.isProcessing(), false, 'Queue item set initially to not processing.');
+  assert.deepEqual(item.getData(), itemData, 'Queue item data is set properly.');
+  var queueObj = {
+    'id': item.getId(),
+    'data': itemData,
+    'pflag': false
+  };
+  assert.deepEqual(item.toObject(), queueObj, 'Queue item can be turned into an object.');
+  queueObj.data = 'testme';
+  var item2 = new Drupal.acquiaLiftUtility.QueueItem(queueObj);
+  assert.ok(item.equals(item2), 'Queue item equality check passes based on id only.');
+  queueObj.data = itemData;
+  queueObj.id = 'newid';
+  var item3 = new Drupal.acquiaLiftUtility.QueueItem(queueObj);
+  assert.ok(!item.equals(item3), 'Queue item equality check passes based on id only.');
+  assert.ok(!item.equals(queueObj), 'Queue item can equality check can handle invalid data.');
+  item.setProcessing(true);
+  assert.equal(item.isProcessing(), true, 'Queue item has processing value changed.');
+  item.reset();
+  assert.equal(item.isProcessing(), false, 'Queue item processing can be reset.');
+});
+
+QUnit.test("Queue unit tests", function(assert) {
+  var $ = jQuery,
+    testData1 = {'testdata': 1},
+    testData2 = {'testdata': 2};
+
+  expect(20);
+
+  // Qunit/sinon resets all dates which affects our automatic ids.
+  if (this.clock) {
+    this.clock.restore();
+  }
+
+  // Start by clearing the queue so we can test.
+  Drupal.acquiaLiftUtility.Queue.empty();
+  assert.deepEqual(readCookieQueue(), [], 'Cookie queue is empty.');
+
+  // Now add an item to the queue.
+  Drupal.acquiaLiftUtility.Queue.add(testData1);
+  var queue = readCookieQueue();
+  assert.ok(queue instanceof Array, 'Cookie contents are an array.');
+  assert.equal(queue.length, 1, 'Cookie queue has one item.');
+  assert.deepEqual(queue[0].data, testData1, 'Item has the correct data.');
+  assert.equal(queue[0].pflag, false, 'Item has been added as not in processing.');
+
+  // Add another item to the queue.
+  Drupal.acquiaLiftUtility.Queue.add(testData2);
+  var queue = readCookieQueue();
+  assert.ok(queue instanceof Array, 'Cookie contents are an array.');
+  assert.equal(queue.length, 2, 'Cookie queue has two items.');
+  assert.deepEqual(queue[1].data, testData2, 'New item has the correct data.');
+
+  // Get the next item for processing
+  var next = Drupal.acquiaLiftUtility.Queue.getNext();
+  assert.ok(next instanceof Drupal.acquiaLiftUtility.QueueItem, 'Next item for processing is a QueueItem');
+  assert.ok(next.isProcessing(), 'Next item has been marked as processing.');
+  assert.deepEqual(next.getData(), testData1, 'Next item is the first added to the queue.');
+
+  // Now add it back into the queue.
+  Drupal.acquiaLiftUtility.Queue.add(next);
+  var queue = readCookieQueue();
+  assert.equal(queue.length, 2, 'The queue is still at two items.');
+  assert.deepEqual(queue[0].data, testData1, 'The re-added item was set back to its original index.');
+  assert.equal(queue[0].pflag, false, 'The item has had its processing status correctly reset.');
+
+  // Now get two items for processing.
+  var next1 = Drupal.acquiaLiftUtility.Queue.getNext();
+  var next2 = Drupal.acquiaLiftUtility.Queue.getNext();
+  var next3 = Drupal.acquiaLiftUtility.Queue.getNext();
+  assert.deepEqual(next1.getData(), testData1, 'The first item returned was the first added.');
+  assert.deepEqual(next2.getData(), testData2, 'The second item returned was the second added.');
+  assert.ok(next3 == null, 'There was no third item returned for processing.');
+
+  // Remove an item from the queue.
+  Drupal.acquiaLiftUtility.Queue.remove(next2);
+  var queue = readCookieQueue();
+  assert.equal(queue.length, 1, 'The queue now has one item for processing.');
+  assert.deepEqual(queue[0].data, testData1, 'The correct item remained in the queue.');
+
+  // Reset the queue.
+  Drupal.acquiaLiftUtility.Queue.reset();
+  var queue = readCookieQueue();
+  assert.equal(queue[0].pflag, false, 'The remaining item has been reset.');
+});
+
+QUnit.test("Goals queue", function(assert) {
+  // Clear out the queue
+  // Qunit/sinon resets all dates which affects our automatic ids.
+  if (this.clock) {
+    this.clock.restore();
+  }
+
+  // Create a fake request for the goals api call.
+  var xhr = sinon.useFakeXMLHttpRequest();
+  var requests = sinon.requests = [];
+
+  xhr.onCreate = function (request) {
+    requests.push(request);
+  };
+
+  // Start by clearing the queue so we can test.
+  Drupal.acquiaLiftUtility.Queue.empty();
+  assert.deepEqual(readCookieQueue(), [], 'Cookie queue is empty.');
+
+  var agentName = 'test-agent';
+  var testGoal1 = {
+    reward: 1,
+    goal: 'goal1'
+  };
+  var testGoal2 = {
+    reward: 2,
+    goal: 'goal2'
+  };
+
+  // Spy on the queue to see that the correct functions are called.
+  sinon.spy(Drupal.acquiaLiftUtility.Queue, 'add');
+  sinon.spy(Drupal.acquiaLiftUtility.Queue, 'remove');
+
+  // Add a goal to the goals queue without processing.
+  Drupal.acquiaLiftUtility.GoalQueue.addGoal(agentName, testGoal1, false);
+  var queueData = {
+    'a': agentName,
+    'o': testGoal1
+  };
+  var queueData2 = {
+    'a': agentName,
+    'o': testGoal2
+  };
+  // Get the queue item for assertions and then clear out the processing status.
+  var item = Drupal.acquiaLiftUtility.Queue.getNext();
+  Drupal.acquiaLiftUtility.Queue.reset();
+
+  // Verify the add process.
+  assert.ok(Drupal.acquiaLiftUtility.Queue.add.calledWith(queueData), 'The queue add method was called with queue data.');
+
+  // Now go ahead and process the queue.
+  Drupal.acquiaLiftUtility.GoalQueue.processQueue();
+
+  // For now just check that a request was made to the right path since we are
+  // testing the queue process here.  Tests specific to goals processing with
+  // handle deeper checkers of parameters, etc.
+  assert.equal(sinon.requests.length, 1, 'The api was called once.');
+
+  var parsed = parseUri(sinon.requests[0].url);
+  assert.equal(parsed.host, 'api.example.com', 'API host is correct.');
+  assert.equal(parsed.path, '/someOwner/' + agentName + '/goal/' + testGoal1.goal, 'API path is correct.');
+
+  sinon.requests[0].respond(200, { "Content-Type": "application/json" }, '{"agent": "' + agentName + '", "session": "some-session-ID", "reward":"' + testGoal1.reward + '", "goal":"' + testGoal1.goal + '"}');
+  assert.equal(Drupal.acquiaLiftUtility.Queue.remove.callCount, 1, 'The remove call was made once.');
+  var removeCall = Drupal.acquiaLiftUtility.Queue.remove.getCall(0);
+  assert.ok(item.equals(removeCall.args[0]), 'The remove call was made with the goal item previously added.');
+
+  // Now add a goal that results in an error from the API and verify that it remains in the queue for later processing.
+  Drupal.acquiaLiftUtility.GoalQueue.addGoal(agentName, testGoal2);
+  assert.ok(Drupal.acquiaLiftUtility.Queue.add.calledWith(queueData2), 'The second goal was added to the queue.');
+  assert.equal(sinon.requests.length, 2, 'Another api call was made.');
+  sinon.requests[1].respond(500, {"Content-Type": "application/json"}, '[{"status": 500}]');
+  assert.equal(Drupal.acquiaLiftUtility.Queue.remove.callCount, 1, 'The remove call was not called again.');
+  var nextGoal = Drupal.acquiaLiftUtility.Queue.getNext();
+  assert.deepEqual(nextGoal.getData(), queueData2, 'The second goal is still in the queue.');
+
+  // Clean up after the sinon wrappers.
+  xhr.restore();
+  Drupal.acquiaLiftUtility.Queue.add.restore();
+  Drupal.acquiaLiftUtility.Queue.remove.restore();
+});
+
 QUnit.module("Acquia Lift service calls", {
   'setup': function() {
-    Drupal.acquiaLift.reset();
-    Drupal.personalize.initializeSessionID = function() {
-      return 'some-session-ID';
-    };
-    Drupal.settings.personalize = Drupal.settings.personalize || {};
-    Drupal.settings.acquia_lift = Drupal.settings.acquia_lift || {};
-    Drupal.settings.acquia_lift.baseUrl = 'http://api.example.com';
-    Drupal.settings.acquia_lift.owner = 'someOwner';
-    Drupal.settings.acquia_lift.apiKey = 'xyz123';
-    Drupal.settings.acquia_lift.featureStringSeparator = '::';
-    Drupal.settings.acquia_lift.featureStringMaxLength = 50;
-    Drupal.settings.acquia_lift.featureStringReplacePattern = '[^A-Za-z0-9_-]';
-    Drupal.settings.acquia_lift.batchMode = 0;
+    initializeLiftSettings();
   }
 });
 
 QUnit.test('Make decision', function(assert) {
   var xhr = sinon.useFakeXMLHttpRequest();
   var requests = sinon.requests = [];
+  initializeLiftSettings();
 
   xhr.onCreate = function (request) {
     requests.push(request);
@@ -40,8 +213,10 @@ QUnit.test('Make decision', function(assert) {
   equal(parsed.queryKey.features, "some-feature%3A%3Asome-value%2Csome-feature%3A%3Asc-some-value%2Cother-feature%3A%3Asome-value");
   equal(parsed.queryKey.session, "some-session-ID");
 
-  requests[0].respond(200, { "Content-Type": "application/json" }, '{"decisions": {"first-decision":"option-2"}, "session": "1234678"}');
+  requests[0].respond(200, { "Content-Type": "application/json" }, '{"decisions": {"first-decision":"option-2"}, "session": "some-session-ID"}');
   ok(callback.called);
+
+  cleanUp();
 });
 
 QUnit.test('Multiple decisions no batching', function(assert) {
@@ -72,9 +247,11 @@ QUnit.test('Multiple decisions no batching', function(assert) {
   equal(parsedUri2.queryKey.features, "some-feature%3A%3Asome-value%2Csome-feature%3A%3Asc-some-value%2Cother-feature%3A%3Asome-value");
   equal(parsedUri2.queryKey.session, "some-session-ID");
 
-  requests[0].respond(200, { "Content-Type": "application/json" }, '{"decisions": {"first-decision":"option-2"}, "session": "1234678"}');
-  requests[1].respond(200, { "Content-Type": "application/json" }, '{"decisions": {"second-decision":"option-2"}, "session": "1234678"}');
+  requests[0].respond(200, { "Content-Type": "application/json" }, '{"decisions": {"first-decision":"option-2"}, "session": "some-session-ID"}');
+  requests[1].respond(200, { "Content-Type": "application/json" }, '{"decisions": {"second-decision":"option-2"}, "session": "some-session-ID"}');
   ok(callback.called);
+
+  cleanUp();
 });
 
 QUnit.test('Make batched decisions', function(assert) {
@@ -95,7 +272,7 @@ QUnit.test('Make batched decisions', function(assert) {
   $(document).trigger('personalizeDecisionsEnd');
 
   // Mock a response from the server so that the request completes.
-  requests[0].respond(200, { "Content-Type": "application/json" }, '[{"status": 200, "data": {"agent": "my-agent", "decisions": {"first-decision":"option-2"}, "session": "1234678"}}, {"status": 200, "data": {"agent": "my-agent", "decisions": {"second-decision":"option-2"}, "session": "1234678"}}}]');
+  requests[0].respond(200, { "Content-Type": "application/json" }, '[{"status": 200, "data": {"agent": "my-agent", "decisions": {"first-decision":"option-2"}, "session": "some-session-ID"}}, {"status": 200, "data": {"agent": "my-agent", "decisions": {"second-decision":"option-2"}, "session": "some-session-ID"}}]');
   // Confirm a single request is made with the expected request body.
   assert.equal(sinon.requests.length, 1);
   var parsedUri = parseUri(sinon.requests[0].url);
@@ -133,6 +310,7 @@ QUnit.test('Make batched decisions', function(assert) {
 
   assert.ok(callback.called);
 
+  cleanUp();
 });
 
 QUnit.test('Send goal', function(assert) {
@@ -143,9 +321,6 @@ QUnit.test('Send goal', function(assert) {
     requests.push(request);
   };
 
-  // Need to mock this function that gets called by sendGoal.
-  Drupal.visitorActions = Drupal.visitorActions || {};
-  Drupal.visitorActions.preventDefaultCallback = function(event) {};
   Drupal.acquiaLift.sendGoal('my-agent', 'some-goal', 2);
 
   assert.equal(sinon.requests.length, 1);
@@ -157,7 +332,9 @@ QUnit.test('Send goal', function(assert) {
   // For some reason the URI parser has trouble with the first param in a querystring
   assert.ok(parsed.query.indexOf('reward=2') != -1);
 
-  requests[0].respond(200, { "Content-Type": "application/json" }, '{"agent": my-agent, "session": "1234678", "reward":2, "goal": "some-goal"}');
+  requests[0].respond(200, { "Content-Type": "application/json" }, '{"agent": my-agent, "session": "some-session-ID", "reward":2, "goal": "some-goal"}');
+
+  cleanUp();
 });
 
 QUnit.test('Send goal in batch mode', function(assert) {
@@ -169,9 +346,6 @@ QUnit.test('Send goal in batch mode', function(assert) {
     requests.push(request);
   };
 
-  // Need to mock this function that gets called by sendGoal.
-  Drupal.visitorActions = Drupal.visitorActions || {};
-  Drupal.visitorActions.preventDefaultCallback = function(event) {};
   Drupal.acquiaLift.sendGoal('my-agent', 'some-goal', 2);
 
   assert.equal(sinon.requests.length, 1);
@@ -196,7 +370,9 @@ QUnit.test('Send goal in batch mode', function(assert) {
   assert.equal(parsedUri.host, 'api.example.com');
   assert.equal(parsedUri.path, "/someOwner/-/batch");
 
-  requests[0].respond(200, { "Content-Type": "application/json" }, '[{"status": 200, "data": {"agent": "my-agent", "session": "1234678", "reward":2, "goal":"some-goal"}}]');
+  requests[0].respond(200, { "Content-Type": "application/json" }, '[{"status": 200, "data": {"agent": "my-agent", "session": "some-session-ID", "reward":2, "goal":"some-goal"}}]');
+
+  cleanUp();
 });
 
 // Helper for parsing the ajax request URI
@@ -220,7 +396,6 @@ function parseUri (str) {
 
   return uri;
 };
-
 parseUri.options = {
   strictMode: false,
   key: ["source","protocol","authority","userInfo","user","password","host","port","relative","path","directory","file","query","anchor"],
@@ -233,3 +408,31 @@ parseUri.options = {
     loose:  /^(?:(?![^:@]+:[^:@\/]*@)([^:\/?#.]+):)?(?:\/\/)?((?:(([^:@]*)(?::([^:@]*))?)?@)?([^:\/?#]*)(?::(\d*))?)(((\/(?:[^?#](?![^?#\/]*\.[^?#\/.]+(?:[?#]|$)))*\/?)?([^?#\/]*))(?:\?([^#]*))?(?:#(.*))?)/
   }
 };
+
+// Helper function to read the queue cookie contents.
+function readCookieQueue() {
+  return jQuery.parseJSON(jQuery.cookie('acquiaLiftQueue'));
+};
+
+// Helper function to initialize the lift API settings.
+function initializeLiftSettings() {
+  Drupal.acquiaLift.reset();
+  Drupal.personalize.initializeSessionID = function() {
+    return 'some-session-ID';
+  };
+  Drupal.settings.personalize = Drupal.settings.personalize || {};
+  Drupal.settings.acquia_lift = Drupal.settings.acquia_lift || {};
+  Drupal.settings.acquia_lift.baseUrl = 'http://api.example.com';
+  Drupal.settings.acquia_lift.owner = 'someOwner';
+  Drupal.settings.acquia_lift.apiKey = 'xyz123';
+  Drupal.settings.acquia_lift.featureStringSeparator = '::';
+  Drupal.settings.acquia_lift.featureStringMaxLength = 50;
+  Drupal.settings.acquia_lift.featureStringReplacePattern = '[^A-Za-z0-9_-]';
+  Drupal.settings.acquia_lift.batchMode = 0;
+}
+
+// Helper function to clean up after tests.
+function cleanUp() {
+  Drupal.acquiaLift.reset();
+  sinon.restore();
+}

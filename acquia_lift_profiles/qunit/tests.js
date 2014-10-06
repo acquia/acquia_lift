@@ -205,7 +205,7 @@ QUnit.asyncTest( "personalize decision event", function( assert ) {
           'cache_decisions': false,
           'enabled_contexts': [],
           'type': 'test_agent',
-          'title' : 'Test Agent'
+          'label' : 'Test Agent'
         }
       }
     }

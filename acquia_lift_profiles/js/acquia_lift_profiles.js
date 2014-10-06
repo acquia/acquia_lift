@@ -143,20 +143,20 @@ var _tcwq = _tcwq || [];
 
     // Keeps track of processed listeners so we don't subscribe them more than once.
     var processedListeners = {}, initialized = false, initializing = false;
-    var agentNameToTitle = {};
+    var agentNameToLabel = {};
 
     /**
-     * Returns the agent tile (label) for the given agent name.
-     * If there is no title then the agent name is returned.
+     * Returns the agent label for the given agent name.
+     * If there is no label then the agent name is returned.
      *
      * @param agent_name
      */
-    function getAgentTitle( agent_name ) {
-      var agent_title = agent_name;
-      if ( agentNameToTitle[agent_name] ) {
-        agent_title = agentNameToTitle[agent_name];
+    function getAgentLabel( agent_name ) {
+      var agent_label = agent_name;
+      if ( agentNameToLabel[agent_name] ) {
+        agent_label = agentNameToLabel[agent_name];
       }
-      return agent_title;
+      return agent_label;
     }
 
     return {
@@ -164,13 +164,14 @@ var _tcwq = _tcwq || [];
         if (initialized || initializing) {
           return;
         }
+
         initializing = true;
         if ( settings.personalize && settings.personalize.agent_map ) {
           var agent_map = settings.personalize.agent_map;
           for (var agent_name in agent_map) {
             if (agent_map.hasOwnProperty(agent_name)) {
-              if (agent_map[agent_name].title) {
-                agentNameToTitle[agent_name] = agent_map[agent_name].title;
+              if (agent_map[agent_name].label) {
+                agentNameToLabel[agent_name] = agent_map[agent_name].label;
               }
             }
           }
@@ -283,12 +284,12 @@ var _tcwq = _tcwq || [];
           decision = 'Control';
         }
 
-        _tcaq.push(['capture', 'Campaign Action', {'campaignid':agent_name, 'campaignname':getAgentTitle(agent_name), 'offerid': decision, 'actionName':decision, 'evalSegments': true } ]);
+        _tcaq.push(['capture', 'Campaign Action', {'campaignid':agent_name, 'campaignname':getAgentLabel(agent_name), 'offerid': decision, 'actionName':decision, 'evalSegments': true } ]);
 
       },
 
       'processSentGoalToAgent':function(e, agent_name, goal_name, goal_value) {
-        _tcaq.push(['capture', goal_name, {'campaignid':agent_name, 'campaignname':getAgentTitle(agent_name), 'evalSegments': true}]);
+        _tcaq.push(['capture', goal_name, {'campaignid':agent_name, 'campaignname':getAgentLabel(agent_name), 'evalSegments': true}]);
       },
       /**
        * Add an action listener for client-side goal events.
@@ -323,6 +324,7 @@ var _tcwq = _tcwq || [];
       }
     }
   })();
+
 
   /**
    * Goes through the server-side actions and calls the appropriate function for

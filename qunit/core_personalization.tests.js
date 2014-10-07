@@ -376,14 +376,13 @@ QUnit.test('Send goal', function(assert) {
 
   assert.equal(sinon.requests.length, 1);
   var parsed = parseUri(sinon.requests[0].url);
-  console.log(parsed);
   assert.equal(parsed.host, 'api.example.com');
   assert.equal(parsed.path, "/someOwner/my-agent/goal/some-goal");
   assert.equal(parsed.queryKey.apikey, "xyz123");
   // For some reason the URI parser has trouble with the first param in a querystring
   assert.ok(parsed.query.indexOf('reward=2') != -1);
 
-  requests[0].respond(200, { "Content-Type": "application/json" }, '{"agent": my-agent, "session": "some-session-ID", "reward":2, "goal": "some-goal"}');
+  requests[0].respond(200, { "Content-Type": "application/json" }, '{"agent": "my-agent", "session": "some-session-ID", "reward":2, "goal": "some-goal"}');
 
   cleanUp();
 });
@@ -463,6 +462,58 @@ QUnit.test('Make decision after goal without session', function(assert) {
 
   cleanUp();
 });
+
+QUnit.test('Page load goals queue processing', function(assert) {
+  var xhr = sinon.useFakeXMLHttpRequest();
+  var requests = sinon.requests = [];
+  initializeLiftSettings();
+
+  xhr.onCreate = function (request) {
+    requests.push(request);
+  };
+
+  // Add a goal to the queue without processing it.
+  // Start by clearing the queue so we can test.
+  Drupal.acquiaLiftUtility.Queue.empty();
+  assert.deepEqual(readCookieQueue(), [], 'Cookie queue is empty.');
+
+  var agentName = 'test-agent';
+  var testGoal = {
+    reward: 1,
+    goal: 'goal1'
+  };
+
+  sinon.spy(Drupal.acquiaLiftUtility.GoalQueue, 'processQueue');
+
+  // Add a goal to the goals queue without processing.
+  Drupal.acquiaLiftUtility.GoalQueue.addGoal(agentName, testGoal, false);
+
+  var queue = readCookieQueue();
+  assert.equal(queue.length, 1, 'Goals queue has one item.');
+
+  // Call the queue page processing.
+  Drupal.behaviors.acquia_lift_goal_queue.attach(jQuery(document), Drupal.settings);
+
+  // Make sure the correct URL was called.
+  assert.equal(sinon.requests.length, 1);
+  var parsed = parseUri(sinon.requests[0].url);
+  assert.equal(parsed.host, 'api.example.com');
+  assert.equal(parsed.path, "/someOwner/test-agent/goal/goal1");
+  assert.equal(parsed.queryKey.apikey, "xyz123");
+  assert.equal(parsed.queryKey.session, "some-session-ID");
+  assert.ok(parsed.query.indexOf('reward=1') != -1);
+
+  requests[0].respond(200, { "Content-Type": "application/json" }, '{"agent": "test-agent", "session": "some-session-ID", "reward":1, "goal": "goal1"}');
+
+  // Make sure the cookie queue was emptied.
+  assert.ok(Drupal.acquiaLiftUtility.GoalQueue.processQueue.called, 'Process queue was called');
+  assert.equal(Drupal.acquiaLiftUtility.GoalQueue.processQueue.callCount, 1, 'Process queue was called only once.');
+
+  queue = readCookieQueue();
+  assert.equal(queue.length, 0, 'Goals queue is empty.');
+
+  cleanUp();
+})
 
 // Helper for parsing the ajax request URI
 

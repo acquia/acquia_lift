@@ -20,7 +20,6 @@
       this.initializingSession = false;
 
       var settings = Drupal.settings.acquia_lift;
-      sessionID = Drupal.personalize.initializeSessionID();
 
       var options = {
         'cookies': null, // we provide our own cookie support
@@ -32,14 +31,22 @@
       }
 
       // At this stage we still may not have a session ID.
-      if (sessionID) {
+      if (readSessionID()) {
         options.session = sessionID;
       }
+
       api = new AcquiaLiftJS(
         settings.owner,
         settings.apiKey,
         options
       );
+    }
+
+    function readSessionID() {
+      if (!sessionID) {
+        sessionID = Drupal.personalize.initializeSessionID();
+      }
+      return sessionID;
     }
 
     /**
@@ -59,6 +66,9 @@
         api.decision(agent_name, options, callback);
       },
       goal: function(agent_name, options, callback) {
+        if (readSessionID()) {
+          options.session = sessionID;
+        }
         api.goal(agent_name, options, callback);
       },
       isManualBatch: function () {
@@ -68,15 +78,10 @@
         return sessionID;
       },
       initializeSessionID: function () {
-        if (!sessionID) {
-          sessionID = Drupal.personalize.initializeSessionID();
-          this.initializingSession = !Boolean(sessionID);
-        } else {
-          // This variable ensures subsequent requests for decisions will get
-          // queued up until the first decision comes back from Acquia Lift
-          // and the session ID gets set.
-          this.initializingSession = true;
-        }
+        // This variable ensures subsequent requests for decisions will get
+        // queued up until the first decision comes back from Acquia Lift
+        // and the session ID gets set.
+        this.initializingSession = !Boolean(readSessionID());
       },
       setSessionID: function (id) {
         sessionID = id;

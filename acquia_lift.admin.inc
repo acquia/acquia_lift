@@ -785,6 +785,10 @@ function acquia_lift_create_campaign_type_form($form, &$form_state, $type) {
       $form['agent'] = _acquia_lift_create_simplified_campaign_form('acquia_lift_simple_ab');
       break;
   }
+  if (empty($form['agent'])) {
+    // There isn't any agent data to act upon.
+    return $form;
+  }
   // Add common actions.
   $form['actions']['submit_form'] = array(
     '#type' => 'submit',

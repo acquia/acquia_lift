@@ -911,6 +911,7 @@ function acquia_lift_library() {
           'acquia-lift-style' => array(
             'modalSize' => array(
               'type' => 'dynamic',
+              'width' => 450,
               'addWidth' => 0,
               'addHeight' => 0,
               'contentRight' => 0,

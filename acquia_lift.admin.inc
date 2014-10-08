@@ -1652,6 +1652,7 @@ function acquia_lift_create_ctools_form($title, $form_name, $args = array(), $ca
   ctools_include('modal');
   ctools_include('ajax');
   ctools_modal_add_js();
+  ctools_js_load('ajax-responder');
 
   $form_state = array(
     'ajax' => TRUE,

@@ -2,7 +2,6 @@
 input[type="submit"].acquia-lift-submit-button,
 .acquia-lift-cancel-button {
   -webkit-appearance: none;
-  display: inline-block;
   -moz-box-sizing: border-box;
   box-sizing: border-box;
   margin: 0.2963em;

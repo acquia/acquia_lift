@@ -395,7 +395,7 @@ function acquia_lift_report_custom($form, &$form_state, $agent, $agent_data, $op
   if ($data['decision_style'] === 'adaptive') {
     $report_title_additional = theme('acquia_lift_percentage_label', array(
       'percent_label' => t('Random'),
-      'rest_label' => 'Personalized',
+      'rest_label' => t('Personalized'),
       'percent' => $data['explore_rate']
     ));
   }
@@ -403,7 +403,7 @@ function acquia_lift_report_custom($form, &$form_state, $agent, $agent_data, $op
   // Overview report section.
   $form['overview_report'] = array(
     'overview_report_title' => array(
-      '#markup' => '<h2>Overview</h2>',
+      '#markup' => '<h2>' . t('Overview') . '</h2>',
     ),
     '#theme_wrappers' => array('container'),
     '#attributes' => array(
@@ -431,7 +431,7 @@ function acquia_lift_report_custom($form, &$form_state, $agent, $agent_data, $op
           'class' => array('acquia-lift-report-section-title'),
         ),
         'report_title' => array(
-          '#markup' => '<h2>Experiment</h2>',
+          '#markup' => '<h2>' . t('Experiment') . '</h2>',
         ),
       ),
     ),
@@ -448,7 +448,7 @@ function acquia_lift_report_custom($form, &$form_state, $agent, $agent_data, $op
   );
   if (!empty($report_title_additional)) {
     $form['experiment_report']['header']['title']['groups'] = array(
-      '#markup' => 'random group',
+      '#markup' => t('random group'),
     );
     $form['experiment_report']['header']['summary']['distribution'] = array(
       '#markup' => $report_title_additional,
@@ -507,7 +507,7 @@ function acquia_lift_report_custom($form, &$form_state, $agent, $agent_data, $op
   );
   if (!empty($report_title_additional)) {
     $form['context_report']['header']['title']['groups'] = array(
-      '#markup' => 'random and personalized groups',
+      '#markup' => t('random and personalized groups'),
     );
     $form['context_report']['header']['summary']['distribution'] = array(
       '#markup' => $report_title_additional,
@@ -554,7 +554,7 @@ function acquia_lift_report_custom($form, &$form_state, $agent, $agent_data, $op
           'class' => array('acquia-lift-report-section-title'),
         ),
         'report_title' => array(
-          '#markup' => '<h2>Context Stability</h2>',
+          '#markup' => '<h2>' . t('Context Stability') . '</h2>',
         ),
       ),
       'summary' => array(
@@ -571,7 +571,7 @@ function acquia_lift_report_custom($form, &$form_state, $agent, $agent_data, $op
   );
   if (!empty($report_title_additional)) {
     $form['advanced_reports']['stability_report']['header']['title']['groups'] = array(
-      '#markup' => 'random and personalized groups',
+      '#markup' => t('random and personalized groups'),
     );
     $form['advanced_reports']['stability_report']['header']['summary']['distribution'] = array(
       '#markup' => $report_title_additional,

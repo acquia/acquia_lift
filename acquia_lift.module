@@ -800,8 +800,7 @@ function acquia_lift_process_queue($exit_on_finish = TRUE) {
         'campaigns' => personalize_agent_get_settings(),
       )), TRUE),
     );
-    $page = array('#type' => 'ajax', '#commands' => $commands);
-    ajax_deliver($page);
+    personalize_ajax_commands_deliver($commands);
     drupal_exit();
   }
   else {

@@ -1032,7 +1032,7 @@ function acquia_lift_page_variation_details_form_ajax_callback($form, &$form_sta
     $commands[] = acquia_lift_command_page_variation_toggle(FALSE);
   }
 
-  return array('#type' => 'ajax', '#commands' => $commands);
+  return personalize_ajax_commands_deliver($commands, TRUE);
 }
 
 /**
@@ -1674,8 +1674,7 @@ function acquia_lift_create_ctools_form($title, $form_name, $args = array(), $ca
       );
     }
   }
-  $page = array('#type' => 'ajax', '#commands' => $output);
-  ajax_deliver($page);
+  personalize_ajax_commands_deliver($output);
 }
 
 /**

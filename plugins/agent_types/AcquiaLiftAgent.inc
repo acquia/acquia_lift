@@ -1766,6 +1766,7 @@ abstract class AcquiaLiftReportBase implements PersonalizeAgentReportInterface, 
         )),
       ),
     );
+    $confidence_message_shown = FALSE;
     $rows = array();
     foreach ($report_data['data'] as $feature => $feature_data) {
       if (!in_array($feature, $all_report_data['features'])) {
@@ -1799,8 +1800,9 @@ abstract class AcquiaLiftReportBase implements PersonalizeAgentReportInterface, 
             'rowspan' => count($feature_data),
             'class' => array('acquia-lift-ab-winner'),
           );
+          $confidence_message_shown = TRUE;
         }
-        else {
+        else if (!$confidence_message_shown) {
           // Show the winner indicator if this is the winning variation.
           $data[] = $confidence && $winner == $data['counter'] ? '<span class="lift-winner">' . t('Winner') . '</span>' : '';
         }

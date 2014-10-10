@@ -321,6 +321,18 @@ var _tcwq = _tcwq || [];
       'specialEvents': {
         'user_login': pushCaptureEmail,
         'user_register': pushCaptureEmail
+      },
+
+      /**
+       * Helper function to reset variables during tests.
+       */
+      'resetAll' : function() {
+        processedListeners = {};
+        initialized = false;
+        initializing = false;
+        agentNameToLabel = {};
+        $(document).unbind('personalizeDecision', this["processPersonalizeDecision"]);
+        $(document).unbind('sentGoalToAgent', this["processSentGoalToAgent"]);
       }
     }
   })();

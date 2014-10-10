@@ -183,10 +183,9 @@ function acquia_lift_admin_form($form, &$form_state) {
     '#element_validate' => array('element_validate_number'),
   );
 
-  $form['#submit'] = array(
-    'acquia_lift_admin_form_submit',
-  );
-  return system_settings_form($form);
+  $form = system_settings_form($form);
+  $form['#submit'][] = 'acquia_lift_admin_form_submit';
+  return $form;
 }
 
 /**
@@ -265,8 +264,11 @@ function acquia_lift_admin_form_submit($form, &$form_state) {
     drupal_set_message(t('A minimum confidence measure of 95% is recommended to ensure proper evaluation of test results.'), 'warning');
   }
 
-  // Clear the ctools plugin "agent_type" cache for personalize.
-  cache_clear_all('plugins:personalize:agent_type', 'cache');
+  // Clear the ctools plugin "agent_type" cache for personalize, clear loaded
+  // files cache, and rebuild the autoloader class definitions.
+  cache_clear_all('plugins:personalize:agent_type', 'cache', TRUE);
+  cache_clear_all('ctools_plugin_files:personalize:agent_type', 'cache', TRUE);
+  registry_rebuild();
 }
 
 /**

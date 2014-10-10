@@ -1735,15 +1735,15 @@ class AcquiaLiftQueue extends SystemQueue {
    * @return bool|void
    */
   public function releaseItem($item) {
-    if (!isset($retries[$item->item_id])) {
-      $retries[$item->item_id] = 0;
+    if (!isset(self::$retries[$item->item_id])) {
+      self::$retries[$item->item_id] = 0;
     }
-    elseif($retries[$item->item_id] >= self::MAX_RETRIES) {
+    elseif(self::$retries[$item->item_id] >= self::MAX_RETRIES) {
       $this->deleteItem($item);
       return;
     }
     parent::releaseItem($item);
-    $retries[$item->item_id]++;
+    self::$retries[$item->item_id]++;
   }
 
   /**

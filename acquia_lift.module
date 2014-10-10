@@ -253,7 +253,7 @@ function acquia_lift_init() {
     // warn the user that their configuration has not been fully sync'd.
     $queue = DrupalQueue::get('acquia_lift_sync');
     if ($queue->numberOfItems() > 0) {
-      $message = t('At least one of your agents has configuration that has not been fully sync\'d to Acquia Lift. This should resolve itself on the next cron run.');
+      $message = t('At least one of your campaigns has configuration that has not been fully synchronized with Acquia Lift. This should resolve itself on the next cron run.');
       if (user_access('administer site configuration')) {
         $message .= t(' Click here to <a href="@cron">run cron manually</a>.', array('@cron' => url('admin/reports/status/run-cron')));
       }

@@ -1111,7 +1111,7 @@ class AcquiaLiftWebTest extends DrupalWebTestCase {
     // Confirm that the queue is now empty.
     $this->assertQueueItems(array());
     $this->drupalGet('admin/structure/personalize');
-    $this->assertNoText(t('At least one of your agents has configuration that has not been fully sync\'d to Acquia Lift. This should resolve itself on the next cron run.'));
+    $this->assertNoText(t('At least one of your campaigns has configuration that has not been fully synchronized with Acquia Lift. This should resolve itself on the next cron run.'));
 
     // Now save it again but don't process the queue.
     $this->drupalPost("admin/structure/personalize/manage/$machine_name/edit", array(), $this->getButton('agent'));
@@ -1141,15 +1141,34 @@ class AcquiaLiftWebTest extends DrupalWebTestCase {
     // Now they should get a message warning them that there are items that
     // need to get sync'd to Acquia Lift.
     $this->drupalGet('admin/structure/personalize');
-    $this->assertText(t('At least one of your agents has configuration that has not been fully sync\'d to Acquia Lift. This should resolve itself on the next cron run.'));
+    $this->assertText(t('At least one of your campaigns has configuration that has not been fully synchronized with Acquia Lift. This should resolve itself on the next cron run.'));
 
     $this->drupalLogout();
     $admin_user = $this->drupalCreateUser(array('administer site configuration', 'access administration pages', 'manage personalized content'));
     $this->drupalLogin($admin_user);
     $this->drupalGet('admin/structure/personalize');
-    $this->assertRaw(t('At least one of your agents has configuration that has not been fully sync\'d to Acquia Lift. This should resolve itself on the next cron run.') . t(' Click here to <a href="@cron">run cron manually</a>.', array('@cron' => url('admin/reports/status/run-cron'))));
+    $this->assertRaw(t('At least one of your campaigns has configuration that has not been fully synchronized with Acquia Lift. This should resolve itself on the next cron run.') . t(' Click here to <a href="@cron">run cron manually</a>.', array('@cron' => url('admin/reports/status/run-cron'))));
     // Now run cron
     $this->drupalGet('admin/reports/status/run-cron');
+    $this->assertQueueItems(array());
+
+    // Now save the agent again.
+    $this->drupalPost("admin/structure/personalize/manage/$machine_name/edit", array(), $this->getButton('agent'));
+    $expected_queue_items = array($queued_agent_item);
+    $this->assertQueueItems($expected_queue_items);
+
+    // Test the retry limit.
+    for ($i = 0; $i <= AcquiaLiftQueue::MAX_RETRIES; $i++) {
+      // Cause the queue to fail.
+      AcquiaLiftAPI::setTestInstance(TRUE);
+
+      // Run the queue.
+      $_SESSION['acquia_lift_queue_trigger'] = true;
+      acquia_lift_process_queue(FALSE);
+      // Retries all happen at the same time so there is no way to assert queue
+      // items after each attempt.
+    }
+    // Item should be removed after final attempt.
     $this->assertQueueItems(array());
   }
 

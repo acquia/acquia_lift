@@ -1489,6 +1489,42 @@ class AcquiaLiftWebTest extends DrupalWebTestCase {
     $this->assertEqual($expected_operations, $operations);
   }
 
+  public function testConversionReportAjaxEndpoint() {
+    $this->drupalLogin($this->managerUser);
+
+    $agent = $this->createTestAgent(array(), TRUE, FALSE);
+    $agent_name = $agent->getMachineName();
+
+    // Set the agent to read report data from the test file.
+    $path = drupal_get_path('module', 'acquia_lift');
+    variable_set("acquia_lift_report_source_" . $agent_name, "/" . $path . '/tests/test_reports.json');
+
+    // Call the conversion report endpoint.
+    $report = $this->drupalGet('acquia_lift/reports/conversion', array('query' => array(
+      'campaign' => $agent_name,
+      'decision' => 'osid-1',
+    )));
+
+    $report = drupal_json_decode($report);
+
+    $pattern = '/class="lift-statistic-category"/';
+    preg_match($pattern, $report, $matches);
+    $this->assertEqual(count($matches), 1, 'Only one category of results returned.');
+
+    $pattern = '/(<table)/';
+    preg_match($pattern, $report, $matches);
+    $this->assertEqual(count($matches), 2, 'Only two tables returned.');
+
+    $pattern = '/data-acquia-lift-campaign=\"([a-z0-9\_\-]+)\"/';
+    preg_match($pattern, $report, $matches);
+
+    $this->assertEqual($matches[1], $agent_name, 'Campaign name was passed in tabular data.');
+
+    $pattern = '/data-acquia-lift-decision-name=\"([a-z0-9\_\-]+)\"/';
+    preg_match($pattern, $report, $matches);
+    $this->assertEqual($matches[1], 'osid-1', 'Decision name was passed in tabular data.');
+  }
+
   public function testReadReportsFromFile() {
     $this->drupalLogin($this->managerUser);
     $first_agent = 'new-test-agent';
@@ -1570,19 +1606,19 @@ class AcquiaLiftWebTest extends DrupalWebTestCase {
     $report_start_date = 1407499650;
     AcquiaLiftAPI::setTestInstance();
     $agent_instance = personalize_agent_load_agent($first_agent);
-    $report = $agent_instance->buildCampaignReports('osid-1', $report_start_date);
+    $report = $agent_instance->buildCampaignReports(array('decision' => 'osid-1', 'start' => $report_start_date));
 
     // The experiment report should show that Option A has a 0% conversion rate.
-    $this->assertEqual("Option A", $report['experiment']['reports']['all']['reports']['summary']['summary_holder']['summary_table']['#rows'][0]['data'][0]['data']);
-    $this->assertEqual("Control", $report['experiment']['reports']['all']['reports']['summary']['summary_holder']['summary_table']['#rows'][0]['data'][0]['data-acquia-lift-variation-label']);
-    $this->assertEqual("0%", $report['experiment']['reports']['all']['reports']['summary']['summary_holder']['summary_table']['#rows'][0]['data'][2]['data']);
+    $this->assertEqual("Option A", $report['experiment']['reports']['conversion']['reports']['summary']['summary_holder']['summary_table']['#rows'][0]['data'][0]['data']);
+    $this->assertEqual("Control", $report['experiment']['reports']['conversion']['reports']['summary']['summary_holder']['summary_table']['#rows'][0]['data'][0]['data-acquia-lift-variation-label']);
+    $this->assertEqual("0%", $report['experiment']['reports']['conversion']['reports']['summary']['summary_holder']['summary_table']['#rows'][0]['data'][2]['data']);
 
     // The report for the second agent will be identical
     $agent_instance = personalize_agent_load_agent($second_agent);
-    $report = $agent_instance->buildCampaignReports('osid-1', $report_start_date);
-    $this->assertEqual("Option A", $report['experiment']['reports']['all']['reports']['summary']['summary_holder']['summary_table']['#rows'][0]['data'][0]['data']);
-    $this->assertEqual("Control", $report['experiment']['reports']['all']['reports']['summary']['summary_holder']['summary_table']['#rows'][0]['data'][0]['data-acquia-lift-variation-label']);
-    $this->assertEqual("0%", $report['experiment']['reports']['all']['reports']['summary']['summary_holder']['summary_table']['#rows'][0]['data'][2]['data']);
+    $report = $agent_instance->buildCampaignReports(array('decision' => 'osid-1', 'start' => $report_start_date));
+    $this->assertEqual("Option A", $report['experiment']['reports']['conversion']['reports']['summary']['summary_holder']['summary_table']['#rows'][0]['data'][0]['data']);
+    $this->assertEqual("Control", $report['experiment']['reports']['conversion']['reports']['summary']['summary_holder']['summary_table']['#rows'][0]['data'][0]['data-acquia-lift-variation-label']);
+    $this->assertEqual("0%", $report['experiment']['reports']['conversion']['reports']['summary']['summary_holder']['summary_table']['#rows'][0]['data'][2]['data']);
 
     $agent_instance = NULL;
     $this->resetAll();
@@ -1590,21 +1626,21 @@ class AcquiaLiftWebTest extends DrupalWebTestCase {
     $path = drupal_get_path('module', 'acquia_lift');
     variable_set("acquia_lift_report_source_$first_agent", "/" . $path . '/tests/test_reports.json');
     $agent_instance = personalize_agent_load_agent($first_agent);
-    $report = $agent_instance->buildCampaignReports('osid-1', $report_start_date);
+    $report = $agent_instance->buildCampaignReports(array('decision' => 'osid-1', 'start' => $report_start_date));
 
     // Now the experiment report should show that Option A has a conversion rate of .19%
-    $this->assertEqual("osid-76:Option A", $report['experiment']['reports']['all']['reports']['summary']['summary_holder']['summary_table']['#rows'][0]['data'][0]['data']);
-    $this->assertEqual("Control", $report['experiment']['reports']['all']['reports']['summary']['summary_holder']['summary_table']['#rows'][0]['data'][0]['data-acquia-lift-variation-label']);
-    $this->assertEqual("0.19%", $report['experiment']['reports']['all']['reports']['summary']['summary_holder']['summary_table']['#rows'][0]['data'][2]['data']);
+    $this->assertEqual("osid-76:Option A", $report['experiment']['reports']['conversion']['reports']['summary']['summary_holder']['summary_table']['#rows'][0]['data'][0]['data']);
+    $this->assertEqual("Control", $report['experiment']['reports']['conversion']['reports']['summary']['summary_holder']['summary_table']['#rows'][0]['data'][0]['data-acquia-lift-variation-label']);
+    $this->assertEqual("0.19%", $report['experiment']['reports']['conversion']['reports']['summary']['summary_holder']['summary_table']['#rows'][0]['data'][2]['data']);
 
     // The report for the second agent should still show the basic report data.
     $agent_instance = personalize_agent_load_agent($second_agent);
-    $report = $agent_instance->buildCampaignReports('osid-1', $report_start_date);
-    $this->assertEqual("Option A", $report['experiment']['reports']['all']['reports']['summary']['summary_holder']['summary_table']['#rows'][0]['data'][0]['data']);
-    $this->assertEqual("Control", $report['experiment']['reports']['all']['reports']['summary']['summary_holder']['summary_table']['#rows'][0]['data'][0]['data-acquia-lift-variation-label']);
-    $this->assertEqual("0%", $report['experiment']['reports']['all']['reports']['summary']['summary_holder']['summary_table']['#rows'][0]['data'][2]['data']);
+    $report = $agent_instance->buildCampaignReports(array('decision' => 'osid-1', 'start' => $report_start_date));
+    $this->assertEqual("Option A", $report['experiment']['reports']['conversion']['reports']['summary']['summary_holder']['summary_table']['#rows'][0]['data'][0]['data']);
+    $this->assertEqual("Control", $report['experiment']['reports']['conversion']['reports']['summary']['summary_holder']['summary_table']['#rows'][0]['data'][0]['data-acquia-lift-variation-label']);
+    $this->assertEqual("0%", $report['experiment']['reports']['conversion']['reports']['summary']['summary_holder']['summary_table']['#rows'][0]['data'][2]['data']);
   }
-
+  
   /**
    * Tests automatic creation of a goal for personalized fields and auto-
    * starting of the campaign.

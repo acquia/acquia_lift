@@ -6,6 +6,7 @@
 @import "base";
 
 .lift-statistic-category {
+  clear: both;
   padding: 1.4em 1em 1em;
   border: {
     style: solid;
@@ -16,20 +17,7 @@
   transition: opacity .4s, position .4s 0 step-start, width .4s 0 step-start, height .4s 0 step-start;
 }
 
-.lift-switches .form-item {
-  display: inline-block;
-  margin-right: 1em;
-
-  html[dir="rtl"] & {
-    margin: {
-      right: auto;
-      left: 1em;
-    }
-  }
-}
-
-.lift-statistic-category,
-.lift-data-switch {
+.lift-statistic-category {
   &.active {
     visibility: visible;
     opacity: 1;
@@ -48,8 +36,13 @@
   }
 }
 
-.lift-switches {
-  padding: .5em 1em;
+.acquia-lift-report-section-options {
+  box-sizing: border-box;
+  clear: both;
+  width: 100%;
+  min-width: 100%; /* Slightly better than using an !important. */
+  margin-top: 1em;
+  padding: .5em 1em .2em;
   border: {
     style: solid;
     color: $border-color;
@@ -58,6 +51,16 @@
   background-color: $background-color-alternate;
 
   .form-item {
+    margin-right: 1em;
+
+    html[dir="rtl"] & {
+      margin: {
+        right: auto;
+        left: 1em;
+      }
+    }
+
+    &,
     label,
     select {
       display: inline-block;
@@ -297,6 +300,7 @@
 
   &-axis-y {
     float: left;
+    clear: left;
     width: 5em;
     height: 20em;
     margin-left: -5em;
@@ -408,7 +412,7 @@
         text-align: center;
       }
     }
-    
+
     td.acquia-lift-ab-winner {
       max-width: 20%;
       width: 150px;

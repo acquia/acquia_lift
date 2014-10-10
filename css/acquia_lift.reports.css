@@ -3,6 +3,7 @@
  * ----------------------------------------------------------------------------
  */
 .lift-statistic-category {
+  clear: both;
   padding: 1.4em 1em 1em;
   border-style: solid;
   border-color: #ccc;
@@ -12,24 +13,13 @@
           transition: opacity .4s, position .4s 0 step-start, width .4s 0 step-start, height .4s 0 step-start;
 }
 
-.lift-switches .form-item {
-  display: inline-block;
-  margin-right: 1em;
-}
-html[dir="rtl"] .lift-switches .form-item {
-  margin-right: auto;
-  margin-left: 1em;
-}
-
-.lift-statistic-category.active,
-.lift-data-switch.active {
+.lift-statistic-category.active {
   visibility: visible;
   opacity: 1;
   width: auto;
   height: auto;
 }
-.lift-statistic-category.inactive,
-.lift-data-switch.inactive {
+.lift-statistic-category.inactive {
   position: absolute;
   margin: 0;
   overflow: hidden;
@@ -39,15 +29,30 @@ html[dir="rtl"] .lift-switches .form-item {
   height: 0;
 }
 
-.lift-switches {
-  padding: .5em 1em;
+.acquia-lift-report-section-options {
+  -moz-box-sizing: border-box;
+       box-sizing: border-box;
+  clear: both;
+  width: 100%;
+  min-width: 100%;
+  /* Slightly better than using an !important. */
+  margin-top: 1em;
+  padding: .5em 1em .2em;
   border-style: solid;
   border-color: #ccc;
   border-width: 1px 0 0 0;
   background-color: #eee;
 }
-.lift-switches .form-item label,
-.lift-switches .form-item select {
+.acquia-lift-report-section-options .form-item {
+  margin-right: 1em;
+}
+html[dir="rtl"] .acquia-lift-report-section-options .form-item {
+  margin-right: auto;
+  margin-left: 1em;
+}
+.acquia-lift-report-section-options .form-item,
+.acquia-lift-report-section-options .form-item label,
+.acquia-lift-report-section-options .form-item select {
   display: inline-block;
 }
 
@@ -229,6 +234,7 @@ html[dir="rtl"] .lift-graph-graph .detail .dot {
 }
 .lift-graph-axis-y {
   float: left;
+  clear: left;
   width: 5em;
   height: 20em;
   margin-left: -5em;

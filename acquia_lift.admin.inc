@@ -329,6 +329,13 @@ function acquia_lift_report($form, &$form_state, $agent_data, $option_set) {
 }
 
 /**
+ * Submit handler for Acquia Lift reports.
+ */
+function acquia_lift_report_submit($form, &$form_state) {
+  $form_state['rebuild'] = TRUE;
+}
+
+/**
  * Form build function for a custom Acquia Lift agent report.
  *
  * @param AcquiaLiftAgentInterface $agent
@@ -390,7 +397,19 @@ function acquia_lift_report_custom($form, &$form_state, $agent, $agent_data, $op
   $date_start_report = date('Y-m-d', $agent_data->started);
   $date_end_report = $date_end_targeting = date('Y-m-d');
 
-  $reports = $agent->buildCampaignReports($decision_point, $date_start_report, $date_end_report);
+  // Conversion report filters.
+  $selected_goal = empty($form_state['values']['goal']) ? NULL : $form_state['values']['goal'];
+  $selected_metric = empty($form_state['values']['metric']) ? 'rate' : $form_state['values']['metric'];
+
+  $options = array(
+    'decision' => $decision_point,
+    'start' => $date_start_report,
+    'end' => $date_end_report,
+    'goal' => $selected_goal,
+    'conversion_metric' => $selected_metric,
+  );
+
+  $reports = $agent->buildCampaignReports($options);
 
   // Generate mark-up for adaptive style report labels.
   $report_title_additional = '';
@@ -457,6 +476,20 @@ function acquia_lift_report_custom($form, &$form_state, $agent, $agent_data, $op
       '#theme_wrappers' => array('container'),
     );
   }
+  // Get the conversion report options.
+  $form['experiment_report']['header']['options'] = array(
+    '#type' => 'container',
+    '#attributes' => array(
+      'class' => array('acquia-lift-report-section-options'),
+    ),
+    '#tree' => FALSE,
+    'goal' => acquia_lift_report_goal_dropdown($agent->getMachineName(), $selected_goal),
+    'metric' => acquia_lift_report_conversion_metric_dropdown($selected_metric),
+    'submit' => array(
+      '#type' => 'submit',
+      '#value' => t('Filter'),
+    ),
+  );
   $form['experiment_report']['header']['summary']['report_summary'] = array(
     '#theme_wrappers' => array('container'),
     '#markup' => t('See which content variations are winning'),
@@ -613,6 +646,16 @@ function acquia_lift_report_custom($form, &$form_state, $agent, $agent_data, $op
  *   An array representing a dropdown select list.
  */
 function acquia_lift_report_decision_point_dropdown($options, $selected) {
+  if (empty($options)) {
+    return array();
+  }
+  if (count($options) == 1) {
+    $option = key($options);
+    return array(
+      '#type' => 'hidden',
+      '#value' => $option,
+    );
+  }
   return array(
     '#title' => t('Variation Set'),
     '#type' => 'select',
@@ -623,6 +666,65 @@ function acquia_lift_report_decision_point_dropdown($options, $selected) {
       'wrapper' => "acquia-lift-reports",
     ),
     '#id' => 'acquia-lift-report-decision-point-filter',
+  );
+}
+
+/**
+ * Returns the drop-down for filtering reports by goal.
+ *
+ * @param $agent_name
+ *   The machine name of the campaign.
+ * @param $selected
+ *   The selected goal action.
+ * @return array
+ *   A form element array to be used as the dropdown.
+ */
+function acquia_lift_report_goal_dropdown($agent_name, $selected = NULL) {
+  $goals = personalize_goal_load_by_conditions(array('agent' => $agent_name));
+  // There should always be at least one goal in an Acquia Lift report.
+  if (empty($goals)) {
+    return array();
+  }
+  if (count($goals) == 1) {
+    $goal = current($goals);
+    return array(
+      '#type' => 'hidden',
+      '#value' => $goal->action,
+    );
+  }
+  else {
+    $actions = visitor_actions_get_actions();
+    foreach ($goals as $goal) {
+      $options[$goal->action] = $actions[$goal->action]['label'];
+    }
+    return array(
+      '#title' => t('Goals'),
+      '#type' => 'select',
+      '#options' => $options,
+      '#default_value' => $selected,
+      '#empty_option' => t('All goals'),
+    );
+  }
+}
+
+/**
+ * Returns the drop-down for filtering reports by metric.
+ *
+ * @param $selected
+ *   The currently display metric.
+ * @return array
+ *   A form element array to be used as the dropdown.
+ */
+function acquia_lift_report_conversion_metric_dropdown($selected) {
+  return array(
+    '#type' => 'select',
+    '#title' => t('Metrics'),
+    '#options' => array(
+      'rate' => t('Conversion rate %'),
+      'value' => t('Conversion value')
+    ),
+    '#default_value' => $selected,
+    '#required' => TRUE,
   );
 }
 
@@ -646,16 +748,76 @@ function acquia_lift_report_ab($form, &$form_state, $agent, $agent_data) {
   if (_acquia_lift_missing_library_warning(array('rickshaw', 'd3'), t('The following libraries are required in order to view the Acquia Lift reports:'))) {
     return array();
   }
+  $selected_goal = empty($form_state['values']['goal']) ? NULL : $form_state['values']['goal'];
+  $selected_metric = empty($form_state['values']['metric']) ? 'rate' : $form_state['values']['metric'];
+
+  $build = array();
+  $build['options'] = array(
+    '#type' => 'container',
+    '#attributes' => array(
+      'class' => array('acquia-lift-report-section-options'),
+    ),
+    '#tree' => FALSE,
+    'goal' => acquia_lift_report_goal_dropdown($agent->getMachineName(), $selected_goal),
+    'metric' => acquia_lift_report_conversion_metric_dropdown($selected_metric),
+    'submit' => array(
+      '#type' => 'submit',
+      '#value' => t('Filter'),
+    ),
+  );
 
   // Default to showing the complete history of the campaign.
   $date_start_report = date('Y-m-d', $agent_data->started);
   $date_end_report = $date_end_targeting = date('Y-m-d');
   // Acquia Lift A/B reports have a decision name that is the same as the
   // campaign machine name.
-  $reports = $agent->buildCampaignReports($agent_data->machine_name, $date_start_report, $date_end_report);
-  $reports['#attached']['library'][] = array('acquia_lift', 'acquia_lift.reports');
+  $options = array(
+    'decision' => $agent_data->machine_name,
+    'start' => $date_start_report,
+    'end' => $date_end_report,
+  );
+  $build['reports'] = $agent->buildCampaignReports($options);
+  $build['reports']['#attached']['library'][] = array('acquia_lift', 'acquia_lift.reports');
 
-  return $reports;
+  return $build;
+}
+
+/**
+ * AJAX callback to return the tabular HTML for conversion reports.
+ *
+ * The following parameters are supplied within the query string:
+ *   - campaign: the machine name of the campaign
+ *   - decision: the decision name to get data
+ *   - start: (optional) the timestamp to use as start date
+ *   - end: (optional) the timestamp to use as the end date
+ *   - goal: (optional) a goal name to limit results (defaults to all goals)
+ */
+function acquia_lift_report_conversion() {
+  $params = drupal_get_query_parameters();
+  $agent_name = empty($params['campaign']) ? NULL : filter_xss($params['campaign']);
+  $options = array();
+  $options['decision'] = empty($params['decision']) ? NULL : filter_xss($params['decision']);
+  $options['goal'] = empty($params['goal']) ? NULL : filter_xss($params['goal']);
+  $options['start'] = empty($params['start']) ? NULL : check_plain($params['start']);
+  $options['end'] = empty($params['end']) ? NULL : check_plain($params['end']);
+  $agent = personalize_agent_load($agent_name);
+
+  if (!acquia_lift_owns_agent($agent)) {
+    return array();
+  }
+  if (is_numeric($options['start'])) {
+    $options['start'] = date('Y-m-d', $options['start']);
+  }
+  if (is_numeric($options['end'])) {
+    $options['end'] = date('Y-m-d', $options['end']);
+  }
+
+  $reports = array();
+  if ($plugin = personalize_agent_load_agent($agent_name)) {
+    $reports = $plugin->buildConversionReport($options);
+  }
+  $reports['#type'] = 'ajax';
+  return drupal_json_output(drupal_render($reports));
 }
 
 /**

@@ -2,7 +2,9 @@ module.exports = function(grunt) {
   require('time-grunt')(grunt);
 
   var reportjs = [
-        'src/js/reports/Rickshaw.Graph.Axis.TimeElement.js',
+        // Disable this plugin due to formatting errors.
+        // @see https://www.drupal.org/node/2354455
+        // 'src/js/reports/Rickshaw.Graph.Axis.TimeElement.js',
         'src/js/reports/Rickshaw.Graph.Axis.LabeledY.js',
         'src/js/reports/Rickshaw.Graph.ClickDetail.js',
         'src/js/reports/Rickshaw.Graph.TableLegend.js',

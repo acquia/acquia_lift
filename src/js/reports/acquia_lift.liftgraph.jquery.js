@@ -247,8 +247,10 @@
 
   // Get the x-axis.
   liftGraph.prototype.setAxisX = function () {
-    this.axisX = new Rickshaw.Graph.Axis.TimeElement({
-      element: this.$axisX[0],
+    this.axisX = new Rickshaw.Graph.Axis.Time({
+      // Disable this plugin due to formatting errors.
+      // @see https://www.drupal.org/node/2354455
+      // element: this.$axisX[0],
       orientation: 'bottom',
       graph: this.graph
     });
@@ -310,7 +312,9 @@
   liftGraph.prototype.build = function () {
     this.$graph = $('<div class="lift-graph-graph" role="presentation"></div>');
     this.$axisY = $('<div class="lift-graph-axis-y" role="presentation"></div>');
-    this.$axisX = $('<div class="lift-graph-axis-x" role="presentation"></div>');
+    // Disable this plugin due to formatting errors.
+    // @see https://www.drupal.org/node/2354455
+    // this.$axisX = $('<div class="lift-graph-axis-x" role="presentation"></div>');
     this.$legend = this.$element.siblings('.lift-graph-result').children('table.lift-graph-result-data');
     this.$rangeSlider = $('<div class="lift-graph-range-slider" role="presentation"></div>');
 

@@ -54,7 +54,11 @@ module.exports = function(grunt) {
       }
     },
     concurrent: {
-      all: ['style', 'script']
+      all: ['style', 'script', 'test']
+    },
+    // Can only test those QUnit tests that do not require Drupal interaction.
+    qunit: {
+      all: ['qunit/core_personalization.html']
     },
     sass: {
       dist: {
@@ -89,10 +93,11 @@ module.exports = function(grunt) {
   grunt.loadNpmTasks('grunt-contrib-concat');
   grunt.loadNpmTasks('grunt-contrib-sass');
   grunt.loadNpmTasks('grunt-contrib-watch');
+  grunt.loadNpmTasks('grunt-contrib-qunit');
 
   // Default task(s).
   grunt.registerTask('default', ['concurrent:all']);
   grunt.registerTask('style', ['sass', 'autoprefixer']);
   grunt.registerTask('script', ['concat']);
-
+  grunt.registerTask('test', ['qunit']);
 };

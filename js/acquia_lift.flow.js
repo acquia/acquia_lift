@@ -63,7 +63,8 @@
       var $variationTypeForm = $('#acquia-lift-page-variation-details-form').not('.acquia-lift-processed');
       if ($variationTypeForm.length > 0) {
         var editLink = '<a class="acquia-lift-selector-edit">' + Drupal.t('Edit selector') + '</a>';
-        var $selector =  $variationTypeForm.find('input[name="selector"]').closest('div');
+        var $selectorInput = $variationTypeForm.find('input[name="selector"]');
+        var $selector =  $selectorInput.closest('div');
         $variationTypeForm.parent().find('h2').append(editLink);
         $variationTypeForm.parent().find('.acquia-lift-selector-edit').on('click', function(e) {
           var newText = $(this).text() == Drupal.t('Edit selector') ? Drupal.t('Hide selector') : Drupal.t('Edit selector');
@@ -71,6 +72,30 @@
           $(this).text(newText);
         });
         $selector.hide();
+
+        // Validate the jQuery selector if changed.
+        $selectorInput.on('change', function(e) {
+          try {
+            var test = $selectorInput.val();
+            var verify = $(test);
+          } catch (error) {
+            $selectorInput.addClass('error');
+            if ($('.acquia-lift-js-message', $variationTypeForm).length == 0) {
+              var errorMessage = '<div class="acquia-lift-js-message"><div class="messages error"><h2 class="element-invisible">' + Drupal.t('Error message') + '</h2>';
+              errorMessage += Drupal.t('Selector field must contain a valid jQuery selector.');
+              errorMessage += '</div></div>';
+              $variationTypeForm.prepend(errorMessage);
+            }
+            $('#edit-variation-type-submit-form', $variationTypeForm).attr('disabled', 'disabled').addClass('form-button-disabled');
+            return;
+          }
+          // If we are still here then validation passed and any previous
+          // error messages should be removed.
+          $selectorInput.removeClass('error');
+          $('.acquia-lift-js-message', $variationTypeForm).remove();
+          $('#edit-variation-type-submit-form', $variationTypeForm).removeAttr('disabled').removeClass('form-button-disabled');
+        });
+
         $variationTypeForm.addClass('acquia-lift-processed');
       }
 

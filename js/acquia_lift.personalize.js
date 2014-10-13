@@ -17,6 +17,10 @@
   }
   var initialized = false;
 
+  function includeCampaignInNavigation(model) {
+
+  }
+
   Drupal.behaviors.acquiaLiftPersonalize = {
     attach: function (context) {
       var settings = Drupal.settings.personalize;

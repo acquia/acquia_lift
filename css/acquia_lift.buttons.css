@@ -42,6 +42,14 @@ input[type="submit"].acquia-lift-submit-button:active {
   text-shadow: 0 1px 0 #1a3646;
 }
 
+.acquia-lift-submit-button.form-button-disabled,
+.acquia-lift-submit-button.form-button-disabled:active,
+.acquia-lift-submit-button.form-button-disabled:hover {
+  color: #bbb;
+  background: #717171;
+  cursor: not-allowed;
+}
+
 .acquia-lift-cancel-button {
   color: black;
   background: #dddddd;

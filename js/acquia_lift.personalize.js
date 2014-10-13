@@ -121,7 +121,7 @@
                   $element = $(Drupal.theme('acquiaLiftCount'));
                   ui.views.push((new ui.MenuCampaignCountView({
                     el: $element.get(0),
-                    model: collection
+                    collection: collection
                   })));
                   // Create the view to show the selected name.
                   ui.views.push(new ui.MenuCampaignsView({
@@ -581,6 +581,27 @@
           return;
         }
         Backbone.Model.prototype.set.call(this, property, value);
+      },
+
+      /**
+       * Determine if the campaign should be included in navigation.
+       */
+      includeInNavigation: function () {
+        var types = this.get('optionSetTypes');
+        // Include any campaigns that don't have variations yet.
+        if (!types || !types.length || types.length == 0) {
+          return true;
+        }
+        // If the campaign has only personalize fields option sets and they
+        // aren't on this page, then hide it.
+        var i, num = types.length;
+        for (i = 0; i < num; i ++) {
+          if (types[i] !== 'fields') {
+            return true;
+          }
+        }
+        // If still here, then all option sets are personalize fields.
+        return this.getNumberOfVariations() > 0;
       },
 
       /**
@@ -1379,6 +1400,8 @@
         if (this.model) {
           this.model.on('change:isActive', this.render, this);
           this.model.on('destroy', this.remove, this);
+          this.listenTo(this.model, 'change:optionSets', this.render);
+          this.listenTo(this.model, 'change:variations', this.render);
         }
 
         this.build(this.model);
@@ -1389,6 +1412,7 @@
        * {@inheritdoc}
        */
       render: function (model, isActive) {
+        this.$el.toggle(model.includeInNavigation());
         // The menu li element.
         this.$el.toggleClass('acquia-lift-active', isActive);
         // The link element.
@@ -1494,8 +1518,9 @@
        * {@inheritdoc}
        */
       initialize: function (options) {
-        this.model.on('add', this.render, this);
-        this.model.on('remove', this.render, this);
+        this.collection = options.collection;
+        this.collection.on('add', this.render, this);
+        this.collection.on('remove', this.render, this);
 
         this.render(this.model);
       },
@@ -1504,9 +1529,9 @@
        * {@inheritdoc}
        */
       render: function () {
-        var count = this.model.length;
+        var count = this.collection.length;
         this.$el.toggleClass('acquia-lift-empty', !count);
-        this.$el.find('span').text(this.model.length);
+        this.$el.find('span').text(count);
       }
     }),
 

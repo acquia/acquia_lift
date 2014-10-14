@@ -939,7 +939,9 @@
        * {@inheritdoc}
        */
       initialize: function (options) {
-        this.model.on('change:isActive', this.render, this);
+        this.listenTo(this.model, 'change:isActive', this.render);
+        this.listenTo(this.model, 'change:optionSets', this.render);
+        this.listenTo(this.model, 'change:variations', this.render);
         this.render(this.model, this.model.get('isActive'));
       },
 
@@ -959,7 +961,9 @@
      */
     MenuOptionSetEmptyView: ViewBase.extend({
       initialize: function (options) {
-        this.model.on('change:isActive', this.render, this);
+        this.listenTo(this.model, 'change:isActive', this.render);
+        this.listenTo(this.model, 'change:optionSets', this.render);
+        this.listenTo(this.model, 'change:variations', this.render);
 
         this.build();
         this.render(this.model, this.model.get('isActive'));

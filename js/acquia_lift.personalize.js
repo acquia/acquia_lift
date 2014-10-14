@@ -1399,14 +1399,15 @@
         }
 
         this.build(this.model);
-        this.render(this.model, this.model ? this.model.get('isActive') : false);
+        this.render();
       },
 
       /**
        * {@inheritdoc}
        */
-      render: function (model, isActive) {
-        this.$el.toggle(model.includeInNavigation());
+      render: function () {
+        var isActive = this.model ? this.model.get('isActive') : false;
+        this.$el.toggle(this.model.includeInNavigation());
         // The menu li element.
         this.$el.toggleClass('acquia-lift-active', isActive);
         // The link element.
@@ -2041,21 +2042,7 @@
       initialize: function() {
         this.parent('inherit');
         this.set('activeVariation', 0);
-        this.listenTo(this, 'change:variations', this.triggerVariationChange);
-        this.listenTo(this.get('optionSets'), 'change:variations', this.triggerVariationChange);
-      },
-
-      triggerOptionSetChange: function (event) {
-        this.trigger('change:variations');
-      },
-
-      /**
-       * {@inheritDoc}
-       */
-      initialize: function() {
-        this.parent('inherit');
-        this.set('activeVariation', 0);
-        this.listenTo(this.get('optionSets'), 'change:variations', this.triggerVariationChange);
+        this.listenTo(this.get('optionSets'), 'change:variations', this.triggerOptionSetChange);
       },
 
       triggerOptionSetChange: function (event) {

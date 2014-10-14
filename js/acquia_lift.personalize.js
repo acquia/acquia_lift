@@ -30,17 +30,19 @@
           ui.collections.campaigns = new ui.MenuCampaignCollection([]);
         }
         looper(settings.campaigns, function (obj, key) {
-          var currentModel = ui.collections.campaigns.findWhere({name: obj.name});
-          if (currentModel) {
-            for (var prop in obj) {
-              if (obj.hasOwnProperty(prop)) {
-                currentModel.set(prop, obj[prop]);
+          if (!obj.hasOwnProperty('includeNavigation') || obj.includeNavigation) {
+            var currentModel = ui.collections.campaigns.findWhere({name: obj.name});
+            if (currentModel) {
+              for (var prop in obj) {
+                if (obj.hasOwnProperty(prop)) {
+                  currentModel.set(prop, obj[prop]);
+                }
               }
+            } else {
+              var model = Drupal.acquiaLiftUI.factories.MenuFactory.createCampaignModel(obj);
+              ui.collections.campaigns.add(model);
+              addedCampaigns[obj.name] = model;
             }
-          } else {
-            var model = Drupal.acquiaLiftUI.factories.MenuFactory.createCampaignModel(obj);
-            ui.collections.campaigns.add(model);
-            addedCampaigns[obj.name] = model;
           }
         });
         // If it was just added and is set as the active campaign then it takes
@@ -509,10 +511,13 @@
       // Refresh the model data for the campaigns.
       looper(Drupal.settings.personalize['campaigns'] || {}, function (obj, key) {
         if (key === activeCampaign) {
-          Drupal.acquiaLiftUI.collections['campaigns'].findWhere({'name': key}).set('isActive', true);
+          var campaign = Drupal.acquiaLiftUI.collections['campaigns'].findWhere({'name': key});
+          if (campaign) {
+            campaign.set('isActive', true);
+            Drupal.settings.personalize.activeCampaign = activeCampaign;
+          }
         }
       });
-      Drupal.settings.personalize.activeCampaign = activeCampaign;
     },
 
     /**

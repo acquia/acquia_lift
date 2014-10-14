@@ -164,6 +164,7 @@ var _tcwq = _tcwq || [];
         if (initialized || initializing) {
           return;
         }
+
         initializing = true;
         if ( settings.personalize && settings.personalize.agent_map ) {
           var agent_map = settings.personalize.agent_map;
@@ -335,6 +336,7 @@ var _tcwq = _tcwq || [];
       }
     }
   })();
+
 
   /**
    * Goes through the server-side actions and calls the appropriate function for

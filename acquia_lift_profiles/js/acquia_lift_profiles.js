@@ -143,6 +143,21 @@ var _tcwq = _tcwq || [];
 
     // Keeps track of processed listeners so we don't subscribe them more than once.
     var processedListeners = {}, initialized = false, initializing = false;
+    var agentNameToLabel = {};
+
+    /**
+     * Returns the agent label for the given agent name.
+     * If there is no label then the agent name is returned.
+     *
+     * @param agent_name
+     */
+    function getAgentLabel( agent_name ) {
+      var agent_label = agent_name;
+      if ( agentNameToLabel[agent_name] ) {
+        agent_label = agentNameToLabel[agent_name];
+      }
+      return agent_label;
+    }
 
     return {
       'init': function(settings) {
@@ -150,6 +165,16 @@ var _tcwq = _tcwq || [];
           return;
         }
         initializing = true;
+        if ( settings.personalize && settings.personalize.agent_map ) {
+          var agent_map = settings.personalize.agent_map;
+          for (var agent_name in agent_map) {
+            if (agent_map.hasOwnProperty(agent_name)) {
+              if (agent_map[agent_name].label) {
+                agentNameToLabel[agent_name] = agent_map[agent_name].label;
+              }
+            }
+          }
+        }
         var mappings = settings.acquia_lift_profiles.udfMappings, context_separator = settings.acquia_lift_profiles.udfMappingContextSeparator, plugins = {}, udfValues = {}, reverseMapping = {};
         for(var type in mappings) {
           if (mappings.hasOwnProperty(type)) {
@@ -213,6 +238,8 @@ var _tcwq = _tcwq || [];
 
           initialized = true;
         };
+        $(document).bind('personalizeDecision', this["processPersonalizeDecision"]);
+        $(document).bind('sentGoalToAgent', this["processSentGoalToAgent"]);
         Drupal.personalize.getVisitorContexts(plugins, callback);
       },
       'getTrackingID': function () {
@@ -250,6 +277,19 @@ var _tcwq = _tcwq || [];
           this.specialEvents[eventName].call(this, settings.acquia_lift_profiles, context);
         }
       },
+
+      'processPersonalizeDecision':function(e, $option_set, decision, osid, agent_name) {
+        if (decision == 'control-variation') {
+          decision = 'Control';
+        }
+
+        _tcaq.push(['capture', 'Campaign Action', {'campaignid':agent_name, 'campaignname':getAgentLabel(agent_name), 'offerid': decision, 'actionName':decision, 'evalSegments': true } ]);
+
+      },
+
+      'processSentGoalToAgent':function(e, agent_name, goal_name, goal_value) {
+        _tcaq.push(['capture', goal_name, {'campaignid':agent_name, 'campaignname':getAgentLabel(agent_name), 'evalSegments': true}]);
+      },
       /**
        * Add an action listener for client-side goal events.
        */
@@ -280,6 +320,18 @@ var _tcwq = _tcwq || [];
       'specialEvents': {
         'user_login': pushCaptureEmail,
         'user_register': pushCaptureEmail
+      },
+
+      /**
+       * Helper function to reset variables during tests.
+       */
+      'resetAll' : function() {
+        processedListeners = {};
+        initialized = false;
+        initializing = false;
+        agentNameToLabel = {};
+        $(document).unbind('personalizeDecision', this["processPersonalizeDecision"]);
+        $(document).unbind('sentGoalToAgent', this["processSentGoalToAgent"]);
       }
     }
   })();

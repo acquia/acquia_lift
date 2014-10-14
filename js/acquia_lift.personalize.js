@@ -118,11 +118,6 @@
               switch (category) {
                 case 'campaigns':
                   collection = ui.collections[category];
-                  $element = $(Drupal.theme('acquiaLiftCount'));
-                  ui.views.push((new ui.MenuCampaignCountView({
-                    el: $element.get(0),
-                    collection: collection
-                  })));
                   // Create the view to show the selected name.
                   ui.views.push(new ui.MenuCampaignsView({
                     el: $link,
@@ -146,7 +141,6 @@
                     scrollable.className += "menu acquia-lift-scrollable";
                     $menu.wrap('<div class="menu-wrapper">').before(scrollable);
                   }
-                  $element.prependTo($link);
                   break;
                 case 'option_sets': {
                   Drupal.acquiaLiftUI.views.variationSetsMenuView = new Drupal.acquiaLiftUI.MenuContentVariationsMenuView({
@@ -1507,31 +1501,6 @@
       build: function () {
         var html = Drupal.theme('acquiaLiftCampaignGoals', this.model);
         this.$el.html(html);
-      }
-    }),
-
-    /**
-     * Display the count of campaigns.
-     */
-    MenuCampaignCountView: ViewBase.extend({
-      /**
-       * {@inheritdoc}
-       */
-      initialize: function (options) {
-        this.collection = options.collection;
-        this.collection.on('add', this.render, this);
-        this.collection.on('remove', this.render, this);
-
-        this.render(this.model);
-      },
-
-      /**
-       * {@inheritdoc}
-       */
-      render: function () {
-        var count = this.collection.length;
-        this.$el.toggleClass('acquia-lift-empty', !count);
-        this.$el.find('span').text(count);
       }
     }),
 

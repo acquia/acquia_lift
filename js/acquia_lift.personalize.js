@@ -1887,6 +1887,7 @@
           $(document).trigger('acquiaLiftVisitorActionsConnectorToggle');
         }
         e.preventDefault();
+        e.stopImmediatePropagation();
       }
     }),
 

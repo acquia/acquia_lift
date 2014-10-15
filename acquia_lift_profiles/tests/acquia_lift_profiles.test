@@ -119,12 +119,13 @@ class ALProfilesWebTest extends DrupalWebTestCase {
     );
     $edit['files[field_image_' . LANGUAGE_NONE . '_0]'] = drupal_realpath($test_image->uri);
     $this->drupalPost('node/add/article', $edit, t('Save'));
+    $nid = $this->getNidFromCurrentUrl();
 
-    $items = field_get_items('node', node_load(1), 'field_image');
+    $items = field_get_items('node', node_load($nid), 'field_image');
     $image_uri = $items[0]['uri'];
 
     // Verify that the image thumbnail is empty in the page context.
-    $this->drupalGet('node/1');
+    $this->drupalGet('node/' . $nid);
     $settings = $this->drupalGetSettings();
     $this->assertTrue($settings['acquia_lift_profiles']['pageContext']['thumbnail_url'] == '', 'Thumbnail image is blank');
 
@@ -138,7 +139,7 @@ class ALProfilesWebTest extends DrupalWebTestCase {
     // Verify that the thumbnail is set (after stripping off the token).
     $token_regex = '/\?itok=[a-zA-Z0-9]*/';
     $thumbnail_image = preg_replace($token_regex, '', image_style_url('thumbnail', $image_uri));
-    $this->drupalGet('node/1');
+    $this->drupalGet('node/' . $nid);
     $settings = $this->drupalGetSettings();
     $settings_image = preg_replace($token_regex, '', $settings['acquia_lift_profiles']['pageContext']['thumbnail_url']);
     $this->assertEqual($thumbnail_image, $settings_image);
@@ -149,9 +150,9 @@ class ALProfilesWebTest extends DrupalWebTestCase {
 
 
     // Verify that the new image style appears in the page context.
-    $this->drupalGet('node/1');
+    $this->drupalGet('node/' . $nid);
     $thumbnail_image = preg_replace($token_regex, '', image_style_url('medium', $image_uri));
-    $this->drupalGet('node/1');
+    $this->drupalGet('node/' . $nid);
     $settings = $this->drupalGetSettings();
     $settings_image = preg_replace($token_regex, '', $settings['acquia_lift_profiles']['pageContext']['thumbnail_url']);
     $this->assertEqual($thumbnail_image, $settings_image);
@@ -161,9 +162,10 @@ class ALProfilesWebTest extends DrupalWebTestCase {
       'title' => $this->randomName(),
     );
     $this->drupalPost('node/add/article', $edit, t('Save'));
+    $second_nid = $this->getNidFromCurrentUrl();
 
     // Verify that the image is blank in the page context.
-    $this->drupalGet('node/2');
+    $this->drupalGet('node/' . $second_nid);
     $settings = $this->drupalGetSettings();
     $this->assertTrue($settings['acquia_lift_profiles']['pageContext']['thumbnail_url'] == '', 'Thumbnail image is blank');
 
@@ -179,7 +181,7 @@ class ALProfilesWebTest extends DrupalWebTestCase {
     $this->drupalPost('admin/structure/types/manage/article', $edit, t('Save content type'));
 
     // Verify that no thumbnail is passed in page context.
-    $this->drupalGet('node/1');
+    $this->drupalGet('node/' . $nid);
     $settings = $this->drupalGetSettings();
     $this->assertTrue($settings['acquia_lift_profiles']['pageContext']['thumbnail_url'] == '', 'Thumbnail image is blank');
   }
@@ -296,5 +298,18 @@ class ALProfilesWebTest extends DrupalWebTestCase {
 
     field_create_instance($fieldInstance);
     return $field;
+  }
+
+  /**
+   * Helper to grab the nid from the url so that we don't have to make assumptions
+   * about the nid of the node we just created.
+   */
+  protected function getNidFromCurrentUrl() {
+    $url = $this->getUrl();
+    $matches = array();
+    if (preg_match('/node\/(\d+)/', $url, $matches)) {
+      return $matches[1];
+    }
+    return NULL;
   }
 }

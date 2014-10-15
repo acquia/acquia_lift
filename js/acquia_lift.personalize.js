@@ -558,9 +558,19 @@
         this.set('optionSets', new Drupal.acquiaLiftUI.MenuOptionSetCollection());
         this.listenTo(this.get('optionSets'), 'add', this.triggerOptionSetChange);
         this.listenTo(this.get('optionSets'), 'remove', this.triggerOptionSetChange);
+        this.listenTo(this.get('optionSets'), 'reset', this.triggerOptionSetChange);
         this.listenTo(this.get('optionSets'), 'change:variations', this.triggerOptionSetChange);
         this.listenTo(this.get('goals'), 'add', this.triggerGoalsChange);
         this.listenTo(this.get('goals'), 'remove', this.triggerGoalsChange);
+
+        var that = this;
+        $(document).on('acquiaLiftOptionSetsEmpty', function (event, data) {
+          if (that.get('name') !== data) {
+            return;
+          }
+          that.get('optionSets').reset();
+        });
+
       },
 
       /**
@@ -2850,7 +2860,19 @@
     if (option_sets) {
       for (osid in option_sets) {
         if (option_sets.hasOwnProperty(osid)) {
-          Drupal.settings.personalize.option_sets[osid] = option_sets[osid];
+          // A campaign's option sets are empty so remove from the settings.
+          if (osid === 'empty') {
+            var empty_agent = option_sets[osid];
+            for (var option_set_id in Drupal.settings.personalize.option_sets) {
+              if (Drupal.settings.personalize.option_sets[option_set_id]['agent'] == empty_agent) {
+                delete Drupal.settings.personalize.option_sets[option_set_id];
+              }
+            }
+            // Notify of the deleted option sets.
+            $(document).trigger('acquiaLiftOptionSetsEmpty', [empty_agent]);
+          } else {
+            Drupal.settings.personalize.option_sets[osid] = option_sets[osid];
+          }
         }
       }
     }

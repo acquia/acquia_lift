@@ -1346,10 +1346,15 @@ function acquia_lift_page_variation_delete_callback($agent_name, $variation_inde
  */
 function acquia_lift_page_variation_delete_complete_callback($form, $form_state) {
   $settings = array();
-  $option_sets = $option_sets = personalize_option_set_load_multiple(array(), array('decision_name' => $form_state['values']['variation_set_name']));
-  $option_set_settings = array_map('_personalize_convert_option_set_to_js_setting', $option_sets);
-  foreach($option_set_settings as $option_set_setting) {
-    $settings[key($option_set_setting)] = reset($option_set_setting);
+  $option_sets = personalize_option_set_load_multiple(array(), array('decision_name' => $form_state['values']['variation_set_name']));
+  if (empty($option_sets)) {
+    $settings['empty'] = $form_state['values']['agent_name'];
+  }
+  else {
+    $option_set_settings = array_map('_personalize_convert_option_set_to_js_setting', $option_sets);
+    foreach ($option_set_settings as $option_set_setting) {
+      $settings[key($option_set_setting)] = reset($option_set_setting);
+    }
   }
   $campaign_settings['personalize']['campaigns'] = personalize_agent_get_settings();
   $commands = array(
@@ -1420,7 +1425,7 @@ function acquia_lift_page_variation_delete_form($form, &$form_state, $agent_name
 }
 
 /**
- * Submit handler for acquia_lift_page_variation_rename().
+ * Submit handler for acquia_lift_page_variation_delete_form().
  */
 function acquia_lift_page_variation_delete_form_submit($form, &$form_state) {
   acquia_lift_page_variation_delete($form_state['values']['variation_set_name'], $form_state['values']['agent_name'], $form_state['values']['variation_index']);
@@ -2063,6 +2068,7 @@ function acquia_lift_page_variation_delete($variation_set_name, $agent_name, $va
   if (count($option_set->options) === 1) {
     $last_option = current($option_set->options);
     if ($last_option['option_id'] === PERSONALIZE_CONTROL_OPTION_ID) {
+      reset($option_sets);
       foreach ($option_sets as $option_set) {
         personalize_option_set_delete($option_set->osid);
       }

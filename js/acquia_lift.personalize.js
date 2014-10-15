@@ -795,15 +795,14 @@
           }
         });
         // Check to see if any options have been removed.
-        optionsCollection.each(function (optionModel) {
+        var num = optionsCollection.length, i = num - 1;
+        for (i; i >= 0; i--) {
+          var optionModel = optionsCollection.at(i);
           if (_.indexOf(option_ids, optionModel.get('option_id')) == -1) {
             // This is no longer in the options for the option set.
             optionsCollection.remove(optionModel);
             triggerChange = true;
           }
-        });
-        if (triggerChange) {
-          this.triggerChange();
         }
         return optionsCollection;
       },
@@ -964,7 +963,9 @@
        * {@inheritdoc}
        */
       initialize: function (options) {
-        this.model.on('change:isActive', this.render, this);
+        this.listenTo(this.model, 'change:isActive', this.render);
+        this.listenTo(this.model, 'change:optionSets', this.render);
+        this.listenTo(this.model, 'change:variations', this.render);
         this.render(this.model, this.model.get('isActive'));
       },
 
@@ -984,7 +985,9 @@
      */
     MenuOptionSetEmptyView: ViewBase.extend({
       initialize: function (options) {
-        this.model.on('change:isActive', this.render, this);
+        this.listenTo(this.model, 'change:isActive', this.render);
+        this.listenTo(this.model, 'change:optionSets', this.render);
+        this.listenTo(this.model, 'change:variations', this.render);
 
         this.build();
         this.render(this.model, this.model.get('isActive'));

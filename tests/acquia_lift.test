@@ -1246,9 +1246,13 @@ class AcquiaLiftWebTest extends DrupalWebTestCase {
         'option_ids' => array('option-a', 'option-b', 'option-c')
       ),
     );
+    $option_sets = array();
     foreach ($option_set_values as $i => $values) {
-      $this->createOptionSet($i, $values);
+      list($option_set, $new_queue_items) = $this->createOptionSet($i, $values);
+      $option_sets[] = $option_set;
     }
+    $first_osid = 'osid-' . $option_sets[0]->osid;
+    $second_osid = 'osid-' . $option_sets[1]->osid;
     // Add a goal.
     personalize_goal_save('first-existing-agent', 'new-goal', 2);
     $this->resetAll();
@@ -1261,7 +1265,7 @@ class AcquiaLiftWebTest extends DrupalWebTestCase {
       'points' => array(
         'first-existing-agent' => array(
           // The agent on the Drupal site will have this point.
-          'osid-1',
+          $first_osid,
           // The agent on the Drupal site will not have this point so it
           // should get deleted upon sync.
           'second-point',
@@ -1269,8 +1273,8 @@ class AcquiaLiftWebTest extends DrupalWebTestCase {
       ),
       'decisions' => array(
         'first-existing-agent' => array(
-          'osid-1' => array(
-            'osid-1',
+          $first_osid => array(
+            $first_osid,
             // This decision should get deleted upon sync.
             'another-decision'
           )
@@ -1278,8 +1282,8 @@ class AcquiaLiftWebTest extends DrupalWebTestCase {
       ),
       'choices' => array(
         'first-existing-agent' => array(
-          'osid-1' => array(
-            'osid-1' => array(
+          $first_osid => array(
+            $first_osid => array(
               'option-1',
               'option-2',
               // These choices should get deleted upon sync.
@@ -1327,7 +1331,7 @@ class AcquiaLiftWebTest extends DrupalWebTestCase {
         'args' =>
           array(
             'first-existing-agent',
-            'osid-1',
+            $first_osid,
           ),
       ),
       array(
@@ -1335,8 +1339,8 @@ class AcquiaLiftWebTest extends DrupalWebTestCase {
         'args' =>
           array(
             'first-existing-agent',
-            'osid-1',
-            'osid-1',
+            $first_osid,
+            $first_osid,
           ),
       ),
       array(
@@ -1344,8 +1348,8 @@ class AcquiaLiftWebTest extends DrupalWebTestCase {
         'args' =>
           array(
             'first-existing-agent',
-            'osid-1',
-            'osid-1',
+            $first_osid,
+            $first_osid,
             'option-1',
           ),
       ),
@@ -1354,8 +1358,8 @@ class AcquiaLiftWebTest extends DrupalWebTestCase {
         'args' =>
           array(
             'first-existing-agent',
-            'osid-1',
-            'osid-1',
+            $first_osid,
+            $first_osid,
             'option-2',
           ),
       ),
@@ -1364,7 +1368,7 @@ class AcquiaLiftWebTest extends DrupalWebTestCase {
         'args' =>
           array(
             'first-existing-agent',
-            'osid-2',
+            $second_osid,
           ),
       ),
       array(
@@ -1372,8 +1376,8 @@ class AcquiaLiftWebTest extends DrupalWebTestCase {
         'args' =>
           array(
             'first-existing-agent',
-            'osid-2',
-            'osid-2',
+            $second_osid,
+            $second_osid,
           ),
       ),
       array(
@@ -1381,8 +1385,8 @@ class AcquiaLiftWebTest extends DrupalWebTestCase {
         'args' =>
           array(
             'first-existing-agent',
-            'osid-2',
-            'osid-2',
+            $second_osid,
+            $second_osid,
             'option-a',
           ),
       ),
@@ -1391,8 +1395,8 @@ class AcquiaLiftWebTest extends DrupalWebTestCase {
         'args' =>
           array(
             'first-existing-agent',
-            'osid-2',
-            'osid-2',
+            $second_osid,
+            $second_osid,
             'option-b',
           ),
       ),
@@ -1401,8 +1405,8 @@ class AcquiaLiftWebTest extends DrupalWebTestCase {
         'args' =>
           array(
             'first-existing-agent',
-            'osid-2',
-            'osid-2',
+            $second_osid,
+            $second_osid,
             'option-c',
           ),
       ),
@@ -1412,8 +1416,8 @@ class AcquiaLiftWebTest extends DrupalWebTestCase {
         'args' =>
           array(
             'first-existing-agent',
-            'osid-1',
-            'osid-1',
+            $first_osid,
+            $first_osid,
             'option-3',
           ),
       ),
@@ -1422,8 +1426,8 @@ class AcquiaLiftWebTest extends DrupalWebTestCase {
         'args' =>
           array(
             'first-existing-agent',
-            'osid-1',
-            'osid-1',
+            $first_osid,
+            $first_osid,
             'last-option',
           ),
       ),
@@ -1433,7 +1437,7 @@ class AcquiaLiftWebTest extends DrupalWebTestCase {
         'args' =>
           array(
             'first-existing-agent',
-            'osid-1',
+            $first_osid,
             'another-decision',
           ),
       ),
@@ -1452,7 +1456,7 @@ class AcquiaLiftWebTest extends DrupalWebTestCase {
         'args' =>
           array(
             'first-existing-agent',
-            'osid-1',
+            $first_osid,
             array(),
           ),
       ),
@@ -1462,7 +1466,7 @@ class AcquiaLiftWebTest extends DrupalWebTestCase {
         'args' =>
           array(
             'first-existing-agent',
-            'osid-2',
+            $second_osid,
             array(),
           ),
       ),
@@ -1500,9 +1504,10 @@ class AcquiaLiftWebTest extends DrupalWebTestCase {
     variable_set("acquia_lift_report_source_" . $agent_name, "/" . $path . '/tests/test_reports.json');
 
     // Call the conversion report endpoint.
+    $first_osid = 'osid-1';
     $report = $this->drupalGet('acquia_lift/reports/conversion', array('query' => array(
       'campaign' => $agent_name,
-      'decision' => 'osid-1',
+      'decision' => $first_osid,
     )));
 
     $report = drupal_json_decode($report);
@@ -1522,7 +1527,7 @@ class AcquiaLiftWebTest extends DrupalWebTestCase {
 
     $pattern = '/data-acquia-lift-decision-name=\"([a-z0-9\_\-]+)\"/';
     preg_match($pattern, $report, $matches);
-    $this->assertEqual($matches[1], 'osid-1', 'Decision name was passed in tabular data.');
+    $this->assertEqual($matches[1], $first_osid, 'Decision name was passed in tabular data.');
   }
 
   public function testReadReportsFromFile() {
@@ -1538,8 +1543,11 @@ class AcquiaLiftWebTest extends DrupalWebTestCase {
     $test_data = array();
     // Set each agent up with an option set with 2 options, and a goal, and set it to
     // running.
+    $option_sets = array();
     foreach (array($first_agent, $second_agent) as $i => $agent_name) {
-      $this->createOptionSet($i, array('agent' => $agent_name, 'plugin' => 'type1', 'option_ids' => array('option-1', 'option-2')));
+      list($option_set, $new_queue_items) = $this->createOptionSet($i, array('agent' => $agent_name, 'plugin' => 'type1', 'option_ids' => array('option-1', 'option-2')));
+      $option_sets[] = $option_set;
+      $osid = $option_set->osid;
       // Add a goal.
       personalize_goal_save($agent_name, 'new-goal', 1);
 
@@ -1561,20 +1569,20 @@ class AcquiaLiftWebTest extends DrupalWebTestCase {
         ),
         'points' => array(
           $agent_name => array(
-            'osid-1',
+            $osid,
           ),
         ),
         'decisions' => array(
           $agent_name => array(
-            'osid-1' => array(
-              'osid-1',
+            $osid => array(
+              $osid,
             )
           )
         ),
         'choices' => array(
           $agent_name => array(
-            'osid-1' => array(
-              'osid-1' => array(
+            $osid => array(
+              $osid => array(
                 'option-1',
                 'option-2',
               )
@@ -1606,7 +1614,7 @@ class AcquiaLiftWebTest extends DrupalWebTestCase {
     $report_start_date = 1407499650;
     AcquiaLiftAPI::setTestInstance();
     $agent_instance = personalize_agent_load_agent($first_agent);
-    $report = $agent_instance->buildCampaignReports(array('decision' => 'osid-1', 'start' => $report_start_date));
+    $report = $agent_instance->buildCampaignReports(array('decision' => 'osid-' . $option_sets[0]->osid, 'start' => $report_start_date));
 
     // The experiment report should show that Option A has a 0% conversion rate.
     $this->assertEqual("Option A", $report['experiment']['reports']['conversion']['reports']['summary']['summary_holder']['summary_table']['#rows'][0]['data'][0]['data']);
@@ -1615,7 +1623,7 @@ class AcquiaLiftWebTest extends DrupalWebTestCase {
 
     // The report for the second agent will be identical
     $agent_instance = personalize_agent_load_agent($second_agent);
-    $report = $agent_instance->buildCampaignReports(array('decision' => 'osid-1', 'start' => $report_start_date));
+    $report = $agent_instance->buildCampaignReports(array('decision' => 'osid-' . $option_sets[0]->osid, 'start' => $report_start_date));
     $this->assertEqual("Option A", $report['experiment']['reports']['conversion']['reports']['summary']['summary_holder']['summary_table']['#rows'][0]['data'][0]['data']);
     $this->assertEqual("Control", $report['experiment']['reports']['conversion']['reports']['summary']['summary_holder']['summary_table']['#rows'][0]['data'][0]['data-acquia-lift-variation-label']);
     $this->assertEqual("0%", $report['experiment']['reports']['conversion']['reports']['summary']['summary_holder']['summary_table']['#rows'][0]['data'][2]['data']);
@@ -1626,7 +1634,7 @@ class AcquiaLiftWebTest extends DrupalWebTestCase {
     $path = drupal_get_path('module', 'acquia_lift');
     variable_set("acquia_lift_report_source_$first_agent", "/" . $path . '/tests/test_reports.json');
     $agent_instance = personalize_agent_load_agent($first_agent);
-    $report = $agent_instance->buildCampaignReports(array('decision' => 'osid-1', 'start' => $report_start_date));
+    $report = $agent_instance->buildCampaignReports(array('decision' => 'osid-' . $option_sets[0]->osid, 'start' => $report_start_date));
 
     // Now the experiment report should show that Option A has a conversion rate of .19%
     $this->assertEqual("osid-76:Option A", $report['experiment']['reports']['conversion']['reports']['summary']['summary_holder']['summary_table']['#rows'][0]['data'][0]['data']);
@@ -1635,7 +1643,7 @@ class AcquiaLiftWebTest extends DrupalWebTestCase {
 
     // The report for the second agent should still show the basic report data.
     $agent_instance = personalize_agent_load_agent($second_agent);
-    $report = $agent_instance->buildCampaignReports(array('decision' => 'osid-1', 'start' => $report_start_date));
+    $report = $agent_instance->buildCampaignReports(array('decision' => 'osid-' . $option_sets[0]->osid, 'start' => $report_start_date));
     $this->assertEqual("Option A", $report['experiment']['reports']['conversion']['reports']['summary']['summary_holder']['summary_table']['#rows'][0]['data'][0]['data']);
     $this->assertEqual("Control", $report['experiment']['reports']['conversion']['reports']['summary']['summary_holder']['summary_table']['#rows'][0]['data'][0]['data-acquia-lift-variation-label']);
     $this->assertEqual("0%", $report['experiment']['reports']['conversion']['reports']['summary']['summary_holder']['summary_table']['#rows'][0]['data'][2]['data']);
@@ -1709,7 +1717,7 @@ class AcquiaLiftWebTest extends DrupalWebTestCase {
       )
     );
     personalize_fields_option_set_save($option_set, 'node', $node, 'article_headline');
-
+    $first_osid = 'osid-' . $option_set->osid;
     $this->resetAll();
     $goals = personalize_goal_load_by_conditions(array('agent' => 'article-personalizable-headline'));
     $this->assertEqual(1, count($goals));
@@ -1737,7 +1745,7 @@ class AcquiaLiftWebTest extends DrupalWebTestCase {
         'args' =>
           array (
             'article-personalizable-headline',
-            'osid-1',
+            $first_osid,
           ),
       ),
       array (
@@ -1745,8 +1753,8 @@ class AcquiaLiftWebTest extends DrupalWebTestCase {
         'args' =>
           array (
             'article-personalizable-headline',
-            'osid-1',
-            'osid-1',
+            $first_osid,
+            $first_osid,
           ),
       ),
       array (
@@ -1754,8 +1762,8 @@ class AcquiaLiftWebTest extends DrupalWebTestCase {
         'args' =>
           array (
             'article-personalizable-headline',
-            'osid-1',
-            'osid-1',
+            $first_osid,
+            $first_osid,
             'option-a',
           ),
       ),
@@ -1764,8 +1772,8 @@ class AcquiaLiftWebTest extends DrupalWebTestCase {
         'args' =>
           array (
             'article-personalizable-headline',
-            'osid-1',
-            'osid-1',
+            $first_osid,
+            $first_osid,
             'option-b',
           ),
       ),
@@ -1774,7 +1782,7 @@ class AcquiaLiftWebTest extends DrupalWebTestCase {
         'args' =>
           array (
             'article-personalizable-headline',
-            'osid-1',
+            $first_osid,
             array(),
           ),
       ),
@@ -1830,9 +1838,10 @@ class AcquiaLiftWebTest extends DrupalWebTestCase {
       )
     );
     personalize_fields_option_set_save($option_set, 'node', $node, 'article_headline');
+    $second_osid = 'osid-' . $option_set->osid;
     $this->resetAll();
     // Confirm that our agent and option set were created.
-    $option_set = personalize_option_set_load(2);
+    $option_set = personalize_option_set_load($option_set->osid);
     $second_agent = 'article-personalizable-headline-2';
     $this->assertEqual($second_agent, $option_set->agent);
     // There should be no goal for this agent.
@@ -1858,7 +1867,7 @@ class AcquiaLiftWebTest extends DrupalWebTestCase {
         'args' =>
           array (
             $second_agent,
-            'osid-2',
+            $second_osid,
           ),
       ),
       array (
@@ -1866,8 +1875,8 @@ class AcquiaLiftWebTest extends DrupalWebTestCase {
         'args' =>
           array (
             $second_agent,
-            'osid-2',
-            'osid-2',
+            $second_osid,
+            $second_osid,
           ),
       ),
       array (
@@ -1875,8 +1884,8 @@ class AcquiaLiftWebTest extends DrupalWebTestCase {
         'args' =>
           array (
             $second_agent,
-            'osid-2',
-            'osid-2',
+            $second_osid,
+            $second_osid,
             'option-a',
           ),
       ),
@@ -1885,8 +1894,8 @@ class AcquiaLiftWebTest extends DrupalWebTestCase {
         'args' =>
           array (
             $second_agent,
-            'osid-2',
-            'osid-2',
+            $second_osid,
+            $second_osid,
             'option-b',
           ),
       ),
@@ -1895,7 +1904,7 @@ class AcquiaLiftWebTest extends DrupalWebTestCase {
         'args' =>
           array (
             $second_agent,
-            'osid-2',
+            $second_osid,
             array(),
           ),
       ),
@@ -1915,13 +1924,14 @@ class AcquiaLiftWebTest extends DrupalWebTestCase {
     // Set the start time of the agent to 2 minutes ago.
     $agent_data->started = time() - 120;
     // Most basic case - a single option set with 2 options.
-    $this->createOptionSet(0, array('agent' => $machine_name, 'plugin' => 'type1', 'num_options' => 2));
+    list($option_set, $new_queue_items) = $this->createOptionSet(0, array('agent' => $machine_name, 'plugin' => 'type1', 'num_options' => 2));
+    $osid = 'osid-' . $option_set->osid;
     // Generate the reporting data to be returned by the dummy http client for this
     // agent.
     $points = array(
-      'osid-1' => array(
-        'osid-1:option-A',
-        'osid-1:option-B',
+      $osid => array(
+        $osid . ':option-A',
+        $osid . ':option-B',
       ),
     );
     $test_data = array(
@@ -1950,7 +1960,7 @@ class AcquiaLiftWebTest extends DrupalWebTestCase {
     $test_data = array(
       'reports' => array(
         $machine_name => array(
-          'confidence' => AcquiaLiftTestReports::generateConfidenceReportWithWinners($machine_name, $points, array('osid-1' => 'osid-1:option-B')),
+          'confidence' => AcquiaLiftTestReports::generateConfidenceReportWithWinners($machine_name, $points, array($osid => $osid . ':option-B')),
         )
       )
     );
@@ -1962,7 +1972,7 @@ class AcquiaLiftWebTest extends DrupalWebTestCase {
     // Now we should get TRUE as a winner will have been found.
     $this->assertTrue($stop);
     // Confirm the winner has been set on the option set.
-    $option_set = personalize_option_set_load(1, TRUE);
+    $option_set = personalize_option_set_load($option_set->osid, TRUE);
     $this->assertEqual('option-B', $option_set->winner);
     // Setting the minimum number of decisions to 50 will mean we won't have enough
     // decisions so we should get FALSE.
@@ -2014,33 +2024,38 @@ class AcquiaLiftWebTest extends DrupalWebTestCase {
       array('agent' => $machine_name, 'plugin' => 'type2', 'num_options' => 3),
     );
 
+    $option_sets = array();
     foreach ($option_set_values as $i => $values) {
-      $this->createOptionSet($i, $values);
+      list($option_set, $new_queue_items) = $this->createOptionSet($i, $values);
+      $option_sets[] = $option_set;
     }
+    $first_osid = 'osid-' . $option_sets[0]->osid;
+    $second_osid = 'osid-' . $option_sets[1]->osid;
+    $third_osid = 'osid-' . $option_sets[2]->osid;
     // Create an MVT and add two of the option sets to it.
     $mvt_label = $this->randomName();
     $mvt_machine_name = personalize_generate_machine_name($mvt_label, 'personalize_mvt_machine_name_exists');
     $edit = array(
       'mvt[add][mvt_basic_info][label]' => $mvt_machine_name,
-      'mvt[add][mvt_basic_info][option_sets][]' => array(2, 3),
+      'mvt[add][mvt_basic_info][option_sets][]' => array($option_sets[1]->osid, $option_sets[2]->osid),
     );
     $this->drupalPost("admin/structure/personalize/manage/{$machine_name}/edit", $edit, $this->getButton('mvt'));
     // Generate the reporting data to be returned by the dummy http client for this
     // agent. All possible choices at each decision point need to be accounted for in
     // the report.
     $points = array(
-      'osid-1' => array(
-        'osid-1:option-A',
-        'osid-1:option-B',
-        'osid-1:option-C'
+      $first_osid => array(
+        $first_osid . ':option-A',
+        $first_osid . ':option-B',
+        $first_osid . ':option-C'
       ),
       $mvt_machine_name => array(
-        'osid-2:option-A,osid-3:option-A',
-        'osid-2:option-A,osid-3:option-B',
-        'osid-2:option-A,osid-3:option-C',
-        'osid-2:option-B,osid-3:option-A',
-        'osid-2:option-B,osid-3:option-B',
-        'osid-2:option-B,osid-3:option-C',
+        $second_osid . ':option-A,' . $third_osid . ':option-A',
+        $second_osid . ':option-A,' . $third_osid . ':option-B',
+        $second_osid . ':option-A,' . $third_osid . ':option-C',
+        $second_osid . ':option-B,' . $third_osid . ':option-A',
+        $second_osid . ':option-B,' . $third_osid . ':option-B',
+        $second_osid . ':option-B,' . $third_osid . ':option-C',
       )
     );
     $test_data = array(
@@ -2049,7 +2064,7 @@ class AcquiaLiftWebTest extends DrupalWebTestCase {
           // We'll specify a winner at each decision point - for option set 1 it will be
           // Option B and for the MVT it will be the combination of Option A and Option C
           // in Option Sets 2 and 3 respectively.
-          'confidence' => AcquiaLiftTestReports::generateConfidenceReportWithWinners($machine_name, $points, array('osid-1' => 'osid-1:option-B', $mvt_machine_name => 'osid-2:option-A,osid-3:option-C')),
+          'confidence' => AcquiaLiftTestReports::generateConfidenceReportWithWinners($machine_name, $points, array($first_osid => $first_osid . ':option-B', $mvt_machine_name => $second_osid . ':option-A,' . $third_osid . ':option-C')),
         )
       )
     );

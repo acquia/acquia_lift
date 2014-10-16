@@ -5,7 +5,8 @@
  * Integration tests for Acquia Lift module.
  */
 
-class AcquiaLiftWebTest extends DrupalWebTestCase {
+class AcquiaLiftWebTestBase extends DrupalWebTestCase
+{
   /**
    * The string to use as the runtime API key.
    *
@@ -40,15 +41,8 @@ class AcquiaLiftWebTest extends DrupalWebTestCase {
 
   protected $personalizedQueue;
 
-  public static function getInfo() {
-    return array(
-      'name' => t('Acquia Lift Web Tests'),
-      'description' => t('Tests basic functionality of Acquia Lift module.'),
-      'group' => t('Personalize'),
-    );
-  }
-
-  public function setUp() {
+  public function setUp()
+  {
     require_once(dirname(__FILE__) . '/../includes/acquia_lift.classes.inc');
     require_once(dirname(__FILE__) . '/acquia_lift.test_classes.inc');
 
@@ -68,9 +62,275 @@ class AcquiaLiftWebTest extends DrupalWebTestCase {
     ));
   }
 
-  public function tearDown() {
+  public function tearDown()
+  {
     variable_del('acquia_lift_web_test_data');
     parent::tearDown();
+  }
+
+
+  /**
+   * Asserts that the expected items are in the queue.
+   *
+   * @param $expected_items
+   *   An array of queued items.
+   */
+  protected function assertQueueItems($expected_items) {
+    $actual_items = array();
+    $result = db_query('SELECT data FROM {queue} q WHERE name = \'acquia_lift_sync\' ORDER BY created ASC');
+    foreach ($result as $row) {
+      $actual_items[] = unserialize($row->data);
+    }
+    $this->assertEqual($expected_items, $actual_items);
+  }
+
+  /**
+   * Help function to create and test queue creation of Personalize Agent
+   *
+   * @param array $data
+   *  array (
+   *    'name' => Agent title
+   *    'machine_name' => string processed by personalize_generate_machine_name()
+   *  )
+   * @param bool $cleanQueue Clean or not Drupal queue after 'saveAgent' queue testing
+   * @return NULL|PersonalizeAgentInterface
+   *
+   * @see personalize_generate_machine_name()
+   * @see testSaveAgent()
+   */
+  protected function createTestAgent($data = array(), $cleanQueue = TRUE, $assertResults = TRUE) {
+    $this->configureAcquiaLiftAccount();
+    $this->drupalLogin($this->managerUser);
+
+    $data += array(
+      'name' => $this->randomName(),
+      'agent_type' => 'acquia_lift',
+      'decision_style' => 'adaptive',
+      'control_rate' => 10,
+      'explore_rate' => 20,
+      'cache_decisions' => 1,
+      'stop_on_winner' => 0
+    );
+
+    $data +=  array('machine_name' => personalize_generate_machine_name($data['name'], 'personalize_agent_machine_name_exists'));
+    $edit = array(
+      'agent_basic_info[title]' => $data['name'],
+      'agent_basic_info[machine_name]' => $data['machine_name'],
+      'agent_basic_info[agent_type]' => $data['agent_type'],
+      'agent_basic_info[options][acquia_lift][decision_style]' => $data['decision_style'],
+      'agent_basic_info[options][acquia_lift][control_rate]' => $data['control_rate'],
+      'agent_basic_info[options][acquia_lift][explore_rate]' => $data['explore_rate'],
+      'cache_decisions' => $data['cache_decisions']
+    );
+
+    $this->drupalPost('admin/structure/personalize/add', $edit, $this->getButton('agent'));
+    if ($data['stop_on_winner']) {
+      $agent = personalize_agent_load($data['machine_name']);
+      $agent->data['stop_on_winner'] = 1;
+      personalize_agent_save($agent);
+    }
+    $agent = personalize_agent_load_agent($data['machine_name'], TRUE);
+
+    if ($assertResults) {
+      $this->assertTrue($agent instanceof AcquiaLiftAgent);
+    }
+
+    $expected_queue_items = array(
+      array(
+        'method' => 'saveAgent',
+        'args' => array(
+          $data['machine_name'],
+          $data['name'],
+          'adaptive',
+          'enabled',
+          isset($data['control_rate']) ? $data['control_rate'] / 100 : .1,
+          isset($data['explore_rate']) ? ($data['explore_rate'] / 100) : .2,
+          isset($data['cache_decisions']) && $data['cache_decisions']
+        )
+      )
+    );
+    if ($assertResults) {
+      $this->assertQueueItems($expected_queue_items);
+    }
+
+    if ($cleanQueue) {
+      $this->personalizedQueue->deleteQueue();
+    }
+
+    return $agent;
+  }
+
+  protected function createOptionSet($index, $optionData) {
+    $option_set = array(
+      'plugin' => $optionData['plugin'],
+      'label' => 'Option Set ' . ($index + 1),
+      'agent' => $optionData['agent'],
+    );
+    $options = array();
+    $choice_ids = array();
+    if (!isset($optionData['option_ids'])) {
+      for ($j = 0; $j < $optionData['num_options']; $j++) {
+        $option_id = personalize_generate_option_id($j);
+        $choice_ids[] = $option_id;
+        $options[$j] = array(
+          'option_id' => $option_id,
+          'option_label' => personalize_generate_option_label($j),
+        );
+      }
+    }
+    else {
+      foreach ($optionData['option_ids'] as $i => $option_id) {
+        $choice_ids[] = $option_id;
+        $options[$i] = array(
+          'option_id' => $option_id,
+          'option_label' => personalize_generate_option_label($i),
+        );
+      }
+    }
+
+    $option_set['options'] = $options;
+    $option_set = (object) $option_set;
+    personalize_option_set_save($option_set);
+
+    $expected_queue_items[] = array(
+      'method' => 'savePoint',
+      'args' => array(
+        $optionData['agent'],
+        personalize_get_decision_point_name_for_option_set($option_set),
+      )
+    );
+    // An item will be added to the queue to save the decision.
+    $expected_queue_items[] = array(
+      'method' => 'saveDecision',
+      'args' => array(
+        $optionData['agent'],
+        personalize_get_decision_point_name_for_option_set($option_set),
+        personalize_get_decision_name_for_option_set($option_set)
+      )
+    );
+    // An item will be added to teh queue to save each option.
+    foreach ($choice_ids as $choice) {
+      $expected_queue_items[] = array(
+        'method' => 'saveChoice',
+        'args' => array(
+          $optionData['agent'],
+          personalize_get_decision_point_name_for_option_set($option_set),
+          personalize_get_decision_name_for_option_set($option_set),
+          $choice
+        )
+      );
+    }
+
+    return array($option_set, $expected_queue_items);
+  }
+
+  /**
+   * Creates a user profile field which can be used for targeting.
+   *
+   * @return array
+   *   An associative array representing the field.
+   */
+  protected function createUserProfileField() {
+    $field = array(
+      'field_name' => 'field_' . drupal_strtolower($this->randomName()),
+      'type' => 'text',
+      'cardinality' => 1,
+    );
+
+    field_create_field($field);
+    $fieldInstance = array(
+      'field_name' => $field['field_name'],
+      'entity_type' => 'user',
+      'bundle' => 'user',
+      'settings' => array(
+        'user_register_form' => FALSE,
+      ),
+    );
+
+    field_create_instance($fieldInstance);
+    return $field;
+  }
+
+  /**
+   * Helper method to move buttons names to one pace to simplify
+   * it's maintaining
+   *
+   * Kind of Page Objects Patterns
+   *
+   * @param $type string
+   * @return string
+   */
+  protected function getButton($type = '') {
+    switch ($type) {
+      case 'agent':
+        return t('Save campaign settings');
+      case 'goal':
+        return t('Save goals');
+      case 'option':
+        return t('Save variation sets');
+      case 'mvt':
+        return t('Save test');
+      case 'delete':
+        return t('Delete');
+      case 'config':
+        return t('Save configuration');
+      default:
+        return t('Save');
+    }
+  }
+
+  /**
+   * Helper method to configure an Acquia Lift account.
+   */
+  protected function configureAcquiaLiftAccount() {
+    $edit = array(
+      'acquia_lift_account_info[owner_code]' => $this->liftAOwnerCode,
+      'acquia_lift_account_info[api_key]' => $this->liftAPIKey,
+      'acquia_lift_account_info[admin_key]' => $this->liftAdminKey,
+      'acquia_lift_account_info[api_url]' => $this->liftAPIUrl,
+    );
+    $this->drupalLogin($this->adminUser);
+    $this->drupalPost('admin/config/content/personalize/acquia_lift', $edit, $this->getButton('config'));
+
+    $this->resetAll();
+  }
+
+  /**
+   * Creates the required number of custom blocks.
+   *
+   * @param int $num
+   *   The number of blocks to create.
+   *
+   * @return array
+   *   An array of block deltas for use in personalized blocks.
+   */
+  protected function createCustomBlocks($num = 1) {
+    $deltas = array();
+    module_load_include('inc', 'personalize_blocks', 'personalize_blocks.admin');
+    for ($i = 1; $i <= $num; $i++) {
+      $title = t('Custom block @num', array('@num' => $i));
+      $values = array(
+        'title' => $title,
+        'info' => $title,
+        'body' => array(
+          'format' => 'filtered_html',
+          'value' => 'Some value',
+        )
+      );
+      $deltas[] = _personalize_blocks_add_custom_block($values);
+    }
+    return $deltas;
+  }
+}
+
+class AcquiaLiftWebTestConfig extends AcquiaLiftWebTestBase {
+
+  public static function getInfo() {
+    return array(
+      'name' => t('Acquia Lift Web Tests - Configuration'),
+      'description' => t('Tests related to configuring Acquia Lift.'),
+      'group' => t('Personalize'),
+    );
   }
 
   public function testLiftAgentAvailibility() {
@@ -93,6 +353,82 @@ class AcquiaLiftWebTest extends DrupalWebTestCase {
     $this->drupalGet('admin/structure/personalize/add');
     $this->assertNoText(t('Your Acquia Lift account info has not been configured.'));
     $this->assertRaw('<option value="acquia_lift">acquia_lift</option>');
+  }
+
+
+  public function testConfigForm()
+  {
+    $this->drupalLogin($this->adminUser);
+    // Try entering an invalid owner code.
+    $edit = array(
+      'acquia_lift_account_info[owner_code]' => 'some invalid string',
+      'acquia_lift_account_info[api_key]' => $this->liftAPIKey,
+      'acquia_lift_account_info[admin_key]' => $this->liftAdminKey,
+      'acquia_lift_account_info[api_url]' => $this->liftAPIUrl,
+    );
+    $this->drupalPost('admin/config/content/personalize/acquia_lift', $edit, $this->getButton('config'));
+    $this->assertText('You must enter a valid owner code');
+
+    // Now try with a valid code.
+    $edit['acquia_lift_account_info[owner_code]'] = $this->liftAOwnerCode;
+    $this->drupalPost('admin/config/content/personalize/acquia_lift', $edit, $this->getButton('config'));
+    $this->assertNoText('You must enter a valid owner code');
+    $account_info = variable_get('acquia_lift_account_info', array());
+    $this->assertEqual($account_info['owner_code'], $this->liftAOwnerCode);
+    $this->assertEqual($account_info['api_key'], $this->liftAPIKey);
+    $this->assertEqual($account_info['admin_key'], $this->liftAdminKey);
+    $this->assertEqual($account_info['api_url'], 'http://some.valid.url');
+    // Try entering an invalid API url.
+    $edit['acquia_lift_account_info[api_url]'] = 'some\\invalid\\url';
+    $this->drupalPost('admin/config/content/personalize/acquia_lift', $edit, $this->getButton('config'));
+    $this->assertText('You must enter a valid URL');
+    // Try a valid URL with no scheme.
+    $edit['acquia_lift_account_info[api_url]'] = 'some.valid.url';
+    $this->drupalPost('admin/config/content/personalize/acquia_lift', $edit, $this->getButton('config'));
+    $this->assertNoText('You must enter a valid URL');
+    // Try a valid URL with scheme.
+    $edit['acquia_lift_account_info[api_url]'] = 'https://some.valid.url';
+    $this->drupalPost('admin/config/content/personalize/acquia_lift', $edit, $this->getButton('config'));
+    $this->assertNoText('You must enter a valid URL');
+    $this->resetAll();
+    $account_info = variable_get('acquia_lift_account_info', array());
+    $this->assertEqual($account_info['api_url'], 'https://some.valid.url');
+
+    // Submit bogus confidence measures.
+    $bad_measures = array(
+      'abcd' => t('Confidence measure must be a number.'),
+      145 => t('Confidence measure must be a value between 0 and 100.'),
+      -45 => t('Confidence measure must be a value between 0 and 100.'),
+    );
+    foreach ($bad_measures as $measure => $message) {
+      $edit['acquia_lift_confidence_measure'] = $measure;
+      $this->drupalPost('admin/config/content/personalize/acquia_lift', $edit, $this->getButton('config'));
+      $this->assertText($message);
+      $this->assertNoText(t('A minimum confidence measure of 80% is recommended to ensure proper evaluation of test results.'));
+      $this->assertNoText(t('The configuration options have been saved.'));
+    }
+
+    // Submit a low confidence measure and test warning.
+    $edit['acquia_lift_confidence_measure'] = '10';
+    $this->drupalPost('admin/config/content/personalize/acquia_lift', $edit, $this->getButton('config'));
+    $this->assertText(t('A minimum confidence measure of 95% is recommended to ensure proper evaluation of test results.'));
+    $this->assertText(t('The configuration options have been saved.'));
+
+    // Submit a valid measure and confirm it is saved without warning.
+    $edit['acquia_lift_confidence_measure'] = '95';
+    $this->drupalPost('admin/config/content/personalize/acquia_lift', $edit, $this->getButton('config'));
+    $this->assertNoText(t('A minimum confidence measure of 95% is recommended to ensure proper evaluation of test results.'));
+    $this->assertText(t('The configuration options have been saved.'));
+  }
+}
+class AcquiaLiftWebTestVariationSets extends AcquiaLiftWebTestBase {
+
+  public static function getInfo() {
+    return array(
+      'name' => t('Acquia Lift Web Tests - Variation Sets'),
+      'description' => t('Tests functionality related to variation set creation.'),
+      'group' => t('Personalize'),
+    );
   }
 
   function testPersonalizeElementsVariationSets() {
@@ -161,7 +497,8 @@ class AcquiaLiftWebTest extends DrupalWebTestCase {
    * testPersonalizeElementsVariationSets() above and simplified to just
    * personalize_elements elements (but with the complexity of this test).
    */
-  function testVariationSets() {
+  function testVariationSets()
+  {
     module_load_include('inc', 'acquia_lift', 'acquia_lift.admin');
 
     $admin_user = $this->drupalCreateUser(array('access administration pages', 'manage personalized content', 'administer blocks'));
@@ -360,69 +697,15 @@ class AcquiaLiftWebTest extends DrupalWebTestCase {
     $option_sets = personalize_option_set_load_multiple(array(), array('decision_name' => 'first_variation_set', 'agent' => $agent_name), TRUE);
     $this->assertTrue(count($option_sets) === 0);
   }
+}
 
-  public function testConfigForm() {
-    $this->drupalLogin($this->adminUser);
-    // Try entering an invalid owner code.
-    $edit = array(
-      'acquia_lift_account_info[owner_code]' => 'some invalid string',
-      'acquia_lift_account_info[api_key]' => $this->liftAPIKey,
-      'acquia_lift_account_info[admin_key]' => $this->liftAdminKey,
-      'acquia_lift_account_info[api_url]' => $this->liftAPIUrl,
+class AcquiaLiftWebTestAgentAdmin extends AcquiaLiftWebTestBase {
+  public static function getInfo() {
+    return array(
+      'name' => t('Acquia Lift Web Tests - Agent Administration'),
+      'description' => t('Tests functionality of adminstering Acquia Lift agents and their components.'),
+      'group' => t('Personalize'),
     );
-    $this->drupalPost('admin/config/content/personalize/acquia_lift', $edit, $this->getButton('config'));
-    $this->assertText('You must enter a valid owner code');
-
-    // Now try with a valid code.
-    $edit['acquia_lift_account_info[owner_code]'] = $this->liftAOwnerCode;
-    $this->drupalPost('admin/config/content/personalize/acquia_lift', $edit, $this->getButton('config'));
-    $this->assertNoText('You must enter a valid owner code');
-    $account_info = variable_get('acquia_lift_account_info', array());
-    $this->assertEqual($account_info['owner_code'], $this->liftAOwnerCode);
-    $this->assertEqual($account_info['api_key'], $this->liftAPIKey);
-    $this->assertEqual($account_info['admin_key'], $this->liftAdminKey);
-    $this->assertEqual($account_info['api_url'], 'http://some.valid.url');
-    // Try entering an invalid API url.
-    $edit['acquia_lift_account_info[api_url]'] = 'some\\invalid\\url';
-    $this->drupalPost('admin/config/content/personalize/acquia_lift', $edit, $this->getButton('config'));
-    $this->assertText('You must enter a valid URL');
-    // Try a valid URL with no scheme.
-    $edit['acquia_lift_account_info[api_url]'] = 'some.valid.url';
-    $this->drupalPost('admin/config/content/personalize/acquia_lift', $edit, $this->getButton('config'));
-    $this->assertNoText('You must enter a valid URL');
-    // Try a valid URL with scheme.
-    $edit['acquia_lift_account_info[api_url]'] = 'https://some.valid.url';
-    $this->drupalPost('admin/config/content/personalize/acquia_lift', $edit, $this->getButton('config'));
-    $this->assertNoText('You must enter a valid URL');
-    $this->resetAll();
-    $account_info = variable_get('acquia_lift_account_info', array());
-    $this->assertEqual($account_info['api_url'], 'https://some.valid.url');
-
-    // Submit bogus confidence measures.
-    $bad_measures = array(
-      'abcd' => t('Confidence measure must be a number.'),
-      145 => t('Confidence measure must be a value between 0 and 100.'),
-      -45 => t('Confidence measure must be a value between 0 and 100.'),
-    );
-    foreach ($bad_measures as $measure => $message) {
-      $edit['acquia_lift_confidence_measure'] = $measure;
-      $this->drupalPost('admin/config/content/personalize/acquia_lift', $edit, $this->getButton('config'));
-      $this->assertText($message);
-      $this->assertNoText(t('A minimum confidence measure of 80% is recommended to ensure proper evaluation of test results.'));
-      $this->assertNoText(t('The configuration options have been saved.'));
-    }
-
-    // Submit a low confidence measure and test warning.
-    $edit['acquia_lift_confidence_measure'] = '10';
-    $this->drupalPost('admin/config/content/personalize/acquia_lift', $edit, $this->getButton('config'));
-    $this->assertText(t('A minimum confidence measure of 95% is recommended to ensure proper evaluation of test results.'));
-    $this->assertText(t('The configuration options have been saved.'));
-
-    // Submit a valid measure and confirm it is saved without warning.
-    $edit['acquia_lift_confidence_measure'] = '95';
-    $this->drupalPost('admin/config/content/personalize/acquia_lift', $edit, $this->getButton('config'));
-    $this->assertNoText(t('A minimum confidence measure of 95% is recommended to ensure proper evaluation of test results.'));
-    $this->assertText(t('The configuration options have been saved.'));
   }
 
   public function testSaveAgent() {
@@ -669,7 +952,7 @@ class AcquiaLiftWebTest extends DrupalWebTestCase {
 
     // Add the user profile fields as context.
     $agentStructure->data['visitor_context'] = array(
-      'user_profile_context' => array (
+      'user_profile_context' => array(
         str_replace('field_', '', $user_profile_field_1['field_name']) => str_replace('field_', '', $user_profile_field_1['field_name']),
         str_replace('field_', '', $user_profile_field_2['field_name']) => str_replace('field_', '', $user_profile_field_2['field_name']),
       ),
@@ -848,7 +1131,7 @@ class AcquiaLiftWebTest extends DrupalWebTestCase {
       'option_sets[option_set_1][options][option-A][explicit_targeting][strategy]' => 'AND'
     );
 
-    $this->drupalPost('admin/structure/personalize/manage/' . $agent->getMachineName() . '/edit', $edit , $this->getButton('option'));
+    $this->drupalPost('admin/structure/personalize/manage/' . $agent->getMachineName() . '/edit', $edit, $this->getButton('option'));
 
     // Now the fixed targeting mapping should have a single mapping with
     // comma-separated features.
@@ -1078,8 +1361,18 @@ class AcquiaLiftWebTest extends DrupalWebTestCase {
   public function testDeleteAgentGoals() {
     // @todo implement or remove it after goal deletion decision
   }
+}
+class AcquiaLiftWebTestFundamentals extends AcquiaLiftWebTestBase {
+  public static function getInfo() {
+    return array(
+      'name' => t('Acquia Lift Web Tests - Fundamentals'),
+      'description' => t('Tests the module\'s underlying machinery.'),
+      'group' => t('Personalize'),
+    );
+  }
 
-  public function testAcquiaLiftQueue() {
+  public function testAcquiaLiftQueue()
+  {
     $marketer = $this->drupalCreateUser(array('access administration pages', 'manage personalized content'));
     $this->drupalLogin($marketer);
     // Create a new agent via the UI.
@@ -1175,7 +1468,8 @@ class AcquiaLiftWebTest extends DrupalWebTestCase {
   /**
    * Tests the logic in AcquiaLiftAgent's implementation of convertContextToFeatureString().
    */
-  public function testConvertContextToFeatureString() {
+  public function testConvertContextToFeatureString()
+  {
     // No truncation should happen if name and value are short enough.
     $name = $this->randomName(20);
     $value = $this->randomName(20);
@@ -1201,7 +1495,8 @@ class AcquiaLiftWebTest extends DrupalWebTestCase {
   /**
    * Tests that new agents on the site cannot override existing agents in Lift.
    */
-  public function testMachineNameValidation() {
+  public function testMachineNameValidation()
+  {
     $test_data = array(
       'agents' => array(
         array('code' => 'my-existing-agent'),
@@ -1222,7 +1517,8 @@ class AcquiaLiftWebTest extends DrupalWebTestCase {
    * Tests the function that gathers operations for syncing of agents and their
    * components to Lift.
    */
-  public function testBatchSyncOperations() {
+  public function testBatchSyncOperations()
+  {
     // Create an agent on the site with a couple of option sets.
     // Note: we do this part first rather than loading the test data to
     // the server because otherwise it wouldn't allow us to create an
@@ -1230,10 +1526,10 @@ class AcquiaLiftWebTest extends DrupalWebTestCase {
     $control_rate = 10;
     $explore_rate = 30;
     $this->createTestAgent(array(
-        'name' => 'first-existing-agent',
-        'control_rate' => $control_rate,
-        'explore_rate' => $explore_rate
-      ));
+      'name' => 'first-existing-agent',
+      'control_rate' => $control_rate,
+      'explore_rate' => $explore_rate
+    ));
     $option_set_values = array(
       array(
         'agent' => 'first-existing-agent',
@@ -1492,6 +1788,15 @@ class AcquiaLiftWebTest extends DrupalWebTestCase {
     );
     $this->assertEqual($expected_operations, $operations);
   }
+}
+class AcquiaLiftWebTestReports extends AcquiaLiftWebTestBase {
+  public static function getInfo() {
+    return array(
+      'name' => t('Acquia Lift Web Tests - Reporting'),
+      'description' => t('Tests the reporting functionality for Acquia Lift.'),
+      'group' => t('Personalize'),
+    );
+  }
 
   public function testConversionReportAjaxEndpoint() {
     $this->drupalLogin($this->managerUser);
@@ -1648,7 +1953,15 @@ class AcquiaLiftWebTest extends DrupalWebTestCase {
     $this->assertEqual("Control", $report['experiment']['reports']['conversion']['reports']['summary']['summary_holder']['summary_table']['#rows'][0]['data'][0]['data-acquia-lift-variation-label']);
     $this->assertEqual("0%", $report['experiment']['reports']['conversion']['reports']['summary']['summary_holder']['summary_table']['#rows'][0]['data'][2]['data']);
   }
-  
+}
+class AcquiaLiftWebTestWorkflow extends AcquiaLiftWebTestBase {
+  public static function getInfo() {
+    return array(
+      'name' => t('Acquia Lift Web Tests - Workflows'),
+      'description' => t('Tests functionality related to particular campaign workflows.'),
+      'group' => t('Personalize'),
+    );
+  }
   /**
    * Tests automatic creation of a goal for personalized fields and auto-
    * starting of the campaign.
@@ -2116,258 +2429,5 @@ class AcquiaLiftWebTest extends DrupalWebTestCase {
     AcquiaLiftAPI::setTestInstance();
     $stop = $agent_instance->stopNow();
     $this->assertTrue($stop);
-  }
-
-  /**
-   * Asserts that the expected items are in the queue.
-   *
-   * @param $expected_items
-   *   An array of queued items.
-   */
-  protected function assertQueueItems($expected_items) {
-    $actual_items = array();
-    $result = db_query('SELECT data FROM {queue} q WHERE name = \'acquia_lift_sync\' ORDER BY created ASC');
-    foreach ($result as $row) {
-      $actual_items[] = unserialize($row->data);
-    }
-    $this->assertEqual($expected_items, $actual_items);
-  }
-
-  /**
-   * Help function to create and test queue creation of Personalize Agent
-   *
-   * @param array $data
-   *  array (
-   *    'name' => Agent title
-   *    'machine_name' => string processed by personalize_generate_machine_name()
-   *  )
-   * @param bool $cleanQueue Clean or not Drupal queue after 'saveAgent' queue testing
-   * @return NULL|PersonalizeAgentInterface
-   *
-   * @see personalize_generate_machine_name()
-   * @see testSaveAgent()
-   */
-  protected function createTestAgent($data = array(), $cleanQueue = TRUE, $assertResults = TRUE) {
-    $this->configureAcquiaLiftAccount();
-    $this->drupalLogin($this->managerUser);
-
-    $data += array(
-      'name' => $this->randomName(),
-      'agent_type' => 'acquia_lift',
-      'decision_style' => 'adaptive',
-      'control_rate' => 10,
-      'explore_rate' => 20,
-      'cache_decisions' => 1,
-      'stop_on_winner' => 0
-    );
-
-    $data +=  array('machine_name' => personalize_generate_machine_name($data['name'], 'personalize_agent_machine_name_exists'));
-    $edit = array(
-      'agent_basic_info[title]' => $data['name'],
-      'agent_basic_info[machine_name]' => $data['machine_name'],
-      'agent_basic_info[agent_type]' => $data['agent_type'],
-      'agent_basic_info[options][acquia_lift][decision_style]' => $data['decision_style'],
-      'agent_basic_info[options][acquia_lift][control_rate]' => $data['control_rate'],
-      'agent_basic_info[options][acquia_lift][explore_rate]' => $data['explore_rate'],
-      'cache_decisions' => $data['cache_decisions']
-    );
-
-    $this->drupalPost('admin/structure/personalize/add', $edit, $this->getButton('agent'));
-    if ($data['stop_on_winner']) {
-      $agent = personalize_agent_load($data['machine_name']);
-      $agent->data['stop_on_winner'] = 1;
-      personalize_agent_save($agent);
-    }
-    $agent = personalize_agent_load_agent($data['machine_name'], TRUE);
-
-    if ($assertResults) {
-      $this->assertTrue($agent instanceof AcquiaLiftAgent);
-    }
-
-    $expected_queue_items = array(
-      array(
-        'method' => 'saveAgent',
-        'args' => array(
-          $data['machine_name'],
-          $data['name'],
-          'adaptive',
-          'enabled',
-          isset($data['control_rate']) ? $data['control_rate'] / 100 : .1,
-          isset($data['explore_rate']) ? ($data['explore_rate'] / 100) : .2,
-          isset($data['cache_decisions']) && $data['cache_decisions']
-        )
-      )
-    );
-    if ($assertResults) {
-      $this->assertQueueItems($expected_queue_items);
-    }
-
-    if ($cleanQueue) {
-      $this->personalizedQueue->deleteQueue();
-    }
-
-    return $agent;
-  }
-
-  protected function createOptionSet($index, $optionData) {
-    $option_set = array(
-      'plugin' => $optionData['plugin'],
-      'label' => 'Option Set ' . ($index + 1),
-      'agent' => $optionData['agent'],
-    );
-    $options = array();
-    $choice_ids = array();
-    if (!isset($optionData['option_ids'])) {
-      for ($j = 0; $j < $optionData['num_options']; $j++) {
-        $option_id = personalize_generate_option_id($j);
-        $choice_ids[] = $option_id;
-        $options[$j] = array(
-          'option_id' => $option_id,
-          'option_label' => personalize_generate_option_label($j),
-        );
-      }
-    }
-    else {
-      foreach ($optionData['option_ids'] as $i => $option_id) {
-        $choice_ids[] = $option_id;
-        $options[$i] = array(
-          'option_id' => $option_id,
-          'option_label' => personalize_generate_option_label($i),
-        );
-      }
-    }
-
-    $option_set['options'] = $options;
-    $option_set = (object) $option_set;
-    personalize_option_set_save($option_set);
-
-    $expected_queue_items[] = array(
-      'method' => 'savePoint',
-      'args' => array(
-        $optionData['agent'],
-        personalize_get_decision_point_name_for_option_set($option_set),
-      )
-    );
-    // An item will be added to the queue to save the decision.
-    $expected_queue_items[] = array(
-      'method' => 'saveDecision',
-      'args' => array(
-        $optionData['agent'],
-        personalize_get_decision_point_name_for_option_set($option_set),
-        personalize_get_decision_name_for_option_set($option_set)
-      )
-    );
-    // An item will be added to teh queue to save each option.
-    foreach ($choice_ids as $choice) {
-      $expected_queue_items[] = array(
-        'method' => 'saveChoice',
-        'args' => array(
-          $optionData['agent'],
-          personalize_get_decision_point_name_for_option_set($option_set),
-          personalize_get_decision_name_for_option_set($option_set),
-          $choice
-        )
-      );
-    }
-
-    return array($option_set, $expected_queue_items);
-  }
-
-  /**
-   * Creates a user profile field which can be used for targeting.
-   *
-   * @return array
-   *   An associative array representing the field.
-   */
-  protected function createUserProfileField() {
-    $field = array(
-      'field_name' => 'field_' . drupal_strtolower($this->randomName()),
-      'type' => 'text',
-      'cardinality' => 1,
-    );
-
-    field_create_field($field);
-    $fieldInstance = array(
-      'field_name' => $field['field_name'],
-      'entity_type' => 'user',
-      'bundle' => 'user',
-      'settings' => array(
-        'user_register_form' => FALSE,
-      ),
-    );
-
-    field_create_instance($fieldInstance);
-    return $field;
-  }
-
-  /**
-   * Helper method to move buttons names to one pace to simplify
-   * it's maintaining
-   *
-   * Kind of Page Objects Patterns
-   *
-   * @param $type string
-   * @return string
-   */
-  protected function getButton($type = '') {
-    switch ($type) {
-      case 'agent':
-        return t('Save campaign settings');
-      case 'goal':
-        return t('Save goals');
-      case 'option':
-        return t('Save variation sets');
-      case 'mvt':
-        return t('Save test');
-      case 'delete':
-        return t('Delete');
-      case 'config':
-        return t('Save configuration');
-      default:
-        return t('Save');
-    }
-  }
-
-  /**
-   * Helper method to configure an Acquia Lift account.
-   */
-  protected function configureAcquiaLiftAccount() {
-    $edit = array(
-      'acquia_lift_account_info[owner_code]' => $this->liftAOwnerCode,
-      'acquia_lift_account_info[api_key]' => $this->liftAPIKey,
-      'acquia_lift_account_info[admin_key]' => $this->liftAdminKey,
-      'acquia_lift_account_info[api_url]' => $this->liftAPIUrl,
-    );
-    $this->drupalLogin($this->adminUser);
-    $this->drupalPost('admin/config/content/personalize/acquia_lift', $edit, $this->getButton('config'));
-
-    $this->resetAll();
-  }
-
-  /**
-   * Creates the required number of custom blocks.
-   *
-   * @param int $num
-   *   The number of blocks to create.
-   *
-   * @return array
-   *   An array of block deltas for use in personalized blocks.
-   */
-  protected function createCustomBlocks($num = 1) {
-    $deltas = array();
-    module_load_include('inc', 'personalize_blocks', 'personalize_blocks.admin');
-    for ($i = 1; $i <= $num; $i++) {
-      $title = t('Custom block @num', array('@num' => $i));
-      $values = array(
-        'title' => $title,
-        'info' => $title,
-        'body' => array(
-          'format' => 'filtered_html',
-          'value' => 'Some value',
-        )
-      );
-      $deltas[] = _personalize_blocks_add_custom_block($values);
-    }
-    return $deltas;
   }
 }

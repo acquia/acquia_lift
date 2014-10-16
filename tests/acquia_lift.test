@@ -2014,7 +2014,7 @@ class AcquiaLiftWebTestWorkflow extends AcquiaLiftWebTestBase {
     node_object_prepare($node);
     $node->title = $this->randomName();
     $node->article_headline['und'][0] = array('value' => 'first value');
-    $node->article_headline['und'][0] = array('value' => 'second value');
+    $node->article_headline['und'][1] = array('value' => 'second value');
     node_save($node);
     // Now create the option set.
     $option_set = new stdClass();
@@ -2025,10 +2025,10 @@ class AcquiaLiftWebTestWorkflow extends AcquiaLiftWebTestBase {
     $option_set->new_agent_title = 'Article: Personalizable Headline';
     $option_set->options = array(
       array(
-        'option_label' => personalize_fields_generate_option_label(0, 'first value')
+        'option_label' => personalize_fields_generate_option_label(0, array('value' => 'first value'))
       ),
       array(
-        'option_label' => personalize_fields_generate_option_label(1, 'second value')
+        'option_label' => personalize_fields_generate_option_label(1, array('value' => 'second value'))
       )
     );
     personalize_fields_option_set_save($option_set, 'node', $node, 'article_headline');
@@ -2079,7 +2079,7 @@ class AcquiaLiftWebTestWorkflow extends AcquiaLiftWebTestBase {
             'article-personalizable-headline',
             $first_osid,
             $first_osid,
-            'option-a',
+            'first-value',
           ),
       ),
       array (
@@ -2089,7 +2089,7 @@ class AcquiaLiftWebTestWorkflow extends AcquiaLiftWebTestBase {
             'article-personalizable-headline',
             $first_osid,
             $first_osid,
-            'option-b',
+            'second-value',
           ),
       ),
       array (
@@ -2135,7 +2135,7 @@ class AcquiaLiftWebTestWorkflow extends AcquiaLiftWebTestBase {
     node_object_prepare($node);
     $node->title = $this->randomName();
     $node->article_headline['und'][0] = array('value' => 'first value');
-    $node->article_headline['und'][0] = array('value' => 'second value');
+    $node->article_headline['und'][1] = array('value' => 'second value');
     node_save($node);
     // Now create the option set.
     $option_set = new stdClass();
@@ -2146,10 +2146,10 @@ class AcquiaLiftWebTestWorkflow extends AcquiaLiftWebTestBase {
     $option_set->new_agent_title = 'Article: Personalizable Headline';
     $option_set->options = array(
       array(
-        'option_label' => personalize_fields_generate_option_label(0, 'first value')
+        'option_label' => personalize_fields_generate_option_label(0, array('value' => 'first value'))
       ),
       array(
-        'option_label' => personalize_fields_generate_option_label(1, 'second value')
+        'option_label' => personalize_fields_generate_option_label(1, array('value' => 'second value'))
       )
     );
     personalize_fields_option_set_save($option_set, 'node', $node, 'article_headline');
@@ -2201,7 +2201,7 @@ class AcquiaLiftWebTestWorkflow extends AcquiaLiftWebTestBase {
             $second_agent,
             $second_osid,
             $second_osid,
-            'option-a',
+            'first-value',
           ),
       ),
       array (
@@ -2211,7 +2211,7 @@ class AcquiaLiftWebTestWorkflow extends AcquiaLiftWebTestBase {
             $second_agent,
             $second_osid,
             $second_osid,
-            'option-b',
+            'second-value',
           ),
       ),
       array (

@@ -448,6 +448,7 @@ class AcquiaLiftWebTestVariationSets extends AcquiaLiftWebTestBase {
 
     $this->resetAll();
     $option_sets = personalize_option_set_load_multiple(array(), array('agent' => $agent_name));
+    $osids = array_keys($option_sets);
     $this->assertEqual(2, count($option_sets));
     foreach ($option_sets as $osid => $option_set) {
       $this->assertEqual('my_first_varset', $option_set->decision_name);
@@ -469,7 +470,7 @@ class AcquiaLiftWebTestVariationSets extends AcquiaLiftWebTestBase {
         'personalize_elements_content' => 'other-class'
       ),
     );
-    $this->assertEqual($expected_options_os1, $option_sets[1]->options);
+    $this->assertEqual($expected_options_os1, $option_sets[$osids[0]]->options);
     $expected_options_os2 = array(
       array(
         'option_id' => PERSONALIZE_CONTROL_OPTION_ID,
@@ -485,7 +486,7 @@ class AcquiaLiftWebTestVariationSets extends AcquiaLiftWebTestBase {
         'personalize_elements_content' => 'appended html'
       ),
     );
-    $this->assertEqual($expected_options_os2, $option_sets[2]->options);
+    $this->assertEqual($expected_options_os2, $option_sets[$osids[1]]->options);
   }
 
   /**
@@ -524,19 +525,19 @@ class AcquiaLiftWebTestVariationSets extends AcquiaLiftWebTestBase {
     $this->assertEqual(2, $var_num);
 
     // Now use the first option set for variation 3.
-    $os_1 = personalize_option_set_load(1, TRUE);
+    $os_1 = personalize_option_set_load($option_set->osid, TRUE);
     $var_num = acquia_lift_page_variation_create('first_variation_set', $os_1, array('personalize_elements_content' => 'another-test-class'));
     $this->assertEqual(3, $var_num);
 
     // Now add a different option to both for variation 4.
-    $os_1 = personalize_option_set_load(1, TRUE);
+    $os_1 = personalize_option_set_load($option_set->osid, TRUE);
     $var_num = acquia_lift_page_variation_create('first_variation_set', $os_1, array('personalize_elements_content' => 'third-test-class'));
     $this->assertEqual(4, $var_num);
 
     // Rename the third variation to test if the new names persist across changes.
     acquia_lift_page_variation_rename('first_variation_set', $agent_name, 3, 'three');
 
-    $os_2 = personalize_option_set_load(2, TRUE);
+    $os_2 = personalize_option_set_load($option_set_2->osid, TRUE);
     $var_num = acquia_lift_page_variation_create('first_variation_set', $os_2, array('personalize_elements_content' => '<p>some other html</p>'), 4);
     $this->assertEqual(4, $var_num);
 
@@ -552,6 +553,7 @@ class AcquiaLiftWebTestVariationSets extends AcquiaLiftWebTestBase {
 
     $this->resetAll();
     $option_sets = personalize_option_set_load_multiple(array(), array('agent' => $agent_name));
+    $osids = array_keys($option_sets);
     $this->assertEqual(3, count($option_sets));
     foreach ($option_sets as $osid => $option_set) {
       $this->assertEqual('first_variation_set', $option_set->decision_name);
@@ -586,7 +588,7 @@ class AcquiaLiftWebTestVariationSets extends AcquiaLiftWebTestBase {
         'option_label' => 'Variation #5',
       ),
     );
-    $this->assertEqual($expected_options_os1, $option_sets[1]->options);
+    $this->assertEqual($expected_options_os1, $option_sets[$osids[0]]->options);
     $expected_options_os2 = array(
       array(
         'option_id' => PERSONALIZE_CONTROL_OPTION_ID,
@@ -616,7 +618,7 @@ class AcquiaLiftWebTestVariationSets extends AcquiaLiftWebTestBase {
         'personalize_elements_content' => '<p>third html</p>',
       ),
     );
-    $this->assertEqual($expected_options_os2, $option_sets[2]->options);
+    $this->assertEqual($expected_options_os2, $option_sets[$osids[1]]->options);
     $expected_options_os3 = array(
       array(
         'option_id' => PERSONALIZE_CONTROL_OPTION_ID,
@@ -645,7 +647,7 @@ class AcquiaLiftWebTestVariationSets extends AcquiaLiftWebTestBase {
         'option_label' => 'Variation #5',
       ),
     );
-    $this->assertEqual($expected_options_os3, $option_sets[3]->options);
+    $this->assertEqual($expected_options_os3, $option_sets[$osids[2]]->options);
 
     // Rename the second variation.
     acquia_lift_page_variation_rename('first_variation_set', $agent_name, 2, 'Hello');
@@ -653,9 +655,9 @@ class AcquiaLiftWebTestVariationSets extends AcquiaLiftWebTestBase {
     $expected_options_os2[2]['option_label'] = 'Hello';
     $expected_options_os3[2]['option_label'] = 'Hello';
     $option_sets = personalize_option_set_load_multiple(array(), array('decision_name' => 'first_variation_set', 'agent' => $agent_name));
-    $this->assertEqual($expected_options_os1, $option_sets[1]->options);
-    $this->assertEqual($expected_options_os2, $option_sets[2]->options);
-    $this->assertEqual($expected_options_os3, $option_sets[3]->options);
+    $this->assertEqual($expected_options_os1, $option_sets[$osids[0]]->options);
+    $this->assertEqual($expected_options_os2, $option_sets[$osids[1]]->options);
+    $this->assertEqual($expected_options_os3, $option_sets[$osids[2]]->options);
 
     // Delete the third variation.
     acquia_lift_page_variation_delete('first_variation_set', $agent_name, 3);
@@ -663,9 +665,9 @@ class AcquiaLiftWebTestVariationSets extends AcquiaLiftWebTestBase {
     unset($expected_options_os2[3]);
     unset($expected_options_os3[3]);
     $option_sets = personalize_option_set_load_multiple(array(), array('decision_name' => 'first_variation_set', 'agent' => $agent_name));
-    $this->assertEqual($expected_options_os1, $option_sets[1]->options);
-    $this->assertEqual($expected_options_os2, $option_sets[2]->options);
-    $this->assertEqual($expected_options_os3, $option_sets[3]->options);
+    $this->assertEqual($expected_options_os1, $option_sets[$osids[0]]->options);
+    $this->assertEqual($expected_options_os2, $option_sets[$osids[1]]->options);
+    $this->assertEqual($expected_options_os3, $option_sets[$osids[2]]->options);
 
     // Delete another out of order and verify.
     acquia_lift_page_variation_delete('first_variation_set', $agent_name, 1);
@@ -673,9 +675,9 @@ class AcquiaLiftWebTestVariationSets extends AcquiaLiftWebTestBase {
     unset($expected_options_os2[1]);
     unset($expected_options_os3[1]);
     $option_sets = personalize_option_set_load_multiple(array(), array('decision_name' => 'first_variation_set', 'agent' => $agent_name));
-    $this->assertEqual($expected_options_os1, $option_sets[1]->options);
-    $this->assertEqual($expected_options_os2, $option_sets[2]->options);
-    $this->assertEqual($expected_options_os3, $option_sets[3]->options);
+    $this->assertEqual($expected_options_os1, $option_sets[$osids[0]]->options);
+    $this->assertEqual($expected_options_os2, $option_sets[$osids[1]]->options);
+    $this->assertEqual($expected_options_os3, $option_sets[$osids[2]]->options);
 
     // Now delete down to one left
     acquia_lift_page_variation_delete('first_variation_set', $agent_name, 2);
@@ -687,9 +689,9 @@ class AcquiaLiftWebTestVariationSets extends AcquiaLiftWebTestBase {
     unset($expected_options_os2[4]);
     unset($expected_options_os3[4]);
     $option_sets = personalize_option_set_load_multiple(array(), array('decision_name' => 'first_variation_set', 'agent' => $agent_name));
-    $this->assertEqual($expected_options_os1, $option_sets[1]->options);
-    $this->assertEqual($expected_options_os2, $option_sets[2]->options);
-    $this->assertEqual($expected_options_os3, $option_sets[3]->options);
+    $this->assertEqual($expected_options_os1, $option_sets[$osids[0]]->options);
+    $this->assertEqual($expected_options_os2, $option_sets[$osids[1]]->options);
+    $this->assertEqual($expected_options_os3, $option_sets[$osids[2]]->options);
 
     // Delete the last and verify that all variations (including control) are
     // removed.
@@ -2409,9 +2411,10 @@ class AcquiaLiftWebTestWorkflow extends AcquiaLiftWebTestBase {
     $this->assertTrue($stop);
     // CHeck that the winner has been set on each option set.
     $option_sets = personalize_option_set_load_by_agent($machine_name, TRUE);
-    $this->assertEqual('option-B', $option_sets[1]->winner);
-    $this->assertEqual('option-A', $option_sets[2]->winner);
-    $this->assertEqual('option-C', $option_sets[3]->winner);
+    $osids = array_keys($option_sets);
+    $this->assertEqual('option-B', $option_sets[$osids[0]]->winner);
+    $this->assertEqual('option-A', $option_sets[$osids[1]]->winner);
+    $this->assertEqual('option-C', $option_sets[$osids[2]]->winner);
 
     // Setting the minimum number of decisions to 70 will mean the first decision point
     // won't satisfy this so we should get FALSE from teh stopNow() call.

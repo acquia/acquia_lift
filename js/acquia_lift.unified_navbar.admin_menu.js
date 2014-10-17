@@ -39,13 +39,13 @@
       }
       // If the link is found and not processed, then go ahead and add
       // listeners.
-      var $anchor = adminMenu.find('a[href*="/admin/acquia_lift"]');
-      if ($anchor.length == 0 || !Drupal.navbar.hasOwnProperty('toggleUnifiedNavbar')) {
+      var anchorSelector = self.getAdminMenuSelector() + ' a[href*="' + Drupal.settings.basePath + 'admin/acquia_lift"]';
+      if ($(anchorSelector).length == 0 || !Drupal.navbar.hasOwnProperty('toggleUnifiedNavbar')) {
         return;
       }
       // Must use "live" event delegation here as the admin menu can be
       // attached multiple times when pulled from cache.
-      $anchor.live('click', function acquiaLiftClickHandler(event) {
+      $(document).delegate(anchorSelector, 'click', function acquiaLiftClickHandler(event) {
         // Make sure this is triggered by the right link (side-effect of method
         // and multiple menus).
         if (!event.target.href || event.target.href.indexOf('admin/acquia_lift') < 0) {
@@ -104,7 +104,14 @@
     // and default toolbar core module.
     // https://drupal.org/project/navbar is supported @see acquia_lift.navbar.js
     getAdminMenu: function () {
-      return $('#admin-menu');
+      return $(self.getAdminMenuSelector());
+    },
+
+    /**
+     * Helper function to get the admin menu selector string.
+     */
+    getAdminMenuSelector: function () {
+      return '#admin-menu';
     }
   }
   var self = Drupal.behaviors.acquiaLiftUnifiedNavbarIntegration;

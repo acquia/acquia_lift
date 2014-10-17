@@ -584,6 +584,8 @@ function acquia_lift_personalize_option_set_save($option_set) {
                 PERSONALIZE_STATUS_RUNNING
               )
             ));
+            // Mark this agent as "pending" as it will be started once the queue runs.
+            acquia_lift_set_pending_status($agent->machine_name, $agent->label);
           }
         }
       }

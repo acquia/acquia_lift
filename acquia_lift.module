@@ -824,7 +824,6 @@ function acquia_lift_library() {
     'scope' => 'footer',
     'defer' => TRUE,
   );
-
   // Acquia lift campaign management toolbar.
   $libraries['acquia_lift.personalize'] = array(
     'title' => 'Acquia lift navigation',
@@ -837,8 +836,8 @@ function acquia_lift_library() {
           'personalize' => array(
             'links' => array(
               'campaigns' => array(
-                'getActive' => '/personalize/campaign_context',
-                'setActive' => '/personalize/campaign_context/%personalize_agent',
+                'getActive' => 'personalize/campaign_context',
+                'setActive' => 'personalize/campaign_context/%personalize_agent',
               )
             )
           ),

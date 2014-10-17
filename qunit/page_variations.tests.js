@@ -84,7 +84,7 @@ QUnit.test('Application view', function (assert) {
   appView.createVariationTypeDialog({data: data});
   assert.equal(appView.variationTypeFormModel.get('selector'), data.selector, 'Variation type form model selector set successfully.');
   assert.ok(appView.variationTypeFormModel.get('id'), 'Variation type form model ID set successfully.');
-  assert.equal(appView.variationTypeFormModel.get('formPath'), '/admin/structure/acquia_lift/pagevariation/addClass', 'Variation type form model form path set successfully.');
+  assert.equal(appView.variationTypeFormModel.get('formPath'), Drupal.settings.basePath + 'admin/structure/acquia_lift/pagevariation/addClass', 'Variation type form model form path set successfully.');
   assert.equal(appView.variationTypeFormModel.get('type'), data.id, 'Variation type form model type set successfully.');
   assert.equal(appView.variationTypeFormModel.get('typeLabel'), data.name, 'Variation type form model type label set successfully.');
   assert.ok(appView.variationTypeFormModel.get('active'), 'Variation type form model set to active.');

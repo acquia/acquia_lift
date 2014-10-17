@@ -11,7 +11,7 @@
       $('div.ctools-modal-content .modal-content .acquia-lift-type', context).once(function() {
         $(this).on('click', function(e) {
           var $link = $(this).find('a.acquia-lift-type-select');
-          if ($link.attr('href') == '/admin/structure/visitor_actions') {
+          if ($link.attr('href') == Drupal.settings.basePath + 'admin/structure/visitor_actions') {
             $('#acquiaLiftVisitorActionsConnector').find('a').trigger('click');
             Drupal.CTools.Modal.dismiss();
             e.preventDefault();
@@ -47,7 +47,7 @@
       // to handle the edit mode toggle.
       var $connector = $('#acquiaLiftVisitorActionsConnector');
       if ($connector.length == 0) {
-        $('body').append('<div id="acquiaLiftVisitorActionsConnector"><a href="/admin/structure/visitor_actions/add" class="element-hidden">' + Drupal.t('Add goals') + '</a></div>');
+        $('body').append('<div id="acquiaLiftVisitorActionsConnector"><a href="' + Drupal.settings.basePath + 'admin/structure/visitor_actions/add" class="element-hidden">' + Drupal.t('Add goals') + '</a></div>');
         // Allow visitor actions UI to process the link.
         Drupal.attachBehaviors($('#acquiaLiftVisitorActionsConnector'));
         $(document).on('acquiaLiftVisitorActionsConnectorToggle', function(e) {

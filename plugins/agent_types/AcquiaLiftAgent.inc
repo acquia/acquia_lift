@@ -433,7 +433,7 @@ class AcquiaLiftAgent extends PersonalizeAgentBase implements PersonalizeAgentGo
       }
     }
     // Not sure if there's a better way to ascertain that this is a new agent.
-    $is_new = !isset($form['agent_form']['agent_fieldset']['agent_basic']['#agent']->machine_name) || $form['#action'] == '/admin/structure/personalize/add';
+    $is_new = !isset($form['agent_form']['agent_fieldset']['agent_basic']['#agent']->machine_name) || $form['#action'] == 'admin/structure/personalize/add';
     // If this is a new agent, we need to ensure the machine name is
     // unique in Acquia Lift.
     if ($is_new) {

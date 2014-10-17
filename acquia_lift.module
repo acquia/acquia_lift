@@ -537,14 +537,23 @@ function acquia_lift_personalize_option_set_save($option_set) {
     $option_set->is_new = TRUE;
   }
   // Unless this is a new fields-based option set, we're done.
-  if ($option_set->plugin !== 'fields' || !isset($option_set->is_new)) {
+  if ($option_set->plugin !== 'fields') {
     return;
   }
 
   // For fields-based option sets, we need to do some more set-up, depending on the
   // field settings.
   $field = field_info_field($option_set->data['personalize_fields_field_name']);
-  if (isset($field['settings']['personalize']) && $field['settings']['personalize']['enabled']) {
+  if (!isset($field['settings']['personalize']) || !$field['settings']['personalize']['enabled']) {
+    return;
+  }
+
+  $needs_starting = FALSE;
+  if (!isset($option_set->is_new)) {
+    // We were just updating an existing option set, make sure the campaign gets restarted.
+    $needs_starting = TRUE;
+  }
+  else {
     if (isset($field['settings']['personalize']['stop_on_winner']) && $field['settings']['personalize']['stop_on_winner']) {
       // We need to set the 'stop_on_winner' property on the newly created agent.
       $agent->data['stop_on_winner'] = 1;
@@ -573,23 +582,24 @@ function acquia_lift_personalize_option_set_save($option_set) {
         }
         if (visitor_actions_save_action($action)) {
           personalize_goal_save($option_set->agent, $action_name, 1);
-          if ($field['settings']['personalize']['auto_start']) {
-            // We also need to make sure the agent is set to running after everything
-            // has been sync'd up.
-            $queue = DrupalQueue::get('acquia_lift_sync');
-            $queue->createItem(array(
-              'callback' => 'personalize_agent_set_status',
-              'args' => array(
-                $agent->machine_name,
-                PERSONALIZE_STATUS_RUNNING
-              )
-            ));
-            // Mark this agent as "pending" as it will be started once the queue runs.
-            acquia_lift_set_pending_status($agent->machine_name, $agent->label);
-          }
+          $needs_starting = TRUE;
         }
       }
     }
+  }
+  if ($needs_starting && $field['settings']['personalize']['auto_start']) {
+    // We also need to make sure the agent is set to running after everything
+    // has been sync'd up.
+    $queue = DrupalQueue::get('acquia_lift_sync');
+    $queue->createItem(array(
+      'callback' => 'personalize_agent_set_status',
+      'args' => array(
+        $agent->machine_name,
+        PERSONALIZE_STATUS_RUNNING
+      )
+    ));
+    // Mark this agent as "pending" as it will be started once the queue runs.
+    acquia_lift_set_pending_status($agent->machine_name, $agent->label);
   }
 }
 

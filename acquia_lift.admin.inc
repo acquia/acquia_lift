@@ -1687,7 +1687,7 @@ function acquia_lift_create_goal_type_form_submit($form, &$form_state) {
       $plugin = $form_state['values']['actionable_element'];
       list($type, $event) = explode('::', $form_state['values']['event'][$plugin]);
       $goal_name = $form_state['values']['title'];
-      $action_name = personalize_generate_machine_name($goal_name, visitor_actions_action_name_exists);
+      $action_name = personalize_generate_machine_name($goal_name, visitor_actions_action_name_exists, '_');
       $action = array(
         'label' => $goal_name,
         'machine_name' => $action_name,

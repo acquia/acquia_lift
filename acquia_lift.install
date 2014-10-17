@@ -414,6 +414,29 @@ function acquia_lift_update_7010() {
 }
 
 /**
+ * Update goals to the visitor actions machine name specification.
+ */
+function acquia_lift_update_7011() {
+  $result = db_select('personalize_campaign_goals', 'g')
+    ->fields('g', array('id', 'action'))
+    ->execute();
+  foreach ($result as $row) {
+    $updated = str_replace('-', '_', $row->action);
+    if ($updated == $row->action) {
+      continue;
+    }
+    db_update('personalize_campaign_goals')
+      ->condition('id', $row->id)
+      ->fields(array('action' => $updated))
+      ->execute();
+    db_update('visitor_actions_actions')
+      ->condition('machine_name', $row->action)
+      ->fields(array('machine_name' => $updated))
+      ->execute();
+  }
+}
+
+/**
  * Helper to get the schema for the cache table.
  */
 function acquia_lift_get_report_cache_table_schema() {

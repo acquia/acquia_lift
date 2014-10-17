@@ -1681,8 +1681,7 @@ function acquia_lift_create_goal_type_form_submit($form, &$form_state) {
   switch ($form_state['values']['goal_type']) {
     case 'existing':
       $action_name = $form_state['values']['action_name'];
-      $action = visitor_actions_custom_load($action_name);
-      $goal_name = $action['label'];
+      $goal_name = $form['goal']['action_name']['#options'][$action_name];
       break;
     case 'page':
       $plugin = $form_state['values']['actionable_element'];

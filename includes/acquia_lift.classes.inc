@@ -244,8 +244,10 @@ class AcquiaLiftAPI implements PersonalizeLoggerAwareInterface, AcquiaLiftReport
    *
    * @param $path
    *   The $path to the endpoint at the API base url.
+   * @param $admin
+   *   Boolean indicating whether to use admin key (true) or runtime (false).
    */
-  protected function generateEndpoint($path) {
+  protected function generateEndpoint($path, $admin = TRUE) {
     $endpoint = $this->api_url . '/';
     $endpoint .= $this->owner_code;
     if (substr($path, 0, 1) !== '/') {
@@ -259,7 +261,8 @@ class AcquiaLiftAPI implements PersonalizeLoggerAwareInterface, AcquiaLiftReport
     else {
       $endpoint .= '?';
     }
-    $endpoint .= "apikey={$this->admin_key}";
+    $key = $admin ? $this->getAdminKey() : $this->getApiKey();
+    $endpoint .= "apikey=$key";
     return $endpoint;
   }
 
@@ -293,8 +296,10 @@ class AcquiaLiftAPI implements PersonalizeLoggerAwareInterface, AcquiaLiftReport
     // We use the list-agents endpoint for our ping test, in the absence of
     // an endpoint specifically provided for this purpose.
     $url = $this->generateEndpoint("/list-agents");
-    $response = $this->httpClient()->get($url, array('Accept' => 'application/json'));
-    return $response->code == 200;
+    $admin_response = $this->httpClient()->get($url, array('Accept' => 'application/json'));
+    $url = $this->generateEndpoint('/ping-test-agent/expire', FALSE);
+    $runtime_response = $this->httpClient()->post($url, array('Accept' => 'application/json'));
+    return $admin_response->code == 200 && $runtime_response->code != 403;
   }
 
   /**

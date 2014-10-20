@@ -41,14 +41,14 @@ projects[libraries][version] = "2.2"
 ; ---------------------------------------
 libraries[backbone][destination] = "libraries"
 libraries[backbone][download][type] = "get"
-libraries[backbone][download][url] = "http://backbonejs.org/backbone-min.js"
+libraries[backbone][download][url] = "https://github.com/jashkenas/backbone/archive/1.0.0.zip"
 libraries[backbone][directory] = "backbone"
 
 ; Library: underscore
 ; ---------------------------------------
 libraries[underscore][destination] = "libraries"
 libraries[underscore][download][type] = "get"
-libraries[underscore][download][url] = "http://underscorejs.org/underscore-min.js"
+libraries[underscore][download][url] = "https://github.com/jashkenas/underscore/archive/1.5.0.zip"
 libraries[underscore][directory] = "underscore"
 
 ; Library: chosen

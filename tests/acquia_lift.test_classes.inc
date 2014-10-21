@@ -271,7 +271,7 @@ class DummyAcquiaLiftHttpClient implements AcquiaLiftDrupalHttpClientInterface {
 }
 
 class AcquiaLiftTestLogger implements PersonalizeLoggerInterface {
-  protected $logs = array();
+  protected static $logs = array();
   protected $output = FALSE;
 
   public function __construct($output = FALSE) {
@@ -288,18 +288,18 @@ class AcquiaLiftTestLogger implements PersonalizeLoggerInterface {
     if ($this->output && function_exists('drupal_set_message')) {
       drupal_set_message($message, $level);
     }
-    $this->logs[] = array(
+    self::$logs[] = array(
       'level' => $level,
       'message' => $message,
     );
   }
 
   public function clearLogs() {
-    $this->logs = array();
+    self::$logs = array();
   }
 
   public function getLogs() {
-    return $this->logs;
+    return self::$logs;
   }
 }
 

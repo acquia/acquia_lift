@@ -1913,6 +1913,9 @@ class AcquiaLiftTest extends DrupalUnitTestCase {
       // that we can retrieve for checking later.
       $this->logger = new AcquiaLiftTestLogger();
     }
+    else {
+      $this->logger->clearLogs();
+    }
     $lift_api->setLogger($this->logger);
     return $lift_api;
   }

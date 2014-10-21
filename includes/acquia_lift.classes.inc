@@ -129,6 +129,7 @@ class AcquiaLiftAPI implements PersonalizeLoggerAwareInterface, AcquiaLiftReport
     // test, so the call to variable_get() is ok here.
     $test_data = variable_get('acquia_lift_web_test_data', array());
     self::$instance->setHttpClient(new DummyAcquiaLiftHttpClient($broken_http_client, $test_data));
+    self::$instance->setLogger(new AcquiaLiftTestLogger(FALSE));
   }
 
   /**

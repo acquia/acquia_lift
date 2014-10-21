@@ -1452,17 +1452,22 @@ class AcquiaLiftWebTestFundamentals extends AcquiaLiftWebTestBase {
     $expected_queue_items = array($queued_agent_item);
     $this->assertQueueItems($expected_queue_items);
 
-    // Test the retry limit.
+    // Cause the queue to fail.
+    AcquiaLiftAPI::setTestInstance(TRUE);
+    // Run the queue.
+    $_SESSION['acquia_lift_queue_trigger'] = true;
+    acquia_lift_process_queue(FALSE);
+    $expected_logs = array();
     for ($i = 0; $i <= AcquiaLiftQueue::MAX_RETRIES; $i++) {
-      // Cause the queue to fail.
-      AcquiaLiftAPI::setTestInstance(TRUE);
-
-      // Run the queue.
-      $_SESSION['acquia_lift_queue_trigger'] = true;
-      acquia_lift_process_queue(FALSE);
-      // Retries all happen at the same time so there is no way to assert queue
-      // items after each attempt.
+      $expected_logs[] = array(
+        'level' => 'error',
+        'message' => "The campaign $machine_name could not be pushed to Acquia Lift",
+      );
     }
+    $test_logger = new AcquiaLiftTestLogger(FALSE);
+    $logs = $test_logger->getLogs();
+    debug($logs);
+    $this->assertEqual($expected_logs, $logs);
     // Item should be removed after final attempt.
     $this->assertQueueItems(array());
   }

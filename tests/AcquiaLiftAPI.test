@@ -143,7 +143,14 @@ class AcquiaLiftTest extends DrupalUnitTestCase {
         'headers' => array('Accept' => 'application/json'),
         'options' => array(),
         'body' => NULL,
-      )
+      ),
+      array(
+        'type' => 'post',
+        'uri' => "{$lift_api->getApiUrl()}/{$lift_api->getOwnerCode()}/ping-test-agent/expire?apikey={$lift_api->getApiKey()}",
+        'headers' => array('Accept' => 'application/json'),
+        'options' => array(),
+        'body' => NULL,
+      ),
     );
     $this->assertAPIRequests($expected);
     // Now test with a broken connection.

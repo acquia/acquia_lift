@@ -1952,13 +1952,18 @@
        */
       render: function (model) {
         var isActive = model.get('isActive');
+        this.$el.toggleClass('acquia-lift-active', isActive);
+
+        if (this.$el.parents('.acquia-lift-controls').length == 0) {
+          return;
+        }
+        // Update the text if within the menu.
         var text = '';
         if (isActive) {
           text = Drupal.t('Exit edit mode');
         } else {
           text = model instanceof Drupal.acquiaLiftUI.MenuPageVariationModeModel ? Drupal.t('Add a variation') : Drupal.t('Add a variation set');
         }
-        this.$el.toggleClass('acquia-lift-active', isActive);
         this.$el.text(text);
       },
 

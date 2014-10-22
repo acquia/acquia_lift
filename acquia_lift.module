@@ -838,8 +838,8 @@ function acquia_lift_library() {
           'personalize' => array(
             'links' => array(
               'campaigns' => array(
-                'getActive' => 'personalize/campaign_context',
-                'setActive' => 'personalize/campaign_context/%personalize_agent',
+                'getActive' => base_path() . 'personalize/campaign_context',
+                'setActive' => base_path() . 'personalize/campaign_context/%personalize_agent',
               )
             )
           ),

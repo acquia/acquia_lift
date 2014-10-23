@@ -1958,9 +1958,9 @@ class AcquiaLiftTest extends DrupalUnitTestCase {
    * @param $expected_requests
    */
   protected function assertAPIRequests($expected_requests) {
-    $logged_requests = $this->httpClient->getLoggedRequests();
+    $logged_requests = DummyAcquiaLiftHttpClient::getLoggedRequests();
     $this->assertEqual($expected_requests, $logged_requests);
-    $this->httpClient->removeLoggedRequests();
+    DummyAcquiaLiftHttpClient::clearLoggedRequests();
   }
 
   /**

@@ -1298,7 +1298,7 @@ abstract class AcquiaLiftReportBase implements PersonalizeAgentReportInterface, 
   protected function generateReportConfiguration($options) {
     $decision_name = empty($options['decision']) ? NULL : $options['decision'];
     $date_from = empty($options['start']) ? NULL : $options['start'];
-    $date_to = empty($options['from']) ? NULL : $options['end'];
+    $date_to = empty($options['end']) ? NULL : $options['end'];
 
     $machine_name = $this->agent->getMachineName();
     $today_only = $date_from === date('Y-m-d') && empty($date_to);

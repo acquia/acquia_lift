@@ -1960,6 +1960,121 @@ class AcquiaLiftWebTestReports extends AcquiaLiftWebTestBase {
     $this->assertEqual("Control", $report['experiment']['reports']['conversion']['reports']['summary']['summary_holder']['summary_table']['#rows'][0]['data'][0]['data-acquia-lift-variation-label']);
     $this->assertEqual("0%", $report['experiment']['reports']['conversion']['reports']['summary']['summary_holder']['summary_table']['#rows'][0]['data'][2]['data']);
   }
+
+  function testReportEndDate() {
+    $this->drupalLogin($this->managerUser);
+    module_load_include('inc', 'acquia_lift', 'acquia_lift.admin');
+    $agent_name = 'new-test-agent';
+    $control_rate = 10;
+    $explore_rate = 30;
+    $this->createTestAgent(array('name' => $agent_name, 'control_rate' => $control_rate, 'explore_rate' => $explore_rate));
+
+    // Set the agent up with an option set with 2 options, and a goal, and set it to
+    // running.
+    list($option_set, $new_queue_items) = $this->createOptionSet(0, array('agent' => $agent_name, 'plugin' => 'type1', 'option_ids' => array('option-1', 'option-2')));
+    $osid = $option_set->osid;
+    // Add a goal.
+    personalize_goal_save($agent_name, 'new-goal', 1);
+
+    // We need to bypass the personalize_agent_set_status() function because it
+    // does the verification check, which would fail.
+    variable_set(_personalize_agent_get_status_variable($agent_name), PERSONALIZE_STATUS_RUNNING);
+    // Set the started time of the agent to 48 hours ago.
+    $agent = personalize_agent_load($agent_name);
+    $started = time() - (48 * 60 * 60);
+    $agent->started = $started;
+    personalize_agent_save($agent);
+    // We need to replicate this test agent on the server so that the errors()
+    // check will pass.
+    $test_data = array(
+      'agents' => array(
+        array('code' => $agent_name),
+      ),
+      'points' => array(
+        $agent_name => array(
+          $osid,
+        ),
+      ),
+      'decisions' => array(
+        $agent_name => array(
+          $osid => array(
+            $osid,
+          )
+        )
+      ),
+      'choices' => array(
+        $agent_name => array(
+          $osid => array(
+            $osid => array(
+              'option-1',
+              'option-2',
+            )
+          )
+        )
+      ),
+      'goals' => array(
+        $agent_name => array(
+          // This goal should get deleted upon sync.
+          'new-goal'
+        )
+      ),
+      'reports' => array(
+        $agent_name => array(
+          'confidence' => AcquiaLiftTestReports::getBasicConfidenceReport($agent_name),
+          'targeting-features' => AcquiaLiftTestReports::getBasicTargetingReport($agent_name),
+          'learning' => array(),
+          'agent-status' => AcquiaLiftTestReports::getBasicStatusReport($agent_name),
+          'context-filters' => AcquiaLiftTestReports::getBasicContextFilters()
+        )
+      )
+    );
+    variable_set('acquia_lift_web_test_data', $test_data);
+    $this->resetAll();
+    DummyAcquiaLiftHttpClient::clearLoggedRequests();
+
+    AcquiaLiftAPI::setTestInstance();
+    $agent_instance = personalize_agent_load_agent($agent_name);
+    $form_state = array();
+    $agent_data = personalize_agent_load($agent_name);
+
+    // We call the report generating function and then check the request made to the
+    // Lift API.
+    acquia_lift_report_custom(array(), $form_state, $agent_instance, $agent_data, $option_set);
+    $requests = DummyAcquiaLiftHttpClient::getLoggedRequests();
+    $start_date = date('Y-m-d', $started);
+    $now = time();
+    $end_date = date('Y-m-d', $now);
+    $confidence_report_uri = $requests[0]['uri'];
+    $pattern = "/http\:\/\/api\.example\.com\/test\-owner\-code\/{$agent_name}\/report\/confidence\/{$start_date}\/(\d{4}\-\d{2}\-\d{2})/";
+    $matches = array();
+    preg_match($pattern, $confidence_report_uri, $matches);
+    debug($matches);
+    $this->assertEqual($end_date, $matches[1]);
+
+    // Now set the campaign to completed
+    personalize_agent_set_status($agent_name, PERSONALIZE_STATUS_COMPLETED);
+    // Specify the completed time as yesterday.
+    $yesterday = $now - (24 * 60 * 60);
+    variable_set(_personalize_agent_get_stoptime_variable($agent_name), $yesterday);
+    $this->resetAll();
+
+    // Clear the logged requests.
+    DummyAcquiaLiftHttpClient::clearLoggedRequests();
+    // Again call the report generating function and then check the request made to the
+    // Lift API. The end date should be different
+    acquia_lift_report_custom(array(), $form_state, $agent_instance, $agent_data, $option_set);
+    $requests = DummyAcquiaLiftHttpClient::getLoggedRequests();
+    $start_date = date('Y-m-d', $started);
+    $confidence_report_uri = $requests[0]['uri'];
+    $pattern = "/http\:\/\/api\.example\.com\/test\-owner\-code\/{$agent_name}\/report\/confidence\/{$start_date}\/(\d{4}\-\d{2}\-\d{2})/";
+    $matches = array();
+    preg_match($pattern, $confidence_report_uri, $matches);
+    debug($matches);
+    $this->assertEqual(date('Y-m-d', $yesterday), $matches[1]);
+
+    debug($requests);
+
+  }
 }
 class AcquiaLiftWebTestWorkflow extends AcquiaLiftWebTestBase {
   public static function getInfo() {

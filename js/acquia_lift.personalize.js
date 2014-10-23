@@ -1798,7 +1798,7 @@
         this.$el
           .toggleClass('acquia-lift-page-variation-toggle-disabled', currentCampaign.get('activeVariation') == 0) // There is no toggle available for the control variation.
           .toggleClass('acquia-lift-page-variation-toggle-active', this.model.get('isActive'))
-          .toggle(currentCampaign instanceof Drupal.acquiaLiftUI.MenuCampaignABModel);
+          .toggleClass('element-hidden', currentCampaign instanceof Drupal.acquiaLiftUI.MenuCampaignABModel);
       },
 
       /**

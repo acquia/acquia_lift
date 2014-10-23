@@ -1193,13 +1193,11 @@
           } else {
             // If in edit mode, make sure that the edited variation index is
             // indicated.
-            var $li = this.$el.find('[data-acquia-lift-personalize-page-variation="' + data.variationIndex + '"]');
             // Make it seem as if the item was clicked without triggering
             // any other click events that may be listening on the link.
             var event = new Event('click');
             event.currentTarget = event.target = $li.get('0');
             this.onClick(event);
-            this.model.set('activeVariation', data.variationIndex);
           }
           updateNavbar();
         } else {

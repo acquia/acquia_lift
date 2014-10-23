@@ -1024,8 +1024,7 @@
         this.listenTo(this.model, 'destroy', this.remove);
         this.listenTo(this.model, 'change:isActive', this.render);
         this.listenTo(this.model, 'change:variations', this.rebuild);
-        this.listenTo(this.model, 'change:optionSets', this.rebuild);
-        this.listenTo(this.model, 'change:activeVariation', this.render);
+        this.listenTo(this.model, 'change:activeVariation', this.onActiveVariationChange);
 
         this.onOptionShowProxy = $.proxy(this.onOptionShow, this);
         this.onPageVariationEditModeProxy = $.proxy(this.onPageVariationEditMode, this);
@@ -1053,6 +1052,15 @@
         this.$el.find('[data-acquia-lift-personalize-page-variation="' + variationData + '"]')
           .addClass('acquia-lift-active')
           .attr('aria-pressed', 'true');
+      },
+
+      /**
+       * When the selected variation changes, we should also update the preview
+       * such that the previewed variation matches what is shown.
+       */
+      onActiveVariationChange: function() {
+        this.render(this.model);
+        this.updatePreview();
       },
 
       /**
@@ -1102,11 +1110,17 @@
         if (isNaN(variation_index)) {
           return;
         }
-        var variations = this.model.get('optionSets').getVariations();
-        if (variation_index >= variations.length) {
-          return;
-        }
+
         this.model.set('activeVariation', variation_index);
+        this.updatePreview();
+
+        event.preventDefault();
+        event.stopPropagation();
+      },
+
+      updatePreview: function() {
+        var variation_index = this.model.get('activeVariation');
+        var variations = this.model.get('optionSets').getVariations();
         var variation = variations[variation_index];
         var i, num = variation.options.length, current;
         // Run the executor for each option in the variation.
@@ -1114,8 +1128,6 @@
           current = variation.options[i];
           Drupal.personalize.executors[current.executor].execute($(current.selector), current.option.option_id, current.osid);
         }
-        event.preventDefault();
-        event.stopPropagation();
       },
 
       /**
@@ -2066,7 +2078,43 @@
       },
 
       triggerOptionSetChange: function (event) {
+        // if the variations have changed, re-validate the active variation.
+        this.set('activeVariation', this.get('activeVariation'));
         this.trigger('change:variations');
+      },
+
+      /**
+       * {@inheritDoc}
+       */
+      set: function (property, value, options) {
+        var that = this;
+
+        /**
+         * Checks to see if the new active variation is valid within the list
+         * of current variations.
+         *
+         * @param check
+         *   The variation index to check.
+         * @returns
+         *   The variation index that should be set as active variation.
+         */
+        function validateVariationIndex(check) {
+          var variations = that.get('optionSets').getVariations(), i, num = variations.length;
+          for (i = 0; i < num; i++) {
+            if (variations[i].original_index == check) {
+              return check;
+            }
+          }
+          // the variation to check does not exist.
+          return 0;
+        }
+
+        if (property.hasOwnProperty('activeVariation')) {
+          property.activeVariation = validateVariationIndex(property.activeVariation);
+        } else if (property === 'activeVariation') {
+          value = validateVariationIndex(value);
+        }
+        this.parent('set', property, value, options);
       },
 
       /**

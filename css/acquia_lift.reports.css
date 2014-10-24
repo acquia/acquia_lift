@@ -30,7 +30,8 @@
 }
 
 .acquia-lift-report-section-options {
-  box-sizing: border-box;
+  -moz-box-sizing: border-box;
+       box-sizing: border-box;
   clear: both;
   width: 100%;
   min-width: 100%;
@@ -80,7 +81,8 @@ html[dir="rtl"] .lift-winner:after {
   font-family: sans-serif;
 }
 .lift-graph * {
-  box-sizing: border-box;
+  -moz-box-sizing: border-box;
+       box-sizing: border-box;
 }
 .lift-graph-container {
   padding-right: 1em;

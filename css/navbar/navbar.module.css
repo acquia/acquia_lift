@@ -23,7 +23,8 @@
   background-repeat: no-repeat;
   border: none;
   box-shadow: none;
-  box-sizing: border-box;
+  -moz-box-sizing: border-box;
+       box-sizing: border-box;
   bottom: auto;
   color: black;
   content: normal;

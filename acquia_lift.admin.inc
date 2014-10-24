@@ -843,6 +843,7 @@ function acquia_lift_create_campaign_callback($ajax) {
 
   $path = drupal_get_path('module', 'acquia_lift');
   $output = theme('acquia_lift_type_list', array(
+    'id' => 'acquia-lift-modal-campaign-type-list',
     'items' => array(
       'ab' => array(
         'title' => t('A/B test'),
@@ -1032,7 +1033,7 @@ function acquia_lift_create_campaign_type_form_submit($form, &$form_state) {
  *
  * @param string $variation_type
  *   The variation type that defines the type of details to include.  This
- *   is a key defined as a personalize_elements variaton.
+ *   is a key defined as a personalize_elements variation.
  * @see hook_personalize_elements_variation_types
  */
 function acquia_lift_page_variation_details_form($form, &$form_state, $variation_type) {
@@ -1449,6 +1450,7 @@ function acquia_lift_create_goal_callback($ajax) {
 
   $path = drupal_get_path('module', 'acquia_lift');
   $output = theme('acquia_lift_type_list', array(
+    'id' => 'acquia-lift-modal-goal-type-list',
     'items' => array(
       'existing' => array(
         'title' => t('Predefined goal'),
@@ -1570,6 +1572,7 @@ function acquia_lift_create_goal_type_form($form, &$form_state, $type) {
       $form['goal_type_change'] = array(
         '#markup' => theme('acquia_lift_create_type_change', array(
           'type' => t('Pre-existing goal'),
+          'id' => 'acquia-lift-create-goal-existing',
           'change_link' => $change_link,
         )),
       );
@@ -1579,6 +1582,7 @@ function acquia_lift_create_goal_type_form($form, &$form_state, $type) {
       $form['goal_type_change'] = array(
         '#markup' => theme('acquia_lift_create_type_change', array(
           'type' => t('Page goal'),
+          'id' => 'acquia-lift-create-goal-page',
           'change_link' => $change_link,
         )),
       );

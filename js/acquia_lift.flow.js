@@ -376,7 +376,7 @@
         this.highlightAnchor(true);
         this.contextualMenuModel = new Drupal.visitorActions.ui.dialog.models.DialogModel({
           selector: selector,
-          id: this.getTemporaryID()
+          id: 'acquia-lift-modal-variation-type-select'
         });
         var dialogView = new Drupal.acquiaLiftPageVariations.views.PageVariationMenuView({
           el: element,
@@ -399,7 +399,7 @@
           Drupal.encodePath(event.data.id);
         this.variationTypeFormModel = new Drupal.acquiaLiftPageVariations.models.VariationTypeFormModel({
           selector: event.data.selector,
-          id: this.getTemporaryID(),
+          id: 'acquia-lift-modal-variation-type-' + event.data.id,
           formPath: formPath,
           type: event.data.id,
           typeLabel: event.data.name,

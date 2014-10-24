@@ -270,6 +270,7 @@ function theme_acquia_lift_report_overview($variables) {
  *     - modal: true if url should continue in a modal, false if a new page
  *     - ctools_style: The ctools modal style to use for the next url (if
  *       modal = true).
+ *   - id: An optional id to use for the wrapping container element.
  */
 function theme_acquia_lift_type_list($variables) {
   ctools_include('modal');
@@ -277,7 +278,11 @@ function theme_acquia_lift_type_list($variables) {
   ctools_modal_add_js();
 
   $items = $variables['items'];
-  $html = '<div class="acquia-lift-type-list">';
+  $html = '<div';
+  if (!empty($variables['id'])) {
+    $html .= ' id="' . $variables['id'] . '"';
+  }
+  $html .= ' class="acquia-lift-type-list">';
   foreach ($items as $typestr => $current_type) {
     $html .= '<div class="acquia-lift-type clearfix">';
     $html .= '<div class="acquia-lift-type-logo">' . $current_type['logo'] . '</div>';
@@ -310,8 +315,13 @@ function theme_acquia_lift_type_list($variables) {
  *   An associative array of variables including:
  *   - type:  The title of the type of form to display
  *   - change_link: A change link to change the type shown
+ *   - id: Optional an id to include in the markup.
  */
 function theme_acquia_lift_create_type_change($variables) {
-  $html = '<span class="acquia-lift-form-type">' . $variables['type'] . '</span>&nbsp;' . $variables['change_link'];
+  $html = '<span';
+  if (!empty($variables['id'])) {
+    $html .= ' id="' . $variables['id'] . '"';
+  }
+  $html .= ' class="acquia-lift-form-type">' . $variables['type'] . '</span>&nbsp;' . $variables['change_link'];
   return $html;
 }

@@ -1545,6 +1545,7 @@
         this.listenTo(this.model, 'change:variations', this.render);
         this.listenTo(this.model, 'change:activeVariation', this.render);
 
+        this.build();
         this.render();
       },
 
@@ -1565,6 +1566,15 @@
         } else {
           this.$el.css('display', 'none');
         }
+      },
+
+      /**
+       * {@inheritdoc}
+       */
+      build: function() {
+        if (this.model) {
+          this.$el.attr('id', 'acquia-lift-menu-option-sets-count--' + this.model.get('name'));
+        }
       }
     }),
 
@@ -1579,6 +1589,7 @@
         this.model.on('change:goals', this.render, this);
         this.model.on('change:isActive', this.render, this);
 
+        this.build();
         this.render();
       },
 
@@ -1595,7 +1606,15 @@
         } else {
           this.$el.css('display', 'none');
         }
+      },
 
+      /**
+       * {@inheritdoc}
+       */
+      build: function() {
+        if (this.model) {
+          this.$el.attr('id', 'acquia-lift-menu-goals-count--' + this.model.get('name'));
+        }
       }
     }),
 
@@ -2883,7 +2902,7 @@
    */
   Drupal.theme.acquiaLiftPageVariationToggle = function () {
     var label = Drupal.t('Toggle variation mode');
-    return '<a class="acquia-lift-page-variation-toggle">' + label + '</a>';
+    return '<a class="acquia-lift-page-variation-toggle" id="acquia-lift-menu-page-variation-toggle">' + label + '</a>';
   }
 
   /**

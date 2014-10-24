@@ -13,6 +13,9 @@
   cursor: pointer;
   vertical-align: middle;
 }
+#navbar-administration a.acquia-lift-page-variation-toggle-hidden {
+  display: none;
+}
 #navbar-administration .acquia-lift-page-variation-toggle.acquia-lift-page-variation-toggle-disabled {
   background-image: url("../images/page-variation-toggle-disabled.png");
 }

@@ -1,5 +1,4 @@
 #acquia-lift-message-box {
-  -moz-box-sizing: border-box;
   box-sizing: border-box;
   position: fixed;
   min-width: 50%;

@@ -1466,7 +1466,6 @@ class AcquiaLiftWebTestFundamentals extends AcquiaLiftWebTestBase {
     }
     $test_logger = new AcquiaLiftTestLogger(FALSE);
     $logs = $test_logger->getLogs();
-    debug($logs);
     $this->assertEqual($expected_logs, $logs);
     // Item should be removed after final attempt.
     $this->assertQueueItems(array());
@@ -2048,7 +2047,6 @@ class AcquiaLiftWebTestReports extends AcquiaLiftWebTestBase {
     $pattern = "/http\:\/\/api\.example\.com\/test\-owner\-code\/{$agent_name}\/report\/confidence\/{$start_date}\/(\d{4}\-\d{2}\-\d{2})/";
     $matches = array();
     preg_match($pattern, $confidence_report_uri, $matches);
-    debug($matches);
     $this->assertEqual($end_date, $matches[1]);
 
     // Now set the campaign to completed
@@ -2069,13 +2067,10 @@ class AcquiaLiftWebTestReports extends AcquiaLiftWebTestBase {
     $pattern = "/http\:\/\/api\.example\.com\/test\-owner\-code\/{$agent_name}\/report\/confidence\/{$start_date}\/(\d{4}\-\d{2}\-\d{2})/";
     $matches = array();
     preg_match($pattern, $confidence_report_uri, $matches);
-    debug($matches);
     $this->assertEqual(date('Y-m-d', $yesterday), $matches[1]);
-
-    debug($requests);
-
   }
 }
+
 class AcquiaLiftWebTestWorkflow extends AcquiaLiftWebTestBase {
   public static function getInfo() {
     return array(

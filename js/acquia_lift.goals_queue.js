@@ -417,9 +417,9 @@
       if (!goal.agentName || !goal.options) {
         throw new Error('Invalid goal data.');
       }
-      api.goal(goal.agentName, goal.options, function(response, textStatus, jqXHR) {
+      api.goal(goal.agentName, goal.options, function(accepted, session, retryable) {
         if (callback && typeof callback === 'function') {
-          callback(queueItem, response);
+          callback(queueItem, accepted, session, retryable);
         }
       });
       if (api.isManualBatch()) {
@@ -490,7 +490,7 @@
         }
 
         // Callback for when a single goal processing call is complete.
-        function processComplete (accepted, session, retryable) {
+        function processComplete (item, accepted, session, retryable) {
           if (!accepted && retryable) {
             failed.push(item);
           } else {

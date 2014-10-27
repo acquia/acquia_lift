@@ -136,11 +136,11 @@
         }
 
         // Callback for when a single goal processing call is complete.
-        function processComplete (item, success) {
-          if (success) {
-            Drupal.acquiaLiftUtility.Queue.remove(item)
-          } else {
+        function processComplete (accepted, session, retryable) {
+          if (!accepted && retryable) {
             failed.push(item);
+          } else {
+            Drupal.acquiaLiftUtility.Queue.remove(item)
           }
           processNext();
         }

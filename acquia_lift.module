@@ -818,6 +818,14 @@ function acquia_lift_process_queue($exit_on_finish = TRUE) {
 }
 
 /**
+ * Deletes everything from the Lift sync queue.
+ */
+function acquia_lift_delete_queue() {
+  $queue = DrupalQueue::get('acquia_lift_sync');
+  $queue->deleteQueue();
+}
+
+/**
  * Implements hook_library().
  */
 function acquia_lift_library() {

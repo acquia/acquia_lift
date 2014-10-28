@@ -536,7 +536,7 @@ function acquia_lift_personalize_option_set_save($option_set) {
   if ($new_os) {
     $option_set->is_new = TRUE;
   }
-  // Unless this is a new fields-based option set, we're done.
+  // Unless this is a fields-based option set, we're done.
   if ($option_set->plugin !== 'fields') {
     return;
   }

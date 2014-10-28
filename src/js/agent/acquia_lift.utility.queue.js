@@ -11,7 +11,8 @@
   Drupal.acquiaLiftUtility.QueueItem = function (params) {
     var queueItemUid,
       queueItemData,
-      queueItemProcessing = false;
+      queueItemProcessing = false,
+      numberTried = 0;
 
     /**
      * Returns the unique ID assigned to this queue item.
@@ -42,7 +43,7 @@
     }
 ;
     /**
-     * Deteremines if this queue item is currently processing.
+     * Determines if this queue item is currently processing.
      */
     this.isProcessing = function () {
       return queueItemProcessing;
@@ -55,18 +56,42 @@
       queueItemProcessing = isProcessing;
     };
 
+    /**
+     * Gets the number of times this item has been tried in the queue.
+     */
+    this.getNumberTried = function () {
+      return numberTried;
+    };
+
+    /**
+     * Sets the number of times this item has been tried in the queue.
+     */
+    this.setNumberTried = function (value) {
+      numberTried = value;
+    };
+
+    /**
+     * Increments the number of times this item has been tried.
+     */
+    this.incrementTries = function () {
+      numberTried++;
+    };
+
     // Constructor handling.
     if (params.hasOwnProperty('id')
       && params.hasOwnProperty('data')
-      && params.hasOwnProperty('pflag')) {
+      && params.hasOwnProperty('pflag')
+      && params.hasOwnProperty('try')) {
       this.setId(params.id);
       this.setData(params.data);
       this.setProcessing(params.pflag);
+      this.setNumberTried(params.try);
     } else {
       var uid = 'acquia-lift-ts-' + new Date().getTime() + Math.random();
       this.setId(uid);
       this.setData(params);
       this.setProcessing(false);
+      this.setNumberTried(0);
     }
   };
 
@@ -99,7 +124,8 @@
       return {
         'id': this.getId(),
         'data': this.getData(),
-        'pflag': this.isProcessing()
+        'pflag': this.isProcessing(),
+        'try': this.getNumberTried()
       };
     }
   }
@@ -108,7 +134,7 @@
     // @todo: Would be cool if we could swap out back-ends to local storage or
     // other mechanism.
 
-    var cookieName = 'acquiaLiftQueue';
+    var cookieName = 'acquiaLiftQueue', maxRetries = 5;
 
     /**
      * Indicates if the cookie handling script handles object serialization.
@@ -217,9 +243,7 @@
      *   The item to add back into the queue.
      * @param reset
      *   Boolean indicates if the processing flag should be reset, defaults
-     *   false..
-     *
-     * @todo think about and possibly implement a retry count
+     *   false.
      */
     function addBack(queueItem, reset) {
       var queue = readQueue();
@@ -227,6 +251,13 @@
 
       if (reset && reset == true) {
         queueItem.reset();
+        queueItem.incrementTries();
+      }
+      if (queueItem.getNumberTried() >= maxRetries) {
+        // This item is beyond the maximum number of tries and should be
+        // removed from the queue so don't add it back.
+        Drupal.acquiaLiftUtility.Queue.remove(queueItem);
+        return;
       }
       if (index >= 0) {
         queue.splice(index, 1, queueItem);
@@ -313,7 +344,7 @@
       /**
        * Empties the queue of all options (typcially used for testing purposes).
        */
-      'empty': function() {
+      'empty': function () {
         writeQueue([]);
       }
     }

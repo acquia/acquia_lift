@@ -234,4 +234,4 @@
     return '<button class="' + options['class'] + '"><span class="action">' + options.action + '</span><span class="label">' + options.text + '</span></button>';
   };
 
-}(jQuery, Drupal));
+}(Drupal.jQuery, Drupal));

@@ -3,10 +3,9 @@
  * personalize_ui.navbar.js
  */
 
-(function (Drupal) {
+(function ($, Drupal) {
 
 "use strict";
-$ = Drupal.jQuery;
 
 Drupal.behaviors.acquiaLiftNavbarMenu = {
   attach: function (context) {
@@ -44,4 +43,4 @@ Drupal.behaviors.acquiaLiftNavbarMenu = {
   }
 };
 
-}(Drupal));
+}(Drupal.jQuery, Drupal));

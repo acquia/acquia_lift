@@ -106,4 +106,4 @@
 
   })();
   Drupal.acquiaLiftAPI = AcquiaLiftAPI;
-})(jQuery, Drupal);
+})(Drupal.jQuery, Drupal);

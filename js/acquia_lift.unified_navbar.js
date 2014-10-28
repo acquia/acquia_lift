@@ -550,4 +550,4 @@ Drupal.theme.navbarOrientationToggle = function () {
     '</div></div>';
 };
 
-}(jQuery, Backbone, Drupal));
+}(Drupal.jQuery, Backbone, Drupal));

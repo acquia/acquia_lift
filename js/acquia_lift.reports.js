@@ -846,7 +846,7 @@ Rickshaw.Graph.TableLegend = Rickshaw.Class.create(Rickshaw.Graph.Legend, {
     $.fn.liftGraph = old;
     return this;
   }
-}(jQuery);
+}(Drupal.jQuery);
 
 /**
  * Functionality related specifically to the Acquia Lift reports.
@@ -914,6 +914,6 @@ Rickshaw.Graph.TableLegend = Rickshaw.Class.create(Rickshaw.Graph.Legend, {
     }
   }
 
-}(jQuery, Drupal));
+}(Drupal.jQuery, Drupal));
 
 //# sourceMappingURL=acquia_lift.reports.js.map

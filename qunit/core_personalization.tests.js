@@ -2,6 +2,8 @@
  * @file libraries.js
  */
 
+var $ = Drupal.jQuery;
+
 QUnit.module("Acquia Lift Cookie Queue", {
   setup: function() {
     initializeLiftSettings();
@@ -42,8 +44,7 @@ QUnit.test("QueueItem unit tests", function(assert) {
 });
 
 QUnit.test("Queue unit tests", function(assert) {
-  var $ = jQuery,
-    testData1 = {'testdata': 1},
+  var testData1 = {'testdata': 1},
     testData2 = {'testdata': 2};
 
   expect(20);
@@ -534,7 +535,7 @@ QUnit.test('Page load goals queue processing', function(assert) {
   assert.equal(queue.length, 1, 'Goals queue has one item.');
 
   // Call the queue page processing.
-  Drupal.behaviors.acquia_lift_goal_queue.attach(jQuery(document), Drupal.settings);
+  Drupal.behaviors.acquia_lift_goal_queue.attach($(document), Drupal.settings);
 
   // Make sure the correct URL was called.
   assert.equal(sinon.requests.length, 1);
@@ -593,7 +594,7 @@ parseUri.options = {
 
 // Helper function to read the queue cookie contents.
 function readCookieQueue() {
-  return jQuery.parseJSON(jQuery.cookie('acquiaLiftQueue'));
+  return $.parseJSON($.cookie('acquiaLiftQueue'));
 };
 
 // Helper function to initialize the lift API settings.

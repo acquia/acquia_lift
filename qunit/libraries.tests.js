@@ -2,13 +2,15 @@
  * @file libraries.js
  */
 
+var $ = Drupal.jQuery;
+
 QUnit.module("Acquia Lift DOM selector tests");
 
 QUnit.test('DOM Selection', function(assert) {
-  var $mousehere = jQuery('#mousehere');
-  var $nowatch = jQuery('#nowatch');
-  var $another = jQuery('#another');
-  var $watch = jQuery('#watch');
+  var $mousehere = $('#mousehere');
+  var $nowatch = $('#nowatch');
+  var $another = $('#another');
+  var $watch = $('#watch');
   var indicatorClass = 'acquia-lift-active-element';
   var current = null;
   var currentSelector = '';
@@ -63,7 +65,7 @@ QUnit.asyncTest('Message Box autoclose', function(assert) {
   expect(4);
 
   Drupal.ajax.prototype.commands.acquia_lift_message_box(Drupal.ajax, resp, 200);
-  $messagebox = jQuery('#acquia-lift-message-box');
+  $messagebox = $('#acquia-lift-message-box');
   assert.equal($messagebox.length, 1, 'Message box added to page.');
   assert.ok(!$messagebox.hasClass('element-hidden'), 'Message box is not hidden.');
   assert.equal($messagebox.find('.message').html(), message, 'Message was set to provided text.');
@@ -89,14 +91,14 @@ QUnit.asyncTest('Message Box no interaction', function(assert) {
   expect(4);
 
   Drupal.ajax.prototype.commands.acquia_lift_message_box(Drupal.ajax, resp, 200);
-  $messagebox = jQuery('#acquia-lift-message-box');
+  $messagebox = $('#acquia-lift-message-box');
   assert.equal($messagebox.length, 1, 'Message box added to page.');
   assert.ok(!$messagebox.hasClass('element-hidden'), 'Message box is not hidden.');
   assert.equal($messagebox.find('.message').html(), message, 'Message was set to provided text.');
 
   QUnit.stop();
   setTimeout(function() {
-    assert.equal(jQuery('#acquia-lift-message-box').length, 1, 'Message box was not removed after 2 seconds.');
+    assert.equal($('#acquia-lift-message-box').length, 1, 'Message box was not removed after 2 seconds.');
     QUnit.start();
     $messagebox.remove();
   }, 2000);
@@ -116,7 +118,7 @@ QUnit.asyncTest('Message Box click close', function(assert) {
   expect(4);
 
   Drupal.ajax.prototype.commands.acquia_lift_message_box(Drupal.ajax, resp, 200);
-  $messagebox = jQuery('#acquia-lift-message-box');
+  $messagebox = $('#acquia-lift-message-box');
   assert.equal($messagebox.length, 1, 'Message box added to page.');
   assert.ok(!$messagebox.hasClass('element-hidden'), 'Message box is not hidden.');
   assert.equal($messagebox.find('.message').html(), message, 'Message was set to provided text.');
@@ -143,13 +145,13 @@ QUnit.asyncTest('Message Box click document', function(assert) {
   QUnit.start();
 
   Drupal.ajax.prototype.commands.acquia_lift_message_box(Drupal.ajax, resp, 200);
-  $messagebox = jQuery('#acquia-lift-message-box');
+  $messagebox = $('#acquia-lift-message-box');
   assert.equal($messagebox.length, 1, 'Message box added to page.');
   assert.ok(!$messagebox.hasClass('element-hidden'), 'Message box is not hidden.');
   assert.equal($messagebox.find('.message').html(), message, 'Message was set to provided text.');
 
   QUnit.stop();
-  jQuery('#nowatch').trigger('click');
+  $('#nowatch').trigger('click');
   setTimeout(function() {
     assert.ok($messagebox.hasClass('element-hidden'), 'Message was hidden when clicking elsewhere in document.');
     QUnit.start();
@@ -170,7 +172,7 @@ QUnit.asyncTest('Message Box click message', function(assert) {
   QUnit.start();
 
   Drupal.ajax.prototype.commands.acquia_lift_message_box(Drupal.ajax, resp, 200);
-  $messagebox = jQuery('#acquia-lift-message-box');
+  $messagebox = $('#acquia-lift-message-box');
   assert.equal($messagebox.length, 1, 'Message box added to page.');
   assert.ok(!$messagebox.hasClass('element-hidden'), 'Message box is not hidden.');
   assert.equal($messagebox.find('.message').html(), message, 'Message was set to provided text.');

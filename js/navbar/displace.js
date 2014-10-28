@@ -176,4 +176,4 @@
     calculateOffset: calculateOffset
   });
 
-})(jQuery, Drupal, Drupal.debounce);
+})(Drupal.jQuery, Drupal, Drupal.debounce);

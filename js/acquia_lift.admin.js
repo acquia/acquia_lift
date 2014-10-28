@@ -125,4 +125,4 @@
       $priorMessages = $('div.messages').not($newMessages).hide();
     }
   }
-})(jQuery);
+})(Drupal.jQuery);

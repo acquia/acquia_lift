@@ -113,7 +113,7 @@
     $('#visitor-actions-ui-actionable-elements-without-identifiers').hide();
   }
 
-}(jQuery, Drupal));
+}(Drupal.jQuery, Drupal));
 
 /**
  * @file acquia_lift.elements.js
@@ -789,7 +789,7 @@
     }
   });
 
-}(jQuery, Drupal, Drupal.visitorActions.ui.dialog, Backbone, _));
+}(Drupal.jQuery, Drupal, Drupal.visitorActions.ui.dialog, Backbone, _));
 
 /**
  * @file Override CTools modal.js in order to provide dynamic sizing
@@ -801,7 +801,7 @@
  * @see  https://www.drupal.org/node/1294478
  */
 
-(function ($) {
+(function ($, Drupal) {
   // Make sure our objects are defined.
   Drupal.CTools = Drupal.CTools || {};
   Drupal.CTools.Modal = Drupal.CTools.Modal || {};
@@ -1105,6 +1105,6 @@
   Drupal.ajax.prototype.commands.modal_display = Drupal.CTools.Modal.modal_display;
   Drupal.ajax.prototype.commands.modal_dismiss = Drupal.CTools.Modal.modal_dismiss;
 
-})(jQuery);
+})(Drupal.jQuery, Drupal);
 
 //# sourceMappingURL=acquia_lift.flow.js.map

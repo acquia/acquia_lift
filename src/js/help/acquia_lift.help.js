@@ -41,4 +41,4 @@
       });
     }
   }
-}(jQuery, Drupal));
+}(Drupal.jQuery, Drupal));

@@ -350,7 +350,7 @@
     }
   }($));
 
-}(jQuery, Drupal));
+}(Drupal.jQuery, Drupal));
 
 /**
  * Acquia Lift goals processing queue functions.
@@ -505,6 +505,6 @@
   }($));
 
 
-}(jQuery, Drupal));
+}(Drupal.jQuery, Drupal));
 
 //# sourceMappingURL=acquia_lift.goals_queue.js.map

@@ -391,4 +391,4 @@
     $.fn.liftGraph = old;
     return this;
   }
-}(jQuery);
+}(Drupal.jQuery);

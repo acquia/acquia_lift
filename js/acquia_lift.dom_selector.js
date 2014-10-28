@@ -273,4 +273,4 @@
       return returns !== undefined ? returns : this;
     }
   };
-})(jQuery, Drupal.utilities);
+})(Drupal.jQuery, Drupal.utilities);

@@ -48,4 +48,4 @@
   Drupal.ajax.prototype.commands.acquia_lift_process_queue = function (ajax, response, status) {
     processQueue();
   };
-}(jQuery));
+}(Drupal.jQuery));

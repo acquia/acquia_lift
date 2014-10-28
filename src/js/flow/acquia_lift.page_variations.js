@@ -672,4 +672,4 @@
     }
   });
 
-}(jQuery, Drupal, Drupal.visitorActions.ui.dialog, Backbone, _));
+}(Drupal.jQuery, Drupal, Drupal.visitorActions.ui.dialog, Backbone, _));

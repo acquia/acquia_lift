@@ -84,4 +84,4 @@
       });
     }
   }
-})(jQuery);
+})(Drupal.jQuery);

@@ -68,4 +68,4 @@
   }
   var self = Drupal.behaviors.acquiaLiftUnifiedNavbarIntegration;
 
-}(Drupal, jQuery, Drupal.debounce, Drupal.displace));
+}(Drupal, Drupal.jQuery, Drupal.debounce, Drupal.displace));

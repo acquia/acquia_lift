@@ -105,4 +105,4 @@
       showMessageBox(response.data.message, seconds);
     }
   };
-})(jQuery, Drupal);
+})(Drupal.jQuery, Drupal);

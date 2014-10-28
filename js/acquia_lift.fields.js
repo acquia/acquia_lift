@@ -251,4 +251,4 @@
   // Get ready for jQuery 1.8.
   jQuery.fn.addBack = jQuery.fn.addBack || jQuery.fn.andSelf;
 
-})(jQuery);
+})(Drupal.jQuery);

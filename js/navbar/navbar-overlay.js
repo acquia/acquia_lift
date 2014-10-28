@@ -90,4 +90,4 @@ $.extend(Drupal.overlay, {
   }
 });
 
-}(jQuery, Drupal, Drupal.displace));
+}(Drupal.jQuery, Drupal, Drupal.displace));

@@ -41,6 +41,6 @@
       });
     }
   }
-}(jQuery, Drupal));
+}(Drupal.jQuery, Drupal));
 
 //# sourceMappingURL=acquia_lift.help.js.map

@@ -2,6 +2,8 @@
  * @file page_variations.tests.js
  */
 
+var $ = Drupal.jQuery;
+
 QUnit.module("Acquia Lift page variation models");
 
 QUnit.test('Default values', function (assert) {
@@ -55,8 +57,8 @@ QUnit.module("Acquia Lift page variation views", {
 });
 
 QUnit.test('Application view', function (assert) {
-  var $view = jQuery('#watch');
-  var $anchor = jQuery('#mousehere');
+  var $view = $('#watch');
+  var $anchor = $('#mousehere');
 
   var appModel = new Drupal.acquiaLiftPageVariations.models.AppModel();
   var appView = new Drupal.acquiaLiftPageVariations.views.AppView({
@@ -100,7 +102,7 @@ QUnit.asyncTest('Contextual menu view', function (assert) {
   QUnit.start();
   expect(11);
   var anchorSelector = '#mousehere';
-  var $anchor = jQuery(anchorSelector);
+  var $anchor = $(anchorSelector);
   var id = 'testing-' + new Date().getTime();
   var model = new Drupal.visitorActions.ui.dialog.models.DialogModel({
     selector: anchorSelector,
@@ -111,7 +113,7 @@ QUnit.asyncTest('Contextual menu view', function (assert) {
     model: model
   });
   model.set('active', true);
-  var $dialog = jQuery('#' + id + '-dialog');
+  var $dialog = $('#' + id + '-dialog');
   assert.equal($dialog.length, 1, 'Dialog created with specified id.');
   assert.ok($dialog.hasClass(view.className), 'Dialog created with view class.');
   assert.equal($dialog.find('.visitor-actions-ui-dialog-content').length, 1, 'Dialog content created.');
@@ -135,7 +137,7 @@ QUnit.asyncTest('Contextual menu view', function (assert) {
     // Give the dialog time to close.
     setTimeout(function() {
       QUnit.start();
-      $dialog = jQuery('#' + id + '-dialog');
+      $dialog = $('#' + id + '-dialog');
       assert.equal($dialog.length, 0, 'Contextual menu view has been removed.');
     }, 1000)
   })
@@ -146,7 +148,7 @@ QUnit.asyncTest('Contextual menu limited by children node types', function (asse
   QUnit.start();
   expect(11);
   var anchorSelector = '#another';
-  var $anchor = jQuery(anchorSelector);
+  var $anchor = $(anchorSelector);
   var id = 'testing-' + new Date().getTime();
   var model = new Drupal.visitorActions.ui.dialog.models.DialogModel({
     selector: anchorSelector,
@@ -157,7 +159,7 @@ QUnit.asyncTest('Contextual menu limited by children node types', function (asse
     model: model
   });
   model.set('active', true);
-  var $dialog = jQuery('#' + id + '-dialog');
+  var $dialog = $('#' + id + '-dialog');
   assert.equal($dialog.length, 1, 'Dialog created with specified id.');
   assert.ok($dialog.hasClass(view.className), 'Dialog created with view class.');
   assert.equal($dialog.find('.visitor-actions-ui-dialog-content').length, 1, 'Dialog content created.');
@@ -181,7 +183,7 @@ QUnit.asyncTest('Contextual menu limited by children node types', function (asse
     // Give the dialog time to close.
     setTimeout(function() {
       QUnit.start();
-      $dialog = jQuery('#' + id + '-dialog');
+      $dialog = $('#' + id + '-dialog');
       assert.equal($dialog.length, 0, 'Contextual menu view has been removed.');
     }, 1000)
   })

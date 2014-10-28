@@ -2,7 +2,10 @@
  * @file
  * acquia_lift.personalize.js
  */
-(function (Drupal, $, _, Backbone) {
+(function (Drupal, _, Backbone) {
+
+  $ = Drupal.jQuery;
+
   // Removes leading '/', '?' and '#' characters from a string.
   var pathRegex = /^(?:[\/\?\#])*(.*)/;
 
@@ -2956,4 +2959,4 @@
     Drupal.attachBehaviors();
   }
 
-}(Drupal, jQuery, _, Backbone));
+}(Drupal, _, Backbone));

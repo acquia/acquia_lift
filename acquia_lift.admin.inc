@@ -397,6 +397,12 @@ function acquia_lift_report_custom($form, &$form_state, $agent, $agent_data, $op
   $date_start_report = date('Y-m-d', $agent_data->started);
   $date_end_report = $date_end_targeting = date('Y-m-d');
 
+  // If the campaign's status is "completed" then we need to use the date it ended.
+  $agent_name = $agent->getMachineName();
+  $status = variable_get(_personalize_agent_get_status_variable($agent_name));
+  if ($status == PERSONALIZE_STATUS_COMPLETED && $end_time = variable_get(_personalize_agent_get_stoptime_variable($agent_name), 0)) {
+    $date_end_report = $date_end_targeting = date('Y-m-d', $end_time);
+  }
   // Conversion report filters.
   $selected_goal = empty($form_state['values']['goal']) ? NULL : $form_state['values']['goal'];
   $selected_metric = empty($form_state['values']['metric']) ? 'rate' : $form_state['values']['metric'];
@@ -744,6 +750,7 @@ function acquia_lift_report_ajax_callback($form, &$form_state) {
  *   The campaign agent data for this report.
  */
 function acquia_lift_report_ab($form, &$form_state, $agent, $agent_data) {
+  $agent_name = $agent->getMachineName();
   // Check for Rickshaw and D3 libraries and alert users if not exist.
   if (_acquia_lift_missing_library_warning(array('rickshaw', 'd3'), t('The following libraries are required in order to view the Acquia Lift reports:'))) {
     return array();
@@ -758,7 +765,7 @@ function acquia_lift_report_ab($form, &$form_state, $agent, $agent_data) {
       'class' => array('acquia-lift-report-section-options'),
     ),
     '#tree' => FALSE,
-    'goal' => acquia_lift_report_goal_dropdown($agent->getMachineName(), $selected_goal),
+    'goal' => acquia_lift_report_goal_dropdown($agent_name, $selected_goal),
     'metric' => acquia_lift_report_conversion_metric_dropdown($selected_metric),
     'submit' => array(
       '#type' => 'submit',
@@ -769,6 +776,12 @@ function acquia_lift_report_ab($form, &$form_state, $agent, $agent_data) {
   // Default to showing the complete history of the campaign.
   $date_start_report = date('Y-m-d', $agent_data->started);
   $date_end_report = $date_end_targeting = date('Y-m-d');
+
+  // If the campaign's status is "completed" then we need use the date it ended.
+  $status = variable_get(_personalize_agent_get_status_variable($agent_name));
+  if ($status == PERSONALIZE_STATUS_COMPLETED && $end_time = variable_get(_personalize_agent_get_stoptime_variable($agent_name), 0)) {
+    $date_end_report = $date_end_targeting = date('Y-m-d', $end_time);
+  }
   // Acquia Lift A/B reports have a decision name that is the same as the
   // campaign machine name.
   $options = array(

@@ -15,7 +15,7 @@ class DummyAcquiaLiftHttpClient implements AcquiaLiftDrupalHttpClientInterface {
    * @var array
    *   An array of requests.
    */
-  protected $requests_received;
+  protected static $requests_received;
 
   /**
    * Whether or not this http client should return 500 errors.
@@ -74,7 +74,7 @@ class DummyAcquiaLiftHttpClient implements AcquiaLiftDrupalHttpClientInterface {
    *   (optional) The body of the request.
    */
   protected function logRequest($type, $uri, $headers, $options, $body = NULL) {
-    $this->requests_received[] = array(
+    self::$requests_received[] = array(
       'type' => $type,
       'uri' => $uri,
       'headers' => $headers,
@@ -89,12 +89,12 @@ class DummyAcquiaLiftHttpClient implements AcquiaLiftDrupalHttpClientInterface {
    * @return array
    *   An array of requests
    */
-  public function getLoggedRequests() {
-    return $this->requests_received;
+  public static function getLoggedRequests() {
+    return self::$requests_received;
   }
 
-  public function removeLoggedRequests() {
-    $this->requests_received = array();
+  public static function clearLoggedRequests() {
+    self::$requests_received = array();
   }
 
   /**

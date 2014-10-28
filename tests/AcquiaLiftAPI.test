@@ -1711,6 +1711,9 @@ class AcquiaLiftTest extends DrupalUnitTestCase {
    */
   public function testGetCallsForPreviousMonth() {
     $lift_api = $this->getAcquiaLiftAPI();
+    // Make sure we're starting off when a clean request log in our dummy
+    // http client.
+    DummyAcquiaLiftHttpClient::clearLoggedRequests();
     $timestamps = array(
       // Timestamp representing March 12th 2014
       1394652611 => array(

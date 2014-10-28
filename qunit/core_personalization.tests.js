@@ -112,7 +112,7 @@ QUnit.test("Goals queue", function(assert) {
     this.clock.restore();
   }
 
-  expect(23);
+  expect(26);
 
   // Create a fake request for the goals api call.
   var xhr = sinon.useFakeXMLHttpRequest();
@@ -135,6 +135,10 @@ QUnit.test("Goals queue", function(assert) {
     reward: 2,
     goal: 'goal2'
   };
+  var testGoal3 = {
+    reward: 0,
+    goal: 'goal3'
+  };
 
   // Spy on the queue to see that the correct functions are called.
   sinon.spy(Drupal.acquiaLiftUtility.Queue, 'add');
@@ -149,6 +153,10 @@ QUnit.test("Goals queue", function(assert) {
   var queueData2 = {
     'a': agentName,
     'o': testGoal2
+  };
+  var queueData3 = {
+    'a': agentName,
+    'o': testGoal3
   };
   // Get the queue item for assertions and then clear out the processing status.
   var item = Drupal.acquiaLiftUtility.Queue.getNext();
@@ -201,6 +209,16 @@ QUnit.test("Goals queue", function(assert) {
   var req = sinon.requests.pop();
   req.respond(500, {"Content-Type": "application/json"}, '[{"status": 500}]');
   assert.equal(Drupal.acquiaLiftUtility.Queue.remove.callCount, 2, 'The remove call was called again.');
+  var nextGoal = Drupal.acquiaLiftUtility.Queue.getNext();
+  assert.ok(nextGoal == null, 'There are no more items in the queue.');
+
+  // Now add a goal that fails and is not retryable.
+  Drupal.acquiaLiftUtility.GoalQueue.addGoal(agentName, testGoal3);
+  assert.ok(Drupal.acquiaLiftUtility.Queue.add.calledWith(queueData3), 'The third goal was added to the queue.');
+  var request = sinon.requests.pop();
+  request.respond(202, { "Content-Type": "*/*" }, '{"agent": "' + agentName + '", "session": "some-session-ID", "reward":"' + testGoal3.reward + '", "goal":"' + testGoal3.goal + '"}');
+  // This should return not retryable and be deleted.
+  assert.equal(Drupal.acquiaLiftUtility.Queue.remove.callCount, 3, 'The remove call was called for non-retryable goal.');
   var nextGoal = Drupal.acquiaLiftUtility.Queue.getNext();
   assert.ok(nextGoal == null, 'There are no more items in the queue.');
 

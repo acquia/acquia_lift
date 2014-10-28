@@ -807,6 +807,9 @@
             triggerChange = true;
           }
         }
+        if (triggerChange) {
+          this.triggerChange();
+        }
         return optionsCollection;
       },
 
@@ -856,7 +859,7 @@
        * event notification.
        */
       startAddMode: function () {
-        // Don't restart if alredy in create mode.
+        // Don't restart if already in create mode.
         if (this.get('isActive') && !this.get('isEditMode')) {
           return;
         }
@@ -969,17 +972,17 @@
         this.listenTo(this.model, 'change:isActive', this.render);
         this.listenTo(this.model, 'change:optionSets', this.render);
         this.listenTo(this.model, 'change:variations', this.render);
-        this.render(this.model, this.model.get('isActive'));
+        this.render();
       },
 
       /**
        * {@inheritdoc}
        */
-      render: function (model, isActive) {
+      render: function () {
         this.$el
           // Toggle visibility of the option set based on the active status of the
           // associated campaign.
-          .toggle(isActive);
+          .toggle(this.model.get('isActive'));
       }
     }),
 
@@ -993,7 +996,7 @@
         this.listenTo(this.model, 'change:variations', this.render);
 
         this.build();
-        this.render(this.model, this.model.get('isActive'));
+        this.render();
       },
 
       build: function () {
@@ -1004,8 +1007,8 @@
         this.$el.html(html);
       },
 
-      render: function(model, isActive) {
-        this.$el.toggle(isActive);
+      render: function () {
+        this.$el.toggle(this.model.get('isActive'));
       }
     }),
 
@@ -1045,12 +1048,12 @@
       /**
        * {@inheritDoc}
        */
-      render: function(model) {
+      render: function () {
         this.$el
           .find('[data-acquia-lift-personalize-page-variation]')
           .removeClass('acquia-lift-active')
           .attr('aria-pressed', 'false');
-        var activeVariation = model.get('activeVariation');
+        var activeVariation = this.model.get('activeVariation');
         var variationData = (isNaN(activeVariation) || activeVariation == -1) ? 'new' : activeVariation;
         this.$el.find('[data-acquia-lift-personalize-page-variation="' + variationData + '"]')
           .addClass('acquia-lift-active')
@@ -1061,7 +1064,7 @@
        * When the selected variation changes, we should also update the preview
        * such that the previewed variation matches what is shown.
        */
-      onActiveVariationChange: function() {
+      onActiveVariationChange: function () {
         this.render(this.model);
         this.updatePreview();
       },
@@ -1072,9 +1075,9 @@
        *
        * @param model
        */
-      rebuild: function() {
-        this.build(this.model);
-        this.render(this.model);
+      rebuild: function () {
+        this.build();
+        this.render();
         // Re-run navbar handling to pick up new menu options.
         _.debounce(updateNavbar, 300);
         // Re-attach behaviors to allow ctools modal integration.
@@ -1084,9 +1087,9 @@
       /**
        * {@inheritDoc}
        */
-      build: function(model) {
+      build: function () {
         var html = '';
-        html += Drupal.theme('acquiaLiftPageVariationsItem', model);
+        html += Drupal.theme('acquiaLiftPageVariationsItem', this.model);
         this.$el.html(html);
       },
 
@@ -1124,7 +1127,11 @@
       updatePreview: function() {
         var variation_index = this.model.get('activeVariation');
         var variations = this.model.get('optionSets').getVariations();
-        var variation = variations[variation_index];
+        var variation = _.find(variations, function(obj) {
+          return obj.original_index == variation_index;
+        });
+
+        if (!variation) return;
         var i, num = variation.options.length, current;
         // Run the executor for each option in the variation.
         for (i=0; i < num; i++) {
@@ -1192,7 +1199,7 @@
         if (data.start) {
           if (data.variationIndex < 0) {
             // If add mode, then create a temporary variation listing.
-            var nextIndex = this.model.getNumberOfVariations();
+            var nextIndex = this.model.getNextVariationNumber();
             // The first option is always control so the numbering displayed
             // actually matches the index number.
             var variationNumber = Math.max(nextIndex, 1);
@@ -1210,6 +1217,7 @@
             // indicated.
             // Make it seem as if the item was clicked without triggering
             // any other click events that may be listening on the link.
+            var $li = this.$el.find('[data-acquia-lift-personalize-page-variation="' + data.variationIndex + '"]');
             var event = new Event('click');
             event.currentTarget = event.target = $li.get('0');
             this.onClick(event);
@@ -1251,20 +1259,20 @@
         });
 
 
-        this.build(this.model);
-        this.render(this.model);
+        this.build();
+        this.render();
       },
 
       /**
        * {@inheritdoc}
        */
-      render: function (model) {
+      render: function () {
         this.$el
           .find('[data-acquia-lift-personalize-option-set-option]')
           .removeClass('acquia-lift-active')
           .attr('aria-pressed', 'false');
         this.$el
-          .find('[data-acquia-lift-personalize-option-set-option="' + model.get('activeOption') + '"]')
+          .find('[data-acquia-lift-personalize-option-set-option="' + this.model.get('activeOption') + '"]')
           .addClass('acquia-lift-active')
           .attr('aria-pressed', 'true');
       },
@@ -1272,11 +1280,11 @@
       /**
        * {@inheritdoc}
        */
-      build: function (model) {
+      build: function () {
         var html = '';
         html += Drupal.theme('acquiaLiftOptionSetItem', {
-          osID: model.get('osid'),
-          os: model.attributes
+          osID: this.model.get('osid'),
+          os: this.model.attributes
         });
         this.$el.html(html);
       },
@@ -1428,7 +1436,7 @@
           this.listenTo(this.model, 'change:variations', this.render);
         }
 
-        this.build(this.model);
+        this.build();
         this.render();
       },
 
@@ -1447,17 +1455,17 @@
       /**
        * {@inheritdoc}
        */
-      build: function (model) {
+      build: function () {
         var html = '';
-        if (model) {
+        if (this.model) {
           html += Drupal.theme('acquiaLiftPersonalizeCampaignMenuItem', {
             link: {
-              'id': model.get('name'),
-              'label': model.get('label'),
-              'href': model.get('links').view
+              'id': this.model.get('name'),
+              'label': this.model.get('label'),
+              'href': this.model.get('links').view
             },
             edit: {
-              'href': model.get('links').edit
+              'href': this.model.get('links').edit
             }
           });
         } else {
@@ -1635,13 +1643,13 @@
           return;
         }
         this.model.on('change', this.render, this);
-        this.render(this.model);
+        this.render();
       },
 
       /**
        * {@inheritdoc}
        */
-      render: function (model) {
+      render: function () {
         var activeCampaign = this.collection.findWhere({'isActive': true});
         if (!activeCampaign) {
           this.$el
@@ -1693,14 +1701,14 @@
           return;
         }
         this.model.on('change', this.render, this);
-        this.build(this.model);
-        this.render(this.model);
+        this.build();
+        this.render();
       },
 
       /**
        * {@inheritdoc}
        */
-      render: function (model) {
+      render: function () {
         var activeCampaign = this.collection.findWhere({'isActive': true});
         if (!activeCampaign) {
           this.$el.hide();
@@ -1727,7 +1735,7 @@
       /**
        * {@inheritdoc}
        */
-      build: function(model) {
+      build: function() {
         this.$el
           .find('a[href]')
           .attr('href', 'javascript:void(0)')
@@ -1976,14 +1984,14 @@
           that.onPageVariationEditModeProxy(event, data);
         });
 
-        this.render(this.model);
+        this.render();
       },
 
       /**
        * {@inheritdoc}
        */
-      render: function (model) {
-        var isActive = model.get('isActive');
+      render: function () {
+        var isActive = this.model.get('isActive');
         this.$el.toggleClass('acquia-lift-active', isActive);
 
         if (this.$el.parents('.acquia-lift-controls').length == 0) {
@@ -1994,7 +2002,7 @@
         if (isActive) {
           text = Drupal.t('Exit edit mode');
         } else {
-          text = model instanceof Drupal.acquiaLiftUI.MenuPageVariationModeModel ? Drupal.t('Add a variation') : Drupal.t('Add a variation set');
+          text = this.model instanceof Drupal.acquiaLiftUI.MenuPageVariationModeModel ? Drupal.t('Add a variation') : Drupal.t('Add a variation set');
         }
         this.$el.text(text);
       },
@@ -2056,8 +2064,8 @@
       /**
        * {@inheritdoc}
        */
-      render: function (model) {
-        var isActive = model.get('isActive');
+      render: function () {
+        var isActive = this.model.get('isActive');
         this.$el.toggleClass('acquia-lift-content-variation-candidate', isActive);
         // Pull the Personalize contextual link out of the list and highlight it.
         if (isActive) {
@@ -2121,13 +2129,17 @@
          *   The variation index that should be set as active variation.
          */
         function validateVariationIndex(check) {
+          // -1 means that we are adding a new variation.
+          if (check == -1) return check;
+
+          // Otherwise check that the variation exists.
           var variations = that.get('optionSets').getVariations(), i, num = variations.length;
           for (i = 0; i < num; i++) {
             if (variations[i].original_index == check) {
               return check;
             }
           }
-          // the variation to check does not exist.
+          // The variation to check does not exist so return the control.
           return 0;
         }
 
@@ -2148,25 +2160,34 @@
       },
 
       /**
+       * {@inheritDoc}
+       */
+      getNextVariationNumber: function () {
+        var variations = this.get('optionSets').getVariations();
+        if (variations.length == 0) {
+          return 1;
+        }
+        // Find the highest numbered variations.
+        var max_variation = _.max(variations, function(variation) {
+          return variation.original_index;
+        });
+        // Careful:don't ++ or you will increment the object's value.
+        return (parseInt(max_variation.original_index) + 1);
+      },
+
+      /**
        * Get the current variation shown.
        */
       getCurrentVariationLabel: function() {
         var variationIndex = this.get('activeVariation');
         if (variationIndex < 0) {
           // Currently adding a new variation
-          var currentNum = this.getNumberOfVariations();
-          // Don't need to add 1 to the current total because of the control
-          // option at position 0 unless it's new in which case it should say
-          // "Variation #1" rather than 0.
-          currentNum = currentNum == 0 ? 1 : currentNum;
-          return Drupal.t('Variation #@num', {'@num': currentNum});
+          var nextNum = this.getNextVariationNumber();
+          return Drupal.t('Variation #@num', {'@num': nextNum});
         }
-        var optionSets = this.get('optionSets');
-        var variations = optionSets.getVariations();
-        if (variations.length > variationIndex) {
-          return variations[variationIndex].label;
-        }
-        return null;
+        var variations = this.get('optionSets').getVariations();
+        var variation = _.find(variations, function(current) { return current.original_index == variationIndex; });
+        return variation ? variation.label : null;
       },
 
       /**
@@ -2749,9 +2770,9 @@
       });
     });
     var attrs = [
-      'class="acquia-lift-preview-option acquia-lift-preview-page-variation--' + variation.index + ' visitor-actions-ui-ignore"',
+      'class="acquia-lift-preview-option acquia-lift-preview-page-variation--' + variation.original_index + ' visitor-actions-ui-ignore"',
       'href="' + generateHref(hrefOptions) + '"',
-      'data-acquia-lift-personalize-page-variation="' + variation.index + '"',
+      'data-acquia-lift-personalize-page-variation="' + variation.original_index + '"',
       'aria-role="button"',
       'aria-pressed="false"'
     ];

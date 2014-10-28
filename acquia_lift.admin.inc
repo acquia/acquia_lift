@@ -1926,12 +1926,18 @@ function acquia_lift_page_variation_create($variation_set_name, $option_set, $op
   // use whichever is higher.
   if (!empty($option_sets)) {
     $first_os = reset($option_sets);
-    $count = count($first_os->options);
+    $max_first = max(array_keys($first_os->options));
   }
   else {
-    $count = 0;
+    $max_first = 0;
   }
-  $max_variation_number = max(array(1, $count, count($option_set->options)));
+  // The maximum new variation number must take into account the number of
+  // options for both the passed in option set and the original first option set
+  // as well as the indexes on those options which may no longer be
+  // sequential.
+  $max_variation_number  = max(array_merge(array(0, $max_first), array_keys($option_set->options)));
+  // The above would give us the maximum existing number so increment for new.
+  $max_variation_number++;
   if ($variation_number === NULL || $variation_number > $max_variation_number) {
     $variation_number = $max_variation_number;
   }

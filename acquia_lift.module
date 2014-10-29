@@ -565,7 +565,7 @@ function acquia_lift_personalize_option_set_save($option_set) {
         $js_id = personalize_stringify_osid($option_set->osid);
         $plugin = 'link';
         $action_label = t('Clicks @option_set', array('@option_set' => $option_set->label));
-        $action_name = personalize_generate_machine_name($action_label, 'visitor_actions_machine_name_exists');
+        $action_name = personalize_generate_machine_name($action_label, 'visitor_actions_machine_name_exists', '_');
         $action = array(
           'label' => $action_label,
           'machine_name' => $action_name,

@@ -357,7 +357,7 @@ function _acquia_lift_profiles_thumbnail_supported_widgets() {
       'use_styles' => TRUE,
     ),
     'media_generic' => array(
-      'use_styles' => FALSE,
+      'use_styles' => TRUE,
     ),
   );
 }

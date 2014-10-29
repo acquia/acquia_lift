@@ -35,13 +35,11 @@ function drush_acquia_lift_profiles_get_segments($accessKey = NULL, $secretKey =
   if ( $secretKey == NULL ) {
     $secretKey = variable_get('acquia_lift_profiles_secret_key', '');
   }
-  variable_set('acquia_lift_profiles_access_key',$accessKey);
-  variable_set('acquia_lift_profiles_secret_key',$secretKey);
-  drupal_set_message(T('Access Key : '.variable_get('acquia_lift_profiles_access_key', '')));
-  drupal_set_message(T('Secret Key : '.variable_get('acquia_lift_profiles_secret_key', '')));
+  drupal_set_message(T('Access Key : '.$accessKey));
+  drupal_set_message(T('Secret Key : '.$secretKey));
   drupal_set_message(T('Segments : '));
   try {
-    $returnSegments = ALProfilesAPI::getInstance(variable_get('acquia_lift_profiles_account_name', ''), variable_get('acquia_lift_profiles_api_url', ''))
+    $returnSegments = ALProfilesAPI::getInstance(variable_get('acquia_lift_profiles_account_name', ''), variable_get('acquia_lift_profiles_api_url', ''), $accessKey, $secretKey)
       ->getSegments();
     foreach ($returnSegments as $segment) {
       drupal_set_message($segment);

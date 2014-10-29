@@ -16,12 +16,7 @@
     tipIgnoreId = new RegExp(Drupal.settings.visitor_actions.ignoreIds);
 
   defaults = {
-      hoverCss: {
-        background: '#666',
-        opacity: .6,
-        color: '#fff',
-        cursor: 'pointer'
-      },
+      hoverClass: 'acquia-lift-dom-highlight',
       onElementSelect: function (element, selector) {
         console.log('selected: ' + selector);
       },
@@ -56,7 +51,7 @@
      * Initialization logic.
      */
     init: function() {
-      this._hovered.hoverCss = this.settings.hoverCss;
+      this._hovered.hoverClass = this.settings.hoverClass;
       this._watching = false;
     },
 
@@ -173,32 +168,26 @@
     _hovered: {
       // The element that is currently hovered.
       $element: null,
-      // The background css for the hovered element so that it can be returned
-      // to its original state after hover.
-      originalCss: {},
       // The CSS for the element on hover.
-      hoverCss: {},
+      hoverClass: '',
 
       // Unhighlight the element.
       unhighlight: function() {
         if (this.$element != null) {
           this.$element.qtip("hide");
-          this.$element.css(this.originalCss);
           this.$element.removeClass(indicatorClass);
+          this.$element.removeClass(this.hoverClass);
         }
-        this.originalCss = {};
         return this.$element = null;
       },
 
       // Highlight the element.
       highlight: function() {
         if (this.$element != null) {
-          for (var prop in this.hoverCss) {
-            this.originalCss[prop] = this.$element.css(prop);
-          }
           this.$element.addClass(indicatorClass);
+          this.$element.addClass(this.hoverClass)
           this.$element.qtip("show");
-          return this.$element.css(this.hoverCss);
+          return this.$element;
         }
       },
 
@@ -240,6 +229,7 @@
       } else {
         // Remove the indicator class so it doesn't show in the final selector.
         $selected.removeClass(indicatorClass);
+        $selected.removeClass(this.hoverClass);
         this.settings.onElementSelect.call(this, $selected[0], Utilities.getSelector($selected[0], selectorIgnoreId, selectorIgnoreClasses));
       }
       event.preventDefault();

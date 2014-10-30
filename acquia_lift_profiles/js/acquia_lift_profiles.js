@@ -132,9 +132,21 @@ var _tcwq = _tcwq || [];
     if (identityCaptured || !(DrupalSettings.captureIdentity && context['mail'])) {
       return;
     }
-    _tcaq.push( [ 'captureIdentity', context['mail'], 'email', {'evalSegments': true}] );
+    pushCaptureIdentity(context['mail'], 'email');
     identityCaptured = true;
   };
+
+  /**
+   * Send a caputreIdentity event to ContextDB
+   *
+   * @param indentifier
+   *   The identifier to be sent.
+   * @param indentityType
+   *   The type of identity to pass.
+   */
+  var pushCaptureIdentity = function(identifier, identityType) {
+    _tcaq.push( [ 'captureIdentity', identifier, identityType, {'evalSegments': true}] );
+  }
 
   /**
    * Centralized functionality for acquia_lift_profiles behavior.
@@ -236,6 +248,8 @@ var _tcwq = _tcwq || [];
           }, settings.acquia_lift_profiles.pageContext, udfValues);
           _tcaq.push( [ 'captureView', 'Content View', pageInfo ] );
 
+          sendURLIdentity();
+
           initialized = true;
         };
         $(document).bind('personalizeDecision', this["processPersonalizeDecision"]);
@@ -313,6 +327,34 @@ var _tcwq = _tcwq || [];
             };
             Drupal.visitorActions.publisher.subscribe(callback);
           }
+        }
+      },
+
+      /**
+       * Check if an identity has been set via query string and push to Lift if it has.
+       *
+       * Query string parameters we're looking for are ali and alit.
+       *
+       * @todo make this functionality as well as the query string keys configurable.
+       */
+      'sendURLIdentity': function() {
+        if(identityCaptured == true) {
+          return;
+        }
+        var queryString = $.deparam.querystring();
+        var identifier, identityType;
+        if(queryString.hasOwnProperty('ali')) {
+          identifier = queryString.ali;
+
+          // If alit is set, we use that as the identity type, otherwise we set the default to 'email'
+          if(queryString.hasOwnProperty('alit')) {
+            identityType = queryString.alit;
+          } else {
+            identityType = 'email';
+          }
+
+          pushCaptureIdentity(identifier, identityType);
+          identityCaptured = true;
         }
       },
 

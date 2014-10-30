@@ -1270,7 +1270,8 @@ function acquia_lift_library_alter(&$libraries, $module) {
     $path = drupal_get_path('module', 'acquia_lift');
     // If the version of jQuery is old, we need to add `on` and `off`.
     if ($jquery_version < '1.7') {
-      $libraries['acquia_lift.personalize']['js'][$path . '/js/jquery/ducktape.events.js'] = array('group' => JS_LIBRARY);
+      $vaui_path = drupal_get_path('module', 'visitor_actions_ui');
+      $libraries['acquia_lift.personalize']['js'][$vaui_path . '/js/jquery/ducktape.events.js'] = array('group' => JS_LIBRARY);
     }
   }
 

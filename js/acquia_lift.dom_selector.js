@@ -11,9 +11,8 @@
    */
   var pluginName = 'DOMSelector',
     indicatorClass = 'acquia-lift-active-element',
-    selectorIgnoreClasses = /(messages|contextual-links-[a-zA-Z/-/_])/g;
-    selectorIgnoreId = null,
-    tipIgnoreId = new RegExp(Drupal.settings.visitor_actions.ignoreIds);
+    selectorIgnoreClasses = new RegExp(Drupal.settings.visitor_actions.ignoreClasses);
+    selectorIgnoreId = tipIgnoreId = new RegExp(Drupal.settings.visitor_actions.ignoreIds);
 
   defaults = {
       hoverClass: 'acquia-lift-dom-highlight',

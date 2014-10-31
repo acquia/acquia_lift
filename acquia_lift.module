@@ -2285,6 +2285,34 @@ function acquia_lift_module_implements_alter(&$implementations, $hook) {
 }
 
 /**
+ * Theme preprocessor for personalize_campaign_status_update
+ */
+function acquia_lift_preprocess_personalize_campaign_status_update(&$variables) {
+  $agent_instance = personalize_agent_load_agent($variables['agent_name']);
+  if ($agent_instance instanceof AcquiaLiftPageVariationInterface && !empty($variables['option_sets'])) {
+    // Rather than showing the option set names as the variations that will be
+    // shown, we need to show the individual page variation that will be shown.
+    $option_sets = personalize_option_set_load_multiple(array(), array('decision_name' => $variables['agent_name'], 'agent' => $variables['agent_name']));
+    $first_os = reset($option_sets);
+    $winner_id = empty($first_os->winner) ? PERSONALIZE_CONTROL_OPTION_ID : $first_os->winner;
+    $winner_label = '';
+    if (!empty($first_os->options)) {
+      foreach ($first_os->options as $option) {
+        if ($winner_id == $option['option_id']) {
+          $winner_label = $option['option_label'];
+          break;
+        }
+      }
+    }
+    // Display the variation winner as the overall message.
+    $variables['alert_message'] = !empty($variables['alert_message']) ? "\n" : '';
+    $variables['alert_message'] .= t('All visitors will see the %winning variation.', array('%winning' => $winner_label));
+    // Remove any option set enumerations.
+    $variables['option_sets'] = array();
+  }
+}
+
+/**
  * Implements hook_help().
  */
 function acquia_lift_help($path, $arg) {

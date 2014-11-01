@@ -132,7 +132,7 @@ var _tcwq = _tcwq || [];
     if (identityCaptured || !(DrupalSettings.captureIdentity && context['mail'])) {
       return;
     }
-    pushCaptureIdentity(context['mail'], 'email');
+    _tcaq.push( [ 'captureIdentity', context['mail'], 'email', {'evalSegments': true}] );
     identityCaptured = true;
   };
 
@@ -248,7 +248,7 @@ var _tcwq = _tcwq || [];
           }, settings.acquia_lift_profiles.pageContext, udfValues);
           _tcaq.push( [ 'captureView', 'Content View', pageInfo ] );
 
-          sendURLIdentity();
+          Drupal.acquia_lift_profiles.sendURLIdentity();
 
           initialized = true;
         };

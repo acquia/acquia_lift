@@ -1848,6 +1848,88 @@ function acquia_lift_goal_type_create_form_submit($form, &$form_state) {
 }
 
 /**
+ * Page callback to generate a goal rename modal window.
+ *
+ * @param string $action
+ *   The visitor action machine name for the goal.
+ */
+function acquia_lift_goal_rename_callback($action) {
+  acquia_lift_create_ctools_form(
+    t('Rename a goal'),
+    'acquia_lift_goal_rename_form',
+    array(
+      'action' => $action,
+    ),
+    'acquia_lift_goal_rename_complete_callback'
+  );
+}
+
+/**
+ * Ctools form processing complete handler for the renaming of a goal.
+ * @see acquia_lift_create_ctools_form().
+ */
+function acquia_lift_goal_rename_complete_callback($form, $form_state) {
+  $settings = personalize_agent_get_settings();
+  $commands = array(
+    ctools_modal_command_dismiss(),
+    ajax_command_settings(array('personalize' => array(
+      'campaigns' => $settings,
+    )), TRUE),
+    acquia_lift_command_messagebox(t('The goal has been renamed.'), 10),
+  );
+  return $commands;
+}
+
+/**
+ * Form handler to generate a form to change a goal name.
+ *
+ * This form is called within a ctools modal window.
+ *
+ * @param string $action_name
+ *   The machine name of the goal's underlying visitor action.
+ */
+function acquia_lift_goal_form($form, &$form_state, $action_name) {
+  ctools_include('modal');
+  ctools_include('ajax');
+  ctools_add_js('ajax-responder');
+
+  $action = visitor_actions_custom_load($action_name);
+
+  $form = array();
+  $form['action'] = array(
+    '#type' => 'value',
+    '#value' => $action,
+  );
+  $form['label'] = array(
+    '#type' => 'textfield',
+    '#title' => t('New name'),
+    '#default_value' => $action['label'],
+    '#required' => TRUE,
+    '#maxlength' => PERSONALIZE_MACHINE_NAME_MAXLENGTH,
+  );
+  $form['actions']['submit_form'] = array(
+    '#type' => 'submit',
+    '#attributes' => array(
+      'class' => array('action-item-primary-active', 'acquia-lift-submit-button'),
+    ),
+    '#value' => t('Rename goal'),
+  );
+  $form['actions']['reset'] = array(
+    '#markup' => ctools_ajax_text_button(t('Cancel'), 'admin/structure/acquia_lift/cancel/nojs', t('Cancel'), 'acquia-lift-cancel-button'),
+  );
+  return $form;
+}
+
+/**
+ * Submit handler for acquia_lift_goal_rename().
+ */
+function acquia_lift_goal_rename_form_submit($form, &$form_state) {
+  $action = $form_state['values']['action'];
+  $action['label'] = $form_state['values']['label'];
+  visitor_actions_save_action($action);
+}
+
+/**
  * Page callback to generate a start campaign screen.
  */
 function acquia_lift_campaign_start_modal_callback($agent_name) {

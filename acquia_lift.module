@@ -112,6 +112,14 @@ function acquia_lift_menu() {
     'file' => 'acquia_lift.admin.inc',
     'theme callback' => 'ajax_base_page_theme',
   );
+  $items['admin/structure/acquia_lift/variation/rename/%/%/%ctools_js'] = array(
+    'page callback' => 'acquia_lift_option_rename_callback',
+    'page arguments' => array(5, 6),
+    'access arguments' => array('manage personalized content'),
+    'type' => MENU_CALLBACK,
+    'file' => 'acquia_lift.admin.inc',
+    'theme callback' => 'ajax_base_page_theme',
+  );
   // AJAX callback to delete a page variation.
   $items['admin/structure/acquia_lift/pagevariation/delete/%/%/%ctools_js'] = array(
     'page callback' => 'acquia_lift_page_variation_delete_callback',

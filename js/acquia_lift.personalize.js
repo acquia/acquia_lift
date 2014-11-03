@@ -265,9 +265,12 @@
                     // Build a view for campaign goals.
                     if (type === 'campaigns') {
                       var $goalsMenu = $('[data-acquia-lift-personalize-type="goals"]');
+                      element = document.createElement('li');
                       var goalsView = new ui.MenuGoalsView({
-                        model: model
+                        model: model,
+                        el: element
                       });
+
                       ui.views.push(goalsView);
                       $goalsMenu.prepend(goalsView.el);
                     }
@@ -1517,9 +1520,6 @@
      * Renders the goals for a campaign.
      */
     MenuGoalsView: ViewBase.extend({
-      tagName: 'ul',
-      className: 'innerMenuList',
-
       /**
        * {@inheritdoc}
        */
@@ -1535,6 +1535,10 @@
       rebuild: function() {
         this.build();
         this.render();
+        // Re-run navbar handling to pick up new menu options.
+        _.debounce(updateNavbar, 300);
+        // Re-attach behaviors to allow ctools modal integration.
+        _.debounce(Drupal.attachBehaviors(this.$el), 300);
       },
 
       /**
@@ -2708,10 +2712,19 @@
       'data-acquia-lift-personalize-goal="' + options.name + '"'
     ];
 
-    item += '\n<span ' + attrs.join(' ') + '>\n';
-    item +=  Drupal.t('@text', {'@text': options.label}) + '\n';
-    item += '</span>\n';
+    var renameHref = Drupal.settings.basePath + 'admin/structure/acquia_lift/goal/rename/' + options.name + '/nojs';
+    var renameAttrs = [
+      'class="acquia-lift-goal-rename acquia-lift-menu-link ctools-use-modal ctools-modal-acquia-lift-style"',
+      'title="' + Drupal.t('Rename goal') + '"',
+      'aria-role="button"',
+      'aria-pressed="false"',
+      'href="' + renameHref + '"'
+    ];
 
+    item += '<div class="acquia-lift-menu-item">\n';
+    item += '<span ' + attrs.join(' ') + '>' + Drupal.t('@text', {'@text': options.label}) + '</span>\n';
+    item += '<a ' + renameAttrs.join(' ') + '>' + Drupal.t('Rename') + '</a>\n';
+    item += '</div>';
     return item;
   };
 
@@ -2903,7 +2916,7 @@
    */
   Drupal.theme.acquiaLiftCampaignGoals = function (model) {
     var goals = model.get('goals');
-    var html = '';
+    var html = '<ul class="innerMenuList">';
 
     if (goals.length == 0) {
       html += '<li>';
@@ -2922,6 +2935,7 @@
       });
       html += '</li>';
     });
+    html += '</ul>';
     return html;
   }
 

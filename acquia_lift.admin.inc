@@ -1364,8 +1364,7 @@ function acquia_lift_option_rename_callback($osid_str, $option_id) {
 function acquia_lift_option_rename_complete_callback($form, $form_state) {
   $settings = array();
   $option_set = $form_state['values']['option_set'];
-  $option_set_setting = _personalize_convert_option_set_to_js_setting($option_set);
-  $settings[personalize_stringify_osid($option_set->osid)] = $option_set_setting;
+  $settings += _personalize_convert_option_set_to_js_setting($option_set);
   // We need to update the campaigns as well in case a campaign was paused by this action.
   $campaign_settings['personalize']['campaigns'] = personalize_agent_get_settings();
   $commands = array(

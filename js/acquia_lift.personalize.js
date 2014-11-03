@@ -1250,7 +1250,7 @@
 
         this.listenTo(this.model, 'change', this.render);
         this.listenTo(this.model, 'destroy', this.remove);
-        this.listenTo(this.model, 'change:optionSets', this.rebuild);
+        this.listenTo(this.model, 'change:options', this.rebuild);
 
         this.onOptionShowProxy = $.proxy(this.onOptionShow, this);
         $(document).on('personalizeOptionChange', function (event, $option_set, choice_name, osid) {
@@ -2648,7 +2648,7 @@
    */
   Drupal.theme.acquiaLiftOptionSetItem = function (options) {
     var attrs = [
-      'class="acquia-lift-preview-option-set acquia-lift-content-variation acquia-lift-preview-option-set-' + formatClass(options.osID)  + '"',
+      'class="acquia-lift-preview-option-set acquia-lift-content-variation navbar-menu-item acquia-lift-preview-option-set-' + formatClass(options.osID)  + '"',
       'data-acquia-lift-personalize-id="' + options.osID + '"',
       'data-acquia-lift-personalize-agent="' + options.os.agent + '"'
     ];

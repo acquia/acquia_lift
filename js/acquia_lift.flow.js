@@ -856,14 +856,14 @@
       Drupal.CTools.Modal.modal = $(Drupal.theme(settings.modalTheme));
     }
 
-    $('span.modal-title', Drupal.CTools.Modal.modal).html(Drupal.CTools.Modal.currentSettings.loadingText);
+    $('#modal-title', Drupal.CTools.Modal.modal).html(Drupal.CTools.Modal.currentSettings.loadingText);
     Drupal.CTools.Modal.modalContent(Drupal.CTools.Modal.modal, settings.modalOptions, settings.animation, settings.animationSpeed);
-    $('#modalContent .modal-content').html(Drupal.theme(settings.throbberTheme));
+    $('#modal-content').html(Drupal.theme(settings.throbberTheme));
 
     $(window).trigger('resize');
 
     // Position autocomplete results based on the scroll position of the modal.
-    $('#modalContent .modal-content').delegate('input.form-autocomplete', 'keyup', function() {
+    $('#modal-content').delegate('input.form-autocomplete', 'keyup', function() {
       $('#autocomplete').css('top', $(this).position().top + $(this).outerHeight() + $(this).offsetParent().filter('#modal-content').scrollTop());
     });
   };

@@ -149,7 +149,7 @@ function acquia_lift_menu() {
   );
   // Ajax callback to rename a goal.
   $items['admin/structure/acquia_lift/goal/rename/%/%ctools_js'] = array(
-    'page callback' => 'acquia_lift_goal_rename_callback',
+    'page callback' => 'acquia_lift_goal_rename_modal_callback',
     'page arguments' => array(5),
     'access arguments' => array('manage personalized content'),
     'type' => MENU_CALLBACK,

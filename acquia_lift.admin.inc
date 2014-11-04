@@ -1850,10 +1850,11 @@ function acquia_lift_goal_type_create_form_submit($form, &$form_state) {
 /**
  * Page callback to generate a goal rename modal window.
  *
- * @param string $action
- *   The visitor action machine name for the goal.
+ * @param array $action
+ *   The visitor action for the goal.
  */
-function acquia_lift_goal_rename_callback($action) {
+function acquia_lift_goal_rename_modal_callback($action_name) {
+  $action = visitor_actions_custom_load($action_name);
   acquia_lift_create_ctools_form(
     t('Rename a goal'),
     'acquia_lift_goal_rename_form',
@@ -1870,12 +1871,13 @@ function acquia_lift_goal_rename_callback($action) {
  */
 function acquia_lift_goal_rename_complete_callback($form, $form_state) {
   $settings = personalize_agent_get_settings();
+  $message = $form_state['acquia_lift']['goal_rename_success'] ? t('The goal has been renamed.') : t('There was a problem renaming the goal.');
   $commands = array(
     ctools_modal_command_dismiss(),
     ajax_command_settings(array('personalize' => array(
       'campaigns' => $settings,
     )), TRUE),
-    acquia_lift_command_messagebox(t('The goal has been renamed.'), 10),
+    acquia_lift_command_messagebox($message, 10),
   );
   return $commands;
 }
@@ -1885,15 +1887,13 @@ function acquia_lift_goal_rename_complete_callback($form, $form_state) {
  *
  * This form is called within a ctools modal window.
  *
- * @param string $action_name
- *   The machine name of the goal's underlying visitor action.
+ * @param array $action_name
+ *   The goal's underlying visitor action.
  */
-function acquia_lift_goal_form($form, &$form_state, $action_name) {
+function acquia_lift_goal_rename_form($form, &$form_state, $action) {
   ctools_include('modal');
   ctools_include('ajax');
   ctools_add_js('ajax-responder');
-
-  $action = visitor_actions_custom_load($action_name);
 
   $form = array();
   $form['action'] = array(
@@ -1926,7 +1926,10 @@ function acquia_lift_goal_form($form, &$form_state, $action_name) {
 function acquia_lift_goal_rename_form_submit($form, &$form_state) {
   $action = $form_state['values']['action'];
   $action['label'] = $form_state['values']['label'];
-  visitor_actions_save_action($action);
+  // Limit those fields to save based on those available in the custom table.
+  $schema = drupal_get_schema('visitor_actions_actions');
+  $action = array_intersect_key($action, $schema['fields']);
+  $form_state['acquia_lift']['goal_rename_success'] = visitor_actions_save_action($action);
 }
 
 /**

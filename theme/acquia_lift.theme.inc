@@ -276,6 +276,7 @@ function theme_acquia_lift_type_list($variables) {
   ctools_include('modal');
   ctools_include('ajax');
   ctools_modal_add_js();
+  drupal_add_library('system', 'drupal.ajax');
 
   $items = $variables['items'];
   $html = '<div';
@@ -283,24 +284,38 @@ function theme_acquia_lift_type_list($variables) {
     $html .= ' id="' . $variables['id'] . '"';
   }
   $html .= ' class="acquia-lift-type-list">';
-  foreach ($items as $typestr => $current_type) {
+  foreach ($items as $typestr => $type) {
     $html .= '<div class="acquia-lift-type clearfix">';
-    $html .= '<div class="acquia-lift-type-logo">' . $current_type['logo'] . '</div>';
+    $html .= '<div class="acquia-lift-type-logo">' . $type['logo'] . '</div>';
     $html .= '<div class="acquia-lift-type-title">';
-    if ($current_type['modal']) {
-      $url_parts = explode('/', $current_type['url']);
-      end($url_parts);
-      if (key($url_parts) != 'nojs') {
-        $url_parts[] = 'nojs';
+    $url_options = isset($type['url_options']) ? $type['url_options'] : array();
+    if ($type['modal']) {
+      $path_parts = explode('/', $type['path']);
+      $last = end($path_parts);
+      if ($last != 'nojs') {
+        $path_parts[] = 'nojs';
       }
-      $current_url = implode('/', $url_parts);
-      $html .= ctools_modal_text_button($current_type['title'], $current_url, $current_type['title'], 'acquia-lift-type-select ' . $current_type['ctools_style']);
+      $type['path'] = implode('/', $path_parts);
+      // We can't use ctools_modal_text_button here because it doesn't give us control
+      // over the options array and we need to be able to add query parameters to the link.
+      $url_options = array_merge_recursive($url_options, array(
+        'html' => TRUE,
+        'attributes' => array(
+          'class' => array(
+            'ctools-use-modal',
+            'acquia-lift-type-select',
+            $type['ctools_style']
+          ),
+          'title' => $type['title']
+        ),
+      ));
     }
     else {
-      $html .= l($current_type['title'], $current_type['url'], array('attributes' => array('class' => array('acquia-lift-type-select'))));
+      $url_options = array_merge_recursive($url_options, array('attributes' => array('class' => array('acquia-lift-type-select'))));
     }
+    $html .= l($type['title'], $type['path'], $url_options);
     $html .= '</div>';
-    $html .= '<p>' . $current_type['description'] . '</p>';
+    $html .= '<p>' . $type['description'] . '</p>';
     $html .= '</div>';
   }
   $html .= '</div>';

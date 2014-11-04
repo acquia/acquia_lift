@@ -861,7 +861,7 @@ function acquia_lift_campaign_create_modal_callback($ajax) {
       'ab' => array(
         'title' => t('A/B test'),
         'description' => t('Create and compare content variations.'),
-        'url' => 'admin/structure/acquia_lift/add/ab',
+        'path' => 'admin/structure/acquia_lift/add/ab',
         'modal' => TRUE,
         'ctools_style' => 'ctools-modal-acquia-lift-style',
         'logo' => theme('image', array(
@@ -873,7 +873,12 @@ function acquia_lift_campaign_create_modal_callback($ajax) {
       'custom' => array(
         'title' => t('Custom Lift campaign'),
         'description' => t('Create a content targeting or multivariate campaign using the Drupal-integrated campaign tools.'),
-        'url' => 'admin/structure/personalize/add/',
+        'path' => 'admin/structure/personalize/add/',
+        'url_options' => array(
+          'query' => array(
+            'personalize_agent_type' => 'acquia_lift'
+          )
+        ),
         'modal' => FALSE,
         'logo' => theme('image', array(
           'path' => $path . '/images/campaign-type-custom.png',
@@ -1582,7 +1587,7 @@ function acquia_lift_goal_create_modal_callback($ajax) {
       'existing' => array(
         'title' => t('Predefined goal'),
         'description' => t('Visitor actions already defined by Acquia Lift'),
-        'url' => 'admin/structure/acquia_lift/goal/add/existing',
+        'path' => 'admin/structure/acquia_lift/goal/add/existing',
         'modal' => TRUE,
         'ctools_style' => 'ctools-modal-acquia-lift-style',
         'logo' => theme('image', array(
@@ -1594,7 +1599,7 @@ function acquia_lift_goal_create_modal_callback($ajax) {
       'element' => array(
         'title' => t('New element goal'),
         'description' => t('Element-level visitor action, such as clicking a link or hovering over an image'),
-        'url' => 'admin/structure/visitor_actions',
+        'path' => 'admin/structure/visitor_actions',
         'modal' => FALSE,
         'logo' => theme('image', array(
           'path' => $path . '/images/goal-type-element.png',
@@ -1605,7 +1610,7 @@ function acquia_lift_goal_create_modal_callback($ajax) {
       'page' => array(
         'title' => t('New page goal'),
         'description' => t('Page-level visitor action, such as scrolling to the bottom of the page'),
-        'url' => 'admin/structure/acquia_lift/goal/add/page',
+        'path' => 'admin/structure/acquia_lift/goal/add/page',
         'modal' => TRUE,
         'ctools_style' => 'ctools-modal-acquia-lift-style',
         'logo' => theme('image', array(

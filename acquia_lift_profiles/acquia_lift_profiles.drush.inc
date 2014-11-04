@@ -10,7 +10,7 @@
 function acquia_lift_profiles_drush_command() {
   $items['acquia-lift-profiles-get-segments'] = array (
     'description' => 'List segments',
-    'aliases' => array('alpgs'),
+    'aliases' => array('alp-seg'),
     'arguments' => array(
       'accessKey' => 'The access key to use (optional)',
       'secretKey' => 'The secret key to use (optional)',

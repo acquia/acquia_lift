@@ -845,7 +845,7 @@ function acquia_lift_report_conversion() {
  * @param bool $ajax
  *   Indicates if form is called with ajax support.
  */
-function acquia_lift_create_campaign_callback($ajax) {
+function acquia_lift_campaign_create_modal_callback($ajax) {
   if (!$ajax) {
     drupal_goto('admin/structure/personalize/add');
     return;
@@ -895,7 +895,7 @@ function acquia_lift_create_campaign_callback($ajax) {
  * @param $ajax
  *   Indicates if AJAX is supported
  */
-function acquia_lift_create_campaign_type_callback($type, $ajax) {
+function acquia_lift_campaign_type_create_modal_callback($type, $ajax) {
   // If the campaign type is not supported or AJAX is not supported then go to the full campaign
   // creation process.
   if (!$ajax || !in_array($type, array('ab'))) {
@@ -904,9 +904,9 @@ function acquia_lift_create_campaign_type_callback($type, $ajax) {
   }
   acquia_lift_create_ctools_form(
     t('Create a campaign'),
-    'acquia_lift_create_campaign_type_form',
+    'acquia_lift_campaign_type_create_form',
     array('type' => $type),
-    'acquia_lift_create_campaign_type_complete_callback'
+    'acquia_lift_campaign_type_create_complete_callback'
   );
 }
 
@@ -915,7 +915,7 @@ function acquia_lift_create_campaign_type_callback($type, $ajax) {
  * by type.
  * @see acquia_lift_create_ctools_form().
  */
-function acquia_lift_create_campaign_type_complete_callback($form, $form_state) {
+function acquia_lift_campaign_type_create_complete_callback($form, $form_state) {
   $agent_name = personalize_get_campaign_context();
   return array(
     ctools_modal_command_dismiss(),
@@ -944,7 +944,7 @@ function acquia_lift_create_campaign_type_complete_callback($form, $form_state) 
  * @param $type
  *   The type of campaign to create.  Current supported choices: 'ab'
  */
-function acquia_lift_create_campaign_type_form($form, &$form_state, $type) {
+function acquia_lift_campaign_type_create_form($form, &$form_state, $type) {
   ctools_include('modal');
   ctools_include('ajax');
 
@@ -960,7 +960,7 @@ function acquia_lift_create_campaign_type_form($form, &$form_state, $type) {
           'change_link' => $change_link,
         )),
       );
-      $form['agent'] = _acquia_lift_create_simplified_campaign_form('acquia_lift_simple_ab');
+      $form['agent'] = _acquia_lift_simplified_campaign_create_form('acquia_lift_simple_ab');
       break;
   }
   if (empty($form['agent'])) {
@@ -985,7 +985,7 @@ function acquia_lift_create_campaign_type_form($form, &$form_state, $type) {
  * Loads the simplified campaign creation form for an A/B test with an
  * Acquia Lift agent.
  */
-function _acquia_lift_create_simplified_campaign_form($agent_type) {
+function _acquia_lift_simplified_campaign_create_form($agent_type) {
   ctools_include('plugins');
 
   if ($agent_class = ctools_plugin_load_class('personalize', 'agent_type', $agent_type, 'handler')) {
@@ -1022,7 +1022,7 @@ function _acquia_lift_create_simplified_campaign_form($agent_type) {
   return $form;
 }
 
-function acquia_lift_create_campaign_type_form_validate($form, &$form_state) {
+function acquia_lift_campaign_type_create_form_validate($form, &$form_state) {
   $form_state['values']['agent_basic_info']['machine_name'] = personalize_generate_machine_name($form_state['values']['agent_basic_info']['title'], 'personalize_agent_machine_name_exists');
   module_load_include('inc', 'personalize', 'personalize.admin');
   personalize_agent_form_validate($form, $form_state);
@@ -1031,7 +1031,7 @@ function acquia_lift_create_campaign_type_form_validate($form, &$form_state) {
 /**
  * Submit handler to create a campaign from the Acquia Lift UI flow.
  */
-function acquia_lift_create_campaign_type_form_submit($form, &$form_state) {
+function acquia_lift_campaign_type_create_form_submit($form, &$form_state) {
   module_load_include('inc', 'personalize', 'personalize.admin');
   $agent_data = _personalize_agent_from_form_values($form_state['values']['agent_basic_info']);
   $agent_data->data['cache_decisions'] = $form_state['values']['cache_decisions'];
@@ -1235,7 +1235,7 @@ function acquia_lift_page_variation_details_form_ajax_callback($form, &$form_sta
  * @param string $variation_index
  *   The index of the variation to rename.
  */
-function acquia_lift_page_variation_rename_callback($agent_name, $variation_index) {
+function acquia_lift_page_variation_rename_modal_callback($agent_name, $variation_index) {
   acquia_lift_create_ctools_form(
     t('Rename a variation'),
     'acquia_lift_page_variation_rename_form',
@@ -1254,7 +1254,7 @@ function acquia_lift_page_variation_rename_callback($agent_name, $variation_inde
  */
 function acquia_lift_page_variation_rename_complete_callback($form, $form_state) {
   $settings = array();
-  $option_sets = $option_sets = personalize_option_set_load_multiple(array(), array('decision_name' => $form_state['values']['variation_set_name']));
+  $option_sets = personalize_option_set_load_multiple(array(), array('decision_name' => $form_state['values']['variation_set_name']));
   $option_set_settings = array_map('_personalize_convert_option_set_to_js_setting', $option_sets);
   foreach($option_set_settings as $option_set_setting) {
     $settings[key($option_set_setting)] = reset($option_set_setting);
@@ -1328,10 +1328,124 @@ function acquia_lift_page_variation_rename_form($form, &$form_state, $agent_name
 }
 
 /**
- * Submit handler for acquia_lift_page_variation_rename().
+ * Submit handler for acquia_lift_page_variation_rename_form().
  */
 function acquia_lift_page_variation_rename_form_submit($form, &$form_state) {
   acquia_lift_page_variation_rename($form_state['values']['variation_set_name'], $form_state['values']['agent_name'], $form_state['values']['variation_index'], $form_state['values']['variation_name']);
+}
+
+/**
+ * Page callback to generate a option set's option label rename modal window.
+ *
+ * @param string $osid
+ *   The option set id string that contains the option to rename.
+ * @param string $option_id
+ *   The option id of the option to rename.
+ */
+function acquia_lift_option_rename_modal_callback($osid_str, $option_id) {
+  $option_set = personalize_option_set_load(personalize_resolve_stringified_osid($osid_str));
+  acquia_lift_create_ctools_form(
+    t('Rename a variation'),
+    'acquia_lift_option_rename_form',
+    array(
+      'option_set' => $option_set,
+      'option_id' => $option_id,
+    ),
+    'acquia_lift_option_rename_complete_callback'
+  );
+}
+
+/**
+ * CTools form processing complete handler for the renaming of an option set's
+ * option label.
+ *
+ * @see acquia_lift_create_ctools_form().
+ */
+function acquia_lift_option_rename_complete_callback($form, $form_state) {
+  $settings = array();
+  $option_set = $form_state['values']['option_set'];
+  $settings += _personalize_convert_option_set_to_js_setting($option_set);
+  // We need to update the campaigns as well in case a campaign was paused by this action.
+  $campaign_settings['personalize']['campaigns'] = personalize_agent_get_settings();
+  $commands = array(
+    ctools_modal_command_dismiss(),
+    acquia_lift_command_messagebox(t('The variation has been renamed.'), 10),
+    acquia_lift_command_option_set_updates($settings),
+    ajax_command_settings($campaign_settings, TRUE),
+    acquia_lift_command_process_queue(),
+  );
+  return $commands;
+}
+
+/**
+ * Form handler to generate a form to change an option set's option label.
+ *
+ * This form is called within a ctools modal window.
+ *
+ * @param stdClass $option_set
+ *   The option set of which the option to rename is a part
+ * @param string $option_id
+ *   The index of the option to rename.
+ */
+function acquia_lift_option_rename_form($form, &$form_state, $option_set, $option_id) {
+  ctools_include('modal');
+  ctools_include('ajax');
+  ctools_add_js('ajax-responder');
+
+  $current_label = '';
+  foreach ($option_set->options as $option) {
+    if ($option['option_id'] == $option_id) {
+      $current_label = $option['option_label'];
+      break;
+    }
+  }
+
+  $form['option_set'] = array(
+    '#type' => 'value',
+    '#value' => $option_set,
+  );
+  if ($option_id === PERSONALIZE_CONTROL_OPTION_ID) {
+    $form['message'] = array(
+      '#markup' => t('The control variation cannot be renamed.'),
+    );
+    return $form;
+  }
+  $form['option_id'] = array(
+    '#type' => 'value',
+    '#value' => $option_id,
+  );
+  $form['option_label'] = array(
+    '#type' => 'textfield',
+    '#title' => t('New name'),
+    '#default_value' => $current_label,
+    '#required' => TRUE,
+    '#maxlength' => PERSONALIZE_MACHINE_NAME_MAXLENGTH,
+  );
+  $form['actions']['submit_form'] = array(
+    '#type' => 'submit',
+    '#attributes' => array(
+      'class' => array('action-item-primary-active', 'acquia-lift-submit-button'),
+    ),
+    '#value' => t('Rename variation'),
+  );
+  $form['actions']['reset'] = array(
+    '#markup' => ctools_ajax_text_button(t('Cancel'), 'admin/structure/acquia_lift/cancel/nojs', t('Cancel'), 'acquia-lift-cancel-button'),
+  );
+  return $form;
+}
+
+/**
+ * Submit handler for acquia_lift_option_rename_form().
+ */
+function acquia_lift_option_rename_form_submit($form, &$form_state) {
+  $option_set = $form_state['values']['option_set'];
+  foreach ($option_set->options as &$option) {
+    if ($option['option_id'] === $form_state['values']['option_id']) {
+      $option['option_label'] = $form_state['values']['option_label'];
+      break;
+    }
+  }
+  personalize_option_set_save($option_set);
 }
 
 /**
@@ -1342,7 +1456,7 @@ function acquia_lift_page_variation_rename_form_submit($form, &$form_state) {
  * @param string $variation_index
  *   The index of the variation to rename.
  */
-function acquia_lift_page_variation_delete_callback($agent_name, $variation_index) {
+function acquia_lift_page_variation_delete_modal_callback($agent_name, $variation_index) {
   acquia_lift_create_ctools_form(
     t('Delete a variation'),
     'acquia_lift_page_variation_delete_form',
@@ -1451,7 +1565,7 @@ function acquia_lift_page_variation_delete_form_submit($form, &$form_state) {
  * @param bool $ajax
  *   Indicates if the form is called with ajax support.
  */
-function acquia_lift_create_goal_callback($ajax) {
+function acquia_lift_goal_create_modal_callback($ajax) {
   if (!$ajax) {
     drupal_goto('admin/structure/personalize/goals');
     return;
@@ -1515,12 +1629,12 @@ function acquia_lift_create_goal_callback($ajax) {
  * @param $ajax
  *   Indicates if AJAX is supported.
  */
-function acquia_lift_create_goal_type_callback($type, $ajax) {
+function acquia_lift_goal_type_create_modal_callback($type, $ajax) {
   acquia_lift_create_ctools_form(
     t('Add a goal'),
-    'acquia_lift_create_goal_type_form',
+    'acquia_lift_goal_type_create_form',
     array('type' => $type),
-    'acquia_lift_create_goal_type_completed_callback'
+    'acquia_lift_goal_type_create_completed_callback'
   );
 }
 
@@ -1529,7 +1643,7 @@ function acquia_lift_create_goal_type_callback($type, $ajax) {
  * type.
  * @see acquia_lift_create_ctools_form().
  */
-function acquia_lift_create_goal_type_completed_callback($form, &$form_state) {
+function acquia_lift_goal_type_create_completed_callback($form, &$form_state) {
   $agent = $form_state['values']['agent'];
   $settings = personalize_agent_get_settings();
   if ($settings[$agent->machine_name]['verified'] && personalize_agent_get_status($agent->machine_name) === PERSONALIZE_STATUS_NOT_STARTED) {
@@ -1556,7 +1670,7 @@ function acquia_lift_create_goal_type_completed_callback($form, &$form_state) {
  * @param type
  *   The type of goal to create.  Current supported choices: 'page', 'existing'
  */
-function acquia_lift_create_goal_type_form($form, &$form_state, $type) {
+function acquia_lift_goal_type_create_form($form, &$form_state, $type) {
   ctools_include('modal');
   ctools_include('ajax');
   ctools_add_js('ajax-responder');
@@ -1589,7 +1703,7 @@ function acquia_lift_create_goal_type_form($form, &$form_state, $type) {
           'change_link' => $change_link,
         )),
       );
-      $form['goal'] = _acquia_lift_create_existing_goal_form($agent);
+      $form['goal'] = _acquia_lift_existing_goal_create_form($agent);
       break;
     case 'page':
       $form['goal_type_change'] = array(
@@ -1599,7 +1713,7 @@ function acquia_lift_create_goal_type_form($form, &$form_state, $type) {
           'change_link' => $change_link,
         )),
       );
-      $form['goal'] = _acquia_lift_create_page_goal_form($agent);
+      $form['goal'] = _acquia_lift_page_goal_create_form($agent);
       break;
   }
   // Common actions.
@@ -1622,7 +1736,7 @@ function acquia_lift_create_goal_type_form($form, &$form_state, $type) {
  * @param $agent
  *   The agent data for the campaign that this goal will belong to.
  */
-function _acquia_lift_create_existing_goal_form($agent) {
+function _acquia_lift_existing_goal_create_form($agent) {
   // Exclude any actions already used in this campaign.
   $exclude = array();
   $goals = personalize_goal_load_by_conditions(array('agent' => $agent->machine_name));
@@ -1648,7 +1762,7 @@ function _acquia_lift_create_existing_goal_form($agent) {
  * @param $agent
  *   The agent data for the campaign that this goal will belong to.
  */
-function _acquia_lift_create_page_goal_form($agent) {
+function _acquia_lift_page_goal_create_form($agent) {
   $form['actionable_element'] = array(
     '#type' => 'value',
     '#value' => 'page',
@@ -1671,7 +1785,7 @@ function _acquia_lift_create_page_goal_form($agent) {
     '#tree' => TRUE,
   );
 
-  $form['#validate']['_acquia_lift_create_page_goal_form_validate'];
+  $form['#validate']['_acquia_lift_page_goal_create_form_validate'];
   module_load_include('inc', 'visitor_actions', 'visitor_actions.admin');
   visitor_actions_get_form_options('page', $form, FALSE);
   return $form;
@@ -1680,7 +1794,7 @@ function _acquia_lift_create_page_goal_form($agent) {
 /**
  * Form validation for creating a new page goal simplified form.
  */
-function _acquia_lift_create_page_goal_form_validate($form, &$form_state) {
+function _acquia_lift_page_goal_create_form_validate($form, &$form_state) {
   // Allow the plugin to validate the form values.
   ctools_include('plugins');
   if ($class = ctools_plugin_load_class('visitor_actions', 'actionable_element', $form_state['values']['actionable_element'], 'handler')) {
@@ -1691,7 +1805,7 @@ function _acquia_lift_create_page_goal_form_validate($form, &$form_state) {
 /**
  * Submit handler to create a new goal for a campaign.
  */
-function acquia_lift_create_goal_type_form_submit($form, &$form_state) {
+function acquia_lift_goal_type_create_form_submit($form, &$form_state) {
   $action_name = $goal_name = '';
   $agent_data = $form_state['values']['agent'];
 
@@ -1736,13 +1850,13 @@ function acquia_lift_create_goal_type_form_submit($form, &$form_state) {
 /**
  * Page callback to generate a start campaign screen.
  */
-function acquia_lift_start_campaign_callback($agent_name) {
+function acquia_lift_campaign_start_modal_callback($agent_name) {
   $agent_data = personalize_agent_load($agent_name);
   acquia_lift_create_ctools_form(
     t('Start campaign %campaign', array('%campaign' => $agent_data->label)),
-    'acquia_lift_start_campaign_form',
+    'acquia_lift_campaign_start_form',
     array('agent_data' => $agent_data),
-    'acquia_lift_start_campaign_complete_callback'
+    'acquia_lift_campaign_start_complete_callback'
   );
 }
 
@@ -1752,7 +1866,7 @@ function acquia_lift_start_campaign_callback($agent_name) {
  * @param stdClass $agent_data
  *   The data for the agent to start.
  */
-function acquia_lift_start_campaign_form($form, &$form_state, $agent_data) {
+function acquia_lift_campaign_start_form($form, &$form_state, $agent_data) {
   ctools_include('modal');
   ctools_include('ajax');
   ctools_add_js('ajax-responder');
@@ -1785,17 +1899,17 @@ function acquia_lift_start_campaign_form($form, &$form_state, $agent_data) {
 }
 
 /**
- * Form validator for acquia_lift_start_campaign().
+ * Form validator for acquia_lift_campaign_start_form().
  */
-function acquia_lift_start_campaign_form_validate($form, &$form_state) {
+function acquia_lift_campaign_start_form_validate($form, &$form_state) {
   module_load_include('inc', 'personalize', 'personalize.admin');
   personalize_agent_end_date_form_validate($form_state['values']['campaign_end']);
 }
 
 /**
- * Form submit handler for acquia_lift_start_campaign().
+ * Form submit handler for acquia_lift_campaign_start_form().
  */
-function acquia_lift_start_campaign_form_submit($form, &$form_state) {
+function acquia_lift_campaign_start_form_submit($form, &$form_state) {
   // Set the decision style.
   $agent_data = $form_state['values']['agent'];
   $agent_data->data['decision_style'] = empty($form_state['values']['decision_style']) ? 'random' : current($form_state['values']['decision_style']);
@@ -1810,10 +1924,10 @@ function acquia_lift_start_campaign_form_submit($form, &$form_state) {
 }
 
 /**
- * Form complete callback for the acquia_lift_start_campaign form.
+ * Form complete callback for the acquia_lift_campaign_start_form form.
  * @see acquia_lift_create_ctools_form().
  */
-function acquia_lift_start_campaign_complete_callback($form, $form_state) {
+function acquia_lift_campaign_start_complete_callback($form, $form_state) {
   $agent_data = $form_state['values']['agent'];
   if ($form_state['acquia_lift']['started']) {
     $message = t('The %campaign campaign has been started', array(

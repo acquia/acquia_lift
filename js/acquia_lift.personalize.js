@@ -1248,18 +1248,33 @@
       initialize: function (options) {
         var that = this;
 
-        this.model.on('change', this.render, this);
-        this.model.on('destroy', this.remove, this);
+        this.listenTo(this.model, 'change', this.render);
+        this.listenTo(this.model, 'destroy', this.remove);
+        this.listenTo(this.model, 'change:options', this.rebuild);
 
         this.onOptionShowProxy = $.proxy(this.onOptionShow, this);
         $(document).on('personalizeOptionChange', function (event, $option_set, choice_name, osid) {
           that.onOptionShowProxy(event, $option_set, choice_name, osid);
         });
 
+        this.rebuild();
+      },
 
+      /**
+       * Regenerates the list HTML and adds to the element.
+       * This is necessary when the option set collection changes.
+       *
+       * @param model
+       */
+      rebuild: function () {
         this.build();
         this.render();
+        // Re-run navbar handling to pick up new menu options.
+        _.debounce(updateNavbar, 300);
+        // Re-attach behaviors to allow ctools modal integration.
+        _.debounce(Drupal.attachBehaviors(this.$el), 300);
       },
+
 
       /**
        * {@inheritdoc}
@@ -2633,7 +2648,7 @@
    */
   Drupal.theme.acquiaLiftOptionSetItem = function (options) {
     var attrs = [
-      'class="acquia-lift-preview-option-set acquia-lift-content-variation acquia-lift-preview-option-set-' + formatClass(options.osID)  + '"',
+      'class="acquia-lift-preview-option-set acquia-lift-content-variation navbar-menu-item acquia-lift-preview-option-set-' + formatClass(options.osID)  + '"',
       'data-acquia-lift-personalize-id="' + options.osID + '"',
       'data-acquia-lift-personalize-agent="' + options.os.agent + '"'
     ];
@@ -2741,10 +2756,21 @@
       'aria-pressed="false"'
     ];
 
-    item += '<li>\n<a ' + attrs.join(' ') + '>\n';
-    item +=  Drupal.t('Preview @text', {'@text': options.label}) + '\n';
-    item += '</a>\n</li>\n';
+    var renameHref = Drupal.settings.basePath + 'admin/structure/acquia_lift/variation/rename/' + options.osID + '/' + options.id + '/nojs';
+    var renameAttrs = [
+      'class="acquia-lift-variation-rename acquia-lift-menu-link ctools-use-modal ctools-modal-acquia-lift-style"',
+      'title="' + Drupal.t('Rename Variation') + '"',
+      'aria-role="button"',
+      'aria-pressed="false"',
+      'href="' + renameHref + '"'
+    ]
 
+    item += '<li>\n<div class="acquia-lift-menu-item">';
+    item += '<a ' + attrs.join(' ') + '>' + Drupal.t('Preview @text', {'@text': options.label}) + '</a> \n';
+    if (options.id !== Drupal.settings.personalize.controlOptionName) {
+      item += '<a ' + renameAttrs.join(' ') + '>' + Drupal.t('Rename') + '</a>\n';
+    }
+    item += '</div></li>';
     return item;
   };
 
@@ -2799,7 +2825,7 @@
       item += '<a ' + deleteAttrs.join(' ') + '>' + Drupal.t('Delete') + '</a>\n';
       item += '<a ' + renameAttrs.join(' ') + '>' + Drupal.t('Rename') + '</a>\n';
     }
-    item += '</div>';
+    item += '</div></li>';
 
     return item;
   }

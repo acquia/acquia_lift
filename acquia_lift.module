@@ -147,6 +147,15 @@ function acquia_lift_menu() {
     'file' => 'acquia_lift.admin.inc',
     'theme callback' => 'ajax_base_page_theme',
   );
+  // Ajax callback to rename a goal.
+  $items['admin/structure/acquia_lift/goal/rename/%/%ctools_js'] = array(
+    'page callback' => 'acquia_lift_goal_rename_modal_callback',
+    'page arguments' => array(5),
+    'access arguments' => array('manage personalized content'),
+    'type' => MENU_CALLBACK,
+    'file' => 'acquia_lift.admin.inc',
+    'theme callback' => 'ajax_base_page_theme',
+  );
   // Callback to show the start campaign form.
   $items['admin/structure/acquia_lift/start/%'] = array(
     'page callback' => 'acquia_lift_campaign_start_modal_callback',

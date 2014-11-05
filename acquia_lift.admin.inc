@@ -1749,7 +1749,7 @@ function _acquia_lift_existing_goal_create_form($agent) {
     $exclude[$goal->action] = $goal->action;
   }
   module_load_include('inc', 'personalize', 'personalize.admin');
-  $all_goal_options = personalize_goals_options();
+  $all_goal_options = personalize_goals_options(TRUE);
   $goal_options = array_diff_key($all_goal_options, $exclude);
   $form['action_name'] = array(
     '#type' => 'select',

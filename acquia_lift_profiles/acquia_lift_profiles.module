@@ -291,7 +291,7 @@ function acquia_lift_profiles_form_visitor_actions_form_alter(&$form, &$form_sta
   }
   $default_value = 0;
   $tracked_actions = variable_get('acquia_lift_profiles_tracked_actions', array());
-  if ($form['machine_name']['#disabled']) {
+  if (isset($form['machine_name']['#disabled']) && $form['machine_name']['#disabled']) {
     $action_name = $form['machine_name']['#value'];
     $default_value = in_array($action_name, $tracked_actions);
   }

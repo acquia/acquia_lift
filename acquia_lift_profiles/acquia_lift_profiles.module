@@ -453,6 +453,10 @@ function acquia_lift_profiles_node_page_context($node = NULL, $primary = FALSE) 
     // Add the thumbnail image if specified in the content type and supplied.
     $page_context['thumbnail_url'] = acquia_lift_profiles_thumbnail_image('node', $node, $node->type);
   }
+
+  // Allow other modules to alter the page context.
+  drupal_alter('acquia_lift_profiles_page_context', $page_context);
+
   return $page_context;
 }
 

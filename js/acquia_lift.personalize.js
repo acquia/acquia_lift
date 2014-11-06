@@ -265,9 +265,12 @@
                     // Build a view for campaign goals.
                     if (type === 'campaigns') {
                       var $goalsMenu = $('[data-acquia-lift-personalize-type="goals"]');
+                      element = document.createElement('li');
                       var goalsView = new ui.MenuGoalsView({
-                        model: model
+                        model: model,
+                        el: element
                       });
+
                       ui.views.push(goalsView);
                       $goalsMenu.prepend(goalsView.el);
                     }
@@ -563,6 +566,7 @@
         this.listenTo(this.get('optionSets'), 'change:variations', this.triggerOptionSetChange);
         this.listenTo(this.get('goals'), 'add', this.triggerGoalsChange);
         this.listenTo(this.get('goals'), 'remove', this.triggerGoalsChange);
+        this.listenTo(this.get('goals'), 'reset', this.triggerGoalsChange);
 
         var that = this;
         $(document).on('acquiaLiftOptionSetsEmpty', function (event, data) {
@@ -582,7 +586,7 @@
           this.setGoals(property.goals);
           delete property.goals;
         } else if (property === 'goals' && !(value instanceof Backbone.Collection)) {
-          this.setGoals(value);
+          this.setGoals(value, true);
           return;
         }
         Backbone.Model.prototype.set.call(this, property, value);
@@ -611,25 +615,40 @@
 
       /**
        * Updates the goals collection based on an array/object of goal data.
+       *
        * @param goals
        *   An object of goal labels keyed by goal ids.
+       * @param triggerChange
+       *   Boolean to indicate if a change notification should be sent.
        */
-      setGoals: function (goals) {
+      setGoals: function (goals, triggerChange) {
         var goalCollection = this.get('goals');
+        triggerChange = typeof(triggerChange) == 'undefined' ? false : triggerChange;
         if (!goalCollection) {
           this.set('goals', new Drupal.acquiaLiftUI.MenuGoalCollection());
           goalCollection = this.get('goals');
         }
 
+        var hasChanged = false;
         var current = this.get('goals');
         _.each(goals, function(goalLabel, goalId) {
-          if (!current.findWhere({'id': goalId})) {
-            current.add(new Drupal.acquiaLiftUI.MenuGoalModel({
+          var goalModel = goalCollection.findWhere({'id': goalId});
+          if (goalModel) {
+            if (goalLabel !== goalModel.get('name')) {
+              goalModel.set('name', goalLabel);
+              hasChanged = true;
+            }
+          } else {
+            goalCollection.add(new Drupal.acquiaLiftUI.MenuGoalModel({
               id: goalId,
               name: goalLabel
             }));
+            hasChanged = true;
           }
-        })
+        });
+        if (triggerChange && hasChanged) {
+          this.triggerGoalsChange();
+        }
       },
 
       /**
@@ -1517,9 +1536,6 @@
      * Renders the goals for a campaign.
      */
     MenuGoalsView: ViewBase.extend({
-      tagName: 'ul',
-      className: 'innerMenuList',
-
       /**
        * {@inheritdoc}
        */
@@ -1535,6 +1551,10 @@
       rebuild: function() {
         this.build();
         this.render();
+        // Re-run navbar handling to pick up new menu options.
+        _.debounce(updateNavbar, 300);
+        // Re-attach behaviors to allow ctools modal integration.
+        _.debounce(Drupal.attachBehaviors(this.$el), 300);
       },
 
       /**
@@ -1551,7 +1571,7 @@
        * {@inheritdoc}
        */
       build: function () {
-        var html = Drupal.theme('acquiaLiftCampaignGoals', this.model);
+        var html = Drupal.theme('acquiaLiftCampaignGoals', this.model, Drupal.settings.acquia_lift.customActions);
         this.$el.html(html);
       }
     }),
@@ -2695,6 +2715,7 @@
    *   - campaignID: The ID of the campaign for these goals.
    *   - name: The goal ID.
    *   - label: The goal label.
+   *   - custom: Boolean to indicate if a goal is custom or defined in code.
    *
    * @return string
    */
@@ -2708,10 +2729,21 @@
       'data-acquia-lift-personalize-goal="' + options.name + '"'
     ];
 
-    item += '\n<span ' + attrs.join(' ') + '>\n';
-    item +=  Drupal.t('@text', {'@text': options.label}) + '\n';
-    item += '</span>\n';
+    var renameHref = Drupal.settings.basePath + 'admin/structure/acquia_lift/goal/rename/' + options.name + '/nojs';
+    var renameAttrs = [
+      'class="acquia-lift-goal-rename acquia-lift-menu-link ctools-use-modal ctools-modal-acquia-lift-style"',
+      'title="' + Drupal.t('Rename goal') + '"',
+      'aria-role="button"',
+      'aria-pressed="false"',
+      'href="' + renameHref + '"'
+    ];
 
+    item += '<div class="acquia-lift-menu-item">\n';
+    item += '<span ' + attrs.join(' ') + '>' + Drupal.t('@text', {'@text': options.label}) + '</span>\n';
+    if (options.custom) {
+      item += '<a ' + renameAttrs.join(' ') + '>' + Drupal.t('Rename') + '</a>\n';
+    }
+    item += '</div>';
     return item;
   };
 
@@ -2900,10 +2932,12 @@
    *
    * @param MenuCampaignModel model
    *   The campaign model to create goals display for.
+   * @param object actions
+   *   An object of all actions keyed by the action machine name.
    */
-  Drupal.theme.acquiaLiftCampaignGoals = function (model) {
+  Drupal.theme.acquiaLiftCampaignGoals = function (model, actions) {
     var goals = model.get('goals');
-    var html = '';
+    var html = '<ul class="innerMenuList">';
 
     if (goals.length == 0) {
       html += '<li>';
@@ -2914,14 +2948,18 @@
       return html;
     }
     goals.each(function (goalModel) {
+      var goalId = goalModel.get('id');
+      var custom = actions.hasOwnProperty(goalId);
       html += '<li>';
       html += Drupal.theme('acquiaLiftPersonalizeGoal', {
         campaignID: model.get('name'),
-        name: goalModel.get('id'),
-        label: goalModel.get('name')
+        name: goalId,
+        label: goalModel.get('name'),
+        custom: custom
       });
       html += '</li>';
     });
+    html += '</ul>';
     return html;
   }
 

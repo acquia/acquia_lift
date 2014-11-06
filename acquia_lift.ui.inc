@@ -65,6 +65,10 @@ function acquia_lift_build_page(&$page) {
     $page['page_top']['#attached']['library'][] = array('acquia_lift', 'acquia_lift.modal');
     ctools_add_css('acquia_lift.ctools.modal', 'acquia_lift');
 
+    // Load data about custom defined visitor actions.
+    $actions = visitor_actions_custom_load_multiple();
+    $settings['acquia_lift']['customActions'] = $actions;
+
     $settings['acquia_lift']['dom_selector_ignore'] = acquia_lift_generate_ignore_selector();
     $pending_agents = acquia_lift_get_pending_agents();
 

@@ -26,6 +26,7 @@
         if (processed) {
           Drupal.attachBehaviors();
         }
+        $(document).trigger('acquiaLiftQueueSyncComplete');
         queueIsProcessing = false;
       }
     });

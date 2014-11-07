@@ -72,30 +72,6 @@
           $(this).text(newText);
         });
         $selector.hide();
-
-        // Validate the jQuery selector if changed.
-        $selectorInput.on('change', function(e) {
-          try {
-            var test = $selectorInput.val();
-            var verify = $(test);
-          } catch (error) {
-            $selectorInput.addClass('error');
-            if ($('.acquia-lift-js-message', $variationTypeForm).length == 0) {
-              var errorMessage = '<div class="acquia-lift-js-message"><div class="messages error"><h2 class="element-invisible">' + Drupal.t('Error message') + '</h2>';
-              errorMessage += Drupal.t('Selector field must contain a valid jQuery selector.');
-              errorMessage += '</div></div>';
-              $variationTypeForm.prepend(errorMessage);
-            }
-            $('#edit-variation-type-submit-form', $variationTypeForm).attr('disabled', 'disabled').addClass('form-button-disabled');
-            return;
-          }
-          // If we are still here then validation passed and any previous
-          // error messages should be removed.
-          $selectorInput.removeClass('error');
-          $('.acquia-lift-js-message', $variationTypeForm).remove();
-          $('#edit-variation-type-submit-form', $variationTypeForm).removeAttr('disabled').removeClass('form-button-disabled');
-        });
-
         $variationTypeForm.addClass('acquia-lift-processed');
       }
 
@@ -466,6 +442,54 @@
         this.$el.find('[name="variation_number"]').val(variationNumber);
         // Call any variation type specific callbacks.
         $(document).trigger('acquiaLiftVariationTypeForm', [type, selector, $input]);
+
+        // Override the form submission handler to verify the selector only
+        // matches a single DOM element.
+        Drupal.ajax['edit-variation-type-submit-form'].options.beforeSubmit = function (form_values, $element, options) {
+          var $selectorInput = $('[name="selector"]', $element),
+            selector = $selectorInput.val(),
+            matches = 0,
+            message = '';
+
+          function displaySelectorError(message) {
+            $selectorInput.addClass('error');
+            if ($('.acquia-lift-js-message', $element).length == 0) {
+              var errorHtml = '<div class="acquia-lift-js-message"><div class="messages error">';
+              errorHtml += '<h2 class="element-invisible">' + Drupal.t('Error message') + '</h2>';
+              errorHtml += '<span class="messages text"></span></div></div>';
+              $element.prepend(errorHtml);
+            }
+            $('.acquia-lift-js-message .messages.error .messages.text').text(message);
+            // Make sure the selector is visible for user to edit.
+            if (!$selectorInput.is(':visible')) {
+              $selectorInput.closest('div').slideToggle();
+              $element.parent().find('.acquia-lift-selector-edit').text(Drupal.t('Hide selector'));
+            }
+            $selectorInput.focus();
+          }
+
+          // Check for a valid jQuery selector.
+          try {
+            matches = $(selector).length;
+          } catch (error) {
+            displaySelectorError(Drupal.t('Selector field must contain a valid jQuery selector.'));
+            return false;
+          }
+          // Check to be sure the selector matches only one DOM element.
+          var matches = $(selector).length;
+          if (matches == 1) {
+            return true;
+          }
+          if (matches > 1) {
+            message = Drupal.t('The selector matches multiple DOM elements.');
+          } else if (matches == 0) {
+            message = Drupal.t('The selector does not match any DOM elements.');
+          }
+          message += ' ' + Drupal.t('Enter a selector that matches a single element, and then click "Save".');
+          displaySelectorError(message);
+          return false;
+        };
+
       },
 
       /**

@@ -147,6 +147,18 @@ function acquia_lift_profiles_page_build(&$page) {
     // it.
     'udfMappingContextSeparator' => PERSONALIZE_TARGETING_ADMIN_SEPARATOR,
   );
+  $identity_param = variable_get('acquia_lift_profiles_identity_param', '');
+  $identity_type_param = variable_get('acquia_lift_profiles_identity_type_param', '');
+  if (!empty($identity_param)) {
+    $all_params = drupal_get_query_parameters();
+    if (isset($all_params[$identity_param])) {
+      $settings['identity'] = check_plain($all_params[$identity_param]);
+      $settings['identityType'] = 'email';
+    }
+    if (!empty($identity_type_param) && isset($all_params[$identity_type_param])) {
+      $settings['identityType'] = check_plain($all_params[$identity_type_param]);
+    }
+  }
 
   $page_context = acquia_lift_profiles_get_page_context();
   foreach ($page_context as $name => $value) {

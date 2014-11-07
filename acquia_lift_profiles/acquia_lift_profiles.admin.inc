@@ -45,9 +45,26 @@ function acquia_lift_profiles_admin_form($form, &$form_state) {
 
   $form['acquia_lift_profiles_capture_identity'] = array(
     '#type' => 'checkbox',
-    '#title' => t('Capture Identity'),
+    '#title' => t('Capture identity on login / register'),
     '#description' => t('Check this if you want Acquia Lift Profiles to capture the identity of the user upon login or registration. This means sending their email address to the Acquia Lift Profile Manager.'),
     '#default_value' => variable_get('acquia_lift_profiles_capture_identity', FALSE),
+  );
+  $form['acquia_lift_profiles_identity_param'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Acquia Lift Profiles identity parameter'),
+    '#description' => t('Specify a querystring parameter that can be used to identify the visitor. If specified, and the querystring parameter is present, the visitor\'s identity will be sent the Acquia Lift Profile Manager.'),
+    '#default_value' => variable_get('acquia_lift_profiles_identity_param', ''),
+  );
+  $form['acquia_lift_profiles_identity_type_param'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Acquia Lift Profiles identity type parameter'),
+    '#description' => t('If the type of identity can be something other than an email address, specify a querystring parameter that can be used to tell Acquia Lift Profile Manager what the type of identity is.'),
+    '#default_value' => variable_get('acquia_lift_profiles_identity_type_param', ''),
+    '#states' => array(
+      'visible' => array(
+        ':input[name="acquia_lift_profiles_identity_param"]' =>  array('!value' => '')
+      )
+    )
   );
   $vocabularies = taxonomy_get_vocabularies();
   $mappings = variable_get('acquia_lift_profiles_vocabulary_mappings', array());
@@ -185,7 +202,18 @@ function acquia_lift_profiles_admin_form_submit($form, &$form_state) {
     visitor_actions_clear_subscribers('user_login');
     visitor_actions_clear_subscribers('user_register');
   }
-  foreach (array('acquia_lift_profiles_account_name', 'acquia_lift_profiles_api_url', 'acquia_lift_profiles_access_key', 'acquia_lift_profiles_secret_key', 'acquia_lift_profiles_js_path', 'acquia_lift_profiles_capture_identity', 'acquia_lift_profiles_vocabulary_mappings') as $key) {
+  $variables = array(
+    'acquia_lift_profiles_account_name',
+    'acquia_lift_profiles_api_url',
+    'acquia_lift_profiles_access_key',
+    'acquia_lift_profiles_secret_key',
+    'acquia_lift_profiles_js_path',
+    'acquia_lift_profiles_capture_identity',
+    'acquia_lift_profiles_identity_param',
+    'acquia_lift_profiles_identity_type_param',
+    'acquia_lift_profiles_vocabulary_mappings'
+  );
+  foreach ($variables as $key) {
     variable_set($key, $form_state['values'][$key]);
   }
 
@@ -222,6 +250,7 @@ function acquia_lift_profiles_admin_form_submit($form, &$form_state) {
     variable_set('acquia_lift_profiles_udf_mappings', $mapped_contexts);
   }
 
+  drupal_set_message(t('The configuration settings have been saved.'), 'status');
 }
 
 /**

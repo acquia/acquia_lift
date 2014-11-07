@@ -118,6 +118,22 @@ var _tcwq = _tcwq || [];
   var identityCaptured = false;
 
   /**
+   * Send a caputreIdentity event to ContextDB
+   *
+   * @param indentifier
+   *   The identifier to be sent.
+   * @param indentityType
+   *   The type of identity to pass.
+   */
+  var pushCaptureIdentity = function(identifier, identityType) {
+    if (identityCaptured) {
+      return;
+    }
+    _tcaq.push( [ 'captureIdentity', identifier, identityType, {'evalSegments': true}] );
+    identityCaptured = true;
+  };
+
+  /**
    * Sends a captureIdentity event to TC using the email address from the
    * passed in context.
    *
@@ -129,24 +145,11 @@ var _tcwq = _tcwq || [];
   var pushCaptureEmail = function(DrupalSettings, context) {
     // Do nothing if identity has already been captured or should not be captured or
     // if we don't have an email address in the context.
-    if (identityCaptured || !(DrupalSettings.captureIdentity && context['mail'])) {
+    if (!(DrupalSettings.captureIdentity && context['mail'])) {
       return;
     }
-    _tcaq.push( [ 'captureIdentity', context['mail'], 'email', {'evalSegments': true}] );
-    identityCaptured = true;
+    pushCaptureIdentity(context['mail'], 'email');
   };
-
-  /**
-   * Send a caputreIdentity event to ContextDB
-   *
-   * @param indentifier
-   *   The identifier to be sent.
-   * @param indentityType
-   *   The type of identity to pass.
-   */
-  var pushCaptureIdentity = function(identifier, identityType) {
-    _tcaq.push( [ 'captureIdentity', identifier, identityType, {'evalSegments': true}] );
-  }
 
   /**
    * Centralized functionality for acquia_lift_profiles behavior.
@@ -248,7 +251,9 @@ var _tcwq = _tcwq || [];
           }, settings.acquia_lift_profiles.pageContext, udfValues);
           _tcaq.push( [ 'captureView', 'Content View', pageInfo ] );
 
-          Drupal.acquia_lift_profiles.sendURLIdentity();
+          if(settings.acquia_lift_profiles.hasOwnProperty('identity')) {
+            pushCaptureIdentity(settings.acquia_lift_profiles.identity, settings.acquia_lift_profiles.identityType);
+          }
 
           initialized = true;
         };
@@ -327,34 +332,6 @@ var _tcwq = _tcwq || [];
             };
             Drupal.visitorActions.publisher.subscribe(callback);
           }
-        }
-      },
-
-      /**
-       * Check if an identity has been set via query string and push to Lift if it has.
-       *
-       * Query string parameters we're looking for are ali and alit.
-       *
-       * @todo make this functionality as well as the query string keys configurable.
-       */
-      'sendURLIdentity': function() {
-        if(identityCaptured == true) {
-          return;
-        }
-        var queryString = $.deparam.querystring();
-        var identifier, identityType;
-        if(queryString.hasOwnProperty('ali')) {
-          identifier = queryString.ali;
-
-          // If alit is set, we use that as the identity type, otherwise we set the default to 'email'
-          if(queryString.hasOwnProperty('alit')) {
-            identityType = queryString.alit;
-          } else {
-            identityType = 'email';
-          }
-
-          pushCaptureIdentity(identifier, identityType);
-          identityCaptured = true;
         }
       },
 

@@ -591,7 +591,8 @@ function acquia_lift_personalize_option_set_save($option_set) {
           'identifier' => '[data-personalize=' . $js_id . ']',
           'event' => 'click',
           'pages' => '',
-          'data' => array()
+          'data' => array(),
+          'limited_use' => 1
         );
         // Allow the plugin to modify the action before saving.
         if ($class = ctools_plugin_load_class('visitor_actions', 'actionable_element', $plugin, 'handler')) {

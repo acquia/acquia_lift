@@ -2158,6 +2158,7 @@ class AcquiaLiftWebTestWorkflow extends AcquiaLiftWebTestBase {
     $action_name = personalize_generate_machine_name(t('Clicks @option_set', array('@option_set' => $option_set->label)), NULL, '_');
 
     $this->assertEqual($action_name, $action['machine_name']);
+    $this->assertTrue($action['limited_use']);
     $expected_queue_items = array(
       array(
         'method' => 'saveAgent',

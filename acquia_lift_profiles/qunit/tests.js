@@ -164,41 +164,23 @@ QUnit.test("get context values with cache", function( assert ) {
 });
 
 QUnit.asyncTest( "personalize decision event", function( assert ) {
-  expect(10);
+  expect(5);
   Drupal.acquia_lift_profiles.resetAll();
-  var personalizeDecisionPushCount = 0;
   _tcaq = {
-    'push':function(stf) {
-      console.log(stf);
-      if ( personalizeDecisionPushCount == 0 ) {
-        assert.equal( stf[0], 'captureView',  'capture view received');
-        assert.equal( stf[1], 'Content View',  'capture view is of type content view');
-        assert.equal( stf[2].person_udf1, "some-value", 'value correctly assigned from context' );
-        assert.equal( stf[2].person_udf2, "some-other-value", 'value correctly assigned from promise based context' );
-        assert.equal( stf[2].person_udf3, "some-other-value", 'same  value correctly assigned to a second UDF' );
-
-      }
-      else {
-        assert.equal( stf[0], 'capture',  'capture view received');
-        assert.equal( stf[1], 'Campaign Action',  'capture view is of type campaign action');
-        assert.equal( stf[2].campaignid, "my-agent", 'value correctly assigned from event' );
-        assert.equal( stf[2].campaignname, "Test Agent", 'value correctly assigned from event' );
-        assert.equal( stf[2].actionName, "test_decision", 'value correctly assigned from event' );
+    'push':function(args) {
+      if ( args[1] == 'Campaign Action' ) {
+        assert.equal( args[0], 'capture',  'capture view received');
+        assert.equal( args[1], 'Campaign Action',  'capture view is of type campaign action');
+        assert.equal( args[2].campaignid, "my-agent", 'value correctly assigned from event' );
+        assert.equal( args[2].campaignname, "Test Agent", 'value correctly assigned from event' );
+        assert.equal( args[2].actionName, "test_decision", 'value correctly assigned from event' );
         QUnit.start();
       }
-      personalizeDecisionPushCount++;
     }
   };
   var settings = {
     acquia_lift_profiles: {
-      udfMappings: {
-        person: {
-          person_udf1: "my_first_plugin__some-context",
-          person_udf2: "my_promise_plugin__some-other-context",
-          // Test that another UDF can be mapped to the same context.
-          person_udf3: "my_promise_plugin__some-other-context"
-        }
-      },
+      udfMappings: {},
       udfMappingContextSeparator: '__'
     },
     personalize : {
@@ -215,59 +197,31 @@ QUnit.asyncTest( "personalize decision event", function( assert ) {
   };
 
   // We need to mock the getVisitorContexts() method as this is called by the
-  // init method, which we're testing here. We just need to make it call the
-  // callback that will be passed into it with the values for the contexts
-  // specified.
+  // init method.
   Drupal.personalize.getVisitorContexts = function(plugins, callback) {
-    var values = {
-      'my_first_plugin': {
-        'some-context': 'some-value'
-      },
-      'my_promise_plugin': {
-        'some-other-context': 'some-other-value'
-      }
-    };
-    callback.call(null, values);
+    callback.call(null, {});
   };
   Drupal.acquia_lift_profiles.init(settings);
   $(document).trigger("personalizeDecision", [{}, "test_decision", "test_osid", "my-agent" ]);
 });
 
 QUnit.asyncTest( "sent goal to agent event", function( assert ) {
-  expect(9);
+  expect(4);
   Drupal.acquia_lift_profiles.resetAll();
-  var personalizeDecisionPushCount = 0;
   _tcaq = {
-    'push':function(stf) {
-      console.log(stf);
-      if ( personalizeDecisionPushCount == 0 ) {
-        assert.equal( stf[0], 'captureView',  'capture view received');
-        assert.equal( stf[1], 'Content View',  'capture view is of type content view');
-        assert.equal( stf[2].person_udf1, "some-value", 'value correctly assigned from context' );
-        assert.equal( stf[2].person_udf2, "some-other-value", 'value correctly assigned from promise based context' );
-        assert.equal( stf[2].person_udf3, "some-other-value", 'same  value correctly assigned to a second UDF' );
-
-      }
-      else {
-        assert.equal( stf[0], 'capture',  'capture received');
-        assert.equal( stf[1], 'goal-event',  'capture view is of type goal-event');
-        assert.equal( stf[2].campaignid, "my-agent", 'value correctly assigned from event' );
-        assert.equal( stf[2].campaignname, "Test Agent", 'value correctly assigned from event' );
+    'push':function(args) {
+      if ( args[1] == 'goal-event' ) {
+        assert.equal( args[0], 'capture',  'capture received');
+        assert.equal( args[1], 'goal-event',  'capture view is of type goal-event');
+        assert.equal( args[2].campaignid, "my-agent", 'value correctly assigned from event' );
+        assert.equal( args[2].campaignname, "Test Agent", 'value correctly assigned from event' );
         QUnit.start();
       }
-      personalizeDecisionPushCount++;
     }
   };
   var settings = {
     acquia_lift_profiles: {
-      udfMappings: {
-        person: {
-          person_udf1: "my_first_plugin__some-context",
-          person_udf2: "my_promise_plugin__some-other-context",
-          // Test that another UDF can be mapped to the same context.
-          person_udf3: "my_promise_plugin__some-other-context"
-        }
-      },
+      udfMappings: {},
       udfMappingContextSeparator: '__'
     },
     personalize : {
@@ -284,19 +238,9 @@ QUnit.asyncTest( "sent goal to agent event", function( assert ) {
   };
 
   // We need to mock the getVisitorContexts() method as this is called by the
-  // init method, which we're testing here. We just need to make it call the
-  // callback that will be passed into it with the values for the contexts
-  // specified.
+  // init method.
   Drupal.personalize.getVisitorContexts = function(plugins, callback) {
-    var values = {
-      'my_first_plugin': {
-        'some-context': 'some-value'
-      },
-      'my_promise_plugin': {
-        'some-other-context': 'some-other-value'
-      }
-    };
-    callback.call(null, values);
+    callback.call(null, {});
   };
   Drupal.acquia_lift_profiles.init(settings);
   $(document).trigger("sentGoalToAgent", ["my-agent", "goal-event", "goal-value"]);

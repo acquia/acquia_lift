@@ -340,8 +340,6 @@
       this.render();
       // Re-run navbar handling to pick up new menu options.
       _.debounce(Drupal.acquiaLiftUI.utilities.updateNavBar, 300);
-      // Re-attach behaviors to allow ctools modal integration.
-      _.debounce(Drupal.attachBehaviors(this.$el), 300);
     },
 
 
@@ -510,8 +508,6 @@
       this.render();
       // Re-run navbar handling to pick up new menu options.
       _.debounce(Drupal.acquiaLiftUI.utilities.updateNavBar, 300);
-      // Re-attach behaviors to allow ctools modal integration.
-      _.debounce(Drupal.attachBehaviors(this.$el), 300);
     },
 
     /**
@@ -803,8 +799,6 @@
       this.render();
       // Re-run navbar handling to pick up new menu options.
       _.debounce(Drupal.acquiaLiftUI.utilities.updateNavBar, 300);
-      // Re-attach behaviors to allow ctools modal integration.
-      _.debounce(Drupal.attachBehaviors(this.$el), 300);
     },
 
     /**

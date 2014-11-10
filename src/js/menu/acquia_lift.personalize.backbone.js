@@ -17,6 +17,7 @@
   Drupal.acquiaLiftUI.utilities.updateNavbar = function() {
     if (initialized && Drupal.behaviors.acquiaLiftNavbarMenu) {
       Drupal.behaviors.acquiaLiftNavbarMenu.attach();
+      Drupal.behaviors.ZZCToolsModal.attach($('.acquia-lift-controls'));
     }
   };
 
@@ -61,11 +62,7 @@
    */
   Drupal.acquiaLiftUI.setActiveCampaign = function (activeCampaign) {
     // Refresh the model data for the campaigns.
-    Drupal.acquiaLiftUI.utilities.looper(Drupal.settings.personalize['campaigns'] || {}, function (obj, key) {
-      if (key === activeCampaign) {
-        Drupal.acquiaLiftUI.collections['campaigns'].findWhere({'name': key}).set('isActive', true);
-      }
-    });
+    Drupal.acquiaLiftUI.collections['campaigns'].findWhere({'name': activeCampaign}).set('isActive', true);
     Drupal.settings.personalize.activeCampaign = activeCampaign;
   };
 

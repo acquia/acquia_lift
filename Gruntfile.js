@@ -23,6 +23,17 @@ module.exports = function(grunt) {
         'src/js/agent/acquia_lift.agent.goal_queue.js',
       ];
 
+  var unibarjs = [
+        'src/js/menu/acquia_lift.personalize.theme.js',
+        'src/js/menu/acquia_lift.personalize.backbone.js',
+        'src/js/menu/acquia_lift.personalize.backbone.models.js',
+        'src/js/menu/acquia_lift.personalize.backbone.collections.js',
+        'src/js/menu/acquia_lift.personalize.backbone.views.js',
+        'src/js/menu/acquia_lift.personalize.backbone.factories.js',
+        'src/js/menu/acquia_lift.personalize.commands.js',
+        'src/js/menu/acquia_lift.personalize.behaviors.js'
+      ];
+
   // Project configuration.
   grunt.initConfig({
     pkg: grunt.file.readJSON('package.json'),
@@ -51,6 +62,10 @@ module.exports = function(grunt) {
       agent: {
         src: goalqueuejs,
         dest: 'js/acquia_lift.goals_queue.js'
+      },
+      unibar: {
+        src: unibarjs,
+        dest: 'js/acquia_lift.personalize.js'
       }
     },
     concurrent: {

@@ -49,6 +49,11 @@
             activeCampaign = settings.activeCampaign;
           }
         }
+        // Make sure the activeCampaign requested is available on this page.
+        var current = ui.collections['campaigns'].findWhere({'name': activeCampaign});
+        if (!current || !current.includeInNavigation()) {
+          activeCampaign = '';
+        }
 
         // Clear the variations for all page variation campaigns.
         ui.collections.campaigns.each(function (model) {

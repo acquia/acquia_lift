@@ -292,6 +292,23 @@
 
     /**
      * {@inheritDoc}
+     *
+     * A Simple A/B campaign should be included in the navigation if it
+     * a) has no variations yet; or b) has variations on the current page.
+     */
+    includeInNavigation: function () {
+      var types = this.get('optionSetTypes');
+      // This campaign doesn't have any variations created yet.
+      if (!types || !types.length) {
+        return true;
+      }
+      // If it has variations, they will be included in the count if they are
+      // on the current page.
+      return this.getNumberOfVariations() > 0;
+    },
+
+    /**
+     * {@inheritDoc}
      */
     getNumberOfVariations: function () {
       var optionSets = this.get('optionSets');

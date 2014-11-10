@@ -57,6 +57,11 @@
             activeCampaign = settings.activeCampaign;
           }
         }
+        // Make sure the activeCampaign requested is available on this page.
+        var current = ui.collections['campaigns'].findWhere({'name': activeCampaign});
+        if (!current || !current.includeInNavigation()) {
+          activeCampaign = '';
+        }
 
         // Clear the variations for all page variation campaigns.
         ui.collections.campaigns.each(function (model) {
@@ -598,7 +603,7 @@
       includeInNavigation: function () {
         var types = this.get('optionSetTypes');
         // Include any campaigns that don't have variations yet.
-        if (!types || !types.length || types.length == 0) {
+        if (!types || !types.length) {
           return true;
         }
         // If the campaign has only personalize fields option sets and they
@@ -2182,6 +2187,23 @@
           value = validateVariationIndex(value);
         }
         this.parent('set', property, value, options);
+      },
+
+      /**
+       * {@inheritDoc}
+       *
+       * A Simple A/B campaign should be included in the navigation if it
+       * a) has no variations yet; or b) has variations on the current page.
+       */
+      includeInNavigation: function () {
+        var types = this.get('optionSetTypes');
+        // This campaign doesn't have any variations created yet.
+        if (!types || !types.length) {
+          return true;
+        }
+        // If it has variations, they will be included in the count if they are
+        // on the current page.
+        return this.getNumberOfVariations() > 0;
       },
 
       /**

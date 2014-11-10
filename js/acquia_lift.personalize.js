@@ -458,9 +458,19 @@
       'href="' + renameHref + '"'
     ];
 
+    var deleteHref = Drupal.settings.basePath + 'admin/structure/acquia_lift/goal/delete/' + options.campaignID + '/' + options.name + '/nojs';
+    var deleteAttrs = [
+      'class="acquia-lift-goal-delete acquia-lift-menu-link ctools-use-modal ctools-modal-acquia-lift-style"',
+      'title="' + Drupal.t('Delete goal') + '"',
+      'aria-role="button"',
+      'aria-pressed="false"',
+      'href="' + deleteHref + '"'
+    ];
+
     item += '<div class="acquia-lift-menu-item">\n';
     item += '<span ' + attrs.join(' ') + '>' + Drupal.t('@text', {'@text': options.label}) + '</span>\n';
     if (options.custom) {
+      item += '<a ' + deleteAttrs.join(' ') + '>' + Drupal.t('Delete') + '</a>\n';
       item += '<a ' + renameAttrs.join(' ') + '>' + Drupal.t('Rename') + '</a>\n';
     }
     item += '</div>';
@@ -488,6 +498,7 @@
   Drupal.acquiaLiftUI.utilities.updateNavbar = function() {
     if (initialized && Drupal.behaviors.acquiaLiftNavbarMenu) {
       Drupal.behaviors.acquiaLiftNavbarMenu.attach();
+      Drupal.behaviors.ZZCToolsModal.attach($('.acquia-lift-controls'));
     }
   };
 
@@ -532,11 +543,7 @@
    */
   Drupal.acquiaLiftUI.setActiveCampaign = function (activeCampaign) {
     // Refresh the model data for the campaigns.
-    Drupal.acquiaLiftUI.utilities.looper(Drupal.settings.personalize['campaigns'] || {}, function (obj, key) {
-      if (key === activeCampaign) {
-        Drupal.acquiaLiftUI.collections['campaigns'].findWhere({'name': key}).set('isActive', true);
-      }
-    });
+    Drupal.acquiaLiftUI.collections['campaigns'].findWhere({'name': activeCampaign}).set('isActive', true);
     Drupal.settings.personalize.activeCampaign = activeCampaign;
   };
 
@@ -1666,8 +1673,6 @@
       this.render();
       // Re-run navbar handling to pick up new menu options.
       _.debounce(Drupal.acquiaLiftUI.utilities.updateNavBar, 300);
-      // Re-attach behaviors to allow ctools modal integration.
-      _.debounce(Drupal.attachBehaviors(this.$el), 300);
     },
 
 
@@ -1836,8 +1841,6 @@
       this.render();
       // Re-run navbar handling to pick up new menu options.
       _.debounce(Drupal.acquiaLiftUI.utilities.updateNavBar, 300);
-      // Re-attach behaviors to allow ctools modal integration.
-      _.debounce(Drupal.attachBehaviors(this.$el), 300);
     },
 
     /**
@@ -2129,8 +2132,6 @@
       this.render();
       // Re-run navbar handling to pick up new menu options.
       _.debounce(Drupal.acquiaLiftUI.utilities.updateNavBar, 300);
-      // Re-attach behaviors to allow ctools modal integration.
-      _.debounce(Drupal.attachBehaviors(this.$el), 300);
     },
 
     /**

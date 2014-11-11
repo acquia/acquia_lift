@@ -127,10 +127,21 @@ class ALProfilesAPITest extends DrupalUnitTestCase {
 
     // Now try with a broken http client (simulating a bad response).
     $acquia_lift_profiles_api = $this->getALProfilesAPI(TRUE);
-    $acquia_lift_profiles_api->getSegments();
+    try {
+      $acquia_lift_profiles_api->getSegments();
+      $this->fail('Exception should have been thrown');
+    }
+    catch (Exception $e ) {
+
+    }
     // Confirm the expected requests were made.
     $this->assertAPIRequests($requests);
-    $logs = array();
+    $logs = array(
+        array(
+            'level' => 'error',
+            'message' => 'Could not get segments from Acquia Lift Profiles "500 Internal Server Error"',
+        )
+    );
     $this->assertLogs($logs);
 
     ALProfilesAPI::reset();

@@ -294,7 +294,17 @@ class ALProfilesAPI {
     $headers += array('Authorization' => $auth_header);
 
     $response = $this->httpClient()->get($url, $headers);
-    if (!isset($response->data)) {
+    if ($response->code != 200 || !isset($response->data)) {
+      if ($response->code != 200) {
+        $vars = array(
+          'rest_api_status' => $response->code,
+          'rest_api_status_line' => $response->status_message,);
+        $fail_msg_template = 'Could not get segments from Acquia Lift Profiles "{rest_api_status} {rest_api_status_line}"';
+        $this->logger()->log(PersonalizeLogLevel::ERROR, $fail_msg_template, $vars);
+        $fail_msg = str_replace(array('{rest_api_status}','{rest_api_status_line}'),
+          array($vars['rest_api_status'],$vars['rest_api_status_line']), $fail_msg_template);
+        throw new ALProfilesException($fail_msg);
+      }
       return array();
     }
     $data = json_decode($response->data, TRUE);

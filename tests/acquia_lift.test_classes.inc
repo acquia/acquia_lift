@@ -42,6 +42,7 @@ class DummyAcquiaLiftHttpClient implements AcquiaLiftDrupalHttpClientInterface {
   protected function generateDummyResponse($data) {
     $response = new stdClass();
     $response->code = $this->broken ? 500 : 200;
+    $response->status_message = $this->broken ? "Internal Server Error" : "OK";
     $response->data = drupal_json_encode($data);
     return $response;
   }

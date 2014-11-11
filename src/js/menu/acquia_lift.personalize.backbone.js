@@ -62,7 +62,12 @@
    */
   Drupal.acquiaLiftUI.setActiveCampaign = function (activeCampaign) {
     // Refresh the model data for the campaigns.
-    Drupal.acquiaLiftUI.collections['campaigns'].findWhere({'name': activeCampaign}).set('isActive', true);
+    var newCampaign = Drupal.acquiaLiftUI.collections['campaigns'].findWhere({'name': activeCampaign});
+    if (newCampaign) {
+      newCampaign.set('isActive', true);
+    } else {
+      activeCampaign = '';
+    }
     Drupal.settings.personalize.activeCampaign = activeCampaign;
   };
 

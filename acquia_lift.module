@@ -2455,6 +2455,25 @@ function acquia_lift_command_option_set_updates($option_sets) {
 }
 
 /**
+ * Returns an AJAX command to force the update of goals data within a campaign.
+ *
+ * @param string $agent_name
+ *   The machine name for the campaign to update goal data.
+ */
+function acquia_lift_command_goal_updates($agent_name) {
+  return array(
+    'command' => 'acquia_lift_goal_updates',
+    'data' => array(
+      'campaigns' => array(
+        $agent_name => array(
+          'goals' => personalize_agent_get_goal_settings($agent_name),
+        ),
+      ),
+    ),
+  );
+}
+
+/**
  * Returns an AJAX command to trigger the Acquia Lift queue processing.
  */
 function acquia_lift_command_process_queue() {

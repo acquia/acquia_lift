@@ -1962,16 +1962,12 @@ function acquia_lift_goal_delete_modal_callback($agent_name, $action_name) {
  * @see acquia_lift_create_ctools_form().
  */
 function acquia_lift_goal_delete_complete_callback($form, $form_state) {
-  $settings = personalize_agent_get_settings();
+  $message = $form_state['acquia_lift']['goal_delete_success'] ? t('The goal has been deleted.') : t('There was a problem deleting the goal.');
   $commands = array(
     ctools_modal_command_dismiss(),
-
-    acquia_lift_command_messagebox(t('The variation has been deleted.'), 10),
-    acquia_lift_command_option_set_updates($settings),
-    ajax_command_settings(array('personalize' => array(
-        'campaigns' => $settings,
-    )), TRUE),
-    acquia_lift_command_messagebox(t('The goal has been deleted.')),
+    acquia_lift_command_messagebox($message, 10),
+    acquia_lift_command_goal_updates($form_state['values']['agent_name']),
+    acquia_lift_command_process_queue(),
   );
   return $commands;
 }
@@ -2026,8 +2022,18 @@ function acquia_lift_goal_delete_form($form, &$form_state, $agent_name, $action_
  * Submit handler for acquia_lift_goal_delete_form().
  */
 function acquia_lift_goal_delete_form_submit($form, &$form_state) {
-  $goal = personalize_goal_load_by_action($form_state['values']['action_name']);
-  personalize_goal_delete($goal->id);
+  $goals = personalize_goal_load_by_conditions(array(
+    'agent' => $form_state['values']['agent_name'],
+    'action' => $form_state['values']['action_name'],
+  ));
+  if (count($goals) === 1) {
+    $goal = reset($goals);
+    personalize_goal_delete($goal->id);
+    $form_state['acquia_lift']['goal_delete_success'] = TRUE;
+  }
+  else {
+    $form_state['acquia_lift']['goal_delete_success'] = FALSE;
+  }
 }
 
 /**

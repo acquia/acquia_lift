@@ -123,23 +123,41 @@
         goalCollection = this.get('goals');
       }
 
-      var hasChanged = false;
-      var current = this.get('goals');
-      _.each(goals, function (goalLabel, goalId) {
-        var goalModel = goalCollection.findWhere({'id': goalId});
-        if (goalModel) {
-          if (goalLabel !== goalModel.get('name')) {
-            goalModel.set('name', goalLabel);
+      var hasChanged = false,
+        goalIds = [];
+      if (goals !== null) {
+        _.each(goals, function (goalLabel, goalId) {
+          goalIds.push(goalId);
+          var goalModel = goalCollection.findWhere({'id': goalId});
+          if (goalModel) {
+            if (goalLabel !== goalModel.get('name')) {
+              goalModel.set('name', goalLabel);
+              hasChanged = true;
+            }
+          } else {
+            goalCollection.add(new Drupal.acquiaLiftUI.MenuGoalModel({
+              id: goalId,
+              name: goalLabel
+            }));
             hasChanged = true;
           }
-        } else {
-          goalCollection.add(new Drupal.acquiaLiftUI.MenuGoalModel({
-            id: goalId,
-            name: goalLabel
-          }));
+        });
+        // Check to see if any goals have been removed.
+        var num = goalCollection.length, i = num - 1;
+        for (i; i >= 0; i--) {
+          var goalModel = goalCollection.at(i);
+          if (_.indexOf(goalIds, goalModel.get('id')) == -1) {
+            // This is no longer in the goals for the campaign.
+            goalCollection.remove(goalModel);
+            hasChanged = true;
+          }
+        }
+      } else {
+        if (goalCollection.length > 0) {
+          goalCollection.reset();
           hasChanged = true;
         }
-      });
+      }
       if (triggerChange && hasChanged) {
         this.triggerGoalsChange();
       }
@@ -450,7 +468,7 @@
     setOptions: function (options) {
       var current,
         triggerChange = false,
-        option_ids = [],
+        optionIds = [],
         optionsCollection = this.get('options');
       if (!optionsCollection) {
         this.set('options', new Drupal.acquiaLiftUI.MenuOptionCollection());
@@ -458,7 +476,7 @@
       }
 
       _.each(options, function (option, option_index) {
-        option_ids.push(option.option_id);
+        optionIds.push(option.option_id);
         // Update the model properties if the model is already in options.
         if (current = optionsCollection.findWhere({'option_id': option.option_id})) {
           _.each(option, function (optionValue, optionProp) {
@@ -478,7 +496,7 @@
       var num = optionsCollection.length, i = num - 1;
       for (i; i >= 0; i--) {
         var optionModel = optionsCollection.at(i);
-        if (_.indexOf(option_ids, optionModel.get('option_id')) == -1) {
+        if (_.indexOf(optionIds, optionModel.get('option_id')) == -1) {
           // This is no longer in the options for the option set.
           optionsCollection.remove(optionModel);
           triggerChange = true;

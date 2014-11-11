@@ -1947,7 +1947,7 @@ function acquia_lift_goal_rename_form_submit($form, &$form_state) {
  */
 function acquia_lift_goal_delete_modal_callback($agent_name, $action_name) {
   acquia_lift_create_ctools_form(
-    t('Delete a goal'),
+    t('Delete goal'),
     'acquia_lift_goal_delete_form',
     array(
       'agent_name' => $agent_name,
@@ -2010,7 +2010,7 @@ function acquia_lift_goal_delete_form($form, &$form_state, $agent_name, $action_
     '#attributes' => array(
       'class' => array('action-item-primary-active', 'acquia-lift-submit-button'),
     ),
-    '#value' => t('Delete goal'),
+    '#value' => t('Delete'),
   );
   $form['actions']['reset'] = array(
     '#markup' => ctools_ajax_text_button(t('Cancel'), 'admin/structure/acquia_lift/cancel/nojs', t('Cancel'), 'acquia-lift-cancel-button'),

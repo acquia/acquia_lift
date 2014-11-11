@@ -55,13 +55,12 @@
    *
    * The response should include a data object with the following keys:
    * - campaigns: object of affected campaigns keyed by machine name
-   *   - goals: the goals for each campaign.
    */
   Drupal.ajax.prototype.commands.acquia_lift_goal_updates = function (ajax, response, status) {
     var campaignId, goalId, campaigns = response.data.campaigns;
 
     for (campaignId in campaigns) {
-      Drupal.settings.personalize.campaigns[campaignId].goals = campaigns[campaignId].goals;
+      Drupal.settings.personalize.campaigns[campaignId] = campaigns[campaignId];
     }
   }
 

@@ -2461,13 +2461,12 @@ function acquia_lift_command_option_set_updates($option_sets) {
  *   The machine name for the campaign to update goal data.
  */
 function acquia_lift_command_goal_updates($agent_name) {
+  $settings = personalize_agent_get_settings();
   return array(
     'command' => 'acquia_lift_goal_updates',
     'data' => array(
       'campaigns' => array(
-        $agent_name => array(
-          'goals' => personalize_agent_get_goal_settings($agent_name),
-        ),
+        $agent_name => $settings[$agent_name],
       ),
     ),
   );

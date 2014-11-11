@@ -51,14 +51,14 @@ function acquia_lift_profiles_admin_form($form, &$form_state) {
   );
   $form['acquia_lift_profiles_identity_param'] = array(
     '#type' => 'textfield',
-    '#title' => t('Acquia Lift Profiles identity parameter'),
-    '#description' => t('Specify a querystring parameter that can be used to identify the visitor. If specified, and the querystring parameter is present, the visitor\'s identity will be sent the Acquia Lift Profile Manager.'),
+    '#title' => t('Identity parameter'),
+    '#description' => t('The query string parameter for a specific item of visitor information, such as the visitor\'s email address or social media username (for example, ?al=person@example.com), which is sent to Acquia Lift Web.'),
     '#default_value' => variable_get('acquia_lift_profiles_identity_param', ''),
   );
   $form['acquia_lift_profiles_identity_type_param'] = array(
     '#type' => 'textfield',
-    '#title' => t('Acquia Lift Profiles identity type parameter'),
-    '#description' => t('If the type of identity can be something other than an email address, specify a querystring parameter that can be used to tell Acquia Lift Profile Manager what the type of identity is.'),
+    '#title' => t('Identity type parameter'),
+    '#description' => t('The query string parameter for the category of the visitor\'s identity information (for example, ?al=person@example.com&alt=email). Acquia Lift Web accepts only the following values: email, account, facebook, twitter, name.'),
     '#default_value' => variable_get('acquia_lift_profiles_identity_type_param', ''),
     '#states' => array(
       'visible' => array(

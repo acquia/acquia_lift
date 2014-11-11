@@ -469,8 +469,8 @@
 
     item += '<div class="acquia-lift-menu-item">\n';
     item += '<span ' + attrs.join(' ') + '>' + Drupal.t('@text', {'@text': options.label}) + '</span>\n';
+    item += '<a ' + deleteAttrs.join(' ') + '>' + Drupal.t('Delete') + '</a>\n';
     if (options.custom) {
-      item += '<a ' + deleteAttrs.join(' ') + '>' + Drupal.t('Delete') + '</a>\n';
       item += '<a ' + renameAttrs.join(' ') + '>' + Drupal.t('Rename') + '</a>\n';
     }
     item += '</div>';
@@ -543,7 +543,12 @@
    */
   Drupal.acquiaLiftUI.setActiveCampaign = function (activeCampaign) {
     // Refresh the model data for the campaigns.
-    Drupal.acquiaLiftUI.collections['campaigns'].findWhere({'name': activeCampaign}).set('isActive', true);
+    var newCampaign = Drupal.acquiaLiftUI.collections['campaigns'].findWhere({'name': activeCampaign});
+    if (newCampaign) {
+      newCampaign.set('isActive', true);
+    } else {
+      activeCampaign = '';
+    }
     Drupal.settings.personalize.activeCampaign = activeCampaign;
   };
 
@@ -700,23 +705,41 @@
         goalCollection = this.get('goals');
       }
 
-      var hasChanged = false;
-      var current = this.get('goals');
-      _.each(goals, function (goalLabel, goalId) {
-        var goalModel = goalCollection.findWhere({'id': goalId});
-        if (goalModel) {
-          if (goalLabel !== goalModel.get('name')) {
-            goalModel.set('name', goalLabel);
+      var hasChanged = false,
+        goalIds = [];
+      if (goals !== null) {
+        _.each(goals, function (goalLabel, goalId) {
+          goalIds.push(goalId);
+          var goalModel = goalCollection.findWhere({'id': goalId});
+          if (goalModel) {
+            if (goalLabel !== goalModel.get('name')) {
+              goalModel.set('name', goalLabel);
+              hasChanged = true;
+            }
+          } else {
+            goalCollection.add(new Drupal.acquiaLiftUI.MenuGoalModel({
+              id: goalId,
+              name: goalLabel
+            }));
             hasChanged = true;
           }
-        } else {
-          goalCollection.add(new Drupal.acquiaLiftUI.MenuGoalModel({
-            id: goalId,
-            name: goalLabel
-          }));
+        });
+        // Check to see if any goals have been removed.
+        var num = goalCollection.length, i = num - 1;
+        for (i; i >= 0; i--) {
+          var goalModel = goalCollection.at(i);
+          if (_.indexOf(goalIds, goalModel.get('id')) == -1) {
+            // This is no longer in the goals for the campaign.
+            goalCollection.remove(goalModel);
+            hasChanged = true;
+          }
+        }
+      } else {
+        if (goalCollection.length > 0) {
+          goalCollection.reset();
           hasChanged = true;
         }
-      });
+      }
       if (triggerChange && hasChanged) {
         this.triggerGoalsChange();
       }
@@ -1027,7 +1050,7 @@
     setOptions: function (options) {
       var current,
         triggerChange = false,
-        option_ids = [],
+        optionIds = [],
         optionsCollection = this.get('options');
       if (!optionsCollection) {
         this.set('options', new Drupal.acquiaLiftUI.MenuOptionCollection());
@@ -1035,7 +1058,7 @@
       }
 
       _.each(options, function (option, option_index) {
-        option_ids.push(option.option_id);
+        optionIds.push(option.option_id);
         // Update the model properties if the model is already in options.
         if (current = optionsCollection.findWhere({'option_id': option.option_id})) {
           _.each(option, function (optionValue, optionProp) {
@@ -1055,7 +1078,7 @@
       var num = optionsCollection.length, i = num - 1;
       for (i; i >= 0; i--) {
         var optionModel = optionsCollection.at(i);
-        if (_.indexOf(option_ids, optionModel.get('option_id')) == -1) {
+        if (_.indexOf(optionIds, optionModel.get('option_id')) == -1) {
           // This is no longer in the options for the option set.
           optionsCollection.remove(optionModel);
           triggerChange = true;
@@ -2712,6 +2735,8 @@
 
   /**
    * Custom AJAX command to indicate a deleted page variation.
+   * This is necessary because Drupal's settings merge utilizes jQuery.extend
+   * which will only add to the original object.
    *
    * The response should include a data object with the following keys:
    * - option_sets:  An updated array of option sets.
@@ -2738,7 +2763,23 @@
         }
       }
     }
-    Drupal.attachBehaviors();
+  }
+
+  /**
+   * Custom AJAX command to indicate a deleted goal.
+   * This is necessary because Drupal's settings merge utilizes jQuery.extend
+   * which will only add to the original object.
+   *
+   * The response should include a data object with the following keys:
+   * - campaigns: object of affected campaigns keyed by machine name
+   *   - goals: the goals for each campaign.
+   */
+  Drupal.ajax.prototype.commands.acquia_lift_goal_updates = function (ajax, response, status) {
+    var campaignId, goalId, campaigns = response.data.campaigns;
+
+    for (campaignId in campaigns) {
+      Drupal.settings.personalize.campaigns[campaignId].goals = campaigns[campaignId].goals;
+    }
   }
 
 }(Drupal, Drupal.jQuery));
@@ -2781,24 +2822,6 @@
             addedCampaigns[obj.name] = model;
           }
         });
-        // If it was just added and is set as the active campaign then it takes
-        // priority over a campaign that was previously set as active.
-        if (addedCampaigns.hasOwnProperty(settings.activeCampaign)) {
-          activeCampaign = settings.activeCampaign;
-        } else {
-          // Use the current if set, otherwise read from settings.
-          var current = ui.collections['campaigns'].findWhere({'isActive': true});
-          if (current) {
-            activeCampaign = current.get('name');
-          } else {
-            activeCampaign = settings.activeCampaign;
-          }
-        }
-        // Make sure the activeCampaign requested is available on this page.
-        var current = ui.collections['campaigns'].findWhere({'name': activeCampaign});
-        if (!current || !current.includeInNavigation()) {
-          activeCampaign = '';
-        }
 
         // Clear the variations for all page variation campaigns.
         ui.collections.campaigns.each(function (model) {
@@ -2823,6 +2846,25 @@
             }
           }
         });
+
+        // If it was just added and is set as the active campaign then it takes
+        // priority over a campaign that was previously set as active.
+        if (addedCampaigns.hasOwnProperty(settings.activeCampaign)) {
+          activeCampaign = settings.activeCampaign;
+        } else {
+          // Use the current if set, otherwise read from settings.
+          var current = ui.collections['campaigns'].findWhere({'isActive': true});
+          if (current) {
+            activeCampaign = current.get('name');
+          } else {
+            activeCampaign = settings.activeCampaign;
+          }
+        }
+        // Make sure the activeCampaign requested is available on this page.
+        var current = ui.collections['campaigns'].findWhere({'name': activeCampaign});
+        if (!current || !current.includeInNavigation()) {
+          activeCampaign = '';
+        }
 
         // Create a model for page variation management state
         if (!ui.models.pageVariationModeModel) {

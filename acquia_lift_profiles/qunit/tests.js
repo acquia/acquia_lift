@@ -6,8 +6,16 @@ QUnit.module("Acquia Lift Profiles", {
     Drupal.settings.personalize = Drupal.settings.personalize || {};
     Drupal.settings = Drupal.settings || {};
     Drupal.settings.acquia_lift_profiles = Drupal.settings.acquia_lift_profiles || {};
+    Drupal.settings.acquia_lift_profiles.udfMappings = {};
+    Drupal.settings.acquia_lift_profiles.udfMappingContextSeparator = '__';
+
     Drupal.personalize = Drupal.personalize || {};
     Drupal.personalize.visitor_context = Drupal.personalize.visitor_context || {};
+    // We need to mock the getVisitorContexts() method as this is called by the
+    // init method.
+    Drupal.personalize.getVisitorContexts = function(plugins, callback) {
+      callback.call(null, {});
+    };
     function assignDummyValues(contexts) {
       var values = {
         'some-context': 'some-value',
@@ -178,30 +186,17 @@ QUnit.asyncTest( "personalize decision event", function( assert ) {
       }
     }
   };
-  var settings = {
-    acquia_lift_profiles: {
-      udfMappings: {},
-      udfMappingContextSeparator: '__'
-    },
-    personalize : {
-      agent_map : {
-        'my-agent': {
-          'active': 1,
-          'cache_decisions': false,
-          'enabled_contexts': [],
-          'type': 'test_agent',
-          'label' : 'Test Agent'
-        }
-      }
+  Drupal.settings.personalize.agent_map = {
+    'my-agent': {
+      'active': 1,
+      'cache_decisions': false,
+      'enabled_contexts': [],
+      'type': 'test_agent',
+      'label' : 'Test Agent'
     }
   };
 
-  // We need to mock the getVisitorContexts() method as this is called by the
-  // init method.
-  Drupal.personalize.getVisitorContexts = function(plugins, callback) {
-    callback.call(null, {});
-  };
-  Drupal.acquia_lift_profiles.init(settings);
+  Drupal.acquia_lift_profiles.init(Drupal.settings);
   $(document).trigger("personalizeDecision", [{}, "test_decision", "test_osid", "my-agent" ]);
 });
 
@@ -219,29 +214,40 @@ QUnit.asyncTest( "sent goal to agent event", function( assert ) {
       }
     }
   };
-  var settings = {
-    acquia_lift_profiles: {
-      udfMappings: {},
-      udfMappingContextSeparator: '__'
-    },
-    personalize : {
-      agent_map : {
-        'my-agent': {
-          'active': 1,
-          'cache_decisions': false,
-          'enabled_contexts': [],
-          'type': 'test_agent',
-          'label' : 'Test Agent'
-        }
+  Drupal.settings.personalize.agent_map = {
+    'my-agent': {
+      'active': 1,
+      'cache_decisions': false,
+      'enabled_contexts': [],
+      'type': 'test_agent',
+      'label' : 'Test Agent'
+    }
+  };
+
+  Drupal.acquia_lift_profiles.init(Drupal.settings);
+  $(document).trigger("sentGoalToAgent", ["my-agent", "goal-event", "goal-value"]);
+});
+
+
+QUnit.asyncTest( "Querystring param identity test", function( assert ) {
+  expect(3);
+  Drupal.acquia_lift_profiles.resetAll();
+
+  // Add an identity and identityType to the settings.
+  Drupal.settings.acquia_lift_profiles.identity = 'someTestUser';
+  Drupal.settings.acquia_lift_profiles.identityType = 'socialTastic';
+  // Our _tcaq.push should be called wiht a captureIdentity event
+  // when we call the init function with our settings.
+  _tcaq = {
+    'push':function(args) {
+      if ( args[0] == 'captureIdentity' ) {
+        assert.equal( args[0], 'captureIdentity',  'capture received');
+        assert.equal( args[1], 'someTestUser',  'identity captured');
+        assert.equal( args[2], "socialTastic", 'identity type received' );
+        QUnit.start();
       }
     }
   };
 
-  // We need to mock the getVisitorContexts() method as this is called by the
-  // init method.
-  Drupal.personalize.getVisitorContexts = function(plugins, callback) {
-    callback.call(null, {});
-  };
-  Drupal.acquia_lift_profiles.init(settings);
-  $(document).trigger("sentGoalToAgent", ["my-agent", "goal-event", "goal-value"]);
+  Drupal.acquia_lift_profiles.init(Drupal.settings);
 });

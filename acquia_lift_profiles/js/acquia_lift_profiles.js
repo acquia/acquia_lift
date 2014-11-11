@@ -19,7 +19,7 @@ var _tcwq = _tcwq || [];
     'attach': function (context, settings) {
       Drupal.acquia_lift_profiles.init(settings);
       Drupal.acquia_lift_profiles.addActionListener(settings);
-      processServerSideActions(settings);
+      Drupal.acquia_lift_profiles.processServerSideActions(settings);
       Drupal.acquia_lift_profiles.registerSegmentsCallback();
     }
   };
@@ -335,6 +335,29 @@ var _tcwq = _tcwq || [];
         }
       },
 
+      /**
+       * Goes through the server-side actions and calls the appropriate function for
+       * each one, passing in the event context.
+       *
+       * @param settings
+       */
+      'processServerSideActions': function (settings) {
+        if (settings.acquia_lift_profiles.serverSideActions) {
+          for (var actionName in settings.acquia_lift_profiles.serverSideActions) {
+            if (settings.acquia_lift_profiles.serverSideActions.hasOwnProperty(actionName)) {
+              for (var i in settings.acquia_lift_profiles.serverSideActions[actionName]) {
+                if (settings.acquia_lift_profiles.serverSideActions[actionName].hasOwnProperty(i) && !settings.acquia_lift_profiles.serverSideActions[actionName][i].processed) {
+                  // Process the event.
+                  this.processEvent(actionName, settings, settings.acquia_lift_profiles.serverSideActions[actionName][i]);
+                  // Mark this event has having been processed so that it doesn't get sent again.
+                  settings.acquia_lift_profiles.serverSideActions[actionName][i].processed = 1;
+                }
+              }
+            }
+          }
+        }
+      },
+
       // Holds the functions that should be called for particular events.
       'specialEvents': {
         'user_login': pushCaptureEmail,
@@ -349,33 +372,11 @@ var _tcwq = _tcwq || [];
         initialized = false;
         initializing = false;
         agentNameToLabel = {};
+        identityCaptured = false;
         $(document).unbind('personalizeDecision', this["processPersonalizeDecision"]);
         $(document).unbind('sentGoalToAgent', this["processSentGoalToAgent"]);
       }
     }
   })();
-
-  /**
-   * Goes through the server-side actions and calls the appropriate function for
-   * each one, passing in the event context.
-   *
-   * @param settings
-   */
-  function processServerSideActions(settings) {
-    if (settings.acquia_lift_profiles.serverSideActions) {
-      for (var actionName in settings.acquia_lift_profiles.serverSideActions) {
-        if (settings.acquia_lift_profiles.serverSideActions.hasOwnProperty(actionName)) {
-          for (var i in settings.acquia_lift_profiles.serverSideActions[actionName]) {
-            if (settings.acquia_lift_profiles.serverSideActions[actionName].hasOwnProperty(i) && !settings.acquia_lift_profiles.serverSideActions[actionName][i].processed) {
-              // Process the event.
-              Drupal.acquia_lift_profiles.processEvent(actionName, settings, settings.acquia_lift_profiles.serverSideActions[actionName][i]);
-              // Mark this event has having been processed so that it doesn't get sent again.
-              settings.acquia_lift_profiles.serverSideActions[actionName][i].processed = 1;
-            }
-          }
-        }
-      }
-    }
-  }
 
 })(jQuery);

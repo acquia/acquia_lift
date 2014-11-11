@@ -186,7 +186,8 @@ QUnit.asyncTest( "personalize decision event", function( assert ) {
       }
     }
   };
-  Drupal.settings.personalize.agent_map = {
+  var settings = jQuery.extend({}, Drupal.settings);
+  settings.personalize.agent_map = {
     'my-agent': {
       'active': 1,
       'cache_decisions': false,
@@ -196,7 +197,7 @@ QUnit.asyncTest( "personalize decision event", function( assert ) {
     }
   };
 
-  Drupal.acquia_lift_profiles.init(Drupal.settings);
+  Drupal.acquia_lift_profiles.init(settings);
   $(document).trigger("personalizeDecision", [{}, "test_decision", "test_osid", "my-agent" ]);
 });
 
@@ -214,7 +215,8 @@ QUnit.asyncTest( "sent goal to agent event", function( assert ) {
       }
     }
   };
-  Drupal.settings.personalize.agent_map = {
+  var settings = jQuery.extend({}, Drupal.settings);
+  settings.personalize.agent_map = {
     'my-agent': {
       'active': 1,
       'cache_decisions': false,
@@ -224,18 +226,100 @@ QUnit.asyncTest( "sent goal to agent event", function( assert ) {
     }
   };
 
-  Drupal.acquia_lift_profiles.init(Drupal.settings);
+  Drupal.acquia_lift_profiles.init(settings);
   $(document).trigger("sentGoalToAgent", ["my-agent", "goal-event", "goal-value"]);
 });
 
+QUnit.test( "Server-side events no email", function( assert ) {
+  expect(4);
+  Drupal.acquia_lift_profiles.resetAll();
+  // Add a couple of server-side actions to the settings. Don't include the 'mail'
+  // property in the user_login action's context.
+  var settings = jQuery.extend({}, Drupal.settings);
+  settings.acquia_lift_profiles.serverSideActions = {
+    'someAction' : {
+      'someContextKey': 'someContextValue'
+    },
+    'user_login': [
+      { 'username': 'someUser' }
+    ]
+  };
 
-QUnit.asyncTest( "Querystring param identity test", function( assert ) {
+  // Our _tcaq.push should be called with a 'capture' event for each server-side
+  // action in our settings when we call processServerSideActions. THere should not
+  // be a captureIdentity push because there's no email address in our user_login
+  // context.
+  _tcaq = {
+    'push':function(args) {
+      if ( args[1] == 'someAction' ) {
+        assert.equal( args[0], 'capture',  'capture received');
+        assert.equal( args[1], 'someAction',  'custom event captured');
+      }
+      else if (args[1] == 'user_login' ) {
+        assert.equal( args[0], 'capture',  'capture received');
+        assert.equal( args[1], 'user_login',  'custom event captured');
+      }
+      else if (args[0] == 'captureIdentity') {
+        // Add an assertion here which simply serves to make the test fail if we
+        // ever get here because the number of assertions will not match what's
+        // expected.
+        assert.ok('This should never run');
+      }
+    }
+  };
+
+  Drupal.acquia_lift_profiles.processServerSideActions(settings);
+});
+
+
+QUnit.test( "Server-side events with email", function( assert ) {
+  expect(7);
+  Drupal.acquia_lift_profiles.resetAll();
+
+  // Add a couple of server-side actions to the settings. This time we do include
+  // the 'mail' property in the user_login action's context.
+  var settings = jQuery.extend({}, Drupal.settings);
+  settings.acquia_lift_profiles.captureIdentity = 1;
+  settings.acquia_lift_profiles.serverSideActions = {
+    'someAction' : {
+      'someContextKey': 'someContextValue'
+    },
+    'user_login': [
+      { 'mail': 'test@example.com' }
+    ]
+  };
+
+  // Our _tcaq.push should be called with a 'capture' event for each server-side
+  // action in our settings when we call processServerSideActions. It should also
+  // be called with a captureIdentity event because of the user_login with email.
+  _tcaq = {
+    'push':function(args) {
+      if ( args[1] == 'someAction' ) {
+        assert.equal( args[0], 'capture',  'capture received');
+        assert.equal( args[1], 'someAction',  'custom event captured');
+      }
+      else if (args[1] == 'user_login' ) {
+        assert.equal( args[0], 'capture',  'capture received');
+        assert.equal( args[1], 'user_login',  'custom event captured');
+      }
+      else if (args[0] == 'captureIdentity') {
+        assert.equal( args[0], 'captureIdentity',  'capture received');
+        assert.equal( args[1], 'test@example.com',  'identity captured');
+        assert.equal( args[2], 'email',  'identity type captured');
+      }
+    }
+  };
+  Drupal.acquia_lift_profiles.processServerSideActions(settings);
+});
+
+QUnit.test( "Capture identity test", function( assert ) {
   expect(3);
   Drupal.acquia_lift_profiles.resetAll();
 
+  var settings = jQuery.extend({}, Drupal.settings);
   // Add an identity and identityType to the settings.
-  Drupal.settings.acquia_lift_profiles.identity = 'someTestUser';
-  Drupal.settings.acquia_lift_profiles.identityType = 'socialTastic';
+  settings.acquia_lift_profiles.identity = 'someTestUser';
+  settings.acquia_lift_profiles.identityType = 'socialTastic';
   // Our _tcaq.push should be called wiht a captureIdentity event
   // when we call the init function with our settings.
   _tcaq = {
@@ -244,10 +328,19 @@ QUnit.asyncTest( "Querystring param identity test", function( assert ) {
         assert.equal( args[0], 'captureIdentity',  'capture received');
         assert.equal( args[1], 'someTestUser',  'identity captured');
         assert.equal( args[2], "socialTastic", 'identity type received' );
-        QUnit.start();
       }
     }
   };
 
-  Drupal.acquia_lift_profiles.init(Drupal.settings);
+  Drupal.acquia_lift_profiles.init(settings);
+
+  // There should be no subsequent captureIdentity call when we process a
+  // user login action.
+  settings.acquia_lift_profiles.captureIdentity = 1;
+  settings.acquia_lift_profiles.serverSideActions = {
+    'user_login': [
+      { 'mail': 'test@example.com' }
+    ]
+  };
+  Drupal.acquia_lift_profiles.processServerSideActions(settings);
 });

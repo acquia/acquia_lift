@@ -367,19 +367,9 @@
       'href="' + renameHref + '"'
     ];
 
-    var deleteHref = Drupal.settings.basePath + 'admin/structure/acquia_lift/variation/delete/' + options.osID + '/' + options.id + '/nojs';
-    var deleteAttrs = [
-      'class="acquia-lift-variation-delete acquia-lift-menu-link ctools-use-modal ctools-modal-acquia-lift-style',
-      'title="' + Drupal.t('Delete variation') + '"',
-      'aria-role="button"',
-      'aria-pressed="false"',
-      'href="' + deleteHref + '"'
-    ];
-
     item += '<li>\n<div class="acquia-lift-menu-item">';
     item += '<a ' + attrs.join(' ') + '>' + Drupal.t('Preview @text', {'@text': options.label}) + '</a> \n';
     if (options.id !== Drupal.settings.personalize.controlOptionName) {
-      item += '<a ' + deleteAttrs.join(' ') + '>' + Drupal.t('Delete') + '</a>\n';
       item += '<a ' + renameAttrs.join(' ') + '>' + Drupal.t('Rename') + '</a>\n';
     }
     item += '</div></li>';

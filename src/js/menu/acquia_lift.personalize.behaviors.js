@@ -36,24 +36,6 @@
             addedCampaigns[obj.name] = model;
           }
         });
-        // If it was just added and is set as the active campaign then it takes
-        // priority over a campaign that was previously set as active.
-        if (addedCampaigns.hasOwnProperty(settings.activeCampaign)) {
-          activeCampaign = settings.activeCampaign;
-        } else {
-          // Use the current if set, otherwise read from settings.
-          var current = ui.collections['campaigns'].findWhere({'isActive': true});
-          if (current) {
-            activeCampaign = current.get('name');
-          } else {
-            activeCampaign = settings.activeCampaign;
-          }
-        }
-        // Make sure the activeCampaign requested is available on this page.
-        var current = ui.collections['campaigns'].findWhere({'name': activeCampaign});
-        if (!current || !current.includeInNavigation()) {
-          activeCampaign = '';
-        }
 
         // Clear the variations for all page variation campaigns.
         ui.collections.campaigns.each(function (model) {
@@ -78,6 +60,25 @@
             }
           }
         });
+
+        // If it was just added and is set as the active campaign then it takes
+        // priority over a campaign that was previously set as active.
+        if (addedCampaigns.hasOwnProperty(settings.activeCampaign)) {
+          activeCampaign = settings.activeCampaign;
+        } else {
+          // Use the current if set, otherwise read from settings.
+          var current = ui.collections['campaigns'].findWhere({'isActive': true});
+          if (current) {
+            activeCampaign = current.get('name');
+          } else {
+            activeCampaign = settings.activeCampaign;
+          }
+        }
+        // Make sure the activeCampaign requested is available on this page.
+        var current = ui.collections['campaigns'].findWhere({'name': activeCampaign});
+        if (!current || !current.includeInNavigation()) {
+          activeCampaign = '';
+        }
 
         // Create a model for page variation management state
         if (!ui.models.pageVariationModeModel) {

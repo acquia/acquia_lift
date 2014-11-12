@@ -75,6 +75,8 @@ function acquia_lift_profiles_uninstall() {
   variable_del('acquia_lift_profiles_vocabulary_mappings');
   variable_del('acquia_lift_profiles_tracked_actions');
   variable_del('acquia_lift_profiles_udf_mappings');
+  variable_del('acquia_lift_profiles_identity_param');
+  variable_del('acquia_lift_profiles_identity_type_param');
 
   // Delete the menu link
   $item = _acquia_lift_profiles_get_menu_link();

@@ -1242,7 +1242,7 @@ function acquia_lift_page_variation_details_form_ajax_callback($form, &$form_sta
  */
 function acquia_lift_page_variation_rename_modal_callback($agent_name, $variation_index) {
   acquia_lift_create_ctools_form(
-    t('Rename a variation'),
+    t('Rename variation'),
     'acquia_lift_page_variation_rename_form',
     array(
       'agent_name' => $agent_name,
@@ -1324,7 +1324,7 @@ function acquia_lift_page_variation_rename_form($form, &$form_state, $agent_name
     '#attributes' => array(
       'class' => array('action-item-primary-active', 'acquia-lift-submit-button'),
     ),
-    '#value' => t('Rename variation'),
+    '#value' => t('Rename'),
   );
   $form['actions']['reset'] = array(
     '#markup' => ctools_ajax_text_button(t('Cancel'), 'admin/structure/acquia_lift/cancel/nojs', t('Cancel'), 'acquia-lift-cancel-button'),
@@ -1350,7 +1350,7 @@ function acquia_lift_page_variation_rename_form_submit($form, &$form_state) {
 function acquia_lift_option_rename_modal_callback($osid_str, $option_id) {
   $option_set = personalize_option_set_load(personalize_resolve_stringified_osid($osid_str));
   acquia_lift_create_ctools_form(
-    t('Rename a variation'),
+    t('Rename variation'),
     'acquia_lift_option_rename_form',
     array(
       'option_set' => $option_set,
@@ -1431,7 +1431,7 @@ function acquia_lift_option_rename_form($form, &$form_state, $option_set, $optio
     '#attributes' => array(
       'class' => array('action-item-primary-active', 'acquia-lift-submit-button'),
     ),
-    '#value' => t('Rename variation'),
+    '#value' => t('Rename'),
   );
   $form['actions']['reset'] = array(
     '#markup' => ctools_ajax_text_button(t('Cancel'), 'admin/structure/acquia_lift/cancel/nojs', t('Cancel'), 'acquia-lift-cancel-button'),

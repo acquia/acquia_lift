@@ -1861,7 +1861,7 @@ function acquia_lift_goal_type_create_form_submit($form, &$form_state) {
 function acquia_lift_goal_rename_modal_callback($action_name) {
   $action = visitor_actions_custom_load($action_name);
   acquia_lift_create_ctools_form(
-    t('Rename a goal'),
+    t('Rename goal'),
     'acquia_lift_goal_rename_form',
     array(
       'action' => $action,
@@ -1917,7 +1917,7 @@ function acquia_lift_goal_rename_form($form, &$form_state, $action) {
     '#attributes' => array(
       'class' => array('action-item-primary-active', 'acquia-lift-submit-button'),
     ),
-    '#value' => t('Rename goal'),
+    '#value' => t('Rename'),
   );
   $form['actions']['reset'] = array(
     '#markup' => ctools_ajax_text_button(t('Cancel'), 'admin/structure/acquia_lift/cancel/nojs', t('Cancel'), 'acquia-lift-cancel-button'),

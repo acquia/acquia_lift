@@ -1892,7 +1892,7 @@ function acquia_lift_goal_rename_complete_callback($form, $form_state) {
  *
  * This form is called within a ctools modal window.
  *
- * @param array $action_name
+ * @param array $action
  *   The goal's underlying visitor action.
  */
 function acquia_lift_goal_rename_form($form, &$form_state, $action) {
@@ -1935,6 +1935,105 @@ function acquia_lift_goal_rename_form_submit($form, &$form_state) {
   $schema = drupal_get_schema('visitor_actions_actions');
   $action = array_intersect_key($action, $schema['fields']);
   $form_state['acquia_lift']['goal_rename_success'] = visitor_actions_save_action($action);
+}
+
+/**
+ * Page callback to generate a goal delete confirm modal window.
+ *
+ * @param string $agent_name
+ *   The name of the campaign to edit.
+ * @param string $action_name
+ *   The machine name for the visitor action for the goal.
+ */
+function acquia_lift_goal_delete_modal_callback($agent_name, $action_name) {
+  acquia_lift_create_ctools_form(
+    t('Delete goal'),
+    'acquia_lift_goal_delete_form',
+    array(
+      'agent_name' => $agent_name,
+      'action_name' => $action_name,
+    ),
+    'acquia_lift_goal_delete_complete_callback'
+  );
+}
+
+/**
+ * Ctools form processing complete handler for deletion of a goal.
+ * @see acquia_lift_create_ctools_form().
+ */
+function acquia_lift_goal_delete_complete_callback($form, $form_state) {
+  $message = $form_state['acquia_lift']['goal_delete_success'] ? t('The goal has been deleted.') : t('There was a problem deleting the goal.');
+  $commands = array(
+    ctools_modal_command_dismiss(),
+    acquia_lift_command_messagebox($message, 10),
+    acquia_lift_command_goal_updates($form_state['values']['agent_name']),
+    acquia_lift_command_process_queue(),
+  );
+  return $commands;
+}
+
+/**
+ * Form handler to generate a confirmation form to delete a goal.
+ *
+ * This form is called within a ctools modal window.
+ *
+ * @param string $agent_name
+ *   The name of the campaign to edit.
+ * @param string $action_name
+ *   The machine name for the visitor action for the goal.
+ */
+function acquia_lift_goal_delete_form($form, &$form_state, $agent_name, $action_name) {
+  ctools_include('modal');
+  ctools_include('ajax');
+  ctools_add_js('ajax-responder');
+
+  $form = array();
+  // Will only load if this is a custom action (not defined in code).
+  $action = visitor_actions_custom_load($action_name);
+  $form['agent_name'] = array(
+    '#type' => 'value',
+    '#value' => $agent_name,
+  );
+  $form['action_name'] = array(
+    '#type' => 'value',
+    '#value' => $action_name,
+  );
+  $form['confirm'] = array(
+    '#prefix' => '<div>',
+    '#suffix' => '</div>',
+    '#markup' => t('Are you sure you want to delete %goal?', array(
+      '%goal' => isset($action['label']) ? $action['label'] : $action_name,
+    )),
+  );
+  $form['actions']['submit_form'] = array(
+    '#type' => 'submit',
+    '#attributes' => array(
+      'class' => array('action-item-primary-active', 'acquia-lift-submit-button'),
+    ),
+    '#value' => t('Delete'),
+  );
+  $form['actions']['reset'] = array(
+    '#markup' => ctools_ajax_text_button(t('Cancel'), 'admin/structure/acquia_lift/cancel/nojs', t('Cancel'), 'acquia-lift-cancel-button'),
+  );
+  return $form;
+}
+
+/**
+ * Submit handler for acquia_lift_goal_delete_form().
+ */
+function acquia_lift_goal_delete_form_submit($form, &$form_state) {
+  $goals = personalize_goal_load_by_conditions(array(
+    'agent' => $form_state['values']['agent_name'],
+    'action' => $form_state['values']['action_name'],
+  ));
+  if (count($goals) === 1) {
+    $goal = reset($goals);
+    personalize_goal_delete($goal->id);
+    $form_state['acquia_lift']['goal_delete_success'] = TRUE;
+  }
+  else {
+    $form_state['acquia_lift']['goal_delete_success'] = FALSE;
+  }
 }
 
 /**

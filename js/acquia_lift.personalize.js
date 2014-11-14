@@ -1929,6 +1929,7 @@
           this.$el.removeClass('ctools-use-modal-processed');
         } else {
           // Next time this link is clicked it should open the modal.
+          this.$el.off('click', this.onClick);
           Drupal.attachBehaviors(this.$el.parent());
         }
       },

@@ -25,6 +25,19 @@ function acquia_lift_profiles_menu() {
 }
 
 /**
+ * Implements hook_translated_menu_link_alter().
+ */
+function acquia_lift_profiles_translated_menu_link_alter(&$link) {
+  // Update the admin link if the API url is specified in the config.
+  if ($link['menu_name'] === 'acquia-lift-controls' && $link['link_path'] === 'http://lift.acquia.com') {
+    $updated_link = 'http://' . variable_get('acquia_lift_profiles_api_url', 'lift.acquia.com');
+    if (valid_url($updated_link, TRUE)) {
+      $link['href'] = $updated_link;
+    }
+  }
+}
+
+/**
  * Implements hook_permission().
  */
 function acquia_lift_profiles_permission() {

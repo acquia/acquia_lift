@@ -2350,7 +2350,7 @@ function acquia_lift_page_variation_get_name($variation_set_name, $agent_name, $
   $option_set = current($option_sets);
   if ($option_set) {
     if (isset($option_set->options[$variation_number])) {
-      return check_plain($option_set->options[$variation_number]['option_label']);
+      return filter_xss($option_set->options[$variation_number]['option_label']);
     }
   }
   return '';

@@ -1994,7 +1994,7 @@
           event.currentTarget = event.target = $li.get('0');
           this.onClick(event);
         }
-        Drupal.acquiaLiftUI.utilities.updateNavBar();
+        Drupal.acquiaLiftUI.utilities.updateNavbar();
       } else {
         // If exiting, remove any temporary variation listings.
         this.$el.find('ul.menu li.acquia-lift-empty').show();

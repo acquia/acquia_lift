@@ -1082,14 +1082,16 @@
           .attr('href', startPath + activeCampaign.get('name'));
 
         if (this.$el.find('a').hasClass('ctools-use-modal')) {
-          // The link is already set up as a modal so just update the href.
-          return;
+          this.$el.find('a').removeClass('ctools-use-modal-processed');
+        } else {
+          this.$el
+            .find('a')
+            .addClass('ctools-use-modal')
+            .addClass('ctools-modal-acquia-lift-style')
+            .off();
         }
-        this.$el
-          .find('a')
-          .addClass('ctools-use-modal')
-          .addClass('ctools-modal-acquia-lift-style')
-          .off();
+        // Re-attach ctools-modal behaviors so that the element settings for
+        // Drupal ajax forms get reset to the new campaign url.
         Drupal.attachBehaviors(this.$el.parent());
       } else {
         // All other status can just get immediately changed.

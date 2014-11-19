@@ -1655,7 +1655,7 @@ function acquia_lift_goal_type_create_completed_callback($form, &$form_state) {
     $message = t('Goal added.  You can now start the campaign.');
   }
   else {
-    $message = t('%goal goal added to campaign.', array('%goal' => $form_state['acquia_lift']['goal_name']));
+    $message = t('!goal goal added to campaign.', array('!goal' => filter_xss($form_state['acquia_lift']['goal_name'])));
   }
   $commands = array(
     ctools_modal_command_dismiss(),

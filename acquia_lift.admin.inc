@@ -1657,11 +1657,19 @@ function acquia_lift_goal_type_create_completed_callback($form, &$form_state) {
   else {
     $message = t('!goal goal added to campaign.', array('!goal' => filter_xss($form_state['acquia_lift']['goal_name'])));
   }
+  // Load updated data about custom defined visitor actions.
+  $actions = visitor_actions_custom_load_multiple();
+
   $commands = array(
     ctools_modal_command_dismiss(),
-    ajax_command_settings(array('personalize' => array(
-      'campaigns' => $settings,
-    )), TRUE),
+    ajax_command_settings(array(
+      'personalize' => array(
+        'campaigns' => $settings,
+      ),
+      'acquia_lift' => array(
+        'customActions' => $actions,
+      )
+    ), TRUE),
     acquia_lift_command_messagebox($message, 10),
     acquia_lift_command_process_queue(),
   );

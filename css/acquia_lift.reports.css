@@ -30,8 +30,7 @@
 }
 
 .acquia-lift-report-section-options {
-  -moz-box-sizing: border-box;
-       box-sizing: border-box;
+  box-sizing: border-box;
   clear: both;
   width: 100%;
   min-width: 100%;
@@ -81,8 +80,7 @@ html[dir="rtl"] .lift-winner:after {
   font-family: sans-serif;
 }
 .lift-graph * {
-  -moz-box-sizing: border-box;
-       box-sizing: border-box;
+  box-sizing: border-box;
 }
 .lift-graph-container {
   padding-right: 1em;
@@ -116,6 +114,7 @@ html[dir="rtl"] .lift-graph-container .lift-graph-graph .tick text {
   float: left;
   width: 100%;
   height: 20em;
+  margin-bottom: 1.8em;
 }
 .lift-graph-graph .detail {
   width: .2em;
@@ -224,6 +223,17 @@ html[dir="rtl"] .lift-graph-graph .detail .item .swatch {
 html[dir="rtl"] .lift-graph-graph .detail .dot {
   margin-right: -.35em;
   margin-left: auto;
+}
+.lift-graph-graph .label-below .title {
+  bottom: -1.8em;
+  width: 6em;
+  margin-left: -3em;
+  text-align: center;
+  font-size: .88em;
+  font-family: inherit;
+  white-space: nowrap;
+  opacity: 1;
+  color: #666;
 }
 .lift-graph-axis-x {
   clear: both;

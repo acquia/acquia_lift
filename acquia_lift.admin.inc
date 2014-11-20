@@ -1491,10 +1491,10 @@ function acquia_lift_page_variation_delete_complete_callback($form, $form_state)
   }
   $campaign_settings['personalize']['campaigns'] = personalize_agent_get_settings();
   $commands = array(
+    ajax_command_settings($campaign_settings, TRUE),
     ctools_modal_command_dismiss(),
     acquia_lift_command_messagebox(t('The variation has been deleted.'), 10),
     acquia_lift_command_option_set_updates($settings),
-    ajax_command_settings($campaign_settings, TRUE),
     acquia_lift_command_process_queue(),
   );
   return $commands;

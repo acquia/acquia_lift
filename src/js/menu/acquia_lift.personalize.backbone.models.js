@@ -265,8 +265,8 @@
     },
 
     triggerOptionSetChange: function (event) {
-      // if the variations have changed, re-validate the active variation.
-      this.set('activeVariation', this.get('activeVariation'));
+      // if the variations have changed, re-validate the variations.
+      this.get('optionSets').resetVariations();
       this.trigger('change:variations');
     },
 

@@ -19,7 +19,7 @@
       Drupal.behaviors.acquiaLiftNavbarMenu.attach();
       Drupal.behaviors.ZZCToolsModal.attach($('.acquia-lift-controls'));
     }
-  }, 500, {leading: false});
+  }, 500);
 
   Drupal.acquiaLiftUI.utilities.setInitialized = function(value) {
     initialized = value;

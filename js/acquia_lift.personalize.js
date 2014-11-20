@@ -490,7 +490,7 @@
       Drupal.behaviors.acquiaLiftNavbarMenu.attach();
       Drupal.behaviors.ZZCToolsModal.attach($('.acquia-lift-controls'));
     }
-  }, 500, {leading: false});
+  }, 500);
 
   Drupal.acquiaLiftUI.utilities.setInitialized = function(value) {
     initialized = value;
@@ -837,8 +837,8 @@
     },
 
     triggerOptionSetChange: function (event) {
-      // if the variations have changed, re-validate the active variation.
-      this.set('activeVariation', this.get('activeVariation'));
+      // if the variations have changed, re-validate the variations.
+      this.get('optionSets').resetVariations();
       this.trigger('change:variations');
     },
 
@@ -1232,6 +1232,7 @@
       // the entire collection.
       this.variations = null;
       this.on('change:options', this.triggerChange, this);
+      this.on('reset', this.triggerChange, this);
     },
 
     /**
@@ -2748,6 +2749,7 @@
                 delete Drupal.settings.personalize.option_sets[option_set_id];
               }
             }
+            Drupal.settings.personalize.campaigns[empty_agent].optionSetTypes = [];
             // Notify of the deleted option sets.
             $(document).trigger('acquiaLiftOptionSetsEmpty', [empty_agent]);
           } else {
@@ -2838,25 +2840,6 @@
             }
           }
         });
-
-        // If it was just added and is set as the active campaign then it takes
-        // priority over a campaign that was previously set as active.
-        if (addedCampaigns.hasOwnProperty(settings.activeCampaign)) {
-          activeCampaign = settings.activeCampaign;
-        } else {
-          // Use the current if set, otherwise read from settings.
-          var current = ui.collections['campaigns'].findWhere({'isActive': true});
-          if (current) {
-            activeCampaign = current.get('name');
-          } else {
-            activeCampaign = settings.activeCampaign;
-          }
-        }
-        // Make sure the activeCampaign requested is available on this page.
-        var current = ui.collections['campaigns'].findWhere({'name': activeCampaign});
-        if (!current || !current.includeInNavigation()) {
-          activeCampaign = '';
-        }
 
         // Create a model for page variation management state
         if (!ui.models.pageVariationModeModel) {
@@ -3126,7 +3109,27 @@
         if (!ui.collections['campaigns']) {
           return;
         }
+
         // Update the active campaign.
+        // If it was just added and is set as the active campaign then it takes
+        // priority over a campaign that was previously set as active.
+        if (addedCampaigns.hasOwnProperty(settings.activeCampaign)) {
+          activeCampaign = settings.activeCampaign;
+        } else {
+          // Use the current if set, otherwise read from settings.
+          var current = ui.collections['campaigns'].findWhere({'isActive': true});
+          if (current) {
+            activeCampaign = current.get('name');
+          } else {
+            activeCampaign = settings.activeCampaign;
+          }
+        }
+        // Make sure the activeCampaign requested is available on this page.
+        var current = ui.collections['campaigns'].findWhere({'name': activeCampaign});
+        if (!current || !current.includeInNavigation()) {
+          activeCampaign = '';
+        }
+
         Drupal.acquiaLiftUI.setActiveCampaign(activeCampaign);
         Drupal.acquiaLiftUI.utilities.setInitialized(true);
         Drupal.acquiaLiftUI.utilities.updateNavbar();

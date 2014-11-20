@@ -185,8 +185,12 @@ function acquia_lift_profiles_admin_form_submit($form, &$form_state) {
     visitor_actions_clear_subscribers('user_login');
     visitor_actions_clear_subscribers('user_register');
   }
-  foreach (array('acquia_lift_profiles_account_name', 'acquia_lift_profiles_api_url', 'acquia_lift_profiles_access_key', 'acquia_lift_profiles_secret_key', 'acquia_lift_profiles_js_path', 'acquia_lift_profiles_capture_identity', 'acquia_lift_profiles_vocabulary_mappings') as $key) {
+  foreach (array('acquia_lift_profiles_account_name', 'acquia_lift_profiles_access_key', 'acquia_lift_profiles_secret_key', 'acquia_lift_profiles_capture_identity', 'acquia_lift_profiles_vocabulary_mappings') as $key) {
     variable_set($key, $form_state['values'][$key]);
+  }
+  // Strip out any http/https protocol from urls and save.
+  foreach (array('acquia_lift_profiles_api_url', 'acquia_lift_profiles_js_path') as $key) {
+    variable_set($key, preg_replace('/(^http:\/\/)|(^https:\/\/)/', $form_state['values'][$key], ''));
   }
 
   // Refresh the segments from Acquia Lift Profiles.

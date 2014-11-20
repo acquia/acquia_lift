@@ -248,11 +248,8 @@
   // Get the x-axis.
   liftGraph.prototype.setAxisX = function () {
     this.axisX = new Rickshaw.Graph.Axis.Time({
-      // Disable this plugin due to formatting errors.
-      // @see https://www.drupal.org/node/2354455
-      // element: this.$axisX[0],
-      orientation: 'bottom',
-      graph: this.graph
+      graph: this.graph,
+      ticksTreatment: 'label-below'
     });
   }
 
@@ -272,14 +269,6 @@
   liftGraph.prototype.setLegend = function () {
     this.legend = new Rickshaw.Graph.TableLegend({
       element: this.$legend[0],
-      graph: this.graph
-    });
-  }
-
-  // Get the range slider.
-  liftGraph.prototype.setRangeSlider = function () {
-    this.rangeSlider = new Rickshaw.Graph.RangeSlider({
-      element: this.$rangeSlider[0],
       graph: this.graph
     });
   }
@@ -312,11 +301,7 @@
   liftGraph.prototype.build = function () {
     this.$graph = $('<div class="lift-graph-graph" role="presentation"></div>');
     this.$axisY = $('<div class="lift-graph-axis-y" role="presentation"></div>');
-    // Disable this plugin due to formatting errors.
-    // @see https://www.drupal.org/node/2354455
-    // this.$axisX = $('<div class="lift-graph-axis-x" role="presentation"></div>');
     this.$legend = this.$element.siblings('.lift-graph-result').children('table.lift-graph-result-data');
-    this.$rangeSlider = $('<div class="lift-graph-range-slider" role="presentation"></div>');
 
     this.$element.addClass('lift-graph-table')
       .wrap('<div class="lift-graph-container"></div>')

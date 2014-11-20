@@ -420,6 +420,39 @@ class AcquiaLiftWebTestConfig extends AcquiaLiftWebTestBase {
     $this->assertNoText(t('A minimum confidence measure of 95% is recommended to ensure proper evaluation of test results.'));
     $this->assertText(t('The configuration options have been saved.'));
   }
+
+  function testPersonalizeElementsConfigurationIntegration() {
+    $fullAdminUser = $this->drupalCreateUser(array('access administration pages', 'administer personalize configuration', 'use advanced personalize elements features'));
+    $this->drupalLogin($fullAdminUser);
+
+    // Test edit in context settings added to personalize elements configuration form.
+    $this->drupalGet('admin/config/content/personalize/personalize-elements');
+    // Should be initially set to 1.
+    $this->assertFieldChecked('edit-acquia-lift-html-context-strip');
+    $edit = array(
+      'acquia_lift_html_context_strip' => FALSE,
+    );
+    $this->drupalPost(NULL, $edit, $this->getButton('config'));
+
+    // Check the javascript setting.
+    $this->drupalLogin($this->managerUser);
+    $this->drupalGet('');
+    $settings = $this->drupalGetSettings();
+    $this->assertEqual($settings['acquia_lift']['edit_in_context_html_strip'], 0);
+
+    // Set it back.
+    $this->drupalLogin($fullAdminUser);
+    $edit = array(
+      'acquia_lift_html_context_strip' => TRUE,
+    );
+    $this->drupalPost('admin/config/content/personalize/personalize-elements', $edit, $this->getButton('config'));
+
+    // Check that the JavaScript settings changed.
+    $this->drupalLogin($this->managerUser);
+    $this->drupalGet('');
+    $settings = $this->drupalGetSettings();
+    $this->assertEqual($settings['acquia_lift']['edit_in_context_html_strip'], 1);
+  }
 }
 class AcquiaLiftWebTestVariationSets extends AcquiaLiftWebTestBase {
 

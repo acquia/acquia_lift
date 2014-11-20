@@ -2191,6 +2191,26 @@ function acquia_lift_form_personalize_admin_form_alter(&$form, &$form_state) {
 }
 
 /**
+ * Implements hook_form_FORM_ID_alter().
+ */
+function acquia_lift_form_personalize_elements_configuration_form_alter(&$form, &$form_state) {
+  $form['acquia_lift_html_context_strip'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Filter HTML when creating variations'),
+    '#description' => t('Select this check box to remove script tags and inline styles from the Edit HTML link when adding variations using the Acquia Lift menu bar. Clear the check box to display unfiltered HTML for variations.'),
+    '#default_value' => variable_get('acquia_lift_html_context_strip', 1),
+  );
+  $form['#submit'][] = 'acquia_lift_personalize_elements_confirmation_form_submit';
+}
+
+/**
+ * Submit handler for altered personalize_elements_configuration_form.
+ */
+function acquia_lift_personalize_elements_confirmation_form_submit($form, &$form_state) {
+  variable_set('acquia_lift_html_context_strip', $form_state['values']['acquia_lift_html_context_strip']);
+}
+
+/**
  * Implements hook_personalize_fields_form_element_alter().
  */
 function acquia_lift_personalize_fields_form_element_alter(&$element, $lang) {

@@ -732,11 +732,14 @@
         }
       });
 
-      // Remove any styling added directly from jQuery.
-      $element.find('[style]').removeAttr('style');
+      // Strip out any tags and styles if configured to do so.
+      if (Drupal.settings.acquia_lift.edit_in_context_html_strip) {
+        // Remove any styling added directly from jQuery.
+        $element.find('[style]').removeAttr('style');
 
-      // Remove any inappropriate tags
-      $element.find(removeTags).remove();
+        // Remove any inappropriate tags
+        $element.find(removeTags).remove();
+      }
 
       // Remove any data attributes.
       _.each(removeAttributes, function(attr) {

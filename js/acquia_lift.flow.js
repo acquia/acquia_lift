@@ -716,6 +716,7 @@
       var removeClasses = new RegExp(Drupal.settings.visitor_actions.ignoreClasses, 'g');
       var removeId = new RegExp(Drupal.settings.visitor_actions.ignoreIds);
       var removeTags = 'script';
+      var removeAttributes = ['data-personalize'];
 
       // Remove any invalid ids.
       $element.find('[id]').filter(function() {
@@ -730,10 +731,17 @@
           $(this).removeAttr('class');
         }
       });
+
       // Remove any styling added directly from jQuery.
       $element.find('[style]').removeAttr('style');
+
       // Remove any inappropriate tags
       $element.find(removeTags).remove();
+
+      // Remove any data attributes.
+      _.each(removeAttributes, function(attr) {
+        $element.find('[' + attr + ']').removeAttr(attr);
+      });
 
       // Now return the cleaned up html.
       return $element.html();

@@ -56,7 +56,7 @@
       this.set('optionSets', new Drupal.acquiaLiftUI.MenuOptionSetCollection());
       this.listenTo(this.get('optionSets'), 'add', this.triggerOptionSetChange);
       this.listenTo(this.get('optionSets'), 'remove', this.triggerOptionSetChange);
-      this.listenTo(this.get('optionSets'), 'reset', this.triggerOptionSetChange);
+      this.listenTo(this.get('optionSets'), 'reset', this.onOptionSetsEmpty);
       this.listenTo(this.get('optionSets'), 'change:variations', this.triggerOptionSetChange);
       this.listenTo(this.get('goals'), 'add', this.triggerGoalsChange);
       this.listenTo(this.get('goals'), 'remove', this.triggerGoalsChange);
@@ -161,6 +161,14 @@
       if (triggerChange && hasChanged) {
         this.triggerGoalsChange();
       }
+    },
+
+    /**
+     * Callback handler for when the option sets for this model are emptied.
+     */
+    onOptionSetsEmpty: function (event) {
+      this.set('optionSetTypes', []);
+      this.triggerOptionSetChange(event);
     },
 
     /**

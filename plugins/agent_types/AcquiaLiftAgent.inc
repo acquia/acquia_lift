@@ -42,6 +42,11 @@ interface AcquiaLiftAgentInterface {
   public function syncFixedTargeting($option_sets);
 
   /**
+   * Syncs the agent's status to Acquia Lift.
+   */
+  public function syncAgentStatus();
+
+  /**
    * Organizes an array of option sets into decision points.
    *
    * @param $option_sets
@@ -491,7 +496,7 @@ class AcquiaLiftAgent extends PersonalizeAgentBase implements PersonalizeAgentGo
         $this->machineName,
         $this->title,
         $this->data['decision_style'],
-        'enabled',
+        $this->status,
         $acquia_lift_control_rate,
         $acquia_lift_explore_rate,
         isset($this->data['cache_decisions']) && $this->data['cache_decisions']
@@ -644,7 +649,7 @@ class AcquiaLiftAgent extends PersonalizeAgentBase implements PersonalizeAgentGo
       return $this->convertAgentExceptionToErrors($e, $errors);
     }
 
-    if ($acquia_lift_agent['status'] !== 'enabled') {
+    if ($acquia_lift_agent['status'] === AcquiaLiftAPI::PROVISIONAL_STATUS) {
       $errors[] = t('The status of the Acquia Lift agent is @status', array('@status' => $acquia_lift_agent['status']));
     }
     // Make sure Acquia Lift knows about the agent's goals.
@@ -864,6 +869,22 @@ class AcquiaLiftAgent extends PersonalizeAgentBase implements PersonalizeAgentGo
    */
   public function setQueue(DrupalQueueInterface $queue) {
     $this->queue = $queue;
+  }
+
+
+  /**
+   * Implements AcquiaLiftAgentInterface::syncAgentStatus().
+   */
+  public function syncAgentStatus() {
+    $items = array();
+    $items[] = array(
+      'method' => 'updateAgentStatus',
+      'args' => array(
+        $this->machineName,
+        $this->status,
+      ),
+    );
+    $this->queueItems($items);
   }
 
   /**

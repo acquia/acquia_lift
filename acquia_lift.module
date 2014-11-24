@@ -478,6 +478,21 @@ function acquia_lift_personalize_agent_presave($agent) {
 }
 
 /**
+ * Implements hook_personalize_agent_update_status().
+ */
+function acquia_lift_personalize_agent_update_status($agent_name, $old_status, $status) {
+  $agent_data = personalize_agent_load($agent_name);
+  if (!acquia_lift_owns_agent($agent_data)) {
+    return;
+  }
+  $agent_instance = personalize_agent_load_agent($agent_name, TRUE);
+  if (!$agent_instance instanceof AcquiaLiftAgentInterface) {
+    return;
+  }
+  $agent_instance->syncAgentStatus();
+}
+
+/**
  * Implements hook_personalize_visitor_contexts().
  */
 function acquia_lift_personalize_visitor_context() {

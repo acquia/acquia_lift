@@ -20,6 +20,14 @@ class AcquiaLiftAPI implements PersonalizeLoggerAwareInterface, AcquiaLiftReport
 
   const VALID_NAME_MATCH_PATTERN = '[A-Za-z0-9_-]';
 
+  const ENABLED_STATUS = 'enabled';
+
+  const PAUSED_STATUS = 'paused';
+
+  const STOPPED_STATUS = 'stopped';
+
+  const PROVISIONAL_STATUS = 'provisional';
+
   /**
    * The Acquia Lift API key to use.
    *
@@ -130,6 +138,25 @@ class AcquiaLiftAPI implements PersonalizeLoggerAwareInterface, AcquiaLiftReport
     $test_data = variable_get('acquia_lift_web_test_data', array());
     self::$instance->setHttpClient(new DummyAcquiaLiftHttpClient($broken_http_client, $test_data));
     self::$instance->setLogger(new AcquiaLiftTestLogger(FALSE));
+  }
+
+
+  public static function mapStatus($status) {
+    $status_map = array(
+      PERSONALIZE_STATUS_NOT_STARTED => self::PAUSED_STATUS,
+      PERSONALIZE_STATUS_PAUSED => self::PAUSED_STATUS,
+      PERSONALIZE_STATUS_RUNNING => self::ENABLED_STATUS,
+      PERSONALIZE_STATUS_COMPLETED => self::STOPPED_STATUS
+    );
+    // Maybe we already have a Lift status string.
+    if (in_array($status, $status_map)) {
+      return $status;
+    }
+    // Otherwise map it to a Lift status.
+    if (!isset($status_map[$status])) {
+      throw new AcquiaLiftException('Unknown agent status: ' . $status);
+    }
+    return $status_map[$status];
   }
 
   /**
@@ -341,6 +368,37 @@ class AcquiaLiftAPI implements PersonalizeLoggerAwareInterface, AcquiaLiftReport
     $vars = array('agent' => $machine_name);
     $success_msg = 'The campaign {agent} was pushed to Acquia Lift';
     $fail_msg = 'The campaign {agent} could not be pushed to Acquia Lift';
+    if ($response->code == 200 && $data['status'] == 'ok') {
+      $this->logger()->log(PersonalizeLogLevel::INFO, $success_msg, $vars);
+    }
+    else {
+      $this->logger()->log(PersonalizeLogLevel::ERROR, $fail_msg, $vars);
+      throw new AcquiaLiftException($fail_msg);
+    }
+  }
+
+  /**
+   * Updates the status of an agent in Acquia Lift.
+   *
+   * @param $machine_name
+   *   The machine of the agent.
+   * @param $status
+   *   The status to set the agent to.
+   * @return boolean
+   *   TRUE if the agent has been saved to Acquia Lift, FALSE otherwise.
+   * @throws AcquiaLiftException
+   */
+  public function updateAgentStatus($machine_name, $status) {
+    $lift_status_code = self::mapStatus($status);
+    $url = $this->generateEndpoint("/agent-api/$machine_name");
+    $agent = array(
+      'status' => $lift_status_code,
+    );
+    $response = $this->httpClient()->put($url, array('Content-Type' => 'application/json; charset=utf-8', 'Accept' => 'application/json'), $agent);
+    $data = json_decode($response->data, TRUE);
+    $vars = array('agent' => $machine_name);
+    $success_msg = 'The new status of campaign {agent} was pushed to Acquia Lift';
+    $fail_msg = 'The new status of campaign {agent} could not be pushed to Acquia Lift';
     if ($response->code == 200 && $data['status'] == 'ok') {
       $this->logger()->log(PersonalizeLogLevel::INFO, $success_msg, $vars);
     }

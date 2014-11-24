@@ -43,6 +43,7 @@
       // the entire collection.
       this.variations = null;
       this.on('change:options', this.triggerChange, this);
+      this.on('reset', this.triggerChange, this);
     },
 
     /**

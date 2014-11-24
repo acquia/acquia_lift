@@ -1491,10 +1491,10 @@ function acquia_lift_page_variation_delete_complete_callback($form, $form_state)
   }
   $campaign_settings['personalize']['campaigns'] = personalize_agent_get_settings();
   $commands = array(
+    ajax_command_settings($campaign_settings, TRUE),
     ctools_modal_command_dismiss(),
     acquia_lift_command_messagebox(t('The variation has been deleted.'), 10),
     acquia_lift_command_option_set_updates($settings),
-    ajax_command_settings($campaign_settings, TRUE),
     acquia_lift_command_process_queue(),
   );
   return $commands;
@@ -1655,13 +1655,21 @@ function acquia_lift_goal_type_create_completed_callback($form, &$form_state) {
     $message = t('Goal added.  You can now start the campaign.');
   }
   else {
-    $message = t('%goal goal added to campaign.', array('%goal' => $form_state['acquia_lift']['goal_name']));
+    $message = t('!goal goal added to campaign.', array('!goal' => filter_xss($form_state['acquia_lift']['goal_name'])));
   }
+  // Load updated data about custom defined visitor actions.
+  $actions = visitor_actions_custom_load_multiple();
+
   $commands = array(
     ctools_modal_command_dismiss(),
-    ajax_command_settings(array('personalize' => array(
-      'campaigns' => $settings,
-    )), TRUE),
+    ajax_command_settings(array(
+      'personalize' => array(
+        'campaigns' => $settings,
+      ),
+      'acquia_lift' => array(
+        'customActions' => $actions,
+      )
+    ), TRUE),
     acquia_lift_command_messagebox($message, 10),
     acquia_lift_command_process_queue(),
   );
@@ -2350,7 +2358,7 @@ function acquia_lift_page_variation_get_name($variation_set_name, $agent_name, $
   $option_set = current($option_sets);
   if ($option_set) {
     if (isset($option_set->options[$variation_number])) {
-      return check_plain($option_set->options[$variation_number]['option_label']);
+      return filter_xss($option_set->options[$variation_number]['option_label']);
     }
   }
   return '';

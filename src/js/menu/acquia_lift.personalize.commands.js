@@ -38,6 +38,7 @@
                 delete Drupal.settings.personalize.option_sets[option_set_id];
               }
             }
+            Drupal.settings.personalize.campaigns[empty_agent].optionSetTypes = [];
             // Notify of the deleted option sets.
             $(document).trigger('acquiaLiftOptionSetsEmpty', [empty_agent]);
           } else {

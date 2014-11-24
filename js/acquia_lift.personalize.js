@@ -485,12 +485,12 @@
 
   var initialized = false;
   Drupal.acquiaLiftUI.utilities = Drupal.acquiaLiftUI.utilities || {};
-  Drupal.acquiaLiftUI.utilities.updateNavbar = function() {
+  Drupal.acquiaLiftUI.utilities.updateNavbar = _.throttle(function() {
     if (initialized && Drupal.behaviors.acquiaLiftNavbarMenu) {
       Drupal.behaviors.acquiaLiftNavbarMenu.attach();
       Drupal.behaviors.ZZCToolsModal.attach($('.acquia-lift-controls'));
     }
-  };
+  }, 500);
 
   Drupal.acquiaLiftUI.utilities.setInitialized = function(value) {
     initialized = value;
@@ -628,7 +628,7 @@
       this.set('optionSets', new Drupal.acquiaLiftUI.MenuOptionSetCollection());
       this.listenTo(this.get('optionSets'), 'add', this.triggerOptionSetChange);
       this.listenTo(this.get('optionSets'), 'remove', this.triggerOptionSetChange);
-      this.listenTo(this.get('optionSets'), 'reset', this.triggerOptionSetChange);
+      this.listenTo(this.get('optionSets'), 'reset', this.onOptionSetsEmpty);
       this.listenTo(this.get('optionSets'), 'change:variations', this.triggerOptionSetChange);
       this.listenTo(this.get('goals'), 'add', this.triggerGoalsChange);
       this.listenTo(this.get('goals'), 'remove', this.triggerGoalsChange);
@@ -736,6 +736,14 @@
     },
 
     /**
+     * Callback handler for when the option sets for this model are emptied.
+     */
+    onOptionSetsEmpty: function (event) {
+      this.set('optionSetTypes', []);
+      this.triggerOptionSetChange(event);
+    },
+
+    /**
      * Triggers a change notification for option sets.
      */
     triggerOptionSetChange: function (event) {
@@ -837,8 +845,8 @@
     },
 
     triggerOptionSetChange: function (event) {
-      // if the variations have changed, re-validate the active variation.
-      this.set('activeVariation', this.get('activeVariation'));
+      // if the variations have changed, re-validate the variations.
+      this.get('optionSets').resetVariations();
       this.trigger('change:variations');
     },
 
@@ -1232,6 +1240,7 @@
       // the entire collection.
       this.variations = null;
       this.on('change:options', this.triggerChange, this);
+      this.on('reset', this.triggerChange, this);
     },
 
     /**
@@ -1994,7 +2003,7 @@
           event.currentTarget = event.target = $li.get('0');
           this.onClick(event);
         }
-        Drupal.acquiaLiftUI.utilities.updateNavBar();
+        Drupal.acquiaLiftUI.utilities.updateNavbar();
       } else {
         // If exiting, remove any temporary variation listings.
         this.$el.find('ul.menu li.acquia-lift-empty').show();
@@ -2428,14 +2437,16 @@
           .attr('href', startPath + activeCampaign.get('name'));
 
         if (this.$el.find('a').hasClass('ctools-use-modal')) {
-          // The link is already set up as a modal so just update the href.
-          return;
+          this.$el.find('a').removeClass('ctools-use-modal-processed');
+        } else {
+          this.$el
+            .find('a')
+            .addClass('ctools-use-modal')
+            .addClass('ctools-modal-acquia-lift-style')
+            .off();
         }
-        this.$el
-          .find('a')
-          .addClass('ctools-use-modal')
-          .addClass('ctools-modal-acquia-lift-style')
-          .off();
+        // Re-attach ctools-modal behaviors so that the element settings for
+        // Drupal ajax forms get reset to the new campaign url.
         Drupal.attachBehaviors(this.$el.parent());
       } else {
         // All other status can just get immediately changed.
@@ -2746,6 +2757,7 @@
                 delete Drupal.settings.personalize.option_sets[option_set_id];
               }
             }
+            Drupal.settings.personalize.campaigns[empty_agent].optionSetTypes = [];
             // Notify of the deleted option sets.
             $(document).trigger('acquiaLiftOptionSetsEmpty', [empty_agent]);
           } else {
@@ -2836,25 +2848,6 @@
             }
           }
         });
-
-        // If it was just added and is set as the active campaign then it takes
-        // priority over a campaign that was previously set as active.
-        if (addedCampaigns.hasOwnProperty(settings.activeCampaign)) {
-          activeCampaign = settings.activeCampaign;
-        } else {
-          // Use the current if set, otherwise read from settings.
-          var current = ui.collections['campaigns'].findWhere({'isActive': true});
-          if (current) {
-            activeCampaign = current.get('name');
-          } else {
-            activeCampaign = settings.activeCampaign;
-          }
-        }
-        // Make sure the activeCampaign requested is available on this page.
-        var current = ui.collections['campaigns'].findWhere({'name': activeCampaign});
-        if (!current || !current.includeInNavigation()) {
-          activeCampaign = '';
-        }
 
         // Create a model for page variation management state
         if (!ui.models.pageVariationModeModel) {
@@ -3124,7 +3117,27 @@
         if (!ui.collections['campaigns']) {
           return;
         }
+
         // Update the active campaign.
+        // If it was just added and is set as the active campaign then it takes
+        // priority over a campaign that was previously set as active.
+        if (addedCampaigns.hasOwnProperty(settings.activeCampaign)) {
+          activeCampaign = settings.activeCampaign;
+        } else {
+          // Use the current if set, otherwise read from settings.
+          var current = ui.collections['campaigns'].findWhere({'isActive': true});
+          if (current) {
+            activeCampaign = current.get('name');
+          } else {
+            activeCampaign = settings.activeCampaign;
+          }
+        }
+        // Make sure the activeCampaign requested is available on this page.
+        var current = ui.collections['campaigns'].findWhere({'name': activeCampaign});
+        if (!current || !current.includeInNavigation()) {
+          activeCampaign = '';
+        }
+
         Drupal.acquiaLiftUI.setActiveCampaign(activeCampaign);
         Drupal.acquiaLiftUI.utilities.setInitialized(true);
         Drupal.acquiaLiftUI.utilities.updateNavbar();

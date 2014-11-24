@@ -70,8 +70,9 @@ function acquia_lift_build_page(&$page) {
     $settings['acquia_lift']['customActions'] = $actions;
 
     $settings['acquia_lift']['dom_selector_ignore'] = acquia_lift_generate_ignore_selector();
-    $pending_agents = acquia_lift_get_pending_agents();
+    $settings['acquia_lift']['edit_in_context_html_strip'] = variable_get('acquia_lift_html_context_strip', 1);
 
+    $pending_agents = acquia_lift_get_pending_agents();
     if (!empty($pending_agents)) {
       $settings['acquia_lift']['pendingMessage'] = t('The following campaigns are being synced to Lift and will be started shortly: %agents', array('%agents' => implode(', ', $pending_agents)));
       $page['page_top']['#attached']['library'][] = array('acquia_lift', 'acquia_lift.messagebox');

@@ -14,12 +14,12 @@
 
   var initialized = false;
   Drupal.acquiaLiftUI.utilities = Drupal.acquiaLiftUI.utilities || {};
-  Drupal.acquiaLiftUI.utilities.updateNavbar = function() {
+  Drupal.acquiaLiftUI.utilities.updateNavbar = _.throttle(function() {
     if (initialized && Drupal.behaviors.acquiaLiftNavbarMenu) {
       Drupal.behaviors.acquiaLiftNavbarMenu.attach();
       Drupal.behaviors.ZZCToolsModal.attach($('.acquia-lift-controls'));
     }
-  };
+  }, 500);
 
   Drupal.acquiaLiftUI.utilities.setInitialized = function(value) {
     initialized = value;

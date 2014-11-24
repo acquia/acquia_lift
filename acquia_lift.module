@@ -93,6 +93,15 @@ function acquia_lift_menu() {
     'file' => 'acquia_lift.admin.inc',
     'theme callback' => 'ajax_base_page_theme',
   );
+  // AJAX callback to add a new variation set to a campaign.
+  $items['admin/structure/acquia_lift/variation/add/%/%ctools_js'] = array(
+    'page callback' => 'acquia_lift_option_set_add_modal_callback',
+    'page arguments' => array(5,6),
+    'access arguments' => array('manage personalized content'),
+    'type' => MENU_CALLBACK,
+    'file' => 'acquia_lift.admin.inc',
+    'theme callback' => 'ajax_base_page_theme',
+  );
   // AJAX callback to retrieve a page variation details form.
   $items['admin/structure/acquia_lift/pagevariation/%'] = array(
     'page callback' => 'drupal_get_form',
@@ -2184,28 +2193,6 @@ function acquia_lift_personalize_agent_end_date_form_alter(&$form, $agent_name) 
     if (isset($data['stop_on_winner']) && $data['stop_on_winner']) {
       $form['campaign_end']['#default_value'] = 'winner';
     }
-  }
-}
-
-/**
- * Implements hook_form_FORM_ID_alter().
- */
-function acquia_lift_form_personalize_agent_option_sets_form_alter(&$form, &$form_state) {
-  if (!empty($form['#agent']) && isset($form['#agent']->machine_name)) {
-    $option_sets_section = &$form['variations']['primary']['option_sets'];
-    // Add a link for personalizing existing content. This is based on the
-    // "Add goal in context link" and the whole functionality is based on
-    // visitor_actions_ui module's "Add action in context" functionality.
-    $option_sets_section['header']['add_existing'] = array(
-      '#type' => 'markup',
-      '#markup' => l(t('Personalize existing'), 'acquia_lift/personalize_in_context/start', array(
-        'query' => array('destination' => "admin/structure/personalize/manage/{$form['#agent']->machine_name}/edit"),
-        'attributes' => array('class' => array('personalize-in-context-link')),
-      )),
-    );
-    $option_sets_section['header']['#attached'] = array(
-      'css' => array(drupal_get_path('module', 'acquia_lift') . '/css/acquia_lift.admin.css'),
-    );
   }
 }
 

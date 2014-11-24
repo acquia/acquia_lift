@@ -161,7 +161,10 @@ function _acquia_lift_build_menu($menu_name) {
     'options' => array(
       'attributes' => array(
         'data-acquia-lift-personalize' => 'campaigns',
-        'class' => array('acquia-lift-campaign-list', 'visitor-actions-ui-ignore'),
+        'class' => array(
+          'acquia-lift-campaign-list',
+          'visitor-actions-ui-ignore',
+        ),
         'id' => 'acquia-lift-menu-campaigns',
       ),
       'html' => FALSE,
@@ -181,7 +184,15 @@ function _acquia_lift_build_menu($menu_name) {
         'data-acquia-lift-personalize-mode' => 'campaign',
         'aria-role' => 'button',
         'aria-pressed' => 'false',
-        'class' => array('acquia-lift-campaign-new', 'visitor-actions-ui-ignore', 'ctools-use-modal', 'ctools-modal-acquia-lift-style', 'acquia-lift-menu-create', 'acquia-lift-menu-link', 'overlay-exclude'),
+        'class' => array(
+          'acquia-lift-campaign-new',
+          'visitor-actions-ui-ignore',
+          'ctools-use-modal',
+          'ctools-modal-acquia-lift-style',
+          'acquia-lift-menu-create',
+          'acquia-lift-menu-link',
+          'overlay-exclude',
+        ),
         'id' => 'acquia-lift-menu-campaign-add',
       ),
       'html' => FALSE,
@@ -200,7 +211,11 @@ function _acquia_lift_build_menu($menu_name) {
     'options' => array(
       'attributes' => array(
         'data-acquia-lift-personalize' => 'option_sets',
-        'class' => array('acquia-lift-option-sets-list', 'visitor-actions-ui-ignore', 'overlay-exclude'),
+        'class' => array(
+          'acquia-lift-option-sets-list',
+          'visitor-actions-ui-ignore',
+          'overlay-exclude',
+        ),
         'id' => 'acquia-lift-menu-option-sets'
       ),
       'html' => FALSE,
@@ -213,14 +228,22 @@ function _acquia_lift_build_menu($menu_name) {
   // Create a link for attaching option set preview triggers.
   $item = array(
     'link_title' => 'Create a variation set',
-    'link_path' => 'admin/structure/personalize/variations',
+    'link_path' => 'admin/structure/acquia_lift/variations/add/nojs',
     'menu_name' => $menu_name,
     'options' => array(
       'attributes' => array(
         'data-acquia-lift-personalize-mode' => 'content-variation',
         'role' => 'button',
         'aria-pressed' => 'false',
-        'class' => array('acquia-lift-option-sets-new', 'visitor-actions-ui-ignore', 'acquia-lift-menu-create', 'acquia-lift-menu-link', 'overlay-exclude'),
+        'class' => array(
+          'acquia-lift-option-sets-new',
+          'visitor-actions-ui-ignore',
+          'acquia-lift-menu-create',
+          'acquia-lift-menu-link',
+          'overlay-exclude',
+          'ctools-use-modal',
+          'ctools-modal-acquia-lift-style',
+        ),
         'id' => 'acquia-lift-menu-option-set-add',
       ),
       'html' => FALSE,
@@ -240,7 +263,11 @@ function _acquia_lift_build_menu($menu_name) {
     'options' => array(
       'attributes' => array(
         'data-acquia-lift-personalize' => 'goals',
-        'class' => array('acquia-lift-goals-list', 'visitor-actions-ui-ignore', 'overlay-exclude'),
+        'class' => array(
+          'acquia-lift-goals-list',
+          'visitor-actions-ui-ignore',
+          'overlay-exclude',
+        ),
         'id' => 'acquia-lift-menu-goals',
       ),
       'html' => FALSE,
@@ -258,7 +285,15 @@ function _acquia_lift_build_menu($menu_name) {
     'options' => array(
       'attributes' => array(
         'data-acquia-lift-personalize-mode' => 'goals',
-        'class' => array('acquia-lift-goals-new', 'visitor-actions-ui-ignore', 'acquia-lift-menu-create', 'acquia-lift-menu-link', 'ctools-use-modal', 'ctools-modal-acquia-lift-style', 'overlay-exclude'),
+        'class' => array(
+          'acquia-lift-goals-new',
+          'visitor-actions-ui-ignore',
+          'acquia-lift-menu-create',
+          'acquia-lift-menu-link',
+          'ctools-use-modal',
+          'ctools-modal-acquia-lift-style',
+          'overlay-exclude',
+        ),
         'id' => 'acquia-lift-menu-goal-add',
       ),
       'html' => FALSE,
@@ -277,7 +312,10 @@ function _acquia_lift_build_menu($menu_name) {
     'menu_name' => $menu_name,
     'options' => array(
       'attributes' => array(
-        'class' => array('acquia-lift-results-list', 'visitor-actions-ui-ignore'),
+        'class' => array(
+          'acquia-lift-results-list',
+          'visitor-actions-ui-ignore',
+        ),
         'id' => 'acquia-lift-menu-reports',
       ),
       'html' => FALSE,
@@ -294,7 +332,12 @@ function _acquia_lift_build_menu($menu_name) {
     'menu_name' => $menu_name,
     'options' => array(
       'attributes' => array(
-        'class' => array('acquia-lift-menu-status', 'acquia-lift-menu-link', 'visitor-actions-ui-ignore', 'overlay-exclude'),
+        'class' => array(
+          'acquia-lift-menu-status',
+          'acquia-lift-menu-link',
+          'visitor-actions-ui-ignore',
+          'overlay-exclude',
+        ),
         'id' => 'acquia-lift-menu-status',
       ),
       'html' => FALSE,
@@ -456,6 +499,14 @@ function acquia_lift_update_7012() {
  * Update Acquia Lift menu bar to add 'overlay-exclude' class.
  */
 function acquia_lift_update_7013() {
+  menu_delete_links('acquia-lift-controls');
+  _acquia_lift_build_menu('acquia-lift-controls');
+}
+
+/**
+ * Update Acquia Lift menu bar "Add a variation" link to open a modal.
+ */
+function acquia_lift_update_7014() {
   menu_delete_links('acquia-lift-controls');
   _acquia_lift_build_menu('acquia-lift-controls');
 }

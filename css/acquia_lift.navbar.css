@@ -113,11 +113,13 @@
 #navbar-administration .acquia-lift-menu-item .acquia-lift-preview-option {
   float: left;
 }
-#navbar-administration .acquia-lift-menu-item .acquia-lift-variation-rename {
+#navbar-administration .acquia-lift-menu-item .acquia-lift-variation-rename,
+#navbar-administration .acquia-lift-menu-item .acquia-lift-goal-rename {
   float: right;
   margin-left: 1.667em;
 }
-#navbar-administration .acquia-lift-menu-item .acquia-lift-variation-delete {
+#navbar-administration .acquia-lift-menu-item .acquia-lift-variation-delete,
+#navbar-administration .acquia-lift-menu-item .acquia-lift-goal-delete {
   float: right;
   margin-left: .667em;
 }
@@ -169,12 +171,19 @@
 /* Nested menu uls for data grouping (rather than visual grouping) */
 #navbar-administration .navbar-tray-acquia-lift.navbar-tray-horizontal .menu ul ul.innerMenuList {
   border: none;
+  background-color: inherit;
+  padding-top: 1em;
+}
+#navbar-administration .navbar-tray-acquia-lift.navbar-tray-horizontal .menu ul ul.innerMenuList .navbar-menu-item {
+  padding: .5em 1.3333em .5em .2em;
 }
 
 /* Additional edit links are only available in horizontal view */
 #navbar-administration .navbar-tray-vertical .acquia-lift-campaign-edit,
 #navbar-administration .navbar-tray-vertical .acquia-lift-variation-delete,
 #navbar-administration .navbar-tray-vertical .acquia-lift-variation-rename,
+#navbar-administration .navbar-tray-vertical .acquia-lift-goal-rename,
+#navbar-administration .navbar-tray-vertical .acquia-lift-goal-delete,
 #navbar-administration .navbar-tray-vertical .acquia-lift-page-variation-toggle {
   display: none !important;
 }

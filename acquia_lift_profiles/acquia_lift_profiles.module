@@ -147,6 +147,20 @@ function acquia_lift_profiles_page_build(&$page) {
     // it.
     'udfMappingContextSeparator' => PERSONALIZE_TARGETING_ADMIN_SEPARATOR,
   );
+  // If there are querystring parameters present corresponding to the configured
+  // identity params, we add the identity and identity type to the js settings.
+  $identity_param = variable_get('acquia_lift_profiles_identity_param', '');
+  $identity_type_param = variable_get('acquia_lift_profiles_identity_type_param', '');
+  if (!empty($identity_param)) {
+    $all_params = drupal_get_query_parameters();
+    if (isset($all_params[$identity_param])) {
+      $settings['identity'] = check_plain($all_params[$identity_param]);
+      $settings['identityType'] = 'email';
+      if (!empty($identity_type_param) && isset($all_params[$identity_type_param])) {
+        $settings['identityType'] = check_plain($all_params[$identity_type_param]);
+      }
+    }
+  }
 
   $page_context = acquia_lift_profiles_get_page_context();
   foreach ($page_context as $name => $value) {
@@ -291,7 +305,7 @@ function acquia_lift_profiles_form_visitor_actions_form_alter(&$form, &$form_sta
   }
   $default_value = 0;
   $tracked_actions = variable_get('acquia_lift_profiles_tracked_actions', array());
-  if ($form['machine_name']['#disabled']) {
+  if (isset($form['machine_name']['#disabled']) && $form['machine_name']['#disabled']) {
     $action_name = $form['machine_name']['#value'];
     $default_value = in_array($action_name, $tracked_actions);
   }

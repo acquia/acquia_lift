@@ -202,6 +202,50 @@ class ALProfilesWebTest extends DrupalWebTestCase {
     $this->assertEqual($settings['acquia_lift_profiles']['available_segments'], $test_segments);
   }
 
+  /**
+   * Tests identity param configuration and js settings.
+   */
+  function testIdentityParams() {
+    $this->configureALProfiles();
+    $this->drupalLogin($this->admin_user);
+    // Test specifying a querystring param to use for capturing identity.
+    $this->drupalPost('admin/config/content/personalize/acquia_lift_profiles', array('acquia_lift_profiles_identity_param' => 'ali'), t('Save'));
+    $this->drupalLogout();
+
+    // Now visit the site as anon without passing any querystring params.
+    $this->drupalGet('');
+    $settings = $this->drupalGetSettings();
+    $alp_settings = $settings['acquia_lift_profiles'];
+    $this->assertFalse(isset($alp_settings['identity']));
+
+    // Now pass the configured identity param
+    $my_id = 'ohai';
+    $this->drupalGet('', array('query' => array('ali' => $my_id)));
+    $settings = $this->drupalGetSettings();
+    $alp_settings = $settings['acquia_lift_profiles'];
+    $this->assertEqual($alp_settings['identity'], $my_id);
+    $this->assertEqual($alp_settings['identityType'], 'email');
+
+    // Set the identity type param
+    $this->drupalLogin($this->admin_user);
+    $this->drupalPost('admin/config/content/personalize/acquia_lift_profiles', array('acquia_lift_profiles_identity_type_param' => 'alit'), t('Save'));
+    $this->drupalLogout();
+    // Pass the configured identity param and the identity_type param
+    $my_id = 'ohai';
+    $this->drupalGet('', array('query' => array('ali' => $my_id, 'alit' => 'socialtastic')));
+    $settings = $this->drupalGetSettings();
+    $alp_settings = $settings['acquia_lift_profiles'];
+    $this->assertEqual($alp_settings['identity'], $my_id);
+    $this->assertEqual($alp_settings['identityType'], 'socialtastic');
+
+    // Pass the configured identity type param without the identity param
+    $this->drupalGet('', array('query' => array('alit' => 'socialtastic')));
+    $settings = $this->drupalGetSettings();
+    $alp_settings = $settings['acquia_lift_profiles'];
+    $this->assertFalse(isset($alp_settings['identity']));
+    $this->assertFalse(isset($alp_settings['identityType']));
+  }
+
   // Tests that configuring events to track in Acquia Lift Profiles makes the required calls to
   // the Acquia Lift Profiles API.
   function testSyncEvents() {

@@ -732,6 +732,36 @@ class AcquiaLiftWebTestVariationSets extends AcquiaLiftWebTestBase {
     $option_sets = personalize_option_set_load_multiple(array(), array('decision_name' => 'first_variation_set', 'agent' => $agent_name), TRUE);
     $this->assertTrue(count($option_sets) === 0);
   }
+
+  function testPersonalizeBlockRedirection() {
+    // Create a new agent
+    $agent = $this->createTestAgent();
+
+    // Create a personalized block from the form with a destination in the
+    // url query string.
+    $this->drupalGet('/admin/structure/personalize/variations/personalize-blocks/add', array('query' => array('destination' => 'node')));
+    $edit = array(
+      'agent_select' => $agent->getMachineName(),
+      'title' => 'My test block',
+      'blocks[0][option_label]' =>  'Option A',
+      'blocks[0][block][bid]' => 'comment_delta_recent',
+      'blocks[1][option_label]' =>  'Option B',
+      'blocks[1][block][bid]' => 'system_delta_main',
+    );
+    $this->drupalPost(NULL, $edit, t('Save'));
+
+    // Verify that the user is redirected to the original page with a custom
+    // URL query parameter.
+    $this->assertUrl('node', array('query' => array('pm' => 'new_block|My test block')));
+
+    // Verify that the pending message has been added to the settings.
+    $expected_message = t('The %block_title personalized block has been created.  Next you need to add it to a region using the <a href="!block_url">blocks administration</a>.', array(
+      '%block_title' => 'My test block',
+      '!block_url' => 'admin/structure/blocks',
+    ));
+    $settings = $this->drupalGetSettings();
+    $this->assertEqual($settings['acquia_lift']['pendingMessage'], array($expected_message));
+  }
 }
 
 class AcquiaLiftWebTestAgentAdmin extends AcquiaLiftWebTestBase {

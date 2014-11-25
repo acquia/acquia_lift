@@ -428,4 +428,27 @@
     }
   };
 
+  Drupal.behaviors.acquiaLiftOptionSetTypeList = {
+    attach: function (context, settings) {
+      $('#acquia-lift-option-set-type-list', context).once().each(function() {
+        var blockAnchor = $(this).find('a[href="' + settings.basePath + 'admin/structure/personalize/variations/personalize-blocks/add"]');
+        var elementAnchor = $(this).find('a[href="' + settings.basePath + 'admin/structure/personalize/variations/personalize-elements/add"]');
+
+        // Add the current destination address to the personalize blocks anchor.
+        blockAnchor.attr('href', blockAnchor.attr('href') + '?destination=' + settings.visitor_actions.currentPath);
+
+        // Add a listener to the personalize elements anchor to trigger variation add mode.
+        elementAnchor.on('click', function(e) {
+          // Trigger the variation add mode.
+          $(document).trigger('acquiaLiftPageVariationMode', [{start: true}]);
+          // Close the modal window.
+          $(this).closest('.ctools-modal-content').find('.close').trigger('click');
+          e.preventDefault();
+          e.stopImmediatePropagation();
+          return false;
+        });
+      });
+    }
+  }
+
 }(Drupal, Drupal.jQuery, _));

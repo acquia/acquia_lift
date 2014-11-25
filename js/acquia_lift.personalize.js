@@ -2495,10 +2495,6 @@
    * Toggles the 'add content variation' trigger.
    */
   Drupal.acquiaLiftUI.MenuContentVariationTriggerView = ViewBase.extend({
-    events: {
-      'click': 'onClick'
-    },
-
     /**
      * {@inheritdoc}
      */
@@ -2508,6 +2504,8 @@
       this.contentVariationModel = options.contentVariationModel;
       this.pageVariationModel = options.pageVariationModel;
       this.campaignCollection = options.campaignCollection;
+
+      _.bindAll(this, 'onClick');
 
       // Model property holds a reference to the relevant type of creation
       // mode model based on the type of campaign selected.
@@ -2526,7 +2524,14 @@
         that.onPageVariationEditModeProxy(event, data);
       });
 
-      this.render();
+      // Set the initial link state based on the campaign type.
+      var activeCampaign = this.campaignCollection.findWhere({'isActive': true});
+      if (activeCampaign) {
+        // Note that this callback will end with a call to render().
+        this.onCampaignChange(activeCampaign, true);
+      } else {
+        this.render();
+      }
     },
 
     /**
@@ -2556,12 +2561,13 @@
      */
     onClick: function (event) {
       event.preventDefault();
-
       if (this.model.get('isActive')) {
+        // If already in editing mode, then clicking the link simply exits.
         this.model.endEditMode();
       } else {
         this.model.startAddMode();
       }
+      return false;
     },
 
     /**
@@ -2577,8 +2583,17 @@
       if (isActive) {
         if (model instanceof Drupal.acquiaLiftUI.MenuCampaignABModel) {
           this.model = this.pageVariationModel;
+          // Remove any ctools handling.
+          this.$el.off();
+          this.$el.on('click', this.onClick);
         } else {
           this.model = this.contentVariationModel;
+          // Next time it is clicked it should open the CTools modal.
+          this.$el.off('click', this.onClick);
+          // Remove the -processed flags that CTools adds so that it can be
+          // re-processed again.
+          this.$el.removeClass('ctools-use-modal-processed');
+          Drupal.attachBehaviors(this.$el.parent());
         }
         this.render(this.model);
       }
@@ -3215,6 +3230,29 @@
         });
     }
   };
+
+  Drupal.behaviors.acquiaLiftOptionSetTypeList = {
+    attach: function (context, settings) {
+      $('#acquia-lift-option-set-type-list', context).once().each(function() {
+        var blockAnchor = $(this).find('a[href="' + settings.basePath + 'admin/structure/personalize/variations/personalize-blocks/add"]');
+        var elementAnchor = $(this).find('a[href="' + settings.basePath + 'admin/structure/personalize/variations/personalize-elements/add"]');
+
+        // Add the current destination address to the personalize blocks anchor.
+        blockAnchor.attr('href', blockAnchor.attr('href') + '?destination=' + settings.visitor_actions.currentPath);
+
+        // Add a listener to the personalize elements anchor to trigger variation add mode.
+        elementAnchor.on('click', function(e) {
+          // Trigger the variation add mode.
+          $(document).trigger('acquiaLiftPageVariationMode', [{start: true}]);
+          // Close the modal window.
+          $(this).closest('.ctools-modal-content').find('.close').trigger('click');
+          e.preventDefault();
+          e.stopImmediatePropagation();
+          return false;
+        });
+      });
+    }
+  }
 
 }(Drupal, Drupal.jQuery, _));
 

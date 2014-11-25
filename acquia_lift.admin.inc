@@ -1233,6 +1233,55 @@ function acquia_lift_page_variation_details_form_ajax_callback($form, &$form_sta
 }
 
 /**
+ * Page callback to create a new option set.
+ *
+ * @param string $agent_name
+ *   The machine name of the current camaign.
+ * @param string $ajax
+ *   Indicates if request is from 'ajax' or 'nojs' support.
+ */
+function acquia_lift_option_set_add_modal_callback($ajax) {
+  if (!$ajax) {
+    drupal_goto('admin/structure/personalize/variations');
+    return;
+  }
+
+  // Show the option set type selection form in a modal.
+  ctools_include('modal');
+  ctools_modal_add_js();
+
+  $path = drupal_get_path('module', 'acquia_lift');
+  $output = theme('acquia_lift_type_list', array(
+    'id' => 'acquia-lift-option-set-type-list',
+    'items' => array(
+      'personalize-block' => array(
+        'title' => t('Personalized block'),
+        'description' => t('Quisque malesuada placerat nisl. Phasellus volutpat, metus eget egestas mollis, lacus lacus blandit dui, id egestas quam mauris ut lacus.'),
+        'path' => 'admin/structure/personalize/variations/personalize-blocks/add',
+        'modal' => FALSE,
+        'logo' => theme('image', array(
+          'path' => $path . '/images/goal-type-predefined.png',
+          'alt' => t('Pre-existing goal'),
+          'title' => t('Select this option to create a goal from a pre-existing visitor action.'),
+        )),
+      ),
+      'personalize-element' => array(
+        'title' => t('Personalize element'),
+        'description' => t('Donec vitae orci sed dolor rutrum auctor. Fusce fermentum odio nec arcu. Praesent venenatis metus at tortor pulvinar varius. Phasellus volutpat, metus eget egestas mollis, lacus lacus blandit dui, id egestas quam mauris ut lacus. Phasellus magna.'),
+        'path' => 'admin/structure/personalize/variations/personalize-elements/add',
+        'modal' => FALSE,
+        'logo' => theme('image', array(
+          'path' => $path . '/images/goal-type-predefined.png',
+          'alt' => t('Pre-existing goal'),
+          'title' => t('Select this option to create a goal from a pre-existing visitor action.'),
+        )),
+      ),
+    ),
+  ));
+  return ctools_modal_render(t('Add a variation set'), $output);
+}
+
+/**
  * Page callback to generate a page variation rename modal window.
  *
  * @param string $agent_name

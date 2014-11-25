@@ -1240,7 +1240,7 @@ function acquia_lift_page_variation_details_form_ajax_callback($form, &$form_sta
  * @param string $ajax
  *   Indicates if request is from 'ajax' or 'nojs' support.
  */
-function acquia_lift_option_set_add_modal_callback($agent_name, $ajax) {
+function acquia_lift_option_set_add_modal_callback($ajax) {
   if (!$ajax) {
     drupal_goto('admin/structure/personalize/variations');
     return;

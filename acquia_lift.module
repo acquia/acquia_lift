@@ -94,9 +94,9 @@ function acquia_lift_menu() {
     'theme callback' => 'ajax_base_page_theme',
   );
   // AJAX callback to add a new variation set to a campaign.
-  $items['admin/structure/acquia_lift/variation/add/%/%ctools_js'] = array(
+  $items['admin/structure/acquia_lift/variations/add/%ctools_js'] = array(
     'page callback' => 'acquia_lift_option_set_add_modal_callback',
-    'page arguments' => array(5,6),
+    'page arguments' => array(5),
     'access arguments' => array('manage personalized content'),
     'type' => MENU_CALLBACK,
     'file' => 'acquia_lift.admin.inc',
@@ -2222,6 +2222,34 @@ function acquia_lift_form_personalize_elements_configuration_form_alter(&$form, 
  */
 function acquia_lift_personalize_elements_confirmation_form_submit($form, &$form_state) {
   variable_set('acquia_lift_html_context_strip', $form_state['values']['acquia_lift_html_context_strip']);
+}
+
+/**
+ * Implements hook_form_FORM_ID_alter().
+ */
+function acquia_lift_form_personalize_blocks_form_alter(&$form, &$form_state) {
+  $form['#submit'][] = 'acquia_lift_personalize_blocks_form_submit';
+  dpm($form['#submit']);
+}
+
+/**
+ * Submit handler for altered personalize_elements_form.
+ */
+function acquia_lift_personalize_blocks_form_submit($form, &$form_state) {
+  /*
+  $form_state['redirect'] = array(
+ *   'node/123',
+ *   array(
+ *     'query' => array(
+ *       'foo' => 'bar',
+ *     ),
+ *     'fragment' => 'baz',
+ *   ),
+ * );
+   *
+   */
+  watchdog('lift_debug', 'redirect:<pre>' . print_r($form_state['redirect'], TRUE) . '</pre>');
+  dpm($form_state['redirect']);
 }
 
 /**

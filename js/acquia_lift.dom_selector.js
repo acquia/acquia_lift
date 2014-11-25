@@ -220,6 +220,7 @@
      */
     _onClick: function(event) {
       var $selected = this._hovered.$element;
+      var hoverClass = this._hovered.hoverClass;
       if (!$selected) {
         return;
       }
@@ -228,7 +229,7 @@
       } else {
         // Remove the indicator class so it doesn't show in the final selector.
         $selected.removeClass(indicatorClass);
-        $selected.removeClass(this.hoverClass);
+        $selected.removeClass(hoverClass);
         this.settings.onElementSelect.call(this, $selected[0], Utilities.getSelector($selected[0], selectorIgnoreId, selectorIgnoreClasses));
       }
       event.preventDefault();

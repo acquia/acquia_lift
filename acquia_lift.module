@@ -2229,27 +2229,42 @@ function acquia_lift_personalize_elements_confirmation_form_submit($form, &$form
  */
 function acquia_lift_form_personalize_blocks_form_alter(&$form, &$form_state) {
   $form['#submit'][] = 'acquia_lift_personalize_blocks_form_submit';
-  dpm($form['#submit']);
 }
 
 /**
  * Submit handler for altered personalize_elements_form.
  */
 function acquia_lift_personalize_blocks_form_submit($form, &$form_state) {
-  /*
-  $form_state['redirect'] = array(
- *   'node/123',
- *   array(
- *     'query' => array(
- *       'foo' => 'bar',
- *     ),
- *     'fragment' => 'baz',
- *   ),
- * );
-   *
-   */
-  watchdog('lift_debug', 'redirect:<pre>' . print_r($form_state['redirect'], TRUE) . '</pre>');
-  dpm($form_state['redirect']);
+  $redirect = $form_state['redirect'];
+  if ($redirect === FALSE) {
+    return;
+  }
+  // A destination string overrides redirects set in the form state.
+  $params = drupal_get_query_parameters();
+  if (!empty($params['destination'])) {
+    // Parse it out into the redirect array form.
+    $parsed = drupal_parse_url($params['destination']);
+    $redirect = array(
+      $parsed['path'],
+      array(
+        'query' => $parsed['query'],
+        'fragment' => $parsed['fragment'],
+      ),
+    );
+    // Now that it has been handled, remove it so that it doesn't overwrite
+    // our own redirect location.
+    unset($_GET['destination']);
+  }
+  // Convert the existing redirect into a redirect that accepts query parameters.
+  if (is_string($redirect)) {
+    $redirect = array(
+      $redirect,
+      array('query' => array())
+    );
+  }
+  // Add a message to be shown.
+  $redirect[1]['query']['pm'] = 'new_block|' . $form_state['values']['title'];
+  $form_state['redirect'] = $redirect;
 }
 
 /**

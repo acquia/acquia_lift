@@ -130,17 +130,30 @@ class AcquiaLiftAPI implements PersonalizeLoggerAwareInterface, AcquiaLiftReport
    *
    * This is used during simpletest web tests.
    */
-  public static function setTestInstance($broken_http_client = FALSE) {
+  public static function setTestInstance($broken_http_client = FALSE, $simulate_client_side_breakage = FALSE) {
     module_load_include('inc', 'acquia_lift', 'tests/acquia_lift.test_classes');
     self::$instance = new self('test-api-key', 'test-admin-key', 'test-owner-code', 'http://api.example.com');
     // This method is only ever called within the context of a simpletest web
     // test, so the call to variable_get() is ok here.
     $test_data = variable_get('acquia_lift_web_test_data', array());
-    self::$instance->setHttpClient(new DummyAcquiaLiftHttpClient($broken_http_client, $test_data));
+    self::$instance->setHttpClient(new DummyAcquiaLiftHttpClient($broken_http_client, $test_data, $simulate_client_side_breakage));
     self::$instance->setLogger(new AcquiaLiftTestLogger(FALSE));
   }
 
-
+  /**
+   * Maps the passed in status code to one consumable by the Lift service.
+   *
+   * If the passed in status code is already a string status code that's
+   * consumable by Lift it just returns that code. If it's a numeric code
+   * defined in personalize module it maps it to the corresponding string
+   * code. If it's neither, an exception is thrown.
+   *
+   * @param $status
+   *   The status to map.
+   * @return string status
+   *   The status code consumable by Lift.
+   * @throws AcquiaLiftException
+   */
   public static function mapStatus($status) {
     $status_map = array(
       PERSONALIZE_STATUS_NOT_STARTED => self::PAUSED_STATUS,
@@ -457,9 +470,27 @@ class AcquiaLiftAPI implements PersonalizeLoggerAwareInterface, AcquiaLiftReport
       $this->logger()->log(PersonalizeLogLevel::INFO, $success_msg, $vars);
     }
     else {
-      $this->logger()->log(PersonalizeLogLevel::ERROR, $fail_msg, $vars);
-      throw new AcquiaLiftException($fail_msg);
+      $this->handleBadResponse($response->code, $fail_msg, $vars);
     }
+  }
+
+  public function handleBadResponse($response_code, $fail_msg, $vars = array(), $log_failure = TRUE) {
+    if ($exception_class = self::mapBadResponseToExceptionClass($response_code)) {
+      if ($log_failure) {
+        $this->logger()->log(PersonalizeLogLevel::ERROR, $fail_msg, $vars);
+      }
+      throw new $exception_class($fail_msg);
+    }
+    if (self::isSuccessful($response_code)) {
+      // If the response wasn't actually bad but we still got here somehow, just
+      // log a warning and return.
+      if ($log_failure) {
+        $this->logger()->log(PersonalizeLogLevel::WARNING, $fail_msg, $vars);
+      }
+      return;
+    }
+    // Otherwise throw a generic exception.
+    throw new AcquiaLiftException($fail_msg);
   }
 
   /**
@@ -483,25 +514,6 @@ class AcquiaLiftAPI implements PersonalizeLoggerAwareInterface, AcquiaLiftReport
     else {
       $this->handleBadResponse($response->code, $fail_msg, $vars);
     }
-  }
-
-  public function handleBadResponse($response_code, $fail_msg, $vars = array(), $log_failure = TRUE) {
-    if ($exception_class = self::mapBadResponseToExceptionClass($response_code)) {
-      if ($log_failure) {
-        $this->logger()->log(PersonalizeLogLevel::ERROR, $fail_msg, $vars);
-      }
-      throw new $exception_class($fail_msg);
-    }
-    if (self::isSuccessful($response_code)) {
-      // If the response wasn't actually bad but we still got here somehow, just
-      // log a warning and return.
-      if ($log_failure) {
-        $this->logger()->log(PersonalizeLogLevel::WARNING, $fail_msg, $vars);
-      }
-      return;
-    }
-    // Otherwise throw a generic exception.
-    throw new AcquiaLiftException($fail_msg);
   }
 
   /**
@@ -668,7 +680,8 @@ class AcquiaLiftAPI implements PersonalizeLoggerAwareInterface, AcquiaLiftReport
       $this->logger()->log(PersonalizeLogLevel::INFO, $success_msg, $vars);
     }
     else {
-      $this->handleBadResponse($response->code, $fail_msg, $vars);
+      $this->logger()->log(PersonalizeLogLevel::ERROR, $fail_msg, $vars);
+      throw new AcquiaLiftException($fail_msg);
     }
   }
 

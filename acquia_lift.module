@@ -848,10 +848,18 @@ function acquia_lift_process_queue($exit_on_finish = TRUE) {
       $function($item->data);
       $queue->deleteItem($item);
     }
+    catch(AcquiaLiftClientErrorException $e) {
+      // If our worker callback throws an exception indicating a client error in
+      // a request made to Lift, we should abort the processing of the queue and
+      // set a message to let the user know things went wrong.
+      drupal_set_message(t('An error occurred while syncing your campaign information to Lift: @error', array('@error' => $e->getMessage())));
+      $queue->deleteQueue();
+      break;
+    }
     catch (AcquiaLiftException $e) {
+      // For other types of errors, allow the item to be retried.
       $queue->releaseItem($item);
     }
-
   }
   _personalize_agent_verification_cache_clear();
 

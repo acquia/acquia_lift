@@ -386,12 +386,9 @@
       if (!$(event.target).hasClass('acquia-lift-preview-option')) {
         return;
       }
-      var optionid = $(event.target).data('acquia-lift-personalize-option-set-option');
-      var selector = $(event.target).data('acquia-lift-personalize-option-set-selector');
-      var osid = this.model.get('osid');
 
-      // Swaps the current option in an option set for the indicated option.
-      Drupal.personalize.executors[this.model.get('executor')].execute($(selector), optionid, this.model.get('osid'), true);
+      var optionid = $(event.target).data('acquia-lift-personalize-option-set-option');
+      this.model.set('activeOption', optionid);
       event.preventDefault();
       event.stopPropagation();
     },
@@ -494,7 +491,6 @@
      */
     onActiveVariationChange: function () {
       this.render(this.model);
-      this.updatePreview();
     },
 
     /**
@@ -544,26 +540,9 @@
       }
 
       this.model.set('activeVariation', variation_index);
-      this.updatePreview();
 
       event.preventDefault();
       event.stopPropagation();
-    },
-
-    updatePreview: function() {
-      var variation_index = this.model.get('activeVariation');
-      var variations = this.model.get('optionSets').getVariations();
-      var variation = _.find(variations, function(obj) {
-        return obj.original_index == variation_index;
-      });
-
-      if (!variation) return;
-      var i, num = variation.options.length, current;
-      // Run the executor for each option in the variation.
-      for (i=0; i < num; i++) {
-        current = variation.options[i];
-        Drupal.personalize.executors[current.executor].execute($(current.selector), current.option.option_id, current.osid);
-      }
     },
 
     /**
@@ -768,6 +747,85 @@
     build: function() {
       if (this.model) {
         this.$el.attr('id', 'acquia-lift-menu-option-sets-count--' + this.model.get('name'));
+      }
+    }
+  });
+
+  /**
+   * A "view" for the variation preview.
+   *
+   * This does not map to a specific
+   * element in the DOM, but rather triggers updates to the view via
+   * personalize executors in reaction to changes in the model.
+   *
+   * It receives the campaign collection as the "collection" in the initialize
+   * function.  The model is always set to the currently active campaign.
+   */
+  Drupal.acquiaLiftUI.MenuVariationPreviewView = ViewBase.extend({
+    /**
+     * {@inheritDoc}
+     */
+    initialize: function (options) {
+      this.collection = options.collection;
+
+      this.listenTo(this.collection, 'change:isActive', this.onActiveCampaignChange);
+      // Call the campaign change function to initialize the first campaign.
+      this.onActiveCampaignChange(this.collection.findWhere({'isActive': true}));
+    },
+
+    onActiveCampaignChange: function (changed) {
+      if (!changed) {
+        if (this.model) {
+          this.stopListening(this.model);
+        }
+        this.model = undefined;
+        return;
+      }
+      if (changed.get('isActive')) {
+        // Bind to change events from the new model.
+        this.model = changed;
+        this.listenTo(this.model, 'change:activeVariation', this.onVariationChange);
+        this.listenTo(this.model.get('optionSets'), 'change:activeOption', this.onVariationChange);
+      } else {
+        this.stopListening(changed);
+      }
+    },
+
+    onVariationChange: function(changedModel) {
+      if (!this.model) {
+        return;
+      }
+      if (this.model instanceof Drupal.acquiaLiftUI.MenuCampaignABModel) {
+        // Simple A/B campaigns need to call the executor for each of the
+        // options within the selected page variation.
+        var variation_index = this.model.get('activeVariation');
+        var variations = this.model.get('optionSets').getVariations();
+        var variation = _.find(variations, function(obj) {
+          return obj.original_index == variation_index;
+        });
+
+        if (!variation) return;
+        var i, num = variation.options.length, current;
+        // Run the executor for each option in the variation.
+        for (i=0; i < num; i++) {
+          current = variation.options[i];
+          Drupal.personalize.executors[current.executor].execute($(current.selector), current.option.option_id, current.osid);
+        }
+      } else {
+        // Standard tests just call the executors on the selected option.
+        // Note that the model passed into this callback will be the
+        // changed option set model.
+        if (changedModel instanceof Drupal.acquiaLiftUI.MenuOptionSetModel) {
+          var activeOption = changedModel.get('activeOption');
+          if (!activeOption) {
+            return;
+          }
+          var current = changedModel.get('options').findWhere({'option_id': activeOption});
+          if (!current) {
+            return;
+          }
+          Drupal.personalize.executors[changedModel.get('executor')].execute($(changedModel.get('selector')), current.get('option_id'), changedModel.get('osid'));
+        }
       }
     }
   });

@@ -53,7 +53,7 @@
     // had been selected so that we can preview more than one at a time.
     var existingSelection = decodeURI(window.location.search.replace(new RegExp("^(?:.*[&\\?]" + encodeURI(param).replace(/[\.\+\*]/g, "\\$&") + "(?:\\=([^&]*))?)?.*$", "i"), "$1"));
     if (existingSelection.length > 0) {
-      looper(existingSelection.split(','), function (str, key) {
+      Drupal.acquiaLiftUI.utilities.looper(existingSelection.split(','), function (str, key) {
         // Exclude any preselection for the Option Set we're generating a link for.
         var existingOsid = str.split('--')[0];
         if (osids.indexOf(existingOsid) == -1) {
@@ -628,20 +628,10 @@
       this.set('optionSets', new Drupal.acquiaLiftUI.MenuOptionSetCollection());
       this.listenTo(this.get('optionSets'), 'add', this.triggerOptionSetChange);
       this.listenTo(this.get('optionSets'), 'remove', this.triggerOptionSetChange);
-      this.listenTo(this.get('optionSets'), 'reset', this.onOptionSetsEmpty);
       this.listenTo(this.get('optionSets'), 'change:variations', this.triggerOptionSetChange);
       this.listenTo(this.get('goals'), 'add', this.triggerGoalsChange);
       this.listenTo(this.get('goals'), 'remove', this.triggerGoalsChange);
       this.listenTo(this.get('goals'), 'reset', this.triggerGoalsChange);
-
-      var that = this;
-      $(document).on('acquiaLiftOptionSetsEmpty', function (event, data) {
-        if (that.get('name') !== data) {
-          return;
-        }
-        that.get('optionSets').reset();
-      });
-
     },
 
     /**
@@ -733,14 +723,6 @@
       if (triggerChange && hasChanged) {
         this.triggerGoalsChange();
       }
-    },
-
-    /**
-     * Callback handler for when the option sets for this model are emptied.
-     */
-    onOptionSetsEmpty: function (event) {
-      this.set('optionSetTypes', []);
-      this.triggerOptionSetChange(event);
     },
 
     /**
@@ -842,12 +824,38 @@
       this.parent('inherit');
       this.set('activeVariation', 0);
       this.listenTo(this.get('optionSets'), 'change:variations', this.triggerOptionSetChange);
+      this.listenTo(this.get('optionSets'), 'reset', this.onOptionSetsEmpty);
+
+      // As options cannot be deleted from a MenuCampaignModel in the UI,
+      // this listener only needs to be in the ABModel.
+      var that = this;
+      $(document).on('acquiaLiftOptionSetsEmpty', function (event, data) {
+        if (that.get('name') !== data) {
+          return;
+        }
+        // Set the index back to the control variation so that views can
+        // update accordingly.
+        that.set('activeVariation', 0);
+        // Now clear out the option sets.
+        that.get('optionSets').reset();
+      });
+
     },
 
     triggerOptionSetChange: function (event) {
-      // if the variations have changed, re-validate the variations.
+      // If the variations have changed, re-validate the variations.
       this.get('optionSets').resetVariations();
+      // Also re-validate the active variation index to ensure it is still valid.
+      this.set('activeVariation', this.get('activeVariation'));
       this.trigger('change:variations');
+    },
+
+    /**
+     * Callback handler for when the option sets for this model are emptied.
+     */
+    onOptionSetsEmpty: function (event) {
+      this.set('optionSetTypes', []);
+      this.triggerOptionSetChange(event);
     },
 
     /**
@@ -1741,12 +1749,9 @@
       if (!$(event.target).hasClass('acquia-lift-preview-option')) {
         return;
       }
-      var optionid = $(event.target).data('acquia-lift-personalize-option-set-option');
-      var selector = $(event.target).data('acquia-lift-personalize-option-set-selector');
-      var osid = this.model.get('osid');
 
-      // Swaps the current option in an option set for the indicated option.
-      Drupal.personalize.executors[this.model.get('executor')].execute($(selector), optionid, this.model.get('osid'), true);
+      var optionid = $(event.target).data('acquia-lift-personalize-option-set-option');
+      this.model.set('activeOption', optionid);
       event.preventDefault();
       event.stopPropagation();
     },
@@ -1849,7 +1854,6 @@
      */
     onActiveVariationChange: function () {
       this.render(this.model);
-      this.updatePreview();
     },
 
     /**
@@ -1899,26 +1903,9 @@
       }
 
       this.model.set('activeVariation', variation_index);
-      this.updatePreview();
 
       event.preventDefault();
       event.stopPropagation();
-    },
-
-    updatePreview: function() {
-      var variation_index = this.model.get('activeVariation');
-      var variations = this.model.get('optionSets').getVariations();
-      var variation = _.find(variations, function(obj) {
-        return obj.original_index == variation_index;
-      });
-
-      if (!variation) return;
-      var i, num = variation.options.length, current;
-      // Run the executor for each option in the variation.
-      for (i=0; i < num; i++) {
-        current = variation.options[i];
-        Drupal.personalize.executors[current.executor].execute($(current.selector), current.option.option_id, current.osid);
-      }
     },
 
     /**
@@ -2123,6 +2110,85 @@
     build: function() {
       if (this.model) {
         this.$el.attr('id', 'acquia-lift-menu-option-sets-count--' + this.model.get('name'));
+      }
+    }
+  });
+
+  /**
+   * A "view" for the variation preview.
+   *
+   * This does not map to a specific
+   * element in the DOM, but rather triggers updates to the view via
+   * personalize executors in reaction to changes in the model.
+   *
+   * It receives the campaign collection as the "collection" in the initialize
+   * function.  The model is always set to the currently active campaign.
+   */
+  Drupal.acquiaLiftUI.MenuVariationPreviewView = ViewBase.extend({
+    /**
+     * {@inheritDoc}
+     */
+    initialize: function (options) {
+      this.collection = options.collection;
+
+      this.listenTo(this.collection, 'change:isActive', this.onActiveCampaignChange);
+      // Call the campaign change function to initialize the first campaign.
+      this.onActiveCampaignChange(this.collection.findWhere({'isActive': true}));
+    },
+
+    onActiveCampaignChange: function (changed) {
+      if (!changed) {
+        if (this.model) {
+          this.stopListening(this.model);
+        }
+        this.model = undefined;
+        return;
+      }
+      if (changed.get('isActive')) {
+        // Bind to change events from the new model.
+        this.model = changed;
+        this.listenTo(this.model, 'change:activeVariation', this.onVariationChange);
+        this.listenTo(this.model.get('optionSets'), 'change:activeOption', this.onVariationChange);
+      } else {
+        this.stopListening(changed);
+      }
+    },
+
+    onVariationChange: function(changedModel) {
+      if (!this.model) {
+        return;
+      }
+      if (this.model instanceof Drupal.acquiaLiftUI.MenuCampaignABModel) {
+        // Simple A/B campaigns need to call the executor for each of the
+        // options within the selected page variation.
+        var variation_index = this.model.get('activeVariation');
+        var variations = this.model.get('optionSets').getVariations();
+        var variation = _.find(variations, function(obj) {
+          return obj.original_index == variation_index;
+        });
+
+        if (!variation) return;
+        var i, num = variation.options.length, current;
+        // Run the executor for each option in the variation.
+        for (i=0; i < num; i++) {
+          current = variation.options[i];
+          Drupal.personalize.executors[current.executor].execute($(current.selector), current.option.option_id, current.osid);
+        }
+      } else {
+        // Standard tests just call the executors on the selected option.
+        // Note that the model passed into this callback will be the
+        // changed option set model.
+        if (changedModel instanceof Drupal.acquiaLiftUI.MenuOptionSetModel) {
+          var activeOption = changedModel.get('activeOption');
+          if (!activeOption) {
+            return;
+          }
+          var current = changedModel.get('options').findWhere({'option_id': activeOption});
+          if (!current) {
+            return;
+          }
+          Drupal.personalize.executors[changedModel.get('executor')].execute($(changedModel.get('selector')), current.get('option_id'), changedModel.get('osid'));
+        }
       }
     }
   });
@@ -2752,9 +2818,12 @@
           // A campaign's option sets are empty so remove from the settings.
           if (osid === 'empty') {
             var empty_agent = option_sets[osid];
+            // Don't delete the data for the option sets in
+            // Drupal.settings.personalize.option_sets as we need this in
+            // order to go back to the control variation preview.
             for (var option_set_id in Drupal.settings.personalize.option_sets) {
               if (Drupal.settings.personalize.option_sets[option_set_id]['agent'] == empty_agent) {
-                delete Drupal.settings.personalize.option_sets[option_set_id];
+                Drupal.settings.personalize.option_sets[option_set_id].removed = true;
               }
             }
             Drupal.settings.personalize.campaigns[empty_agent].optionSetTypes = [];
@@ -2806,7 +2875,7 @@
       var activeCampaign = '';
 
       if (settings) {
-        // Build models for menus that don't have them yet.
+        // Build models for campaigns that don't have them yet.
         if (!ui.collections.campaigns) {
           ui.collections.campaigns = new ui.MenuCampaignCollection([]);
         }
@@ -2832,19 +2901,21 @@
           }
         });
         Drupal.acquiaLiftUI.utilities.looper(settings.option_sets, function (obj, key) {
-          var campaignModel = ui.collections.campaigns.findWhere({name: obj.agent});
-          if (campaignModel) {
-            var optionSets = campaignModel.get('optionSets');
-            var optionSet = optionSets.findWhere({'osid': key});
-            // Merge doesn't work in this case so we need to manually merge.
-            if (optionSet) {
-              for (var prop in obj) {
-                if (obj.hasOwnProperty(prop)) {
-                  optionSet.set(prop, obj[prop]);
+          if (!obj.hasOwnProperty('removed')) {
+            var campaignModel = ui.collections.campaigns.findWhere({name: obj.agent});
+            if (campaignModel) {
+              var optionSets = campaignModel.get('optionSets');
+              var optionSet = optionSets.findWhere({'osid': key});
+              // Merge doesn't work in this case so we need to manually merge.
+              if (optionSet) {
+                for (var prop in obj) {
+                  if (obj.hasOwnProperty(prop)) {
+                    optionSet.set(prop, obj[prop]);
+                  }
                 }
+              } else {
+                optionSets.add(new Drupal.acquiaLiftUI.MenuOptionSetModel(obj));
               }
-            } else {
-              optionSets.add(new Drupal.acquiaLiftUI.MenuOptionSetModel(obj));
             }
           }
         });
@@ -2862,6 +2933,11 @@
             collection: ui.collections.campaigns,
             el: menu
           });
+        }
+
+        // Initialize the executor preview view functionality.
+        if (!ui.views.previewView) {
+          ui.views.previewView = new Drupal.acquiaLiftUI.MenuVariationPreviewView({'collection': ui.collections.campaigns});
         }
 
         // Process the Campaigns, Content Variations and Goals top-level links

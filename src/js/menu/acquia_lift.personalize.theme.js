@@ -53,7 +53,7 @@
     // had been selected so that we can preview more than one at a time.
     var existingSelection = decodeURI(window.location.search.replace(new RegExp("^(?:.*[&\\?]" + encodeURI(param).replace(/[\.\+\*]/g, "\\$&") + "(?:\\=([^&]*))?)?.*$", "i"), "$1"));
     if (existingSelection.length > 0) {
-      looper(existingSelection.split(','), function (str, key) {
+      Drupal.acquiaLiftUI.utilities.looper(existingSelection.split(','), function (str, key) {
         // Exclude any preselection for the Option Set we're generating a link for.
         var existingOsid = str.split('--')[0];
         if (osids.indexOf(existingOsid) == -1) {

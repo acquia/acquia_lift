@@ -33,9 +33,12 @@
           // A campaign's option sets are empty so remove from the settings.
           if (osid === 'empty') {
             var empty_agent = option_sets[osid];
+            // Don't delete the data for the option sets in
+            // Drupal.settings.personalize.option_sets as we need this in
+            // order to go back to the control variation preview.
             for (var option_set_id in Drupal.settings.personalize.option_sets) {
               if (Drupal.settings.personalize.option_sets[option_set_id]['agent'] == empty_agent) {
-                delete Drupal.settings.personalize.option_sets[option_set_id];
+                Drupal.settings.personalize.option_sets[option_set_id].removed = true;
               }
             }
             Drupal.settings.personalize.campaigns[empty_agent].optionSetTypes = [];

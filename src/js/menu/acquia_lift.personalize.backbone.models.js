@@ -56,20 +56,10 @@
       this.set('optionSets', new Drupal.acquiaLiftUI.MenuOptionSetCollection());
       this.listenTo(this.get('optionSets'), 'add', this.triggerOptionSetChange);
       this.listenTo(this.get('optionSets'), 'remove', this.triggerOptionSetChange);
-      this.listenTo(this.get('optionSets'), 'reset', this.onOptionSetsEmpty);
       this.listenTo(this.get('optionSets'), 'change:variations', this.triggerOptionSetChange);
       this.listenTo(this.get('goals'), 'add', this.triggerGoalsChange);
       this.listenTo(this.get('goals'), 'remove', this.triggerGoalsChange);
       this.listenTo(this.get('goals'), 'reset', this.triggerGoalsChange);
-
-      var that = this;
-      $(document).on('acquiaLiftOptionSetsEmpty', function (event, data) {
-        if (that.get('name') !== data) {
-          return;
-        }
-        that.get('optionSets').reset();
-      });
-
     },
 
     /**
@@ -161,14 +151,6 @@
       if (triggerChange && hasChanged) {
         this.triggerGoalsChange();
       }
-    },
-
-    /**
-     * Callback handler for when the option sets for this model are emptied.
-     */
-    onOptionSetsEmpty: function (event) {
-      this.set('optionSetTypes', []);
-      this.triggerOptionSetChange(event);
     },
 
     /**
@@ -270,12 +252,38 @@
       this.parent('inherit');
       this.set('activeVariation', 0);
       this.listenTo(this.get('optionSets'), 'change:variations', this.triggerOptionSetChange);
+      this.listenTo(this.get('optionSets'), 'reset', this.onOptionSetsEmpty);
+
+      // As options cannot be deleted from a MenuCampaignModel in the UI,
+      // this listener only needs to be in the ABModel.
+      var that = this;
+      $(document).on('acquiaLiftOptionSetsEmpty', function (event, data) {
+        if (that.get('name') !== data) {
+          return;
+        }
+        // Set the index back to the control variation so that views can
+        // update accordingly.
+        that.set('activeVariation', 0);
+        // Now clear out the option sets.
+        that.get('optionSets').reset();
+      });
+
     },
 
     triggerOptionSetChange: function (event) {
-      // if the variations have changed, re-validate the variations.
+      // If the variations have changed, re-validate the variations.
       this.get('optionSets').resetVariations();
+      // Also re-validate the active variation index to ensure it is still valid.
+      this.set('activeVariation', this.get('activeVariation'));
       this.trigger('change:variations');
+    },
+
+    /**
+     * Callback handler for when the option sets for this model are emptied.
+     */
+    onOptionSetsEmpty: function (event) {
+      this.set('optionSetTypes', []);
+      this.triggerOptionSetChange(event);
     },
 
     /**

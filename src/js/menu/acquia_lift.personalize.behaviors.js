@@ -18,7 +18,7 @@
       var activeCampaign = '';
 
       if (settings) {
-        // Build models for menus that don't have them yet.
+        // Build models for campaigns that don't have them yet.
         if (!ui.collections.campaigns) {
           ui.collections.campaigns = new ui.MenuCampaignCollection([]);
         }
@@ -44,19 +44,21 @@
           }
         });
         Drupal.acquiaLiftUI.utilities.looper(settings.option_sets, function (obj, key) {
-          var campaignModel = ui.collections.campaigns.findWhere({name: obj.agent});
-          if (campaignModel) {
-            var optionSets = campaignModel.get('optionSets');
-            var optionSet = optionSets.findWhere({'osid': key});
-            // Merge doesn't work in this case so we need to manually merge.
-            if (optionSet) {
-              for (var prop in obj) {
-                if (obj.hasOwnProperty(prop)) {
-                  optionSet.set(prop, obj[prop]);
+          if (!obj.hasOwnProperty('removed')) {
+            var campaignModel = ui.collections.campaigns.findWhere({name: obj.agent});
+            if (campaignModel) {
+              var optionSets = campaignModel.get('optionSets');
+              var optionSet = optionSets.findWhere({'osid': key});
+              // Merge doesn't work in this case so we need to manually merge.
+              if (optionSet) {
+                for (var prop in obj) {
+                  if (obj.hasOwnProperty(prop)) {
+                    optionSet.set(prop, obj[prop]);
+                  }
                 }
+              } else {
+                optionSets.add(new Drupal.acquiaLiftUI.MenuOptionSetModel(obj));
               }
-            } else {
-              optionSets.add(new Drupal.acquiaLiftUI.MenuOptionSetModel(obj));
             }
           }
         });
@@ -74,6 +76,11 @@
             collection: ui.collections.campaigns,
             el: menu
           });
+        }
+
+        // Initialize the executor preview view functionality.
+        if (!ui.views.previewView) {
+          ui.views.previewView = new Drupal.acquiaLiftUI.MenuVariationPreviewView({'collection': ui.collections.campaigns});
         }
 
         // Process the Campaigns, Content Variations and Goals top-level links

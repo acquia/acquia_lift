@@ -27,7 +27,7 @@
     var $messageBox = getMessageBox();
     if ($messageBox.length == 0) {
       $messageBox = $('<div id="acquia-lift-message-box"><div class="close">' + Drupal.t('Close') + '</div><p class="message"></p></div>');
-      $('.region-page-top').append($messageBox);
+      $('body').prepend($messageBox);
       $messageBox.find('.close').on('click', closeMessageBox);
       // Don't close the message box if you click on it (other than close).
       $messageBox.on('click', function(e) {

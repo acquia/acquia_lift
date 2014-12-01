@@ -1132,6 +1132,20 @@ class AcquiaLiftSimpleAB extends AcquiaLiftAgent implements AcquiaLiftSimplified
     return self::buildOptionsForm($agent_data, TRUE);
   }
 
+  /**
+   * Implements PersonalizeAgentInterface::supportsMVTs().
+   */
+  public function supportsMVTs() {
+    return FALSE;
+  }
+
+  /**
+   * Implements PersonalizeAgentInterface::supportsMultipleDecisionPoints().
+   */
+  public function supportsMultipleDecisionPoints() {
+    return FALSE;
+  }
+
 }
 
 /**

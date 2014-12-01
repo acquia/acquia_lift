@@ -1121,11 +1121,6 @@
   Drupal.acquiaLiftUI.MenuGoalModel = Backbone.Model.extend({});
 
   /**
-   * The Model for a 'add content variation' state.
-   */
-  Drupal.acquiaLiftUI.MenuContentVariationModeModel = contentModeModelBase.extend({});
-
-  /**
    * The model for 'add page variation' state.
    */
   Drupal.acquiaLiftUI.MenuPageVariationModeModel = contentModeModelBase.extend({
@@ -2561,29 +2556,25 @@
    * Toggles the 'add content variation' trigger.
    */
   Drupal.acquiaLiftUI.MenuContentVariationTriggerView = ViewBase.extend({
-    events: {
-      'click': 'onClick'
-    },
-
     /**
      * {@inheritdoc}
      */
     initialize: function (options) {
       var that = this;
 
-      this.contentVariationModel = options.contentVariationModel;
       this.pageVariationModel = options.pageVariationModel;
       this.campaignCollection = options.campaignCollection;
+
+      _.bindAll(this, 'onClick');
 
       // Model property holds a reference to the relevant type of creation
       // mode model based on the type of campaign selected.
       if (this.campaignCollection.findWhere({'isActive': true}) instanceof Drupal.acquiaLiftUI.MenuCampaignABModel) {
         this.model = this.pageVariationModel;
       } else {
-        this.model = this.contentVariationModel;
+        this.model = null;
       }
 
-      this.listenTo(this.contentVariationModel, 'change:isActive', this.render);
       this.listenTo(this.pageVariationModel, 'change:isActive', this.render);
       this.listenTo(this.campaignCollection, 'change:isActive', this.onCampaignChange);
 
@@ -2592,14 +2583,21 @@
         that.onPageVariationEditModeProxy(event, data);
       });
 
-      this.render();
+      // Set the initial link state based on the campaign type.
+      var activeCampaign = this.campaignCollection.findWhere({'isActive': true});
+      if (activeCampaign) {
+        // Note that this callback will end with a call to render().
+        this.onCampaignChange(activeCampaign, true);
+      } else {
+        this.render();
+      }
     },
 
     /**
      * {@inheritdoc}
      */
     render: function () {
-      var isActive = this.model.get('isActive');
+      var isActive = this.model && this.model.get('isActive');
       this.$el.toggleClass('acquia-lift-active', isActive);
 
       if (this.$el.parents('.acquia-lift-controls').length == 0) {
@@ -2610,7 +2608,7 @@
       if (isActive) {
         text = Drupal.t('Exit edit mode');
       } else {
-        text = this.model instanceof Drupal.acquiaLiftUI.MenuPageVariationModeModel ? Drupal.t('Add a variation') : Drupal.t('Add a variation set');
+        text = this.model && this.model instanceof Drupal.acquiaLiftUI.MenuPageVariationModeModel ? Drupal.t('Add a variation') : Drupal.t('Add a variation set');
       }
       this.$el.text(text);
     },
@@ -2622,12 +2620,16 @@
      */
     onClick: function (event) {
       event.preventDefault();
-
+      if (!this.model) {
+        return false;
+      }
       if (this.model.get('isActive')) {
+        // If already in editing mode, then clicking the link simply exits.
         this.model.endEditMode();
       } else {
         this.model.startAddMode();
       }
+      return false;
     },
 
     /**
@@ -2639,12 +2641,23 @@
      *   The new active status.
      */
     onCampaignChange: function(model, isActive) {
-      this.model.endEditMode();
+      if (this.model) {
+        this.model.endEditMode();
+      }
       if (isActive) {
         if (model instanceof Drupal.acquiaLiftUI.MenuCampaignABModel) {
           this.model = this.pageVariationModel;
+          // Remove any ctools handling.
+          this.$el.off();
+          this.$el.on('click', this.onClick);
         } else {
-          this.model = this.contentVariationModel;
+          this.model = null;
+          // Next time it is clicked it should open the CTools modal.
+          this.$el.off('click', this.onClick);
+          // Remove the -processed flags that CTools adds so that it can be
+          // re-processed again.
+          this.$el.removeClass('ctools-use-modal-processed');
+          Drupal.attachBehaviors(this.$el.parent());
         }
         this.render(this.model);
       }
@@ -2655,47 +2668,6 @@
      */
     onPageVariationEditMode: function (event, data) {
       this.pageVariationModel.set('isActive', data.start);
-    }
-  });
-
-  /**
-   * Adds an identifying class to elements on the page that can be varied.
-   */
-  Drupal.acquiaLiftUI.MenuContentVariationCandidateView = ViewBase.extend({
-    /**
-     * {@inheritdoc}
-     */
-    initialize: function (options) {
-      this.model.on('change', this.render, this);
-    },
-
-    /**
-     * {@inheritdoc}
-     */
-    render: function () {
-      var isActive = this.model.get('isActive');
-      this.$el.toggleClass('acquia-lift-content-variation-candidate', isActive);
-      // Pull the Personalize contextual link out of the list and highlight it.
-      if (isActive) {
-        var $wrapper = this.$el.find('.contextual-links-wrapper:first');
-        var $link = $wrapper.find('.personalize-this-contextual-link').detach();
-        $wrapper.children('.contextual-links-trigger').addClass('acquia-lift-hidden');
-        $wrapper.prepend($link);
-      }
-      // Repair the contextual links.
-      else {
-        var $wrapper = this.$el.find('.contextual-links-wrapper:first');
-        var $link = $wrapper.find('.personalize-this-contextual-link')
-        $wrapper.find('.contextual-links .personalize').append($link);
-        $wrapper.children('.contextual-links-trigger').removeClass('acquia-lift-hidden');
-      }
-    },
-
-    /**
-     * {@inheritdoc}
-     */
-    remove: function () {
-      ViewBase.prototype.remove.call(this, true);
     }
   });
 
@@ -3224,17 +3196,13 @@
   Drupal.behaviors.acquiaLiftContentVariations = {
     attach: function (context) {
       var ui = Drupal.acquiaLiftUI;
-      // Create a model for a Content Variation management state.
-      if (!ui.models.contentVariationModeModel) {
-        ui.models.contentVariationModeModel = new ui.MenuContentVariationModeModel();
-      }
       // Create a model for page variation management state
       if (!ui.models.pageVariationModeModel) {
         ui.models.pageVariationModeModel = new ui.MenuPageVariationModeModel();
       }
 
-      // Keep the in-context content variation editing, page variation editing,
-      // and in-context goal creation in mutually exclusive active states.
+      // Keep the page variation editing and in-context goal creation in
+      // mutually exclusive active states.
       $('body').once('acquia-lift-personalize', function () {
         // Turn off content variations highlighting if visitor actions editing
         // is enabled.
@@ -3243,26 +3211,14 @@
             // Prevent infinite loops of updating models triggering change events
             // by delaying this update to the next evaluation cycle.
             _.delay(function () {
-              ui.models.contentVariationModeModel.endEditMode();
               ui.models.pageVariationModeModel.endEditMode();
             });
           }
         });
-        // Signal when content variation highlighting is active.
-        ui.models.contentVariationModeModel.on('change:isActive', function (model, isActive) {
-          if (isActive) {
-            _.delay(function() {
-              $(document).trigger('visitorActionsUIShutdown');
-              ui.models.pageVariationModeModel.endEditMode();
-            });
-          }
-        });
-        // Turn off content variation and visitor actions modes when entering
-        // page variation mode.
+        // Turn off visitor actions modes when entering page variation mode.
         $(document).bind('acquiaLiftPageVariationMode', function (event, data) {
           if (data.start) {
             _.delay(function() {
-              ui.models.contentVariationModeModel.endEditMode();
               $(document).trigger('visitorActionsUIShutdown');
             });
           }
@@ -3275,18 +3231,8 @@
         .each(function (index, element) {
           ui.views.push((new ui.MenuContentVariationTriggerView({
             el: element,
-            contentVariationModel: ui.models.contentVariationModeModel,
             pageVariationModel: ui.models.pageVariationModeModel,
             campaignCollection: ui.collections.campaigns
-          })));
-        });
-      // Find content variation candidates.
-      $('[data-personalize-entity-id]')
-        .once('acquia-lift-personalize-variation-candidate')
-        .each(function (index, element) {
-          ui.views.push((new ui.MenuContentVariationCandidateView({
-            el: element,
-            model: ui.models.contentVariationModeModel
           })));
         });
     }

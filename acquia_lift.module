@@ -93,6 +93,15 @@ function acquia_lift_menu() {
     'file' => 'acquia_lift.admin.inc',
     'theme callback' => 'ajax_base_page_theme',
   );
+  // AJAX callback to add a new variation set to a campaign.
+  $items['admin/structure/acquia_lift/variations/add/%ctools_js'] = array(
+    'page callback' => 'acquia_lift_option_set_add_modal_callback',
+    'page arguments' => array(5),
+    'access arguments' => array('manage personalized content'),
+    'type' => MENU_CALLBACK,
+    'file' => 'acquia_lift.admin.inc',
+    'theme callback' => 'ajax_base_page_theme',
+  );
   // AJAX callback to retrieve a page variation details form.
   $items['admin/structure/acquia_lift/pagevariation/%'] = array(
     'page callback' => 'drupal_get_form',
@@ -2190,28 +2199,6 @@ function acquia_lift_personalize_agent_end_date_form_alter(&$form, $agent_name) 
 /**
  * Implements hook_form_FORM_ID_alter().
  */
-function acquia_lift_form_personalize_agent_option_sets_form_alter(&$form, &$form_state) {
-  if (!empty($form['#agent']) && isset($form['#agent']->machine_name)) {
-    $option_sets_section = &$form['variations']['primary']['option_sets'];
-    // Add a link for personalizing existing content. This is based on the
-    // "Add goal in context link" and the whole functionality is based on
-    // visitor_actions_ui module's "Add action in context" functionality.
-    $option_sets_section['header']['add_existing'] = array(
-      '#type' => 'markup',
-      '#markup' => l(t('Personalize existing'), 'acquia_lift/personalize_in_context/start', array(
-        'query' => array('destination' => "admin/structure/personalize/manage/{$form['#agent']->machine_name}/edit"),
-        'attributes' => array('class' => array('personalize-in-context-link')),
-      )),
-    );
-    $option_sets_section['header']['#attached'] = array(
-      'css' => array(drupal_get_path('module', 'acquia_lift') . '/css/acquia_lift.admin.css'),
-    );
-  }
-}
-
-/**
- * Implements hook_form_FORM_ID_alter().
- */
 function acquia_lift_form_personalize_admin_form_alter(&$form, &$form_state) {
   module_load_include('inc', 'acquia_lift', 'acquia_lift.ui');
   acquia_lift_chosenify_element($form['personalize_visitor_context_disabled']);
@@ -2235,6 +2222,49 @@ function acquia_lift_form_personalize_elements_configuration_form_alter(&$form, 
  */
 function acquia_lift_personalize_elements_confirmation_form_submit($form, &$form_state) {
   variable_set('acquia_lift_html_context_strip', $form_state['values']['acquia_lift_html_context_strip']);
+}
+
+/**
+ * Implements hook_form_FORM_ID_alter().
+ */
+function acquia_lift_form_personalize_blocks_form_alter(&$form, &$form_state) {
+  $form['#submit'][] = 'acquia_lift_personalize_blocks_form_submit';
+}
+
+/**
+ * Submit handler for altered personalize_elements_form.
+ */
+function acquia_lift_personalize_blocks_form_submit($form, &$form_state) {
+  $redirect = $form_state['redirect'];
+  if ($redirect === FALSE) {
+    return;
+  }
+  // If there is a destination specified, then it should take priority over the
+  // existing redirect value (which is what happens in Drupal form handling).
+  // Check this manually rather than using drupal_get_destination() as it
+  // returns the current URL if the destination is not yet.
+  $destination = drupal_get_destination();
+  if (isset($_GET['destination'])) {
+    $redirect = $destination['destination'];
+    // Now that it has been handled, remove it so taht it doesn't overwrite
+    // our own redirect location.
+    unset($_GET['destination']);
+  }
+  else if (empty($redirect)) {
+    // If there is no destination and no redirect, then use the default
+    // Drupal destination of the current path.
+    $redirect = $destination['redirect'];
+  }
+  // Convert the existing redirect into a redirect that accepts query parameters.
+  if (is_string($redirect)) {
+    $redirect = array(
+      $redirect,
+      array('query' => array())
+    );
+  }
+  // Add a message to be shown.
+  $redirect[1]['query']['liftpm'] = 'new_block|' . $form_state['values']['title'];
+  $form_state['redirect'] = $redirect;
 }
 
 /**

@@ -74,8 +74,19 @@ function acquia_lift_build_page(&$page) {
 
     $pending_agents = acquia_lift_get_pending_agents();
     if (!empty($pending_agents)) {
-      $settings['acquia_lift']['pendingMessage'] = t('The following campaigns are being synced to Lift and will be started shortly: %agents', array('%agents' => implode(', ', $pending_agents)));
+      $settings['acquia_lift']['pendingMessage'][] = t('The following campaigns are being synced to Lift and will be started shortly: %agents', array('%agents' => implode(', ', $pending_agents)));
       $page['page_top']['#attached']['library'][] = array('acquia_lift', 'acquia_lift.messagebox');
+    }
+    // Add any pending messages from the query string.
+    $params = drupal_get_query_parameters();
+    if (!empty($params['liftpm']) && strstr($params['liftpm'], '|') !== FALSE) {
+      list($type, $details) = explode('|', $params['liftpm']);
+      if ($type === 'new_block') {
+        $settings['acquia_lift']['pendingMessage'][] = t('The %block_title personalized block has been created.  Next you need to add it to a region using the <a href="!block_url">blocks administration</a>.', array(
+          '%block_title' => $details,
+          '!block_url' => 'admin/structure/blocks',
+        ));
+      }
     }
     drupal_add_js($settings, 'setting');
   }

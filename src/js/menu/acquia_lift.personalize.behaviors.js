@@ -367,17 +367,13 @@
   Drupal.behaviors.acquiaLiftContentVariations = {
     attach: function (context) {
       var ui = Drupal.acquiaLiftUI;
-      // Create a model for a Content Variation management state.
-      if (!ui.models.contentVariationModeModel) {
-        ui.models.contentVariationModeModel = new ui.MenuContentVariationModeModel();
-      }
       // Create a model for page variation management state
       if (!ui.models.pageVariationModeModel) {
         ui.models.pageVariationModeModel = new ui.MenuPageVariationModeModel();
       }
 
-      // Keep the in-context content variation editing, page variation editing,
-      // and in-context goal creation in mutually exclusive active states.
+      // Keep the page variation editing and in-context goal creation in
+      // mutually exclusive active states.
       $('body').once('acquia-lift-personalize', function () {
         // Turn off content variations highlighting if visitor actions editing
         // is enabled.
@@ -386,26 +382,14 @@
             // Prevent infinite loops of updating models triggering change events
             // by delaying this update to the next evaluation cycle.
             _.delay(function () {
-              ui.models.contentVariationModeModel.endEditMode();
               ui.models.pageVariationModeModel.endEditMode();
             });
           }
         });
-        // Signal when content variation highlighting is active.
-        ui.models.contentVariationModeModel.on('change:isActive', function (model, isActive) {
-          if (isActive) {
-            _.delay(function() {
-              $(document).trigger('visitorActionsUIShutdown');
-              ui.models.pageVariationModeModel.endEditMode();
-            });
-          }
-        });
-        // Turn off content variation and visitor actions modes when entering
-        // page variation mode.
+        // Turn off visitor actions modes when entering page variation mode.
         $(document).bind('acquiaLiftPageVariationMode', function (event, data) {
           if (data.start) {
             _.delay(function() {
-              ui.models.contentVariationModeModel.endEditMode();
               $(document).trigger('visitorActionsUIShutdown');
             });
           }
@@ -418,18 +402,8 @@
         .each(function (index, element) {
           ui.views.push((new ui.MenuContentVariationTriggerView({
             el: element,
-            contentVariationModel: ui.models.contentVariationModeModel,
             pageVariationModel: ui.models.pageVariationModeModel,
             campaignCollection: ui.collections.campaigns
-          })));
-        });
-      // Find content variation candidates.
-      $('[data-personalize-entity-id]')
-        .once('acquia-lift-personalize-variation-candidate')
-        .each(function (index, element) {
-          ui.views.push((new ui.MenuContentVariationCandidateView({
-            el: element,
-            model: ui.models.contentVariationModeModel
           })));
         });
     }

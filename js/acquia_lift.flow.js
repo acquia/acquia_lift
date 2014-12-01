@@ -11,11 +11,21 @@
       $('div.ctools-modal-content .modal-content .acquia-lift-type', context).once(function() {
         $(this).on('click', function(e) {
           var $link = $(this).find('a.acquia-lift-type-select');
-          if ($link.attr('href') == Drupal.settings.basePath + 'admin/structure/visitor_actions') {
+          // Special handling based on href values.
+          if ($link.attr('href') == settings.basePath + 'admin/structure/visitor_actions') {
+            // Trigger goals in context.
             $('#acquiaLiftVisitorActionsConnector').find('a').trigger('click');
             Drupal.CTools.Modal.dismiss();
             e.preventDefault();
             e.stopImmediatePropagation();
+          /* Uncomment these lines when there is a variation set process to trigger.
+          } else if ($link.attr('href') == settings.basePath + 'admin/structure/personalize/variations/personalize-elements/add') {
+            // Trigger variations in context.
+            $(document).trigger('acquiaLiftVariationSetMode', [{start: true}]);
+            Drupal.CTools.Modal.dismiss();
+            e.preventDefault();
+            e.stopImmediatePropagation();
+            */
           } else if ($link.hasClass('ctools-use-modal')) {
             // It needs to be the link that is triggered if we want CTools to
             // take over.
@@ -83,7 +93,21 @@
         $pageGoalForm.addClass('acquia-lift-processed');
       }
     }
-  }
+  };
+
+  Drupal.behaviors.acquiaLiftOptionSetTypeList = {
+    attach: function (context, settings) {
+      $('#acquia-lift-option-set-type-list', context).once('acquia-lift-option-set-type-list').each(function () {
+        var blockAnchor = $(this).find('a[href="' + settings.basePath + 'admin/structure/personalize/variations/personalize-blocks/add"]');
+        // Add the current destination address to the personalize blocks anchor.
+        blockAnchor.attr('href', blockAnchor.attr('href') + '?destination=' + settings.visitor_actions.currentPath);
+
+        // Remove this when there is a variation set creation to trigger.
+        var elementAnchor = $(this).find('a[href="' + settings.basePath + 'admin/structure/personalize/variations/personalize-elements/add"]');
+        elementAnchor.attr('href', elementAnchor.attr('href') + '?destination=' + settings.visitor_actions.currentPath);
+      });
+    }
+  };
 
   function hidePageVisitorActionsButton() {
     $('#visitor-actions-ui-actionable-elements-without-identifiers').hide();

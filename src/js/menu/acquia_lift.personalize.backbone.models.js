@@ -549,11 +549,6 @@
   Drupal.acquiaLiftUI.MenuGoalModel = Backbone.Model.extend({});
 
   /**
-   * The Model for a 'add content variation' state.
-   */
-  Drupal.acquiaLiftUI.MenuContentVariationModeModel = contentModeModelBase.extend({});
-
-  /**
    * The model for 'add page variation' state.
    */
   Drupal.acquiaLiftUI.MenuPageVariationModeModel = contentModeModelBase.extend({

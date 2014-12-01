@@ -186,3 +186,27 @@ QUnit.asyncTest('Message Box click message', function(assert) {
     $messagebox.remove();
   }, 2000);
 });
+
+QUnit.asyncTest("Pending messages displayed", function(assert) {
+  expect(4);
+  QUnit.start();
+
+  // Set two messages to be displayed.
+  Drupal.settings.acquia_lift.pendingMessage = ['Message 1','Message 2'];
+  Drupal.behaviors.AcquiaLiftMessageBox.attach(document, Drupal.settings);
+  var $messagebox = $('#acquia-lift-message-box');
+  assert.equal($messagebox.length, 1, 'Message box added to the page');
+  assert.equal($messagebox.find('.message').html(), 'Message 1<br>Message 2', 'Both messages are displayed.');
+
+  QUnit.stop();
+  $messagebox.find('.close').trigger('click');
+  setTimeout(function() {
+    // Now time has passed for the message box to close.
+    assert.ok($messagebox.hasClass('element-hidden'), 'Message box was closed.');
+    // Call it again and verify that the messages are not shown twice.
+    Drupal.behaviors.AcquiaLiftMessageBox.attach(document, Drupal.settings);
+    assert.ok($messagebox.hasClass('element-hidden'), 'Message was not shown again.');
+    QUnit.start();
+    $messagebox.remove();
+  }, 2000);
+});

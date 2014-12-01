@@ -4,6 +4,7 @@ div.ctools-modal-content {
   padding: 1em;
   color: #333;
   border-color: #555;
+  max-width: 1000px;
 }
 
 div.ctools-modal-content .modal-header {

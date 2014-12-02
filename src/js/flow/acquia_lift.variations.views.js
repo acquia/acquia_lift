@@ -8,7 +8,7 @@
   Drupal.acquiaLiftVariations.views = Drupal.acquiaLiftVariations.views || {
 
     /**
-     * Backbone View for the full page variation flow.
+     * Backbone View for the full variation flow.
      */
     AppView: Backbone.View.extend({
       contextualMenuModel: null,
@@ -162,13 +162,13 @@
        * Generates a page-level temporary unique identifier.
        */
       getTemporaryID: function() {
-        return 'acquiaLiftPageVariations-' + new Date().getTime();
+        return 'acquiaLiftVariations-' + new Date().getTime();
       }
     }),
 
     /**
      * Backbone view that displays the form to enter the value for a new
-     * page variation of a specific variation type.
+     * variation of a specific variation type.
      */
     VariationTypeFormView: Dialog.views.ElementDialogView.extend({
       className: 'acquia-lift-variation-type-form',
@@ -188,7 +188,7 @@
         var that = this;
         this.parent('render', model, active);
         // Add a title to this dialog.
-        var title = Drupal.theme('acquiaLiftPageVariationsTypeFormTitle', {
+        var title = Drupal.theme('acquiaLiftVariationsTypeFormTitle', {
           variationType: this.model.get('typeLabel'),
           elementType: this.anchor.nodeName
         });
@@ -294,7 +294,7 @@
         var that = this;
         this.parent('render', model, active);
         // Generate the contextual menu HTML.
-        var titleHtml = Drupal.theme('acquiaLiftPageVariationsMenuTitle', {
+        var titleHtml = Drupal.theme('acquiaLiftVariationsMenuTitle', {
           elementType: this.anchor.nodeName
         });
 
@@ -308,7 +308,7 @@
           };
         });
         collection.add(modelAttributes);
-        this.list = new Drupal.acquiaLiftVariations.views.PageVariationMenuListView({collection: collection.applicableToElement($(this.anchor))});
+        this.list = new Drupal.acquiaLiftVariations.views.VariationTypeMenuListView({collection: collection.applicableToElement($(this.anchor))});
         this.list.render();
         this.$el.find('.visitor-actions-ui-dialog-content').html(titleHtml).append(this.list.el);
         this.position(function () {
@@ -347,7 +347,7 @@
      * A view for the list of variation options presented within the contextual
      * menu.
      */
-    PageVariationMenuListView: Backbone.View.extend({
+    VariationTypeMenuListView: Backbone.View.extend({
       tagName: 'ul',
       className: 'acquia-lift-page-variation-list',
 
@@ -363,7 +363,7 @@
        * Renders a single page variation menu item.
        */
       renderItem: function (model) {
-        var itemView = new Drupal.acquiaLiftVariations.views.PageVariationMenuListItemView({model: model});
+        var itemView = new Drupal.acquiaLiftVariations.views.VariationTypeMenuListItemView({model: model});
         itemView.render();
         this.$el.append(itemView.el);
         this.subviews.push(itemView);
@@ -390,7 +390,7 @@
      * Backbone view for a single variation option presented within the
      * contextual menu.
      */
-    PageVariationMenuListItemView: Backbone.View.extend({
+    VariationTypeMenuListItemView: Backbone.View.extend({
       tagName: 'li',
 
       /**
@@ -421,7 +421,7 @@
        * {@inheritDoc}
        */
       render: function(){
-        var html = Drupal.theme('acquiaLiftPageVariationsMenuItem', this.model.toJSON());
+        var html = Drupal.theme('acquiaLiftVariationsMenuItem', this.model.toJSON());
         this.$el.append(html);
       },
 

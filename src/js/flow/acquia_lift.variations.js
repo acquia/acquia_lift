@@ -63,6 +63,7 @@
    */
   Drupal.ajax.prototype.commands.acquia_lift_page_variation_toggle = function (ajax, response, status) {
     if (response.data.start) {
+      // Initialize Backbone application.
       if (!Drupal.acquiaLiftVariations.app.appModel) {
         Drupal.acquiaLiftVariations.app.appModel = new Drupal.acquiaLiftVariations.models.AppModel();
       }
@@ -72,18 +73,21 @@
           $el: $('body')
         });
       }
+      // Set the model to page variation mode and set up the relevant data.
       var editVariation = response.data.variationIndex || -1;
+      Drupal.acquiaLiftVariations.app.appModel.setModelMode(true);
       Drupal.acquiaLiftVariations.app.appModel.set('variationIndex', editVariation);
       Drupal.acquiaLiftVariations.app.appModel.set('editMode', true);
       // Notify that the mode has actually been changed.
       response.data.variationIndex = editVariation;
     } else {
+      // End editing for the application.
       if (Drupal.acquiaLiftVariations.app.appModel) {
         Drupal.acquiaLiftVariations.app.appModel.set('editMode', false);
       }
     }
-    response.data.campaign = Drupal.settings.personalize.activeCampaign;
     // Let the other menu stuff clear out before we set a new variation mode.
+    response.data.campaign = Drupal.settings.personalize.activeCampaign;
     _.defer(function () {
       $(document).trigger('acquiaLiftPageVariationMode', [response.data]);
     });

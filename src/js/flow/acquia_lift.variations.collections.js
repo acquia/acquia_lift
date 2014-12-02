@@ -9,6 +9,13 @@
     ElementVariationCollection: Backbone.Collection.extend({
       model: Drupal.acquiaLiftVariations.models.ElementVariationModel,
 
+      /**
+       * Returns a filtered collection with only those variation types that
+       * are relevent to the current element.
+       *
+       * For example, this is where it is determined that editText can only be
+       * displayed based on particular child nodes.
+       */
       applicableToElement: function ($element) {
         // Get all the node types of the children for the element.
         var childrenNodeTypes = _.pluck($element.find('*'), 'nodeType');
@@ -37,11 +44,6 @@
           return true;
         }))
       },
-      currentStatus : function(status){
-        return _(this.filter(function(data) {
-          return data.get("completed") == status;
-        }));
-      }
     })
   };
 

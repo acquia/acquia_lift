@@ -19,6 +19,7 @@ function acquia_lift_profiles_install() {
         'class' => array('visitor-actions-ui-ignore', 'acquia-lift-menu-link', 'acquia-lift-web-admin'),
         'target' => '_blank'
       ),
+      'alter' => TRUE,
       'html' => FALSE,
     ),
     'expanded' => 1,
@@ -38,7 +39,6 @@ function acquia_lift_profiles_enable() {
   // Unhide the menu link if it's hidden.
   $item = _acquia_lift_profiles_get_menu_link();
   if (!empty($item) && $item['hidden'] == 1) {
-    $item['options'] = unserialize($item['options']);
     $item['hidden'] = 0;
     menu_link_save($item);
     // Update the menu router information.
@@ -55,7 +55,6 @@ function acquia_lift_profiles_disable() {
   // Disable the Profiles web admin link.
   $item = _acquia_lift_profiles_get_menu_link();
   if (!empty($item) && $item['hidden'] == 0) {
-    $item['options'] = unserialize($item['options']);
     $item['hidden'] = 1;
     menu_link_save($item);
     menu_rebuild();
@@ -104,5 +103,21 @@ function _acquia_lift_profiles_get_menu_link() {
     ->condition('menu_name', 'acquia-lift-controls')
     ->condition('link_path', 'http://lift.acquia.com')
     ->execute()->fetchAssoc();
+  if (!empty($item['options'])) {
+    $item['options'] = unserialize($item['options']);
+  }
   return $item;
+}
+
+/**
+ * Allow Acquia Lift Web Admin link to be altered.
+ */
+function acquia_lift_profiles_update_7001() {
+  $item = _acquia_lift_profiles_get_menu_link();
+  if (!empty($item)) {
+    $item['options']['alter'] = TRUE;
+    menu_link_save($item);
+    // Update the menu router information.
+    menu_rebuild();
+  }
 }

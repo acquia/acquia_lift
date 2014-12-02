@@ -216,6 +216,10 @@ function acquia_lift_profiles_admin_form_submit($form, &$form_state) {
   foreach ($variables as $key) {
     variable_set($key, $form_state['values'][$key]);
   }
+  // Strip out any http/https protocol from urls and save.
+  foreach (array('acquia_lift_profiles_api_url', 'acquia_lift_profiles_js_path') as $key) {
+    variable_set($key, preg_replace('/(^http:\/\/)|(^https:\/\/)/', $form_state['values'][$key], ''));
+  }
 
   // Refresh the segments from Acquia Lift Profiles.
   acquia_lift_profiles_refresh_segments_cache();

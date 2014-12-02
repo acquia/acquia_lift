@@ -58,10 +58,11 @@
    * The response should include a data object with the following keys:
    * - start: Boolean indicating if page variation mode should be on (true)
    *   or off (false).
+   * - type: Indicates the type of variation mode: one of 'page' or 'element'.
    * - variationIndex: The variation index to edit.  This can be an existing
    *   variation index to edit, or -1 to create a new variation.
    */
-  Drupal.ajax.prototype.commands.acquia_lift_page_variation_toggle = function (ajax, response, status) {
+  Drupal.ajax.prototype.commands.acquia_lift_variation_toggle = function (ajax, response, status) {
     if (response.data.start) {
       // Initialize Backbone application.
       if (!Drupal.acquiaLiftVariations.app.appModel) {
@@ -75,7 +76,7 @@
       }
       // Set the model to page variation mode and set up the relevant data.
       var editVariation = response.data.variationIndex || -1;
-      Drupal.acquiaLiftVariations.app.appModel.setModelMode(true);
+      Drupal.acquiaLiftVariations.app.appModel.setModelMode(response.data.type === 'page');
       Drupal.acquiaLiftVariations.app.appModel.set('variationIndex', editVariation);
       Drupal.acquiaLiftVariations.app.appModel.set('editMode', true);
       // Notify that the mode has actually been changed.
@@ -89,7 +90,7 @@
     // Let the other menu stuff clear out before we set a new variation mode.
     response.data.campaign = Drupal.settings.personalize.activeCampaign;
     _.defer(function () {
-      $(document).trigger('acquiaLiftPageVariationMode', [response.data]);
+      $(document).trigger('acquiaLiftVariationMode', [response.data]);
     });
   };
 
@@ -100,11 +101,26 @@
    * back-end requests for the functionality to be handled the same way.
    */
   $(document).on('acquiaLiftPageVariationModeTrigger', function(e, data) {
+    data['type'] = 'page';
     var response = {
       data: data
     };
-    Drupal.ajax.prototype.commands.acquia_lift_page_variation_toggle(Drupal.ajax, response, 200);
+    Drupal.ajax.prototype.commands.acquia_lift_variation_toggle(Drupal.ajax, response, 200);
   });
+
+  /**
+   * Add an event listener for an element variation set mode trigger request.
+   *
+   * This utilizes the custom toggle command in order to allow front-end
+   * and back-end requests for the functionality to be handled the same way.
+   */
+  $(document).on('acquiaLiftElementVariationModeTrigger', function(e, data) {
+    data['type'] = 'element';
+    var response = {
+      data: data
+    };
+    Drupal.ajax.prototype.commands.acquia_lift_variation_toggle(Drupal.ajax, response, 200);
+  })
 
 
 }(Drupal.jQuery, Drupal));

@@ -1821,7 +1821,7 @@
       $(document).on('personalizeOptionChange', function (event, data) {
         that.onOptionShowProxy(event, data);
       });
-      $(document).on('acquiaLiftPageVariationMode', function (event, data) {
+      $(document).on('acquiaLiftVariationMode', function (event, data) {
         that.onPageVariationEditModeProxy(event, data);
       });
 
@@ -1878,7 +1878,7 @@
      */
     remove: function () {
       $(document).off('personalizeOptionChange', this.onOptionShowProxy);
-      $(document).off('acquiaLiftPageVariationMode', this.onPageVariationEditModeProxy);
+      $(document).off('acquiaLiftVariationMode', this.onPageVariationEditModeProxy);
       ViewBase.prototype.remove.call(this);
     },
 
@@ -2579,7 +2579,7 @@
       this.listenTo(this.campaignCollection, 'change:isActive', this.onCampaignChange);
 
       this.onPageVariationEditModeProxy = $.proxy(this.onPageVariationEditMode, this);
-      $(document).on('acquiaLiftPageVariationMode', function (event, data) {
+      $(document).on('acquiaLiftVariationMode', function (event, data) {
         that.onPageVariationEditModeProxy(event, data);
       });
 
@@ -3215,8 +3215,8 @@
             });
           }
         });
-        // Turn off visitor actions modes when entering page variation mode.
-        $(document).bind('acquiaLiftPageVariationMode', function (event, data) {
+        // Turn off visitor actions modes when entering variation mode.
+        $(document).bind('acquiaLiftVariationMode', function (event, data) {
           if (data.start) {
             _.delay(function() {
               $(document).trigger('visitorActionsUIShutdown');

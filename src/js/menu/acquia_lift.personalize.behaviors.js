@@ -386,8 +386,8 @@
             });
           }
         });
-        // Turn off visitor actions modes when entering page variation mode.
-        $(document).bind('acquiaLiftPageVariationMode', function (event, data) {
+        // Turn off visitor actions modes when entering variation mode.
+        $(document).bind('acquiaLiftVariationMode', function (event, data) {
           if (data.start) {
             _.delay(function() {
               $(document).trigger('visitorActionsUIShutdown');

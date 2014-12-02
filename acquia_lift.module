@@ -2486,9 +2486,10 @@ function acquia_lift_command_messagebox($message, $seconds = 0) {
  */
 function acquia_lift_command_page_variation_toggle($start = TRUE) {
   return array(
-    'command' => 'acquia_lift_page_variation_toggle',
+    'command' => 'acquia_lift_variation_toggle',
     'data' => array(
       'start' => $start,
+      'type' => 'page',
     ),
   );
 }

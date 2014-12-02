@@ -18,14 +18,12 @@
             Drupal.CTools.Modal.dismiss();
             e.preventDefault();
             e.stopImmediatePropagation();
-          /* Uncomment these lines when there is a variation set process to trigger.
           } else if ($link.attr('href') == settings.basePath + 'admin/structure/personalize/variations/personalize-elements/add') {
             // Trigger variations in context.
-            $(document).trigger('acquiaLiftVariationSetMode', [{start: true}]);
+            $(document).trigger('acquiaLiftElementVariationModeTrigger', [{start: true}]);
             Drupal.CTools.Modal.dismiss();
             e.preventDefault();
             e.stopImmediatePropagation();
-            */
           } else if ($link.hasClass('ctools-use-modal')) {
             // It needs to be the link that is triggered if we want CTools to
             // take over.
@@ -101,10 +99,6 @@
         var blockAnchor = $(this).find('a[href="' + settings.basePath + 'admin/structure/personalize/variations/personalize-blocks/add"]');
         // Add the current destination address to the personalize blocks anchor.
         blockAnchor.attr('href', blockAnchor.attr('href') + '?destination=' + settings.visitor_actions.currentPath);
-
-        // Remove this when there is a variation set creation to trigger.
-        var elementAnchor = $(this).find('a[href="' + settings.basePath + 'admin/structure/personalize/variations/personalize-elements/add"]');
-        elementAnchor.attr('href', elementAnchor.attr('href') + '?destination=' + settings.visitor_actions.currentPath);
       });
     }
   };

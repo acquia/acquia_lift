@@ -26,7 +26,7 @@
             that.onElementSelected(element, selector);
           }
         });
-        Backbone.on('acquiaLiftPageVariationType', this.createVariationTypeDialog, this);
+        Backbone.on('acquiaLiftVariationType', this.createVariationTypeDialog, this);
         this.listenTo(this.model, 'change:editMode', this.render);
         this.listenTo(this.model, 'change:editMode', this.updateEditMode);
         this.render(this.model, this.model.get('editMode'));
@@ -283,7 +283,7 @@
        */
       initialize: function (options) {
         this.parent('inherit', options);
-        Backbone.on('acquiaLiftPageVariationTypeSelected', this.onVariationTypeSelected, this);
+        Backbone.on('acquiaLiftVariationTypeSelected', this.onVariationTypeSelected, this);
         this.list = null;
       },
 
@@ -327,7 +327,7 @@
         event.data.anchor = this.anchor;
         event.data.selector = this.model.get('selector');
         this.remove();
-        Backbone.trigger('acquiaLiftPageVariationType', {data: event.data});
+        Backbone.trigger('acquiaLiftVariationType', {data: event.data});
       },
 
       /**
@@ -337,7 +337,7 @@
         if (this.list) {
           this.list.remove();
         }
-        Backbone.off('acquiaLiftPageVariationTypeSelected');
+        Backbone.off('acquiaLiftVariationTypeSelected');
         this.unbind();
         Backbone.View.prototype.remove.call(this);
       }
@@ -414,7 +414,7 @@
        */
       clicked: function (e){
         e.preventDefault();
-        Backbone.trigger('acquiaLiftPageVariationTypeSelected', {data: this.model.toJSON()});
+        Backbone.trigger('acquiaLiftVariationTypeSelected', {data: this.model.toJSON()});
       },
 
       /**

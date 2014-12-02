@@ -35,6 +35,16 @@
       },
 
       /**
+       * Determine if the model is in page variation mode or element mode.
+       *
+       * @returns boolean
+       * True if page variation mode, false otherwise.
+       */
+      isPageModelMode: function () {
+        return this.get('modelMode') === this.MODEL_MODE_PAGE;
+      },
+
+      /**
        * {@inheritdoc}
        */
       destroy: function (options) {

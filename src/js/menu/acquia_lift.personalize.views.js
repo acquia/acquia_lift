@@ -463,7 +463,7 @@
       $(document).on('personalizeOptionChange', function (event, data) {
         that.onOptionShowProxy(event, data);
       });
-      $(document).on('acquiaLiftPageVariationMode', function (event, data) {
+      $(document).on('acquiaLiftVariationMode', function (event, data) {
         that.onPageVariationEditModeProxy(event, data);
       });
 
@@ -520,7 +520,7 @@
      */
     remove: function () {
       $(document).off('personalizeOptionChange', this.onOptionShowProxy);
-      $(document).off('acquiaLiftPageVariationMode', this.onPageVariationEditModeProxy);
+      $(document).off('acquiaLiftVariationMode', this.onPageVariationEditModeProxy);
       ViewBase.prototype.remove.call(this);
     },
 
@@ -1221,7 +1221,7 @@
       this.listenTo(this.campaignCollection, 'change:isActive', this.onCampaignChange);
 
       this.onPageVariationEditModeProxy = $.proxy(this.onPageVariationEditMode, this);
-      $(document).on('acquiaLiftPageVariationMode', function (event, data) {
+      $(document).on('acquiaLiftVariationMode', function (event, data) {
         that.onPageVariationEditModeProxy(event, data);
       });
 

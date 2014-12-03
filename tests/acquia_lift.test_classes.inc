@@ -24,6 +24,13 @@ class DummyAcquiaLiftHttpClient implements AcquiaLiftDrupalHttpClientInterface {
    */
   protected $broken;
 
+    /**
+     * The type of breakage to simulate, i.e. client or server side.
+     *
+     * @var string
+     */
+  protected $breakageType;
+
   /**
    * An array of data simulating resources than can be returned.
    *
@@ -41,8 +48,18 @@ class DummyAcquiaLiftHttpClient implements AcquiaLiftDrupalHttpClientInterface {
    */
   protected function generateDummyResponse($data) {
     $response = new stdClass();
-    $response->code = $this->broken ? 500 : 200;
-    $response->status_message = $this->broken ? "Internal Server Error" : "OK";
+    $response->code = 200;
+    $response->status_message = 'OK';
+    if ($this->broken) {
+      if ($this->breakageType == 'client') {
+        $response->code = 400;
+        $response->status_message = 'Bad request';
+      }
+      else {
+        $response->code = 500;
+        $response->status_message = 'Internal Server Error';
+      }
+    }
     $response->data = drupal_json_encode($data);
     return $response;
   }
@@ -55,8 +72,9 @@ class DummyAcquiaLiftHttpClient implements AcquiaLiftDrupalHttpClientInterface {
    * @param array $data
    *   An array of dummy data that can be returned in responses.
    */
-  public function __construct($broken = FALSE, $data = array()) {
+  public function __construct($broken = FALSE, $data = array(), $simulate_client_side_breakage = FALSE) {
     $this->broken = $broken;
+    $this->breakageType = $simulate_client_side_breakage ? 'client' : 'server';
     $this->data += $data;
   }
 

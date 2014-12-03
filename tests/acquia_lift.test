@@ -142,7 +142,7 @@ class AcquiaLiftWebTestBase extends DrupalWebTestCase
           $data['machine_name'],
           $data['name'],
           'adaptive',
-          'enabled',
+          PERSONALIZE_STATUS_NOT_STARTED,
           isset($data['control_rate']) ? $data['control_rate'] / 100 : .1,
           isset($data['explore_rate']) ? ($data['explore_rate'] / 100) : .2,
           isset($data['cache_decisions']) && $data['cache_decisions']
@@ -810,7 +810,7 @@ class AcquiaLiftWebTestAgentAdmin extends AcquiaLiftWebTestBase {
             $machine_name,
             $agent_name,
             'adaptive',
-            'enabled',
+            PERSONALIZE_STATUS_NOT_STARTED,
             0.1,
             0.3,
             1
@@ -838,7 +838,7 @@ class AcquiaLiftWebTestAgentAdmin extends AcquiaLiftWebTestBase {
         $machine_name,
         $agent_name,
         'adaptive',
-        'enabled',
+        PERSONALIZE_STATUS_NOT_STARTED,
         0.1,
         0.3,
         1
@@ -855,7 +855,7 @@ class AcquiaLiftWebTestAgentAdmin extends AcquiaLiftWebTestBase {
           $machine_name,
           $agent_name,
           'adaptive',
-          'enabled',
+          PERSONALIZE_STATUS_NOT_STARTED,
           0.1,
           0.3,
           1
@@ -874,7 +874,7 @@ class AcquiaLiftWebTestAgentAdmin extends AcquiaLiftWebTestBase {
         $machine_name,
         $agent_name,
         'adaptive',
-        'enabled',
+        PERSONALIZE_STATUS_NOT_STARTED,
         0.1,
         0.3,
         1
@@ -939,7 +939,7 @@ class AcquiaLiftWebTestAgentAdmin extends AcquiaLiftWebTestBase {
           $agent->getMachineName(),
           $agent->getTitle(),
           $agentData['decision_style'],
-          'enabled',
+          PERSONALIZE_STATUS_NOT_STARTED,
           0.1,
           0.2,
           1
@@ -976,7 +976,7 @@ class AcquiaLiftWebTestAgentAdmin extends AcquiaLiftWebTestBase {
           $agent->getMachineName(),
           $agent->getTitle(),
           $agentData['decision_style'],
-          'enabled',
+          PERSONALIZE_STATUS_NOT_STARTED,
           0.1,
           0.2,
           1
@@ -1033,7 +1033,7 @@ class AcquiaLiftWebTestAgentAdmin extends AcquiaLiftWebTestBase {
         $agent->getMachineName(),
         $agent->getTitle(),
         $agentData['decision_style'],
-        'enabled',
+        PERSONALIZE_STATUS_NOT_STARTED,
         ($agentData['control_rate'] / 100),
         ($agentData['explore_rate'] / 100),
         isset($agentData['cache_decisions']) && $agentData['cache_decisions']
@@ -1256,7 +1256,7 @@ class AcquiaLiftWebTestAgentAdmin extends AcquiaLiftWebTestBase {
           $agent->getMachineName(),
           $agent->getTitle(),
           'adaptive',
-          'enabled',
+          PERSONALIZE_STATUS_NOT_STARTED,
           0.1,
           0.2,
           1
@@ -1337,7 +1337,7 @@ class AcquiaLiftWebTestAgentAdmin extends AcquiaLiftWebTestBase {
           $agent->getMachineName(),
           $agent->getTitle(),
           'adaptive',
-          'enabled',
+          PERSONALIZE_STATUS_NOT_STARTED,
           0.1,
           0.2,
           1
@@ -1378,7 +1378,7 @@ class AcquiaLiftWebTestAgentAdmin extends AcquiaLiftWebTestBase {
           $agent->getMachineName(),
           $agent->getTitle(),
           'adaptive',
-          'enabled',
+          PERSONALIZE_STATUS_NOT_STARTED,
           0.1,
           0.2,
           1
@@ -1408,7 +1408,7 @@ class AcquiaLiftWebTestAgentAdmin extends AcquiaLiftWebTestBase {
 //          $agent->getMachineName(),
 //          $agent->getTitle(),
 //          'adaptive',
-//          'enabled',
+//          PERSONALIZE_STATUS_NOT_STARTED,
 //           0,
 //        ),
 //      ),
@@ -1425,6 +1425,30 @@ class AcquiaLiftWebTestAgentAdmin extends AcquiaLiftWebTestBase {
 
   public function testDeleteAgentGoals() {
     // @todo implement or remove it after goal deletion decision
+  }
+
+  public function testUpdateAgentStatus() {
+    $agent = $this->createTestAgent();
+    $agent_name = $agent->getMachineName();
+    // Manually set the agent's status to running, bypassing the verification check.
+    variable_set(_personalize_agent_get_status_variable($agent_name), PERSONALIZE_STATUS_RUNNING);
+    $this->resetAll();
+    // Now use the API function to update the status.
+    personalize_agent_set_status($agent_name, PERSONALIZE_STATUS_PAUSED);
+
+    $expected_queues = array(
+      array(
+        'method' => 'updateAgentStatus',
+        'args' => array(
+          $agent_name,
+          PERSONALIZE_STATUS_PAUSED,
+        ),
+      ),
+    );
+
+    $this->assertQueueItems($expected_queues);
+    $this->personalizedQueue->deleteQueue();
+
   }
 }
 class AcquiaLiftWebTestFundamentals extends AcquiaLiftWebTestBase {
@@ -1455,7 +1479,7 @@ class AcquiaLiftWebTestFundamentals extends AcquiaLiftWebTestBase {
         $machine_name,
         $agent_name,
         'adaptive',
-        'enabled',
+        PERSONALIZE_STATUS_NOT_STARTED,
         0.1,
         0.2,
         1
@@ -1528,6 +1552,41 @@ class AcquiaLiftWebTestFundamentals extends AcquiaLiftWebTestBase {
       );
     }
     $test_logger = new AcquiaLiftTestLogger(FALSE);
+    $logs = $test_logger->getLogs();
+    $this->assertEqual($expected_logs, $logs);
+    // Item should be removed after final attempt.
+    $this->assertQueueItems(array());
+    $test_logger->clearLogs();
+
+    // Edit the agent again.
+    $edit = array(
+      'cache_decisions' => FALSE
+    );
+    $this->drupalPost("admin/structure/personalize/manage/$machine_name/edit", $edit, $this->getButton('agent'));
+    personalize_agent_set_status($machine_name, PERSONALIZE_STATUS_PAUSED);
+    $this->resetAll();
+    $queued_agent_item['args'][6] = FALSE;
+    $expected_queue_items = array($queued_agent_item);
+    $expected_queue_items[] = array(
+      'method' => 'updateAgentStatus',
+      'args' => array(
+        $machine_name,
+        PERSONALIZE_STATUS_PAUSED,
+      ),
+    );
+    $this->assertQueueItems($expected_queue_items);
+    $this->resetAll();
+    // Cause the queue to fail based on a bad request. There should not be any retries,
+    // it should just be aborted.
+    AcquiaLiftAPI::setTestInstance(TRUE, TRUE); // 2nd param specifies simulating client-side error, i.e. 400 error.
+    // Run the queue.
+    $_SESSION['acquia_lift_queue_trigger'] = true;
+    acquia_lift_process_queue(FALSE);
+    $expected_logs = array();
+    $expected_logs[] = array(
+      'level' => 'error',
+      'message' => "The campaign $machine_name could not be pushed to Acquia Lift",
+    );
     $logs = $test_logger->getLogs();
     $this->assertEqual($expected_logs, $logs);
     // Item should be removed after final attempt.
@@ -1682,7 +1741,7 @@ class AcquiaLiftWebTestFundamentals extends AcquiaLiftWebTestBase {
             'first-existing-agent',
             'first-existing-agent',
             'adaptive',
-            'enabled',
+            PERSONALIZE_STATUS_NOT_STARTED,
             $control_rate / 100,
             $explore_rate / 100,
             TRUE,
@@ -2229,7 +2288,7 @@ class AcquiaLiftWebTestWorkflow extends AcquiaLiftWebTestBase {
           'article-personalizable-headline',
           'Article: Personalizable Headline 1',
           'adaptive',
-          'enabled',
+          PERSONALIZE_STATUS_NOT_STARTED,
           10/100,
           25/100,
           true
@@ -2351,7 +2410,7 @@ class AcquiaLiftWebTestWorkflow extends AcquiaLiftWebTestBase {
           'article-personalizable-headline-2',
           'Article: Personalizable Headline 2',
           'adaptive',
-          'enabled',
+          PERSONALIZE_STATUS_NOT_STARTED,
           10/100,
           25/100,
           true

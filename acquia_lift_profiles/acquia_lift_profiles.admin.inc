@@ -204,10 +204,8 @@ function acquia_lift_profiles_admin_form_submit($form, &$form_state) {
   }
   $variables = array(
     'acquia_lift_profiles_account_name',
-    'acquia_lift_profiles_api_url',
     'acquia_lift_profiles_access_key',
     'acquia_lift_profiles_secret_key',
-    'acquia_lift_profiles_js_path',
     'acquia_lift_profiles_capture_identity',
     'acquia_lift_profiles_identity_param',
     'acquia_lift_profiles_identity_type_param',
@@ -218,7 +216,7 @@ function acquia_lift_profiles_admin_form_submit($form, &$form_state) {
   }
   // Strip out any http/https protocol from urls and save.
   foreach (array('acquia_lift_profiles_api_url', 'acquia_lift_profiles_js_path') as $key) {
-    variable_set($key, preg_replace('/(^http:\/\/)|(^https:\/\/)/', $form_state['values'][$key], ''));
+    variable_set($key, preg_replace('/(^[a-z]+:\/\/)/i', '', $form_state['values'][$key]));
   }
 
   // Refresh the segments from Acquia Lift Profiles.

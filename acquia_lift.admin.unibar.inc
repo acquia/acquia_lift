@@ -885,6 +885,149 @@ function acquia_lift_page_variation_delete_form_submit($form, &$form_state) {
 
 /***************************************************************
  *
+ * E L E M E N T  V A R I A T I O N  D E L E T E
+ *
+ ***************************************************************/
+
+/**
+ * Page callback to generate an element variation delete confirm modal window.
+ *
+ * @param string $agent_name
+ *   The name of the campaign to edit.
+ * @param string $osid
+ *   The stringified option set id
+ * @param string $option_id
+ *   The id of the option to be deleted.
+ */
+function acquia_lift_element_variation_delete_modal_callback($agent_name, $osid, $option_id) {
+  acquia_lift_create_ctools_form(
+    t('Delete a variation'),
+    'acquia_lift_element_variation_delete_form',
+    array(
+      'agent_name' => $agent_name,
+      'osid' => personalize_resolve_stringified_osid($osid),
+      'option_id' => $option_id,
+    ),
+    'acquia_lift_element_variation_delete_complete_callback'
+  );
+}
+
+/**
+ * Ctools form processing complete handler for deletion of an element variation.
+ * @see acquia_lift_create_ctools_form().
+ */
+function acquia_lift_element_variation_delete_complete_callback($form, $form_state) {
+  $settings = array();
+  $option_sets = personalize_option_set_load_by_agent($form_state['values']['agent_name']);
+  if (empty($option_sets)) {
+    // All of the option sets have been removed from the campaign.
+    $message = t('The variation set has been deleted.');
+    $settings['empty'] = $form_state['values']['agent_name'];
+  }
+  else {
+    $option_set_settings = array_map('_personalize_convert_option_set_to_js_setting', $option_sets);
+    $has_option_set = FALSE;
+    foreach ($option_set_settings as $option_set_setting) {
+      $osid = key($option_set_setting);
+      if ($osid === $form_state['values']['osid']) {
+        $has_option_set = TRUE;
+      }
+      $settings[$osid] = reset($option_set_setting);
+    }
+    $message = $has_option_set ? t('The variation has been deleted.') : t('The variation set has been deleted');
+  }
+  $campaign_settings['personalize']['campaigns'] = personalize_agent_get_settings();
+  $commands = array(
+    ajax_command_settings($campaign_settings, TRUE),
+    ctools_modal_command_dismiss(),
+    acquia_lift_command_messagebox($message, 10),
+    acquia_lift_command_option_set_updates($settings),
+    acquia_lift_command_process_queue(),
+  );
+  return $commands;
+}
+
+/**
+ * Form handler to generate a confirmation form to delete an element variation.
+ *
+ * This form is called within a ctools modal window.
+ *
+ * @param string $agent_name
+ *   The name of the campaign to edit.
+ * @param int $osid
+ *   The id of the option set
+ * @param string $option_id
+ *   The id of the option/variation.
+ */
+function acquia_lift_element_variation_delete_form($form, &$form_state, $agent_name, $osid, $option_id) {
+  ctools_include('modal');
+  ctools_include('ajax');
+  ctools_add_js('ajax-responder');
+
+  $option_set = personalize_option_set_load($osid);
+  $variation_name = $option_id;
+  foreach ($option_set->options as $option) {
+    if ($option['option_id'] === $option_id) {
+      $variation_name = $option['option_label'];
+      break;
+    }
+  }
+
+  $form = array();
+  $form['agent_name'] = array(
+    '#type' => 'value',
+    '#value' => $agent_name,
+  );
+  $form['option_set'] = array(
+    '#type' => 'value',
+    '#value' => $option_set,
+  );
+  $form['option_id'] = array(
+    '#type' => 'value',
+    '#value' => $option_id,
+  );
+  if ($option_id == PERSONALIZE_CONTROL_OPTION_ID) {
+    $form['message'] = array(
+      '#markup' => t('The control variation cannot be renamed.'),
+    );
+    return $form;
+  }
+  $form['confirm'] = array(
+    '#prefix' => '<div>',
+    '#suffix' => '</div>',
+    '#markup' => t('Are you sure you want to delete %variation?', array(
+      '%variation' => $variation_name,
+    )),
+  );
+  $form['actions']['submit_form'] = array(
+    '#type' => 'submit',
+    '#attributes' => array(
+      'class' => array('action-item-primary-active', 'acquia-lift-submit-button'),
+    ),
+    '#value' => t('Delete variation'),
+  );
+  $form['actions']['reset'] = array(
+    '#markup' => ctools_ajax_text_button(t('Cancel'), 'admin/structure/acquia_lift/cancel/nojs', t('Cancel'), 'acquia-lift-cancel-button'),
+  );
+  return $form;
+}
+
+/**
+ * Submit handler for acquia_lift_page_variation_delete_form().
+ */
+function acquia_lift_element_variation_delete_form_submit($form, &$form_state) {
+  $option_set = $form_state['values']['option_set'];
+  foreach ($option_set->options as $key => $option) {
+    if ($option['option_id'] === $form_state['values']['option_id']) {
+      unset($option_set->options[$key]);
+      break;
+    }
+  }
+  personalize_option_set_save($option_set);
+}
+
+/***************************************************************
+ *
  * G O A L  C R E A T E
  *
  ***************************************************************/

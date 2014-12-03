@@ -15,6 +15,7 @@
       var settings = Drupal.settings.personalize;
       var ui = Drupal.acquiaLiftUI;
       var addedCampaigns = {};
+      var addedOptionSets = {};
       var activeCampaign = '';
 
       if (settings) {
@@ -57,7 +58,9 @@
                   }
                 }
               } else {
-                optionSets.add(new Drupal.acquiaLiftUI.MenuOptionSetModel(obj));
+                optionSet = new Drupal.acquiaLiftUI.MenuOptionSetModel(obj);
+                optionSets.add(optionSet);
+                addedOptionSets[obj.osid] = optionSet;
               }
             }
           }
@@ -238,11 +241,13 @@
                   if (model && addedCampaigns.hasOwnProperty(campaignName)) {
                     element = document.createElement('li');
                     if (type == 'campaigns') {
+                      // Add campaign view.
                       ui.views.push(new ui.MenuCampaignView({
                         el: element,
                         model: model
                       }));
                     } else {
+                      // Add content variation view.
                       ui.views.push(ui.factories.MenuFactory.createContentVariationView(model, campaignModel, element));
                     }
 
@@ -273,7 +278,17 @@
                       ui.factories.MenuFactory.createEmptyContentVariationView(model, element);
                       $menu.prepend(element);
                     }
-                  })
+                  });
+                  // Add any new option sets.
+                  Drupal.acquiaLiftUI.utilities.looper(addedOptionSets, function (model, osid) {
+                    if (!Drupal.acquiaLiftUI.views.optionSets[osid]) {
+                      campaignModel = ui.collections.campaigns.findWhere({'name': model.get('agent')});
+                      element = document.createElement('li');
+                      view = ui.factories.MenuFactory.createContentVariationView(model, campaignModel, element);
+                      ui.views.push(view);
+                      $holder.prepend(view.el);
+                    }
+                  });
                 }
               });
           }

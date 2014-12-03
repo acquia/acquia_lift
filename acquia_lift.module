@@ -103,9 +103,9 @@ function acquia_lift_menu() {
     'theme callback' => 'ajax_base_page_theme',
   );
   // AJAX callback to retrieve a page variation details form.
-  $items['admin/structure/acquia_lift/pagevariation/%'] = array(
+  $items['admin/structure/acquia_lift/variation/%'] = array(
     'page callback' => 'drupal_get_form',
-    'page arguments' => array('acquia_lift_page_variation_details_form', 4),
+    'page arguments' => array('acquia_lift_element_variation_details_form', 4),
     'access arguments' => array('manage personalized content'),
     'type' => MENU_CALLBACK,
     'file' => 'acquia_lift.admin.unibar.inc',
@@ -2508,6 +2508,30 @@ function acquia_lift_command_page_variation_preview($agent_name, $variation_inde
     'data' => array(
       'agentName' => $agent_name,
       'variationIndex' => $variation_index,
+    ),
+  );
+}
+
+/**
+ * Returns an AJAX command to preview a specific option set option (variation).
+ *
+ * @param string $agent_name
+ *   The name of the campaign/agent to which the variation belongs.
+ * @param int $osid
+ *   The id of the option set to which the variation belongs.
+ * @param string $option_id
+ *   The id of the variation to display.
+ *
+ * @return array
+ *   The command to be included in AJAX response.
+ */
+function acquia_lift_command_variation_preview($agent_name, $osid, $option_id) {
+  return array(
+    'command' => 'acquia_lift_variation_preview',
+    'data' => array(
+      'agentName' => $agent_name,
+      'osid' => personalize_stringify_osid($osid),
+      'optionId' => $option_id,
     ),
   );
 }

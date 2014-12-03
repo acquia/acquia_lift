@@ -5,6 +5,7 @@
 (function (Drupal, $, _, Backbone) {
 
   Drupal.acquiaLiftUI.views.pageVariations = Drupal.acquiaLiftUI.views.pageVariations || {};
+  Drupal.acquiaLiftUI.views.optionSets = Drupal.acquiaLiftUI.views.optionSets || {};
   Drupal.acquiaLiftUI.factories = Drupal.acquiaLiftUI.factories || {};
   Drupal.acquiaLiftUI.factories.MenuFactory = Drupal.acquiaLiftUI.factories.MenuFactory || {
     /**
@@ -31,7 +32,7 @@
         }
         view = Drupal.acquiaLiftUI.views.pageVariations[campaignName];
       } else {
-        view = new Drupal.acquiaLiftUI.MenuOptionSetView({
+        view = Drupal.acquiaLiftUI.views.optionSets[model.get('osid')] = new Drupal.acquiaLiftUI.MenuOptionSetView({
           model: model,
           el: element
         });

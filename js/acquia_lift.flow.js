@@ -68,7 +68,7 @@
       // until the user selects to edit.
       // Note that the form is sent as the new context so we can't just check
       // within the context.
-      var $variationTypeForm = $('#acquia-lift-page-variation-details-form').not('.acquia-lift-processed');
+      var $variationTypeForm = $('#acquia-lift-element-variation-details-form').not('.acquia-lift-processed');
       if ($variationTypeForm.length > 0) {
         var editLink = '<a class="acquia-lift-selector-edit">' + Drupal.t('Edit selector') + '</a>';
         var $selectorInput = $variationTypeForm.find('input[name="selector"]');
@@ -558,7 +558,7 @@
        */
       createVariationTypeDialog: function(event) {
         var formPath = Drupal.settings.basePath +
-          'admin/structure/acquia_lift/pagevariation/' +
+          'admin/structure/acquia_lift/variation/' +
           Drupal.encodePath(event.data.id);
         this.variationTypeFormModel = new Drupal.acquiaLiftVariations.models.VariationTypeFormModel({
           selector: event.data.selector,
@@ -570,7 +570,8 @@
         });
         var dialogView = new Drupal.acquiaLiftVariations.views.VariationTypeFormView({
           el: event.data.anchor,
-          model: this.variationTypeFormModel
+          model: this.variationTypeFormModel,
+          appModel: this.model
         });
         this.variationTypeFormModel.set('active', this.model.get('editMode'));
       },
@@ -595,6 +596,7 @@
       initialize: function (options) {
         options.myVerticalEdge = 'top';
         options.anchorVerticalEdge = 'bottom';
+        this.appModel = options.appModel;
         this.parent('inherit', options);
       },
 
@@ -622,6 +624,12 @@
         var type = this.model.get('type');
         var $input = this.$el.find('[name=personalize_elements_content]');
         var variationNumber = this.model.get('variationIndex');
+
+        // Don't show the title field for page variations.
+        if (this.appModel.isPageModelMode()) {
+          this.$el.find('[name="title"]').val(this.model.get('typeLabel'));
+          this.closest('.form-item').hide();
+        }
 
         this.$el.find('[name="selector"]').val(selector);
         this.$el.find('[name="pages"]').val(Drupal.settings.visitor_actions.currentPath);

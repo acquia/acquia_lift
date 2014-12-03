@@ -1679,6 +1679,7 @@
       this.listenTo(this.model, 'reset', this.remove);
       this.listenTo(this.model, 'change:options', this.rebuild);
 
+      // Handle menu display changes when an element preview is complete.
       this.onOptionShowProxy = $.proxy(this.onOptionShow, this);
       $(document).on('personalizeOptionChange', function (event, $option_set, choice_name, osid) {
         that.onOptionShowProxy(event, $option_set, choice_name, osid);
@@ -1752,6 +1753,20 @@
     },
 
     /**
+     * Select a specific variation within an option set.
+     *
+     * @param string osid
+     *   The id of the option set to which this choice belongs.
+     * @param string choice_name
+     *   The option id of the choice to show.
+     */
+    selectOption: function (osid, choice_name) {
+      if (this.model.get('osid') === osid) {
+        this.model.set('activeOption', choice_name);
+      }
+    },
+
+    /**
      * Responds to personalizeOptionChange change events.
      *
      * @param jQuery event
@@ -1763,9 +1778,7 @@
      *   The id of the option set to which this choice belongs.
      */
     onOptionShow: function (event, $option_set, choice_name, osid) {
-      if (this.model.get('osid') === osid) {
-        this.model.set('activeOption', choice_name);
-      }
+      this.selectOption(osid, choice_name);
     }
   });
 
@@ -2680,6 +2693,7 @@
 (function (Drupal, $, _, Backbone) {
 
   Drupal.acquiaLiftUI.views.pageVariations = Drupal.acquiaLiftUI.views.pageVariations || {};
+  Drupal.acquiaLiftUI.views.optionSets = Drupal.acquiaLiftUI.views.optionSets || {};
   Drupal.acquiaLiftUI.factories = Drupal.acquiaLiftUI.factories || {};
   Drupal.acquiaLiftUI.factories.MenuFactory = Drupal.acquiaLiftUI.factories.MenuFactory || {
     /**
@@ -2706,7 +2720,7 @@
         }
         view = Drupal.acquiaLiftUI.views.pageVariations[campaignName];
       } else {
-        view = new Drupal.acquiaLiftUI.MenuOptionSetView({
+        view = Drupal.acquiaLiftUI.views.optionSets[model.get('osid')] = new Drupal.acquiaLiftUI.MenuOptionSetView({
           model: model,
           el: element
         });
@@ -2758,7 +2772,7 @@
 /**
  * Custom Drupal AJAX commands used for the unified navigation bar tray.
  */
-(function(Drupal, $) {
+(function(Drupal, $, _) {
 
   /**
    * Custom AJAX command to preview a specific page variation.
@@ -2772,6 +2786,22 @@
     var view = Drupal.acquiaLiftUI.views.pageVariations[response.data.agentName]
     view.selectVariation(response.data.variationIndex);
   }
+
+  /**
+   * Custom AJAX command to preview a specific option set variation.
+   *
+   * The response should include a data object with the following keys:
+   * - agentName: The name of the campaign for this page variation.
+   * - osid:  The option set id for the option set to preview.
+   * - optionId: The option id to preview.
+   */
+  Drupal.ajax.prototype.commands.acquia_lift_variation_preview = function (ajax, response, status) {
+    _.defer(function() {
+      var view = Drupal.acquiaLiftUI.views.optionSets[response.data.osid];
+      view.selectOption(response.data.osid, response.data.optionId);
+    });
+  }
+
 
   /**
    * Custom AJAX command to indicate a deleted page variation.
@@ -2825,7 +2855,7 @@
     }
   }
 
-}(Drupal, Drupal.jQuery));
+}(Drupal, Drupal.jQuery, _));
 
 /**
  * Drupal behaviors to initialize the Backbone applications to handle
@@ -2844,6 +2874,7 @@
       var settings = Drupal.settings.personalize;
       var ui = Drupal.acquiaLiftUI;
       var addedCampaigns = {};
+      var addedOptionSets = {};
       var activeCampaign = '';
 
       if (settings) {
@@ -2886,7 +2917,9 @@
                   }
                 }
               } else {
-                optionSets.add(new Drupal.acquiaLiftUI.MenuOptionSetModel(obj));
+                optionSet = new Drupal.acquiaLiftUI.MenuOptionSetModel(obj);
+                optionSets.add(optionSet);
+                addedOptionSets[obj.osid] = optionSet;
               }
             }
           }
@@ -3067,11 +3100,13 @@
                   if (model && addedCampaigns.hasOwnProperty(campaignName)) {
                     element = document.createElement('li');
                     if (type == 'campaigns') {
+                      // Add campaign view.
                       ui.views.push(new ui.MenuCampaignView({
                         el: element,
                         model: model
                       }));
                     } else {
+                      // Add content variation view.
                       ui.views.push(ui.factories.MenuFactory.createContentVariationView(model, campaignModel, element));
                     }
 
@@ -3102,7 +3137,17 @@
                       ui.factories.MenuFactory.createEmptyContentVariationView(model, element);
                       $menu.prepend(element);
                     }
-                  })
+                  });
+                  // Add any new option sets.
+                  Drupal.acquiaLiftUI.utilities.looper(addedOptionSets, function (model, osid) {
+                    if (!Drupal.acquiaLiftUI.views.optionSets[osid]) {
+                      campaignModel = ui.collections.campaigns.findWhere({'name': model.get('agent')});
+                      element = document.createElement('li');
+                      view = ui.factories.MenuFactory.createContentVariationView(model, campaignModel, element);
+                      ui.views.push(view);
+                      $holder.prepend(view.el);
+                    }
+                  });
                 }
               });
           }

@@ -321,6 +321,7 @@
       this.listenTo(this.model, 'reset', this.remove);
       this.listenTo(this.model, 'change:options', this.rebuild);
 
+      // Handle menu display changes when an element preview is complete.
       this.onOptionShowProxy = $.proxy(this.onOptionShow, this);
       $(document).on('personalizeOptionChange', function (event, $option_set, choice_name, osid) {
         that.onOptionShowProxy(event, $option_set, choice_name, osid);
@@ -394,6 +395,20 @@
     },
 
     /**
+     * Select a specific variation within an option set.
+     *
+     * @param string osid
+     *   The id of the option set to which this choice belongs.
+     * @param string choice_name
+     *   The option id of the choice to show.
+     */
+    selectOption: function (osid, choice_name) {
+      if (this.model.get('osid') === osid) {
+        this.model.set('activeOption', choice_name);
+      }
+    },
+
+    /**
      * Responds to personalizeOptionChange change events.
      *
      * @param jQuery event
@@ -405,9 +420,7 @@
      *   The id of the option set to which this choice belongs.
      */
     onOptionShow: function (event, $option_set, choice_name, osid) {
-      if (this.model.get('osid') === osid) {
-        this.model.set('activeOption', choice_name);
-      }
+      this.selectOption(osid, choice_name);
     }
   });
 

@@ -208,6 +208,18 @@ class AcquiaLiftAPI implements PersonalizeLoggerAwareInterface, AcquiaLiftReport
     return $code >= 500 && $code < 600;
   }
 
+  /**
+   * Maps the passed in response code to an exception class to use.
+   *
+   * If the response code passed in constitutes a successful response,
+   * NULL is returned. If it does not constitute a 400 or 500 error,
+   * NULL is returned.
+   *
+   * @param $code
+   *   The response code to map.
+   * @return null|string
+   *   The exception class to use or NULL.
+   */
   protected static function mapBadResponseToExceptionClass($code) {
     if (self::isSuccessful($code)) {
       return NULL;
@@ -474,6 +486,18 @@ class AcquiaLiftAPI implements PersonalizeLoggerAwareInterface, AcquiaLiftReport
     }
   }
 
+  /**
+   * Figures out the correct exception to throw and throws it.
+   *
+   * @param $response_code
+   *   The response code, e.g. 404.
+   * @param $fail_msg
+   *   The message to use for the exception, and for logging if $log_failure it TRUE.
+   * @param array $vars
+   *   Variables to pass to the message.
+   * @param bool $log_failure
+   *   Whether failures should be logged or not
+   */
   public function handleBadResponse($response_code, $fail_msg, $vars = array(), $log_failure = TRUE) {
     if ($exception_class = self::mapBadResponseToExceptionClass($response_code)) {
       if ($log_failure) {

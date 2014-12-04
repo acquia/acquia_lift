@@ -27,11 +27,11 @@ module.exports = function(grunt) {
 
   var unibarjs = [
         'src/js/menu/acquia_lift.personalize.theme.js',
-        'src/js/menu/acquia_lift.personalize.backbone.js',
-        'src/js/menu/acquia_lift.personalize.backbone.models.js',
-        'src/js/menu/acquia_lift.personalize.backbone.collections.js',
-        'src/js/menu/acquia_lift.personalize.backbone.views.js',
-        'src/js/menu/acquia_lift.personalize.backbone.factories.js',
+        'src/js/menu/acquia_lift.personalize.js',
+        'src/js/menu/acquia_lift.personalize.models.js',
+        'src/js/menu/acquia_lift.personalize.collections.js',
+        'src/js/menu/acquia_lift.personalize.views.js',
+        'src/js/menu/acquia_lift.personalize.factories.js',
         'src/js/menu/acquia_lift.personalize.commands.js',
         'src/js/menu/acquia_lift.personalize.behaviors.js'
       ];

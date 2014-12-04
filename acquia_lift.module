@@ -72,7 +72,7 @@ function acquia_lift_menu() {
     'page arguments' => array(4),
     'access arguments' => array('manage personalized content'),
     'type' => MENU_CALLBACK,
-    'file' => 'acquia_lift.admin.inc',
+    'file' => 'acquia_lift.admin.unibar.inc',
     'theme callback' => 'ajax_base_page_theme',
   );
   // AJAX callback to create a new campaign in a modal window.
@@ -81,7 +81,7 @@ function acquia_lift_menu() {
     'page arguments' => array(4, 5),
     'access arguments' => array('manage personalized content'),
     'type' => MENU_CALLBACK,
-    'file' => 'acquia_lift.admin.inc',
+    'file' => 'acquia_lift.admin.unibar.inc',
     'theme callback' => 'ajax_base_page_theme',
   );
   // AJAX callback to cancel a modal creation flow.
@@ -90,7 +90,7 @@ function acquia_lift_menu() {
     'page arguments' => array(4),
     'access arguments' => array('manage personalized content'),
     'type' => MENU_CALLBACK,
-    'file' => 'acquia_lift.admin.inc',
+    'file' => 'acquia_lift.admin.unibar.inc',
     'theme callback' => 'ajax_base_page_theme',
   );
   // AJAX callback to add a new variation set to a campaign.
@@ -99,7 +99,7 @@ function acquia_lift_menu() {
     'page arguments' => array(5),
     'access arguments' => array('manage personalized content'),
     'type' => MENU_CALLBACK,
-    'file' => 'acquia_lift.admin.inc',
+    'file' => 'acquia_lift.admin.unibar.inc',
     'theme callback' => 'ajax_base_page_theme',
   );
   // AJAX callback to retrieve a page variation details form.
@@ -108,7 +108,7 @@ function acquia_lift_menu() {
     'page arguments' => array('acquia_lift_page_variation_details_form', 4),
     'access arguments' => array('manage personalized content'),
     'type' => MENU_CALLBACK,
-    'file' => 'acquia_lift.admin.inc',
+    'file' => 'acquia_lift.admin.unibar.inc',
     'delivery callback' => 'ajax_deliver',
     'theme callback' => 'ajax_base_page_theme',
   );
@@ -118,7 +118,7 @@ function acquia_lift_menu() {
     'page arguments' => array(5, 6),
     'access arguments' => array('manage personalized content'),
     'type' => MENU_CALLBACK,
-    'file' => 'acquia_lift.admin.inc',
+    'file' => 'acquia_lift.admin.unibar.inc',
     'theme callback' => 'ajax_base_page_theme',
   );
   $items['admin/structure/acquia_lift/variation/rename/%/%/%ctools_js'] = array(
@@ -126,7 +126,7 @@ function acquia_lift_menu() {
     'page arguments' => array(5, 6),
     'access arguments' => array('manage personalized content'),
     'type' => MENU_CALLBACK,
-    'file' => 'acquia_lift.admin.inc',
+    'file' => 'acquia_lift.admin.unibar.inc',
     'theme callback' => 'ajax_base_page_theme',
   );
   // AJAX callback to delete a page variation.
@@ -135,7 +135,7 @@ function acquia_lift_menu() {
     'page arguments' => array(5, 6),
     'access arguments' => array('manage personalized content'),
     'type' => MENU_CALLBACK,
-    'file' => 'acquia_lift.admin.inc',
+    'file' => 'acquia_lift.admin.unibar.inc',
     'theme callback' => 'ajax_base_page_theme',
   );
   // Ajax callback to open the add a goal selection in a modal window.
@@ -144,7 +144,7 @@ function acquia_lift_menu() {
     'page arguments' => array(5),
     'access arguments' => array('manage personalized content'),
     'type' => MENU_CALLBACK,
-    'file' => 'acquia_lift.admin.inc',
+    'file' => 'acquia_lift.admin.unibar.inc',
     'theme callback' => 'ajax_base_page_theme',
   );
   // Ajax callback to create a goal of a specific type.
@@ -153,7 +153,7 @@ function acquia_lift_menu() {
     'page arguments' => array(5, 6),
     'access arguments' => array('manage personalized content'),
     'type' => MENU_CALLBACK,
-    'file' => 'acquia_lift.admin.inc',
+    'file' => 'acquia_lift.admin.unibar.inc',
     'theme callback' => 'ajax_base_page_theme',
   );
   // Ajax callback to rename a goal.
@@ -162,7 +162,7 @@ function acquia_lift_menu() {
     'page arguments' => array(5),
     'access arguments' => array('manage personalized content'),
     'type' => MENU_CALLBACK,
-    'file' => 'acquia_lift.admin.inc',
+    'file' => 'acquia_lift.admin.unibar.inc',
     'theme callback' => 'ajax_base_page_theme',
   );
   // AJAX callback to delete a goal.
@@ -171,7 +171,7 @@ function acquia_lift_menu() {
     'page arguments' => array(5, 6),
     'access arguments' => array('manage personalized content'),
     'type' => MENU_CALLBACK,
-    'file' => 'acquia_lift.admin.inc',
+    'file' => 'acquia_lift.admin.unibar.inc',
     'theme callback' => 'ajax_base_page_theme',
   );
   // Callback to show the start campaign form.
@@ -180,7 +180,7 @@ function acquia_lift_menu() {
     'page arguments' => array(4),
     'access arguments' => array('manage personalized content'),
     'type' => MENU_CALLBACK,
-    'file' => 'acquia_lift.admin.inc',
+    'file' => 'acquia_lift.admin.unibar.inc',
     'theme callback' => 'ajax_base_page_theme',
   );
   return $items;

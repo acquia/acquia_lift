@@ -892,19 +892,16 @@ function acquia_lift_page_variation_delete_form_submit($form, &$form_state) {
 /**
  * Page callback to generate an element variation delete confirm modal window.
  *
- * @param string $agent_name
- *   The name of the campaign to edit.
  * @param string $osid
  *   The stringified option set id
  * @param string $option_id
  *   The id of the option to be deleted.
  */
-function acquia_lift_element_variation_delete_modal_callback($agent_name, $osid, $option_id) {
+function acquia_lift_element_variation_delete_modal_callback($osid, $option_id) {
   acquia_lift_create_ctools_form(
     t('Delete a variation'),
     'acquia_lift_element_variation_delete_form',
     array(
-      'agent_name' => $agent_name,
       'osid' => personalize_resolve_stringified_osid($osid),
       'option_id' => $option_id,
     ),
@@ -959,7 +956,7 @@ function acquia_lift_element_variation_delete_complete_callback($form, $form_sta
  * @param string $option_id
  *   The id of the option/variation.
  */
-function acquia_lift_element_variation_delete_form($form, &$form_state, $agent_name, $osid, $option_id) {
+function acquia_lift_element_variation_delete_form($form, &$form_state, $osid, $option_id) {
   ctools_include('modal');
   ctools_include('ajax');
   ctools_add_js('ajax-responder');
@@ -976,7 +973,7 @@ function acquia_lift_element_variation_delete_form($form, &$form_state, $agent_n
   $form = array();
   $form['agent_name'] = array(
     '#type' => 'value',
-    '#value' => $agent_name,
+    '#value' => $option_set->agent,
   );
   $form['option_set'] = array(
     '#type' => 'value',
@@ -1023,7 +1020,13 @@ function acquia_lift_element_variation_delete_form_submit($form, &$form_state) {
       break;
     }
   }
-  personalize_option_set_save($option_set);
+  // @todo: This logic should be moved into personalize.
+  if (count($option_set->options) < 2) {
+    personalize_option_set_delete($option_set->osid);
+  }
+  else {
+    personalize_option_set_save($option_set);
+  }
 }
 
 /***************************************************************

@@ -11,7 +11,12 @@ module.exports = function(grunt) {
 
   var flowjs = [
         'src/js/flow/acquia_lift.modal.js',
-        'src/js/flow/acquia_lift.page_variations.js',
+        'src/js/flow/acquia_lift.variations.js',
+        'src/js/flow/acquia_lift.variations.models.js',
+        'src/js/flow/acquia_lift.variations.collections.js',
+        'src/js/flow/acquia_lift.variations.theme.js',
+        'src/js/flow/acquia_lift.variations.views.js',
+        'src/js/flow/acquia_lift.variations.editInContext.js',
         'src/js/flow/acquia_lift.ctools.modal.js'
       ];
 

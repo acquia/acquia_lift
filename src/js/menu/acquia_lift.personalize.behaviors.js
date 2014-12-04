@@ -71,8 +71,8 @@
         });
 
         // Create a model for page variation management state
-        if (!ui.models.pageVariationModeModel) {
-          ui.models.pageVariationModeModel = new ui.MenuPageVariationModeModel();
+        if (!ui.models.variationModeModel) {
+          ui.models.variationModeModel = new ui.MenuVariationModeModel();
         }
 
         // Create the menu view to handle general show/hide functionality for
@@ -153,7 +153,7 @@
                   });
                   $element = $(Drupal.theme('acquiaLiftPageVariationToggle'));
                   ui.views.pageVariationToggle = new ui.MenuPageVariationsToggleView({
-                    model: ui.models.pageVariationModeModel,
+                    model: ui.models.variationModeModel,
                     campaignCollection: ui.collections.campaigns,
                     el: $element.get(0)
                   });
@@ -387,8 +387,8 @@
     attach: function (context) {
       var ui = Drupal.acquiaLiftUI;
       // Create a model for page variation management state
-      if (!ui.models.pageVariationModeModel) {
-        ui.models.pageVariationModeModel = new ui.MenuPageVariationModeModel();
+      if (!ui.models.variationModeModel) {
+        ui.models.variationModeModel = new ui.MenuVariationModeModel();
       }
 
       // Keep the page variation editing and in-context goal creation in
@@ -401,7 +401,7 @@
             // Prevent infinite loops of updating models triggering change events
             // by delaying this update to the next evaluation cycle.
             _.delay(function () {
-              ui.models.pageVariationModeModel.endEditMode();
+              ui.models.variationModeModel.endEditMode();
             });
           }
         });
@@ -421,7 +421,7 @@
         .each(function (index, element) {
           ui.views.push((new ui.MenuContentVariationTriggerView({
             el: element,
-            pageVariationModel: ui.models.pageVariationModeModel,
+            model: ui.models.variationModeModel,
             campaignCollection: ui.collections.campaigns
           })));
         });

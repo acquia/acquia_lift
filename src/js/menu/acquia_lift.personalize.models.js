@@ -560,9 +560,20 @@
   Drupal.acquiaLiftUI.MenuGoalModel = Backbone.Model.extend({});
 
   /**
-   * The model for 'add page variation' state.
+   * The model for 'add variation' state for element variations.
    */
-  Drupal.acquiaLiftUI.MenuPageVariationModeModel = contentModeModelBase.extend({
+  Drupal.acquiaLiftUI.MenuElementVariationModeModel = contentModeModelBase.extend({
+    defaults: {
+      isActive: false,
+      isEditMode: false,
+      variationIndex: -1
+    }
+  });
+
+  /**
+   * The model for 'add variation' state.
+   */
+  Drupal.acquiaLiftUI.MenuVariationModeModel = contentModeModelBase.extend({
     defaults: {
       isActive: false,
       isEditMode: false,

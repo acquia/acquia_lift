@@ -1250,28 +1250,23 @@
 
   /**
    * Toggles the 'add content variation' trigger.
+   *
+   * The model is the variation mode model which keeps track of whether element
+   * mode is active or inactive.
    */
   Drupal.acquiaLiftUI.MenuContentVariationTriggerView = ViewBase.extend({
+
     /**
      * {@inheritdoc}
      */
     initialize: function (options) {
       var that = this;
 
-      this.pageVariationModel = options.pageVariationModel;
       this.campaignCollection = options.campaignCollection;
 
       _.bindAll(this, 'onClick');
 
-      // Model property holds a reference to the relevant type of creation
-      // mode model based on the type of campaign selected.
-      if (this.campaignCollection.findWhere({'isActive': true}) instanceof Drupal.acquiaLiftUI.MenuCampaignABModel) {
-        this.model = this.pageVariationModel;
-      } else {
-        this.model = null;
-      }
-
-      this.listenTo(this.pageVariationModel, 'change:isActive', this.render);
+      this.listenTo(this.model, 'change:isActive', this.onEditModeChange);
       this.listenTo(this.campaignCollection, 'change:isActive', this.onCampaignChange);
 
       this.onPageVariationEditModeProxy = $.proxy(this.onPageVariationEditMode, this);
@@ -1293,7 +1288,7 @@
      * {@inheritdoc}
      */
     render: function () {
-      var isActive = this.model && this.model.get('isActive');
+      var isActive = this.model.get('isActive');
       this.$el.toggleClass('acquia-lift-active', isActive);
 
       if (this.$el.parents('.acquia-lift-controls').length == 0) {
@@ -1301,12 +1296,18 @@
       }
       // Update the text if within the menu.
       var text = '';
+      var current = this.campaignCollection.findWhere({'isActive': true});
       if (isActive) {
         text = Drupal.t('Exit edit mode');
       } else {
-        text = this.model && this.model instanceof Drupal.acquiaLiftUI.MenuPageVariationModeModel ? Drupal.t('Add a variation') : Drupal.t('Add a variation set');
+        text = current instanceof Drupal.acquiaLiftUI.MenuCampaignABModel ? Drupal.t('Add a variation') : Drupal.t('Add a variation set');
       }
       this.$el.text(text);
+    },
+
+    onEditModeChange: function () {
+      this.updateListeners();
+      this.render();
     },
 
     /**
@@ -1315,16 +1316,14 @@
      * @param jQuery.Event event
      */
     onClick: function (event) {
-      event.preventDefault();
-      if (!this.model) {
-        return false;
-      }
       if (this.model.get('isActive')) {
-        // If already in editing mode, then clicking the link simply exits.
         this.model.endEditMode();
       } else {
         this.model.startAddMode();
       }
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      this.updateListeners();
       return false;
     },
 
@@ -1340,22 +1339,30 @@
       if (this.model) {
         this.model.endEditMode();
       }
-      if (isActive) {
-        if (model instanceof Drupal.acquiaLiftUI.MenuCampaignABModel) {
-          this.model = this.pageVariationModel;
-          // Remove any ctools handling.
-          this.$el.off();
+      this.updateListeners();
+      this.render(this.model);
+    },
+
+    /**
+     * Update the event listeners for clicks.
+     */
+    updateListeners: function () {
+      this.$el.off();
+      // If the application is in variation mode, the next click should
+      // be to exit.
+      if (this.model.get('isActive')) {
+        this.$el.on('click', this.onClick);
+      } else {
+        if (this.campaignCollection.findWhere({'isActive': true}) instanceof Drupal.acquiaLiftUI.MenuCampaignABModel) {
+          // The next click takes it straight back into edit mode.
           this.$el.on('click', this.onClick);
         } else {
-          this.model = null;
-          // Next time it is clicked it should open the CTools modal.
-          this.$el.off('click', this.onClick);
+          // The next click should open a modal.
           // Remove the -processed flags that CTools adds so that it can be
           // re-processed again.
           this.$el.removeClass('ctools-use-modal-processed');
           Drupal.attachBehaviors(this.$el.parent());
         }
-        this.render(this.model);
       }
     },
 
@@ -1363,7 +1370,7 @@
      * Listens to changes broadcast from the page variation application.
      */
     onPageVariationEditMode: function (event, data) {
-      this.pageVariationModel.set('isActive', data.start);
+      this.model.set('isActive', data.start);
     }
   });
 

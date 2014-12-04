@@ -45,11 +45,15 @@
           }
         });
         Drupal.acquiaLiftUI.utilities.looper(settings.option_sets, function (obj, key) {
-          if (!obj.hasOwnProperty('removed')) {
-            var campaignModel = ui.collections.campaigns.findWhere({name: obj.agent});
-            if (campaignModel) {
-              var optionSets = campaignModel.get('optionSets');
-              var optionSet = optionSets.findWhere({'osid': key});
+          var campaignModel = ui.collections.campaigns.findWhere({name: obj.agent});
+          if (campaignModel) {
+            var optionSets = campaignModel.get('optionSets');
+            var optionSet = optionSets.findWhere({'osid': key});
+            if (obj.hasOwnProperty('removed')) {
+              // Remove the option set from its campaign.
+              optionSets.remove(optionSet);
+            } else {
+              // Add the option set collection to the campaign.
               // Merge doesn't work in this case so we need to manually merge.
               if (optionSet) {
                 for (var prop in obj) {
@@ -84,6 +88,16 @@
         // Initialize the executor preview view functionality.
         if (!ui.views.previewView) {
           ui.views.previewView = new Drupal.acquiaLiftUI.MenuVariationPreviewView({'collection': ui.collections.campaigns});
+        }
+
+        // Add the empty campaign variations placeholder.
+        if ($('[data-acquia-lift-personalize-type="option_sets"]').length > 0 && !ui.views.emptyVariationsView) {
+          var emptyElement = document.createElement('li');
+          ui.views.emptyVariationsView = new ui.MenuOptionSetEmptyView({
+            el: emptyElement,
+            collection: ui.collections.campaigns
+          });
+          $('[data-acquia-lift-personalize-type="option_sets"]').prepend(ui.views.emptyVariationsView.el);
         }
 
         // Process the Campaigns, Content Variations and Goals top-level links
@@ -269,16 +283,6 @@
                 });
 
                 if (category === 'option_sets') {
-                  Drupal.acquiaLiftUI.utilities.looper(settings.campaigns, function (obj, key) {
-                    if (addedCampaigns.hasOwnProperty(key) && !campaignsWithOptions.hasOwnProperty(key)) {
-                      // Add a content variations view for any campaigns that don't have existing
-                      // option sets (and therefore would have been missed).
-                      model = ui.collections.campaigns.findWhere({'name': key});
-                      element = document.createElement('li');
-                      ui.factories.MenuFactory.createEmptyContentVariationView(model, element);
-                      $menu.prepend(element);
-                    }
-                  });
                   // Add any new option sets.
                   Drupal.acquiaLiftUI.utilities.looper(addedOptionSets, function (model, osid) {
                     if (!Drupal.acquiaLiftUI.views.optionSets[osid]) {

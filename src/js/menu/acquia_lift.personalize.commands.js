@@ -61,7 +61,11 @@
             // Notify of the deleted option sets.
             $(document).trigger('acquiaLiftOptionSetsEmpty', [empty_agent]);
           } else {
-            Drupal.settings.personalize.option_sets[osid] = option_sets[osid];
+            if (option_sets[osid] === 'empty') {
+              Drupal.settings.personalize.option_sets[osid].removed = true;
+            } else {
+              Drupal.settings.personalize.option_sets[osid] = option_sets[osid];
+            }
           }
         }
       }

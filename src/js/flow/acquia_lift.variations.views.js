@@ -210,8 +210,7 @@
 
         // Don't show the title field for page variations.
         if (this.appModel.isPageModelMode()) {
-          this.$el.find('[name="title"]').val(this.model.get('typeLabel'));
-          this.closest('.form-item').hide();
+          this.$el.find('[name="title"]').val(this.model.get('typeLabel')).closest('.form-item').hide();
         }
 
         this.$el.find('[name="selector"]').val(selector);

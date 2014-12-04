@@ -14,6 +14,7 @@
    *   The updated string.
    */
   function formatClass (str) {
+    if (!str) return '';
     return str.trim().replace(/[\s\_]+/g, '-');
   }
 

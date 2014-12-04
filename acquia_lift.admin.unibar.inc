@@ -915,23 +915,33 @@ function acquia_lift_element_variation_delete_modal_callback($osid, $option_id) 
  */
 function acquia_lift_element_variation_delete_complete_callback($form, $form_state) {
   $settings = array();
+  $form_option_set = $form_state['values']['option_set'];
+  $osid = $form_option_set->osid;
+
   $option_sets = personalize_option_set_load_by_agent($form_state['values']['agent_name']);
-  if (empty($option_sets)) {
-    // All of the option sets have been removed from the campaign.
-    $message = t('The variation set has been deleted.');
-    $settings['empty'] = $form_state['values']['agent_name'];
+  $updated = NULL;
+  foreach ($option_sets as $option_set) {
+    if ($option_set->osid === $osid) {
+      $updated = $option_set;
+      break;
+    }
+  }
+  if ($updated) {
+    // The variation has been deleted, but the option set still has more.
+    $message = t('The variation has been deleted.');
+    $settings = _personalize_convert_option_set_to_js_setting($updated);
   }
   else {
-    $option_set_settings = array_map('_personalize_convert_option_set_to_js_setting', $option_sets);
-    $has_option_set = FALSE;
-    foreach ($option_set_settings as $option_set_setting) {
-      $osid = key($option_set_setting);
-      if ($osid === $form_state['values']['osid']) {
-        $has_option_set = TRUE;
-      }
-      $settings[$osid] = reset($option_set_setting);
+    $message = t('The variation set has been deleted.');
+    if (empty($option_sets)) {
+      // There are no more option sets in the agent.
+      $settings['empty'] = $form_state['values']['agent_name'];
     }
-    $message = $has_option_set ? t('The variation has been deleted.') : t('The variation set has been deleted');
+    else {
+      // The last variation was removed from the option set, but the agent
+      // still has other option sets.
+      $settings[personalize_stringify_osid($osid)] = 'empty';
+    }
   }
   $campaign_settings['personalize']['campaigns'] = personalize_agent_get_settings();
   $commands = array(

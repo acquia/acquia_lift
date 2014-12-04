@@ -780,7 +780,7 @@ function acquia_lift_option_rename_form_submit($form, &$form_state) {
  */
 function acquia_lift_page_variation_delete_modal_callback($agent_name, $variation_index) {
   acquia_lift_create_ctools_form(
-    t('Delete a variation'),
+    t('Delete variation'),
     'acquia_lift_page_variation_delete_form',
     array(
       'agent_name' => $agent_name,
@@ -867,7 +867,7 @@ function acquia_lift_page_variation_delete_form($form, &$form_state, $agent_name
     '#attributes' => array(
       'class' => array('action-item-primary-active', 'acquia-lift-submit-button'),
     ),
-    '#value' => t('Delete variation'),
+    '#value' => t('Delete'),
   );
   $form['actions']['reset'] = array(
     '#markup' => ctools_ajax_text_button(t('Cancel'), 'admin/structure/acquia_lift/cancel/nojs', t('Cancel'), 'acquia-lift-cancel-button'),
@@ -899,7 +899,7 @@ function acquia_lift_page_variation_delete_form_submit($form, &$form_state) {
  */
 function acquia_lift_element_variation_delete_modal_callback($osid, $option_id) {
   acquia_lift_create_ctools_form(
-    t('Delete a variation'),
+    t('Delete variation'),
     'acquia_lift_element_variation_delete_form',
     array(
       'osid' => personalize_resolve_stringified_osid($osid),
@@ -1001,7 +1001,7 @@ function acquia_lift_element_variation_delete_form($form, &$form_state, $osid, $
     '#attributes' => array(
       'class' => array('action-item-primary-active', 'acquia-lift-submit-button'),
     ),
-    '#value' => t('Delete variation'),
+    '#value' => t('Delete'),
   );
   $form['actions']['reset'] = array(
     '#markup' => ctools_ajax_text_button(t('Cancel'), 'admin/structure/acquia_lift/cancel/nojs', t('Cancel'), 'acquia-lift-cancel-button'),

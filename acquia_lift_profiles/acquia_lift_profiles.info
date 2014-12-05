@@ -1,5 +1,6 @@
 name = Acquia Lift Profiles
 description = The Acquia Lift Profiles module provides integration with the Acquia Lift Profiles service
+configure = admin/config/content/personalize/acquia_lift_profiles
 
 dependencies[] = acquia_lift
 dependencies[] = personalize

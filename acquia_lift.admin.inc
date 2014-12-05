@@ -117,6 +117,7 @@ function acquia_lift_admin_form($form, &$form_state) {
     '#type' => 'textfield',
     '#title' => t('API Server URL'),
     '#default_value' => !empty($account_info['api_url']) ? $account_info['api_url'] : '',
+    '#field_prefix' => 'http(s)://',
     '#size' => 35,
     '#maxlength' => 50,
     '#description' => t("Paste in your Acquia Lift API URL"),
@@ -247,6 +248,8 @@ function acquia_lift_admin_form_validate($form, &$form_state) {
   if (!valid_url($form_state['values']['acquia_lift_account_info']['api_url'])) {
     form_set_error('acquia_lift_account_info][api_url', t('You must enter a valid URL'));
   }
+  // Strip any scheme from the API URL.
+  $form_state['values']['acquia_lift_account_info']['api_url'] = preg_replace('/(^[a-z]+:\/\/)/i', '', $form_state['values']['acquia_lift_account_info']['api_url']);
   if ($form_state['values']['acquia_lift_confidence_measure'] <= 0 || $form_state['values']['acquia_lift_confidence_measure'] >= 100) {
     form_set_error('acquia_lift_confidence_measure', t('Confidence measure must be a value between 0 and 100.'));
   }

@@ -356,8 +356,7 @@ class AcquiaLiftWebTestConfig extends AcquiaLiftWebTestBase {
   }
 
 
-  public function testConfigForm()
-  {
+  public function testConfigForm() {
     $this->drupalLogin($this->adminUser);
     // Try entering an invalid owner code.
     $edit = array(
@@ -377,7 +376,7 @@ class AcquiaLiftWebTestConfig extends AcquiaLiftWebTestBase {
     $this->assertEqual($account_info['owner_code'], $this->liftAOwnerCode);
     $this->assertEqual($account_info['api_key'], $this->liftAPIKey);
     $this->assertEqual($account_info['admin_key'], $this->liftAdminKey);
-    $this->assertEqual($account_info['api_url'], 'http://some.valid.url');
+    $this->assertEqual($account_info['api_url'], 'some.valid.url');
     // Try entering an invalid API url.
     $edit['acquia_lift_account_info[api_url]'] = 'some\\invalid\\url';
     $this->drupalPost('admin/config/content/personalize/acquia_lift', $edit, $this->getButton('config'));
@@ -392,7 +391,8 @@ class AcquiaLiftWebTestConfig extends AcquiaLiftWebTestBase {
     $this->assertNoText('You must enter a valid URL');
     $this->resetAll();
     $account_info = variable_get('acquia_lift_account_info', array());
-    $this->assertEqual($account_info['api_url'], 'https://some.valid.url');
+    // The scheme should have been stripped out before saving.
+    $this->assertEqual($account_info['api_url'], 'some.valid.url');
 
     // Submit bogus confidence measures.
     $bad_measures = array(

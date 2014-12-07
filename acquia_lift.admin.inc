@@ -2342,8 +2342,9 @@ function acquia_lift_page_variation_create($variation_set_name, $option_set, $op
       $option_set->options[$k] = personalize_elements_get_option_for_variation('variation-' . $k, $option_label);
     }
   }
-
-  $option_set = personalize_option_set_save($option_set);
+  // Save the option set, specifying *not* to enforce decision matching as we know
+  // the options will not match at this point.
+  $option_set = personalize_option_set_save($option_set, FALSE);
   // Go through the other option sets in the variation set to update their options.
   foreach ($option_sets as $osid => $os) {
     if (isset($option_set->osid) && $osid == $option_set->osid) {
@@ -2362,7 +2363,7 @@ function acquia_lift_page_variation_create($variation_set_name, $option_set, $op
         $os->options[$i] = personalize_elements_get_option_for_variation($op_id, $op_label);
       }
     }
-    personalize_option_set_save($os);
+    personalize_option_set_save($os, FALSE);
   }
   return $variation_number;
 }
@@ -2445,7 +2446,7 @@ function acquia_lift_page_variation_delete($variation_set_name, $agent_name, $va
   foreach ($option_sets as $option_set) {
     if (isset($option_set->options[$variation_number])) {
       unset($option_set->options[$variation_number]);
-      personalize_option_set_save($option_set);
+      personalize_option_set_save($option_set, FALSE);
     }
   }
   // If the only variation left is the control variation, then delete

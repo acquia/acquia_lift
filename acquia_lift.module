@@ -580,7 +580,15 @@ function acquia_lift_personalize_option_set_save($option_set) {
   if ($old_option_sets == $new_option_sets) {
     return;
   }
-  acquia_lift_sync_option_sets($agent, $old_option_sets, $new_option_sets);
+  acquia_lift_sync_option_sets($agent, $old_option_sets, $new_option_sets, TRUE);
+  // The only reason that a change to this option set should cause the agent to be
+  // paused, is if we now have fewer than two options in the option set.
+  $paused = FALSE;
+  if (count($option_set->options < 2)) {
+    personalize_pause_if_running($agent->machine_name);
+    $paused = TRUE;
+  }
+  acquia_lift_sync_fixed_targetng($agent, $new_option_sets);
 
   // Put back the is_new property if it was there.
   if ($new_os) {
@@ -601,7 +609,7 @@ function acquia_lift_personalize_option_set_save($option_set) {
   $needs_starting = FALSE;
   if (!isset($option_set->is_new)) {
     // We were just updating an existing option set, make sure the campaign gets restarted.
-    $needs_starting = TRUE;
+    $needs_starting = $paused;
   }
   else {
     if (isset($field['settings']['personalize']['stop_on_winner']) && $field['settings']['personalize']['stop_on_winner']) {
@@ -676,6 +684,12 @@ function acquia_lift_personalize_option_set_delete($option_set) {
     unset($new_option_sets[$option_set->osid]);
   }
   acquia_lift_sync_option_sets($agent, $old_option_sets, $new_option_sets);
+  acquia_lift_sync_fixed_targetng($agent, $new_option_sets);
+  // The only reason deletion of the option set would mean the agent needs to be
+  // paused is if there are no more option sets.
+  if (count($new_option_sets) == 0) {
+    personalize_pause_if_running($agent);
+  }
 }
 
 /**
@@ -688,19 +702,38 @@ function acquia_lift_personalize_option_set_delete($option_set) {
  * @param $new_option_sets
  *   The new option sets.
  */
-function acquia_lift_sync_option_sets($agent, $old_option_sets, $new_option_sets) {
+function acquia_lift_sync_option_sets($agent, $old_option_sets, $new_option_sets, $sync_only_on_changes = FALSE) {
   if ($agent_instance = personalize_agent_load_agent($agent->machine_name)) {
     try {
       // Tell Acquia Lift about the change to the decision structure.
       $old_decisions = AcquiaLiftAgent::convertOptionSetsToDecisions($old_option_sets);
       $new_decisions = AcquiaLiftAgent::convertOptionSetsToDecisions($new_option_sets);
-      $agent_instance->syncDecisions($old_decisions, $new_decisions);
-      // Tell Acquia Lift about the fixed targeting for the option sets.
-      $agent_instance->syncFixedTargeting($new_option_sets);
+      if (!$sync_only_on_changes || ($old_decisions != $new_decisions)) {
+        $agent_instance->syncDecisions($old_decisions, $new_decisions);
+      }
 
       // Save the agent data to the db.
       $agent->data['decisions'] = $new_option_sets;
       personalize_agent_save($agent);
+    }
+    catch (Exception $e) {
+      drupal_set_message($e->getMessage(), 'error');
+    }
+  }
+}
+
+/**
+ * Syncs fixed targeting rules to Acquia Lift.
+ * @param $agent
+ * @param $new_option_sets
+ */
+function acquia_lift_sync_fixed_targetng($agent, $new_option_sets) {
+  if ($agent_instance = personalize_agent_load_agent($agent->machine_name)) {
+    if (!$agent_instance instanceof AcquiaLiftAgentInterface) {
+      return;
+    }
+    try {
+      $agent_instance->syncFixedTargeting($new_option_sets);
     }
     catch (Exception $e) {
       drupal_set_message($e->getMessage(), 'error');
@@ -724,10 +757,34 @@ function acquia_lift_personalize_goal_save($goal_info) {
   // For the current goal, take the info from what was passed in, rather
   // than from the db.
   $new_goals[$goal_info['name']] = $goal_info['value'];
-  if ($new_goals == $old_goals) {
+  acquia_lift_sync_goals($agent, $old_goals, $new_goals, TRUE);
+}
+
+function acquia_lift_personalize_goal_delete($goal_info) {
+  $agent = personalize_agent_load($goal_info['agent']);
+  if (!acquia_lift_owns_agent($agent)) {
+    return;
+  }
+  $old_goals = isset($agent->data['goals']) ? $agent->data['goals'] : array();
+  $new_goals = personalize_goal_load_by_conditions(array('agent' => $agent->machine_name));
+  if (isset($new_goals[$goal_info['name']])) {
+    unset($new_goals[$goal_info['name']]);
+  }
+  acquia_lift_sync_goals($agent, $old_goals, $new_goals, TRUE);
+  // If we now have no goals, the agent needs to be paused.
+  if (count($new_goals) == 0) {
+    personalize_pause_if_running($agent->machine_name);
+  }
+}
+
+function acquia_lift_sync_goals($agent, $old_goals, $new_goals, $sync_only_on_changes = FALSE) {
+  if ($sync_only_on_changes && ($new_goals == $old_goals)) {
     return;
   }
   if ($agent_instance = personalize_agent_load_agent($agent->machine_name)) {
+    if (!$agent_instance instanceof AcquiaLiftAgentInterface) {
+      return;
+    }
     try {
       // Now tell Acquia Lift about the change to the goals.
       $agent_instance->syncGoals($old_goals, $new_goals);
@@ -862,6 +919,7 @@ function acquia_lift_process_queue($exit_on_finish = TRUE) {
       // a request made to Lift, we should abort the processing of the queue and
       // set a message to let the user know things went wrong.
       drupal_set_message(t('An error occurred while syncing your campaign information to Lift: @error', array('@error' => $e->getMessage())));
+      AcquiaLiftQueue::handleFailedItem($item);
       $queue->deleteQueue();
       break;
     }

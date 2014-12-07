@@ -190,7 +190,12 @@ class AcquiaLiftWebTestBase extends DrupalWebTestCase
 
     $option_set['options'] = $options;
     $option_set = (object) $option_set;
-    personalize_option_set_save($option_set);
+    try {
+      personalize_option_set_save($option_set);
+    }
+    catch (PersonalizeException $e) {
+      $this->fail('Exception thrown with message: . ' . $e->getMessage());
+    }
 
     $expected_queue_items[] = array(
       'method' => 'savePoint',
@@ -795,14 +800,7 @@ class AcquiaLiftWebTestAgentAdmin extends AcquiaLiftWebTestBase {
       // queue separately from the other items as we need them again later.
       // Dirty way to avoid 'saveAgent' method be included to $option_set_queue_items
       $option_set_queue_items = array_merge($option_set_queue_items, $new_queues);
-      $expected_queue_items[] = array(
-        'method' => 'saveFixedTargetingMapping',
-        'args' => array(
-          $machine_name,
-          personalize_get_decision_point_name_for_option_set($option_set),
-          array()
-        )
-      );
+
       if ($i == 0) {
         $expected_queue_items[] = array(
           'method' => 'saveAgent',
@@ -817,6 +815,14 @@ class AcquiaLiftWebTestAgentAdmin extends AcquiaLiftWebTestBase {
           )
         );
       }
+      $expected_queue_items[] = array(
+        'method' => 'saveFixedTargetingMapping',
+        'args' => array(
+          $machine_name,
+          personalize_get_decision_point_name_for_option_set($option_set),
+          array()
+        )
+      );
     }
 
     $this->assertQueueItems($expected_queue_items);
@@ -1120,6 +1126,7 @@ class AcquiaLiftWebTestAgentAdmin extends AcquiaLiftWebTestBase {
         )
       );
     }
+    $expected_queue_items['agent'] = $agent_queue_item;
     $expected_queue_items['targeting'] = array(
       'method' => 'saveFixedTargetingMapping',
       'args' => array(
@@ -1128,7 +1135,6 @@ class AcquiaLiftWebTestAgentAdmin extends AcquiaLiftWebTestBase {
         array()
       )
     );
-    $expected_queue_items['agent'] = $agent_queue_item;
 
     $this->assertQueueItems(array_values($expected_queue_items));
     $this->personalizedQueue->deleteQueue();
@@ -1187,8 +1193,12 @@ class AcquiaLiftWebTestAgentAdmin extends AcquiaLiftWebTestBase {
         'decision' => $decision_name . ':option-A'
       ),
     );
-
-    $this->assertQueueItems(array_values($expected_queue_items));
+    // Because the decision structure has not changed only the agent and targeting
+    // should be sync'd.
+    $this->assertQueueItems(array(
+      $expected_queue_items['agent'],
+      $expected_queue_items['targeting']
+    ));
     $this->personalizedQueue->deleteQueue();
 
     // Change the fixed targeting strategy to AND the features together.
@@ -1206,7 +1216,10 @@ class AcquiaLiftWebTestAgentAdmin extends AcquiaLiftWebTestBase {
         'decision' => $decision_name . ':option-A'
       ),
     );
-    $this->assertQueueItems(array_values($expected_queue_items));
+    $this->assertQueueItems(array(
+      $expected_queue_items['agent'],
+      $expected_queue_items['targeting']
+    ));
     $this->personalizedQueue->deleteQueue();
 
     // Remove Option B
@@ -1223,7 +1236,7 @@ class AcquiaLiftWebTestAgentAdmin extends AcquiaLiftWebTestBase {
       ),
     );
     $new_queue_items = array();
-    $expected_order = array('point', 'decision', 'option-A', 'option-C', 'delete-B', 'targeting', 'agent');
+    $expected_order = array('point', 'decision', 'option-A', 'option-C', 'delete-B', 'agent', 'targeting');
     foreach ($expected_order as $key) {
       $new_queue_items[$key] = $expected_queue_items[$key];
     }
@@ -1398,21 +1411,27 @@ class AcquiaLiftWebTestAgentAdmin extends AcquiaLiftWebTestBase {
     // Try to delete goal that connected to Agent from Visitor Action UI
     $this->drupalPost('admin/structure/visitor_actions/manage/' . $actionMachineName . '/delete', array(), t('Delete'));
 
-    $expected_queues = array();
-
-    // @todo uncomment or remove it after goal deletion decision
-//    $expected_queues = array(
-//      array(
-//        'method' => 'saveAgent',
-//        'args' => array(
-//          $agent->getMachineName(),
-//          $agent->getTitle(),
-//          'adaptive',
-//          PERSONALIZE_STATUS_NOT_STARTED,
-//           0,
-//        ),
-//      ),
-//    );
+    $expected_queues = array(
+      array(
+        'method' => 'deleteGoal',
+        'args' => array(
+          $agent->getMachineName(),
+          $actionMachineName,
+        ),
+      ),
+      array(
+        'method' => 'saveAgent',
+        'args' => array(
+          $agent->getMachineName(),
+          $agent->getTitle(),
+          'adaptive',
+          PERSONALIZE_STATUS_NOT_STARTED,
+          0.1,
+          0.2,
+          1
+        ),
+      ),
+    );
 
     $this->assertQueueItems($expected_queues);
     $this->personalizedQueue->deleteQueue();

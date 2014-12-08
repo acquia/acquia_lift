@@ -584,7 +584,7 @@ function acquia_lift_personalize_option_set_save($option_set) {
   // The only reason that a change to this option set should cause the agent to be
   // paused, is if we now have fewer than two options in the option set.
   $paused = FALSE;
-  if (count($option_set->options < 2)) {
+  if (count($option_set->options) < 2) {
     personalize_pause_if_running($agent->machine_name);
     $paused = TRUE;
   }

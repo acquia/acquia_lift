@@ -1865,10 +1865,10 @@ class AcquiaLiftQueue extends SystemQueue {
    * @param $item
    */
   public static function handleFailedItem($item) {
-    if (!isset($item->agent)) {
+    if (!isset($item->data['agent'])) {
       return;
     }
-    personalize_pause_if_running($item->agent);
+    personalize_pause_if_running($item->data['agent']);
   }
 
   /**

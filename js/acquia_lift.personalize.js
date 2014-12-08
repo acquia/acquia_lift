@@ -2252,8 +2252,10 @@
       if (changed.get('isActive')) {
         // Bind to change events from the new model.
         this.model = changed;
+        var optionSets = this.model.get('optionSets');
         this.listenTo(this.model, 'change:activeVariation', this.onVariationChange);
-        this.listenTo(this.model.get('optionSets'), 'change:activeOption', this.onVariationChange);
+        this.listenTo(optionSets, 'change:activeOption', this.onVariationChange);
+        this.listenTo(optionSets, 'remove', this.onOptionSetRemove);
       } else {
         this.stopListening(changed);
       }
@@ -2295,6 +2297,12 @@
           Drupal.personalize.executors[changedModel.get('executor')].execute($(changedModel.get('selector')), current.get('option_id'), changedModel.get('osid'));
         }
       }
+    },
+
+    // When an option set is removed, then set the preview back to the control
+    // for the now deleted option set.
+    onOptionSetRemove: function (removed) {
+      Drupal.personalize.executors[removed.get('executor')].execute($(removed.get('selector')), Drupal.settings.personalize.controlOptionName, removed.get('osid'));
     }
   });
 

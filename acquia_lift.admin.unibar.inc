@@ -270,6 +270,7 @@ function acquia_lift_element_variation_details_form($form, &$form_state, $variat
   $form['title'] = array(
     '#type' => 'textfield',
     '#title' => t('Variation set name'),
+    '#description' => t('Descriptive name for the variation set, used by Acquia Lift for administration and reporting.'),
     '#required' => TRUE,
     '#maxlength' => 255,
   );
@@ -502,8 +503,8 @@ function acquia_lift_option_set_add_modal_callback($ajax) {
     'id' => 'acquia-lift-option-set-type-list',
     'items' => array(
       'personalize-element' => array(
-        'title' => t('Web page element'),
-        'description' => t('Test variations of a web page.  Good if you want to increase form submissions, time on page, etc.'),
+        'title' => t('Webpage elements'),
+        'description' => t('Create a variation set of personalized webpage elements, including a base and control version. Useful for quick tests and personalization on individual webpages.'),
         'path' => 'admin/structure/personalize/variations/personalize-elements/add',
         'modal' => FALSE,
         'logo' => theme('image', array(
@@ -513,8 +514,8 @@ function acquia_lift_option_set_add_modal_callback($ajax) {
         )),
       ),
       'personalize-block' => array(
-        'title' => t('Drupal content block'),
-        'description' => t('Test variations of a recurring content block.  Good if you want to test the effectiveness of a fixture across your site.'),
+        'title' => t('Drupal blocks'),
+        'description' => t('Create a variation set of personalized Drupal blocks of content. Useful for personalization and testing across your website where this block appears.'),
         'path' => 'admin/structure/personalize/variations/personalize-blocks/add',
         'modal' => FALSE,
         'logo' => theme('image', array(

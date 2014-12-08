@@ -18,14 +18,12 @@
             Drupal.CTools.Modal.dismiss();
             e.preventDefault();
             e.stopImmediatePropagation();
-          /* Uncomment these lines when there is a variation set process to trigger.
           } else if ($link.attr('href') == settings.basePath + 'admin/structure/personalize/variations/personalize-elements/add') {
             // Trigger variations in context.
-            $(document).trigger('acquiaLiftVariationSetMode', [{start: true}]);
+            $(document).trigger('acquiaLiftElementVariationModeTrigger', [{start: true}]);
             Drupal.CTools.Modal.dismiss();
             e.preventDefault();
             e.stopImmediatePropagation();
-            */
           } else if ($link.hasClass('ctools-use-modal')) {
             // It needs to be the link that is triggered if we want CTools to
             // take over.
@@ -70,7 +68,7 @@
       // until the user selects to edit.
       // Note that the form is sent as the new context so we can't just check
       // within the context.
-      var $variationTypeForm = $('#acquia-lift-page-variation-details-form').not('.acquia-lift-processed');
+      var $variationTypeForm = $('#acquia-lift-element-variation-details-form').not('.acquia-lift-processed');
       if ($variationTypeForm.length > 0) {
         var editLink = '<a class="acquia-lift-selector-edit">' + Drupal.t('Edit selector') + '</a>';
         var $selectorInput = $variationTypeForm.find('input[name="selector"]');
@@ -101,10 +99,6 @@
         var blockAnchor = $(this).find('a[href="' + settings.basePath + 'admin/structure/personalize/variations/personalize-blocks/add"]');
         // Add the current destination address to the personalize blocks anchor.
         blockAnchor.attr('href', blockAnchor.attr('href') + '?destination=' + settings.visitor_actions.currentPath);
-
-        // Remove this when there is a variation set creation to trigger.
-        var elementAnchor = $(this).find('a[href="' + settings.basePath + 'admin/structure/personalize/variations/personalize-elements/add"]');
-        elementAnchor.attr('href', elementAnchor.attr('href') + '?destination=' + settings.visitor_actions.currentPath);
       });
     }
   };

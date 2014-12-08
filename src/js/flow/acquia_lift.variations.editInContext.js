@@ -11,6 +11,24 @@
    * a particular personalize_element page variation in context.
    */
   Drupal.acquiaLiftVariations.personalizeElements = Drupal.acquiaLiftVariations.personalizeElements || {};
+
+  /**
+   * Whenever a variation type form is complete, call the personalize elements
+   * editInContext callbacks.
+   */
+  $(document).on('acquiaLiftVariationTypeForm', function(e, type, selector, $input) {
+    if (Drupal.acquiaLiftVariations.personalizeElements.hasOwnProperty(type)
+      && Drupal.acquiaLiftVariations.personalizeElements[type].hasOwnProperty('editInContext')
+      && typeof Drupal.acquiaLiftVariations.personalizeElements[type].editInContext === 'function') {
+      Drupal.acquiaLiftVariations.personalizeElements[type].editInContext(selector, $input);
+    }
+  });
+
+  /****************************************************************
+   *
+   *          E D I T  H T M L
+   *
+   ****************************************************************/
   Drupal.acquiaLiftVariations.personalizeElements.editHtml = {
     getOuterHtml: function($element) {
       if ($element.length > 1) {
@@ -63,23 +81,16 @@
     }
   };
 
+  /****************************************************************
+   *
+   *          E D I T  T E X T
+   *
+   ****************************************************************/
   Drupal.acquiaLiftVariations.personalizeElements.editText = {
     editInContext : function(selector, $contentInput) {
       var editString = $(selector).text();
       $contentInput.val(editString);
     }
   };
-
-  /**
-   * Whenever a variation type form is complete, call the personalize elements
-   * editInContext callbacks.
-   */
-  $(document).on('acquiaLiftVariationTypeForm', function(e, type, selector, $input) {
-    if (Drupal.acquiaLiftVariations.personalizeElements.hasOwnProperty(type)
-      && Drupal.acquiaLiftVariations.personalizeElements[type].hasOwnProperty('editInContext')
-      && typeof Drupal.acquiaLiftVariations.personalizeElements[type].editInContext === 'function') {
-      Drupal.acquiaLiftVariations.personalizeElements[type].editInContext(selector, $input);
-    }
-  });
 
 }(Drupal.jQuery, Drupal, Drupal.visitorActions.ui.dialog, Backbone, _));

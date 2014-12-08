@@ -5,6 +5,7 @@
 (function (Drupal, $, _, Backbone) {
 
   Drupal.acquiaLiftUI.views.pageVariations = Drupal.acquiaLiftUI.views.pageVariations || {};
+  Drupal.acquiaLiftUI.views.optionSets = Drupal.acquiaLiftUI.views.optionSets || {};
   Drupal.acquiaLiftUI.factories = Drupal.acquiaLiftUI.factories || {};
   Drupal.acquiaLiftUI.factories.MenuFactory = Drupal.acquiaLiftUI.factories.MenuFactory || {
     /**
@@ -31,35 +32,13 @@
         }
         view = Drupal.acquiaLiftUI.views.pageVariations[campaignName];
       } else {
-        view = new Drupal.acquiaLiftUI.MenuOptionSetView({
+        view = Drupal.acquiaLiftUI.views.optionSets[model.get('osid')] = new Drupal.acquiaLiftUI.MenuOptionSetView({
+          campaignModel: campaignModel,
           model: model,
           el: element
         });
       }
       return view;
-    },
-
-    /**
-     * Factory method to create the correct type of content variation set view
-     * for a campaign with no content variations yet created.
-     *
-     * @param Drupal.acquiaLiftUI.MenuCampaignModel model
-     *   The campaign model that owns the option set.
-     * @param element
-     *   The DOM element for the Backbone view.
-     */
-    createEmptyContentVariationView: function (model, element) {
-      if (model instanceof Drupal.acquiaLiftUI.MenuCampaignABModel) {
-        Drupal.acquiaLiftUI.views.pageVariations[model.get('name')] = new Drupal.acquiaLiftUI.MenuPageVariationsView({
-          model: model,
-          el: element
-        });
-      } else {
-        Drupal.acquiaLiftUI.views.push(new Drupal.acquiaLiftUI.MenuOptionSetEmptyView({
-          el: element,
-          model: model
-        }));
-      }
     },
 
     /**

@@ -291,8 +291,8 @@ function acquia_lift_element_variation_details_form($form, &$form_state, $variat
       'class' => array('action-item-primary-active', 'acquia-lift-submit-button'),
     ),
     '#ajax' => array(
-      'callback' => 'acquia_lift_page_variation_details_form_ajax_callback',
-      'wrapper' => 'acquia-lift-page-variation-details-form',
+      'callback' => 'acquia_lift_element_variation_details_form_ajax_callback',
+      'wrapper' => 'acquia-lift-element-variation-details-form',
       'progress' => array(
         'message' => NULL,
         'type' => 'throbber',

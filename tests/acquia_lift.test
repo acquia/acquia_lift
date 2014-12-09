@@ -1600,6 +1600,13 @@ class AcquiaLiftWebTestAgentAdmin extends AcquiaLiftWebTestBase {
     $this->resetAll();
     $status = personalize_agent_get_status($agent_name);
     $this->assertEqual($status, PERSONALIZE_STATUS_PAUSED);
+
+    // Set it to running again and delete that last remaining option set.
+    variable_set(_personalize_agent_get_status_variable($agent_name), PERSONALIZE_STATUS_RUNNING);
+    personalize_option_set_delete($second_osid);
+    $this->resetAll();
+    $status = personalize_agent_get_status($agent_name);
+    $this->assertEqual($status, PERSONALIZE_STATUS_PAUSED);
   }
 }
 class AcquiaLiftWebTestFundamentals extends AcquiaLiftWebTestBase {
@@ -2595,6 +2602,7 @@ class AcquiaLiftWebTestWorkflow extends AcquiaLiftWebTestBase {
             $second_osid,
             $second_osid,
           ),
+        'agent' => 'article-personalizable-headline-2'
       ),
       array (
         'method' => 'saveChoice',
@@ -2630,109 +2638,6 @@ class AcquiaLiftWebTestWorkflow extends AcquiaLiftWebTestBase {
       ),
     );
     $this->assertQueueItems($expected_queue_items);
-  }
-
-  /**
-   * Tests automatic restart of a fields-based campaign after editing.
-   */
-  public function testFieldUpdateAutoRestart() {
-    $this->resetAll();
-    module_enable(array('personalize_fields'));
-    $this->resetAll();
-    $admin_user = $this->drupalCreateUser(array('access administration pages', 'administer site configuration', 'access content', 'administer content types', 'administer nodes', 'bypass node access', 'manage personalized content'));
-    $this->drupalLogin($admin_user);
-    // Add personalizable field to the article node type.
-    $field = array(
-      'type' => 'text',
-      'field_name' => 'article_headline',
-      'cardinality' => -1,
-      'settings' => array(
-        'personalize' => array(
-          'enabled' => 1,
-          'agent_type' => 'acquia_lift',
-          'options' => array(
-            'acquia_lift' => array(
-              'control_rate' => 10,
-              'decision_style' => 'adaptive',
-              'explore_rate' => 25,
-            ),
-          ),
-          'create_goal' => 1,
-          'auto_start' => 1
-        ),
-      ),
-    );
-    field_create_field($field);
-    $instance = array(
-      'field_name' => 'article_headline',
-      'entity_type' => 'node',
-      'label' => 'Personalizable Headline',
-      'bundle' => 'article',
-      'required' => FALSE
-    );
-    field_create_instance($instance);
-
-    // Create a node which we will attach a fields-based option set to. We can't
-    // do this via the form because of the way we alter the form, which makes the
-    // "Add an option" button not findable by simpletest.
-    $node = new stdClass();
-    $node->type = 'article';
-    $node->language = LANGUAGE_NONE;
-    node_object_prepare($node);
-    $node->title = $this->randomName();
-    $node->article_headline['und'][0] = array('value' => 'first value');
-    $node->article_headline['und'][1] = array('value' => 'second value');
-    node_save($node);
-    $nid = $node->nid;
-    // Now create the option set.
-    $option_set = new stdClass();
-    $option_set->is_new = TRUE;
-    $option_set->data = array();
-    $option_set->options = array();
-    $option_set->plugin = 'fields';
-    $option_set->new_agent_title = 'Article: Personalizable Headline';
-    $option_set->options = array(
-      array(
-        'option_label' => personalize_fields_generate_option_label(0, array('value' => 'first value'))
-      ),
-      array(
-        'option_label' => personalize_fields_generate_option_label(1, array('value' => 'second value'))
-      )
-    );
-    personalize_fields_option_set_save($option_set, 'node', $node, 'article_headline');
-    $first_osid = 'osid-' . $option_set->osid;
-    $this->resetAll();
-    // We'll just delete the queue and manually set the campaign to running as we are
-    // testing the restart after editing the field.
-    $this->personalizedQueue->deleteQueue();
-    $agent_name = 'article-personalizable-headline';
-    // Need to set the variable directly as it would not pass the verification check.
-    $var = _personalize_agent_get_status_variable($agent_name);
-    variable_set($var, PERSONALIZE_STATUS_RUNNING);
-
-    // Edit the node and change the field values.
-    $edit = array(
-      'article_headline[und][0][value]' => 'altered first value',
-      'article_headline[und][1][value]' => 'altered second value'
-    );
-
-    $this->drupalPost("node/$nid/edit", $edit, t('Save'));
-    $this->resetAll();
-    $status = personalize_agent_get_status($agent_name);
-    $this->assertEqual(PERSONALIZE_STATUS_PAUSED, $status);
-    $queue_callback = array(
-      'callback' => 'personalize_agent_set_status',
-      'args' =>
-        array(
-          'article-personalizable-headline',
-          PERSONALIZE_STATUS_RUNNING,
-        ),
-      'agent' => 'article-personalizable-headline'
-    );
-    // Confirm that the start campaign callback is the last item in the queue.
-    $result = db_query('SELECT data FROM {queue} q WHERE name = \'acquia_lift_sync\' ORDER BY item_id DESC')->fetchField();
-    $item = unserialize($result);
-    $this->assertEqual($queue_callback, $item);
   }
 
   /**

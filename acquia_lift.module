@@ -581,14 +581,15 @@ function acquia_lift_personalize_option_set_save($option_set) {
     return;
   }
   acquia_lift_sync_option_sets($agent, $old_option_sets, $new_option_sets, TRUE);
+  // This agent will need to be re-verified as the changes may have made it changed
+  // whether or not it is valid.
+  personalize_agent_clear_verified_status($agent->machine_name);
   // The only reason that a change to this option set should cause the agent to be
   // paused, is if we now have fewer than two options in the option set.
-  $paused = FALSE;
   if (count($option_set->options) < 2) {
     personalize_pause_if_running($agent->machine_name);
-    $paused = TRUE;
   }
-  acquia_lift_sync_fixed_targetng($agent, $new_option_sets);
+  acquia_lift_sync_fixed_targeting($agent, $new_option_sets);
 
   // Put back the is_new property if it was there.
   if ($new_os) {
@@ -607,11 +608,7 @@ function acquia_lift_personalize_option_set_save($option_set) {
   }
 
   $needs_starting = FALSE;
-  if (!isset($option_set->is_new)) {
-    // We were just updating an existing option set, make sure the campaign gets restarted.
-    $needs_starting = $paused;
-  }
-  else {
+  if (isset($option_set->is_new)) {
     if (isset($field['settings']['personalize']['stop_on_winner']) && $field['settings']['personalize']['stop_on_winner']) {
       // We need to set the 'stop_on_winner' property on the newly created agent.
       $agent->data['stop_on_winner'] = 1;
@@ -684,11 +681,13 @@ function acquia_lift_personalize_option_set_delete($option_set) {
     unset($new_option_sets[$option_set->osid]);
   }
   acquia_lift_sync_option_sets($agent, $old_option_sets, $new_option_sets);
-  acquia_lift_sync_fixed_targetng($agent, $new_option_sets);
+  acquia_lift_sync_fixed_targeting($agent, $new_option_sets);
+  // Clear the verified status of the agent.
+  personalize_agent_clear_verified_status($agent->machine_name);
   // The only reason deletion of the option set would mean the agent needs to be
   // paused is if there are no more option sets.
   if (count($new_option_sets) == 0) {
-    personalize_pause_if_running($agent);
+    personalize_pause_if_running($agent->machine_name);
   }
 }
 
@@ -727,7 +726,7 @@ function acquia_lift_sync_option_sets($agent, $old_option_sets, $new_option_sets
  * @param $agent
  * @param $new_option_sets
  */
-function acquia_lift_sync_fixed_targetng($agent, $new_option_sets) {
+function acquia_lift_sync_fixed_targeting($agent, $new_option_sets) {
   if ($agent_instance = personalize_agent_load_agent($agent->machine_name)) {
     if (!$agent_instance instanceof AcquiaLiftAgentInterface) {
       return;
@@ -758,8 +757,14 @@ function acquia_lift_personalize_goal_save($goal_info) {
   // than from the db.
   $new_goals[$goal_info['name']] = $goal_info['value'];
   acquia_lift_sync_goals($agent, $old_goals, $new_goals, TRUE);
+  // This agent will need to be re-verified as the changes may have changed
+  // whether or not it is valid.
+  personalize_agent_clear_verified_status($goal_info['agent']);
 }
 
+/**
+ * Implements hook_personalize_goal_delete().
+ */
 function acquia_lift_personalize_goal_delete($goal_info) {
   $agent = personalize_agent_load($goal_info['agent']);
   if (!acquia_lift_owns_agent($agent)) {
@@ -771,12 +776,26 @@ function acquia_lift_personalize_goal_delete($goal_info) {
     unset($new_goals[$goal_info['name']]);
   }
   acquia_lift_sync_goals($agent, $old_goals, $new_goals, TRUE);
+  // Clear the verified status of the agent.
+  personalize_agent_clear_verified_status($agent->machine_name);
   // If we now have no goals, the agent needs to be paused.
   if (count($new_goals) == 0) {
     personalize_pause_if_running($agent->machine_name);
   }
 }
 
+/**
+ * Syncs an agents goals to Lift.
+ *
+ * @param $agent
+ *   The agent whose goals are being sync'd.
+ * @param $old_goals
+ *   The old goals that Lift knows about.
+ * @param $new_goals
+ *   The new goals.
+ * @param bool $sync_only_on_changes
+ *   Whether to sync only if there are changes.
+ */
 function acquia_lift_sync_goals($agent, $old_goals, $new_goals, $sync_only_on_changes = FALSE) {
   if ($sync_only_on_changes && ($new_goals == $old_goals)) {
     return;
@@ -928,7 +947,7 @@ function acquia_lift_process_queue($exit_on_finish = TRUE) {
       $queue->releaseItem($item);
     }
   }
-  _personalize_agent_verification_cache_clear();
+  personalize_agent_clear_verified_status();
 
   if ($exit_on_finish) {
     $commands = array(

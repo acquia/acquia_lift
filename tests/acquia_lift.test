@@ -752,7 +752,7 @@ class AcquiaLiftWebTestVariationSets extends AcquiaLiftWebTestBase {
 
     // Verify that the user is redirected to the original page with a custom
     // URL query parameter.
-    $this->assertUrl('node', array('query' => array('pm' => 'new_block|My test block')));
+    $this->assertUrl('node', array('query' => array('liftpm' => 'new_block|My test block')));
 
     // Verify that the pending message has been added to the settings.
     $expected_message = t('The %block_title personalized block has been created.  Next you need to add it to a region using the <a href="!block_url">blocks administration</a>.', array(

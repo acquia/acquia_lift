@@ -302,12 +302,12 @@ var _tcwq = _tcwq || [];
           decision = 'Control';
         }
 
-        _tcaq.push(['capture', 'Campaign Action', {'campaignid':agent_name, 'campaignname':getAgentLabel(agent_name), 'offerid': decision, 'actionName':decision, 'evalSegments': true } ]);
+        _tcaq.push(['capture', 'Campaign Action', {'targetcampaignid':agent_name, 'targetcampaignname':getAgentLabel(agent_name), 'targetofferid': decision, 'targetactionname':decision, 'evalSegments': true } ]);
 
       },
 
       'processSentGoalToAgent':function(e, agent_name, goal_name, goal_value) {
-        _tcaq.push(['capture', goal_name, {'campaignid':agent_name, 'campaignname':getAgentLabel(agent_name), 'evalSegments': true}]);
+        _tcaq.push(['capture', goal_name, {'targetcampaignid':agent_name, 'targetcampaignname':getAgentLabel(agent_name), 'evalSegments': true}]);
       },
       /**
        * Add an action listener for client-side goal events.

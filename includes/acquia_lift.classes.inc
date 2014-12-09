@@ -1860,6 +1860,18 @@ class AcquiaLiftQueue extends SystemQueue {
   const MAX_RETRIES = 15;
 
   /**
+   * Takes necessary steps when an item has failed permanently.
+   *
+   * @param $item
+   */
+  public static function handleFailedItem($item) {
+    if (!isset($item->data['agent'])) {
+      return;
+    }
+    personalize_pause_if_running($item->data['agent']);
+  }
+
+  /**
    * Overrides SystemQueue::createItem().
    *
    * Prevents duplicate requests from being queued up during the same
@@ -1894,6 +1906,7 @@ class AcquiaLiftQueue extends SystemQueue {
       self::$retries[$item->item_id] = 0;
     }
     elseif(self::$retries[$item->item_id] >= self::MAX_RETRIES) {
+      self::handleFailedItem($item);
       $this->deleteItem($item);
       return;
     }

@@ -1105,6 +1105,9 @@ class AcquiaLiftAgent extends PersonalizeAgentBase implements PersonalizeAgentGo
         // being added to the queue.
         $hash = md5(serialize($item));
         $item['hash'] = $hash;
+        // We add the agent machine name to the queue item so that if it fails
+        // the agent in question can be paused.
+        $item['agent'] = $this->machineName;
         $this->getQueue()->createItem($item);
       }
       // Make sure the queue gets triggered on the next request.

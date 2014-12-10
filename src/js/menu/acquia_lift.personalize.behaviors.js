@@ -15,6 +15,7 @@
       var settings = Drupal.settings.personalize;
       var ui = Drupal.acquiaLiftUI;
       var addedCampaigns = {};
+      var addedOptionSets = {};
       var activeCampaign = '';
 
       if (settings) {
@@ -44,11 +45,15 @@
           }
         });
         Drupal.acquiaLiftUI.utilities.looper(settings.option_sets, function (obj, key) {
-          if (!obj.hasOwnProperty('removed')) {
-            var campaignModel = ui.collections.campaigns.findWhere({name: obj.agent});
-            if (campaignModel) {
-              var optionSets = campaignModel.get('optionSets');
-              var optionSet = optionSets.findWhere({'osid': key});
+          var campaignModel = ui.collections.campaigns.findWhere({name: obj.agent});
+          if (campaignModel) {
+            var optionSets = campaignModel.get('optionSets');
+            var optionSet = optionSets.findWhere({'osid': key});
+            if (obj.hasOwnProperty('removed')) {
+              // Remove the option set from its campaign.
+              optionSets.remove(optionSet);
+            } else {
+              // Add the option set collection to the campaign.
               // Merge doesn't work in this case so we need to manually merge.
               if (optionSet) {
                 for (var prop in obj) {
@@ -57,15 +62,17 @@
                   }
                 }
               } else {
-                optionSets.add(new Drupal.acquiaLiftUI.MenuOptionSetModel(obj));
+                optionSet = new Drupal.acquiaLiftUI.MenuOptionSetModel(obj);
+                optionSets.add(optionSet);
+                addedOptionSets[obj.osid] = optionSet;
               }
             }
           }
         });
 
         // Create a model for page variation management state
-        if (!ui.models.pageVariationModeModel) {
-          ui.models.pageVariationModeModel = new ui.MenuPageVariationModeModel();
+        if (!ui.models.variationModeModel) {
+          ui.models.variationModeModel = new ui.MenuVariationModeModel();
         }
 
         // Create the menu view to handle general show/hide functionality for
@@ -81,6 +88,16 @@
         // Initialize the executor preview view functionality.
         if (!ui.views.previewView) {
           ui.views.previewView = new Drupal.acquiaLiftUI.MenuVariationPreviewView({'collection': ui.collections.campaigns});
+        }
+
+        // Add the empty campaign variations placeholder.
+        if ($('[data-acquia-lift-personalize-type="option_sets"]').length > 0 && !ui.views.emptyVariationsView) {
+          var emptyElement = document.createElement('li');
+          ui.views.emptyVariationsView = new ui.MenuOptionSetEmptyView({
+            el: emptyElement,
+            collection: ui.collections.campaigns
+          });
+          $('[data-acquia-lift-personalize-type="option_sets"]').prepend(ui.views.emptyVariationsView.el);
         }
 
         // Process the Campaigns, Content Variations and Goals top-level links
@@ -136,7 +153,7 @@
                   });
                   $element = $(Drupal.theme('acquiaLiftPageVariationToggle'));
                   ui.views.pageVariationToggle = new ui.MenuPageVariationsToggleView({
-                    model: ui.models.pageVariationModeModel,
+                    model: ui.models.variationModeModel,
                     campaignCollection: ui.collections.campaigns,
                     el: $element.get(0)
                   });
@@ -238,11 +255,13 @@
                   if (model && addedCampaigns.hasOwnProperty(campaignName)) {
                     element = document.createElement('li');
                     if (type == 'campaigns') {
+                      // Add campaign view.
                       ui.views.push(new ui.MenuCampaignView({
                         el: element,
                         model: model
                       }));
                     } else {
+                      // Add content variation view.
                       ui.views.push(ui.factories.MenuFactory.createContentVariationView(model, campaignModel, element));
                     }
 
@@ -264,16 +283,16 @@
                 });
 
                 if (category === 'option_sets') {
-                  Drupal.acquiaLiftUI.utilities.looper(settings.campaigns, function (obj, key) {
-                    if (addedCampaigns.hasOwnProperty(key) && !campaignsWithOptions.hasOwnProperty(key)) {
-                      // Add a content variations view for any campaigns that don't have existing
-                      // option sets (and therefore would have been missed).
-                      model = ui.collections.campaigns.findWhere({'name': key});
+                  // Add any new option sets.
+                  Drupal.acquiaLiftUI.utilities.looper(addedOptionSets, function (model, osid) {
+                    if (!Drupal.acquiaLiftUI.views.optionSets[osid]) {
+                      campaignModel = ui.collections.campaigns.findWhere({'name': model.get('agent')});
                       element = document.createElement('li');
-                      ui.factories.MenuFactory.createEmptyContentVariationView(model, element);
-                      $menu.prepend(element);
+                      view = ui.factories.MenuFactory.createContentVariationView(model, campaignModel, element);
+                      ui.views.push(view);
+                      $holder.prepend(view.el);
                     }
-                  })
+                  });
                 }
               });
           }
@@ -368,8 +387,8 @@
     attach: function (context) {
       var ui = Drupal.acquiaLiftUI;
       // Create a model for page variation management state
-      if (!ui.models.pageVariationModeModel) {
-        ui.models.pageVariationModeModel = new ui.MenuPageVariationModeModel();
+      if (!ui.models.variationModeModel) {
+        ui.models.variationModeModel = new ui.MenuVariationModeModel();
       }
 
       // Keep the page variation editing and in-context goal creation in
@@ -382,12 +401,12 @@
             // Prevent infinite loops of updating models triggering change events
             // by delaying this update to the next evaluation cycle.
             _.delay(function () {
-              ui.models.pageVariationModeModel.endEditMode();
+              ui.models.variationModeModel.endEditMode();
             });
           }
         });
-        // Turn off visitor actions modes when entering page variation mode.
-        $(document).bind('acquiaLiftPageVariationMode', function (event, data) {
+        // Turn off visitor actions modes when entering variation mode.
+        $(document).bind('acquiaLiftVariationMode', function (event, data) {
           if (data.start) {
             _.delay(function() {
               $(document).trigger('visitorActionsUIShutdown');
@@ -402,7 +421,7 @@
         .each(function (index, element) {
           ui.views.push((new ui.MenuContentVariationTriggerView({
             el: element,
-            pageVariationModel: ui.models.pageVariationModeModel,
+            model: ui.models.variationModeModel,
             campaignCollection: ui.collections.campaigns
           })));
         });

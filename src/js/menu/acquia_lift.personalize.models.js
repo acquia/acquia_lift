@@ -449,7 +449,9 @@
       osid: '',
       stateful: 1,
       type: null,
-      winner: null
+      winner: null,
+      plugin: null,
+      deletable: false
     },
 
     /**
@@ -470,13 +472,22 @@
     set: function (property, value) {
       // Tricky - the initial creation from object model data passes all data
       // to this function first.
-      if (typeof property == 'object' && property.hasOwnProperty('options')) {
-        this.setOptions(property.options);
-        // Remove this property so the rest can still be processed.
-        delete property.options;
-      } else if (property === 'options' && !(value instanceof Drupal.acquiaLiftUI.MenuOptionCollection)) {
-        this.setOptions(value);
-        return;
+      if (typeof property == 'object') {
+        if (property.hasOwnProperty('options')) {
+          this.setOptions(property.options);
+          // Remove this property so the rest can still be processed.
+          delete property.options;
+        }
+        if (property.hasOwnProperty('plugin') && property.plugin === 'elements') {
+          property.deletable = true;
+        }
+      } else {
+        if (property === 'options' && !(value instanceof Drupal.acquiaLiftUI.MenuOptionCollection)) {
+          this.setOptions(value);
+          return;
+        } else if (property == 'plugin' && property.plugin === 'elements') {
+          this.set('deletable', true);
+        }
       }
       this.parent('set', property, value);
     },
@@ -549,9 +560,20 @@
   Drupal.acquiaLiftUI.MenuGoalModel = Backbone.Model.extend({});
 
   /**
-   * The model for 'add page variation' state.
+   * The model for 'add variation' state for element variations.
    */
-  Drupal.acquiaLiftUI.MenuPageVariationModeModel = contentModeModelBase.extend({
+  Drupal.acquiaLiftUI.MenuElementVariationModeModel = contentModeModelBase.extend({
+    defaults: {
+      isActive: false,
+      isEditMode: false,
+      variationIndex: -1
+    }
+  });
+
+  /**
+   * The model for 'add variation' state.
+   */
+  Drupal.acquiaLiftUI.MenuVariationModeModel = contentModeModelBase.extend({
     defaults: {
       isActive: false,
       isEditMode: false,

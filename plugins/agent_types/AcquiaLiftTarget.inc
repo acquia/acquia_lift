@@ -48,4 +48,17 @@ class AcquiaLiftTarget extends PersonalizeAgentBase implements PersonalizeExplic
     return $name . '::' . $value;
   }
 
+  /**
+   * Implements PersonalizeAgentInterface::supportsMVTs().
+   */
+  public function supportsMVTs() {
+    return FALSE;
+  }
+
+  /**
+   * Implements PersonalizeAgentInterface::supportsMultipleDecisionPoints().
+   */
+  public function supportsMultipleDecisionPoints() {
+    return FALSE;
+  }
 }

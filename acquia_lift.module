@@ -439,11 +439,15 @@ function acquia_lift_get_agent_types() {
       'class' => 'AcquiaLiftSimpleAB',
       'file' => 'AcquiaLiftAgent.inc',
     ),
-    'acquia_lift_target' => array(
+  );
+  // Not exposing this agent type for now as there is no decent workflow for
+  // using it.
+  if (variable_get('acquia_lift_target_enabled', FALSE)) {
+    $types['acquia_lift_target'] = array(
       'class' => 'AcquiaLiftTarget',
       'file' => 'AcquiaLiftTarget.inc',
-    ),
-  );
+    );
+  }
   return $types;
 }
 

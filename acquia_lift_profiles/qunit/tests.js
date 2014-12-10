@@ -179,9 +179,9 @@ QUnit.asyncTest( "personalize decision event", function( assert ) {
       if ( args[1] == 'Campaign Action' ) {
         assert.equal( args[0], 'capture',  'capture view received');
         assert.equal( args[1], 'Campaign Action',  'capture view is of type campaign action');
-        assert.equal( args[2].campaignid, "my-agent", 'value correctly assigned from event' );
-        assert.equal( args[2].campaignname, "Test Agent", 'value correctly assigned from event' );
-        assert.equal( args[2].actionName, "test_decision", 'value correctly assigned from event' );
+        assert.equal( args[2].targetcampaignid, "my-agent", 'value correctly assigned from event' );
+        assert.equal( args[2].targetcampaignname, "Test Agent", 'value correctly assigned from event' );
+        assert.equal( args[2].targetactionname, "test_decision", 'value correctly assigned from event' );
         QUnit.start();
       }
     }
@@ -209,8 +209,8 @@ QUnit.asyncTest( "sent goal to agent event", function( assert ) {
       if ( args[1] == 'goal-event' ) {
         assert.equal( args[0], 'capture',  'capture received');
         assert.equal( args[1], 'goal-event',  'capture view is of type goal-event');
-        assert.equal( args[2].campaignid, "my-agent", 'value correctly assigned from event' );
-        assert.equal( args[2].campaignname, "Test Agent", 'value correctly assigned from event' );
+        assert.equal( args[2].targetcampaignid, "my-agent", 'value correctly assigned from event' );
+        assert.equal( args[2].targetcampaignname, "Test Agent", 'value correctly assigned from event' );
         QUnit.start();
       }
     }

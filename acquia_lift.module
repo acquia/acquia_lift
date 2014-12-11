@@ -431,9 +431,23 @@ function acquia_lift_cron_queue_info() {
  */
 function acquia_lift_get_agent_types() {
   $types = array(
-    'acquia_lift' => 'AcquiaLiftAgent',
-    'acquia_lift_simple_ab' => 'AcquiaLiftSimpleAB',
+    'acquia_lift' => array(
+      'class' => 'AcquiaLiftAgent',
+      'file' => 'AcquiaLiftAgent.inc'
+    ),
+    'acquia_lift_simple_ab' => array(
+      'class' => 'AcquiaLiftSimpleAB',
+      'file' => 'AcquiaLiftAgent.inc',
+    ),
   );
+  // Not exposing this agent type for now as there is no decent workflow for
+  // using it.
+  if (variable_get('acquia_lift_target_enabled', FALSE)) {
+    $types['acquia_lift_target'] = array(
+      'class' => 'AcquiaLiftTarget',
+      'file' => 'AcquiaLiftTarget.inc',
+    );
+  }
   return $types;
 }
 
@@ -464,13 +478,10 @@ function acquia_lift_personalize_agent_type() {
   // only personalize_agent_type available.
   if (!empty($account_info)) {
     $path = drupal_get_path('module', 'acquia_lift') . '/plugins/agent_types';
-    foreach (acquia_lift_get_agent_types() as $type_name => $class_name) {
+    foreach (acquia_lift_get_agent_types() as $type_name => $handler) {
       $info[$type_name] = array(
         'path' => $path,
-        'handler' => array(
-          'file' => 'AcquiaLiftAgent.inc',
-          'class' => $class_name,
-        ),
+        'handler' => $handler,
       );
     }
   }
@@ -713,6 +724,9 @@ function acquia_lift_personalize_option_set_delete($option_set) {
  */
 function acquia_lift_sync_option_sets($agent, $old_option_sets, $new_option_sets, $sync_only_on_changes = FALSE) {
   if ($agent_instance = personalize_agent_load_agent($agent->machine_name)) {
+    if (!$agent_instance instanceof AcquiaLiftAgentInterface) {
+      return;
+    }
     try {
       // Tell Acquia Lift about the change to the decision structure.
       $old_decisions = AcquiaLiftAgent::convertOptionSetsToDecisions($old_option_sets);

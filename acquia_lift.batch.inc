@@ -14,7 +14,7 @@ function acquia_lift_batch_sync_campaigns() {
   acquia_lift_delete_queue();
   // Now get all sync operations for all existing Acquia Lift agents.
   $agents = array();
-  foreach (acquia_lift_get_agent_types() as $type => $class) {
+  foreach (acquia_lift_get_agent_types() as $type => $info) {
     $agents = array_merge($agents, personalize_agent_load_by_type($type));
   }
   $operations = acquia_lift_get_sync_operations_for_agents($agents);

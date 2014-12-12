@@ -2246,6 +2246,7 @@ function acquia_lift_personalize_agent_page_alter(&$build, &$agent_data) {
   // Add a link to return to the page for variations if this is a page variation
   // campaign.
   module_load_include('inc', 'acquia_lift', 'acquia_lift.admin');
+  module_load_include('inc', 'acquia_lift', 'acquia_lift.page_variations');
   $agent_instance = personalize_agent_load_agent($agent_data->machine_name);
   if ($agent_instance instanceof AcquiaLiftPageVariationInterface) {
     $build['return_link'] = array(

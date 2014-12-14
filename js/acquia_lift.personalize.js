@@ -1534,7 +1534,7 @@
      */
     render: function () {
       var isActive = this.model ? this.model.get('isActive') : false;
-      this.$el.toggle(this.model.includeInNavigation());
+      this.$el.toggle(this.model && this.model.includeInNavigation());
       // The menu li element.
       this.$el.toggleClass('acquia-lift-active', isActive);
       // The link element.

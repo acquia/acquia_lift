@@ -2873,8 +2873,10 @@
    *   variation index to edit, or -1 to create a new variation.
    */
   Drupal.ajax.prototype.commands.acquia_lift_page_variation_preview = function (ajax, response, status) {
-    var view = Drupal.acquiaLiftUI.views.pageVariations[response.data.agentName]
-    view.selectVariation(response.data.variationIndex);
+    _.defer(function() {
+      var view = Drupal.acquiaLiftUI.views.pageVariations[response.data.agentName]
+      view.selectVariation(response.data.variationIndex);
+    });
   }
 
   /**

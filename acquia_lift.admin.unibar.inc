@@ -398,6 +398,7 @@ function _acquia_lift_personalize_element_variation_details_form_submit($form, &
   );
   $values['add_control_option'] = TRUE;
   $values['agent_select'] = $values['agent'];
+  $values['pages_all'] = 0;
 
   module_load_include('inc', 'personalize_elements', 'personalize_elements.admin');
   $option_set = personalize_elements_convert_form_values_to_option_set($values);

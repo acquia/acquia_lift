@@ -1,0 +1,324 @@
+/**
+ * @file
+ * Styles for integrating Personalize with the Navbar module.
+ */
+
+/**
+ * Personalize top-level icon.
+ */
+.navbar-bar .navbar-icon-acquia-lift:before {
+  background-image: url("../images/bebebe/rocket.svg");
+}
+
+.no-svg .navbar-bar .navbar-icon-acquia-lift:before {
+  background-image: url("../images/bebebe/rocket.png");
+}
+
+.navbar-bar .navbar-icon-acquia-lift {
+  &:active:before, &.navbar-active:before {
+    background-image: url("../images/ffffff/rocket.svg");
+  }
+}
+
+.no-svg .navbar-bar .navbar-icon-acquia-lift {
+  &:active:before, &.navbar-active:before {
+    background-image: url("../images/ffffff/rocket.png");
+  }
+}
+
+/**
+ * Personalize second-level icon.
+ */
+.navbar-box .navbar-icon-acquia-lift:before {
+  background-image: url("../images/707070/rocket.svg");
+}
+
+.no-svg .navbar-box .navbar-icon-acquia-lift:before {
+  background-image: url("../images/707070/rocket.png");
+}
+
+#navbar-administration {
+  .acquia-lift-active {
+    font-weight: bold;
+    .acquia-lift-campaign {
+      font-weight: bold;
+    }
+  }
+  .acquia-lift-campaigns .navbar-box {
+    display: inline-block;
+    width: 100%;
+  }
+  .navbar-tray-vertical .acquia-lift-campaigns .navbar-box .acquia-lift-campaign {
+    margin-right: 0;
+  }
+  &.navbar-oriented .acquia-lift-campaign {
+    padding-right: 0; /* LTR */
+  }
+}
+
+/* Menu wrapper container */
+#navbar-administration {
+  .navbar-tray-vertical .navbar-twisty {
+    > .menu-wrapper {
+      display: none;
+    }
+    &.open > .menu-wrapper {
+      display: block;
+    }
+  }
+}
+
+/* Horizontal dropdowns */
+#navbar-administration {
+  .navbar-tray-acquia-lift.navbar-tray-horizontal {
+    .menu li:hover ul {
+      display: block;
+    }
+    .navbar-level-1 > {
+      ul, .menu-wrapper {
+        border-color: #dddddd;
+        border-style: solid;
+        border-width: 0 1px 1px;
+        box-shadow: 0px 0px 2px 0px rgba(0, 0, 0, 0.3333);
+        margin-left: -1px;
+        position: absolute;
+        top: 100%;
+      }
+    }
+    .acquia-lift-scrollable {
+      max-height: 70vh;
+      overflow-y: auto;
+      padding-bottom: .3em;
+    }
+    .menu ul ul {
+      border-bottom: 1px solid #dddddd;
+      border-top: 1px solid #dddddd;
+    }
+    .navbar-level-1 li {
+      float: none;
+    }
+    .navbar-level-2 > {
+      ul, * > ul {
+        margin-left: 1em; /* LTR */
+      }
+    }
+    .acquia-lift-personalize-type-count {
+      display: inline-block;
+      span {
+        background-color: #85A810;
+        border-radius: 1em;
+        color: white;
+        padding: 0 0.35em;
+        font-weight: bold;
+      }
+      &.acquia-lift-empty span {
+        background-color: gray;
+      }
+    }
+  }
+}
+
+/* Campaign drop-down */
+#navbar-administration {
+  .navbar-tray-horizontal {
+    .acquia-lift-menu-item {
+      .acquia-lift-campaign {
+        float: left;
+      }
+      .acquia-lift-campaign-edit {
+        float: right;
+        margin-left: 1.667em;
+      }
+    }
+  }
+  .navbar-tray-vertical {
+    .acquia-lift-active-container * {
+      line-height: 1.3;
+    }
+    .acquia-lift-menu-item {
+      margin: {
+        top: (1.3em / 2);
+        bottom: (1.3em / 2);
+      }
+      padding: {
+        top: 0;
+        bottom: 0;
+        left: 0;
+      }
+      line-height: 1.3;
+
+      a {
+        display: block;
+      }
+    }
+  }
+}
+
+/* Page variation links */
+#navbar-administration {
+  .navbar-tray-horizontal {
+    .acquia-lift-menu-item {
+      .acquia-lift-preview-option {
+        float: left;
+      }
+      .acquia-lift-variation-rename,
+      .acquia-lift-goal-rename,
+      .acquia-lift-variation-edit {
+        float: right;
+        margin-left: 1.667em;
+      }
+      .acquia-lift-variation-delete,
+      .acquia-lift-goal-delete {
+        float: right;
+        margin-left: .667em;
+      }
+    }
+  }
+}
+
+/* Displayed as links within menus */
+#navbar-administration {
+  .navbar-tray .acquia-lift-menu-link, .menu .menu a.acquia-lift-menu-link {
+    color: #29aae1;
+  }
+  .navbar-tray .acquia-lift-menu-link {
+    &:hover, &:active {
+      color: #007ec0;
+    }
+  }
+  .menu .menu a.acquia-lift-menu-link {
+    &:hover, &:active {
+      color: #007ec0;
+    }
+  }
+}
+
+/* Create links */
+#navbar-administration {
+  .navbar-tray-horizontal {
+    .acquia-lift-menu-create {
+      border-top: 1px solid #ddd;
+      padding: .2em 1.3333em 1em 1.3333em;
+    }
+    .menu ul li.last {
+      padding-top: .6em;
+    }
+  }
+  .acquia-lift-menu-create:before {
+    content: '+';
+    font-weight: bold;
+    font-size: 1.667em;
+    padding-right: 0.2em;
+    vertical-align: text-bottom;
+  }
+  .navbar-tray-acquia-lift.navbar-tray-horizontal .menu ul ul:last-child {
+    border-bottom: none;
+  }
+}
+
+/* General text */
+#navbar-administration {
+  .navbar-tray {
+    .acquia-lift-menu-disabled {
+      color: #c6c6c6;
+    }
+    a.acquia-lift-menu-disabled {
+      pointer-events: none;
+      cursor: default;
+      &:hover, &:active {
+        color: #c6c6c6;
+      }
+    }
+  }
+}
+
+/* Nested menu uls for data grouping (rather than visual grouping) */
+#navbar-administration {
+  .navbar-tray-acquia-lift.navbar-tray-horizontal .menu ul ul.innerMenuList {
+    border: none;
+    background-color: inherit;
+    padding-top: 1em;
+    .navbar-menu-item {
+      padding: .5em 1.3333em .5em .2em;
+    }
+  }
+}
+
+/* Additional edit links are only available in horizontal view */
+#navbar-administration {
+  .navbar-tray-vertical {
+    .acquia-lift-campaign-edit, .acquia-lift-variation-delete, .acquia-lift-variation-rename, .acquia-lift-goal-rename, .acquia-lift-goal-delete, .acquia-lift-page-variation-toggle {
+      display: none !important;
+    }
+  }
+}
+
+
+/**
+* Keep long names compact.
+*/
+#navbar-administration {
+  .navbar-tray-horizontal {
+    .acquia-lift-campaign-list,
+    .acquia-lift-option-sets-list {
+      padding: {
+        top: .9em;
+        bottom: .9em;
+      }
+
+      &, span {
+        line-height: 1.2;
+      }
+    }
+
+    .acquia-lift-option-sets-list .acquia-lift-personalize-type-count {
+      position: relative;
+      top: -.2em;
+    }
+
+    .acquia-lift-active-container {
+      $width: 12em;
+      position: relative;
+      display: inline-block;
+      max-width: $width;
+      word-wrap: normal;
+      overflow-x: hidden;
+
+      &::after {
+        content: "\02026";
+        display: inline-block;
+        position: absolute;
+        top: 0;
+        left: $width;
+        width: 2em;
+        margin-left: -2em;
+        text-align: right;
+        font-weight: bold;
+        background-image: linear-gradient(270deg, #fff, #fff 1.1em, transparent 100%);
+        color: #999;
+      }
+
+      @media screen and (min-width: 1024px) {
+        $width: 20em;
+        max-width: $width;
+
+        &::after {
+          left: $width;
+        }
+      }
+
+      @media screen and (min-width: 1366px) {
+        $width: 30em;
+        max-width: $width;
+
+        &::after {
+          left: $width;
+        }
+      }
+
+      &, * {
+        white-space: pre;
+      }
+    }
+  }
+}

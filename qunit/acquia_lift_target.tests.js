@@ -91,14 +91,15 @@ QUnit.test("test explicit targeting logic", function( assert ) {
 function addLiftTargetToDrupalSettings(agent_name, enabled_contexts, decision_name, osid, options) {
 
   Drupal.settings.personalize.agent_map = Drupal.settings.personalize.agent_map || {};
-  Drupal.settings.personalize.agent_map[agent_name] = Drupal.settings.personalize.agent_map[agent_name] || {
+  Drupal.settings.personalize.agent_map[agent_name] = {
     'active': 1,
     'cache_decisions': false,
     'enabled_contexts': enabled_contexts,
     'type': 'acquia_lift_target'
   };
 
-  var option_names = options_array = [];
+  var option_names = [];
+  var options_array = [];
   for (var i in options) {
     if (options.hasOwnProperty(i)) {
       option_names.push(i);

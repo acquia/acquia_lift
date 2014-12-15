@@ -75,10 +75,6 @@
   overflow-y: auto;
   padding-bottom: .3em;
 }
-#navbar-administration .navbar-tray-acquia-lift.navbar-tray-horizontal .menu ul ul {
-  border-bottom: 1px solid #dddddd;
-  border-top: 1px solid #dddddd;
-}
 #navbar-administration .navbar-tray-acquia-lift.navbar-tray-horizontal .navbar-level-1 li {
   float: none;
 }
@@ -100,6 +96,11 @@
   background-color: gray;
 }
 
+/* Nested menu padding */
+#navbar-administration .navbar-tray-horizontal .menu ul li {
+  padding-bottom: .3em;
+}
+
 /* Campaign drop-down */
 #navbar-administration .acquia-lift-menu-item .acquia-lift-campaign {
   float: left;
@@ -107,6 +108,13 @@
 #navbar-administration .acquia-lift-menu-item .acquia-lift-campaign-edit {
   float: right;
   margin-left: 1.667em;
+}
+
+/* Option set dividers */
+#navbar-administration .navbar-tray-acquia-lift.navbar-tray-horizontal .acquia-lift-content-variation {
+  border-top: 1px solid #dddddd;
+  border-bottom: 1px solid #dddddd;
+  background-color: #fafafa;
 }
 
 /* Page variation links */
@@ -139,10 +147,7 @@
 /** Create links */
 #navbar-administration .navbar-tray-horizontal .acquia-lift-menu-create {
   border-top: 1px solid #ddd;
-  padding: .2em 1.3333em 1em 1.3333em;
-}
-#navbar-administration .navbar-tray-horizontal .menu ul li.last {
-  padding-top: .6em;
+  padding: .6em 1.3333em 1em 1.3333em;
 }
 #navbar-administration .acquia-lift-menu-create:before {
   content: '+';

@@ -149,12 +149,16 @@
   border-top: 1px solid #ddd;
   padding: .6em 1.3333em 1em 1.3333em;
 }
+#navbar-administration .acquia-lift-variation-add:before,
 #navbar-administration .acquia-lift-menu-create:before {
   content: '+';
   font-weight: bold;
-  font-size: 1.667em;
+  font-size: 1.3em;
   padding-right: 0.2em;
   vertical-align: text-bottom;
+}
+#navbar-administration .acquia-lift-menu-create:before {
+  font-size: 1.667em;
 }
 #navbar-administration .navbar-tray-acquia-lift.navbar-tray-horizontal .menu ul ul:last-child {
   border-bottom: none;

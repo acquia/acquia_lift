@@ -158,6 +158,5 @@
  */
 #navbar-administration *:before,
 #navbar-administration *:after {
-  -moz-box-sizing: content-box;
-       box-sizing: content-box;
+  box-sizing: content-box;
 }

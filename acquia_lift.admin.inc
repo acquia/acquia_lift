@@ -1138,13 +1138,14 @@ function acquia_lift_page_variation_details_form($form, &$form_state, $variation
  * Form validation handler for acquia_lift_page_variation_details_form.
  */
 function acquia_lift_page_variation_details_form_validate($form, &$form_state) {
-  // Validating a CSS selector is generally beyond what REGEX can handle,
-  // and using the Drupal cleaning scripts all update < > to entities
-  // so just make sure that there are no tags.
-  $re = "/<\\/?[a-z][a-z0-9]*[^<>]*>|<!--.*?-->/im";
-  $matched = preg_match_all($re, $form_state['values']['selector']);
-  if ($matched > 0) {
+  module_load_include('inc', 'personalize_elements', 'personalize_elements.admin');
+  if (!personalize_elements_selector_validate($form_state['values']['selector'])) {
     form_set_error('selector', t('The selector cannot contain tags.'));
+  }
+  $filtered = personalize_elements_filter_personalize_element_option($form_state['values']['variation_type'], $form_state['values']['personalize_elements_content']);
+  if ($filtered !== $form_state['values']['personalize_elements_content']) {
+    $form_state['values']['personalize_elements_content'] = $filtered;
+    drupal_set_message(t('Disallowed HTML tags were removed from the variation.'), 'warning');
   }
 }
 

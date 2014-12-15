@@ -83,7 +83,7 @@
   Drupal.theme.acquiaLiftSelectedContext = function (options) {
     var label = options.category + ': ';
     label += '<span class="acquia-lift-active">' + options.label + '</span>';
-    return label;
+    return '<span class="acquia-lift-active-container">' + label + '</span>';
   }
 
   /**

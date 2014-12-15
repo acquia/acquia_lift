@@ -435,6 +435,8 @@ function acquia_lift_element_variation_details_form_ajax_callback($form, &$form_
     $settings['personalize_elements']['elements'] = personalize_elements_element_settings($option_sets);
     // We need to update the campaigns as well in case a campaign was paused by this action.
     $settings['personalize']['campaigns'] = personalize_agent_get_settings();
+    // And the agent map.
+    $settings['personalize']['agent_map'][$agent_name] = personalize_agent_get_map_settings($agent_name);
     // Note: JavaScript assets for personalize elements are included in
     // personalize_elements_page_build when the module is enabled and therefore
     // do not need to be explicitly added here.

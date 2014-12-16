@@ -795,7 +795,11 @@ function acquia_lift_personalize_goal_delete($goal_info) {
     return;
   }
   $old_goals = isset($agent->data['goals']) ? $agent->data['goals'] : array();
-  $new_goals = personalize_goal_load_by_conditions(array('agent' => $agent->machine_name));
+  $new_goals = array();
+  $goals = personalize_goal_load_by_conditions(array('agent' => $agent->machine_name));
+  foreach ($goals as $goal) {
+    $new_goals[$goal->action] = $goal->value;
+  }
   if (isset($new_goals[$goal_info['name']])) {
     unset($new_goals[$goal_info['name']]);
   }

@@ -1471,7 +1471,55 @@ class AcquiaLiftWebTestAgentAdmin extends AcquiaLiftWebTestBase {
   }
 
   public function testDeleteAgentGoals() {
-    // @todo implement or remove it after goal deletion decision
+    $agent = $this->createTestAgent();
+    $agent_name = $agent->getMachineName();
+    // Add goals.
+    personalize_goal_save($agent_name, 'first-goal', 1);
+    personalize_goal_save($agent_name, 'second-goal', 1);
+    $this->resetAll();
+    // Clear the queue as we're just testing goal deletion.
+    $this->personalizedQueue->deleteQueue();
+
+    $goals = personalize_goal_load_by_conditions(array('agent' => $agent_name));
+    debug($goals);
+    $this->assertEqual(2, count($goals));
+    $goal_ids = array_keys($goals);
+    $first_goal_id = $goal_ids[0];
+    $second_goal_id = $goal_ids[1];
+    // Delete one of the goals.
+    personalize_goal_delete($first_goal_id);
+    $expected_queues = array(
+      array(
+        'method' => 'saveGoal',
+        'args' => array(
+          $agent_name,
+          $goals[$second_goal_id]->action,
+        ),
+        'agent' => $agent_name
+      ),
+      array(
+        'method' => 'deleteGoal',
+        'args' => array(
+          $agent_name,
+          $goals[$first_goal_id]->action,
+        ),
+        'agent' => $agent_name
+      ),
+      array(
+        'method' => 'saveAgent',
+        'args' => array(
+          $agent_name,
+          $agent->getTitle(),
+          'adaptive',
+          PERSONALIZE_STATUS_NOT_STARTED,
+          0.1,
+          0.2,
+          1
+        ),
+        'agent' => $agent_name
+      ),
+    );
+    $this->assertQueueItems($expected_queues);
   }
 
   public function testUpdateAgentStatus() {

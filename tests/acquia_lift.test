@@ -474,7 +474,7 @@ class AcquiaLiftWebTestVariationSets extends AcquiaLiftWebTestBase {
   }
 
   function testPersonalizeElementsVariationSets() {
-    module_load_include('inc', 'acquia_lift', 'acquia_lift.admin');
+    module_load_include('inc', 'acquia_lift', 'acquia_lift.page_variations');
 
     $agent_name = 'test-agent';
     // Variation 1 (only one element).
@@ -542,17 +542,17 @@ class AcquiaLiftWebTestVariationSets extends AcquiaLiftWebTestBase {
    */
   function testVariationSets()
   {
-    module_load_include('inc', 'acquia_lift', 'acquia_lift.admin');
+    module_load_include('inc', 'acquia_lift', 'acquia_lift.page_variations');
 
     $admin_user = $this->drupalCreateUser(array('access administration pages', 'manage personalized content', 'administer blocks'));
     $this->drupalLogin($admin_user);
 
     // Create a new agent via the UI.
-    $agent_name = $this->randomName();
-    $machine_name = personalize_generate_machine_name($agent_name, 'personalize_agent_machine_name_exists');
+    $agent_title = $this->randomName();
+    $agent_name = personalize_generate_machine_name($agent_title, 'personalize_agent_machine_name_exists');
     $edit = array(
-      'agent_basic_info[title]' => $agent_name,
-      'agent_basic_info[machine_name]' => $machine_name,
+      'agent_basic_info[title]' => $agent_title,
+      'agent_basic_info[machine_name]' => $agent_name,
       'agent_basic_info[agent_type]' => 'test_agent',
     );
     $this->drupalPost('admin/structure/personalize/add', $edit, $this->getButton('agent'));

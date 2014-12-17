@@ -63,15 +63,17 @@
         });
       }
 
-
       // Provide method to hide full selector in variation type details form
       // until the user selects to edit.
       // Note that the form is sent as the new context so we can't just check
       // within the context.
+      // Note that the selector input may not be available if the user isn't
+      // able to edit its contents.
       var $variationTypeForm = $('#acquia-lift-element-variation-details-form').not('.acquia-lift-processed');
-      if ($variationTypeForm.length > 0) {
+      var $selectorInput = $variationTypeForm.find('input[name="selector"]');
+
+      if ($variationTypeForm.length > 0 && $selectorInput.length > 0) {
         var editLink = '<a class="acquia-lift-selector-edit">' + Drupal.t('Edit selector') + '</a>';
-        var $selectorInput = $variationTypeForm.find('input[name="selector"]');
         var $selector =  $selectorInput.closest('div');
         $variationTypeForm.parent().find('h2').append(editLink);
         $variationTypeForm.parent().find('.acquia-lift-selector-edit').on('click', function(e) {
@@ -205,9 +207,13 @@
    * - type: Indicates the type of variation mode: one of 'page' or 'element'.
    * - variationType: The type of variation, e.g., editText, addClass, etc.
    * - selector: The selector for the affected DOM element.
-   * - variationIndex:  The variation index to edit.  If a page variation, this
-   *   is the variation index, if an element variation then this is the option
-   *   id.  A variationIndex of -1 indicates creating a new variation.
+   * If type == page:
+   * - variationIndex:  The variation index to edit.  A variationIndex of -1
+   *   indicates creating a new variation.
+   * If type == element
+   * - osid: (optional) the option set id of an existing option set that is
+   *   being modified either by adding a variation or by editing a variation
+   *   within.
    */
   Drupal.ajax.prototype.commands.acquia_lift_variation_edit = function (ajax, response, status) {
     var data = response.data || {}, $selector = null;
@@ -242,12 +248,15 @@
     // Generate required event data for details form.
     var editEvent = {};
     editEvent.data = {
-      'anchor': $selector.get(0),
-      'id': data.variationType,
-      'limitByChildrenType': variationTypeData.limitByChildrenType,
-      'name': variationTypeData.name,
-      'selector': data.selector
+      anchor: $selector.get(0),
+      id: data.variationType,
+      limitByChildrenType: variationTypeData.limitByChildrenType,
+      name: variationTypeData.name,
+      selector: data.selector
     };
+    if (data.osid) {
+      editEvent.data.osid = data.osid;
+    }
 
     // Open the view.
     Drupal.acquiaLiftVariations.app.appView.createVariationTypeDialog(editEvent);
@@ -299,14 +308,12 @@
 
   /**
    * Add an event listener to open up a specific variation type details form
-   * on a specific element.
+   * on a specific element in order to add an element variation.
    *
    * Data is an object with the following keys:
    * - variationType: The type of variation, e.g., editText, addClass, etc.
    * - selector: The selector for the affected DOM element.
-   * - variationIndex:  The variation index to edit.  If a page variation, this
-   *   is the variation index, if an element variation then this is the option
-   *   id.  A variationIndex of -1 indicates creating a new variation.
+   * - osid: The option set id for the parent option set.
 
    */
   $(document).on('acquiaLiftElementVariationAdd', function(e, data) {
@@ -653,6 +660,9 @@
         var formPath = Drupal.settings.basePath +
           'admin/structure/acquia_lift/variation/' +
           Drupal.encodePath(event.data.id);
+        if (event.data.osid) {
+          formPath += '/' + Drupal.encodePath(event.data.osid);
+        }
         this.variationTypeFormModel = new Drupal.acquiaLiftVariations.models.VariationTypeFormModel({
           selector: event.data.selector,
           id: 'acquia-lift-modal-variation-type-' + event.data.id,
@@ -737,6 +747,10 @@
             selector = $selectorInput.val(),
             matches = 0,
             message = '';
+          // If the selector wasn't shown then it doesn't need to be validated.
+          if ($selectorInput.length == 0) {
+            return true;
+          }
 
           function displaySelectorError(message) {
             $selectorInput.addClass('error');

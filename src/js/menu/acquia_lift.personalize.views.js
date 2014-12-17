@@ -419,7 +419,8 @@
       var osData = this.model.get('data');
       var data = {
         variationType: osData.personalize_elements_type,
-        selector: osData.personalize_elements_selector
+        selector: osData.personalize_elements_selector,
+        osid: this.model.get('osid')
       };
       $(document).trigger('acquiaLiftElementVariationAdd', data)
       event.preventDefault();

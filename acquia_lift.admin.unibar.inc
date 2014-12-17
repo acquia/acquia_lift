@@ -237,13 +237,20 @@ function acquia_lift_campaign_type_create_form_submit($form, &$form_state) {
  *   is a key defined as a personalize_elements variation.
  * @see hook_personalize_elements_variation_types
  */
-function acquia_lift_element_variation_details_form($form, &$form_state, $variation_type) {
+function acquia_lift_element_variation_details_form($form, &$form_state, $variation_type, $osid = NULL) {
   $types = module_invoke_all('personalize_elements_variation_types');
   if (!isset($types[$variation_type]['contextual']['formitem'])) {
     $form['error'] = array(
       '#markup' => t('Invalid page variation type.  Please close this message and create a new variation.'),
     );
     return $form;
+  }
+  if (!empty($osid)) {
+    $osid = personalize_resolve_stringified_osid($osid);
+    $form['osid'] = array(
+      '#type' => 'value',
+      '#value' => $osid,
+    );
   }
   $form['variation_type'] = array(
     '#type' => 'value',
@@ -255,6 +262,7 @@ function acquia_lift_element_variation_details_form($form, &$form_state, $variat
     '#title' => t('Selector'),
     '#required' => TRUE,
     '#maxlength' => 500,
+    '#access' => empty($osid),
   );
   $form['pages'] = array(
     '#type' => 'hidden',
@@ -273,6 +281,7 @@ function acquia_lift_element_variation_details_form($form, &$form_state, $variat
     '#description' => t('Descriptive name for the variation set, used by Acquia Lift for administration and reporting.'),
     '#required' => TRUE,
     '#maxlength' => 255,
+    '#access' => empty($osid),
   );
   // Now include the details specific to this variation type.
   $form['personalize_elements_content'] = $types[$variation_type]['contextual']['formitem'];
@@ -389,17 +398,28 @@ function _acquia_lift_page_variation_details_form_submit($form, &$form_state) {
 function _acquia_lift_personalize_element_variation_details_form_submit($form, &$form_state) {
   // Prepare the values to those expected by the personalize elements module.
   $values = $form_state['values'];
-  $values['options'] = array(
-    array(
-      'option_label' => t('Variation'),
-      'personalize_elements_content' => $values['personalize_elements_content'],
-    ),
-  );
-  $values['add_control_option'] = TRUE;
-  $values['agent_select'] = $values['agent'];
+  if (empty($values['osid'])) {
+    // Creating a new option set and a new option within it.
+    $values['options'] = array(
+      array(
+        'option_label' => t('Variation #@num', array('@num' => 1)),
+        'personalize_elements_content' => $values['personalize_elements_content'],
+      ),
+    );
+    $values['add_control_option'] = TRUE;
+    $values['agent_select'] = $values['agent'];
 
-  module_load_include('inc', 'personalize_elements', 'personalize_elements.admin');
-  $option_set = personalize_elements_convert_form_values_to_option_set($values);
+    module_load_include('inc', 'personalize_elements', 'personalize_elements.admin');
+    $option_set = personalize_elements_convert_form_values_to_option_set($values);
+  }
+  else {
+    // Adding a variation to an existing option set.
+    $option_set = personalize_option_set_load($values['osid']);
+    $option_set->options[] = array(
+      'option_label' => t('Variation #@num', array('@num' => count($option_set->options))),
+      'personalize_elements_content' => $values['personalize_elements_content'],
+    );
+  }
   $option_set = personalize_option_set_save($option_set);
   // Now re-load the option set so that all hooks get run.
   // This is particularly important to set the selector property.

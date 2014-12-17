@@ -379,6 +379,19 @@
       // Keep the in-context content variation editing, page variation editing,
       // and in-context goal creation in mutually exclusive active states.
       $('body').once('acquia-lift-personalize', function () {
+        // Creating any item from the menu is considering starting a new menu action.
+        $('.acquia-lift-menu-create').once().each(function() {
+          $(this).on('click', function () {
+            $(document).trigger('acquiaLiftMenuAction');
+          })
+        });
+        // Shut down goals editing if a new menu action is started.
+        $(document).on('acquiaLiftMenuAction', function () {
+          _.defer(function() {
+            Drupal.acquiaLiftUI.utilities.shutDownGoalsUI();
+          });
+        });
+
         // Turn off content variations highlighting if visitor actions editing
         // is enabled.
         $(document).bind('visitorActionsUIEditMode', function (event, isActive) {
@@ -395,7 +408,7 @@
         ui.models.contentVariationModeModel.on('change:isActive', function (model, isActive) {
           if (isActive) {
             _.delay(function() {
-              $(document).trigger('visitorActionsUIShutdown');
+              Drupal.acquiaLiftUI.utilities.shutDownGoalsUI();
               ui.models.pageVariationModeModel.endEditMode();
             });
           }
@@ -406,7 +419,7 @@
           if (data.start) {
             _.delay(function() {
               ui.models.contentVariationModeModel.endEditMode();
-              $(document).trigger('visitorActionsUIShutdown');
+              Drupal.acquiaLiftUI.utilities.shutDownGoalsUI();
             });
           }
         });

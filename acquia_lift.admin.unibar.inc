@@ -235,6 +235,9 @@ function acquia_lift_campaign_type_create_form_submit($form, &$form_state) {
  * @param string $variation_type
  *   The variation type that defines the type of details to include.  This
  *   is a key defined as a personalize_elements variation.
+ * @param string $osid
+ *   (Optional) The option set id when adding variations to an existing option
+ *   set.  If null, then create a new option set with the control and variation.
  * @see hook_personalize_elements_variation_types
  */
 function acquia_lift_element_variation_details_form($form, &$form_state, $variation_type, $osid = NULL) {

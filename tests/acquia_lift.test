@@ -764,9 +764,8 @@ class AcquiaLiftWebTestVariationSets extends AcquiaLiftWebTestBase {
     $this->assertUrl('node', array('query' => array('liftpm' => 'new_block|My test block')));
 
     // Verify that the pending message has been added to the settings.
-    $expected_message = t('The %block_title personalized block has been created.  Next you need to add it to a region using the <a href="!block_url">blocks administration</a>.', array(
-      '%block_title' => 'My test block',
-      '!block_url' => 'admin/structure/blocks',
+    $expected_message = t('Created the new <em class="placeholder">My test block</em> personalized block. The block will not appear on your website until you add the block to a region on the !blocks page.', array(
+      '!blocks' => l('Structure > Blocks', 'admin/structure/blocks'),
     ));
     $settings = $this->drupalGetSettings();
     $this->assertEqual($settings['acquia_lift']['pendingMessage'], array($expected_message));

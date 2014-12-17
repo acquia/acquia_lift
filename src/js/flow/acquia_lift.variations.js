@@ -146,7 +146,7 @@
     }
 
     // Open the view.
-    Drupal.acquiaLiftVariations.app.appView.createVariationTypeDialog(editEvent);
+    Drupal.acquiaLiftVariations.app.appView.openExistingTypeDialog(editEvent);
   }
 
   /**

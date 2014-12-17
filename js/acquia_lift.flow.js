@@ -259,7 +259,7 @@
     }
 
     // Open the view.
-    Drupal.acquiaLiftVariations.app.appView.createVariationTypeDialog(editEvent);
+    Drupal.acquiaLiftVariations.app.appView.openExistingTypeDialog(editEvent);
   }
 
   /**
@@ -656,7 +656,6 @@
        *   ElementVariationModel.
        */
       createVariationTypeDialog: function(event) {
-        this.setSelectionMode(false);
         var formPath = Drupal.settings.basePath +
           'admin/structure/acquia_lift/variation/' +
           Drupal.encodePath(event.data.id);
@@ -671,12 +670,32 @@
           typeLabel: event.data.name,
           variationIndex: this.model.get('variationIndex')
         });
-        var dialogView = new Drupal.acquiaLiftVariations.views.VariationTypeFormView({
+        this.variationTypeView = new Drupal.acquiaLiftVariations.views.VariationTypeFormView({
           el: event.data.anchor,
           model: this.variationTypeFormModel,
           appModel: this.model
         });
         this.variationTypeFormModel.set('active', this.model.get('editMode'));
+      },
+
+      /**
+       * Open a variation type dialog based on an existing variation set.
+       *
+       *  @param event
+       *    The triggering event that includes the model data/JSON for the selected
+       *    ElementVariationModel.
+       */
+      openExistingTypeDialog: function(event) {
+        // Made sure the DOM selector is no longer active.
+        this.setSelectionMode(false);
+        // Highlight the affected element.
+        this.anchor = event.data.anchor;
+        this.highlightAnchor(true);
+        if (this.variationTypeView) {
+          this.variationTypeView.remove();
+        }
+        // Create the dialog.
+        this.createVariationTypeDialog(event);
       },
 
       /**

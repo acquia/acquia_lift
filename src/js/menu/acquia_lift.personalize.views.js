@@ -220,6 +220,7 @@
         // ajax event.
         //$(Drupal.theme('acquiaLiftThrobber')).insertAfter(this.$el.find('.acquia-lift-campaign'));
         Drupal.acquiaLiftUI.setActiveCampaignAjax.call(null, this.model.get('name'), this);
+        $(document).trigger('acquiaLiftMenuAction');
         event.preventDefault();
         event.stopPropagation();
       }
@@ -1213,6 +1214,7 @@
         // Re-attach ctools-modal behaviors so that the element settings for
         // Drupal ajax forms get reset to the new campaign url.
         Drupal.attachBehaviors(this.$el.parent());
+        this.$el.find('a').on('click', this.dispatchChange);
       } else {
         // All other status can just get immediately changed.
         if (!this.$el.find('a').hasClass('ctools-use-modal')) {
@@ -1227,7 +1229,9 @@
           .removeClass('ctools-modal-acquia-lift-style')
           .removeClass('ctools-use-modal-processed')
           .off()
-          .bind('click', this.updateStatus);
+          .on('click', this.updateStatus)
+          .on('click', this.dispatchChange);
+        ;
       }
     },
 
@@ -1247,6 +1251,13 @@
       // The disabled class will be removed when re-rendered.
       this.$el.find('a[href]').addClass('acquia-lift-menu-disabled');
       activeModel.updateStatus(newStatus);
+    },
+
+    /**
+     * Sends a notice that a menu action is happening.
+     */
+    dispatchChange: function () {
+      $(document).trigger('acquiaLiftMenuAction');
     }
   });
 

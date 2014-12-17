@@ -20,7 +20,7 @@ div.ctools-modal-content .modal-title {
 }
 
 div.ctools-modal-content .modal-content {
-  padding: 0;
+  padding: .3em;
   color: #666;
   font-family: "Helvetica Neue", helvetica, "Segoe UI", segoe, "Ubuntu", "Droid Sans", "Arial", sans-serif;
 }

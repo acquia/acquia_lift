@@ -750,6 +750,7 @@
      * Triggers a change notification for option sets.
      */
     triggerOptionSetChange: function (event) {
+      this.refreshData();
       this.trigger('change:optionSets');
     },
 
@@ -776,8 +777,17 @@
       var that = this;
       var optionSets = this.get('optionSets');
       optionSets.each(function (model) {
+        var activeOption = model.get('activeOption');
+        // If there is currently an active option, make sure it is still in the
+        // options for this option set.
+        if (activeOption) {
+          var found = model.get('options').findWhere({'option_id': activeOption});
+          if (!found) {
+            activeOption = null;
+          }
+        }
         // If the activeOption has not been set, set it to a default.
-        if (!model.get('activeOption')) {
+        if (!activeOption) {
           // Default the active option to the first/control option.
           var index = 0;
           if (Drupal.settings.personalize.preselected && Drupal.settings.personalize.preselected.hasOwnProperty(model.get('decision_name'))) {

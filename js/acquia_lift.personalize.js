@@ -496,6 +496,10 @@
     initialized = value;
   };
 
+  Drupal.acquiaLiftUI.utilities.shutDownGoalsUI = _.throttle(function () {
+    $(document).trigger('visitorActionsUIShutdown');
+  }, 500);
+
   /**
    * Apply a callback to values in an object.
    *
@@ -578,6 +582,13 @@
   var contentModeModelBase = Backbone.Model.extend({
     defaults: {
       isActive: false
+    },
+
+    initialize: function () {
+      var that = this;
+      $(document).on('acquiaLiftMenuAction', function() {
+        that.endEditMode();
+      });
     },
 
     /**
@@ -1583,6 +1594,7 @@
         // ajax event.
         //$(Drupal.theme('acquiaLiftThrobber')).insertAfter(this.$el.find('.acquia-lift-campaign'));
         Drupal.acquiaLiftUI.setActiveCampaignAjax.call(null, this.model.get('name'), this);
+        $(document).trigger('acquiaLiftMenuAction');
         event.preventDefault();
         event.stopPropagation();
       }
@@ -2514,6 +2526,7 @@
         // Re-attach ctools-modal behaviors so that the element settings for
         // Drupal ajax forms get reset to the new campaign url.
         Drupal.attachBehaviors(this.$el.parent());
+        this.$el.find('a').on('click', this.dispatchChange);
       } else {
         // All other status can just get immediately changed.
         if (!this.$el.find('a').hasClass('ctools-use-modal')) {
@@ -2528,7 +2541,9 @@
           .removeClass('ctools-modal-acquia-lift-style')
           .removeClass('ctools-use-modal-processed')
           .off()
-          .bind('click', this.updateStatus);
+          .on('click', this.updateStatus)
+          .on('click', this.dispatchChange);
+        ;
       }
     },
 
@@ -2548,6 +2563,13 @@
       // The disabled class will be removed when re-rendered.
       this.$el.find('a[href]').addClass('acquia-lift-menu-disabled');
       activeModel.updateStatus(newStatus);
+    },
+
+    /**
+     * Sends a notice that a menu action is happening.
+     */
+    dispatchChange: function () {
+      $(document).trigger('acquiaLiftMenuAction');
     }
   });
 
@@ -3236,6 +3258,19 @@
       // Keep the in-context content variation editing, page variation editing,
       // and in-context goal creation in mutually exclusive active states.
       $('body').once('acquia-lift-personalize', function () {
+        // Creating any item from the menu is considering starting a new menu action.
+        $('.acquia-lift-menu-create').once().each(function() {
+          $(this).on('click', function () {
+            $(document).trigger('acquiaLiftMenuAction');
+          })
+        });
+        // Shut down goals editing if a new menu action is started.
+        $(document).on('acquiaLiftMenuAction', function () {
+          _.defer(function() {
+            Drupal.acquiaLiftUI.utilities.shutDownGoalsUI();
+          });
+        });
+
         // Turn off content variations highlighting if visitor actions editing
         // is enabled.
         $(document).bind('visitorActionsUIEditMode', function (event, isActive) {
@@ -3252,7 +3287,7 @@
         ui.models.contentVariationModeModel.on('change:isActive', function (model, isActive) {
           if (isActive) {
             _.delay(function() {
-              $(document).trigger('visitorActionsUIShutdown');
+              Drupal.acquiaLiftUI.utilities.shutDownGoalsUI();
               ui.models.pageVariationModeModel.endEditMode();
             });
           }
@@ -3263,7 +3298,7 @@
           if (data.start) {
             _.delay(function() {
               ui.models.contentVariationModeModel.endEditMode();
-              $(document).trigger('visitorActionsUIShutdown');
+              Drupal.acquiaLiftUI.utilities.shutDownGoalsUI();
             });
           }
         });

@@ -8,6 +8,13 @@
       isActive: false
     },
 
+    initialize: function () {
+      var that = this;
+      $(document).on('acquiaLiftMenuAction', function() {
+        that.endEditMode();
+      });
+    },
+
     /**
      * Helper function to start adding a content variation.
      */

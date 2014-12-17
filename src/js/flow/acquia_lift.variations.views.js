@@ -36,15 +36,7 @@
        * {@inheritDoc}
        */
       render: function (model, editMode) {
-        if (editMode) {
-          // Must update the watched elements as the page DOM structure can
-          // be changed in between each call.
-          this.$watchElements = Drupal.acquiaLiftVariations.getAvailableElements();
-          this.$el.DOMSelector("updateElements", this.$watchElements);
-          this.$el.DOMSelector("startWatching");
-        } else {
-          this.$el.DOMSelector("stopWatching");
-        }
+        this.setSelectionMode(editMode);
       },
 
       /**
@@ -106,10 +98,26 @@
       },
 
       /**
+       * Sets whether the DOM selector should be active to allow the end user
+       * to select a DOM element.
+       */
+      setSelectionMode: function(inSelectionMode) {
+        if (inSelectionMode) {
+          // Must update the watched elements as the page DOM structure can
+          // be changed in between each call.
+          this.$watchElements = Drupal.acquiaLiftVariations.getAvailableElements();
+          this.$el.DOMSelector("updateElements", this.$watchElements);
+          this.$el.DOMSelector("startWatching");
+        } else {
+          this.$el.DOMSelector("stopWatching");
+        }
+      },
+
+      /**
        * Event callback for when an element is selected in the DOM selector.
        */
       onElementSelected: function (element, selector) {
-        this.$el.DOMSelector('stopWatching');
+        this.setSelectionMode(false);
         this.createContextualMenu(element, selector);
       },
 
@@ -140,6 +148,7 @@
        *   ElementVariationModel.
        */
       createVariationTypeDialog: function(event) {
+        this.setSelectionMode(false);
         var formPath = Drupal.settings.basePath +
           'admin/structure/acquia_lift/variation/' +
           Drupal.encodePath(event.data.id);

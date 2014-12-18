@@ -512,7 +512,7 @@ function acquia_lift_option_set_add_modal_callback($ajax) {
         'path' => 'admin/structure/personalize/variations/personalize-elements/add',
         'modal' => FALSE,
         'logo' => theme('image', array(
-          'path' => $path . '/images/variation-type-element.svg',
+          'path' => $path . '/images/variation-type-element.png',
           'alt' => t('Webpage element'),
           'title' => t('Select this option to create a variation set from web page elements.'),
         )),
@@ -523,7 +523,7 @@ function acquia_lift_option_set_add_modal_callback($ajax) {
         'path' => 'admin/structure/personalize/variations/personalize-blocks/add',
         'modal' => FALSE,
         'logo' => theme('image', array(
-          'path' => $path . '/images/variation-type-block.svg',
+          'path' => $path . '/images/variation-type-block.png',
           'alt' => t('Drupal block'),
           'title' => t('Select this option to create a variation set from Drupal content blocks.'),
         )),

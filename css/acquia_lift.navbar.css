@@ -217,7 +217,7 @@
 #navbar-administration .navbar-tray-horizontal .acquia-lift-active-container {
   position: relative;
   display: inline-block;
-  max-width: 12em;
+  max-width: 8em;
   word-wrap: normal;
   overflow-x: hidden;
 }
@@ -226,21 +226,21 @@
   display: inline-block;
   position: absolute;
   top: 0;
-  left: 12em;
+  left: 8em;
   width: 2em;
   margin-left: -2em;
   text-align: right;
   font-weight: bold;
-  background-image: -webkit-linear-gradient(180deg, #fff, #fff 1.1em, transparent 100%);
-  background-image: linear-gradient(270deg, #fff, #fff 1.1em, transparent 100%);
+  background-image: -webkit-linear-gradient(180deg, #fff, #fff 1.1em, rgba(255, 255, 255, 0) 100%);
+  background-image: linear-gradient(270deg, #fff, #fff 1.1em, rgba(255, 255, 255, 0) 100%);
   color: #999;
 }
 @media screen and (min-width: 1024px) {
   #navbar-administration .navbar-tray-horizontal .acquia-lift-active-container {
-    max-width: 20em;
+    max-width: 16em;
   }
   #navbar-administration .navbar-tray-horizontal .acquia-lift-active-container::after {
-    left: 20em;
+    left: 16em;
   }
 }
 @media screen and (min-width: 1366px) {

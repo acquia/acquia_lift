@@ -14,6 +14,7 @@
    *   The updated string.
    */
   function formatClass (str) {
+    if (!str) return '';
     return str.trim().replace(/[\s\_]+/g, '-');
   }
 
@@ -117,6 +118,10 @@
     var optionSets = model.get('optionSets');
     var variations = optionSets.getVariations();
 
+    if (variations.length == 0) {
+      return '';
+    }
+
     var attrs = [
       'class="acquia-lift-preview-page-variation acquia-lift-content-variation navbar-menu-item"' +
       'data-acquia-lift-personalize-agent="' + model.get('name') + '"'
@@ -127,14 +132,9 @@
     item += '</span>\n';
 
     item += '<ul class="menu">' + "\n";
-    // Handle empty page variations.
-    if (variations.length == 0) {
-      item += '<li class="acquia-lift-empty">' + Drupal.theme('acquiaLiftPersonalizeNoMenuItem', {type: 'variations'}) + '</li>\n';
-    } else {
-      _.each(variations, function (variation, index, list) {
-        item += Drupal.theme('acquiaLiftPreviewPageVariationMenuItem', variation);
-      });
-    }
+    _.each(variations, function (variation, index, list) {
+      item += Drupal.theme('acquiaLiftPreviewPageVariationMenuItem', variation);
+    });
     item += '</ul>\n';
     return item;
   }
@@ -280,35 +280,6 @@
    *****************************************/
 
   /**
-   * Returns a menu item that contains links to preview option set options.
-   *
-   * @param object options
-   *   Keys:
-   *   - osID: The ID of the option set.
-   *   - os: The option set object.
-   *   - os.option_id: The ID of an option set option.
-   *   - os.option_label: The label of an option set option.
-   *
-   * @return string
-   */
-  Drupal.theme.acquiaLiftOptionSetMenu = function (options) {
-    var menu = '<ul class="menu">' + "\n";
-    var osID = options.osID;
-    var os = options.os;
-    var os_selector = os.selector;
-    options.os.options.each(function(model) {
-      menu += Drupal.theme('acquiaLiftPreviewOptionMenuItem', {
-        id: model.get('option_id'),
-        label: model.get('option_label'),
-        osID: osID,
-        osSelector: os_selector
-      });
-    });
-    menu += '</ul>\n';
-    return menu;
-  };
-
-  /**
    * Returns a list item that contains links to preview option set options.
    *
    * @param object options
@@ -333,6 +304,36 @@
   };
 
   /**
+   * Returns a menu item that contains links to preview option set options.
+   *
+   * @param object options
+   *   Keys:
+   *   - osID: The ID of the option set.
+   *   - os: The option set object.
+   *   - os.option_id: The ID of an option set option.
+   *   - os.option_label: The label of an option set option.
+   *
+   * @return string
+   */
+  Drupal.theme.acquiaLiftOptionSetMenu = function (options) {
+    var menu = '<ul class="menu">' + "\n";
+    var osID = options.osID;
+    var os = options.os;
+    var os_selector = os.selector;
+    options.os.options.each(function(model) {
+      menu += Drupal.theme('acquiaLiftPreviewOptionMenuItem', {
+        id: model.get('option_id'),
+        label: model.get('option_label'),
+        osID: osID,
+        osSelector: os_selector,
+        showDelete: os.deletable
+      });
+    });
+    menu += '</ul>\n';
+    return menu;
+  };
+
+  /**
    * Returns a menu item that contains a link to an option set option.
    *
    * @param object options
@@ -341,6 +342,8 @@
    *   - label: The label of the option set option.
    *   - osID: The ID of the option set.
    *   - osSelector: The selector representing the option set.
+   *   - showDelete: Indicates if the delete option should be available for this
+   *     particular item.
    *
    * @return string
    */
@@ -367,9 +370,21 @@
       'href="' + renameHref + '"'
     ];
 
+    var deleteHref = Drupal.settings.basePath + 'admin/structure/acquia_lift/variation/delete/' + options.osID + '/' + options.id + '/nojs';
+    var deleteAttrs = [
+      'class="acquia-lift-variation-delete acquia-lift-menu-link ctools-use-modal ctools-modal-acquia-lift-style"',
+      'title="' + Drupal.t('Delete Variation') + '"',
+      'aria-role="button"',
+      'aria-pressed="false"',
+      'href="' + deleteHref + '"'
+    ];
+
     item += '<li>\n<div class="acquia-lift-menu-item">';
     item += '<a ' + attrs.join(' ') + '>' + Drupal.t('Preview @text', {'@text': options.label}) + '</a> \n';
     if (options.id !== Drupal.settings.personalize.controlOptionName) {
+      if (options.showDelete) {
+        item += '<a ' + deleteAttrs.join(' ') + '>' + Drupal.t('Delete') + '</a>\n';
+      }
       item += '<a ' + renameAttrs.join(' ') + '>' + Drupal.t('Rename') + '</a>\n';
     }
     item += '</div></li>';

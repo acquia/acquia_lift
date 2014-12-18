@@ -72,7 +72,7 @@ function acquia_lift_menu() {
     'page arguments' => array(4),
     'access arguments' => array('manage personalized content'),
     'type' => MENU_CALLBACK,
-    'file' => 'acquia_lift.admin.inc',
+    'file' => 'acquia_lift.admin.unibar.inc',
     'theme callback' => 'ajax_base_page_theme',
   );
   // AJAX callback to create a new campaign in a modal window.
@@ -81,7 +81,7 @@ function acquia_lift_menu() {
     'page arguments' => array(4, 5),
     'access arguments' => array('manage personalized content'),
     'type' => MENU_CALLBACK,
-    'file' => 'acquia_lift.admin.inc',
+    'file' => 'acquia_lift.admin.unibar.inc',
     'theme callback' => 'ajax_base_page_theme',
   );
   // AJAX callback to cancel a modal creation flow.
@@ -90,16 +90,25 @@ function acquia_lift_menu() {
     'page arguments' => array(4),
     'access arguments' => array('manage personalized content'),
     'type' => MENU_CALLBACK,
-    'file' => 'acquia_lift.admin.inc',
+    'file' => 'acquia_lift.admin.unibar.inc',
+    'theme callback' => 'ajax_base_page_theme',
+  );
+  // AJAX callback to add a new variation set to a campaign.
+  $items['admin/structure/acquia_lift/variations/add/%ctools_js'] = array(
+    'page callback' => 'acquia_lift_option_set_add_modal_callback',
+    'page arguments' => array(5),
+    'access arguments' => array('manage personalized content'),
+    'type' => MENU_CALLBACK,
+    'file' => 'acquia_lift.admin.unibar.inc',
     'theme callback' => 'ajax_base_page_theme',
   );
   // AJAX callback to retrieve a page variation details form.
-  $items['admin/structure/acquia_lift/pagevariation/%'] = array(
+  $items['admin/structure/acquia_lift/variation/%'] = array(
     'page callback' => 'drupal_get_form',
-    'page arguments' => array('acquia_lift_page_variation_details_form', 4),
+    'page arguments' => array('acquia_lift_element_variation_details_form', 4),
     'access arguments' => array('manage personalized content'),
     'type' => MENU_CALLBACK,
-    'file' => 'acquia_lift.admin.inc',
+    'file' => 'acquia_lift.admin.unibar.inc',
     'delivery callback' => 'ajax_deliver',
     'theme callback' => 'ajax_base_page_theme',
   );
@@ -109,15 +118,16 @@ function acquia_lift_menu() {
     'page arguments' => array(5, 6),
     'access arguments' => array('manage personalized content'),
     'type' => MENU_CALLBACK,
-    'file' => 'acquia_lift.admin.inc',
+    'file' => 'acquia_lift.admin.unibar.inc',
     'theme callback' => 'ajax_base_page_theme',
   );
+  // AJAX callback to rename an option set variation.
   $items['admin/structure/acquia_lift/variation/rename/%/%/%ctools_js'] = array(
     'page callback' => 'acquia_lift_option_rename_modal_callback',
     'page arguments' => array(5, 6),
     'access arguments' => array('manage personalized content'),
     'type' => MENU_CALLBACK,
-    'file' => 'acquia_lift.admin.inc',
+    'file' => 'acquia_lift.admin.unibar.inc',
     'theme callback' => 'ajax_base_page_theme',
   );
   // AJAX callback to delete a page variation.
@@ -126,7 +136,16 @@ function acquia_lift_menu() {
     'page arguments' => array(5, 6),
     'access arguments' => array('manage personalized content'),
     'type' => MENU_CALLBACK,
-    'file' => 'acquia_lift.admin.inc',
+    'file' => 'acquia_lift.admin.unibar.inc',
+    'theme callback' => 'ajax_base_page_theme',
+  );
+  // AJAX callback to delete an element variation.
+  $items['admin/structure/acquia_lift/variation/delete/%/%/%ctools_js'] = array(
+    'page callback' => 'acquia_lift_element_variation_delete_modal_callback',
+    'page arguments' => array(5, 6),
+    'access arguments' => array('manage personalized content'),
+    'type' => MENU_CALLBACK,
+    'file' => 'acquia_lift.admin.unibar.inc',
     'theme callback' => 'ajax_base_page_theme',
   );
   // Ajax callback to open the add a goal selection in a modal window.
@@ -135,7 +154,7 @@ function acquia_lift_menu() {
     'page arguments' => array(5),
     'access arguments' => array('manage personalized content'),
     'type' => MENU_CALLBACK,
-    'file' => 'acquia_lift.admin.inc',
+    'file' => 'acquia_lift.admin.unibar.inc',
     'theme callback' => 'ajax_base_page_theme',
   );
   // Ajax callback to create a goal of a specific type.
@@ -144,7 +163,7 @@ function acquia_lift_menu() {
     'page arguments' => array(5, 6),
     'access arguments' => array('manage personalized content'),
     'type' => MENU_CALLBACK,
-    'file' => 'acquia_lift.admin.inc',
+    'file' => 'acquia_lift.admin.unibar.inc',
     'theme callback' => 'ajax_base_page_theme',
   );
   // Ajax callback to rename a goal.
@@ -153,7 +172,7 @@ function acquia_lift_menu() {
     'page arguments' => array(5),
     'access arguments' => array('manage personalized content'),
     'type' => MENU_CALLBACK,
-    'file' => 'acquia_lift.admin.inc',
+    'file' => 'acquia_lift.admin.unibar.inc',
     'theme callback' => 'ajax_base_page_theme',
   );
   // AJAX callback to delete a goal.
@@ -162,7 +181,7 @@ function acquia_lift_menu() {
     'page arguments' => array(5, 6),
     'access arguments' => array('manage personalized content'),
     'type' => MENU_CALLBACK,
-    'file' => 'acquia_lift.admin.inc',
+    'file' => 'acquia_lift.admin.unibar.inc',
     'theme callback' => 'ajax_base_page_theme',
   );
   // Callback to show the start campaign form.
@@ -171,7 +190,7 @@ function acquia_lift_menu() {
     'page arguments' => array(4),
     'access arguments' => array('manage personalized content'),
     'type' => MENU_CALLBACK,
-    'file' => 'acquia_lift.admin.inc',
+    'file' => 'acquia_lift.admin.unibar.inc',
     'theme callback' => 'ajax_base_page_theme',
   );
   return $items;
@@ -412,9 +431,23 @@ function acquia_lift_cron_queue_info() {
  */
 function acquia_lift_get_agent_types() {
   $types = array(
-    'acquia_lift' => 'AcquiaLiftAgent',
-    'acquia_lift_simple_ab' => 'AcquiaLiftSimpleAB',
+    'acquia_lift' => array(
+      'class' => 'AcquiaLiftAgent',
+      'file' => 'AcquiaLiftAgent.inc'
+    ),
+    'acquia_lift_simple_ab' => array(
+      'class' => 'AcquiaLiftSimpleAB',
+      'file' => 'AcquiaLiftAgent.inc',
+    ),
   );
+  // Not exposing this agent type for now as there is no decent workflow for
+  // using it.
+  if (variable_get('acquia_lift_target_enabled', FALSE)) {
+    $types['acquia_lift_target'] = array(
+      'class' => 'AcquiaLiftTarget',
+      'file' => 'AcquiaLiftTarget.inc',
+    );
+  }
   return $types;
 }
 
@@ -445,13 +478,10 @@ function acquia_lift_personalize_agent_type() {
   // only personalize_agent_type available.
   if (!empty($account_info)) {
     $path = drupal_get_path('module', 'acquia_lift') . '/plugins/agent_types';
-    foreach (acquia_lift_get_agent_types() as $type_name => $class_name) {
+    foreach (acquia_lift_get_agent_types() as $type_name => $handler) {
       $info[$type_name] = array(
         'path' => $path,
-        'handler' => array(
-          'file' => 'AcquiaLiftAgent.inc',
-          'class' => $class_name,
-        ),
+        'handler' => $handler,
       );
     }
   }
@@ -475,6 +505,21 @@ function acquia_lift_personalize_agent_presave($agent) {
   if (!isset($agent->data['explore_rate'])) {
     $agent->data['explore_rate'] = 20;
   }
+}
+
+/**
+ * Implements hook_personalize_agent_update_status().
+ */
+function acquia_lift_personalize_agent_update_status($agent_name, $old_status, $status) {
+  $agent_data = personalize_agent_load($agent_name);
+  if (!acquia_lift_owns_agent($agent_data)) {
+    return;
+  }
+  $agent_instance = personalize_agent_load_agent($agent_name, TRUE);
+  if (!$agent_instance instanceof AcquiaLiftAgentInterface) {
+    return;
+  }
+  $agent_instance->syncAgentStatus();
 }
 
 /**
@@ -556,7 +601,16 @@ function acquia_lift_personalize_option_set_save($option_set) {
   if ($old_option_sets == $new_option_sets) {
     return;
   }
-  acquia_lift_sync_option_sets($agent, $old_option_sets, $new_option_sets);
+  acquia_lift_sync_option_sets($agent, $old_option_sets, $new_option_sets, TRUE);
+  // This agent will need to be re-verified as the changes may have made it changed
+  // whether or not it is valid.
+  personalize_agent_clear_verified_status($agent->machine_name);
+  // The only reason that a change to this option set should cause the agent to be
+  // paused, is if we now have fewer than two options in the option set.
+  if (count($option_set->options) < 2) {
+    personalize_pause_if_running($agent->machine_name);
+  }
+  acquia_lift_sync_fixed_targeting($agent, $new_option_sets);
 
   // Put back the is_new property if it was there.
   if ($new_os) {
@@ -575,11 +629,7 @@ function acquia_lift_personalize_option_set_save($option_set) {
   }
 
   $needs_starting = FALSE;
-  if (!isset($option_set->is_new)) {
-    // We were just updating an existing option set, make sure the campaign gets restarted.
-    $needs_starting = TRUE;
-  }
-  else {
+  if (isset($option_set->is_new)) {
     if (isset($field['settings']['personalize']['stop_on_winner']) && $field['settings']['personalize']['stop_on_winner']) {
       // We need to set the 'stop_on_winner' property on the newly created agent.
       $agent->data['stop_on_winner'] = 1;
@@ -652,6 +702,14 @@ function acquia_lift_personalize_option_set_delete($option_set) {
     unset($new_option_sets[$option_set->osid]);
   }
   acquia_lift_sync_option_sets($agent, $old_option_sets, $new_option_sets);
+  acquia_lift_sync_fixed_targeting($agent, $new_option_sets);
+  // Clear the verified status of the agent.
+  personalize_agent_clear_verified_status($agent->machine_name);
+  // The only reason deletion of the option set would mean the agent needs to be
+  // paused is if there are no more option sets.
+  if (count($new_option_sets) == 0) {
+    personalize_pause_if_running($agent->machine_name);
+  }
 }
 
 /**
@@ -664,19 +722,41 @@ function acquia_lift_personalize_option_set_delete($option_set) {
  * @param $new_option_sets
  *   The new option sets.
  */
-function acquia_lift_sync_option_sets($agent, $old_option_sets, $new_option_sets) {
+function acquia_lift_sync_option_sets($agent, $old_option_sets, $new_option_sets, $sync_only_on_changes = FALSE) {
   if ($agent_instance = personalize_agent_load_agent($agent->machine_name)) {
+    if (!$agent_instance instanceof AcquiaLiftAgentInterface) {
+      return;
+    }
     try {
       // Tell Acquia Lift about the change to the decision structure.
       $old_decisions = AcquiaLiftAgent::convertOptionSetsToDecisions($old_option_sets);
       $new_decisions = AcquiaLiftAgent::convertOptionSetsToDecisions($new_option_sets);
-      $agent_instance->syncDecisions($old_decisions, $new_decisions);
-      // Tell Acquia Lift about the fixed targeting for the option sets.
-      $agent_instance->syncFixedTargeting($new_option_sets);
+      if (!$sync_only_on_changes || ($old_decisions != $new_decisions)) {
+        $agent_instance->syncDecisions($old_decisions, $new_decisions);
+      }
 
       // Save the agent data to the db.
       $agent->data['decisions'] = $new_option_sets;
       personalize_agent_save($agent);
+    }
+    catch (Exception $e) {
+      drupal_set_message($e->getMessage(), 'error');
+    }
+  }
+}
+
+/**
+ * Syncs fixed targeting rules to Acquia Lift.
+ * @param $agent
+ * @param $new_option_sets
+ */
+function acquia_lift_sync_fixed_targeting($agent, $new_option_sets) {
+  if ($agent_instance = personalize_agent_load_agent($agent->machine_name)) {
+    if (!$agent_instance instanceof AcquiaLiftAgentInterface) {
+      return;
+    }
+    try {
+      $agent_instance->syncFixedTargeting($new_option_sets);
     }
     catch (Exception $e) {
       drupal_set_message($e->getMessage(), 'error');
@@ -700,10 +780,58 @@ function acquia_lift_personalize_goal_save($goal_info) {
   // For the current goal, take the info from what was passed in, rather
   // than from the db.
   $new_goals[$goal_info['name']] = $goal_info['value'];
-  if ($new_goals == $old_goals) {
+  acquia_lift_sync_goals($agent, $old_goals, $new_goals, TRUE);
+  // This agent will need to be re-verified as the changes may have changed
+  // whether or not it is valid.
+  personalize_agent_clear_verified_status($goal_info['agent']);
+}
+
+/**
+ * Implements hook_personalize_goal_delete().
+ */
+function acquia_lift_personalize_goal_delete($goal_info) {
+  $agent = personalize_agent_load($goal_info['agent']);
+  if (!acquia_lift_owns_agent($agent)) {
+    return;
+  }
+  $old_goals = isset($agent->data['goals']) ? $agent->data['goals'] : array();
+  $new_goals = array();
+  $goals = personalize_goal_load_by_conditions(array('agent' => $agent->machine_name));
+  foreach ($goals as $goal) {
+    $new_goals[$goal->action] = $goal->value;
+  }
+  if (isset($new_goals[$goal_info['name']])) {
+    unset($new_goals[$goal_info['name']]);
+  }
+  acquia_lift_sync_goals($agent, $old_goals, $new_goals, TRUE);
+  // Clear the verified status of the agent.
+  personalize_agent_clear_verified_status($agent->machine_name);
+  // If we now have no goals, the agent needs to be paused.
+  if (count($new_goals) == 0) {
+    personalize_pause_if_running($agent->machine_name);
+  }
+}
+
+/**
+ * Syncs an agents goals to Lift.
+ *
+ * @param $agent
+ *   The agent whose goals are being sync'd.
+ * @param $old_goals
+ *   The old goals that Lift knows about.
+ * @param $new_goals
+ *   The new goals.
+ * @param bool $sync_only_on_changes
+ *   Whether to sync only if there are changes.
+ */
+function acquia_lift_sync_goals($agent, $old_goals, $new_goals, $sync_only_on_changes = FALSE) {
+  if ($sync_only_on_changes && ($new_goals == $old_goals)) {
     return;
   }
   if ($agent_instance = personalize_agent_load_agent($agent->machine_name)) {
+    if (!$agent_instance instanceof AcquiaLiftAgentInterface) {
+      return;
+    }
     try {
       // Now tell Acquia Lift about the change to the goals.
       $agent_instance->syncGoals($old_goals, $new_goals);
@@ -833,12 +961,21 @@ function acquia_lift_process_queue($exit_on_finish = TRUE) {
       $function($item->data);
       $queue->deleteItem($item);
     }
+    catch(AcquiaLiftClientErrorException $e) {
+      // If our worker callback throws an exception indicating a client error in
+      // a request made to Lift, we should abort the processing of the queue and
+      // set a message to let the user know things went wrong.
+      drupal_set_message(t('An error occurred while syncing your campaign information to Lift: @error', array('@error' => $e->getMessage())));
+      AcquiaLiftQueue::handleFailedItem($item);
+      $queue->deleteQueue();
+      break;
+    }
     catch (AcquiaLiftException $e) {
+      // For other types of errors, allow the item to be retried.
       $queue->releaseItem($item);
     }
-
   }
-  _personalize_agent_verification_cache_clear();
+  personalize_agent_clear_verified_status();
 
   if ($exit_on_finish) {
     $commands = array(
@@ -2113,6 +2250,7 @@ function acquia_lift_personalize_agent_page_alter(&$build, &$agent_data) {
   // Add a link to return to the page for variations if this is a page variation
   // campaign.
   module_load_include('inc', 'acquia_lift', 'acquia_lift.admin');
+  module_load_include('inc', 'acquia_lift', 'acquia_lift.page_variations');
   $agent_instance = personalize_agent_load_agent($agent_data->machine_name);
   if ($agent_instance instanceof AcquiaLiftPageVariationInterface) {
     $build['return_link'] = array(
@@ -2190,28 +2328,6 @@ function acquia_lift_personalize_agent_end_date_form_alter(&$form, $agent_name) 
 /**
  * Implements hook_form_FORM_ID_alter().
  */
-function acquia_lift_form_personalize_agent_option_sets_form_alter(&$form, &$form_state) {
-  if (!empty($form['#agent']) && isset($form['#agent']->machine_name)) {
-    $option_sets_section = &$form['variations']['primary']['option_sets'];
-    // Add a link for personalizing existing content. This is based on the
-    // "Add goal in context link" and the whole functionality is based on
-    // visitor_actions_ui module's "Add action in context" functionality.
-    $option_sets_section['header']['add_existing'] = array(
-      '#type' => 'markup',
-      '#markup' => l(t('Personalize existing'), 'acquia_lift/personalize_in_context/start', array(
-        'query' => array('destination' => "admin/structure/personalize/manage/{$form['#agent']->machine_name}/edit"),
-        'attributes' => array('class' => array('personalize-in-context-link')),
-      )),
-    );
-    $option_sets_section['header']['#attached'] = array(
-      'css' => array(drupal_get_path('module', 'acquia_lift') . '/css/acquia_lift.admin.css'),
-    );
-  }
-}
-
-/**
- * Implements hook_form_FORM_ID_alter().
- */
 function acquia_lift_form_personalize_admin_form_alter(&$form, &$form_state) {
   module_load_include('inc', 'acquia_lift', 'acquia_lift.ui');
   acquia_lift_chosenify_element($form['personalize_visitor_context_disabled']);
@@ -2235,6 +2351,49 @@ function acquia_lift_form_personalize_elements_configuration_form_alter(&$form, 
  */
 function acquia_lift_personalize_elements_confirmation_form_submit($form, &$form_state) {
   variable_set('acquia_lift_html_context_strip', $form_state['values']['acquia_lift_html_context_strip']);
+}
+
+/**
+ * Implements hook_form_FORM_ID_alter().
+ */
+function acquia_lift_form_personalize_blocks_form_alter(&$form, &$form_state) {
+  $form['#submit'][] = 'acquia_lift_personalize_blocks_form_submit';
+}
+
+/**
+ * Submit handler for altered personalize_elements_form.
+ */
+function acquia_lift_personalize_blocks_form_submit($form, &$form_state) {
+  $redirect = $form_state['redirect'];
+  if ($redirect === FALSE) {
+    return;
+  }
+  // If there is a destination specified, then it should take priority over the
+  // existing redirect value (which is what happens in Drupal form handling).
+  // Check this manually rather than using drupal_get_destination() as it
+  // returns the current URL if the destination is not yet.
+  $destination = drupal_get_destination();
+  if (isset($_GET['destination'])) {
+    $redirect = $destination['destination'];
+    // Now that it has been handled, remove it so taht it doesn't overwrite
+    // our own redirect location.
+    unset($_GET['destination']);
+  }
+  else if (empty($redirect)) {
+    // If there is no destination and no redirect, then use the default
+    // Drupal destination of the current path.
+    $redirect = $destination['redirect'];
+  }
+  // Convert the existing redirect into a redirect that accepts query parameters.
+  if (is_string($redirect)) {
+    $redirect = array(
+      $redirect,
+      array('query' => array())
+    );
+  }
+  // Add a message to be shown.
+  $redirect[1]['query']['liftpm'] = 'new_block|' . $form_state['values']['title'];
+  $form_state['redirect'] = $redirect;
 }
 
 /**
@@ -2433,9 +2592,10 @@ function acquia_lift_command_messagebox($message, $seconds = 0) {
  */
 function acquia_lift_command_page_variation_toggle($start = TRUE) {
   return array(
-    'command' => 'acquia_lift_page_variation_toggle',
+    'command' => 'acquia_lift_variation_toggle',
     'data' => array(
       'start' => $start,
+      'type' => 'page',
     ),
   );
 }
@@ -2454,6 +2614,30 @@ function acquia_lift_command_page_variation_preview($agent_name, $variation_inde
     'data' => array(
       'agentName' => $agent_name,
       'variationIndex' => $variation_index,
+    ),
+  );
+}
+
+/**
+ * Returns an AJAX command to preview a specific option set option (variation).
+ *
+ * @param string $agent_name
+ *   The name of the campaign/agent to which the variation belongs.
+ * @param int $osid
+ *   The id of the option set to which the variation belongs.
+ * @param string $option_id
+ *   The id of the variation to display.
+ *
+ * @return array
+ *   The command to be included in AJAX response.
+ */
+function acquia_lift_command_variation_preview($agent_name, $osid, $option_id) {
+  return array(
+    'command' => 'acquia_lift_variation_preview',
+    'data' => array(
+      'agentName' => $agent_name,
+      'osid' => personalize_stringify_osid($osid),
+      'optionId' => $option_id,
     ),
   );
 }

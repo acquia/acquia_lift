@@ -11,8 +11,16 @@
       $('div.ctools-modal-content .modal-content .acquia-lift-type', context).once(function() {
         $(this).on('click', function(e) {
           var $link = $(this).find('a.acquia-lift-type-select');
-          if ($link.attr('href') == Drupal.settings.basePath + 'admin/structure/visitor_actions') {
+          // Special handling based on href values.
+          if ($link.attr('href') == settings.basePath + 'admin/structure/visitor_actions') {
+            // Trigger goals in context.
             $('#acquiaLiftVisitorActionsConnector').find('a').trigger('click');
+            Drupal.CTools.Modal.dismiss();
+            e.preventDefault();
+            e.stopImmediatePropagation();
+          } else if ($link.attr('href') == settings.basePath + 'admin/structure/personalize/variations/personalize-elements/add') {
+            // Trigger variations in context.
+            $(document).trigger('acquiaLiftElementVariationModeTrigger', [{start: true}]);
             Drupal.CTools.Modal.dismiss();
             e.preventDefault();
             e.stopImmediatePropagation();
@@ -60,7 +68,7 @@
       // until the user selects to edit.
       // Note that the form is sent as the new context so we can't just check
       // within the context.
-      var $variationTypeForm = $('#acquia-lift-page-variation-details-form').not('.acquia-lift-processed');
+      var $variationTypeForm = $('#acquia-lift-element-variation-details-form').not('.acquia-lift-processed');
       if ($variationTypeForm.length > 0) {
         var editLink = '<a class="acquia-lift-selector-edit">' + Drupal.t('Edit selector') + '</a>';
         var $selectorInput = $variationTypeForm.find('input[name="selector"]');
@@ -83,7 +91,17 @@
         $pageGoalForm.addClass('acquia-lift-processed');
       }
     }
-  }
+  };
+
+  Drupal.behaviors.acquiaLiftOptionSetTypeList = {
+    attach: function (context, settings) {
+      $('#acquia-lift-option-set-type-list', context).once('acquia-lift-option-set-type-list').each(function () {
+        var blockAnchor = $(this).find('a[href="' + settings.basePath + 'admin/structure/personalize/variations/personalize-blocks/add"]');
+        // Add the current destination address to the personalize blocks anchor.
+        blockAnchor.attr('href', blockAnchor.attr('href') + '?destination=' + settings.visitor_actions.currentPath);
+      });
+    }
+  };
 
   function hidePageVisitorActionsButton() {
     $('#visitor-actions-ui-actionable-elements-without-identifiers').hide();

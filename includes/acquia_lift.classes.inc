@@ -20,6 +20,14 @@ class AcquiaLiftAPI implements PersonalizeLoggerAwareInterface, AcquiaLiftReport
 
   const VALID_NAME_MATCH_PATTERN = '[A-Za-z0-9_-]';
 
+  const ENABLED_STATUS = 'enabled';
+
+  const PAUSED_STATUS = 'paused';
+
+  const STOPPED_STATUS = 'stopped';
+
+  const PROVISIONAL_STATUS = 'provisional';
+
   /**
    * The Acquia Lift API key to use.
    *
@@ -122,14 +130,114 @@ class AcquiaLiftAPI implements PersonalizeLoggerAwareInterface, AcquiaLiftReport
    *
    * This is used during simpletest web tests.
    */
-  public static function setTestInstance($broken_http_client = FALSE) {
+  public static function setTestInstance($broken_http_client = FALSE, $simulate_client_side_breakage = FALSE) {
     module_load_include('inc', 'acquia_lift', 'tests/acquia_lift.test_classes');
     self::$instance = new self('test-api-key', 'test-admin-key', 'test-owner-code', 'http://api.example.com');
     // This method is only ever called within the context of a simpletest web
     // test, so the call to variable_get() is ok here.
     $test_data = variable_get('acquia_lift_web_test_data', array());
-    self::$instance->setHttpClient(new DummyAcquiaLiftHttpClient($broken_http_client, $test_data));
+    self::$instance->setHttpClient(new DummyAcquiaLiftHttpClient($broken_http_client, $test_data, $simulate_client_side_breakage));
     self::$instance->setLogger(new AcquiaLiftTestLogger(FALSE));
+  }
+
+  /**
+   * Maps the passed in status code to one consumable by the Lift service.
+   *
+   * If the passed in status code is already a string status code that's
+   * consumable by Lift it just returns that code. If it's a numeric code
+   * defined in personalize module it maps it to the corresponding string
+   * code. If it's neither, an exception is thrown.
+   *
+   * @param $status
+   *   The status to map.
+   * @return string status
+   *   The status code consumable by Lift.
+   * @throws AcquiaLiftException
+   */
+  public static function mapStatus($status) {
+    $status_map = array(
+      PERSONALIZE_STATUS_NOT_STARTED => self::PAUSED_STATUS,
+      PERSONALIZE_STATUS_PAUSED => self::PAUSED_STATUS,
+      PERSONALIZE_STATUS_RUNNING => self::ENABLED_STATUS,
+      PERSONALIZE_STATUS_COMPLETED => self::STOPPED_STATUS
+    );
+    // Maybe we already have a Lift status string.
+    if (in_array($status, $status_map)) {
+      return $status;
+    }
+    // Otherwise map it to a Lift status.
+    if (!isset($status_map[$status])) {
+      throw new AcquiaLiftException('Unknown agent status: ' . $status);
+    }
+    return $status_map[$status];
+  }
+
+  /**
+   * Whether the passed in status code represents a successful response.
+   *
+   * @param $code
+   *   The status code.
+   * @return bool
+   *   TRUE if the code represents a client error, FALSE otherwise.
+   */
+  public static function isSuccessful($code) {
+    return $code >= 200 && $code < 300;
+  }
+
+  /**
+   * Whether the passed in status code represents a client side error.
+   *
+   * @param $code
+   *   The status code.
+   * @return bool
+   *   TRUE if the code represents a client error, FALSE otherwise.
+   */
+  public static function isClientError($code) {
+    return $code >= 400 && $code < 500;
+  }
+
+  /**
+   * Whether the passed in status code represents a server side error.
+   *
+   * @param $code
+   *   The status code.
+   * @return bool
+   *   TRUE if the code represents a server error, FALSE otherwise.
+   */
+  public static function isServerError($code) {
+    return $code >= 500 && $code < 600;
+  }
+
+  /**
+   * Maps the passed in response code to an exception class to use.
+   *
+   * If the response code passed in constitutes a successful response,
+   * NULL is returned. If it does not constitute a 400 or 500 error,
+   * NULL is returned.
+   *
+   * @param $code
+   *   The response code to map.
+   * @return null|string
+   *   The exception class to use or NULL.
+   */
+  protected static function mapBadResponseToExceptionClass($code) {
+    if (self::isSuccessful($code)) {
+      return NULL;
+    }
+    if (self::isClientError($code)) {
+      switch ($code) {
+        case 404:
+          return 'AcquiaLiftNotFoundException';
+        case 403:
+          return 'AcquiaLiftForbiddenException';
+        default:
+          return 'AcquiaLiftClientErrorException';
+      }
+    }
+    elseif (self::isServerError($code)) {
+      return 'AcquiaLiftServerErrorException';
+    }
+    return NULL;
   }
 
   /**
@@ -327,6 +435,7 @@ class AcquiaLiftAPI implements PersonalizeLoggerAwareInterface, AcquiaLiftReport
    *   TRUE if the agent has been saved to Acquia Lift, FALSE otherwise.
    */
   public function saveAgent($machine_name, $label, $decision_style, $status = 'enabled', $control_rate = 0.1, $explore_rate = .2, $sticky = TRUE) {
+    $status = self::mapStatus($status);
     $url = $this->generateEndpoint("/agent-api/$machine_name");
     $agent = array(
       'name' => $label,
@@ -345,9 +454,67 @@ class AcquiaLiftAPI implements PersonalizeLoggerAwareInterface, AcquiaLiftReport
       $this->logger()->log(PersonalizeLogLevel::INFO, $success_msg, $vars);
     }
     else {
-      $this->logger()->log(PersonalizeLogLevel::ERROR, $fail_msg, $vars);
-      throw new AcquiaLiftException($fail_msg);
+      $this->handleBadResponse($response->code, $fail_msg, $vars);
     }
+  }
+
+  /**
+   * Updates the status of an agent in Acquia Lift.
+   *
+   * @param $machine_name
+   *   The machine of the agent.
+   * @param $status
+   *   The status to set the agent to.
+   * @throws AcquiaLiftException
+   */
+  public function updateAgentStatus($machine_name, $status) {
+    $lift_status_code = self::mapStatus($status);
+    $url = $this->generateEndpoint("/agent-api/$machine_name");
+    $agent = array(
+      'status' => $lift_status_code,
+    );
+    $response = $this->httpClient()->put($url, array('Content-Type' => 'application/json; charset=utf-8', 'Accept' => 'application/json'), $agent);
+    $data = json_decode($response->data, TRUE);
+    $vars = array('agent' => $machine_name);
+    $success_msg = 'The new status of campaign {agent} was pushed to Acquia Lift';
+    $fail_msg = 'The new status of campaign {agent} could not be pushed to Acquia Lift';
+    if ($response->code == 200 && $data['status'] == 'ok') {
+      $this->logger()->log(PersonalizeLogLevel::INFO, $success_msg, $vars);
+    }
+    else {
+      $this->handleBadResponse($response->code, $fail_msg, $vars);
+    }
+  }
+
+  /**
+   * Figures out the correct exception to throw and throws it.
+   *
+   * @param $response_code
+   *   The response code, e.g. 404.
+   * @param $fail_msg
+   *   The message to use for the exception, and for logging if $log_failure it TRUE.
+   * @param array $vars
+   *   Variables to pass to the message.
+   * @param bool $log_failure
+   *   Whether failures should be logged or not
+   */
+  public function handleBadResponse($response_code, $fail_msg, $vars = array(), $log_failure = TRUE) {
+    if ($exception_class = self::mapBadResponseToExceptionClass($response_code)) {
+      if ($log_failure) {
+        $this->logger()->log(PersonalizeLogLevel::ERROR, $fail_msg, $vars);
+      }
+      throw new $exception_class($fail_msg);
+    }
+    if (self::isSuccessful($response_code)) {
+      // If the response wasn't actually bad but we still got here somehow, just
+      // log a warning and return.
+      if ($log_failure) {
+        $this->logger()->log(PersonalizeLogLevel::WARNING, $fail_msg, $vars);
+      }
+      return;
+    }
+    // Otherwise throw a generic exception.
+    throw new AcquiaLiftException($fail_msg);
   }
 
   /**
@@ -369,8 +536,7 @@ class AcquiaLiftAPI implements PersonalizeLoggerAwareInterface, AcquiaLiftReport
       $this->logger()->log(PersonalizeLogLevel::INFO, $success_msg, $vars);
     }
     else {
-      $this->logger()->log(PersonalizeLogLevel::ERROR, $fail_msg, $vars);
-      throw new AcquiaLiftException($fail_msg);
+      $this->handleBadResponse($response->code, $fail_msg, $vars);
     }
   }
 
@@ -395,8 +561,7 @@ class AcquiaLiftAPI implements PersonalizeLoggerAwareInterface, AcquiaLiftReport
       $this->logger()->log(PersonalizeLogLevel::INFO, $success_msg, $vars);
     }
     else {
-      $this->logger()->log(PersonalizeLogLevel::ERROR, $fail_msg, $vars);
-      throw new AcquiaLiftException($fail_msg);
+      $this->handleBadResponse($response->code, $fail_msg, $vars);
     }
   }
 
@@ -424,8 +589,7 @@ class AcquiaLiftAPI implements PersonalizeLoggerAwareInterface, AcquiaLiftReport
       $this->logger()->log(PersonalizeLogLevel::INFO, $success_msg, $vars);
     }
     else {
-      $this->logger()->log(PersonalizeLogLevel::ERROR, $fail_msg, $vars);
-      throw new AcquiaLiftException($fail_msg);
+      $this->handleBadResponse($response->code, $fail_msg, $vars);
     }
   }
 
@@ -444,8 +608,7 @@ class AcquiaLiftAPI implements PersonalizeLoggerAwareInterface, AcquiaLiftReport
       $this->logger()->log(PersonalizeLogLevel::INFO, $success_msg, $vars);
     }
     else {
-      $this->logger()->log(PersonalizeLogLevel::ERROR, $fail_msg, $vars);
-      throw new AcquiaLiftException($fail_msg);
+      $this->handleBadResponse($response->code, $fail_msg, $vars);
     }
   }
 
@@ -465,8 +628,7 @@ class AcquiaLiftAPI implements PersonalizeLoggerAwareInterface, AcquiaLiftReport
       $this->logger()->log(PersonalizeLogLevel::INFO, $success_msg, $vars);
     }
     else {
-      $this->logger()->log(PersonalizeLogLevel::ERROR, $fail_msg, $vars);
-      throw new AcquiaLiftException($fail_msg);
+      $this->handleBadResponse($response->code, $fail_msg, $vars);
     }
   }
 
@@ -489,8 +651,7 @@ class AcquiaLiftAPI implements PersonalizeLoggerAwareInterface, AcquiaLiftReport
       $this->logger()->log(PersonalizeLogLevel::INFO, $success_msg, $vars);
     }
     else {
-      $this->logger()->log(PersonalizeLogLevel::ERROR, $fail_msg, $vars);
-      throw new AcquiaLiftException($fail_msg);
+      $this->handleBadResponse($response->code, $fail_msg, $vars);
     }
   }
 
@@ -515,8 +676,7 @@ class AcquiaLiftAPI implements PersonalizeLoggerAwareInterface, AcquiaLiftReport
       $this->logger()->log(PersonalizeLogLevel::INFO, $success_msg, $vars);
     }
     else {
-      $this->logger()->log(PersonalizeLogLevel::ERROR, $fail_msg, $vars);
-      throw new AcquiaLiftException($fail_msg);
+      $this->handleBadResponse($response->code, $fail_msg, $vars);
     }
   }
 
@@ -570,8 +730,7 @@ class AcquiaLiftAPI implements PersonalizeLoggerAwareInterface, AcquiaLiftReport
       $this->logger()->log(PersonalizeLogLevel::INFO, $success_msg, $vars);
     }
     else {
-      $this->logger()->log(PersonalizeLogLevel::ERROR, $fail_msg, $vars);
-      throw new AcquiaLiftException($fail_msg);
+      $this->handleBadResponse($response->code, $fail_msg, $vars);
     }
   }
 
@@ -593,8 +752,7 @@ class AcquiaLiftAPI implements PersonalizeLoggerAwareInterface, AcquiaLiftReport
       $this->logger()->log(PersonalizeLogLevel::INFO, $success_msg, $vars);
     }
     else {
-      $this->logger()->log(PersonalizeLogLevel::ERROR, $fail_msg, $vars);
-      throw new AcquiaLiftException($fail_msg);
+      $this->handleBadResponse($response->code, $fail_msg, $vars);
     }
   }
 
@@ -610,13 +768,13 @@ class AcquiaLiftAPI implements PersonalizeLoggerAwareInterface, AcquiaLiftReport
   public function getAgent($machine_name) {
     $url = $this->generateEndpoint("/agent-api/$machine_name");
     $response = $this->httpClient()->get($url, array('Accept' => 'application/json'));
-    if ($response->code == 404) {
-      throw new AcquiaLiftNotFoundException('No such agent');
+    if ($response->code == 200) {
+      return json_decode($response->data, TRUE);
     }
-    if ($response->code != 200) {
-      throw new AcquiaLiftException('Could not retrieve agent from Acquia Lift');
+    else {
+      $this->handleBadResponse($response->code, 'Could not retrieve agent from Acquia Lift', array(), FALSE);
     }
-    return json_decode($response->data, TRUE);
+    return FALSE;
   }
 
   /**
@@ -630,13 +788,13 @@ class AcquiaLiftAPI implements PersonalizeLoggerAwareInterface, AcquiaLiftReport
   public function getGoalsForAgent($agent_name) {
     $url = $this->generateEndpoint("/agent-api/$agent_name/goals");
     $response = $this->httpClient()->get($url, array('Accept' => 'application/json'));
-    if ($response->code == 404) {
-      throw new AcquiaLiftNotFoundException('No such agent');
+    if ($response->code == 200) {
+      return json_decode($response->data, TRUE);
     }
-    if ($response->code != 200) {
-      throw new AcquiaLiftException('Could not retrieve goals from Acquia Lift');
+    else {
+      $this->handleBadResponse($response->code, 'Could not retrieve goals from Acquia Lift', array(), FALSE);
     }
-    return json_decode($response->data, TRUE);
+    return FALSE;
   }
 
   /**
@@ -650,13 +808,14 @@ class AcquiaLiftAPI implements PersonalizeLoggerAwareInterface, AcquiaLiftReport
   public function getPointsForAgent($agent_name) {
     $url = $this->generateEndpoint("/agent-api/$agent_name/points");
     $response = $this->httpClient()->get($url, array('Accept' => 'application/json'));
-    if ($response->code == 404) {
-      throw new AcquiaLiftNotFoundException('No such agent');
+
+    if ($response->code == 200) {
+      return json_decode($response->data, TRUE);
     }
-    if ($response->code != 200) {
-      throw new AcquiaLiftException('Could not retrieve decision points from Acquia Lift');
+    else {
+      $this->handleBadResponse($response->code, 'Could not retrieve decision points from Acquia Lift', array(), FALSE);
     }
-    return json_decode($response->data, TRUE);
+    return FALSE;
   }
 
   /**
@@ -673,13 +832,14 @@ class AcquiaLiftAPI implements PersonalizeLoggerAwareInterface, AcquiaLiftReport
   public function getDecisionsForPoint($agent_name, $point_name) {
     $url = $this->generateEndpoint("/agent-api/$agent_name/points/{$point_name}/decisions");
     $response = $this->httpClient()->get($url, array('Accept' => 'application/json'));
-    if ($response->code == 404) {
-      throw new AcquiaLiftNotFoundException('No such decision point');
+
+    if ($response->code == 200) {
+      return json_decode($response->data, TRUE);
     }
-    if ($response->code != 200) {
-      throw new AcquiaLiftException('Could not retrieve decisions from Acquia Lift');
+    else {
+      $this->handleBadResponse($response->code, 'Could not retrieve decisions from Acquia Lift', array(), FALSE);
     }
-    return json_decode($response->data, TRUE);
+    return FALSE;
   }
 
   /**
@@ -698,13 +858,14 @@ class AcquiaLiftAPI implements PersonalizeLoggerAwareInterface, AcquiaLiftReport
   public function getChoicesForDecision($agent_name, $point_name, $decision_name) {
     $url = $this->generateEndpoint("/agent-api/$agent_name/points/{$point_name}/decisions/$decision_name/choices");
     $response = $this->httpClient()->get($url, array('Accept' => 'application/json'));
-    if ($response->code == 404) {
-      throw new AcquiaLiftNotFoundException('No such decision');
+
+    if ($response->code == 200) {
+      return json_decode($response->data, TRUE);
     }
-    if ($response->code != 200) {
-      throw new AcquiaLiftException('Could not retrieve decisions from Acquia Lift');
+    else {
+      $this->handleBadResponse($response->code, 'Could not retrieve choices from Acquia Lift', array(), FALSE);
     }
-    return json_decode($response->data, TRUE);
+    return FALSE;
   }
 
   /**
@@ -730,10 +891,9 @@ class AcquiaLiftAPI implements PersonalizeLoggerAwareInterface, AcquiaLiftReport
       return $existing_agents;
     }
     else {
-      $msg = 'Error retrieving agent list from Acquia Lift';
-      $this->logger()->log(PersonalizeLogLevel::ERROR, $msg);
-      throw new AcquiaLiftException($msg);
+      $this->handleBadResponse($response->code, 'Error retrieving agent list from Acquia Lift');
     }
+    return array();
   }
 
   /**
@@ -750,10 +910,9 @@ class AcquiaLiftAPI implements PersonalizeLoggerAwareInterface, AcquiaLiftReport
       return $response['data']['options'];
     }
     else {
-      $msg = 'Error retrieving list of transforms options';
-      $this->logger()->log(PersonalizeLogLevel::ERROR, $msg);
-      throw new AcquiaLiftException($msg);
+      $this->handleBadResponse($response->code, 'Error retrieving list of transforms options');
     }
+    return FALSE;
   }
 
   /**
@@ -787,8 +946,7 @@ class AcquiaLiftAPI implements PersonalizeLoggerAwareInterface, AcquiaLiftReport
       $this->logger()->log(PersonalizeLogLevel::INFO, $success_msg, $vars);
     }
     else {
-      $this->logger()->log(PersonalizeLogLevel::ERROR, $fail_msg, $vars);
-      throw new AcquiaLiftException($fail_msg);
+      $this->handleBadResponse($response->code, $fail_msg, $vars);
     }
   }
 
@@ -809,8 +967,7 @@ class AcquiaLiftAPI implements PersonalizeLoggerAwareInterface, AcquiaLiftReport
       $this->logger()->log(PersonalizeLogLevel::INFO, $success_msg, $vars);
     }
     else {
-      $this->logger()->log(PersonalizeLogLevel::ERROR, $fail_msg, $vars);
-      throw new AcquiaLiftException($fail_msg);
+      $this->handleBadResponse($response->code, $fail_msg, $vars);
     }
   }
 
@@ -827,9 +984,8 @@ class AcquiaLiftAPI implements PersonalizeLoggerAwareInterface, AcquiaLiftReport
     $url = $this->generateEndpoint("/transforms-list");
     $response = $this->httpClient()->get($url, array('Accept' => 'application/json'));
     if ($response->code != 200) {
-      $msg = 'Problem retrieving auto-targeting rules';
-      $this->logger()->log(PersonalizeLogLevel::ERROR, $msg);
-      throw new AcquiaLiftException($msg);
+      $this->handleBadResponse($response->code, 'Problem retrieving auto-targeting rules');
+      return FALSE;
     }
 
     $response = json_decode($response->data, TRUE);
@@ -868,9 +1024,8 @@ class AcquiaLiftAPI implements PersonalizeLoggerAwareInterface, AcquiaLiftReport
     $headers = array('Accept' => 'application/json');
     $response = $this->httpClient()->get($url, $headers);
     if ($response->code != 200) {
-      $msg = 'Problem retrieving potential targeting values';
-      $this->logger()->log(PersonalizeLogLevel::ERROR, $msg);
-      throw new AcquiaLiftException('Problem retrieving potential targeting values');
+      $this->handleBadResponse($response->code, 'Problem retrieving potential targeting values');
+      return array();
     }
     return json_decode($response->data, TRUE);
   }
@@ -975,8 +1130,7 @@ class AcquiaLiftAPI implements PersonalizeLoggerAwareInterface, AcquiaLiftReport
       $this->logger()->log(PersonalizeLogLevel::INFO, $success_msg, $vars);
     }
     else {
-      $this->logger()->log(PersonalizeLogLevel::ERROR, $fail_msg, $vars);
-      throw new AcquiaLiftException($fail_msg);
+      $this->handleBadResponse($response->code, $fail_msg, $vars);
     }
   }
 
@@ -992,9 +1146,8 @@ class AcquiaLiftAPI implements PersonalizeLoggerAwareInterface, AcquiaLiftReport
     }
     $response = $this->httpClient()->get($url, $headers);
     if ($response->code != 200) {
-      $msg = 'Problem retrieving targeting impact report.';
-      $this->logger()->log(PersonalizeLogLevel::ERROR, $msg);
-      throw new AcquiaLiftException($msg);
+      $this->handleBadResponse($response->code, 'Problem retrieving targeting impact report.');
+      return array();
     }
     return json_decode($response->data, TRUE);
   }
@@ -1008,9 +1161,8 @@ class AcquiaLiftAPI implements PersonalizeLoggerAwareInterface, AcquiaLiftReport
     $url = $this->generateEndpoint("/report/status?codes={$codes}{$days}");
     $response = $this->httpClient()->get($url, array('Accept' => 'application/json'));
     if ($response->code != 200) {
-      $msg = 'Problem retrieving targeting impact report.';
-      $this->logger()->log(PersonalizeLogLevel::ERROR, $msg);
-      throw new AcquiaLiftException('Problem retrieving targeting impact report');
+      $this->handleBadResponse($response->code, 'Problem retrieving status report.');
+      return array();
     }
     return json_decode($response->data, TRUE);
   }
@@ -1046,9 +1198,8 @@ class AcquiaLiftAPI implements PersonalizeLoggerAwareInterface, AcquiaLiftReport
     // Use a timeout of 8 seconds for retrieving the transform options.
     $response = $this->httpClient()->get($url, $headers);
     if ($response->code != 200) {
-      $msg = 'Problem retrieving confidence report.';
-      $this->logger()->log(PersonalizeLogLevel::ERROR, $msg);
-      throw new AcquiaLiftException($msg);
+      $this->handleBadResponse($response->code, 'Problem retrieving confidence report.');
+      return array();
     }
     return json_decode($response->data, TRUE);
   }
@@ -1074,9 +1225,8 @@ class AcquiaLiftAPI implements PersonalizeLoggerAwareInterface, AcquiaLiftReport
     $response = $this->httpClient()->get($url, $headers);
 
     if ($response->code != 200) {
-      $msg = 'Problem retrieving learning report.';
-      $this->logger()->log(PersonalizeLogLevel::ERROR, $msg);
-      throw new AcquiaLiftException($msg);
+      $this->handleBadResponse($response->code, 'Problem retrieving learning report.');
+      return array();
     }
     return json_decode($response->data, TRUE);
   }
@@ -1096,9 +1246,8 @@ class AcquiaLiftAPI implements PersonalizeLoggerAwareInterface, AcquiaLiftReport
     $headers = array('Accept' => 'application/json');
     $response = $this->httpClient()->get($url, $headers);
     if ($response->code != 200) {
-      $msg = 'Problem retrieving API call counts.';
-      $this->logger()->log(PersonalizeLogLevel::ERROR, $msg);
-      throw new AcquiaLiftException($msg);
+      $this->handleBadResponse($response->code, 'Problem retrieving API call counts.');
+      return array();
     }
     $result = json_decode($response->data, TRUE);
     if (!isset($result['data']) || !isset($result['data'][0]) || !isset($result['data'][0]['calls'])) {
@@ -1711,6 +1860,18 @@ class AcquiaLiftQueue extends SystemQueue {
   const MAX_RETRIES = 15;
 
   /**
+   * Takes necessary steps when an item has failed permanently.
+   *
+   * @param $item
+   */
+  public static function handleFailedItem($item) {
+    if (!isset($item->data['agent'])) {
+      return;
+    }
+    personalize_pause_if_running($item->data['agent']);
+  }
+
+  /**
    * Overrides SystemQueue::createItem().
    *
    * Prevents duplicate requests from being queued up during the same
@@ -1745,6 +1906,7 @@ class AcquiaLiftQueue extends SystemQueue {
       self::$retries[$item->item_id] = 0;
     }
     elseif(self::$retries[$item->item_id] >= self::MAX_RETRIES) {
+      self::handleFailedItem($item);
       $this->deleteItem($item);
       return;
     }
@@ -1762,5 +1924,8 @@ class AcquiaLiftQueue extends SystemQueue {
 }
 
 class AcquiaLiftException extends Exception {}
-class AcquiaLiftNotFoundException extends AcquiaLiftException {}
+class AcquiaLiftServerErrorException extends AcquiaLiftException {}
+class AcquiaLiftClientErrorException extends AcquiaLiftException {}
+class AcquiaLiftNotFoundException extends AcquiaLiftClientErrorException {}
+class AcquiaLiftForbiddenException extends AcquiaLiftClientErrorException {}
 class AcquiaLiftCredsException extends AcquiaLiftException {}

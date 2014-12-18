@@ -1,7 +1,7 @@
 /**
  * Custom Drupal AJAX commands used for the unified navigation bar tray.
  */
-(function(Drupal, $) {
+(function(Drupal, $, _) {
 
   /**
    * Custom AJAX command to preview a specific page variation.
@@ -12,9 +12,27 @@
    *   variation index to edit, or -1 to create a new variation.
    */
   Drupal.ajax.prototype.commands.acquia_lift_page_variation_preview = function (ajax, response, status) {
-    var view = Drupal.acquiaLiftUI.views.pageVariations[response.data.agentName]
-    view.selectVariation(response.data.variationIndex);
+    _.defer(function() {
+      var view = Drupal.acquiaLiftUI.views.pageVariations[response.data.agentName]
+      view.selectVariation(response.data.variationIndex);
+    });
   }
+
+  /**
+   * Custom AJAX command to preview a specific option set variation.
+   *
+   * The response should include a data object with the following keys:
+   * - agentName: The name of the campaign for this page variation.
+   * - osid:  The option set id for the option set to preview.
+   * - optionId: The option id to preview.
+   */
+  Drupal.ajax.prototype.commands.acquia_lift_variation_preview = function (ajax, response, status) {
+    _.defer(function() {
+      var view = Drupal.acquiaLiftUI.views.optionSets[response.data.osid];
+      view.selectOption(response.data.osid, response.data.optionId);
+    });
+  }
+
 
   /**
    * Custom AJAX command to indicate a deleted page variation.
@@ -45,7 +63,11 @@
             // Notify of the deleted option sets.
             $(document).trigger('acquiaLiftOptionSetsEmpty', [empty_agent]);
           } else {
-            Drupal.settings.personalize.option_sets[osid] = option_sets[osid];
+            if (option_sets[osid] === 'empty') {
+              Drupal.settings.personalize.option_sets[osid].removed = true;
+            } else {
+              Drupal.settings.personalize.option_sets[osid] = option_sets[osid];
+            }
           }
         }
       }
@@ -68,4 +90,4 @@
     }
   }
 
-}(Drupal, Drupal.jQuery));
+}(Drupal, Drupal.jQuery, _));

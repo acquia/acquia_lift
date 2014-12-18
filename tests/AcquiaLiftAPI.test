@@ -701,7 +701,6 @@ class AcquiaLiftTest extends DrupalUnitTestCase {
     $lift_api = $this->getAcquiaLiftAPI();
 
     $machineName = 'some_machine_name';
-
     $lift_api->getAgent($machineName);
 
     // Define the requests we expect to have been made to our dummy http
@@ -1329,13 +1328,10 @@ class AcquiaLiftTest extends DrupalUnitTestCase {
 
     // Confirm the expected requests were made.
     $this->assertAPIRequests($requests);
-
     $logs = array();
-
     $this->assertLogs($logs);
 
     $lift_api = $this->getAcquiaLiftAPI(TRUE);
-
     try {
       $lift_api->getAgentStatusReport($agentNamesArray, $dayNumber);
     }
@@ -1349,7 +1345,7 @@ class AcquiaLiftTest extends DrupalUnitTestCase {
     $logs = array(
       array(
         'level' => PersonalizeLogLevel::ERROR,
-        'message' => 'Problem retrieving targeting impact report.',
+        'message' => 'Problem retrieving status report.',
       )
     );
 
@@ -1467,13 +1463,10 @@ class AcquiaLiftTest extends DrupalUnitTestCase {
 
     // Confirm the expected requests were made.
     $this->assertAPIRequests($requests);
-
     $logs = array();
-
     $this->assertLogs($logs);
 
     $lift_api = $this->getAcquiaLiftAPI(TRUE);
-
     try {
       $lift_api->getRawLearningReport($agentName, $startDate, $endDate);
     }
@@ -1518,6 +1511,7 @@ class AcquiaLiftTest extends DrupalUnitTestCase {
     );
     // Confirm the expected requests were made.
     $this->assertAPIRequests($requests);
+    DummyAcquiaLiftHttpClient::clearLoggedRequests();
     // Confirm the expected messages were logged.
     $logs = array(
       array(
@@ -1528,6 +1522,15 @@ class AcquiaLiftTest extends DrupalUnitTestCase {
     $this->assertLogs($logs);
     $this->logger->clearLogs();
 
+    // Make sure we can use a Personalize status code.
+    $this->assertAPIRequests(array());
+    $lift_api->saveAgent($agentName, 'Some Test Agent', 'adaptive', PERSONALIZE_STATUS_RUNNING);
+    // The requests and logs should be the same.
+    $this->assertAPIRequests($requests);
+    $this->assertLogs($logs);
+    $this->logger->clearLogs();
+
+    $this->assertAPIRequests(array());
     $lift_api->saveAgent($agentName, 'Some Test Agent', 'adaptive', 'enabled', 0.1, 0.4);
     // Define the requests we expect to have been made to our dummy http
     // client for this operation.
@@ -1894,6 +1897,93 @@ class AcquiaLiftTest extends DrupalUnitTestCase {
     $new_name = $lift_api->ensureUniqueAgentName('abcdefghijklmnopqrstuvwxyzabcdef', 32);
     $this->assertEqual('abcdefghijklmnopqrstuvwxyzabc-10', $new_name);
 
+  }
+
+
+  function testUpdateAgentStatus() {
+    $lift_api = $this->getAcquiaLiftAPI();
+    DummyAcquiaLiftHttpClient::clearLoggedRequests();
+    $agent_name = 'my-test-agent';
+    // The updating the status to a non-existent status code string.
+    try {
+      $lift_api->updateAgentStatus($agent_name, 'some-non-existent-status-code');
+      $this->fail('Exception not thrown as expected');
+    }
+    catch (Exception $e) {
+      $this->pass('Exception thrown as expected');
+    }
+
+    // Now try with a non-existent numeric code.
+    try {
+      $lift_api->updateAgentStatus($agent_name, 33);
+      $this->fail('Exception not thrown as expected');
+    }
+    catch (Exception $e) {
+      $this->pass('Exception thrown as expected');
+    }
+    // Now try with a string code that exists in Lift.
+    try {
+      $lift_api->updateAgentStatus($agent_name, AcquiaLiftAPI::PAUSED_STATUS);
+    }
+    catch (Exception $e) {
+      $this->fail('Exception thrown when none expected');
+    }
+    // Define the requests we expect to have been made to our dummy http
+    // client for this operation.
+    $requests = array(
+      array(
+        'type' => 'put',
+        'uri' => "http://api.lift.acquia.com/{$this->liftOwnerCode}/agent-api/$agent_name?apikey={$this->liftAdminKey}",
+        'headers' => array('Content-Type' => 'application/json; charset=utf-8', 'Accept' => 'application/json'),
+        'options' => array(),
+        'body' => array(
+          'status' => AcquiaLiftAPI::PAUSED_STATUS,
+        )
+      )
+    );
+    // Confirm the expected requests were made.
+    $this->assertAPIRequests($requests);
+    // Confirm the expected messages were logged.
+    $logs = array(
+      array(
+        'level' => PersonalizeLogLevel::INFO,
+        'message' => "The new status of campaign $agent_name was pushed to Acquia Lift",
+      )
+    );
+    $this->assertLogs($logs);
+    $this->logger->clearLogs();
+
+    // Now try with a numeric code that exists in Personalize.
+    try {
+      $lift_api->updateAgentStatus($agent_name, PERSONALIZE_STATUS_PAUSED);
+    }
+    catch (Exception $e) {
+      $this->fail('Exception thrown when none expected');
+    }
+
+    // The request made and the logs should be identical.
+    $this->assertAPIRequests($requests);
+    $this->assertLogs($logs);
+    $this->logger->clearLogs();
+
+    // Now try with a broken http client.
+    $lift_api = $this->getAcquiaLiftAPI(TRUE);
+    try {
+      $lift_api->updateAgentStatus($agent_name, PERSONALIZE_STATUS_PAUSED);
+      $this->fail('Exception not thrown as expected');
+    }
+    catch (Exception $e) {
+      $this->pass('Exception thrown as expected');
+    }
+    $this->assertAPIRequests($requests);
+    $logs = array(
+      array(
+        'level' => PersonalizeLogLevel::ERROR,
+        'message' => "The new status of campaign $agent_name could not be pushed to Acquia Lift",
+      )
+    );
+    $this->assertLogs($logs);
+    $this->logger->clearLogs();
   }
 
   /**

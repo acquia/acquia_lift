@@ -275,7 +275,7 @@
   });
 
   /**
-   * View for all content variations in a campaign.
+   * View for all content variation sets for all campaigns.
    *
    * The model in this view is actually the campaign model.
    */
@@ -315,18 +315,32 @@
      * {@inheritdoc}
      */
     initialize: function (options) {
+      this.campaignModel = options.campaignModel;
+
       var that = this;
 
-      this.listenTo(this.model, 'change', this.render);
-      this.listenTo(this.model, 'remove', this.remove);
-      this.listenTo(this.model, 'reset', this.remove);
-      this.listenTo(this.model, 'change:options', this.rebuild);
+      if (this.model) {
+        this.listenTo(this.model, 'change', this.render);
+        this.listenTo(this.model, 'remove', this.onOptionSetRemoved);
+        this.listenTo(this.model, 'change:options', this.rebuild);
+      }
+      this.listenTo(this.campaignModel, 'change:isActive', this.render);
 
+      // Handle menu display changes when an element preview is complete.
       this.onOptionShowProxy = $.proxy(this.onOptionShow, this);
       $(document).on('personalizeOptionChange', function (event, $option_set, choice_name, osid) {
         that.onOptionShowProxy(event, $option_set, choice_name, osid);
       });
 
+      this.rebuild();
+    },
+
+    /**
+     * When the option set is removed, then update the model reference
+     * and rebuild the view.
+     */
+    onOptionSetRemoved: function() {
+      this.model = null;
       this.rebuild();
     },
 
@@ -348,14 +362,17 @@
      * {@inheritdoc}
      */
     render: function () {
+      this.$el.toggle(this.campaignModel.get('isActive'));
       this.$el
         .find('[data-acquia-lift-personalize-option-set-option]')
         .removeClass('acquia-lift-active')
         .attr('aria-pressed', 'false');
-      this.$el
-        .find('[data-acquia-lift-personalize-option-set-option="' + this.model.get('activeOption') + '"]')
-        .addClass('acquia-lift-active')
-        .attr('aria-pressed', 'true');
+      if (this.model) {
+        this.$el
+          .find('[data-acquia-lift-personalize-option-set-option="' + this.model.get('activeOption') + '"]')
+          .addClass('acquia-lift-active')
+          .attr('aria-pressed', 'true');
+      }
     },
 
     /**
@@ -363,10 +380,12 @@
      */
     build: function () {
       var html = '';
-      html += Drupal.theme('acquiaLiftOptionSetItem', {
-        osID: this.model.get('osid'),
-        os: this.model.attributes
-      });
+      if (this.model) {
+        html += Drupal.theme('acquiaLiftOptionSetItem', {
+          osID: this.model.get('osid'),
+          os: this.model.attributes
+        });
+      }
       this.$el.html(html);
     },
 
@@ -384,14 +403,27 @@
      * @param jQuery.Event event
      */
     onClick: function (event) {
-      if (!$(event.target).hasClass('acquia-lift-preview-option')) {
-        return;
-      }
+      if (!$(event.target).hasClass('acquia-lift-preview-option')) return;
+      if (!this.model) return;
 
       var optionid = $(event.target).data('acquia-lift-personalize-option-set-option');
       this.model.set('activeOption', optionid);
       event.preventDefault();
       event.stopPropagation();
+    },
+
+    /**
+     * Select a specific variation within an option set.
+     *
+     * @param string osid
+     *   The id of the option set to which this choice belongs.
+     * @param string choice_name
+     *   The option id of the choice to show.
+     */
+    selectOption: function (osid, choice_name) {
+      if (this.model && this.model.get('osid') === osid) {
+        this.model.set('activeOption', choice_name);
+      }
     },
 
     /**
@@ -406,35 +438,57 @@
      *   The id of the option set to which this choice belongs.
      */
     onOptionShow: function (event, $option_set, choice_name, osid) {
-      if (this.model.get('osid') === osid) {
-        this.model.set('activeOption', choice_name);
-      }
+      this.selectOption(osid, choice_name);
     }
   });
 
   /**
    * View to show when there are no option sets for a campaign.
+   *
+   * The collection property passed in at creation is the collection of all
+   * campaigns.
    */
   Drupal.acquiaLiftUI.MenuOptionSetEmptyView = ViewBase.extend({
     initialize: function (options) {
-      this.listenTo(this.model, 'change:isActive', this.render);
-      this.listenTo(this.model, 'change:optionSets', this.render);
-      this.listenTo(this.model, 'change:variations', this.render);
+      this.collection = options.collection;
+      this.model = this.collection.findWhere({'isActive': true});
+
+      this.listenTo(this.collection, 'change', this.onActiveCampaignChange);
 
       this.build();
+      this.render();
+    },
+
+    /**
+     * Listen to changes in the option sets for the active campaign and
+     * re-render.
+     */
+    onActiveCampaignChange: function () {
+      if (this.model) {
+        this.stopListening(this.model);
+      }
+      this.model = this.collection.findWhere({'isActive': true});
+      if (this.model) {
+        this.listenTo(this.model, 'change:optionSets', this.render);
+      }
       this.render();
     },
 
     build: function () {
       var html = '';
       html += Drupal.theme('acquiaLiftPersonalizeNoMenuItem', {
-        type: 'variation sets'
+        type: 'variations'
       });
       this.$el.html(html);
     },
 
     render: function () {
-      this.$el.toggle(this.model.get('isActive'));
+      if (!this.model) {
+        this.$el.hide();
+        return;
+      }
+      var numOptions = this.model.get('optionSets').length;
+      this.$el.toggle(numOptions == 0);
     }
   });
 
@@ -464,7 +518,7 @@
       $(document).on('personalizeOptionChange', function (event, data) {
         that.onOptionShowProxy(event, data);
       });
-      $(document).on('acquiaLiftPageVariationMode', function (event, data) {
+      $(document).on('acquiaLiftVariationMode', function (event, data) {
         that.onPageVariationEditModeProxy(event, data);
       });
 
@@ -521,7 +575,7 @@
      */
     remove: function () {
       $(document).off('personalizeOptionChange', this.onOptionShowProxy);
-      $(document).off('acquiaLiftPageVariationMode', this.onPageVariationEditModeProxy);
+      $(document).off('acquiaLiftVariationMode', this.onPageVariationEditModeProxy);
       ViewBase.prototype.remove.call(this);
     },
 
@@ -785,8 +839,10 @@
       if (changed.get('isActive')) {
         // Bind to change events from the new model.
         this.model = changed;
+        var optionSets = this.model.get('optionSets');
         this.listenTo(this.model, 'change:activeVariation', this.onVariationChange);
-        this.listenTo(this.model.get('optionSets'), 'change:activeOption', this.onVariationChange);
+        this.listenTo(optionSets, 'change:activeOption', this.onVariationChange);
+        this.listenTo(optionSets, 'remove', this.onOptionSetRemove);
       } else {
         this.stopListening(changed);
       }
@@ -828,6 +884,12 @@
           Drupal.personalize.executors[changedModel.get('executor')].execute($(changedModel.get('selector')), current.get('option_id'), changedModel.get('osid'));
         }
       }
+    },
+
+    // When an option set is removed, then set the preview back to the control
+    // for the now deleted option set.
+    onOptionSetRemove: function (removed) {
+      Drupal.personalize.executors[removed.get('executor')].execute($(removed.get('selector')), Drupal.settings.personalize.controlOptionName, removed.get('osid'));
     }
   });
 
@@ -1207,11 +1269,11 @@
 
   /**
    * Toggles the 'add content variation' trigger.
+   *
+   * The model is the variation mode model which keeps track of whether element
+   * mode is active or inactive.
    */
   Drupal.acquiaLiftUI.MenuContentVariationTriggerView = ViewBase.extend({
-    events: {
-      'click': 'onClick'
-    },
 
     /**
      * {@inheritdoc}
@@ -1219,28 +1281,26 @@
     initialize: function (options) {
       var that = this;
 
-      this.contentVariationModel = options.contentVariationModel;
-      this.pageVariationModel = options.pageVariationModel;
       this.campaignCollection = options.campaignCollection;
 
-      // Model property holds a reference to the relevant type of creation
-      // mode model based on the type of campaign selected.
-      if (this.campaignCollection.findWhere({'isActive': true}) instanceof Drupal.acquiaLiftUI.MenuCampaignABModel) {
-        this.model = this.pageVariationModel;
-      } else {
-        this.model = this.contentVariationModel;
-      }
+      _.bindAll(this, 'onClick');
 
-      this.listenTo(this.contentVariationModel, 'change:isActive', this.render);
-      this.listenTo(this.pageVariationModel, 'change:isActive', this.render);
+      this.listenTo(this.model, 'change:isActive', this.onEditModeChange);
       this.listenTo(this.campaignCollection, 'change:isActive', this.onCampaignChange);
 
       this.onPageVariationEditModeProxy = $.proxy(this.onPageVariationEditMode, this);
-      $(document).on('acquiaLiftPageVariationMode', function (event, data) {
+      $(document).on('acquiaLiftVariationMode', function (event, data) {
         that.onPageVariationEditModeProxy(event, data);
       });
 
-      this.render();
+      // Set the initial link state based on the campaign type.
+      var activeCampaign = this.campaignCollection.findWhere({'isActive': true});
+      if (activeCampaign) {
+        // Note that this callback will end with a call to render().
+        this.onCampaignChange(activeCampaign, true);
+      } else {
+        this.render();
+      }
     },
 
     /**
@@ -1255,12 +1315,18 @@
       }
       // Update the text if within the menu.
       var text = '';
+      var current = this.campaignCollection.findWhere({'isActive': true});
       if (isActive) {
         text = Drupal.t('Exit edit mode');
       } else {
-        text = this.model instanceof Drupal.acquiaLiftUI.MenuPageVariationModeModel ? Drupal.t('Add a variation') : Drupal.t('Add a variation set');
+        text = current instanceof Drupal.acquiaLiftUI.MenuCampaignABModel ? Drupal.t('Add a variation') : Drupal.t('Add a variation set');
       }
       this.$el.text(text);
+    },
+
+    onEditModeChange: function () {
+      this.updateListeners();
+      this.render();
     },
 
     /**
@@ -1269,13 +1335,15 @@
      * @param jQuery.Event event
      */
     onClick: function (event) {
-      event.preventDefault();
-
       if (this.model.get('isActive')) {
         this.model.endEditMode();
       } else {
         this.model.startAddMode();
       }
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      this.updateListeners();
+      return false;
     },
 
     /**
@@ -1287,14 +1355,33 @@
      *   The new active status.
      */
     onCampaignChange: function(model, isActive) {
-      this.model.endEditMode();
-      if (isActive) {
-        if (model instanceof Drupal.acquiaLiftUI.MenuCampaignABModel) {
-          this.model = this.pageVariationModel;
+      if (this.model) {
+        this.model.endEditMode();
+      }
+      this.updateListeners();
+      this.render(this.model);
+    },
+
+    /**
+     * Update the event listeners for clicks.
+     */
+    updateListeners: function () {
+      this.$el.off();
+      // If the application is in variation mode, the next click should
+      // be to exit.
+      if (this.model.get('isActive')) {
+        this.$el.on('click', this.onClick);
+      } else {
+        if (this.campaignCollection.findWhere({'isActive': true}) instanceof Drupal.acquiaLiftUI.MenuCampaignABModel) {
+          // The next click takes it straight back into edit mode.
+          this.$el.on('click', this.onClick);
         } else {
-          this.model = this.contentVariationModel;
+          // The next click should open a modal.
+          // Remove the -processed flags that CTools adds so that it can be
+          // re-processed again.
+          this.$el.removeClass('ctools-use-modal-processed');
+          Drupal.attachBehaviors(this.$el.parent());
         }
-        this.render(this.model);
       }
     },
 
@@ -1302,48 +1389,7 @@
      * Listens to changes broadcast from the page variation application.
      */
     onPageVariationEditMode: function (event, data) {
-      this.pageVariationModel.set('isActive', data.start);
-    }
-  });
-
-  /**
-   * Adds an identifying class to elements on the page that can be varied.
-   */
-  Drupal.acquiaLiftUI.MenuContentVariationCandidateView = ViewBase.extend({
-    /**
-     * {@inheritdoc}
-     */
-    initialize: function (options) {
-      this.model.on('change', this.render, this);
-    },
-
-    /**
-     * {@inheritdoc}
-     */
-    render: function () {
-      var isActive = this.model.get('isActive');
-      this.$el.toggleClass('acquia-lift-content-variation-candidate', isActive);
-      // Pull the Personalize contextual link out of the list and highlight it.
-      if (isActive) {
-        var $wrapper = this.$el.find('.contextual-links-wrapper:first');
-        var $link = $wrapper.find('.personalize-this-contextual-link').detach();
-        $wrapper.children('.contextual-links-trigger').addClass('acquia-lift-hidden');
-        $wrapper.prepend($link);
-      }
-      // Repair the contextual links.
-      else {
-        var $wrapper = this.$el.find('.contextual-links-wrapper:first');
-        var $link = $wrapper.find('.personalize-this-contextual-link')
-        $wrapper.find('.contextual-links .personalize').append($link);
-        $wrapper.children('.contextual-links-trigger').removeClass('acquia-lift-hidden');
-      }
-    },
-
-    /**
-     * {@inheritdoc}
-     */
-    remove: function () {
-      ViewBase.prototype.remove.call(this, true);
+      this.model.set('isActive', data.start);
     }
   });
 

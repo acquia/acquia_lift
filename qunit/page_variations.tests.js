@@ -9,18 +9,18 @@ QUnit.module("Acquia Lift page variation models");
 QUnit.test('Default values', function (assert) {
   expect(7);
 
-  var appModel = new Drupal.acquiaLiftPageVariations.models.AppModel();
+  var appModel = new Drupal.acquiaLiftVariations.models.AppModel();
   assert.equal(appModel.get('editMode'), true, 'App model edit mode default set correctly.');
-  var valueAppModel = new Drupal.acquiaLiftPageVariations.models.AppModel({editMode: false});
+  var valueAppModel = new Drupal.acquiaLiftVariations.models.AppModel({editMode: false});
   assert.equal(valueAppModel.get('editMode'), false, 'App model value for edit mode set correctly.');
 
-  var elemModel = new Drupal.acquiaLiftPageVariations.models.ElementVariationModel();
+  var elemModel = new Drupal.acquiaLiftVariations.models.ElementVariationModel();
   assert.ok(elemModel.cid, 'Element variaton model created successfully.');
 
-  var formModel = new Drupal.acquiaLiftPageVariations.models.VariationTypeFormModel();
+  var formModel = new Drupal.acquiaLiftVariations.models.VariationTypeFormModel();
   assert.equal(formModel.get('type'), null, 'Form model type default set correctly.');
   assert.equal(formModel.get('typeLabel'), null, 'Form model type label default set correctly.');
-  var valueFormModel = new Drupal.acquiaLiftPageVariations.models.VariationTypeFormModel({
+  var valueFormModel = new Drupal.acquiaLiftVariations.models.VariationTypeFormModel({
     type: 'addClass',
     typeLabel: 'Add CSS class'
   });
@@ -60,8 +60,8 @@ QUnit.test('Application view', function (assert) {
   var $view = $('#watch');
   var $anchor = $('#mousehere');
 
-  var appModel = new Drupal.acquiaLiftPageVariations.models.AppModel();
-  var appView = new Drupal.acquiaLiftPageVariations.views.AppView({
+  var appModel = new Drupal.acquiaLiftVariations.models.AppModel();
+  var appView = new Drupal.acquiaLiftVariations.views.AppView({
     model: appModel,
     el: $view[0]
   });
@@ -86,7 +86,7 @@ QUnit.test('Application view', function (assert) {
   appView.createVariationTypeDialog({data: data});
   assert.equal(appView.variationTypeFormModel.get('selector'), data.selector, 'Variation type form model selector set successfully.');
   assert.ok(appView.variationTypeFormModel.get('id'), 'Variation type form model ID set successfully.');
-  assert.equal(appView.variationTypeFormModel.get('formPath'), Drupal.settings.basePath + 'admin/structure/acquia_lift/pagevariation/addClass', 'Variation type form model form path set successfully.');
+  assert.equal(appView.variationTypeFormModel.get('formPath'), Drupal.settings.basePath + 'admin/structure/acquia_lift/variation/addClass', 'Variation type form model form path set successfully.');
   assert.equal(appView.variationTypeFormModel.get('type'), data.id, 'Variation type form model type set successfully.');
   assert.equal(appView.variationTypeFormModel.get('typeLabel'), data.name, 'Variation type form model type label set successfully.');
   assert.ok(appView.variationTypeFormModel.get('active'), 'Variation type form model set to active.');
@@ -108,7 +108,7 @@ QUnit.asyncTest('Contextual menu view', function (assert) {
     selector: anchorSelector,
     id: id
   });
-  var view = new Drupal.acquiaLiftPageVariations.views.PageVariationMenuView({
+  var view = new Drupal.acquiaLiftVariations.views.PageVariationMenuView({
     el: $anchor[0],
     model: model
   });
@@ -121,7 +121,7 @@ QUnit.asyncTest('Contextual menu view', function (assert) {
   var dialogHtml = $dialog.find('.visitor-actions-ui-dialog-content').html();
   var dialogTitle = Drupal.theme.acquiaLiftPageVariationsMenuTitle({elementType: 'DIV'});
   assert.equal(dialogHtml.search(dialogTitle), 0, 'Dialog title created and at start of content.');
-  assert.ok(view.list instanceof Drupal.acquiaLiftPageVariations.views.PageVariationMenuListView, 'Dialog list component is a PageVariationMenuListView.');
+  assert.ok(view.list instanceof Drupal.acquiaLiftVariations.views.PageVariationMenuListView, 'Dialog list component is a PageVariationMenuListView.');
   assert.equal($dialog.find('.visitor-actions-ui-dialog-content ul.acquia-lift-page-variation-list li').length, 5, 'Dialog list is rendered with one list item per variation type.');
 
   QUnit.stop();
@@ -154,7 +154,7 @@ QUnit.asyncTest('Contextual menu limited by children node types', function (asse
     selector: anchorSelector,
     id: id
   });
-  var view = new Drupal.acquiaLiftPageVariations.views.PageVariationMenuView({
+  var view = new Drupal.acquiaLiftVariations.views.PageVariationMenuView({
     el: $anchor[0],
     model: model
   });
@@ -167,7 +167,7 @@ QUnit.asyncTest('Contextual menu limited by children node types', function (asse
   var dialogHtml = $dialog.find('.visitor-actions-ui-dialog-content').html();
   var dialogTitle = Drupal.theme.acquiaLiftPageVariationsMenuTitle({elementType: 'DIV'});
   assert.equal(dialogHtml.search(dialogTitle), 0, 'Dialog title created and at start of content.');
-  assert.ok(view.list instanceof Drupal.acquiaLiftPageVariations.views.PageVariationMenuListView, 'Dialog list component is a PageVariationMenuListView.');
+  assert.ok(view.list instanceof Drupal.acquiaLiftVariations.views.PageVariationMenuListView, 'Dialog list component is a PageVariationMenuListView.');
   assert.equal($dialog.find('.visitor-actions-ui-dialog-content ul.acquia-lift-page-variation-list li').length, 4, 'Dialog list is rendered with one list item per variation type.');
 
   QUnit.stop();

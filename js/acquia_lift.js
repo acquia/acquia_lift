@@ -38,6 +38,7 @@
      */
     function init(initializeSession) {
       settings = Drupal.settings.acquia_lift;
+
       api = Drupal.acquiaLiftAPI.getInstance();
 
       if (initializeSession) {
@@ -145,6 +146,11 @@
           if (!api.getSessionID() && session) {
             api.setSessionID(session);
             Drupal.personalize.saveSessionID(session);
+          }
+          if (!session) {
+            // This means the call to Lift was unsuccessful and we are showing
+            // the fallback option. Log this as an error.
+            Drupal.personalize.debug('Could not get decision from Lift for ' + agent_name + ', showing fallback option', 5100);
           }
 
           // We need to send back an object with decision names as keys

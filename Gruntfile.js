@@ -11,7 +11,12 @@ module.exports = function(grunt) {
 
   var flowjs = [
         'src/js/flow/acquia_lift.modal.js',
-        'src/js/flow/acquia_lift.page_variations.js',
+        'src/js/flow/acquia_lift.variations.js',
+        'src/js/flow/acquia_lift.variations.models.js',
+        'src/js/flow/acquia_lift.variations.collections.js',
+        'src/js/flow/acquia_lift.variations.theme.js',
+        'src/js/flow/acquia_lift.variations.views.js',
+        'src/js/flow/acquia_lift.variations.editInContext.js',
         'src/js/flow/acquia_lift.ctools.modal.js'
       ];
 
@@ -22,11 +27,11 @@ module.exports = function(grunt) {
 
   var unibarjs = [
         'src/js/menu/acquia_lift.personalize.theme.js',
-        'src/js/menu/acquia_lift.personalize.backbone.js',
-        'src/js/menu/acquia_lift.personalize.backbone.models.js',
-        'src/js/menu/acquia_lift.personalize.backbone.collections.js',
-        'src/js/menu/acquia_lift.personalize.backbone.views.js',
-        'src/js/menu/acquia_lift.personalize.backbone.factories.js',
+        'src/js/menu/acquia_lift.personalize.js',
+        'src/js/menu/acquia_lift.personalize.models.js',
+        'src/js/menu/acquia_lift.personalize.collections.js',
+        'src/js/menu/acquia_lift.personalize.views.js',
+        'src/js/menu/acquia_lift.personalize.factories.js',
         'src/js/menu/acquia_lift.personalize.commands.js',
         'src/js/menu/acquia_lift.personalize.behaviors.js'
       ];

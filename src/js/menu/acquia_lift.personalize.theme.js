@@ -118,6 +118,10 @@
     var optionSets = model.get('optionSets');
     var variations = optionSets.getVariations();
 
+    if (variations.length == 0) {
+      return '';
+    }
+
     var attrs = [
       'class="acquia-lift-preview-page-variation acquia-lift-content-variation navbar-menu-item"' +
       'data-acquia-lift-personalize-agent="' + model.get('name') + '"'
@@ -128,14 +132,9 @@
     item += '</span>\n';
 
     item += '<ul class="menu">' + "\n";
-    // Handle empty page variations.
-    if (variations.length == 0) {
-      item += '<li class="acquia-lift-empty">' + Drupal.theme('acquiaLiftPersonalizeNoMenuItem', {type: 'variations'}) + '</li>\n';
-    } else {
-      _.each(variations, function (variation, index, list) {
-        item += Drupal.theme('acquiaLiftPreviewPageVariationMenuItem', variation);
-      });
-    }
+    _.each(variations, function (variation, index, list) {
+      item += Drupal.theme('acquiaLiftPreviewPageVariationMenuItem', variation);
+    });
     item += '</ul>\n';
     return item;
   }

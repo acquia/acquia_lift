@@ -82,9 +82,9 @@ function acquia_lift_build_page(&$page) {
     if (!empty($params['liftpm']) && strstr($params['liftpm'], '|') !== FALSE) {
       list($type, $details) = explode('|', $params['liftpm']);
       if ($type === 'new_block') {
-        $settings['acquia_lift']['pendingMessage'][] = t('Created the new $block_title personalized block. The block will not appear on your website uUntil you add the block to a region on the <a href="!block_url">Structure > Blocks</a> page.', array(
+        $settings['acquia_lift']['pendingMessage'][] = t('Created the new %block_title personalized block. The block will not appear on your website until you add the block to a region on the !blocks page.', array(
           '%block_title' => $details,
-          '!block_url' => 'admin/structure/blocks',
+          '!blocks' => l('Structure > Blocks', 'admin/structure/blocks'),
         ));
       }
     }

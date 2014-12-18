@@ -25,6 +25,10 @@
     initialized = value;
   };
 
+  Drupal.acquiaLiftUI.utilities.shutDownGoalsUI = _.throttle(function () {
+    $(document).trigger('visitorActionsUIShutdown');
+  }, 500);
+
   /**
    * Apply a callback to values in an object.
    *

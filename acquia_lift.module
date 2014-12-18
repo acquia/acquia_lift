@@ -795,7 +795,11 @@ function acquia_lift_personalize_goal_delete($goal_info) {
     return;
   }
   $old_goals = isset($agent->data['goals']) ? $agent->data['goals'] : array();
-  $new_goals = personalize_goal_load_by_conditions(array('agent' => $agent->machine_name));
+  $new_goals = array();
+  $goals = personalize_goal_load_by_conditions(array('agent' => $agent->machine_name));
+  foreach ($goals as $goal) {
+    $new_goals[$goal->action] = $goal->value;
+  }
   if (isset($new_goals[$goal_info['name']])) {
     unset($new_goals[$goal_info['name']]);
   }
@@ -2246,6 +2250,7 @@ function acquia_lift_personalize_agent_page_alter(&$build, &$agent_data) {
   // Add a link to return to the page for variations if this is a page variation
   // campaign.
   module_load_include('inc', 'acquia_lift', 'acquia_lift.admin');
+  module_load_include('inc', 'acquia_lift', 'acquia_lift.page_variations');
   $agent_instance = personalize_agent_load_agent($agent_data->machine_name);
   if ($agent_instance instanceof AcquiaLiftPageVariationInterface) {
     $build['return_link'] = array(

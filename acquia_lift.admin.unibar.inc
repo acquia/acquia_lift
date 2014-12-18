@@ -327,13 +327,14 @@ function acquia_lift_element_variation_details_form($form, &$form_state, $variat
  * Form validation handler for acquia_lift_element_variation_details_form.
  */
 function acquia_lift_element_variation_details_form_validate($form, &$form_state) {
-  // Validating a CSS selector is generally beyond what REGEX can handle,
-  // and using the Drupal cleaning scripts all update < > to entities
-  // so just make sure that there are no tags.
-  $re = "/<\\/?[a-z][a-z0-9]*[^<>]*>|<!--.*?-->/im";
-  $matched = preg_match_all($re, $form_state['values']['selector']);
-  if ($matched > 0) {
+  module_load_include('inc', 'personalize_elements', 'personalize_elements.admin');
+  if (!personalize_elements_selector_validate($form_state['values']['selector'])) {
     form_set_error('selector', t('The selector cannot contain tags.'));
+  }
+  $filtered = personalize_elements_filter_personalize_element_option($form_state['values']['variation_type'], $form_state['values']['personalize_elements_content']);
+  if ($filtered !== $form_state['values']['personalize_elements_content']) {
+    $form_state['values']['personalize_elements_content'] = $filtered;
+    drupal_set_message(t('Disallowed HTML tags were removed from the variation.'), 'warning');
   }
 }
 
@@ -397,6 +398,7 @@ function _acquia_lift_personalize_element_variation_details_form_submit($form, &
   );
   $values['add_control_option'] = TRUE;
   $values['agent_select'] = $values['agent'];
+  $values['pages_all'] = 0;
 
   module_load_include('inc', 'personalize_elements', 'personalize_elements.admin');
   $option_set = personalize_elements_convert_form_values_to_option_set($values);
@@ -435,6 +437,8 @@ function acquia_lift_element_variation_details_form_ajax_callback($form, &$form_
     $settings['personalize_elements']['elements'] = personalize_elements_element_settings($option_sets);
     // We need to update the campaigns as well in case a campaign was paused by this action.
     $settings['personalize']['campaigns'] = personalize_agent_get_settings();
+    // And the agent map.
+    $settings['personalize']['agent_map'][$agent_name] = personalize_agent_get_map_settings($agent_name);
     // Note: JavaScript assets for personalize elements are included in
     // personalize_elements_page_build when the module is enabled and therefore
     // do not need to be explicitly added here.
@@ -508,7 +512,7 @@ function acquia_lift_option_set_add_modal_callback($ajax) {
         'path' => 'admin/structure/personalize/variations/personalize-elements/add',
         'modal' => FALSE,
         'logo' => theme('image', array(
-          'path' => $path . '/images/variation-type-element.svg',
+          'path' => $path . '/images/variation-type-element.png',
           'alt' => t('Webpage element'),
           'title' => t('Select this option to create a variation set from web page elements.'),
         )),
@@ -519,7 +523,7 @@ function acquia_lift_option_set_add_modal_callback($ajax) {
         'path' => 'admin/structure/personalize/variations/personalize-blocks/add',
         'modal' => FALSE,
         'logo' => theme('image', array(
-          'path' => $path . '/images/variation-type-block.svg',
+          'path' => $path . '/images/variation-type-block.png',
           'alt' => t('Drupal block'),
           'title' => t('Select this option to create a variation set from Drupal content blocks.'),
         )),

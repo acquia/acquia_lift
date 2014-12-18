@@ -81,6 +81,7 @@ Drupal.acquia_lift_target = (function() {
                   if (agentRules[agent_name][optionId].features.hasOwnProperty(j)) {
                     if (feature_strings.indexOf(agentRules[agent_name][optionId].features[j]) === -1) {
                       matched = false;
+                      break;
                     }
                   }
                 }
@@ -136,9 +137,7 @@ Drupal.personalize.agents.acquia_lift_target = {
     Drupal.acquia_lift_target.getDecision(agent_name, visitor_context, choice_array, decisionName, fallbacks, callback);
   },
   'sendGoalToAgent': function(agent_name, goal_name, value) {
-    if (window.console) {
-      console.log('Sending goal ' + goal_name + ' to agent ' + agent_name + ' with value ' + value);
-    }
+    // @todo: Introduce the concept of goals in fixed targeting :)
   },
   'featureToContext': function(featureString) {
     var contextArray = featureString.split('::');

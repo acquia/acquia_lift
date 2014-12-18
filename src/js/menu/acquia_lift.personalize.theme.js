@@ -330,6 +330,13 @@
         showDelete: os.deletable
       });
     });
+    if (os.plugin === 'elements') {
+      menu += '<li>';
+      menu += '<a href="' + Drupal.settings.basePath + 'admin/structure/personalize/variations/add/nojs"';
+      menu += ' class="acquia-lift-variation-add title="' + Drupal.t('Add variation') + '" aria-role="button" aria-pressed="false">';
+      menu += Drupal.t('Add variation');
+      menu += '</a></li>';
+    }
     menu += '</ul>\n';
     return menu;
   };
@@ -350,38 +357,36 @@
    */
   Drupal.theme.acquiaLiftPreviewOptionMenuItem = function (options) {
     var item = '';
+    var ariaAttrs = [
+      'aria-role="button"',
+      'aria-pressed="false"'
+    ];
     // Prepare the selector string to be passed as a data attribute.
     var selector = options.osSelector.replace(/\"/g, '\'');
-    var attrs = [
+    var previewAttrs = [
       'class="acquia-lift-preview-option acquia-lift-preview-option--' + formatClass(options.id) + ' visitor-actions-ui-ignore"',
       'href="' + generateHref(options) + '"',
       'data-acquia-lift-personalize-option-set="' + options.osID + '"',
       'data-acquia-lift-personalize-option-set-selector="' + selector + '"',
-      'data-acquia-lift-personalize-option-set-option="' + options.id + '"',
-      'aria-role="button"',
-      'aria-pressed="false"'
-    ];
+      'data-acquia-lift-personalize-option-set-option="' + options.id + '"'
+    ].concat(ariaAttrs);
 
     var renameHref = Drupal.settings.basePath + 'admin/structure/acquia_lift/variation/rename/' + options.osID + '/' + options.id + '/nojs';
     var renameAttrs = [
       'class="acquia-lift-variation-rename acquia-lift-menu-link ctools-use-modal ctools-modal-acquia-lift-style"',
       'title="' + Drupal.t('Rename Variation') + '"',
-      'aria-role="button"',
-      'aria-pressed="false"',
       'href="' + renameHref + '"'
-    ];
+    ].concat(ariaAttrs);
 
     var deleteHref = Drupal.settings.basePath + 'admin/structure/acquia_lift/variation/delete/' + options.osID + '/' + options.id + '/nojs';
     var deleteAttrs = [
       'class="acquia-lift-variation-delete acquia-lift-menu-link ctools-use-modal ctools-modal-acquia-lift-style"',
       'title="' + Drupal.t('Delete Variation') + '"',
-      'aria-role="button"',
-      'aria-pressed="false"',
       'href="' + deleteHref + '"'
-    ];
+    ].concat(ariaAttrs);
 
     item += '<li>\n<div class="acquia-lift-menu-item">';
-    item += '<a ' + attrs.join(' ') + '>' + Drupal.t('Preview @text', {'@text': options.label}) + '</a> \n';
+    item += '<a ' + previewAttrs.join(' ') + '>' + Drupal.t('Preview @text', {'@text': options.label}) + '</a> \n';
     if (options.id !== Drupal.settings.personalize.controlOptionName) {
       if (options.showDelete) {
         item += '<a ' + deleteAttrs.join(' ') + '>' + Drupal.t('Delete') + '</a>\n';

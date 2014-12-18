@@ -307,7 +307,8 @@
   Drupal.acquiaLiftUI.MenuOptionSetView = ViewBase.extend({
 
     events: {
-      'click .acquia-lift-preview-option': 'onClick'
+      'click .acquia-lift-preview-option': 'onPreview',
+      'click .acquia-lift-variation-add': 'onAdd'
     },
 
     /**
@@ -397,11 +398,11 @@
     },
 
     /**
-     * Responds to clicks.
+     * Responds to clicks on preview links.
      *
      * @param jQuery.Event event
      */
-    onClick: function (event) {
+    onPreview: function (event) {
       if (!$(event.target).hasClass('acquia-lift-preview-option')) return;
       if (!this.model) return;
 
@@ -409,6 +410,22 @@
       this.model.set('activeOption', optionid);
       event.preventDefault();
       event.stopPropagation();
+    },
+
+    /**
+     * Responds to clicks on links to add a variation.
+     */
+    onAdd: function(event) {
+      var osData = this.model.get('data');
+      var data = {
+        variationType: osData.personalize_elements_type,
+        selector: osData.personalize_elements_selector,
+        osid: this.model.get('osid')
+      };
+      $(document).trigger('acquiaLiftElementVariationAdd', data)
+      event.preventDefault();
+      event.stopPropagation();
+      return false;
     },
 
     /**

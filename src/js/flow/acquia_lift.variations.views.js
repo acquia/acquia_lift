@@ -36,15 +36,7 @@
        * {@inheritDoc}
        */
       render: function (model, editMode) {
-        if (editMode) {
-          // Must update the watched elements as the page DOM structure can
-          // be changed in between each call.
-          this.$watchElements = Drupal.acquiaLiftVariations.getAvailableElements();
-          this.$el.DOMSelector("updateElements", this.$watchElements);
-          this.$el.DOMSelector("startWatching");
-        } else {
-          this.$el.DOMSelector("stopWatching");
-        }
+        this.setSelectionMode(editMode);
       },
 
       /**
@@ -106,10 +98,26 @@
       },
 
       /**
+       * Sets whether the DOM selector should be active to allow the end user
+       * to select a DOM element.
+       */
+      setSelectionMode: function(inSelectionMode) {
+        if (inSelectionMode) {
+          // Must update the watched elements as the page DOM structure can
+          // be changed in between each call.
+          this.$watchElements = Drupal.acquiaLiftVariations.getAvailableElements();
+          this.$el.DOMSelector("updateElements", this.$watchElements);
+          this.$el.DOMSelector("startWatching");
+        } else {
+          this.$el.DOMSelector("stopWatching");
+        }
+      },
+
+      /**
        * Event callback for when an element is selected in the DOM selector.
        */
       onElementSelected: function (element, selector) {
-        this.$el.DOMSelector('stopWatching');
+        this.setSelectionMode(false);
         this.createContextualMenu(element, selector);
       },
 
@@ -143,6 +151,9 @@
         var formPath = Drupal.settings.basePath +
           'admin/structure/acquia_lift/variation/' +
           Drupal.encodePath(event.data.id);
+        if (event.data.osid) {
+          formPath += '/' + Drupal.encodePath(event.data.osid);
+        }
         this.variationTypeFormModel = new Drupal.acquiaLiftVariations.models.VariationTypeFormModel({
           selector: event.data.selector,
           id: 'acquia-lift-modal-variation-type-' + event.data.id,
@@ -151,12 +162,32 @@
           typeLabel: event.data.name,
           variationIndex: this.model.get('variationIndex')
         });
-        var dialogView = new Drupal.acquiaLiftVariations.views.VariationTypeFormView({
+        this.variationTypeView = new Drupal.acquiaLiftVariations.views.VariationTypeFormView({
           el: event.data.anchor,
           model: this.variationTypeFormModel,
           appModel: this.model
         });
         this.variationTypeFormModel.set('active', this.model.get('editMode'));
+      },
+
+      /**
+       * Open a variation type dialog based on an existing variation set.
+       *
+       *  @param event
+       *    The triggering event that includes the model data/JSON for the selected
+       *    ElementVariationModel.
+       */
+      openExistingTypeDialog: function(event) {
+        // Made sure the DOM selector is no longer active.
+        this.setSelectionMode(false);
+        // Highlight the affected element.
+        this.anchor = event.data.anchor;
+        this.highlightAnchor(true);
+        if (this.variationTypeView) {
+          this.variationTypeView.remove();
+        }
+        // Create the dialog.
+        this.createVariationTypeDialog(event);
       },
 
       /**
@@ -227,6 +258,10 @@
             selector = $selectorInput.val(),
             matches = 0,
             message = '';
+          // If the selector wasn't shown then it doesn't need to be validated.
+          if ($selectorInput.length == 0) {
+            return true;
+          }
 
           function displaySelectorError(message) {
             $selectorInput.addClass('error');

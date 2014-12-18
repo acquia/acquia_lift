@@ -63,10 +63,10 @@
   display: block;
 }
 #navbar-administration .navbar-tray-acquia-lift.navbar-tray-horizontal .navbar-level-1 > ul, #navbar-administration .navbar-tray-acquia-lift.navbar-tray-horizontal .navbar-level-1 > .menu-wrapper {
-  border-color: #dddddd;
+  border-color: #ccc;
   border-style: solid;
-  border-width: 0 1px 1px;
-  box-shadow: 0px 0px 2px 0px rgba(0, 0, 0, 0.3333);
+  border-width: 0 0.1em 0.1em;
+  box-shadow: 0px 0px 2px 0px rgba(0, 0, 0, 0.6);
   margin-left: -1px;
   position: absolute;
   top: 100%;
@@ -77,8 +77,8 @@
   padding-bottom: .3em;
 }
 #navbar-administration .navbar-tray-acquia-lift.navbar-tray-horizontal .menu ul ul {
-  border-bottom: 1px solid #dddddd;
-  border-top: 1px solid #dddddd;
+  border-bottom: 0.1em solid #ccc;
+  border-top: 0.1em solid #ccc;
 }
 #navbar-administration .navbar-tray-acquia-lift.navbar-tray-horizontal .navbar-level-1 li {
   float: none;
@@ -153,7 +153,7 @@
 
 /* Create links */
 #navbar-administration .navbar-tray-horizontal .acquia-lift-menu-create {
-  border-top: 1px solid #ddd;
+  border-top: 0.1em solid #ccc;
   padding: .2em 1.3333em 1em 1.3333em;
 }
 #navbar-administration .navbar-tray-horizontal .menu ul li.last {
@@ -233,7 +233,10 @@
   font-weight: bold;
   background-image: -webkit-linear-gradient(180deg, #fff, #fff 1.1em, rgba(255, 255, 255, 0) 100%);
   background-image: linear-gradient(270deg, #fff, #fff 1.1em, rgba(255, 255, 255, 0) 100%);
-  color: #999;
+  color: rgba(51, 51, 51, 0.6);
+}
+#navbar-administration .navbar-tray-horizontal .acquia-lift-active-container::after html[dir="rtl"] {
+  text-align: left;
 }
 @media screen and (min-width: 1024px) {
   #navbar-administration .navbar-tray-horizontal .acquia-lift-active-container {

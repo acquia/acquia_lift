@@ -3,6 +3,8 @@
  * Styles for integrating Personalize with the Navbar module.
  */
 
+@import "base";
+
 /**
  * Personalize top-level icon.
  */
@@ -76,10 +78,10 @@
     }
     .navbar-level-1 > {
       ul, .menu-wrapper {
-        border-color: #dddddd;
+        border-color: $border-color;
         border-style: solid;
-        border-width: 0 1px 1px;
-        box-shadow: 0px 0px 2px 0px rgba(0, 0, 0, 0.3333);
+        border-width: 0 $border-size $border-size;
+        box-shadow: 0px 0px 2px 0px rgba(0, 0, 0, $shadow-opacity);
         margin-left: -1px;
         position: absolute;
         top: 100%;
@@ -91,8 +93,8 @@
       padding-bottom: .3em;
     }
     .menu ul ul {
-      border-bottom: 1px solid #dddddd;
-      border-top: 1px solid #dddddd;
+      border-bottom: $border-size solid $border-color;
+      border-top: $border-size solid $border-color;
     }
     .navbar-level-1 li {
       float: none;
@@ -197,7 +199,7 @@
 #navbar-administration {
   .navbar-tray-horizontal {
     .acquia-lift-menu-create {
-      border-top: 1px solid #ddd;
+      border-top: $border-size solid $border-color;
       padding: .2em 1.3333em 1em 1.3333em;
     }
     .menu ul li.last {
@@ -296,7 +298,11 @@
         text-align: right;
         font-weight: bold;
         background-image: linear-gradient(270deg, #fff, #fff 1.1em, rgba(#fff, 0) 100%);
-        color: #999;
+        color: rgba($text-color, $shadow-opacity);
+
+        html[dir="rtl"] {
+          text-align: left;
+        }
       }
 
       @media screen and (min-width: 1024px) {

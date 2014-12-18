@@ -210,7 +210,7 @@
 #navbar-administration .navbar-tray-horizontal .acquia-lift-option-sets-list span {
   line-height: 1.2;
 }
-#navbar-administration .navbar-tray-horizontal .acquia-lift-option-sets-list .acquia-lift-personalize-type-count {
+#navbar-administration .navbar-tray-horizontal .acquia-lift-option-sets-list .acquia-lift-personalize-type-count:not(.acquia-lift-empty) {
   position: relative;
   top: -.2em;
 }

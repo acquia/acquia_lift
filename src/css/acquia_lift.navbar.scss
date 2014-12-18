@@ -271,7 +271,7 @@
       }
     }
 
-    .acquia-lift-option-sets-list .acquia-lift-personalize-type-count {
+    .acquia-lift-option-sets-list .acquia-lift-personalize-type-count:not(.acquia-lift-empty) {
       position: relative;
       top: -.2em;
     }

@@ -200,33 +200,31 @@
 /**
  * Keep long names compact.
  */
-#navbar-administration .navbar-tray-horizontal .acquia-lift-campaign-list,
-#navbar-administration .navbar-tray-horizontal .acquia-lift-option-sets-list {
+#navbar-administration .acquia-lift-campaign-list,
+#navbar-administration .acquia-lift-option-sets-list {
   padding-top: .9em;
   padding-bottom: .9em;
 }
-#navbar-administration .navbar-tray-horizontal .acquia-lift-campaign-list, #navbar-administration .navbar-tray-horizontal .acquia-lift-campaign-list span,
-#navbar-administration .navbar-tray-horizontal .acquia-lift-option-sets-list,
-#navbar-administration .navbar-tray-horizontal .acquia-lift-option-sets-list span {
+#navbar-administration .acquia-lift-campaign-list, #navbar-administration .acquia-lift-campaign-list span,
+#navbar-administration .acquia-lift-option-sets-list,
+#navbar-administration .acquia-lift-option-sets-list span {
   line-height: 1.2;
 }
-#navbar-administration .navbar-tray-horizontal .acquia-lift-option-sets-list .acquia-lift-personalize-type-count:not(.acquia-lift-empty) {
+#navbar-administration .acquia-lift-option-sets-list .acquia-lift-personalize-type-count:not(.acquia-lift-empty) {
   position: relative;
   top: -.2em;
 }
-#navbar-administration .navbar-tray-horizontal .acquia-lift-active-container {
+#navbar-administration .acquia-lift-active-container {
   position: relative;
   display: inline-block;
-  max-width: 8em;
   word-wrap: normal;
   overflow-x: hidden;
 }
-#navbar-administration .navbar-tray-horizontal .acquia-lift-active-container::after {
+#navbar-administration .acquia-lift-active-container::after {
   content: "\02026";
   display: inline-block;
   position: absolute;
   top: 0;
-  left: 8em;
   width: 2em;
   margin-left: -2em;
   text-align: right;
@@ -235,8 +233,19 @@
   background-image: linear-gradient(270deg, #fff, #fff 1.1em, rgba(255, 255, 255, 0) 100%);
   color: rgba(51, 51, 51, 0.6);
 }
-#navbar-administration .navbar-tray-horizontal .acquia-lift-active-container::after html[dir="rtl"] {
+html[dir="rtl"] #navbar-administration .acquia-lift-active-container::after {
   text-align: left;
+  background-image: -webkit-linear-gradient(0deg, #fff, #fff 1.1em, rgba(255, 255, 255, 0) 100%);
+  background-image: linear-gradient(90deg, #fff, #fff 1.1em, rgba(255, 255, 255, 0) 100%);
+}
+#navbar-administration .acquia-lift-active-container, #navbar-administration .acquia-lift-active-container * {
+  white-space: pre;
+}
+#navbar-administration .navbar-tray-horizontal .acquia-lift-active-container {
+  max-width: 8em;
+}
+#navbar-administration .navbar-tray-horizontal .acquia-lift-active-container::after {
+  left: 8em;
 }
 @media screen and (min-width: 1024px) {
   #navbar-administration .navbar-tray-horizontal .acquia-lift-active-container {
@@ -253,7 +262,18 @@
   #navbar-administration .navbar-tray-horizontal .acquia-lift-active-container::after {
     left: 30em;
   }
+  html[dir="rtl"] #navbar-administration .navbar-tray-horizontal .acquia-lift-active-container::after {
+    right: 30em;
+    left: auto;
+  }
 }
-#navbar-administration .navbar-tray-horizontal .acquia-lift-active-container, #navbar-administration .navbar-tray-horizontal .acquia-lift-active-container * {
-  white-space: pre;
+#navbar-administration .navbar-tray-vertical .acquia-lift-active-container {
+  max-width: 13em;
+}
+#navbar-administration .navbar-tray-vertical .acquia-lift-active-container::after {
+  left: 13em;
+}
+html[dir="rtl"] #navbar-administration .navbar-tray-vertical .acquia-lift-active-container::after {
+  right: 13em;
+  left: auto;
 }

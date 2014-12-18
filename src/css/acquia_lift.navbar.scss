@@ -260,49 +260,61 @@
  * Keep long names compact.
  */
 #navbar-administration {
+  .acquia-lift-campaign-list,
+  .acquia-lift-option-sets-list {
+    padding: {
+      top: .9em;
+      bottom: .9em;
+    }
+
+    &, span {
+      line-height: 1.2;
+    }
+  }
+
+  .acquia-lift-option-sets-list .acquia-lift-personalize-type-count:not(.acquia-lift-empty) {
+    position: relative;
+    top: -.2em;
+  }
+
+  .acquia-lift-active-container {
+    position: relative;
+    display: inline-block;
+    word-wrap: normal;
+    overflow-x: hidden;
+
+    &::after {
+      $ellipsis-width: 2em;
+      content: "\02026";
+      display: inline-block;
+      position: absolute;
+      top: 0;
+      width: $ellipsis-width;
+      margin-left: -$ellipsis-width;
+      text-align: right;
+      font-weight: bold;
+      background-image: linear-gradient(270deg, #fff, #fff 1.1em, rgba(#fff, 0) 100%);
+      color: rgba($text-color, $shadow-opacity);
+
+      html[dir="rtl"] & {
+        text-align: left;
+        background-image: linear-gradient(90deg, #fff, #fff 1.1em, rgba(#fff, 0) 100%);
+
+      }
+    }
+
+    &, * {
+      white-space: pre;
+    }
+  }
+
   .navbar-tray-horizontal {
-    .acquia-lift-campaign-list,
-    .acquia-lift-option-sets-list {
-      padding: {
-        top: .9em;
-        bottom: .9em;
-      }
-
-      &, span {
-        line-height: 1.2;
-      }
-    }
-
-    .acquia-lift-option-sets-list .acquia-lift-personalize-type-count:not(.acquia-lift-empty) {
-      position: relative;
-      top: -.2em;
-    }
-
     .acquia-lift-active-container {
       $width: 8em;
-      position: relative;
-      display: inline-block;
       max-width: $width;
-      word-wrap: normal;
-      overflow-x: hidden;
 
       &::after {
-        $ellipsis-width: 2em;
-        content: "\02026";
-        display: inline-block;
-        position: absolute;
-        top: 0;
         left: $width;
-        width: $ellipsis-width;
-        margin-left: -$ellipsis-width;
-        text-align: right;
-        font-weight: bold;
-        background-image: linear-gradient(270deg, #fff, #fff 1.1em, rgba(#fff, 0) 100%);
-        color: rgba($text-color, $shadow-opacity);
-
-        html[dir="rtl"] {
-          text-align: left;
-        }
       }
 
       @media screen and (min-width: 1024px) {
@@ -320,11 +332,28 @@
 
         &::after {
           left: $width;
+
+          html[dir="rtl"] & {
+            right: $width;
+            left: auto;
+          }
         }
       }
+    }
+  }
 
-      &, * {
-        white-space: pre;
+  .navbar-tray-vertical {
+    .acquia-lift-active-container {
+      $width: 13em;
+      max-width: $width;
+
+      &::after {
+        left: $width;
+
+        html[dir="rtl"] & {
+          right: $width;
+          left: auto;
+        }
       }
     }
   }

@@ -287,6 +287,46 @@ class ALProfilesWebTest extends DrupalWebTestCase {
     $this->assertNoText('The event user_register was deleted from Acquia Lift Profiles');
     $tracked_actions = variable_get('acquia_lift_profiles_tracked_actions', array());
     $this->assertEqual(array('form_submit'), $tracked_actions);
+
+    // Create a custom action with a label.
+    $action_name = 'my_action_with_label';
+    $action_label = 'My Friendly Event';
+    $action = array(
+      'machine_name' => $action_name,
+      'label' => $action_label,
+      'plugin' => 'link',
+      'client_side' => 1,
+      'module' => 'visitor_actions',
+      'identifier' => '#some-id',
+      'event' => 'click',
+      'pages' => '',
+      'data' => array(),
+      'limited_use' => 1
+    );
+    visitor_actions_save_action($action);
+    visitor_actions_custom_load_multiple(FALSE, FALSE, TRUE);
+    $tracked_actions = array();
+    ALProfilesAPI::setTestInstance();
+    acquia_lift_profiles_put_action($action_name, $tracked_actions);
+
+    // An action with no label should send the machine name as the label to
+    // Lift Web.
+    $new_action_name = 'my_action_without_label';
+    $new_action = $action;
+    unset($new_action['label']);
+    $new_action['machine_name'] = $new_action_name;
+    visitor_actions_save_action($new_action);
+    $this->resetAll();
+    acquia_lift_profiles_put_action($new_action_name, $tracked_actions);
+    $requests = DummyALProfilesHttpClient::getLoggedRequests();
+    $this->assertEqual('http://api.example.com/dashboard/rest/TESTACCOUNT/events/my_action_with_label?label=' . rawurlencode($action_label) . '&type=OTHER', $requests[0]['uri']);
+    $this->assertEqual('http://api.example.com/dashboard/rest/TESTACCOUNT/events/my_action_without_label?label=' . $new_action_name . '&type=OTHER', $requests[1]['uri']);
+
+    // Now try to save a non-existent action.
+    DummyALProfilesHttpClient::clearLoggedRequests();
+    acquia_lift_profiles_put_action('some_non_existent_action', $tracked_actions);
+    $requests = DummyALProfilesHttpClient::getLoggedRequests();
+    $this->assertTrue(empty($requests));
   }
 
   function testUDFMappings() {

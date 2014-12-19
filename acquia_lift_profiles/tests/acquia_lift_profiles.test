@@ -25,7 +25,7 @@ class ALProfilesWebTest extends DrupalWebTestCase {
     require_once(dirname(__FILE__) . '/acquia_lift_profiles.test_classes.inc');
     variable_set('user_register', USER_REGISTER_VISITORS);
     variable_set('user_email_verification', FALSE);
-    $this->admin_user = $this->drupalCreateUser(array('access administration pages', 'administer acquia_lift_profiles configuration', 'administer content types', 'administer nodes', 'bypass node access'));
+    $this->admin_user = $this->drupalCreateUser(array('access administration pages', 'administer acquia_lift_profiles configuration', 'administer content types', 'administer nodes', 'bypass node access', 'administer visitor actions'));
   }
 
   function testBasicConfig() {
@@ -274,7 +274,6 @@ class ALProfilesWebTest extends DrupalWebTestCase {
 
     // Now remove one of those actions.
     $this->drupalPost('admin/config/content/personalize/acquia_lift_profiles', array('acquia_lift_profiles_tracked_actions[]' => array('user_login')), t('Save'));
-    $this->assertNoText('The event user_login has been saved to Acquia Lift Profiles');
     $this->assertText('The event user_register was deleted from Acquia Lift Profiles');
     $tracked_actions = variable_get('acquia_lift_profiles_tracked_actions', array());
     $this->assertEqual(array('user_login'), $tracked_actions);

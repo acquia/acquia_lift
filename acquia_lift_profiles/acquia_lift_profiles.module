@@ -341,7 +341,7 @@ function acquia_lift_profiles_visitor_action_form_submit($form, &$form_state) {
   $values = $form_state['values'];
   $tracked_actions = variable_get('acquia_lift_profiles_tracked_actions', array());
   if (isset($values['acquia_lift_profiles'])) {
-    acquia_lift_profiles_sync_action($values['machine_name'], $tracked_actions, $values['acquia_lift_profiles']);
+    acquia_lift_profiles_sync_action($values['machine_name'], $tracked_actions, $values['acquia_lift_profiles'], check_plain($values['title']));
   }
   variable_set('acquia_lift_profiles_tracked_actions', $tracked_actions);
 }
@@ -349,17 +349,22 @@ function acquia_lift_profiles_visitor_action_form_submit($form, &$form_state) {
 /**
  * Saves an action for Acquia Lift Profiles tracking
  *
- * @param string $machine_name
- *   THe name of the action to sync.
+ * @param string $action_name
+ *   The machine name of the action to sync.
+ * @param &$tracked_ations
+ *   The array of actions being tracked in Lift Web, passed by reference so that it can
+ *   be updated based on this operation.
  * @param boolean $track
  *   Whether the action should or should not be tracked. If this is set to FALSE
  *   and the item was previously being tracked, it will be deleted from Acquia Lift Profiles.
+ * @param string $label
+ *   The human-readable name of the action.
  */
-function acquia_lift_profiles_sync_action($action_name, &$tracked_actions, $track = TRUE) {
-  if ($track && !in_array($action_name, $tracked_actions)) {
-    acquia_lift_profiles_put_action($action_name, $tracked_actions);
+function acquia_lift_profiles_sync_action($action_name, &$tracked_actions, $track = TRUE, $label = NULL) {
+  if ($track) {
+    acquia_lift_profiles_put_action($action_name, $tracked_actions, $label);
   }
-  elseif (!$track) {
+  else {
     acquia_lift_profiles_delete_action($action_name, $tracked_actions);
   }
   $tracked_actions = array_values($tracked_actions);
@@ -370,15 +375,23 @@ function acquia_lift_profiles_sync_action($action_name, &$tracked_actions, $trac
  *
  * @param $action_name
  *   The name of the action to save to Acquia Lift Profiles.
+ * @param &$tracked_ations
+ *   The array of actions being tracked in Lift Web, passed by reference so that it can
+ *   be added to when this action is sync'd successfully.
+ * @param string $label
+ *   The human-readable name of the action. If not provided it will be looked up.
  */
-function acquia_lift_profiles_put_action($action_name, &$tracked_actions) {
-  $actions = visitor_actions_get_actions();
-  // Bail if called with a non-existent action name.
-  if (!isset($actions[$action_name])) {
-    drupal_set_message(t('Cannot save the action @action to Acquia Lift Profiles as it does not exist.', array('@action' => $action_name)), 'error');
-    return;
+function acquia_lift_profiles_put_action($action_name, &$tracked_actions, $label = NULL) {
+  if (empty($label)) {
+    $actions = visitor_actions_get_actions();
+    // Bail if called with a non-existent action name.
+    if (!isset($actions[$action_name])) {
+      drupal_set_message(t('Cannot save the action @action to Acquia Lift Profiles as it does not exist.', array('@action' => $action_name)), 'error');
+      return;
+    }
+    $label = !empty($actions[$action_name]['label']) ? $actions[$action_name]['label'] : $action_name;
   }
-  $label = !empty($actions[$action_name]['label']) ? $actions[$action_name]['label'] : $action_name;
+
   // Visitor Actions module defaults the label to 'unlabeled', which is dumb, and
   // should be changed in Visitor Actions module, but for now we'll just use the
   // machine name if the label is 'unlabeled'.

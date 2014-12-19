@@ -280,11 +280,11 @@
     });
   }
 
-  // Highlight a series when hovering on legend.
-  liftGraph.prototype.setSeriesHighlight = function () {
-    this.seriesHighlight = new Rickshaw.Graph.Behavior.Series.Highlight({
+  // Allow the narowing of data with a range slider.
+  liftGraph.prototype.setRangeSlider = function () {
+    this.rangeSlider = new Rickshaw.Graph.RangeSlider({
       graph: this.graph,
-      legend: this.legend
+      element: this.$rangeSlider[0]
     });
   }
 
@@ -301,13 +301,13 @@
   liftGraph.prototype.build = function () {
     this.$graph = $('<div class="lift-graph-graph" role="presentation"></div>');
     this.$axisY = $('<div class="lift-graph-axis-y" role="presentation"></div>');
+    this.$rangeSlider = $('<div class="lift-graph-range-slider"></div>');
     this.$legend = this.$element.siblings('.lift-graph-result').children('table.lift-graph-result-data');
 
     this.$element.addClass('lift-graph-table')
       .wrap('<div class="lift-graph-container"></div>')
       .before(this.$axisY)
       .before(this.$graph)
-      .before(this.$axisX)
       .before(this.$rangeSlider);
   }
 
@@ -332,6 +332,7 @@
     this.setAxisY();
     this.setLegend();
     this.setHoverDetail();
+    this.setRangeSlider();
     this.graph.render();
     this.hideTable();
   }

@@ -312,6 +312,9 @@
    *   - os: The option set object.
    *   - os.option_id: The ID of an option set option.
    *   - os.option_label: The label of an option set option.
+   *   - os.deletable: Boolean indicating if the option is deletable from the
+   *     menu.
+   *   - os.editable: Boolean indicating if the option is editable from the menu.
    *
    * @return string
    */
@@ -326,7 +329,8 @@
         label: model.get('option_label'),
         osID: osID,
         osSelector: os_selector,
-        showDelete: os.deletable
+        showDelete: os.deletable,
+        showEdit: os.editable
       });
     });
     if (os.plugin === 'elements') {
@@ -351,6 +355,8 @@
    *   - osSelector: The selector representing the option set.
    *   - showDelete: Indicates if the delete option should be available for this
    *     particular item.
+   *   - showEdit: Indicates if the edit option should be available for this
+   *     item.
    *
    * @return string
    */
@@ -373,15 +379,22 @@
     var renameHref = Drupal.settings.basePath + 'admin/structure/acquia_lift/variation/rename/' + options.osID + '/' + options.id + '/nojs';
     var renameAttrs = [
       'class="acquia-lift-variation-rename acquia-lift-menu-link ctools-use-modal ctools-modal-acquia-lift-style"',
-      'title="' + Drupal.t('Rename Variation') + '"',
+      'title="' + Drupal.t('Rename variation') + '"',
       'href="' + renameHref + '"'
     ].concat(ariaAttrs);
 
     var deleteHref = Drupal.settings.basePath + 'admin/structure/acquia_lift/variation/delete/' + options.osID + '/' + options.id + '/nojs';
     var deleteAttrs = [
       'class="acquia-lift-variation-delete acquia-lift-menu-link ctools-use-modal ctools-modal-acquia-lift-style"',
-      'title="' + Drupal.t('Delete Variation') + '"',
+      'title="' + Drupal.t('Delete variation') + '"',
       'href="' + deleteHref + '"'
+    ].concat(ariaAttrs);
+
+    var editHref = Drupal.settings.basePath + 'admin/structure/personalize/variations';
+    var editAttrs = [
+      'class="acquia-lift-variation-edit acquia-lift-menu-link"',
+      'title="' + Drupal.t('Edit variation') + '"',
+      'href="' + editHref + '"'
     ].concat(ariaAttrs);
 
     item += '<li>\n<div class="acquia-lift-menu-item">';
@@ -389,6 +402,9 @@
     if (options.id !== Drupal.settings.personalize.controlOptionName) {
       if (options.showDelete) {
         item += '<a ' + deleteAttrs.join(' ') + '>' + Drupal.t('Delete') + '</a>\n';
+      }
+      if (options.showEdit) {
+        item += '<a ' + editAttrs.join(' ') + '>' + Drupal.t('Edit') + '</a>\n';
       }
       item += '<a ' + renameAttrs.join(' ') + '>' + Drupal.t('Rename') + '</a>\n';
     }

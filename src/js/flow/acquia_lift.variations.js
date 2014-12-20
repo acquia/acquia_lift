@@ -194,16 +194,16 @@
   });
 
   /**
-   * Add an event listener to open up a specific variation type details form
-   * on a specific element in order to add an element variation.
+   * Add an event listener to open up a specific variation details form
+   * for adding or editing an existing variation.
    *
    * Data is an object with the following keys:
    * - variationType: The type of variation, e.g., editText, addClass, etc.
    * - selector: The selector for the affected DOM element.
    * - osid: The option set id for the parent option set.
-
+   * - variationIndex: (Optional) The choice id for the option to edit.
    */
-  $(document).on('acquiaLiftElementVariationAdd', function(e, data) {
+  $(document).on('acquiaLiftElementVariationEdit', function(e, data) {
     data['type'] = 'element';
     var response = {
       data: data

@@ -393,6 +393,7 @@
     var editHref = Drupal.settings.basePath + 'admin/structure/personalize/variations';
     var editAttrs = [
       'class="acquia-lift-variation-edit acquia-lift-menu-link"',
+      'data-acquia-lift-personalize-option-set-option="' + options.id + '"',
       'title="' + Drupal.t('Edit variation') + '"',
       'href="' + editHref + '"'
     ].concat(ariaAttrs);
@@ -1766,7 +1767,8 @@
 
     events: {
       'click .acquia-lift-preview-option': 'onPreview',
-      'click .acquia-lift-variation-add': 'onAdd'
+      'click .acquia-lift-variation-add': 'onEdit',
+      'click .acquia-lift-variation-edit': 'onEdit'
     },
 
     /**
@@ -1871,16 +1873,20 @@
     },
 
     /**
-     * Responds to clicks on links to add a variation.
+     * Responds to clicks to add or edit an existing elements variation.
      */
-    onAdd: function(event) {
+    onEdit: function(event) {
       var osData = this.model.get('data');
+      var optionId = $(event.target).data('acquia-lift-personalize-option-set-option');
       var data = {
         variationType: osData.personalize_elements_type,
         selector: osData.personalize_elements_selector,
         osid: this.model.get('osid')
+      }
+      if (optionId) {
+        data.variationIndex = optionId;
       };
-      $(document).trigger('acquiaLiftElementVariationAdd', data)
+      $(document).trigger('acquiaLiftElementVariationEdit', data);
       event.preventDefault();
       event.stopPropagation();
       return false;

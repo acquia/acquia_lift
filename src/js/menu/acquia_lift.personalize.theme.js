@@ -393,6 +393,7 @@
     var editHref = Drupal.settings.basePath + 'admin/structure/personalize/variations';
     var editAttrs = [
       'class="acquia-lift-variation-edit acquia-lift-menu-link"',
+      'data-acquia-lift-personalize-option-set-option="' + options.id + '"',
       'title="' + Drupal.t('Edit variation') + '"',
       'href="' + editHref + '"'
     ].concat(ariaAttrs);

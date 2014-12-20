@@ -221,7 +221,7 @@ function acquia_lift_campaign_type_create_form_submit($form, &$form_state) {
 
 /***************************************************************
  *
- * V A R I A T I O N  C R E A T E
+ * V A R I A T I O N  C R E A T E / E D I T
  *
  ***************************************************************/
 

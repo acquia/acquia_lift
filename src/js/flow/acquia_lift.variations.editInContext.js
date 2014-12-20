@@ -17,6 +17,10 @@
    * editInContext callbacks.
    */
   $(document).on('acquiaLiftVariationTypeForm', function(e, type, selector, $input) {
+    if ($input.val().length > 0) {
+      // Don't replace any existing content in the input field.
+      return;
+    }
     if (Drupal.acquiaLiftVariations.personalizeElements.hasOwnProperty(type)
       && Drupal.acquiaLiftVariations.personalizeElements[type].hasOwnProperty('editInContext')
       && typeof Drupal.acquiaLiftVariations.personalizeElements[type].editInContext === 'function') {

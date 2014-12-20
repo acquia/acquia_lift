@@ -145,9 +145,10 @@
        *
        * @param event
        *   The triggering event that includes the model data/JSON for the selected
-       *   ElementVariationModel.
+       *   VariationTypeModel.
        */
       createVariationTypeDialog: function(event) {
+        var variationIndex = this.model.get('variationIndex');
         var formPath = Drupal.settings.basePath +
           'admin/structure/acquia_lift/variation/' +
           Drupal.encodePath(event.data.id);
@@ -160,7 +161,7 @@
           formPath: formPath,
           type: event.data.id,
           typeLabel: event.data.name,
-          variationIndex: this.model.get('variationIndex')
+          variationIndex: variationIndex
         });
         this.variationTypeView = new Drupal.acquiaLiftVariations.views.VariationTypeFormView({
           el: event.data.anchor,
@@ -175,7 +176,7 @@
        *
        *  @param event
        *    The triggering event that includes the model data/JSON for the selected
-       *    ElementVariationModel.
+       *    VariationTypeModel.
        */
       openExistingTypeDialog: function(event) {
         // Made sure the DOM selector is no longer active.
@@ -248,6 +249,9 @@
         this.$el.find('[name="pages"]').val(Drupal.settings.visitor_actions.currentPath);
         this.$el.find('[name="agent"]').val(Drupal.settings.personalize.activeCampaign);
         this.$el.find('[name="variation_number"]').val(variationNumber);
+        if (variationNumber !== -1) {
+
+        }
         // Call any variation type specific callbacks.
         $(document).trigger('acquiaLiftVariationTypeForm', [type, selector, $input]);
 

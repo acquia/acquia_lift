@@ -62,21 +62,13 @@
        * Updates the application based on changes in edit mode in model.
        */
       updateEditMode: function(model, editMode) {
-        var data = {};
-        var variationIndex = model.get('variationIndex');
         if (editMode) {
-          variationIndex = isNaN(variationIndex) ? -1 : variationIndex;
           if (this.contextualMenuModel) {
             this.contextualMenuModel.set('active', true);
           }
           if (this.variationTypeFormModel) {
             this.variationTypeFormModel.set('active', true);
           }
-          data.started = editMode;
-          data.mode = (variationIndex == -1) ? 'add' : 'edit';
-          data.campaign = Drupal.settings.personalize.activeCampaign;
-          data.variationIndex = variationIndex;
-          $(document).trigger('acquiaLiftPageVariationsMode', data);
         } else {
           this.highlightAnchor(false);
           if (this.contextualMenuModel) {
@@ -148,7 +140,7 @@
        *   VariationTypeModel.
        */
       createVariationTypeDialog: function(event) {
-        var variationIndex = this.model.get('variationIndex');
+        var variation = this.model.get('variation');
         var formPath = Drupal.settings.basePath +
           'admin/structure/acquia_lift/variation/' +
           Drupal.encodePath(event.data.id);
@@ -161,7 +153,7 @@
           formPath: formPath,
           type: event.data.id,
           typeLabel: event.data.name,
-          variationIndex: variationIndex
+          variation: variation
         });
         this.variationTypeView = new Drupal.acquiaLiftVariations.views.VariationTypeFormView({
           el: event.data.anchor,
@@ -238,7 +230,7 @@
         var selector = this.model.get('selector');
         var type = this.model.get('type');
         var $input = this.$el.find('[name=personalize_elements_content]');
-        var variationNumber = this.model.get('variationIndex');
+        var variation = this.model.get('variation');
 
         // Don't show the title field for page variations.
         if (this.appModel.isPageModelMode()) {
@@ -248,12 +240,12 @@
         this.$el.find('[name="selector"]').val(selector);
         this.$el.find('[name="pages"]').val(Drupal.settings.visitor_actions.currentPath);
         this.$el.find('[name="agent"]').val(Drupal.settings.personalize.activeCampaign);
-        this.$el.find('[name="variation_number"]').val(variationNumber);
-        if (variationNumber !== -1) {
-
-        }
         // Call any variation type specific callbacks.
         $(document).trigger('acquiaLiftVariationTypeForm', [type, selector, $input]);
+        if (variation) {
+          this.$el.find('[name="variation_number"]').val(variation.getVariationNumber());
+          $input.val(variation.getContent());
+        }
 
         // Override the form submission handler to verify the selector only
         // matches a single DOM element.

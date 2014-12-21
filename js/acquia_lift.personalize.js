@@ -1829,7 +1829,7 @@
         .attr('aria-pressed', 'false');
       if (this.model) {
         this.$el
-          .find('[data-acquia-lift-personalize-option-set-option="' + this.model.get('activeOption') + '"]')
+          .find('.acquia-lift-preview-option[data-acquia-lift-personalize-option-set-option="' + this.model.get('activeOption') + '"]')
           .addClass('acquia-lift-active')
           .attr('aria-pressed', 'true');
       }
@@ -1881,7 +1881,8 @@
       var data = {
         variationType: osData.personalize_elements_type,
         selector: osData.personalize_elements_selector,
-        osid: this.model.get('osid')
+        osid: this.model.get('osid'),
+        agentName: this.model.get('agent')
       }
       if (optionId) {
         data.variationIndex = optionId;

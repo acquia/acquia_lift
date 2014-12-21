@@ -10,10 +10,16 @@
   /**
    * Base model for a variation that can be shown or edited.
    */
-  Drupal.acquiaLiftVariations.models.VariationModel: Backbone.Model.extend({
+  Drupal.acquiaLiftVariations.models.BaseVariationModel = Backbone.Model.extend({
     // Each type of variation overrides this function to return its content.
     getContent: function () {
       return '';
+    },
+
+    // Each type of variation overrides this to return the index for the
+    // variation.  -1 indicates a new variation.
+    getVariationNumber: function () {
+      return -1;
     }
   });
 
@@ -31,9 +37,8 @@
         editMode: true,
         modelMode: this.MODEL_MODE_PAGE,
         // The current variation being edited.
-        // This will be an integer for a page variation or an option id
-        // for an element variation.
-        variationIndex: -1
+        // This will be a model that extends the BaseVariationModel class.
+        variation: null
       },
 
       /**
@@ -87,71 +92,72 @@
           // The label for the variation type.
           typeLabel: null,
           selector: null,
-          variationIndex: -1
+          variation: null
         }
       )
     }),
 
     /**
-     * Model for a variation that can be shown or edited.
+     * The model for a variation within a personalize elements option set.
      */
-    VariationModel: Backbone.Model.extend({
-      // Each type of variation overrides this function to return its content.
+    ElementVariationModel: Drupal.acquiaLiftVariations.models.BaseVariationModel.extend({
+      defaults: {
+        osid: null,
+        optionId: null
+      },
+
+      getVariationNumber: function () {
+        return this.get('optionId');
+      },
+
       getContent: function () {
+        var osid = this.get('osid'),
+          optionId = this.get('optionId'),
+          content = '';
+        if (Drupal.settings.personalize.option_sets.hasOwnProperty(osid)) {
+          var options = Drupal.settings.personalize.option_sets[osid].options;
+          _.each(options, function(option) {
+            if (option['option_id'] === optionId) {
+              content = option['personalize_elements_content'];
+            }
+          });
+        }
+        return content;
+      }
+    }),
+
+    /**
+     * The model for a variation within a page variation.
+     */
+    PageVariationModel: Drupal.acquiaLiftVariations.models.BaseVariationModel.extend({
+      defaults: {
+        agentName: null,
+        variationIndex: -1,
+        selector: null
+      },
+
+      getVariationNumber: function () {
+        return this.get('variationIndex');
+      },
+
+      getContent: function () {
+        var variationIndex = this.get('variationIndex'),
+          agentName = this.get('agentName'),
+          selector = this.get('selector');
+        if (!agentName || !selector) {
+          return '';
+        }
+        // Find the right option set for this agent and selector.
+        _.each(Drupal.settings.personalize.option_sets, function(option_set) {
+          if (option_set.agent === agentName && option_set.selector === selector) {
+            if (option_set.options.hasOwnProperty(variationIndex)) {
+              return option_set.options[variationIndex].personalize_elements_content;
+            }
+          }
+        });
         return '';
       }
     })
-  };
-
-  /**
-   * The model for a variation within a personalize elements option set.
-   */
-  Drupal.acquiaLiftVariations.models.ElementVariationModel = Drupal.acquiaLiftVariations.models.VariationModel.extend({
-    defaults: {
-      osid: null,
-      optionId: null
-    },
-
-    getContent: function () {
-      if (Drupal.settings.personalize.option_sets.hasOwnProperty(osid)) {
-        var options = Drupal.settings.personalize.option_sets[osid].options;
-        _.each(options, function(option) {
-          if (option['option_id'] == this.get('optionId')) {
-            return option['personalize_elements_content'];
-          }
-        });
-      }
-      return '';
-    }
-  });
-
-  /**
-   * The model for a variation within a page variation.
-   */
-  Drupal.acquiaLiftVariations.models.PageVariationModel = Drupal.acquiaLiftVariations.models.VariationModel.extend({
-    defaults: {
-      agentName: null,
-      variationIndex: -1,
-      selector: null
-    },
-
-    getContent: function () {
-      var variationIndex = this.get('variationIndex'),
-        agentName = this.get('agentName'),
-        selector = this.get('selector');
-      if (!agentName || !selector) {
-        return '';
-      }
-      // Find the right option set for this agent and selector.
-      _.each(Drupal.settings.personalize.option_sets, function(option_set) {
-        if (option_set.agent === agentName && option_set.selector === selector) {
-          if (option_set.options.hasOwnProperty(variationIndex)) {
-            return option_set.options[variationIndex].personalize_elements_content;
-          }
-        }
-      });
-      return '';
-    }
   });
 
 }(Drupal.jQuery, Drupal, Drupal.visitorActions.ui.dialog, Backbone, _));

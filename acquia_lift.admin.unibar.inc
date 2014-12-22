@@ -448,8 +448,16 @@ function _acquia_lift_personalize_element_variation_details_form_submit($form, &
   // Save the updated option sets for use within the Ajax callback.
   $form_state['storage']['option_sets'] = array($option_set);
   $form_state['storage']['osid'] = $option_set->osid;
-  $updated_option = end(array_values($option_set->options));
-  $form_state['storage']['option_id'] = $updated_option['option_id'];
+  // Determine the option set to preview after save.
+  if (!empty($values['variation_number'])) {
+    // Preview the edited variation.
+    $form_state['storage']['option_id'] = $values['variation_number'];
+  }
+  else {
+    // It was a new option, so preview the last one.
+    $updated_option = end(array_values($option_set->options));
+    $form_state['storage']['option_id'] = $updated_option['option_id'];
+  }
   $form_state['storage']['confirmation_message'] = $message;
 }
 

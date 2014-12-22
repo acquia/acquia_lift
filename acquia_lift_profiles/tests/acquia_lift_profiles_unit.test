@@ -153,18 +153,19 @@ class ALProfilesAPITest extends DrupalUnitTestCase {
   public function testSaveEvent() {
     $acquia_lift_profiles_api = $this->getALProfilesAPI();
     $event_name = 'test_event';
-    $acquia_lift_profiles_api->saveEvent($event_name);
+    $event_label = 'My Test Event';
+    $acquia_lift_profiles_api->saveEvent($event_name, $event_label);
 
     // Define the requests we expect to have been made to our dummy http
     // client for this operation.
-    $canonicalRequest = "PUT\naccept:application/json\n/dashboard/rest/{$acquia_lift_profiles_api->getAccountName()}/events/{$event_name}?type=OTHER";
+    $canonicalRequest = "PUT\naccept:application/json\n/dashboard/rest/{$acquia_lift_profiles_api->getAccountName()}/events/{$event_name}?label={$event_label}&type=OTHER";
     $hmac = base64_encode(hash_hmac('sha1', $canonicalRequest, $this->secretKey, TRUE));
     $auth_header = 'HMAC ' . $this->accessKey . ':' . $hmac;
-
+    $encoded_label = rawurlencode($event_label);
     $requests = array(
       array(
         'type' => 'put',
-        'uri' => "{$acquia_lift_profiles_api->getApiUrl()}/dashboard/rest/{$acquia_lift_profiles_api->getAccountName()}/events/{$event_name}?type=OTHER",
+        'uri' => "{$acquia_lift_profiles_api->getApiUrl()}/dashboard/rest/{$acquia_lift_profiles_api->getAccountName()}/events/{$event_name}?label={$encoded_label}&type=OTHER",
         'headers' => array('Authorization' => $auth_header, 'Accept' => 'application/json'),
         'options' => array(),
         'body' => NULL,
@@ -184,7 +185,7 @@ class ALProfilesAPITest extends DrupalUnitTestCase {
     // Now try with a broken client.
     $acquia_lift_profiles_api = $this->getALProfilesAPI(TRUE);
     try {
-      $acquia_lift_profiles_api->saveEvent($event_name);
+      $acquia_lift_profiles_api->saveEvent($event_name, $event_label);
     }
     catch (Exception $e) {
       $this->assertTrue($e instanceof ALProfilesException);

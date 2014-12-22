@@ -404,7 +404,7 @@ function _acquia_lift_personalize_element_variation_details_form_submit($form, &
   // Prepare the values to those expected by the personalize elements module.
   $values = $form_state['values'];
   $message = '';
-  
+
   if (empty($values['osid'])) {
     // Creating a new option set and a new option within it.
     $values['options'] = array(
@@ -438,7 +438,7 @@ function _acquia_lift_personalize_element_variation_details_form_submit($form, &
           break;
         }
       }
-      $message = t('The variation has been edited.');
+      $message = t('The variation has been updated.');
     }
   }
   $option_set = personalize_option_set_save($option_set);

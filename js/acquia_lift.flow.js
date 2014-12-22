@@ -179,6 +179,7 @@
       // Set the model to page or element variation mode.
       Drupal.acquiaLiftVariations.app.appModel.setModelMode(response.data.type === 'page');
       Drupal.acquiaLiftVariations.app.appModel.set('editMode', true);
+      Drupal.acquiaLiftVariations.app.appModel.set('variation', null);
     } else {
       // End editing for the application.
       if (Drupal.acquiaLiftVariations.app.appModel) {
@@ -236,25 +237,27 @@
     // Set up application.
     initializeApplication();
     // Set up the variation model for editing.
+    var variation = null;
     if (data.type === 'page') {
       Drupal.acquiaLiftVariations.app.appModel.setModelMode(true);
       if (data.variationIndex && data.variationIndex >= 0) {
-        Drupal.acquiaLiftVariations.app.appModel.set('variation', new Drupal.acquiaLiftVariations.models.PageVariationModel({
+        variation = new Drupal.acquiaLiftVariations.models.PageVariationModel({
           variationIndex: data.variationIndex,
           agentName: data.agentName,
           selector: data.selector
-        }));
+        });
       }
     } else {
       Drupal.acquiaLiftVariations.app.appModel.setModelMode(false);
       if (data.variationIndex && data.variationIndex != -1) {
-        Drupal.acquiaLiftVariations.app.appModel.set('variation', new Drupal.acquiaLiftVariations.models.ElementVariationModel({
+        variation = new Drupal.acquiaLiftVariations.models.ElementVariationModel({
           optionId: data.variationIndex,
           agentName: data.agentName,
           osid: data.osid
-        }));
+        });
       }
     }
+    Drupal.acquiaLiftVariations.app.appModel.set('variation', variation);
     Drupal.acquiaLiftVariations.app.appModel.set('editMode', true);
 
     // Generate required event data for details form.

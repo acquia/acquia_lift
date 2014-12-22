@@ -1336,7 +1336,7 @@
       if (isActive) {
         text = Drupal.t('Exit edit mode');
       } else {
-        text = current instanceof Drupal.acquiaLiftUI.MenuCampaignABModel ? Drupal.t('Add a variation') : Drupal.t('Add a variation set');
+        text = current instanceof Drupal.acquiaLiftUI.MenuCampaignABModel ? Drupal.t('Add variation') : Drupal.t('Add variation set');
       }
       this.$el.text(text);
     },

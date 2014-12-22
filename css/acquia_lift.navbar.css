@@ -116,6 +116,9 @@
   border-bottom: 1px solid #dddddd;
   background-color: #fafafa;
 }
+#navbar-administration .navbar-tray-acquia-lift.navbar-tray-horizontal ul.acquia-lift-option-sets .navbar-level-2 > ul {
+  margin-left: 0;
+}
 
 /* Page variation links */
 #navbar-administration .acquia-lift-menu-item .acquia-lift-preview-option {
@@ -153,12 +156,9 @@
 #navbar-administration .acquia-lift-menu-create:before {
   content: '+';
   font-weight: bold;
-  font-size: 1.3em;
+  font-size: 1.667em;
   padding-right: 0.2em;
   vertical-align: text-bottom;
-}
-#navbar-administration .acquia-lift-menu-create:before {
-  font-size: 1.667em;
 }
 #navbar-administration .navbar-tray-acquia-lift.navbar-tray-horizontal .menu ul ul:last-child {
   border-bottom: none;

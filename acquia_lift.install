@@ -227,7 +227,7 @@ function _acquia_lift_build_menu($menu_name) {
 
   // Create a link for attaching option set preview triggers.
   $item = array(
-    'link_title' => 'Create a variation set',
+    'link_title' => 'Add variation set',
     'link_path' => 'admin/structure/acquia_lift/variations/add/nojs',
     'menu_name' => $menu_name,
     'options' => array(
@@ -279,7 +279,7 @@ function _acquia_lift_build_menu($menu_name) {
 
   // Create a link for attaching Goals.
   $item = array(
-    'link_title' => 'Add a goal',
+    'link_title' => 'Add goal',
     'link_path' => 'admin/structure/acquia_lift/goal/add/nojs',
     'menu_name' => $menu_name,
     'options' => array(
@@ -507,6 +507,14 @@ function acquia_lift_update_7013() {
  * Update Acquia Lift menu bar "Add a variation" link to open a modal.
  */
 function acquia_lift_update_7014() {
+  menu_delete_links('acquia-lift-controls');
+  _acquia_lift_build_menu('acquia-lift-controls');
+}
+
+/**
+ * Update Acquia Lift menu bar to ensure consistent language.
+ */
+function acquia_lift_update_7015() {
   menu_delete_links('acquia-lift-controls');
   _acquia_lift_build_menu('acquia-lift-controls');
 }

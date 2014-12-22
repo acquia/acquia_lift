@@ -332,7 +332,7 @@
     if (os.plugin === 'elements') {
       menu += '<li>';
       menu += '<a href="' + Drupal.settings.basePath + 'admin/structure/personalize/variations/add/nojs"';
-      menu += ' class="acquia-lift-variation-add title="' + Drupal.t('Add variation') + '" aria-role="button" aria-pressed="false">';
+      menu += ' class="acquia-lift-variation-add acquia-lift-menu-link" title="' + Drupal.t('Add variation') + '" aria-role="button" aria-pressed="false">';
       menu += Drupal.t('Add variation');
       menu += '</a></li>';
     }
@@ -385,7 +385,7 @@
     ].concat(ariaAttrs);
 
     item += '<li>\n<div class="acquia-lift-menu-item">';
-    item += '<a ' + previewAttrs.join(' ') + '>' + Drupal.t('Preview @text', {'@text': options.label}) + '</a> \n';
+    item += '<a ' + previewAttrs.join(' ') + '>' + options.label + '</a> \n';
     if (options.id !== Drupal.settings.personalize.controlOptionName) {
       if (options.showDelete) {
         item += '<a ' + deleteAttrs.join(' ') + '>' + Drupal.t('Delete') + '</a>\n';
@@ -2775,7 +2775,7 @@
       if (isActive) {
         text = Drupal.t('Exit edit mode');
       } else {
-        text = current instanceof Drupal.acquiaLiftUI.MenuCampaignABModel ? Drupal.t('Add a variation') : Drupal.t('Add a variation set');
+        text = current instanceof Drupal.acquiaLiftUI.MenuCampaignABModel ? Drupal.t('Add variation') : Drupal.t('Add variation set');
       }
       this.$el.text(text);
     },

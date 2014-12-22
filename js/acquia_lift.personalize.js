@@ -1903,9 +1903,13 @@
      * @param string choice_name
      *   The option id of the choice to show.
      */
-    selectOption: function (osid, choice_name) {
+    selectOption: function (osid, choice_name, force) {
       if (this.model && this.model.get('osid') === osid) {
-        this.model.set('activeOption', choice_name);
+        if (this.model.get('activeOption') === choice_name && force) {
+          this.model.trigger('change:activeOption', this.model);
+        } else {
+          this.model.set('activeOption', choice_name);
+        }
       }
     },
 
@@ -2970,7 +2974,7 @@
   Drupal.ajax.prototype.commands.acquia_lift_variation_preview = function (ajax, response, status) {
     _.defer(function() {
       var view = Drupal.acquiaLiftUI.views.optionSets[response.data.osid];
-      view.selectOption(response.data.osid, response.data.optionId);
+      view.selectOption(response.data.osid, response.data.optionId, true);
     });
   }
 

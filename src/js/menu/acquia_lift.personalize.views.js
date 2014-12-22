@@ -445,9 +445,13 @@
      * @param string choice_name
      *   The option id of the choice to show.
      */
-    selectOption: function (osid, choice_name) {
+    selectOption: function (osid, choice_name, force) {
       if (this.model && this.model.get('osid') === osid) {
-        this.model.set('activeOption', choice_name);
+        if (this.model.get('activeOption') === choice_name && force) {
+          this.model.trigger('change:activeOption', this.model);
+        } else {
+          this.model.set('activeOption', choice_name);
+        }
       }
     },
 

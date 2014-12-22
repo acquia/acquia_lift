@@ -408,8 +408,8 @@
       if (!$(event.target).hasClass('acquia-lift-preview-option')) return;
       if (!this.model) return;
 
-      var optionid = $(event.target).data('acquia-lift-personalize-option-set-option');
-      this.model.set('activeOption', optionid);
+      var optionId = $(event.target).data('acquia-lift-personalize-option-set-option');
+      this.model.set('activeOption', optionId);
       event.preventDefault();
       event.stopPropagation();
     },
@@ -428,6 +428,8 @@
       }
       if (optionId) {
         data.variationIndex = optionId;
+        // Set this as the active option for preview as well.
+        this.model.set('activeOption', optionId);
       };
       $(document).trigger('acquiaLiftElementVariationEdit', data);
       event.preventDefault();

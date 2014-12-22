@@ -9,17 +9,26 @@
 
   /**
    * Base model for a variation that can be shown or edited.
+   *
+   * Models that extend this class are responsible for setting the "option"
+   * property which holds a reference to the option within an option set
+   * settings that represents this variation.
    */
   Drupal.acquiaLiftVariations.models.BaseVariationModel = Backbone.Model.extend({
-    // Each type of variation overrides this function to return its content.
-    getContent: function () {
-      return '';
-    },
-
     // Each type of variation overrides this to return the index for the
     // variation.  -1 indicates a new variation.
     getVariationNumber: function () {
       return -1;
+    },
+
+    getVariationLabel: function () {
+      var option = this.get('option');
+      return option ? option.option_label : Drupal.t('Variation');
+    },
+
+    getContent: function () {
+      var option = this.get('option');
+      return option ? option.personalize_elements_content : '';
     }
   });
 
@@ -103,26 +112,26 @@
     ElementVariationModel: Drupal.acquiaLiftVariations.models.BaseVariationModel.extend({
       defaults: {
         osid: null,
-        optionId: null
+        optionId: null,
+        option: null
+      },
+
+      initialize: function () {
+        var osid = this.get('osid'),
+          optionId = this.get('optionId'),
+          that = this;
+        if (Drupal.settings.personalize.option_sets.hasOwnProperty(osid)) {
+          var options = Drupal.settings.personalize.option_sets[osid].options;
+          _.each(options, function (option) {
+            if (option['option_id'] === optionId) {
+              that.set('option', option);
+            }
+          });
+        }
       },
 
       getVariationNumber: function () {
         return this.get('optionId');
-      },
-
-      getContent: function () {
-        var osid = this.get('osid'),
-          optionId = this.get('optionId'),
-          content = '';
-        if (Drupal.settings.personalize.option_sets.hasOwnProperty(osid)) {
-          var options = Drupal.settings.personalize.option_sets[osid].options;
-          _.each(options, function(option) {
-            if (option['option_id'] === optionId) {
-              content = option['personalize_elements_content'];
-            }
-          });
-        }
-        return content;
       }
     }),
 
@@ -133,29 +142,28 @@
       defaults: {
         agentName: null,
         variationIndex: -1,
-        selector: null
+        selector: null,
+        option: null
       },
 
-      getVariationNumber: function () {
-        return this.get('variationIndex');
-      },
-
-      getContent: function () {
+      initialize: function () {
         var variationIndex = this.get('variationIndex'),
           agentName = this.get('agentName'),
-          selector = this.get('selector');
-        if (!agentName || !selector) {
-          return '';
-        }
+          selector = this.get('selector'),
+          that = this;
+
         // Find the right option set for this agent and selector.
         _.each(Drupal.settings.personalize.option_sets, function(option_set) {
           if (option_set.agent === agentName && option_set.selector === selector) {
             if (option_set.options.hasOwnProperty(variationIndex)) {
-              return option_set.options[variationIndex].personalize_elements_content;
+              that.set('option', option_set.options[variationIndex]);
             }
           }
         });
-        return '';
+      },
+
+      getVariationNumber: function () {
+        return this.get('variationIndex');
       }
     })
   });

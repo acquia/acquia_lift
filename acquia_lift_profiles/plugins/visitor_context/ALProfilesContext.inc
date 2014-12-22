@@ -9,7 +9,7 @@ class ALProfilesContext extends PersonalizeContextBase {
   /**
    * Implements PersonalizeContextInterface::create().
    */
-  public static function create(PersonalizeAgentInterface $agent, $selected_context) {
+  public static function create(PersonalizeAgentInterface $agent = NULL, $selected_context = array()) {
     try {
       $acquia_lift_profiles_api = ALProfilesAPI::getInstance();
       return new self($agent, $selected_context, $acquia_lift_profiles_api);

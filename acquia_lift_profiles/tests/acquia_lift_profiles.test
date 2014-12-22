@@ -350,6 +350,31 @@ class ALProfilesWebTest extends DrupalWebTestCase {
       )
     );
     $this->assertEqual($expected, $settings['acquia_lift_profiles']['udfMappings']);
+
+    // Confirm that the context value is available in the settings
+    $this->drupalLogout();
+    $regular_user = $this->drupalCreateUser(array('access content'));
+    $pass_raw = $regular_user->pass_raw;
+    unset($regular_user->pass_raw);
+
+    $edit = array(
+      'field_test_user_field_1' => array(
+        'und' => array(
+          array('value' => 'ohai')
+        )
+      )
+    );
+    user_save($regular_user, $edit);
+    $this->resetAll();
+
+    $regular_user->pass_raw = $pass_raw;
+    $this->drupalLogin($regular_user);
+    $this->drupalGet('');
+    $settings = $this->drupalGetSettings();
+    $expected = array(
+      'test_user_field_1' => 'ohai'
+    );
+    $this->assertEqual($expected, $settings['personalize_user_profile_context']);
   }
 
   /**

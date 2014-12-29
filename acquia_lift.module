@@ -2498,7 +2498,7 @@ function acquia_lift_preprocess_personalize_campaign_status_update(&$variables) 
   if ($agent_instance instanceof AcquiaLiftPageVariationInterface && !empty($variables['option_sets'])) {
     // Rather than showing the option set names as the variations that will be
     // shown, we need to show the individual page variation that will be shown.
-    $option_sets = personalize_option_set_load_multiple(array(), array('decision_name' => $variables['agent_name'], 'agent' => $variables['agent_name']));
+    $option_sets = personalize_option_set_load_multiple(FALSE, array('decision_name' => $variables['agent_name'], 'agent' => $variables['agent_name']));
     $first_os = reset($option_sets);
     $winner_id = empty($first_os->winner) ? PERSONALIZE_CONTROL_OPTION_ID : $first_os->winner;
     $winner_label = '';

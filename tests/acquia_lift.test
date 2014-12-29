@@ -489,7 +489,7 @@ class AcquiaLiftWebTestVariationSets extends AcquiaLiftWebTestBase {
 
 
     $this->resetAll();
-    $option_sets = personalize_option_set_load_multiple(array(), array('agent' => $agent_name));
+    $option_sets = personalize_option_set_load_multiple(FALSE, array('agent' => $agent_name));
     $osids = array_keys($option_sets);
     $this->assertEqual(2, count($option_sets));
     foreach ($option_sets as $osid => $option_set) {
@@ -594,7 +594,7 @@ class AcquiaLiftWebTestVariationSets extends AcquiaLiftWebTestBase {
     $this->assertEqual(1, $var_num);
 
     $this->resetAll();
-    $option_sets = personalize_option_set_load_multiple(array(), array('agent' => $agent_name));
+    $option_sets = personalize_option_set_load_multiple(FALSE, array('agent' => $agent_name));
     $osids = array_keys($option_sets);
     $this->assertEqual(3, count($option_sets));
     foreach ($option_sets as $osid => $option_set) {
@@ -696,7 +696,7 @@ class AcquiaLiftWebTestVariationSets extends AcquiaLiftWebTestBase {
     $expected_options_os1[2]['option_label'] = 'Hello';
     $expected_options_os2[2]['option_label'] = 'Hello';
     $expected_options_os3[2]['option_label'] = 'Hello';
-    $option_sets = personalize_option_set_load_multiple(array(), array('decision_name' => 'first_variation_set', 'agent' => $agent_name));
+    $option_sets = personalize_option_set_load_multiple(FALSE, array('decision_name' => 'first_variation_set', 'agent' => $agent_name));
     $this->assertEqual($expected_options_os1, $option_sets[$osids[0]]->options);
     $this->assertEqual($expected_options_os2, $option_sets[$osids[1]]->options);
     $this->assertEqual($expected_options_os3, $option_sets[$osids[2]]->options);
@@ -706,7 +706,7 @@ class AcquiaLiftWebTestVariationSets extends AcquiaLiftWebTestBase {
     unset($expected_options_os1[3]);
     unset($expected_options_os2[3]);
     unset($expected_options_os3[3]);
-    $option_sets = personalize_option_set_load_multiple(array(), array('decision_name' => 'first_variation_set', 'agent' => $agent_name));
+    $option_sets = personalize_option_set_load_multiple(FALSE, array('decision_name' => 'first_variation_set', 'agent' => $agent_name));
     $this->assertEqual($expected_options_os1, $option_sets[$osids[0]]->options);
     $this->assertEqual($expected_options_os2, $option_sets[$osids[1]]->options);
     $this->assertEqual($expected_options_os3, $option_sets[$osids[2]]->options);
@@ -716,7 +716,7 @@ class AcquiaLiftWebTestVariationSets extends AcquiaLiftWebTestBase {
     unset($expected_options_os1[1]);
     unset($expected_options_os2[1]);
     unset($expected_options_os3[1]);
-    $option_sets = personalize_option_set_load_multiple(array(), array('decision_name' => 'first_variation_set', 'agent' => $agent_name));
+    $option_sets = personalize_option_set_load_multiple(FALSE, array('decision_name' => 'first_variation_set', 'agent' => $agent_name));
     $this->assertEqual($expected_options_os1, $option_sets[$osids[0]]->options);
     $this->assertEqual($expected_options_os2, $option_sets[$osids[1]]->options);
     $this->assertEqual($expected_options_os3, $option_sets[$osids[2]]->options);
@@ -730,7 +730,7 @@ class AcquiaLiftWebTestVariationSets extends AcquiaLiftWebTestBase {
     unset($expected_options_os1[4]);
     unset($expected_options_os2[4]);
     unset($expected_options_os3[4]);
-    $option_sets = personalize_option_set_load_multiple(array(), array('decision_name' => 'first_variation_set', 'agent' => $agent_name));
+    $option_sets = personalize_option_set_load_multiple(FALSE, array('decision_name' => 'first_variation_set', 'agent' => $agent_name));
     $this->assertEqual($expected_options_os1, $option_sets[$osids[0]]->options);
     $this->assertEqual($expected_options_os2, $option_sets[$osids[1]]->options);
     $this->assertEqual($expected_options_os3, $option_sets[$osids[2]]->options);
@@ -738,7 +738,7 @@ class AcquiaLiftWebTestVariationSets extends AcquiaLiftWebTestBase {
     // Delete the last and verify that all variations (including control) are
     // removed.
     acquia_lift_page_variation_delete('first_variation_set', $agent_name, 5);
-    $option_sets = personalize_option_set_load_multiple(array(), array('decision_name' => 'first_variation_set', 'agent' => $agent_name), TRUE);
+    $option_sets = personalize_option_set_load_multiple(FALSE, array('decision_name' => 'first_variation_set', 'agent' => $agent_name), TRUE);
     $this->assertTrue(count($option_sets) === 0);
   }
 

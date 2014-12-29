@@ -23,7 +23,7 @@
 function acquia_lift_page_variation_create($variation_set_name, $option_set, $option_info, $variation_number = NULL) {
   // Find all other option sets in this variation set (i.e. with the same
   // decision name and agent.)
-  $option_sets = personalize_option_set_load_multiple(array(), array('decision_name' => $variation_set_name, 'agent' => $option_set->agent));
+  $option_sets = personalize_option_set_load_multiple(FALSE, array('decision_name' => $variation_set_name, 'agent' => $option_set->agent));
 
   // To figure out the variation number, check the number of options in the first
   // existing option set and the number of options in the passed in option set and
@@ -129,7 +129,7 @@ function acquia_lift_page_variation_rename($variation_set_name, $agent_name, $va
   if ($variation_number == 0) {
     return;
   }
-  $option_sets = personalize_option_set_load_multiple(array(), array('decision_name' => $variation_set_name, 'agent' => $agent_name));
+  $option_sets = personalize_option_set_load_multiple(FALSE, array('decision_name' => $variation_set_name, 'agent' => $agent_name));
   foreach ($option_sets as $option_set) {
     if (isset($option_set->options[$variation_number])) {
       $option_set->options[$variation_number]['option_label'] = $variation_name;
@@ -149,7 +149,7 @@ function acquia_lift_page_variation_rename($variation_set_name, $agent_name, $va
  *   The number of variation within the variation set to retrieve.
  */
 function acquia_lift_page_variation_get_name($variation_set_name, $agent_name, $variation_number) {
-  $option_sets = personalize_option_set_load_multiple(array(), array('decision_name' => $variation_set_name, 'agent' => $agent_name));
+  $option_sets = personalize_option_set_load_multiple(FALSE, array('decision_name' => $variation_set_name, 'agent' => $agent_name));
   $option_set = current($option_sets);
   if ($option_set) {
     if (isset($option_set->options[$variation_number])) {
@@ -165,7 +165,7 @@ function acquia_lift_page_variation_get_name($variation_set_name, $agent_name, $
  * Assumption: All page variations are on the same path for a single variation set.
  */
 function acquia_lift_page_variation_get_path($variation_set_name, $agent_name) {
-  $option_sets = personalize_option_set_load_multiple(array(), array('decision_name' => $variation_set_name, 'agent' => $agent_name));
+  $option_sets = personalize_option_set_load_multiple(FALSE, array('decision_name' => $variation_set_name, 'agent' => $agent_name));
   $option_set = current($option_sets);
   if ($option_set && isset($option_set->data)) {
     return isset($option_set->data['pages']) ? $option_set->data['pages'] : '';
@@ -184,7 +184,7 @@ function acquia_lift_page_variation_get_path($variation_set_name, $agent_name) {
  *   The number for the variation to delete.
  */
 function acquia_lift_page_variation_delete($variation_set_name, $agent_name, $variation_number) {
-  $option_sets = personalize_option_set_load_multiple(array(), array('decision_name' => $variation_set_name, 'agent' => $agent_name));
+  $option_sets = personalize_option_set_load_multiple(FALSE, array('decision_name' => $variation_set_name, 'agent' => $agent_name));
   foreach ($option_sets as $option_set) {
     if (isset($option_set->options[$variation_number])) {
       unset($option_set->options[$variation_number]);

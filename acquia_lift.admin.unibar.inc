@@ -380,7 +380,7 @@ function _acquia_lift_page_variation_details_form_submit($form, &$form_state) {
   module_load_include('inc', 'acquia_lift', 'acquia_lift.page_variations');
   $variation_number = acquia_lift_page_variation_create($variation_set_name, $option_set, array('personalize_elements_content' => $form_state['values']['personalize_elements_content']), $variation_number);
   // Save the updated option sets for use within the Ajax callback.
-  $form_state['storage']['option_sets'] = personalize_option_set_load_multiple(array(), array('decision_name' => $variation_set_name));
+  $form_state['storage']['option_sets'] = personalize_option_set_load_multiple(FALSE, array('decision_name' => $variation_set_name));
   $form_state['storage']['variation_number'] = $variation_number;
 }
 
@@ -566,7 +566,7 @@ function acquia_lift_page_variation_rename_modal_callback($agent_name, $variatio
  */
 function acquia_lift_page_variation_rename_complete_callback($form, $form_state) {
   $settings = array();
-  $option_sets = personalize_option_set_load_multiple(array(), array('decision_name' => $form_state['values']['variation_set_name']));
+  $option_sets = personalize_option_set_load_multiple(FALSE, array('decision_name' => $form_state['values']['variation_set_name']));
   $option_set_settings = array_map('_personalize_convert_option_set_to_js_setting', $option_sets);
   foreach($option_set_settings as $option_set_setting) {
     $settings[key($option_set_setting)] = reset($option_set_setting);
@@ -801,7 +801,7 @@ function acquia_lift_page_variation_delete_modal_callback($agent_name, $variatio
  */
 function acquia_lift_page_variation_delete_complete_callback($form, $form_state) {
   $settings = array();
-  $option_sets = personalize_option_set_load_multiple(array(), array('decision_name' => $form_state['values']['variation_set_name']));
+  $option_sets = personalize_option_set_load_multiple(FALSE, array('decision_name' => $form_state['values']['variation_set_name']));
   if (empty($option_sets)) {
     $settings['empty'] = $form_state['values']['agent_name'];
   }

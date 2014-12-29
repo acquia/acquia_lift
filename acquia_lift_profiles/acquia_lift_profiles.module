@@ -146,7 +146,7 @@ function acquia_lift_profiles_page_build(&$page) {
   }
   $js_path = variable_get('acquia_lift_profiles_js_path', '');
   $account_name = variable_get('acquia_lift_profiles_account_name', '');
-
+  $udf_mappings = variable_get('acquia_lift_profiles_udf_mappings', array());
   $segments = acquia_lift_profiles_get_segments();
   $settings = array(
     'request_url' => $base_root . request_uri(),
@@ -154,12 +154,36 @@ function acquia_lift_profiles_page_build(&$page) {
     'account_name' => $account_name,
     'currentPath' => current_path(),
     'captureIdentity' => variable_get('acquia_lift_profiles_capture_identity', FALSE),
-    'udfMappings' => variable_get('acquia_lift_profiles_udf_mappings', array()),
+    'udfMappings' => $udf_mappings,
     // Since we are using the same separator as provided by personalize
     // module for targeting values, we need to tell our JS settings about
     // it.
     'udfMappingContextSeparator' => PERSONALIZE_TARGETING_ADMIN_SEPARATOR,
   );
+  // We need to make sure that all assets for visitor context plugins used in our udf
+  // mappings are avaiable so that we can get the actual context values.
+  $assets = $attached = $contexts = array();
+  ctools_include('plugins');
+  // Group the mappings by context plugins so we can load each plugin only once.
+  foreach ($udf_mappings as $type => $mappings) {
+    foreach ($mappings as $name => $mapping) {
+      list($plugin, $context) = explode(PERSONALIZE_TARGETING_ADMIN_SEPARATOR, $mapping);
+      if (!isset($contexts[$plugin])) {
+        $contexts[$plugin] = array();
+      }
+      $contexts[$plugin][] = $context;
+    }
+  }
+  // Now load the context plugins grab the required assets.
+  foreach ($contexts as $plugin_name => $plugin_contexts) {
+    if ($class = ctools_plugin_load_class('personalize', 'visitor_context', $plugin_name, 'handler')) {
+      if ($plugin_instance = call_user_func_array(array($class, 'create'), array(NULL, $plugin_contexts))) {
+        // Ensure js assets for visitor_context plugins are loaded.
+        $assets = array_merge_recursive($assets, $plugin_instance->getAssets());
+      }
+    }
+  }
+
   // If there are querystring parameters present corresponding to the configured
   // identity params, we add the identity and identity type to the js settings.
   $identity_param = variable_get('acquia_lift_profiles_identity_param', '');
@@ -215,25 +239,38 @@ _tcaq.push(['setAccount', '$account_name']);
 })();
 EOT;
 
+  // Now we need to compile all the assets together with the js settings and files
+  // needed for Acquia Lift Profiles itself.
+  if (!isset($assets['js'])) {
+    $assets['js'] = array();
+  }
+  $js_settings = array(
+    'data' => array('acquia_lift_profiles' => $settings),
+    'type' => 'setting'
+  );
+
+  $assets['js'] = array_merge_recursive($assets['js'], array($js_settings));
+  foreach ($assets as $type => $data_array) {
+    if (!isset($attached[$type])) {
+      $attached[$type] = array();
+    }
+    $attached[$type] = array_merge($attached[$type], $data_array);
+  }
+
+  $js_file = drupal_get_path('module', 'acquia_lift_profiles') . '/js/acquia_lift_profiles.js';
+  $attached['js'][$js_file] = array(
+    'weight' => JS_DEFAULT - 10
+  );
+  $attached['js'][] = array(
+    'data' => $init,
+    'type' => 'inline'
+  );
+  if (!isset($attached['library'])) {
+    $attached['library'] = array();
+  }
+  $attached['library'][] =  array('system', 'jquery.cookie');
   $page['page_top']['acquia_lift_profiles'] = array(
-    '#attached' => array(
-      'js' => array(
-        drupal_get_path('module', 'acquia_lift_profiles') . '/js/acquia_lift_profiles.js' => array(
-          'weight' => JS_DEFAULT - 10
-        ),
-        array(
-          'data' => array('acquia_lift_profiles' => $settings),
-          'type' => 'setting'
-        ),
-        array(
-          'data' => $init,
-          'type' => 'inline'
-        )
-      ),
-      'library' => array(
-        array('system', 'jquery.cookie'),
-      ),
-    )
+    '#attached' => $attached
   );
   acquia_lift_profiles_process_server_side_actions($page);
 }

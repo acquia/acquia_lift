@@ -9,7 +9,10 @@ class AcquiaLiftContext extends PersonalizeContextBase {
   /**
    * Implements PersonalizeContextInterface::create().
    */
-  public static function create(PersonalizeAgentInterface $agent, $selected_context) {
+  public static function create(PersonalizeAgentInterface $agent = NULL, $selected_context = array()) {
+    if ($agent === NULL) {
+      throw new AcquiaLiftException('Cannot use Lift contexts outside the context of an agent');
+    }
     try {
       $lift_api = AcquiaLiftAPI::getInstance(variable_get('acquia_lift_account_info', array()));
       return new self($agent, $selected_context, $lift_api);
@@ -101,7 +104,7 @@ class AcquiaLiftContext extends PersonalizeContextBase {
    * for agent context.  Therefore $limit is always treated as true.
    */
   public function getPossibleValues($limit = FALSE) {
-    if ($this->agent->getType() != 'acquia_lift') {
+    if (!preg_match('/^acquia_lift/', $this->agent->getType())) {
       return array();
     }
     $possible_values = array();

@@ -779,7 +779,7 @@ function acquia_lift_personalize_goal_save($goal_info) {
   }
   // For the current goal, take the info from what was passed in, rather
   // than from the db.
-  $new_goals[$goal_info['name']] = $goal_info['value'];
+  $new_goals[$goal_info['action']] = $goal_info['value'];
   acquia_lift_sync_goals($agent, $old_goals, $new_goals, TRUE);
   // This agent will need to be re-verified as the changes may have changed
   // whether or not it is valid.
@@ -800,8 +800,8 @@ function acquia_lift_personalize_goal_delete($goal_info) {
   foreach ($goals as $goal) {
     $new_goals[$goal->action] = $goal->value;
   }
-  if (isset($new_goals[$goal_info['name']])) {
-    unset($new_goals[$goal_info['name']]);
+  if (isset($new_goals[$goal_info['action']])) {
+    unset($new_goals[$goal_info['action']]);
   }
   acquia_lift_sync_goals($agent, $old_goals, $new_goals, TRUE);
   // Clear the verified status of the agent.

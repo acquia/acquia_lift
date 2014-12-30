@@ -30,6 +30,11 @@ projects[acquia_lift][version] = 1.0-rc2
 projects[ctools][subdir] = contrib
 projects[ctools][version] = 1.4
 
+; Contrib module: entity
+; ---------------------------------------
+projects[entity][subdir] = contrib
+projects[entity][version] = 1.5
+
 ; Contrib module: libraries
 ; ---------------------------------------
 projects[libraries][subdir] = contrib

@@ -172,19 +172,14 @@
    * - start: Boolean indicating if page variation mode should be on (true)
    *   or off (false).
    * - type: Indicates the type of variation mode: one of 'page' or 'element'.
-   * - variationIndex: The variation index to edit.  This can be an existing
-   *   variation index to edit, or -1 to create a new variation.
    */
   Drupal.ajax.prototype.commands.acquia_lift_variation_toggle = function (ajax, response, status) {
     if (response.data.start) {
       initializeApplication();
-      // Set the model to page variation mode and set up the relevant data.
-      var editVariation = response.data.variationIndex || -1;
+      // Set the model to page or element variation mode.
       Drupal.acquiaLiftVariations.app.appModel.setModelMode(response.data.type === 'page');
-      Drupal.acquiaLiftVariations.app.appModel.set('variationIndex', editVariation);
       Drupal.acquiaLiftVariations.app.appModel.set('editMode', true);
-      // Notify that the mode has actually been changed.
-      response.data.variationIndex = editVariation;
+      Drupal.acquiaLiftVariations.app.appModel.set('variation', null);
     } else {
       // End editing for the application.
       if (Drupal.acquiaLiftVariations.app.appModel) {
@@ -207,6 +202,7 @@
    * - type: Indicates the type of variation mode: one of 'page' or 'element'.
    * - variationType: The type of variation, e.g., editText, addClass, etc.
    * - selector: The selector for the affected DOM element.
+   * - agentName: The machine name of the current campaign.
    * If type == page:
    * - variationIndex:  The variation index to edit.  A variationIndex of -1
    *   indicates creating a new variation.
@@ -240,9 +236,28 @@
 
     // Set up application.
     initializeApplication();
-    var editVariation = response.data.variationIndex || -1;
-    Drupal.acquiaLiftVariations.app.appModel.setModelMode(response.data.type === 'page');
-    Drupal.acquiaLiftVariations.app.appModel.set('variationIndex', editVariation);
+    // Set up the variation model for editing.
+    var variation = null;
+    if (data.type === 'page') {
+      Drupal.acquiaLiftVariations.app.appModel.setModelMode(true);
+      if (data.variationIndex && data.variationIndex >= 0) {
+        variation = new Drupal.acquiaLiftVariations.models.PageVariationModel({
+          variationIndex: data.variationIndex,
+          agentName: data.agentName,
+          selector: data.selector
+        });
+      }
+    } else {
+      Drupal.acquiaLiftVariations.app.appModel.setModelMode(false);
+      if (data.variationIndex && data.variationIndex != -1) {
+        variation = new Drupal.acquiaLiftVariations.models.ElementVariationModel({
+          optionId: data.variationIndex,
+          agentName: data.agentName,
+          osid: data.osid
+        });
+      }
+    }
+    Drupal.acquiaLiftVariations.app.appModel.set('variation', variation);
     Drupal.acquiaLiftVariations.app.appModel.set('editMode', true);
 
     // Generate required event data for details form.
@@ -307,16 +322,16 @@
   });
 
   /**
-   * Add an event listener to open up a specific variation type details form
-   * on a specific element in order to add an element variation.
+   * Add an event listener to open up a specific variation details form
+   * for adding or editing an existing variation.
    *
    * Data is an object with the following keys:
    * - variationType: The type of variation, e.g., editText, addClass, etc.
    * - selector: The selector for the affected DOM element.
    * - osid: The option set id for the parent option set.
-
+   * - variationIndex: (Optional) The choice id for the option to edit.
    */
-  $(document).on('acquiaLiftElementVariationAdd', function(e, data) {
+  $(document).on('acquiaLiftElementVariationEdit', function(e, data) {
     data['type'] = 'element';
     var response = {
       data: data
@@ -335,8 +350,35 @@
  */
 (function($, Drupal, Dialog, Backbone, _) {
 
-  Drupal.acquiaLiftVariations.models = Drupal.acquiaLiftVariations.models || {
-    /**
+  Drupal.acquiaLiftVariations.models = Drupal.acquiaLiftVariations.models || {};
+
+  /**
+   * Base model for a variation that can be shown or edited.
+   *
+   * Models that extend this class are responsible for setting the "option"
+   * property which holds a reference to the option within an option set
+   * settings that represents this variation.
+   */
+  Drupal.acquiaLiftVariations.models.BaseVariationModel = Backbone.Model.extend({
+    // Each type of variation overrides this to return the index for the
+    // variation.  -1 indicates a new variation.
+    getVariationNumber: function () {
+      return -1;
+    },
+
+    getVariationLabel: function () {
+      var option = this.get('option');
+      return option ? option.option_label : Drupal.t('Variation');
+    },
+
+    getContent: function () {
+      var option = this.get('option');
+      return option ? option.personalize_elements_content : '';
+    }
+  });
+
+  $.extend(Drupal.acquiaLiftVariations.models, {
+  /**
      * Backbone model for the variations process.
      */
     AppModel: Backbone.Model.extend({
@@ -349,9 +391,8 @@
         editMode: true,
         modelMode: this.MODEL_MODE_PAGE,
         // The current variation being edited.
-        // This will be an integer for a page variation or an option id
-        // for an element variation.
-        variationIndex: -1
+        // This will be a model that extends the BaseVariationModel class.
+        variation: null
       },
 
       /**
@@ -388,7 +429,7 @@
      *
      * Examples:  edit HTML, edit text, add class, etc.
      */
-    ElementVariationModel: Backbone.Model.extend({
+    VariationTypeModel: Backbone.Model.extend({
       defaults: {
         limitByChildrenType: ''
       }
@@ -405,11 +446,72 @@
           // The label for the variation type.
           typeLabel: null,
           selector: null,
-          variationIndex: -1
+          variation: null
         }
       )
+    }),
+
+    /**
+     * The model for a variation within a personalize elements option set.
+     */
+    ElementVariationModel: Drupal.acquiaLiftVariations.models.BaseVariationModel.extend({
+      defaults: {
+        osid: null,
+        optionId: null,
+        option: null
+      },
+
+      initialize: function () {
+        var osid = this.get('osid'),
+          optionId = this.get('optionId'),
+          that = this;
+        if (Drupal.settings.personalize.option_sets.hasOwnProperty(osid)) {
+          var options = Drupal.settings.personalize.option_sets[osid].options;
+          _.each(options, function (option) {
+            if (option['option_id'] === optionId) {
+              that.set('option', option);
+            }
+          });
+        }
+      },
+
+      getVariationNumber: function () {
+        return this.get('optionId');
+      }
+    }),
+
+    /**
+     * The model for a variation within a page variation.
+     */
+    PageVariationModel: Drupal.acquiaLiftVariations.models.BaseVariationModel.extend({
+      defaults: {
+        agentName: null,
+        variationIndex: -1,
+        selector: null,
+        option: null
+      },
+
+      initialize: function () {
+        var variationIndex = this.get('variationIndex'),
+          agentName = this.get('agentName'),
+          selector = this.get('selector'),
+          that = this;
+
+        // Find the right option set for this agent and selector.
+        _.each(Drupal.settings.personalize.option_sets, function(option_set) {
+          if (option_set.agent === agentName && option_set.selector === selector) {
+            if (option_set.options.hasOwnProperty(variationIndex)) {
+              that.set('option', option_set.options[variationIndex]);
+            }
+          }
+        });
+      },
+
+      getVariationNumber: function () {
+        return this.get('variationIndex');
+      }
     })
-  };
+  });
 
 }(Drupal.jQuery, Drupal, Drupal.visitorActions.ui.dialog, Backbone, _));
 
@@ -422,7 +524,7 @@
 
   Drupal.acquiaLiftVariations.collections = Drupal.acquiaLiftVariations.collections || {
     ElementVariationCollection: Backbone.Collection.extend({
-      model: Drupal.acquiaLiftVariations.models.ElementVariationModel,
+      model: Drupal.acquiaLiftVariations.models.VariationTypeModel,
 
       /**
        * Returns a filtered collection with only those variation types that
@@ -570,21 +672,13 @@
        * Updates the application based on changes in edit mode in model.
        */
       updateEditMode: function(model, editMode) {
-        var data = {};
-        var variationIndex = model.get('variationIndex');
         if (editMode) {
-          variationIndex = isNaN(variationIndex) ? -1 : variationIndex;
           if (this.contextualMenuModel) {
             this.contextualMenuModel.set('active', true);
           }
           if (this.variationTypeFormModel) {
             this.variationTypeFormModel.set('active', true);
           }
-          data.started = editMode;
-          data.mode = (variationIndex == -1) ? 'add' : 'edit';
-          data.campaign = Drupal.settings.personalize.activeCampaign;
-          data.variationIndex = variationIndex;
-          $(document).trigger('acquiaLiftPageVariationsMode', data);
         } else {
           this.highlightAnchor(false);
           if (this.contextualMenuModel) {
@@ -653,9 +747,10 @@
        *
        * @param event
        *   The triggering event that includes the model data/JSON for the selected
-       *   ElementVariationModel.
+       *   VariationTypeModel.
        */
       createVariationTypeDialog: function(event) {
+        var variation = this.model.get('variation');
         var formPath = Drupal.settings.basePath +
           'admin/structure/acquia_lift/variation/' +
           Drupal.encodePath(event.data.id);
@@ -668,7 +763,7 @@
           formPath: formPath,
           type: event.data.id,
           typeLabel: event.data.name,
-          variationIndex: this.model.get('variationIndex')
+          variation: variation
         });
         this.variationTypeView = new Drupal.acquiaLiftVariations.views.VariationTypeFormView({
           el: event.data.anchor,
@@ -683,7 +778,7 @@
        *
        *  @param event
        *    The triggering event that includes the model data/JSON for the selected
-       *    ElementVariationModel.
+       *    VariationTypeModel.
        */
       openExistingTypeDialog: function(event) {
         // Made sure the DOM selector is no longer active.
@@ -745,7 +840,7 @@
         var selector = this.model.get('selector');
         var type = this.model.get('type');
         var $input = this.$el.find('[name=personalize_elements_content]');
-        var variationNumber = this.model.get('variationIndex');
+        var variation = this.model.get('variation');
 
         // Don't show the title field for page variations.
         if (this.appModel.isPageModelMode()) {
@@ -755,9 +850,12 @@
         this.$el.find('[name="selector"]').val(selector);
         this.$el.find('[name="pages"]').val(Drupal.settings.visitor_actions.currentPath);
         this.$el.find('[name="agent"]').val(Drupal.settings.personalize.activeCampaign);
-        this.$el.find('[name="variation_number"]').val(variationNumber);
         // Call any variation type specific callbacks.
         $(document).trigger('acquiaLiftVariationTypeForm', [type, selector, $input]);
+        if (variation) {
+          this.$el.find('[name="variation_number"]').val(variation.getVariationNumber());
+          $input.val(variation.getContent());
+        }
 
         // Override the form submission handler to verify the selector only
         // matches a single DOM element.
@@ -1006,6 +1104,10 @@
    * editInContext callbacks.
    */
   $(document).on('acquiaLiftVariationTypeForm', function(e, type, selector, $input) {
+    if ($input.val().length > 0) {
+      // Don't replace any existing content in the input field.
+      return;
+    }
     if (Drupal.acquiaLiftVariations.personalizeElements.hasOwnProperty(type)
       && Drupal.acquiaLiftVariations.personalizeElements[type].hasOwnProperty('editInContext')
       && typeof Drupal.acquiaLiftVariations.personalizeElements[type].editInContext === 'function') {

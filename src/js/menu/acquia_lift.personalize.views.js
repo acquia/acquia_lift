@@ -309,7 +309,8 @@
 
     events: {
       'click .acquia-lift-preview-option': 'onPreview',
-      'click .acquia-lift-variation-add': 'onAdd'
+      'click .acquia-lift-variation-add': 'onEdit',
+      'click .acquia-lift-variation-edit': 'onEdit'
     },
 
     /**
@@ -370,7 +371,7 @@
         .attr('aria-pressed', 'false');
       if (this.model) {
         this.$el
-          .find('[data-acquia-lift-personalize-option-set-option="' + this.model.get('activeOption') + '"]')
+          .find('.acquia-lift-preview-option[data-acquia-lift-personalize-option-set-option="' + this.model.get('activeOption') + '"]')
           .addClass('acquia-lift-active')
           .attr('aria-pressed', 'true');
       }
@@ -407,23 +408,30 @@
       if (!$(event.target).hasClass('acquia-lift-preview-option')) return;
       if (!this.model) return;
 
-      var optionid = $(event.target).data('acquia-lift-personalize-option-set-option');
-      this.model.set('activeOption', optionid);
+      var optionId = $(event.target).data('acquia-lift-personalize-option-set-option');
+      this.model.set('activeOption', optionId);
       event.preventDefault();
       event.stopPropagation();
     },
 
     /**
-     * Responds to clicks on links to add a variation.
+     * Responds to clicks to add or edit an existing elements variation.
      */
-    onAdd: function(event) {
+    onEdit: function(event) {
       var osData = this.model.get('data');
+      var optionId = $(event.target).data('acquia-lift-personalize-option-set-option');
       var data = {
         variationType: osData.personalize_elements_type,
         selector: osData.personalize_elements_selector,
-        osid: this.model.get('osid')
+        osid: this.model.get('osid'),
+        agentName: this.model.get('agent')
+      }
+      if (optionId) {
+        data.variationIndex = optionId;
+        // Set this as the active option for preview as well.
+        this.model.set('activeOption', optionId);
       };
-      $(document).trigger('acquiaLiftElementVariationAdd', data)
+      $(document).trigger('acquiaLiftElementVariationEdit', data);
       event.preventDefault();
       event.stopPropagation();
       return false;
@@ -437,9 +445,13 @@
      * @param string choice_name
      *   The option id of the choice to show.
      */
-    selectOption: function (osid, choice_name) {
+    selectOption: function (osid, choice_name, force) {
       if (this.model && this.model.get('osid') === osid) {
-        this.model.set('activeOption', choice_name);
+        if (this.model.get('activeOption') === choice_name && force) {
+          this.model.trigger('change:activeOption', this.model);
+        } else {
+          this.model.set('activeOption', choice_name);
+        }
       }
     },
 

@@ -59,19 +59,14 @@
    * - start: Boolean indicating if page variation mode should be on (true)
    *   or off (false).
    * - type: Indicates the type of variation mode: one of 'page' or 'element'.
-   * - variationIndex: The variation index to edit.  This can be an existing
-   *   variation index to edit, or -1 to create a new variation.
    */
   Drupal.ajax.prototype.commands.acquia_lift_variation_toggle = function (ajax, response, status) {
     if (response.data.start) {
       initializeApplication();
-      // Set the model to page variation mode and set up the relevant data.
-      var editVariation = response.data.variationIndex || -1;
+      // Set the model to page or element variation mode.
       Drupal.acquiaLiftVariations.app.appModel.setModelMode(response.data.type === 'page');
-      Drupal.acquiaLiftVariations.app.appModel.set('variationIndex', editVariation);
       Drupal.acquiaLiftVariations.app.appModel.set('editMode', true);
-      // Notify that the mode has actually been changed.
-      response.data.variationIndex = editVariation;
+      Drupal.acquiaLiftVariations.app.appModel.set('variation', null);
     } else {
       // End editing for the application.
       if (Drupal.acquiaLiftVariations.app.appModel) {
@@ -94,6 +89,7 @@
    * - type: Indicates the type of variation mode: one of 'page' or 'element'.
    * - variationType: The type of variation, e.g., editText, addClass, etc.
    * - selector: The selector for the affected DOM element.
+   * - agentName: The machine name of the current campaign.
    * If type == page:
    * - variationIndex:  The variation index to edit.  A variationIndex of -1
    *   indicates creating a new variation.
@@ -127,9 +123,28 @@
 
     // Set up application.
     initializeApplication();
-    var editVariation = response.data.variationIndex || -1;
-    Drupal.acquiaLiftVariations.app.appModel.setModelMode(response.data.type === 'page');
-    Drupal.acquiaLiftVariations.app.appModel.set('variationIndex', editVariation);
+    // Set up the variation model for editing.
+    var variation = null;
+    if (data.type === 'page') {
+      Drupal.acquiaLiftVariations.app.appModel.setModelMode(true);
+      if (data.variationIndex && data.variationIndex >= 0) {
+        variation = new Drupal.acquiaLiftVariations.models.PageVariationModel({
+          variationIndex: data.variationIndex,
+          agentName: data.agentName,
+          selector: data.selector
+        });
+      }
+    } else {
+      Drupal.acquiaLiftVariations.app.appModel.setModelMode(false);
+      if (data.variationIndex && data.variationIndex != -1) {
+        variation = new Drupal.acquiaLiftVariations.models.ElementVariationModel({
+          optionId: data.variationIndex,
+          agentName: data.agentName,
+          osid: data.osid
+        });
+      }
+    }
+    Drupal.acquiaLiftVariations.app.appModel.set('variation', variation);
     Drupal.acquiaLiftVariations.app.appModel.set('editMode', true);
 
     // Generate required event data for details form.
@@ -194,16 +209,16 @@
   });
 
   /**
-   * Add an event listener to open up a specific variation type details form
-   * on a specific element in order to add an element variation.
+   * Add an event listener to open up a specific variation details form
+   * for adding or editing an existing variation.
    *
    * Data is an object with the following keys:
    * - variationType: The type of variation, e.g., editText, addClass, etc.
    * - selector: The selector for the affected DOM element.
    * - osid: The option set id for the parent option set.
-
+   * - variationIndex: (Optional) The choice id for the option to edit.
    */
-  $(document).on('acquiaLiftElementVariationAdd', function(e, data) {
+  $(document).on('acquiaLiftElementVariationEdit', function(e, data) {
     data['type'] = 'element';
     var response = {
       data: data

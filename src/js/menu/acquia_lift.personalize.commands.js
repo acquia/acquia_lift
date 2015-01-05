@@ -29,7 +29,7 @@
   Drupal.ajax.prototype.commands.acquia_lift_variation_preview = function (ajax, response, status) {
     _.defer(function() {
       var view = Drupal.acquiaLiftUI.views.optionSets[response.data.osid];
-      view.selectOption(response.data.osid, response.data.optionId);
+      view.selectOption(response.data.osid, response.data.optionId, true);
     });
   }
 

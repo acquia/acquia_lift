@@ -47,8 +47,8 @@ Scenario: Create the simplest A/B campaign.
   And I should see the link "Variations" visible in the "lift_tray" region
   And I should see the link "Goals" visible in the "lift_tray" region
   And I should see the text "0" in the "lift_tray_goal_count" region
-  And menu item "Reports" should be inactive
-  And menu item "Start campaign" should be inactive
+  And menu item "Reports" should be "inactive"
+  And menu item "Start campaign" should be "inactive"
   And I should not see the modal
   When I click "#site-name a span" element in the "page_content" region
   And I wait for AJAX to finish
@@ -93,4 +93,6 @@ Scenario: Create the simplest A/B campaign.
   And I should see the text "My test goal goal added to campaign." in the "messagebox" region
   When I hover over "Goals" in the "lift_tray" region
   Then I should see the text "My test goal" in the "lift_tray" region
-
+  When I wait for Lift to synchronize
+  Then menu item "Reports" should be "active"
+  And menu item "Start campaign" should be "active"

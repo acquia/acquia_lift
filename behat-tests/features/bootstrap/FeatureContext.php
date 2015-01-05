@@ -122,7 +122,7 @@ class FeatureContext extends RawDrupalContext implements SnippetAcceptingContext
    * @When I wait for Lift to synchronize
    */
   public function waitForLiftSynchronize() {
-
+    $this->getSession()->wait(5000, '(typeof(jQuery)=="undefined" || (0 === jQuery.active && 0 === Drupal.acquiaLift.queueCount))');
   }
 
   /**
@@ -185,16 +185,21 @@ class FeatureContext extends RawDrupalContext implements SnippetAcceptingContext
   }
 
   /**
-   * @Then menu item :link should be inactive
+   * @Given /^menu item "([^"]*)" should be "(active|inactive)"$/
    */
-  public function assertMenuItemInactive($link) {
+  public function assertMenuItemInactive($link, $status) {
     $class = 'acquia-lift-menu-disabled';
     $element = $this->findLinkInRegion($link, 'lift_tray');
     if (empty($element)) {
       throw new \Exception(sprintf('The link element %s was not found on the page %s', $link, $this->getSession()->getCurrentUrl()));
     }
-    if (!$this->elementHasClass($element, $class)) {
-      throw new \Exception(sprintf('The link element %s on page %s does not have class %s', $link, $this->getSession()->getCurrentUrl(), $class));
+    if ($this->elementHasClass($element, $class)) {
+      if ($status === 'active') {
+        throw new \Exception(sprintf('The link element %s on page %s is inactive but should be active.', $link, $this->getSession()->getCurrentUrl()));
+      }
+    }
+    else if ($status === 'inactive') {
+      throw new \Exception(sprintf('The link element %s on page %s is active but should be inactive.', $link, $this->getSession()->getCurrentUrl()));
     }
   }
 

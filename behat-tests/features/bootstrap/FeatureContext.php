@@ -62,6 +62,33 @@ class FeatureContext extends RawDrupalContext implements SnippetAcceptingContext
   }
 
   /****************************************************
+   *        G I V E N S
+   ***************************************************/
+
+  /**
+   * @Given /^"(?P<type>[^"]*)" agents:$/
+   */
+  public function createAgents($type, TableNode $agentsTable) {
+    foreach ($agentsTable->getHash() as $agentHash) {
+      $agent = (object) $agentHash;
+      $agent->plugin = $type;
+      $data = array();
+      if (!empty($agentHash['url_contexts'])) {
+        $data['visitor_context'] = array(
+          'querystring_context' => array()
+        );
+        $contexts = explode(',', $agentHash['url_contexts']);
+        foreach ($contexts as $context) {
+          $data['visitor_context']['querystring_context'][$context] = $context;
+        }
+      }
+      $agent->data = $data;
+      $saved = personalize_agent_save($agent);
+      personalize_agent_set_status($saved->machine_name, PERSONALIZE_STATUS_RUNNING);
+    }
+  }
+
+  /****************************************************
    *        A S S E R T I O N S
    ***************************************************/
 
@@ -108,14 +135,31 @@ class FeatureContext extends RawDrupalContext implements SnippetAcceptingContext
   }
 
   /**
+   * @Then :selector element in the :region region should have :class class
+   *
+   * @throws \Exception
+   *   If the region or element cannot be found or does not have the specified
+   *   class.
+   */
+  public function assertRegionElementHasClass($selector, $region, $class) {
+    $element = $this->findElementInRegion($selector, $region);
+    if (empty($element)) {
+      throw new \Exception(sprintf('The element "%s" was not found in the region "%s" on the page %s', $selector, $region, $this->getSession()->getCurrentUrl()));
+    }
+    if (!$this->elementHasClass($element, $class)) {
+      throw new \Exception(sprintf('The element "%s" in region "%s" on the page %s does not have class "%s".', $selector, $region, $this->getSession()->getCurrentUrl(), $class));
+    }
+  }
+
+  /**
    * @When I wait for messagebox to close
    */
-  public function waitForMessagebox() {
+  public function waitForMessageboxClose() {
     $region = $this->getRegion('messagebox');
     if (empty($region)) {
       return;
     }
-    $this->getSession()->wait(5000, 'typeof(jQuery) == "undefined" || jQuery("#acquia-lift-message-box").hasClass("element-hidden")');
+    $this->getSession()->wait(5000, 'jQuery("#acquia-lift-message-box").hasClass("element-hidden")');
   }
 
   /**
@@ -173,15 +217,21 @@ class FeatureContext extends RawDrupalContext implements SnippetAcceptingContext
    * @Then /^I should not see the modal$/
    */
   public function assertNoModalWindow() {
-    try {
-      $region = $this->getRegion('modal_content');
-    } catch (\Exception $e) {
-      // If the region was not found that is good.
-      return;
-    }
-    if ($region && $region->isVisible()) {
-      throw new \Exception(sprintf('The modal dialog was found on the page %s', $this->getSession()->getCurrentUrl()));
-    }
+    $this->assertNoRegion('modal_content', 'modal dialog');
+  }
+
+  /**
+   * @Then /^I should not see the variation type dialog$/
+   */
+  public function assertNoVariationTypeDialogWindow() {
+    $this->assertNoRegion('dialog_variation_type', 'variation type dialog');
+  }
+
+  /**
+   * @Then /^I should not see the variation type form dialog$/
+   */
+  public function assertNoVariationTypeFormDialogWindow() {
+    $this->assertNoRegion('dialog_variation_type_form', 'variation type form dialog');
   }
 
   /**
@@ -213,6 +263,19 @@ class FeatureContext extends RawDrupalContext implements SnippetAcceptingContext
     }
     if (!$this->elementHasClass($element, $class)) {
       throw new \Exception(sprintf('The element with id %s in region %s on page %s does not have class %s', $id, $region, $this->getSession()->getCurrentUrl(), $class));
+    }
+  }
+
+  /**
+   * @Then I should see the message :text in the messagebox
+   */
+  public function assertTextInMessagebox($text) {
+    // Wait for the message box to be shown.
+    $this->getSession()->wait(5000, "(jQuery('#acquia-lift-message-box').length > 0 && jQuery('#acquia-lift-message-box').hasClass('acquia-lift-messagebox-shown'))");
+    $script = "return jQuery('#acquia-lift-message-box').find('.message').text();";
+    $message = $this->getSession()->evaluateScript($script);
+    if (strpos($message, $text) === FALSE) {
+      throw new \Exception(sprintf('The message "%s" was not found in the messagebox.', $text));
     }
   }
 
@@ -272,6 +335,28 @@ class FeatureContext extends RawDrupalContext implements SnippetAcceptingContext
       throw new \Exception(sprintf('The region %s was not found on the page %s', $region, $this->getSession()->getCurrentUrl()));
     }
     return $regionObj;
+  }
+
+  /**
+   * Helper function to assert that a particular region is not visible.
+   *
+   * @param $region_id
+   *   The id for the region defined in the behat.yml configuration file.
+   * @param $region_name
+   *   A human readable name for the region
+   * @throws Exception
+   *   If the region is visible on the page.
+   */
+  public function assertNoRegion($region_id, $region_name) {
+    try {
+      $region = $this->getRegion($region_id);
+    } catch (\Exception $e) {
+      // If the region was not found that is good.
+      return;
+    }
+    if ($region && $region->isVisible()) {
+      throw new \Exception(sprintf('The %s was found on the page %s', strtolower($region_name), $this->getSession()->getCurrentUrl()));
+    }
   }
 
   /**

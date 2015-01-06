@@ -40,9 +40,9 @@ Scenario: Create the simplest A/B campaign.
   When I fill in "My test campaign" for "edit-agent-basic-info-title"
   And I press the "Create campaign" button
   And I wait for AJAX to finish
-  And I wait for AJAX to finish
-  Then I should see the text "Click the element you want to change in Variation #1" in the "messagebox" region
-  And I should see the text "Campaign: My test campaign" in the "lift_tray_campaign_header" region
+  Then I should see the message "Click the element you want to change in Variation #1" in the messagebox
+  When I wait for AJAX to finish
+  Then I should see the text "Campaign: My test campaign" in the "lift_tray_campaign_header" region
   And I should see the text "0" in the "lift_tray_variation_count" region
   And I should see the link "Variations" visible in the "lift_tray" region
   And I should see the link "Goals" visible in the "lift_tray" region
@@ -53,7 +53,7 @@ Scenario: Create the simplest A/B campaign.
   When I click "#site-name a span" element in the "page_content" region
   And I wait for AJAX to finish
   Then I should see the text "<SPAN>" in the "dialog_variation_type" region
-  When I click "Edit text"
+  When I click "Edit text" in the "dialog_variation_type" region
   And I wait for AJAX to finish
   Then I should not see a "#acquia-lift-modal-variation-type-select-dialog" element
   And I should see the text "Edit text: <SPAN>" in the "dialog_variation_type_form" region
@@ -61,9 +61,10 @@ Scenario: Create the simplest A/B campaign.
   When I fill in "Lift Testing" for "personalize_elements_content"
   And I press the "Save" button
   And I wait for AJAX to finish
-  Then I should see the text "The variation has been created. Add one or more goals by clicking Goals > Add goal." in the "messagebox" region
-  And I should not see a ".visitor-actions-ui-dialog.acquia-lift-variation-type-form" element
-  Then I should see the text "Lift Testing"
+  Then I should see the message "The variation has been created. Add one or more goals by clicking Goals > Add goal." in the messagebox
+  When I wait for AJAX to finish
+  Then I should not see the variation type form dialog
+  And I should see the text "Lift Testing"
   When I hover over "Goals" in the "lift_tray" region
   Then I should see the link "Add goal" in the "lift_tray" region
   When I click "Add goal" in the "lift_tray" region
@@ -89,8 +90,9 @@ Scenario: Create the simplest A/B campaign.
   When I fill in "My test goal" for "edit-title"
   And I press "Add goal"
   And I wait for AJAX to finish
+  Then I should see the message "My test goal goal added to campaign." in the messagebox
+  When I wait for AJAX to finish
   Then I should see the text "1" in the "lift_tray_goal_count" region
-  And I should see the text "My test goal goal added to campaign." in the "messagebox" region
   When I hover over "Goals" in the "lift_tray" region
   Then I should see the text "My test goal" in the "lift_tray" region
   When I wait for Lift to synchronize

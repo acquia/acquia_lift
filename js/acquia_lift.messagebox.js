@@ -47,6 +47,7 @@
     var $messageBox = getMessageBox();
     $messageBox.animate({ height:0, opacity:0 }, "slow", function() {
       $(this).addClass('element-hidden');
+      $(this).removeClass('acquia-lift-messagebox-shown');
       // Take off the height/opacity styles - only used for animation.
       $(this).removeAttr('style');
     });
@@ -84,7 +85,9 @@
     $messageBox.css('opacity', '0');
     $messageBox.removeClass('element-hidden');
     // Animate the box height and opacity to draw attention.
-    $messageBox.animate({height: fullHeight + 'px', opacity: 1}, 'slow');
+    $messageBox.animate({height: fullHeight + 'px', opacity: 1}, 'slow', function() {
+      $(this).addClass('acquia-lift-messagebox-shown');
+    });
 
     // Close the message box by clicking anywhere on the page.
     $(document).on('click', closeMessageBox);

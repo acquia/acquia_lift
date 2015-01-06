@@ -2,10 +2,9 @@
 
 use Drupal\DrupalExtension\Context\RawDrupalContext;
 use Behat\Behat\Context\SnippetAcceptingContext;
-use Behat\Gherkin\Node\PyStringNode;
 use Behat\Gherkin\Node\TableNode;
-use Behat\Behat\Hook\Scope\BeforeFeatureScope;
-use Behat\Behat\Hook\Scope\AfterFeatureScope;
+use Behat\Behat\Hook\Scope\AfterStepScope;
+use Behat\Mink\Driver\Selenium2Driver;
 
 /**
  * Defines application features from the specific context.
@@ -13,10 +12,14 @@ use Behat\Behat\Hook\Scope\AfterFeatureScope;
 class FeatureContext extends RawDrupalContext implements SnippetAcceptingContext {
 
   /**
-   * Stores campaigns created during testing for cleanup purposes.
-   * @var array
+   * Stores the context parameters that are passed in for the test suite.
+   * Parameters include default values for:
+   *   - temp_path: The path to temporary location where files, such as error
+   *     screenshots, can be written.  Default value: /tmp/behat
    */
-  protected $campaigns = array();
+  protected $context_parameters = array(
+    'temp_path' => '/tmp/behat',
+  );
 
   /**
    * Initializes context.
@@ -25,7 +28,8 @@ class FeatureContext extends RawDrupalContext implements SnippetAcceptingContext
    * You can also pass arbitrary arguments to the
    * context constructor through behat.yml.
    */
-  public function __construct() {
+  public function __construct($context_parameters) {
+    $this->setContextParameters($context_parameters);
   }
 
   /****************************************************
@@ -58,6 +62,33 @@ class FeatureContext extends RawDrupalContext implements SnippetAcceptingContext
         }
         personalize_agent_delete($name);
       }
+    }
+  }
+
+  /**
+   * Take screenshot when step fails.
+   * Works only with Selenium2Driver.
+   *
+   * @AfterStep
+   */
+  public function takeScreenshotAfterFailedStep(AfterStepScope $scope) {
+    if (!$scope->getTestResult()->isPassed()) {
+      $driver = $this->getSession()->getDriver();
+      if (!($driver instanceof Selenium2Driver)) {
+        //throw new UnsupportedDriverActionException('Taking screenshots is not supported by %s, use Selenium2Driver instead.', $driver);
+        return;
+      }
+      $step = $scope->getStep();
+      $step_line = $step->getLine();
+      $temp_path = $this->getContextParameter('temp_path');
+      $filename = $temp_path . '/stepAtLine' . $step_line . '.png';
+      $screenshot = $driver->getWebDriverSession()->screenshot();
+      file_put_contents($filename, base64_decode($screenshot));
+      echo "Saved Screenshot To $fileame \n";
+      $filename = $temp_path . '/stepAtLine' . $step_line .'.html';
+      $source = $driver->getWebDriverSession()->source();
+      file_put_contents($filename, $source);
+      echo "Saved Source To $filename\n";
     }
   }
 
@@ -282,6 +313,28 @@ class FeatureContext extends RawDrupalContext implements SnippetAcceptingContext
   /****************************************************
    *        H E L P E R  F U N C T I O N S
    ***************************************************/
+
+  /**
+   * Helper function to retrieve a context parameter.
+   *
+   * @param $param_name
+   *   The name of the parameter to retrieve
+   * @return
+   *   The parameter value or NULL if undefined.
+   */
+  public function getContextParameter($param_name) {
+    return !empty($this->context_parameters[$param_name]) ? $this->context_parameters[$param_name] : NULL;
+  }
+
+  /**
+   * Helper function to set the context parameters.
+   *
+   * @param array $parameters
+   *   The parameters to set.
+   */
+  public function setContextParameters($parameters) {
+    $this->context_parameters = array_merge($this->context_parameters, $parameters);
+  }
 
   /**
    * Helper function to return a link in a particular region.

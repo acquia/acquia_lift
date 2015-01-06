@@ -1,9 +1,11 @@
 # Tests assume the standard toolbar module
+# Todo: Make environment specific yml files using import section.
 default:
   suites:
     default:
       contexts:
-        - FeatureContext
+        - FeatureContext:
+          - temp_path: /tmp/behat
         - Drupal\DrupalExtension\Context\DrupalContext
         - Drupal\DrupalExtension\Context\MinkContext
         - Drupal\DrupalExtension\Context\MessageContext

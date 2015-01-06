@@ -26,7 +26,7 @@
   function createMessageBox() {
     var $messageBox = getMessageBox();
     if ($messageBox.length == 0) {
-      $messageBox = $('<div id="acquia-lift-message-box"><div class="close">' + Drupal.t('Close') + '</div><p class="message"></p></div>');
+      $messageBox = $('<div id="acquia-lift-message-box"><div class="close"><a id="acquia-lift-message-box-close" href="#">' + Drupal.t('Close') + '</a></div><p class="message"></p></div>');
       $('body').prepend($messageBox);
       $messageBox.find('.close').on('click', closeMessageBox);
       // Don't close the message box if you click on it (other than close).
@@ -47,6 +47,7 @@
     var $messageBox = getMessageBox();
     $messageBox.animate({ height:0, opacity:0 }, "slow", function() {
       $(this).addClass('element-hidden');
+      $(this).removeClass('acquia-lift-messagebox-shown');
       // Take off the height/opacity styles - only used for animation.
       $(this).removeAttr('style');
     });
@@ -84,7 +85,9 @@
     $messageBox.css('opacity', '0');
     $messageBox.removeClass('element-hidden');
     // Animate the box height and opacity to draw attention.
-    $messageBox.animate({height: fullHeight + 'px', opacity: 1}, 'slow');
+    $messageBox.animate({height: fullHeight + 'px', opacity: 1}, 'slow', function() {
+      $(this).addClass('acquia-lift-messagebox-shown');
+    });
 
     // Close the message box by clicking anywhere on the page.
     $(document).on('click', closeMessageBox);

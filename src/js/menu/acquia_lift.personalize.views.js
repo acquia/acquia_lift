@@ -456,6 +456,9 @@
       this.listenTo(this.collection, 'change', this.onActiveCampaignChange);
 
       this.build();
+
+      // Set the initial campaign listeners if available.
+      this.onActiveCampaignChange();
       this.render();
     },
 

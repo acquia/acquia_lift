@@ -447,7 +447,7 @@ class AcquiaLiftAgent extends PersonalizeAgentBase implements PersonalizeAgentGo
     }
     // If "Run until a winner is found" was selected, we need to add this to the agent's
     // data property.
-    if ($form_state['values']['campaign_end'] == 'winner') {
+    if (isset($form_state['values']['campaign_end']) && $form_state['values']['campaign_end'] == 'winner') {
       $form_state['values']['agent_basic_info']['options']['acquia_lift']['stop_on_winner'] = 1;
     }
   }

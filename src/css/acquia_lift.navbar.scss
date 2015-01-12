@@ -68,6 +68,20 @@
       display: block;
     }
   }
+  .acquia-lift-menu-item {
+    margin: {
+      top: .88em;
+      bottom: .88em;
+    }
+  }
+  .navbar-level-1 {
+    .menu-wrapper > .menu,
+    .menu {
+      *:not(select) {
+        line-height: 1.5;
+      }
+    }
+  }
 }
 
 /* Horizontal dropdowns */
@@ -86,23 +100,23 @@
         position: absolute;
         top: 100%;
       }
+
+      .menu-wrapper > .menu,
+      .menu {
+        max-width: 28em;
+      }
     }
     .acquia-lift-scrollable {
       max-height: 70vh;
       overflow-y: auto;
-      padding-bottom: .3em;
     }
     .menu ul ul {
       border-bottom: $border-size solid $border-color;
       border-top: $border-size solid $border-color;
     }
-    .navbar-level-1 li {
+    .navbar-level-2 {
+      clear: both;
       float: none;
-    }
-    .navbar-level-2 > {
-      ul, * > ul {
-        margin-left: 1em; /* LTR */
-      }
     }
     .acquia-lift-personalize-type-count {
       display: inline-block;
@@ -124,12 +138,42 @@
 #navbar-administration {
   .navbar-tray-horizontal {
     .acquia-lift-menu-item {
-      .acquia-lift-campaign {
+      margin: {
+        top: .7em;
+        bottom: .7em;
+      }
+      padding: {
+        top: 0;
+        bottom: 0;
+      }
+      .acquia-lift-campaign,
+      .acquia-lift-preview-option {
+        display: block;
+        width: 100%;
         float: left;
       }
-      .acquia-lift-campaign-edit {
+      .acquia-lift-campaign-edit,
+      .acquia-lift-variation-delete,
+      .acquia-lift-variation-rename {
+        position: relative;
+        display: block;
         float: right;
-        margin-left: 1.667em;
+        text-align: right;
+      }
+      .acquia-lift-campaign {
+        margin-right: -4em;
+        padding-right: 4em;
+      }
+      .acquia-lift-campaign-edit {
+        width: 4em;
+      }
+      .acquia-lift-preview-option {
+        margin-right: -8em;
+        padding-right: 8em;
+      }
+      .acquia-lift-variation-delete,
+      .acquia-lift-variation-rename {
+        width: 4em;
       }
     }
   }
@@ -151,28 +195,6 @@
 
       a {
         display: block;
-      }
-    }
-  }
-}
-
-/* Page variation links */
-#navbar-administration {
-  .navbar-tray-horizontal {
-    .acquia-lift-menu-item {
-      .acquia-lift-preview-option {
-        float: left;
-      }
-      .acquia-lift-variation-rename,
-      .acquia-lift-goal-rename,
-      .acquia-lift-variation-edit {
-        float: right;
-        margin-left: 1.667em;
-      }
-      .acquia-lift-variation-delete,
-      .acquia-lift-goal-delete {
-        float: right;
-        margin-left: .667em;
       }
     }
   }
@@ -200,7 +222,7 @@
   .navbar-tray-horizontal {
     .acquia-lift-menu-create {
       border-top: $border-size solid $border-color;
-      padding: .2em 1.3333em 1em 1.3333em;
+      padding: .7em 1.3333em .7em 1.3333em;
     }
     .menu ul li.last {
       padding-top: .6em;
@@ -210,6 +232,7 @@
     content: '+';
     font-weight: bold;
     font-size: 1.667em;
+    line-height: (1.5 / 1.667);
     padding-right: 0.2em;
     vertical-align: text-bottom;
   }
@@ -252,9 +275,12 @@
     .acquia-lift-campaign-edit, .acquia-lift-variation-delete, .acquia-lift-variation-rename, .acquia-lift-goal-rename, .acquia-lift-goal-delete, .acquia-lift-page-variation-toggle {
       display: none !important;
     }
+
+    .acquia-lift-goal {
+      padding-left: .6663em;
+    }
   }
 }
-
 
 /**
  * Keep long names compact.
@@ -264,7 +290,7 @@
   .acquia-lift-option-sets-list {
     padding: {
       top: .9em;
-      bottom: .9em;
+      bottom: .75em;
     }
 
     &, span {

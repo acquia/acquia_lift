@@ -170,7 +170,7 @@
       'aria-pressed="false"'
     ];
 
-    var item = '<div class="acquia-lift-menu-item"><a ' + linkAttrs.join(' ') + '>' + options.link.label + '</a>';
+    var item = '<div class="acquia-lift-menu-item clearfix"><a ' + linkAttrs.join(' ') + '>' + options.link.label + '</a>';
     item += '<a ' + editAttrs.join(' ') + '>' + Drupal.t('Edit') + '</a>\n';
     item += '</div>\n';
     //item += '<a ' + linkAttrs.join(' ') + '>' + options.link.label + '</a>\n';
@@ -227,7 +227,7 @@
       'href="' + deleteHref + '"'
     ];
 
-    item += '<li>\n<div class="acquia-lift-menu-item">';
+    item += '<li>\n<div class="acquia-lift-menu-item clearfix">';
     item += '<a ' + attrs.join(' ') + '>' + Drupal.checkPlain(variation.label) + '</a> \n';
     if (variation.index > 0) {
       item += '<a ' + deleteAttrs.join(' ') + '>' + Drupal.t('Delete') + '</a>\n';
@@ -400,6 +400,7 @@
 
     item += '<li>\n<div class="acquia-lift-menu-item">';
     item += '<a ' + previewAttrs.join(' ') + '>' + options.label + '</a> \n';
+
     if (options.id !== Drupal.settings.personalize.controlOptionName) {
       if (options.showDelete) {
         item += '<a ' + deleteAttrs.join(' ') + '>' + Drupal.t('Delete') + '</a>\n';
@@ -427,7 +428,7 @@
    */
   Drupal.theme.acquiaLiftCampaignGoals = function (model, actions) {
     var goals = model.get('goals');
-    var html = '<ul class="innerMenuList">';
+    var html = '<ul class="menu">';
 
     if (goals.length == 0) {
       html += '<li>';
@@ -494,7 +495,7 @@
       'href="' + deleteHref + '"'
     ];
 
-    item += '<div class="acquia-lift-menu-item">\n';
+    item += '<div class="acquia-lift-menu-item clearfix">\n';
     item += '<span ' + attrs.join(' ') + '>' + Drupal.t('@text', {'@text': options.label}) + '</span>\n';
     item += '<a ' + deleteAttrs.join(' ') + '>' + Drupal.t('Delete') + '</a>\n';
     if (options.custom) {

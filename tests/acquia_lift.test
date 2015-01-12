@@ -2200,6 +2200,14 @@ class AcquiaLiftWebTestReports extends AcquiaLiftWebTestBase {
       $started = time();
       $agent->started = $started;
       personalize_agent_save($agent);
+
+      $report_start_date = 1407499650;
+      // Test to ensure that an initial report at this point returns no data.
+      AcquiaLiftAPI::setTestInstance();
+      $agent_instance = personalize_agent_load_agent($first_agent);
+      $report = $agent_instance->buildCampaignReports(array('decision' => 'osid-' . $option_sets[0]->osid, 'start' => $report_start_date));
+      $this->assertFalse($report['#has_data'], 'Report has no data.');
+
       // Add some test data so that calls to get reports for this agent will
       // return basic reports.
       $test_data = array_merge_recursive($test_data, array(
@@ -2252,10 +2260,8 @@ class AcquiaLiftWebTestReports extends AcquiaLiftWebTestBase {
     $this->resetAll();
 
     // We use the date that the test report was created.
-    $report_start_date = 1407499650;
-    AcquiaLiftAPI::setTestInstance();
-    $agent_instance = personalize_agent_load_agent($first_agent);
     $report = $agent_instance->buildCampaignReports(array('decision' => 'osid-' . $option_sets[0]->osid, 'start' => $report_start_date));
+    $this->assertTrue($report['#has_data'], 'Report now reports having data.');
 
     // The experiment report should show that Option A has a 0% conversion rate.
     $this->assertEqual("Option A", $report['experiment']['reports']['conversion']['reports']['summary']['summary_holder']['summary_table']['#rows'][0]['data'][0]['data']);

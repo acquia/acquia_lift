@@ -1,11 +1,10 @@
 # Tests assume the standard toolbar module
-# Todo: Make environment specific yml files using import section.
 default:
   suites:
     default:
       contexts:
         - FeatureContext:
-          - temp_path: /tmp/behat
+          - temp_path: ''
         - Drupal\DrupalExtension\Context\DrupalContext
         - Drupal\DrupalExtension\Context\MinkContext
         - Drupal\DrupalExtension\Context\MessageContext
@@ -15,14 +14,14 @@ default:
     Behat\MinkExtension:
       goutte: ~
       selenium2: ~
-      base_url: http://lift.local:8082
     Drupal\DrupalExtension:
       blackbox: ~
       api_driver: 'drupal'
       drush:
         alias: 'local'
+        #root: ${drush.root}
       drupal:
-        drupal_root: '/Users/lisa.backer/Sites/lift'
+        #drupal_root: '/Users/lisa.backer/Sites/lift'
       region_map:
         menu: '#toolbar'
         lift_tray: '#navbar-administration .navbar-tray-acquia-lift'

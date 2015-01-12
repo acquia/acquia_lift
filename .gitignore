@@ -4,7 +4,8 @@
 .LSOverride
 
 # Icon must end with two \r
-Icon
+Icon
+
 # Thumbnails
 ._*
 
@@ -27,3 +28,8 @@ node_modules
 
 # Gem packages
 vendor
+
+# Behat user interface tests
+/behat-tests/behat.yml
+/behat-tests/vendor
+/behat-tests/bin

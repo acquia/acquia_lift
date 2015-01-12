@@ -419,6 +419,14 @@ function acquia_lift_report_custom($form, &$form_state, $agent, $agent_data, $op
   );
 
   $reports = $agent->buildCampaignReports($options);
+  if (!($reports['#has_data'])) {
+    // This campaign hasn't been shown yet, so there is no data for reporting.
+    return array(
+      'no_report' => array(
+        '#markup' => t('This campaign has not been shown yet so there is no report data available.  Check back here after the campaign has been shown to site visitors.'),
+      ),
+    );
+  }
 
   // Generate mark-up for adaptive style report labels.
   $report_title_additional = '';
@@ -793,6 +801,16 @@ function acquia_lift_report_ab($form, &$form_state, $agent, $agent_data) {
     'end' => $date_end_report,
   );
   $build['reports'] = $agent->buildCampaignReports($options);
+
+  if (!$build['reports']['#has_data']) {
+    // This campaign hasn't been shown yet, so there is no data for reporting.
+    return array(
+      'no_report' => array(
+        '#markup' => t('This campaign has not been shown yet so there is no report data available.  Check back here after the campaign has been shown to site visitors.'),
+      ),
+    );
+  }
+
   $build['reports']['#attached']['library'][] = array('acquia_lift', 'acquia_lift.reports');
 
   return $build;

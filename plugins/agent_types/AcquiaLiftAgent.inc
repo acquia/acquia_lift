@@ -1637,7 +1637,7 @@ abstract class AcquiaLiftReportBase implements PersonalizeAgentReportInterface, 
   protected function extractOverviewReportData($items) {
     $agent_data = $this->agent->getData();
     $decision_style = $agent_data['decision_style'] === 'adaptive' ? t('Auto-personalize') : t('A/B');
-    $total_variations = count($agent_data['decisions']);
+    $total_variations = isset($agent_data['decisions']) ? count($agent_data['decisions']) : 0;
 
     // Create an array of data for each time option.
     $report['today'] = array(
@@ -2296,9 +2296,11 @@ class AcquiaLiftReport extends AcquiaLiftReportBase {
 
     // Determine overall confidence based on confidence in choices.
     $total_confident = 0;
-    foreach($report_data['confidence']['features'][self::NO_FEATURES] as $choice) {
-      if ($choice['significant']) {
-        $total_confident++;
+    if (isset($report_data['confidence']['features'][self::NO_FEATURES])) {
+      foreach ($report_data['confidence']['features'][self::NO_FEATURES] as $choice) {
+        if ($choice['significant']) {
+          $total_confident++;
+        }
       }
     }
 
@@ -2317,47 +2319,49 @@ class AcquiaLiftReport extends AcquiaLiftReportBase {
 
     // Update context report data.
     $option_numbers = array();
-    foreach ($report_data['confidence']['features'] as $feature_string => $feature) {
-      // Get the user-friendly feature label from the possible contextual values.
-      $feature_label = $feature_string;
-      if (isset($report_data['potential_context'][$feature_string])) {
-        $feature_label = $report_data['potential_context'][$feature_string]['label'];
-      }
+    if (isset($report_data['confidence']['features'])) {
+      foreach ($report_data['confidence']['features'] as $feature_string => $feature) {
+        // Get the user-friendly feature label from the possible contextual values.
+        $feature_label = $feature_string;
+        if (isset($report_data['potential_context'][$feature_string])) {
+          $feature_label = $report_data['potential_context'][$feature_string]['label'];
+        }
 
-      // This report only shows features that can be targeted.
-      if (!isset($report_data['targeting'][$feature_string])) {
-        continue;
-      }
+        // This report only shows features that can be targeted.
+        if (!isset($report_data['targeting'][$feature_string])) {
+          continue;
+        }
 
-      // Get the data from the targeting report for this feature.
-      $targeting_data = $report_data['targeting'][$feature_string];
+        // Get the data from the targeting report for this feature.
+        $targeting_data = $report_data['targeting'][$feature_string];
 
-      // Create a hash of choice numbers for stability report.
-      // Don't show system-defined features.
-      if ($targeting_data['system'] === TRUE) {
-        continue;
-      }
-      foreach($feature as $choice_id => $choice) {
-        $report_data['context']['features'][$feature_string][$choice_id] = array(
-          'counter' => $choice['counter'],
-          'choice_id' => $choice['choice_id'],
-          'best' => ($isAdaptive && $targeting_data['favored_selection'] === $choice['raw_label']),
-          'decisions' => $choice['decisions'],
-          'lift_default' => $choice['control'] ? self::DATA_NA : $choice['lift_default'],
-          'lift_default_positive' => $choice['unformatted']['lift_default'] > self::LIFT_THRESHHOLD,
-          'lift_random' => $choice['lift_random'],
-          'lift_random_positive' => $choice['unformatted']['lift_random'] > self::LIFT_THRESHHOLD,
-          'control' => $choice['control'],
-          'feature_label' => $feature_label,
-          'goals' => $choice['goals'],
-          'conversion' => $choice['conversion'],
-        );
-        $option_numbers[$feature_string . '|' . $choice['raw_label']] = $choice['counter'];
+        // Create a hash of choice numbers for stability report.
+        // Don't show system-defined features.
+        if ($targeting_data['system'] === TRUE) {
+          continue;
+        }
+        foreach ($feature as $choice_id => $choice) {
+          $report_data['context']['features'][$feature_string][$choice_id] = array(
+            'counter' => $choice['counter'],
+            'choice_id' => $choice['choice_id'],
+            'best' => ($isAdaptive && $targeting_data['favored_selection'] === $choice['raw_label']),
+            'decisions' => $choice['decisions'],
+            'lift_default' => $choice['control'] ? self::DATA_NA : $choice['lift_default'],
+            'lift_default_positive' => $choice['unformatted']['lift_default'] > self::LIFT_THRESHHOLD,
+            'lift_random' => $choice['lift_random'],
+            'lift_random_positive' => $choice['unformatted']['lift_random'] > self::LIFT_THRESHHOLD,
+            'control' => $choice['control'],
+            'feature_label' => $feature_label,
+            'goals' => $choice['goals'],
+            'conversion' => $choice['conversion'],
+          );
+          $option_numbers[$feature_string . '|' . $choice['raw_label']] = $choice['counter'];
+        }
       }
     }
 
     // Build the experiment report data
-    $report_data['experiment']['choices'] = $report_data['confidence']['features'][self::NO_FEATURES];
+    $report_data['experiment']['choices'] = isset($report_data['confidence']['features'][self::NO_FEATURES]) ? $report_data['confidence']['features'] : array();
 
     // Build the stability report data
     foreach ($report_data['targeting'] as $feature_string => &$feature) {

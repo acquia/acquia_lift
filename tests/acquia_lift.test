@@ -1480,7 +1480,6 @@ class AcquiaLiftWebTestAgentAdmin extends AcquiaLiftWebTestBase {
     $this->personalizedQueue->deleteQueue();
 
     $goals = personalize_goal_load_by_conditions(array('agent' => $agent_name));
-    debug($goals);
     $this->assertEqual(2, count($goals));
     $goal_ids = array_keys($goals);
     $first_goal_id = $goal_ids[0];
@@ -2258,10 +2257,12 @@ class AcquiaLiftWebTestReports extends AcquiaLiftWebTestBase {
     }
     variable_set('acquia_lift_web_test_data', $test_data);
     $this->resetAll();
+    AcquiaLiftAPI::setTestInstance();
+    $agent_instance = personalize_agent_load_agent($first_agent);
 
     // We use the date that the test report was created.
     $report = $agent_instance->buildCampaignReports(array('decision' => 'osid-' . $option_sets[0]->osid, 'start' => $report_start_date));
-    $this->assertTrue($report['#has_data'], 'Report now reports having data.');
+    $this->assertFalse($report['#has_data'], 'Empty reports have no data to show.');
 
     // The experiment report should show that Option A has a 0% conversion rate.
     $this->assertEqual("Option A", $report['experiment']['reports']['conversion']['reports']['summary']['summary_holder']['summary_table']['#rows'][0]['data'][0]['data']);
@@ -2282,6 +2283,7 @@ class AcquiaLiftWebTestReports extends AcquiaLiftWebTestBase {
     variable_set("acquia_lift_report_source_$first_agent", "/" . $path . '/tests/test_reports.json');
     $agent_instance = personalize_agent_load_agent($first_agent);
     $report = $agent_instance->buildCampaignReports(array('decision' => 'osid-' . $option_sets[0]->osid, 'start' => $report_start_date));
+    $this->assertTrue($report['#has_data'], 'Report data file indicates data to show.');
 
     // Now the experiment report should show that Option A has a conversion rate of .19%
     $this->assertEqual("osid-76:Option A", $report['experiment']['reports']['conversion']['reports']['summary']['summary_holder']['summary_table']['#rows'][0]['data'][0]['data']);
@@ -2291,6 +2293,7 @@ class AcquiaLiftWebTestReports extends AcquiaLiftWebTestBase {
     // The report for the second agent should still show the basic report data.
     $agent_instance = personalize_agent_load_agent($second_agent);
     $report = $agent_instance->buildCampaignReports(array('decision' => 'osid-' . $option_sets[0]->osid, 'start' => $report_start_date));
+    $this->assertFalse($report['#has_data'], 'Empty report data still indicates no data to show.');
     $this->assertEqual("Option A", $report['experiment']['reports']['conversion']['reports']['summary']['summary_holder']['summary_table']['#rows'][0]['data'][0]['data']);
     $this->assertEqual("Control", $report['experiment']['reports']['conversion']['reports']['summary']['summary_holder']['summary_table']['#rows'][0]['data'][0]['data-acquia-lift-variation-label']);
     $this->assertEqual("0%", $report['experiment']['reports']['conversion']['reports']['summary']['summary_holder']['summary_table']['#rows'][0]['data'][2]['data']);

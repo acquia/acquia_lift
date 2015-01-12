@@ -1625,13 +1625,11 @@ function acquia_lift_campaign_start_form($form, &$form_state, $agent_data) {
     '#type' => 'value',
     '#value' => $agent_data,
   );
-  $form['decision_style'] = array(
-    '#type' => 'checkboxes',
+  $form['adaptive'] = array(
+    '#type' => 'checkbox',
     '#title' => t('Automatically determine a winner'),
-    '#options' => array(
-      'adaptive' => t('Acquia Lift will adapt to visitors to choose the best option over time.'),
-    ),
-    '#default_value' => array($agent_data->data['decision_style']),
+    '#description' => t('Acquia Lift will adapt to visitors to choose the best option over time.'),
+    '#default_value' => $agent_data->data['decision_style'] == 'adaptive',
   );
   module_load_include('inc', 'personalize', 'personalize.admin');
   $form['campaign_end'] = personalize_agent_end_date_form($agent_data->machine_name);
@@ -1645,7 +1643,8 @@ function acquia_lift_campaign_start_form($form, &$form_state, $agent_data) {
   );
   $form['actions']['reset'] = array(
     '#markup' => ctools_ajax_text_button(t('Cancel'), 'admin/structure/acquia_lift/cancel/nojs', t('Cancel'), 'acquia-lift-cancel-button'),
-  );  return $form;
+  );
+  return $form;
 }
 
 /**
@@ -1662,7 +1661,7 @@ function acquia_lift_campaign_start_form_validate($form, &$form_state) {
 function acquia_lift_campaign_start_form_submit($form, &$form_state) {
   // Set the decision style.
   $agent_data = $form_state['values']['agent'];
-  $agent_data->data['decision_style'] = empty($form_state['values']['decision_style']) ? 'random' : current($form_state['values']['decision_style']);
+  $agent_data->data['decision_style'] = empty($form_state['values']['adaptive']) ? 'random' : 'adaptive';
   personalize_agent_save($agent_data);
 
   // Set the end date.

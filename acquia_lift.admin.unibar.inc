@@ -394,6 +394,7 @@ function _acquia_lift_page_variation_details_form_submit($form, &$form_state) {
   // Save the updated option sets for use within the Ajax callback.
   $form_state['storage']['option_sets'] = personalize_option_set_load_multiple(FALSE, array('decision_name' => $variation_set_name));
   $form_state['storage']['variation_number'] = $variation_number;
+  $form_state['storage']['confirmation_message'] = t('The variation has been created.');
 }
 
 /**

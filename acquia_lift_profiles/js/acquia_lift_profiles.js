@@ -307,7 +307,7 @@ var _tcwq = _tcwq || [];
       },
 
       'processSentGoalToAgent':function(e, agent_name, goal_name, goal_value) {
-        _tcaq.push(['capture', goal_name, {'targetcampaignid':agent_name, 'targetcampaignname':getAgentLabel(agent_name), 'evalSegments': true}]);
+        _tcaq.push(['capture', goal_name, {'targetcampaignid':agent_name, 'targetcampaignname':getAgentLabel(agent_name), 'targetgoalvalue':goal_value, 'evalSegments': true}]);
       },
       /**
        * Add an action listener for client-side goal events.

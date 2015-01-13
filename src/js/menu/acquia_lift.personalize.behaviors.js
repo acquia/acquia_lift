@@ -335,7 +335,6 @@
             .each(function (index, element) {
               ui.views.push(new ui.MenuStatusView({
                 el: element.parentNode,
-                model: ui.collections['campaigns'],
                 collection: ui.collections['campaigns']
               }));
             });
@@ -380,6 +379,34 @@
         Drupal.acquiaLiftUI.utilities.setInitialized(true);
         Drupal.acquiaLiftUI.utilities.updateNavbar();
       }
+    }
+  };
+
+  Drupal.behaviors.acquiaLiftUnibarListeners = {
+    attach: function (context) {
+      $('body').once('acquia-lift-unibar-listeners', function () {
+        $(document).bind('acquiaLiftQueueSyncComplete', function () {
+          // Each time the queue synchronization is complete it means that
+          // the status could have changed for a particular campaign.
+          $.ajax({
+            url: Drupal.settings.basePath + 'acquia_lift/settings',
+            type: "POST",
+            success: function (response, status, jqXHR) {
+              var processed = false;
+              // Process any Drupal commands returned.
+              for (var i in response) {
+                if (response.hasOwnProperty(i) && response[i]['command'] && Drupal.ajax.prototype.commands[response[i]['command']]) {
+                  Drupal.ajax.prototype.commands[response[i]['command']](Drupal.ajax.prototype, response[i], status);
+                  processed = true;
+                }
+              }
+              if (processed) {
+                Drupal.attachBehaviors();
+              }
+            }
+          });
+        });
+      })
     }
   };
 

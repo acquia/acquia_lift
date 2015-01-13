@@ -15,17 +15,6 @@
       url: queue_url,
       type: "POST",
       success: function (response, status, jqXHR) {
-        var processed = false;
-        // Process any Drupal commands returned.
-        for (var i in response) {
-          if (response.hasOwnProperty(i) && response[i]['command'] && Drupal.ajax.prototype.commands[response[i]['command']]) {
-            Drupal.ajax.prototype.commands[response[i]['command']](Drupal.ajax.prototype, response[i], status);
-            processed = true;
-          }
-        }
-        if (processed) {
-          Drupal.attachBehaviors();
-        }
         $(document).trigger('acquiaLiftQueueSyncComplete');
         queueIsProcessing = false;
       }

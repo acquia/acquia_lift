@@ -1523,7 +1523,7 @@
     initialize: function (options) {
       // The campaign collection.
       this.collection = options.collection;
-      this.collection.on('change', this.render, this);
+      this.listenTo(this.collection, 'change:isActive', this.render);
       this.render();
     },
 
@@ -1577,7 +1577,7 @@
      */
     initialize: function (options) {
       this.collection = options.collection;
-      this.collection.on('change', this.render, this);
+      this.listenTo(this.collection, 'change:isActive', this.render);
     },
 
     /**
@@ -1940,7 +1940,7 @@
       this.collection = options.collection;
       this.model = this.collection.findWhere({'isActive': true});
 
-      this.listenTo(this.collection, 'change', this.onActiveCampaignChange);
+      this.listenTo(this.collection, 'change:isActive', this.onActiveCampaignChange);
 
       this.build();
       this.render();
@@ -2626,13 +2626,46 @@
      * {@inheritdoc}
      */
     initialize: function (options) {
-      _.bindAll(this, "updateStatus");
+      _.bindAll(this, "updateStatus", "render");
       this.collection = options.collection;
-      if (!this.model) {
+      this.listenTo(this.collection, 'change:isActive', this.onActiveCampaignChange);
+
+      // Add listeners to currently active campaign if there is one.
+      this.onActiveCampaignChange(this.collection.findWhere({'isActive': true}));
+
+      // Create the view.
+      this.build();
+      this.render();
+    },
+
+    /**
+     * Update the change listeners to listen to the newly activated campaign
+     * model.
+     */
+    onActiveCampaignChange: function (changed) {
+      var currentActive = this.collection.findWhere({'isActive': true});
+      // No change in active model.
+      if (this.model && currentActive && this.model === currentActive) {
         return;
       }
-      this.model.on('change', this.render, this);
-      this.build();
+      if (this.model) {
+        this.stopListening(this.model);
+      }
+      if (!currentActive) {
+        this.model = undefined;
+        return;
+      }
+      this.model = currentActive;
+
+      function deferredRender() {
+        _.defer(this.render);
+      }
+      // TRICKY: The nextStatus property doesn't trigger an event upon change
+      // because it is an object... however the nextStatus may not be set when
+      // the status is updated due to order within the object.  We need to wait
+      // for all of the campaign attributes to be saved before updating the
+      // status message displayed for the active campaign.
+      this.listenTo(this.model, 'change:status', deferredRender);
       this.render();
     },
 
@@ -3374,7 +3407,6 @@
             .each(function (index, element) {
               ui.views.push(new ui.MenuStatusView({
                 el: element.parentNode,
-                model: ui.collections['campaigns'],
                 collection: ui.collections['campaigns']
               }));
             });
@@ -3419,6 +3451,34 @@
         Drupal.acquiaLiftUI.utilities.setInitialized(true);
         Drupal.acquiaLiftUI.utilities.updateNavbar();
       }
+    }
+  };
+
+  Drupal.behaviors.acquiaLiftUnibarListeners = {
+    attach: function (context) {
+      $('body').once('acquia-lift-unibar-listeners', function () {
+        $(document).bind('acquiaLiftQueueSyncComplete', function () {
+          // Each time the queue synchronization is complete it means that
+          // the status could have changed for a particular campaign.
+          $.ajax({
+            url: Drupal.settings.basePath + 'acquia_lift/settings',
+            type: "POST",
+            success: function (response, status, jqXHR) {
+              var processed = false;
+              // Process any Drupal commands returned.
+              for (var i in response) {
+                if (response.hasOwnProperty(i) && response[i]['command'] && Drupal.ajax.prototype.commands[response[i]['command']]) {
+                  Drupal.ajax.prototype.commands[response[i]['command']](Drupal.ajax.prototype, response[i], status);
+                  processed = true;
+                }
+              }
+              if (processed) {
+                Drupal.attachBehaviors();
+              }
+            }
+          });
+        });
+      })
     }
   };
 

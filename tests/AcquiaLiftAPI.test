@@ -1563,6 +1563,13 @@ class AcquiaLiftTest extends DrupalUnitTestCase {
     $this->assertLogs($logs);
     $this->logger->clearLogs();
 
+    // Try with something nonsensical for the decision mode.
+    $lift_api->saveAgent($agentName, 'Some Test Agent', 'narf', 'enabled', 0.1, 0.4, 0);
+    // Confirm the expected requests were made.
+    $this->assertAPIRequests($requests);
+    $this->assertLogs($logs);
+    $this->logger->clearLogs();
+
     // Now try with a broken http client.
     $lift_api = $this->getAcquiaLiftAPI(TRUE);
     try {

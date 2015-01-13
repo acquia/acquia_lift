@@ -675,6 +675,10 @@ class AcquiaLiftAgent extends PersonalizeAgentBase implements PersonalizeAgentGo
 
     // Make sure all decision points are known by Acquia Lift.
     $option_sets = personalize_option_set_load_by_agent($this->machineName);
+    if (empty($option_sets)) {
+      // Acquia Lift agents need option sets.
+      $errors[] = t('No variation sets have been set up for this agent');
+    }
     $decision_tree = self::convertOptionSetsToDecisions($option_sets);
     try {
       $acquia_lift_points = $this->liftAPI->getPointsForAgent($this->machineName);

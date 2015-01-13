@@ -335,7 +335,6 @@
             .each(function (index, element) {
               ui.views.push(new ui.MenuStatusView({
                 el: element.parentNode,
-                model: ui.collections['campaigns'],
                 collection: ui.collections['campaigns']
               }));
             });
@@ -380,6 +379,34 @@
         Drupal.acquiaLiftUI.utilities.setInitialized(true);
         Drupal.acquiaLiftUI.utilities.updateNavbar();
       }
+    }
+  };
+
+  Drupal.behaviors.acquiaLiftUnibarListeners = {
+    attach: function (context) {
+      $('body').once('acquia-lift-unibar-listeners', function () {
+
+        // Generate a place-holder element to handle the Lift settings updates
+        // via Drupal's AJAX handling.  This ensures that theme styles can be
+        // limited to those already on the page as well as automatically
+        // handling Drupal commands upon return.
+        var settingsElement = document.createElement('div');
+        var elementId = settingsElement.id = 'acquia-lift-settings-' + new Date().getTime();
+        $('body').append(settingsElement);
+
+        Drupal.ajax[elementId] = new Drupal.ajax(elementId, settingsElement, {
+          url: Drupal.settings.basePath + 'acquia_lift/settings',
+          event: 'acquiaLiftSettingsUpdate'
+        });
+
+        // Each time the queue synchronization is complete it means that
+        // the status could have changed for a particular campaign.
+        $(document).bind('acquiaLiftQueueSyncComplete', function () {
+          // Trigger the event that will load from the Drupal AJAX object
+          // created above.
+          $('#' + elementId).trigger('acquiaLiftSettingsUpdate');
+        });
+      })
     }
   };
 

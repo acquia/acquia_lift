@@ -64,6 +64,7 @@ function acquia_lift_menu() {
     'type' => MENU_CALLBACK,
     'page callback' => 'acquia_lift_settings_update',
     'access arguments' => array('manage personalized content'),
+    'delivery callback' => 'ajax_deliver',
     'theme callback' => 'ajax_base_page_theme',
     'type' => MENU_CALLBACK,
   );

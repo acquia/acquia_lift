@@ -9,8 +9,7 @@
   border-color: #ccc;
   border-width: 1px 0;
   background: #fff;
-  -webkit-transition: opacity .4s, position .4s 0 step-start, width .4s 0 step-start, height .4s 0 step-start;
-          transition: opacity .4s, position .4s 0 step-start, width .4s 0 step-start, height .4s 0 step-start;
+  transition: opacity .4s, position .4s 0 step-start, width .4s 0 step-start, height .4s 0 step-start;
 }
 
 .lift-statistic-category.active {
@@ -30,8 +29,7 @@
 }
 
 .acquia-lift-report-section-options {
-  -moz-box-sizing: border-box;
-       box-sizing: border-box;
+  box-sizing: border-box;
   clear: both;
   width: 100%;
   min-width: 100%;
@@ -81,8 +79,7 @@ html[dir="rtl"] .lift-winner:after {
   font-family: sans-serif;
 }
 .lift-graph * {
-  -moz-box-sizing: border-box;
-       box-sizing: border-box;
+  box-sizing: border-box;
 }
 .lift-graph-container {
   padding-right: 1em;
@@ -380,3 +377,5 @@ html[dir="rtl"] .lift-graph-result .label {
 .lift-graph-result .toggle-enabled .line.disabled .action {
   opacity: .4;
 }
+
+/*# sourceMappingURL=acquia_lift.reports.css.map */

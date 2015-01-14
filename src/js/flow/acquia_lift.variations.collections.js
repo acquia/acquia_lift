@@ -7,7 +7,7 @@
 
   Drupal.acquiaLiftVariations.collections = Drupal.acquiaLiftVariations.collections || {
     ElementVariationCollection: Backbone.Collection.extend({
-      model: Drupal.acquiaLiftVariations.models.ElementVariationModel,
+      model: Drupal.acquiaLiftVariations.models.VariationTypeModel,
 
       /**
        * Returns a filtered collection with only those variation types that

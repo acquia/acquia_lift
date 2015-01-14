@@ -25,7 +25,7 @@ class ALProfilesWebTest extends DrupalWebTestCase {
     require_once(dirname(__FILE__) . '/acquia_lift_profiles.test_classes.inc');
     variable_set('user_register', USER_REGISTER_VISITORS);
     variable_set('user_email_verification', FALSE);
-    $this->admin_user = $this->drupalCreateUser(array('access administration pages', 'administer acquia_lift_profiles configuration', 'administer content types', 'administer nodes', 'bypass node access'));
+    $this->admin_user = $this->drupalCreateUser(array('access administration pages', 'administer acquia_lift_profiles configuration', 'administer content types', 'administer nodes', 'bypass node access', 'administer visitor actions'));
   }
 
   function testBasicConfig() {
@@ -274,7 +274,6 @@ class ALProfilesWebTest extends DrupalWebTestCase {
 
     // Now remove one of those actions.
     $this->drupalPost('admin/config/content/personalize/acquia_lift_profiles', array('acquia_lift_profiles_tracked_actions[]' => array('user_login')), t('Save'));
-    $this->assertNoText('The event user_login has been saved to Acquia Lift Profiles');
     $this->assertText('The event user_register was deleted from Acquia Lift Profiles');
     $tracked_actions = variable_get('acquia_lift_profiles_tracked_actions', array());
     $this->assertEqual(array('user_login'), $tracked_actions);
@@ -287,6 +286,46 @@ class ALProfilesWebTest extends DrupalWebTestCase {
     $this->assertNoText('The event user_register was deleted from Acquia Lift Profiles');
     $tracked_actions = variable_get('acquia_lift_profiles_tracked_actions', array());
     $this->assertEqual(array('form_submit'), $tracked_actions);
+
+    // Create a custom action with a label.
+    $action_name = 'my_action_with_label';
+    $action_label = 'My Friendly Event';
+    $action = array(
+      'machine_name' => $action_name,
+      'label' => $action_label,
+      'plugin' => 'link',
+      'client_side' => 1,
+      'module' => 'visitor_actions',
+      'identifier' => '#some-id',
+      'event' => 'click',
+      'pages' => '',
+      'data' => array(),
+      'limited_use' => 1
+    );
+    visitor_actions_save_action($action);
+    visitor_actions_custom_load_multiple(FALSE, FALSE, TRUE);
+    $tracked_actions = array();
+    ALProfilesAPI::setTestInstance();
+    acquia_lift_profiles_put_action($action_name, $tracked_actions);
+
+    // An action with no label should send the machine name as the label to
+    // Lift Web.
+    $new_action_name = 'my_action_without_label';
+    $new_action = $action;
+    unset($new_action['label']);
+    $new_action['machine_name'] = $new_action_name;
+    visitor_actions_save_action($new_action);
+    $this->resetAll();
+    acquia_lift_profiles_put_action($new_action_name, $tracked_actions);
+    $requests = DummyALProfilesHttpClient::getLoggedRequests();
+    $this->assertEqual('http://api.example.com/dashboard/rest/TESTACCOUNT/events/my_action_with_label?label=' . rawurlencode($action_label) . '&type=OTHER', $requests[0]['uri']);
+    $this->assertEqual('http://api.example.com/dashboard/rest/TESTACCOUNT/events/my_action_without_label?label=' . $new_action_name . '&type=OTHER', $requests[1]['uri']);
+
+    // Now try to save a non-existent action.
+    DummyALProfilesHttpClient::clearLoggedRequests();
+    acquia_lift_profiles_put_action('some_non_existent_action', $tracked_actions);
+    $requests = DummyALProfilesHttpClient::getLoggedRequests();
+    $this->assertTrue(empty($requests));
   }
 
   function testUDFMappings() {
@@ -311,6 +350,31 @@ class ALProfilesWebTest extends DrupalWebTestCase {
       )
     );
     $this->assertEqual($expected, $settings['acquia_lift_profiles']['udfMappings']);
+
+    // Confirm that the context value is available in the settings
+    $this->drupalLogout();
+    $regular_user = $this->drupalCreateUser(array('access content'));
+    $pass_raw = $regular_user->pass_raw;
+    unset($regular_user->pass_raw);
+
+    $edit = array(
+      'field_test_user_field_1' => array(
+        'und' => array(
+          array('value' => 'ohai')
+        )
+      )
+    );
+    user_save($regular_user, $edit);
+    $this->resetAll();
+
+    $regular_user->pass_raw = $pass_raw;
+    $this->drupalLogin($regular_user);
+    $this->drupalGet('');
+    $settings = $this->drupalGetSettings();
+    $expected = array(
+      'test_user_field_1' => 'ohai'
+    );
+    $this->assertEqual($expected, $settings['personalize_user_profile_context']);
   }
 
   /**

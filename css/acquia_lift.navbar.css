@@ -75,10 +75,6 @@
   overflow-y: auto;
   padding-bottom: .3em;
 }
-#navbar-administration .navbar-tray-acquia-lift.navbar-tray-horizontal .menu ul ul {
-  border-bottom: 1px solid #dddddd;
-  border-top: 1px solid #dddddd;
-}
 #navbar-administration .navbar-tray-acquia-lift.navbar-tray-horizontal .navbar-level-1 li {
   float: none;
 }
@@ -100,6 +96,11 @@
   background-color: gray;
 }
 
+/* Nested menu padding */
+#navbar-administration .navbar-tray-horizontal .menu ul li {
+  padding-bottom: .3em;
+}
+
 /* Campaign drop-down */
 #navbar-administration .acquia-lift-menu-item .acquia-lift-campaign {
   float: left;
@@ -109,19 +110,30 @@
   margin-left: 1.667em;
 }
 
+/* Option set dividers */
+#navbar-administration .navbar-tray-acquia-lift.navbar-tray-horizontal .acquia-lift-content-variation {
+  border-top: 1px solid #dddddd;
+  border-bottom: 1px solid #dddddd;
+  background-color: #fafafa;
+}
+#navbar-administration .navbar-tray-acquia-lift.navbar-tray-horizontal ul.acquia-lift-option-sets .navbar-level-2 > ul {
+  margin-left: 0;
+}
+
 /* Page variation links */
 #navbar-administration .acquia-lift-menu-item .acquia-lift-preview-option {
   float: left;
+}
+#navbar-administration .acquia-lift-menu-item .acquia-lift-variation-delete,
+#navbar-administration .acquia-lift-menu-item .acquia-lift-goal-delete,
+#navbar-administration .acquia-lift-menu-item .acquia-lift-variation-edit {
+  float: right;
+  margin-left: .667em;
 }
 #navbar-administration .acquia-lift-menu-item .acquia-lift-variation-rename,
 #navbar-administration .acquia-lift-menu-item .acquia-lift-goal-rename {
   float: right;
   margin-left: 1.667em;
-}
-#navbar-administration .acquia-lift-menu-item .acquia-lift-variation-delete,
-#navbar-administration .acquia-lift-menu-item .acquia-lift-goal-delete {
-  float: right;
-  margin-left: .667em;
 }
 
 /* Displayed as links within menus */
@@ -139,11 +151,9 @@
 /** Create links */
 #navbar-administration .navbar-tray-horizontal .acquia-lift-menu-create {
   border-top: 1px solid #ddd;
-  padding: .2em 1.3333em 1em 1.3333em;
+  padding: .6em 1.3333em 1em 1.3333em;
 }
-#navbar-administration .navbar-tray-horizontal .menu ul li.last {
-  padding-top: .6em;
-}
+#navbar-administration .acquia-lift-variation-add:before,
 #navbar-administration .acquia-lift-menu-create:before {
   content: '+';
   font-weight: bold;
@@ -182,6 +192,7 @@
 #navbar-administration .navbar-tray-vertical .acquia-lift-campaign-edit,
 #navbar-administration .navbar-tray-vertical .acquia-lift-variation-delete,
 #navbar-administration .navbar-tray-vertical .acquia-lift-variation-rename,
+#navbar-administration .navbar-tray-vertical .acquia-lift-variation-edit,
 #navbar-administration .navbar-tray-vertical .acquia-lift-goal-rename,
 #navbar-administration .navbar-tray-vertical .acquia-lift-goal-delete,
 #navbar-administration .navbar-tray-vertical .acquia-lift-page-variation-toggle {

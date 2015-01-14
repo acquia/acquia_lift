@@ -63,15 +63,17 @@
         });
       }
 
-
       // Provide method to hide full selector in variation type details form
       // until the user selects to edit.
       // Note that the form is sent as the new context so we can't just check
       // within the context.
+      // Note that the selector input may not be available if the user isn't
+      // able to edit its contents.
       var $variationTypeForm = $('#acquia-lift-element-variation-details-form').not('.acquia-lift-processed');
-      if ($variationTypeForm.length > 0) {
+      var $selectorInput = $variationTypeForm.find('input[name="selector"]');
+
+      if ($variationTypeForm.length > 0 && $selectorInput.length > 0) {
         var editLink = '<a class="acquia-lift-selector-edit">' + Drupal.t('Edit selector') + '</a>';
-        var $selectorInput = $variationTypeForm.find('input[name="selector"]');
         var $selector =  $selectorInput.closest('div');
         $variationTypeForm.parent().find('h2').append(editLink);
         $variationTypeForm.parent().find('.acquia-lift-selector-edit').on('click', function(e) {

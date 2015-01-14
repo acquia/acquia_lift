@@ -312,6 +312,9 @@
    *   - os: The option set object.
    *   - os.option_id: The ID of an option set option.
    *   - os.option_label: The label of an option set option.
+   *   - os.deletable: Boolean indicating if the option is deletable from the
+   *     menu.
+   *   - os.editable: Boolean indicating if the option is editable from the menu.
    *
    * @return string
    */
@@ -326,9 +329,17 @@
         label: model.get('option_label'),
         osID: osID,
         osSelector: os_selector,
-        showDelete: os.deletable
+        showDelete: os.deletable,
+        showEdit: os.editable
       });
     });
+    if (os.plugin === 'elements') {
+      menu += '<li>';
+      menu += '<a href="' + Drupal.settings.basePath + 'admin/structure/personalize/variations/add/nojs"';
+      menu += ' class="acquia-lift-variation-add acquia-lift-menu-link" title="' + Drupal.t('Add variation') + '" aria-role="button" aria-pressed="false">';
+      menu += Drupal.t('Add variation');
+      menu += '</a></li>';
+    }
     menu += '</ul>\n';
     return menu;
   };
@@ -344,46 +355,57 @@
    *   - osSelector: The selector representing the option set.
    *   - showDelete: Indicates if the delete option should be available for this
    *     particular item.
+   *   - showEdit: Indicates if the edit option should be available for this
+   *     item.
    *
    * @return string
    */
   Drupal.theme.acquiaLiftPreviewOptionMenuItem = function (options) {
     var item = '';
+    var ariaAttrs = [
+      'aria-role="button"',
+      'aria-pressed="false"'
+    ];
     // Prepare the selector string to be passed as a data attribute.
     var selector = options.osSelector.replace(/\"/g, '\'');
-    var attrs = [
+    var previewAttrs = [
       'class="acquia-lift-preview-option acquia-lift-preview-option--' + formatClass(options.id) + ' visitor-actions-ui-ignore"',
       'href="' + generateHref(options) + '"',
       'data-acquia-lift-personalize-option-set="' + options.osID + '"',
       'data-acquia-lift-personalize-option-set-selector="' + selector + '"',
-      'data-acquia-lift-personalize-option-set-option="' + options.id + '"',
-      'aria-role="button"',
-      'aria-pressed="false"'
-    ];
+      'data-acquia-lift-personalize-option-set-option="' + options.id + '"'
+    ].concat(ariaAttrs);
 
     var renameHref = Drupal.settings.basePath + 'admin/structure/acquia_lift/variation/rename/' + options.osID + '/' + options.id + '/nojs';
     var renameAttrs = [
       'class="acquia-lift-variation-rename acquia-lift-menu-link ctools-use-modal ctools-modal-acquia-lift-style"',
-      'title="' + Drupal.t('Rename Variation') + '"',
-      'aria-role="button"',
-      'aria-pressed="false"',
+      'title="' + Drupal.t('Rename variation') + '"',
       'href="' + renameHref + '"'
-    ];
+    ].concat(ariaAttrs);
 
     var deleteHref = Drupal.settings.basePath + 'admin/structure/acquia_lift/variation/delete/' + options.osID + '/' + options.id + '/nojs';
     var deleteAttrs = [
       'class="acquia-lift-variation-delete acquia-lift-menu-link ctools-use-modal ctools-modal-acquia-lift-style"',
-      'title="' + Drupal.t('Delete Variation') + '"',
-      'aria-role="button"',
-      'aria-pressed="false"',
+      'title="' + Drupal.t('Delete variation') + '"',
       'href="' + deleteHref + '"'
-    ];
+    ].concat(ariaAttrs);
+
+    var editHref = Drupal.settings.basePath + 'admin/structure/personalize/variations';
+    var editAttrs = [
+      'class="acquia-lift-variation-edit acquia-lift-menu-link"',
+      'data-acquia-lift-personalize-option-set-option="' + options.id + '"',
+      'title="' + Drupal.t('Edit variation') + '"',
+      'href="' + editHref + '"'
+    ].concat(ariaAttrs);
 
     item += '<li>\n<div class="acquia-lift-menu-item">';
-    item += '<a ' + attrs.join(' ') + '>' + Drupal.t('Preview @text', {'@text': options.label}) + '</a> \n';
+    item += '<a ' + previewAttrs.join(' ') + '>' + options.label + '</a> \n';
     if (options.id !== Drupal.settings.personalize.controlOptionName) {
       if (options.showDelete) {
         item += '<a ' + deleteAttrs.join(' ') + '>' + Drupal.t('Delete') + '</a>\n';
+      }
+      if (options.showEdit) {
+        item += '<a ' + editAttrs.join(' ') + '>' + Drupal.t('Edit') + '</a>\n';
       }
       item += '<a ' + renameAttrs.join(' ') + '>' + Drupal.t('Rename') + '</a>\n';
     }
@@ -755,6 +777,7 @@
      * Triggers a change notification for option sets.
      */
     triggerOptionSetChange: function (event) {
+      this.refreshData();
       this.trigger('change:optionSets');
     },
 
@@ -781,8 +804,17 @@
       var that = this;
       var optionSets = this.get('optionSets');
       optionSets.each(function (model) {
+        var activeOption = model.get('activeOption');
+        // If there is currently an active option, make sure it is still in the
+        // options for this option set.
+        if (activeOption) {
+          var found = model.get('options').findWhere({'option_id': activeOption});
+          if (!found) {
+            activeOption = null;
+          }
+        }
         // If the activeOption has not been set, set it to a default.
-        if (!model.get('activeOption')) {
+        if (!activeOption) {
           // Default the active option to the first/control option.
           var index = 0;
           if (Drupal.settings.personalize.preselected && Drupal.settings.personalize.preselected.hasOwnProperty(model.get('decision_name'))) {
@@ -1078,6 +1110,7 @@
         }
         if (property.hasOwnProperty('plugin') && property.plugin === 'elements') {
           property.deletable = true;
+          property.editable = true;
         }
       } else {
         if (property === 'options' && !(value instanceof Drupal.acquiaLiftUI.MenuOptionCollection)) {
@@ -1085,6 +1118,7 @@
           return;
         } else if (property == 'plugin' && property.plugin === 'elements') {
           this.set('deletable', true);
+          this.set('editable', true);
         }
       }
       this.parent('set', property, value);
@@ -1732,7 +1766,9 @@
   Drupal.acquiaLiftUI.MenuOptionSetView = ViewBase.extend({
 
     events: {
-      'click .acquia-lift-preview-option': 'onClick'
+      'click .acquia-lift-preview-option': 'onPreview',
+      'click .acquia-lift-variation-add': 'onEdit',
+      'click .acquia-lift-variation-edit': 'onEdit'
     },
 
     /**
@@ -1793,7 +1829,7 @@
         .attr('aria-pressed', 'false');
       if (this.model) {
         this.$el
-          .find('[data-acquia-lift-personalize-option-set-option="' + this.model.get('activeOption') + '"]')
+          .find('.acquia-lift-preview-option[data-acquia-lift-personalize-option-set-option="' + this.model.get('activeOption') + '"]')
           .addClass('acquia-lift-active')
           .attr('aria-pressed', 'true');
       }
@@ -1822,18 +1858,41 @@
     },
 
     /**
-     * Responds to clicks.
+     * Responds to clicks on preview links.
      *
      * @param jQuery.Event event
      */
-    onClick: function (event) {
+    onPreview: function (event) {
       if (!$(event.target).hasClass('acquia-lift-preview-option')) return;
       if (!this.model) return;
 
-      var optionid = $(event.target).data('acquia-lift-personalize-option-set-option');
-      this.model.set('activeOption', optionid);
+      var optionId = $(event.target).data('acquia-lift-personalize-option-set-option');
+      this.model.set('activeOption', optionId);
       event.preventDefault();
       event.stopPropagation();
+    },
+
+    /**
+     * Responds to clicks to add or edit an existing elements variation.
+     */
+    onEdit: function(event) {
+      var osData = this.model.get('data');
+      var optionId = $(event.target).data('acquia-lift-personalize-option-set-option');
+      var data = {
+        variationType: osData.personalize_elements_type,
+        selector: osData.personalize_elements_selector,
+        osid: this.model.get('osid'),
+        agentName: this.model.get('agent')
+      }
+      if (optionId) {
+        data.variationIndex = optionId;
+        // Set this as the active option for preview as well.
+        this.model.set('activeOption', optionId);
+      };
+      $(document).trigger('acquiaLiftElementVariationEdit', data);
+      event.preventDefault();
+      event.stopPropagation();
+      return false;
     },
 
     /**
@@ -1844,9 +1903,13 @@
      * @param string choice_name
      *   The option id of the choice to show.
      */
-    selectOption: function (osid, choice_name) {
+    selectOption: function (osid, choice_name, force) {
       if (this.model && this.model.get('osid') === osid) {
-        this.model.set('activeOption', choice_name);
+        if (this.model.get('activeOption') === choice_name && force) {
+          this.model.trigger('change:activeOption', this.model);
+        } else {
+          this.model.set('activeOption', choice_name);
+        }
       }
     },
 
@@ -2746,7 +2809,7 @@
       if (isActive) {
         text = Drupal.t('Exit edit mode');
       } else {
-        text = current instanceof Drupal.acquiaLiftUI.MenuCampaignABModel ? Drupal.t('Add a variation') : Drupal.t('Add a variation set');
+        text = current instanceof Drupal.acquiaLiftUI.MenuCampaignABModel ? Drupal.t('Add variation') : Drupal.t('Add variation set');
       }
       this.$el.text(text);
     },
@@ -2914,7 +2977,7 @@
   Drupal.ajax.prototype.commands.acquia_lift_variation_preview = function (ajax, response, status) {
     _.defer(function() {
       var view = Drupal.acquiaLiftUI.views.optionSets[response.data.osid];
-      view.selectOption(response.data.osid, response.data.optionId);
+      view.selectOption(response.data.osid, response.data.optionId, true);
     });
   }
 

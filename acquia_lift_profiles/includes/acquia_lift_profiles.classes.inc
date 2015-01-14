@@ -82,7 +82,7 @@ class ALProfilesAPI {
   public static function getInstance($account_name = '', $api_url = '', $access_key = '', $secret_key = '') {
     if (empty(self::$instance)) {
       if (drupal_valid_test_ua()) {
-        self::$instance = self::getTestInstance();
+        self::setTestInstance();
         return self::$instance;
       }
       // If no account name or api url has been passed in, fallback to getting them
@@ -131,16 +131,16 @@ class ALProfilesAPI {
   }
 
   /**
-   * Returns a ALProfilesAPI instance with dummy creds and a dummy HttpClient.
+   * Sets the ALProfilesAPI instance with dummy creds and a dummy HttpClient.
    *
    * This is used during simpletest web tests.
    */
-  protected static function getTestInstance() {
+  public static function setTestInstance($broken_http_client = FALSE) {
     module_load_include('inc', 'acquia_lift_profiles', 'tests/acquia_lift_profiles.test_classes');
-    $instance = new self('TESTACCOUNT', 'http://api.example.com', 'testUser', 'testPass');
-    $instance->setHttpClient(new DummyALProfilesHttpClient());
-    $instance->setLogger(new AcquiaLiftTestLogger(TRUE));
-    return $instance;
+    self::$instance = new self('TESTACCOUNT', 'http://api.example.com', 'testUser', 'testPass');
+    $test_data = variable_get('acquia_lift_profiles_web_test_data', array());
+    self::$instance->setHttpClient(new DummyALProfilesHttpClient($broken_http_client, $test_data));
+    self::$instance->setLogger(new AcquiaLiftTestLogger(TRUE));
   }
 
   /**
@@ -318,22 +318,24 @@ class ALProfilesAPI {
   /**
    * Saves an event to Acquia Lift Profiles
    *
-   * @param string $event_name
-   *   The name of the event.
+   * @param string $machine_name
+   *   The canonical, machine-readable name of the event.
+   * @param string $label
+   *   The human-readable name of the event.
    * @param string $event_type
    *   The type of event, can be one of 'CAMPAIGN_ACTION', 'CAMPAIGN_CLICK_THROUGH',
    *   'CAMPAIGN_CONVERSION', or 'OTHER' (default).
    *
    * @throws ALProfilesException
    */
-  public function saveEvent($event_name, $event_type = 'OTHER') {
+  public function saveEvent($event_name, $event_label, $event_type = 'OTHER') {
     // First get our Authorization header.
     $headers = array('Accept' => 'application/json');
     $url = $this->generateEndpoint('events/' . $event_name);
-    $auth_header = $this->getAuthHeader('PUT', $url, array('type' => $event_type), $headers);
+    $auth_header = $this->getAuthHeader('PUT', $url, array('label' => $event_label, 'type' => $event_type), $headers);
     $headers += array('Authorization' => $auth_header);
 
-    $response = $this->httpClient()->put($url . '?type=' . $event_type, $headers);
+    $response = $this->httpClient()->put($url . '?label=' . rawurlencode($event_label) . '&type=' . $event_type, $headers);
     $vars = array('eventname' => $event_name);
     $success_msg = 'The event {eventname} has been saved to Acquia Lift Profiles';
     $fail_msg = 'Could not save event {eventname} to Acquia Lift Profiles';

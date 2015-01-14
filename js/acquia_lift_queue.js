@@ -1,5 +1,8 @@
 (function ($) {
 
+  Drupal.acquiaLift = Drupal.acquiaLift || {};
+  Drupal.acquiaLift.queueCount = Drupal.acquiaLift.queueCount || 0;
+
   var queueIsProcessing = false;
   /**
    * Actually trigger the Acquia Lift queue processing and let
@@ -11,6 +14,7 @@
     }
     queueIsProcessing = true;
     var queue_url = Drupal.settings.basePath + 'acquia_lift/queue';
+    Drupal.acquiaLift.queueCount++;
     $.ajax({
       url: queue_url,
       type: "POST",
@@ -28,6 +32,9 @@
         }
         $(document).trigger('acquiaLiftQueueSyncComplete');
         queueIsProcessing = false;
+      },
+      complete: function (jqXHR, status) {
+        Drupal.acquiaLift.queueCount--;
       }
     });
   }

@@ -36,15 +36,7 @@
        * {@inheritDoc}
        */
       render: function (model, editMode) {
-        if (editMode) {
-          // Must update the watched elements as the page DOM structure can
-          // be changed in between each call.
-          this.$watchElements = Drupal.acquiaLiftVariations.getAvailableElements();
-          this.$el.DOMSelector("updateElements", this.$watchElements);
-          this.$el.DOMSelector("startWatching");
-        } else {
-          this.$el.DOMSelector("stopWatching");
-        }
+        this.setSelectionMode(editMode);
       },
 
       /**
@@ -70,21 +62,13 @@
        * Updates the application based on changes in edit mode in model.
        */
       updateEditMode: function(model, editMode) {
-        var data = {};
-        var variationIndex = model.get('variationIndex');
         if (editMode) {
-          variationIndex = isNaN(variationIndex) ? -1 : variationIndex;
           if (this.contextualMenuModel) {
             this.contextualMenuModel.set('active', true);
           }
           if (this.variationTypeFormModel) {
             this.variationTypeFormModel.set('active', true);
           }
-          data.started = editMode;
-          data.mode = (variationIndex == -1) ? 'add' : 'edit';
-          data.campaign = Drupal.settings.personalize.activeCampaign;
-          data.variationIndex = variationIndex;
-          $(document).trigger('acquiaLiftPageVariationsMode', data);
         } else {
           this.highlightAnchor(false);
           if (this.contextualMenuModel) {
@@ -106,10 +90,26 @@
       },
 
       /**
+       * Sets whether the DOM selector should be active to allow the end user
+       * to select a DOM element.
+       */
+      setSelectionMode: function(inSelectionMode) {
+        if (inSelectionMode) {
+          // Must update the watched elements as the page DOM structure can
+          // be changed in between each call.
+          this.$watchElements = Drupal.acquiaLiftVariations.getAvailableElements();
+          this.$el.DOMSelector("updateElements", this.$watchElements);
+          this.$el.DOMSelector("startWatching");
+        } else {
+          this.$el.DOMSelector("stopWatching");
+        }
+      },
+
+      /**
        * Event callback for when an element is selected in the DOM selector.
        */
       onElementSelected: function (element, selector) {
-        this.$el.DOMSelector('stopWatching');
+        this.setSelectionMode(false);
         this.createContextualMenu(element, selector);
       },
 
@@ -137,26 +137,50 @@
        *
        * @param event
        *   The triggering event that includes the model data/JSON for the selected
-       *   ElementVariationModel.
+       *   VariationTypeModel.
        */
       createVariationTypeDialog: function(event) {
+        var variation = this.model.get('variation');
         var formPath = Drupal.settings.basePath +
           'admin/structure/acquia_lift/variation/' +
           Drupal.encodePath(event.data.id);
+        if (event.data.osid) {
+          formPath += '/' + Drupal.encodePath(event.data.osid);
+        }
         this.variationTypeFormModel = new Drupal.acquiaLiftVariations.models.VariationTypeFormModel({
           selector: event.data.selector,
           id: 'acquia-lift-modal-variation-type-' + event.data.id,
           formPath: formPath,
           type: event.data.id,
           typeLabel: event.data.name,
-          variationIndex: this.model.get('variationIndex')
+          variation: variation
         });
-        var dialogView = new Drupal.acquiaLiftVariations.views.VariationTypeFormView({
+        this.variationTypeView = new Drupal.acquiaLiftVariations.views.VariationTypeFormView({
           el: event.data.anchor,
           model: this.variationTypeFormModel,
           appModel: this.model
         });
         this.variationTypeFormModel.set('active', this.model.get('editMode'));
+      },
+
+      /**
+       * Open a variation type dialog based on an existing variation set.
+       *
+       *  @param event
+       *    The triggering event that includes the model data/JSON for the selected
+       *    VariationTypeModel.
+       */
+      openExistingTypeDialog: function(event) {
+        // Made sure the DOM selector is no longer active.
+        this.setSelectionMode(false);
+        // Highlight the affected element.
+        this.anchor = event.data.anchor;
+        this.highlightAnchor(true);
+        if (this.variationTypeView) {
+          this.variationTypeView.remove();
+        }
+        // Create the dialog.
+        this.createVariationTypeDialog(event);
       },
 
       /**
@@ -206,7 +230,7 @@
         var selector = this.model.get('selector');
         var type = this.model.get('type');
         var $input = this.$el.find('[name=personalize_elements_content]');
-        var variationNumber = this.model.get('variationIndex');
+        var variation = this.model.get('variation');
 
         // Don't show the title field for page variations.
         if (this.appModel.isPageModelMode()) {
@@ -216,9 +240,12 @@
         this.$el.find('[name="selector"]').val(selector);
         this.$el.find('[name="pages"]').val(Drupal.settings.visitor_actions.currentPath);
         this.$el.find('[name="agent"]').val(Drupal.settings.personalize.activeCampaign);
-        this.$el.find('[name="variation_number"]').val(variationNumber);
         // Call any variation type specific callbacks.
         $(document).trigger('acquiaLiftVariationTypeForm', [type, selector, $input]);
+        if (variation) {
+          this.$el.find('[name="variation_number"]').val(variation.getVariationNumber());
+          $input.val(variation.getContent());
+        }
 
         // Override the form submission handler to verify the selector only
         // matches a single DOM element.
@@ -227,6 +254,10 @@
             selector = $selectorInput.val(),
             matches = 0,
             message = '';
+          // If the selector wasn't shown then it doesn't need to be validated.
+          if ($selectorInput.length == 0) {
+            return true;
+          }
 
           function displaySelectorError(message) {
             $selectorInput.addClass('error');

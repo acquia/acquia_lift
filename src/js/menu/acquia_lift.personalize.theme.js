@@ -312,6 +312,9 @@
    *   - os: The option set object.
    *   - os.option_id: The ID of an option set option.
    *   - os.option_label: The label of an option set option.
+   *   - os.deletable: Boolean indicating if the option is deletable from the
+   *     menu.
+   *   - os.editable: Boolean indicating if the option is editable from the menu.
    *
    * @return string
    */
@@ -326,9 +329,17 @@
         label: model.get('option_label'),
         osID: osID,
         osSelector: os_selector,
-        showDelete: os.deletable
+        showDelete: os.deletable,
+        showEdit: os.editable
       });
     });
+    if (os.plugin === 'elements') {
+      menu += '<li>';
+      menu += '<a href="' + Drupal.settings.basePath + 'admin/structure/personalize/variations/add/nojs"';
+      menu += ' class="acquia-lift-variation-add acquia-lift-menu-link" title="' + Drupal.t('Add variation') + '" aria-role="button" aria-pressed="false">';
+      menu += Drupal.t('Add variation');
+      menu += '</a></li>';
+    }
     menu += '</ul>\n';
     return menu;
   };
@@ -344,46 +355,57 @@
    *   - osSelector: The selector representing the option set.
    *   - showDelete: Indicates if the delete option should be available for this
    *     particular item.
+   *   - showEdit: Indicates if the edit option should be available for this
+   *     item.
    *
    * @return string
    */
   Drupal.theme.acquiaLiftPreviewOptionMenuItem = function (options) {
     var item = '';
+    var ariaAttrs = [
+      'aria-role="button"',
+      'aria-pressed="false"'
+    ];
     // Prepare the selector string to be passed as a data attribute.
     var selector = options.osSelector.replace(/\"/g, '\'');
-    var attrs = [
+    var previewAttrs = [
       'class="acquia-lift-preview-option acquia-lift-preview-option--' + formatClass(options.id) + ' visitor-actions-ui-ignore"',
       'href="' + generateHref(options) + '"',
       'data-acquia-lift-personalize-option-set="' + options.osID + '"',
       'data-acquia-lift-personalize-option-set-selector="' + selector + '"',
-      'data-acquia-lift-personalize-option-set-option="' + options.id + '"',
-      'aria-role="button"',
-      'aria-pressed="false"'
-    ];
+      'data-acquia-lift-personalize-option-set-option="' + options.id + '"'
+    ].concat(ariaAttrs);
 
     var renameHref = Drupal.settings.basePath + 'admin/structure/acquia_lift/variation/rename/' + options.osID + '/' + options.id + '/nojs';
     var renameAttrs = [
       'class="acquia-lift-variation-rename acquia-lift-menu-link ctools-use-modal ctools-modal-acquia-lift-style"',
-      'title="' + Drupal.t('Rename Variation') + '"',
-      'aria-role="button"',
-      'aria-pressed="false"',
+      'title="' + Drupal.t('Rename variation') + '"',
       'href="' + renameHref + '"'
-    ];
+    ].concat(ariaAttrs);
 
     var deleteHref = Drupal.settings.basePath + 'admin/structure/acquia_lift/variation/delete/' + options.osID + '/' + options.id + '/nojs';
     var deleteAttrs = [
       'class="acquia-lift-variation-delete acquia-lift-menu-link ctools-use-modal ctools-modal-acquia-lift-style"',
-      'title="' + Drupal.t('Delete Variation') + '"',
-      'aria-role="button"',
-      'aria-pressed="false"',
+      'title="' + Drupal.t('Delete variation') + '"',
       'href="' + deleteHref + '"'
-    ];
+    ].concat(ariaAttrs);
+
+    var editHref = Drupal.settings.basePath + 'admin/structure/personalize/variations';
+    var editAttrs = [
+      'class="acquia-lift-variation-edit acquia-lift-menu-link"',
+      'data-acquia-lift-personalize-option-set-option="' + options.id + '"',
+      'title="' + Drupal.t('Edit variation') + '"',
+      'href="' + editHref + '"'
+    ].concat(ariaAttrs);
 
     item += '<li>\n<div class="acquia-lift-menu-item">';
-    item += '<a ' + attrs.join(' ') + '>' + Drupal.t('Preview @text', {'@text': options.label}) + '</a> \n';
+    item += '<a ' + previewAttrs.join(' ') + '>' + options.label + '</a> \n';
     if (options.id !== Drupal.settings.personalize.controlOptionName) {
       if (options.showDelete) {
         item += '<a ' + deleteAttrs.join(' ') + '>' + Drupal.t('Delete') + '</a>\n';
+      }
+      if (options.showEdit) {
+        item += '<a ' + editAttrs.join(' ') + '>' + Drupal.t('Edit') + '</a>\n';
       }
       item += '<a ' + renameAttrs.join(' ') + '>' + Drupal.t('Rename') + '</a>\n';
     }

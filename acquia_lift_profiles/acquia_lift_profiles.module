@@ -146,7 +146,7 @@ function acquia_lift_profiles_page_build(&$page) {
   }
   $js_path = variable_get('acquia_lift_profiles_js_path', '');
   $account_name = variable_get('acquia_lift_profiles_account_name', '');
-
+  $udf_mappings = variable_get('acquia_lift_profiles_udf_mappings', array());
   $segments = acquia_lift_profiles_get_segments();
   $settings = array(
     'request_url' => $base_root . request_uri(),
@@ -154,12 +154,36 @@ function acquia_lift_profiles_page_build(&$page) {
     'account_name' => $account_name,
     'currentPath' => current_path(),
     'captureIdentity' => variable_get('acquia_lift_profiles_capture_identity', FALSE),
-    'udfMappings' => variable_get('acquia_lift_profiles_udf_mappings', array()),
+    'udfMappings' => $udf_mappings,
     // Since we are using the same separator as provided by personalize
     // module for targeting values, we need to tell our JS settings about
     // it.
     'udfMappingContextSeparator' => PERSONALIZE_TARGETING_ADMIN_SEPARATOR,
   );
+  // We need to make sure that all assets for visitor context plugins used in our udf
+  // mappings are avaiable so that we can get the actual context values.
+  $assets = $attached = $contexts = array();
+  ctools_include('plugins');
+  // Group the mappings by context plugins so we can load each plugin only once.
+  foreach ($udf_mappings as $type => $mappings) {
+    foreach ($mappings as $name => $mapping) {
+      list($plugin, $context) = explode(PERSONALIZE_TARGETING_ADMIN_SEPARATOR, $mapping);
+      if (!isset($contexts[$plugin])) {
+        $contexts[$plugin] = array();
+      }
+      $contexts[$plugin][] = $context;
+    }
+  }
+  // Now load the context plugins grab the required assets.
+  foreach ($contexts as $plugin_name => $plugin_contexts) {
+    if ($class = ctools_plugin_load_class('personalize', 'visitor_context', $plugin_name, 'handler')) {
+      if ($plugin_instance = call_user_func_array(array($class, 'create'), array(NULL, $plugin_contexts))) {
+        // Ensure js assets for visitor_context plugins are loaded.
+        $assets = array_merge_recursive($assets, $plugin_instance->getAssets());
+      }
+    }
+  }
+
   // If there are querystring parameters present corresponding to the configured
   // identity params, we add the identity and identity type to the js settings.
   $identity_param = variable_get('acquia_lift_profiles_identity_param', '');
@@ -215,25 +239,38 @@ _tcaq.push(['setAccount', '$account_name']);
 })();
 EOT;
 
+  // Now we need to compile all the assets together with the js settings and files
+  // needed for Acquia Lift Profiles itself.
+  if (!isset($assets['js'])) {
+    $assets['js'] = array();
+  }
+  $js_settings = array(
+    'data' => array('acquia_lift_profiles' => $settings),
+    'type' => 'setting'
+  );
+
+  $assets['js'] = array_merge_recursive($assets['js'], array($js_settings));
+  foreach ($assets as $type => $data_array) {
+    if (!isset($attached[$type])) {
+      $attached[$type] = array();
+    }
+    $attached[$type] = array_merge($attached[$type], $data_array);
+  }
+
+  $js_file = drupal_get_path('module', 'acquia_lift_profiles') . '/js/acquia_lift_profiles.js';
+  $attached['js'][$js_file] = array(
+    'weight' => JS_DEFAULT - 10
+  );
+  $attached['js'][] = array(
+    'data' => $init,
+    'type' => 'inline'
+  );
+  if (!isset($attached['library'])) {
+    $attached['library'] = array();
+  }
+  $attached['library'][] =  array('system', 'jquery.cookie');
   $page['page_top']['acquia_lift_profiles'] = array(
-    '#attached' => array(
-      'js' => array(
-        drupal_get_path('module', 'acquia_lift_profiles') . '/js/acquia_lift_profiles.js' => array(
-          'weight' => JS_DEFAULT - 10
-        ),
-        array(
-          'data' => array('acquia_lift_profiles' => $settings),
-          'type' => 'setting'
-        ),
-        array(
-          'data' => $init,
-          'type' => 'inline'
-        )
-      ),
-      'library' => array(
-        array('system', 'jquery.cookie'),
-      ),
-    )
+    '#attached' => $attached
   );
   acquia_lift_profiles_process_server_side_actions($page);
 }
@@ -341,7 +378,7 @@ function acquia_lift_profiles_visitor_action_form_submit($form, &$form_state) {
   $values = $form_state['values'];
   $tracked_actions = variable_get('acquia_lift_profiles_tracked_actions', array());
   if (isset($values['acquia_lift_profiles'])) {
-    acquia_lift_profiles_sync_action($values['machine_name'], $tracked_actions, $values['acquia_lift_profiles']);
+    acquia_lift_profiles_sync_action($values['machine_name'], $tracked_actions, $values['acquia_lift_profiles'], check_plain($values['title']));
   }
   variable_set('acquia_lift_profiles_tracked_actions', $tracked_actions);
 }
@@ -349,17 +386,22 @@ function acquia_lift_profiles_visitor_action_form_submit($form, &$form_state) {
 /**
  * Saves an action for Acquia Lift Profiles tracking
  *
- * @param string $machine_name
- *   THe name of the action to sync.
+ * @param string $action_name
+ *   The machine name of the action to sync.
+ * @param &$tracked_ations
+ *   The array of actions being tracked in Lift Web, passed by reference so that it can
+ *   be updated based on this operation.
  * @param boolean $track
  *   Whether the action should or should not be tracked. If this is set to FALSE
  *   and the item was previously being tracked, it will be deleted from Acquia Lift Profiles.
+ * @param string $label
+ *   The human-readable name of the action.
  */
-function acquia_lift_profiles_sync_action($action_name, &$tracked_actions, $track = TRUE) {
-  if ($track && !in_array($action_name, $tracked_actions)) {
-    acquia_lift_profiles_put_action($action_name, $tracked_actions);
+function acquia_lift_profiles_sync_action($action_name, &$tracked_actions, $track = TRUE, $label = NULL) {
+  if ($track) {
+    acquia_lift_profiles_put_action($action_name, $tracked_actions, $label);
   }
-  elseif (!$track) {
+  else {
     acquia_lift_profiles_delete_action($action_name, $tracked_actions);
   }
   $tracked_actions = array_values($tracked_actions);
@@ -370,17 +412,39 @@ function acquia_lift_profiles_sync_action($action_name, &$tracked_actions, $trac
  *
  * @param $action_name
  *   The name of the action to save to Acquia Lift Profiles.
+ * @param &$tracked_ations
+ *   The array of actions being tracked in Lift Web, passed by reference so that it can
+ *   be added to when this action is sync'd successfully.
+ * @param string $label
+ *   The human-readable name of the action. If not provided it will be looked up.
  */
-function acquia_lift_profiles_put_action($action_name, &$tracked_actions) {
+function acquia_lift_profiles_put_action($action_name, &$tracked_actions, $label = NULL) {
+  if (empty($label)) {
+    $actions = visitor_actions_get_actions();
+    // Bail if called with a non-existent action name.
+    if (!isset($actions[$action_name])) {
+      drupal_set_message(t('Cannot save the action @action to Acquia Lift Profiles as it does not exist.', array('@action' => $action_name)), 'error');
+      return;
+    }
+    $label = !empty($actions[$action_name]['label']) ? $actions[$action_name]['label'] : $action_name;
+  }
+
+  // Visitor Actions module defaults the label to 'unlabeled', which is dumb, and
+  // should be changed in Visitor Actions module, but for now we'll just use the
+  // machine name if the label is 'unlabeled'.
+  if ($label == 'unlabeled') {
+    $label = $action_name;
+  };
+
   try {
     $acquia_lift_profiles_api = ALProfilesAPI::getInstance(variable_get('acquia_lift_profiles_account_name', ''), variable_get('acquia_lift_profiles_api_url', ''));
-    $acquia_lift_profiles_api->saveEvent($action_name);
+    $acquia_lift_profiles_api->saveEvent($action_name, $label);
     if (!in_array($action_name, $tracked_actions)) {
       $tracked_actions[] = $action_name;
     }
   }
   catch (ALProfilesException $e) {
-    drupal_set_message(t('There was a problem saving the action @action to Acquia Lift Profiles. Please try again later.', array('@action' => $action_name)), 'error');
+    drupal_set_message(t('There was a problem saving the action @action to Acquia Lift Profiles. Please try again later.', array('@action' => $label)), 'error');
   }
 }
 

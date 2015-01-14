@@ -92,9 +92,8 @@
       overflow-y: auto;
       padding-bottom: .3em;
     }
-    .menu ul ul {
-      border-bottom: $border-size solid $border-color;
-      border-top: $border-size solid $border-color;
+    .menu ul li {
+      padding-bottom: .3em;
     }
     .navbar-level-1 li {
       float: none;
@@ -116,6 +115,11 @@
       &.acquia-lift-empty span {
         background-color: gray;
       }
+    }
+    .acquia-lift-content-variation {
+      border-top: $border-size solid $border-color;
+      border-bottom: $border-size solid $border-color;
+      background-color: $highlight-background-color;
     }
   }
 }
@@ -197,18 +201,18 @@
   .navbar-tray-horizontal {
     .acquia-lift-menu-create {
       border-top: $border-size solid $border-color;
-      padding: .2em 1.3333em 1em 1.3333em;
-    }
-    .menu ul li.last {
-      padding-top: .6em;
+      padding: .6em 1.333em 1em 1.333em;
     }
   }
-  .acquia-lift-menu-create:before {
+  .acquia-lift-menu-create:before, .acquia-lift-variation-add:before {
     content: '+';
     font-weight: bold;
-    font-size: 1.667em;
+    font-size: 1.3em;
     padding-right: 0.2em;
     vertical-align: text-bottom;
+  }
+  .acquia-lift-menu-create:before {
+    font-size: 1.667em;
   }
   .navbar-tray-acquia-lift.navbar-tray-horizontal .menu ul ul:last-child {
     border-bottom: none;
@@ -271,7 +275,6 @@
 
   .acquia-lift-option-sets-list .acquia-lift-personalize-type-count:not(.acquia-lift-empty) {
     position: relative;
-    top: -.2em;
   }
 
   .acquia-lift-active-container {

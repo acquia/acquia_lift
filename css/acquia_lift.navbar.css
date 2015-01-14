@@ -76,9 +76,8 @@
   overflow-y: auto;
   padding-bottom: .3em;
 }
-#navbar-administration .navbar-tray-acquia-lift.navbar-tray-horizontal .menu ul ul {
-  border-bottom: 0.1em solid #ccc;
-  border-top: 0.1em solid #ccc;
+#navbar-administration .navbar-tray-acquia-lift.navbar-tray-horizontal .menu ul li {
+  padding-bottom: .3em;
 }
 #navbar-administration .navbar-tray-acquia-lift.navbar-tray-horizontal .navbar-level-1 li {
   float: none;
@@ -99,6 +98,11 @@
 }
 #navbar-administration .navbar-tray-acquia-lift.navbar-tray-horizontal .acquia-lift-personalize-type-count.acquia-lift-empty span {
   background-color: gray;
+}
+#navbar-administration .navbar-tray-acquia-lift.navbar-tray-horizontal .acquia-lift-content-variation {
+  border-top: 0.1em solid #ccc;
+  border-bottom: 0.1em solid #ccc;
+  background-color: #fafafa;
 }
 
 /* Campaign drop-down */
@@ -151,17 +155,17 @@
 /* Create links */
 #navbar-administration .navbar-tray-horizontal .acquia-lift-menu-create {
   border-top: 0.1em solid #ccc;
-  padding: .2em 1.3333em 1em 1.3333em;
+  padding: .6em 1.333em 1em 1.333em;
 }
-#navbar-administration .navbar-tray-horizontal .menu ul li.last {
-  padding-top: .6em;
-}
-#navbar-administration .acquia-lift-menu-create:before {
+#navbar-administration .acquia-lift-menu-create:before, #navbar-administration .acquia-lift-variation-add:before {
   content: '+';
   font-weight: bold;
-  font-size: 1.667em;
+  font-size: 1.3em;
   padding-right: 0.2em;
   vertical-align: text-bottom;
+}
+#navbar-administration .acquia-lift-menu-create:before {
+  font-size: 1.667em;
 }
 #navbar-administration .navbar-tray-acquia-lift.navbar-tray-horizontal .menu ul ul:last-child {
   border-bottom: none;
@@ -209,7 +213,6 @@
 }
 #navbar-administration .acquia-lift-option-sets-list .acquia-lift-personalize-type-count:not(.acquia-lift-empty) {
   position: relative;
-  top: -.2em;
 }
 #navbar-administration .acquia-lift-active-container {
   position: relative;

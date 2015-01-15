@@ -2567,7 +2567,8 @@
      */
     initialize: function (options) {
       this.collection = options.collection;
-      if (!this.model) {
+      // Make sure we are looking at the element within the menu.
+      if (!this.model || !this.$el.hasClass('navbar-box')) {
         return;
       }
       this.model.on('change', this.render, this);
@@ -2631,7 +2632,8 @@
     initialize: function (options) {
       _.bindAll(this, "updateStatus");
       this.collection = options.collection;
-      if (!this.model) {
+      // Make sure we are looking at the element within the menu.
+      if (!this.model || !this.$el.hasClass('navbar-box')) {
         return;
       }
       this.model.on('change', this.render, this);

@@ -213,6 +213,7 @@
     var renameAttrs = [
       'class="acquia-lift-variation-rename acquia-lift-menu-link ctools-use-modal ctools-modal-acquia-lift-style"',
       'title="' + Drupal.t('Rename Variation #@num', {'@num': variation.index}) + '"',
+      'data-acquia-lift-personalize-page-variation="' + variation.original_index + '"',
       'aria-role="button"',
       'aria-pressed="false"',
       'href="' + renameHref + '"'
@@ -222,12 +223,13 @@
     var deleteAttrs = [
       'class="acquia-lift-variation-delete acquia-lift-menu-link ctools-use-modal ctools-modal-acquia-lift-style"',
       'title="' + Drupal.t('Delete Variation #@num', {'@num': variation.index}) + '"',
+      'data-acquia-lift-personalize-page-variation="' + variation.original_index + '"',
       'aria-role="button"',
       'aria-pressed="false"',
       'href="' + deleteHref + '"'
     ];
 
-    item += '<li>\n<div class="acquia-lift-menu-item">';
+    item += '<li>\n<div class="acquia-lift-menu-item" data-acquia-lift-personalize-agent="' + variation.agent + '">';
     item += '<a ' + attrs.join(' ') + '>' + Drupal.checkPlain(variation.label) + '</a> \n';
     if (variation.index > 0) {
       item += '<a ' + deleteAttrs.join(' ') + '>' + Drupal.t('Delete') + '</a>\n';
@@ -376,13 +378,6 @@
       'data-acquia-lift-personalize-option-set-option="' + options.id + '"'
     ].concat(ariaAttrs);
 
-    var renameHref = Drupal.settings.basePath + 'admin/structure/acquia_lift/variation/rename/' + options.osID + '/' + options.id + '/nojs';
-    var renameAttrs = [
-      'class="acquia-lift-variation-rename acquia-lift-menu-link ctools-use-modal ctools-modal-acquia-lift-style"',
-      'title="' + Drupal.t('Rename variation') + '"',
-      'href="' + renameHref + '"'
-    ].concat(ariaAttrs);
-
     var deleteHref = Drupal.settings.basePath + 'admin/structure/acquia_lift/variation/delete/' + options.osID + '/' + options.id + '/nojs';
     var deleteAttrs = [
       'class="acquia-lift-variation-delete acquia-lift-menu-link ctools-use-modal ctools-modal-acquia-lift-style"',
@@ -398,7 +393,7 @@
       'href="' + editHref + '"'
     ].concat(ariaAttrs);
 
-    item += '<li>\n<div class="acquia-lift-menu-item">';
+    item += '<li>\n<div class="acquia-lift-menu-item" data-acquia-lift-personalize-option-set="' + options.osID + '">';
     item += '<a ' + previewAttrs.join(' ') + '>' + options.label + '</a> \n';
     if (options.id !== Drupal.settings.personalize.controlOptionName) {
       if (options.showDelete) {
@@ -407,7 +402,6 @@
       if (options.showEdit) {
         item += '<a ' + editAttrs.join(' ') + '>' + Drupal.t('Edit') + '</a>\n';
       }
-      item += '<a ' + renameAttrs.join(' ') + '>' + Drupal.t('Rename') + '</a>\n';
     }
     item += '</div></li>';
     return item;

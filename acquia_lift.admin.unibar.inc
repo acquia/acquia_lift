@@ -238,9 +238,13 @@ function acquia_lift_campaign_type_create_form_submit($form, &$form_state) {
  * @param string $osid
  *   (Optional) The option set id when adding variations to an existing option
  *   set.  If null, then create a new option set with the control and variation.
+ * @param string $option_id
+ *   (Optional) The option id for the specific variation to be edited.  NOTE:
+ *   Only element variations can be edited (not page variations).
+ *
  * @see hook_personalize_elements_variation_types
  */
-function acquia_lift_element_variation_details_form($form, &$form_state, $variation_type, $osid = NULL) {
+function acquia_lift_element_variation_details_form($form, &$form_state, $variation_type, $osid = NULL, $option_id = NULL) {
   $types = module_invoke_all('personalize_elements_variation_types');
   if (!isset($types[$variation_type]['contextual']['formitem'])) {
     $form['error'] = array(
@@ -250,6 +254,26 @@ function acquia_lift_element_variation_details_form($form, &$form_state, $variat
   }
   if (!empty($osid)) {
     $osid = personalize_resolve_stringified_osid($osid);
+    $option_set = personalize_option_set_load($osid);
+    $edit_option = NULL;
+    if (!empty($option_id)) {
+      if ($option_id === PERSONALIZE_CONTROL_OPTION_ID) {
+        $form['error'] = array(
+          '#markup' => t('The control variation cannot be edited.'),
+        );
+        return $form;
+      }
+      foreach ($option_set->options as $option) {
+        if ($option['option_id'] === $option_id) {
+          $edit_option = $option;
+          $form['option'] = array(
+            '#type' => 'value',
+            '#value' => $edit_option,
+          );
+          break;
+        }
+      }
+    }
     $form['osid'] = array(
       '#type' => 'value',
       '#value' => $osid,
@@ -286,8 +310,24 @@ function acquia_lift_element_variation_details_form($form, &$form_state, $variat
     '#maxlength' => 255,
     '#access' => empty($osid),
   );
+  // Option label if editing.
+  $form['option_label'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Variation name'),
+    '#description' => t('Descriptive name for the variation, used by Acquia Lift for administration and reporting.'),
+    '#required' => TRUE,
+    '#maxlength' => PERSONALIZE_MACHINE_NAME_MAXLENGTH,
+    '#access' => !empty($option),
+    '#default_value' => filter_xss($option['option_label']),
+  );
   // Now include the details specific to this variation type.
   $form['personalize_elements_content'] = $types[$variation_type]['contextual']['formitem'];
+  if ($edit_option) {
+    $form['personalize_elements_content']['#default_value'] = filter_xss($option['personalize_elements_content']);
+    $form['variation_number']['#type'] = 'value';
+    $form['variation_number']['#value'] = $edit_option['option_id'];
+  }
+
   $form['actions'] = array(
     '#type' => 'actions',
   );
@@ -436,6 +476,7 @@ function _acquia_lift_personalize_element_variation_details_form_submit($form, &
       foreach ($option_set->options as &$option) {
         if ($option['option_id'] === $values['variation_number']) {
           $option['personalize_elements_content'] = $values['personalize_elements_content'];
+          $option['option_label'] = $values['option_label'];
           break;
         }
       }
@@ -694,126 +735,6 @@ function acquia_lift_page_variation_rename_form($form, &$form_state, $agent_name
 function acquia_lift_page_variation_rename_form_submit($form, &$form_state) {
   module_load_include('inc', 'acquia_lift', 'acquia_lift.page_variations');
   acquia_lift_page_variation_rename($form_state['values']['variation_set_name'], $form_state['values']['agent_name'], $form_state['values']['variation_index'], $form_state['values']['variation_name']);
-}
-
-/***************************************************************
- *
- * O P T I O N  S E T  O P T I O N  R E N A M E
- *
- ***************************************************************/
-
-/**
- * Page callback to generate a option set's option label rename modal window.
- *
- * @param string $osid
- *   The option set id string that contains the option to rename.
- * @param string $option_id
- *   The option id of the option to rename.
- */
-function acquia_lift_option_rename_modal_callback($osid_str, $option_id) {
-  $option_set = personalize_option_set_load(personalize_resolve_stringified_osid($osid_str));
-  acquia_lift_create_ctools_form(
-    t('Rename variation'),
-    'acquia_lift_option_rename_form',
-    array(
-      'option_set' => $option_set,
-      'option_id' => $option_id,
-    ),
-    'acquia_lift_option_rename_complete_callback'
-  );
-}
-
-/**
- * CTools form processing complete handler for the renaming of an option set's
- * option label.
- *
- * @see acquia_lift_create_ctools_form().
- */
-function acquia_lift_option_rename_complete_callback($form, $form_state) {
-  $settings = array();
-  $option_set = $form_state['values']['option_set'];
-  $settings += _personalize_convert_option_set_to_js_setting($option_set);
-  // We need to update the campaigns as well in case a campaign was paused by this action.
-  $campaign_settings['personalize']['campaigns'] = personalize_agent_get_settings();
-  $commands = array(
-    ctools_modal_command_dismiss(),
-    acquia_lift_command_messagebox(t('The variation has been renamed.'), 10),
-    acquia_lift_command_option_set_updates($settings),
-    ajax_command_settings($campaign_settings, TRUE),
-    acquia_lift_command_process_queue(),
-  );
-  return $commands;
-}
-
-/**
- * Form handler to generate a form to change an option set's option label.
- *
- * This form is called within a ctools modal window.
- *
- * @param stdClass $option_set
- *   The option set of which the option to rename is a part
- * @param string $option_id
- *   The index of the option to rename.
- */
-function acquia_lift_option_rename_form($form, &$form_state, $option_set, $option_id) {
-  ctools_include('modal');
-  ctools_include('ajax');
-  ctools_add_js('ajax-responder');
-
-  $current_label = '';
-  foreach ($option_set->options as $option) {
-    if ($option['option_id'] == $option_id) {
-      $current_label = $option['option_label'];
-      break;
-    }
-  }
-
-  $form['option_set'] = array(
-    '#type' => 'value',
-    '#value' => $option_set,
-  );
-  if ($option_id === PERSONALIZE_CONTROL_OPTION_ID) {
-    $form['message'] = array(
-      '#markup' => t('The control variation cannot be renamed.'),
-    );
-    return $form;
-  }
-  $form['option_id'] = array(
-    '#type' => 'value',
-    '#value' => $option_id,
-  );
-  $form['option_label'] = array(
-    '#type' => 'textfield',
-    '#title' => t('New name'),
-    '#default_value' => $current_label,
-    '#required' => TRUE,
-    '#maxlength' => PERSONALIZE_MACHINE_NAME_MAXLENGTH,
-  );
-  $form['actions']['submit_form'] = array(
-    '#type' => 'submit',
-    '#attributes' => array(
-      'class' => array('action-item-primary-active', 'acquia-lift-submit-button'),
-    ),
-    '#value' => t('Rename'),
-  );
-  $form['actions']['reset'] = array(
-    '#markup' => ctools_ajax_text_button(t('Cancel'), 'admin/structure/acquia_lift/cancel/nojs', t('Cancel'), 'acquia-lift-cancel-button'),
-  );
-  return $form;
-}
-
-/**
- * Submit handler for acquia_lift_option_rename_form().
- */
-function acquia_lift_option_rename_form_submit($form, &$form_state) {
-  $option_set = $form_state['values']['option_set'];
-  foreach ($option_set->options as &$option) {
-    if ($option['option_id'] === $form_state['values']['option_id']) {
-      $option['option_label'] = $form_state['values']['option_label'];
-      break;
-    }
-  }
-  personalize_option_set_save($option_set);
 }
 
 /***************************************************************

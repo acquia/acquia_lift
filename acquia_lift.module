@@ -59,6 +59,15 @@ function acquia_lift_menu() {
     // @see acquia_lift_process_queue()
     'access callback' => TRUE,
   );
+  // Ajax callback to provide updated campaign settings to JavaScript.
+  $items['acquia_lift/settings'] = array(
+    'type' => MENU_CALLBACK,
+    'page callback' => 'acquia_lift_settings_update',
+    'access arguments' => array('manage personalized content'),
+    'delivery callback' => 'ajax_deliver',
+    'theme callback' => 'ajax_base_page_theme',
+    'type' => MENU_CALLBACK,
+  );
   // Ajax callback to generate report data.
   $items['acquia_lift/reports/conversion'] = array(
     'type' => MENU_CALLBACK,
@@ -922,10 +931,13 @@ function acquia_lift_ensure_default_agent($account_info) {
 }
 
 /**
- * Implements hook_personalize_form_ajax_submit().
+ * Implements hook_personalize_form_ajax_commands_alter().
+ *
+ * Synchronize the queue when the campaign is edited.  This is done via client-
+ * side commands in order to allow the user-interface to adjust upon completion.
  */
-function acquia_lift_personalize_form_ajax_submit($agent_data) {
-  acquia_lift_process_queue(FALSE);
+function acquia_lift_personalize_form_ajax_commands_alter(&$commands) {
+  $commands[] = acquia_lift_command_process_queue();
 }
 
 /**
@@ -978,12 +990,6 @@ function acquia_lift_process_queue($exit_on_finish = TRUE) {
   personalize_agent_clear_verified_status();
 
   if ($exit_on_finish) {
-    $commands = array(
-      ajax_command_settings(array('personalize' => array(
-        'campaigns' => personalize_agent_get_settings(),
-      )), TRUE),
-    );
-    personalize_ajax_commands_deliver($commands);
     drupal_exit();
   }
   else {
@@ -2543,6 +2549,23 @@ function acquia_lift_visitor_actions_ui_selector_ignore() {
       'acquia-lift-[a-zA-Z0-9\_\-]+',
     ),
   );
+}
+
+/**
+ * Returns updated campaign settings that can be used to update the client
+ * interface in response to asynchronous events such as queue synchronization.
+ *
+ * In the future it could become necessary, useful, to pass parameters to
+ * indicate the type of data to include.  The only current need is to return
+ * the updated campaign basic information.
+ */
+function acquia_lift_settings_update() {
+  $commands = array(
+    ajax_command_settings(array('personalize' => array(
+      'campaigns' => personalize_agent_get_settings(),
+    )), TRUE),
+  );
+  personalize_ajax_commands_deliver($commands);
 }
 
 /**

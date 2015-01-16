@@ -1,5 +1,5 @@
 /**
- * @file libraries.js
+ * @file core_personalization.tests.js
  */
 
 var $ = Drupal.jQuery;

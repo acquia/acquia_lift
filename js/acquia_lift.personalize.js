@@ -1523,7 +1523,7 @@
     initialize: function (options) {
       // The campaign collection.
       this.collection = options.collection;
-      this.collection.on('change', this.render, this);
+      this.listenTo(this.collection, 'change:isActive', this.render);
       this.render();
     },
 
@@ -1577,7 +1577,7 @@
      */
     initialize: function (options) {
       this.collection = options.collection;
-      this.collection.on('change', this.render, this);
+      this.listenTo(this.collection, 'change:isActive', this.render);
     },
 
     /**
@@ -1940,7 +1940,7 @@
       this.collection = options.collection;
       this.model = this.collection.findWhere({'isActive': true});
 
-      this.listenTo(this.collection, 'change', this.onActiveCampaignChange);
+      this.listenTo(this.collection, 'change:isActive', this.onActiveCampaignChange);
 
       this.build();
 
@@ -2630,14 +2630,49 @@
      * {@inheritdoc}
      */
     initialize: function (options) {
-      _.bindAll(this, "updateStatus");
+      _.bindAll(this, "updateStatus", "render");
       this.collection = options.collection;
-      // Make sure we are looking at the element within the menu.
-      if (!this.model || !this.$el.hasClass('navbar-box')) {
+      if (!this.$el.hasClass('navbar-box')) {
         return;
       }
-      this.model.on('change', this.render, this);
+      this.listenTo(this.collection, 'change:isActive', this.onActiveCampaignChange);
+
+      // Add listeners to currently active campaign if there is one.
+      this.onActiveCampaignChange(this.collection.findWhere({'isActive': true}));
+
+      // Create the view.
       this.build();
+      this.render();
+    },
+
+    /**
+     * Update the change listeners to listen to the newly activated campaign
+     * model.
+     */
+    onActiveCampaignChange: function (changed) {
+      var currentActive = this.collection.findWhere({'isActive': true});
+      // No change in active model.
+      if (this.model && currentActive && this.model === currentActive) {
+        return;
+      }
+      if (this.model) {
+        this.stopListening(this.model);
+      }
+      if (!currentActive) {
+        this.model = undefined;
+        return;
+      }
+      this.model = currentActive;
+
+      function deferredRender() {
+        _.defer(this.render);
+      }
+      // TRICKY: The nextStatus property doesn't trigger an event upon change
+      // because it is an object... however the nextStatus may not be set when
+      // the status is updated due to order within the object.  We need to wait
+      // for all of the campaign attributes to be saved before updating the
+      // status message displayed for the active campaign.
+      this.listenTo(this.model, 'change:status', deferredRender);
       this.render();
     },
 
@@ -3379,7 +3414,6 @@
             .each(function (index, element) {
               ui.views.push(new ui.MenuStatusView({
                 el: element.parentNode,
-                model: ui.collections['campaigns'],
                 collection: ui.collections['campaigns']
               }));
             });
@@ -3424,6 +3458,34 @@
         Drupal.acquiaLiftUI.utilities.setInitialized(true);
         Drupal.acquiaLiftUI.utilities.updateNavbar();
       }
+    }
+  };
+
+  Drupal.behaviors.acquiaLiftUnibarListeners = {
+    attach: function (context) {
+      $('body').once('acquia-lift-unibar-listeners', function () {
+
+        // Generate a place-holder element to handle the Lift settings updates
+        // via Drupal's AJAX handling.  This ensures that theme styles can be
+        // limited to those already on the page as well as automatically
+        // handling Drupal commands upon return.
+        var settingsElement = document.createElement('div');
+        var elementId = settingsElement.id = 'acquia-lift-settings-' + new Date().getTime();
+        $('body').append(settingsElement);
+
+        Drupal.ajax[elementId] = new Drupal.ajax(elementId, settingsElement, {
+          url: Drupal.settings.basePath + 'acquia_lift/settings',
+          event: 'acquiaLiftSettingsUpdate'
+        });
+
+        // Each time the queue synchronization is complete it means that
+        // the status could have changed for a particular campaign.
+        $(document).bind('acquiaLiftQueueSyncComplete', function () {
+          // Trigger the event that will load from the Drupal AJAX object
+          // created above.
+          $('#' + elementId).trigger('acquiaLiftSettingsUpdate');
+        });
+      })
     }
   };
 

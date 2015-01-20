@@ -1632,7 +1632,7 @@ function acquia_lift_campaign_start_form($form, &$form_state, $agent_data) {
     '#default_value' => $agent_data->data['decision_style'] == 'adaptive',
   );
   module_load_include('inc', 'personalize', 'personalize.admin');
-  $form['campaign_end'] = personalize_agent_end_date_form($agent_data->machine_name);
+  $form['campaign_dates'] = personalize_agent_date_form($agent_data->machine_name);
 
   $form['actions']['submit_form'] = array(
     '#type' => 'submit',
@@ -1652,7 +1652,7 @@ function acquia_lift_campaign_start_form($form, &$form_state, $agent_data) {
  */
 function acquia_lift_campaign_start_form_validate($form, &$form_state) {
   module_load_include('inc', 'personalize', 'personalize.admin');
-  personalize_agent_end_date_form_validate($form_state['values']['campaign_end']);
+  personalize_agent_date_form_validate($form_state['values']);
 }
 
 /**
@@ -1666,7 +1666,7 @@ function acquia_lift_campaign_start_form_submit($form, &$form_state) {
 
   // Set the end date.
   module_load_include('inc', 'personalize', 'personalize.admin');
-  personalize_agent_end_date_form_submit($agent_data->machine_name, $form_state['values']['campaign_end']);
+  personalize_agent_date_form_submit($agent_data->machine_name, $form_state['values']);
 
   // Start the campaign.
   $form_state['acquia_lift']['started'] = personalize_agent_set_status($agent_data->machine_name, PERSONALIZE_STATUS_RUNNING);

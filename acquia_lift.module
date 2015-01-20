@@ -2306,9 +2306,9 @@ function acquia_lift_reset_agent($agent_name) {
 
 
 /**
- * Implements hook_personalize_agent_end_date_form_alter().
+ * Implements hook_personalize_agent_date_form_alter().
  */
-function acquia_lift_personalize_agent_end_date_form_alter(&$form, $agent_name) {
+function acquia_lift_personalize_agent_date_form_alter(&$form, $agent_name) {
   if (empty($agent_name)) {
     return;
   }

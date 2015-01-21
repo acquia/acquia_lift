@@ -132,8 +132,10 @@
       var $count = this.$el.find('i.acquia-lift-personalize-type-count').detach();
       if (!activeCampaign) {
         var label = Drupal.t('All campaigns');
+        this.$el.attr('title', label);
       } else {
         var label = Drupal.theme.acquiaLiftSelectedContext({'label': activeCampaign.get('label'), 'category': Drupal.t('Campaign')});
+        this.$el.attr('title', activeCampaign.get('label'));
       }
       this.$el.html(label);
       if ($count.length > 0) {
@@ -263,8 +265,10 @@
         var currentVariation = currentCampaign.getCurrentVariationLabel();
         if (currentVariation) {
           text = Drupal.theme.acquiaLiftSelectedContext({'label': currentVariation, 'category': Drupal.t('Variation')});
+          this.$el.attr('title', currentVariation)
         } else {
           text = Drupal.t('Variations');
+          this.$el.attr('title', text)
         }
       }
       this.$el.html(text);

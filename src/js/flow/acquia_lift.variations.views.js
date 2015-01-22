@@ -146,6 +146,9 @@
           Drupal.encodePath(event.data.id);
         if (event.data.osid) {
           formPath += '/' + Drupal.encodePath(event.data.osid);
+          if (variation) {
+            formPath += '/' + variation.getVariationNumber();
+          }
         }
         this.variationTypeFormModel = new Drupal.acquiaLiftVariations.models.VariationTypeFormModel({
           selector: event.data.selector,
@@ -242,10 +245,6 @@
         this.$el.find('[name="agent"]').val(Drupal.settings.personalize.activeCampaign);
         // Call any variation type specific callbacks.
         $(document).trigger('acquiaLiftVariationTypeForm', [type, selector, $input]);
-        if (variation) {
-          this.$el.find('[name="variation_number"]').val(variation.getVariationNumber());
-          $input.val(variation.getContent());
-        }
 
         // Override the form submission handler to verify the selector only
         // matches a single DOM element.

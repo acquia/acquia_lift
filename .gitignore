@@ -33,3 +33,5 @@ vendor
 /behat-tests/behat.yml
 /behat-tests/vendor
 /behat-tests/bin
+
+/behat-tests/composer.lock

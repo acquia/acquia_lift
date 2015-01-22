@@ -423,7 +423,7 @@ function acquia_lift_report_custom($form, &$form_state, $agent, $agent_data, $op
     // This campaign hasn't been shown yet, so there is no data for reporting.
     return array(
       'no_report' => array(
-        '#markup' => t('This campaign has not been shown yet so there is no report data available.  Check back here after the campaign has been shown to site visitors.'),
+        '#markup' => t('This campaign does not yet contain information about your visitors\' website interactions. This situation generally occurs for campaigns that have either just been started or do not generate much website traffic.'),
       ),
     );
   }
@@ -806,7 +806,7 @@ function acquia_lift_report_ab($form, &$form_state, $agent, $agent_data) {
     // This campaign hasn't been shown yet, so there is no data for reporting.
     return array(
       'no_report' => array(
-        '#markup' => t('This campaign has not been shown yet so there is no report data available.  Check back here after the campaign has been shown to site visitors.'),
+        '#markup' => t('This campaign does not yet contain information about your visitors\' website interactions. This situation generally occurs for campaigns that have either just been started or do not generate much website traffic.'),
       ),
     );
   }

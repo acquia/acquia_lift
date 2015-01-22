@@ -419,6 +419,14 @@ function acquia_lift_report_custom($form, &$form_state, $agent, $agent_data, $op
   );
 
   $reports = $agent->buildCampaignReports($options);
+  if (!($reports['#has_data'])) {
+    // This campaign hasn't been shown yet, so there is no data for reporting.
+    return array(
+      'no_report' => array(
+        '#markup' => t('This campaign does not yet contain information about your visitors\' website interactions. This situation generally occurs for campaigns that have either just been started or do not generate much website traffic.'),
+      ),
+    );
+  }
 
   // Generate mark-up for adaptive style report labels.
   $report_title_additional = '';
@@ -793,6 +801,16 @@ function acquia_lift_report_ab($form, &$form_state, $agent, $agent_data) {
     'end' => $date_end_report,
   );
   $build['reports'] = $agent->buildCampaignReports($options);
+
+  if (!$build['reports']['#has_data']) {
+    // This campaign hasn't been shown yet, so there is no data for reporting.
+    return array(
+      'no_report' => array(
+        '#markup' => t('This campaign does not yet contain information about your visitors\' website interactions. This situation generally occurs for campaigns that have either just been started or do not generate much website traffic.'),
+      ),
+    );
+  }
+
   $build['reports']['#attached']['library'][] = array('acquia_lift', 'acquia_lift.reports');
 
   return $build;

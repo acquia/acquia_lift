@@ -131,7 +131,7 @@
     item += Drupal.t('Variations');
     item += '</span>\n';
 
-    item += '<ul class="menu">' + "\n";
+    item += '<ul class="navbar-menu">' + "\n";
     _.each(variations, function (variation, index, list) {
       item += Drupal.theme('acquiaLiftPreviewPageVariationMenuItem', variation);
     });
@@ -321,7 +321,7 @@
    * @return string
    */
   Drupal.theme.acquiaLiftOptionSetMenu = function (options) {
-    var menu = '<ul class="menu">' + "\n";
+    var menu = '<ul class="navbar-menu">' + "\n";
     var osID = options.osID;
     var os = options.os;
     var os_selector = os.selector;
@@ -422,7 +422,7 @@
    */
   Drupal.theme.acquiaLiftCampaignGoals = function (model, actions) {
     var goals = model.get('goals');
-    var html = '<ul class="menu">';
+    var html = '<ul class="navbar-menu">';
 
     if (goals.length == 0) {
       html += '<li>';

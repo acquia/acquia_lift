@@ -129,6 +129,9 @@ Drupal.behaviors.navbar = {
  *
  * It's very difficult to remove this class on a case-by-case basis, so
  * we just do it with JavaScript here.
+ *
+ * NOTE: This is only necessary with the .menu classes and not with the updated
+ * navbar module that uses .navbar-menu
  */
 Drupal.behaviors.navbarShortcuts = {
 

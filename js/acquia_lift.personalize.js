@@ -2678,6 +2678,7 @@
       // for all of the campaign attributes to be saved before updating the
       // status message displayed for the active campaign.
       this.listenTo(this.model, 'change:status', deferredRender);
+      this.listenTo(this.model, 'change:verified', deferredRender);
       this.render();
     },
 
@@ -2691,6 +2692,7 @@
       }
       else {
         var nextStatus = activeCampaign.get('nextStatus');
+        var changed = nextStatus.status != this.$el.find('a[href]').data('acquia-lift-campaign-status');
         this.$el
           .find('a[href]')
           .text(Drupal.t('@status campaign', {'@status': nextStatus.text}))
@@ -2704,7 +2706,9 @@
         } else {
           this.$el.find('a[href]').addClass('acquia-lift-menu-disabled');
         }
-        this.updateListeners();
+        if (changed) {
+          this.updateListeners();
+        }
       }
     },
 
@@ -3480,7 +3484,11 @@
 
         Drupal.ajax[elementId] = new Drupal.ajax(elementId, settingsElement, {
           url: Drupal.settings.basePath + 'acquia_lift/settings',
-          event: 'acquiaLiftSettingsUpdate'
+          event: 'acquiaLiftSettingsUpdate',
+          success: function (response, status) {
+            Drupal.ajax.prototype.success.call(this, response, status);
+            Drupal.attachBehaviors(settingsElement);
+          }
         });
 
         // Each time the queue synchronization is complete it means that

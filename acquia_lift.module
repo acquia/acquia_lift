@@ -2565,7 +2565,7 @@ function acquia_lift_settings_update() {
       'campaigns' => personalize_agent_get_settings(),
     )), TRUE),
   );
-  personalize_ajax_commands_deliver($commands);
+  return personalize_ajax_commands_deliver($commands, TRUE);
 }
 
 /**

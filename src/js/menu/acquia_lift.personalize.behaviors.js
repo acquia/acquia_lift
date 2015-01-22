@@ -396,7 +396,11 @@
 
         Drupal.ajax[elementId] = new Drupal.ajax(elementId, settingsElement, {
           url: Drupal.settings.basePath + 'acquia_lift/settings',
-          event: 'acquiaLiftSettingsUpdate'
+          event: 'acquiaLiftSettingsUpdate',
+          success: function (response, status) {
+            Drupal.ajax.prototype.success.call(this, response, status);
+            Drupal.attachBehaviors(settingsElement);
+          }
         });
 
         // Each time the queue synchronization is complete it means that

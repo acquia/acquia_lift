@@ -282,6 +282,11 @@ function acquia_lift_theme() {
       'path' => $path . '/theme',
       'file' => 'acquia_lift.navbar.theme.inc',
     ),
+    'menu_tree__acquia_lift_controls' => array(
+      'render element' => 'tree',
+      'function' => 'theme_acquia_lift_navbar_menu_tree',
+      'preprocess functions' => array('template_preprocess_acquia_lift_navbar_menu_tree'),
+    ),
   );
 }
 
@@ -1167,14 +1172,20 @@ function acquia_lift_library() {
     'js' => array(
       $path . '/js/acquia_lift.navbar.js' => $options,
     ),
-    'css' => array(
-      $path . '/css/acquia_lift.navbar.css' => array(),
-    ),
     'dependencies' => array(
       array('system', 'jquery'),
       array('system', 'jquery.once'),
     ),
   );
+
+  // If navbar is enabled before the class names were changed from .menu then include the old css.
+  if (module_exists('navbar') && !function_exists('template_preprocess_navbar_tab_wrapper')) {
+    $libraries['acquia_lift.navbar']['css'][$path . '/css/acquia_lift.navbar_1-5.css'] = array();
+  }
+  else {
+    // Navbar is not enabled, or it is enabled with the later menu class names.
+    $libraries['acquia_lift.navbar']['css'][$path . '/css/acquia_lift.navbar.css'] = array();
+  }
 
   // Toolbar module integration.
   $libraries['acquia_lift.toolbar'] = array(
@@ -2513,6 +2524,27 @@ function acquia_lift_preprocess_personalize_campaign_status_update(&$variables) 
     // Remove any option set enumerations.
     $variables['option_sets'] = array();
   }
+}
+
+/**
+ * Implements template_preprocess_HOOK() for theme_acquia_lift_navbar_menu_tree().
+ */
+function template_preprocess_acquia_lift_navbar_menu_tree(&$variables) {
+  $variables['tree'] = $variables['tree']['#children'];
+}
+
+/**
+ * Returns HTML for a wrapper for the acquia lift navbar subtree.
+ *
+ * @param $variables
+ *   An associative array containing:
+ *   - tree: An HTML string containing the tree's items.
+ *
+ * @see template_preprocess_navbar_menu_tree()
+ * @ingroup themeable
+ */
+function theme_acquia_lift_navbar_menu_tree(&$variables) {
+  return '<ul class="navbar-menu">' . $variables['tree'] . '</ul>';
 }
 
 /**

@@ -1179,7 +1179,7 @@ function acquia_lift_library() {
   );
 
   // If navbar is enabled before the class names were changed from .menu then include the old css.
-  if (module_exists('navbar') && !function_exists('template_preprocess_navbar_tab_wrapper')) {
+  if (module_exists('navbar') && !function_exists('template_preprocess_navbar_menu_tree')) {
     $libraries['acquia_lift.navbar']['css'][$path . '/css/acquia_lift.navbar_1-5.css'] = array();
   }
   else {

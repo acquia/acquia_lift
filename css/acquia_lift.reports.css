@@ -9,7 +9,8 @@
   border-color: #ccc;
   border-width: 1px 0;
   background: #fff;
-  transition: opacity .4s, position .4s 0 step-start, width .4s 0 step-start, height .4s 0 step-start;
+  -webkit-transition: opacity .4s, position .4s 0 step-start, width .4s 0 step-start, height .4s 0 step-start;
+          transition: opacity .4s, position .4s 0 step-start, width .4s 0 step-start, height .4s 0 step-start;
 }
 
 .lift-statistic-category.active {
@@ -113,7 +114,7 @@ html[dir="rtl"] .lift-graph-container .lift-graph-graph .tick text {
   float: left;
   width: 100%;
   height: 20em;
-  margin-bottom: 1.8em;
+  margin-bottom: 2.8em;
 }
 .lift-graph-graph .detail {
   width: .2em;
@@ -376,4 +377,40 @@ html[dir="rtl"] .lift-graph-result .label {
 }
 .lift-graph-result .toggle-enabled .line.disabled .action {
   opacity: .4;
+}
+
+.lift-graph-range-slider {
+  clear: both;
+  margin-right: 2.5em;
+  margin-left: 2.5em;
+  width: auto !important;
+}
+
+.acquia-lift-handle-value {
+  position: absolute;
+  width: 5em;
+  top: -2.6em;
+  left: 50%;
+  margin-left: -2.5em;
+  padding-top: .3em;
+  padding-bottom: .2em;
+  font-size: .88em;
+  font-weight: normal;
+  line-height: 1.4;
+  background-color: #fff;
+  border: 0.1em solid #ccc;
+  border-radius: .2em;
+  color: #333;
+  text-align: center;
+  text-decoration: none;
+}
+.acquia-lift-handle-value:after {
+  content: "";
+  display: block;
+  position: absolute;
+  border: 0.5em solid transparent;
+  border-top-color: #ccc;
+  bottom: -0.9em;
+  left: 50%;
+  margin-left: -0.5em;
 }

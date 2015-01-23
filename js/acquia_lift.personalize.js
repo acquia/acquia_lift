@@ -4,6 +4,8 @@
 
 (function(Drupal, $) {
 
+  var navbarMenuClassName = Drupal.settings.acquia_lift.menuClass;
+
   /**
    * Replaces spaces and underscored with dashes in a string.
    *
@@ -131,7 +133,7 @@
     item += Drupal.t('Variations');
     item += '</span>\n';
 
-    item += '<ul class="navbar-menu">' + "\n";
+    item += '<ul class="' + navbarMenuClassName + '">' + "\n";
     _.each(variations, function (variation, index, list) {
       item += Drupal.theme('acquiaLiftPreviewPageVariationMenuItem', variation);
     });
@@ -321,7 +323,7 @@
    * @return string
    */
   Drupal.theme.acquiaLiftOptionSetMenu = function (options) {
-    var menu = '<ul class="navbar-menu">' + "\n";
+    var menu = '<ul class="' + navbarMenuClassName + '">' + "\n";
     var osID = options.osID;
     var os = options.os;
     var os_selector = os.selector;
@@ -422,7 +424,7 @@
    */
   Drupal.theme.acquiaLiftCampaignGoals = function (model, actions) {
     var goals = model.get('goals');
-    var html = '<ul class="navbar-menu">';
+    var html = '<ul class="' + navbarMenuClassName + '">';
 
     if (goals.length == 0) {
       html += '<li>';
@@ -2145,7 +2147,7 @@
       if (this.model.get('name') !== data.campaign) {
         return;
       }
-      var menuClass = this.$el.find('ul.menu').length > 0 ? 'menu' : 'navbar-menu';
+      var menuClass = Drupal.settings.acquia_lift.menuClass;
       if (data.start) {
         if (data.variationIndex < 0) {
           // If add mode, then create a temporary variation listing.
@@ -3225,7 +3227,7 @@
                     // link.
                     var $menu = $('[data-acquia-lift-personalize-type="campaigns"]');
                     var scrollable = document.createElement('ul');
-                    scrollable.className += "navbar-menu acquia-lift-scrollable";
+                    scrollable.className += Drupal.settings.acquia_lift.menuClass + " acquia-lift-scrollable";
                     $menu.wrap('<div class="menu-wrapper">').before(scrollable);
                   }
                   break;

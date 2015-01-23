@@ -692,7 +692,7 @@
       if (this.model.get('name') !== data.campaign) {
         return;
       }
-      var menuClass = this.$el.find('ul.menu').length > 0 ? 'menu' : 'navbar-menu';
+      var menuClass = Drupal.settings.acquia_lift.menuClass;
       if (data.start) {
         if (data.variationIndex < 0) {
           // If add mode, then create a temporary variation listing.

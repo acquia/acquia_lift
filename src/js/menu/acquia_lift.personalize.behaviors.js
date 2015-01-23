@@ -142,7 +142,7 @@
                     // link.
                     var $menu = $('[data-acquia-lift-personalize-type="campaigns"]');
                     var scrollable = document.createElement('ul');
-                    scrollable.className += "navbar-menu acquia-lift-scrollable";
+                    scrollable.className += Drupal.settings.acquia_lift.menuClass + " acquia-lift-scrollable";
                     $menu.wrap('<div class="menu-wrapper">').before(scrollable);
                   }
                   break;

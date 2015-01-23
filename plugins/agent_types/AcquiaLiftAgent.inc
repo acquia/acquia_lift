@@ -2198,7 +2198,7 @@ class AcquiaLiftReport extends AcquiaLiftReportBase {
       'stability' => $this->buildStabilityReport($report_data),
       'targeting' => $this->buildReportContextSelection($report_data),
     );
-    $reports['#has_data'] = $reports['overview']['shown']['#title'] > 0;
+    $reports['#has_data'] = isset($reports['overview']['shown']['#title']) ? $reports['overview']['shown']['#title'] > 0 : FALSE;
 
     if (!is_array($report_data['status']) || !is_array($report_data['confidence']) || !is_array($report_data['targeting']) || !is_array($report_data['potential_context'])) {
       drupal_set_message(t('There was a problem retrieving the report data.  Please try again later.'), 'error');
@@ -2263,7 +2263,7 @@ class AcquiaLiftReport extends AcquiaLiftReportBase {
     // Targeting report data.
     if (!isset($report_data['targeting'])) {
       $this->loadTargetingData($report_data);
-      if (isset($report_data['raw']['targeting']['error'])) {
+      if (isset($report_data['raw']['targeting']['error']) || !isset($report_data['raw']['targeting']['data']['items'])) {
         $report_data['targeting'] = FALSE;
       }
       else {
@@ -2420,15 +2420,17 @@ class AcquiaLiftReport extends AcquiaLiftReportBase {
         'id' => 'acquia-lift-overview-type',
       )
     );
-    $build['total_running'] = array(
-      '#type' => 'container',
-      '#theme' => 'acquia_lift_report_overview',
-      '#attributes' => array(
-        'id' => 'acquia-lift-overview-running',
-      ),
-      '#title' => $overview_report['time_running'],
-      '#description' => t('total time running'),
-    );
+    if (isset($overview_report['time_running'])) {
+      $build['total_running'] = array(
+        '#type' => 'container',
+        '#theme' => 'acquia_lift_report_overview',
+        '#attributes' => array(
+          'id' => 'acquia-lift-overview-running',
+        ),
+        '#title' => $overview_report['time_running'],
+        '#description' => t('total time running'),
+      );
+    }
     $build['shown'] = array(
       '#type' => 'container',
       '#theme' => 'acquia_lift_report_overview',

@@ -20,10 +20,6 @@
 #navbar-administration .navbar-tray .edit-shortcuts {
   padding: 1em 1.3333em;
 }
-#navbar-administration .navbar-tray-vertical .navbar-menu-item {
-  padding-right: 0;
-  margin-right: 3em;
-}
 .navbar-box a {
   cursor: pointer;
   text-decoration: none;
@@ -67,7 +63,6 @@
   padding-right: 1px; /* LTR */
 }
 #navbar-administration .navbar-tray-vertical > .navbar-lining:before {
-  background-color: #ffffff;
   border-right: 1px solid #aaaaaa; /* LTR */
   box-shadow: -1px 0 5px 2px rgba(0, 0, 0, 0.3333); /* LTR */
   width: 239px;
@@ -87,41 +82,41 @@
 #navbar-administration .navbar-tray a.navbar-active {
   color: #000;
 }
-#navbar-administration .navbar-tray-horizontal .menu {
+#navbar-administration .navbar-tray-horizontal .navbar-menu {
   background-color: #ffffff;
 }
-#navbar-administration .navbar-tray-horizontal .menu .navbar-level-1 + .navbar-level-1 {
+#navbar-administration .navbar-tray-horizontal .navbar-menu .navbar-level-1 + .navbar-level-1 {
   border-left: 1px solid #dddddd; /* LTR */
 }
-#navbar-administration .navbar-tray-horizontal .menu .navbar-level-1:last-child {
+#navbar-administration .navbar-tray-horizontal .navbar-menu .navbar-level-1:last-child {
   border-right: 1px solid #dddddd; /* LTR */
 }
-#navbar-administration .navbar-tray-vertical .menu li + li {
+#navbar-administration .navbar-tray-vertical .navbar-menu li + li {
   border-top: 1px solid #dddddd;
 }
-#navbar-administration .navbar-tray-vertical .menu li:last-child {
+#navbar-administration .navbar-tray-vertical .navbar-menu li:last-child {
   border-bottom: 1px solid #dddddd;
 }
-#navbar-administration .navbar-tray-vertical .menu .menu li {
+#navbar-administration .navbar-tray-vertical .navbar-menu .navbar-menu li {
   border: 0 none;
 }
-#navbar-administration .navbar-tray-vertical .menu ul ul {
+#navbar-administration .navbar-tray-vertical .navbar-menu ul ul {
   border-bottom: 1px solid #dddddd;
   border-top: 1px solid #dddddd;
 }
-#navbar-administration .navbar-tray-vertical .menu li:last-child > ul {
+#navbar-administration .navbar-tray-vertical .navbar-menu li:last-child > ul {
   border-bottom: 0;
 }
-#navbar-administration .navbar-tray-vertical .menu .menu .menu {
+#navbar-administration .navbar-tray-vertical .navbar-menu .navbar-menu .navbar-menu {
   margin-left: 1.3333em; /* LTR */
 }
-#navbar-administration .navbar-tray-vertical .menu .menu .menu .menu {
+#navbar-administration .navbar-tray-vertical .navbar-menu .navbar-menu .navbar-menu .navbar-menu {
   margin-left: 0.25em; /* LTR */
 }
-#navbar-administration .menu .menu a {
+#navbar-administration .navbar-menu .navbar-menu a {
   color: #434343;
 }
-#navbar-administration .navbar-tray-vertical .menu .menu .menu a {
+#navbar-administration .navbar-tray-vertical .navbar-menu .navbar-menu .navbar-menu a {
   padding-left: 0.6667em; /* LTR */
 }
 
@@ -158,5 +153,7 @@
  */
 #navbar-administration *:before,
 #navbar-administration *:after {
+  -webkit-box-sizing: content-box;
+  -moz-box-sizing: content-box;
   box-sizing: content-box;
 }

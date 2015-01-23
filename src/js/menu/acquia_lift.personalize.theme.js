@@ -4,6 +4,8 @@
 
 (function(Drupal, $) {
 
+  var navbarMenuClassName = Drupal.settings.acquia_lift.menuClass;
+
   /**
    * Replaces spaces and underscored with dashes in a string.
    *
@@ -131,7 +133,7 @@
     item += Drupal.t('Variations');
     item += '</span>\n';
 
-    item += '<ul class="menu">' + "\n";
+    item += '<ul class="' + navbarMenuClassName + '">' + "\n";
     _.each(variations, function (variation, index, list) {
       item += Drupal.theme('acquiaLiftPreviewPageVariationMenuItem', variation);
     });
@@ -321,7 +323,7 @@
    * @return string
    */
   Drupal.theme.acquiaLiftOptionSetMenu = function (options) {
-    var menu = '<ul class="menu">' + "\n";
+    var menu = '<ul class="' + navbarMenuClassName + '">' + "\n";
     var osID = options.osID;
     var os = options.os;
     var os_selector = os.selector;
@@ -422,7 +424,7 @@
    */
   Drupal.theme.acquiaLiftCampaignGoals = function (model, actions) {
     var goals = model.get('goals');
-    var html = '<ul class="menu">';
+    var html = '<ul class="' + navbarMenuClassName + '">';
 
     if (goals.length == 0) {
       html += '<li>';

@@ -4,8 +4,11 @@
  * RTL styling for navbar.base.css
  */
 
+#navbar-administration ul.navbar-menu {
+  text-align: right;
+}
 /* Override core system.menus.css */
-#navbar-administration ul.menu li {
+#navbar-administration ul.navbar-menu li {
   margin-right: 0;
 }
 /* Present the admin navbar tabs horizontally as a default on user agents that

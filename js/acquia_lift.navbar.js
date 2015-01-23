@@ -11,7 +11,7 @@ Drupal.behaviors.acquiaLiftNavbarMenu = {
   attach: function (context) {
     if ('drupalNavbarMenu' in $.fn) {
       $('.navbar-menu-acquia-lift-controls')
-        .children('.menu')
+        .children('.menu, .navbar-menu')
         .drupalNavbarMenu({
           activeTrail: false,
           findItem: function ($list, $menu) {

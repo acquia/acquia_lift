@@ -397,6 +397,10 @@
         Drupal.ajax[elementId] = new Drupal.ajax(elementId, settingsElement, {
           url: Drupal.settings.basePath + 'acquia_lift/settings',
           event: 'acquiaLiftSettingsUpdate',
+          progress: {
+            type: '',
+            message: '',
+          },
           success: function (response, status) {
             Drupal.ajax.prototype.success.call(this, response, status);
             Drupal.attachBehaviors(settingsElement);

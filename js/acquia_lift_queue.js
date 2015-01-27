@@ -19,8 +19,9 @@
       url: queue_url,
       type: "POST",
       success: function (response, status, jqXHR) {
-        $(document).trigger('acquiaLiftQueueSyncComplete');
+        Drupal.settings.acquia_lift.sync_queue = 0;
         queueIsProcessing = false;
+        $(document).trigger('acquiaLiftQueueSyncComplete');
       },
       complete: function (jqXHR, status) {
         Drupal.acquiaLift.queueCount--;

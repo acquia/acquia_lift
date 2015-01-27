@@ -98,3 +98,41 @@ Scenario: Create the simplest A/B campaign.
   When I wait for Lift to synchronize
   Then menu item "Reports" should be "active"
   And menu item "Start campaign" should be "active"
+
+  @api @javascript @campaign
+  Scenario:  As a Marketer I want to quickly create several A/B test campaigns for later use.
+    Given I am logged in as a user with the "Marketer" role
+    And I am on the homepage
+    When I click "Acquia Lift" in the "menu" region
+    And I wait for AJAX to finish
+    Then I should see the link "Campaigns" in the "lift_tray" region
+    When I hover over "Campaigns" in the "lift_tray" region
+    And I wait for AJAX to finish
+    Then I should see the link "Add campaign" in the "lift_tray" region
+    When I click "Add campaign" in the "lift_tray" region
+    And I wait for AJAX to finish
+    Then I should see the modal with title "Create a campaign"
+    When I click "A/B test" in the "modal_content" region
+    And I wait for AJAX to finish
+    Then I should see the modal with title "Create a campaign"
+    When I fill in "Test campaign 2" for "agent_basic_info[title]"
+    And I press the "Create campaign" button
+    And I wait for AJAX to finish
+    Then I should see the message "Click the element you want to change in Variation #1" in the messagebox
+    When I wait for AJAX to finish
+    Then I should see the text "Campaign: Test campaign 2" in the "lift_tray_campaign_header" region
+    When I hover over "Campaign: Test campaign 2" in the "lift_tray" region
+    And I wait for AJAX to finish
+    Then I should see the link "Add campaign" in the "lift_tray" region
+    When I click "Add campaign" in the "lift_tray" region
+    And I wait for AJAX to finish
+    Then I should see the modal with title "Create a campaign"
+    When I click "A/B test" in the "modal_content" region
+    And I wait for AJAX to finish
+    Then I should see the modal with title "Create a campaign"
+    When I fill in "Test campaign 3" for "agent_basic_info[title]"
+    And I press the "Create campaign" button
+    And I wait for AJAX to finish
+    Then I should see the message "Click the element you want to change in Variation #1" in the messagebox
+    When I wait for AJAX to finish
+    Then I should see the text "Campaign: Test campaign 3" in the "lift_tray_campaign_header" region

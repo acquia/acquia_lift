@@ -6,7 +6,7 @@ Feature: Creation of Simple A/B campaigns from unified navigation.
   I want the ability to create a campaign in context.
 
 @api @javascript @campaign
-Scenario: Create the simplest A/B campaign.
+Scenario: Create the simplest A/B campaign from start to finish.
   Given I am logged in as a user with the "Marketer" role
   And I am on the homepage
   When I click "Acquia Lift" in the "menu" region
@@ -50,9 +50,11 @@ Scenario: Create the simplest A/B campaign.
   And menu item "Reports" should be "inactive"
   And menu item "Start campaign" should be "inactive"
   And I should not see the modal
+  And the variation edit mode is "active"
   When I click "#site-name a span" element in the "page_content" region
   And I wait for AJAX to finish
   Then I should see the text "<SPAN>" in the "dialog_variation_type" region
+  And the variation edit mode is "inactive"
   When I click "Edit text" in the "dialog_variation_type" region
   And I wait for AJAX to finish
   Then I should not see a "#acquia-lift-modal-variation-type-select-dialog" element
@@ -121,12 +123,14 @@ Scenario: Create the simplest A/B campaign.
     Then I should see the message "Click the element you want to change in Variation #1" in the messagebox
     When I wait for AJAX to finish
     Then I should see the text "Campaign: Test campaign 2" in the "lift_tray_campaign_header" region
+    And the variation edit mode is "active"
     When I hover over "Campaign: Test campaign 2" in the "lift_tray" region
     And I wait for AJAX to finish
     Then I should see the link "Add campaign" in the "lift_tray" region
     When I click "Add campaign" in the "lift_tray" region
     And I wait for AJAX to finish
     Then I should see the modal with title "Create a campaign"
+    And the variation edit mode is "inactive"
     When I click "A/B test" in the "modal_content" region
     And I wait for AJAX to finish
     Then I should see the modal with title "Create a campaign"
@@ -136,3 +140,4 @@ Scenario: Create the simplest A/B campaign.
     Then I should see the message "Click the element you want to change in Variation #1" in the messagebox
     When I wait for AJAX to finish
     Then I should see the text "Campaign: Test campaign 3" in the "lift_tray_campaign_header" region
+    And the variation edit mode is "active"

@@ -290,6 +290,32 @@ class FeatureContext extends RawDrupalContext implements SnippetAcceptingContext
     $element->click();
   }
 
+  /**
+   * @Then the variation edit mode is :state
+   */
+  public function assertVariationEditMode($expected_state) {
+    if (!in_array($expected_state, array('active','inactive','hidden','disabled'))) {
+      throw new \Exception(sprintf('Invalid expected state for variation toggle: %s', $expected_state));
+    }
+    $element = $this->findElementInRegion('#acquia-lift-menu-page-variation-toggle', 'lift_tray');
+    if (empty($element)) {
+      throw new \Exception(sprintf('The variation toggle edit link cannot be found on the page %s', $this->getSession()->getCurrentUrl()));
+    }
+    $current_state = 'inactive';
+    if ($element->hasClass('acquia-lift-page-variation-toggle-hidden')) {
+      $current_state = 'hidden';
+    }
+    else if ($element->hasClass('acquia-lift-page-variation-toggle-disabled')) {
+      $current_state = 'disabled';
+    }
+    else if ($element->hasClass('acquia-lift-page-variation-toggle-active')) {
+      $current_state = 'active';
+    }
+    if ($current_state !== $expected_state) {
+      throw new \Exception(sprintf('The variation toggle edit link is currently in the %s state and not the expected %s state.', $current_state, $state));
+    }
+  }
+
 
   /**
    * @Then :selector element in the :region region should have :class class

@@ -9,14 +9,16 @@
 /**
  * Batch syncs all campaigns to Lift.
  */
-function acquia_lift_batch_sync_campaigns() {
+function acquia_lift_batch_sync_campaigns($agents = array()) {
   // First delete the queue because we are about to sync everything now.
   acquia_lift_delete_queue();
   // Now get all sync operations for all existing Acquia Lift agents.
-  $agents = array();
-  foreach (acquia_lift_get_agent_types() as $type => $info) {
-    $agents = array_merge($agents, personalize_agent_load_by_type($type));
+  if (empty($agents)) {
+    foreach (acquia_lift_get_agent_types() as $type => $info) {
+      $agents = array_merge($agents, personalize_agent_load_by_type($type));
+    }
   }
+
   $operations = acquia_lift_get_sync_operations_for_agents($agents);
 
   $batch_operations = array();
@@ -26,7 +28,7 @@ function acquia_lift_batch_sync_campaigns() {
   $batch = array(
     'operations' => $batch_operations,
     'finished' => 'acquia_lift_batch_finished',
-    'title' => t('Syncing campaigns to Acquia Lift'),
+    'title' => t('Syncing campaign components to Acquia Lift'),
     'init_message' => t('Starting campaign sync.'),
     'progress_message' => t('Processed @current out of @total.'),
     'error_message' => t('Lift campaign sync has encountered an error.'),

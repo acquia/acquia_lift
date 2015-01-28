@@ -2203,14 +2203,21 @@ function acquia_lift_form_personalize_agent_form_alter(&$form, &$form_state) {
     drupal_set_message(t('Your Acquia Lift account info has not been configured. Acquia Lift campaigns can not be created until you configure your account info !here', array('!here' => l('here', 'admin/config/content/personalize/acquia_lift'))), 'error');
   }
 
+  if (!empty($form['agent_form']['agent_fieldset']['agent_basic']['#agent'])) {
+    $agent = $form['agent_form']['agent_fieldset']['agent_basic']['#agent'];
+    if (!empty($agent->machine_name)) {
+      $agent_name = $agent->machine_name;
+    }
+  }
+
   // If we're editing an existing agent, add a "Reset data" button next to
   // the Pause/Resume button.
-  if (isset($form['agent_form']['agent_fieldset']['header']['toggle_form'])) {
-    $subform = array(
+  if (isset($agent_name) && acquia_lift_owns_agent($agent) && isset($form['agent_form']['agent_fieldset']['header']['toggle_form'])) {
+    $reset_form = array(
       '#prefix' => '<div id="personalize-acquia-lift-reset-form">',
       '#suffix' => '</div>'
     );
-    $subform['actions']['reset'] = array(
+    $reset_form['actions']['reset'] = array(
       '#prefix' => '<div id="personalize-acquia-lift-reset">',
       '#suffix' => '</div>',
       '#type' => 'submit',
@@ -2225,20 +2232,38 @@ function acquia_lift_form_personalize_agent_form_alter(&$form, &$form_state) {
         'effect' => 'fade',
       )
     );
+    $reset_form['actions']['reset']['#submit'] = array('acquia_lift_reset_submit');
+    $form['agent_form']['agent_fieldset']['header']['reset_lift_agent'] = $reset_form;
+    // Now the Sync button.
+    $sync_form = array(
+      '#prefix' => '<div id="personalize-acquia-lift-sync-form">',
+      '#suffix' => '</div>'
+    );
+    $sync_form['agent_name'] = array(
+      '#type' => 'value',
+      '#value' => $agent_name
+    );
+    $sync_form['actions']['sync'] = array(
+      '#prefix' => '<div id="personalize-acquia-lift-sync">',
+      '#suffix' => '</div>',
+      '#type' => 'submit',
+      '#name' => 'sync_submit',
+      '#value' => t('Sync with Lift'),
+      '#attributes' => array(
+        'class' => array('action-item-primary-active'),
+      ),
+    );
+    $sync_form['actions']['sync']['#submit'] = array('acquia_lift_sync_campaign_submit');
+    $form['agent_form']['agent_fieldset']['header']['sync_lift_agent'] = $sync_form;
   }
-  $subform['actions']['reset']['#submit'] = array('acquia_lift_reset_submit');
-  $form['agent_form']['agent_fieldset']['header']['reset_lift_agent'] = $subform;
 
   // Show the campaign fieldset by default when editing a page variation
   // campaign as the option set form is hidden by default.
   // @see acquia_lift_personalize_agent_page_alter().
-  if (!empty($form['agent_form']['agent_fieldset']['agent_basic']['#agent'])) {
-    $agent = $form['agent_form']['agent_fieldset']['agent_basic']['#agent'];
-    if (!empty($agent->machine_name)) {
-      $agent_instance = personalize_agent_load_agent($agent->machine_name);
-      if ($agent_instance instanceof AcquiaLiftPageVariationInterface) {
-        $form['agent_form']['agent_fieldset']['#collapsed'] = FALSE;
-      }
+  if (isset($agent_name)) {
+    $agent_instance = personalize_agent_load_agent($agent_name);
+    if ($agent_instance instanceof AcquiaLiftPageVariationInterface) {
+      $form['agent_form']['agent_fieldset']['#collapsed'] = FALSE;
     }
   }
 }
@@ -2283,6 +2308,20 @@ function personalize_acquia_lift_ajax_callback($form, $form_state) {
  */
 function acquia_lift_reset_submit($form, $form_state) {
   acquia_lift_reset_agent($form_state['values']['agent']);
+}
+
+/**
+ * Submit callback for the "Sync with Lift" button.
+ */
+function acquia_lift_sync_campaign_submit($form, $form_state) {
+  module_load_include('inc', 'acquia_lift', 'acquia_lift.batch');
+  if (empty($form_state['values']['agent_name'])) {
+    return;
+  }
+  $agent_name = $form_state['values']['agent_name'];
+  if ($agent = personalize_agent_load($agent_name)) {
+    acquia_lift_batch_sync_campaigns(array($agent_name => $agent));
+  }
 }
 
 /**

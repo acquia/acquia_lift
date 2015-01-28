@@ -2297,9 +2297,9 @@ function acquia_lift_reset_agent($agent_name) {
 
 
 /**
- * Implements hook_personalize_agent_end_date_form_alter().
+ * Implements hook_personalize_agent_date_form_alter().
  */
-function acquia_lift_personalize_agent_end_date_form_alter(&$form, $agent_name) {
+function acquia_lift_personalize_agent_date_form_alter(&$form, $agent_name) {
   if (empty($agent_name)) {
     return;
   }
@@ -2313,7 +2313,7 @@ function acquia_lift_personalize_agent_end_date_form_alter(&$form, $agent_name) 
     // picker element that goes with it.
     $specified = $options['specified'];
     unset($options['specified']);
-    $options['winner'] = t('Run until a winner is found');
+    $options['winner'] = t('End when a winner is determined');
     $options['specified'] = $specified;
     $form['campaign_end']['#options'] = $options;
     if (isset($data['stop_on_winner']) && $data['stop_on_winner']) {

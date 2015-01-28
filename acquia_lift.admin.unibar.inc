@@ -1553,7 +1553,10 @@ function acquia_lift_campaign_start_form($form, &$form_state, $agent_data) {
     '#default_value' => $agent_data->data['decision_style'] == 'adaptive',
   );
   module_load_include('inc', 'personalize', 'personalize.admin');
-  $form['campaign_end'] = personalize_agent_end_date_form($agent_data->machine_name);
+  $form['campaign_dates'] = personalize_agent_date_form($agent_data->machine_name);
+  // Rather than "Start manually", the option is really to start it now since
+  // the user has triggered this via a "start campaign" form.
+  $form['campaign_dates']['campaign_start']['#options']['none'] = t('Start now');
 
   $form['actions']['submit_form'] = array(
     '#type' => 'submit',
@@ -1573,7 +1576,7 @@ function acquia_lift_campaign_start_form($form, &$form_state, $agent_data) {
  */
 function acquia_lift_campaign_start_form_validate($form, &$form_state) {
   module_load_include('inc', 'personalize', 'personalize.admin');
-  personalize_agent_end_date_form_validate($form_state['values']['campaign_end']);
+  personalize_agent_date_form_validate($form_state['values']);
 }
 
 /**
@@ -1587,10 +1590,13 @@ function acquia_lift_campaign_start_form_submit($form, &$form_state) {
 
   // Set the end date.
   module_load_include('inc', 'personalize', 'personalize.admin');
-  personalize_agent_end_date_form_submit($agent_data->machine_name, $form_state['values']['campaign_end']);
+  personalize_agent_date_form_submit($agent_data->machine_name, $form_state['values']);
 
   // Start the campaign.
-  $form_state['acquia_lift']['started'] = personalize_agent_set_status($agent_data->machine_name, PERSONALIZE_STATUS_RUNNING);
+  $form_state['acquia_lift']['started'] = FALSE;
+  if ($form_state['values']['campaign_start'] == 'none') {
+    $form_state['acquia_lift']['started'] = personalize_agent_set_status($agent_data->machine_name, PERSONALIZE_STATUS_RUNNING);
+  }
 }
 
 /**
@@ -1599,13 +1605,25 @@ function acquia_lift_campaign_start_form_submit($form, &$form_state) {
  */
 function acquia_lift_campaign_start_complete_callback($form, $form_state) {
   $agent_data = $form_state['values']['agent'];
+
+  // Determine the message to display.
   if ($form_state['acquia_lift']['started']) {
     $message = t('The %campaign campaign has been started', array(
       '%campaign' => $agent_data->label,
     ));
   }
   else {
-    $message = t('There was a problem starting your campaign.');
+    if ($form_state['values']['campaign_start'] == 'specified') {
+      $start_variable = _personalize_agent_get_starttime_variable($agent_data->machine_name);
+      $start_date = variable_get($start_variable, 0);
+      $message = t('The %campaign campaign will be started on %date', array(
+        '%campaign' => $agent_data->label,
+        '%date' => format_date($start_date, 'custom', 'M d, Y'),
+      ));
+    }
+    else {
+      $message = t('There was a problem starting your campaign.');
+    }
   }
   return array(
     ctools_modal_command_dismiss(),

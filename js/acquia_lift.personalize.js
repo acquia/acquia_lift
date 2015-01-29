@@ -4,6 +4,8 @@
 
 (function(Drupal, $) {
 
+  var navbarMenuClassName = Drupal.settings.acquia_lift.menuClass;
+
   /**
    * Replaces spaces and underscored with dashes in a string.
    *
@@ -131,7 +133,7 @@
     item += Drupal.t('Variations');
     item += '</span>\n';
 
-    item += '<ul class="menu">' + "\n";
+    item += '<ul class="' + navbarMenuClassName + '">' + "\n";
     _.each(variations, function (variation, index, list) {
       item += Drupal.theme('acquiaLiftPreviewPageVariationMenuItem', variation);
     });
@@ -321,7 +323,7 @@
    * @return string
    */
   Drupal.theme.acquiaLiftOptionSetMenu = function (options) {
-    var menu = '<ul class="menu">' + "\n";
+    var menu = '<ul class="' + navbarMenuClassName + '">' + "\n";
     var osID = options.osID;
     var os = options.os;
     var os_selector = os.selector;
@@ -422,7 +424,7 @@
    */
   Drupal.theme.acquiaLiftCampaignGoals = function (model, actions) {
     var goals = model.get('goals');
-    var html = '<ul class="menu">';
+    var html = '<ul class="' + navbarMenuClassName + '">';
 
     if (goals.length == 0) {
       html += '<li>';
@@ -2145,6 +2147,7 @@
       if (this.model.get('name') !== data.campaign) {
         return;
       }
+      var menuClass = Drupal.settings.acquia_lift.menuClass;
       if (data.start) {
         if (data.variationIndex < 0) {
           // If add mode, then create a temporary variation listing.
@@ -2154,10 +2157,10 @@
           var variationNumber = Math.max(nextIndex, 1);
           if (nextIndex == 0) {
             // Add a control variation display as well.
-            this.$el.find('ul.menu').append(Drupal.theme('acquiaLiftNewVariationMenuItem', -1));
+            this.$el.find('ul.' + menuClass).append(Drupal.theme('acquiaLiftNewVariationMenuItem', -1));
           }
-          this.$el.find('ul.menu').append(Drupal.theme('acquiaLiftNewVariationMenuItem', variationNumber));
-          this.$el.find('ul.menu li.acquia-lift-empty').hide();
+          this.$el.find('ul.' + menuClass).append(Drupal.theme('acquiaLiftNewVariationMenuItem', variationNumber));
+          this.$el.find('ul.' + menuClass + ' li.acquia-lift-empty').hide();
           // Indicate in the model that we are adding.
           this.model.set('activeVariation', -1);
           this.render(this.model);
@@ -2174,7 +2177,7 @@
         Drupal.acquiaLiftUI.utilities.updateNavbar();
       } else {
         // If exiting, remove any temporary variation listings.
-        this.$el.find('ul.menu li.acquia-lift-empty').show();
+        this.$el.find('ul.' + menuClass + ' li.acquia-lift-empty').show();
         this.$el.find('.acquia-lift-page-variation-new').closest('li').remove();
         // If the model is set at adding, change it back to the control option.
         if (this.model.get('activeVariation') == -1) {
@@ -3224,7 +3227,7 @@
                     // link.
                     var $menu = $('[data-acquia-lift-personalize-type="campaigns"]');
                     var scrollable = document.createElement('ul');
-                    scrollable.className += "menu acquia-lift-scrollable";
+                    scrollable.className += Drupal.settings.acquia_lift.menuClass + " acquia-lift-scrollable";
                     $menu.wrap('<div class="menu-wrapper">').before(scrollable);
                   }
                   break;

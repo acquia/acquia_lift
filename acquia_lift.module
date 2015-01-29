@@ -282,6 +282,11 @@ function acquia_lift_theme() {
       'path' => $path . '/theme',
       'file' => 'acquia_lift.navbar.theme.inc',
     ),
+    'menu_tree__acquia_lift_controls' => array(
+      'render element' => 'tree',
+      'function' => 'theme_acquia_lift_navbar_menu_tree',
+      'preprocess functions' => array('template_preprocess_acquia_lift_navbar_menu_tree'),
+    ),
   );
 }
 
@@ -1167,13 +1172,28 @@ function acquia_lift_library() {
     'js' => array(
       $path . '/js/acquia_lift.navbar.js' => $options,
     ),
-    'css' => array(
-      $path . '/css/acquia_lift.navbar.css' => array(),
-    ),
     'dependencies' => array(
       array('system', 'jquery'),
       array('system', 'jquery.once'),
     ),
+  );
+
+  // If navbar is enabled before the class names were changed from .menu then include the old css.
+  if (acquia_lift_using_older_navbar()) {
+    $libraries['acquia_lift.navbar']['css'][$path . '/css/acquia_lift.navbar_1-5.css'] = array();
+  }
+  else {
+    // Navbar is not enabled, or it is enabled with the later menu class names.
+    $libraries['acquia_lift.navbar']['css'][$path . '/css/acquia_lift.navbar.css'] = array();
+  }
+  // Save the menu class name to be used.
+  $libraries['acquia_lift.navbar']['js'][] = array(
+    'data' => array(
+      'acquia_lift' => array(
+        'menuClass' => acquia_lift_unibar_menu_class(),
+      ),
+    ),
+    'type' => 'setting'
   );
 
   // Toolbar module integration.
@@ -1238,6 +1258,15 @@ function acquia_lift_library() {
       array('acquia_lift', 'acquia_lift.navbar.displace'),
       array('acquia_lift', 'acquia_lift.navbar.menu'),
     ),
+  );
+  // Set the menu class to be used.
+  $libraries['acquia_lift.unified.navbar']['js'][] = array(
+    'data' => array(
+      'acquia_lift' => array(
+        'menuClass' => acquia_lift_unibar_menu_class(),
+      ),
+    ),
+    'type' => 'setting'
   );
 
   // Only load navbar.overlay if overlay is enabled.
@@ -2029,6 +2058,26 @@ function _acquia_lift_using_unified_navbar() {
 }
 
 /**
+ * Helper function to determine if an older version of navbar is in use.
+ *
+ * The main difference to be dealt with here is that in navbar <= 1.5 the
+ * main menu class used is 'menu' while later versions standardized to
+ * 'navbar-menu' to avoid conflicts with the standard menu system.
+ */
+function acquia_lift_using_older_navbar() {
+  // The menu tree preprocessor was added after navbar 1.5 in order to handle applying
+  // the updated navbar-menu class.
+  return module_exists('navbar') && !function_exists('template_preprocess_navbar_menu_tree');
+}
+
+/**
+ * Helper function to determine the menu class name to use for unibar structure.
+ */
+function acquia_lift_unibar_menu_class() {
+  return acquia_lift_using_older_navbar() ? 'menu' : 'navbar-menu';
+}
+
+/**
  * Create and attach the assets for Acquia Lift navigation to an element on the
  * page.
  *
@@ -2552,6 +2601,27 @@ function acquia_lift_preprocess_personalize_campaign_status_update(&$variables) 
     // Remove any option set enumerations.
     $variables['option_sets'] = array();
   }
+}
+
+/**
+ * Implements template_preprocess_HOOK() for theme_acquia_lift_navbar_menu_tree().
+ */
+function template_preprocess_acquia_lift_navbar_menu_tree(&$variables) {
+  $variables['tree'] = $variables['tree']['#children'];
+}
+
+/**
+ * Returns HTML for a wrapper for the acquia lift navbar subtree.
+ *
+ * @param $variables
+ *   An associative array containing:
+ *   - tree: An HTML string containing the tree's items.
+ *
+ * @see template_preprocess_navbar_menu_tree()
+ * @ingroup themeable
+ */
+function theme_acquia_lift_navbar_menu_tree(&$variables) {
+  return '<ul class="' . acquia_lift_unibar_menu_class() . '">' . $variables['tree'] . '</ul>';
 }
 
 /**

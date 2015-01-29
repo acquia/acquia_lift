@@ -2,7 +2,7 @@
  * Builds a nested accordion widget.
  *
  * Invoke on an HTML list element with the jQuery plugin pattern.
- * - For example, $('.menu').drupalNavbarMenu();
+ * - For example, $('.navbar-menu').drupalNavbarMenu();
  */
 
 (function ($, Drupal) {
@@ -234,4 +234,4 @@
     return '<button class="' + options['class'] + '"><span class="action">' + options.action + '</span><span class="label">' + options.text + '</span></button>';
   };
 
-}(Drupal.jQuery, Drupal));
+}(jQuery, Drupal));

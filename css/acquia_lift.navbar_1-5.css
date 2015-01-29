@@ -1,6 +1,6 @@
 /**
  * @file
- * Styles for integrating Personalize with the Navbar module (version > 1.5).
+ * Styles for integrating Personalize with the Navbar module (version <= 1.5).
  */
 /**
  * @file
@@ -65,13 +65,13 @@
   margin-top: .88em;
   margin-bottom: .88em;
 }
-#navbar-administration .navbar-level-1 .menu-wrapper > .navbar-menu *:not(select),
-#navbar-administration .navbar-level-1 .navbar-menu *:not(select) {
+#navbar-administration .navbar-level-1 .menu-wrapper > .menu *:not(select),
+#navbar-administration .navbar-level-1 .menu *:not(select) {
   line-height: 1.5;
 }
 
 /* Horizontal dropdowns */
-#navbar-administration .navbar-tray-acquia-lift.navbar-tray-horizontal .navbar-menu li:hover ul {
+#navbar-administration .navbar-tray-acquia-lift.navbar-tray-horizontal .menu li:hover ul {
   display: block;
 }
 #navbar-administration .navbar-tray-acquia-lift.navbar-tray-horizontal .navbar-level-1 > ul, #navbar-administration .navbar-tray-acquia-lift.navbar-tray-horizontal .navbar-level-1 > .menu-wrapper {
@@ -83,8 +83,8 @@
   position: absolute;
   top: 100%;
 }
-#navbar-administration .navbar-tray-acquia-lift.navbar-tray-horizontal .navbar-level-1 > .menu-wrapper > .navbar-menu,
-#navbar-administration .navbar-tray-acquia-lift.navbar-tray-horizontal .navbar-level-1 > .navbar-menu {
+#navbar-administration .navbar-tray-acquia-lift.navbar-tray-horizontal .navbar-level-1 > .menu-wrapper > .menu,
+#navbar-administration .navbar-tray-acquia-lift.navbar-tray-horizontal .navbar-level-1 > .menu {
   max-width: 28em;
   min-width: 22em;
 }
@@ -92,7 +92,7 @@
   max-height: 70vh;
   overflow-y: auto;
 }
-#navbar-administration .navbar-tray-acquia-lift.navbar-tray-horizontal .navbar-menu ul ul {
+#navbar-administration .navbar-tray-acquia-lift.navbar-tray-horizontal .menu ul ul {
   border-bottom: 0.1em solid #ccc;
   border-top: 0.1em solid #ccc;
 }
@@ -180,13 +180,13 @@
 }
 
 /* Displayed as links within menus */
-#navbar-administration .navbar-tray .acquia-lift-menu-link, #navbar-administration .navbar-menu .navbar-menu a.acquia-lift-menu-link {
+#navbar-administration .navbar-tray .acquia-lift-menu-link, #navbar-administration .menu .menu a.acquia-lift-menu-link {
   color: #29aae1;
 }
 #navbar-administration .navbar-tray .acquia-lift-menu-link:hover, #navbar-administration .navbar-tray .acquia-lift-menu-link:active {
   color: #007ec0;
 }
-#navbar-administration .navbar-menu .navbar-menu a.acquia-lift-menu-link:hover, #navbar-administration .navbar-menu .navbar-menu a.acquia-lift-menu-link:active {
+#navbar-administration .menu .menu a.acquia-lift-menu-link:hover, #navbar-administration .menu .menu a.acquia-lift-menu-link:active {
   color: #007ec0;
 }
 
@@ -195,7 +195,7 @@
   border-top: 0.1em solid #ccc;
   padding: .7em 1.3333em .7em 1.3333em;
 }
-#navbar-administration .navbar-tray-horizontal .navbar-menu ul li.last {
+#navbar-administration .navbar-tray-horizontal .menu ul li.last {
   padding-top: .6em;
 }
 #navbar-administration .acquia-lift-variation-add:before,
@@ -207,7 +207,7 @@
   padding-right: 0.2em;
   vertical-align: text-bottom;
 }
-#navbar-administration .navbar-tray-acquia-lift.navbar-tray-horizontal .navbar-menu ul ul:last-child {
+#navbar-administration .navbar-tray-acquia-lift.navbar-tray-horizontal .menu ul ul:last-child {
   border-bottom: none;
 }
 
@@ -224,12 +224,12 @@
 }
 
 /* Nested menu uls for data grouping (rather than visual grouping) */
-#navbar-administration .navbar-tray-acquia-lift.navbar-tray-horizontal .navbar-menu ul ul.innerMenuList {
+#navbar-administration .navbar-tray-acquia-lift.navbar-tray-horizontal .menu ul ul.innerMenuList {
   border: none;
   background-color: inherit;
   padding-top: 1em;
 }
-#navbar-administration .navbar-tray-acquia-lift.navbar-tray-horizontal .navbar-menu ul ul.innerMenuList .navbar-menu-item {
+#navbar-administration .navbar-tray-acquia-lift.navbar-tray-horizontal .menu ul ul.innerMenuList .navbar-menu-item {
   padding: .5em 1.3333em .5em .2em;
 }
 

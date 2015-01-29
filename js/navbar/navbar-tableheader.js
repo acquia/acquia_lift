@@ -15,4 +15,4 @@ $.extend(Drupal.navbar, {
   }
 });
 
-}(Drupal.jQuery, Drupal, Drupal.displace));
+}(jQuery, Drupal, Drupal.displace));

@@ -1186,6 +1186,15 @@ function acquia_lift_library() {
     // Navbar is not enabled, or it is enabled with the later menu class names.
     $libraries['acquia_lift.navbar']['css'][$path . '/css/acquia_lift.navbar.css'] = array();
   }
+  // Save the menu class name to be used.
+  $libraries['acquia_lift.navbar']['js'][] = array(
+    'data' => array(
+      'acquia_lift' => array(
+        'menuClass' => acquia_lift_unibar_menu_class(),
+      ),
+    ),
+    'type' => 'setting'
+  );
 
   // Toolbar module integration.
   $libraries['acquia_lift.toolbar'] = array(
@@ -1259,7 +1268,6 @@ function acquia_lift_library() {
     ),
     'type' => 'setting'
   );
-
 
   // Only load navbar.overlay if overlay is enabled.
   if (module_exists('overlay')) {

@@ -2570,7 +2570,7 @@
     initialize: function (options) {
       this.collection = options.collection;
       // Make sure we are looking at the element within the menu.
-      if (!this.model || !this.$el.hasClass('navbar-box')) {
+      if (!this.model || this.$el.parents('.acquia-lift-controls').length == 0) {
         return;
       }
       this.model.on('change', this.render, this);
@@ -2634,7 +2634,8 @@
     initialize: function (options) {
       _.bindAll(this, "updateStatus", "render");
       this.collection = options.collection;
-      if (!this.$el.hasClass('navbar-box')) {
+      // Make sure we are looking at the element within the menu.
+      if (!this.model || this.$el.parents('.acquia-lift-controls').length == 0) {
         return;
       }
       this.listenTo(this.collection, 'change:isActive', this.onActiveCampaignChange);

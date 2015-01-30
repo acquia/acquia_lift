@@ -12,7 +12,11 @@
 
   Drupal.behaviors.acquiaLiftPersonalize = {
     attach: function (context) {
-      var settings = Drupal.settings.personalize;
+      var settings = {
+        'option_sets': Drupal.settings.personalize.option_sets,
+        'activeCampaign': Drupal.settings.personalize.activeCampaign,
+        'campaigns': Drupal.settings.acquia_lift.campaigns
+      };
       var ui = Drupal.acquiaLiftUI;
       var addedCampaigns = {};
       var addedOptionSets = {};

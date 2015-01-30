@@ -860,8 +860,8 @@
           // application scope.
           // Leaving for now since the reliance on drupal settings is all over
           // the application so it's not horrible.
-          Drupal.settings.personalize.campaigns[model.get('name')].status = data.currentStatus;
-          Drupal.settings.personalize.campaigns[model.get('name')].nextStatus = data.nextStatus;
+          Drupal.settings.acquia_lift.campaigns[model.get('name')].status = data.currentStatus;
+          Drupal.settings.acquia_lift.campaigns[model.get('name')].nextStatus = data.nextStatus;
         }
       });
     }
@@ -2637,10 +2637,12 @@
       if (!this.$el.hasClass('navbar-box')) {
         return;
       }
-      this.listenTo(this.collection, 'change:isActive', this.onActiveCampaignChange);
+      if (Drupal.settings.acquia_lift.allowStatusChange) {
+        this.listenTo(this.collection, 'change:isActive', this.onActiveCampaignChange);
 
-      // Add listeners to currently active campaign if there is one.
-      this.onActiveCampaignChange(this.collection.findWhere({'isActive': true}));
+        // Add listeners to currently active campaign if there is one.
+        this.onActiveCampaignChange(this.collection.findWhere({'isActive': true}));
+      }
 
       // Create the view.
       this.build();
@@ -2684,7 +2686,8 @@
      */
     render: function () {
       var activeCampaign = this.collection.findWhere({'isActive': true});
-      if (!activeCampaign) {
+      var statusChangeAllowed = Drupal.settings.acquia_lift.hasOwnProperty('allowStatusChange') && Drupal.settings.acquia_lift.allowStatusChange;
+      if (!activeCampaign || !statusChangeAllowed) {
         this.$el.hide();
       }
       else {
@@ -3050,7 +3053,7 @@
                 Drupal.settings.personalize.option_sets[option_set_id].removed = true;
               }
             }
-            Drupal.settings.personalize.campaigns[empty_agent].optionSetTypes = [];
+            Drupal.settings.acquia_lift.campaigns[empty_agent].optionSetTypes = [];
             // Notify of the deleted option sets.
             $(document).trigger('acquiaLiftOptionSetsEmpty', [empty_agent]);
           } else {
@@ -3077,7 +3080,7 @@
     var campaignId, goalId, campaigns = response.data.campaigns;
 
     for (campaignId in campaigns) {
-      Drupal.settings.personalize.campaigns[campaignId] = campaigns[campaignId];
+      Drupal.settings.acquia_lift.campaigns[campaignId] = campaigns[campaignId];
     }
   }
 
@@ -3097,7 +3100,11 @@
 
   Drupal.behaviors.acquiaLiftPersonalize = {
     attach: function (context) {
-      var settings = Drupal.settings.personalize;
+      var settings = {
+        'option_sets': Drupal.settings.personalize.option_sets,
+        'activeCampaign': Drupal.settings.personalize.activeCampaign,
+        'campaigns': Drupal.settings.acquia_lift.campaigns
+      };
       var ui = Drupal.acquiaLiftUI;
       var addedCampaigns = {};
       var addedOptionSets = {};

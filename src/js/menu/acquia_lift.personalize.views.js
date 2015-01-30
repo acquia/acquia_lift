@@ -1182,10 +1182,12 @@
       if (!this.$el.hasClass('navbar-box')) {
         return;
       }
-      this.listenTo(this.collection, 'change:isActive', this.onActiveCampaignChange);
+      if (Drupal.settings.acquia_lift.allowStatusChange) {
+        this.listenTo(this.collection, 'change:isActive', this.onActiveCampaignChange);
 
-      // Add listeners to currently active campaign if there is one.
-      this.onActiveCampaignChange(this.collection.findWhere({'isActive': true}));
+        // Add listeners to currently active campaign if there is one.
+        this.onActiveCampaignChange(this.collection.findWhere({'isActive': true}));
+      }
 
       // Create the view.
       this.build();
@@ -1229,7 +1231,8 @@
      */
     render: function () {
       var activeCampaign = this.collection.findWhere({'isActive': true});
-      if (!activeCampaign) {
+      var statusChangeAllowed = Drupal.settings.acquia_lift.hasOwnProperty('allowStatusChange') && Drupal.settings.acquia_lift.allowStatusChange;
+      if (!activeCampaign || !statusChangeAllowed) {
         this.$el.hide();
       }
       else {

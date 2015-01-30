@@ -183,7 +183,12 @@ function acquia_lift_admin_form($form, &$form_state) {
     '#description' => t('Minimum number of decisions before campaign can be stopped automatically. Only affects campaigns that are set to stop automatically when a winner is found.'),
     '#element_validate' => array('element_validate_number'),
   );
-
+  $form['acquia_lift_unibar_allow_status_change'] = array(
+    '#type' => 'checkbox',
+    '#default_value' => variable_get('acquia_lift_unibar_allow_status_change', TRUE),
+    '#title' => t('Allow changing campaign status from the front-end.'),
+    '#description' => t('If this is enabled, there will be a button showing one of "Start", "Pause" or "Resume" for the active campaign in the Acquia Lift menu bar.')
+  );
   $form = system_settings_form($form);
   $form['#submit'][] = 'acquia_lift_admin_form_submit';
   return $form;

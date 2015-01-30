@@ -2902,4 +2902,106 @@ class AcquiaLiftWebTestWorkflow extends AcquiaLiftWebTestBase {
     $stop = $agent_instance->stopNow();
     $this->assertTrue($stop);
   }
+
+  /**
+   * Tests campaign javascript settings.
+   */
+  function testCampaignSettings() {
+    module_enable(array('personalize_test_extra_agent'));
+    $this->resetAll();
+    $this->resetAll();
+    $admin_user = $this->drupalCreateUser(array('access administration pages', 'manage personalized content'));
+    $this->drupalLogin($admin_user);
+    // Create two agents of different types.
+    $first_agent_name = $this->randomName();
+    $first_agent_machine_name = personalize_generate_machine_name($first_agent_name, 'personalize_agent_machine_name_exists');
+    $second_agent_name = $this->randomName();
+    $second_agent_machine_name = personalize_generate_machine_name($second_agent_name, 'personalize_agent_machine_name_exists');
+    $agents = array(
+      array(
+        'label' => $first_agent_name,
+        'machine_name' => $first_agent_machine_name,
+        'agent_type' => 'test_agent',
+      ),
+      array(
+        'label' => $second_agent_name,
+        'machine_name' => $second_agent_machine_name,
+        'agent_type' => 'test_extra_agent',
+      ),
+    );
+    foreach ($agents as $agent) {
+      $edit = array(
+        'agent_basic_info[title]' => $agent['label'],
+        'agent_basic_info[machine_name]' => $agent['machine_name'],
+        'agent_basic_info[agent_type]' => $agent['agent_type'],
+      );
+      $this->drupalPost('admin/structure/personalize/add', $edit, $this->getButton('agent'));
+    }
+    $expected = array(
+      $first_agent_machine_name => array(
+        'name' => $first_agent_machine_name,
+        'label' => $first_agent_name,
+        'type' => 'test_agent',
+        'status' => PERSONALIZE_STATUS_NOT_STARTED,
+        'nextStatus' => array(
+          'status' => PERSONALIZE_STATUS_RUNNING,
+          'text' => t('Start'),
+        ),
+        'links' => array(
+          'edit' => base_path() . 'admin/structure/personalize/manage/' . $first_agent_machine_name . '/edit',
+          'report' => base_path() . 'admin/structure/personalize/manage/' . $first_agent_machine_name . '/report',
+          'view' => base_path() . 'admin/structure/personalize/manage/' . $first_agent_machine_name,
+        ),
+        'supportsGoals' => TRUE,
+        'optionSetTypes' => array(),
+        'goals' => NULL,
+        'verified' => TRUE,
+      ),
+      $second_agent_machine_name => array(
+        'name' => $second_agent_machine_name,
+        'label' => $second_agent_name,
+        'type' => 'test_extra_agent',
+        'status' => PERSONALIZE_STATUS_NOT_STARTED,
+        'nextStatus' => array(
+          'status' => PERSONALIZE_STATUS_RUNNING,
+          'text' => t('Start'),
+        ),
+        'links' => array(
+          'edit' => base_path() . 'admin/structure/personalize/manage/' . $second_agent_machine_name . '/edit',
+          'report' => '',
+          'view' => base_path() . 'admin/structure/personalize/manage/' . $second_agent_machine_name,
+        ),
+        'supportsGoals' => FALSE,
+        'optionSetTypes' => array(),
+        'goals' => NULL,
+        'verified' => TRUE,
+      ),
+    );
+    $settings = $this->drupalGetSettings();
+    $this->assertEqual($settings['acquia_lift']['campaigns'][$first_agent_machine_name], $expected[$first_agent_machine_name]);
+    $this->assertEqual($settings['acquia_lift']['campaigns'][$second_agent_machine_name], $expected[$second_agent_machine_name]);
+
+    // Click the "start" button for the first agent.
+    $html_id_first_agent = "personalize-change-status-{$first_agent_machine_name}-form";
+    $this->drupalPost('admin/structure/personalize', array(), t('Start'), array(), array(), $html_id_first_agent);
+
+    $expected[$first_agent_machine_name]['status'] = PERSONALIZE_STATUS_RUNNING;
+    $expected[$first_agent_machine_name]['nextStatus'] = array(
+      'status' => PERSONALIZE_STATUS_PAUSED,
+      'text' => t('Pause'),
+    );
+    $settings = $this->drupalGetSettings();
+    $this->assertEqual($settings['acquia_lift']['campaigns'][$first_agent_machine_name], $expected[$first_agent_machine_name]);
+    $this->assertEqual($settings['acquia_lift']['campaigns'][$second_agent_machine_name], $expected[$second_agent_machine_name]);
+
+    // Add a goal to the agent.
+    personalize_goal_save($first_agent_machine_name, 'user_login', 3);
+    $this->drupalGet('/');
+    $settings = $this->drupalGetSettings();
+    $expected[$first_agent_machine_name]['goals'] = array(
+      'user_login' => 'logs in',
+    );
+    $this->assertEqual($settings['acquia_lift']['campaigns'][$first_agent_machine_name], $expected[$first_agent_machine_name]);
+    $this->assertEqual($settings['acquia_lift']['campaigns'][$second_agent_machine_name], $expected[$second_agent_machine_name]);
+  }
 }

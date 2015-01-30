@@ -2100,7 +2100,7 @@
     selectVariation: function (variationIndex) {
       var variationData = variationIndex < 0 ? 'new' : variationIndex;
       _.defer(function($context, variationId) {
-        $context.find('[data-acquia-lift-personalize-page-variation="' + variationId + '"]').trigger('click');
+        $context.find('.acquia-lift-preview-option[data-acquia-lift-personalize-page-variation="' + variationId + '"]').trigger('click');
       }, this.$el, variationData)
     },
 

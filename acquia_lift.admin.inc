@@ -186,8 +186,8 @@ function acquia_lift_admin_form($form, &$form_state) {
   $form['acquia_lift_unibar_allow_status_change'] = array(
     '#type' => 'checkbox',
     '#default_value' => variable_get('acquia_lift_unibar_allow_status_change', TRUE),
-    '#title' => t('Allow changing campaign status from the front-end.'),
-    '#description' => t('If this is enabled, there will be a button showing one of "Start", "Pause" or "Resume" for the active campaign in the Acquia Lift menu bar.')
+    '#title' => t('Campaigns can be started, paused, or resumed from the Acquia Lift menu bar.'),
+    '#description' => t('Disabling this option hides the status change link on the menu bar, which can increase the performance of the menu bar if the website has many defined campaigns.')
   );
   $form = system_settings_form($form);
   $form['#submit'][] = 'acquia_lift_admin_form_submit';

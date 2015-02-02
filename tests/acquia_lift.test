@@ -2363,7 +2363,7 @@ class AcquiaLiftWebTestReports extends AcquiaLiftWebTestBase {
     personalize_agent_set_status($agent_name, PERSONALIZE_STATUS_COMPLETED);
     // Specify the completed time as yesterday.
     $yesterday = $now - (24 * 60 * 60);
-    variable_set(_personalize_agent_get_stoptime_variable($agent_name), $yesterday);
+    personalize_agent_set_stop_date($agent_name, $yesterday);
     $this->resetAll();
 
     // Clear the logged requests.

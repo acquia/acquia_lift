@@ -408,7 +408,7 @@ function acquia_lift_report_custom($form, &$form_state, $agent, $agent_data, $op
   // If the campaign's status is "completed" then we need to use the date it ended.
   $agent_name = $agent->getMachineName();
   $status = variable_get(_personalize_agent_get_status_variable($agent_name));
-  if ($status == PERSONALIZE_STATUS_COMPLETED && $end_time = variable_get(_personalize_agent_get_stoptime_variable($agent_name), 0)) {
+  if ($status == PERSONALIZE_STATUS_COMPLETED && $end_time = personalize_agent_get_stop_date($agent_name)) {
     $date_end_report = $date_end_targeting = date('Y-m-d', $end_time);
   }
   // Conversion report filters.
@@ -795,7 +795,7 @@ function acquia_lift_report_ab($form, &$form_state, $agent, $agent_data) {
 
   // If the campaign's status is "completed" then we need use the date it ended.
   $status = variable_get(_personalize_agent_get_status_variable($agent_name));
-  if ($status == PERSONALIZE_STATUS_COMPLETED && $end_time = variable_get(_personalize_agent_get_stoptime_variable($agent_name), 0)) {
+  if ($status == PERSONALIZE_STATUS_COMPLETED && $end_time = personalize_agent_get_stop_date($agent_name)) {
     $date_end_report = $date_end_targeting = date('Y-m-d', $end_time);
   }
   // Acquia Lift A/B reports have a decision name that is the same as the

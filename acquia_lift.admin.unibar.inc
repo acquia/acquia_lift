@@ -1617,8 +1617,7 @@ function acquia_lift_campaign_start_complete_callback($form, $form_state) {
   }
   else {
     if ($form_state['values']['campaign_start'] == 'specified') {
-      $start_variable = _personalize_agent_get_starttime_variable($agent_data->machine_name);
-      $start_date = variable_get($start_variable, 0);
+      $start_date = personalize_agent_get_start_date($agent_data->machine_name);
       $message = t('The %campaign campaign will be started on %date', array(
         '%campaign' => $agent_data->label,
         '%date' => format_date($start_date, 'custom', 'M d, Y'),

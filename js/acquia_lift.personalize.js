@@ -860,8 +860,8 @@
           // application scope.
           // Leaving for now since the reliance on drupal settings is all over
           // the application so it's not horrible.
-          Drupal.settings.personalize.campaigns[model.get('name')].status = data.currentStatus;
-          Drupal.settings.personalize.campaigns[model.get('name')].nextStatus = data.nextStatus;
+          Drupal.settings.acquia_lift.campaigns[model.get('name')].status = data.currentStatus;
+          Drupal.settings.acquia_lift.campaigns[model.get('name')].nextStatus = data.nextStatus;
         }
       });
     }
@@ -2632,6 +2632,10 @@
      * {@inheritdoc}
      */
     initialize: function (options) {
+      if (!Drupal.settings.acquia_lift.allowStatusChange) {
+        this.remove();
+        return;
+      }
       _.bindAll(this, "updateStatus", "render");
       this.collection = options.collection;
       // Make sure we are looking at the element within the menu.
@@ -3051,7 +3055,7 @@
                 Drupal.settings.personalize.option_sets[option_set_id].removed = true;
               }
             }
-            Drupal.settings.personalize.campaigns[empty_agent].optionSetTypes = [];
+            Drupal.settings.acquia_lift.campaigns[empty_agent].optionSetTypes = [];
             // Notify of the deleted option sets.
             $(document).trigger('acquiaLiftOptionSetsEmpty', [empty_agent]);
           } else {
@@ -3078,7 +3082,7 @@
     var campaignId, goalId, campaigns = response.data.campaigns;
 
     for (campaignId in campaigns) {
-      Drupal.settings.personalize.campaigns[campaignId] = campaigns[campaignId];
+      Drupal.settings.acquia_lift.campaigns[campaignId] = campaigns[campaignId];
     }
   }
 
@@ -3098,7 +3102,11 @@
 
   Drupal.behaviors.acquiaLiftPersonalize = {
     attach: function (context) {
-      var settings = Drupal.settings.personalize;
+      var settings = {
+        'option_sets': Drupal.settings.personalize.option_sets,
+        'activeCampaign': Drupal.settings.personalize.activeCampaign,
+        'campaigns': Drupal.settings.acquia_lift.campaigns
+      };
       var ui = Drupal.acquiaLiftUI;
       var addedCampaigns = {};
       var addedOptionSets = {};

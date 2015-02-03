@@ -1177,6 +1177,10 @@
      * {@inheritdoc}
      */
     initialize: function (options) {
+      if (!Drupal.settings.acquia_lift.allowStatusChange) {
+        this.remove();
+        return;
+      }
       _.bindAll(this, "updateStatus", "render");
       this.collection = options.collection;
       // Make sure we are looking at the element within the menu.

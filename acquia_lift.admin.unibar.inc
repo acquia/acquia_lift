@@ -97,13 +97,17 @@ function acquia_lift_campaign_type_create_complete_callback($form, $form_state) 
   $agent_name = personalize_get_campaign_context();
   return array(
     ctools_modal_command_dismiss(),
-    ajax_command_settings(array('acquia_lift' => array(
-      'activeCampaign' => $agent_name,
-      'campaigns' => acquia_lift_get_campaign_details(variable_get('acquia_lift_unibar_allow_status_change', TRUE)),
-      'agent_map' => array(
-        $agent_name => personalize_agent_get_map_settings($agent_name),
-      )
-    )), TRUE),
+    ajax_command_settings(array(
+      'acquia_lift' => array(
+        'campaigns' => acquia_lift_get_campaign_details(variable_get('acquia_lift_unibar_allow_status_change', TRUE)),
+        'agent_map' => array(
+          $agent_name => personalize_agent_get_map_settings($agent_name),
+        ),
+      ),
+      'personalize' => array(
+        'activeCampaign' => $agent_name,
+      ),
+    ), TRUE),
     acquia_lift_command_messagebox(t('Click the element you want to change in %variation.', array(
       '%campaign' => $form_state['values']['agent_basic_info']['title'],
       '%variation' => 'Variation #1',

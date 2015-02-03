@@ -2635,7 +2635,7 @@
       _.bindAll(this, "updateStatus", "render");
       this.collection = options.collection;
       // Make sure we are looking at the element within the menu.
-      if (!this.model || this.$el.parents('.acquia-lift-controls').length == 0) {
+      if (!this.collection || this.$el.parents('.acquia-lift-controls').length == 0) {
         return;
       }
       this.listenTo(this.collection, 'change:isActive', this.onActiveCampaignChange);

@@ -2297,13 +2297,13 @@ function acquia_lift_form_personalize_campaign_wizard_alter(&$form, &$form_state
     acquia_lift_chosenify_element($form['visitor_context']);
   }
 
-  if (!acquia_lift_owns_agent($agent)) {
-    return;
-  }
-
   $account_info = variable_get('acquia_lift_account_info', array());
   if (empty($account_info)) {
     drupal_set_message(t('Your Acquia Lift account info has not been configured. Acquia Lift campaigns can not be created until you configure your account info !here', array('!here' => l('here', 'admin/config/content/personalize/acquia_lift'))), 'error');
+  }
+
+  if (empty($agent->machine_name) || !acquia_lift_owns_agent($agent)) {
+    return;
   }
 
   // If we're editing an existing agent, add a "Reset data" button next to

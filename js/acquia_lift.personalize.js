@@ -2632,17 +2632,19 @@
      * {@inheritdoc}
      */
     initialize: function (options) {
+      if (!Drupal.settings.acquia_lift.allowStatusChange) {
+        this.remove();
+        return;
+      }
       _.bindAll(this, "updateStatus", "render");
       this.collection = options.collection;
       if (!this.$el.hasClass('navbar-box')) {
         return;
       }
-      if (Drupal.settings.acquia_lift.allowStatusChange) {
-        this.listenTo(this.collection, 'change:isActive', this.onActiveCampaignChange);
+      this.listenTo(this.collection, 'change:isActive', this.onActiveCampaignChange);
 
-        // Add listeners to currently active campaign if there is one.
-        this.onActiveCampaignChange(this.collection.findWhere({'isActive': true}));
-      }
+      // Add listeners to currently active campaign if there is one.
+      this.onActiveCampaignChange(this.collection.findWhere({'isActive': true}));
 
       // Create the view.
       this.build();
@@ -2686,8 +2688,7 @@
      */
     render: function () {
       var activeCampaign = this.collection.findWhere({'isActive': true});
-      var statusChangeAllowed = Drupal.settings.acquia_lift.hasOwnProperty('allowStatusChange') && Drupal.settings.acquia_lift.allowStatusChange;
-      if (!activeCampaign || !statusChangeAllowed) {
+      if (!activeCampaign) {
         this.$el.hide();
       }
       else {

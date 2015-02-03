@@ -2695,20 +2695,20 @@ class AcquiaLiftWebTestWorkflow extends AcquiaLiftWebTestBase {
     );
     $this->assertQueueItems($expected_queue_items);
   }
-
+  
   /**
    * Tests the logic of AcquiaLiftAgent's stopNow() implementation in the
    * simplest use case.
    */
-  function testAutoDeclareWinner() {
+  function testAutoStop() {
     // Create a new agent via the UI.
-    $agent = $this->createTestAgent(array('control_rate' => 10, 'explore_rate' => 30, 'stop_on_winner' => 1), TRUE, FALSE);
+    $agent = $this->createTestAgent(array('control_rate' => 10, 'explore_rate' => 30, 'auto_stop' => 1), TRUE, FALSE);
     $machine_name = $agent->getMachineName();
     $agent_data = personalize_agent_load($machine_name, TRUE);
     // Set the start time of the agent to 2 minutes ago.
     $agent_data->started = time() - 120;
     // Most basic case - a single option set with 2 options.
-    list($option_set, $new_queue_items) = $this->createOptionSet(0, array('agent' => $machine_name, 'plugin' => 'type1', 'num_options' => 2));
+    list($option_set, $new_queue_items) = $this->createOptionSet(0, array('agent' => $machine_name, 'plugin' => 'type1', 'num_options' => 3));
     $osid = 'osid-' . $option_set->osid;
     // Generate the reporting data to be returned by the dummy http client for this
     // agent.
@@ -2716,12 +2716,13 @@ class AcquiaLiftWebTestWorkflow extends AcquiaLiftWebTestBase {
       $osid => array(
         $osid . ':option-A',
         $osid . ':option-B',
+        $osid . ':option-C',
       ),
     );
     $test_data = array(
       'reports' => array(
         $machine_name => array(
-          // First generate a report with no winner.
+          // Generate a fake confidence report with no clear winner.
           'confidence' => AcquiaLiftTestReports::generateConfidenceReportWithWinners($machine_name, $points),
         )
       )
@@ -2734,13 +2735,27 @@ class AcquiaLiftWebTestWorkflow extends AcquiaLiftWebTestBase {
     // Make sure we are using a test instance of the API client.
     AcquiaLiftAPI::setTestInstance();
     $stop = $agent->stopNow();
-    // The call should return FALSE as there is no winner.
+    // The call should return FALSE as neither minimum runtime nor minimum decisions
+    // has been configured as a basis on which to stop.
     $this->assertFalse($stop);
     // No winner should have been set on the option set.
     $option_set = personalize_option_set_load(1, TRUE);
     $this->assertNull($option_set->winner);
 
-    // Now generate a report that does have a winning option.
+    // Set min decisions to 30 and we should get option C set as the winner (just
+    // because the test data is set up to give higher values to later options
+    // if not otherwise specified.)
+    variable_set('acquia_lift_min_decisions', 30);
+    $this->resetAll();
+    $agent_instance = personalize_agent_load_agent($machine_name, TRUE);
+    AcquiaLiftAPI::setTestInstance();
+    $stop = $agent_instance->stopNow();
+    $this->assertTrue($stop);
+    // Confirm the winner has been set on the option set.
+    $option_set = personalize_option_set_load($option_set->osid, TRUE);
+    $this->assertEqual('option-C', $option_set->winner);
+
+    // Now generate a report where option B has the highest estimated value.
     $test_data = array(
       'reports' => array(
         $machine_name => array(
@@ -2750,17 +2765,16 @@ class AcquiaLiftWebTestWorkflow extends AcquiaLiftWebTestBase {
     );
     variable_set('acquia_lift_web_test_data', $test_data);
     $this->resetAll();
-    $agent_instance = personalize_agent_load_agent($machine_name, TRUE);
     AcquiaLiftAPI::setTestInstance();
+    $agent_instance = personalize_agent_load_agent($machine_name, TRUE);
     $stop = $agent_instance->stopNow();
-    // Now we should get TRUE as a winner will have been found.
     $this->assertTrue($stop);
     // Confirm the winner has been set on the option set.
     $option_set = personalize_option_set_load($option_set->osid, TRUE);
     $this->assertEqual('option-B', $option_set->winner);
-    // Setting the minimum number of decisions to 50 will mean we won't have enough
+    // Setting the minimum number of decisions to 100 will mean we won't have enough
     // decisions so we should get FALSE.
-    variable_set('acquia_lift_min_decisions', 50);
+    variable_set('acquia_lift_min_decisions', 100);
     $this->resetAll();
     $agent_instance = personalize_agent_load_agent($machine_name, TRUE);
     AcquiaLiftAPI::setTestInstance();
@@ -2797,9 +2811,9 @@ class AcquiaLiftWebTestWorkflow extends AcquiaLiftWebTestBase {
    * Tests the logic of AcquiaLiftAgent's stopNow() implementation when the agent
    * has mulitple decision points including an MVT.
    */
-  function testAutoDeclareWinnerMultiplePoints() {
+  function testAutoStopMultiplePoints() {
     // Create a new agent.
-    $agent = $this->createTestAgent(array('control_rate' => 10, 'explore_rate' => 30, 'stop_on_winner' => 1), TRUE, FALSE);
+    $agent = $this->createTestAgent(array('control_rate' => 10, 'explore_rate' => 30, 'auto_stop' => 1), TRUE, FALSE);
     $machine_name = $agent->getMachineName();
     // This time we'll add 3 option sets.
     $option_set_values = array(
@@ -2857,21 +2871,9 @@ class AcquiaLiftWebTestWorkflow extends AcquiaLiftWebTestBase {
     $agent_instance = personalize_agent_load_agent($machine_name, TRUE);
     AcquiaLiftAPI::setTestInstance();
 
-    // The minimum runtime and minimum decisions won't have been met so we should
-    // get FALSE.
-    $stop = $agent_instance->stopNow();
-    $this->assertFalse($stop);
-
-    // Now set the minimum number of decisions to 0 so that this criterion is
-    // no longer checked.
-    variable_set('acquia_lift_min_decisions', 0);
-    $this->resetAll();
-    $agent_instance = personalize_agent_load_agent($machine_name, TRUE);
-    AcquiaLiftAPI::setTestInstance();
-    $stop = $agent_instance->stopNow();
-    $this->assertFalse($stop);
-
-    // Now set the minimum runtime to 0 so that this criterion is no longer checked.
+    // Set the minimum number of decisions to 30, and the minium runtime to 0 so
+    // that we know we'll get passed these two checks.
+    variable_set('acquia_lift_min_decisions', 30);
     variable_set('acquia_lift_min_runtime_num', 0);
     $this->resetAll();
     $agent_instance = personalize_agent_load_agent($machine_name, TRUE);

@@ -520,6 +520,43 @@ function acquia_lift_update_7015() {
 }
 
 /**
+ * Converts the 'stop_on_winner' property to 'auto_stop' in both field settings
+ * and agent config.
+ */
+function acquia_lift_update_7016() {
+  // First update the agent config.
+  $result = db_select('personalize_agent', 'a')
+    ->fields('a', array('machine_name', 'data'))
+    ->execute();
+  foreach ($result as $row) {
+    $data = unserialize($row->data);
+    if (isset($data['stop_on_winner'])) {
+      $data['auto_stop'] = $data['stop_on_winner'];
+      unset($data['stop_on_winner']);
+    }
+    db_update('personalize_agent')
+      ->condition('machine_name', $row->machine_name)
+      ->fields(array('data' => serialize($data)))
+      ->execute();
+  }
+  // Now update field settings.
+  $result = db_select('field_config', 'f')
+    ->fields('f', array('id', 'field_name', 'data'))
+    ->execute();
+  foreach ($result as $row) {
+    $data = unserialize($row->data);
+    if (isset($data['settings']['personalize']) && isset($data['settings']['personalize']['stop_on_winner'])) {
+      $data['settings']['personalize']['auto_stop'] = $data['settings']['personalize']['stop_on_winner'];
+      unset($data['settings']['personalize']['stop_on_winner']);
+      db_update('field_config')
+        ->fields(array('data' => serialize($data)))
+        ->condition('id', $row->id)
+        ->execute();
+    }
+  }
+}
+
+/**
  * Helper to get the schema for the cache table.
  */
 function acquia_lift_get_report_cache_table_schema() {

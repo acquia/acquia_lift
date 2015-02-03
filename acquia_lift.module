@@ -2365,6 +2365,74 @@ function acquia_lift_form_personalize_agent_form_alter(&$form, &$form_state) {
 }
 
 /**
+ * Implements hook_form_FORM_ID_alter().
+ */
+function acquia_lift_form_personalize_campaign_wizard_alter(&$form, &$form_state) {
+  $agent = $form['#agent'];
+  if (!empty($form['visitor_context']) && $form['visitor_context']['#type'] == 'select') {
+    module_load_include('inc', 'acquia_lift', 'acquia_lift.ui');
+    acquia_lift_chosenify_element($form['visitor_context']);
+  }
+
+  if (!acquia_lift_owns_agent($agent)) {
+    return;
+  }
+
+  $account_info = variable_get('acquia_lift_account_info', array());
+  if (empty($account_info)) {
+    drupal_set_message(t('Your Acquia Lift account info has not been configured. Acquia Lift campaigns can not be created until you configure your account info !here', array('!here' => l('here', 'admin/config/content/personalize/acquia_lift'))), 'error');
+  }
+
+  // If we're editing an existing agent, add a "Reset data" button next to
+  // the Pause/Resume button.
+  if (!empty($agent->machine_name)) {
+    $reset_form = array(
+      '#prefix' => '<div id="personalize-acquia-lift-reset-form">',
+      '#suffix' => '</div>'
+    );
+    $reset_form['actions']['reset'] = array(
+      '#prefix' => '<div id="personalize-acquia-lift-reset">',
+      '#suffix' => '</div>',
+      '#type' => 'submit',
+      '#name' => 'reset_submit',
+      '#value' => t('Reset data'),
+      '#attributes' => array(
+        'class' => array('action-item-primary-active'),
+      ),
+      '#ajax' => array(
+        'callback' => 'personalize_acquia_lift_ajax_callback',
+        'wrapper' => 'personalize-acquia-lift-reset-form',
+        'effect' => 'fade',
+      )
+    );
+    $reset_form['actions']['reset']['#submit'] = array('acquia_lift_reset_submit');
+    $form['process_bar']['actions']['reset_lift_agent'] = $reset_form;
+    // Now the Sync button.
+    $sync_form = array(
+      '#prefix' => '<div id="personalize-acquia-lift-sync-form">',
+      '#suffix' => '</div>'
+    );
+    $sync_form['agent_name'] = array(
+      '#type' => 'value',
+      '#value' => $agent->machine_name,
+    );
+    $sync_form['actions']['sync'] = array(
+      '#prefix' => '<div id="personalize-acquia-lift-sync">',
+      '#suffix' => '</div>',
+      '#type' => 'submit',
+      '#name' => 'sync_submit',
+      '#value' => t('Sync with Lift'),
+      '#attributes' => array(
+        'class' => array('action-item-primary-active'),
+      ),
+    );
+    $sync_form['actions']['sync']['#submit'] = array('acquia_lift_sync_campaign_submit');
+    $form['process_bar']['actions']['sync_lift_agent'] = $sync_form;
+  }
+}
+
+
+/**
  * Implements hook_personalize_agent_page_alter().
  */
 function acquia_lift_personalize_agent_page_alter(&$build, &$agent_data) {

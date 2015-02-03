@@ -3010,6 +3010,7 @@ class AcquiaLiftWebTestWorkflow extends AcquiaLiftWebTestBase {
    * prevent verification checks on every page load.
    */
   function testVerificationChecks() {
+    module_load_include('inc', 'acquia_lift', 'acquia_lift.ui');
     AcquiaLiftAPI::setTestInstance();
     // Create a bunch of agents.
     $num_agents = 10;

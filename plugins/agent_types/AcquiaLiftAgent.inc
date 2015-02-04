@@ -413,7 +413,7 @@ class AcquiaLiftAgent extends PersonalizeAgentBase implements PersonalizeAgentGo
       );
     }
     // This will get overridden by the 'campaign_end' dropdown.
-    $form['stop_on_winner'] = array(
+    $form['auto_stop'] = array(
       '#type' => 'value',
       '#value' => 0
     );
@@ -447,8 +447,8 @@ class AcquiaLiftAgent extends PersonalizeAgentBase implements PersonalizeAgentGo
     }
     // If "Run until a winner is found" was selected, we need to add this to the agent's
     // data property.
-    if (isset($form_state['values']['campaign_end']) && $form_state['values']['campaign_end'] == 'winner') {
-      $form_state['values']['agent_basic_info']['options']['acquia_lift']['stop_on_winner'] = 1;
+    if (isset($form_state['values']['campaign_end']) && $form_state['values']['campaign_end'] == 'auto') {
+      $form_state['values']['agent_basic_info']['options']['acquia_lift']['auto_stop'] = 1;
     }
   }
 
@@ -735,12 +735,17 @@ class AcquiaLiftAgent extends PersonalizeAgentBase implements PersonalizeAgentGo
    */
   public function stopNow() {
     // Check whether the agent is configured to stop once a winner's been found.
-    if (!isset($this->data['stop_on_winner']) || !$this->data['stop_on_winner']) {
+    if (!isset($this->data['auto_stop']) || !$this->data['auto_stop']) {
       return parent::stopNow();
     }
 
-    // No point checking for a winner if the campaign hasn't been running for the
-    // minimum runtime.
+    // If neither minimum runtime nor minimum decisions has been configured,
+    // then return FALSE.
+    if(!$this->globalConfig['minimum_runtime'] && !$this->globalConfig['minimum_decisions']) {
+      return FALSE;
+    }
+
+    // If there a minimum runtime, check that it has been reached.
     $time_now = time();
     if ($this->globalConfig['minimum_runtime']) {
       $runtime = $time_now - $this->startTime;
@@ -751,8 +756,7 @@ class AcquiaLiftAgent extends PersonalizeAgentBase implements PersonalizeAgentGo
     }
 
     // Need to go through each option set for this agent and establish whether each
-    // of them satisfies the minimum number of decisions made, if this has been set,
-    // and has a winner.
+    // of them satisfies the minimum number of decisions made, if this has been set.
     $option_sets = $this->data['decisions'];
     if (empty($option_sets)) {
       return FALSE;
@@ -762,7 +766,7 @@ class AcquiaLiftAgent extends PersonalizeAgentBase implements PersonalizeAgentGo
     $winners = array();
     foreach ($points as $point) {
       $num_decisions = 0;
-      $bLos = $vMeans = array();
+      $vMeans = array();
       // Get the confidence report directly from Lift.
       $report_options = array(
         'confidence-measure' => $this->globalConfig['confidence_measure'],
@@ -785,7 +789,6 @@ class AcquiaLiftAgent extends PersonalizeAgentBase implements PersonalizeAgentGo
       foreach ($items as $item) {
         $choice = $item['choice'];
         $vMeans[$choice] = $item['vMean'];
-        $bLos[$choice] = $item['bLo'];
         $num_decisions += $item['count'];
       }
       if ($this->globalConfig['minimum_decisions']) {
@@ -796,19 +799,9 @@ class AcquiaLiftAgent extends PersonalizeAgentBase implements PersonalizeAgentGo
         }
       }
 
-      // Find the variation with the highest bLo value.
-      arsort($bLos);
-      $highest_bLo_choice = key($bLos);
-      $highest_bLo_value = array_shift($bLos);
-      // Go through the vMeans of the rest of the choices and see if our highest
-      // bLo is higher than all of them.
-      foreach (array_keys($bLos) as $choice) {
-        if (!$highest_bLo_value > $vMeans[$choice]) {
-          return FALSE;
-        }
-      }
-      // If we got here, we have a winner for this decision point.
-      $winners[$point] = $highest_bLo_choice;
+      // Find the variation with the highest estimated value.
+      arsort($vMeans);
+      $winners[$point] = key($vMeans);
     }
 
     // If we reach here, we have a winner at each decision point and have satisfied all

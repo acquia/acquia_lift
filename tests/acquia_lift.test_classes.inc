@@ -487,9 +487,8 @@ class AcquiaLiftTestReports {
         );
       }
       if (isset($winners[$point])) {
-        // For the winning option, we need to make sure the bLo, vMean and bHi
-        // values are going to be clear winners (the bLo needs to be higher than
-        // all other vMeans).
+        // For the winning option, we need to make sure the vMean value is higher
+        // than the others.
         $winning_blo = $vmean + (.001 * (count($options) + 1));
         $winning_vmean = $winning_blo + .001;
         $winning_vhi = $winning_vmean + .001;

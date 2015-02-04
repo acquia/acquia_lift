@@ -109,7 +109,7 @@ class AcquiaLiftWebTestBase extends DrupalWebTestCase
       'control_rate' => 10,
       'explore_rate' => 20,
       'cache_decisions' => 1,
-      'stop_on_winner' => 0
+      'auto_stop' => 0
     );
 
     $data +=  array('machine_name' => personalize_generate_machine_name($data['name'], 'personalize_agent_machine_name_exists'));
@@ -124,9 +124,9 @@ class AcquiaLiftWebTestBase extends DrupalWebTestCase
     );
 
     $this->drupalPost('admin/structure/personalize/add', $edit, $this->getButton('agent'));
-    if ($data['stop_on_winner']) {
+    if ($data['auto_stop']) {
       $agent = personalize_agent_load($data['machine_name']);
-      $agent->data['stop_on_winner'] = 1;
+      $agent->data['auto_stop'] = 1;
       personalize_agent_save($agent);
     }
     $agent = personalize_agent_load_agent($data['machine_name'], TRUE);

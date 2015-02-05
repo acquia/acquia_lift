@@ -111,19 +111,24 @@ class AcquiaLiftWebTestBase extends DrupalWebTestCase
       'cache_decisions' => 1,
       'auto_stop' => 0
     );
+    $data += array('machine_name' => personalize_generate_machine_name($data['name'], 'personalize_agent_machine_name_exists'));
 
-    $data +=  array('machine_name' => personalize_generate_machine_name($data['name'], 'personalize_agent_machine_name_exists'));
     $edit = array(
       'agent_basic_info[title]' => $data['name'],
-      'agent_basic_info[machine_name]' => $data['machine_name'],
       'agent_basic_info[agent_type]' => $data['agent_type'],
-      'agent_basic_info[options][acquia_lift][decision_style]' => $data['decision_style'],
-      'agent_basic_info[options][acquia_lift][control_rate]' => $data['control_rate'],
-      'agent_basic_info[options][acquia_lift][explore_rate]' => $data['explore_rate'],
-      'cache_decisions' => $data['cache_decisions']
     );
 
-    $this->drupalPost('admin/structure/personalize/add', $edit, $this->getButton('agent'));
+    $this->drupalPost('admin/structure/personalize/add', $edit, $this->getButton('create_campaign'));
+
+    $edit = array(
+      'agent_basic_info[title]' => $data['name'],
+      'options[acquia_lift][decision_style]' => $data['decision_style'],
+      'options[acquia_lift][control_rate]' => $data['control_rate'],
+      'options[acquia_lift][explore_rate]' => $data['explore_rate'],
+      'cache_decisions' => $data['cache_decisions']
+    );
+    $this->drupalPost('admin/structure/personalize/manage/' . $data['machine_name'] . '/review', $edit, $this->getButton('wizard_start'));
+
     if ($data['auto_stop']) {
       $agent = personalize_agent_load($data['machine_name']);
       $agent->data['auto_stop'] = 1;
@@ -135,8 +140,23 @@ class AcquiaLiftWebTestBase extends DrupalWebTestCase
       $this->assertTrue($agent instanceof AcquiaLiftAgent);
     }
 
+    // We should expect one queue item for the initial save of base information
+    // and a second queue item to save the agent-specific details.
     $expected_queue_items = array(
       array(
+        'method' => 'saveAgent',
+        'args' => array(
+          $data['machine_name'],
+          $data['name'],
+          'adaptive',
+          PERSONALIZE_STATUS_NOT_STARTED,
+          10/100,
+          20/100,
+          FALSE,
+        ),
+        'agent' => $data['machine_name'],
+      ),
+      array (
         'method' => 'saveAgent',
         'args' => array(
           $data['machine_name'],
@@ -271,14 +291,26 @@ class AcquiaLiftWebTestBase extends DrupalWebTestCase
    */
   protected function getButton($type = '') {
     switch ($type) {
-      case 'agent':
-        return t('Save campaign settings');
-      case 'goal':
-        return t('Save goals');
-      case 'option':
-        return t('Save variation sets');
-      case 'mvt':
-        return t('Save test');
+      case 'wizard_next':
+        return t('Next');
+      case 'wizard_done':
+        return t('Done');
+      case 'wizard_start':
+        return t('Start');
+      case 'wizard_scheduled':
+        return t('Save');
+      case 'wizard_variations':
+        return t('What');
+      case 'wizard_goals':
+        return t('Why');
+      case 'wizard_targeting':
+        return t('Who');
+      case 'wizard_scheduling':
+        return t('When');
+      case 'wizard_review':
+        return t('Review');
+      case 'create_campaign':
+        return t('Create campaign');
       case 'delete':
         return t('Delete');
       case 'config':
@@ -548,14 +580,8 @@ class AcquiaLiftWebTestVariationSets extends AcquiaLiftWebTestBase {
     $this->drupalLogin($admin_user);
 
     // Create a new agent via the UI.
-    $agent_title = $this->randomName();
-    $agent_name = personalize_generate_machine_name($agent_title, 'personalize_agent_machine_name_exists');
-    $edit = array(
-      'agent_basic_info[title]' => $agent_title,
-      'agent_basic_info[machine_name]' => $agent_name,
-      'agent_basic_info[agent_type]' => 'test_agent',
-    );
-    $this->drupalPost('admin/structure/personalize/add', $edit, $this->getButton('agent'));
+    $agent = $this->createTestAgent(array('agent_type' => 'test_agent'));
+    $agent_name = $agent->getMachineName();
 
     $option_set = personalize_elements_get_option_set_for_variation('option-1', $agent_name, '#selector1', 'addCss', 'page1');
     $var_num = acquia_lift_page_variation_create('first_variation_set', $option_set, array('personalize_elements_content' => 'test-class'));
@@ -850,8 +876,7 @@ class AcquiaLiftWebTestAgentAdmin extends AcquiaLiftWebTestBase {
     );
     $this->assertQueueItems($expected_queue_items);
     $this->personalizedQueue->deleteQueue();
-    $expected_queue_items = array();
-    $this->drupalPost("admin/structure/personalize/manage/$machine_name/edit", array(), $this->getButton('agent'));
+    $this->drupalPost("admin/structure/personalize/manage/$machine_name/review", array(), $this->getButton('wizard_start'));
     $expected_queue_items = array(
       array(
         'method' => 'saveAgent',
@@ -870,7 +895,7 @@ class AcquiaLiftWebTestAgentAdmin extends AcquiaLiftWebTestBase {
     $this->assertQueueItems($expected_queue_items);
     $this->personalizedQueue->deleteQueue();
     $expected_queue_items = array();
-    $this->drupalPost("admin/structure/personalize/manage/$machine_name/edit", array(), $this->getButton('agent'));
+    $this->drupalPost("admin/structure/personalize/manage/$machine_name/review", array(), $this->getButton('wizard_start'));
     // Now the only thing that should get added is an item for the agent
     // because neither goals nor option sets will have changed.
     $expected_queue_items[] = array(
@@ -889,6 +914,7 @@ class AcquiaLiftWebTestAgentAdmin extends AcquiaLiftWebTestBase {
     $this->assertQueueItems($expected_queue_items);
     $this->personalizedQueue->deleteQueue();
 
+    /* @todo: Add MVT tests back in after included in campaign form.
     // Create an MVT and add the two option sets to it.
     $mvt_label = $this->randomName();
     $mvt_machine_name = personalize_generate_machine_name($mvt_label, 'personalize_mvt_machine_name_exists');
@@ -904,6 +930,7 @@ class AcquiaLiftWebTestAgentAdmin extends AcquiaLiftWebTestBase {
       $item['args'][1] = $mvt_machine_name;
     }
     $expected_queue_items = array_slice($option_set_queue_items, 0, 5);
+    */
     // @todo Commenting this out as for some reason after saving the new
     // point and decision/choices for osid-1, it saves the old point and
     // decision/choices for osid-2, before deleting the old osid-1 point,
@@ -932,9 +959,9 @@ class AcquiaLiftWebTestAgentAdmin extends AcquiaLiftWebTestBase {
       ),
     );
 
-    $this->drupalGet('admin/structure/personalize/manage/' . $agent->getMachineName() . '/edit');
+    $this->drupalGet('admin/structure/personalize/manage/' . $agent->getMachineName() . '/targeting');
     personalize_agent_save($agentStructure);
-    $this->drupalGet('admin/structure/personalize/manage/' . $agent->getMachineName() . '/edit');
+    $this->drupalGet('admin/structure/personalize/manage/' . $agent->getMachineName() . '/targeting');
     $agent = personalize_agent_load_agent($agent->getMachineName(), TRUE);
 
     $agentData = $agent->getData();
@@ -971,9 +998,9 @@ class AcquiaLiftWebTestAgentAdmin extends AcquiaLiftWebTestBase {
       'acquia_lift_context' => array(),
     );
 
-    $this->drupalGet('admin/structure/personalize/manage/' . $agent->getMachineName() . '/edit');
+    $this->drupalGet('admin/structure/personalize/manage/' . $agent->getMachineName() . '/targeting');
     personalize_agent_save($agentStructure);
-    $this->drupalGet('admin/structure/personalize/manage/' . $agent->getMachineName() . '/edit');
+    $this->drupalGet('admin/structure/personalize/manage/' . $agent->getMachineName() . '/targeting');
     $agent = personalize_agent_load_agent($agent->getMachineName(), TRUE);
 
     $agentData = $agent->getData();
@@ -1146,10 +1173,22 @@ class AcquiaLiftWebTestAgentAdmin extends AcquiaLiftWebTestBase {
     // We can't use the form to add multiple fixed targeting contexts because we can't
     // make simpletest use the "Add context" button, so we send our form values directly
     // to the submit function.
-    module_load_include('inc', 'personalize', 'personalize.admin');
+    module_load_include('inc', 'personalize', 'personalize.admin.campaign');
     $form_state = array(
+      'storage' => array(
+        'step' => 'variations',
+      ),
+      'triggering_element' => array(
+        '#value' => $this->getButton('wizard_next'),
+        '#name' => 'wizard_submit',
+      ),
       'values' => array(
         'agent' => $agent->getMachineName(),
+        'agent_basic_info' => array(
+          'title' => $agent->getTitle(),
+          'machine_name' => $agent->getMachineName(),
+          'agent_type' => $agent->getType(),
+        ),
         'option_sets' => array(
           'option_set_1' => array(
             'winner' => 'option-A',
@@ -1180,7 +1219,7 @@ class AcquiaLiftWebTestAgentAdmin extends AcquiaLiftWebTestBase {
         )
       )
     );
-    personalize_agent_option_sets_form_submit(array(), $form_state);
+    personalize_campaign_wizard_submit(array(), $form_state);
     $feature_1 = $context_1 . '::some-value';
     $feature_2 = $context_2 . '::sc-some-other-value';
     $expected_queue_items['targeting'] = array(
@@ -1215,7 +1254,7 @@ class AcquiaLiftWebTestAgentAdmin extends AcquiaLiftWebTestBase {
       'option_sets[option_set_1][options][option-A][explicit_targeting][strategy]' => 'AND'
     );
 
-    $this->drupalPost('admin/structure/personalize/manage/' . $agent->getMachineName() . '/edit', $edit, $this->getButton('option'));
+    $this->drupalPost('admin/structure/personalize/manage/' . $agent->getMachineName() . '/variations', $edit, $this->getButton('wizard_next'));
 
     // Now the fixed targeting mapping should have a single mapping with
     // comma-separated features.
@@ -1259,11 +1298,11 @@ class AcquiaLiftWebTestAgentAdmin extends AcquiaLiftWebTestBase {
     $agent = $this->createTestAgent();
 
     $edit = array(
-      'goals[0][action_name]' => 'form_submit',
-      'goals[0][value]' => '20',
+      'all_goals[0][action_name]' => 'form_submit',
+      'all_goals[0][value]' => '20',
     );
 
-    $this->drupalPost('admin/structure/personalize/manage/' . $agent->getMachineName() . '/edit', $edit, $this->getButton('goal'));
+    $this->drupalPost('admin/structure/personalize/manage/' . $agent->getMachineName() . '/goals', $edit, $this->getButton('wizard_next'));
 
     $expected_queues = array(
       array(
@@ -1292,11 +1331,25 @@ class AcquiaLiftWebTestAgentAdmin extends AcquiaLiftWebTestBase {
     $this->assertQueueItems($expected_queues);
     $this->personalizedQueue->deleteQueue();
 
-    $this->drupalPost('admin/structure/personalize/manage/' . $agent->getMachineName() . '/edit', array(), $this->getButton('goal'));
+    $this->drupalPost('admin/structure/personalize/manage/' . $agent->getMachineName() . '/goals', array(), $this->getButton('wizard_next'));
 
-    // As we're triggering only goals form and do not change anything
-    // saveAgent won't be invoked also
-    $expected_queues = array();
+    // As we're triggering only goals form and do not change anything only the
+    // saveAgent will be invoked.
+    $agent_data = $agent->getData();
+    $agent_queue_item = array(
+      'method' => 'saveAgent',
+      'args' => array(
+        $agent->getMachineName(),
+        $agent->getTitle(),
+        $agent_data['decision_style'],
+        PERSONALIZE_STATUS_NOT_STARTED,
+        ($agent_data['control_rate'] / 100),
+        ($agent_data['explore_rate'] / 100),
+        isset($agent_data['cache_decisions']) && $agent_data['cache_decisions']
+      ),
+      'agent' => $agent->getMachineName()
+    );
+    $expected_queues = array($agent_queue_item);
 
     $this->assertQueueItems($expected_queues);
     $this->personalizedQueue->deleteQueue();
@@ -1677,10 +1730,14 @@ class AcquiaLiftWebTestFundamentals extends AcquiaLiftWebTestBase {
         PERSONALIZE_STATUS_NOT_STARTED,
         0.1,
         0.2,
-        1
+        0
       ),
       'agent' => $machine_name
     );
+    $expected_queue_items[] = $queued_agent_item;
+    // Two items because the save function actually first saves base information
+    // and then the agent-specific and advanced information.
+    $queued_agent_item['args'][6] = 1;
     $expected_queue_items[] = $queued_agent_item;
     $this->assertQueueItems($expected_queue_items);
     // Now cause the queue to be processed, which would normally happen
@@ -1692,7 +1749,7 @@ class AcquiaLiftWebTestFundamentals extends AcquiaLiftWebTestBase {
     $this->assertNoText(t('At least one of your campaigns has configuration that has not been fully synchronized with Acquia Lift. This should resolve itself on the next cron run.'));
 
     // Now save it again but don't process the queue.
-    $this->drupalPost("admin/structure/personalize/manage/$machine_name/edit", array(), $this->getButton('agent'));
+    $this->drupalPost("admin/structure/personalize/manage/$machine_name/review", array(), $this->getButton('wizard_start'));
     // Save a goal for the agent.
     $goal_name = 'form_submit';
     personalize_goal_save($machine_name, $goal_name, 2);
@@ -1732,7 +1789,7 @@ class AcquiaLiftWebTestFundamentals extends AcquiaLiftWebTestBase {
     $this->assertQueueItems(array());
 
     // Now save the agent again.
-    $this->drupalPost("admin/structure/personalize/manage/$machine_name/edit", array(), $this->getButton('agent'));
+    $this->drupalPost("admin/structure/personalize/manage/$machine_name/review", array(), $this->getButton('wizard_start'));
     $expected_queue_items = array($queued_agent_item);
     $this->assertQueueItems($expected_queue_items);
 
@@ -1759,7 +1816,7 @@ class AcquiaLiftWebTestFundamentals extends AcquiaLiftWebTestBase {
     $edit = array(
       'cache_decisions' => FALSE
     );
-    $this->drupalPost("admin/structure/personalize/manage/$machine_name/edit", $edit, $this->getButton('agent'));
+    $this->drupalPost("admin/structure/personalize/manage/$machine_name/review", $edit, $this->getButton('wizard_start'));
     personalize_agent_set_status($machine_name, PERSONALIZE_STATUS_PAUSED);
     $this->resetAll();
     $queued_agent_item['args'][6] = FALSE;
@@ -1832,6 +1889,7 @@ class AcquiaLiftWebTestFundamentals extends AcquiaLiftWebTestBase {
 
     // Try to create a new agent with the same name as one that exists in Lift.
     $this->createTestAgent(array('name' => 'my-existing-agent', 'control_rate' => 10, 'explore_rate' => 30), TRUE, FALSE);
+    $this->resetAll();
     $this->resetAll();
     $agent = personalize_agent_load_agent('my-existing-agent');
     $this->assertNull($agent);
@@ -2775,14 +2833,15 @@ class AcquiaLiftWebTestWorkflow extends AcquiaLiftWebTestBase {
     $first_osid = 'osid-' . $option_sets[0]->osid;
     $second_osid = 'osid-' . $option_sets[1]->osid;
     $third_osid = 'osid-' . $option_sets[2]->osid;
+
     // Create an MVT and add two of the option sets to it.
-    $mvt_label = $this->randomName();
-    $mvt_machine_name = personalize_generate_machine_name($mvt_label, 'personalize_mvt_machine_name_exists');
-    $edit = array(
-      'mvt[add][mvt_basic_info][label]' => $mvt_machine_name,
-      'mvt[add][mvt_basic_info][option_sets][]' => array($option_sets[1]->osid, $option_sets[2]->osid),
-    );
-    $this->drupalPost("admin/structure/personalize/manage/{$machine_name}/edit", $edit, $this->getButton('mvt'));
+    $mvt = new stdClass();
+    $mvt->label = $this->randomName();
+    $mvt_machine_name = $mvt->machine_name = personalize_generate_machine_name($mvt->label, 'personalize_mvt_machine_name_exists');
+    $mvt->agent = $machine_name;
+    $mvt->option_sets = array($option_sets[1]->osid, $option_sets[2]->osid);
+    personalize_mvt_save($mvt);
+
     // Generate the reporting data to be returned by the dummy http client for this
     // agent. All possible choices at each decision point need to be accounted for in
     // the report.

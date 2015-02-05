@@ -945,9 +945,14 @@ function acquia_lift_batch_sync_item($item, &$errors = array()) {
 /**
  * Implements hook_personalize_campaign_report().
  */
-function acquia_lift_personalize_campaign_report($agent_data, $option_set) {
+function acquia_lift_personalize_campaign_report($agent_data, $option_set = NULL, $form = NULL, &$form_state = NULL) {
   module_load_include('inc', 'acquia_lift', 'acquia_lift.admin');
-  return drupal_get_form('acquia_lift_report', $agent_data, $option_set);
+  if (!empty($form) && !empty($form_state)) {
+    return acquia_lift_report($form, $form_state, $agent_data, $option_set);
+  }
+  else {
+    return drupal_get_form('acquia_lift_report', $agent_data, $option_set);
+  }
 }
 
 /**

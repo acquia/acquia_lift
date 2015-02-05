@@ -293,7 +293,7 @@ function acquia_lift_admin_form_submit($form, &$form_state) {
  * @param stdClass $option_set
  *   (optional) The content variation to show in the default view.
  */
-function acquia_lift_report($form, &$form_state, $agent_data, $option_set) {
+function acquia_lift_report($form, &$form_state, $agent_data, $option_set = NULL) {
   if (!$agent = personalize_agent_load_agent($agent_data->machine_name)) {
     return array();
   }

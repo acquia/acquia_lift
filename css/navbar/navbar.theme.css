@@ -153,7 +153,5 @@
  */
 #navbar-administration *:before,
 #navbar-administration *:after {
-  -webkit-box-sizing: content-box;
-  -moz-box-sizing: content-box;
   box-sizing: content-box;
 }

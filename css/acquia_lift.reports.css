@@ -9,7 +9,8 @@
   border-color: #ccc;
   border-width: 1px 0;
   background: #fff;
-  transition: opacity .4s, position .4s 0 step-start, width .4s 0 step-start, height .4s 0 step-start;
+  -webkit-transition: opacity .4s, position .4s 0 step-start, width .4s 0 step-start, height .4s 0 step-start;
+          transition: opacity .4s, position .4s 0 step-start, width .4s 0 step-start, height .4s 0 step-start;
 }
 
 .lift-statistic-category.active {

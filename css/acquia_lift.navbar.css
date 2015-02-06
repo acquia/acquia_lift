@@ -42,6 +42,9 @@
 #navbar-administration .acquia-lift-active .acquia-lift-campaign {
   font-weight: bold;
 }
+#navbar-administration .acquia-lift-active.acquia-lift-menu-link {
+  font-weight: normal;
+}
 #navbar-administration .acquia-lift-campaigns .navbar-box {
   display: inline-block;
   width: 100%;
@@ -143,26 +146,26 @@
   text-align: right;
 }
 #navbar-administration .navbar-tray-horizontal .acquia-lift-menu-item .acquia-lift-campaign {
-  margin-right: -4em;
-  padding-right: 4em;
+  margin-right: -4.2em;
+  padding-right: 4.2em;
 }
 #navbar-administration .navbar-tray-horizontal .acquia-lift-menu-item .acquia-lift-campaign-edit {
-  width: 4em;
+  width: 4.2em;
 }
 #navbar-administration .navbar-tray-horizontal .acquia-lift-menu-item .acquia-lift-preview-option {
-  margin-right: -10em;
-  padding-right: 10em;
+  margin-right: -9em;
+  padding-right: 9em;
 }
 #navbar-administration .navbar-tray-horizontal .acquia-lift-menu-item .acquia-lift-variation-edit {
   width: 2.3em;
 }
 #navbar-administration .navbar-tray-horizontal .acquia-lift-menu-item .acquia-lift-variation-delete,
 #navbar-administration .navbar-tray-horizontal .acquia-lift-menu-item .acquia-lift-goal-delete {
-  width: 3.5em;
+  width: 4em;
 }
 #navbar-administration .navbar-tray-horizontal .acquia-lift-menu-item .acquia-lift-variation-rename,
 #navbar-administration .navbar-tray-horizontal .acquia-lift-menu-item .acquia-lift-goal-rename {
-  width: 4.1em;
+  width: 4.6em;
 }
 #navbar-administration .navbar-tray-vertical .acquia-lift-active-container * {
   line-height: 1.3;
@@ -269,11 +272,13 @@
   margin-left: -2em;
   text-align: right;
   font-weight: bold;
+  background-image: -webkit-linear-gradient(180deg, #fff, #fff 1.1em, rgba(255, 255, 255, 0) 100%);
   background-image: linear-gradient(270deg, #fff, #fff 1.1em, rgba(255, 255, 255, 0) 100%);
   color: rgba(51, 51, 51, 0.6);
 }
 html[dir="rtl"] #navbar-administration .acquia-lift-active-container::after {
   text-align: left;
+  background-image: -webkit-linear-gradient(0deg, #fff, #fff 1.1em, rgba(255, 255, 255, 0) 100%);
   background-image: linear-gradient(90deg, #fff, #fff 1.1em, rgba(255, 255, 255, 0) 100%);
 }
 #navbar-administration .acquia-lift-active-container, #navbar-administration .acquia-lift-active-container * {

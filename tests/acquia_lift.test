@@ -2459,42 +2459,15 @@ class AcquiaLiftWebTestWorkflow extends AcquiaLiftWebTestBase {
     );
     field_create_instance($instance);
 
-    // Create a node which we will attach a fields-based option set to. We can't
-    // do this via the form because of the way we alter the form, which makes the
-    // "Add an option" button not findable by simpletest.
-    $node = new stdClass();
-    $node->type = 'article';
-    $node->language = LANGUAGE_NONE;
-    node_object_prepare($node);
-    $node->title = $this->randomName();
-    $node->article_headline['und'][0] = array('value' => 'first value');
-    $node->article_headline['und'][1] = array('value' => 'second value');
-    node_save($node);
-    // Now create the option set.
-    $option_set = new stdClass();
-    $option_set->is_new = TRUE;
-    $option_set->data = array();
-    $option_set->options = array();
-    $option_set->plugin = 'fields';
-    $option_set->new_agent_title = 'Article: Personalizable Headline';
-    $option_set->options = array(
-      array(
-        'option_label' => personalize_fields_generate_option_label(0, array('value' => 'first value'))
-      ),
-      array(
-        'option_label' => personalize_fields_generate_option_label(1, array('value' => 'second value'))
-      )
-    );
-    personalize_fields_option_set_save($option_set, 'node', $node, 'article_headline');
-    $first_osid = 'osid-' . $option_set->osid;
-    $this->resetAll();
-    $goals = personalize_goal_load_by_conditions(array('agent' => 'article-personalizable-headline'));
+    list($node1, $os1, $agent_name) = $this->createPersonalizedField();
+    $first_osid = 'osid-' . $os1->osid;
+    $goals = personalize_goal_load_by_conditions(array('agent' => $agent_name));
     $this->assertEqual(1, count($goals));
     $goal = reset($goals);
     $action = visitor_actions_custom_load($goal->action);
     $this->assertEqual('click', $action['event']);
     $this->assertEqual('[data-personalize=osid-1]', $action['identifier']);
-    $action_name = personalize_generate_machine_name(t('Clicks @option_set', array('@option_set' => $option_set->label)), NULL, '_');
+    $action_name = personalize_generate_machine_name(t('Clicks @option_set', array('@option_set' => $os1->label)), NULL, '_');
 
     $this->assertEqual($action_name, $action['machine_name']);
     $this->assertTrue($action['limited_use']);
@@ -2502,7 +2475,7 @@ class AcquiaLiftWebTestWorkflow extends AcquiaLiftWebTestBase {
       array(
         'method' => 'saveAgent',
         'args' => array(
-          'article-personalizable-headline',
+          $agent_name,
           'Article: Personalizable Headline 1',
           'adaptive',
           PERSONALIZE_STATUS_NOT_STARTED,
@@ -2510,120 +2483,141 @@ class AcquiaLiftWebTestWorkflow extends AcquiaLiftWebTestBase {
           25/100,
           true
         ),
-        'agent' => 'article-personalizable-headline'
+        'agent' => $agent_name
       ),
       array (
         'method' => 'savePoint',
         'args' =>
           array (
-            'article-personalizable-headline',
+            $agent_name,
             $first_osid,
           ),
-        'agent' => 'article-personalizable-headline'
+        'agent' => $agent_name
       ),
       array (
         'method' => 'saveDecision',
         'args' =>
           array (
-            'article-personalizable-headline',
+            $agent_name,
             $first_osid,
             $first_osid,
           ),
-        'agent' => 'article-personalizable-headline'
+        'agent' => $agent_name
       ),
       array (
         'method' => 'saveChoice',
         'args' =>
           array (
-            'article-personalizable-headline',
+            $agent_name,
             $first_osid,
             $first_osid,
             'first-value',
           ),
-        'agent' => 'article-personalizable-headline'
+        'agent' => $agent_name
       ),
       array (
         'method' => 'saveChoice',
         'args' =>
           array (
-            'article-personalizable-headline',
+            $agent_name,
             $first_osid,
             $first_osid,
             'second-value',
           ),
-        'agent' => 'article-personalizable-headline'
+        'agent' => $agent_name
       ),
       array (
         'method' => 'saveFixedTargetingMapping',
         'args' =>
           array (
-            'article-personalizable-headline',
+            $agent_name,
             $first_osid,
             array(),
           ),
-        'agent' => 'article-personalizable-headline'
+        'agent' => $agent_name
       ),
       array (
         'method' => 'saveGoal',
         'args' =>
           array (
-            'article-personalizable-headline',
+            $agent_name,
             $action_name,
           ),
-        'agent' => 'article-personalizable-headline'
+        'agent' => $agent_name
       ),
       array (
         'callback' => 'personalize_agent_set_status',
         'args' =>
           array (
-            'article-personalizable-headline',
+            $agent_name,
             PERSONALIZE_STATUS_RUNNING,
           ),
       ),
     );
 
     $this->assertQueueItems($expected_queue_items);
-    $this->personalizedQueue->deleteQueue();
 
+    // Manually set the agent's status to running, bypassing the verification check.
+    variable_set(_personalize_agent_get_status_variable($agent_name), PERSONALIZE_STATUS_RUNNING);
+    $this->resetAll();
+    $expected_action_listeners = array(
+      $action_name => array(
+        array(
+          'agent' => $agent_name,
+          'value' => 1
+        )
+      )
+    );
+    // Confirm that the goal is in the js settings on the /user page.
+    $this->drupalGet('user');
+    $settings = $this->drupalGetSettings();
+    $this->assertEqual($expected_action_listeners, $settings['personalize']['actionListeners']);
+
+    // Change the field settings to specify particular pages for the goal.
+    $edit = array(
+      'field[settings][personalize][goal_pages]' => "node"
+    );
+    $this->drupalPost('admin/structure/types/manage/article/fields/article_headline', $edit, t('Save settings'));
+    $this->resetAll();
+    // Create another personalized field on a new node.
+    list($node2, $os2, $second_agent) = $this->createPersonalizedField();
+    // Manually set the agent's status to running, bypassing the verification check.
+    variable_set(_personalize_agent_get_status_variable($second_agent), PERSONALIZE_STATUS_RUNNING);
+    $this->resetAll();
+    $goals = personalize_goal_load_by_conditions(array('agent' => $second_agent));
+    $this->assertEqual(1, count($goals));
+    $goal = reset($goals);
+    // Confirm that the goal is *not* in the js settings on the user page but is
+    // on the node page.
+    $this->drupalGet('user');
+    $settings = $this->drupalGetSettings();
+    $this->assertFalse(isset($settings['personalize']['actionListeners'][$goal->action]));
+
+    $this->drupalGet('node');
+    $settings = $this->drupalGetSettings();
+    $expected_action_listeners[$goal->action] = array(
+      array(
+        'agent' => $second_agent,
+        'value' => 1
+      )
+    );
+    $this->assertEqual($expected_action_listeners, $settings['personalize']['actionListeners']);
+
+    $this->personalizedQueue->deleteQueue();
     // Now change the field settings to not auto-create a goal.
     $edit = array(
       'field[settings][personalize][create_goal]' => FALSE
     );
     $this->drupalPost('admin/structure/types/manage/article/fields/article_headline', $edit, t('Save settings'));
 
-    // Create another node with values in the personalized field.
-    $node = new stdClass();
-    $node->type = 'article';
-    $node->language = LANGUAGE_NONE;
-    node_object_prepare($node);
-    $node->title = $this->randomName();
-    $node->article_headline['und'][0] = array('value' => 'first value');
-    $node->article_headline['und'][1] = array('value' => 'second value');
-    node_save($node);
-    // Now create the option set.
-    $option_set = new stdClass();
-    $option_set->is_new = TRUE;
-    $option_set->data = array();
-    $option_set->options = array();
-    $option_set->plugin = 'fields';
-    $option_set->new_agent_title = 'Article: Personalizable Headline';
-    $option_set->options = array(
-      array(
-        'option_label' => personalize_fields_generate_option_label(0, array('value' => 'first value'))
-      ),
-      array(
-        'option_label' => personalize_fields_generate_option_label(1, array('value' => 'second value'))
-      )
-    );
-    personalize_fields_option_set_save($option_set, 'node', $node, 'article_headline');
-    $second_osid = 'osid-' . $option_set->osid;
+    list($node3, $os3, $third_agent) = $this->createPersonalizedField();
+    $third_osid = 'osid-' . $os3->osid;
     $this->resetAll();
     // Confirm that our agent and option set were created.
-    $option_set = personalize_option_set_load($option_set->osid);
-    $second_agent = 'article-personalizable-headline-2';
-    $this->assertEqual($second_agent, $option_set->agent);
+    $option_set = personalize_option_set_load($os3->osid);
+    $this->assertEqual($third_agent, $option_set->agent);
     // There should be no goal for this agent.
-    $goals = personalize_goal_load_by_conditions(array('agent' => $second_agent));
+    $goals = personalize_goal_load_by_conditions(array('agent' => $third_agent));
     $this->assertTrue(empty($goals));
     // We should only have items in the queue for saving the agent and the
     // option set.
@@ -2631,66 +2625,66 @@ class AcquiaLiftWebTestWorkflow extends AcquiaLiftWebTestBase {
       array(
         'method' => 'saveAgent',
         'args' => array(
-          'article-personalizable-headline-2',
-          'Article: Personalizable Headline 2',
+          $third_agent,
+          'Article: Personalizable Headline 3',
           'adaptive',
           PERSONALIZE_STATUS_NOT_STARTED,
           10/100,
           25/100,
           true
         ),
-        'agent' => 'article-personalizable-headline-2'
+        'agent' => $third_agent
       ),
       array (
         'method' => 'savePoint',
         'args' =>
           array (
-            $second_agent,
-            $second_osid,
+            $third_agent,
+            $third_osid,
           ),
-        'agent' => 'article-personalizable-headline-2'
+        'agent' => $third_agent
       ),
       array (
         'method' => 'saveDecision',
         'args' =>
           array (
-            $second_agent,
-            $second_osid,
-            $second_osid,
+            $third_agent,
+            $third_osid,
+            $third_osid,
           ),
-        'agent' => 'article-personalizable-headline-2'
+        'agent' => $third_agent
       ),
       array (
         'method' => 'saveChoice',
         'args' =>
           array (
-            $second_agent,
-            $second_osid,
-            $second_osid,
+            $third_agent,
+            $third_osid,
+            $third_osid,
             'first-value',
           ),
-        'agent' => 'article-personalizable-headline-2'
+        'agent' => $third_agent
       ),
       array (
         'method' => 'saveChoice',
         'args' =>
           array (
-            $second_agent,
-            $second_osid,
-            $second_osid,
+            $third_agent,
+            $third_osid,
+            $third_osid,
             'second-value',
           ),
-        'agent' => 'article-personalizable-headline-2'
+        'agent' => $third_agent
       ),
       array (
         'method' => 'saveFixedTargetingMapping',
         'args' =>
           array (
-            $second_agent,
-            $second_osid,
+            $third_agent,
+            $third_osid,
             array(),
           ),
-        'agent' => 'article-personalizable-headline-2'
+        'agent' => $third_agent
       ),
     );
     $this->assertQueueItems($expected_queue_items);
@@ -3050,5 +3044,42 @@ class AcquiaLiftWebTestWorkflow extends AcquiaLiftWebTestBase {
     acquia_lift_build_page($page);
     $requests = DummyAcquiaLiftHttpClient::getLoggedRequests();
     $this->assertEqual(count($requests), 0);
+  }
+
+  /**
+   * Creates an article node with a personalized headline field.
+   */
+  protected  function createPersonalizedField() {
+    // Create a node which we will attach a fields-based option set to. We can't
+    // do this via the form because of the way we alter the form, which makes the
+    // "Add an option" button not findable by simpletest.
+    $node = new stdClass();
+    $node->type = 'article';
+    $node->language = LANGUAGE_NONE;
+    node_object_prepare($node);
+    $node->title = $this->randomName();
+    $node->article_headline['und'][0] = array('value' => 'first value');
+    $node->article_headline['und'][1] = array('value' => 'second value');
+    node_save($node);
+
+    // Now create the option set.
+    $option_set = new stdClass();
+    $option_set->is_new = TRUE;
+    $option_set->data = array();
+    $option_set->options = array();
+    $option_set->plugin = 'fields';
+    $option_set->new_agent_title = 'Article: Personalizable Headline';
+    $option_set->options = array(
+      array(
+        'option_label' => personalize_fields_generate_option_label(0, array('value' => 'first value'))
+      ),
+      array(
+        'option_label' => personalize_fields_generate_option_label(1, array('value' => 'second value'))
+      )
+    );
+    personalize_fields_option_set_save($option_set, 'node', $node, 'article_headline');
+    $this->resetAll();
+    $agent_name = $option_set->agent;
+    return array($node, $option_set, $agent_name);
   }
 }

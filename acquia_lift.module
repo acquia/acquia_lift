@@ -660,6 +660,7 @@ function acquia_lift_personalize_option_set_save($option_set) {
         $plugin = 'link';
         $action_label = t('Clicks @option_set', array('@option_set' => $option_set->label));
         $action_name = personalize_generate_machine_name($action_label, 'visitor_actions_machine_name_exists', '_');
+        $pages = empty($field['settings']['personalize']['goal_pages']) ? '' : $field['settings']['personalize']['goal_pages'];
         $action = array(
           'label' => $action_label,
           'machine_name' => $action_name,
@@ -667,7 +668,7 @@ function acquia_lift_personalize_option_set_save($option_set) {
           'client_side' => 1,
           'identifier' => '[data-personalize=' . $js_id . ']',
           'event' => 'click',
-          'pages' => '',
+          'pages' => $pages,
           'data' => array(),
           'limited_use' => 1
         );
@@ -2546,6 +2547,20 @@ function acquia_lift_form_field_ui_field_edit_form_alter(&$form, &$form_state, $
     );
     personalize_form_element_add_states($state, $form['field']['settings']['personalize']['create_goal']);
 
+    // Textarea to limit the pages the goal fires on.
+    $form['field']['settings']['personalize']['goal_pages'] = array(
+      '#type' => 'textarea',
+      '#title' => t('Pages for goal'),
+      '#default_value' => isset($field['settings']['personalize']['goal_pages']) ? $field['settings']['personalize']['goal_pages'] : '',
+      '#description' => t('Specify pages to limit the goal to using their paths (one path per line.) Leave blank to apply to all pages.'),
+      '#states' => array(
+        'visible' => array(
+          ':input[name="field[settings][personalize][agent_type]"]' => $visible_states,
+          ':input[name="field[settings][personalize][create_goal]"]' => array('checked' => TRUE),
+        ),
+      )
+    );
+    personalize_form_element_add_states($state, $form['field']['settings']['personalize']['goal_pages']);
     // Checkbox for auto-starting the campaign should only be visible if the chosen agent
     // type is a Lift agent type and the auto-create goal box is checked.
     $form['field']['settings']['personalize']['auto_start'] = array(

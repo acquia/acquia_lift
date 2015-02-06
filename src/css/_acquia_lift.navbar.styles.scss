@@ -305,12 +305,13 @@
   .acquia-lift-campaign-list,
   .acquia-lift-option-sets-list {
     padding: {
-      top: .9em;
-      bottom: .75em;
+      top: $navbar-padding-top;
+      bottom: $navbar-padding-bottom;
     }
+    min-height:  ($navbar-padding-top * 2 + $navbar-line-height);
 
     &, span {
-      line-height: 1.2;
+      line-height: $navbar-line-height;
     }
   }
 

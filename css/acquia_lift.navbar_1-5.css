@@ -246,13 +246,14 @@
  */
 #navbar-administration .acquia-lift-campaign-list,
 #navbar-administration .acquia-lift-option-sets-list {
-  padding-top: .9em;
-  padding-bottom: .75em;
+  padding-top: 0.9em;
+  padding-bottom: 0.75em;
+  min-height: 3em;
 }
 #navbar-administration .acquia-lift-campaign-list, #navbar-administration .acquia-lift-campaign-list span,
 #navbar-administration .acquia-lift-option-sets-list,
 #navbar-administration .acquia-lift-option-sets-list span {
-  line-height: 1.2;
+  line-height: 1.2em;
 }
 #navbar-administration .acquia-lift-active-container {
   position: relative;

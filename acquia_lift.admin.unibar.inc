@@ -1705,3 +1705,25 @@ function acquia_lift_campaign_flow_cancel($ajax = NULL) {
   $commands = array(ctools_modal_command_dismiss());
   print ajax_render($commands);
 }
+
+/**
+ * Ajax callback to update an agent's status.
+ *
+ * @param $agent
+ *   The agent to update.
+ * @param $status
+ *   The new status to set.
+ */
+function acquia_lift_agent_set_status_ajax($agent, $status) {
+  $updated = personalize_agent_set_status($agent->machine_name, $status);
+  $return = array('success' => $updated);
+  if ($updated) {
+    list($next_status, $text) = _personalize_status_toggle_next($status);
+    $return['nextStatus'] = array(
+      'status' => $next_status,
+      'text' => $text,
+    );
+    $return['currentStatus'] = $status;
+  }
+  return drupal_json_output($return);
+}

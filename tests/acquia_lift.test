@@ -2695,7 +2695,7 @@ class AcquiaLiftWebTestWorkflow extends AcquiaLiftWebTestBase {
     );
     $this->assertQueueItems($expected_queue_items);
   }
-  
+
   /**
    * Tests the logic of AcquiaLiftAgent's stopNow() implementation in the
    * simplest use case.
@@ -3050,5 +3050,68 @@ class AcquiaLiftWebTestWorkflow extends AcquiaLiftWebTestBase {
     acquia_lift_build_page($page);
     $requests = DummyAcquiaLiftHttpClient::getLoggedRequests();
     $this->assertEqual(count($requests), 0);
+  }
+
+  // Tests changing the status of an agent via AJAX.
+  function testAgentStatusChangeAJAX() {
+    module_enable(array('personalize_test_extra_agent'));
+    $this->resetAll();
+    // Need to call resetAll again to force ctools to load the class files.
+    $this->resetAll();
+    $admin_user = $this->drupalCreateUser(array('access administration pages', 'manage personalized content'));
+    $this->drupalLogin($admin_user);
+    // Create two agents of different types.
+    $first_agent_name = $this->randomName();
+    $first_agent_machine_name = personalize_generate_machine_name($first_agent_name, 'personalize_agent_machine_name_exists');
+    $second_agent_name = $this->randomName();
+    $second_agent_machine_name = personalize_generate_machine_name($second_agent_name, 'personalize_agent_machine_name_exists');
+    $agents = array(
+      array(
+        'label' => $first_agent_name,
+        'machine_name' => $first_agent_machine_name,
+        'agent_type' => 'test_agent',
+      ),
+      array(
+        'label' => $second_agent_name,
+        'machine_name' => $second_agent_machine_name,
+        'agent_type' => 'test_invalid_agent',
+      ),
+    );
+    foreach ($agents as $agent) {
+      $edit = array(
+        'agent_basic_info[title]' => $agent['label'],
+        'agent_basic_info[machine_name]' => $agent['machine_name'],
+        'agent_basic_info[agent_type]' => $agent['agent_type'],
+      );
+      $this->drupalPost('admin/structure/personalize/add', $edit, $this->getButton('agent'));
+    }
+    // Now test the ajax callback.
+    // Expected case to update to next status.
+    $expected = array(
+      'success' => TRUE,
+      'nextStatus' => array(
+        'status' => PERSONALIZE_STATUS_PAUSED,
+        'text' => t('Pause'),
+      ),
+      'currentStatus' => PERSONALIZE_STATUS_RUNNING,
+    );
+    $result = $this->drupalGetAjax('admin/structure/personalize/manage/' . $first_agent_machine_name . '/ajax_status/' . PERSONALIZE_STATUS_RUNNING);
+    $this->assertEqual($expected, $result);
+
+    // Try an update that doesn't change the status.
+    $result = $this->drupalGetAjax('admin/structure/personalize/manage/' . $first_agent_machine_name . '/ajax_status/' . PERSONALIZE_STATUS_RUNNING);
+    $this->assertEqual($expected, $result);
+
+    // Try to update an agent that cannot be verified.
+    $expected = array(
+      'success' => FALSE,
+    );
+    $result = $this->drupalGetAjax('admin/structure/personalize/manage/' . $second_agent_machine_name . '/ajax_status/' . PERSONALIZE_STATUS_RUNNING);
+    $this->assertEqual($expected, $result);
+
+    // Try to call the path without the proper permissions.
+    $this->drupalLogout();
+    $this->drupalGet('admin/structure/personalize/manage/' . $first_agent_machine_name . '/ajax_status/' . PERSONALIZE_STATUS_RUNNING);
+    $this->assertText(t('Access denied'));
   }
 }

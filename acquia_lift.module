@@ -194,6 +194,15 @@ function acquia_lift_menu() {
     'file' => 'acquia_lift.admin.unibar.inc',
     'theme callback' => 'ajax_base_page_theme',
   );
+  // AJAX callback to change the status of a campaign.
+  $items['admin/structure/personalize/manage/%personalize_agent/ajax_status/%'] = array(
+    'page callback' => 'acquia_lift_agent_set_status_ajax',
+    'page arguments' => array(4, 6),
+    'access callback' => 'user_access',
+    'access arguments' => array('manage personalized content'),
+    'type' => MENU_CALLBACK,
+    'file' => 'acquia_lift.admin.unibar.inc',
+  );
   return $items;
 }
 

@@ -1236,7 +1236,15 @@ abstract class AcquiaLiftReportBase implements PersonalizeAgentReportInterface, 
       $this->loadConversionReportHelper($report_data, FALSE, $options);
       $report_options['goal'] = $options['gaol'];
       $actions = visitor_actions_get_actions();
-      $report_name = $actions[$options['goal']]['label'];
+      // If the action still exists, use the label, otherwise just use the goal
+      // machine name.
+      if (isset($actions[$options['goal']])) {
+        $report_name = $actions[$options['goal']]['label'];
+      }
+      else {
+        $report_name = $options['goal'];
+      }
+
     }
     $this->loadConversionReportHelper($report_data, TRUE, $report_options);
     $this->loadConversionReportHelper($report_data, FALSE, $report_options);
@@ -1758,7 +1766,7 @@ abstract class AcquiaLiftReportBase implements PersonalizeAgentReportInterface, 
     $actions = visitor_actions_get_actions();
     $goal_id = $report_data['goal'];
     if (!isset($report_data['conversion_goals'][$goal_id])) {
-      $report_data['conversion_goals'][$goal_id]['name'] = $actions[$goal_id]['label'];
+      $report_data['conversion_goals'][$goal_id]['name'] = isset($actions[$goal_id]) ? $actions[$goal_id]['label'] : $goal_id;
       $options['goal'] = $goal_id;
       // Summary report.
       $this->loadConversionReportHelper($report_data, FALSE, $options);

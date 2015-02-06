@@ -76,7 +76,6 @@ class DummyAcquiaLiftHttpClient implements AcquiaLiftDrupalHttpClientInterface {
     $this->broken = $broken;
     $this->breakageType = $simulate_client_side_breakage ? 'client' : 'server';
     $this->data += $data;
-    debug($this->data, 'test data for dummy class');
   }
 
   /**
@@ -127,7 +126,6 @@ class DummyAcquiaLiftHttpClient implements AcquiaLiftDrupalHttpClientInterface {
    */
   protected function getDataForURI($uri, $headers = array()) {
     $parsed = parse_url($uri);
-    debug($parsed, 'api url');
     $path_parts = explode('/', $parsed['path']);
     // The first element of the $path_parts array will be an empty string and the second
     // will be the owner code, which we don't need here.

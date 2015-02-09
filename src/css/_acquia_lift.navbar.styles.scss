@@ -43,6 +43,9 @@
     .acquia-lift-campaign {
       font-weight: bold;
     }
+    &.acquia-lift-menu-link {
+      font-weight: normal;
+    }
   }
   .acquia-lift-campaigns .navbar-box {
     display: inline-block;
@@ -167,26 +170,26 @@
         text-align: right;
       }
       .acquia-lift-campaign {
-        margin-right: -4em;
-        padding-right: 4em;
+        margin-right: -4.2em;
+        padding-right: 4.2em;
       }
       .acquia-lift-campaign-edit {
-        width: 4em;
+        width: 4.2em;
       }
       .acquia-lift-preview-option {
-        margin-right: -10em;
-        padding-right: 10em;
+        margin-right: -9em;
+        padding-right: 9em;
       }
       .acquia-lift-variation-edit {
         width: 2.3em;
       }
       .acquia-lift-variation-delete,
       .acquia-lift-goal-delete {
-        width: 3.5em;
+        width: 4em;
       }
       .acquia-lift-variation-rename,
       .acquia-lift-goal-rename {
-        width: 4.1em;
+        width: 4.6em;
       }
     }
   }
@@ -305,12 +308,13 @@
   .acquia-lift-campaign-list,
   .acquia-lift-option-sets-list {
     padding: {
-      top: .9em;
-      bottom: .75em;
+      top: $navbar-padding-top;
+      bottom: $navbar-padding-bottom;
     }
+    min-height:  ($navbar-padding-top * 2 + $navbar-line-height);
 
     &, span {
-      line-height: 1.2;
+      line-height: $navbar-line-height;
     }
   }
 

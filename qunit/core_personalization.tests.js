@@ -26,7 +26,7 @@ QUnit.test("QueueItem unit tests", function(assert) {
     'id': item.getId(),
     'data': itemData,
     'pflag': false,
-    'try': 0
+    'numberTried': 0
   };
   assert.deepEqual(item.toObject(), queueObj, 'Queue item can be turned into an object.');
   queueObj.data = 'testme';

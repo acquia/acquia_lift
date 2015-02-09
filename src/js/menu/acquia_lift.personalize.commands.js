@@ -59,7 +59,7 @@
                 Drupal.settings.personalize.option_sets[option_set_id].removed = true;
               }
             }
-            Drupal.settings.personalize.campaigns[empty_agent].optionSetTypes = [];
+            Drupal.settings.acquia_lift.campaigns[empty_agent].optionSetTypes = [];
             // Notify of the deleted option sets.
             $(document).trigger('acquiaLiftOptionSetsEmpty', [empty_agent]);
           } else {
@@ -86,7 +86,7 @@
     var campaignId, goalId, campaigns = response.data.campaigns;
 
     for (campaignId in campaigns) {
-      Drupal.settings.personalize.campaigns[campaignId] = campaigns[campaignId];
+      Drupal.settings.acquia_lift.campaigns[campaignId] = campaigns[campaignId];
     }
   }
 

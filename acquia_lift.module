@@ -7,6 +7,7 @@
 
 define('ACQUIA_LIFT_DEFAULT_AGENT_NAME', 'drupal-default');
 define('ACQUIA_LIFT_OPERATION_ERROR_PREFIX', 'Errors: ');
+define('ACQUIA_LIFT_AGENT_VERIFY_CACHE', 'acquia_lift:agent:verification');
 
 /**
  * Implements hook_menu().
@@ -58,6 +59,15 @@ function acquia_lift_menu() {
     // processed if a particular session variable is set.
     // @see acquia_lift_process_queue()
     'access callback' => TRUE,
+  );
+  // Ajax callback to provide updated campaign settings to JavaScript.
+  $items['acquia_lift/settings'] = array(
+    'type' => MENU_CALLBACK,
+    'page callback' => 'acquia_lift_settings_update',
+    'access arguments' => array('manage personalized content'),
+    'delivery callback' => 'ajax_deliver',
+    'theme callback' => 'ajax_base_page_theme',
+    'type' => MENU_CALLBACK,
   );
   // Ajax callback to generate report data.
   $items['acquia_lift/reports/conversion'] = array(
@@ -115,15 +125,6 @@ function acquia_lift_menu() {
   // AJAX callback to rename a page variation.
   $items['admin/structure/acquia_lift/pagevariation/rename/%/%/%ctools_js'] = array(
     'page callback' => 'acquia_lift_page_variation_rename_modal_callback',
-    'page arguments' => array(5, 6),
-    'access arguments' => array('manage personalized content'),
-    'type' => MENU_CALLBACK,
-    'file' => 'acquia_lift.admin.unibar.inc',
-    'theme callback' => 'ajax_base_page_theme',
-  );
-  // AJAX callback to rename an option set variation.
-  $items['admin/structure/acquia_lift/variation/rename/%/%/%ctools_js'] = array(
-    'page callback' => 'acquia_lift_option_rename_modal_callback',
     'page arguments' => array(5, 6),
     'access arguments' => array('manage personalized content'),
     'type' => MENU_CALLBACK,
@@ -192,6 +193,15 @@ function acquia_lift_menu() {
     'type' => MENU_CALLBACK,
     'file' => 'acquia_lift.admin.unibar.inc',
     'theme callback' => 'ajax_base_page_theme',
+  );
+  // AJAX callback to change the status of a campaign.
+  $items['admin/structure/personalize/manage/%personalize_agent/ajax_status/%'] = array(
+    'page callback' => 'acquia_lift_agent_set_status_ajax',
+    'page arguments' => array(4, 6),
+    'access callback' => 'user_access',
+    'access arguments' => array('manage personalized content'),
+    'type' => MENU_CALLBACK,
+    'file' => 'acquia_lift.admin.unibar.inc',
   );
   return $items;
 }
@@ -281,6 +291,11 @@ function acquia_lift_theme() {
       'render element' => 'element',
       'path' => $path . '/theme',
       'file' => 'acquia_lift.navbar.theme.inc',
+    ),
+    'menu_tree__acquia_lift_controls' => array(
+      'render element' => 'tree',
+      'function' => 'theme_acquia_lift_navbar_menu_tree',
+      'preprocess functions' => array('template_preprocess_acquia_lift_navbar_menu_tree'),
     ),
   );
 }
@@ -511,6 +526,8 @@ function acquia_lift_personalize_agent_presave($agent) {
  * Implements hook_personalize_agent_update_status().
  */
 function acquia_lift_personalize_agent_update_status($agent_name, $old_status, $status) {
+  // Clear the agent's verification status.
+  acquia_lift_agent_clear_verified_status($agent_name);
   $agent_data = personalize_agent_load($agent_name);
   if (!acquia_lift_owns_agent($agent_data)) {
     return;
@@ -545,6 +562,7 @@ function acquia_lift_personalize_agent_delete($agent_data) {
   if (!acquia_lift_owns_agent($agent_data)) {
     return;
   }
+  acquia_lift_agent_clear_verified_status($agent_data->machine_name);
   $queue = DrupalQueue::get('acquia_lift_sync');
   $queue->createItem(array(
     'method' => 'deleteAgent',
@@ -604,7 +622,7 @@ function acquia_lift_personalize_option_set_save($option_set) {
   acquia_lift_sync_option_sets($agent, $old_option_sets, $new_option_sets, TRUE);
   // This agent will need to be re-verified as the changes may have made it changed
   // whether or not it is valid.
-  personalize_agent_clear_verified_status($agent->machine_name);
+  acquia_lift_agent_clear_verified_status($agent->machine_name);
   // The only reason that a change to this option set should cause the agent to be
   // paused, is if we now have fewer than two options in the option set.
   if (count($option_set->options) < 2) {
@@ -630,9 +648,9 @@ function acquia_lift_personalize_option_set_save($option_set) {
 
   $needs_starting = FALSE;
   if (isset($option_set->is_new)) {
-    if (isset($field['settings']['personalize']['stop_on_winner']) && $field['settings']['personalize']['stop_on_winner']) {
-      // We need to set the 'stop_on_winner' property on the newly created agent.
-      $agent->data['stop_on_winner'] = 1;
+    if (isset($field['settings']['personalize']['auto_stop']) && $field['settings']['personalize']['auto_stop']) {
+      // We need to set the 'auto_stop' property on the newly created agent.
+      $agent->data['auto_stop'] = 1;
       personalize_agent_save($agent);
     }
     if (isset($field['settings']['personalize']['create_goal']) && $field['settings']['personalize']['create_goal']) {
@@ -642,6 +660,7 @@ function acquia_lift_personalize_option_set_save($option_set) {
         $plugin = 'link';
         $action_label = t('Clicks @option_set', array('@option_set' => $option_set->label));
         $action_name = personalize_generate_machine_name($action_label, 'visitor_actions_machine_name_exists', '_');
+        $pages = empty($field['settings']['personalize']['goal_pages']) ? '' : $field['settings']['personalize']['goal_pages'];
         $action = array(
           'label' => $action_label,
           'machine_name' => $action_name,
@@ -649,7 +668,7 @@ function acquia_lift_personalize_option_set_save($option_set) {
           'client_side' => 1,
           'identifier' => '[data-personalize=' . $js_id . ']',
           'event' => 'click',
-          'pages' => '',
+          'pages' => $pages,
           'data' => array(),
           'limited_use' => 1
         );
@@ -704,7 +723,7 @@ function acquia_lift_personalize_option_set_delete($option_set) {
   acquia_lift_sync_option_sets($agent, $old_option_sets, $new_option_sets);
   acquia_lift_sync_fixed_targeting($agent, $new_option_sets);
   // Clear the verified status of the agent.
-  personalize_agent_clear_verified_status($agent->machine_name);
+  acquia_lift_agent_clear_verified_status($agent->machine_name);
   // The only reason deletion of the option set would mean the agent needs to be
   // paused is if there are no more option sets.
   if (count($new_option_sets) == 0) {
@@ -783,7 +802,7 @@ function acquia_lift_personalize_goal_save($goal_info) {
   acquia_lift_sync_goals($agent, $old_goals, $new_goals, TRUE);
   // This agent will need to be re-verified as the changes may have changed
   // whether or not it is valid.
-  personalize_agent_clear_verified_status($goal_info['agent']);
+  acquia_lift_agent_clear_verified_status($goal_info['agent']);
 }
 
 /**
@@ -805,7 +824,7 @@ function acquia_lift_personalize_goal_delete($goal_info) {
   }
   acquia_lift_sync_goals($agent, $old_goals, $new_goals, TRUE);
   // Clear the verified status of the agent.
-  personalize_agent_clear_verified_status($agent->machine_name);
+  acquia_lift_agent_clear_verified_status($agent->machine_name);
   // If we now have no goals, the agent needs to be paused.
   if (count($new_goals) == 0) {
     personalize_pause_if_running($agent->machine_name);
@@ -922,10 +941,13 @@ function acquia_lift_ensure_default_agent($account_info) {
 }
 
 /**
- * Implements hook_personalize_form_ajax_submit().
+ * Implements hook_personalize_form_ajax_commands_alter().
+ *
+ * Synchronize the queue when the campaign is edited.  This is done via client-
+ * side commands in order to allow the user-interface to adjust upon completion.
  */
-function acquia_lift_personalize_form_ajax_submit($agent_data) {
-  acquia_lift_process_queue(FALSE);
+function acquia_lift_personalize_form_ajax_commands_alter(&$commands) {
+  $commands[] = acquia_lift_command_process_queue();
 }
 
 /**
@@ -975,15 +997,9 @@ function acquia_lift_process_queue($exit_on_finish = TRUE) {
       $queue->releaseItem($item);
     }
   }
-  personalize_agent_clear_verified_status();
+  acquia_lift_agent_clear_verified_status();
 
   if ($exit_on_finish) {
-    $commands = array(
-      ajax_command_settings(array('personalize' => array(
-        'campaigns' => personalize_agent_get_settings(),
-      )), TRUE),
-    );
-    personalize_ajax_commands_deliver($commands);
     drupal_exit();
   }
   else {
@@ -1170,13 +1186,28 @@ function acquia_lift_library() {
     'js' => array(
       $path . '/js/acquia_lift.navbar.js' => $options,
     ),
-    'css' => array(
-      $path . '/css/acquia_lift.navbar.css' => array(),
-    ),
     'dependencies' => array(
       array('system', 'jquery'),
       array('system', 'jquery.once'),
     ),
+  );
+
+  // If navbar is enabled before the class names were changed from .menu then include the old css.
+  if (acquia_lift_using_older_navbar()) {
+    $libraries['acquia_lift.navbar']['css'][$path . '/css/acquia_lift.navbar_1-5.css'] = array();
+  }
+  else {
+    // Navbar is not enabled, or it is enabled with the later menu class names.
+    $libraries['acquia_lift.navbar']['css'][$path . '/css/acquia_lift.navbar.css'] = array();
+  }
+  // Save the menu class name to be used.
+  $libraries['acquia_lift.navbar']['js'][] = array(
+    'data' => array(
+      'acquia_lift' => array(
+        'menuClass' => acquia_lift_unibar_menu_class(),
+      ),
+    ),
+    'type' => 'setting'
   );
 
   // Toolbar module integration.
@@ -1241,6 +1272,15 @@ function acquia_lift_library() {
       array('acquia_lift', 'acquia_lift.navbar.displace'),
       array('acquia_lift', 'acquia_lift.navbar.menu'),
     ),
+  );
+  // Set the menu class to be used.
+  $libraries['acquia_lift.unified.navbar']['js'][] = array(
+    'data' => array(
+      'acquia_lift' => array(
+        'menuClass' => acquia_lift_unibar_menu_class(),
+      ),
+    ),
+    'type' => 'setting'
   );
 
   // Only load navbar.overlay if overlay is enabled.
@@ -2032,6 +2072,26 @@ function _acquia_lift_using_unified_navbar() {
 }
 
 /**
+ * Helper function to determine if an older version of navbar is in use.
+ *
+ * The main difference to be dealt with here is that in navbar <= 1.5 the
+ * main menu class used is 'menu' while later versions standardized to
+ * 'navbar-menu' to avoid conflicts with the standard menu system.
+ */
+function acquia_lift_using_older_navbar() {
+  // The menu tree preprocessor was added after navbar 1.5 in order to handle applying
+  // the updated navbar-menu class.
+  return module_exists('navbar') && !function_exists('template_preprocess_navbar_menu_tree');
+}
+
+/**
+ * Helper function to determine the menu class name to use for unibar structure.
+ */
+function acquia_lift_unibar_menu_class() {
+  return acquia_lift_using_older_navbar() ? 'menu' : 'navbar-menu';
+}
+
+/**
  * Create and attach the assets for Acquia Lift navigation to an element on the
  * page.
  *
@@ -2339,9 +2399,9 @@ function acquia_lift_reset_agent($agent_name) {
 
 
 /**
- * Implements hook_personalize_agent_end_date_form_alter().
+ * Implements hook_personalize_agent_date_form_alter().
  */
-function acquia_lift_personalize_agent_end_date_form_alter(&$form, $agent_name) {
+function acquia_lift_personalize_agent_date_form_alter(&$form, $agent_name) {
   if (empty($agent_name)) {
     return;
   }
@@ -2355,11 +2415,14 @@ function acquia_lift_personalize_agent_end_date_form_alter(&$form, $agent_name) 
     // picker element that goes with it.
     $specified = $options['specified'];
     unset($options['specified']);
-    $options['winner'] = t('Run until a winner is found');
+    $options['auto'] = t('End when campaign thresholds are reached');
+    $form['campaign_end']['auto'] = array(
+      '#description' => t('This option changes the campaign\'s status to complete when both the campaign !duration and !decisions thresholds are reached. The variation with highest number of completed goals at that time is the winning variation for display.', array('!duration' => l(t('duration'), 'admin/config/content/personalize/acquia_lift'), '!decisions' => l(t('decisions'), 'admin/config/content/personalize/acquia_lift'))),
+    );
     $options['specified'] = $specified;
     $form['campaign_end']['#options'] = $options;
-    if (isset($data['stop_on_winner']) && $data['stop_on_winner']) {
-      $form['campaign_end']['#default_value'] = 'winner';
+    if (isset($data['auto_stop']) && $data['auto_stop']) {
+      $form['campaign_end']['#default_value'] = 'auto';
     }
   }
 }
@@ -2484,6 +2547,20 @@ function acquia_lift_form_field_ui_field_edit_form_alter(&$form, &$form_state, $
     );
     personalize_form_element_add_states($state, $form['field']['settings']['personalize']['create_goal']);
 
+    // Textarea to limit the pages the goal fires on.
+    $form['field']['settings']['personalize']['goal_pages'] = array(
+      '#type' => 'textarea',
+      '#title' => t('Pages for goal'),
+      '#default_value' => isset($field['settings']['personalize']['goal_pages']) ? $field['settings']['personalize']['goal_pages'] : '',
+      '#description' => t('Specify pages to limit the goal to using their paths (one path per line.) Leave blank to apply to all pages.'),
+      '#states' => array(
+        'visible' => array(
+          ':input[name="field[settings][personalize][agent_type]"]' => $visible_states,
+          ':input[name="field[settings][personalize][create_goal]"]' => array('checked' => TRUE),
+        ),
+      )
+    );
+    personalize_form_element_add_states($state, $form['field']['settings']['personalize']['goal_pages']);
     // Checkbox for auto-starting the campaign should only be visible if the chosen agent
     // type is a Lift agent type and the auto-create goal box is checked.
     $form['field']['settings']['personalize']['auto_start'] = array(
@@ -2501,18 +2578,18 @@ function acquia_lift_form_field_ui_field_edit_form_alter(&$form, &$form_state, $
     personalize_form_element_add_states($state, $form['field']['settings']['personalize']['auto_start']);
 
     // Add a checkbox for automatically stopping the campaign once a winner has been found.
-    $form['field']['settings']['personalize']['stop_on_winner'] = array(
+    $form['field']['settings']['personalize']['auto_stop'] = array(
       '#type' => 'checkbox',
-      '#title' => t('Only run until a winner is found'),
-      '#default_value' => isset($field['settings']['personalize']['stop_on_winner']) ? $field['settings']['personalize']['stop_on_winner'] : 0,
-      '#description' => t('Should the created campaign be stopped when a winner has been found?'),
+      '#title' => t('End when campaign thresholds are reached'),
+      '#default_value' => isset($field['settings']['personalize']['auto_stop']) ? $field['settings']['personalize']['auto_stop'] : 0,
+      '#description' => t('Should the campaign\'s status be changed to complete when both the campaign !duration and !decisions thresholds are reached? In this case, the variation with the highest number of completed goals at that time is set as the winning variation for display.', array('!duration' => l(t('duration'), 'admin/config/content/personalize/acquia_lift'), '!decisions' => l(t('decisions'), 'admin/config/content/personalize/acquia_lift'))),
       '#states' => array(
         'visible' => array(
           ':input[name="field[settings][personalize][agent_type]"]' => $visible_states,
         ),
       )
     );
-    personalize_form_element_add_states($state, $form['field']['settings']['personalize']['stop_on_winner']);
+    personalize_form_element_add_states($state, $form['field']['settings']['personalize']['auto_stop']);
   }
 }
 
@@ -2558,6 +2635,27 @@ function acquia_lift_preprocess_personalize_campaign_status_update(&$variables) 
 }
 
 /**
+ * Implements template_preprocess_HOOK() for theme_acquia_lift_navbar_menu_tree().
+ */
+function template_preprocess_acquia_lift_navbar_menu_tree(&$variables) {
+  $variables['tree'] = $variables['tree']['#children'];
+}
+
+/**
+ * Returns HTML for a wrapper for the acquia lift navbar subtree.
+ *
+ * @param $variables
+ *   An associative array containing:
+ *   - tree: An HTML string containing the tree's items.
+ *
+ * @see template_preprocess_navbar_menu_tree()
+ * @ingroup themeable
+ */
+function theme_acquia_lift_navbar_menu_tree(&$variables) {
+  return '<ul class="' . acquia_lift_unibar_menu_class() . '">' . $variables['tree'] . '</ul>';
+}
+
+/**
  * Implements hook_help().
  */
 function acquia_lift_help($path, $arg) {
@@ -2582,6 +2680,23 @@ function acquia_lift_visitor_actions_ui_selector_ignore() {
       'acquia-lift-[a-zA-Z0-9\_\-]+',
     ),
   );
+}
+
+/**
+ * Returns updated campaign settings that can be used to update the client
+ * interface in response to asynchronous events such as queue synchronization.
+ *
+ * In the future it could become necessary, useful, to pass parameters to
+ * indicate the type of data to include.  The only current need is to return
+ * the updated campaign basic information.
+ */
+function acquia_lift_settings_update() {
+  $commands = array(
+    ajax_command_settings(array('acquia_lift' => array(
+      'campaigns' => acquia_lift_get_campaign_details(variable_get('acquia_lift_unibar_allow_status_change', TRUE)),
+    )), TRUE),
+  );
+  return personalize_ajax_commands_deliver($commands, TRUE);
 }
 
 /**
@@ -2704,7 +2819,7 @@ function acquia_lift_command_option_set_updates($option_sets) {
  *   The machine name for the campaign to update goal data.
  */
 function acquia_lift_command_goal_updates($agent_name) {
-  $settings = personalize_agent_get_settings();
+  $settings = acquia_lift_get_campaign_details(variable_get('acquia_lift_unibar_allow_status_change', TRUE));
   return array(
     'command' => 'acquia_lift_goal_updates',
     'data' => array(
@@ -2783,4 +2898,127 @@ function acquia_lift_config_min_runtime() {
       return $num * 60 * 60 * 24 * 7;
   }
   return 0;
+}
+
+
+/**
+ * Generate an array of campaign settings that are currently configured.
+ * This administrative information is used for navigation and campaign
+ * management.
+ *
+ * @return array
+ *   An array of campaigns keyed by machine_name.
+ */
+function acquia_lift_get_campaign_details($include_status = TRUE) {
+  $campaigns = &drupal_static(__FUNCTION__, NULL);
+  if (is_array($campaigns)) {
+    return $campaigns;
+  }
+  $campaigns = array();
+
+  // We need to provide information about all configured campaigns
+  // and goals for the control UI.
+  $actions = visitor_actions_get_actions();
+  // List the campaigns in Drupal.settings, excluding completed campaigns.
+  foreach (personalize_agent_load_multiple(array(), array(), FALSE, FALSE, 'label') as $agent) {
+    $plugin = personalize_agent_load_agent($agent->machine_name);
+    if (!$plugin) {
+      continue;
+    }
+    $supports_goals = $plugin instanceof PersonalizeAgentGoalInterface;
+    if ($supports_goals) {
+      foreach (personalize_goal_load_by_conditions(array('agent' => $agent->machine_name)) as $goal) {
+        if (isset($actions[$goal->action])) {
+          $goals[$goal->action] = filter_xss($actions[$goal->action]['label']);
+        }
+      }
+    }
+    $option_sets = personalize_option_set_load_by_agent($agent->machine_name);
+    $option_set_types = array();
+    foreach ($option_sets as $option_set) {
+      $option_set_types[] = $option_set->plugin;
+    }
+    $campaigns[$agent->machine_name] = array(
+      'name' => $agent->machine_name,
+      'label' => filter_xss($agent->label),
+      'type' => $agent->plugin,
+      'links' => array(
+        'view' => base_path() . 'admin/structure/personalize/manage/' . $agent->machine_name,
+        'edit' => base_path() . 'admin/structure/personalize/manage/' . $agent->machine_name . '/edit',
+        'report' => $plugin instanceof PersonalizeAgentReportInterface ? base_path() . 'admin/structure/personalize/manage/' . $agent->machine_name . '/report' : '',
+      ),
+      'supportsGoals' => $supports_goals,
+      'optionSetTypes' => array_unique($option_set_types),
+      'goals' => (isset($goals)) ? $goals : NULL,
+    );
+
+    if ($include_status) {
+      // Add information that will allow starting / pausing the campaign from the
+      // unibar.
+      $current_status = personalize_agent_get_status($agent->machine_name);
+      list($next_status, $status_text) = _personalize_status_toggle_next($current_status);
+      $campaigns[$agent->machine_name]['status'] = $current_status;
+      $campaigns[$agent->machine_name]['nextStatus'] = array(
+        'status' => $next_status,
+        'text' => $status_text,
+      );
+      $campaigns[$agent->machine_name]['verified'] = acquia_lift_agent_verification_cache_get($agent->machine_name);
+    }
+
+    // In the client, goals will render to an array when it is empty and an
+    // object when it has data, so the no-data state must be NULL to keep
+    // the type consistent as an object.
+    unset($goals);
+  }
+
+  return $campaigns;
+}
+
+/**
+ * Helper function to read the current agent's verification status from cache.
+ *
+ * @param string $agent_name
+ *   The machine name of the agent to get verification for.
+ * @result bool
+ *   True if agent is verified, false if not.
+ */
+function acquia_lift_agent_verification_cache_get($agent_name) {
+  $verification = &drupal_static(__FUNCTION__);
+  if (!isset($verification)) {
+    $cache = cache_get(ACQUIA_LIFT_AGENT_VERIFY_CACHE);
+    if ($cache) {
+      $verification = $cache->data;
+    }
+    else {
+      $verification = array();
+    }
+  }
+  if (!isset($verification[$agent_name])) {
+    $verification[$agent_name] = personalize_verify_agent($agent_name, FALSE);
+    cache_set(ACQUIA_LIFT_AGENT_VERIFY_CACHE, $verification);
+  }
+  return $verification[$agent_name];
+}
+
+/**
+ * Helper function to clear the cache of the verification status for a
+ * particular agent.
+ *
+ * @param string $agent_name
+ *   The machine name of the agent that should have cache cleared.  If not
+ *   passed, entire cache will be cleared.
+ */
+function acquia_lift_agent_clear_verified_status($agent_name = NULL) {
+  $cache = cache_get(ACQUIA_LIFT_AGENT_VERIFY_CACHE);
+  if (!$cache) {
+    return;
+  }
+  $verification = $cache->data;
+  if (empty($agent_name)) {
+    $verification = array();
+  }
+  else if (isset($verification[$agent_name])) {
+    unset($verification[$agent_name]);
+  }
+  cache_set(ACQUIA_LIFT_AGENT_VERIFY_CACHE, $verification);
 }

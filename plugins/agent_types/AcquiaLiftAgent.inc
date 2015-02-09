@@ -413,7 +413,7 @@ class AcquiaLiftAgent extends PersonalizeAgentBase implements PersonalizeAgentGo
       );
     }
     // This will get overridden by the 'campaign_end' dropdown.
-    $form['stop_on_winner'] = array(
+    $form['auto_stop'] = array(
       '#type' => 'value',
       '#value' => 0
     );
@@ -447,8 +447,8 @@ class AcquiaLiftAgent extends PersonalizeAgentBase implements PersonalizeAgentGo
     }
     // If "Run until a winner is found" was selected, we need to add this to the agent's
     // data property.
-    if (isset($form_state['values']['campaign_end']) && $form_state['values']['campaign_end'] == 'winner') {
-      $form_state['values']['agent_basic_info']['options']['acquia_lift']['stop_on_winner'] = 1;
+    if (isset($form_state['values']['campaign_end']) && $form_state['values']['campaign_end'] == 'auto') {
+      $form_state['values']['agent_basic_info']['options']['acquia_lift']['auto_stop'] = 1;
     }
   }
 
@@ -735,12 +735,17 @@ class AcquiaLiftAgent extends PersonalizeAgentBase implements PersonalizeAgentGo
    */
   public function stopNow() {
     // Check whether the agent is configured to stop once a winner's been found.
-    if (!isset($this->data['stop_on_winner']) || !$this->data['stop_on_winner']) {
+    if (!isset($this->data['auto_stop']) || !$this->data['auto_stop']) {
       return parent::stopNow();
     }
 
-    // No point checking for a winner if the campaign hasn't been running for the
-    // minimum runtime.
+    // If neither minimum runtime nor minimum decisions has been configured,
+    // then return FALSE.
+    if(!$this->globalConfig['minimum_runtime'] && !$this->globalConfig['minimum_decisions']) {
+      return FALSE;
+    }
+
+    // If there a minimum runtime, check that it has been reached.
     $time_now = time();
     if ($this->globalConfig['minimum_runtime']) {
       $runtime = $time_now - $this->startTime;
@@ -751,8 +756,7 @@ class AcquiaLiftAgent extends PersonalizeAgentBase implements PersonalizeAgentGo
     }
 
     // Need to go through each option set for this agent and establish whether each
-    // of them satisfies the minimum number of decisions made, if this has been set,
-    // and has a winner.
+    // of them satisfies the minimum number of decisions made, if this has been set.
     $option_sets = $this->data['decisions'];
     if (empty($option_sets)) {
       return FALSE;
@@ -762,7 +766,7 @@ class AcquiaLiftAgent extends PersonalizeAgentBase implements PersonalizeAgentGo
     $winners = array();
     foreach ($points as $point) {
       $num_decisions = 0;
-      $bLos = $vMeans = array();
+      $vMeans = array();
       // Get the confidence report directly from Lift.
       $report_options = array(
         'confidence-measure' => $this->globalConfig['confidence_measure'],
@@ -785,7 +789,6 @@ class AcquiaLiftAgent extends PersonalizeAgentBase implements PersonalizeAgentGo
       foreach ($items as $item) {
         $choice = $item['choice'];
         $vMeans[$choice] = $item['vMean'];
-        $bLos[$choice] = $item['bLo'];
         $num_decisions += $item['count'];
       }
       if ($this->globalConfig['minimum_decisions']) {
@@ -796,19 +799,9 @@ class AcquiaLiftAgent extends PersonalizeAgentBase implements PersonalizeAgentGo
         }
       }
 
-      // Find the variation with the highest bLo value.
-      arsort($bLos);
-      $highest_bLo_choice = key($bLos);
-      $highest_bLo_value = array_shift($bLos);
-      // Go through the vMeans of the rest of the choices and see if our highest
-      // bLo is higher than all of them.
-      foreach (array_keys($bLos) as $choice) {
-        if (!$highest_bLo_value > $vMeans[$choice]) {
-          return FALSE;
-        }
-      }
-      // If we got here, we have a winner for this decision point.
-      $winners[$point] = $highest_bLo_choice;
+      // Find the variation with the highest estimated value.
+      arsort($vMeans);
+      $winners[$point] = key($vMeans);
     }
 
     // If we reach here, we have a winner at each decision point and have satisfied all
@@ -1638,6 +1631,50 @@ abstract class AcquiaLiftReportBase implements PersonalizeAgentReportInterface, 
   }
 
   /**
+   * Extracts the required overview data from the report data returned by
+   * Acquia Lift.
+   *
+   * @param $items
+   *   An array of items as returned from Acquia Lift.
+   * @return array
+   *   An associative array with information for today's and the total overview.
+   */
+  protected function extractOverviewReportData($items) {
+    $agent_data = $this->agent->getData();
+    $decision_style = $agent_data['decision_style'] === 'adaptive' ? t('Auto-personalize') : t('A/B');
+    $total_variations = isset($agent_data['decisions']) ? count($agent_data['decisions']) : 0;
+
+    // Create an array of data for each time option.
+    $report['today'] = array(
+      'unformatted' => array(
+        'total_lift' => $items['today']['liftOverDefaultUsingGoals'],
+        'total_shown' => $items['today']['sessionCount'],
+        'total_goals' => $items['today']['goalCount'],
+      ),
+      'test_type' => $decision_style,
+      'total_shown' => $this->formatReportNumber($items['today']['sessionCount']),
+      'total_goals' => $this->formatReportNumber($items['today']['goalCount']),
+      'total_goals_positive' => $items['today']['goalCount'] > 0,
+      'total_lift' => $this->formatReportPercentage($items['today']['liftOverDefaultUsingGoals']),
+      'total_variations' => $total_variations,
+    );
+    $report['all'] = array(
+      'unformatted' => array(
+        'total_shown' => $items['totals']['sessions']['count'],
+        'total_goals' => $items['totals']['goals']['count'],
+        'total_lift' => $items['today']['liftOverDefaultUsingGoalsToDate'],
+      ),
+      'test_type' => $decision_style,
+      'total_shown' => $this->formatReportNumber($items['totals']['sessions']['count']),
+      'total_goals' => $this->formatReportNumber($items['totals']['goals']['count']),
+      'total_goals_positive' => $items['totals']['goals']['count'] > 0,
+      'total_lift' => $this->formatReportPercentage($items['today']['liftOverDefaultUsingGoalsToDate']),
+      'total_variations' => $total_variations,
+    );
+    return $report;
+  }
+
+  /**
    * Extracts data from the raw confidence detail report that is prepared for use
    * within the conversion report rendering process.
    *
@@ -2063,12 +2100,35 @@ class AcquiaLiftABReport extends AcquiaLiftReportBase {
   }
 
   /**
+   * Generates report overview data.
+   */
+  public function generateOverviewData(&$report_data) {
+    $this->loadAgentStatusData($report_data);
+    $report_data['status'] = $report = $this->extractOverviewReportData($report_data['raw']['status']['data'][$report_data['machine_name']]);
+    if ($report === FALSE) {
+      return array();
+    }
+
+    if ($report_data['today_only']) {
+      $overview_report = $report_data['status']['today'];
+    }
+    else {
+      $overview_report = $report_data['status']['all'];
+    }
+    $report_data['has_data'] = $overview_report['total_shown'] > 0;
+    return $report_data;
+  }
+
+  /**
    * Implements PersonalizeAgentReportInterface::buildCampaignReports().
    */
   public function buildCampaignReports($options) {
     $report_data = $this->generateReportConfiguration($options);
     $this->loadConversionReportData($report_data);
-    return $this->buildAllConversionReports($report_data);
+    $this->generateOverviewData($report_data);
+    $reports = $this->buildAllConversionReports($report_data);
+    $reports['#has_data'] = $report_data['has_data'];
+    return $reports;
   }
 }
 
@@ -2139,10 +2199,12 @@ class AcquiaLiftReport extends AcquiaLiftReportBase {
       'stability' => $this->buildStabilityReport($report_data),
       'targeting' => $this->buildReportContextSelection($report_data),
     );
+    $reports['#has_data'] = isset($reports['overview']['shown']['#title']) ? $reports['overview']['shown']['#title'] > 0 : FALSE;
+
     if (!is_array($report_data['status']) || !is_array($report_data['confidence']) || !is_array($report_data['targeting']) || !is_array($report_data['potential_context'])) {
       drupal_set_message(t('There was a problem retrieving the report data.  Please try again later.'), 'error');
     }
-    else if ($report_data['status']['all']['total_confident'] == 0) {
+    else if ($reports['#has_data'] && $report_data['status']['all']['total_confident'] == 0) {
       drupal_set_message($this->getLowConfidenceMessage(), 'warning');
     }
     return $reports;
@@ -2202,7 +2264,7 @@ class AcquiaLiftReport extends AcquiaLiftReportBase {
     // Targeting report data.
     if (!isset($report_data['targeting'])) {
       $this->loadTargetingData($report_data);
-      if (isset($report_data['raw']['targeting']['error'])) {
+      if (isset($report_data['raw']['targeting']['error']) || !isset($report_data['raw']['targeting']['data']['items'])) {
         $report_data['targeting'] = FALSE;
       }
       else {
@@ -2239,9 +2301,11 @@ class AcquiaLiftReport extends AcquiaLiftReportBase {
 
     // Determine overall confidence based on confidence in choices.
     $total_confident = 0;
-    foreach($report_data['confidence']['features'][self::NO_FEATURES] as $choice) {
-      if ($choice['significant']) {
-        $total_confident++;
+    if (isset($report_data['confidence']['features'][self::NO_FEATURES])) {
+      foreach ($report_data['confidence']['features'][self::NO_FEATURES] as $choice) {
+        if ($choice['significant']) {
+          $total_confident++;
+        }
       }
     }
 
@@ -2260,47 +2324,49 @@ class AcquiaLiftReport extends AcquiaLiftReportBase {
 
     // Update context report data.
     $option_numbers = array();
-    foreach ($report_data['confidence']['features'] as $feature_string => $feature) {
-      // Get the user-friendly feature label from the possible contextual values.
-      $feature_label = $feature_string;
-      if (isset($report_data['potential_context'][$feature_string])) {
-        $feature_label = $report_data['potential_context'][$feature_string]['label'];
-      }
+    if (isset($report_data['confidence']['features'])) {
+      foreach ($report_data['confidence']['features'] as $feature_string => $feature) {
+        // Get the user-friendly feature label from the possible contextual values.
+        $feature_label = $feature_string;
+        if (isset($report_data['potential_context'][$feature_string])) {
+          $feature_label = $report_data['potential_context'][$feature_string]['label'];
+        }
 
-      // This report only shows features that can be targeted.
-      if (!isset($report_data['targeting'][$feature_string])) {
-        continue;
-      }
+        // This report only shows features that can be targeted.
+        if (!isset($report_data['targeting'][$feature_string])) {
+          continue;
+        }
 
-      // Get the data from the targeting report for this feature.
-      $targeting_data = $report_data['targeting'][$feature_string];
+        // Get the data from the targeting report for this feature.
+        $targeting_data = $report_data['targeting'][$feature_string];
 
-      // Create a hash of choice numbers for stability report.
-      // Don't show system-defined features.
-      if ($targeting_data['system'] === TRUE) {
-        continue;
-      }
-      foreach($feature as $choice_id => $choice) {
-        $report_data['context']['features'][$feature_string][$choice_id] = array(
-          'counter' => $choice['counter'],
-          'choice_id' => $choice['choice_id'],
-          'best' => ($isAdaptive && $targeting_data['favored_selection'] === $choice['raw_label']),
-          'decisions' => $choice['decisions'],
-          'lift_default' => $choice['control'] ? self::DATA_NA : $choice['lift_default'],
-          'lift_default_positive' => $choice['unformatted']['lift_default'] > self::LIFT_THRESHHOLD,
-          'lift_random' => $choice['lift_random'],
-          'lift_random_positive' => $choice['unformatted']['lift_random'] > self::LIFT_THRESHHOLD,
-          'control' => $choice['control'],
-          'feature_label' => $feature_label,
-          'goals' => $choice['goals'],
-          'conversion' => $choice['conversion'],
-        );
-        $option_numbers[$feature_string . '|' . $choice['raw_label']] = $choice['counter'];
+        // Create a hash of choice numbers for stability report.
+        // Don't show system-defined features.
+        if ($targeting_data['system'] === TRUE) {
+          continue;
+        }
+        foreach ($feature as $choice_id => $choice) {
+          $report_data['context']['features'][$feature_string][$choice_id] = array(
+            'counter' => $choice['counter'],
+            'choice_id' => $choice['choice_id'],
+            'best' => ($isAdaptive && $targeting_data['favored_selection'] === $choice['raw_label']),
+            'decisions' => $choice['decisions'],
+            'lift_default' => $choice['control'] ? self::DATA_NA : $choice['lift_default'],
+            'lift_default_positive' => $choice['unformatted']['lift_default'] > self::LIFT_THRESHHOLD,
+            'lift_random' => $choice['lift_random'],
+            'lift_random_positive' => $choice['unformatted']['lift_random'] > self::LIFT_THRESHHOLD,
+            'control' => $choice['control'],
+            'feature_label' => $feature_label,
+            'goals' => $choice['goals'],
+            'conversion' => $choice['conversion'],
+          );
+          $option_numbers[$feature_string . '|' . $choice['raw_label']] = $choice['counter'];
+        }
       }
     }
 
     // Build the experiment report data
-    $report_data['experiment']['choices'] = $report_data['confidence']['features'][self::NO_FEATURES];
+    $report_data['experiment']['choices'] = isset($report_data['confidence']['features'][self::NO_FEATURES]) ? $report_data['confidence']['features'][self::NO_FEATURES] : array();
 
     // Build the stability report data
     foreach ($report_data['targeting'] as $feature_string => &$feature) {
@@ -2355,15 +2421,17 @@ class AcquiaLiftReport extends AcquiaLiftReportBase {
         'id' => 'acquia-lift-overview-type',
       )
     );
-    $build['total_running'] = array(
-      '#type' => 'container',
-      '#theme' => 'acquia_lift_report_overview',
-      '#attributes' => array(
-        'id' => 'acquia-lift-overview-running',
-      ),
-      '#title' => $overview_report['time_running'],
-      '#description' => t('total time running'),
-    );
+    if (isset($overview_report['time_running'])) {
+      $build['total_running'] = array(
+        '#type' => 'container',
+        '#theme' => 'acquia_lift_report_overview',
+        '#attributes' => array(
+          'id' => 'acquia-lift-overview-running',
+        ),
+        '#title' => $overview_report['time_running'],
+        '#description' => t('total time running'),
+      );
+    }
     $build['shown'] = array(
       '#type' => 'container',
       '#theme' => 'acquia_lift_report_overview',
@@ -2581,50 +2649,6 @@ class AcquiaLiftReport extends AcquiaLiftReportBase {
       '#options' => $context_values,
       '#multiple' => TRUE,
     );
-  }
-
-  /**
-   * Extracts the required overview data from the report data returned by
-   * Acquia Lift.
-   *
-   * @param $items
-   *   An array of items as returned from Acquia Lift.
-   * @return array
-   *   An associative array with information for today's and the total overview.
-   */
-  protected function extractOverviewReportData($items) {
-    $agent_data = $this->agent->getData();
-    $decision_style = $agent_data['decision_style'] === 'adaptive' ? t('Auto-personalize') : t('A/B');
-    $total_variations = count($agent_data['decisions']);
-
-    // Create an array of data for each time option.
-    $report['today'] = array(
-      'unformatted' => array(
-        'total_lift' => $items['today']['liftOverDefaultUsingGoals'],
-        'total_shown' => $items['today']['sessionCount'],
-        'total_goals' => $items['today']['goalCount'],
-      ),
-      'test_type' => $decision_style,
-      'total_shown' => $this->formatReportNumber($items['today']['sessionCount']),
-      'total_goals' => $this->formatReportNumber($items['today']['goalCount']),
-      'total_goals_positive' => $items['today']['goalCount'] > 0,
-      'total_lift' => $this->formatReportPercentage($items['today']['liftOverDefaultUsingGoals']),
-      'total_variations' => $total_variations,
-    );
-    $report['all'] = array(
-      'unformatted' => array(
-        'total_shown' => $items['totals']['sessions']['count'],
-        'total_goals' => $items['totals']['goals']['count'],
-        'total_lift' => $items['today']['liftOverDefaultUsingGoalsToDate'],
-      ),
-      'test_type' => $decision_style,
-      'total_shown' => $this->formatReportNumber($items['totals']['sessions']['count']),
-      'total_goals' => $this->formatReportNumber($items['totals']['goals']['count']),
-      'total_goals_positive' => $items['totals']['goals']['count'] > 0,
-      'total_lift' => $this->formatReportPercentage($items['today']['liftOverDefaultUsingGoalsToDate']),
-      'total_variations' => $total_variations,
-    );
-    return $report;
   }
 
   /**

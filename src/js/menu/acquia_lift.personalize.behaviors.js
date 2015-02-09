@@ -12,7 +12,11 @@
 
   Drupal.behaviors.acquiaLiftPersonalize = {
     attach: function (context) {
-      var settings = Drupal.settings.personalize;
+      var settings = {
+        'option_sets': Drupal.settings.personalize.option_sets,
+        'activeCampaign': Drupal.settings.personalize.activeCampaign,
+        'campaigns': Drupal.settings.acquia_lift.campaigns
+      };
       var ui = Drupal.acquiaLiftUI;
       var addedCampaigns = {};
       var addedOptionSets = {};
@@ -142,7 +146,7 @@
                     // link.
                     var $menu = $('[data-acquia-lift-personalize-type="campaigns"]');
                     var scrollable = document.createElement('ul');
-                    scrollable.className += "menu acquia-lift-scrollable";
+                    scrollable.className += Drupal.settings.acquia_lift.menuClass + " acquia-lift-scrollable";
                     $menu.wrap('<div class="menu-wrapper">').before(scrollable);
                   }
                   break;
@@ -335,7 +339,6 @@
             .each(function (index, element) {
               ui.views.push(new ui.MenuStatusView({
                 el: element.parentNode,
-                model: ui.collections['campaigns'],
                 collection: ui.collections['campaigns']
               }));
             });
@@ -380,6 +383,42 @@
         Drupal.acquiaLiftUI.utilities.setInitialized(true);
         Drupal.acquiaLiftUI.utilities.updateNavbar();
       }
+    }
+  };
+
+  Drupal.behaviors.acquiaLiftUnibarListeners = {
+    attach: function (context) {
+      $('body').once('acquia-lift-unibar-listeners', function () {
+
+        // Generate a place-holder element to handle the Lift settings updates
+        // via Drupal's AJAX handling.  This ensures that theme styles can be
+        // limited to those already on the page as well as automatically
+        // handling Drupal commands upon return.
+        var settingsElement = document.createElement('div');
+        var elementId = settingsElement.id = 'acquia-lift-settings-' + new Date().getTime();
+        $('body').append(settingsElement);
+
+        Drupal.ajax[elementId] = new Drupal.ajax(elementId, settingsElement, {
+          url: Drupal.settings.basePath + 'acquia_lift/settings',
+          event: 'acquiaLiftSettingsUpdate',
+          progress: {
+            type: '',
+            message: '',
+          },
+          success: function (response, status) {
+            Drupal.ajax.prototype.success.call(this, response, status);
+            Drupal.attachBehaviors(settingsElement);
+          }
+        });
+
+        // Each time the queue synchronization is complete it means that
+        // the status could have changed for a particular campaign.
+        $(document).bind('acquiaLiftQueueSyncComplete', function () {
+          // Trigger the event that will load from the Drupal AJAX object
+          // created above.
+          $('#' + elementId).trigger('acquiaLiftSettingsUpdate');
+        });
+      })
     }
   };
 

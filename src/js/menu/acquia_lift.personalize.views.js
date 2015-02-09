@@ -65,7 +65,7 @@
     initialize: function (options) {
       // The campaign collection.
       this.collection = options.collection;
-      this.collection.on('change', this.render, this);
+      this.listenTo(this.collection, 'change:isActive', this.render);
       this.render();
     },
 
@@ -119,7 +119,7 @@
      */
     initialize: function (options) {
       this.collection = options.collection;
-      this.collection.on('change', this.render, this);
+      this.listenTo(this.collection, 'change:isActive', this.render);
     },
 
     /**
@@ -132,8 +132,10 @@
       var $count = this.$el.find('i.acquia-lift-personalize-type-count').detach();
       if (!activeCampaign) {
         var label = Drupal.t('All campaigns');
+        this.$el.attr('title', label);
       } else {
         var label = Drupal.theme.acquiaLiftSelectedContext({'label': activeCampaign.get('label'), 'category': Drupal.t('Campaign')});
+        this.$el.attr('title', activeCampaign.get('label'));
       }
       this.$el.html(label);
       if ($count.length > 0) {
@@ -263,8 +265,10 @@
         var currentVariation = currentCampaign.getCurrentVariationLabel();
         if (currentVariation) {
           text = Drupal.theme.acquiaLiftSelectedContext({'label': currentVariation, 'category': Drupal.t('Variation')});
+          this.$el.attr('title', currentVariation)
         } else {
           text = Drupal.t('Variations');
+          this.$el.attr('title', text)
         }
       }
       this.$el.html(text);
@@ -482,7 +486,7 @@
       this.collection = options.collection;
       this.model = this.collection.findWhere({'isActive': true});
 
-      this.listenTo(this.collection, 'change', this.onActiveCampaignChange);
+      this.listenTo(this.collection, 'change:isActive', this.onActiveCampaignChange);
 
       this.build();
 
@@ -641,7 +645,7 @@
     selectVariation: function (variationIndex) {
       var variationData = variationIndex < 0 ? 'new' : variationIndex;
       _.defer(function($context, variationId) {
-        $context.find('[data-acquia-lift-personalize-page-variation="' + variationId + '"]').trigger('click');
+        $context.find('.acquia-lift-preview-option[data-acquia-lift-personalize-page-variation="' + variationId + '"]').trigger('click');
       }, this.$el, variationData)
     },
 
@@ -688,6 +692,7 @@
       if (this.model.get('name') !== data.campaign) {
         return;
       }
+      var menuClass = Drupal.settings.acquia_lift.menuClass;
       if (data.start) {
         if (data.variationIndex < 0) {
           // If add mode, then create a temporary variation listing.
@@ -697,10 +702,10 @@
           var variationNumber = Math.max(nextIndex, 1);
           if (nextIndex == 0) {
             // Add a control variation display as well.
-            this.$el.find('ul.menu').append(Drupal.theme('acquiaLiftNewVariationMenuItem', -1));
+            this.$el.find('ul.' + menuClass).append(Drupal.theme('acquiaLiftNewVariationMenuItem', -1));
           }
-          this.$el.find('ul.menu').append(Drupal.theme('acquiaLiftNewVariationMenuItem', variationNumber));
-          this.$el.find('ul.menu li.acquia-lift-empty').hide();
+          this.$el.find('ul.' + menuClass).append(Drupal.theme('acquiaLiftNewVariationMenuItem', variationNumber));
+          this.$el.find('ul.' + menuClass + ' li.acquia-lift-empty').hide();
           // Indicate in the model that we are adding.
           this.model.set('activeVariation', -1);
           this.render(this.model);
@@ -717,7 +722,7 @@
         Drupal.acquiaLiftUI.utilities.updateNavbar();
       } else {
         // If exiting, remove any temporary variation listings.
-        this.$el.find('ul.menu li.acquia-lift-empty').show();
+        this.$el.find('ul.' + menuClass + ' li.acquia-lift-empty').show();
         this.$el.find('.acquia-lift-page-variation-new').closest('li').remove();
         // If the model is set at adding, change it back to the control option.
         if (this.model.get('activeVariation') == -1) {
@@ -1172,14 +1177,55 @@
      * {@inheritdoc}
      */
     initialize: function (options) {
-      _.bindAll(this, "updateStatus");
+      if (!Drupal.settings.acquia_lift.allowStatusChange) {
+        this.remove();
+        return;
+      }
+      _.bindAll(this, "updateStatus", "render");
       this.collection = options.collection;
       // Make sure we are looking at the element within the menu.
       if (!this.collection || this.$el.parents('.acquia-lift-controls').length == 0) {
         return;
       }
-      this.model.on('change', this.render, this);
+      this.listenTo(this.collection, 'change:isActive', this.onActiveCampaignChange);
+
+      // Add listeners to currently active campaign if there is one.
+      this.onActiveCampaignChange(this.collection.findWhere({'isActive': true}));
+
+      // Create the view.
       this.build();
+      this.render();
+    },
+
+    /**
+     * Update the change listeners to listen to the newly activated campaign
+     * model.
+     */
+    onActiveCampaignChange: function (changed) {
+      var currentActive = this.collection.findWhere({'isActive': true});
+      // No change in active model.
+      if (this.model && currentActive && this.model === currentActive) {
+        return;
+      }
+      if (this.model) {
+        this.stopListening(this.model);
+      }
+      if (!currentActive) {
+        this.model = undefined;
+        return;
+      }
+      this.model = currentActive;
+
+      function deferredRender() {
+        _.defer(this.render);
+      }
+      // TRICKY: The nextStatus property doesn't trigger an event upon change
+      // because it is an object... however the nextStatus may not be set when
+      // the status is updated due to order within the object.  We need to wait
+      // for all of the campaign attributes to be saved before updating the
+      // status message displayed for the active campaign.
+      this.listenTo(this.model, 'change:status', deferredRender);
+      this.listenTo(this.model, 'change:verified', deferredRender);
       this.render();
     },
 
@@ -1193,6 +1239,7 @@
       }
       else {
         var nextStatus = activeCampaign.get('nextStatus');
+        var changed = nextStatus.status != this.$el.find('a[href]').data('acquia-lift-campaign-status');
         this.$el
           .find('a[href]')
           .text(Drupal.t('@status campaign', {'@status': nextStatus.text}))
@@ -1206,7 +1253,9 @@
         } else {
           this.$el.find('a[href]').addClass('acquia-lift-menu-disabled');
         }
-        this.updateListeners();
+        if (changed) {
+          this.updateListeners();
+        }
       }
     },
 

@@ -129,6 +129,9 @@ Drupal.behaviors.navbar = {
  *
  * It's very difficult to remove this class on a case-by-case basis, so
  * we just do it with JavaScript here.
+ *
+ * NOTE: This is only necessary with the .menu classes and not with the updated
+ * navbar module that uses .navbar-menu
  */
 Drupal.behaviors.navbarShortcuts = {
 
@@ -333,9 +336,19 @@ Drupal.navbar = {
    */
   NavbarVisualView: Backbone.View.extend({
 
-    events: {
-      'click .navbar-bar [data-navbar-tab-trigger]': 'onTabClick',
-      'click .navbar-toggle-orientation button': 'onOrientationToggleClick'
+    events: function () {
+      // Prevents delay and simulated mouse events.
+      var touchEndToClick = function (event) {
+        event.preventDefault();
+        event.target.click();
+      };
+
+      return {
+        'click .navbar-bar [data-navbar-tab-trigger]': 'onTabClick',
+        'click .navbar-toggle-orientation button': 'onOrientationToggleClick',
+        'touchend .navbar-bar [data-navbar-tab-trigger]': touchEndToClick,
+        'touchend .navbar-toggle-orientation button': touchEndToClick
+      };
     },
 
     /**

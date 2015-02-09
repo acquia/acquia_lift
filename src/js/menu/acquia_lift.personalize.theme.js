@@ -4,6 +4,8 @@
 
 (function(Drupal, $) {
 
+  var navbarMenuClassName = Drupal.settings.acquia_lift.menuClass;
+
   /**
    * Replaces spaces and underscored with dashes in a string.
    *
@@ -83,7 +85,7 @@
   Drupal.theme.acquiaLiftSelectedContext = function (options) {
     var label = options.category + ': ';
     label += '<span class="acquia-lift-active">' + options.label + '</span>';
-    return label;
+    return '<span class="acquia-lift-active-container">' + label + '</span>';
   }
 
   /**
@@ -131,7 +133,7 @@
     item += Drupal.t('Variations');
     item += '</span>\n';
 
-    item += '<ul class="menu">' + "\n";
+    item += '<ul class="' + navbarMenuClassName + '">' + "\n";
     _.each(variations, function (variation, index, list) {
       item += Drupal.theme('acquiaLiftPreviewPageVariationMenuItem', variation);
     });
@@ -170,7 +172,7 @@
       'aria-pressed="false"'
     ];
 
-    var item = '<div class="acquia-lift-menu-item"><a ' + linkAttrs.join(' ') + '>' + options.link.label + '</a>';
+    var item = '<div class="acquia-lift-menu-item clearfix"><a ' + linkAttrs.join(' ') + '>' + options.link.label + '</a>';
     item += '<a ' + editAttrs.join(' ') + '>' + Drupal.t('Edit') + '</a>\n';
     item += '</div>\n';
     //item += '<a ' + linkAttrs.join(' ') + '>' + options.link.label + '</a>\n';
@@ -213,6 +215,7 @@
     var renameAttrs = [
       'class="acquia-lift-variation-rename acquia-lift-menu-link ctools-use-modal ctools-modal-acquia-lift-style"',
       'title="' + Drupal.t('Rename Variation #@num', {'@num': variation.index}) + '"',
+      'data-acquia-lift-personalize-page-variation="' + variation.original_index + '"',
       'aria-role="button"',
       'aria-pressed="false"',
       'href="' + renameHref + '"'
@@ -222,12 +225,13 @@
     var deleteAttrs = [
       'class="acquia-lift-variation-delete acquia-lift-menu-link ctools-use-modal ctools-modal-acquia-lift-style"',
       'title="' + Drupal.t('Delete Variation #@num', {'@num': variation.index}) + '"',
+      'data-acquia-lift-personalize-page-variation="' + variation.original_index + '"',
       'aria-role="button"',
       'aria-pressed="false"',
       'href="' + deleteHref + '"'
     ];
 
-    item += '<li>\n<div class="acquia-lift-menu-item">';
+    item += '<li>\n<div class="acquia-lift-menu-item clearfix" data-acquia-lift-personalize-agent="' + variation.agent + '">';
     item += '<a ' + attrs.join(' ') + '>' + Drupal.checkPlain(variation.label) + '</a> \n';
     if (variation.index > 0) {
       item += '<a ' + deleteAttrs.join(' ') + '>' + Drupal.t('Delete') + '</a>\n';
@@ -319,7 +323,7 @@
    * @return string
    */
   Drupal.theme.acquiaLiftOptionSetMenu = function (options) {
-    var menu = '<ul class="menu">' + "\n";
+    var menu = '<ul class="' + navbarMenuClassName + '">' + "\n";
     var osID = options.osID;
     var os = options.os;
     var os_selector = os.selector;
@@ -376,13 +380,6 @@
       'data-acquia-lift-personalize-option-set-option="' + options.id + '"'
     ].concat(ariaAttrs);
 
-    var renameHref = Drupal.settings.basePath + 'admin/structure/acquia_lift/variation/rename/' + options.osID + '/' + options.id + '/nojs';
-    var renameAttrs = [
-      'class="acquia-lift-variation-rename acquia-lift-menu-link ctools-use-modal ctools-modal-acquia-lift-style"',
-      'title="' + Drupal.t('Rename variation') + '"',
-      'href="' + renameHref + '"'
-    ].concat(ariaAttrs);
-
     var deleteHref = Drupal.settings.basePath + 'admin/structure/acquia_lift/variation/delete/' + options.osID + '/' + options.id + '/nojs';
     var deleteAttrs = [
       'class="acquia-lift-variation-delete acquia-lift-menu-link ctools-use-modal ctools-modal-acquia-lift-style"',
@@ -398,8 +395,9 @@
       'href="' + editHref + '"'
     ].concat(ariaAttrs);
 
-    item += '<li>\n<div class="acquia-lift-menu-item">';
+    item += '<li>\n<div class="acquia-lift-menu-item clearfix" data-acquia-lift-personalize-option-set="' + options.osID + '">';
     item += '<a ' + previewAttrs.join(' ') + '>' + options.label + '</a> \n';
+
     if (options.id !== Drupal.settings.personalize.controlOptionName) {
       if (options.showDelete) {
         item += '<a ' + deleteAttrs.join(' ') + '>' + Drupal.t('Delete') + '</a>\n';
@@ -407,7 +405,6 @@
       if (options.showEdit) {
         item += '<a ' + editAttrs.join(' ') + '>' + Drupal.t('Edit') + '</a>\n';
       }
-      item += '<a ' + renameAttrs.join(' ') + '>' + Drupal.t('Rename') + '</a>\n';
     }
     item += '</div></li>';
     return item;
@@ -427,7 +424,7 @@
    */
   Drupal.theme.acquiaLiftCampaignGoals = function (model, actions) {
     var goals = model.get('goals');
-    var html = '<ul class="innerMenuList">';
+    var html = '<ul class="' + navbarMenuClassName + '">';
 
     if (goals.length == 0) {
       html += '<li>';
@@ -494,7 +491,7 @@
       'href="' + deleteHref + '"'
     ];
 
-    item += '<div class="acquia-lift-menu-item">\n';
+    item += '<div class="acquia-lift-menu-item clearfix">\n';
     item += '<span ' + attrs.join(' ') + '>' + Drupal.t('@text', {'@text': options.label}) + '</span>\n';
     item += '<a ' + deleteAttrs.join(' ') + '>' + Drupal.t('Delete') + '</a>\n';
     if (options.custom) {

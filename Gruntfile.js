@@ -41,6 +41,10 @@ module.exports = function(grunt) {
     pkg: grunt.file.readJSON('package.json'),
     autoprefixer: {
       css: {
+        options: {
+          // Uncomment the map setting to enable sourcemaps.
+          // map: true
+        },
         src: 'css/**/*.css'
       }
     },
@@ -80,11 +84,15 @@ module.exports = function(grunt) {
     sass: {
       dist: {
         options: {
+          // Comment out the sourcemap setting to enable sourcemaps.
+          sourcemap: 'none',
           style: 'expanded'
         },
         files: {
           'css/acquia_lift.help.css': 'src/css/acquia_lift.help.scss',
-          'css/acquia_lift.reports.css': 'src/css/acquia_lift.reports.scss'
+          'css/acquia_lift.reports.css': 'src/css/acquia_lift.reports.scss',
+          'css/acquia_lift.navbar.css': 'src/css/acquia_lift.navbar.scss',
+          'css/acquia_lift.navbar_1-5.css': 'src/css/acquia_lift.navbar_1-5.scss'
         }
       }
     },

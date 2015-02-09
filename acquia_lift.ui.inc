@@ -65,6 +65,10 @@ function acquia_lift_build_page(&$page) {
     $page['page_top']['#attached']['library'][] = array('acquia_lift', 'acquia_lift.modal');
     ctools_add_css('acquia_lift.ctools.modal', 'acquia_lift');
 
+    // Load data about active campaigns.
+    $include_status = variable_get('acquia_lift_unibar_allow_status_change', TRUE);
+    $settings['acquia_lift']['campaigns'] = acquia_lift_get_campaign_details($include_status);
+    $settings['acquia_lift']['allowStatusChange'] = (bool) $include_status;
     // Load data about custom defined visitor actions.
     $actions = visitor_actions_custom_load_multiple();
     $settings['acquia_lift']['customActions'] = $actions;

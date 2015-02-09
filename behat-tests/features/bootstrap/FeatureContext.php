@@ -5,6 +5,8 @@ use Behat\Behat\Context\SnippetAcceptingContext;
 use Behat\Gherkin\Node\TableNode;
 use Behat\Behat\Hook\Scope\AfterStepScope;
 use Behat\Mink\Driver\Selenium2Driver;
+use Behat\Behat\Hook\Scope\BeforeScenarioScope;
+use Behat\Behat\Hook\Scope\AfterScenarioScope;
 
 /**
  * Defines application features from the specific context.
@@ -41,7 +43,7 @@ class FeatureContext extends RawDrupalContext implements SnippetAcceptingContext
    *
    * @BeforeScenario @campaign
    */
-  public function before($event) {
+  public function before(BeforeScenarioScope $event) {
     $this->campaigns = personalize_agent_load_multiple();
   }
 
@@ -51,7 +53,7 @@ class FeatureContext extends RawDrupalContext implements SnippetAcceptingContext
    *
    * @AfterScenario @campaign
    */
-  public function after($event) {
+  public function after(AfterScenarioScope $event) {
     $original_campaigns = $this->campaigns;
     $all_campaigns = personalize_agent_load_multiple(array(), array(), TRUE);
     foreach ($all_campaigns as $name => $campaign) {
@@ -119,6 +121,52 @@ class FeatureContext extends RawDrupalContext implements SnippetAcceptingContext
     }
   }
 
+  /**
+   * @Given /^personalized elements:$/
+   */
+  public function createPersonalizedElements(TableNode $elementsTable) {
+    foreach ($elementsTable->getHash() as $optionSetHash) {
+      $option_set = (object) $optionSetHash;
+      $option_set->plugin = 'elements';
+      $option_set->data = array(
+        'personalize_elements_selector' => $option_set->selector,
+        'personalize_elements_type' => $option_set->type,
+      );
+      $option_set->executor = 'personalizeElements';
+      $content_options = explode(',', $option_set->content);
+      $options = array();
+      $context_values = array();
+      // Grab explicit targeting values if specified.
+      if (!empty($option_set->targeting)) {
+        $contexts = variable_get('personalize_url_querystring_contexts', array());
+        if (isset($contexts[$option_set->targeting])) {
+          foreach ($contexts[$option_set->targeting] as $value) {
+            $context_values[] = $option_set->targeting . '::' . $value;
+          }
+        }
+      }
+      foreach ($content_options as $index => $content) {
+        $content = trim($content);
+        $option = array(
+          'option_label' => personalize_generate_option_label($index),
+          'personalize_elements_content' => $content,
+        );
+        // Set up fixed targeting if there's an available fixed targeting value.
+        if (!empty($context_values)) {
+          $option['fixed_targeting'] = array(array_shift($context_values));
+        }
+        $options[] = $option;
+      }
+      $options = personalize_ensure_unique_option_ids($options);
+      $control_option = array('option_label' => PERSONALIZE_CONTROL_OPTION_LABEL, 'option_id' => PERSONALIZE_CONTROL_OPTION_ID, 'personalize_elements_content' => '');
+      array_unshift($options, $control_option);
+      $option_set->options = $options;
+      personalize_option_set_save($option_set);
+      personalize_agent_set_status($option_set->agent, PERSONALIZE_STATUS_RUNNING);
+    }
+  }
+
+
   /****************************************************
    *        A S S E R T I O N S
    ***************************************************/
@@ -164,6 +212,84 @@ class FeatureContext extends RawDrupalContext implements SnippetAcceptingContext
     }
     $element->click();
   }
+
+  /**
+   * @When I click :link link for the :variation_set set :variation variation
+   *
+   * @throws \Exception
+   *   If the menu or link cannot be found.
+   */
+  public function assertRegionVariationLinkClick($link, $variation_set, $variation) {
+    $link = drupal_strtolower($link);
+    if (!in_array($link, array('edit', 'rename', 'delete'))) {
+      throw new \Exception(sprintf('The variation action "%s" is invalid.', $link));
+    }
+    $campaign = $this->getCurrentCampaign();
+    if (empty($campaign)) {
+      throw new \Exception(sprintf('Cannot determine the current campaign for variation set %s.', $variation_set));
+    }
+    $agent_instance = personalize_agent_load_agent($campaign);
+    if (empty($agent_instance)) {
+      throw new \Exception(sprintf('Cannot load the current agent instance for campaign %s.', $campaign));
+    }
+    $option_sets = personalize_option_set_load_by_agent($campaign);
+    if ($agent_instance instanceof AcquiaLiftSimpleAB) {
+      // One decision with many variations.
+      $option_set = reset($option_sets);
+      foreach ($option_set->options as $index => $option) {
+        if ($option['option_label'] == $variation) {
+          break;
+        }
+      }
+      $css = '.acquia-lift-menu-item[data-acquia-lift-personalize-agent="' . $campaign . '"]';
+      switch ($link) {
+        case "rename":
+          $css .= ' a.acquia-lift-variation-rename';
+          break;
+        case "delete":
+          $css .= ' a.acquia-lift-variation-delete';
+          break;
+        default:
+          throw new \Exception(sprintf('Campaign %s does not support edit links for variations.', $campaign));
+      }
+      $css .= '[data-acquia-lift-personalize-page-variation="' . $index . '"]';
+    }
+    else {
+      // Standard option set names displayed.
+      foreach ($option_sets as $option_set) {
+        if ($option_set->label == $variation_set) {
+          $osid = $option_set->osid;
+          foreach ($option_set->options as $option) {
+            if ($option['option_label'] == $variation) {
+              $option_id = $option['option_id'];
+              break;
+            }
+          }
+          break;
+        }
+      }
+      $css = '.acquia-lift-menu-item[data-acquia-lift-personalize-option-set="' . personalize_stringify_osid($osid) . '"]';
+      switch ($link) {
+        case "edit":
+          $css .= ' a.acquia-lift-variation-edit';
+          break;
+        case "rename":
+          $css .= ' a.acquia-lift-variation-rename';
+          break;
+        case "delete":
+          $css .= 'a.acquia-lift-variation-delete';
+          break;
+      }
+      $css .= '[data-acquia-lift-personalize-option-set-option="' . $option_id . '"]';
+    }
+    // Now find the link and click it.
+    $element = $this->findElementInRegion($css, 'lift_tray');
+    if (empty($element)) {
+      throw new \Exception(sprintf('Cannot load the link "%s" for set "%s" and variation "%s" on page %s using selector %s.', $link, $variation_set, $variation, $this->getSession()->getCurrentUrl(), $css));
+    }
+    $element->click();
+  }
+
 
   /**
    * @Then :selector element in the :region region should have :class class
@@ -424,5 +550,17 @@ class FeatureContext extends RawDrupalContext implements SnippetAcceptingContext
     $classes = $element->getAttribute('class');
     $search_classes = explode(' ', $classes);
     return in_array($class, $search_classes);
+  }
+
+  /**
+   * Helper function to retrieve the currently active campaign from the client
+   * Javascript.
+   *
+   * @return string
+   *   The machine name for the currently active campaign or empty string.
+   */
+  private function getCurrentCampaign() {
+    $script = 'return Drupal.settings.personalize.activeCampaign;';
+    return $this->getMink()->getSession()->evaluateScript($script);
   }
 }

@@ -30,19 +30,28 @@
   border: 0;
   font-size: 1em;
 }
-#navbar-administration .menu ul a.navbar-icon:before {
+#navbar-administration .navbar-menu ul .navbar-icon {
+  padding-left: 1.3333em; /* LTR */
+}
+#navbar-administration .navbar-menu ul a.navbar-icon:before {
   display: none;
 }
-#navbar-administration .navbar-tray-vertical .menu ul {
+#navbar-administration .navbar-tray-vertical .navbar-menu ul {
   margin-left: 1.5em; /* LTR */
 }
-#navbar-administration .navbar-tray-vertical .menu ul ul {
+#navbar-administration .navbar-tray-vertical .navbar-menu ul ul {
   margin-left: 0.75em; /* LTR */
 }
 
 /**
  * Top level icons.
  */
+.navbar-bar .navbar-icon-escape-admin:before {
+  background-image: url("../icons/bebebe/chevron-disc-left.svg"); /* LTR */
+}
+.no-svg .navbar-bar .navbar-icon-escape-admin:before {
+  background-image: url("../icons/bebebe/chevron-disc-left.png"); /* LTR */
+}
 .navbar-bar .navbar-icon-home:before {
   background-image: url("../icons/bebebe/house.svg");
 }
@@ -84,6 +93,9 @@
 .no-svg .navbar-bar .navbar-icon-help:active:before,
 .no-svg .navbar-bar .navbar-icon-help.navbar-active:before {
   background-image: url("../icons/ffffff/questionmark-disc.png");
+}
+#navbar-administration .navbar-bar .navbar-icon.element-hidden {
+  display: none;
 }
 
 /**
@@ -310,19 +322,19 @@
 .no-svg #navbar-administration .navbar-icon.navbar-handle.open:before {
   background-image: url("../icons/787878/chevron-disc-up.png");
 }
-#navbar-administration .menu .menu .navbar-icon.navbar-handle:before {
+#navbar-administration .navbar-menu .navbar-menu .navbar-icon.navbar-handle:before {
   background-image: url("../icons/5181c6/twistie-down.svg");
   background-size: 75%;
 }
-.no-svg #navbar-administration .menu .menu .navbar-icon.navbar-handle:before {
+.no-svg #navbar-administration .navbar-menu .navbar-menu .navbar-icon.navbar-handle:before {
   background-image: url("../icons/5181c6/twistie-down.png");
   background-size: auto auto;
 }
-#navbar-administration .menu .menu .navbar-icon.navbar-handle.open:before {
+#navbar-administration .navbar-menu .navbar-menu .navbar-icon.navbar-handle.open:before {
   background-image: url("../icons/787878/twistie-up.svg");
   background-size: 75%;
 }
-.no-svg #navbar-administration .menu .menu .navbar-icon.navbar-handle.open:before {
+.no-svg #navbar-administration .navbar-menu .navbar-menu .navbar-icon.navbar-handle.open:before {
   background-image: url("../icons/787878/twistie-up.png");
   background-size: auto auto;
 }
@@ -368,4 +380,3 @@
 .no-svg #navbar-administration .navbar-toggle-orientation [value="horizontal"]:hover:before {
   background-image: url("../icons/787878/push-up.png");
 }
-

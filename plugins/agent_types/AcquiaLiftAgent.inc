@@ -1791,7 +1791,7 @@ abstract class AcquiaLiftReportBase implements PersonalizeAgentReportInterface, 
     $shown = array();
     $counter = NAN;
     $data = array();
-    $confidence = TRUE;
+    $confidence = FALSE;
     $winner = '';
     $winning_value = NAN;
     foreach ($items as $item) {
@@ -1826,11 +1826,8 @@ abstract class AcquiaLiftReportBase implements PersonalizeAgentReportInterface, 
         if (is_nan($winning_value) || $item['confidence'] > $winning_value) {
           $winning_value = $item['lift']['default'];
           $winner = $counter;
+          $confidence = TRUE;
         }
-      }
-      else {
-        // If any row is not significant, then the whole test isn't confident yet.
-        $confidence = FALSE;
       }
 
       $data[$item['feature']][] = array(
@@ -1983,11 +1980,12 @@ abstract class AcquiaLiftReportBase implements PersonalizeAgentReportInterface, 
     $confidence_message_shown = FALSE;
     $rows = array();
     foreach ($report_data['data'] as $feature => $feature_data) {
+
       if (!in_array($feature, $all_report_data['features'])) {
         continue;
       }
       foreach ($feature_data as $data) {
-        $data = array(
+        $row_data = array(
           array(
             'data' => $data['choice_id'],
             'data-acquia-lift-variation-label' => $this->getVariationLabel($data['counter'], $data['control']),
@@ -2009,7 +2007,7 @@ abstract class AcquiaLiftReportBase implements PersonalizeAgentReportInterface, 
         if (empty($rows) && $report_data['overview']['confidence'] === FALSE) {
           // If there is low confidence then show the message throughout the
           // winner column.
-          $data[] = array(
+          $row_data[] = array(
             'data' => $this->getLowConfidenceMessage(),
             'rowspan' => count($feature_data),
             'class' => array('acquia-lift-ab-winner'),
@@ -2018,10 +2016,10 @@ abstract class AcquiaLiftReportBase implements PersonalizeAgentReportInterface, 
         }
         else if (!$confidence_message_shown) {
           // Show the winner indicator if this is the winning variation.
-          $data[] = $confidence && $winner == $data['counter'] ? '<span class="lift-winner">' . t('Winner') . '</span>' : '';
+          $row_data[] = $confidence && $winner == $data['counter'] ? '<span class="lift-winner">' . t('Winner') . '</span>' : '';
         }
         $rows[] = array(
-          'data' => $data,
+          'data' => $row_data,
           'no_striping' => TRUE,
         );
       }

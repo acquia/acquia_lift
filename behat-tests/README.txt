@@ -43,3 +43,9 @@ To run tests:
 
 2.  Navigate to the behat-tests directory and type:
     bin/behat
+
+Special notes and considerations:
+By default, tests will run using the Firefox browser.  There is a Selenium
+bug with Firefox version 35 that will prevent tests from properly executing.
+If you plan to utilize Firefox, ensure that you have are not testing with
+version 35.  See: https://code.google.com/p/selenium/issues/detail?id=8390

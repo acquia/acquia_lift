@@ -47,6 +47,8 @@ class FeatureContext extends RawDrupalContext implements SnippetAcceptingContext
   public function before(BeforeScenarioScope $event) {
     // Clear any currently active campaign contexts.
     personalize_set_campaign_context('');
+    // Make sure unibar can update status.
+    variable_set('acquia_lift_unibar_allow_status_change', TRUE);
     $this->campaigns = personalize_agent_load_multiple();
   }
 
@@ -308,17 +310,31 @@ class FeatureContext extends RawDrupalContext implements SnippetAcceptingContext
     if ($element->hasClass('acquia-lift-page-variation-toggle-hidden')) {
       $current_state = 'hidden';
     }
-    else if ($element->hasClass('acquia-lift-page-variation-toggle-disabled')) {
-      $current_state = 'disabled';
-    }
     else if ($element->hasClass('acquia-lift-page-variation-toggle-active')) {
       $current_state = 'active';
+    }
+    else if ($element->hasClass('acquia-lift-page-variation-toggle-disabled')) {
+      $current_state = 'disabled';
     }
     if ($current_state !== $expected_state) {
       throw new \Exception(sprintf('The variation toggle edit link is currently in the %s state and not the expected %s state.', $current_state, $expected_state));
     }
   }
 
+  /**
+   * @Then the :field field should contain the site title
+   *
+   * @throws \Exception
+   *   If the region or element cannot be found or does not have the specified
+   *   class.
+
+   */
+  public function assertFieldHasSiteTitle($field) {
+    // Read the site name dynamically.
+    $site_name = variable_get('site_name', "Default site name");
+    $mink = $this->getMink();
+    $mink->assertSession()->fieldValueEquals($field, $site_name);
+  }
 
   /**
    * @Then :selector element in the :region region should have :class class

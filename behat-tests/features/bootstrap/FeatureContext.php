@@ -5,6 +5,7 @@ use Behat\Behat\Context\SnippetAcceptingContext;
 use Behat\Gherkin\Node\TableNode;
 use Behat\Behat\Hook\Scope\AfterStepScope;
 use Behat\Mink\Driver\Selenium2Driver;
+use Behat\Mink\Element\NodeElement;
 use Behat\Behat\Hook\Scope\BeforeScenarioScope;
 use Behat\Behat\Hook\Scope\AfterScenarioScope;
 
@@ -44,6 +45,8 @@ class FeatureContext extends RawDrupalContext implements SnippetAcceptingContext
    * @BeforeScenario @campaign
    */
   public function before(BeforeScenarioScope $event) {
+    // Clear any currently active campaign contexts.
+    personalize_set_campaign_context('');
     $this->campaigns = personalize_agent_load_multiple();
   }
 
@@ -86,7 +89,7 @@ class FeatureContext extends RawDrupalContext implements SnippetAcceptingContext
       $filename = $temp_path . '/stepAtLine' . $step_line . '.png';
       $screenshot = $driver->getWebDriverSession()->screenshot();
       file_put_contents($filename, base64_decode($screenshot));
-      echo "Saved Screenshot To $fileame \n";
+      echo "Saved Screenshot To $filename \n";
       $filename = $temp_path . '/stepAtLine' . $step_line .'.html';
       $source = $driver->getWebDriverSession()->source();
       file_put_contents($filename, $source);
@@ -312,7 +315,7 @@ class FeatureContext extends RawDrupalContext implements SnippetAcceptingContext
       $current_state = 'active';
     }
     if ($current_state !== $expected_state) {
-      throw new \Exception(sprintf('The variation toggle edit link is currently in the %s state and not the expected %s state.', $current_state, $state));
+      throw new \Exception(sprintf('The variation toggle edit link is currently in the %s state and not the expected %s state.', $current_state, $expected_state));
     }
   }
 
@@ -329,7 +332,7 @@ class FeatureContext extends RawDrupalContext implements SnippetAcceptingContext
     if (empty($element)) {
       throw new \Exception(sprintf('The element "%s" was not found in the region "%s" on the page %s', $selector, $region, $this->getSession()->getCurrentUrl()));
     }
-    if (!$this->elementHasClass($element, $class)) {
+    if (!$element->hasClass($class)) {
       throw new \Exception(sprintf('The element "%s" in region "%s" on the page %s does not have class "%s".', $selector, $region, $this->getSession()->getCurrentUrl(), $class));
     }
   }
@@ -426,7 +429,7 @@ class FeatureContext extends RawDrupalContext implements SnippetAcceptingContext
     if (empty($element)) {
       throw new \Exception(sprintf('The link element %s was not found on the page %s', $link, $this->getSession()->getCurrentUrl()));
     }
-    if ($this->elementHasClass($element, $class)) {
+    if ($element->hasClass($class)) {
       if ($status === 'active') {
         throw new \Exception(sprintf('The link element %s on page %s is inactive but should be active.', $link, $this->getSession()->getCurrentUrl()));
       }
@@ -444,7 +447,7 @@ class FeatureContext extends RawDrupalContext implements SnippetAcceptingContext
     if (empty($element)) {
       throw new \Exception(sprintf('The element with %s was not found in region %s on the page %s', $id, $region, $this->getSession()->getCurrentUrl()));
     }
-    if (!$this->elementHasClass($element, $class)) {
+    if (!$element->hasClass($class)) {
       throw new \Exception(sprintf('The element with id %s in region %s on page %s does not have class %s', $id, $region, $this->getSession()->getCurrentUrl(), $class));
     }
   }
@@ -460,6 +463,14 @@ class FeatureContext extends RawDrupalContext implements SnippetAcceptingContext
     if (strpos($message, $text) === FALSE) {
       throw new \Exception(sprintf('The message "%s" was not found in the messagebox.', $text));
     }
+  }
+
+  /**
+   * @Then I wait for :seconds seconds
+   */
+  public function iWaitSeconds($seconds) {
+    $ms = $seconds * 1000;
+    $this->getSession()->wait($ms);
   }
 
   /****************************************************
@@ -562,20 +573,6 @@ class FeatureContext extends RawDrupalContext implements SnippetAcceptingContext
     if ($region && $region->isVisible()) {
       throw new \Exception(sprintf('The %s was found on the page %s', strtolower($region_name), $this->getSession()->getCurrentUrl()));
     }
-  }
-
-  /**
-   * Helper function to determine an element has a particular class applied.
-   *
-   * @param \Behat\Mink\Element\NodeElement $element
-   *   The element to test.
-   * @param string $class
-   *   The class to find.
-   */
-  private function elementHasClass($element, $class) {
-    $classes = $element->getAttribute('class');
-    $search_classes = explode(' ', $classes);
-    return in_array($class, $search_classes);
   }
 
   /**

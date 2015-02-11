@@ -25,9 +25,15 @@ such as a different CSS selector for a particular region.
 
 6.  Create the following Drupal roles:
     Marketer:  This role should have the ability to manage personalized content
-    as well as to see the administration menus.
+    as well as to see the administration menus.  Specifically:
+    - Manage personalized content
+    - Use the administration pages and help
+    - Use the administration toolbar
+    - Administer visitor actions
     Nonmarketer:  This role should have the ability to see administration menus
-    but not to manage personalized content.
+    but not to manage personalized content.  Specifically:
+    - Use the administration pages and help
+    - Use the administration toolbar
     @todo: Add this role creation into the before/after hooks.
 
 To run tests:

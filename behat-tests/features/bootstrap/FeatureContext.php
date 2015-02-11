@@ -219,80 +219,47 @@ class FeatureContext extends RawDrupalContext implements SnippetAcceptingContext
   }
 
   /**
+   * @Then :variation_set set :variation variation should have the :link link
+   *
+   * @throws \Exception
+   *   If the menu or link cannot be found.
+   */
+  public function assertRegionVariationHasLink($variation_set, $variation, $link) {
+    $css = $this->getVariationLinkCss($variation_set, $variation, $link);
+    // Now find the link and return it.
+    $element = $this->findElementInRegion($css, 'lift_tray');
+    if (empty($element)) {
+      throw new \Exception(sprintf('Cannot load the link "%s" for set "%s" and variation "%s" on page %s using selector %s.', $link, $variation_set, $variation, $this->getSession()->getCurrentUrl(), $css));
+    }
+    return $element;
+  }
+
+  /**
+   * @Then :variation_set set :variation variation should not have the :link link
+   *
+   * @throws \Exception
+   *   If the menu cannot be found or the link can be found.
+   */
+  public function assertNotRegionVariationHasLink($variation_set, $variation, $link) {
+    $css = $this->getVariationLinkCss($variation_set, $variation, $link);
+    // Now find the link and return it.
+    $element = $this->findElementInRegion($css, 'lift_tray');
+    if (!empty($element)) {
+      throw new \Exception(sprintf('Found the link "%s" for set "%s" and variation "%s" on page %s using selector %s.', $link, $variation_set, $variation, $this->getSession()->getCurrentUrl(), $css));
+    }
+  }
+
+  /**
    * @When I click :link link for the :variation_set set :variation variation
    *
    * @throws \Exception
    *   If the menu or link cannot be found.
    */
   public function assertRegionVariationLinkClick($link, $variation_set, $variation) {
-    $link = drupal_strtolower($link);
-    if (!in_array($link, array('edit', 'rename', 'delete'))) {
-      throw new \Exception(sprintf('The variation action "%s" is invalid.', $link));
+    $element = $this->assertRegionVariationHasLink($variation_set, $variation, $link);
+    if (!empty($element)) {
+      $element->click();
     }
-    $campaign = $this->getCurrentCampaign();
-    if (empty($campaign)) {
-      throw new \Exception(sprintf('Cannot determine the current campaign for variation set %s.', $variation_set));
-    }
-    $agent_instance = personalize_agent_load_agent($campaign);
-    if (empty($agent_instance)) {
-      throw new \Exception(sprintf('Cannot load the current agent instance for campaign %s.', $campaign));
-    }
-    $option_sets = personalize_option_set_load_by_agent($campaign);
-    if ($agent_instance instanceof AcquiaLiftSimpleAB) {
-      // One decision with many variations.
-      $option_set = reset($option_sets);
-      foreach ($option_set->options as $index => $option) {
-        if ($option['option_label'] == $variation) {
-          break;
-        }
-      }
-      $css = '.acquia-lift-menu-item[data-acquia-lift-personalize-agent="' . $campaign . '"]';
-      switch ($link) {
-        case "rename":
-          $css .= ' a.acquia-lift-variation-rename';
-          break;
-        case "delete":
-          $css .= ' a.acquia-lift-variation-delete';
-          break;
-        default:
-          throw new \Exception(sprintf('Campaign %s does not support edit links for variations.', $campaign));
-      }
-      $css .= '[data-acquia-lift-personalize-page-variation="' . $index . '"]';
-    }
-    else {
-      // Standard option set names displayed.
-      foreach ($option_sets as $option_set) {
-        if ($option_set->label == $variation_set) {
-          $osid = $option_set->osid;
-          foreach ($option_set->options as $option) {
-            if ($option['option_label'] == $variation) {
-              $option_id = $option['option_id'];
-              break;
-            }
-          }
-          break;
-        }
-      }
-      $css = '.acquia-lift-menu-item[data-acquia-lift-personalize-option-set="' . personalize_stringify_osid($osid) . '"]';
-      switch ($link) {
-        case "edit":
-          $css .= ' a.acquia-lift-variation-edit';
-          break;
-        case "rename":
-          $css .= ' a.acquia-lift-variation-rename';
-          break;
-        case "delete":
-          $css .= 'a.acquia-lift-variation-delete';
-          break;
-      }
-      $css .= '[data-acquia-lift-personalize-option-set-option="' . $option_id . '"]';
-    }
-    // Now find the link and click it.
-    $element = $this->findElementInRegion($css, 'lift_tray');
-    if (empty($element)) {
-      throw new \Exception(sprintf('Cannot load the link "%s" for set "%s" and variation "%s" on page %s using selector %s.', $link, $variation_set, $variation, $this->getSession()->getCurrentUrl(), $css));
-    }
-    $element->click();
   }
 
   /**
@@ -492,6 +459,85 @@ class FeatureContext extends RawDrupalContext implements SnippetAcceptingContext
   /****************************************************
    *        H E L P E R  F U N C T I O N S
    ***************************************************/
+
+  /**
+   * Helper function to generate the css for a variation action link.
+   *
+   * @param string $variation_set
+   *   The name of the variation set displayed
+   * @param string $variation
+   *   The name of the variation displayed
+   * @param string $link
+   *   The link text to find.  One of "rename", "edit", or "delete".
+   *
+   * @throws \Exception
+   *   If the link type is invalid or the current campaign is not available.
+   */
+  public function getVariationLinkCss($variation_set, $variation, $link) {
+    $link = drupal_strtolower($link);
+    if (!in_array($link, array('edit', 'rename', 'delete'))) {
+      throw new \Exception(sprintf('The variation action "%s" is invalid.', $link));
+    }
+    $campaign = $this->getCurrentCampaign();
+    if (empty($campaign)) {
+      throw new \Exception(sprintf('Cannot determine the current campaign for variation set %s.', $variation_set));
+    }
+    $agent_instance = personalize_agent_load_agent($campaign);
+    if (empty($agent_instance)) {
+      throw new \Exception(sprintf('Cannot load the current agent instance for campaign %s.', $campaign));
+    }
+    $option_sets = personalize_option_set_load_by_agent($campaign);
+    if ($agent_instance instanceof AcquiaLiftSimpleAB) {
+      // One decision with many variations.
+      $option_set = reset($option_sets);
+      foreach ($option_set->options as $index => $option) {
+        if ($option['option_label'] == $variation) {
+          break;
+        }
+      }
+      $css = '.acquia-lift-menu-item[data-acquia-lift-personalize-agent="' . $campaign . '"]';
+      switch ($link) {
+        case "rename":
+          $css .= ' a.acquia-lift-variation-rename';
+          break;
+        case "delete":
+          $css .= ' a.acquia-lift-variation-delete';
+          break;
+        default:
+          throw new \Exception(sprintf('Campaign %s does not support edit links for variations.', $campaign));
+      }
+      $css .= '[data-acquia-lift-personalize-page-variation="' . $index . '"]';
+    }
+    else {
+      // Standard option set names displayed.
+      foreach ($option_sets as $option_set) {
+        if ($option_set->label == $variation_set) {
+          $osid = $option_set->osid;
+          foreach ($option_set->options as $option) {
+            if ($option['option_label'] == $variation) {
+              $option_id = $option['option_id'];
+              break;
+            }
+          }
+          break;
+        }
+      }
+      $css = '.acquia-lift-menu-item[data-acquia-lift-personalize-option-set="' . personalize_stringify_osid($osid) . '"]';
+      switch ($link) {
+        case "edit":
+          $css .= ' a.acquia-lift-variation-edit';
+          break;
+        case "rename":
+          $css .= ' a.acquia-lift-variation-rename';
+          break;
+        case "delete":
+          $css .= ' a.acquia-lift-variation-delete';
+          break;
+      }
+      $css .= '[data-acquia-lift-personalize-option-set-option="' . $option_id . '"]';
+    }
+    return $css;
+  }
 
   /**
    * Helper function to retrieve a context parameter.

@@ -384,7 +384,8 @@
     var deleteAttrs = [
       'class="acquia-lift-variation-delete acquia-lift-menu-link ctools-use-modal ctools-modal-acquia-lift-style"',
       'title="' + Drupal.t('Delete variation') + '"',
-      'href="' + deleteHref + '"'
+      'href="' + deleteHref + '"',
+      'data-acquia-lift-personalize-option-set-option="' + options.id + '"'
     ].concat(ariaAttrs);
 
     var editHref = Drupal.settings.basePath + 'admin/structure/personalize/variations';

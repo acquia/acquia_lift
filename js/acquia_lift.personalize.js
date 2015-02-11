@@ -2217,10 +2217,15 @@
       if (!currentCampaign) {
         return;
       }
+      // There is no toggle available for the control variation.
+      var disabled = currentCampaign.get('activeVariation') == 0;
+      var active = this.model.get('isActive');
+      var hidden = currentCampaign instanceof Drupal.acquiaLiftUI.MenuCampaignABModel === false;
+
       this.$el
-        .toggleClass('acquia-lift-page-variation-toggle-disabled', currentCampaign.get('activeVariation') == 0) // There is no toggle available for the control variation.
-        .toggleClass('acquia-lift-page-variation-toggle-active', this.model.get('isActive'))
-        .toggleClass('acquia-lift-page-variation-toggle-hidden', currentCampaign instanceof Drupal.acquiaLiftUI.MenuCampaignABModel === false);
+        .toggleClass('acquia-lift-page-variation-toggle-disabled', !active && disabled && !hidden)
+        .toggleClass('acquia-lift-page-variation-toggle-active', active && !hidden)
+        .toggleClass('acquia-lift-page-variation-toggle-hidden', hidden);
     },
 
     /**

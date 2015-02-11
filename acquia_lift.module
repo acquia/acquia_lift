@@ -539,6 +539,22 @@ function acquia_lift_personalize_agent_update_status($agent_name, $old_status, $
   $agent_instance->syncAgentStatus();
 }
 
+function acquia_lift_personalize_option_set_render($option_set) {
+  if (!empty($option_set->execution_rules)) {
+    $rules = $option_set->execution_rules;
+    foreach ($rules as $rule) {
+      if (isset($rule['option_id']) || !isset($rule['osid'])) {
+        continue;
+      }
+      if (isset($rule['osid'])) {
+        $child_os = personalize_option_set_load($rule['osid']);
+        // Make sure the agent assets are available for the child OS.
+        $personalize_settings['data']['personalize']['agent_map'][$child_os->agent] = personalize_agent_get_map_settings($child_os->agent, $child_os, $assets);
+      }
+    }
+  }
+}
+
 /**
  * Implements hook_personalize_visitor_contexts().
  */

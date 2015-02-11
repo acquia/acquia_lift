@@ -35,7 +35,7 @@ Feature: Personalize elements variations can be added to an existing campaign.
     And I wait for AJAX to finish
     Then I should not see the variation type dialog
     And I should see the text "Edit text: <SPAN>" in the "dialog_variation_type_form" region
-    And the "personalize_elements_content" field should contain "lift.local"
+    And the "personalize_elements_content" field should contain the site title
     When I fill in "Test 1" for "personalize_elements_content"
     And I fill in "Test variation set" for "title"
     And I press the "Save" button

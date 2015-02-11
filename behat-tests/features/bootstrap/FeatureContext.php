@@ -25,6 +25,16 @@ class FeatureContext extends RawDrupalContext implements SnippetAcceptingContext
   );
 
   /**
+   * Stores campaigns at start of scenario for comparison with those at the end.
+   */
+  protected $campaigns = array();
+
+  /**
+   * Stores visitor actions at start of scenario for comparison at end.
+   */
+  protected $actions = array();
+
+  /**
    * Initializes context.
    *
    * Every scenario gets its own context instance.
@@ -50,6 +60,7 @@ class FeatureContext extends RawDrupalContext implements SnippetAcceptingContext
     // Make sure unibar can update status.
     variable_set('acquia_lift_unibar_allow_status_change', TRUE);
     $this->campaigns = personalize_agent_load_multiple();
+    $this->actions = visitor_actions_custom_load_multiple();
   }
 
   /**
@@ -68,6 +79,14 @@ class FeatureContext extends RawDrupalContext implements SnippetAcceptingContext
           personalize_option_set_delete($option_set->osid);
         }
         personalize_agent_delete($name);
+      }
+    }
+
+    $original_actions = $this->actions;
+    $all_actions = visitor_actions_custom_load_multiple();
+    foreach ($all_actions as $name => $action) {
+      if (!isset($original_actions[$name])) {
+        visitor_actions_delete_action($name);
       }
     }
   }
@@ -175,6 +194,37 @@ class FeatureContext extends RawDrupalContext implements SnippetAcceptingContext
   /****************************************************
    *        A S S E R T I O N S
    ***************************************************/
+
+  /**
+   * @Then I should see :count for the :type count
+   */
+  public function assertMenuCount($count, $type) {
+    switch ($type) {
+      case 'variation':
+      case 'variation set':
+        $region_name = 'lift_tray_variation_count';
+        break;
+      case 'goal':
+        $region_name = 'lift_tray_goal_count';
+        break;
+      default:
+        throw new \Exception(sprintf('The count type %s is not supported.', $type));
+    }
+    $regions = $this->getRegions($region_name);
+    foreach ($regions as $current) {
+      if ($current->isVisible()) {
+        $region = $current;
+        break;
+      }
+    }
+    if (empty($region)) {
+      throw new \Exception(sprintf('There is no visible goal region'));
+    }
+    $actual_count = $region->getText();
+    if ($actual_count !== $count) {
+      throw new \Exception(sprintf('The count for type %s was %s rather than the expected %s.', $type, $actual_count, $count));
+    }
+  }
 
   /**
    * @When I hover over :link in the :region( region)
@@ -613,6 +663,28 @@ class FeatureContext extends RawDrupalContext implements SnippetAcceptingContext
       throw new \Exception(sprintf('The region %s was not found on the page %s', $region, $this->getSession()->getCurrentUrl()));
     }
     return $regionObj;
+  }
+
+  /**
+   * Helper function to retrieve a region defined in the configuration file that
+   * may consist of multiple elements matching the selector.
+   *
+   * @param $region
+   *   The region identifier to load.
+   *
+   * @return \Behat\Mink\Element\NodeElement|null
+   *   The region element node or null if not found.
+   *
+   * @throws \Exception
+   *   If the region cannot be found on the current page.
+   */
+  private function getRegions($region) {
+    $mink = $this->getMink();
+    $regions = $mink->getSession()->getPage()->findAll('region', $region);
+    if (empty($regions)) {
+      throw new \Exception(sprintf('The region %s was not found on the page %s', $region, $this->getSession()->getCurrentUrl()));
+    }
+    return $regions;
   }
 
   /**

@@ -5,7 +5,7 @@ Drupal.acquia_lift_target = (function() {
   var agentRules = {}, initialized = false;
 
   function init() {
-    var i, j, optionSet, agentName, optionId;
+    var i, optionSet, agentName;
     var option_sets = Drupal.settings.personalize.option_sets;
     var agent_map = Drupal.settings.personalize.agent_map;
     for (i in option_sets) {
@@ -49,11 +49,30 @@ Drupal.acquia_lift_target = (function() {
       }
     }
     else if (rule.hasOwnProperty('osid')) {
-      if (Drupal.settings.personalize.option_sets.hasOwnProperty(rule.osid)) {
+      var osid = 'osid-' + rule.osid;
+      if (Drupal.settings.acquia_lift_target.option_sets.hasOwnProperty(osid)) {
+        var optionSet = Drupal.settings.acquia_lift_target.option_sets[osid];
+        var agent_name = optionSet.agent,
+            nestedPoint = optionSet.decision_point,
+            nestedDecision = optionSet.decision_name,
+            choiceNames = optionSet.option_names,
+            fallbacks = {};
+        fallbacks[nestedDecision] = 0;
+        if (Drupal.settings.acquia_lift_target.agent_map.hasOwnProperty(agent_name)) {
+          var subCallback = function(selection) {
+            for (var decision_name in decisions) {
+              if (decisions.hasOwnProperty(decision_name) && selection.hasOwnProperty(nestedDecision)) {
+                decisions[decision_name] = selection[nestedDecision];
+              }
+            }
+            callback(decisions);
+          };
 
+          Drupal.personalize.agents.acquia_lift.getDecisionsForPoint(agent_name, {}, choiceNames, nestedPoint, fallbacks, subCallback);
+          return;
+        }
       }
     }
-    //decisions[decision_name] = ruleId;
     callback(decisions);
   }
 
@@ -86,19 +105,19 @@ Drupal.acquia_lift_target = (function() {
       for (i in agentRules[agent_name]) {
         if (agentRules[agent_name].hasOwnProperty(i)) {
           ruleId = i;
-          if (agentRules[agent_name][ruleId].features.length == 0) {
+          if (agentRules[agent_name][ruleId].fixed_targeting_features.length == 0) {
             continue;
           }
-          strategy = agentRules[agent_name][ruleId].strategy;
+          strategy = agentRules[agent_name][ruleId].fixed_targeting_strategy;
           switch (strategy) {
             case 'AND':
               // If all features are present, call the callback with this option
               // as the chosen option.
               matched = true;
               // Set matched to false if any feature is missing.
-              for (j in agentRules[agent_name][ruleId].features) {
-                if (agentRules[agent_name][ruleId].features.hasOwnProperty(j)) {
-                  if (feature_strings.indexOf(agentRules[agent_name][ruleId].features[j]) === -1) {
+              for (j in agentRules[agent_name][ruleId].fixed_targeting_features) {
+                if (agentRules[agent_name][ruleId].fixed_targeting_features.hasOwnProperty(j)) {
+                  if (feature_strings.indexOf(agentRules[agent_name][ruleId].fixed_targeting_features[j]) === -1) {
                     matched = false;
                     break;
                   }
@@ -114,9 +133,9 @@ Drupal.acquia_lift_target = (function() {
               // as the chosen option.
               matched = false;
               // Set matched to true if *any* feature is present.
-              for (j in agentRules[agent_name][ruleId].features) {
-                if (agentRules[agent_name][ruleId].features.hasOwnProperty(j)) {
-                  if (feature_strings.indexOf(agentRules[agent_name][ruleId].features[j]) !== -1) {
+              for (j in agentRules[agent_name][ruleId].fixed_targeting_features) {
+                if (agentRules[agent_name][ruleId].fixed_targeting_features.hasOwnProperty(j)) {
+                  if (feature_strings.indexOf(agentRules[agent_name][ruleId].fixed_targeting_features[j]) !== -1) {
                     matched = true;
                     break;
                   }

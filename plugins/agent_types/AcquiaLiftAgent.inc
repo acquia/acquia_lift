@@ -1049,25 +1049,31 @@ class AcquiaLiftAgent extends PersonalizeAgentBase implements PersonalizeAgentGo
     // we need to send these mappings to Acquia Lift.
     $mappings = array();
     foreach ($option_sets as $option_set) {
+      if (empty($option_set->execution_rules)) {
+        continue;
+      }
       $point_name = $option_set->decision_point;
       $decision_name = $option_set->decision_name;
       $mappings[$point_name] = isset($mappings[$point_name]) ? $mappings[$point_name] : array();
-      foreach ($option_set->options as $option) {
-        if (isset($option['fixed_targeting'])) {
+      foreach ($option_set->execution_rules as $rule) {
+        if (!isset($rule['option_id'])) {
+          continue;
+        }
+        if (isset($rule['fixed_targeting_features'])) {
           // Check if we're supposed to AND or OR mulitple features together.
-          if (isset($option['fixed_targeting_strategy']) && $option['fixed_targeting_strategy'] == 'AND') {
+          if (isset($rule['fixed_targeting_strategy']) && $rule['fixed_targeting_strategy'] == 'AND') {
             // Create a single mapping, with a comma-separated list of features.
             $mappings[$point_name][] = array(
-              'feature' => implode(',', $option['fixed_targeting']),
-              'decision' => $decision_name . ':' . $option['option_id']
+              'feature' => implode(',', $rule['fixed_targeting_features']),
+              'decision' => $decision_name . ':' . $rule['option_id']
             );
           }
           else {
             // Create a mapping for each feature and they will be OR'd together.
-            foreach ($option['fixed_targeting'] as $feature) {
+            foreach ($rule['fixed_targeting_features'] as $feature) {
               $mappings[$point_name][] = array(
                 'feature' => $feature,
-                'decision' => $decision_name . ':' . $option['option_id']
+                'decision' => $decision_name . ':' . $rule['option_id']
               );
             }
           }

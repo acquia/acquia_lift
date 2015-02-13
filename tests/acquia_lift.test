@@ -3097,3 +3097,40 @@ class AcquiaLiftWebTestWorkflow extends AcquiaLiftWebTestBase {
     return array($node, $option_set, $agent_name);
   }
 }
+
+class AcquiaLiftWebTestTarget extends AcquiaLiftWebTestBase {
+  public static function getInfo() {
+    return array(
+      'name' => t('Acquia Lift Web Tests - Target'),
+      'description' => t('Tests functionality related acquia_lift_target campaigns.'),
+      'group' => t('Personalize'),
+    );
+  }
+
+  function testNestedCampaigns() {
+
+  }
+
+  protected function createTargetingAgent($data = array()) {
+    $this->drupalLogin($this->managerUser);
+
+    $data += array(
+      'name' => $this->randomName(),
+      'agent_type' => 'acquia_lift_target',
+      'cache_decisions' => 0,
+    );
+
+    $data +=  array('machine_name' => personalize_generate_machine_name($data['name'], 'personalize_agent_machine_name_exists'));
+    $edit = array(
+      'agent_basic_info[title]' => $data['name'],
+      'agent_basic_info[machine_name]' => $data['machine_name'],
+      'agent_basic_info[agent_type]' => $data['agent_type'],
+      'cache_decisions' => $data['cache_decisions']
+    );
+
+    $this->drupalPost('admin/structure/personalize/add', $edit, $this->getButton('agent'));
+    $this->drupalLogout();
+    $agent = personalize_agent_load_agent($data['machine_name'], TRUE);
+    return $agent;
+  }
+}

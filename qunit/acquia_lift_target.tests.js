@@ -24,29 +24,29 @@ QUnit.test("test explicit targeting logic", function( assert ) {
         'option_label': 'Third Option'
       }
     ],
-    executionRules = [
+    targeting = [
       {
         'option_id': 'second-option',
         // Add fixed targeting rules such that this option should be shown if two
         // feature strings are present.
-        'fixed_targeting_features': [
+        'targeting_features': [
           "some-context::some-value",
           "other-context::ss-other"
         ],
-        'fixed_targeting_strategy': 'AND'
+        'targeting_strategy': 'AND'
       },
       {
         'option_id': 'third-option',
         // Add fixed targeting rules such that this option should be shown if one of
         // two feature strings is present.
-        'fixed_targeting_features': [
+        'targeting_features': [
           "some-context::some-value",
           "other-context::ss-ohai"
         ],
-        'fixed_targeting_strategy': 'OR'
+        'targeting_strategy': 'OR'
       }
     ];
-  addLiftTargetToDrupalSettings(agentName, enabledContexts, decisionName, 'osid-1', options, executionRules);
+  addLiftTargetToDrupalSettings(agentName, enabledContexts, decisionName, 'osid-1', options, targeting);
 
   // Now request decisions from that agent to test its behavior with different contexts.
   var evaluatedVisitorContexts = {},
@@ -118,29 +118,29 @@ QUnit.test("test nesting logic", function( assert ) {
           'option_label': 'Third Option'
         }
       ],
-      subOS = 'osid-123',
-      executionRules = [
+      subOS = '123',
+      targeting = [
         {
           // If this rule matches then a nested option set decides between the
           // first and second options.
           'osid': subOS,
-          'fixed_targeting_features': [
+          'targeting_features': [
             "some-context::some-value",
             "other-context::ss-other"
           ],
-          'fixed_targeting_strategy': 'AND'
+          'targeting_strategy': 'AND'
         },
         {
           // If this rule matches then the third option is shown.
           'option_id': 'third-option',
-          'fixed_targeting_features': [
+          'targeting_features': [
             "some-context::some-value",
             "other-context::ss-ohai"
           ],
-          'fixed_targeting_strategy': 'OR'
+          'targeting_strategy': 'OR'
         }
       ];
-  addLiftTargetToDrupalSettings(agentName, enabledContexts, decisionName, 'osid-1', options, executionRules);
+  addLiftTargetToDrupalSettings(agentName, enabledContexts, decisionName, 'osid-1', options, targeting);
   // Now add the acquia_lift_target settings for the nested option set.
   var sub_agent_name = 'my-nested-agent';
   Drupal.settings.acquia_lift_target = Drupal.settings.acquia_lift_target || {};
@@ -148,19 +148,20 @@ QUnit.test("test nesting logic", function( assert ) {
   Drupal.settings.acquia_lift_target.agent_map[sub_agent_name] = {
     'type': 'acquia_lift'
   };
+  var subOs_str = 'osid-' + 123;
   Drupal.settings.acquia_lift_target.option_sets = Drupal.settings.acquia_lift_target.option_sets || {};
-  Drupal.settings.acquia_lift_target.option_sets[subOS] = {
+  Drupal.settings.acquia_lift_target.option_sets[subOs_str] = {
     'agent': sub_agent_name,
     'data': [],
-    'decision_name': subOS,
-    'decision_point': subOS,
+    'decision_name': subOs_str,
+    'decision_point': subOs_str,
     'executor': 'show',
     'label': 'My Sub OS',
     'mvt': null,
     'option_names': ['first-option', 'second-option'],
     'options': options.slice(0,2),
-    'execution_rules': {},
-    'osid': subOS,
+    'targeting': {},
+    'osid': subOs_str,
     'plugin': 'my_os_plugin',
     'selector': '.some-class',
     'stateful': 0,
@@ -170,7 +171,7 @@ QUnit.test("test nesting logic", function( assert ) {
   // Mock the acquia_lift testing agent to just make it return the second option.
   Drupal.personalize.agents.acquia_lift.getDecisionsForPoint = function(agentName, evaluatedVisitorContexts, choices, decisionName, fallbacks, callback) {
     var selection = {};
-    selection[subOS] = 'second-option';
+    selection[subOs_str] = 'second-option';
     callback(selection);
   };
 
@@ -221,7 +222,7 @@ QUnit.test("test nesting logic", function( assert ) {
 /**
  * Adds settings for the required targeting agent set-up to Drupal.settings.
  */
-function addLiftTargetToDrupalSettings(agent_name, enabled_contexts, decision_name, osid, options_array, execution_rules) {
+function addLiftTargetToDrupalSettings(agent_name, enabled_contexts, decision_name, osid, options_array, targeting) {
 
   Drupal.settings.personalize.agent_map = Drupal.settings.personalize.agent_map || {};
   Drupal.settings.personalize.agent_map[agent_name] = {
@@ -248,7 +249,7 @@ function addLiftTargetToDrupalSettings(agent_name, enabled_contexts, decision_na
     'mvt': null,
     'option_names': option_names,
     'options': options_array,
-    'execution_rules': execution_rules,
+    'targeting': targeting,
     'osid': osid,
     'plugin': 'my_os_plugin',
     'selector': '.some-class',

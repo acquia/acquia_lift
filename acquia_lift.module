@@ -543,10 +543,10 @@ function acquia_lift_personalize_agent_update_status($agent_name, $old_status, $
  * Implements hook_personalize_option_set_render().
  */
 function acquia_lift_personalize_option_set_render(&$element, $option_set) {
-  if (empty($option_set->execution_rules)) {
+  if (empty($option_set->targeting)) {
     return;
   }
-  $rules = $option_set->execution_rules;
+  $rules = $option_set->targeting;
   // We add our own settings for nested agents as they won't have been added
   // by personalize.
   $settings = array(

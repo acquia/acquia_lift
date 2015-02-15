@@ -12,10 +12,10 @@ Drupal.acquia_lift_target = (function() {
       if (option_sets.hasOwnProperty(i) && agent_map.hasOwnProperty(option_sets[i].agent) && agent_map[option_sets[i].agent]['type'] == 'acquia_lift_target') {
         optionSet = option_sets[i];
         agentName = optionSet.agent;
-        if (agentRules.hasOwnProperty(agentName) || !optionSet.hasOwnProperty('execution_rules')) {
+        if (agentRules.hasOwnProperty(agentName) || !optionSet.hasOwnProperty('targeting')) {
           continue;
         }
-        agentRules[agentName] = optionSet.execution_rules;
+        agentRules[agentName] = optionSet.targeting;
       }
     }
   }
@@ -105,19 +105,19 @@ Drupal.acquia_lift_target = (function() {
       for (i in agentRules[agent_name]) {
         if (agentRules[agent_name].hasOwnProperty(i)) {
           ruleId = i;
-          if (agentRules[agent_name][ruleId].fixed_targeting_features.length == 0) {
+          if (agentRules[agent_name][ruleId].targeting_features.length == 0) {
             continue;
           }
-          strategy = agentRules[agent_name][ruleId].fixed_targeting_strategy;
+          strategy = agentRules[agent_name][ruleId].targeting_strategy;
           switch (strategy) {
             case 'AND':
               // If all features are present, call the callback with this option
               // as the chosen option.
               matched = true;
               // Set matched to false if any feature is missing.
-              for (j in agentRules[agent_name][ruleId].fixed_targeting_features) {
-                if (agentRules[agent_name][ruleId].fixed_targeting_features.hasOwnProperty(j)) {
-                  if (feature_strings.indexOf(agentRules[agent_name][ruleId].fixed_targeting_features[j]) === -1) {
+              for (j in agentRules[agent_name][ruleId].targeting_features) {
+                if (agentRules[agent_name][ruleId].targeting_features.hasOwnProperty(j)) {
+                  if (feature_strings.indexOf(agentRules[agent_name][ruleId].targeting_features[j]) === -1) {
                     matched = false;
                     break;
                   }
@@ -133,9 +133,9 @@ Drupal.acquia_lift_target = (function() {
               // as the chosen option.
               matched = false;
               // Set matched to true if *any* feature is present.
-              for (j in agentRules[agent_name][ruleId].fixed_targeting_features) {
-                if (agentRules[agent_name][ruleId].fixed_targeting_features.hasOwnProperty(j)) {
-                  if (feature_strings.indexOf(agentRules[agent_name][ruleId].fixed_targeting_features[j]) !== -1) {
+              for (j in agentRules[agent_name][ruleId].targeting_features) {
+                if (agentRules[agent_name][ruleId].targeting_features.hasOwnProperty(j)) {
+                  if (feature_strings.indexOf(agentRules[agent_name][ruleId].targeting_features[j]) !== -1) {
                     matched = true;
                     break;
                   }
@@ -149,7 +149,7 @@ Drupal.acquia_lift_target = (function() {
           }
         }
       }
-      // If we got here there was no matched execution rule so we just call the
+      // If we got here there was no matched targeting rule so we just call the
       // callback with the fallback decisions.
       callback(decisions);
     }

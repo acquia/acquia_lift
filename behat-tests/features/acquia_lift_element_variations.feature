@@ -17,7 +17,7 @@ Feature: Personalize elements variations can be edited for an existing campaign.
     When I hover over "Campaigns" in the "lift_tray" region
     And I click "Testing campaign add variations" in the "lift_tray" region
     Then I should see the link "Variation Sets" visible in the "lift_tray" region
-    And I should see the text "0" in the "lift_tray_variation_count" region
+    And I should see "0" for the "variation set" count
     When I hover over "Variation Sets" in the "lift_tray" region
     Then I should see the link "Add variation set" in the "lift_tray" region
     When I click "Add variation set"
@@ -44,7 +44,7 @@ Feature: Personalize elements variations can be edited for an existing campaign.
     When I wait for AJAX to finish
     Then I should not see the variation type form dialog
     And I should see the text "Test 1" in the "page_content" region
-    And I should see the text "1" in the "lift_tray_variation_count" region
+    And I should see "1" for the "variation set" count
     When I hover over "Variation Sets" in the "lift_tray" region
     Then I should see the text "Test variation set" in the "lift_tray" region
     And I should see the link "Control variation" in the "lift_tray" region
@@ -62,7 +62,7 @@ Feature: Personalize elements variations can be edited for an existing campaign.
     When I wait for AJAX to finish
     Then I should not see the variation type form dialog
     And I should see the text "Test 2" in the "page_content" region
-    And I should see the text "1" in the "lift_tray_variation_count" region
+    And I should see "1" for the "variation set" count
     When I hover over "Variation Sets" in the "lift_tray" region
     Then I should see the link "Variation #2" in the "lift_tray" region
 
@@ -83,7 +83,7 @@ Feature: Personalize elements variations can be edited for an existing campaign.
     And I click "Testing campaign edit variations" in the "lift_tray" region
     And I wait for AJAX to finish
     Then I should see the link "Variation Sets" visible in the "lift_tray" region
-    And I should see the text "1" in the "lift_tray_variation_count" region
+    And I should see "1" for the "variation set" count
     When I hover over "Variation Sets" in the "lift_tray" region
     Then I should see the text "Site name updated" in the "lift_tray" region
     And I should see the link "Option A" visible in the "lift_tray" region
@@ -104,7 +104,7 @@ Feature: Personalize elements variations can be edited for an existing campaign.
     When I wait for AJAX to finish
     Then I should not see the variation type form dialog
     And I should see the text "Moving Right Along" in the "page_content" region
-    And I should see the text "1" in the "lift_tray_variation_count" region
+    And I should see "1" for the "variation set" count
     When I hover over "Variation Sets" in the "lift_tray" region
     And I wait for AJAX to finish
     Then I should see the text "Site name updated" in the "lift_tray" region
@@ -127,7 +127,7 @@ Feature: Personalize elements variations can be edited for an existing campaign.
     And I click "Testing campaign edit variations" in the "lift_tray" region
     And I wait for AJAX to finish
     Then I should see the link "Variation Sets" visible in the "lift_tray" region
-    And I should see the text "1" in the "lift_tray_variation_count" region
+    And I should see "1" for the "variation set" count
     When I hover over "Variation Sets" in the "lift_tray" region
     Then I should see the text "Site name updated" in the "lift_tray" region
     And I should see the link "Option A" visible in the "lift_tray" region
@@ -145,7 +145,7 @@ Feature: Personalize elements variations can be edited for an existing campaign.
     And I wait for AJAX to finish
     Then I should see the message "The variation has been deleted" in the messagebox
     When I wait for AJAX to finish
-    Then I should see the text "1" in the "lift_tray_variation_count" region
+    Then I should see "1" for the "variation set" count
     When I hover over "Variation Sets" in the "lift_tray" region
     Then I should see the text "Site name updated" in the "lift_tray" region
     And I should not see the link "Option A" visible in the "lift_tray" region
@@ -161,7 +161,7 @@ Feature: Personalize elements variations can be edited for an existing campaign.
     And I wait for AJAX to finish
     Then I should see the message "The variation set has been deleted" in the messagebox
     When I wait for AJAX to finish
-    Then I should see the text "0" in the "lift_tray_variation_count" region
+    Then I should see "0" for the "variation set" count
     When I hover over "Variation Sets" in the "lift_tray" region
     Then I should not see the text "Site name updated" in the "lift_tray" region
     And I should not see the link "Option B" visible in the "lift_tray" region

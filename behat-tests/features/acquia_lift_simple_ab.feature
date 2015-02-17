@@ -44,10 +44,10 @@ Scenario: Create the simplest A/B campaign from start to finish.
   Then I should see the message "Click the element you want to change in Variation #1" in the messagebox
   When I wait for AJAX to finish
   Then I should see the text "Campaign: My test campaign" in the "lift_tray_campaign_header" region
-  And I should see the text "0" in the "lift_tray_variation_count" region
+  And I should see "0" for the "variation" count
   And I should see the link "Variations" visible in the "lift_tray" region
   And I should see the link "Goals" visible in the "lift_tray" region
-  And I should see the text "0" in the "lift_tray_goal_count" region
+  And I should see "0" for the "goal" count
   #And menu item "Reports" should be "inactive"
   And menu item "Start campaign" should be "inactive"
   And I should not see the modal
@@ -95,7 +95,7 @@ Scenario: Create the simplest A/B campaign from start to finish.
   And I wait for AJAX to finish
   Then I should see the message "My test goal goal added to campaign." in the messagebox
   When I wait for AJAX to finish
-  Then I should see the text "1" in the "lift_tray_goal_count" region
+  Then  I should see "1" for the "goal" count
   When I hover over "Goals" in the "lift_tray" region
   Then I should see the text "My test goal" in the "lift_tray" region
   When I wait for Lift to synchronize

@@ -614,6 +614,9 @@ class FeatureContext extends RawDrupalContext implements SnippetAcceptingContext
   /**
    * Helper function to return a link in a particular region.
    *
+   * Note: the selector is translated to xpath in order to allow selection of
+   * the link even if it needs to be scrolled in order to visible.
+   *
    * @param string $link
    *   link id, title, text or image alt
    * @param $region
@@ -623,8 +626,14 @@ class FeatureContext extends RawDrupalContext implements SnippetAcceptingContext
    *   The element node for the link or null if not found.
    */
   private function findLinkInRegion($link, $region) {
+    $session = $this->getSession();
     $regionObj = $this->getRegion($region);
-    return $regionObj->findLink($link);
+    $xpath = $session->getSelectorsHandler()->selectorToXpath('link', $link);
+
+    $element = $regionObj->find('xpath', $xpath);
+    if (empty($element)) {
+      throw new \Exception(sprintf('Could not find element in %region using xpath %s', $region, $xpath));
+    }
   }
 
   /**

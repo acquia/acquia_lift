@@ -81,11 +81,11 @@
     if (params.hasOwnProperty('id')
       && params.hasOwnProperty('data')
       && params.hasOwnProperty('pflag')
-      && params.hasOwnProperty('try')) {
+      && params.hasOwnProperty('numberTried')) {
       this.setId(params.id);
       this.setData(params.data);
       this.setProcessing(params.pflag);
-      this.setNumberTried(params.try);
+      this.setNumberTried(params.numberTried);
     } else {
       var uid = 'acquia-lift-ts-' + new Date().getTime() + Math.random();
       this.setId(uid);
@@ -125,7 +125,7 @@
         'id': this.getId(),
         'data': this.getData(),
         'pflag': this.isProcessing(),
-        'try': this.getNumberTried()
+        'numberTried': this.getNumberTried()
       };
     }
   }

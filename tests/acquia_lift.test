@@ -819,15 +819,6 @@ class AcquiaLiftWebTestAgentAdmin extends AcquiaLiftWebTestBase {
           'agent' => $machine_name
         );
       }
-      $expected_queue_items[] = array(
-        'method' => 'saveFixedTargetingMapping',
-        'args' => array(
-          $machine_name,
-          personalize_get_decision_point_name_for_option_set($option_set),
-          array()
-        ),
-        'agent' => $machine_name
-      );
     }
 
     $this->assertQueueItems($expected_queue_items);
@@ -1144,15 +1135,6 @@ class AcquiaLiftWebTestAgentAdmin extends AcquiaLiftWebTestBase {
       );
     }
     $expected_queue_items['agent'] = $agent_queue_item;
-    $expected_queue_items['targeting'] = array(
-      'method' => 'saveFixedTargetingMapping',
-      'args' => array(
-        $agent->getMachineName(),
-        $point_name,
-        array()
-      ),
-      'agent' => $agent->getMachineName()
-    );
 
     $this->assertQueueItems(array_values($expected_queue_items));
     $this->personalizedQueue->deleteQueue();
@@ -1201,16 +1183,25 @@ class AcquiaLiftWebTestAgentAdmin extends AcquiaLiftWebTestBase {
     personalize_agent_option_sets_form_submit(array(), $form_state);
     $feature_1 = $context_1 . '::some-value';
     $feature_2 = $context_2 . '::sc-some-other-value';
-    $expected_queue_items['targeting']['args'][2] = array(
-      array(
-        'feature' => $feature_1,
-        'decision' => $decision_name . ':option-A'
+    $expected_queue_items['targeting'] = array(
+      'method' => 'saveFixedTargetingMapping',
+      'args' => array(
+        $agent->getMachineName(),
+        $point_name,
+        array(
+          array(
+            'feature' => $feature_1,
+            'decision' => $decision_name . ':option-A'
+          ),
+          array(
+            'feature' => $feature_2,
+            'decision' => $decision_name . ':option-A'
+          ),
+        )
       ),
-      array(
-        'feature' => $feature_2,
-        'decision' => $decision_name . ':option-A'
-      ),
+      'agent' => $agent->getMachineName()
     );
+
     // Because the decision structure has not changed only the agent and targeting
     // should be sync'd.
     $this->assertQueueItems(array(
@@ -2081,26 +2072,6 @@ class AcquiaLiftWebTestFundamentals extends AcquiaLiftWebTestBase {
             'second-point',
           ),
       ),
-      // PUT request for targeting mapping for osid-1
-      array(
-        'method' => 'saveFixedTargetingMapping',
-        'args' =>
-          array(
-            'first-existing-agent',
-            $first_osid,
-            array(),
-          ),
-      ),
-      // PUT request for targeting mapping for osid-2
-      array(
-        'method' => 'saveFixedTargetingMapping',
-        'args' =>
-          array(
-            'first-existing-agent',
-            $second_osid,
-            array(),
-          ),
-      ),
       // PUT request for the new goal
       array(
         'method' => 'saveGoal',
@@ -2527,16 +2498,6 @@ class AcquiaLiftWebTestWorkflow extends AcquiaLiftWebTestBase {
         'agent' => $agent_name
       ),
       array (
-        'method' => 'saveFixedTargetingMapping',
-        'args' =>
-          array (
-            $agent_name,
-            $first_osid,
-            array(),
-          ),
-        'agent' => $agent_name
-      ),
-      array (
         'method' => 'saveGoal',
         'args' =>
           array (
@@ -2673,16 +2634,6 @@ class AcquiaLiftWebTestWorkflow extends AcquiaLiftWebTestBase {
             $third_osid,
             $third_osid,
             'second-value',
-          ),
-        'agent' => $third_agent
-      ),
-      array (
-        'method' => 'saveFixedTargetingMapping',
-        'args' =>
-          array (
-            $third_agent,
-            $third_osid,
-            array(),
           ),
         'agent' => $third_agent
       ),
@@ -3144,5 +3095,42 @@ class AcquiaLiftWebTestWorkflow extends AcquiaLiftWebTestBase {
     $this->resetAll();
     $agent_name = $option_set->agent;
     return array($node, $option_set, $agent_name);
+  }
+}
+
+class AcquiaLiftWebTestTarget extends AcquiaLiftWebTestBase {
+  public static function getInfo() {
+    return array(
+      'name' => t('Acquia Lift Web Tests - Target'),
+      'description' => t('Tests functionality related acquia_lift_target campaigns.'),
+      'group' => t('Personalize'),
+    );
+  }
+
+  function testNestedCampaigns() {
+
+  }
+
+  protected function createTargetingAgent($data = array()) {
+    $this->drupalLogin($this->managerUser);
+
+    $data += array(
+      'name' => $this->randomName(),
+      'agent_type' => 'acquia_lift_target',
+      'cache_decisions' => 0,
+    );
+
+    $data +=  array('machine_name' => personalize_generate_machine_name($data['name'], 'personalize_agent_machine_name_exists'));
+    $edit = array(
+      'agent_basic_info[title]' => $data['name'],
+      'agent_basic_info[machine_name]' => $data['machine_name'],
+      'agent_basic_info[agent_type]' => $data['agent_type'],
+      'cache_decisions' => $data['cache_decisions']
+    );
+
+    $this->drupalPost('admin/structure/personalize/add', $edit, $this->getButton('agent'));
+    $this->drupalLogout();
+    $agent = personalize_agent_load_agent($data['machine_name'], TRUE);
+    return $agent;
   }
 }

@@ -280,15 +280,50 @@
     });
   }
 
-  // Highlight a series when hovering on legend.
-  liftGraph.prototype.setSeriesHighlight = function () {
-    this.seriesHighlight = new Rickshaw.Graph.Behavior.Series.Highlight({
+  // Allow the narowing of data with a range slider.
+  liftGraph.prototype.setRangeSlider = function () {
+    this.rangeSlider = new Rickshaw.Graph.RangeSlider({
       graph: this.graph,
-      legend: this.legend
+      element: this.$rangeSlider[0]
     });
+
+    this.rangeSlider.update = function() {
+      var element = this.element,
+          graph = this.graph,
+          time = new Rickshaw.Fixtures.Time(),
+          unit = time.units[3],
+          values = $(element).slider('option', 'values'),
+          text = [
+            unit.formatter(new Date(values[0] * 1000)),
+            unit.formatter(new Date(values[1] * 1000))
+          ],
+          domain = graph.dataDomain(),
+          $handles = $(element).children('.ui-slider-handle');
+
+      // Add a span for the tooltip in each handle.
+      $handles.once('acquia-lift-handle-value', function() {
+        $(this).html('<span class="acquia-lift-handle-value"></span>');
+      });
+
+      $(element).slider('option', 'min', domain[0]);
+      $(element).slider('option', 'max', domain[1]);
+
+      if (graph.window.xMin == null) {
+        values[0] = domain[0];
+        text[0] = unit.formatter(new Date(values[0] * 1000));
+      }
+      if (graph.window.xMax == null) {
+        values[1] = domain[1];
+        text[1] = unit.formatter(new Date(values[1] * 1000));
+      }
+
+      $(element).slider('option', 'values', values);
+      $handles.first().children('.acquia-lift-handle-value').text(text[0]);
+      $handles.last().children('.acquia-lift-handle-value').text(text[1]);
+    }
   }
 
-  // Allow a user to togle graph data via the legend.
+  // Allow a user to toggle graph data via the legend.
   liftGraph.prototype.setSeriesToggle = function () {
     this.$legend.addClass('toggle-enabled');
     this.seriesToggle = new Rickshaw.Graph.Behavior.Series.Toggle({
@@ -301,13 +336,13 @@
   liftGraph.prototype.build = function () {
     this.$graph = $('<div class="lift-graph-graph" role="presentation"></div>');
     this.$axisY = $('<div class="lift-graph-axis-y" role="presentation"></div>');
+    this.$rangeSlider = $('<div class="lift-graph-range-slider"></div>');
     this.$legend = this.$element.siblings('.lift-graph-result').children('table.lift-graph-result-data');
 
     this.$element.addClass('lift-graph-table')
       .wrap('<div class="lift-graph-container"></div>')
       .before(this.$axisY)
       .before(this.$graph)
-      .before(this.$axisX)
       .before(this.$rangeSlider);
   }
 
@@ -332,6 +367,7 @@
     this.setAxisY();
     this.setLegend();
     this.setHoverDetail();
+    this.setRangeSlider();
     this.graph.render();
     this.hideTable();
   }

@@ -115,6 +115,12 @@ class AcquiaLiftWebTestBase extends DrupalWebTestCase
     );
     $data += array('machine_name' => personalize_generate_machine_name($data['name'], 'personalize_agent_machine_name_exists'));
 
+    // Only equipped to handle additional options for Lift agents.
+    if ($data['agent_type'] !== 'acquia_lift') {
+      $basicOnly = TRUE;
+      $assertResults = FALSE;
+    }
+
     $edit = array(
       'agent_basic_info[title]' => $data['name'],
       'agent_basic_info[agent_type]' => $data['agent_type'],
@@ -131,6 +137,7 @@ class AcquiaLiftWebTestBase extends DrupalWebTestCase
         'cache_decisions' => $data['cache_decisions']
       );
       $this->drupalPost('admin/structure/personalize/manage/' . $data['machine_name'] . '/review', $edit, $this->getButton('wizard_start'));
+    }
 
     if ($data['auto_stop']) {
       $agent = personalize_agent_load($data['machine_name']);
@@ -1274,6 +1281,7 @@ class AcquiaLiftWebTestAgentAdmin extends AcquiaLiftWebTestBase {
       $expected_queue_items['targeting']
     ));
     $this->personalizedQueue->deleteQueue();
+    $this->drupalGet('admin/structure/personalize/manage/' . $agent->getMachineName() . '/variations');
 
     // Remove Option B
     $this->drupalGet('admin/structure/personalize/variations/personalize-blocks/manage/' . $osid . '/edit');
@@ -2942,10 +2950,9 @@ class AcquiaLiftWebTestWorkflow extends AcquiaLiftWebTestBase {
     foreach ($agents as $agent) {
       $edit = array(
         'agent_basic_info[title]' => $agent['label'],
-        'agent_basic_info[machine_name]' => $agent['machine_name'],
         'agent_basic_info[agent_type]' => $agent['agent_type'],
       );
-      $this->drupalPost('admin/structure/personalize/add', $edit, $this->getButton('agent'));
+      $this->drupalPost('admin/structure/personalize/add', $edit, $this->getButton('create_campaign'));
     }
     $expected = array(
       $first_agent_machine_name => array(
@@ -3088,10 +3095,9 @@ class AcquiaLiftWebTestWorkflow extends AcquiaLiftWebTestBase {
     foreach ($agents as $agent) {
       $edit = array(
         'agent_basic_info[title]' => $agent['label'],
-        'agent_basic_info[machine_name]' => $agent['machine_name'],
         'agent_basic_info[agent_type]' => $agent['agent_type'],
       );
-      $this->drupalPost('admin/structure/personalize/add', $edit, $this->getButton('agent'));
+      $this->drupalPost('admin/structure/personalize/add', $edit, $this->getButton('create_campaign'));
     }
     // Now test the ajax callback.
     // Expected case to update to next status.

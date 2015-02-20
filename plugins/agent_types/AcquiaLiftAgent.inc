@@ -437,14 +437,6 @@ class AcquiaLiftAgent extends PersonalizeAgentBase implements PersonalizeAgentGo
         form_set_error('agent_basic_info][options][acquia_lift][explore_rate', t('Invalid percent to test specified'));
       }
     }
-    // Not sure if there's a better way to ascertain that this is a new agent.
-    $is_new = !isset($form['agent_form']['agent_fieldset']['agent_basic']['#agent']->machine_name) || $form['#action'] == base_path() . 'admin/structure/personalize/add';
-    // If this is a new agent, we need to ensure the machine name is
-    // unique in Acquia Lift.
-    if ($is_new) {
-      $agent_name = AcquiaLiftAPI::getInstance(variable_get('acquia_lift_account_info', array()))->ensureUniqueAgentName($values['machine_name'], PERSONALIZE_MACHINE_NAME_MAXLENGTH);
-      $form_state['values']['agent_basic_info']['machine_name'] = $agent_name;
-    }
     // If "Run until a winner is found" was selected, we need to add this to the agent's
     // data property.
     if (isset($form_state['values']['campaign_end']) && $form_state['values']['campaign_end'] == 'auto') {

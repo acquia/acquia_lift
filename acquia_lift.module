@@ -2300,12 +2300,9 @@ function acquia_lift_navbar() {
 /**
  * Implements hook_form_FORM_ID_alter().
  */
-function acquia_lift_form_personalize_campaign_wizard_alter(&$form, &$form_state) {
+function acquia_lift_form_personalize_campaign_wizard_alter(&$form, &$form_state, $form_id) {
+  // Add in the basic functionality.
   $agent = $form['#agent'];
-  if (!empty($form['visitor_context']) && $form['visitor_context']['#type'] == 'select') {
-    module_load_include('inc', 'acquia_lift', 'acquia_lift.ui');
-    acquia_lift_chosenify_element($form['visitor_context']);
-  }
 
   $account_info = variable_get('acquia_lift_account_info', array());
   if (empty($account_info)) {
@@ -2360,6 +2357,13 @@ function acquia_lift_form_personalize_campaign_wizard_alter(&$form, &$form_state
   );
   $sync_form['actions']['sync']['#submit'] = array('acquia_lift_sync_campaign_submit');
   $form['process_bar']['actions']['sync_lift_agent'] = $sync_form;
+
+  // Now call any alter hooks that are specific to the storage step.
+  module_load_include('inc', 'acquia_lift', 'acquia_lift.admin.wizard');
+  $function = 'acquia_lift_personalize_campaign_wizard_' . $form_state['storage']['step'] . '_alter';
+  if (function_exists($function)) {
+    call_user_func_array($function, array(&$form, &$form_state, $form_id));
+  }
 }
 
 /**

@@ -858,3 +858,339 @@ function acquia_lift_report_conversion() {
   $reports['#type'] = 'ajax';
   return drupal_json_output(drupal_render($reports));
 }
+
+
+/**
+ * =======================================================================
+ *  A C Q U I A  L I F T  T A R G E T I N G  W O R K F L O W
+ * =======================================================================
+ */
+
+function acquia_lift_targeting_form($form, &$form_state, $agent) {
+  if ($agent->plugin != 'acquia_lift_target') {
+    drupal_goto('admin/structure/personalize');
+  }
+  $option_set = acquia_lift_get_option_set_for_targeting($agent->machine_name);
+  $variation_options = $saved_targeting = array();
+  if (!empty($agent->data['lift_targeting'])) {
+    $saved_targeting = $agent->data['lift_targeting'];
+  }
+  else {
+    $saved_targeting = acquia_lift_get_structure_from_targeting($option_set);
+  }
+
+  foreach ($option_set->options as $option) {
+    $variation_options[$option['option_id']] = $option['option_label'];
+  }
+  $form['agent'] = array(
+    '#type' => 'value',
+    '#value' => $agent->machine_name
+  );
+  $form['targeting'] = array(
+    '#type' => 'fieldset',
+    '#tree' => TRUE
+  );
+  foreach (array_keys($saved_targeting) as $audience) {
+    $form['targeting'][$audience] = array(
+      '#title' => $audience,
+      '#type' => 'select',
+      '#multiple' => TRUE,
+      '#options' => array('' => t('Select...')) + $variation_options,
+      '#default_value' => isset($saved_targeting[$audience]) ? $saved_targeting[$audience] : ''
+    );
+  }
+  $form['submit'] = array(
+    '#type' => 'submit',
+    '#value' => t('Save')
+  );
+  return $form;
+}
+
+function acquia_lift_targeting_form_submit($form, &$form_state) {
+  $agent = personalize_agent_load($form_state['values']['agent']);
+  $targeting = array();
+  foreach ($form_state['values']['targeting'] as $audience => $options) {
+    $targeting[$audience] = array();
+    foreach ($options as $option) {
+      if (!empty($option)) {
+        $targeting[$audience][] = $option;
+      }
+    }
+  }
+  acquia_lift_save_targeting_structure($agent, $targeting);
+}
+
+function acquia_lift_review_form($form, &$form_state, $agent) {
+  if ($agent->plugin != 'acquia_lift_target') {
+    drupal_goto('admin/structure/personalize');
+  }
+  $form = array();
+  $form['agent'] = array(
+    '#type' => 'value',
+    '#value' => $agent->machine_name
+  );
+  $saved_targeting = array();
+  if (!empty($agent->data['lift_targeting'])) {
+    $saved_targeting = $agent->data['lift_targeting'];
+  }
+
+  $option_set = acquia_lift_get_option_set_for_targeting($agent->machine_name);
+  $running_targeting = acquia_lift_get_structure_from_targeting($option_set);
+  dpm($running_targeting);
+  if ($saved_targeting != $running_targeting) {
+    drupal_set_message(t('Saving this form will restructure your personalization and could result in loss of data about existing tests.'), 'warning');
+    $form['submit'] = array(
+      '#type' => 'submit',
+      '#value' => t('Confirm changes')
+    );
+  }
+  else {
+    $form['all_good'] = array(
+      '#type' => 'markup',
+      '#markup' => t('No changes to apply')
+    );
+  }
+
+  return $form;
+}
+
+/**
+ * Submit callback for the campaign review form.
+ */
+function acquia_lift_review_form_submit($form, &$form_state) {
+  $agent_name = $form_state['values']['agent'];
+  $agent = personalize_agent_load($agent_name);
+  acquia_lift_update_targeting($agent);
+}
+
+function acquia_lift_update_targeting($agent) {
+  if (empty($agent->data['lift_targeting'])) {
+    return;
+  }
+  // First we need to figure out what existing tests we have running as nested
+  // tests for this agent.
+  $option_set = acquia_lift_get_option_set_for_targeting($agent->machine_name);
+  $existing_structure = acquia_lift_get_structure_from_targeting($option_set);
+  // Any target audience that has multiple variations in it has a test running.
+  $existing_tests = array();
+  foreach ($existing_structure as $audience => $variations) {
+    if (count($variations) > 1) {
+      $existing_tests[$audience] = $variations;
+    }
+  }
+  // Now look at the tests required by the new structure.
+  $rules = $new_tests = array();
+  foreach ($agent->data['lift_targeting'] as $new_audience => $variations) {
+    if (count($variations) == 1) {
+      acquia_lift_set_option_for_audience($agent, reset($variations), $new_audience);
+      continue;
+    }
+    // See if this variation combination already exists as a test.
+    foreach ($existing_tests as $existing_audience => $vars) {
+      if ($variations == $vars) {
+        $rules[$new_audience] = $existing_audience;
+      }
+    }
+    // If we didn't find an existing test corresponding to this combination,
+    // we'll need to create a new one.
+    if (!isset($rules[$new_audience])) {
+      $new_tests[$new_audience] = $variations;
+    }
+  }
+  foreach (array_keys($existing_tests) as $audience) {
+    if (!in_array($audience, $rules)) {
+      // Delete the old test if it's no longer being used.
+      acquia_lift_delete_old_nested_test($agent, $audience);
+    }
+    else {
+      // Change the audience for the test if necessary.
+      $new_audience = array_search($audience, $rules);
+      if ($new_audience != $audience) {
+        acquia_lift_set_audience_for_test($agent, $audience, $new_audience);
+      }
+    }
+  }
+  // Now create any new tests required by the new structure.
+  foreach ($new_tests as $audience => $variations) {
+    acquia_lift_add_new_test_for_audience($agent, $variations, $audience);
+  }
+  // Now clobber the "lift_targeting" data as we only use that to store *changes*
+  // to the running targeting.
+  $agent->data['lift_targeting'] = array();
+  personalize_agent_save($agent);
+}
+
+/**
+ * Assigns an option to a target audience.
+ * @param $agent
+ * @param $option_id
+ * @param $audience
+ * @throws \PersonalizeException
+ */
+function acquia_lift_set_option_for_audience($agent, $option_id, $audience) {
+  $option_set = acquia_lift_get_option_set_for_targeting($agent->machine_name);
+  if (isset($option_set->targeting[$audience])) {
+    $option_set->targeting[$audience]['option_id'] = $option_id;
+    personalize_option_set_save($option_set);
+  }
+}
+
+/**
+ * Creates a new nested test of the specified variations for the specified agent.
+ *
+ * @param $parent_agent
+ *   The parent agent to add the test to.
+ * @param $variations
+ *   The variations to test.
+ * @param $audience
+ *   The target audience for the test.
+ * @param string $test_agent_type
+ *   The agent plugin to use for the nested test.
+ * @throws \PersonalizeException
+ */
+function acquia_lift_add_new_test_for_audience($parent_agent, $variations, $audience, $test_agent_type = 'acquia_lift') {
+  module_load_include('inc', 'personalize', 'personalize.admin');
+  $option_set = acquia_lift_get_option_set_for_targeting($parent_agent->machine_name);
+  if (isset($option_set->targeting[$audience])) {
+    // First we need to create a new agent.
+    $agent = new stdClass();
+    $agent->label = 'Sub-test for ' . $parent_agent->label;
+    $agent->plugin = $test_agent_type;
+    $agent->data = array();
+    $agent->machine_name = personalize_generate_machine_name($parent_agent->machine_name . '-test', 'personalize_agent_machine_name_exists');
+    try {
+      $agent = personalize_agent_save($agent);
+      $nested_os = new stdClass();
+      $nested_os->agent = $agent->machine_name;
+      $nested_os->is_new = TRUE;
+      $nested_os->data = array();
+      $nested_os->options = array();
+      // This is basically a non-renderable option set - just set the plugin to
+      // 'options'.
+      $nested_os->plugin = 'options';
+      foreach ($variations as $option_id) {
+        $nested_os->options[] = array(
+          'option_id' => $option_id
+        );
+      }
+      $nested_os = personalize_option_set_save($nested_os);
+    }
+    catch (PersonalizeException $e) {
+      // If anything goes wrong savign the new agent or option set, just print
+      // the error message and bail.
+      drupal_set_message($e->getMessage());
+      return;
+    }
+
+    $option_set->targeting[$audience]['osid'] = $nested_os->osid;
+    personalize_option_set_save($option_set);
+  }
+}
+
+/**
+ * Saves a test to a particular targeting audience.
+ *
+ * @param $parent_agent
+ *   The machine name of the parent agent.
+ * @param $old_audience
+ *   The target audience that currently has this test running.
+ * @param $new_audience
+ *   The target audience to move the test to.
+ */
+function acquia_lift_set_audience_for_test($parent_agent, $old_audience, $new_audience) {
+  if ($old_audience == $new_audience) {
+    return;
+  }
+  $option_set = acquia_lift_get_option_set_for_targeting($parent_agent->machine_name);
+  if (isset($option_set->targeting[$old_audience]) && isset($option_set->targeting[$old_audience]['osid'])) {
+    $nested_osid = $option_set->targeting[$old_audience]['osid'];
+    unset($option_set->targeting[$old_audience]['osid']);
+  }
+  else {
+    return;
+  }
+
+  // Now add the test to the new audience.
+  if (isset($option_set->targeting[$new_audience])) {
+    // If this audience previously had a single option assigned to it, remove
+    // that option.
+    if (isset($option_set->targeting[$new_audience]['option_id'])) {
+      unset($option_set->targeting[$new_audience]['option_id']);
+    }
+    $option_set->targeting[$new_audience]['osid'] = $nested_osid;
+  }
+  personalize_option_set_save($option_set);
+}
+
+function acquia_lift_delete_old_nested_test($parent_agent, $audience) {
+  $option_set = acquia_lift_get_option_set_for_targeting($parent_agent->machine_name);
+  // Find the nested option set for the specified targeting rule.
+  if (isset($option_set->targeting[$audience]) && isset($option_set->targeting[$audience]['osid'])) {
+    $nested_os = personalize_option_set_load($option_set->targeting[$audience]['osid']);
+    // Pause the agent, delete the option set, then delete the agent.
+    personalize_agent_set_status($nested_os->agent, PERSONALIZE_STATUS_PAUSED);
+    personalize_option_set_delete($option_set->targeting[$audience]['osid']);
+    personalize_agent_delete($nested_os->agent);
+    unset($option_set->targeting[$audience]['osid']);
+  }
+
+  personalize_option_set_save($option_set);
+}
+
+/**
+ * @param $agent
+ * @param $values
+ * @throws \AcquiaLiftException
+ */
+function acquia_lift_save_targeting_structure($agent, $targeting) {
+  if ($agent->plugin != 'acquia_lift_target') {
+    throw new AcquiaLiftException('Invalid agent');
+  }
+  $agent->data['lift_targeting'] = $targeting;
+  personalize_agent_save($agent);
+}
+
+/**
+ * Returns a mapping of audiences to option IDs based on the targeting set-up.
+ *
+ * Returns an array of option IDs for each audience, so if the audience is
+ * assigned a single option, then it's a single element array, if it's assigned
+ * a nested option set, we pull out the option IDs for the nested option set.
+ *
+ * @param $option_set
+ *   The option set to get the targeting structure for.
+ * @return array
+ *   An associative array whose keys are target audiences and whose values are
+ *   arrays of option IDs.
+ */
+function acquia_lift_get_structure_from_targeting($option_set) {
+  $targeting_structure = array();
+  foreach ($option_set->targeting as $name => $targ) {
+    $targeting_structure[$name] = array();
+    if (isset($targ['osid'])) {
+      $nested_option_set = personalize_option_set_load($targ['osid']);
+      foreach ($nested_option_set->options as $option) {
+        $targeting_structure[$name][] = $option['option_id'];
+      }
+    }
+    elseif (isset($targ['option_id'])) {
+      $targeting_structure[$name][] = $targ['option_id'];
+    }
+  }
+  return $targeting_structure;
+}
+
+/**
+ * Get the option set where targeting rules are defined.
+ * @param $agent
+ * @return mixed
+ */
+function acquia_lift_get_option_set_for_targeting($agent_name) {
+  $option_sets = personalize_option_set_load_by_agent($agent_name);
+  foreach ($option_sets as $option_set) {
+    if (!empty($option_set->targeting)) {
+      return $option_set;
+    }
+  }
+  return reset($option_sets);
+}

@@ -39,7 +39,7 @@
       }
       // If the link is found and not processed, then go ahead and add
       // listeners.
-      var anchorSelector = self.getAdminMenuSelector() + ' a[href*="' + Drupal.settings.basePath + 'admin/acquia_lift"]';
+      var anchorSelector = self.getAdminMenuSelector() + ' a[href*="' + Drupal.settings.basePath + Drupal.settings.pathPrefix + 'admin/acquia_lift"]';
       if ($(anchorSelector).length == 0 || !Drupal.navbar.hasOwnProperty('toggleUnifiedNavbar')) {
         return;
       }

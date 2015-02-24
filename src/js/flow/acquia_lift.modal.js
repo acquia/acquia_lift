@@ -12,13 +12,13 @@
         $(this).on('click', function(e) {
           var $link = $(this).find('a.acquia-lift-type-select');
           // Special handling based on href values.
-          if ($link.attr('href') == settings.basePath + 'admin/structure/visitor_actions') {
+          if ($link.attr('href') == settings.basePath + settings.pathPrefix + 'admin/structure/visitor_actions') {
             // Trigger goals in context.
             $('#acquiaLiftVisitorActionsConnector').find('a').trigger('click');
             Drupal.CTools.Modal.dismiss();
             e.preventDefault();
             e.stopImmediatePropagation();
-          } else if ($link.attr('href') == settings.basePath + 'admin/structure/personalize/variations/personalize-elements/add') {
+          } else if ($link.attr('href') == settings.basePath + settings.pathPrefix + 'admin/structure/personalize/variations/personalize-elements/add') {
             // Trigger variations in context.
             $(document).trigger('acquiaLiftElementVariationModeTrigger', [{start: true}]);
             Drupal.CTools.Modal.dismiss();
@@ -55,7 +55,7 @@
       // to handle the edit mode toggle.
       var $connector = $('#acquiaLiftVisitorActionsConnector');
       if ($connector.length == 0) {
-        $('body').append('<div id="acquiaLiftVisitorActionsConnector"><a href="' + Drupal.settings.basePath + 'admin/structure/visitor_actions/add" class="element-hidden">' + Drupal.t('Add goals') + '</a></div>');
+        $('body').append('<div id="acquiaLiftVisitorActionsConnector"><a href="' + Drupal.settings.basePath + Drupal.settings.pathPrefix + 'admin/structure/visitor_actions/add" class="element-hidden">' + Drupal.t('Add goals') + '</a></div>');
         // Allow visitor actions UI to process the link.
         Drupal.attachBehaviors($('#acquiaLiftVisitorActionsConnector'));
         $(document).on('acquiaLiftVisitorActionsConnectorToggle', function(e) {
@@ -98,7 +98,7 @@
   Drupal.behaviors.acquiaLiftOptionSetTypeList = {
     attach: function (context, settings) {
       $('#acquia-lift-option-set-type-list', context).once('acquia-lift-option-set-type-list').each(function () {
-        var blockAnchor = $(this).find('a[href="' + settings.basePath + 'admin/structure/personalize/variations/personalize-blocks/add"]');
+        var blockAnchor = $(this).find('a[href="' + settings.basePath + settings.pathPrefix + 'admin/structure/personalize/variations/personalize-blocks/add"]');
         // Add the current destination address to the personalize blocks anchor.
         blockAnchor.attr('href', blockAnchor.attr('href') + '?destination=' + settings.visitor_actions.currentPath);
       });

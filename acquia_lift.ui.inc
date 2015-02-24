@@ -145,6 +145,45 @@ function acquia_lift_generate_ignore_selector() {
 
 /**
  * =======================================================================
+ * S H A R E D  U I
+ * =======================================================================
+ */
+
+/**
+ * Helper function to return a list of option set type metadata.
+ *
+ * @return array
+ *   An array for each type of option set available with the following keys:
+ *   - title: A title for the type of option set
+ *   - description: A brief description
+ *   - logo: a themed image that can be used to represent the option set type
+ */
+function acquia_lift_option_set_types_ui() {
+  $path = drupal_get_path('module', 'acquia_lift');
+  return array(
+    'element' => array(
+      'title' => t('Webpage elements'),
+      'description' => t('Create a variation set of personalized webpage elements, including a base and control version. Useful for quick tests and personalization on individual webpages.'),
+      'logo' => theme('image', array(
+        'path' => $path . '/images/variation-type-element.png',
+        'alt' => t('Webpage element'),
+        'title' => t('Select this option to create a variation set from web page elements.'),
+      )),
+    ),
+    'block' => array(
+      'title' => t('Drupal blocks'),
+      'description' => t('Create a variation set of personalized Drupal blocks of content. Useful for personalization and testing across your website where this block appears.'),
+      'logo' => theme('image', array(
+        'path' => $path . '/images/variation-type-block.png',
+        'alt' => t('Drupal block'),
+        'title' => t('Select this option to create a variation set from Drupal content blocks.'),
+      )),
+    ),
+  );
+}
+
+/**
+ * =======================================================================
  *  F U N C T I O N S  B A S E D  O N  V I S I T O R  A C T I O N S  U I
  * =======================================================================
  */

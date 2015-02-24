@@ -80,7 +80,7 @@ function acquia_lift_admin_form($form, &$form_state) {
   );
 
   $form['acquia_lift_account_info']['msg'] = array(
-    '#markup' => t("<p>This information is used to link your !acquialift account to Drupal.</p><p>Email !liftemail to get set up with Acquia Lift credentials.</p>", array('!acquialift' => l(t('Acquia Lift'), 'http://www.acquia.com/products-services/website-personalization', array('attributes' => array('target' => '_blank'))), '!liftemail' => l('lift@acquia.com', 'mailto:lift@acquia.com'))),
+    '#markup' => t("<p>This information is used to link your !acquialift account to Drupal.</p><p>If you are already an Acquia Lift customer, contact Acquia Support to obtain your credentials. Otherwise, contact !advocacyemail to purchase a subscription to the Acquia Lift service.</p>", array('!acquialift' => l(t('Acquia Lift'), 'http://www.acquia.com/products-services/website-personalization', array('attributes' => array('target' => '_blank'))), '!advocacyemail' => l('advocacy@acquia.com', 'mailto:advocacy@acquia.com'))),
   );
 
   $form['acquia_lift_account_info']['owner_code'] = array(

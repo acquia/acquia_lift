@@ -1961,6 +1961,7 @@
       this.model = this.collection.findWhere({'isActive': true});
       if (this.model) {
         this.listenTo(this.model, 'change:optionSets', this.render);
+        this.listenTo(this.model, 'change:variations', this.render);
       }
       this.render();
     },

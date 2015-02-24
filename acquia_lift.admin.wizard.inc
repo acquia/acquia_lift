@@ -20,11 +20,31 @@ function acquia_lift_personalize_campaign_wizard_variations_alter(&$form, &$form
   }
   $option_sets = personalize_option_set_load_by_agent($agent_data->machine_name);
 
+  // Make a container to hold existing option sets.
+  if (!empty($option_sets)) {
+    $form['variations']['option_sets'] = array(
+      '#tree' => TRUE,
+      '#type' => 'container',
+      '#attributes' => array(
+        'class' => array('personalize-wizard-variation-sets'),
+      ),
+    );
+  }
+  // Add an option set edit card for each option set.
   foreach ($option_sets as $option_set) {
-
+    $form['variations']['option_sets']['option_set_' . $option_set->osid] = array(
+      '#tree' => TRUE,
+      '#type' => 'container',
+      '#attributes' => array(
+        'class' => array('personalize-option-set'),
+      ),
+    );
+    $form['variations']['option_sets']['option_set_' . $option_set->osid]['content'] = array(
+      '#markup' => 'Option set form for type: ' . $option_set->plugin,
+    );
   }
 
-  // Form to add a new option set.
+  // Show the card to add a new option set last.
   module_load_include('inc', 'acquia_lift', 'acquia_lift.ui');
   $option_set_types = acquia_lift_option_set_types_ui();
   foreach ($option_set_types as $type => $details) {

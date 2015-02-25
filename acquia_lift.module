@@ -287,6 +287,11 @@ function acquia_lift_theme() {
       'path' => $path . '/theme',
       'file' => 'acquia_lift.wizard.theme.inc',
     ),
+    'acquia_lift_revealing_input' => array(
+      'render element' => 'element',
+      'path' => $path . '/theme',
+      'file' => 'acquia_lift.wizard.theme.inc',
+    ),
     // Unified navbar themes.
     'acquia_lift_navbar' => array(
       'render element' => 'element',
@@ -1394,6 +1399,21 @@ function acquia_lift_library() {
     ),
     'css' => array(
       $path . '/css/acquia_lift.card.css',
+    ),
+    'dependencies' => array(
+      array('system', 'jquery'),
+    ),
+  );
+
+  // Special input types.
+  $libraries['acquia_lift.inputs'] = array(
+    'title' => 'Acquia Lift inputs',
+    'version' => VERSION,
+    'js' => array(
+      $path . '/js/acquia_lift.inputs.js' => array(),
+    ),
+    'css' => array(
+      $path . '/css/acquia_lift.inputs.css' ,
     ),
     'dependencies' => array(
       array('system', 'jquery'),

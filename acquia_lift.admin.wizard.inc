@@ -126,6 +126,14 @@ function acquia_lift_personalize_campaign_wizard_process_bar_alter(&$form, &$for
 
 >>>>>>> Move process bar hook changes into their own callback.
 /**
+ * Alter hook for the base campaign wizard form.
+ */
+function acquia_lift_personalize_campaign_wizard_base_alter(&$form, &$form_state, $form_id) {
+  // Make the campaign name a self-revealing text input.
+  $form['agent_basic_info']['title']['#theme_wrappers'][] = 'acquia_lift_revealing_input';
+}
+
+/**
  * Alter hook for the variations portions of the campaign wizard.
  */
 function acquia_lift_personalize_campaign_wizard_variations_alter(&$form, &$form_state, $form_id) {

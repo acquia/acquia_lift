@@ -866,19 +866,378 @@ function acquia_lift_report_conversion() {
  * =======================================================================
  */
 
+function acquia_lift_new_target_audience_form($form, &$form_state, $agent) {
+  // Build up a list of available context values for targeting.
+  module_load_include('inc', 'personalize', 'personalize.admin');
+  $targeting_values = personalize_get_targeting_values_for_agent($agent);
+  $attributes = array(
+    'class' => array('personalize-variation-row'),
+  );
+  $form = array(
+    '#tree' => TRUE,
+    '#type' => 'container',
+    '#attributes' => $attributes,
+  );
+  $form['#attached']['css'][] = drupal_get_path('module', 'personalize') . '/css/personalize.admin.css';
+  $form['agent'] = array(
+    '#type' => 'value',
+    '#value' => $agent->machine_name
+  );
+  $form['name'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Audience name'),
+    '#required' => TRUE
+  );
+  $context_options = array('' => '-- ' . t('Select a context') . ' --');
+  $value_types = array();
+  $operator_options = array(
+    'string' => array(
+      'equals' => t('equals'),
+      'contains' => t('contains'),
+      'starts' => t('starts with'),
+      'ends' => t('ends with')
+    ),
+    'number' => array(
+      'equals' => t('equals'),
+      'numgt' => t('greater than'),
+      'numlt' => t('less than')
+    )
+  );
+
+  foreach ($targeting_values as  $key => $info) {
+    $option_key = $info['visitor_context'] . PERSONALIZE_TARGETING_ADMIN_SEPARATOR . $key;
+    $key_label = isset($info['friendly name']) ? $info['friendly name'] : $key;
+    $context_options[$option_key] = $key_label;
+    $value_types[$option_key] = $info['value type'];
+  }
+
+  // This is the portion of the form that will be replace when the "add new" or "remove
+  // context" links are clicked.
+  $main_wrapper_id = 'acquia-lift-targeting';
+
+  $form['mapping'] = array(
+    '#tree' => TRUE,
+    '#theme_wrappers' => array('container'),
+    '#attributes' => $attributes,
+  );
+  $form['mapping']['contexts'] = array(
+    '#type' => 'container',
+    '#attributes' => array(
+      'id' => $main_wrapper_id,
+    ),
+  );
+
+  // Load from the existing form if passed first, otherwise, load from option
+  // set.
+  $mappings = array();
+  if (isset($form_state['values']['mapping']['contexts'])) {
+    foreach($form_state['values']['mapping']['contexts'] as $delta => $context) {
+      list($plugin_name, $context_option) = explode(PERSONALIZE_TARGETING_ADMIN_SEPARATOR, $context['context']);
+      // Important: preserve the delta passed through the form as it is used
+      // to determine the item to delete when "remove" is clicked.
+      $mappings[$delta] = array(
+        'plugin' => $plugin_name,
+        'context' => $context_option,
+        'operator' => $context['value']['operator'],
+        'match' => $context['value']['match'],
+      );
+    }
+  }
+
+  // If the "Remove" button was clicked for a context, we need to remove that context
+  // from the form.
+  if (isset($form_state['to_remove'])) {
+    unset($mappings[$form_state['to_remove']]);
+    unset($form_state['to_remove']);
+    $form_state['num_contexts']--;
+  }
+
+  // Make sure there is at least an empty context.
+  if (empty($mappings)) {
+    $mappings[] = array(
+      'context' => '',
+      'operator' => 'equals',
+      'match' => '',
+      'plugin' => '',
+    );
+  }
+
+  // If the "Add another" button was clicked, we need to add contexts to get up
+  // to the number indicated.
+  $num_contexts = count($mappings);
+  if (isset($form_state['num_contexts']) && $form_state['num_contexts'] > $num_contexts) {
+    while ($num_contexts < $form_state['num_contexts']) {
+      $mappings[] = array(
+        'context' => '',
+        'operator' => 'equals',
+        'match' => '',
+        'plugin' => '',
+      );
+      $num_contexts++;
+    }
+  }
+
+  $form_state['num_contexts'] = count($mappings);
+  foreach ($mappings as $delta => $mapping) {
+    $wrapper_id = 'operator-dropdown-replace-' . $delta;
+    $selected_plugin_context = $mapping['plugin'] . PERSONALIZE_TARGETING_ADMIN_SEPARATOR . $mapping['context'];
+    $selected_context = $mapping['context'];
+    $selected_operator = $mapping['operator'];
+    $selected_match = $mapping['match'];
+    $form['mapping']['contexts'][$delta] = array(
+      '#prefix' => '<div class="personalize-target-wrapper">',
+      '#suffix' => '</div>',
+      'context' => array(
+        '#type' => 'select',
+        '#title' => t('Context'),
+        '#options' => $context_options,
+        '#default_value' => empty($selected_plugin_context) ? '' : $selected_plugin_context,
+        '#ajax' => array(
+          'event' => 'change',
+          'callback' => 'personalize_explicit_targeting_context_callback',
+          'wrapper' => $wrapper_id,
+        ),
+        '#attributes' => array(
+          'class' => array('acquia-lift-targeting-context'),
+        ),
+      ),
+    );
+    $form['mapping']['contexts'][$delta]['value'] = array(
+      '#tree' => TRUE,
+      '#prefix' => '<div id="' . $wrapper_id. '">',
+      '#suffix' => '</div>'
+    );
+    $value_type = isset($value_types[$selected_plugin_context]) ? $value_types[$selected_plugin_context] : 'string';
+    // We use different form elements depending on whether there is a predefined list
+    // of possible values or not.
+    switch ($value_type) {
+      case 'predefined':
+        $form['mapping']['contexts'][$delta]['value']['operator'] = array(
+          '#type' => 'value',
+          '#value' => 'equals',
+        );
+        $form['mapping']['contexts'][$delta]['value']['match'] = array(
+          '#type' => 'select',
+          '#options' => $targeting_values[$selected_context]['values'],
+          '#title' => 'Value',
+          '#default_value' => $selected_match,
+        );
+        break;
+      case 'boolean':
+        $form['mapping']['contexts'][$delta]['value']['operator'] = array(
+          '#type' => 'value',
+          '#value' => 'equals',
+        );
+        $off_label = isset($targeting_values[$selected_context]['off_label']) ? $targeting_values[$selected_context]['off_label'] : 'No';
+        $on_label = isset($targeting_values[$selected_context]['on_label']) ? $targeting_values[$selected_context]['on_label'] : 'Yes';
+        $form['mapping']['contexts'][$delta]['value']['match'] = array(
+          '#type' => 'select',
+          '#options' => array(0 => $off_label, 1 => $on_label),
+          '#title' => 'Value',
+          '#default_value' => $selected_match,
+        );
+        break;
+      default:
+        $form['mapping']['contexts'][$delta]['value']['operator'] = array(
+          '#type' => 'select',
+          '#title' => t('Operator'),
+          '#options' => $operator_options[$value_type],
+          '#default_value' => $selected_operator
+        );
+        $form['mapping']['contexts'][$delta]['value']['match'] = array(
+          '#type' => 'textfield',
+          '#title' => 'Value',
+          '#size' => $value_type == 'number' ? 6 : 30,
+          '#default_value' => $selected_match,
+        );
+        break;
+    }
+
+    // Add a "remove" button for this context.
+    // NOTE: ajax.js expects the ID of the element to match the element's name
+    // even when a different selector is passed.
+    $form['mapping']['contexts'][$delta]['remove'] = array(
+      '#prefix' => '<div class="acquia-lift-remove-context">',
+      '#suffix' => '</div>',
+      '#type' => 'submit',
+      '#tag' => 'button',
+      '#text' => t('Remove'),
+      '#value' => 'remove_' . $delta,
+      '#theme_wrappers' => array('personalize_html_tag'),
+      '#attributes' => array(
+        'class' => array('personalize-delete-context', 'form-submit',),
+        'title' => t('Delete this context.'),
+        'id' => 'edit-targeting-mapping-contexts-' . $delta . '-remove',
+      ),
+      '#submit' => array('acquia_lift_targeting_remove_context_submit'),
+      '#ajax' => array(
+        'callback' => 'acquia_lift_targeting_context_ajax_callback',
+        'wrapper' => $main_wrapper_id,
+        'effect' => 'fade',
+      ),
+    );
+  }
+  // Create an "add new context" link.
+  $form['add_new'] = array(
+    '#prefix' => '<span class="personalize-add-link-prefix"></span>',
+    '#type' => 'submit',
+    '#value' => t('Add context'),
+    '#submit' => array('acquia_lift_targeting_add_context_submit'),
+    '#ajax' => array(
+      'callback' => 'acquia_lift_targeting_context_ajax_callback',
+      'wrapper' => $main_wrapper_id,
+      'effect' => 'fade',
+    ),
+  );
+  $form['strategies'] = array(
+    '#type' => 'container',
+    '#attributes' => $attributes,
+  );
+
+  // Add radio buttons so the user can select how multiple features for an option
+  // should be treated.
+  $default_strategy = 'OR';
+  $form['strategy'] = array(
+    '#type' => 'select',
+    '#multiple' => FALSE,
+    '#field_prefix' => t('Visitor must have '),
+    '#field_suffix' => t(' of the specified contexts'),
+    '#description' => t('Choose how multiple contexts should be applied to options. Choose "any" if the rule should apply if the user has any of the contexts. Choose "all" if the rule should apply only if the user has all of the contexts.'),
+    '#options' => array(
+      'OR' => 'any',
+      'AND' => 'all'
+    ),
+    '#default_value' => $default_strategy,
+  );
+  $form['submit'] = array(
+    '#type' => 'submit',
+    '#value' => t('Create new audience')
+  );
+  return $form;
+}
+
+function acquia_lift_new_target_audience_form_validate($form, &$form_state) {
+  $machine_name = personalize_generate_machine_name($form_state['values']['name'], NULL, '-');
+  $agent_name = $form_state['values']['agent'];
+  $option_set = acquia_lift_get_option_set_for_targeting($agent_name);
+  if (isset($option_set->targeting[$machine_name])) {
+    form_set_error('name', t('Please choose a different name for your audience as this one is already taken'));
+  }
+}
+
+function acquia_lift_new_target_audience_form_submit($form, &$form_state) {
+  module_load_include('inc', 'personalize', 'personalize.admin');
+  $values = $form_state['values'];
+  $machine_name = personalize_generate_machine_name($values['name'], NULL, '-');
+  $agent_name = $values['agent'];
+  $option_set = acquia_lift_get_option_set_for_targeting($agent_name);
+  $option_set->targeting[$machine_name] = array(
+    'label' => $values['name'],
+    'weight' => count($option_set->targeting)
+  );
+  $agent = personalize_agent_load_agent($agent_name);
+  $feature_strings = $feature_rules = array();
+  foreach ($values['mapping']['contexts'] as $delta => $context_values) {
+    if ($context_values['context'] == '') {
+      continue;
+    }
+    list($plugin_name, $context_name) = explode(PERSONALIZE_TARGETING_ADMIN_SEPARATOR, $context_values['context']);
+    $context_values['match'] = $context_values['value']['match'];
+    $context_values['operator'] = $context_values['value']['operator'];
+    unset($context_values['value'], $context_values['remove']);
+    // Generate a value code based on the operator used.
+    $value = personalize_targeting_generate_value_code($context_values['match'], $context_values['operator']);
+    // Create a feature string for this context value that can be consumed
+    // by the agent that will be using it.
+    $feature_string = $agent->convertContextToFeatureString($context_name, $value);
+    $feature_strings[] = $feature_string;
+    // Save the actual rule information as this is what will be used
+    // for evaluating it.
+    $feature_rules[$feature_string] = $context_values;
+    // Override the context to split it into plugin and context parts.
+    $feature_rules[$feature_string]['context'] = $context_name;
+    $feature_rules[$feature_string]['plugin'] = $plugin_name;
+  }
+  $option_set->targeting[$machine_name]['targeting_features'] = $feature_strings;
+  $option_set->targeting[$machine_name]['targeting_rules'] = $feature_rules;
+  $option_set->targeting[$machine_name]['targeting_strategy'] = $values['strategy'];
+  try {
+    personalize_option_set_save($option_set);
+    drupal_set_message(t('The new target audience was saved successfully'));
+  }
+  catch (PersonalizeException $e) {
+    drupal_set_message(t('There was a problem saving the nw target audience.'), 'error');
+  }
+
+}
+
+/**
+ * Submit handler for the "Add Context" button.
+ */
+function acquia_lift_targeting_add_context_submit($form, &$form_state) {
+  // Increment the number of contexts to be rendered.
+  $form_state['num_contexts']++;
+  $form_state['rebuild'] = TRUE;
+}
+
+/**
+ * Submit handler for the "Remove Context" button.
+ */
+function acquia_lift_targeting_remove_context_submit($form, &$form_state) {
+  $parents = $form_state['clicked_button']['#parents'];
+  $delta_pos = array_search('contexts', $parents) + 1;
+  $delta = $parents[$delta_pos];
+  $form_state['to_remove'] = $delta;
+  $form_state['rebuild'] = TRUE;
+}
+
+/**
+ * Ajax callback for the add context and remove context buttons.
+ */
+function acquia_lift_targeting_context_ajax_callback($form, $form_state) {
+  return $form['mapping']['contexts'];
+}
+
+/**
+ * Form for assigning options or tests to audiences.
+ *
+ * @param $agent
+ *   A stdClass object representing the agent.
+ */
 function acquia_lift_targeting_form($form, &$form_state, $agent) {
   if ($agent->plugin != 'acquia_lift_target') {
     drupal_goto('admin/structure/personalize');
   }
+  // Check if we should display the confirm form, if they are reverting changes.
+  if (isset($form_state['confirm_revert_changes'])) {
+    return acquia_lift_confirm_revert_changes($form, $form_state, $agent->machine_name);
+  }
   $option_set = acquia_lift_get_option_set_for_targeting($agent->machine_name);
   $variation_options = $saved_targeting = array();
+  $exising_targeting = acquia_lift_get_structure_from_targeting($option_set);
+  // The settings reflected in the form will either be what is currently running
+  // or any saved overrides from when this form was last submitted (if the
+  // review step was never completed to apply them.)
   if (!empty($agent->data['lift_targeting'])) {
     $saved_targeting = $agent->data['lift_targeting'];
+    if ($saved_targeting != $exising_targeting) {
+      $message = t('The targeting settings shown here do not match what is currently running for this campaign.');
+      $message_type = 'warning';
+    }
   }
   else {
-    $saved_targeting = acquia_lift_get_structure_from_targeting($option_set);
+    $message = t('The targeting settings shown here represent what is currently running for this campaign.');
+    $message_type = 'ok';
+    $saved_targeting = $exising_targeting;
   }
 
+  if (isset($message)) {
+    $form['message'] = array(
+      '#type' => 'markup',
+      '#markup' => '<div class="acquia-lift-targeting-message acquia-lift-targeting-message-' . $message_type . '">' . $message . '</div>',
+      '#weight' => -1
+    );
+  }
   foreach ($option_set->options as $option) {
     $variation_options[$option['option_id']] = $option['option_label'];
   }
@@ -899,15 +1258,33 @@ function acquia_lift_targeting_form($form, &$form_state, $agent) {
       '#default_value' => isset($saved_targeting[$audience]) ? $saved_targeting[$audience] : ''
     );
   }
-  $form['submit'] = array(
+  $form['actions'] = array('#type' => 'actions', '#tree' => FALSE);
+  $form['actions']['submit'] = array(
     '#type' => 'submit',
     '#value' => t('Save')
+  );
+  $form['actions']['revert_changes'] = array(
+    '#type' => 'submit',
+    '#value' => t('Revert changes')
   );
   return $form;
 }
 
+/**
+ * Submit callback for the targeting form.
+ */
 function acquia_lift_targeting_form_submit($form, &$form_state) {
   $agent = personalize_agent_load($form_state['values']['agent']);
+  if ($form_state['triggering_element']['#value'] == t('Revert changes')) {
+    // Execute the revert action.
+    if ($form_state['values']['revert_changes'] === TRUE) {
+      return acquia_lift_confirm_revert_changes_submit($form, $form_state);
+    }
+    // Rebuild the form to confirm the revert action.
+    $form_state['rebuild'] = TRUE;
+    $form_state['confirm_revert_changes'] = TRUE;
+    return;
+  }
   $targeting = array();
   foreach ($form_state['values']['targeting'] as $audience => $options) {
     $targeting[$audience] = array();
@@ -920,6 +1297,43 @@ function acquia_lift_targeting_form_submit($form, &$form_state) {
   acquia_lift_save_targeting_structure($agent, $targeting);
 }
 
+/**
+ * Confirm form for reverting the changes to targeting.
+ *
+ * @param $agent_name
+ *   The name of hte agent whose targeting changes are being reverted.
+ */
+function acquia_lift_confirm_revert_changes($form, &$form_state, $agent_name) {
+  $form['agent'] = array(
+    '#type' => 'value',
+    '#value' => $agent_name
+  );
+  $form['revert_changes'] = array('#type' => 'value', '#value' => TRUE);
+  return confirm_form($form,
+    t('Are you sure you want to revert the targeting changes for the %agent campaign?',
+      array('%agent' => $agent_name)),
+    'admin/structure/personalize/' . $agent_name,
+    t('Reverting the targeting will discard all changes since the campaign was set to running.'),
+    t('Revert changes'),
+    t('Cancel'));
+}
+
+/**
+ * Submit callback for the "Revert changes" confirm form.
+ */
+function acquia_lift_confirm_revert_changes_submit($form, &$form_state) {
+  if ($agent = personalize_agent_load($form_state['values']['agent'])) {
+    $agent->data['lift_targeting'] = array();
+    personalize_agent_save($agent);
+  }
+}
+
+/**
+ * Final review form for applying targeting changes.
+ *
+ * @param $agent
+ *   A stdClass object representing the agent.
+ */
 function acquia_lift_review_form($form, &$form_state, $agent) {
   if ($agent->plugin != 'acquia_lift_target') {
     drupal_goto('admin/structure/personalize');
@@ -936,8 +1350,9 @@ function acquia_lift_review_form($form, &$form_state, $agent) {
 
   $option_set = acquia_lift_get_option_set_for_targeting($agent->machine_name);
   $running_targeting = acquia_lift_get_structure_from_targeting($option_set);
-  dpm($running_targeting);
-  if ($saved_targeting != $running_targeting) {
+
+  // Only show a submit button if there are actual changes to apply.
+  if (!empty($saved_targeting) && $saved_targeting != $running_targeting) {
     drupal_set_message(t('Saving this form will restructure your personalization and could result in loss of data about existing tests.'), 'warning');
     $form['submit'] = array(
       '#type' => 'submit',
@@ -947,7 +1362,7 @@ function acquia_lift_review_form($form, &$form_state, $agent) {
   else {
     $form['all_good'] = array(
       '#type' => 'markup',
-      '#markup' => t('No changes to apply')
+      '#markup' => t('No changes to apply. !change', array('!change' => l(t('Make changes to the targeting for this campaign.'), 'admin/structure/personalize/manage/' . $agent->machine_name . '/lift-target')))
     );
   }
 
@@ -1022,14 +1437,22 @@ function acquia_lift_update_targeting($agent) {
 
 /**
  * Assigns an option to a target audience.
+ *
  * @param $agent
+ *   A stdClass object representing the agent.
  * @param $option_id
+ *   The option ID
  * @param $audience
+ *   The name of hte targeting audience to assign the option to.
  * @throws \PersonalizeException
  */
 function acquia_lift_set_option_for_audience($agent, $option_id, $audience) {
   $option_set = acquia_lift_get_option_set_for_targeting($agent->machine_name);
   if (isset($option_set->targeting[$audience])) {
+    // If there was a test assigned to this audience, remove it.
+    if (isset($option_set->targeting[$audience]['osid'])) {
+      unset($option_set->targeting[$audience]['osid']);
+    }
     $option_set->targeting[$audience]['option_id'] = $option_id;
     personalize_option_set_save($option_set);
   }
@@ -1081,7 +1504,9 @@ function acquia_lift_add_new_test_for_audience($parent_agent, $variations, $audi
       drupal_set_message($e->getMessage());
       return;
     }
-
+    if (isset($option_set->targeting[$audience]['option_id'])) {
+      unset($option_set->targeting[$audience]['option_id']);
+    }
     $option_set->targeting[$audience]['osid'] = $nested_os->osid;
     personalize_option_set_save($option_set);
   }
@@ -1122,13 +1547,21 @@ function acquia_lift_set_audience_for_test($parent_agent, $old_audience, $new_au
   personalize_option_set_save($option_set);
 }
 
+/**
+ * Deletes a nested test that is no longer needed.
+ *
+ * @param $parent_agent
+ *   The name of the parent agent.
+ * @param $audience
+ *   THe name of the target audience the test was assigned to.
+ * @throws \PersonalizeException
+ */
 function acquia_lift_delete_old_nested_test($parent_agent, $audience) {
   $option_set = acquia_lift_get_option_set_for_targeting($parent_agent->machine_name);
   // Find the nested option set for the specified targeting rule.
   if (isset($option_set->targeting[$audience]) && isset($option_set->targeting[$audience]['osid'])) {
     $nested_os = personalize_option_set_load($option_set->targeting[$audience]['osid']);
-    // Pause the agent, delete the option set, then delete the agent.
-    personalize_agent_set_status($nested_os->agent, PERSONALIZE_STATUS_PAUSED);
+    // Delete the option set, then delete the agent.
     personalize_option_set_delete($option_set->targeting[$audience]['osid']);
     personalize_agent_delete($nested_os->agent);
     unset($option_set->targeting[$audience]['osid']);
@@ -1138,8 +1571,15 @@ function acquia_lift_delete_old_nested_test($parent_agent, $audience) {
 }
 
 /**
+ * Saves the targeting structure defined via the UI.
+ *
+ * This does not actually *create* the structure defined via the UI as that
+ * happens once the final review stage has been completed.
+ *
  * @param $agent
- * @param $values
+ *   A stdClass ogject representing the agent to save the targeting structure for.
+ * @param $targeting
+ *   An array keyed by target audience with arrays of option IDs as values.
  * @throws \AcquiaLiftException
  */
 function acquia_lift_save_targeting_structure($agent, $targeting) {
@@ -1155,7 +1595,8 @@ function acquia_lift_save_targeting_structure($agent, $targeting) {
  *
  * Returns an array of option IDs for each audience, so if the audience is
  * assigned a single option, then it's a single element array, if it's assigned
- * a nested option set, we pull out the option IDs for the nested option set.
+ * a nested option set, we pull out the option IDs for the nested option set and
+ * return them as an array.
  *
  * @param $option_set
  *   The option set to get the targeting structure for.

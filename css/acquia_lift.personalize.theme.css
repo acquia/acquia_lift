@@ -8,7 +8,7 @@
   text-indent: -99999px;
   width: 30px;
   height: 30px;
-  background: transparent url("../images/page-variation-toggle-inactive.png") no-repeat center;
+  background: transparent url("../images/edit-toggle-inactive.png") no-repeat center;
   padding: 1em 1.3333em;
   cursor: pointer;
   vertical-align: middle;
@@ -17,10 +17,10 @@
   display: none;
 }
 #navbar-administration .acquia-lift-page-variation-toggle.acquia-lift-page-variation-toggle-disabled {
-  background-image: url("../images/page-variation-toggle-disabled.png");
+  background-image: url("../images/edit-toggle-disabled.png");
 }
 #navbar-administration .acquia-lift-page-variation-toggle.acquia-lift-page-variation-toggle-active {
-  background-image: url("../images/page-variation-toggle-active.png");
+  background-image: url("../images/edit-toggle-active.png");
 }
 /* Ensure QTips are always on top */
 .qtip {

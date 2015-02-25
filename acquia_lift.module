@@ -2411,6 +2411,7 @@ function acquia_lift_form_personalize_campaign_wizard_alter(&$form, &$form_state
   module_load_include('inc', 'acquia_lift', 'acquia_lift.admin.wizard');
   // Call the alter hooks for the generic form parts.
   call_user_func_array('acquia_lift_personalize_campaign_wizard_process_bar_alter', array(&$form, &$form_state, $form_id));
+  call_user_func_array('acquia_lift_personalize_campaign_wizard_base_alter', array(&$form, &$form_state, $form_id));
 
   // Now call any alter hooks that are specific to the storage step.
   $function = 'acquia_lift_personalize_campaign_wizard_' . $form_state['storage']['step'] . '_alter';

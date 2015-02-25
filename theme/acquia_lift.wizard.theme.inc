@@ -84,3 +84,17 @@ function theme_acquia_lift_radio_list_item($variables) {
   return $html;
 }
 
+/**
+ * Theme wrapper function to wrap an input as a revealing input.
+ */
+function theme_acquia_lift_revealing_input($variables) {
+  if (empty($variables['element']['#children'])) {
+    return '';
+  }
+  drupal_add_library('acquia_lift', 'acquia_lift.inputs');
+  $html = '';
+  $html .= '<div class="acquia-lift-revealing-input">';
+  $html .= $variables['element']['#children'];
+  $html .= '</div>';
+  return $html;
+}

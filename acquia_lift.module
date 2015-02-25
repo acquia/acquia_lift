@@ -274,18 +274,18 @@ function acquia_lift_theme() {
     'acquia_lift_card' => array(
       'render element' => 'element',
       'path' => $path . '/theme',
-      'file' => 'acquia_lift.theme.inc',
+      'file' => 'acquia_lift.wizard.theme.inc',
     ),
     'acquia_lift_radio_list' => array(
       'render element' => 'element',
       'path' => $path . '/theme',
-      'file' => 'acquia_lift.theme.inc',
+      'file' => 'acquia_lift.wizard.theme.inc',
       'preprocess functions' => array('template_preprocess_acquia_lift_radio_list'),
     ),
     'acquia_lift_radio_list_item' => array(
       'render element' => 'element',
       'path' => $path . '/theme',
-      'file' => 'acquia_lift.theme.inc',
+      'file' => 'acquia_lift.wizard.theme.inc',
     ),
     // Unified navbar themes.
     'acquia_lift_navbar' => array(

@@ -1568,6 +1568,9 @@
    * View/controller for the campaign menu header.
    */
   Drupal.acquiaLiftUI.MenuCampaignsView = ViewBase.extend({
+    events: {
+      'click': 'onClick'
+    },
 
     /**
      * {@inheritdoc}
@@ -1596,6 +1599,17 @@
       if ($count.length > 0) {
         this.$el.prepend($count);
       }
+    },
+
+    /**
+     * Responds to clicks.
+     *
+     * @param jQuery.Event event
+     */
+    onClick: function (event) {
+      event.preventDefault();
+      event.stopPropagation();
+      return false;
     }
   });
 
@@ -1695,6 +1709,9 @@
    * View for the top-level content variations menu.
    */
   Drupal.acquiaLiftUI.MenuContentVariationsMenuView = ViewBase.extend({
+    events: {
+      'click': 'onClick'
+    },
 
     /**
      * {@inheritDoc}
@@ -1730,6 +1747,17 @@
       if ($count) {
         this.$el.prepend($count);
       }
+    },
+
+    /**
+     * Responds to clicks.
+     *
+     * @param jQuery.Event event
+     */
+    onClick: function (event) {
+      event.preventDefault();
+      event.stopPropagation();
+      return false;
     }
   });
 
@@ -2390,6 +2418,26 @@
    *            G O A L S
    *
    ***************************************************************/
+
+  /**
+   * View for the top-level goal menu.
+   */
+  Drupal.acquiaLiftUI.MenuGoalMenuView = ViewBase.extend({
+    events: {
+      'click': 'onClick'
+    },
+
+    /**
+     * Responds to clicks.
+     *
+     * @param jQuery.Event event
+     */
+    onClick: function (event) {
+      event.preventDefault();
+      event.stopPropagation();
+      return false;
+    }
+  });
 
   /**
    * Renders the goals for a campaign.
@@ -3254,6 +3302,13 @@
                   $link.wrap('<div class="navbar-box">');
                   $link.addClass('navbar-menu-item');
                   $link.after($element);
+                  break;
+                }
+                case 'goals': {
+                  Drupal.acquiaLiftUI.views.goalMenuView = new Drupal.acquiaLiftUI.MenuGoalMenuView({
+                    el: $link[0]
+                  });
+                  break;
                 }
               }
             }

@@ -164,6 +164,13 @@
                   $link.wrap('<div class="navbar-box">');
                   $link.addClass('navbar-menu-item');
                   $link.after($element);
+                  break;
+                }
+                case 'goals': {
+                  Drupal.acquiaLiftUI.views.goalMenuView = new Drupal.acquiaLiftUI.MenuGoalMenuView({
+                    el: $link[0]
+                  });
+                  break;
                 }
               }
             }

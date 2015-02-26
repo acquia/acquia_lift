@@ -33,7 +33,7 @@
                 campaign: campaign,
                 goal: $(this).val()
               },
-              path = Drupal.settings.basePath + 'acquia_lift/reports/conversion?' + $.param(args);
+              path = Drupal.settings.basePath + Drupal.settings.pathPrefix + 'acquia_lift/reports/conversion?' + $.param(args);
 
           // Get the new report and replace the existing report(s) with it.
           $.get(path, function (html) {

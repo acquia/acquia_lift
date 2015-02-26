@@ -287,6 +287,8 @@ tr.acquia-lift-report-control {
 }
 
 /* Acquia Lift campaign wizard form alterations */
+
+/* Radio list component */
 .acquia-lift-radio-list {
   max-width: 1000px;
 }
@@ -325,4 +327,12 @@ tr.acquia-lift-report-control {
   position: absolute;
   width: 1px;
 }
+/* Base form */
+.personalize-wizard-section #edit-agent-basic-info .acquia-lift-revealing-input {
+  margin-bottom: 1em;
+}
 
+/* Variations form */
+.personalize-wizard-section #personalized-block-variations fieldset .fieldset-title {
+  text-transform: none;
+}

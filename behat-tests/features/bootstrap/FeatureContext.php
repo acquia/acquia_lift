@@ -5,6 +5,7 @@ use Behat\Behat\Context\SnippetAcceptingContext;
 use Behat\Gherkin\Node\TableNode;
 use Behat\Behat\Hook\Scope\AfterStepScope;
 use Behat\Mink\Driver\Selenium2Driver;
+use Behat\Mink\Element\NodeElement;
 use Behat\Behat\Hook\Scope\BeforeScenarioScope;
 use Behat\Behat\Hook\Scope\AfterScenarioScope;
 
@@ -20,6 +21,16 @@ class FeatureContext extends RawDrupalContext implements SnippetAcceptingContext
    *     screenshots, can be written.  Default value: /tmp/behat
    */
   protected $context_parameters = array();
+
+  /**
+   * Stores campaigns at start of scenario for comparison with those at the end.
+   */
+  protected $campaigns = array();
+
+  /**
+   * Stores visitor actions at start of scenario for comparison at end.
+   */
+  protected $actions = array();
 
   /**
    * Initializes context.
@@ -42,7 +53,12 @@ class FeatureContext extends RawDrupalContext implements SnippetAcceptingContext
    * @BeforeScenario @campaign
    */
   public function before(BeforeScenarioScope $event) {
+    // Clear any currently active campaign contexts.
+    personalize_set_campaign_context('');
+    // Make sure unibar can update status.
+    variable_set('acquia_lift_unibar_allow_status_change', TRUE);
     $this->campaigns = personalize_agent_load_multiple();
+    $this->actions = visitor_actions_custom_load_multiple();
   }
 
   /**
@@ -61,6 +77,14 @@ class FeatureContext extends RawDrupalContext implements SnippetAcceptingContext
           personalize_option_set_delete($option_set->osid);
         }
         personalize_agent_delete($name);
+      }
+    }
+
+    $original_actions = $this->actions;
+    $all_actions = visitor_actions_custom_load_multiple();
+    foreach ($all_actions as $name => $action) {
+      if (!isset($original_actions[$name])) {
+        visitor_actions_delete_action($name);
       }
     }
   }
@@ -170,6 +194,37 @@ class FeatureContext extends RawDrupalContext implements SnippetAcceptingContext
    ***************************************************/
 
   /**
+   * @Then I should see :count for the :type count
+   */
+  public function assertMenuCount($count, $type) {
+    switch ($type) {
+      case 'variation':
+      case 'variation set':
+        $region_name = 'lift_tray_variation_count';
+        break;
+      case 'goal':
+        $region_name = 'lift_tray_goal_count';
+        break;
+      default:
+        throw new \Exception(sprintf('The count type %s is not supported.', $type));
+    }
+    $regions = $this->getRegions($region_name);
+    foreach ($regions as $current) {
+      if ($current->isVisible()) {
+        $region = $current;
+        break;
+      }
+    }
+    if (empty($region)) {
+      throw new \Exception(sprintf('There is no visible goal region'));
+    }
+    $actual_count = $region->getText();
+    if ($actual_count !== $count) {
+      throw new \Exception(sprintf('The count for type %s was %s rather than the expected %s.', $type, $actual_count, $count));
+    }
+  }
+
+  /**
    * @When I hover over :link in the :region( region)
    *
    * @throws \Exception
@@ -212,82 +267,89 @@ class FeatureContext extends RawDrupalContext implements SnippetAcceptingContext
   }
 
   /**
+   * @Then :variation_set set :variation variation should have the :link link
+   *
+   * @throws \Exception
+   *   If the menu or link cannot be found.
+   */
+  public function assertRegionVariationHasLink($variation_set, $variation, $link) {
+    $css = $this->getVariationLinkCss($variation_set, $variation, $link);
+    // Now find the link and return it.
+    $element = $this->findElementInRegion($css, 'lift_tray');
+    if (empty($element)) {
+      throw new \Exception(sprintf('Cannot load the link "%s" for set "%s" and variation "%s" on page %s using selector %s.', $link, $variation_set, $variation, $this->getSession()->getCurrentUrl(), $css));
+    }
+    return $element;
+  }
+
+  /**
+   * @Then :variation_set set :variation variation should not have the :link link
+   *
+   * @throws \Exception
+   *   If the menu cannot be found or the link can be found.
+   */
+  public function assertNotRegionVariationHasLink($variation_set, $variation, $link) {
+    $css = $this->getVariationLinkCss($variation_set, $variation, $link);
+    // Now find the link and return it.
+    $element = $this->findElementInRegion($css, 'lift_tray');
+    if (!empty($element)) {
+      throw new \Exception(sprintf('Found the link "%s" for set "%s" and variation "%s" on page %s using selector %s.', $link, $variation_set, $variation, $this->getSession()->getCurrentUrl(), $css));
+    }
+  }
+
+  /**
    * @When I click :link link for the :variation_set set :variation variation
    *
    * @throws \Exception
    *   If the menu or link cannot be found.
    */
   public function assertRegionVariationLinkClick($link, $variation_set, $variation) {
-    $link = drupal_strtolower($link);
-    if (!in_array($link, array('edit', 'rename', 'delete'))) {
-      throw new \Exception(sprintf('The variation action "%s" is invalid.', $link));
+    $element = $this->assertRegionVariationHasLink($variation_set, $variation, $link);
+    if (!empty($element)) {
+      $element->click();
     }
-    $campaign = $this->getCurrentCampaign();
-    if (empty($campaign)) {
-      throw new \Exception(sprintf('Cannot determine the current campaign for variation set %s.', $variation_set));
-    }
-    $agent_instance = personalize_agent_load_agent($campaign);
-    if (empty($agent_instance)) {
-      throw new \Exception(sprintf('Cannot load the current agent instance for campaign %s.', $campaign));
-    }
-    $option_sets = personalize_option_set_load_by_agent($campaign);
-    if ($agent_instance instanceof AcquiaLiftSimpleAB) {
-      // One decision with many variations.
-      $option_set = reset($option_sets);
-      foreach ($option_set->options as $index => $option) {
-        if ($option['option_label'] == $variation) {
-          break;
-        }
-      }
-      $css = '.acquia-lift-menu-item[data-acquia-lift-personalize-agent="' . $campaign . '"]';
-      switch ($link) {
-        case "rename":
-          $css .= ' a.acquia-lift-variation-rename';
-          break;
-        case "delete":
-          $css .= ' a.acquia-lift-variation-delete';
-          break;
-        default:
-          throw new \Exception(sprintf('Campaign %s does not support edit links for variations.', $campaign));
-      }
-      $css .= '[data-acquia-lift-personalize-page-variation="' . $index . '"]';
-    }
-    else {
-      // Standard option set names displayed.
-      foreach ($option_sets as $option_set) {
-        if ($option_set->label == $variation_set) {
-          $osid = $option_set->osid;
-          foreach ($option_set->options as $option) {
-            if ($option['option_label'] == $variation) {
-              $option_id = $option['option_id'];
-              break;
-            }
-          }
-          break;
-        }
-      }
-      $css = '.acquia-lift-menu-item[data-acquia-lift-personalize-option-set="' . personalize_stringify_osid($osid) . '"]';
-      switch ($link) {
-        case "edit":
-          $css .= ' a.acquia-lift-variation-edit';
-          break;
-        case "rename":
-          $css .= ' a.acquia-lift-variation-rename';
-          break;
-        case "delete":
-          $css .= 'a.acquia-lift-variation-delete';
-          break;
-      }
-      $css .= '[data-acquia-lift-personalize-option-set-option="' . $option_id . '"]';
-    }
-    // Now find the link and click it.
-    $element = $this->findElementInRegion($css, 'lift_tray');
-    if (empty($element)) {
-      throw new \Exception(sprintf('Cannot load the link "%s" for set "%s" and variation "%s" on page %s using selector %s.', $link, $variation_set, $variation, $this->getSession()->getCurrentUrl(), $css));
-    }
-    $element->click();
   }
 
+  /**
+   * @Then the variation edit mode is :state
+   */
+  public function assertVariationEditMode($expected_state) {
+    if (!in_array($expected_state, array('active','inactive','hidden','disabled'))) {
+      throw new \Exception(sprintf('Invalid expected state for variation toggle: %s', $expected_state));
+    }
+    $element = $this->findElementInRegion('#acquia-lift-menu-page-variation-toggle', 'lift_tray');
+    if (empty($element)) {
+      throw new \Exception(sprintf('The variation toggle edit link cannot be found on the page %s', $this->getSession()->getCurrentUrl()));
+    }
+    $current_state = 'inactive';
+    if ($element->hasClass('acquia-lift-page-variation-toggle-hidden')) {
+      $current_state = 'hidden';
+    }
+    else if ($element->hasClass('acquia-lift-page-variation-toggle-active')) {
+      $current_state = 'active';
+    }
+    else if ($element->hasClass('acquia-lift-page-variation-toggle-disabled')) {
+      $current_state = 'disabled';
+    }
+    if ($current_state !== $expected_state) {
+      throw new \Exception(sprintf('The variation toggle edit link is currently in the %s state and not the expected %s state.', $current_state, $expected_state));
+    }
+  }
+
+  /**
+   * @Then the :field field should contain the site title
+   *
+   * @throws \Exception
+   *   If the region or element cannot be found or does not have the specified
+   *   class.
+
+   */
+  public function assertFieldHasSiteTitle($field) {
+    // Read the site name dynamically.
+    $site_name = variable_get('site_name', "Default site name");
+    $mink = $this->getMink();
+    $mink->assertSession()->fieldValueEquals($field, $site_name);
+  }
 
   /**
    * @Then :selector element in the :region region should have :class class
@@ -301,7 +363,7 @@ class FeatureContext extends RawDrupalContext implements SnippetAcceptingContext
     if (empty($element)) {
       throw new \Exception(sprintf('The element "%s" was not found in the region "%s" on the page %s', $selector, $region, $this->getSession()->getCurrentUrl()));
     }
-    if (!$this->elementHasClass($element, $class)) {
+    if (!$element->hasClass($class)) {
       throw new \Exception(sprintf('The element "%s" in region "%s" on the page %s does not have class "%s".', $selector, $region, $this->getSession()->getCurrentUrl(), $class));
     }
   }
@@ -398,7 +460,7 @@ class FeatureContext extends RawDrupalContext implements SnippetAcceptingContext
     if (empty($element)) {
       throw new \Exception(sprintf('The link element %s was not found on the page %s', $link, $this->getSession()->getCurrentUrl()));
     }
-    if ($this->elementHasClass($element, $class)) {
+    if ($element->hasClass($class)) {
       if ($status === 'active') {
         throw new \Exception(sprintf('The link element %s on page %s is inactive but should be active.', $link, $this->getSession()->getCurrentUrl()));
       }
@@ -416,7 +478,7 @@ class FeatureContext extends RawDrupalContext implements SnippetAcceptingContext
     if (empty($element)) {
       throw new \Exception(sprintf('The element with %s was not found in region %s on the page %s', $id, $region, $this->getSession()->getCurrentUrl()));
     }
-    if (!$this->elementHasClass($element, $class)) {
+    if (!$element->hasClass($class)) {
       throw new \Exception(sprintf('The element with id %s in region %s on page %s does not have class %s', $id, $region, $this->getSession()->getCurrentUrl(), $class));
     }
   }
@@ -434,9 +496,96 @@ class FeatureContext extends RawDrupalContext implements SnippetAcceptingContext
     }
   }
 
+  /**
+   * @Then I wait for :seconds seconds
+   */
+  public function iWaitSeconds($seconds) {
+    $ms = $seconds * 1000;
+    $this->getSession()->wait($ms);
+  }
+
   /****************************************************
    *        H E L P E R  F U N C T I O N S
    ***************************************************/
+
+  /**
+   * Helper function to generate the css for a variation action link.
+   *
+   * @param string $variation_set
+   *   The name of the variation set displayed
+   * @param string $variation
+   *   The name of the variation displayed
+   * @param string $link
+   *   The link text to find.  One of "rename", "edit", or "delete".
+   *
+   * @throws \Exception
+   *   If the link type is invalid or the current campaign is not available.
+   */
+  public function getVariationLinkCss($variation_set, $variation, $link) {
+    $link = drupal_strtolower($link);
+    if (!in_array($link, array('edit', 'rename', 'delete'))) {
+      throw new \Exception(sprintf('The variation action "%s" is invalid.', $link));
+    }
+    $campaign = $this->getCurrentCampaign();
+    if (empty($campaign)) {
+      throw new \Exception(sprintf('Cannot determine the current campaign for variation set %s.', $variation_set));
+    }
+    $agent_instance = personalize_agent_load_agent($campaign);
+    if (empty($agent_instance)) {
+      throw new \Exception(sprintf('Cannot load the current agent instance for campaign %s.', $campaign));
+    }
+    $option_sets = personalize_option_set_load_by_agent($campaign);
+    if ($agent_instance instanceof AcquiaLiftSimpleAB) {
+      // One decision with many variations.
+      $option_set = reset($option_sets);
+      foreach ($option_set->options as $index => $option) {
+        if ($option['option_label'] == $variation) {
+          break;
+        }
+      }
+      $css = '.acquia-lift-menu-item[data-acquia-lift-personalize-agent="' . $campaign . '"]';
+      switch ($link) {
+        case "rename":
+          $css .= ' a.acquia-lift-variation-rename';
+          break;
+        case "delete":
+          $css .= ' a.acquia-lift-variation-delete';
+          break;
+        default:
+          throw new \Exception(sprintf('Campaign %s does not support edit links for variations.', $campaign));
+      }
+      $css .= '[data-acquia-lift-personalize-page-variation="' . $index . '"]';
+    }
+    else {
+      // Standard option set names displayed.
+      foreach ($option_sets as $option_set) {
+        if ($option_set->label == $variation_set) {
+          $osid = $option_set->osid;
+          foreach ($option_set->options as $option) {
+            if ($option['option_label'] == $variation) {
+              $option_id = $option['option_id'];
+              break;
+            }
+          }
+          break;
+        }
+      }
+      $css = '.acquia-lift-menu-item[data-acquia-lift-personalize-option-set="' . personalize_stringify_osid($osid) . '"]';
+      switch ($link) {
+        case "edit":
+          $css .= ' a.acquia-lift-variation-edit';
+          break;
+        case "rename":
+          $css .= ' a.acquia-lift-variation-rename';
+          break;
+        case "delete":
+          $css .= ' a.acquia-lift-variation-delete';
+          break;
+      }
+      $css .= '[data-acquia-lift-personalize-option-set-option="' . $option_id . '"]';
+    }
+    return $css;
+  }
 
   /**
    * Helper function to retrieve a context parameter.
@@ -463,6 +612,9 @@ class FeatureContext extends RawDrupalContext implements SnippetAcceptingContext
   /**
    * Helper function to return a link in a particular region.
    *
+   * Note: the selector is translated to xpath in order to allow selection of
+   * the link even if it needs to be scrolled in order to visible.
+   *
    * @param string $link
    *   link id, title, text or image alt
    * @param $region
@@ -472,8 +624,14 @@ class FeatureContext extends RawDrupalContext implements SnippetAcceptingContext
    *   The element node for the link or null if not found.
    */
   private function findLinkInRegion($link, $region) {
+    $session = $this->getSession();
     $regionObj = $this->getRegion($region);
-    return $regionObj->findLink($link);
+    $xpath = $session->getSelectorsHandler()->selectorToXpath('link', $link);
+
+    $element = $regionObj->find('xpath', $xpath);
+    if (empty($element)) {
+      throw new \Exception(sprintf('Could not find element in %region using xpath %s', $region, $xpath));
+    }
   }
 
   /**
@@ -515,6 +673,28 @@ class FeatureContext extends RawDrupalContext implements SnippetAcceptingContext
   }
 
   /**
+   * Helper function to retrieve a region defined in the configuration file that
+   * may consist of multiple elements matching the selector.
+   *
+   * @param $region
+   *   The region identifier to load.
+   *
+   * @return \Behat\Mink\Element\NodeElement|null
+   *   The region element node or null if not found.
+   *
+   * @throws \Exception
+   *   If the region cannot be found on the current page.
+   */
+  private function getRegions($region) {
+    $mink = $this->getMink();
+    $regions = $mink->getSession()->getPage()->findAll('region', $region);
+    if (empty($regions)) {
+      throw new \Exception(sprintf('The region %s was not found on the page %s', $region, $this->getSession()->getCurrentUrl()));
+    }
+    return $regions;
+  }
+
+  /**
    * Helper function to assert that a particular region is not visible.
    *
    * @param $region_id
@@ -534,20 +714,6 @@ class FeatureContext extends RawDrupalContext implements SnippetAcceptingContext
     if ($region && $region->isVisible()) {
       throw new \Exception(sprintf('The %s was found on the page %s', strtolower($region_name), $this->getSession()->getCurrentUrl()));
     }
-  }
-
-  /**
-   * Helper function to determine an element has a particular class applied.
-   *
-   * @param \Behat\Mink\Element\NodeElement $element
-   *   The element to test.
-   * @param string $class
-   *   The class to find.
-   */
-  private function elementHasClass($element, $class) {
-    $classes = $element->getAttribute('class');
-    $search_classes = explode(' ', $classes);
-    return in_array($class, $search_classes);
   }
 
   /**

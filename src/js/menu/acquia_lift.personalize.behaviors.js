@@ -7,8 +7,8 @@
 
 (function (Drupal, $, _) {
 
-  var reportPath = Drupal.settings.basePath + 'admin/structure/personalize/manage/acquia-lift-placeholder/report';
-  var statusPath = Drupal.settings.basePath + 'admin/structure/personalize/manage/acquia-lift-placeholder/status';
+  var reportPath = Drupal.settings.basePath + Drupal.settings.pathPrefix + 'admin/structure/personalize/manage/acquia-lift-placeholder/report';
+  var statusPath = Drupal.settings.basePath + Drupal.settings.pathPrefix + 'admin/structure/personalize/manage/acquia-lift-placeholder/status';
 
   Drupal.behaviors.acquiaLiftPersonalize = {
     attach: function (context) {
@@ -406,7 +406,7 @@
         $('body').append(settingsElement);
 
         Drupal.ajax[elementId] = new Drupal.ajax(elementId, settingsElement, {
-          url: Drupal.settings.basePath + 'acquia_lift/settings',
+          url: Drupal.settings.basePath + Drupal.settings.pathPrefix + 'acquia_lift/settings',
           event: 'acquiaLiftSettingsUpdate',
           progress: {
             type: '',

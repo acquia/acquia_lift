@@ -10,36 +10,36 @@ To set up your environment to run tests locally:
     http://selenium-release.storage.googleapis.com/2.44/selenium-server-standalone-2.44.0.jar
 
 2.  Selenium version 2.44 is only compatible with Firefox 33, but not 34 or above. You can download
-Firefox 33 at the following link to a local location of your choice:
+    Firefox 33 at the following link to a local location of your choice:
 
-https://ftp.mozilla.org/pub/mozilla.org/firefox/releases/33.1.1/mac/en-US/
+    https://ftp.mozilla.org/pub/mozilla.org/firefox/releases/33.1.1/mac/en-US/
 
 3.  Install Composer:
     https://getcomposer.org/doc/00-intro.md#system-requirements
 
 4.  Install project dependencies into a "vendor" folder
-   - Navigate to the behat-tests folder
-   - Type: composer install
+    - Navigate to the behat-tests folder
+    - Type: composer install
 
 5.  Copy behat.template.yml and rename it to behat.yml
 
-6.  Update behat.yml settings to match your environment.  You will need
-to at least adjust base_url and drupal_root. Additionally you can copy over
-any setting from behat.common.yml and change it to match your configuration
-such as a different CSS selector for a particular region.
+6.  Update behat.yml settings to match your environment.  You will need to at least adjust base_url and
+    drupal_root. Additionally you can copy over any setting from behat.common.yml and change it to match
+    your configuration such as a different CSS selector for a particular region.
 
 7.  Create the following Drupal roles:
-    Marketer:
-      This role should have the following permissions:
-        * Administer menus and menu items
-        * Manage personalized content
-        * Use the administration toolbar
-    Nonmarketer:
-      This role should have the following permissions:
-        * Administer menus and menu items
-        * Use the administration toolbar
-      But should NOT have the following permissions:
-        * Manage personalized content
+    Marketer:  This role should have the ability to manage personalized content
+    as well as to see the administration menus.  Specifically:
+    - Manage personalized content
+    - Use the administration pages and help
+    - Use the administration toolbar
+    - Administer visitor actions
+    Nonmarketer:  This role should have the ability to see administration menus.
+    Specifically:
+    - Use the administration pages and help
+    - Use the administration toolbar
+    But not:
+    - Manage personalized content
 
     @todo: Add this role creation into the before/after hooks.
 

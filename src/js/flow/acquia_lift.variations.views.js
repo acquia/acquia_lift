@@ -141,7 +141,7 @@
        */
       createVariationTypeDialog: function(event) {
         var variation = this.model.get('variation');
-        var formPath = Drupal.settings.basePath +
+        var formPath = Drupal.settings.basePath + Drupal.settings.pathPrefix +
           'admin/structure/acquia_lift/variation/' +
           Drupal.encodePath(event.data.id);
         if (event.data.osid) {

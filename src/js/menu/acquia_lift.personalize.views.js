@@ -4,7 +4,7 @@
  */
 (function (Drupal, $, _, Backbone) {
 
-  var startPath = Drupal.settings.basePath + 'admin/structure/acquia_lift/start/';
+  var startPath = Drupal.settings.basePath + Drupal.settings.pathPrefix + 'admin/structure/acquia_lift/start/';
 
   /**
    * Returns the Backbone View of the Visitor Actions add action controller.
@@ -534,6 +534,7 @@
       this.model = this.collection.findWhere({'isActive': true});
       if (this.model) {
         this.listenTo(this.model, 'change:optionSets', this.render);
+        this.listenTo(this.model, 'change:variations', this.render);
       }
       this.render();
     },
@@ -790,10 +791,15 @@
       if (!currentCampaign) {
         return;
       }
+      // There is no toggle available for the control variation.
+      var disabled = currentCampaign.get('activeVariation') == 0;
+      var active = this.model.get('isActive');
+      var hidden = currentCampaign instanceof Drupal.acquiaLiftUI.MenuCampaignABModel === false;
+
       this.$el
-        .toggleClass('acquia-lift-page-variation-toggle-disabled', currentCampaign.get('activeVariation') == 0) // There is no toggle available for the control variation.
-        .toggleClass('acquia-lift-page-variation-toggle-active', this.model.get('isActive'))
-        .toggleClass('acquia-lift-page-variation-toggle-hidden', currentCampaign instanceof Drupal.acquiaLiftUI.MenuCampaignABModel === false);
+        .toggleClass('acquia-lift-page-variation-toggle-disabled', !active && disabled && !hidden)
+        .toggleClass('acquia-lift-page-variation-toggle-active', active && !hidden)
+        .toggleClass('acquia-lift-page-variation-toggle-hidden', hidden);
     },
 
     /**

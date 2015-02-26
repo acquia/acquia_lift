@@ -13,7 +13,7 @@
       return;
     }
     queueIsProcessing = true;
-    var queue_url = Drupal.settings.basePath + 'acquia_lift/queue';
+    var queue_url = Drupal.settings.basePath + Drupal.settings.pathPrefix + 'acquia_lift/queue';
     Drupal.acquiaLift.queueCount++;
     $.ajax({
       url: queue_url,

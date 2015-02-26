@@ -63,7 +63,6 @@ function acquia_lift_personalize_campaign_wizard_process_bar_alter(&$form, &$for
   $form['process_bar']['actions']['sync_lift_agent'] = $sync_form;
 }
 
->>>>>>> Move process bar hook changes into their own callback.
 /**
  * Alter hook for the base campaign wizard form.
  */
@@ -190,6 +189,51 @@ function acquia_lift_personalize_campaign_wizard_variations_alter(&$form, &$form
     }
   }
 }
+
+/**
+ * Generate the blocks portion of the campaign wizard form.
+ */
+function _acquia_lift_personalize_campaign_wizard_variations_block(&$form, &$form_state, $form_id, $option_set = NULL) {
+  $form = array();
+  module_load_include('inc', 'personalize_blocks', 'personalize_blocks.admin');
+  module_load_include('inc', 'acquia_lift', 'acquia_lift.ui');
+
+  $form = personalize_blocks_form($form, $form_state, 'embed', $option_set);
+  // The agent cannot be changed.
+  $form['personalize']['#access'] = FALSE;
+  // Make the variations wrapper a plain container rather than a fieldset.
+  $form['pblock_wrapper']['#theme_wrappers'] = array('container');
+  // Adjust the blocks container for our own user interface.
+  unset($form['pblock_wrapper']['blocks']['#theme']);
+
+  foreach (element_children($form['pblock_wrapper']['blocks']) as $key) {
+    $block = &$form['pblock_wrapper']['blocks'][$key];
+    // Set the option label as a revealing input and give it a label.
+    $block['option_label']['#theme_wrappers'][] = 'acquia_lift_revealing_input';
+    $block['option_label']['#title'] = _personalize_generate_option_index($key);
+    // Weights are not manipulated here.
+    $block['weight']['#access'] = FALSE;
+    // Remove the link to add a new block from the drop-down options.
+    unset($block['block']['bid']['#options']['add']);
+    unset($block['block']['add']['#states']);
+    // Hide the add form by default.
+    $block['block']['add']['#collapsible'] = TRUE;
+    $block['block']['add']['#collapsed'] = TRUE;
+    $block['block']['add']['#title'] = t('Create new and add');
+
+    acquia_lift_chosenify_element($block['block']['bid'], array('acquia-lift-chosen-select-half'));
+
+    // Hide the remove button at this point.
+    $block['remove']['#access'] = FALSE;
+  }
+  // Update the "Add another" button to match the desired styling and language.
+  $form['pblock_wrapper']['blocks_more']['#attributes']['class'][] = 'personalize-add-link';
+  $form['pblock_wrapper']['blocks_more']['#prefix'] = '<span class="personalize-add-link-prefix"></span>';
+  $form['pblock_wrapper']['blocks_more']['#value'] = t('Add variation');
+  // Remove the form's action buttons
+  unset($form['actions']);
+}
+
 
 /**
  * Alter hook for the targeting portion of the campaign wizard.

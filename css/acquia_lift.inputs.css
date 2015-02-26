@@ -3,10 +3,9 @@
  * Style elements that have specialized input features.
  */
 
-.acquia-lift-revealing-input {
-  margin-bottom: 1em;
-}
-
+/**************************************
+ * Revealing input
+ **************************************/
 .acquia-lift-revealing-input .acquia-lift-revealer,
 .acquia-lift-revealing-input input,
 .acquia-lift-revealing-input .acquia-lift-reveal-value {
@@ -23,4 +22,8 @@
   text-indent: -9999px;
   overflow: hidden;
   margin-left: .5em; /* LTR */
+}
+.acquia-lift-revealing-input .acquia-lift-revealer,
+.acquia-lift-revealing-input .acquia-lift-reveal-value {
+  cursor: pointer;
 }

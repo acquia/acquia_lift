@@ -1082,8 +1082,8 @@ function acquia_lift_library() {
           'personalize' => array(
             'links' => array(
               'campaigns' => array(
-                'getActive' => base_path() . 'personalize/campaign_context',
-                'setActive' => base_path() . 'personalize/campaign_context/%personalize_agent',
+                'getActive' => url('personalize/campaign_context'),
+                'setActive' => url('personalize/campaign_context/%personalize_agent'),
               )
             )
           ),
@@ -2949,9 +2949,9 @@ function acquia_lift_get_campaign_details($include_status = TRUE) {
       'label' => filter_xss($agent->label),
       'type' => $agent->plugin,
       'links' => array(
-        'view' => base_path() . 'admin/structure/personalize/manage/' . $agent->machine_name,
-        'edit' => base_path() . 'admin/structure/personalize/manage/' . $agent->machine_name . '/edit',
-        'report' => $plugin instanceof PersonalizeAgentReportInterface ? base_path() . 'admin/structure/personalize/manage/' . $agent->machine_name . '/report' : '',
+        'view' => url('admin/structure/personalize/manage/' . $agent->machine_name),
+        'edit' => url('admin/structure/personalize/manage/' . $agent->machine_name . '/edit'),
+        'report' => $plugin instanceof PersonalizeAgentReportInterface ? url('admin/structure/personalize/manage/' . $agent->machine_name . '/report') : '',
       ),
       'supportsGoals' => $supports_goals,
       'optionSetTypes' => array_unique($option_set_types),

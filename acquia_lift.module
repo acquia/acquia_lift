@@ -540,6 +540,42 @@ function acquia_lift_personalize_agent_update_status($agent_name, $old_status, $
 }
 
 /**
+ * Implements hook_personalize_option_set_render().
+ */
+function acquia_lift_personalize_option_set_render(&$element, $option_set) {
+  if (empty($option_set->targeting)) {
+    return;
+  }
+  $rules = $option_set->targeting;
+  // We add our own settings for nested agents as they won't have been added
+  // by personalize.
+  $settings = array(
+    'agent_map' => array(),
+    'option_sets' => array()
+  );
+  $assets = array('js' => array());
+  foreach ($rules as $rule) {
+    if (isset($rule['option_id']) || !isset($rule['osid'])) {
+      continue;
+    }
+    if (isset($rule['osid'])) {
+      $child_os = personalize_option_set_load($rule['osid']);
+      // Make sure the agent assets are available for the child OS.
+      $settings['agent_map'][$child_os->agent] = personalize_agent_get_map_settings($child_os->agent, $child_os, $assets);
+      $settings['option_sets'] += _personalize_convert_option_set_to_js_setting($child_os);
+    }
+  }
+  $settings_array = array(
+    'type' => 'setting',
+    'data' => array(
+      'acquia_lift_target' => $settings
+    )
+  );
+  $assets['js'] = array_merge_recursive($assets['js'], array($settings_array));
+  personalize_merge_element_assets($element, $assets);
+}
+
+/**
  * Implements hook_personalize_visitor_contexts().
  */
 function acquia_lift_personalize_visitor_context() {

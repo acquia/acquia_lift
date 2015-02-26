@@ -48,5 +48,3 @@
     }
   }
 }(Drupal.jQuery, Drupal));
-
-//# sourceMappingURL=acquia_lift.inputs.js.map

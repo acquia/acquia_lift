@@ -4,7 +4,7 @@ default:
     default:
       contexts:
         - FeatureContext:
-          - temp_path: ''
+          - temp_path: '/tmp/behat'
         - Drupal\DrupalExtension\Context\DrupalContext
         - Drupal\DrupalExtension\Context\MinkContext
         - Drupal\DrupalExtension\Context\MessageContext

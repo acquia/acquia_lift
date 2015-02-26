@@ -16,6 +16,7 @@ Feature: Personalize elements variations can be added to an existing campaign.
     Then I should see the link "Campaigns" in the "lift_tray" region
     When I hover over "Campaigns" in the "lift_tray" region
     And I click "Testing campaign add variations" in the "lift_tray" region
+    And I wait for AJAX to finish
     Then I should see the link "Variation Sets" visible in the "lift_tray" region
     And I should see the text "0" in the "lift_tray_variation_count" region
     When I hover over "Variation Sets" in the "lift_tray" region

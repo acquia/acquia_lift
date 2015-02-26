@@ -19,9 +19,7 @@ class FeatureContext extends RawDrupalContext implements SnippetAcceptingContext
    *   - temp_path: The path to temporary location where files, such as error
    *     screenshots, can be written.  Default value: /tmp/behat
    */
-  protected $context_parameters = array(
-    'temp_path' => '/tmp/behat',
-  );
+  protected $context_parameters = array();
 
   /**
    * Initializes context.
@@ -86,7 +84,7 @@ class FeatureContext extends RawDrupalContext implements SnippetAcceptingContext
       $filename = $temp_path . '/stepAtLine' . $step_line . '.png';
       $screenshot = $driver->getWebDriverSession()->screenshot();
       file_put_contents($filename, base64_decode($screenshot));
-      echo "Saved Screenshot To $fileame \n";
+      echo "Saved Screenshot To $filename \n";
       $filename = $temp_path . '/stepAtLine' . $step_line .'.html';
       $source = $driver->getWebDriverSession()->source();
       file_put_contents($filename, $source);

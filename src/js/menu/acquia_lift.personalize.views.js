@@ -4,7 +4,7 @@
  */
 (function (Drupal, $, _, Backbone) {
 
-  var startPath = Drupal.settings.basePath + 'admin/structure/acquia_lift/start/';
+  var startPath = Drupal.settings.basePath + Drupal.settings.pathPrefix + 'admin/structure/acquia_lift/start/';
 
   /**
    * Returns the Backbone View of the Visitor Actions add action controller.

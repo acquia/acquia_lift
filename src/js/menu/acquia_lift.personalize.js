@@ -4,7 +4,7 @@
  */
 (function (Drupal, $, _, Backbone) {
 
-  var startPath = Drupal.settings.basePath + 'admin/structure/acquia_lift/start/';
+  var startPath = Drupal.settings.basePath + Drupal.settings.pathPrefix + 'admin/structure/acquia_lift/start/';
 
   Drupal.acquiaLiftUI = Drupal.acquiaLiftUI || {};
   Drupal.acquiaLiftUI.views = Drupal.acquiaLiftUI.views || [];

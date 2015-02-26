@@ -36,6 +36,10 @@ module.exports = function(grunt) {
         'src/js/menu/acquia_lift.personalize.behaviors.js'
       ];
 
+  var inputjs = [
+        'src/js/inputs/acquia_lift.inputs.revealing.js'
+  ];
+
   // Project configuration.
   grunt.initConfig({
     pkg: grunt.file.readJSON('package.json'),
@@ -72,6 +76,10 @@ module.exports = function(grunt) {
       unibar: {
         src: unibarjs,
         dest: 'js/acquia_lift.personalize.js'
+      },
+      inputs: {
+        src: inputjs,
+        dest: 'js/acquia_lift.inputs.js'
       }
     },
     concurrent: {

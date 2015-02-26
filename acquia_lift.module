@@ -1465,6 +1465,7 @@ function acquia_lift_library() {
     ),
     'dependencies' => array(
       array('system', 'jquery'),
+      array('system', 'jquery.once'),
     ),
   );
 

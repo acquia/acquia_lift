@@ -632,6 +632,7 @@ class FeatureContext extends RawDrupalContext implements SnippetAcceptingContext
     if (empty($element)) {
       throw new \Exception(sprintf('Could not find element in %region using xpath %s', $region, $xpath));
     }
+    return $element;
   }
 
   /**

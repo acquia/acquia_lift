@@ -2,10 +2,10 @@
  * @file
  * Javascript functionality for elemental-card.
  *
- * @group component
+ * @group card
  */
 
-(function ($) {
+(function ($, undefined) {
   'use strict';
 
   // CARD PUBLIC CLASS DEFINITION
@@ -24,8 +24,8 @@
     collapsible: true,
     collapsed: false,
     footerVisible: true,
-    eventExpanded: 'el-card-expanded',
-    eventCollapsed: 'el-card-collapsed'
+    eventExpanded: 'card-expanded',
+    eventCollapsed: 'card-collapsed'
   };
 
   Card.prototype.init = function (type, element, options) {
@@ -49,18 +49,10 @@
    * Read a card data attribute from the element.
    */
   Card.prototype.dataAttr = function(key) {
-    var value = this.$element.attr('data-' + this.type + '-' + key);
-    if (value === undefined) {
-      return undefined;
-    }
-    // All values will be strings by default.
-    // Convert them to native booleans or numbers if appropriate.
-    if (value === "true" || value === "false") {
-      return value === "true";
-    } else if (!isNaN(Number(value))) {
-      return Number(value);
-    }
-    return value;
+    var dataKey = this.type + key.charAt(0).toUpperCase() + key.slice(1);
+    var oldKey = dataKey.replace(/[A-Z]/g, function(a) {return '-' + a.toLowerCase()});
+
+    return this.$element.data(dataKey) || this.$element.data(oldKey);
   };
 
   Card.prototype.getDefaults = function () {
@@ -83,14 +75,13 @@
   };
 
   Card.prototype.destroy = function () {
-    this.hide().$element.off('.' + this.type).removeData('bs.' + this.type);
+    this.$element.unbind('.' + this.type).removeData('el.' + this.type);
   };
 
   Card.prototype.render = function () {
-    var $label, $details, detailsId, that = this;
-    if (!this.options.footerVisible) {
-      this.getFooter().hide();
-    }
+    var $label, $details, detailsId;
+    var self = this;
+    this.getFooter().toggle(this.options.footerVisible);
     if (this.options.collapsible) {
       // Add a collapse control
       $details = this.getDetails();
@@ -100,8 +91,8 @@
       $label = this.getHeaderLabel();
       $label.attr('aria-controls', detailsId);
       // Toggle opening details when clicking the card label.
-      $label.on('click', function (e) {
-        that.toggleOpen();
+      $label.bind('click.card', function (e) {
+        self.toggleOpen();
       });
       this.setOpen(!this.options.collapsed);
     } else {
@@ -117,9 +108,9 @@
    *   If not passed then the element is simply toggled.
    */
   Card.prototype.toggleOpen = function (open) {
-    var isOpen = this.isOpen(),
-      $content = this.getDetails(),
-      that = this;
+    var isOpen = this.isOpen();
+    var $content = this.getDetails();
+    var self = this;
 
     // Set a value for the toggle.
     open = open === undefined ? !isOpen : open;
@@ -141,19 +132,25 @@
     if (open) {
       $content.hide();
       $content.slideDown('fast', function () {
-        that.setOpen(true);
-        that.$element.removeClass('is-transitioning');
-        that.$element.trigger(that.options.eventExpanded);
+        self.setOpen(true);
+        self.$element.removeClass('is-transitioning');
+        self.$element.trigger(self.options.eventExpanded);
       });
     } else {
       $content.slideUp('fast', function () {
-        that.setOpen(false);
-        that.$element.removeClass('is-transitioning');
-        that.$element.trigger(that.options.eventCollapsed);
+        self.setOpen(false);
+        self.$element.removeClass('is-transitioning');
+        self.$element.trigger(self.options.eventCollapsed);
       });
     }
   };
 
+  /**
+   * Sets the final open state values on the element.
+   *
+   * @param boolean open
+   *   True if the final state should be expanded, false if collapsed.
+   */
   Card.prototype.setOpen = function (open) {
     if (open) {
       this.$element.addClass('is-active');
@@ -163,6 +160,9 @@
     this.getDetails().attr('aria-expanded', open);
   };
 
+  /**
+   * Returns whether the element is currently expanded (true) or collapsed.
+   */
   Card.prototype.isOpen = function() {
     return this.$element.hasClass('is-active');
   };
@@ -196,9 +196,6 @@
       var $this = $(this),
         data = $this.data('el.card'),
         options = typeof option === 'object' && option;
-      if (!data && option === 'destroy') {
-        return;
-      }
       if (!data) {
         $this.data('el.card', (data = new Card(this, options)));
       }

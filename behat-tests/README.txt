@@ -7,10 +7,11 @@ The system requirements are documented here:
 To set up your environment to run tests locally:
 
 1.  Download the Selenium stand-alone server JAR file:
-    http://selenium-release.storage.googleapis.com/2.44/selenium-server-standalone-2.44.0.jar
+    http://selenium-release.storage.googleapis.com/2.45/selenium-server-standalone-2.45.0.jar
 
-2.  Selenium version 2.44 is only compatible with Firefox 33, but not 34 or above. You can download
-    Firefox 33 at the following link to a local location of your choice:
+2.  Selenium version 2.45 is only compatible with Firefox 33, but not 34 or above. It is also recommended
+    that you use a dedicated Firefox for your Selenium stand-alone server. You can download Firefox 33 at
+    the following link:
 
     https://ftp.mozilla.org/pub/mozilla.org/firefox/releases/33.1.1/mac/en-US/
 
@@ -46,7 +47,7 @@ To set up your environment to run tests locally:
 To run tests:
 
 1.  Start the Selenium server
-    Type: java -jar /opt/selenium/selenium-server-standalone-2.44.0.jar -Dwebdriver.firefox.bin="[PATH TO YOUR Firefox.app]/Contents/MacOS/firefox-bin" &
+    Type: java -jar [DIRECTORY PATH]/selenium-server-standalone-2.45.0.jar -Dwebdriver.firefox.bin="[DIRECTORY PATH]/Firefox.app/Contents/MacOS/firefox-bin" &
 
 2.  Navigate to the behat-tests directory and type:
     bin/behat

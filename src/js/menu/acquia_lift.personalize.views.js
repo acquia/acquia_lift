@@ -973,7 +973,7 @@
   /**
    * View for the top-level goal menu.
    */
-  Drupal.acquiaLiftUI.MenuGoalMenuView = ViewBase.extend({
+  Drupal.acquiaLiftUI.MenuGoalsMenuView = ViewBase.extend({
     events: {
       'click': 'onClick'
     },

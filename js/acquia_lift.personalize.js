@@ -2429,7 +2429,7 @@
   /**
    * View for the top-level goal menu.
    */
-  Drupal.acquiaLiftUI.MenuGoalMenuView = ViewBase.extend({
+  Drupal.acquiaLiftUI.MenuGoalsMenuView = ViewBase.extend({
     events: {
       'click': 'onClick'
     },
@@ -3312,7 +3312,7 @@
                   break;
                 }
                 case 'goals': {
-                  Drupal.acquiaLiftUI.views.goalMenuView = new Drupal.acquiaLiftUI.MenuGoalMenuView({
+                  Drupal.acquiaLiftUI.views.goalsMenuView = new Drupal.acquiaLiftUI.MenuGoalsMenuView({
                     el: $link[0]
                   });
                   break;

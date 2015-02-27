@@ -167,7 +167,7 @@
                   break;
                 }
                 case 'goals': {
-                  Drupal.acquiaLiftUI.views.goalMenuView = new Drupal.acquiaLiftUI.MenuGoalMenuView({
+                  Drupal.acquiaLiftUI.views.goalsMenuView = new Drupal.acquiaLiftUI.MenuGoalsMenuView({
                     el: $link[0]
                   });
                   break;

@@ -170,6 +170,7 @@ function acquia_lift_personalize_campaign_wizard_variations_alter(&$form, &$form
   }
   $form['variations']['add_variation'] = array(
     '#type' => 'container',
+    '#tree' => TRUE,
     '#theme' => 'acquia_lift_card',
     '#collapsed' => !empty($option_sets),
     '#title' => t('Add variation set'),
@@ -339,6 +340,9 @@ function acquia_lift_personalize_campaign_wizard_variations_validate(&$form, &$f
         break;
     }
   }
+
+  // Put the form state back the way it was for the next steps in form processing.
+  $form_state['values'] = $values;
 }
 
 /**

@@ -17,10 +17,13 @@ function theme_acquia_lift_card($variables) {
   $card_label = isset($element['#title']) ? $element['#title'] : '';
   unset($element['footer']);
 
+  // Set default values
+  $element['#collapsible'] = isset($element['#collapsible']) ? $element['#collapsible'] : TRUE;
+  $element['#collapsed'] = isset($element['#collapsed']) ? $element['#collapsed'] : TRUE;
   $data_attributes = array(
-    'data-card-collapsible' => isset($element['#collapsible']) ? $element['#collapsible'] : TRUE,
-    'data-card-collapsed' => isset($element['#collapsed']) ? $element['#collapsed'] : FALSE,
-    'data-card-footerVisible' => !empty($footer_children),
+    'data-card-collapsible' => $element['#collapsible'] ? 'true' : 'false',
+    'data-card-collapsed' => $element['#collapsed'] ? 'true' : 'false',
+    'data-card-footer-visible' => empty($footer_children) ? 'false' : 'true',
   );
   drupal_add_library('acquia_lift', 'acquia_lift.card');
   $html = '';

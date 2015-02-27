@@ -11,6 +11,7 @@
  *
  ********************************************************************
  */
+
 /**
  * Alter hook for the process bar on the campaign wizard form.
  */
@@ -78,6 +79,9 @@ function acquia_lift_personalize_campaign_wizard_variations_alter(&$form, &$form
   // Rebuild the variations form to show the customized Lift approach.
   unset($form['variations']['title']['summary']);
   unset($form['variations']['option_sets']);
+  // Take over the form validation and submit handling.
+  $form['#validate'] = array('acquia_lift_personalize_campaign_wizard_variations_validate');
+  $form['#submit'] = array('acquia_lift_personalize_campaign_wizard_variations_submit');
 
   $form['#attached']['css'][] = drupal_get_path('module', 'acquia_lift') . '/css/acquia_lift.admin.css';
 
@@ -102,13 +106,34 @@ function acquia_lift_personalize_campaign_wizard_variations_alter(&$form, &$form
     $form['variations']['option_sets']['option_set_' . $option_set->osid] = array(
       '#tree' => TRUE,
       '#type' => 'container',
+      '#theme' => 'acquia_lift_card',
+      '#collapsible' => TRUE,
+      '#collapsed' => TRUE,
+      '#title' => $option_set->label,
       '#attributes' => array(
         'class' => array('personalize-option-set'),
       ),
     );
-    $form['variations']['option_sets']['option_set_' . $option_set->osid]['content'] = array(
-      '#markup' => 'Option set form for type: ' . $option_set->plugin,
+    $form['variations']['option_sets']['option_set_' . $option_set->osid]['option_set'] = array(
+      '#type' => 'value',
+      '#value' => $option_set,
     );
+    switch ($option_set->plugin) {
+      case 'block':
+        _acquia_lift_personalize_campaign_wizard_variations_block($form['variations']['option_sets']['option_set_' . $option_set->osid]['content'], $form_state, array('option_sets', 'option_set_' . $option_set->osid, 'content'), $option_set);
+        break;
+      case 'element':
+        $form['variations']['option_sets']['option_set_' . $option_set->osid]['content'] = array(
+          '#markup' => 'Option set form for type: ' . $option_set->plugin,
+        );
+        break;
+      // Unsupported display - get an edit link if provided by the plugin.
+      default:
+        $form['variations']['option_sets']['option_set_' . $option_set->osid]['content'] = array(
+          '#markup' => 'Option set form for type: ' . $option_set->plugin,
+        );
+
+    }
   }
 
   // Show the card to add a new option set last.
@@ -119,6 +144,7 @@ function acquia_lift_personalize_campaign_wizard_variations_alter(&$form, &$form
   }
   $form['variations']['add_variation'] = array(
     '#type' => 'container',
+    '#tree' => TRUE,
     '#theme' => 'acquia_lift_card',
     '#collapsed' => !empty($option_sets),
     '#title' => t('Add variation set'),
@@ -127,22 +153,20 @@ function acquia_lift_personalize_campaign_wizard_variations_alter(&$form, &$form
   // Tricky: we need this container in order to hide the radio list when a
   // selection is made.  The radios type does not have a proper wrapping
   // element to apply visible/invisible states.
-  $form['variations']['add_variation']['option_set_type_container'] = array(
+  $form['variations']['add_variation']['option_set_types'] = array(
     '#type' => 'container',
     '#attributes' => array(
       'class' => array('form-item'),
     ),
     '#states' => array(
       'invisible' => array(
-        ':input[name="option_set_type"]' => array('!value' => false),
+        ':input[name="add_variation[option_set_types][option_set_type]"]' => array('!value' => false),
       ),
     )
   );
-  $form['variations']['add_variation']['option_set_type_container']['option_set_type'] = array(
+  $form['variations']['add_variation']['option_set_types']['option_set_type'] = array(
     '#type' => 'radios',
     '#options' => $options,
-    '#default_value' => '',
-    '#required' => TRUE,
     '#theme' => 'acquia_lift_radio_list',
     '#ajax' => array(
       'callback' => 'acquia_lift_personalize_campaign_wizard_variations_ajax_add',
@@ -151,8 +175,8 @@ function acquia_lift_personalize_campaign_wizard_variations_alter(&$form, &$form
     ),
   );
   foreach ($option_set_types as $type => $details) {
-    $form['variations']['add_variation']['option_set_type_container']['option_set_type'][$type]['#description'] = $details['description'];
-    $form['variations']['add_variation']['option_set_type_container']['option_set_type'][$type]['#image'] = $details['logo'];
+    $form['variations']['add_variation']['option_set_types']['option_set_type'][$type]['#description'] = $details['description'];
+    $form['variations']['add_variation']['option_set_types']['option_set_type'][$type]['#image'] = $details['logo'];
   }
 
   $form['variations']['add_variation']['details'] = array(
@@ -191,9 +215,175 @@ function acquia_lift_personalize_campaign_wizard_variations_alter(&$form, &$form
 }
 
 /**
- * Generate the blocks portion of the campaign wizard form.
+ * Alter hook for the targeting portion of the campaign wizard.
  */
-function _acquia_lift_personalize_campaign_wizard_variations_block(&$form, &$form_state, $form_id, $option_set = NULL) {
+function acquia_lift_personalize_campaign_wizard_targeting_alter(&$form, &$form_state, $form_id) {
+  if (!empty($form['visitor_context']) && $form['visitor_context']['#type'] == 'select') {
+    module_load_include('inc', 'acquia_lift', 'acquia_lift.ui');
+    acquia_lift_chosenify_element($form['visitor_context']);
+  }
+}
+
+/**
+ ********************************************************************
+ *
+ * A J A X  C A L L B A C K S
+ *
+ ********************************************************************
+ */
+function acquia_lift_personalize_campaign_wizard_blocks_add(&$form, &$form_state) {
+  dpm($form_state, 'ajax formstate');
+}
+
+/**
+ ********************************************************************
+ *
+ * V A L I D A T I O N
+ *
+ ********************************************************************
+ */
+
+/**
+ * Validation function for variations form.
+ */
+function acquia_lift_personalize_campaign_wizard_variations_validate(&$form, &$form_state) {
+  dpm($form_state['values'], 'acquia_lift validate');
+  // Get a reference to the full values array.
+  $values = $form_state['values'];
+
+  // Run any base form validation if available.
+  module_load_include('inc', 'personalize', 'personalize.admin.campaign');
+  if (function_exists('personalize_campaign_wizard_validate_base')) {
+    personalize_campaign_wizard_validate_base($form, $form_state);
+  }
+  // Validation for existing option set types.
+  if (!empty($form_state['values']['option_sets'])) {
+    foreach ($form_state['values']['option_sets'] as $option_set_values) {
+      switch ($option_set_values['option_set']->plugin) {
+        case "block":
+          module_load_include('inc', 'personalize_blocks', 'personalize_blocks.admin');
+          _acquia_lift_personalize_campaign_wizard_form_state_blocks_alter($form_state, $option_set_values['content']);
+          personalize_blocks_form_validate($form, $form_state);
+          break;
+        case "element":
+          break;
+        default:
+          // Unsupported option set type.
+      }
+    }
+  }
+  // Validation for any new option set types.
+  if (!empty($form_state['values']['add_variation']['option_set_types']['option_set_type'])) {
+    switch ($form_state['values']['add_variation']['option_set_types']['option_set_type']) {
+      case "block":
+        module_load_include('inc', 'personalize_blocks', 'personalize_blocks.admin');
+        _acquia_lift_personalize_campaign_wizard_form_state_blocks_alter($form_state, $values['add_variation']['block']['content']);
+        personalize_blocks_form_validate($form, $form_state);
+        break;
+      case "element":
+        break;
+    }
+  }
+
+  // Put the form state back the way it was for the next steps in form processing.
+  $form_state['values'] = $values;
+}
+
+/**
+ ********************************************************************
+ *
+ * S U B M I S S I O N S
+ *
+ ********************************************************************
+ */
+
+/**
+ * Submit function for variations form.
+ */
+function acquia_lift_personalize_campaign_wizard_variations_submit(&$form, &$form_state) {
+  module_load_include('inc', 'personalize', 'personalize.admin');
+  module_load_include('inc', 'personalize', 'personalize.admin.campaign');
+  // Save a reference to the full form state values.
+  $values = $form_state['values'];
+  $click_id = $form_state['clicked_button']['#id'];
+
+  // Run the base submit form handling.
+  $agent = personalize_campaign_wizard_submit_base($form, $form_state);
+
+  // Common functionality needed before submitting the block submission
+  // handler whether for new or existing blocks.
+  $submitBlockHandler = function ($block_content) use ($form, $form_state) {
+    module_load_include('inc', 'personalize_blocks', 'personalize_blocks.admin');
+    _acquia_lift_personalize_campaign_wizard_form_state_blocks_alter($form_state, $block_content);
+    foreach ($form_state['values']['blocks'] as $delta => $block_info) {
+      // Set the "add" indicator if the user is creating a new block.
+      if (!empty($block['block']['add']['info']) && !empty($block['block']['add']['body']['value'])) {
+        $form_state['values']['blocks'][$delta]['bid'] = 'add';
+      }
+    }
+    // Submit handler only runs if there is a specific button id.
+    $form_state['clicked_button']['#id'] = 'edit-submit-form';
+    personalize_blocks_form_submit($form, $form_state);
+  };
+
+  // Save any existing option sets.
+  if (!empty($form_state['values']['option_sets'])) {
+    foreach ($form_state['values']['option_sets'] as $option_set_values) {
+      switch ($option_set_values['option_set']->plugin) {
+        case "block":
+          $submitBlockHandler($option_set_values['content']);
+          break;
+        case "element":
+          break;
+        default:
+          // Unsupported option set type.
+      }
+    }
+  }
+
+  // Create any new option sets.
+  if (!empty($form_state['values']['add_variation']['option_set_types']['option_set_type'])) {
+    switch ($form_state['values']['add_variation']['option_set_types']['option_set_type']) {
+      case "block":
+        $submitBlockHandler($values['add_variation']['block']['content']);
+        break;
+      case "element":
+        break;
+    }
+  }
+  // Clear out any redirects set by option set forms.
+  unset($form_state['redirect']);
+  // Set the clicked button ID back.
+  $form_state['clicked_button']['#id'] = $click_id;
+
+  // If user selected to add another variation, then return to the variations step.
+
+  // Otherwise the next step is "why".
+  $form_state['storage']['step'] = 'goals';
+  $form_state['rebuild'] = TRUE;
+}
+
+/**
+ ********************************************************************
+ *
+ * H E L P E R S
+ *
+ ********************************************************************
+ */
+
+/**
+ * Generate the blocks portion of the campaign wizard form.
+ *
+ * @param array $form
+ *   The form array reference
+ * @param array $form_state
+ *   The current form state
+ * @param array $parents
+ *   The array of parents for this element
+ * @param stdClass $option_set
+ *   The option set class that should be shown within the form
+ */
+function _acquia_lift_personalize_campaign_wizard_variations_block(&$form, &$form_state, $parents, $option_set = NULL) {
   $form = array();
   module_load_include('inc', 'personalize_blocks', 'personalize_blocks.admin');
   module_load_include('inc', 'acquia_lift', 'acquia_lift.ui');
@@ -205,6 +395,9 @@ function _acquia_lift_personalize_campaign_wizard_variations_block(&$form, &$for
   $form['pblock_wrapper']['#theme_wrappers'] = array('container');
   // Adjust the blocks container for our own user interface.
   unset($form['pblock_wrapper']['blocks']['#theme']);
+  unset($form['pblock_wrapper']['#tree']);
+  unset($form['pblock_wrapper']['blocks']['#tree']);
+  // @todo Give a default variation set name if not yet set, i.e., "Set 1".
 
   foreach (element_children($form['pblock_wrapper']['blocks']) as $key) {
     $block = &$form['pblock_wrapper']['blocks'][$key];
@@ -227,22 +420,32 @@ function _acquia_lift_personalize_campaign_wizard_variations_block(&$form, &$for
     $block['remove']['#access'] = FALSE;
   }
   // Update the "Add another" button to match the desired styling and language.
+  $pblock_id = drupal_html_id('edit-' . implode('-', $parents) . '-personalize-blocks-wrapper');
+  $form['pblock_wrapper']['#attributes']['id'] = $pblock_id;
   $form['pblock_wrapper']['blocks_more']['#attributes']['class'][] = 'personalize-add-link';
   $form['pblock_wrapper']['blocks_more']['#prefix'] = '<span class="personalize-add-link-prefix"></span>';
   $form['pblock_wrapper']['blocks_more']['#value'] = t('Add variation');
+  $form['pblock_wrapper']['blocks_more']['#ajax'] = array(
+    'callback' => 'acquia_lift_personalize_campaign_wizard_blocks_add',
+    'wrapper' => $pblock_id,
+    'effect' => 'fade',
+  );
+  dpm($form, 'add variation');
   // Remove the form's action buttons
   unset($form['actions']);
 }
 
-
 /**
- * Alter hook for the targeting portion of the campaign wizard.
+ * Adds values to form_state as expected by personalize blocks form handlers.
+ *
+ * @param $form_state
+ *   The form state to update (by reference).
+ * @param $block_content
+ *   The array that is the root of the blocks content values.
  */
-function acquia_lift_personalize_campaign_wizard_targeting_alter(&$form, &$form_state, $form_id) {
-  if (!empty($form['visitor_context']) && $form['visitor_context']['#type'] == 'select') {
-    module_load_include('inc', 'acquia_lift', 'acquia_lift.ui');
-    acquia_lift_chosenify_element($form['visitor_context']);
-  }
+function _acquia_lift_personalize_campaign_wizard_form_state_blocks_alter(&$form_state, $block_content) {
+  $form_state['values'] = $block_content;
+  $form_state['values']['blocks'] = $block_content['pblock_wrapper']['blocks'];
 }
 
 /**

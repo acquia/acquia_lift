@@ -213,7 +213,6 @@ function _acquia_lift_build_menu($menu_name) {
         'aria-role' => 'button',
         'aria-pressed' => 'false',
         'class' => array(
-          'acquia-lift-campaign-all',
           'visitor-actions-ui-ignore',
           'acquia-lift-menu-all',
           'acquia-lift-menu-link',
@@ -291,7 +290,6 @@ function _acquia_lift_build_menu($menu_name) {
         'aria-role' => 'button',
         'aria-pressed' => 'false',
         'class' => array(
-          'acquia-lift-option-sets-all',
           'visitor-actions-ui-ignore',
           'acquia-lift-menu-all',
           'acquia-lift-menu-link',
@@ -366,7 +364,6 @@ function _acquia_lift_build_menu($menu_name) {
         'aria-role' => 'button',
         'aria-pressed' => 'false',
         'class' => array(
-          'acquia-lift-goals-all',
           'visitor-actions-ui-ignore',
           'acquia-lift-menu-all',
           'acquia-lift-menu-link',

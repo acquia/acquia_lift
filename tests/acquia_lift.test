@@ -161,7 +161,7 @@ class AcquiaLiftWebTestBase extends DrupalWebTestCase
     return $agent;
   }
 
-  protected function createOptionSet($index, $optionData) {
+  protected function createOptionSet($index, $optionData, $withQueueItems = TRUE) {
     $option_set = array(
       'plugin' => $optionData['plugin'],
       'label' => 'Option Set ' . ($index + 1),
@@ -198,38 +198,40 @@ class AcquiaLiftWebTestBase extends DrupalWebTestCase
       $this->fail('Exception thrown with message: . ' . $e->getMessage());
     }
 
-    $expected_queue_items[] = array(
-      'method' => 'savePoint',
-      'args' => array(
-        $optionData['agent'],
-        personalize_get_decision_point_name_for_option_set($option_set),
-      ),
-      'agent' => $optionData['agent']
-    );
-    // An item will be added to the queue to save the decision.
-    $expected_queue_items[] = array(
-      'method' => 'saveDecision',
-      'args' => array(
-        $optionData['agent'],
-        personalize_get_decision_point_name_for_option_set($option_set),
-        personalize_get_decision_name_for_option_set($option_set)
-      ),
-      'agent' => $optionData['agent']
-    );
-    // An item will be added to teh queue to save each option.
-    foreach ($choice_ids as $choice) {
+    $expected_queue_items = array();
+    if ($withQueueItems) {
       $expected_queue_items[] = array(
-        'method' => 'saveChoice',
+        'method' => 'savePoint',
         'args' => array(
           $optionData['agent'],
           personalize_get_decision_point_name_for_option_set($option_set),
-          personalize_get_decision_name_for_option_set($option_set),
-          $choice
         ),
         'agent' => $optionData['agent']
       );
+      // An item will be added to the queue to save the decision.
+      $expected_queue_items[] = array(
+        'method' => 'saveDecision',
+        'args' => array(
+          $optionData['agent'],
+          personalize_get_decision_point_name_for_option_set($option_set),
+          personalize_get_decision_name_for_option_set($option_set)
+        ),
+        'agent' => $optionData['agent']
+      );
+      // An item will be added to teh queue to save each option.
+      foreach ($choice_ids as $choice) {
+        $expected_queue_items[] = array(
+          'method' => 'saveChoice',
+          'args' => array(
+            $optionData['agent'],
+            personalize_get_decision_point_name_for_option_set($option_set),
+            personalize_get_decision_name_for_option_set($option_set),
+            $choice
+          ),
+          'agent' => $optionData['agent']
+        );
+      }
     }
-
     return array($option_set, $expected_queue_items);
   }
 
@@ -3107,30 +3109,181 @@ class AcquiaLiftWebTestTarget extends AcquiaLiftWebTestBase {
     );
   }
 
-  function testNestedCampaigns() {
-
+  public function setUp() {
+    parent::setUp();
+    variable_set('acquia_lift_target_enabled', TRUE);
   }
 
-  protected function createTargetingAgent($data = array()) {
-    $this->drupalLogin($this->managerUser);
-
-    $data += array(
-      'name' => $this->randomName(),
-      'agent_type' => 'acquia_lift_target',
-      'cache_decisions' => 0,
+  function testCreateTargetAudiences() {
+    module_load_include('inc', 'acquia_lift', 'acquia_lift.admin');
+    $agent = $this->createTargetingAgent();
+    $this->resetAll();
+    $label = $this->randomName();
+    $contexts = array(
+      array(
+        'context' => implode(PERSONALIZE_TARGETING_ADMIN_SEPARATOR, array('some_plugin', 'some_context')),
+        'operator' => 'contains',
+        'match' => 'ohai'
+      ),
+      array(
+        'context' => implode(PERSONALIZE_TARGETING_ADMIN_SEPARATOR, array('some_plugin', 'some_other_context')),
+        'operator' => 'starts',
+        'match' => 'stuff'
+      ),
+      array(
+        'context' => implode(PERSONALIZE_TARGETING_ADMIN_SEPARATOR, array('some_other_plugin', 'some_context')),
+        'operator' => 'equals',
+        'match' => 'kthxbai'
+      ),
     );
+    // Try saving a target audience without having created an option set.
+    $saved = acquia_lift_target_audience_save($label, $agent->machine_name, $contexts, 'AND');
+    $this->assertFalse($saved);
+    // Now create an option set for hte agent.
+    list($option_set,) = $this->createOptionSet(0, array(
+      'plugin' => 'blocks',
+      'agent' => $agent->machine_name,
+      'option_ids' => array('first-choice', 'second-choice', 'third-choice')
+    ), FALSE);
+    $this->resetAll();
+    $saved = acquia_lift_target_audience_save($label, $agent->machine_name, $contexts, 'AND');
+    $this->assertTrue($saved);
 
-    $data +=  array('machine_name' => personalize_generate_machine_name($data['name'], 'personalize_agent_machine_name_exists'));
-    $edit = array(
-      'agent_basic_info[title]' => $data['name'],
-      'agent_basic_info[machine_name]' => $data['machine_name'],
-      'agent_basic_info[agent_type]' => $data['agent_type'],
-      'cache_decisions' => $data['cache_decisions']
+    // Check that the expected targeting rules were saved on the option set.
+    $option_set = personalize_option_set_load($option_set->osid, TRUE);
+    $this->assertNotNull($option_set->targeting);
+    $audience_name = key($option_set->targeting);
+    $expected_targeting = array(
+      $audience_name => array(
+        'label' => $label,
+        'weight' => 0,
+        'targeting_features' => array(
+          'some_context--sc-ohai',
+          'some_other_context--ss-stuff',
+          'some_context--kthxbai'
+        ),
+        'targeting_rules' => array(
+          'some_context--sc-ohai' => array(
+              'context' => 'some_context',
+              'operator' => 'contains',
+              'match' => 'ohai',
+              'plugin' => 'some_plugin',
+            ),
+          'some_other_context--ss-stuff' => array(
+              'context' => 'some_other_context',
+              'operator' => 'starts',
+              'match' => 'stuff',
+              'plugin' => 'some_plugin',
+            ),
+          'some_context--kthxbai' => array(
+              'context' => 'some_context',
+              'operator' => 'equals',
+              'match' => 'kthxbai',
+              'plugin' => 'some_other_plugin',
+            ),
+        ),
+        'targeting_strategy' => 'AND',
+      )
     );
+    $this->assertEqual($expected_targeting, $option_set->targeting);
 
-    $this->drupalPost('admin/structure/personalize/add', $edit, $this->getButton('agent'));
-    $this->drupalLogout();
-    $agent = personalize_agent_load_agent($data['machine_name'], TRUE);
+    // Add another audience.
+    $label = $this->randomName();
+    $contexts = array(
+      array(
+        'context' => implode(PERSONALIZE_TARGETING_ADMIN_SEPARATOR, array('boolean_plugin', 'some_context')),
+        'operator' => 'equals',
+        'match' => 1
+      ),
+      array(
+        'context' => implode(PERSONALIZE_TARGETING_ADMIN_SEPARATOR, array('boolean_plugin', 'some_other_context')),
+        'operator' => 'equals',
+        'match' => '0'
+      ),
+    );
+    $this->resetAll();
+    $saved = acquia_lift_target_audience_save($label, $agent->machine_name, $contexts, 'OR');
+    $this->assertTrue($saved);
+
+    $option_set = personalize_option_set_load($option_set->osid, TRUE);
+    $audience_names = array_keys($option_set->targeting);
+    $expected_targeting[$audience_names[1]] = array(
+      'label' => $label,
+      'weight' => 1,
+      'targeting_features' => array(
+        'some_context--1',
+        'some_other_context--0',
+      ),
+      'targeting_rules' => array(
+        'some_context--1' => array(
+          'context' => 'some_context',
+          'operator' => 'equals',
+          'match' => '1',
+          'plugin' => 'boolean_plugin',
+        ),
+        'some_other_context--0' => array(
+          'context' => 'some_other_context',
+          'operator' => 'equals',
+          'match' => '0',
+          'plugin' => 'boolean_plugin',
+        ),
+      ),
+      'targeting_strategy' => 'OR',
+    );
+    $this->assertEqual($expected_targeting, $option_set->targeting);
+  }
+
+  function testAssignVariations() {
+    module_load_include('inc', 'acquia_lift', 'acquia_lift.admin');
+    $agent = $this->createTargetingAgent();
+    $this->resetAll();
+    list($option_set,) = $this->createOptionSet(0, array(
+      'plugin' => 'blocks',
+      'agent' => $agent->machine_name,
+      'option_ids' => array('first-choice', 'second-choice', 'third-choice')
+    ), FALSE);
+    $this->resetAll();
+    $audience_name = $this->createTargetAudience($option_set);
+    $targeting = array(
+      $audience_name => array(
+        array('second-choice', 'third-choice')
+      )
+    );
+    acquia_lift_save_targeting_structure($agent, $targeting);
+    $option_set = personalize_option_set_load($option_set->osid);
+  }
+
+  protected function createTargetingAgent($label = NULL) {
+    if (empty($label)) {
+      $label = $this->randomName();
+    }
+    $agent = new stdClass();
+    $agent->label = $label;
+    $agent->plugin = 'acquia_lift_target';
+    $agent->data = array();
+    $agent->machine_name = personalize_generate_machine_name($label, 'personalize_agent_machine_name_exists');
+    $agent = personalize_agent_save($agent);
     return $agent;
+  }
+
+  protected function createTargetAudience($option_set, $label = NULL) {
+    if (empty($label)) {
+      $label = $this->randomName();
+    }
+    $contexts = array(
+      array(
+        'context' => implode(PERSONALIZE_TARGETING_ADMIN_SEPARATOR, array('some_plugin', 'some_context')),
+        'operator' => 'contains',
+        'match' => 'ohai'
+      ),
+      array(
+        'context' => implode(PERSONALIZE_TARGETING_ADMIN_SEPARATOR, array('some_plugin', 'some_other_context')),
+        'operator' => 'starts',
+        'match' => 'stuff'
+      ),
+    );
+
+    acquia_lift_target_audience_save($label, $option_set->agent, $contexts, 'AND');
+    return personalize_generate_machine_name($label, NULL, '-');
   }
 }

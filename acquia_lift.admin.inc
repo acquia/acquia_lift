@@ -866,6 +866,9 @@ function acquia_lift_report_conversion() {
  * =======================================================================
  */
 
+/**
+ * Form for adding a targeting audience to an agent.
+ */
 function acquia_lift_new_target_audience_form($form, &$form_state, $agent) {
   // Build up a list of available context values for targeting.
   module_load_include('inc', 'personalize', 'personalize.admin');
@@ -1116,6 +1119,9 @@ function acquia_lift_new_target_audience_form($form, &$form_state, $agent) {
   return $form;
 }
 
+/**
+ * Validation callback for the new target audience form.
+ */
 function acquia_lift_new_target_audience_form_validate($form, &$form_state) {
   $machine_name = personalize_generate_machine_name($form_state['values']['name'], NULL, '-');
   $agent_name = $form_state['values']['agent'];
@@ -1125,26 +1131,57 @@ function acquia_lift_new_target_audience_form_validate($form, &$form_state) {
   }
 }
 
+/**
+ * Submit callback for the new target audience form.
+ */
 function acquia_lift_new_target_audience_form_submit($form, &$form_state) {
-  module_load_include('inc', 'personalize', 'personalize.admin');
   $values = $form_state['values'];
-  $machine_name = personalize_generate_machine_name($values['name'], NULL, '-');
-  $agent_name = $values['agent'];
-  $option_set = acquia_lift_get_option_set_for_targeting($agent_name);
-  $option_set->targeting[$machine_name] = array(
-    'label' => $values['name'],
-    'weight' => count($option_set->targeting)
-  );
-  $agent = personalize_agent_load_agent($agent_name);
-  $feature_strings = $feature_rules = array();
-  foreach ($values['mapping']['contexts'] as $delta => $context_values) {
+  $contexts = array();
+  // We need to massage the context information as submitted in the form into
+  // an array of contexts that can be consumed by the
+  // acquia_lift_target_audience_save() function.
+  foreach ($values['mapping']['contexts'] as $context_values) {
     if ($context_values['context'] == '') {
       continue;
     }
-    list($plugin_name, $context_name) = explode(PERSONALIZE_TARGETING_ADMIN_SEPARATOR, $context_values['context']);
     $context_values['match'] = $context_values['value']['match'];
     $context_values['operator'] = $context_values['value']['operator'];
     unset($context_values['value'], $context_values['remove']);
+    $contexts[] = $context_values;
+  }
+  if (acquia_lift_target_audience_save($values['name'], $values['agent'], $contexts, $values['strategy'])) {
+    drupal_set_message(t('The new target audience was saved successfully'));
+  }
+  else {
+    drupal_set_message(t('There was a problem saving the new target audience.'), 'error');
+  }
+
+}
+
+/**
+ * Saves a new target audience for an agent.
+ *
+ * @param $label
+ * @param $agent_name
+ * @param $contexts
+ */
+function acquia_lift_target_audience_save($label, $agent_name, $contexts, $strategy) {
+  module_load_include('inc', 'personalize', 'personalize.admin');
+  $machine_name = personalize_generate_machine_name($label, NULL, '-');
+  // Find the option set to use for targeting and add the audience.
+  $option_set = acquia_lift_get_option_set_for_targeting($agent_name);
+  if (empty($option_set)) {
+    return FALSE;
+  }
+  $option_set->targeting[$machine_name] = array(
+    'label' => $label,
+    'weight' => count($option_set->targeting)
+  );
+  // Generate the feature strings and rules for the contexts.
+  $agent = personalize_agent_load_agent($agent_name);
+  $feature_strings = $feature_rules = array();
+  foreach ($contexts as $context_values) {
+    list($plugin_name, $context_name) = explode(PERSONALIZE_TARGETING_ADMIN_SEPARATOR, $context_values['context']);
     // Generate a value code based on the operator used.
     $value = personalize_targeting_generate_value_code($context_values['match'], $context_values['operator']);
     // Create a feature string for this context value that can be consumed
@@ -1160,15 +1197,14 @@ function acquia_lift_new_target_audience_form_submit($form, &$form_state) {
   }
   $option_set->targeting[$machine_name]['targeting_features'] = $feature_strings;
   $option_set->targeting[$machine_name]['targeting_rules'] = $feature_rules;
-  $option_set->targeting[$machine_name]['targeting_strategy'] = $values['strategy'];
+  $option_set->targeting[$machine_name]['targeting_strategy'] = $strategy;
   try {
     personalize_option_set_save($option_set);
-    drupal_set_message(t('The new target audience was saved successfully'));
+    return TRUE;
   }
   catch (PersonalizeException $e) {
-    drupal_set_message(t('There was a problem saving the nw target audience.'), 'error');
+    return FALSE;
   }
-
 }
 
 /**
@@ -1226,8 +1262,10 @@ function acquia_lift_targeting_form($form, &$form_state, $agent) {
     }
   }
   else {
-    $message = t('The targeting settings shown here represent what is currently running for this campaign.');
-    $message_type = 'ok';
+    if (personalize_agent_get_status($agent->machine_name) != PERSONALIZE_STATUS_NOT_STARTED) {
+      $message = t('The targeting settings shown here represent what is currently running for this campaign.');
+      $message_type = 'ok';
+    }
     $saved_targeting = $exising_targeting;
   }
 
@@ -1628,6 +1666,9 @@ function acquia_lift_get_structure_from_targeting($option_set) {
  */
 function acquia_lift_get_option_set_for_targeting($agent_name) {
   $option_sets = personalize_option_set_load_by_agent($agent_name);
+  if (empty($option_sets)) {
+    return NULL;
+  }
   foreach ($option_sets as $option_set) {
     if (!empty($option_set->targeting)) {
       return $option_set;

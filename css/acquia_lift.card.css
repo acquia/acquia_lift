@@ -1,0 +1,3 @@
+.el-card:not(.is-open) .el-card-details {
+  display: none;
+}

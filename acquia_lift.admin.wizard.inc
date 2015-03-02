@@ -5,6 +5,13 @@
  */
 
 /**
+ ********************************************************************
+ *
+ * S U B F O R M S
+ *
+ ********************************************************************
+ */
+/**
  * Alter hook for the variations portions of the campaign wizard.
  */
 function acquia_lift_personalize_campaign_wizard_variations_alter(&$form, &$form_state, $form_id) {
@@ -77,42 +84,22 @@ function acquia_lift_personalize_campaign_wizard_variations_alter(&$form, &$form
     '#default_value' => '',
     '#required' => TRUE,
     '#theme' => 'acquia_lift_radio_list',
+    '#ajax' => array(
+      'callback' => 'acquia_lift_personalize_campaign_wizard_variations_ajax_add',
+      'wrapper' => 'acquia-lift-add-variation-details',
+      'effect' => 'fade',
+    ),
   );
   foreach ($option_set_types as $type => $details) {
     $form['variations']['add_variation']['option_set_type_container']['option_set_type'][$type]['#description'] = $details['description'];
     $form['variations']['add_variation']['option_set_type_container']['option_set_type'][$type]['#image'] = $details['logo'];
   }
 
-  // Block form
-  $form['variations']['add_variation']['block'] = array(
+  $form['variations']['add_variation']['details'] = array(
     '#type' => 'container',
     '#attributes' => array(
-      'class' => array('acquia-lift-block-variation-set'),
+      'id' => 'acquia-lift-add-variation-details',
     ),
-    '#states' => array(
-      'visible' => array(
-        'input[name="option_set_type"]' => array('value' => 'block'),
-      ),
-    ),
-  );
-  $form['variations']['add_variation']['block']['content'] = array(
-    '#markup' => 'Block form here',
-  );
-
-  // Element form
-  $form['variations']['add_variation']['element'] = array(
-    '#type' => 'container',
-    '#attributes' => array(
-      'class' => array('acquia-lift-element-variation-set'),
-    ),
-    '#states' => array(
-      'visible' => array(
-        'input[name="option_set_type"]' => array('value' => 'element'),
-      ),
-    ),
-  );
-  $form['variations']['add_variation']['element']['content'] = array(
-    '#markup' => 'Element form here',
   );
 }
 
@@ -124,4 +111,42 @@ function acquia_lift_personalize_campaign_wizard_targeting_alter(&$form, &$form_
     module_load_include('inc', 'acquia_lift', 'acquia_lift.ui');
     acquia_lift_chosenify_element($form['visitor_context']);
   }
+}
+
+/**
+ ********************************************************************
+ *
+ * A J A X  C A L L B A C K S
+ *
+ ********************************************************************
+ */
+/**
+ * Submit handler to add another block option to a personalized block form.
+ */
+function acquia_lift_personalize_campaign_wizard_variations_ajax_add(&$form, &$form_state) {
+  switch ($form_state['triggering_element']['#value']) {
+    case 'block':
+      $form['variations']['add_variation']['details']['block'] = array(
+        '#type' => 'container',
+        '#attributes' => array(
+          'class' => array('acquia-lift-block-variation-set'),
+        ),
+      );
+      $form['variations']['add_variation']['details']['block']['content'] = array(
+        '#markup' => 'Block form here',
+      );
+    break;
+
+    case 'element':
+      $form['variations']['add_variation']['details']['element'] = array(
+        '#type' => 'container',
+        '#attributes' => array(
+          'class' => array('acquia-lift-element-variation-set'),
+        ),
+      );
+      $form['variations']['add_variation']['details']['element']['content'] = array(
+        '#markup' => 'Element form here',
+      );
+  }
+  return $form['variations']['add_variation']['details'];
 }

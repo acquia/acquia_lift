@@ -137,6 +137,7 @@ function acquia_lift_personalize_campaign_wizard_variations_alter(&$form, &$form
           )),
         );
         _acquia_lift_personalize_campaign_wizard_variations_block($form['variations']['option_sets']['option_set_' . $option_set->osid]['content'], $form_state, $agent_data, array('variations', 'option_sets', 'option_set_' . $option_set->osid, 'content'), $option_set);
+        break;
       case 'element':
         $form['variations']['option_sets']['option_set_' . $option_set->osid]['content'] = array(
           '#markup' => 'Option set form for type: ' . $option_set->plugin,

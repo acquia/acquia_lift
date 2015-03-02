@@ -363,7 +363,6 @@ function acquia_lift_personalize_campaign_wizard_variations_validate(&$form, &$f
  * Submit function for variations form.
  */
 function acquia_lift_personalize_campaign_wizard_variations_submit(&$form, &$form_state) {
-  dpm($form_state, 'default submit handler');
   module_load_include('inc', 'personalize', 'personalize.admin');
   module_load_include('inc', 'personalize', 'personalize.admin.campaign');
   // Save a reference to the full form state values.

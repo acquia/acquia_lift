@@ -377,12 +377,6 @@ function acquia_lift_personalize_campaign_wizard_variations_submit(&$form, &$for
   $submitBlockHandler = function ($block_content, $option_set = NULL) use ($form, $form_state) {
     module_load_include('inc', 'personalize_blocks', 'personalize_blocks.admin');
     _acquia_lift_personalize_campaign_wizard_form_state_blocks_alter($form_state, $block_content, $option_set);
-    foreach ($form_state['values']['blocks'] as $delta => $block_info) {
-      // Set the "add" indicator if the user is creating a new block.
-      if (!empty($block['block']['add']['info']) && !empty($block['block']['add']['body']['value'])) {
-        $form_state['values']['blocks'][$delta]['bid'] = 'add';
-      }
-    }
     // Submit handler only runs if there is a specific button id.
     $form_state['clicked_button']['#id'] = 'edit-submit-form';
     personalize_blocks_form_submit($form, $form_state);
@@ -550,6 +544,15 @@ function _acquia_lift_personalize_campaign_wizard_form_state_blocks_alter(&$form
   else {
     unset($form_state['values']);
   }
+  if (!empty($form_state['values']['blocks'])) {
+    foreach ($form_state['values']['blocks'] as $delta => $block_info) {
+      // Set the "add" indicator if the user is creating a new block.
+      if (!empty($block['block']['add']['info']) && !empty($block['block']['add']['body']['value'])) {
+        $form_state['values']['blocks'][$delta]['bid'] = 'add';
+      }
+    }
+  }
+
   $key = empty($option_set) ? 'add' : $option_set->osid;
   if (!empty($form_state['option_set_num_blocks'][$key])) {
     $form_state['num_blocks'] = $form_state['option_set_num_blocks'][$key];

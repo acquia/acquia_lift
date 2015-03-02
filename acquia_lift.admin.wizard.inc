@@ -121,7 +121,7 @@ function acquia_lift_personalize_campaign_wizard_variations_alter(&$form, &$form
     );
     switch ($option_set->plugin) {
       case 'block':
-        _acquia_lift_personalize_campaign_wizard_variations_block($form['variations']['option_sets']['option_set_' . $option_set->osid]['content'], $form_state, array('variations', 'option_sets', 'option_set_' . $option_set->osid, 'content'), $option_set);
+        _acquia_lift_personalize_campaign_wizard_variations_block($form['variations']['option_sets']['option_set_' . $option_set->osid]['content'], $form_state, $agent_data, array('variations', 'option_sets', 'option_set_' . $option_set->osid, 'content'), $option_set);
         break;
       case 'element':
         $form['variations']['option_sets']['option_set_' . $option_set->osid]['content'] = array(
@@ -165,7 +165,7 @@ function acquia_lift_personalize_campaign_wizard_variations_alter(&$form, &$form
     );
     switch ($option_set->plugin) {
       case 'block':
-        _acquia_lift_personalize_campaign_wizard_variations_block($form['variations']['new_option_sets']['option_set_' . $index]['content'], $form_state, array('variations', 'new_option_sets', 'option_set_' . $index, 'content'));
+        _acquia_lift_personalize_campaign_wizard_variations_block($form['variations']['new_option_sets']['option_set_' . $index]['content'], $form_state, $agent_data, array('variations', 'new_option_sets', 'option_set_' . $index, 'content'));
         break;
       case 'element':
         $form['variations']['new_option_sets']['option_set_' . $option_set->osid]['content'] = array(
@@ -441,12 +441,14 @@ function acquia_lift_personalize_campaign_wizard_variations_submit(&$form, &$for
  *   The form array reference
  * @param array $form_state
  *   The current form state
+ * @param stdClass $agent_data
+ *   The data for the current campaign
  * @param array $parents
  *   The array of parents for this element
  * @param stdClass $option_set
  *   The option set class that should be shown within the form
  */
-function _acquia_lift_personalize_campaign_wizard_variations_block(&$form, &$form_state, $parents, $option_set = NULL) {
+function _acquia_lift_personalize_campaign_wizard_variations_block(&$form, &$form_state, $agent_data, $parents, $option_set = NULL) {
   $form = array();
   $values = isset($form_state['values']) ? $form_state['values'] : array();
   if (empty($option_set->osid)) {
@@ -472,6 +474,10 @@ function _acquia_lift_personalize_campaign_wizard_variations_block(&$form, &$for
 
   // The agent cannot be changed.
   $form['personalize']['#access'] = FALSE;
+  $form['agent_select'] = array(
+    '#type' => 'value',
+    '#value' => $agent_data->machine_name,
+  );
   // Make the variations wrapper a plain container rather than a fieldset.
   $form['pblock_wrapper']['#theme_wrappers'] = array('container');
   // Adjust the blocks container for our own user interface.

@@ -20,6 +20,7 @@ Scenario: Create the simplest A/B campaign from start to finish.
   When I hover over "Campaigns" in the "lift_tray" region
   And I wait for AJAX to finish
   Then I should see the link "Add campaign" in the "lift_tray" region
+  Then I should see the link "All campaigns" in the "lift_tray" region
   When I click "Add campaign" in the "lift_tray" region
   And I wait for AJAX to finish
   Then I should see the modal with title "Create a campaign"
@@ -70,6 +71,7 @@ Scenario: Create the simplest A/B campaign from start to finish.
   And the variation edit mode is "inactive"
   When I hover over "Goals" in the "lift_tray" region
   Then I should see the link "Add goal" in the "lift_tray" region
+  Then I should see the link "All goals" in the "lift_tray" region
   When I click "Add goal" in the "lift_tray" region
   And I wait for AJAX to finish
   Then I should see the modal with title "Add a goal"

@@ -20,6 +20,7 @@ Feature: Personalize elements variations can be edited for an existing campaign.
     And I should see "0" for the "variation set" count
     When I hover over "Variation Sets" in the "lift_tray" region
     Then I should see the link "Add variation set" in the "lift_tray" region
+    Then I should see the link "All variation sets" in the "lift_tray" region
     When I click "Add variation set"
     And I wait for AJAX to finish
     Then I should see the modal with title "Add a variation set"

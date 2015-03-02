@@ -189,7 +189,7 @@ function acquia_lift_personalize_campaign_wizard_variations_alter(&$form, &$form
     );
     switch ($option_set->plugin) {
       case 'block':
-        _acquia_lift_personalize_campaign_wizard_variations_block($form['variations']['new_option_sets']['option_set_' . $index]['content'], $form_state, array('variations', 'new_option_sets', 'option_set_' . $index, 'content'));
+        _acquia_lift_personalize_campaign_wizard_variations_block($form['variations']['new_option_sets']['option_set_' . $index]['content'], $form_state, $agent_data, array('variations', 'new_option_sets', 'option_set_' . $index, 'content'));
         break;
       case 'element':
         $form['variations']['new_option_sets']['option_set_' . $option_set->osid]['content'] = array(

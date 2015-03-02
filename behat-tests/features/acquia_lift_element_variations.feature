@@ -10,7 +10,9 @@ Feature: Personalize elements variations can be edited for an existing campaign.
       | machine_name                    | label |
       | testing-campaign-add-variations | Testing campaign add variations |
     And I am logged in as a user with the "Marketer" role
-    And I am on the homepage
+    And I am viewing an "Article" content:
+      | title | My article title |
+      | body  | A placeholder           |
     When I click "Acquia Lift" in the "menu" region
     And I wait for AJAX to finish
     Then I should see the link "Campaigns" in the "lift_tray" region
@@ -29,14 +31,14 @@ Feature: Personalize elements variations can be edited for an existing campaign.
     When I click "Webpage elements" in the "modal_content" region
     And I wait for AJAX to finish
     Then I should not see the modal
-    When I click "#site-name a span" element in the "page_content" region
+    When I click "#page-title" element in the "page_content" region
     And I wait for AJAX to finish
-    Then I should see the text "<SPAN>" in the "dialog_variation_type" region
+    Then I should see the text "<H1>" in the "dialog_variation_type" region
     When I click "Edit text" in the "dialog_variation_type" region
     And I wait for AJAX to finish
     Then I should not see the variation type dialog
-    And I should see the text "Edit text: <SPAN>" in the "dialog_variation_type_form" region
-    And the "personalize_elements_content" field should contain the site title
+    And I should see the text "Edit text: <H1>" in the "dialog_variation_type_form" region
+    And the "personalize_elements_content" field should contain "My article title"
     When I fill in "Test 1" for "personalize_elements_content"
     And I fill in "Test variation set" for "title"
     And I press the "Save" button
@@ -53,8 +55,8 @@ Feature: Personalize elements variations can be edited for an existing campaign.
     And I should see the link "Add variation" in the "lift_tray" region
     And I should see the link "Add variation set" in the "lift_tray" region
     When I click "Add variation" in the "lift_tray" region
-    Then "#site-name a span" element in the "page_content" region should have "acquia-lift-page-variation-item" class
-    And I should see the text "Edit text: <SPAN>" in the "dialog_variation_type_form" region
+    Then "#page-title" element in the "page_content" region should have "acquia-lift-page-variation-item" class
+    And I should see the text "Edit HTML: <H1>" in the "dialog_variation_type_form" region
     And I should not see the link "Edit selector" visible in the "dialog_variation_type_form" region
     When I fill in "Test 2" for "personalize_elements_content"
     And I press the "Save" button
@@ -74,9 +76,11 @@ Feature: Personalize elements variations can be edited for an existing campaign.
       | testing-campaign-edit-variations | Testing campaign edit variations |
     And personalized elements:
       | label                     | agent                            | selector     | type     | content                 |
-      | Site name updated         | testing-campaign-edit-variations | #site-name a | editText | The Rainbow Connection  |
+      | Page title updated         | testing-campaign-edit-variations | #page-title | editText | The Rainbow Connection  |
     And I am logged in as a user with the "Marketer" role
-    And I am on the homepage
+    And I am viewing an "Article" content:
+      | title | My article title |
+      | body  | A placeholder           |
     When I click "Acquia Lift" in the "menu" region
     And I wait for AJAX to finish
     Then I should see the link "Campaigns" in the "lift_tray" region
@@ -92,9 +96,9 @@ Feature: Personalize elements variations can be edited for an existing campaign.
     And "Site name updated" set "Control variation" variation should not have the "Delete" link
     And "Site name updated" set "Option A" variation should have the "Edit" link
     And "Site name updated" set "Option A" variation should have the "Delete" link
-    When I click "Edit" link for the "Site name updated" set "Option A" variation
+    When I click "Edit" link for the "Page title updated" set "Option A" variation
     And I wait for AJAX to finish
-    Then I should see the text "Edit text: <A>" in the "dialog_variation_type_form" region
+    Then I should see the text "Edit text: <H1>" in the "dialog_variation_type_form" region
     And the "personalize_elements_content" field should contain "The Rainbow Connection"
     And the "option_label" field should contain "Option A"
     When I fill in "Variation 1" for "option_label"

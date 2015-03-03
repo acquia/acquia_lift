@@ -101,6 +101,33 @@ function acquia_lift_personalize_campaign_wizard_variations_alter(&$form, &$form
       'id' => 'acquia-lift-add-variation-details',
     ),
   );
+  if (isset($form_state['values']['option_set_type'])) {
+    switch ($form_state['values']['option_set_type']) {
+      case 'block':
+        $form['variations']['add_variation']['details']['block'] = array(
+          '#type' => 'container',
+          '#attributes' => array(
+            'class' => array('acquia-lift-block-variation-set'),
+          ),
+        );
+        $form['variations']['add_variation']['details']['block']['content'] = array(
+          '#markup' => 'Block form here',
+        );
+        break;
+
+      case 'element':
+        $form['variations']['add_variation']['details']['element'] = array(
+          '#type' => 'container',
+          '#attributes' => array(
+            'class' => array('acquia-lift-element-variation-set'),
+          ),
+        );
+        $form['variations']['add_variation']['details']['element']['content'] = array(
+          '#markup' => 'Element form here',
+        );
+        break;
+    }
+  }
 }
 
 /**
@@ -124,29 +151,5 @@ function acquia_lift_personalize_campaign_wizard_targeting_alter(&$form, &$form_
  * Submit handler to add another block option to a personalized block form.
  */
 function acquia_lift_personalize_campaign_wizard_variations_ajax_add(&$form, &$form_state) {
-  switch ($form_state['triggering_element']['#value']) {
-    case 'block':
-      $form['variations']['add_variation']['details']['block'] = array(
-        '#type' => 'container',
-        '#attributes' => array(
-          'class' => array('acquia-lift-block-variation-set'),
-        ),
-      );
-      $form['variations']['add_variation']['details']['block']['content'] = array(
-        '#markup' => 'Block form here',
-      );
-    break;
-
-    case 'element':
-      $form['variations']['add_variation']['details']['element'] = array(
-        '#type' => 'container',
-        '#attributes' => array(
-          'class' => array('acquia-lift-element-variation-set'),
-        ),
-      );
-      $form['variations']['add_variation']['details']['element']['content'] = array(
-        '#markup' => 'Element form here',
-      );
-  }
   return $form['variations']['add_variation']['details'];
 }

@@ -3760,7 +3760,7 @@ class AcquiaLiftWebTestCampaignWizard extends AcquiaLiftWebTestBase {
     );
     $this->drupalPost(NULL, $edit, $this->getButton('wizard_next'));
 
-    $this->assertText('The preview link for "Great Muppet Caper" must be a valid internal Drupal path.');
+    $this->assertText('You have specified an invalid path');
     $edit['variations[option_sets][option_set_1][advanced][preview_link]'] = '<front>';
 
     $this->drupalPost(NULL, $edit, $this->getButton('wizard_next'));

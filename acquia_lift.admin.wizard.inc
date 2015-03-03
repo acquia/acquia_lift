@@ -298,8 +298,9 @@ function acquia_lift_personalize_campaign_wizard_variations_validate(&$form, &$f
       }
     }
   }
-  // Validation for any new option set types.
-  if (!empty($form_state['values']['variations']['add_variation']['option_set_types']['option_set_type'])) {
+  // Validation for any new option set types once the details have been input.
+  if (!empty($form_state['values']['variations']['add_variation']['option_set_types']['option_set_type']) &&
+    !empty($values['variations']['add_variation']['details'])) {
     switch ($form_state['values']['variations']['add_variation']['option_set_types']['option_set_type']) {
       case "block":
         module_load_include('inc', 'personalize_blocks', 'personalize_blocks.admin');
@@ -509,8 +510,8 @@ function _acquia_lift_personalize_campaign_wizard_form_state_blocks_alter(&$form
   if (!empty($form_state['values']['blocks'])) {
     foreach ($form_state['values']['blocks'] as $delta => $block_info) {
       // Set the "add" indicator if the user is creating a new block.
-      if (!empty($block['block']['add']['info']) && !empty($block['block']['add']['body']['value'])) {
-        $form_state['values']['blocks'][$delta]['bid'] = 'add';
+      if (!empty($block_info['block']['add']['info']) && !empty($block_info['block']['add']['body']['value'])) {
+        $form_state['values']['blocks'][$delta]['block']['bid'] = 'add';
       }
     }
   }

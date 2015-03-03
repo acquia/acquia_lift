@@ -50,7 +50,7 @@ function drush_acquia_lift_campaign_sync() {
     'all' => dt('Sync all campaigns.'),
     'one' => dt('Sync one campaign by its machine name.')
   );
-  $type_selection = drush_choice($options, dt('Select Sync Type'));
+  $type_selection = drush_choice($options, dt('Select sync type:'));
   if (!$type_selection) {
     return;
   }
@@ -62,7 +62,7 @@ function drush_acquia_lift_campaign_sync() {
   // Step 2a. Select a campaign (if the type is not "all").
   if ($type_selection == 'one') {
     $agent_names = array_keys($agents);
-    $name_selection = drush_choice($agent_names, dt('Select A Campaign Machine Name to Sync'));
+    $name_selection = drush_choice($agent_names, dt('Select a campaign machine name to sync:'));
     if (!$name_selection) {
       return;
     }

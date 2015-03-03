@@ -135,6 +135,10 @@ function acquia_lift_personalize_campaign_wizard_variations_alter(&$form, &$form
         );
 
     }
+    // Add the advanced settings form.
+    $form['variations']['option_sets']['option_set_' . $option_set->osid]['advanced'] = personalize_campaign_wizard_variations_advanced($form, $form_state, $option_set);
+    // Option set label is edited in a different spot so don't show it twice.
+    $form['variations']['option_sets']['option_set_' . $option_set->osid]['advanced']['label']['#access'] = FALSE;
   }
 
   // Show the card to add a new option set last.
@@ -283,7 +287,7 @@ function acquia_lift_personalize_campaign_wizard_variations_validate(&$form, &$f
   }
   // Validation for existing option set types.
   if (!empty($form_state['values']['variations']['option_sets'])) {
-    foreach ($form_state['values']['variations']['option_sets'] as $option_set_values) {
+    foreach ($form_state['values']['variations']['option_sets'] as $option_set_id => $option_set_values) {
       switch ($option_set_values['option_set']->plugin) {
         case "block":
           module_load_include('inc', 'personalize_blocks', 'personalize_blocks.admin');
@@ -296,6 +300,8 @@ function acquia_lift_personalize_campaign_wizard_variations_validate(&$form, &$f
         default:
           // Unsupported option set type.
       }
+      // Validate advanced settings.
+      personalize_campaign_wizard_validate_variations_advanced($form_state['values']['variations']['option_sets'][$option_set_id], 'variations][option_sets][' . $option_set_id . ']');
     }
   }
   // Validation for any new option set types once the details have been input.
@@ -348,15 +354,21 @@ function acquia_lift_personalize_campaign_wizard_variations_submit(&$form, &$for
   // Save any existing option sets.
   if (!empty($form_state['values']['variations']['option_sets'])) {
     foreach ($form_state['values']['variations']['option_sets'] as $option_set_values) {
+      $option_set = $option_set_values['option_set'];
       switch ($option_set_values['option_set']->plugin) {
         case "block":
-          $submitBlockHandler($option_set_values['content'], $option_set_values['option_set']);
+          $submitBlockHandler($option_set_values['content'], $option_set);
           break;
         case "element":
           break;
         default:
           // Unsupported option set type.
       }
+      // Advanced form expects the label within its options.
+      $option_set = personalize_option_set_load($option_set->osid);
+      $option_set_values['advanced']['label'] = $option_set_values['content']['title'];
+      personalize_campaign_wizard_submit_variations_advanced($option_set_values, $option_set);
+      personalize_option_set_save($option_set);
     }
   }
 
@@ -512,6 +524,7 @@ function _acquia_lift_personalize_campaign_wizard_form_state_blocks_alter(&$form
       // Set the "add" indicator if the user is creating a new block.
       if (!empty($block_info['block']['add']['info']) && !empty($block_info['block']['add']['body']['value'])) {
         $form_state['values']['blocks'][$delta]['block']['bid'] = 'add';
+        unset($form_state['values']['blocks'][$delta]['osid']);
       }
     }
   }

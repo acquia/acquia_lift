@@ -199,6 +199,9 @@ function acquia_lift_personalize_campaign_wizard_variations_alter(&$form, &$form
       'wrapper' => 'acquia-lift-add-variation-details',
       'effect' => 'fade',
     ),
+    '#attributes' => array(
+      'autocomplete' => 'off',
+    ),
   );
   foreach ($option_set_types as $type => $details) {
     $form['variations']['add_variation']['option_set_types']['option_set_type'][$type]['#description'] = $details['description'];
@@ -230,9 +233,7 @@ function acquia_lift_personalize_campaign_wizard_variations_alter(&$form, &$form
             'class' => array('acquia-lift-element-variation-set'),
           ),
         );
-        $form['variations']['add_variation']['details']['element']['content'] = array(
-          '#markup' => 'Element form here',
-        );
+        _acquia_lift_personalize_campaign_wizard_variations_element($form['variations']['add_variation']['details']['element']['content'], $form_state, $agent_data);
         break;
     }
   }
@@ -418,6 +419,13 @@ function acquia_lift_personalize_campaign_wizard_variations_submit(&$form, &$for
 }
 
 /**
+ * Submit handler for entering a URL to begin creation an element variation.
+ */
+function acquia_lift_personalize_campaign_wizard_variations_submit_element($form, &$form_state) {
+  $form_state['redirect'] = $form_state['values']['variations']['add_variation']['details']['element']['content']['url'];
+}
+
+/**
  ********************************************************************
  *
  * H E L P E R S
@@ -565,4 +573,30 @@ function _acquia_lift_personalize_campaign_wizard_form_state_blocks_alter(&$form
   else {
     unset($form_state['pblock']);
   }
+}
+
+/**
+ * Generate the add form for a new element variation set.
+ *
+ * @param array $form
+ *   The form array reference
+ * @param array $form_state
+ *   The current form state
+ * @param stdClass $agent_data
+ *   The data for the current campaign
+ */
+function _acquia_lift_personalize_campaign_wizard_variations_element(&$form, &$form_state, $agent_data) {
+  $form['url'] = array(
+    '#type' => 'textfield',
+    '#element_validate' => array('personalize_form_element_path_validate'),
+    '#title' => t('Page where element exists'),
+    '#allow_dynamic' => FALSE,
+    '#allow_external' => TRUE,
+    '#required' => TRUE,
+  );
+  $form['navigate'] = array(
+    '#type' => 'submit',
+    '#submit' => array('acquia_lift_personalize_campaign_wizard_variations_submit_element'),
+    '#value' => t('Go'),
+  );
 }

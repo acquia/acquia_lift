@@ -594,33 +594,16 @@ function acquia_lift_option_set_add_modal_callback($ajax) {
   ctools_include('modal');
   ctools_modal_add_js();
 
-  $path = drupal_get_path('module', 'acquia_lift');
+  module_load_include('inc', 'acquia_lift', 'acquia_lift.ui');
+  $types = acquia_lift_option_set_types_ui();
+  // Indicate that type links should not open in a modal.
+  foreach ($types as $type) {
+    $type['modal'] = FALSE;
+  }
+
   $output = theme('acquia_lift_type_list', array(
     'id' => 'acquia-lift-option-set-type-list',
-    'items' => array(
-      'personalize-element' => array(
-        'title' => t('Webpage elements'),
-        'description' => t('Create a variation set of personalized webpage elements, including a base and control version. Useful for quick tests and personalization on individual webpages.'),
-        'path' => 'admin/structure/personalize/variations/personalize-elements/add',
-        'modal' => FALSE,
-        'logo' => theme('image', array(
-          'path' => $path . '/images/variation-type-element.png',
-          'alt' => t('Webpage element'),
-          'title' => t('Select this option to create a variation set from web page elements.'),
-        )),
-      ),
-      'personalize-block' => array(
-        'title' => t('Drupal blocks'),
-        'description' => t('Create a variation set of personalized Drupal blocks of content. Useful for personalization and testing across your website where this block appears.'),
-        'path' => 'admin/structure/personalize/variations/personalize-blocks/add',
-        'modal' => FALSE,
-        'logo' => theme('image', array(
-          'path' => $path . '/images/variation-type-block.png',
-          'alt' => t('Drupal block'),
-          'title' => t('Select this option to create a variation set from Drupal content blocks.'),
-        )),
-      ),
-    ),
+    'items' => $types,
   ));
   return ctools_modal_render(t('Add a variation set'), $output);
 }

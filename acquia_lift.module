@@ -271,6 +271,22 @@ function acquia_lift_theme() {
       'type' => '',
       'change_link' => '',
     ),
+    'acquia_lift_card' => array(
+      'render element' => 'element',
+      'path' => $path . '/theme',
+      'file' => 'acquia_lift.wizard.theme.inc',
+    ),
+    'acquia_lift_radio_list' => array(
+      'render element' => 'element',
+      'path' => $path . '/theme',
+      'file' => 'acquia_lift.wizard.theme.inc',
+      'preprocess functions' => array('template_preprocess_acquia_lift_radio_list'),
+    ),
+    'acquia_lift_radio_list_item' => array(
+      'render element' => 'element',
+      'path' => $path . '/theme',
+      'file' => 'acquia_lift.wizard.theme.inc',
+    ),
     // Unified navbar themes.
     'acquia_lift_navbar' => array(
       'render element' => 'element',
@@ -1368,6 +1384,22 @@ function acquia_lift_library() {
     ),
   );
 
+  // Card UI component
+  $libraries['acquia_lift.card'] = array(
+    'title' => 'Acquia Lift card component',
+    'version' => VERSION,
+    'js' => array(
+      $path . '/js/acquia_lift.card.js' => array(),
+      'jQuery(document).ready(function () { jQuery(".el-card").card(); })' => array('type' => 'inline'),
+    ),
+    'css' => array(
+      $path . '/css/acquia_lift.card.css',
+    ),
+    'dependencies' => array(
+      array('system', 'jquery'),
+    ),
+  );
+
   /*** 3rd PARTY LIBRARY DEPENDENCIES ***/
   // Ensure that each 3rd party library dependency has a default variant.
   // Convert Libraries module data structures to library data structures.
@@ -2300,12 +2332,9 @@ function acquia_lift_navbar() {
 /**
  * Implements hook_form_FORM_ID_alter().
  */
-function acquia_lift_form_personalize_campaign_wizard_alter(&$form, &$form_state) {
+function acquia_lift_form_personalize_campaign_wizard_alter(&$form, &$form_state, $form_id) {
+  // Add in the basic functionality.
   $agent = $form['#agent'];
-  if (!empty($form['visitor_context']) && $form['visitor_context']['#type'] == 'select') {
-    module_load_include('inc', 'acquia_lift', 'acquia_lift.ui');
-    acquia_lift_chosenify_element($form['visitor_context']);
-  }
 
   $account_info = variable_get('acquia_lift_account_info', array());
   if (empty($account_info)) {
@@ -2360,6 +2389,13 @@ function acquia_lift_form_personalize_campaign_wizard_alter(&$form, &$form_state
   );
   $sync_form['actions']['sync']['#submit'] = array('acquia_lift_sync_campaign_submit');
   $form['process_bar']['actions']['sync_lift_agent'] = $sync_form;
+
+  // Now call any alter hooks that are specific to the storage step.
+  module_load_include('inc', 'acquia_lift', 'acquia_lift.admin.wizard');
+  $function = 'acquia_lift_personalize_campaign_wizard_' . $form_state['storage']['step'] . '_alter';
+  if (function_exists($function)) {
+    call_user_func_array($function, array(&$form, &$form_state, $form_id));
+  }
 }
 
 /**
@@ -2645,6 +2681,16 @@ function acquia_lift_preprocess_personalize_campaign_status_update(&$variables) 
  */
 function template_preprocess_acquia_lift_navbar_menu_tree(&$variables) {
   $variables['tree'] = $variables['tree']['#children'];
+}
+
+/**
+ * Implements template_preprocess_HOOK() for theme_acquia_lift_button_list().
+ */
+function template_preprocess_acquia_lift_radio_list(&$variables) {
+  // Add a theme wrapper for each item in the list.
+  foreach($variables['element']['#options'] as $id => $title) {
+    $variables['element'][$id]['#theme_wrappers'][] = 'acquia_lift_radio_list_item';
+  }
 }
 
 /**

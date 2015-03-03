@@ -3790,13 +3790,13 @@ class AcquiaLiftWebTestCampaignWizard extends AcquiaLiftWebTestBase {
     $this->drupalPost(NULL, $edit, $this->getButton('wizard_element_navigate'));
     $this->assertText('You have specified an invalid path');
 
-    // Valid url by path
+    // Valid external url
     $edit = array(
-      'variations[add_variation][details][element][content][url]' => 'node',
+      'variations[add_variation][details][element][content][url]' => 'http://www.google.com',
     );
     $this->drupalPost(NULL, $edit, $this->getButton('wizard_element_navigate'));
     $this->assertNoText('You have specified an invalid path');
-    $this->assertUrl('node');
+    $this->assertUrl('http://www.google.com/');
 
     // Valid url by alias
     $this->drupalGet('admin/structure/personalize/manage/' . $agent->getMachineName() . '/variations');
@@ -3811,8 +3811,7 @@ class AcquiaLiftWebTestCampaignWizard extends AcquiaLiftWebTestBase {
     $this->assertNoText('You have specified an invalid path');
     $this->assertUrl('admin/structure');
 
-
-    // Valid external url
+    // Valid url by path
     $this->drupalGet('admin/structure/personalize/manage/' . $agent->getMachineName() . '/variations');
     // Indicate an element variation set type.
     $edit = array(
@@ -3820,10 +3819,19 @@ class AcquiaLiftWebTestCampaignWizard extends AcquiaLiftWebTestBase {
     );
     $this->drupalPostAJAX(NULL, $edit, 'variations[add_variation][option_set_types][option_set_type]');
     $edit = array(
-      'variations[add_variation][details][element][content][url]' => 'http://www.google.com',
+      'variations[add_variation][details][element][content][url]' => 'node',
     );
     $this->drupalPost(NULL, $edit, $this->getButton('wizard_element_navigate'));
     $this->assertNoText('You have specified an invalid path');
-    $this->assertUrl('http://www.google.com/');
+    $this->assertUrl('node');
+
+    // Check the settings for toolbar integration.
+    $settings = $this->drupalGetSettings();
+    $this->assertEqual($settings['acquia_lift']['toolbarEditMode'], 'element');
+
+    // Now navigate to another page and make sure that the settings are gone.
+    $this->drupalGet('admin/structure/personalize');
+    $settings = $this->drupalGetSettings();
+    $this->assertTrue(empty($settings['acquia_lift']['toolbarEditMode']));
   }
 }

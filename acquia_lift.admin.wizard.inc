@@ -422,6 +422,12 @@ function acquia_lift_personalize_campaign_wizard_variations_submit(&$form, &$for
  * Submit handler for entering a URL to begin creation an element variation.
  */
 function acquia_lift_personalize_campaign_wizard_variations_submit_element($form, &$form_state) {
+  // Set a session variable that we can check upon the next page load to
+  // trigger element editing mode for either page or element variations.
+  $agent_data = $form['#agent'];
+  $agent = personalize_agent_load_agent($agent_data->machine_name);
+  $element_type = $agent instanceof AcquiaLiftPageVariationInterface ? 'page' : 'element';
+  $_SESSION['acquia_lift_element_trigger'] = $element_type;
   $form_state['redirect'] = $form_state['values']['variations']['add_variation']['details']['element']['content']['url'];
 }
 

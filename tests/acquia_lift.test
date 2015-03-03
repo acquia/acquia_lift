@@ -3219,32 +3219,168 @@ class AcquiaLiftWebTestCampaignWizard extends AcquiaLiftWebTestBase {
 
     $this->drupalGet('admin/structure/personalize/manage/' . $agent->getMachineName() . '/variations');
     // Make sure the type selection is shown by default without any selections.
-    $this->assertNoFieldChecked('edit-option-set-type-block');
-    $this->assertNoFieldChecked('edit-option-set-type-element');
+    $this->assertNoFieldChecked('edit-variations-add-variation-option-set-types-option-set-type-block');
+    $this->assertNoFieldChecked('edit-variations-add-variation-option-set-types-option-set-type-element');
 
     // Actual forms should not be shown yet.
-    $this->assertNoText('Block form here');
+    $this->assertNoFieldByName('variations[add_variation][details][block][content][title]');
     $this->assertNoText('Element form here');
 
     $edit = array(
-      'option_set_type' => 'block',
+      'variations[add_variation][option_set_types][option_set_type]' => 'block',
     );
 
-    $this->drupalPostAJAX(NULL, $edit, 'option_set_type');
-    $this->assertText('Block form here');
+    $this->drupalPostAJAX(NULL, $edit, 'variations[add_variation][option_set_types][option_set_type]');
+    $this->assertFieldByName('variations[add_variation][details][block][content][title]');
     $this->assertNoText('Element form here');
 
     $this->drupalGet('admin/structure/personalize/manage/' . $agent->getMachineName() . '/variations');
     // Actual forms should not be shown yet.
-    $this->assertNoText('Block form here');
+    $this->assertNoFieldByName('variations[add_variation][details][block][content][title]');
     $this->assertNoText('Element form here');
 
     $edit = array(
-      'option_set_type' => 'element',
+      'variations[add_variation][option_set_types][option_set_type]' => 'element',
     );
 
-    $this->drupalPostAJAX(NULL, $edit, 'option_set_type');
-    $this->assertNoText('Block form here');
+    $this->drupalPostAJAX(NULL, $edit, 'variations[add_variation][option_set_types][option_set_type]');
+    $this->assertNoFieldByName('variations[add_variation][details][block][content][title]');
     $this->assertText('Element form here');
+  }
+
+  /**
+   * Test variation set creation.
+   */
+  function testWhatForm() {
+    $this->drupalLogin($this->managerUser);
+    $agent = $this->createTestAgent();
+    // Create a personalized block from existing blocks.
+    $this->drupalGet('admin/structure/personalize/manage/' . $agent->getMachineName() . '/variations');
+    // Indicate a block variation set type.
+    $edit = array(
+      'variations[add_variation][option_set_types][option_set_type]' => 'block',
+    );
+    $this->drupalPostAJAX(NULL, $edit, 'variations[add_variation][option_set_types][option_set_type]');
+
+    $edit = array(
+      'variations[add_variation][option_set_types][option_set_type]' => 'block',
+      'variations[add_variation][details][block][content][title]' => 'Muppets',
+      'variations[add_variation][details][block][content][pblock_wrapper][blocks][0][block][bid]' => 'comment_delta_recent',
+      'variations[add_variation][details][block][content][pblock_wrapper][blocks][1][block][bid]' => 'node_delta_recent',
+    );
+    $this->drupalPost(NULL, $edit, $this->getButton('wizard_next'));
+
+    $option_sets = personalize_option_set_load_by_agent($agent->getMachineName());
+    $this->assertEqual(count($option_sets), 1);
+
+    $option_set = reset($option_sets);
+    $this->assertEqual(count($option_set->options), 2);
+    $expected_queue_items[] = array(
+      'method' => 'savePoint',
+      'args' => array(
+        $agent->getMachineName(),
+        personalize_get_decision_point_name_for_option_set($option_set),
+      ),
+      'agent' => $agent->getMachineName(),
+    );
+    // An item will be added to the queue to save the decision.
+    $expected_queue_items[] = array(
+      'method' => 'saveDecision',
+      'args' => array(
+        $agent->getMachineName(),
+        personalize_get_decision_point_name_for_option_set($option_set),
+        personalize_get_decision_name_for_option_set($option_set)
+      ),
+      'agent' => $agent->getMachineName(),
+    );
+    $expected_queue_items[] = array(
+      'method' => 'saveChoice',
+      'args' => array(
+        $agent->getMachineName(),
+        personalize_get_decision_point_name_for_option_set($option_set),
+        personalize_get_decision_name_for_option_set($option_set),
+        'option-a',
+      ),
+      'agent' => $agent->getMachineName(),
+    );
+    $expected_queue_items[] = array(
+      'method' => 'saveChoice',
+      'args' => array(
+        $agent->getMachineName(),
+        personalize_get_decision_point_name_for_option_set($option_set),
+        personalize_get_decision_name_for_option_set($option_set),
+        'option-b',
+      ),
+      'agent' => $agent->getMachineName(),
+    );
+    $expected_queue_items[] = array(
+        'method' => 'saveAgent',
+        'args' => array(
+          $agent->getMachineName(),
+          $agent->getTitle(),
+          'adaptive',
+          PERSONALIZE_STATUS_NOT_STARTED,
+          10/100,
+          20/100,
+          TRUE,
+        ),
+        'agent' => $agent->getMachineName(),
+    );
+    $this->assertQueueItems($expected_queue_items);
+
+    // Now go to the variations page and verify the new option set is available.
+    $this->resetAll();
+    $this->drupalGet('admin/structure/personalize/manage/' . $agent->getMachineName() . '/variations');
+    $this->assertFieldByName('variations[option_sets][option_set_1][content][title]', 'Muppets');
+    $this->assertOptionSelected('edit-variations-option-sets-option-set-1-content-pblock-wrapper-blocks-0-block-bid', 'comment_delta_recent');
+    $this->assertOptionSelected('edit-variations-option-sets-option-set-1-content-pblock-wrapper-blocks-1-block-bid', 'node_delta_recent');
+
+    // Edit the variation set title change the second block to a new block
+    // created inline.
+    $edit = array(
+      'variations[option_sets][option_set_1][content][title]' => 'Great Muppet Caper',
+      'variations[option_sets][option_set_1][content][pblock_wrapper][blocks][0][block][bid]' => 'comment_delta_recent',
+      'variations[option_sets][option_set_1][content][pblock_wrapper][blocks][1][block][bid]' => '',
+      'variations[option_sets][option_set_1][content][pblock_wrapper][blocks][1][block][add][title]' => 'Kermit',
+      'variations[option_sets][option_set_1][content][pblock_wrapper][blocks][1][block][add][info]' => 'Piggy',
+      'variations[option_sets][option_set_1][content][pblock_wrapper][blocks][1][block][add][body][value]' => 'complicated',
+    );
+    $this->drupalPost(NULL, $edit, $this->getButton('wizard_next'));
+
+    $option_sets = personalize_option_set_load_by_agent($agent->getMachineName(), TRUE);
+    $this->assertEqual(count($option_sets), 1);
+
+    $option_set = reset($option_sets);
+    $this->assertEqual(count($option_set->options), 2);
+    $this->assertEqual($option_set->label, 'Great Muppet Caper');
+    $this->assertEqual($option_set->options[1]['bid'], 'block_delta_1');
+
+    // Now go to the variations page test the advanced options
+    $this->resetAll();
+    $this->drupalGet('admin/structure/personalize/manage/' . $agent->getMachineName() . '/variations');
+
+    $edit = array(
+      'variations[option_sets][option_set_1][advanced][decision_name]' => 'decision updated',
+      'variations[option_sets][option_set_1][advanced][stateful]' => 1,
+      'variations[option_sets][option_set_1][advanced][preview_link]' => 'invalid url',
+      'variations[option_sets][option_set_1][advanced][executor]' => 'callback',
+    );
+    $this->drupalPost(NULL, $edit, $this->getButton('wizard_next'));
+
+    $this->assertText('The preview link for "Great Muppet Caper" must be a valid internal Drupal path.');
+    $edit['variations[option_sets][option_set_1][advanced][preview_link]'] = '<front>';
+
+    $this->drupalPost(NULL, $edit, $this->getButton('wizard_next'));
+
+    $option_sets = personalize_option_set_load_by_agent($agent->getMachineName(), TRUE);
+    $this->assertEqual(count($option_sets), 1);
+
+    $option_set = reset($option_sets);
+    $this->assertEqual(count($option_set->options), 2);
+    $this->assertEqual($option_set->label, 'Great Muppet Caper');
+    $this->assertEqual($option_set->decision_name, 'decision-updated');
+    $this->assertEqual($option_set->stateful, 1);
+    $this->assertEqual($option_set->preview_link, '<front>');
+    $this->assertEqual($option_set->executor, 'callback');
   }
 }

@@ -78,7 +78,22 @@ function drush_acquia_lift_campaign_sync() {
   }
 
   // Step 4. Sync selected campaign(s)
-  acquia_lift_batch_sync_campaigns($agents);
-  $agent_names = array_keys($agents);
-  drush_log(dt('The campaign(s)') . ' ' . implode(', ', $agent_names) . ' ' . dt('have been synchronized with Lift.'), 'success');
+  // First delete the queue because we are about to sync everything now.
+  acquia_lift_delete_queue();
+  foreach ($agents as $agent_name => $agent) {
+    $operations = acquia_lift_get_sync_operations_for_agents(array($agent_name => $agent));
+    $batch_operations = array();
+    foreach ($operations as $operation) {
+      $batch_operations[] = array('acquia_lift_batch_process_item', array($operation));
+    }
+    $batch = array(
+      'operations' => $batch_operations,
+      'finished' => 'acquia_lift_batch_finished',
+      'file' => drupal_get_path('module', 'acquia_lift') . '/acquia_lift.batch.inc',
+    );
+    batch_set($batch);
+    $batch =& batch_get();
+    $batch['progressive'] = false;
+    drush_backend_batch_process();
+  }
 }

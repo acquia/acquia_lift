@@ -322,6 +322,8 @@ function acquia_lift_personalize_campaign_wizard_variations_validate(&$form, &$f
         default:
           // Unsupported option set type.
       }
+      // Validate advanced settings.
+      personalize_campaign_wizard_validate_variations_advanced($form_state['values']['variations']['option_sets'][$option_set_id], 'variations][option_sets][' . $option_set_id . ']');
     }
   }
   // Validation for any new option set types once the details have been input.

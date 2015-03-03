@@ -1416,6 +1416,13 @@ function acquia_lift_review_form_submit($form, &$form_state) {
   acquia_lift_update_targeting($agent);
 }
 
+/**
+ * Takes whatever is in the 'lift_targeting' data property and converts it into
+ * the required campaign structure (including nested tests where needed).
+ *
+ * @param $agent
+ *   The agent to create the targeting structure for.
+ */
 function acquia_lift_update_targeting($agent) {
   if (empty($agent->data['lift_targeting'])) {
     return;
@@ -1425,17 +1432,20 @@ function acquia_lift_update_targeting($agent) {
   $option_set = acquia_lift_get_option_set_for_targeting($agent->machine_name);
   $existing_structure = acquia_lift_get_structure_from_targeting($option_set);
   // Any target audience that has multiple variations in it has a test running.
-  $existing_tests = array();
+  $existing_tests = $existing_options = array();
   foreach ($existing_structure as $audience => $variations) {
     if (count($variations) > 1) {
       $existing_tests[$audience] = $variations;
     }
+    else {
+      $existing_options[$audience] = reset($variations);
+    }
   }
-  // Now look at the tests required by the new structure.
-  $rules = $new_tests = array();
+  // Now look at the tests and options required by the new structure.
+  $rules = $new_tests = $new_options = array();
   foreach ($agent->data['lift_targeting'] as $new_audience => $variations) {
     if (count($variations) == 1) {
-      acquia_lift_set_option_for_audience($agent, reset($variations), $new_audience);
+      $new_options[$new_audience] = reset($variations);
       continue;
     }
     // See if this variation combination already exists as a test.
@@ -1450,6 +1460,7 @@ function acquia_lift_update_targeting($agent) {
       $new_tests[$new_audience] = $variations;
     }
   }
+
   foreach (array_keys($existing_tests) as $audience) {
     if (!in_array($audience, $rules)) {
       // Delete the old test if it's no longer being used.
@@ -1463,9 +1474,18 @@ function acquia_lift_update_targeting($agent) {
       }
     }
   }
+  foreach ($existing_options as $audience => $option) {
+    if (!isset($agent->data['lift_targeting'][$audience])) {
+      acquia_lift_remove_option_for_audience($agent, $audience);
+    }
+  }
+
   // Now create any new tests required by the new structure.
   foreach ($new_tests as $audience => $variations) {
     acquia_lift_add_new_test_for_audience($agent, $variations, $audience);
+  }
+  foreach ($new_options as $audience => $option) {
+    acquia_lift_set_option_for_audience($agent, $option, $audience);
   }
   // Now clobber the "lift_targeting" data as we only use that to store *changes*
   // to the running targeting.
@@ -1493,6 +1513,23 @@ function acquia_lift_set_option_for_audience($agent, $option_id, $audience) {
     }
     $option_set->targeting[$audience]['option_id'] = $option_id;
     personalize_option_set_save($option_set);
+  }
+}
+
+/**
+ * Unsets the option_id property for a given target audience.
+ * @param $agent
+ * @param $audience
+ * @throws \PersonalizeException
+ */
+function acquia_lift_remove_option_for_audience($agent, $audience) {
+  $option_set = acquia_lift_get_option_set_for_targeting($agent->machine_name);
+  if (isset($option_set->targeting[$audience])) {
+    // If there was a test assigned to this audience, remove it.
+    if (isset($option_set->targeting[$audience]['option_id'])) {
+      unset($option_set->targeting[$audience]['option_id']);
+      personalize_option_set_save($option_set);
+    }
   }
 }
 
@@ -1623,6 +1660,14 @@ function acquia_lift_delete_old_nested_test($parent_agent, $audience) {
 function acquia_lift_save_targeting_structure($agent, $targeting) {
   if ($agent->plugin != 'acquia_lift_target') {
     throw new AcquiaLiftException('Invalid agent');
+  }
+  $option_set = acquia_lift_get_option_set_for_targeting($agent->machine_name);
+  // Check that the targeting rules for the specified audiences exist in the
+  // option set.
+  foreach ($targeting as $audience => $vars) {
+    if (!isset($option_set->targeting[$audience])) {
+      throw new AcquiaLiftException('Invalid audience');
+    }
   }
   $agent->data['lift_targeting'] = $targeting;
   personalize_agent_save($agent);

@@ -185,8 +185,8 @@ function acquia_lift_personalize_campaign_wizard_variations_alter(&$form, &$form
       'id' => 'acquia-lift-add-variation-details',
     ),
   );
-  if (isset($form_state['values']['option_set_type'])) {
-    switch ($form_state['values']['option_set_type']) {
+  if (isset($form_state['values']['variations']['add_variation']['option_set_types']['option_set_type'])) {
+    switch ($form_state['values']['variations']['add_variation']['option_set_types']['option_set_type']) {
       case 'block':
         $form['variations']['add_variation']['details']['block'] = array(
           '#type' => 'container',

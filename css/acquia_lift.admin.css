@@ -285,3 +285,44 @@ tr.acquia-lift-report-control {
 .acquia-lift-config-minimum-runtime div.description {
     clear: both;
 }
+
+/* Acquia Lift campaign wizard form alterations */
+.acquia-lift-radio-list {
+  max-width: 1000px;
+}
+.acquia-lift-radio-list .acquia-lift-radio-list-item {
+  border: 1px solid #CCC;
+  padding: 1.4em;
+  background-color: #F5F5F5;
+  margin-bottom: 1.4em;
+}
+.acquia-lift-radio-list .acquia-lift-radio-list-item .acquia-lift-radio-list-item-image {
+  float: left;
+  width: 125px;
+  padding-right: 1.4em;
+  text-align: center;
+}
+.acquia-lift-radio-list .acquia-lift-radio-list-item .acquia-lift-radio-list-item-holder {
+  float: left;
+  max-width: 800px;
+}
+.acquia-lift-radio-list .acquia-lift-radio-list-item .acquia-lift-radio-list-item-holder .form-item label {
+  font-weight: bold;
+  font-size: 1.2em;
+  margin-bottom: 0.4em;
+  cursor: pointer;
+}
+.acquia-lift-radio-list .acquia-lift-radio-list-item .acquia-lift-radio-list-item-holder div.form-type-radio div.description {
+  margin-left: 0;
+}
+.acquia-lift-radio-list .acquia-lift-radio-list-item .acquia-lift-radio-list-item-holder .form-item input[type="radio"] {
+  border: 0;
+  clip: rect(0 0 0 0);
+  height: 1px;
+  margin: -1px;
+  overflow: hidden;
+  padding: 0;
+  position: absolute;
+  width: 1px;
+}
+

@@ -3203,3 +3203,48 @@ class AcquiaLiftWebTestTarget extends AcquiaLiftWebTestBase {
     return $agent;
   }
 }
+
+class AcquiaLiftWebTestCampaignWizard extends AcquiaLiftWebTestBase {
+  public static function getInfo() {
+    return array(
+      'name' => t('Acquia Lift Web Tests - Campaign Wizard'),
+      'description' => t('Tests functionality related to the campaign management wizard.'),
+      'group' => t('Personalize'),
+    );
+  }
+
+  function testVariationTypeSelect() {
+    $this->drupalLogin($this->managerUser);
+    $agent = $this->createTestAgent();
+
+    $this->drupalGet('admin/structure/personalize/manage/' . $agent->getMachineName() . '/variations');
+    // Make sure the type selection is shown by default without any selections.
+    $this->assertNoFieldChecked('edit-option-set-type-block');
+    $this->assertNoFieldChecked('edit-option-set-type-element');
+
+    // Actual forms should not be shown yet.
+    $this->assertNoText('Block form here');
+    $this->assertNoText('Element form here');
+
+    $edit = array(
+      'option_set_type' => 'block',
+    );
+
+    $this->drupalPostAJAX(NULL, $edit, 'option_set_type');
+    $this->assertText('Block form here');
+    $this->assertNoText('Element form here');
+
+    $this->drupalGet('admin/structure/personalize/manage/' . $agent->getMachineName() . '/variations');
+    // Actual forms should not be shown yet.
+    $this->assertNoText('Block form here');
+    $this->assertNoText('Element form here');
+
+    $edit = array(
+      'option_set_type' => 'element',
+    );
+
+    $this->drupalPostAJAX(NULL, $edit, 'option_set_type');
+    $this->assertNoText('Block form here');
+    $this->assertText('Element form here');
+  }
+}

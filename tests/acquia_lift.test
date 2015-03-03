@@ -3875,11 +3875,17 @@ class AcquiaLiftWebTestCampaignWizard extends AcquiaLiftWebTestBase {
     $agent = $this->createTestAgent();
     // Create a personalized block from existing blocks.
     $this->drupalGet('admin/structure/personalize/manage/' . $agent->getMachineName() . '/variations');
+    // Indicate a block variation set type.
     $edit = array(
       'variations[add_variation][option_set_types][option_set_type]' => 'block',
-      'variations[add_variation][block][content][title]' => 'Muppets',
-      'variations[add_variation][block][content][pblock_wrapper][blocks][0][block][bid]' => 'comment_delta_recent',
-      'variations[add_variation][block][content][pblock_wrapper][blocks][1][block][bid]' => 'node_delta_recent',
+    );
+    $this->drupalPostAJAX(NULL, $edit, 'variations[add_variation][option_set_types][option_set_type]');
+
+    $edit = array(
+      'variations[add_variation][option_set_types][option_set_type]' => 'block',
+      'variations[add_variation][details][block][content][title]' => 'Muppets',
+      'variations[add_variation][details][block][content][pblock_wrapper][blocks][0][block][bid]' => 'comment_delta_recent',
+      'variations[add_variation][details][block][content][pblock_wrapper][blocks][1][block][bid]' => 'node_delta_recent',
     );
     $this->drupalPost(NULL, $edit, $this->getButton('wizard_next'));
 
@@ -3955,15 +3961,16 @@ class AcquiaLiftWebTestCampaignWizard extends AcquiaLiftWebTestBase {
       'variations[option_sets][option_set_1][content][pblock_wrapper][blocks][1][block][bid]' => '',
       'variations[option_sets][option_set_1][content][pblock_wrapper][blocks][1][block][add][title]' => 'Kermit',
       'variations[option_sets][option_set_1][content][pblock_wrapper][blocks][1][block][add][info]' => 'Piggy',
-      'variations[option_sets][option_set_1][content][pblock_wrapper][blocks][1][block][add][body][value]' => "It's complicated",
+      'variations[option_sets][option_set_1][content][pblock_wrapper][blocks][1][block][add][body][value]' => 'complicated',
     );
     $this->drupalPost(NULL, $edit, $this->getButton('wizard_next'));
 
-    $option_sets = personalize_option_set_load_by_agent($agent->getMachineName());
+    $option_sets = personalize_option_set_load_by_agent($agent->getMachineName(), TRUE);
     $this->assertEqual(count($option_sets), 1);
 
     $option_set = reset($option_sets);
     $this->assertEqual(count($option_set->options), 2);
-    debug($option_set);
+    $this->assertEqual($option_set->label, 'Great Muppet Caper');
+    $this->assertEqual($option_set->options[1]['bid'], 'block_delta_1');
   }
 }

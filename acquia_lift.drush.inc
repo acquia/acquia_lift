@@ -45,21 +45,27 @@ function drush_acquia_lift_menu_rebuild() {
 function drush_acquia_lift_campaign_sync() {
   module_load_include('inc', 'acquia_lift', 'acquia_lift.batch');
 
-  // Step 1. Select sync type.
+  // Step 1. Exit if there is no campaign to be synchronized.
+  $agents = array();
+  foreach (acquia_lift_get_agent_types() as $type => $info) {
+    $agents = array_merge($agents, personalize_agent_load_by_type($type));
+  }
+  if (empty($agents)) {
+    drush_log(dt('There is no campaign to be synchronized.'), 'success');
+    return;
+  }
+
+  // Step 2. Select sync type.
   $options = array(
     'all' => dt('Sync all campaigns.'),
-    'one' => dt('Sync one campaign by its machine name.')
+    'one' => dt('Sync one campaign by its machine name.'),
   );
   $type_selection = drush_choice($options, dt('Select sync type:'));
   if (!$type_selection) {
     return;
   }
-  $agents = array();
-  foreach (acquia_lift_get_agent_types() as $type => $info) {
-    $agents = array_merge($agents, personalize_agent_load_by_type($type));
-  }
 
-  // Step 2a. Select a campaign (if the type is not "all").
+  // Step 3a. Select a campaign (if the type is "one").
   if ($type_selection == 'one') {
     $agent_names = array_keys($agents);
     $name_selection = drush_choice($agent_names, dt('Select a campaign machine name to sync:'));
@@ -71,8 +77,8 @@ function drush_acquia_lift_campaign_sync() {
     $agents = array($agent_name => $agent);
   }
 
-  // Step 3. Sync selected campaign(s)
+  // Step 4. Sync selected campaign(s)
   acquia_lift_batch_sync_campaigns($agents);
   $agent_names = array_keys($agents);
-  drush_log('The campaign(s) '. implode(', ', $agent_names). ' have been synchronized with Lift.', 'success');
+  drush_log(dt('The campaign(s)') . ' ' . implode(', ', $agent_names) . ' ' . dt('have been synchronized with Lift.'), 'success');
 }

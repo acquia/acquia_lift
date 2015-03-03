@@ -309,21 +309,11 @@ class AcquiaLiftWebTestBase extends DrupalWebTestCase
       case 'wizard_next':
         return t('Next');
       case 'wizard_done':
-        return t('Done');
+        return t('Save');
       case 'wizard_start':
         return t('Start');
-      case 'wizard_scheduled':
-        return t('Save');
-      case 'wizard_variations':
-        return t('What');
-      case 'wizard_goals':
-        return t('Why');
-      case 'wizard_targeting':
-        return t('Who');
-      case 'wizard_scheduling':
-        return t('When');
-      case 'wizard_review':
-        return t('Review');
+      case 'wizard_element_navigate':
+        return t('Go');
       case 'create_campaign':
         return t('Create campaign');
       case 'delete':
@@ -3607,6 +3597,9 @@ class AcquiaLiftWebTestCampaignWizard extends AcquiaLiftWebTestBase {
   }
 
   function testVariationTypeSelect() {
+    $block_title_name = 'variations[add_variation][details][block][content][title]';
+    $element_url_name = 'variations[add_variation][details][element][content][url]';
+
     $this->drupalLogin($this->managerUser);
     $agent = $this->createTestAgent();
 
@@ -3616,35 +3609,35 @@ class AcquiaLiftWebTestCampaignWizard extends AcquiaLiftWebTestBase {
     $this->assertNoFieldChecked('edit-variations-add-variation-option-set-types-option-set-type-element');
 
     // Actual forms should not be shown yet.
-    $this->assertNoFieldByName('variations[add_variation][details][block][content][title]');
-    $this->assertNoText('Element form here');
+    $this->assertNoFieldByName($block_title_name);
+    $this->assertNoFieldByName($element_url_name);
 
     $edit = array(
       'variations[add_variation][option_set_types][option_set_type]' => 'block',
     );
 
     $this->drupalPostAJAX(NULL, $edit, 'variations[add_variation][option_set_types][option_set_type]');
-    $this->assertFieldByName('variations[add_variation][details][block][content][title]');
-    $this->assertNoText('Element form here');
+    $this->assertFieldByName($block_title_name);
+    $this->assertNoFieldByName($element_url_name);
 
     $this->drupalGet('admin/structure/personalize/manage/' . $agent->getMachineName() . '/variations');
     // Actual forms should not be shown yet.
-    $this->assertNoFieldByName('variations[add_variation][details][block][content][title]');
-    $this->assertNoText('Element form here');
+    $this->assertNoFieldByName($block_title_name);
+    $this->assertNoFieldByName($element_url_name);
 
     $edit = array(
       'variations[add_variation][option_set_types][option_set_type]' => 'element',
     );
 
     $this->drupalPostAJAX(NULL, $edit, 'variations[add_variation][option_set_types][option_set_type]');
-    $this->assertNoFieldByName('variations[add_variation][details][block][content][title]');
-    $this->assertText('Element form here');
+    $this->assertNoFieldByName($block_title_name);
+    $this->assertFieldByName($element_url_name);
   }
 
   /**
-   * Test variation set creation.
+   * Test block variation set creation.
    */
-  function testWhatForm() {
+  function testWhatBlockForm() {
     $this->drupalLogin($this->managerUser);
     $agent = $this->createTestAgent();
     // Create a personalized block from existing blocks.
@@ -3775,5 +3768,62 @@ class AcquiaLiftWebTestCampaignWizard extends AcquiaLiftWebTestBase {
     $this->assertEqual($option_set->stateful, 1);
     $this->assertEqual($option_set->preview_link, '<front>');
     $this->assertEqual($option_set->executor, 'callback');
+  }
+
+  /**
+   * Test block variation set creation.
+   */
+  function testWhatElementForm() {
+    $this->drupalLogin($this->managerUser);
+    $agent = $this->createTestAgent();
+    $this->drupalGet('admin/structure/personalize/manage/' . $agent->getMachineName() . '/variations');
+    // Indicate an element variation set type.
+    $edit = array(
+      'variations[add_variation][option_set_types][option_set_type]' => 'element',
+    );
+    $this->drupalPostAJAX(NULL, $edit, 'variations[add_variation][option_set_types][option_set_type]');
+
+    // Invalid url
+    $edit = array(
+      'variations[add_variation][details][element][content][url]' => 'invalid url',
+    );
+    $this->drupalPost(NULL, $edit, $this->getButton('wizard_element_navigate'));
+    $this->assertText('You have specified an invalid path');
+
+    // Valid url by path
+    $edit = array(
+      'variations[add_variation][details][element][content][url]' => 'node',
+    );
+    $this->drupalPost(NULL, $edit, $this->getButton('wizard_element_navigate'));
+    $this->assertNoText('You have specified an invalid path');
+    $this->assertUrl('node');
+
+    // Valid url by alias
+    $this->drupalGet('admin/structure/personalize/manage/' . $agent->getMachineName() . '/variations');
+    $edit = array(
+      'variations[add_variation][option_set_types][option_set_type]' => 'element',
+    );
+    $this->drupalPostAJAX(NULL, $edit, 'variations[add_variation][option_set_types][option_set_type]');
+    $edit = array(
+      'variations[add_variation][details][element][content][url]' => 'admin/structure',
+    );
+    $this->drupalPost(NULL, $edit, $this->getButton('wizard_element_navigate'));
+    $this->assertNoText('You have specified an invalid path');
+    $this->assertUrl('admin/structure');
+
+
+    // Valid external url
+    $this->drupalGet('admin/structure/personalize/manage/' . $agent->getMachineName() . '/variations');
+    // Indicate an element variation set type.
+    $edit = array(
+      'variations[add_variation][option_set_types][option_set_type]' => 'element',
+    );
+    $this->drupalPostAJAX(NULL, $edit, 'variations[add_variation][option_set_types][option_set_type]');
+    $edit = array(
+      'variations[add_variation][details][element][content][url]' => 'http://www.google.com',
+    );
+    $this->drupalPost(NULL, $edit, $this->getButton('wizard_element_navigate'));
+    $this->assertNoText('You have specified an invalid path');
+    $this->assertUrl('http://www.google.com/');
   }
 }

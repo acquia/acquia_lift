@@ -3219,32 +3219,32 @@ class AcquiaLiftWebTestCampaignWizard extends AcquiaLiftWebTestBase {
 
     $this->drupalGet('admin/structure/personalize/manage/' . $agent->getMachineName() . '/variations');
     // Make sure the type selection is shown by default without any selections.
-    $this->assertNoFieldChecked('edit-option-set-type-block');
-    $this->assertNoFieldChecked('edit-option-set-type-element');
+    $this->assertNoFieldChecked('edit-variations-add-variation-option-set-types-option-set-type-block');
+    $this->assertNoFieldChecked('edit-variations-add-variation-option-set-types-option-set-type-element');
 
     // Actual forms should not be shown yet.
-    $this->assertNoText('Block form here');
+    $this->assertNoFieldByName('variations[add_variation][details][block][content][title]');
     $this->assertNoText('Element form here');
 
     $edit = array(
-      'option_set_type' => 'block',
+      'variations[add_variation][option_set_types][option_set_type]' => 'block',
     );
 
-    $this->drupalPostAJAX(NULL, $edit, 'option_set_type');
-    $this->assertText('Block form here');
+    $this->drupalPostAJAX(NULL, $edit, 'variations[add_variation][option_set_types][option_set_type]');
+    $this->assertFieldByName('variations[add_variation][details][block][content][title]');
     $this->assertNoText('Element form here');
 
     $this->drupalGet('admin/structure/personalize/manage/' . $agent->getMachineName() . '/variations');
     // Actual forms should not be shown yet.
-    $this->assertNoText('Block form here');
+    $this->assertNoFieldByName('variations[add_variation][details][block][content][title]');
     $this->assertNoText('Element form here');
 
     $edit = array(
-      'option_set_type' => 'element',
+      'variations[add_variation][option_set_types][option_set_type]' => 'element',
     );
 
-    $this->drupalPostAJAX(NULL, $edit, 'option_set_type');
-    $this->assertNoText('Block form here');
+    $this->drupalPostAJAX(NULL, $edit, 'variations[add_variation][option_set_types][option_set_type]');
+    $this->assertNoFieldByName('variations[add_variation][details][block][content][title]');
     $this->assertText('Element form here');
   }
 
@@ -3256,11 +3256,17 @@ class AcquiaLiftWebTestCampaignWizard extends AcquiaLiftWebTestBase {
     $agent = $this->createTestAgent();
     // Create a personalized block from existing blocks.
     $this->drupalGet('admin/structure/personalize/manage/' . $agent->getMachineName() . '/variations');
+    // Indicate a block variation set type.
     $edit = array(
       'variations[add_variation][option_set_types][option_set_type]' => 'block',
-      'variations[add_variation][block][content][title]' => 'Muppets',
-      'variations[add_variation][block][content][pblock_wrapper][blocks][0][block][bid]' => 'comment_delta_recent',
-      'variations[add_variation][block][content][pblock_wrapper][blocks][1][block][bid]' => 'node_delta_recent',
+    );
+    $this->drupalPostAJAX(NULL, $edit, 'variations[add_variation][option_set_types][option_set_type]');
+
+    $edit = array(
+      'variations[add_variation][option_set_types][option_set_type]' => 'block',
+      'variations[add_variation][details][block][content][title]' => 'Muppets',
+      'variations[add_variation][details][block][content][pblock_wrapper][blocks][0][block][bid]' => 'comment_delta_recent',
+      'variations[add_variation][details][block][content][pblock_wrapper][blocks][1][block][bid]' => 'node_delta_recent',
     );
     $this->drupalPost(NULL, $edit, $this->getButton('wizard_next'));
 
@@ -3336,15 +3342,16 @@ class AcquiaLiftWebTestCampaignWizard extends AcquiaLiftWebTestBase {
       'variations[option_sets][option_set_1][content][pblock_wrapper][blocks][1][block][bid]' => '',
       'variations[option_sets][option_set_1][content][pblock_wrapper][blocks][1][block][add][title]' => 'Kermit',
       'variations[option_sets][option_set_1][content][pblock_wrapper][blocks][1][block][add][info]' => 'Piggy',
-      'variations[option_sets][option_set_1][content][pblock_wrapper][blocks][1][block][add][body][value]' => "It's complicated",
+      'variations[option_sets][option_set_1][content][pblock_wrapper][blocks][1][block][add][body][value]' => 'complicated',
     );
     $this->drupalPost(NULL, $edit, $this->getButton('wizard_next'));
 
-    $option_sets = personalize_option_set_load_by_agent($agent->getMachineName());
+    $option_sets = personalize_option_set_load_by_agent($agent->getMachineName(), TRUE);
     $this->assertEqual(count($option_sets), 1);
 
     $option_set = reset($option_sets);
     $this->assertEqual(count($option_set->options), 2);
-    debug($option_set);
+    $this->assertEqual($option_set->label, 'Great Muppet Caper');
+    $this->assertEqual($option_set->options[1]['bid'], 'block_delta_1');
   }
 }

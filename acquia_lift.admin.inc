@@ -1155,15 +1155,19 @@ function acquia_lift_new_target_audience_form_submit($form, &$form_state) {
   else {
     drupal_set_message(t('There was a problem saving the new target audience.'), 'error');
   }
-
 }
 
 /**
  * Saves a new target audience for an agent.
  *
  * @param $label
+ *   The human-readable name of the audience to create.
  * @param $agent_name
+ *   THe name of the agent to add the audience to.
  * @param $contexts
+ *   The contexts that make up the audience definition.
+ * @param $strategy
+ *   The strategy to use for multiple contexts, i.e. 'AND' or 'OR'
  */
 function acquia_lift_target_audience_save($label, $agent_name, $contexts, $strategy) {
   module_load_include('inc', 'personalize', 'personalize.admin');
@@ -1706,8 +1710,16 @@ function acquia_lift_get_structure_from_targeting($option_set) {
 
 /**
  * Get the option set where targeting rules are defined.
+ *
+ * The assumption here is that if you have multiple option sets then targeting
+ * is only defined on one of them as we currently do not support targeting for
+ * MVTs.
+ *
  * @param $agent
- * @return mixed
+ *   A stdClass object representing the agent to get the option set for.
+ * @return stdClass|NULL
+ *   The option set to use for targeting rules or NULL if the agent has no option
+ *   sets.
  */
 function acquia_lift_get_option_set_for_targeting($agent_name) {
   $option_sets = personalize_option_set_load_by_agent($agent_name);

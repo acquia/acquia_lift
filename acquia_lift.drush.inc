@@ -57,30 +57,48 @@ function drush_acquia_lift_campaign_sync() {
 
   // Step 2. Select sync type.
   $options = array(
-    'all' => dt('Sync all campaigns.'),
-    'one' => dt('Sync one campaign by its machine name.'),
+    'all' => dt('Sync all campaigns'),
+    'one' => dt('Sync one campaign'),
   );
   $type_selection = drush_choice($options, dt('Select sync type:'));
   if (!$type_selection) {
     return;
   }
 
-  // Step 3a. Select a campaign (if the type is "one").
-  if ($type_selection == 'one') {
-    $agent_names = array_keys($agents);
-    $name_selection = drush_choice($agent_names, dt('Select a campaign machine name to sync:'));
-    if (!$name_selection) {
-      return;
-    }
-    $agent_name = $agent_names[$name_selection];
-    $agent = $agents[$agent_name];
-    $agents = array($agent_name => $agent);
+  // Step 3. Based on type, do further selections.
+  switch ($type_selection) {
+    // Step 3a. Select all campaigns.
+    case 'all':
+      $agent_names = array_keys($agents);
+      $options = array(
+        'yes' => dt('Confirm'),
+      );
+      $confirm_selection = drush_choice($options, dt('Confirm syncing all campaigns:'). "\n- " . implode("\n- ", $agent_names));
+      if (!$confirm_selection) {
+        return;
+      }
+      break;
+    // Step 3b. Select one campaign.
+    case 'one':
+      $agent_names = array_keys($agents);
+      $name_selection = drush_choice($agent_names, dt('Select a campaign machine name to sync:'));
+      if (!$name_selection) {
+        return;
+      }
+      $agent_name = $agent_names[$name_selection];
+      $agent = $agents[$agent_name];
+      $agents = array($agent_name => $agent);
+      break;
   }
 
   // Step 4. Sync selected campaign(s)
   // First delete the queue because we are about to sync everything now.
   acquia_lift_delete_queue();
+  // For each agent, set up a batch job including all the required save operations,
+  // then process immediately.
   foreach ($agents as $agent_name => $agent) {
+    $message = "\n" . dt('Synchronizing campaign ' . $agent_name) . " ...";
+    drush_print($message);
     $operations = acquia_lift_get_sync_operations_for_agents(array($agent_name => $agent));
     $batch_operations = array();
     foreach ($operations as $operation) {
@@ -88,12 +106,44 @@ function drush_acquia_lift_campaign_sync() {
     }
     $batch = array(
       'operations' => $batch_operations,
-      'finished' => 'acquia_lift_batch_finished',
+      'finished' => 'acquia_lift_drush_batch_finished',
       'file' => drupal_get_path('module', 'acquia_lift') . '/acquia_lift.batch.inc',
     );
+
+    // Set and process.
     batch_set($batch);
     $batch =& batch_get();
     $batch['progressive'] = false;
     drush_backend_batch_process();
+  }
+}
+
+/**
+ * Batch API callback for when processing of all items is complete.
+ *
+ * @param $success
+ *   Whether or not the batch completed successfully.
+ * @param $results
+ *   An array holding the results of each operation.
+ * @param $operations
+ *   An array of unprocessed operations.
+ */
+function acquia_lift_drush_batch_finished($success, $results, $operations) {
+  // See if an error occurred.
+  if (!$success) {
+    // $operations contains the operations that remained unprocessed.
+    $error_operation = reset($operations);
+    $message = '- ' . dt('An error occurred while processing %error_operation with arguments: @arguments', array('%error_operation' => $error_operation[0], '@arguments' => print_r($error_operation[1], TRUE)));
+    drush_log($message, 'error');
+    return;
+  }
+
+  foreach ($results as $result) {
+    $message = '- ' . dt($result);
+    $message_type = 'ok';
+    if (strpos($result, ACQUIA_LIFT_OPERATION_ERROR_PREFIX) === 0) {
+      $message_type = 'error';
+    }
+    drush_log($message, $message_type);
   }
 }

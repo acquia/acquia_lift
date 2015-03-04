@@ -104,6 +104,7 @@ function acquia_lift_personalize_campaign_wizard_variations_alter(&$form, &$form
   }
   // Add an option set edit card for each option set.
   foreach ($option_sets as $option_set) {
+    $option_set_plugin = personalize_get_option_set_type($option_set->plugin);
     $form['variations']['option_sets']['option_set_' . $option_set->osid] = array(
       '#tree' => TRUE,
       '#type' => 'container',
@@ -119,8 +120,22 @@ function acquia_lift_personalize_campaign_wizard_variations_alter(&$form, &$form
       '#type' => 'value',
       '#value' => $option_set,
     );
+    $form['variations']['option_sets']['option_set_' . $option_set->osid]['header'] = array(
+      '#type' => 'container',
+    );
     switch ($option_set->plugin) {
       case 'block':
+        $delete_link = module_hook($option_set_plugin['module'], 'personalize_delete_link') ? module_invoke($option_set_plugin['module'], 'personalize_delete_link', $option_set) : '';
+        $form['variations']['option_sets']['option_set_' . $option_set->osid]['header']['delete'] = array(
+          '#markup' => l(t('Delete'), $delete_link, array(
+            'attributes' => array(
+              'class' => array('acquia-lift-delete')
+            ),
+            'query' => array(
+              'destination' => current_path(),
+            )
+          )),
+        );
         _acquia_lift_personalize_campaign_wizard_variations_block($form['variations']['option_sets']['option_set_' . $option_set->osid]['content'], $form_state, $agent_data, array('variations', 'option_sets', 'option_set_' . $option_set->osid, 'content'), $option_set);
         break;
       case 'element':
@@ -130,10 +145,16 @@ function acquia_lift_personalize_campaign_wizard_variations_alter(&$form, &$form
         break;
       // Unsupported display - get an edit link if provided by the plugin.
       default:
+        $edit_link = module_hook($option_set_plugin['module'], 'personalize_edit_link') ? module_invoke($option_set_plugin['module'], 'personalize_edit_link', $option_set) : '';
+        if (!empty($edit_link)) {
+          $markup = l(t('Edit this variation set'), $edit_link);
+        }
+        else {
+          $markup = t('Variation set type ' . $option_set->plugin . ' does not provide a link for editing.');
+        }
         $form['variations']['option_sets']['option_set_' . $option_set->osid]['content'] = array(
-          '#markup' => 'Option set form for type: ' . $option_set->plugin,
+          '#markup' => $markup,
         );
-
     }
     // Add the advanced settings form.
     $form['variations']['option_sets']['option_set_' . $option_set->osid]['advanced'] = personalize_campaign_wizard_variations_advanced($form, $form_state, $option_set);

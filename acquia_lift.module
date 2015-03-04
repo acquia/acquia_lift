@@ -1442,7 +1442,9 @@ function acquia_lift_library() {
       'jQuery(document).ready(function () { jQuery(".el-card").card(); })' => array('type' => 'inline'),
     ),
     'css' => array(
-      $path . '/css/acquia_lift.card.css',
+      $path . '/css/acquia_lift.card.css' => array(
+        'group' => CSS_THEME,
+      ),
     ),
     'dependencies' => array(
       array('system', 'jquery'),

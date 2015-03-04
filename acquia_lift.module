@@ -203,6 +203,39 @@ function acquia_lift_menu() {
     'type' => MENU_CALLBACK,
     'file' => 'acquia_lift.admin.unibar.inc',
   );
+  $items['admin/structure/personalize/manage/%personalize_agent/lift-add-audience'] = array(
+    'title' => t('Add target audience'),
+    'weight' => 1,
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('acquia_lift_new_target_audience_form', 4),
+    'access callback' => 'acquia_lift_target_access',
+    'access arguments' => array(4),
+    'type' => MENU_LOCAL_TASK,
+    'file' => 'acquia_lift.admin.inc',
+  );
+  $items['admin/structure/personalize/manage/%personalize_agent/lift-target'] = array(
+    'title' => t('Target variations'),
+    'weight' => 2,
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('acquia_lift_targeting_form', 4),
+    'access callback' => 'acquia_lift_target_access',
+    'access arguments' => array(4),
+    'type' => MENU_LOCAL_TASK,
+    'file' => 'acquia_lift.admin.inc',
+  );
+
+  $items['admin/structure/personalize/manage/%personalize_agent/lift-review'] = array(
+    'title' => t('Apply changes'),
+    'weight' => 3,
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('acquia_lift_review_form', 4),
+    'access callback' => 'acquia_lift_target_access',
+    'access arguments' => array(4),
+    'type' => MENU_LOCAL_TASK,
+    'file' => 'acquia_lift.admin.inc',
+  );
+
+
   return $items;
 }
 
@@ -519,6 +552,16 @@ function acquia_lift_personalize_agent_type() {
   return $info;
 }
 
+/**
+ * Access callback for the Lift Target menu items.
+ *
+ * @return bool
+ */
+function acquia_lift_target_access($agent) {
+  return $agent->plugin == 'acquia_lift_target' &&
+    user_access('manage personalized content') &&
+    variable_get('acquia_lift_target_enabled', FALSE);
+}
 /**
  * Implements hook_personalize_agent_presave().
  */
@@ -2399,11 +2442,29 @@ function acquia_lift_form_personalize_campaign_wizard_alter(&$form, &$form_state
 }
 
 /**
+ * Implements hook_form_FORM_ID_alter().
+ *
+ * Alters the option sets form so that it can't be used for explicit targeting
+ * on a Lift Target agent.
+ */
+function acquia_lift_form_personalize_agent_option_sets_form_alter(&$form, &$form_state) {
+  if ($form['#agent']->plugin != 'acquia_lift_target') {
+    return;
+  }
+  foreach ($form['variations']['primary']['option_sets'] as $name => $elements) {
+    if (isset($elements['options'])) {
+      unset($form['variations']['primary']['option_sets'][$name]['options']);
+    }
+  }
+}
+
+/**
  * Ajax callback for the "Reset data" button.
  */
 function personalize_acquia_lift_ajax_callback($form, $form_state) {
   return $form['agent_form']['agent_fieldset']['header']['reset_lift_agent'];
 }
+
 
 /**
  * Submit callback for the "Reset data" button.

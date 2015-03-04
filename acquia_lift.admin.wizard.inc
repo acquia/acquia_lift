@@ -138,6 +138,17 @@ function acquia_lift_personalize_campaign_wizard_variations_alter(&$form, &$form
     }
     switch ($option_set->plugin) {
       case 'block':
+        $delete_link = module_hook($option_set_plugin['module'], 'personalize_delete_link') ? module_invoke($option_set_plugin['module'], 'personalize_delete_link', $option_set) : '';
+        $form['variations']['option_sets']['option_set_' . $option_set->osid]['header']['delete'] = array(
+          '#markup' => l(t('Delete'), $delete_link, array(
+            'attributes' => array(
+              'class' => array('acquia-lift-delete')
+            ),
+            'query' => array(
+              'destination' => current_path(),
+            )
+          )),
+        );
         _acquia_lift_personalize_campaign_wizard_variations_block($form['variations']['option_sets']['option_set_' . $option_set->osid]['content'], $form_state, $agent_data, array('variations', 'option_sets', 'option_set_' . $option_set->osid, 'content'), $option_set);
         break;
       case 'elements':

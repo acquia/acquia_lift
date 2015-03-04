@@ -1,3 +1,112 @@
-.el-card:not(.is-open) .el-card-details {
+.el-card__gist:before, .el-card__summary:before, .el-card:before, .el-card__header:before, .el-card__content:before, .el-card__footer:before, .el-card__gist:after, .el-card__summary:after, .el-card:after, .el-card__header:after, .el-card__content:after, .el-card__footer:after {
+  content: " ";
+  display: table;
+}
+.el-card__gist:after, .el-card__summary:after, .el-card:after, .el-card__header:after, .el-card__content:after, .el-card__footer:after {
+  clear: both;
+}
+
+/**
+ * Provide general styles for cards.
+ */
+.el-card__gist, .el-card__summary, .el-card, .el-card__header, .el-card__title, .el-card__content, .el-card__footer {
+  -webkit-transform: translateZ(0);
+  transform: translateZ(0);
+  -webkit-transition: all .3s ease-out;
+  transition: all .3s ease-out;
+}
+
+.el-card__gist, .el-card__summary, .el-card {
+  border: 0.08rem solid #aaaaaa;
+  border-radius: 0.15rem;
+  box-shadow: 0 0.05rem 0 #aaaaaa;
+  font-family: "Helvetica Neue", helvetica, "Segoe UI", segoe, "Ubuntu", "Droid Sans", "Arial", sans-serif;
+  margin: 1.5rem;
+  position: relative;
+  top: 0;
+}
+
+.el-card__header {
+  background-color: #cccccc;
+  margin: 0;
+  padding: 0.75rem;
+}
+
+.el-card__title {
+  font-size: 1.125rem;
+  line-height: 1.33333;
+  margin-top: 0;
+  padding-top: 0.37rem;
+  margin-bottom: 0.63rem;
+  float: left;
+  font-weight: normal;
+}
+
+.el-card__content {
+  padding-right: 0.75rem;
+  padding-left: 0.75rem;
+}
+
+.el-card__footer {
+  background-color: #eeeeee;
+  padding-right: 0.75rem;
+  padding-left: 0.75rem;
+}
+
+.el-card__actions {
+  float: right;
+  left: -100%;
+  margin: 0;
+  margin-right: -100%;
+  padding: 0;
+  position: relative;
+}
+
+.el-card__action {
+  display: inline-block;
+}
+
+.el-card__action__link {
+  display: inline-block;
+}
+
+/**
+ * Add styles for different variations.
+ */
+/**
+ * Add styles for different states.
+ */
+.el-card.is-compact {
+  margin-top: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+
+.el-card.is-active {
+  border-color: #018dc7;
+  box-shadow: 0 0.4rem 1rem rgba(170, 170, 170, 0.6);
+  margin-right: 0.75rem;
+  margin-left: 0.75rem;
+  top: -0.395rem;
+}
+
+.is-compact .el-card__header {
+  background-color: transparent;
+  padding-top: 0;
+  padding-bottom: 0;
+}
+
+.is-active .el-card__header {
+  background-color: #29aae1;
+}
+
+.is-active .el-card__title {
+  font-size: 1.5rem;
+  line-height: 2;
+  margin-top: 0;
+  padding-top: 0.37rem;
+  margin-bottom: 0.63rem;
+}
+
+.el-card:not(.is-active) .el-card__content {
   display: none;
 }

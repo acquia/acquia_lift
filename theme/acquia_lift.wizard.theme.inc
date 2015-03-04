@@ -15,6 +15,7 @@ function theme_acquia_lift_card($variables) {
   $element = $variables['element'];
   $footer_children = empty($element['footer']) ? array() : element_children($element['footer']);
   $card_label = isset($element['#title']) ? $element['#title'] : '';
+  $header_actions = isset($element['#header_actions']) && is_array($element['#header_actions']) ? $element['#header_actions'] : array();
   unset($element['footer']);
 
   $data_attributes = array(
@@ -25,11 +26,20 @@ function theme_acquia_lift_card($variables) {
   drupal_add_library('acquia_lift', 'acquia_lift.card');
   $html = '';
   $html .= '<div class="el-card" ' . drupal_attributes($data_attributes) . '>';
-  $html .= '<div class="el-card-header"><span class="el-card-label">' . $card_label . '</span></div>';
-  $html .= '<div class="el-card-details">';
+  $html .= '<div class="el-card__header">';
+  $html .= '<h2 class="el-card__title">' . $card_label . '</h2>';
+  if (!empty($header_actions)) {
+    $html .= '<ul class="el-card__actions">';
+    foreach ($header_actions as $link) {
+      $html .= '<li class="el-card__action">' . $link . '</li>';
+    }
+    $html .= '</ul>';
+  }
+  $html .= '</div>';
+  $html .= '<div class="el-card__content">';
   $html .= drupal_render_children($element);
   if (!empty($footer_children)) {
-    $html .= '<div class="el-card-footer">' . drupal_render($footer_children) . '</div>';
+    $html .= '<div class="el-card__footer">' . drupal_render($footer_children) . '</div>';
   }
   $html .= '</div>';
   $html .= '</div>';

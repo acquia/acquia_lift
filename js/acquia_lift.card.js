@@ -156,34 +156,34 @@
 
   Card.prototype.setOpen = function (open) {
     if (open) {
-      this.$element.addClass('is-open');
+      this.$element.addClass('is-active');
     } else {
-      this.$element.removeClass('is-open');
+      this.$element.removeClass('is-active');
     }
     this.getDetails().attr('aria-expanded', open);
   };
 
   Card.prototype.isOpen = function() {
-    return this.$element.hasClass('is-open');
+    return this.$element.hasClass('is-active');
   };
 
   /**
    * Helper functions to return the main components of the card.
    */
   Card.prototype.getHeader = function () {
-    return this.$element.find('.el-card-header');
+    return this.$element.find('.el-card__header');
   };
 
   Card.prototype.getHeaderLabel = function () {
-    return this.getHeader().find('.el-card-label');
+    return this.getHeader().find('.el-card__title');
   };
 
   Card.prototype.getDetails = function () {
-    return this.$element.find('.el-card-details');
+    return this.$element.find('.el-card__content');
   };
 
   Card.prototype.getFooter = function () {
-    return this.$element.find('.el-card-footer');
+    return this.$element.find('.el-card__footer');
   };
 
   // CARD PLUGIN DEFINITION
@@ -194,13 +194,13 @@
   $.fn.card = function (option) {
     return this.each(function () {
       var $this = $(this),
-        data = $this.data('bs.card'),
+        data = $this.data('el.card'),
         options = typeof option === 'object' && option;
       if (!data && option === 'destroy') {
         return;
       }
       if (!data) {
-        $this.data('bs.card', (data = new Card(this, options)));
+        $this.data('el.card', (data = new Card(this, options)));
       }
       if (typeof option === 'string') {
         data[option]();

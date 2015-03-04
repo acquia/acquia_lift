@@ -169,10 +169,7 @@ function acquia_lift_option_set_types_ui() {
         'alt' => t('Webpage element'),
         'title' => t('Select this option to create a variation set from web page elements.'),
       )),
-<<<<<<< HEAD
       'path' => 'admin/structure/personalize/variations/personalize-elements/add',
-=======
->>>>>>> Move add variation menu into form structure.
     ),
     'block' => array(
       'title' => t('Drupal blocks'),
@@ -182,10 +179,7 @@ function acquia_lift_option_set_types_ui() {
         'alt' => t('Drupal block'),
         'title' => t('Select this option to create a variation set from Drupal content blocks.'),
       )),
-<<<<<<< HEAD
       'path' => 'admin/structure/personalize/variations/personalize-blocks/add',
-=======
->>>>>>> Move add variation menu into form structure.
     ),
   );
 }

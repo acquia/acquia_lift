@@ -1475,22 +1475,6 @@ function acquia_lift_library() {
     ),
   );
 
-  // Special input types.
-  $libraries['acquia_lift.inputs'] = array(
-    'title' => 'Acquia Lift inputs',
-    'version' => VERSION,
-    'js' => array(
-      $path . '/js/acquia_lift.inputs.js' => array(),
-    ),
-    'css' => array(
-      $path . '/css/acquia_lift.inputs.css' ,
-    ),
-    'dependencies' => array(
-      array('system', 'jquery'),
-      array('system', 'jquery.once'),
-    ),
-  );
-
   /*** 3rd PARTY LIBRARY DEPENDENCIES ***/
   // Ensure that each 3rd party library dependency has a default variant.
   // Convert Libraries module data structures to library data structures.

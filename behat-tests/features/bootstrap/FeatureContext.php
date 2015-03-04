@@ -20,9 +20,7 @@ class FeatureContext extends RawDrupalContext implements SnippetAcceptingContext
    *   - temp_path: The path to temporary location where files, such as error
    *     screenshots, can be written.  Default value: /tmp/behat
    */
-  protected $context_parameters = array(
-    'temp_path' => '/tmp/behat',
-  );
+  protected $context_parameters = array();
 
   /**
    * Stores campaigns at start of scenario for comparison with those at the end.
@@ -634,6 +632,7 @@ class FeatureContext extends RawDrupalContext implements SnippetAcceptingContext
     if (empty($element)) {
       throw new \Exception(sprintf('Could not find element in %region using xpath %s', $region, $xpath));
     }
+    return $element;
   }
 
   /**

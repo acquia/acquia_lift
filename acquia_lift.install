@@ -203,6 +203,31 @@ function _acquia_lift_build_menu($menu_name) {
   );
   menu_link_save($item);
 
+  // Create a link to the all campaigns page.
+  $item = array(
+    'link_title' => 'All campaigns',
+    'link_path' => 'admin/structure/personalize',
+    'menu_name' => $menu_name,
+    'options' => array(
+      'attributes' => array(
+        'aria-role' => 'button',
+        'aria-pressed' => 'false',
+        'class' => array(
+          'visitor-actions-ui-ignore',
+          'acquia-lift-menu-all',
+          'acquia-lift-menu-link',
+          'overlay-exclude',
+        ),
+        'id' => 'acquia-lift-menu-campaign-all',
+      ),
+      'html' => FALSE,
+    ),
+    'expanded' => 1,
+    'weight' => 9,
+    'plid' => $item_campaign,
+  );
+  menu_link_save($item);
+
   // Create a link for attaching option sets.
   $item = array(
     'link_title' => 'Variation sets',
@@ -251,6 +276,31 @@ function _acquia_lift_build_menu($menu_name) {
     ),
     'expanded' => 1,
     'weight' => 3,
+    'plid' => $item_cv,
+  );
+  menu_link_save($item);
+
+  // Create a link to the all variation sets page.
+  $item = array(
+    'link_title' => 'All variation sets',
+    'link_path' => 'admin/structure/personalize/variations',
+    'menu_name' => $menu_name,
+    'options' => array(
+      'attributes' => array(
+        'aria-role' => 'button',
+        'aria-pressed' => 'false',
+        'class' => array(
+          'visitor-actions-ui-ignore',
+          'acquia-lift-menu-all',
+          'acquia-lift-menu-link',
+          'overlay-exclude',
+        ),
+        'id' => 'acquia-lift-menu-option-set-all',
+      ),
+      'html' => FALSE,
+    ),
+    'expanded' => 1,
+    'weight' => 9,
     'plid' => $item_cv,
   );
   menu_link_save($item);
@@ -304,6 +354,30 @@ function _acquia_lift_build_menu($menu_name) {
   );
   menu_link_save($item);
 
+  // Create a link to the goals page.
+  $item = array(
+    'link_title' => 'All goals',
+    'link_path' => 'admin/structure/personalize/goals',
+    'menu_name' => $menu_name,
+    'options' => array(
+      'attributes' => array(
+        'aria-role' => 'button',
+        'aria-pressed' => 'false',
+        'class' => array(
+          'visitor-actions-ui-ignore',
+          'acquia-lift-menu-all',
+          'acquia-lift-menu-link',
+          'overlay-exclude',
+        ),
+        'id' => 'acquia-lift-menu-goal-all',
+      ),
+      'html' => FALSE,
+    ),
+    'expanded' => 1,
+    'weight' => 9,
+    'plid' => $item_goal,
+  );
+  menu_link_save($item);
 
   // Create a link to the reports page.
   $item = array(
@@ -554,6 +628,14 @@ function acquia_lift_update_7016() {
         ->execute();
     }
   }
+}
+
+/**
+ * Update Acquia Lift menu bar to disable click-through on the root items.
+ */
+function acquia_lift_update_7017() {
+    menu_delete_links('acquia-lift-controls');
+    _acquia_lift_build_menu('acquia-lift-controls');
 }
 
 /**

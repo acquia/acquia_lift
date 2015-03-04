@@ -3737,5 +3737,37 @@ class AcquiaLiftWebTestCampaignWizard extends AcquiaLiftWebTestBase {
     $this->drupalGet('admin/structure/personalize');
     $settings = $this->drupalGetSettings();
     $this->assertTrue(empty($settings['acquia_lift']['toolbarEditMode']));
+
+    // Create an element variation for our agent.
+    $option_set = array(
+      'label' => 'Element test set 1',
+      'plugin' => 'elements',
+      'agent' => $agent->getMachineName(),
+      'executor' => 'personalizeElements',
+      'options' => array(
+        array(
+          'option_label' => PERSONALIZE_CONTROL_OPTION_LABEL,
+          'option_id' => PERSONALIZE_CONTROL_OPTION_ID,
+          'personalize_elements_content' => '',
+        ),
+        array(
+          'option_label' => 'Option A',
+          'option_id' => 'option-a',
+          'personalize_elements_content' => 'With our very special guest star',
+        ),
+      ),
+      'data' => array(
+        'personalize_elements_selector' => '#some-selector',
+        'personalize_elements_type' => 'editText',
+        'pages' => 'node',
+      ),
+    );
+    personalize_option_set_save((object) $option_set);
+    // Go to the edit page and verify that this option set is displayed and
+    // links to its "pages" page for editing.
+    $this->drupalGet('admin/structure/personalize/manage/' . $agent->getMachineName() . '/variations');
+    $this->assertText('Element test set 1');
+    $this->drupalPost(NULL, NULL, 'Edit');
+    $this->assertUrl('node');
   }
 }

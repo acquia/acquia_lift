@@ -66,22 +66,23 @@ function drush_acquia_lift_campaign_sync() {
   }
 
   // Step 3. Based on type, do further selections.
+  $agent_names = array_keys($agents);
   switch ($type_selection) {
     // Step 3a. Select all campaigns.
     case 'all':
-      $agent_names = array_keys($agents);
       $options = array(
         'yes' => dt('Confirm'),
       );
-      $confirm_selection = drush_choice($options, dt('Confirm syncing all campaigns:'). "\n- " . implode("\n- ", $agent_names));
+      $options_message = "\n" . dt('Confirm syncing all campaigns:'). "\n- " . implode("\n- ", $agent_names);
+      $confirm_selection = drush_choice($options, $options_message);
       if (!$confirm_selection) {
         return;
       }
       break;
     // Step 3b. Select one campaign.
     case 'one':
-      $agent_names = array_keys($agents);
-      $name_selection = drush_choice($agent_names, dt('Select a campaign machine name to sync:'));
+      $options_message = "\n" . dt('Select a campaign machine name to sync:');
+      $name_selection = drush_choice($agent_names, $options_message);
       if (!$name_selection) {
         return;
       }

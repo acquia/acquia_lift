@@ -353,6 +353,17 @@ function acquia_lift_profiles_put_action($action_name, $label, &$errors = array(
 }
 
 /**
+ * Implements hook_visitor_actions_save_action().
+ */
+function acquia_lift_profiles_visitor_actions_save_action($action) {
+  $errors = array();
+  acquia_lift_profiles_put_action($action['machine_name'], acquia_lift_profiles_get_label_for_action($action), $errors);
+  foreach ($errors as $error) {
+    drupal_set_message($error, 'error');
+  }
+}
+
+/**
  * Calls the Acquia Lift Profiles API to delete an event corresponding to a
  * Visitor Actions action
  *
@@ -374,6 +385,24 @@ function acquia_lift_profiles_delete_action($action_name) {
  */
 function acquia_lift_profiles_visitor_actions_delete_action($action) {
   acquia_lift_profiles_delete_action($action['machine_name']);
+}
+
+/**
+ * Returns the human-readable name to use for an action.
+ *
+ * Visitor Actions module defaults the label to 'unlabeled', which is dumb, and
+ * should be changed in Visitor Actions module, but for now we'll just use the
+ * machine name if the label is 'unlabeled'.
+ *
+ * @param $action
+ *   THe action to get a label for.
+ */
+function acquia_lift_profiles_get_label_for_action($action) {
+  $label = !empty($action['label']) ? $action['label'] : $action['machine_name'];
+  if ($label == 'unlabeled') {
+    $label = $action['machine_name'];
+  };
+  return $label;
 }
 
 /**

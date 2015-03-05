@@ -252,30 +252,9 @@ function acquia_lift_profiles_admin_form_submit($form, &$form_state) {
     variable_set('acquia_lift_profiles_udf_mappings', $mapped_contexts);
   }
 
-  drupal_set_message(t('The configuration settings have been saved.'), 'status');
-}
-
-/**
- * Simple form for initiating batch syncing of actions to Lift Web.
- */
-function acquia_lift_profiles_batch_sync_form($form, &$form_state) {
-  $form['submit'] = array(
-    '#type' => 'submit',
-    '#value' => t('Synchronize all actions Acquia Lift Web')
-  );
-  $form['explanation'] = array(
-    '#type' => 'markup',
-    '#markup' => '<div>' . t('Sends information about the visitor actions that exist on the site to the Lift Web service.') . '</div>'
-  );
-  return $form;
-}
-
-/**
- * Submit callback for the batch sync form.
- */
-function acquia_lift_profiles_batch_sync_form_submit($form, &$form_state) {
   module_load_include('inc', 'acquia_lift_profiles', 'acquia_lift_profiles.batch');
   acquia_lift_batch_sync_actions();
+  drupal_set_message(t('The configuration settings have been saved.'), 'status');
 }
 
 /**

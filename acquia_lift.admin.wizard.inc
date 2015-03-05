@@ -374,6 +374,7 @@ function acquia_lift_personalize_campaign_wizard_variations_submit(&$form, &$for
 
   // Run the base submit form handling.
   $agent = personalize_campaign_wizard_submit_base($form, $form_state);
+  $agent_instance = personalize_agent_load_agent($agent->machine_name);
 
   // Common functionality needed before submitting the block submission
   // handler whether for new or existing blocks.
@@ -421,10 +422,7 @@ function acquia_lift_personalize_campaign_wizard_variations_submit(&$form, &$for
   // Set the clicked button ID back.
   $form_state['clicked_button']['#id'] = $click_id;
 
-  // If user selected to add another variation, then return to the variations step.
-
-  // Otherwise the next step is "why".
-  $form_state['storage']['step'] = 'goals';
+  $form_state['storage']['step'] = _personalize_campaign_wizard_next_step($form_state, $agent_instance);;
   $form_state['rebuild'] = TRUE;
 }
 

@@ -85,8 +85,6 @@ function acquia_lift_personalize_campaign_wizard_variations_alter(&$form, &$form
   $form['#validate'] = array('acquia_lift_personalize_campaign_wizard_variations_validate');
   $form['#submit'] = array('acquia_lift_personalize_campaign_wizard_variations_submit');
 
-  $form['#attached']['css'][] = drupal_get_path('module', 'acquia_lift') . '/css/acquia_lift.admin.css';
-
   $agent_data = $form['#agent'];
   if (empty($agent_data->machine_name)) {
     return;
@@ -247,6 +245,19 @@ function acquia_lift_personalize_campaign_wizard_targeting_alter(&$form, &$form_
     module_load_include('inc', 'acquia_lift', 'acquia_lift.ui');
     acquia_lift_chosenify_element($form['targeting']['visitor_context']);
   }
+
+  // Explicit targeting in Acquia Lift works based on audience designations
+  // rather than simply with set context rules.
+  $agent_data = $form['#agent'];
+  $agent_instance = personalize_agent_load_agent($agent_data->machine_name);
+  if (!($agent_instance instanceof PersonalizeExplicitTargetingInterface)) {
+    return;
+  }
+  // Take over the form validation and submit handling.
+  $form['#validate'] = array('acquia_lift_personalize_campaign_wizard_targeting_validate');
+  $form['#submit'] = array('acquia_lift_personalize_campaign_wizard_targeting_submit');
+
+  unset($form['targeting']['options']);
 }
 
 /**
@@ -641,3 +652,5 @@ function _acquia_lift_personalize_campaign_wizard_variations_element(&$form, &$f
     );
   }
 }
+
+function _acquia_lift_personalize_campaign_wizard_targeting_audience(&$for, &$form_state, $agent_data, $)

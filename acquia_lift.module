@@ -546,12 +546,18 @@ function acquia_lift_target_access($agent) {
     user_access('manage personalized content') &&
     variable_get('acquia_lift_target_enabled', FALSE);
 }
+
 /**
  * Implements hook_personalize_agent_presave().
  */
 function acquia_lift_personalize_agent_presave($agent) {
   if (!acquia_lift_owns_agent($agent)) {
     return;
+  }
+  $account = variable_get('acquia_lift_account_info', array());
+  $current = personalize_agent_load($agent->machine_name);
+  if (empty($current)) {
+    $agent->machine_name = AcquiaLiftAPI::getInstance($account)->ensureUniqueAgentName($agent->machine_name, PERSONALIZE_MACHINE_NAME_MAXLENGTH);
   }
   // Make sure the required configurations are set.
   if (!isset($agent->data['decision_style'])) {

@@ -551,7 +551,7 @@ function acquia_lift_target_access($agent) {
  * Implements hook_personalize_agent_presave().
  */
 function acquia_lift_personalize_agent_presave($agent) {
-  if (!acquia_lift_owns_agent($agent)) {
+  if (!in_array($agent->plugin, array('acquia_lift', 'acquia_lift_simple_ab'))) {
     return;
   }
   $account = variable_get('acquia_lift_account_info', array());

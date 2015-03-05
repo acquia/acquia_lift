@@ -2419,6 +2419,8 @@ function acquia_lift_form_personalize_campaign_wizard_alter(&$form, &$form_state
   if (empty($agent->machine_name) || !acquia_lift_is_testing_agent($agent)) {
     return;
   }
+  $form['#attached']['css'][] = drupal_get_path('module', 'acquia_lift') . '/css/acquia_lift.admin.css';
+
   module_load_include('inc', 'acquia_lift', 'acquia_lift.admin.wizard');
   // We have to specify the include file so as not to lose it during rendering from ajax.
   // @see personalize_agent_form_ajax_submit()

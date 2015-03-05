@@ -346,8 +346,10 @@ function acquia_lift_profiles_put_action($action_name, $label, &$errors = array(
   try {
     $acquia_lift_profiles_api = ALProfilesAPI::getInstance(variable_get('acquia_lift_profiles_account_name', ''), variable_get('acquia_lift_profiles_api_url', ''));
     $acquia_lift_profiles_api->saveEvent($action_name, $label);
+    watchdog('acquia_lift_profiles', 'Synchronized the action @action to Acquia Lift Web.', array('@action' => $action_name), WATCHDOG_INFO);
   }
   catch (ALProfilesException $e) {
+    watchdog('acquia_lift_profiles', 'There was a problem saving the action @action to Acquia Lift Profiles. Please try again later.', array('@action' => $action_name), WATCHDOG_ERROR);
     $errors[] = $e->getMessage();
   }
 }

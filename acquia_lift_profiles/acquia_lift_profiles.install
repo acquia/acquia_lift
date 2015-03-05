@@ -121,3 +121,65 @@ function acquia_lift_profiles_update_7001() {
     menu_rebuild();
   }
 }
+
+function acquia_lift_profiles_update_7002(&$sandbox) {
+  drupal_load('module', 'acquia_lift_profiles');
+  if (!acquia_lift_profiles_is_configured(TRUE)) {
+    return;
+  }
+  // We need action defined in code as well as those in the db.
+  $actions = module_invoke_all('visitor_actions_info');
+  $result = db_query('SELECT machine_name, label FROM {visitor_actions_actions}');
+  foreach ($result as $row) {
+    $actions[$row->machine_name] = array(
+      'machine_name' => $row->machine_name,
+      'label' => $row->label
+    );
+  }
+  if (empty($actions)) {
+    return;
+  }
+  module_load_include('inc', 'personalize', 'includes/personalize.classes');
+  module_load_include('inc', 'acquia_lift', 'includes/acquia_lift.classes');
+  module_load_include('inc', 'acquia_lift_profiles', 'includes/acquia_lift_profiles.classes');
+
+
+  $action_names = array_keys($actions);
+  if (!isset($sandbox['progress'])) {
+    // The count of nodes visited so far.
+    $sandbox['progress'] = 0;
+    // Total actions that must be sync'd.
+
+    $sandbox['max'] = count($actions);
+    // A place to store messages during the run.
+    $sandbox['messages'] = array();
+    // Last node read via the query.
+    $sandbox['current_action'] = 0;
+  }
+
+  // Process each action separately
+  $action_name = $action_names[$sandbox['current_action']];
+  $action = $actions[$action_name];
+  $errors = array();
+  acquia_lift_profiles_put_action($action['action_name'], $action['label'], $errors);
+  // Update our progress information.
+  $sandbox['progress']++;
+  $sandbox['current_action']++;
+
+  // Set the "finished" status, to tell batch engine whether this function
+  // needs to run again. If you set a float, this will indicate the progress
+  // of the batch so the progress bar will update.
+  $sandbox['#finished'] = ($sandbox['progress'] >= $sandbox['max']) ? TRUE : ($sandbox['progress'] / $sandbox['max']);
+
+  // Set up a per-run message; Make a copy of $sandbox so we can change it.
+  // This is simply a debugging stanza to illustrate how to capture status
+  // from each pass through hook_update_N().
+  $sandbox_status = $sandbox;
+  // Don't want them in the output.
+  unset($sandbox_status['messages']);
+  $sandbox['messages'][] = t('$sandbox=') . print_r($sandbox_status, TRUE);
+
+  if ($sandbox['#finished']) {
+    return t('All actions were synchronized to Lift Web');
+  }
+}

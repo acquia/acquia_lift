@@ -6,20 +6,6 @@
  */
 
 /**
- * Menu callback for the Acquia Lift Profiles settings page.
- *
- * Consists of multiple forms.
- *
- * @return array
- *   A render array for the page.
- */
-function acquia_lift_profiles_configuration_page() {
-  $build['main_config'] = drupal_get_form('acquia_lift_profiles_admin_form');
-  $build['batch_sync'] = drupal_get_form('acquia_lift_profiles_batch_sync_form');
-  return $build;
-}
-
-/**
  * Admin form for configuring acquia_lift_profiles behavior.
  */
 function acquia_lift_profiles_admin_form($form, &$form_state) {

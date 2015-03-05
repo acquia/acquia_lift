@@ -16,7 +16,8 @@ function acquia_lift_profiles_menu() {
     'type' => MENU_LOCAL_TASK,
     'title' => 'Acquia Lift Profiles',
     'description' => 'Configuration settings for the Acquia Lift Profiles integration module.',
-    'page callback' => 'acquia_lift_profiles_configuration_page',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('acquia_lift_profiles_admin_form'),
     'access arguments' => array('administer acquia_lift_profiles configuration'),
     'file' => 'acquia_lift_profiles.admin.inc'
   );

@@ -2898,7 +2898,7 @@ class AcquiaLiftWebTestWorkflow extends AcquiaLiftWebTestBase {
         ),
         'links' => array(
           'edit' => url('admin/structure/personalize/manage/' . $first_agent_machine_name . '/edit'),
-          'report' => url('admin/structure/personalize/manage/' . $first_agent_machine_name . '/report'),
+          'report' => '',
           'view' => url('admin/structure/personalize/manage/' . $first_agent_machine_name),
         ),
         'supportsGoals' => TRUE,
@@ -2934,6 +2934,8 @@ class AcquiaLiftWebTestWorkflow extends AcquiaLiftWebTestBase {
     $html_id_first_agent = "personalize-change-status-{$first_agent_machine_name}-form";
     $this->drupalPost('admin/structure/personalize', array(), t('Start'), array(), array(), $html_id_first_agent);
 
+    // As soon as the agent is started, we are able to access its reports.
+    $expected[$first_agent_machine_name]['links']['report'] = url('admin/structure/personalize/manage/' . $first_agent_machine_name . '/report');
     $expected[$first_agent_machine_name]['status'] = PERSONALIZE_STATUS_RUNNING;
     $expected[$first_agent_machine_name]['nextStatus'] = array(
       'status' => PERSONALIZE_STATUS_PAUSED,

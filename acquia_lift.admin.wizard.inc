@@ -253,9 +253,9 @@ function acquia_lift_personalize_campaign_wizard_variations_alter(&$form, &$form
  * Alter hook for the targeting portion of the campaign wizard.
  */
 function acquia_lift_personalize_campaign_wizard_targeting_alter(&$form, &$form_state, $form_id) {
-  if (!empty($form['visitor_context']) && $form['visitor_context']['#type'] == 'select') {
+  if (!empty($form['targeting']['visitor_context']) && $form['targeting']['visitor_context']['#type'] == 'select') {
     module_load_include('inc', 'acquia_lift', 'acquia_lift.ui');
-    acquia_lift_chosenify_element($form['visitor_context']);
+    acquia_lift_chosenify_element($form['targeting']['visitor_context']);
   }
 }
 

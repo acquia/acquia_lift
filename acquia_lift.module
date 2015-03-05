@@ -562,6 +562,7 @@ function acquia_lift_target_access($agent) {
     user_access('manage personalized content') &&
     variable_get('acquia_lift_target_enabled', FALSE);
 }
+
 /**
  * Implements hook_personalize_agent_presave().
  */
@@ -3051,6 +3052,8 @@ function acquia_lift_get_campaign_details($include_status = TRUE) {
     foreach ($option_sets as $option_set) {
       $option_set_types[] = $option_set->plugin;
     }
+    $current_status = personalize_agent_get_status($agent->machine_name);
+    $report_is_active = $plugin instanceof PersonalizeAgentReportInterface && $current_status != PERSONALIZE_STATUS_NOT_STARTED;
     $campaigns[$agent->machine_name] = array(
       'name' => $agent->machine_name,
       'label' => filter_xss($agent->label),
@@ -3058,7 +3061,7 @@ function acquia_lift_get_campaign_details($include_status = TRUE) {
       'links' => array(
         'view' => url('admin/structure/personalize/manage/' . $agent->machine_name),
         'edit' => url('admin/structure/personalize/manage/' . $agent->machine_name . '/edit'),
-        'report' => $plugin instanceof PersonalizeAgentReportInterface ? url('admin/structure/personalize/manage/' . $agent->machine_name . '/report') : '',
+        'report' => $report_is_active ? url('admin/structure/personalize/manage/' . $agent->machine_name . '/report') : '',
       ),
       'supportsGoals' => $supports_goals,
       'optionSetTypes' => array_unique($option_set_types),
@@ -3068,7 +3071,6 @@ function acquia_lift_get_campaign_details($include_status = TRUE) {
     if ($include_status) {
       // Add information that will allow starting / pausing the campaign from the
       // unibar.
-      $current_status = personalize_agent_get_status($agent->machine_name);
       list($next_status, $status_text) = _personalize_status_toggle_next($current_status);
       $campaigns[$agent->machine_name]['status'] = $current_status;
       $campaigns[$agent->machine_name]['nextStatus'] = array(

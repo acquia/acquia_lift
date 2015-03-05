@@ -98,7 +98,7 @@ function drush_acquia_lift_campaign_sync() {
   // For each agent, set up a batch job including all the required save operations,
   // then process immediately.
   foreach ($agents as $agent_name => $agent) {
-    $message = "\n" . dt('Synchronizing campaign ' . $agent_name) . " ...";
+    $message = "\n" . dt('Synchronizing campaign ') . $agent_name . " ...";
     drush_print($message);
     $operations = acquia_lift_get_sync_operations_for_agents(array($agent_name => $agent));
     $batch_operations = array();

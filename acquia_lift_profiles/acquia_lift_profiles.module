@@ -290,7 +290,7 @@ function acquia_lift_profiles_personalize_agent_save($agent) {
 function acquia_lift_profiles_visitor_actions_page_build(&$page, $actions) {
   // Add info about client-side actions to Drupal.settings so that our client-
   // side action listener can process them.
-  if (!empty($client_side_actions)) {
+  if (!empty($actions)) {
     $page['page_top']['acquia_lift_profiles_actions'] = array(
       '#attached' => array(
         'js' => array(
@@ -342,6 +342,8 @@ function acquia_lift_profiles_form_node_type_form_alter(&$form, &$form_state) {
  *   The name of the action to save to Acquia Lift Profiles.
  * @param string $label
  *   The human-readable name of the action. If not provided it will be looked up.
+ * @param array $errors
+ *   An array, passed by reference, to add any errors to.
  */
 function acquia_lift_profiles_put_action($action_name, $label, &$errors = array()) {
   try {

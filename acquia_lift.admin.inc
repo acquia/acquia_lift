@@ -841,7 +841,7 @@ function acquia_lift_report_conversion() {
   $options['end'] = empty($params['end']) ? NULL : check_plain($params['end']);
   $agent = personalize_agent_load($agent_name);
 
-  if (!acquia_lift_owns_agent($agent)) {
+  if (!acquia_lift_is_testing_agent($agent)) {
     return array();
   }
   if (is_numeric($options['start'])) {

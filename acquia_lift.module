@@ -2423,9 +2423,7 @@ function acquia_lift_form_personalize_campaign_wizard_alter(&$form, &$form_state
   // We have to specify the include file so as not to lose it during rendering from ajax.
   // @see personalize_agent_form_ajax_submit()
   // @see drupal_retrieve_form():734
-  $form_state['build_info']['files'] = array(
-    drupal_get_path('module', 'acquia_lift') . '/acquia_lift.admin.wizard.inc',
-  );
+  $form_state['build_info']['files'][] = drupal_get_path('module', 'acquia_lift') . '/acquia_lift.admin.wizard.inc';
   // Call the alter hooks for the generic form parts.
   call_user_func_array('acquia_lift_personalize_campaign_wizard_process_bar_alter', array(&$form, &$form_state, $form_id));
   call_user_func_array('acquia_lift_personalize_campaign_wizard_base_alter', array(&$form, &$form_state, $form_id));

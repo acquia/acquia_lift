@@ -577,7 +577,7 @@ function acquia_lift_personalize_campaign_wizard_targeting_submit(&$form, &$form
       unset($context_values['value'], $context_values['remove']);
       $contexts[] = $context_values;
     }
-    if (acquia_lift_target_audience_save($rule_values['details']['name'], $agent_data->machine_name, $contexts, $rule_values['details']['strategy'])) {
+    if (acquia_lift_target_audience_save($rule_values['details']['name'], $agent_data->machine_name, $contexts, $rule_values['details']['strategy'], $rule_id === 'add' ? NULL : $rule_id)) {
       drupal_set_message(t('The target audience %audience was saved successfully', array(
         '%audience' => $rule_values['details']['name'],
       )));

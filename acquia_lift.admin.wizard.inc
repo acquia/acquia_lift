@@ -253,6 +253,14 @@ function acquia_lift_personalize_campaign_wizard_targeting_alter(&$form, &$form_
     return;
   }
   module_load_include('inc', 'acquia_lift', 'acquia_lift.admin');
+  $option_set = acquia_lift_get_option_set_for_targeting($agent_data->machine_name);
+
+  if (empty($option_set)) {
+    drupal_set_message(t('You must <a href="!variations_url">create variation sets</a> before targeting.', array(
+      '!variations_url' => url('admin/structure/personalize/manage/' . $agent_data->machine_name . '/variations'),
+    )), 'warning');
+    return;
+  }
   // Take over the form validation and submit handling.
   $form['#validate'] = array('acquia_lift_personalize_campaign_wizard_targeting_validate');
   $form['#submit'] = array('acquia_lift_personalize_campaign_wizard_submit');
@@ -263,7 +271,6 @@ function acquia_lift_personalize_campaign_wizard_targeting_alter(&$form, &$form_
     '#tree' => TRUE,
   );
   // Load all audience rules for the agent.
-  $option_set = acquia_lift_get_option_set_for_targeting($agent_data->machine_name);
   if (isset($option_set->targeting)) {
     foreach ($option_set->targeting as $rule_id => $rule) {
       $form['audiences'][$rule_id] = array(

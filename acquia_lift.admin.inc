@@ -1205,22 +1205,24 @@ function acquia_lift_target_audience_delete_submit($form, &$form_state) {
  * Saves a target audience for an agent.
  *
  * @param $label
- *   The human-readable name of the audience to create.
+ *   The human-readable name of the audience to save.
  * @param $agent_name
  *   THe name of the agent to add the audience to.
  * @param $contexts
  *   The contexts that make up the audience definition.
  * @param $strategy
  *   The strategy to use for multiple contexts, i.e. 'AND' or 'OR'
+ * @param $machine_name
+ *   The machine name for the audience if it already exists.
  */
-function acquia_lift_target_audience_save($label, $agent_name, $contexts, $strategy) {
+function acquia_lift_target_audience_save($label, $agent_name, $contexts, $strategy, $machine_name = NULL) {
   module_load_include('inc', 'personalize', 'personalize.admin');
-  $machine_name = personalize_generate_machine_name($label, NULL, '-');
   // Find the option set to use for targeting and add the audience.
   $option_set = acquia_lift_get_option_set_for_targeting($agent_name);
   if (empty($option_set)) {
     return FALSE;
   }
+  $machine_name = empty($machine_name) ? personalize_generate_machine_name($label, NULL, '-') : $machine_name;
   $option_set->targeting[$machine_name] = array(
     'label' => $label,
     'weight' => count($option_set->targeting)

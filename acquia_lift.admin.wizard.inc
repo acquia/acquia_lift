@@ -286,6 +286,16 @@ function acquia_lift_personalize_campaign_wizard_targeting_alter(&$form, &$form_
         '#collapsible' => TRUE,
         '#collapsed' => TRUE,
       );
+      $form['audiences'][$rule_id]['header'] = array(
+        '#type' => 'container'
+      );
+      $form['audiences'][$rule_id]['header']['delete'] = array(
+        '#markup' => l(t('Delete'), 'admin/structure/personalize/manage/' . $agent_data->machine_name . '/audience/' . $rule_id . '/delete', array(
+          'attributes' => array(
+            'class' => array('acquia-lift-delete')
+          ),
+        )),
+      );
       _acquia_lift_personalize_campaign_wizard_targeting_audience($form['audiences'][$rule_id]['details'], $form_state, $agent_data, $rule_id, $rule);
     }
   }

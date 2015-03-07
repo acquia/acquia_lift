@@ -266,35 +266,47 @@ function acquia_lift_personalize_campaign_wizard_targeting_alter(&$form, &$form_
   $form['#submit'] = array('acquia_lift_personalize_campaign_wizard_submit');
 
   unset($form['targeting']['option_sets']);
+
+  // Determine any messages for display based on the current targeting
+  // persistence.
+  $variation_options = $saved_targeting = array();
+  $existing_targeting = acquia_lift_get_structure_from_targeting($option_set);
+  // The settings reflected in the form will either be what is currently running
+  // or any saved overrides from when this form was last submitted (if the
+  // review step was never completed to apply them.)
+  if (!empty($agent_data->data['lift_targeting'])) {
+    $saved_targeting = $agent_data->data['lift_targeting'];
+    if ($saved_targeting != $existing_targeting) {
+      $message = t('The targeting settings shown here do not match what is currently running for this campaign.');
+      $message_type = 'warning';
+    }
+  }
+  else {
+    if (personalize_agent_get_status($agent_data->machine_name) != PERSONALIZE_STATUS_NOT_STARTED) {
+      $message = t('The targeting settings shown here represent what is currently running for this campaign.');
+      $message_type = 'ok';
+    }
+    $saved_targeting = $existing_targeting;
+  }
+  if (isset($message)) {
+    $form['message'] = array(
+      '#type' => 'markup',
+      '#markup' => '<div class="acquia-lift-targeting-message acquia-lift-targeting-message-' . $message_type . '">' . $message . '</div>',
+      '#weight' => -1
+    );
+  }
+  // Get the names of the options from the representative option set.
+  foreach ($option_set->options as $option) {
+    $variation_options[$option['option_id']] = $option['option_label'];
+  }
+
+  // Begin the audience form.
   $form['audiences'] = array(
     '#type' => 'container',
     '#tree' => TRUE,
   );
-  // Load all audiences for the agent.
-  if (isset($option_set->targeting)) {
-    foreach ($option_set->targeting as $audience_id => $audience) {
-      $form['audiences'][$audience_id] = array(
-        '#type' => 'container',
-        '#theme' => 'acquia_lift_card',
-        '#title' => isset($audience['label']) ? $audience['label'] : 'Audience: ' . $audience_id,
-        '#collapsible' => TRUE,
-        '#collapsed' => TRUE,
-      );
-      $form['audiences'][$audience_id]['header'] = array(
-        '#type' => 'container'
-      );
-      $form['audiences'][$audience_id]['header']['delete'] = array(
-        '#markup' => l(t('Delete'), 'admin/structure/personalize/manage/' . $agent_data->machine_name . '/audience/' . $audience_id . '/delete', array(
-          'attributes' => array(
-            'class' => array('acquia-lift-delete')
-          ),
-        )),
-      );
-      $form['audiences'][$audience_id]['details'] = _acquia_lift_personalize_campaign_wizard_targeting_audience($form, $form_state, $agent_data, $audience_id, $audience);
-    }
-  }
 
-  // Add a new audience.
+  // Add a new audience rule.
   $form['audiences']['add'] = array(
     '#type' => 'container',
     '#theme' => 'acquia_lift_card',
@@ -303,6 +315,57 @@ function acquia_lift_personalize_campaign_wizard_targeting_alter(&$form, &$form_
     '#title' => t('Add target audience'),
   );
   $form['audiences']['add']['details'] = _acquia_lift_personalize_campaign_wizard_targeting_audience($form, $form_state, $agent_data, 'add');
+
+  // Load all existing audience rules for the agent.
+  if (isset($option_set->targeting)) {
+    foreach ($option_set->targeting as $audience_id => $audience) {
+      $form['audiences'][$audience_id] = array(
+        '#type' => 'container',
+        '#theme' => 'acquia_lift_card',
+        '#title' => isset($audience['label']) ? $audience['label'] : 'Audience: ' . $audience_id,
+        '#collapsible' => FALSE,
+      );
+      $form['audiences'][$audience_id]['header'] = array(
+        '#type' => 'container'
+      );
+      $form['audiences'][$audience_id]['header']['edit'] = array(
+        '#type' => 'checkbox',
+        '#title' => t('Edit'),
+        '#title_display' => 'invisible',
+        '#attributes' => array(
+          'class' => array('acquia-lift-edit'),
+        ),
+      );
+      $form['audiences'][$audience_id]['header']['delete'] = array(
+        '#markup' => l(t('Delete'), 'admin/structure/personalize/manage/' . $agent_data->machine_name . '/audience/' . $audience_id . '/delete', array(
+          'attributes' => array(
+            'class' => array('acquia-lift-delete')
+          ),
+        )),
+      );
+      // Show the form to edit the audience segment when edit is selected.
+      $form['audiences'][$audience_id]['details'] = _acquia_lift_personalize_campaign_wizard_targeting_audience($form, $form_state, $agent_data, $audience_id, $audience);
+      $form['audiences'][$audience_id]['details']['#states'] = array(
+        'visible' => array(
+          ':input[name="audiences[' . $audience_id . '][header][edit]"]' => array('checked' => TRUE),
+        )
+      );
+      // Show the form to assign variations when not in edit mode.
+      $form['audiences'][$audience_id]['assignment'] = array(
+        '#type' => 'select',
+        '#title' => t('Add display option'),
+        '#multiple' => TRUE,
+        '#options' => $variation_options,
+        '#default_value' => isset($saved_targeting[$audience_id]) ? $saved_targeting[$audience_id] : '',
+        '#empty_option' => t('Select...'),
+        '#states' => array(
+          'visible' => array(
+            ':input[name="audiences[' . $audience_id . '][header][edit]"]' => array('checked' => FALSE),
+          )
+        )
+      );
+    }
+  }
 }
 
 /**
@@ -576,10 +639,12 @@ function acquia_lift_personalize_campaign_wizard_targeting_submit(&$form, &$form
     return;
   }
   module_load_include('inc', 'acquia_lift', 'acquia_lift.admin');
+  $targeting = array();
   foreach ($form_state['values']['audiences'] as $audience_id => $audience) {
     if (empty($audience['details']['name'])) {
       continue;
     }
+    // Handle saving any contexts that define this audience rule.
     $contexts = array();
     // We need to massage the context information as submitted in the form into
     // an array of contexts that can be consumed by the
@@ -603,7 +668,11 @@ function acquia_lift_personalize_campaign_wizard_targeting_submit(&$form, &$form
         '%audience' => $audience['details']['name'],
       )), 'error');
     }
+
+    // Handle the assignment of options to audiences.
+    $targeting[$audience_id] = array_values($audience['assignment']);
   }
+  acquia_lift_save_targeting_structure($agent_data, $targeting);
 }
 
 /**

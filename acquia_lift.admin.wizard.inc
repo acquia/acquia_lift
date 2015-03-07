@@ -304,6 +304,9 @@ function acquia_lift_personalize_campaign_wizard_targeting_alter(&$form, &$form_
   $form['audiences'] = array(
     '#type' => 'container',
     '#tree' => TRUE,
+    '#attributes' => array(
+      'id' => 'acquia-lift-targeting-audiences',
+    ),
   );
 
   // Add a new audience rule.
@@ -331,7 +334,6 @@ function acquia_lift_personalize_campaign_wizard_targeting_alter(&$form, &$form_
       $form['audiences'][$audience_id]['header']['edit'] = array(
         '#type' => 'checkbox',
         '#title' => t('Edit'),
-        '#title_display' => 'invisible',
         '#attributes' => array(
           'class' => array('acquia-lift-edit'),
         ),

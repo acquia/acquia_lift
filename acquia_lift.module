@@ -203,10 +203,10 @@ function acquia_lift_menu() {
     'type' => MENU_CALLBACK,
     'file' => 'acquia_lift.admin.unibar.inc',
   );
-  $items['admin/structure/personalize/%personalize_agent/%/audience_delete'] = array(
+  $items['admin/structure/personalize/manage/%personalize_agent/audience/%/delete'] = array(
     'title' => 'Delete target audience',
-    'page callback' => 'acquia_lift_target_audience_delete',
-    'page arguments' => array('acquia_lift_target_audience_delete', 3, 4),
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('acquia_lift_target_audience_delete', 4, 6),
     'type' => MENU_CALLBACK,
     'file' => 'acquia_lift.admin.inc',
     'access arguments' => array('manage personalized content'),

@@ -877,10 +877,13 @@ function acquia_lift_report_conversion() {
  *   The contexts that make up the audience definition.
  * @param $strategy
  *   The strategy to use for multiple contexts, i.e. 'AND' or 'OR'
+ * @param number $weight
+ *   The weight for this audience within all audiences for the agent.
+ *   Audiences with the lowest weight will be evaluated first.
  * @param $machine_name
  *   The machine name for the audience if it already exists.
  */
-function acquia_lift_target_audience_save($label, $agent_name, $contexts, $strategy, $machine_name = NULL) {
+function acquia_lift_target_audience_save($label, $agent_name, $contexts, $strategy, $weight = 50, $machine_name = NULL) {
   module_load_include('inc', 'personalize', 'personalize.admin');
   // Find the option set to use for targeting and add the audience.
   $option_set = acquia_lift_get_option_set_for_targeting($agent_name);
@@ -890,7 +893,7 @@ function acquia_lift_target_audience_save($label, $agent_name, $contexts, $strat
   $machine_name = empty($machine_name) ? personalize_generate_machine_name($label, NULL, '-') : $machine_name;
   $option_set->targeting[$machine_name] = array(
     'label' => $label,
-    'weight' => count($option_set->targeting)
+    'weight' => $weight,
   );
   // Generate the feature strings and rules for the contexts.
   $agent = personalize_agent_load_agent($agent_name);

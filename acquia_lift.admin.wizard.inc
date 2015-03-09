@@ -312,6 +312,15 @@ function acquia_lift_personalize_campaign_wizard_targeting_alter(&$form, &$form_
 
   // Load all existing audience rules for the agent.
   if (isset($option_set->targeting)) {
+    // Sort the audiences by weight for display.
+    uasort($option_set->targeting, function ($a, $b) {
+      if ($a['weight'] === $b['weight']) {
+        return 0;
+      }
+      else {
+        return $a['weight'] < $b['weight'] ? -1 : 1;
+      }
+    });
     foreach ($option_set->targeting as $audience_id => $audience) {
       $form['audiences'][$audience_id] = array(
         '#type' => 'container',
@@ -337,15 +346,15 @@ function acquia_lift_personalize_campaign_wizard_targeting_alter(&$form, &$form_
             ),
           )),
         );
-      }
 
-      // Show the form to edit the audience segment when edit is selected.
-      $form['audiences'][$audience_id]['details'] = _acquia_lift_personalize_campaign_wizard_targeting_audience($form, $form_state, $agent_data, $audience_id, $audience);
-      $form['audiences'][$audience_id]['details']['#states'] = array(
-        'visible' => array(
-          ':input[name="audiences[' . $audience_id . '][header][edit]"]' => array('checked' => TRUE),
-        )
-      );
+        // Show the form to edit the audience segment when edit is selected.
+        $form['audiences'][$audience_id]['details'] = _acquia_lift_personalize_campaign_wizard_targeting_audience($form, $form_state, $agent_data, $audience_id, $audience);
+        $form['audiences'][$audience_id]['details']['#states'] = array(
+          'visible' => array(
+            ':input[name="audiences[' . $audience_id . '][header][edit]"]' => array('checked' => TRUE),
+          )
+        );
+      }
       // Show the form to assign variations when not in edit mode.
       $form['audiences'][$audience_id]['assignment'] = array(
         '#type' => 'select',
@@ -658,13 +667,39 @@ function acquia_lift_personalize_campaign_wizard_targeting_submit(&$form, &$form
   module_load_include('inc', 'acquia_lift', 'acquia_lift.admin');
   $targeting = array();
   $audience_count = 0;
-  foreach ($form_state['values']['audiences'] as $audience_id => $audience) {
-    if (empty($audience['details']['name'])) {
+  // Determine the values for the "Everyone else" audience.
+  $else = array(
+    'name' => t('Everyone else'),
+    'weight' => 0,
+    'contexts' => array(),
+    'strategy' => 'OR',
+    'id' => ACQUIA_LIFT_TARGETING_EVERYONE_ELSE,
+  );
+  // Set the weight higher than any of the audience options.
+  foreach($form_state['values']['audiences'] as $audience_id => $audience) {
+    if ($audience_id === ACQUIA_LIFT_TARGETING_EVERYONE_ELSE || !isset($audience['details']['weight']) || empty($audience['details']['name'])) {
       continue;
     }
-    // Handle saving any contexts that define this audience rule.
-    $contexts = array();
-    if (isset($audience['details']['mapping']['contexts'])) {
+    $else['weight'] = $audience['details']['weight'] > $else['weight'] ? $audience['details']['weight'] : $else['weight'];
+  }
+  $else['weight'] += 10;
+  // Now process all of the audiences.
+  foreach ($form_state['values']['audiences'] as $audience_id => $audience) {
+    if (empty($audience['details']['name']) && $audience_id !== ACQUIA_LIFT_TARGETING_EVERYONE_ELSE) {
+      continue;
+    }
+
+    if ($audience_id === ACQUIA_LIFT_TARGETING_EVERYONE_ELSE) {
+      $audience_values = $else;
+    }
+    else {
+      $audience_values = array(
+        'name' => $audience['details']['name'],
+        'weight' => $audience['details']['weight'],
+        'contexts' => array(),
+        'strategy' => $audience['details']['strategy'],
+        'id' => $audience_id === 'add' ? NULL : $audience_id,
+      );
       // We need to massage the context information as submitted in the form into
       // an array of contexts that can be consumed by the
       // acquia_lift_target_audience_save() function.
@@ -675,13 +710,15 @@ function acquia_lift_personalize_campaign_wizard_targeting_submit(&$form, &$form
         $context_values['match'] = $context_values['value']['match'];
         $context_values['operator'] = $context_values['value']['operator'];
         unset($context_values['value'], $context_values['remove']);
-        $contexts[] = $context_values;
+        $audience_values['contexts'][] = $context_values;
       }
     }
-    if (acquia_lift_target_audience_save($audience['details']['name'], $agent_data->machine_name, $contexts, $audience['details']['strategy'], $audience_id === 'add' ? NULL : $audience_id)) {
-      drupal_set_message(t('The target audience %audience was saved successfully', array(
-        '%audience' => $audience['details']['name'],
-      )));
+    if (acquia_lift_target_audience_save($audience_values['name'], $agent_data->machine_name, $audience_values['contexts'], $audience_values['strategy'], $audience_values['weight'], $audience_values['id'])) {
+      if ($audience_id === 'add') {
+        drupal_set_message(t('The target audience %audience was created successfully', array(
+          '%audience' => $audience['details']['name'],
+        )));
+      }
       $audience_count++;
     }
     else {
@@ -689,17 +726,13 @@ function acquia_lift_personalize_campaign_wizard_targeting_submit(&$form, &$form
         '%audience' => $audience['details']['name'],
       )), 'error');
     }
-
-    // Handle the assignment of options to audiences.
-    if (isset($audience['assignment'])) {
-      $targeting[$audience_id] = array_values($audience['assignment']);
-    }
   }
   // Create the "Everyone else" audience if there are other audiences and it
   // does not exist.
   if ($audience_count > 0 && !isset($form_state['values']['audiences'][ACQUIA_LIFT_TARGETING_EVERYONE_ELSE])) {
-    acquia_lift_target_audience_save(t('Everyone else'), $agent_data->machine_name, array(), 'OR');
+    acquia_lift_target_audience_save($else['name'], $agent_data->machine_name, $else['contexts'], $else['strategy'], $else['weight']);
   }
+
   acquia_lift_save_targeting_structure($agent_data, $targeting);
 }
 
@@ -940,8 +973,15 @@ function _acquia_lift_personalize_campaign_wizard_targeting_audience(&$form, &$f
   $element['name'] = array(
     '#type' => 'textfield',
     '#title' => t('Audience name'),
-    '#default_value' => $audience['label'],
+    '#default_value' => !empty($audience['label']) ? $audience['label'] : '',
     '#required' => !empty($audience),
+  );
+  $element['weight'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Weight'),
+    '#default_value' => !empty($audience['weight']) ? $audience['weight'] : 50,
+    '#size' => 3,
+    '#element_validate' => array('element_validate_number'),
   );
 
   // This is the portion of the form that will be replace when the "add new" or "remove

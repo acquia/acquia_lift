@@ -339,13 +339,13 @@ tr.acquia-lift-report-control {
 }
 
 /* Targeting form */
-#acquia-lift-targeting .personalize-target-wrapper .form-item,
-#acquia-lift-targeting .personalize-target-wrapper .personalize-target-value,
-#acquia-lift-targeting .personalize-target-wrapper .personalize-target-value div,
-#acquia-lift-targeting .personalize-target-wrapper .form-item > *,
-#acquia-lift-targeting .personalize-target-wrapper .acquia-lift-remove-context {
+.acquia-lift-targeting .personalize-target-wrapper .form-item,
+.acquia-lift-targeting .personalize-target-wrapper .personalize-target-value,
+.acquia-lift-targeting .personalize-target-wrapper .personalize-target-value div,
+.acquia-lift-targeting .personalize-target-wrapper .form-item > *,
+.acquia-lift-targeting .personalize-target-wrapper .acquia-lift-remove-context {
   display: inline;
 }
-#acquia-lift-targeting .personalize-target-wrapper .form-item label {
+.acquia-lift-targeting .personalize-target-wrapper .form-item label {
   display: none;
 }

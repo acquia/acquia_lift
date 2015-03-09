@@ -849,7 +849,7 @@ function _acquia_lift_personalize_campaign_wizard_targeting_audience(&$form, &$f
 
   // This is the portion of the form that will be replace when the "add new" or "remove
   // context" links are clicked.
-  $main_wrapper_id = 'acquia-lift-targeting';
+  $main_wrapper_id = 'acquia-lift-targeting-' . $parent_identifier;
 
   $element['mapping'] = array(
     '#tree' => TRUE,
@@ -859,6 +859,7 @@ function _acquia_lift_personalize_campaign_wizard_targeting_audience(&$form, &$f
     '#type' => 'container',
     '#attributes' => array(
       'id' => $main_wrapper_id,
+      'class' => array('acquia-lift-targeting'),
     ),
   );
   $element['mapping']['contexts']['title'] = array(

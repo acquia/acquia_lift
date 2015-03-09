@@ -365,21 +365,3 @@ tr.acquia-lift-report-control {
 #acquia-lift-targeting-audiences .el-card__action input[type="checkbox"].acquia-lift-edit:checked + label {
   content: url(../images/edit-toggle-active.png);
 }
-
-/* Targeting message box */
-.acquia-lift-targeting-message {
-  border: 1px solid;
-  margin: 0;
-  padding: 10px 10px 10px 20px;
-}
-.acquia-lift-targeting-message.acquia-lift-targeting-message.acquia-lift-targeting-message-ok {
-  background-color: #f8fff0;
-  border-color: #be7;
-  color: #234600;
-}
-.acquia-lift-targeting-message.acquia-lift-targeting-message.acquia-lift-targeting-message-warning {
-  border-color: #ed5;
-  background-color: #fffce5;
-  color: #840;
-}
-

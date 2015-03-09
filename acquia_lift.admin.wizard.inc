@@ -279,21 +279,12 @@ function acquia_lift_personalize_campaign_wizard_targeting_alter(&$form, &$form_
   if (!empty($agent_data->data['lift_targeting']) && personalize_agent_get_status($agent_data->machine_name) != PERSONALIZE_STATUS_NOT_STARTED) {
     $saved_targeting = $agent_data->data['lift_targeting'];
     if ($saved_targeting != $existing_targeting) {
-      $message = t('The targeting settings shown here do not match what is currently running for this campaign.');
-      $message_type = 'warning';
+      drupal_set_message(t('The targeting settings shown here do not match what is currently running for this campaign.'), 'warning');
       $show_revert = TRUE;
     }
     else {
-      $message = t('The targeting settings shown here represent what is currently running for this campaign.');
-      $message_type = 'ok';
+      drupal_set_message(t('The targeting settings shown here represent what is currently running for this campaign.'));
     }
-  }
-  if (isset($message)) {
-    $form['message'] = array(
-      '#type' => 'markup',
-      '#markup' => '<div class="acquia-lift-targeting-message acquia-lift-targeting-message-' . $message_type . '">' . $message . '</div>',
-      '#weight' => -1
-    );
   }
   // Get the names of the options from the representative option set.
   foreach ($option_set->options as $option) {

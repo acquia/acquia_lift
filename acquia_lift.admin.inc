@@ -1068,37 +1068,6 @@ function acquia_lift_targeting_form_submit($form, &$form_state) {
 }
 
 /**
- * Confirm form for reverting the changes to targeting.
- *
- * @param $agent_name
- *   The name of hte agent whose targeting changes are being reverted.
- */
-function acquia_lift_confirm_revert_changes($form, &$form_state, $agent_name) {
-  $form['agent'] = array(
-    '#type' => 'value',
-    '#value' => $agent_name
-  );
-  $form['revert_changes'] = array('#type' => 'value', '#value' => TRUE);
-  return confirm_form($form,
-    t('Are you sure you want to revert the targeting changes for the %agent campaign?',
-      array('%agent' => $agent_name)),
-    'admin/structure/personalize/' . $agent_name,
-    t('Reverting the targeting will discard all changes since the campaign was set to running.'),
-    t('Revert changes'),
-    t('Cancel'));
-}
-
-/**
- * Submit callback for the "Revert changes" confirm form.
- */
-function acquia_lift_confirm_revert_changes_submit($form, &$form_state) {
-  if ($agent = personalize_agent_load($form_state['values']['agent'])) {
-    $agent->data['lift_targeting'] = array();
-    personalize_agent_save($agent);
-  }
-}
-
-/**
  * Final review form for applying targeting changes.
  *
  * @param $agent

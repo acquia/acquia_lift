@@ -212,6 +212,15 @@ function acquia_lift_menu() {
     'access callback' => 'acquia_lift_target_access',
     'access arguments' => array(4),
   );
+  $items['admin/structure/personalize/manage/%personalize_agent/targeting/revert'] = array(
+    'title' => 'Revert targeting changes',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('acquia_lift_confirm_revert_changes', 4),
+    'access callback' => 'acquia_lift_target_access',
+    'access arguments' => array(4),
+    'type' => MENU_CALLBACK,
+    'file' => 'acquia_lift.admin.wizard.inc',
+  );
   $items['admin/structure/personalize/manage/%personalize_agent/lift-target'] = array(
     'title' => t('Target variations'),
     'weight' => 2,

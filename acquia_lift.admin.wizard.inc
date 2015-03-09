@@ -271,23 +271,22 @@ function acquia_lift_personalize_campaign_wizard_targeting_alter(&$form, &$form_
   // persistence.
   $variation_options = $saved_targeting = array();
   $existing_targeting = acquia_lift_get_structure_from_targeting($option_set);
+  // Track whether an option to revert targeting changes should be shown.
+  $show_revert = FALSE;
   // The settings reflected in the form will either be what is currently running
   // or any saved overrides from when this form was last submitted (if the
   // review step was never completed to apply them.)
-  if (!empty($agent_data->data['lift_targeting'])) {
+  if (!empty($agent_data->data['lift_targeting']) && personalize_agent_get_status($agent_data->machine_name) != PERSONALIZE_STATUS_NOT_STARTED) {
     $saved_targeting = $agent_data->data['lift_targeting'];
     if ($saved_targeting != $existing_targeting) {
       $message = t('The targeting settings shown here do not match what is currently running for this campaign.');
       $message_type = 'warning';
-      $show_rev
+      $show_revert = TRUE;
     }
-  }
-  else {
-    if (personalize_agent_get_status($agent_data->machine_name) != PERSONALIZE_STATUS_NOT_STARTED) {
+    else {
       $message = t('The targeting settings shown here represent what is currently running for this campaign.');
       $message_type = 'ok';
     }
-    $saved_targeting = $existing_targeting;
   }
   if (isset($message)) {
     $form['message'] = array(
@@ -368,6 +367,12 @@ function acquia_lift_personalize_campaign_wizard_targeting_alter(&$form, &$form_
         )
       );
     }
+  }
+  if ($show_revert) {
+    $form['actions']['revert'] = array(
+      '#type' => 'submit',
+      '#value' => t('Revert changes'),
+    );
   }
 }
 
@@ -540,9 +545,12 @@ function acquia_lift_personalize_campaign_wizard_submit(&$form, &$form_state) {
   // Save any changes to the campaign.
   personalize_agent_save($agent_data);
 
-  // Set the next step and rebuild the form.
-  $form_state['storage']['step'] = _personalize_campaign_wizard_next_step($form_state, $agent_instance);;
-  $form_state['rebuild'] = TRUE;
+  // If the subform submit handlers didn't already set a redirect, then set the
+  // next step and rebuild the form.
+  if (empty($form_state['redirect'])) {
+    $form_state['storage']['step'] = _personalize_campaign_wizard_next_step($form_state, $agent_instance);;
+    $form_state['rebuild'] = TRUE;
+  }
 }
 
 /**
@@ -629,6 +637,18 @@ function acquia_lift_personalize_campaign_wizard_variations_submit_element_edit(
  * Submit function for targeting form.
  */
 function acquia_lift_personalize_campaign_wizard_targeting_submit(&$form, &$form_state, &$agent_data, $agent_instance) {
+  if ($form_state['triggering_element']['#value'] == t('Revert changes')) {
+    $form_state['redirect'] = array(
+      'admin/structure/personalize/manage/' . $agent_data->machine_name . '/targeting/revert',
+      array(
+        'query' => array(
+          'destination' => 'admin/structure/personalize/manage/' . $agent_data->machine_name . '/targeting',
+        ),
+      ),
+    );
+    return;
+  }
+
   // Save any visitor context if passed.
   // Add the visitor context configuration.
   $visitor_context = array();
@@ -673,7 +693,9 @@ function acquia_lift_personalize_campaign_wizard_targeting_submit(&$form, &$form
     }
 
     // Handle the assignment of options to audiences.
-    $targeting[$audience_id] = array_values($audience['assignment']);
+    if (isset($audience['assignment'])) {
+      $targeting[$audience_id] = array_values($audience['assignment']);
+    }
   }
   acquia_lift_save_targeting_structure($agent_data, $targeting);
 }
@@ -1124,3 +1146,33 @@ function acquia_lift_target_audience_delete_submit($form, &$form_state) {
   $form_state['redirect'] = 'admin/structure/personalize/manage/' . $form_state['values']['agent_name'] . '/targeting';
 }
 
+/**
+ * Confirm form for reverting the changes to targeting.
+ *
+ * @param stdClass $agent
+ *   The agent data whose targeting changes are being reverted.
+ */
+function acquia_lift_confirm_revert_changes($form, &$form_state, $agent) {
+  $form['agent'] = array(
+    '#type' => 'value',
+    '#value' => $agent->machine_name
+  );
+  $form['revert_changes'] = array('#type' => 'value', '#value' => TRUE);
+  return confirm_form($form,
+    t('Are you sure you want to revert the targeting changes for the %agent campaign?',
+      array('%agent' => $agent->label)),
+    'admin/structure/personalize/' . $agent->machine_name . '/targeting',
+    t('Reverting the targeting will discard all changes since the campaign was set to running.'),
+    t('Revert changes'),
+    t('Cancel'));
+}
+
+/**
+ * Submit callback for the "Revert changes" confirm form.
+ */
+function acquia_lift_confirm_revert_changes_submit($form, &$form_state) {
+  if ($agent = personalize_agent_load($form_state['values']['agent'])) {
+    $agent->data['lift_targeting'] = array();
+    personalize_agent_save($agent);
+  }
+}

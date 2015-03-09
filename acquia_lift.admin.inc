@@ -867,50 +867,6 @@ function acquia_lift_report_conversion() {
  */
 
 /**
- * Show a delete confirmation for an agent audience.
- */
-function acquia_lift_target_audience_delete($form, $form_state, $agent, $audience_id) {
-  $option_set = acquia_lift_get_option_set_for_targeting($agent->machine_name);
-  if (empty($option_set->targeting[$audience_id])) {
-    drupal_set_message(t('Could not find the audience %audience_id in %agent.', array(
-        '%audience_id' => $audience_id,
-        '%agent' => $agent->machine_name,
-      ))
-    , 'error');
-    return array();
-  }
-  $form['audience_id'] = array(
-   '#type' => 'value',
-   '#value' => $audience_id,
-  );
-  $form['agent_name'] = array(
-    '#type' => 'value',
-    '#value' => $agent->machine_name,
-  );
-  $form['option_set'] = array(
-    '#type' => 'value',
-    '#value' => $option_set,
-  );
-  return confirm_form($form, t('Are you sure you want to delete %audience from %agent?', array(
-    '%audience' => empty($option_set->targeting[$audience_id]['label']) ? $audience_id : $option_set->targeting[$audience_id]['label'],
-    '%agent' => $agent->label,
-  )), 'admin/structure/personalize/manage/' . $agent->machine_name . '/targeting', NULL, t('Delete'), t('Cancel'));
-}
-
-/**
- * Submit handler for agent audience delete submission.
- */
-function acquia_lift_target_audience_delete_submit($form, &$form_state) {
-  $option_set = $form_state['values']['option_set'];
-  $audience_id = $form_state['values']['audience_id'];
-  $audience_name = isset($option_set->targeting[$audience_id]['label']) ? $option_set->targeting[$audience_id]['label'] : $audience_id;
-  unset($option_set->targeting[$audience_id]);
-  personalize_option_set_save($option_set);
-  drupal_set_message(t('The target audience %name has been removed.', array('%name' => $audience_name)));
-  $form_state['redirect'] = 'admin/structure/personalize/manage/' . $form_state['values']['agent_name'] . '/targeting';
-}
-
-/**
  * Saves a target audience for an agent.
  *
  * @param $label

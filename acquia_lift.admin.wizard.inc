@@ -270,31 +270,31 @@ function acquia_lift_personalize_campaign_wizard_targeting_alter(&$form, &$form_
     '#type' => 'container',
     '#tree' => TRUE,
   );
-  // Load all audience rules for the agent.
+  // Load all audiences for the agent.
   if (isset($option_set->targeting)) {
-    foreach ($option_set->targeting as $rule_id => $rule) {
-      $form['audiences'][$rule_id] = array(
+    foreach ($option_set->targeting as $audience_id => $audience) {
+      $form['audiences'][$audience_id] = array(
         '#type' => 'container',
         '#theme' => 'acquia_lift_card',
-        '#title' => isset($rule['label']) ? $rule['label'] : 'Audience: ' . $rule_id,
+        '#title' => isset($audience['label']) ? $audience['label'] : 'Audience: ' . $audience_id,
         '#collapsible' => TRUE,
         '#collapsed' => TRUE,
       );
-      $form['audiences'][$rule_id]['header'] = array(
+      $form['audiences'][$audience_id]['header'] = array(
         '#type' => 'container'
       );
-      $form['audiences'][$rule_id]['header']['delete'] = array(
-        '#markup' => l(t('Delete'), 'admin/structure/personalize/manage/' . $agent_data->machine_name . '/audience/' . $rule_id . '/delete', array(
+      $form['audiences'][$audience_id]['header']['delete'] = array(
+        '#markup' => l(t('Delete'), 'admin/structure/personalize/manage/' . $agent_data->machine_name . '/audience/' . $audience_id . '/delete', array(
           'attributes' => array(
             'class' => array('acquia-lift-delete')
           ),
         )),
       );
-      $form['audiences'][$rule_id]['details'] = _acquia_lift_personalize_campaign_wizard_targeting_audience($form, $form_state, $agent_data, $rule_id, $rule);
+      $form['audiences'][$audience_id]['details'] = _acquia_lift_personalize_campaign_wizard_targeting_audience($form, $form_state, $agent_data, $audience_id, $audience);
     }
   }
 
-  // Add a new audience rule.
+  // Add a new audience.
   $form['audiences']['add'] = array(
     '#type' => 'container',
     '#theme' => 'acquia_lift_card',
@@ -302,7 +302,7 @@ function acquia_lift_personalize_campaign_wizard_targeting_alter(&$form, &$form_
     '#collapsed' => !empty($option_set->targeting),
     '#title' => t('Add target audience'),
   );
-  $form['audiences']['add']['details'] - _acquia_lift_personalize_campaign_wizard_targeting_audience($form, $form_state, $agent_data, 'add');
+  $form['audiences']['add']['details'] = _acquia_lift_personalize_campaign_wizard_targeting_audience($form, $form_state, $agent_data, 'add');
 }
 
 /**
@@ -349,9 +349,8 @@ function acquia_lift_personalize_campaign_wizard_blocks_ajax($form, &$form_state
  */
 function acquia_lift_personalize_campaign_wizard_targeting_add($form, &$form_state) {
   // Increment the number of contexts to be rendered.
-  $rule_context_key = $form_state['triggering_element']['#array_parents'][1];
-  $form_state['num_contexts_audience'][$rule_context_key]++;
-  $form_state['storage']['num_contexts_audience'][$rule_context_key] = 'TESTME';
+  $context_key = $form_state['triggering_element']['#array_parents'][1];
+  $form_state['num_contexts_audience'][$context_key]++;
   $form_state['rebuild'] = TRUE;
 }
 
@@ -359,11 +358,11 @@ function acquia_lift_personalize_campaign_wizard_targeting_add($form, &$form_sta
  * Submit handler for the "Remove Context" button.
  */
 function acquia_lift_personalize_campaign_wizard_targeting_remove($form, &$form_state) {
-  $rule_context_key = $form_state['triggering_element']['#array_parents'][1];
+  $context_key = $form_state['triggering_element']['#array_parents'][1];
   $parents = $form_state['clicked_button']['#parents'];
   $delta_pos = array_search('contexts', $parents) + 1;
   $delta = $parents[$delta_pos];
-  $form_state['to_remove_audience'][$rule_context_key] = $delta;
+  $form_state['to_remove_audience'][$context_key] = $delta;
   $form_state['rebuild'] = TRUE;
 }
 
@@ -371,8 +370,8 @@ function acquia_lift_personalize_campaign_wizard_targeting_remove($form, &$form_
  * Ajax callback for the add context and remove context buttons.
  */
 function acquia_lift_personalize_campaign_wizard_targeting_ajax($form, &$form_state) {
-  $rule_key = $form_state['triggering_element']['#array_parents'][1];
-  return $form['audiences'][$rule_key]['details']['mapping']['contexts'];
+  $context_key = $form_state['triggering_element']['#array_parents'][1];
+  return $form['audiences'][$context_key]['details']['mapping']['contexts'];
 }
 
 /**
@@ -435,7 +434,7 @@ function acquia_lift_personalize_campaign_wizard_variations_validate(&$form, &$f
  * Validation function for targeting form.
  */
 function acquia_lift_personalize_campaign_wizard_targeting_validate(&$form, &$form_state) {
-  // Verify that a new rule will have a unique machine name.
+  // Verify that a new audience will have a unique machine name.
   if (!empty($form_state['values']['audiences']['add']['details']['name'])) {
     module_load_include('inc', 'acquia_lift', 'acquia_lift.admin');
     $machine_name = personalize_generate_machine_name($form_state['values']['audiences']['add']['details']['name'], NULL, '-');
@@ -577,15 +576,15 @@ function acquia_lift_personalize_campaign_wizard_targeting_submit(&$form, &$form
     return;
   }
   module_load_include('inc', 'acquia_lift', 'acquia_lift.admin');
-  foreach ($form_state['values']['audiences'] as $rule_id => $rule_values) {
-    if (empty($rule_values['details']['name'])) {
+  foreach ($form_state['values']['audiences'] as $audience_id => $audience) {
+    if (empty($audience['details']['name'])) {
       continue;
     }
     $contexts = array();
     // We need to massage the context information as submitted in the form into
     // an array of contexts that can be consumed by the
     // acquia_lift_target_audience_save() function.
-    foreach ($rule_values['details']['mapping']['contexts'] as $context_values) {
+    foreach ($audience['details']['mapping']['contexts'] as $context_values) {
       if ($context_values['context'] == '') {
         continue;
       }
@@ -594,14 +593,14 @@ function acquia_lift_personalize_campaign_wizard_targeting_submit(&$form, &$form
       unset($context_values['value'], $context_values['remove']);
       $contexts[] = $context_values;
     }
-    if (acquia_lift_target_audience_save($rule_values['details']['name'], $agent_data->machine_name, $contexts, $rule_values['details']['strategy'], $rule_id === 'add' ? NULL : $rule_id)) {
+    if (acquia_lift_target_audience_save($audience['details']['name'], $agent_data->machine_name, $contexts, $audience['details']['strategy'], $audience_id === 'add' ? NULL : $audience_id)) {
       drupal_set_message(t('The target audience %audience was saved successfully', array(
-        '%audience' => $rule_values['details']['name'],
+        '%audience' => $audience['details']['name'],
       )));
     }
     else {
       drupal_set_message(t('There was a problem saving the target audience %audience.', array(
-        '%audience' => $rule_values['details']['name'],
+        '%audience' => $audience['details']['name'],
       )), 'error');
     }
   }
@@ -820,11 +819,11 @@ function _acquia_lift_personalize_campaign_wizard_variations_element(&$form, &$f
  *
  * @param $agent_data
  *   The current agent data.
- * @param $rule_parent_identifier
- *   The identifier used for this rule, either the machine_name or "add" for
- *   new rules.
- * @param $rule
- *   (Optional) The rule for an existing audience rule.  This contains:
+ * @param $parent_identifier
+ *   The identifier used for this audience within the form, either the
+ *   machine_name or "add" for new audiences.
+ * @param $audience
+ *   (Optional) The existing audience.  This contains:
  *   - label: The name of the audience
  *   - weight: the weight of the audience as compared ot all audiences for the
  *     option set.
@@ -834,7 +833,7 @@ function _acquia_lift_personalize_campaign_wizard_variations_element(&$form, &$f
  * @return array
  *   The form element
  */
-function _acquia_lift_personalize_campaign_wizard_targeting_audience(&$form, &$form_state, $agent_data, $rule_parent_identifier, $rule = NULL) {
+function _acquia_lift_personalize_campaign_wizard_targeting_audience(&$form, &$form_state, $agent_data, $parent_identifier, $audience = NULL) {
 // Build up a list of available context values for targeting.
   module_load_include('inc', 'personalize', 'personalize.admin');
   $targeting_values = personalize_get_targeting_values_for_agent($agent_data);
@@ -844,12 +843,8 @@ function _acquia_lift_personalize_campaign_wizard_targeting_audience(&$form, &$f
   $element['name'] = array(
     '#type' => 'textfield',
     '#title' => t('Audience name'),
-    '#default_value' => $rule['label'],
-    '#required' => !empty($rule),
-  );
-  $element['rule_id'] = array(
-    '#type' => 'value',
-    '#value' => $rule_parent_identifier,
+    '#default_value' => $audience['label'],
+    '#required' => !empty($audience),
   );
 
   // This is the portion of the form that will be replace when the "add new" or "remove
@@ -873,10 +868,10 @@ function _acquia_lift_personalize_campaign_wizard_targeting_audience(&$form, &$f
     ))),
   );
 
-  // Load from the existing form if passed first, otherwise, load from rule.
+  // Load from the existing form if passed first, otherwise, load from audience.
   $mappings = array();
-  if (isset($form_state['values']['audiences'][$rule_parent_identifier]['details']['mapping']['contexts'])) {
-    foreach($form_state['values']['audiences'][$rule_parent_identifier]['details']['mapping']['contexts'] as $delta => $context) {
+  if (isset($form_state['values']['audiences'][$parent_identifier]['details']['mapping']['contexts'])) {
+    foreach($form_state['values']['audiences'][$parent_identifier]['details']['mapping']['contexts'] as $delta => $context) {
       if (empty($context['context'])) {
         $plugin_name = $context_option = '';
       }
@@ -893,19 +888,19 @@ function _acquia_lift_personalize_campaign_wizard_targeting_audience(&$form, &$f
       );
     }
   }
-  else if (!empty($rule['targeting_features'])) {
-    foreach ($rule['targeting_features'] as $feature) {
-      if (isset($rule['targeting_rules'][$feature])) {
-        $mappings[] = $rule['targeting_rules'][$feature];
+  else if (!empty($audience['targeting_features'])) {
+    foreach ($audience['targeting_features'] as $feature) {
+      if (isset($audience['targeting_rules'][$feature])) {
+        $mappings[] = $audience['targeting_rules'][$feature];
       }
     }
   }
   // If the "Remove" button was clicked for a context, we need to remove that context
   // from the form.
-  if (isset($form_state['to_remove_audience'][$rule_parent_identifier])) {
-    unset($mappings[$form_state['to_remove_audience'][$rule_parent_identifier]]);
-    unset($form_state['to_remove_audience'][$rule_parent_identifier]);
-    $form_state['num_contexts_audience'][$rule_parent_identifier]--;
+  if (isset($form_state['to_remove_audience'][$parent_identifier])) {
+    unset($mappings[$form_state['to_remove_audience'][$parent_identifier]]);
+    unset($form_state['to_remove_audience'][$parent_identifier]);
+    $form_state['num_contexts_audience'][$parent_identifier]--;
   }
 
   // Make sure there is at least an empty context.
@@ -921,8 +916,8 @@ function _acquia_lift_personalize_campaign_wizard_targeting_audience(&$form, &$f
   // If the "Add another" button was clicked, we need to add contexts to get up
   // to the number indicated.
   $num_contexts = count($mappings);
-  if (isset($form_state['num_contexts_audience'][$rule_parent_identifier]) && $form_state['num_contexts_audience'][$rule_parent_identifier] > $num_contexts) {
-    while ($num_contexts < $form_state['num_contexts_audience'][$rule_parent_identifier]) {
+  if (isset($form_state['num_contexts_audience'][$parent_identifier]) && $form_state['num_contexts_audience'][$parent_identifier] > $num_contexts) {
+    while ($num_contexts < $form_state['num_contexts_audience'][$parent_identifier]) {
       $mappings[] = array(
         'context' => '',
         'operator' => 'equals',
@@ -932,7 +927,7 @@ function _acquia_lift_personalize_campaign_wizard_targeting_audience(&$form, &$f
       $num_contexts++;
     }
   }
-  $form_state['num_contexts_audience'][$rule_parent_identifier] = count($mappings);
+  $form_state['num_contexts_audience'][$parent_identifier] = count($mappings);
 
   foreach ($mappings as $delta => $mapping) {
     $element['mapping']['contexts'][$delta] = personalize_explicit_targeting_mapping_element($mapping, $targeting_values, $delta);
@@ -951,7 +946,7 @@ function _acquia_lift_personalize_campaign_wizard_targeting_audience(&$form, &$f
       '#attributes' => array(
         'class' => array('personalize-delete-context', 'form-submit',),
         'title' => t('Delete this context.'),
-        'id' => 'edit-audiences-' . $rule_parent_identifier . '-details-mapping-contexts-' . $delta . '-remove',
+        'id' => 'edit-audiences-' . $parent_identifier . '-details-mapping-contexts-' . $delta . '-remove',
       ),
       '#submit' => array('acquia_lift_personalize_campaign_wizard_targeting_remove'),
       '#ajax' => array(
@@ -967,13 +962,13 @@ function _acquia_lift_personalize_campaign_wizard_targeting_audience(&$form, &$f
     '#type' => 'submit',
     '#tag' => 'button',
     '#text' => t('Add context'),
-    '#value' => 'add_context_' . $rule_parent_identifier,
+    '#value' => 'add_context_' . $parent_identifier,
     '#theme_wrappers' => array('personalize_html_tag'),
     '#submit' => array('acquia_lift_personalize_campaign_wizard_targeting_add'),
     '#attributes' => array(
       'class' => array('personalize-add-link'),
       'title' => t('Click here to add more contexts.'),
-      'id' => 'edit-audiences-' . $rule_parent_identifier . '-details-add-new'
+      'id' => 'edit-audiences-' . $parent_identifier . '-details-add-new'
     ),
     '#ajax' => array(
       'callback' => 'acquia_lift_personalize_campaign_wizard_targeting_ajax',

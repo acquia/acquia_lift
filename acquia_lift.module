@@ -208,8 +208,9 @@ function acquia_lift_menu() {
     'page callback' => 'drupal_get_form',
     'page arguments' => array('acquia_lift_target_audience_delete', 4, 6),
     'type' => MENU_CALLBACK,
-    'file' => 'acquia_lift.admin.inc',
-    'access arguments' => array('manage personalized content'),
+    'file' => 'acquia_lift.admin.wizard.inc',
+    'access callback' => 'acquia_lift_target_access',
+    'access arguments' => array(4),
   );
   $items['admin/structure/personalize/manage/%personalize_agent/lift-target'] = array(
     'title' => t('Target variations'),

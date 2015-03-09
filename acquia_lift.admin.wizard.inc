@@ -279,6 +279,7 @@ function acquia_lift_personalize_campaign_wizard_targeting_alter(&$form, &$form_
     if ($saved_targeting != $existing_targeting) {
       $message = t('The targeting settings shown here do not match what is currently running for this campaign.');
       $message_type = 'warning';
+      $show_rev
     }
   }
   else {

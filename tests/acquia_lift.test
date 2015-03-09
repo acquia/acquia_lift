@@ -131,9 +131,9 @@ class AcquiaLiftWebTestBase extends DrupalWebTestCase
     if (!$basicOnly) {
       $edit = array(
         'agent_basic_info[title]' => $data['name'],
-        'options[acquia_lift][decision_style]' => $data['decision_style'],
-        'options[acquia_lift][control_rate]' => $data['control_rate'],
-        'options[acquia_lift][explore_rate]' => $data['explore_rate'],
+        'agent_options[options][decision_style]' => $data['decision_style'],
+        'agent_options[options][control_rate]' => $data['control_rate'],
+        'agent_options[options][explore_rate]' => $data['explore_rate'],
         'cache_decisions' => $data['cache_decisions']
       );
       $this->drupalPost('admin/structure/personalize/manage/' . $data['machine_name'] . '/review', $edit, $this->getButton('wizard_start'));
@@ -190,6 +190,27 @@ class AcquiaLiftWebTestBase extends DrupalWebTestCase
       $this->personalizedQueue->deleteQueue();
     }
 
+    return $agent;
+  }
+
+  /**
+   * A helper function to create an acquia_lift_target agent.
+   * @param string $label
+   *   (Optional) The label for the new agent.
+   * @return stdClass
+   *   The newly created agent data.
+   */
+  protected function createTargetingAgent($label = NULL) {
+    if (empty($label)) {
+      $label = $this->randomName();
+    }
+    $agent = new stdClass();
+    $agent->label = $label;
+    $agent->plugin = 'acquia_lift_target';
+    $agent->data = array();
+    $agent->machine_name = personalize_generate_machine_name($label, 'personalize_agent_machine_name_exists');
+    $agent = personalize_agent_save($agent);
+    $this->resetAll();
     return $agent;
   }
 
@@ -3443,20 +3464,6 @@ class AcquiaLiftWebTestTarget extends AcquiaLiftWebTestBase {
     $this->assertFalse(isset($option_set->targeting[$audience_name]['osid']));
   }
 
-  protected function createTargetingAgent($label = NULL) {
-    if (empty($label)) {
-      $label = $this->randomName();
-    }
-    $agent = new stdClass();
-    $agent->label = $label;
-    $agent->plugin = 'acquia_lift_target';
-    $agent->data = array();
-    $agent->machine_name = personalize_generate_machine_name($label, 'personalize_agent_machine_name_exists');
-    $agent = personalize_agent_save($agent);
-    $this->resetAll();
-    return $agent;
-  }
-
   /**
    * Helper that adds a target audience using two contexts AND'd together.
    *
@@ -3782,35 +3789,38 @@ class AcquiaLiftWebTestCampaignWizard extends AcquiaLiftWebTestBase {
    */
   function testAudienceAvailability() {
     $test_agent = $this->createTestAgent();
-    $target_agent = $this->createTestAgent(array('agent_type' => 'acquia_lift_target'));
+    $target_agent_data = $this->createTargetingAgent();
+
+    $test_name = $test_agent->getMachineName();
+    $target_name = $target_agent_data->machine_name;
 
     // No audiences should show before option sets are created regardless of the
     // agent type.
-    $this->drupalGet('admin/structure/personalize/manage/' . $test_agent->getMachineName() . '/targeting');
+    $this->drupalGet('admin/structure/personalize/manage/' . $test_name . '/targeting');
     $this->assertNoFieldByName('audiences[add][details][name]');
     $this->assertNoText('You must create variation sets before targeting.');
 
-    $this->drupalGet('admin/structure/personalize/manage/' . $target_agent->getMachineName() . '/targeting');
+    $this->drupalGet('admin/structure/personalize/manage/' . $target_name . '/targeting');
     $this->assertNoFieldByName('audiences[add][details][name]');
     $this->assertText('You must create variation sets before targeting.');
 
     // Now add an option set to each agent.
     $this->createOptionSet(1, array(
-      'agent' => $test_agent->getMachineName(),
+      'agent' => $test_name,
       'plugin' => 'type1',
       'num_options' => 2,
     ));
     $this->createOptionSet(1, array(
-      'agent' => $target_agent->getMachineName(),
+      'agent' => $target_name,
       'plugin' => 'type1',
       'num_options' => 2,
     ));
 
-    $this->drupalGet('admin/structure/personalize/manage/' . $test_agent->getMachineName() . '/targeting');
+    $this->drupalGet('admin/structure/personalize/manage/' . $test_name . '/targeting');
     $this->assertNoFieldByName('audiences[add][details][name]');
     $this->assertNoText('You must create variation sets before targeting.');
 
-    $this->drupalGet('admin/structure/personalize/manage/' . $target_agent->getMachineName() . '/targeting');
+    $this->drupalGet('admin/structure/personalize/manage/' . $target_name . '/targeting');
     $this->assertFieldByName('audiences[add][details][name]');
     $this->assertNoText('You must create variation sets before targeting.');
   }
@@ -3819,9 +3829,9 @@ class AcquiaLiftWebTestCampaignWizard extends AcquiaLiftWebTestBase {
    * Test the audience functionality.
    */
   function testTargeting() {
-    $agent = $this->createTestAgent(array('agent_type' => 'acquia_lift_target'));
+    $agent = $this->createTargetingAgent();
     $this->createOptionSet(1, array(
-      'agent' => $agent->getMachineName(),
+      'agent' => $agent->machine_name,
       'plugin' => 'type1',
       'num_options' => 2,
     ));
@@ -3846,11 +3856,11 @@ class AcquiaLiftWebTestCampaignWizard extends AcquiaLiftWebTestBase {
         '#name' => 'wizard_submit',
       ),
       'values' => array(
-        'agent' => $agent->getMachineName(),
+        'agent' => $agent->machine_name,
         'agent_basic_info' => array(
-          'title' => $agent->getTitle(),
-          'machine_name' => $agent->getMachineName(),
-          'agent_type' => $agent->getType(),
+          'title' => $agent->label,
+          'machine_name' => $agent->machine_name,
+          'agent_type' => $agent->plugin,
         ),
         'audiences' => array(
           'add' => array(
@@ -3874,13 +3884,13 @@ class AcquiaLiftWebTestCampaignWizard extends AcquiaLiftWebTestBase {
         ),
       ),
     );
-    $agent_data = personalize_agent_load($agent->getMachineName());
     $form = array(
-      '#agent' => $agent_data,
+      '#agent' => $agent,
     );
     acquia_lift_personalize_campaign_wizard_submit($form, $form_state);
+    $this->resetAll();
 
-    $this->drupalGet('admin/structure/personalize/manage/' . $agent->getMachineName() . '/targeting');
+    $this->drupalGet('admin/structure/personalize/manage/' . $agent->machine_name . '/targeting');
 
     // Now there should be an existing audience as well as a form to create
     // a new audience.
@@ -3899,7 +3909,7 @@ class AcquiaLiftWebTestCampaignWizard extends AcquiaLiftWebTestBase {
     );
     $this->drupalPost(NULL, $edit, $this->getButton('wizard_next'));
 
-    $this->drupalGet('admin/structure/personalize/manage/' . $agent->getMachineName() . '/targeting');
+    $this->drupalGet('admin/structure/personalize/manage/' . $agent->machine_name . '/targeting');
 
     // Now there should be two existing audiences as well as a form to create
     // a new audience.

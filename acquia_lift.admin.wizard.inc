@@ -267,24 +267,32 @@ function acquia_lift_personalize_campaign_wizard_targeting_alter(&$form, &$form_
 
   unset($form['targeting']['option_sets']);
 
-  // Determine any messages for display based on the current targeting
-  // persistence.
   $variation_options = $saved_targeting = array();
+  // Load the targeting that is currently in use for a campaign.
   $existing_targeting = acquia_lift_get_structure_from_targeting($option_set);
   // Track whether an option to revert targeting changes should be shown.
   $show_revert = FALSE;
   // The settings reflected in the form will either be what is currently running
   // or any saved overrides from when this form was last submitted (if the
   // review step was never completed to apply them.)
-  if (!empty($agent_data->data['lift_targeting']) && personalize_agent_get_status($agent_data->machine_name) != PERSONALIZE_STATUS_NOT_STARTED) {
+  if (!empty($agent_data->data['lift_targeting'])) {
+    // Get the current state of targeting work within the UI that has not
+    // yet been saved to the agent.
     $saved_targeting = $agent_data->data['lift_targeting'];
     if ($saved_targeting != $existing_targeting) {
       drupal_set_message(t('The targeting settings shown here do not match what is currently running for this campaign.'), 'warning');
       $show_revert = TRUE;
     }
-    else {
+  }
+  else {
+    if (personalize_agent_get_status($agent_data->machine_name) != PERSONALIZE_STATUS_NOT_STARTED) {
+      // The current agent is running and there have been no UI changes made
+      // since it was started.
       drupal_set_message(t('The targeting settings shown here represent what is currently running for this campaign.'));
     }
+    // Set the saved targeting to be the same as existing targeting for
+    // presentation within this form.
+    $saved_targeting = $existing_targeting;
   }
   // Get the names of the options from the representative option set.
   foreach ($option_set->options as $option) {
@@ -310,7 +318,7 @@ function acquia_lift_personalize_campaign_wizard_targeting_alter(&$form, &$form_
   );
   $form['audiences']['add']['details'] = _acquia_lift_personalize_campaign_wizard_targeting_audience($form, $form_state, $agent_data, 'add');
 
-  // Load all existing audience rules for the agent.
+  // Load all existing audiences for the agent.
   if (isset($option_set->targeting)) {
     // Sort the audiences by weight for display.
     uasort($option_set->targeting, function ($a, $b) {
@@ -725,6 +733,10 @@ function acquia_lift_personalize_campaign_wizard_targeting_submit(&$form, &$form
       drupal_set_message(t('There was a problem saving the target audience %audience.', array(
         '%audience' => $audience['details']['name'],
       )), 'error');
+    }
+    // Handle the assignment of options to audiences.
+    if (isset($audience['assignment'])) {
+      $targeting[$audience_id] = array_values($audience['assignment']);
     }
   }
   // Create the "Everyone else" audience if there are other audiences and it

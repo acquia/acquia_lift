@@ -320,6 +320,11 @@ function acquia_lift_theme() {
       'path' => $path . '/theme',
       'file' => 'acquia_lift.wizard.theme.inc',
     ),
+    'acquia_lift_revealing_input' => array(
+      'render element' => 'element',
+      'path' => $path . '/theme',
+      'file' => 'acquia_lift.wizard.theme.inc',
+    ),
     // Unified navbar themes.
     'acquia_lift_navbar' => array(
       'render element' => 'element',
@@ -1438,7 +1443,25 @@ function acquia_lift_library() {
       'jQuery(document).ready(function () { jQuery(".el-card").card(); })' => array('type' => 'inline'),
     ),
     'css' => array(
-      $path . '/css/acquia_lift.card.css',
+      $path . '/css/acquia_lift.card.css' => array(
+        'group' => CSS_THEME,
+      ),
+    ),
+    'dependencies' => array(
+      array('system', 'jquery'),
+      array('system', 'jquery.once'),
+    ),
+  );
+
+  // Special input types.
+  $libraries['acquia_lift.inputs'] = array(
+    'title' => 'Acquia Lift inputs',
+    'version' => VERSION,
+    'js' => array(
+      $path . '/js/acquia_lift.inputs.js' => array(),
+    ),
+    'css' => array(
+      $path . '/css/acquia_lift.inputs.css' ,
     ),
     'dependencies' => array(
       array('system', 'jquery'),
@@ -2389,54 +2412,18 @@ function acquia_lift_form_personalize_campaign_wizard_alter(&$form, &$form_state
   if (empty($agent->machine_name) || !acquia_lift_is_testing_agent($agent)) {
     return;
   }
-
-  // If we're editing an existing agent, add a "Reset data" button next to
-  // the Pause/Resume button.
-  $reset_form = array(
-    '#prefix' => '<div id="personalize-acquia-lift-reset-form">',
-    '#suffix' => '</div>'
+  module_load_include('inc', 'acquia_lift', 'acquia_lift.admin.wizard');
+  // We have to specify the include file so as not to lose it during rendering from ajax.
+  // @see personalize_agent_form_ajax_submit()
+  // @see drupal_retrieve_form():734
+  $form_state['build_info']['files'] = array(
+    drupal_get_path('module', 'acquia_lift') . '/acquia_lift.admin.wizard.inc',
   );
-  $reset_form['actions']['reset'] = array(
-    '#prefix' => '<div id="personalize-acquia-lift-reset">',
-    '#suffix' => '</div>',
-    '#type' => 'submit',
-    '#name' => 'reset_submit',
-    '#value' => t('Reset data'),
-    '#attributes' => array(
-      'class' => array('action-item-primary-active'),
-    ),
-    '#ajax' => array(
-      'callback' => 'personalize_acquia_lift_ajax_callback',
-      'wrapper' => 'personalize-acquia-lift-reset-form',
-      'effect' => 'fade',
-    )
-  );
-  $reset_form['actions']['reset']['#submit'] = array('acquia_lift_reset_submit');
-  $form['process_bar']['actions']['reset_lift_agent'] = $reset_form;
-  // Now the Sync button.
-  $sync_form = array(
-    '#prefix' => '<div id="personalize-acquia-lift-sync-form">',
-    '#suffix' => '</div>'
-  );
-  $sync_form['agent_name'] = array(
-    '#type' => 'value',
-    '#value' => $agent->machine_name,
-  );
-  $sync_form['actions']['sync'] = array(
-    '#prefix' => '<div id="personalize-acquia-lift-sync">',
-    '#suffix' => '</div>',
-    '#type' => 'submit',
-    '#name' => 'sync_submit',
-    '#value' => t('Sync with Lift'),
-    '#attributes' => array(
-      'class' => array('action-item-primary-active'),
-    ),
-  );
-  $sync_form['actions']['sync']['#submit'] = array('acquia_lift_sync_campaign_submit');
-  $form['process_bar']['actions']['sync_lift_agent'] = $sync_form;
+  // Call the alter hooks for the generic form parts.
+  call_user_func_array('acquia_lift_personalize_campaign_wizard_process_bar_alter', array(&$form, &$form_state, $form_id));
+  call_user_func_array('acquia_lift_personalize_campaign_wizard_base_alter', array(&$form, &$form_state, $form_id));
 
   // Now call any alter hooks that are specific to the storage step.
-  module_load_include('inc', 'acquia_lift', 'acquia_lift.admin.wizard');
   $function = 'acquia_lift_personalize_campaign_wizard_' . $form_state['storage']['step'] . '_alter';
   if (function_exists($function)) {
     call_user_func_array($function, array(&$form, &$form_state, $form_id));

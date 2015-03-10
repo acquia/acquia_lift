@@ -15,23 +15,27 @@ function theme_acquia_lift_card($variables) {
   $element = $variables['element'];
   $footer_children = empty($element['footer']) ? array() : element_children($element['footer']);
   $card_label = isset($element['#title']) ? $element['#title'] : '';
-  $header_actions = isset($element['#header_actions']) && is_array($element['#header_actions']) ? $element['#header_actions'] : array();
+  $header_children = isset($element['header']) ? element_children($element['header']) : array();
   unset($element['footer']);
 
+  // Set default values
+  $element['#collapsible'] = isset($element['#collapsible']) ? $element['#collapsible'] : TRUE;
+  $element['#collapsed'] = isset($element['#collapsed']) ? $element['#collapsed'] : TRUE;
   $data_attributes = array(
-    'data-card-collapsible' => isset($element['#collapsible']) ? $element['#collapsible'] : TRUE,
-    'data-card-collapsed' => isset($element['#collapsed']) ? $element['#collapsed'] : FALSE,
-    'data-card-footerVisible' => !empty($footer_children),
+    'data-card-collapsible' => $element['#collapsible'] ? 'true' : 'false',
+    'data-card-collapsed' => $element['#collapsed'] ? 'true' : 'false',
+    'data-card-footer-visible' => empty($footer_children) ? 'false' : 'true',
   );
   drupal_add_library('acquia_lift', 'acquia_lift.card');
   $html = '';
   $html .= '<div class="el-card" ' . drupal_attributes($data_attributes) . '>';
   $html .= '<div class="el-card__header">';
   $html .= '<h2 class="el-card__title">' . $card_label . '</h2>';
-  if (!empty($header_actions)) {
+  if (!empty($header_children)) {
     $html .= '<ul class="el-card__actions">';
-    foreach ($header_actions as $link) {
-      $html .= '<li class="el-card__action">' . $link . '</li>';
+    foreach ($header_children as $action) {
+      $element['header'][$action]['#attributes']['class'][] = 'el-card__action__link';
+      $html .= '<li class="el-card__action">' . drupal_render($element['header'][$action]) . '</li>';
     }
     $html .= '</ul>';
   }
@@ -84,3 +88,17 @@ function theme_acquia_lift_radio_list_item($variables) {
   return $html;
 }
 
+/**
+ * Theme wrapper function to wrap an input as a revealing input.
+ */
+function theme_acquia_lift_revealing_input($variables) {
+  if (empty($variables['element']['#children'])) {
+    return '';
+  }
+  drupal_add_library('acquia_lift', 'acquia_lift.inputs');
+  $html = '';
+  $html .= '<div class="acquia-lift-revealing-input">';
+  $html .= $variables['element']['#children'];
+  $html .= '</div>';
+  return $html;
+}

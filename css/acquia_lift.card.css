@@ -53,7 +53,7 @@
   padding-left: 0.75rem;
 }
 
-.el-card__actions {
+ul.el-card__actions {
   float: right;
   left: -100%;
   margin: 0;
@@ -66,6 +66,7 @@
   display: inline-block;
 }
 
+.el-card__action a,
 .el-card__action__link {
   display: inline-block;
 }

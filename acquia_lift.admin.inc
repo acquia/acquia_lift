@@ -932,10 +932,11 @@ function acquia_lift_target_audience_save($label, $agent_name, $contexts, $strat
     return FALSE;
   }
   $machine_name = empty($machine_name) ? personalize_generate_machine_name($label, NULL, '-') : $machine_name;
-  $option_set->targeting[$machine_name] = array(
-    'label' => $label,
-    'weight' => count($option_set->targeting)
-  );
+  if (empty($option_set->targeting[$machine_name])) {
+    $option_set->targeting[$machine_name] = array();
+  }
+  $option_set->targeting[$machine_name]['label'] = $label;
+  $option_set->targeting[$machine_name]['weight'] = count($option_set->targeting);
   // Generate the feature strings and rules for the contexts.
   $agent = personalize_agent_load_agent($agent_name);
   $feature_strings = $feature_rules = array();

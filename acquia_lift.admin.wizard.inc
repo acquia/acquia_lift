@@ -594,7 +594,7 @@ function _acquia_lift_personalize_campaign_wizard_form_state_blocks_alter(&$form
 }
 
 /**
- * Generate the add form for a new element variation set.
+ * Form to edit or add an element variation.
  *
  * @param array $form
  *   The form array reference
@@ -602,6 +602,8 @@ function _acquia_lift_personalize_campaign_wizard_form_state_blocks_alter(&$form
  *   The current form state
  * @param stdClass $agent_data
  *   The data for the current campaign
+ * @param stdClass $option_set
+ *   (Optional) The option set to display within the form if editing.
  *
  * NOTE: limit_validation_errors is not set for either of this submit buttons
  * due to a requirement to actually save the page content before exiting for

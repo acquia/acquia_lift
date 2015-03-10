@@ -3829,9 +3829,15 @@ class AcquiaLiftWebTestCampaignWizard extends AcquiaLiftWebTestBase {
    * Test the audience functionality.
    */
   function testTargeting() {
-    $agent = $this->createTargetingAgent();
+    $first_agent = $this->createTargetingAgent();
+    $second_agent = $this->createTargetingAgent();
     $this->createOptionSet(1, array(
-      'agent' => $agent->machine_name,
+      'agent' => $first_agent->machine_name,
+      'plugin' => 'type1',
+      'num_options' => 2,
+    ));
+    $this->createOptionSet(2, array(
+      'agent' => $second_agent->machine_name,
       'plugin' => 'type1',
       'num_options' => 2,
     ));
@@ -3856,16 +3862,17 @@ class AcquiaLiftWebTestCampaignWizard extends AcquiaLiftWebTestBase {
         '#name' => 'wizard_submit',
       ),
       'values' => array(
-        'agent' => $agent->machine_name,
+        'agent' => $first_agent->machine_name,
         'agent_basic_info' => array(
-          'title' => $agent->label,
-          'machine_name' => $agent->machine_name,
-          'agent_type' => $agent->plugin,
+          'title' => $first_agent->label,
+          'machine_name' => $first_agent->machine_name,
+          'agent_type' => $first_agent->plugin,
         ),
         'audiences' => array(
           'add' => array(
             'details' => array(
               'name' => 'Muppet fans',
+              'weight' => 10,
               'mapping' => array(
                 'contexts' => array(
                   array(
@@ -3885,12 +3892,12 @@ class AcquiaLiftWebTestCampaignWizard extends AcquiaLiftWebTestBase {
       ),
     );
     $form = array(
-      '#agent' => $agent,
+      '#agent' => $first_agent,
     );
     acquia_lift_personalize_campaign_wizard_submit($form, $form_state);
     $this->resetAll();
 
-    $this->drupalGet('admin/structure/personalize/manage/' . $agent->machine_name . '/targeting');
+    $this->drupalGet('admin/structure/personalize/manage/' . $first_agent->machine_name . '/targeting');
 
     // Now there should be an existing audience as well as a form to create
     // a new audience.
@@ -3909,7 +3916,7 @@ class AcquiaLiftWebTestCampaignWizard extends AcquiaLiftWebTestBase {
     );
     $this->drupalPost(NULL, $edit, $this->getButton('wizard_next'));
 
-    $this->drupalGet('admin/structure/personalize/manage/' . $agent->machine_name . '/targeting');
+    $this->drupalGet('admin/structure/personalize/manage/' . $first_agent->machine_name . '/targeting');
 
     // Now there should be two existing audiences as well as a form to create
     // a new audience.
@@ -3921,5 +3928,60 @@ class AcquiaLiftWebTestCampaignWizard extends AcquiaLiftWebTestBase {
     $this->assertOptionSelected('edit-audiences-others-details-mapping-contexts-0-value-operator', 'equals');
     $this->assertFieldByName('audiences[others][details][mapping][contexts][0][value][match]', 'Sad people');
     $this->assertFieldByName('audiences[add][details][name]', '');
+
+    // Adjust the weights and verify that the "Everyone else" has the highest.
+    module_load_include('inc', 'acquia_lift', 'acquia_lift.admin');
+    $this->drupalGet('admin/structure/personalize/manage/' . $first_agent->machine_name . '/targeting');
+    $edit = array(
+      'audiences[muppet-fans][details][weight]' => 50,
+      'audiences[others][details][weight]' => 75,
+    );
+    $this->drupalPost(NULL, $edit, $this->getButton('wizard_next'));
+    $this->drupalGet('admin/structure/personalize/manage/' . $first_agent->machine_name . '/targeting');
+    $option_set = acquia_lift_get_option_set_for_targeting($first_agent->machine_name);
+    $this->assertEqual($option_set->targeting['muppet-fans']['weight'], 50);
+    $this->assertEqual($option_set->targeting['others']['weight'], 75);
+    $this->assertEqual($option_set->targeting['everyone-else']['weight'], 85);
+
+    $edit = array(
+      'audiences[muppet-fans][details][weight]' => 5,
+      'audiences[others][details][weight]' => 0,
+    );
+    $this->drupalPost(NULL, $edit, $this->getButton('wizard_next'));
+    $this->resetAll();
+    $option_set = acquia_lift_get_option_set_for_targeting($first_agent->machine_name);
+    $this->assertEqual($option_set->targeting['muppet-fans']['weight'], 5);
+    $this->assertEqual($option_set->targeting['others']['weight'], 0);
+    $this->assertEqual($option_set->targeting['everyone-else']['weight'], 15);
+
+    // Use the second agent to test the automatic creation and removal of the
+    // "Everyone else" audience.
+    $this->drupalGet('admin/structure/personalize/manage/' . $second_agent->machine_name . '/targeting');
+    $edit = array(
+      'audiences[add][details][name]' => 'Swamp lovers',
+      'audiences[add][details][mapping][contexts][0][context]' => 'user_profile_context' . PERSONALIZE_TARGETING_ADMIN_SEPARATOR . $context_1,
+      'audiences[add][details][mapping][contexts][0][value][operator]' => 'equals',
+      'audiences[add][details][mapping][contexts][0][value][match]' => 'Amphibians',
+      'audiences[add][details][weight]' => 50,
+    );
+    $this->drupalPost(NULL, $edit, $this->getButton('wizard_next'));
+
+    // Verify the new audience as well as the "Everyone else" audience,
+    $this->drupalGet('admin/structure/personalize/manage/' . $second_agent->machine_name . '/targeting');
+    $this->assertFieldByName('audiences[swamp-lovers][details][name]', 'Swamp lovers');
+    $this->assertFieldByName('audiences[swamp-lovers][assignment][]');
+    $this->assertFieldByName('audiences[add][details][name]', '');
+    $this->assertNoFieldByName('audiences[everyone-else][details][name]');
+    $this->assertFieldByName('audiences[everyone-else][assignment][]');
+
+    // Delete the new audience and verify that "Everyone else" is removed too.
+    $this->drupalGet('admin/structure/personalize/manage/' . $second_agent->machine_name . '/audience/swamp-lovers/delete');
+    $this->drupalPost(NULL, NULL, t('Delete'));
+    $this->drupalGet('admin/structure/personalize/manage/' . $second_agent->machine_name . '/targeting');
+    $this->assertNoFieldByName('audiences[swamp-lovers][details][name]');
+    $this->assertFieldByName('audiences[add][details][name]', '');
+    $this->assertNoFieldByName('audiences[everyone-else][assignment][]');
   }
+
+  // Test the revert functionality.
 }

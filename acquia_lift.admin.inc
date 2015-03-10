@@ -1348,6 +1348,9 @@ function acquia_lift_save_targeting_structure($agent, $targeting) {
  *   arrays of option IDs.
  */
 function acquia_lift_get_structure_from_targeting($option_set) {
+  if (empty($option_set->targeting)) {
+    return array();
+  }
   $targeting_structure = array();
   foreach ($option_set->targeting as $name => $targ) {
     $targeting_structure[$name] = array();

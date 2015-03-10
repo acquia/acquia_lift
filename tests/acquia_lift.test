@@ -131,9 +131,9 @@ class AcquiaLiftWebTestBase extends DrupalWebTestCase
     if (!$basicOnly) {
       $edit = array(
         'agent_basic_info[title]' => $data['name'],
-        'options[acquia_lift][decision_style]' => $data['decision_style'],
-        'options[acquia_lift][control_rate]' => $data['control_rate'],
-        'options[acquia_lift][explore_rate]' => $data['explore_rate'],
+        'agent_options[options][decision_style]' => $data['decision_style'],
+        'agent_options[options][control_rate]' => $data['control_rate'],
+        'agent_options[options][explore_rate]' => $data['explore_rate'],
         'cache_decisions' => $data['cache_decisions']
       );
       $this->drupalPost('admin/structure/personalize/manage/' . $data['machine_name'] . '/review', $edit, $this->getButton('wizard_start'));
@@ -191,6 +191,27 @@ class AcquiaLiftWebTestBase extends DrupalWebTestCase
       $this->personalizedQueue->deleteQueue();
     }
 
+    return $agent;
+  }
+
+  /**
+   * A helper function to create an acquia_lift_target agent.
+   * @param string $label
+   *   (Optional) The label for the new agent.
+   * @return stdClass
+   *   The newly created agent data.
+   */
+  protected function createTargetingAgent($label = NULL) {
+    if (empty($label)) {
+      $label = $this->randomName();
+    }
+    $agent = new stdClass();
+    $agent->label = $label;
+    $agent->plugin = 'acquia_lift_target';
+    $agent->data = array();
+    $agent->machine_name = personalize_generate_machine_name($label, 'personalize_agent_machine_name_exists');
+    $agent = personalize_agent_save($agent);
+    $this->resetAll();
     return $agent;
   }
 
@@ -3538,21 +3559,6 @@ class AcquiaLiftWebTestTarget extends AcquiaLiftWebTestBase {
     }
   }
 
-  protected function createTargetingAgent($label = NULL) {
-    AcquiaLiftAPI::setTestInstance();
-    if (empty($label)) {
-      $label = $this->randomName();
-    }
-    $agent = new stdClass();
-    $agent->label = $label;
-    $agent->plugin = 'acquia_lift_target';
-    $agent->data = array();
-    $agent->machine_name = personalize_generate_machine_name($label, 'personalize_agent_machine_name_exists');
-    $agent = personalize_agent_save($agent);
-    $this->resetAll();
-    return $agent;
-  }
-
   /**
    * Helper that adds a target audience using two contexts AND'd together.
    *
@@ -3594,6 +3600,11 @@ class AcquiaLiftWebTestCampaignWizard extends AcquiaLiftWebTestBase {
       'description' => t('Tests functionality related to the campaign management wizard.'),
       'group' => t('Personalize'),
     );
+  }
+
+  public function setUp() {
+    parent::setUp();
+    variable_set('acquia_lift_target_enabled', TRUE);
   }
 
   function testVariationTypeSelect() {
@@ -3865,5 +3876,145 @@ class AcquiaLiftWebTestCampaignWizard extends AcquiaLiftWebTestBase {
     $this->assertText('Element test set 1');
     $this->drupalPost(NULL, NULL, 'Edit');
     $this->assertUrl('node');
+  }
+
+  /**
+   * Verify that audience-style targeting is only available for Acquia Lift
+   * Target agents.
+   */
+  function testAudienceAvailability() {
+    $test_agent = $this->createTestAgent();
+    $target_agent_data = $this->createTargetingAgent();
+
+    $test_name = $test_agent->getMachineName();
+    $target_name = $target_agent_data->machine_name;
+
+    // No audiences should show before option sets are created regardless of the
+    // agent type.
+    $this->drupalGet('admin/structure/personalize/manage/' . $test_name . '/targeting');
+    $this->assertNoFieldByName('audiences[add][details][name]');
+    $this->assertNoText('You must create variation sets before targeting.');
+
+    $this->drupalGet('admin/structure/personalize/manage/' . $target_name . '/targeting');
+    $this->assertNoFieldByName('audiences[add][details][name]');
+    $this->assertText('You must create variation sets before targeting.');
+
+    // Now add an option set to each agent.
+    $this->createOptionSet(1, array(
+      'agent' => $test_name,
+      'plugin' => 'type1',
+      'num_options' => 2,
+    ));
+    $this->createOptionSet(1, array(
+      'agent' => $target_name,
+      'plugin' => 'type1',
+      'num_options' => 2,
+    ));
+
+    $this->drupalGet('admin/structure/personalize/manage/' . $test_name . '/targeting');
+    $this->assertNoFieldByName('audiences[add][details][name]');
+    $this->assertNoText('You must create variation sets before targeting.');
+
+    $this->drupalGet('admin/structure/personalize/manage/' . $target_name . '/targeting');
+    $this->assertFieldByName('audiences[add][details][name]');
+    $this->assertNoText('You must create variation sets before targeting.');
+  }
+
+  /**
+   * Test the audience functionality.
+   */
+  function testTargeting() {
+    $agent = $this->createTargetingAgent();
+    $this->createOptionSet(1, array(
+      'agent' => $agent->machine_name,
+      'plugin' => 'type1',
+      'num_options' => 2,
+    ));
+
+    // Create user profile fields that we can use for targeting.
+    $user_profile_field_1 = $this->createUserProfileField();
+    $user_profile_field_2 = $this->createUserProfileField();
+    $context_1 = str_replace('field_', '', $user_profile_field_1['field_name']);
+    $context_2 = str_replace('field_', '', $user_profile_field_2['field_name']);
+
+    // Add some contexts so that the audience can be interesting.
+    // We can't use the form to add multiple fixed targeting contexts because we can't
+    // make simpletest use the "Add context" button, so we send our form values directly
+    // to the submit function.
+    module_load_include('inc', 'acquia_lift', 'acquia_lift.admin.wizard');
+    $form_state = array(
+      'storage' => array(
+        'step' => 'targeting',
+      ),
+      'triggering_element' => array(
+        '#value' => $this->getButton('wizard_next'),
+        '#name' => 'wizard_submit',
+      ),
+      'values' => array(
+        'agent' => $agent->machine_name,
+        'agent_basic_info' => array(
+          'title' => $agent->label,
+          'machine_name' => $agent->machine_name,
+          'agent_type' => $agent->plugin,
+        ),
+        'audiences' => array(
+          'add' => array(
+            'details' => array(
+              'name' => 'Muppet fans',
+              'mapping' => array(
+                'contexts' => array(
+                  array(
+                    'context' => 'user_profile_context' . PERSONALIZE_TARGETING_ADMIN_SEPARATOR . $context_1,
+                    'value' => array('match' => 'some value', 'operator' => 'equals'),
+                  ),
+                  array(
+                    'context' => 'user_profile_context' . PERSONALIZE_TARGETING_ADMIN_SEPARATOR . $context_2,
+                    'value' => array('match' => 'some value', 'operator' => 'equals'),
+                  ),
+                ),
+              ),
+              'strategy' => 'OR',
+            ),
+          ),
+        ),
+      ),
+    );
+    $form = array(
+      '#agent' => $agent,
+    );
+    acquia_lift_personalize_campaign_wizard_submit($form, $form_state);
+    $this->resetAll();
+
+    $this->drupalGet('admin/structure/personalize/manage/' . $agent->machine_name . '/targeting');
+
+    // Now there should be an existing audience as well as a form to create
+    // a new audience.
+    $this->assertFieldByName('audiences[muppet-fans][details][name]', 'Muppet fans');
+    $this->assertFieldByName('audiences[add][details][name]', '');
+
+    // Add a new audience and edit the existing audience.
+    $edit = array(
+      'audiences[muppet-fans][details][name]' => 'Muppet mania',
+      'audiences[muppet-fans][details][mapping][contexts][0][value][match]' => 'Kermit fans',
+      'audiences[muppet-fans][details][mapping][contexts][1][value][match]' => 'Gonzo fans',
+      'audiences[add][details][name]' => 'Others',
+      'audiences[add][details][mapping][contexts][0][context]' => 'user_profile_context' . PERSONALIZE_TARGETING_ADMIN_SEPARATOR . $context_1,
+      'audiences[add][details][mapping][contexts][0][value][operator]' => 'equals',
+      'audiences[add][details][mapping][contexts][0][value][match]' => 'Sad people',
+    );
+    $this->drupalPost(NULL, $edit, $this->getButton('wizard_next'));
+
+    $this->drupalGet('admin/structure/personalize/manage/' . $agent->machine_name . '/targeting');
+
+    // Now there should be two existing audiences as well as a form to create
+    // a new audience.
+    $this->assertFieldByName('audiences[muppet-fans][details][name]', 'Muppet mania');
+    $this->assertFieldByname('audiences[muppet-fans][details][mapping][contexts][0][value][match]', 'Kermit fans');
+    $this->assertFieldByName('audiences[muppet-fans][details][mapping][contexts][1][value][match]', 'Gonzo fans');
+    $this->assertFieldByName('audiences[others][details][name]', 'Others');
+    $this->assertFieldByName('audiences[others][details][mapping][contexts][0][context]', 'user_profile_context' . PERSONALIZE_TARGETING_ADMIN_SEPARATOR . $context_1);
+    $this->assertOptionSelected('edit-audiences-others-details-mapping-contexts-0-value-operator', 'equals');
+    $this->assertFieldByName('audiences[others][details][mapping][contexts][0][value][match]', 'Sad people');
+    $this->assertFieldByName('audiences[add][details][name]', '');
   }
 }

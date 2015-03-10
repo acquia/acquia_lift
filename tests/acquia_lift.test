@@ -3401,7 +3401,7 @@ class AcquiaLiftWebTestTarget extends AcquiaLiftWebTestBase {
     $option_set = personalize_option_set_load($option_set->osid, TRUE);
     $this->assertEqual($nested_osid, $option_set->targeting[$audience_name]['osid']);
 
-    // Create a new target audience and change the strucutre of our campaign.
+    // Create a new target audience and change the structure of our campaign.
     $second_audience = personalize_generate_machine_name($this->randomName(), NULL, '-');
     $this->createTargetAudience($option_set, $second_audience, array(
       array(
@@ -3421,7 +3421,7 @@ class AcquiaLiftWebTestTarget extends AcquiaLiftWebTestBase {
       $this->fail('Exception thrown when none expected.');
     }
     $this->resetAll();
-    // When we implement the new structure it should delete the existing nexted
+    // When we implement the new structure it should delete the existing nested
     // agent and create a new one.
     acquia_lift_update_targeting($agent);
     $this->resetAll();
@@ -3831,10 +3831,10 @@ class AcquiaLiftWebTestCampaignWizard extends AcquiaLiftWebTestBase {
   function testTargeting() {
     $first_agent = $this->createTargetingAgent();
     $second_agent = $this->createTargetingAgent();
-    $this->createOptionSet(1, array(
+    list($first_option_set, $first_queue) = $this->createOptionSet(1, array(
       'agent' => $first_agent->machine_name,
       'plugin' => 'type1',
-      'num_options' => 2,
+      'num_options' => 3,
     ));
     $this->createOptionSet(2, array(
       'agent' => $second_agent->machine_name,
@@ -3954,6 +3954,72 @@ class AcquiaLiftWebTestCampaignWizard extends AcquiaLiftWebTestBase {
     $this->assertEqual($option_set->targeting['others']['weight'], 0);
     $this->assertEqual($option_set->targeting['everyone-else']['weight'], 15);
 
+    // Test assignments saves as anticipated.
+    $this->drupalGet('admin/structure/personalize/manage/' . $first_agent->machine_name . '/targeting');
+    // There are no targeting assignments so there should be no messages.
+    $this->assertNoText('The targeting settings shown here do not match what is currently running for this campaign.');
+    $this->assertNoText('The targeting settings shown here represent what is currently running for this campaign.');
+
+    $edit = array(
+      'audiences[muppet-fans][assignment][]' => array($first_option_set->options[0]['option_id'], $first_option_set->options[1]['option_id']),
+      'audiences[others][assignment][]' => array($first_option_set->options[2]['option_id']),
+      'audiences[everyone-else][assignment][]' => array($first_option_set->options[0]['option_id']),
+    );
+    $this->drupalPost(NULL, $edit, $this->getButton('wizard_next'));
+    // The targeting should be saved in the agent property.
+    $first_agent = personalize_agent_load($first_agent->machine_name);
+    $expected_agent_targeting = array(
+      'muppet-fans' =>  $edit['audiences[muppet-fans][assignment][]'],
+      'others' => $edit['audiences[others][assignment][]'],
+      'everyone-else' => $edit['audiences[everyone-else][assignment][]'],
+    );
+    $this->assertEqual($expected_agent_targeting, $first_agent->data['lift_targeting']);
+    // The targeting should not have been saved to the option set yet.
+    acquia_lift_get_structure_from_targeting(personalize_option_set_load($first_option_set->osid, TRUE));
+    $this->assertTrue(empty($option_set->targeting['muppet-fans']['option_id']));
+    $this->assertTrue(empty($option_set->targeting['muppet-fans']['osid']));
+    $this->assertTrue(empty($option_set->targeting['others']['option_id']));
+    $this->assertTrue(empty($option_set->targeting['others']['osid']));
+    $this->assertTrue(empty($option_set->targeting['everyone-else']['option_id']));
+    $this->assertTrue(empty($option_set->targeting['everyone-else']['osid']));
+
+    // A message should display to indicate that the targeting isn't finalized.
+    $this->drupalGet('admin/structure/personalize/manage/' . $first_agent->machine_name . '/targeting');
+    $this->assertText('The targeting settings shown here do not match what is currently running for this campaign.');
+    $this->assertNoText('The targeting settings shown here represent what is currently running for this campaign.');
+
+    // Save the targeting structure and start the agent.
+    acquia_lift_update_targeting($first_agent);
+    personalize_agent_set_status($first_agent->machine_name, PERSONALIZE_STATUS_RUNNING);
+    $this->resetAll();
+
+    $this->drupalGet('admin/structure/personalize/manage/' . $first_agent->machine_name . '/targeting');
+    $this->assertNoText('The targeting settings shown here do not match what is currently running for this campaign.');
+    $this->assertText('The targeting settings shown here represent what is currently running for this campaign.');
+
+    // Make changes and verify the messaging.
+    $edit = array(
+      'audiences[muppet-fans][assignment][]' => array($first_option_set->options[1]['option_id']),
+    );
+    $this->drupalPost(NULL, $edit, $this->getButton('wizard_next'));
+    $this->drupalGet('admin/structure/personalize/manage/' . $first_agent->machine_name . '/targeting');
+    $this->assertText('The targeting settings shown here do not match what is currently running for this campaign.');
+    $this->assertNoText('The targeting settings shown here represent what is currently running for this campaign.');
+
+    // Revert the changes and verify.
+    $this->drupalPost(NULL, NULL, t('Revert changes'));
+    $this->assertText(t('Are you sure you want to revert the targeting changes'));
+    $this->drupalPost(NULL, NULL, t('Revert changes'));
+    $this->resetAll();
+
+    $this->drupalGet('admin/structure/personalize/manage/' . $first_agent->machine_name . '/targeting');
+    $this->assertNoText('The targeting settings shown here do not match what is currently running for this campaign.');
+    $this->assertText('The targeting settings shown here represent what is currently running for this campaign.');
+    $this->assertOptionSelected('edit-audiences-muppet-fans-assignment', $first_option_set->options[0]['option_id']);
+    $this->assertOptionSelected('edit-audiences-muppet-fans-assignment', $first_option_set->options[1]['option_id']);
+    $this->assertOptionSelected('edit-audiences-others-assignment', $first_option_set->options[2]['option_id']);
+    $this->assertOptionSelected('edit-audiences-everyone-else-assignment', $first_option_set->options[0]['option_id']);
+
     // Use the second agent to test the automatic creation and removal of the
     // "Everyone else" audience.
     $this->drupalGet('admin/structure/personalize/manage/' . $second_agent->machine_name . '/targeting');
@@ -3982,6 +4048,4 @@ class AcquiaLiftWebTestCampaignWizard extends AcquiaLiftWebTestBase {
     $this->assertFieldByName('audiences[add][details][name]', '');
     $this->assertNoFieldByName('audiences[everyone-else][assignment][]');
   }
-
-  // Test the revert functionality.
 }

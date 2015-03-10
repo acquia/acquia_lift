@@ -339,6 +339,25 @@
     Drupal.ajax.prototype.commands.acquia_lift_variation_edit(Drupal.ajax, response, 200);
   });
 
+  /**
+   * Look for any behavior initialization information in the Drupal settings.
+   */
+  Drupal.behaviors.acquiaLiftVariations = {
+    attach: function (context, settings) {
+      if (settings.acquia_lift.toolbarEditMode) {
+        $('body').once('acquia-lift-variations', function () {
+          response = {
+            data: {
+              type: settings.acquia_lift.toolbarEditMode,
+              start: true
+            }
+          };
+          Drupal.ajax.prototype.commands.acquia_lift_variation_toggle(Drupal.ajax, response, 200);
+        });
+      }
+    }
+  }
+
 
 }(Drupal.jQuery, Drupal));
 

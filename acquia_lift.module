@@ -389,6 +389,12 @@ function acquia_lift_init() {
       acquia_lift_unset_nav_message();
     }
   }
+  if (!empty($_SESSION['acquia_lift_element_trigger']) && user_access('manage personalized content')) {
+    // Element variation editing should enabled upon page load.
+    drupal_add_js(array('acquia_lift' => array('toolbarEditMode' => $_SESSION['acquia_lift_element_trigger'])), array('type' => 'setting'));
+    unset($_SESSION['acquia_lift_element_trigger']);
+  }
+
 }
 
 /**
@@ -1465,6 +1471,7 @@ function acquia_lift_library() {
     ),
     'dependencies' => array(
       array('system', 'jquery'),
+      array('system', 'jquery.once'),
     ),
   );
 

@@ -132,7 +132,7 @@ function acquia_lift_get_sync_operations_for_agents($agents) {
   $operations = array();
   $lift_api = AcquiaLiftAPI::getInstance(variable_get('acquia_lift_account_info', array()));
   foreach ($agents as $agent_name => $agent) {
-    if (!acquia_lift_owns_agent($agent)) {
+    if (!acquia_lift_is_testing_agent($agent)) {
       continue;
     }
     if ($agent_instance = personalize_agent_load_agent($agent_name)) {

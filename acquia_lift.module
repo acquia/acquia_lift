@@ -535,18 +535,19 @@ function acquia_lift_get_agent_types() {
 }
 
 /**
- * Returns whether or not the passed in agent is owned by this module.
+ * Returns whether or not the passed in agent is a testing agent.
  *
  * @param $agent
  *   An object representing the agent.
  * @return bool
- *   TRUE if the object is an Acquia Lift owned agent, FALSE otherwise.
+ *   TRUE if the object is an agent whose plugin is one of the testing plugins
+ *   provided by this module, FALSE otherwise.
  */
-function acquia_lift_owns_agent($agent) {
+function acquia_lift_is_testing_agent($agent) {
   if (empty($agent)) {
     return FALSE;
   }
-  $agent_types = acquia_lift_get_agent_types();
+  $agent_types = array('acquia_lift', 'acquia_lift_simple_ab');
   return in_array($agent->plugin, array_keys($agent_types));
 }
 
@@ -586,7 +587,7 @@ function acquia_lift_target_access($agent) {
  * Implements hook_personalize_agent_presave().
  */
 function acquia_lift_personalize_agent_presave($agent) {
-  if (!acquia_lift_owns_agent($agent)) {
+  if (!in_array($agent->plugin, array('acquia_lift', 'acquia_lift_simple_ab'))) {
     return;
   }
   $account = variable_get('acquia_lift_account_info', array());
@@ -613,7 +614,7 @@ function acquia_lift_personalize_agent_update_status($agent_name, $old_status, $
   // Clear the agent's verification status.
   acquia_lift_agent_clear_verified_status($agent_name);
   $agent_data = personalize_agent_load($agent_name);
-  if (!acquia_lift_owns_agent($agent_data)) {
+  if (!acquia_lift_is_testing_agent($agent_data)) {
     return;
   }
   $agent_instance = personalize_agent_load_agent($agent_name, TRUE);
@@ -679,7 +680,7 @@ function acquia_lift_personalize_visitor_context() {
  * Implements hook_personalize_agent_delete().
  */
 function acquia_lift_personalize_agent_delete($agent_data) {
-  if (!acquia_lift_owns_agent($agent_data)) {
+  if (!acquia_lift_is_testing_agent($agent_data)) {
     return;
   }
   acquia_lift_agent_clear_verified_status($agent_data->machine_name);
@@ -714,7 +715,7 @@ function acquia_lift_personalize_option_set_presave($option_set) {
  */
 function acquia_lift_personalize_option_set_save($option_set) {
   $agent = personalize_agent_load($option_set->agent);
-  if (!acquia_lift_owns_agent($agent)) {
+  if (!acquia_lift_is_testing_agent($agent)) {
     return;
   }
   $new_os = FALSE;
@@ -824,7 +825,7 @@ function acquia_lift_personalize_option_set_save($option_set) {
  */
 function acquia_lift_personalize_option_set_delete($option_set) {
   $agent = personalize_agent_load($option_set->agent);
-  if (!acquia_lift_owns_agent($agent)) {
+  if (!acquia_lift_is_testing_agent($agent)) {
     return;
   }
   // Acquia Lift agents store their option set info in the db so that they can
@@ -908,7 +909,7 @@ function acquia_lift_sync_fixed_targeting($agent, $new_option_sets) {
  */
 function acquia_lift_personalize_goal_save($goal_info) {
   $agent = personalize_agent_load($goal_info['agent']);
-  if (!acquia_lift_owns_agent($agent)) {
+  if (!acquia_lift_is_testing_agent($agent)) {
     return;
   }
   $old_goals = isset($agent->data['goals']) ? $agent->data['goals'] : array();
@@ -930,7 +931,7 @@ function acquia_lift_personalize_goal_save($goal_info) {
  */
 function acquia_lift_personalize_goal_delete($goal_info) {
   $agent = personalize_agent_load($goal_info['agent']);
-  if (!acquia_lift_owns_agent($agent)) {
+  if (!acquia_lift_is_testing_agent($agent)) {
     return;
   }
   $old_goals = isset($agent->data['goals']) ? $agent->data['goals'] : array();
@@ -1478,6 +1479,7 @@ function acquia_lift_library() {
     ),
     'dependencies' => array(
       array('system', 'jquery'),
+      array('system', 'jquery.once'),
     ),
   );
 
@@ -2422,7 +2424,7 @@ function acquia_lift_form_personalize_campaign_wizard_alter(&$form, &$form_state
     drupal_set_message(t('Your Acquia Lift account info has not been configured. Acquia Lift campaigns can not be created until you configure your account info !here', array('!here' => l('here', 'admin/config/content/personalize/acquia_lift'))), 'error');
   }
 
-  if (empty($agent->machine_name) || !acquia_lift_owns_agent($agent)) {
+  if (empty($agent->machine_name) || !acquia_lift_is_testing_agent($agent)) {
     return;
   }
   $form['#attached']['css'][] = drupal_get_path('module', 'acquia_lift') . '/css/acquia_lift.admin.css';
@@ -2513,7 +2515,7 @@ function acquia_lift_personalize_agent_date_form_alter(&$form, $agent_name) {
   $agent = personalize_agent_load($agent_name);
   // If this is a Lift agent, we need to add the "Run until a winner is found"
   // option to the campaign end dropdown.
-  if (acquia_lift_owns_agent($agent)) {
+  if (acquia_lift_is_testing_agent($agent)) {
     $data = $agent->data;
     $options = $form['campaign_end']['#options'];
     // The "specified" needs to be the last option, because of the date

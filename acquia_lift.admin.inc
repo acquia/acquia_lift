@@ -841,7 +841,7 @@ function acquia_lift_report_conversion() {
   $options['end'] = empty($params['end']) ? NULL : check_plain($params['end']);
   $agent = personalize_agent_load($agent_name);
 
-  if (!acquia_lift_owns_agent($agent)) {
+  if (!acquia_lift_is_testing_agent($agent)) {
     return array();
   }
   if (is_numeric($options['start'])) {
@@ -891,10 +891,11 @@ function acquia_lift_target_audience_save($label, $agent_name, $contexts, $strat
     return FALSE;
   }
   $machine_name = empty($machine_name) ? personalize_generate_machine_name($label, NULL, '-') : $machine_name;
-  $option_set->targeting[$machine_name] = array(
-    'label' => $label,
-    'weight' => $weight,
-  );
+  if (empty($option_set->targeting[$machine_name])) {
+    $option_set->targeting[$machine_name] = array();
+  }
+  $option_set->targeting[$machine_name]['label'] = $label;
+  $option_set->targeting[$machine_name]['weight'] = $weight;
   // Generate the feature strings and rules for the contexts.
   $agent = personalize_agent_load_agent($agent_name);
   $feature_strings = $feature_rules = array();

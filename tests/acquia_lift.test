@@ -3782,7 +3782,7 @@ class AcquiaLiftWebTestCampaignWizard extends AcquiaLiftWebTestBase {
   }
 
   /**
-   * Test block variation set creation.
+   * Test element variation set creation.
    */
   function testWhatElementForm() {
     $this->drupalLogin($this->managerUser);

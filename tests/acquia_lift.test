@@ -130,7 +130,6 @@ class AcquiaLiftWebTestBase extends DrupalWebTestCase
 
     if (!$basicOnly) {
       $edit = array(
-        'agent_basic_info[title]' => $data['name'],
         'agent_options[options][decision_style]' => $data['decision_style'],
         'agent_options[options][control_rate]' => $data['control_rate'],
         'agent_options[options][explore_rate]' => $data['explore_rate'],
@@ -3263,7 +3262,7 @@ class AcquiaLiftWebTestTarget extends AcquiaLiftWebTestBase {
     $expected_targeting = array(
       $audience_name => array(
         'label' => $label,
-        'weight' => 0,
+        'weight' => 1,
         'targeting_features' => array(
           'some_context::sc-ohai',
           'some_other_context::ss-stuff',
@@ -3316,7 +3315,7 @@ class AcquiaLiftWebTestTarget extends AcquiaLiftWebTestBase {
     $audience_names = array_keys($option_set->targeting);
     $expected_targeting[$audience_names[1]] = array(
       'label' => $label,
-      'weight' => 1,
+      'weight' => 2,
       'targeting_features' => array(
         'some_context::1',
         'some_other_context::0',

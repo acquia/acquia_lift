@@ -688,7 +688,7 @@ function acquia_lift_personalize_campaign_wizard_targeting_submit(&$form, &$form
   $targeting = array();
   $audience_count = 0;
   // Determine the values for the "Everyone else" audience
-  $else = array(
+  $final_audience = array(
     'name' => t('Everyone else'),
     'contexts' => array(),
     'weight' => 1,
@@ -700,9 +700,9 @@ function acquia_lift_personalize_campaign_wizard_targeting_submit(&$form, &$form
     if ($audience_id === ACQUIA_LIFT_TARGETING_EVERYONE_ELSE || !isset($audience['details']['weight']) || empty($audience['details']['name'])) {
       continue;
     }
-    $else['weight'] = $audience['details']['weight'] > $else['weight'] ? $audience['details']['weight'] : $else['weight'];
+    $final_audience['weight'] = $audience['details']['weight'] > $final_audience['weight'] ? $audience['details']['weight'] : $final_audience['weight'];
   }
-  $else['weight'] += 10;
+  $final_audience['weight'] += 10;
   // Now process all of the audiences.
   foreach ($form_state['values']['audiences'] as $audience_id => $audience) {
     if (empty($audience['details']['name']) && $audience_id !== ACQUIA_LIFT_TARGETING_EVERYONE_ELSE) {
@@ -710,7 +710,7 @@ function acquia_lift_personalize_campaign_wizard_targeting_submit(&$form, &$form
     }
 
     if ($audience_id === ACQUIA_LIFT_TARGETING_EVERYONE_ELSE) {
-      $audience_values = $else;
+      $audience_values = $final_audience;
     }
     else {
       $audience_values = array(
@@ -754,7 +754,7 @@ function acquia_lift_personalize_campaign_wizard_targeting_submit(&$form, &$form
   // Create the "Everyone else" audience if there are other audiences and it
   // does not exist.
   if ($audience_count > 0 && !isset($form_state['values']['audiences'][ACQUIA_LIFT_TARGETING_EVERYONE_ELSE])) {
-    acquia_lift_target_audience_save($else['name'], $agent_data->machine_name, $else['contexts'], $else['strategy'], $else['weight']);
+    acquia_lift_target_audience_save($final_audience['name'], $agent_data->machine_name, $final_audience['contexts'], $final_audience['strategy'], $final_audience['weight']);
   }
   acquia_lift_save_targeting_structure($agent_data, $targeting);
 }

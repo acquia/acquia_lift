@@ -1143,32 +1143,6 @@ function acquia_lift_get_structure_from_targeting($option_set) {
 }
 
 /**
- * Get the option set where targeting rules are defined.
- *
- * The assumption here is that if you have multiple option sets then targeting
- * is only defined on one of them as we currently do not support targeting for
- * MVTs.
- *
- * @param $agent
- *   A stdClass object representing the agent to get the option set for.
- * @return stdClass|NULL
- *   The option set to use for targeting rules or NULL if the agent has no option
- *   sets.
- */
-function acquia_lift_get_option_set_for_targeting($agent_name) {
-  $option_sets = personalize_option_set_load_by_agent($agent_name, TRUE);
-  if (empty($option_sets)) {
-    return NULL;
-  }
-  foreach ($option_sets as $option_set) {
-    if (!empty($option_set->targeting)) {
-      return $option_set;
-    }
-  }
-  return reset($option_sets);
-}
-
-/**
  * Validate that an agent has the minimum targeting required and add it if it
  * is not available.
  *

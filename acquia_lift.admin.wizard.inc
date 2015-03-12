@@ -16,7 +16,10 @@
  */
 function acquia_lift_personalize_campaign_wizard_process_bar_alter(&$form, &$form_state, $form_id) {
   $agent = $form['#agent'];
-
+  $nested = acquia_lift_get_nested_tests($agent);
+  if (empty($nested)) {
+    return;
+  }
   // If we're editing an existing agent, add a "Reset data" button next to
   // the Pause/Resume button.
   $reset_form = array(

@@ -2446,7 +2446,13 @@ function personalize_acquia_lift_ajax_callback($form, $form_state) {
  * Submit callback for the "Reset data" button.
  */
 function acquia_lift_reset_submit($form, $form_state) {
-  acquia_lift_reset_agent($form_state['values']['agent']);
+  $agent_name = $form_state['values']['agent'];
+  if ($parent_agent = personalize_agent_load($agent_name)) {
+    $nested_tests = acquia_lift_get_nested_tests($parent_agent);
+    foreach ($nested_tests as $name) {
+      acquia_lift_reset_agent($name);
+    }
+  }
 }
 
 /**
@@ -2458,8 +2464,16 @@ function acquia_lift_sync_campaign_submit($form, $form_state) {
     return;
   }
   $agent_name = $form_state['values']['agent_name'];
-  if ($agent = personalize_agent_load($agent_name)) {
-    acquia_lift_batch_sync_campaigns(array($agent_name => $agent));
+  if ($parent_agent = personalize_agent_load($agent_name)) {
+    $nested_tests = acquia_lift_get_nested_tests($parent_agent);
+    $agents = array();
+    foreach ($nested_tests as $name) {
+      $agent = personalize_agent_load($name);
+      if (!empty($agent)) {
+        $agents[$name] = $agent;
+      }
+    }
+    acquia_lift_batch_sync_campaigns($agents);
   }
 }
 
@@ -3013,4 +3027,57 @@ function acquia_lift_get_campaign_details() {
   }
 
   return $campaigns;
+}
+
+/**
+ * Get the option set where targeting rules are defined.
+ *
+ * The assumption here is that if you have multiple option sets then targeting
+ * is only defined on one of them as we currently do not support targeting for
+ * MVTs.
+ *
+ * @param $agent
+ *   A stdClass object representing the agent to get the option set for.
+ * @return stdClass|NULL
+ *   The option set to use for targeting rules or NULL if the agent has no option
+ *   sets.
+ */
+function acquia_lift_get_option_set_for_targeting($agent_name) {
+  $option_sets = personalize_option_set_load_by_agent($agent_name, TRUE);
+  if (empty($option_sets)) {
+    return NULL;
+  }
+  foreach ($option_sets as $option_set) {
+    if (!empty($option_set->targeting)) {
+      return $option_set;
+    }
+  }
+  return reset($option_sets);
+}
+
+/**
+ * Returns the list of test agents that are nested under the specified agent.
+ *
+ * @param $agent
+ *   The agent to get nested test agents for.
+ * @return array
+ *   An array of agent names.
+ */
+function acquia_lift_get_nested_tests($agent) {
+  if ($agent->plugin != 'acquia_lift_target') {
+    return array();
+  }
+  $option_set = acquia_lift_get_option_set_for_targeting($agent->machine_name);
+  if (empty($option_set) || empty($option_set->targeting)) {
+    return array();
+  }
+  $agents = array();
+  foreach ($option_set->targeting as $audience_name => $audience) {
+    if (isset($audience['osid'])) {
+      if ($option_set = personalize_option_set_load($audience['osid'])) {
+        $agents[] = $option_set->agent;
+      }
+    }
+  }
+  return $agents;
 }

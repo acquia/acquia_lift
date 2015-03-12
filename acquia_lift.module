@@ -2391,7 +2391,15 @@ function acquia_lift_form_personalize_campaign_wizard_alter(&$form, &$form_state
   // Stylize the create campaign button for new campaigns.
   $form['agent_basic_info']['create']['#attributes']['class'][] = 'acquia-lift-submit-button';
 
-  if (empty($agent->machine_name) || !acquia_lift_is_targeting_agent($agent)) {
+  if (empty($agent->machine_name)) {
+    $form['agent_basic_info']['agent_type'] = array(
+      '#type' => 'value',
+      '#value' => 'acquia_lift_target',
+    );
+    // All other modifications only apply to the edit form.
+    return;
+  }
+  if (!acquia_lift_is_targeting_agent($agent)) {
     return;
   }
   $form['#attached']['library'][] = array('acquia_lift', 'acquia_lift.targeting_admin');

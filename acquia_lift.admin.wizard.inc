@@ -568,9 +568,12 @@ function acquia_lift_personalize_campaign_wizard_submit(&$form, &$form_state) {
   // Save any changes to the campaign.
   personalize_agent_save($agent_data);
 
-  // Set the next step and rebuild the form.
-  $form_state['storage']['step'] = _personalize_campaign_wizard_next_step($form_state, $agent_instance);;
-  $form_state['rebuild'] = TRUE;
+  // If the subform submit handlers didn't already set a redirect, then set the
+  // next step and rebuild the form.
+  if (empty($form_state['redirect'])) {
+    $form_state['storage']['step'] = _personalize_campaign_wizard_next_step($form_state, $agent_instance);;
+    $form_state['rebuild'] = TRUE;
+  }
 }
 
 /**
@@ -657,6 +660,18 @@ function acquia_lift_personalize_campaign_wizard_variations_submit_element_edit(
  * Submit function for targeting form.
  */
 function acquia_lift_personalize_campaign_wizard_targeting_submit(&$form, &$form_state, &$agent_data, $agent_instance) {
+  if ($form_state['triggering_element']['#value'] == t('Revert changes')) {
+    $form_state['redirect'] = array(
+      'admin/structure/personalize/manage/' . $agent_data->machine_name . '/targeting/revert',
+      array(
+        'query' => array(
+          'destination' => 'admin/structure/personalize/manage/' . $agent_data->machine_name . '/targeting',
+        ),
+      ),
+    );
+    return;
+  }
+
   // Save any visitor context if passed.
   // Add the visitor context configuration.
   $visitor_context = array();
@@ -670,34 +685,78 @@ function acquia_lift_personalize_campaign_wizard_targeting_submit(&$form, &$form
     return;
   }
   module_load_include('inc', 'acquia_lift', 'acquia_lift.admin');
-  foreach ($form_state['values']['audiences'] as $audience_id => $audience) {
-    if (empty($audience['details']['name'])) {
+  $targeting = array();
+  $audience_count = 0;
+  // Determine the values for the "Everyone else" audience
+  $else = array(
+    'name' => t('Everyone else'),
+    'contexts' => array(),
+    'weight' => 1,
+    'strategy' => 'OR',
+    'id' => ACQUIA_LIFT_TARGETING_EVERYONE_ELSE,
+  );
+  // Set the weight higher than any of the audience options.
+  foreach($form_state['values']['audiences'] as $audience_id => $audience) {
+    if ($audience_id === ACQUIA_LIFT_TARGETING_EVERYONE_ELSE || !isset($audience['details']['weight']) || empty($audience['details']['name'])) {
       continue;
     }
-    $contexts = array();
-    // We need to massage the context information as submitted in the form into
-    // an array of contexts that can be consumed by the
-    // acquia_lift_target_audience_save() function.
-    foreach ($audience['details']['mapping']['contexts'] as $context_values) {
-      if ($context_values['context'] == '') {
-        continue;
-      }
-      $context_values['match'] = $context_values['value']['match'];
-      $context_values['operator'] = $context_values['value']['operator'];
-      unset($context_values['value'], $context_values['remove']);
-      $contexts[] = $context_values;
+    $else['weight'] = $audience['details']['weight'] > $else['weight'] ? $audience['details']['weight'] : $else['weight'];
+  }
+  $else['weight'] += 10;
+  // Now process all of the audiences.
+  foreach ($form_state['values']['audiences'] as $audience_id => $audience) {
+    if (empty($audience['details']['name']) && $audience_id !== ACQUIA_LIFT_TARGETING_EVERYONE_ELSE) {
+      continue;
     }
-    if (acquia_lift_target_audience_save($audience['details']['name'], $agent_data->machine_name, $contexts, $audience['details']['strategy'], $audience_id === 'add' ? NULL : $audience_id)) {
-      drupal_set_message(t('The target audience %audience was saved successfully', array(
-        '%audience' => $audience['details']['name'],
-      )));
+
+    if ($audience_id === ACQUIA_LIFT_TARGETING_EVERYONE_ELSE) {
+      $audience_values = $else;
+    }
+    else {
+      $audience_values = array(
+        'name' => $audience['details']['name'],
+        'weight' => $audience['details']['weight'],
+        'contexts' => array(),
+        'strategy' => $audience['details']['strategy'],
+        'id' => $audience_id === 'add' ? NULL : $audience_id,
+      );
+      // We need to massage the context information as submitted in the form into
+      // an array of contexts that can be consumed by the
+      // acquia_lift_target_audience_save() function.
+      foreach ($audience['details']['mapping']['contexts'] as $context_values) {
+        if ($context_values['context'] == '') {
+          continue;
+        }
+        $context_values['match'] = $context_values['value']['match'];
+        $context_values['operator'] = $context_values['value']['operator'];
+        unset($context_values['value'], $context_values['remove']);
+        $audience_values['contexts'][] = $context_values;
+      }
+    }
+    if (acquia_lift_target_audience_save($audience_values['name'], $agent_data->machine_name, $audience_values['contexts'], $audience_values['strategy'], $audience_values['weight'], $audience_values['id'])) {
+      if ($audience_id === 'add') {
+        drupal_set_message(t('The target audience %audience was created successfully', array(
+          '%audience' => $audience['details']['name'],
+        )));
+      }
+      $audience_count++;
     }
     else {
       drupal_set_message(t('There was a problem saving the target audience %audience.', array(
         '%audience' => $audience['details']['name'],
       )), 'error');
     }
+    // Handle the assignment of options to audiences.
+    if (isset($audience['assignment'])) {
+      $targeting[$audience_id] = array_values($audience['assignment']);
+    }
   }
+  // Create the "Everyone else" audience if there are other audiences and it
+  // does not exist.
+  if ($audience_count > 0 && !isset($form_state['values']['audiences'][ACQUIA_LIFT_TARGETING_EVERYONE_ELSE])) {
+    acquia_lift_target_audience_save($else['name'], $agent_data->machine_name, $else['contexts'], $else['strategy'], $else['weight']);
+  }
+  acquia_lift_save_targeting_structure($agent_data, $targeting);
 }
 
 /**
@@ -939,8 +998,15 @@ function _acquia_lift_personalize_campaign_wizard_targeting_audience(&$form, &$f
   $element['name'] = array(
     '#type' => 'textfield',
     '#title' => t('Audience name'),
-    '#default_value' => $audience['label'],
+    '#default_value' => !empty($audience['label']) ? $audience['label'] : '',
     '#required' => !empty($audience),
+  );
+  $element['weight'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Weight'),
+    '#default_value' => !empty($audience['weight']) ? $audience['weight'] : 50,
+    '#size' => 3,
+    '#element_validate' => array('element_validate_number'),
   );
 
   // This is the portion of the form that will be replace when the "add new" or "remove
@@ -1093,4 +1159,92 @@ function _acquia_lift_personalize_campaign_wizard_targeting_audience(&$form, &$f
     '#default_value' => $default_strategy,
   );
   return $element;
+}
+
+/**
+ ********************************************************************
+ *
+ * R E L E V A N T  W O R K F L O W  F O R M S
+ *
+ ********************************************************************
+ */
+
+/**
+ * Show a delete confirmation for an agent audience.
+ */
+function acquia_lift_target_audience_delete($form, $form_state, $agent, $audience_id) {
+  module_load_include('inc', 'acquia_lift', 'acquia_lift.admin');
+  $option_set = acquia_lift_get_option_set_for_targeting($agent->machine_name);
+  if (empty($option_set->targeting[$audience_id])) {
+    drupal_set_message(t('Could not find the audience %audience_id in %agent.', array(
+        '%audience_id' => $audience_id,
+        '%agent' => $agent->machine_name,
+      ))
+      , 'error');
+    return array();
+  }
+  $form['audience_id'] = array(
+    '#type' => 'value',
+    '#value' => $audience_id,
+  );
+  $form['agent_name'] = array(
+    '#type' => 'value',
+    '#value' => $agent->machine_name,
+  );
+  $form['option_set'] = array(
+    '#type' => 'value',
+    '#value' => $option_set,
+  );
+  return confirm_form($form, t('Are you sure you want to delete %audience from %agent?', array(
+    '%audience' => empty($option_set->targeting[$audience_id]['label']) ? $audience_id : $option_set->targeting[$audience_id]['label'],
+    '%agent' => $agent->label,
+  )), 'admin/structure/personalize/manage/' . $agent->machine_name . '/targeting', NULL, t('Delete'), t('Cancel'));
+}
+
+/**
+ * Submit handler for agent audience delete submission.
+ */
+function acquia_lift_target_audience_delete_submit($form, &$form_state) {
+  $option_set = $form_state['values']['option_set'];
+  $audience_id = $form_state['values']['audience_id'];
+  $audience_name = isset($option_set->targeting[$audience_id]['label']) ? $option_set->targeting[$audience_id]['label'] : $audience_id;
+  unset($option_set->targeting[$audience_id]);
+  // If this leaves only the "Everyone else" audience, then delete it too.
+  if (count($option_set->targeting) === 1 && array_key_exists(ACQUIA_LIFT_TARGETING_EVERYONE_ELSE, $option_set->targeting)) {
+    unset($option_set->targeting[ACQUIA_LIFT_TARGETING_EVERYONE_ELSE]);
+  }
+  personalize_option_set_save($option_set);
+  drupal_set_message(t('The target audience %name has been removed.', array('%name' => $audience_name)));
+  $form_state['redirect'] = 'admin/structure/personalize/manage/' . $form_state['values']['agent_name'] . '/targeting';
+}
+
+/**
+ * Confirm form for reverting the changes to targeting.
+ *
+ * @param stdClass $agent
+ *   The agent data whose targeting changes are being reverted.
+ */
+function acquia_lift_confirm_revert_changes($form, &$form_state, $agent) {
+  $form['agent'] = array(
+    '#type' => 'value',
+    '#value' => $agent->machine_name
+  );
+  $form['revert_changes'] = array('#type' => 'value', '#value' => TRUE);
+  return confirm_form($form,
+    t('Are you sure you want to revert the targeting changes for the %agent campaign?',
+      array('%agent' => $agent->label)),
+    'admin/structure/personalize/' . $agent->machine_name . '/targeting',
+    t('Reverting the targeting will discard all changes since the campaign was set to running.'),
+    t('Revert changes'),
+    t('Cancel'));
+}
+
+/**
+ * Submit callback for the "Revert changes" confirm form.
+ */
+function acquia_lift_confirm_revert_changes_submit($form, &$form_state) {
+  if ($agent = personalize_agent_load($form_state['values']['agent'])) {
+    $agent->data['lift_targeting'] = array();
+    personalize_agent_save($agent);
+  }
 }

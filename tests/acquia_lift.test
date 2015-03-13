@@ -4077,9 +4077,10 @@ class AcquiaLiftWebTestCampaignWizard extends AcquiaLiftWebTestBase {
     $this->assertTrue(empty($option_set->targeting['everyone-else']['option_id']));
     $this->assertTrue(empty($option_set->targeting['everyone-else']['osid']));
 
-    // A message should display to indicate that the targeting isn't finalized.
+    // A message should not display to indicate that the targeting isn't
+    // finalized because the agent is still not started.
     $this->drupalGet('admin/structure/personalize/manage/' . $first_agent->machine_name . '/targeting');
-    $this->assertText('The targeting settings shown here do not match what is currently running for this campaign.');
+    $this->assertNoText('The targeting settings shown here do not match what is currently running for this campaign.');
     $this->assertNoText('The targeting settings shown here represent what is currently running for this campaign.');
 
     // Save the targeting structure and start the agent.

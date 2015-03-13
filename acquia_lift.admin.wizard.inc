@@ -272,6 +272,7 @@ function acquia_lift_personalize_campaign_wizard_targeting_alter(&$form, &$form_
   $existing_targeting = acquia_lift_get_structure_from_targeting($option_set);
   // Track whether an option to revert targeting changes should be shown.
   $show_revert = FALSE;
+  $status = personalize_agent_get_status($agent_data->machine_name);
   // The settings reflected in the form will either be what is currently running
   // or any saved overrides from when this form was last submitted (if the
   // review step was never completed to apply them.)
@@ -279,13 +280,13 @@ function acquia_lift_personalize_campaign_wizard_targeting_alter(&$form, &$form_
     // Get the current state of targeting work within the UI that has not
     // yet been saved to the agent.
     $saved_targeting = $agent_data->data['lift_targeting'];
-    if ($saved_targeting != $existing_targeting) {
+    if ($saved_targeting != $existing_targeting && $status != PERSONALIZE_STATUS_NOT_STARTED) {
       drupal_set_message(t('The targeting settings shown here do not match what is currently running for this campaign.'), 'warning');
       $show_revert = TRUE;
     }
   }
   else {
-    if (personalize_agent_get_status($agent_data->machine_name) != PERSONALIZE_STATUS_NOT_STARTED) {
+    if ($status != PERSONALIZE_STATUS_NOT_STARTED) {
       // The current agent is running and there have been no UI changes made
       // since it was started.
       drupal_set_message(t('The targeting settings shown here represent what is currently running for this campaign.'));

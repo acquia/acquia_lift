@@ -867,50 +867,6 @@ function acquia_lift_report_conversion() {
  */
 
 /**
- * Show a delete confirmation for an agent audience.
- */
-function acquia_lift_target_audience_delete($form, $form_state, $agent, $audience_id) {
-  $option_set = acquia_lift_get_option_set_for_targeting($agent->machine_name);
-  if (empty($option_set->targeting[$audience_id])) {
-    drupal_set_message(t('Could not find the audience %audience_id in %agent.', array(
-        '%audience_id' => $audience_id,
-        '%agent' => $agent->machine_name,
-      ))
-    , 'error');
-    return array();
-  }
-  $form['audience_id'] = array(
-   '#type' => 'value',
-   '#value' => $audience_id,
-  );
-  $form['agent_name'] = array(
-    '#type' => 'value',
-    '#value' => $agent->machine_name,
-  );
-  $form['option_set'] = array(
-    '#type' => 'value',
-    '#value' => $option_set,
-  );
-  return confirm_form($form, t('Are you sure you want to delete %audience from %agent?', array(
-    '%audience' => empty($option_set->targeting[$audience_id]['label']) ? $audience_id : $option_set->targeting[$audience_id]['label'],
-    '%agent' => $agent->label,
-  )), 'admin/structure/personalize/manage/' . $agent->machine_name . '/targeting', NULL, t('Delete'), t('Cancel'));
-}
-
-/**
- * Submit handler for agent audience delete submission.
- */
-function acquia_lift_target_audience_delete_submit($form, &$form_state) {
-  $option_set = $form_state['values']['option_set'];
-  $audience_id = $form_state['values']['audience_id'];
-  $audience_name = isset($option_set->targeting[$audience_id]['label']) ? $option_set->targeting[$audience_id]['label'] : $audience_id;
-  unset($option_set->targeting[$audience_id]);
-  personalize_option_set_save($option_set);
-  drupal_set_message(t('The target audience %name has been removed.', array('%name' => $audience_name)));
-  $form_state['redirect'] = 'admin/structure/personalize/manage/' . $form_state['values']['agent_name'] . '/targeting';
-}
-
-/**
  * Saves a target audience for an agent.
  *
  * @param $label
@@ -921,10 +877,13 @@ function acquia_lift_target_audience_delete_submit($form, &$form_state) {
  *   The contexts that make up the audience definition.
  * @param $strategy
  *   The strategy to use for multiple contexts, i.e. 'AND' or 'OR'
+ * @param number $weight
+ *   The weight for this audience within all audiences for the agent.
+ *   Audiences with the lowest weight will be evaluated first.
  * @param $machine_name
  *   The machine name for the audience if it already exists.
  */
-function acquia_lift_target_audience_save($label, $agent_name, $contexts, $strategy, $machine_name = NULL) {
+function acquia_lift_target_audience_save($label, $agent_name, $contexts, $strategy, $weight = 50, $machine_name = NULL) {
   module_load_include('inc', 'personalize', 'personalize.admin');
   // Find the option set to use for targeting and add the audience.
   $option_set = acquia_lift_get_option_set_for_targeting($agent_name);
@@ -932,11 +891,11 @@ function acquia_lift_target_audience_save($label, $agent_name, $contexts, $strat
     return FALSE;
   }
   $machine_name = empty($machine_name) ? personalize_generate_machine_name($label, NULL, '-') : $machine_name;
-  if (empty($option_set->targeting[$machine_name])) {
+  if (!isset($option_set->targeting[$machine_name])) {
     $option_set->targeting[$machine_name] = array();
   }
   $option_set->targeting[$machine_name]['label'] = $label;
-  $option_set->targeting[$machine_name]['weight'] = count($option_set->targeting);
+  $option_set->targeting[$machine_name]['weight'] = $weight;
   // Generate the feature strings and rules for the contexts.
   $agent = personalize_agent_load_agent($agent_name);
   $feature_strings = $feature_rules = array();
@@ -968,192 +927,10 @@ function acquia_lift_target_audience_save($label, $agent_name, $contexts, $strat
 }
 
 /**
- * Form for assigning options or tests to audiences.
- *
- * @param $agent
- *   A stdClass object representing the agent.
- */
-function acquia_lift_targeting_form($form, &$form_state, $agent) {
-  if ($agent->plugin != 'acquia_lift_target') {
-    drupal_goto('admin/structure/personalize');
-  }
-  // Check if we should display the confirm form, if they are reverting changes.
-  if (isset($form_state['confirm_revert_changes'])) {
-    return acquia_lift_confirm_revert_changes($form, $form_state, $agent->machine_name);
-  }
-  $option_set = acquia_lift_get_option_set_for_targeting($agent->machine_name);
-  $variation_options = $saved_targeting = array();
-  $exising_targeting = acquia_lift_get_structure_from_targeting($option_set);
-  // The settings reflected in the form will either be what is currently running
-  // or any saved overrides from when this form was last submitted (if the
-  // review step was never completed to apply them.)
-  if (!empty($agent->data['lift_targeting'])) {
-    $saved_targeting = $agent->data['lift_targeting'];
-    if ($saved_targeting != $exising_targeting) {
-      $message = t('The targeting settings shown here do not match what is currently running for this campaign.');
-      $message_type = 'warning';
-    }
-  }
-  else {
-    if (personalize_agent_get_status($agent->machine_name) != PERSONALIZE_STATUS_NOT_STARTED) {
-      $message = t('The targeting settings shown here represent what is currently running for this campaign.');
-      $message_type = 'ok';
-    }
-    $saved_targeting = $exising_targeting;
-  }
-
-  if (isset($message)) {
-    $form['message'] = array(
-      '#type' => 'markup',
-      '#markup' => '<div class="acquia-lift-targeting-message acquia-lift-targeting-message-' . $message_type . '">' . $message . '</div>',
-      '#weight' => -1
-    );
-  }
-  foreach ($option_set->options as $option) {
-    $variation_options[$option['option_id']] = $option['option_label'];
-  }
-  $form['agent'] = array(
-    '#type' => 'value',
-    '#value' => $agent->machine_name
-  );
-  $form['targeting'] = array(
-    '#type' => 'fieldset',
-    '#tree' => TRUE
-  );
-  foreach (array_keys($saved_targeting) as $audience) {
-    $form['targeting'][$audience] = array(
-      '#title' => $audience,
-      '#type' => 'select',
-      '#multiple' => TRUE,
-      '#options' => array('' => t('Select...')) + $variation_options,
-      '#default_value' => isset($saved_targeting[$audience]) ? $saved_targeting[$audience] : ''
-    );
-  }
-  $form['actions'] = array('#type' => 'actions', '#tree' => FALSE);
-  $form['actions']['submit'] = array(
-    '#type' => 'submit',
-    '#value' => t('Save')
-  );
-  $form['actions']['revert_changes'] = array(
-    '#type' => 'submit',
-    '#value' => t('Revert changes')
-  );
-  return $form;
-}
-
-/**
- * Submit callback for the targeting form.
- */
-function acquia_lift_targeting_form_submit($form, &$form_state) {
-  $agent = personalize_agent_load($form_state['values']['agent']);
-  if ($form_state['triggering_element']['#value'] == t('Revert changes')) {
-    // Execute the revert action.
-    if ($form_state['values']['revert_changes'] === TRUE) {
-      return acquia_lift_confirm_revert_changes_submit($form, $form_state);
-    }
-    // Rebuild the form to confirm the revert action.
-    $form_state['rebuild'] = TRUE;
-    $form_state['confirm_revert_changes'] = TRUE;
-    return;
-  }
-  $targeting = array();
-  foreach ($form_state['values']['targeting'] as $audience => $options) {
-    $targeting[$audience] = array();
-    foreach ($options as $option) {
-      if (!empty($option)) {
-        $targeting[$audience][] = $option;
-      }
-    }
-  }
-  acquia_lift_save_targeting_structure($agent, $targeting);
-}
-
-/**
- * Confirm form for reverting the changes to targeting.
- *
- * @param $agent_name
- *   The name of hte agent whose targeting changes are being reverted.
- */
-function acquia_lift_confirm_revert_changes($form, &$form_state, $agent_name) {
-  $form['agent'] = array(
-    '#type' => 'value',
-    '#value' => $agent_name
-  );
-  $form['revert_changes'] = array('#type' => 'value', '#value' => TRUE);
-  return confirm_form($form,
-    t('Are you sure you want to revert the targeting changes for the %agent campaign?',
-      array('%agent' => $agent_name)),
-    'admin/structure/personalize/' . $agent_name,
-    t('Reverting the targeting will discard all changes since the campaign was set to running.'),
-    t('Revert changes'),
-    t('Cancel'));
-}
-
-/**
- * Submit callback for the "Revert changes" confirm form.
- */
-function acquia_lift_confirm_revert_changes_submit($form, &$form_state) {
-  if ($agent = personalize_agent_load($form_state['values']['agent'])) {
-    $agent->data['lift_targeting'] = array();
-    personalize_agent_save($agent);
-  }
-}
-
-/**
- * Final review form for applying targeting changes.
- *
- * @param $agent
- *   A stdClass object representing the agent.
- */
-function acquia_lift_review_form($form, &$form_state, $agent) {
-  if ($agent->plugin != 'acquia_lift_target') {
-    drupal_goto('admin/structure/personalize');
-  }
-  $form = array();
-  $form['agent'] = array(
-    '#type' => 'value',
-    '#value' => $agent->machine_name
-  );
-  $saved_targeting = array();
-  if (!empty($agent->data['lift_targeting'])) {
-    $saved_targeting = $agent->data['lift_targeting'];
-  }
-
-  $option_set = acquia_lift_get_option_set_for_targeting($agent->machine_name);
-  $running_targeting = acquia_lift_get_structure_from_targeting($option_set);
-
-  // Only show a submit button if there are actual changes to apply.
-  if (!empty($saved_targeting) && $saved_targeting != $running_targeting) {
-    drupal_set_message(t('Saving this form will restructure your personalization and could result in loss of data about existing tests.'), 'warning');
-    $form['submit'] = array(
-      '#type' => 'submit',
-      '#value' => t('Confirm changes')
-    );
-  }
-  else {
-    $form['all_good'] = array(
-      '#type' => 'markup',
-      '#markup' => t('No changes to apply. !change', array('!change' => l(t('Make changes to the targeting for this campaign.'), 'admin/structure/personalize/manage/' . $agent->machine_name . '/lift-target')))
-    );
-  }
-
-  return $form;
-}
-
-/**
- * Submit callback for the campaign review form.
- */
-function acquia_lift_review_form_submit($form, &$form_state) {
-  $agent_name = $form_state['values']['agent'];
-  $agent = personalize_agent_load($agent_name);
-  acquia_lift_update_targeting($agent);
-}
-
-/**
  * Takes whatever is in the 'lift_targeting' data property and converts it into
  * the required campaign structure (including nested tests where needed).
  *
- * @param $agent
+ * @param stdClass $agent
  *   The agent to create the targeting structure for.
  */
 function acquia_lift_update_targeting($agent) {
@@ -1421,6 +1198,9 @@ function acquia_lift_save_targeting_structure($agent, $targeting) {
  *   arrays of option IDs.
  */
 function acquia_lift_get_structure_from_targeting($option_set) {
+  if (empty($option_set->targeting)) {
+    return array();
+  }
   $targeting_structure = array();
   foreach ($option_set->targeting as $name => $targ) {
     $targeting_structure[$name] = array();

@@ -891,7 +891,7 @@ function acquia_lift_target_audience_save($label, $agent_name, $contexts, $strat
     return FALSE;
   }
   $machine_name = empty($machine_name) ? personalize_generate_machine_name($label, NULL, '-') : $machine_name;
-  if (empty($option_set->targeting[$machine_name])) {
+  if (!isset($option_set->targeting[$machine_name])) {
     $option_set->targeting[$machine_name] = array();
   }
   $option_set->targeting[$machine_name]['label'] = $label;
@@ -1081,7 +1081,7 @@ function acquia_lift_review_form_submit($form, &$form_state) {
  * Takes whatever is in the 'lift_targeting' data property and converts it into
  * the required campaign structure (including nested tests where needed).
  *
- * @param $agent
+ * @param stdClass $agent
  *   The agent to create the targeting structure for.
  */
 function acquia_lift_update_targeting($agent) {

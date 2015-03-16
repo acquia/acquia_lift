@@ -32,6 +32,7 @@ function theme_acquia_lift_card($variables) {
   $html = '';
   $html .= '<div class="el-card" ' . drupal_attributes($data_attributes) . '>';
   $html .= '<div class="el-card__header">';
+  $html .= '<div class="el-card__dragger"></div>';
   $html .= '<h2 class="el-card__title">' . $card_label . '</h2>';
   if (!empty($header_children)) {
     $html .= '<ul class="el-card__actions">';

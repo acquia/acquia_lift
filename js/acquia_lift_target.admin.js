@@ -20,6 +20,10 @@
         items: "> .acquia-lift-sortable",
         placeholder: 'acquia-lift-sortable-placeholder',
         forcePlaceholderSize: true,
+        opacity: 0.7,
+        cursor: 'move',
+        tolerance: 'pointer',
+        handle: '.el-card__dragger',
         update: function (event, ui) {
           // Update the weight values for each sortable element after
           // the positions have been updated.
@@ -31,6 +35,15 @@
         }
       });
     }
+  }
+
+
+  Drupal.theme.acquiaLiftTargetingDroppable = function () {
+    var html = '';
+    html += '<div class="acquia-lift-targeting-droppable">';
+    html += 'Drop variations here';
+    html += '</div>';
+    return html;
   }
 
 })(Drupal.jQuery, Drupal);

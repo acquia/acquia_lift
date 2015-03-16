@@ -111,3 +111,13 @@ ul.el-card__actions {
 .el-card:not(.is-active) .el-card__content {
   display: none;
 }
+
+.el-card:not(.is-sortable) .el-card__dragger {
+  display: none;
+}
+.el-card .el-card__dragger {
+  width: 10px;
+  height: 10px;
+  background-color: red;
+  cursor: pointer;
+}

@@ -5,7 +5,7 @@ use Behat\Behat\Context\SnippetAcceptingContext;
 use Behat\Gherkin\Node\TableNode;
 use Behat\Behat\Hook\Scope\AfterStepScope;
 use Behat\Mink\Driver\Selenium2Driver;
-use Behat\Mink\Element\NodeElement;
+use Behat\Testwork\Hook\Scope\BeforeSuiteScope;
 use Behat\Behat\Hook\Scope\BeforeScenarioScope;
 use Behat\Behat\Hook\Scope\AfterScenarioScope;
 
@@ -18,9 +18,14 @@ class FeatureContext extends RawDrupalContext implements SnippetAcceptingContext
    * Stores the context parameters that are passed in for the test suite.
    * Parameters include default values for:
    *   - temp_path: The path to temporary location where files, such as error
-   *     screenshots, can be written.  Default value: /tmp/behat
+   *     screenshots, can be written. Default value: /tmp
    */
   protected $context_parameters = array();
+
+  /**
+   * Stores contexts.
+   */
+  protected $contexts = array();
 
   /**
    * Stores campaigns at start of scenario for comparison with those at the end.
@@ -47,16 +52,39 @@ class FeatureContext extends RawDrupalContext implements SnippetAcceptingContext
    *        H O O K S
    ***************************************************/
   /**
+   * Perform before suite actions:
+   * - Stage the environment.
+   *
+   * @BeforeSuite
+   */
+  static public function beforeSuite(BeforeSuiteScope $scope) {
+    // Make sure unibar can update status.
+    variable_set('acquia_lift_unibar_allow_status_change', TRUE);
+  }
+
+  /**
+   * Perform before scenario actions:
+   * - Gather all contexts so they can be reused in the current context.
+   *
+   * @BeforeScenario
+   */
+  public function beforeScenario(BeforeScenarioScope $scope)
+  {
+    // Gather all contexts.
+    $contexts = $scope->getEnvironment()->getContexts();
+    foreach ($contexts as $context) {
+      $context_class_name = get_class($context);
+      $this->contexts[$context_class_name] = $context;
+    }
+  }
+
+  /**
    * Gets a reference to current campaigns, option sets, goals, etc. for
    * tracking purposes.
    *
    * @BeforeScenario @campaign
    */
-  public function before(BeforeScenarioScope $event) {
-    // Clear any currently active campaign contexts.
-    personalize_set_campaign_context('');
-    // Make sure unibar can update status.
-    variable_set('acquia_lift_unibar_allow_status_change', TRUE);
+  public function beforeScenarioCampaign(BeforeScenarioScope $scope) {
     $this->campaigns = personalize_agent_load_multiple();
     $this->actions = visitor_actions_custom_load_multiple();
   }
@@ -67,7 +95,7 @@ class FeatureContext extends RawDrupalContext implements SnippetAcceptingContext
    *
    * @AfterScenario @campaign
    */
-  public function after(AfterScenarioScope $event) {
+  public function afterScenarioCampaign(AfterScenarioScope $event) {
     $original_campaigns = $this->campaigns;
     $all_campaigns = personalize_agent_load_multiple(array(), array(), TRUE);
     foreach ($all_campaigns as $name => $campaign) {
@@ -342,7 +370,6 @@ class FeatureContext extends RawDrupalContext implements SnippetAcceptingContext
    * @throws \Exception
    *   If the region or element cannot be found or does not have the specified
    *   class.
-
    */
   public function assertFieldHasSiteTitle($field) {
     // Read the site name dynamically.
@@ -387,7 +414,7 @@ class FeatureContext extends RawDrupalContext implements SnippetAcceptingContext
   }
 
   /**
-   * @Then I should see the link :link visible in the :region( region)
+   * @Then I should visibly see the link :link in the :region( region)
    *
    * @throws \Exception
    *   If region or link within it cannot be found or is hidden.
@@ -400,7 +427,7 @@ class FeatureContext extends RawDrupalContext implements SnippetAcceptingContext
   }
 
   /**
-   * @Then I should not see the link :link visible in the :region( region)
+   * @Then I should not visibly see the link :link in the :region( region)
    *
    * @throws \Exception
    *   If link is found in region and is visible.
@@ -628,7 +655,7 @@ class FeatureContext extends RawDrupalContext implements SnippetAcceptingContext
     $element = $regionObj->findLink($link);
 
     if (empty($element)) {
-      throw new \Exception(sprintf('Could not find element in %region using xpath %s', $region, $xpath));
+      throw new \Exception(sprintf('Could not find element in "%s" using link "%s"', $region, $link));
     }
     return $element;
   }

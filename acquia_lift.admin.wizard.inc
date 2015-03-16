@@ -336,6 +336,7 @@ function acquia_lift_personalize_campaign_wizard_targeting_alter(&$form, &$form_
         '#theme' => 'acquia_lift_card',
         '#title' => isset($audience['label']) ? $audience['label'] : 'Audience: ' . $audience_id,
         '#collapsible' => FALSE,
+        '#sortable' => $audience_id !== ACQUIA_LIFT_TARGETING_EVERYONE_ELSE,
       );
       $form['audiences'][$audience_id]['header'] = array(
         '#type' => 'container'
@@ -1008,6 +1009,9 @@ function _acquia_lift_personalize_campaign_wizard_targeting_audience(&$form, &$f
     '#default_value' => !empty($audience['weight']) ? $audience['weight'] : 50,
     '#size' => 3,
     '#element_validate' => array('element_validate_number'),
+    '#attributes' => array(
+      'class' => array('acquia-lift-sortable-weight'),
+    ),
   );
 
   // This is the portion of the form that will be replace when the "add new" or "remove

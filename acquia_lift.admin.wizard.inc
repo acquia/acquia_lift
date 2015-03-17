@@ -1033,6 +1033,7 @@ function _acquia_lift_personalize_campaign_wizard_targeting_audience(&$form, &$f
     '#attributes' => array(
       'class' => array('acquia-lift-sortable-weight'),
     ),
+    '#access' => !empty($audience),
   );
 
   // This is the portion of the form that will be replace when the "add new" or "remove

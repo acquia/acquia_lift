@@ -794,9 +794,9 @@ class FeatureContext extends RawDrupalContext implements SnippetAcceptingContext
    * @param integer $attemptThreshold Number of attempts to execute the command.
    */
   private function spinJavaScriptEvaluation($assertionScript, $attemptThreshold = 15) {
-    $this->spin(function () use ($assertionScript, $attemptThreshold) {
+    $this->spin(function () use ($assertionScript) {
       return $this->getMink()->getSession()->evaluateScript($assertionScript);
-    });
+    }, $attemptThreshold);
   }
 
   /**

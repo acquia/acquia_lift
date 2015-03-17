@@ -128,7 +128,7 @@
    */
   Drupal.theme.prototype.acquiaLiftTargetingDraggableItem = function(id, label) {
     var html = '';
-    html += '<li data-acquia-lift-option-id="' + id + '">';
+    html += '<li data-acquia-lift-option-id="' + id + '" class="acquia-lift-targeting-draggable">';
     html += label;
     html += '</li>';
     return html;

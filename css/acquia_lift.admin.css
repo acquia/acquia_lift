@@ -327,14 +327,15 @@ tr.acquia-lift-report-control {
   position: absolute;
   width: 1px;
 }
+
 /* Base form */
 .personalize-wizard-section #edit-agent-basic-info .acquia-lift-revealing-input {
   margin-bottom: 1em;
 }
 
-/* Base form */
-.personalize-wizard-section #edit-agent-basic-info .acquia-lift-revealing-input {
-  margin-bottom: 1em;
+/* Process bar */
+#personalize-campaign-wizard-process-bar {
+  margin: 1em 0;
 }
 
 /* Variations form */
@@ -391,13 +392,15 @@ tr.acquia-lift-report-control {
   margin: 0;
 }
 
-#acquia-lift-targeting-audiences .acquia-lift-draggable-variations li {
+#acquia-lift-targeting-audiences .acquia-lift-draggable-variations li,
+.acquia-lift-targeting-draggable {
   border: 1px solid #cfd1d5;
   max-width: 30em;
   color: #000;
   background-color: #E6E9ED;
   padding: .6em 1em;
   margin: 1em 0;
+  list-style-type: none;
 }
 /*
 #acquia-lift-targeting-audiences .acquia-lift-draggable-variations li:after {

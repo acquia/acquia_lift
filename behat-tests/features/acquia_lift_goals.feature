@@ -19,7 +19,6 @@ Feature: Goals can be edited and managed for an Acquia Lift campaign from toolba
     # I open the goal's menu.
     When I hover over "Campaigns" in the "lift_tray" region
     And I click "Testing campaign add page goal" in the "lift_tray" region
-    And I wait for AJAX to finish
     Then I should visibly see the link "Goals" in the "lift_tray" region
     And I should see "0" for the "goal" count
 
@@ -27,7 +26,6 @@ Feature: Goals can be edited and managed for an Acquia Lift campaign from toolba
     When I hover over "Goals" in the "lift_tray" region
     And I should visibly see the link "Add goal" in the "lift_tray" region
     When I click "Add goal" in the "lift_tray" region
-    And I wait for AJAX to finish
     Then I should see the modal with title "Add a goal"
     And I should see the link "New page goal" in the "modal_content" region
 
@@ -45,12 +43,10 @@ Feature: Goals can be edited and managed for an Acquia Lift campaign from toolba
     And I should not see the text "Offset from bottom" in the "modal_content" region
     When I fill in "Test goal #1" for "Title"
     And I press "Add goal"
-    And I wait for AJAX to finish
 
     # I verify my page goal is added.
     Then I should see the message "Test goal #1 goal added to campaign" in the messagebox
     And I should not see the modal
-    When I wait for AJAX to finish
     Then I should see "1" for the "goal" count
     When I hover over "Goals" in the "lift_tray" region
     Then I should see the text "Test goal #1" in the "lift_tray" region
@@ -77,7 +73,6 @@ Feature: Goals can be edited and managed for an Acquia Lift campaign from toolba
     When I hover over "Goals" in the "lift_tray" region
     And I should visibly see the link "Add goal" in the "lift_tray" region
     When I click "Add goal" in the "lift_tray" region
-    And I wait for AJAX to finish
     Then I should see the modal with title "Add a goal"
     And I should see the link "Predefined goal" in the "modal_content" region
 
@@ -86,12 +81,10 @@ Feature: Goals can be edited and managed for an Acquia Lift campaign from toolba
     And I wait for AJAX to finish
     When I select "Registers" from "Goal"
     And I press "Add goal"
-    And I wait for AJAX to finish
 
     # I verify my predefined goal is registered with this campaign.
     Then I should see the message "Registers goal added to campaign" in the messagebox
     And I should not see the modal
-    When I wait for AJAX to finish
     Then I should see "1" for the "goal" count
     When I hover over "Goals" in the "lift_tray" region
     Then I should see the text "Registers" in the "lift_tray" region
@@ -118,14 +111,12 @@ Feature: Goals can be edited and managed for an Acquia Lift campaign from toolba
     When I hover over "Goals" in the "lift_tray" region
     And I should visibly see the link "Add goal" in the "lift_tray" region
     When I click "Add goal" in the "lift_tray" region
-    And I wait for AJAX to finish
     Then I should see the modal with title "Add a goal"
     And I should see the link "New element goal" in the "modal_content" region
 
     # I appoint the "logo" element as the goal element,
     # and specify "hovers over" option to be the goal.
     When I click "New element goal" in the "modal_content" region
-    And I wait for AJAX to finish
     Then I should not see the modal
     And "#logo" element in the "page_content" region should have "visitor-actions-ui-enabled" class
     When I click "logo" in the "page_content" region

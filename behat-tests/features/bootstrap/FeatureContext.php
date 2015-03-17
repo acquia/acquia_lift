@@ -225,6 +225,8 @@ class FeatureContext extends RawDrupalContext implements SnippetAcceptingContext
    * @Then I should see :count for the :type count
    */
   public function assertMenuCount($count, $type) {
+    $this->spinUntilAjaxIsFinished();
+
     switch ($type) {
       case 'variation':
       case 'variation set':
@@ -336,6 +338,8 @@ class FeatureContext extends RawDrupalContext implements SnippetAcceptingContext
     if (!empty($element)) {
       $element->click();
     }
+
+    $this->spinUntilAjaxIsFinished();
   }
 
   /**
@@ -386,6 +390,8 @@ class FeatureContext extends RawDrupalContext implements SnippetAcceptingContext
    *   class.
    */
   public function assertRegionElementHasClass($selector, $region, $class) {
+    $this->spinUntilAjaxIsFinished();
+
     $element = $this->findElementInRegion($selector, $region);
     if (empty($element)) {
       throw new \Exception(sprintf('The element "%s" was not found in the region "%s" on the page %s', $selector, $region, $this->getSession()->getCurrentUrl()));
@@ -396,21 +402,10 @@ class FeatureContext extends RawDrupalContext implements SnippetAcceptingContext
   }
 
   /**
-   * @When I wait for messagebox to close
-   */
-  public function waitForMessageboxClose() {
-    $region = $this->getRegion('messagebox');
-    if (empty($region)) {
-      return;
-    }
-    $this->getSession()->wait(5000, 'jQuery("#acquia-lift-message-box").hasClass("element-hidden")');
-  }
-
-  /**
    * @When I wait for Lift to synchronize
    */
   public function waitForLiftSynchronize() {
-    $this->getSession()->wait(5000, '(typeof(jQuery)=="undefined" || (0 === jQuery.active && 0 === Drupal.acquiaLift.queueCount))');
+    $this->spinUntilLiftCampaignsAreSynchronized();
   }
 
   /**
@@ -420,6 +415,8 @@ class FeatureContext extends RawDrupalContext implements SnippetAcceptingContext
    *   If region or link within it cannot be found or is hidden.
    */
   public function assertLinkVisibleRegion($link, $region) {
+    $this->spinUntilAjaxIsFinished();
+
     $result = $this->findLinkInRegion($link, $region);
     if (empty($result) || !$result->isVisible()) {
       throw new \Exception(sprintf('No link to "%s" in the "%s" region on the page %s', $link, $region, $this->getSession()->getCurrentUrl()));
@@ -433,6 +430,8 @@ class FeatureContext extends RawDrupalContext implements SnippetAcceptingContext
    *   If link is found in region and is visible.
    */
   public function assertNotLinkVisibleRegion($link, $region) {
+    $this->spinUntilAjaxIsFinished();
+
     $result = $this->findLinkInRegion($link, $region);
     if (!empty($result) && $result->isVisible()) {
       throw new \Exception(sprintf('Link to "%s" in the "%s" region on the page %s', $link, $region, $this->getSession()->getCurrentUrl()));
@@ -447,6 +446,8 @@ class FeatureContext extends RawDrupalContext implements SnippetAcceptingContext
    *   invisible.
    */
   public function assertModalWindowWithTitle($title) {
+    $this->spinUntilAjaxIsFinished();
+
     $region = $this->getRegion('modal_title');
     if (!$region || !$region->isVisible()) {
       throw new \Exception(sprintf('The modal dialog titled %s is not visible on the page %s', $title, $this->getSession()->getCurrentUrl()));
@@ -461,6 +462,8 @@ class FeatureContext extends RawDrupalContext implements SnippetAcceptingContext
    * @Then /^I should not see the modal$/
    */
   public function assertNoModalWindow() {
+    $this->spinUntilAjaxIsFinished();
+
     $this->assertNoRegion('modal_content', 'modal dialog');
   }
 
@@ -468,6 +471,8 @@ class FeatureContext extends RawDrupalContext implements SnippetAcceptingContext
    * @Then /^I should not see the variation type dialog$/
    */
   public function assertNoVariationTypeDialogWindow() {
+    $this->spinUntilAjaxIsFinished();
+
     $this->assertNoRegion('dialog_variation_type', 'variation type dialog');
   }
 
@@ -514,8 +519,9 @@ class FeatureContext extends RawDrupalContext implements SnippetAcceptingContext
    * @Then I should see the message :text in the messagebox
    */
   public function assertTextInMessagebox($text) {
-    // Wait for the message box to be shown.
-    $this->getSession()->wait(5000, "(jQuery('#acquia-lift-message-box').length > 0 && jQuery('#acquia-lift-message-box').hasClass('acquia-lift-messagebox-shown'))");
+    $this->spinUntilAjaxIsFinished();
+    $this->spinUntilMessageBoxIsPopulated();
+
     $script = "return jQuery('#acquia-lift-message-box').find('.message').text();";
     $message = $this->getSession()->evaluateScript($script);
     if (strpos($message, $text) === FALSE) {
@@ -752,5 +758,68 @@ class FeatureContext extends RawDrupalContext implements SnippetAcceptingContext
   private function getCurrentCampaign() {
     $script = 'return Drupal.settings.personalize.activeCampaign;';
     return $this->getMink()->getSession()->evaluateScript($script);
+  }
+
+  /****************************************************
+   *        S P I N  F U N C T I O N S
+   ***************************************************/
+  /**
+   * Keep retrying assertion for a defined number of iterations.
+   *
+   * @param closure $lambda           Callback.
+   * @param integer $attemptThreshold Number of attempts to execute the command.
+   *
+   * @throws \Exception If attemptThreshold is met.
+   *
+   * @return mixed
+   */
+  private function spin($lambda, $attemptThreshold = 15) {
+    for ($iteration = 0; $iteration <= $attemptThreshold; $iteration++) {
+      try {
+        if (call_user_func($lambda)) {
+          return;
+        }
+      } catch (\Exception $exception) {
+        // do nothing
+      }
+
+      sleep(1);
+    }
+  }
+
+  /**
+   * Spin JavaScript evaluation.
+   *
+   * @param string  $assertionScript  Assertion script
+   * @param integer $attemptThreshold Number of attempts to execute the command.
+   */
+  private function spinJavaScriptEvaluation($assertionScript, $attemptThreshold = 15) {
+    $this->spin(function () use ($assertionScript, $attemptThreshold) {
+      return $this->getMink()->getSession()->evaluateScript($assertionScript);
+    });
+  }
+
+  /**
+   * Spin until the Ajax is finished.
+   */
+  private function spinUntilAjaxIsFinished() {
+    $assertionScript = 'return (typeof(jQuery)=="undefined" || (0 === jQuery.active && 0 === jQuery(\':animated\').length));';
+    $this->spinJavaScriptEvaluation($assertionScript);
+  }
+
+  /**
+   * Spin until the message box is populated.
+   */
+  private function spinUntilMessageBoxIsPopulated() {
+    $assertionScript = "return (jQuery('#acquia-lift-message-box').length > 0 && jQuery('#acquia-lift-message-box').hasClass('acquia-lift-messagebox-shown'));";
+    $this->spinJavaScriptEvaluation($assertionScript);
+  }
+
+  /**
+   * Spin until the Lift Campaigns are synchronized.
+   */
+  private function spinUntilLiftCampaignsAreSynchronized() {
+    $assertionScript = 'return (typeof(jQuery)=="undefined" || (0 === jQuery.active && 0 === Drupal.acquiaLift.queueCount));';
+    $this->spinJavaScriptEvaluation($assertionScript);
   }
 }

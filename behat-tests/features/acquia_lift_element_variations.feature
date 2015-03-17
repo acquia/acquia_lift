@@ -22,7 +22,6 @@ Feature: Personalize elements variations can be edited for an existing campaign.
     # I open the variation set's menu.
     When I hover over "Campaigns" in the "lift_tray" region
     And I click "Testing campaign add variations" in the "lift_tray" region
-    And I wait for AJAX to finish
     Then I should visibly see the link "Variation Sets" in the "lift_tray" region
     And I should see "0" for the "variation set" count
 
@@ -31,30 +30,24 @@ Feature: Personalize elements variations can be edited for an existing campaign.
     Then I should see the link "Add variation set" in the "lift_tray" region
     Then I should see the link "All variation sets" in the "lift_tray" region
     When I click "Add variation set"
-    And I wait for AJAX to finish
     Then I should see the modal with title "Add a variation set"
     And I should see the link "Webpage elements" in the "modal_content" region
     And I should see the link "Drupal blocks" in the "modal_content" region
     When I click "Webpage elements" in the "modal_content" region
-    And I wait for AJAX to finish
     Then I should not see the modal
 
     # I add a new variation set.
     When I click "#page-title" element in the "page_content" region
-    And I wait for AJAX to finish
     Then I should see the text "<H1>" in the "dialog_variation_type" region
     When I click "Edit text" in the "dialog_variation_type" region
-    And I wait for AJAX to finish
     Then I should not see the variation type dialog
     And I should see the text "Edit text: <H1>" in the "dialog_variation_type_form" region
     When I fill in "Test Article Title - Updated 1" for "personalize_elements_content"
     And I fill in "Test variation set" for "title"
     And I click "#edit-variation-type-submit-form" element in the "dialog_variation_type_form" region
-    And I wait for AJAX to finish
 
     # I verify my variation set is created.
     Then I should see the message "The variation set has been created." in the messagebox
-    When I wait for AJAX to finish
     Then I should not see the variation type form dialog
     And I should see the text "Test Article Title" in the "page_content" region
     And I should see "1" for the "variation set" count
@@ -74,11 +67,9 @@ Feature: Personalize elements variations can be edited for an existing campaign.
     And I should not see the link "Edit selector" in the "dialog_variation_type_form" region
     When I fill in "Test Article Title - Updated 2" for "personalize_elements_content"
     And I click "#edit-variation-type-submit-form" element in the "dialog_variation_type_form" region
-    And I wait for AJAX to finish
 
     # I verify my new variation is add.
     Then I should see the message "The variation has been created." in the messagebox
-    When I wait for AJAX to finish
     Then I should not see the variation type form dialog
     And I should see the text "Test Article Title - Updated 2" in the "page_content" region
     And I should see "1" for the "variation set" count
@@ -107,7 +98,6 @@ Feature: Personalize elements variations can be edited for an existing campaign.
     # I open the variation set's menu.
     When I hover over "Campaigns" in the "lift_tray" region
     And I click "Testing campaign edit variations" in the "lift_tray" region
-    And I wait for AJAX to finish
     Then I should visibly see the link "Variation Sets" in the "lift_tray" region
     And I should see "1" for the "variation set" count
 
@@ -122,23 +112,19 @@ Feature: Personalize elements variations can be edited for an existing campaign.
 
     # I edit the variation set.
     When I click "Edit" link for the "Page title updated" set "Option A" variation
-    And I wait for AJAX to finish
     Then I should see the text "Edit text: <H1>" in the "dialog_variation_type_form" region
     And the "personalize_elements_content" field should contain "The Rainbow Connection"
     And the "option_label" field should contain "Option A"
     When I fill in "Variation 1" for "option_label"
     And I fill in "Moving Right Along" for "personalize_elements_content"
     And I click "#edit-variation-type-submit-form" element in the "dialog_variation_type_form" region
-    And I wait for AJAX to finish
 
     # I verify my variation is updated.
     Then I should see the message "The variation has been updated." in the messagebox
-    When I wait for AJAX to finish
     Then I should not see the variation type form dialog
     And I should see the text "Moving Right Along" in the "page_content" region
     And I should see "1" for the "variation set" count
     When I hover over "Variation Sets" in the "lift_tray" region
-    And I wait for AJAX to finish
     Then I should see the text "Page title updated" in the "lift_tray" region
     And I should visibly see the link "Variation 1" in the "lift_tray" region
 
@@ -163,7 +149,6 @@ Feature: Personalize elements variations can be edited for an existing campaign.
     # I open the variation set's menu.
     When I hover over "Campaigns" in the "lift_tray" region
     And I click "Testing campaign delete variations" in the "lift_tray" region
-    And I wait for AJAX to finish
     Then I should visibly see the link "Variation Sets" in the "lift_tray" region
     And I should see "1" for the "variation set" count
 
@@ -181,14 +166,11 @@ Feature: Personalize elements variations can be edited for an existing campaign.
 
     # I delete a variation, "Option A".
     When I click "Delete" link for the "Page title updated" set "Option A" variation
-    And I wait for AJAX to finish
     Then I should see the modal with title "Delete variation"
     When I press "Delete"
-    And I wait for AJAX to finish
 
     # I verify the variation "Option A" is deleted.
     Then I should see the message "The variation has been deleted." in the messagebox
-    When I wait for AJAX to finish
     Then I should see "1" for the "variation set" count
     When I hover over "Variation Sets" in the "lift_tray" region
     Then I should see the text "Page title updated" in the "lift_tray" region
@@ -201,14 +183,11 @@ Feature: Personalize elements variations can be edited for an existing campaign.
 
     # I delete another variation, "Option B".
     When I click "Delete" link for the "Page title updated" set "Option B" variation
-    And I wait for AJAX to finish
     Then I should see the modal with title "Delete variation"
     When I press "Delete"
-    And I wait for AJAX to finish
 
     # I verify the variation "Option B" is deleted.
     Then I should see the message "The variation set has been deleted." in the messagebox
-    When I wait for AJAX to finish
     Then I should see "0" for the "variation set" count
     When I hover over "Variation Sets" in the "lift_tray" region
     Then I should not see the text "Page title updated" in the "lift_tray" region

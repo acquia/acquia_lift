@@ -369,3 +369,39 @@ tr.acquia-lift-report-control {
 #acquia-lift-targeting-audiences .el-card__action input[type="checkbox"].acquia-lift-edit:checked + label {
   content: url(../images/edit-toggle-active.png);
 }
+
+/* Drag and Drop audience targeting */
+.acquia-lift-draggable-variations li {
+  cursor: pointer;
+}
+.acquia-lift-targeting-droppable {
+  border: 1px dotted #cfd1d5;
+  padding: .6em 1em;
+  max-width: 30em;
+}
+.acquia-lift-targeting-droppable.is-droppable {
+  background-color: #fafafa;
+}
+.acquia-lift-targeting-droppable.is-hovered {
+  background-color: #FFFFCC;
+}
+
+#acquia-lift-targeting-audiences .acquia-lift-draggable-variations {
+  list-style-type: none;
+  margin: 0;
+}
+
+#acquia-lift-targeting-audiences .acquia-lift-draggable-variations li {
+  border: 1px solid #cfd1d5;
+  max-width: 30em;
+  color: #000;
+  background-color: #E6E9ED;
+  padding: .6em 1em;
+  margin: 1em 0;
+}
+/*
+#acquia-lift-targeting-audiences .acquia-lift-draggable-variations li:after {
+  content: 'OR';
+  display: block;
+  clear: both;
+}*/

@@ -1439,6 +1439,8 @@ function acquia_lift_library() {
     'dependencies' => array(
       array('system', 'jquery'),
       array('system', 'ui.sortable'),
+      array('system', 'ui.draggable'),
+      array('system', 'ui.droppable'),
       array('acquia_lift', 'acquia_lift.card'),
     ),
   );

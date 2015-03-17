@@ -748,8 +748,8 @@
      */
     initialize: function (options) {
       this.campaignCollection = options.campaignCollection;
-      this.listenTo(this.campaignCollection, 'change:isActive', this.render);
-      this.listenTo(this.campaignCollection, 'change:activeVariation', this.render);
+      this.listenTo(this.campaignCollection, 'change:isActive', this.onActiveVariationChange);
+      this.listenTo(this.campaignCollection, 'change:activeVariation', this.onActiveVariationChange);
       this.listenTo(this.model, 'change:isActive', this.render);
       this.build();
       this.render();
@@ -779,6 +779,17 @@
      */
     build: function() {
       this.$el.text(Drupal.t('Toggle edit variation'));
+    },
+
+    /**
+     * Event handler for changing the active variation.
+     */
+    onActiveVariationChange: function (event) {
+      // End any current editing when changing variations.
+      if (this.model.get('isActive')) {
+        this.model.endEditMode();
+      }
+      this.render();
     },
 
     /**

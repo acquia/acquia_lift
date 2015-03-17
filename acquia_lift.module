@@ -2715,6 +2715,9 @@ function acquia_lift_visitor_actions_ui_selector_ignore() {
     'classes' => array(
       'acquia-lift-[a-zA-Z0-9\_\-]+',
     ),
+    'id' => array(
+      'acquia-lift-[a-zA-Z0-9\_\-]+',
+    ),
   );
 }
 

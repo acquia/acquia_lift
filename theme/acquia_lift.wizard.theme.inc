@@ -100,7 +100,7 @@ function theme_acquia_lift_revealing_input($variables) {
   }
   drupal_add_library('acquia_lift', 'acquia_lift.inputs');
   $html = '';
-  $html .= '<div class="acquia-lift-revealing-input">';
+  $html .= '<div class="acquia-lift-revealing-input clearfix">';
   $html .= $variables['element']['#children'];
   $html .= '</div>';
   return $html;

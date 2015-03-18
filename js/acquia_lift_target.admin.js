@@ -56,7 +56,21 @@
           scope: 'acquia-lift-targeting-variations',
           helper: 'clone',
           appendTo: 'body',
-          cursor: 'move'
+          cursor: 'move',
+          cursorAt: {
+            top: 0,
+            left: 0
+          },
+          start: function (event, ui) {
+            if ($(event.srcElement).hasClass('acquia-lift-targeting-duplicate')) {
+              // Remove the duplicate indicator.
+              ui.helper.find('.acquia-lift-targeting-duplicate').remove();
+              // Give feedback that this is a copy.
+              ui.helper.text(ui.helper.text() + ' - ' + Drupal.t('Copy'));
+              // Add a class to be able to tell upon drop.
+              ui.helper.addClass('acquia-lift-targeting-duplicate');
+            }
+          }
         });
 
         // Convert each assignment select area into a droppable target.
@@ -72,6 +86,8 @@
             var $dragSelect = ui.draggable.closest('.form-item').children('select.acquia-lift-targeting-assignment');
             var dragSelectedOptions = $dragSelect.val() || [];
             var dropIsEveryoneElse = $dropSelect.hasClass('acquia-lift-targeting-everyone-else');
+            var $dropList = $(this).parent().children('.acquia-lift-draggable-variations');
+            var isCopy = ui.helper.hasClass('acquia-lift-targeting-duplicate');
 
             ui.helper.remove();
 
@@ -88,12 +104,17 @@
             dropSelectedOptions.push(dropOptionId);
             $dropSelect.val(dropSelectedOptions);
 
-            // Unselect this option in the draggable select input.
-            dragSelectedOptions.splice(dragSelectedOptions.indexOf(dropOptionId), 1);
-            $dragSelect.val(dragSelectedOptions);
+            if (isCopy) {
+              // Making a copy so this should remain selected and in the list.
+              ui.draggable.clone().appendTo($dropList);
+            } else {
+              // Unselect this option in the draggable select input.
+              dragSelectedOptions.splice(dragSelectedOptions.indexOf(dropOptionId), 1);
+              $dragSelect.val(dragSelectedOptions);
 
-            // Move the list item from the dragged list to the dropped list.
-            $(this).parent().children('.acquia-lift-draggable-variations').append(ui.draggable);
+              // Move the list item from the dragged list to the dropped list.
+              $dropList.append(ui.draggable);
+            }
           }
         });
 
@@ -130,6 +151,7 @@
     var html = '';
     html += '<li data-acquia-lift-option-id="' + id + '" class="acquia-lift-targeting-draggable">';
     html += label;
+    html += '<span class="acquia-lift-targeting-duplicate">Duplicate</span>';
     html += '</li>';
     return html;
   }

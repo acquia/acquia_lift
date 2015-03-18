@@ -402,6 +402,15 @@ tr.acquia-lift-report-control {
   margin: 1em 0;
   list-style-type: none;
 }
+/* Hide the duplicate button when shown as the drag helper */
+.acquia-lift-targeting-draggable .acquia-lift-targeting-duplicate {
+  display:none;
+}
+#acquia-lift-targeting-audiences .acquia-lift-targeting-draggable .acquia-lift-targeting-duplicate {
+  float: right;
+  display: inline-block;
+}
+
 /*
 #acquia-lift-targeting-audiences .acquia-lift-draggable-variations li:after {
   content: 'OR';

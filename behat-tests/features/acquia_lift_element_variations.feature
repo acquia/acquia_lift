@@ -12,7 +12,6 @@ Feature: Personalize elements variations can be edited for an existing campaign.
       | machine_name                    | label                           |
       | testing-campaign-add-variations | Testing campaign add variations |
     And I am logged in as a user with the "access administration pages,access toolbar,administer visitor actions,manage personalized content" permission
-    And I am on the homepage
     And I am viewing an "Article" content:
       | title | Test Article Title - Original |
     When I click "Acquia Lift" in the "menu" region
@@ -62,7 +61,7 @@ Feature: Personalize elements variations can be edited for an existing campaign.
 
     # I add a new variation to to the existing variation set.
     When I click "Add variation" in the "lift_tray" region
-    Then "#page-title" element in the "page_content" region should have "acquia-lift-page-variation-item" class
+    Then I should see "#page-title" element in the "page_content" region is "highlighted" for editing
     And I should see the text "Edit text: <H1>" in the "dialog_variation_type_form" region
     And I should not see the link "Edit selector" in the "dialog_variation_type_form" region
     When I fill in "Test Article Title - Updated 2" for "personalize_elements_content"
@@ -88,7 +87,6 @@ Feature: Personalize elements variations can be edited for an existing campaign.
       | label              | agent                            | selector    | type     | content                |
       | Page title updated | testing-campaign-edit-variations | #page-title | editText | The Rainbow Connection |
     And I am logged in as a user with the "access administration pages,access toolbar,administer visitor actions,manage personalized content" permission
-    And I am on the homepage
     And I am viewing an "Article" content:
       | title | Test Article Title - Original |
     When I click "Acquia Lift" in the "menu" region
@@ -139,7 +137,6 @@ Feature: Personalize elements variations can be edited for an existing campaign.
       | label              | agent                              | selector    | type     | content                                    |
       | Page title updated | testing-campaign-delete-variations | #page-title | editText | The Rainbow Connection, Moving Right Along |
     And I am logged in as a user with the "access administration pages,access toolbar,administer visitor actions,manage personalized content" permission
-    And I am on the homepage
     And I am viewing an "Article" content:
       | title | Test Article Title - Original |
     When I click "Acquia Lift" in the "menu" region

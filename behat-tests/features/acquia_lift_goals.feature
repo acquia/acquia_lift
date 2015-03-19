@@ -118,7 +118,7 @@ Feature: Goals can be edited and managed for an Acquia Lift campaign from toolba
     # and specify "hovers over" option to be the goal.
     When I click "New element goal" in the "modal_content" region
     Then I should not see the modal
-    And "#logo" element in the "page_content" region should have "visitor-actions-ui-enabled" class
+    Then I should see "#logo" element in the "page_content" region is "available" for editing
     When I click "logo" in the "page_content" region
     And I wait for AJAX to finish
     Then I should see "Title" in the "dialog_goal_form" region

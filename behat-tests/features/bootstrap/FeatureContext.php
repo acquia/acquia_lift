@@ -68,8 +68,7 @@ class FeatureContext extends RawDrupalContext implements SnippetAcceptingContext
    *
    * @BeforeScenario
    */
-  public function beforeScenario(BeforeScenarioScope $scope)
-  {
+  public function beforeScenario(BeforeScenarioScope $scope) {
     // Gather all contexts.
     $contexts = $scope->getEnvironment()->getContexts();
     foreach ($contexts as $context) {
@@ -114,6 +113,30 @@ class FeatureContext extends RawDrupalContext implements SnippetAcceptingContext
       if (!isset($original_actions[$name])) {
         visitor_actions_delete_action($name);
       }
+    }
+  }
+
+  /**
+   * For javascript enabled scenarios, always wait for AJAX before clicking.
+   *
+   * @BeforeStep
+   */
+  public function beforeJavascriptStep($event) {
+    $text = $event->getStep()->getText();
+    if (preg_match('/(follow|press|click|submit)/i', $text)) {
+      $this->spinUntilAjaxIsFinished();
+    }
+  }
+
+  /**
+   * For javascript enabled scenarios, always wait for AJAX after clicking.
+   *
+   * @AfterStep
+   */
+  public function afterJavascriptStep($event) {
+    $text = $event->getStep()->getText();
+    if (preg_match('/(follow|press|click|submit)/i', $text)) {
+      $this->spinUntilAjaxIsFinished();
     }
   }
 
@@ -225,8 +248,6 @@ class FeatureContext extends RawDrupalContext implements SnippetAcceptingContext
    * @Then I should see :count for the :type count
    */
   public function assertMenuCount($count, $type) {
-    $this->spinUntilAjaxIsFinished();
-
     switch ($type) {
       case 'variation':
       case 'variation set':
@@ -338,8 +359,6 @@ class FeatureContext extends RawDrupalContext implements SnippetAcceptingContext
     if (!empty($element)) {
       $element->click();
     }
-
-    $this->spinUntilAjaxIsFinished();
   }
 
   /**
@@ -383,21 +402,28 @@ class FeatureContext extends RawDrupalContext implements SnippetAcceptingContext
   }
 
   /**
-   * @Then :selector element in the :region region should have :class class
+   * @Then I should see :selector element in the :region region is :state for editing
    *
    * @throws \Exception
-   *   If the region or element cannot be found or does not have the specified
-   *   class.
+   *   If the region or element cannot be found or is not in a specified state.
    */
-  public function assertRegionElementHasClass($selector, $region, $class) {
-    $this->spinUntilAjaxIsFinished();
-
+  public function assertRegionElementIsInState($selector, $region, $state) {
+    $state_class = array(
+      'highlighted' => 'acquia-lift-page-variation-item',
+      'available' => 'visitor-actions-ui-enabled',
+    );
+    if (!isset($state_class[$state])) {
+      $state_options_array = array_keys($state_class);
+      $state_options_string = implode(', ', $state_options_array);
+      throw new \Exception(sprintf('The element state "%s" is not defined. Available options are "%s".', $state, $state_options_string));
+    }
     $element = $this->findElementInRegion($selector, $region);
     if (empty($element)) {
-      throw new \Exception(sprintf('The element "%s" was not found in the region "%s" on the page %s', $selector, $region, $this->getSession()->getCurrentUrl()));
+      throw new \Exception(sprintf('The element "%s" was not found in the region "%s" on the page %s.', $selector, $region, $this->getSession()->getCurrentUrl()));
     }
+    $class = $state_class[$state];
     if (!$element->hasClass($class)) {
-      throw new \Exception(sprintf('The element "%s" in region "%s" on the page %s does not have class "%s".', $selector, $region, $this->getSession()->getCurrentUrl(), $class));
+      throw new \Exception(sprintf('The element "%s" in region "%s" on the page %s is not in "%s" state.', $selector, $region, $this->getSession()->getCurrentUrl(), $state));
     }
   }
 
@@ -415,8 +441,6 @@ class FeatureContext extends RawDrupalContext implements SnippetAcceptingContext
    *   If region or link within it cannot be found or is hidden.
    */
   public function assertLinkVisibleRegion($link, $region) {
-    $this->spinUntilAjaxIsFinished();
-
     $result = $this->findLinkInRegion($link, $region);
     if (empty($result) || !$result->isVisible()) {
       throw new \Exception(sprintf('No link to "%s" in the "%s" region on the page %s', $link, $region, $this->getSession()->getCurrentUrl()));
@@ -430,8 +454,6 @@ class FeatureContext extends RawDrupalContext implements SnippetAcceptingContext
    *   If link is found in region and is visible.
    */
   public function assertNotLinkVisibleRegion($link, $region) {
-    $this->spinUntilAjaxIsFinished();
-
     $result = $this->findLinkInRegion($link, $region);
     if (!empty($result) && $result->isVisible()) {
       throw new \Exception(sprintf('Link to "%s" in the "%s" region on the page %s', $link, $region, $this->getSession()->getCurrentUrl()));
@@ -446,8 +468,6 @@ class FeatureContext extends RawDrupalContext implements SnippetAcceptingContext
    *   invisible.
    */
   public function assertModalWindowWithTitle($title) {
-    $this->spinUntilAjaxIsFinished();
-
     $region = $this->getRegion('modal_title');
     if (!$region || !$region->isVisible()) {
       throw new \Exception(sprintf('The modal dialog titled %s is not visible on the page %s', $title, $this->getSession()->getCurrentUrl()));
@@ -462,8 +482,6 @@ class FeatureContext extends RawDrupalContext implements SnippetAcceptingContext
    * @Then /^I should not see the modal$/
    */
   public function assertNoModalWindow() {
-    $this->spinUntilAjaxIsFinished();
-
     $this->assertNoRegion('modal_content', 'modal dialog');
   }
 
@@ -471,8 +489,6 @@ class FeatureContext extends RawDrupalContext implements SnippetAcceptingContext
    * @Then /^I should not see the variation type dialog$/
    */
   public function assertNoVariationTypeDialogWindow() {
-    $this->spinUntilAjaxIsFinished();
-
     $this->assertNoRegion('dialog_variation_type', 'variation type dialog');
   }
 
@@ -519,7 +535,6 @@ class FeatureContext extends RawDrupalContext implements SnippetAcceptingContext
    * @Then I should see the message :text in the messagebox
    */
   public function assertTextInMessagebox($text) {
-    $this->spinUntilAjaxIsFinished();
     $this->spinUntilMessageBoxIsPopulated();
 
     $script = "return jQuery('#acquia-lift-message-box').find('.message').text();";
@@ -683,8 +698,7 @@ class FeatureContext extends RawDrupalContext implements SnippetAcceptingContext
   }
 
   /**
-   * Helper function to retrieve a region defined in the configuration file
-   * from the browser output.
+   * Thin wrapper over Drupal MinkContext's getRegion function.
    *
    * @param $region
    *   The region identifier to load.
@@ -696,12 +710,7 @@ class FeatureContext extends RawDrupalContext implements SnippetAcceptingContext
    *   If the region cannot be found on the current page.
    */
   private function getRegion($region) {
-    $mink = $this->getMink();
-    $regionObj = $mink->getSession()->getPage()->find('region', $region);
-    if (empty($regionObj)) {
-      throw new \Exception(sprintf('The region %s was not found on the page %s', $region, $this->getSession()->getCurrentUrl()));
-    }
-    return $regionObj;
+    return $this->contexts['Drupal\DrupalExtension\Context\MinkContext']->getRegion($region);
   }
 
   /**
@@ -795,7 +804,7 @@ class FeatureContext extends RawDrupalContext implements SnippetAcceptingContext
    */
   private function spinJavaScriptEvaluation($assertionScript, $attemptThreshold = 15) {
     $this->spin(function () use ($assertionScript) {
-      return $this->getMink()->getSession()->evaluateScript($assertionScript);
+      return $this->getMink()->getSession()->evaluateScript('return ' . $assertionScript);
     }, $attemptThreshold);
   }
 
@@ -803,7 +812,7 @@ class FeatureContext extends RawDrupalContext implements SnippetAcceptingContext
    * Spin until the Ajax is finished.
    */
   private function spinUntilAjaxIsFinished() {
-    $assertionScript = 'return (typeof(jQuery)=="undefined" || (0 === jQuery.active && 0 === jQuery(\':animated\').length));';
+    $assertionScript = '(typeof(jQuery)=="undefined" || (0 === jQuery.active && 0 === jQuery(\':animated\').length));';
     $this->spinJavaScriptEvaluation($assertionScript);
   }
 
@@ -811,7 +820,7 @@ class FeatureContext extends RawDrupalContext implements SnippetAcceptingContext
    * Spin until the message box is populated.
    */
   private function spinUntilMessageBoxIsPopulated() {
-    $assertionScript = "return (jQuery('#acquia-lift-message-box').length > 0 && jQuery('#acquia-lift-message-box').hasClass('acquia-lift-messagebox-shown'));";
+    $assertionScript = "(jQuery('#acquia-lift-message-box').length > 0 && jQuery('#acquia-lift-message-box').hasClass('acquia-lift-messagebox-shown'));";
     $this->spinJavaScriptEvaluation($assertionScript);
   }
 
@@ -819,7 +828,7 @@ class FeatureContext extends RawDrupalContext implements SnippetAcceptingContext
    * Spin until the Lift Campaigns are synchronized.
    */
   private function spinUntilLiftCampaignsAreSynchronized() {
-    $assertionScript = 'return (typeof(jQuery)=="undefined" || (0 === jQuery.active && 0 === Drupal.acquiaLift.queueCount));';
+    $assertionScript = '(typeof(jQuery)=="undefined" || (0 === jQuery.active && 0 === Drupal.acquiaLift.queueCount));';
     $this->spinJavaScriptEvaluation($assertionScript);
   }
 }

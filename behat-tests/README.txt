@@ -22,27 +22,11 @@ To set up your environment to run tests locally:
     - Navigate to the behat-tests folder
     - Type: composer install
 
-5.  Copy behat.template.yml and rename it to behat.yml
+5.  Copy behat.template.yml and rename it to behat.yml.
 
 6.  Update behat.yml settings to match your environment.  You will need to at least adjust base_url and
     drupal_root. Additionally you can copy over any setting from behat.common.yml and change it to match
     your configuration such as a different CSS selector for a particular region.
-
-7.  Create the following Drupal roles:
-    Marketer:  This role should have the ability to manage personalized content
-    as well as to see the administration menus.  Specifically:
-    - Manage personalized content
-    - Use the administration pages and help
-    - Use the administration toolbar
-    - Administer visitor actions
-    Nonmarketer:  This role should have the ability to see administration menus.
-    Specifically:
-    - Use the administration pages and help
-    - Use the administration toolbar
-    But not:
-    - Manage personalized content
-
-    @todo: Add this role creation into the before/after hooks.
 
 To run tests:
 

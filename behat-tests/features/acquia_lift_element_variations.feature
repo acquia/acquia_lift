@@ -63,6 +63,7 @@ Feature: Personalize elements variations can be edited for an existing campaign.
     When I click "Add variation" in the "lift_tray" region
     Then I should see "#page-title" element in the "page_content" region is "highlighted" for editing
     And I should see the text "Edit text: <H1>" in the "dialog_variation_type_form" region
+    And the "personalize_elements_content" field should contain "Test Article Title - Updated 1"
     And I should not see the link "Edit selector" in the "dialog_variation_type_form" region
     When I fill in "Test Article Title - Updated 2" for "personalize_elements_content"
     And I click "#edit-variation-type-submit-form" element in the "dialog_variation_type_form" region

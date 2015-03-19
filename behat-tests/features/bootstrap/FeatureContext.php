@@ -397,8 +397,8 @@ class FeatureContext extends RawDrupalContext implements SnippetAcceptingContext
   public function assertFieldHasSiteTitle($field) {
     // Read the site name dynamically.
     $site_name = variable_get('site_name', "Default site name");
-    $mink = $this->getMink();
-    $mink->assertSession()->fieldValueEquals($field, $site_name);
+    $mink_context = $this->contexts['Drupal\DrupalExtension\Context\MinkContext'];
+    $mink_context->assertFieldContains($field, $site_name);
   }
 
   /**

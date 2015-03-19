@@ -402,6 +402,20 @@ class FeatureContext extends RawDrupalContext implements SnippetAcceptingContext
   }
 
   /**
+   * @Then the :field field should contain text that has :needle
+   *
+   * @throws \Exception
+   *   If the the substring cannot be found in the given field.
+   */
+  public function assertFieldContains($field, $needle) {
+    $node = $this->assertSession()->fieldExists($field);
+    $haystack = $node->getValue();
+    if (strpos($haystack, $needle) === false) {
+      throw new \Exception(sprintf('The field "%s" value is "%s", but we are looking for "%s".', $field, $haystack, $needle));
+    }
+  }
+
+  /**
    * @Then I should see :selector element in the :region region is :state for editing
    *
    * @throws \Exception
@@ -542,14 +556,6 @@ class FeatureContext extends RawDrupalContext implements SnippetAcceptingContext
     if (strpos($message, $text) === FALSE) {
       throw new \Exception(sprintf('The message "%s" was not found in the messagebox.', $text));
     }
-  }
-
-  /**
-   * @Then I wait for :seconds seconds
-   */
-  public function iWaitSeconds($seconds) {
-    $ms = $seconds * 1000;
-    $this->getSession()->wait($ms);
   }
 
   /****************************************************

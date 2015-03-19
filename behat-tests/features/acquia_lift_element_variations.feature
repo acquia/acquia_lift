@@ -41,8 +41,10 @@ Feature: Personalize elements variations can be edited for an existing campaign.
     When I click "Edit text" in the "dialog_variation_type" region
     Then I should not see the variation type dialog
     And I should see the text "Edit text: <H1>" in the "dialog_variation_type_form" region
+    And the "personalize_elements_content" field should contain text that has "Test Article Title - Original"
     When I fill in "Test Article Title - Updated 1" for "personalize_elements_content"
     And I fill in "Test variation set" for "title"
+    # There are two "Save" buttons on the page and we are clicking one by element id.
     And I click "#edit-variation-type-submit-form" element in the "dialog_variation_type_form" region
 
     # I verify my variation set is created.
@@ -66,6 +68,7 @@ Feature: Personalize elements variations can be edited for an existing campaign.
     And the "personalize_elements_content" field should contain "Test Article Title - Updated 1"
     And I should not see the link "Edit selector" in the "dialog_variation_type_form" region
     When I fill in "Test Article Title - Updated 2" for "personalize_elements_content"
+    # There are two "Save" buttons on the page and we are clicking one by element id.
     And I click "#edit-variation-type-submit-form" element in the "dialog_variation_type_form" region
 
     # I verify my new variation is add.
@@ -116,6 +119,7 @@ Feature: Personalize elements variations can be edited for an existing campaign.
     And the "option_label" field should contain "Option A"
     When I fill in "Variation 1" for "option_label"
     And I fill in "Moving Right Along" for "personalize_elements_content"
+    # There are two "Save" buttons on the page and we are clicking one by element id.
     And I click "#edit-variation-type-submit-form" element in the "dialog_variation_type_form" region
 
     # I verify my variation is updated.

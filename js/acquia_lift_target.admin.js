@@ -62,7 +62,7 @@
             left: 0
           },
           start: function (event, ui) {
-            if ($(event.srcElement).hasClass('acquia-lift-targeting-duplicate')) {
+            if ($(event.originalEvent.target).hasClass('acquia-lift-targeting-duplicate')) {
               // Remove the duplicate indicator.
               ui.helper.find('.acquia-lift-targeting-duplicate').remove();
               // Give feedback that this is a copy.

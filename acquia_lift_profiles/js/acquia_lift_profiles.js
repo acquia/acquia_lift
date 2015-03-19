@@ -79,6 +79,10 @@ var _tcwq = _tcwq || [];
   Drupal.personalize.visitor_context = Drupal.personalize.visitor_context || {};
   Drupal.personalize.visitor_context.acquia_lift_profiles_context = {
     'getContext': function(enabled) {
+      if ($.cookie('tc_dnt') === "true") {
+        return {};
+      }
+
       var i, j, context_values = {};
       // First check to see if we have the acquia_lift_profiles segments already stored
       // locally.

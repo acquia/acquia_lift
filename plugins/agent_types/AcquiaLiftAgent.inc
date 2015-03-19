@@ -423,32 +423,30 @@ class AcquiaLiftAgent extends PersonalizeAgentBase implements PersonalizeAgentGo
   /**
    * Implements PersonalizeAgentInterface::optionsFormValidate().
    */
-  public static function optionsFormValidate($form, &$form_state) {
-    $values = $form_state['values']['agent_basic_info'];
-    if (isset($values['options']['acquia_lift']) && isset($values['options']['acquia_lift']['control_rate'])) {
-      $rate = $values['options']['acquia_lift']['control_rate'];
+  public static function optionsFormValidate($form, &$form_state, $option_parents = array()) {
+    $values = &$form_state['values'];
+    foreach($option_parents as $parent) {
+      $values = &$values[$parent];
+    }
+    $error_parents = implode('][', $option_parents);
+    if (isset($values['control_rate'])) {
+      $rate = $values['control_rate'];
       if (!is_numeric($rate) || !($rate >= 0 && $rate <= 100)) {
-        form_set_error('agent_basic_info][options][acquia_lift][control_rate', t('Invalid percent to test specified'));
+        $error_element = empty($error_parents) ? 'control_rate' : $error_parents . '][contral_rate';
+        form_set_error($error_element, t('Invalid percent to test specified'));
       }
     }
-    if (isset($values['options']['acquia_lift']) && isset($values['options']['acquia_lift']['explore_rate'])) {
-      $rate = $values['options']['acquia_lift']['explore_rate'];
+    if (isset($values['explore_rate'])) {
+      $rate = $values['explore_rate'];
       if (!is_numeric($rate) || !($rate >= 0 && $rate <= 100)) {
-        form_set_error('agent_basic_info][options][acquia_lift][explore_rate', t('Invalid percent to test specified'));
+        $error_element = empty($error_parents) ? 'explore_rate' : $error_parents . '][explore_rate';
+        form_set_error($error_element, t('Invalid percent to test specified'));
       }
-    }
-    // Not sure if there's a better way to ascertain that this is a new agent.
-    $is_new = !isset($form['agent_form']['agent_fieldset']['agent_basic']['#agent']->machine_name) || $form['#action'] == base_path() . 'admin/structure/personalize/add';
-    // If this is a new agent, we need to ensure the machine name is
-    // unique in Acquia Lift.
-    if ($is_new) {
-      $agent_name = AcquiaLiftAPI::getInstance(variable_get('acquia_lift_account_info', array()))->ensureUniqueAgentName($values['machine_name'], PERSONALIZE_MACHINE_NAME_MAXLENGTH);
-      $form_state['values']['agent_basic_info']['machine_name'] = $agent_name;
     }
     // If "Run until a winner is found" was selected, we need to add this to the agent's
     // data property.
     if (isset($form_state['values']['campaign_end']) && $form_state['values']['campaign_end'] == 'auto') {
-      $form_state['values']['agent_basic_info']['options']['acquia_lift']['auto_stop'] = 1;
+      $values['auto_stop'] = 1;
     }
   }
 

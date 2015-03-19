@@ -203,6 +203,39 @@ function acquia_lift_menu() {
     'type' => MENU_CALLBACK,
     'file' => 'acquia_lift.admin.unibar.inc',
   );
+  $items['admin/structure/personalize/manage/%personalize_agent/lift-add-audience'] = array(
+    'title' => t('Add target audience'),
+    'weight' => 1,
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('acquia_lift_new_target_audience_form', 4),
+    'access callback' => 'acquia_lift_target_access',
+    'access arguments' => array(4),
+    'type' => MENU_LOCAL_TASK,
+    'file' => 'acquia_lift.admin.inc',
+  );
+  $items['admin/structure/personalize/manage/%personalize_agent/lift-target'] = array(
+    'title' => t('Target variations'),
+    'weight' => 2,
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('acquia_lift_targeting_form', 4),
+    'access callback' => 'acquia_lift_target_access',
+    'access arguments' => array(4),
+    'type' => MENU_LOCAL_TASK,
+    'file' => 'acquia_lift.admin.inc',
+  );
+
+  $items['admin/structure/personalize/manage/%personalize_agent/lift-review'] = array(
+    'title' => t('Apply changes'),
+    'weight' => 3,
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('acquia_lift_review_form', 4),
+    'access callback' => 'acquia_lift_target_access',
+    'access arguments' => array(4),
+    'type' => MENU_LOCAL_TASK,
+    'file' => 'acquia_lift.admin.inc',
+  );
+
+
   return $items;
 }
 
@@ -467,19 +500,20 @@ function acquia_lift_get_agent_types() {
 }
 
 /**
- * Returns whether or not the passed in agent is owned by this module.
+ * Returns whether or not the passed in agent is a testing agent.
  *
  * @param $agent
  *   An object representing the agent.
  * @return bool
- *   TRUE if the object is an Acquia Lift owned agent, FALSE otherwise.
+ *   TRUE if the object is an agent whose plugin is one of the testing plugins
+ *   provided by this module, FALSE otherwise.
  */
-function acquia_lift_owns_agent($agent) {
+function acquia_lift_is_testing_agent($agent) {
   if (empty($agent)) {
     return FALSE;
   }
-  $agent_types = acquia_lift_get_agent_types();
-  return in_array($agent->plugin, array_keys($agent_types));
+  $agent_types = array('acquia_lift', 'acquia_lift_simple_ab');
+  return in_array($agent->plugin, $agent_types);
 }
 
 /**
@@ -504,11 +538,27 @@ function acquia_lift_personalize_agent_type() {
 }
 
 /**
+ * Access callback for the Lift Target menu items.
+ *
+ * @return bool
+ */
+function acquia_lift_target_access($agent) {
+  return $agent->plugin == 'acquia_lift_target' &&
+    user_access('manage personalized content') &&
+    variable_get('acquia_lift_target_enabled', FALSE);
+}
+
+/**
  * Implements hook_personalize_agent_presave().
  */
 function acquia_lift_personalize_agent_presave($agent) {
-  if (!acquia_lift_owns_agent($agent)) {
+  if (!in_array($agent->plugin, array('acquia_lift', 'acquia_lift_simple_ab'))) {
     return;
+  }
+  $account = variable_get('acquia_lift_account_info', array());
+  $current = personalize_agent_load($agent->machine_name);
+  if (empty($current)) {
+    $agent->machine_name = AcquiaLiftAPI::getInstance($account)->ensureUniqueAgentName($agent->machine_name, PERSONALIZE_MACHINE_NAME_MAXLENGTH);
   }
   // Make sure the required configurations are set.
   if (!isset($agent->data['decision_style'])) {
@@ -529,7 +579,7 @@ function acquia_lift_personalize_agent_update_status($agent_name, $old_status, $
   // Clear the agent's verification status.
   acquia_lift_agent_clear_verified_status($agent_name);
   $agent_data = personalize_agent_load($agent_name);
-  if (!acquia_lift_owns_agent($agent_data)) {
+  if (!acquia_lift_is_testing_agent($agent_data)) {
     return;
   }
   $agent_instance = personalize_agent_load_agent($agent_name, TRUE);
@@ -595,7 +645,7 @@ function acquia_lift_personalize_visitor_context() {
  * Implements hook_personalize_agent_delete().
  */
 function acquia_lift_personalize_agent_delete($agent_data) {
-  if (!acquia_lift_owns_agent($agent_data)) {
+  if (!acquia_lift_is_testing_agent($agent_data)) {
     return;
   }
   acquia_lift_agent_clear_verified_status($agent_data->machine_name);
@@ -630,7 +680,7 @@ function acquia_lift_personalize_option_set_presave($option_set) {
  */
 function acquia_lift_personalize_option_set_save($option_set) {
   $agent = personalize_agent_load($option_set->agent);
-  if (!acquia_lift_owns_agent($agent)) {
+  if (!acquia_lift_is_testing_agent($agent)) {
     return;
   }
   $new_os = FALSE;
@@ -740,7 +790,7 @@ function acquia_lift_personalize_option_set_save($option_set) {
  */
 function acquia_lift_personalize_option_set_delete($option_set) {
   $agent = personalize_agent_load($option_set->agent);
-  if (!acquia_lift_owns_agent($agent)) {
+  if (!acquia_lift_is_testing_agent($agent)) {
     return;
   }
   // Acquia Lift agents store their option set info in the db so that they can
@@ -824,7 +874,7 @@ function acquia_lift_sync_fixed_targeting($agent, $new_option_sets) {
  */
 function acquia_lift_personalize_goal_save($goal_info) {
   $agent = personalize_agent_load($goal_info['agent']);
-  if (!acquia_lift_owns_agent($agent)) {
+  if (!acquia_lift_is_testing_agent($agent)) {
     return;
   }
   $old_goals = isset($agent->data['goals']) ? $agent->data['goals'] : array();
@@ -846,7 +896,7 @@ function acquia_lift_personalize_goal_save($goal_info) {
  */
 function acquia_lift_personalize_goal_delete($goal_info) {
   $agent = personalize_agent_load($goal_info['agent']);
-  if (!acquia_lift_owns_agent($agent)) {
+  if (!acquia_lift_is_testing_agent($agent)) {
     return;
   }
   $old_goals = isset($agent->data['goals']) ? $agent->data['goals'] : array();
@@ -2308,7 +2358,7 @@ function acquia_lift_form_personalize_agent_form_alter(&$form, &$form_state) {
 
   // If we're editing an existing agent, add a "Reset data" button next to
   // the Pause/Resume button.
-  if (isset($agent_name) && acquia_lift_owns_agent($agent) && isset($form['agent_form']['agent_fieldset']['header']['toggle_form'])) {
+  if (isset($agent_name) && acquia_lift_is_testing_agent($agent) && isset($form['agent_form']['agent_fieldset']['header']['toggle_form'])) {
     $reset_form = array(
       '#prefix' => '<div id="personalize-acquia-lift-reset-form">',
       '#suffix' => '</div>'
@@ -2393,11 +2443,29 @@ function acquia_lift_personalize_agent_page_alter(&$build, &$agent_data) {
 }
 
 /**
+ * Implements hook_form_FORM_ID_alter().
+ *
+ * Alters the option sets form so that it can't be used for explicit targeting
+ * on a Lift Target agent.
+ */
+function acquia_lift_form_personalize_agent_option_sets_form_alter(&$form, &$form_state) {
+  if ($form['#agent']->plugin != 'acquia_lift_target') {
+    return;
+  }
+  foreach ($form['variations']['primary']['option_sets'] as $name => $elements) {
+    if (isset($elements['options'])) {
+      unset($form['variations']['primary']['option_sets'][$name]['options']);
+    }
+  }
+}
+
+/**
  * Ajax callback for the "Reset data" button.
  */
 function personalize_acquia_lift_ajax_callback($form, $form_state) {
   return $form['agent_form']['agent_fieldset']['header']['reset_lift_agent'];
 }
+
 
 /**
  * Submit callback for the "Reset data" button.
@@ -2444,7 +2512,7 @@ function acquia_lift_personalize_agent_date_form_alter(&$form, $agent_name) {
   $agent = personalize_agent_load($agent_name);
   // If this is a Lift agent, we need to add the "Run until a winner is found"
   // option to the campaign end dropdown.
-  if (acquia_lift_owns_agent($agent)) {
+  if (acquia_lift_is_testing_agent($agent)) {
     $data = $agent->data;
     $options = $form['campaign_end']['#options'];
     // The "specified" needs to be the last option, because of the date
@@ -2977,6 +3045,8 @@ function acquia_lift_get_campaign_details($include_status = TRUE) {
     foreach ($option_sets as $option_set) {
       $option_set_types[] = $option_set->plugin;
     }
+    $current_status = personalize_agent_get_status($agent->machine_name);
+    $report_is_active = $plugin instanceof PersonalizeAgentReportInterface && $current_status != PERSONALIZE_STATUS_NOT_STARTED;
     $campaigns[$agent->machine_name] = array(
       'name' => $agent->machine_name,
       'label' => filter_xss($agent->label),
@@ -2984,7 +3054,7 @@ function acquia_lift_get_campaign_details($include_status = TRUE) {
       'links' => array(
         'view' => url('admin/structure/personalize/manage/' . $agent->machine_name),
         'edit' => url('admin/structure/personalize/manage/' . $agent->machine_name . '/edit'),
-        'report' => $plugin instanceof PersonalizeAgentReportInterface ? url('admin/structure/personalize/manage/' . $agent->machine_name . '/report') : '',
+        'report' => $report_is_active ? url('admin/structure/personalize/manage/' . $agent->machine_name . '/report') : '',
       ),
       'supportsGoals' => $supports_goals,
       'optionSetTypes' => array_unique($option_set_types),
@@ -2994,7 +3064,6 @@ function acquia_lift_get_campaign_details($include_status = TRUE) {
     if ($include_status) {
       // Add information that will allow starting / pausing the campaign from the
       // unibar.
-      $current_status = personalize_agent_get_status($agent->machine_name);
       list($next_status, $status_text) = _personalize_status_toggle_next($current_status);
       $campaigns[$agent->machine_name]['status'] = $current_status;
       $campaigns[$agent->machine_name]['nextStatus'] = array(

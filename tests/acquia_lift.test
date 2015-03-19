@@ -127,6 +127,7 @@ class AcquiaLiftWebTestBase extends DrupalWebTestCase
     if ($data['auto_stop']) {
       $agent = personalize_agent_load($data['machine_name']);
       $agent->data['auto_stop'] = 1;
+      AcquiaLiftAPI::setTestInstance();
       personalize_agent_save($agent);
     }
     $agent = personalize_agent_load_agent($data['machine_name'], TRUE);
@@ -161,7 +162,7 @@ class AcquiaLiftWebTestBase extends DrupalWebTestCase
     return $agent;
   }
 
-  protected function createOptionSet($index, $optionData) {
+  protected function createOptionSet($index, $optionData, $withQueueItems = TRUE) {
     $option_set = array(
       'plugin' => $optionData['plugin'],
       'label' => 'Option Set ' . ($index + 1),
@@ -198,38 +199,40 @@ class AcquiaLiftWebTestBase extends DrupalWebTestCase
       $this->fail('Exception thrown with message: . ' . $e->getMessage());
     }
 
-    $expected_queue_items[] = array(
-      'method' => 'savePoint',
-      'args' => array(
-        $optionData['agent'],
-        personalize_get_decision_point_name_for_option_set($option_set),
-      ),
-      'agent' => $optionData['agent']
-    );
-    // An item will be added to the queue to save the decision.
-    $expected_queue_items[] = array(
-      'method' => 'saveDecision',
-      'args' => array(
-        $optionData['agent'],
-        personalize_get_decision_point_name_for_option_set($option_set),
-        personalize_get_decision_name_for_option_set($option_set)
-      ),
-      'agent' => $optionData['agent']
-    );
-    // An item will be added to teh queue to save each option.
-    foreach ($choice_ids as $choice) {
+    $expected_queue_items = array();
+    if ($withQueueItems) {
       $expected_queue_items[] = array(
-        'method' => 'saveChoice',
+        'method' => 'savePoint',
         'args' => array(
           $optionData['agent'],
           personalize_get_decision_point_name_for_option_set($option_set),
-          personalize_get_decision_name_for_option_set($option_set),
-          $choice
         ),
         'agent' => $optionData['agent']
       );
+      // An item will be added to the queue to save the decision.
+      $expected_queue_items[] = array(
+        'method' => 'saveDecision',
+        'args' => array(
+          $optionData['agent'],
+          personalize_get_decision_point_name_for_option_set($option_set),
+          personalize_get_decision_name_for_option_set($option_set)
+        ),
+        'agent' => $optionData['agent']
+      );
+      // An item will be added to teh queue to save each option.
+      foreach ($choice_ids as $choice) {
+        $expected_queue_items[] = array(
+          'method' => 'saveChoice',
+          'args' => array(
+            $optionData['agent'],
+            personalize_get_decision_point_name_for_option_set($option_set),
+            personalize_get_decision_name_for_option_set($option_set),
+            $choice
+          ),
+          'agent' => $optionData['agent']
+        );
+      }
     }
-
     return array($option_set, $expected_queue_items);
   }
 
@@ -313,10 +316,18 @@ class AcquiaLiftWebTestBase extends DrupalWebTestCase
    * @return array
    *   An array of block deltas for use in personalized blocks.
    */
-  protected function createCustomBlocks($num = 1) {
-    $deltas = array();
+  protected function createPersonalizedBlock($index, $agent, $num_options = 2) {
+    $option_set = array(
+      'plugin' => 'block',
+      'label' => 'Option Set ' . ($index + 1),
+      'agent' => $agent->machine_name,
+      'data' => array(
+        'block_title' => 'Personalized Block ' . ($index + 1)
+      )
+    );
+    $options = array();
     module_load_include('inc', 'personalize_blocks', 'personalize_blocks.admin');
-    for ($i = 1; $i <= $num; $i++) {
+    for ($i = 1; $i <= $num_options; $i++) {
       $title = t('Custom block @num', array('@num' => $i));
       $values = array(
         'title' => $title,
@@ -326,9 +337,23 @@ class AcquiaLiftWebTestBase extends DrupalWebTestCase
           'value' => 'Some value',
         )
       );
-      $deltas[] = _personalize_blocks_add_custom_block($values);
+      $option = array(
+        'option_label' => 'Option ' . ($i),
+        'option_id' => 'option-' . $i,
+        'bid' => _personalize_blocks_add_custom_block($values)
+      );
+      $options[] = $option;
     }
-    return $deltas;
+    $option_set['options'] = $options;
+    $option_set = (object) $option_set;
+    try {
+      personalize_option_set_save($option_set);
+    }
+    catch (PersonalizeException $e) {
+      $this->fail('Exception thrown with message: . ' . $e->getMessage());
+      return NULL;
+    }
+    return $option_set;
   }
 }
 
@@ -2896,7 +2921,7 @@ class AcquiaLiftWebTestWorkflow extends AcquiaLiftWebTestBase {
         ),
         'links' => array(
           'edit' => url('admin/structure/personalize/manage/' . $first_agent_machine_name . '/edit'),
-          'report' => url('admin/structure/personalize/manage/' . $first_agent_machine_name . '/report'),
+          'report' => '',
           'view' => url('admin/structure/personalize/manage/' . $first_agent_machine_name),
         ),
         'supportsGoals' => TRUE,
@@ -2932,6 +2957,8 @@ class AcquiaLiftWebTestWorkflow extends AcquiaLiftWebTestBase {
     $html_id_first_agent = "personalize-change-status-{$first_agent_machine_name}-form";
     $this->drupalPost('admin/structure/personalize', array(), t('Start'), array(), array(), $html_id_first_agent);
 
+    // As soon as the agent is started, we are able to access its reports.
+    $expected[$first_agent_machine_name]['links']['report'] = url('admin/structure/personalize/manage/' . $first_agent_machine_name . '/report');
     $expected[$first_agent_machine_name]['status'] = PERSONALIZE_STATUS_RUNNING;
     $expected[$first_agent_machine_name]['nextStatus'] = array(
       'status' => PERSONALIZE_STATUS_PAUSED,
@@ -2942,6 +2969,7 @@ class AcquiaLiftWebTestWorkflow extends AcquiaLiftWebTestBase {
     $this->assertEqual($settings['acquia_lift']['campaigns'][$second_agent_machine_name], $expected[$second_agent_machine_name]);
 
     // Add a goal to the agent.
+    AcquiaLiftAPI::setTestInstance();
     personalize_goal_save($first_agent_machine_name, 'user_login', 3);
     $this->drupalGet('/');
     $settings = $this->drupalGetSettings();
@@ -3064,6 +3092,7 @@ class AcquiaLiftWebTestWorkflow extends AcquiaLiftWebTestBase {
    * Creates an article node with a personalized headline field.
    */
   protected  function createPersonalizedField() {
+    AcquiaLiftAPI::setTestInstance();
     // Create a node which we will attach a fields-based option set to. We can't
     // do this via the form because of the way we alter the form, which makes the
     // "Add an option" button not findable by simpletest.
@@ -3107,30 +3136,394 @@ class AcquiaLiftWebTestTarget extends AcquiaLiftWebTestBase {
     );
   }
 
-  function testNestedCampaigns() {
-
+  public function setUp() {
+    parent::setUp();
+    variable_set('acquia_lift_target_enabled', TRUE);
   }
 
-  protected function createTargetingAgent($data = array()) {
-    $this->drupalLogin($this->managerUser);
-
-    $data += array(
-      'name' => $this->randomName(),
-      'agent_type' => 'acquia_lift_target',
-      'cache_decisions' => 0,
+  function testCreateTargetAudiences() {
+    module_load_include('inc', 'acquia_lift', 'acquia_lift.admin');
+    $agent = $this->createTargetingAgent();
+    $this->resetAll();
+    $label = $this->randomName();
+    $contexts = array(
+      array(
+        'context' => implode(PERSONALIZE_TARGETING_ADMIN_SEPARATOR, array('some_plugin', 'some_context')),
+        'operator' => 'contains',
+        'match' => 'ohai'
+      ),
+      array(
+        'context' => implode(PERSONALIZE_TARGETING_ADMIN_SEPARATOR, array('some_plugin', 'some_other_context')),
+        'operator' => 'starts',
+        'match' => 'stuff'
+      ),
+      array(
+        'context' => implode(PERSONALIZE_TARGETING_ADMIN_SEPARATOR, array('some_other_plugin', 'some_context')),
+        'operator' => 'equals',
+        'match' => 'kthxbai'
+      ),
     );
+    // Try saving a target audience without having created an option set.
+    $saved = acquia_lift_target_audience_save($label, $agent->machine_name, $contexts, 'AND');
+    $this->assertFalse($saved);
+    // Now create an option set for hte agent.
+    list($option_set,) = $this->createOptionSet(0, array(
+      'plugin' => 'blocks',
+      'agent' => $agent->machine_name,
+      'option_ids' => array('first-choice', 'second-choice', 'third-choice')
+    ), FALSE);
+    $this->resetAll();
+    $saved = acquia_lift_target_audience_save($label, $agent->machine_name, $contexts, 'AND');
+    $this->assertTrue($saved);
 
-    $data +=  array('machine_name' => personalize_generate_machine_name($data['name'], 'personalize_agent_machine_name_exists'));
+    // Check that the expected targeting rules were saved on the option set.
+    $option_set = personalize_option_set_load($option_set->osid, TRUE);
+    $this->assertNotNull($option_set->targeting);
+    $audience_name = key($option_set->targeting);
+    $expected_targeting = array(
+      $audience_name => array(
+        'label' => $label,
+        'weight' => 0,
+        'targeting_features' => array(
+          'some_context::sc-ohai',
+          'some_other_context::ss-stuff',
+          'some_context::kthxbai'
+        ),
+        'targeting_rules' => array(
+          'some_context::sc-ohai' => array(
+              'context' => 'some_context',
+              'operator' => 'contains',
+              'match' => 'ohai',
+              'plugin' => 'some_plugin',
+            ),
+          'some_other_context::ss-stuff' => array(
+              'context' => 'some_other_context',
+              'operator' => 'starts',
+              'match' => 'stuff',
+              'plugin' => 'some_plugin',
+            ),
+          'some_context::kthxbai' => array(
+              'context' => 'some_context',
+              'operator' => 'equals',
+              'match' => 'kthxbai',
+              'plugin' => 'some_other_plugin',
+            ),
+        ),
+        'targeting_strategy' => 'AND',
+      )
+    );
+    $this->assertEqual($expected_targeting, $option_set->targeting);
+
+    // Add another audience.
+    $label = $this->randomName();
+    $contexts = array(
+      array(
+        'context' => implode(PERSONALIZE_TARGETING_ADMIN_SEPARATOR, array('boolean_plugin', 'some_context')),
+        'operator' => 'equals',
+        'match' => 1
+      ),
+      array(
+        'context' => implode(PERSONALIZE_TARGETING_ADMIN_SEPARATOR, array('boolean_plugin', 'some_other_context')),
+        'operator' => 'equals',
+        'match' => '0'
+      ),
+    );
+    $this->resetAll();
+    $saved = acquia_lift_target_audience_save($label, $agent->machine_name, $contexts, 'OR');
+    $this->assertTrue($saved);
+
+    $option_set = personalize_option_set_load($option_set->osid, TRUE);
+    $audience_names = array_keys($option_set->targeting);
+    $expected_targeting[$audience_names[1]] = array(
+      'label' => $label,
+      'weight' => 1,
+      'targeting_features' => array(
+        'some_context::1',
+        'some_other_context::0',
+      ),
+      'targeting_rules' => array(
+        'some_context::1' => array(
+          'context' => 'some_context',
+          'operator' => 'equals',
+          'match' => '1',
+          'plugin' => 'boolean_plugin',
+        ),
+        'some_other_context::0' => array(
+          'context' => 'some_other_context',
+          'operator' => 'equals',
+          'match' => '0',
+          'plugin' => 'boolean_plugin',
+        ),
+      ),
+      'targeting_strategy' => 'OR',
+    );
+    $this->assertEqual($expected_targeting, $option_set->targeting);
+  }
+
+  function testAssignVariations() {
+    module_load_include('inc', 'acquia_lift', 'acquia_lift.admin');
+    $agent = $this->createTargetingAgent();
+    $this->assertFalse(isset($agent->data['lift_targeting']));
+    $this->resetAll();
+    list($option_set,) = $this->createOptionSet(0, array(
+      'plugin' => 'blocks',
+      'agent' => $agent->machine_name,
+      'option_ids' => array('first-choice', 'second-choice', 'third-choice')
+    ), FALSE);
+    $this->resetAll();
+    // Try to set up targeting with a non-existent audience.
+    $audience_name = personalize_generate_machine_name($this->randomName(), NULL, '-');
+    $targeting = array(
+      $audience_name => array('second-choice', 'third-choice')
+    );
+    try {
+      acquia_lift_save_targeting_structure($agent, $targeting);
+      $this->fail('Should not reach here');
+    }
+    catch (AcquiaLiftException $e) {
+      $this->assertEqual('Invalid audience', $e->getMessage());
+    }
+    // Now create the audience and try again.
+    $this->createTargetAudience($option_set, $audience_name);
+    $this->resetAll();
+    try {
+      acquia_lift_save_targeting_structure($agent, $targeting);
+    }
+    catch (AcquiaLiftException $e) {
+      $this->fail('Exception thrown when none expected.');
+    }
+    $this->assertEqual($targeting, $agent->data['lift_targeting']);
+  }
+
+  function testImplementTargetingStructure() {
+    module_load_include('inc', 'acquia_lift', 'acquia_lift.admin');
+    // First, set up our agent, option set, audience and desired targeting
+    // structure.
+    $agent = $this->createTargetingAgent();
+    $this->resetAll();
+    $parent_option_set = $this->createPersonalizedBlock(0, $agent, 3);
+    if (empty($parent_option_set)) {
+      $this->fail('Could not create option set');
+      return;
+    }
+    // Keep the option ids in an array.
+    $option_ids = array();
+    foreach ($parent_option_set->options as $option) {
+      $option_ids[] = $option['option_id'];
+    }
+
+    $this->resetAll();
+    $audience_name = personalize_generate_machine_name($this->randomName(), NULL, '-');
+    $this->createTargetAudience($parent_option_set, $audience_name);
+    $targeting = array(
+      $audience_name => array($option_ids[1], $option_ids[2])
+    );
+    try {
+      acquia_lift_save_targeting_structure($agent, $targeting);
+    }
+    catch (AcquiaLiftException $e) {
+      $this->fail('Exception thrown when none expected.');
+    }
+    // Now implement the targeting structure that is currently just stored in
+    // the 'lift_targeting' property.
+    AcquiaLiftAPI::setTestInstance();
+    acquia_lift_update_targeting($agent);
+    // We should have a new nested acquia_lift agent and option set.
+    $agents = personalize_agent_load_by_type('acquia_lift');
+    $this->assertEqual(1, count($agents));
+    $nested_agent = reset($agents);
+    $option_sets = personalize_option_set_load_by_agent($nested_agent->machine_name);
+    $this->assertEqual(1, count($option_sets));
+    $nested_osid = key($option_sets);
+    $nested_option_set = reset($option_sets);
+    $this->assertEqual('options', $nested_option_set->plugin);
+    // Confirm the correct options have been added.
+    $expected_options = array(
+      array(
+        'option_id' => $option_ids[1],
+      ),
+      array(
+        'option_id' => $option_ids[2]
+      )
+    );
+    $this->assertEqual($expected_options, $nested_option_set->options);
+
+    // Confirm this osid is on the original option set's targeting rule for that
+    // audience.
+    $option_set = personalize_option_set_load($parent_option_set->osid, TRUE);
+    $this->assertEqual($nested_osid, $option_set->targeting[$audience_name]['osid']);
+
+    // Create a new target audience and change the strucutre of our campaign.
+    $second_audience = personalize_generate_machine_name($this->randomName(), NULL, '-');
+    $this->createTargetAudience($option_set, $second_audience, array(
+      array(
+        'context' => implode(PERSONALIZE_TARGETING_ADMIN_SEPARATOR, array('some_plugin', 'some_context')),
+        'operator' => 'equals',
+        'match' => 'kthxbai'
+      )
+    ));
+    $targeting = array(
+      $audience_name => array($option_ids[2]),
+      $second_audience => array($option_ids[0], $option_ids[1])
+    );
+    try {
+      acquia_lift_save_targeting_structure($agent, $targeting);
+    }
+    catch (AcquiaLiftException $e) {
+      $this->fail('Exception thrown when none expected.');
+    }
+    $this->resetAll();
+    // When we implement the new structure it should delete the existing nested
+    // option set and create a new one.
+    AcquiaLiftAPI::setTestInstance();
+    acquia_lift_update_targeting($agent);
+    $nested_option_set = personalize_option_set_load($nested_osid, TRUE);
+    $this->assertFalse($nested_option_set);
+    // Check the new agent and option set.
+    $agents = personalize_agent_load_by_type('acquia_lift');
+    $this->assertEqual(1, count($agents));
+    $nested_agent = reset($agents);
+    $option_sets = personalize_option_set_load_by_agent($nested_agent->machine_name);
+
+    $this->assertEqual(1, count($option_sets));
+    $nested_osid = key($option_sets);
+    $nested_option_set = reset($option_sets);
+    $this->assertEqual('options', $nested_option_set->plugin);
+    // Confirm the correct options have been added.
+    $expected_options = array(
+      array(
+        'option_id' => $option_ids[0],
+      ),
+      array(
+        'option_id' => $option_ids[1]
+      )
+    );
+    $this->assertEqual($expected_options, $nested_option_set->options);
+    // Confirm this osid is on the original option set's targeting rule for that
+    // audience.
+    $parent_option_set = personalize_option_set_load($parent_option_set->osid, TRUE);
+    $this->assertEqual($nested_osid, $parent_option_set->targeting[$second_audience]['osid']);
+    // This audience should not have an option id property.
+    $this->assertFalse(isset($parent_option_set->targeting[$second_audience]['option_id']));
+    // Confirm the option_id property is now on the original audience.
+    $this->assertEqual($option_ids[2], $parent_option_set->targeting[$audience_name]['option_id']);
+    // It should no longer have an osid property.
+    $this->assertFalse(isset($parent_option_set->targeting[$audience_name]['osid']));
+
+    // Now let's place our personalized block so we can test how it gets rendered.
+    $admin_user = $this->drupalCreateUser(array('access administration pages', 'manage personalized content', 'administer blocks'));
+    $this->drupalLogin($admin_user);
     $edit = array(
-      'agent_basic_info[title]' => $data['name'],
-      'agent_basic_info[machine_name]' => $data['machine_name'],
-      'agent_basic_info[agent_type]' => $data['agent_type'],
-      'cache_decisions' => $data['cache_decisions']
+      'blocks[personalize_blocks_' . $parent_option_set->osid . '][region]' => 'content',
     );
-
-    $this->drupalPost('admin/structure/personalize/add', $edit, $this->getButton('agent'));
+    $this->drupalPost('admin/structure/block', $edit, t('Save blocks'));
     $this->drupalLogout();
-    $agent = personalize_agent_load_agent($data['machine_name'], TRUE);
+    $this->drupalGet('');
+    $settings = $this->drupalGetSettings();
+    // THe parent agent and option set should be in the personalize js settings.
+    $this->assertTrue(isset($settings['personalize']['agent_map'][$agent->machine_name]));
+    $this->assertTrue(isset($settings['personalize']['option_sets']['osid-' . $parent_option_set->osid]));
+    // The nested agent and option set should *not* be in the personlaize js settings.
+    $this->assertFalse(isset($settings['personalize']['agent_map'][$nested_agent->machine_name]));
+    $this->assertFalse(isset($settings['personalize']['option_sets']['osid-' . $nested_osid]));
+    // The nested agent and option set should be in the acquia_lift_target js settings.
+    $this->assertTrue(isset($settings['acquia_lift_target']['agent_map'][$nested_agent->machine_name]));
+    $this->assertTrue(isset($settings['acquia_lift_target']['option_sets']['osid-' . $nested_osid]));
+    // The parent agent and option set should *not* be in the acquia_lift_target js settings.
+    $this->assertFalse(isset($settings['acquia_lift_target']['agent_map'][$agent->machine_name]));
+    $this->assertEqual(1, count($settings['acquia_lift_target']['option_sets']));
+
+    // Change the targeting structure again to have two nested tests.
+    $targeting = array(
+      $audience_name => array($option_ids[0], $option_ids[1]),
+      $second_audience => array($option_ids[0], $option_ids[2])
+    );
+    try {
+      acquia_lift_save_targeting_structure($agent, $targeting);
+    }
+    catch (AcquiaLiftException $e) {
+      $this->fail('Exception thrown when none expected.');
+    }
+    $this->resetAll();
+    // When we implement the new structure it should not delete the existing nested
+    // option set but it should change the audience it belongs to.
+    AcquiaLiftAPI::setTestInstance();
+    acquia_lift_update_targeting($agent);
+    $nested_option_set = personalize_option_set_load($nested_osid, TRUE);
+    $this->assertTrue($nested_option_set);
+    // We should have two nested agents each with one option set.
+    $agents = personalize_agent_load_by_type('acquia_lift');
+    $this->assertEqual(2, count($agents));
+    // Find the osid of the new option set so we can check that it has been set
+    // on the correct target audience.
+    foreach ($agents as $nested) {
+      // Find the *new* nested agent.
+      if ($nested->machine_name != $nested_agent->machine_name) {
+        $option_sets = personalize_option_set_load_by_agent($nested->machine_name);
+        $nested_os = reset($option_sets);
+        $nested_osid2 = $nested_os->osid;
+      }
+    }
+    if (isset($nested_osid2)) {
+      // Confirm that the correct osid is assigend to each of the two target
+      // audiences.
+      $parent_option_set = personalize_option_set_load($parent_option_set->osid, TRUE);
+      $this->assertEqual(2, count($parent_option_set->targeting));
+      foreach (array($audience_name => $nested_osid, $second_audience => $nested_osid2) as $audience => $osid) {
+        $this->assertEqual($osid, $parent_option_set->targeting[$audience]['osid']);
+        $this->assertFalse(isset($parent_option_set->targeting[$audience]['option_id']));
+      }
+    }
+    else {
+      $this->fail('Could not find the second option set');
+    }
+  }
+
+  protected function createTargetingAgent($label = NULL) {
+    AcquiaLiftAPI::setTestInstance();
+    if (empty($label)) {
+      $label = $this->randomName();
+    }
+    $agent = new stdClass();
+    $agent->label = $label;
+    $agent->plugin = 'acquia_lift_target';
+    $agent->data = array();
+    $agent->machine_name = personalize_generate_machine_name($label, 'personalize_agent_machine_name_exists');
+    $agent = personalize_agent_save($agent);
+    $this->resetAll();
     return $agent;
+  }
+
+  /**
+   * Helper that adds a target audience using two contexts AND'd together.
+   *
+   * @param $option_set
+   * @param null $machine_name
+   * @return null|string
+   */
+  protected function createTargetAudience($option_set, $machine_name = NULL, $contexts = array()) {
+    if (empty($machine_name)) {
+      $label = $this->randomName();
+      $machine_name = personalize_generate_machine_name($label, NULL, '-');
+    }
+    if (empty($contexts)) {
+      $contexts = array(
+        array(
+          'context' => implode(PERSONALIZE_TARGETING_ADMIN_SEPARATOR, array('some_plugin', 'some_context')),
+          'operator' => 'contains',
+          'match' => 'ohai'
+        ),
+        array(
+          'context' => implode(PERSONALIZE_TARGETING_ADMIN_SEPARATOR, array('some_plugin', 'some_other_context')),
+          'operator' => 'starts',
+          'match' => 'stuff'
+        ),
+      );
+    }
+
+    module_load_include('inc', 'acquia_lift', 'acquia_lift.admin');
+    acquia_lift_target_audience_save($machine_name, $option_set->agent, $contexts, 'AND');
+    $this->resetAll();
+    return $machine_name;
   }
 }

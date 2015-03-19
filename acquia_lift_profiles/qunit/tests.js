@@ -16,6 +16,8 @@ QUnit.module("Acquia Lift Profiles", {
     Drupal.personalize.getVisitorContexts = function(plugins, callback) {
       callback.call(null, {});
     };
+    // The normal flow is to assume tc_dnt (do not track) cookie is NOT set.
+    $.cookie('tc_dnt', null, {path:'/'});
     function assignDummyValues(contexts) {
       var values = {
         'some-context': 'some-value',
@@ -138,6 +140,14 @@ QUnit.asyncTest( "init test", function( assert ) {
   Drupal.acquia_lift_profiles.init(settings);
 });
 
+
+QUnit.test("Get context values with 'do not track' cookie", function( assert ) {
+  $.cookie('tc_dnt', 'true', {path:'/'});
+  expect(1);
+  var contextResult = Drupal.personalize.visitor_context.acquia_lift_profiles_context.getContext({'segment1':'segment1'});
+  assert.ok($.isEmptyObject(contextResult), 'Context result must be an empty object');
+  $.cookie('tc_dnt', null, {path:'/'});
+});
 
 QUnit.asyncTest("Get context values no cache", function( assert ) {
   expect(7);

@@ -513,7 +513,7 @@ function acquia_lift_is_testing_agent($agent) {
     return FALSE;
   }
   $agent_types = array('acquia_lift', 'acquia_lift_simple_ab');
-  return in_array($agent->plugin, array_keys($agent_types));
+  return in_array($agent->plugin, $agent_types);
 }
 
 /**
@@ -2781,6 +2781,9 @@ function acquia_lift_help($path, $arg) {
 function acquia_lift_visitor_actions_ui_selector_ignore() {
   return array(
     'classes' => array(
+      'acquia-lift-[a-zA-Z0-9\_\-]+',
+    ),
+    'ids' => array(
       'acquia-lift-[a-zA-Z0-9\_\-]+',
     ),
   );

@@ -248,9 +248,6 @@ function acquia_lift_personalize_campaign_wizard_targeting_alter(&$form, &$form_
   // Acquia Lift Target agents allow for audience designation to be used across
   // the agent.
   $agent_data = $form['#agent'];
-  if ($agent_data->plugin !== 'acquia_lift_target') {
-    return;
-  }
   module_load_include('inc', 'acquia_lift', 'acquia_lift.admin');
   $option_set = acquia_lift_get_option_set_for_targeting($agent_data->machine_name);
 

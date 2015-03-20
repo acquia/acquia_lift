@@ -353,3 +353,19 @@ tr.acquia-lift-report-control {
 .acquia-lift-targeting .personalize-target-wrapper .form-item label {
   display: none;
 }
+
+/* Edit checkbox in card header */
+#acquia-lift-targeting-audiences .el-card__action input[type="checkbox"].acquia-lift-edit {
+  display: none;
+}
+#acquia-lift-targeting-audiences .el-card__action input[type="checkbox"].acquia-lift-edit + label {
+  content: url(../images/edit-toggle-inactive.png);
+  height: 30px;
+  width: 30px;
+  display: inline-block;
+  padding: 0;
+  cursor: pointer;
+}
+#acquia-lift-targeting-audiences .el-card__action input[type="checkbox"].acquia-lift-edit:checked + label {
+  content: url(../images/edit-toggle-active.png);
+}

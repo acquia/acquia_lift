@@ -23,6 +23,7 @@ input[type="submit"].acquia-lift-submit-button,
   padding: 0.70711em 1em;
   font-size: 1em;
   height: inherit;
+  display: inline-block;
 }
 
 input[type="submit"].acquia-lift-submit-button:active {

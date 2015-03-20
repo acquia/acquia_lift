@@ -327,6 +327,10 @@ tr.acquia-lift-report-control {
   position: absolute;
   width: 1px;
 }
+/* Base form */
+.personalize-wizard-section #edit-agent-basic-info .acquia-lift-revealing-input {
+  margin-bottom: 1em;
+}
 
 /* Base form */
 .personalize-wizard-section #edit-agent-basic-info .acquia-lift-revealing-input {
@@ -410,10 +414,3 @@ tr.acquia-lift-report-control {
   float: right;
   display: inline-block;
 }
-
-/*
-#acquia-lift-targeting-audiences .acquia-lift-draggable-variations li:after {
-  content: 'OR';
-  display: block;
-  clear: both;
-}*/

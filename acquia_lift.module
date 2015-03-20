@@ -526,7 +526,7 @@ function acquia_lift_is_testing_agent($agent) {
     return FALSE;
   }
   $agent_types = array('acquia_lift', 'acquia_lift_simple_ab');
-  return in_array($agent->plugin, array_keys($agent_types));
+  return in_array($agent->plugin, $agent_types);
 }
 
 /**
@@ -2437,7 +2437,7 @@ function acquia_lift_form_personalize_campaign_wizard_alter(&$form, &$form_state
     drupal_set_message(t('Your Acquia Lift account info has not been configured. Acquia Lift campaigns can not be created until you configure your account info !here', array('!here' => l('here', 'admin/config/content/personalize/acquia_lift'))), 'error');
   }
 
-  if (empty($agent->machine_name) || !acquia_lift_is_testing_agent($agent)) {
+  if (empty($agent->machine_name) || $agent->plugin !== 'acquia_lift_target') {
     return;
   }
   $form['#attached']['library'][] = array('acquia_lift', 'acquia_lift.targeting_admin');
@@ -2807,6 +2807,9 @@ function acquia_lift_help($path, $arg) {
 function acquia_lift_visitor_actions_ui_selector_ignore() {
   return array(
     'classes' => array(
+      'acquia-lift-[a-zA-Z0-9\_\-]+',
+    ),
+    'ids' => array(
       'acquia-lift-[a-zA-Z0-9\_\-]+',
     ),
   );

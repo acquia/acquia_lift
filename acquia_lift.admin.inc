@@ -1231,7 +1231,7 @@ function acquia_lift_get_structure_from_targeting($option_set) {
  *   sets.
  */
 function acquia_lift_get_option_set_for_targeting($agent_name) {
-  $option_sets = personalize_option_set_load_by_agent($agent_name);
+  $option_sets = personalize_option_set_load_by_agent($agent_name, TRUE);
   if (empty($option_sets)) {
     return NULL;
   }

@@ -249,6 +249,7 @@ function acquia_lift_campaign_type_create_form_submit($form, &$form_state) {
  * @see hook_personalize_elements_variation_types
  */
 function acquia_lift_element_variation_details_form($form, &$form_state, $variation_type, $osid = NULL, $option_id = NULL) {
+  module_load_include('inc', 'personalize_elements', 'personalize_elements.admin');
   $types = module_invoke_all('personalize_elements_variation_types');
   if (!isset($types[$variation_type]['contextual']['formitem'])) {
     $form['error'] = array(
@@ -327,7 +328,7 @@ function acquia_lift_element_variation_details_form($form, &$form_state, $variat
   // Now include the details specific to this variation type.
   $form['personalize_elements_content'] = $types[$variation_type]['contextual']['formitem'];
   if ($edit_option) {
-    $form['personalize_elements_content']['#default_value'] = filter_xss($option['personalize_elements_content']);
+    $form['personalize_elements_content']['#default_value'] = personalize_elements_filter_personalize_element_option($variation_type, $option['personalize_elements_content']);
     $form['variation_number']['#type'] = 'value';
     $form['variation_number']['#value'] = $edit_option['option_id'];
   }

@@ -23,7 +23,7 @@ projects[visitor_actions][version] = 1.0-rc3
 ; Contrib module: acquia_lift
 ; ---------------------------------------
 projects[acquia_lift][subdir] = contrib
-projects[acquia_lift][version] = 1.0-rc8
+projects[acquia_lift][version] = 1.0-rc9
 
 ; Contrib module: ctools
 ; ---------------------------------------

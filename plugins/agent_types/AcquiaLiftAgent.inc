@@ -920,10 +920,10 @@ class AcquiaLiftAgent extends PersonalizeAgentBase implements PersonalizeAgentGo
         // We add the agent machine name to the queue item so that if it fails
         // the agent in question can be paused.
         $item['agent'] = $this->machineName;
-        $this->getQueue()->createItem($item);
+        //$this->getQueue()->createItem($item);
       }
       // Make sure the queue gets triggered on the next request.
-      $_SESSION['acquia_lift_queue_trigger'] = 1;
+      //$_SESSION['acquia_lift_queue_trigger'] = 1;
     }
   }
 }

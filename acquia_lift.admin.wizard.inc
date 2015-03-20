@@ -83,9 +83,7 @@ function acquia_lift_personalize_campaign_wizard_variations_alter(&$form, &$form
 
   // Take over the form validation and submit handling.
   $form['#validate'] = array('acquia_lift_personalize_campaign_wizard_variations_validate');
-  $form['#submit'] = array('acquia_lift_personalize_campaign_wizard_variations_submit');
-
-  $form['#attached']['css'][] = drupal_get_path('module', 'acquia_lift') . '/css/acquia_lift.admin.css';
+  $form['#submit'] = array('acquia_lift_personalize_campaign_wizard_submit');
 
   $agent_data = $form['#agent'];
   if (empty($agent_data->machine_name)) {
@@ -138,10 +136,10 @@ function acquia_lift_personalize_campaign_wizard_variations_alter(&$form, &$form
     }
     switch ($option_set->plugin) {
       case 'block':
-        _acquia_lift_personalize_campaign_wizard_variations_block($form['variations']['option_sets']['option_set_' . $option_set->osid]['content'], $form_state, $agent_data, array('variations', 'option_sets', 'option_set_' . $option_set->osid, 'content'), $option_set);
+        $form['variations']['option_sets']['option_set_' . $option_set->osid]['content'] = _acquia_lift_personalize_campaign_wizard_variations_block($form, $form_state, $agent_data, array('variations', 'option_sets', 'option_set_' . $option_set->osid, 'content'), $option_set);
         break;
       case 'elements':
-        _acquia_lift_personalize_campaign_wizard_variations_element($form['variations']['option_sets']['option_set_' . $option_set->osid]['content'], $form_state, $agent_data, $option_set);
+        $form['variations']['option_sets']['option_set_' . $option_set->osid]['content'] = _acquia_lift_personalize_campaign_wizard_variations_element($form, $form_state, $agent_data, $option_set);
         break;
       // Unsupported display - get an edit link if provided by the plugin.
       default:
@@ -170,7 +168,6 @@ function acquia_lift_personalize_campaign_wizard_variations_alter(&$form, &$form
   }
   $form['variations']['add_variation'] = array(
     '#type' => 'container',
-    '#tree' => TRUE,
     '#theme' => 'acquia_lift_card',
     '#collapsed' => !empty($option_sets),
     '#title' => t('Add variation set'),
@@ -223,7 +220,7 @@ function acquia_lift_personalize_campaign_wizard_variations_alter(&$form, &$form
             'class' => array('acquia-lift-block-variation-set'),
           ),
         );
-        _acquia_lift_personalize_campaign_wizard_variations_block($form['variations']['add_variation']['details']['block']['content'], $form_state, $agent_data, array('variations', 'add_variation', 'details', 'block', 'content'));
+        $form['variations']['add_variation']['details']['block']['content'] = _acquia_lift_personalize_campaign_wizard_variations_block($form, $form_state, $agent_data, array('variations', 'add_variation', 'details', 'block', 'content'));
         break;
 
       case 'element':
@@ -233,7 +230,7 @@ function acquia_lift_personalize_campaign_wizard_variations_alter(&$form, &$form
             'class' => array('acquia-lift-element-variation-set'),
           ),
         );
-        _acquia_lift_personalize_campaign_wizard_variations_element($form['variations']['add_variation']['details']['element']['content'], $form_state, $agent_data);
+        $form['variations']['add_variation']['details']['element']['content'] = _acquia_lift_personalize_campaign_wizard_variations_element($form, $form_state, $agent_data);
         break;
     }
   }
@@ -243,10 +240,68 @@ function acquia_lift_personalize_campaign_wizard_variations_alter(&$form, &$form
  * Alter hook for the targeting portion of the campaign wizard.
  */
 function acquia_lift_personalize_campaign_wizard_targeting_alter(&$form, &$form_state, $form_id) {
-  if (!empty($form['visitor_context']) && $form['visitor_context']['#type'] == 'select') {
+  if (!empty($form['targeting']['visitor_context']) && $form['targeting']['visitor_context']['#type'] == 'select') {
     module_load_include('inc', 'acquia_lift', 'acquia_lift.ui');
-    acquia_lift_chosenify_element($form['visitor_context']);
+    acquia_lift_chosenify_element($form['targeting']['visitor_context']);
   }
+
+  // Acquia Lift Target agents allow for audience designation to be used across
+  // the agent.
+  $agent_data = $form['#agent'];
+  if ($agent_data->plugin !== 'acquia_lift_target') {
+    return;
+  }
+  module_load_include('inc', 'acquia_lift', 'acquia_lift.admin');
+  $option_set = acquia_lift_get_option_set_for_targeting($agent_data->machine_name);
+
+  if (empty($option_set)) {
+    drupal_set_message(t('You must <a href="!variations_url">create variation sets</a> before targeting.', array(
+      '!variations_url' => url('admin/structure/personalize/manage/' . $agent_data->machine_name . '/variations'),
+    )), 'warning');
+    return;
+  }
+  // Take over the form validation and submit handling.
+  $form['#validate'] = array('acquia_lift_personalize_campaign_wizard_targeting_validate');
+  $form['#submit'] = array('acquia_lift_personalize_campaign_wizard_submit');
+
+  unset($form['targeting']['option_sets']);
+  $form['audiences'] = array(
+    '#type' => 'container',
+    '#tree' => TRUE,
+  );
+  // Load all audiences for the agent.
+  if (isset($option_set->targeting)) {
+    foreach ($option_set->targeting as $audience_id => $audience) {
+      $form['audiences'][$audience_id] = array(
+        '#type' => 'container',
+        '#theme' => 'acquia_lift_card',
+        '#title' => isset($audience['label']) ? $audience['label'] : 'Audience: ' . $audience_id,
+        '#collapsible' => TRUE,
+        '#collapsed' => TRUE,
+      );
+      $form['audiences'][$audience_id]['header'] = array(
+        '#type' => 'container'
+      );
+      $form['audiences'][$audience_id]['header']['delete'] = array(
+        '#markup' => l(t('Delete'), 'admin/structure/personalize/manage/' . $agent_data->machine_name . '/audience/' . $audience_id . '/delete', array(
+          'attributes' => array(
+            'class' => array('acquia-lift-delete')
+          ),
+        )),
+      );
+      $form['audiences'][$audience_id]['details'] = _acquia_lift_personalize_campaign_wizard_targeting_audience($form, $form_state, $agent_data, $audience_id, $audience);
+    }
+  }
+
+  // Add a new audience.
+  $form['audiences']['add'] = array(
+    '#type' => 'container',
+    '#theme' => 'acquia_lift_card',
+    '#collapsible' => TRUE,
+    '#collapsed' => !empty($option_set->targeting),
+    '#title' => t('Add target audience'),
+  );
+  $form['audiences']['add']['details'] = _acquia_lift_personalize_campaign_wizard_targeting_audience($form, $form_state, $agent_data, 'add');
 }
 
 /**
@@ -258,16 +313,16 @@ function acquia_lift_personalize_campaign_wizard_targeting_alter(&$form, &$form_
  */
 
 /**
- * Submit handler to add another block option to a personalized block form.
+ * Ajax handler when adding a new variation set.
  */
-function acquia_lift_personalize_campaign_wizard_variations_ajax_add(&$form, &$form_state) {
+function acquia_lift_personalize_campaign_wizard_variations_ajax_add($form, &$form_state) {
   return $form['variations']['add_variation']['details'];
 }
 
 /**
  * Submit handler to add another block option to a personalized block form.
  */
-function acquia_lift_personalize_campaign_wizard_blocks_add(&$form, &$form_state) {
+function acquia_lift_personalize_campaign_wizard_blocks_add($form, &$form_state) {
   // Value will be "blocks_add" or "blocks_{osid}" where the second part is the
   // key within the form state storage for the number of blocks to generate.
   list($blocks, $key) = explode('_', $form_state['triggering_element']['#value']);
@@ -278,7 +333,7 @@ function acquia_lift_personalize_campaign_wizard_blocks_add(&$form, &$form_state
 /**
  * Callback to for AJAX to generate the personalize block wrapper form.
  */
-function acquia_lift_personalize_campaign_wizard_blocks_ajax(&$form, &$form_state) {
+function acquia_lift_personalize_campaign_wizard_blocks_ajax($form, &$form_state) {
   // The triggering element and the blocks container share a common parent.
   $parents = $form_state['triggering_element']['#array_parents'];
   $section = $form;
@@ -286,6 +341,36 @@ function acquia_lift_personalize_campaign_wizard_blocks_ajax(&$form, &$form_stat
     $section = $section[$parents[$i]];
   }
   return $section['blocks'];
+}
+
+/**
+ * Submit handler for the "Add Context" button.
+ */
+function acquia_lift_personalize_campaign_wizard_targeting_add($form, &$form_state) {
+  // Increment the number of contexts to be rendered.
+  $context_key = $form_state['triggering_element']['#array_parents'][1];
+  $form_state['num_contexts_audience'][$context_key]++;
+  $form_state['rebuild'] = TRUE;
+}
+
+/**
+ * Submit handler for the "Remove Context" button.
+ */
+function acquia_lift_personalize_campaign_wizard_targeting_remove($form, &$form_state) {
+  $context_key = $form_state['triggering_element']['#array_parents'][1];
+  $parents = $form_state['clicked_button']['#parents'];
+  $delta_pos = array_search('contexts', $parents) + 1;
+  $delta = $parents[$delta_pos];
+  $form_state['to_remove_audience'][$context_key] = $delta;
+  $form_state['rebuild'] = TRUE;
+}
+
+/**
+ * Ajax callback for the add context and remove context buttons.
+ */
+function acquia_lift_personalize_campaign_wizard_targeting_ajax($form, &$form_state) {
+  $context_key = $form_state['triggering_element']['#array_parents'][1];
+  return $form['audiences'][$context_key]['details']['mapping']['contexts'];
 }
 
 /**
@@ -323,6 +408,8 @@ function acquia_lift_personalize_campaign_wizard_variations_validate(&$form, &$f
         default:
           // Unsupported option set type.
       }
+      // Validate advanced settings.
+      personalize_campaign_wizard_validate_variations_advanced($form_state['values']['variations']['option_sets'][$option_set_id], 'variations][option_sets][' . $option_set_id . ']');
     }
   }
   // Validation for any new option set types once the details have been input.
@@ -345,6 +432,22 @@ function acquia_lift_personalize_campaign_wizard_variations_validate(&$form, &$f
 }
 
 /**
+ * Validation function for targeting form.
+ */
+function acquia_lift_personalize_campaign_wizard_targeting_validate(&$form, &$form_state) {
+  // Verify that a new audience will have a unique machine name.
+  if (!empty($form_state['values']['audiences']['add']['details']['name'])) {
+    module_load_include('inc', 'acquia_lift', 'acquia_lift.admin');
+    $machine_name = personalize_generate_machine_name($form_state['values']['audiences']['add']['details']['name'], NULL, '-');
+    $agent_data = $form['#agent'];
+    $option_set = acquia_lift_get_option_set_for_targeting($agent_data->machine_name);
+    if (isset($option_set->targeting[$machine_name])) {
+      form_set_error('audiences[add][details][name', t('Please choose a different name for your audience as this one is already taken'));
+    }
+  }
+}
+
+/**
  ********************************************************************
  *
  * S U B M I S S I O N S
@@ -353,17 +456,37 @@ function acquia_lift_personalize_campaign_wizard_variations_validate(&$form, &$f
  */
 
 /**
- * Submit function for variations form.
+ * General Acquia Lift submission of campaign step form.
  */
-function acquia_lift_personalize_campaign_wizard_variations_submit(&$form, &$form_state) {
+function acquia_lift_personalize_campaign_wizard_submit(&$form, &$form_state) {
   module_load_include('inc', 'personalize', 'personalize.admin');
   module_load_include('inc', 'personalize', 'personalize.admin.campaign');
+
+  // Run the base submit form handling.
+  $agent_data = personalize_campaign_wizard_submit_base($form, $form_state);
+  $agent_instance = personalize_agent_load_agent($agent_data->machine_name);
+
+  // Call any step-specific submission handlers.
+  $submit_function = 'acquia_lift_personalize_campaign_wizard_' . $form_state['storage']['step'] . '_submit';
+  if (function_exists($submit_function)) {
+    $submit_function($form, $form_state, $agent_data, $agent_instance);
+  }
+
+  // Save any changes to the campaign.
+  personalize_agent_save($agent_data);
+
+  // Set the next step and rebuild the form.
+  $form_state['storage']['step'] = _personalize_campaign_wizard_next_step($form_state, $agent_instance);;
+  $form_state['rebuild'] = TRUE;
+}
+
+/**
+ * Submit function for variations form.
+ */
+function acquia_lift_personalize_campaign_wizard_variations_submit(&$form, &$form_state, &$agent_data, $agent_instance) {
   // Save a reference to the full form state values.
   $values = $form_state['values'];
   $click_id = $form_state['clicked_button']['#id'];
-
-  // Run the base submit form handling.
-  $agent = personalize_campaign_wizard_submit_base($form, $form_state);
 
   // Common functionality needed before submitting the block submission
   // handler whether for new or existing blocks.
@@ -410,12 +533,6 @@ function acquia_lift_personalize_campaign_wizard_variations_submit(&$form, &$for
   unset($form_state['redirect']);
   // Set the clicked button ID back.
   $form_state['clicked_button']['#id'] = $click_id;
-
-  // If user selected to add another variation, then return to the variations step.
-
-  // Otherwise the next step is "why".
-  $form_state['storage']['step'] = 'goals';
-  $form_state['rebuild'] = TRUE;
 }
 
 /**
@@ -444,6 +561,53 @@ function acquia_lift_personalize_campaign_wizard_variations_submit_element_edit(
 }
 
 /**
+ * Submit function for targeting form.
+ */
+function acquia_lift_personalize_campaign_wizard_targeting_submit(&$form, &$form_state, &$agent_data, $agent_instance) {
+  // Save any visitor context if passed.
+  // Add the visitor context configuration.
+  $visitor_context = array();
+  if (isset($form_state['values']['visitor_context'])) {
+    $visitor_context = personalize_admin_convert_visitor_context_form_values($form_state['values']['visitor_context']);
+  }
+  $agent_data->data['visitor_context'] = $visitor_context;
+
+  // Handle targeting audiences.
+  if (empty($form_state['values']['audiences'])) {
+    return;
+  }
+  module_load_include('inc', 'acquia_lift', 'acquia_lift.admin');
+  foreach ($form_state['values']['audiences'] as $audience_id => $audience) {
+    if (empty($audience['details']['name'])) {
+      continue;
+    }
+    $contexts = array();
+    // We need to massage the context information as submitted in the form into
+    // an array of contexts that can be consumed by the
+    // acquia_lift_target_audience_save() function.
+    foreach ($audience['details']['mapping']['contexts'] as $context_values) {
+      if ($context_values['context'] == '') {
+        continue;
+      }
+      $context_values['match'] = $context_values['value']['match'];
+      $context_values['operator'] = $context_values['value']['operator'];
+      unset($context_values['value'], $context_values['remove']);
+      $contexts[] = $context_values;
+    }
+    if (acquia_lift_target_audience_save($audience['details']['name'], $agent_data->machine_name, $contexts, $audience['details']['strategy'], $audience_id === 'add' ? NULL : $audience_id)) {
+      drupal_set_message(t('The target audience %audience was saved successfully', array(
+        '%audience' => $audience['details']['name'],
+      )));
+    }
+    else {
+      drupal_set_message(t('There was a problem saving the target audience %audience.', array(
+        '%audience' => $audience['details']['name'],
+      )), 'error');
+    }
+  }
+}
+
+/**
  ********************************************************************
  *
  * H E L P E R S
@@ -464,9 +628,11 @@ function acquia_lift_personalize_campaign_wizard_variations_submit_element_edit(
  *   The array of parents for this element
  * @param stdClass $option_set
  *   The option set class that should be shown within the form
+ * @return array
+ *   The form section for the requestd block
  */
 function _acquia_lift_personalize_campaign_wizard_variations_block(&$form, &$form_state, $agent_data, $parents, $option_set = NULL) {
-  $form = array();
+  $element = array();
   $values = isset($form_state['values']) ? $form_state['values'] : array();
   if (empty($option_set->osid)) {
     $block_content = empty($values['variations']['add_variation']['details']['block']['content']) ? array() : $values['variations']['add_variation']['details']['block']['content'];
@@ -480,7 +646,7 @@ function _acquia_lift_personalize_campaign_wizard_variations_block(&$form, &$for
   module_load_include('inc', 'acquia_lift', 'acquia_lift.ui');
 
   _acquia_lift_personalize_campaign_wizard_form_state_blocks_alter($form_state, $block_content, $option_set);
-  $form = personalize_blocks_form($form, $form_state, 'embed', $option_set);
+  $element = personalize_blocks_form($element, $form_state, 'embed', $option_set);
   // This will add the current number of blocks and the personalized block
   // into the form state.  We move it into a more structured format to support
   // multiple blocks forms per page.
@@ -490,27 +656,27 @@ function _acquia_lift_personalize_campaign_wizard_variations_block(&$form, &$for
   $form_state['values'] = $values;
 
   // The agent cannot be changed.
-  $form['personalize']['#access'] = FALSE;
-  $form['agent_select'] = array(
+  $element['personalize']['#access'] = FALSE;
+  $element['agent_select'] = array(
     '#type' => 'value',
     '#value' => $agent_data->machine_name,
   );
   // Make the variations wrapper a plain container rather than a fieldset.
-  $form['pblock_wrapper']['#theme_wrappers'] = array('container');
+  $element['pblock_wrapper']['#theme_wrappers'] = array('container');
   // Adjust the blocks container for our own user interface.
-  unset($form['pblock_wrapper']['blocks']['#theme']);
-  unset($form['pblock_wrapper']['#tree']);
-  unset($form['pblock_wrapper']['blocks']['#tree']);
+  unset($element['pblock_wrapper']['blocks']['#theme']);
+  unset($element['pblock_wrapper']['#tree']);
+  unset($element['pblock_wrapper']['blocks']['#tree']);
 
   $pblock_id = drupal_html_id('edit-' . implode('-', $parents) . '-pblock-wrapper');
   $more_id = $pblock_id . '-blocks-more';
   $blocks_id = $pblock_id . '-blocks';
   // Need to update the id so that it is unique on the page.
-  $form['pblock_wrapper']['blocks']['#attributes']['id'] = $blocks_id;
+  $element['pblock_wrapper']['blocks']['#attributes']['id'] = $blocks_id;
   // @todo Give a default variation set name if not yet set, i.e., "Set 1".
 
-  foreach (element_children($form['pblock_wrapper']['blocks']) as $key) {
-    $block = &$form['pblock_wrapper']['blocks'][$key];
+  foreach (element_children($element['pblock_wrapper']['blocks']) as $key) {
+    $block = &$element['pblock_wrapper']['blocks'][$key];
     // Set the option label as a revealing input and give it a label.
     $block['option_label']['#theme_wrappers'][] = 'acquia_lift_revealing_input';
     $block['option_label']['#title'] = _personalize_generate_option_index($key);
@@ -530,22 +696,23 @@ function _acquia_lift_personalize_campaign_wizard_variations_block(&$form, &$for
     $block['remove']['#access'] = FALSE;
   }
   // Update the "Add another" button to match the desired styling and language.
-  $form['pblock_wrapper']['#attributes']['id'] = $pblock_id;
-  $form['pblock_wrapper']['blocks_more']['#tag'] = 'button';
-  $form['pblock_wrapper']['blocks_more']['#text'] = t('Add variation');
-  $form['pblock_wrapper']['blocks_more']['#value'] = 'blocks_' . (empty($option_set) ? 'add' : $option_set->osid);
-  $form['pblock_wrapper']['blocks_more']['#theme_wrappers'] = array('personalize_html_tag');
-  $form['pblock_wrapper']['blocks_more']['#attributes']['id'] = $more_id;
-  $form['pblock_wrapper']['blocks_more']['#attributes']['class'][] = 'personalize-add-link';
-  $form['pblock_wrapper']['blocks_more']['#prefix'] = '<span class="personalize-add-link-prefix"></span>';
-  $form['pblock_wrapper']['blocks_more']['#submit'] = array('acquia_lift_personalize_campaign_wizard_blocks_add');
-  $form['pblock_wrapper']['blocks_more']['#ajax'] = array(
+  $element['pblock_wrapper']['#attributes']['id'] = $pblock_id;
+  $element['pblock_wrapper']['blocks_more']['#tag'] = 'button';
+  $element['pblock_wrapper']['blocks_more']['#text'] = t('Add variation');
+  $element['pblock_wrapper']['blocks_more']['#value'] = 'blocks_' . (empty($option_set) ? 'add' : $option_set->osid);
+  $element['pblock_wrapper']['blocks_more']['#theme_wrappers'] = array('personalize_html_tag');
+  $element['pblock_wrapper']['blocks_more']['#attributes']['id'] = $more_id;
+  $element['pblock_wrapper']['blocks_more']['#attributes']['class'][] = 'personalize-add-link';
+  $element['pblock_wrapper']['blocks_more']['#prefix'] = '<span class="personalize-add-link-prefix"></span>';
+  $element['pblock_wrapper']['blocks_more']['#submit'] = array('acquia_lift_personalize_campaign_wizard_blocks_add');
+  $element['pblock_wrapper']['blocks_more']['#ajax'] = array(
     'callback' => 'acquia_lift_personalize_campaign_wizard_blocks_ajax',
     'wrapper' => $blocks_id,
     'effect' => 'fade',
   );
   // Remove the form's action buttons
-  unset($form['actions']);
+  unset($element['actions']);
+  return $element;
 }
 
 /**
@@ -604,14 +771,17 @@ function _acquia_lift_personalize_campaign_wizard_form_state_blocks_alter(&$form
  *   The data for the current campaign
  * @param stdClass $option_set
  *   (Optional) The option set to display within the form if editing.
+ * @return array
+ *   The form element for the requested element variation set.
  *
  * NOTE: limit_validation_errors is not set for either of this submit buttons
  * due to a requirement to actually save the page content before exiting for
  * element variation actions.
  */
 function _acquia_lift_personalize_campaign_wizard_variations_element(&$form, &$form_state, $agent_data, $option_set = NULL) {
+  $element = array();
   if (empty($option_set->osid)) {
-    $form['url'] = array(
+    $element['url'] = array(
       '#type' => 'textfield',
       '#element_validate' => array('personalize_form_element_path_validate'),
       '#title' => t('Page where element exists'),
@@ -619,15 +789,15 @@ function _acquia_lift_personalize_campaign_wizard_variations_element(&$form, &$f
       '#allow_external' => TRUE,
       '#required' => TRUE,
     );
-    $form['navigate'] = array(
+    $element['navigate'] = array(
       '#type' => 'submit',
       '#submit' => array('acquia_lift_personalize_campaign_wizard_variations_submit_element_add'),
       '#value' => t('Go'),
     );
-    return;
+    return $element;
   }
   // Form for an existing option set.
-  $form['label'] = array(
+  $element['label'] = array(
     '#type' => 'textfield',
     '#required' => TRUE,
     '#theme_wrappers' => array('acquia_lift_revealing_input'),
@@ -637,11 +807,197 @@ function _acquia_lift_personalize_campaign_wizard_variations_element(&$form, &$f
   if (!empty($option_set->data['pages'])) {
     // Note that utilizing the personalize_html_tag theme here somehow prevents
     // the element and form-altered submit handlers from being called.
-    $form['edit'] = array(
+    $element['edit'] = array(
       '#type' => 'submit',
       '#submit' => array('acquia_lift_personalize_campaign_wizard_variations_submit_element_edit'),
       '#value' => t('Edit'),
       '#name' => 'edit_' . $option_set->osid,
     );
   }
+  return $element;
+}
+
+/**
+ * Helper function to generate an audience sub-form.
+ *
+ * @param $agent_data
+ *   The current agent data.
+ * @param $parent_identifier
+ *   The identifier used for this audience within the form, either the
+ *   machine_name or "add" for new audiences.
+ * @param $audience
+ *   (Optional) The existing audience.  This contains:
+ *   - label: The name of the audience
+ *   - weight: the weight of the audience as compared ot all audiences for the
+ *     option set.
+ *   - targeting_features: An array of feature strings (context/value)
+ *   - targeting_rules: An array of rules including context and plugin
+ *   - targeting_strategy: The strategy to use when combining contexts
+ * @return array
+ *   The form element
+ */
+function _acquia_lift_personalize_campaign_wizard_targeting_audience(&$form, &$form_state, $agent_data, $parent_identifier, $audience = NULL) {
+// Build up a list of available context values for targeting.
+  module_load_include('inc', 'personalize', 'personalize.admin');
+  $targeting_values = personalize_get_targeting_values_for_agent($agent_data);
+  $element = array(
+    '#type' => 'container',
+  );
+  $element['name'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Audience name'),
+    '#default_value' => $audience['label'],
+    '#required' => !empty($audience),
+  );
+
+  // This is the portion of the form that will be replace when the "add new" or "remove
+  // context" links are clicked.
+  $main_wrapper_id = 'acquia-lift-targeting-' . $parent_identifier;
+
+  $element['mapping'] = array(
+    '#tree' => TRUE,
+    '#theme_wrappers' => array('container'),
+  );
+  $element['mapping']['contexts'] = array(
+    '#type' => 'container',
+    '#attributes' => array(
+      'id' => $main_wrapper_id,
+      'class' => array('acquia-lift-targeting'),
+    ),
+  );
+  $element['mapping']['contexts']['title'] = array(
+    '#markup' => theme('html_tag', array('element' => array(
+      '#tag' => 'label',
+      '#value' => t('Definition'),
+    ))),
+  );
+
+  // Load from the existing form if passed first, otherwise, load from audience.
+  $mappings = array();
+  if (isset($form_state['values']['audiences'][$parent_identifier]['details']['mapping']['contexts'])) {
+    foreach($form_state['values']['audiences'][$parent_identifier]['details']['mapping']['contexts'] as $delta => $context) {
+      if (empty($context['context'])) {
+        $plugin_name = $context_option = '';
+      }
+      else {
+        list($plugin_name, $context_option) = explode(PERSONALIZE_TARGETING_ADMIN_SEPARATOR, $context['context']);
+      }
+      // Important: preserve the delta passed through the form as it is used
+      // to determine the item to delete when "remove" is clicked.
+      $mappings[$delta] = array(
+        'plugin' => $plugin_name,
+        'context' => $context_option,
+        'operator' => $context['value']['operator'],
+        'match' => $context['value']['match'],
+      );
+    }
+  }
+  else if (!empty($audience['targeting_features'])) {
+    foreach ($audience['targeting_features'] as $feature) {
+      if (isset($audience['targeting_rules'][$feature])) {
+        $mappings[] = $audience['targeting_rules'][$feature];
+      }
+    }
+  }
+  // If the "Remove" button was clicked for a context, we need to remove that context
+  // from the form.
+  if (isset($form_state['to_remove_audience'][$parent_identifier])) {
+    unset($mappings[$form_state['to_remove_audience'][$parent_identifier]]);
+    unset($form_state['to_remove_audience'][$parent_identifier]);
+    $form_state['num_contexts_audience'][$parent_identifier]--;
+  }
+
+  // Make sure there is at least an empty context.
+  if (empty($mappings)) {
+    $mappings[] = array(
+      'context' => '',
+      'operator' => 'equals',
+      'match' => '',
+      'plugin' => '',
+    );
+  }
+
+  // If the "Add another" button was clicked, we need to add contexts to get up
+  // to the number indicated.
+  $num_contexts = count($mappings);
+  if (isset($form_state['num_contexts_audience'][$parent_identifier]) && $form_state['num_contexts_audience'][$parent_identifier] > $num_contexts) {
+    while ($num_contexts < $form_state['num_contexts_audience'][$parent_identifier]) {
+      $mappings[] = array(
+        'context' => '',
+        'operator' => 'equals',
+        'match' => '',
+        'plugin' => '',
+      );
+      $num_contexts++;
+    }
+  }
+  $form_state['num_contexts_audience'][$parent_identifier] = count($mappings);
+
+  foreach ($mappings as $delta => $mapping) {
+    $element['mapping']['contexts'][$delta] = personalize_explicit_targeting_mapping_element($mapping, $targeting_values, $delta);
+
+    // Add a "remove" button for this context.
+    // NOTE: ajax.js expects the ID of the element to match the element's name
+    // even when a different selector is passed.
+    $element['mapping']['contexts'][$delta]['remove'] = array(
+      '#prefix' => '<div class="acquia-lift-remove-context">',
+      '#suffix' => '</div>',
+      '#type' => 'submit',
+      '#tag' => 'button',
+      '#text' => t('Remove'),
+      '#value' => 'remove_' . $delta,
+      '#theme_wrappers' => array('personalize_html_tag'),
+      '#attributes' => array(
+        'class' => array('personalize-delete-context', 'form-submit',),
+        'title' => t('Delete this context.'),
+        'id' => 'edit-audiences-' . $parent_identifier . '-details-mapping-contexts-' . $delta . '-remove',
+      ),
+      '#submit' => array('acquia_lift_personalize_campaign_wizard_targeting_remove'),
+      '#ajax' => array(
+        'callback' => 'acquia_lift_personalize_campaign_wizard_targeting_ajax',
+        'wrapper' => $main_wrapper_id,
+        'effect' => 'fade',
+      ),
+    );
+  }
+  // Create an "add new context" link.
+  $element['add_new'] = array(
+    '#prefix' => '<span class="personalize-add-link-prefix"></span>',
+    '#type' => 'submit',
+    '#tag' => 'button',
+    '#text' => t('Add context'),
+    '#value' => 'add_context_' . $parent_identifier,
+    '#theme_wrappers' => array('personalize_html_tag'),
+    '#submit' => array('acquia_lift_personalize_campaign_wizard_targeting_add'),
+    '#attributes' => array(
+      'class' => array('personalize-add-link'),
+      'title' => t('Click here to add more contexts.'),
+      'id' => 'edit-audiences-' . $parent_identifier . '-details-add-new'
+    ),
+    '#ajax' => array(
+      'callback' => 'acquia_lift_personalize_campaign_wizard_targeting_ajax',
+      'wrapper' => $main_wrapper_id,
+      'effect' => 'fade',
+    ),
+  );
+  $element['strategies'] = array(
+    '#type' => 'container',
+  );
+
+  // Add radio buttons so the user can select how multiple features for an option
+  // should be treated.
+  $default_strategy = 'OR';
+  $element['strategy'] = array(
+    '#type' => 'select',
+    '#multiple' => FALSE,
+    '#field_prefix' => t('Visitor must have '),
+    '#field_suffix' => t(' of the specified contexts'),
+    '#description' => t('Choose how multiple contexts should be applied to options. Choose "any" if the rule should apply if the user has any of the contexts. Choose "all" if the rule should apply only if the user has all of the contexts.'),
+    '#options' => array(
+      'OR' => 'any',
+      'AND' => 'all'
+    ),
+    '#default_value' => $default_strategy,
+  );
+  return $element;
 }

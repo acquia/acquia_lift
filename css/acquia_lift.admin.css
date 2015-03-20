@@ -327,6 +327,10 @@ tr.acquia-lift-report-control {
   position: absolute;
   width: 1px;
 }
+/* Base form */
+.personalize-wizard-section #edit-agent-basic-info .acquia-lift-revealing-input {
+  margin-bottom: 1em;
+}
 
 /* Base form */
 .personalize-wizard-section #edit-agent-basic-info .acquia-lift-revealing-input {
@@ -336,4 +340,16 @@ tr.acquia-lift-report-control {
 /* Variations form */
 .personalize-wizard-section #personalized-block-variations fieldset .fieldset-title {
   text-transform: none;
+}
+
+/* Targeting form */
+.acquia-lift-targeting .personalize-target-wrapper .form-item,
+.acquia-lift-targeting .personalize-target-wrapper .personalize-target-value,
+.acquia-lift-targeting .personalize-target-wrapper .personalize-target-value div,
+.acquia-lift-targeting .personalize-target-wrapper .form-item > *,
+.acquia-lift-targeting .personalize-target-wrapper .acquia-lift-remove-context {
+  display: inline;
+}
+.acquia-lift-targeting .personalize-target-wrapper .form-item label {
+  display: none;
 }

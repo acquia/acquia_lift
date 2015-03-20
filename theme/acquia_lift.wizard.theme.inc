@@ -21,15 +21,18 @@ function theme_acquia_lift_card($variables) {
   // Set default values
   $element['#collapsible'] = isset($element['#collapsible']) ? $element['#collapsible'] : TRUE;
   $element['#collapsed'] = isset($element['#collapsed']) ? $element['#collapsed'] : TRUE;
+  $element['#sortable'] = isset($element['#sortable']) ? $element['#sortable'] : FALSE;
   $data_attributes = array(
     'data-card-collapsible' => $element['#collapsible'] ? 'true' : 'false',
     'data-card-collapsed' => $element['#collapsed'] ? 'true' : 'false',
     'data-card-footer-visible' => empty($footer_children) ? 'false' : 'true',
+    'data-card-sortable' => $element['#sortable'] ? 'true' : 'false',
   );
   drupal_add_library('acquia_lift', 'acquia_lift.card');
   $html = '';
   $html .= '<div class="el-card" ' . drupal_attributes($data_attributes) . '>';
   $html .= '<div class="el-card__header">';
+  $html .= '<div class="el-card__dragger"></div>';
   $html .= '<h2 class="el-card__title">' . $card_label . '</h2>';
   if (!empty($header_children)) {
     $html .= '<ul class="el-card__actions">';
@@ -97,7 +100,7 @@ function theme_acquia_lift_revealing_input($variables) {
   }
   drupal_add_library('acquia_lift', 'acquia_lift.inputs');
   $html = '';
-  $html .= '<div class="acquia-lift-revealing-input">';
+  $html .= '<div class="acquia-lift-revealing-input clearfix">';
   $html .= $variables['element']['#children'];
   $html .= '</div>';
   return $html;

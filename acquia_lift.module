@@ -526,7 +526,7 @@ function acquia_lift_is_testing_agent($agent) {
     return FALSE;
   }
   $agent_types = array('acquia_lift', 'acquia_lift_simple_ab');
-  return in_array($agent->plugin, array_keys($agent_types));
+  return in_array($agent->plugin, $agent_types);
 }
 
 /**
@@ -1423,6 +1423,25 @@ function acquia_lift_library() {
       array('system', 'ui.slider'),
       array('acquia_lift', 'd3'),
       array('acquia_lift', 'rickshaw'),
+    ),
+  );
+
+  // Acquia Lift Targeting campaign management.
+  $libraries['acquia_lift.targeting_admin'] = array(
+    'title' => 'Acquia Lift Target administration',
+    'version' => VERSION,
+    'js' => array(
+      $path . '/js/acquia_lift_target.admin.js' => array(),
+    ),
+    'css' => array(
+      $path . '/css/acquia_lift.admin.css',
+    ),
+    'dependencies' => array(
+      array('system', 'jquery'),
+      array('system', 'ui.sortable'),
+      array('system', 'ui.draggable'),
+      array('system', 'ui.droppable'),
+      array('acquia_lift', 'acquia_lift.card'),
     ),
   );
 
@@ -2418,10 +2437,10 @@ function acquia_lift_form_personalize_campaign_wizard_alter(&$form, &$form_state
     drupal_set_message(t('Your Acquia Lift account info has not been configured. Acquia Lift campaigns can not be created until you configure your account info !here', array('!here' => l('here', 'admin/config/content/personalize/acquia_lift'))), 'error');
   }
 
-  if (empty($agent->machine_name) || !acquia_lift_is_testing_agent($agent)) {
+  if (empty($agent->machine_name) || $agent->plugin !== 'acquia_lift_target') {
     return;
   }
-  $form['#attached']['css'][] = drupal_get_path('module', 'acquia_lift') . '/css/acquia_lift.admin.css';
+  $form['#attached']['library'][] = array('acquia_lift', 'acquia_lift.targeting_admin');
 
   module_load_include('inc', 'acquia_lift', 'acquia_lift.admin.wizard');
   // We have to specify the include file so as not to lose it during rendering from ajax.
@@ -2788,6 +2807,9 @@ function acquia_lift_help($path, $arg) {
 function acquia_lift_visitor_actions_ui_selector_ignore() {
   return array(
     'classes' => array(
+      'acquia-lift-[a-zA-Z0-9\_\-]+',
+    ),
+    'ids' => array(
       'acquia-lift-[a-zA-Z0-9\_\-]+',
     ),
   );

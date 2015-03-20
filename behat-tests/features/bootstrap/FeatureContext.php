@@ -6,6 +6,7 @@ use Behat\Gherkin\Node\TableNode;
 use Behat\Behat\Hook\Scope\AfterStepScope;
 use Behat\Mink\Driver\Selenium2Driver;
 use Behat\Mink\Element\NodeElement;
+use \Behat\Behat\Hook\Scope\BeforeFeatureScope;
 use Behat\Behat\Hook\Scope\BeforeScenarioScope;
 use Behat\Behat\Hook\Scope\AfterScenarioScope;
 
@@ -46,6 +47,18 @@ class FeatureContext extends RawDrupalContext implements SnippetAcceptingContext
   /****************************************************
    *        H O O K S
    ***************************************************/
+  /**
+   * Enables Acquia Lift targeting agent and functionality for all features
+   * marked with the @targeting tag.
+   *
+   * @BeforeFeature @targeting
+   */
+  public static function setupFeature(BeforeFeatureScope $event) {
+    if ($event->getFeature()->hasTag('targeting')) {
+      variable_set('acquia_lift_target_enabled', TRUE);
+    }
+  }
+
   /**
    * Gets a reference to current campaigns, option sets, goals, etc. for
    * tracking purposes.
@@ -139,6 +152,15 @@ class FeatureContext extends RawDrupalContext implements SnippetAcceptingContext
       }
       $agent->data = $data;
       $saved = personalize_agent_save($agent);
+      // Clear out any existing option sets/goals if this agent already existed.
+      $option_sets = personalize_option_set_load_by_agent($agent->machine_name);
+      foreach($option_sets as $option_set) {
+        personalize_option_set_delete($option_set->osid);
+      }
+      $goals = personalize_goal_load_by_conditions(array('agent' => $agent->machine_name));
+      foreach ($goals as $goal_id => $goal) {
+        personalize_goal_delete($goal_id);
+      }
       personalize_agent_set_status($saved->machine_name, PERSONALIZE_STATUS_RUNNING);
     }
   }
@@ -157,16 +179,7 @@ class FeatureContext extends RawDrupalContext implements SnippetAcceptingContext
       $option_set->executor = 'personalizeElements';
       $content_options = explode(',', $option_set->content);
       $options = array();
-      $context_values = array();
-      // Grab explicit targeting values if specified.
-      if (!empty($option_set->targeting)) {
-        $contexts = variable_get('personalize_url_querystring_contexts', array());
-        if (isset($contexts[$option_set->targeting])) {
-          foreach ($contexts[$option_set->targeting] as $value) {
-            $context_values[] = $option_set->targeting . '::' . $value;
-          }
-        }
-      }
+      $context_values = empty($option_set->targeting) ? array() : $this->convertContexts(explode(',', $option_set->targerting));
       foreach ($content_options as $index => $content) {
         $content = trim($content);
         $option = array(
@@ -188,6 +201,21 @@ class FeatureContext extends RawDrupalContext implements SnippetAcceptingContext
     }
   }
 
+  /**
+   * @Given /^audiences:$/
+   */
+  public function createAudiences(TableNode $elementsTable) {
+    module_load_include('inc', 'acquia_lift', 'acquia_lift.admin');
+    foreach ($elementsTable->getHash() as $audienceHash) {
+      $audience = (object) $audienceHash;
+      $label = $audience->label;
+      $agent_name = $audience->agent;
+      $context_values = empty($audience->context) ? array() : $this->convertContexts(explode(',', $audience->context));
+      $weight = isset($audience->weight) ? $audience->weight : 50;
+      $strategy = isset($audience->strategy) ? $audience->strategy : 'OR';
+      acquia_lift_target_audience_save($label, $agent_name, $context_values, $strategy, $weight);
+    }
+  }
 
   /****************************************************
    *        A S S E R T I O N S
@@ -504,6 +532,85 @@ class FeatureContext extends RawDrupalContext implements SnippetAcceptingContext
     $this->getSession()->wait($ms);
   }
 
+  /**
+   * @When I :action the :variation variation from the :from_audience audience to the :to_audience audience
+   */
+  public function assignVariationToAudience($action, $variation, $from_audience, $to_audience) {
+    $valid_actions = array('move', 'copy');
+    if (!in_array($action, $valid_actions)) {
+      throw new \Exception(sprintf('Invalid action "%s" supplied for variation assignment.  Valid actions are: %s.', $action, implode(', ', $valid_actions)));
+    }
+    $from_audience_element = $this->getAudienceElement($from_audience);
+    $to_audience_element = $this->getAudienceElement($to_audience);
+    if (empty($from_audience_element)) {
+      throw new \Exception(sprintf('The "%s" audience cannot be found on the current page.', $from_audience));
+    }
+    if (empty($to_audience_element)) {
+      throw new \Exception(sprintf('The "%s" audience cannot be found on the current page.', $to_audience));
+    }
+    $from_variations_list = $from_audience_element->findAll('css', '.acquia-lift-draggable-variations li');
+    foreach ($from_variations_list as $variation_element) {
+      $variation_list_item = $variation_element->getText();
+      if (strpos($variation_list_item, $variation) === 0) {
+        $variation_draggable = $action == 'move' ? $variation_element : $variation_element->find('css', '.acquia-lift-targeting-duplicate');
+        break;
+      }
+    }
+    if (empty($variation_draggable)) {
+      throw new \Exception(sprintf('The "%s" variation cannot be found in the list of variations for "%s" audience as a draggable option.', $variation, $from_audience));
+    }
+    $to_audience_drop_zone = $to_audience_element->find('css', '.acquia-lift-targeting-droppable');
+    $variation_draggable->dragTo($to_audience_drop_zone);
+  }
+
+  /**
+   * @Then :variation variation should be assigned to the :audience audience
+   */
+  public function assertAudienceHasVariation($variation_label, $audience_label) {
+    $escaped_variation = $this->getSession()->getSelectorsHandler()->xpathLiteral($variation_label);
+    $audience_element = $this->getAudienceElement($audience_label);
+    if (empty($audience_element)) {
+      throw new \Exception(sprintf('The "%s" audience container cannot be found on the page.', $audience_label));
+    }
+    $variation_select = $audience_element->find('css', 'select[name*=assignment]');
+    $variation_option = $variation_select->find('named', array('option', $escaped_variation));
+    if (empty($variation_option)) {
+      throw new \Exception(sprintf('The "%s" variation cannot be found in the "%s" audience variation select options.', $variation_label, $audience_label));
+    }
+    if (!$variation_option->isSelected()) {
+      throw new \Exception(sprintf('The "%s" variation is not selected for the "%s" audience.', $variation_label, $audience_label));
+    }
+    $variations_list = $audience_element->find('css', '.acquia-lift-draggable-variations');
+    $variation_display = $variations_list->find('named', array('content', $escaped_variation));
+    if (empty($variation_display)) {
+      throw new \Exception(sprintf('The "%s" variation is not displayed for "%s" audience.', $variation_label, $audience_label));
+    }
+  }
+
+  /**
+   * @Then :variation variation should not be assigned to the :audience audience
+   */
+  public function assertAudienceHasNoVariation($variation_label, $audience_label) {
+    $escaped_variation = $this->getSession()->getSelectorsHandler()->xpathLiteral($variation_label);
+    $audience_element = $this->getAudienceElement($audience_label);
+    if (empty($audience_element)) {
+      throw new \Exception(sprintf('The "%s" audience container cannot be found on the page.', $audience_label));
+    }
+    $variation_select = $audience_element->find('css', 'select[name*=assignment]');
+    $variation_option = $variation_select->find('named', array('option', $escaped_variation));
+    if (empty($variation_option)) {
+      throw new \Exception(sprintf('The "%s" variation cannot be found in the "%s" audience variation select options.', $variation_label, $audience_label));
+    }
+    if ($variation_option->isSelected()) {
+      throw new \Exception(sprintf('The "%s" variation is selected for the "%s" audience.', $variation_label, $audience_label));
+    }
+    $variations_list = $audience_element->find('css', '.acquia-lift-draggable-variations');
+    $variation_display = $variations_list->find('named', array('content', $escaped_variation));
+    if (!empty($variation_display)) {
+      throw new \Exception(sprintf('The "%s" variation is displayed for "%s" audience.', $variation_label, $audience_label));
+    }
+  }
+
   /****************************************************
    *        H E L P E R  F U N C T I O N S
    ***************************************************/
@@ -727,5 +834,56 @@ class FeatureContext extends RawDrupalContext implements SnippetAcceptingContext
   private function getCurrentCampaign() {
     $script = 'return Drupal.settings.personalize.activeCampaign;';
     return $this->getMink()->getSession()->evaluateScript($script);
+  }
+
+  /**
+   * Helper function to retrieve a specific audience targeting element for the
+   * current campaign.
+   *
+   * @param $audience_label
+   *   The audience label assigned.
+   * @return NodeElement|null
+   *   The element found for the audience container or null if not found.
+   * @throws Exception
+   *   If the audience is not part of the current campaign.
+   */
+  private function getAudienceElement($audience_label) {
+    $agent_name = $this->getCurrentCampaign();
+    module_load_include('inc', 'acquia_lift', 'acquia_lift.admin');
+    $option_set = acquia_lift_get_option_set_for_targeting($agent_name);
+    if (!isset($option_set->targeting)) {
+      throw new \Exception(sprintf('The current agent "%s" does not have any audiences available.', $agent_name));
+    }
+    $audiences = array();
+    foreach ($option_set->targeting as $audience_id => $audience) {
+      $audiences[$audience['label']] = $audience_id;
+    }
+    if (!isset($audiences[$audience_label])) {
+      throw new \Exception(sprintf('The current agent "%s" does not have an audience named "%s".', $agent_name, $audience_label));
+    }
+    return $this->findElementInRegion('#edit-audiences-' . $audiences[$audience_label], 'wizard_targeting_form');
+  }
+
+  /**
+   * Generates the targeting contexts based on a list of context values
+   * @param array $feature_contexts
+   *   Feature contexts to be added
+   * @return array
+   *   The context values formatted for Lift.
+   */
+  private function convertContexts($feature_contexts) {
+    $context_values = array();
+    // Grab explicit targeting values if specified.
+    if (!empty($values)) {
+      $contexts = variable_get('personalize_url_querystring_contexts', array());
+      foreach ($feature_contexts as $context) {
+        if (isset($contexts[$context])) {
+          foreach ($contexts[$context] as $value) {
+            $context_values[] = $context . '::' . $value;
+          }
+        }
+      }
+    }
+    return $context_values;
   }
 }

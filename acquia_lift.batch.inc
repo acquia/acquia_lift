@@ -10,8 +10,6 @@
  * Batch syncs all campaigns to Lift.
  */
 function acquia_lift_batch_sync_campaigns($agents = array()) {
-  // First delete the queue because we are about to sync everything now.
-  acquia_lift_delete_queue();
   // Now get all sync operations for all existing Acquia Lift testing agents.
   if (empty($agents)) {
     foreach (acquia_lift_get_agent_types() as $type => $info) {

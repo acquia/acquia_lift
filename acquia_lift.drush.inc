@@ -96,8 +96,6 @@ function drush_acquia_lift_campaign_sync() {
   }
 
   // Step 4. Sync selected campaign(s)
-  // First delete the queue because we are about to sync everything now.
-  acquia_lift_delete_queue();
   // For each agent, set up a batch job including all the required save operations,
   // then process immediately.
   foreach ($agents as $agent_name => $agent) {

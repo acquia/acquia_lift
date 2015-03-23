@@ -23,7 +23,6 @@ function acquia_lift_install() {
  * Implements hook_enable().
  */
 function acquia_lift_enable() {
-  variable_set('queue_class_acquia_lift_sync', 'AcquiaLiftQueue');
 
   $items = db_select('menu_links', 'ml')
     ->fields('ml')
@@ -687,6 +686,10 @@ function acquia_lift_update_7018() {
     ->execute();
   menu_delete_links('acquia-lift-controls');
   _acquia_lift_build_menu('acquia-lift-controls');
+}
+
+function acquia_lift_update_7018() {
+  variable_del('queue_class_acquia_lift_sync');
 }
 
 /**

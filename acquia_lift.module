@@ -288,29 +288,6 @@ function acquia_lift_theme() {
  * Implements hook_init().
  */
 function acquia_lift_init() {
-  // If the user can manage content, then they may need to trigger the queue
-  // process from the front-end campaign creation flow.
-  if (user_access('manage personalized content')) {
-    drupal_add_js(drupal_get_path('module', 'acquia_lift') . '/js/acquia_lift_queue.js', array('preprocess' => FALSE));
-  }
-  // This session variable is set to indicate that there are configuration
-  // changes that have been queued for syncing with Acquia Lift.
-  if (!empty($_SESSION['acquia_lift_queue_trigger'])) {
-    drupal_add_js(array('acquia_lift' => array('sync_queue' => 1)), array('type' => 'setting'));
-    drupal_add_js(drupal_get_path('module', 'acquia_lift') . '/js/acquia_lift_queue.js', array('preprocess' => FALSE));
-  }
-  elseif (path_is_admin(current_path()) && user_access('manage personalized content')) {
-    // Check to see if there are items in the Acquia Lift queue and if so
-    // warn the user that their configuration has not been fully sync'd.
-    $queue = DrupalQueue::get('acquia_lift_sync');
-    if ($queue->numberOfItems() > 0) {
-      $message = t('At least one of your personalizations has configuration that has not been fully synchronized with Acquia Lift. This should resolve itself on the next cron run.');
-      if (user_access('administer site configuration')) {
-        $message .= t(' Click here to <a href="@cron">run cron manually</a>.', array('@cron' => url('admin/reports/status/run-cron')));
-      }
-      drupal_set_message($message, 'warning');
-    }
-  }
   if (path_is_admin(current_path()) && user_access('manage personalized content')) {
     module_load_include('inc', 'acquia_lift', 'acquia_lift.ui');
     if (acquia_lift_nav_message_is_set()) {
@@ -411,20 +388,6 @@ function acquia_lift_percentage_validate($element, &$form_state) {
   if ($value < 0 || $value > 100) {
     form_error($element, t('%name must be a number between 0 and 100.', array('%name' => $element['#title'])));
   }
-}
-
-/**
- * Implements hook_cron_queue_info().
- */
-function acquia_lift_cron_queue_info() {
-  $queues['acquia_lift_sync'] = array(
-    'worker callback' => 'acquia_lift_sync_item',
-    // All of the items in this queue will be making a PUT, POST, or DELETE
-    // request to the Lift API, so the timeout here should match the timeout
-    // we use for those http requests.
-    'time' => AcquiaLiftDrupalHttpClient::REQUEST_TIMEOUT_VALUE_DEFAULT
-  );
-  return $queues;
 }
 
 /**

@@ -90,6 +90,7 @@ function acquia_lift_personalize_campaign_wizard_variations_alter(&$form, &$form
     return;
   }
   $option_sets = personalize_option_set_load_by_agent($agent_data->machine_name);
+  $agent_instance = personalize_agent_load_agent($agent_data->machine_name);
 
   // Make a container to hold existing option sets.
   if (!empty($option_sets)) {
@@ -108,7 +109,7 @@ function acquia_lift_personalize_campaign_wizard_variations_alter(&$form, &$form
       '#type' => 'container',
       '#theme' => 'acquia_lift_card',
       '#collapsible' => TRUE,
-      '#collapsed' => TRUE,
+      '#collapsed' => $agent_instance->supportsMultipleDecisionPoints(),
       '#title' => $option_set->label,
       '#attributes' => array(
         'class' => array('personalize-option-set'),
@@ -158,6 +159,13 @@ function acquia_lift_personalize_campaign_wizard_variations_alter(&$form, &$form
     $form['variations']['option_sets']['option_set_' . $option_set->osid]['advanced'] = personalize_campaign_wizard_variations_advanced($form, $form_state, $option_set);
     // Option set label is edited in a different spot so don't show it twice.
     $form['variations']['option_sets']['option_set_' . $option_set->osid]['advanced']['label']['#access'] = FALSE;
+  }
+
+  // Test to see if the current agent supports multiple variation sets.
+  if (!empty($option_sets)) {
+    if (!$agent_instance->supportsMultipleDecisionPoints()) {
+      return;
+    }
   }
 
   // Show the card to add a new option set last.

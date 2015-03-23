@@ -40,18 +40,6 @@ function acquia_lift_menu() {
     'type' => MENU_CALLBACK,
     'file' => 'acquia_lift.ui.inc',
   );
-  $items['acquia_lift/personalize_in_context/start'] = array(
-    'page callback' => 'personalize_in_context_start',
-    'access arguments' => array('manage personalized content'),
-    'type' => MENU_CALLBACK,
-    'file' => 'acquia_lift.ui.inc',
-  );
-  $items['acquia_lift/personalize_in_context/stop'] = array(
-    'page callback' => 'acquia_lift_edit_mode_disable',
-    'access arguments' => array('manage personalized content'),
-    'type' => MENU_CALLBACK,
-    'file' => 'acquia_lift.ui.inc',
-  );
   // Ajax callback to provide updated campaign settings to JavaScript.
   $items['acquia_lift/settings'] = array(
     'type' => MENU_CALLBACK,

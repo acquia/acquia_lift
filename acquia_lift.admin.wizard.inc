@@ -627,7 +627,7 @@ function acquia_lift_personalize_campaign_wizard_validate(&$form, &$form_state) 
     personalize_campaign_wizard_validate_base($form, $form_state);
   }
 
-  $function = 'acquia_lift_personalize_campaign_wizard_' . $form_state['step'] . '_validate';
+  $function = 'acquia_lift_personalize_campaign_wizard_' . $form_state['storage']['step'] . '_validate';
   if (function_exists($function)) {
     $function($form, $form_state);
   }
@@ -725,8 +725,7 @@ function acquia_lift_personalize_campaign_wizard_submit(&$form, &$form_state) {
   // If the subform submit handlers didn't already set a redirect, then set the
   // next step and rebuild the form.
   if (empty($form_state['redirect'])) {
-    $form_state['storage']['step'] = _personalize_campaign_wizard_next_step($form_state, $agent_instance);;
-    $form_state['rebuild'] = TRUE;
+    _personalize_campaign_wizard_rebuild($form_state, $agent_instance);
   }
 }
 

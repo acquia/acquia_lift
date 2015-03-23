@@ -82,7 +82,7 @@ function acquia_lift_personalize_campaign_wizard_variations_alter(&$form, &$form
   $form['variations']['#tree'] = TRUE;
 
   // Take over the form validation and submit handling.
-  $form['#validate'] = array('acquia_lift_personalize_campaign_wizard_variations_validate');
+  $form['#validate'] = array('acquia_lift_personalize_campaign_wizard_validate');
   $form['#submit'] = array('acquia_lift_personalize_campaign_wizard_submit');
 
   $agent_data = $form['#agent'];
@@ -245,7 +245,7 @@ function acquia_lift_personalize_campaign_wizard_goals_alter(&$form, &$form_stat
   $form['goals']['#tree'] = TRUE;
 
   // Take over form validation and submit handling.
-  $form['#validate'] = array('acquia_lift_personalize_campaign_wizard_goals_validate');
+  $form['#validate'] = array('acquia_lift_personalize_campaign_wizard_validate');
   $form['#submit'] = array('acquia_lift_personalize_campaign_wizard_submit');
 
   $agent_data = $form['#agent'];
@@ -350,6 +350,17 @@ function acquia_lift_personalize_campaign_wizard_goals_alter(&$form, &$form_stat
         $form['goals']['add_goal']['goal']['details'] = _acquia_lift_page_goal_create_form($agent_data);
         // Include the page for the validation callback.
         $form_state['build_info']['files'][] = drupal_get_path('module', 'acquia_lift') . '/acquia_lift.admin.unibar.inc';
+        // The pages field needs to be manually populated.
+        $form['goals']['add_goal']['goal']['details']['pages'] = array(
+          '#type' => 'textarea',
+          '#element_validate' => array('personalize_form_element_path_validate'),
+          '#title' => t('Pages'),
+          '#description' => t("Specify pages by using their paths or leave blank to apply to all pages. Enter one path per line. The '*' character is a wildcard. Example paths are blog for the blog page and blog/* for every personal blog. <front> is the front page."),
+          '#allow_dynamic' => TRUE,
+          '#allow_external' => FALSE,
+          '#required' => TRUE,
+          '#weight' => 10,
+        );
         break;
       case 'element':
         ctools_include('ajax');
@@ -358,17 +369,6 @@ function acquia_lift_personalize_campaign_wizard_goals_alter(&$form, &$form_stat
         print ajax_render($commands);
         exit;
     }
-    // The pages field needs to be manually populated.
-    $form['goals']['add_goal']['goal']['details']['pages'] = array(
-      '#type' => 'textarea',
-      '#element_validate' => array('personalize_form_element_path_validate'),
-      '#title' => t('Pages'),
-      '#description' => t("Specify pages by using their paths or leave blank to apply to all pages. Enter one path per line. The '*' character is a wildcard. Example paths are blog for the blog page and blog/* for every personal blog. <front> is the front page."),
-      '#allow_dynamic' => TRUE,
-      '#allow_external' => FALSE,
-      '#required' => TRUE,
-      '#weight' => 10,
-    );
   }
 }
 
@@ -397,7 +397,7 @@ function acquia_lift_personalize_campaign_wizard_targeting_alter(&$form, &$form_
     return;
   }
   // Take over the form validation and submit handling.
-  $form['#validate'] = array('acquia_lift_personalize_campaign_wizard_targeting_validate');
+  $form['#validate'] = array('acquia_lift_personalize_campaign_wizard_validate');
   $form['#submit'] = array('acquia_lift_personalize_campaign_wizard_submit');
 
   unset($form['targeting']['option_sets']);
@@ -618,17 +618,28 @@ function acquia_lift_personalize_campaign_wizard_targeting_ajax($form, &$form_st
  */
 
 /**
+ * Validation for the entire campaign wizard (all steps).
+ */
+function acquia_lift_personalize_campaign_wizard_validate(&$form, &$form_state) {
+  // Run any base form validation if available.
+  module_load_include('inc', 'personalize', 'personalize.admin.campaign');
+  if (function_exists('personalize_campaign_wizard_validate_base')) {
+    personalize_campaign_wizard_validate_base($form, $form_state);
+  }
+
+  $function = 'acquia_lift_personalize_campaign_wizard_' . $form_state['step'] . '_validate';
+  if (function_exists($function)) {
+    $function($form, $form_state);
+  }
+}
+
+/**
  * Validation function for variations form.
  */
 function acquia_lift_personalize_campaign_wizard_variations_validate(&$form, &$form_state) {
   // Get a reference to the full values array.
   $values = $form_state['values'];
 
-  // Run any base form validation if available.
-  module_load_include('inc', 'personalize', 'personalize.admin.campaign');
-  if (function_exists('personalize_campaign_wizard_validate_base')) {
-    personalize_campaign_wizard_validate_base($form, $form_state);
-  }
   // Validation for existing option set types.
   if (!empty($form_state['values']['variations']['option_sets'])) {
     foreach ($form_state['values']['variations']['option_sets'] as $option_set_id => $option_set_values) {
@@ -665,13 +676,6 @@ function acquia_lift_personalize_campaign_wizard_variations_validate(&$form, &$f
 
   // Put the form state back the way it was for the next steps in form processing.
   $form_state['values'] = $values;
-}
-
-/**
- * Validation function for goals form.
- */
-function acquia_lift_personalize_campaign_wizard_goals_validate(&$form, &$form_state) {
-
 }
 
 /**
@@ -814,9 +818,12 @@ function acquia_lift_personalize_campaign_wizard_goals_submit(&$form, &$form_sta
   $values = $form_state['values'];
 
   // Check for any new goals.
-  if (!empty($form_state['goal_add_type'])) {
-    $form_state['values']['goal_type'] = $form_state['goal_add_type'];
+  if (!empty($form_state['values']['goal_add_type'])) {
+    $form_state['values']['goal_type'] = $form_state['values']['goal_add_type'];
     $form_state['values']['agent'] = $agent_data;
+    if (isset($form['goals']['add_goal']['goal']['details']['action_name'])) {
+      $form['goal']['action_name'] = $form['goals']['add_goal']['goal']['details']['action_name'];
+    }
     module_load_include('inc', 'acquia_lift', 'acquia_lift.admin.unibar');
     acquia_lift_goal_type_create_form_submit($form, $form_state);
   }

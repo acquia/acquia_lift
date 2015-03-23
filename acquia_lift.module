@@ -2145,36 +2145,6 @@ function acquia_lift_reset_agent($agent_name) {
   }
 }
 
-
-/**
- * Implements hook_personalize_agent_date_form_alter().
- */
-function acquia_lift_personalize_agent_date_form_alter(&$form, $agent_name) {
-  if (empty($agent_name)) {
-    return;
-  }
-  $agent = personalize_agent_load($agent_name);
-  // If this is a Lift agent, we need to add the "Run until a winner is found"
-  // option to the campaign end dropdown.
-  if (acquia_lift_is_testing_agent($agent)) {
-    $data = $agent->data;
-    $options = $form['campaign_end']['#options'];
-    // The "specified" needs to be the last option, because of the date
-    // picker element that goes with it.
-    $specified = $options['specified'];
-    unset($options['specified']);
-    $options['auto'] = t('End when personalization thresholds are reached');
-    $form['campaign_end']['auto'] = array(
-      '#description' => t('This option changes the personalization\'s status to complete when both the personalization !duration and !decisions thresholds are reached. The variation with highest number of completed goals at that time is the winning variation for display.', array('!duration' => l(t('duration'), 'admin/config/content/personalize/acquia_lift'), '!decisions' => l(t('decisions'), 'admin/config/content/personalize/acquia_lift'))),
-    );
-    $options['specified'] = $specified;
-    $form['campaign_end']['#options'] = $options;
-    if (isset($data['auto_stop']) && $data['auto_stop']) {
-      $form['campaign_end']['#default_value'] = 'auto';
-    }
-  }
-}
-
 /**
  * Implements hook_form_FORM_ID_alter().
  */
@@ -2312,35 +2282,6 @@ function acquia_lift_form_field_ui_field_edit_form_alter(&$form, &$form_state, $
       )
     );
     personalize_form_element_add_states($state, $form['field']['settings']['personalize']['goal_pages']);
-    // Checkbox for auto-starting the campaign should only be visible if the chosen agent
-    // type is a Lift agent type and the auto-create goal box is checked.
-    $form['field']['settings']['personalize']['auto_start'] = array(
-      '#type' => 'checkbox',
-      '#title' => t('Auto-start the personalization'),
-      '#default_value' => isset($field['settings']['personalize']['auto_start']) ? $field['settings']['personalize']['auto_start'] : 1,
-      '#description' => t('Should the personalization be set to running automatically after creation?'),
-      '#states' => array(
-        'visible' => array(
-          ':input[name="field[settings][personalize][agent_type]"]' => $visible_states,
-          ':input[name="field[settings][personalize][create_goal]"]' => array('checked' => TRUE),
-        ),
-      )
-    );
-    personalize_form_element_add_states($state, $form['field']['settings']['personalize']['auto_start']);
-
-    // Add a checkbox for automatically stopping the campaign once a winner has been found.
-    $form['field']['settings']['personalize']['auto_stop'] = array(
-      '#type' => 'checkbox',
-      '#title' => t('End when personalization thresholds are reached'),
-      '#default_value' => isset($field['settings']['personalize']['auto_stop']) ? $field['settings']['personalize']['auto_stop'] : 0,
-      '#description' => t('Should the personalization\'s status be changed to complete when both the personalization !duration and !decisions thresholds are reached? In this case, the variation with the highest number of completed goals at that time is set as the winning variation for display.', array('!duration' => l(t('duration'), 'admin/config/content/personalize/acquia_lift'), '!decisions' => l(t('decisions'), 'admin/config/content/personalize/acquia_lift'))),
-      '#states' => array(
-        'visible' => array(
-          ':input[name="field[settings][personalize][agent_type]"]' => $visible_states,
-        ),
-      )
-    );
-    personalize_form_element_add_states($state, $form['field']['settings']['personalize']['auto_stop']);
   }
 }
 

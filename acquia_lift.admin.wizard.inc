@@ -185,7 +185,7 @@ function acquia_lift_personalize_campaign_wizard_variations_alter(&$form, &$form
       'invisible' => array(
         ':input[name="variations[add_variation][option_set_types][option_set_type]"]' => array('!value' => false),
       ),
-    )
+    ),
   );
   $form['variations']['add_variation']['option_set_types']['option_set_type'] = array(
     '#type' => 'radios',
@@ -233,6 +233,142 @@ function acquia_lift_personalize_campaign_wizard_variations_alter(&$form, &$form
         $form['variations']['add_variation']['details']['element']['content'] = _acquia_lift_personalize_campaign_wizard_variations_element($form, $form_state, $agent_data);
         break;
     }
+  }
+}
+
+/**
+ * Alter the goals form.
+ */
+function acquia_lift_personalize_campaign_wizard_goals_alter(&$form, &$form_state, $form_id) {
+  unset($form['goals']['title']);
+  unset($form['goals']['all_goals']);
+  $form['goals']['#tree'] = TRUE;
+
+  // Take over form validation and submit handling.
+  $form['#validate'] = array('acquia_lift_personalize_campaign_wizard_goals_validate');
+  $form['#submit'] = array('acquia_lift_personalize_campaign_wizard_submit');
+
+  $agent_data = $form['#agent'];
+  $goals = personalize_goal_load_by_conditions(array('agent' => $agent_data->machine_name));
+
+  // Make a container to hold existing goals.
+  if (!empty($goals)) {
+    $form['goals']['all_goals'] = array(
+      '#type' => array(
+        'class' => array('personalize-wizard-goals'),
+      ),
+    );
+  }
+  // Add a goal card for each goal.
+  foreach ($goals as $goal_id => $goal) {
+    $form['goals']['all_goals'][$goal_id] = array(
+      '#type' => 'container',
+      '#theme' => 'acquia_lift_card',
+      '#collapsible' => TRUE,
+      '#collapsed' => TRUE,
+      '#title' => 'Put goal title here',
+      '#attributes' => array(
+        'class' => array('personalize-goal'),
+      ),
+    );
+    $form['goals']['all_goals'][$goal_id]['header'] = array(
+      '#type' => 'container',
+    );
+    $form['goals']['all_goals'][$goal_id]['header']['delete'] = array(
+      '#type' => 'submit',
+      '#value' => t('Delete'),
+    );
+    $form['goals']['all_goals'][$goal_id]['content'] = array(
+      '#markup' => t('Goal details form goes here.'),
+    );
+  }
+
+  // Show the card to add a new goal last.
+  module_load_include('inc', 'acquia_lift', 'acquia_lift.ui');
+  $goal_types = acquia_lift_goal_types_ui();
+  foreach($goal_types as $type => $details) {
+    $options[$type] = $details['title'];
+  };
+  $form['goals']['add_goal'] = array(
+    '#type' => 'container',
+    '#theme' => 'acquia_lift_card',
+    '#collapsed' => !empty($goals),
+    '#title' => t('Add goal'),
+    '#collapsible' => TRUE,
+  );
+  // Tricky: we need this container in order to hide the radio list when a
+  // selection is made.  The radio type does not have a proper wrapping
+  // element to apply visible/invisible states.
+  $form['goals']['add_goal']['goal_types'] = array(
+    '#type' => 'container',
+    '#attributes' => array(
+      'class' => array('form-item'),
+    ),
+    '#states' => array(
+      'invisible' => array(
+        ':input[name="goals[add_goal][goal_types][goal_type]"]' => array('!value' => false),
+      ),
+    ),
+  );
+  $form['goals']['add_goal']['goal_types']['goal_type'] = array(
+    '#type' => 'radios',
+    '#options' => $options,
+    '#theme' => 'acquia_lift_radio_list',
+    '#ajax' => array(
+      'callback' => 'acquia_lift_personalize_campaign_wizard_goals_ajax_add',
+      'wrapper' => 'acquia-lift-add-goal-details',
+      'effect' => 'fade',
+    ),
+    '#attributes' => array(
+      'autocomplete' => 'off',
+    ),
+  );
+  foreach ($goal_types as $type => $details) {
+    $form['goals']['add_goal']['goal_types']['goal_type'][$type]['#description'] = $details['description'];
+    $form['goals']['add_goal']['goal_types']['goal_type'][$type]['#image'] = $details['logo'];
+  }
+
+  $form['goals']['add_goal']['goal'] = array(
+    '#type' => 'container',
+    '#attributes' => array(
+      'id' => 'acquia-lift-add-goal-details',
+    ),
+    // #tree must be false for the states from visitor actions module to work.
+    '#tree' => FALSE,
+  );
+  if (isset($form_state['values']['goals']['add_goal']['goal_types']['goal_type'])) {
+    module_load_include('inc', 'acquia_lift', 'acquia_lift.admin.unibar');
+    $form['goals']['add_goal']['goal']['goal_add_type'] = array(
+      '#type' => 'value',
+      '#value' => $form_state['values']['goals']['add_goal']['goal_types']['goal_type'],
+    );
+    switch ($form_state['values']['goals']['add_goal']['goal_types']['goal_type']) {
+      case 'existing':
+        $form['goals']['add_goal']['goal']['details'] = _acquia_lift_existing_goal_create_form($agent_data);
+        break;
+      case 'page':
+        $form['goals']['add_goal']['goal']['details'] = _acquia_lift_page_goal_create_form($agent_data);
+        // Include the page for the validation callback.
+        $form_state['build_info']['files'][] = drupal_get_path('module', 'acquia_lift') . '/acquia_lift.admin.unibar.inc';
+        break;
+      case 'element':
+        ctools_include('ajax');
+        ctools_add_js('ajax-responder');
+        $commands[] = ctools_ajax_command_redirect($goal_types['element']['path']);
+        print ajax_render($commands);
+        exit;
+    }
+    // The pages field needs to be manually populated.
+    $form['goals']['add_goal']['goal']['details']['pages'] = array(
+      '#type' => 'textarea',
+      '#element_validate' => array('personalize_form_element_path_validate'),
+      '#title' => t('Pages'),
+      '#description' => t("Specify pages by using their paths or leave blank to apply to all pages. Enter one path per line. The '*' character is a wildcard. Example paths are blog for the blog page and blog/* for every personal blog. <front> is the front page."),
+      '#allow_dynamic' => TRUE,
+      '#allow_external' => FALSE,
+      '#required' => TRUE,
+      '#weight' => 10,
+    );
   }
 }
 
@@ -437,6 +573,13 @@ function acquia_lift_personalize_campaign_wizard_blocks_ajax($form, &$form_state
 }
 
 /**
+ * Ajax handler when adding a new goal.
+ */
+function acquia_lift_personalize_campaign_wizard_goals_ajax_add($form, &$form_state) {
+  return $form['goals']['add_goal']['goal'];
+}
+
+/**
  * Submit handler for the "Add Context" button.
  */
 function acquia_lift_personalize_campaign_wizard_targeting_add($form, &$form_state) {
@@ -522,6 +665,13 @@ function acquia_lift_personalize_campaign_wizard_variations_validate(&$form, &$f
 
   // Put the form state back the way it was for the next steps in form processing.
   $form_state['values'] = $values;
+}
+
+/**
+ * Validation function for goals form.
+ */
+function acquia_lift_personalize_campaign_wizard_goals_validate(&$form, &$form_state) {
+
 }
 
 /**
@@ -654,6 +804,25 @@ function acquia_lift_personalize_campaign_wizard_variations_submit_element_edit(
   list($prefix, $osid) = explode('_', $form_state['triggering_element']['#name']);
   $option_set = $form['variations']['option_sets']['option_set_' . $osid]['option_set']['#value'];
   $form_state['redirect'] = $option_set->data['pages'];
+}
+
+/**
+ * Submit function for goals form.
+ */
+function acquia_lift_personalize_campaign_wizard_goals_submit(&$form, &$form_state, &$agent_data, $agent_instance) {
+  // Get a reference to the original values.
+  $values = $form_state['values'];
+
+  // Check for any new goals.
+  if (!empty($form_state['goal_add_type'])) {
+    $form_state['values']['goal_type'] = $form_state['goal_add_type'];
+    $form_state['values']['agent'] = $agent_data;
+    module_load_include('inc', 'acquia_lift', 'acquia_lift.admin.unibar');
+    acquia_lift_goal_type_create_form_submit($form, $form_state);
+  }
+
+  // Restore the form state values.
+  $form_state['values'] = $values;
 }
 
 /**

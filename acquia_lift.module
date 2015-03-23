@@ -288,14 +288,6 @@ function acquia_lift_theme() {
  * Implements hook_init().
  */
 function acquia_lift_init() {
-  if (path_is_admin(current_path()) && user_access('manage personalized content')) {
-    module_load_include('inc', 'acquia_lift', 'acquia_lift.ui');
-    if (acquia_lift_nav_message_is_set()) {
-      // The user navigated to the admin UI without exiting normally from the "personalize
-      // in context" flow. Unset the nav message.
-      acquia_lift_unset_nav_message();
-    }
-  }
   if (!empty($_SESSION['acquia_lift_element_trigger']) && user_access('manage personalized content')) {
     // Element variation editing should enabled upon page load.
     drupal_add_js(array('acquia_lift' => array('toolbarEditMode' => $_SESSION['acquia_lift_element_trigger'])), array('type' => 'setting'));

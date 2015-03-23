@@ -89,9 +89,9 @@ function acquia_lift_personalize_campaign_wizard_variations_alter(&$form, &$form
   if (empty($agent_data->machine_name)) {
     return;
   }
-  $option_sets = personalize_option_set_load_by_agent($agent_data->machine_name);
   $agent_instance = personalize_agent_load_agent($agent_data->machine_name);
 
+  $option_sets = personalize_option_set_load_by_agent($agent_data->machine_name);
   // Make a container to hold existing option sets.
   if (!empty($option_sets)) {
     $form['variations']['option_sets'] = array(
@@ -302,20 +302,6 @@ function acquia_lift_personalize_campaign_wizard_targeting_alter(&$form, &$form_
   // Get the names of the options from the representative option set.
   foreach ($option_set->options as $option) {
     $variation_options[$option['option_id']] = $option['option_label'];
-  }
-
-  // The "Everyone else" audience should be anything explicitly assigned plus
-  // any options that aren't assigned.
-  $assigned_options = array();
-  foreach ($saved_targeting as $audience_id => $options) {
-    $assigned_options = array_merge($assigned_options, $options);
-  }
-  $unassigned_options = array_diff_key($variation_options, array_flip($assigned_options));
-  if (isset($saved_targeting[ACQUIA_LIFT_TARGETING_EVERYONE_ELSE])) {
-    $saved_targeting[ACQUIA_LIFT_TARGETING_EVERYONE_ELSE] += array_keys($unassigned_options);
-  }
-  else {
-    $saved_targeting[ACQUIA_LIFT_TARGETING_EVERYONE_ELSE] = array_keys($unassigned_options);
   }
 
   // Begin the audience form.
@@ -656,6 +642,37 @@ function acquia_lift_personalize_campaign_wizard_variations_submit(&$form, &$for
   unset($form_state['redirect']);
   // Set the clicked button ID back.
   $form_state['clicked_button']['#id'] = $click_id;
+
+  if (personalize_agent_get_status($agent_data->machine_name) === PERSONALIZE_STATUS_NOT_STARTED) {
+    // Create the "Everyone else" audience if there are no audiences yet and
+    // assign all the new variations.
+    module_load_include('inc', 'acquia_lift', 'acquia_lift.admin');
+    $option_set = acquia_lift_get_option_set_for_targeting($agent_data->machine_name);
+    if (empty($option_set->targeting)) {
+      $audience = _acquia_lift_personalize_campaign_wizard_everyone_else_audience();
+      acquia_lift_target_audience_save($audience['name'], $agent_data->machine_name, $audience['contexts'], $audience['strategy'], $audience['weight'], $audience['id']);
+      $assigned = array();
+    }
+    else {
+      // Find all of the options that are assigned to other audiences.
+      $existing = acquia_lift_get_structure_from_targeting($option_set);
+      $assigned = array();
+      foreach ($existing as $audience_id => $options) {
+        if ($audience_id === ACQUIA_LIFT_TARGETING_EVERYONE_ELSE) {
+          continue;
+        }
+        $assigned = array_merge($assigned, $options);
+      }
+    }
+    $targeting_options = array();
+    foreach ($option_set->options as $option) {
+      $targeting_options[] = $option['option_id'];
+    }
+    // Any unassigned option is automatically assigned to the "Everyone else"
+    // category.
+    $unassigned_options = array_diff($targeting_options, $assigned);
+    acquia_lift_save_targeting_structure($agent_data, array(ACQUIA_LIFT_TARGETING_EVERYONE_ELSE => $unassigned_options));
+  }
 }
 
 /**
@@ -715,13 +732,8 @@ function acquia_lift_personalize_campaign_wizard_targeting_submit(&$form, &$form
   $targeting = array();
   $audience_count = 0;
   // Determine the values for the "Everyone else" audience
-  $final_audience = array(
-    'name' => t('Everyone else'),
-    'contexts' => array(),
-    'weight' => 1,
-    'strategy' => 'OR',
-    'id' => ACQUIA_LIFT_TARGETING_EVERYONE_ELSE,
-  );
+  $final_audience = _acquia_lift_personalize_campaign_wizard_everyone_else_audience();
+
   // Set the weight higher than any of the audience options.
   foreach($form_state['values']['audiences'] as $audience_id => $audience) {
     if ($audience_id === ACQUIA_LIFT_TARGETING_EVERYONE_ELSE || !isset($audience['details']['weight']) || empty($audience['details']['name'])) {
@@ -777,11 +789,6 @@ function acquia_lift_personalize_campaign_wizard_targeting_submit(&$form, &$form
     if (isset($audience['assignment'])) {
       $targeting[$audience_id] = array_values($audience['assignment']);
     }
-  }
-  // Create the "Everyone else" audience if there are other audiences and it
-  // does not exist.
-  if ($audience_count > 0 && !isset($form_state['values']['audiences'][ACQUIA_LIFT_TARGETING_EVERYONE_ELSE])) {
-    acquia_lift_target_audience_save($final_audience['name'], $agent_data->machine_name, $final_audience['contexts'], $final_audience['strategy'], $final_audience['weight']);
   }
   acquia_lift_save_targeting_structure($agent_data, $targeting);
 }
@@ -1190,6 +1197,19 @@ function _acquia_lift_personalize_campaign_wizard_targeting_audience(&$form, &$f
     '#default_value' => $default_strategy,
   );
   return $element;
+}
+
+/**
+ * Return the default values used for an "Everyone else" audience.
+ */
+function _acquia_lift_personalize_campaign_wizard_everyone_else_audience() {
+  return array(
+    'name' => t('Everyone else'),
+    'contexts' => array(),
+    'weight' => 1,
+    'strategy' => 'OR',
+    'id' => ACQUIA_LIFT_TARGETING_EVERYONE_ELSE,
+  );
 }
 
 /**

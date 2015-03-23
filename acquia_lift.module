@@ -457,19 +457,15 @@ function acquia_lift_cron_queue_info() {
  */
 function acquia_lift_get_agent_types() {
   $types = array(
+    'acquia_lift_target' => array(
+      'class' => 'AcquiaLiftTarget',
+      'file' => 'AcquiaLiftTarget.inc',
+    ),
     'acquia_lift' => array(
       'class' => 'AcquiaLiftAgent',
       'file' => 'AcquiaLiftAgent.inc'
     ),
   );
-  // Not exposing this agent type for now as there is no decent workflow for
-  // using it.
-  if (variable_get('acquia_lift_target_enabled', FALSE)) {
-    $types['acquia_lift_target'] = array(
-      'class' => 'AcquiaLiftTarget',
-      'file' => 'AcquiaLiftTarget.inc',
-    );
-  }
   return $types;
 }
 
@@ -2628,13 +2624,16 @@ function acquia_lift_form_field_ui_field_edit_form_alter(&$form, &$form_state, $
     // personalizable checkbox is checked.
     $state = array(':input[name="field[settings][personalize][enabled]"]' => array('checked' => TRUE));
 
+    //  Make sure only acquia_lift_target shows up as an agent type.
+    foreach (array('acquia_lift', 'acquia_lift_simple_ab') as $type) {
+      unset($form['field']['settings']['personalize']['agent_type']['#options'][$type]);
+    }
+
     // Checkbox for auto creation of a goal should only be visible if the selected
     // campaign type is one of the Lift campaign types.
-    $visible_states = array();
-    $acquia_lift_agent_types = acquia_lift_get_agent_types();
-    foreach (array_keys($acquia_lift_agent_types) as $type) {
-      $visible_states[] = array('value' => $type);
-    }
+    $visible_states = array(
+      array('value' => 'acquia_lift_target')
+    );
     $form['field']['settings']['personalize']['create_goal'] = array(
       '#type' => 'checkbox',
       '#title' => t('Auto-create goal'),

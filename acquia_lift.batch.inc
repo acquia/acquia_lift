@@ -12,9 +12,12 @@
 function acquia_lift_batch_sync_campaigns($agents = array()) {
   // First delete the queue because we are about to sync everything now.
   acquia_lift_delete_queue();
-  // Now get all sync operations for all existing Acquia Lift agents.
+  // Now get all sync operations for all existing Acquia Lift testing agents.
   if (empty($agents)) {
     foreach (acquia_lift_get_agent_types() as $type => $info) {
+      if ($type == 'acquia_lift_target') {
+        continue;
+      }
       $agents = array_merge($agents, personalize_agent_load_by_type($type));
     }
   }

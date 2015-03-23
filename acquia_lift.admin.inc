@@ -260,8 +260,6 @@ function acquia_lift_admin_form_validate($form, &$form_state) {
  * Creates a default Acquia Lift agent if one does not yet exist.
  */
 function acquia_lift_admin_form_submit($form, &$form_state) {
-  acquia_lift_ensure_default_agent($form_state['values']['acquia_lift_account_info']);
-
   if ($form_state['values']['acquia_lift_confidence_measure'] < 95) {
     drupal_set_message(t('A minimum confidence measure of 95% is recommended to ensure proper evaluation of test results.'), 'warning');
   }
@@ -1065,6 +1063,8 @@ function acquia_lift_set_audience_for_test($parent_agent, $old_audience, $new_au
  * @param $audience
  *   THe name of the target audience the test was assigned to.
  * @throws \PersonalizeException
+ *
+ * @todo We need to make sure this test gets deleted from Lift
  */
 function acquia_lift_delete_old_nested_test($parent_agent, $audience) {
   $option_set = acquia_lift_get_option_set_for_targeting($parent_agent->machine_name);

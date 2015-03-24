@@ -4,7 +4,7 @@
  * Provides an agent for doing fixed targeting.
  */
 
-class AcquiaLiftTarget extends PersonalizeAgentBase implements PersonalizeExplicitTargetingInterface {
+class AcquiaLiftTarget extends PersonalizeAgentBase implements PersonalizeExplicitTargetingInterface, PersonalizeAgentGoalInterface {
 
   /**
    * Implements PersonalizeAgentInterface::create().
@@ -60,5 +60,21 @@ class AcquiaLiftTarget extends PersonalizeAgentBase implements PersonalizeExplic
    */
   public function supportsMultipleDecisionPoints() {
     return FALSE;
+  }
+
+  /**
+   * Implements PersonalizeAgentGoalInterface::useClientSideGoalDelivery().
+   *
+   * @return boolean
+   */
+  public function useClientSideGoalDelivery() {
+    return TRUE;
+  }
+
+  /**
+   * Implements PersonalizeAgentGoalInterface::sendGoal().
+   */
+  public function sendGoal($goal_name, $value = NULL) {
+    return;
   }
 }

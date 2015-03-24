@@ -12,7 +12,7 @@
         $(this).on('click', function(e) {
           var $link = $(this).find('a.acquia-lift-type-select');
           // Special handling based on href values.
-          if ($link.attr('href') == settings.basePath + settings.pathPrefix + 'admin/structure/visitor_actions') {
+          if ($link.attr('href') == settings.basePath + settings.pathPrefix + 'admin/structure/visitor_actions/add-in-context') {
             // Trigger goals in context.
             $('#acquiaLiftVisitorActionsConnector').find('a').trigger('click');
             Drupal.CTools.Modal.dismiss();

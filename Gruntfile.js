@@ -40,6 +40,11 @@ module.exports = function(grunt) {
         'src/js/inputs/acquia_lift.inputs.revealing.js'
   ];
 
+  var cardsjs = [
+        'src/js/cards/elemental-card.js',
+        'src/js/cards/acquia_lift.cards.js'
+  ];
+
   // Project configuration.
   grunt.initConfig({
     pkg: grunt.file.readJSON('package.json'),
@@ -80,6 +85,10 @@ module.exports = function(grunt) {
       inputs: {
         src: inputjs,
         dest: 'js/acquia_lift.inputs.js'
+      },
+      cards: {
+        src: cardsjs,
+        dest: 'js/acquia_lift.card.js'
       }
     },
     concurrent: {

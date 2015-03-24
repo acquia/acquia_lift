@@ -1022,46 +1022,22 @@ function acquia_lift_goal_create_modal_callback($ajax) {
   ctools_include('modal');
   ctools_modal_add_js();
 
-  $path = drupal_get_path('module', 'acquia_lift');
+  module_load_include('inc', 'acquia_lift', 'acquia_lift.ui');
+  $types = acquia_lift_goal_types_ui();
+  // Handle differences in modal submits based on type of goal.
+  foreach ($types as $id => $type) {
+    if ($id === 'element') {
+      $type['modal'] = FALSE;
+    }
+    else {
+      $type['modal'] = TRUE;
+      $type['ctools_style'] = 'ctools-modal-acquia-lift-style';
+    }
+  }
+
   $output = theme('acquia_lift_type_list', array(
     'id' => 'acquia-lift-modal-goal-type-list',
-    'items' => array(
-      'existing' => array(
-        'title' => t('Predefined goal'),
-        'description' => t('Visitor actions already defined by Acquia Lift'),
-        'path' => 'admin/structure/acquia_lift/goal/add/existing',
-        'modal' => TRUE,
-        'ctools_style' => 'ctools-modal-acquia-lift-style',
-        'logo' => theme('image', array(
-          'path' => $path . '/images/goal-type-predefined.png',
-          'alt' => t('Pre-existing goal'),
-          'title' => t('Select this option to create a goal from a pre-existing visitor action.'),
-        )),
-      ),
-      'element' => array(
-        'title' => t('New element goal'),
-        'description' => t('Element-level visitor action, such as clicking a link or hovering over an image'),
-        'path' => 'admin/structure/visitor_actions',
-        'modal' => FALSE,
-        'logo' => theme('image', array(
-          'path' => $path . '/images/goal-type-element.png',
-          'alt' => t('Element goal'),
-          'title' => t('Select this option to create an element goal.'),
-        ))
-      ),
-      'page' => array(
-        'title' => t('New page goal'),
-        'description' => t('Page-level visitor action, such as scrolling to the bottom of the page'),
-        'path' => 'admin/structure/acquia_lift/goal/add/page',
-        'modal' => TRUE,
-        'ctools_style' => 'ctools-modal-acquia-lift-style',
-        'logo' => theme('image', array(
-          'path' => $path . '/images/goal-type-page.png',
-          'alt' => t('Page goal'),
-          'title' => t('Select this option to create a page goal.'),
-        ))
-      ),
-    ),
+    'items' => $types,
   ));
   return ctools_modal_render(t('Add a goal'), $output);
 }
@@ -1239,7 +1215,7 @@ function _acquia_lift_page_goal_create_form($agent) {
     '#tree' => TRUE,
   );
 
-  $form['#validate']['_acquia_lift_page_goal_create_form_validate'];
+  $form['#element_validate'][] = '_acquia_lift_page_goal_create_form_validate';
   module_load_include('inc', 'visitor_actions', 'visitor_actions.admin');
   visitor_actions_get_form_options('page', $form, FALSE);
   return $form;
@@ -1272,7 +1248,7 @@ function acquia_lift_goal_type_create_form_submit($form, &$form_state) {
       $plugin = $form_state['values']['actionable_element'];
       list($type, $event) = explode('::', $form_state['values']['event'][$plugin]);
       $goal_name = $form_state['values']['title'];
-      $action_name = personalize_generate_machine_name($goal_name, visitor_actions_action_name_exists, '_');
+      $action_name = personalize_generate_machine_name($goal_name, 'visitor_actions_action_name_exists', '_');
       $action = array(
         'label' => $goal_name,
         'machine_name' => $action_name,

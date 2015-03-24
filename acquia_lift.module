@@ -2539,6 +2539,15 @@ function acquia_lift_get_campaign_details() {
   return $campaigns;
 }
 
+function acquia_lift_personalize_agent_list_alter(&$agents) {
+  // If this is a nested agent, it should not be listed.
+  foreach ($agents as $agent_name => $agent) {
+    if (in_array($agent->plugin, array('acquia_lift', 'acquia_lift_simple_ab'))) {
+      unset($agents[$agent_name]);
+    }
+  }
+}
+
 /**
  * Get the option set where targeting rules are defined.
  *

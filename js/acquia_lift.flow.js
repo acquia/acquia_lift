@@ -169,7 +169,7 @@
    * A command to trigger the element selection process.
    *
    * The response should include a data object with the following keys:
-   * - start: Boolean indicating if page variation mode should be on (true)
+   * - start: Boolean indicating if element variation mode should be on (true)
    *   or off (false).
    */
   Drupal.ajax.prototype.commands.acquia_lift_variation_toggle = function (ajax, response, status) {
@@ -606,7 +606,7 @@
       },
 
       /**
-       * Deactivates the view and the page variation process.
+       * Deactivates the view and the element variation process.
        */
       deactivate: function () {
         this.$watchElements.DOMSelector("stopWatching");
@@ -637,7 +637,7 @@
       },
 
       /**
-       * Creates a contextual page variation selection menu at the specified
+       * Creates a contextual element variation selection menu at the specified
        * element.
        */
       createContextualMenu: function (element, selector) {
@@ -915,7 +915,7 @@
       },
 
       /**
-       * Renders a single page variation menu item.
+       * Renders a single element variation menu item.
        */
       renderItem: function (model) {
         var itemView = new Drupal.acquiaLiftVariations.views.VariationTypeMenuListItemView({model: model});
@@ -1002,7 +1002,7 @@
 
   /**
    * Define editInContext behaviors to define what happens when creating
-   * a particular personalize_element page variation in context.
+   * a particular personalize_element element variation in context.
    */
   Drupal.acquiaLiftVariations.personalizeElements = Drupal.acquiaLiftVariations.personalizeElements || {};
 

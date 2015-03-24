@@ -76,7 +76,7 @@
     },
 
     /**
-     * Generates the variations listing for page variations made up of the
+     * Generates the variations listing for element variations made up of the
      * option sets within this collection.
      *
      * The results are cached within a local variable that is invalidated

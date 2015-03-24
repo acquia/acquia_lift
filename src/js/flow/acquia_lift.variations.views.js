@@ -83,7 +83,7 @@
       },
 
       /**
-       * Deactivates the view and the page variation process.
+       * Deactivates the view and the element variation process.
        */
       deactivate: function () {
         this.$watchElements.DOMSelector("stopWatching");
@@ -114,7 +114,7 @@
       },
 
       /**
-       * Creates a contextual page variation selection menu at the specified
+       * Creates a contextual element variation selection menu at the specified
        * element.
        */
       createContextualMenu: function (element, selector) {
@@ -392,7 +392,7 @@
       },
 
       /**
-       * Renders a single page variation menu item.
+       * Renders a single element variation menu item.
        */
       renderItem: function (model) {
         var itemView = new Drupal.acquiaLiftVariations.views.VariationTypeMenuListItemView({model: model});

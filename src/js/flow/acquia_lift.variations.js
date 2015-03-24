@@ -56,7 +56,7 @@
    * A command to trigger the element selection process.
    *
    * The response should include a data object with the following keys:
-   * - start: Boolean indicating if page variation mode should be on (true)
+   * - start: Boolean indicating if element variation mode should be on (true)
    *   or off (false).
    */
   Drupal.ajax.prototype.commands.acquia_lift_variation_toggle = function (ajax, response, status) {

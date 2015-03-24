@@ -950,7 +950,7 @@
     },
 
     /**
-     * Generates the variations listing for page variations made up of the
+     * Generates the variations listing for element variations made up of the
      * option sets within this collection.
      *
      * The results are cached within a local variable that is invalidated
@@ -2262,7 +2262,7 @@
    * Custom AJAX command to preview a specific option set variation.
    *
    * The response should include a data object with the following keys:
-   * - agentName: The name of the campaign for this page variation.
+   * - agentName: The name of the campaign for this element variation.
    * - osid:  The option set id for the option set to preview.
    * - optionId: The option id to preview.
    */
@@ -2274,7 +2274,7 @@
   }
 
   /**
-   * Custom AJAX command to indicate a deleted page variation.
+   * Custom AJAX command to indicate a deleted element variation.
    * This is necessary because Drupal's settings merge utilizes jQuery.extend
    * which will only add to the original object.
    *
@@ -2375,7 +2375,7 @@
           }
         });
 
-        // Clear the variations for all page variation campaigns.
+        // Clear the variations for all element variation campaigns.
         Drupal.acquiaLiftUI.utilities.looper(settings.option_sets, function (obj, key) {
           var campaignModel = ui.collections.campaigns.findWhere({name: obj.agent});
           if (campaignModel) {
@@ -2402,7 +2402,7 @@
           }
         });
 
-        // Create a model for page variation management state
+        // Create a model for element variation management state
         if (!ui.models.variationModeModel) {
           ui.models.variationModeModel = new ui.MenuElementVariationModeModel();
         }
@@ -2764,12 +2764,12 @@
   Drupal.behaviors.acquiaLiftContentVariations = {
     attach: function (context) {
       var ui = Drupal.acquiaLiftUI;
-      // Create a model for page variation management state
+      // Create a model for element variation management state
       if (!ui.models.variationModeModel) {
         ui.models.variationModeModel = new ui.MenuElementVariationModeModel();
       }
 
-      // Keep the page variation editing and in-context goal creation in
+      // Keep the element variation editing and in-context goal creation in
       // mutually exclusive active states.
       $('body').once('acquia-lift-personalize', function () {
         // Creating any item from the menu is considering starting a new menu action.

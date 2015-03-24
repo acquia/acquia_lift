@@ -42,7 +42,7 @@
           }
         });
 
-        // Clear the variations for all page variation campaigns.
+        // Clear the variations for all element variation campaigns.
         Drupal.acquiaLiftUI.utilities.looper(settings.option_sets, function (obj, key) {
           var campaignModel = ui.collections.campaigns.findWhere({name: obj.agent});
           if (campaignModel) {
@@ -69,7 +69,7 @@
           }
         });
 
-        // Create a model for page variation management state
+        // Create a model for element variation management state
         if (!ui.models.variationModeModel) {
           ui.models.variationModeModel = new ui.MenuElementVariationModeModel();
         }
@@ -431,12 +431,12 @@
   Drupal.behaviors.acquiaLiftContentVariations = {
     attach: function (context) {
       var ui = Drupal.acquiaLiftUI;
-      // Create a model for page variation management state
+      // Create a model for element variation management state
       if (!ui.models.variationModeModel) {
         ui.models.variationModeModel = new ui.MenuElementVariationModeModel();
       }
 
-      // Keep the page variation editing and in-context goal creation in
+      // Keep the element variation editing and in-context goal creation in
       // mutually exclusive active states.
       $('body').once('acquia-lift-personalize', function () {
         // Creating any item from the menu is considering starting a new menu action.

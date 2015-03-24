@@ -5,7 +5,7 @@ use Behat\Behat\Context\SnippetAcceptingContext;
 use Behat\Gherkin\Node\TableNode;
 use Behat\Behat\Hook\Scope\AfterStepScope;
 use Behat\Mink\Driver\Selenium2Driver;
-use Behat\Mink\Element\NodeElement;
+use Behat\Testwork\Hook\Scope\BeforeSuiteScope;
 use Behat\Behat\Hook\Scope\BeforeScenarioScope;
 use Behat\Behat\Hook\Scope\AfterScenarioScope;
 
@@ -18,9 +18,14 @@ class FeatureContext extends RawDrupalContext implements SnippetAcceptingContext
    * Stores the context parameters that are passed in for the test suite.
    * Parameters include default values for:
    *   - temp_path: The path to temporary location where files, such as error
-   *     screenshots, can be written.  Default value: /tmp/behat
+   *     screenshots, can be written. Default value: /tmp
    */
   protected $context_parameters = array();
+
+  /**
+   * Stores contexts.
+   */
+  protected $contexts = array();
 
   /**
    * Stores campaigns at start of scenario for comparison with those at the end.
@@ -47,16 +52,38 @@ class FeatureContext extends RawDrupalContext implements SnippetAcceptingContext
    *        H O O K S
    ***************************************************/
   /**
+   * Perform before suite actions:
+   * - Stage the environment.
+   *
+   * @BeforeSuite
+   */
+  static public function beforeSuite(BeforeSuiteScope $scope) {
+    // Make sure unibar can update status.
+    variable_set('acquia_lift_unibar_allow_status_change', TRUE);
+  }
+
+  /**
+   * Perform before scenario actions:
+   * - Gather all contexts so they can be reused in the current context.
+   *
+   * @BeforeScenario
+   */
+  public function beforeScenario(BeforeScenarioScope $scope) {
+    // Gather all contexts.
+    $contexts = $scope->getEnvironment()->getContexts();
+    foreach ($contexts as $context) {
+      $context_class_name = get_class($context);
+      $this->contexts[$context_class_name] = $context;
+    }
+  }
+
+  /**
    * Gets a reference to current campaigns, option sets, goals, etc. for
    * tracking purposes.
    *
    * @BeforeScenario @campaign
    */
-  public function before(BeforeScenarioScope $event) {
-    // Clear any currently active campaign contexts.
-    personalize_set_campaign_context('');
-    // Make sure unibar can update status.
-    variable_set('acquia_lift_unibar_allow_status_change', TRUE);
+  public function beforeScenarioCampaign(BeforeScenarioScope $scope) {
     $this->campaigns = personalize_agent_load_multiple();
     $this->actions = visitor_actions_custom_load_multiple();
   }
@@ -67,7 +94,7 @@ class FeatureContext extends RawDrupalContext implements SnippetAcceptingContext
    *
    * @AfterScenario @campaign
    */
-  public function after(AfterScenarioScope $event) {
+  public function afterScenarioCampaign(AfterScenarioScope $event) {
     $original_campaigns = $this->campaigns;
     $all_campaigns = personalize_agent_load_multiple(array(), array(), TRUE);
     foreach ($all_campaigns as $name => $campaign) {
@@ -86,6 +113,30 @@ class FeatureContext extends RawDrupalContext implements SnippetAcceptingContext
       if (!isset($original_actions[$name])) {
         visitor_actions_delete_action($name);
       }
+    }
+  }
+
+  /**
+   * For javascript enabled scenarios, always wait for AJAX before clicking.
+   *
+   * @BeforeStep
+   */
+  public function beforeJavascriptStep($event) {
+    $text = $event->getStep()->getText();
+    if (preg_match('/(follow|press|click|submit)/i', $text)) {
+      $this->spinUntilAjaxIsFinished();
+    }
+  }
+
+  /**
+   * For javascript enabled scenarios, always wait for AJAX after clicking.
+   *
+   * @AfterStep
+   */
+  public function afterJavascriptStep($event) {
+    $text = $event->getStep()->getText();
+    if (preg_match('/(follow|press|click|submit)/i', $text)) {
+      $this->spinUntilAjaxIsFinished();
     }
   }
 
@@ -342,52 +393,63 @@ class FeatureContext extends RawDrupalContext implements SnippetAcceptingContext
    * @throws \Exception
    *   If the region or element cannot be found or does not have the specified
    *   class.
-
    */
   public function assertFieldHasSiteTitle($field) {
     // Read the site name dynamically.
     $site_name = variable_get('site_name', "Default site name");
-    $mink = $this->getMink();
-    $mink->assertSession()->fieldValueEquals($field, $site_name);
+    $mink_context = $this->contexts['Drupal\DrupalExtension\Context\MinkContext'];
+    $mink_context->assertFieldContains($field, $site_name);
   }
 
   /**
-   * @Then :selector element in the :region region should have :class class
+   * @Then the :field field should contain text that has :needle
    *
    * @throws \Exception
-   *   If the region or element cannot be found or does not have the specified
-   *   class.
+   *   If the the substring cannot be found in the given field.
    */
-  public function assertRegionElementHasClass($selector, $region, $class) {
-    $element = $this->findElementInRegion($selector, $region);
-    if (empty($element)) {
-      throw new \Exception(sprintf('The element "%s" was not found in the region "%s" on the page %s', $selector, $region, $this->getSession()->getCurrentUrl()));
-    }
-    if (!$element->hasClass($class)) {
-      throw new \Exception(sprintf('The element "%s" in region "%s" on the page %s does not have class "%s".', $selector, $region, $this->getSession()->getCurrentUrl(), $class));
+  public function assertFieldContains($field, $needle) {
+    $node = $this->assertSession()->fieldExists($field);
+    $haystack = $node->getValue();
+    if (strpos($haystack, $needle) === false) {
+      throw new \Exception(sprintf('The field "%s" value is "%s", but we are looking for "%s".', $field, $haystack, $needle));
     }
   }
 
   /**
-   * @When I wait for messagebox to close
+   * @Then I should see :selector element in the :region region is :state for editing
+   *
+   * @throws \Exception
+   *   If the region or element cannot be found or is not in a specified state.
    */
-  public function waitForMessageboxClose() {
-    $region = $this->getRegion('messagebox');
-    if (empty($region)) {
-      return;
+  public function assertRegionElementIsInState($selector, $region, $state) {
+    $state_class = array(
+      'highlighted' => 'acquia-lift-page-variation-item',
+      'available' => 'visitor-actions-ui-enabled',
+    );
+    if (!isset($state_class[$state])) {
+      $state_options_array = array_keys($state_class);
+      $state_options_string = implode(', ', $state_options_array);
+      throw new \Exception(sprintf('The element state "%s" is not defined. Available options are "%s".', $state, $state_options_string));
     }
-    $this->getSession()->wait(5000, 'jQuery("#acquia-lift-message-box").hasClass("element-hidden")');
+    $element = $this->findElementInRegion($selector, $region);
+    if (empty($element)) {
+      throw new \Exception(sprintf('The element "%s" was not found in the region "%s" on the page %s.', $selector, $region, $this->getSession()->getCurrentUrl()));
+    }
+    $class = $state_class[$state];
+    if (!$element->hasClass($class)) {
+      throw new \Exception(sprintf('The element "%s" in region "%s" on the page %s is not in "%s" state.', $selector, $region, $this->getSession()->getCurrentUrl(), $state));
+    }
   }
 
   /**
    * @When I wait for Lift to synchronize
    */
   public function waitForLiftSynchronize() {
-    $this->getSession()->wait(5000, '(typeof(jQuery)=="undefined" || (0 === jQuery.active && 0 === Drupal.acquiaLift.queueCount))');
+    $this->spinUntilLiftCampaignsAreSynchronized();
   }
 
   /**
-   * @Then I should see the link :link visible in the :region( region)
+   * @Then I should visibly see the link :link in the :region( region)
    *
    * @throws \Exception
    *   If region or link within it cannot be found or is hidden.
@@ -400,7 +462,7 @@ class FeatureContext extends RawDrupalContext implements SnippetAcceptingContext
   }
 
   /**
-   * @Then I should not see the link :link visible in the :region( region)
+   * @Then I should not visibly see the link :link in the :region( region)
    *
    * @throws \Exception
    *   If link is found in region and is visible.
@@ -487,21 +549,13 @@ class FeatureContext extends RawDrupalContext implements SnippetAcceptingContext
    * @Then I should see the message :text in the messagebox
    */
   public function assertTextInMessagebox($text) {
-    // Wait for the message box to be shown.
-    $this->getSession()->wait(5000, "(jQuery('#acquia-lift-message-box').length > 0 && jQuery('#acquia-lift-message-box').hasClass('acquia-lift-messagebox-shown'))");
+    $this->spinUntilMessageBoxIsPopulated();
+
     $script = "return jQuery('#acquia-lift-message-box').find('.message').text();";
     $message = $this->getSession()->evaluateScript($script);
     if (strpos($message, $text) === FALSE) {
       throw new \Exception(sprintf('The message "%s" was not found in the messagebox.', $text));
     }
-  }
-
-  /**
-   * @Then I wait for :seconds seconds
-   */
-  public function iWaitSeconds($seconds) {
-    $ms = $seconds * 1000;
-    $this->getSession()->wait($ms);
   }
 
   /****************************************************
@@ -624,13 +678,11 @@ class FeatureContext extends RawDrupalContext implements SnippetAcceptingContext
    *   The element node for the link or null if not found.
    */
   private function findLinkInRegion($link, $region) {
-    $session = $this->getSession();
     $regionObj = $this->getRegion($region);
-    $xpath = $session->getSelectorsHandler()->selectorToXpath('link', $link);
+    $element = $regionObj->findLink($link);
 
-    $element = $regionObj->find('xpath', $xpath);
     if (empty($element)) {
-      throw new \Exception(sprintf('Could not find element in %region using xpath %s', $region, $xpath));
+      throw new \Exception(sprintf('Could not find element in "%s" using link "%s"', $region, $link));
     }
     return $element;
   }
@@ -652,8 +704,7 @@ class FeatureContext extends RawDrupalContext implements SnippetAcceptingContext
   }
 
   /**
-   * Helper function to retrieve a region defined in the configuration file
-   * from the browser output.
+   * Thin wrapper over Drupal MinkContext's getRegion function.
    *
    * @param $region
    *   The region identifier to load.
@@ -665,12 +716,7 @@ class FeatureContext extends RawDrupalContext implements SnippetAcceptingContext
    *   If the region cannot be found on the current page.
    */
   private function getRegion($region) {
-    $mink = $this->getMink();
-    $regionObj = $mink->getSession()->getPage()->find('region', $region);
-    if (empty($regionObj)) {
-      throw new \Exception(sprintf('The region %s was not found on the page %s', $region, $this->getSession()->getCurrentUrl()));
-    }
-    return $regionObj;
+    return $this->contexts['Drupal\DrupalExtension\Context\MinkContext']->getRegion($region);
   }
 
   /**
@@ -727,5 +773,68 @@ class FeatureContext extends RawDrupalContext implements SnippetAcceptingContext
   private function getCurrentCampaign() {
     $script = 'return Drupal.settings.personalize.activeCampaign;';
     return $this->getMink()->getSession()->evaluateScript($script);
+  }
+
+  /****************************************************
+   *        S P I N  F U N C T I O N S
+   ***************************************************/
+  /**
+   * Keep retrying assertion for a defined number of iterations.
+   *
+   * @param closure $lambda           Callback.
+   * @param integer $attemptThreshold Number of attempts to execute the command.
+   *
+   * @throws \Exception If attemptThreshold is met.
+   *
+   * @return mixed
+   */
+  private function spin($lambda, $attemptThreshold = 15) {
+    for ($iteration = 0; $iteration <= $attemptThreshold; $iteration++) {
+      try {
+        if (call_user_func($lambda)) {
+          return;
+        }
+      } catch (\Exception $exception) {
+        // do nothing
+      }
+
+      sleep(1);
+    }
+  }
+
+  /**
+   * Spin JavaScript evaluation.
+   *
+   * @param string  $assertionScript  Assertion script
+   * @param integer $attemptThreshold Number of attempts to execute the command.
+   */
+  private function spinJavaScriptEvaluation($assertionScript, $attemptThreshold = 15) {
+    $this->spin(function () use ($assertionScript) {
+      return $this->getMink()->getSession()->evaluateScript('return ' . $assertionScript);
+    }, $attemptThreshold);
+  }
+
+  /**
+   * Spin until the Ajax is finished.
+   */
+  private function spinUntilAjaxIsFinished() {
+    $assertionScript = '(typeof(jQuery)=="undefined" || (0 === jQuery.active && 0 === jQuery(\':animated\').length));';
+    $this->spinJavaScriptEvaluation($assertionScript);
+  }
+
+  /**
+   * Spin until the message box is populated.
+   */
+  private function spinUntilMessageBoxIsPopulated() {
+    $assertionScript = "(jQuery('#acquia-lift-message-box').length > 0 && jQuery('#acquia-lift-message-box').hasClass('acquia-lift-messagebox-shown'));";
+    $this->spinJavaScriptEvaluation($assertionScript);
+  }
+
+  /**
+   * Spin until the Lift Campaigns are synchronized.
+   */
+  private function spinUntilLiftCampaignsAreSynchronized() {
+    $assertionScript = '(typeof(jQuery)=="undefined" || (0 === jQuery.active && 0 === Drupal.acquiaLift.queueCount));';
+    $this->spinJavaScriptEvaluation($assertionScript);
   }
 }

@@ -3246,21 +3246,36 @@ class AcquiaLiftWebTestTarget extends AcquiaLiftWebTestBase {
     // Try saving a target audience without having created an option set.
     $saved = acquia_lift_target_audience_save($label, $agent->machine_name, $contexts, 'AND');
     $this->assertFalse($saved);
-    // Now create an option set for hte agent.
+    // Now create an option set for the agent.
     list($option_set,) = $this->createOptionSet(0, array(
       'plugin' => 'blocks',
       'agent' => $agent->machine_name,
       'option_ids' => array('first-choice', 'second-choice', 'third-choice')
     ), FALSE);
     $this->resetAll();
+
+    // The "everyone else" target audience should have been created and the
+    // options assigned to it by default.
+    $option_set = acquia_lift_get_option_set_for_targeting($agent->machine_name);
+    $expected_targeting = array(ACQUIA_LIFT_TARGETING_EVERYONE_ELSE => array('first-choice', 'second-choice', 'third-choice'));
+    $agent = personalize_agent_load($agent->machine_name);
+    $this->assertEqual($expected_targeting, $agent->data['lift_targeting']);
+
     $saved = acquia_lift_target_audience_save($label, $agent->machine_name, $contexts, 'AND');
     $this->assertTrue($saved);
 
     // Check that the expected targeting rules were saved on the option set.
     $option_set = personalize_option_set_load($option_set->osid, TRUE);
     $this->assertNotNull($option_set->targeting);
-    $audience_name = key($option_set->targeting);
+    $audience_name = personalize_generate_machine_name($label, NULL, '-');
     $expected_targeting = array(
+      ACQUIA_LIFT_TARGETING_EVERYONE_ELSE => array(
+        'label' => t('Everyone else'),
+        'weight' => 1,
+        'targeting_features' => array(),
+        'targeting_rules' => array(),
+        'targeting_strategy' => 'OR',
+      ),
       $audience_name => array(
         'label' => $label,
         'weight' => 50,
@@ -3314,7 +3329,7 @@ class AcquiaLiftWebTestTarget extends AcquiaLiftWebTestBase {
 
     $option_set = personalize_option_set_load($option_set->osid, TRUE);
     $audience_names = array_keys($option_set->targeting);
-    $expected_targeting[$audience_names[1]] = array(
+    $expected_targeting[$audience_names[2]] = array(
       'label' => $label,
       'weight' => 50,
       'targeting_features' => array(
@@ -3548,7 +3563,7 @@ class AcquiaLiftWebTestTarget extends AcquiaLiftWebTestBase {
       // Confirm that the correct osid is assigend to each of the two target
       // audiences.
       $parent_option_set = personalize_option_set_load($parent_option_set->osid, TRUE);
-      $this->assertEqual(2, count($parent_option_set->targeting));
+      $this->assertEqual(3, count($parent_option_set->targeting));
       foreach (array($audience_name => $nested_osid, $second_audience => $nested_osid2) as $audience => $osid) {
         $this->assertEqual($osid, $parent_option_set->targeting[$audience]['osid']);
         $this->assertFalse(isset($parent_option_set->targeting[$audience]['option_id']));
@@ -3878,16 +3893,10 @@ class AcquiaLiftWebTestCampaignWizard extends AcquiaLiftWebTestBase {
    */
   function testTargeting() {
     $first_agent = $this->createTargetingAgent();
-    $second_agent = $this->createTargetingAgent();
     list($first_option_set, $first_queue) = $this->createOptionSet(1, array(
       'agent' => $first_agent->machine_name,
       'plugin' => 'type1',
       'num_options' => 3,
-    ));
-    $this->createOptionSet(2, array(
-      'agent' => $second_agent->machine_name,
-      'plugin' => 'type1',
-      'num_options' => 2,
     ));
 
     // Create user profile fields that we can use for targeting.
@@ -4083,31 +4092,19 @@ class AcquiaLiftWebTestCampaignWizard extends AcquiaLiftWebTestBase {
     $this->assertOptionSelected('edit-audiences-others-assignment', $first_option_set->options[2]['option_id']);
     $this->assertOptionSelected('edit-audiences-everyone-else-assignment', $first_option_set->options[0]['option_id']);
 
-    // Use the second agent to test the automatic creation and removal of the
-    // "Everyone else" audience.
-    $this->drupalGet('admin/structure/personalize/manage/' . $second_agent->machine_name . '/targeting');
-    $edit = array(
-      'audiences[add][details][name]' => 'Swamp lovers',
-      'audiences[add][details][mapping][contexts][0][context]' => 'user_profile_context' . PERSONALIZE_TARGETING_ADMIN_SEPARATOR . $context_1,
-      'audiences[add][details][mapping][contexts][0][value][operator]' => 'equals',
-      'audiences[add][details][mapping][contexts][0][value][match]' => 'Amphibians',
+    // Add an option to the existing option set and verify that it appears as
+    // unassigned.
+    $unassigned_id = personalize_generate_option_id(3);
+    $first_option_set->options[] = array(
+      'option_id' => $unassigned_id,
+      'option_label' => personalize_generate_option_label(3),
     );
-    $this->drupalPost(NULL, $edit, $this->getButton('wizard_next'));
+    personalize_option_set_save($first_option_set);
 
-    // Verify the new audience as well as the "Everyone else" audience,
-    $this->drupalGet('admin/structure/personalize/manage/' . $second_agent->machine_name . '/targeting');
-    $this->assertFieldByName('audiences[swamp-lovers][details][name]', 'Swamp lovers');
-    $this->assertFieldByName('audiences[swamp-lovers][assignment][]');
-    $this->assertFieldByName('audiences[add][details][name]', '');
-    $this->assertNoFieldByName('audiences[everyone-else][details][name]');
-    $this->assertFieldByName('audiences[everyone-else][assignment][]');
-
-    // Delete the new audience and verify that "Everyone else" is removed too.
-    $this->drupalGet('admin/structure/personalize/manage/' . $second_agent->machine_name . '/audience/swamp-lovers/delete');
-    $this->drupalPost(NULL, NULL, t('Delete'));
-    $this->drupalGet('admin/structure/personalize/manage/' . $second_agent->machine_name . '/targeting');
-    $this->assertNoFieldByName('audiences[swamp-lovers][details][name]');
-    $this->assertFieldByName('audiences[add][details][name]', '');
-    $this->assertNoFieldByName('audiences[everyone-else][assignment][]');
+    $this->drupalGet('admin/structure/personalize/manage/' . $first_agent->machine_name . '/targeting');
+    $this->assertOptionSelected('edit-audiences-unassigned-assignment', $unassigned_id);
+    $this->assertNoOptionSelected('edit-audiences-unassigned-assignment', $first_option_set->options[0]['option_id']);
+    $this->assertNoOptionSelected('edit-audiences-unassigned-assignment', $first_option_set->options[1]['option_id']);
+    $this->assertNoOptionSelected('edit-audiences-unassigned-assignment', $first_option_set->options[2]['option_id']);
   }
 }

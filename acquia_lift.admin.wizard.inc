@@ -435,7 +435,7 @@ function acquia_lift_personalize_campaign_wizard_targeting_alter(&$form, &$form_
         '#title' => t('Add display option'),
         '#multiple' => TRUE,
         '#options' => $variation_options,
-        '#default_value' => $unassigned_options,
+        '#default_value' => array_keys($unassigned_options),
         '#attributes' => array(
           'class' => array('acquia-lift-targeting-assignment'),
         ),
@@ -735,13 +735,8 @@ function acquia_lift_personalize_campaign_wizard_targeting_submit(&$form, &$form
   $targeting = array();
   $audience_count = 0;
   // Determine the values for the "Everyone else" audience
-  $final_audience = array(
-    'name' => t('Everyone else'),
-    'contexts' => array(),
-    'weight' => 1,
-    'strategy' => 'OR',
-    'id' => ACQUIA_LIFT_TARGETING_EVERYONE_ELSE,
-  );
+  $final_audience = _acquia_lift_personalize_campaign_wizard_everyone_else_audience();
+
   // Set the weight higher than any of the audience options.
   foreach($form_state['values']['audiences'] as $audience_id => $audience) {
     if ($audience_id === ACQUIA_LIFT_TARGETING_EVERYONE_ELSE || !isset($audience['details']['weight']) || empty($audience['details']['name'])) {
@@ -797,11 +792,6 @@ function acquia_lift_personalize_campaign_wizard_targeting_submit(&$form, &$form
     if (isset($audience['assignment'])) {
       $targeting[$audience_id] = array_values($audience['assignment']);
     }
-  }
-  // Create the "Everyone else" audience if there are other audiences and it
-  // does not exist.
-  if ($audience_count > 0 && !isset($form_state['values']['audiences'][ACQUIA_LIFT_TARGETING_EVERYONE_ELSE])) {
-    acquia_lift_target_audience_save($final_audience['name'], $agent_data->machine_name, $final_audience['contexts'], $final_audience['strategy'], $final_audience['weight']);
   }
   acquia_lift_save_targeting_structure($agent_data, $targeting);
 }
@@ -1260,10 +1250,6 @@ function acquia_lift_target_audience_delete_submit($form, &$form_state) {
   $audience_id = $form_state['values']['audience_id'];
   $audience_name = isset($option_set->targeting[$audience_id]['label']) ? $option_set->targeting[$audience_id]['label'] : $audience_id;
   unset($option_set->targeting[$audience_id]);
-  // If this leaves only the "Everyone else" audience, then delete it too.
-  if (count($option_set->targeting) === 1 && array_key_exists(ACQUIA_LIFT_TARGETING_EVERYONE_ELSE, $option_set->targeting)) {
-    unset($option_set->targeting[ACQUIA_LIFT_TARGETING_EVERYONE_ELSE]);
-  }
   personalize_option_set_save($option_set);
   drupal_set_message(t('The target audience %name has been removed.', array('%name' => $audience_name)));
   $form_state['redirect'] = 'admin/structure/personalize/manage/' . $form_state['values']['agent_name'] . '/targeting';

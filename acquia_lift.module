@@ -725,6 +725,10 @@ function acquia_lift_personalize_option_set_presave($option_set) {
  */
 function acquia_lift_personalize_option_set_save($option_set) {
   $agent = personalize_agent_load($option_set->agent);
+  if (acquia_lift_is_targeting_agent($agent)) {
+    module_load_include('inc', 'acquia_lift', 'acquia_lift.admin');
+    acquia_lift_validate_minimum_targeting($agent, $option_set);
+  }
   if (!acquia_lift_is_testing_agent($agent)) {
     return;
   }

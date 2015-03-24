@@ -688,8 +688,150 @@ function acquia_lift_update_7018() {
   _acquia_lift_build_menu('acquia-lift-controls');
 }
 
+/**
+ * Miscellaneous changes required for the new workflow, includes converting legacy
+ * campaigns to "personalizations".
+ */
 function acquia_lift_update_7018() {
+  // The queue is now gone so delete the queue class variable.
   variable_del('queue_class_acquia_lift_sync');
+
+  // Get all old-style agents and convert them where possible.
+  $result = db_query("SELECT a.machine_name, a.label, o.plugin, o.osid, o.decision_name, o.options, o.targeting FROM {personalize_agent} a INNER JOIN {personalize_option_sets} o ON o.agent = a.machine_name WHERE a.plugin IN ('acquia_lift', 'acquia_lift_simple_ab')");
+  // First organize our results into arrays of agents with their option sets.
+  $agents = array();
+  foreach ($result as $row) {
+    $options = unserialize($row->options);
+    $agents[$row->machine_name][] = array(
+      'agent_name' => $row->machine_name,
+      'agent_label' => $row->label,
+      'osid' => $row->osid,
+      'decision_name' => empty($row->decision_name) ? 'osid-' + $row->osid : $row->decision_name,
+      'option_count' => count($options),
+      'options' => $options,
+      'targeting' => unserialize($row->targeting),
+    );
+  }
+  // If an agent has more than one option set or if its option set contains fixed
+  // targeting rules, it cannot be converted and will be treated as a legacy agent.
+  $legacy_agents = $convertibles = array();
+  // If personalize module is not enabled all campaigns will be treated as legacy.
+  $personalize_enabled = module_exists('personalize');
+  foreach ($agents as $agent_name => $details) {
+    $option_set = reset($details);
+    if (!empty($option_set['targeting']) || !$personalize_enabled) {
+      $legacy_agents[] = $agent_name;
+    }
+    if (count($details) > 1) {
+      // We can convert this if all option sets have the same decision name.
+      $decision_name = '';
+      $option_count = 0;
+      $supported = TRUE;
+      foreach ($details as $i => $option_set) {
+        if ($i == 0) {
+          $decision_name = $option_set['decision_name'];
+          $option_count = $option_set['option_count'];
+        }
+        else {
+          // If any of the option sets has a different decision name or option
+          // count, then this agent cannot be converted.
+          if ($option_set['decision_name'] != $decision_name || $option_set['option_count'] != $option_count) {
+            $supported = FALSE;
+          }
+        }
+      }
+      if ($supported) {
+        $convertibles[$agent_name] = $details;
+      }
+      else {
+        $legacy_agents[] = $agent_name;
+      }
+    }
+    else {
+      $convertibles[$agent_name] = $details;
+    }
+  }
+  // If personalize module is not enabled we just want to save the legacy agents
+  // and be done.
+  if (!$personalize_enabled && !empty($legacy_agents)) {
+    variable_set('acquia_lift_legacy_agents', $legacy_agents);
+    return;
+  }
+
+  // Now convert anything that can be converted.
+  foreach ($convertibles as $original_agent_name => $details) {
+    // Create a new acquia_lift_target agent which will delegate to this one.
+    $agent = new stdClass();
+    $agent->label = 'Parent personalization for ' . $details[0]['agent_label'];
+    $agent->plugin = 'acquia_lift_target';
+    $agent->data = array();
+    $agent->machine_name = personalize_generate_machine_name($original_agent_name . '-parent', 'personalize_agent_machine_name_exists');
+    $nested_agent = personalize_agent_load($original_agent_name);
+    try {
+      $agent = personalize_agent_save($agent);
+      // Set the status of our new agent to that of the original.
+      $nested_agent_status = personalize_agent_get_status($original_agent_name);
+      personalize_agent_set_status($agent->machine_name, $nested_agent_status);
+      $agent->started = $nested_agent->started;
+      $agent = personalize_agent_save($agent);
+      // Remove the "decisions" info from the data property of the original
+      // agent as this no longer serves any function.
+      unset($nested_agent->data['decisions']);
+      personalize_agent_save($nested_agent);
+
+      $nested_osid = NULL;
+      // If there are mulitple option sets, they constitute one decision.
+      foreach ($details as $i => $option_set_details) {
+        $nested_os = personalize_option_set_load($option_set_details['osid']);
+        if ($i == 0) {
+          $nested_osid = $nested_os->osid;
+        }
+        $main_os = new stdClass();
+        $main_os->agent = $agent->machine_name;
+        $main_os->is_new = TRUE;
+        $main_os->data = $nested_os->data;
+        $main_os->label = $nested_os->label;
+        $main_os->options = $nested_os->options;
+        $main_os->plugin = $nested_os->plugin;
+        $main_os->executor = $nested_os->executor;
+        $main_os->winner = $nested_os->executor;
+        $main_os->stateful = $nested_os->executor;
+        $main_os->preview_link = $nested_os->executor;
+        $main_os->decision_name = $option_set_details['decision_name'];
+        $main_os->targeting = array(
+          ACQUIA_LIFT_TARGETING_EVERYONE_ELSE => array(
+            'osid' => $nested_osid
+          )
+        );
+        personalize_option_set_save($main_os);
+        // Convert the first of the original option sets to a nested option set
+        // and delete the others.
+        if ($i == 0) {
+          $nested_os->plugin = 'options';
+          $nested_os->options = array();
+          foreach ($option_set_details['options'] as $option) {
+            $nested_os->options[] = array(
+              'option_id' => $option['option_id']
+            );
+          }
+          personalize_option_set_save($nested_os);
+        }
+        else {
+          personalize_option_set_delete($option_set_details['osid']);
+        }
+      }
+    }
+    catch (PersonalizeException $e) {
+      // Add this to the legacy agents, set a message to that effect and continue
+      // to the next agent.
+      $legacy_agents[] = $original_agent_name;
+      drupal_set_message(t('There was a problem converting the campaign @agent to a new style campaign. It will be treated as a legacy agent.'), array('@agent' => $original_agent_name), 'error');
+      continue;
+    }
+  }
+  if (!empty($legacy_agents)) {
+    variable_set('acquia_lift_legacy_agents', $legacy_agents);
+  }
 }
 
 /**

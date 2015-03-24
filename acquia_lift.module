@@ -8,6 +8,7 @@
 define('ACQUIA_LIFT_DEFAULT_AGENT_NAME', 'drupal-default');
 define('ACQUIA_LIFT_OPERATION_ERROR_PREFIX', 'Errors: ');
 define('ACQUIA_LIFT_AGENT_VERIFY_CACHE', 'acquia_lift:agent:verification');
+define('ACQUIA_LIFT_TARGETING_EVERYONE_ELSE', 'everyone-else');
 
 /**
  * Implements hook_menu().

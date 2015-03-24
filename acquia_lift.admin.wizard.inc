@@ -3,7 +3,6 @@
  * @file acquia_lift.admin.wizard.inc Functions specific to the Acquia Lift
  * alteration of the campaign creation wizard.
  */
-define('ACQUIA_LIFT_TARGETING_EVERYONE_ELSE', 'everyone-else');
 /**
  ********************************************************************
  *

@@ -4,21 +4,6 @@
 (function(Drupal, $, _) {
 
   /**
-   * Custom AJAX command to preview a specific page variation.
-   *
-   * The response should include a data object with the following keys:
-   * - agentName: The name of the campaign for this page variation.
-   * - variationIndex: The variation index to edit.  This can be an existing
-   *   variation index to edit, or -1 to create a new variation.
-   */
-  Drupal.ajax.prototype.commands.acquia_lift_page_variation_preview = function (ajax, response, status) {
-    _.defer(function() {
-      var view = Drupal.acquiaLiftUI.views.pageVariations[response.data.agentName]
-      view.selectVariation(response.data.variationIndex);
-    });
-  }
-
-  /**
    * Custom AJAX command to preview a specific option set variation.
    *
    * The response should include a data object with the following keys:
@@ -32,7 +17,6 @@
       view.selectOption(response.data.osid, response.data.optionId, true);
     });
   }
-
 
   /**
    * Custom AJAX command to indicate a deleted page variation.

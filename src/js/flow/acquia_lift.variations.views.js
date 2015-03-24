@@ -124,7 +124,7 @@
           selector: selector,
           id: 'acquia-lift-modal-variation-type-select'
         });
-        var dialogView = new Drupal.acquiaLiftVariations.views.PageVariationMenuView({
+        new Drupal.acquiaLiftVariations.views.ElementVariationMenuView({
           el: element,
           model: this.contextualMenuModel
         });
@@ -235,11 +235,6 @@
         var $input = this.$el.find('[name=personalize_elements_content]');
         var variation = this.model.get('variation');
 
-        // Don't show the title field for page variations.
-        if (this.appModel.isPageModelMode()) {
-          this.$el.find('[name="title"]').val(this.model.get('typeLabel')).closest('.form-item').hide();
-        }
-
         this.$el.find('[name="selector"]').val(selector);
         this.$el.find('[name="pages"]').val(Drupal.settings.visitor_actions.currentPath);
         this.$el.find('[name="agent"]').val(Drupal.settings.personalize.activeCampaign);
@@ -312,7 +307,7 @@
      * Contextual menu view to allow selection of the type of variation to
      * create.
      */
-    PageVariationMenuView: Dialog.views.ElementDialogView.extend({
+    ElementVariationMenuView: Dialog.views.ElementDialogView.extend({
       className: 'acquia-lift-context-menu',
 
       /**

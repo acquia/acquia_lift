@@ -8,6 +8,7 @@
 
   Drupal.acquiaLiftUI = Drupal.acquiaLiftUI || {};
   Drupal.acquiaLiftUI.views = Drupal.acquiaLiftUI.views || [];
+  Drupal.acquiaLiftUI.views.optionSets = Drupal.acquiaLiftUI.views.optionSets || {};
   Drupal.acquiaLiftUI.models = Drupal.acquiaLiftUI.models || {};
   Drupal.acquiaLiftUI.collections = Drupal.acquiaLiftUI.collections || {};
   Drupal.acquiaLiftUI.collections['option_sets'] = Drupal.acquiaLiftUI.collections['option_sets'] || {};

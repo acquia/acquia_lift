@@ -683,55 +683,32 @@ class FeatureContext extends RawDrupalContext implements SnippetAcceptingContext
       throw new \Exception(sprintf('Cannot load the current agent instance for campaign %s.', $campaign));
     }
     $option_sets = personalize_option_set_load_by_agent($campaign);
-    if ($agent_instance instanceof AcquiaLiftSimpleAB) {
-      // One decision with many variations.
-      $option_set = reset($option_sets);
-      foreach ($option_set->options as $index => $option) {
-        if ($option['option_label'] == $variation) {
-          break;
-        }
-      }
-      $css = '.acquia-lift-menu-item[data-acquia-lift-personalize-agent="' . $campaign . '"]';
-      switch ($link) {
-        case "rename":
-          $css .= ' a.acquia-lift-variation-rename';
-          break;
-        case "delete":
-          $css .= ' a.acquia-lift-variation-delete';
-          break;
-        default:
-          throw new \Exception(sprintf('Campaign %s does not support edit links for variations.', $campaign));
-      }
-      $css .= '[data-acquia-lift-personalize-page-variation="' . $index . '"]';
-    }
-    else {
-      // Standard option set names displayed.
-      foreach ($option_sets as $option_set) {
-        if ($option_set->label == $variation_set) {
-          $osid = $option_set->osid;
-          foreach ($option_set->options as $option) {
-            if ($option['option_label'] == $variation) {
-              $option_id = $option['option_id'];
-              break;
-            }
+    foreach ($option_sets as $option_set) {
+      if ($option_set->label == $variation_set) {
+        $osid = $option_set->osid;
+        foreach ($option_set->options as $option) {
+          if ($option['option_label'] == $variation) {
+            $option_id = $option['option_id'];
+            break;
           }
-          break;
         }
+        break;
       }
-      $css = '.acquia-lift-menu-item[data-acquia-lift-personalize-option-set="' . personalize_stringify_osid($osid) . '"]';
-      switch ($link) {
-        case "edit":
-          $css .= ' a.acquia-lift-variation-edit';
-          break;
-        case "rename":
-          $css .= ' a.acquia-lift-variation-rename';
-          break;
-        case "delete":
-          $css .= ' a.acquia-lift-variation-delete';
-          break;
-      }
-      $css .= '[data-acquia-lift-personalize-option-set-option="' . $option_id . '"]';
     }
+    $css = '.acquia-lift-menu-item[data-acquia-lift-personalize-option-set="' . personalize_stringify_osid($osid) . '"]';
+    switch ($link) {
+      case "edit":
+        $css .= ' a.acquia-lift-variation-edit';
+        break;
+      case "rename":
+        $css .= ' a.acquia-lift-variation-rename';
+        break;
+      case "delete":
+        $css .= ' a.acquia-lift-variation-delete';
+        break;
+    }
+    $css .= '[data-acquia-lift-personalize-option-set-option="' . $option_id . '"]';
+
     return $css;
   }
 

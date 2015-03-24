@@ -36,18 +36,13 @@
               }
             }
           } else {
-            var model = Drupal.acquiaLiftUI.factories.MenuFactory.createCampaignModel(obj);
+            var model = new Drupal.acquiaLiftUI.MenuCampaignModel(obj);
             ui.collections.campaigns.add(model);
             addedCampaigns[obj.name] = model;
           }
         });
 
         // Clear the variations for all page variation campaigns.
-        ui.collections.campaigns.each(function (model) {
-          if (model instanceof Drupal.acquiaLiftUI.MenuCampaignABModel) {
-            model.get('optionSets').resetVariations();
-          }
-        });
         Drupal.acquiaLiftUI.utilities.looper(settings.option_sets, function (obj, key) {
           var campaignModel = ui.collections.campaigns.findWhere({name: obj.agent});
           if (campaignModel) {
@@ -76,7 +71,7 @@
 
         // Create a model for page variation management state
         if (!ui.models.variationModeModel) {
-          ui.models.variationModeModel = new ui.MenuVariationModeModel();
+          ui.models.variationModeModel = new ui.MenuElementVariationModeModel();
         }
 
         // Create the menu view to handle general show/hide functionality for
@@ -155,15 +150,8 @@
                     campaignCollection: ui.collections.campaigns,
                     el: $link[0]
                   });
-                  $element = $(Drupal.theme('acquiaLiftPageVariationToggle'));
-                  ui.views.pageVariationToggle = new ui.MenuPageVariationsToggleView({
-                    model: ui.models.variationModeModel,
-                    campaignCollection: ui.collections.campaigns,
-                    el: $element.get(0)
-                  });
                   $link.wrap('<div class="navbar-box">');
                   $link.addClass('navbar-menu-item');
-                  $link.after($element);
                   break;
                 }
                 case 'goals': {
@@ -273,7 +261,13 @@
                       }));
                     } else {
                       // Add content variation view.
-                      ui.views.push(ui.factories.MenuFactory.createContentVariationView(model, campaignModel, element));
+                      var view = new Drupal.acquiaLiftUI.MenuOptionSetView({
+                        campaignModel: campaignModel,
+                        model: model,
+                        el: element
+                      });
+                      Drupal.acquiaLiftUI.views.optionSets[model.get('osid')] = view;
+                      ui.views.push(view);
                     }
 
                     $holder.prepend(element);
@@ -299,7 +293,12 @@
                     if (!Drupal.acquiaLiftUI.views.optionSets[osid]) {
                       campaignModel = ui.collections.campaigns.findWhere({'name': model.get('agent')});
                       element = document.createElement('li');
-                      view = ui.factories.MenuFactory.createContentVariationView(model, campaignModel, element);
+                      var view = new Drupal.acquiaLiftUI.MenuOptionSetView({
+                        campaignModel: campaignModel,
+                        model: model,
+                        el: element
+                      });
+                      Drupal.acquiaLiftUI.views.optionSets[model.get('osid')] = view;
                       ui.views.push(view);
                       $holder.prepend(view.el);
                     }
@@ -410,7 +409,7 @@
           event: 'acquiaLiftSettingsUpdate',
           progress: {
             type: '',
-            message: '',
+            message: ''
           },
           success: function (response, status) {
             Drupal.ajax.prototype.success.call(this, response, status);
@@ -434,7 +433,7 @@
       var ui = Drupal.acquiaLiftUI;
       // Create a model for page variation management state
       if (!ui.models.variationModeModel) {
-        ui.models.variationModeModel = new ui.MenuVariationModeModel();
+        ui.models.variationModeModel = new ui.MenuElementVariationModeModel();
       }
 
       // Keep the page variation editing and in-context goal creation in

@@ -177,7 +177,7 @@ function _acquia_lift_build_menu($menu_name) {
   // Create a new campaign link.
   $item = array(
     'link_title' => 'Add campaign',
-    'link_path' => 'admin/structure/personalize/add/nojs',
+    'link_path' => 'admin/structure/personalize/add',
     'menu_name' => $menu_name,
     'options' => array(
       'attributes' => array(
@@ -185,10 +185,7 @@ function _acquia_lift_build_menu($menu_name) {
         'aria-role' => 'button',
         'aria-pressed' => 'false',
         'class' => array(
-          'acquia-lift-campaign-new',
           'visitor-actions-ui-ignore',
-          'ctools-use-modal',
-          'ctools-modal-acquia-lift-style',
           'acquia-lift-menu-create',
           'acquia-lift-menu-link',
           'overlay-exclude',
@@ -634,8 +631,16 @@ function acquia_lift_update_7016() {
  * Update Acquia Lift menu bar to disable click-through on the root items.
  */
 function acquia_lift_update_7017() {
-    menu_delete_links('acquia-lift-controls');
-    _acquia_lift_build_menu('acquia-lift-controls');
+  menu_delete_links('acquia-lift-controls');
+  _acquia_lift_build_menu('acquia-lift-controls');
+}
+
+/**
+ * Removing Simple A/B campaign agent.
+ */
+function acquia_lift_update_7018() {
+  menu_delete_links('acquia-lift-controls');
+  _acquia_lift_build_menu('acquia-lift-controls');
 }
 
 /**

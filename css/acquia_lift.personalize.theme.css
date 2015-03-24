@@ -3,7 +3,7 @@
   display: inline-block;
   vertical-align: middle;
 }
-#navbar-administration a.acquia-lift-page-variation-toggle {
+#navbar-administration a.acquia-lift-element-variation-toggle {
   display: inline-block;
   text-indent: -99999px;
   width: 30px;
@@ -13,13 +13,13 @@
   cursor: pointer;
   vertical-align: middle;
 }
-#navbar-administration a.acquia-lift-page-variation-toggle-hidden {
+#navbar-administration a.acquia-lift-element-variation-toggle-hidden {
   display: none;
 }
-#navbar-administration .acquia-lift-page-variation-toggle.acquia-lift-page-variation-toggle-disabled {
+#navbar-administration .acquia-lift-element-variation-toggle.acquia-lift-element-variation-toggle-disabled {
   background-image: url("../images/edit-toggle-disabled.png");
 }
-#navbar-administration .acquia-lift-page-variation-toggle.acquia-lift-page-variation-toggle-active {
+#navbar-administration .acquia-lift-element-variation-toggle.acquia-lift-element-variation-toggle-active {
   background-image: url("../images/edit-toggle-active.png");
 }
 /* Ensure QTips are always on top */

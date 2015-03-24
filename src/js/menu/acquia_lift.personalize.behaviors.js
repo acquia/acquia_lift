@@ -228,7 +228,7 @@
                   switch (type) {
                     case 'option_sets':
                       // If the menu already has a link for this setting, abort.
-                      if (!$menu.find('[data-acquia-lift-personalize-agent="' + obj.agent + '"][data-acquia-lift-personalize-id="' + key + '"].acquia-lift-preview-page-variation').length) {
+                      if (!$menu.find('[data-acquia-lift-personalize-agent="' + obj.agent + '"][data-acquia-lift-personalize-id="' + key + '"].acquia-lift-preview-element-variation').length) {
                         campaignName = obj.agent;
                         campaignsWithOptions[obj.agent] = obj.agent;
                         campaignModel = ui.collections.campaigns.findWhere({'name': campaignName});

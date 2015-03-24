@@ -383,18 +383,18 @@ class FeatureContext extends RawDrupalContext implements SnippetAcceptingContext
     if (!in_array($expected_state, array('active','inactive','hidden','disabled'))) {
       throw new \Exception(sprintf('Invalid expected state for variation toggle: %s', $expected_state));
     }
-    $element = $this->findElementInRegion('#acquia-lift-menu-page-variation-toggle', 'lift_tray');
+    $element = $this->findElementInRegion('#acquia-lift-menu-element-variation-toggle', 'lift_tray');
     if (empty($element)) {
       throw new \Exception(sprintf('The variation toggle edit link cannot be found on the page %s', $this->getSession()->getCurrentUrl()));
     }
     $current_state = 'inactive';
-    if ($element->hasClass('acquia-lift-page-variation-toggle-hidden')) {
+    if ($element->hasClass('acquia-lift-element-variation-toggle-hidden')) {
       $current_state = 'hidden';
     }
-    else if ($element->hasClass('acquia-lift-page-variation-toggle-active')) {
+    else if ($element->hasClass('acquia-lift-element-variation-toggle-active')) {
       $current_state = 'active';
     }
-    else if ($element->hasClass('acquia-lift-page-variation-toggle-disabled')) {
+    else if ($element->hasClass('acquia-lift-element-variation-toggle-disabled')) {
       $current_state = 'disabled';
     }
     if ($current_state !== $expected_state) {
@@ -438,7 +438,7 @@ class FeatureContext extends RawDrupalContext implements SnippetAcceptingContext
    */
   public function assertRegionElementIsInState($selector, $region, $state) {
     $state_class = array(
-      'highlighted' => 'acquia-lift-page-variation-item',
+      'highlighted' => 'acquia-lift-element-variation-item',
       'available' => 'visitor-actions-ui-enabled',
     );
     if (!isset($state_class[$state])) {

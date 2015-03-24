@@ -568,7 +568,7 @@
        *   True if showing the highlight, false if no highlight should be shown.
        */
       highlightAnchor: function(show) {
-        var highlightClass = 'acquia-lift-page-variation-item';
+        var highlightClass = 'acquia-lift-element-variation-item';
         if (!this.anchor) {
           return;
         }
@@ -904,7 +904,7 @@
      */
     VariationTypeMenuListView: Backbone.View.extend({
       tagName: 'ul',
-      className: 'acquia-lift-page-variation-list',
+      className: 'acquia-lift-element-variation-list',
 
       /**
        * {@inheritDoc}

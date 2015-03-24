@@ -1201,3 +1201,16 @@ function _acquia_lift_personalize_campaign_wizard_everyone_else_audience() {
     'id' => ACQUIA_LIFT_TARGETING_EVERYONE_ELSE,
   );
 }
+
+/**
+ * Page callback for the legacy campaign listing.
+ */
+function acquia_lift_legacy_campaign_list() {
+  $legacy_campaigns = variable_get('acquia_lift_legacy_agents', array());
+  if (empty($legacy_campaigns)) {
+    drupal_goto('admin/structure/personalize');
+  }
+  $agents = personalize_agent_load_multiple($legacy_campaigns);
+  dpm($agents);
+  return 'ohai';
+}

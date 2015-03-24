@@ -165,8 +165,26 @@ function acquia_lift_menu() {
     'type' => MENU_CALLBACK,
     'file' => 'acquia_lift.admin.wizard.inc',
   );
-
+  // Page callback for the list of legacy agents.
+  $items['admin/structure/personalize/legacy'] = array(
+    'title' => 'Legacy Campaigns',
+    'description' => 'List legacy Lift Campaigns',
+    'page callback' => 'acquia_lift_legacy_campaign_list',
+    'access callback' => 'acquia_lift_legacy_access',
+    'type' => MENU_LOCAL_TASK,
+    'file' => 'acquia_lift.admin.inc',
+  );
   return $items;
+}
+
+/**
+ * Implements hook_menu_alter().
+ */
+function acquia_lift_menu_alter(&$items) {
+  // Change the access callback for the edit campaign page so that we can control
+  // access to Lift campaigns.
+  $items['admin/structure/personalize/manage/%personalize_agent/edit']['access callback'] = 'acquia_lift_campaign_edit_access';
+  $items['admin/structure/personalize/manage/%personalize_agent/edit']['access arguments'] = array(4);
 }
 
 /**
@@ -465,6 +483,27 @@ function acquia_lift_target_access($agent) {
   return acquia_lift_is_targeting_agent($agent) &&
     user_access('manage personalized content') &&
     variable_get('acquia_lift_target_enabled', FALSE);
+}
+
+/**
+ * Access callback for the Lift legacy campaign list.
+ *
+ * @return bool
+ */
+function acquia_lift_legacy_access() {
+  $legacy_campaigns = variable_get('acquia_lift_legacy_agents', array());
+  return user_access('manage personalized content') &&
+  !empty($legacy_campaigns);
+}
+
+/**
+ * Access callback for campaign edit page.
+ */
+function acquia_lift_campaign_edit_access($agent) {
+  if (in_array($agent->plugin, array('acquia_lift', 'acquia_lift_simple_ab'))) {
+    return FALSE;
+  }
+  return user_access('manage personalized content');
 }
 
 /**

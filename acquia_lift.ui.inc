@@ -43,11 +43,6 @@ function acquia_lift_build_page(&$page) {
   $is_admin = TRUE;
   if (!path_is_admin(current_path()) && preg_match('/^admin\/structure\/block\/demo\//', current_path()) == 0) {
     $is_admin = FALSE;
-    // If the user is personalizing content in context, provide a DSM with actions
-    // to personalize or cancel out of this 'mode'.
-    if (acquia_lift_nav_message_is_set()) {
-      drupal_set_message(acquia_lift_edit_mode_personalize_in_context(), 'acquia-lift-personalize');
-    }
   }
 
   // Attach client-side controls for managing personalized content.
@@ -74,11 +69,6 @@ function acquia_lift_build_page(&$page) {
     $settings['acquia_lift']['dom_selector_ignore'] = acquia_lift_generate_ignore_selector();
     $settings['acquia_lift']['edit_in_context_html_strip'] = variable_get('acquia_lift_html_context_strip', 1);
 
-    $pending_agents = acquia_lift_get_pending_agents();
-    if (!empty($pending_agents)) {
-      $settings['acquia_lift']['pendingMessage'][] = t('The following personalizations are being synced to Lift and will be started shortly: %agents', array('%agents' => implode(', ', $pending_agents)));
-      $page['page_top']['#attached']['library'][] = array('acquia_lift', 'acquia_lift.messagebox');
-    }
     // Add any pending messages from the query string.
     $params = drupal_get_query_parameters();
     if (!empty($params['liftpm']) && strstr($params['liftpm'], '|') !== FALSE) {

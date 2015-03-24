@@ -105,7 +105,7 @@ Drupal.acquia_lift_target = (function() {
       for (i in agentRules[agent_name]) {
         if (agentRules[agent_name].hasOwnProperty(i)) {
           ruleId = i;
-          if (agentRules[agent_name][ruleId].targeting_features.length == 0) {
+          if (!agentRules[agent_name][ruleId].hasOwnProperty('targeting_features') || agentRules[agent_name][ruleId].targeting_features.length == 0) {
             continue;
           }
           strategy = agentRules[agent_name][ruleId].targeting_strategy;

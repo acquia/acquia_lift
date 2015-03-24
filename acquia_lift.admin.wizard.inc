@@ -361,7 +361,7 @@ function acquia_lift_personalize_campaign_wizard_goals_alter(&$form, &$form_stat
           '#type' => 'textarea',
           '#element_validate' => array('personalize_form_element_path_validate'),
           '#title' => t('Pages'),
-          '#description' => t("Specify pages by using their paths or leave blank to apply to all pages. Enter one path per line. The '*' character is a wildcard. Example paths are blog for the blog page and blog/* for every personal blog. <front> is the front page."),
+          '#description' => t("Specify pages by using their paths or leave blank to apply to all pages. Enter one path per line. The '*' character is a wildcard. Example paths are blog for the blog page and blog/* for every personal blog. &lt;front&gt; is the front page."),
           '#allow_dynamic' => TRUE,
           '#allow_external' => FALSE,
           '#required' => TRUE,
@@ -704,6 +704,32 @@ function acquia_lift_personalize_campaign_wizard_variations_validate(&$form, &$f
 }
 
 /**
+ * Validation function for goals form.
+ */
+function acquia_lift_personalize_campaign_wizard_goals_validate(&$form, &$form_state) {
+  // Make sure that each action is only set once per campaign.
+  if (empty($form_state['values']['goals']['all_goals'])) {
+    // If there aren't any existing goals then this isn't a problem.
+    return;
+  }
+  // Save an array of action names and the field names where they are found.
+  $proposed_actions = array();
+  if (!empty($form_state['values']['action_name'])) {
+    $proposed_actions[$form_state['values']['action_name']] = 'action_name';
+  }
+  foreach ($form_state['values']['goals']['all_goals'] as $delta => $goal) {
+    if (!empty($proposed_actions[$goal['action_name']])) {
+      // Only show the message once in the error messages.
+      form_set_error('goals[all_goals][' + $delta + '][action_name]', t('Each action can only be used once per campaign.'));
+      break;
+    }
+    else {
+      $proposed_actions[$goal['action_name']] = 'goals[all_goals][' . $delta . '][action_name]';
+    }
+  }
+}
+
+/**
  * Validation function for targeting form.
  */
 function acquia_lift_personalize_campaign_wizard_targeting_validate(&$form, &$form_state) {
@@ -857,7 +883,7 @@ function acquia_lift_personalize_campaign_wizard_goals_submit(&$form, &$form_sta
     foreach ($form_state['values']['goals']['all_goals'] as $goal) {
       if (!empty($goal['action_name'])) {
         try {
-          personalize_goal_save($agent_data->machine_name, $goal['action_name'], $goal['value']);
+          personalize_goal_save($agent_data->machine_name, $goal['action_name'], $goal['value'], $goal['goal_id']);
         }
         catch (Exception $e) {
           drupal_set_message($e->getMessage(), 'error');

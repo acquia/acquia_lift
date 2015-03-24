@@ -337,6 +337,11 @@ tr.acquia-lift-report-control {
   margin-bottom: 1em;
 }
 
+/* Process bar */
+#personalize-campaign-wizard-process-bar {
+  margin: 1em 0;
+}
+
 /* Variations form */
 .personalize-wizard-section #personalized-block-variations fieldset .fieldset-title {
   text-transform: none;
@@ -368,4 +373,44 @@ tr.acquia-lift-report-control {
 }
 #acquia-lift-targeting-audiences .el-card__action input[type="checkbox"].acquia-lift-edit:checked + label {
   content: url(../images/edit-toggle-active.png);
+}
+
+/* Drag and Drop audience targeting */
+.acquia-lift-draggable-variations li {
+  cursor: pointer;
+}
+.acquia-lift-targeting-droppable {
+  border: 1px dotted #cfd1d5;
+  padding: .6em 1em;
+  max-width: 30em;
+}
+.acquia-lift-targeting-droppable.is-droppable {
+  background-color: #fafafa;
+}
+.acquia-lift-targeting-droppable.is-hovered {
+  background-color: #FFFFCC;
+}
+
+#acquia-lift-targeting-audiences .acquia-lift-draggable-variations {
+  list-style-type: none;
+  margin: 0;
+}
+
+#acquia-lift-targeting-audiences .acquia-lift-draggable-variations li,
+.acquia-lift-targeting-draggable {
+  border: 1px solid #cfd1d5;
+  max-width: 30em;
+  color: #000;
+  background-color: #E6E9ED;
+  padding: .6em 1em;
+  margin: 1em 0;
+  list-style-type: none;
+}
+/* Hide the duplicate button when shown as the drag helper */
+.acquia-lift-targeting-draggable .acquia-lift-targeting-duplicate {
+  display:none;
+}
+#acquia-lift-targeting-audiences .acquia-lift-targeting-draggable .acquia-lift-targeting-duplicate {
+  float: right;
+  display: inline-block;
 }

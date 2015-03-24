@@ -23,6 +23,7 @@
   Card.DEFAULTS = {
     collapsible: true,
     collapsed: false,
+    sortable: false,
     footerVisible: true,
     eventExpanded: 'card-expanded',
     eventCollapsed: 'card-collapsed'
@@ -98,6 +99,7 @@
     } else {
       this.setOpen(true);
     }
+    this.$element.toggleClass('is-sortable', this.options.sortable);
   };
 
   /**

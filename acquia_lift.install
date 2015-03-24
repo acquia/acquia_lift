@@ -721,6 +721,7 @@ function acquia_lift_update_7018() {
     $option_set = reset($details);
     if (!empty($option_set['targeting']) || !$personalize_enabled) {
       $legacy_agents[] = $agent_name;
+      continue;
     }
     if (count($details) > 1) {
       // We can convert this if all option sets have the same decision name.
@@ -774,6 +775,14 @@ function acquia_lift_update_7018() {
       personalize_agent_set_status($agent->machine_name, $nested_agent_status);
       $agent->started = $nested_agent->started;
       $agent = personalize_agent_save($agent);
+      // Move goals over to the new agent.
+      $goals = personalize_goal_load_by_conditions(array('agent' => $original_agent_name));
+      foreach ($goals as $goal) {
+        db_update('personalize_campaign_goals')
+          ->condition('id', $goal->id)
+          ->fields(array('agent' => $agent->machine_name))
+          ->execute();
+      }
       // Remove the "decisions" info from the data property of the original
       // agent as this no longer serves any function.
       unset($nested_agent->data['decisions']);
@@ -788,7 +797,6 @@ function acquia_lift_update_7018() {
         }
         $main_os = new stdClass();
         $main_os->agent = $agent->machine_name;
-        $main_os->is_new = TRUE;
         $main_os->data = $nested_os->data;
         $main_os->label = $nested_os->label;
         $main_os->options = $nested_os->options;
@@ -822,10 +830,11 @@ function acquia_lift_update_7018() {
       }
     }
     catch (PersonalizeException $e) {
+      personalize_agent_delete($agent->machine_name);
       // Add this to the legacy agents, set a message to that effect and continue
       // to the next agent.
       $legacy_agents[] = $original_agent_name;
-      drupal_set_message(t('There was a problem converting the campaign @agent to a new style campaign. It will be treated as a legacy agent.'), array('@agent' => $original_agent_name), 'error');
+      drupal_set_message(t('There was a problem converting the campaign @agent to a new style campaign. It will be treated as a legacy agent.', array('@agent' => $original_agent_name)), 'error');
       continue;
     }
   }

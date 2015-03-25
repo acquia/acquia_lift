@@ -1162,7 +1162,7 @@ function acquia_lift_delete_old_nested_test($parent_agent, $audience) {
  * happens once the final review stage has been completed.
  *
  * @param $agent
- *   A stdClass ogject representing the agent to save the targeting structure for.
+ *   A stdClass object representing the agent to save the targeting structure for.
  * @param $targeting
  *   An array keyed by target audience with arrays of option IDs as values.
  * @throws \AcquiaLiftException

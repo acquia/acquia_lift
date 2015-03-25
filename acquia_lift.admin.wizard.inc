@@ -1314,7 +1314,7 @@ function _acquia_lift_personalize_campaign_wizard_variations_element(&$form, &$f
 function _acquia_lift_personalize_campaign_wizard_targeting_audience(&$form, &$form_state, $agent_data, $parent_identifier, $audience = NULL) {
 // Build up a list of available context values for targeting.
   module_load_include('inc', 'personalize', 'personalize.admin');
-  $targeting_values = personalize_get_targeting_values_for_agent($agent_data);
+  $targeting_values = personalize_get_targeting_options_for_agent($agent_data);
   $element = array(
     '#type' => 'container',
   );

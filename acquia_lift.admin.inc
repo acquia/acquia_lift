@@ -1258,21 +1258,26 @@ function acquia_lift_validate_minimum_targeting($agent) {
   if (personalize_agent_get_status($agent->machine_name) !== PERSONALIZE_STATUS_NOT_STARTED) {
     return;
   }
+  // Check and create the "Everyone else" audience if it doesn't exist.
   $option_set = acquia_lift_get_option_set_for_targeting($agent->machine_name);
   if (empty($option_set->targeting)) {
     $audience = _acquia_lift_personalize_campaign_wizard_everyone_else_audience();
     acquia_lift_target_audience_save($audience['name'], $agent->machine_name, $audience['contexts'], $audience['strategy'], $audience['weight'], $audience['id']);
+    // Indicate that there are no variations assigned.
     $assigned = array();
   }
   else {
-    // Find all of the options that are assigned to other audiences.
-    $existing = acquia_lift_get_structure_from_targeting($option_set);
+    // Find all of the options that are assigned to other audiences.  This will
+    // be stored in the agent data property until the agent has been verified
+    // to start.  After that time changes shouldn't be made automatically.
     $assigned = array();
-    foreach ($existing as $audience_id => $options) {
-      if ($audience_id === ACQUIA_LIFT_TARGETING_EVERYONE_ELSE) {
-        continue;
+    if (!empty($agent->data['lift_targeting'])) {
+      foreach ($agent->data['lift_targeting'] as $audience_id => $options) {
+        if ($audience_id === ACQUIA_LIFT_TARGETING_EVERYONE_ELSE) {
+          continue;
+        }
+        $assigned = array_merge($assigned, $options);
       }
-      $assigned = array_merge($assigned, $options);
     }
   }
   $targeting_options = array();

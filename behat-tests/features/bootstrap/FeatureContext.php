@@ -377,46 +377,6 @@ class FeatureContext extends RawDrupalContext implements SnippetAcceptingContext
   }
 
   /**
-   * @Then the variation edit mode is :state
-   */
-  public function assertVariationEditMode($expected_state) {
-    if (!in_array($expected_state, array('active','inactive','hidden','disabled'))) {
-      throw new \Exception(sprintf('Invalid expected state for variation toggle: %s', $expected_state));
-    }
-    $element = $this->findElementInRegion('#acquia-lift-menu-element-variation-toggle', 'lift_tray');
-    if (empty($element)) {
-      throw new \Exception(sprintf('The variation toggle edit link cannot be found on the page %s', $this->getSession()->getCurrentUrl()));
-    }
-    $current_state = 'inactive';
-    if ($element->hasClass('acquia-lift-element-variation-toggle-hidden')) {
-      $current_state = 'hidden';
-    }
-    else if ($element->hasClass('acquia-lift-element-variation-toggle-active')) {
-      $current_state = 'active';
-    }
-    else if ($element->hasClass('acquia-lift-element-variation-toggle-disabled')) {
-      $current_state = 'disabled';
-    }
-    if ($current_state !== $expected_state) {
-      throw new \Exception(sprintf('The variation toggle edit link is currently in the %s state and not the expected %s state.', $current_state, $expected_state));
-    }
-  }
-
-  /**
-   * @Then the :field field should contain the site title
-   *
-   * @throws \Exception
-   *   If the region or element cannot be found or does not have the specified
-   *   class.
-   */
-  public function assertFieldHasSiteTitle($field) {
-    // Read the site name dynamically.
-    $site_name = variable_get('site_name', "Default site name");
-    $mink_context = $this->contexts['Drupal\DrupalExtension\Context\MinkContext'];
-    $mink_context->assertFieldContains($field, $site_name);
-  }
-
-  /**
    * @Then the :field field should contain text that has :needle
    *
    * @throws \Exception

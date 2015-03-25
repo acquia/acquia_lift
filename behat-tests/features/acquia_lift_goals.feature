@@ -26,6 +26,18 @@ Feature: Goals can be edited and managed for an Acquia Lift campaign from toolba
     And I should visibly see the link "Add goal" in the "lift_tray" region
     When I click "Add goal" in the "lift_tray" region
     Then I should see the modal with title "Add a goal"
+    And I should visibly see the link "New page goal" in the "modal_content" region
+
+    # I go to "Predefined goal" sub-menu then return.
+    When I click "Predefined goal" in the "modal_content" region
+    Then I should see the modal with title "Add a goal"
+    And I should see the link "Change type of goal" in the "modal_content" region
+    When I click "Change type of goal" in the "modal_content" region
+
+    # I verify I am back to the "Add goal" interface.
+    Then I should see the modal with title "Add a goal"
+    And I should see the link "Predefined goal" in the "modal_content" region
+    And I should see the link "New element goal" in the "modal_content" region
     And I should see the link "New page goal" in the "modal_content" region
 
     # I verify three different page goal events.

@@ -755,6 +755,7 @@ function acquia_lift_update_7018() {
   // If personalize module is not enabled we just want to save the legacy agents
   // and be done.
   if (!$personalize_enabled && !empty($legacy_agents)) {
+    drupal_set_message(t('Personalize module was disabled so existing campaigns could not be converted to the new style personalizations. They will be treated as legacy campaigns.'), 'warning');
     variable_set('acquia_lift_legacy_agents', $legacy_agents);
     return;
   }
@@ -839,7 +840,31 @@ function acquia_lift_update_7018() {
     }
   }
   if (!empty($legacy_agents)) {
+    drupal_set_message(t('The following campaigns could not be converted to new style personalizations and will be treated as legacy campaigns: ' . implode(', ', $legacy_agents)), 'warning');
     variable_set('acquia_lift_legacy_agents', $legacy_agents);
+  }
+
+  // Fix settings for personalized fields.
+  $result = db_select('field_config', 'f')
+    ->fields('f', array('id', 'field_name', 'data'))
+    ->execute();
+  foreach ($result as $row) {
+    $data = unserialize($row->data);
+    if (isset($data['settings']['personalize']) && in_array($data['settings']['personalize']['agent_type'], array('acquia_lift', 'acquia_lift_simple_ab'))) {
+      $data['settings']['personalize']['agent_type'] = 'acquia_lift_target';
+      if (isset($data['settings']['personalize']['options']['acquia_lift'])) {
+        unset($data['settings']['personalize']['options']['acquia_lift']);
+      }
+      if (isset($data['settings']['personalize']['options']['acquia_lift_simple_ab'])) {
+        unset($data['settings']['personalize']['options']['acquia_lift_simple_ab']);
+      }
+      unset($data['settings']['personalize']['auto_stop']);
+      unset($data['settings']['personalize']['auto_start']);
+      db_update('field_config')
+        ->fields(array('data' => serialize($data)))
+        ->condition('id', $row->id)
+        ->execute();
+    }
   }
 }
 

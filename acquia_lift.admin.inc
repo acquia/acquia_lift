@@ -1211,6 +1211,6 @@ function acquia_lift_legacy_campaign_list() {
     drupal_goto('admin/structure/personalize');
   }
   $agents = personalize_agent_load_multiple($legacy_campaigns);
-  dpm($agents);
-  return 'ohai';
+  module_load_include('inc', 'personalize', 'personalize.admin');
+  return personalize_agent_list($agents, FALSE, FALSE);
 }

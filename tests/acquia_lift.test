@@ -3898,61 +3898,23 @@ class AcquiaLiftWebTestCampaignWizard extends AcquiaLiftWebTestBase {
       'plugin' => 'type1',
       'num_options' => 3,
     ));
+    $option_id_1 = $first_option_set->options[0]['option_id'];
+    $option_id_2 = $first_option_set->options[1]['option_id'];
+    $option_id_3 = $first_option_set->options[2]['option_id'];
 
     // Create user profile fields that we can use for targeting.
     $user_profile_field_1 = $this->createUserProfileField();
-    $user_profile_field_2 = $this->createUserProfileField();
     $context_1 = str_replace('field_', '', $user_profile_field_1['field_name']);
-    $context_2 = str_replace('field_', '', $user_profile_field_2['field_name']);
 
-    // Add some contexts so that the audience can be interesting.
-    // We can't use the form to add multiple fixed targeting contexts because we can't
-    // make simpletest use the "Add context" button, so we send our form values directly
-    // to the submit function.
-    module_load_include('inc', 'acquia_lift', 'acquia_lift.admin.wizard');
-    $form_state = array(
-      'storage' => array(
-        'step' => 'targeting',
-      ),
-      'triggering_element' => array(
-        '#value' => $this->getButton('wizard_next'),
-        '#name' => 'wizard_submit',
-      ),
-      'values' => array(
-        'agent' => $first_agent->machine_name,
-        'agent_basic_info' => array(
-          'title' => $first_agent->label,
-          'machine_name' => $first_agent->machine_name,
-          'agent_type' => $first_agent->plugin,
-        ),
-        'audiences' => array(
-          'add' => array(
-            'details' => array(
-              'name' => 'Muppet fans',
-              'weight' => 10,
-              'mapping' => array(
-                'contexts' => array(
-                  array(
-                    'context' => 'user_profile_context' . PERSONALIZE_TARGETING_ADMIN_SEPARATOR . $context_1,
-                    'value' => array('match' => 'some value', 'operator' => 'equals'),
-                  ),
-                  array(
-                    'context' => 'user_profile_context' . PERSONALIZE_TARGETING_ADMIN_SEPARATOR . $context_2,
-                    'value' => array('match' => 'some value', 'operator' => 'equals'),
-                  ),
-                ),
-              ),
-              'strategy' => 'OR',
-            ),
-          ),
-        ),
-      ),
+    $this->drupalGet('admin/structure/personalize/manage/' . $first_agent->machine_name . '/targeting');
+    $edit = array(
+      'audiences[add][details][name]' => 'Muppet fans',
+      'audiences[add][details][mapping][contexts][0][context]' => 'user_profile_context' . PERSONALIZE_TARGETING_ADMIN_SEPARATOR . $context_1,
+      'audiences[add][details][mapping][contexts][0][value][match]' => 'some value',
+      'audiences[add][details][mapping][contexts][0][value][operator]' => 'equals',
+      'audiences[add][details][strategy]' => 'OR',
     );
-    $form = array(
-      '#agent' => $first_agent,
-    );
-    acquia_lift_personalize_campaign_wizard_submit($form, $form_state);
-    $this->resetAll();
+    $this->drupalPost(NULL, $edit, $this->getButton('wizard_next'));
 
     $this->drupalGet('admin/structure/personalize/manage/' . $first_agent->machine_name . '/targeting');
 
@@ -3965,7 +3927,6 @@ class AcquiaLiftWebTestCampaignWizard extends AcquiaLiftWebTestBase {
     $edit = array(
       'audiences[muppet-fans][details][name]' => 'Muppet mania',
       'audiences[muppet-fans][details][mapping][contexts][0][value][match]' => 'Kermit fans',
-      'audiences[muppet-fans][details][mapping][contexts][1][value][match]' => 'Gonzo fans',
       'audiences[add][details][name]' => 'Others',
       'audiences[add][details][mapping][contexts][0][context]' => 'user_profile_context' . PERSONALIZE_TARGETING_ADMIN_SEPARATOR . $context_1,
       'audiences[add][details][mapping][contexts][0][value][operator]' => 'equals',
@@ -3979,7 +3940,6 @@ class AcquiaLiftWebTestCampaignWizard extends AcquiaLiftWebTestBase {
     // a new audience.
     $this->assertFieldByName('audiences[muppet-fans][details][name]', 'Muppet mania');
     $this->assertFieldByname('audiences[muppet-fans][details][mapping][contexts][0][value][match]', 'Kermit fans');
-    $this->assertFieldByName('audiences[muppet-fans][details][mapping][contexts][1][value][match]', 'Gonzo fans');
     $this->assertFieldByName('audiences[others][details][name]', 'Others');
     $this->assertFieldByName('audiences[others][details][mapping][contexts][0][context]', 'user_profile_context' . PERSONALIZE_TARGETING_ADMIN_SEPARATOR . $context_1);
     $this->assertOptionSelected('edit-audiences-others-details-mapping-contexts-0-value-operator', 'equals');
@@ -4010,11 +3970,9 @@ class AcquiaLiftWebTestCampaignWizard extends AcquiaLiftWebTestBase {
     $this->assertEqual($option_set->targeting['muppet-fans']['weight'], 5);
     $this->assertEqual($option_set->targeting['others']['weight'], 0);
     $this->assertEqual($option_set->targeting['everyone-else']['weight'], 15);
+    $first_agent = personalize_agent_load($first_agent->machine_name);
 
     // Test assignments saves as anticipated.
-    $option_id_1 = $first_option_set->options[0]['option_id'];
-    $option_id_2 = $first_option_set->options[1]['option_id'];
-    $option_id_3 = $first_option_set->options[2]['option_id'];
     $this->drupalGet('admin/structure/personalize/manage/' . $first_agent->machine_name . '/targeting');
     // There are no targeting assignments so there should be no messages.
     $this->assertNoText('The targeting settings shown here do not match what is currently running for this campaign.');
@@ -4038,7 +3996,7 @@ class AcquiaLiftWebTestCampaignWizard extends AcquiaLiftWebTestBase {
     );
     $this->drupalPost(NULL, $edit, $this->getButton('wizard_next'));
     // The targeting should be saved in the agent property.
-    $first_agent = personalize_agent_load($first_agent->machine_name);
+    $first_agent = personalize_agent_load($first_agent->machine_name, TRUE);
     $expected_agent_targeting = array(
       'muppet-fans' =>  $edit['audiences[muppet-fans][assignment][]'],
       'others' => $edit['audiences[others][assignment][]'],

@@ -303,20 +303,6 @@ function acquia_lift_personalize_campaign_wizard_targeting_alter(&$form, &$form_
     $variation_options[$option['option_id']] = $option['option_label'];
   }
 
-  // The "Everyone else" audience should be anything explicitly assigned plus
-  // any options that aren't assigned.
-  $assigned_options = array();
-  foreach ($saved_targeting as $audience_id => $options) {
-    $assigned_options = array_merge($assigned_options, $options);
-  }
-  $unassigned_options = array_diff_key($variation_options, array_flip($assigned_options));
-  if (isset($saved_targeting[ACQUIA_LIFT_TARGETING_EVERYONE_ELSE])) {
-    $saved_targeting[ACQUIA_LIFT_TARGETING_EVERYONE_ELSE] += array_keys($unassigned_options);
-  }
-  else {
-    $saved_targeting[ACQUIA_LIFT_TARGETING_EVERYONE_ELSE] = array_keys($unassigned_options);
-  }
-
   // Begin the audience form.
   $form['audiences'] = array(
     '#type' => 'container',

@@ -2532,6 +2532,9 @@ function acquia_lift_get_campaign_details() {
   $actions = visitor_actions_get_actions();
   // List the campaigns in Drupal.settings, excluding completed campaigns.
   foreach (personalize_agent_load_multiple(array(), array(), FALSE, FALSE, 'label') as $agent) {
+    if (in_array($agent->plugin, array('acquia_lift', 'acquia_lift_simple_ab'))) {
+      continue;
+    }
     $plugin = personalize_agent_load_agent($agent->machine_name);
     if (!$plugin) {
       continue;

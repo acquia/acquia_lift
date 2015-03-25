@@ -13,8 +13,7 @@ Feature: Goals can be edited and managed for an Acquia Lift campaign from toolba
     And I am logged in as a user with the "access administration pages,access toolbar,administer visitor actions,manage personalized content" permission
     And I am on the homepage
     When I click "Acquia Lift" in the "menu" region
-    And I wait for AJAX to finish
-    Then I should see the link "Campaigns" in the "lift_tray" region
+    Then I should visibly see the link "Campaigns" in the "lift_tray" region
 
     # I open the goal's menu.
     When I hover over "Campaigns" in the "lift_tray" region
@@ -31,7 +30,6 @@ Feature: Goals can be edited and managed for an Acquia Lift campaign from toolba
 
     # I add a new page goal.
     When I click "New page goal" in the "modal_content" region
-    And I wait for AJAX to finish
     When I select "scrolls to the bottom of" from "Event"
     Then I should see the text "Offset from bottom" in the "modal_content" region
     And I should not see the text "Time in seconds" in the "modal_content" region
@@ -60,8 +58,7 @@ Feature: Goals can be edited and managed for an Acquia Lift campaign from toolba
     And I am logged in as a user with the "access administration pages,access toolbar,administer visitor actions,manage personalized content" permission
     And I am on the homepage
     When I click "Acquia Lift" in the "menu" region
-    And I wait for AJAX to finish
-    Then I should see the link "Campaigns" in the "lift_tray" region
+    Then I should visibly see the link "Campaigns" in the "lift_tray" region
 
     # I open the goal's menu.
     When I hover over "Campaigns" in the "lift_tray" region
@@ -74,11 +71,10 @@ Feature: Goals can be edited and managed for an Acquia Lift campaign from toolba
     And I should visibly see the link "Add goal" in the "lift_tray" region
     When I click "Add goal" in the "lift_tray" region
     Then I should see the modal with title "Add a goal"
-    And I should see the link "Predefined goal" in the "modal_content" region
+    And I should visibly see the link "Predefined goal" in the "modal_content" region
 
     # I register a predefined goal to this campaign.
     When I click "Predefined goal" in the "modal_content" region
-    And I wait for AJAX to finish
     When I select "Registers" from "Goal"
     And I press "Add goal"
 
@@ -98,8 +94,7 @@ Feature: Goals can be edited and managed for an Acquia Lift campaign from toolba
     And I am logged in as a user with the "access administration pages,access toolbar,administer visitor actions,manage personalized content" permission
     And I am on the homepage
     When I click "Acquia Lift" in the "menu" region
-    And I wait for AJAX to finish
-    Then I should see the link "Campaigns" in the "lift_tray" region
+    Then I should visibly see the link "Campaigns" in the "lift_tray" region
 
     # I open and see the goal's menu.
     When I hover over "Campaigns" in the "lift_tray" region
@@ -112,7 +107,7 @@ Feature: Goals can be edited and managed for an Acquia Lift campaign from toolba
     And I should visibly see the link "Add goal" in the "lift_tray" region
     When I click "Add goal" in the "lift_tray" region
     Then I should see the modal with title "Add a goal"
-    And I should see the link "New element goal" in the "modal_content" region
+    And I should visibly see the link "New element goal" in the "modal_content" region
 
     # I appoint the "logo" element as the goal element,
     # and specify "hovers over" option to be the goal.
@@ -120,14 +115,12 @@ Feature: Goals can be edited and managed for an Acquia Lift campaign from toolba
     Then I should not see the modal
     Then I should see "#logo" element in the "page_content" region is "available" for editing
     When I click "logo" in the "page_content" region
-    And I wait for AJAX to finish
     Then I should see "Title" in the "dialog_goal_form" region
     And I should see "Event" in the "dialog_goal_form" region
-    And I should see the link "Advanced Options" in the "dialog_goal_form" region
+    And I should visibly see the link "Advanced Options" in the "dialog_goal_form" region
     When I fill in "New goal #2" for "Title"
     And I select "hovers over" from "Event"
     And I press "Save" in the "dialog_goal_form" region
-    And I wait for AJAX to finish
 
     # I verify my new element goal is added.
     Then I should see the message "The action New goal #2 was saved."

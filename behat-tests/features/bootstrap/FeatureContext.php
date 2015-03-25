@@ -123,7 +123,7 @@ class FeatureContext extends RawDrupalContext implements SnippetAcceptingContext
    */
   public function beforeJavascriptStep($event) {
     $text = $event->getStep()->getText();
-    if (preg_match('/(follow|press|click|submit)/i', $text)) {
+    if (preg_match('/(follow|press|click|submit|hover)/i', $text)) {
       $this->spinUntilAjaxIsFinished();
     }
   }
@@ -135,7 +135,7 @@ class FeatureContext extends RawDrupalContext implements SnippetAcceptingContext
    */
   public function afterJavascriptStep($event) {
     $text = $event->getStep()->getText();
-    if (preg_match('/(follow|press|click|submit)/i', $text)) {
+    if (preg_match('/(follow|press|click|submit|hover)/i', $text)) {
       $this->spinUntilAjaxIsFinished();
     }
   }

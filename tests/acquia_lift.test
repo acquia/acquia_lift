@@ -129,13 +129,12 @@ class AcquiaLiftWebTestBase extends DrupalWebTestCase
     $this->drupalPost('admin/structure/personalize/add', $edit, $this->getButton('create_campaign'));
 
     if (!$basicOnly) {
-      $edit = array(
-        'agent_options[options][decision_style]' => $data['decision_style'],
-        'agent_options[options][control_rate]' => $data['control_rate'],
-        'agent_options[options][explore_rate]' => $data['explore_rate'],
-        'cache_decisions' => $data['cache_decisions']
-      );
-      $this->drupalPost('admin/structure/personalize/manage/' . $data['machine_name'] . '/review', $edit, $this->getButton('wizard_start'));
+      $agent_data = personalize_agent_load($data['machine_name']);
+      $agent_data->data['decision_style'] = $data['decision_style'];
+      $agent_data->data['control_rate'] = $data['control_rate'];
+      $agent_data->data['explore_rate'] = $data['explore_rate'];
+      $agent_data->data['cache_decisions'] = $data['cache_decisions'];
+      personalize_agent_save($agent_data);
     }
 
     if ($data['auto_stop']) {

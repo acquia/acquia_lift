@@ -803,9 +803,9 @@ function acquia_lift_update_7018() {
         $main_os->options = $nested_os->options;
         $main_os->plugin = $nested_os->plugin;
         $main_os->executor = $nested_os->executor;
-        $main_os->winner = $nested_os->executor;
-        $main_os->stateful = $nested_os->executor;
-        $main_os->preview_link = $nested_os->executor;
+        $main_os->winner = $nested_os->winner;
+        $main_os->stateful = $nested_os->stateful;
+        $main_os->preview_link = $nested_os->preview_link;
         $main_os->decision_name = $option_set_details['decision_name'];
         $main_os->targeting = array(
           ACQUIA_LIFT_TARGETING_EVERYONE_ELSE => array(

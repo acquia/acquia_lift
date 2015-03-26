@@ -157,6 +157,7 @@ function acquia_lift_generate_ignore_selector() {
  *   - title: A title for the type of option set
  *   - description: A brief description
  *   - logo: a themed image that can be used to represent the option set type
+ *   - path: the link to create an option set of this type
  */
 function acquia_lift_option_set_types_ui() {
   $path = drupal_get_path('module', 'acquia_lift');
@@ -180,6 +181,51 @@ function acquia_lift_option_set_types_ui() {
         'title' => t('Select this option to create a variation set from Drupal content blocks.'),
       )),
       'path' => 'admin/structure/personalize/variations/personalize-blocks/add',
+    ),
+  );
+}
+
+/**
+ * Helper function to return a list of goal type metadata.
+ *
+ * @return array
+ *   An array for each goal type available wit the following keys:
+ *   - title: A title for the type of goal
+ *   - description: A brief description
+ *   - logo: a themed image that can be used to represent the goal type
+ */
+function acquia_lift_goal_types_ui() {
+  $path = drupal_get_path('module', 'acquia_lift');
+  return array(
+    'existing' => array(
+      'title' => t('Predefined goal'),
+      'description' => t('Visitor actions already defined by Acquia Lift'),
+      'path' => 'admin/structure/acquia_lift/goal/add/existing',
+      'logo' => theme('image', array(
+        'path' => $path . '/images/goal-type-predefined.png',
+        'alt' => t('Pre-existing goal'),
+        'title' => t('Select this option to create a goal from a pre-existing visitor action.'),
+      )),
+    ),
+    'element' => array(
+      'title' => t('New element goal'),
+      'description' => t('Element-level visitor action, such as clicking a link or hovering over an image'),
+      'path' => 'admin/structure/visitor_actions/add-in-context',
+      'logo' => theme('image', array(
+        'path' => $path . '/images/goal-type-element.png',
+        'alt' => t('Element goal'),
+        'title' => t('Select this option to create an element goal.'),
+      ))
+    ),
+    'page' => array(
+      'title' => t('New page goal'),
+      'description' => t('Page-level visitor action, such as scrolling to the bottom of the page'),
+      'path' => 'admin/structure/acquia_lift/goal/add/page',
+      'logo' => theme('image', array(
+        'path' => $path . '/images/goal-type-page.png',
+        'alt' => t('Page goal'),
+        'title' => t('Select this option to create a page goal.'),
+      ))
     ),
   );
 }

@@ -329,6 +329,7 @@ class AcquiaLiftWebTestBase extends DrupalWebTestCase
     switch ($type) {
       case 'wizard_next':
         return t('Next');
+      case 'wizard_save':
       case 'wizard_done':
         return t('Save');
       case 'wizard_start':
@@ -4064,5 +4065,87 @@ class AcquiaLiftWebTestCampaignWizard extends AcquiaLiftWebTestBase {
     $this->assertNoOptionSelected('edit-audiences-unassigned-assignment', $first_option_set->options[0]['option_id']);
     $this->assertNoOptionSelected('edit-audiences-unassigned-assignment', $first_option_set->options[1]['option_id']);
     $this->assertNoOptionSelected('edit-audiences-unassigned-assignment', $first_option_set->options[2]['option_id']);
+  }
+
+  /**
+   * Test goals form.
+   */
+  function testGoals() {
+    $this->drupalLogin($this->managerUser);
+    $agent = $this->createTargetingAgent();
+
+    $element_action = 'action_name';
+    $page_event = 'event[page]';
+
+    $this->drupalGet('admin/structure/personalize/manage/' . $agent->machine_name . '/goals');
+    // The type selection should be shown by default when there are no goals.
+    $this->assertNoFieldChecked('edit-goals-add-goal-goal-types-goal-type-existing');
+    $this->assertNoFieldChecked('edit-goals-add-goal-goal-types-goal-type-page');
+    $this->assertNoFieldChecked('edit-goals-add-goal-goal-types-goal-type-element');
+
+    // Actual forms should not be shown yet.
+    $this->assertNoFieldByName($element_action);
+    $this->assertNoFieldByName($page_event);
+
+    // Check existing form.
+    $edit = array(
+      'goals[add_goal][goal_types][goal_type]' => 'existing',
+    );
+    $this->drupalPostAJAX(NULL, $edit, 'goals[add_goal][goal_types][goal_type]');
+    $this->assertNoFieldByName($page_event);
+    $this->assertFieldByName($element_action);
+
+    // Add an existing goal.
+    $edit = array(
+      $element_action => 'user_login',
+    );
+    $this->drupalPost(NULL, $edit, $this->getButton('wizard_save'));
+
+    $this->assertOptionSelected('edit-goals-all-goals-0-action-name', 'user_login');
+    $this->assertFieldByName('goals[all_goals][0][value]', 1);
+
+    // Add a page goal.
+    $edit = array(
+      'goals[add_goal][goal_types][goal_type]' => 'page',
+    );
+    $this->drupalPostAJAX(NULL, $edit, 'goals[add_goal][goal_types][goal_type]');
+
+    $this->assertFieldByName($page_event);
+    $this->assertNoFieldByName($element_action);
+
+    $edit = array(
+      'title' => 'Test goal',
+      $page_event => 'client::scrollToBottom',
+      'pages' => 'node',
+    );
+    $this->drupalPost(NULL, $edit, $this->getButton('wizard_save'));
+
+    $this->assertOptionSelected('edit-goals-all-goals-1-action-name', 'test_goal');
+    $this->assertFieldByName('goals[all_goals][1][value]', 1);
+
+    // Edit the new goal.
+    $edit = array(
+      'goals[all_goals][1][action_name]' => 'form_submit',
+      'goals[all_goals][1][value]' => 5,
+    );
+    $this->drupalPost(NULL, $edit, $this->getButton('wizard_save'));
+
+    // Verify everything is as expected.
+    $this->assertNoFieldChecked('edit-goals-add-goal-goal-types-goal-type-existing');
+    $this->assertNoFieldChecked('edit-goals-add-goal-goal-types-goal-type-page');
+    $this->assertNoFieldChecked('edit-goals-add-goal-goal-types-goal-type-element');
+    $this->assertOptionSelected('edit-goals-all-goals-0-action-name', 'user_login');
+    $this->assertFieldByName('goals[all_goals][0][value]', 1);
+    $this->assertOptionSelected('edit-goals-all-goals-1-action-name', 'form_submit');
+    $this->assertFieldByName('goals[all_goals][1][value]', 5);
+
+    // Make sure all goals saved as expected too.
+    $goal_entities = personalize_goal_load_by_conditions(array('agent' => $agent->machine_name));
+    $test_goals = array_values($goal_entities);
+    $this->assertEqual(count($test_goals), 2);
+    $this->assertEqual($test_goals[0]->action, 'user_login');
+    $this->assertEqual($test_goals[0]->value, 1);
+    $this->assertEqual($test_goals[1]->action, 'form_submit');
+    $this->assertEqual($test_goals[1]->value, 5);
   }
 }

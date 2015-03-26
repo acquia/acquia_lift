@@ -1487,7 +1487,6 @@ function acquia_lift_library() {
     'version' => VERSION,
     'js' => array(
       $path . '/js/acquia_lift.card.js' => array(),
-      'jQuery(document).ready(function () { jQuery(".el-card").card(); })' => array('type' => 'inline'),
     ),
     'css' => array(
       $path . '/css/acquia_lift.card.css' => array(

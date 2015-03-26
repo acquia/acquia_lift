@@ -887,6 +887,10 @@ function acquia_lift_personalize_campaign_wizard_variations_submit(&$form, &$for
   unset($form_state['redirect']);
   // Set the clicked button ID back.
   $form_state['clicked_button']['#id'] = $click_id;
+
+  // Handle the advanced settings form submission.
+  module_load_include('inc', 'personalize', 'personalize.admin.campaign');
+  personalize_campaign_wizard_submit_variations_advanced_agent($form, $form_state, $agent_data);
 }
 
 /**

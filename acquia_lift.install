@@ -639,6 +639,10 @@ function acquia_lift_update_7017() {
  * Removing Simple A/B campaign agent.
  */
 function acquia_lift_update_7018() {
+  db_update('personalize_agent')
+    ->condition('plugin', 'acquia_lift_simple_ab')
+    ->fields(array('plugin' => 'acquia_lift'))
+    ->execute();
   menu_delete_links('acquia-lift-controls');
   _acquia_lift_build_menu('acquia-lift-controls');
 }

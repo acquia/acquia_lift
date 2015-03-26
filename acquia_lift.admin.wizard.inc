@@ -160,13 +160,6 @@ function acquia_lift_personalize_campaign_wizard_variations_alter(&$form, &$form
     $form['variations']['option_sets']['option_set_' . $option_set->osid]['advanced']['label']['#access'] = FALSE;
   }
 
-  // Test to see if the current agent supports multiple variation sets.
-  if (!empty($option_sets)) {
-    if (!$agent_instance->supportsMultipleDecisionPoints()) {
-      return;
-    }
-  }
-
   // Show the card to add a new option set last.
   module_load_include('inc', 'acquia_lift', 'acquia_lift.ui');
   $option_set_types = acquia_lift_option_set_types_ui();

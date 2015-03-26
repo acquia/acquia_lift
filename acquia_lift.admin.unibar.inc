@@ -80,10 +80,6 @@ function acquia_lift_element_variation_details_form($form, &$form_state, $variat
   $form['agent'] = array(
     '#type' => 'hidden',
   );
-  // Variation number applicable to element variations.
-  $form['variation_number'] = array(
-    '#type' => 'hidden',
-  );
   // Option set title applicable to element variations.
   $form['title'] = array(
     '#type' => 'textfield',
@@ -283,7 +279,7 @@ function acquia_lift_element_variation_details_form_ajax_callback($form, &$form_
       $commands[] = acquia_lift_command_variation_preview($form_state['values']['agent'], $form_state['storage']['osid'], $form_state['storage']['option_id']);
     }
     // End the editing mode.
-    $commands[] = acquia_lift_command_element_variation_toggle(FALSE);
+    $commands[] = acquia_lift_command_variation_toggle(FALSE);
     // Show a confirmation message.
     $current_status = personalize_agent_get_status($agent_name);
     $message = $form_state['storage']['confirmation_message'];
@@ -300,7 +296,7 @@ function acquia_lift_element_variation_details_form_ajax_callback($form, &$form_
   }
   else if ($op === t('Cancel')) {
     // Turn off edit mode and redirect them.
-    $commands[] = acquia_lift_command_element_variation_toggle(FALSE);
+    $commands[] = acquia_lift_command_variation_toggle(FALSE);
   }
 
   return personalize_ajax_commands_deliver($commands, TRUE);

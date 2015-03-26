@@ -549,7 +549,7 @@ function acquia_lift_target_access($agent) {
  * Implements hook_personalize_agent_presave().
  */
 function acquia_lift_personalize_agent_presave($agent) {
-  if (!in_array($agent->plugin, array('acquia_lift'))) {
+  if (!acquia_lift_is_testing_agent($agent)) {
     return;
   }
   $account = variable_get('acquia_lift_account_info', array());
@@ -2816,12 +2816,15 @@ function acquia_lift_command_messagebox($message, $seconds = 0) {
 }
 
 /**
- * Returns an AJAX command to toggle the element variation element selector.
+ * Returns an AJAX command to toggle the variation element selector.
  *
  * @param bool $start
- *   True to start the element variation mode, FALSE to stop it.
+ *   True to start the variation mode, FALSE to stop it.
+ *
+ * @return array
+ *   The command to be included in AJAX response.
  */
-function acquia_lift_command_element_variation_toggle($start = TRUE) {
+function acquia_lift_command_variation_toggle($start = TRUE) {
   return array(
     'command' => 'acquia_lift_variation_toggle',
     'data' => array(

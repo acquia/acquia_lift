@@ -938,81 +938,7 @@
      * Causes the cached variation list to be reset.
      */
     triggerChange: function() {
-      this.resetVariations();
       this.trigger('change:variations');
-    },
-
-    /**
-     * Causes the cached variation list to be reset.
-     */
-    resetVariations: function() {
-      this.variations = null;
-    },
-
-    /**
-     * Generates the variations listing for element variations made up of the
-     * option sets within this collection.
-     *
-     * The results are cached within a local variable that is invalidated
-     * when the variations/options change.
-     */
-    getVariations: function() {
-      if (this.variations !== null) {
-        return this.variations;
-      }
-      if (this.length == 0) {
-        return [];
-      }
-      var i,
-        sample = this.at(0),
-        sampleOptions = sample ? sample.get('options') : null,
-        num = sampleOptions ? sampleOptions.length : 0,
-        variations = [],
-        variation,
-        options,
-        option,
-        valid,
-        variationNum;
-      for (i=0; i < num; i++) {
-        valid = true;
-        variationNum = i+1;
-        variation = {
-          index: i,
-          original_index: i,
-          options: [],
-          agent: sample.get('agent')
-        };
-        this.each(function (model) {
-          options = model.get('options');
-          if (options instanceof Backbone.Collection) {
-            options = options.toJSON();
-          }
-          if (options.length <= i) {
-            // This variation is invalid because it does not have an option
-            // in each option set.
-            valid = false;
-          } else {
-            option = {
-              decision_name: model.get('decision_name'),
-              executor: model.get('executor'),
-              osid: model.get('osid'),
-              plugin: model.get('plugin'),
-              selector: model.get('selector'),
-              stateful: model.get('stateful'),
-              winner: model.get('winner'),
-              option: options[i]
-            };
-            variation.label = options[i].option_label;
-            variation.options.push(option);
-            variation.original_index = options[i].original_index;
-          }
-        });
-        if (valid) {
-          variations.push(variation);
-        }
-      }
-      this.variations = variations;
-      return this.variations;
     }
   });
 
@@ -1685,7 +1611,6 @@
       if (!this.model) {
         return;
       }
-      // Standard tests just call the executors on the selected option.
       // Note that the model passed into this callback will be the
       // changed option set model.
       if (changedModel instanceof Drupal.acquiaLiftUI.MenuOptionSetModel) {
@@ -2375,7 +2300,7 @@
           }
         });
 
-        // Clear the variations for all element variation campaigns.
+        // Merging settings' option_sets into campaigns' option_sets.
         Drupal.acquiaLiftUI.utilities.looper(settings.option_sets, function (obj, key) {
           var campaignModel = ui.collections.campaigns.findWhere({name: obj.agent});
           if (campaignModel) {
@@ -2547,7 +2472,6 @@
         _.each(['campaigns', 'option_sets'], function (category) {
           var $typeMenus = $('[data-acquia-lift-personalize-type="' + category + '"]');
           var $scrollable = $typeMenus.siblings('.acquia-lift-scrollable');
-          var campaignsWithOptions = {};
           var viewName = null;
           if ($typeMenus.length) {
             $typeMenus
@@ -2558,30 +2482,13 @@
                 var $holder = $scrollable.length > 0 ? $scrollable : $menu;
                 Drupal.acquiaLiftUI.utilities.looper(settings[type], function (obj, key) {
                   // Find the right model.
-                  switch (type) {
-                    case 'option_sets':
-                      // If the menu already has a link for this setting, abort.
-                      if (!$menu.find('[data-acquia-lift-personalize-agent="' + obj.agent + '"][data-acquia-lift-personalize-id="' + key + '"].acquia-lift-preview-element-variation').length) {
-                        campaignName = obj.agent;
-                        campaignsWithOptions[obj.agent] = obj.agent;
-                        campaignModel = ui.collections.campaigns.findWhere({'name': campaignName});
-                        if (campaignModel) {
-                          optionSets = campaignModel.get('optionSets');
-                          model = optionSets.findWhere({'osid': key});
-                          viewName = 'MenuOptionView';
-                        } else {
-                          model = optionSets = viewName = null;
-                        }
-                      }
-                      break;
-                    case 'campaigns':
-                      // If the menu already has a link for this setting, abort.
-                      if (!$menu.find('[data-acquia-lift-personalize-agent="' + key + '"].acquia-lift-campaign').length) {
-                        campaignName = key;
-                        campaignModel = model = ui.collections[type].findWhere({'name': key});
-                        viewName = 'MenuCampaignView';
-                      }
-                      break;
+                  if (type == 'campaigns') {
+                    // If the menu already has a link for this setting, abort.
+                    if (!$menu.find('[data-acquia-lift-personalize-agent="' + key + '"].acquia-lift-campaign').length) {
+                      campaignName = key;
+                      campaignModel = model = ui.collections[type].findWhere({'name': key});
+                      viewName = 'MenuCampaignView';
+                    }
                   }
                   // Create views for the campaign model if it was just added.
                   if (model && addedCampaigns.hasOwnProperty(campaignName)) {

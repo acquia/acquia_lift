@@ -635,7 +635,6 @@
       if (!this.model) {
         return;
       }
-      // Standard tests just call the executors on the selected option.
       // Note that the model passed into this callback will be the
       // changed option set model.
       if (changedModel instanceof Drupal.acquiaLiftUI.MenuOptionSetModel) {

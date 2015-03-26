@@ -42,7 +42,7 @@
           }
         });
 
-        // Clear the variations for all element variation campaigns.
+        // Merging settings' option_sets into campaigns' option_sets.
         Drupal.acquiaLiftUI.utilities.looper(settings.option_sets, function (obj, key) {
           var campaignModel = ui.collections.campaigns.findWhere({name: obj.agent});
           if (campaignModel) {
@@ -214,7 +214,6 @@
         _.each(['campaigns', 'option_sets'], function (category) {
           var $typeMenus = $('[data-acquia-lift-personalize-type="' + category + '"]');
           var $scrollable = $typeMenus.siblings('.acquia-lift-scrollable');
-          var campaignsWithOptions = {};
           var viewName = null;
           if ($typeMenus.length) {
             $typeMenus
@@ -225,30 +224,13 @@
                 var $holder = $scrollable.length > 0 ? $scrollable : $menu;
                 Drupal.acquiaLiftUI.utilities.looper(settings[type], function (obj, key) {
                   // Find the right model.
-                  switch (type) {
-                    case 'option_sets':
-                      // If the menu already has a link for this setting, abort.
-                      if (!$menu.find('[data-acquia-lift-personalize-agent="' + obj.agent + '"][data-acquia-lift-personalize-id="' + key + '"].acquia-lift-preview-element-variation').length) {
-                        campaignName = obj.agent;
-                        campaignsWithOptions[obj.agent] = obj.agent;
-                        campaignModel = ui.collections.campaigns.findWhere({'name': campaignName});
-                        if (campaignModel) {
-                          optionSets = campaignModel.get('optionSets');
-                          model = optionSets.findWhere({'osid': key});
-                          viewName = 'MenuOptionView';
-                        } else {
-                          model = optionSets = viewName = null;
-                        }
-                      }
-                      break;
-                    case 'campaigns':
-                      // If the menu already has a link for this setting, abort.
-                      if (!$menu.find('[data-acquia-lift-personalize-agent="' + key + '"].acquia-lift-campaign').length) {
-                        campaignName = key;
-                        campaignModel = model = ui.collections[type].findWhere({'name': key});
-                        viewName = 'MenuCampaignView';
-                      }
-                      break;
+                  if (type == 'campaigns') {
+                    // If the menu already has a link for this setting, abort.
+                    if (!$menu.find('[data-acquia-lift-personalize-agent="' + key + '"].acquia-lift-campaign').length) {
+                      campaignName = key;
+                      campaignModel = model = ui.collections[type].findWhere({'name': key});
+                      viewName = 'MenuCampaignView';
+                    }
                   }
                   // Create views for the campaign model if it was just added.
                   if (model && addedCampaigns.hasOwnProperty(campaignName)) {

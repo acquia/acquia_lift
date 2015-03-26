@@ -2085,6 +2085,27 @@ function acquia_lift_form_personalize_agent_option_sets_form_alter(&$form, &$for
 }
 
 /**
+ * Implements hook_form_FORM_ID_alter().
+ *
+ * Alters the status change form so that legacy campaigns whose status is completed
+ * cannot be changed to any other status.
+ */
+function acquia_lift_form_personalize_status_change_form_alter(&$form, &$form_state) {
+  $agent_name = $form['agent_name']['#value'];
+  $legacy_campaigns = variable_get('acquia_lift_legacy_agents', array());
+  if (in_array($agent_name, $legacy_campaigns)) {
+    $status = personalize_agent_get_status($agent_name);
+    if ($status == PERSONALIZE_STATUS_COMPLETED) {
+      $form['status'] = array(
+        '#type' => 'markup',
+        '#markup' => t('No status change allowed.')
+      );
+      unset(  $form['submit']);
+    }
+  }
+}
+
+/**
  * Ajax callback for the "Reset data" button.
  */
 function personalize_acquia_lift_ajax_callback($form, $form_state) {

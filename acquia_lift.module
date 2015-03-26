@@ -8,6 +8,7 @@
 define('ACQUIA_LIFT_DEFAULT_AGENT_NAME', 'drupal-default');
 define('ACQUIA_LIFT_OPERATION_ERROR_PREFIX', 'Errors: ');
 define('ACQUIA_LIFT_AGENT_VERIFY_CACHE', 'acquia_lift:agent:verification');
+define('ACQUIA_LIFT_TARGETING_EVERYONE_ELSE', 'everyone-else');
 
 /**
  * Implements hook_menu().
@@ -530,6 +531,21 @@ function acquia_lift_is_testing_agent($agent) {
 }
 
 /**
+ * Returns whether or not the passed in agent is a targeting agent.
+ *
+ * @param $agent
+ *   An object representing the agent.
+ * @return bool
+ *   TRUE if the object is an Acquia Lift targeting agent, FALSE otherwise.
+ */
+function acquia_lift_is_targeting_agent($agent) {
+  if (empty($agent)) {
+    return FALSE;
+  }
+  return $agent->plugin == 'acquia_lift_target';
+}
+
+/**
  * Implements hook_personalize_agent_type().
  */
 function acquia_lift_personalize_agent_type() {
@@ -556,7 +572,7 @@ function acquia_lift_personalize_agent_type() {
  * @return bool
  */
 function acquia_lift_target_access($agent) {
-  return $agent->plugin == 'acquia_lift_target' &&
+  return acquia_lift_is_targeting_agent($agent) &&
     user_access('manage personalized content') &&
     variable_get('acquia_lift_target_enabled', FALSE);
 }
@@ -595,7 +611,7 @@ function acquia_lift_personalize_agent_status_presave($agent_name, $status) {
   // Targeting agents should update the targeting structure for agent creation
   // before the main agent is started.
   $agent_data = personalize_agent_load($agent_name);
-  if ($agent_data->plugin === 'acquia_lift_target') {
+  if (acquia_lift_is_targeting_agent($agent_data)) {
     module_load_include('inc', 'acquia_lift', 'acquia_lift.admin');
     acquia_lift_update_targeting($agent_data);
   }
@@ -709,6 +725,10 @@ function acquia_lift_personalize_option_set_presave($option_set) {
  */
 function acquia_lift_personalize_option_set_save($option_set) {
   $agent = personalize_agent_load($option_set->agent);
+  if (acquia_lift_is_targeting_agent($agent)) {
+    module_load_include('inc', 'acquia_lift', 'acquia_lift.admin');
+    acquia_lift_validate_minimum_targeting($agent, $option_set);
+  }
   if (!acquia_lift_is_testing_agent($agent)) {
     return;
   }
@@ -1423,6 +1443,25 @@ function acquia_lift_library() {
       array('system', 'ui.slider'),
       array('acquia_lift', 'd3'),
       array('acquia_lift', 'rickshaw'),
+    ),
+  );
+
+  // Acquia Lift Targeting campaign management.
+  $libraries['acquia_lift.targeting_admin'] = array(
+    'title' => 'Acquia Lift Target administration',
+    'version' => VERSION,
+    'js' => array(
+      $path . '/js/acquia_lift_target.admin.js' => array(),
+    ),
+    'css' => array(
+      $path . '/css/acquia_lift.admin.css',
+    ),
+    'dependencies' => array(
+      array('system', 'jquery'),
+      array('system', 'ui.sortable'),
+      array('system', 'ui.draggable'),
+      array('system', 'ui.droppable'),
+      array('acquia_lift', 'acquia_lift.card'),
     ),
   );
 
@@ -2418,10 +2457,10 @@ function acquia_lift_form_personalize_campaign_wizard_alter(&$form, &$form_state
     drupal_set_message(t('Your Acquia Lift account info has not been configured. Acquia Lift campaigns can not be created until you configure your account info !here', array('!here' => l('here', 'admin/config/content/personalize/acquia_lift'))), 'error');
   }
 
-  if (empty($agent->machine_name) || $agent->plugin !== 'acquia_lift_target') {
+  if (empty($agent->machine_name) || !acquia_lift_is_targeting_agent($agent)) {
     return;
   }
-  $form['#attached']['css'][] = drupal_get_path('module', 'acquia_lift') . '/css/acquia_lift.admin.css';
+  $form['#attached']['library'][] = array('acquia_lift', 'acquia_lift.targeting_admin');
 
   module_load_include('inc', 'acquia_lift', 'acquia_lift.admin.wizard');
   // We have to specify the include file so as not to lose it during rendering from ajax.
@@ -2446,7 +2485,7 @@ function acquia_lift_form_personalize_campaign_wizard_alter(&$form, &$form_state
  * on a Lift Target agent.
  */
 function acquia_lift_form_personalize_agent_option_sets_form_alter(&$form, &$form_state) {
-  if ($form['#agent']->plugin != 'acquia_lift_target') {
+  if (!acquia_lift_is_targeting_agent($form['#agent'])) {
     return;
   }
   foreach ($form['variations']['primary']['option_sets'] as $name => $elements) {

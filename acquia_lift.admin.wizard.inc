@@ -3,7 +3,6 @@
  * @file acquia_lift.admin.wizard.inc Functions specific to the Acquia Lift
  * alteration of the campaign creation wizard.
  */
-define('ACQUIA_LIFT_TARGETING_EVERYONE_ELSE', 'everyone-else');
 /**
  ********************************************************************
  *
@@ -90,6 +89,7 @@ function acquia_lift_personalize_campaign_wizard_variations_alter(&$form, &$form
     return;
   }
   $option_sets = personalize_option_set_load_by_agent($agent_data->machine_name);
+  $agent_instance = personalize_agent_load_agent($agent_data->machine_name);
 
   // Make a container to hold existing option sets.
   if (!empty($option_sets)) {
@@ -108,7 +108,7 @@ function acquia_lift_personalize_campaign_wizard_variations_alter(&$form, &$form
       '#type' => 'container',
       '#theme' => 'acquia_lift_card',
       '#collapsible' => TRUE,
-      '#collapsed' => TRUE,
+      '#collapsed' => $agent_instance->supportsMultipleDecisionPoints(),
       '#title' => $option_set->label,
       '#attributes' => array(
         'class' => array('personalize-option-set'),
@@ -158,6 +158,13 @@ function acquia_lift_personalize_campaign_wizard_variations_alter(&$form, &$form
     $form['variations']['option_sets']['option_set_' . $option_set->osid]['advanced'] = personalize_campaign_wizard_variations_advanced($form, $form_state, $option_set);
     // Option set label is edited in a different spot so don't show it twice.
     $form['variations']['option_sets']['option_set_' . $option_set->osid]['advanced']['label']['#access'] = FALSE;
+  }
+
+  // Test to see if the current agent supports multiple variation sets.
+  if (!empty($option_sets)) {
+    if (!$agent_instance->supportsMultipleDecisionPoints()) {
+      return;
+    }
   }
 
   // Show the card to add a new option set last.
@@ -248,9 +255,6 @@ function acquia_lift_personalize_campaign_wizard_targeting_alter(&$form, &$form_
   // Acquia Lift Target agents allow for audience designation to be used across
   // the agent.
   $agent_data = $form['#agent'];
-  if ($agent_data->plugin !== 'acquia_lift_target') {
-    return;
-  }
   module_load_include('inc', 'acquia_lift', 'acquia_lift.admin');
   $option_set = acquia_lift_get_option_set_for_targeting($agent_data->machine_name);
 
@@ -335,6 +339,7 @@ function acquia_lift_personalize_campaign_wizard_targeting_alter(&$form, &$form_
         '#theme' => 'acquia_lift_card',
         '#title' => isset($audience['label']) ? $audience['label'] : 'Audience: ' . $audience_id,
         '#collapsible' => FALSE,
+        '#sortable' => $audience_id !== ACQUIA_LIFT_TARGETING_EVERYONE_ELSE,
       );
       $form['audiences'][$audience_id]['header'] = array(
         '#type' => 'container'
@@ -364,6 +369,10 @@ function acquia_lift_personalize_campaign_wizard_targeting_alter(&$form, &$form_
         );
       }
       // Show the form to assign variations when not in edit mode.
+      $classes = array('acquia-lift-targeting-assignment');
+      if ($audience_id === ACQUIA_LIFT_TARGETING_EVERYONE_ELSE) {
+        $classes[] = 'acquia-lift-targeting-everyone-else';
+      }
       $form['audiences'][$audience_id]['assignment'] = array(
         '#type' => 'select',
         '#title' => t('Add display option'),
@@ -375,7 +384,12 @@ function acquia_lift_personalize_campaign_wizard_targeting_alter(&$form, &$form_
           'visible' => array(
             ':input[name="audiences[' . $audience_id . '][header][edit]"]' => array('checked' => FALSE),
           )
-        )
+        ),
+        '#attributes' => array(
+          'class' => $classes,
+          'data-acquia-lift-targeting-droppable' => TRUE,
+          'data-acquia-lift-targeting-allow-copy' => TRUE,
+        ),
       );
     }
   }
@@ -386,15 +400,34 @@ function acquia_lift_personalize_campaign_wizard_targeting_alter(&$form, &$form_
     );
   }
 
-  // Add a new audience.
-  $form['audiences']['add'] = array(
-    '#type' => 'container',
-    '#theme' => 'acquia_lift_card',
-    '#collapsible' => TRUE,
-    '#collapsed' => !empty($option_set->targeting),
-    '#title' => t('Add target audience'),
-  );
-  $form['audiences']['add']['details'] = _acquia_lift_personalize_campaign_wizard_targeting_audience($form, $form_state, $agent_data, 'add');
+  // If the agent has been started, then there is the possibility of unassigned
+  // variation options that need to be assigned to a region in order to be
+  // available for assignment via drag and drop.
+  if ($status !== PERSONALIZE_STATUS_NOT_STARTED) {
+    $assigned_options = array();
+    foreach ($saved_targeting as $audience_id => $options) {
+      $assigned_options = array_merge($assigned_options, $options);
+    }
+    $unassigned_options = array_diff_key($variation_options, array_flip($assigned_options));
+    if (!empty($unassigned_options)) {
+      $form['audiences']['unassigned'] = array(
+        '#type' => 'container',
+        '#theme' => 'acquia_lift_card',
+        '#collapsible' => FALSE,
+        '#title' => t('Unassigned'),
+      );
+      $form['audiences']['unassigned']['assignment'] = array(
+        '#type' => 'select',
+        '#title' => t('Add display option'),
+        '#multiple' => TRUE,
+        '#options' => $variation_options,
+        '#default_value' => array_keys($unassigned_options),
+        '#attributes' => array(
+          'class' => array('acquia-lift-targeting-assignment'),
+        ),
+      );
+    }
+  }
 }
 
 /**
@@ -688,13 +721,8 @@ function acquia_lift_personalize_campaign_wizard_targeting_submit(&$form, &$form
   $targeting = array();
   $audience_count = 0;
   // Determine the values for the "Everyone else" audience
-  $final_audience = array(
-    'name' => t('Everyone else'),
-    'contexts' => array(),
-    'weight' => 1,
-    'strategy' => 'OR',
-    'id' => ACQUIA_LIFT_TARGETING_EVERYONE_ELSE,
-  );
+  $final_audience = _acquia_lift_personalize_campaign_wizard_everyone_else_audience();
+
   // Set the weight higher than any of the audience options.
   foreach($form_state['values']['audiences'] as $audience_id => $audience) {
     if ($audience_id === ACQUIA_LIFT_TARGETING_EVERYONE_ELSE || !isset($audience['details']['weight']) || empty($audience['details']['name'])) {
@@ -750,11 +778,6 @@ function acquia_lift_personalize_campaign_wizard_targeting_submit(&$form, &$form
     if (isset($audience['assignment'])) {
       $targeting[$audience_id] = array_values($audience['assignment']);
     }
-  }
-  // Create the "Everyone else" audience if there are other audiences and it
-  // does not exist.
-  if ($audience_count > 0 && !isset($form_state['values']['audiences'][ACQUIA_LIFT_TARGETING_EVERYONE_ELSE])) {
-    acquia_lift_target_audience_save($final_audience['name'], $agent_data->machine_name, $final_audience['contexts'], $final_audience['strategy'], $final_audience['weight']);
   }
   acquia_lift_save_targeting_structure($agent_data, $targeting);
 }
@@ -1007,6 +1030,10 @@ function _acquia_lift_personalize_campaign_wizard_targeting_audience(&$form, &$f
     '#default_value' => !empty($audience['weight']) ? $audience['weight'] : 50,
     '#size' => 3,
     '#element_validate' => array('element_validate_number'),
+    '#attributes' => array(
+      'class' => array('acquia-lift-sortable-weight'),
+    ),
+    '#access' => !empty($audience),
   );
 
   // This is the portion of the form that will be replace when the "add new" or "remove
@@ -1209,10 +1236,6 @@ function acquia_lift_target_audience_delete_submit($form, &$form_state) {
   $audience_id = $form_state['values']['audience_id'];
   $audience_name = isset($option_set->targeting[$audience_id]['label']) ? $option_set->targeting[$audience_id]['label'] : $audience_id;
   unset($option_set->targeting[$audience_id]);
-  // If this leaves only the "Everyone else" audience, then delete it too.
-  if (count($option_set->targeting) === 1 && array_key_exists(ACQUIA_LIFT_TARGETING_EVERYONE_ELSE, $option_set->targeting)) {
-    unset($option_set->targeting[ACQUIA_LIFT_TARGETING_EVERYONE_ELSE]);
-  }
   personalize_option_set_save($option_set);
   drupal_set_message(t('The target audience %name has been removed.', array('%name' => $audience_name)));
   $form_state['redirect'] = 'admin/structure/personalize/manage/' . $form_state['values']['agent_name'] . '/targeting';

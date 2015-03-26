@@ -557,6 +557,7 @@ function acquia_lift_personalize_option_set_render(&$element, $option_set) {
   // We add our own settings for nested agents as they won't have been added
   // by personalize.
   $settings = array(
+    'default_target' => ACQUIA_LIFT_TARGETING_EVERYONE_ELSE,
     'agent_map' => array(),
     'option_sets' => array()
   );

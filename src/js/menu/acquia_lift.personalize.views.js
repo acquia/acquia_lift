@@ -1118,6 +1118,11 @@
       this.listenTo(this.model, 'change:isActive', this.onEditModeChange);
       this.listenTo(this.campaignCollection, 'change:isActive', this.onCampaignChange);
 
+      this.onVariationEditModeProxy = $.proxy(this.onVariationEditMode, this);
+      $(document).on('acquiaLiftVariationMode', function (event, data) {
+        that.onVariationEditModeProxy(event, data);
+      });
+
       // Set the initial link state based on the campaign type.
       var activeCampaign = this.campaignCollection.findWhere({'isActive': true});
       if (activeCampaign) {
@@ -1197,6 +1202,13 @@
         this.$el.removeClass('ctools-use-modal-processed');
         Drupal.attachBehaviors(this.$el.parent());
       }
+    },
+
+    /**
+     * Listens to changes broadcast from the variation application.
+     */
+    onVariationEditMode: function (event, data) {
+      this.model.set('isActive', data.start);
     }
   });
 

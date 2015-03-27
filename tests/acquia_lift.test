@@ -3039,7 +3039,7 @@ class AcquiaLiftWebTestWorkflow extends AcquiaLiftWebTestBase {
     $this->drupalPost('admin/structure/personalize', array(), t('Start'), array(), array(), $html_id_first_agent);
 
     // As soon as the agent is started, we are able to access its reports.
-    $expected[$first_agent_machine_name]['links']['report'] = url('admin/structure/personalize/manage/' . $first_agent_machine_name . '/report');
+    $expected[$first_agent_machine_name]['links']['report'] = url('admin/structure/personalize/manage/' . $first_agent_machine_name . '/results');
     $expected[$first_agent_machine_name]['status'] = PERSONALIZE_STATUS_RUNNING;
     $expected[$first_agent_machine_name]['nextStatus'] = array(
       'status' => PERSONALIZE_STATUS_PAUSED,

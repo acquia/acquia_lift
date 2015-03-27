@@ -113,6 +113,16 @@ function acquia_lift_menu() {
     'file' => 'acquia_lift.admin.unibar.inc',
     'theme callback' => 'ajax_base_page_theme',
   );
+  // AJAX callback to retrieve an element variation details form.
+  $items['admin/structure/acquia_lift/variation/%'] = array(
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('acquia_lift_element_variation_details_form', 4),
+    'access arguments' => array('manage personalized content'),
+    'type' => MENU_CALLBACK,
+    'file' => 'acquia_lift.admin.unibar.inc',
+    'delivery callback' => 'ajax_deliver',
+    'theme callback' => 'ajax_base_page_theme',
+  );
   // AJAX callback to delete an element variation.
   $items['admin/structure/acquia_lift/variation/delete/%/%/%ctools_js'] = array(
     'page callback' => 'acquia_lift_element_variation_delete_modal_callback',

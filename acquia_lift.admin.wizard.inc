@@ -71,6 +71,16 @@ function acquia_lift_personalize_campaign_wizard_variations_alter(&$form, &$form
   if (empty($agent_data->machine_name)) {
     return;
   }
+  $status = personalize_agent_get_status($agent_data->machine_name);
+  $form['variations']['decision_type'] = array(
+    '#type' => 'radios',
+    '#options' => array(
+      ACQUIA_LIFT_DECISION_LOCKSTEP => t('Lock step'),
+      ACQUIA_LIFT_DECISION_MULTIVARIATE => t('Multi-variate')
+    ),
+    '#default_value' => isset($agent_data->data['variation_set_handling']) ? $agent_data->data['variation_set_handling'] : ACQUIA_LIFT_DECISION_LOCKSTEP,
+    '#disabled' => $status != PERSONALIZE_STATUS_RUNNING,
+  );
   $option_sets = personalize_option_set_load_by_agent($agent_data->machine_name);
   $agent_instance = personalize_agent_load_agent($agent_data->machine_name);
 

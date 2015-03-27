@@ -152,6 +152,29 @@ Drupal.acquia_lift_target = (function() {
       // If we got here there was no matched targeting rule so we just call the
       // callback with the fallback decisions.
       callback(decisions);
+    },
+    'sendGoal': function(agent_name, goal_name, value) {
+      if (!initialized) {
+        init();
+      }
+      // Check if there is a nested test that this goal needs to be sent to.
+      if (agentRules.hasOwnProperty(agent_name)) {
+        for (var i in agentRules[agent_name]) {
+          if (agentRules[agent_name].hasOwnProperty(i)) {
+            var rule = agentRules[agent_name][i];
+            if (rule.hasOwnProperty('osid')) {
+              var osid = 'osid-' + rule.osid;
+              if (Drupal.settings.acquia_lift_target.option_sets.hasOwnProperty(osid)) {
+                var optionSet = Drupal.settings.acquia_lift_target.option_sets[osid];
+                var nested_agent = optionSet.agent;
+                if (Drupal.settings.acquia_lift_target.agent_map.hasOwnProperty(nested_agent)) {
+                  Drupal.personalize.agents.acquia_lift.sendGoalToAgent(nested_agent, goal_name, value);
+                }
+              }
+            }
+          }
+        }
+      }
     }
   }
 })();
@@ -163,7 +186,7 @@ Drupal.personalize.agents.acquia_lift_target = {
     Drupal.acquia_lift_target.getDecision(agent_name, visitor_context, choices, decision_point, fallbacks, callback);
   },
   'sendGoalToAgent': function(agent_name, goal_name, value) {
-    // @todo: Introduce the concept of goals in fixed targeting :)
+    Drupal.acquia_lift_target.sendGoal(agent_name, goal_name, value);
   },
   'featureToContext': function(featureString) {
     var contextArray = featureString.split('::');

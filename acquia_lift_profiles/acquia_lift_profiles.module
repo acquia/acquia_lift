@@ -636,7 +636,7 @@ function acquia_lift_profiles_set_server_side_action($action_name, $context) {
   if (!isset($_SESSION['acquia_lift_profiles_actions'])) {
     $_SESSION['acquia_lift_profiles_actions'] = array();
   }
-  $_SESSION['acquia_lift_profiles_actions'][$action_name][] = $context;
+  $_SESSION['acquia_lift_profiles_actions'][$action_name][] = serialize($context);
 }
 
 /**
@@ -645,7 +645,19 @@ function acquia_lift_profiles_set_server_side_action($action_name, $context) {
  * @return an array of actions or NULL.
  */
 function acquia_lift_profiles_get_server_side_actions() {
-  return (isset($_SESSION['acquia_lift_profiles_actions']) ? $_SESSION['acquia_lift_profiles_actions'] : NULL);
+  if (isset($_SESSION['acquia_lift_profiles_actions'])) {
+    $actions = array();
+
+    foreach ($_SESSION['acquia_lift_profiles_actions'] as $action_name => $contexts) {
+      foreach ($contexts as $context) {
+        $actions[$action_name][] = unserialize($context);
+      }
+    }
+
+    return $actions;
+  }
+
+  return NULL;
 }
 
 /**

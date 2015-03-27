@@ -1264,7 +1264,8 @@ class AcquiaLiftWebTestAgentAdmin extends AcquiaLiftWebTestBase {
               ),
             )
           )
-        )
+        ),
+        'cache_decisions' => 0,
       )
     );
     personalize_campaign_wizard_submit(array(), $form_state);
@@ -1862,7 +1863,7 @@ class AcquiaLiftWebTestFundamentals extends AcquiaLiftWebTestBase {
     $edit = array(
       'cache_decisions' => FALSE
     );
-    $this->drupalPost("admin/structure/personalize/manage/$machine_name/review", $edit, $this->getButton('wizard_start'));
+    $this->drupalPost("admin/structure/personalize/manage/$machine_name/variations", $edit, $this->getButton('wizard_start'));
     personalize_agent_set_status($machine_name, PERSONALIZE_STATUS_PAUSED);
     $this->resetAll();
     $queued_agent_item['args'][6] = FALSE;

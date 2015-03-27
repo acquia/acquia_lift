@@ -902,7 +902,7 @@ function acquia_lift_personalize_campaign_wizard_variations_submit(&$form, &$for
 function acquia_lift_personalize_campaign_wizard_variations_submit_element_add($form, &$form_state) {
   // Set a session variable that we can check upon the next page load to
   // trigger element editing mode for element variations.
-  $_SESSION['acquia_lift_element_trigger'] = 'element';
+  $_SESSION['acquia_lift_element_trigger'] = true;
 
   // Redirect to the requested URL to create an option set.
   $form_state['redirect'] = $form_state['values']['variations']['add_variation']['details']['element']['content']['url'];

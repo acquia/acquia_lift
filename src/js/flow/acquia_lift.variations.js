@@ -201,7 +201,6 @@
         $('body').once('acquia-lift-variations', function () {
           response = {
             data: {
-              type: settings.acquia_lift.toolbarEditMode,
               start: true
             }
           };

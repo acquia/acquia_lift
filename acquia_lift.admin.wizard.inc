@@ -569,9 +569,13 @@ function acquia_lift_personalize_campaign_wizard_targeting_alter(&$form, &$form_
  * Alter hook for the review portion of the campaign wizard.
  */
 function acquia_lift_personalize_campaign_wizard_review_alter(&$form, &$form_state, $form_id) {
-  // Add audiences to the summary section.
+  // Make the overview a card.
+  $form['review']['summary_column']['summary']['#type'] = 'container';
+  $form['review']['summary_column']['summary']['#theme'] = 'acquia_lift_card';
+
+    // Add audiences to the summary section.
   $count = 0;
-  $form['summary']['audiences'] = array(
+  $form['review']['summary_column']['summary']['audiences'] = array(
     '#markup' => theme('personalize_wizard_summary_count', array(
       'count' => $count,
       'details' => theme('html_tag', array(
@@ -583,7 +587,13 @@ function acquia_lift_personalize_campaign_wizard_review_alter(&$form, &$form_sta
     )),
   );
   // Move the scheduling summary element to the bottom.
-  $form['summary']['scheduling']['#weight'] = 10;
+  $form['review']['summary_column']['summary']['scheduling']['#weight'] = 10;
+
+  // Move the warnings into a card.
+  if (!empty($form['review']['warnings_column'])) {
+    $form['review']['warnings_column']['warnings']['#type'] = 'container';
+    $form['review']['warnings_column']['warnings']['#theme'] = 'acquia_lift_card';
+  }
 }
 
 /**

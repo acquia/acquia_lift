@@ -3147,7 +3147,8 @@ function acquia_lift_agent_verification_cache_get($agent_name) {
     }
   }
   if (!isset($verification[$agent_name])) {
-    $verification[$agent_name] = personalize_verify_agent($agent_name, FALSE);
+    $errors = personalize_verify_agent($agent_name, FALSE);
+    $verification[$agent_name] = empty($errors);
     cache_set(ACQUIA_LIFT_AGENT_VERIFY_CACHE, $verification);
   }
   return $verification[$agent_name];

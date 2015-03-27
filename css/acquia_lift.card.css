@@ -17,17 +17,16 @@
 }
 
 .el-card__gist, .el-card__summary, .el-card {
-  border: 0.08rem solid #aaaaaa;
-  border-radius: 0.15rem;
-  box-shadow: 0 0.05rem 0 #aaaaaa;
+  border: 0.08rem solid #cccccc;
+  box-shadow: 0 0.05rem 0 #cccccc;
   font-family: "Helvetica Neue", helvetica, "Segoe UI", segoe, "Ubuntu", "Droid Sans", "Arial", sans-serif;
-  margin: 1.5rem;
+  margin: 1rem;
   position: relative;
   top: 0;
 }
 
 .el-card__header {
-  background-color: #cccccc;
+  background-color: #e6e9ed;
   margin: 0;
   padding: 0.75rem;
 }
@@ -83,29 +82,15 @@ ul.el-card__actions {
 }
 
 .el-card.is-active {
-  border-color: #018dc7;
-  box-shadow: 0 0.4rem 1rem rgba(170, 170, 170, 0.6);
-  margin-right: 0.75rem;
-  margin-left: 0.75rem;
-  top: -0.395rem;
+  box-shadow: 0 0.2rem 0.5rem rgba(170, 170, 170, 0.6);
+  border-bottom-left-radius: .5rem;
+  border-bottom-right-radius: .5rem;
 }
 
 .is-compact .el-card__header {
   background-color: transparent;
   padding-top: 0;
   padding-bottom: 0;
-}
-
-.is-active .el-card__header {
-  background-color: #29aae1;
-}
-
-.is-active .el-card__title {
-  font-size: 1.5rem;
-  line-height: 2;
-  margin-top: 0;
-  padding-top: 0.37rem;
-  margin-bottom: 0.63rem;
 }
 
 .el-card:not(.is-active) .el-card__content {

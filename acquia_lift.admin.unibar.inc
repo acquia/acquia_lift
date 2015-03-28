@@ -269,15 +269,8 @@ function acquia_lift_element_variation_details_form_ajax_callback($form, &$form_
     // personalize_elements_page_build when the module is enabled and therefore
     // do not need to be explicitly added here.
     $commands[] = ajax_command_settings($settings, TRUE);
-    // Determine the index to preview.  If creating a new variation, then the
-    // first index is 1 because 0 is the control variation.
-    if (isset($form_state['storage']['variation_number'])) {
-      $preview_variation_index = (!is_numeric($form_state['storage']['variation_number']) || $form_state['storage']['variation_number'] < 1) ? 1 : $form_state['storage']['variation_number'];
-      $commands[] = acquia_lift_command_element_variation_preview($form_state['values']['agent'], $preview_variation_index);
-    }
-    else {
-      $commands[] = acquia_lift_command_variation_preview($form_state['values']['agent'], $form_state['storage']['osid'], $form_state['storage']['option_id']);
-    }
+    // Preview a specific variation.
+    $commands[] = acquia_lift_command_variation_preview($form_state['values']['agent'], $form_state['storage']['osid'], $form_state['storage']['option_id']);
     // End the editing mode.
     $commands[] = acquia_lift_command_variation_toggle(FALSE);
     // Show a confirmation message.

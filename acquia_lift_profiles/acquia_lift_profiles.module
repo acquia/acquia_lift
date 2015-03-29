@@ -88,7 +88,7 @@ function acquia_lift_profiles_refresh_segments_cache() {
     return FALSE;
   }
   try {
-    $segments = ALProfilesAPI::getInstance(variable_get('acquia_lift_profiles_account_name', ''), variable_get('acquia_lift_profiles_api_url', ''))->getSegments();
+    $segments = ALProfilesAPI::getInstance(variable_get('acquia_lift_profiles_account_name', ''), variable_get('acquia_lift_profiles_site_name', ''), variable_get('acquia_lift_profiles_api_url', ''))->getSegments();
     variable_set('acquia_lift_profiles_segments', $segments);
     return TRUE;
   }
@@ -437,7 +437,7 @@ function acquia_lift_profiles_put_action($action_name, &$tracked_actions, $label
   };
 
   try {
-    $acquia_lift_profiles_api = ALProfilesAPI::getInstance(variable_get('acquia_lift_profiles_account_name', ''), variable_get('acquia_lift_profiles_api_url', ''));
+    $acquia_lift_profiles_api = ALProfilesAPI::getInstance(variable_get('acquia_lift_profiles_account_name', ''), variable_get('acquia_lift_profiles_site_name', ''), variable_get('acquia_lift_profiles_api_url', ''));
     $acquia_lift_profiles_api->saveEvent($action_name, $label);
     if (!in_array($action_name, $tracked_actions)) {
       $tracked_actions[] = $action_name;
@@ -457,7 +457,7 @@ function acquia_lift_profiles_put_action($action_name, &$tracked_actions, $label
  */
 function acquia_lift_profiles_delete_action($action_name, &$tracked_actions) {
   try {
-    $acquia_lift_profiles_api = ALProfilesAPI::getInstance(variable_get('acquia_lift_profiles_account_name', ''), variable_get('acquia_lift_profiles_api_url', ''));
+    $acquia_lift_profiles_api = ALProfilesAPI::getInstance(variable_get('acquia_lift_profiles_account_name', ''), variable_get('acquia_lift_profiles_site_name', ''), variable_get('acquia_lift_profiles_api_url', ''));
     $acquia_lift_profiles_api->deleteEvent($action_name);
     $pos = array_search($action_name, $tracked_actions);
     if ($pos !== FALSE) {

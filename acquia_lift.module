@@ -186,15 +186,6 @@ function acquia_lift_menu() {
     'file' => 'acquia_lift.admin.unibar.inc',
     'theme callback' => 'ajax_base_page_theme',
   );
-  // Callback to show the start campaign form.
-  $items['admin/structure/acquia_lift/start/%'] = array(
-    'page callback' => 'acquia_lift_campaign_start_modal_callback',
-    'page arguments' => array(4),
-    'access arguments' => array('manage personalized content'),
-    'type' => MENU_CALLBACK,
-    'file' => 'acquia_lift.admin.unibar.inc',
-    'theme callback' => 'ajax_base_page_theme',
-  );
   // AJAX callback to change the status of a campaign.
   $items['admin/structure/personalize/manage/%personalize_agent/ajax_status/%'] = array(
     'page callback' => 'acquia_lift_agent_set_status_ajax',
@@ -2853,7 +2844,7 @@ function acquia_lift_visitor_actions_ui_selector_ignore() {
 function acquia_lift_settings_update() {
   $commands = array(
     ajax_command_settings(array('acquia_lift' => array(
-      'campaigns' => acquia_lift_get_campaign_details(variable_get('acquia_lift_unibar_allow_status_change', TRUE)),
+      'campaigns' => acquia_lift_get_campaign_details(),
     )), TRUE),
   );
   return personalize_ajax_commands_deliver($commands, TRUE);
@@ -2979,7 +2970,7 @@ function acquia_lift_command_option_set_updates($option_sets) {
  *   The machine name for the campaign to update goal data.
  */
 function acquia_lift_command_goal_updates($agent_name) {
-  $settings = acquia_lift_get_campaign_details(variable_get('acquia_lift_unibar_allow_status_change', TRUE));
+  $settings = acquia_lift_get_campaign_details();
   return array(
     'command' => 'acquia_lift_goal_updates',
     'data' => array(
@@ -3069,7 +3060,7 @@ function acquia_lift_config_min_runtime() {
  * @return array
  *   An array of campaigns keyed by machine_name.
  */
-function acquia_lift_get_campaign_details($include_status = TRUE) {
+function acquia_lift_get_campaign_details() {
   $campaigns = &drupal_static(__FUNCTION__, NULL);
   if (is_array($campaigns)) {
     return $campaigns;
@@ -3113,18 +3104,6 @@ function acquia_lift_get_campaign_details($include_status = TRUE) {
       'optionSetTypes' => array_unique($option_set_types),
       'goals' => (isset($goals)) ? $goals : NULL,
     );
-
-    if ($include_status) {
-      // Add information that will allow starting / pausing the campaign from the
-      // unibar.
-      list($next_status, $status_text) = _personalize_status_toggle_next($current_status);
-      $campaigns[$agent->machine_name]['status'] = $current_status;
-      $campaigns[$agent->machine_name]['nextStatus'] = array(
-        'status' => $next_status,
-        'text' => $status_text,
-      );
-      $campaigns[$agent->machine_name]['verified'] = acquia_lift_agent_verification_cache_get($agent->machine_name);
-    }
 
     // In the client, goals will render to an array when it is empty and an
     // object when it has data, so the no-data state must be NULL to keep

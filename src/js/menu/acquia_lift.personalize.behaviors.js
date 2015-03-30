@@ -8,7 +8,6 @@
 (function (Drupal, $, _) {
 
   var reportPath = Drupal.settings.basePath + Drupal.settings.pathPrefix + 'admin/structure/personalize/manage/acquia-lift-placeholder/report';
-  var statusPath = Drupal.settings.basePath + Drupal.settings.pathPrefix + 'admin/structure/personalize/manage/acquia-lift-placeholder/status';
 
   Drupal.behaviors.acquiaLiftPersonalize = {
     attach: function (context) {
@@ -337,20 +336,6 @@
             });
         } else {
           $('[href="' + reportPath + '"]').hide();
-        }
-
-        // Create a View for the Status link.
-        if (ui.collections.campaigns.length > 0) {
-          $('[href="' + statusPath + '"]')
-            .once('acquia-lift-personalize-status')
-            .each(function (index, element) {
-              ui.views.push(new ui.MenuStatusView({
-                el: element.parentNode,
-                collection: ui.collections['campaigns']
-              }));
-            });
-        } else {
-          $('[href="' + statusPath + '"]').hide();
         }
 
         // Refresh event delegation. This is necessary to rebind event delegation

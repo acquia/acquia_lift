@@ -399,28 +399,6 @@ function _acquia_lift_build_menu($menu_name) {
   );
   menu_link_save($item);
 
-  // Create a link to toggle the agent status.
-  $item = array(
-    'link_title' => 'Status',
-    'link_path' => 'admin/structure/personalize/manage/acquia-lift-placeholder/status',
-    'menu_name' => $menu_name,
-    'options' => array(
-      'attributes' => array(
-        'class' => array(
-          'acquia-lift-menu-status',
-          'acquia-lift-menu-link',
-          'visitor-actions-ui-ignore',
-          'overlay-exclude',
-        ),
-        'id' => 'acquia-lift-menu-status',
-      ),
-      'html' => FALSE,
-    ),
-    'expanded' => 1,
-    'weight' => 30,
-  );
-  menu_link_save($item);
-
   // Update the menu router information.
   menu_rebuild();
 }
@@ -636,6 +614,14 @@ function acquia_lift_update_7016() {
 function acquia_lift_update_7017() {
     menu_delete_links('acquia-lift-controls');
     _acquia_lift_build_menu('acquia-lift-controls');
+}
+
+/**
+ * Remove ability to start campaigns in the status bar.
+ */
+function acquia_lift_update_7018() {
+  menu_delete_links('acquia-lift-controls');
+  _acquia_lift_build_menu('acquia-lift-controls');
 }
 
 /**

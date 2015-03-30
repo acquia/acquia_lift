@@ -13,7 +13,6 @@ Feature: Creation of Simple A/B campaigns from unified navigation.
     And I should not visibly see the link "Variation sets" in the "lift_tray" region
     And I should not visibly see the link "Goals" in the "lift_tray" region
     And I should not visibly see the link "Reports" in the "lift_tray" region
-    And I should not visibly see the link "Status" in the "lift_tray" region
 
     # I bring up the "Create a campaign" interface.
     When I hover over "Campaigns" in the "lift_tray" region
@@ -46,7 +45,6 @@ Feature: Creation of Simple A/B campaigns from unified navigation.
     And I should visibly see the link "Goals" in the "lift_tray" region
     And I should see "0" for the "goal" count
     And menu item "Reports" should be "inactive"
-    And menu item "Start campaign" should be "inactive"
     And I should not see the modal
     And the variation edit mode is "active"
 
@@ -105,7 +103,6 @@ Feature: Creation of Simple A/B campaigns from unified navigation.
     # I verify my campaign's status.
     When I wait for Lift to synchronize
     Then menu item "Reports" should be "inactive"
-    And menu item "Start campaign" should be "active"
 
   Scenario: Create several A/B test campaigns for later use.
     # I login with the marketer role.

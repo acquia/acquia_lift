@@ -99,7 +99,7 @@ function acquia_lift_campaign_type_create_complete_callback($form, $form_state) 
     ctools_modal_command_dismiss(),
     ajax_command_settings(array(
       'acquia_lift' => array(
-        'campaigns' => acquia_lift_get_campaign_details(variable_get('acquia_lift_unibar_allow_status_change', TRUE)),
+        'campaigns' => acquia_lift_get_campaign_details(),
         'agent_map' => array(
           $agent_name => personalize_agent_get_map_settings($agent_name),
         ),
@@ -531,7 +531,7 @@ function acquia_lift_element_variation_details_form_ajax_callback($form, &$form_
     personalize_elements_limit_option_sets_by_path($option_sets, $form_state['values']['pages']);
     $settings['personalize_elements']['elements'] = personalize_elements_element_settings($option_sets);
     // We need to update the campaigns as well in case a campaign was paused by this action.
-    $settings['acquia_lift']['campaigns'] = acquia_lift_get_campaign_details(variable_get('acquia_lift_unibar_allow_status_change', TRUE));
+    $settings['acquia_lift']['campaigns'] = acquia_lift_get_campaign_details();
     // And the agent map.
     $settings['personalize']['agent_map'][$agent_name] = personalize_agent_get_map_settings($agent_name);
     // Note: JavaScript assets for personalize elements are included in
@@ -648,7 +648,7 @@ function acquia_lift_page_variation_rename_complete_callback($form, $form_state)
     $settings[key($option_set_setting)] = reset($option_set_setting);
   }
   // We need to update the campaigns as well in case a campaign was paused by this action.
-  $campaign_settings['acquia_lift']['campaigns'] = acquia_lift_get_campaign_details(variable_get('acquia_lift_unibar_allow_status_change', TRUE));
+  $campaign_settings['acquia_lift']['campaigns'] = acquia_lift_get_campaign_details();
   $commands = array(
     ctools_modal_command_dismiss(),
     acquia_lift_command_messagebox(t('The variation has been renamed.'), 10),
@@ -767,7 +767,7 @@ function acquia_lift_page_variation_delete_complete_callback($form, $form_state)
       $settings[key($option_set_setting)] = reset($option_set_setting);
     }
   }
-  $campaign_settings['acquia_lift']['campaigns'] = acquia_lift_get_campaign_details(variable_get('acquia_lift_unibar_allow_status_change', TRUE));
+  $campaign_settings['acquia_lift']['campaigns'] = acquia_lift_get_campaign_details();
   $commands = array(
     ajax_command_settings($campaign_settings, TRUE),
     ctools_modal_command_dismiss(),
@@ -904,7 +904,7 @@ function acquia_lift_element_variation_delete_complete_callback($form, $form_sta
       $settings[personalize_stringify_osid($osid)] = 'empty';
     }
   }
-  $campaign_settings['acquia_lift']['campaigns'] = acquia_lift_get_campaign_details(variable_get('acquia_lift_unibar_allow_status_change', TRUE));
+  $campaign_settings['acquia_lift']['campaigns'] = acquia_lift_get_campaign_details();
   $commands = array(
     ajax_command_settings($campaign_settings, TRUE),
     ctools_modal_command_dismiss(),
@@ -1068,10 +1068,9 @@ function acquia_lift_goal_type_create_modal_callback($type, $ajax) {
  */
 function acquia_lift_goal_type_create_completed_callback($form, &$form_state) {
   $agent = $form_state['values']['agent'];
-  $include_status = variable_get('acquia_lift_unibar_allow_status_change', TRUE);
-  $settings = acquia_lift_get_campaign_details($include_status);
+  $settings = acquia_lift_get_campaign_details();
   if ($settings[$agent->machine_name]['verified'] && personalize_agent_get_status($agent->machine_name) === PERSONALIZE_STATUS_NOT_STARTED) {
-    $message = t('Goal added.  You can now !start the campaign.', array('!start' => $include_status ? t('start') : l(t('start'), 'admin/structure/personalize/' . $agent->machine_name)));
+    $message = t('Goal added.  You can now !start the campaign.', array('!start' => l(t('start'), 'admin/structure/personalize/' . $agent->machine_name)));
   }
   else {
     $message = t('!goal goal added to campaign.', array('!goal' => filter_xss($form_state['acquia_lift']['goal_name'])));
@@ -1306,7 +1305,7 @@ function acquia_lift_goal_rename_modal_callback($action_name) {
  * @see acquia_lift_create_ctools_form().
  */
 function acquia_lift_goal_rename_complete_callback($form, $form_state) {
-  $settings = acquia_lift_get_campaign_details(variable_get('acquia_lift_unibar_allow_status_change', TRUE));
+  $settings = acquia_lift_get_campaign_details();
   $message = $form_state['acquia_lift']['goal_rename_success'] ? t('The goal has been renamed.') : t('There was a problem renaming the goal.');
   $commands = array(
     ctools_modal_command_dismiss(),
@@ -1472,128 +1471,6 @@ function acquia_lift_goal_delete_form_submit($form, &$form_state) {
   else {
     $form_state['acquia_lift']['goal_delete_success'] = FALSE;
   }
-}
-
-/***************************************************************
- *
- * C A M P A I G N  S T A R T  F O R M
- *
- ***************************************************************/
-
-
-/**
- * Page callback to generate a start campaign screen.
- */
-function acquia_lift_campaign_start_modal_callback($agent_name) {
-  $agent_data = personalize_agent_load($agent_name);
-  acquia_lift_create_ctools_form(
-    t('Start campaign %campaign', array('%campaign' => $agent_data->label)),
-    'acquia_lift_campaign_start_form',
-    array('agent_data' => $agent_data),
-    'acquia_lift_campaign_start_complete_callback'
-  );
-}
-
-/**
- * Form handler to start a new campaign.
- *
- * @param stdClass $agent_data
- *   The data for the agent to start.
- */
-function acquia_lift_campaign_start_form($form, &$form_state, $agent_data) {
-  ctools_include('modal');
-  ctools_include('ajax');
-  ctools_add_js('ajax-responder');
-
-  $form['agent'] = array(
-    '#type' => 'value',
-    '#value' => $agent_data,
-  );
-  $form['adaptive'] = array(
-    '#type' => 'checkbox',
-    '#title' => t('Automatically determine a winner'),
-    '#description' => t('Acquia Lift will adapt to visitors to choose the best option over time.'),
-    '#default_value' => $agent_data->data['decision_style'] == 'adaptive',
-  );
-  module_load_include('inc', 'personalize', 'personalize.admin');
-  $form['campaign_dates'] = personalize_agent_date_form($agent_data->machine_name);
-  // Rather than "Start manually", the option is really to start it now since
-  // the user has triggered this via a "start campaign" form.
-  $form['campaign_dates']['campaign_start']['#options']['none'] = t('Start now');
-
-  $form['actions']['submit_form'] = array(
-    '#type' => 'submit',
-    '#attributes' => array(
-      'class' => array('action-item-primary-active', 'acquia-lift-submit-button'),
-    ),
-    '#value' => t('Start campaign'),
-  );
-  $form['actions']['reset'] = array(
-    '#markup' => ctools_ajax_text_button(t('Cancel'), 'admin/structure/acquia_lift/cancel/nojs', t('Cancel'), 'acquia-lift-cancel-button'),
-  );
-  return $form;
-}
-
-/**
- * Form validator for acquia_lift_campaign_start_form().
- */
-function acquia_lift_campaign_start_form_validate($form, &$form_state) {
-  module_load_include('inc', 'personalize', 'personalize.admin');
-  personalize_agent_date_form_validate($form_state['values']);
-}
-
-/**
- * Form submit handler for acquia_lift_campaign_start_form().
- */
-function acquia_lift_campaign_start_form_submit($form, &$form_state) {
-  // Set the decision style.
-  $agent_data = $form_state['values']['agent'];
-  $agent_data->data['decision_style'] = empty($form_state['values']['adaptive']) ? 'random' : 'adaptive';
-  personalize_agent_save($agent_data);
-
-  // Set the end date.
-  module_load_include('inc', 'personalize', 'personalize.admin');
-  personalize_agent_date_form_submit($agent_data->machine_name, $form_state['values']);
-
-  // Start the campaign.
-  $form_state['acquia_lift']['started'] = FALSE;
-  if ($form_state['values']['campaign_start'] == 'none') {
-    $form_state['acquia_lift']['started'] = personalize_agent_set_status($agent_data->machine_name, PERSONALIZE_STATUS_RUNNING);
-  }
-}
-
-/**
- * Form complete callback for the acquia_lift_campaign_start_form form.
- * @see acquia_lift_create_ctools_form().
- */
-function acquia_lift_campaign_start_complete_callback($form, $form_state) {
-  $agent_data = $form_state['values']['agent'];
-
-  // Determine the message to display.
-  if ($form_state['acquia_lift']['started']) {
-    $message = t('The %campaign campaign has been started', array(
-      '%campaign' => $agent_data->label,
-    ));
-  }
-  else {
-    if ($form_state['values']['campaign_start'] == 'specified') {
-      $start_date = personalize_agent_get_start_date($agent_data->machine_name);
-      $message = t('The %campaign campaign will be started on %date', array(
-        '%campaign' => $agent_data->label,
-        '%date' => format_date($start_date, 'custom', 'M d, Y'),
-      ));
-    }
-    else {
-      $message = t('There was a problem starting your campaign.');
-    }
-  }
-  return array(
-    ctools_modal_command_dismiss(),
-    ajax_command_settings(array('acquia_lift' => array(
-      'campaigns' => acquia_lift_get_campaign_details(variable_get('acquia_lift_unibar_allow_status_change', TRUE)),
-    )), TRUE),
-    acquia_lift_command_messagebox($message, 10),
-  );
 }
 
 /***************************************************************

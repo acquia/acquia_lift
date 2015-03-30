@@ -51,16 +51,6 @@ class FeatureContext extends RawDrupalContext implements SnippetAcceptingContext
   /****************************************************
    *        H O O K S
    ***************************************************/
-  /**
-   * Perform before suite actions:
-   * - Stage the environment.
-   *
-   * @BeforeSuite
-   */
-  static public function beforeSuite(BeforeSuiteScope $scope) {
-    // Make sure unibar can update status.
-    variable_set('acquia_lift_unibar_allow_status_change', TRUE);
-  }
 
   /**
    * Perform before scenario actions:

@@ -389,6 +389,9 @@ tr.acquia-lift-report-control {
 .personalize-wizard-section .form-item-variations-add-variation-details-element-content-url > input[type="submit"] {
   display: inline-block;
 }
+#edit-variations .personalize-wizard-column > fieldset {
+  border: none;
+}
 
 /* Targeting form */
 .acquia-lift-targeting .personalize-target-wrapper .form-item,

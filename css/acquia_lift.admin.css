@@ -290,19 +290,17 @@ tr.acquia-lift-report-control {
 .el-card__action .acquia-lift-delete {
   background-image: url(../images/000000/delete.png);
   background-repeat: no-repeat;
-  background-size: 80%;
   background-position: 50%;
   width: 24px;
   height: 24px;
   text-indent: -9999px;
   overflow: hidden;
   display: inline-block;
-  padding-top: .5rem;
+  padding-top: .37rem;
 }
 .el-card__action button.acquia-lift-delete {
   background-image: url(../images/000000/delete.png);
   background-repeat: no-repeat;
-  background-size: 80%;
   background-position: 50%;
   background-color: transparent;
   width: 24px;
@@ -312,6 +310,7 @@ tr.acquia-lift-report-control {
   border: none;
   margin-top: .37rem;
   cursor: pointer;
+  margin-top: .37rem;
 }
 .el-card__content fieldset.collapsible.collapsed {
   border: none;
@@ -410,15 +409,16 @@ tr.acquia-lift-report-control {
   display: none;
 }
 #acquia-lift-targeting-audiences .el-card__action input[type="checkbox"].acquia-lift-edit + label {
-  content: url(../images/edit-toggle-inactive.png);
-  height: 30px;
-  width: 30px;
+  content: url(../images/000000/edit.png);
+  height: 24px;
+  width: 24px;
   display: inline-block;
   padding: 0;
   cursor: pointer;
+  margin-top: .37rem;
 }
 #acquia-lift-targeting-audiences .el-card__action input[type="checkbox"].acquia-lift-edit:checked + label {
-  content: url(../images/edit-toggle-active.png);
+  content: url(../images/0F93DE/edit.png);
 }
 
 /* Drag and Drop audience targeting */

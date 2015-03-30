@@ -75,10 +75,6 @@ interface AcquiaLiftAgentInterface {
   public function buildConversionReport($options);
 }
 
-interface AcquiaLiftSimplifiedAgentInterface {
-  public static function simplifiedForm($agent_data);
-}
-
 /**
  * An interface to implement when an agent handles page-level variations such
  * as a simple A/B test.
@@ -274,180 +270,6 @@ class AcquiaLiftAgent extends PersonalizeAgentBase implements PersonalizeAgentGo
    */
   public function sendGoal($goal_name, $value = NULL) {
     // @todo Implement server-side goal delivery.
-  }
-
-  /**
-   * Implements PersonalizeAgentInterface::optionsForm().
-   */
-  public static function optionsForm($agent_data, $option_parents = array()) {
-    return self::buildOptionsForm($agent_data, FALSE, $option_parents);
-  }
-
-  /**
-   * Builds the options to display for a campaign form.
-   *
-   * @param $agent_data
-   *   The existing campaign data.
-   * @param bool $simplified
-   *   Indicates if the form should be shown in simplified format or with all
-   *   advanced options.
-   *
-   * @return array
-   *   The form render array.
-   */
-  protected static function buildOptionsForm($agent_data, $simplified = FALSE, $option_parents = array()) {
-    $account_info = variable_get('acquia_lift_account_info', array());
-    if (empty($account_info)) {
-      drupal_set_message(t('Your Acquia Lift account info has not been configured. Any Acquia Lift campaigns you create here will not work until you configure your account info !here', array('!here' => l('here', 'admin/config/content/personalize/acquia_lift'))), 'error');
-    }
-    $form = array();
-    $form['#attached'] = array(
-      'css' => array(
-        drupal_get_path('module', 'acquia_lift') . '/css/personalize_acquia_lift_admin.css',
-        drupal_get_path('module', 'acquia_lift') . '/css/acquia_lift.admin.css',
-      ),
-      'js' => array(
-        drupal_get_path('module', 'acquia_lift') . '/js/acquia_lift.agent.admin.js',
-      ),
-    );
-    if (empty($option_parents)) {
-      $option_parents = array('agent_basic_info', 'options', 'acquia_lift');
-    }
-
-    $control_rate = isset($agent_data->data['control_rate']) ? $agent_data->data['control_rate'] : 10;
-    if ($simplified) {
-      $form['control_rate'] = array(
-        '#type' => 'value',
-        '#value' => $control_rate,
-      );
-    }
-    else {
-      $form['control'] = array(
-        '#type' => 'fieldset',
-        '#tree' => FALSE,
-        '#collapsible' => TRUE,
-        '#collapsed' => TRUE,
-        '#title' => t('Control (@control_rate%)', array('@control_rate' => $control_rate)),
-      );
-      $control_rate_parents = $option_parents;
-      $control_rate_parents[] = 'control_rate';
-      $form['control']['control_rate'] = array(
-        '#type' => 'acquia_lift_percentage',
-        '#parents' => $control_rate_parents,
-        '#title' => t('Control Group'),
-        '#field_suffix' => '%',
-        '#size' => 3,
-        '#description' => t('A fixed baseline variation will be shown, by default the first variation in the set.'),
-        '#default_value' => $control_rate,
-        '#rest_title' => t('Test Group'),
-        '#rest_description' => t('Personalized variations will be shown.'),
-        '#collapsible' => TRUE,
-        '#collapsed' => TRUE,
-      );
-    }
-    $decision_style = isset($agent_data->data['decision_style']) ? $agent_data->data['decision_style'] : 'adaptive';
-    if ($simplified) {
-      $form['decision_style'] = array(
-        '#type' => 'value',
-        '#value' => $decision_style,
-      );
-    }
-    else {
-      $form['decision_style'] = array(
-        '#type' => 'radios',
-        '#title' => t('Decision Style'),
-        '#options' => array('adaptive' => t('Auto-personalize'), 'random' => t('Test only')),
-        '#default_value' => $decision_style,
-        '#title_display' => 'invisible',
-      );
-      $form['decision_style']['adaptive'] = array(
-        '#description' => t('Adapts to users and chooses the best option over time.'),
-      );
-      $form['decision_style']['random'] = array(
-        '#description' => t('Tests variations and reports results.'),
-      );
-    }
-    $explore_rate = isset($agent_data->data['explore_rate']) ? $agent_data->data['explore_rate'] : 20;
-    if ($simplified) {
-      $form['distribution'] = array(
-        '#type' => 'value',
-        '#value' => $explore_rate,
-      );
-    }
-    else {
-      $decision_style_parents = $option_parents;
-      $decision_style_parents[] = 'decision_style';
-      $decision_style_form_element = '';
-      foreach ($decision_style_parents as $i => $parent_name) {
-        $decision_style_form_element .= ($i ? '[' . $parent_name . ']' : $parent_name);
-      }
-      $form['distribution'] = array(
-        '#type' => 'fieldset',
-        '#tree' => FALSE,
-        '#collapsible' => TRUE,
-        '#collapsed' => TRUE,
-        '#title' => t('Distribution (@explore_rate/@rest)', array(
-          '@explore_rate' => $explore_rate,
-          '@rest' => (100 - $explore_rate),
-        )),
-        '#states' => array(
-          'visible' => array(
-            ':input[name="' . $decision_style_form_element . '"]' => array('value' => 'adaptive'),
-          ),
-        ),
-      );
-      $explore_rate_parents = $option_parents;
-      $explore_rate_parents[] = 'explore_rate';
-      $form['distribution']['explore_rate'] = array(
-        '#type' => 'acquia_lift_percentage',
-        '#parents' => $explore_rate_parents,
-        '#title' => t('Random Group'),
-        '#field_suffix' => '%',
-        '#description' => t('Variations will be shown randomly and tracked to adjust for false positives.'),
-        '#size' => 3,
-        '#default_value' => isset($agent_data->data['explore_rate']) ? $agent_data->data['explore_rate'] : 20,
-        '#rest_title' => t('Personalized Group'),
-        '#rest_description' => t('The "best" variation will be shown for each visitor based on our algorithm.'),
-        '#collapsible' => TRUE,
-        '#collapsed' => TRUE,
-      );
-    }
-    // This will get overridden by the 'campaign_end' dropdown.
-    $form['auto_stop'] = array(
-      '#type' => 'value',
-      '#value' => 0
-    );
-    return $form;
-  }
-
-  /**
-   * Implements PersonalizeAgentInterface::optionsFormValidate().
-   */
-  public static function optionsFormValidate($form, &$form_state, $option_parents = array()) {
-    $values = &$form_state['values'];
-    foreach($option_parents as $parent) {
-      $values = &$values[$parent];
-    }
-    $error_parents = implode('][', $option_parents);
-    if (isset($values['control_rate'])) {
-      $rate = $values['control_rate'];
-      if (!is_numeric($rate) || !($rate >= 0 && $rate <= 100)) {
-        $error_element = empty($error_parents) ? 'control_rate' : $error_parents . '][contral_rate';
-        form_set_error($error_element, t('Invalid percent to test specified'));
-      }
-    }
-    if (isset($values['explore_rate'])) {
-      $rate = $values['explore_rate'];
-      if (!is_numeric($rate) || !($rate >= 0 && $rate <= 100)) {
-        $error_element = empty($error_parents) ? 'explore_rate' : $error_parents . '][explore_rate';
-        form_set_error($error_element, t('Invalid percent to test specified'));
-      }
-    }
-    // If "Run until a winner is found" was selected, we need to add this to the agent's
-    // data property.
-    if (isset($form_state['values']['campaign_end']) && $form_state['values']['campaign_end'] == 'auto') {
-      $values['auto_stop'] = 1;
-    }
   }
 
   /**
@@ -1124,14 +946,7 @@ class AcquiaLiftAgent extends PersonalizeAgentBase implements PersonalizeAgentGo
  * differs from the regular Acquia Lift agent class in the options form it presents
  * to users.
  */
-class AcquiaLiftSimpleAB extends AcquiaLiftAgent implements AcquiaLiftSimplifiedAgentInterface, AcquiaLiftPageVariationInterface, PersonalizeAutoTargetingInterface {
-
-  /**
-   * Implements PersonalizeAgentInterface::optionsForm().
-   */
-  public static function simplifiedForm($agent_data) {
-    return self::buildOptionsForm($agent_data, TRUE);
-  }
+class AcquiaLiftSimpleAB extends AcquiaLiftAgent implements AcquiaLiftPageVariationInterface, PersonalizeAutoTargetingInterface {
 
   /**
    * Implements PersonalizeAgentInterface::supportsMVTs().

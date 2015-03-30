@@ -94,7 +94,7 @@ QUnit.test("test explicit targeting logic", function( assert ) {
 });
 
 QUnit.test("test nesting logic", function( assert ) {
-  expect(6);
+  expect(9);
   // Add settings for a targeting agent with a test nested in it..
   var agentName = 'my-parent-agent',
       decisionName = 'my-decision',
@@ -185,6 +185,17 @@ QUnit.test("test nesting logic", function( assert ) {
   Drupal.personalize.agents.acquia_lift_target.getDecisionsForPoint(agentName, evaluatedVisitorContexts, choices, decisionName, fallbacks, function(decisions) {
     assert.ok(decisions.hasOwnProperty(decisionName));
     assert.equal(decisions[decisionName], 'first-option');
+
+    // Fire a goal and confirm the acquia_lift agent gets it. We do this by mocking
+    // the acquia_lift agent's sendGoalToAgent function and confirming it gets called
+    // with the correct arguments.
+    Drupal.personalize.agents.acquia_lift.sendGoalToAgent = function(agent_name, goal_name, value) {
+      assert.equal(agent_name, sub_agent_name);
+      assert.equal(goal_name, 'some-goal');
+      assert.equal(value, 2);
+    };
+    Drupal.personalize.agents.acquia_lift_target.sendGoalToAgent(agentName, 'some-goal', 2);
+
   });
 
   // Now try with contexts that should satisfy the rules for the nested option set.

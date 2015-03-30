@@ -129,13 +129,12 @@ class AcquiaLiftWebTestBase extends DrupalWebTestCase
     $this->drupalPost('admin/structure/personalize/add', $edit, $this->getButton('create_campaign'));
 
     if (!$basicOnly) {
-      $edit = array(
-        'agent_options[options][decision_style]' => $data['decision_style'],
-        'agent_options[options][control_rate]' => $data['control_rate'],
-        'agent_options[options][explore_rate]' => $data['explore_rate'],
-        'cache_decisions' => $data['cache_decisions']
-      );
-      $this->drupalPost('admin/structure/personalize/manage/' . $data['machine_name'] . '/review', $edit, $this->getButton('wizard_start'));
+      $agent_data = personalize_agent_load($data['machine_name']);
+      $agent_data->data['decision_style'] = $data['decision_style'];
+      $agent_data->data['control_rate'] = $data['control_rate'];
+      $agent_data->data['explore_rate'] = $data['explore_rate'];
+      $agent_data->data['cache_decisions'] = $data['cache_decisions'];
+      personalize_agent_save($agent_data);
     }
 
     if ($data['auto_stop']) {
@@ -1265,7 +1264,8 @@ class AcquiaLiftWebTestAgentAdmin extends AcquiaLiftWebTestBase {
               ),
             )
           )
-        )
+        ),
+        'cache_decisions' => 0,
       )
     );
     personalize_campaign_wizard_submit(array(), $form_state);
@@ -1863,7 +1863,7 @@ class AcquiaLiftWebTestFundamentals extends AcquiaLiftWebTestBase {
     $edit = array(
       'cache_decisions' => FALSE
     );
-    $this->drupalPost("admin/structure/personalize/manage/$machine_name/review", $edit, $this->getButton('wizard_start'));
+    $this->drupalPost("admin/structure/personalize/manage/$machine_name/variations", $edit, $this->getButton('wizard_start'));
     personalize_agent_set_status($machine_name, PERSONALIZE_STATUS_PAUSED);
     $this->resetAll();
     $queued_agent_item['args'][6] = FALSE;
@@ -3040,7 +3040,7 @@ class AcquiaLiftWebTestWorkflow extends AcquiaLiftWebTestBase {
     $this->drupalPost('admin/structure/personalize', array(), t('Start'), array(), array(), $html_id_first_agent);
 
     // As soon as the agent is started, we are able to access its reports.
-    $expected[$first_agent_machine_name]['links']['report'] = url('admin/structure/personalize/manage/' . $first_agent_machine_name . '/report');
+    $expected[$first_agent_machine_name]['links']['report'] = url('admin/structure/personalize/manage/' . $first_agent_machine_name . '/results');
     $expected[$first_agent_machine_name]['status'] = PERSONALIZE_STATUS_RUNNING;
     $expected[$first_agent_machine_name]['nextStatus'] = array(
       'status' => PERSONALIZE_STATUS_PAUSED,

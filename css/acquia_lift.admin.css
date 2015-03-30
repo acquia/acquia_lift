@@ -457,3 +457,11 @@ tr.acquia-lift-report-control {
   float: right;
   display: inline-block;
 }
+
+/* Review warning list */
+#personalize-campaign-wizard .personalize-wizard-review-warnings li {
+  list-style-type: none;
+  background: transparent url(../images/FF8000/alert.png) no-repeat 0 50%;
+  margin: 1em 1em 1em -15px;
+  padding-left: 40px;
+}

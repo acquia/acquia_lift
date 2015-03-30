@@ -316,6 +316,7 @@ function acquia_lift_element_variation_details_form($form, &$form_state, $variat
     '#access' => empty($osid),
   );
   // Option label if editing.
+  $option_label = isset($option['option_label']) ? $option['option_label'] : '';
   $form['option_label'] = array(
     '#type' => 'textfield',
     '#title' => t('Variation name'),
@@ -323,11 +324,11 @@ function acquia_lift_element_variation_details_form($form, &$form_state, $variat
     '#required' => TRUE,
     '#maxlength' => PERSONALIZE_MACHINE_NAME_MAXLENGTH,
     '#access' => !empty($option),
-    '#default_value' => filter_xss($option['option_label']),
+    '#default_value' => filter_xss($option_label),
   );
   // Now include the details specific to this variation type.
   $form['personalize_elements_content'] = $types[$variation_type]['contextual']['formitem'];
-  if ($edit_option) {
+  if (isset($edit_option)) {
     $form['personalize_elements_content']['#default_value'] = personalize_elements_filter_personalize_element_option($variation_type, $option['personalize_elements_content']);
     $form['variation_number']['#type'] = 'value';
     $form['variation_number']['#value'] = $edit_option['option_id'];
@@ -502,7 +503,8 @@ function _acquia_lift_personalize_element_variation_details_form_submit($form, &
   }
   else {
     // It was a new option, so preview the last one.
-    $updated_option = end(array_values($option_set->options));
+    // The extra parenthesis over array_values is for avoiding PHP strict warning.
+    $updated_option = end((array_values($option_set->options)));
     $form_state['storage']['option_id'] = $updated_option['option_id'];
   }
   $form_state['storage']['confirmation_message'] = $message;
@@ -553,7 +555,7 @@ function acquia_lift_element_variation_details_form_ajax_callback($form, &$form_
     $current_status = personalize_agent_get_status($agent_name);
     $message = $form_state['storage']['confirmation_message'];
     if ($current_status === PERSONALIZE_STATUS_NOT_STARTED) {
-      if ($settings['personalize']['campaigns'][$agent_name]['verified']) {
+      if ($settings['acquia_lift']['campaigns'][$agent_name]['verified']) {
         $message .= ' ' . t('You can now start the campaign.');
       }
       else {

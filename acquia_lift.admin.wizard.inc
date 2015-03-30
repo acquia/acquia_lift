@@ -160,13 +160,6 @@ function acquia_lift_personalize_campaign_wizard_variations_alter(&$form, &$form
     $form['variations']['option_sets']['option_set_' . $option_set->osid]['advanced']['label']['#access'] = FALSE;
   }
 
-  // Test to see if the current agent supports multiple variation sets.
-  if (!empty($option_sets)) {
-    if (!$agent_instance->supportsMultipleDecisionPoints()) {
-      return;
-    }
-  }
-
   // Show the card to add a new option set last.
   module_load_include('inc', 'acquia_lift', 'acquia_lift.ui');
   $option_set_types = acquia_lift_option_set_types_ui();
@@ -573,6 +566,37 @@ function acquia_lift_personalize_campaign_wizard_targeting_alter(&$form, &$form_
 }
 
 /**
+ * Alter hook for the review portion of the campaign wizard.
+ */
+function acquia_lift_personalize_campaign_wizard_review_alter(&$form, &$form_state, $form_id) {
+  // Make the overview a card.
+  $form['review']['summary_column']['summary']['#type'] = 'container';
+  $form['review']['summary_column']['summary']['#theme'] = 'acquia_lift_card';
+
+    // Add audiences to the summary section.
+  $count = 0;
+  $form['review']['summary_column']['summary']['audiences'] = array(
+    '#markup' => theme('personalize_wizard_summary_count', array(
+      'count' => $count,
+      'details' => theme('html_tag', array(
+        'element' => array(
+          '#tag' => 'h3',
+          '#value' => format_plural($count, 'Audience', 'Audiences'),
+        ),
+      )),
+    )),
+  );
+  // Move the scheduling summary element to the bottom.
+  $form['review']['summary_column']['summary']['scheduling']['#weight'] = 10;
+
+  // Move the warnings into a card.
+  if (!empty($form['review']['warnings_column'])) {
+    $form['review']['warnings_column']['warnings']['#type'] = 'container';
+    $form['review']['warnings_column']['warnings']['#theme'] = 'acquia_lift_card';
+  }
+}
+
+/**
  ********************************************************************
  *
  * A J A X  C A L L B A C K S
@@ -866,6 +890,10 @@ function acquia_lift_personalize_campaign_wizard_variations_submit(&$form, &$for
   unset($form_state['redirect']);
   // Set the clicked button ID back.
   $form_state['clicked_button']['#id'] = $click_id;
+
+  // Handle the advanced settings form submission.
+  module_load_include('inc', 'personalize', 'personalize.admin.campaign');
+  personalize_campaign_wizard_submit_variations_advanced_agent($form, $form_state, $agent_data);
 }
 
 /**

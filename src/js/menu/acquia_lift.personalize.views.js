@@ -74,13 +74,11 @@
       var hasCampaigns = this.collection.length > 0;
       var activeCampaign = this.collection.findWhere({'isActive': true});
       var supportsGoals = activeCampaign && activeCampaign.get('supportsGoals');
+      var supportsTargeting = activeCampaign && activeCampaign.get('supportsTargeting');
       // Show or hide relevant menus.
       if (hasCampaigns && activeCampaign) {
-        if (supportsGoals) {
-          this.$el.find('[data-acquia-lift-personalize="goals"]').parents('li').show();
-        } else {
-          this.$el.find('[data-acquia-lift-personalize="goals"]').parents('li').hide();
-        }
+        this.$el.find('[data-acquia-lift-personalize="goals"]').parents('li').toggle(supportsGoals);
+        this.$el.find('[data-acquia-lift-personalize="targeting"]').parents('li').toggle(supportsTargeting);
         this.$el.find('[data-acquia-lift-personalize="option_sets"]').parents('li').show();
       } else {
         this.$el.find('[data-acquia-lift-personalize="goals"]').parents('li').hide();
@@ -132,10 +130,10 @@
       var activeCampaign = this.collection.findWhere({'isActive': true});
       var $count = this.$el.find('i.acquia-lift-personalize-type-count').detach();
       if (!activeCampaign) {
-        var label = Drupal.t('All campaigns');
+        var label = Drupal.t('All personalizations');
         this.$el.attr('title', label);
       } else {
-        var label = Drupal.theme.acquiaLiftSelectedContext({'label': activeCampaign.get('label'), 'category': Drupal.t('Campaign')});
+        var label = Drupal.theme.acquiaLiftSelectedContext({'label': activeCampaign.get('label'), 'category': Drupal.t('Personalization')});
         this.$el.attr('title', activeCampaign.get('label'));
       }
       this.$el.html(label);
@@ -271,7 +269,7 @@
      */
     render: function() {
       var currentCampaign = this.campaignCollection.findWhere({'isActive': true});
-      var text = Drupal.t('Variation Sets');
+      var text = Drupal.t('What');
       var $count = this.$el.find('i.acquia-lift-personalize-type-count').detach();
       if (!currentCampaign) {
         return;
@@ -279,10 +277,9 @@
       if (currentCampaign instanceof Drupal.acquiaLiftUI.MenuCampaignABModel) {
         var currentVariation = currentCampaign.getCurrentVariationLabel();
         if (currentVariation) {
-          text = Drupal.theme.acquiaLiftSelectedContext({'label': currentVariation, 'category': Drupal.t('Variation')});
+          text = Drupal.theme.acquiaLiftSelectedContext({'label': currentVariation, 'category': Drupal.t('What')});
           this.$el.attr('title', currentVariation)
         } else {
-          text = Drupal.t('Variations');
           this.$el.attr('title', text)
         }
       }
@@ -1163,14 +1160,14 @@
 
   /***************************************************************
    *
-   *            R E P O R T S
+   *            S I N G L E  L I N K  V I E W S
    *
    ***************************************************************/
 
   /**
-   * Updates the results link to reflect the active campaign.
+   * A view for a single campaign link.
    */
-  Drupal.acquiaLiftUI.MenuReportsView = ViewBase.extend({
+  Drupal.acquiaLiftUI.MenuCampaignLinkView = ViewBase.extend({
 
     /**
      * {@inheritdoc}
@@ -1198,24 +1195,86 @@
           .hide();
       }
       else {
-        // The report link will be empty if reports are not available for this
+        // The link will be empty if this link is not available for this
         // campaign agent type.
-        var reportLink = activeCampaign.get('links').report;
-        if (reportLink.length == 0) {
-          reportLink = 'javascript:void(0);';
+        var link = this.getLink(activeCampaign);
+        if (link.length == 0) {
+          link = 'javascript:void(0);';
           this.$el.find('a[href]').addClass('acquia-lift-menu-disabled');
         } else {
           this.$el.find('a[href]').removeClass('acquia-lift-menu-disabled');
         }
-        var name = activeCampaign.get('name');
-        var label = activeCampaign.get('label');
         this.$el
           .find('a[href]')
-          .attr('href', reportLink)
-          .text(Drupal.t('Reports'))
+          .attr('href', link)
           .end()
           .show();
       }
+    },
+
+    /**
+     * A helper method to return the link for this view.
+     *
+     * This should be
+     * overridden by extending views.
+     *
+     * @param model
+     *   An instance of the current campaign model.
+     */
+    getLink: function (model) {
+      throw("The getLink method not implemented in this view.");
+    }
+  });
+
+  /**
+   * Updates the reports link to reflect the active campaign.
+   */
+  Drupal.acquiaLiftUI.MenuReportsView = Drupal.acquiaLiftUI.MenuCampaignLinkView.extend({
+
+    /**
+     * {@inheritdoc}
+     */
+    getLink: function (model) {
+      return model.get('links').report;
+    }
+  });
+
+  /**
+   * Updates the targeting link to reflect the active campaign.
+   */
+  Drupal.acquiaLiftUI.MenuTargetingView = Drupal.acquiaLiftUI.MenuCampaignLinkView.extend({
+
+    /**
+     * {@inheritdoc}
+     */
+    getLink: function (model) {
+      return model.get('links').targeting;
+    }
+  });
+
+  /**
+   * Updates the scheduling link to reflect the active campaign.
+   */
+  Drupal.acquiaLiftUI.MenuSchedulingView = Drupal.acquiaLiftUI.MenuCampaignLinkView.extend({
+
+    /**
+     * {@inheritdoc}
+     */
+    getLink: function (model) {
+      return model.get('links').scheduling;
+    }
+  });
+
+  /**
+   * Updates the review link to reflect the active campaign.
+   */
+  Drupal.acquiaLiftUI.MenuReviewView = Drupal.acquiaLiftUI.MenuCampaignLinkView.extend({
+
+    /**
+     * {@inheritdoc}
+     */
+    getLink: function (model) {
+      return model.get('links').review;
     }
   });
 

@@ -3077,6 +3077,7 @@ function acquia_lift_get_campaign_details() {
       continue;
     }
     $supports_goals = $plugin instanceof PersonalizeAgentGoalInterface;
+    $supports_targeting = $plugin instanceof PersonalizeAutoTargetingInterface || $plugin instanceof PersonalizeExplicitTargetingInterface;
     if ($supports_goals) {
       foreach (personalize_goal_load_by_conditions(array('agent' => $agent->machine_name)) as $goal) {
         if (isset($actions[$goal->action])) {
@@ -3099,8 +3100,12 @@ function acquia_lift_get_campaign_details() {
         'view' => url('admin/structure/personalize/manage/' . $agent->machine_name),
         'edit' => url('admin/structure/personalize/manage/' . $agent->machine_name),
         'report' => $report_is_active ? url('admin/structure/personalize/manage/' . $agent->machine_name . '/report') : '',
+        'targeting' => $supports_targeting ? url('admin/structure/personalize/manage/' . $agent->machine_name . '/targeting') : '',
+        'scheduling' => url('admin/structure/personalize/manage/' . $agent->machine_name . '/scheduling'),
+        'review' => url('admin/structure/personalize/manage/' . $agent->machine_name . '/review'),
       ),
       'supportsGoals' => $supports_goals,
+      'supportsTargeting' => $supports_targeting,
       'optionSetTypes' => array_unique($option_set_types),
       'goals' => (isset($goals)) ? $goals : NULL,
     );

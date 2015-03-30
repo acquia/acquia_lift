@@ -323,19 +323,28 @@
             });
         }
 
-        // Create View for the Report link.
-        if (ui.collections.campaigns.length > 0) {
-          $('[href="' + reportPath + '"]')
-            .once('acquia-lift-personalize-report')
-            .each(function (index, element) {
-              ui.views.push((new ui.MenuReportsView({
-                el: element.parentNode,
-                model: ui.collections['campaigns'],
-                collection: ui.collections['campaigns']
-              })));
-            });
-        } else {
-          $('[href="' + reportPath + '"]').hide();
+        // Create views for single campaign link menu items.
+        var linkTypes = {
+          'reports': ui.MenuReportsView,
+          'targeting': ui.MenuTargetingView,
+          'scheduling': ui.MenuSchedulingView,
+          'review': ui.MenuReviewView
+        };
+
+        for (var linkType in linkTypes) {
+          if (ui.collections.campaigns.length > 0) {
+            $('[data-acquia-lift-personalize="' + linkType + '"]')
+              .once('acquia-lift-personalize-' + linkType)
+              .each(function (index, element) {
+                ui.views.push((new linkTypes[linkType]({
+                  el: element.parentNode,
+                  model: ui.collections['campaigns'],
+                  collection: ui.collections['campaigns']
+                })));
+              });
+          } else {
+            $('[data-acquia-lift-personalize="' + linkType + '"]').hide();
+          }
         }
 
         // Refresh event delegation. This is necessary to rebind event delegation
@@ -395,7 +404,7 @@
           event: 'acquiaLiftSettingsUpdate',
           progress: {
             type: '',
-            message: '',
+            message: ''
           },
           success: function (response, status) {
             Drupal.ajax.prototype.success.call(this, response, status);

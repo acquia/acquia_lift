@@ -290,14 +290,28 @@ tr.acquia-lift-report-control {
 .el-card__action .acquia-lift-delete {
   background-image: url(../images/000000/delete.png);
   background-repeat: no-repeat;
-  text-indent: -9999px;
-  overflow: hidden;
+  background-size: 80%;
+  background-position: 50%;
   width: 24px;
   height: 24px;
-  background-size: 80%;
+  text-indent: -9999px;
+  overflow: hidden;
   display: inline-block;
-  background-position: 50%;
   padding-top: .5rem;
+}
+.el-card__action button.acquia-lift-delete {
+  background-image: url(../images/000000/delete.png);
+  background-repeat: no-repeat;
+  background-size: 80%;
+  background-position: 50%;
+  background-color: transparent;
+  width: 24px;
+  height: 24px;
+  text-indent: -9999px;
+  overflow: hidden;
+  border: none;
+  margin-top: .37rem;
+  cursor: pointer;
 }
 .el-card__content fieldset.collapsible.collapsed {
   border: none;

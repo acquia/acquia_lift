@@ -283,6 +283,7 @@ function acquia_lift_personalize_campaign_wizard_goals_alter(&$form, &$form_stat
           'title' => t('Delete the goal.'),
           'name' => 'edit-goals-all-goals-' . $delta . '-header-delete',
           'value' => t('Delete'),
+          'class' => array('acquia-lift-delete'),
         ),
         '#theme_wrappers' => array('personalize_html_tag'),
         '#submit' => array('acquia_lift_personalize_campaign_wizard_goals_ajax_delete'),
@@ -364,6 +365,10 @@ function acquia_lift_personalize_campaign_wizard_goals_alter(&$form, &$form_stat
     switch ($form_state['values']['goals']['add_goal']['goal_types']['goal_type']) {
       case 'existing':
         $form['goals']['add_goal']['goal']['details'] = _acquia_lift_existing_goal_create_form($agent_data);
+        $form['goals']['add_goal']['goal']['save'] = array(
+          '#type' => 'submit',
+          '#value' => t('Save'),
+        );
         break;
       case 'page':
         $form['goals']['add_goal']['goal']['details'] = _acquia_lift_page_goal_create_form($agent_data);
@@ -379,6 +384,10 @@ function acquia_lift_personalize_campaign_wizard_goals_alter(&$form, &$form_stat
           '#allow_external' => FALSE,
           '#required' => TRUE,
           '#weight' => 10,
+        );
+        $form['goals']['add_goal']['goal']['save'] = array(
+          '#type' => 'submit',
+          '#value' => t('Save'),
         );
         break;
       case 'element':

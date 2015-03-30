@@ -3002,7 +3002,7 @@ class AcquiaLiftWebTestWorkflow extends AcquiaLiftWebTestBase {
           'text' => t('Start'),
         ),
         'links' => array(
-          'edit' => url('admin/structure/personalize/manage/' . $first_agent_machine_name . '/edit'),
+          'edit' => url('admin/structure/personalize/manage/' . $first_agent_machine_name),
           'report' => '',
           'view' => url('admin/structure/personalize/manage/' . $first_agent_machine_name),
         ),
@@ -3021,7 +3021,7 @@ class AcquiaLiftWebTestWorkflow extends AcquiaLiftWebTestBase {
           'text' => t('Start'),
         ),
         'links' => array(
-          'edit' => url('admin/structure/personalize/manage/' . $second_agent_machine_name . '/edit'),
+          'edit' => url('admin/structure/personalize/manage/' . $second_agent_machine_name),
           'report' => '',
           'view' => url('admin/structure/personalize/manage/' . $second_agent_machine_name),
         ),

@@ -1071,7 +1071,7 @@ function acquia_lift_goal_type_create_completed_callback($form, &$form_state) {
   $include_status = variable_get('acquia_lift_unibar_allow_status_change', TRUE);
   $settings = acquia_lift_get_campaign_details($include_status);
   if ($settings[$agent->machine_name]['verified'] && personalize_agent_get_status($agent->machine_name) === PERSONALIZE_STATUS_NOT_STARTED) {
-    $message = t('Goal added.  You can now !start the campaign.', array('!start' => $include_status ? t('start') : l(t('start'), 'admin/structure/personalize/' . $agent->machine_name . '/edit')));
+    $message = t('Goal added.  You can now !start the campaign.', array('!start' => $include_status ? t('start') : l(t('start'), 'admin/structure/personalize/' . $agent->machine_name)));
   }
   else {
     $message = t('!goal goal added to campaign.', array('!goal' => filter_xss($form_state['acquia_lift']['goal_name'])));

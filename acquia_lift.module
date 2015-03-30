@@ -3106,7 +3106,7 @@ function acquia_lift_get_campaign_details($include_status = TRUE) {
       'type' => $agent->plugin,
       'links' => array(
         'view' => url('admin/structure/personalize/manage/' . $agent->machine_name),
-        'edit' => url('admin/structure/personalize/manage/' . $agent->machine_name . '/edit'),
+        'edit' => url('admin/structure/personalize/manage/' . $agent->machine_name),
         'report' => $report_is_active ? url('admin/structure/personalize/manage/' . $agent->machine_name . '/report') : '',
       ),
       'supportsGoals' => $supports_goals,

@@ -409,9 +409,6 @@ function acquia_lift_personalize_campaign_wizard_targeting_alter(&$form, &$form_
   $option_set = acquia_lift_get_option_set_for_targeting($agent_data->machine_name);
 
   if (empty($option_set)) {
-    drupal_set_message(t('You must <a href="!variations_url">create variation sets</a> before targeting.', array(
-      '!variations_url' => url('admin/structure/personalize/manage/' . $agent_data->machine_name . '/variations'),
-    )), 'warning');
     return;
   }
   // Take over the form validation and submit handling.

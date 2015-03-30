@@ -2456,6 +2456,9 @@ function acquia_lift_form_personalize_campaign_wizard_alter(&$form, &$form_state
     drupal_set_message(t('Your Acquia Lift account info has not been configured. Acquia Lift campaigns can not be created until you configure your account info !here', array('!here' => l('here', 'admin/config/content/personalize/acquia_lift'))), 'error');
   }
 
+  // Stylize the create campaign button for new campaigns.
+  $form['agent_basic_info']['create']['#attributes']['class'][] = 'acquia-lift-submit-button';
+
   if (empty($agent->machine_name) || !acquia_lift_is_targeting_agent($agent)) {
     return;
   }

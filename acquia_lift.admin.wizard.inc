@@ -228,6 +228,12 @@ function acquia_lift_personalize_campaign_wizard_variations_alter(&$form, &$form
           ),
         );
         $form['variations']['add_variation']['details']['block']['content'] = _acquia_lift_personalize_campaign_wizard_variations_block($form, $form_state, $agent_data, array('variations', 'add_variation', 'details', 'block', 'content'));
+        // Add a default variation set title to the form based on the number
+        // of option sets already in the campaign.
+        $default_title = t('Variation set #!counter', array(
+          '!counter' => count($option_sets) + 1,
+        ));
+        $form['variations']['add_variation']['details']['block']['content']['title']['#default_value'] = $default_title;
         break;
 
       case 'element':
@@ -1088,10 +1094,11 @@ function _acquia_lift_personalize_campaign_wizard_variations_block(&$form, &$for
   $blocks_id = $pblock_id . '-blocks';
   // Need to update the id so that it is unique on the page.
   $element['pblock_wrapper']['blocks']['#attributes']['id'] = $blocks_id;
-  // @todo Give a default variation set name if not yet set, i.e., "Set 1".
 
   foreach (element_children($element['pblock_wrapper']['blocks']) as $key) {
     $block = &$element['pblock_wrapper']['blocks'][$key];
+    $block['block']['#attributes']['class'][] = 'acquia-lift-personalize-block-wrapper';
+
     // Set the option label as a revealing input and give it a label.
     $block['option_label']['#theme_wrappers'][] = 'acquia_lift_revealing_input';
     $block['option_label']['#title'] = _personalize_generate_option_index($key);
@@ -1110,6 +1117,7 @@ function _acquia_lift_personalize_campaign_wizard_variations_block(&$form, &$for
     // Hide the remove button at this point.
     $block['remove']['#access'] = FALSE;
   }
+
   // Update the "Add another" button to match the desired styling and language.
   $element['pblock_wrapper']['#attributes']['id'] = $pblock_id;
   $element['pblock_wrapper']['blocks_more']['#tag'] = 'button';
@@ -1225,7 +1233,7 @@ function _acquia_lift_personalize_campaign_wizard_variations_element(&$form, &$f
     $element['edit'] = array(
       '#type' => 'submit',
       '#submit' => array('acquia_lift_personalize_campaign_wizard_variations_submit_element_edit'),
-      '#value' => t('Edit'),
+      '#value' => t('Edit variation set'),
       '#name' => 'edit_' . $option_set->osid,
     );
   }

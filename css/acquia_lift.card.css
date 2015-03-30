@@ -35,8 +35,7 @@
 }
 
 .el-card__content {
-  padding-right: 0.75rem;
-  padding-left: 0.75rem;
+  padding: 0.75rem;
 }
 
 .el-card__footer {

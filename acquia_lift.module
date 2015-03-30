@@ -2475,6 +2475,11 @@ function acquia_lift_form_personalize_campaign_wizard_alter(&$form, &$form_state
   if (function_exists($function)) {
     call_user_func_array($function, array(&$form, &$form_state, $form_id));
   }
+
+  // Update primary submit button.
+  if (!empty($form['actions']['submit'])) {
+    $form['actions']['submit']['#attributes']['class'][] = 'acquia-lift-submit-button';
+  }
 }
 
 /**

@@ -26,4 +26,5 @@
 .acquia-lift-revealing-input .acquia-lift-revealer,
 .acquia-lift-revealing-input .acquia-lift-reveal-value {
   cursor: pointer;
+  line-height: 24px;
 }

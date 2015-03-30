@@ -287,6 +287,21 @@ tr.acquia-lift-report-control {
 }
 
 /* Acquia Lift campaign wizard form alterations */
+.el-card__action .acquia-lift-delete {
+  background-image: url(../images/000000/delete.png);
+  background-repeat: no-repeat;
+  text-indent: -9999px;
+  overflow: hidden;
+  width: 24px;
+  height: 24px;
+  background-size: 80%;
+  display: inline-block;
+  background-position: 50%;
+  padding-top: .5rem;
+}
+.el-card__content fieldset.collapsible.collapsed {
+  border: none;
+}
 
 /* Radio list component */
 .acquia-lift-radio-list {
@@ -343,8 +358,22 @@ tr.acquia-lift-report-control {
 }
 
 /* Variations form */
-.personalize-wizard-section #personalized-block-variations fieldset .fieldset-title {
-  text-transform: none;
+.personalize-wizard-section .acquia-lift-personalize-block-wrapper {
+  background-color: #e6e9ed;
+  padding: .5em .5em 0 .5em;
+  border: solid 1px #cfd1d5;
+  border-radius: .5rem;
+  margin-bottom: 1.5rem;
+}
+.personalize-wizard-section .acquia-lift-personalize-block-wrapper fieldset {
+  border: none;
+}
+
+.personalize-wizard-section .form-item-variations-add-variation-details-element-content-url {
+  display: inline-block;
+}
+.personalize-wizard-section .form-item-variations-add-variation-details-element-content-url > input[type="submit"] {
+  display: inline-block;
 }
 
 /* Targeting form */

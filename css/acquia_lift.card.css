@@ -9,13 +9,6 @@
 /**
  * Provide general styles for cards.
  */
-.el-card__gist, .el-card__summary, .el-card, .el-card__header, .el-card__title, .el-card__content, .el-card__footer {
-  -webkit-transform: translateZ(0);
-  transform: translateZ(0);
-  -webkit-transition: all .3s ease-out;
-  transition: all .3s ease-out;
-}
-
 .el-card__gist, .el-card__summary, .el-card {
   border: 0.08rem solid #cccccc;
   box-shadow: 0 0.05rem 0 #cccccc;
@@ -28,7 +21,7 @@
 .el-card__header {
   background-color: #e6e9ed;
   margin: 0;
-  padding: 0.75rem;
+  padding: 0 0.75rem;
 }
 
 .el-card__title {
@@ -91,6 +84,19 @@ ul.el-card__actions {
   background-color: transparent;
   padding-top: 0;
   padding-bottom: 0;
+}
+
+.el-card .el-card__header .el-card__title[aria-controls] {
+  cursor: pointer;
+}
+.el-card .el-card__header .el-card__title[aria-controls]:before {
+  content: url('../images/000000/menu-collapsed.png'); /* LTR */
+  position: relative;
+  margin-left: .5em; /* LTR */
+  left: -.5em; /* LTR */
+}
+.is-active .el-card__header .el-card__title[aria-controls]:before {
+  content: url('../images/000000/menu-expanded.png');
 }
 
 .el-card:not(.is-active) .el-card__content {

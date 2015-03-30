@@ -306,7 +306,7 @@ tr.acquia-lift-report-control {
 }
 .acquia-lift-radio-list .acquia-lift-radio-list-item .acquia-lift-radio-list-item-holder {
   float: left;
-  max-width: 800px;
+  max-width: 60%;
 }
 .acquia-lift-radio-list .acquia-lift-radio-list-item .acquia-lift-radio-list-item-holder .form-item label {
   font-weight: bold;

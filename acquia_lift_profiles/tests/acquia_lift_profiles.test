@@ -36,6 +36,7 @@ class ALProfilesWebTest extends DrupalWebTestCase {
 
     $edit = array(
       'acquia_lift_profiles_account_name' => 'MYALPROFILESACCOUNT',
+      'acquia_lift_profiles_site_name' => 'MYALPROFILESSITE',
       'acquia_lift_profiles_api_url' => 'api.example.com',
       'acquia_lift_profiles_access_key' => 'abc123',
       'acquia_lift_profiles_secret_key' => 'xyz987',
@@ -45,7 +46,7 @@ class ALProfilesWebTest extends DrupalWebTestCase {
 
     // Since this is not a system_settings_form we need to assert that the
     // variables do in fact get set.
-    foreach (array('acquia_lift_profiles_account_name', 'acquia_lift_profiles_api_url', 'acquia_lift_profiles_access_key', 'acquia_lift_profiles_secret_key', 'acquia_lift_profiles_js_path') as $key) {
+    foreach (array('acquia_lift_profiles_account_name', 'acquia_lift_profiles_site_name', 'acquia_lift_profiles_api_url', 'acquia_lift_profiles_access_key', 'acquia_lift_profiles_secret_key', 'acquia_lift_profiles_js_path') as $key) {
       $variable = variable_get($key);
       $this->assertEqual($edit[$key], $variable);
     }
@@ -292,8 +293,8 @@ class ALProfilesWebTest extends DrupalWebTestCase {
 
     // Check that the expected requests have been made to the Event CRUD API.
     $requests = DummyALProfilesHttpClient::getLoggedRequests();
-    $this->assertEqual('http://api.example.com/dashboard/rest/TESTACCOUNT/events/my_action_with_label?label=' . rawurlencode($action_label) . '&type=OTHER', $requests[0]['uri']);
-    $this->assertEqual('http://api.example.com/dashboard/rest/TESTACCOUNT/events/my_action_without_label?label=' . $new_action_name . '&type=OTHER', $requests[1]['uri']);
+    $this->assertEqual('http://api.example.com/dashboard/rest/TESTACCOUNT/events/my_action_with_label?customerSite=TESTSITE&label=' . rawurlencode($action_label) . '&type=OTHER', $requests[0]['uri']);
+    $this->assertEqual('http://api.example.com/dashboard/rest/TESTACCOUNT/events/my_action_without_label?customerSite=TESTSITE&label=' . $new_action_name . '&type=OTHER', $requests[1]['uri']);
 
     DummyALProfilesHttpClient::clearLoggedRequests();
     // Now delete the actions.
@@ -364,6 +365,7 @@ class ALProfilesWebTest extends DrupalWebTestCase {
 
     $edit = array(
       'acquia_lift_profiles_account_name' => 'MYALPROFILESACCOUNT',
+      'acquia_lift_profiles_site_name' => 'MYALPROFILESSITE',
       'acquia_lift_profiles_js_path' => 'acquia_lift_profiles.example.com/path/to.js',
       'acquia_lift_profiles_api_url' => 'api.example.com',
       'acquia_lift_profiles_access_key' => 'abc123',

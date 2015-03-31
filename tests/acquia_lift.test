@@ -3798,7 +3798,7 @@ class AcquiaLiftWebTestCampaignWizard extends AcquiaLiftWebTestBase {
     // links to its "pages" page for editing.
     $this->drupalGet('admin/structure/personalize/manage/' . $agent->machine_name . '/variations');
     $this->assertText('Element test set 1');
-    $this->drupalPost(NULL, NULL, 'Edit');
+    $this->drupalPost(NULL, NULL, 'Edit variation set');
     $this->assertUrl('node');
   }
 
@@ -3807,37 +3807,21 @@ class AcquiaLiftWebTestCampaignWizard extends AcquiaLiftWebTestBase {
    * Target agents.
    */
   function testAudienceAvailability() {
-    $test_agent = $this->createTestAgent();
     $target_agent_data = $this->createTargetingAgent();
 
-    $test_name = $test_agent->getMachineName();
     $target_name = $target_agent_data->machine_name;
 
-    // No audiences should show before option sets are created regardless of the
-    // agent type.
-    $this->drupalGet('admin/structure/personalize/manage/' . $test_name . '/targeting');
-    $this->assertNoFieldByName('audiences[add][details][name]');
-    $this->assertNoText('You must create variation sets before targeting.');
-
+    // No audiences should show before option sets are created.
     $this->drupalGet('admin/structure/personalize/manage/' . $target_name . '/targeting');
     $this->assertNoFieldByName('audiences[add][details][name]');
     $this->assertText('You must create variation sets before targeting.');
 
-    // Now add an option set to each agent.
-    $this->createOptionSet(1, array(
-      'agent' => $test_name,
-      'plugin' => 'type1',
-      'num_options' => 2,
-    ));
+    // Now add an option set.
     $this->createOptionSet(1, array(
       'agent' => $target_name,
       'plugin' => 'type1',
       'num_options' => 2,
     ));
-
-    $this->drupalGet('admin/structure/personalize/manage/' . $test_name . '/targeting');
-    $this->assertNoFieldByName('audiences[add][details][name]');
-    $this->assertNoText('You must create variation sets before targeting.');
 
     $this->drupalGet('admin/structure/personalize/manage/' . $target_name . '/targeting');
     $this->assertFieldByName('audiences[add][details][name]');

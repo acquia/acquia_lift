@@ -16,6 +16,12 @@ function acquia_lift_profiles_admin_form($form, &$form_state) {
     '#default_value' => variable_get('acquia_lift_profiles_account_name', ''),
     '#required' => TRUE,
   );
+  $form['acquia_lift_profiles_site_name'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Acquia Lift Profiles Customer Site'),
+    '#default_value' => variable_get('acquia_lift_profiles_site_name', ''),
+    '#required' => TRUE,
+  );
   $form['acquia_lift_profiles_api_url'] = array(
     '#type' => 'textfield',
     '#title' => t('Acquia Lift Profiles API URL'),
@@ -204,6 +210,7 @@ function acquia_lift_profiles_admin_form_submit($form, &$form_state) {
   }
   $variables = array(
     'acquia_lift_profiles_account_name',
+    'acquia_lift_profiles_site_name',
     'acquia_lift_profiles_access_key',
     'acquia_lift_profiles_secret_key',
     'acquia_lift_profiles_capture_identity',

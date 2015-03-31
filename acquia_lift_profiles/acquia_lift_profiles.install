@@ -66,6 +66,7 @@ function acquia_lift_profiles_disable() {
  */
 function acquia_lift_profiles_uninstall() {
   variable_del('acquia_lift_profiles_account_name');
+  variable_del('acquia_lift_profiles_site_name');
   variable_del('acquia_lift_profiles_api_url');
   variable_del('acquia_lift_profiles_access_key');
   variable_del('acquia_lift_profiles_secret_key');

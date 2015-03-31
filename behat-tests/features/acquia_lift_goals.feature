@@ -45,7 +45,7 @@ Feature: Goals can be edited and managed for an Acquia Lift campaign from toolba
     And I press "Add goal"
 
     # I verify my page goal is added.
-    Then I should see the message "Test goal #1 goal added to campaign" in the messagebox
+    Then I should see the message "Test goal #1 goal added to personalization" in the messagebox
     And I should not see the modal
     Then I should see "1" for the "goal" count
     When I hover over "Why" in the "lift_tray" region
@@ -83,7 +83,7 @@ Feature: Goals can be edited and managed for an Acquia Lift campaign from toolba
     And I press "Add goal"
 
     # I verify my predefined goal is registered with this campaign.
-    Then I should see the message "Registers goal added to campaign" in the messagebox
+    Then I should see the message "Registers goal added to personalization" in the messagebox
     And I should not see the modal
     Then I should see "1" for the "goal" count
     When I hover over "Why" in the "lift_tray" region

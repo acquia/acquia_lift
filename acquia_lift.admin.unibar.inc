@@ -557,7 +557,7 @@ function acquia_lift_element_variation_details_form_ajax_callback($form, &$form_
         $message .= ' ' . t('You can now start the personalization.');
       }
       else {
-        $message .= ' ' . t('Add one or more goals by clicking Goals &gt; Add goal.');
+        $message .= ' ' . t('Add one or more goals by clicking Why &gt; Add goal.');
       }
     }
     $commands[] = acquia_lift_command_messagebox($message, 10);

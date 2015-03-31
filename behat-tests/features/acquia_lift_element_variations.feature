@@ -176,7 +176,7 @@ Feature: Personalize elements variations can be edited for an existing campaign.
     Then I should see "1" for the "variation set" count
     When I hover over "What" in the "lift_tray" region
     Then I should see the text "Page title updated" in the "lift_tray" region
-    And I should not see the link "Option A" in the "lift_tray" region
+    And I should not visibly see the link "Option A" in the "lift_tray" region
     And I should visibly see the link "Option B" in the "lift_tray" region
     And "Page title updated" set "Control variation" variation should not have the "Edit" link
     And "Page title updated" set "Control variation" variation should not have the "Delete" link
@@ -193,8 +193,8 @@ Feature: Personalize elements variations can be edited for an existing campaign.
     Then I should see "0" for the "variation set" count
     When I hover over "What" in the "lift_tray" region
     Then I should not see the text "Page title updated" in the "lift_tray" region
-    And I should not see the link "Option B" in the "lift_tray" region
+    And I should not visibly see the link "Option B" in the "lift_tray" region
 
     # I verify both variations are deleted and there is none left.
-    And I should not see the link "Control variation" in the "lift_tray" region
+    And I should not visibly see the link "Control variation" in the "lift_tray" region
     And I should see the text "No variations" in the "lift_tray" region

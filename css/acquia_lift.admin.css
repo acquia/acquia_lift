@@ -452,13 +452,20 @@ tr.acquia-lift-report-control {
   margin: 1em 0;
   list-style-type: none;
 }
-/* Hide the duplicate button when shown as the drag helper */
-.acquia-lift-targeting-draggable .acquia-lift-targeting-duplicate {
-  display:none;
-}
-#acquia-lift-targeting-audiences .acquia-lift-targeting-draggable .acquia-lift-targeting-duplicate {
+#acquia-lift-targeting-audiences .acquia-lift-targeting-draggable .acquia-lift-targeting-duplicate,
+#acquia-lift-targeting-audiences .acquia-lift-targeting-draggable .acquia-lift-targeting-remove {
   float: right;
   display: inline-block;
+  text-indent: -9999px;
+  overflow: hidden;
+  width: 20px;
+  height: 20px;
+}
+#acquia-lift-targeting-audiences .acquia-lift-targeting-draggable .acquia-lift-targeting-duplicate {
+  background: transparent url(../images/000000/copy.png) no-repeat;
+}
+#acquia-lift-targeting-audiences .acquia-lift-targeting-draggable .acquia-lift-targeting-remove {
+  background: transparent url(../images/000000/close.png) no-repeat;
 }
 
 /* Review warning list */

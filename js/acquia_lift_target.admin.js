@@ -36,45 +36,69 @@
         }
       });
 
+      // Define the draggable configuration so that draggable items can be
+      // initialized from multiple places.
+      var draggableConfiguration = {
+        containment: '#acquia-lift-targeting-audiences',
+        scope: 'acquia-lift-targeting-variations',
+        helper: 'clone',
+        appendTo: 'body',
+        cursor: 'move',
+        cursorAt: {
+          top: 0,
+          left: 0
+        },
+        start: function (event, ui) {
+          if ($(event.originalEvent.target).hasClass('acquia-lift-targeting-duplicate')) {
+            // Remove the duplicate indicator.
+            ui.helper.find('.acquia-lift-targeting-duplicate-icon').remove();
+            // Remove the removal indicator.
+            ui.helper.find('.acquia-lift-targeting-remove').remove();
+            // Give feedback that this is a copy.
+            ui.helper.text(ui.helper.data('acquia-lift-option-label') + ' - ' + Drupal.t('Copy'));
+            // Add a class to be able to tell upon drop.
+            ui.helper.addClass('acquia-lift-targeting-duplicate');
+          } else {
+            ui.helper.text(ui.helper.data('acquia-lift-option-label'));
+          }
+        }
+      };
+
+      // Allow removal of an option from the draggable list.
+      function handleDraggableItemRemove(event) {
+        var $li = $(this).closest('li');
+        var optionId = $li.data('acquia-lift-option-id');
+        var $select = $(this).closest('.form-item').children('select.acquia-lift-targeting-assignment');
+        var selectedItems = $select.val();
+        // Remove it from the selected items.
+        selectedItems.splice(selectedItems.indexOf(optionId), 1);
+        $select.val(selectedItems);
+        // Remove the list item.
+        $li.remove();
+      }
+
       // Add drag and drop behavior to the variations for audience assignment.
       $('.acquia-lift-targeting-assignment').once(function() {
         var $wrapperDiv = $(this).parent();
         var selectId = $(this).attr('id');
         var allowDuplication = $(this).data('acquia-lift-targeting-allow-copy');
         var allowMove = $(this).data('acquia-lift-targeting-allow-move');
+        var allowRemove = $(this).data('acquia-lift-targeting-allow-remove');
         var variationsListHtml = '<ul class="acquia-lift-draggable-variations">';
         // Hide the label for the select element.
         $('label[for="' + selectId + '"]').hide();
         // Convert each selected option in an audience assignment select
         // into a draggable container.
         $('option:selected', this).each(function() {
-          variationsListHtml += Drupal.theme('acquiaLiftTargetingDraggableItem', $(this).val(), $(this).text(), allowDuplication, allowMove);
+          variationsListHtml += Drupal.theme('acquiaLiftTargetingDraggableItem', $(this).val(), $(this).text(), allowDuplication, allowMove, allowRemove);
         });
         variationsListHtml += '</ul>';
         $wrapperDiv.append(variationsListHtml);
 
         // Make the options draggable.
-        $('.acquia-lift-draggable-variations li', $wrapperDiv).draggable({
-          containment: '#acquia-lift-targeting-audiences',
-          scope: 'acquia-lift-targeting-variations',
-          helper: 'clone',
-          appendTo: 'body',
-          cursor: 'move',
-          cursorAt: {
-            top: 0,
-            left: 0
-          },
-          start: function (event, ui) {
-            if ($(event.originalEvent.target).hasClass('acquia-lift-targeting-duplicate')) {
-              // Remove the duplicate indicator.
-              ui.helper.find('.acquia-lift-targeting-duplicate-icon').remove();
-              // Give feedback that this is a copy.
-              ui.helper.text(ui.helper.text() + ' - ' + Drupal.t('Copy'));
-              // Add a class to be able to tell upon drop.
-              ui.helper.addClass('acquia-lift-targeting-duplicate');
-            }
-          }
-        });
+        $('.acquia-lift-draggable-variations li', $wrapperDiv).draggable(draggableConfiguration);
+        // Make options removable if indicated.
+        $('.acquia-lift-targeting-remove', $wrapperDiv).on('click', handleDraggableItemRemove);
 
         // Convert each assignment select area into a droppable target.
         if ($(this).data('acquia-lift-targeting-droppable')) {
@@ -110,7 +134,16 @@
 
               if (isCopy) {
                 // Making a copy so this should remain selected and in the list.
-                ui.draggable.clone(true).appendTo($dropList);
+                // In the new list it needs to inherit the actions based on that
+                // audience container.
+                var allowDuplication = $dropSelect.data('acquia-lift-targeting-allow-copy');
+                var allowMove = $dropSelect.data('acquia-lift-targeting-allow-move');
+                var allowRemove = $dropSelect.data('acquia-lift-targeting-allow-remove');
+                var copyLi = Drupal.theme('acquiaLiftTargetingDraggableItem', dropOptionId, ui.draggable.data('acquia-lift-option-label'), allowDuplication, allowMove, allowRemove);
+                $dropList.append(copyLi);
+                // Make the new item draggable and removable.
+                $('[data-acquia-lift-option-id="' + dropOptionId + '"]', $dropList).draggable(draggableConfiguration);
+                $('[data-acquia-lift-option-id="' + dropOptionId + '"] .acquia-lift-targeting-remove', $dropList).on('click', handleDraggableItemRemove);
               } else {
                 // Unselect this option in the draggable select input.
                 dragSelectedOptions.splice(dragSelectedOptions.indexOf(dropOptionId), 1);
@@ -125,9 +158,7 @@
 
         // Hide the actual select input.
         $(this).hide();
-
       });
-
     }
   }
 
@@ -157,8 +188,11 @@
    * @param allowMove
    *   True if the draggable item can be moved from the container.  False if the
    *   draggable item is only available for copy.
+   * @param allowRemove
+   *   True if the draggable item can be removed from its current container.
+   *   False if it cannot.
    */
-  Drupal.theme.prototype.acquiaLiftTargetingDraggableItem = function(id, label, allowDuplication, allowMove) {
+  Drupal.theme.prototype.acquiaLiftTargetingDraggableItem = function(id, label, allowDuplication, allowMove, allowRemove) {
     var html = '';
     var classes = ['acquia-lift-targeting-draggable'];
     // If the item can be copied but not moved, then dragging anywhere on the
@@ -166,8 +200,11 @@
     if (allowDuplication && !allowMove) {
       classes.push('acquia-lift-targeting-duplicate');
     }
-    html += '<li data-acquia-lift-option-id="' + id + '" class="' + classes.join(' ') + '">';
+    html += '<li data-acquia-lift-option-id="' + id + '" data-acquia-lift-option-label="' + label + '" class="' + classes.join(' ') + '">';
     html += label;
+    if (allowRemove) {
+      html += '<span class="acquia-lift-targeting-remove">Remove</span>';
+    }
     // Show an icon to duplicate this item in addition to the move label so that
     // the user can indicate one action or the other based on where they click.
     if (allowDuplication && allowMove) {

@@ -4007,7 +4007,7 @@ class AcquiaLiftWebTestCampaignWizard extends AcquiaLiftWebTestBase {
     $this->assertOptionSelected('edit-audiences-everyone-else-assignment', $first_option_set->options[0]['option_id']);
 
     // Add an option to the existing option set and verify that it appears as
-    // unassigned.
+    // unassigned but available for targeting.
     $unassigned_id = personalize_generate_option_id(3);
     $first_option_set->options[] = array(
       'option_id' => $unassigned_id,
@@ -4016,10 +4016,14 @@ class AcquiaLiftWebTestCampaignWizard extends AcquiaLiftWebTestBase {
     personalize_option_set_save($first_option_set);
 
     $this->drupalGet('admin/structure/personalize/manage/' . $first_agent->machine_name . '/targeting');
-    $this->assertOptionSelected('edit-audiences-unassigned-assignment', $unassigned_id);
-    $this->assertNoOptionSelected('edit-audiences-unassigned-assignment', $first_option_set->options[0]['option_id']);
-    $this->assertNoOptionSelected('edit-audiences-unassigned-assignment', $first_option_set->options[1]['option_id']);
-    $this->assertNoOptionSelected('edit-audiences-unassigned-assignment', $first_option_set->options[2]['option_id']);
+    $this->assertOptionSelected('edit-variations-options-assignment', $unassigned_id);
+    $this->assertOptionSelected('edit-variations-options-assignment', $first_option_set->options[0]['option_id']);
+    $this->assertOptionSelected('edit-variations-options-assignment', $first_option_set->options[1]['option_id']);
+    $this->assertOptionSelected('edit-variations-options-assignment', $first_option_set->options[2]['option_id']);
+    $this->assertOptionSelected('edit-audiences-muppet-fans-assignment', $first_option_set->options[0]['option_id']);
+    $this->assertOptionSelected('edit-audiences-muppet-fans-assignment', $first_option_set->options[1]['option_id']);
+    $this->assertOptionSelected('edit-audiences-others-assignment', $first_option_set->options[2]['option_id']);
+    $this->assertOptionSelected('edit-audiences-everyone-else-assignment', $first_option_set->options[0]['option_id']);
   }
 
   /**

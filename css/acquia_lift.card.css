@@ -106,8 +106,11 @@ ul.el-card__actions {
   display: none;
 }
 .el-card .el-card__dragger {
-  width: 10px;
-  height: 10px;
-  background-color: red;
+  width: 24px;
+  height: 24px;
   cursor: pointer;
+  background: transparent url(/sites/all/modules/contrib/acquia_lift/images/000000/drag.png) no-repeat;
+  float: left;
+  margin-top: .37rem;
+  margin-left: -0.5rem;
 }

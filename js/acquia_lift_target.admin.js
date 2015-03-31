@@ -39,7 +39,6 @@
       // Define the draggable configuration so that draggable items can be
       // initialized from multiple places.
       var draggableConfiguration = {
-        containment: '#acquia-lift-targeting-audiences',
         scope: 'acquia-lift-targeting-variations',
         helper: 'clone',
         appendTo: 'body',

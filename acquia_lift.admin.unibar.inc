@@ -1025,7 +1025,7 @@ function acquia_lift_goal_create_modal_callback($ajax) {
   module_load_include('inc', 'acquia_lift', 'acquia_lift.ui');
   $types = acquia_lift_goal_types_ui();
   // Handle differences in modal submits based on type of goal.
-  foreach ($types as $id => $type) {
+  foreach ($types as $id => &$type) {
     if ($id === 'element') {
       $type['modal'] = FALSE;
     }

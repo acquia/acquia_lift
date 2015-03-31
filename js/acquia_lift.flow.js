@@ -87,7 +87,7 @@
 
       // Populate the pages input with the current page.
       // The form is sent as the context so we can't check within it.
-      var $pageGoalForm = $('#acquia-lift-create-goal-type-form').not('acquia-lift-processed');
+      var $pageGoalForm = $('#acquia-lift-goal-type-create-form').not('acquia-lift-processed');
       if ($pageGoalForm.length > 0) {
         $pageGoalForm.find('input[name="pages"]').val(Drupal.settings.visitor_actions.currentPath);
         $pageGoalForm.addClass('acquia-lift-processed');

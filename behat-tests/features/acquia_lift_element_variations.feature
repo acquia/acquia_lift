@@ -16,16 +16,16 @@ Feature: Personalize elements variations can be edited for an existing campaign.
       | title | Test Article Title - Original |
     When I click "Acquia Lift" in the "menu" region
     And I wait for AJAX to finish
-    Then I should see the link "Campaigns" in the "lift_tray" region
+    Then I should see the link "Personalizations" in the "lift_tray" region
 
     # I open the variation set's menu.
-    When I hover over "Campaigns" in the "lift_tray" region
+    When I hover over "Personalizations" in the "lift_tray" region
     And I click "Testing campaign add variations" in the "lift_tray" region
-    Then I should visibly see the link "Variation Sets" in the "lift_tray" region
+    Then I should visibly see the link "What" in the "lift_tray" region
     And I should see "0" for the "variation set" count
 
     # I bring up the "Add variation set" interface.
-    When I hover over "Variation Sets" in the "lift_tray" region
+    When I hover over "What" in the "lift_tray" region
     Then I should see the link "Add variation set" in the "lift_tray" region
     Then I should see the link "All variation sets" in the "lift_tray" region
     When I click "Add variation set"
@@ -54,7 +54,7 @@ Feature: Personalize elements variations can be edited for an existing campaign.
     And I should see "1" for the "variation set" count
 
     # I bring up the "Add variation" interface.
-    When I hover over "Variation Sets" in the "lift_tray" region
+    When I hover over "What" in the "lift_tray" region
     Then I should see the text "Test variation set" in the "lift_tray" region
     And I should see the link "Control variation" in the "lift_tray" region
     And I should see the link "Variation #1" in the "lift_tray" region
@@ -76,7 +76,7 @@ Feature: Personalize elements variations can be edited for an existing campaign.
     Then I should not see the variation type form dialog
     And I should see the text "Test Article Title - Updated 2" in the "page_content" region
     And I should see "1" for the "variation set" count
-    When I hover over "Variation Sets" in the "lift_tray" region
+    When I hover over "What" in the "lift_tray" region
     Then I should see the link "Variation #1" in the "lift_tray" region
     Then I should see the link "Variation #2" in the "lift_tray" region
 
@@ -95,16 +95,16 @@ Feature: Personalize elements variations can be edited for an existing campaign.
       | title | Test Article Title - Original |
     When I click "Acquia Lift" in the "menu" region
     And I wait for AJAX to finish
-    Then I should see the link "Campaigns" in the "lift_tray" region
+    Then I should see the link "Personalizations" in the "lift_tray" region
 
     # I open the variation set's menu.
-    When I hover over "Campaigns" in the "lift_tray" region
+    When I hover over "Personalizations" in the "lift_tray" region
     And I click "Testing campaign edit variations" in the "lift_tray" region
-    Then I should visibly see the link "Variation Sets" in the "lift_tray" region
+    Then I should visibly see the link "What" in the "lift_tray" region
     And I should see "1" for the "variation set" count
 
     # I bring up the "Edit" variation set interface.
-    When I hover over "Variation Sets" in the "lift_tray" region
+    When I hover over "What" in the "lift_tray" region
     Then I should see the text "Page title updated" in the "lift_tray" region
     And I should visibly see the link "Option A" in the "lift_tray" region
     And "Page title updated" set "Control variation" variation should not have the "Edit" link
@@ -127,7 +127,7 @@ Feature: Personalize elements variations can be edited for an existing campaign.
     Then I should not see the variation type form dialog
     And I should see the text "Moving Right Along" in the "page_content" region
     And I should see "1" for the "variation set" count
-    When I hover over "Variation Sets" in the "lift_tray" region
+    When I hover over "What" in the "lift_tray" region
     Then I should see the text "Page title updated" in the "lift_tray" region
     And I should visibly see the link "Variation 1" in the "lift_tray" region
 
@@ -146,16 +146,16 @@ Feature: Personalize elements variations can be edited for an existing campaign.
       | title | Test Article Title - Original |
     When I click "Acquia Lift" in the "menu" region
     And I wait for AJAX to finish
-    Then I should see the link "Campaigns" in the "lift_tray" region
+    Then I should see the link "Personalizations" in the "lift_tray" region
 
     # I open the variation set's menu.
-    When I hover over "Campaigns" in the "lift_tray" region
+    When I hover over "Personalizations" in the "lift_tray" region
     And I click "Testing campaign delete variations" in the "lift_tray" region
-    Then I should visibly see the link "Variation Sets" in the "lift_tray" region
+    Then I should visibly see the link "What" in the "lift_tray" region
     And I should see "1" for the "variation set" count
 
     # I bring up the "Delete" variation set interface.
-    When I hover over "Variation Sets" in the "lift_tray" region
+    When I hover over "What" in the "lift_tray" region
     Then I should see the text "Page title updated" in the "lift_tray" region
     And I should visibly see the link "Option A" in the "lift_tray" region
     And I should visibly see the link "Option B" in the "lift_tray" region
@@ -174,7 +174,7 @@ Feature: Personalize elements variations can be edited for an existing campaign.
     # I verify the variation "Option A" is deleted.
     Then I should see the message "The variation has been deleted." in the messagebox
     Then I should see "1" for the "variation set" count
-    When I hover over "Variation Sets" in the "lift_tray" region
+    When I hover over "What" in the "lift_tray" region
     Then I should see the text "Page title updated" in the "lift_tray" region
     And I should not see the link "Option A" in the "lift_tray" region
     And I should visibly see the link "Option B" in the "lift_tray" region
@@ -191,7 +191,7 @@ Feature: Personalize elements variations can be edited for an existing campaign.
     # I verify the variation "Option B" is deleted.
     Then I should see the message "The variation set has been deleted." in the messagebox
     Then I should see "0" for the "variation set" count
-    When I hover over "Variation Sets" in the "lift_tray" region
+    When I hover over "What" in the "lift_tray" region
     Then I should not see the text "Page title updated" in the "lift_tray" region
     And I should not see the link "Option B" in the "lift_tray" region
 

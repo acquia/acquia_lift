@@ -14,16 +14,16 @@ Feature: Goals can be edited and managed for an Acquia Lift campaign from toolba
     And I am on the homepage
     When I click "Acquia Lift" in the "menu" region
     And I wait for AJAX to finish
-    Then I should see the link "Campaigns" in the "lift_tray" region
+    Then I should see the link "Personalizations" in the "lift_tray" region
 
     # I open the goal's menu.
-    When I hover over "Campaigns" in the "lift_tray" region
+    When I hover over "Personalizations" in the "lift_tray" region
     And I click "Testing campaign add page goal" in the "lift_tray" region
-    Then I should visibly see the link "Goals" in the "lift_tray" region
+    Then I should visibly see the link "Why" in the "lift_tray" region
     And I should see "0" for the "goal" count
 
     # I bring up the "Add goal" interface.
-    When I hover over "Goals" in the "lift_tray" region
+    When I hover over "Why" in the "lift_tray" region
     And I should visibly see the link "Add goal" in the "lift_tray" region
     When I click "Add goal" in the "lift_tray" region
     Then I should see the modal with title "Add a goal"
@@ -48,7 +48,7 @@ Feature: Goals can be edited and managed for an Acquia Lift campaign from toolba
     Then I should see the message "Test goal #1 goal added to campaign" in the messagebox
     And I should not see the modal
     Then I should see "1" for the "goal" count
-    When I hover over "Goals" in the "lift_tray" region
+    When I hover over "Why" in the "lift_tray" region
     Then I should see the text "Test goal #1" in the "lift_tray" region
 
   Scenario: Add pre-existing goals to a campaign
@@ -61,16 +61,16 @@ Feature: Goals can be edited and managed for an Acquia Lift campaign from toolba
     And I am on the homepage
     When I click "Acquia Lift" in the "menu" region
     And I wait for AJAX to finish
-    Then I should see the link "Campaigns" in the "lift_tray" region
+    Then I should see the link "Personalizations" in the "lift_tray" region
 
     # I open the goal's menu.
-    When I hover over "Campaigns" in the "lift_tray" region
+    When I hover over "Personalizations" in the "lift_tray" region
     And I click "Testing campaign add existing goal" in the "lift_tray" region
-    Then I should visibly see the link "Goals" in the "lift_tray" region
+    Then I should visibly see the link "Why" in the "lift_tray" region
     And I should see "0" for the "goal" count
 
     # I bring up the "Add goal" interface, again.
-    When I hover over "Goals" in the "lift_tray" region
+    When I hover over "Why" in the "lift_tray" region
     And I should visibly see the link "Add goal" in the "lift_tray" region
     When I click "Add goal" in the "lift_tray" region
     Then I should see the modal with title "Add a goal"
@@ -86,7 +86,7 @@ Feature: Goals can be edited and managed for an Acquia Lift campaign from toolba
     Then I should see the message "Registers goal added to campaign" in the messagebox
     And I should not see the modal
     Then I should see "1" for the "goal" count
-    When I hover over "Goals" in the "lift_tray" region
+    When I hover over "Why" in the "lift_tray" region
     Then I should see the text "Registers" in the "lift_tray" region
 
   Scenario: Add an element goals to a campaign
@@ -99,16 +99,16 @@ Feature: Goals can be edited and managed for an Acquia Lift campaign from toolba
     And I am on the homepage
     When I click "Acquia Lift" in the "menu" region
     And I wait for AJAX to finish
-    Then I should see the link "Campaigns" in the "lift_tray" region
+    Then I should see the link "Personalizations" in the "lift_tray" region
 
     # I open and see the goal's menu.
-    When I hover over "Campaigns" in the "lift_tray" region
+    When I hover over "Personalizations" in the "lift_tray" region
     And I click "Testing campaign add element goal" in the "lift_tray" region
-    Then I should visibly see the link "Goals" in the "lift_tray" region
+    Then I should visibly see the link "Why" in the "lift_tray" region
     And I should see "0" for the "goal" count
 
     # I bring up the "Add goal" interface.
-    When I hover over "Goals" in the "lift_tray" region
+    When I hover over "Why" in the "lift_tray" region
     And I should visibly see the link "Add goal" in the "lift_tray" region
     When I click "Add goal" in the "lift_tray" region
     Then I should see the modal with title "Add a goal"
@@ -132,5 +132,5 @@ Feature: Goals can be edited and managed for an Acquia Lift campaign from toolba
     # I verify my new element goal is added.
     Then I should see the message "The action New goal #2 was saved."
     Then I should see "1" for the "goal" count
-    When I hover over "Goals" in the "lift_tray" region
+    When I hover over "Why" in the "lift_tray" region
     Then I should see the text "New goal #2" in the "lift_tray" region

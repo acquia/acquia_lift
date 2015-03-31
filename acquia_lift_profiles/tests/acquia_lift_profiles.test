@@ -77,17 +77,15 @@ class ALProfilesWebTest extends DrupalWebTestCase {
     );
     $this->drupalPost('user/register', $new_user_fields, t('Create new account'));
     $settings = $this->drupalGetSettings();
-
     $this->assertFalse($settings['acquia_lift_profiles']['captureIdentity']);
-    $this->assertFalse(isset($settings['acquia_lift_profiles']['serverSideActions']));
 
     // Log out and log back in and there still shouldn't be any settings for
     // capturing identity.
     $this->drupalLogout();
     $this->drupalPost('user/login', array('name' => $user_name_1, 'pass' => $password_1), t('Log in'));
     $settings = $this->drupalGetSettings();
+
     $this->assertFalse($settings['acquia_lift_profiles']['captureIdentity']);
-    $this->assertFalse(isset($settings['acquia_lift_profiles']['serverSideActions']));
     $this->drupalLogout();
 
     // Login as admin again and set the "capture identity" setting.
@@ -105,7 +103,7 @@ class ALProfilesWebTest extends DrupalWebTestCase {
     $settings = $this->drupalGetSettings();
 
     $this->assertTrue($settings['acquia_lift_profiles']['captureIdentity']);
-    $this->assertEqual(array('user_login'), array_keys($settings['acquia_lift_profiles']['serverSideActions']));
+    $this->assertEqual(array('form_submit','user_login'), array_keys($settings['acquia_lift_profiles']['serverSideActions']));
     $this->drupalLogout();
 
     // Register as another new user, identity should now be captured.
@@ -120,7 +118,7 @@ class ALProfilesWebTest extends DrupalWebTestCase {
     $this->drupalPost('user/register', $new_user_fields, t('Create new account'));
     $settings = $this->drupalGetSettings();
     $this->assertTrue($settings['acquia_lift_profiles']['captureIdentity']);
-    $this->assertEqual(array('user_login', 'user_register'), array_keys($settings['acquia_lift_profiles']['serverSideActions']));
+    $this->assertEqual(array('form_submit', 'user_login', 'user_register'), array_keys($settings['acquia_lift_profiles']['serverSideActions']));
   }
 
   function testThumbnailImage() {
@@ -266,28 +264,8 @@ class ALProfilesWebTest extends DrupalWebTestCase {
   function testSyncEvents() {
     $this->configureALProfiles();
     $this->drupalLogin($this->admin_user);
-    // Test configuring Acquia Lift Profiles to track a couple of actions.
-    $this->drupalPost('admin/config/content/personalize/acquia_lift_profiles', array('acquia_lift_profiles_tracked_actions[]' => array('user_login', 'user_register')), t('Save'));
-    $this->assertText('The event user_login has been saved to Acquia Lift Profiles');
-    $this->assertText('The event user_register has been saved to Acquia Lift Profiles');
-    $tracked_actions = variable_get('acquia_lift_profiles_tracked_actions', array());
-    $this->assertEqual(array('user_login', 'user_register'), $tracked_actions);
 
-    // Now remove one of those actions.
-    $this->drupalPost('admin/config/content/personalize/acquia_lift_profiles', array('acquia_lift_profiles_tracked_actions[]' => array('user_login')), t('Save'));
-    $this->assertText('The event user_register was deleted from Acquia Lift Profiles');
-    $tracked_actions = variable_get('acquia_lift_profiles_tracked_actions', array());
-    $this->assertEqual(array('user_login'), $tracked_actions);
-
-    // Remove the other one. There should be no call to delete the one we already
-    // deleted.
-    $this->drupalPost('admin/config/content/personalize/acquia_lift_profiles', array('acquia_lift_profiles_tracked_actions[]' => array('form_submit')), t('Save'));
-    $this->assertText('The event form_submit has been saved to Acquia Lift Profiles');
-    $this->assertText('The event user_login was deleted from Acquia Lift Profiles');
-    $this->assertNoText('The event user_register was deleted from Acquia Lift Profiles');
-    $tracked_actions = variable_get('acquia_lift_profiles_tracked_actions', array());
-    $this->assertEqual(array('form_submit'), $tracked_actions);
-
+    ALProfilesAPI::setTestInstance();
     // Create a custom action with a label.
     $action_name = 'my_action_with_label';
     $action_label = 'My Friendly Event';
@@ -304,10 +282,6 @@ class ALProfilesWebTest extends DrupalWebTestCase {
       'limited_use' => 1
     );
     visitor_actions_save_action($action);
-    visitor_actions_custom_load_multiple(FALSE, FALSE, TRUE);
-    $tracked_actions = array();
-    ALProfilesAPI::setTestInstance();
-    acquia_lift_profiles_put_action($action_name, $tracked_actions);
 
     // An action with no label should send the machine name as the label to
     // Lift Web.
@@ -316,17 +290,22 @@ class ALProfilesWebTest extends DrupalWebTestCase {
     unset($new_action['label']);
     $new_action['machine_name'] = $new_action_name;
     visitor_actions_save_action($new_action);
-    $this->resetAll();
-    acquia_lift_profiles_put_action($new_action_name, $tracked_actions);
+
+    // Check that the expected requests have been made to the Event CRUD API.
     $requests = DummyALProfilesHttpClient::getLoggedRequests();
     $this->assertEqual('http://api.example.com/dashboard/rest/TESTACCOUNT/events/my_action_with_label?customerSite=TESTSITE&label=' . rawurlencode($action_label) . '&type=OTHER', $requests[0]['uri']);
     $this->assertEqual('http://api.example.com/dashboard/rest/TESTACCOUNT/events/my_action_without_label?customerSite=TESTSITE&label=' . $new_action_name . '&type=OTHER', $requests[1]['uri']);
 
-    // Now try to save a non-existent action.
     DummyALProfilesHttpClient::clearLoggedRequests();
-    acquia_lift_profiles_put_action('some_non_existent_action', $tracked_actions);
+    // Now delete the actions.
+    visitor_actions_delete_action($action_name);
+
+    // Check that the DELETE request has been made to the API.
     $requests = DummyALProfilesHttpClient::getLoggedRequests();
-    $this->assertTrue(empty($requests));
+    $this->assertEqual('http://api.example.com/dashboard/rest/TESTACCOUNT/events/my_action_with_label', $requests[0]['uri']);
+    $this->assertEqual('delete', $requests[0]['type']);
+
+
   }
 
   function testUDFMappings() {

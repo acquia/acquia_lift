@@ -2484,7 +2484,6 @@
         _.each(['campaigns', 'option_sets'], function (category) {
           var $typeMenus = $('[data-acquia-lift-personalize-type="' + category + '"]');
           var $scrollable = $typeMenus.siblings('.acquia-lift-scrollable');
-          var viewName = null;
           if ($typeMenus.length) {
             $typeMenus
               .each(function (index, element) {
@@ -2499,7 +2498,6 @@
                     if (!$menu.find('[data-acquia-lift-personalize-agent="' + key + '"].acquia-lift-campaign').length) {
                       campaignName = key;
                       campaignModel = model = ui.collections[type].findWhere({'name': key});
-                      viewName = 'MenuCampaignView';
                     }
                   }
                   // Create views for the campaign model if it was just added.

@@ -459,6 +459,7 @@ function acquia_lift_personalize_campaign_wizard_targeting_alter(&$form, &$form_
     '#tree' => TRUE,
     '#attributes' => array(
       'id' => 'acquia-lift-targeting-audiences',
+      'class' => array('personalize-wizard-column'),
     ),
   );
 
@@ -543,6 +544,7 @@ function acquia_lift_personalize_campaign_wizard_targeting_alter(&$form, &$form_
           'class' => $classes,
           'data-acquia-lift-targeting-droppable' => TRUE,
           'data-acquia-lift-targeting-allow-copy' => TRUE,
+          'data-acquia-lift-targeting-allow-move' => TRUE,
         ),
       );
     }
@@ -554,34 +556,35 @@ function acquia_lift_personalize_campaign_wizard_targeting_alter(&$form, &$form_
     );
   }
 
-  // If the agent has been started, then there is the possibility of unassigned
-  // variation options that need to be assigned to a region in order to be
-  // available for assignment via drag and drop.
-  if ($status !== PERSONALIZE_STATUS_NOT_STARTED) {
-    $assigned_options = array();
-    foreach ($saved_targeting as $audience_id => $options) {
-      $assigned_options = array_merge($assigned_options, $options);
-    }
-    $unassigned_options = array_diff_key($variation_options, array_flip($assigned_options));
-    if (!empty($unassigned_options)) {
-      $form['targeting']['audiences']['unassigned'] = array(
-        '#type' => 'container',
-        '#theme' => 'acquia_lift_card',
-        '#collapsible' => FALSE,
-        '#title' => t('Unassigned'),
-      );
-      $form['targeting']['audiences']['unassigned']['assignment'] = array(
-        '#type' => 'select',
-        '#title' => t('Add display option'),
-        '#multiple' => TRUE,
-        '#options' => $variation_options,
-        '#default_value' => array_keys($unassigned_options),
-        '#attributes' => array(
-          'class' => array('acquia-lift-targeting-assignment'),
-        ),
-      );
-    }
-  }
+  // Show all variations so that even if there are unassigned variations they
+  // can be dragged into appropriate audiences.
+  $form['targeting']['variations'] = array(
+    '#type' => 'container',
+    '#attributes' => array(
+      'class' => array('personalize-wizard-column'),
+    ),
+  );
+  $form['targeting']['variations']['options'] = array(
+    '#type' => 'container',
+    '#theme' => 'acquia_lift_card',
+    '#title' => t('All variations'),
+    '#collapsible' => FALSE,
+  );
+  $form['targeting']['variations']['options']['instructions'] = array(
+    '#markup' => t('Drag variations to the desired audience to display to that audience.'),
+  );
+  $form['targeting']['variations']['options']['assignment'] = array(
+    '#type' => 'select',
+    '#title' => t('Drag variations to the desired audiences.'),
+    '#multiple' => TRUE,
+    '#options' => $variation_options,
+    '#default_value' => array_keys($variation_options),
+    '#attributes' => array(
+      'class' => array('acquia-lift-targeting-assignment'),
+      'data-acquia-lift-targeting-allow-copy' => TRUE,
+      'data-acquia-lift-targeting-allow-move' => FALSE,
+    ),
+  );
 }
 
 /**

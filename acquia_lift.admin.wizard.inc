@@ -599,7 +599,11 @@ function acquia_lift_personalize_campaign_wizard_review_alter(&$form, &$form_sta
   $form['review']['summary_column']['summary']['#theme'] = 'acquia_lift_card';
 
     // Add audiences to the summary section.
-  $count = 0;
+  $agent_data = $form['#agent'];
+
+  module_load_include('inc', 'acquia_lift', 'acquia_lift.admin');
+  $option_set = acquia_lift_get_option_set_for_targeting($agent_data->machine_name);
+  $count = isset($option_set->targeting) ? count($option_set->targeting) : 0;
   $form['review']['summary_column']['summary']['audiences'] = array(
     '#markup' => theme('personalize_wizard_summary_count', array(
       'count' => $count,

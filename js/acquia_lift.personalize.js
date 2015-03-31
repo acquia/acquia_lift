@@ -2493,7 +2493,7 @@
                 var $holder = $scrollable.length > 0 ? $scrollable : $menu;
                 Drupal.acquiaLiftUI.utilities.looper(settings[type], function (obj, key) {
                   // Find the right model.
-                  if (type == 'campaigns') {
+                  if (type === 'campaigns') {
                     // If the menu already has a link for this setting, abort.
                     if (!$menu.find('[data-acquia-lift-personalize-agent="' + key + '"].acquia-lift-campaign').length) {
                       campaignName = key;
@@ -2503,21 +2503,12 @@
                   // Create views for the campaign model if it was just added.
                   if (model && addedCampaigns.hasOwnProperty(campaignName)) {
                     element = document.createElement('li');
-                    if (type == 'campaigns') {
+                    if (type === 'campaigns') {
                       // Add campaign view.
                       ui.views.push(new ui.MenuCampaignView({
                         el: element,
                         model: model
                       }));
-                    } else {
-                      // Add content variation view.
-                      var view = new Drupal.acquiaLiftUI.MenuOptionSetView({
-                        campaignModel: campaignModel,
-                        model: model,
-                        el: element
-                      });
-                      Drupal.acquiaLiftUI.views.optionSets[model.get('osid')] = view;
-                      ui.views.push(view);
                     }
 
                     $holder.prepend(element);

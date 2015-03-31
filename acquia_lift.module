@@ -25,7 +25,7 @@ function acquia_lift_menu() {
 
   $items['admin/acquia_lift'] = array(
     'title' => 'Acquia Lift',
-    'description' => 'Manage Acquia Lift campaigns.',
+    'description' => 'Manage Acquia Lift personalizations.',
     'position' => 'right',
     'weight' => 0,
     'page callback' => 'acquia_lift_root_page',
@@ -352,7 +352,7 @@ function acquia_lift_init() {
     // warn the user that their configuration has not been fully sync'd.
     $queue = DrupalQueue::get('acquia_lift_sync');
     if ($queue->numberOfItems() > 0) {
-      $message = t('At least one of your campaigns has configuration that has not been fully synchronized with Acquia Lift. This should resolve itself on the next cron run.');
+      $message = t('At least one of your personalizations has configuration that has not been fully synchronized with Acquia Lift. This should resolve itself on the next cron run.');
       if (user_access('administer site configuration')) {
         $message .= t(' Click here to <a href="@cron">run cron manually</a>.', array('@cron' => url('admin/reports/status/run-cron')));
       }
@@ -1118,7 +1118,7 @@ function acquia_lift_process_queue($exit_on_finish = TRUE) {
       // If our worker callback throws an exception indicating a client error in
       // a request made to Lift, we should abort the processing of the queue and
       // set a message to let the user know things went wrong.
-      drupal_set_message(t('An error occurred while syncing your campaign information to Lift: @error', array('@error' => $e->getMessage())));
+      drupal_set_message(t('An error occurred while syncing your personalization information to Lift: @error', array('@error' => $e->getMessage())));
       AcquiaLiftQueue::handleFailedItem($item);
       $queue->deleteQueue();
       break;
@@ -1237,7 +1237,7 @@ function acquia_lift_library() {
   // It needs to be loaded separately in order to be processed after CTools
   // default modal CSS.
   $libraries['acquia_lift.modal'] = array(
-    'title' => 'Acquia Lift modal campaign management',
+    'title' => 'Acquia Lift modal personalization management',
     'website' => '',
     'version' => VERSION,
     'js' => array(
@@ -2444,7 +2444,7 @@ function acquia_lift_form_personalize_campaign_wizard_alter(&$form, &$form_state
 
   $account_info = variable_get('acquia_lift_account_info', array());
   if (empty($account_info)) {
-    drupal_set_message(t('Your Acquia Lift account info has not been configured. Acquia Lift campaigns can not be created until you configure your account info !here', array('!here' => l('here', 'admin/config/content/personalize/acquia_lift'))), 'error');
+    drupal_set_message(t('Your Acquia Lift account info has not been configured. Acquia Lift personalizations can not be created until you configure your account info !here', array('!here' => l('here', 'admin/config/content/personalize/acquia_lift'))), 'error');
   }
 
   // Stylize the create campaign button for new campaigns.
@@ -2553,9 +2553,9 @@ function acquia_lift_personalize_agent_date_form_alter(&$form, $agent_name) {
     // picker element that goes with it.
     $specified = $options['specified'];
     unset($options['specified']);
-    $options['auto'] = t('End when campaign thresholds are reached');
+    $options['auto'] = t('End when personalization thresholds are reached');
     $form['campaign_end']['auto'] = array(
-      '#description' => t('This option changes the campaign\'s status to complete when both the campaign !duration and !decisions thresholds are reached. The variation with highest number of completed goals at that time is the winning variation for display.', array('!duration' => l(t('duration'), 'admin/config/content/personalize/acquia_lift'), '!decisions' => l(t('decisions'), 'admin/config/content/personalize/acquia_lift'))),
+      '#description' => t('This option changes the personalization\'s status to complete when both the personalization !duration and !decisions thresholds are reached. The variation with highest number of completed goals at that time is the winning variation for display.', array('!duration' => l(t('duration'), 'admin/config/content/personalize/acquia_lift'), '!decisions' => l(t('decisions'), 'admin/config/content/personalize/acquia_lift'))),
     );
     $options['specified'] = $specified;
     $form['campaign_end']['#options'] = $options;
@@ -2676,7 +2676,7 @@ function acquia_lift_form_field_ui_field_edit_form_alter(&$form, &$form_state, $
       '#type' => 'checkbox',
       '#title' => t('Auto-create goal'),
       '#default_value' => isset($field['settings']['personalize']['create_goal']) ? $field['settings']['personalize']['create_goal'] : 1,
-      '#description' => t('Should a goal of "clicks the field" automatically get created for this campaign?'),
+      '#description' => t('Should a goal of "clicks the field" automatically get created for this personalization?'),
       '#states' => array(
         'visible' => array(
           ':input[name="field[settings][personalize][agent_type]"]' => $visible_states,
@@ -2703,9 +2703,9 @@ function acquia_lift_form_field_ui_field_edit_form_alter(&$form, &$form_state, $
     // type is a Lift agent type and the auto-create goal box is checked.
     $form['field']['settings']['personalize']['auto_start'] = array(
       '#type' => 'checkbox',
-      '#title' => t('Auto-start the campaign'),
+      '#title' => t('Auto-start the personalization'),
       '#default_value' => isset($field['settings']['personalize']['auto_start']) ? $field['settings']['personalize']['auto_start'] : 1,
-      '#description' => t('Should the campaign be set to running automatically after creation?'),
+      '#description' => t('Should the personalization be set to running automatically after creation?'),
       '#states' => array(
         'visible' => array(
           ':input[name="field[settings][personalize][agent_type]"]' => $visible_states,
@@ -2718,9 +2718,9 @@ function acquia_lift_form_field_ui_field_edit_form_alter(&$form, &$form_state, $
     // Add a checkbox for automatically stopping the campaign once a winner has been found.
     $form['field']['settings']['personalize']['auto_stop'] = array(
       '#type' => 'checkbox',
-      '#title' => t('End when campaign thresholds are reached'),
+      '#title' => t('End when personalization thresholds are reached'),
       '#default_value' => isset($field['settings']['personalize']['auto_stop']) ? $field['settings']['personalize']['auto_stop'] : 0,
-      '#description' => t('Should the campaign\'s status be changed to complete when both the campaign !duration and !decisions thresholds are reached? In this case, the variation with the highest number of completed goals at that time is set as the winning variation for display.', array('!duration' => l(t('duration'), 'admin/config/content/personalize/acquia_lift'), '!decisions' => l(t('decisions'), 'admin/config/content/personalize/acquia_lift'))),
+      '#description' => t('Should the personalization\'s status be changed to complete when both the personalization !duration and !decisions thresholds are reached? In this case, the variation with the highest number of completed goals at that time is set as the winning variation for display.', array('!duration' => l(t('duration'), 'admin/config/content/personalize/acquia_lift'), '!decisions' => l(t('decisions'), 'admin/config/content/personalize/acquia_lift'))),
       '#states' => array(
         'visible' => array(
           ':input[name="field[settings][personalize][agent_type]"]' => $visible_states,
@@ -2813,8 +2813,8 @@ function acquia_lift_help($path, $arg) {
       $output .= '<p>' . t('The Acquia Lift module provides machine-learning-based personalization for Drupal sites.') . '</p>';
       $output .= '<h3>' . t('Configuration') . '</h3>';
       $output .= '<p>' . t('Go to the !configlink to configure your Acquia Lift credentials.', array('!configlink' => l(t('configuration settings page'), 'admin/config/content/personalize/acquia_lift'))) . '</p>';
-      $output .= '<h3>' . t('Manage your campaigns') . '</h3>';
-      $output .= '<p>' . t('You can manage all of your Acquia Lift campaigns from the !campaignslink.', array('!campaignslink' => l(t('campaign listing page'), 'admin/structure/personalize/manage'))) . '</p>';
+      $output .= '<h3>' . t('Manage your personalizations') . '</h3>';
+      $output .= '<p>' . t('You can manage all of your Acquia Lift personalizations from the !campaignslink.', array('!campaignslink' => l(t('personalization listing page'), 'admin/structure/personalize/manage'))) . '</p>';
       return $output;
   }
 }

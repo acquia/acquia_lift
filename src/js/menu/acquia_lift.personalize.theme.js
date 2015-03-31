@@ -159,14 +159,14 @@
   Drupal.theme.acquiaLiftPersonalizeCampaignMenuItem = function (options) {
     var editAttrs = [
       'class="acquia-lift-campaign-edit acquia-lift-menu-link"',
-      'title="' + Drupal.t('Edit the @campaign campaign', {'@campaign': options.link.label}) + '"',
+      'title="' + Drupal.t('Edit the @campaign personalization', {'@campaign': options.link.label}) + '"',
       'href="' + options.edit.href + '"'
     ];
 
     var linkAttrs = [
       'class="acquia-lift-campaign acquia-lift-campaign--' + formatClass(options.link.id) + ' visitor-actions-ui-ignore"',
       'href="' + options.link.href + '"',
-      'title="' + Drupal.t('Preview the @campaign campaign', {'@campaign': options.link.label}) + '"',
+      'title="' + Drupal.t('Preview the @campaign personalization', {'@campaign': options.link.label}) + '"',
       'data-acquia-lift-personalize-agent="' + options.link.id + '"',
       'aria-role="button"',
       'aria-pressed="false"'

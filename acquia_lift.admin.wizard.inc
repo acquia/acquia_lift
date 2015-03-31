@@ -434,7 +434,7 @@ function acquia_lift_personalize_campaign_wizard_targeting_alter(&$form, &$form_
     // yet been saved to the agent.
     $saved_targeting = $agent_data->data['lift_targeting'];
     if ($saved_targeting != $existing_targeting && $status != PERSONALIZE_STATUS_NOT_STARTED) {
-      drupal_set_message(t('The targeting settings shown here do not match what is currently running for this campaign.'), 'warning');
+      drupal_set_message(t('The targeting settings shown here do not match what is currently running for this personalization.'), 'warning');
       $show_revert = TRUE;
     }
   }
@@ -442,7 +442,7 @@ function acquia_lift_personalize_campaign_wizard_targeting_alter(&$form, &$form_
     if ($status != PERSONALIZE_STATUS_NOT_STARTED) {
       // The current agent is running and there have been no UI changes made
       // since it was started.
-      drupal_set_message(t('The targeting settings shown here represent what is currently running for this campaign.'));
+      drupal_set_message(t('The targeting settings shown here represent what is currently running for this personalization.'));
     }
     // Set the saved targeting to be the same as existing targeting for
     // presentation within this form.
@@ -796,7 +796,7 @@ function acquia_lift_personalize_campaign_wizard_goals_validate(&$form, &$form_s
   foreach ($form_state['values']['goals']['all_goals'] as $delta => $goal) {
     if (!empty($proposed_actions[$goal['action_name']])) {
       // Only show the message once in the error messages.
-      form_set_error('goals[all_goals][' + $delta + '][action_name]', t('Each action can only be used once per campaign.'));
+      form_set_error('goals[all_goals][' + $delta + '][action_name]', t('Each action can only be used once per personalization.'));
       break;
     }
     else {
@@ -1543,10 +1543,10 @@ function acquia_lift_confirm_revert_changes($form, &$form_state, $agent) {
   );
   $form['revert_changes'] = array('#type' => 'value', '#value' => TRUE);
   return confirm_form($form,
-    t('Are you sure you want to revert the targeting changes for the %agent campaign?',
+    t('Are you sure you want to revert the targeting changes for the %agent personalization?',
       array('%agent' => $agent->label)),
     'admin/structure/personalize/' . $agent->machine_name . '/targeting',
-    t('Reverting the targeting will discard all changes since the campaign was set to running.'),
+    t('Reverting the targeting will discard all changes since the personalization was set to running.'),
     t('Revert changes'),
     t('Cancel'));
 }

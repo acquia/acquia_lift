@@ -13,7 +13,7 @@ function acquia_lift_install() {
   $menu = array(
     'menu_name' => $menu_name,
     'title' => 'Acquia Lift personalize controls',
-    'description' => 'The <em>Acquia Lift personalize controls</em> menu contains actions to create and manage personalization campaigns.',
+    'description' => 'The <em>Acquia Lift personalize controls</em> menu contains actions to create and manage personalizations.',
   );
   menu_save($menu);
   _acquia_lift_build_menu($menu_name);

@@ -189,7 +189,7 @@ class AcquiaLiftTest extends DrupalUnitTestCase {
     $logs = array(
       array(
         'level' => PersonalizeLogLevel::INFO,
-        'message' => "The point $pointName was pushed to the Acquia Lift campaign $agentName"
+        'message' => "The point $pointName was pushed to the Acquia Lift personalization $agentName"
       )
     );
     $this->assertLogs($logs);
@@ -209,7 +209,7 @@ class AcquiaLiftTest extends DrupalUnitTestCase {
     $logs = array(
       array(
         'level' => PersonalizeLogLevel::ERROR,
-        'message' => "Could not save the point $pointName to the Acquia Lift campaign $agentName"
+        'message' => "Could not save the point $pointName to the Acquia Lift personalization $agentName"
       )
     );
     $this->assertLogs($logs);
@@ -246,7 +246,7 @@ class AcquiaLiftTest extends DrupalUnitTestCase {
     $logs = array(
       array(
         'level' => PersonalizeLogLevel::INFO,
-        'message' => "The decision $decisionName for point $pointName was pushed to the Acquia Lift campaign $agentName"
+        'message' => "The decision $decisionName for point $pointName was pushed to the Acquia Lift personalization $agentName"
       )
     );
     $this->assertLogs($logs);
@@ -272,7 +272,7 @@ class AcquiaLiftTest extends DrupalUnitTestCase {
     $logs = array(
       array(
         'level' => PersonalizeLogLevel::INFO,
-        'message' => "The decision $decisionName for point $pointName was pushed to the Acquia Lift campaign $agentName"
+        'message' => "The decision $decisionName for point $pointName was pushed to the Acquia Lift personalization $agentName"
       )
     );
 
@@ -293,7 +293,7 @@ class AcquiaLiftTest extends DrupalUnitTestCase {
     $logs = array(
       array(
         'level' => PersonalizeLogLevel::ERROR,
-        'message' => "Could not save decision $decisionName for point $pointName to the Acquia Lift campaign $agentName"
+        'message' => "Could not save decision $decisionName for point $pointName to the Acquia Lift personalization $agentName"
       )
     );
     $this->assertLogs($logs);
@@ -331,7 +331,7 @@ class AcquiaLiftTest extends DrupalUnitTestCase {
     $logs = array(
       array(
         'level' => PersonalizeLogLevel::INFO,
-        'message' => "The decision choice $decisionName: $choiceName for point $pointName was pushed to the Acquia Lift campaign $agentName",
+        'message' => "The decision choice $decisionName: $choiceName for point $pointName was pushed to the Acquia Lift personalization $agentName",
       )
     );
     $this->assertLogs($logs);
@@ -357,7 +357,7 @@ class AcquiaLiftTest extends DrupalUnitTestCase {
     $logs = array(
       array(
         'level' => PersonalizeLogLevel::INFO,
-        'message' => "The decision choice $decisionName: $choiceName for point $pointName was pushed to the Acquia Lift campaign $agentName",
+        'message' => "The decision choice $decisionName: $choiceName for point $pointName was pushed to the Acquia Lift personalization $agentName",
       )
     );
 
@@ -378,7 +378,7 @@ class AcquiaLiftTest extends DrupalUnitTestCase {
     $logs = array(
       array(
         'level' => PersonalizeLogLevel::ERROR,
-        'message' => "Could not save decision choice $decisionName: $choiceName for point $pointName to the Acquia Lift campaign $agentName"
+        'message' => "Could not save decision choice $decisionName: $choiceName for point $pointName to the Acquia Lift personalization $agentName"
       )
     );
     $this->assertLogs($logs);
@@ -414,7 +414,7 @@ class AcquiaLiftTest extends DrupalUnitTestCase {
     $logs = array(
       array(
         'level' => PersonalizeLogLevel::INFO,
-        'message' => "The decision point $pointName was deleted from the Acquia Lift campaign $agentName",
+        'message' => "The decision point $pointName was deleted from the Acquia Lift personalization $agentName",
       )
     );
 
@@ -434,7 +434,7 @@ class AcquiaLiftTest extends DrupalUnitTestCase {
     $logs = array(
       array(
         'level' => PersonalizeLogLevel::ERROR,
-        'message' => "Could not delete decision point $pointName from the Acquia Lift campaign $agentName",
+        'message' => "Could not delete decision point $pointName from the Acquia Lift personalization $agentName",
       )
     );
 
@@ -471,7 +471,7 @@ class AcquiaLiftTest extends DrupalUnitTestCase {
     $logs = array(
       array(
         'level' => PersonalizeLogLevel::INFO,
-        'message' => "The decision $decisionName for point $pointName was deleted from the Acquia Lift campaign $agentName",
+        'message' => "The decision $decisionName for point $pointName was deleted from the Acquia Lift personalization $agentName",
       )
     );
 
@@ -491,7 +491,7 @@ class AcquiaLiftTest extends DrupalUnitTestCase {
     $logs = array(
       array(
         'level' => PersonalizeLogLevel::ERROR,
-        'message' => "Could not delete decision $decisionName for point $pointName from the Acquia Lift campaign $agentName",
+        'message' => "Could not delete decision $decisionName for point $pointName from the Acquia Lift personalization $agentName",
       )
     );
     $this->assertLogs($logs);
@@ -528,7 +528,7 @@ class AcquiaLiftTest extends DrupalUnitTestCase {
     $logs = array(
       array(
         'level' => PersonalizeLogLevel::INFO,
-        'message' => "The decision choice $decisionName: $choiceName for point $pointName was deleted from the Acquia Lift campaign $agentName",
+        'message' => "The decision choice $decisionName: $choiceName for point $pointName was deleted from the Acquia Lift personalization $agentName",
       )
     );
 
@@ -548,7 +548,7 @@ class AcquiaLiftTest extends DrupalUnitTestCase {
     $logs = array(
       array(
         'level' => PersonalizeLogLevel::ERROR,
-        'message' => "Could not delete decision choice $decisionName: $choiceName for point $pointName from the Acquia Lift campaign $agentName",
+        'message' => "Could not delete decision choice $decisionName: $choiceName for point $pointName from the Acquia Lift personalization $agentName",
       )
     );
 
@@ -585,7 +585,7 @@ class AcquiaLiftTest extends DrupalUnitTestCase {
     $logs = array(
       array(
         'level' => PersonalizeLogLevel::INFO,
-        'message' => "The goal $goalName was pushed to the Acquia Lift campaign $agentName",
+        'message' => "The goal $goalName was pushed to the Acquia Lift personalization $agentName",
       )
     );
 
@@ -610,7 +610,7 @@ class AcquiaLiftTest extends DrupalUnitTestCase {
     $logs = array(
       array(
         'level' => PersonalizeLogLevel::INFO,
-        'message' => "The goal $goalName was pushed to the Acquia Lift campaign $agentName",
+        'message' => "The goal $goalName was pushed to the Acquia Lift personalization $agentName",
       )
     );
 
@@ -630,7 +630,7 @@ class AcquiaLiftTest extends DrupalUnitTestCase {
     $logs = array(
       array(
         'level' => PersonalizeLogLevel::ERROR,
-        'message' => "Could not save the goal $goalName to the Acquia Lift campaign $agentName",
+        'message' => "Could not save the goal $goalName to the Acquia Lift personalization $agentName",
       )
     );
 
@@ -667,7 +667,7 @@ class AcquiaLiftTest extends DrupalUnitTestCase {
     $logs = array(
       array(
         'level' => PersonalizeLogLevel::INFO,
-        'message' => "The goal $goalName was deleted from the Acquia Lift campaign $agentName",
+        'message' => "The goal $goalName was deleted from the Acquia Lift personalization $agentName",
       )
     );
 
@@ -687,7 +687,7 @@ class AcquiaLiftTest extends DrupalUnitTestCase {
     $logs = array(
       array(
         'level' => PersonalizeLogLevel::ERROR,
-        'message' => "Could not delete the goal $goalName from the Acquia Lift campaign $agentName",
+        'message' => "Could not delete the goal $goalName from the Acquia Lift personalization $agentName",
       )
     );
 
@@ -1037,7 +1037,7 @@ class AcquiaLiftTest extends DrupalUnitTestCase {
     $logs = array(
       array(
         'level' => PersonalizeLogLevel::INFO,
-        'message' => "The targeting rule for campaign $agentName was saved successfully",
+        'message' => "The targeting rule for personalization $agentName was saved successfully",
       )
     );
 
@@ -1058,7 +1058,7 @@ class AcquiaLiftTest extends DrupalUnitTestCase {
     $logs = array(
       array(
         'level' => PersonalizeLogLevel::ERROR,
-        'message' => "The targeting rule could not be saved for campaign $agentName",
+        'message' => "The targeting rule could not be saved for personalization $agentName",
       )
     );
 
@@ -1199,7 +1199,7 @@ class AcquiaLiftTest extends DrupalUnitTestCase {
     $logs = array(
       array(
         'level' => PersonalizeLogLevel::INFO,
-        'message' => "The fixed targeting mapping for point $pointName was successfully saved for campaign $agentName"
+        'message' => "The fixed targeting mapping for point $pointName was successfully saved for personalization $agentName"
       ),
     );
 
@@ -1220,7 +1220,7 @@ class AcquiaLiftTest extends DrupalUnitTestCase {
     $logs = array(
       array(
         'level' => PersonalizeLogLevel::ERROR,
-        'message' => "The fixed targeting mapping for point $pointName could not be saved for campaign $agentName",
+        'message' => "The fixed targeting mapping for point $pointName could not be saved for personalization $agentName",
       )
     );
 
@@ -1516,7 +1516,7 @@ class AcquiaLiftTest extends DrupalUnitTestCase {
     $logs = array(
       array(
         'level' => PersonalizeLogLevel::INFO,
-        'message' => "The campaign $agentName was pushed to Acquia Lift",
+        'message' => "The personalization $agentName was pushed to Acquia Lift",
       )
     );
     $this->assertLogs($logs);
@@ -1584,7 +1584,7 @@ class AcquiaLiftTest extends DrupalUnitTestCase {
     $logs = array(
       array(
         'level' => PersonalizeLogLevel::ERROR,
-        'message' => "The campaign $agentName could not be pushed to Acquia Lift",
+        'message' => "The personalization $agentName could not be pushed to Acquia Lift",
       )
     );
     $this->assertLogs($logs);
@@ -1831,7 +1831,7 @@ class AcquiaLiftTest extends DrupalUnitTestCase {
     $logs = array(
       array(
         'level' => PersonalizeLogLevel::INFO,
-        'message' => "The data for Acquia Lift campaign $agent_name was reset",
+        'message' => "The data for Acquia Lift personalization $agent_name was reset",
       )
     );
     $this->assertLogs($logs);
@@ -1851,7 +1851,7 @@ class AcquiaLiftTest extends DrupalUnitTestCase {
     $logs = array(
       array(
         'level' => PersonalizeLogLevel::ERROR,
-        'message' => "Could not reset data for Acquia Lift campaign $agent_name",
+        'message' => "Could not reset data for Acquia Lift personalization $agent_name",
       )
     );
     $this->assertLogs($logs);
@@ -1954,7 +1954,7 @@ class AcquiaLiftTest extends DrupalUnitTestCase {
     $logs = array(
       array(
         'level' => PersonalizeLogLevel::INFO,
-        'message' => "The new status of campaign $agent_name was pushed to Acquia Lift",
+        'message' => "The new status of personalization $agent_name was pushed to Acquia Lift",
       )
     );
     $this->assertLogs($logs);
@@ -1986,7 +1986,7 @@ class AcquiaLiftTest extends DrupalUnitTestCase {
     $logs = array(
       array(
         'level' => PersonalizeLogLevel::ERROR,
-        'message' => "The new status of campaign $agent_name could not be pushed to Acquia Lift",
+        'message' => "The new status of personalization $agent_name could not be pushed to Acquia Lift",
       )
     );
     $this->assertLogs($logs);

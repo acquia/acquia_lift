@@ -666,11 +666,11 @@ class FeatureContext extends RawDrupalContext implements SnippetAcceptingContext
     }
     $campaign = $this->getCurrentCampaign();
     if (empty($campaign)) {
-      throw new \Exception(sprintf('Cannot determine the current campaign for variation set %s.', $variation_set));
+      throw new \Exception(sprintf('Cannot determine the current personalization for variation set %s.', $variation_set));
     }
     $agent_instance = personalize_agent_load_agent($campaign);
     if (empty($agent_instance)) {
-      throw new \Exception(sprintf('Cannot load the current agent instance for campaign %s.', $campaign));
+      throw new \Exception(sprintf('Cannot load the current agent instance for personalization %s.', $campaign));
     }
     $option_sets = personalize_option_set_load_by_agent($campaign);
     if ($agent_instance instanceof AcquiaLiftSimpleAB) {
@@ -690,7 +690,7 @@ class FeatureContext extends RawDrupalContext implements SnippetAcceptingContext
           $css .= ' a.acquia-lift-variation-delete';
           break;
         default:
-          throw new \Exception(sprintf('Campaign %s does not support edit links for variations.', $campaign));
+          throw new \Exception(sprintf('Personalization %s does not support edit links for variations.', $campaign));
       }
       $css .= '[data-acquia-lift-personalize-page-variation="' . $index . '"]';
     }

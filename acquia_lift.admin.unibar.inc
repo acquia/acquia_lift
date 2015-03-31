@@ -44,8 +44,8 @@ function acquia_lift_campaign_create_modal_callback($ajax) {
         )),
       ),
       'custom' => array(
-        'title' => t('Custom Lift campaign'),
-        'description' => t('Create a content targeting or multivariate campaign using the Drupal-integrated campaign tools.'),
+        'title' => t('Custom Lift personalization'),
+        'description' => t('Create a content targeting or multivariate personalization using the Drupal-integrated personalization tools.'),
         'path' => 'admin/structure/personalize/add/',
         'url_options' => array(
           'query' => array(
@@ -55,13 +55,13 @@ function acquia_lift_campaign_create_modal_callback($ajax) {
         'modal' => FALSE,
         'logo' => theme('image', array(
           'path' => $path . '/images/campaign-type-custom.png',
-          'alt' => t('Custom Lift campaign'),
-          'title' => t('Select this option to create a custom Lift campaign.'),
+          'alt' => t('Custom Lift personalization'),
+          'title' => t('Select this option to create a custom Lift personalization.'),
         ))
       ),
     ),
   ));
-  return ctools_modal_render(t('Create a campaign'), $output);
+  return ctools_modal_render(t('Create a personalization'), $output);
 }
 
 /**
@@ -81,7 +81,7 @@ function acquia_lift_campaign_type_create_modal_callback($type, $ajax) {
     return;
   }
   acquia_lift_create_ctools_form(
-    t('Create a campaign'),
+    t('Create a personalization'),
     'acquia_lift_campaign_type_create_form',
     array('type' => $type),
     'acquia_lift_campaign_type_create_complete_callback'
@@ -155,7 +155,7 @@ function acquia_lift_campaign_type_create_form($form, &$form_state, $type) {
     '#attributes' => array(
       'class' => array('action-item-primary-active', 'acquia-lift-submit-button'),
     ),
-    '#value' => t('Create campaign'),
+    '#value' => t('Create personalization'),
   );
   $form['actions']['reset'] = array(
     '#markup' => ctools_ajax_text_button(t('Cancel'), 'admin/structure/acquia_lift/cancel/nojs', t('Cancel'), 'acquia-lift-cancel-button'),
@@ -175,7 +175,7 @@ function _acquia_lift_simplified_campaign_create_form($agent_type) {
     $options_form = call_user_func_array(array($agent_class, $method), array(array()));
   }
   else {
-    drupal_set_message(t('There is a problem accessing the Acquia Lift agent. Acquia Lift campaigns can not be created until you configure your account info !here', array('!here' => l('here', 'admin/config/content/personalize/acquia_lift'))), 'error');
+    drupal_set_message(t('There is a problem accessing the Acquia Lift agent. Acquia Lift personalizations can not be created until you configure your account info !here', array('!here' => l('here', 'admin/config/content/personalize/acquia_lift'))), 'error');
     return array();
   }
   // Recreate a basic campaign form with the appropriate AB options.
@@ -554,7 +554,7 @@ function acquia_lift_element_variation_details_form_ajax_callback($form, &$form_
     $message = $form_state['storage']['confirmation_message'];
     if ($current_status === PERSONALIZE_STATUS_NOT_STARTED) {
       if ($settings['personalize']['campaigns'][$agent_name]['verified']) {
-        $message .= ' ' . t('You can now start the campaign.');
+        $message .= ' ' . t('You can now start the personalization.');
       }
       else {
         $message .= ' ' . t('Add one or more goals by clicking Goals &gt; Add goal.');
@@ -1070,10 +1070,10 @@ function acquia_lift_goal_type_create_completed_callback($form, &$form_state) {
   $agent = $form_state['values']['agent'];
   $settings = acquia_lift_get_campaign_details();
   if ($settings[$agent->machine_name]['verified'] && personalize_agent_get_status($agent->machine_name) === PERSONALIZE_STATUS_NOT_STARTED) {
-    $message = t('Goal added.  You can now !start the campaign.', array('!start' => l(t('start'), 'admin/structure/personalize/' . $agent->machine_name)));
+    $message = t('Goal added.  You can now !start the personalization.', array('!start' => l(t('start'), 'admin/structure/personalize/' . $agent->machine_name)));
   }
   else {
-    $message = t('!goal goal added to campaign.', array('!goal' => filter_xss($form_state['acquia_lift']['goal_name'])));
+    $message = t('!goal goal added to personalization.', array('!goal' => filter_xss($form_state['acquia_lift']['goal_name'])));
   }
   // Load updated data about custom defined visitor actions.
   $actions = visitor_actions_custom_load_multiple();
@@ -1108,7 +1108,7 @@ function acquia_lift_goal_type_create_form($form, &$form_state, $type) {
   $agent = personalize_agent_load($agent_name);
   if (empty($agent)) {
     $form['message'] = array(
-      '#markup' => t('You must select a campaign before adding goals.'),
+      '#markup' => t('You must select a personalization before adding goals.'),
     );
     return $form;
   }

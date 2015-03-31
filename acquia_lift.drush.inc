@@ -13,7 +13,7 @@ function acquia_lift_drush_command() {
     'aliases' => array('al-menu'),
   );
   $items['acquia-lift-campaign-sync'] = array (
-    'description' => 'Sync all or one Lift campaign(s).',
+    'description' => 'Sync all or one Lift personalization(s).',
     'aliases' => array('al-sync'),
   );
   return $items;
@@ -51,14 +51,14 @@ function drush_acquia_lift_campaign_sync() {
     $agents = array_merge($agents, personalize_agent_load_by_type($type));
   }
   if (empty($agents)) {
-    drush_log(dt('There is no campaign to be synchronized.'), 'success');
+    drush_log(dt('There is no personalization to be synchronized.'), 'success');
     return;
   }
 
   // Step 2. Select sync type.
   $options = array(
-    'all' => dt('Sync all campaigns'),
-    'one' => dt('Sync one campaign'),
+    'all' => dt('Sync all personalizations'),
+    'one' => dt('Sync one personalization'),
   );
   $type_selection = drush_choice($options, dt('Select sync type:'));
   if (!$type_selection) {
@@ -73,7 +73,7 @@ function drush_acquia_lift_campaign_sync() {
       $options = array(
         'yes' => dt('Confirm'),
       );
-      $options_message = "\n" . dt('Confirm syncing all campaigns:'). "\n- " . implode("\n- ", $agent_names);
+      $options_message = "\n" . dt('Confirm syncing all personalizations:'). "\n- " . implode("\n- ", $agent_names);
       $confirm_selection = drush_choice($options, $options_message);
       if (!$confirm_selection) {
         return;
@@ -81,7 +81,7 @@ function drush_acquia_lift_campaign_sync() {
       break;
     // Step 3b. Select one campaign.
     case 'one':
-      $options_message = "\n" . dt('Select a campaign machine name to sync:');
+      $options_message = "\n" . dt('Select a personalization machine name to sync:');
       $name_selection = drush_choice($agent_names, $options_message);
       if (!$name_selection) {
         return;
@@ -98,7 +98,7 @@ function drush_acquia_lift_campaign_sync() {
   // For each agent, set up a batch job including all the required save operations,
   // then process immediately.
   foreach ($agents as $agent_name => $agent) {
-    $message = "\n" . dt('Synchronizing campaign ') . $agent_name . " ...";
+    $message = "\n" . dt('Synchronizing personalization ') . $agent_name . " ...";
     drush_print($message);
     $operations = acquia_lift_get_sync_operations_for_agents(array($agent_name => $agent));
     $batch_operations = array();

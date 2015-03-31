@@ -13,9 +13,9 @@
 
   var Card = function (element, options) {
     this.type =
-      this.options =
-        this.enabled =
-          this.$element = null;
+    this.options =
+    this.enabled =
+    this.$element = null;
 
     this.init('card', element, options);
   };
@@ -23,6 +23,7 @@
   Card.DEFAULTS = {
     collapsible: true,
     collapsed: false,
+    sortable: false,
     footerVisible: true,
     eventExpanded: 'card-expanded',
     eventCollapsed: 'card-collapsed'
@@ -98,6 +99,7 @@
     } else {
       this.setOpen(true);
     }
+    this.$element.toggleClass('is-sortable', this.options.sortable);
   };
 
   /**

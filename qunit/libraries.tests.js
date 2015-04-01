@@ -14,8 +14,11 @@ QUnit.test('DOM Selection', function(assert) {
   var indicatorClass = 'acquia-lift-active-element';
   var current = null;
   var currentSelector = '';
+  var qtipUrl = document.URL.replace(new RegExp('(\/[^/]*){5}$'), '/libraries/qtip/jquery.qtip-1.0.0-rc3.min.js');
 
-  expect(10);
+  expect(11);
+
+  assert.ok($.fn.qtip, 'jQuery qTip plugin is expected to exist at ' + qtipUrl + ', and loaded.');
 
   function testCallback(element, selector) {
     assert.equal(element, current, 'Callback triggered from selecting ' + selector);

@@ -20,7 +20,6 @@ function acquia_lift_profiles_admin_form($form, &$form_state) {
     '#type' => 'textfield',
     '#title' => t('Acquia Lift Profiles Customer Site'),
     '#default_value' => variable_get('acquia_lift_profiles_site_name', ''),
-    '#required' => TRUE,
   );
   $form['acquia_lift_profiles_api_url'] = array(
     '#type' => 'textfield',

@@ -31,7 +31,6 @@ module.exports = function(grunt) {
         'src/js/menu/acquia_lift.personalize.models.js',
         'src/js/menu/acquia_lift.personalize.collections.js',
         'src/js/menu/acquia_lift.personalize.views.js',
-        'src/js/menu/acquia_lift.personalize.factories.js',
         'src/js/menu/acquia_lift.personalize.commands.js',
         'src/js/menu/acquia_lift.personalize.behaviors.js'
       ];

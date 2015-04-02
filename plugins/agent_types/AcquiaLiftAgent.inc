@@ -75,12 +75,6 @@ interface AcquiaLiftAgentInterface {
   public function buildConversionReport($options);
 }
 
-/**
- * An interface to implement when an agent handles page-level variations such
- * as a simple A/B test.
- */
-interface AcquiaLiftPageVariationInterface { };
-
 interface AcquiaLiftReportInterface {
   /**
    * Get the confidence measure for determining the statistical significance
@@ -141,12 +135,7 @@ class AcquiaLiftReportFactory {
       $report_source = $api_instance;
     }
 
-    if ($agent_instance instanceof AcquiaLiftSimpleAB) {
-      $report = new AcquiaLiftABReport($agent_instance, $report_source);
-    }
-    else {
-      $report = new AcquiaLiftReport($agent_instance, $report_source);
-    }
+    $report = new AcquiaLiftReport($agent_instance, $report_source);
     $report->setConfidenceMeasure(variable_get('acquia_lift_confidence_measure', 95));
     return $report;
   }
@@ -937,31 +926,6 @@ class AcquiaLiftAgent extends PersonalizeAgentBase implements PersonalizeAgentGo
       $_SESSION['acquia_lift_queue_trigger'] = 1;
     }
   }
-}
-
-/**
- * Class AcquiaLiftSimpleAB
- *
- * This is the class for agents of type 'acquia_lift_simple_ab'. For now it only
- * differs from the regular Acquia Lift agent class in the options form it presents
- * to users.
- */
-class AcquiaLiftSimpleAB extends AcquiaLiftAgent implements AcquiaLiftPageVariationInterface, PersonalizeAutoTargetingInterface {
-
-  /**
-   * Implements PersonalizeAgentInterface::supportsMVTs().
-   */
-  public function supportsMVTs() {
-    return FALSE;
-  }
-
-  /**
-   * Implements PersonalizeAgentInterface::supportsMultipleDecisionPoints().
-   */
-  public function supportsMultipleDecisionPoints() {
-    return FALSE;
-  }
-
 }
 
 /**
@@ -1900,52 +1864,6 @@ abstract class AcquiaLiftReportBase implements PersonalizeAgentReportInterface, 
     $build['reports']['#theme_wrappers'] = array('container');
     $build['reports']['#attributes'] = array('class' => array('lift-statistic-category'));
     return $build;
-  }
-}
-
-/**
- * Responsible for retrieving and generating Acquia Lift AB Reports.
- */
-class AcquiaLiftABReport extends AcquiaLiftReportBase {
-
-  /**
-   * Implements PersonalizeAgentReportInterface::renderStatusForOptionSet().
-   */
-  public function renderStatsForOptionSet($option_set, $date_from, $date_to = NULL) {
-    // Not applicable to A/B tests made up of page variations.
-    return array();
-  }
-
-  /**
-   * Generates report overview data.
-   */
-  public function generateOverviewData(&$report_data) {
-    $this->loadAgentStatusData($report_data);
-    $report_data['status'] = $report = $this->extractOverviewReportData($report_data['raw']['status']['data'][$report_data['machine_name']]);
-    if ($report === FALSE) {
-      return array();
-    }
-
-    if ($report_data['today_only']) {
-      $overview_report = $report_data['status']['today'];
-    }
-    else {
-      $overview_report = $report_data['status']['all'];
-    }
-    $report_data['has_data'] = $overview_report['total_shown'] > 0;
-    return $report_data;
-  }
-
-  /**
-   * Implements PersonalizeAgentReportInterface::buildCampaignReports().
-   */
-  public function buildCampaignReports($options) {
-    $report_data = $this->generateReportConfiguration($options);
-    $this->loadConversionReportData($report_data);
-    $this->generateOverviewData($report_data);
-    $reports = $this->buildAllConversionReports($report_data);
-    $reports['#has_data'] = $report_data['has_data'];
-    return $reports;
   }
 }
 

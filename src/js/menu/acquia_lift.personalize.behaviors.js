@@ -36,18 +36,13 @@
               }
             }
           } else {
-            var model = Drupal.acquiaLiftUI.factories.MenuFactory.createCampaignModel(obj);
+            var model = new Drupal.acquiaLiftUI.MenuCampaignModel(obj);
             ui.collections.campaigns.add(model);
             addedCampaigns[obj.name] = model;
           }
         });
 
-        // Clear the variations for all page variation campaigns.
-        ui.collections.campaigns.each(function (model) {
-          if (model instanceof Drupal.acquiaLiftUI.MenuCampaignABModel) {
-            model.get('optionSets').resetVariations();
-          }
-        });
+        // Merging settings' option_sets into campaigns' option_sets.
         Drupal.acquiaLiftUI.utilities.looper(settings.option_sets, function (obj, key) {
           var campaignModel = ui.collections.campaigns.findWhere({name: obj.agent});
           if (campaignModel) {
@@ -74,9 +69,9 @@
           }
         });
 
-        // Create a model for page variation management state
+        // Create a model for element variation management state
         if (!ui.models.variationModeModel) {
-          ui.models.variationModeModel = new ui.MenuVariationModeModel();
+          ui.models.variationModeModel = new ui.MenuElementVariationModeModel();
         }
 
         // Create the menu view to handle general show/hide functionality for
@@ -155,15 +150,8 @@
                     campaignCollection: ui.collections.campaigns,
                     el: $link[0]
                   });
-                  $element = $(Drupal.theme('acquiaLiftPageVariationToggle'));
-                  ui.views.pageVariationToggle = new ui.MenuPageVariationsToggleView({
-                    model: ui.models.variationModeModel,
-                    campaignCollection: ui.collections.campaigns,
-                    el: $element.get(0)
-                  });
                   $link.wrap('<div class="navbar-box">');
                   $link.addClass('navbar-menu-item');
-                  $link.after($element);
                   break;
                 }
                 case 'goals': {
@@ -226,8 +214,6 @@
         _.each(['campaigns', 'option_sets'], function (category) {
           var $typeMenus = $('[data-acquia-lift-personalize-type="' + category + '"]');
           var $scrollable = $typeMenus.siblings('.acquia-lift-scrollable');
-          var campaignsWithOptions = {};
-          var viewName = null;
           if ($typeMenus.length) {
             $typeMenus
               .each(function (index, element) {
@@ -237,43 +223,22 @@
                 var $holder = $scrollable.length > 0 ? $scrollable : $menu;
                 Drupal.acquiaLiftUI.utilities.looper(settings[type], function (obj, key) {
                   // Find the right model.
-                  switch (type) {
-                    case 'option_sets':
-                      // If the menu already has a link for this setting, abort.
-                      if (!$menu.find('[data-acquia-lift-personalize-agent="' + obj.agent + '"][data-acquia-lift-personalize-id="' + key + '"].acquia-lift-preview-page-variation').length) {
-                        campaignName = obj.agent;
-                        campaignsWithOptions[obj.agent] = obj.agent;
-                        campaignModel = ui.collections.campaigns.findWhere({'name': campaignName});
-                        if (campaignModel) {
-                          optionSets = campaignModel.get('optionSets');
-                          model = optionSets.findWhere({'osid': key});
-                          viewName = 'MenuOptionView';
-                        } else {
-                          model = optionSets = viewName = null;
-                        }
-                      }
-                      break;
-                    case 'campaigns':
-                      // If the menu already has a link for this setting, abort.
-                      if (!$menu.find('[data-acquia-lift-personalize-agent="' + key + '"].acquia-lift-campaign').length) {
-                        campaignName = key;
-                        campaignModel = model = ui.collections[type].findWhere({'name': key});
-                        viewName = 'MenuCampaignView';
-                      }
-                      break;
+                  if (type === 'campaigns') {
+                    // If the menu already has a link for this setting, abort.
+                    if (!$menu.find('[data-acquia-lift-personalize-agent="' + key + '"].acquia-lift-campaign').length) {
+                      campaignName = key;
+                      campaignModel = model = ui.collections[type].findWhere({'name': key});
+                    }
                   }
                   // Create views for the campaign model if it was just added.
                   if (model && addedCampaigns.hasOwnProperty(campaignName)) {
                     element = document.createElement('li');
-                    if (type == 'campaigns') {
+                    if (type === 'campaigns') {
                       // Add campaign view.
                       ui.views.push(new ui.MenuCampaignView({
                         el: element,
                         model: model
                       }));
-                    } else {
-                      // Add content variation view.
-                      ui.views.push(ui.factories.MenuFactory.createContentVariationView(model, campaignModel, element));
                     }
 
                     $holder.prepend(element);
@@ -299,7 +264,12 @@
                     if (!Drupal.acquiaLiftUI.views.optionSets[osid]) {
                       campaignModel = ui.collections.campaigns.findWhere({'name': model.get('agent')});
                       element = document.createElement('li');
-                      view = ui.factories.MenuFactory.createContentVariationView(model, campaignModel, element);
+                      var view = new Drupal.acquiaLiftUI.MenuOptionSetView({
+                        campaignModel: campaignModel,
+                        model: model,
+                        el: element
+                      });
+                      Drupal.acquiaLiftUI.views.optionSets[model.get('osid')] = view;
                       ui.views.push(view);
                       $holder.prepend(view.el);
                     }
@@ -410,7 +380,7 @@
           event: 'acquiaLiftSettingsUpdate',
           progress: {
             type: '',
-            message: '',
+            message: ''
           },
           success: function (response, status) {
             Drupal.ajax.prototype.success.call(this, response, status);
@@ -432,12 +402,12 @@
   Drupal.behaviors.acquiaLiftContentVariations = {
     attach: function (context) {
       var ui = Drupal.acquiaLiftUI;
-      // Create a model for page variation management state
+      // Create a model for element variation management state
       if (!ui.models.variationModeModel) {
-        ui.models.variationModeModel = new ui.MenuVariationModeModel();
+        ui.models.variationModeModel = new ui.MenuElementVariationModeModel();
       }
 
-      // Keep the page variation editing and in-context goal creation in
+      // Keep the element variation editing and in-context goal creation in
       // mutually exclusive active states.
       $('body').once('acquia-lift-personalize', function () {
         // Creating any item from the menu is considering starting a new menu action.

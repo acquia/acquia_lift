@@ -8,7 +8,7 @@
 
   /**
    * Define editInContext behaviors to define what happens when creating
-   * a particular personalize_element page variation in context.
+   * a particular personalize_element element variation in context.
    */
   Drupal.acquiaLiftVariations.personalizeElements = Drupal.acquiaLiftVariations.personalizeElements || {};
 

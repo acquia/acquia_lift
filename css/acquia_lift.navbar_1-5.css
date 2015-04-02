@@ -237,7 +237,7 @@
 }
 
 /* Additional edit links are only available in horizontal view */
-#navbar-administration .navbar-tray-vertical .acquia-lift-campaign-edit, #navbar-administration .navbar-tray-vertical .acquia-lift-variation-delete, #navbar-administration .navbar-tray-vertical .acquia-lift-variation-rename, #navbar-administration .navbar-tray-vertical .acquia-lift-variation-edit, #navbar-administration .navbar-tray-vertical .acquia-lift-goal-rename, #navbar-administration .navbar-tray-vertical .acquia-lift-goal-delete, #navbar-administration .navbar-tray-vertical .acquia-lift-page-variation-toggle {
+#navbar-administration .navbar-tray-vertical .acquia-lift-campaign-edit, #navbar-administration .navbar-tray-vertical .acquia-lift-variation-delete, #navbar-administration .navbar-tray-vertical .acquia-lift-variation-rename, #navbar-administration .navbar-tray-vertical .acquia-lift-variation-edit, #navbar-administration .navbar-tray-vertical .acquia-lift-goal-rename, #navbar-administration .navbar-tray-vertical .acquia-lift-goal-delete {
   display: none !important;
 }
 #navbar-administration .navbar-tray-vertical .acquia-lift-goal {

@@ -123,7 +123,7 @@ class FeatureContext extends RawDrupalContext implements SnippetAcceptingContext
    */
   public function beforeJavascriptStep($event) {
     $text = $event->getStep()->getText();
-    if (preg_match('/(follow|press|click|submit)/i', $text)) {
+    if (preg_match('/(follow|press|click|submit|hover)/i', $text)) {
       $this->spinUntilAjaxIsFinished();
     }
   }
@@ -135,7 +135,7 @@ class FeatureContext extends RawDrupalContext implements SnippetAcceptingContext
    */
   public function afterJavascriptStep($event) {
     $text = $event->getStep()->getText();
-    if (preg_match('/(follow|press|click|submit)/i', $text)) {
+    if (preg_match('/(follow|press|click|submit|hover)/i', $text)) {
       $this->spinUntilAjaxIsFinished();
     }
   }
@@ -377,46 +377,6 @@ class FeatureContext extends RawDrupalContext implements SnippetAcceptingContext
   }
 
   /**
-   * @Then the variation edit mode is :state
-   */
-  public function assertVariationEditMode($expected_state) {
-    if (!in_array($expected_state, array('active','inactive','hidden','disabled'))) {
-      throw new \Exception(sprintf('Invalid expected state for variation toggle: %s', $expected_state));
-    }
-    $element = $this->findElementInRegion('#acquia-lift-menu-page-variation-toggle', 'lift_tray');
-    if (empty($element)) {
-      throw new \Exception(sprintf('The variation toggle edit link cannot be found on the page %s', $this->getSession()->getCurrentUrl()));
-    }
-    $current_state = 'inactive';
-    if ($element->hasClass('acquia-lift-page-variation-toggle-hidden')) {
-      $current_state = 'hidden';
-    }
-    else if ($element->hasClass('acquia-lift-page-variation-toggle-active')) {
-      $current_state = 'active';
-    }
-    else if ($element->hasClass('acquia-lift-page-variation-toggle-disabled')) {
-      $current_state = 'disabled';
-    }
-    if ($current_state !== $expected_state) {
-      throw new \Exception(sprintf('The variation toggle edit link is currently in the %s state and not the expected %s state.', $current_state, $expected_state));
-    }
-  }
-
-  /**
-   * @Then the :field field should contain the site title
-   *
-   * @throws \Exception
-   *   If the region or element cannot be found or does not have the specified
-   *   class.
-   */
-  public function assertFieldHasSiteTitle($field) {
-    // Read the site name dynamically.
-    $site_name = variable_get('site_name', "Default site name");
-    $mink_context = $this->contexts['Drupal\DrupalExtension\Context\MinkContext'];
-    $mink_context->assertFieldContains($field, $site_name);
-  }
-
-  /**
    * @Then the :field field should contain text that has :needle
    *
    * @throws \Exception
@@ -438,7 +398,7 @@ class FeatureContext extends RawDrupalContext implements SnippetAcceptingContext
    */
   public function assertRegionElementIsInState($selector, $region, $state) {
     $state_class = array(
-      'highlighted' => 'acquia-lift-page-variation-item',
+      'highlighted' => 'acquia-lift-element-variation-item',
       'available' => 'visitor-actions-ui-enabled',
     );
     if (!isset($state_class[$state])) {
@@ -683,55 +643,32 @@ class FeatureContext extends RawDrupalContext implements SnippetAcceptingContext
       throw new \Exception(sprintf('Cannot load the current agent instance for campaign %s.', $campaign));
     }
     $option_sets = personalize_option_set_load_by_agent($campaign);
-    if ($agent_instance instanceof AcquiaLiftSimpleAB) {
-      // One decision with many variations.
-      $option_set = reset($option_sets);
-      foreach ($option_set->options as $index => $option) {
-        if ($option['option_label'] == $variation) {
-          break;
-        }
-      }
-      $css = '.acquia-lift-menu-item[data-acquia-lift-personalize-agent="' . $campaign . '"]';
-      switch ($link) {
-        case "rename":
-          $css .= ' a.acquia-lift-variation-rename';
-          break;
-        case "delete":
-          $css .= ' a.acquia-lift-variation-delete';
-          break;
-        default:
-          throw new \Exception(sprintf('Campaign %s does not support edit links for variations.', $campaign));
-      }
-      $css .= '[data-acquia-lift-personalize-page-variation="' . $index . '"]';
-    }
-    else {
-      // Standard option set names displayed.
-      foreach ($option_sets as $option_set) {
-        if ($option_set->label == $variation_set) {
-          $osid = $option_set->osid;
-          foreach ($option_set->options as $option) {
-            if ($option['option_label'] == $variation) {
-              $option_id = $option['option_id'];
-              break;
-            }
+    foreach ($option_sets as $option_set) {
+      if ($option_set->label == $variation_set) {
+        $osid = $option_set->osid;
+        foreach ($option_set->options as $option) {
+          if ($option['option_label'] == $variation) {
+            $option_id = $option['option_id'];
+            break;
           }
-          break;
         }
+        break;
       }
-      $css = '.acquia-lift-menu-item[data-acquia-lift-personalize-option-set="' . personalize_stringify_osid($osid) . '"]';
-      switch ($link) {
-        case "edit":
-          $css .= ' a.acquia-lift-variation-edit';
-          break;
-        case "rename":
-          $css .= ' a.acquia-lift-variation-rename';
-          break;
-        case "delete":
-          $css .= ' a.acquia-lift-variation-delete';
-          break;
-      }
-      $css .= '[data-acquia-lift-personalize-option-set-option="' . $option_id . '"]';
     }
+    $css = '.acquia-lift-menu-item[data-acquia-lift-personalize-option-set="' . personalize_stringify_osid($osid) . '"]';
+    switch ($link) {
+      case "edit":
+        $css .= ' a.acquia-lift-variation-edit';
+        break;
+      case "rename":
+        $css .= ' a.acquia-lift-variation-rename';
+        break;
+      case "delete":
+        $css .= ' a.acquia-lift-variation-delete';
+        break;
+    }
+    $css .= '[data-acquia-lift-personalize-option-set-option="' . $option_id . '"]';
+
     return $css;
   }
 

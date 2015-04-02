@@ -328,12 +328,7 @@ function acquia_lift_report($form, &$form_state, $agent_data, $option_set = NULL
     );
   }
 
-  if ($agent instanceof AcquiaLiftSimpleAB) {
-    return acquia_lift_report_ab($form, $form_state, $agent, $agent_data);
-  }
-  else {
-    return acquia_lift_report_custom($form, $form_state, $agent, $agent_data, $option_set);
-  }
+  return acquia_lift_report_custom($form, $form_state, $agent, $agent_data, $option_set);
 }
 
 /**
@@ -755,70 +750,6 @@ function acquia_lift_report_conversion_metric_dropdown($selected) {
  */
 function acquia_lift_report_ajax_callback($form, &$form_state) {
   return $form;
-}
-
-/**
- * Form build function for an A/B Acquia Lift agent report.
- *
- * @param AcquiaLiftAgentInterface $agent
- *   The plugin agent for the selected campaign.
- * @param stdClass $agent_data
- *   The campaign agent data for this report.
- */
-function acquia_lift_report_ab($form, &$form_state, $agent, $agent_data) {
-  $agent_name = $agent->getMachineName();
-  // Check for Rickshaw and D3 libraries and alert users if not exist.
-  if (_acquia_lift_missing_library_warning(array('rickshaw', 'd3'), t('The following libraries are required in order to view the Acquia Lift reports:'))) {
-    return array();
-  }
-  $selected_goal = empty($form_state['values']['goal']) ? NULL : $form_state['values']['goal'];
-  $selected_metric = empty($form_state['values']['metric']) ? 'rate' : $form_state['values']['metric'];
-
-  $build = array();
-  $build['options'] = array(
-    '#type' => 'container',
-    '#attributes' => array(
-      'class' => array('acquia-lift-report-section-options'),
-    ),
-    '#tree' => FALSE,
-    'goal' => acquia_lift_report_goal_dropdown($agent_name, $selected_goal),
-    'metric' => acquia_lift_report_conversion_metric_dropdown($selected_metric),
-    'submit' => array(
-      '#type' => 'submit',
-      '#value' => t('Filter'),
-    ),
-  );
-
-  // Default to showing the complete history of the campaign.
-  $date_start_report = date('Y-m-d', $agent_data->started);
-  $date_end_report = $date_end_targeting = date('Y-m-d');
-
-  // If the campaign's status is "completed" then we need use the date it ended.
-  $status = variable_get(_personalize_agent_get_status_variable($agent_name));
-  if ($status == PERSONALIZE_STATUS_COMPLETED && $end_time = personalize_agent_get_stop_date($agent_name)) {
-    $date_end_report = $date_end_targeting = date('Y-m-d', $end_time);
-  }
-  // Acquia Lift A/B reports have a decision name that is the same as the
-  // campaign machine name.
-  $options = array(
-    'decision' => $agent_data->machine_name,
-    'start' => $date_start_report,
-    'end' => $date_end_report,
-  );
-  $build['reports'] = $agent->buildCampaignReports($options);
-
-  if (!$build['reports']['#has_data']) {
-    // This campaign hasn't been shown yet, so there is no data for reporting.
-    return array(
-      'no_report' => array(
-        '#markup' => t('This campaign does not yet contain information about your visitors\' website interactions. This situation generally occurs for campaigns that have either just been started or do not generate much website traffic.'),
-      ),
-    );
-  }
-
-  $build['reports']['#attached']['library'][] = array('acquia_lift', 'acquia_lift.reports');
-
-  return $build;
 }
 
 /**

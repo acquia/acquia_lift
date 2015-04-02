@@ -15,8 +15,7 @@ Feature: Personalize elements variations can be edited for an existing campaign.
     And I am viewing an "Article" content:
       | title | Test Article Title - Original |
     When I click "Acquia Lift" in the "menu" region
-    And I wait for AJAX to finish
-    Then I should see the link "Campaigns" in the "lift_tray" region
+    Then I should visibly see the link "Campaigns" in the "lift_tray" region
 
     # I open the variation set's menu.
     When I hover over "Campaigns" in the "lift_tray" region
@@ -26,12 +25,12 @@ Feature: Personalize elements variations can be edited for an existing campaign.
 
     # I bring up the "Add variation set" interface.
     When I hover over "Variation Sets" in the "lift_tray" region
-    Then I should see the link "Add variation set" in the "lift_tray" region
-    Then I should see the link "All variation sets" in the "lift_tray" region
+    Then I should visibly see the link "Add variation set" in the "lift_tray" region
+    Then I should visibly see the link "All variation sets" in the "lift_tray" region
     When I click "Add variation set"
     Then I should see the modal with title "Add a variation set"
-    And I should see the link "Webpage elements" in the "modal_content" region
-    And I should see the link "Drupal blocks" in the "modal_content" region
+    And I should visibly see the link "Webpage elements" in the "modal_content" region
+    And I should visibly see the link "Drupal blocks" in the "modal_content" region
     When I click "Webpage elements" in the "modal_content" region
     Then I should not see the modal
 
@@ -56,10 +55,10 @@ Feature: Personalize elements variations can be edited for an existing campaign.
     # I bring up the "Add variation" interface.
     When I hover over "Variation Sets" in the "lift_tray" region
     Then I should see the text "Test variation set" in the "lift_tray" region
-    And I should see the link "Control variation" in the "lift_tray" region
-    And I should see the link "Variation #1" in the "lift_tray" region
-    And I should see the link "Add variation" in the "lift_tray" region
-    And I should see the link "Add variation set" in the "lift_tray" region
+    And I should visibly see the link "Control variation" in the "lift_tray" region
+    And I should visibly see the link "Variation #1" in the "lift_tray" region
+    And I should visibly see the link "Add variation" in the "lift_tray" region
+    And I should visibly see the link "Add variation set" in the "lift_tray" region
 
     # I add a new variation to to the existing variation set.
     When I click "Add variation" in the "lift_tray" region
@@ -77,8 +76,8 @@ Feature: Personalize elements variations can be edited for an existing campaign.
     And I should see the text "Test Article Title - Updated 2" in the "page_content" region
     And I should see "1" for the "variation set" count
     When I hover over "Variation Sets" in the "lift_tray" region
-    Then I should see the link "Variation #1" in the "lift_tray" region
-    Then I should see the link "Variation #2" in the "lift_tray" region
+    Then I should visibly see the link "Variation #1" in the "lift_tray" region
+    Then I should visibly see the link "Variation #2" in the "lift_tray" region
 
   Scenario: Edit existing personalize elements for an acquia_lift campaign.
     # I have a campaign and a variation set.
@@ -94,8 +93,7 @@ Feature: Personalize elements variations can be edited for an existing campaign.
     And I am viewing an "Article" content:
       | title | Test Article Title - Original |
     When I click "Acquia Lift" in the "menu" region
-    And I wait for AJAX to finish
-    Then I should see the link "Campaigns" in the "lift_tray" region
+    Then I should visibly see the link "Campaigns" in the "lift_tray" region
 
     # I open the variation set's menu.
     When I hover over "Campaigns" in the "lift_tray" region
@@ -145,8 +143,7 @@ Feature: Personalize elements variations can be edited for an existing campaign.
     And I am viewing an "Article" content:
       | title | Test Article Title - Original |
     When I click "Acquia Lift" in the "menu" region
-    And I wait for AJAX to finish
-    Then I should see the link "Campaigns" in the "lift_tray" region
+    Then I should visibly see the link "Campaigns" in the "lift_tray" region
 
     # I open the variation set's menu.
     When I hover over "Campaigns" in the "lift_tray" region

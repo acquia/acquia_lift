@@ -53,18 +53,15 @@
   };
 
   /**
-   * A command to trigger the page element selection process.
+   * A command to trigger the element selection process.
    *
    * The response should include a data object with the following keys:
-   * - start: Boolean indicating if page variation mode should be on (true)
+   * - start: Boolean indicating if element variation mode should be on (true)
    *   or off (false).
-   * - type: Indicates the type of variation mode: one of 'page' or 'element'.
    */
   Drupal.ajax.prototype.commands.acquia_lift_variation_toggle = function (ajax, response, status) {
     if (response.data.start) {
       initializeApplication();
-      // Set the model to page or element variation mode.
-      Drupal.acquiaLiftVariations.app.appModel.setModelMode(response.data.type === 'page');
       Drupal.acquiaLiftVariations.app.appModel.set('editMode', true);
       Drupal.acquiaLiftVariations.app.appModel.set('variation', null);
     } else {
@@ -86,14 +83,11 @@
    * same selector/variation type.
    *
    * The response should include a data object with the following keys:
-   * - type: Indicates the type of variation mode: one of 'page' or 'element'.
    * - variationType: The type of variation, e.g., editText, addClass, etc.
    * - selector: The selector for the affected DOM element.
    * - agentName: The machine name of the current campaign.
-   * If type == page:
    * - variationIndex:  The variation index to edit.  A variationIndex of -1
    *   indicates creating a new variation.
-   * If type == element
    * - osid: (optional) the option set id of an existing option set that is
    *   being modified either by adding a variation or by editing a variation
    *   within.
@@ -125,24 +119,12 @@
     initializeApplication();
     // Set up the variation model for editing.
     var variation = null;
-    if (data.type === 'page') {
-      Drupal.acquiaLiftVariations.app.appModel.setModelMode(true);
-      if (data.variationIndex && data.variationIndex >= 0) {
-        variation = new Drupal.acquiaLiftVariations.models.PageVariationModel({
-          variationIndex: data.variationIndex,
-          agentName: data.agentName,
-          selector: data.selector
-        });
-      }
-    } else {
-      Drupal.acquiaLiftVariations.app.appModel.setModelMode(false);
-      if (data.variationIndex && data.variationIndex != -1) {
-        variation = new Drupal.acquiaLiftVariations.models.ElementVariationModel({
-          optionId: data.variationIndex,
-          agentName: data.agentName,
-          osid: data.osid
-        });
-      }
+    if (data.variationIndex && data.variationIndex != -1) {
+      variation = new Drupal.acquiaLiftVariations.models.ElementVariationModel({
+        optionId: data.variationIndex,
+        agentName: data.agentName,
+        osid: data.osid
+      });
     }
     Drupal.acquiaLiftVariations.app.appModel.set('variation', variation);
     Drupal.acquiaLiftVariations.app.appModel.set('editMode', true);
@@ -181,27 +163,12 @@
   }
 
   /**
-   * Add an event listener for a page variation mode trigger request.
-   *
-   * This utilizes the custom toggle command in order to allow front-end and
-   * back-end requests for the functionality to be handled the same way.
-   */
-  $(document).on('acquiaLiftPageVariationModeTrigger', function(e, data) {
-    data['type'] = 'page';
-    var response = {
-      data: data
-    };
-    Drupal.ajax.prototype.commands.acquia_lift_variation_toggle(Drupal.ajax, response, 200);
-  });
-
-  /**
    * Add an event listener for an element variation set mode trigger request.
    *
    * This utilizes the custom toggle command in order to allow front-end
    * and back-end requests for the functionality to be handled the same way.
    */
   $(document).on('acquiaLiftElementVariationModeTrigger', function(e, data) {
-    data['type'] = 'element';
     var response = {
       data: data
     };
@@ -219,7 +186,6 @@
    * - variationIndex: (Optional) The choice id for the option to edit.
    */
   $(document).on('acquiaLiftElementVariationEdit', function(e, data) {
-    data['type'] = 'element';
     var response = {
       data: data
     };
@@ -235,7 +201,6 @@
         $('body').once('acquia-lift-variations', function () {
           response = {
             data: {
-              type: settings.acquia_lift.toolbarEditMode,
               start: true
             }
           };

@@ -110,37 +110,6 @@
     return item;
   }
 
-  /**
-   * Themes a list of page variations for a campaign.
-   *
-   * @param MenuCampaignModel model
-   *   The campaign model to create page variations display for.
-   */
-  Drupal.theme.acquiaLiftPageVariationsItem = function (model) {
-    var optionSets = model.get('optionSets');
-    var variations = optionSets.getVariations();
-
-    if (variations.length == 0) {
-      return '';
-    }
-
-    var attrs = [
-      'class="acquia-lift-preview-page-variation acquia-lift-content-variation navbar-menu-item"' +
-      'data-acquia-lift-personalize-agent="' + model.get('name') + '"'
-    ];
-    var item = '';
-    item += '<span ' + attrs.join(' ') + '>';
-    item += Drupal.t('Variations');
-    item += '</span>\n';
-
-    item += '<ul class="' + navbarMenuClassName + '">' + "\n";
-    _.each(variations, function (variation, index, list) {
-      item += Drupal.theme('acquiaLiftPreviewPageVariationMenuItem', variation);
-    });
-    item += '</ul>\n';
-    return item;
-  }
-
   /*****************************************
    * C A M P A I G N S
    *****************************************/
@@ -179,105 +148,6 @@
 
     return item;
   };
-
-  /*****************************************
-   * P A G E  V A R I A T I O N S
-   *****************************************/
-
-  /**
-   * Themes a list item for a page variation within the list of variations.
-   *
-   * @param object variation
-   *   The variation details including:
-   *   - agent: the name of the agent/campaign for this variation
-   *   - options: an array of variation options
-   *   - index: the variation index value
-   *   - label: the variation label
-   */
-  Drupal.theme.acquiaLiftPreviewPageVariationMenuItem = function (variation) {
-    var item = '';
-    var hrefOptions = [];
-    _.each(variation.options, function (option, index, list) {
-      hrefOptions.push({
-        osID: option.osid,
-        id: option.option.option_id
-      });
-    });
-    var attrs = [
-      'class="acquia-lift-preview-option acquia-lift-preview-page-variation--' + variation.original_index + ' visitor-actions-ui-ignore"',
-      'href="' + generateHref(hrefOptions) + '"',
-      'data-acquia-lift-personalize-page-variation="' + variation.original_index + '"',
-      'aria-role="button"',
-      'aria-pressed="false"'
-    ];
-
-    var renameHref = Drupal.settings.basePath + Drupal.settings.pathPrefix + 'admin/structure/acquia_lift/pagevariation/rename/' + variation.agent + '/' + variation.original_index + '/nojs';
-    var renameAttrs = [
-      'class="acquia-lift-variation-rename acquia-lift-menu-link ctools-use-modal ctools-modal-acquia-lift-style"',
-      'title="' + Drupal.t('Rename Variation #@num', {'@num': variation.index}) + '"',
-      'data-acquia-lift-personalize-page-variation="' + variation.original_index + '"',
-      'aria-role="button"',
-      'aria-pressed="false"',
-      'href="' + renameHref + '"'
-    ];
-
-    var deleteHref = Drupal.settings.basePath + Drupal.settings.pathPrefix + 'admin/structure/acquia_lift/pagevariation/delete/' + variation.agent + '/' + variation.original_index + '/nojs';
-    var deleteAttrs = [
-      'class="acquia-lift-variation-delete acquia-lift-menu-link ctools-use-modal ctools-modal-acquia-lift-style"',
-      'title="' + Drupal.t('Delete Variation #@num', {'@num': variation.index}) + '"',
-      'data-acquia-lift-personalize-page-variation="' + variation.original_index + '"',
-      'aria-role="button"',
-      'aria-pressed="false"',
-      'href="' + deleteHref + '"'
-    ];
-
-    item += '<li>\n<div class="acquia-lift-menu-item clearfix" data-acquia-lift-personalize-agent="' + variation.agent + '">';
-    item += '<a ' + attrs.join(' ') + '>' + Drupal.checkPlain(variation.label) + '</a> \n';
-    if (variation.index > 0) {
-      item += '<a ' + deleteAttrs.join(' ') + '>' + Drupal.t('Delete') + '</a>\n';
-      item += '<a ' + renameAttrs.join(' ') + '>' + Drupal.t('Rename') + '</a>\n';
-    }
-    item += '</div></li>';
-
-    return item;
-  }
-
-  /**
-   * Themes a list item for a new page variation that has not yet been saved.
-   *
-   * @param variation_number
-   *   The number to display for this variation.  -1 is passed to indicate a
-   *   temporary control variation option display.
-   */
-  Drupal.theme.acquiaLiftNewVariationMenuItem = function (variation_number) {
-    var isControl = variation_number == -1;
-    var attrs = [
-      'class="acquia-lift-preview-option acquia-lift-page-variation-new',
-      'aria-role="button"',
-      'aria-pressed="false"'
-    ];
-    var variationLabel = isControl ? Drupal.t(Drupal.settings.personalize.controlOptionLabel) : Drupal.t('Variation #@varnum', {'@varnum': variation_number});
-    if (isControl) {
-      attrs.push('data-acquia-lift-personalize-page-variation="control"');
-    } else {
-      attrs.push('data-acquia-lift-personalize-page-variation="new"');
-    }
-
-    var item = '';
-    item += '<li>\n<a ' + attrs.join(' ') + '>\n';
-    item += variationLabel + '\n';
-    item += '</a>\n</li>\n';
-
-    return item;
-  }
-
-  /**
-   * Returns the HTML for the page variation edit toggle link.
-   */
-  Drupal.theme.acquiaLiftPageVariationToggle = function () {
-    var label = Drupal.t('Toggle variation mode');
-    return '<a class="acquia-lift-page-variation-toggle" id="acquia-lift-menu-page-variation-toggle">' + label + '</a>';
-  }
 
   /*****************************************
    * O P T I O N  S E T S
@@ -514,6 +384,7 @@
 
   Drupal.acquiaLiftUI = Drupal.acquiaLiftUI || {};
   Drupal.acquiaLiftUI.views = Drupal.acquiaLiftUI.views || [];
+  Drupal.acquiaLiftUI.views.optionSets = Drupal.acquiaLiftUI.views.optionSets || {};
   Drupal.acquiaLiftUI.models = Drupal.acquiaLiftUI.models || {};
   Drupal.acquiaLiftUI.collections = Drupal.acquiaLiftUI.collections || {};
   Drupal.acquiaLiftUI.collections['option_sets'] = Drupal.acquiaLiftUI.collections['option_sets'] || {};
@@ -614,43 +485,6 @@
  * tray.
  */
 (function (Drupal, $, _, Backbone) {
-  var contentModeModelBase = Backbone.Model.extend({
-    defaults: {
-      isActive: false
-    },
-
-    initialize: function () {
-      var that = this;
-      $(document).on('acquiaLiftMenuAction', function() {
-        that.endEditMode();
-      });
-    },
-
-    /**
-     * Helper function to start adding a content variation.
-     */
-    startAddMode: function () {
-      this.set('isActive', true);
-    },
-
-    /**
-     * Helper function to start editing a content variation.
-     *
-     * @param variationIndex
-     *   Index of the variation to edit within the current campaign context.
-     */
-    startEditMode: function (variationIndex) {
-      this.set('isActive', true);
-    },
-
-    /**
-     * Helper function to end editing mode for a page variation.
-     */
-    endEditMode: function () {
-      this.set('isActive', false);
-    }
-  });
-
   /**
    * The model for a campaign.
    */
@@ -869,198 +703,6 @@
   });
 
   /**
-   * The model for a simple A/B test campaign.
-   */
-  Drupal.acquiaLiftUI.MenuCampaignABModel = Drupal.acquiaLiftUI.MenuCampaignModel.extend({
-
-    /**
-     * {@inheritDoc}
-     */
-    initialize: function () {
-      this.parent('inherit');
-      this.set('activeVariation', 0);
-      this.listenTo(this.get('optionSets'), 'change:variations', this.triggerOptionSetChange);
-      this.listenTo(this.get('optionSets'), 'reset', this.onOptionSetsEmpty);
-
-      // As options cannot be deleted from a MenuCampaignModel in the UI,
-      // this listener only needs to be in the ABModel.
-      var that = this;
-      $(document).on('acquiaLiftOptionSetsEmpty', function (event, data) {
-        if (that.get('name') !== data) {
-          return;
-        }
-        // Set the index back to the control variation so that views can
-        // update accordingly.
-        that.set('activeVariation', 0);
-        // Now clear out the option sets.
-        that.get('optionSets').reset();
-      });
-
-    },
-
-    triggerOptionSetChange: function (event) {
-      // If the variations have changed, re-validate the variations.
-      this.get('optionSets').resetVariations();
-      // Also re-validate the active variation index to ensure it is still valid.
-      this.set('activeVariation', this.get('activeVariation'));
-      this.trigger('change:variations');
-    },
-
-    /**
-     * Callback handler for when the option sets for this model are emptied.
-     */
-    onOptionSetsEmpty: function (event) {
-      this.set('optionSetTypes', []);
-      this.triggerOptionSetChange(event);
-    },
-
-    /**
-     * {@inheritDoc}
-     */
-    set: function (property, value, options) {
-      var that = this;
-
-      /**
-       * Checks to see if the new active variation is valid within the list
-       * of current variations.
-       *
-       * @param check
-       *   The variation index to check.
-       * @returns
-       *   The variation index that should be set as active variation.
-       */
-      function validateVariationIndex(check) {
-        // -1 means that we are adding a new variation.
-        if (check == -1) return check;
-
-        // Otherwise check that the variation exists.
-        var variations = that.get('optionSets').getVariations(), i, num = variations.length;
-        for (i = 0; i < num; i++) {
-          if (variations[i].original_index == check) {
-            return check;
-          }
-        }
-        // The variation to check does not exist so return the control.
-        return 0;
-      }
-
-      if (property.hasOwnProperty('activeVariation')) {
-        property.activeVariation = validateVariationIndex(property.activeVariation);
-      } else if (property === 'activeVariation') {
-        value = validateVariationIndex(value);
-      }
-      this.parent('set', property, value, options);
-    },
-
-    /**
-     * {@inheritDoc}
-     *
-     * A Simple A/B campaign should be included in the navigation if it
-     * a) has no variations yet; or b) has variations on the current page.
-     */
-    includeInNavigation: function () {
-      var types = this.get('optionSetTypes');
-      // This campaign doesn't have any variations created yet.
-      if (!types || !types.length) {
-        return true;
-      }
-      // If it has variations, they will be included in the count if they are
-      // on the current page.
-      return this.getNumberOfVariations() > 0;
-    },
-
-    /**
-     * {@inheritDoc}
-     */
-    getNumberOfVariations: function () {
-      var optionSets = this.get('optionSets');
-      return optionSets.getVariations().length;
-    },
-
-    /**
-     * {@inheritDoc}
-     */
-    getNextVariationNumber: function () {
-      var variations = this.get('optionSets').getVariations();
-      if (variations.length == 0) {
-        return 1;
-      }
-      // Find the highest numbered variations.
-      var max_variation = _.max(variations, function (variation) {
-        return variation.original_index;
-      });
-      // Careful:don't ++ or you will increment the object's value.
-      return (parseInt(max_variation.original_index) + 1);
-    },
-
-    /**
-     * Get the current variation shown.
-     */
-    getCurrentVariationLabel: function () {
-      var variationIndex = this.get('activeVariation');
-      if (variationIndex < 0) {
-        // Currently adding a new variation
-        var nextNum = this.getNextVariationNumber();
-        return Drupal.t('Variation #@num', {'@num': nextNum});
-      }
-      var variations = this.get('optionSets').getVariations();
-      var variation = _.find(variations, function (current) {
-        return current.original_index == variationIndex;
-      });
-      return variation ? variation.label : null;
-    },
-
-    /**
-     * {@inheritDoc}
-     */
-    refreshData: function () {
-      var that = this;
-      var optionSets = this.get('optionSets');
-      if (optionSets.length > 0) {
-        var sample = optionSets.at(0);
-        var decisionName = sample.get('decision_name');
-      } else {
-        return;
-      }
-      // Default the selected variation to the first/control option if it
-      // has not yet already been set.
-      if (!isNaN(this.get('activeVariation'))) {
-        return;
-      }
-      var index = 0;
-      var found = false;
-      // If there is an option pre-selected, then it should be the default
-      // active option.
-      // NOTE you cannot break out of each functions, so the found variable.
-      optionSets.each(function (optionSet) {
-        if (!found && Drupal.settings.personalize.preselected) {
-          var preselectedOptionName = Drupal.settings.personalize.preselected[optionSet.get('osid')] || null;
-          if (preselectedOptionName) {
-            index = optionSet.get('option_names').indexOf(preselectedOptionName);
-            if (index < 0) {
-              index = 0;
-            } else {
-              found = true;
-            }
-          }
-        }
-      });
-      if (!found && sample.get('winner') != null) {
-        // Otherwise a winner should be the default if one has been defined.
-        index = sample.get('winner');
-      }
-      // The first option key isn't always 0.
-      var options = sample.get('options');
-      if (!options.hasOwnProperty(index)) {
-        var keys = _.keys(options);
-        keys.sort;
-        index = keys[0];
-      }
-      this.set('activeVariation', index);
-    }
-  });
-
-  /**
    * The model for a menu of option set links.
    */
   Drupal.acquiaLiftUI.MenuOptionSetModel = Backbone.Model.extend({
@@ -1174,7 +816,7 @@
   });
 
   /**
-   * The model for a single option within an option set or page variation.
+   * The model for a single option within an option set.
    */
   Drupal.acquiaLiftUI.MenuOptionModel = Backbone.Model.extend({
     defaults: {
@@ -1192,87 +834,39 @@
   /**
    * The model for 'add variation' state for element variations.
    */
-  Drupal.acquiaLiftUI.MenuElementVariationModeModel = contentModeModelBase.extend({
-    defaults: {
-      isActive: false,
-      isEditMode: false,
-      variationIndex: -1
-    }
-  });
-
-  /**
-   * The model for 'add variation' state.
-   */
-  Drupal.acquiaLiftUI.MenuVariationModeModel = contentModeModelBase.extend({
+  Drupal.acquiaLiftUI.MenuElementVariationModeModel = Backbone.Model.extend({
     defaults: {
       isActive: false,
       isEditMode: false,
       variationIndex: -1
     },
 
+    initialize: function () {
+      var that = this;
+      $(document).on('acquiaLiftMenuAction', function() {
+        that.endEditMode();
+      });
+    },
+
     /**
-     * Helper function to start adding a page variation.
-     *
-     * This handles setting all the correct model parameters and sending an
-     * event notification.
+     * Helper function to start adding a content variation.
      */
     startAddMode: function () {
-      // Don't restart if already in create mode.
-      if (this.get('isActive') && !this.get('isEditMode')) {
-        return;
-      }
-      this.set('variationIndex', -1);
-      this.set('isEditMode', false);
       this.set('isActive', true);
-      this.notifyTrigger();
     },
 
     /**
-     * Helper function to start editing a page variation.
-     *
-     * This handles setting all the correct model parameters and sending an
-     * event notification.
-     *
-     * @param variationIndex
-     *   Index of the variation to edit within the current campaign context.
+     * Helper function to start editing a content variation.
      */
-    startEditMode: function (variationIndex) {
-      // Don't do anything if we are already editing the same variation.
-      if (this.get('isActive') && this.get('variationIndex') == variationIndex) {
-        return;
-      }
-      this.set('variationIndex', variationIndex);
-      this.set('isEditMode', true);
+    startEditMode: function () {
       this.set('isActive', true);
-      this.notifyTrigger();
     },
 
     /**
-     * Helper function to end editing mode for a page variation.
-     *
-     * This handles setting all the correct model parameters back and sending
-     * an event notification.
+     * Helper function to end editing mode for a content variation.
      */
     endEditMode: function () {
-      // If editing mode isn't already active, then just return.
-      if (!this.get('isActive')) {
-        return;
-      }
-      this.set('variationIndex', -1);
-      this.set('isEditMode', false);
       this.set('isActive', false);
-      this.notifyTrigger();
-    },
-
-    /**
-     * Send a notification of the trigger in variation mode change.
-     */
-    notifyTrigger: function () {
-      var data = {
-        start: this.get('isActive'),
-        variationIndex: this.get('variationIndex')
-      };
-      $(document).trigger('acquiaLiftPageVariationModeTrigger', [data]);
     }
   });
 
@@ -1344,81 +938,7 @@
      * Causes the cached variation list to be reset.
      */
     triggerChange: function() {
-      this.resetVariations();
       this.trigger('change:variations');
-    },
-
-    /**
-     * Causes the cached variation list to be reset.
-     */
-    resetVariations: function() {
-      this.variations = null;
-    },
-
-    /**
-     * Generates the variations listing for page variations made up of the
-     * option sets within this collection.
-     *
-     * The results are cached within a local variable that is invalidated
-     * when the variations/options change.
-     */
-    getVariations: function() {
-      if (this.variations !== null) {
-        return this.variations;
-      }
-      if (this.length == 0) {
-        return [];
-      }
-      var i,
-        sample = this.at(0),
-        sampleOptions = sample ? sample.get('options') : null,
-        num = sampleOptions ? sampleOptions.length : 0,
-        variations = [],
-        variation,
-        options,
-        option,
-        valid,
-        variationNum;
-      for (i=0; i < num; i++) {
-        valid = true;
-        variationNum = i+1;
-        variation = {
-          index: i,
-          original_index: i,
-          options: [],
-          agent: sample.get('agent')
-        };
-        this.each(function (model) {
-          options = model.get('options');
-          if (options instanceof Backbone.Collection) {
-            options = options.toJSON();
-          }
-          if (options.length <= i) {
-            // This variation is invalid because it does not have an option
-            // in each option set.
-            valid = false;
-          } else {
-            option = {
-              decision_name: model.get('decision_name'),
-              executor: model.get('executor'),
-              osid: model.get('osid'),
-              plugin: model.get('plugin'),
-              selector: model.get('selector'),
-              stateful: model.get('stateful'),
-              winner: model.get('winner'),
-              option: options[i]
-            };
-            variation.label = options[i].option_label;
-            variation.options.push(option);
-            variation.original_index = options[i].original_index;
-          }
-        });
-        if (valid) {
-          variations.push(variation);
-        }
-      }
-      this.variations = variations;
-      return this.variations;
     }
   });
 
@@ -1734,16 +1254,6 @@
       if (!currentCampaign) {
         return;
       }
-      if (currentCampaign instanceof Drupal.acquiaLiftUI.MenuCampaignABModel) {
-        var currentVariation = currentCampaign.getCurrentVariationLabel();
-        if (currentVariation) {
-          text = Drupal.theme.acquiaLiftSelectedContext({'label': currentVariation, 'category': Drupal.t('Variation')});
-          this.$el.attr('title', currentVariation)
-        } else {
-          text = Drupal.t('Variations');
-          this.$el.attr('title', text)
-        }
-      }
       this.$el.html(text);
       if ($count) {
         this.$el.prepend($count);
@@ -2014,291 +1524,6 @@
   });
 
   /**
-   * Backbone View/Controller for the page variations of a campaign.
-   */
-  Drupal.acquiaLiftUI.MenuPageVariationsView = ViewBase.extend({
-    events: {
-      'click .acquia-lift-preview-option': 'onClick'
-    },
-
-    /**
-     * {@inheritDoc}
-     */
-    initialize: function (options) {
-      var that = this;
-
-      // the model is the campaign model.
-      this.listenTo(this.model, 'destroy', this.remove);
-      this.listenTo(this.model, 'change:isActive', this.render);
-      this.listenTo(this.model, 'change:variations', this.rebuild);
-      this.listenTo(this.model, 'change:activeVariation', this.onActiveVariationChange);
-
-      this.onOptionShowProxy = $.proxy(this.onOptionShow, this);
-      this.onPageVariationEditModeProxy = $.proxy(this.onPageVariationEditMode, this);
-
-      $(document).on('personalizeOptionChange', function (event, data) {
-        that.onOptionShowProxy(event, data);
-      });
-      $(document).on('acquiaLiftVariationMode', function (event, data) {
-        that.onPageVariationEditModeProxy(event, data);
-      });
-
-      this.rebuild();
-    },
-
-    /**
-     * {@inheritDoc}
-     */
-    render: function () {
-      this.$el
-        .find('[data-acquia-lift-personalize-page-variation]')
-        .removeClass('acquia-lift-active')
-        .attr('aria-pressed', 'false');
-      var activeVariation = this.model.get('activeVariation');
-      var variationData = (isNaN(activeVariation) || activeVariation == -1) ? 'new' : activeVariation;
-      this.$el.find('[data-acquia-lift-personalize-page-variation="' + variationData + '"]')
-        .addClass('acquia-lift-active')
-        .attr('aria-pressed', 'true');
-    },
-
-    /**
-     * When the selected variation changes, we should also update the preview
-     * such that the previewed variation matches what is shown.
-     */
-    onActiveVariationChange: function () {
-      this.render(this.model);
-    },
-
-    /**
-     * Regenerates the list HTML and adds to the element.
-     * This is necessary when the option set collection changes.
-     *
-     * @param model
-     */
-    rebuild: function () {
-      this.build();
-      this.render();
-      // Re-run navbar handling to pick up new menu options.
-      _.debounce(Drupal.acquiaLiftUI.utilities.updateNavBar, 300);
-    },
-
-    /**
-     * {@inheritDoc}
-     */
-    build: function () {
-      var html = '';
-      html += Drupal.theme('acquiaLiftPageVariationsItem', this.model);
-      this.$el.html(html);
-    },
-
-    /**
-     * {@inheritdoc}
-     */
-    remove: function () {
-      $(document).off('personalizeOptionChange', this.onOptionShowProxy);
-      $(document).off('acquiaLiftVariationMode', this.onPageVariationEditModeProxy);
-      ViewBase.prototype.remove.call(this);
-    },
-
-    /**
-     * Responds to clicks.
-     *
-     * @param jQuery.Event event
-     */
-    onClick: function (event) {
-      if (!$(event.target).hasClass('acquia-lift-preview-option')) {
-        return;
-      }
-      var variation_index = $(event.target).data('acquia-lift-personalize-page-variation');
-      // Clicked new variation name when in add mode.
-      if (isNaN(variation_index)) {
-        return;
-      }
-
-      this.model.set('activeVariation', variation_index);
-
-      event.preventDefault();
-      event.stopPropagation();
-    },
-
-    /**
-     * Select a specific variation to show.
-     *
-     * @param number variationIndex
-     *   The variation index to show.
-     */
-    selectVariation: function (variationIndex) {
-      var variationData = variationIndex < 0 ? 'new' : variationIndex;
-      _.defer(function($context, variationId) {
-        $context.find('.acquia-lift-preview-option[data-acquia-lift-personalize-page-variation="' + variationId + '"]').trigger('click');
-      }, this.$el, variationData)
-    },
-
-    /**
-     * Responds to personalizeOptionChange change events.
-     *
-     * @param jQuery event
-     * @param jQuery $option_set
-     *   A reference to the jQuery-wrapped option set DOM element.
-     * @param string choice_name
-     *   The name of the selected choice.
-     * @param string osid
-     *   The id of the option set to which this choice belongs.
-     */
-    onOptionShow: function (event, $option_set, choice_name, osid) {
-      var optionSets = this.model.get('optionSets');
-      var optionSet = optionSets.findWhere({osid: osid});
-      if (!optionSet) {
-        return;
-      }
-      var options = optionSet.get('options');
-      var option = options.findWhere({'option_id': choice_name});
-      var variationIndex = options.indexOf(option);
-      if (variationIndex < 0) {
-        return;
-      }
-      this.model.set('activeVariation', variationIndex);
-    },
-
-    /**
-     * Response to a change in edit mode for the page variation application.
-     *
-     * @param event
-     *   The jQuery event object
-     * @param data
-     *   An object of event data including the keys:
-     *   - start: true if edit mode started, false if ended.
-     *   - campaign: the machine name of the campaign holding variations.
-     *   - variationIndex: the index of the variation for editing or -1
-     *     if adding a new variation.
-     */
-    onPageVariationEditMode: function (event, data) {
-      // Make sure it's for this campaign.
-      if (this.model.get('name') !== data.campaign) {
-        return;
-      }
-      var menuClass = Drupal.settings.acquia_lift.menuClass;
-      if (data.start) {
-        if (data.variationIndex < 0) {
-          // If add mode, then create a temporary variation listing.
-          var nextIndex = this.model.getNextVariationNumber();
-          // The first option is always control so the numbering displayed
-          // actually matches the index number.
-          var variationNumber = Math.max(nextIndex, 1);
-          if (nextIndex == 0) {
-            // Add a control variation display as well.
-            this.$el.find('ul.' + menuClass).append(Drupal.theme('acquiaLiftNewVariationMenuItem', -1));
-          }
-          this.$el.find('ul.' + menuClass).append(Drupal.theme('acquiaLiftNewVariationMenuItem', variationNumber));
-          this.$el.find('ul.' + menuClass + ' li.acquia-lift-empty').hide();
-          // Indicate in the model that we are adding.
-          this.model.set('activeVariation', -1);
-          this.render(this.model);
-        } else {
-          // If in edit mode, make sure that the edited variation index is
-          // indicated.
-          // Make it seem as if the item was clicked without triggering
-          // any other click events that may be listening on the link.
-          var $li = this.$el.find('[data-acquia-lift-personalize-page-variation="' + data.variationIndex + '"]');
-          var event = new Event('click');
-          event.currentTarget = event.target = $li.get('0');
-          this.onClick(event);
-        }
-        Drupal.acquiaLiftUI.utilities.updateNavbar();
-      } else {
-        // If exiting, remove any temporary variation listings.
-        this.$el.find('ul.' + menuClass + ' li.acquia-lift-empty').show();
-        this.$el.find('.acquia-lift-page-variation-new').closest('li').remove();
-        // If the model is set at adding, change it back to the control option.
-        if (this.model.get('activeVariation') == -1) {
-          this.model.set('activeVariation', 0);
-        }
-      }
-    }
-  });
-
-  /**
-   * The toggle functionality for editing page variations.
-   */
-  Drupal.acquiaLiftUI.MenuPageVariationsToggleView = ViewBase.extend({
-    events: {
-      'click': 'onClick'
-    },
-
-    /**
-     * @{inheritDoc}
-     *
-     * The model is the page variations mode model.
-     */
-    initialize: function (options) {
-      this.campaignCollection = options.campaignCollection;
-      this.listenTo(this.campaignCollection, 'change:isActive', this.onActiveVariationChange);
-      this.listenTo(this.campaignCollection, 'change:activeVariation', this.onActiveVariationChange);
-      this.listenTo(this.model, 'change:isActive', this.render);
-      this.build();
-      this.render();
-    },
-
-    /**
-     * {@inheritDoc}
-     */
-    render: function() {
-      var currentCampaign = this.campaignCollection.findWhere({'isActive': true});
-      if (!currentCampaign) {
-        return;
-      }
-      // There is no toggle available for the control variation.
-      var disabled = currentCampaign.get('activeVariation') == 0;
-      var active = this.model.get('isActive');
-      var hidden = currentCampaign instanceof Drupal.acquiaLiftUI.MenuCampaignABModel === false;
-
-      this.$el
-        .toggleClass('acquia-lift-page-variation-toggle-disabled', !active && disabled && !hidden)
-        .toggleClass('acquia-lift-page-variation-toggle-active', active && !hidden)
-        .toggleClass('acquia-lift-page-variation-toggle-hidden', hidden);
-    },
-
-    /**
-     * {@inheritDoc}
-     */
-    build: function() {
-      this.$el.text(Drupal.t('Toggle edit variation'));
-    },
-
-    /**
-     * Event handler for changing the active variation.
-     */
-    onActiveVariationChange: function (event) {
-      // End any current editing when changing variations.
-      if (this.model.get('isActive')) {
-        this.model.endEditMode();
-      }
-      this.render();
-    },
-
-    /**
-     * Event handler for clicking on the toggle link.
-     * @param event
-     */
-    onClick: function (event) {
-      var currentCampaign = this.campaignCollection.findWhere({'isActive': true});
-      if (!currentCampaign) {
-        return;
-      }
-      if (this.model.get('isActive')) {
-        this.model.endEditMode();
-      } else {
-        var currentVariationIndex = currentCampaign.get('activeVariation');
-        if (currentVariationIndex == 0) {
-          // Cannot edit the control variation.
-          return;
-        }
-        this.model.startEditMode(currentVariationIndex);
-      }
-    }
-  });
-
-  /**
    * Display the content variation count for the active campaign.
    */
   Drupal.acquiaLiftUI.MenuContentVariationsCountView = ViewBase.extend({
@@ -2320,10 +1545,6 @@
      */
     render: function () {
       var variations = this.model.getNumberOfVariations();
-      if (this.model instanceof Drupal.acquiaLiftUI.MenuCampaignABModel && this.model.get('activeVariation') == -1) {
-        // We are in add mode so adjust the number to show.
-        variations++;
-      }
       if (this.model.get('isActive')) {
         this.$el
           .toggleClass('acquia-lift-empty', !variations)
@@ -2390,37 +1611,18 @@
       if (!this.model) {
         return;
       }
-      if (this.model instanceof Drupal.acquiaLiftUI.MenuCampaignABModel) {
-        // Simple A/B campaigns need to call the executor for each of the
-        // options within the selected page variation.
-        var variation_index = this.model.get('activeVariation');
-        var variations = this.model.get('optionSets').getVariations();
-        var variation = _.find(variations, function(obj) {
-          return obj.original_index == variation_index;
-        });
-
-        if (!variation) return;
-        var i, num = variation.options.length, current;
-        // Run the executor for each option in the variation.
-        for (i=0; i < num; i++) {
-          current = variation.options[i];
-          Drupal.personalize.executors[current.executor].execute($(current.selector), current.option.option_id, current.osid);
+      // Note that the model passed into this callback will be the
+      // changed option set model.
+      if (changedModel instanceof Drupal.acquiaLiftUI.MenuOptionSetModel) {
+        var activeOption = changedModel.get('activeOption');
+        if (!activeOption) {
+          return;
         }
-      } else {
-        // Standard tests just call the executors on the selected option.
-        // Note that the model passed into this callback will be the
-        // changed option set model.
-        if (changedModel instanceof Drupal.acquiaLiftUI.MenuOptionSetModel) {
-          var activeOption = changedModel.get('activeOption');
-          if (!activeOption) {
-            return;
-          }
-          var current = changedModel.get('options').findWhere({'option_id': activeOption});
-          if (!current) {
-            return;
-          }
-          Drupal.personalize.executors[changedModel.get('executor')].execute($(changedModel.get('selector')), current.get('option_id'), changedModel.get('osid'));
+        var current = changedModel.get('options').findWhere({'option_id': activeOption});
+        if (!current) {
+          return;
         }
+        Drupal.personalize.executors[changedModel.get('executor')].execute($(changedModel.get('selector')), current.get('option_id'), changedModel.get('osid'));
       }
     },
 
@@ -2892,9 +2094,9 @@
       this.listenTo(this.model, 'change:isActive', this.onEditModeChange);
       this.listenTo(this.campaignCollection, 'change:isActive', this.onCampaignChange);
 
-      this.onPageVariationEditModeProxy = $.proxy(this.onPageVariationEditMode, this);
+      this.onVariationEditModeProxy = $.proxy(this.onVariationEditMode, this);
       $(document).on('acquiaLiftVariationMode', function (event, data) {
-        that.onPageVariationEditModeProxy(event, data);
+        that.onVariationEditModeProxy(event, data);
       });
 
       // Set the initial link state based on the campaign type.
@@ -2918,13 +2120,7 @@
         return;
       }
       // Update the text if within the menu.
-      var text = '';
-      var current = this.campaignCollection.findWhere({'isActive': true});
-      if (isActive) {
-        text = Drupal.t('Exit edit mode');
-      } else {
-        text = current instanceof Drupal.acquiaLiftUI.MenuCampaignABModel ? Drupal.t('Add variation') : Drupal.t('Add variation set');
-      }
+      var text = isActive ? Drupal.t('Exit edit mode') : Drupal.t('Add variation set');
       this.$el.text(text);
     },
 
@@ -2976,87 +2172,21 @@
       if (this.model.get('isActive')) {
         this.$el.on('click', this.onClick);
       } else {
-        if (this.campaignCollection.findWhere({'isActive': true}) instanceof Drupal.acquiaLiftUI.MenuCampaignABModel) {
-          // The next click takes it straight back into edit mode.
-          this.$el.on('click', this.onClick);
-        } else {
-          // The next click should open a modal.
-          // Remove the -processed flags that CTools adds so that it can be
-          // re-processed again.
-          this.$el.removeClass('ctools-use-modal-processed');
-          Drupal.attachBehaviors(this.$el.parent());
-        }
+        // The next click should open a modal.
+        // Remove the -processed flags that CTools adds so that it can be
+        // re-processed again.
+        this.$el.removeClass('ctools-use-modal-processed');
+        Drupal.attachBehaviors(this.$el.parent());
       }
     },
 
     /**
-     * Listens to changes broadcast from the page variation application.
+     * Listens to changes broadcast from the variation application.
      */
-    onPageVariationEditMode: function (event, data) {
+    onVariationEditMode: function (event, data) {
       this.model.set('isActive', data.start);
     }
   });
-
-}(Drupal, Drupal.jQuery, _, Backbone));
-
-/**
- * The basic backbone application factories for the unified navigation bar
- * tray.
- */
-(function (Drupal, $, _, Backbone) {
-
-  Drupal.acquiaLiftUI.views.pageVariations = Drupal.acquiaLiftUI.views.pageVariations || {};
-  Drupal.acquiaLiftUI.views.optionSets = Drupal.acquiaLiftUI.views.optionSets || {};
-  Drupal.acquiaLiftUI.factories = Drupal.acquiaLiftUI.factories || {};
-  Drupal.acquiaLiftUI.factories.MenuFactory = Drupal.acquiaLiftUI.factories.MenuFactory || {
-    /**
-     * Factory method to create the correct type of content variation set view
-     * based on the type of data displayed.
-     *
-     * @param Drupal.acquiaLiftUI.MenuOptionSetModel model
-     *   The model that will be the base for this view.
-     * @param Drupal.acquiaLiftUI.MenuCampaignModel model
-     *   The campaign model that owns the option set.
-     * @param element
-     *   The DOM element for the Backbone view.
-     */
-    createContentVariationView: function (model, campaignModel, element) {
-      if (campaignModel instanceof Drupal.acquiaLiftUI.MenuCampaignABModel) {
-        // There is only one page variation view per page per campaign, but
-        // this may be called multiple times due to multiple option sets.
-        var view, campaignName = campaignModel.get('name');
-        if (!Drupal.acquiaLiftUI.views.pageVariations.hasOwnProperty(campaignName)) {
-          view = Drupal.acquiaLiftUI.views.pageVariations[campaignName] = new Drupal.acquiaLiftUI.MenuPageVariationsView({
-            model: campaignModel,
-            el: element
-          });
-        }
-        view = Drupal.acquiaLiftUI.views.pageVariations[campaignName];
-      } else {
-        view = Drupal.acquiaLiftUI.views.optionSets[model.get('osid')] = new Drupal.acquiaLiftUI.MenuOptionSetView({
-          campaignModel: campaignModel,
-          model: model,
-          el: element
-        });
-      }
-      return view;
-    },
-
-    /**
-     * Factory method to create the correct type of campaign model based
-     * on the type of data.
-     *
-     * @param object data
-     *   The data to create the model from.
-     */
-    createCampaignModel: function (data) {
-      if (data.type == 'acquia_lift_simple_ab') {
-        return new Drupal.acquiaLiftUI.MenuCampaignABModel(data);
-      } else {
-        return new Drupal.acquiaLiftUI.MenuCampaignModel(data);
-      }
-    }
-  };
 
 }(Drupal, Drupal.jQuery, _, Backbone));
 
@@ -3066,25 +2196,10 @@
 (function(Drupal, $, _) {
 
   /**
-   * Custom AJAX command to preview a specific page variation.
-   *
-   * The response should include a data object with the following keys:
-   * - agentName: The name of the campaign for this page variation.
-   * - variationIndex: The variation index to edit.  This can be an existing
-   *   variation index to edit, or -1 to create a new variation.
-   */
-  Drupal.ajax.prototype.commands.acquia_lift_page_variation_preview = function (ajax, response, status) {
-    _.defer(function() {
-      var view = Drupal.acquiaLiftUI.views.pageVariations[response.data.agentName]
-      view.selectVariation(response.data.variationIndex);
-    });
-  }
-
-  /**
    * Custom AJAX command to preview a specific option set variation.
    *
    * The response should include a data object with the following keys:
-   * - agentName: The name of the campaign for this page variation.
+   * - agentName: The name of the campaign for this element variation.
    * - osid:  The option set id for the option set to preview.
    * - optionId: The option id to preview.
    */
@@ -3095,9 +2210,8 @@
     });
   }
 
-
   /**
-   * Custom AJAX command to indicate a deleted page variation.
+   * Custom AJAX command to indicate a deleted element variation.
    * This is necessary because Drupal's settings merge utilizes jQuery.extend
    * which will only add to the original object.
    *
@@ -3192,18 +2306,13 @@
               }
             }
           } else {
-            var model = Drupal.acquiaLiftUI.factories.MenuFactory.createCampaignModel(obj);
+            var model = new Drupal.acquiaLiftUI.MenuCampaignModel(obj);
             ui.collections.campaigns.add(model);
             addedCampaigns[obj.name] = model;
           }
         });
 
-        // Clear the variations for all page variation campaigns.
-        ui.collections.campaigns.each(function (model) {
-          if (model instanceof Drupal.acquiaLiftUI.MenuCampaignABModel) {
-            model.get('optionSets').resetVariations();
-          }
-        });
+        // Merging settings' option_sets into campaigns' option_sets.
         Drupal.acquiaLiftUI.utilities.looper(settings.option_sets, function (obj, key) {
           var campaignModel = ui.collections.campaigns.findWhere({name: obj.agent});
           if (campaignModel) {
@@ -3230,9 +2339,9 @@
           }
         });
 
-        // Create a model for page variation management state
+        // Create a model for element variation management state
         if (!ui.models.variationModeModel) {
-          ui.models.variationModeModel = new ui.MenuVariationModeModel();
+          ui.models.variationModeModel = new ui.MenuElementVariationModeModel();
         }
 
         // Create the menu view to handle general show/hide functionality for
@@ -3311,15 +2420,8 @@
                     campaignCollection: ui.collections.campaigns,
                     el: $link[0]
                   });
-                  $element = $(Drupal.theme('acquiaLiftPageVariationToggle'));
-                  ui.views.pageVariationToggle = new ui.MenuPageVariationsToggleView({
-                    model: ui.models.variationModeModel,
-                    campaignCollection: ui.collections.campaigns,
-                    el: $element.get(0)
-                  });
                   $link.wrap('<div class="navbar-box">');
                   $link.addClass('navbar-menu-item');
-                  $link.after($element);
                   break;
                 }
                 case 'goals': {
@@ -3382,8 +2484,6 @@
         _.each(['campaigns', 'option_sets'], function (category) {
           var $typeMenus = $('[data-acquia-lift-personalize-type="' + category + '"]');
           var $scrollable = $typeMenus.siblings('.acquia-lift-scrollable');
-          var campaignsWithOptions = {};
-          var viewName = null;
           if ($typeMenus.length) {
             $typeMenus
               .each(function (index, element) {
@@ -3393,43 +2493,22 @@
                 var $holder = $scrollable.length > 0 ? $scrollable : $menu;
                 Drupal.acquiaLiftUI.utilities.looper(settings[type], function (obj, key) {
                   // Find the right model.
-                  switch (type) {
-                    case 'option_sets':
-                      // If the menu already has a link for this setting, abort.
-                      if (!$menu.find('[data-acquia-lift-personalize-agent="' + obj.agent + '"][data-acquia-lift-personalize-id="' + key + '"].acquia-lift-preview-page-variation').length) {
-                        campaignName = obj.agent;
-                        campaignsWithOptions[obj.agent] = obj.agent;
-                        campaignModel = ui.collections.campaigns.findWhere({'name': campaignName});
-                        if (campaignModel) {
-                          optionSets = campaignModel.get('optionSets');
-                          model = optionSets.findWhere({'osid': key});
-                          viewName = 'MenuOptionView';
-                        } else {
-                          model = optionSets = viewName = null;
-                        }
-                      }
-                      break;
-                    case 'campaigns':
-                      // If the menu already has a link for this setting, abort.
-                      if (!$menu.find('[data-acquia-lift-personalize-agent="' + key + '"].acquia-lift-campaign').length) {
-                        campaignName = key;
-                        campaignModel = model = ui.collections[type].findWhere({'name': key});
-                        viewName = 'MenuCampaignView';
-                      }
-                      break;
+                  if (type === 'campaigns') {
+                    // If the menu already has a link for this setting, abort.
+                    if (!$menu.find('[data-acquia-lift-personalize-agent="' + key + '"].acquia-lift-campaign').length) {
+                      campaignName = key;
+                      campaignModel = model = ui.collections[type].findWhere({'name': key});
+                    }
                   }
                   // Create views for the campaign model if it was just added.
                   if (model && addedCampaigns.hasOwnProperty(campaignName)) {
                     element = document.createElement('li');
-                    if (type == 'campaigns') {
+                    if (type === 'campaigns') {
                       // Add campaign view.
                       ui.views.push(new ui.MenuCampaignView({
                         el: element,
                         model: model
                       }));
-                    } else {
-                      // Add content variation view.
-                      ui.views.push(ui.factories.MenuFactory.createContentVariationView(model, campaignModel, element));
                     }
 
                     $holder.prepend(element);
@@ -3455,7 +2534,12 @@
                     if (!Drupal.acquiaLiftUI.views.optionSets[osid]) {
                       campaignModel = ui.collections.campaigns.findWhere({'name': model.get('agent')});
                       element = document.createElement('li');
-                      view = ui.factories.MenuFactory.createContentVariationView(model, campaignModel, element);
+                      var view = new Drupal.acquiaLiftUI.MenuOptionSetView({
+                        campaignModel: campaignModel,
+                        model: model,
+                        el: element
+                      });
+                      Drupal.acquiaLiftUI.views.optionSets[model.get('osid')] = view;
                       ui.views.push(view);
                       $holder.prepend(view.el);
                     }
@@ -3566,7 +2650,7 @@
           event: 'acquiaLiftSettingsUpdate',
           progress: {
             type: '',
-            message: '',
+            message: ''
           },
           success: function (response, status) {
             Drupal.ajax.prototype.success.call(this, response, status);
@@ -3588,12 +2672,12 @@
   Drupal.behaviors.acquiaLiftContentVariations = {
     attach: function (context) {
       var ui = Drupal.acquiaLiftUI;
-      // Create a model for page variation management state
+      // Create a model for element variation management state
       if (!ui.models.variationModeModel) {
-        ui.models.variationModeModel = new ui.MenuVariationModeModel();
+        ui.models.variationModeModel = new ui.MenuElementVariationModeModel();
       }
 
-      // Keep the page variation editing and in-context goal creation in
+      // Keep the element variation editing and in-context goal creation in
       // mutually exclusive active states.
       $('body').once('acquia-lift-personalize', function () {
         // Creating any item from the menu is considering starting a new menu action.

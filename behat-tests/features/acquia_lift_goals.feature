@@ -150,19 +150,19 @@ Feature: Goals can be edited and managed for an Acquia Lift campaign from toolba
     And I am logged in as a user with the "access administration pages,access toolbar,administer visitor actions,manage personalized content" permission
     And I am on the homepage
     When I click "Acquia Lift" in the "menu" region
-    Then I should visibly see the link "Campaigns" in the "lift_tray" region
+    Then I should visibly see the link "Personalizations" in the "lift_tray" region
 
     # I add a goal.
-    When I hover over "Campaigns" in the "lift_tray" region
+    When I hover over "Personalizations" in the "lift_tray" region
     And I click "Testing campaign rename existing goal" in the "lift_tray" region
-    Then I hover over "Goals" in the "lift_tray" region
+    Then I hover over "Why" in the "lift_tray" region
     And I click "Add goal" in the "lift_tray" region
     And I click "New page goal" in the "modal_content" region
     When I fill in "Original goal name" for "Title"
     And I press "Add goal"
 
     # I verify my new goal is added, and has the rename option.
-    When I hover over "Goals" in the "lift_tray" region
+    When I hover over "Why" in the "lift_tray" region
     Then I should see the text "Original goal name" in the "lift_tray" region
     And I should visibly see the link "Rename" in the "lift_tray" region
 
@@ -175,7 +175,7 @@ Feature: Goals can be edited and managed for an Acquia Lift campaign from toolba
     # I verify my goal is renamed.
     Then I should see the message "The goal has been renamed." in the messagebox
     And I should see "1" for the "goal" count
-    When I hover over "Goals" in the "lift_tray" region
+    When I hover over "Why" in the "lift_tray" region
     Then I should see the text "Renamed goal name" in the "lift_tray" region
 
   Scenario: Delete a goal
@@ -187,19 +187,19 @@ Feature: Goals can be edited and managed for an Acquia Lift campaign from toolba
     And I am logged in as a user with the "access administration pages,access toolbar,administer visitor actions,manage personalized content" permission
     And I am on the homepage
     When I click "Acquia Lift" in the "menu" region
-    Then I should visibly see the link "Campaigns" in the "lift_tray" region
+    Then I should visibly see the link "Personalizations" in the "lift_tray" region
 
     # I add a goal.
-    When I hover over "Campaigns" in the "lift_tray" region
+    When I hover over "Personalizations" in the "lift_tray" region
     And I click "Testing campaign delete existing goal" in the "lift_tray" region
-    Then I hover over "Goals" in the "lift_tray" region
+    Then I hover over "Why" in the "lift_tray" region
     And I click "Add goal" in the "lift_tray" region
     And I click "New page goal" in the "modal_content" region
     When I fill in "A goal" for "Title"
     And I press "Add goal"
 
     # I verify my new goal is added, and has the delete option.
-    When I hover over "Goals" in the "lift_tray" region
+    When I hover over "Why" in the "lift_tray" region
     Then I should see the text "A goal" in the "lift_tray" region
     And I should visibly see the link "Delete" in the "lift_tray" region
 
@@ -211,5 +211,5 @@ Feature: Goals can be edited and managed for an Acquia Lift campaign from toolba
     # I verify my goal is deleted.
     Then I should see the message "The goal has been deleted." in the messagebox
     And I should see "0" for the "goal" count
-    When I hover over "Goals" in the "lift_tray" region
+    When I hover over "Why" in the "lift_tray" region
     Then I should see the text "No goals" in the "lift_tray" region

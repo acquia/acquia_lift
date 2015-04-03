@@ -19,15 +19,21 @@ Feature:  Campaign management for Acquia Lift Target campaigns
     And I am on "admin/structure/personalize/manage/test-targeting-agent/targeting"
 
     # All variations should be selected in the "Everyone else" audience by default.
-    Then "Option A" variation should be assigned to the "Everyone else" audience
-    And "Option B" variation should be assigned to the "Everyone else" audience
     And "Option A" variation should not be assigned to the "Test audience" audience
     And "Option B" variation should not be assigned to the "Test audience" audience
 
     # Test simple assignment of a single variation.
-    When I move the "Option A" variation from the "Everyone else" audience to the "Test audience" audience
+    When I move the "Option A" variation to the "Test audience" audience
     Then "Option A" variation should be assigned to the "Test audience" audience
     And "Option A" variation should not be assigned to the "Everyone else" audience
+
+    When I move the "Option B" variation to the "Test audience" audience
+    Then "Option B" variation should be assigned to the "Test audience" audience
+    And "Option B" variation should not be assigned to the "Everyone else" audience
+
+    When I move the "Option B" variation from the "Test audience" audience to the "Everyone else" audience
+    Then "Option B" variation should be assigned to the "Everyone else" audience
+    And "Option B" variation should not be assigned to the "Test audience" audience
 
     # Test dropping a variation on its own audience's drop area.
     When I move the "Option A" variation from the "Test audience" audience to the "Test audience" audience
@@ -40,8 +46,4 @@ Feature:  Campaign management for Acquia Lift Target campaigns
     And "Option A" variation should be assigned to the "Test audience" audience
     And "Option B" variation should be assigned to the "Everyone else" audience
 
-    # Test removal of a variation.
-    When I move the "Option A" variation from the "Test audience" audience to the "Everyone else" audience
-    Then "Option A" variation should be assigned to the "Everyone else" audience
-    And "Option A" variation should not be assigned to the "Test audience" audience
-    And "Option B" variation should be assigned to the "Test audience" audience
+    # Test removal of option from audience.

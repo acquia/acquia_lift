@@ -1,0 +1,5 @@
+.el-card .el-card__header .el-card__title[aria-controls]:before {
+  content: url('../images/000000/menu-collapsed-rtl.png'); /* RTL */
+  margin-right: .5em; /* RTL */
+  right: -.5em; /* RTL */
+}

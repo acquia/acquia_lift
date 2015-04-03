@@ -172,7 +172,7 @@ function acquia_lift_admin_form($form, &$form_state) {
   );
   $form['minimum_runtime']['acquia_lift_min_runtime_desc'] = array(
     '#type' => 'markup',
-    '#markup' => '<div class="description">' . t('The amount of time a campaign will run before it can be completed. Applies only to campaigns with the "End when campaign thresholds are reached" option selected.') . '</div>',
+    '#markup' => '<div class="description">' . t('The amount of time a personalization will run before it can be completed. Applies only to personalizations with the "End when personalization thresholds are reached" option selected.') . '</div>',
   );
   $form['acquia_lift_min_decisions'] = array(
     '#type' => 'textfield',
@@ -180,14 +180,8 @@ function acquia_lift_admin_form($form, &$form_state) {
     '#size' => 3,
     '#required' => TRUE,
     '#default_value' => variable_get('acquia_lift_min_decisions', 1000),
-    '#description' => t('The number of variations selected by Acquia Lift for display to visitors before the campaign can be completed. Applies only to campaigns with the "End when campaign thresholds are reached" option selected.'),
+    '#description' => t('The number of variations selected by Acquia Lift for display to visitors before the personalization can be completed. Applies only to personalizations with the "End when personalization thresholds are reached" option selected.'),
     '#element_validate' => array('element_validate_number'),
-  );
-  $form['acquia_lift_unibar_allow_status_change'] = array(
-    '#type' => 'checkbox',
-    '#default_value' => variable_get('acquia_lift_unibar_allow_status_change', TRUE),
-    '#title' => t('Campaigns can be started, paused, or resumed from the Acquia Lift menu bar.'),
-    '#description' => t('Disabling this option hides the status change link on the menu bar, which can increase the performance of the menu bar if the website has many defined campaigns.')
   );
   $form = system_settings_form($form);
   $form['#submit'][] = 'acquia_lift_admin_form_submit';
@@ -204,7 +198,7 @@ function acquia_lift_batch_sync_form($form, &$form_state) {
   );
   $form['explanation'] = array(
     '#type' => 'markup',
-    '#markup' => '<div>' . t('Sends your local campaign information to the hosted Acquia Lift service. Use this feature if you change your Acquia Lift credentials after creating one or more campaigns.') . '</div>'
+    '#markup' => '<div>' . t('Sends your local personalization information to the hosted Acquia Lift service. Use this feature if you change your Acquia Lift credentials after creating one or more personalizations.') . '</div>'
   );
   return $form;
 }
@@ -423,7 +417,7 @@ function acquia_lift_report_custom($form, &$form_state, $agent, $agent_data, $op
     // This campaign hasn't been shown yet, so there is no data for reporting.
     return array(
       'no_report' => array(
-        '#markup' => t('This campaign does not yet contain information about your visitors\' website interactions. This situation generally occurs for campaigns that have either just been started or do not generate much website traffic.'),
+        '#markup' => t('This personalization does not yet contain information about your visitors\' website interactions. This situation generally occurs for personalizations that have either just been started or do not generate much website traffic.'),
       ),
     );
   }

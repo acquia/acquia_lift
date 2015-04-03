@@ -453,8 +453,8 @@ class AcquiaLiftAPI implements PersonalizeLoggerAwareInterface, AcquiaLiftReport
     $response = $this->httpClient()->put($url, array('Content-Type' => 'application/json; charset=utf-8', 'Accept' => 'application/json'), $agent);
     $data = json_decode($response->data, TRUE);
     $vars = array('agent' => $machine_name);
-    $success_msg = 'The campaign {agent} was pushed to Acquia Lift';
-    $fail_msg = 'The campaign {agent} could not be pushed to Acquia Lift';
+    $success_msg = 'The personalization {agent} was pushed to Acquia Lift';
+    $fail_msg = 'The personalization {agent} could not be pushed to Acquia Lift';
     if ($response->code == 200 && $data['status'] == 'ok') {
       $this->logger()->log(PersonalizeLogLevel::INFO, $success_msg, $vars);
     }
@@ -481,8 +481,8 @@ class AcquiaLiftAPI implements PersonalizeLoggerAwareInterface, AcquiaLiftReport
     $response = $this->httpClient()->put($url, array('Content-Type' => 'application/json; charset=utf-8', 'Accept' => 'application/json'), $agent);
     $data = json_decode($response->data, TRUE);
     $vars = array('agent' => $machine_name);
-    $success_msg = 'The new status of campaign {agent} was pushed to Acquia Lift';
-    $fail_msg = 'The new status of campaign {agent} could not be pushed to Acquia Lift';
+    $success_msg = 'The new status of personalization {agent} was pushed to Acquia Lift';
+    $fail_msg = 'The new status of personalization {agent} could not be pushed to Acquia Lift';
     if ($response->code == 200 && $data['status'] == 'ok') {
       $this->logger()->log(PersonalizeLogLevel::INFO, $success_msg, $vars);
     }
@@ -535,8 +535,8 @@ class AcquiaLiftAPI implements PersonalizeLoggerAwareInterface, AcquiaLiftReport
     $response = $this->httpClient()->put($url, array('Content-Type' => 'application/json; charset=utf-8', 'Accept' => 'application/json'));
     $data = json_decode($response->data, TRUE);
     $vars = array('agent' => $agent_name, 'decpoint' => $point_name);
-    $success_msg = 'The point {decpoint} was pushed to the Acquia Lift campaign {agent}';
-    $fail_msg = 'Could not save the point {decpoint} to the Acquia Lift campaign {agent}';
+    $success_msg = 'The point {decpoint} was pushed to the Acquia Lift personalization {agent}';
+    $fail_msg = 'Could not save the point {decpoint} to the Acquia Lift personalization {agent}';
     if ($response->code == 200 && $data['status'] == 'ok') {
       $this->logger()->log(PersonalizeLogLevel::INFO, $success_msg, $vars);
     }
@@ -560,8 +560,8 @@ class AcquiaLiftAPI implements PersonalizeLoggerAwareInterface, AcquiaLiftReport
     $response = $this->httpClient()->put($url, array('Content-Type' => 'application/json; charset=utf-8', 'Accept' => 'application/json'), $data);
     $data = json_decode($response->data, TRUE);
     $vars = array('agent' => $agent_name, 'decpoint' => $point_name, 'decname' => $decision_name);
-    $success_msg = 'The decision {decname} for point {decpoint} was pushed to the Acquia Lift campaign {agent}';
-    $fail_msg = 'Could not save decision {decname} for point {decpoint} to the Acquia Lift campaign {agent}';
+    $success_msg = 'The decision {decname} for point {decpoint} was pushed to the Acquia Lift personalization {agent}';
+    $fail_msg = 'Could not save decision {decname} for point {decpoint} to the Acquia Lift personalization {agent}';
     if ($response->code == 200 && $data['status'] == 'ok') {
       $this->logger()->log(PersonalizeLogLevel::INFO, $success_msg, $vars);
     }
@@ -588,8 +588,8 @@ class AcquiaLiftAPI implements PersonalizeLoggerAwareInterface, AcquiaLiftReport
     $response = $this->httpClient()->put($url, array('Content-Type' => 'application/json; charset=utf-8', 'Accept' => 'application/json'), $data);
     $data = json_decode($response->data, TRUE);
     $vars = array('agent' => $agent_name, 'decpoint' => $point_name, 'choicename' => $decision_name . ': ' . $choice);
-    $success_msg = 'The decision choice {choicename} for point {decpoint} was pushed to the Acquia Lift campaign {agent}';
-    $fail_msg = 'Could not save decision choice {choicename} for point {decpoint} to the Acquia Lift campaign {agent}';
+    $success_msg = 'The decision choice {choicename} for point {decpoint} was pushed to the Acquia Lift personalization {agent}';
+    $fail_msg = 'Could not save decision choice {choicename} for point {decpoint} to the Acquia Lift personalization {agent}';
     if ($response->code == 200 && $data['status'] == 'ok') {
       $this->logger()->log(PersonalizeLogLevel::INFO, $success_msg, $vars);
     }
@@ -607,8 +607,8 @@ class AcquiaLiftAPI implements PersonalizeLoggerAwareInterface, AcquiaLiftReport
     $url = $this->generateEndpoint("/$agent_name/data");
     $response = $this->httpClient()->delete($url);
     $vars = array('agent' => $agent_name);
-    $success_msg = 'The data for Acquia Lift campaign {agent} was reset';
-    $fail_msg = 'Could not reset data for Acquia Lift campaign {agent}';
+    $success_msg = 'The data for Acquia Lift personalization {agent} was reset';
+    $fail_msg = 'Could not reset data for Acquia Lift personalization {agent}';
     if ($response->code == 200) {
       $this->logger()->log(PersonalizeLogLevel::INFO, $success_msg, $vars);
     }
@@ -627,8 +627,8 @@ class AcquiaLiftAPI implements PersonalizeLoggerAwareInterface, AcquiaLiftReport
     $url = $this->generateEndpoint("/agent-api/$agent_name");
     $response = $this->httpClient()->delete($url);
     $vars = array('agent' => $agent_name);
-    $success_msg = 'The Acquia Lift campaign {agent} was deleted';
-    $fail_msg = 'Could not delete Acquia Lift campaign {agent}';
+    $success_msg = 'The Acquia Lift personalization {agent} was deleted';
+    $fail_msg = 'Could not delete Acquia Lift personalization {agent}';
     if ($response->code == 200) {
       $this->logger()->log(PersonalizeLogLevel::INFO, $success_msg, $vars);
     }
@@ -650,8 +650,8 @@ class AcquiaLiftAPI implements PersonalizeLoggerAwareInterface, AcquiaLiftReport
     $response = $this->httpClient()->delete($url);
     $data = json_decode($response->data, TRUE);
     $vars = array('agent' => $agent_name, 'decpoint' => $point_name);
-    $success_msg = 'The decision point {decpoint} was deleted from the Acquia Lift campaign {agent}';
-    $fail_msg = 'Could not delete decision point {decpoint} from the Acquia Lift campaign {agent}';
+    $success_msg = 'The decision point {decpoint} was deleted from the Acquia Lift personalization {agent}';
+    $fail_msg = 'Could not delete decision point {decpoint} from the Acquia Lift personalization {agent}';
     if ($response->code == 200 && $data['status'] == 'ok') {
       $this->logger()->log(PersonalizeLogLevel::INFO, $success_msg, $vars);
     }
@@ -675,8 +675,8 @@ class AcquiaLiftAPI implements PersonalizeLoggerAwareInterface, AcquiaLiftReport
     $response = $this->httpClient()->delete($url);
     $data = json_decode($response->data, TRUE);
     $vars = array('agent' => $agent_name, 'decpoint' => $point_name, 'decname' => $decision_name);
-    $success_msg = 'The decision {decname} for point {decpoint} was deleted from the Acquia Lift campaign {agent}';
-    $fail_msg = 'Could not delete decision {decname} for point {decpoint} from the Acquia Lift campaign {agent}';
+    $success_msg = 'The decision {decname} for point {decpoint} was deleted from the Acquia Lift personalization {agent}';
+    $fail_msg = 'Could not delete decision {decname} for point {decpoint} from the Acquia Lift personalization {agent}';
     if ($response->code == 200 && $data['status'] == 'ok') {
       $this->logger()->log(PersonalizeLogLevel::INFO, $success_msg, $vars);
     }
@@ -703,8 +703,8 @@ class AcquiaLiftAPI implements PersonalizeLoggerAwareInterface, AcquiaLiftReport
     $response = $this->httpClient()->delete($url);
     $data = json_decode($response->data, TRUE);
     $vars = array('agent' => $agent_name, 'decpoint' => $point_name, 'choicename' => $decision_name . ': ' . $choice);
-    $success_msg = 'The decision choice {choicename} for point {decpoint} was deleted from the Acquia Lift campaign {agent}';
-    $fail_msg = 'Could not delete decision choice {choicename} for point {decpoint} from the Acquia Lift campaign {agent}';
+    $success_msg = 'The decision choice {choicename} for point {decpoint} was deleted from the Acquia Lift personalization {agent}';
+    $fail_msg = 'Could not delete decision choice {choicename} for point {decpoint} from the Acquia Lift personalization {agent}';
     if ($response->code == 200 && $data['status'] == 'ok') {
       $this->logger()->log(PersonalizeLogLevel::INFO, $success_msg, $vars);
     }
@@ -729,8 +729,8 @@ class AcquiaLiftAPI implements PersonalizeLoggerAwareInterface, AcquiaLiftReport
     $response = $this->httpClient()->put($url, array('Content-Type' => 'application/json; charset=utf-8', 'Accept' => 'application/json'), $data);
     $data = json_decode($response->data, TRUE);
     $vars = array('agent' => $agent_name, 'goalname' => $goal_name);
-    $success_msg = 'The goal {goalname} was pushed to the Acquia Lift campaign {agent}';
-    $fail_msg = 'Could not save the goal {goalname} to the Acquia Lift campaign {agent}';
+    $success_msg = 'The goal {goalname} was pushed to the Acquia Lift personalization {agent}';
+    $fail_msg = 'Could not save the goal {goalname} to the Acquia Lift personalization {agent}';
     if ($response->code == 200 && $data['status'] == 'ok') {
       $this->logger()->log(PersonalizeLogLevel::INFO, $success_msg, $vars);
     }
@@ -751,8 +751,8 @@ class AcquiaLiftAPI implements PersonalizeLoggerAwareInterface, AcquiaLiftReport
     $url = $this->generateEndpoint("/agent-api/$agent_name/goals/$goal_name");
     $response = $this->httpClient()->delete($url);
     $vars = array('agent' => $agent_name, 'goalname' => $goal_name);
-    $success_msg = 'The goal {goalname} was deleted from the Acquia Lift campaign {agent}';
-    $fail_msg = 'Could not delete the goal {goalname} from the Acquia Lift campaign {agent}';
+    $success_msg = 'The goal {goalname} was deleted from the Acquia Lift personalization {agent}';
+    $fail_msg = 'Could not delete the goal {goalname} from the Acquia Lift personalization {agent}';
     if ($response->code == 200) {
       $this->logger()->log(PersonalizeLogLevel::INFO, $success_msg, $vars);
     }
@@ -945,8 +945,8 @@ class AcquiaLiftAPI implements PersonalizeLoggerAwareInterface, AcquiaLiftReport
     );
     $response = $this->httpClient()->post($url, array('Content-Type' => 'application/json; charset=utf-8', 'Accept' => 'application/json'), $body);
     $vars = array('agent' => $agent_name);
-    $success_msg = 'The targeting rule for campaign {agent} was saved successfully';
-    $fail_msg = 'The targeting rule could not be saved for campaign {agent}';
+    $success_msg = 'The targeting rule for personalization {agent} was saved successfully';
+    $fail_msg = 'The targeting rule could not be saved for personalization {agent}';
     if ($response->code == 200) {
       $this->logger()->log(PersonalizeLogLevel::INFO, $success_msg, $vars);
     }
@@ -966,8 +966,8 @@ class AcquiaLiftAPI implements PersonalizeLoggerAwareInterface, AcquiaLiftReport
     $url = $this->generateEndpoint("/transform-rule/$rule_name");
     $response = $this->httpClient()->delete($url, array('Content-Type' => 'application/json; charset=utf-8', 'Accept' => 'application/json'));
     $vars = array('agent' => $agent_name);
-    $success_msg = 'The targeting rule for campaign {agent} was deleted successfully';
-    $fail_msg = 'The targeting rule could not be deleted for campaign {agent}';
+    $success_msg = 'The targeting rule for personalization {agent} was deleted successfully';
+    $fail_msg = 'The targeting rule could not be deleted for personalization {agent}';
     if ($response->code == 200) {
       $this->logger()->log(PersonalizeLogLevel::INFO, $success_msg, $vars);
     }
@@ -1129,8 +1129,8 @@ class AcquiaLiftAPI implements PersonalizeLoggerAwareInterface, AcquiaLiftReport
     $response = $this->httpClient()->put($url, array('Content-Type' => 'application/json; charset=utf-8', 'Accept' => 'application/json'), $map);
     $data = json_decode($response->data, TRUE);
     $vars = array('agent' => $agent_name, 'decpoint' => $point_name);
-    $success_msg = 'The fixed targeting mapping for point {decpoint} was successfully saved for campaign {agent}';
-    $fail_msg = 'The fixed targeting mapping for point {decpoint} could not be saved for campaign {agent}';
+    $success_msg = 'The fixed targeting mapping for point {decpoint} was successfully saved for personalization {agent}';
+    $fail_msg = 'The fixed targeting mapping for point {decpoint} could not be saved for personalization {agent}';
     if ($response->code == 200 && $data['status'] == 'ok') {
       $this->logger()->log(PersonalizeLogLevel::INFO, $success_msg, $vars);
     }

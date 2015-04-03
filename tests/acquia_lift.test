@@ -336,7 +336,7 @@ class AcquiaLiftWebTestBase extends DrupalWebTestCase
       case 'wizard_element_navigate':
         return t('Go');
       case 'create_campaign':
-        return t('Create campaign');
+        return t('Create personalization');
       case 'delete':
         return t('Delete');
       case 'config':
@@ -1793,7 +1793,7 @@ class AcquiaLiftWebTestFundamentals extends AcquiaLiftWebTestBase {
     // Confirm that the queue is now empty.
     $this->assertQueueItems(array());
     $this->drupalGet('admin/structure/personalize');
-    $this->assertNoText(t('At least one of your campaigns has configuration that has not been fully synchronized with Acquia Lift. This should resolve itself on the next cron run.'));
+    $this->assertNoText(t('At least one of your personalizations has configuration that has not been fully synchronized with Acquia Lift. This should resolve itself on the next cron run.'));
 
     // Now save it again but don't process the queue.
     $this->drupalPost("admin/structure/personalize/manage/$machine_name/review", array(), $this->getButton('wizard_start'));
@@ -1824,13 +1824,13 @@ class AcquiaLiftWebTestFundamentals extends AcquiaLiftWebTestBase {
     // Now they should get a message warning them that there are items that
     // need to get sync'd to Acquia Lift.
     $this->drupalGet('admin/structure/personalize');
-    $this->assertText(t('At least one of your campaigns has configuration that has not been fully synchronized with Acquia Lift. This should resolve itself on the next cron run.'));
+    $this->assertText(t('At least one of your personalizations has configuration that has not been fully synchronized with Acquia Lift. This should resolve itself on the next cron run.'));
 
     $this->drupalLogout();
     $admin_user = $this->drupalCreateUser(array('administer site configuration', 'access administration pages', 'manage personalized content'));
     $this->drupalLogin($admin_user);
     $this->drupalGet('admin/structure/personalize');
-    $this->assertRaw(t('At least one of your campaigns has configuration that has not been fully synchronized with Acquia Lift. This should resolve itself on the next cron run.') . t(' Click here to <a href="@cron">run cron manually</a>.', array('@cron' => url('admin/reports/status/run-cron'))));
+    $this->assertRaw(t('At least one of your personalizations has configuration that has not been fully synchronized with Acquia Lift. This should resolve itself on the next cron run.') . t(' Click here to <a href="@cron">run cron manually</a>.', array('@cron' => url('admin/reports/status/run-cron'))));
     // Now run cron
     $this->drupalGet('admin/reports/status/run-cron');
     $this->assertQueueItems(array());
@@ -1849,7 +1849,7 @@ class AcquiaLiftWebTestFundamentals extends AcquiaLiftWebTestBase {
     for ($i = 0; $i <= AcquiaLiftQueue::MAX_RETRIES; $i++) {
       $expected_logs[] = array(
         'level' => 'error',
-        'message' => "The campaign $machine_name could not be pushed to Acquia Lift",
+        'message' => "The personalization $machine_name could not be pushed to Acquia Lift",
       );
     }
     $test_logger = new AcquiaLiftTestLogger(FALSE);
@@ -1887,7 +1887,7 @@ class AcquiaLiftWebTestFundamentals extends AcquiaLiftWebTestBase {
     $expected_logs = array();
     $expected_logs[] = array(
       'level' => 'error',
-      'message' => "The campaign $machine_name could not be pushed to Acquia Lift",
+      'message' => "The personalization $machine_name could not be pushed to Acquia Lift",
     );
     $logs = $test_logger->getLogs();
     $this->assertEqual($expected_logs, $logs);
@@ -2238,7 +2238,7 @@ class AcquiaLiftWebTestReports extends AcquiaLiftWebTestBase {
     $pattern = '/data-acquia-lift-campaign=\"([a-z0-9\_\-]+)\"/';
     preg_match($pattern, $report, $matches);
 
-    $this->assertEqual($matches[1], $agent_name, 'Campaign name was passed in tabular data.');
+    $this->assertEqual($matches[1], $agent_name, 'Personalization name was passed in tabular data.');
 
     $pattern = '/data-acquia-lift-decision-name=\"([a-z0-9\_\-]+)\"/';
     preg_match($pattern, $report, $matches);
@@ -2489,7 +2489,7 @@ class AcquiaLiftWebTestWorkflow extends AcquiaLiftWebTestBase {
   public static function getInfo() {
     return array(
       'name' => t('Acquia Lift Web Tests - Workflows'),
-      'description' => t('Tests functionality related to particular campaign workflows.'),
+      'description' => t('Tests functionality related to particular personalization workflows.'),
       'group' => t('Personalize'),
     );
   }
@@ -3002,7 +3002,7 @@ class AcquiaLiftWebTestWorkflow extends AcquiaLiftWebTestBase {
           'text' => t('Start'),
         ),
         'links' => array(
-          'edit' => url('admin/structure/personalize/manage/' . $first_agent_machine_name . '/edit'),
+          'edit' => url('admin/structure/personalize/manage/' . $first_agent_machine_name),
           'report' => '',
           'view' => url('admin/structure/personalize/manage/' . $first_agent_machine_name),
         ),
@@ -3021,7 +3021,7 @@ class AcquiaLiftWebTestWorkflow extends AcquiaLiftWebTestBase {
           'text' => t('Start'),
         ),
         'links' => array(
-          'edit' => url('admin/structure/personalize/manage/' . $second_agent_machine_name . '/edit'),
+          'edit' => url('admin/structure/personalize/manage/' . $second_agent_machine_name),
           'report' => '',
           'view' => url('admin/structure/personalize/manage/' . $second_agent_machine_name),
         ),
@@ -3060,51 +3060,6 @@ class AcquiaLiftWebTestWorkflow extends AcquiaLiftWebTestBase {
     );
     $this->assertEqual($settings['acquia_lift']['campaigns'][$first_agent_machine_name], $expected[$first_agent_machine_name]);
     $this->assertEqual($settings['acquia_lift']['campaigns'][$second_agent_machine_name], $expected[$second_agent_machine_name]);
-  }
-
-  /**
-   * Tests the effect of the acquia_lift_unibar_allow_status_change variable to
-   * prevent verification checks on every page load.
-   */
-  function testVerificationChecks() {
-    module_load_include('inc', 'acquia_lift', 'acquia_lift.ui');
-    AcquiaLiftAPI::setTestInstance();
-    // Create a bunch of agents.
-    $num_agents = 10;
-    for ($i = 0; $i < $num_agents; $i++) {
-      $this->createTestAgent(array('control_rate' => 10, 'explore_rate' => 30));
-    }
-    $this->resetAll();
-    DummyAcquiaLiftHttpClient::clearLoggedRequests();
-    $page = array(
-      'page_top' => array()
-    );
-    acquia_lift_build_page($page);
-    // There should be 3 requests per agent, and there are 11 agents (the 10 we
-    // just created plus the default.)
-    $requests = DummyAcquiaLiftHttpClient::getLoggedRequests();
-    $this->assertEqual(count($requests), 3 + (3*$num_agents));
-
-    // Don't clear cache but clear logged requests and call the function again,
-    // there shouldn't be any new requests.
-    DummyAcquiaLiftHttpClient::clearLoggedRequests();
-    acquia_lift_build_page($page);
-    $requests = DummyAcquiaLiftHttpClient::getLoggedRequests();
-    $this->assertEqual(count($requests), 0);
-    // Clear the cache and confirm they are made again.
-    $this->resetAll();
-    DummyAcquiaLiftHttpClient::clearLoggedRequests();
-    acquia_lift_build_page($page);
-    $requests = DummyAcquiaLiftHttpClient::getLoggedRequests();
-    $this->assertEqual(count($requests), 3 + (3*$num_agents));
-
-    // Now disable allowing status changes from the unibar.
-    variable_set('acquia_lift_unibar_allow_status_change', 0);
-    $this->resetAll();
-    DummyAcquiaLiftHttpClient::clearLoggedRequests();
-    acquia_lift_build_page($page);
-    $requests = DummyAcquiaLiftHttpClient::getLoggedRequests();
-    $this->assertEqual(count($requests), 0);
   }
 
   // Tests changing the status of an agent via AJAX.
@@ -3212,7 +3167,7 @@ class AcquiaLiftWebTestTarget extends AcquiaLiftWebTestBase {
   public static function getInfo() {
     return array(
       'name' => t('Acquia Lift Web Tests - Target'),
-      'description' => t('Tests functionality related acquia_lift_target campaigns.'),
+      'description' => t('Tests functionality related acquia_lift_target personalizations.'),
       'group' => t('Personalize'),
     );
   }
@@ -3612,8 +3567,8 @@ class AcquiaLiftWebTestTarget extends AcquiaLiftWebTestBase {
 class AcquiaLiftWebTestCampaignWizard extends AcquiaLiftWebTestBase {
   public static function getInfo() {
     return array(
-      'name' => t('Acquia Lift Web Tests - Campaign Wizard'),
-      'description' => t('Tests functionality related to the campaign management wizard.'),
+      'name' => t('Acquia Lift Web Tests - Personalization Wizard'),
+      'description' => t('Tests functionality related to the personalization management wizard.'),
       'group' => t('Personalize'),
     );
   }
@@ -3843,7 +3798,7 @@ class AcquiaLiftWebTestCampaignWizard extends AcquiaLiftWebTestBase {
     // links to its "pages" page for editing.
     $this->drupalGet('admin/structure/personalize/manage/' . $agent->machine_name . '/variations');
     $this->assertText('Element test set 1');
-    $this->drupalPost(NULL, NULL, 'Edit');
+    $this->drupalPost(NULL, NULL, 'Edit variation set');
     $this->assertUrl('node');
   }
 
@@ -3852,37 +3807,21 @@ class AcquiaLiftWebTestCampaignWizard extends AcquiaLiftWebTestBase {
    * Target agents.
    */
   function testAudienceAvailability() {
-    $test_agent = $this->createTestAgent();
     $target_agent_data = $this->createTargetingAgent();
 
-    $test_name = $test_agent->getMachineName();
     $target_name = $target_agent_data->machine_name;
 
-    // No audiences should show before option sets are created regardless of the
-    // agent type.
-    $this->drupalGet('admin/structure/personalize/manage/' . $test_name . '/targeting');
-    $this->assertNoFieldByName('audiences[add][details][name]');
-    $this->assertNoText('You must create variation sets before targeting.');
-
+    // No audiences should show before option sets are created.
     $this->drupalGet('admin/structure/personalize/manage/' . $target_name . '/targeting');
     $this->assertNoFieldByName('audiences[add][details][name]');
     $this->assertText('You must create variation sets before targeting.');
 
-    // Now add an option set to each agent.
-    $this->createOptionSet(1, array(
-      'agent' => $test_name,
-      'plugin' => 'type1',
-      'num_options' => 2,
-    ));
+    // Now add an option set.
     $this->createOptionSet(1, array(
       'agent' => $target_name,
       'plugin' => 'type1',
       'num_options' => 2,
     ));
-
-    $this->drupalGet('admin/structure/personalize/manage/' . $test_name . '/targeting');
-    $this->assertNoFieldByName('audiences[add][details][name]');
-    $this->assertNoText('You must create variation sets before targeting.');
 
     $this->drupalGet('admin/structure/personalize/manage/' . $target_name . '/targeting');
     $this->assertFieldByName('audiences[add][details][name]');
@@ -3976,8 +3915,8 @@ class AcquiaLiftWebTestCampaignWizard extends AcquiaLiftWebTestBase {
     // Test assignments saves as anticipated.
     $this->drupalGet('admin/structure/personalize/manage/' . $first_agent->machine_name . '/targeting');
     // There are no targeting assignments so there should be no messages.
-    $this->assertNoText('The targeting settings shown here do not match what is currently running for this campaign.');
-    $this->assertNoText('The targeting settings shown here represent what is currently running for this campaign.');
+    $this->assertNoText('The targeting settings shown here do not match what is currently running for this personalization.');
+    $this->assertNoText('The targeting settings shown here represent what is currently running for this personalization.');
     // All variations should be assigned to the "Everyone else" audience.
     $this->assertOptionSelected('edit-audiences-everyone-else-assignment', $option_id_1);
     $this->assertOptionSelected('edit-audiences-everyone-else-assignment', $option_id_2);
@@ -4016,8 +3955,8 @@ class AcquiaLiftWebTestCampaignWizard extends AcquiaLiftWebTestBase {
     // A message should not display to indicate that the targeting isn't
     // finalized because the agent is still not started.
     $this->drupalGet('admin/structure/personalize/manage/' . $first_agent->machine_name . '/targeting');
-    $this->assertNoText('The targeting settings shown here do not match what is currently running for this campaign.');
-    $this->assertNoText('The targeting settings shown here represent what is currently running for this campaign.');
+    $this->assertNoText('The targeting settings shown here do not match what is currently running for this personalization.');
+    $this->assertNoText('The targeting settings shown here represent what is currently running for this personalization.');
 
     // Save the targeting structure and start the agent.
     acquia_lift_update_targeting($first_agent);
@@ -4025,8 +3964,8 @@ class AcquiaLiftWebTestCampaignWizard extends AcquiaLiftWebTestBase {
     $this->resetAll();
 
     $this->drupalGet('admin/structure/personalize/manage/' . $first_agent->machine_name . '/targeting');
-    $this->assertNoText('The targeting settings shown here do not match what is currently running for this campaign.');
-    $this->assertText('The targeting settings shown here represent what is currently running for this campaign.');
+    $this->assertNoText('The targeting settings shown here do not match what is currently running for this personalization.');
+    $this->assertText('The targeting settings shown here represent what is currently running for this personalization.');
 
     // Make changes and verify the messaging.
     $edit = array(
@@ -4034,8 +3973,8 @@ class AcquiaLiftWebTestCampaignWizard extends AcquiaLiftWebTestBase {
     );
     $this->drupalPost(NULL, $edit, $this->getButton('wizard_next'));
     $this->drupalGet('admin/structure/personalize/manage/' . $first_agent->machine_name . '/targeting');
-    $this->assertText('The targeting settings shown here do not match what is currently running for this campaign.');
-    $this->assertNoText('The targeting settings shown here represent what is currently running for this campaign.');
+    $this->assertText('The targeting settings shown here do not match what is currently running for this personalization.');
+    $this->assertNoText('The targeting settings shown here represent what is currently running for this personalization.');
 
     // Revert the changes and verify.
     $this->drupalPost(NULL, NULL, t('Revert changes'));
@@ -4044,15 +3983,15 @@ class AcquiaLiftWebTestCampaignWizard extends AcquiaLiftWebTestBase {
     $this->resetAll();
 
     $this->drupalGet('admin/structure/personalize/manage/' . $first_agent->machine_name . '/targeting');
-    $this->assertNoText('The targeting settings shown here do not match what is currently running for this campaign.');
-    $this->assertText('The targeting settings shown here represent what is currently running for this campaign.');
+    $this->assertNoText('The targeting settings shown here do not match what is currently running for this personalization.');
+    $this->assertText('The targeting settings shown here represent what is currently running for this personalization.');
     $this->assertOptionSelected('edit-audiences-muppet-fans-assignment', $first_option_set->options[0]['option_id']);
     $this->assertOptionSelected('edit-audiences-muppet-fans-assignment', $first_option_set->options[1]['option_id']);
     $this->assertOptionSelected('edit-audiences-others-assignment', $first_option_set->options[2]['option_id']);
     $this->assertOptionSelected('edit-audiences-everyone-else-assignment', $first_option_set->options[0]['option_id']);
 
     // Add an option to the existing option set and verify that it appears as
-    // unassigned.
+    // unassigned but available for targeting.
     $unassigned_id = personalize_generate_option_id(3);
     $first_option_set->options[] = array(
       'option_id' => $unassigned_id,
@@ -4061,10 +4000,14 @@ class AcquiaLiftWebTestCampaignWizard extends AcquiaLiftWebTestBase {
     personalize_option_set_save($first_option_set);
 
     $this->drupalGet('admin/structure/personalize/manage/' . $first_agent->machine_name . '/targeting');
-    $this->assertOptionSelected('edit-audiences-unassigned-assignment', $unassigned_id);
-    $this->assertNoOptionSelected('edit-audiences-unassigned-assignment', $first_option_set->options[0]['option_id']);
-    $this->assertNoOptionSelected('edit-audiences-unassigned-assignment', $first_option_set->options[1]['option_id']);
-    $this->assertNoOptionSelected('edit-audiences-unassigned-assignment', $first_option_set->options[2]['option_id']);
+    $this->assertOptionSelected('edit-variations-options-assignment', $unassigned_id);
+    $this->assertOptionSelected('edit-variations-options-assignment', $first_option_set->options[0]['option_id']);
+    $this->assertOptionSelected('edit-variations-options-assignment', $first_option_set->options[1]['option_id']);
+    $this->assertOptionSelected('edit-variations-options-assignment', $first_option_set->options[2]['option_id']);
+    $this->assertOptionSelected('edit-audiences-muppet-fans-assignment', $first_option_set->options[0]['option_id']);
+    $this->assertOptionSelected('edit-audiences-muppet-fans-assignment', $first_option_set->options[1]['option_id']);
+    $this->assertOptionSelected('edit-audiences-others-assignment', $first_option_set->options[2]['option_id']);
+    $this->assertOptionSelected('edit-audiences-everyone-else-assignment', $first_option_set->options[0]['option_id']);
   }
 
   /**

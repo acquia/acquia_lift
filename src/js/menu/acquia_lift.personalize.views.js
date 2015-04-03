@@ -4,8 +4,6 @@
  */
 (function (Drupal, $, _, Backbone) {
 
-  var startPath = Drupal.settings.basePath + Drupal.settings.pathPrefix + 'admin/structure/acquia_lift/start/';
-
   /**
    * Returns the Backbone View of the Visitor Actions add action controller.
    *
@@ -76,13 +74,11 @@
       var hasCampaigns = this.collection.length > 0;
       var activeCampaign = this.collection.findWhere({'isActive': true});
       var supportsGoals = activeCampaign && activeCampaign.get('supportsGoals');
+      var supportsTargeting = activeCampaign && activeCampaign.get('supportsTargeting');
       // Show or hide relevant menus.
       if (hasCampaigns && activeCampaign) {
-        if (supportsGoals) {
-          this.$el.find('[data-acquia-lift-personalize="goals"]').parents('li').show();
-        } else {
-          this.$el.find('[data-acquia-lift-personalize="goals"]').parents('li').hide();
-        }
+        this.$el.find('[data-acquia-lift-personalize="goals"]').parents('li').toggle(supportsGoals);
+        this.$el.find('[data-acquia-lift-personalize="targeting"]').parents('li').toggle(supportsTargeting);
         this.$el.find('[data-acquia-lift-personalize="option_sets"]').parents('li').show();
       } else {
         this.$el.find('[data-acquia-lift-personalize="goals"]').parents('li').hide();
@@ -134,10 +130,10 @@
       var activeCampaign = this.collection.findWhere({'isActive': true});
       var $count = this.$el.find('i.acquia-lift-personalize-type-count').detach();
       if (!activeCampaign) {
-        var label = Drupal.t('All campaigns');
+        var label = Drupal.t('All personalizations');
         this.$el.attr('title', label);
       } else {
-        var label = Drupal.theme.acquiaLiftSelectedContext({'label': activeCampaign.get('label'), 'category': Drupal.t('Campaign')});
+        var label = Drupal.theme.acquiaLiftSelectedContext({'label': activeCampaign.get('label'), 'category': Drupal.t('Personalization')});
         this.$el.attr('title', activeCampaign.get('label'));
       }
       this.$el.html(label);
@@ -273,7 +269,7 @@
      */
     render: function() {
       var currentCampaign = this.campaignCollection.findWhere({'isActive': true});
-      var text = Drupal.t('Variation Sets');
+      var text = Drupal.t('What');
       var $count = this.$el.find('i.acquia-lift-personalize-type-count').detach();
       if (!currentCampaign) {
         return;
@@ -847,14 +843,14 @@
 
   /***************************************************************
    *
-   *            R E P O R T S
+   *            S I N G L E  L I N K  V I E W S
    *
    ***************************************************************/
 
   /**
-   * Updates the results link to reflect the active campaign.
+   * A view for a single campaign link.
    */
-  Drupal.acquiaLiftUI.MenuReportsView = ViewBase.extend({
+  Drupal.acquiaLiftUI.MenuCampaignLinkView = ViewBase.extend({
 
     /**
      * {@inheritdoc}
@@ -882,212 +878,86 @@
           .hide();
       }
       else {
-        // The report link will be empty if reports are not available for this
+        // The link will be empty if this link is not available for this
         // campaign agent type.
-        var reportLink = activeCampaign.get('links').report;
-        if (reportLink.length == 0) {
-          reportLink = 'javascript:void(0);';
+        var link = this.getLink(activeCampaign);
+        if (link.length == 0) {
+          link = 'javascript:void(0);';
           this.$el.find('a[href]').addClass('acquia-lift-menu-disabled');
         } else {
           this.$el.find('a[href]').removeClass('acquia-lift-menu-disabled');
         }
-        var name = activeCampaign.get('name');
-        var label = activeCampaign.get('label');
         this.$el
           .find('a[href]')
-          .attr('href', reportLink)
-          .text(Drupal.t('Reports'))
+          .attr('href', link)
           .end()
           .show();
       }
+    },
+
+    /**
+     * A helper method to return the link for this view.
+     *
+     * This should be
+     * overridden by extending views.
+     *
+     * @param model
+     *   An instance of the current campaign model.
+     */
+    getLink: function (model) {
+      throw("The getLink method not implemented in this view.");
     }
   });
 
-  /***************************************************************
-   *
-   *            S T A T U S
-   *
-   ***************************************************************/
+  /**
+   * Updates the reports link to reflect the active campaign.
+   */
+  Drupal.acquiaLiftUI.MenuReportsView = Drupal.acquiaLiftUI.MenuCampaignLinkView.extend({
+
+    /**
+     * {@inheritdoc}
+     */
+    getLink: function (model) {
+      return model.get('links').report;
+    }
+  });
 
   /**
-   * Updates the status link to the correct verb for each campaign.
-   *
-   * Also handles Ajax submission to change the status of the selected campaign.
+   * Updates the targeting link to reflect the active campaign.
    */
-  Drupal.acquiaLiftUI.MenuStatusView = ViewBase.extend({
-
-    events: {
-      'click .acquia-lift-status-update': 'updateStatus'
-    },
+  Drupal.acquiaLiftUI.MenuTargetingView = Drupal.acquiaLiftUI.MenuCampaignLinkView.extend({
 
     /**
      * {@inheritdoc}
      */
-    initialize: function (options) {
-      if (!Drupal.settings.acquia_lift.allowStatusChange) {
-        this.remove();
-        return;
-      }
-      _.bindAll(this, "updateStatus", "render");
-      this.collection = options.collection;
-      // Make sure we are looking at the element within the menu.
-      if (!this.collection || this.$el.parents('.acquia-lift-controls').length == 0) {
-        return;
-      }
-      this.listenTo(this.collection, 'change:isActive', this.onActiveCampaignChange);
+    getLink: function (model) {
+      return model.get('links').targeting;
+    }
+  });
 
-      // Add listeners to currently active campaign if there is one.
-      this.onActiveCampaignChange(this.collection.findWhere({'isActive': true}));
-
-      // Create the view.
-      this.build();
-      this.render();
-    },
-
-    /**
-     * Update the change listeners to listen to the newly activated campaign
-     * model.
-     */
-    onActiveCampaignChange: function (changed) {
-      var currentActive = this.collection.findWhere({'isActive': true});
-      // No change in active model.
-      if (this.model && currentActive && this.model === currentActive) {
-        return;
-      }
-      if (this.model) {
-        this.stopListening(this.model);
-      }
-      if (!currentActive) {
-        this.model = undefined;
-        return;
-      }
-      this.model = currentActive;
-
-      function deferredRender() {
-        _.defer(this.render);
-      }
-      // TRICKY: The nextStatus property doesn't trigger an event upon change
-      // because it is an object... however the nextStatus may not be set when
-      // the status is updated due to order within the object.  We need to wait
-      // for all of the campaign attributes to be saved before updating the
-      // status message displayed for the active campaign.
-      this.listenTo(this.model, 'change:status', deferredRender);
-      this.listenTo(this.model, 'change:verified', deferredRender);
-      this.render();
-    },
+  /**
+   * Updates the scheduling link to reflect the active campaign.
+   */
+  Drupal.acquiaLiftUI.MenuSchedulingView = Drupal.acquiaLiftUI.MenuCampaignLinkView.extend({
 
     /**
      * {@inheritdoc}
      */
-    render: function () {
-      var activeCampaign = this.collection.findWhere({'isActive': true});
-      if (!activeCampaign) {
-        this.$el.hide();
-      }
-      else {
-        var nextStatus = activeCampaign.get('nextStatus');
-        var changed = nextStatus.status != this.$el.find('a[href]').data('acquia-lift-campaign-status');
-        this.$el
-          .find('a[href]')
-          .text(Drupal.t('@status campaign', {'@status': nextStatus.text}))
-          .data('acquia-lift-campaign-status', nextStatus.status)
-          .removeClass('acquia-lift-menu-disabled')
-          .end()
-          .show();
-        // The campaign must be verified in order to change the status.
-        if (activeCampaign.get('verified') == true) {
-          this.$el.find('a[href]').removeClass('acquia-lift-menu-disabled');
-        } else {
-          this.$el.find('a[href]').addClass('acquia-lift-menu-disabled');
-        }
-        if (changed) {
-          this.updateListeners();
-        }
-      }
-    },
+    getLink: function (model) {
+      return model.get('links').scheduling;
+    }
+  });
+
+  /**
+   * Updates the review link to reflect the active campaign.
+   */
+  Drupal.acquiaLiftUI.MenuReviewView = Drupal.acquiaLiftUI.MenuCampaignLinkView.extend({
 
     /**
      * {@inheritdoc}
      */
-    build: function() {
-      this.$el
-        .find('a[href]')
-        .attr('href', 'javascript:void(0)')
-        .addClass('acquia-lift-status-update');
-    },
-
-    /**
-     * Update click listeners based on the status of a campaign.
-     */
-    updateListeners: function() {
-      var activeCampaign = this.collection.findWhere({'isActive': true});
-      if (!activeCampaign) {
-        return;
-      }
-
-      if (activeCampaign.get('status') == 1) {
-        // Not yet started.
-        this.$el
-          .find('a')
-          .addClass('acquia-lift-menu-status-advanced')
-          .attr('href', startPath + activeCampaign.get('name'));
-
-        if (this.$el.find('a').hasClass('ctools-use-modal')) {
-          this.$el.find('a').removeClass('ctools-use-modal-processed');
-        } else {
-          this.$el
-            .find('a')
-            .addClass('ctools-use-modal')
-            .addClass('ctools-modal-acquia-lift-style')
-            .off();
-        }
-        // Re-attach ctools-modal behaviors so that the element settings for
-        // Drupal ajax forms get reset to the new campaign url.
-        Drupal.attachBehaviors(this.$el.parent());
-        this.$el.find('a').on('click', this.dispatchChange);
-      } else {
-        // All other status can just get immediately changed.
-        if (!this.$el.find('a').hasClass('ctools-use-modal')) {
-          // Already set up as a plain click handler.
-          return;
-        }
-        this.$el
-          .find('a')
-          .attr('href', 'javascript:void(0);')
-          .removeClass('acquia-lift-menu-status-advanced')
-          .removeClass('ctools-use-modal')
-          .removeClass('ctools-modal-acquia-lift-style')
-          .removeClass('ctools-use-modal-processed')
-          .off()
-          .on('click', this.updateStatus)
-          .on('click', this.dispatchChange);
-        ;
-      }
-    },
-
-    /**
-     * Update the status of the current campaign to its next status value.
-     *
-     * @param event
-     *   Click event that triggered this function.
-     */
-    updateStatus: function(event) {
-      var newStatus = $(event.target).data('acquia-lift-campaign-status');
-      var activeModel = this.collection.findWhere({'isActive': true});
-      if (!newStatus || !activeModel || activeModel.get('verified') == false) {
-        return;
-      }
-      // Make link disabled while update happens.
-      // The disabled class will be removed when re-rendered.
-      this.$el.find('a[href]').addClass('acquia-lift-menu-disabled');
-      activeModel.updateStatus(newStatus);
-    },
-
-    /**
-     * Sends a notice that a menu action is happening.
-     */
-    dispatchChange: function () {
-      $(document).trigger('acquiaLiftMenuAction');
+    getLink: function (model) {
+      return model.get('links').review;
     }
   });
 

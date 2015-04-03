@@ -50,7 +50,7 @@
       $('#personalize-acquia-lift-reset input[type="submit"]').once('acquia-lift-reset').each(function() {
         // Overwrite beforeSubmit of the ajax event.
         Drupal.ajax[this.id].options.beforeSubmit = function(form_values, $element, options) {
-          if (confirm(Drupal.t('This action will delete all existing data for this campaign and cannot be undone. Are you sure you want to continue?'))) {
+          if (confirm(Drupal.t('This action will delete all existing data for this personalization and cannot be undone. Are you sure you want to continue?'))) {
             return true;
           } else {
             return false;

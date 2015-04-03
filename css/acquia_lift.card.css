@@ -9,27 +9,19 @@
 /**
  * Provide general styles for cards.
  */
-.el-card__gist, .el-card__summary, .el-card, .el-card__header, .el-card__title, .el-card__content, .el-card__footer {
-  -webkit-transform: translateZ(0);
-  transform: translateZ(0);
-  -webkit-transition: all .3s ease-out;
-  transition: all .3s ease-out;
-}
-
 .el-card__gist, .el-card__summary, .el-card {
-  border: 0.08rem solid #aaaaaa;
-  border-radius: 0.15rem;
-  box-shadow: 0 0.05rem 0 #aaaaaa;
+  border: 0.08rem solid #cccccc;
+  box-shadow: 0 0.05rem 0 #cccccc;
   font-family: "Helvetica Neue", helvetica, "Segoe UI", segoe, "Ubuntu", "Droid Sans", "Arial", sans-serif;
-  margin: 1.5rem;
+  margin: 1rem;
   position: relative;
   top: 0;
 }
 
 .el-card__header {
-  background-color: #cccccc;
+  background-color: #e6e9ed;
   margin: 0;
-  padding: 0.75rem;
+  padding: 0 0.75rem;
 }
 
 .el-card__title {
@@ -43,8 +35,7 @@
 }
 
 .el-card__content {
-  padding-right: 0.75rem;
-  padding-left: 0.75rem;
+  padding: 0.75rem;
 }
 
 .el-card__footer {
@@ -83,11 +74,9 @@ ul.el-card__actions {
 }
 
 .el-card.is-active {
-  border-color: #018dc7;
-  box-shadow: 0 0.4rem 1rem rgba(170, 170, 170, 0.6);
-  margin-right: 0.75rem;
-  margin-left: 0.75rem;
-  top: -0.395rem;
+  box-shadow: 0 0.2rem 0.5rem rgba(170, 170, 170, 0.6);
+  border-bottom-left-radius: .5rem;
+  border-bottom-right-radius: .5rem;
 }
 
 .is-compact .el-card__header {
@@ -96,16 +85,17 @@ ul.el-card__actions {
   padding-bottom: 0;
 }
 
-.is-active .el-card__header {
-  background-color: #29aae1;
+.el-card .el-card__header .el-card__title[aria-controls] {
+  cursor: pointer;
 }
-
-.is-active .el-card__title {
-  font-size: 1.5rem;
-  line-height: 2;
-  margin-top: 0;
-  padding-top: 0.37rem;
-  margin-bottom: 0.63rem;
+.el-card .el-card__header .el-card__title[aria-controls]:before {
+  content: url('../images/000000/menu-collapsed.png'); /* LTR */
+  position: relative;
+  margin-left: .5em; /* LTR */
+  left: -.5em; /* LTR */
+}
+.is-active .el-card__header .el-card__title[aria-controls]:before {
+  content: url('../images/000000/menu-expanded.png');
 }
 
 .el-card:not(.is-active) .el-card__content {
@@ -116,8 +106,11 @@ ul.el-card__actions {
   display: none;
 }
 .el-card .el-card__dragger {
-  width: 10px;
-  height: 10px;
-  background-color: red;
+  width: 24px;
+  height: 24px;
   cursor: pointer;
+  background: transparent url(/sites/all/modules/contrib/acquia_lift/images/000000/drag.png) no-repeat;
+  float: left;
+  margin-top: .37rem;
+  margin-left: -0.5rem;
 }

@@ -8,7 +8,6 @@
 (function (Drupal, $, _) {
 
   var reportPath = Drupal.settings.basePath + Drupal.settings.pathPrefix + 'admin/structure/personalize/manage/acquia-lift-placeholder/report';
-  var statusPath = Drupal.settings.basePath + Drupal.settings.pathPrefix + 'admin/structure/personalize/manage/acquia-lift-placeholder/status';
 
   Drupal.behaviors.acquiaLiftPersonalize = {
     attach: function (context) {
@@ -294,33 +293,28 @@
             });
         }
 
-        // Create View for the Report link.
-        if (ui.collections.campaigns.length > 0) {
-          $('[href="' + reportPath + '"]')
-            .once('acquia-lift-personalize-report')
-            .each(function (index, element) {
-              ui.views.push((new ui.MenuReportsView({
-                el: element.parentNode,
-                model: ui.collections['campaigns'],
-                collection: ui.collections['campaigns']
-              })));
-            });
-        } else {
-          $('[href="' + reportPath + '"]').hide();
-        }
+        // Create views for single campaign link menu items.
+        var linkTypes = {
+          'reports': ui.MenuReportsView,
+          'targeting': ui.MenuTargetingView,
+          'scheduling': ui.MenuSchedulingView,
+          'review': ui.MenuReviewView
+        };
 
-        // Create a View for the Status link.
-        if (ui.collections.campaigns.length > 0) {
-          $('[href="' + statusPath + '"]')
-            .once('acquia-lift-personalize-status')
-            .each(function (index, element) {
-              ui.views.push(new ui.MenuStatusView({
-                el: element.parentNode,
-                collection: ui.collections['campaigns']
-              }));
-            });
-        } else {
-          $('[href="' + statusPath + '"]').hide();
+        for (var linkType in linkTypes) {
+          if (ui.collections.campaigns.length > 0) {
+            $('[data-acquia-lift-personalize="' + linkType + '"]')
+              .once('acquia-lift-personalize-' + linkType)
+              .each(function (index, element) {
+                ui.views.push((new linkTypes[linkType]({
+                  el: element.parentNode,
+                  model: ui.collections['campaigns'],
+                  collection: ui.collections['campaigns']
+                })));
+              });
+          } else {
+            $('[data-acquia-lift-personalize="' + linkType + '"]').hide();
+          }
         }
 
         // Refresh event delegation. This is necessary to rebind event delegation

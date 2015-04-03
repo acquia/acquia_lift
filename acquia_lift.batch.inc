@@ -28,10 +28,10 @@ function acquia_lift_batch_sync_campaigns($agents = array()) {
   $batch = array(
     'operations' => $batch_operations,
     'finished' => 'acquia_lift_batch_finished',
-    'title' => t('Syncing campaign components to Acquia Lift'),
-    'init_message' => t('Starting campaign sync.'),
+    'title' => t('Syncing personalization components to Acquia Lift'),
+    'init_message' => t('Starting personalization sync.'),
     'progress_message' => t('Processed @current out of @total.'),
-    'error_message' => t('Lift campaign sync has encountered an error.'),
+    'error_message' => t('Lift personalization sync has encountered an error.'),
     'file' => drupal_get_path('module', 'acquia_lift') . '/acquia_lift.batch.inc'
   );
 
@@ -104,7 +104,7 @@ function acquia_lift_batch_finished($success, $results, $operations) {
     }
     else {
       $message_type = 'error';
-      $message = t('Some errors occurred while syncing campaigns to Acquia Lift:');
+      $message = t('Some errors occurred while syncing personalizations to Acquia Lift:');
       $message .= theme('item_list', array('items' => $errors));
     }
     drupal_set_message($message, $message_type);

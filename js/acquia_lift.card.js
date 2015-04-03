@@ -13,9 +13,9 @@
 
   var Card = function (element, options) {
     this.type =
-      this.options =
-        this.enabled =
-          this.$element = null;
+    this.options =
+    this.enabled =
+    this.$element = null;
 
     this.init('card', element, options);
   };
@@ -154,12 +154,16 @@
    *   True if the final state should be expanded, false if collapsed.
    */
   Card.prototype.setOpen = function (open) {
+    var $details = this.getDetails();
     if (open) {
       this.$element.addClass('is-active');
+      $details.removeClass('element-hidden');
     } else {
       this.$element.removeClass('is-active');
+      $details.addClass('element-hidden');
     }
-    this.getDetails().attr('aria-expanded', open);
+    $details.css('display', '');
+    $details.attr('aria-expanded', open);
   };
 
   /**

@@ -51,16 +51,6 @@ class FeatureContext extends RawDrupalContext implements SnippetAcceptingContext
   /****************************************************
    *        H O O K S
    ***************************************************/
-  /**
-   * Perform before suite actions:
-   * - Stage the environment.
-   *
-   * @BeforeSuite
-   */
-  static public function beforeSuite(BeforeSuiteScope $scope) {
-    // Make sure unibar can update status.
-    variable_set('acquia_lift_unibar_allow_status_change', TRUE);
-  }
 
   /**
    * Perform before scenario actions:
@@ -534,6 +524,25 @@ class FeatureContext extends RawDrupalContext implements SnippetAcceptingContext
   }
 
   /**
+   * @When I move the :variation variation to the :audience audience
+   */
+  public function assignVariationFromUnassigned($variation, $audience) {
+    $variation_element = $this->getAssignableVariation($variation);
+    $to_audience_element = $this->getAudienceElement($audience);
+    if (empty($variation_element)) {
+      throw new \Exception(sprintf('Cannot find variation "%s" in available options.', $variation));
+    }
+    if (empty($to_audience_element)) {
+      throw new \Exception(sprintf('Cannot find audience "%s" to move variation to.', $audience));
+    }
+    $to_audience_drop_zone = $to_audience_element->find('css', '.acquia-lift-targeting-droppable');
+    if (empty($to_audience_drop_zone)) {
+      throw new \Exception(sprintf('Cannot find drop zone for audience "%s".', $audience));
+    }
+    $variation_element->dragTo($to_audience_drop_zone);
+  }
+
+  /**
    * @When I :action the :variation variation from the :from_audience audience to the :to_audience audience
    */
   public function assignVariationToAudience($action, $variation, $from_audience, $to_audience) {
@@ -553,7 +562,7 @@ class FeatureContext extends RawDrupalContext implements SnippetAcceptingContext
     foreach ($from_variations_list as $variation_element) {
       $variation_list_item = $variation_element->getText();
       if (strpos($variation_list_item, $variation) === 0) {
-        $variation_draggable = $action == 'move' ? $variation_element : $variation_element->find('css', '.acquia-lift-targeting-duplicate');
+        $variation_draggable = $action == 'move' ? $variation_element : $variation_element->find('css', '.acquia-lift-targeting-duplicate-icon');
         break;
       }
     }
@@ -636,11 +645,11 @@ class FeatureContext extends RawDrupalContext implements SnippetAcceptingContext
     }
     $campaign = $this->getCurrentCampaign();
     if (empty($campaign)) {
-      throw new \Exception(sprintf('Cannot determine the current campaign for variation set %s.', $variation_set));
+      throw new \Exception(sprintf('Cannot determine the current personalization for variation set %s.', $variation_set));
     }
     $agent_instance = personalize_agent_load_agent($campaign);
     if (empty($agent_instance)) {
-      throw new \Exception(sprintf('Cannot load the current agent instance for campaign %s.', $campaign));
+      throw new \Exception(sprintf('Cannot load the current agent instance for personalization %s.', $campaign));
     }
     $option_sets = personalize_option_set_load_by_agent($campaign);
     foreach ($option_sets as $option_set) {
@@ -832,6 +841,30 @@ class FeatureContext extends RawDrupalContext implements SnippetAcceptingContext
       throw new \Exception(sprintf('The current agent "%s" does not have an audience named "%s".', $agent_name, $audience_label));
     }
     return $this->findElementInRegion('#edit-audiences-' . $audiences[$audience_label], 'wizard_targeting_form');
+  }
+
+  /**
+   * Helper function to retrieve a specific variation from the available
+   * variations list.
+   *
+   * @param $variation
+   *   The label of the variation
+   * @throws Exception
+   *   If the variation is not available within the available variations.
+   */
+  private function getAssignableVariation($variation) {
+    $variations_list = $this->findElementInRegion('.form-item-variations-options-assignment', 'wizard_targeting_form');
+    if (empty($variations_list)) {
+      throw new \Exception('Could not find the variations bucket area for all variations.');
+    }
+    $variation_items = $variations_list->findAll('css', '.acquia-lift-draggable-variations li');
+    foreach ($variation_items as $variation_element) {
+      $variation_list_item = $variation_element->getText();
+      if (strpos($variation_list_item, $variation) === 0) {
+        return $variation_element;
+      }
+    }
+    return NULL;
   }
 
   /**

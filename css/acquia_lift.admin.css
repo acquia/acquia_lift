@@ -287,6 +287,34 @@ tr.acquia-lift-report-control {
 }
 
 /* Acquia Lift campaign wizard form alterations */
+.el-card__action .acquia-lift-delete {
+  background-image: url(../images/000000/delete.png);
+  background-repeat: no-repeat;
+  background-position: 50%;
+  width: 24px;
+  height: 24px;
+  text-indent: -9999px;
+  overflow: hidden;
+  display: inline-block;
+  padding-top: .37rem;
+}
+.el-card__action button.acquia-lift-delete {
+  background-image: url(../images/000000/delete.png);
+  background-repeat: no-repeat;
+  background-position: 50%;
+  background-color: transparent;
+  width: 24px;
+  height: 24px;
+  text-indent: -9999px;
+  overflow: hidden;
+  border: none;
+  margin-top: .37rem;
+  cursor: pointer;
+  margin-top: .37rem;
+}
+.el-card__content fieldset.collapsible.collapsed {
+  border: none;
+}
 
 /* Radio list component */
 .acquia-lift-radio-list {
@@ -306,7 +334,7 @@ tr.acquia-lift-report-control {
 }
 .acquia-lift-radio-list .acquia-lift-radio-list-item .acquia-lift-radio-list-item-holder {
   float: left;
-  max-width: 800px;
+  max-width: 60%;
 }
 .acquia-lift-radio-list .acquia-lift-radio-list-item .acquia-lift-radio-list-item-holder .form-item label {
   font-weight: bold;
@@ -343,8 +371,25 @@ tr.acquia-lift-report-control {
 }
 
 /* Variations form */
-.personalize-wizard-section #personalized-block-variations fieldset .fieldset-title {
-  text-transform: none;
+.personalize-wizard-section .acquia-lift-personalize-block-wrapper {
+  background-color: #e6e9ed;
+  padding: .5em .5em 0 .5em;
+  border: solid 1px #cfd1d5;
+  border-radius: .5rem;
+  margin-bottom: 1.5rem;
+}
+.personalize-wizard-section .acquia-lift-personalize-block-wrapper fieldset {
+  border: none;
+}
+
+.personalize-wizard-section .form-item-variations-add-variation-details-element-content-url {
+  display: inline-block;
+}
+.personalize-wizard-section .form-item-variations-add-variation-details-element-content-url > input[type="submit"] {
+  display: inline-block;
+}
+#edit-variations .personalize-wizard-column > fieldset {
+  border: none;
 }
 
 /* Targeting form */
@@ -364,15 +409,16 @@ tr.acquia-lift-report-control {
   display: none;
 }
 #acquia-lift-targeting-audiences .el-card__action input[type="checkbox"].acquia-lift-edit + label {
-  content: url(../images/edit-toggle-inactive.png);
-  height: 30px;
-  width: 30px;
+  content: url(../images/000000/edit.png);
+  height: 24px;
+  width: 24px;
   display: inline-block;
   padding: 0;
   cursor: pointer;
+  margin-top: .37rem;
 }
 #acquia-lift-targeting-audiences .el-card__action input[type="checkbox"].acquia-lift-edit:checked + label {
-  content: url(../images/edit-toggle-active.png);
+  content: url(../images/0F93DE/edit.png);
 }
 
 /* Drag and Drop audience targeting */
@@ -406,13 +452,20 @@ tr.acquia-lift-report-control {
   margin: 1em 0;
   list-style-type: none;
 }
-/* Hide the duplicate button when shown as the drag helper */
-.acquia-lift-targeting-draggable .acquia-lift-targeting-duplicate {
-  display:none;
-}
-#acquia-lift-targeting-audiences .acquia-lift-targeting-draggable .acquia-lift-targeting-duplicate {
+#acquia-lift-targeting-audiences .acquia-lift-targeting-draggable .acquia-lift-targeting-duplicate,
+#acquia-lift-targeting-audiences .acquia-lift-targeting-draggable .acquia-lift-targeting-remove {
   float: right;
   display: inline-block;
+  text-indent: -9999px;
+  overflow: hidden;
+  width: 20px;
+  height: 20px;
+}
+#acquia-lift-targeting-audiences .acquia-lift-targeting-draggable .acquia-lift-targeting-duplicate {
+  background: transparent url(../images/000000/copy.png) no-repeat;
+}
+#acquia-lift-targeting-audiences .acquia-lift-targeting-draggable .acquia-lift-targeting-remove {
+  background: transparent url(../images/000000/close.png) no-repeat;
 }
 
 /* Review warning list */

@@ -530,7 +530,7 @@ class AcquiaLiftAgent extends PersonalizeAgentBase implements PersonalizeAgentGo
     }
     if ($discrepancies) {
       // Add a general message about how to resolve discrepancies.
-      $message = t('To resolve the discrepancies between your agent configuration here and what has been sync\'d to the Acquia Lift service, try saving your campaign and its variation sets and goals again.');
+      $message = t('To resolve the discrepancies between your agent configuration here and what has been sync\'d to the Acquia Lift service, try saving your personalization and its variation sets and goals again.');
       if (user_access('administer site configuration')) {
         $message .= t(' If that still does not resolve it, try <a href="@cron">running cron</a>.', array('@cron' => url('admin/reports/status/run-cron')));
       }

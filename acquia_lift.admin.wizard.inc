@@ -798,16 +798,30 @@ function acquia_lift_personalize_campaign_wizard_blocks_add($form, &$form_state)
 }
 
 /**
+ * Submit handler to remove a block option from a personalized block form.
+ */
+function acquia_lift_personalize_campaign_wizard_blocks_remove($form, &$form_state) {
+  // Value will be "remove_{delta}_{osid}" where the {delta} is the block delta
+  // to remove and {osid} is the option set to remove it from.
+  list($remove, $delta, $osid) = explode('_', $form_state['triggering_element']['#value']);
+  $form_state['option_set_to_remove'][$osid] = $delta;
+  $form_state['rebuild'] = TRUE;
+}
+
+/**
  * Callback to for AJAX to generate the personalize block wrapper form.
  */
 function acquia_lift_personalize_campaign_wizard_blocks_ajax($form, &$form_state) {
-  // The triggering element and the blocks container share a common parent.
-  $parents = $form_state['triggering_element']['#array_parents'];
-  $section = $form;
-  for ($i = 0; $i < count($parents) -1; $i++) {
-    $section = $section[$parents[$i]];
+  // Both the add and remove buttons have the osid as the last in a "_"
+  // delimited list.
+  $value_parts = explode('_', $form_state['triggering_element']['#value']);
+  $osid = end($value_parts);
+  if ($osid === 'add') {
+    return $form['variations']['add_variation']['details']['block']['content']['pblock_wrapper']['blocks'];
   }
-  return $section['blocks'];
+  else {
+    return $form['variations']['option_sets']['option_set_' . $osid]['content']['pblock_wrapper']['blocks'];
+  }
 }
 
 /**
@@ -1385,10 +1399,15 @@ function _acquia_lift_personalize_campaign_wizard_variations_block(&$form, &$for
   unset($element['pblock_wrapper']['blocks']['#tree']);
 
   $pblock_id = drupal_html_id('edit-' . implode('-', $parents) . '-pblock-wrapper');
+  // Remove any duplicate indicator that Drupal may have added from seeing this
+  // id generated more than once. This can happen in the AJAX callback.
+  $dup_re = "/\\-\\-[a-z0-9]+$/";
+  $pblock_id = preg_replace($dup_re, '', $pblock_id);
   $more_id = $pblock_id . '-blocks-more';
   $blocks_id = $pblock_id . '-blocks';
   // Need to update the id so that it is unique on the page.
   $element['pblock_wrapper']['blocks']['#attributes']['id'] = $blocks_id;
+  $element['pblock_wrapper']['blocks']['#attributes']['class'][] = 'acquia-lift-personalize-blocks';
 
   foreach (element_children($element['pblock_wrapper']['blocks']) as $key) {
     $block = &$element['pblock_wrapper']['blocks'][$key];
@@ -1409,8 +1428,42 @@ function _acquia_lift_personalize_campaign_wizard_variations_block(&$form, &$for
 
     acquia_lift_chosenify_element($block['block']['bid'], array('acquia-lift-chosen-select-half'));
 
-    // Hide the remove button at this point.
-    $block['remove']['#access'] = FALSE;
+    // Update the remove button.
+    if (!isset($block['remove']['#access']) || $block['remove']['#access'] == TRUE) {
+      $block['option_label']['#weight'] = 10;
+      $block['remove']['#weight'] = 20;
+      $block['block']['#weight'] = 30;
+      
+      if (isset($block['option_id']['#value'])) {
+        // If the option is an existing one, then redirect to a confirmation form
+        // prior to deleting.
+        $option_id = $block['option_id']['#value'];
+        $remove_url = "admin/structure/personalize/variations/personalize-blocks/manage/{$option_set->osid}/{$option_id}/delete";
+        $block['option_label']['#weight'] = 10;
+        $block['remove'] = array(
+          '#weight' => 20,
+          '#markup' => l(t('Delete'), $remove_url, array(
+            'attributes' => array(
+              'class' => array('acquia-lift-delete'),
+            ),
+            'query' => array('destination' => url('admin/structure/personalize/manage/' . $agent_data->machine_name . '/variations')),
+          )),
+        );
+      }
+      else {
+        // If the block is a new option that has never been saved, then just
+        // allow a quick AJAX adjustment for the number to show.
+        $block['remove']['#attributes']['id'] = $blocks_id . '-' . $key . '-remove';
+        $block['remove']['#attributes']['class'][] = 'acquia-lift-delete';
+        $block['remove']['#submit'] = array('acquia_lift_personalize_campaign_wizard_blocks_remove');
+        $block['remove']['#ajax'] = array(
+          'callback' => 'acquia_lift_personalize_campaign_wizard_blocks_ajax',
+          'wrapper' => $blocks_id,
+          'effect' => 'fade',
+        );
+        $block['remove']['#value'] .= '_' . (empty($option_set) ? 'add' : $option_set->osid);
+      }
+    }
   }
 
   // Update the "Add another" button to match the desired styling and language.
@@ -1475,6 +1528,12 @@ function _acquia_lift_personalize_campaign_wizard_form_state_blocks_alter(&$form
   }
   else {
     unset($form_state['pblock']);
+  }
+  if (isset($form_state['option_set_to_remove'][$key])) {
+    $form_state['to_remove'] = $form_state['option_set_to_remove'][$key];
+  }
+  else {
+    unset($form_state['to_remove']);
   }
 }
 

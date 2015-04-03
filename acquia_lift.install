@@ -692,7 +692,7 @@ function acquia_lift_update_7018() {
  * Miscellaneous changes required for the new workflow, includes converting legacy
  * campaigns to "personalizations".
  */
-function acquia_lift_update_7018() {
+function acquia_lift_update_7019() {
   // The queue is now gone so delete the queue class variable.
   variable_del('queue_class_acquia_lift_sync');
 
@@ -764,7 +764,7 @@ function acquia_lift_update_7018() {
   foreach ($convertibles as $original_agent_name => $details) {
     // Create a new acquia_lift_target agent which will delegate to this one.
     $agent = new stdClass();
-    $agent->label = 'Parent personalization for ' . $details[0]['agent_label'];
+    $agent->label = 'Converted: ' . $details[0]['agent_label'];
     $agent->plugin = 'acquia_lift_target';
     $agent->data = array();
     $agent->machine_name = personalize_generate_machine_name($original_agent_name . '-parent', 'personalize_agent_machine_name_exists');

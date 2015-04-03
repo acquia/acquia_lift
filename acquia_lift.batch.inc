@@ -190,11 +190,6 @@ function acquia_lift_get_sync_operations_for_agents($agents) {
         }
       }
       $operations = array_merge($operations, $agent_instance->getDecisionSyncOperations($old_decisions, $decisions));
-
-      if (!empty($option_sets)) {
-        // Tell Acquia Lift about the fixed targeting for the option sets.
-        $operations = array_merge($operations, $agent_instance->getFixedTargetingSyncOperations($option_sets));
-      }
       $goals = personalize_goal_load_by_conditions(array('agent' => $agent_name));
       $new_goals = $old_goals = array();
       foreach ($goals as $goal) {

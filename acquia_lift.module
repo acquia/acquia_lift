@@ -661,20 +661,6 @@ function acquia_lift_personalize_option_set_save($option_set) {
 }
 
 /**
- * Implements hook_personalize_option_set_delete().
- */
-function acquia_lift_personalize_option_set_delete($option_set) {
-
-}
-
-/**
- * Implements hook_personalize_goal_delete().
- */
-function acquia_lift_personalize_goal_delete($goal_info) {
-
-}
-
-/**
  * Queue callback function for making a request to Acquia Lift.
  *
  * @param $item

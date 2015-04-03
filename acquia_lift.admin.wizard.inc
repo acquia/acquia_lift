@@ -22,6 +22,7 @@ function acquia_lift_personalize_campaign_wizard_process_bar_alter(&$form, &$for
   }
   // If we're editing an existing agent, add a "Reset data" button next to
   // the Pause/Resume button.
+  // @todo Move this to the reports page.
   $reset_form = array(
     '#prefix' => '<div id="personalize-acquia-lift-reset-form">',
     '#suffix' => '</div>'
@@ -43,27 +44,6 @@ function acquia_lift_personalize_campaign_wizard_process_bar_alter(&$form, &$for
   );
   $reset_form['actions']['reset']['#submit'] = array('acquia_lift_reset_submit');
   $form['process_bar']['actions']['reset_lift_agent'] = $reset_form;
-  // Now the Sync button.
-  $sync_form = array(
-    '#prefix' => '<div id="personalize-acquia-lift-sync-form">',
-    '#suffix' => '</div>'
-  );
-  $sync_form['agent_name'] = array(
-    '#type' => 'value',
-    '#value' => $agent->machine_name,
-  );
-  $sync_form['actions']['sync'] = array(
-    '#prefix' => '<div id="personalize-acquia-lift-sync">',
-    '#suffix' => '</div>',
-    '#type' => 'submit',
-    '#name' => 'sync_submit',
-    '#value' => t('Sync with Lift'),
-    '#attributes' => array(
-      'class' => array('action-item-primary-active'),
-    ),
-  );
-  $sync_form['actions']['sync']['#submit'] = array('acquia_lift_sync_campaign_submit');
-  $form['process_bar']['actions']['sync_lift_agent'] = $sync_form;
 }
 
 /**

@@ -543,7 +543,6 @@ function acquia_lift_personalize_campaign_wizard_targeting_alter(&$form, &$form_
         '#attributes' => array(
           'class' => $classes,
           'data-acquia-lift-targeting-droppable' => TRUE,
-          'data-acquia-lift-targeting-allow-copy' => TRUE,
           'data-acquia-lift-targeting-allow-move' => TRUE,
           'data-acquia-lift-targeting-allow-remove' => TRUE,
         ),

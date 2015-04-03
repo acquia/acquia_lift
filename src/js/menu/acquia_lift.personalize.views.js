@@ -73,8 +73,9 @@
     render: function() {
       var hasCampaigns = this.collection.length > 0;
       var activeCampaign = this.collection.findWhere({'isActive': true});
-      var supportsGoals = activeCampaign && activeCampaign.get('supportsGoals');
-      var supportsTargeting = activeCampaign && activeCampaign.get('supportsTargeting');
+      var links = activeCampaign ? activeCampaign.get('links') : {};
+      var supportsGoals = activeCampaign && links.hasOwnProperty('goals') && links.goals.length > 0;
+      var supportsTargeting = activeCampaign && links.hasOwnProperty('targeting') && links.targeting.length > 0;
       // Show or hide relevant menus.
       if (hasCampaigns && activeCampaign) {
         this.$el.find('[data-acquia-lift-personalize="goals"]').parents('li').toggle(supportsGoals);

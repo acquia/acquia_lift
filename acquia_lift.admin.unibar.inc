@@ -277,7 +277,8 @@ function acquia_lift_element_variation_details_form_ajax_callback($form, &$form_
     $current_status = personalize_agent_get_status($agent_name);
     $message = $form_state['storage']['confirmation_message'];
     if ($current_status === PERSONALIZE_STATUS_NOT_STARTED) {
-      if ($settings['acquia_lift']['campaigns'][$agent_name]['verified']) {
+      $errors = personalize_verify_agent($agent_name);
+      if (empty($errors)) {
         $message .= ' ' . t('You can now start the personalization.');
       }
       else {
@@ -1029,26 +1030,4 @@ function acquia_lift_campaign_flow_cancel($ajax = NULL) {
 
   $commands = array(ctools_modal_command_dismiss());
   print ajax_render($commands);
-}
-
-/**
- * Ajax callback to update an agent's status.
- *
- * @param $agent
- *   The agent to update.
- * @param $status
- *   The new status to set.
- */
-function acquia_lift_agent_set_status_ajax($agent, $status) {
-  $updated = personalize_agent_set_status($agent->machine_name, $status);
-  $return = array('success' => $updated);
-  if ($updated) {
-    list($next_status, $text) = _personalize_status_toggle_next($status);
-    $return['nextStatus'] = array(
-      'status' => $next_status,
-      'text' => $text,
-    );
-    $return['currentStatus'] = $status;
-  }
-  return drupal_json_output($return);
 }

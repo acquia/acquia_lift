@@ -2996,39 +2996,33 @@ class AcquiaLiftWebTestWorkflow extends AcquiaLiftWebTestBase {
         'name' => $first_agent_machine_name,
         'label' => $first_agent_name,
         'type' => 'test_agent',
-        'status' => PERSONALIZE_STATUS_NOT_STARTED,
-        'nextStatus' => array(
-          'status' => PERSONALIZE_STATUS_RUNNING,
-          'text' => t('Start'),
-        ),
         'links' => array(
           'edit' => url('admin/structure/personalize/manage/' . $first_agent_machine_name),
           'report' => '',
           'view' => url('admin/structure/personalize/manage/' . $first_agent_machine_name),
+          'goals' => '/admin/structure/personalize/manage/' . $first_agent_machine_name . '/goals',
+          'targeting' => '',
+          'scheduling' => '/admin/structure/personalize/manage/' . $first_agent_machine_name . '/scheduling',
+          'review' => '/admin/structure/personalize/manage/' . $first_agent_machine_name . '/review',
         ),
-        'supportsGoals' => TRUE,
         'optionSetTypes' => array(),
         'goals' => NULL,
-        'verified' => TRUE,
       ),
       $second_agent_machine_name => array(
         'name' => $second_agent_machine_name,
         'label' => $second_agent_name,
         'type' => 'test_extra_agent',
-        'status' => PERSONALIZE_STATUS_NOT_STARTED,
-        'nextStatus' => array(
-          'status' => PERSONALIZE_STATUS_RUNNING,
-          'text' => t('Start'),
-        ),
         'links' => array(
           'edit' => url('admin/structure/personalize/manage/' . $second_agent_machine_name),
           'report' => '',
           'view' => url('admin/structure/personalize/manage/' . $second_agent_machine_name),
+          'goals' => '',
+          'targeting' => '/admin/structure/personalize/manage/' . $second_agent_machine_name . '/targeting',
+          'scheduling' => '/admin/structure/personalize/manage/' . $second_agent_machine_name . '/scheduling',
+          'review' => '/admin/structure/personalize/manage/' . $second_agent_machine_name . '/review',
         ),
-        'supportsGoals' => FALSE,
         'optionSetTypes' => array(),
         'goals' => NULL,
-        'verified' => TRUE,
       ),
     );
     $settings = $this->drupalGetSettings();
@@ -3041,11 +3035,6 @@ class AcquiaLiftWebTestWorkflow extends AcquiaLiftWebTestBase {
 
     // As soon as the agent is started, we are able to access its reports.
     $expected[$first_agent_machine_name]['links']['report'] = url('admin/structure/personalize/manage/' . $first_agent_machine_name . '/results');
-    $expected[$first_agent_machine_name]['status'] = PERSONALIZE_STATUS_RUNNING;
-    $expected[$first_agent_machine_name]['nextStatus'] = array(
-      'status' => PERSONALIZE_STATUS_PAUSED,
-      'text' => t('Pause'),
-    );
     $settings = $this->drupalGetSettings();
     $this->assertEqual($settings['acquia_lift']['campaigns'][$first_agent_machine_name], $expected[$first_agent_machine_name]);
     $this->assertEqual($settings['acquia_lift']['campaigns'][$second_agent_machine_name], $expected[$second_agent_machine_name]);
@@ -3060,68 +3049,6 @@ class AcquiaLiftWebTestWorkflow extends AcquiaLiftWebTestBase {
     );
     $this->assertEqual($settings['acquia_lift']['campaigns'][$first_agent_machine_name], $expected[$first_agent_machine_name]);
     $this->assertEqual($settings['acquia_lift']['campaigns'][$second_agent_machine_name], $expected[$second_agent_machine_name]);
-  }
-
-  // Tests changing the status of an agent via AJAX.
-  function testAgentStatusChangeAJAX() {
-    module_enable(array('personalize_test_extra_agent'));
-    $this->resetAll();
-    // Need to call resetAll again to force ctools to load the class files.
-    $this->resetAll();
-    $admin_user = $this->drupalCreateUser(array('access administration pages', 'manage personalized content'));
-    $this->drupalLogin($admin_user);
-    // Create two agents of different types.
-    $first_agent_name = $this->randomName();
-    $first_agent_machine_name = personalize_generate_machine_name($first_agent_name, 'personalize_agent_machine_name_exists');
-    $second_agent_name = $this->randomName();
-    $second_agent_machine_name = personalize_generate_machine_name($second_agent_name, 'personalize_agent_machine_name_exists');
-    $agents = array(
-      array(
-        'label' => $first_agent_name,
-        'machine_name' => $first_agent_machine_name,
-        'agent_type' => 'test_agent',
-      ),
-      array(
-        'label' => $second_agent_name,
-        'machine_name' => $second_agent_machine_name,
-        'agent_type' => 'test_invalid_agent',
-      ),
-    );
-    foreach ($agents as $agent) {
-      $edit = array(
-        'agent_basic_info[title]' => $agent['label'],
-        'agent_basic_info[agent_type]' => $agent['agent_type'],
-      );
-      $this->drupalPost('admin/structure/personalize/add', $edit, $this->getButton('create_campaign'));
-    }
-    // Now test the ajax callback.
-    // Expected case to update to next status.
-    $expected = array(
-      'success' => TRUE,
-      'nextStatus' => array(
-        'status' => PERSONALIZE_STATUS_PAUSED,
-        'text' => t('Pause'),
-      ),
-      'currentStatus' => PERSONALIZE_STATUS_RUNNING,
-    );
-    $result = $this->drupalGetAjax('admin/structure/personalize/manage/' . $first_agent_machine_name . '/ajax_status/' . PERSONALIZE_STATUS_RUNNING);
-    $this->assertEqual($expected, $result);
-
-    // Try an update that doesn't change the status.
-    $result = $this->drupalGetAjax('admin/structure/personalize/manage/' . $first_agent_machine_name . '/ajax_status/' . PERSONALIZE_STATUS_RUNNING);
-    $this->assertEqual($expected, $result);
-
-    // Try to update an agent that cannot be verified.
-    $expected = array(
-      'success' => FALSE,
-    );
-    $result = $this->drupalGetAjax('admin/structure/personalize/manage/' . $second_agent_machine_name . '/ajax_status/' . PERSONALIZE_STATUS_RUNNING);
-    $this->assertEqual($expected, $result);
-
-    // Try to call the path without the proper permissions.
-    $this->drupalLogout();
-    $this->drupalGet('admin/structure/personalize/manage/' . $first_agent_machine_name . '/ajax_status/' . PERSONALIZE_STATUS_RUNNING);
-    $this->assertText(t('Access denied'));
   }
 
   /**

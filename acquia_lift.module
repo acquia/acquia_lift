@@ -168,15 +168,6 @@ function acquia_lift_menu() {
     'file' => 'acquia_lift.admin.unibar.inc',
     'theme callback' => 'ajax_base_page_theme',
   );
-  // AJAX callback to change the status of a campaign.
-  $items['admin/structure/personalize/manage/%personalize_agent/ajax_status/%'] = array(
-    'page callback' => 'acquia_lift_agent_set_status_ajax',
-    'page arguments' => array(4, 6),
-    'access callback' => 'user_access',
-    'access arguments' => array('manage personalized content'),
-    'type' => MENU_CALLBACK,
-    'file' => 'acquia_lift.admin.unibar.inc',
-  );
   $items['admin/structure/personalize/manage/%personalize_agent/audience/%/delete'] = array(
     'title' => 'Delete target audience',
     'page callback' => 'drupal_get_form',
@@ -590,8 +581,6 @@ function acquia_lift_personalize_agent_status_presave($agent_name, $status) {
  * Implements hook_personalize_agent_update_status().
  */
 function acquia_lift_personalize_agent_update_status($agent_name, $old_status, $status) {
-  // Clear the agent's verification status.
-  acquia_lift_agent_clear_verified_status($agent_name);
   $agent_data = personalize_agent_load($agent_name);
   if (!acquia_lift_is_testing_agent($agent_data)) {
     return;
@@ -662,7 +651,6 @@ function acquia_lift_personalize_agent_delete($agent_data) {
   if (!acquia_lift_is_testing_agent($agent_data)) {
     return;
   }
-  acquia_lift_agent_clear_verified_status($agent_data->machine_name);
   $queue = DrupalQueue::get('acquia_lift_sync');
   $queue->createItem(array(
     'method' => 'deleteAgent',
@@ -709,9 +697,6 @@ function acquia_lift_personalize_option_set_save($option_set) {
     return;
   }
   acquia_lift_sync_option_sets($agent, $old_option_sets, $new_option_sets, TRUE);
-  // This agent will need to be re-verified as the changes may have made it changed
-  // whether or not it is valid.
-  acquia_lift_agent_clear_verified_status($agent->machine_name);
   // The only reason that a change to this option set should cause the agent to be
   // paused, is if we now have fewer than two options in the option set.
   if (count($option_set->options) < 2) {
@@ -811,8 +796,6 @@ function acquia_lift_personalize_option_set_delete($option_set) {
   }
   acquia_lift_sync_option_sets($agent, $old_option_sets, $new_option_sets);
   acquia_lift_sync_fixed_targeting($agent, $new_option_sets);
-  // Clear the verified status of the agent.
-  acquia_lift_agent_clear_verified_status($agent->machine_name);
   // The only reason deletion of the option set would mean the agent needs to be
   // paused is if there are no more option sets.
   if (count($new_option_sets) == 0) {
@@ -889,9 +872,6 @@ function acquia_lift_personalize_goal_save($goal_info) {
   // than from the db.
   $new_goals[$goal_info['action']] = $goal_info['value'];
   acquia_lift_sync_goals($agent, $old_goals, $new_goals, TRUE);
-  // This agent will need to be re-verified as the changes may have changed
-  // whether or not it is valid.
-  acquia_lift_agent_clear_verified_status($goal_info['agent']);
 }
 
 /**
@@ -912,8 +892,6 @@ function acquia_lift_personalize_goal_delete($goal_info) {
     unset($new_goals[$goal_info['action']]);
   }
   acquia_lift_sync_goals($agent, $old_goals, $new_goals, TRUE);
-  // Clear the verified status of the agent.
-  acquia_lift_agent_clear_verified_status($agent->machine_name);
   // If we now have no goals, the agent needs to be paused.
   if (count($new_goals) == 0) {
     personalize_pause_if_running($agent->machine_name);
@@ -1091,7 +1069,6 @@ function acquia_lift_process_queue($exit_on_finish = TRUE) {
       $queue->releaseItem($item);
     }
   }
-  acquia_lift_agent_clear_verified_status();
 
   if ($exit_on_finish) {
     drupal_exit();
@@ -3018,13 +2995,12 @@ function acquia_lift_get_campaign_details() {
       'links' => array(
         'view' => url('admin/structure/personalize/manage/' . $agent->machine_name),
         'edit' => url('admin/structure/personalize/manage/' . $agent->machine_name),
-        'report' => $report_is_active ? url('admin/structure/personalize/manage/' . $agent->machine_name . '/report') : '',
+        'report' => $report_is_active ? url('admin/structure/personalize/manage/' . $agent->machine_name . '/results') : '',
+        'goals' => $supports_goals ? url('admin/structure/personalize/manage/' . $agent->machine_name . '/goals') : '',
         'targeting' => $supports_targeting ? url('admin/structure/personalize/manage/' . $agent->machine_name . '/targeting') : '',
         'scheduling' => url('admin/structure/personalize/manage/' . $agent->machine_name . '/scheduling'),
         'review' => url('admin/structure/personalize/manage/' . $agent->machine_name . '/review'),
       ),
-      'supportsGoals' => $supports_goals,
-      'supportsTargeting' => $supports_targeting,
       'optionSetTypes' => array_unique($option_set_types),
       'goals' => (isset($goals)) ? $goals : NULL,
     );
@@ -3036,54 +3012,4 @@ function acquia_lift_get_campaign_details() {
   }
 
   return $campaigns;
-}
-
-/**
- * Helper function to read the current agent's verification status from cache.
- *
- * @param string $agent_name
- *   The machine name of the agent to get verification for.
- * @result bool
- *   True if agent is verified, false if not.
- */
-function acquia_lift_agent_verification_cache_get($agent_name) {
-  $verification = &drupal_static(__FUNCTION__);
-  if (!isset($verification)) {
-    $cache = cache_get(ACQUIA_LIFT_AGENT_VERIFY_CACHE);
-    if ($cache) {
-      $verification = $cache->data;
-    }
-    else {
-      $verification = array();
-    }
-  }
-  if (!isset($verification[$agent_name])) {
-    $errors = personalize_verify_agent($agent_name, FALSE);
-    $verification[$agent_name] = empty($errors);
-    cache_set(ACQUIA_LIFT_AGENT_VERIFY_CACHE, $verification);
-  }
-  return $verification[$agent_name];
-}
-
-/**
- * Helper function to clear the cache of the verification status for a
- * particular agent.
- *
- * @param string $agent_name
- *   The machine name of the agent that should have cache cleared.  If not
- *   passed, entire cache will be cleared.
- */
-function acquia_lift_agent_clear_verified_status($agent_name = NULL) {
-  $cache = cache_get(ACQUIA_LIFT_AGENT_VERIFY_CACHE);
-  if (!$cache) {
-    return;
-  }
-  $verification = $cache->data;
-  if (empty($agent_name)) {
-    $verification = array();
-  }
-  else if (isset($verification[$agent_name])) {
-    unset($verification[$agent_name]);
-  }
-  cache_set(ACQUIA_LIFT_AGENT_VERIFY_CACHE, $verification);
 }

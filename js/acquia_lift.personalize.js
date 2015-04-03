@@ -492,7 +492,6 @@
       links: {},
       name: '',
       isActive: false,
-      verified: false,
       type: ''
     },
 
@@ -631,7 +630,6 @@
      * Refreshes the active option selected for a campaign's options ets.
      */
     refreshData: function () {
-      var that = this;
       var optionSets = this.get('optionSets');
       optionSets.each(function (model) {
         var activeOption = model.get('activeOption');
@@ -668,33 +666,6 @@
           if (activeOption) {
             model.set('activeOption', activeOption.get('option_id'));
           }
-        }
-      });
-    },
-
-    /**
-     * Updates the status of a campaign.
-     *
-     * @param newStatus
-     *   The new status value for the campaign.
-     */
-    updateStatus: function (newStatus) {
-      var updateUrl = Drupal.settings.basePath + Drupal.settings.pathPrefix + 'admin/structure/personalize/manage/' + this.get('name') + '/ajax_status/' + newStatus;
-      var model = this;
-      $.getJSON(updateUrl, function (data) {
-        if (data.success) {
-          // Update the model current and next status values.
-          model.set('status', data.currentStatus);
-          model.set('nextStatus', data.nextStatus);
-
-          // We also need to update the status value of the campaign in the
-          // Drupal.settings object.
-          // @todo: Make this an event dispatch that is handled outside of this
-          // application scope.
-          // Leaving for now since the reliance on drupal settings is all over
-          // the application so it's not horrible.
-          Drupal.settings.acquia_lift.campaigns[model.get('name')].status = data.currentStatus;
-          Drupal.settings.acquia_lift.campaigns[model.get('name')].nextStatus = data.nextStatus;
         }
       });
     }
@@ -1047,8 +1018,9 @@
     render: function() {
       var hasCampaigns = this.collection.length > 0;
       var activeCampaign = this.collection.findWhere({'isActive': true});
-      var supportsGoals = activeCampaign && activeCampaign.get('supportsGoals');
-      var supportsTargeting = activeCampaign && activeCampaign.get('supportsTargeting');
+      var links = activeCampaign ? activeCampaign.get('links') : {};
+      var supportsGoals = activeCampaign && links.hasOwnProperty('goals') && links.goals.length > 0;
+      var supportsTargeting = activeCampaign && links.hasOwnProperty('targeting') && links.targeting.length > 0;
       // Show or hide relevant menus.
       if (hasCampaigns && activeCampaign) {
         this.$el.find('[data-acquia-lift-personalize="goals"]').parents('li').toggle(supportsGoals);

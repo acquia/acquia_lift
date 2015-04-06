@@ -94,7 +94,8 @@ Drupal.acquia_lift_target = (function() {
           ruleId,
           strategy,
           feature_strings = convertContextToFeatureStrings(visitor_context),
-          fallbackIndex = fallbacks.hasOwnProperty(decision_name) ? fallbacks[decision_name] : 0;
+          fallbackIndex = fallbacks.hasOwnProperty(decision_name) ? fallbacks[decision_name] : 0,
+          defaultTarget = Drupal.settings.acquia_lift_target.default_target;
       // Initialize each decision to the fallback option.
       for (var decision_name in choices) {
         if (choices.hasOwnProperty(decision_name)) {
@@ -105,7 +106,13 @@ Drupal.acquia_lift_target = (function() {
       for (i in agentRules[agent_name]) {
         if (agentRules[agent_name].hasOwnProperty(i)) {
           ruleId = i;
-          if (agentRules[agent_name][ruleId].targeting_features.length == 0) {
+          // If this is the "everyone else" target, then there are no features to be matched,
+          // just execute the decision for this target.
+          if (ruleId == defaultTarget) {
+            executeDecision(agentRules[agent_name][ruleId], decisions, choices, callback);
+            return;
+          }
+          if (!agentRules[agent_name][ruleId].hasOwnProperty('targeting_features') || agentRules[agent_name][ruleId].targeting_features.length == 0) {
             continue;
           }
           strategy = agentRules[agent_name][ruleId].targeting_strategy;

@@ -286,7 +286,6 @@ function acquia_lift_element_variation_details_form_ajax_callback($form, &$form_
       }
     }
     $commands[] = acquia_lift_command_messagebox($message, 10);
-    $commands[] = acquia_lift_command_process_queue();
   }
   else if ($op === t('Cancel')) {
     // Turn off edit mode and redirect them.
@@ -400,7 +399,6 @@ function acquia_lift_element_variation_delete_complete_callback($form, $form_sta
     ctools_modal_command_dismiss(),
     acquia_lift_command_messagebox($message, 10),
     acquia_lift_command_option_set_updates($settings),
-    acquia_lift_command_process_queue(),
   );
   return $commands;
 }
@@ -577,7 +575,6 @@ function acquia_lift_goal_type_create_completed_callback($form, &$form_state) {
       )
     ), TRUE),
     acquia_lift_command_messagebox($message, 10),
-    acquia_lift_command_process_queue(),
   );
   return $commands;
 }
@@ -894,7 +891,6 @@ function acquia_lift_goal_delete_complete_callback($form, $form_state) {
     ctools_modal_command_dismiss(),
     acquia_lift_command_messagebox($message, 10),
     acquia_lift_command_goal_updates($form_state['values']['agent_name']),
-    acquia_lift_command_process_queue(),
   );
   return $commands;
 }

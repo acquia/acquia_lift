@@ -48,6 +48,9 @@ function drush_acquia_lift_campaign_sync() {
   // Step 1. Exit if there is no campaign to be synchronized.
   $agents = array();
   foreach (acquia_lift_get_agent_types() as $type => $info) {
+    if ($type == 'acquia_lift_target') {
+      continue;
+    }
     $agents = array_merge($agents, personalize_agent_load_by_type($type));
   }
   if (empty($agents)) {
@@ -93,8 +96,6 @@ function drush_acquia_lift_campaign_sync() {
   }
 
   // Step 4. Sync selected campaign(s)
-  // First delete the queue because we are about to sync everything now.
-  acquia_lift_delete_queue();
   // For each agent, set up a batch job including all the required save operations,
   // then process immediately.
   foreach ($agents as $agent_name => $agent) {

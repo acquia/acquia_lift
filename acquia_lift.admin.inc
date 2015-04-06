@@ -260,8 +260,6 @@ function acquia_lift_admin_form_validate($form, &$form_state) {
  * Creates a default Acquia Lift agent if one does not yet exist.
  */
 function acquia_lift_admin_form_submit($form, &$form_state) {
-  acquia_lift_ensure_default_agent($form_state['values']['acquia_lift_account_info']);
-
   if ($form_state['values']['acquia_lift_confidence_measure'] < 95) {
     drupal_set_message(t('A minimum confidence measure of 95% is recommended to ensure proper evaluation of test results.'), 'warning');
   }
@@ -1065,6 +1063,8 @@ function acquia_lift_set_audience_for_test($parent_agent, $old_audience, $new_au
  * @param $audience
  *   THe name of the target audience the test was assigned to.
  * @throws \PersonalizeException
+ *
+ * @todo We need to make sure this test gets deleted from Lift
  */
 function acquia_lift_delete_old_nested_test($parent_agent, $audience) {
   $option_set = acquia_lift_get_option_set_for_targeting($parent_agent->machine_name);
@@ -1143,32 +1143,6 @@ function acquia_lift_get_structure_from_targeting($option_set) {
 }
 
 /**
- * Get the option set where targeting rules are defined.
- *
- * The assumption here is that if you have multiple option sets then targeting
- * is only defined on one of them as we currently do not support targeting for
- * MVTs.
- *
- * @param $agent
- *   A stdClass object representing the agent to get the option set for.
- * @return stdClass|NULL
- *   The option set to use for targeting rules or NULL if the agent has no option
- *   sets.
- */
-function acquia_lift_get_option_set_for_targeting($agent_name) {
-  $option_sets = personalize_option_set_load_by_agent($agent_name, TRUE);
-  if (empty($option_sets)) {
-    return NULL;
-  }
-  foreach ($option_sets as $option_set) {
-    if (!empty($option_set->targeting)) {
-      return $option_set;
-    }
-  }
-  return reset($option_sets);
-}
-
-/**
  * Validate that an agent has the minimum targeting required and add it if it
  * is not available.
  *
@@ -1226,4 +1200,17 @@ function _acquia_lift_personalize_campaign_wizard_everyone_else_audience() {
     'strategy' => 'OR',
     'id' => ACQUIA_LIFT_TARGETING_EVERYONE_ELSE,
   );
+}
+
+/**
+ * Page callback for the legacy campaign listing.
+ */
+function acquia_lift_legacy_campaign_list() {
+  $legacy_campaigns = variable_get('acquia_lift_legacy_agents', array());
+  if (empty($legacy_campaigns)) {
+    drupal_goto('admin/structure/personalize');
+  }
+  $agents = personalize_agent_load_multiple($legacy_campaigns);
+  module_load_include('inc', 'personalize', 'personalize.admin');
+  return personalize_agent_list($agents, FALSE, FALSE);
 }

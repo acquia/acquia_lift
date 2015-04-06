@@ -10,11 +10,12 @@
  * Batch syncs all campaigns to Lift.
  */
 function acquia_lift_batch_sync_campaigns($agents = array()) {
-  // First delete the queue because we are about to sync everything now.
-  acquia_lift_delete_queue();
-  // Now get all sync operations for all existing Acquia Lift agents.
+  // Now get all sync operations for all existing Acquia Lift testing agents.
   if (empty($agents)) {
     foreach (acquia_lift_get_agent_types() as $type => $info) {
+      if ($type == 'acquia_lift_target') {
+        continue;
+      }
       $agents = array_merge($agents, personalize_agent_load_by_type($type));
     }
   }
@@ -189,11 +190,6 @@ function acquia_lift_get_sync_operations_for_agents($agents) {
         }
       }
       $operations = array_merge($operations, $agent_instance->getDecisionSyncOperations($old_decisions, $decisions));
-
-      if (!empty($option_sets)) {
-        // Tell Acquia Lift about the fixed targeting for the option sets.
-        $operations = array_merge($operations, $agent_instance->getFixedTargetingSyncOperations($option_sets));
-      }
       $goals = personalize_goal_load_by_conditions(array('agent' => $agent_name));
       $new_goals = $old_goals = array();
       foreach ($goals as $goal) {

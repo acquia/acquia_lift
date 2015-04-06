@@ -5,46 +5,7 @@
  */
 
 interface AcquiaLiftAgentInterface {
-  /**
-   * Synchronizes the decision structure for this agent to Acquia Lift.
-   *
-   * If decision names or decision points have been renamed or removed, they
-   * need to be deleted in Acquia Lift and the new points and decisions
-   * added.
-   *
-   * @param $old_decisions
-   *   Array representing the old decision structure from when it was
-   *   last sync'd to AcquiaLift.
-   * @param $new_decisions
-   *   Array representing the new decision structure.
-   * @return mixed
-   */
-  public function syncDecisions($old_decisions, $new_decisions);
 
-  /**
-   * Synchronize the goals for this agent to Acquia Lift.
-   *
-   * @param $old_goals
-   *   The old goals that Acquia Lift knows about, with goal names as
-   *   keys and goal values as values.
-   * @param $new_goals
-   *   The new goals, with goal names as keys and goal values as values.
-   */
-  public function syncGoals($old_goals, $new_goals);
-
-  /**
-   * Syncs fixed targeting rules to Acquia Lift.
-   *
-   * @param $option_sets
-   *   An array of option set objects whose options may have fixed targeting rules
-   *   associated with them.
-   */
-  public function syncFixedTargeting($option_sets);
-
-  /**
-   * Syncs the agent's status to Acquia Lift.
-   */
-  public function syncAgentStatus();
 
   /**
    * Organizes an array of option sets into decision points.
@@ -141,7 +102,7 @@ class AcquiaLiftReportFactory {
   }
 }
 
-class AcquiaLiftAgent extends PersonalizeAgentBase implements PersonalizeAgentGoalInterface, AcquiaLiftAgentInterface, PersonalizeExplicitTargetingInterface, PersonalizeAutoTargetingInterface, PersonalizeAgentReportInterface {
+class AcquiaLiftAgent extends PersonalizeAgentBase implements PersonalizeAgentGoalInterface, AcquiaLiftAgentInterface, PersonalizeAgentReportInterface {
 
   /**
    * An object containing the agent data.
@@ -165,13 +126,6 @@ class AcquiaLiftAgent extends PersonalizeAgentBase implements PersonalizeAgentGo
    * @var PersonalizeAgentReportInterface
    */
   protected $reporting;
-
-  /**
-   * An instance of DrupalQueueInterface
-   *
-   * @var DrupalQueueInterface
-   */
-  protected $queue;
 
   protected $globalConfig;
 
@@ -248,6 +202,14 @@ class AcquiaLiftAgent extends PersonalizeAgentBase implements PersonalizeAgentGo
   }
 
   /**
+   * Implements PersonalizeAgentInterface::supportsAutoTargeting().
+   */
+  public function supportsAutoTargeting() {
+    return TRUE;
+  }
+
+
+  /**
    * Implements PersonalizeAgentGoalInterface::useClientSideGoalDelivery().
    */
   public function useClientSideGoalDelivery() {
@@ -259,15 +221,6 @@ class AcquiaLiftAgent extends PersonalizeAgentBase implements PersonalizeAgentGo
    */
   public function sendGoal($goal_name, $value = NULL) {
     // @todo Implement server-side goal delivery.
-  }
-
-  /**
-   * Implements PersonalizeAgentInterface::postSave().
-   */
-  public function postSave($old_data) {
-    $items = $this->getAgentSyncOperations(isset($old_data->data['visitor_context']['acquia_lift_context']));
-
-    $this->queueItems($items);
   }
 
   /**
@@ -340,20 +293,6 @@ class AcquiaLiftAgent extends PersonalizeAgentBase implements PersonalizeAgentGo
       );
     }
     return $items;
-  }
-
-  /**
-   * Implements PersonalizeExplicitTargetingInterface::explicitTargetingSupportMultiple().
-   */
-  public static function explicitTargetingSupportMultiple() {
-    return PersonalizeExplicitTargetingInterface::EXPLICIT_TARGETING_MULTIPLE_BOTH;
-  }
-
-  /**
-   * Implements PersonalizeAutoTargetingInterface::constrainExplicitTargetingContexts().
-   */
-  public static function constrainExplicitTargetingContexts() {
-    return TRUE;
   }
 
   /**
@@ -526,7 +465,6 @@ class AcquiaLiftAgent extends PersonalizeAgentBase implements PersonalizeAgentGo
           }
         }
       }
-      // @todo Check the fixed targeting for each decision point.
     }
     if ($discrepancies) {
       // Add a general message about how to resolve discrepancies.
@@ -657,51 +595,6 @@ class AcquiaLiftAgent extends PersonalizeAgentBase implements PersonalizeAgentGo
   }
 
   /**
-   * Returns a queue to use.
-   *
-   * @return DrupalQueueInterface
-   */
-  protected function getQueue() {
-    if ($this->queue !== NULL) {
-      return $this->queue;
-    }
-    return DrupalQueue::get('acquia_lift_sync');
-  }
-
-  /**
-   * Sets the queue to use.
-   *
-   * @param DrupalQueueInterface $queue
-   */
-  public function setQueue(DrupalQueueInterface $queue) {
-    $this->queue = $queue;
-  }
-
-
-  /**
-   * Implements AcquiaLiftAgentInterface::syncAgentStatus().
-   */
-  public function syncAgentStatus() {
-    $items = array();
-    $items[] = array(
-      'method' => 'updateAgentStatus',
-      'args' => array(
-        $this->machineName,
-        $this->status,
-      ),
-    );
-    $this->queueItems($items);
-  }
-
-  /**
-   * Implements AcquiaLiftAgentInterface::syncDecisions().
-   */
-  public function syncDecisions($old_decisions, $new_decisions) {
-    $items = $this->getDecisionSyncOperations($old_decisions, $new_decisions);
-    $this->queueItems($items);
-  }
-
-  /**
    * Returns the operations needed to sync decisions to Acquia Lift.
    *
    * @param $old_decisions
@@ -792,14 +685,6 @@ class AcquiaLiftAgent extends PersonalizeAgentBase implements PersonalizeAgentGo
   }
 
   /**
-   * Implements AcquiaLiftAgentInterface::syncGoals().
-   */
-  public function syncGoals($old_goals, $new_goals) {
-    $items = $this->getGoalSyncOperations($old_goals, $new_goals);
-    $this->queueItems($items);
-  }
-
-  /**
    * Returns the operations needed to sync goals to Acquia Lift.
    *
    * @param $old_goals
@@ -834,97 +719,6 @@ class AcquiaLiftAgent extends PersonalizeAgentBase implements PersonalizeAgentGo
       }
     }
     return $items;
-  }
-
-  /**
-   * Implements AcquiaLiftAgentInterface::syncFixedTargeting().
-   */
-  public function syncFixedTargeting($option_sets) {
-    $items = $this->getFixedTargetingSyncOperations($option_sets);
-    $this->queueItems($items);
-  }
-
-  /**
-   * Returns the operations needed to sync goals to Acquia Lift.
-   *
-   * @param $option_sets
-   *   An array representing the option sets whose targeting rules need to be sync'd.
-   * @return array
-   *    An array of items representing API calls to be made to Acquia Lift.
-   */
-  public function getFixedTargetingSyncOperations($option_sets) {
-    $items = array();
-    // If any of this agent's option sets has explicit targeting mappings configured,
-    // we need to send these mappings to Acquia Lift.
-    $mappings = array();
-    foreach ($option_sets as $option_set) {
-      if (empty($option_set->targeting)) {
-        continue;
-      }
-      $point_name = $option_set->decision_point;
-      $decision_name = $option_set->decision_name;
-      $mappings[$point_name] = isset($mappings[$point_name]) ? $mappings[$point_name] : array();
-      foreach ($option_set->targeting as $targ) {
-        if (!isset($targ['option_id'])) {
-          continue;
-        }
-        if (isset($targ['targeting_features'])) {
-          // Check if we're supposed to AND or OR mulitple features together.
-          if (isset($targ['targeting_strategy']) && $targ['targeting_strategy'] == 'AND') {
-            // Create a single mapping, with a comma-separated list of features.
-            $mappings[$point_name][] = array(
-              'feature' => implode(',', $targ['targeting_features']),
-              'decision' => $decision_name . ':' . $targ['option_id']
-            );
-          }
-          else {
-            // Create a mapping for each feature and they will be OR'd together.
-            foreach ($targ['targeting_features'] as $feature) {
-              $mappings[$point_name][] = array(
-                'feature' => $feature,
-                'decision' => $decision_name . ':' . $targ['option_id']
-              );
-            }
-          }
-        }
-      }
-    }
-
-    // Send mappings per decision point.
-    foreach ($mappings as $point_name => $map) {
-      $items[] = array(
-        'method' => 'saveFixedTargetingMapping',
-        'args' => array(
-          $this->machineName,
-          $point_name,
-          $map
-        )
-      );
-    }
-    return $items;
-  }
-
-  /**
-   * Adds items to the queue and sets a message to inform the user.
-   *
-   * @param $items
-   *   An array of items to add to the queue.
-   */
-  protected function queueItems($items) {
-    if (!empty($items)) {
-      foreach ($items as $item) {
-        // Create a hash of the item. This will prevent duplicate items from
-        // being added to the queue.
-        $hash = md5(serialize($item));
-        $item['hash'] = $hash;
-        // We add the agent machine name to the queue item so that if it fails
-        // the agent in question can be paused.
-        $item['agent'] = $this->machineName;
-        $this->getQueue()->createItem($item);
-      }
-      // Make sure the queue gets triggered on the next request.
-      $_SESSION['acquia_lift_queue_trigger'] = 1;
-    }
   }
 }
 

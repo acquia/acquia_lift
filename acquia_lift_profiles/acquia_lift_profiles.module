@@ -88,7 +88,7 @@ function acquia_lift_profiles_refresh_segments_cache() {
     return FALSE;
   }
   try {
-    $segments = ALProfilesAPI::getInstance(variable_get('acquia_lift_profiles_account_name', ''), variable_get('acquia_lift_profiles_api_url', ''))->getSegments();
+    $segments = ALProfilesAPI::getInstance(variable_get('acquia_lift_profiles_account_name', ''), variable_get('acquia_lift_profiles_site_name', ''), variable_get('acquia_lift_profiles_api_url', ''))->getSegments();
     variable_set('acquia_lift_profiles_segments', $segments);
     return TRUE;
   }
@@ -347,7 +347,7 @@ function acquia_lift_profiles_form_node_type_form_alter(&$form, &$form_state) {
  */
 function acquia_lift_profiles_put_action($action_name, $label, &$errors = array()) {
   try {
-    $acquia_lift_profiles_api = ALProfilesAPI::getInstance(variable_get('acquia_lift_profiles_account_name', ''), variable_get('acquia_lift_profiles_api_url', ''));
+    $acquia_lift_profiles_api = ALProfilesAPI::getInstance(variable_get('acquia_lift_profiles_account_name', ''), variable_get('acquia_lift_profiles_site_name', ''), variable_get('acquia_lift_profiles_api_url', ''));
     $acquia_lift_profiles_api->saveEvent($action_name, $label);
     watchdog('acquia_lift_profiles', 'Synchronized the action @action to Acquia Lift Web.', array('@action' => $action_name), WATCHDOG_INFO);
   }
@@ -377,7 +377,7 @@ function acquia_lift_profiles_visitor_actions_save_action($action) {
  */
 function acquia_lift_profiles_delete_action($action_name) {
   try {
-    $acquia_lift_profiles_api = ALProfilesAPI::getInstance(variable_get('acquia_lift_profiles_account_name', ''), variable_get('acquia_lift_profiles_api_url', ''));
+    $acquia_lift_profiles_api = ALProfilesAPI::getInstance(variable_get('acquia_lift_profiles_account_name', ''), variable_get('acquia_lift_profiles_site_name', ''), variable_get('acquia_lift_profiles_api_url', ''));
     $acquia_lift_profiles_api->deleteEvent($action_name);
   }
   catch (ALProfilesException $e) {
@@ -541,7 +541,7 @@ function acquia_lift_profiles_set_server_side_action($action_name, $context) {
   if (!isset($_SESSION['acquia_lift_profiles_actions'])) {
     $_SESSION['acquia_lift_profiles_actions'] = array();
   }
-  $_SESSION['acquia_lift_profiles_actions'][$action_name][] = $context;
+  $_SESSION['acquia_lift_profiles_actions'][$action_name][] = serialize($context);
 }
 
 /**
@@ -550,7 +550,19 @@ function acquia_lift_profiles_set_server_side_action($action_name, $context) {
  * @return an array of actions or NULL.
  */
 function acquia_lift_profiles_get_server_side_actions() {
-  return (isset($_SESSION['acquia_lift_profiles_actions']) ? $_SESSION['acquia_lift_profiles_actions'] : NULL);
+  if (isset($_SESSION['acquia_lift_profiles_actions'])) {
+    $actions = array();
+
+    foreach ($_SESSION['acquia_lift_profiles_actions'] as $action_name => $contexts) {
+      foreach ($contexts as $context) {
+        $actions[$action_name][] = unserialize($context);
+      }
+    }
+
+    return $actions;
+  }
+
+  return NULL;
 }
 
 /**

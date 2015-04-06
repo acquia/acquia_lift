@@ -39,6 +39,13 @@ class ALProfilesAPITest extends DrupalUnitTestCase {
   protected $accountName = 'MYALPROFILESACCOUNT';
 
   /**
+   * The string to use as customer site.
+   *
+   * @var string
+   */
+  protected $customerSite = '';
+
+  /**
    * The string to use as the username.
    *
    * @var string
@@ -79,7 +86,7 @@ class ALProfilesAPITest extends DrupalUnitTestCase {
       $this->assertTrue($e instanceof ALProfilesCredsException);
       $this->assertEqual('Missing acquia_lift_profiles account information.', $e->getMessage());
       try {
-        $acquia_lift_profiles_api = ALProfilesAPI::getInstance($this->accountName, 'some\\invalid\\url', $this->accessKey, $this->secretKey);
+        $acquia_lift_profiles_api = ALProfilesAPI::getInstance($this->accountName, $this->customerSite, 'some\\invalid\\url', $this->accessKey, $this->secretKey);
         $this->fail('Should never reach here.');
       }
       catch (Exception $e) {
@@ -87,7 +94,7 @@ class ALProfilesAPITest extends DrupalUnitTestCase {
         $this->assertEqual('API URL is not a valid URL.', $e->getMessage());
         try {
           // Here we pass valid creds.
-          $acquia_lift_profiles_api = ALProfilesAPI::getInstance($this->accountName, $this->apiUrl, $this->accessKey, $this->secretKey);
+          $acquia_lift_profiles_api = ALProfilesAPI::getInstance($this->accountName, $this->customerSite, $this->apiUrl, $this->accessKey, $this->secretKey);
           $acquia_lift_profiles_api->setLogger(new AcquiaLiftTestLogger());
           $this->assertEqual($this->apiUrl, $acquia_lift_profiles_api->getApiUrl());
         }
@@ -201,6 +208,35 @@ class ALProfilesAPITest extends DrupalUnitTestCase {
     );
     $this->assertLogs($logs);
 
+    // Now try with a non-empty customer site
+    ALProfilesAPI::reset();
+    $this->customerSite = 'TESTSITE';
+    $acquia_lift_profiles_api = $this->getALProfilesAPI();
+    $acquia_lift_profiles_api->saveEvent($event_name, $event_label);
+    // Our request should now include a customerSite param in the querystring
+    $canonicalRequest = "PUT\naccept:application/json\n/dashboard/rest/{$acquia_lift_profiles_api->getAccountName()}/events/{$event_name}?customerSite={$this->customerSite}&label={$event_label}&type=OTHER";
+    $hmac = base64_encode(hash_hmac('sha1', $canonicalRequest, $this->secretKey, TRUE));
+    $auth_header = 'HMAC ' . $this->accessKey . ':' . $hmac;
+    $encoded_label = rawurlencode($event_label);
+    $requests = array(
+      array(
+        'type' => 'put',
+        'uri' => "{$acquia_lift_profiles_api->getApiUrl()}/dashboard/rest/{$acquia_lift_profiles_api->getAccountName()}/events/{$event_name}?customerSite={$this->customerSite}&label={$encoded_label}&type=OTHER",
+        'headers' => array('Authorization' => $auth_header, 'Accept' => 'application/json'),
+        'options' => array(),
+        'body' => NULL,
+      )
+    );
+
+    // Confirm the expected requests were made.
+    $this->assertAPIRequests($requests);
+    $logs = array(
+      array(
+        'level' => PersonalizeLogLevel::INFO,
+        'message' => "The event $event_name has been saved to Acquia Lift Profiles",
+      )
+    );
+    $this->assertLogs($logs);
     ALProfilesAPI::reset();
   }
 
@@ -298,7 +334,7 @@ class ALProfilesAPITest extends DrupalUnitTestCase {
    *   A ALProfilesAPI instance.
    */
   protected function getALProfilesAPI($broken = FALSE) {
-    $acquia_lift_profiles_api = ALProfilesAPI::getInstance($this->accountName, $this->apiUrl, $this->accessKey, $this->secretKey);
+    $acquia_lift_profiles_api = ALProfilesAPI::getInstance($this->accountName, $this->customerSite, $this->apiUrl, $this->accessKey, $this->secretKey);
     // Create a dummy http client for the Acquia Lift Profiles API to use. All
     // requests to it will be logged and retrievable for checking later.
     $this->httpClient = new DummyALProfilesHttpClient($broken);

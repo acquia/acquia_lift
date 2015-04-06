@@ -1193,6 +1193,7 @@ function acquia_lift_library() {
               'contentRight' => 0,
               'contentBottom' => 0,
             ),
+            'modalTheme' => 'AcquiaLiftModalDialog',
             'modalOptions' => array(
               'background-color' => '#000000',
             ),

@@ -677,27 +677,20 @@ function acquia_lift_update_7017() {
 }
 
 /**
- * Removing Simple A/B campaign agent.
+ * Miscellaneous changes required for the new workflow, includes converting legacy
+ * campaigns to "personalizations".
  */
-function acquia_lift_update_7018() {
+function acquia_lift_update_7200() {
+  // The queue is now gone so delete the queue class variable.
+  variable_del('queue_class_acquia_lift_sync');
+
+  // Convert simple A/B agents to regular Lift agents.
   db_update('personalize_agent')
     ->condition('plugin', 'acquia_lift_simple_ab')
     ->fields(array('plugin' => 'acquia_lift'))
     ->execute();
-  menu_delete_links('acquia-lift-controls');
-  _acquia_lift_build_menu('acquia-lift-controls');
-}
-
-/**
- * Miscellaneous changes required for the new workflow, includes converting legacy
- * campaigns to "personalizations".
- */
-function acquia_lift_update_7019() {
-  // The queue is now gone so delete the queue class variable.
-  variable_del('queue_class_acquia_lift_sync');
-
   // Get all old-style agents and convert them where possible.
-  $result = db_query("SELECT a.machine_name, a.label, o.plugin, o.osid, o.decision_name, o.options, o.targeting FROM {personalize_agent} a INNER JOIN {personalize_option_sets} o ON o.agent = a.machine_name WHERE a.plugin IN ('acquia_lift', 'acquia_lift_simple_ab')");
+  $result = db_query("SELECT a.machine_name, a.label, o.plugin, o.osid, o.decision_name, o.options, o.targeting FROM {personalize_agent} a INNER JOIN {personalize_option_sets} o ON o.agent = a.machine_name WHERE a.plugin = 'acquia_lift'");
   // First organize our results into arrays of agents with their option sets.
   $agents = array();
   foreach ($result as $row) {
@@ -866,12 +859,7 @@ function acquia_lift_update_7019() {
         ->execute();
     }
   }
-}
-
-/**
- * Update menu to match updated "Personalizations" terminology.
- */
-function acquia_lift_update_7019() {
+  // Update menu to match updated "Personalizations" terminology.
   menu_delete_links('acquia-lift-controls');
   _acquia_lift_build_menu('acquia-lift-controls');
 }

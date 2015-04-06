@@ -56,24 +56,6 @@ function acquia_lift_menu() {
     'access arguments' => array('manage personalized content'),
     'file' => 'acquia_lift.admin.inc',
   );
-  // Ajax callback to open the create campaign screen in a modal window.
-  $items['admin/structure/personalize/add/%ctools_js'] = array(
-    'page callback' => 'acquia_lift_campaign_create_modal_callback',
-    'page arguments' => array(4),
-    'access arguments' => array('manage personalized content'),
-    'type' => MENU_CALLBACK,
-    'file' => 'acquia_lift.admin.unibar.inc',
-    'theme callback' => 'ajax_base_page_theme',
-  );
-  // AJAX callback to create a new campaign in a modal window.
-  $items['admin/structure/acquia_lift/add/%/%ctools_js'] = array(
-    'page callback' => 'acquia_lift_campaign_type_create_modal_callback',
-    'page arguments' => array(4, 5),
-    'access arguments' => array('manage personalized content'),
-    'type' => MENU_CALLBACK,
-    'file' => 'acquia_lift.admin.unibar.inc',
-    'theme callback' => 'ajax_base_page_theme',
-  );
   // AJAX callback to cancel a modal creation flow.
   $items['admin/structure/acquia_lift/cancel/%ctools_js'] = array(
     'page callback' => 'acquia_lift_campaign_flow_cancel',

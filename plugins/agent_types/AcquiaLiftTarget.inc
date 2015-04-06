@@ -71,7 +71,7 @@ class AcquiaLiftTarget extends PersonalizeAgentBase implements PersonalizeExplic
   public function useClientSideGoalDelivery() {
     return TRUE;
   }
-
+  
   /**
    * Implements PersonalizeAgentGoalInterface::sendGoal().
    */

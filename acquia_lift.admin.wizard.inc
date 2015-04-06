@@ -583,16 +583,42 @@ function acquia_lift_personalize_campaign_wizard_review_alter(&$form, &$form_sta
     // Add audiences to the summary section.
   $agent_data = $form['#agent'];
 
-  module_load_include('inc', 'acquia_lift', 'acquia_lift.admin');
-  $option_set = acquia_lift_get_option_set_for_targeting($agent_data->machine_name);
-  $count = isset($option_set->targeting) ? count($option_set->targeting) : 0;
+  // If the agent has embedded tests then include the test settings form before
+  // the summary.
+  $count_audiences = 0;
+  $has_tests = FALSE;
+  if (isset($agent_data->data['lift_targeting'])) {
+    $count_audiences = count($agent_data->data['lift_targeting']);
+    foreach ($agent_data->data['lift_targeting'] as $options) {
+      if (count($options) > 1) {
+        $has_tests = TRUE;
+        break;
+      }
+    }
+  }
+  if ($has_tests) {
+    $form['review']['summary_column']['tests'] = array(
+      '#type' => 'container',
+      '#theme' => 'acquia_lift_card',
+      '#title' => t('Test options'),
+      '#collapsible' => TRUE,
+      '#collapsed' => FALSE,
+      '#tree' => TRUE,
+      '#attributes' => array(
+        'class' => array('acquia-lift-test-options'),
+      ),
+      '#weight' => -10,
+    );
+    $form['review']['summary_column']['tests']['options'] = _acquia_lift_personalize_campaign_wizard_review_tests($agent_data, array('tests', 'options'));
+  }
+
   $form['review']['summary_column']['summary']['audiences'] = array(
     '#markup' => theme('personalize_wizard_summary_count', array(
-      'count' => $count,
+      'count' => $count_audiences,
       'details' => theme('html_tag', array(
         'element' => array(
           '#tag' => 'h3',
-          '#value' => format_plural($count, 'Audience', 'Audiences'),
+          '#value' => format_plural($count_audiences, 'Audience', 'Audiences'),
         ),
       )),
     )),
@@ -811,6 +837,25 @@ function acquia_lift_personalize_campaign_wizard_targeting_validate(&$form, &$fo
     $option_set = acquia_lift_get_option_set_for_targeting($agent_data->machine_name);
     if (isset($option_set->targeting[$machine_name])) {
       form_set_error('audiences[add][details][name', t('Please choose a different name for your audience as this one is already taken'));
+    }
+  }
+}
+
+/**
+ * Validation for the review page.
+ */
+function acquia_lift_personalize_campaign_wizard_review_validate(&$form, &$form_state) {
+  $values = &$form_state['values']['tests']['options'];
+  if (isset($values['control_rate'])) {
+    $rate = $values['control_rate'];
+    if (!is_numeric($rate) || !($rate >= 0 && $rate <= 100)) {
+      form_set_error('tests][options][control_rate', t('Invalid percent to test specified'));
+    }
+  }
+  if (isset($values['explore_rate'])) {
+    $rate = $values['explore_rate'];
+    if (!is_numeric($rate) || !($rate >= 0 && $rate <= 100)) {
+      form_set_error('tests][options][explore_rate', t('Invalid percent to test specified'));
     }
   }
 }
@@ -1058,6 +1103,22 @@ function acquia_lift_personalize_campaign_wizard_targeting_submit(&$form, &$form
     }
   }
   acquia_lift_save_targeting_structure($agent_data, $targeting);
+}
+
+/**
+ * Submit function for the review page.
+ */
+function acquia_lift_personalize_campaign_wizard_review_submit(&$form, &$form_state, &$agent_data, $agent_instance) {
+  if (!isset($form_state['values']['tests']['options'])) {
+    return;
+  }
+  // Save the test options on the main targeting agent.  When the agent creates
+  // embedded tests then it will read these properties and set them on each
+  // test agent.
+  $values = $form_state['values']['tests']['options'];
+  $agent_data->data['decision_style'] = $values['decision_style'];
+  $agent_data->data['control_rate'] = $values['control_rate'];
+  $agent_data->data['explore_rate'] = $values['explore_rate'];
 }
 
 /**
@@ -1466,6 +1527,94 @@ function _acquia_lift_personalize_campaign_wizard_targeting_audience(&$form, &$f
     '#default_value' => $default_strategy,
   );
   return $element;
+}
+
+/**
+ * Form to include for test settings to apply to all embedded tests.
+ *
+ * @param stdClass $agent_data
+ *   The data for the current targeting agent.
+ * @param array $element_parents
+ *   The array of parents for this form element.
+ * @return array
+ *   The renderable form array for the test options.
+ */
+function _acquia_lift_personalize_campaign_wizard_review_tests($agent_data, $element_parents) {
+  $form = array();
+  $form['#attached'] = array(
+    'js' => array(
+      drupal_get_path('module', 'acquia_lift') . '/js/acquia_lift.agent.admin.js',
+    ),
+  );
+  $control_rate = isset($agent_data->data['control_rate']) ? $agent_data->data['control_rate'] : 10;
+  $form['control'] = array(
+    '#type' => 'fieldset',
+    '#tree' => FALSE,
+    '#collapsible' => TRUE,
+    '#collapsed' => TRUE,
+    '#title' => t('Control (@control_rate%)', array('@control_rate' => $control_rate)),
+  );
+  $form['control']['control_rate'] = array(
+    '#type' => 'acquia_lift_percentage',
+    '#title' => t('Control Group'),
+    '#field_suffix' => '%',
+    '#size' => 3,
+    '#description' => t('A fixed baseline variation will be shown, by default the first variation in the set.'),
+    '#default_value' => $control_rate,
+    '#rest_title' => t('Test Group'),
+    '#rest_description' => t('Personalized variations will be shown.'),
+    '#collapsible' => TRUE,
+    '#collapsed' => TRUE,
+  );
+  $decision_style = isset($agent_data->data['decision_style']) ? $agent_data->data['decision_style'] : 'adaptive';
+  $form['decision_style'] = array(
+    '#type' => 'radios',
+    '#title' => t('Decision Style'),
+    '#options' => array('adaptive' => t('Auto-personalize'), 'random' => t('Test only')),
+    '#default_value' => $decision_style,
+    '#title_display' => 'invisible',
+  );
+  $form['decision_style']['adaptive'] = array(
+    '#description' => t('Adapts to users and chooses the best option over time.'),
+  );
+  $form['decision_style']['random'] = array(
+    '#description' => t('Tests variations and reports results.'),
+  );
+  $explore_rate = isset($agent_data->data['explore_rate']) ? $agent_data->data['explore_rate'] : 20;
+  $decision_style_parents = $element_parents;
+  $decision_style_parents[] = 'decision_style';
+  $decision_style_form_element = '';
+  foreach ($decision_style_parents as $i => $parent_name) {
+    $decision_style_form_element .= ($i ? '[' . $parent_name . ']' : $parent_name);
+  }
+  $form['distribution'] = array(
+    '#type' => 'fieldset',
+    '#tree' => FALSE,
+    '#collapsible' => TRUE,
+    '#collapsed' => TRUE,
+    '#title' => t('Distribution (@explore_rate/@rest)', array(
+      '@explore_rate' => $explore_rate,
+      '@rest' => (100 - $explore_rate),
+    )),
+    '#states' => array(
+      'visible' => array(
+        ':input[name="' . $decision_style_form_element . '"]' => array('value' => 'adaptive'),
+      ),
+    ),
+  );
+  $form['distribution']['explore_rate'] = array(
+    '#type' => 'acquia_lift_percentage',
+    '#title' => t('Random Group'),
+    '#field_suffix' => '%',
+    '#description' => t('Variations will be shown randomly and tracked to adjust for false positives.'),
+    '#size' => 3,
+    '#default_value' => isset($agent_data->data['explore_rate']) ? $agent_data->data['explore_rate'] : 20,
+    '#rest_title' => t('Personalized Group'),
+    '#rest_description' => t('The "best" variation will be shown for each visitor based on our algorithm.'),
+    '#collapsible' => TRUE,
+    '#collapsed' => TRUE,
+  );
+  return $form;
 }
 
 /**

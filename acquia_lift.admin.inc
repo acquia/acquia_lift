@@ -373,7 +373,8 @@ function acquia_lift_report_custom($form, &$form_state, $agent, $agent_data, $op
   );
 
   // Get the decision points for this agent so we can provide a filter on this.
-  $decisions = AcquiaLiftAgent::convertOptionSetsToDecisions($data['decisions']);
+  $option_sets = personalize_option_set_load_by_agent($agent->getMachineName());
+  $decisions = AcquiaLiftAgent::convertOptionSetsToDecisions($option_sets);
   $decision_options = array();
   foreach ($decisions as $name => $decision) {
     $decision_options[$name] = personalize_get_label_for_decision_point_name($name);

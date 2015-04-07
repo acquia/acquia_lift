@@ -287,6 +287,10 @@ tr.acquia-lift-report-control {
 }
 
 /* Acquia Lift campaign wizard form alterations */
+.acquia-lift-campaign-add .el-card .el-card__header {
+  background-color: #0074BD;
+  color: #FFF;
+}
 .el-card__action .acquia-lift-delete {
   background-image: url(../images/000000/delete.png);
   background-repeat: no-repeat;
@@ -425,16 +429,19 @@ tr.acquia-lift-report-control {
 .acquia-lift-draggable-variations li {
   cursor: pointer;
 }
-.acquia-lift-targeting-droppable {
+.acquia-lift-targeting-empty {
   border: 1px dotted #cfd1d5;
-  padding: .6em 1em;
+  padding: .6em 1em 1em 2em;
   max-width: 30em;
+  height: 1em;
+  margin: 1em 0;
 }
-.acquia-lift-targeting-droppable.is-droppable {
-  background-color: #fafafa;
-}
-.acquia-lift-targeting-droppable.is-hovered {
+.acquia-lift-targeting-empty.is-active {
   background-color: #FFFFCC;
+}
+
+.acquia-lift-sortable-placeholder-empty {
+  height: 0;
 }
 
 #acquia-lift-targeting-audiences .acquia-lift-draggable-variations {
@@ -442,13 +449,17 @@ tr.acquia-lift-report-control {
   margin: 0;
 }
 
-#acquia-lift-targeting-audiences .acquia-lift-draggable-variations li,
+#acquia-lift-targeting-audiences .acquia-lift-draggable-variations.acquia-lift-no-drop {
+  cursor: no-drop;
+}
+#acquia-lift-targeting-audiences .acquia-lift-draggable-variations li.acquia-lift-targeting-draggable,
 .acquia-lift-targeting-draggable {
+  background: #E6E9ED url(/sites/all/modules/contrib/acquia_lift/images/000000/drag.png) no-repeat;
+  background-position: left center;
   border: 1px solid #cfd1d5;
   max-width: 30em;
   color: #000;
-  background-color: #E6E9ED;
-  padding: .6em 1em;
+  padding: .6em 1em .6em 2em;
   margin: 1em 0;
   list-style-type: none;
 }

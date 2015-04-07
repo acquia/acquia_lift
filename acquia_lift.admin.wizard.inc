@@ -155,6 +155,9 @@ function acquia_lift_personalize_campaign_wizard_variations_alter(&$form, &$form
     '#collapsed' => !empty($option_sets),
     '#title' => t('Add variation set'),
     '#collapsible' => TRUE,
+    '#attributes' => array(
+      'class' => array('acquia-lift-campaign-add'),
+    ),
   );
   // Tricky: we need this container in order to hide the radio list when a
   // selection is made.  The radios type does not have a proper wrapping
@@ -294,6 +297,9 @@ function acquia_lift_personalize_campaign_wizard_goals_alter(&$form, &$form_stat
     '#collapsed' => !empty($goal_deltas),
     '#title' => t('Add goal'),
     '#collapsible' => TRUE,
+    '#attributes' => array(
+      'class' => array('acquia-lift-campaign-add'),
+    ),
   );
   // Tricky: we need this container in order to hide the radio list when a
   // selection is made.  The radio type does not have a proper wrapping
@@ -453,6 +459,9 @@ function acquia_lift_personalize_campaign_wizard_targeting_alter(&$form, &$form_
     '#collapsible' => TRUE,
     '#collapsed' => !empty($option_set->targeting),
     '#title' => t('Add target audience'),
+    '#attributes' => array(
+      'class' => array('acquia-lift-campaign-add'),
+    ),
   );
   $form['targeting']['audiences']['add']['details'] = _acquia_lift_personalize_campaign_wizard_targeting_audience($form, $form_state, $agent_data, 'add');
   $form['targeting']['audiences']['add']['save'] = array(
@@ -511,6 +520,17 @@ function acquia_lift_personalize_campaign_wizard_targeting_alter(&$form, &$form_
       if ($audience_id === ACQUIA_LIFT_TARGETING_EVERYONE_ELSE) {
         $classes[] = 'acquia-lift-targeting-everyone-else';
       }
+      // This message will only be shown when there two or more variations
+      // assigned to an audience.
+      $form['targeting']['audiences'][$audience_id]['message'] = array(
+        '#type' => 'container',
+        '#attributes' => array(
+          'class' => array('acquia-lift-test-message'),
+        ),
+        'tests' => array(
+          '#markup' => t('These variations will be shown as a test.  The first variation will be the control variation.'),
+        ),
+      );
       $form['targeting']['audiences'][$audience_id]['assignment'] = array(
         '#type' => 'select',
         '#title' => t('Add display option'),
@@ -528,6 +548,15 @@ function acquia_lift_personalize_campaign_wizard_targeting_alter(&$form, &$form_
           'data-acquia-lift-targeting-droppable' => TRUE,
           'data-acquia-lift-targeting-allow-move' => TRUE,
           'data-acquia-lift-targeting-allow-remove' => TRUE,
+        ),
+      );
+      // Keep track of the assignment order of options within the audience.
+      $form['targeting']['audiences'][$audience_id]['assignment_order'] = array(
+        '#type' => 'textfield',
+        '#title' => t('Assignment order'),
+        '#default_value' => isset($saved_targeting[$audience_id]) ? implode(',', $saved_targeting[$audience_id]) : '',
+        '#attributes' => array(
+          'class' => array('acquia-lift-targeting-assignment-order'),
         ),
       );
     }
@@ -1053,8 +1082,8 @@ function acquia_lift_personalize_campaign_wizard_targeting_submit(&$form, &$form
       )), 'error');
     }
     // Handle the assignment of options to audiences.
-    if (isset($audience['assignment'])) {
-      $targeting[$audience_id] = array_values($audience['assignment']);
+    if (!empty($audience['assignment_order'])) {
+      $targeting[$audience_id] = explode(',', $audience['assignment_order']);
     }
   }
   acquia_lift_save_targeting_structure($agent_data, $targeting);

@@ -2094,17 +2094,17 @@ class AcquiaLiftWebTestCampaignWizard extends AcquiaLiftWebTestBase {
     $this->assertNoOptionSelected('edit-audiences-others-assignment', $option_id_3);
 
     $edit = array(
-      'audiences[muppet-fans][assignment][]' => array($option_id_1, $option_id_2),
-      'audiences[others][assignment][]' => array($option_id_3),
-      'audiences[everyone-else][assignment][]' => array($option_id_1),
+      'audiences[muppet-fans][assignment_order]' => $option_id_1 . ',' . $option_id_2,
+      'audiences[others][assignment_order]' => $option_id_3,
+      'audiences[everyone-else][assignment_order]' => $option_id_1,
     );
     $this->drupalPost(NULL, $edit, $this->getButton('wizard_next'));
     // The targeting should be saved in the agent property.
     $first_agent = personalize_agent_load($first_agent->machine_name, TRUE);
     $expected_agent_targeting = array(
-      'muppet-fans' =>  $edit['audiences[muppet-fans][assignment][]'],
-      'others' => $edit['audiences[others][assignment][]'],
-      'everyone-else' => $edit['audiences[everyone-else][assignment][]'],
+      'muppet-fans' =>  array($option_id_1, $option_id_2),
+      'others' => array($option_id_3),
+      'everyone-else' => array($option_id_1),
     );
     $this->assertEqual($expected_agent_targeting, $first_agent->data['lift_targeting']);
     // The targeting should not have been saved to the option set yet.
@@ -2133,7 +2133,7 @@ class AcquiaLiftWebTestCampaignWizard extends AcquiaLiftWebTestBase {
 
     // Make changes and verify the messaging.
     $edit = array(
-      'audiences[muppet-fans][assignment][]' => array($option_id_2),
+      'audiences[muppet-fans][assignment_order]' => $option_id_2,
     );
     $this->drupalPost(NULL, $edit, $this->getButton('wizard_next'));
     $this->drupalGet('admin/structure/personalize/manage/' . $first_agent->machine_name . '/targeting');

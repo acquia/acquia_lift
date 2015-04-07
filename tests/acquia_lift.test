@@ -1462,6 +1462,13 @@ class AcquiaLiftWebTestTarget extends AcquiaLiftWebTestBase {
     // First, set up our agent, option set, audience and desired targeting
     // structure.
     $agent = $this->createTargetingAgent();
+
+    // Set up some test options for nested tests.
+    $agent->data['explore_rate'] = 25;
+    $agent->data['control_rate'] = 25;
+    $agent->data['decision_style'] = 'adaptive';
+    personalize_agent_save($agent);
+
     $this->resetAll();
     $parent_option_set = $this->createPersonalizedBlock(0, $agent, 3);
     if (empty($parent_option_set)) {
@@ -1495,6 +1502,12 @@ class AcquiaLiftWebTestTarget extends AcquiaLiftWebTestBase {
     $agents = personalize_agent_load_by_type('acquia_lift');
     $this->assertEqual(1, count($agents));
     $nested_agent = reset($agents);
+
+    // Confirm the test options properties were set.
+    $this->assertEqual($nested_agent->data['decision_style'], 'adaptive');
+    $this->assertEqual($nested_agent->data['control_rate'], 25);
+    $this->assertEqual($nested_agent->data['explore_rate'], 25);
+
     $option_sets = personalize_option_set_load_by_agent($nested_agent->machine_name);
     $this->assertEqual(1, count($option_sets));
     $nested_osid = key($option_sets);
@@ -1529,6 +1542,11 @@ class AcquiaLiftWebTestTarget extends AcquiaLiftWebTestBase {
       $audience_name => array($option_ids[2]),
       $second_audience => array($option_ids[0], $option_ids[1])
     );
+
+    // Update the test options.
+    $agent->data['explore_rate'] = 35;
+    personalize_agent_save($agent);
+
     try {
       acquia_lift_save_targeting_structure($agent, $targeting);
     }
@@ -1547,6 +1565,12 @@ class AcquiaLiftWebTestTarget extends AcquiaLiftWebTestBase {
     $agents = personalize_agent_load_by_type('acquia_lift');
     $this->assertEqual(1, count($agents));
     $nested_agent = reset($agents);
+
+    // Confirm the test options properties were set.
+    $this->assertEqual($nested_agent->data['decision_style'], 'adaptive');
+    $this->assertEqual($nested_agent->data['control_rate'], 25);
+    $this->assertEqual($nested_agent->data['explore_rate'], 35);
+
     $option_sets = personalize_option_set_load_by_agent($nested_agent->machine_name);
 
     $this->assertEqual(1, count($option_sets));
@@ -1602,6 +1626,10 @@ class AcquiaLiftWebTestTarget extends AcquiaLiftWebTestBase {
       $audience_name => array($option_ids[0], $option_ids[1]),
       $second_audience => array($option_ids[0], $option_ids[2])
     );
+    // Update another test option too.
+    $agent->data['control_rate'] = 50;
+    personalize_agent_save($agent);
+
     try {
       acquia_lift_save_targeting_structure($agent, $targeting);
     }
@@ -1622,6 +1650,12 @@ class AcquiaLiftWebTestTarget extends AcquiaLiftWebTestBase {
     // Find the osid of the new option set so we can check that it has been set
     // on the correct target audience.
     foreach ($agents as $nested) {
+      // Verify the test options.
+      // Confirm the test options properties were set.
+      $this->assertEqual($nested->data['decision_style'], 'adaptive');
+      $this->assertEqual($nested->data['control_rate'], 50);
+      $this->assertEqual($nested->data['explore_rate'], 35);
+
       // Find the *new* nested agent.
       if ($nested->machine_name != $nested_agent->machine_name) {
         $option_sets = personalize_option_set_load_by_agent($nested->machine_name);
@@ -2254,5 +2288,43 @@ class AcquiaLiftWebTestCampaignWizard extends AcquiaLiftWebTestBase {
     $this->assertEqual($test_goals[0]->value, 1);
     $this->assertEqual($test_goals[1]->action, 'form_submit');
     $this->assertEqual($test_goals[1]->value, 5);
+  }
+
+  /**
+   * Test the review form.
+   */
+  function testReviewForm() {
+    $this->drupalLogin($this->managerUser);
+    $agent = $this->createTargetingAgent();
+
+    // There are no tests yet so the review page should not show any test
+    // options.
+    $this->drupalGet("admin/structure/personalize/manage/{$agent->machine_name}/review");
+    $this->assertNoFieldByName('decision_style');
+    $this->assertNoFieldByName('control_rate');
+    $this->assertNoFieldByName('explore_rate');
+
+    $this->createOptionSet(1, array(
+      'agent' => $agent->machine_name,
+      'plugin' => 'type1',
+      'num_options' => 2,
+    ));
+
+    // Options will be automatically added to the "Everyone else" audience
+    // which means that there will be two options to test against.
+    $this->drupalGet("admin/structure/personalize/manage/{$agent->machine_name}/review");
+    $edit = array(
+      'decision_style' => 'adaptive',
+      'control_rate' => 25,
+      'explore_rate' => 25,
+    );
+    $this->drupalPost(NULL, $edit, $this->getButton('wizard_save'));
+
+    $this->resetAll();
+    $agent = personalize_agent_load($agent->machine_name);
+    debug($agent, 'agent');
+    $this->assertEqual($agent->data['decision_style'], 'adaptive');
+    $this->assertEqual($agent->data['control_rate'], '25');
+    $this->assertEqual($agent->data['explore_rate'], 25);
   }
 }

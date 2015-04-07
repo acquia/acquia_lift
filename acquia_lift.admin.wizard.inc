@@ -576,6 +576,10 @@ function acquia_lift_personalize_campaign_wizard_targeting_alter(&$form, &$form_
  * Alter hook for the review portion of the campaign wizard.
  */
 function acquia_lift_personalize_campaign_wizard_review_alter(&$form, &$form_state, $form_id) {
+  // Take over the form validation and submit handling.
+  $form['#validate'] = array('acquia_lift_personalize_campaign_wizard_validate');
+  $form['#submit'] = array('acquia_lift_personalize_campaign_wizard_submit');
+
   // Make the overview a card.
   $form['review']['summary_column']['summary']['#type'] = 'container';
   $form['review']['summary_column']['summary']['#theme'] = 'acquia_lift_card';
@@ -603,13 +607,13 @@ function acquia_lift_personalize_campaign_wizard_review_alter(&$form, &$form_sta
       '#title' => t('Test options'),
       '#collapsible' => TRUE,
       '#collapsed' => FALSE,
-      '#tree' => TRUE,
+      '#tree' => FALSE,
       '#attributes' => array(
         'class' => array('acquia-lift-test-options'),
       ),
       '#weight' => -10,
     );
-    $form['review']['summary_column']['tests']['options'] = _acquia_lift_personalize_campaign_wizard_review_tests($agent_data, array('tests', 'options'));
+    $form['review']['summary_column']['tests']['options'] = _acquia_lift_personalize_campaign_wizard_review_tests($agent_data, array());
   }
 
   $form['review']['summary_column']['summary']['audiences'] = array(
@@ -845,17 +849,16 @@ function acquia_lift_personalize_campaign_wizard_targeting_validate(&$form, &$fo
  * Validation for the review page.
  */
 function acquia_lift_personalize_campaign_wizard_review_validate(&$form, &$form_state) {
-  $values = &$form_state['values']['tests']['options'];
-  if (isset($values['control_rate'])) {
-    $rate = $values['control_rate'];
+  if (isset($form_state['values']['control_rate'])) {
+    $rate = $form_state['values']['control_rate'];
     if (!is_numeric($rate) || !($rate >= 0 && $rate <= 100)) {
-      form_set_error('tests][options][control_rate', t('Invalid percent to test specified'));
+      form_set_error('control_rate', t('Invalid percent to test specified'));
     }
   }
-  if (isset($values['explore_rate'])) {
-    $rate = $values['explore_rate'];
+  if (isset($form_state['values']['explore_rate'])) {
+    $rate = $form_state['values']['explore_rate'];
     if (!is_numeric($rate) || !($rate >= 0 && $rate <= 100)) {
-      form_set_error('tests][options][explore_rate', t('Invalid percent to test specified'));
+      form_set_error('explore_rate', t('Invalid percent to test specified'));
     }
   }
 }
@@ -1109,16 +1112,18 @@ function acquia_lift_personalize_campaign_wizard_targeting_submit(&$form, &$form
  * Submit function for the review page.
  */
 function acquia_lift_personalize_campaign_wizard_review_submit(&$form, &$form_state, &$agent_data, $agent_instance) {
-  if (!isset($form_state['values']['tests']['options'])) {
-    return;
-  }
   // Save the test options on the main targeting agent.  When the agent creates
   // embedded tests then it will read these properties and set them on each
   // test agent.
-  $values = $form_state['values']['tests']['options'];
-  $agent_data->data['decision_style'] = $values['decision_style'];
-  $agent_data->data['control_rate'] = $values['control_rate'];
-  $agent_data->data['explore_rate'] = $values['explore_rate'];
+  if (isset($form_state['values']['decision_style'])) {
+    $agent_data->data['decision_style'] = $form_state['values']['decision_style'];
+  }
+  if (isset($form_state['values']['control_rate'])) {
+    $agent_data->data['control_rate'] = $form_state['values']['control_rate'];
+  }
+  if (isset($form_state['values']['explore_rate'])) {
+    $agent_data->data['explore_rate'] = $form_state['values']['explore_rate'];
+  }
 }
 
 /**

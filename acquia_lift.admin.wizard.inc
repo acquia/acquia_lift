@@ -711,6 +711,19 @@ function acquia_lift_personalize_campaign_wizard_review_alter(&$form, &$form_sta
     $form['review']['warnings_column']['warnings']['#type'] = 'container';
     $form['review']['warnings_column']['warnings']['#theme'] = 'acquia_lift_card';
   }
+  $form['#submit'] = array(
+    'acquia_lift_personalize_campaign_wizard_review_submit'
+  );
+}
+
+/**
+ * Submit handler for the review form.
+ */
+function acquia_lift_personalize_campaign_wizard_review_submit($form, &$form_state) {
+  $agent_data = $form['#agent'];
+  $agents_to_delete = acquia_lift_update_targeting($agent_data);
+  $agents = acquia_lift_get_nested_tests($agent_data);
+  acquia_lift_batch_sync_campaigns($agents, $agents_to_delete);
 }
 
 /**

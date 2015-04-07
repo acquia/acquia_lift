@@ -861,6 +861,7 @@ function acquia_lift_update_targeting($agent) {
   if (empty($agent->data['lift_targeting'])) {
     return;
   }
+
   // First we need to figure out what existing tests we have running as nested
   // tests for this agent.
   $option_set = acquia_lift_get_option_set_for_targeting($agent->machine_name);
@@ -894,11 +895,14 @@ function acquia_lift_update_targeting($agent) {
       $new_tests[$new_audience] = $variations;
     }
   }
-
+  // Keep track of nested agents that get deleted.
+  $to_delete = array();
   foreach (array_keys($existing_tests) as $audience) {
     if (!in_array($audience, $rules)) {
       // Delete the old test if it's no longer being used.
-      acquia_lift_delete_old_nested_test($agent, $audience);
+      if ($deleted = acquia_lift_delete_old_nested_test($agent, $audience)) {
+        $to_delete[] = $deleted;
+      }
     }
     else {
       // Change the audience for the test if necessary.
@@ -928,6 +932,7 @@ function acquia_lift_update_targeting($agent) {
   // to the running targeting.
   $agent->data['lift_targeting'] = array();
   personalize_agent_save($agent);
+  return $to_delete;
 }
 
 /**
@@ -1068,20 +1073,25 @@ function acquia_lift_set_audience_for_test($parent_agent, $old_audience, $new_au
  *   THe name of the target audience the test was assigned to.
  * @throws \PersonalizeException
  *
- * @todo We need to make sure this test gets deleted from Lift
+ * @return string
+ *   The machine name of the agent that was deleted so it can be scheduled for
+ *   deletion in Lift.
  */
 function acquia_lift_delete_old_nested_test($parent_agent, $audience) {
   $option_set = acquia_lift_get_option_set_for_targeting($parent_agent->machine_name);
+  $agent_to_delete = NULL;
   // Find the nested option set for the specified targeting rule.
   if (isset($option_set->targeting[$audience]) && isset($option_set->targeting[$audience]['osid'])) {
     $nested_os = personalize_option_set_load($option_set->targeting[$audience]['osid']);
     // Delete the option set, then delete the agent.
     personalize_option_set_delete($option_set->targeting[$audience]['osid']);
-    personalize_agent_delete($nested_os->agent);
+    $agent_to_delete = $nested_os->agent;
+    personalize_agent_delete($agent_to_delete);
     unset($option_set->targeting[$audience]['osid']);
   }
 
   personalize_option_set_save($option_set);
+  return $agent_to_delete;
 }
 
 /**

@@ -9,7 +9,8 @@
 /**
  * Batch syncs all campaigns to Lift.
  */
-function acquia_lift_batch_sync_campaigns($agents = array()) {
+function acquia_lift_batch_sync_campaigns($agents = array(), $to_delete = array()) {
+
   // Now get all sync operations for all existing Acquia Lift testing agents.
   if (empty($agents)) {
     foreach (acquia_lift_get_agent_types() as $type => $info) {
@@ -20,7 +21,7 @@ function acquia_lift_batch_sync_campaigns($agents = array()) {
     }
   }
 
-  $operations = acquia_lift_get_sync_operations_for_agents($agents);
+  $operations = acquia_lift_get_sync_operations_for_agents($agents, $to_delete);
 
   $batch_operations = array();
   foreach ($operations as $operation) {
@@ -129,8 +130,16 @@ function acquia_lift_batch_finished($success, $results, $operations) {
  *   An array of operation arrays, each with a 'method' key and an 'args'
  *   key, that can be processed by acquia_lift_sync_item().
  */
-function acquia_lift_get_sync_operations_for_agents($agents) {
+function acquia_lift_get_sync_operations_for_agents($agents, $to_delete = array()) {
   $operations = array();
+  foreach ($to_delete as $old_agent) {
+    $operations[] = array(
+      'method' => 'deleteAgent',
+      'args' => array(
+        $old_agent,
+      ),
+    );
+  }
   $lift_api = AcquiaLiftAPI::getInstance(variable_get('acquia_lift_account_info', array()));
   foreach ($agents as $agent_name => $agent) {
     if (!acquia_lift_is_testing_agent($agent)) {

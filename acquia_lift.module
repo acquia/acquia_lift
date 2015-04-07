@@ -515,22 +515,6 @@ function acquia_lift_personalize_agent_presave($agent) {
 }
 
 /**
- * Implements hook_personalize_agent_status_presave().
- */
-function acquia_lift_personalize_agent_status_presave($agent_name, $status) {
-  if ($status !== PERSONALIZE_STATUS_RUNNING) {
-    return;
-  }
-  // Targeting agents should update the targeting structure for agent creation
-  // before the main agent is started.
-  $agent_data = personalize_agent_load($agent_name);
-  if (acquia_lift_is_targeting_agent($agent_data)) {
-    module_load_include('inc', 'acquia_lift', 'acquia_lift.admin');
-    acquia_lift_update_targeting($agent_data);
-  }
-}
-
-/**
  * Implements hook_personalize_goal_presave().
  */
 function acquia_lift_personalize_goal_presave($goal) {

@@ -155,6 +155,9 @@ function acquia_lift_personalize_campaign_wizard_variations_alter(&$form, &$form
     '#collapsed' => !empty($option_sets),
     '#title' => t('Add variation set'),
     '#collapsible' => TRUE,
+    '#attributes' => array(
+      'class' => array('acquia-lift-campaign-add'),
+    ),
   );
   // Tricky: we need this container in order to hide the radio list when a
   // selection is made.  The radios type does not have a proper wrapping
@@ -294,6 +297,9 @@ function acquia_lift_personalize_campaign_wizard_goals_alter(&$form, &$form_stat
     '#collapsed' => !empty($goal_deltas),
     '#title' => t('Add goal'),
     '#collapsible' => TRUE,
+    '#attributes' => array(
+      'class' => array('acquia-lift-campaign-add'),
+    ),
   );
   // Tricky: we need this container in order to hide the radio list when a
   // selection is made.  The radio type does not have a proper wrapping
@@ -453,6 +459,9 @@ function acquia_lift_personalize_campaign_wizard_targeting_alter(&$form, &$form_
     '#collapsible' => TRUE,
     '#collapsed' => !empty($option_set->targeting),
     '#title' => t('Add target audience'),
+    '#attributes' => array(
+      'class' => array('acquia-lift-campaign-add'),
+    ),
   );
   $form['targeting']['audiences']['add']['details'] = _acquia_lift_personalize_campaign_wizard_targeting_audience($form, $form_state, $agent_data, 'add');
   $form['targeting']['audiences']['add']['save'] = array(

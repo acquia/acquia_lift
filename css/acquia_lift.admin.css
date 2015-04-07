@@ -287,6 +287,10 @@ tr.acquia-lift-report-control {
 }
 
 /* Acquia Lift campaign wizard form alterations */
+.acquia-lift-campaign-add .el-card .el-card__header {
+  background-color: #0074BD;
+  color: #FFF;
+}
 .el-card__action .acquia-lift-delete {
   background-image: url(../images/000000/delete.png);
   background-repeat: no-repeat;

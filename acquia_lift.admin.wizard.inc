@@ -124,6 +124,9 @@ function acquia_lift_personalize_campaign_wizard_variations_alter(&$form, &$form
       case 'elements':
         $form['variations']['option_sets']['option_set_' . $option_set->osid]['content'] = _acquia_lift_personalize_campaign_wizard_variations_element($form, $form_state, $agent_data, $option_set);
         break;
+      case 'fields':
+        $form['variations']['option_sets']['option_set_' . $option_set->osid]['content'] = _acquia_lift_personalize_campaign_wizard_variations_fields($form, $form_state, $agent_data, $option_set);
+        break;
       // Unsupported display - get an edit link if provided by the plugin.
       default:
         $edit_link = module_hook($option_set_plugin['module'], 'personalize_edit_link') ? module_invoke($option_set_plugin['module'], 'personalize_edit_link', $option_set) : '';
@@ -961,6 +964,16 @@ function acquia_lift_personalize_campaign_wizard_variations_submit_element_edit(
 }
 
 /**
+ * Submit handler to redirect to a personalize fields content page for editing.
+ */
+function acquia_lift_personalize_campaign_wizard_fields_submit_element_edit($form, &$form_state) {
+  // Value for the edit button is "edit_{osid}".
+  list($prefix, $osid) = explode('_', $form_state['triggering_element']['#name']);
+  $option_set = $form['variations']['option_sets']['option_set_' . $osid]['option_set']['#value'];
+  $form_state['redirect'] = personalize_fields_personalize_edit_link($option_set);
+}
+
+/**
  * Submit function for goals form.
  */
 function acquia_lift_personalize_campaign_wizard_goals_submit(&$form, &$form_state, &$agent_data, $agent_instance) {
@@ -1294,6 +1307,61 @@ function _acquia_lift_personalize_campaign_wizard_variations_element(&$form, &$f
     $element['edit'] = array(
       '#type' => 'submit',
       '#submit' => array('acquia_lift_personalize_campaign_wizard_variations_submit_element_edit'),
+      '#value' => t('Edit variation set'),
+      '#name' => 'edit_' . $option_set->osid,
+    );
+  }
+  return $element;
+}
+
+/**
+ * Form to edit a personalize fields variation.
+ *
+ * This provides a brief display of each field and the link to edit within the
+ * context of the parent entity.  There is no "add" version of this as fields
+ * are created within the context of the parent entity.
+ *
+ * @param array $form
+ *   The form array reference
+ * @param array $form_state
+ *   The current form state
+ * @param stdClass $agent_data
+ *   The data for the current campaign
+ * @param stdClass $option_set
+ *   The option set to display within the form editing.
+ * @return array
+ *   The form element for the requested element variation set.
+ */
+function _acquia_lift_personalize_campaign_wizard_variations_fields(&$form, &$form_state, $agent_data, $option_set) {
+  // Load the entity's field display for the personalized field.
+  $entities = entity_load($option_set->field_info['entity_type'], array($option_set->field_info['entity_id']));
+  $display = field_view_field($option_set->field_info['entity_type'], $entities[$option_set->field_info['entity_id']], $option_set->field_info['field_name']);
+
+  // Customize the display based on the type of rendering to be better presented
+  // in a small list.
+  $items = array();
+  foreach (element_children($display) as $id) {
+    if (isset($display[$id]['#image_style'])) {
+      $display[$id]['#image_style'] = 'thumbnail';
+    }
+    else if (isset($display[$id]['#markup'])) {
+      $display[$id]['#markup'] = drupal_truncate_bytes($display[$id]['#markup'], 150);
+    }
+    $items[] = drupal_render($display[$id]);
+  }
+  $field_title = !empty($display['#title']) ? $display['#title'] : $option_set->field_info['field_name'];
+
+  $element['display'] = array(
+    '#markup' => theme('item_list', array(
+      'items' => $items,
+      'title' => t('Options for %field_name', array('%field_name' => $field_title)),
+    )),
+  );
+  $edit_link = personalize_fields_personalize_edit_link($option_set);
+  if (!empty($edit_link)) {
+    $element['edit'] = array(
+      '#type' => 'submit',
+      '#submit' => array('acquia_lift_personalize_campaign_wizard_fields_submit_element_edit'),
       '#value' => t('Edit variation set'),
       '#name' => 'edit_' . $option_set->osid,
     );

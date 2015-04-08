@@ -591,13 +591,22 @@ function acquia_lift_personalize_campaign_wizard_review_alter(&$form, &$form_sta
   // the summary.
   $count_audiences = 0;
   $has_tests = FALSE;
-  if (isset($agent_data->data['lift_targeting'])) {
-    $count_audiences = count($agent_data->data['lift_targeting']);
-    foreach ($agent_data->data['lift_targeting'] as $options) {
-      if (count($options) > 1) {
-        $has_tests = TRUE;
-        break;
-      }
+  $targeting = array();
+  if (!empty($agent_data->data['lift_targeting'])) {
+    // Read audience information from the agent if changes have been made.
+    $targeting = $agent_data->data['lift_targeting'];
+  }
+  else {
+    // Otherwise read audience information from the option set targeting.
+    module_load_include('inc', 'acquia_lift', 'acquia_lift.admin');
+    $option_set = acquia_lift_get_option_set_for_targeting($agent_data->machine_name);
+    $targeting = acquia_lift_get_structure_from_targeting($option_set);
+  }
+  $count_audiences = count($targeting);
+  foreach ($targeting as $options) {
+    if (count($options) > 1) {
+      $has_tests = TRUE;
+      break;
     }
   }
   if ($has_tests) {
@@ -1551,6 +1560,18 @@ function _acquia_lift_personalize_campaign_wizard_review_tests($agent_data, $ele
       drupal_get_path('module', 'acquia_lift') . '/js/acquia_lift.agent.admin.js',
     ),
   );
+  $status = personalize_agent_get_status($agent_data->machine_name);
+  $editable = $status === PERSONALIZE_STATUS_NOT_STARTED || $status === PERSONALIZE_STATUS_PAUSED;
+
+  if (!$editable) {
+    if ($status === PERSONALIZE_STATUS_COMPLETED) {
+      drupal_set_message(t('Test options can no longer be edited.'), 'warning');
+    }
+    else {
+      drupal_set_message(t('Test options cannot be edited while this personalization is running.'), 'warning');
+    }
+  }
+
   $control_rate = isset($agent_data->data['control_rate']) ? $agent_data->data['control_rate'] : 10;
   $form['control'] = array(
     '#type' => 'fieldset',
@@ -1570,6 +1591,7 @@ function _acquia_lift_personalize_campaign_wizard_review_tests($agent_data, $ele
     '#rest_description' => t('Personalized variations will be shown.'),
     '#collapsible' => TRUE,
     '#collapsed' => TRUE,
+    '#disabled' => !$editable,
   );
   $decision_style = isset($agent_data->data['decision_style']) ? $agent_data->data['decision_style'] : 'adaptive';
   $form['decision_style'] = array(
@@ -1578,6 +1600,7 @@ function _acquia_lift_personalize_campaign_wizard_review_tests($agent_data, $ele
     '#options' => array('adaptive' => t('Auto-personalize'), 'random' => t('Test only')),
     '#default_value' => $decision_style,
     '#title_display' => 'invisible',
+    '#disabled' => !$editable,
   );
   $form['decision_style']['adaptive'] = array(
     '#description' => t('Adapts to users and chooses the best option over time.'),
@@ -1618,6 +1641,7 @@ function _acquia_lift_personalize_campaign_wizard_review_tests($agent_data, $ele
     '#rest_description' => t('The "best" variation will be shown for each visitor based on our algorithm.'),
     '#collapsible' => TRUE,
     '#collapsed' => TRUE,
+    '#disabled' => !$editable,
   );
   return $form;
 }

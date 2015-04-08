@@ -2313,6 +2313,7 @@ class AcquiaLiftWebTestCampaignWizard extends AcquiaLiftWebTestBase {
     // Options will be automatically added to the "Everyone else" audience
     // which means that there will be two options to test against.
     $this->drupalGet("admin/structure/personalize/manage/{$agent->machine_name}/review");
+    $this->assertNoText('Test options cannot be edited while this personalization is running.');
     $edit = array(
       'decision_style' => 'adaptive',
       'control_rate' => 25,
@@ -2322,9 +2323,15 @@ class AcquiaLiftWebTestCampaignWizard extends AcquiaLiftWebTestBase {
 
     $this->resetAll();
     $agent = personalize_agent_load($agent->machine_name);
-    debug($agent, 'agent');
     $this->assertEqual($agent->data['decision_style'], 'adaptive');
     $this->assertEqual($agent->data['control_rate'], '25');
     $this->assertEqual($agent->data['explore_rate'], 25);
+
+    // Start the agent and verify that the options are no longer editable.
+    personalize_agent_set_status($agent->machine_name, PERSONALIZE_STATUS_RUNNING);
+    $this->resetAll();
+
+    $this->drupalGet("admin/structure/personalize/manage/{$agent->machine_name}/review");
+    $this->assertText('Test options cannot be edited while this personalization is running.');
   }
 }

@@ -1222,6 +1222,22 @@ function acquia_lift_validate_minimum_targeting($agent) {
 }
 
 /**
+ * Check to see if an acquia lift target agent allows changes to goals.
+ *
+ * @param stdClass $agent_data
+ *   The agent to check.
+ * @return bool
+ *   True if goals can be modified, false if they cannot be modified.
+ */
+function acquia_lift_target_goal_changes_allowed($agent_data) {
+  if ($agent_data->plugin !== 'acquia_lift_target') {
+    return TRUE;
+  }
+  $status = personalize_agent_get_status($agent_data->machine_name);
+  return $status === PERSONALIZE_STATUS_NOT_STARTED || $status === PERSONALIZE_STATUS_PAUSED;
+}
+
+/**
  * Return the default values used for an "Everyone else" audience.
  */
 function _acquia_lift_personalize_campaign_wizard_everyone_else_audience() {

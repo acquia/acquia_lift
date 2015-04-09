@@ -244,6 +244,12 @@ function acquia_lift_personalize_campaign_wizard_goals_alter(&$form, &$form_stat
   $form['#validate'] = array('acquia_lift_personalize_campaign_wizard_validate');
   $form['#submit'] = array('acquia_lift_personalize_campaign_wizard_submit');
 
+  module_load_include('inc', 'acquia_lift', 'acquia_lift.admin');
+  $enable_goals = acquia_lift_target_goal_changes_allowed($agent_data);
+  if (!$enable_goals) {
+    drupal_set_message(t('Goals cannot be changed while the personalization is running.'), 'warning');
+  }
+
   // Alter the existing goals list form items.
   $goal_deltas = element_children($form['goals']['all_goals']);
   if (count($goal_deltas) === 1 && empty($form['goals']['all_goals'][0]['goal_id']['#value'])) {
@@ -255,35 +261,38 @@ function acquia_lift_personalize_campaign_wizard_goals_alter(&$form, &$form_stat
   $params = drupal_get_query_parameters();
   foreach ($goal_deltas as $delta) {
     $goal_id = $form['goals']['all_goals'][$delta]['goal_id']['#value'];
-    $form['goals']['all_goals'][$delta]['header'] = array(
-      '#type' => 'container',
-      'delete' => array(
-        '#type' => 'submit',
-        '#tag' => 'button',
-        '#text' => t('Delete'),
-        '#value' => 'remove_' . $delta,
-        '#attributes' => array(
-          'id' => 'edit-goals-all-goals-' . $delta . '-header-delete',
-          'data-acquia-lift-personalize-goal-id' => $goal_id,
-          'title' => t('Delete the goal.'),
-          'name' => 'edit-goals-all-goals-' . $delta . '-header-delete',
-          'value' => t('Delete'),
-          'class' => array('acquia-lift-delete'),
+    if ($enable_goals) {
+      $form['goals']['all_goals'][$delta]['header'] = array(
+        '#type' => 'container',
+        'delete' => array(
+          '#type' => 'submit',
+          '#tag' => 'button',
+          '#text' => t('Delete'),
+          '#value' => 'remove_' . $delta,
+          '#attributes' => array(
+            'id' => 'edit-goals-all-goals-' . $delta . '-header-delete',
+            'data-acquia-lift-personalize-goal-id' => $goal_id,
+            'title' => t('Delete the goal.'),
+            'name' => 'edit-goals-all-goals-' . $delta . '-header-delete',
+            'value' => t('Delete'),
+            'class' => array('acquia-lift-delete'),
+          ),
+          '#theme_wrappers' => array('personalize_html_tag'),
+          '#submit' => array('acquia_lift_personalize_campaign_wizard_goals_ajax_delete'),
+          '#ajax' => array(
+            'callback' => 'acquia_lift_personalize_campaign_wizard_goals_ajax_all',
+            'wrapper' => 'personalize-goals-container',
+            'effect' => 'fade',
+          ),
+          '#limit_validation_errors' => array(),
         ),
-        '#theme_wrappers' => array('personalize_html_tag'),
-        '#submit' => array('acquia_lift_personalize_campaign_wizard_goals_ajax_delete'),
-        '#ajax' => array(
-          'callback' => 'acquia_lift_personalize_campaign_wizard_goals_ajax_all',
-          'wrapper' => 'personalize-goals-container',
-          'effect' => 'fade',
-        ),
-        '#limit_validation_errors' => array(),
-      ),
-    );
+      );
+    }
     $form['goals']['all_goals'][$delta]['#type'] = 'container';
     $form['goals']['all_goals'][$delta]['#theme'] = 'acquia_lift_card';
     $form['goals']['all_goals'][$delta]['#collapsible'] = TRUE;
     $form['goals']['all_goals'][$delta]['#collapsed'] = !isset($params['goal']) || $params['goal'] !== $goal_id;
+    $form['goals']['all_goals'][$delta]['#disabled'] = !$enable_goals;
     unset($form['goals']['all_goals'][$delta]['remove']);
   }
 
@@ -302,6 +311,7 @@ function acquia_lift_personalize_campaign_wizard_goals_alter(&$form, &$form_stat
     '#attributes' => array(
       'class' => array('acquia-lift-campaign-add'),
     ),
+    '#disabled' => !$enable_goals,
   );
   // Tricky: we need this container in order to hide the radio list when a
   // selection is made.  The radio type does not have a proper wrapping

@@ -2125,28 +2125,6 @@ function acquia_lift_reset_submit($form, $form_state) {
 }
 
 /**
- * Submit callback for the "Sync with Lift" button.
- */
-function acquia_lift_sync_campaign_submit($form, $form_state) {
-  module_load_include('inc', 'acquia_lift', 'acquia_lift.batch');
-  if (empty($form_state['values']['agent_name'])) {
-    return;
-  }
-  $agent_name = $form_state['values']['agent_name'];
-  if ($parent_agent = personalize_agent_load($agent_name)) {
-    $nested_tests = acquia_lift_get_nested_tests($parent_agent);
-    $agents = array();
-    foreach ($nested_tests as $name) {
-      $agent = personalize_agent_load($name);
-      if (!empty($agent)) {
-        $agents[$name] = $agent;
-      }
-    }
-    acquia_lift_batch_sync_campaigns($agents);
-  }
-}
-
-/**
  * Resets the data for the specified agent.
  */
 function acquia_lift_reset_agent($agent_name) {

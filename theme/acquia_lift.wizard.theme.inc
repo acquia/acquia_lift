@@ -22,15 +22,15 @@ function theme_acquia_lift_card($variables) {
   $element['#collapsible'] = isset($element['#collapsible']) ? $element['#collapsible'] : TRUE;
   $element['#collapsed'] = isset($element['#collapsed']) ? $element['#collapsed'] : TRUE;
   $element['#sortable'] = isset($element['#sortable']) ? $element['#sortable'] : FALSE;
-  $data_attributes = array(
-    'data-card-collapsible' => $element['#collapsible'] ? 'true' : 'false',
-    'data-card-collapsed' => $element['#collapsed'] ? 'true' : 'false',
-    'data-card-footer-visible' => empty($footer_children) ? 'false' : 'true',
-    'data-card-sortable' => $element['#sortable'] ? 'true' : 'false',
-  );
+  $element['#attributes']['data-card-collapsible'] = $element['#collapsible'] ? 'true' : 'false';
+  $element['#attributes']['data-card-collapsed'] = $element['#collapsed'] ? 'true' : 'false';
+  $element['#attributes']['data-card-footer-visible'] = empty($footer_children) ? 'false' : 'true';
+  $element['#attributes']['data-card-sortable'] = $element['#sortable'] ? 'true' : 'false';
+
+  $element['#attributes']['class'][] = 'el-card';
   drupal_add_library('acquia_lift', 'acquia_lift.card');
   $html = '';
-  $html .= '<div class="el-card" ' . drupal_attributes($data_attributes) . '>';
+  $html .= '<div ' . drupal_attributes($element['#attributes']) . '>';
   $html .= '<div class="el-card__header">';
   $html .= '<div class="el-card__dragger"></div>';
   $html .= '<h2 class="el-card__title">' . $card_label . '</h2>';

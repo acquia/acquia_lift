@@ -921,6 +921,9 @@ function acquia_lift_update_targeting($agent) {
   foreach ($new_options as $audience => $option) {
     acquia_lift_set_option_for_audience($agent, $option, $audience);
   }
+  // Update the test options for any embedded tests.
+  acquia_lift_save_nested_test_options($agent);
+
   // Now clobber the "lift_targeting" data as we only use that to store *changes*
   // to the running targeting.
   $agent->data['lift_targeting'] = array();
@@ -1141,6 +1144,34 @@ function acquia_lift_get_structure_from_targeting($option_set) {
     }
   }
   return $targeting_structure;
+}
+
+/**
+ * Saves the current test options on each nested test.
+ *
+ * @param stdClass $parent_agent
+ *   The parent targeting agent that may contain nested tests to update.
+ */
+function acquia_lift_save_nested_test_options($parent_agent) {
+  $option_set = acquia_lift_get_option_set_for_targeting($parent_agent->machine_name);
+  if (!isset($option_set->targeting)) {
+    return;
+  }
+  $control_rate = isset($parent_agent->data['control_rate']) ? $parent_agent->data['control_rate'] : 10;
+  $explore_rate = isset($parent_agent->data['explore_rate']) ? $parent_agent->data['explore_rate'] : 20;
+  $decision_style = isset($parent_agent->data['decision_style']) ? $parent_agent->data['decision_style'] : 'adaptive';
+
+  foreach ($option_set->targeting as $vars) {
+    if (!isset($vars['osid'])) {
+      continue;
+    }
+    $nested_option_set = personalize_option_set_load($vars['osid']);
+    $nested_agent = personalize_agent_load($nested_option_set->agent);
+    $nested_agent->data['control_rate'] = $control_rate;
+    $nested_agent->data['explore_rate'] = $explore_rate;
+    $nested_agent->data['decision_style'] = $decision_style;
+    personalize_agent_save($nested_agent);
+  }
 }
 
 /**

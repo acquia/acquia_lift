@@ -475,10 +475,14 @@ tr.acquia-lift-report-control {
   background: transparent url(../images/000000/close.png) no-repeat;
 }
 
-/* Review warning list */
+/* Review */
 #personalize-campaign-wizard .personalize-wizard-review-warnings li {
   list-style-type: none;
   background: transparent url(../images/FF8000/alert.png) no-repeat 0 50%;
   margin: 1em 1em 1em -15px;
   padding-left: 40px;
+}
+
+#personalize-campaign-wizard .acquia-lift-test-options fieldset {
+  border: none;
 }

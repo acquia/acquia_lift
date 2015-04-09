@@ -529,6 +529,17 @@ function acquia_lift_personalize_agent_status_presave($agent_name, $status) {
 }
 
 /**
+ * Implements hook_personalize_goal_presave().
+ */
+function acquia_lift_personalize_goal_presave($goal) {
+  $agent = personalize_agent_load($goal->agent);
+  module_load_include('inc', 'acquia_lift', 'acquia_lift.admin');
+  if (!acquia_lift_target_goal_changes_allowed($agent)) {
+    throw new PersonalizeException('Goals cannot be modified until the personalization is paused.');
+  }
+}
+
+/**
  * Implements hook_personalize_option_set_render().
  */
 function acquia_lift_personalize_option_set_render(&$element, $option_set) {

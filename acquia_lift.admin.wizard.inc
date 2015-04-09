@@ -857,6 +857,15 @@ function acquia_lift_personalize_campaign_wizard_variations_validate(&$form, &$f
  * Validation function for goals form.
  */
 function acquia_lift_personalize_campaign_wizard_goals_validate(&$form, &$form_state) {
+  // Determine if goals are allowed to be modified.
+  $agent = $form['#agent'];
+  module_load_include('inc', 'acquia_lift', 'acquia_lift.admin');
+  $enabled = acquia_lift_target_goal_changes_allowed($agent);
+
+  if (!$enabled && !empty($form_state['values']['goal_add_type'])) {
+    form_set_error('goal_add_type', t('Goals cannot be added until the personalization is paused.'));
+  }
+
   // Make sure that each action is only set once per campaign.
   if (empty($form_state['values']['goals']['all_goals'])) {
     // If there aren't any existing goals then this isn't a problem.
@@ -868,6 +877,15 @@ function acquia_lift_personalize_campaign_wizard_goals_validate(&$form, &$form_s
     $proposed_actions[$form_state['values']['action_name']] = 'action_name';
   }
   foreach ($form_state['values']['goals']['all_goals'] as $delta => $goal) {
+    // If goal changes aren't enabled then nothing should be changed.
+    if (!$enabled) {
+      if ($goal['action'] != $form['goals']['all_goals'][$delta]['action_name']['#default_value']) {
+        form_set_error('goals[all_goals][' . $delta . '][action_name]', t('Goals actions cannot be changed until the personalization is paused.'));
+      }
+      if ($goal['value'] != $form['goals']['all_goals'][$delta]['value']['#default_value']) {
+        form_set_error('goals[all_goals][' . $delta . '][value]', t('Goal values cannot be changed until the personalization is paused.'));
+      }
+    }
     if (!empty($proposed_actions[$goal['action_name']])) {
       // Only show the message once in the error messages.
       form_set_error('goals[all_goals][' + $delta + '][action_name]', t('Each action can only be used once per personalization.'));
@@ -1033,6 +1051,10 @@ function acquia_lift_personalize_campaign_wizard_variations_submit_element_edit(
  * Submit function for goals form.
  */
 function acquia_lift_personalize_campaign_wizard_goals_submit(&$form, &$form_state, &$agent_data, $agent_instance) {
+  if (!acquia_lift_target_goal_changes_allowed($agent_data)) {
+    return;
+  }
+
   // Get a reference to the original values.
   $values = $form_state['values'];
 

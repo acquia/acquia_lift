@@ -133,7 +133,7 @@ var _tcwq = _tcwq || [];
     if (identityCaptured) {
       return;
     }
-    _tcaq.push( [ 'captureIdentity', identifier, identityType, {'evalSegments': true}] );
+    _tcaq.push( [ 'captureIdentity', identifier, identityType ] );
     identityCaptured = true;
   };
 
@@ -306,12 +306,12 @@ var _tcwq = _tcwq || [];
           decision = 'Control';
         }
 
-        _tcaq.push(['capture', 'Campaign Action', {'targetcampaignid':agent_name, 'targetcampaignname':getAgentLabel(agent_name), 'targetofferid': decision, 'targetactionname':decision, 'evalSegments': true } ]);
+        _tcaq.push(['capture', 'Campaign Action', {'targetcampaignid':agent_name, 'targetcampaignname':getAgentLabel(agent_name), 'targetofferid': decision, 'targetactionname':decision } ]);
 
       },
 
       'processSentGoalToAgent':function(e, agent_name, goal_name, goal_value) {
-        _tcaq.push(['capture', goal_name, {'targetcampaignid':agent_name, 'targetcampaignname':getAgentLabel(agent_name), 'targetgoalvalue':goal_value, 'evalSegments': true}]);
+        _tcaq.push(['capture', goal_name, {'targetcampaignid':agent_name, 'targetcampaignname':getAgentLabel(agent_name), 'targetgoalvalue':goal_value}]);
       },
       /**
        * Add an action listener for client-side goal events.

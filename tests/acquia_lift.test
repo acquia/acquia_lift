@@ -183,6 +183,73 @@ class AcquiaLiftWebTestBase extends DrupalWebTestCase
   }
 
   /**
+   * Adds a personalizable field to the article node type.
+   */
+  protected function createPersonalizedArticleField() {
+    // Add personalizable field to the article node type.
+    $field = array(
+      'type' => 'text',
+      'field_name' => 'article_headline',
+      'cardinality' => -1,
+      'settings' => array(
+        'personalize' => array(
+          'enabled' => 1,
+          'agent_type' => 'acquia_lift_target',
+          'options' => array(),
+          'create_goal' => 1,
+        ),
+      ),
+    );
+    field_create_field($field);
+    $instance = array(
+      'field_name' => 'article_headline',
+      'entity_type' => 'node',
+      'label' => 'Personalizable Headline',
+      'bundle' => 'article',
+      'required' => FALSE
+    );
+    field_create_instance($instance);
+  }
+
+  /**
+   * Creates an article node with a personalized headline field.
+   */
+  protected  function createPersonalizedField() {
+    AcquiaLiftAPI::setTestInstance();
+    // Create a node which we will attach a fields-based option set to. We can't
+    // do this via the form because of the way we alter the form, which makes the
+    // "Add an option" button not findable by simpletest.
+    $node = new stdClass();
+    $node->type = 'article';
+    $node->language = LANGUAGE_NONE;
+    node_object_prepare($node);
+    $node->title = $this->randomName();
+    $node->article_headline['und'][0] = array('value' => 'first value');
+    $node->article_headline['und'][1] = array('value' => 'second value');
+    node_save($node);
+
+    // Now create the option set.
+    $option_set = new stdClass();
+    $option_set->is_new = TRUE;
+    $option_set->data = array();
+    $option_set->options = array();
+    $option_set->plugin = 'fields';
+    $option_set->new_agent_title = 'Article: Personalizable Headline';
+    $option_set->options = array(
+      array(
+        'option_label' => personalize_fields_generate_option_label(0, array('value' => 'first value'))
+      ),
+      array(
+        'option_label' => personalize_fields_generate_option_label(1, array('value' => 'second value'))
+      )
+    );
+    personalize_fields_option_set_save($option_set, 'node', $node, 'article_headline');
+    $this->resetAll();
+    $agent_name = $option_set->agent;
+    return array($node, $option_set, $agent_name);
+  }
+
+  /**
    * Helper method to move buttons names to one pace to simplify
    * it's maintaining
    *
@@ -1088,31 +1155,11 @@ class AcquiaLiftWebTestWorkflow extends AcquiaLiftWebTestBase {
     $this->resetAll();
     $admin_user = $this->drupalCreateUser(array('access administration pages', 'administer site configuration', 'access content', 'administer content types', 'administer nodes', 'bypass node access', 'manage personalized content'));
     $this->drupalLogin($admin_user);
-    // Add personalizable field to the article node type.
-    $field = array(
-      'type' => 'text',
-      'field_name' => 'article_headline',
-      'cardinality' => -1,
-      'settings' => array(
-        'personalize' => array(
-          'enabled' => 1,
-          'agent_type' => 'acquia_lift_target',
-          'options' => array(),
-          'create_goal' => 1,
-        ),
-      ),
-    );
-    field_create_field($field);
-    $instance = array(
-      'field_name' => 'article_headline',
-      'entity_type' => 'node',
-      'label' => 'Personalizable Headline',
-      'bundle' => 'article',
-      'required' => FALSE
-    );
-    field_create_instance($instance);
 
+    // Add personalizable field to the article node type.
+    $this->createPersonalizedArticleField();
     list($node1, $os1, $agent_name) = $this->createPersonalizedField();
+
     $first_osid = 'osid-' . $os1->osid;
     $goals = personalize_goal_load_by_conditions(array('agent' => $agent_name));
     $this->assertEqual(1, count($goals));
@@ -1233,44 +1280,6 @@ class AcquiaLiftWebTestWorkflow extends AcquiaLiftWebTestBase {
       'user_login' => 'logs in',
     );
     $this->assertEqual($settings['acquia_lift']['campaigns'][$first_agent_machine_name], $expected[$first_agent_machine_name]);
-  }
-
-  /**
-   * Creates an article node with a personalized headline field.
-   */
-  protected  function createPersonalizedField() {
-    AcquiaLiftAPI::setTestInstance();
-    // Create a node which we will attach a fields-based option set to. We can't
-    // do this via the form because of the way we alter the form, which makes the
-    // "Add an option" button not findable by simpletest.
-    $node = new stdClass();
-    $node->type = 'article';
-    $node->language = LANGUAGE_NONE;
-    node_object_prepare($node);
-    $node->title = $this->randomName();
-    $node->article_headline['und'][0] = array('value' => 'first value');
-    $node->article_headline['und'][1] = array('value' => 'second value');
-    node_save($node);
-
-    // Now create the option set.
-    $option_set = new stdClass();
-    $option_set->is_new = TRUE;
-    $option_set->data = array();
-    $option_set->options = array();
-    $option_set->plugin = 'fields';
-    $option_set->new_agent_title = 'Article: Personalizable Headline';
-    $option_set->options = array(
-      array(
-        'option_label' => personalize_fields_generate_option_label(0, array('value' => 'first value'))
-      ),
-      array(
-        'option_label' => personalize_fields_generate_option_label(1, array('value' => 'second value'))
-      )
-    );
-    personalize_fields_option_set_save($option_set, 'node', $node, 'article_headline');
-    $this->resetAll();
-    $agent_name = $option_set->agent;
-    return array($node, $option_set, $agent_name);
   }
 }
 
@@ -1964,6 +1973,27 @@ class AcquiaLiftWebTestCampaignWizard extends AcquiaLiftWebTestBase {
     $this->assertText('Element test set 1');
     $this->drupalPost(NULL, NULL, 'Edit variation set');
     $this->assertUrl('node');
+  }
+
+  /**
+   * Test the personalize fields view of the "What" campaign subform.
+   */
+  function testWhatFieldsForm() {
+    module_enable(array('personalize_fields'));
+    $this->resetAll();
+    $admin_user = $this->drupalCreateUser(array('access administration pages', 'administer site configuration', 'access content', 'administer content types', 'administer nodes', 'bypass node access', 'manage personalized content'));
+    $this->drupalLogin($admin_user);
+
+    // Add personalizable field to the article node type.
+    $this->createPersonalizedArticleField();
+    list($node, $os, $agent_name) = $this->createPersonalizedField();
+
+    $this->drupalGet("admin/structure/personalize/manage/{$agent_name}/variations");
+    $this->assertText('first value');
+    $this->assertText('second value');
+    $this->drupalPost(NULL, array(), t('Edit variation set'));
+
+    $this->assertUrl('node/' . $node->nid . '/edit');
   }
 
   /**

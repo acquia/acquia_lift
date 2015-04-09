@@ -2219,6 +2219,8 @@ class AcquiaLiftWebTestCampaignWizard extends AcquiaLiftWebTestBase {
     $page_event = 'event[page]';
 
     $this->drupalGet('admin/structure/personalize/manage/' . $agent->machine_name . '/goals');
+    $this->assertNoText('Goals cannot be changed while the personalization is running.');
+
     // The type selection should be shown by default when there are no goals.
     $this->assertNoFieldChecked('edit-goals-add-goal-goal-types-goal-type-existing');
     $this->assertNoFieldChecked('edit-goals-add-goal-goal-types-goal-type-page');
@@ -2295,6 +2297,19 @@ class AcquiaLiftWebTestCampaignWizard extends AcquiaLiftWebTestBase {
     $this->assertEqual($test_goals[0]->value, 1);
     $this->assertEqual($test_goals[1]->action, 'form_submit');
     $this->assertEqual($test_goals[1]->value, 5);
+
+    // Change the agent status and verify that goals cannot be edited.
+    personalize_agent_set_status($agent->machine_name, PERSONALIZE_STATUS_RUNNING);
+    $this->drupalGet("admin/structure/personalize/manage/{$agent->machine_name}/goals");
+    $this->assertText('Goals cannot be changed while the personalization is running.');
+    // @todo Can't find a way to assert that there is a failure from an underlying test post.
+
+    // Pause the agent and make sure that goals can be edited again.
+    personalize_agent_set_status($agent->machine_name, PERSONALIZE_STATUS_PAUSED);
+    $this->drupalGet("admin/structure/personalize/manage/{$agent->machine_name}/goals");
+    $this->assertNoText('Goals cannot be changed while the personalization is running.');
+
+    $this->drupalPost(NULL, $edit, $this->getButton('wizard_save'));
   }
 
   /**

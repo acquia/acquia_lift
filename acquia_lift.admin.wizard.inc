@@ -251,7 +251,10 @@ function acquia_lift_personalize_campaign_wizard_goals_alter(&$form, &$form_stat
     unset($form['goals']['all_goals'][0]);
     $goal_deltas = array();
   }
+
+  $params = drupal_get_query_parameters();
   foreach ($goal_deltas as $delta) {
+    $goal_id = $form['goals']['all_goals'][$delta]['goal_id']['#value'];
     $form['goals']['all_goals'][$delta]['header'] = array(
       '#type' => 'container',
       'delete' => array(
@@ -261,7 +264,7 @@ function acquia_lift_personalize_campaign_wizard_goals_alter(&$form, &$form_stat
         '#value' => 'remove_' . $delta,
         '#attributes' => array(
           'id' => 'edit-goals-all-goals-' . $delta . '-header-delete',
-          'data-acquia-lift-personalize-goal-id' => $form['goals']['all_goals'][$delta]['goal_id']['#value'],
+          'data-acquia-lift-personalize-goal-id' => $goal_id,
           'title' => t('Delete the goal.'),
           'name' => 'edit-goals-all-goals-' . $delta . '-header-delete',
           'value' => t('Delete'),
@@ -277,11 +280,10 @@ function acquia_lift_personalize_campaign_wizard_goals_alter(&$form, &$form_stat
         '#limit_validation_errors' => array(),
       ),
     );
-
     $form['goals']['all_goals'][$delta]['#type'] = 'container';
     $form['goals']['all_goals'][$delta]['#theme'] = 'acquia_lift_card';
     $form['goals']['all_goals'][$delta]['#collapsible'] = TRUE;
-    $form['goals']['all_goals'][$delta]['#collapsed'] = TRUE;
+    $form['goals']['all_goals'][$delta]['#collapsed'] = !isset($params['goal']) || $params['goal'] !== $goal_id;
     unset($form['goals']['all_goals'][$delta]['remove']);
   }
 

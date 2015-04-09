@@ -53,14 +53,16 @@ class AcquiaLiftTarget extends PersonalizeAgentBase implements PersonalizeExplic
    * Implements PersonalizeAgentInterface::supportsMVTs().
    */
   public function supportsMVTs() {
-    return FALSE;
+    return TRUE;
   }
 
   /**
    * Implements PersonalizeAgentInterface::supportsMultipleDecisionPoints().
    */
   public function supportsMultipleDecisionPoints() {
-    return FALSE;
+    // We don't really, but at the time of option set creation, decision point
+    // names cannot be set.
+    return TRUE;
   }
 
   /**

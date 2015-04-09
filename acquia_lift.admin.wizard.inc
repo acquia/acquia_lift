@@ -721,9 +721,18 @@ function acquia_lift_personalize_campaign_wizard_review_alter(&$form, &$form_sta
  */
 function acquia_lift_personalize_campaign_wizard_review_submit($form, &$form_state) {
   $agent_data = $form['#agent'];
-  $agents_to_delete = acquia_lift_update_targeting($agent_data);
-  $agents = acquia_lift_get_nested_tests($agent_data);
-  acquia_lift_batch_sync_campaigns($agents, $agents_to_delete);
+  module_load_include('inc', 'acquia_lift', 'acquia_lift.admin');
+  module_load_include('inc', 'acquia_lift', 'acquia_lift.batch');
+
+  try {
+    $agent_data->tests_to_delete = acquia_lift_implement_test_structure($agent_data);
+    acquia_lift_batch_sync_tests(array($agent_data->machine_name => $agent_data));
+    // If the "Start" button was pressed then start the campaign.
+    personalize_agent_set_status($agent_data->machine_name, PERSONALIZE_STATUS_RUNNING);
+  }
+  catch (Exception $e) {
+    form_set_error(NULL, t('There was a problem implementing the personalization as defined.'));
+  }
 }
 
 /**

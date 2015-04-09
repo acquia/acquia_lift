@@ -851,21 +851,60 @@ function acquia_lift_target_audience_save($label, $agent_name, $contexts, $strat
 }
 
 /**
+ * Implements the structure, including all sub-tests, required by the targeting.
+ *
+ * @param $agent_data
+ *   The parent personalization.
+ * @return array
+ *   An array of nested tests that need to be deleted in Lift following the
+ *   implementation of the test structure.
+ * @throws \AcquiaLiftException
+ */
+function acquia_lift_implement_test_structure($agent_data) {
+  if (isset($agent_data->data['variation_set_handling']) && $agent_data->data['variation_set_handling'] == ACQUIA_LIFT_DECISION_MULTIVARIATE) {
+    $tests_to_delete = acquia_lift_implement_mvt($agent_data);
+  }
+  else {
+    $tests_to_delete = acquia_lift_implement_targeting($agent_data);
+  }
+  // Once we implement the structure for a personalization, we do not allow
+  // adding or removing variation sets.
+  // @todo This can be revisited later, it is simply too cumbersome to support
+  //   such post-implementation changes at this time and the use-case of multiple
+  //   variation sets so is small that it does not warrant such effort.
+  $agent_data->data['locked_for_variation_sets'] = TRUE;
+  personalize_agent_save($agent_data);
+
+  return $tests_to_delete;
+}
+
+/**
  * Takes whatever is in the 'lift_targeting' data property and converts it into
  * the required campaign structure (including nested tests where needed).
  *
  * @param stdClass $agent
  *   The agent to create the targeting structure for.
  */
-function acquia_lift_update_targeting($agent) {
+function acquia_lift_implement_targeting($agent) {
   if (empty($agent->data['lift_targeting'])) {
-    return;
+    return array();
   }
-
+  $all_option_sets = personalize_option_set_load_by_agent($agent->machine_name);
+  // Bail if not all option sets have an equal number of options.
+  $num_decisions = NULL;
+  foreach ($all_option_sets as $os) {
+    if ($num_decisions == NULL) {
+      $num_decisions = count($os->options);
+    }
+    elseif (count($os->options) !== $num_decisions) {
+      throw new AcquiaLiftException('Variation sets do not have equal numbers of options');
+    }
+  }
   // First we need to figure out what existing tests we have running as nested
   // tests for this agent.
-  $option_set = acquia_lift_get_option_set_for_targeting($agent->machine_name);
-  $existing_structure = acquia_lift_get_structure_from_targeting($option_set);
+  $targeting_option_set = acquia_lift_get_option_set_for_targeting($agent->machine_name);
+
+  $existing_structure = acquia_lift_get_structure_from_targeting($targeting_option_set);
   // Any target audience that has multiple variations in it has a test running.
   $existing_tests = $existing_options = array();
   foreach ($existing_structure as $audience => $variations) {
@@ -932,6 +971,15 @@ function acquia_lift_update_targeting($agent) {
   // to the running targeting.
   $agent->data['lift_targeting'] = array();
   personalize_agent_save($agent);
+  // Go through any other option sets for this personalization and copy the
+  // targeting information to them.
+  foreach ($all_option_sets as $os) {
+    if ($os->osid == $targeting_option_set->osid) {
+      continue;
+    }
+    $os->targeting = $targeting_option_set->targeting;
+    personalize_option_set_save($os);
+  }
   return $to_delete;
 }
 
@@ -1229,6 +1277,51 @@ function acquia_lift_validate_minimum_targeting($agent) {
   // category.
   $unassigned_options = array_diff($targeting_options, $assigned);
   acquia_lift_save_targeting_structure($agent, array(ACQUIA_LIFT_TARGETING_EVERYONE_ELSE => $unassigned_options));
+}
+
+
+/**
+ * Sets up a multivariate test as defined by the variation sets created.
+ */
+function acquia_lift_implement_mvt($agent) {
+  // There will only ever be one nested test for this campaign and it follows a
+  // naming convention (e.g. "{parent-campaign-name}-mvt"
+  $mvt_name = acquia_lift_get_mvt_name_for_personalization($agent);
+  // If this is our first time implementing this MVT, then the option sets will
+  // still be on the parent personalization and we'll need to move them.
+  $option_sets = personalize_option_set_load_by_agent($agent->machine_name);
+  if (empty($option_sets)) {
+    $option_sets = personalize_option_set_load_by_agent($mvt_name);
+  }
+  if (count($option_sets) < 2) {
+    throw new AcquiaLiftException('Cannot implement a multi-variate test wtih fewer than 2 variation sets');
+  }
+  $tests_to_delete = array();
+
+  if ($mvt = personalize_agent_load($mvt_name)) {
+    // If this agent already exists delete it and recreate from scratch.
+    personalize_agent_delete($mvt_name);
+    $tests_to_delete = array($mvt_name);
+  }
+
+  // Create a test agent for the MVT.
+  $mvt_agent = new stdClass();
+  $mvt_agent->label = 'MVT for ' . $agent->label;
+  $mvt_agent->plugin = acquia_lift_get_testing_agent();
+  $mvt_agent->data = array();
+  $mvt_agent->machine_name = $mvt_name;
+  try {
+    personalize_agent_save($mvt_agent);
+    // Ensure the option sets are attached to the mvt, not the parent.
+    foreach ($option_sets as $os) {
+      $os->agent = $mvt_name;
+      personalize_option_set_save($os);
+    }
+  }
+  catch (PersonalizeException $e) {
+
+  }
+  return $tests_to_delete;
 }
 
 /**

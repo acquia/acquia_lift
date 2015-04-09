@@ -9,8 +9,12 @@ define('ACQUIA_LIFT_DEFAULT_AGENT_NAME', 'drupal-default');
 define('ACQUIA_LIFT_OPERATION_ERROR_PREFIX', 'Errors: ');
 define('ACQUIA_LIFT_AGENT_VERIFY_CACHE', 'acquia_lift:agent:verification');
 define('ACQUIA_LIFT_TARGETING_EVERYONE_ELSE', 'everyone-else');
+define('ACQUIA_LIFT_TARGETING_AGENT', 'acquia_lift_target');
+define('ACQUIA_LIFT_TESTING_AGENT_V1', 'acquia_lift');
+define('ACQUIA_LIFT_TESTING_AGENT_V2', 'acquia_lift_test');
 define('ACQUIA_LIFT_DECISION_LOCKSTEP', 'lockstep');
 define('ACQUIA_LIFT_DECISION_MULTIVARIATE', 'mvt');
+define('ACQUIA_LIFT_MULTIVARIATE_TEST_SUFFIX', '-mvt');
 
 /**
  * Implements hook_menu().
@@ -418,8 +422,19 @@ function acquia_lift_is_testing_agent($agent) {
   if (empty($agent)) {
     return FALSE;
   }
-  $agent_types = array('acquia_lift');
-  return in_array($agent->plugin, $agent_types);
+  return in_array($agent->plugin, array(ACQUIA_LIFT_TESTING_AGENT_V1, ACQUIA_LIFT_TESTING_AGENT_V2));
+}
+
+/**
+ * Returns the agent plugin to use for test agents.
+ *
+ * @return string
+ */
+function acquia_lift_get_test_agent_plugin() {
+  if (variable_get('acquia_lift_v2_enabled', FALSE)) {
+    return ACQUIA_LIFT_TESTING_AGENT_V2;
+  }
+  return ACQUIA_LIFT_TESTING_AGENT_V1;
 }
 
 /**
@@ -435,6 +450,10 @@ function acquia_lift_is_targeting_agent($agent) {
     return FALSE;
   }
   return $agent->plugin == 'acquia_lift_target';
+}
+
+function acquia_lift_get_mvt_name_for_personalization($personalization_name) {
+  return $personalization_name . ACQUIA_LIFT_MULTIVARIATE_TEST_SUFFIX;
 }
 
 /**
@@ -537,6 +556,7 @@ function acquia_lift_personalize_option_set_render(&$element, $option_set) {
   // by personalize.
   $settings = array(
     'default_target' => ACQUIA_LIFT_TARGETING_EVERYONE_ELSE,
+    'test_agent_plugin' => acquia_lift_get_test_agent_plugin(),
     'agent_map' => array(),
     'option_sets' => array()
   );
@@ -545,12 +565,10 @@ function acquia_lift_personalize_option_set_render(&$element, $option_set) {
     if (isset($rule['option_id']) || !isset($rule['osid'])) {
       continue;
     }
-    if (isset($rule['osid'])) {
-      $child_os = personalize_option_set_load($rule['osid']);
-      // Make sure the agent assets are available for the child OS.
-      $settings['agent_map'][$child_os->agent] = personalize_agent_get_map_settings($child_os->agent, $child_os, $assets);
-      $settings['option_sets'] += _personalize_convert_option_set_to_js_setting($child_os);
-    }
+    $child_os = personalize_option_set_load($rule['osid']);
+    // Make sure the agent assets are available for the child OS.
+    $settings['agent_map'][$child_os->agent] = personalize_agent_get_map_settings($child_os->agent, $child_os, $assets);
+    $settings['option_sets'] += _personalize_convert_option_set_to_js_setting($child_os);
   }
   $settings_array = array(
     'type' => 'setting',

@@ -72,16 +72,30 @@ function acquia_lift_personalize_campaign_wizard_variations_alter(&$form, &$form
     return;
   }
   $status = personalize_agent_get_status($agent_data->machine_name);
-  $form['variations']['decision_type'] = array(
+  $variation_set_handling = isset($agent_data->data['variation_set_handling']) ? $agent_data->data['variation_set_handling'] : ACQUIA_LIFT_DECISION_LOCKSTEP;
+
+  if ($variation_set_handling == ACQUIA_LIFT_DECISION_MULTIVARIATE) {
+    // If this is an MVT then the option sets get saved directly on the testing
+    // agent.
+    $mvt_name = acquia_lift_get_mvt_name_for_personalization($agent_data->machine_name);
+    $option_sets = personalize_option_set_load_by_agent($mvt_name);
+  }
+  else {
+    $option_sets = personalize_option_set_load_by_agent($agent_data->machine_name);
+  }
+  $form['variations']['variation_set_handling'] = array(
     '#type' => 'radios',
     '#options' => array(
       ACQUIA_LIFT_DECISION_LOCKSTEP => t('Lock step'),
       ACQUIA_LIFT_DECISION_MULTIVARIATE => t('Multi-variate')
     ),
-    '#default_value' => isset($agent_data->data['variation_set_handling']) ? $agent_data->data['variation_set_handling'] : ACQUIA_LIFT_DECISION_LOCKSTEP,
-    '#disabled' => $status != PERSONALIZE_STATUS_RUNNING,
+    '#default_value' => $variation_set_handling,
+    // Once a second option set has been added to this personalization, or if
+    // the structure has already been implmented, this choice is no longer
+    // available.
+    '#disabled' => $agent_data->data['locked_for_variation_sets'] || count($option_sets) > 1,
   );
-  $option_sets = personalize_option_set_load_by_agent($agent_data->machine_name);
+
   $agent_instance = personalize_agent_load_agent($agent_data->machine_name);
 
   // Make a container to hold existing option sets.
@@ -114,18 +128,23 @@ function acquia_lift_personalize_campaign_wizard_variations_alter(&$form, &$form
     $form['variations']['option_sets']['option_set_' . $option_set->osid]['header'] = array(
       '#type' => 'container',
     );
-    $delete_link = module_hook($option_set_plugin['module'], 'personalize_delete_link') ? module_invoke($option_set_plugin['module'], 'personalize_delete_link', $option_set) : '';
-    if (!empty($delete_link)) {
-      $form['variations']['option_sets']['option_set_' . $option_set->osid]['header']['delete'] = array(
-        '#markup' => l(t('Delete'), $delete_link, array(
-          'attributes' => array(
-            'class' => array('acquia-lift-delete')
-          ),
-          'query' => array(
-            'destination' => current_path(),
-          )
-        )),
-      );
+    // Variation sets can be deleted only if the structure has not already been
+    // implemented.
+    // @see acquia_lift_implement_test_structure().
+    if (!$agent_data->data['locked_for_variation_sets']) {
+      $delete_link = module_hook($option_set_plugin['module'], 'personalize_delete_link') ? module_invoke($option_set_plugin['module'], 'personalize_delete_link', $option_set) : '';
+      if (!empty($delete_link)) {
+        $form['variations']['option_sets']['option_set_' . $option_set->osid]['header']['delete'] = array(
+          '#markup' => l(t('Delete'), $delete_link, array(
+            'attributes' => array(
+              'class' => array('acquia-lift-delete')
+            ),
+            'query' => array(
+              'destination' => current_path(),
+            )
+          )),
+        );
+      }
     }
     switch ($option_set->plugin) {
       case 'block':
@@ -154,6 +173,15 @@ function acquia_lift_personalize_campaign_wizard_variations_alter(&$form, &$form
     $form['variations']['option_sets']['option_set_' . $option_set->osid]['advanced'] = personalize_campaign_wizard_variations_advanced($form, $form_state, $option_set);
     // Option set label is edited in a different spot so don't show it twice.
     $form['variations']['option_sets']['option_set_' . $option_set->osid]['advanced']['label']['#access'] = FALSE;
+  }
+  // Move the advanced agent options to the bottom of the page.
+  $form['variations']['advanced']['#weight'] = 100;
+
+  if ($agent_data->data['locked_for_variation_sets']) {
+    // Variation sets can be added only if the structure has not already been
+    // implemented.
+    // @see acquia_lift_implement_test_structure().
+    return;
   }
 
   // Show the card to add a new option set last.
@@ -239,9 +267,6 @@ function acquia_lift_personalize_campaign_wizard_variations_alter(&$form, &$form
         break;
     }
   }
-
-  // Move the advanced agent options to the bottom of the page.
-  $form['variations']['advanced']['#weight'] = 100;
 }
 
 /**
@@ -1004,6 +1029,9 @@ function acquia_lift_personalize_campaign_wizard_submit(&$form, &$form_state) {
     $submit_function($form, $form_state, $agent_data, $agent_instance);
   }
 
+  if (isset($form_state['values']['variation_set_handling'])) {
+    $agent_data->data['variation_set_handling'] = $form_state['values']['variation_set_handling'];
+  }
   // Save any changes to the campaign.
   personalize_agent_save($agent_data);
 

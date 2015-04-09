@@ -658,6 +658,21 @@ function acquia_lift_personalize_option_set_save($option_set) {
 }
 
 /**
+ * Implements hook_personalize_option_set_delete().
+ */
+function acquia_lift_personalize_option_set_delete($option_set) {
+  $agent = personalize_agent_load($option_set->agent);
+  if ($agent->data['locked_for_variation_sets']) {
+    // Somehow an option set is being deleted for an already implemented campaign.
+    // This is not supported via the UI and can cause problems for running
+    // campaigns. Set the campaign's status to completed to avoid any problematic
+    // decision calls being made.
+    personalize_agent_set_status($agent->machine_name, PERSONALIZE_STATUS_COMPLETED);
+    drupal_set_message(t('The @agent_name personalization has been set to completed because one of its variation sets was deleted', array('@agent_name' => $agent->machine_name), 'warning'));
+  }
+}
+
+/**
  * Queue callback function for making a request to Acquia Lift.
  *
  * @param $item

@@ -22,11 +22,12 @@ function theme_acquia_lift_card($variables) {
   $element['#collapsible'] = isset($element['#collapsible']) ? $element['#collapsible'] : TRUE;
   $element['#collapsed'] = isset($element['#collapsed']) ? $element['#collapsed'] : TRUE;
   $element['#sortable'] = isset($element['#sortable']) ? $element['#sortable'] : FALSE;
+  $element['#disabled'] = isset($element['#disabled']) ? $element['#disabled'] : FALSE;
   $element['#attributes']['data-card-collapsible'] = $element['#collapsible'] ? 'true' : 'false';
   $element['#attributes']['data-card-collapsed'] = $element['#collapsed'] ? 'true' : 'false';
   $element['#attributes']['data-card-footer-visible'] = empty($footer_children) ? 'false' : 'true';
   $element['#attributes']['data-card-sortable'] = $element['#sortable'] ? 'true' : 'false';
-
+  $element['#attributes']['data-card-enabled'] = $element['#disabled'] ? 'false' : 'true';
   $element['#attributes']['class'][] = 'el-card';
   drupal_add_library('acquia_lift', 'acquia_lift.card');
   $html = '';

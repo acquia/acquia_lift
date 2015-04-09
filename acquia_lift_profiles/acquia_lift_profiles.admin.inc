@@ -54,22 +54,45 @@ function acquia_lift_profiles_admin_form($form, &$form_state) {
     '#description' => t('Check this if you want Acquia Lift Profiles to capture the identity of the user upon login or registration. This means sending their email address to the Acquia Lift Profile Manager.'),
     '#default_value' => variable_get('acquia_lift_profiles_capture_identity', FALSE),
   );
+  $identity_parameter_display_value = variable_get('acquia_lift_profiles_identity_param') ?: 'identity';
+  $identity_type_parameter_display_value = variable_get('acquia_lift_profiles_identity_type_param') ?: 'identityType';
+  $default_identity_type_display_value = variable_get('acquia_lift_profiles_default_identity_type') ?: ACQUIA_LIFT_PROFILES_DEFAULT_IDENTITY_TYPE_DEFAULT;
   $form['acquia_lift_profiles_identity_param'] = array(
     '#type' => 'textfield',
     '#title' => t('Identity parameter'),
-    '#description' => t('The query string parameter for a specific item of visitor information, such as the visitor\'s email address or social media username (for example, ?identity=person@example.com), which is sent to Acquia Lift Web.'),
+    '#description' => t('The query string parameter for a specific item of visitor information, such as the visitor\'s email address or social media username. This identification info is sent to Acquia Lift Web only if this parameter is explicitly configured here. (Example: ?<ins>@identity_parameter_display_value</ins>=person@example.com)', array(
+      '@identity_parameter_display_value' => $identity_parameter_display_value,
+    )),
     '#default_value' => variable_get('acquia_lift_profiles_identity_param', ''),
   );
   $form['acquia_lift_profiles_identity_type_param'] = array(
     '#type' => 'textfield',
     '#title' => t('Identity type parameter'),
-    '#description' => t('The query string parameter for the category of the visitor\'s identity information (for example, ?identity=person@example.com&identityType=email). Acquia Lift Web accepts only either a blank value (which defaults to "email") or one of the following values: email, account, facebook, twitter, name.'),
+    '#description' => t('The query string parameter for the category of the visitor\'s identity information. Acquia Lift Web by default accepts "email", "account", "facebook", "twitter", and "name", and you can add more in the Web\'s interface before using them here. (Example: ?@identity_parameter_display_value=person@example.com&<ins>@identity_type_parameter_display_value</ins>=@default_identity_type_display_value)', array(
+      '@identity_parameter_display_value' => $identity_parameter_display_value,
+      '@identity_type_parameter_display_value' => $identity_type_parameter_display_value,
+      '@default_identity_type_display_value' => $default_identity_type_display_value,
+    )),
     '#default_value' => variable_get('acquia_lift_profiles_identity_type_param', ''),
     '#states' => array(
       'visible' => array(
         ':input[name="acquia_lift_profiles_identity_param"]' =>  array('!value' => '')
       )
     )
+  );
+  $form['acquia_lift_profiles_default_identity_type'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Default identity type'),
+    '#attributes' => array(
+      'placeholder' => ACQUIA_LIFT_PROFILES_DEFAULT_IDENTITY_TYPE_DEFAULT,
+    ),
+    '#description' => t('The identity type\'s default value, which will be used if the identity type parameter is absent in the query string. If this value is not explicitly configured, "@default" will be used. (Example: ?@identity_parameter_display_value=person@example.com&@identity_type_parameter_display_value=<ins>@default_identity_type_display_value</ins> is the same as ?@identity_parameter_display_value=person@example.com)', array(
+      '@default' => ACQUIA_LIFT_PROFILES_DEFAULT_IDENTITY_TYPE_DEFAULT,
+      '@identity_parameter_display_value' => $identity_parameter_display_value,
+      '@identity_type_parameter_display_value' => $identity_type_parameter_display_value,
+      '@default_identity_type_display_value' => $default_identity_type_display_value,
+    )),
+    '#default_value' => variable_get('acquia_lift_profiles_default_identity_type', ''),
   );
   $vocabularies = taxonomy_get_vocabularies();
   $mappings = variable_get('acquia_lift_profiles_vocabulary_mappings', array());
@@ -201,6 +224,7 @@ function acquia_lift_profiles_admin_form_submit($form, &$form_state) {
     'acquia_lift_profiles_capture_identity',
     'acquia_lift_profiles_identity_param',
     'acquia_lift_profiles_identity_type_param',
+    'acquia_lift_profiles_default_identity_type',
     'acquia_lift_profiles_vocabulary_mappings'
   );
   foreach ($variables as $key) {

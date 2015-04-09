@@ -6,6 +6,7 @@
  */
 
 define('ACQUIA_LIFT_PROFILES_THUMBNAIL_WIDGET_SEPARATOR', '|');
+define('ACQUIA_LIFT_PROFILES_DEFAULT_IDENTITY_TYPE_DEFAULT', 'email');
 
 /**
  * Implements hook_menu().
@@ -192,7 +193,7 @@ function acquia_lift_profiles_page_build(&$page) {
     $all_params = drupal_get_query_parameters();
     if (isset($all_params[$identity_param])) {
       $settings['identity'] = check_plain($all_params[$identity_param]);
-      $settings['identityType'] = 'email';
+      $settings['identityType'] = variable_get('acquia_lift_profiles_default_identity_type') ?: ACQUIA_LIFT_PROFILES_DEFAULT_IDENTITY_TYPE_DEFAULT;
       if (!empty($identity_type_param) && isset($all_params[$identity_type_param])) {
         $settings['identityType'] = check_plain($all_params[$identity_type_param]);
       }

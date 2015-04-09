@@ -1692,6 +1692,57 @@ class AcquiaLiftWebTestTarget extends AcquiaLiftWebTestBase {
     $this->assertFieldByName($reset_button_name);
   }
 
+  function testAgentEditable() {
+    $this->drupalLogin($this->managerUser);
+    $agent = $this->createTargetingAgent();
+    $option_set = $this->createOptionSet(0, array(
+      'plugin' => 'blocks',
+      'agent' => $agent->machine_name,
+      'option_ids' => array('first-choice', 'second-choice', 'third-choice')
+    ));
+    $this->resetAll();
+
+    // Add a goal to this agent.
+    personalize_goal_save($agent->machine_name, 'user_login', 1);
+    $goals = personalize_goal_load_by_conditions(array('agent' => $agent->machine_name));
+    $this->assertEqual(count($goals), 1);
+    $goal = reset($goals);
+
+    // Start the agent.
+    personalize_agent_set_status($agent->machine_name, PERSONALIZE_STATUS_RUNNING);
+
+    // Try to edit the goal.
+    try {
+      personalize_goal_save($agent->machine_name, 'user_login', 5, $goal->id);
+      $this->fail('Should not ever get here because a cannot be saved when agent is running.');
+    } catch (Exception $e) {
+      $this->assertTrue($e instanceof PersonalizeException);
+      $this->assertEqual($e->getMessage(), 'Goals cannot be modified until the personalization is paused.');
+    }
+
+    // Pause the agent.
+    personalize_agent_set_status($agent->machine_name, PERSONALIZE_STATUS_PAUSED);
+
+    // Edit the goal.
+    personalize_goal_save($agent->machine_name, 'user_login', 5, $goal->id);
+
+    // Verify the change.
+    $goal = personalize_goal_load($goal->id);
+    $this->assertEqual($goal->value, 5);
+
+    // Complete the agent.
+    personalize_agent_set_status($agent->machine_name, PERSONALIZE_STATUS_COMPLETED);
+
+    // Try to edit the goal.
+    try {
+      personalize_goal_save($agent->machine_name, 'user_login', 10, $goal->id);
+      $this->fail('Should not ever get here because a cannot be saved when agent is running.');
+    } catch (Exception $e) {
+      $this->assertTrue($e instanceof PersonalizeException);
+      $this->assertEqual($e->getMessage(), 'Goals cannot be modified until the personalization is paused.');
+    }
+  }
+
   protected function createTargetingAgentWithNestedTest($label = NULL, $num_options = 3) {
     module_load_include('inc', 'acquia_lift', 'acquia_lift.admin');
     // First, set up our agent, option set, audience and desired targeting

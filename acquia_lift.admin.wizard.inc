@@ -888,7 +888,7 @@ function acquia_lift_personalize_campaign_wizard_goals_validate(&$form, &$form_s
     }
     if (!empty($proposed_actions[$goal['action_name']])) {
       // Only show the message once in the error messages.
-      form_set_error('goals[all_goals][' + $delta + '][action_name]', t('Each action can only be used once per personalization.'));
+      form_set_error('goals[all_goals][' . $delta . '][action_name]', t('Each action can only be used once per personalization.'));
       break;
     }
     else {

@@ -1505,7 +1505,7 @@ class AcquiaLiftWebTestTarget extends AcquiaLiftWebTestBase {
     // Now implement the targeting structure that is currently just stored in
     // the 'lift_targeting' property.
     AcquiaLiftAPI::setTestInstance();
-    acquia_lift_update_targeting($agent);
+    acquia_lift_implement_targeting($agent);
     // We should have a new nested acquia_lift agent and option set.
     $this->resetAll();
     $agents = personalize_agent_load_by_type('acquia_lift');
@@ -1535,12 +1535,12 @@ class AcquiaLiftWebTestTarget extends AcquiaLiftWebTestBase {
 
     // Confirm this osid is on the original option set's targeting rule for that
     // audience.
-    $option_set = personalize_option_set_load($parent_option_set->osid, TRUE);
-    $this->assertEqual($nested_osid, $option_set->targeting[$audience_name]['osid']);
+    $parent_option_set = personalize_option_set_load($parent_option_set->osid, TRUE);
+    $this->assertEqual($nested_osid, $parent_option_set->targeting[$audience_name]['osid']);
 
     // Create a new target audience and change the structure of our campaign.
     $second_audience = personalize_generate_machine_name($this->randomName(), NULL, '-');
-    $this->createTargetAudience($option_set, $second_audience, array(
+    $this->createTargetAudience($parent_option_set, $second_audience, array(
       array(
         'context' => implode(PERSONALIZE_TARGETING_ADMIN_SEPARATOR, array('some_plugin', 'some_context')),
         'operator' => 'equals',
@@ -1566,7 +1566,7 @@ class AcquiaLiftWebTestTarget extends AcquiaLiftWebTestBase {
     // When we implement the new structure it should delete the existing nested
     // option set and create a new one.
     AcquiaLiftAPI::setTestInstance();
-    acquia_lift_update_targeting($agent);
+    acquia_lift_implement_targeting($agent);
     $this->resetAll();
     $nested_option_set = personalize_option_set_load($nested_osid, TRUE);
     $this->assertFalse($nested_option_set);
@@ -1649,7 +1649,7 @@ class AcquiaLiftWebTestTarget extends AcquiaLiftWebTestBase {
     // When we implement the new structure it should not delete the existing nested
     // option set but it should change the audience it belongs to.
     AcquiaLiftAPI::setTestInstance();
-    acquia_lift_update_targeting($agent);
+    acquia_lift_implement_targeting($agent);
     $this->resetAll();
     $nested_option_set = personalize_option_set_load($nested_osid, TRUE);
     $this->assertTrue($nested_option_set);
@@ -1784,7 +1784,7 @@ class AcquiaLiftWebTestTarget extends AcquiaLiftWebTestBase {
     // Now implement the targeting structure that is currently just stored in
     // the 'lift_targeting' property.
     AcquiaLiftAPI::setTestInstance();
-    acquia_lift_update_targeting($agent);
+    acquia_lift_implement_targeting($agent);
     return $agent;
   }
 
@@ -2238,7 +2238,9 @@ class AcquiaLiftWebTestCampaignWizard extends AcquiaLiftWebTestBase {
     $this->assertNoText('The targeting settings shown here represent what is currently running for this personalization.');
 
     // Save the targeting structure and start the agent.
-    acquia_lift_update_targeting($first_agent);
+    AcquiaLiftAPI::setTestInstance();
+    acquia_lift_implement_targeting($first_agent);
+    $first_agent = personalize_agent_load($first_agent->machine_name, TRUE);
     personalize_agent_set_status($first_agent->machine_name, PERSONALIZE_STATUS_RUNNING);
     $this->resetAll();
 

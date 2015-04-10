@@ -448,7 +448,7 @@ function acquia_lift_personalize_campaign_wizard_targeting_alter(&$form, &$form_
   // Acquia Lift Target agents allow for audience designation to be used across
   // the agent.
   $agent_data = $form['#agent'];
-  if ($agent_data->data['variation_set_handling'] == ACQUIA_LIFT_DECISION_MULTIVARIATE) {
+  if (isset($agent_data->data['variation_set_handling']) && $agent_data->data['variation_set_handling'] == ACQUIA_LIFT_DECISION_MULTIVARIATE) {
     unset($form['targeting'], $form['actions']);
     $form['main'] = array(
       '#markup' => t('Targeting is not support for multivariate tests.')

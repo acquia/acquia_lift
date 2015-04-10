@@ -662,7 +662,7 @@ function acquia_lift_personalize_option_set_save($option_set) {
  */
 function acquia_lift_personalize_option_set_delete($option_set) {
   $agent = personalize_agent_load($option_set->agent);
-  if ($agent->data['locked_for_variation_sets']) {
+  if (!empty($agent->data['locked_for_variation_sets'])) {
     // Somehow an option set is being deleted for an already implemented campaign.
     // This is not supported via the UI and can cause problems for running
     // campaigns. Set the campaign's status to completed to avoid any problematic

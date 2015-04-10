@@ -101,43 +101,37 @@ function acquia_lift_profiles_admin_form($form, &$form_state) {
     )),
     '#default_value' => variable_get('acquia_lift_profiles_default_identity_type', ''),
   );
-  $vocabularies = taxonomy_get_vocabularies();
-  $mappings = variable_get('acquia_lift_profiles_vocabulary_mappings', array());
-  $vocab_options = array('' => t('Select...'));
-  foreach ($vocabularies as $vid => $voc) {
-    $vocab_options[$vid] = $voc->name;
-  }
+
+  // Retrieving all context options.
+  module_load_include('inc', 'personalize', 'personalize.admin');
+  $groups = personalize_get_grouped_context_options(NULL, TRUE, array('acquia_lift_profiles_context', 'acquia_lift_context'));
+
+  // Vocabulary mappings.
   $form['acquia_lift_profiles_vocabulary_mappings'] = array(
     '#title' => t('Vocabulary Mappings'),
+    '#description' => t('For each vocabularies available in Acquia Lift Profiles, you can map a visitor context, whose value will then be sent as the value for that vocabulary.'),
     '#type' => 'fieldset',
     '#tree' => TRUE,
   );
-  $form['acquia_lift_profiles_vocabulary_mappings']['content_section'] = array(
-    '#title' => t('Content Section'),
-    '#description' => t('The vocabulary to use for the content section'),
-    '#type' => 'select',
-    '#options' => $vocab_options,
-    '#default_value' => isset($mappings['content_section']) ? $mappings['content_section'] : '',
+  $type_list = array(
+    'content_section',
+    'content_keywords',
+    'persona',
   );
-  $form['acquia_lift_profiles_vocabulary_mappings']['content_keywords'] = array(
-    '#title' => t('Content Keywords'),
-    '#description' => t('The vocabulary to use for the content keywords'),
-    '#type' => 'select',
-    '#options' => $vocab_options,
-    '#default_value' => isset($mappings['content_keywords']) ? $mappings['content_keywords'] : '',
-  );
-  $form['acquia_lift_profiles_vocabulary_mappings']['persona'] = array(
-    '#title' => t('Persona'),
-    '#description' => t('The vocabulary to use for the persona'),
-    '#type' => 'select',
-    '#options' => $vocab_options,
-    '#default_value' => isset($mappings['persona']) ? $mappings['persona'] : '',
-  );
+  $vocabulary_mappings = variable_get('acquia_lift_profiles_vocabulary_mappings', array());
+  foreach ($type_list as $type) {
+    $default_value = isset($vocabulary_mappings[$type]) ? $vocabulary_mappings[$type] : NULL;
+    $select = acquia_lift_profiles_admin_build_visitor_context_select($groups, $default_value);
+    $type_name = str_replace('_', ' ', $type);
+    $type_title = ucfirst($type_name);
+    $form['acquia_lift_profiles_vocabulary_mappings'][$type] = $select;
+    $form['acquia_lift_profiles_vocabulary_mappings'][$type]['#title'] = t($type_title);
+    $form['acquia_lift_profiles_vocabulary_mappings'][$type]['#description'] = t('The vocabulary to use for the @type_name', array('@type_name' => $type_name));
+  }
+
   // Only show the "Tracked actions" selector if acquia_lift_profiles has already been
   // configured for API connections.
   if (acquia_lift_profiles_is_configured(TRUE)) {
-    module_load_include('inc', 'personalize', 'personalize.admin');
-    $groups = personalize_get_grouped_context_options(NULL, TRUE, array('acquia_lift_profiles_context', 'acquia_lift_context'));
     $udf_mappings = variable_get('acquia_lift_profiles_udf_mappings', array());
     $form['acquia_lift_profiles_udf_mappings'] = array(
       '#title' => t('User Defined Field Mappings'),
@@ -164,7 +158,6 @@ function acquia_lift_profiles_admin_form($form, &$form_state) {
         }
       }
       foreach ($udfs as $i => $udf) {
-
         $default_value = isset($udf_mappings[$type][$udf]) ? $udf_mappings[$type][$udf] : NULL;
         $select = acquia_lift_profiles_admin_build_visitor_context_select($groups, $default_value);
         $select['#title'] = t('Context to map to the @field field', array('@field' => $udf));
@@ -172,7 +165,7 @@ function acquia_lift_profiles_admin_form($form, &$form_state) {
         if ($i == $min) {
           $form['acquia_lift_profiles_udf_mappings'][$type][$udf]['#prefix'] = '<div class="acquia-lift-profiles-hidden-udfs">';
         }
-        elseif ($i == $max - 1) {
+        if ($i == $max - 1) {
           $form['acquia_lift_profiles_udf_mappings'][$type][$udf]['#suffix'] = '</div>';
         }
       }
@@ -228,7 +221,7 @@ function acquia_lift_profiles_admin_form_submit($form, &$form_state) {
     'acquia_lift_profiles_site_name',
     'acquia_lift_profiles_access_key',
     'acquia_lift_profiles_secret_key',
-    'acquia_lift_profiles_vocabulary_mappings'
+    'acquia_lift_profiles_vocabulary_mappings',
   );
   foreach ($variables as $key) {
     variable_set($key, $form_state['values'][$key]);

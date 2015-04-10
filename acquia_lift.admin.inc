@@ -891,7 +891,7 @@ function acquia_lift_implement_targeting($agent) {
   }
   $all_option_sets = personalize_option_set_load_by_agent($agent->machine_name);
   // Bail if not all option sets have an equal number of options.
-  $num_decisions = NULL;
+  $num_decisions = $decision_name = NULL;
   foreach ($all_option_sets as $os) {
     if ($num_decisions == NULL) {
       $num_decisions = count($os->options);
@@ -971,13 +971,14 @@ function acquia_lift_implement_targeting($agent) {
   // to the running targeting.
   $agent->data['lift_targeting'] = array();
   personalize_agent_save($agent);
-  // Go through any other option sets for this personalization and copy the
-  // targeting information to them.
+
+  // Go through any other option sets for this personalization, assign the same
+  // decision name to each of them, and copy the targeting information to them.
   foreach ($all_option_sets as $os) {
-    if ($os->osid == $targeting_option_set->osid) {
-      continue;
+    if ($os->osid != $targeting_option_set->osid) {
+      $os->targeting = $targeting_option_set->targeting;
     }
-    $os->targeting = $targeting_option_set->targeting;
+    $os->decision_name = $agent->machine_name;
     personalize_option_set_save($os);
   }
   return $to_delete;
@@ -1036,18 +1037,19 @@ function acquia_lift_remove_option_for_audience($agent, $audience) {
  *   The agent plugin to use for the nested test.
  * @throws \PersonalizeException
  */
-function acquia_lift_add_new_test_for_audience($parent_agent, $variations, $audience, $test_agent_type = 'acquia_lift') {
+function acquia_lift_add_new_test_for_audience($parent_agent, $variations, $audience) {
   module_load_include('inc', 'personalize', 'personalize.admin');
   $option_set = acquia_lift_get_option_set_for_targeting($parent_agent->machine_name);
   if (isset($option_set->targeting[$audience])) {
     // First we need to create a new agent.
     $agent = new stdClass();
     $agent->label = 'Sub-test for ' . $parent_agent->label;
-    $agent->plugin = $test_agent_type;
+    $agent->plugin = acquia_lift_get_test_agent_plugin();
     $agent->data = array();
     $agent->machine_name = personalize_generate_machine_name($parent_agent->machine_name . '-test', 'personalize_agent_machine_name_exists');
     try {
       $agent = personalize_agent_save($agent);
+      personalize_agent_set_status($agent->machine_name, PERSONALIZE_STATUS_RUNNING);
       $nested_os = new stdClass();
       $nested_os->agent = $agent->machine_name;
       $nested_os->is_new = TRUE;
@@ -1286,7 +1288,7 @@ function acquia_lift_validate_minimum_targeting($agent) {
 function acquia_lift_implement_mvt($agent) {
   // There will only ever be one nested test for this campaign and it follows a
   // naming convention (e.g. "{parent-campaign-name}-mvt"
-  $mvt_name = acquia_lift_get_mvt_name_for_personalization($agent);
+  $mvt_name = acquia_lift_get_mvt_name_for_personalization($agent->machine_name);
   // If this is our first time implementing this MVT, then the option sets will
   // still be on the parent personalization and we'll need to move them.
   $option_sets = personalize_option_set_load_by_agent($agent->machine_name);
@@ -1307,14 +1309,16 @@ function acquia_lift_implement_mvt($agent) {
   // Create a test agent for the MVT.
   $mvt_agent = new stdClass();
   $mvt_agent->label = 'MVT for ' . $agent->label;
-  $mvt_agent->plugin = acquia_lift_get_testing_agent();
+  $mvt_agent->plugin = acquia_lift_get_test_agent_plugin();
   $mvt_agent->data = array();
   $mvt_agent->machine_name = $mvt_name;
   try {
     personalize_agent_save($mvt_agent);
+    personalize_agent_set_status($mvt_name, PERSONALIZE_STATUS_RUNNING);
     // Ensure the option sets are attached to the mvt, not the parent.
     foreach ($option_sets as $os) {
       $os->agent = $mvt_name;
+      $os->mvt = $mvt_name;
       personalize_option_set_save($os);
     }
   }

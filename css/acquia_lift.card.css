@@ -114,3 +114,11 @@ ul.el-card__actions {
   margin-top: .37rem;
   margin-left: -0.5rem;
 }
+
+.el-card.is-disabled .el-card__header {
+  background-color: #e6e9ed;
+  color: #999;
+}
+.el-card.is-disabled .el-card__content {
+  opacity: 0.6;
+}

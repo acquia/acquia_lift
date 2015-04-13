@@ -247,6 +247,12 @@ function acquia_lift_personalize_campaign_wizard_goals_alter(&$form, &$form_stat
   $form['#validate'] = array('acquia_lift_personalize_campaign_wizard_validate');
   $form['#submit'] = array('acquia_lift_personalize_campaign_wizard_submit');
 
+  module_load_include('inc', 'acquia_lift', 'acquia_lift.admin');
+  $enable_goals = acquia_lift_target_goal_changes_allowed($agent_data);
+  if (!$enable_goals) {
+    drupal_set_message(t('Goals cannot be changed while the personalization is running.'), 'warning');
+  }
+
   // Alter the existing goals list form items.
   $goal_deltas = element_children($form['goals']['all_goals']);
   if (count($goal_deltas) === 1 && empty($form['goals']['all_goals'][0]['goal_id']['#value'])) {
@@ -254,37 +260,42 @@ function acquia_lift_personalize_campaign_wizard_goals_alter(&$form, &$form_stat
     unset($form['goals']['all_goals'][0]);
     $goal_deltas = array();
   }
-  foreach ($goal_deltas as $delta) {
-    $form['goals']['all_goals'][$delta]['header'] = array(
-      '#type' => 'container',
-      'delete' => array(
-        '#type' => 'submit',
-        '#tag' => 'button',
-        '#text' => t('Delete'),
-        '#value' => 'remove_' . $delta,
-        '#attributes' => array(
-          'id' => 'edit-goals-all-goals-' . $delta . '-header-delete',
-          'data-acquia-lift-personalize-goal-id' => $form['goals']['all_goals'][$delta]['goal_id']['#value'],
-          'title' => t('Delete the goal.'),
-          'name' => 'edit-goals-all-goals-' . $delta . '-header-delete',
-          'value' => t('Delete'),
-          'class' => array('acquia-lift-delete'),
-        ),
-        '#theme_wrappers' => array('personalize_html_tag'),
-        '#submit' => array('acquia_lift_personalize_campaign_wizard_goals_ajax_delete'),
-        '#ajax' => array(
-          'callback' => 'acquia_lift_personalize_campaign_wizard_goals_ajax_all',
-          'wrapper' => 'personalize-goals-container',
-          'effect' => 'fade',
-        ),
-        '#limit_validation_errors' => array(),
-      ),
-    );
 
+  $params = drupal_get_query_parameters();
+  foreach ($goal_deltas as $delta) {
+    $goal_id = $form['goals']['all_goals'][$delta]['goal_id']['#value'];
+    if ($enable_goals) {
+      $form['goals']['all_goals'][$delta]['header'] = array(
+        '#type' => 'container',
+        'delete' => array(
+          '#type' => 'submit',
+          '#tag' => 'button',
+          '#text' => t('Delete'),
+          '#value' => 'remove_' . $delta,
+          '#attributes' => array(
+            'id' => 'edit-goals-all-goals-' . $delta . '-header-delete',
+            'data-acquia-lift-personalize-goal-id' => $goal_id,
+            'title' => t('Delete the goal.'),
+            'name' => 'edit-goals-all-goals-' . $delta . '-header-delete',
+            'value' => t('Delete'),
+            'class' => array('acquia-lift-delete'),
+          ),
+          '#theme_wrappers' => array('personalize_html_tag'),
+          '#submit' => array('acquia_lift_personalize_campaign_wizard_goals_ajax_delete'),
+          '#ajax' => array(
+            'callback' => 'acquia_lift_personalize_campaign_wizard_goals_ajax_all',
+            'wrapper' => 'personalize-goals-container',
+            'effect' => 'fade',
+          ),
+          '#limit_validation_errors' => array(),
+        ),
+      );
+    }
     $form['goals']['all_goals'][$delta]['#type'] = 'container';
     $form['goals']['all_goals'][$delta]['#theme'] = 'acquia_lift_card';
     $form['goals']['all_goals'][$delta]['#collapsible'] = TRUE;
-    $form['goals']['all_goals'][$delta]['#collapsed'] = TRUE;
+    $form['goals']['all_goals'][$delta]['#collapsed'] = !isset($params['goal']) || $params['goal'] !== $goal_id;
+    $form['goals']['all_goals'][$delta]['#disabled'] = !$enable_goals;
     unset($form['goals']['all_goals'][$delta]['remove']);
   }
 
@@ -303,6 +314,7 @@ function acquia_lift_personalize_campaign_wizard_goals_alter(&$form, &$form_stat
     '#attributes' => array(
       'class' => array('acquia-lift-campaign-add'),
     ),
+    '#disabled' => !$enable_goals,
   );
   // Tricky: we need this container in order to hide the radio list when a
   // selection is made.  The radio type does not have a proper wrapping
@@ -642,6 +654,18 @@ function acquia_lift_personalize_campaign_wizard_review_alter(&$form, &$form_sta
     }
   }
   if ($has_tests) {
+    $status = personalize_agent_get_status($agent_data->machine_name);
+    $editable = $status === PERSONALIZE_STATUS_NOT_STARTED || $status === PERSONALIZE_STATUS_PAUSED;
+
+    if (!$editable) {
+      if ($status === PERSONALIZE_STATUS_COMPLETED) {
+        drupal_set_message(t('Test options can no longer be edited.'), 'warning');
+      }
+      else {
+        drupal_set_message(t('Test options cannot be edited while this personalization is running.'), 'warning');
+      }
+    }
+
     $form['review']['summary_column']['tests'] = array(
       '#type' => 'container',
       '#theme' => 'acquia_lift_card',
@@ -653,6 +677,7 @@ function acquia_lift_personalize_campaign_wizard_review_alter(&$form, &$form_sta
         'class' => array('acquia-lift-test-options'),
       ),
       '#weight' => -10,
+      '#disabled' => !$editable,
     );
     $form['review']['summary_column']['tests']['options'] = _acquia_lift_personalize_campaign_wizard_review_tests($agent_data, array());
   }
@@ -848,6 +873,15 @@ function acquia_lift_personalize_campaign_wizard_variations_validate(&$form, &$f
  * Validation function for goals form.
  */
 function acquia_lift_personalize_campaign_wizard_goals_validate(&$form, &$form_state) {
+  // Determine if goals are allowed to be modified.
+  $agent = $form['#agent'];
+  module_load_include('inc', 'acquia_lift', 'acquia_lift.admin');
+  $enabled = acquia_lift_target_goal_changes_allowed($agent);
+
+  if (!$enabled && !empty($form_state['values']['goal_add_type'])) {
+    form_set_error('goal_add_type', t('Goals cannot be added until the personalization is paused.'));
+  }
+
   // Make sure that each action is only set once per campaign.
   if (empty($form_state['values']['goals']['all_goals'])) {
     // If there aren't any existing goals then this isn't a problem.
@@ -859,9 +893,18 @@ function acquia_lift_personalize_campaign_wizard_goals_validate(&$form, &$form_s
     $proposed_actions[$form_state['values']['action_name']] = 'action_name';
   }
   foreach ($form_state['values']['goals']['all_goals'] as $delta => $goal) {
+    // If goal changes aren't enabled then nothing should be changed.
+    if (!$enabled) {
+      if ($goal['action'] != $form['goals']['all_goals'][$delta]['action_name']['#default_value']) {
+        form_set_error('goals[all_goals][' . $delta . '][action_name]', t('Goals actions cannot be changed until the personalization is paused.'));
+      }
+      if ($goal['value'] != $form['goals']['all_goals'][$delta]['value']['#default_value']) {
+        form_set_error('goals[all_goals][' . $delta . '][value]', t('Goal values cannot be changed until the personalization is paused.'));
+      }
+    }
     if (!empty($proposed_actions[$goal['action_name']])) {
       // Only show the message once in the error messages.
-      form_set_error('goals[all_goals][' + $delta + '][action_name]', t('Each action can only be used once per personalization.'));
+      form_set_error('goals[all_goals][' . $delta . '][action_name]', t('Each action can only be used once per personalization.'));
       break;
     }
     else {
@@ -1050,6 +1093,10 @@ function acquia_lift_personalize_campaign_wizard_fields_submit_element_edit($for
  * Submit function for goals form.
  */
 function acquia_lift_personalize_campaign_wizard_goals_submit(&$form, &$form_state, &$agent_data, $agent_instance) {
+  if (!acquia_lift_target_goal_changes_allowed($agent_data)) {
+    return;
+  }
+
   // Get a reference to the original values.
   $values = $form_state['values'];
 
@@ -1684,17 +1731,6 @@ function _acquia_lift_personalize_campaign_wizard_review_tests($agent_data, $ele
       drupal_get_path('module', 'acquia_lift') . '/js/acquia_lift.agent.admin.js',
     ),
   );
-  $status = personalize_agent_get_status($agent_data->machine_name);
-  $editable = $status === PERSONALIZE_STATUS_NOT_STARTED || $status === PERSONALIZE_STATUS_PAUSED;
-
-  if (!$editable) {
-    if ($status === PERSONALIZE_STATUS_COMPLETED) {
-      drupal_set_message(t('Test options can no longer be edited.'), 'warning');
-    }
-    else {
-      drupal_set_message(t('Test options cannot be edited while this personalization is running.'), 'warning');
-    }
-  }
 
   $control_rate = isset($agent_data->data['control_rate']) ? $agent_data->data['control_rate'] : 10;
   $form['control'] = array(
@@ -1715,7 +1751,6 @@ function _acquia_lift_personalize_campaign_wizard_review_tests($agent_data, $ele
     '#rest_description' => t('Personalized variations will be shown.'),
     '#collapsible' => TRUE,
     '#collapsed' => TRUE,
-    '#disabled' => !$editable,
   );
   $decision_style = isset($agent_data->data['decision_style']) ? $agent_data->data['decision_style'] : 'adaptive';
   $form['decision_style'] = array(
@@ -1724,7 +1759,6 @@ function _acquia_lift_personalize_campaign_wizard_review_tests($agent_data, $ele
     '#options' => array('adaptive' => t('Auto-personalize'), 'random' => t('Test only')),
     '#default_value' => $decision_style,
     '#title_display' => 'invisible',
-    '#disabled' => !$editable,
   );
   $form['decision_style']['adaptive'] = array(
     '#description' => t('Adapts to users and chooses the best option over time.'),
@@ -1765,7 +1799,6 @@ function _acquia_lift_personalize_campaign_wizard_review_tests($agent_data, $ele
     '#rest_description' => t('The "best" variation will be shown for each visitor based on our algorithm.'),
     '#collapsible' => TRUE,
     '#collapsed' => TRUE,
-    '#disabled' => !$editable,
   );
   return $form;
 }

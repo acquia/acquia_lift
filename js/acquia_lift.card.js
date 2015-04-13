@@ -14,7 +14,6 @@
   var Card = function (element, options) {
     this.type =
     this.options =
-    this.enabled =
     this.$element = null;
 
     this.init('card', element, options);
@@ -25,6 +24,7 @@
     collapsed: false,
     sortable: false,
     footerVisible: true,
+    enabled: true,
     eventExpanded: 'card-expanded',
     eventCollapsed: 'card-collapsed'
   };
@@ -33,17 +33,24 @@
     this.type = type;
     this.$element = $(element);
     this.options = this.getOptions(options);
-    this.enabled = true;
+
+    if (this.options.enabled) {
+      this.enable();
+    } else {
+      this.disable();
+    }
 
     this.render();
   };
 
   Card.prototype.enable = function () {
     this.enabled = true;
+    this.$element.removeClass('is-disabled');
   };
 
   Card.prototype.disable = function () {
     this.enabled = false;
+    this.$element.addClass('is-disabled');
   };
 
   /**

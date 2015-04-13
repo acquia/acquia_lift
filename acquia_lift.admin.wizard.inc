@@ -737,6 +737,26 @@ function acquia_lift_personalize_campaign_wizard_review_alter(&$form, &$form_sta
     );
   }
   else {
+    // If there are multiple option sets, check that they all have the same number
+    // of options.
+    $option_sets = personalize_option_set_load_by_agent($agent_data->machine_name);
+    $equal_option_counts = TRUE;
+    if (count($option_sets) > 1) {
+      $first_os = array_shift($option_sets);
+      $num_options = count($first_os->options);
+      foreach ($option_sets as $os) {
+        if (count($os->options) != $num_options);
+        $equal_option_counts = FALSE;
+      }
+    }
+    // Prevent submission if the numbers of options aren't the same.
+    if (!$equal_option_counts) {
+      // @todo Get proper text for this.
+      drupal_set_message(t('You have multiple variation sets with different numbers of variations - the personalization cannot be started until all variation sets have the same number of variations.'), 'warning');
+      $form_state['storage']['allow_submit'] = FALSE;
+      $form['actions']['submit']['#disabled'] = TRUE;
+    }
+
     $form['review']['summary_column']['summary']['audiences'] = array(
       '#markup' => theme('personalize_wizard_summary_count', array(
           'count' => $count_audiences,

@@ -180,3 +180,19 @@ function acquia_lift_profiles_update_7002(&$sandbox) {
     return t('All actions were synchronized to Lift Web');
   }
 }
+
+/**
+ * Convert existing vocabulary mappings to use taxonomy context module.
+ */
+function acquia_lift_profiles_update_7003() {
+  $vocabulary_mappings = variable_get('acquia_lift_profiles_vocabulary_mappings');
+  // Migration: prefix to existing mappings (if not already).
+  // Before: array ('', '7', '82', 'taxonomy_context__4')
+  // After: array ('', 'taxonomy_context__7', 'taxonomy_context__82', 'taxonomy_context__4')
+  $vocabulary_mappings_updated = preg_replace('/^(\d+)$/', 'taxonomy_context' . preg_quote(PERSONALIZE_TARGETING_ADMIN_SEPARATOR) . '$1', $vocabulary_mappings);
+  // If taxonomy is already configured, enable the taxonomy context module.
+  if ($vocabulary_mappings != $vocabulary_mappings_updated) {
+    module_enable(array('personalize_taxonomy_context'));
+  }
+  variable_set('acquia_lift_profiles_vocabulary_mappings', $vocabulary_mappings_updated);
+}

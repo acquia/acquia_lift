@@ -9,6 +9,11 @@ define('ACQUIA_LIFT_PROFILES_THUMBNAIL_WIDGET_SEPARATOR', '|');
 define('ACQUIA_LIFT_PROFILES_DEFAULT_IDENTITY_TYPE_DEFAULT', 'email');
 
 /**
+ * Class FieldException
+ */
+class AcquiaLiftProfilesFunctionNotExistException extends Exception {}
+
+/**
  * Implements hook_menu().
  */
 function acquia_lift_profiles_menu() {
@@ -442,10 +447,9 @@ function acquia_lift_profiles_node_page_context($node = NULL, $primary = FALSE) 
   // For each vocabulary, add any terms that are applied to the viewed node.
   $page_context = &drupal_static(__FUNCTION__);
   $mappings = variable_get('acquia_lift_profiles_vocabulary_mappings', array());
-  $flipped = array_flip($mappings);
   if (!isset($page_context)) {
     $page_context = array();
-    foreach ($mappings as $name => $vid) {
+    foreach ($mappings as $name => $mapping) {
       $page_context[$name] = array();
     }
   }
@@ -459,17 +463,27 @@ function acquia_lift_profiles_node_page_context($node = NULL, $primary = FALSE) 
     $account = user_load($node->uid);
     $page_context['author'] = $account->name;
     $page_context['page_type'] = 'node page';
-    // Add the node's taxonomy to the context.
+    // Add the node's vocabulary mappings to the context.
     if (isset($node)) {
-      $results = db_query('SELECT tid FROM {taxonomy_index} WHERE nid = :nid', array(':nid' => $node->nid));
-      $terms = taxonomy_term_load_multiple($results->fetchCol());
-      foreach($terms as $term) {
-        if (isset($flipped[$term->vid])) {
-          $name = $flipped[$term->vid];
-          if (!in_array($term->name, $page_context[$name])) {
-            $page_context[$name][] = $term->name;
-          }
+      foreach ($mappings as $name => $mapping) {
+        if (empty($mapping)) {
+          continue;
         }
+        list($plugin, $context) = explode(PERSONALIZE_TARGETING_ADMIN_SEPARATOR, $mapping);
+        // Call the module's custom-fetch function to retrieve the terms.
+        $module_name = 'personalize_' . $plugin;
+        $get_terms_function_name = $module_name . '_get_terms';
+        if (!function_exists($get_terms_function_name)) {
+          $error_message = t('You need to enable "@module_name" module and/or define "@function_name" function in the module to custom-fetch the terms into page context.', array (
+            '@module_name' => $module_name,
+            '@function_name' => $get_terms_function_name,
+          ));
+          throw new AcquiaLiftProfilesFunctionNotExistException($error_message);
+        }
+        $terms = call_user_func($get_terms_function_name, $node->nid, $context);
+        // Make sure page context terms are unique.
+        $context_terms = array_merge($page_context[$name], $terms);
+        $page_context[$name] = array_unique($context_terms);
       }
     }
     // Add the thumbnail image if specified in the content type and supplied.

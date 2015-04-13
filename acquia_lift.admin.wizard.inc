@@ -124,6 +124,9 @@ function acquia_lift_personalize_campaign_wizard_variations_alter(&$form, &$form
       case 'elements':
         $form['variations']['option_sets']['option_set_' . $option_set->osid]['content'] = _acquia_lift_personalize_campaign_wizard_variations_element($form, $form_state, $agent_data, $option_set);
         break;
+      case 'fields':
+        $form['variations']['option_sets']['option_set_' . $option_set->osid]['content'] = _acquia_lift_personalize_campaign_wizard_variations_fields($form, $form_state, $agent_data, $option_set);
+        break;
       // Unsupported display - get an edit link if provided by the plugin.
       default:
         $edit_link = module_hook($option_set_plugin['module'], 'personalize_edit_link') ? module_invoke($option_set_plugin['module'], 'personalize_edit_link', $option_set) : '';
@@ -943,6 +946,7 @@ function acquia_lift_personalize_campaign_wizard_variations_submit(&$form, &$for
   // Save a reference to the full form state values.
   $values = $form_state['values'];
   $click_id = $form_state['clicked_button']['#id'];
+  $requires_cleanup = FALSE;
 
   // Common functionality needed before submitting the block submission
   // handler whether for new or existing blocks.
@@ -961,15 +965,20 @@ function acquia_lift_personalize_campaign_wizard_variations_submit(&$form, &$for
       switch ($option_set_values['option_set']->plugin) {
         case "block":
           $submitBlockHandler($option_set_values['content'], $option_set);
+          $requires_cleanup = TRUE;
           break;
         case "element":
           break;
         default:
           // Unsupported option set type.
       }
-      // Advanced form expects the label within its options.
       $option_set = personalize_option_set_load($option_set->osid);
-      $option_set_values['advanced']['label'] = $option_set_values['content']['title'];
+      // Advanced form expects the label within its options.
+      if (isset($option_set_values['content'])) {
+        $option_label = isset($option_set_values['content']['title']) ? $option_set_values['content']['title'] : $option_set_values['content']['label'];
+        $option_set->label = $option_label;
+        $option_set_values['advanced']['label'] = $option_label;
+      }
       personalize_campaign_wizard_submit_variations_advanced($option_set_values, $option_set);
       personalize_option_set_save($option_set);
     }
@@ -980,15 +989,19 @@ function acquia_lift_personalize_campaign_wizard_variations_submit(&$form, &$for
     switch ($form_state['values']['variations']['add_variation']['option_set_types']['option_set_type']) {
       case "block":
         $submitBlockHandler($values['variations']['add_variation']['details']['block']['content']);
+        $requires_cleanup = TRUE;
         break;
       case "element":
         break;
     }
   }
-  // Clear out any redirects set by option set forms.
-  unset($form_state['redirect']);
-  // Set the clicked button ID back.
-  $form_state['clicked_button']['#id'] = $click_id;
+
+  if ($requires_cleanup) {
+    // Clear out any redirects set by option set forms.
+    unset($form_state['redirect']);
+    // Set the clicked button ID back.
+    $form_state['clicked_button']['#id'] = $click_id;
+  }
 
   // Handle the advanced settings form submission.
   module_load_include('inc', 'personalize', 'personalize.admin.campaign');
@@ -1015,6 +1028,22 @@ function acquia_lift_personalize_campaign_wizard_variations_submit_element_edit(
   list($prefix, $osid) = explode('_', $form_state['triggering_element']['#name']);
   $option_set = $form['variations']['option_sets']['option_set_' . $osid]['option_set']['#value'];
   $form_state['redirect'] = $option_set->data['pages'];
+
+  // Run form-level submit handlers
+  acquia_lift_personalize_campaign_wizard_submit($form, $form_state);
+}
+
+/**
+ * Submit handler to redirect to a personalize fields content page for editing.
+ */
+function acquia_lift_personalize_campaign_wizard_fields_submit_element_edit($form, &$form_state) {
+  // Value for the edit button is "edit_{osid}".
+  list($prefix, $osid) = explode('_', $form_state['triggering_element']['#name']);
+  $option_set = $form['variations']['option_sets']['option_set_' . $osid]['option_set']['#value'];
+  $form_state['redirect'] = personalize_fields_personalize_edit_link($option_set);
+
+  // Run form-level submit handlers
+  acquia_lift_personalize_campaign_wizard_submit($form, $form_state);
 }
 
 /**
@@ -1369,6 +1398,72 @@ function _acquia_lift_personalize_campaign_wizard_variations_element(&$form, &$f
     $element['edit'] = array(
       '#type' => 'submit',
       '#submit' => array('acquia_lift_personalize_campaign_wizard_variations_submit_element_edit'),
+      '#value' => t('Edit variation set'),
+      '#name' => 'edit_' . $option_set->osid,
+    );
+  }
+  return $element;
+}
+
+/**
+ * Form to edit a personalize fields variation.
+ *
+ * This provides a brief display of each field and the link to edit within the
+ * context of the parent entity.  There is no "add" version of this as fields
+ * are created within the context of the parent entity.
+ *
+ * @param array $form
+ *   The form array reference
+ * @param array $form_state
+ *   The current form state
+ * @param stdClass $agent_data
+ *   The data for the current campaign
+ * @param stdClass $option_set
+ *   The option set to display within the form editing.
+ * @return array
+ *   The form element for the requested element variation set.
+ *
+ * NOTE: limit_validation_errors is not set for submit buttons due to a
+ * requirement to actually save the page content before exiting for editing.
+ */
+function _acquia_lift_personalize_campaign_wizard_variations_fields(&$form, &$form_state, $agent_data, $option_set) {
+  $element['label'] = array(
+    '#type' => 'textfield',
+    '#required' => TRUE,
+    '#theme_wrappers' => array('acquia_lift_revealing_input'),
+    '#default_value' => $option_set->label,
+    '#title' => t('Variation set')
+  );
+
+  // Load the entity's field display for the personalized field.
+  $entities = entity_load($option_set->field_info['entity_type'], array($option_set->field_info['entity_id']));
+  $display = field_view_field($option_set->field_info['entity_type'], $entities[$option_set->field_info['entity_id']], $option_set->field_info['field_name']);
+
+  // Customize the display based on the type of rendering to be better presented
+  // in a small list.
+  $items = array();
+  foreach (element_children($display) as $id) {
+    if (isset($display[$id]['#image_style'])) {
+      $display[$id]['#image_style'] = 'thumbnail';
+    }
+    else if (isset($display[$id]['#markup'])) {
+      $display[$id]['#markup'] = drupal_truncate_bytes($display[$id]['#markup'], 150);
+    }
+    $items[] = drupal_render($display[$id]);
+  }
+  $field_title = !empty($display['#title']) ? $display['#title'] : $option_set->field_info['field_name'];
+
+  $element['display'] = array(
+    '#markup' => theme('item_list', array(
+      'items' => $items,
+      'title' => t('Variations for %field_name', array('%field_name' => $field_title)),
+    )),
+  );
+  $edit_link = personalize_fields_personalize_edit_link($option_set);
+  if (!empty($edit_link)) {
+    $element['edit'] = array(
+      '#type' => 'submit',
+      '#submit' => array('acquia_lift_personalize_campaign_wizard_fields_submit_element_edit'),
       '#value' => t('Edit variation set'),
       '#name' => 'edit_' . $option_set->osid,
     );

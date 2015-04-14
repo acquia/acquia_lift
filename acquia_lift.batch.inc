@@ -16,7 +16,7 @@ function acquia_lift_batch_sync_tests($agents = array()) {
   }
   $operations = array();
   foreach ($agents as $agent) {
-    $operations += acquia_lift_get_sync_operations_for_personalization($agent);
+    $operations += acquia_lift_get_sync_operations_for_agent($agent);
   }
 
   $batch_operations = array();
@@ -116,10 +116,10 @@ function acquia_lift_batch_finished($success, $results, $operations) {
   }
 }
 
-function acquia_lift_get_sync_operations_for_personalization($personalization) {
+function acquia_lift_get_sync_operations_for_agent($agent) {
   $operations = array();
-  if (isset($personalization->tests_to_delete)) {
-    foreach ($personalization->tests_to_delete as $old_test_agent) {
+  if (isset($agent->tests_to_delete)) {
+    foreach ($agent->tests_to_delete as $old_test_agent) {
       $operations[] = array(
         'method' => 'deleteAgent',
         'args' => array(
@@ -128,16 +128,16 @@ function acquia_lift_get_sync_operations_for_personalization($personalization) {
       );
     }
   }
-  $nested = acquia_lift_get_nested_tests($personalization);
+  $nested = acquia_lift_get_nested_tests($agent);
 
   if (empty($nested)) {
     return $operations;
   }
   $nested_tests = personalize_agent_load_multiple($nested);
-  $goals = personalize_goal_load_by_conditions(array('agent' => $personalization->machine_name));
+  $goals = personalize_goal_load_by_conditions(array('agent' => $agent->machine_name));
   $lift_api = AcquiaLiftAPI::getInstance(variable_get('acquia_lift_account_info', array()));
-  foreach ($nested_tests as $agent_name => $agent) {
-    if (!acquia_lift_is_testing_agent($agent)) {
+  foreach ($nested_tests as $agent_name => $test) {
+    if (!acquia_lift_is_testing_agent($test)) {
       continue;
     }
     if ($agent_instance = personalize_agent_load_agent($agent_name)) {

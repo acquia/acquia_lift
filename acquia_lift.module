@@ -452,8 +452,8 @@ function acquia_lift_is_targeting_agent($agent) {
   return $agent->plugin == 'acquia_lift_target';
 }
 
-function acquia_lift_get_mvt_name_for_personalization($personalization_name) {
-  return $personalization_name . ACQUIA_LIFT_MULTIVARIATE_TEST_SUFFIX;
+function acquia_lift_get_mvt_name_for_agent($agent_name) {
+  return $agent_name . ACQUIA_LIFT_MULTIVARIATE_TEST_SUFFIX;
 }
 
 /**
@@ -662,7 +662,7 @@ function acquia_lift_personalize_option_set_save($option_set) {
  */
 function acquia_lift_personalize_option_set_delete($option_set) {
   $agent = personalize_agent_load($option_set->agent);
-  if (!empty($agent->data['locked_for_variation_sets'])) {
+  if (acquia_lift_is_targeting_agent($agent) && !empty($agent->data['locked_for_variation_sets'])) {
     // Somehow an option set is being deleted for an already implemented campaign.
     // This is not supported via the UI and can cause problems for running
     // campaigns. Set the campaign's status to completed to avoid any problematic

@@ -682,8 +682,7 @@ class AcquiaLiftWebTestFundamentals extends AcquiaLiftWebTestBase {
     // Add a couple of tests for deletion to ensure they show up in the batch
     // operations.
     $agent->tests_to_delete = array('first-test', 'second-test');
-    $operations = acquia_lift_get_sync_operations_for_personalization($agent);
-    debug($operations);
+    $operations = acquia_lift_get_sync_operations_for_agent($agent);
     $control_rate = 10;
     $explore_rate = 20;
     $decision_point = $decision_name = 'osid-' . $sub_option_set->osid;

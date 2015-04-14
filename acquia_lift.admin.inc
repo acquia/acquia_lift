@@ -884,6 +884,10 @@ function acquia_lift_implement_test_structure($agent_data) {
  *
  * @param stdClass $agent
  *   The agent to create the targeting structure for.
+ *
+ * @return array
+ *   An array of agent names that have been deleted and therefore need to be
+ *   deleted in Lift.
  */
 function acquia_lift_implement_targeting($agent) {
 
@@ -990,8 +994,8 @@ function acquia_lift_implement_targeting($agent) {
 /**
  * Assigns an option to a target audience.
  *
- * @param $agent
- *   A stdClass object representing the agent.
+ * @param $option_set
+ *   The option set whose targeting is being changed.
  * @param $option_id
  *   The option ID
  * @param $audience
@@ -1010,8 +1014,11 @@ function acquia_lift_set_option_for_audience(&$option_set, $option_id, $audience
 
 /**
  * Unsets the option_id property for a given target audience.
- * @param $agent
+ *
+ * @param $option_set
+ *   The option set whose targeting is being changed.
  * @param $audience
+ *   The audience name.
  * @throws \PersonalizeException
  */
 function acquia_lift_remove_option_for_audience(&$option_set, $audience) {
@@ -1026,14 +1033,14 @@ function acquia_lift_remove_option_for_audience(&$option_set, $audience) {
 /**
  * Creates a new nested test of the specified variations for the specified agent.
  *
- * @param $parent_agent
- *   The parent agent to add the test to.
- * @param $variations
- *   The variations to test.
+ * @param $option_set
+ *   The option set whose targeting is being changed.
  * @param $audience
  *   The target audience for the test.
- * @param string $test_agent_type
- *   The agent plugin to use for the nested test.
+ * @param $parent_agent
+ *   The parent agent.
+ * @param $variations
+ *   The variations to create a test for.
  * @throws \PersonalizeException
  */
 function acquia_lift_add_new_test_for_audience(&$option_set, $audience, $parent_agent, $variations) {
@@ -1080,8 +1087,8 @@ function acquia_lift_add_new_test_for_audience(&$option_set, $audience, $parent_
 /**
  * Saves a test to a particular targeting audience.
  *
- * @param $parent_agent
- *   The machine name of the parent agent.
+ * @param $option_set
+ *  The option set whose targeting is being changed.
  * @param $old_audience
  *   The target audience that currently has this test running.
  * @param $new_audience
@@ -1113,8 +1120,8 @@ function acquia_lift_set_audience_for_test(&$option_set, $old_audience, $new_aud
 /**
  * Deletes a nested test that is no longer needed.
  *
- * @param $parent_agent
- *   The name of the parent agent.
+ * @param $option_set
+ *   The option set whose targeting is being changed.
  * @param $audience
  *   THe name of the target audience the test was assigned to.
  * @throws \PersonalizeException
@@ -1284,7 +1291,7 @@ function acquia_lift_validate_minimum_targeting($agent, $option_set) {
 function acquia_lift_implement_mvt($agent) {
   // There will only ever be one nested test for this campaign and it follows a
   // naming convention (e.g. "{parent-campaign-name}-mvt"
-  $mvt_name = acquia_lift_get_mvt_name_for_personalization($agent->machine_name);
+  $mvt_name = acquia_lift_get_mvt_name_for_agent($agent->machine_name);
   // If this is our first time implementing this MVT, then the option sets will
   // still be on the parent personalization and we'll need to move them.
   $option_sets = personalize_option_set_load_by_agent($agent->machine_name);
@@ -1317,6 +1324,8 @@ function acquia_lift_implement_mvt($agent) {
       $os->mvt = $mvt_name;
       personalize_option_set_save($os);
     }
+    // Ensure goals are attached to the mvt, not the parent.
+
   }
   catch (PersonalizeException $e) {
 

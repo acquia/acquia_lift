@@ -65,6 +65,35 @@ class AcquiaLiftTarget extends PersonalizeAgentBase implements PersonalizeExplic
     return TRUE;
   }
 
+  public function errors() {
+    $data = $this->getData();
+    $is_mvt = isset($data['variation_set_handling']) && $data['variation_set_handling'] == ACQUIA_LIFT_DECISION_MULTIVARIATE;
+    if ($is_mvt) {
+      return array();
+    }
+    // If there are multiple option sets, check that they all have the same number
+    // of options.
+    $option_sets = personalize_option_set_load_by_agent($this->getMachineName());
+    $equal_option_counts = TRUE;
+    if (count($option_sets) > 1) {
+      $first_os = array_shift($option_sets);
+      $num_options = count($first_os->options);
+      foreach ($option_sets as $os) {
+        if (count($os->options) != $num_options) {
+          $equal_option_counts = FALSE;
+        }
+      }
+    }
+    // Prevent submission if the numbers of options aren't the same.
+    if (!$equal_option_counts) {
+      // @todo Get proper text for this.
+      return array(
+        t('You have multiple variation sets with different numbers of variations - the personalization cannot be started until all variation sets have the same number of variations.')
+      );
+    }
+    return array();
+  }
+
   /**
    * Implements PersonalizeAgentGoalInterface::useClientSideGoalDelivery().
    *

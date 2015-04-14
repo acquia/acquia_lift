@@ -78,7 +78,7 @@ function acquia_lift_personalize_campaign_wizard_variations_alter(&$form, &$form
   if ($variation_set_handling == ACQUIA_LIFT_DECISION_MULTIVARIATE) {
     // If this is an MVT then the option sets get saved directly on the testing
     // agent.
-    $mvt_name = acquia_lift_get_mvt_name_for_personalization($agent_data->machine_name);
+    $mvt_name = acquia_lift_get_mvt_name_for_agent($agent_data->machine_name);
     if ($mvt = personalize_agent_load($mvt_name)) {
       $option_sets = personalize_option_set_load_by_agent($mvt_name);
     }
@@ -733,30 +733,18 @@ function acquia_lift_personalize_campaign_wizard_review_alter(&$form, &$form_sta
 
   if ($is_mvt) {
     $form['review']['summary_column']['summary']['option_sets'] = array(
-      '#markup' => '<div class="personalize-wizard-summary-item clearfix"><span class="personalize-wizard-summary-count">1</span><div class="personalize-wizard-summary-details"><div class="item-list"><h3>Multivariate Test</h3></div></div></div>'
+      '#markup' => theme('personalize_wizard_summary_count', array(
+        'count' => 1,
+        'details' => theme('html_tag', array(
+          'element' => array(
+            '#tag' => 'h3',
+            '#value' => t('Multivariate Test'),
+          ),
+        )),
+      )),
     );
   }
   else {
-    // If there are multiple option sets, check that they all have the same number
-    // of options.
-    $option_sets = personalize_option_set_load_by_agent($agent_data->machine_name);
-    $equal_option_counts = TRUE;
-    if (count($option_sets) > 1) {
-      $first_os = array_shift($option_sets);
-      $num_options = count($first_os->options);
-      foreach ($option_sets as $os) {
-        if (count($os->options) != $num_options);
-        $equal_option_counts = FALSE;
-      }
-    }
-    // Prevent submission if the numbers of options aren't the same.
-    if (!$equal_option_counts) {
-      // @todo Get proper text for this.
-      drupal_set_message(t('You have multiple variation sets with different numbers of variations - the personalization cannot be started until all variation sets have the same number of variations.'), 'warning');
-      $form_state['storage']['allow_submit'] = FALSE;
-      $form['actions']['submit']['#disabled'] = TRUE;
-    }
-
     $form['review']['summary_column']['summary']['audiences'] = array(
       '#markup' => theme('personalize_wizard_summary_count', array(
           'count' => $count_audiences,
@@ -1053,9 +1041,6 @@ function acquia_lift_personalize_campaign_wizard_submit(&$form, &$form_state) {
     $submit_function($form, $form_state, $agent_data, $agent_instance);
   }
 
-  if (isset($form_state['values']['variations']['variation_set_handling'])) {
-    $agent_data->data['variation_set_handling'] = $form_state['values']['variations']['variation_set_handling'];
-  }
   // Save any changes to the campaign.
   personalize_agent_save($agent_data);
 
@@ -1075,6 +1060,9 @@ function acquia_lift_personalize_campaign_wizard_variations_submit(&$form, &$for
   $click_id = $form_state['clicked_button']['#id'];
   $requires_cleanup = FALSE;
 
+  if (isset($values['variations']['variation_set_handling'])) {
+    $agent_data->data['variation_set_handling'] = $values['variations']['variation_set_handling'];
+  }
   // Common functionality needed before submitting the block submission
   // handler whether for new or existing blocks.
   $submitBlockHandler = function ($block_content, $option_set = NULL) use ($form, $form_state) {
@@ -1329,7 +1317,9 @@ function acquia_lift_personalize_campaign_wizard_review_submit(&$form, &$form_st
     $agent_data->tests_to_delete = acquia_lift_implement_test_structure($agent_data);
     acquia_lift_batch_sync_tests(array($agent_data->machine_name => $agent_data));
     // If the "Start" button was pressed then start the campaign.
-    personalize_agent_set_status($agent_data->machine_name, PERSONALIZE_STATUS_RUNNING);
+    if ($form_state['triggering_element']['#value'] === t('Start')) {
+      personalize_agent_set_status($agent_data->machine_name, PERSONALIZE_STATUS_RUNNING);
+    }
   }
   catch (Exception $e) {
     form_set_error(NULL, t('There was a problem implementing the personalization as defined.'));

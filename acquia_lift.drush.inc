@@ -101,7 +101,7 @@ function drush_acquia_lift_campaign_sync() {
   foreach ($agents as $agent_name => $agent) {
     $message = "\n" . dt('Synchronizing personalization ') . $agent_name . " ...";
     drush_print($message);
-    $operations = acquia_lift_get_sync_operations_for_personalization($agent);
+    $operations = acquia_lift_get_sync_operations_for_agent($agent);
 
     $batch_operations = array();
     foreach ($operations as $operation) {

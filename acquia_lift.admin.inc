@@ -1306,8 +1306,15 @@ function acquia_lift_implement_mvt($agent) {
     throw new AcquiaLiftException('Cannot implement a multi-variate test wtih fewer than 2 variation sets');
   }
   $tests_to_delete = array();
-
+  $goals = array();
   if ($mvt = personalize_agent_load($mvt_name)) {
+    $old_goals = personalize_goal_load_by_conditions(array('agent' => $mvt_name));
+    foreach ($old_goals as $goal) {
+      // This goal will get deleted so we'll just need to recreate it on the new
+      // agent.
+      $goal->id = NULL;
+      $goals[] = $goal;
+    }
     // If this agent already exists delete it and recreate from scratch.
     personalize_agent_delete($mvt_name);
     $tests_to_delete = array($mvt_name);
@@ -1329,7 +1336,11 @@ function acquia_lift_implement_mvt($agent) {
       personalize_option_set_save($os);
     }
     // Ensure goals are attached to the mvt, not the parent.
-
+    $new_goals = personalize_goal_load_by_conditions(array('agent' => $agent->machine_name));
+    $goals += array_values($new_goals);
+    foreach ($goals as $goal) {
+      personalize_goal_save($mvt_name, $goal->action, $goal->value, $goal->id);
+    }
   }
   catch (PersonalizeException $e) {
 

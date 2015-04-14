@@ -1349,14 +1349,15 @@ function acquia_lift_implement_mvt($agent) {
 }
 
 /**
- * Check to see if an acquia lift target agent allows changes to goals.
+ * Check to see if an acquia lift target agent allows changes that would affect
+ * the definition of the agent or any nested agents.
  *
  * @param stdClass $agent_data
  *   The agent to check.
  * @return bool
- *   True if goals can be modified, false if they cannot be modified.
+ *   True if changes can be made, false otherwise.
  */
-function acquia_lift_target_goal_changes_allowed($agent_data) {
+function acquia_lift_target_definition_changes_allowed($agent_data) {
   if ($agent_data->plugin !== 'acquia_lift_target') {
     return TRUE;
   }

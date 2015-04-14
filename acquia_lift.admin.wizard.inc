@@ -74,6 +74,8 @@ function acquia_lift_personalize_campaign_wizard_variations_alter(&$form, &$form
   $status = personalize_agent_get_status($agent_data->machine_name);
   $variation_set_handling = isset($agent_data->data['variation_set_handling']) ? $agent_data->data['variation_set_handling'] : ACQUIA_LIFT_DECISION_LOCKSTEP;
 
+  module_load_include('inc', 'acquia_lift', 'acquia_lift.admin');
+
   $option_sets = personalize_option_set_load_by_agent($agent_data->machine_name);
   if ($variation_set_handling == ACQUIA_LIFT_DECISION_MULTIVARIATE) {
     // If this is an MVT then the option sets get saved directly on the testing
@@ -98,6 +100,10 @@ function acquia_lift_personalize_campaign_wizard_variations_alter(&$form, &$form
   );
 
   $agent_instance = personalize_agent_load_agent($agent_data->machine_name);
+  $delete_allowed = acquia_lift_target_definition_changes_allowed($agent_data);
+  if (!$delete_allowed && !empty($option_sets)) {
+    drupal_set_message(t('Variations cannot be removed until the personalization is paused.'), 'warning');
+  }
 
   // Make a container to hold existing option sets.
   if (!empty($option_sets)) {
@@ -132,7 +138,7 @@ function acquia_lift_personalize_campaign_wizard_variations_alter(&$form, &$form
     // Variation sets can be deleted only if the structure has not already been
     // implemented.
     // @see acquia_lift_implement_test_structure().
-    if (empty($agent_data->data['locked_for_variation_sets'])) {
+    if ($delete_allowed && empty($agent_data->data['locked_for_variation_sets'])) {
       $delete_link = module_hook($option_set_plugin['module'], 'personalize_delete_link') ? module_invoke($option_set_plugin['module'], 'personalize_delete_link', $option_set) : '';
       if (!empty($delete_link)) {
         $form['variations']['option_sets']['option_set_' . $option_set->osid]['header']['delete'] = array(
@@ -284,7 +290,7 @@ function acquia_lift_personalize_campaign_wizard_goals_alter(&$form, &$form_stat
   $form['#submit'] = array('acquia_lift_personalize_campaign_wizard_submit');
 
   module_load_include('inc', 'acquia_lift', 'acquia_lift.admin');
-  $enable_goals = acquia_lift_target_goal_changes_allowed($agent_data);
+  $enable_goals = acquia_lift_target_definition_changes_allowed($agent_data);
   if (!$enable_goals) {
     drupal_set_message(t('Goals cannot be changed while the personalization is running.'), 'warning');
   }
@@ -956,7 +962,7 @@ function acquia_lift_personalize_campaign_wizard_goals_validate(&$form, &$form_s
   // Determine if goals are allowed to be modified.
   $agent = $form['#agent'];
   module_load_include('inc', 'acquia_lift', 'acquia_lift.admin');
-  $enabled = acquia_lift_target_goal_changes_allowed($agent);
+  $enabled = acquia_lift_target_definition_changes_allowed($agent);
 
   if (!$enabled && !empty($form_state['values']['goal_add_type'])) {
     form_set_error('goal_add_type', t('Goals cannot be added until the personalization is paused.'));
@@ -1176,7 +1182,7 @@ function acquia_lift_personalize_campaign_wizard_fields_submit_element_edit($for
  * Submit function for goals form.
  */
 function acquia_lift_personalize_campaign_wizard_goals_submit(&$form, &$form_state, &$agent_data, $agent_instance) {
-  if (!acquia_lift_target_goal_changes_allowed($agent_data)) {
+  if (!acquia_lift_target_definition_changes_allowed($agent_data)) {
     return;
   }
 
@@ -1374,6 +1380,9 @@ function _acquia_lift_personalize_campaign_wizard_variations_block(&$form, &$for
 
   module_load_include('inc', 'personalize_blocks', 'personalize_blocks.admin');
   module_load_include('inc', 'acquia_lift', 'acquia_lift.ui');
+  module_load_include('inc', 'acquia_lift', 'acquia_lift.admin');
+
+  $option_delete_allowed = empty($option_set) || acquia_lift_target_definition_changes_allowed($agent_data);
 
   _acquia_lift_personalize_campaign_wizard_form_state_blocks_alter($form_state, $block_content, $option_set);
   $element = personalize_blocks_form($element, $form_state, 'embed', $option_set);
@@ -1429,6 +1438,13 @@ function _acquia_lift_personalize_campaign_wizard_variations_block(&$form, &$for
     acquia_lift_chosenify_element($block['block']['bid'], array('acquia-lift-chosen-select-half'));
 
     // Update the remove button.
+    if (!$option_delete_allowed) {
+      $block['remove']['#access'] = FALSE;
+    }
+
+    // If the block still allows removal, then adjust the callbacks based on
+    // whether it is an option that requires deletion or just an AJAX
+    // re-display of the form.
     if (!isset($block['remove']['#access']) || $block['remove']['#access'] == TRUE) {
       $block['option_label']['#weight'] = 10;
       $block['remove']['#weight'] = 20;

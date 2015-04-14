@@ -1676,6 +1676,62 @@ class AcquiaLiftWebTestTarget extends AcquiaLiftWebTestBase {
       $this->assertEqual($e->getMessage(), 'Goals cannot be modified until the personalization is paused.');
     }
   }
+
+
+  function testMultipleOptionSetsOneDecision() {
+    $this->drupalLogin($this->managerUser);
+    $targeting_agent = $this->createTargetingAgent();
+    // Now add an option set.
+    $os1 = $this->createOptionSet(1, array(
+      'agent' => $targeting_agent->machine_name,
+      'plugin' => 'type1',
+      'num_options' => 2,
+    ));
+    $os2 = $this->createOptionSet(2, array(
+      'agent' => $targeting_agent->machine_name,
+      'plugin' => 'type1',
+      'num_options' => 3,
+    ));
+
+    $this->drupalGet('admin/structure/personalize/manage/' . $targeting_agent->machine_name . '/review');
+    $this->assertText('You have multiple variation sets with different numbers of variations - the personalization cannot be started until all variation sets have the same number of variations.');
+
+    // Add a third variation to the first option set.
+    $os1->options[] = array(
+      'option_id' => 'option-ohai'
+    );
+    personalize_option_set_save($os1);
+    $this->resetAll();
+    $this->drupalGet('admin/structure/personalize/manage/' . $targeting_agent->machine_name . '/review');
+    $this->assertNoText('You have multiple variation sets with different numbers of variations - the personalization cannot be started until all variation sets have the same number of variations.');
+    // Right now the option IDs will not be the same - at least the third one
+    // will be different.
+    $this->assertFalse($os1->options[2]['option_id'] == $os2->options[2]['option_id']);
+
+    // Now implement the structure. The option IDs on all option sets should be
+    // updated to match those of the targeting option set.
+    AcquiaLiftAPI::setTestInstance();
+    // Implement the targeting as a basic test.
+    $targeting_agent->data['lift_targeting'] = array(
+      ACQUIA_LIFT_TARGETING_EVERYONE_ELSE => array(
+        $os1->options[0]['option_id'], $os1->options[1]['option_id'], $os1->options[2]['option_id']
+      ),
+    );
+    acquia_lift_implement_targeting($targeting_agent);
+    $this->resetAll();
+    // Refresh the option sets.
+    $os1 = personalize_option_set_load($os1->osid, TRUE);
+    $os2 = personalize_option_set_load($os2->osid, TRUE);
+    $option_ids = array();
+    foreach (array($os1->osid => $os1, $os2->osid => $os2) as $osid => $os) {
+      $option_ids[$osid] = array();
+      foreach ($os->options as $option) {
+        $option_ids[$osid][] = $option['option_id'];
+      }
+    }
+    $this->assertEqual($option_ids[$os1->osid], $option_ids[$os2->osid]);
+
+  }
 }
 
 class AcquiaLiftWebTestCampaignWizard extends AcquiaLiftWebTestBase {

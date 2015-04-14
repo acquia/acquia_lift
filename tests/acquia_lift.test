@@ -1681,7 +1681,7 @@ class AcquiaLiftWebTestTarget extends AcquiaLiftWebTestBase {
   function testMultipleOptionSetsOneDecision() {
     $this->drupalLogin($this->managerUser);
     $targeting_agent = $this->createTargetingAgent();
-    // Now add an option set.
+    // Add a couple of option sets with different numbers of options.
     $os1 = $this->createOptionSet(1, array(
       'agent' => $targeting_agent->machine_name,
       'plugin' => 'type1',
@@ -1731,6 +1731,66 @@ class AcquiaLiftWebTestTarget extends AcquiaLiftWebTestBase {
     }
     $this->assertEqual($option_ids[$os1->osid], $option_ids[$os2->osid]);
 
+  }
+
+  function testMVTCreation() {
+    $this->drupalLogin($this->managerUser);
+    $targeting_agent = $this->createTargetingAgent();
+    $targeting_agent->data['variation_set_handling'] = ACQUIA_LIFT_DECISION_MULTIVARIATE;
+    personalize_agent_save($targeting_agent);
+    // Add a couple of option sets with different numbers of options.
+    $os1 = $this->createOptionSet(1, array(
+      'agent' => $targeting_agent->machine_name,
+      'plugin' => 'type1',
+      'num_options' => 2,
+    ));
+    $os2 = $this->createOptionSet(2, array(
+      'agent' => $targeting_agent->machine_name,
+      'plugin' => 'type1',
+      'num_options' => 3,
+    ));
+
+    // Add a couple of goals.
+    personalize_goal_save($targeting_agent->machine_name, 'form_submit', 1);
+    personalize_goal_save($targeting_agent->machine_name, 'user_login', 2);
+    // Grab the goals created so we can assert that they get moved over to the
+    // MVT later.
+    $goals = personalize_goal_load_by_conditions(array('agent' => $targeting_agent->machine_name), TRUE);
+    // Just pull the details out into an array.
+    $original_goal_info = array();
+    foreach ($goals as $goal) {
+      $goal_array = (array) $goal;
+      unset($goal_array['agent']);
+      $original_goal_info[$goal->id] = $goal_array;
+    }
+
+    $this->drupalGet('admin/structure/personalize/manage/' . $targeting_agent->machine_name . '/review');
+    $this->assertNoText('You have multiple variation sets with different numbers of variations - the personalization cannot be started until all variation sets have the same number of variations.');
+
+    // Implement the MVT.
+    AcquiaLiftAPI::setTestInstance();
+    acquia_lift_implement_mvt($targeting_agent);
+    $this->resetAll();
+    $nested = personalize_agent_load_by_type(acquia_lift_get_test_agent_plugin(), TRUE);
+    $nested_mvt = reset($nested);
+    $this->assertEqual($nested_mvt->machine_name, acquia_lift_get_mvt_name_for_agent($targeting_agent->machine_name));
+    $option_sets = personalize_option_set_load_by_agent($nested_mvt->machine_name, TRUE);
+    $this->assertTrue(isset($option_sets[$os1->osid]));
+    $this->assertTrue(isset($option_sets[$os2->osid]));
+    $goals = personalize_goal_load_by_conditions(array('agent' => $nested_mvt->machine_name), TRUE);
+    $mvt_goal_info = array();
+    foreach ($goals as $goal) {
+      $goal_array = (array) $goal;
+      unset($goal_array['agent']);
+      $mvt_goal_info[$goal->id] = $goal_array;
+    }
+    $this->assertEqual($original_goal_info, $mvt_goal_info);
+
+    // There shouldn't be any option sets or goals on the parent agent.
+    $option_sets_original = personalize_option_set_load_by_agent($targeting_agent->machine_name, TRUE);
+    $this->assertTrue(empty($option_sets_original));
+    $goals_original = personalize_goal_load_by_conditions(array('agent' => $targeting_agent->machine_name), TRUE);
+    $this->assertTrue(empty($goals_original));
   }
 }
 

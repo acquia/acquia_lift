@@ -2193,6 +2193,21 @@ function acquia_lift_personalize_elements_confirmation_form_submit($form, &$form
  */
 function acquia_lift_form_personalize_blocks_form_alter(&$form, &$form_state) {
   $form['#submit'][] = 'acquia_lift_personalize_blocks_form_submit';
+  if (!isset($form['agent_select']['#value'])) {
+    return;
+  }
+  module_load_include('inc', 'acquia_lift', 'acquia_lift.admin');
+  $agent = $form['agent_select']['#value'];
+  $agent_data = personalize_agent_load($agent);
+  if (!acquia_lift_target_definition_changes_allowed($agent_data)) {
+    drupal_set_message(t('Variations cannot be removed from %variation_set until the %agent_name personalization is paused.', array(
+      '%variation_set' => $form['title']['#default_value'],
+      '%agent_name' => $agent_data->label,
+    )), 'warning');
+    foreach(element_children($form['pblock_wrapper']['blocks']) as $delta) {
+      $form['pblock_wrapper']['blocks'][$delta]['remove']['#access'] = FALSE;
+    }
+  }
 }
 
 /**

@@ -690,7 +690,8 @@
       type: null,
       winner: null,
       plugin: null,
-      deletable: false
+      deletable: false,
+      editable: false
     },
 
     /**
@@ -717,17 +718,10 @@
           // Remove this property so the rest can still be processed.
           delete property.options;
         }
-        if (property.hasOwnProperty('plugin') && property.plugin === 'elements') {
-          property.deletable = true;
-          property.editable = true;
-        }
       } else {
         if (property === 'options' && !(value instanceof Drupal.acquiaLiftUI.MenuOptionCollection)) {
           this.setOptions(value);
           return;
-        } else if (property == 'plugin' && property.plugin === 'elements') {
-          this.set('deletable', true);
-          this.set('editable', true);
         }
       }
       this.parent('set', property, value);

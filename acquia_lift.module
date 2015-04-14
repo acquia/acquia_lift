@@ -548,6 +548,29 @@ function acquia_lift_personalize_goal_presave($goal) {
  * Implements hook_personalize_option_set_render().
  */
 function acquia_lift_personalize_option_set_render(&$element, $option_set) {
+  // For administrative users and Acquia Lift target agents, indicate if option
+  // sets are deletable (only applicable to personalize elements sets).
+  if (user_access('manage personalized content')) {
+    if ($option_set->plugin === 'elements') {
+      $agent_data = personalize_agent_load($option_set->agent);
+      if ($agent_data->plugin === 'acquia_lift_target') {
+        module_load_include('inc', 'acquia_lift', 'acquia_lift.admin');
+        $changes_enabled = acquia_lift_target_definition_changes_allowed($agent_data);
+        $option_set_settings = array(
+          'personalize' => array(
+            'option_sets' => array(
+              personalize_stringify_osid($option_set->osid) => array(
+                'deletable' => $changes_enabled,
+                'editable' => TRUE,
+              ),
+            ),
+          ),
+        );
+        $element['#attached']['js'][] = array('type' => 'setting', 'data' => $option_set_settings);
+      }
+    }
+  }
+
   if (empty($option_set->targeting)) {
     return;
   }

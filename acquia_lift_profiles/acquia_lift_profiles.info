@@ -4,6 +4,7 @@ configure = admin/config/content/personalize/acquia_lift_profiles
 
 dependencies[] = acquia_lift
 dependencies[] = personalize
+dependencies[] = personalize_taxonomy_context
 dependencies[] = visitor_actions
 
 package = Personalization

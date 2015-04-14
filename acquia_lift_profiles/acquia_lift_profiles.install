@@ -190,9 +190,11 @@ function acquia_lift_profiles_update_7003() {
   // Before: array ('', '7', '82', 'taxonomy_context__4')
   // After: array ('', 'taxonomy_context__7', 'taxonomy_context__82', 'taxonomy_context__4')
   $vocabulary_mappings_updated = preg_replace('/^(\d+)$/', 'taxonomy_context' . preg_quote(PERSONALIZE_TARGETING_ADMIN_SEPARATOR) . '$1', $vocabulary_mappings);
-  // If taxonomy is already configured, enable the taxonomy context module.
-  if ($vocabulary_mappings != $vocabulary_mappings_updated) {
-    module_enable(array('personalize_taxonomy_context'));
-  }
   variable_set('acquia_lift_profiles_vocabulary_mappings', $vocabulary_mappings_updated);
+
+  // Enable the personalize taxonomy context module.
+  $result = module_enable(array('personalize_taxonomy_context'));
+  if (empty($result)) {
+    throw new DrupalUpdateException('Module personalize_taxonomy_context could not be enabled.');
+  }
 }

@@ -2191,6 +2191,56 @@ function acquia_lift_form_personalize_admin_form_alter(&$form, &$form_state) {
 /**
  * Implements hook_form_FORM_ID_alter().
  */
+function acquia_lift_form_personalize_elements_form_alter(&$form, &$form_state) {
+  if (empty($form['agent_select']['#value'])) {
+    return;
+  }
+  $agent_data = personalize_agent_load($form['agent_select']['#value']);
+  if ($agent_data->plugin !== 'acquia_lift_target') {
+    return;
+  }
+  module_load_include('inc', 'acquia_lift', 'acquia_lift.admin');
+  if (!acquia_lift_target_definition_changes_allowed($agent_data)) {
+    drupal_set_message(t('Variations that are in use cannot be removed until the %campaign_name personalization is paused.', array(
+      '%campaign_name' => $agent_data->label,
+    )));
+  }
+
+  $form['#validate'][] = 'acquia_lift_personalize_elements_form_validate';
+}
+
+/**
+ * Validation handler for personalize_elements_form.
+ */
+function acquia_lift_personalize_elements_form_validate(&$form, &$form_state) {
+  if (!isset($form_state['values']['agent_select'])) {
+    return;
+  }
+  $agent = $form_state['values']['agent_select'];
+  $agent_data = personalize_agent_load($agent);
+  if ($agent_data->plugin !== 'acquia_lift_target') {
+    return;
+  }
+  module_load_include('inc', 'acquia_lift', 'acquia_lift.admin');
+  if (acquia_lift_target_definition_changes_allowed($agent_data)) {
+    return;
+  }
+  // Variations cannot be removed from running acquia_lift_target campaigns if
+  // they are used in targeting.
+  foreach ($form_state['values']['options'] as $delta => $option) {
+    if (empty($option['personalize_elements_content']) && !empty($option['option_id'])) {
+      if (acquia_lift_target_option_targeted($agent, $option['option_id'])) {
+        form_set_error('options][' . $delta . '][personalize_elements_content', t('Variations cannot be removed until the %campaign_name personalization is paused.', array(
+          '%campaign_name' => $agent_data->label,
+        )));
+      };
+    }
+  }
+}
+
+/**
+ * Implements hook_form_FORM_ID_alter().
+ */
 function acquia_lift_form_personalize_elements_configuration_form_alter(&$form, &$form_state) {
   $form['acquia_lift_html_context_strip'] = array(
     '#type' => 'checkbox',

@@ -1366,6 +1366,26 @@ function acquia_lift_target_definition_changes_allowed($agent_data) {
 }
 
 /**
+ * Checks to see if an option within an option set is currently targeted.
+ *
+ * @param string $agent_name
+ *   The name of the agent to check.
+ * @param string $option_id
+ *   The option id to check.
+ */
+function acquia_lift_target_option_targeted($agent_name, $option_id) {
+  // We only care about saved targeting that has been created.
+  $option_set = acquia_lift_get_option_set_for_targeting($agent_name);
+  $targeting = acquia_lift_get_structure_from_targeting($option_set);
+  foreach ($targeting as $options) {
+    if (in_array($option_id, $options)) {
+      return TRUE;
+    }
+  }
+  return FALSE;
+}
+
+/**
  * Return the default values used for an "Everyone else" audience.
  */
 function _acquia_lift_personalize_campaign_wizard_everyone_else_audience() {

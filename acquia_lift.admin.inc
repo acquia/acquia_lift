@@ -1372,6 +1372,8 @@ function acquia_lift_target_definition_changes_allowed($agent_data) {
  *   The name of the agent to check.
  * @param string $option_id
  *   The option id to check.
+ * @return bool
+ *   True if the option set is targeted, false otherwise.
  */
 function acquia_lift_target_option_targeted($agent_name, $option_id) {
   // We only care about saved targeting that has been created.
@@ -1379,6 +1381,33 @@ function acquia_lift_target_option_targeted($agent_name, $option_id) {
   $targeting = acquia_lift_get_structure_from_targeting($option_set);
   foreach ($targeting as $options) {
     if (in_array($option_id, $options)) {
+      return TRUE;
+    }
+  }
+  return FALSE;
+}
+
+/**
+ * Checks to see if any options within an option set are currently targted.
+ *
+ * @param string $agent_name
+ *   The name of the agent to check.
+ * @param string $osid
+ *   The id of the option set to check.
+ * @return bool
+ *   True if any option in the option set is targeted, false if none of the
+ *   options are used in explicit targeting.
+ */
+function acquia_lift_target_option_set_targeted($agent_name, $option_set) {
+  // We only care about saved targeting that has been created.
+  $targeting_option_set = acquia_lift_get_option_set_for_targeting($agent_name);
+  $targeting = acquia_lift_get_structure_from_targeting($targeting_option_set);
+  $targeted_options = array();
+  foreach($targeting as $options) {
+    $targeted_options += $options;
+  }
+  foreach ($option_set->options as $option) {
+    if (in_array($option['option_id'], $targeted_options)) {
       return TRUE;
     }
   }

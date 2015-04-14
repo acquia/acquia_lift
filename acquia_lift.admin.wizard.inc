@@ -100,8 +100,7 @@ function acquia_lift_personalize_campaign_wizard_variations_alter(&$form, &$form
   );
 
   $agent_instance = personalize_agent_load_agent($agent_data->machine_name);
-  $delete_allowed = acquia_lift_target_definition_changes_allowed($agent_data);
-  if (!$delete_allowed && !empty($option_sets)) {
+  if (!empty($option_sets) && !acquia_lift_target_definition_changes_allowed($agent_data)) {
     drupal_set_message(t('Variations cannot be removed until the personalization is paused.'), 'warning');
   }
 
@@ -117,6 +116,7 @@ function acquia_lift_personalize_campaign_wizard_variations_alter(&$form, &$form
   // Add an option set edit card for each option set.
   foreach ($option_sets as $option_set) {
     $option_set_plugin = personalize_get_option_set_type($option_set->plugin);
+    $delete_allowed = !acquia_lift_target_option_set_targeted($agent_data->machine_name, $option_set);
     $form['variations']['option_sets']['option_set_' . $option_set->osid] = array(
       '#tree' => TRUE,
       '#type' => 'container',
@@ -1437,8 +1437,10 @@ function _acquia_lift_personalize_campaign_wizard_variations_block(&$form, &$for
 
     acquia_lift_chosenify_element($block['block']['bid'], array('acquia-lift-chosen-select-half'));
 
-    // Update the remove button.
-    if (!$option_delete_allowed) {
+    // Hide the remove button if the options is currently targeted in a running
+    // campaign.
+    $option_id = isset($block['option_id']['#value']) ? $block['option_id']['#value'] : '';
+    if (!empty($option_id) && !$option_delete_allowed && acquia_lift_target_option_targeted($agent_data->machine_name, $option_id)) {
       $block['remove']['#access'] = FALSE;
     }
 
@@ -1450,10 +1452,9 @@ function _acquia_lift_personalize_campaign_wizard_variations_block(&$form, &$for
       $block['remove']['#weight'] = 20;
       $block['block']['#weight'] = 30;
       
-      if (isset($block['option_id']['#value'])) {
+      if (!empty($option_id)) {
         // If the option is an existing one, then redirect to a confirmation form
         // prior to deleting.
-        $option_id = $block['option_id']['#value'];
         $remove_url = "admin/structure/personalize/variations/personalize-blocks/manage/{$option_set->osid}/{$option_id}/delete";
         $block['option_label']['#weight'] = 10;
         $block['remove'] = array(

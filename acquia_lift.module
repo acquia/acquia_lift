@@ -540,7 +540,27 @@ function acquia_lift_personalize_goal_presave($goal) {
   $agent = personalize_agent_load($goal->agent);
   module_load_include('inc', 'acquia_lift', 'acquia_lift.admin');
   if (!acquia_lift_target_goal_changes_allowed($agent)) {
-    throw new PersonalizeException('Goals cannot be modified until the personalization is paused.');
+    throw new PersonalizeException(t('Goals cannot be modified until the personalization is paused.'));
+  }
+}
+
+/**
+ * Implements hook_personalize_option_set_presave().
+ */
+function acquia_lift_personalize_option_set_presave($option_set) {
+  module_load_include('inc', 'acquia_lift', 'acquia_lift.admin');
+  $agent_data = personalize_agent_load($option_set->agent);
+  if (acquia_lift_target_definition_changes_allowed($agent_data)) {
+    return;
+  }
+  $original_option_set = personalize_option_set_load($option_set->osid);
+  $new_option_ids = array_map(function($option) {return $option['option_id'];}, $option_set->options);
+  $original_option_ids = array_map(function($option) {return $option['option_id'];}, $original_option_set->options);
+  $removed = array_diff($original_option_ids, $new_option_ids);
+  foreach ($removed as $option_id) {
+    if (acquia_lift_target_option_targeted($agent_data->machine_name, $option_id)) {
+      throw new PersonalizeException(t('Variations used in targeting cannot be removed until the personalization is paused.'));
+    }
   }
 }
 

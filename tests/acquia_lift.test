@@ -593,11 +593,24 @@ class AcquiaLiftWebTestAgentAdmin extends AcquiaLiftWebTestBase {
     );
   }
 
-  /**
-   * Tests that agents are paused when they need to be paused.
-   */
-  function testPauseAgents() {
+  function testCreateAgent() {
+    // Enable the test module that provides multiple agent types.
+    module_enable(array('personalize_test_extra_agent'));
+    $this->resetAll();
+    // Need to call resetAll again to force ctools to load the class files.
+    $this->resetAll();
 
+    // Go to the agent creation page and assert there is no agent type dropdown
+    // even with multiple agent types enabled.
+    $this->drupalLogin($this->managerUser);
+    $this->drupalGet('admin/structure/personalize/add');
+    $this->assertNoFieldByName('agent_basic_info[agent_type]');
+    $this->drupalPost(NULL, array('agent_basic_info[title]' => $this->randomName()), $this->getButton('create_campaign'));
+    $url = $this->getUrl();
+    $pattern = '/admin\/structure\/personalize\/manage\/([a-z0-9\_\-]+)\//';
+    preg_match($pattern, $url, $matches);
+    $agent = personalize_agent_load($matches[1]);
+    $this->assertEqual(ACQUIA_LIFT_TARGETING_AGENT, $agent->plugin);
   }
 }
 

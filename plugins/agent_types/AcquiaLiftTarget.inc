@@ -65,6 +65,9 @@ class AcquiaLiftTarget extends PersonalizeAgentBase implements PersonalizeExplic
     return TRUE;
   }
 
+  /**
+   * Implements PersonalizeAgentInterface::errors().
+   */
   public function errors() {
     $data = $this->getData();
     $is_mvt = isset($data['variation_set_handling']) && $data['variation_set_handling'] == ACQUIA_LIFT_DECISION_MULTIVARIATE;

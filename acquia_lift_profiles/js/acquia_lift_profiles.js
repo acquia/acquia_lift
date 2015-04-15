@@ -160,8 +160,7 @@ var _tcwq = _tcwq || [];
    */
   Drupal.acquia_lift_profiles = (function(){
 
-    // Keeps track of processed listeners so we don't subscribe them more than once.
-    var processedListeners = {}, initialized = false, initializing = false;
+    var processedListeners = {}, initialized = false, initializing = false, udfValues = {};
     var agentNameToLabel = {};
 
     /**
@@ -194,7 +193,7 @@ var _tcwq = _tcwq || [];
             }
           }
         }
-        var mappings = settings.acquia_lift_profiles.udfMappings, context_separator = settings.acquia_lift_profiles.udfMappingContextSeparator, plugins = {}, udfValues = {}, reverseMapping = {};
+        var mappings = settings.acquia_lift_profiles.udfMappings, context_separator = settings.acquia_lift_profiles.udfMappingContextSeparator, plugins = {}, reverseMapping = {};
         for(var type in mappings) {
           if (mappings.hasOwnProperty(type)) {
             for (var udf in mappings[type]) {
@@ -292,8 +291,16 @@ var _tcwq = _tcwq || [];
        * @param eventName
        */
       'processEvent': function(eventName, settings, context) {
+        var extra = {
+          evalSegments: true
+        };
+        // Add the UDF values to the extra info we're sending about the event. The assumption
+        // here is that this event is being processed *after* the initial page view capture has
+        // already retrieved all the visitor context valuess. Since this happens asynchronously
+        // it is not guaranteed that this is the case.
+        $.extend(extra, udfValues);
         // Send to acquia_lift_profiles.
-        _tcaq.push(['capture', eventName, {'evalSegments': true}]);
+        _tcaq.push(['capture', eventName, extra]);
         // If it's a special event with some other callback associated with it, call that
         // callback as well.
         if (typeof this.specialEvents[eventName] == 'function') {
@@ -377,6 +384,7 @@ var _tcwq = _tcwq || [];
         initializing = false;
         agentNameToLabel = {};
         identityCaptured = false;
+        udfValues = {};
         $(document).unbind('personalizeDecision', this["processPersonalizeDecision"]);
         $(document).unbind('sentGoalToAgent', this["processSentGoalToAgent"]);
       }

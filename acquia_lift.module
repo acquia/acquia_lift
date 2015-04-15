@@ -581,8 +581,9 @@ function acquia_lift_personalize_option_set_render(&$element, $option_set) {
         module_load_include('inc', 'acquia_lift', 'acquia_lift.admin');
         $changes_enabled = acquia_lift_target_definition_changes_allowed($agent_data);
         foreach($option_set->options as $option) {
-          $option_set_settings['acquia_lift']['option_sets'][$js_osid][$option['option_id']]['deletable'] = $changes_enabled || !acquia_lift_target_option_targeted($agent_data->machine_name, $option['option_id']);
-          $option_set_settings['acquia_lift']['option_sets'][$js_osid][$option['option_id']]['editable'] = TRUE;
+          $is_control = $option['option_id'] === PERSONALIZE_CONTROL_OPTION_ID;
+          $option_set_settings['acquia_lift']['option_sets'][$js_osid][$option['option_id']]['deletable'] = !$is_control && ($changes_enabled || !acquia_lift_target_option_targeted($agent_data->machine_name, $option['option_id']));
+          $option_set_settings['acquia_lift']['option_sets'][$js_osid][$option['option_id']]['editable'] = !$is_control;
         }
       }
     }

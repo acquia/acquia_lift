@@ -767,9 +767,6 @@ function acquia_lift_personalize_campaign_wizard_review_alter(&$form, &$form_sta
     $form['review']['warnings_column']['warnings']['#type'] = 'container';
     $form['review']['warnings_column']['warnings']['#theme'] = 'acquia_lift_card';
   }
-  $form['#submit'] = array(
-    'acquia_lift_personalize_campaign_wizard_review_submit'
-  );
 }
 
 /**

@@ -1667,6 +1667,37 @@ class AcquiaLiftWebTestTarget extends AcquiaLiftWebTestBase {
       $this->assertEqual($e->getMessage(), 'Goals cannot be modified until the personalization is paused.');
     }
 
+    // Try to add a variation
+    $option_set->options[] = array(
+      'option_id' => 'fourth-choice',
+      'option_label' => 'Fourth choice',
+    );
+    try {
+      $option_set = personalize_option_set_save($option_set);
+      $this->pass('No errors should be thrown when adding variations to a running campaign.');
+    } catch (Exception $e) {
+      $this->fail('No errors should be thrown when adding variations to a running campaign.');
+    }
+
+    // Try to delete the new variation.
+    array_pop($option_set->options);
+    try {
+      $option_set = personalize_option_set_save($option_set);
+      $this->pass('No errors should be thrown when deleting non-targeted variations from a running campaign.');
+    } catch (Exception $e) {
+      $this->fail('No errors should be thrown when deleting non-targeted variations from a running campaign.');
+    }
+
+    // Try to delete a targeted option.
+    unset($option_set->options[0]);
+    try {
+      $option_set = personalize_option_set_save($option_set);
+      $this->fail('Should not get here because an error should be thrown while removing this variation.');
+    } catch (Exception $e) {
+      $this->assertTrue($e instanceof PersonalizeException);
+      $this->assertEqual($e->getMessage(), 'Variations used in targeting cannot be removed until the personalization is paused.');
+    }
+
     // Pause the agent.
     personalize_agent_set_status($agent->machine_name, PERSONALIZE_STATUS_PAUSED);
 
@@ -1676,6 +1707,10 @@ class AcquiaLiftWebTestTarget extends AcquiaLiftWebTestBase {
     // Verify the change.
     $goal = personalize_goal_load($goal->id);
     $this->assertEqual($goal->value, 5);
+
+    // Remove the variation.
+    $option_set = personalize_option_set_save($option_set);
+    $this->assertEqual(count($option_set->options), 2);
 
     // Complete the agent.
     personalize_agent_set_status($agent->machine_name, PERSONALIZE_STATUS_COMPLETED);

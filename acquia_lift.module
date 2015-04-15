@@ -2337,6 +2337,69 @@ function acquia_lift_personalize_fields_form_element_alter(&$element, $lang) {
     $element[$lang]['#theme'] = 'acquia_lift_personalizable_field_form';
   }
   $element['#attached']['library'][] = array('acquia_lift', 'acquia_lift.fields');
+  $element['#element_validate'][] = 'acquia_lift_personalize_fields_form_element_validate';
+}
+
+/**
+ * Personalized fields element validation.
+ */
+function acquia_lift_personalize_fields_form_element_validate($element, &$form_state, $form) {
+  $agent = isset($element['#attributes']['data-personalize-agent']) ? $element['#attributes']['data-personalize-agent'] : NULL;
+  if (empty($agent)) {
+    return;
+  }
+  $agent_data = personalize_agent_load($agent);
+  if ($agent_data->plugin !== 'acquia_lift_target') {
+    return;
+  }
+  module_load_include('inc', 'acquia_lift', 'acquia_lift.admin');
+  $changes_allowed = acquia_lift_target_definition_changes_allowed($agent_data);
+  if ($changes_allowed) {
+    return;
+  }
+  // We can tell if a text field is emptied, but not if a remove button has been
+  // pressed because that removes the personalize_fields_option_id value. We
+  // show a specific field error when we can, otherwise, check the number of
+  // options and show for the entire field.
+  $lang_element = $element[$element['#language']];
+  $field_options = element_children($lang_element);
+  $field_title = isset($lang_element['#title']) ? $lang_element['#title'] : $lang_element['#field_name'];
+  $number_options = 0;
+  $shown_error = FALSE;
+  foreach ($field_options as $index) {
+    if (!is_numeric($index)) {
+      continue;
+    }
+    $option_field = drupal_array_get_nested_value($form_state['values'], $lang_element[$index]['#parents']);
+    $option_value = personalize_fields_get_option_value($option_field);
+    if (!empty($option_value)) {
+      // Looking specifically for options that have been deleted.
+      $number_options++;
+      continue;
+    }
+    // Determine if the deleted option is targeted in a running campaign
+    // if it is possible to do so.
+    if (!empty($lang_element[$index]['personalize_fields_option_id'])) {
+      $option_id = $lang_element[$index]['personalize_fields_option_id']['#value'];
+      // A field cannot be deleted while it is being used in targeting.
+      if (acquia_lift_target_option_targeted($agent_data->machine_name, $option_id)) {
+        $shown_error = TRUE;
+        form_set_error(implode('][', $lang_element[$index]['#parents']), t('The %field_title field cannot be removed until the personalization is paused.', array(
+          '%field_title' => $field_title,
+        )));
+      }
+    }
+  }
+  // If an error was not found based on option values, then check the number of
+  // options for this element against the number saved in the option set.
+  if (!$shown_error) {
+    $option_set = personalize_option_set_load($element['#attributes']['data-personalize-osid']);
+    if ($number_options < count($option_set->options)) {
+      form_set_error(implode('][', $element['#parents']), t('Fields for %field_title in use by personalization cannot be removed until the personalization is paused.', array(
+        '%field_title' => $field_title,
+      )));
+    }
+  }
 }
 
 /**

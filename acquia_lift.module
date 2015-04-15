@@ -539,7 +539,7 @@ function acquia_lift_personalize_agent_presave($agent) {
 function acquia_lift_personalize_goal_presave($goal) {
   $agent = personalize_agent_load($goal->agent);
   module_load_include('inc', 'acquia_lift', 'acquia_lift.admin');
-  if (!acquia_lift_target_goal_changes_allowed($agent)) {
+  if (!acquia_lift_target_definition_changes_allowed($agent)) {
     throw new PersonalizeException(t('Goals cannot be modified until the personalization is paused.'));
   }
 }

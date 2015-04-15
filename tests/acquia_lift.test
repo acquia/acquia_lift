@@ -2071,13 +2071,59 @@ class AcquiaLiftWebTestCampaignWizard extends AcquiaLiftWebTestBase {
         'pages' => 'node',
       ),
     );
-    personalize_option_set_save((object) $option_set);
+    $option_set = personalize_option_set_save((object) $option_set);
     // Go to the edit page and verify that this option set is displayed and
     // links to its "pages" page for editing.
     $this->drupalGet('admin/structure/personalize/manage/' . $agent->machine_name . '/variations');
     $this->assertText('Element test set 1');
     $this->drupalPost(NULL, NULL, 'Edit variation set');
     $this->assertUrl('node');
+
+    // Settings should include indicators for deleting and editing option sets.
+    $js_osid = personalize_stringify_osid($option_set->osid);
+    $settings = $this->drupalGetSettings();
+    $this->assertFalse($settings['acquia_lift']['option_sets'][$js_osid][PERSONALIZE_CONTROL_OPTION_ID]['editable']);
+    $this->assertFalse($settings['acquia_lift']['option_sets'][$js_osid][PERSONALIZE_CONTROL_OPTION_ID]['deletable']);
+    $this->assertTrue($settings['acquia_lift']['option_sets'][$js_osid]['option-a']['editable']);
+    $this->assertTrue($settings['acquia_lift']['option_sets'][$js_osid]['option-a']['deletable']);
+
+    // Start the campaign and the elements should not be deletable.
+    personalize_agent_set_status($agent->machine_name, PERSONALIZE_STATUS_RUNNING);
+    $this->drupalGet('');
+    $settings = $this->drupalGetSettings();
+    $this->assertFalse($settings['acquia_lift']['option_sets'][$js_osid][PERSONALIZE_CONTROL_OPTION_ID]['editable']);
+    $this->assertFalse($settings['acquia_lift']['option_sets'][$js_osid][PERSONALIZE_CONTROL_OPTION_ID]['deletable']);
+    $this->assertTrue($settings['acquia_lift']['option_sets'][$js_osid]['option-a']['editable']);
+    $this->assertFalse($settings['acquia_lift']['option_sets'][$js_osid]['option-a']['deletable']);
+
+    // Add another option to the option set that is not targeted.
+    $option_set->options[] = array(
+      'option_id' => 'option-b',
+      'option_label' => 'Option B',
+      'personalize_elements_content' => 'Yaaaaaay!',
+    );
+    $option_set = personalize_option_set_save($option_set);
+
+    // The new option should be deletable.
+    $this->drupalGet('');
+    $settings = $this->drupalGetSettings();
+    $this->assertFalse($settings['acquia_lift']['option_sets'][$js_osid][PERSONALIZE_CONTROL_OPTION_ID]['editable']);
+    $this->assertFalse($settings['acquia_lift']['option_sets'][$js_osid][PERSONALIZE_CONTROL_OPTION_ID]['deletable']);
+    $this->assertTrue($settings['acquia_lift']['option_sets'][$js_osid]['option-a']['editable']);
+    $this->assertFalse($settings['acquia_lift']['option_sets'][$js_osid]['option-a']['deletable']);
+    $this->assertTrue($settings['acquia_lift']['option_sets'][$js_osid]['option-b']['editable']);
+    $this->assertTrue($settings['acquia_lift']['option_sets'][$js_osid]['option-b']['deletable']);
+
+    // Pause the agent and all options should be editable and deletable.
+    personalize_agent_set_status($agent->machine_name, PERSONALIZE_STATUS_PAUSED);
+    $this->drupalGet('');
+    $settings = $this->drupalGetSettings();
+    $this->assertFalse($settings['acquia_lift']['option_sets'][$js_osid][PERSONALIZE_CONTROL_OPTION_ID]['editable']);
+    $this->assertFalse($settings['acquia_lift']['option_sets'][$js_osid][PERSONALIZE_CONTROL_OPTION_ID]['deletable']);
+    $this->assertTrue($settings['acquia_lift']['option_sets'][$js_osid]['option-a']['editable']);
+    $this->assertTrue($settings['acquia_lift']['option_sets'][$js_osid]['option-a']['deletable']);
+    $this->assertTrue($settings['acquia_lift']['option_sets'][$js_osid]['option-b']['editable']);
+    $this->assertTrue($settings['acquia_lift']['option_sets'][$js_osid]['option-b']['deletable']);
   }
 
   /**

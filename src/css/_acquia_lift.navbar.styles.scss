@@ -220,15 +220,14 @@
 #navbar-administration {
   .navbar-tray .acquia-lift-menu-link, .#{$menu-class} .#{$menu-class} a.acquia-lift-menu-link {
     color: #29aae1;
-  }
-  .navbar-tray .acquia-lift-menu-link {
-    &:hover, &:active {
-      color: #007ec0;
+    .navbar-tray .acquia-lift-menu-link, .#{$menu-class} .#{$menu-class} a.acquia-lift-menu-link {
+      &:hover, &:active {
+        color: #007ec0;
+      }
     }
-  }
-  .#{$menu-class} .#{$menu-class} a.acquia-lift-menu-link {
-    &:hover, &:active {
-      color: #007ec0;
+    &.acquia-lift-disabled {
+      color: $text-color-disabled;
+      cursor: default;
     }
   }
 }

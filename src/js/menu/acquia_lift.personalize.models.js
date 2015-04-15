@@ -209,9 +209,7 @@
       stateful: 1,
       type: null,
       winner: null,
-      plugin: null,
-      deletable: false,
-      editable: false
+      plugin: null
     },
 
     /**
@@ -305,7 +303,9 @@
     defaults: {
       option_id: '',
       option_label: '',
-      original_index: null
+      original_index: null,
+      editable: false,
+      deletable: false
     }
   });
 

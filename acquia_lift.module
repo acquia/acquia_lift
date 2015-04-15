@@ -571,24 +571,29 @@ function acquia_lift_personalize_option_set_render(&$element, $option_set) {
   // For administrative users and Acquia Lift target agents, indicate if option
   // sets are deletable (only applicable to personalize elements sets).
   if (user_access('manage personalized content')) {
+    $js_osid = personalize_stringify_osid($option_set->osid);
+    $option_set_settings = array();
     if ($option_set->plugin === 'elements') {
+      // Personalize elements are always editable, but only deletable if not
+      // used in targeting in a running/competed campaign.
       $agent_data = personalize_agent_load($option_set->agent);
       if ($agent_data->plugin === 'acquia_lift_target') {
         module_load_include('inc', 'acquia_lift', 'acquia_lift.admin');
         $changes_enabled = acquia_lift_target_definition_changes_allowed($agent_data);
-        $option_set_settings = array(
-          'personalize' => array(
-            'option_sets' => array(
-              personalize_stringify_osid($option_set->osid) => array(
-                'deletable' => $changes_enabled,
-                'editable' => TRUE,
-              ),
-            ),
-          ),
-        );
-        $element['#attached']['js'][] = array('type' => 'setting', 'data' => $option_set_settings);
+        foreach($option_set->options as $option) {
+          $option_set_settings['acquia_lift']['option_sets'][$js_osid][$option['option_id']]['deletable'] = $changes_enabled || !acquia_lift_target_option_targeted($agent_data->machine_name, $option['option_id']);
+          $option_set_settings['acquia_lift']['option_sets'][$js_osid][$option['option_id']]['editable'] = TRUE;
+        }
       }
     }
+    else {
+      // Other types of options are not editable or deletable from the unibar.
+      foreach ($option_set->options as $option) {
+        $option_set_settings['acquia_lift']['option_sets'][$js_osid][$option['option_id']]['deletable'] = FALSE;
+        $option_set_settings['acquia_lift']['option_sets'][$js_osid][$option['option_id']]['editable'] = FALSE;
+      }
+    }
+    $element['#attached']['js'][] = array('type' => 'setting', 'data' => $option_set_settings);
   }
 
   if (empty($option_set->targeting)) {

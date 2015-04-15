@@ -203,8 +203,8 @@
         label: model.get('option_label'),
         osID: osID,
         osSelector: os_selector,
-        showDelete: os.deletable,
-        showEdit: os.editable
+        showDelete: model.get('deletable'),
+        showEdit: model.get('editable')
       });
     });
     if (os.plugin === 'elements') {
@@ -251,12 +251,18 @@
     ].concat(ariaAttrs);
 
     var deleteHref = Drupal.settings.basePath + Drupal.settings.pathPrefix + 'admin/structure/acquia_lift/variation/delete/' + options.osID + '/' + options.id + '/nojs';
+    var deleteClasses = 'acquia-lift-variation-delete acquia-lift-menu-link';
     var deleteAttrs = [
-      'class="acquia-lift-variation-delete acquia-lift-menu-link ctools-use-modal ctools-modal-acquia-lift-style"',
-      'title="' + Drupal.t('Delete variation') + '"',
-      'href="' + deleteHref + '"',
       'data-acquia-lift-personalize-option-set-option="' + options.id + '"'
     ].concat(ariaAttrs);
+    if (options.showDelete) {
+      deleteAttrs.push('class="' + deleteClasses + ' ctools-use-modal ctools-modal-acquia-lift-style"');
+      deleteAttrs.push('title="' + Drupal.t('Delete variation') + '"');
+      deleteAttrs.push('href="' + deleteHref + '"');
+    } else {
+      deleteAttrs.push('class="' + deleteClasses + ' acquia-lift-disabled"');
+      deleteAttrs.push('title="' + Drupal.t('Variation cannot be deleted until the personalization is paused."'));
+    }
 
     var editHref = Drupal.settings.basePath + Drupal.settings.pathPrefix + 'admin/structure/personalize/variations';
     var editAttrs = [
@@ -270,9 +276,7 @@
     item += '<a ' + previewAttrs.join(' ') + '>' + options.label + '</a> \n';
 
     if (options.id !== Drupal.settings.personalize.controlOptionName) {
-      if (options.showDelete) {
-        item += '<a ' + deleteAttrs.join(' ') + '>' + Drupal.t('Delete') + '</a>\n';
-      }
+      item += '<a ' + deleteAttrs.join(' ') + '>' + Drupal.t('Delete') + '</a>\n';
       if (options.showEdit) {
         item += '<a ' + editAttrs.join(' ') + '>' + Drupal.t('Edit') + '</a>\n';
       }
@@ -689,9 +693,7 @@
       stateful: 1,
       type: null,
       winner: null,
-      plugin: null,
-      deletable: false,
-      editable: false
+      plugin: null
     },
 
     /**
@@ -785,7 +787,9 @@
     defaults: {
       option_id: '',
       option_label: '',
-      original_index: null
+      original_index: null,
+      editable: false,
+      deletable: false
     }
   });
 
@@ -2120,6 +2124,22 @@
         'activeCampaign': Drupal.settings.personalize.activeCampaign,
         'campaigns': Drupal.settings.acquia_lift.campaigns
       };
+      // Add in the Acquia Lift specific editable/deletable indicators for
+      // option set options.
+      var liftOptionSetSettings = Drupal.settings.acquia_lift.option_sets || {};
+      for (var osid in settings.option_sets) {
+        if (settings.option_sets.hasOwnProperty(osid)) {
+          if (liftOptionSetSettings.hasOwnProperty(osid)) {
+            for (var i = 0; i < settings.option_sets[osid].options.length; i++) {
+              var option_id = settings.option_sets[osid].options[i].option_id;
+              if (liftOptionSetSettings[osid][option_id]) {
+                settings.option_sets[osid].options[i].editable = liftOptionSetSettings[osid][option_id].editable;
+                settings.option_sets[osid].options[i].deletable = liftOptionSetSettings[osid][option_id].deletable;
+              }
+            }
+          }
+        }
+      }
       var ui = Drupal.acquiaLiftUI;
       var addedCampaigns = {};
       var addedOptionSets = {};

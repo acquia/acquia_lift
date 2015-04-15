@@ -208,7 +208,7 @@ function acquia_lift_batch_sync_form($form, &$form_state) {
  */
 function acquia_lift_batch_sync_form_submit($form, &$form_state) {
   module_load_include('inc', 'acquia_lift', 'acquia_lift.batch');
-  acquia_lift_batch_sync_campaigns();
+  acquia_lift_batch_sync_tests();
 }
 
 /**
@@ -851,20 +851,68 @@ function acquia_lift_target_audience_save($label, $agent_name, $contexts, $strat
 }
 
 /**
+ * Implements the structure, including all sub-tests, required by the targeting.
+ *
+ * @param $agent_data
+ *   The parent personalization.
+ * @return array
+ *   An array of nested tests that need to be deleted in Lift following the
+ *   implementation of the test structure.
+ * @throws \AcquiaLiftException
+ */
+function acquia_lift_implement_test_structure($agent_data) {
+  if (isset($agent_data->data['variation_set_handling']) && $agent_data->data['variation_set_handling'] == ACQUIA_LIFT_DECISION_MULTIVARIATE) {
+    $tests_to_delete = acquia_lift_implement_mvt($agent_data);
+  }
+  else {
+    $tests_to_delete = acquia_lift_implement_targeting($agent_data);
+  }
+  // Once we implement the structure for a personalization, we do not allow
+  // adding or removing variation sets.
+  // @todo This can be revisited later, it is simply too cumbersome to support
+  //   such post-implementation changes at this time and the use-case of multiple
+  //   variation sets so is small that it does not warrant such effort.
+  $agent_data->data['locked_for_variation_sets'] = TRUE;
+  personalize_agent_save($agent_data);
+
+  return $tests_to_delete;
+}
+
+/**
  * Takes whatever is in the 'lift_targeting' data property and converts it into
  * the required campaign structure (including nested tests where needed).
  *
  * @param stdClass $agent
  *   The agent to create the targeting structure for.
+ *
+ * @return array
+ *   An array of agent names that have been deleted and therefore need to be
+ *   deleted in Lift.
  */
-function acquia_lift_update_targeting($agent) {
+function acquia_lift_implement_targeting($agent) {
+
   if (empty($agent->data['lift_targeting'])) {
-    return;
+    return array();
+  }
+  $all_option_sets = personalize_option_set_load_by_agent($agent->machine_name);
+
+  // Bail if not all option sets have an equal number of options.
+  $num_decisions = $decision_name = NULL;
+  foreach ($all_option_sets as $os) {
+    if ($num_decisions == NULL) {
+      $num_decisions = count($os->options);
+    }
+    elseif (count($os->options) !== $num_decisions) {
+      throw new AcquiaLiftException('Variation sets do not have equal numbers of options');
+    }
   }
   // First we need to figure out what existing tests we have running as nested
   // tests for this agent.
-  $option_set = acquia_lift_get_option_set_for_targeting($agent->machine_name);
-  $existing_structure = acquia_lift_get_structure_from_targeting($option_set);
+  $targeting_option_set = acquia_lift_get_option_set_for_targeting($agent->machine_name);
+  // Make sure we only have one reference to the targeting option set.
+  $all_option_sets[$targeting_option_set->osid] = $targeting_option_set;
+  $existing_structure = acquia_lift_get_structure_from_targeting($targeting_option_set);
+
   // Any target audience that has multiple variations in it has a test running.
   $existing_tests = $existing_options = array();
   foreach ($existing_structure as $audience => $variations) {
@@ -894,78 +942,94 @@ function acquia_lift_update_targeting($agent) {
       $new_tests[$new_audience] = $variations;
     }
   }
-
+  // Keep track of nested agents that get deleted.
+  $to_delete = array();
   foreach (array_keys($existing_tests) as $audience) {
     if (!in_array($audience, $rules)) {
       // Delete the old test if it's no longer being used.
-      acquia_lift_delete_old_nested_test($agent, $audience);
+      if ($deleted = acquia_lift_delete_old_nested_test($targeting_option_set, $audience)) {
+        $to_delete[] = $deleted;
+      }
     }
     else {
       // Change the audience for the test if necessary.
       $new_audience = array_search($audience, $rules);
       if ($new_audience != $audience) {
-        acquia_lift_set_audience_for_test($agent, $audience, $new_audience);
+        acquia_lift_set_audience_for_test($targeting_option_set, $audience, $new_audience);
       }
     }
   }
   foreach ($existing_options as $audience => $option) {
     if (!isset($agent->data['lift_targeting'][$audience])) {
-      acquia_lift_remove_option_for_audience($agent, $audience);
+      acquia_lift_remove_option_for_audience($targeting_option_set, $audience);
     }
   }
 
   // Now create any new tests required by the new structure.
   foreach ($new_tests as $audience => $variations) {
-    acquia_lift_add_new_test_for_audience($agent, $variations, $audience);
+    acquia_lift_add_new_test_for_audience($targeting_option_set, $audience, $agent, $variations);
   }
   foreach ($new_options as $audience => $option) {
-    acquia_lift_set_option_for_audience($agent, $option, $audience);
+    acquia_lift_set_option_for_audience($targeting_option_set, $option, $audience);
+  }
+
+  // Go through any other option sets for this personalization, assign the same
+  // decision name and option IDs to each of them, and copy the targeting infor-
+  // mation to them.
+  foreach ($all_option_sets as $os) {
+    if ($os->osid != $targeting_option_set->osid) {
+      $os->targeting = $targeting_option_set->targeting;
+      foreach ($os->options as $i => &$option) {
+        $option['option_id'] = $targeting_option_set->options[$i]['option_id'];
+      }
+    }
+    $os->decision_name = $agent->machine_name;
+    personalize_option_set_save($os);
   }
   // Update the test options for any embedded tests.
   acquia_lift_save_nested_test_options($agent);
-
   // Now clobber the "lift_targeting" data as we only use that to store *changes*
   // to the running targeting.
   $agent->data['lift_targeting'] = array();
   personalize_agent_save($agent);
+  return $to_delete;
 }
 
 /**
  * Assigns an option to a target audience.
  *
- * @param $agent
- *   A stdClass object representing the agent.
+ * @param $option_set
+ *   The option set whose targeting is being changed.
  * @param $option_id
  *   The option ID
  * @param $audience
  *   The name of hte targeting audience to assign the option to.
  * @throws \PersonalizeException
  */
-function acquia_lift_set_option_for_audience($agent, $option_id, $audience) {
-  $option_set = acquia_lift_get_option_set_for_targeting($agent->machine_name);
+function acquia_lift_set_option_for_audience(&$option_set, $option_id, $audience) {
   if (isset($option_set->targeting[$audience])) {
     // If there was a test assigned to this audience, remove it.
     if (isset($option_set->targeting[$audience]['osid'])) {
       unset($option_set->targeting[$audience]['osid']);
     }
     $option_set->targeting[$audience]['option_id'] = $option_id;
-    personalize_option_set_save($option_set);
   }
 }
 
 /**
  * Unsets the option_id property for a given target audience.
- * @param $agent
+ *
+ * @param $option_set
+ *   The option set whose targeting is being changed.
  * @param $audience
+ *   The audience name.
  * @throws \PersonalizeException
  */
-function acquia_lift_remove_option_for_audience($agent, $audience) {
-  $option_set = acquia_lift_get_option_set_for_targeting($agent->machine_name);
+function acquia_lift_remove_option_for_audience(&$option_set, $audience) {
   if (isset($option_set->targeting[$audience])) {
     // If there was a test assigned to this audience, remove it.
     if (isset($option_set->targeting[$audience]['option_id'])) {
       unset($option_set->targeting[$audience]['option_id']);
-      personalize_option_set_save($option_set);
     }
   }
 }
@@ -973,72 +1037,71 @@ function acquia_lift_remove_option_for_audience($agent, $audience) {
 /**
  * Creates a new nested test of the specified variations for the specified agent.
  *
- * @param $parent_agent
- *   The parent agent to add the test to.
- * @param $variations
- *   The variations to test.
+ * @param $option_set
+ *   The option set whose targeting is being changed.
  * @param $audience
  *   The target audience for the test.
- * @param string $test_agent_type
- *   The agent plugin to use for the nested test.
+ * @param $parent_agent
+ *   The parent agent.
+ * @param $variations
+ *   The variations to create a test for.
  * @throws \PersonalizeException
  */
-function acquia_lift_add_new_test_for_audience($parent_agent, $variations, $audience, $test_agent_type = 'acquia_lift') {
-  module_load_include('inc', 'personalize', 'personalize.admin');
-  $option_set = acquia_lift_get_option_set_for_targeting($parent_agent->machine_name);
-  if (isset($option_set->targeting[$audience])) {
-    // First we need to create a new agent.
-    $agent = new stdClass();
-    $agent->label = 'Sub-test for ' . $parent_agent->label;
-    $agent->plugin = $test_agent_type;
-    $agent->data = array();
-    $agent->machine_name = personalize_generate_machine_name($parent_agent->machine_name . '-test', 'personalize_agent_machine_name_exists');
-    try {
-      $agent = personalize_agent_save($agent);
-      $nested_os = new stdClass();
-      $nested_os->agent = $agent->machine_name;
-      $nested_os->is_new = TRUE;
-      $nested_os->data = array();
-      $nested_os->options = array();
-      // This is basically a non-renderable option set - just set the plugin to
-      // 'options'.
-      $nested_os->plugin = 'options';
-      foreach ($variations as $option_id) {
-        $nested_os->options[] = array(
-          'option_id' => $option_id
-        );
-      }
-      $nested_os = personalize_option_set_save($nested_os);
+function acquia_lift_add_new_test_for_audience(&$option_set, $audience, $parent_agent, $variations) {
+  if (!isset($option_set->targeting[$audience])) {
+    return;
+  }
+
+  // First we need to create a new agent.
+  $agent = new stdClass();
+  $agent->label = 'Sub-test for ' . $parent_agent->label;
+  $agent->plugin = acquia_lift_get_test_agent_plugin();
+  $agent->data = array();
+  $agent->machine_name = personalize_generate_machine_name($parent_agent->machine_name . '-test', 'personalize_agent_machine_name_exists');
+
+  try {
+    $agent = personalize_agent_save($agent);
+    personalize_agent_set_status($agent->machine_name, PERSONALIZE_STATUS_RUNNING);
+    $nested_os = new stdClass();
+    $nested_os->agent = $agent->machine_name;
+    $nested_os->is_new = TRUE;
+    $nested_os->data = array();
+    $nested_os->options = array();
+    // This is basically a non-renderable option set - just set the plugin to
+    // 'options'.
+    $nested_os->plugin = 'options';
+    foreach ($variations as $option_id) {
+      $nested_os->options[] = array(
+        'option_id' => $option_id
+      );
     }
-    catch (PersonalizeException $e) {
-      // If anything goes wrong savign the new agent or option set, just print
-      // the error message and bail.
-      drupal_set_message($e->getMessage());
-      return;
-    }
+    $nested_os = personalize_option_set_save($nested_os);
+    $option_set->targeting[$audience]['osid'] = $nested_os->osid;
     if (isset($option_set->targeting[$audience]['option_id'])) {
       unset($option_set->targeting[$audience]['option_id']);
     }
-    $option_set->targeting[$audience]['osid'] = $nested_os->osid;
-    personalize_option_set_save($option_set);
+  }
+  catch (PersonalizeException $e) {
+    // If anything goes wrong savign the new agent or option set, just print
+    // the error message and bail.
+    drupal_set_message($e->getMessage());
   }
 }
 
 /**
  * Saves a test to a particular targeting audience.
  *
- * @param $parent_agent
- *   The machine name of the parent agent.
+ * @param $option_set
+ *  The option set whose targeting is being changed.
  * @param $old_audience
  *   The target audience that currently has this test running.
  * @param $new_audience
  *   The target audience to move the test to.
  */
-function acquia_lift_set_audience_for_test($parent_agent, $old_audience, $new_audience) {
+function acquia_lift_set_audience_for_test(&$option_set, $old_audience, $new_audience) {
   if ($old_audience == $new_audience) {
     return;
   }
-  $option_set = acquia_lift_get_option_set_for_targeting($parent_agent->machine_name);
   if (isset($option_set->targeting[$old_audience]) && isset($option_set->targeting[$old_audience]['osid'])) {
     $nested_osid = $option_set->targeting[$old_audience]['osid'];
     unset($option_set->targeting[$old_audience]['osid']);
@@ -1056,32 +1119,33 @@ function acquia_lift_set_audience_for_test($parent_agent, $old_audience, $new_au
     }
     $option_set->targeting[$new_audience]['osid'] = $nested_osid;
   }
-  personalize_option_set_save($option_set);
 }
 
 /**
  * Deletes a nested test that is no longer needed.
  *
- * @param $parent_agent
- *   The name of the parent agent.
+ * @param $option_set
+ *   The option set whose targeting is being changed.
  * @param $audience
  *   THe name of the target audience the test was assigned to.
  * @throws \PersonalizeException
  *
- * @todo We need to make sure this test gets deleted from Lift
+ * @return string
+ *   The machine name of the agent that was deleted so it can be scheduled for
+ *   deletion in Lift.
  */
-function acquia_lift_delete_old_nested_test($parent_agent, $audience) {
-  $option_set = acquia_lift_get_option_set_for_targeting($parent_agent->machine_name);
+function acquia_lift_delete_old_nested_test(&$option_set, $audience) {
+  $agent_to_delete = NULL;
   // Find the nested option set for the specified targeting rule.
   if (isset($option_set->targeting[$audience]) && isset($option_set->targeting[$audience]['osid'])) {
     $nested_os = personalize_option_set_load($option_set->targeting[$audience]['osid']);
     // Delete the option set, then delete the agent.
-    personalize_option_set_delete($option_set->targeting[$audience]['osid']);
-    personalize_agent_delete($nested_os->agent);
+    personalize_option_set_delete($nested_os->osid);
+    $agent_to_delete = $nested_os->agent;
+    personalize_agent_delete($agent_to_delete);
     unset($option_set->targeting[$audience]['osid']);
   }
-
-  personalize_option_set_save($option_set);
+  return $agent_to_delete;
 }
 
 /**
@@ -1185,13 +1249,16 @@ function acquia_lift_save_nested_test_options($parent_agent) {
  * @param stdClass $agent
  *   The object representing the agent that owns the targeting option set.
  */
-function acquia_lift_validate_minimum_targeting($agent) {
+function acquia_lift_validate_minimum_targeting($agent, $option_set) {
   if (personalize_agent_get_status($agent->machine_name) !== PERSONALIZE_STATUS_NOT_STARTED) {
     return;
   }
   // Check and create the "Everyone else" audience if it doesn't exist.
-  $option_set = acquia_lift_get_option_set_for_targeting($agent->machine_name);
-  if (empty($option_set->targeting)) {
+  $targeting_option_set = acquia_lift_get_option_set_for_targeting($agent->machine_name);
+  if ($targeting_option_set->osid == $option_set->osid) {
+    $targeting_option_set = $option_set;
+  }
+  if (empty($targeting_option_set->targeting)) {
     $audience = _acquia_lift_personalize_campaign_wizard_everyone_else_audience();
     acquia_lift_target_audience_save($audience['name'], $agent->machine_name, $audience['contexts'], $audience['strategy'], $audience['weight'], $audience['id']);
     // Indicate that there are no variations assigned.
@@ -1212,13 +1279,73 @@ function acquia_lift_validate_minimum_targeting($agent) {
     }
   }
   $targeting_options = array();
-  foreach ($option_set->options as $option) {
+  foreach ($targeting_option_set->options as $option) {
     $targeting_options[] = $option['option_id'];
   }
   // Any unassigned option is automatically assigned to the "Everyone else"
   // category.
   $unassigned_options = array_diff($targeting_options, $assigned);
   acquia_lift_save_targeting_structure($agent, array(ACQUIA_LIFT_TARGETING_EVERYONE_ELSE => $unassigned_options));
+}
+
+
+/**
+ * Sets up a multivariate test as defined by the variation sets created.
+ */
+function acquia_lift_implement_mvt($agent) {
+  // There will only ever be one nested test for this campaign and it follows a
+  // naming convention (e.g. "{parent-campaign-name}-mvt"
+  $mvt_name = acquia_lift_get_mvt_name_for_agent($agent->machine_name);
+  // If this is our first time implementing this MVT, then the option sets will
+  // still be on the parent personalization and we'll need to move them.
+  $option_sets = personalize_option_set_load_by_agent($agent->machine_name);
+  if (empty($option_sets)) {
+    $option_sets = personalize_option_set_load_by_agent($mvt_name);
+  }
+  if (count($option_sets) < 2) {
+    throw new AcquiaLiftException('Cannot implement a multi-variate test wtih fewer than 2 variation sets');
+  }
+  $tests_to_delete = array();
+  $goals = array();
+  if ($mvt = personalize_agent_load($mvt_name)) {
+    $old_goals = personalize_goal_load_by_conditions(array('agent' => $mvt_name));
+    foreach ($old_goals as $goal) {
+      // This goal will get deleted so we'll just need to recreate it on the new
+      // agent.
+      $goal->id = NULL;
+      $goals[] = $goal;
+    }
+    // If this agent already exists delete it and recreate from scratch.
+    personalize_agent_delete($mvt_name);
+    $tests_to_delete = array($mvt_name);
+  }
+
+  // Create a test agent for the MVT.
+  $mvt_agent = new stdClass();
+  $mvt_agent->label = 'MVT for ' . $agent->label;
+  $mvt_agent->plugin = acquia_lift_get_test_agent_plugin();
+  $mvt_agent->data = array();
+  $mvt_agent->machine_name = $mvt_name;
+  try {
+    personalize_agent_save($mvt_agent);
+    personalize_agent_set_status($mvt_name, PERSONALIZE_STATUS_RUNNING);
+    // Ensure the option sets are attached to the mvt, not the parent.
+    foreach ($option_sets as $os) {
+      $os->agent = $mvt_name;
+      $os->mvt = $mvt_name;
+      personalize_option_set_save($os);
+    }
+    // Ensure goals are attached to the mvt, not the parent.
+    $new_goals = personalize_goal_load_by_conditions(array('agent' => $agent->machine_name));
+    $goals += array_values($new_goals);
+    foreach ($goals as $goal) {
+      personalize_goal_save($mvt_name, $goal->action, $goal->value, $goal->id);
+    }
+  }
+  catch (PersonalizeException $e) {
+
+  }
+  return $tests_to_delete;
 }
 
 /**

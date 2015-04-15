@@ -5,22 +5,19 @@
  * Provides functions for batch syncing agents to Lift
  */
 
-
 /**
- * Batch syncs all campaigns to Lift.
+ * Batch syncs the nested tests for the specified agents or all agents.
+ *
+ * @param array $agents
  */
-function acquia_lift_batch_sync_campaigns($agents = array()) {
-  // Now get all sync operations for all existing Acquia Lift testing agents.
+function acquia_lift_batch_sync_tests($agents = array()) {
   if (empty($agents)) {
-    foreach (acquia_lift_get_agent_types() as $type => $info) {
-      if ($type == 'acquia_lift_target') {
-        continue;
-      }
-      $agents = array_merge($agents, personalize_agent_load_by_type($type));
-    }
+    $agents = personalize_agent_load_by_type('acquia_lift_target');
   }
-
-  $operations = acquia_lift_get_sync_operations_for_agents($agents);
+  $operations = array();
+  foreach ($agents as $agent) {
+    $operations += acquia_lift_get_sync_operations_for_agent($agent);
+  }
 
   $batch_operations = array();
   foreach ($operations as $operation) {
@@ -119,21 +116,28 @@ function acquia_lift_batch_finished($success, $results, $operations) {
   }
 }
 
-/**
- * Gets the required operations for syncing the specified agents to Lift.
- *
- * @param $agents
- *   An array of agents with agent names as keys and stdClass objects rep-
- *   resenting the agents as values.
- * @return array
- *   An array of operation arrays, each with a 'method' key and an 'args'
- *   key, that can be processed by acquia_lift_sync_item().
- */
-function acquia_lift_get_sync_operations_for_agents($agents) {
+function acquia_lift_get_sync_operations_for_agent($agent) {
   $operations = array();
+  if (isset($agent->tests_to_delete)) {
+    foreach ($agent->tests_to_delete as $old_test_agent) {
+      $operations[] = array(
+        'method' => 'deleteAgent',
+        'args' => array(
+          $old_test_agent,
+        ),
+      );
+    }
+  }
+  $nested = acquia_lift_get_nested_tests($agent);
+
+  if (empty($nested)) {
+    return $operations;
+  }
+  $nested_tests = personalize_agent_load_multiple($nested);
+  $goals = personalize_goal_load_by_conditions(array('agent' => $agent->machine_name));
   $lift_api = AcquiaLiftAPI::getInstance(variable_get('acquia_lift_account_info', array()));
-  foreach ($agents as $agent_name => $agent) {
-    if (!acquia_lift_is_testing_agent($agent)) {
+  foreach ($nested_tests as $agent_name => $test) {
+    if (!acquia_lift_is_testing_agent($test)) {
       continue;
     }
     if ($agent_instance = personalize_agent_load_agent($agent_name)) {
@@ -166,31 +170,8 @@ function acquia_lift_get_sync_operations_for_agents($agents) {
       // Now go through all option sets and sync those.
       $option_sets = personalize_option_set_load_by_agent($agent_name);
       $decisions = empty($option_sets) ? array() : AcquiaLiftAgent::convertOptionSetsToDecisions($option_sets);
-      $old_decisions = array();
-      if ($existing_agent) {
-        // If this is an existing agent then the decision structure
-        // may be different and we'll need to perform some DELETEs
-        // as well as PUTs.
-        if ($existing_points = $lift_api->getPointsForAgent($agent_name)) {
-          // Build up the old decision tree for comparison with the
-          // new tree.
-          foreach ($existing_points as $point) {
-            $old_decisions[$point] = array();
-            if ($existing_decisions = $lift_api->getDecisionsForPoint($agent_name, $point)) {
-              foreach ($existing_decisions as $decision) {
-                $old_decisions[$point][$decision] = array();
-                if ($existing_choices = $lift_api->getChoicesForDecision($agent_name, $point, $decision)) {
-                  foreach ($existing_choices as $choice) {
-                    $old_decisions[$point][$decision][] = $choice;
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-      $operations = array_merge($operations, $agent_instance->getDecisionSyncOperations($old_decisions, $decisions));
-      $goals = personalize_goal_load_by_conditions(array('agent' => $agent_name));
+
+      $operations = array_merge($operations, $agent_instance->getDecisionSyncOperations(array(), $decisions));
       $new_goals = $old_goals = array();
       foreach ($goals as $goal) {
         $new_goals[$goal->action] = $goal->value;

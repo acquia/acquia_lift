@@ -53,6 +53,7 @@ Drupal.acquia_lift_target = (function() {
       if (Drupal.settings.acquia_lift_target.option_sets.hasOwnProperty(osid)) {
         var optionSet = Drupal.settings.acquia_lift_target.option_sets[osid];
         var agent_name = optionSet.agent,
+            agent_plugin = Drupal.settings.acquia_lift_target.test_agent_plugin,
             nestedPoint = optionSet.decision_point,
             nestedDecision = optionSet.decision_name,
             choiceNames = optionSet.option_names,
@@ -68,7 +69,7 @@ Drupal.acquia_lift_target = (function() {
             callback(decisions);
           };
 
-          Drupal.personalize.agents.acquia_lift.getDecisionsForPoint(agent_name, {}, choiceNames, nestedPoint, fallbacks, subCallback);
+          Drupal.personalize.agents[agent_plugin].getDecisionsForPoint(agent_name, {}, choiceNames, nestedPoint, fallbacks, subCallback);
           return;
         }
       }
@@ -164,6 +165,7 @@ Drupal.acquia_lift_target = (function() {
       if (!initialized) {
         init();
       }
+      var agent_plugin = Drupal.settings.acquia_lift_target.test_agent_plugin;
       // Check if there is a nested test that this goal needs to be sent to.
       if (agentRules.hasOwnProperty(agent_name)) {
         for (var i in agentRules[agent_name]) {
@@ -175,7 +177,7 @@ Drupal.acquia_lift_target = (function() {
                 var optionSet = Drupal.settings.acquia_lift_target.option_sets[osid];
                 var nested_agent = optionSet.agent;
                 if (Drupal.settings.acquia_lift_target.agent_map.hasOwnProperty(nested_agent)) {
-                  Drupal.personalize.agents.acquia_lift.sendGoalToAgent(nested_agent, goal_name, value);
+                  Drupal.personalize.agents[agent_plugin].sendGoalToAgent(nested_agent, goal_name, value);
                 }
               }
             }

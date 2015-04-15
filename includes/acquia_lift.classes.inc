@@ -519,7 +519,7 @@ class AcquiaLiftAPI implements PersonalizeLoggerAwareInterface, AcquiaLiftReport
       return;
     }
     // Otherwise throw a generic exception.
-    throw new AcquiaLiftException($fail_msg);
+    throw new AcquiaLiftException(t($fail_msg, $vars));
   }
 
   /**

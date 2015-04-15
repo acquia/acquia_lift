@@ -71,7 +71,32 @@ function acquia_lift_personalize_campaign_wizard_variations_alter(&$form, &$form
   if (empty($agent_data->machine_name)) {
     return;
   }
+  $status = personalize_agent_get_status($agent_data->machine_name);
+  $variation_set_handling = isset($agent_data->data['variation_set_handling']) ? $agent_data->data['variation_set_handling'] : ACQUIA_LIFT_DECISION_LOCKSTEP;
+
   $option_sets = personalize_option_set_load_by_agent($agent_data->machine_name);
+  if ($variation_set_handling == ACQUIA_LIFT_DECISION_MULTIVARIATE) {
+    // If this is an MVT then the option sets get saved directly on the testing
+    // agent.
+    $mvt_name = acquia_lift_get_mvt_name_for_agent($agent_data->machine_name);
+    if ($mvt = personalize_agent_load($mvt_name)) {
+      $option_sets = personalize_option_set_load_by_agent($mvt_name);
+    }
+  }
+
+  $form['variations']['variation_set_handling'] = array(
+    '#type' => 'radios',
+    '#options' => array(
+      ACQUIA_LIFT_DECISION_LOCKSTEP => t('Lock step'),
+      ACQUIA_LIFT_DECISION_MULTIVARIATE => t('Multi-variate')
+    ),
+    '#default_value' => $variation_set_handling,
+    // Once a second option set has been added to this personalization, or if
+    // the structure has already been implmented, this choice is no longer
+    // available.
+    '#disabled' => !empty($agent_data->data['locked_for_variation_sets']) || count($option_sets) > 1,
+  );
+
   $agent_instance = personalize_agent_load_agent($agent_data->machine_name);
 
   // Make a container to hold existing option sets.
@@ -104,18 +129,23 @@ function acquia_lift_personalize_campaign_wizard_variations_alter(&$form, &$form
     $form['variations']['option_sets']['option_set_' . $option_set->osid]['header'] = array(
       '#type' => 'container',
     );
-    $delete_link = module_hook($option_set_plugin['module'], 'personalize_delete_link') ? module_invoke($option_set_plugin['module'], 'personalize_delete_link', $option_set) : '';
-    if (!empty($delete_link)) {
-      $form['variations']['option_sets']['option_set_' . $option_set->osid]['header']['delete'] = array(
-        '#markup' => l(t('Delete'), $delete_link, array(
-          'attributes' => array(
-            'class' => array('acquia-lift-delete')
-          ),
-          'query' => array(
-            'destination' => current_path(),
-          )
-        )),
-      );
+    // Variation sets can be deleted only if the structure has not already been
+    // implemented.
+    // @see acquia_lift_implement_test_structure().
+    if (empty($agent_data->data['locked_for_variation_sets'])) {
+      $delete_link = module_hook($option_set_plugin['module'], 'personalize_delete_link') ? module_invoke($option_set_plugin['module'], 'personalize_delete_link', $option_set) : '';
+      if (!empty($delete_link)) {
+        $form['variations']['option_sets']['option_set_' . $option_set->osid]['header']['delete'] = array(
+          '#markup' => l(t('Delete'), $delete_link, array(
+            'attributes' => array(
+              'class' => array('acquia-lift-delete')
+            ),
+            'query' => array(
+              'destination' => current_path(),
+            )
+          )),
+        );
+      }
     }
     switch ($option_set->plugin) {
       case 'block':
@@ -144,6 +174,15 @@ function acquia_lift_personalize_campaign_wizard_variations_alter(&$form, &$form
     $form['variations']['option_sets']['option_set_' . $option_set->osid]['advanced'] = personalize_campaign_wizard_variations_advanced($form, $form_state, $option_set);
     // Option set label is edited in a different spot so don't show it twice.
     $form['variations']['option_sets']['option_set_' . $option_set->osid]['advanced']['label']['#access'] = FALSE;
+  }
+  // Move the advanced agent options to the bottom of the page.
+  $form['variations']['advanced']['#weight'] = 100;
+
+  if (!empty($agent_data->data['locked_for_variation_sets'])) {
+    // Variation sets can be added only if the structure has not already been
+    // implemented.
+    // @see acquia_lift_implement_test_structure().
+    return;
   }
 
   // Show the card to add a new option set last.
@@ -229,9 +268,6 @@ function acquia_lift_personalize_campaign_wizard_variations_alter(&$form, &$form
         break;
     }
   }
-
-  // Move the advanced agent options to the bottom of the page.
-  $form['variations']['advanced']['#weight'] = 100;
 }
 
 /**
@@ -412,6 +448,13 @@ function acquia_lift_personalize_campaign_wizard_targeting_alter(&$form, &$form_
   // Acquia Lift Target agents allow for audience designation to be used across
   // the agent.
   $agent_data = $form['#agent'];
+  if (isset($agent_data->data['variation_set_handling']) && $agent_data->data['variation_set_handling'] == ACQUIA_LIFT_DECISION_MULTIVARIATE) {
+    unset($form['targeting'], $form['actions']);
+    $form['main'] = array(
+      '#markup' => t('Targeting is not support for multivariate tests.')
+    );
+    return;
+  }
   module_load_include('inc', 'acquia_lift', 'acquia_lift.admin');
   $option_set = acquia_lift_get_option_set_for_targeting($agent_data->machine_name);
 
@@ -635,22 +678,28 @@ function acquia_lift_personalize_campaign_wizard_review_alter(&$form, &$form_sta
   // the summary.
   $count_audiences = 0;
   $has_tests = FALSE;
-  $targeting = array();
-  if (!empty($agent_data->data['lift_targeting'])) {
-    // Read audience information from the agent if changes have been made.
-    $targeting = $agent_data->data['lift_targeting'];
+  $is_mvt = isset($agent_data->data['variation_set_handling']) && $agent_data->data['variation_set_handling'] == ACQUIA_LIFT_DECISION_MULTIVARIATE;
+  if ($is_mvt) {
+    $has_tests = TRUE;
   }
   else {
-    // Otherwise read audience information from the option set targeting.
-    module_load_include('inc', 'acquia_lift', 'acquia_lift.admin');
-    $option_set = acquia_lift_get_option_set_for_targeting($agent_data->machine_name);
-    $targeting = acquia_lift_get_structure_from_targeting($option_set);
-  }
-  $count_audiences = count($targeting);
-  foreach ($targeting as $options) {
-    if (count($options) > 1) {
-      $has_tests = TRUE;
-      break;
+    $targeting = array();
+    if (!empty($agent_data->data['lift_targeting'])) {
+      // Read audience information from the agent if changes have been made.
+      $targeting = $agent_data->data['lift_targeting'];
+    }
+    else {
+      // Otherwise read audience information from the option set targeting.
+      module_load_include('inc', 'acquia_lift', 'acquia_lift.admin');
+      $option_set = acquia_lift_get_option_set_for_targeting($agent_data->machine_name);
+      $targeting = acquia_lift_get_structure_from_targeting($option_set);
+    }
+    $count_audiences = count($targeting);
+    foreach ($targeting as $options) {
+      if (count($options) > 1) {
+        $has_tests = TRUE;
+        break;
+      }
     }
   }
   if ($has_tests) {
@@ -682,17 +731,34 @@ function acquia_lift_personalize_campaign_wizard_review_alter(&$form, &$form_sta
     $form['review']['summary_column']['tests']['options'] = _acquia_lift_personalize_campaign_wizard_review_tests($agent_data, array());
   }
 
-  $form['review']['summary_column']['summary']['audiences'] = array(
-    '#markup' => theme('personalize_wizard_summary_count', array(
-      'count' => $count_audiences,
-      'details' => theme('html_tag', array(
-        'element' => array(
-          '#tag' => 'h3',
-          '#value' => format_plural($count_audiences, 'Audience', 'Audiences'),
-        ),
+  if ($is_mvt) {
+    $form['review']['summary_column']['summary']['option_sets'] = array(
+      '#markup' => theme('personalize_wizard_summary_count', array(
+        'count' => 1,
+        'details' => theme('html_tag', array(
+          'element' => array(
+            '#tag' => 'h3',
+            '#value' => t('Multivariate Test'),
+          ),
+        )),
       )),
-    )),
-  );
+    );
+  }
+  else {
+    $form['review']['summary_column']['summary']['audiences'] = array(
+      '#markup' => theme('personalize_wizard_summary_count', array(
+          'count' => $count_audiences,
+          'details' => theme('html_tag', array(
+            'element' => array(
+              '#tag' => 'h3',
+              '#value' => format_plural($count_audiences, 'Audience', 'Audiences'),
+            ),
+          )),
+        )
+      )
+    );
+  }
+
   // Move the scheduling summary element to the bottom.
   $form['review']['summary_column']['summary']['scheduling']['#weight'] = 10;
 
@@ -991,6 +1057,9 @@ function acquia_lift_personalize_campaign_wizard_variations_submit(&$form, &$for
   $click_id = $form_state['clicked_button']['#id'];
   $requires_cleanup = FALSE;
 
+  if (isset($values['variations']['variation_set_handling'])) {
+    $agent_data->data['variation_set_handling'] = $values['variations']['variation_set_handling'];
+  }
   // Common functionality needed before submitting the block submission
   // handler whether for new or existing blocks.
   $submitBlockHandler = function ($block_content, $option_set = NULL) use ($form, $form_state) {
@@ -1237,6 +1306,20 @@ function acquia_lift_personalize_campaign_wizard_review_submit(&$form, &$form_st
   }
   if (isset($form_state['values']['explore_rate'])) {
     $agent_data->data['explore_rate'] = $form_state['values']['explore_rate'];
+  }
+
+  module_load_include('inc', 'acquia_lift', 'acquia_lift.admin');
+  module_load_include('inc', 'acquia_lift', 'acquia_lift.batch');
+  try {
+    $agent_data->tests_to_delete = acquia_lift_implement_test_structure($agent_data);
+    acquia_lift_batch_sync_tests(array($agent_data->machine_name => $agent_data));
+    // If the "Start" button was pressed then start the campaign.
+    if ($form_state['triggering_element']['#value'] === t('Start')) {
+      personalize_agent_set_status($agent_data->machine_name, PERSONALIZE_STATUS_RUNNING);
+    }
+  }
+  catch (Exception $e) {
+    form_set_error(NULL, t('There was a problem implementing the personalization as defined.'));
   }
 }
 

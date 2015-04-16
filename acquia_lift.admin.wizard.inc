@@ -736,7 +736,6 @@ function acquia_lift_personalize_campaign_wizard_review_alter(&$form, &$form_sta
 
   // Show advanced testing options.
   if ($has_advanced) {
-    $editable = $status === PERSONALIZE_STATUS_NOT_STARTED || $status === PERSONALIZE_STATUS_PAUSED;
     $form['review']['summary_column']['advanced'] = array(
       '#type' => 'container',
       '#theme' => 'acquia_lift_card',
@@ -748,18 +747,19 @@ function acquia_lift_personalize_campaign_wizard_review_alter(&$form, &$form_sta
         'class' => array('acquia-lift-test-options'),
       ),
       '#weight' => -10,
-      // @todo: Change this to take advantage of acquia_lift_target_definition_changes_allowed
-      '#disabled' => !$editable,
     );
-    if (!$editable) {
-      if ($status === PERSONALIZE_STATUS_COMPLETED) {
-        drupal_set_message(t('Advanced options can no longer be edited.'), 'warning');
-      }
-      else {
-        drupal_set_message(t('Advanced options cannot be edited while this personalization is running.'), 'warning');
-      }
-    }
     if ($has_tests) {
+      $status = personalize_agent_get_status($agent_data->machine_name);
+      $editable = $status === PERSONALIZE_STATUS_NOT_STARTED || $status === PERSONALIZE_STATUS_PAUSED;
+
+      if (!$editable) {
+        if ($status === PERSONALIZE_STATUS_COMPLETED) {
+          drupal_set_message(t('Test options can no longer be edited.'), 'warning');
+        }
+        else {
+          drupal_set_message(t('Test options cannot be edited while this personalization is running.'), 'warning');
+        }
+      }
       $form['review']['summary_column']['advanced']['options'] = _acquia_lift_personalize_campaign_wizard_review_tests($agent_data, array());
     }
     if ($context_element !== FALSE) {

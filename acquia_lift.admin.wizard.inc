@@ -444,15 +444,27 @@ function acquia_lift_personalize_campaign_wizard_goals_alter(&$form, &$form_stat
 
 /**
  * Alter hook for the targeting portion of the campaign wizard.
+ *
+ * Acquia Lift Target agents allow for audience designation to be used across
+ * the agent.
  */
 function acquia_lift_personalize_campaign_wizard_targeting_alter(&$form, &$form_state, $form_id) {
-  // Acquia Lift Target agents allow for audience designation to be used across
-  // the agent.
   $agent_data = $form['#agent'];
+  // Explicit targeting is not allowed for multivariate tests.
   if (isset($agent_data->data['variation_set_handling']) && $agent_data->data['variation_set_handling'] == ACQUIA_LIFT_DECISION_MULTIVARIATE) {
     unset($form['targeting'], $form['actions']);
     $form['main'] = array(
-      '#markup' => t('Targeting is not support for multivariate tests.')
+      '#markup' => t('Targeting is not supported for multivariate tests.')
+    );
+    return;
+  }
+  // Explicit targeting is not allowed when auto-targeting is in use.
+  if (isset($agent_data->data['visitor_context']) && !empty($agent_data->data['visitor_context'])) {
+    unset($form['targeting'], $form['actions']);
+    $form['main'] = array(
+      '#markup' => t('Explicit targeting is not supported when automatic targeting is in place.  Remove automatic targeting in the <a href="!review">advanced section of the review section</a> to continue.', array(
+        '!review' => url('admin/structure/personalize/manage/' . $agent_data->machine_name . '/review'),
+      )),
     );
     return;
   }

@@ -449,8 +449,6 @@ function acquia_lift_personalize_campaign_wizard_goals_alter(&$form, &$form_stat
  * the agent.
  */
 function acquia_lift_personalize_campaign_wizard_targeting_alter(&$form, &$form_state, $form_id) {
-  // Acquia Lift Target agents allow for audience designation to be used across
-  // the agent.
   $agent_data = $form['#agent'];
   // Explicit targeting is not allowed for multivariate tests.
   if (isset($agent_data->data['variation_set_handling']) && $agent_data->data['variation_set_handling'] == ACQUIA_LIFT_DECISION_MULTIVARIATE) {

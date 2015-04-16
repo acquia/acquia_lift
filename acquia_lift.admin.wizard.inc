@@ -446,11 +446,6 @@ function acquia_lift_personalize_campaign_wizard_goals_alter(&$form, &$form_stat
  * Alter hook for the targeting portion of the campaign wizard.
  */
 function acquia_lift_personalize_campaign_wizard_targeting_alter(&$form, &$form_state, $form_id) {
-  if (!empty($form['targeting']['visitor_context']) && $form['targeting']['visitor_context']['#type'] == 'select') {
-    module_load_include('inc', 'acquia_lift', 'acquia_lift.ui');
-    acquia_lift_chosenify_element($form['targeting']['visitor_context']);
-  }
-
   // Acquia Lift Target agents allow for audience designation to be used across
   // the agent.
   $agent_data = $form['#agent'];
@@ -1229,14 +1224,6 @@ function acquia_lift_personalize_campaign_wizard_targeting_submit(&$form, &$form
     );
     return;
   }
-
-  // Save any visitor context if passed.
-  // Add the visitor context configuration.
-  $visitor_context = array();
-  if (isset($form_state['values']['visitor_context'])) {
-    $visitor_context = personalize_admin_convert_visitor_context_form_values($form_state['values']['visitor_context']);
-  }
-  $agent_data->data['visitor_context'] = $visitor_context;
 
   // Handle targeting audiences.
   if (empty($form_state['values']['audiences'])) {

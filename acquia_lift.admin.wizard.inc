@@ -703,23 +703,18 @@ function acquia_lift_personalize_campaign_wizard_review_alter(&$form, &$form_sta
       }
     }
   }
-  if ($has_tests) {
-    $status = personalize_agent_get_status($agent_data->machine_name);
-    $editable = $status === PERSONALIZE_STATUS_NOT_STARTED || $status === PERSONALIZE_STATUS_PAUSED;
-
-    if (!$editable) {
-      if ($status === PERSONALIZE_STATUS_COMPLETED) {
-        drupal_set_message(t('Test options can no longer be edited.'), 'warning');
-      }
-      else {
-        drupal_set_message(t('Test options cannot be edited while this personalization is running.'), 'warning');
-      }
-    }
-
-    $form['review']['summary_column']['tests'] = array(
+  // If there is only one audience then there is no explicit targeting so
+  // check for auto-targeting options.
+  $context_element = FALSE;
+  if ($count_audiences < 2) {
+    $visitor_context = isset($agent_data->data['visitor_context']) ? $agent_data->data['visitor_context'] : array();
+    $context_element = personalize_admin_build_visitor_context_select($visitor_context, TRUE, $agent_data);
+  }
+  if ($has_tests || $context_element !== FALSE) {
+    $form['review']['summary_column']['advanced'] = array(
       '#type' => 'container',
       '#theme' => 'acquia_lift_card',
-      '#title' => t('Test options'),
+      '#title' => t('Advanced'),
       '#collapsible' => TRUE,
       '#collapsed' => FALSE,
       '#tree' => FALSE,
@@ -727,9 +722,27 @@ function acquia_lift_personalize_campaign_wizard_review_alter(&$form, &$form_sta
         'class' => array('acquia-lift-test-options'),
       ),
       '#weight' => -10,
-      '#disabled' => !$editable,
     );
-    $form['review']['summary_column']['tests']['options'] = _acquia_lift_personalize_campaign_wizard_review_tests($agent_data, array());
+    if ($has_tests) {
+      $status = personalize_agent_get_status($agent_data->machine_name);
+      $editable = $status === PERSONALIZE_STATUS_NOT_STARTED || $status === PERSONALIZE_STATUS_PAUSED;
+
+      if (!$editable) {
+        if ($status === PERSONALIZE_STATUS_COMPLETED) {
+          drupal_set_message(t('Test options can no longer be edited.'), 'warning');
+        }
+        else {
+          drupal_set_message(t('Test options cannot be edited while this personalization is running.'), 'warning');
+        }
+      }
+      $form['review']['summary_column']['advanced']['options'] = _acquia_lift_personalize_campaign_wizard_review_tests($agent_data, array());
+    }
+    if ($context_element !== FALSE) {
+      $form['review']['summary_column']['advanced']['visitor_context'] = $context_element;
+      $form['review']['summary_column']['advanced']['visitor_context']['#title'] = t('Visitor contexts to use for automatic targeting');
+      module_load_include('inc', 'acquia_lift', 'acquia_lift.ui');
+      acquia_lift_chosenify_element($form['review']['summary_column']['advanced']['visitor_context'], array('acquia-lift-chosen-select-half'));
+    }
   }
 
   if ($is_mvt) {
@@ -1310,6 +1323,12 @@ function acquia_lift_personalize_campaign_wizard_review_submit(&$form, &$form_st
   if (isset($form_state['values']['explore_rate'])) {
     $agent_data->data['explore_rate'] = $form_state['values']['explore_rate'];
   }
+  $visitor_context = array();
+  if (isset($form_state['values']['visitor_context'])) {
+    $visitor_context = personalize_admin_convert_visitor_context_form_values($form_state['values']['visitor_context']);
+  }
+  $agent_data->data['visitor_context'] = $visitor_context;
+
   // If the "Start" button was pressed then we sync everything to Lift and start
   // the campaign.
   if ($form_state['triggering_element']['#value'] === t('Start')) {

@@ -508,7 +508,7 @@ class AcquiaLiftAPI implements PersonalizeLoggerAwareInterface, AcquiaLiftReport
       if ($log_failure) {
         $this->logger()->log(PersonalizeLogLevel::ERROR, $fail_msg, $vars);
       }
-      throw new $exception_class($fail_msg);
+      throw new $exception_class(t($fail_msg, $vars));
     }
     if (self::isSuccessful($response_code)) {
       // If the response wasn't actually bad but we still got here somehow, just

@@ -2086,7 +2086,6 @@ class AcquiaLiftWebTestCampaignWizard extends AcquiaLiftWebTestBase {
     $this->drupalGet('admin/structure/personalize/manage/' . $agent->machine_name . '/variations');
 
     $edit = array(
-      'variations[option_sets][option_set_1][advanced][decision_name]' => 'decision updated',
       'variations[option_sets][option_set_1][advanced][stateful]' => 1,
       'variations[option_sets][option_set_1][advanced][preview_link]' => 'invalid url',
       'variations[option_sets][option_set_1][advanced][executor]' => 'callback',
@@ -2104,7 +2103,6 @@ class AcquiaLiftWebTestCampaignWizard extends AcquiaLiftWebTestBase {
     $option_set = reset($option_sets);
     $this->assertEqual(count($option_set->options), 2);
     $this->assertEqual($option_set->label, 'Great Muppet Caper');
-    $this->assertEqual($option_set->decision_name, 'decision-updated');
     $this->assertEqual($option_set->stateful, 1);
     $this->assertEqual($option_set->preview_link, '<front>');
     $this->assertEqual($option_set->executor, 'callback');

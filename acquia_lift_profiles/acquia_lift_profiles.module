@@ -152,6 +152,7 @@ function acquia_lift_profiles_page_build(&$page) {
   }
   $js_path = variable_get('acquia_lift_profiles_js_path', '');
   $account_name = variable_get('acquia_lift_profiles_account_name', '');
+  $capture_identity = variable_get('acquia_lift_profiles_capture_identity', FALSE);
   $udf_mappings = variable_get('acquia_lift_profiles_udf_mappings', array());
   $segments = acquia_lift_profiles_get_segments();
   $settings = array(
@@ -159,7 +160,7 @@ function acquia_lift_profiles_page_build(&$page) {
     'available_segments' => $segments,
     'account_name' => $account_name,
     'currentPath' => current_path(),
-    'captureIdentity' => variable_get('acquia_lift_profiles_capture_identity', FALSE),
+    'captureIdentity' => $capture_identity,
     'udfMappings' => $udf_mappings,
     // Since we are using the same separator as provided by personalize
     // module for targeting values, we need to tell our JS settings about
@@ -446,12 +447,8 @@ function acquia_lift_profiles_ctools_render_alter(&$info, &$page, &$context) {
 function acquia_lift_profiles_node_page_context($node = NULL, $primary = FALSE) {
   // For each vocabulary, add any terms that are applied to the viewed node.
   $page_context = &drupal_static(__FUNCTION__);
-  $mappings = variable_get('acquia_lift_profiles_vocabulary_mappings', array());
   if (!isset($page_context)) {
     $page_context = array();
-    foreach ($mappings as $name => $mapping) {
-      $page_context[$name] = array();
-    }
   }
 
   // Add the content type of the page if this is the primary node displayed.
@@ -463,29 +460,6 @@ function acquia_lift_profiles_node_page_context($node = NULL, $primary = FALSE) 
     $account = user_load($node->uid);
     $page_context['author'] = $account->name;
     $page_context['page_type'] = 'node page';
-    // Add the node's vocabulary mappings to the context.
-    if (isset($node)) {
-      foreach ($mappings as $name => $mapping) {
-        if (empty($mapping)) {
-          continue;
-        }
-        list($plugin, $context) = explode(PERSONALIZE_TARGETING_ADMIN_SEPARATOR, $mapping);
-        // Call the module's custom-fetch function to retrieve the terms.
-        $module_name = 'personalize_' . $plugin;
-        $get_terms_function_name = $module_name . '_get_terms';
-        if (!function_exists($get_terms_function_name)) {
-          $error_message = t('You need to enable "@module_name" module and/or define "@function_name" function in the module to custom-fetch the terms into page context.', array (
-            '@module_name' => $module_name,
-            '@function_name' => $get_terms_function_name,
-          ));
-          throw new AcquiaLiftProfilesFunctionNotExistException($error_message);
-        }
-        $terms = call_user_func($get_terms_function_name, $node->nid, $context);
-        // Make sure page context terms are unique.
-        $context_terms = array_merge($page_context[$name], $terms);
-        $page_context[$name] = array_unique($context_terms);
-      }
-    }
     // Add the thumbnail image if specified in the content type and supplied.
     $page_context['thumbnail_url'] = acquia_lift_profiles_thumbnail_image('node', $node, $node->type);
   }

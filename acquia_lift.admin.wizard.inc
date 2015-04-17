@@ -1055,7 +1055,6 @@ function acquia_lift_personalize_campaign_wizard_variations_submit(&$form, &$for
   // Save a reference to the full form state values.
   $values = $form_state['values'];
   $click_id = $form_state['clicked_button']['#id'];
-  $requires_cleanup = FALSE;
 
   if (isset($values['variations']['variation_set_handling'])) {
     $agent_data->data['variation_set_handling'] = $values['variations']['variation_set_handling'];
@@ -1065,9 +1064,14 @@ function acquia_lift_personalize_campaign_wizard_variations_submit(&$form, &$for
   $submitBlockHandler = function ($block_content, $option_set = NULL) use ($form, $form_state) {
     module_load_include('inc', 'personalize_blocks', 'personalize_blocks.admin');
     _acquia_lift_personalize_campaign_wizard_form_state_blocks_alter($form_state, $block_content, $option_set);
-    // Submit handler only runs if there is a specific button id.
-    $form_state['clicked_button']['#id'] = 'edit-submit-form';
-    personalize_blocks_form_submit($form, $form_state);
+    // Create any new blocks
+    foreach($form_state['values']['blocks'] as &$block) {
+      if ($block['block']['bid'] === 'add') {
+        $block['block']['bid'] = _personalize_blocks_add_custom_block($block['block']['add']);
+      }
+    }
+    $pblock = _personalize_blocks_convert_form_to_personalized_block($form_state);
+    personalize_option_set_save($pblock);
   };
 
   // Save any existing option sets.
@@ -1077,7 +1081,6 @@ function acquia_lift_personalize_campaign_wizard_variations_submit(&$form, &$for
       switch ($option_set_values['option_set']->plugin) {
         case "block":
           $submitBlockHandler($option_set_values['content'], $option_set);
-          $requires_cleanup = TRUE;
           break;
         case "element":
           break;
@@ -1106,13 +1109,6 @@ function acquia_lift_personalize_campaign_wizard_variations_submit(&$form, &$for
       case "element":
         break;
     }
-  }
-
-  if ($requires_cleanup) {
-    // Clear out any redirects set by option set forms.
-    unset($form_state['redirect']);
-    // Set the clicked button ID back.
-    $form_state['clicked_button']['#id'] = $click_id;
   }
 
   // Handle the advanced settings form submission.

@@ -1017,7 +1017,7 @@ function acquia_lift_personalize_campaign_wizard_goals_validate(&$form, &$form_s
   foreach ($form_state['values']['goals']['all_goals'] as $delta => $goal) {
     // If goal changes aren't enabled then nothing should be changed.
     if (!$enabled) {
-      if ($goal['action'] != $form['goals']['all_goals'][$delta]['action_name']['#default_value']) {
+      if ($goal['action_name'] != $form['goals']['all_goals'][$delta]['action_name']['#default_value']) {
         form_set_error('goals[all_goals][' . $delta . '][action_name]', t('Goals actions cannot be changed until the personalization is paused.'));
       }
       if ($goal['value'] != $form['goals']['all_goals'][$delta]['value']['#default_value']) {

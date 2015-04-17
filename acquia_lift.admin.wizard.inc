@@ -1303,19 +1303,19 @@ function acquia_lift_personalize_campaign_wizard_review_submit(&$form, &$form_st
   if (isset($form_state['values']['explore_rate'])) {
     $agent_data->data['explore_rate'] = $form_state['values']['explore_rate'];
   }
-
-  module_load_include('inc', 'acquia_lift', 'acquia_lift.admin');
-  module_load_include('inc', 'acquia_lift', 'acquia_lift.batch');
-  try {
-    $agent_data->tests_to_delete = acquia_lift_implement_test_structure($agent_data);
-    acquia_lift_batch_sync_tests(array($agent_data->machine_name => $agent_data));
-    // If the "Start" button was pressed then start the campaign.
-    if ($form_state['triggering_element']['#value'] === t('Start')) {
+  // If the "Start" button was pressed then we sync everything to Lift and start
+  // the campaign.
+  if ($form_state['triggering_element']['#value'] === t('Start')) {
+    module_load_include('inc', 'acquia_lift', 'acquia_lift.admin');
+    module_load_include('inc', 'acquia_lift', 'acquia_lift.batch');
+    try {
+      $agent_data->tests_to_delete = acquia_lift_implement_test_structure($agent_data);
+      acquia_lift_batch_sync_tests(array($agent_data->machine_name => $agent_data));
       personalize_agent_set_status($agent_data->machine_name, PERSONALIZE_STATUS_RUNNING);
     }
-  }
-  catch (Exception $e) {
-    form_set_error(NULL, t('There was a problem implementing the personalization as defined.'));
+    catch (Exception $e) {
+      form_set_error(NULL, t('There was a problem implementing the personalization as defined.'));
+    }
   }
 }
 

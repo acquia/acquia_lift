@@ -91,7 +91,9 @@ class AcquiaLiftTarget extends PersonalizeAgentBase implements PersonalizeExplic
     if (!$equal_option_counts) {
       // @todo Get proper text for this.
       return array(
-        t('You have multiple variation sets with different numbers of variations - the personalization cannot be started until all variation sets have the same number of variations.')
+        t('You have multiple variation sets with different numbers of variations - the personalization cannot be started until all variation sets have the same number of variations.  Fix this by making sure all variation sets have the same number of variations in the <a href="!what_url">"What" section</a>.', array(
+          '!what_url' => url('admin/structure/personalize/manage/' . $this->getMachineName() . '/variations'),
+        )),
       );
     }
     return array();

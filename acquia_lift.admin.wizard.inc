@@ -183,8 +183,8 @@ function acquia_lift_personalize_campaign_wizard_variations_alter(&$form, &$form
     // Decision name is handled based on the type of tests created.
     $form['variations']['option_sets']['option_set_' . $option_set->osid]['advanced']['decision_name']['#access'] = FALSE;
   }
-  // Move the advanced agent options to the bottom of the page.
-  $form['variations']['advanced']['#weight'] = 100;
+  // Hide the agent advanced options which will be shown on the review screen.
+  $form['variations']['advanced']['#access'] = FALSE;
 
   if (!empty($agent_data->data['locked_for_variation_sets'])) {
     // Variation sets can be added only if the structure has not already been
@@ -733,43 +733,46 @@ function acquia_lift_personalize_campaign_wizard_review_alter(&$form, &$form_sta
     $visitor_context = isset($agent_data->data['visitor_context']) ? $agent_data->data['visitor_context'] : array();
     $context_element = personalize_admin_build_visitor_context_select($visitor_context, TRUE, $agent_data);
   }
-  $has_advanced = $has_tests || $context_element !== FALSE;
 
   // Show advanced testing options.
-  if ($has_advanced) {
-    $editable = $status === PERSONALIZE_STATUS_NOT_STARTED || $status === PERSONALIZE_STATUS_PAUSED;
-    $form['review']['summary_column']['advanced'] = array(
-      '#type' => 'container',
-      '#theme' => 'acquia_lift_card',
-      '#title' => t('Advanced'),
-      '#collapsible' => TRUE,
-      '#collapsed' => FALSE,
-      '#tree' => FALSE,
-      '#attributes' => array(
-        'class' => array('acquia-lift-test-options'),
-      ),
-      '#weight' => -10,
-      // @todo: Change this to take advantage of acquia_lift_target_definition_changes_allowed
-      '#disabled' => !$editable,
-    );
-    if (!$editable) {
-      if ($status === PERSONALIZE_STATUS_COMPLETED) {
-        drupal_set_message(t('Advanced options can no longer be edited.'), 'warning');
-      }
-      else {
-        drupal_set_message(t('Advanced options cannot be edited while this personalization is running.'), 'warning');
-      }
+  $editable = $status === PERSONALIZE_STATUS_NOT_STARTED || $status === PERSONALIZE_STATUS_PAUSED;
+  $form['review']['summary_column']['advanced'] = array(
+    '#type' => 'container',
+    '#theme' => 'acquia_lift_card',
+    '#title' => t('Advanced'),
+    '#collapsible' => TRUE,
+    '#collapsed' => FALSE,
+    '#tree' => FALSE,
+    '#attributes' => array(
+      'class' => array('acquia-lift-test-options'),
+    ),
+    '#weight' => -10,
+    // @todo: Change this to take advantage of acquia_lift_target_definition_changes_allowed
+    '#disabled' => !$editable,
+  );
+  if (!$editable) {
+    if ($status === PERSONALIZE_STATUS_COMPLETED) {
+      drupal_set_message(t('Advanced options can no longer be edited.'), 'warning');
     }
-    if ($has_tests) {
-      $form['review']['summary_column']['advanced']['options'] = _acquia_lift_personalize_campaign_wizard_review_tests($agent_data, array());
-    }
-    if ($context_element !== FALSE) {
-      $form['review']['summary_column']['advanced']['visitor_context'] = $context_element;
-      $form['review']['summary_column']['advanced']['visitor_context']['#title'] = t('Visitor contexts to use for automatic targeting');
-      module_load_include('inc', 'acquia_lift', 'acquia_lift.ui');
-      acquia_lift_chosenify_element($form['review']['summary_column']['advanced']['visitor_context'], array('acquia-lift-chosen-select-half'));
+    else {
+      drupal_set_message(t('Advanced options cannot be edited while this personalization is running.'), 'warning');
     }
   }
+  if ($has_tests) {
+    $form['review']['summary_column']['advanced']['options'] = _acquia_lift_personalize_campaign_wizard_review_tests($agent_data, array());
+  }
+  if ($context_element !== FALSE) {
+    $form['review']['summary_column']['advanced']['visitor_context'] = $context_element;
+    $form['review']['summary_column']['advanced']['visitor_context']['#title'] = t('Visitor contexts to use for automatic targeting');
+    module_load_include('inc', 'acquia_lift', 'acquia_lift.ui');
+    acquia_lift_chosenify_element($form['review']['summary_column']['advanced']['visitor_context'], array('acquia-lift-chosen-select-half'));
+  }
+  $form['review']['summary_column']['advanced']['cache_decisions'] = array(
+    '#type' => 'checkbox',
+    '#title' => 'Cache decisions made by this agent?',
+    '#description' => t('Check this if decisions made by this agent should stick, so that they don\'t have to be made again every time variation sets are rendered. This depends on the availability of local storage in the visitor\'s browser'),
+    '#default_value' => isset($agent_data->data['cache_decisions']) ? $agent_data->data['cache_decisions'] : 1
+  );
 
   if ($is_mvt) {
     $form['review']['summary_column']['summary']['option_sets'] = array(
@@ -1370,6 +1373,8 @@ function acquia_lift_personalize_campaign_wizard_review_submit(&$form, &$form_st
     $visitor_context = personalize_admin_convert_visitor_context_form_values($form_state['values']['visitor_context']);
   }
   $agent_data->data['visitor_context'] = $visitor_context;
+  module_load_include('inc', 'personalize', 'personalize.admin.campaign');
+  personalize_campaign_wizard_submit_variations_advanced_agent($form, $form_state, $agent_data);
 
   // If the "Start" button was pressed then we sync everything to Lift and start
   // the campaign.

@@ -2607,11 +2607,12 @@ class AcquiaLiftWebTestCampaignWizard extends AcquiaLiftWebTestBase {
     // Options will be automatically added to the "Everyone else" audience
     // which means that there will be two options to test against.
     $this->drupalGet("admin/structure/personalize/manage/{$agent->machine_name}/review");
-    $this->assertNoText('Test options cannot be edited while this personalization is running.');
+    $this->assertNoText('Advanced options cannot be edited while this personalization is running.');
     $edit = array(
       'decision_style' => 'adaptive',
       'control_rate' => 25,
       'explore_rate' => 25,
+      'cache_decisions' => 1
     );
     $this->drupalPost(NULL, $edit, $this->getButton('wizard_save'));
 
@@ -2620,13 +2621,20 @@ class AcquiaLiftWebTestCampaignWizard extends AcquiaLiftWebTestBase {
     $this->assertEqual($agent->data['decision_style'], 'adaptive');
     $this->assertEqual($agent->data['control_rate'], '25');
     $this->assertEqual($agent->data['explore_rate'], 25);
+    $this->assertTrue($agent->data['cache_decisions']);
+
+    unset($edit['cache_decisions']);
+    $this->drupalPost(NULL, $edit, $this->getButton('wizard_save'));
+    $this->resetAll();
+    $agent = personalize_agent_load($agent->machine_name);
+    $this->assertFalse($agent->data['cache_decisions']);
 
     // Start the agent and verify that the options are no longer editable.
     personalize_agent_set_status($agent->machine_name, PERSONALIZE_STATUS_RUNNING);
     $this->resetAll();
 
     $this->drupalGet("admin/structure/personalize/manage/{$agent->machine_name}/review");
-    $this->assertText('Test options cannot be edited while this personalization is running.');
+    $this->assertText('Advanced options cannot be edited while this personalization is running.');
   }
 
   /**

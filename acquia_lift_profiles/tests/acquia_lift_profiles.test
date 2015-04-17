@@ -91,7 +91,7 @@ class ALProfilesWebTest extends DrupalWebTestCase {
     // Login as admin again and set the "capture identity" setting.
     $this->drupalLogin($this->admin_user);
     $edit = array(
-      'acquia_lift_profiles_capture_identity' => TRUE,
+      'acquia_lift_profiles_identity[acquia_lift_profiles_capture_identity]' => TRUE,
     );
     $this->drupalPost('admin/config/content/personalize/acquia_lift_profiles', $edit, t('Save'));
     $this->drupalLogout();
@@ -222,7 +222,9 @@ class ALProfilesWebTest extends DrupalWebTestCase {
     $this->configureALProfiles();
     $this->drupalLogin($this->admin_user);
     // Test specifying a querystring param to use for capturing identity.
-    $this->drupalPost('admin/config/content/personalize/acquia_lift_profiles', array('acquia_lift_profiles_identity_param' => 'ali'), t('Save'));
+    $this->drupalPost('admin/config/content/personalize/acquia_lift_profiles', array(
+      'acquia_lift_profiles_identity[acquia_lift_profiles_identity_param]' => 'ali',
+    ), t('Save'));
     $this->drupalLogout();
 
     // Now visit the site as anon without passing any querystring params.
@@ -241,7 +243,9 @@ class ALProfilesWebTest extends DrupalWebTestCase {
 
     // Set the identity type param
     $this->drupalLogin($this->admin_user);
-    $this->drupalPost('admin/config/content/personalize/acquia_lift_profiles', array('acquia_lift_profiles_identity_type_param' => 'alit'), t('Save'));
+    $this->drupalPost('admin/config/content/personalize/acquia_lift_profiles', array(
+      'acquia_lift_profiles_identity[acquia_lift_profiles_identity_type_param]' => 'alit',
+    ), t('Save'));
     $this->drupalLogout();
 
     // Pass the configured identity param and the identity_type param
@@ -262,7 +266,9 @@ class ALProfilesWebTest extends DrupalWebTestCase {
     // Set the default identity type
     $default_type = 'tknr';
     $this->drupalLogin($this->admin_user);
-    $this->drupalPost('admin/config/content/personalize/acquia_lift_profiles', array('acquia_lift_profiles_default_identity_type' => $default_type), t('Save'));
+    $this->drupalPost('admin/config/content/personalize/acquia_lift_profiles', array(
+      'acquia_lift_profiles_identity[acquia_lift_profiles_default_identity_type]' => $default_type,
+    ), t('Save'));
     $this->drupalLogout();
 
     // Pass the configured identity param but without the identity_type param

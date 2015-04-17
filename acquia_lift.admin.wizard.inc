@@ -735,19 +735,18 @@ function acquia_lift_personalize_campaign_wizard_review_alter(&$form, &$form_sta
   }
 
   // Show advanced testing options.
-  $editable = $status === PERSONALIZE_STATUS_NOT_STARTED || $status === PERSONALIZE_STATUS_PAUSED;
+  module_load_include('inc', 'acquia_lift', 'acquia_lift.admin');
+  $editable = acquia_lift_target_definition_changes_allowed($agent_data);
   $form['review']['summary_column']['advanced'] = array(
     '#type' => 'container',
     '#theme' => 'acquia_lift_card',
     '#title' => t('Advanced'),
     '#collapsible' => TRUE,
-    '#collapsed' => FALSE,
+    '#collapsed' => TRUE,
     '#tree' => FALSE,
     '#attributes' => array(
       'class' => array('acquia-lift-test-options'),
     ),
-    '#weight' => -10,
-    // @todo: Change this to take advantage of acquia_lift_target_definition_changes_allowed
     '#disabled' => !$editable,
   );
   if (!$editable) {

@@ -2267,7 +2267,9 @@ class AcquiaLiftWebTestCampaignWizard extends AcquiaLiftWebTestBase {
     $this->assertText('second value');
     $this->drupalPost(NULL, array(), t('Edit variation set'));
 
-    $this->assertUrl('node/' . $node->nid . '/edit');
+    $this->assertUrl('node/' . $node->nid . '/edit', array('query' => array('destination' => url("admin/structure/personalize/manage/{$agent_name}/variations"))));
+    $this->drupalPost(NULL, array(), t('Save'));
+    $this->assertUrl("admin/structure/personalize/manage/$agent_name/variations");
   }
 
   /**

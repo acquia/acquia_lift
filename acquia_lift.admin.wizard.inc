@@ -180,6 +180,8 @@ function acquia_lift_personalize_campaign_wizard_variations_alter(&$form, &$form
     $form['variations']['option_sets']['option_set_' . $option_set->osid]['advanced'] = personalize_campaign_wizard_variations_advanced($form, $form_state, $option_set);
     // Option set label is edited in a different spot so don't show it twice.
     $form['variations']['option_sets']['option_set_' . $option_set->osid]['advanced']['label']['#access'] = FALSE;
+    // Decision name is handled based on the type of tests created.
+    $form['variations']['option_sets']['option_set_' . $option_set->osid]['advanced']['decision_name']['#access'] = FALSE;
   }
   // Move the advanced agent options to the bottom of the page.
   $form['variations']['advanced']['#weight'] = 100;

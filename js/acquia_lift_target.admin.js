@@ -83,6 +83,22 @@
         $ul.parents('.el-card__content').find('.acquia-lift-test-message').toggle(numChildren > 1);
       }
 
+      /**
+       * Relabel the list to indicate the control.
+       */
+      function indicateControlVariation($ul) {
+        var $variationItems = $ul.find('li.acquia-lift-targeting-draggable');
+        var numberVariations = $variationItems.length;
+        for (var i = 0; i < numberVariations; i++) {
+          var $current = $variationItems.eq(i);
+          var itemText = $current.data('acquia-lift-option-label');
+          if (i == 0 && numberVariations > 1) {
+            itemText += ' (' + Drupal.t('Control') + ')';
+          }
+          $current.contents().get(0).nodeValue = itemText;
+        }
+      }
+
       // Add drag and drop behavior to assign variations to audiences.
       $('.acquia-lift-targeting-assignment').once(function() {
         var $wrapperDiv = $(this).parent();
@@ -151,6 +167,11 @@
             }
           },
           update: function (event, ui) {
+            // This will fire on the origin list too (the variations options)
+            // but there is no need to do anything with them.
+            if (!$(this).hasClass('acquia-lift-draggable-connect')) {
+              return;
+            }
             // Update the selected variations in the underlying select to
             // match the list contents.
             var $select = $(this).parent().children('select.acquia-lift-targeting-assignment');
@@ -162,12 +183,16 @@
             $select.val(selectedOptions);
             $orderInput.val(selectedOptions.join(','));
             checkSortableListEmpty($(this));
+            indicateControlVariation($(this));
 
             // Make sure the droppable area is last in the list.
             $(this).append($('.acquia-lift-targeting-droppable', this));
           }
         });
-        if (!allowMove) {
+        if (allowMove) {
+          // Indicate the control option for any initial tests.
+          indicateControlVariation($('ul.acquia-lift-draggable-variations', $wrapperDiv));
+        } else {
           // Special handling for the variations options list to enable a copy
           // to be added.
           $('.acquia-lift-draggable-variations', $wrapperDiv).sortable('option', 'helper', function(e, li) {

@@ -2643,7 +2643,7 @@ class AcquiaLiftWebTestCampaignWizard extends AcquiaLiftWebTestBase {
     $this->drupalLogin($admin_user);
     // Create a new agent.
     $agent = $this->createTargetingAgent();
-    $machine_name = $agent->getMachineName();
+    $machine_name = $agent->machine_name;
     $this->drupalGet("admin/structure/personalize/manage/{$machine_name}/review");
     // Check for auto-targeting.
     $this->assertFieldByName('visitor_context[]');

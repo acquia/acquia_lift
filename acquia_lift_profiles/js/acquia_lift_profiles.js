@@ -193,7 +193,7 @@ var _tcwq = _tcwq || [];
             }
           }
         }
-        var mappings = settings.acquia_lift_profiles.udfMappings, context_separator = settings.acquia_lift_profiles.udfMappingContextSeparator, plugins = {}, reverseMapping = {};
+        var mappings = settings.acquia_lift_profiles.udfMappings, context_separator = settings.acquia_lift_profiles.mappingContextSeparator, plugins = {}, udfValues = {}, reverseMapping = {};
         for(var type in mappings) {
           if (mappings.hasOwnProperty(type)) {
             for (var udf in mappings[type]) {

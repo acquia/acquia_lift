@@ -153,6 +153,7 @@ function acquia_lift_profiles_page_build(&$page) {
   $js_path = variable_get('acquia_lift_profiles_js_path', '');
   $account_name = variable_get('acquia_lift_profiles_account_name', '');
   $capture_identity = variable_get('acquia_lift_profiles_capture_identity', FALSE);
+  $vocabulary_mappings = variable_get('acquia_lift_profiles_vocabulary_mappings', array());
   $udf_mappings = variable_get('acquia_lift_profiles_udf_mappings', array());
   $segments = acquia_lift_profiles_get_segments();
   $settings = array(
@@ -161,19 +162,25 @@ function acquia_lift_profiles_page_build(&$page) {
     'account_name' => $account_name,
     'currentPath' => current_path(),
     'captureIdentity' => $capture_identity,
+    'vocabularyMappings' => $vocabulary_mappings,
     'udfMappings' => $udf_mappings,
     // Since we are using the same separator as provided by personalize
     // module for targeting values, we need to tell our JS settings about
     // it.
-    'udfMappingContextSeparator' => PERSONALIZE_TARGETING_ADMIN_SEPARATOR,
+    'mappingContextSeparator' => PERSONALIZE_TARGETING_ADMIN_SEPARATOR,
   );
   // We need to make sure that all assets for visitor context plugins used in our udf
   // mappings are avaiable so that we can get the actual context values.
   $assets = $attached = $contexts = array();
   ctools_include('plugins');
   // Group the mappings by context plugins so we can load each plugin only once.
-  foreach ($udf_mappings as $type => $mappings) {
-    foreach ($mappings as $name => $mapping) {
+  $context_mappings = $udf_mappings;
+  $context_mappings['vocabulary'] = $vocabulary_mappings;
+  foreach ($context_mappings as $mappings) {
+    foreach ($mappings as $mapping) {
+      if (empty($mapping)) {
+        continue;
+      }
       list($plugin, $context) = explode(PERSONALIZE_TARGETING_ADMIN_SEPARATOR, $mapping);
       if (!isset($contexts[$plugin])) {
         $contexts[$plugin] = array();

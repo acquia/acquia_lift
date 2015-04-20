@@ -122,7 +122,7 @@ function acquia_lift_personalize_campaign_wizard_variations_alter(&$form, &$form
       '#type' => 'container',
       '#theme' => 'acquia_lift_card',
       '#collapsible' => TRUE,
-      '#collapsed' => $agent_instance->supportsMultipleDecisionPoints(),
+      '#collapsed' => count($option_sets) > 1,
       '#title' => $option_set->label,
       '#attributes' => array(
         'class' => array('personalize-option-set'),
@@ -333,10 +333,11 @@ function acquia_lift_personalize_campaign_wizard_goals_alter(&$form, &$form_stat
         ),
       );
     }
+    $expand = count(element_children($form['goals']['all_goals'])) === 1 || (isset($params['goal']) && $params['goal'] == $goal_id);
     $form['goals']['all_goals'][$delta]['#type'] = 'container';
     $form['goals']['all_goals'][$delta]['#theme'] = 'acquia_lift_card';
     $form['goals']['all_goals'][$delta]['#collapsible'] = TRUE;
-    $form['goals']['all_goals'][$delta]['#collapsed'] = !isset($params['goal']) || $params['goal'] !== $goal_id;
+    $form['goals']['all_goals'][$delta]['#collapsed'] = !$expand;
     $form['goals']['all_goals'][$delta]['#disabled'] = !$enable_goals;
     unset($form['goals']['all_goals'][$delta]['remove']);
   }

@@ -1205,41 +1205,6 @@ function acquia_lift_personalize_campaign_wizard_variations_submit_element_add($
 }
 
 /**
- * Submit handler to redirect to an element option set page for editing.
- */
-function acquia_lift_personalize_campaign_wizard_variations_submit_element_edit($form, &$form_state) {
-  $agent = $form['#agent'];
-  // Value for the edit button is "edit_{osid}".
-  list($prefix, $osid) = explode('_', $form_state['triggering_element']['#name']);
-  $option_set = $form['variations']['option_sets']['option_set_' . $osid]['option_set']['#value'];
-  $form_state['redirect'] = $option_set->data['pages'];
-
-  // Run form-level submit handlers
-  acquia_lift_personalize_campaign_wizard_submit($form, $form_state);
-}
-
-/**
- * Submit handler to redirect to a personalize fields content page for editing.
- */
-function acquia_lift_personalize_campaign_wizard_fields_submit_element_edit($form, &$form_state) {
-  $agent = $form['#agent'];
-  // Value for the edit button is "edit_{osid}".
-  list($prefix, $osid) = explode('_', $form_state['triggering_element']['#name']);
-  $option_set = $form['variations']['option_sets']['option_set_' . $osid]['option_set']['#value'];
-  $form_state['redirect'] = array(
-    personalize_fields_personalize_edit_link($option_set),
-    array(
-      'query' => array(
-        'destination' => url('admin/structure/personalize/manage/' . $agent->machine_name . '/variations'),
-      ),
-    ),
-  );
-
-  // Run form-level submit handlers
-  acquia_lift_personalize_campaign_wizard_submit($form, $form_state);
-}
-
-/**
  * Submit function for goals form.
  */
 function acquia_lift_personalize_campaign_wizard_goals_submit(&$form, &$form_state, &$agent_data, $agent_instance) {
@@ -1659,14 +1624,25 @@ function _acquia_lift_personalize_campaign_wizard_variations_element(&$form, &$f
     '#default_value' => $option_set->label,
     '#title' => t('Variation set')
   );
+  $items = array();
+  foreach ($option_set->options as $option) {
+    $items[] = $option['option_label'];
+  };
+  if (!empty($items)) {
+    $element['display'] = array(
+      '#markup' => theme('item_list', array(
+        'items' => $items,
+        'title' => t('Variations'),
+      )),
+    );
+  }
   if (!empty($option_set->data['pages'])) {
     // Note that utilizing the personalize_html_tag theme here somehow prevents
     // the element and form-altered submit handlers from being called.
     $element['edit'] = array(
-      '#type' => 'submit',
-      '#submit' => array('acquia_lift_personalize_campaign_wizard_variations_submit_element_edit'),
-      '#value' => t('Edit variation set'),
-      '#name' => 'edit_' . $option_set->osid,
+      '#type' => 'link',
+      '#href' => $option_set->data['pages'],
+      '#title' => t('Edit variations in context'),
     );
   }
   return $element;
@@ -1727,12 +1703,17 @@ function _acquia_lift_personalize_campaign_wizard_variations_fields(&$form, &$fo
     )),
   );
   $edit_link = personalize_fields_personalize_edit_link($option_set);
+  $machine_name = $agent_data->machine_name;
   if (!empty($edit_link)) {
     $element['edit'] = array(
-      '#type' => 'submit',
-      '#submit' => array('acquia_lift_personalize_campaign_wizard_fields_submit_element_edit'),
-      '#value' => t('Edit variation set'),
-      '#name' => 'edit_' . $option_set->osid,
+      '#type' => 'link',
+      '#href' => $edit_link,
+      '#options' => array(
+        'query' => array(
+          'destination' => url("admin/structure/personalize/manage/${machine_name}/variations"),
+        ),
+      ),
+      '#title' => t('Edit variations in context'),
     );
   }
   return $element;

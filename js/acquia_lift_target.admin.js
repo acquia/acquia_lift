@@ -48,7 +48,7 @@
         $select.val(selectedItems);
         // Remove the list item.
         $li.remove();
-        checkSortableListEmpty($ul);
+        checkTargetingPlaceholder($ul);
       }
 
       /**
@@ -69,17 +69,17 @@
       }
 
       /**
-       * Checks if a sortable list is empty and if it is adds placeholder
-       * text.
+       * Adjusts the location of the targeting placeholder.
        */
-      function checkSortableListEmpty($ul) {
+      function checkTargetingPlaceholder($ul) {
         // If all of the items have been removed then add the placeholder.
-        var numChildren = $ul.children('li.acquia-lift-targeting-draggable').length;
-        if (numChildren == 0) {
+        if ($ul.find('li.acquia-lift-targeting-empty').length == 0) {
           $ul.append(Drupal.theme('acquiaLiftTargetingEmptyAudience'));
         } else {
-          $('li.acquia-lift-targeting-empty', $ul).remove();
+          // Move it to the end of the elements.
+          $('li.acquia-lift-targeting-empty', $ul).appendTo($ul);
         }
+        var numChildren = $ul.find('li.acquia-lift-targeting-draggable').length;
         $ul.parents('.el-card__content').find('.acquia-lift-test-message').toggle(numChildren > 1);
       }
 
@@ -139,7 +139,7 @@
 
         $('.acquia-lift-draggable-variations', $wrapperDiv).sortable({
           items: '> .acquia-lift-targeting-draggable',
-          forcePlaceholderSize: true,
+          placeholder: 'element-hidden',
           opacity: 0.7,
           cursor: 'move',
           tolerance: 'pointer',
@@ -182,7 +182,7 @@
             });
             $select.val(selectedOptions);
             $orderInput.val(selectedOptions.join(','));
-            checkSortableListEmpty($(this));
+            checkTargetingPlaceholder($(this));
             indicateControlVariation($(this));
 
             // Make sure the droppable area is last in the list.
@@ -192,6 +192,8 @@
         if (allowMove) {
           // Indicate the control option for any initial tests.
           indicateControlVariation($('ul.acquia-lift-draggable-variations', $wrapperDiv));
+          // Add a placeholder list item.
+          checkTargetingPlaceholder($('.acquia-lift-draggable-variations', $wrapperDiv));
         } else {
           // Special handling for the variations options list to enable a copy
           // to be added.
@@ -208,9 +210,6 @@
             this.copyHelper = null;
           });
         }
-        // Add a placeholder list item if the audience doesn't have any
-        // assignments.
-        checkSortableListEmpty($('.acquia-lift-draggable-variations', $wrapperDiv));
 
         // Make options removable if indicated.
         $('.acquia-lift-targeting-remove', $wrapperDiv).on('click', handleDraggableItemRemove);

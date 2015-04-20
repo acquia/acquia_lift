@@ -193,8 +193,7 @@ var _tcwq = _tcwq || [];
             }
           }
         }
-        var mappings = $.extend(settings.acquia_lift_profiles.udfMappings, {'vocabulary': settings.acquia_lift_profiles.vocabularyMappings}),
-          context_separator = settings.acquia_lift_profiles.mappingContextSeparator, plugins = {}, pageContextValues = {}, reverseMapping = {};
+        var mappings = settings.acquia_lift_profiles.mappings, context_separator = settings.acquia_lift_profiles.mappingContextSeparator, plugins = {}, pageContextValues = {}, reverseMapping = {};
         for(var type in mappings) {
           if (mappings.hasOwnProperty(type)) {
             for (var udf in mappings[type]) {

@@ -6,7 +6,7 @@ QUnit.module("Acquia Lift Profiles", {
     Drupal.settings.personalize = Drupal.settings.personalize || {};
     Drupal.settings = Drupal.settings || {};
     Drupal.settings.acquia_lift_profiles = Drupal.settings.acquia_lift_profiles || {};
-    Drupal.settings.acquia_lift_profiles.udfMappings = {};
+    Drupal.settings.acquia_lift_profiles.mappings = {};
     Drupal.settings.acquia_lift_profiles.mappingContextSeparator = '__';
 
     Drupal.personalize = Drupal.personalize || {};
@@ -110,7 +110,7 @@ QUnit.asyncTest( "init test", function( assert ) {
   };
   var settings = {
     acquia_lift_profiles: {
-      udfMappings: {
+      mappings: {
         person: {
           person_udf1: "my_first_plugin__some-context",
           person_udf2: "my_promise_plugin__some-other-context",

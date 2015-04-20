@@ -1382,7 +1382,7 @@ function _acquia_lift_personalize_campaign_wizard_variations_block(&$form, &$for
   module_load_include('inc', 'acquia_lift', 'acquia_lift.ui');
   module_load_include('inc', 'acquia_lift', 'acquia_lift.admin');
 
-  $option_delete_allowed = empty($option_set) || acquia_lift_target_definition_changes_allowed($agent_data);
+  $changes_enabled = empty($option_set) || acquia_lift_target_definition_changes_allowed($agent_data);
 
   _acquia_lift_personalize_campaign_wizard_form_state_blocks_alter($form_state, $block_content, $option_set);
   $element = personalize_blocks_form($element, $form_state, 'embed', $option_set);
@@ -1437,10 +1437,10 @@ function _acquia_lift_personalize_campaign_wizard_variations_block(&$form, &$for
 
     acquia_lift_chosenify_element($block['block']['bid'], array('acquia-lift-chosen-select-half'));
 
-    // Hide the remove button if the options is currently targeted in a running
+    // Hide the remove button if the option is currently targeted in a running
     // campaign.
     $option_id = isset($block['option_id']['#value']) ? $block['option_id']['#value'] : '';
-    if (!empty($option_id) && !$option_delete_allowed && acquia_lift_target_option_targeted($agent_data->machine_name, $option_id)) {
+    if (!empty($option_id) && !$changes_enabled && acquia_lift_target_option_targeted($agent_data->machine_name, $option_id)) {
       $block['remove']['#access'] = FALSE;
     }
 

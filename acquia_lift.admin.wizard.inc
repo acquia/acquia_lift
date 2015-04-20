@@ -1212,14 +1212,7 @@ function acquia_lift_personalize_campaign_wizard_variations_submit_element_edit(
   // Value for the edit button is "edit_{osid}".
   list($prefix, $osid) = explode('_', $form_state['triggering_element']['#name']);
   $option_set = $form['variations']['option_sets']['option_set_' . $osid]['option_set']['#value'];
-  $form_state['redirect'] = array(
-    $option_set->data['pages'],
-    array(
-      'query' => array(
-        'destination' => url('admin/structure/personalize/manage/' . $agent->machine_name . '/variations'),
-      ),
-    ),
-  );
+  $form_state['redirect'] = $option_set->data['pages'];
 
   // Run form-level submit handlers
   acquia_lift_personalize_campaign_wizard_submit($form, $form_state);

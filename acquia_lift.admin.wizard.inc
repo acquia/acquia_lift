@@ -1953,11 +1953,11 @@ function _acquia_lift_personalize_campaign_wizard_review_tests($agent_data, $ele
     '#collapsible' => TRUE,
     '#collapsed' => TRUE,
   );
-  $decision_style = isset($agent_data->data['decision_style']) ? $agent_data->data['decision_style'] : 'adaptive';
+  $decision_style = isset($agent_data->data['decision_style']) ? $agent_data->data['decision_style'] : 'random';
   $form['decision_style'] = array(
     '#type' => 'radios',
     '#title' => t('Decision Style'),
-    '#options' => array('adaptive' => t('Auto-personalize'), 'random' => t('Test only')),
+    '#options' => array('random' => t('Test only'), 'adaptive' => t('Auto-personalize')),
     '#default_value' => $decision_style,
     '#title_display' => 'invisible',
   );

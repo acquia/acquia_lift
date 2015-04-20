@@ -486,7 +486,7 @@ function acquia_lift_personalize_campaign_wizard_targeting_alter(&$form, &$form_
   if (isset($agent_data->data['visitor_context']) && !empty($agent_data->data['visitor_context'])) {
     unset($form['targeting'], $form['actions']);
     $form['main'] = array(
-      '#markup' => t('Explicit targeting is not supported when automatic targeting is in place.  Remove automatic targeting in the <a href="!review">advanced section of the review section</a> to continue.', array(
+      '#markup' => t('Explicit targeting is not supported when automatic targeting is in place.  Remove automatic targeting in the <a href="!review">advanced section of the review screen</a> to continue.', array(
         '!review' => url('admin/structure/personalize/manage/' . $agent_data->machine_name . '/review'),
       )),
     );

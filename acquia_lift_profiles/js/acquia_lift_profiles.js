@@ -193,7 +193,8 @@ var _tcwq = _tcwq || [];
             }
           }
         }
-        var mappings = settings.acquia_lift_profiles.udfMappings, context_separator = settings.acquia_lift_profiles.mappingContextSeparator, plugins = {}, udfValues = {}, reverseMapping = {};
+        var mappings = $.extend(settings.acquia_lift_profiles.udfMappings, {'vocabulary': settings.acquia_lift_profiles.vocabularyMappings}),
+          context_separator = settings.acquia_lift_profiles.mappingContextSeparator, plugins = {}, pageContextValues = {}, reverseMapping = {};
         for(var type in mappings) {
           if (mappings.hasOwnProperty(type)) {
             for (var udf in mappings[type]) {
@@ -227,7 +228,7 @@ var _tcwq = _tcwq || [];
                     // Set this is as the value for all UDFs that use this context.
                     for (var i in reverseMapping[fullContextName]) {
                       if (reverseMapping[fullContextName].hasOwnProperty(i)) {
-                        udfValues[reverseMapping[fullContextName][i]] = contextValues[pluginName][contextName];
+                        pageContextValues[reverseMapping[fullContextName][i]] = contextValues[pluginName][contextName];
                       }
                     }
                   }
@@ -251,7 +252,7 @@ var _tcwq = _tcwq || [];
             'author':'',
             'evalSegments': true,
             'trackingId': trackingId
-          }, settings.acquia_lift_profiles.pageContext, udfValues);
+          }, settings.acquia_lift_profiles.pageContext, pageContextValues);
           _tcaq.push( [ 'captureView', 'Content View', pageInfo ] );
 
           if(settings.acquia_lift_profiles.hasOwnProperty('identity')) {

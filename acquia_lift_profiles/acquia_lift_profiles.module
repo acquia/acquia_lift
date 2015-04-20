@@ -9,11 +9,6 @@ define('ACQUIA_LIFT_PROFILES_THUMBNAIL_WIDGET_SEPARATOR', '|');
 define('ACQUIA_LIFT_PROFILES_DEFAULT_IDENTITY_TYPE_DEFAULT', 'email');
 
 /**
- * Class FieldException
- */
-class AcquiaLiftProfilesFunctionNotExistException extends Exception {}
-
-/**
  * Implements hook_menu().
  */
 function acquia_lift_profiles_menu() {

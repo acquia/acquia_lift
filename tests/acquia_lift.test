@@ -2193,8 +2193,7 @@ class AcquiaLiftWebTestCampaignWizard extends AcquiaLiftWebTestBase {
     $this->assertTrue($settings['acquia_lift']['option_sets'][$js_osid]['option-A']['deletable']);
 
     // Start the campaign and the elements should not be deletable.
-    personalize_agent_set_status($agent->machine_name, PERSONALIZE_STATUS_RUNNING);
-    $this->resetAll();
+    $this->drupalPost('admin/structure/personalize/manage/' . $agent->machine_name . '/review', array(), t('Start'));
     $this->drupalGet('');
     $settings = $this->drupalGetSettings();
     $this->assertFalse($settings['acquia_lift']['option_sets'][$js_osid][PERSONALIZE_CONTROL_OPTION_ID]['editable']);
@@ -2609,10 +2608,13 @@ class AcquiaLiftWebTestCampaignWizard extends AcquiaLiftWebTestBase {
     $this->assertEqual($agent->data['explore_rate'], 25);
     $this->assertTrue($agent->data['cache_decisions']);
 
-    unset($edit['cache_decisions']);
+    // Update decision cache.
+    $edit = array(
+      'cache_decisions' => FALSE,
+    );
     $this->drupalPost(NULL, $edit, $this->getButton('wizard_save'));
-    $this->resetAll();
-    $agent = personalize_agent_load($agent->machine_name);
+
+    $agent = personalize_agent_load($agent->machine_name, TRUE);
     $this->assertFalse($agent->data['cache_decisions']);
 
     // Start the agent and verify that the options are no longer editable.

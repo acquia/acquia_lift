@@ -710,9 +710,16 @@ function acquia_lift_personalize_campaign_wizard_review_alter(&$form, &$form_sta
     }
     $count_audiences = count($targeting);
     foreach ($targeting as $options) {
-      if (count($options) > 1) {
-        $has_tests = TRUE;
-        break;
+      $num_options = count($options);
+      if ($num_options > 0) {
+        // Update the audience count if the audience has at least one
+        // option assigned.
+        $count_audiences++;
+        if ($num_options > 1) {
+          // If there is more than one option assigned, then this audience
+          // should be shown a test.
+          $has_tests = TRUE;
+        }
       }
     }
   }

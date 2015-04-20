@@ -186,15 +186,16 @@
 #navbar-administration .navbar-tray .acquia-lift-menu-link, #navbar-administration .menu .menu a.acquia-lift-menu-link {
   color: #29aae1;
 }
-#navbar-administration .navbar-tray .acquia-lift-menu-link:hover, #navbar-administration .navbar-tray .acquia-lift-menu-link:active {
+#navbar-administration .navbar-tray .acquia-lift-menu-link:hover, #navbar-administration .navbar-tray .acquia-lift-menu-link:active, #navbar-administration .menu .menu a.acquia-lift-menu-link:hover, #navbar-administration .menu .menu a.acquia-lift-menu-link:active {
   color: #007ec0;
 }
-#navbar-administration .menu .menu a.acquia-lift-menu-link:hover, #navbar-administration .menu .menu a.acquia-lift-menu-link:active {
-  color: #007ec0;
+#navbar-administration .navbar-tray .acquia-lift-menu-link.acquia-lift-disabled, #navbar-administration .menu .menu a.acquia-lift-menu-link.acquia-lift-disabled {
+  color: #999;
+  cursor: default;
 }
 
 /* Create links */
-#navbar-administration .navbar-tray-horizontal .acquia-lift-menu-create {
+#navbar-administration .navbar-tray-horizontal .acquia-lift-menu-create, #navbar-administration .navbar-tray-horizontal .acquia-lift-menu-all {
   border-top: 0.1em solid #ccc;
   padding: .7em 1.3333em .7em 1.3333em;
 }

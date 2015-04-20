@@ -539,8 +539,28 @@ function acquia_lift_personalize_agent_presave($agent) {
 function acquia_lift_personalize_goal_presave($goal) {
   $agent = personalize_agent_load($goal->agent);
   module_load_include('inc', 'acquia_lift', 'acquia_lift.admin');
-  if (!acquia_lift_target_goal_changes_allowed($agent)) {
-    throw new PersonalizeException('Goals cannot be modified until the personalization is paused.');
+  if (!acquia_lift_target_definition_changes_allowed($agent)) {
+    throw new PersonalizeException(t('Goals cannot be modified until the personalization is paused.'));
+  }
+}
+
+/**
+ * Implements hook_personalize_option_set_presave().
+ */
+function acquia_lift_personalize_option_set_presave($option_set) {
+  module_load_include('inc', 'acquia_lift', 'acquia_lift.admin');
+  $agent_data = personalize_agent_load($option_set->agent);
+  if (acquia_lift_target_definition_changes_allowed($agent_data)) {
+    return;
+  }
+  $original_option_set = personalize_option_set_load($option_set->osid);
+  $new_option_ids = array_map(function($option) {return $option['option_id'];}, $option_set->options);
+  $original_option_ids = array_map(function($option) {return $option['option_id'];}, $original_option_set->options);
+  $removed = array_diff($original_option_ids, $new_option_ids);
+  foreach ($removed as $option_id) {
+    if (acquia_lift_target_option_targeted($agent_data->machine_name, $option_id)) {
+      throw new PersonalizeException(t('Variations used in targeting cannot be removed until the personalization is paused.'));
+    }
   }
 }
 
@@ -548,6 +568,35 @@ function acquia_lift_personalize_goal_presave($goal) {
  * Implements hook_personalize_option_set_render().
  */
 function acquia_lift_personalize_option_set_render(&$element, $option_set) {
+  // For administrative users and Acquia Lift target agents, indicate if option
+  // sets are deletable (only applicable to personalize elements sets).
+  if (user_access('manage personalized content')) {
+    $js_osid = personalize_stringify_osid($option_set->osid);
+    $option_set_settings = array();
+    if ($option_set->plugin === 'elements') {
+      // Personalize elements are always editable, but only deletable if not
+      // used in targeting in a running/competed campaign.
+      $agent_data = personalize_agent_load($option_set->agent);
+      if ($agent_data->plugin === 'acquia_lift_target') {
+        module_load_include('inc', 'acquia_lift', 'acquia_lift.admin');
+        $changes_enabled = acquia_lift_target_definition_changes_allowed($agent_data);
+        foreach($option_set->options as $option) {
+          $is_control = $option['option_id'] === PERSONALIZE_CONTROL_OPTION_ID;
+          $option_set_settings['acquia_lift']['option_sets'][$js_osid][$option['option_id']]['deletable'] = !$is_control && ($changes_enabled || !acquia_lift_target_option_targeted($agent_data->machine_name, $option['option_id']));
+          $option_set_settings['acquia_lift']['option_sets'][$js_osid][$option['option_id']]['editable'] = !$is_control;
+        }
+      }
+    }
+    else {
+      // Other types of options are not editable or deletable from the unibar.
+      foreach ($option_set->options as $option) {
+        $option_set_settings['acquia_lift']['option_sets'][$js_osid][$option['option_id']]['deletable'] = FALSE;
+        $option_set_settings['acquia_lift']['option_sets'][$js_osid][$option['option_id']]['editable'] = FALSE;
+      }
+    }
+    $element['#attached']['js'][] = array('type' => 'setting', 'data' => $option_set_settings);
+  }
+
   if (empty($option_set->targeting)) {
     return;
   }
@@ -2148,6 +2197,56 @@ function acquia_lift_form_personalize_admin_form_alter(&$form, &$form_state) {
 /**
  * Implements hook_form_FORM_ID_alter().
  */
+function acquia_lift_form_personalize_elements_form_alter(&$form, &$form_state) {
+  if (empty($form['agent_select']['#value'])) {
+    return;
+  }
+  $agent_data = personalize_agent_load($form['agent_select']['#value']);
+  if ($agent_data->plugin !== 'acquia_lift_target') {
+    return;
+  }
+  module_load_include('inc', 'acquia_lift', 'acquia_lift.admin');
+  if (!acquia_lift_target_definition_changes_allowed($agent_data)) {
+    drupal_set_message(t('Variations that are in use cannot be removed until the %campaign_name personalization is paused.', array(
+      '%campaign_name' => $agent_data->label,
+    )));
+  }
+
+  $form['#validate'][] = 'acquia_lift_personalize_elements_form_validate';
+}
+
+/**
+ * Validation handler for personalize_elements_form.
+ */
+function acquia_lift_personalize_elements_form_validate(&$form, &$form_state) {
+  if (!isset($form_state['values']['agent_select'])) {
+    return;
+  }
+  $agent = $form_state['values']['agent_select'];
+  $agent_data = personalize_agent_load($agent);
+  if ($agent_data->plugin !== 'acquia_lift_target') {
+    return;
+  }
+  module_load_include('inc', 'acquia_lift', 'acquia_lift.admin');
+  if (acquia_lift_target_definition_changes_allowed($agent_data)) {
+    return;
+  }
+  // Variations cannot be removed from running acquia_lift_target campaigns if
+  // they are used in targeting.
+  foreach ($form_state['values']['options'] as $delta => $option) {
+    if (empty($option['personalize_elements_content']) && !empty($option['option_id'])) {
+      if (acquia_lift_target_option_targeted($agent, $option['option_id'])) {
+        form_set_error('options][' . $delta . '][personalize_elements_content', t('Variations cannot be removed until the %campaign_name personalization is paused.', array(
+          '%campaign_name' => $agent_data->label,
+        )));
+      };
+    }
+  }
+}
+
+/**
+ * Implements hook_form_FORM_ID_alter().
+ */
 function acquia_lift_form_personalize_elements_configuration_form_alter(&$form, &$form_state) {
   $form['acquia_lift_html_context_strip'] = array(
     '#type' => 'checkbox',
@@ -2170,6 +2269,28 @@ function acquia_lift_personalize_elements_confirmation_form_submit($form, &$form
  */
 function acquia_lift_form_personalize_blocks_form_alter(&$form, &$form_state) {
   $form['#submit'][] = 'acquia_lift_personalize_blocks_form_submit';
+  if (!isset($form['agent_select']['#value'])) {
+    return;
+  }
+  module_load_include('inc', 'acquia_lift', 'acquia_lift.admin');
+  $agent = $form['agent_select']['#value'];
+  $agent_data = personalize_agent_load($agent);
+  if (!acquia_lift_target_definition_changes_allowed($agent_data)) {
+    $show_remove_message = FALSE;
+    foreach(element_children($form['pblock_wrapper']['blocks']) as $delta) {
+      $option_id = $form['pblock_wrapper']['blocks'][$delta]['option_id']['#value'];
+      if (acquia_lift_target_option_targeted($agent, $option_id)) {
+        $form['pblock_wrapper']['blocks'][$delta]['remove']['#access'] = FALSE;
+        $show_remove_message = TRUE;
+      }
+    }
+    if ($show_remove_message) {
+      drupal_set_message(t('Variations in use cannot be removed from %variation_set until the %agent_name personalization is paused.', array(
+        '%variation_set' => $form['title']['#default_value'],
+        '%agent_name' => $agent_data->label,
+      )), 'warning');
+    }
+  }
 }
 
 /**
@@ -2217,6 +2338,69 @@ function acquia_lift_personalize_fields_form_element_alter(&$element, $lang) {
     $element[$lang]['#theme'] = 'acquia_lift_personalizable_field_form';
   }
   $element['#attached']['library'][] = array('acquia_lift', 'acquia_lift.fields');
+  $element['#element_validate'][] = 'acquia_lift_personalize_fields_form_element_validate';
+}
+
+/**
+ * Personalized fields element validation.
+ */
+function acquia_lift_personalize_fields_form_element_validate($element, &$form_state, $form) {
+  $agent = isset($element['#attributes']['data-personalize-agent']) ? $element['#attributes']['data-personalize-agent'] : NULL;
+  if (empty($agent)) {
+    return;
+  }
+  $agent_data = personalize_agent_load($agent);
+  if ($agent_data->plugin !== 'acquia_lift_target') {
+    return;
+  }
+  module_load_include('inc', 'acquia_lift', 'acquia_lift.admin');
+  $changes_allowed = acquia_lift_target_definition_changes_allowed($agent_data);
+  if ($changes_allowed) {
+    return;
+  }
+  // We can tell if a text field is emptied, but not if a remove button has been
+  // pressed because that removes the personalize_fields_option_id value. We
+  // show a specific field error when we can, otherwise, check the number of
+  // options and show for the entire field.
+  $lang_element = $element[$element['#language']];
+  $field_options = element_children($lang_element);
+  $field_title = isset($lang_element['#title']) ? $lang_element['#title'] : $lang_element['#field_name'];
+  $number_options = 0;
+  $shown_error = FALSE;
+  foreach ($field_options as $index) {
+    if (!is_numeric($index)) {
+      continue;
+    }
+    $option_field = drupal_array_get_nested_value($form_state['values'], $lang_element[$index]['#parents']);
+    $option_value = personalize_fields_get_option_value($option_field);
+    if (!empty($option_value)) {
+      // Looking specifically for options that have been deleted.
+      $number_options++;
+      continue;
+    }
+    // Determine if the deleted option is targeted in a running campaign
+    // if it is possible to do so.
+    if (!empty($lang_element[$index]['personalize_fields_option_id'])) {
+      $option_id = $lang_element[$index]['personalize_fields_option_id']['#value'];
+      // A field cannot be deleted while it is being used in targeting.
+      if (acquia_lift_target_option_targeted($agent_data->machine_name, $option_id)) {
+        $shown_error = TRUE;
+        form_set_error(implode('][', $lang_element[$index]['#parents']), t('The %field_title field cannot be removed until the personalization is paused.', array(
+          '%field_title' => $field_title,
+        )));
+      }
+    }
+  }
+  // If an error was not found based on option values, then check the number of
+  // options for this element against the number saved in the option set.
+  if (!$shown_error) {
+    $option_set = personalize_option_set_load($element['#attributes']['data-personalize-osid']);
+    if ($number_options < count($option_set->options)) {
+      form_set_error(implode('][', $element['#parents']), t('Fields for %field_title in use by personalization cannot be removed until the personalization is paused.', array(
+        '%field_title' => $field_title,
+      )));
+    }
+  }
 }
 
 /**

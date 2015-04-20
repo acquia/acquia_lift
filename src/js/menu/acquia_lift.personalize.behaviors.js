@@ -16,6 +16,22 @@
         'activeCampaign': Drupal.settings.personalize.activeCampaign,
         'campaigns': Drupal.settings.acquia_lift.campaigns
       };
+      // Add in the Acquia Lift specific editable/deletable indicators for
+      // option set options.
+      var liftOptionSetSettings = Drupal.settings.acquia_lift.option_sets || {};
+      for (var osid in settings.option_sets) {
+        if (settings.option_sets.hasOwnProperty(osid)) {
+          if (liftOptionSetSettings.hasOwnProperty(osid)) {
+            for (var i = 0; i < settings.option_sets[osid].options.length; i++) {
+              var option_id = settings.option_sets[osid].options[i].option_id;
+              if (liftOptionSetSettings[osid][option_id]) {
+                settings.option_sets[osid].options[i].editable = liftOptionSetSettings[osid][option_id].editable;
+                settings.option_sets[osid].options[i].deletable = liftOptionSetSettings[osid][option_id].deletable;
+              }
+            }
+          }
+        }
+      }
       var ui = Drupal.acquiaLiftUI;
       var addedCampaigns = {};
       var addedOptionSets = {};

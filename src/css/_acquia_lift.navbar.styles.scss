@@ -221,14 +221,13 @@
   .navbar-tray .acquia-lift-menu-link, .#{$menu-class} .#{$menu-class} a.acquia-lift-menu-link {
     color: #29aae1;
   }
-  .navbar-tray .acquia-lift-menu-link {
+  .navbar-tray .acquia-lift-menu-link, .#{$menu-class} .#{$menu-class} a.acquia-lift-menu-link {
     &:hover, &:active {
       color: #007ec0;
     }
-  }
-  .#{$menu-class} .#{$menu-class} a.acquia-lift-menu-link {
-    &:hover, &:active {
-      color: #007ec0;
+    &.acquia-lift-disabled {
+      color: $text-color-disabled;
+      cursor: default;
     }
   }
 }
@@ -236,7 +235,7 @@
 /* Create links */
 #navbar-administration {
   .navbar-tray-horizontal {
-    .acquia-lift-menu-create {
+    .acquia-lift-menu-create, .acquia-lift-menu-all {
       border-top: $border-size solid $border-color;
       padding: .7em 1.3333em .7em 1.3333em;
     }

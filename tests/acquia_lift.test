@@ -225,6 +225,40 @@ class AcquiaLiftWebTestBase extends DrupalWebTestCase
   }
 
   /**
+   * Create personalize element option set.
+   */
+  protected function createPersonalizeElementsOptionSet($agent_name, $option_data) {
+    $option_set = array(
+      'label' => isset($option_data['label']) ? $option_data['label'] : 'Element test set 1',
+      'plugin' => 'elements',
+      'agent' => $agent_name,
+      'executor' => 'personalizeElements',
+      'options' => array(),
+      'data' => array(
+        'personalize_elements_selector' => isset($option_data['selector']) ? $option_data['selector'] : '#some-selector',
+        'personalize_elements_type' => isset($option_data['type']) ? $option_data['type'] : 'editText',
+        'pages' => isset($option_data['pages']) ? $option_data['pages'] : 'node',
+      ),
+    );
+    if (!empty($option_data['add_control'])) {
+      $option_set['options'][] = array(
+        'option_label' => PERSONALIZE_CONTROL_OPTION_LABEL,
+        'option_id' => PERSONALIZE_CONTROL_OPTION_ID,
+        'personalize_elements_content' => '',
+      );
+    }
+    $num_options = empty($option_data['num_options']) ? 2 : $option_data['num_options'];
+    for ($i = 0; $i < $num_options; $i++) {
+      $option_set['options'][] = array(
+        'option_id' => personalize_generate_option_id($i),
+        'option_label' => personalize_generate_option_label($i),
+        'personalize_elements_content' => 'Generated content ' . ($i + 1),
+      );
+    }
+    return personalize_option_set_save((object) $option_set);
+  }
+
+  /**
    * Creates a user profile field which can be used for targeting.
    *
    * @return array
@@ -1639,6 +1673,10 @@ class AcquiaLiftWebTestTarget extends AcquiaLiftWebTestBase {
     $this->assertFieldByName($reset_button_name);
   }
 
+  /**
+   * Tests which components of a campaign are editable when the depending on
+   * agent status.
+   */
   function testAgentEditable() {
     $this->drupalLogin($this->managerUser);
     $agent = $this->createTargetingAgent();
@@ -1667,6 +1705,37 @@ class AcquiaLiftWebTestTarget extends AcquiaLiftWebTestBase {
       $this->assertEqual($e->getMessage(), 'Goals cannot be modified until the personalization is paused.');
     }
 
+    // Try to add a variation
+    $option_set->options[] = array(
+      'option_id' => 'fourth-choice',
+      'option_label' => 'Fourth choice',
+    );
+    try {
+      $option_set = personalize_option_set_save($option_set);
+      $this->pass('No errors should be thrown when adding variations to a running campaign.');
+    } catch (Exception $e) {
+      $this->fail('No errors should be thrown when adding variations to a running campaign.');
+    }
+
+    // Try to delete the new variation.
+    array_pop($option_set->options);
+    try {
+      $option_set = personalize_option_set_save($option_set);
+      $this->pass('No errors should be thrown when deleting non-targeted variations from a running campaign.');
+    } catch (Exception $e) {
+      $this->fail('No errors should be thrown when deleting non-targeted variations from a running campaign.');
+    }
+
+    // Try to delete a targeted option.
+    unset($option_set->options[0]);
+    try {
+      $option_set = personalize_option_set_save($option_set);
+      $this->fail('Should not get here because an error should be thrown while removing this variation.');
+    } catch (Exception $e) {
+      $this->assertTrue($e instanceof PersonalizeException);
+      $this->assertEqual($e->getMessage(), 'Variations used in targeting cannot be removed until the personalization is paused.');
+    }
+
     // Pause the agent.
     personalize_agent_set_status($agent->machine_name, PERSONALIZE_STATUS_PAUSED);
 
@@ -1676,6 +1745,10 @@ class AcquiaLiftWebTestTarget extends AcquiaLiftWebTestBase {
     // Verify the change.
     $goal = personalize_goal_load($goal->id);
     $this->assertEqual($goal->value, 5);
+
+    // Remove the variation.
+    $option_set = personalize_option_set_save($option_set);
+    $this->assertEqual(count($option_set->options), 2);
 
     // Complete the agent.
     personalize_agent_set_status($agent->machine_name, PERSONALIZE_STATUS_COMPLETED);
@@ -1690,6 +1763,95 @@ class AcquiaLiftWebTestTarget extends AcquiaLiftWebTestBase {
     }
   }
 
+  /**
+   * Tests messaging for available operations based on agent status.
+   */
+  public function testAgentEditableMessaging() {
+    module_enable(array('personalize_blocks', 'personalize_elements', 'personalize_fields'));
+    $this->resetAll();
+    $admin_user = $this->drupalCreateUser(array('access administration pages', 'administer site configuration', 'access content', 'administer content types', 'administer nodes', 'bypass node access', 'manage personalized content'));
+    $this->drupalLogin($admin_user);
+
+    $agent = $this->createTargetingAgent();
+
+    // Personalize blocks.
+    $option_set = $this->createPersonalizedBlock(1, $agent, 2);
+
+    $pb_message = 'Variations in use cannot be removed from Personalized Block 2 until the ' . $agent->label . ' personalization is paused.';
+    $this->drupalGet('admin/structure/personalize/variations/personalize-blocks/manage/1/edit');
+    $this->assertNoText($pb_message);
+
+    personalize_agent_set_status($agent->machine_name, PERSONALIZE_STATUS_RUNNING);
+    $this->drupalGet('admin/structure/personalize/variations/personalize-blocks/manage/1/edit');
+    $this->assertText($pb_message);
+
+    // Reset the agent.
+    personalize_agent_set_status($agent->machine_name, PERSONALIZE_STATUS_NOT_STARTED);
+    personalize_option_set_delete($option_set->osid);
+
+    // Personalize elements.
+    $option_set = $this->createPersonalizeElementsOptionSet($agent->machine_name, array(
+      'num_options' => 4,
+    ));
+
+    $pe_message = 'Variations that are in use cannot be removed until the ' . $agent->label . ' personalization is paused.';
+    $this->drupalGet('admin/structure/personalize/variations/personalize-elements/manage/' . $option_set->osid . '/edit');
+    $this->assertNoText($pe_message);
+
+    $edit = array(
+      'options[1][personalize_elements_content]' => 'Mahna mahna',
+      'options[2][personalize_elements_content]' => 'Do doo do do do',
+      'options[3][personalize_elements_content]' => 'Mahna mahna',
+      'options[4][personalize_elements_content]' => '',
+    );
+    $this->drupalPost(NULL, $edit, 'Save');
+    $this->resetAll();
+
+    // Verify that one option was removed.
+    $option_set = personalize_option_set_load($option_set->osid);
+    $this->assertEqual(count($option_set->options), 3);
+
+    personalize_agent_set_status($agent->machine_name, PERSONALIZE_STATUS_RUNNING);
+    $this->drupalGet('admin/structure/personalize/variations/personalize-elements/manage/' . $option_set->osid . '/edit');
+    $this->assertText($pe_message);
+
+    $edit = array(
+      'options[1][personalize_elements_content]' => 'Mahna mahna',
+      'options[2][personalize_elements_content]' => 'Do doo do do do',
+      'options[3][personalize_elements_content]' => '',
+    );
+    $this->drupalPost(NULL, $edit, 'Save');
+    $this->resetAll();
+    $this->assertText('Variations cannot be removed until the ' . $agent->label . ' personalization is paused.');
+
+    $option_set = personalize_option_set_load($option_set->osid);
+    $this->assertEqual(count($option_set->options), 3);
+
+    // Personalize fields.
+    $this->createPersonalizedArticleField();
+    list($node, $os, $agent_name) = $this->createPersonalizedField();
+
+    personalize_agent_set_status($agent_name, PERSONALIZE_STATUS_RUNNING);
+
+    // Verify you can't remove from a running agent.
+    $pf_message = 'The Personalizable Headline field cannot be removed until the personalization is paused.';
+    $this->drupalGet('node/1/edit');
+
+    $edit = array(
+      'article_headline[und][0][value]' => '',
+    );
+    $this->drupalPost(NULL, $edit, 'Save');
+    $this->assertText($pf_message);
+
+    personalize_agent_set_status($agent_name, PERSONALIZE_STATUS_PAUSED);
+    $this->drupalGet('node/1/edit');
+
+    $edit = array(
+      'article_headline[und][0][value]' => '',
+    );
+    $this->drupalPost(NULL, $edit, 'Save');
+    $this->assertNoText($pf_message);
+  }
 
   function testMultipleOptionSetsOneDecision() {
     $this->drupalLogin($this->managerUser);
@@ -2013,36 +2175,64 @@ class AcquiaLiftWebTestCampaignWizard extends AcquiaLiftWebTestBase {
     $this->assertTrue(empty($settings['acquia_lift']['toolbarEditMode']));
 
     // Create an element variation for our agent.
-    $option_set = array(
-      'label' => 'Element test set 1',
-      'plugin' => 'elements',
-      'agent' => $agent->machine_name,
-      'executor' => 'personalizeElements',
-      'options' => array(
-        array(
-          'option_label' => PERSONALIZE_CONTROL_OPTION_LABEL,
-          'option_id' => PERSONALIZE_CONTROL_OPTION_ID,
-          'personalize_elements_content' => '',
-        ),
-        array(
-          'option_label' => 'Option A',
-          'option_id' => 'option-a',
-          'personalize_elements_content' => 'With our very special guest star',
-        ),
-      ),
-      'data' => array(
-        'personalize_elements_selector' => '#some-selector',
-        'personalize_elements_type' => 'editText',
-        'pages' => 'node',
-      ),
-    );
-    personalize_option_set_save((object) $option_set);
+    $option_set = $this->createPersonalizeElementsOptionSet($agent->machine_name, array(
+      'num_options' => 1,
+      'add_control' => TRUE,
+    ));
     // Go to the edit page and verify that this option set is displayed and
     // links to its "pages" page for editing.
     $this->drupalGet('admin/structure/personalize/manage/' . $agent->machine_name . '/variations');
     $this->assertText('Element test set 1');
     $this->drupalPost(NULL, NULL, 'Edit variation set');
     $this->assertUrl('node');
+
+    // Settings should include indicators for deleting and editing option sets.
+    $js_osid = personalize_stringify_osid($option_set->osid);
+    $settings = $this->drupalGetSettings();
+    $this->assertFalse($settings['acquia_lift']['option_sets'][$js_osid][PERSONALIZE_CONTROL_OPTION_ID]['editable']);
+    $this->assertFalse($settings['acquia_lift']['option_sets'][$js_osid][PERSONALIZE_CONTROL_OPTION_ID]['deletable']);
+    $this->assertTrue($settings['acquia_lift']['option_sets'][$js_osid]['option-A']['editable']);
+    $this->assertTrue($settings['acquia_lift']['option_sets'][$js_osid]['option-A']['deletable']);
+
+    // Start the campaign and the elements should not be deletable.
+    personalize_agent_set_status($agent->machine_name, PERSONALIZE_STATUS_RUNNING);
+    $this->resetAll();
+    $this->drupalGet('');
+    $settings = $this->drupalGetSettings();
+    $this->assertFalse($settings['acquia_lift']['option_sets'][$js_osid][PERSONALIZE_CONTROL_OPTION_ID]['editable']);
+    $this->assertFalse($settings['acquia_lift']['option_sets'][$js_osid][PERSONALIZE_CONTROL_OPTION_ID]['deletable']);
+    $this->assertTrue($settings['acquia_lift']['option_sets'][$js_osid]['option-A']['editable']);
+    $this->assertFalse($settings['acquia_lift']['option_sets'][$js_osid]['option-A']['deletable']);
+
+    // Add another option to the option set that is not targeted.
+    $option_set->options[] = array(
+      'option_id' => 'option-B',
+      'option_label' => 'Option B',
+      'personalize_elements_content' => 'Yaaaaaay!',
+    );
+    $option_set = personalize_option_set_save($option_set);
+    $this->resetAll();
+
+    // The new option should be deletable.
+    $this->drupalGet('');
+    $settings = $this->drupalGetSettings();
+    $this->assertFalse($settings['acquia_lift']['option_sets'][$js_osid][PERSONALIZE_CONTROL_OPTION_ID]['editable']);
+    $this->assertFalse($settings['acquia_lift']['option_sets'][$js_osid][PERSONALIZE_CONTROL_OPTION_ID]['deletable']);
+    $this->assertTrue($settings['acquia_lift']['option_sets'][$js_osid]['option-A']['editable']);
+    $this->assertFalse($settings['acquia_lift']['option_sets'][$js_osid]['option-A']['deletable']);
+    $this->assertTrue($settings['acquia_lift']['option_sets'][$js_osid]['option-B']['editable']);
+    $this->assertTrue($settings['acquia_lift']['option_sets'][$js_osid]['option-B']['deletable']);
+
+    // Pause the agent and all options should be editable and deletable.
+    personalize_agent_set_status($agent->machine_name, PERSONALIZE_STATUS_PAUSED);
+    $this->drupalGet('');
+    $settings = $this->drupalGetSettings();
+    $this->assertFalse($settings['acquia_lift']['option_sets'][$js_osid][PERSONALIZE_CONTROL_OPTION_ID]['editable']);
+    $this->assertFalse($settings['acquia_lift']['option_sets'][$js_osid][PERSONALIZE_CONTROL_OPTION_ID]['deletable']);
+    $this->assertTrue($settings['acquia_lift']['option_sets'][$js_osid]['option-A']['editable']);
+    $this->assertTrue($settings['acquia_lift']['option_sets'][$js_osid]['option-A']['deletable']);
+    $this->assertTrue($settings['acquia_lift']['option_sets'][$js_osid]['option-B']['editable']);
+    $this->assertTrue($settings['acquia_lift']['option_sets'][$js_osid]['option-B']['deletable']);
   }
 
   /**

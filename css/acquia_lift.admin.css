@@ -287,34 +287,28 @@ tr.acquia-lift-report-control {
 }
 
 /* Acquia Lift campaign wizard form alterations */
+.acquia-lift-delete {
+  background-image: url(../images/000000/delete.png);
+  background-repeat: no-repeat;
+  background-position: 50%;
+  width: 24px;
+  height: 24px;
+  text-indent: -9999px;
+  overflow: hidden;
+}
 .acquia-lift-campaign-add .el-card .el-card__header {
   background-color: #0074BD;
   color: #FFF;
 }
 .el-card__action .acquia-lift-delete {
-  background-image: url(../images/000000/delete.png);
-  background-repeat: no-repeat;
-  background-position: 50%;
-  width: 24px;
-  height: 24px;
-  text-indent: -9999px;
-  overflow: hidden;
   display: inline-block;
   padding-top: .37rem;
 }
 .el-card__action button.acquia-lift-delete {
-  background-image: url(../images/000000/delete.png);
-  background-repeat: no-repeat;
-  background-position: 50%;
   background-color: transparent;
-  width: 24px;
-  height: 24px;
-  text-indent: -9999px;
-  overflow: hidden;
   border: none;
   margin-top: .37rem;
   cursor: pointer;
-  margin-top: .37rem;
 }
 .el-card__content fieldset.collapsible.collapsed {
   border: none;
@@ -375,7 +369,26 @@ tr.acquia-lift-report-control {
 }
 
 /* Variations form */
+.personalize-wizard-section .acquia-lift-personalize-blocks .acquia-lift-revealing-input {
+  float: left;
+}
+.personalize-wizard-section .acquia-lift-personalize-blocks .acquia-lift-delete {
+  float: right;
+  background-image: url(../images/000000/delete.png);
+  background-repeat: no-repeat;
+  background-position: 50%;
+  background-color: transparent;
+  width: 24px;
+  height: 24px;
+  text-indent: -9999px;
+  overflow: hidden;
+  border: none;
+  cursor: pointer;
+  margin-bottom: .5rem;
+}
+
 .personalize-wizard-section .acquia-lift-personalize-block-wrapper {
+  clear: both;
   background-color: #e6e9ed;
   padding: .5em .5em 0 .5em;
   border: solid 1px #cfd1d5;

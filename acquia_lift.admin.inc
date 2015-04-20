@@ -1349,19 +1349,69 @@ function acquia_lift_implement_mvt($agent) {
 }
 
 /**
- * Check to see if an acquia lift target agent allows changes to goals.
+ * Check to see if an acquia lift target agent allows changes that would affect
+ * the definition of the agent or any nested agents.
  *
  * @param stdClass $agent_data
  *   The agent to check.
  * @return bool
- *   True if goals can be modified, false if they cannot be modified.
+ *   True if changes can be made, false otherwise.
  */
-function acquia_lift_target_goal_changes_allowed($agent_data) {
+function acquia_lift_target_definition_changes_allowed($agent_data) {
   if ($agent_data->plugin !== 'acquia_lift_target') {
     return TRUE;
   }
   $status = personalize_agent_get_status($agent_data->machine_name);
   return $status === PERSONALIZE_STATUS_NOT_STARTED || $status === PERSONALIZE_STATUS_PAUSED;
+}
+
+/**
+ * Checks to see if an option within an option set is currently targeted.
+ *
+ * @param string $agent_name
+ *   The name of the agent to check.
+ * @param string $option_id
+ *   The option id to check.
+ * @return bool
+ *   True if the option set is targeted, false otherwise.
+ */
+function acquia_lift_target_option_targeted($agent_name, $option_id) {
+  // We only care about saved targeting that has been created.
+  $option_set = acquia_lift_get_option_set_for_targeting($agent_name);
+  $targeting = acquia_lift_get_structure_from_targeting($option_set);
+  foreach ($targeting as $options) {
+    if (in_array($option_id, $options)) {
+      return TRUE;
+    }
+  }
+  return FALSE;
+}
+
+/**
+ * Checks to see if any options within an option set are currently targted.
+ *
+ * @param string $agent_name
+ *   The name of the agent to check.
+ * @param string $osid
+ *   The id of the option set to check.
+ * @return bool
+ *   True if any option in the option set is targeted, false if none of the
+ *   options are used in explicit targeting.
+ */
+function acquia_lift_target_option_set_targeted($agent_name, $option_set) {
+  // We only care about saved targeting that has been created.
+  $targeting_option_set = acquia_lift_get_option_set_for_targeting($agent_name);
+  $targeting = acquia_lift_get_structure_from_targeting($targeting_option_set);
+  $targeted_options = array();
+  foreach($targeting as $options) {
+    $targeted_options += $options;
+  }
+  foreach ($option_set->options as $option) {
+    if (in_array($option['option_id'], $targeted_options)) {
+      return TRUE;
+    }
+  }
+  return FALSE;
 }
 
 /**

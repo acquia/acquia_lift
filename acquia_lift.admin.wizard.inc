@@ -74,6 +74,8 @@ function acquia_lift_personalize_campaign_wizard_variations_alter(&$form, &$form
   $status = personalize_agent_get_status($agent_data->machine_name);
   $variation_set_handling = isset($agent_data->data['variation_set_handling']) ? $agent_data->data['variation_set_handling'] : ACQUIA_LIFT_DECISION_LOCKSTEP;
 
+  module_load_include('inc', 'acquia_lift', 'acquia_lift.admin');
+
   $option_sets = personalize_option_set_load_by_agent($agent_data->machine_name);
   if ($variation_set_handling == ACQUIA_LIFT_DECISION_MULTIVARIATE) {
     // If this is an MVT then the option sets get saved directly on the testing
@@ -98,6 +100,9 @@ function acquia_lift_personalize_campaign_wizard_variations_alter(&$form, &$form
   );
 
   $agent_instance = personalize_agent_load_agent($agent_data->machine_name);
+  if (!empty($option_sets) && !acquia_lift_target_definition_changes_allowed($agent_data)) {
+    drupal_set_message(t('Variations cannot be removed until the personalization is paused.'), 'warning');
+  }
 
   // Make a container to hold existing option sets.
   if (!empty($option_sets)) {
@@ -111,6 +116,7 @@ function acquia_lift_personalize_campaign_wizard_variations_alter(&$form, &$form
   // Add an option set edit card for each option set.
   foreach ($option_sets as $option_set) {
     $option_set_plugin = personalize_get_option_set_type($option_set->plugin);
+    $delete_allowed = !acquia_lift_target_option_set_targeted($agent_data->machine_name, $option_set);
     $form['variations']['option_sets']['option_set_' . $option_set->osid] = array(
       '#tree' => TRUE,
       '#type' => 'container',
@@ -132,7 +138,7 @@ function acquia_lift_personalize_campaign_wizard_variations_alter(&$form, &$form
     // Variation sets can be deleted only if the structure has not already been
     // implemented.
     // @see acquia_lift_implement_test_structure().
-    if (empty($agent_data->data['locked_for_variation_sets'])) {
+    if ($delete_allowed && empty($agent_data->data['locked_for_variation_sets'])) {
       $delete_link = module_hook($option_set_plugin['module'], 'personalize_delete_link') ? module_invoke($option_set_plugin['module'], 'personalize_delete_link', $option_set) : '';
       if (!empty($delete_link)) {
         $form['variations']['option_sets']['option_set_' . $option_set->osid]['header']['delete'] = array(
@@ -284,7 +290,7 @@ function acquia_lift_personalize_campaign_wizard_goals_alter(&$form, &$form_stat
   $form['#submit'] = array('acquia_lift_personalize_campaign_wizard_submit');
 
   module_load_include('inc', 'acquia_lift', 'acquia_lift.admin');
-  $enable_goals = acquia_lift_target_goal_changes_allowed($agent_data);
+  $enable_goals = acquia_lift_target_definition_changes_allowed($agent_data);
   if (!$enable_goals) {
     drupal_set_message(t('Goals cannot be changed while the personalization is running.'), 'warning');
   }
@@ -798,16 +804,30 @@ function acquia_lift_personalize_campaign_wizard_blocks_add($form, &$form_state)
 }
 
 /**
+ * Submit handler to remove a block option from a personalized block form.
+ */
+function acquia_lift_personalize_campaign_wizard_blocks_remove($form, &$form_state) {
+  // Value will be "remove_{delta}_{osid}" where the {delta} is the block delta
+  // to remove and {osid} is the option set to remove it from.
+  list($remove, $delta, $osid) = explode('_', $form_state['triggering_element']['#value']);
+  $form_state['option_set_to_remove'][$osid] = $delta;
+  $form_state['rebuild'] = TRUE;
+}
+
+/**
  * Callback to for AJAX to generate the personalize block wrapper form.
  */
 function acquia_lift_personalize_campaign_wizard_blocks_ajax($form, &$form_state) {
-  // The triggering element and the blocks container share a common parent.
-  $parents = $form_state['triggering_element']['#array_parents'];
-  $section = $form;
-  for ($i = 0; $i < count($parents) -1; $i++) {
-    $section = $section[$parents[$i]];
+  // Both the add and remove buttons have the osid as the last in a "_"
+  // delimited list.
+  $value_parts = explode('_', $form_state['triggering_element']['#value']);
+  $osid = end($value_parts);
+  if ($osid === 'add') {
+    return $form['variations']['add_variation']['details']['block']['content']['pblock_wrapper']['blocks'];
   }
-  return $section['blocks'];
+  else {
+    return $form['variations']['option_sets']['option_set_' . $osid]['content']['pblock_wrapper']['blocks'];
+  }
 }
 
 /**
@@ -942,7 +962,7 @@ function acquia_lift_personalize_campaign_wizard_goals_validate(&$form, &$form_s
   // Determine if goals are allowed to be modified.
   $agent = $form['#agent'];
   module_load_include('inc', 'acquia_lift', 'acquia_lift.admin');
-  $enabled = acquia_lift_target_goal_changes_allowed($agent);
+  $enabled = acquia_lift_target_definition_changes_allowed($agent);
 
   if (!$enabled && !empty($form_state['values']['goal_add_type'])) {
     form_set_error('goal_add_type', t('Goals cannot be added until the personalization is paused.'));
@@ -1158,7 +1178,7 @@ function acquia_lift_personalize_campaign_wizard_fields_submit_element_edit($for
  * Submit function for goals form.
  */
 function acquia_lift_personalize_campaign_wizard_goals_submit(&$form, &$form_state, &$agent_data, $agent_instance) {
-  if (!acquia_lift_target_goal_changes_allowed($agent_data)) {
+  if (!acquia_lift_target_definition_changes_allowed($agent_data)) {
     return;
   }
 
@@ -1356,6 +1376,9 @@ function _acquia_lift_personalize_campaign_wizard_variations_block(&$form, &$for
 
   module_load_include('inc', 'personalize_blocks', 'personalize_blocks.admin');
   module_load_include('inc', 'acquia_lift', 'acquia_lift.ui');
+  module_load_include('inc', 'acquia_lift', 'acquia_lift.admin');
+
+  $changes_enabled = empty($option_set) || acquia_lift_target_definition_changes_allowed($agent_data);
 
   _acquia_lift_personalize_campaign_wizard_form_state_blocks_alter($form_state, $block_content, $option_set);
   $element = personalize_blocks_form($element, $form_state, 'embed', $option_set);
@@ -1381,10 +1404,15 @@ function _acquia_lift_personalize_campaign_wizard_variations_block(&$form, &$for
   unset($element['pblock_wrapper']['blocks']['#tree']);
 
   $pblock_id = drupal_html_id('edit-' . implode('-', $parents) . '-pblock-wrapper');
+  // Remove any duplicate indicator that Drupal may have added from seeing this
+  // id generated more than once. This can happen in the AJAX callback.
+  $dup_re = "/\\-\\-[a-z0-9]+$/";
+  $pblock_id = preg_replace($dup_re, '', $pblock_id);
   $more_id = $pblock_id . '-blocks-more';
   $blocks_id = $pblock_id . '-blocks';
   // Need to update the id so that it is unique on the page.
   $element['pblock_wrapper']['blocks']['#attributes']['id'] = $blocks_id;
+  $element['pblock_wrapper']['blocks']['#attributes']['class'][] = 'acquia-lift-personalize-blocks';
 
   foreach (element_children($element['pblock_wrapper']['blocks']) as $key) {
     $block = &$element['pblock_wrapper']['blocks'][$key];
@@ -1405,8 +1433,50 @@ function _acquia_lift_personalize_campaign_wizard_variations_block(&$form, &$for
 
     acquia_lift_chosenify_element($block['block']['bid'], array('acquia-lift-chosen-select-half'));
 
-    // Hide the remove button at this point.
-    $block['remove']['#access'] = FALSE;
+    // Hide the remove button if the option is currently targeted in a running
+    // campaign.
+    $option_id = isset($block['option_id']['#value']) ? $block['option_id']['#value'] : '';
+    if (!empty($option_id) && !$changes_enabled && acquia_lift_target_option_targeted($agent_data->machine_name, $option_id)) {
+      $block['remove']['#access'] = FALSE;
+    }
+
+    // If the block still allows removal, then adjust the callbacks based on
+    // whether it is an option that requires deletion or just an AJAX
+    // re-display of the form.
+    if (!isset($block['remove']['#access']) || $block['remove']['#access'] == TRUE) {
+      $block['option_label']['#weight'] = 10;
+      $block['remove']['#weight'] = 20;
+      $block['block']['#weight'] = 30;
+      
+      if (!empty($option_id)) {
+        // If the option is an existing one, then redirect to a confirmation form
+        // prior to deleting.
+        $remove_url = "admin/structure/personalize/variations/personalize-blocks/manage/{$option_set->osid}/{$option_id}/delete";
+        $block['option_label']['#weight'] = 10;
+        $block['remove'] = array(
+          '#weight' => 20,
+          '#markup' => l(t('Delete'), $remove_url, array(
+            'attributes' => array(
+              'class' => array('acquia-lift-delete'),
+            ),
+            'query' => array('destination' => url('admin/structure/personalize/manage/' . $agent_data->machine_name . '/variations')),
+          )),
+        );
+      }
+      else {
+        // If the block is a new option that has never been saved, then just
+        // allow a quick AJAX adjustment for the number to show.
+        $block['remove']['#attributes']['id'] = $blocks_id . '-' . $key . '-remove';
+        $block['remove']['#attributes']['class'][] = 'acquia-lift-delete';
+        $block['remove']['#submit'] = array('acquia_lift_personalize_campaign_wizard_blocks_remove');
+        $block['remove']['#ajax'] = array(
+          'callback' => 'acquia_lift_personalize_campaign_wizard_blocks_ajax',
+          'wrapper' => $blocks_id,
+          'effect' => 'fade',
+        );
+        $block['remove']['#value'] .= '_' . (empty($option_set) ? 'add' : $option_set->osid);
+      }
+    }
   }
 
   // Update the "Add another" button to match the desired styling and language.
@@ -1471,6 +1541,12 @@ function _acquia_lift_personalize_campaign_wizard_form_state_blocks_alter(&$form
   }
   else {
     unset($form_state['pblock']);
+  }
+  if (isset($form_state['option_set_to_remove'][$key])) {
+    $form_state['to_remove'] = $form_state['option_set_to_remove'][$key];
+  }
+  else {
+    unset($form_state['to_remove']);
   }
 }
 

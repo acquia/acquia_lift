@@ -9,6 +9,28 @@
   Drupal.behaviors.acquiaLiftTargetAdmin = {
     attach: function (context, settings) {
 
+      // Fix the variations list to a position on the page.
+      $('#acquia-lift-targeting-variations').once(function() {
+        var $sidebar = $(this);
+        var $window = $(window);
+        var offset = $sidebar.offset();
+        var $body = $('body');
+        var paddingTop = parseInt($sidebar.css('margin-top')) + parseInt($sidebar.css('padding-top'));
+        var scrollPaddingTop = paddingTop + parseInt($body.css('margin-top')) + parseInt($body.css('padding-top'));
+
+        $window.scroll(function() {
+          if ($window.scrollTop() > offset.top) {
+            $sidebar.stop().animate({
+              marginTop: $window.scrollTop() - offset.top + scrollPaddingTop
+            }, 'fast');
+          } else {
+            $sidebar.stop().animate({
+              marginTop: paddingTop
+            }, 'fast');
+          }
+        });
+      });
+
       // Attach the drag 'n' drop behavior to audiences in order to determine
       // audience weight.
       $('#acquia-lift-targeting-audiences .el-card.is-sortable').once(function () {

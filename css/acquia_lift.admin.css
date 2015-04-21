@@ -302,12 +302,10 @@ tr.acquia-lift-report-control {
 }
 .acquia-lift-campaign-add .el-card .el-card__header h2 {
   color: #FFF;
-  font-weight: bold;
 }
 .acquia-lift-campaign-add .el-card__title {
   display: block;
   width: 100%;
-  font-weight: bold;
 }
 .acquia-lift-campaign-add .el-card .el-card__title:before,
 .acquia-lift-campaign-add .el-card .el-card__title:after {

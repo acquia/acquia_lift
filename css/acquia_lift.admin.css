@@ -469,8 +469,13 @@ tr.acquia-lift-report-control {
 }
 
 /* Drag and Drop audience targeting */
-.acquia-lift-draggable-variations li {
-  cursor: pointer;
+li.acquia-lift-targeting-draggable {
+  cursor: -webkit-grab;
+  cursor: -moz-grab;
+}
+li.acquia-lift-targeting-draggable.ui-sortable-helper {
+  cursor: -webkit-grabbing;
+  cursor: -moz-grabbing;
 }
 .acquia-lift-targeting-empty {
   border: 1px dotted #cfd1d5;

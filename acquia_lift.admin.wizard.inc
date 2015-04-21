@@ -1961,7 +1961,7 @@ function _acquia_lift_personalize_campaign_wizard_review_tests($agent_data, $ele
     '#collapsible' => TRUE,
     '#collapsed' => TRUE,
   );
-  $decision_style = isset($agent_data->data['decision_style']) ? $agent_data->data['decision_style'] : 'random';
+  $decision_style = isset($agent_data->data['decision_style']) ? $agent_data->data['decision_style'] : 'adaptive';
   $form['decision_style'] = array(
     '#type' => 'radios',
     '#title' => t('Decision Style'),

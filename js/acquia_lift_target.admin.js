@@ -49,6 +49,7 @@
         // Remove the list item.
         $li.remove();
         checkTargetingPlaceholder($ul);
+        indicateControlVariation($ul);
       }
 
       /**

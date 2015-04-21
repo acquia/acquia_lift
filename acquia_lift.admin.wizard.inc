@@ -676,6 +676,7 @@ function acquia_lift_personalize_campaign_wizard_targeting_alter(&$form, &$form_
     '#type' => 'container',
     '#attributes' => array(
       'class' => array('personalize-wizard-column'),
+      'id' => 'acquia-lift-targeting-variations',
     ),
     '#tree' => TRUE,
   );

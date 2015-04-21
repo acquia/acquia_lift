@@ -194,7 +194,7 @@ function acquia_lift_profiles_update_7003() {
   //    'content_keywords' => '',
   //    'persona' => 'taxonomy_context__country',
   //   )
-  // * After migration.
+  // * After migration:
   //   array (
   //    'content_section' => 'taxonomy_context__people',
   //    'persona' => 'taxonomy_context__country',

@@ -1221,9 +1221,13 @@ function acquia_lift_save_nested_test_options($parent_agent) {
   if (!isset($option_set->targeting)) {
     return;
   }
-  $control_rate = isset($parent_agent->data['control_rate']) ? $parent_agent->data['control_rate'] : 10;
-  $explore_rate = isset($parent_agent->data['explore_rate']) ? $parent_agent->data['explore_rate'] : 20;
-  $decision_style = isset($parent_agent->data['decision_style']) ? $parent_agent->data['decision_style'] : 'adaptive';
+  $agent_data = array(
+    'control_rate' => isset($parent_agent->data['control_rate']) ? $parent_agent->data['control_rate'] : 10,
+    'explore_rate' => isset($parent_agent->data['explore_rate']) ? $parent_agent->data['explore_rate'] : 20,
+    'decision_style' => isset($parent_agent->data['decision_style']) ? $parent_agent->data['decision_style'] : 'adaptive',
+    'cache_decisions' => isset($parent_agent->data['cache_decisions']) ? $parent_agent->data['cache_decisions'] : 1,
+    'visitor_context' => isset($parent_agent->data['visitor_context']) ? $parent_agent->data['visitor_context'] : array(),
+  );
 
   foreach ($option_set->targeting as $vars) {
     if (!isset($vars['osid'])) {
@@ -1231,9 +1235,7 @@ function acquia_lift_save_nested_test_options($parent_agent) {
     }
     $nested_option_set = personalize_option_set_load($vars['osid']);
     $nested_agent = personalize_agent_load($nested_option_set->agent);
-    $nested_agent->data['control_rate'] = $control_rate;
-    $nested_agent->data['explore_rate'] = $explore_rate;
-    $nested_agent->data['decision_style'] = $decision_style;
+    $nested_agent->data = $agent_data;
     personalize_agent_save($nested_agent);
   }
 }

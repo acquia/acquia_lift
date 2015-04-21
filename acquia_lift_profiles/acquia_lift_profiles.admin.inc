@@ -216,16 +216,20 @@ function acquia_lift_profiles_admin_form_submit($form, &$form_state) {
     visitor_actions_clear_subscribers('user_login');
     visitor_actions_clear_subscribers('user_register');
   }
+  // Credentials.
   $variables = array(
     'acquia_lift_profiles_account_name',
     'acquia_lift_profiles_site_name',
     'acquia_lift_profiles_access_key',
     'acquia_lift_profiles_secret_key',
-    'acquia_lift_profiles_vocabulary_mappings',
   );
   foreach ($variables as $key) {
     variable_set($key, $form_state['values'][$key]);
   }
+  // Vocabulary mappings. Don't save empty entries.
+  $acquia_lift_profiles_vocabulary_mappings = array_filter($form_state['values']['acquia_lift_profiles_vocabulary_mappings']);
+  variable_set('acquia_lift_profiles_vocabulary_mappings', $acquia_lift_profiles_vocabulary_mappings);
+  // Identity parameters.
   $identity_variables = array(
     'acquia_lift_profiles_capture_identity',
     'acquia_lift_profiles_identity_param',

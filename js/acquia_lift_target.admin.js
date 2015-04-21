@@ -158,13 +158,13 @@
               ui.sender.sortable('cancel');
               return;
             }
-            if (ui.sender.data().hasOwnProperty('acquia-lift-copied')) {
+            if (ui.sender.data().hasOwnProperty('acquialiftcopied')) {
               // Make the new item removable.
               ui.item.append(Drupal.theme('acquiaLiftTargetingItemRemove'));
               $('.acquia-lift-targeting-remove', ui.item).on('click', handleDraggableItemRemove);
 
               // This is a copy from the variation options list.
-              ui.sender.data('acquia-lift-copied', true);
+              ui.sender.data('acquialiftcopied', true);
             }
           },
           update: function (event, ui) {
@@ -200,11 +200,11 @@
           // to be added.
           $('.acquia-lift-draggable-variations', $wrapperDiv).sortable('option', 'helper', function(e, li) {
             this.copyHelper = li.clone().insertAfter(li);
-            $(this).data('acquia-lift-copied', false);
+            $(this).data('acquialiftcopied', false);
             return li.clone();
           });
           $('.acquia-lift-draggable-variations', $wrapperDiv).sortable('option', 'stop', function () {
-            var copied = $(this).data('acquia-lift-copied');
+            var copied = $(this).data('acquialiftcopied');
             if (!copied) {
               this.copyHelper.remove();
             }

@@ -142,7 +142,6 @@
           items: '> .acquia-lift-targeting-draggable',
           placeholder: 'element-hidden',
           opacity: 0.7,
-          cursor: 'move',
           tolerance: 'pointer',
           connectWith: '.acquia-lift-draggable-variations.acquia-lift-draggable-connect',
           cancel: '.acquia-lift-targeting-droppable',

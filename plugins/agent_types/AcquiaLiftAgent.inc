@@ -202,14 +202,6 @@ class AcquiaLiftAgent extends PersonalizeAgentBase implements PersonalizeAgentGo
   }
 
   /**
-   * Implements PersonalizeAgentInterface::supportsAutoTargeting().
-   */
-  public function supportsAutoTargeting() {
-    return TRUE;
-  }
-
-
-  /**
    * Implements PersonalizeAgentGoalInterface::useClientSideGoalDelivery().
    */
   public function useClientSideGoalDelivery() {

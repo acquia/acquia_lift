@@ -1448,6 +1448,8 @@ class AcquiaLiftWebTestTarget extends AcquiaLiftWebTestBase {
     $agent->data['explore_rate'] = 25;
     $agent->data['control_rate'] = 25;
     $agent->data['decision_style'] = 'adaptive';
+    $agent->data['cache_decisions'] = 1;
+    $agent->data['visitor_context'] = array('some-context-plugin' => array('test-context' => 'test-context'));
     personalize_agent_save($agent);
 
     $this->resetAll();
@@ -1488,6 +1490,8 @@ class AcquiaLiftWebTestTarget extends AcquiaLiftWebTestBase {
     $this->assertEqual($nested_agent->data['decision_style'], 'adaptive');
     $this->assertEqual($nested_agent->data['control_rate'], 25);
     $this->assertEqual($nested_agent->data['explore_rate'], 25);
+    $this->assertEqual($nested_agent->data['cache_decisions'], 1);
+    $this->assertEqual($nested_agent->data['visitor_context'], array('some-context-plugin' => array('test-context' => 'test-context')));
 
     $option_sets = personalize_option_set_load_by_agent($nested_agent->machine_name);
     $this->assertEqual(1, count($option_sets));
@@ -1526,6 +1530,7 @@ class AcquiaLiftWebTestTarget extends AcquiaLiftWebTestBase {
 
     // Update the test options.
     $agent->data['explore_rate'] = 35;
+    $agent->data['cache_decisions'] = 0;
     personalize_agent_save($agent);
 
     try {
@@ -1551,6 +1556,8 @@ class AcquiaLiftWebTestTarget extends AcquiaLiftWebTestBase {
     $this->assertEqual($nested_agent->data['decision_style'], 'adaptive');
     $this->assertEqual($nested_agent->data['control_rate'], 25);
     $this->assertEqual($nested_agent->data['explore_rate'], 35);
+    $this->assertEqual($nested_agent->data['cache_decisions'], 0);
+    $this->assertEqual($nested_agent->data['visitor_context'], array('some-context-plugin' => array('test-context' => 'test-context')));
 
     $option_sets = personalize_option_set_load_by_agent($nested_agent->machine_name);
 
@@ -1636,6 +1643,8 @@ class AcquiaLiftWebTestTarget extends AcquiaLiftWebTestBase {
       $this->assertEqual($nested->data['decision_style'], 'adaptive');
       $this->assertEqual($nested->data['control_rate'], 50);
       $this->assertEqual($nested->data['explore_rate'], 35);
+      $this->assertEqual($nested_agent->data['cache_decisions'], 0);
+      $this->assertEqual($nested_agent->data['visitor_context'], array('some-context-plugin' => array('test-context' => 'test-context')));
 
       // Find the *new* nested agent.
       if ($nested->machine_name != $nested_agent->machine_name) {
@@ -1693,8 +1702,9 @@ class AcquiaLiftWebTestTarget extends AcquiaLiftWebTestBase {
     $this->assertEqual(count($goals), 1);
     $goal = reset($goals);
 
-    // Start the agent.
-    personalize_agent_set_status($agent->machine_name, PERSONALIZE_STATUS_RUNNING);
+    // Start the agent through the UI so that the targeting gets implemented.
+    $this->drupalGet('admin/structure/personalize/manage/' . $agent->machine_name . '/review');
+    $this->drupalPost(NULL, array(), $this->getButton('wizard_start'));
 
     // Try to edit the goal.
     try {
@@ -1781,7 +1791,8 @@ class AcquiaLiftWebTestTarget extends AcquiaLiftWebTestBase {
     $this->drupalGet('admin/structure/personalize/variations/personalize-blocks/manage/1/edit');
     $this->assertNoText($pb_message);
 
-    personalize_agent_set_status($agent->machine_name, PERSONALIZE_STATUS_RUNNING);
+    // Start the agent via the UI in order to implement targeting and nested agents.
+    $this->drupalPost('admin/structure/personalize/manage/' . $agent->machine_name . '/review', array(), $this->getButton('wizard_start'));
     $this->drupalGet('admin/structure/personalize/variations/personalize-blocks/manage/1/edit');
     $this->assertText($pb_message);
 
@@ -1811,7 +1822,9 @@ class AcquiaLiftWebTestTarget extends AcquiaLiftWebTestBase {
     $option_set = personalize_option_set_load($option_set->osid);
     $this->assertEqual(count($option_set->options), 3);
 
-    personalize_agent_set_status($agent->machine_name, PERSONALIZE_STATUS_RUNNING);
+    // Start the agent via the UI in order to implement targeting and nested agents.
+    $this->drupalPost('admin/structure/personalize/manage/' . $agent->machine_name . '/review', array(), $this->getButton('wizard_start'));
+
     $this->drupalGet('admin/structure/personalize/variations/personalize-elements/manage/' . $option_set->osid . '/edit');
     $this->assertText($pe_message);
 
@@ -1831,7 +1844,8 @@ class AcquiaLiftWebTestTarget extends AcquiaLiftWebTestBase {
     $this->createPersonalizedArticleField();
     list($node, $os, $agent_name) = $this->createPersonalizedField();
 
-    personalize_agent_set_status($agent_name, PERSONALIZE_STATUS_RUNNING);
+    // Start the agent via the UI in order to implement targeting and nested agents.
+    $this->drupalPost('admin/structure/personalize/manage/' . $agent_name . '/review', array(), $this->getButton('wizard_start'));
 
     // Verify you can't remove from a running agent.
     $pf_message = 'The Personalizable Headline field cannot be removed until the personalization is paused.';
@@ -2613,5 +2627,74 @@ class AcquiaLiftWebTestCampaignWizard extends AcquiaLiftWebTestBase {
 
     $this->drupalGet("admin/structure/personalize/manage/{$agent->machine_name}/review");
     $this->assertText('Test options cannot be edited while this personalization is running.');
+  }
+
+  /**
+   * Tests automatic targeting based on campaign-wide context selections.
+   */
+  function testAutoTargeting() {
+    // Create user profile fields that we can use for targeting.
+    $this->createUserProfileField('test_user_field_1');
+    $this->createUserProfileField('test_user_field_2');
+
+    $admin_user = $this->drupalCreateUser(array('access administration pages', 'manage personalized content', 'administer blocks'));
+    $this->drupalLogin($admin_user);
+    // Create a new agent.
+    $agent = $this->createTargetingAgent();
+    $machine_name = $agent->getMachineName();
+    $this->drupalGet("admin/structure/personalize/manage/{$machine_name}/review");
+    // Check for auto-targeting.
+    $this->assertFieldByName('visitor_context[]');
+
+    // Create a block based option set.
+    $options = array(
+      array('bid' => 'comment_delta_recent'),
+      array('bid' => 'system_delta_powered-by'),
+    );
+    $option_set = $this->createOptionSet(1, array('plugin' => 'block', 'agent' => $machine_name, 'options' => $options, 'data' => array('block_title' => $this->randomName())));
+    $osid = $option_set->osid;
+
+    // Place it on the page so that we can check visitor context settings.
+    $edit = array();
+    $edit["blocks[personalize_blocks_$osid][region]"] = 'sidebar_first';
+    $this->drupalPost('admin/structure/block', $edit, t('Save blocks'));
+
+    // Confirm that explicit targeting options are available.
+    $this->drupalGet("admin/structure/personalize/manage/$machine_name/review");
+    $this->assertField('visitor_context[]');
+
+    // Now add automatic targeting.
+    $edit = array(
+      'visitor_context[]' => 'user_profile_context__test_user_field_1',
+    );
+    $this->drupalPost(NULL, $edit, $this->getButton('wizard_save'));
+    $this->assertOptionSelected('edit-visitor-context', 'user_profile_context__test_user_field_1');
+
+    // Confirm that the explicit targeting options are no longer available.
+    $this->drupalGet("admin/structure/personalize/manage/$machine_name/targeting");
+    $this->assertText("Explicit targeting is not supported when automatic targeting is in place");
+
+    // Verify the correct context settings.
+    $this->drupalGet('');
+    $settings = $this->drupalGetSettings();
+    $this->assertEqual($settings['personalize']['agent_map'][$machine_name]['enabled_contexts']['user_profile_context']['test_user_field_1'], 'test_user_field_1');
+
+    // Remove the automatic targeting.
+    $this->drupalGet("admin/structure/personalize/manage/$machine_name/review");
+    $edit = array(
+      'visitor_context[]' => '',
+    );
+    $this->drupalPost(NULL, $edit, $this->getButton('wizard_save'));
+    $this->assertNoOptionSelected('edit-visitor-context', 'user_profile_context__test_user_field_1');
+
+    // Confirm that the explicit targeting options are available.
+    $this->drupalGet("admin/structure/personalize/manage/$machine_name/targeting");
+    $this->assertNoText("Explicit targeting is not supported when automatic targeting is in place");
+    $this->assertFieldByName('audiences[everyone-else][assignment][]');
+
+    // Confirm that the automatic visitor context as been removed from settings.
+    $this->drupalGet('');
+    $settings = $this->drupalGetSettings();
+    $this->assertTrue(empty($settings['personalize']['agent_map'][$machine_name]['enabled_contexts']));
   }
 }

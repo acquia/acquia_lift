@@ -739,7 +739,7 @@ function acquia_lift_personalize_campaign_wizard_review_alter(&$form, &$form_sta
       $option_set = acquia_lift_get_option_set_for_targeting($agent_data->machine_name);
       $targeting = acquia_lift_get_structure_from_targeting($option_set);
     }
-    $count_audiences = count($targeting);
+    $count_audiences = 0;
     foreach ($targeting as $options) {
       $num_options = count($options);
       if ($num_options > 0) {

@@ -96,6 +96,13 @@ function acquia_lift_personalize_campaign_wizard_variations_alter(&$form, &$form
     drupal_set_message(t('Variations cannot be removed until the personalization is paused.'), 'warning');
   }
 
+  // If this campaign already handles multiple variation sets then indicate
+  // the type of handling in the section title.
+  if (count($option_sets) > 1 && !empty($variation_set_handling)) {
+    $variation_set_indicator = $variation_set_handling == ACQUIA_LIFT_DECISION_LOCKSTEP ? t('Lock step') : t('Multi-variate');
+    $form['variations']['title']['#title'] .= ' (' . $variation_set_indicator . ')';
+  }
+
   // Make a container to hold existing option sets.
   if (!empty($option_sets)) {
     $form['variations']['option_sets'] = array(

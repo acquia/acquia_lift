@@ -377,9 +377,15 @@ class ALProfilesAPI {
   public function deleteEvent($event_name) {
     // First get our Authorization header.
     $url = $this->generateEndpoint('events/' . $event_name);
-    $auth_header = $this->getAuthHeader('DELETE', $url);
 
-    $response = $this->httpClient()->delete($url, array('Authorization' => $auth_header));
+    $params = array();
+    $querystring = '';
+    if (!empty($this->customerSite)) {
+      $params['customerSite'] = $this->customerSite;
+      $querystring = '?customerSite=' . $this->customerSite;
+    }
+    $auth_header = $this->getAuthHeader('DELETE', $url, $params);
+    $response = $this->httpClient()->delete($url . $querystring, array('Authorization' => $auth_header));
     $vars = array('eventname' => $event_name);
     $success_msg = 'The event {eventname} was deleted from Acquia Lift Profiles';
     $fail_msg = 'Could not delete event {eventname} from Acquia Lift Profiles';

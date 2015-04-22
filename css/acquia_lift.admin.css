@@ -325,7 +325,8 @@ tr.acquia-lift-report-control {
   content: url('../images/actions__close.svg');
   float: right;
   opacity: 0;
-  transition: opacity .2s;
+  -webkit-transition: opacity .2s;
+          transition: opacity .2s;
 }
 .acquia-lift-campaign-add .el-card.is-active .el-card__title:after {
   opacity: 1;

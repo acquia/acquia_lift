@@ -72,7 +72,13 @@ function acquia_lift_personalize_campaign_wizard_variations_alter(&$form, &$form
     return;
   }
   $status = personalize_agent_get_status($agent_data->machine_name);
-  $variation_set_handling = isset($agent_data->data['variation_set_handling']) ? $agent_data->data['variation_set_handling'] : ACQUIA_LIFT_DECISION_LOCKSTEP;
+  $variation_set_handling = '';
+  if (isset($form_state['values']['variations']['add_variation']['variation_set_handling'])) {
+    $variation_set_handling = $form_state['values']['variations']['add_variation']['variation_set_handling'];
+  }
+  else if (isset($agent_data->data['variation_set_handling'])) {
+    $variation_set_handling = $agent_data->data['variation_set_handling'];
+  }
 
   module_load_include('inc', 'acquia_lift', 'acquia_lift.admin');
 
@@ -86,22 +92,15 @@ function acquia_lift_personalize_campaign_wizard_variations_alter(&$form, &$form
     }
   }
 
-  $form['variations']['variation_set_handling'] = array(
-    '#type' => 'radios',
-    '#options' => array(
-      ACQUIA_LIFT_DECISION_LOCKSTEP => t('Lock step'),
-      ACQUIA_LIFT_DECISION_MULTIVARIATE => t('Multi-variate')
-    ),
-    '#default_value' => $variation_set_handling,
-    // Once a second option set has been added to this personalization, or if
-    // the structure has already been implmented, this choice is no longer
-    // available.
-    '#disabled' => !empty($agent_data->data['locked_for_variation_sets']) || count($option_sets) > 1,
-  );
-
-  $agent_instance = personalize_agent_load_agent($agent_data->machine_name);
   if (!empty($option_sets) && !acquia_lift_target_definition_changes_allowed($agent_data)) {
     drupal_set_message(t('Variations cannot be removed until the personalization is paused.'), 'warning');
+  }
+
+  // If this campaign already handles multiple variation sets then indicate
+  // the type of handling in the section title.
+  if (count($option_sets) > 1 && !empty($variation_set_handling)) {
+    $variation_set_indicator = $variation_set_handling == ACQUIA_LIFT_DECISION_LOCKSTEP ? t('Lock step') : t('Multi-variate');
+    $form['variations']['title']['#title'] .= ' (' . $variation_set_indicator . ')';
   }
 
   // Make a container to hold existing option sets.
@@ -122,7 +121,7 @@ function acquia_lift_personalize_campaign_wizard_variations_alter(&$form, &$form
       '#type' => 'container',
       '#theme' => 'acquia_lift_card',
       '#collapsible' => TRUE,
-      '#collapsed' => $agent_instance->supportsMultipleDecisionPoints(),
+      '#collapsed' => count($option_sets) > 1,
       '#title' => $option_set->label,
       '#attributes' => array(
         'class' => array('personalize-option-set'),
@@ -180,9 +179,11 @@ function acquia_lift_personalize_campaign_wizard_variations_alter(&$form, &$form
     $form['variations']['option_sets']['option_set_' . $option_set->osid]['advanced'] = personalize_campaign_wizard_variations_advanced($form, $form_state, $option_set);
     // Option set label is edited in a different spot so don't show it twice.
     $form['variations']['option_sets']['option_set_' . $option_set->osid]['advanced']['label']['#access'] = FALSE;
+    // Decision name is handled based on the type of tests created.
+    $form['variations']['option_sets']['option_set_' . $option_set->osid]['advanced']['decision_name']['#access'] = FALSE;
   }
-  // Move the advanced agent options to the bottom of the page.
-  $form['variations']['advanced']['#weight'] = 100;
+  // Hide the agent advanced options which will be shown on the review screen.
+  $form['variations']['advanced']['#access'] = FALSE;
 
   if (!empty($agent_data->data['locked_for_variation_sets'])) {
     // Variation sets can be added only if the structure has not already been
@@ -192,11 +193,6 @@ function acquia_lift_personalize_campaign_wizard_variations_alter(&$form, &$form
   }
 
   // Show the card to add a new option set last.
-  module_load_include('inc', 'acquia_lift', 'acquia_lift.ui');
-  $option_set_types = acquia_lift_option_set_types_ui();
-  foreach ($option_set_types as $type => $details) {
-    $options[$type] = $details['title'];
-  }
   $form['variations']['add_variation'] = array(
     '#type' => 'container',
     '#theme' => 'acquia_lift_card',
@@ -205,48 +201,82 @@ function acquia_lift_personalize_campaign_wizard_variations_alter(&$form, &$form
     '#collapsible' => TRUE,
     '#attributes' => array(
       'class' => array('acquia-lift-campaign-add'),
+      'id' => 'acquia-lift-personalize-campaign-add-variation',
     ),
   );
-  // Tricky: we need this container in order to hide the radio list when a
-  // selection is made.  The radios type does not have a proper wrapping
-  // element to apply visible/invisible states.
-  $form['variations']['add_variation']['option_set_types'] = array(
-    '#type' => 'container',
+  $form['variations']['add_variation']['variation_set_handling'] = array(
+    '#type' => 'radios',
+    '#options' => array(
+      ACQUIA_LIFT_DECISION_LOCKSTEP => t('Lock step'),
+      ACQUIA_LIFT_DECISION_MULTIVARIATE => t('Multi-variate')
+    ),
+    '#theme' => 'acquia_lift_radio_list',
     '#attributes' => array(
-      'class' => array('form-item'),
+      'autocomplete' => 'off',
     ),
-    '#states' => array(
-      'invisible' => array(
-        ':input[name="variations[add_variation][option_set_types][option_set_type]"]' => array('!value' => false),
-      ),
+    '#default_value' => count($option_sets) === 1 ? '' : $variation_set_handling,
+    '#ajax' => array(
+      'wrapper' => 'acquia-lift-personalize-campaign-add-variation',
+      'callback' => 'acquia_lift_personalize_campaign_wizard_variations_ajax_add',
     ),
   );
-  $form['variations']['add_variation']['option_set_types']['option_set_type'] = array(
+  $form['variations']['add_variation']['variation_set_handling'][ACQUIA_LIFT_DECISION_LOCKSTEP]['#description'] = t('Use variation sets in Lock step if you want to test and target with a locked combination of variations. Each variation set should have the same number of variations so they can be evenly locked as combinations. Eg: AA, BB, CC.');
+  $form['variations']['add_variation']['variation_set_handling'][ACQUIA_LIFT_DECISION_MULTIVARIATE]['#description'] = t('Use multivariate variation sets when you want to test all possible combination of variations across your variation sets but are not interested in targeting them. You can have a different number of variations in each variation set. E.g. AA, AB, AC, BB, BC, CC.');
+
+  // Once variation handling is selected (if necessary) then select the
+  // type of option set to add.
+  module_load_include('inc', 'acquia_lift', 'acquia_lift.ui');
+  $option_set_types = acquia_lift_option_set_types_ui();
+  foreach ($option_set_types as $type => $details) {
+    $options[$type] = $details['title'];
+  }
+  $form['variations']['add_variation']['option_set_type'] = array(
     '#type' => 'radios',
     '#options' => $options,
     '#theme' => 'acquia_lift_radio_list',
     '#ajax' => array(
+      'wrapper' => 'acquia-lift-personalize-campaign-add-variation',
       'callback' => 'acquia_lift_personalize_campaign_wizard_variations_ajax_add',
-      'wrapper' => 'acquia-lift-add-variation-details',
-      'effect' => 'fade',
     ),
     '#attributes' => array(
       'autocomplete' => 'off',
     ),
+    '#default_value' => isset($form_state['values']['variations']['add_variation']['option_set_type']) ? $form_state['values']['variations']['add_variation']['option_set_type'] : '',
   );
   foreach ($option_set_types as $type => $details) {
-    $form['variations']['add_variation']['option_set_types']['option_set_type'][$type]['#description'] = $details['description'];
-    $form['variations']['add_variation']['option_set_types']['option_set_type'][$type]['#image'] = $details['logo'];
+    $form['variations']['add_variation']['option_set_type'][$type]['#description'] = $details['description'];
+    $form['variations']['add_variation']['option_set_type'][$type]['#image'] = $details['logo'];
   }
 
-  $form['variations']['add_variation']['details'] = array(
-    '#type' => 'container',
-    '#attributes' => array(
-      'id' => 'acquia-lift-add-variation-details',
-    ),
-  );
-  if (isset($form_state['values']['variations']['add_variation']['option_set_types']['option_set_type'])) {
-    switch ($form_state['values']['variations']['add_variation']['option_set_types']['option_set_type']) {
+  // If adding the second option set then the user needs to indicate if it is
+  // to be a multi-variate or lock-step campaign so hide the option set type
+  // until ready for it.
+  if (empty($agent_data->data['locked_for_variation_sets']) && count($option_sets) == 1 && empty($form_state['values']['variations']['add_variation']['variation_set_handling'])) {
+    $form['variations']['add_variation']['option_set_type']['#attributes']['class'][] = 'element-hidden';
+  }
+  else if (empty($form_state['values']['variations']['add_variation']['option_set_type'])) {
+    // If the user has just selected the variation set handling, then expand
+    // the add card by default.
+    $form['variations']['add_variation']['#collapsed'] = FALSE;
+    // The user is ready to select the option set type so hide the variation set
+    // handling list.
+    $form['variations']['add_variation']['variation_set_handling']['#attributes']['class'][] = 'element-hidden';
+  }
+  else {
+    // Hide both the variation handling and option set type forms
+    $form['variations']['add_variation']['variation_set_handling']['#attributes']['class'][] = 'element-hidden';
+    $form['variations']['add_variation']['option_set_type']['#attributes']['class'][] = 'element-hidden';
+    // Make sure the add card remains expanded.
+    $form['variations']['add_variation']['#collapsed'] = FALSE;
+    // Once the option set type has been selected, then include the form
+    // to add the actual option set.
+    $form['variations']['add_variation']['details'] = array(
+      '#type' => 'container',
+      '#attributes' => array(
+        'id' => 'acquia-lift-add-variation-details',
+      ),
+    );
+    switch ($form_state['values']['variations']['add_variation']['option_set_type']) {
       case 'block':
         $form['variations']['add_variation']['details']['block'] = array(
           '#type' => 'container',
@@ -333,10 +363,11 @@ function acquia_lift_personalize_campaign_wizard_goals_alter(&$form, &$form_stat
         ),
       );
     }
+    $expand = count(element_children($form['goals']['all_goals'])) === 1 || (isset($params['goal']) && $params['goal'] == $goal_id);
     $form['goals']['all_goals'][$delta]['#type'] = 'container';
     $form['goals']['all_goals'][$delta]['#theme'] = 'acquia_lift_card';
     $form['goals']['all_goals'][$delta]['#collapsible'] = TRUE;
-    $form['goals']['all_goals'][$delta]['#collapsed'] = !isset($params['goal']) || $params['goal'] !== $goal_id;
+    $form['goals']['all_goals'][$delta]['#collapsed'] = !$expand;
     $form['goals']['all_goals'][$delta]['#disabled'] = !$enable_goals;
     unset($form['goals']['all_goals'][$delta]['remove']);
   }
@@ -462,7 +493,7 @@ function acquia_lift_personalize_campaign_wizard_targeting_alter(&$form, &$form_
   if (isset($agent_data->data['visitor_context']) && !empty($agent_data->data['visitor_context'])) {
     unset($form['targeting'], $form['actions']);
     $form['main'] = array(
-      '#markup' => t('Explicit targeting is not supported when automatic targeting is in place.  Remove automatic targeting in the <a href="!review">advanced section of the review section</a> to continue.', array(
+      '#markup' => t('Explicit targeting is not supported when automatic targeting is in place.  Remove automatic targeting in the <a href="!review">advanced section of the review screen</a> to continue.', array(
         '!review' => url('admin/structure/personalize/manage/' . $agent_data->machine_name . '/review'),
       )),
     );
@@ -645,6 +676,7 @@ function acquia_lift_personalize_campaign_wizard_targeting_alter(&$form, &$form_
     '#type' => 'container',
     '#attributes' => array(
       'class' => array('personalize-wizard-column'),
+      'id' => 'acquia-lift-targeting-variations',
     ),
     '#tree' => TRUE,
   );
@@ -708,7 +740,7 @@ function acquia_lift_personalize_campaign_wizard_review_alter(&$form, &$form_sta
       $option_set = acquia_lift_get_option_set_for_targeting($agent_data->machine_name);
       $targeting = acquia_lift_get_structure_from_targeting($option_set);
     }
-    $count_audiences = count($targeting);
+    $count_audiences = 0;
     foreach ($targeting as $options) {
       $num_options = count($options);
       if ($num_options > 0) {
@@ -730,43 +762,45 @@ function acquia_lift_personalize_campaign_wizard_review_alter(&$form, &$form_sta
     $visitor_context = isset($agent_data->data['visitor_context']) ? $agent_data->data['visitor_context'] : array();
     $context_element = personalize_admin_build_visitor_context_select($visitor_context, TRUE, $agent_data);
   }
-  $has_advanced = $has_tests || $context_element !== FALSE;
 
   // Show advanced testing options.
-  if ($has_advanced) {
-    $editable = $status === PERSONALIZE_STATUS_NOT_STARTED || $status === PERSONALIZE_STATUS_PAUSED;
-    $form['review']['summary_column']['advanced'] = array(
-      '#type' => 'container',
-      '#theme' => 'acquia_lift_card',
-      '#title' => t('Advanced'),
-      '#collapsible' => TRUE,
-      '#collapsed' => FALSE,
-      '#tree' => FALSE,
-      '#attributes' => array(
-        'class' => array('acquia-lift-test-options'),
-      ),
-      '#weight' => -10,
-      // @todo: Change this to take advantage of acquia_lift_target_definition_changes_allowed
-      '#disabled' => !$editable,
-    );
-    if (!$editable) {
-      if ($status === PERSONALIZE_STATUS_COMPLETED) {
-        drupal_set_message(t('Advanced options can no longer be edited.'), 'warning');
-      }
-      else {
-        drupal_set_message(t('Advanced options cannot be edited while this personalization is running.'), 'warning');
-      }
+  module_load_include('inc', 'acquia_lift', 'acquia_lift.admin');
+  $editable = acquia_lift_target_definition_changes_allowed($agent_data);
+  $form['review']['summary_column']['advanced'] = array(
+    '#type' => 'container',
+    '#theme' => 'acquia_lift_card',
+    '#title' => t('Advanced'),
+    '#collapsible' => TRUE,
+    '#collapsed' => TRUE,
+    '#tree' => FALSE,
+    '#attributes' => array(
+      'class' => array('acquia-lift-test-options'),
+    ),
+    '#disabled' => !$editable,
+  );
+  if (!$editable) {
+    if ($status === PERSONALIZE_STATUS_COMPLETED) {
+      drupal_set_message(t('Advanced options can no longer be edited.'), 'warning');
     }
-    if ($has_tests) {
-      $form['review']['summary_column']['advanced']['options'] = _acquia_lift_personalize_campaign_wizard_review_tests($agent_data, array());
-    }
-    if ($context_element !== FALSE) {
-      $form['review']['summary_column']['advanced']['visitor_context'] = $context_element;
-      $form['review']['summary_column']['advanced']['visitor_context']['#title'] = t('Visitor contexts to use for automatic targeting');
-      module_load_include('inc', 'acquia_lift', 'acquia_lift.ui');
-      acquia_lift_chosenify_element($form['review']['summary_column']['advanced']['visitor_context'], array('acquia-lift-chosen-select-half'));
+    else {
+      drupal_set_message(t('Advanced options cannot be edited while this personalization is running.'), 'warning');
     }
   }
+  if ($has_tests) {
+    $form['review']['summary_column']['advanced']['options'] = _acquia_lift_personalize_campaign_wizard_review_tests($agent_data, array());
+  }
+  if ($context_element !== FALSE) {
+    $form['review']['summary_column']['advanced']['visitor_context'] = $context_element;
+    $form['review']['summary_column']['advanced']['visitor_context']['#title'] = t('Visitor contexts to use for automatic targeting');
+    module_load_include('inc', 'acquia_lift', 'acquia_lift.ui');
+    acquia_lift_chosenify_element($form['review']['summary_column']['advanced']['visitor_context'], array('acquia-lift-chosen-select-half'));
+  }
+  $form['review']['summary_column']['advanced']['cache_decisions'] = array(
+    '#type' => 'checkbox',
+    '#title' => 'Cache decisions made by this agent?',
+    '#description' => t('Check this if decisions made by this agent should stick, so that they don\'t have to be made again every time variation sets are rendered. This depends on the availability of local storage in the visitor\'s browser'),
+    '#default_value' => isset($agent_data->data['cache_decisions']) ? $agent_data->data['cache_decisions'] : 1
+  );
 
   if ($is_mvt) {
     $form['review']['summary_column']['summary']['option_sets'] = array(
@@ -818,7 +852,7 @@ function acquia_lift_personalize_campaign_wizard_review_alter(&$form, &$form_sta
  * Ajax handler when adding a new variation set.
  */
 function acquia_lift_personalize_campaign_wizard_variations_ajax_add($form, &$form_state) {
-  return $form['variations']['add_variation']['details'];
+  return $form['variations']['add_variation'];
 }
 
 /**
@@ -968,9 +1002,9 @@ function acquia_lift_personalize_campaign_wizard_variations_validate(&$form, &$f
     }
   }
   // Validation for any new option set types once the details have been input.
-  if (!empty($form_state['values']['variations']['add_variation']['option_set_types']['option_set_type']) &&
+  if (!empty($form_state['values']['variations']['add_variation']['option_set_type']) &&
     !empty($values['variations']['add_variation']['details'])) {
-    switch ($form_state['values']['variations']['add_variation']['option_set_types']['option_set_type']) {
+    switch ($form_state['values']['variations']['add_variation']['option_set_type']) {
       case "block":
         module_load_include('inc', 'personalize_blocks', 'personalize_blocks.admin');
         _acquia_lift_personalize_campaign_wizard_form_state_blocks_alter($form_state, $values['variations']['add_variation']['details']['block']['content']);
@@ -1012,7 +1046,7 @@ function acquia_lift_personalize_campaign_wizard_goals_validate(&$form, &$form_s
   foreach ($form_state['values']['goals']['all_goals'] as $delta => $goal) {
     // If goal changes aren't enabled then nothing should be changed.
     if (!$enabled) {
-      if ($goal['action'] != $form['goals']['all_goals'][$delta]['action_name']['#default_value']) {
+      if ($goal['action_name'] != $form['goals']['all_goals'][$delta]['action_name']['#default_value']) {
         form_set_error('goals[all_goals][' . $delta . '][action_name]', t('Goals actions cannot be changed until the personalization is paused.'));
       }
       if ($goal['value'] != $form['goals']['all_goals'][$delta]['value']['#default_value']) {
@@ -1107,8 +1141,8 @@ function acquia_lift_personalize_campaign_wizard_variations_submit(&$form, &$for
   $values = $form_state['values'];
   $click_id = $form_state['clicked_button']['#id'];
 
-  if (isset($values['variations']['variation_set_handling'])) {
-    $agent_data->data['variation_set_handling'] = $values['variations']['variation_set_handling'];
+  if (isset($values['variations']['add_variation']['variation_set_handling'])) {
+    $agent_data->data['variation_set_handling'] = $values['variations']['add_variation']['variation_set_handling'];
   }
   // Common functionality needed before submitting the block submission
   // handler whether for new or existing blocks.
@@ -1151,11 +1185,10 @@ function acquia_lift_personalize_campaign_wizard_variations_submit(&$form, &$for
   }
 
   // Create any new option sets.
-  if (!empty($form_state['values']['variations']['add_variation']['option_set_types']['option_set_type'])) {
-    switch ($form_state['values']['variations']['add_variation']['option_set_types']['option_set_type']) {
+  if (!empty($form_state['values']['variations']['add_variation']['option_set_type'])) {
+    switch ($form_state['values']['variations']['add_variation']['option_set_type']) {
       case "block":
         $submitBlockHandler($values['variations']['add_variation']['details']['block']['content']);
-        $requires_cleanup = TRUE;
         break;
       case "element":
         break;
@@ -1177,32 +1210,6 @@ function acquia_lift_personalize_campaign_wizard_variations_submit_element_add($
 
   // Redirect to the requested URL to create an option set.
   $form_state['redirect'] = $form_state['values']['variations']['add_variation']['details']['element']['content']['url'];
-}
-
-/**
- * Submit handler to redirect to an element option set page for editing.
- */
-function acquia_lift_personalize_campaign_wizard_variations_submit_element_edit($form, &$form_state) {
-  // Value for the edit button is "edit_{osid}".
-  list($prefix, $osid) = explode('_', $form_state['triggering_element']['#name']);
-  $option_set = $form['variations']['option_sets']['option_set_' . $osid]['option_set']['#value'];
-  $form_state['redirect'] = $option_set->data['pages'];
-
-  // Run form-level submit handlers
-  acquia_lift_personalize_campaign_wizard_submit($form, $form_state);
-}
-
-/**
- * Submit handler to redirect to a personalize fields content page for editing.
- */
-function acquia_lift_personalize_campaign_wizard_fields_submit_element_edit($form, &$form_state) {
-  // Value for the edit button is "edit_{osid}".
-  list($prefix, $osid) = explode('_', $form_state['triggering_element']['#name']);
-  $option_set = $form['variations']['option_sets']['option_set_' . $osid]['option_set']['#value'];
-  $form_state['redirect'] = personalize_fields_personalize_edit_link($option_set);
-
-  // Run form-level submit handlers
-  acquia_lift_personalize_campaign_wizard_submit($form, $form_state);
 }
 
 /**
@@ -1351,6 +1358,8 @@ function acquia_lift_personalize_campaign_wizard_review_submit(&$form, &$form_st
     $visitor_context = personalize_admin_convert_visitor_context_form_values($form_state['values']['visitor_context']);
   }
   $agent_data->data['visitor_context'] = $visitor_context;
+  module_load_include('inc', 'personalize', 'personalize.admin.campaign');
+  personalize_campaign_wizard_submit_variations_advanced_agent($form, $form_state, $agent_data);
 
   // If the "Start" button was pressed then we sync everything to Lift and start
   // the campaign.
@@ -1623,14 +1632,25 @@ function _acquia_lift_personalize_campaign_wizard_variations_element(&$form, &$f
     '#default_value' => $option_set->label,
     '#title' => t('Variation set')
   );
+  $items = array();
+  foreach ($option_set->options as $option) {
+    $items[] = $option['option_label'];
+  };
+  if (!empty($items)) {
+    $element['display'] = array(
+      '#markup' => theme('item_list', array(
+        'items' => $items,
+        'title' => t('Variations'),
+      )),
+    );
+  }
   if (!empty($option_set->data['pages'])) {
     // Note that utilizing the personalize_html_tag theme here somehow prevents
     // the element and form-altered submit handlers from being called.
     $element['edit'] = array(
-      '#type' => 'submit',
-      '#submit' => array('acquia_lift_personalize_campaign_wizard_variations_submit_element_edit'),
-      '#value' => t('Edit variation set'),
-      '#name' => 'edit_' . $option_set->osid,
+      '#type' => 'link',
+      '#href' => $option_set->data['pages'],
+      '#title' => t('Edit variations in context'),
     );
   }
   return $element;
@@ -1691,12 +1711,17 @@ function _acquia_lift_personalize_campaign_wizard_variations_fields(&$form, &$fo
     )),
   );
   $edit_link = personalize_fields_personalize_edit_link($option_set);
+  $machine_name = $agent_data->machine_name;
   if (!empty($edit_link)) {
     $element['edit'] = array(
-      '#type' => 'submit',
-      '#submit' => array('acquia_lift_personalize_campaign_wizard_fields_submit_element_edit'),
-      '#value' => t('Edit variation set'),
-      '#name' => 'edit_' . $option_set->osid,
+      '#type' => 'link',
+      '#href' => $edit_link,
+      '#options' => array(
+        'query' => array(
+          'destination' => url("admin/structure/personalize/manage/${machine_name}/variations"),
+        ),
+      ),
+      '#title' => t('Edit variations in context'),
     );
   }
   return $element;
@@ -1940,7 +1965,7 @@ function _acquia_lift_personalize_campaign_wizard_review_tests($agent_data, $ele
   $form['decision_style'] = array(
     '#type' => 'radios',
     '#title' => t('Decision Style'),
-    '#options' => array('adaptive' => t('Auto-personalize'), 'random' => t('Test only')),
+    '#options' => array('random' => t('Test only'), 'adaptive' => t('Auto-personalize')),
     '#default_value' => $decision_style,
     '#title_display' => 'invisible',
   );

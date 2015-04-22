@@ -264,9 +264,10 @@ class AcquiaLiftWebTestBase extends DrupalWebTestCase
    * @return array
    *   An associative array representing the field.
    */
-  protected function createUserProfileField() {
+  protected function createUserProfileField($field_name = NULL) {
+    $field_name = $field_name ?: $this->randomName();
     $field = array(
-      'field_name' => 'field_' . drupal_strtolower($this->randomName()),
+      'field_name' => 'field_' . drupal_strtolower($field_name),
       'type' => 'text',
       'cardinality' => 1,
     );
@@ -420,7 +421,7 @@ class AcquiaLiftWebTestBase extends DrupalWebTestCase
     $options = array();
     module_load_include('inc', 'personalize_blocks', 'personalize_blocks.admin');
     for ($i = 1; $i <= $num_options; $i++) {
-      $title = t('Custom block @num', array('@num' => $i));
+      $title = t('Custom block @num from @index', array('@num' => $i, '@index' => $index));
       $values = array(
         'title' => $title,
         'info' => $title,
@@ -2006,18 +2007,18 @@ class AcquiaLiftWebTestCampaignWizard extends AcquiaLiftWebTestBase {
 
     $this->drupalGet('admin/structure/personalize/manage/' . $agent->machine_name . '/variations');
     // Make sure the type selection is shown by default without any selections.
-    $this->assertNoFieldChecked('edit-variations-add-variation-option-set-types-option-set-type-block');
-    $this->assertNoFieldChecked('edit-variations-add-variation-option-set-types-option-set-type-element');
+    $this->assertNoFieldChecked('edit-variations-add-variation-option-set-type-block');
+    $this->assertNoFieldChecked('edit-variations-add-variation-option-set-type-element');
 
     // Actual forms should not be shown yet.
     $this->assertNoFieldByName($block_title_name);
     $this->assertNoFieldByName($element_url_name);
 
     $edit = array(
-      'variations[add_variation][option_set_types][option_set_type]' => 'block',
+      'variations[add_variation][option_set_type]' => 'block',
     );
 
-    $this->drupalPostAJAX(NULL, $edit, 'variations[add_variation][option_set_types][option_set_type]');
+    $this->drupalPostAJAX(NULL, $edit, 'variations[add_variation][option_set_type]');
     $this->assertFieldByName($block_title_name);
     $this->assertNoFieldByName($element_url_name);
 
@@ -2027,14 +2028,53 @@ class AcquiaLiftWebTestCampaignWizard extends AcquiaLiftWebTestBase {
     $this->assertNoFieldByName($element_url_name);
 
     $edit = array(
-      'variations[add_variation][option_set_types][option_set_type]' => 'element',
+      'variations[add_variation][option_set_type]' => 'element',
     );
 
-    $this->drupalPostAJAX(NULL, $edit, 'variations[add_variation][option_set_types][option_set_type]');
+    $this->drupalPostAJAX(NULL, $edit, 'variations[add_variation][option_set_type]');
     $this->assertNoFieldByName($block_title_name);
     $this->assertFieldByName($element_url_name);
-  }
 
+    // Now test the selection process when there is an existing option set.
+    $this->createPersonalizedBlock(1, $agent);
+
+    // Set the variation set handling
+    $this->drupalget('admin/structure/personalize/manage/' . $agent->machine_name . '/variations');
+    $this->assertNoFieldByName($block_title_name);
+    $this->assertNoFieldByName($element_url_name);
+    $this->assertNoFieldByName('variations[add_variation][option_set_type]');
+    $this->assertFieldByName('variations[add_variation][variation_set_handling]');
+    $edit = array(
+      'variations[add_variation][variation_set_handling]' => ACQUIA_LIFT_DECISION_LOCKSTEP,
+    );
+    $this->drupalPostAJAX(NULL, $edit, 'variations[add_variation][variation_set_handling]');
+    // Now we can set the type of option set to create.
+    $edit = array(
+      'variations[add_variation][option_set_type]' => 'block',
+    );
+    $this->drupalPostAJAX(NULL, $edit, 'variations[add_variation][option_set_type]');
+    // And finally there should be the new block form.
+    $this->assertFieldByName($block_title_name);
+
+    // Finally test adding option sets once they are already multiple.
+    $this->createPersonalizedBlock(2, $agent);
+    $agent->data['variation_set_handling'] = ACQUIA_LIFT_DECISION_LOCKSTEP;
+    personalize_agent_save($agent);
+
+    $this->drupalget('admin/structure/personalize/manage/' . $agent->machine_name . '/variations');
+    $this->assertText('Variation sets (Lock step)');
+    $this->assertFieldByName('variations[add_variation][option_set_type]');
+    $this->assertNoFieldByName('variations[add_variation][variation_set_handling]');
+    $this->assertNoFieldByName($block_title_name);
+    $this->assertNoFieldByName($element_url_name);
+    $edit = array(
+      'variations[add_variation][option_set_type]' => 'block',
+    );
+    $this->drupalPostAJAX(NULL, $edit, 'variations[add_variation][option_set_type]');
+    // The new block form should display without selecting variation handling.
+    $this->assertFieldByName($block_title_name);
+  }
+  
   /**
    * Test block variation set creation.
    */
@@ -2045,12 +2085,12 @@ class AcquiaLiftWebTestCampaignWizard extends AcquiaLiftWebTestBase {
     $this->drupalGet('admin/structure/personalize/manage/' . $agent->machine_name . '/variations');
     // Indicate a block variation set type.
     $edit = array(
-      'variations[add_variation][option_set_types][option_set_type]' => 'block',
+      'variations[add_variation][option_set_type]' => 'block',
     );
-    $this->drupalPostAJAX(NULL, $edit, 'variations[add_variation][option_set_types][option_set_type]');
+    $this->drupalPostAJAX(NULL, $edit, 'variations[add_variation][option_set_type]');
 
     $edit = array(
-      'variations[add_variation][option_set_types][option_set_type]' => 'block',
+      'variations[add_variation][option_set_type]' => 'block',
       'variations[add_variation][details][block][content][title]' => 'Muppets',
       'variations[add_variation][details][block][content][pblock_wrapper][blocks][0][block][bid]' => 'comment_delta_recent',
       'variations[add_variation][details][block][content][pblock_wrapper][blocks][1][block][bid]' => 'node_delta_recent',
@@ -2100,7 +2140,6 @@ class AcquiaLiftWebTestCampaignWizard extends AcquiaLiftWebTestBase {
     $this->drupalGet('admin/structure/personalize/manage/' . $agent->machine_name . '/variations');
 
     $edit = array(
-      'variations[option_sets][option_set_1][advanced][decision_name]' => 'decision updated',
       'variations[option_sets][option_set_1][advanced][stateful]' => 1,
       'variations[option_sets][option_set_1][advanced][preview_link]' => 'invalid url',
       'variations[option_sets][option_set_1][advanced][executor]' => 'callback',
@@ -2118,7 +2157,6 @@ class AcquiaLiftWebTestCampaignWizard extends AcquiaLiftWebTestBase {
     $option_set = reset($option_sets);
     $this->assertEqual(count($option_set->options), 2);
     $this->assertEqual($option_set->label, 'Great Muppet Caper');
-    $this->assertEqual($option_set->decision_name, 'decision-updated');
     $this->assertEqual($option_set->stateful, 1);
     $this->assertEqual($option_set->preview_link, '<front>');
     $this->assertEqual($option_set->executor, 'callback');
@@ -2133,9 +2171,9 @@ class AcquiaLiftWebTestCampaignWizard extends AcquiaLiftWebTestBase {
     $this->drupalGet('admin/structure/personalize/manage/' . $agent->machine_name . '/variations');
     // Indicate an element variation set type.
     $edit = array(
-      'variations[add_variation][option_set_types][option_set_type]' => 'element',
+      'variations[add_variation][option_set_type]' => 'element',
     );
-    $this->drupalPostAJAX(NULL, $edit, 'variations[add_variation][option_set_types][option_set_type]');
+    $this->drupalPostAJAX(NULL, $edit, 'variations[add_variation][option_set_type]');
 
     // Invalid url
     $edit = array(
@@ -2155,9 +2193,9 @@ class AcquiaLiftWebTestCampaignWizard extends AcquiaLiftWebTestBase {
     // Valid url by alias
     $this->drupalGet('admin/structure/personalize/manage/' . $agent->machine_name . '/variations');
     $edit = array(
-      'variations[add_variation][option_set_types][option_set_type]' => 'element',
+      'variations[add_variation][option_set_type]' => 'element',
     );
-    $this->drupalPostAJAX(NULL, $edit, 'variations[add_variation][option_set_types][option_set_type]');
+    $this->drupalPostAJAX(NULL, $edit, 'variations[add_variation][option_set_type]');
     $edit = array(
       'variations[add_variation][details][element][content][url]' => 'admin/structure',
     );
@@ -2169,9 +2207,9 @@ class AcquiaLiftWebTestCampaignWizard extends AcquiaLiftWebTestBase {
     $this->drupalGet('admin/structure/personalize/manage/' . $agent->machine_name . '/variations');
     // Indicate an element variation set type.
     $edit = array(
-      'variations[add_variation][option_set_types][option_set_type]' => 'element',
+      'variations[add_variation][option_set_type]' => 'element',
     );
-    $this->drupalPostAJAX(NULL, $edit, 'variations[add_variation][option_set_types][option_set_type]');
+    $this->drupalPostAJAX(NULL, $edit, 'variations[add_variation][option_set_type]');
     $edit = array(
       'variations[add_variation][details][element][content][url]' => 'node',
     );
@@ -2197,7 +2235,7 @@ class AcquiaLiftWebTestCampaignWizard extends AcquiaLiftWebTestBase {
     // links to its "pages" page for editing.
     $this->drupalGet('admin/structure/personalize/manage/' . $agent->machine_name . '/variations');
     $this->assertText('Element test set 1');
-    $this->drupalPost(NULL, NULL, 'Edit variation set');
+    $this->clickLink(t('Edit variations in context'));
     $this->assertUrl('node');
 
     // Settings should include indicators for deleting and editing option sets.
@@ -2209,8 +2247,7 @@ class AcquiaLiftWebTestCampaignWizard extends AcquiaLiftWebTestBase {
     $this->assertTrue($settings['acquia_lift']['option_sets'][$js_osid]['option-A']['deletable']);
 
     // Start the campaign and the elements should not be deletable.
-    personalize_agent_set_status($agent->machine_name, PERSONALIZE_STATUS_RUNNING);
-    $this->resetAll();
+    $this->drupalPost('admin/structure/personalize/manage/' . $agent->machine_name . '/review', array(), t('Start'));
     $this->drupalGet('');
     $settings = $this->drupalGetSettings();
     $this->assertFalse($settings['acquia_lift']['option_sets'][$js_osid][PERSONALIZE_CONTROL_OPTION_ID]['editable']);
@@ -2265,9 +2302,11 @@ class AcquiaLiftWebTestCampaignWizard extends AcquiaLiftWebTestBase {
     $this->drupalGet("admin/structure/personalize/manage/{$agent_name}/variations");
     $this->assertText('first value');
     $this->assertText('second value');
-    $this->drupalPost(NULL, array(), t('Edit variation set'));
+    $this->clickLink(t('Edit variations in context'));
 
-    $this->assertUrl('node/' . $node->nid . '/edit');
+    $this->assertUrl('node/' . $node->nid . '/edit', array('query' => array('destination' => url("admin/structure/personalize/manage/{$agent_name}/variations"))));
+    $this->drupalPost(NULL, array(), t('Save'));
+    $this->assertUrl("admin/structure/personalize/manage/$agent_name/variations");
   }
 
   /**
@@ -2607,11 +2646,12 @@ class AcquiaLiftWebTestCampaignWizard extends AcquiaLiftWebTestBase {
     // Options will be automatically added to the "Everyone else" audience
     // which means that there will be two options to test against.
     $this->drupalGet("admin/structure/personalize/manage/{$agent->machine_name}/review");
-    $this->assertNoText('Test options cannot be edited while this personalization is running.');
+    $this->assertNoText('Advanced options cannot be edited while this personalization is running.');
     $edit = array(
       'decision_style' => 'adaptive',
       'control_rate' => 25,
       'explore_rate' => 25,
+      'cache_decisions' => 1
     );
     $this->drupalPost(NULL, $edit, $this->getButton('wizard_save'));
 
@@ -2620,13 +2660,23 @@ class AcquiaLiftWebTestCampaignWizard extends AcquiaLiftWebTestBase {
     $this->assertEqual($agent->data['decision_style'], 'adaptive');
     $this->assertEqual($agent->data['control_rate'], '25');
     $this->assertEqual($agent->data['explore_rate'], 25);
+    $this->assertTrue($agent->data['cache_decisions']);
+
+    // Update decision cache.
+    $edit = array(
+      'cache_decisions' => FALSE,
+    );
+    $this->drupalPost(NULL, $edit, $this->getButton('wizard_save'));
+
+    $agent = personalize_agent_load($agent->machine_name, TRUE);
+    $this->assertFalse($agent->data['cache_decisions']);
 
     // Start the agent and verify that the options are no longer editable.
     personalize_agent_set_status($agent->machine_name, PERSONALIZE_STATUS_RUNNING);
     $this->resetAll();
 
     $this->drupalGet("admin/structure/personalize/manage/{$agent->machine_name}/review");
-    $this->assertText('Test options cannot be edited while this personalization is running.');
+    $this->assertText('Advanced options cannot be edited while this personalization is running.');
   }
 
   /**
@@ -2641,17 +2691,13 @@ class AcquiaLiftWebTestCampaignWizard extends AcquiaLiftWebTestBase {
     $this->drupalLogin($admin_user);
     // Create a new agent.
     $agent = $this->createTargetingAgent();
-    $machine_name = $agent->getMachineName();
+    $machine_name = $agent->machine_name;
     $this->drupalGet("admin/structure/personalize/manage/{$machine_name}/review");
     // Check for auto-targeting.
     $this->assertFieldByName('visitor_context[]');
 
     // Create a block based option set.
-    $options = array(
-      array('bid' => 'comment_delta_recent'),
-      array('bid' => 'system_delta_powered-by'),
-    );
-    $option_set = $this->createOptionSet(1, array('plugin' => 'block', 'agent' => $machine_name, 'options' => $options, 'data' => array('block_title' => $this->randomName())));
+    $option_set = $this->createPersonalizedBlock(1, $agent);
     $osid = $option_set->osid;
 
     // Place it on the page so that we can check visitor context settings.
@@ -2682,7 +2728,7 @@ class AcquiaLiftWebTestCampaignWizard extends AcquiaLiftWebTestBase {
     // Remove the automatic targeting.
     $this->drupalGet("admin/structure/personalize/manage/$machine_name/review");
     $edit = array(
-      'visitor_context[]' => '',
+      'visitor_context[]' => array(),
     );
     $this->drupalPost(NULL, $edit, $this->getButton('wizard_save'));
     $this->assertNoOptionSelected('edit-visitor-context', 'user_profile_context__test_user_field_1');

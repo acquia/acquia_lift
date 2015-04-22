@@ -31,11 +31,12 @@
   padding-top: 0.37rem;
   margin-bottom: 0.63rem;
   float: left;
-  font-weight: normal;
+  font-weight: bold;
 }
 
 .el-card__content {
   padding: 0.75rem;
+  background-color: #fff;
 }
 
 .el-card__footer {
@@ -93,6 +94,7 @@ ul.el-card__actions {
   position: relative;
   margin-left: .5em; /* LTR */
   left: -.5em; /* LTR */
+  vertical-align: text-bottom;
 }
 .is-active .el-card__header .el-card__title[aria-controls]:before {
   content: url('../images/000000/menu-expanded.png');

@@ -581,7 +581,7 @@
           // No limits in place so include by default.
           return true;
         }))
-      },
+      }
     })
   };
 

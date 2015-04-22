@@ -193,8 +193,7 @@
   color: #007ec0;
 }
 
-/* Menu links */
-#navbar-administration .navbar-tray-horizontal .acquia-lift-menu-all,
+/* Create links */
 #navbar-administration .navbar-tray-horizontal .acquia-lift-menu-create {
   border-top: 0.1em solid #ccc;
   padding: .7em 1.3333em .7em 1.3333em;

@@ -302,7 +302,7 @@ class ALProfilesWebTest extends DrupalWebTestCase {
 
     // Check that the DELETE request has been made to the API.
     $requests = DummyALProfilesHttpClient::getLoggedRequests();
-    $this->assertEqual('http://api.example.com/dashboard/rest/TESTACCOUNT/events/my_action_with_label', $requests[0]['uri']);
+    $this->assertEqual('http://api.example.com/dashboard/rest/TESTACCOUNT/events/my_action_with_label?customerSite=TESTSITE', $requests[0]['uri']);
     $this->assertEqual('delete', $requests[0]['type']);
 
 

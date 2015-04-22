@@ -354,3 +354,57 @@ QUnit.test( "Capture identity test", function( assert ) {
   };
   Drupal.acquia_lift_profiles.processServerSideActions(settings);
 });
+
+QUnit.asyncTest("Use UDF values in processEvent", function( assert ) {
+  expect(2);
+  Drupal.acquia_lift_profiles.resetAll();
+  // Mock the _tcaq object so we can assert on what gets passed to it.
+  _tcaq = {
+    'push':function(event) {
+      if (event[0] == "capture") {
+        assert.equal(event[1], "someEvent");
+        // This is what we're testing - when we process an event below,
+        // the UDF values that were gathered during the init call should get
+        // passed in the _tcaq.push call for the custom event.
+        assert.deepEqual(event[2], {
+          evalSegments: true,
+          person_udf1: "some-value",
+          person_udf2: "some-other-value"
+        });
+      }
+      QUnit.start();
+    }
+  };
+  // Set up some UDF values that will get mapped during the init() call.
+  var settings = {
+    acquia_lift_profiles: {
+      udfMappings: {
+        person: {
+          person_udf1: "my_first_plugin__some-context",
+          person_udf2: "my_promise_plugin__some-other-context"
+        }
+      },
+      udfMappingContextSeparator: '__'
+    }
+  };
+
+  // We need to mock the getVisitorContexts() method as this is called by the
+  // init method.
+  Drupal.personalize.getVisitorContexts = function(plugins, callback) {
+    var values = {
+      'my_first_plugin': {
+        'some-context': 'some-value'
+      },
+      'my_promise_plugin': {
+        'some-other-context': 'some-other-value'
+      }
+    };
+    callback.call(null, values);
+  };
+  // Call the init() function which will result in the UDF values getting mapped.
+  Drupal.acquia_lift_profiles.init(settings);
+  QUnit.stop();
+  // Now process a custom event - the UDF values that were evaluated during the
+  // init call should also get passed. The assertion is in our _tcaq mock above.
+  Drupal.acquia_lift_profiles.processEvent('someEvent', {}, {'context1': 'value1'});
+});

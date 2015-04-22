@@ -410,7 +410,7 @@
           event: 'acquiaLiftSettingsUpdate',
           progress: {
             type: '',
-            message: '',
+            message: ''
           },
           success: function (response, status) {
             Drupal.ajax.prototype.success.call(this, response, status);

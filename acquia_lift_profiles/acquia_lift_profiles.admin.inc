@@ -109,24 +109,21 @@ function acquia_lift_profiles_admin_form($form, &$form_state) {
   // Vocabulary mappings.
   $form['acquia_lift_profiles_vocabulary_mappings'] = array(
     '#title' => t('Vocabulary Mappings'),
-    '#description' => t('For each vocabularies available in Acquia Lift Profiles, you can map a visitor context, whose value will then be sent as the value for that vocabulary.'),
+    '#description' => t('For the "content section", "content keywords", and "persona" fields in Acquia Lift Profiles, you can map them to different visitor contexts.'),
     '#type' => 'fieldset',
     '#tree' => TRUE,
   );
-  $type_list = array(
-    'content_section',
-    'content_keywords',
-    'persona',
+  $field_list = array(
+    'content_section' => 'Content Section',
+    'content_keywords' => 'Content Keywords',
+    'persona' => 'Persona',
   );
   $vocabulary_mappings = variable_get('acquia_lift_profiles_vocabulary_mappings', array());
-  foreach ($type_list as $type) {
-    $default_value = isset($vocabulary_mappings[$type]) ? $vocabulary_mappings[$type] : NULL;
+  foreach ($field_list as $field_name => $field_friendly_name) {
+    $default_value = isset($vocabulary_mappings[$field_name]) ? $vocabulary_mappings[$field_name] : NULL;
     $select = acquia_lift_profiles_admin_build_visitor_context_select($groups, $default_value);
-    $type_name = str_replace('_', ' ', $type);
-    $type_title = ucfirst($type_name);
-    $form['acquia_lift_profiles_vocabulary_mappings'][$type] = $select;
-    $form['acquia_lift_profiles_vocabulary_mappings'][$type]['#title'] = t($type_title);
-    $form['acquia_lift_profiles_vocabulary_mappings'][$type]['#description'] = t('The vocabulary to use for the @type_name', array('@type_name' => $type_name));
+    $form['acquia_lift_profiles_vocabulary_mappings'][$field_name] = $select;
+    $form['acquia_lift_profiles_vocabulary_mappings'][$field_name]['#title'] = t($field_friendly_name);
   }
 
   // Only show the "Tracked actions" selector if acquia_lift_profiles has already been

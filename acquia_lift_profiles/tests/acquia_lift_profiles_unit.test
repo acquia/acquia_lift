@@ -103,6 +103,7 @@ class ALProfilesAPITest extends DrupalUnitTestCase {
         }
       }
     }
+
     ALProfilesAPI::reset();
     // Put back our original conf settings.
     $conf = $original_conf;
@@ -237,6 +238,7 @@ class ALProfilesAPITest extends DrupalUnitTestCase {
       )
     );
     $this->assertLogs($logs);
+    $this->customerSite = '';
     ALProfilesAPI::reset();
   }
 
@@ -293,6 +295,35 @@ class ALProfilesAPITest extends DrupalUnitTestCase {
     );
     $this->assertLogs($logs);
 
+    // Now try with a non-empty customer site
+    ALProfilesAPI::reset();
+    $this->customerSite = 'TESTSITE';
+    $acquia_lift_profiles_api = $this->getALProfilesAPI();
+    $event_name = 'test_event';
+    $acquia_lift_profiles_api->deleteEvent($event_name);
+    // Our request should now include a customerSite param in the querystring
+    $canonicalRequest = "DELETE\n/dashboard/rest/{$acquia_lift_profiles_api->getAccountName()}/events/{$event_name}?customerSite=TESTSITE";
+    $hmac = base64_encode(hash_hmac('sha1', $canonicalRequest, $this->secretKey, TRUE));
+    $auth_header = 'HMAC ' . $this->accessKey . ':' . $hmac;
+    $requests = array(
+      array(
+        'type' => 'delete',
+        'uri' => "{$acquia_lift_profiles_api->getApiUrl()}/dashboard/rest/{$acquia_lift_profiles_api->getAccountName()}/events/{$event_name}?customerSite=TESTSITE",
+        'headers' => array('Authorization' => $auth_header),
+        'options' => array(),
+        'body' => NULL,
+      )
+    );
+
+    // Confirm the expected requests were made.
+    $this->assertAPIRequests($requests);
+    $logs = array(
+      array(
+        'level' => PersonalizeLogLevel::INFO,
+        'message' => "The event $event_name was deleted from Acquia Lift Profiles",
+      )
+    );
+    $this->assertLogs($logs);
     ALProfilesAPI::reset();
   }
 

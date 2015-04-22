@@ -216,6 +216,6 @@ function acquia_lift_profiles_update_7003() {
   // 2) Enable the personalize taxonomy context module.
   $result = module_enable(array('personalize_taxonomy_context'));
   if (empty($result)) {
-    throw new DrupalUpdateException('Module personalize_taxonomy_context could not be enabled.');
+    throw new DrupalUpdateException('There was a problem enabling "personalize_taxonomy_context" module. Please ensure you have "personalize" module version 7.x-1.0-rc11 or higher, and then try updating again.');
   }
 }

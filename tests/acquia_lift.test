@@ -61,6 +61,7 @@ class AcquiaLiftWebTestBase extends DrupalWebTestCase
   public function tearDown()
   {
     variable_del('acquia_lift_web_test_data');
+    variable_del('acquia_lift_web_test_broken_client');
     parent::tearDown();
   }
 
@@ -2074,7 +2075,7 @@ class AcquiaLiftWebTestCampaignWizard extends AcquiaLiftWebTestBase {
     // The new block form should display without selecting variation handling.
     $this->assertFieldByName($block_title_name);
   }
-  
+
   /**
    * Test block variation set creation.
    */
@@ -2519,6 +2520,45 @@ class AcquiaLiftWebTestCampaignWizard extends AcquiaLiftWebTestBase {
     $this->assertOptionSelected('edit-audiences-everyone-else-assignment', $first_option_set->options[0]['option_id']);
   }
 
+
+  /**
+   * Test doing a straight test, i.e. all variations assigned to "Everyone Else".
+   */
+  function testNoTargeting() {
+    $first_agent = $this->createTargetingAgent();
+    $first_option_set = $this->createOptionSet(1, array(
+      'agent' => $first_agent->machine_name,
+      'plugin' => 'type1',
+      'num_options' => 3,
+    ));
+    $option_id_1 = $first_option_set->options[0]['option_id'];
+    $option_id_2 = $first_option_set->options[1]['option_id'];
+    $option_id_3 = $first_option_set->options[2]['option_id'];
+
+    // Adjust the weights and verify that the "Everyone else" has the highest.
+    module_load_include('inc', 'acquia_lift', 'acquia_lift.admin');
+    $this->drupalPost('admin/structure/personalize/manage/' . $first_agent->machine_name . '/targeting', array(), $this->getButton('wizard_next'));
+
+    // The targeting should be saved in the agent property.
+    $first_agent = personalize_agent_load($first_agent->machine_name, TRUE);
+    $expected_agent_targeting = array(
+      'everyone-else' => array($option_id_1, $option_id_2, $option_id_3),
+    );
+    $this->assertEqual($expected_agent_targeting, $first_agent->data['lift_targeting']);
+    $option_set = acquia_lift_get_option_set_for_targeting($first_agent->machine_name);
+    // The targeting should not have been saved to the option set yet.
+    $this->assertTrue(empty($option_set->targeting['everyone-else']['option_id']));
+    $this->assertTrue(empty($option_set->targeting['everyone-else']['osid']));
+
+    // Hit the start button on the review form to implement the targeting
+    $this->drupalPost('admin/structure/personalize/manage/' . $first_agent->machine_name . '/review', array(), $this->getButton('wizard_start'));
+    personalize_agent_load($first_agent->machine_name, TRUE);
+    $this->resetAll();
+    $option_set = personalize_option_set_load($option_set->osid, TRUE);
+    // The targeting should now have been saved to the option set.
+    $this->assertFalse(empty($option_set->targeting['everyone-else']['osid']));
+  }
+
   /**
    * Test goals form.
    */
@@ -2677,6 +2717,49 @@ class AcquiaLiftWebTestCampaignWizard extends AcquiaLiftWebTestBase {
 
     $this->drupalGet("admin/structure/personalize/manage/{$agent->machine_name}/review");
     $this->assertText('Advanced options cannot be edited while this personalization is running.');
+  }
+
+  /**
+   * Tests the behavior of the review form when there are batch sync errors.
+   */
+  function testReviewSubmit() {
+    $agent = $this->createTargetingAgent();
+    $this->createOptionSet(1, array(
+      'agent' => $agent->machine_name,
+      'plugin' => 'type1',
+      'num_options' => 2,
+    ));
+
+    // Adjust the weights and verify that the "Everyone else" has the highest.
+    module_load_include('inc', 'acquia_lift', 'acquia_lift.admin');
+    $this->drupalPost('admin/structure/personalize/manage/' . $agent->machine_name . '/targeting', array(), $this->getButton('wizard_next'));
+
+    // Try to start the agent.
+    $this->drupalPost('admin/structure/personalize/manage/' . $agent->machine_name . '/review', array(), $this->getButton('wizard_start'));
+    $this->assertText('No goals have been set up for agent ' . $agent->machine_name);
+    $this->assertText('There was a problem syncing your personalization components to Lift and it cannot be started at this time.');
+    // Confirm the agent's status has not changed.
+    personalize_agent_load($agent->machine_name, TRUE);
+    $status = personalize_agent_get_status($agent->machine_name);
+    $this->assertEqual($status, PERSONALIZE_STATUS_NOT_STARTED);
+
+    // Add a goal so it will no longer fail for this reason.
+    personalize_goal_save($agent->machine_name, 'user_login', 1);
+
+    // Cause batch syncing to fail by using a broken http client.
+    variable_set('acquia_lift_web_test_broken_client', TRUE);
+    $this->resetAll();
+
+    $this->drupalPost('admin/structure/personalize/manage/' . $agent->machine_name . '/review', array(), $this->getButton('wizard_start'));
+
+    // Confirm the agent's status still has not changed.
+    personalize_agent_load($agent->machine_name, TRUE);
+    $status = personalize_agent_get_status($agent->machine_name);
+    $this->assertEqual($status, PERSONALIZE_STATUS_NOT_STARTED);
+
+    // @todo Figure out a way to test a failure that happens *during* batch -
+    //   the above failure happens before the batch even starts because an
+    //   exception is thrown when trying to get the operations.
   }
 
   /**

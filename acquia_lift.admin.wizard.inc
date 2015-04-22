@@ -1115,6 +1115,7 @@ function acquia_lift_personalize_campaign_wizard_submit(&$form, &$form_state) {
 
   // Run the base submit form handling.
   $agent_data = personalize_campaign_wizard_submit_base($form, $form_state);
+  $agent_data = personalize_agent_load($agent_data->machine_name);
   $agent_instance = personalize_agent_load_agent($agent_data->machine_name);
 
   // Call any step-specific submission handlers.

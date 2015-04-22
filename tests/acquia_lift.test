@@ -2520,6 +2520,46 @@ class AcquiaLiftWebTestCampaignWizard extends AcquiaLiftWebTestBase {
   }
 
   /**
+   * Test doing a straight test, i.e. all variations assigned to "Everyone Else".
+   */
+  function testNoTargeting() {
+    $first_agent = $this->createTargetingAgent();
+    $first_option_set = $this->createOptionSet(1, array(
+      'agent' => $first_agent->machine_name,
+      'plugin' => 'type1',
+      'num_options' => 3,
+    ));
+    $option_id_1 = $first_option_set->options[0]['option_id'];
+    $option_id_2 = $first_option_set->options[1]['option_id'];
+    $option_id_3 = $first_option_set->options[2]['option_id'];
+
+    // Adjust the weights and verify that the "Everyone else" has the highest.
+    module_load_include('inc', 'acquia_lift', 'acquia_lift.admin');
+    $this->drupalPost('admin/structure/personalize/manage/' . $first_agent->machine_name . '/targeting', array(), $this->getButton('wizard_next'));
+
+    // The targeting should be saved in the agent property.
+    $first_agent = personalize_agent_load($first_agent->machine_name, TRUE);
+    $expected_agent_targeting = array(
+      'everyone-else' => array($option_id_1, $option_id_2, $option_id_3),
+    );
+    $this->assertEqual($expected_agent_targeting, $first_agent->data['lift_targeting']);
+    $option_set = acquia_lift_get_option_set_for_targeting($first_agent->machine_name);
+    // The targeting should not have been saved to the option set yet.
+    $this->assertTrue(empty($option_set->targeting['everyone-else']['option_id']));
+    $this->assertTrue(empty($option_set->targeting['everyone-else']['osid']));
+
+    // Hit the start button on the review form to implement the targeting
+    $this->drupalPost('admin/structure/personalize/manage/' . $first_agent->machine_name . '/review', array(), $this->getButton('wizard_start'));
+    $first_agent = personalize_agent_load($first_agent->machine_name, TRUE);
+    //personalize_agent_set_status($first_agent->machine_name, PERSONALIZE_STATUS_RUNNING);
+    $this->resetAll();
+    $option_set = personalize_option_set_load($option_set->osid, TRUE);
+    // The targeting should now have been saved to the option set.
+    $this->assertFalse(empty($option_set->targeting['everyone-else']['osid']));
+
+  }
+
+  /**
    * Test goals form.
    */
   function testGoals() {

@@ -4,6 +4,9 @@
 
   Drupal.behaviors.AcquiaLiftMessageBox = {
     'attach': function(context, settings) {
+      if (!settings.hasOwnProperty('acquia_lift')) {
+        return;
+      }
       // If any messages have been set to display on page load, show them.
       if (!pendingMessagesShown && settings.acquia_lift.pendingMessage && settings.acquia_lift.pendingMessage.length > 0) {
         showMessageBox(settings.acquia_lift.pendingMessage.join('<br />'), 0);

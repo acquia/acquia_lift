@@ -106,9 +106,9 @@ function acquia_lift_profiles_admin_form($form, &$form_state) {
   module_load_include('inc', 'personalize', 'personalize.admin');
   $groups = personalize_get_grouped_context_options(NULL, TRUE, array('acquia_lift_profiles_context', 'acquia_lift_context'));
 
-  // Vocabulary mappings.
-  $form['acquia_lift_profiles_vocabulary_mappings'] = array(
-    '#title' => t('Vocabulary Mappings'),
+  // Field mappings.
+  $form['acquia_lift_profiles_field_mappings'] = array(
+    '#title' => t('Field Mappings'),
     '#description' => t('For the "content section", "content keywords", and "persona" fields in Acquia Lift Profiles, you can map them to different visitor contexts.'),
     '#type' => 'fieldset',
     '#tree' => TRUE,
@@ -118,12 +118,12 @@ function acquia_lift_profiles_admin_form($form, &$form_state) {
     'content_keywords' => 'Content Keywords',
     'persona' => 'Persona',
   );
-  $vocabulary_mappings = variable_get('acquia_lift_profiles_vocabulary_mappings', array());
+  $field_mappings = variable_get('acquia_lift_profiles_field_mappings', array());
   foreach ($field_list as $field_name => $field_friendly_name) {
-    $default_value = isset($vocabulary_mappings[$field_name]) ? $vocabulary_mappings[$field_name] : NULL;
+    $default_value = isset($field_mappings[$field_name]) ? $field_mappings[$field_name] : NULL;
     $select = acquia_lift_profiles_admin_build_visitor_context_select($groups, $default_value);
-    $form['acquia_lift_profiles_vocabulary_mappings'][$field_name] = $select;
-    $form['acquia_lift_profiles_vocabulary_mappings'][$field_name]['#title'] = t($field_friendly_name);
+    $form['acquia_lift_profiles_field_mappings'][$field_name] = $select;
+    $form['acquia_lift_profiles_field_mappings'][$field_name]['#title'] = t($field_friendly_name);
   }
 
   // Only show the "Tracked actions" selector if acquia_lift_profiles has already been
@@ -223,9 +223,9 @@ function acquia_lift_profiles_admin_form_submit($form, &$form_state) {
   foreach ($variables as $key) {
     variable_set($key, $form_state['values'][$key]);
   }
-  // Vocabulary mappings. Don't save empty entries.
-  $acquia_lift_profiles_vocabulary_mappings = array_filter($form_state['values']['acquia_lift_profiles_vocabulary_mappings']);
-  variable_set('acquia_lift_profiles_vocabulary_mappings', $acquia_lift_profiles_vocabulary_mappings);
+  // Field mappings. Don't save empty entries.
+  $acquia_lift_profiles_field_mappings = array_filter($form_state['values']['acquia_lift_profiles_field_mappings']);
+  variable_set('acquia_lift_profiles_field_mappings', $acquia_lift_profiles_field_mappings);
   // Identity parameters.
   $identity_variables = array(
     'acquia_lift_profiles_capture_identity',

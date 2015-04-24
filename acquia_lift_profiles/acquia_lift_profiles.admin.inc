@@ -223,9 +223,12 @@ function acquia_lift_profiles_admin_form_submit($form, &$form_state) {
   foreach ($variables as $key) {
     variable_set($key, $form_state['values'][$key]);
   }
-  // Field mappings. Don't save empty entries.
-  $acquia_lift_profiles_field_mappings = array_filter($form_state['values']['acquia_lift_profiles_field_mappings']);
-  variable_set('acquia_lift_profiles_field_mappings', $acquia_lift_profiles_field_mappings);
+  // Field mappings.
+  if (isset($form_state['values']['acquia_lift_profiles_field_mappings'])) {
+    // Don't save empty entries.
+    $acquia_lift_profiles_field_mappings = array_filter($form_state['values']['acquia_lift_profiles_field_mappings']);
+    variable_set('acquia_lift_profiles_field_mappings', $acquia_lift_profiles_field_mappings);
+  }
   // Identity parameters.
   $identity_variables = array(
     'acquia_lift_profiles_capture_identity',

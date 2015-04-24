@@ -197,7 +197,7 @@ function acquia_lift_profiles_update_7003() {
   //   $acquia_lift_profiles_vocabulary_mappings = array (
   //     'content_section' => '2',
   //     'content_keywords' => '',
-  //     'persona' => 'taxonomy_context__country',
+  //     'persona' => '4',
   //   )
   // * After migration:
   //   $acquia_lift_profiles_field_mappings = array (
@@ -207,14 +207,11 @@ function acquia_lift_profiles_update_7003() {
   $vocabulary_mappings = variable_get('acquia_lift_profiles_vocabulary_mappings', array());
   $field_mappings = array();
   foreach ($vocabulary_mappings as $type => $vocabulary_mapping) {
-    if (empty($vocabulary_mapping)) {
+    if (empty($vocabulary_mapping) || !is_numeric($vocabulary_mapping)) {
       continue;
     }
-    $field_mappings[$type] = $vocabulary_mapping;
-    if (is_numeric($vocabulary_mapping)) {
-      $vocabulary = taxonomy_vocabulary_load($vocabulary_mapping);
-      $field_mappings[$type] = 'taxonomy_context' . PERSONALIZE_TARGETING_ADMIN_SEPARATOR . $vocabulary->machine_name;
-    }
+    $vocabulary = taxonomy_vocabulary_load($vocabulary_mapping);
+    $field_mappings[$type] = 'taxonomy_context' . PERSONALIZE_TARGETING_ADMIN_SEPARATOR . $vocabulary->machine_name;
   }
   if (!empty($field_mappings)) {
     variable_set('acquia_lift_profiles_field_mappings', $field_mappings);

@@ -389,13 +389,13 @@ QUnit.asyncTest("Use UDF values in processEvent", function( assert ) {
   // Set up some UDF values that will get mapped during the init() call.
   var settings = {
     acquia_lift_profiles: {
-      udfMappings: {
+      mappings: {
         person: {
           person_udf1: "my_first_plugin__some-context",
           person_udf2: "my_promise_plugin__some-other-context"
         }
       },
-      udfMappingContextSeparator: '__'
+      mappingContextSeparator: '__'
     }
   };
 

@@ -107,7 +107,7 @@ QUnit.asyncTest( "init test", function( assert ) {
       assert.equal( stf[2].person_udf3, "some-other-value", 'same value correctly assigned to a second UDF' );
       assert.equal( stf[2].content_section, "", 'empty value correctly assigned' );
       assert.equal( stf[2].content_keywords, "some-value", 'value correctly assigned from context' );
-      assert.deepEqual( stf[2].persona, {1: 'nested-value-1', 2: 'nested-value-2'}, 'value correctly assigned from context' );
+      assert.equal( stf[2].persona, "some-other-value-1,some-other-value-2", 'value correctly assigned from context' );
       QUnit.start();
     }
   };
@@ -137,10 +137,7 @@ QUnit.asyncTest( "init test", function( assert ) {
     var values = {
       'my_first_plugin': {
         'some-context': 'some-value',
-        'nested-value-context': {
-          1: 'nested-value-1',
-          2: 'nested-value-2'
-        }
+        'nested-value-context': "some-other-value-1,some-other-value-2"
       },
       'my_promise_plugin': {
         'some-other-context': 'some-other-value'

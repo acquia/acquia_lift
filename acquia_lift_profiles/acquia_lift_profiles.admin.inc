@@ -213,22 +213,7 @@ function acquia_lift_profiles_admin_form_submit($form, &$form_state) {
 
   // Refresh the segments from Acquia Lift Profiles.
   acquia_lift_profiles_refresh_segments_cache();
-  if (isset($form_state['values']['acquia_lift_profiles_tracked_actions'])) {
-    $actions = array_filter($form_state['values']['acquia_lift_profiles_tracked_actions']);
-    // Check for actions that should be deleted from Acquia Lift Profiles.
-    $tracked_actions = variable_get('acquia_lift_profiles_tracked_actions', array());
-    foreach ($tracked_actions as $action_name) {
-      if (!isset($actions[$action_name])) {
-        acquia_lift_profiles_sync_action($action_name, $tracked_actions, FALSE);
-      }
-    }
 
-    // Save all selected actions to Acquia Lift Profiles.
-    foreach ($actions as $action_name => $action) {
-      acquia_lift_profiles_sync_action($action_name, $tracked_actions, TRUE);
-    }
-    variable_set('acquia_lift_profiles_tracked_actions', $tracked_actions);
-  }
   if (isset($form_state['values']['acquia_lift_profiles_udf_mappings'])) {
     $mapped_contexts = array();
     foreach ($form_state['values']['acquia_lift_profiles_udf_mappings'] as $type => $mappings) {

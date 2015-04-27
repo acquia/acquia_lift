@@ -158,6 +158,7 @@ class AcquiaLiftAPI implements PersonalizeLoggerAwareInterface, AcquiaLiftReport
   public static function mapStatus($status) {
     $status_map = array(
       PERSONALIZE_STATUS_NOT_STARTED => self::PAUSED_STATUS,
+      PERSONALIZE_STATUS_SCHEDULED => self::PAUSED_STATUS,
       PERSONALIZE_STATUS_PAUSED => self::PAUSED_STATUS,
       PERSONALIZE_STATUS_RUNNING => self::ENABLED_STATUS,
       PERSONALIZE_STATUS_COMPLETED => self::STOPPED_STATUS

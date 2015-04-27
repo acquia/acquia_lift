@@ -525,7 +525,7 @@ function acquia_lift_personalize_campaign_wizard_targeting_alter(&$form, &$form_
     // yet been saved to the agent.
     $saved_targeting = $agent_data->data['lift_targeting'];
     if ($saved_targeting != $existing_targeting && $status != PERSONALIZE_STATUS_NOT_STARTED) {
-      drupal_set_message(t('The targeting settings shown here do not match what is currently running for this personalization.'), 'warning');
+      drupal_set_message(t('The targeting settings shown here do not match what is currently implemented for this personalization.'), 'warning');
       $show_revert = TRUE;
     }
   }
@@ -533,7 +533,7 @@ function acquia_lift_personalize_campaign_wizard_targeting_alter(&$form, &$form_
     if ($status != PERSONALIZE_STATUS_NOT_STARTED) {
       // The current agent is running and there have been no UI changes made
       // since it was started.
-      drupal_set_message(t('The targeting settings shown here represent what is currently running for this personalization.'));
+      drupal_set_message(t('The targeting settings shown here represent what is currently implemented for this personalization.'));
     }
     // Set the saved targeting to be the same as existing targeting for
     // presentation within this form.

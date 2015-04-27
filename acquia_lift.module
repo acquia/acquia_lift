@@ -2736,7 +2736,7 @@ function acquia_lift_get_campaign_details() {
       $option_set_types[] = $option_set->plugin;
     }
     $current_status = personalize_agent_get_status($agent->machine_name);
-    $report_is_active = $plugin instanceof PersonalizeAgentReportInterface && $current_status != PERSONALIZE_STATUS_NOT_STARTED;
+    $report_is_active = $plugin instanceof PersonalizeAgentReportInterface && !empty($agent->started);
     $campaigns[$agent->machine_name] = array(
       'name' => $agent->machine_name,
       'label' => filter_xss($agent->label),

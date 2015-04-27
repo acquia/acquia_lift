@@ -72,7 +72,7 @@ function acquia_lift_profiles_uninstall() {
   variable_del('acquia_lift_profiles_secret_key');
   variable_del('acquia_lift_profiles_capture_identity');
   variable_del('acquia_lift_profiles_js_path');
-  variable_del('acquia_lift_profiles_vocabulary_mappings');
+  variable_del('acquia_lift_profiles_field_mappings');
   variable_del('acquia_lift_profiles_tracked_actions');
   variable_del('acquia_lift_profiles_udf_mappings');
   variable_del('acquia_lift_profiles_identity_param');
@@ -179,4 +179,42 @@ function acquia_lift_profiles_update_7002(&$sandbox) {
   if ($sandbox['#finished']) {
     return t('All actions were synchronized to Lift Web');
   }
+}
+
+/**
+ * Convert existing vocabulary mappings to use taxonomy context module.
+ */
+function acquia_lift_profiles_update_7003() {
+  // 1) Enable the personalize taxonomy context module.
+  $result = module_enable(array('personalize_taxonomy_context'));
+  if (empty($result)) {
+    throw new DrupalUpdateException('There was a problem enabling "personalize_taxonomy_context" module. Please ensure you have "personalize" module version 7.x-1.0-rc11 or higher, and then try updating again.');
+  }
+
+  // 2) Convert existing mappings (if not already). Example:
+  //
+  // * Before migration:
+  //   $acquia_lift_profiles_vocabulary_mappings = array (
+  //     'content_section' => '2',
+  //     'content_keywords' => '',
+  //     'persona' => '4',
+  //   )
+  // * After migration:
+  //   $acquia_lift_profiles_field_mappings = array (
+  //     'content_section' => 'taxonomy_context__people',
+  //     'persona' => 'taxonomy_context__country',
+  //   )
+  $vocabulary_mappings = variable_get('acquia_lift_profiles_vocabulary_mappings', array());
+  $field_mappings = array();
+  foreach ($vocabulary_mappings as $type => $vocabulary_mapping) {
+    if (empty($vocabulary_mapping) || !is_numeric($vocabulary_mapping)) {
+      continue;
+    }
+    $vocabulary = taxonomy_vocabulary_load($vocabulary_mapping);
+    $field_mappings[$type] = 'taxonomy_context' . PERSONALIZE_TARGETING_ADMIN_SEPARATOR . $vocabulary->machine_name;
+  }
+  if (!empty($field_mappings)) {
+    variable_set('acquia_lift_profiles_field_mappings', $field_mappings);
+  }
+  variable_del('acquia_lift_profiles_vocabulary_mappings');
 }

@@ -18,7 +18,7 @@ function acquia_lift_batch_sync_tests_for_agent($agent) {
     $operations = acquia_lift_get_sync_operations_for_agent($agent);
     acquia_lift_do_batch_sync($operations);
     $error = _acquia_lift_batch_get_error();
-    return empty($error);
+    return !$error;
   }
   catch (AcquiaLiftException $e) {
     drupal_set_message($e->getMessage(), 'error');
@@ -28,6 +28,9 @@ function acquia_lift_batch_sync_tests_for_agent($agent) {
 
 /**
  * Batch syncs the nested tests for all agents.
+ *
+ * @return bool
+ *   Returns TRUE if batch syncing completed successfully, FALSE otherwise.
  */
 function acquia_lift_batch_sync_all() {
   $agents = personalize_agent_load_by_type('acquia_lift_target');
@@ -39,11 +42,13 @@ function acquia_lift_batch_sync_all() {
     catch (AcquiaLiftException $e) {
       // Something went wrong getting all necessary batch operations for this
       // agent, just skip it and sync the next one.
-      drupal_set_message('Could not sync the' . $agent->machine_name . ' personalization');
+      drupal_set_message(t('Could not sync the @agent personalization, most likely due to missing goals or variations.', array('@agent' => $agent->machine_name)), 'warning');
       continue;
     }
   }
   acquia_lift_do_batch_sync($operations);
+  $error = _acquia_lift_batch_get_error();
+  return !$error;
 }
 
 /**
@@ -140,16 +145,13 @@ function acquia_lift_batch_finished($success, $results, $operations) {
       $message_type = 'error';
       $message = t('Some errors occurred while syncing personalizations to Acquia Lift:');
       $message .= theme('item_list', array('items' => $errors));
-      _acquia_lift_batch_set_error($message);
+      _acquia_lift_batch_set_error();
     }
     drupal_set_message($message, $message_type);
   }
   else {
     // An error occurred.
-    // $operations contains the operations that remained unprocessed.
-    $error_operation = reset($operations);
-    $message = t('An error occurred while processing %error_operation with arguments: @arguments', array('%error_operation' => $error_operation[0], '@arguments' => print_r($error_operation[1], TRUE)));
-    _acquia_lift_batch_set_error($message);
+    _acquia_lift_batch_set_error();
   }
 }
 
@@ -159,26 +161,26 @@ function acquia_lift_batch_finished($success, $results, $operations) {
  * @param $error
  *   The error message to store.
  */
-function _acquia_lift_batch_set_error($error) {
-  $_SESSION['acquia_lift_batch_error'] = $error;
+function _acquia_lift_batch_set_error() {
+  $_SESSION['acquia_lift_batch_error'] = 1;
 }
 
 /**
- * Returns any error that was set during batch syncing.
+ * Returns whether an error was set during batch syncing.
  *
- * Also unsets the session variable used to track errors. This function should
- * only ever be called by acquia_lift_batch_sync_tests_for_agent().
+ * Also unsets the session variable used to track the error. This function should
+ * only ever be called by acquia_lift_batch_sync_tests_for_agent() and
+ * acquia_lift_batch_sync_all().
  *
- * @return string|NULL
- *   The most recently set error or NULL if none was set
+ * @return bool
+ *   True if an error had been set by the batch sync, FALSE otherwise.
  */
 function _acquia_lift_batch_get_error() {
-  $error = NULL;
-  if (isset($_SESSION['acquia_lift_batch_error'])) {
-    $error = $_SESSION['acquia_lift_batch_error'];
+  if (!empty($_SESSION['acquia_lift_batch_error'])) {
     unset($_SESSION['acquia_lift_batch_error']);
+    return TRUE;
   }
-  return $error;
+  return FALSE;
 }
 
 /**

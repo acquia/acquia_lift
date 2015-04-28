@@ -375,7 +375,7 @@ class AcquiaLiftWebTestBase extends DrupalWebTestCase
       case 'wizard_element_navigate':
         return t('Go');
       case 'create_campaign':
-        return t('Create personalization');
+        return t('Create and edit');
       case 'delete':
         return t('Delete');
       case 'config':
@@ -2423,8 +2423,8 @@ class AcquiaLiftWebTestCampaignWizard extends AcquiaLiftWebTestBase {
     // Test assignments saves as anticipated.
     $this->drupalGet('admin/structure/personalize/manage/' . $first_agent->machine_name . '/targeting');
     // There are no targeting assignments so there should be no messages.
-    $this->assertNoText('The targeting settings shown here do not match what is currently running for this personalization.');
-    $this->assertNoText('The targeting settings shown here represent what is currently running for this personalization.');
+    $this->assertNoText('The targeting settings shown here do not match what is currently implemented for this personalization.');
+    $this->assertNoText('The targeting settings shown here represent what is currently implemented for this personalization.');
     // All variations should be assigned to the "Everyone else" audience.
     $this->assertOptionSelected('edit-audiences-everyone-else-assignment', $option_id_1);
     $this->assertOptionSelected('edit-audiences-everyone-else-assignment', $option_id_2);
@@ -2463,19 +2463,15 @@ class AcquiaLiftWebTestCampaignWizard extends AcquiaLiftWebTestBase {
     // A message should not display to indicate that the targeting isn't
     // finalized because the agent is still not started.
     $this->drupalGet('admin/structure/personalize/manage/' . $first_agent->machine_name . '/targeting');
-    $this->assertNoText('The targeting settings shown here do not match what is currently running for this personalization.');
-    $this->assertNoText('The targeting settings shown here represent what is currently running for this personalization.');
+    $this->assertNoText('The targeting settings shown here do not match what is currently implemented for this personalization.');
+    $this->assertNoText('The targeting settings shown here represent what is currently implemented for this personalization.');
 
     // Save the targeting structure and start the agent.
-    AcquiaLiftAPI::setTestInstance();
-    acquia_lift_implement_targeting($first_agent);
-    $first_agent = personalize_agent_load($first_agent->machine_name, TRUE);
-    personalize_agent_set_status($first_agent->machine_name, PERSONALIZE_STATUS_RUNNING);
-    $this->resetAll();
+    $this->drupalPost("admin/structure/personalize/manage/" . $first_agent->machine_name . '/review', array(), $this->getButton('wizard_start'));
 
+    // Pause the agent in order to make changes.
     $this->drupalGet('admin/structure/personalize/manage/' . $first_agent->machine_name . '/targeting');
-    $this->assertNoText('The targeting settings shown here do not match what is currently running for this personalization.');
-    $this->assertText('The targeting settings shown here represent what is currently running for this personalization.');
+    $this->drupalPost(NULL, array(), t("Pause"));
 
     // Make changes and verify the messaging.
     $edit = array(
@@ -2483,8 +2479,8 @@ class AcquiaLiftWebTestCampaignWizard extends AcquiaLiftWebTestBase {
     );
     $this->drupalPost(NULL, $edit, $this->getButton('wizard_next'));
     $this->drupalGet('admin/structure/personalize/manage/' . $first_agent->machine_name . '/targeting');
-    $this->assertText('The targeting settings shown here do not match what is currently running for this personalization.');
-    $this->assertNoText('The targeting settings shown here represent what is currently running for this personalization.');
+    $this->assertText('The targeting settings shown here do not match what is currently implemented for this personalization.');
+    $this->assertNoText('The targeting settings shown here represent what is currently implemented for this personalization.');
 
     // Revert the changes and verify.
     $this->drupalPost(NULL, NULL, t('Revert changes'));
@@ -2493,8 +2489,8 @@ class AcquiaLiftWebTestCampaignWizard extends AcquiaLiftWebTestBase {
     $this->resetAll();
 
     $this->drupalGet('admin/structure/personalize/manage/' . $first_agent->machine_name . '/targeting');
-    $this->assertNoText('The targeting settings shown here do not match what is currently running for this personalization.');
-    $this->assertText('The targeting settings shown here represent what is currently running for this personalization.');
+    $this->assertNoText('The targeting settings shown here do not match what is currently implemented for this personalization.');
+    $this->assertText('The targeting settings shown here represent what is currently implemented for this personalization.');
     $this->assertOptionSelected('edit-audiences-muppet-fans-assignment', $first_option_set->options[0]['option_id']);
     $this->assertOptionSelected('edit-audiences-muppet-fans-assignment', $first_option_set->options[1]['option_id']);
     $this->assertOptionSelected('edit-audiences-others-assignment', $first_option_set->options[2]['option_id']);
@@ -2649,17 +2645,6 @@ class AcquiaLiftWebTestCampaignWizard extends AcquiaLiftWebTestBase {
     $this->assertEqual($test_goals[1]->action, 'form_submit');
     $this->assertEqual($test_goals[1]->value, 5);
 
-    // Change the agent status and verify that goals cannot be edited.
-    personalize_agent_set_status($agent->machine_name, PERSONALIZE_STATUS_RUNNING);
-    $this->drupalGet("admin/structure/personalize/manage/{$agent->machine_name}/goals");
-    $this->assertText('Goals cannot be changed while the personalization is running.');
-    // @todo Can't find a way to assert that there is a failure from an underlying test post.
-
-    // Pause the agent and make sure that goals can be edited again.
-    personalize_agent_set_status($agent->machine_name, PERSONALIZE_STATUS_PAUSED);
-    $this->drupalGet("admin/structure/personalize/manage/{$agent->machine_name}/goals");
-    $this->assertNoText('Goals cannot be changed while the personalization is running.');
-
     $this->drupalPost(NULL, $edit, $this->getButton('wizard_save'));
   }
 
@@ -2686,7 +2671,6 @@ class AcquiaLiftWebTestCampaignWizard extends AcquiaLiftWebTestBase {
     // Options will be automatically added to the "Everyone else" audience
     // which means that there will be two options to test against.
     $this->drupalGet("admin/structure/personalize/manage/{$agent->machine_name}/review");
-    $this->assertNoText('Advanced options cannot be edited while this personalization is running.');
     $edit = array(
       'decision_style' => 'adaptive',
       'control_rate' => 25,
@@ -2710,13 +2694,6 @@ class AcquiaLiftWebTestCampaignWizard extends AcquiaLiftWebTestBase {
 
     $agent = personalize_agent_load($agent->machine_name, TRUE);
     $this->assertFalse($agent->data['cache_decisions']);
-
-    // Start the agent and verify that the options are no longer editable.
-    personalize_agent_set_status($agent->machine_name, PERSONALIZE_STATUS_RUNNING);
-    $this->resetAll();
-
-    $this->drupalGet("admin/structure/personalize/manage/{$agent->machine_name}/review");
-    $this->assertText('Advanced options cannot be edited while this personalization is running.');
   }
 
   /**

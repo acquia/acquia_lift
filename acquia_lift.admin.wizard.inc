@@ -1368,13 +1368,21 @@ function acquia_lift_personalize_campaign_wizard_review_submit(&$form, &$form_st
     module_load_include('inc', 'acquia_lift', 'acquia_lift.batch');
     try {
       $agent_data->tests_to_delete = acquia_lift_implement_test_structure($agent_data);
-      acquia_lift_batch_sync_tests(array($agent_data->machine_name => $agent_data));
-      personalize_agent_set_status($agent_data->machine_name, PERSONALIZE_STATUS_RUNNING);
+      if (acquia_lift_batch_sync_tests_for_agent($agent_data)) {
+        personalize_agent_set_status($agent_data->machine_name, PERSONALIZE_STATUS_RUNNING);
+        return;
+      }
+      else {
+        drupal_set_message(t('There was a problem syncing your personalization components to Lift and it cannot be started at this time.'), 'error');
+      }
     }
     catch (Exception $e) {
       form_set_error(NULL, t('There was a problem implementing the personalization as defined.'));
     }
   }
+  // If we got here, some sort of error occurred so make sure we don't move to
+  // the next step.
+  $form_state['redirect'] = current_path();
 }
 
 /**

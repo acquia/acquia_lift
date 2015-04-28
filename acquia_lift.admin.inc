@@ -208,7 +208,9 @@ function acquia_lift_batch_sync_form($form, &$form_state) {
  */
 function acquia_lift_batch_sync_form_submit($form, &$form_state) {
   module_load_include('inc', 'acquia_lift', 'acquia_lift.batch');
-  acquia_lift_batch_sync_tests();
+  if (!acquia_lift_batch_sync_all()) {
+    form_set_error(NULL, t('A problem occurred during batch sync, please try again later'));
+  }
 }
 
 /**

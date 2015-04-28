@@ -80,7 +80,8 @@ class AcquiaLiftAPI implements PersonalizeLoggerAwareInterface, AcquiaLiftReport
   public static function getInstance($account_info) {
     if (empty(self::$instance)) {
       if (drupal_valid_test_ua()) {
-        self::setTestInstance();
+        $broken = variable_get('acquia_lift_web_test_broken_client', FALSE);
+        self::setTestInstance($broken);
         return self::$instance;
       }
       foreach (array('api_key', 'admin_key', 'owner_code') as $key) {

@@ -311,7 +311,7 @@ function acquia_lift_element_variation_details_form_ajax_callback($form, &$form_
  */
 function acquia_lift_option_set_add_modal_callback($ajax) {
   if (!$ajax) {
-    drupal_goto('admin/structure/personalize/variations');
+    drupal_goto('admin/structure/personalize');
     return;
   }
 
@@ -502,7 +502,7 @@ function acquia_lift_element_variation_delete_form_submit($form, &$form_state) {
  */
 function acquia_lift_goal_create_modal_callback($ajax) {
   if (!$ajax) {
-    drupal_goto('admin/structure/personalize/goals');
+    drupal_goto('admin/structure/personalize');
     return;
   }
 

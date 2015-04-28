@@ -197,7 +197,7 @@
 /* Create links */
 #navbar-administration .navbar-tray-horizontal .acquia-lift-menu-create, #navbar-administration .navbar-tray-horizontal .acquia-lift-menu-all {
   border-top: 0.1em solid #ccc;
-  padding: .7em 1.3333em .7em 1.3333em;
+  padding: 1.0em 1.3333em 1.0em 1.3333em;
 }
 #navbar-administration .navbar-tray-horizontal .menu ul li.last {
   padding-top: .6em;

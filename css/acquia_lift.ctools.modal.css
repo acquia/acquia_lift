@@ -23,6 +23,7 @@ div.ctools-modal-content.acquia-lift-modal .modal-content {
   padding: .3em;
   color: #666;
   font-family: "Helvetica Neue", helvetica, "Segoe UI", segoe, "Ubuntu", "Droid Sans", "Arial", sans-serif;
+  max-width: 1000px;
 }
 
 div.ctools-modal-content.acquia-lift-modal .form-item label {

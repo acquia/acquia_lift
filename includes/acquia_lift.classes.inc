@@ -10,15 +10,9 @@ class AcquiaLiftAPI implements PersonalizeLoggerAwareInterface, AcquiaLiftReport
 
   const EXPLORATION_RATE_RANDOM = 1;
 
-  const FEATURE_STRING_REPLACE_PATTERN = '[^A-Za-z0-9_-]';
-
-  const FEATURE_STRING_MAX_LENGTH = 50;
-
-  const FEATURE_STRING_SEPARATOR_MUTEX = ':';
-
-  const FEATURE_STRING_SEPARATOR_NONMUTEX = '::';
-
   const VALID_NAME_MATCH_PATTERN = '[A-Za-z0-9_-]';
+
+  const NAME_MAX_LENGTH = 50;
 
   const ENABLED_STATUS = 'enabled';
 
@@ -255,21 +249,6 @@ class AcquiaLiftAPI implements PersonalizeLoggerAwareInterface, AcquiaLiftReport
   }
 
   /**
-   * Returns a "clean" version of the passed in string.
-   *
-   * @param $str
-   *   The string to be cleaned.
-   * @return string
-   *   The clean string.
-   */
-  public static function cleanFeatureString($str) {
-    $string = preg_replace('/' . self::FEATURE_STRING_REPLACE_PATTERN . '/', '-', $str);
-    // Get rid of instances of multiple '-' characters after replacement.
-    $string = preg_replace('/\-{2,}/', '-', $string);
-    return $string;
-  }
-
-  /**
    * Private constructor as this is a singleton.
    *
    * @param string $api_key
@@ -456,34 +435,6 @@ class AcquiaLiftAPI implements PersonalizeLoggerAwareInterface, AcquiaLiftReport
     $vars = array('agent' => $machine_name);
     $success_msg = 'The personalization {agent} was pushed to Acquia Lift';
     $fail_msg = 'The personalization {agent} could not be pushed to Acquia Lift';
-    if ($response->code == 200 && $data['status'] == 'ok') {
-      $this->logger()->log(PersonalizeLogLevel::INFO, $success_msg, $vars);
-    }
-    else {
-      $this->handleBadResponse($response->code, $fail_msg, $vars);
-    }
-  }
-
-  /**
-   * Updates the status of an agent in Acquia Lift.
-   *
-   * @param $machine_name
-   *   The machine of the agent.
-   * @param $status
-   *   The status to set the agent to.
-   * @throws AcquiaLiftException
-   */
-  public function updateAgentStatus($machine_name, $status) {
-    $lift_status_code = self::mapStatus($status);
-    $url = $this->generateEndpoint("/agent-api/$machine_name");
-    $agent = array(
-      'status' => $lift_status_code,
-    );
-    $response = $this->httpClient()->put($url, array('Content-Type' => 'application/json; charset=utf-8', 'Accept' => 'application/json'), $agent);
-    $data = json_decode($response->data, TRUE);
-    $vars = array('agent' => $machine_name);
-    $success_msg = 'The new status of personalization {agent} was pushed to Acquia Lift';
-    $fail_msg = 'The new status of personalization {agent} could not be pushed to Acquia Lift';
     if ($response->code == 200 && $data['status'] == 'ok') {
       $this->logger()->log(PersonalizeLogLevel::INFO, $success_msg, $vars);
     }
@@ -803,76 +754,6 @@ class AcquiaLiftAPI implements PersonalizeLoggerAwareInterface, AcquiaLiftReport
     return FALSE;
   }
 
-  /**
-   * Gets a list of decision points for the specified agent.
-   *
-   * @param $agent_name
-   *   The name of the agent.
-   * @return bool|mixed
-   *   An array of point names or FALSE if an error occurs.
-   */
-  public function getPointsForAgent($agent_name) {
-    $url = $this->generateEndpoint("/agent-api/$agent_name/points");
-    $response = $this->httpClient()->get($url, array('Accept' => 'application/json'));
-
-    if ($response->code == 200) {
-      return json_decode($response->data, TRUE);
-    }
-    else {
-      $this->handleBadResponse($response->code, 'Could not retrieve decision points from Acquia Lift', array(), FALSE);
-    }
-    return FALSE;
-  }
-
-  /**
-   * Gets a list of decisions for the specified agent and
-   * decision point.
-   *
-   * @param $agent_name
-   *   The name of the agent.
-   * @param $point_name
-   *   The name of the decision point.
-   * @return bool|mixed
-   *   An array of decision names or FALSE if an error occurs.
-   */
-  public function getDecisionsForPoint($agent_name, $point_name) {
-    $url = $this->generateEndpoint("/agent-api/$agent_name/points/{$point_name}/decisions");
-    $response = $this->httpClient()->get($url, array('Accept' => 'application/json'));
-
-    if ($response->code == 200) {
-      return json_decode($response->data, TRUE);
-    }
-    else {
-      $this->handleBadResponse($response->code, 'Could not retrieve decisions from Acquia Lift', array(), FALSE);
-    }
-    return FALSE;
-  }
-
-  /**
-   * Gets a list of choices for the specified agent, decision
-   * point and decision.
-   *
-   * @param $agent_name
-   *   The name of the agent.
-   * @param $point_name
-   *   The name of the decision point.
-   * @param $decision_name
-   *   The name of the decision.
-   * @return bool|mixed
-   *   An array of choices or FALSE if an error occurs.
-   */
-  public function getChoicesForDecision($agent_name, $point_name, $decision_name) {
-    $url = $this->generateEndpoint("/agent-api/$agent_name/points/{$point_name}/decisions/$decision_name/choices");
-    $response = $this->httpClient()->get($url, array('Accept' => 'application/json'));
-
-    if ($response->code == 200) {
-      return json_decode($response->data, TRUE);
-    }
-    else {
-      $this->handleBadResponse($response->code, 'Could not retrieve choices from Acquia Lift', array(), FALSE);
-    }
-    return FALSE;
-  }
 
   /**
    * Retrieves a list of existing agents from Acquia Lift.
@@ -900,60 +781,6 @@ class AcquiaLiftAPI implements PersonalizeLoggerAwareInterface, AcquiaLiftReport
       $this->handleBadResponse($response->code, 'Error retrieving agent list from Acquia Lift');
     }
     return array();
-  }
-
-  /**
-   * Retrieves the list of available source data options from Acquia Lift.
-   * @return mixed
-   * @throws AcquiaLiftException
-   */
-  public function getTransformOptions() {
-    $url = $this->generateEndpoint("/transforms-options");
-    // Use a timeout of 8 seconds for retrieving the transform options.
-    $response = $this->httpClient()->get($url, array('Accept' => 'application/json'));
-    if ($response->code == 200) {
-      $response = json_decode($response->data, TRUE);
-      return $response['data']['options'];
-    }
-    else {
-      $this->handleBadResponse($response->code, 'Error retrieving list of transforms options');
-    }
-    return FALSE;
-  }
-
-  /**
-   * Saves a targeting rule with automatic features to Acquia Lift for a particular agent.
-   *
-   * @param $agent_name
-   *   The name of the agent the rule is for.
-   * @param $auto_features
-   *   The list of automatic targeting features to use.
-   */
-  public function saveAutoTargetingRule($agent_name, $auto_features) {
-    $rule_name = $agent_name . '-auto-targeting';
-    $url = $this->generateEndpoint("/transform-rule");
-    foreach ($auto_features as &$feature) {
-      $feature = '#' . $feature;
-    }
-    $body = array(
-      'code' => $rule_name,
-      'status' => 1,
-      'agents' => array($agent_name),
-      'when' => array(),
-      'apply' => array(
-        'feature' => implode(',', $auto_features),
-      )
-    );
-    $response = $this->httpClient()->post($url, array('Content-Type' => 'application/json; charset=utf-8', 'Accept' => 'application/json'), $body);
-    $vars = array('agent' => $agent_name);
-    $success_msg = 'The targeting rule for personalization {agent} was saved successfully';
-    $fail_msg = 'The targeting rule could not be saved for personalization {agent}';
-    if ($response->code == 200) {
-      $this->logger()->log(PersonalizeLogLevel::INFO, $success_msg, $vars);
-    }
-    else {
-      $this->handleBadResponse($response->code, $fail_msg, $vars);
-    }
   }
 
   /**
@@ -1007,158 +834,6 @@ class AcquiaLiftAPI implements PersonalizeLoggerAwareInterface, AcquiaLiftReport
   }
 
   /**
-   * Gets a list of all possible values for the features that have been set.
-   *
-   * @param $agent_name
-   *   The name of the agent to get targeting values for.
-   * @return array
-   *   An associative array of targeting values structured as follows:
-   *    array(
-   *      'data' => array(
-   *        'potential' => array(
-   *          'features' => array(
-   *              // A line like this for every possible value
-   *              array('code' => 'AFG', 'name' => 'Afghanistan'),
-   *           )
-   *         )
-   *       )
-   *     )
-   * @throws AcquiaLiftException
-   */
-  public function getPotentialTargetingValues($agent_name) {
-    $url = $this->generateEndpoint("/-/potential-targeting?agent={$agent_name}&include-current=true");
-    $headers = array('Accept' => 'application/json');
-    $response = $this->httpClient()->get($url, $headers);
-    if ($response->code != 200) {
-      $this->handleBadResponse($response->code, 'Problem retrieving potential targeting values');
-      return array();
-    }
-    return json_decode($response->data, TRUE);
-  }
-
-  /**
-   * Gets array of possible targeting values in the format expected by the plugin.
-   *
-   * @param $agent_name
-   *   The name of the agent to get targeting values for.
-   * @param $mutex_separator
-   *   The string used as a separator for mutually exclusive context values. This
-   *   parameter is provided so that the logic can be unit tested.
-   * @param $non_mutex_separator
-   *   The string used as a separator for non-mutually exclusive context values. This
-   *   parameter is provided so that the logic can be unit tested.
-   * @return array
-   *   An associative array of targeting values with feature names as keys and an
-   *   associative array structured as follows for each value:
-   *    array(
-   *      'mutex' => TRUE, // If values for this feature type are mutually exclusive.
-   *      'values' => array(
-   *        'some-feature-value-code' => 'Some feature value friendly name'
-   *       )
-   *     )
-   */
-  public function getPossibleValues($agent_name, $mutex_separator = NULL, $non_mutex_separator = NULL) {
-    $possible_values = array();
-    // We make these separators injectable so that we can write unit tests to test the
-    // logic here.
-    if (empty($mutex_separator)) {
-      $mutex_separator = self::FEATURE_STRING_SEPARATOR_MUTEX;
-    }
-    if (empty($non_mutex_separator)) {
-      $non_mutex_separator = self::FEATURE_STRING_SEPARATOR_NONMUTEX;
-    }
-    $result = $this->getPotentialTargetingValues($agent_name);
-    if (isset($result['data']['potential']['features']) && !empty($result['data']['potential']['features'])) {
-      // To determine whether values are mutually exclusive we need to check whether
-      // they contain the separator that designates them as such, but the separator that
-      // designates them as non-mutex could be contained in this so we need some logic
-      // here to figure out how to check for this.
-      $check = $non_mutex_separator;
-      if (strpos($mutex_separator, $non_mutex_separator) !== FALSE) {
-        // The mutex separator contains the non-mutex separator so we should use that
-        // for our check.
-        $check = $mutex_separator;
-      }
-      foreach ($result['data']['potential']['features'] as $feature) {
-        $code = $feature['code'];
-        // This logic is seriously gnarly. The absence of the string we check for signifies
-        // something different depending on what that string was. E.g. if we are checking for
-        // the presence of the non-mutex separator, then its absence means we are dealing with
-        // mutex values.
-        $mutex = (strpos($code, $check) === FALSE) ? $check === $non_mutex_separator : $check === $mutex_separator;
-        $separator = $mutex ? $mutex_separator : $non_mutex_separator;
-        $separated = explode($separator, $code);
-        if (count($separated) !== 2) {
-          continue;
-        }
-        list($name, $value) = $separated;
-        $name = trim($name);
-        $value = trim($value);
-        $friendly_name = isset($feature['typeName']) ? $feature['typeName'] : $name;
-
-        if (!isset($possible_values[$name])) {
-          $possible_values[$name] = array(
-            'value type' => 'predefined',
-            'mutex' => $mutex,
-            'friendly name' => $friendly_name,
-            'values' => array(),
-          );
-        }
-        $possible_values[$name]['values'][$value] = $feature['name'];
-      }
-    }
-    return $possible_values;
-  }
-
-  /**
-   * Saves a mapping of targeting features to options for explicit targeting.
-   *
-   * @param $agent_name
-   *   The name of the agent this mapping is for.
-   * @param $point_name
-   *   The decision point this mapping is for.
-   * @param $map
-   *   An array of associative arrays with teh following keys:
-   *   - feature A string corresponding to a feature name
-   *   - decision A string in the form decision_name:option_id
-   * @return array
-   *   An array containing the response from Acquia Lift.
-   * @throws AcquiaLiftException
-   */
-  public function saveFixedTargetingMapping($agent_name, $point_name, $map) {
-    $url = $this->generateEndpoint("/agent-api/$agent_name/points/$point_name/fixed-targeting");
-    $response = $this->httpClient()->put($url, array('Content-Type' => 'application/json; charset=utf-8', 'Accept' => 'application/json'), $map);
-    $data = json_decode($response->data, TRUE);
-    $vars = array('agent' => $agent_name, 'decpoint' => $point_name);
-    $success_msg = 'The fixed targeting mapping for point {decpoint} was successfully saved for personalization {agent}';
-    $fail_msg = 'The fixed targeting mapping for point {decpoint} could not be saved for personalization {agent}';
-    if ($response->code == 200 && $data['status'] == 'ok') {
-      $this->logger()->log(PersonalizeLogLevel::INFO, $success_msg, $vars);
-    }
-    else {
-      $this->handleBadResponse($response->code, $fail_msg, $vars);
-    }
-  }
-
-  /**
-   * Implements AcquiaLiftReportDataSourceInterface::getTargetingImpactReport().
-   */
-  public function getTargetingImpactReport($agent_name, $date_start = NULL, $date_end = NULL, $point = NULL) {
-    $date_str = $this->getDateString($date_start, $date_end);
-    $url = $this->generateEndpoint("/{$agent_name}/report/targeting-features{$date_str}");
-    $headers = array('Accept' => 'application/json');
-    if ($point !== NULL) {
-      $headers['x-mpath-point'] = $point;
-    }
-    $response = $this->httpClient()->get($url, $headers);
-    if ($response->code != 200) {
-      $this->handleBadResponse($response->code, 'Problem retrieving targeting impact report.');
-      return array();
-    }
-    return json_decode($response->data, TRUE);
-  }
-
-  /**
    * Implements AcquiaLiftReportDataSourceInterface::getAgentStatusReport().
    */
   public function getAgentStatusReport($agent_names, $num_days = NULL) {
@@ -1184,12 +859,7 @@ class AcquiaLiftAPI implements PersonalizeLoggerAwareInterface, AcquiaLiftReport
     );
     $options = array_merge($default_options, $options);
     $date_str = $this->getDateString($date_start, $date_end);
-    if ($options['features'] === 'all') {
-      $features = '';
-    }
-    else {
-      $features = is_array($options['features']) ? implode(',', $options['features']) : "(none)";
-    }
+    $features = '';
     unset($options['features']);
 
     $url = $this->generateEndpoint("/{$agent_name}/report/confidence{$date_str}?features=$features");
@@ -1208,13 +878,6 @@ class AcquiaLiftAPI implements PersonalizeLoggerAwareInterface, AcquiaLiftReport
       return array();
     }
     return json_decode($response->data, TRUE);
-  }
-
-  /**
-   * Implements AcquiaLiftReportDataSourceInterface::getContextFilters().
-   */
-  public function getContextFilters($agent_name) {
-    return $this->getPotentialTargetingValues($agent_name);
   }
 
   /**
@@ -1399,8 +1062,8 @@ class AcquiaLiftAPI implements PersonalizeLoggerAwareInterface, AcquiaLiftReport
    *   in Acquia Lift.
    */
   public function ensureUniqueAgentName($agent_name, $max_length) {
-    if ($max_length > self::FEATURE_STRING_MAX_LENGTH) {
-      $max_length = self::FEATURE_STRING_MAX_LENGTH;
+    if ($max_length > self::NAME_MAX_LENGTH) {
+      $max_length = self::NAME_MAX_LENGTH;
     }
     $agent_name = substr($agent_name, 0, $max_length);
 
@@ -1457,8 +1120,6 @@ interface AcquiaLiftReportDataSourceInterface {
    *   An array of report options to be passed to Acquia Lift where the keys
    *   are the parameter names and the values are the parameter values.
    *   Support includes:
-   *     - features: An array of features to include in the report.
-   *       Defaults to "none" but can also be set to "all" for all features.
    *     - confidence-measure: The confidence measure to use between 0 and 1.
    *     - aggregated-over-dates: Aggregates the data over the time span or
    *       reports on individual dates
@@ -1468,25 +1129,6 @@ interface AcquiaLiftReportDataSourceInterface {
    * @throws AcquiaLiftException
    */
   public function getConfidenceReport($agent_name, $date_start = NULL, $date_end = NULL, $point = NULL, $options = array());
-
-  /**
-   * Returns a targeting impact report for the specified agent and timeframe.
-   *
-   * @param $agent_name
-   *   The name of the agent.
-   * @param string $date_start
-   *   The start date in the format YYYY-MM-DD or null to use today's date.
-   * @param string $date_end
-   *   The end date in the format YYYY-MM-DD or null to get a report for just
-   *   a single day.
-   * @param string $point
-   *   An optional decision point to limit the report to.
-   * @return array
-   *   The report as an associative array
-   *
-   * @throws AcquiaLiftException
-   */
-  public function getTargetingImpactReport($agent_name, $date_start = NULL, $date_end = NULL, $point = NULL);
 
   /**
    * Returns status reports for the specified agents and number of days.
@@ -1526,13 +1168,6 @@ interface AcquiaLiftReportDataSourceInterface {
    * @throws AcquiaLiftException
    */
   public function getRawLearningReport($agent_name, $date_start = NULL, $date_end = NULL, $point = NULL);
-
-
-  /**
-   * Returns the context values to use in a report.
-   * @param $agent_name
-   */
-  public function getContextFilters($agent_name);
 
 }
 
@@ -1639,19 +1274,6 @@ class AcquiaLiftReportDataFromFile implements AcquiaLiftReportDataSourceInterfac
     return $this->getReport($agent_name, 'raw-learning');
   }
 
-  /**
-   * Implements AcquiaLiftReportDataSourceInterface::getContextFilters().
-   */
-  public function getContextFilters($agent_name) {
-    $context_filters = $this->getReport($agent_name, 'context-filters');
-    return !empty($context_filters) ? $context_filters : array(
-      'data' => array(
-        'potential' => array(
-          'features' => array()
-        )
-      )
-    );
-  }
 }
 
 interface AcquiaLiftReportCacheInterface {

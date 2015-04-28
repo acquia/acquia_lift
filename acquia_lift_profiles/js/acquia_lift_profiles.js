@@ -261,7 +261,7 @@ var _tcwq = _tcwq || [];
 
           initialized = true;
         };
-        $(document).bind('personalizeDecision', this["processPersonalizeDecision"]);
+        $(document).bind('acquiaLiftDecisions', this["processLiftDecisions"]);
         $(document).bind('sentGoalToAgent', this["processSentGoalToAgent"]);
         Drupal.personalize.getVisitorContexts(plugins, callback);
       },
@@ -301,13 +301,10 @@ var _tcwq = _tcwq || [];
         }
       },
 
-      'processPersonalizeDecision':function(e, $option_set, decision, osid, agent_name) {
-        if (decision == 'control-variation') {
-          decision = 'Control';
-        }
-
-        _tcaq.push(['capture', 'Campaign Action', {'targetcampaignid':agent_name, 'targetcampaignname':getAgentLabel(agent_name), 'targetofferid': decision, 'targetactionname':decision } ]);
-
+      'processLiftDecisions':function(e, decisionResponses) {
+       // decisionResponses is an array of objects each with an agent_name and an object
+       // containing the choices for each decision at a decision point. How do we push
+       // this batch of decisions to Lift Web?
       },
 
       'processSentGoalToAgent':function(e, agent_name, goal_name, goal_value) {
@@ -377,7 +374,7 @@ var _tcwq = _tcwq || [];
         initializing = false;
         agentNameToLabel = {};
         identityCaptured = false;
-        $(document).unbind('personalizeDecision', this["processPersonalizeDecision"]);
+        $(document).unbind('acquiaLiftDecisions', this["processLiftDecisions"]);
         $(document).unbind('sentGoalToAgent', this["processSentGoalToAgent"]);
       }
     }

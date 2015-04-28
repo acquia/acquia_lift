@@ -836,14 +836,6 @@ function acquia_lift_personalize_campaign_wizard_review_alter(&$form, &$form_sta
     ),
     '#disabled' => !$editable,
   );
-  if (!$editable) {
-    if ($status === PERSONALIZE_STATUS_COMPLETED) {
-      drupal_set_message(t('Advanced options can no longer be edited.'), 'warning');
-    }
-    else {
-      drupal_set_message(t('Advanced options cannot be edited while this personalization is running.'), 'warning');
-    }
-  }
   if ($has_tests) {
     $form['review']['summary_column']['advanced']['options'] = _acquia_lift_personalize_campaign_wizard_review_tests($agent_data, array());
   }

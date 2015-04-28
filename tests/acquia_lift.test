@@ -2740,6 +2740,145 @@ class AcquiaLiftWebTestCampaignWizard extends AcquiaLiftWebTestBase {
   }
 
   /**
+   * Tests review form status changes.
+   */
+  function testReviewFormStatus() {
+    $message_running = t('Personalizations that are running cannot be edited. Click "Pause" to allow it to be edited. Personalizations that are paused display the default variations to visitors.');
+    $message_scheduled = t('Personalizations with scheduled start dates cannot be edited.  Click "Make editable" to allow it to be edited. After you have made your changes, go to the Review section to restart the personalization.');
+    $message_completed = t('Archived personalizations cannot be edited.  Click "Unarchive" for the personalization to restore it to a Paused status, allowing it to be edited.');
+
+    $this->drupalLogin($this->managerUser);
+    $agent = $this->createTargetingAgent();
+    $machine_name = $agent->machine_name;
+
+    // Add option set.
+    $this->createPersonalizedBlock(0, $agent);
+
+    // Add a goal.
+    $this->drupalGet("admin/structure/personalize/manage/$machine_name/goals");
+    $edit = array(
+      'goals[add_goal][goal_types][goal_type]' => 'existing',
+    );
+    $this->drupalPostAJAX(NULL, $edit, 'goals[add_goal][goal_types][goal_type]');
+    $edit = array(
+      'action_name' => 'user_login',
+    );
+    $this->drupalPost(NULL, $edit, $this->getButton('wizard_save'));
+
+    // Start the campaign from the review screen.
+    $this->drupalGet("admin/structure/personalize/manage/$machine_name/review");
+    $this->drupalPost(NULL, array(), $this->getButton('wizard_start'));
+
+    // Verify that the correct messaging is shown on all campaign wizard pages.
+    $this->drupalGet("admin/structure/personalize/manage/$machine_name/variations");
+    $this->assertText($message_running);
+    $this->assertNoText($message_scheduled);
+    $this->assertNoText($message_completed);
+    $this->drupalGet("admin/structure/personalize/manage/$machine_name/goals");
+    $this->assertText($message_running);
+    $this->assertNoText($message_scheduled);
+    $this->assertNoText($message_completed);
+    $this->drupalGet("admin/structure/personalize/manage/$machine_name/targeting");
+    $this->assertText($message_running);
+    $this->assertNoText($message_scheduled);
+    $this->assertNoText($message_completed);
+    $this->drupalGet("admin/structure/personalize/manage/$machine_name/scheduling");
+    $this->assertText($message_running);
+    $this->assertNoText($message_scheduled);
+    $this->assertNoText($message_completed);
+    $this->drupalGet("admin/structure/personalize/manage/$machine_name/review");
+    $this->assertText($message_running);
+    $this->assertNoText($message_scheduled);
+    $this->assertNoText($message_completed);
+
+    // Pause the campaign and verify that messaging is removed.
+    $this->drupalPost(NULL, array(), t('Pause'));
+    $this->drupalGet("admin/structure/personalize/manage/$machine_name/variations");
+    $this->assertNoText($message_running);
+    $this->assertNoText($message_scheduled);
+    $this->assertNoText($message_completed);
+    $this->drupalGet("admin/structure/personalize/manage/$machine_name/goals");
+    $this->assertNoText($message_running);
+    $this->assertNoText($message_scheduled);
+    $this->assertNoText($message_completed);
+    $this->drupalGet("admin/structure/personalize/manage/$machine_name/targeting");
+    $this->assertNoText($message_running);
+    $this->assertNoText($message_scheduled);
+    $this->assertNoText($message_completed);
+    $this->drupalGet("admin/structure/personalize/manage/$machine_name/scheduling");
+    $this->assertNoText($message_running);
+    $this->assertNoText($message_scheduled);
+    $this->assertNoText($message_completed);
+    $this->drupalGet("admin/structure/personalize/manage/$machine_name/review");
+    $this->assertNoText($message_running);
+    $this->assertNoText($message_scheduled);
+    $this->assertNoText($message_completed);
+
+    // Schedule the campaign to start in the future.
+    $this->drupalGet("admin/structure/personalize/manage/$machine_name/scheduling");
+    $start_date = strtotime('+1 month midnight');
+
+    $edit = array(
+      'campaign_start' => 'specified',
+      'campaign_start_date[month]' => intval(date('m', $start_date)),
+      'campaign_start_date[day]' => date('d', $start_date),
+      'campaign_start_date[year]' => date('Y', $start_date),
+    );
+    $this->drupalPost(NULL, $edit, $this->getButton('wizard_next'));
+    module_load_include('inc', 'personalize', 'personalize.admin.campaign');
+    $button_text = t('Start on @start_date', array(
+      '@start_date' => _personalize_campaign_wizard_date($start_date),
+    ));
+    $this->drupalPost(NULL, array(), $button_text);
+
+    // Verify that the correct messaging is shown on all campaign wizard pages.
+    $this->drupalGet("admin/structure/personalize/manage/$machine_name/variations");
+    $this->assertNoText($message_running);
+    $this->assertText($message_scheduled);
+    $this->assertNoText($message_completed);
+    $this->drupalGet("admin/structure/personalize/manage/$machine_name/goals");
+    $this->assertNoText($message_running);
+    $this->assertText($message_scheduled);
+    $this->assertNoText($message_completed);
+    $this->drupalGet("admin/structure/personalize/manage/$machine_name/targeting");
+    $this->assertNoText($message_running);
+    $this->assertText($message_scheduled);
+    $this->assertNoText($message_completed);
+    $this->drupalGet("admin/structure/personalize/manage/$machine_name/scheduling");
+    $this->assertNoText($message_running);
+    $this->assertText($message_scheduled);
+    $this->assertNoText($message_completed);
+    $this->drupalGet("admin/structure/personalize/manage/$machine_name/review");
+    $this->assertNoText($message_running);
+    $this->assertText($message_scheduled);
+    $this->assertNoText($message_completed);
+
+    // Complete the campaign and verify messaging.
+    personalize_agent_set_status($machine_name, PERSONALIZE_STATUS_COMPLETED);
+    $this->resetAll();
+    $this->drupalGet("admin/structure/personalize/manage/$machine_name/variations");
+    $this->assertNoText($message_running);
+    $this->assertNoText($message_scheduled);
+    $this->assertText($message_completed);
+    $this->drupalGet("admin/structure/personalize/manage/$machine_name/goals");
+    $this->assertNoText($message_running);
+    $this->assertNoText($message_scheduled);
+    $this->assertText($message_completed);
+    $this->drupalGet("admin/structure/personalize/manage/$machine_name/targeting");
+    $this->assertNoText($message_running);
+    $this->assertNoText($message_scheduled);
+    $this->assertText($message_completed);
+    $this->drupalGet("admin/structure/personalize/manage/$machine_name/scheduling");
+    $this->assertNoText($message_running);
+    $this->assertNoText($message_scheduled);
+    $this->assertText($message_completed);
+    $this->drupalGet("admin/structure/personalize/manage/$machine_name/review");
+    $this->assertNoText($message_running);
+    $this->assertNoText($message_scheduled);
+    $this->assertText($message_completed);
+  }
+
+  /**
    * Tests automatic targeting based on campaign-wide context selections.
    */
   function testAutoTargeting() {

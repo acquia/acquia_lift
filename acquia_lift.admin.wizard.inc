@@ -767,6 +767,8 @@ function acquia_lift_personalize_campaign_wizard_scheduling_alter(&$form, &$form
  * Alter hook for the review portion of the campaign wizard.
  */
 function acquia_lift_personalize_campaign_wizard_review_alter(&$form, &$form_state, $form_id) {
+  module_load_include('inc', 'acquia_lift', 'acquia_lift.admin');
+
   // Take over the form validation and submit handling.
   $form['#validate'] = array('acquia_lift_personalize_campaign_wizard_validate');
   $form['#submit'] = array('acquia_lift_personalize_campaign_wizard_submit');
@@ -777,7 +779,6 @@ function acquia_lift_personalize_campaign_wizard_review_alter(&$form, &$form_sta
 
     // Add audiences to the summary section.
   $agent_data = $form['#agent'];
-  $status = personalize_agent_get_status($agent_data->machine_name);
 
   // If the agent has embedded tests then include the test settings form before
   // the summary.
@@ -795,7 +796,6 @@ function acquia_lift_personalize_campaign_wizard_review_alter(&$form, &$form_sta
     }
     else {
       // Otherwise read audience information from the option set targeting.
-      module_load_include('inc', 'acquia_lift', 'acquia_lift.admin');
       $option_set = acquia_lift_get_option_set_for_targeting($agent_data->machine_name);
       $targeting = acquia_lift_get_structure_from_targeting($option_set);
     }
@@ -823,7 +823,6 @@ function acquia_lift_personalize_campaign_wizard_review_alter(&$form, &$form_sta
   }
 
   // Show advanced testing options.
-  module_load_include('inc', 'acquia_lift', 'acquia_lift.admin');
   $editable = acquia_lift_target_definition_changes_allowed($agent_data);
   $form['review']['summary_column']['advanced'] = array(
     '#type' => 'container',
@@ -1200,7 +1199,9 @@ function acquia_lift_personalize_campaign_wizard_submit_status(&$form, &$form_st
   $agent_data = personalize_campaign_wizard_submit_base($form, $form_state);
   $next_status = $form_state['triggering_element']['#personalize_next_status'];
   if (personalize_agent_set_status($agent_data->machine_name, $next_status)) {
-    drupal_set_message("The %campaign_name personalization is now editable.");
+    drupal_set_message(t("The %campaign_name personalization is now editable.", array(
+      '%campaign_name' => $agent_data->label,
+    )));
     $form_state['rebuild'] = TRUE;
   }
 }
@@ -1211,7 +1212,6 @@ function acquia_lift_personalize_campaign_wizard_submit_status(&$form, &$form_st
 function acquia_lift_personalize_campaign_wizard_variations_submit(&$form, &$form_state, &$agent_data, $agent_instance) {
   // Save a reference to the full form state values.
   $values = $form_state['values'];
-  $click_id = $form_state['clicked_button']['#id'];
 
   if (isset($values['variations']['add_variation']['variation_set_handling'])) {
     $agent_data->data['variation_set_handling'] = $values['variations']['add_variation']['variation_set_handling'];

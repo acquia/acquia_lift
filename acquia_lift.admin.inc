@@ -1366,7 +1366,7 @@ function acquia_lift_target_definition_changes_allowed($agent_data) {
     return TRUE;
   }
   $status = personalize_agent_get_status($agent_data->machine_name);
-  return $status === PERSONALIZE_STATUS_NOT_STARTED || $status === PERSONALIZE_STATUS_PAUSED;
+  return $status == PERSONALIZE_STATUS_NOT_STARTED || $status == PERSONALIZE_STATUS_PAUSED;
 }
 
 /**

@@ -1228,7 +1228,6 @@ function acquia_lift_save_nested_test_options($parent_agent) {
     'explore_rate' => isset($parent_agent->data['explore_rate']) ? $parent_agent->data['explore_rate'] : 20,
     'decision_style' => isset($parent_agent->data['decision_style']) ? $parent_agent->data['decision_style'] : 'adaptive',
     'cache_decisions' => isset($parent_agent->data['cache_decisions']) ? $parent_agent->data['cache_decisions'] : 1,
-    'visitor_context' => isset($parent_agent->data['visitor_context']) ? $parent_agent->data['visitor_context'] : array(),
   );
 
   foreach ($option_set->targeting as $vars) {

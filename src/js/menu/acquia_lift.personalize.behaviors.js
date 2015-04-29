@@ -16,22 +16,7 @@
         'activeCampaign': Drupal.settings.personalize.activeCampaign,
         'campaigns': Drupal.settings.acquia_lift.campaigns
       };
-      // Add in the Acquia Lift specific editable/deletable indicators for
-      // option set options.
       var liftOptionSetSettings = Drupal.settings.acquia_lift.option_sets || {};
-      for (var osid in settings.option_sets) {
-        if (settings.option_sets.hasOwnProperty(osid)) {
-          if (liftOptionSetSettings.hasOwnProperty(osid)) {
-            for (var i = 0; i < settings.option_sets[osid].options.length; i++) {
-              var option_id = settings.option_sets[osid].options[i].option_id;
-              if (liftOptionSetSettings[osid][option_id]) {
-                settings.option_sets[osid].options[i].editable = liftOptionSetSettings[osid][option_id].editable;
-                settings.option_sets[osid].options[i].deletable = liftOptionSetSettings[osid][option_id].deletable;
-              }
-            }
-          }
-        }
-      }
       var ui = Drupal.acquiaLiftUI;
       var addedCampaigns = {};
       var addedOptionSets = {};
@@ -59,6 +44,16 @@
 
         // Merging settings' option_sets into campaigns' option_sets.
         Drupal.acquiaLiftUI.utilities.looper(settings.option_sets, function (obj, key) {
+          // Add in any Lift-specific details.
+          if (liftOptionSetSettings.hasOwnProperty(key)) {
+            for (var i in obj.options) {
+              var option_id = obj.options[i].option_id;
+              if (liftOptionSetSettings[key].hasOwnProperty(option_id)) {
+                obj.options[i].editable = liftOptionSetSettings[key][option_id].editable;
+                obj.options[i].deletable = liftOptionSetSettings[key][option_id].deletable;
+              }
+            }
+          }
           var campaignModel = ui.collections.campaigns.findWhere({name: obj.agent});
           if (campaignModel) {
             var optionSets = campaignModel.get('optionSets');

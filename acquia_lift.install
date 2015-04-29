@@ -663,7 +663,7 @@ function acquia_lift_update_7200() {
   $personalize_enabled = module_exists('personalize');
   foreach ($agents as $agent_name => $details) {
     $option_set = reset($details);
-    if (!empty($option_set['targeting']) || !empty($details['agent_data']['visitor_contexts']) || !$personalize_enabled) {
+    if (!empty($option_set['targeting']) || !empty($details['agent_data']['visitor_context']) || !$personalize_enabled) {
       $legacy_agents[] = $agent_name;
       continue;
     }

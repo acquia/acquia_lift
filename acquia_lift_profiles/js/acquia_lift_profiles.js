@@ -160,8 +160,7 @@ var _tcwq = _tcwq || [];
    */
   Drupal.acquia_lift_profiles = (function(){
 
-    // Keeps track of processed listeners so we don't subscribe them more than once.
-    var processedListeners = {}, initialized = false, initializing = false;
+    var processedListeners = {}, initialized = false, initializing = false, pageFieldValues = {};
     var agentNameToLabel = {};
 
     /**
@@ -194,7 +193,7 @@ var _tcwq = _tcwq || [];
             }
           }
         }
-        var mappings = settings.acquia_lift_profiles.udfMappings, context_separator = settings.acquia_lift_profiles.udfMappingContextSeparator, plugins = {}, udfValues = {}, reverseMapping = {};
+        var mappings = settings.acquia_lift_profiles.mappings, context_separator = settings.acquia_lift_profiles.mappingContextSeparator, plugins = {}, reverseMapping = {};
         for(var type in mappings) {
           if (mappings.hasOwnProperty(type)) {
             for (var udf in mappings[type]) {
@@ -228,7 +227,7 @@ var _tcwq = _tcwq || [];
                     // Set this is as the value for all UDFs that use this context.
                     for (var i in reverseMapping[fullContextName]) {
                       if (reverseMapping[fullContextName].hasOwnProperty(i)) {
-                        udfValues[reverseMapping[fullContextName][i]] = contextValues[pluginName][contextName];
+                        pageFieldValues[reverseMapping[fullContextName][i]] = contextValues[pluginName][contextName];
                       }
                     }
                   }
@@ -252,7 +251,7 @@ var _tcwq = _tcwq || [];
             'author':'',
             'evalSegments': true,
             'trackingId': trackingId
-          }, settings.acquia_lift_profiles.pageContext, udfValues);
+          }, settings.acquia_lift_profiles.pageContext, pageFieldValues);
           _tcaq.push( [ 'captureView', 'Content View', pageInfo ] );
 
           if(settings.acquia_lift_profiles.hasOwnProperty('identity')) {
@@ -292,8 +291,16 @@ var _tcwq = _tcwq || [];
        * @param eventName
        */
       'processEvent': function(eventName, settings, context) {
+        var extra = {
+          evalSegments: true
+        };
+        // Add the field and UDF values to the extra info we're sending about the event. The assumption
+        // here is that this event is being processed *after* the initial page view capture has
+        // already retrieved all the visitor context valuess. Since this happens asynchronously
+        // it is not guaranteed that this is the case.
+        $.extend(extra, pageFieldValues);
         // Send to acquia_lift_profiles.
-        _tcaq.push(['capture', eventName, {'evalSegments': true}]);
+        _tcaq.push(['capture', eventName, extra]);
         // If it's a special event with some other callback associated with it, call that
         // callback as well.
         if (typeof this.specialEvents[eventName] == 'function') {
@@ -377,6 +384,7 @@ var _tcwq = _tcwq || [];
         initializing = false;
         agentNameToLabel = {};
         identityCaptured = false;
+        pageFieldValues = {};
         $(document).unbind('personalizeDecision', this["processPersonalizeDecision"]);
         $(document).unbind('sentGoalToAgent', this["processSentGoalToAgent"]);
       }

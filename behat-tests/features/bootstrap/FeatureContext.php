@@ -251,6 +251,17 @@ class FeatureContext extends RawDrupalContext implements SnippetAcceptingContext
    ***************************************************/
 
   /**
+   * @When /^I check the "([^”]*)" radio button$/
+   */
+  public function iCheckTheRadioButton($radioLabel) {
+    $radioButton = $this->getSession()->getPage()->findField($radioLabel);
+    if (null === $radioButton) {
+      throw new \Exception(sprintf('Cannot find radio button %s', $radioLabel));
+    }
+    $this->getSession()->getDriver()->click($radioButton->getXPath());
+  }
+
+  /**
    * @Then I should see :count for the :type count
    */
   public function assertMenuCount($count, $type) {

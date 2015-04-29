@@ -1762,6 +1762,30 @@ class AcquiaLiftWebTestTarget extends AcquiaLiftWebTestBase {
     $option_set = personalize_option_set_save($option_set);
     $this->assertEqual(count($option_set->options), 2);
 
+    // Schedule the agent.
+    $start_date = strtotime('+1 month midnight');
+    personalize_agent_set_start_date($agent->machine_name, $start_date);
+    personalize_agent_set_status($agent->machine_name, PERSONALIZE_STATUS_SCHEDULED);
+
+    // Try to edit the goal.
+    try {
+      personalize_goal_save($agent->machine_name, 'user_login', 5, $goal->id);
+      $this->fail('Should not ever get here because a cannot be saved when agent is running.');
+    } catch (Exception $e) {
+      $this->assertTrue($e instanceof PersonalizeException);
+      $this->assertEqual($e->getMessage(), 'Goals cannot be modified until the personalization is paused.');
+    }
+
+    // Try to delete a targeted option.
+    unset($option_set->options[1]);
+    try {
+      $option_set = personalize_option_set_save($option_set);
+      $this->fail('Should not get here because an error should be thrown while removing this variation.');
+    } catch (Exception $e) {
+      $this->assertTrue($e instanceof PersonalizeException);
+      $this->assertEqual($e->getMessage(), 'Variations used in targeting cannot be removed until the personalization is paused.');
+    }
+
     // Complete the agent.
     personalize_agent_set_status($agent->machine_name, PERSONALIZE_STATUS_COMPLETED);
 

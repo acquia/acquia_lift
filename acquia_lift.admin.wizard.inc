@@ -91,7 +91,7 @@ function acquia_lift_personalize_campaign_wizard_base_alter(&$form, &$form_state
     '#type' => 'submit',
     '#value' => $button_text,
     '#personalize_next_status' => $next_status,
-    '#submit' => array('acquia_lift_personalize_campaign_wizard_submit_status'),
+    '#submit' => array('acquia_lift_personalize_campaign_wizard_submit_editable'),
     '#limit_valiation_errors' => array('agent_basic_info'),
     '#attributes' => array(
       'class' => array(
@@ -1186,7 +1186,7 @@ function acquia_lift_personalize_campaign_wizard_submit(&$form, &$form_state) {
 /**
  * Submit handler for changing campaign status to an editable campaign.
  */
-function acquia_lift_personalize_campaign_wizard_submit_status(&$form, &$form_state) {
+function acquia_lift_personalize_campaign_wizard_submit_editable(&$form, &$form_state) {
   // Run the base submit form handling.
   $agent_data = personalize_campaign_wizard_submit_base($form, $form_state);
   $next_status = $form_state['triggering_element']['#personalize_next_status'];
@@ -1194,7 +1194,6 @@ function acquia_lift_personalize_campaign_wizard_submit_status(&$form, &$form_st
     drupal_set_message(t("The %campaign_name personalization is now editable.", array(
       '%campaign_name' => $agent_data->label,
     )));
-    $form_state['rebuild'] = TRUE;
   }
 }
 

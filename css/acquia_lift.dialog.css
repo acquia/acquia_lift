@@ -18,6 +18,9 @@
 }
 
 /* Variation type form */
+.acquia-lift-variation-type-form.visitor-actions-ui-dialog {
+  max-width: 500px;
+}
 .acquia-lift-variation-type-form.visitor-actions-ui-dialog .visitor-actions-ui-dialog-content h2 {
   margin-top: 0;
   color: #ffffff;

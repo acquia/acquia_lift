@@ -7,9 +7,9 @@ Feature: Goals can be edited and managed for an Acquia Lift campaign from toolba
   Scenario: Add page level goals to a campaign
     # I have a campaign.
     # I login with the marketer role.
-    Given "acquia_lift" agents:
-      | machine_name                    | label                          |
-      | testing-campaign-add-goals-page | Testing campaign add page goal |
+    Given "acquia_lift_target" agents:
+      | machine_name                    | label                          | status  |
+      | testing-campaign-add-goals-page | Testing campaign add page goal | 1       |
     And I am logged in as a user with the "access administration pages,access toolbar,administer visitor actions,manage personalized content" permission
     And I am on the homepage
     When I click "Acquia Lift" in the "menu" region
@@ -65,9 +65,9 @@ Feature: Goals can be edited and managed for an Acquia Lift campaign from toolba
   Scenario: Add pre-existing goals to a campaign
     # I have a campaign.
     # I login with the marketer role.
-    Given "acquia_lift" agents:
-      | machine_name                       | label                              |
-      | testing-campaign-add-existing-goal | Testing campaign add existing goal |
+    Given "acquia_lift_target" agents:
+      | machine_name                       | label                              | status  |
+      | testing-campaign-add-existing-goal | Testing campaign add existing goal | 1       |
     And I am logged in as a user with the "access administration pages,access toolbar,administer visitor actions,manage personalized content" permission
     And I am on the homepage
     When I click "Acquia Lift" in the "menu" region
@@ -101,9 +101,9 @@ Feature: Goals can be edited and managed for an Acquia Lift campaign from toolba
   Scenario: Add an element goals to a campaign
     # I have a campaign.
     # I login with the marketer role.
-    Given "acquia_lift" agents:
-      | machine_name                      | label                             |
-      | testing-campaign-add-element-goal | Testing campaign add element goal |
+    Given "acquia_lift_target" agents:
+      | machine_name                      | label                             | status  |
+      | testing-campaign-add-element-goal | Testing campaign add element goal | 1       |
     And I am logged in as a user with the "access administration pages,access toolbar,administer visitor actions,manage personalized content" permission
     And I am on the homepage
     When I click "Acquia Lift" in the "menu" region
@@ -131,22 +131,22 @@ Feature: Goals can be edited and managed for an Acquia Lift campaign from toolba
     Then I should see "Title" in the "dialog_goal_form" region
     And I should see "Event" in the "dialog_goal_form" region
     And I should visibly see the link "Advanced Options" in the "dialog_goal_form" region
-    When I fill in "New goal #2" for "Title"
+    When I fill in "New element goal #2" for "Title"
     And I select "hovers over" from "Event"
     And I press "Save" in the "dialog_goal_form" region
 
     # I verify my new element goal is added.
-    Then I should see the message "The action New goal #2 was saved."
+    Then I should see the message "The action New element goal #2 was saved."
     Then I should see "1" for the "goal" count
     When I hover over "Why" in the "lift_tray" region
-    Then I should see the text "New goal #2" in the "lift_tray" region
+    Then I should see the text "New element goal #2" in the "lift_tray" region
 
   Scenario: Rename a goal
     # I have a campaign.
     # I login with the marketer role.
-    Given "acquia_lift" agents:
-      | machine_name                          | label                                 |
-      | testing-campaign-rename-existing-goal | Testing campaign rename existing goal |
+    Given "acquia_lift_target" agents:
+      | machine_name                          | label                                 | status  |
+      | testing-campaign-rename-existing-goal | Testing campaign rename existing goal | 1       |
     And I am logged in as a user with the "access administration pages,access toolbar,administer visitor actions,manage personalized content" permission
     And I am on the homepage
     When I click "Acquia Lift" in the "menu" region
@@ -181,9 +181,9 @@ Feature: Goals can be edited and managed for an Acquia Lift campaign from toolba
   Scenario: Delete a goal
     # I have a campaign.
     # I login with the marketer role.
-    Given "acquia_lift" agents:
-      | machine_name                          | label                                 |
-      | testing-campaign-delete-existing-goal | Testing campaign delete existing goal |
+    Given "acquia_lift_target" agents:
+      | machine_name                          | label                                 | status  |
+      | testing-campaign-delete-existing-goal | Testing campaign delete existing goal | 1       |
     And I am logged in as a user with the "access administration pages,access toolbar,administer visitor actions,manage personalized content" permission
     And I am on the homepage
     When I click "Acquia Lift" in the "menu" region

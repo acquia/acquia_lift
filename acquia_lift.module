@@ -548,6 +548,10 @@ function acquia_lift_personalize_goal_presave($goal) {
  * Implements hook_personalize_option_set_presave().
  */
 function acquia_lift_personalize_option_set_presave($option_set) {
+  // Only applies to saving of existing option sets.
+  if (empty($option_set->osid)) {
+    return;
+  }
   module_load_include('inc', 'acquia_lift', 'acquia_lift.admin');
   $agent_data = personalize_agent_load($option_set->agent);
   if (acquia_lift_target_definition_changes_allowed($agent_data)) {

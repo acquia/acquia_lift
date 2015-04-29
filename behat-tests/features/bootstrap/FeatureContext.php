@@ -651,7 +651,7 @@ class FeatureContext extends RawDrupalContext implements SnippetAcceptingContext
     if (empty($agent_instance)) {
       throw new \Exception(sprintf('Cannot load the current agent instance for personalization %s.', $campaign));
     }
-    $option_sets = personalize_option_set_load_by_agent($campaign);
+    $option_sets = personalize_option_set_load_by_agent($campaign, TRUE);
     foreach ($option_sets as $option_set) {
       if ($option_set->label == $variation_set) {
         $osid = $option_set->osid;
@@ -663,6 +663,9 @@ class FeatureContext extends RawDrupalContext implements SnippetAcceptingContext
         }
         break;
       }
+    }
+    if (empty($osid)) {
+      throw new \Exception(sprintf('Cannot load the option set %s for personalization %s.', $variation_set, $campaign));
     }
     $css = '.acquia-lift-menu-item[data-acquia-lift-personalize-option-set="' . personalize_stringify_osid($osid) . '"]';
     switch ($link) {

@@ -8,7 +8,7 @@ Feature: Personalize elements variations can be edited for an existing campaign.
     # I have a campaign.
     # I login with the marketer role.
     # I am on an article page.
-    Given "acquia_lift" agents:
+    Given "acquia_lift_target" agents:
       | machine_name                    | label                           |
       | testing-campaign-add-variations | Testing campaign add variations |
     And I am logged in as a user with the "access administration pages,access toolbar,administer visitor actions,manage personalized content" permission
@@ -84,7 +84,7 @@ Feature: Personalize elements variations can be edited for an existing campaign.
     # I have a campaign and a variation set.
     # I login with the marketer role.
     # I am on an article page.
-    Given "acquia_lift" agents:
+    Given "acquia_lift_target" agents:
       | machine_name                     | label                            |
       | testing-campaign-edit-variations | Testing campaign edit variations |
     And personalized elements:
@@ -134,7 +134,7 @@ Feature: Personalize elements variations can be edited for an existing campaign.
     # I have a campaign and a variation set.
     # I login with the marketer role.
     # I am on an article page.
-    Given "acquia_lift" agents:
+    Given "acquia_lift_target" agents:
       | machine_name                       | label                              |
       | testing-campaign-delete-variations | Testing campaign delete variations |
     And personalized elements:

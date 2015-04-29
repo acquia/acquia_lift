@@ -289,7 +289,7 @@ function theme_acquia_lift_type_list($variables) {
     $html .= '<div class="acquia-lift-type-logo">' . $type['logo'] . '</div>';
     $html .= '<div class="acquia-lift-type-title">';
     $url_options = isset($type['url_options']) ? $type['url_options'] : array();
-    if ($type['modal']) {
+    if (!empty($type['modal'])) {
       $path_parts = explode('/', $type['path']);
       $last = end($path_parts);
       if ($last != 'nojs') {

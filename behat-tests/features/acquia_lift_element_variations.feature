@@ -189,10 +189,10 @@ Feature: Personalize elements variations can be edited for an existing campaign.
     # I verify the variation "Option B" is deleted.
     Then I should see the message "The variation set has been deleted." in the messagebox
     Then I should see "0" for the "variation set" count
+
+    # I verify both variations are deleted and there is none left.
     When I hover over "What" in the "lift_tray" region
     Then I should not see the text "Page title updated" in the "lift_tray" region
     And I should not visibly see the link "Option B" in the "lift_tray" region
-
-    # I verify both variations are deleted and there is none left.
     And I should not visibly see the link "Control variation" in the "lift_tray" region
     And I should see the text "No variations" in the "lift_tray" region

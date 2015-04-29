@@ -189,7 +189,8 @@ class FeatureContext extends RawDrupalContext implements SnippetAcceptingContext
       foreach ($goals as $goal_id => $goal) {
         personalize_goal_delete($goal_id);
       }
-      personalize_agent_set_status($saved->machine_name, PERSONALIZE_STATUS_RUNNING);
+      $agent_status = isset($agent->status) ? $agent->status : PERSONALIZE_STATUS_RUNNING;
+      personalize_agent_set_status($saved->machine_name, $agent_status);
     }
   }
 
@@ -723,10 +724,6 @@ class FeatureContext extends RawDrupalContext implements SnippetAcceptingContext
   private function findLinkInRegion($link, $region) {
     $regionObj = $this->getRegion($region);
     $element = $regionObj->findLink($link);
-
-    if (empty($element)) {
-      throw new \Exception(sprintf('Could not find element in "%s" using link "%s"', $region, $link));
-    }
     return $element;
   }
 

@@ -256,66 +256,8 @@ class AcquiaLiftAgent extends PersonalizeAgentBase implements PersonalizeAgentGo
         isset($this->data['cache_decisions']) && $this->data['cache_decisions']
       ),
     );
-    $acquia_lift_context_needs_deleting = $targeting_rule_exists;
-    if (isset($this->data['visitor_context']['acquia_lift_context'])) {
-      // Whereas non-Acquia Lift visitor_context plugins operate by adding extra
-      // info at the time of getting a decision, Acquia Lift targeting needs to
-      // be set up on the Acquia Lift side before any decisions are made.
-      $auto_targeting = array_filter($this->data['visitor_context']['acquia_lift_context']);
-      if (!empty($auto_targeting)) {
-        $acquia_lift_context_needs_deleting = FALSE;
-        // Add an item for saving the targeting rule.
-        $items[] = array(
-          'method' => 'saveAutoTargetingRule',
-          'args' => array(
-            $this->machineName,
-            array_keys($auto_targeting)
-          ),
-        );
-      }
-    }
-    if ($acquia_lift_context_needs_deleting) {
-      // Acquia Lift may have a targeting rule for this agent, so we need
-      // to delete it.
-      $items[] = array(
-        'method' => 'deleteAutoTargetingRule',
-        'args' => array(
-          $this->machineName
-        ),
-      );
-    }
+
     return $items;
-  }
-
-  /**
-   * Implements PersonalizeAgentInterface::convertContextToFeatureString().
-   *
-   * This is essentially a PHP version of the js in the convertContextToFeatureString
-   * function in acquia_lift.js
-   */
-  public static function convertContextToFeatureString($name, $value, $is_mutex = FALSE) {
-    $separator = $is_mutex ? AcquiaLiftAPI::FEATURE_STRING_SEPARATOR_MUTEX : AcquiaLiftAPI::FEATURE_STRING_SEPARATOR_NONMUTEX;
-    $prefix_max_length = floor((AcquiaLiftAPI::FEATURE_STRING_MAX_LENGTH - strlen($separator)) / 2);
-
-    $prefix = AcquiaLiftAPI::cleanFeatureString($name);
-    $value = AcquiaLiftAPI::cleanFeatureString($value);
-    // Make a string of the visitor context item in the format Acquia Lift can
-    // consume.
-    $feature_string = $prefix . $separator . $value;
-
-    while (strlen($feature_string) > AcquiaLiftAPI::FEATURE_STRING_MAX_LENGTH) {
-      // Acquia Lift has a hard character limit for feature strings.
-      if (strlen($prefix) > $prefix_max_length) {
-        // Start by truncating the prefix down to half the max length.
-        $prefix = substr($prefix, 0, $prefix_max_length);
-        $feature_string = $prefix . $separator . $value;
-      }
-      else {
-        // Otherwise just truncate the whole thing down to the max length.
-        $feature_string = substr($feature_string, 0, AcquiaLiftAPI::FEATURE_STRING_MAX_LENGTH);
-      }
-    }
-    return $feature_string;
   }
 
   /**

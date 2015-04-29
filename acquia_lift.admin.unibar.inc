@@ -288,6 +288,7 @@ function acquia_lift_element_variation_details_form_ajax_callback($form, &$form_
 
     $agent_name = $form_state['values']['agent'];
     if (!$has_destination) {
+      $settings = array();
       // Get the updated option sets for the element variation so that the
       // unibar can display the latest information.
       $option_sets = $form_state['storage']['option_sets'];
@@ -295,6 +296,11 @@ function acquia_lift_element_variation_details_form_ajax_callback($form, &$form_
       foreach($option_set_settings as $option_set_setting) {
         $settings['personalize']['option_sets'][key($option_set_setting)] = reset($option_set_setting);
       }
+      // Include whether the option sets are editable for unibar.
+      foreach ($option_sets as $option_set) {
+        $settings += acquia_lift_get_option_set_editable_settings($option_set);
+      }
+
       // Also get the updated personalize elements options.
       personalize_elements_limit_option_sets_by_path($option_sets, $form_state['values']['pages']);
       $settings['personalize_elements']['elements'] = personalize_elements_element_settings($option_sets);

@@ -2634,6 +2634,30 @@ function acquia_lift_command_variation_preview($agent_name, $osid, $option_id) {
 }
 
 /**
+ * Returns an AJAX command to add or edit an element variation.
+ *
+ * @param stdClass $option_set
+ *   The option set that owns the variation
+ * @param $option_id
+ *   The option id to edit or NULL if creating a new variation within the
+ *   option set.
+ * @return array
+ *   The command to be included in AJAX response.
+ */
+function acquia_lift_command_variation_edit($option_set, $option_id = NULL) {
+  return array(
+    'command' => 'acquia_lift_variation_edit',
+    'data' => array(
+      'variationType' => $option_set->data['personalize_elements_type'],
+      'selector' => $option_set->data['personalize_elements_selector'],
+      'agentName' => $option_set->agent,
+      'variationIndex' => empty($option_id) ? -1 : $option_id,
+      'osid' => $option_set->osid,
+    ),
+  );
+}
+
+/**
  * Returns an AJAX command to force the update of option set data and then
  * reattach behaviors.
  *

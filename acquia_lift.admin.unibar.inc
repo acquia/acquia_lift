@@ -341,6 +341,7 @@ function acquia_lift_element_variation_details_form_ajax_callback($form, &$form_
     }
     else {
       // Adding another variation.
+      $commands[] = acquia_lift_command_variation_preview($form_state['values']['agent'], $form_state['storage']['osid'], $form_state['storage']['option_id']);
       $option_set = personalize_option_set_load($form_state['storage']['osid']);
       $commands[] = acquia_lift_command_variation_edit($option_set);
     }

@@ -816,56 +816,6 @@ class AcquiaLiftAPI implements PersonalizeLoggerAwareInterface, AcquiaLiftReport
   }
 
   /**
-   * Deletes the auto targeting rule for the specified agent.
-   *
-   * @param $agent_name
-   *   The name of the agent whose targeting rule is to be deleted.
-   */
-  public function deleteAutoTargetingRule($agent_name) {
-    $rule_name = $agent_name . '-auto-targeting';
-    $url = $this->generateEndpoint("/transform-rule/$rule_name");
-    $response = $this->httpClient()->delete($url, array('Content-Type' => 'application/json; charset=utf-8', 'Accept' => 'application/json'));
-    $vars = array('agent' => $agent_name);
-    $success_msg = 'The targeting rule for personalization {agent} was deleted successfully';
-    $fail_msg = 'The targeting rule could not be deleted for personalization {agent}';
-    if ($response->code == 200) {
-      $this->logger()->log(PersonalizeLogLevel::INFO, $success_msg, $vars);
-    }
-    else {
-      $this->handleBadResponse($response->code, $fail_msg, $vars);
-    }
-  }
-
-  /**
-   * Returns whether or not a targeting rule exists for the given agent.
-   *
-   * @param $agent_name
-   *   The name of the agent to check.
-   * @return bool
-   *   TRUE if the specified agent has a targeting rule set up, FALSE otherwise.
-   */
-  public function hasAutoTargetingRule($agent_name) {
-    $rule_name = $agent_name . '-auto-targeting';
-    $url = $this->generateEndpoint("/transforms-list");
-    $response = $this->httpClient()->get($url, array('Accept' => 'application/json'));
-    if ($response->code != 200) {
-      $this->handleBadResponse($response->code, 'Problem retrieving auto-targeting rules');
-      return FALSE;
-    }
-
-    $response = json_decode($response->data, TRUE);
-    if (!isset($response['data']) || !isset($response['data']['transforms'])) {
-      return FALSE;
-    }
-    foreach ($response['data']['transforms'] as $rule) {
-      if ($rule['code'] == $rule_name) {
-        return TRUE;
-      }
-    }
-    return FALSE;
-  }
-
-  /**
    * Implements AcquiaLiftReportDataSourceInterface::getAgentStatusReport().
    */
   public function getAgentStatusReport($agent_names, $num_days = NULL) {

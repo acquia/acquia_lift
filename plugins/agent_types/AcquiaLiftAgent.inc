@@ -222,7 +222,7 @@ class AcquiaLiftAgent extends PersonalizeAgentBase implements PersonalizeAgentGo
    * @return array
    *   An array of items representing API calls to be made to Acquia Lift.
    */
-  public function getAgentSyncOperations($targeting_rule_exists = FALSE) {
+  public function getAgentSyncOperations() {
     $items = array();
     $acquia_lift_control_rate = .1;
     $acquia_lift_explore_rate = .2;
@@ -320,102 +320,6 @@ class AcquiaLiftAgent extends PersonalizeAgentBase implements PersonalizeAgentGo
       }
     }
     return $points;
-  }
-
-  /**
-   * Implements PersonalizeAgentInterface::stopNow().
-   */
-  public function stopNow() {
-    // Check whether the agent is configured to stop once a winner's been found.
-    if (!isset($this->data['auto_stop']) || !$this->data['auto_stop']) {
-      return parent::stopNow();
-    }
-
-    // If neither minimum runtime nor minimum decisions has been configured,
-    // then return FALSE.
-    if(!$this->globalConfig['minimum_runtime'] && !$this->globalConfig['minimum_decisions']) {
-      return FALSE;
-    }
-
-    // If there a minimum runtime, check that it has been reached.
-    $time_now = time();
-    if ($this->globalConfig['minimum_runtime']) {
-      $runtime = $time_now - $this->startTime;
-      if ($runtime < $this->globalConfig['minimum_runtime']) {
-        // Campaign has not been running long enough.
-        return FALSE;
-      }
-    }
-
-    // Need to go through each option set for this agent and establish whether each
-    // of them satisfies the minimum number of decisions made, if this has been set.
-    $option_sets = $this->data['decisions'];
-    if (empty($option_sets)) {
-      return FALSE;
-    }
-    $decision_points = self::convertOptionSetsToDecisions($option_sets);
-    $points = array_keys($decision_points);
-    $winners = array();
-    foreach ($points as $point) {
-      $num_decisions = 0;
-      $vMeans = array();
-      // Get the confidence report directly from Lift.
-      $report_options = array(
-        'confidence-measure' => $this->globalConfig['confidence_measure'],
-        'aggregated-over-dates' => TRUE
-      );
-      $confidence_report = $this->liftAPI->getConfidenceReport(
-        $this->machineName,
-        $this->startTime,
-        $time_now,
-        $point,
-        $report_options
-      );
-
-      $items = $confidence_report['data']['items'];
-      if (empty($items)) {
-        return FALSE;
-      }
-
-      foreach ($items as $item) {
-        $choice = $item['choice'];
-        $vMeans[$choice] = $item['vMean'];
-        $num_decisions += $item['count'];
-      }
-      if ($this->globalConfig['minimum_decisions']) {
-        // If any of the decision points has fewer than the required minimum number
-        // of decisions, don't stop the campaign.
-        if ($num_decisions < $this->globalConfig['minimum_decisions']) {
-          return FALSE;
-        }
-      }
-
-      // Find the variation with the highest estimated value.
-      arsort($vMeans);
-      $winners[$point] = key($vMeans);
-    }
-
-    // If we reach here, we have a winner at each decision point and have satisfied all
-    // criteria for choosing a winner and pausing the campaign. Get all option sets for the
-    // agent and set the winner for each one.
-    $option_sets = personalize_option_set_load_by_agent($this->machineName);
-
-    foreach ($winners as $point => $choice) {
-      // The "winner" at any decision point might be a single decision or a combination
-      // of decisions, in which case they'll be separated by a comma.
-      $decisions = explode(',', $choice);
-      foreach ($decisions as $decision) {
-        list($decision_name, $option_id) = explode(':', $decision);
-        // Get all option sets for this decision name.
-        foreach ($option_sets as $osid => $option_set) {
-          if ($option_set->decision_point == $point && $option_set->decision_name == $decision_name) {
-            $option_set->winner = $option_id;
-            personalize_option_set_save($option_set);
-          }
-        }
-      }
-    }
-    return TRUE;
   }
 
   /**

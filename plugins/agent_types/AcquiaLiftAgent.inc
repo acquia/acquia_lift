@@ -84,7 +84,7 @@ class AcquiaLiftReportFactory {
    * @return
    *   The AcquiaLiftReport class to use.
    */
-  public static function create(PersonalizeAgentInterface $agent_instance, $api_instance) {
+  public static function create(PersonalizeAgentInterface $agent_instance, $api_instance, $legacy = FALSE) {
     $agent_name = $agent_instance->getMachineName();
     // Check if this agent is set up to read reports from a file instead of
     // calling the API.
@@ -96,7 +96,8 @@ class AcquiaLiftReportFactory {
       $report_source = $api_instance;
     }
 
-    $report = new AcquiaLiftReport($agent_instance, $report_source);
+    $class = $legacy ? 'AcquiaLiftReportLegacy' : 'AcquiaLiftReport';
+    $report = new $class($agent_instance, $report_source);
     $report->setConfidenceMeasure(variable_get('acquia_lift_confidence_measure', 95));
     return $report;
   }
@@ -265,9 +266,9 @@ class AcquiaLiftAgent extends PersonalizeAgentBase implements PersonalizeAgentGo
    *
    * Allows for delayed instantiation of reporting class.
    */
-  protected function getReporting() {
+  protected function getReporting($legacy = FALSE) {
     if (empty($this->reporting)) {
-      $this->reporting = AcquiaLiftReportFactory::create($this, $this->liftAPI);
+      $this->reporting = AcquiaLiftReportFactory::create($this, $this->liftAPI, $legacy);
     }
     return $this->reporting;
   }
@@ -287,7 +288,12 @@ class AcquiaLiftAgent extends PersonalizeAgentBase implements PersonalizeAgentGo
    * A facade to the reporting class.
    */
   public function buildCampaignReports($options) {
-    return $this->getReporting()->buildCampaignReports($options);
+    $legacy = FALSE;
+    if (!empty($options['legacy'])) {
+      $legacy = TRUE;
+      unset($options['legacy']);
+    }
+    return $this->getReporting($legacy)->buildCampaignReports($options);
   }
 
   /**

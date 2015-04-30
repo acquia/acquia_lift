@@ -287,13 +287,16 @@ function acquia_lift_admin_form_submit($form, &$form_state) {
  * @param stdClass $option_set
  *   (optional) The content variation to show in the default view.
  */
-function acquia_lift_report($form, &$form_state, $agent_data, $option_set = NULL) {
+function acquia_lift_report($form, &$form_state, $agent_data, $option_set = NULL, $nested = FALSE) {
   if (!$agent = personalize_agent_load_agent($agent_data->machine_name)) {
     return array();
   }
-  if (!$agent instanceof AcquiaLiftAgent) {
-    return array();
+  if (acquia_lift_is_targeting_agent($agent_data)) {
+    $nested = acquia_lift_get_nested_tests($agent_data);
+    $nested_agent = personalize_agent_load($nested[0]);
+    return acquia_lift_report($form, $form_state, $nested_agent, NULL, TRUE);
   }
+
   if ($agent_data->started == 0) {
     return array(
       'no_report' => array(
@@ -342,7 +345,7 @@ function acquia_lift_report_submit($form, &$form_state) {
  * @param stdClass $option_set
  *   (optional) The content variation to show in the default view.
  */
-function acquia_lift_report_custom($form, &$form_state, $agent, $agent_data, $option_set) {
+function acquia_lift_report_custom($form, &$form_state, $agent, $agent_data, $option_set, $legacy = FALSE) {
   // Check for Rickshaw and D3 libraries and alert users if not exist.
   if (_acquia_lift_missing_library_warning(array('rickshaw', 'd3'), t('The following libraries are required in order to view the Acquia Lift reports:'))) {
     return array();
@@ -411,6 +414,7 @@ function acquia_lift_report_custom($form, &$form_state, $agent, $agent_data, $op
     'end' => $date_end_report,
     'goal' => $selected_goal,
     'conversion_metric' => $selected_metric,
+    'legacy' => $legacy
   );
 
   $reports = $agent->buildCampaignReports($options);

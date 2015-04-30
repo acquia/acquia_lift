@@ -363,6 +363,31 @@ class AcquiaLiftAPI implements PersonalizeLoggerAwareInterface, AcquiaLiftReport
   }
 
   /**
+   * Allows legacy agents to make old API requests that are no longer explicitly
+   * supported by this API client.
+   *
+   * @param $path
+   *   The endpoint path, including any querystring parameters.
+   * @param $headers
+   *   Any headers that need to be added.
+   * @param $error
+   *   The error message to provide if the request fails.
+   * @return array
+   *   The decoded response as an array.
+   * @throws \AcquiaLiftException
+   */
+  public function makeLegacyGetRequest($path, $headers, $error) {
+    $headers += array('Accept' => 'application/json');
+    $url = $this->generateEndpoint($path);
+    $response = $this->httpClient()->get($url, $headers);
+    if ($response->code != 200) {
+      $this->handleBadResponse($response->code, $error);
+      return array();
+    }
+    return json_decode($response->data, TRUE);
+  }
+
+  /**
    * Returns the logger to use.
    *
    * @return PersonalizeLoggerInterface
@@ -865,7 +890,11 @@ class AcquiaLiftAPI implements PersonalizeLoggerAwareInterface, AcquiaLiftReport
     );
     $options = array_merge($default_options, $options);
     $date_str = $this->getDateString($date_start, $date_end);
-    $features = isset($options['features']) ? '' : self::NO_FEATURES;
+    $features = self::NO_FEATURES;
+    if (isset($options['features'])) {
+      $features = '';
+      unset($options['features']);
+    }
 
     $url = $this->generateEndpoint("/{$agent_name}/report/confidence{$date_str}?features=$features");
     foreach ($options as $param => $value) {
@@ -1208,7 +1237,7 @@ class AcquiaLiftReportDataFromFile implements AcquiaLiftReportDataSourceInterfac
    * @return array
    *   An array representing the report.
    */
-  protected function getReport($agent_name, $report_name) {
+  public function getReport($agent_name, $report_name) {
 
     // First see if we already have the reports in memory.
     if ($this->reports) {

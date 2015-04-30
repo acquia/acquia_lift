@@ -291,10 +291,14 @@ function acquia_lift_report($form, &$form_state, $agent_data, $option_set = NULL
   if (!$agent = personalize_agent_load_agent($agent_data->machine_name)) {
     return array();
   }
+  $legacy = FALSE;
   if (acquia_lift_is_targeting_agent($agent_data)) {
     $nested = acquia_lift_get_nested_tests($agent_data);
     $nested_agent = personalize_agent_load($nested[0]);
     return acquia_lift_report($form, $form_state, $nested_agent, NULL, TRUE);
+  }
+  elseif (!$nested && acquia_lift_is_testing_agent($agent_data)) {
+    $legacy = TRUE;
   }
 
   if ($agent_data->started == 0) {
@@ -325,7 +329,7 @@ function acquia_lift_report($form, &$form_state, $agent_data, $option_set = NULL
     );
   }
 
-  return acquia_lift_report_custom($form, $form_state, $agent, $agent_data, $option_set);
+  return acquia_lift_report_custom($form, $form_state, $agent, $agent_data, $option_set, $legacy);
 }
 
 /**
@@ -408,6 +412,10 @@ function acquia_lift_report_custom($form, &$form_state, $agent, $agent_data, $op
   $selected_goal = empty($form_state['values']['goal']) ? NULL : $form_state['values']['goal'];
   $selected_metric = empty($form_state['values']['metric']) ? 'rate' : $form_state['values']['metric'];
 
+  if ($legacy) {
+    // The file containing the legacy report class needs to be explicitly loaded.
+    module_load_include('inc', 'acquia_lift', 'includes/AcquiaLiftReportLegacy');
+  }
   $options = array(
     'decision' => $decision_point,
     'start' => $date_start_report,

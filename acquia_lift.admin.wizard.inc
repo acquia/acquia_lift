@@ -1434,7 +1434,7 @@ function acquia_lift_personalize_campaign_wizard_review_submit(&$form, &$form_st
       try {
         $agent_data->tests_to_delete = acquia_lift_implement_test_structure($agent_data);
         if (acquia_lift_batch_sync_tests_for_agent($agent_data)) {
-          personalize_agent_set_status($agent_data->machine_name, PERSONALIZE_STATUS_RUNNING);
+          personalize_agent_set_status($agent_data->machine_name, $next_status);
           return;
         }
         else {

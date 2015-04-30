@@ -643,6 +643,8 @@ class AcquiaLiftWebTestAgentAdmin extends AcquiaLiftWebTestBase {
     $this->drupalGet('admin/structure/personalize/add');
     $this->assertNoFieldByName('agent_basic_info[agent_type]');
     $this->drupalPost(NULL, array('agent_basic_info[title]' => $this->randomName()), $this->getButton('create_campaign'));
+    $this->assertLink(t('Review and start'));
+    $this->assertNoFieldByXPath('//input[@value="Start"]');
     $url = $this->getUrl();
     $pattern = '/admin\/structure\/personalize\/manage\/([a-z0-9\_\-]+)\//';
     preg_match($pattern, $url, $matches);

@@ -264,12 +264,11 @@
       deleteAttrs.push('title="' + Drupal.t('Variation cannot be deleted until the personalization is paused."'));
     }
 
-    var editHref = Drupal.settings.basePath + Drupal.settings.pathPrefix + 'admin/structure/personalize/variations';
     var editAttrs = [
       'class="acquia-lift-variation-edit acquia-lift-menu-link"',
       'data-acquia-lift-personalize-option-set-option="' + options.id + '"',
       'title="' + Drupal.t('Edit variation') + '"',
-      'href="' + editHref + '"'
+      'href="#"'
     ].concat(ariaAttrs);
 
     item += '<li>\n<div class="acquia-lift-menu-item clearfix" data-acquia-lift-personalize-option-set="' + options.osID + '">';

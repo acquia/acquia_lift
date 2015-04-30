@@ -27,7 +27,6 @@ Feature: Personalize elements variations can be edited for an existing campaign.
     # I bring up the "Add variation set" interface.
     When I hover over "What" in the "lift_tray" region
     Then I should visibly see the link "Add variation set" in the "lift_tray" region
-    Then I should visibly see the link "All variation sets" in the "lift_tray" region
     When I click "Add variation set"
     Then I should see the modal with title "Add a variation set"
     And I should visibly see the link "Webpage elements" in the "modal_content" region

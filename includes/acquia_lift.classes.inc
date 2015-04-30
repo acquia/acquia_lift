@@ -10,6 +10,8 @@ class AcquiaLiftAPI implements PersonalizeLoggerAwareInterface, AcquiaLiftReport
 
   const EXPLORATION_RATE_RANDOM = 1;
 
+  const STRING_REPLACE_PATTERN = '[^A-Za-z0-9_-]';
+
   const VALID_NAME_MATCH_PATTERN = '[A-Za-z0-9_-]';
 
   const NAME_MAX_LENGTH = 50;

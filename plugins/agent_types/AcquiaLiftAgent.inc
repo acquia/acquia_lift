@@ -185,10 +185,7 @@ class AcquiaLiftAgent extends PersonalizeAgentBase implements PersonalizeAgentGo
               'apiKey' => $this->liftAPI->getApiKey(),
               'owner' => $this->liftAPI->getOwnerCode(),
               'baseUrl' => $this->liftAPI->getApiUrl(),
-              'featureStringReplacePattern' => AcquiaLiftAPI::FEATURE_STRING_REPLACE_PATTERN,
-              'featureStringMaxLength' => AcquiaLiftAPI::FEATURE_STRING_MAX_LENGTH,
-              // @todo Add support for mutually exclusive values.
-              'featureStringSeparator' => AcquiaLiftAPI::FEATURE_STRING_SEPARATOR_NONMUTEX,
+              'stringReplacePattern' => AcquiaLiftAPI::STRING_REPLACE_PATTERN,
               'batchMode' => variable_get('acquia_lift_batch_decisions', FALSE)
             )
           )

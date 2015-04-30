@@ -362,8 +362,7 @@ class AcquiaLiftAgent extends PersonalizeAgentBase implements PersonalizeAgentGo
       // Get the confidence report directly from Lift.
       $report_options = array(
         'confidence-measure' => $this->globalConfig['confidence_measure'],
-        'aggregated-over-dates' => TRUE,
-        'features' => "(none)",
+        'aggregated-over-dates' => TRUE
       );
       $confidence_report = $this->liftAPI->getConfidenceReport(
         $this->machineName,
@@ -579,11 +578,6 @@ class AcquiaLiftReport implements PersonalizeAgentReportInterface, AcquiaLiftRep
   const DATA_NA = '&mdash;';
 
   /**
-   * The value representing no features applied to an experiment.
-   */
-  const NO_FEATURES = '(none)';
-
-  /**
    * The threshold to use above which lift percentage will be positively noted.
    */
   const LIFT_THRESHHOLD = 0;
@@ -594,13 +588,6 @@ class AcquiaLiftReport implements PersonalizeAgentReportInterface, AcquiaLiftRep
    * @var AcquiaLiftAgent
    */
   protected $agent;
-
-  /**
-   * An instance of AcquiaLiftAPI.
-   *
-   * @var AcquiaLiftAPI
-   */
-  protected $liftAPI;
 
   /**
    * The confidence measure for determining statistical significance.
@@ -614,6 +601,11 @@ class AcquiaLiftReport implements PersonalizeAgentReportInterface, AcquiaLiftRep
    */
   protected $reportConfig;
 
+  /**
+   * Holds the reporting data that has been loaded and extracted.
+   *
+   * @var array;
+   */
   protected $loadedReports;
 
   /**
@@ -651,6 +643,66 @@ class AcquiaLiftReport implements PersonalizeAgentReportInterface, AcquiaLiftRep
   }
 
   /**
+   * Returns the configuration for the reports.
+   *
+   * @return array
+   *   An associative array that can have the following keys:
+   *   - 'today_only' Boolean indicating whether reports should only be for the
+   *     current day.
+   *   - 'date_from' The start date for the reports
+   *   - 'date_to' The end date for the reports
+   *   - 'decision_name' The specific decision the report is for
+   *   - 'machine_name' The agent machine name
+   *   - 'confidence_measure' The confidence measure to use in the reports
+   *   - 'goal' A particular goal to restrict reports to
+   *   -  conversion_metric: Metric to display within the conversion report. One
+   *      of 'rate' (conversion rate) or 'value' (conversion value).
+   */
+  protected function getReportConfiguration() {
+    return $this->reportConfig;
+  }
+
+  /**
+   * Converts the passed in options to configuration for all reports.
+   *
+   * @param $options
+   *   An array of options for the report.
+   *   - decision: (Optional) decision point name to limit results.
+   *   - start: (Optional) start date for report, defaults to agent start.
+   *   - end: (Optional) end date for report, defaults to current date.
+   *   - goal: (Optional) goal to show in report, defaults to all.
+   *   - conversion_metric: (Optional) metric to show in report, defaults to
+   *     'rate'.
+   */
+  protected function setReportConfiguration($options) {
+    $decision_name = empty($options['decision']) ? NULL : $options['decision'];
+    $date_from = empty($options['start']) ? NULL : $options['start'];
+    $date_to = empty($options['end']) ? NULL : $options['end'];
+
+    $machine_name = $this->agent->getMachineName();
+    $today_only = $date_from === date('Y-m-d') && empty($date_to);
+    $date_from = empty($date_from) ? date('Y-m-d', $this->agent->getStartTime()) : $date_from;
+    $date_to = empty($date_to) ? date('Y-m-d') : $date_to;
+
+    $confidence_measure = $this->getConfidenceMeasure();
+    // Convert the confidence measure from a percentage to a value between
+    // 0 and 1 as expected by the Lift API.
+    $confidence_measure /= 100;
+
+    // Set the configuration for the reports.
+    $this->reportConfig = array(
+      'today_only' => $today_only,
+      'date_from' => $date_from,
+      'date_to' => $date_to,
+      'decision_name' => $decision_name,
+      'machine_name' => $machine_name,
+      'confidence_measure' => $confidence_measure,
+      'goal' => empty($options['goal']) ? NULL : $options['goal'],
+      'conversion_metric' => empty($options['conversion_metric']) ? 'rate' : $options['conversion_metric']
+    );
+  }
+
+  /**
    * Implements AcquiaLiftReportInterface()::buildConversionReport().
    */
   public function buildConversionReport($options) {
@@ -675,7 +727,7 @@ class AcquiaLiftReport implements PersonalizeAgentReportInterface, AcquiaLiftRep
     }
     $this->loadConversionReportHelper('confidence_detail', FALSE, $goal);
     $this->loadConversionReportHelper('confidence', TRUE, $goal);
-debug($this->loadedReports);
+
     if ($this->loadedReports['conversion_all'] == FALSE) {
       return array(
         '#markup' => t('There was a problem generating the conversion report.'),
@@ -691,88 +743,7 @@ debug($this->loadedReports);
   }
 
   /**
-   * Generates a message to show when there is insufficient confidence in the
-   * test results.
-   *
-   * @return string
-   */
-  protected function getLowConfidenceMessage() {
-    return t('There is not enough data to declare a winner with @confidence% confidence. Consider letting the test run longer before using the results.', array(
-      '@confidence' => $this->getConfidenceMeasure(),
-    ));
-  }
-
-  /**
-   * Generates the variation abbreviated label.
-   *
-   * @param $counter
-   *   Indicates the number for the variation.
-   * @param $is_control
-   *   True if this is the control option.
-   */
-  protected function getVariationLabel($counter, $is_control) {
-    if ($is_control) {
-      return t('Control');
-    }
-    else {
-      return t('V@num', array('@num' => $counter));
-    }
-  }
-
-
-  /**
-   * Generates the general report configuration that is used to load any report.
-   *
-   * @param $options
-   *   An array of options for the report.
-   *   - decision: (Optional) decision point name to limit results.
-   *   - start: (Optional) start date for report, defaults to agent start.
-   *   - end: (Optional) end date for report, defaults to current date.
-   *   - goal: (Optional) goal to show in report, defaults to all.
-   *   - conversion_metric: (Optional) metric to show in report, defaults to
-   *     'rate'.
-   * @return array
-   *   The basic reporting configuration.
-   */
-  protected function setReportConfiguration($options) {
-    $decision_name = empty($options['decision']) ? NULL : $options['decision'];
-    $date_from = empty($options['start']) ? NULL : $options['start'];
-    $date_to = empty($options['end']) ? NULL : $options['end'];
-
-    $machine_name = $this->agent->getMachineName();
-    $today_only = $date_from === date('Y-m-d') && empty($date_to);
-    $date_from = empty($date_from) ? date('Y-m-d', $this->agent->getStartTime()) : $date_from;
-    $date_to = empty($date_to) ? date('Y-m-d') : $date_to;
-
-    $confidence_measure = $this->getConfidenceMeasure();
-    // Convert the confidence measure from a percentage to a value between
-    // 0 and 1 as expected by the Lift API.
-    $confidence_measure /= 100;
-
-    // Save basic report generation information with the data.
-    $this->reportConfig['today_only'] = $today_only;
-    $this->reportConfig['date_from'] = $date_from;
-    $this->reportConfig['date_to'] = $date_to;
-    $this->reportConfig['decision_name'] = $decision_name;
-    $this->reportConfig['machine_name'] = $machine_name;
-    $this->reportConfig['confidence_measure'] = $confidence_measure;
-    $this->reportConfig['features'] = array(AcquiaLiftReport::NO_FEATURES);
-    $this->reportConfig['goal'] = empty($options['goal']) ? NULL : $options['goal'];
-    $this->reportConfig['conversion_metric'] = empty($options['conversion_metric']) ? 'rate' : $options['conversion_metric'];
-  }
-
-  protected function getReportConfiguration() {
-    return $this->reportConfig;
-  }
-
-  /**
    * Loads the agent status raw reporting data.
-   *
-   * @param $report_data
-   *   The current reporting array by reference.
-   * @return array
-   *   The updated reporting data for chaining purposes.  Note that the
-   *   reporting data is updated by reference as well.
    */
   protected function loadAgentStatusData() {
     $config = $this->getReportConfiguration();
@@ -798,23 +769,22 @@ debug($this->loadedReports);
   /**
    * Loads the agent confidence raw reporting data.
    *
-   * @param $report_data
-   *   The current reporting array by reference.
-   * @param $options
-   *   (Optional) An array of options to pass to the report source.
-   * @return array
-   *   The updated reporting data for chaining purposes.  Note that the
-   *   reporting data is updated by reference as well.
+   * @param $report_name
+   *   The report name to use when adding this to the loadedReports property.
+   * @param $aggregated
+   *   (Optional) Whether to aggregate over dates.
+   * @param $goal
+   *   (Optional) A goal to restrict the report to.
    */
   protected function loadConfidenceData($report_name, $aggregated = TRUE, $goal = NULL) {
     // Check and see if it is already loaded.
     if (isset($this->loadedReports['raw'][$report_name])) {
       return;
     }
+
     $config = $this->getReportConfiguration();
     try {
       $options = array(
-        'features' => 'all',
         'confidence-measure' => $config['confidence_measure'],
         'aggregated-over-dates' => $aggregated,
       );
@@ -836,68 +806,9 @@ debug($this->loadedReports);
   }
 
   /**
-   * Formats a percentage value for use in reports.
-   *
-   * @param $value
-   *   The number to show as a percentage.
-   * @param bool $include_sign
-   *   True to include positive/negative sign indicators.
-   * @param $trim
-   *   Boolean indicating whether the number should be trimmed of trailing 0s.
-   * @param $decimals
-   *   The number of decimal places to display.
-   * @param $padding
-   *   The total number of characters (including decimal) for padding of the
-   *   final number.  This allows numbers to align properly  in column views.
-   *   This will have no effect if trim is set to true.
-   * @return string
-   *   The formatted number to display.
-   */
-  protected function formatReportPercentage($value, $include_sign = FALSE, $trim = TRUE, $decimals = 2, $padding = 1) {
-    $percent = (float) $value * 100;
-    if ($percent > 0 && $include_sign) {
-      return '+' . $this->formatReportNumber($percent, $trim, $decimals, $padding) . '%';
-    }
-    return $this->formatReportNumber($percent, $trim, $decimals, $padding) . '%';
-  }
-
-  /**
-   * Formats a number value for use in reports.
-   *
-   * @param $value
-   *   The number of format (or an empty value).
-   * @param $trim
-   *   Boolean indicating whether the number should be trimmed of trailing 0s.
-   * @param $decimals
-   *   The number of decimal places to display.
-   * @param $padding
-   *   The total number of characters to pad to the left of the decimal point.
-   * @return string
-   *   The formatted number to display.
-   */
-  protected function formatReportNumber($value, $trim = TRUE, $decimals = 2, $padding = 1) {
-    if (is_numeric($value)) {
-      $value = number_format($value, $decimals);
-      if ($trim) {
-        $value = rtrim(rtrim($value, '0'), '.');
-      }
-      if ($padding > 0) {
-        $value = str_pad($value, $padding, '0', STR_PAD_LEFT);
-      }
-    }
-    if (empty($value)) {
-      $value = 0;
-    }
-    return $value;
-  }
-
-  /**
    * Builds the conversion reports to show basic conversion metrics for report
    * requested in the report_data.
    *
-   * @param array $report_data
-   *   The loaded report data for the selection decision and dates.
-   * @return array
    *   The render array for the report.
    */
   protected function buildAllConversionReports() {
@@ -930,12 +841,10 @@ debug($this->loadedReports);
   /**
    * Handles all of the logic to load and extract a conversion report.
    *
-   * @param $report_data
-   *   The array of existing report data.
-   * @param $detail
-   *   True if the report should be a detailed report and false for summary.
-   * @param array $options
-   *   An array of report options such as a goal for limiting.
+   * @param $report_name
+   *   The report name to use when adding this to the loadedReports property.
+   * @param $aggregated
+   *   (Optional) Whether to aggregate over dates.
    */
   protected function loadConversionReportHelper($report_name, $aggregated) {
     $config = $this->getReportConfiguration();
@@ -985,9 +894,7 @@ debug($this->loadedReports);
   /**
    * Extracts the required overview data from the report data returned by
    * Acquia Lift.
-   *
-   * @param $items
-   *   An array of items as returned from Acquia Lift.
+
    * @return array
    *   An associative array with information for today's and the total overview.
    */
@@ -1032,8 +939,8 @@ debug($this->loadedReports);
    * Extracts data from the raw confidence detail report that is prepared for use
    * within the conversion report rendering process.
    *
-   * @param $items
-   *   An array of items as return from Acquia Lift.
+   * @param $report_name
+   *   The name of the raw report to extract data from.
    * @return array
    *   An associative array with information about the performance of each choice.
    */
@@ -1046,7 +953,7 @@ debug($this->loadedReports);
     $counter = NAN;
     $data = array();
     foreach ($items as $item) {
-      if ($item['feature'] != self::NO_FEATURES) {
+      if ($item['feature'] != AcquiaLiftAPI::NO_FEATURES) {
         continue;
       }
       // Check to see if we are in a new grouping of choices.
@@ -1079,7 +986,7 @@ debug($this->loadedReports);
       $val_rate = $total_count[$counter] > 0 ? ($total_val[$counter]/$total_count[$counter]) : 0;
       $margin = (($item['bHi'] - $item['bLo'])/2) * 100;
 
-      $data[$choice_id] = array(
+      $data[] = array(
         'choice_id' => $choice_id,
         'raw_label' => $option_id,
         'goals' => $total_goals[$counter],
@@ -1100,9 +1007,6 @@ debug($this->loadedReports);
   /**
    * Loads and formats the necessary reporting data in order to generate a
    * conversion metrics graph/report.
-   *
-   * @param array
-   *   The report data object to load conversion report data into.
    */
   protected function loadConversionReportData() {
     // All goals - summary report is always loaded in order to get the overview
@@ -1136,8 +1040,8 @@ debug($this->loadedReports);
    * Extracts data from the raw aggregate confidence report that is prepared for
    * use within the report rendering process.
    *
-   * @param $items
-   *   An array of items as return from Acquia Lift.
+   * @param $report_name
+   *   The name of the raw report to extract data from.
    * @return array
    *   An associative array with information about the performance of each choice.
    */
@@ -1151,7 +1055,7 @@ debug($this->loadedReports);
     $winner = '';
     $winning_value = NAN;
     foreach ($items as $i => $item) {
-      if ($item['feature'] !== self::NO_FEATURES) {
+      if ($item['feature'] !== AcquiaLiftAPI::NO_FEATURES) {
         continue;
       }
       $choice = $option_id = $item['choice'];
@@ -1209,12 +1113,10 @@ debug($this->loadedReports);
    *
    * @param array $report_data
    *   All of the reporting data for this AB report.
-   * @param array $all_report_data
-   *   The report data for all reports to be build including overview data.
    * @param array|bool
    *   A render array for the report or FALSE if it cannot be generated.
    */
-  protected function buildConversionDetailReport($report_data, $all_report_data) {
+  protected function buildConversionDetailReport($report_data) {
     if ($report_data === FALSE) {
       return FALSE;
     }
@@ -1233,14 +1135,14 @@ debug($this->loadedReports);
       t('Margin of error (%)'),
     );
     $rows = array();
-    foreach ($report_data as $choice_id => $choice_data) {
+    foreach ($report_data as $choice_data) {
       $rows[] = array(
         'data' => array(
           array(
             'data' => $choice_data['timestamp'],
           ),
           array(
-            'data' => $choice_id,
+            'data' => $choice_data['choice_id'],
             'data-acquia-lift-variation-label' => $this->getVariationLabel($choice_data['counter'], $choice_data['control']),
           ),
           array(
@@ -1281,18 +1183,18 @@ debug($this->loadedReports);
    *
    * @param array $report_data
    *   Reporting data for this summary report.
-   * @param array $all_report_data
-   *   The report data for all reports to be build including overview data.
+   * @param bool $confidence
+   *   Whether the report has confidence.
+   * @param bool $winner
+   *   The index of the winning option or NULL if there's no winner
    * @param array|bool
    *   A render array for the report or FALSE if it cannot be generated.
    */
-  protected function buildConversionSummaryReport($report_data, $all_report_data) {
+  protected function buildConversionSummaryReport($report_data, $confidence, $winner) {
     if ($report_data === FALSE) {
       return FALSE;
     }
     $config = $this->getReportConfiguration();
-    $confidence = $all_report_data['conversion_all']['summary']['overview']['confidence'];
-    $winner = $all_report_data['conversion_all']['summary']['overview']['winner'];
     $headers = array(
       t('Variation'),
       array(
@@ -1397,12 +1299,10 @@ debug($this->loadedReports);
    *   - name: The name of the section
    *   - detail:  The detail report data
    *   - summary: The summary report data
-   * @param array $all_report_data
-   *   The full report data for all reports including overview information.
    * @return array|bool
    *   The render array for the reports or false if invalid data.
    */
-  protected function buildConversionReports($report_data, $all_report_data) {
+  protected function buildConversionReports($report_data) {
     if ($report_data['detail'] == FALSE || $report_data['summary'] == FALSE) {
       return FALSE;
     }
@@ -1413,8 +1313,10 @@ debug($this->loadedReports);
       '#value' => $report_data['name'],
       '#attributes' => array('class' => array('lift-statistic-category-name', 'element-invisible')),
     );
-    $build['reports']['detail'] = $this->buildConversionDetailReport($report_data['detail'], $all_report_data);
-    $build['reports']['summary'] = $this->buildConversionSummaryReport($report_data['summary'], $all_report_data);
+    $build['reports']['detail'] = $this->buildConversionDetailReport($report_data['detail']);
+    $confidence = $this->loadedReports['conversion_all']['summary']['overview']['confidence'];
+    $winner = $this->loadedReports['conversion_all']['summary']['overview']['winner'];
+    $build['reports']['summary'] = $this->buildConversionSummaryReport($report_data['summary'], $confidence, $winner);
     $build['reports']['#theme_wrappers'] = array('container');
     $build['reports']['#attributes'] = array('class' => array('lift-statistic-category'));
     return $build;
@@ -1444,7 +1346,7 @@ debug($this->loadedReports);
     $decisions = $goals = 0;
     // Get a total count of all decisions made for this Option Set and all
     // goals received.
-    foreach ($data['features'][self::NO_FEATURES] as $choice => $info) {
+    foreach ($data['variations'] as $choice => $info) {
       list($decision_name, $option_id) = explode(':', $choice);
       if ($decision_name != $option_set->decision_name) {
         continue;
@@ -1481,20 +1383,6 @@ debug($this->loadedReports);
 
   /**
    * Loads all of the data necessary to generate the reports for the agent.
-   *
-   * @param $options
-   * An array of report filter options.
-   * - decision: Preselected decision to display.
-   * - start: The start date of the report.
-   * - from: The end date of the report.
-   * - goal: (optional) A selected goal for reporting; defaults to all.
-   * - conversion_metric: (optional) Metric to display within the conversion report.  One
-   *   of 'rate' (conversion rate) or 'value' (conversion value).
-   * @return array
-   *   The reporting data for the date range as an array with keys for
-   *   - status: The general agent status report data
-   *   - confidence: The confidence report data
-   *   - targeting: The targeting report data
    */
   protected function loadReportData() {
     $this->loadConversionReportData();
@@ -1528,9 +1416,6 @@ debug($this->loadedReports);
   /**
    * Alter the report data returned from API calls to combine into data that is
    * ready for presentation within individual campaign reports.
-   *
-   * @param array $report_data
-   *   The report data loaded and formatted from Acquia Lift.
    *
    * @see loadReportData()
    * @see extractOverviewReportData()
@@ -1571,12 +1456,10 @@ debug($this->loadedReports);
   /**
    * Returns a render array representing the overview report for the given dates.
    *
-   * @param array $report_data
-   *   All of the reporting data for the campaign.
    * @return array
    *   A render array representing the overview report.
    */
-  protected function buildOverviewReport($goal = NULL) {
+  protected function buildOverviewReport() {
     $report = $this->loadedReports['status'];
     if ($report === FALSE) {
       return array();
@@ -1688,7 +1571,7 @@ debug($this->loadedReports);
     );
     $counter = 1;
     foreach ($items as $i => $item) {
-      if ($item['feature'] != self::NO_FEATURES) {
+      if ($item['feature'] != AcquiaLiftAPI::NO_FEATURES) {
         continue;
       }
       $counter++;
@@ -1731,6 +1614,91 @@ debug($this->loadedReports);
       }
     }
     return $data;
+  }
+
+  /**
+   * Generates a message to show when there is insufficient confidence in the
+   * test results.
+   *
+   * @return string
+   */
+  protected function getLowConfidenceMessage() {
+    return t('There is not enough data to declare a winner with @confidence% confidence. Consider letting the test run longer before using the results.', array(
+      '@confidence' => $this->getConfidenceMeasure(),
+    ));
+  }
+
+  /**
+   * Generates the variation abbreviated label.
+   *
+   * @param $counter
+   *   Indicates the number for the variation.
+   * @param $is_control
+   *   True if this is the control option.
+   */
+  protected function getVariationLabel($counter, $is_control) {
+    if ($is_control) {
+      return t('Control');
+    }
+    else {
+      return t('V@num', array('@num' => $counter));
+    }
+  }
+
+  /**
+   * Formats a percentage value for use in reports.
+   *
+   * @param $value
+   *   The number to show as a percentage.
+   * @param bool $include_sign
+   *   True to include positive/negative sign indicators.
+   * @param $trim
+   *   Boolean indicating whether the number should be trimmed of trailing 0s.
+   * @param $decimals
+   *   The number of decimal places to display.
+   * @param $padding
+   *   The total number of characters (including decimal) for padding of the
+   *   final number.  This allows numbers to align properly  in column views.
+   *   This will have no effect if trim is set to true.
+   * @return string
+   *   The formatted number to display.
+   */
+  protected function formatReportPercentage($value, $include_sign = FALSE, $trim = TRUE, $decimals = 2, $padding = 1) {
+    $percent = (float) $value * 100;
+    if ($percent > 0 && $include_sign) {
+      return '+' . $this->formatReportNumber($percent, $trim, $decimals, $padding) . '%';
+    }
+    return $this->formatReportNumber($percent, $trim, $decimals, $padding) . '%';
+  }
+
+  /**
+   * Formats a number value for use in reports.
+   *
+   * @param $value
+   *   The number of format (or an empty value).
+   * @param $trim
+   *   Boolean indicating whether the number should be trimmed of trailing 0s.
+   * @param $decimals
+   *   The number of decimal places to display.
+   * @param $padding
+   *   The total number of characters to pad to the left of the decimal point.
+   * @return string
+   *   The formatted number to display.
+   */
+  protected function formatReportNumber($value, $trim = TRUE, $decimals = 2, $padding = 1) {
+    if (is_numeric($value)) {
+      $value = number_format($value, $decimals);
+      if ($trim) {
+        $value = rtrim(rtrim($value, '0'), '.');
+      }
+      if ($padding > 0) {
+        $value = str_pad($value, $padding, '0', STR_PAD_LEFT);
+      }
+    }
+    if (empty($value)) {
+      $value = 0;
+    }
+    return $value;
   }
 
   /**

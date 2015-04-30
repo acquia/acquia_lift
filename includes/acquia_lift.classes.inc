@@ -25,6 +25,11 @@ class AcquiaLiftAPI implements PersonalizeLoggerAwareInterface, AcquiaLiftReport
   const PROVISIONAL_STATUS = 'provisional';
 
   /**
+   * The value representing no features applied to an experiment.
+   */
+  const NO_FEATURES = '(none)';
+
+  /**
    * The Acquia Lift API key to use.
    *
    * @var string
@@ -857,12 +862,10 @@ class AcquiaLiftAPI implements PersonalizeLoggerAwareInterface, AcquiaLiftReport
     $default_options = array(
       'confidence-measure' => 0.95,
       'aggregated-over-dates' => true,
-      'features' => NULL,
     );
     $options = array_merge($default_options, $options);
     $date_str = $this->getDateString($date_start, $date_end);
-    $features = '';
-    unset($options['features']);
+    $features = isset($options['features']) ? '' : self::NO_FEATURES;
 
     $url = $this->generateEndpoint("/{$agent_name}/report/confidence{$date_str}?features=$features");
     foreach ($options as $param => $value) {

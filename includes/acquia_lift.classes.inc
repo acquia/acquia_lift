@@ -888,11 +888,18 @@ class AcquiaLiftAPI implements PersonalizeLoggerAwareInterface, AcquiaLiftReport
       'confidence-measure' => 0.95,
       'aggregated-over-dates' => true,
     );
+
     $options = array_merge($default_options, $options);
     $date_str = $this->getDateString($date_start, $date_end);
     $features = self::NO_FEATURES;
+    // Provide legacy support for passing features.
     if (isset($options['features'])) {
-      $features = '';
+      if ($options['features'] === 'all') {
+        $features = '';
+      }
+      else {
+        $features = is_array($options['features']) ? implode(',', $options['features']) : "(none)";
+      }
       unset($options['features']);
     }
 

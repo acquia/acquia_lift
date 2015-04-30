@@ -293,9 +293,25 @@ function acquia_lift_report($form, &$form_state, $agent_data, $option_set = NULL
   }
   $legacy = FALSE;
   if (acquia_lift_is_targeting_agent($agent_data)) {
-    $nested = acquia_lift_get_nested_tests($agent_data);
-    $nested_agent = personalize_agent_load($nested[0]);
-    return acquia_lift_report($form, $form_state, $nested_agent, NULL, TRUE);
+    // Display a report for any nested test.
+    $report = array();
+    $option_set = acquia_lift_get_option_set_for_targeting($agent_data->machine_name);
+    foreach($option_set->targeting as $audience_name => $audience) {
+      if (isset($audience['osid'])) {
+        if ($option_set = personalize_option_set_load($audience['osid'])) {
+          $nested_agent = personalize_agent_load($option_set->agent);
+          if (!empty($nested_agent)) {
+            $report[$nested_agent->machine_name] = array(
+              'title' => array(
+                '#markup' => '<h2>' . t('Test report for audience @audience', array('@audience' => $audience_name)) . '</h2>'
+              ),
+              'report' => acquia_lift_report($form, $form_state, $nested_agent, NULL, TRUE)
+            );
+          }
+        }
+      }
+    }
+    return $report;
   }
   elseif (!$nested && acquia_lift_is_testing_agent($agent_data)) {
     $legacy = TRUE;
@@ -343,7 +359,7 @@ function acquia_lift_report_submit($form, &$form_state) {
  * Form build function for a custom Acquia Lift agent report.
  *
  * @param AcquiaLiftAgentInterface $agent
- *   The plugin agent for the selected campaign.
+ *   The instantiated agent for the selected campaign.
  * @param stdClass $agent_data
  *   The campaign agent data for this report.
  * @param stdClass $option_set
@@ -354,11 +370,11 @@ function acquia_lift_report_custom($form, &$form_state, $agent, $agent_data, $op
   if (_acquia_lift_missing_library_warning(array('rickshaw', 'd3'), t('The following libraries are required in order to view the Acquia Lift reports:'))) {
     return array();
   }
-
+  $agent_name = $agent->getMachineName();
   // Generate report filters.
   $data = $agent->getData();
   $form = array(
-    '#prefix' => '<div id="acquia-lift-reports">',
+    '#prefix' => '<div id="acquia-lift-report-' . $agent_name . '">',
     '#suffix' => '</div>',
     '#attached' => array(
       'css' => array(
@@ -382,7 +398,7 @@ function acquia_lift_report_custom($form, &$form_state, $agent, $agent_data, $op
   );
 
   // Get the decision points for this agent so we can provide a filter on this.
-  $option_sets = personalize_option_set_load_by_agent($agent->getMachineName());
+  $option_sets = personalize_option_set_load_by_agent($agent_name);
   $decisions = AcquiaLiftAgent::convertOptionSetsToDecisions($option_sets);
   $decision_options = array();
   foreach ($decisions as $name => $decision) {
@@ -396,7 +412,7 @@ function acquia_lift_report_custom($form, &$form_state, $agent, $agent_data, $op
   else {
     $decision_point = !empty($option_set) ? personalize_get_decision_name_for_option_set($option_set) : key($decisions);
   }
-  $form['report_filters']['decision_point'] = acquia_lift_report_decision_point_dropdown($decision_options, $decision_point);
+  $form['report_filters']['decision_point'] = acquia_lift_report_decision_point_dropdown($decision_options, $decision_point, $agent_name);
 
   // Default to showing the complete history of the campaign.
   $date_start_report = date('Y-m-d', $agent_data->started);
@@ -546,7 +562,7 @@ function acquia_lift_report_custom($form, &$form_state, $agent, $agent_data, $op
  * @return array
  *   An array representing a dropdown select list.
  */
-function acquia_lift_report_decision_point_dropdown($options, $selected) {
+function acquia_lift_report_decision_point_dropdown($options, $selected, $agent_name) {
   if (empty($options)) {
     return array();
   }
@@ -564,7 +580,7 @@ function acquia_lift_report_decision_point_dropdown($options, $selected) {
     '#default_value' => $selected,
     '#ajax' => array(
       'callback' => "acquia_lift_report_ajax_callback",
-      'wrapper' => "acquia-lift-reports",
+      'wrapper' => "acquia-lift-report-" . $agent_name,
     ),
     '#id' => 'acquia-lift-report-decision-point-filter',
   );

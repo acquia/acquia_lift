@@ -75,8 +75,7 @@ class AcquiaLiftWebTestBase extends DrupalWebTestCase
         'decision_style' => 'adaptive',
         'control_rate' => 10,
         'explore_rate' => 20,
-        'cache_decisions' => 1,
-        'auto_stop' => 0
+        'cache_decisions' => 1
       );
     }
 
@@ -660,43 +659,9 @@ class AcquiaLiftWebTestFundamentals extends AcquiaLiftWebTestBase {
   }
 
   /**
-   * Tests the logic in AcquiaLiftAgent's implementation of convertContextToFeatureString().
-   */
-  public function testConvertContextToFeatureString()
-  {
-    ctools_include('plugins');
-    // Make sure the AcquiaLiftAgent class is available.
-    if (!$agent_class = ctools_plugin_load_class('personalize', 'agent_type', 'acquia_lift', 'handler')) {
-      return;
-    }
-    //ctools_plugin_load_class('personalize', 'agent_type', 'acquia_lift', 'handler');
-    // No truncation should happen if name and value are short enough.
-    $name = $this->randomName(20);
-    $value = $this->randomName(20);
-    $string = AcquiaLiftAgent::convertContextToFeatureString($name, $value);
-    $expected = $name . '::' . $value;
-    $this->assertEqual($expected, $string);
-    $string = AcquiaLiftAgent::convertContextToFeatureString($name, $value, TRUE);
-    $expected = $name . ':' . $value;
-    $this->assertEqual($expected, $string);
-    // If we have a really long name and value test that they are truncated
-    // correctly.
-    $long_name = $this->randomName(40);
-    $long_value = $this->randomName(40);
-    $string = AcquiaLiftAgent::convertContextToFeatureString($long_name, $long_value);
-    $expected = substr($long_name, 0, 24) . '::' . substr($long_value, 0, 24);
-    $this->assertEqual($expected, $string);
-    $string = AcquiaLiftAgent::convertContextToFeatureString($long_name, $long_value, TRUE);
-    $expected = substr($long_name, 0, 24) . ':' . substr($long_value, 0, 25);
-    $this->assertEqual($expected, $string);
-  }
-
-
-  /**
    * Tests that new agents on the site cannot override existing agents in Lift.
    */
-  public function testMachineNameValidation()
-  {
+  public function testMachineNameValidation()  {
     $test_data = array(
       'agents' => array(
         array('code' => 'my-existing-agent'),
@@ -722,6 +687,7 @@ class AcquiaLiftWebTestFundamentals extends AcquiaLiftWebTestBase {
     module_load_include('inc', 'acquia_lift', 'acquia_lift.batch');
     // Create a targeting agent with a single nested test.
     $agent = $this->createTargetingAgentWithNestedTest(NULL, 4);
+    personalize_goal_save($agent->machine_name, 'user_login', 1);
     $this->resetAll();
 
     $test_agents = personalize_agent_load_by_type(ACQUIA_LIFT_TESTING_AGENT_V1);
@@ -820,6 +786,14 @@ class AcquiaLiftWebTestFundamentals extends AcquiaLiftWebTestBase {
             'option-4',
           ),
       ),
+      array (
+        'method' => 'saveGoal',
+        'args' =>
+          array (
+            $test_agent->machine_name,
+            'user_login',
+          )
+      )
     );
 
     $this->assertEqual($expected_operations, $operations);
@@ -903,7 +877,7 @@ class AcquiaLiftWebTestReports extends AcquiaLiftWebTestBase {
       $report_start_date = 1407499650;
       // Test to ensure that an initial report at this point returns no data.
       AcquiaLiftAPI::setTestInstance();
-      $agent_instance = personalize_agent_load_agent($first_agent);
+      $agent_instance = personalize_agent_load_agent($agent_name);
       $report = $agent_instance->buildCampaignReports(array('decision' => 'osid-' . $option_sets[0]->osid, 'start' => $report_start_date));
       $this->assertFalse($report['#has_data'], 'Report has no data.');
 
@@ -947,10 +921,8 @@ class AcquiaLiftWebTestReports extends AcquiaLiftWebTestBase {
         'reports' => array(
           $agent_name => array(
             'confidence' => AcquiaLiftTestReports::getBasicConfidenceReport($agent_name),
-            'targeting-features' => AcquiaLiftTestReports::getBasicTargetingReport($agent_name),
             'learning' => array(),
             'agent-status' => AcquiaLiftTestReports::getBasicStatusReport($agent_name),
-            'context-filters' => AcquiaLiftTestReports::getBasicContextFilters()
           )
         )
       ));
@@ -1451,7 +1423,6 @@ class AcquiaLiftWebTestTarget extends AcquiaLiftWebTestBase {
     $agent->data['control_rate'] = 25;
     $agent->data['decision_style'] = 'adaptive';
     $agent->data['cache_decisions'] = 1;
-    $agent->data['visitor_context'] = array('some-context-plugin' => array('test-context' => 'test-context'));
     personalize_agent_save($agent);
 
     $this->resetAll();
@@ -1493,7 +1464,6 @@ class AcquiaLiftWebTestTarget extends AcquiaLiftWebTestBase {
     $this->assertEqual($nested_agent->data['control_rate'], 25);
     $this->assertEqual($nested_agent->data['explore_rate'], 25);
     $this->assertEqual($nested_agent->data['cache_decisions'], 1);
-    $this->assertEqual($nested_agent->data['visitor_context'], array('some-context-plugin' => array('test-context' => 'test-context')));
 
     $option_sets = personalize_option_set_load_by_agent($nested_agent->machine_name);
     $this->assertEqual(1, count($option_sets));
@@ -1559,7 +1529,6 @@ class AcquiaLiftWebTestTarget extends AcquiaLiftWebTestBase {
     $this->assertEqual($nested_agent->data['control_rate'], 25);
     $this->assertEqual($nested_agent->data['explore_rate'], 35);
     $this->assertEqual($nested_agent->data['cache_decisions'], 0);
-    $this->assertEqual($nested_agent->data['visitor_context'], array('some-context-plugin' => array('test-context' => 'test-context')));
 
     $option_sets = personalize_option_set_load_by_agent($nested_agent->machine_name);
 
@@ -1646,7 +1615,6 @@ class AcquiaLiftWebTestTarget extends AcquiaLiftWebTestBase {
       $this->assertEqual($nested->data['control_rate'], 50);
       $this->assertEqual($nested->data['explore_rate'], 35);
       $this->assertEqual($nested_agent->data['cache_decisions'], 0);
-      $this->assertEqual($nested_agent->data['visitor_context'], array('some-context-plugin' => array('test-context' => 'test-context')));
 
       // Find the *new* nested agent.
       if ($nested->machine_name != $nested_agent->machine_name) {
@@ -2762,68 +2730,4 @@ class AcquiaLiftWebTestCampaignWizard extends AcquiaLiftWebTestBase {
     //   exception is thrown when trying to get the operations.
   }
 
-  /**
-   * Tests automatic targeting based on campaign-wide context selections.
-   */
-  function testAutoTargeting() {
-    // Create user profile fields that we can use for targeting.
-    $this->createUserProfileField('test_user_field_1');
-    $this->createUserProfileField('test_user_field_2');
-
-    $admin_user = $this->drupalCreateUser(array('access administration pages', 'manage personalized content', 'administer blocks'));
-    $this->drupalLogin($admin_user);
-    // Create a new agent.
-    $agent = $this->createTargetingAgent();
-    $machine_name = $agent->machine_name;
-    $this->drupalGet("admin/structure/personalize/manage/{$machine_name}/review");
-    // Check for auto-targeting.
-    $this->assertFieldByName('visitor_context[]');
-
-    // Create a block based option set.
-    $option_set = $this->createPersonalizedBlock(1, $agent);
-    $osid = $option_set->osid;
-
-    // Place it on the page so that we can check visitor context settings.
-    $edit = array();
-    $edit["blocks[personalize_blocks_$osid][region]"] = 'sidebar_first';
-    $this->drupalPost('admin/structure/block', $edit, t('Save blocks'));
-
-    // Confirm that explicit targeting options are available.
-    $this->drupalGet("admin/structure/personalize/manage/$machine_name/review");
-    $this->assertField('visitor_context[]');
-
-    // Now add automatic targeting.
-    $edit = array(
-      'visitor_context[]' => 'user_profile_context__test_user_field_1',
-    );
-    $this->drupalPost(NULL, $edit, $this->getButton('wizard_save'));
-    $this->assertOptionSelected('edit-visitor-context', 'user_profile_context__test_user_field_1');
-
-    // Confirm that the explicit targeting options are no longer available.
-    $this->drupalGet("admin/structure/personalize/manage/$machine_name/targeting");
-    $this->assertText("Explicit targeting is not supported when automatic targeting is in place");
-
-    // Verify the correct context settings.
-    $this->drupalGet('');
-    $settings = $this->drupalGetSettings();
-    $this->assertEqual($settings['personalize']['agent_map'][$machine_name]['enabled_contexts']['user_profile_context']['test_user_field_1'], 'test_user_field_1');
-
-    // Remove the automatic targeting.
-    $this->drupalGet("admin/structure/personalize/manage/$machine_name/review");
-    $edit = array(
-      'visitor_context[]' => array(),
-    );
-    $this->drupalPost(NULL, $edit, $this->getButton('wizard_save'));
-    $this->assertNoOptionSelected('edit-visitor-context', 'user_profile_context__test_user_field_1');
-
-    // Confirm that the explicit targeting options are available.
-    $this->drupalGet("admin/structure/personalize/manage/$machine_name/targeting");
-    $this->assertNoText("Explicit targeting is not supported when automatic targeting is in place");
-    $this->assertFieldByName('audiences[everyone-else][assignment][]');
-
-    // Confirm that the automatic visitor context as been removed from settings.
-    $this->drupalGet('');
-    $settings = $this->drupalGetSettings();
-    $this->assertTrue(empty($settings['personalize']['agent_map'][$machine_name]['enabled_contexts']));
-  }
 }

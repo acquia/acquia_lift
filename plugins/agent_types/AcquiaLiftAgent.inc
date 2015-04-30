@@ -675,6 +675,9 @@ class AcquiaLiftReport implements PersonalizeAgentReportInterface, AcquiaLiftRep
    *     'rate'.
    */
   protected function setReportConfiguration($options) {
+    // Set the loadedReports property to NULL because the configuration might
+    // have changed.
+    $this->loadedReports = NULL;
     $decision_name = empty($options['decision']) ? NULL : $options['decision'];
     $date_from = empty($options['start']) ? NULL : $options['start'];
     $date_to = empty($options['end']) ? NULL : $options['end'];
@@ -791,7 +794,6 @@ class AcquiaLiftReport implements PersonalizeAgentReportInterface, AcquiaLiftRep
       if (!empty($goal)) {
         $options['goal'] = $goal;
       }
-
       $this->loadedReports['raw'][$report_name] = $this->reportDataSrc->getConfidenceReport(
         $config['machine_name'],
         $config['date_from'],
@@ -1009,6 +1011,7 @@ class AcquiaLiftReport implements PersonalizeAgentReportInterface, AcquiaLiftRep
    * conversion metrics graph/report.
    */
   protected function loadConversionReportData() {
+
     // All goals - summary report is always loaded in order to get the overview
     // data for the campaign.
     if (!isset($this->loadedReports['conversion'])) {
@@ -1430,9 +1433,11 @@ class AcquiaLiftReport implements PersonalizeAgentReportInterface, AcquiaLiftRep
 
     // Determine overall confidence based on confidence in choices.
     $total_confident = 0;
-    foreach ($this->loadedReports['confidence']['variations'] as $choice) {
-      if ($choice['significant']) {
-        $total_confident++;
+    if (isset($this->loadedReports['confidence']['variations'])) {
+      foreach ($this->loadedReports['confidence']['variations'] as $choice) {
+        if ($choice['significant']) {
+          $total_confident++;
+        }
       }
     }
 

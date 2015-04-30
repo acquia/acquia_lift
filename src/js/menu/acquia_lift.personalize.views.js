@@ -812,9 +812,9 @@
     /**
      * Event handler for changing the active variation.
      */
-    onActiveVariationChange: function (event) {
+    onActiveVariationChange: function (changed) {
       // End any current editing when changing variations.
-      if (this.model.get('isActive')) {
+      if (changed.get('activeVariation') != '-1' && this.model.get('isActive')) {
         this.model.endEditMode();
       }
       this.render();

@@ -25,7 +25,7 @@
    */
   Drupal.acquiaLift = (function() {
 
-    var settings, api, initialized = false, waitingDecisions = [];
+    var settings, api, initialized = false, waitingDecisions = [], numRequests = 0, decisionResponses = [];
 
     /**
      * Initialize the API and page level processing.
@@ -108,7 +108,7 @@
           });
           return;
         }
-
+        numRequests++;
         // Prepare the options for our decision.
         var options = {
           point: cleanString(point),
@@ -161,7 +161,19 @@
               decisions[key] = selection[key].code;
             }
           }
+
           callback(decisions);
+          // Add this to our decisionResponses object and trigger an event
+          // if it's the last response.
+          decisionResponses.push({
+            agent: agent_name,
+            decisions: decisions
+          });
+          if (decisionResponses.length == numRequests) {
+            $(document).trigger('acquiaLiftDecisions', [decisionResponses]);
+            numRequests = 0;
+            decisionResponses = [];
+          }
           // Now unblock all future decision requests.
           api.initializingSession = false;
           // Process any decisions that have been waiting in the queue.

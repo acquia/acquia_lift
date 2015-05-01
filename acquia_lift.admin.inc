@@ -288,9 +288,6 @@ function acquia_lift_admin_form_submit($form, &$form_state) {
  *   (optional) The content variation to show in the default view.
  */
 function acquia_lift_report($form, &$form_state, $agent_data, $option_set = NULL, $nested = FALSE) {
-  if (!$agent = personalize_agent_load_agent($agent_data->machine_name)) {
-    return array();
-  }
   $legacy = FALSE;
   if (acquia_lift_is_targeting_agent($agent_data)) {
     // Display a report for any nested test.
@@ -324,10 +321,14 @@ function acquia_lift_report($form, &$form_state, $agent_data, $option_set = NULL
       )
     );
   }
-
+  // Instantiate the agent class to perform some further checks before trying to
+  // show reports for it.
+  if (!$agent_instance = personalize_agent_load_agent($agent_data->machine_name)) {
+    return array();
+  }
   // If this agent is not currently enabled in Acquia Lift, there are no reports
   // to show.
-  $errors = $agent->errors();
+  $errors = $agent_instance->errors();
   if (!empty($errors)) {
     return array(
       'no_report' => array(
@@ -337,7 +338,7 @@ function acquia_lift_report($form, &$form_state, $agent_data, $option_set = NULL
   }
   // If this agent doesn't implement the reporting interface then there are no
   // reports to show.
-  if (!$agent instanceof PersonalizeAgentReportInterface) {
+  if (!$agent_instance instanceof PersonalizeAgentReportInterface) {
     return array(
       'no_report' => array(
         '#markup' => t('This agent does not support reporting.')
@@ -345,7 +346,7 @@ function acquia_lift_report($form, &$form_state, $agent_data, $option_set = NULL
     );
   }
 
-  return acquia_lift_report_custom($form, $form_state, $agent, $agent_data, $option_set, $legacy);
+  return acquia_lift_report_custom($form, $form_state, $agent_instance, $agent_data, $option_set, $legacy);
 }
 
 /**

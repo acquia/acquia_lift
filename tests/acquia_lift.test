@@ -1753,7 +1753,8 @@ class AcquiaLiftWebTestTarget extends AcquiaLiftWebTestBase {
     $this->drupalLogin($admin_user);
 
     $agent = $this->createTargetingAgent();
-
+    // Add a goal or it cannot be started.
+    personalize_goal_save($agent->machine_name, 'user_login', 1);
     // Personalize blocks.
     $option_set = $this->createPersonalizedBlock(1, $agent, 2);
 

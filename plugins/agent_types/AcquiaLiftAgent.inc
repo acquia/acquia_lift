@@ -806,7 +806,11 @@ class AcquiaLiftReport implements PersonalizeAgentReportInterface, AcquiaLiftRep
    */
   protected function extractOverviewReportData() {
     $config = $this->getReportConfiguration();
-    $items = $this->loadedReports['raw']['status']['data'][$config['machine_name']];
+    $report = $this->loadedReports['raw']['status'];
+    if (!isset($report['data']) || !isset($report['data'][$config['machine_name']])) {
+      return array();
+    }
+    $items = $report['data']['items'];
     $agent_data = $this->agent->getData();
     $decision_style = $agent_data['decision_style'] === 'adaptive' ? t('Auto-personalize') : t('A/B');
     $total_variations = isset($agent_data['decisions']) ? count($agent_data['decisions']) : 0;
@@ -851,10 +855,12 @@ class AcquiaLiftReport implements PersonalizeAgentReportInterface, AcquiaLiftRep
    *   An associative array with information about the performance of each choice.
    */
   protected function extractConversionReportData($report_name) {
-    $items = $this->loadedReports['raw'][$report_name]['data']['items'];
-    if (empty($items)) {
+    $report = $this->loadedReports['raw'][$report_name];
+    if (!isset($report['data']) || empty($report['data']['items'])) {
       return array();
     }
+    $items = $report['data']['items'];
+
     $shown = array();
     $counter = NAN;
     $data = array();
@@ -953,10 +959,11 @@ class AcquiaLiftReport implements PersonalizeAgentReportInterface, AcquiaLiftRep
    *   An associative array with information about the performance of each choice.
    */
   protected function extractConversionSummaryData($report_name) {
-    $items = $this->loadedReports['raw'][$report_name]['data']['items'];
-    if (empty($items)) {
+    $report = $this->loadedReports['raw'][$report_name];
+    if (!isset($report['data']) || empty($report['data']['items'])) {
       return array();
     }
+    $items = $report['data']['items'];
     $data = array();
     $confidence = FALSE;
     $winner = '';
@@ -1375,10 +1382,16 @@ class AcquiaLiftReport implements PersonalizeAgentReportInterface, AcquiaLiftRep
     }
     $config = $this->getReportConfiguration();
     if ($config['today_only']) {
-      $overview_report = $this->loadedReports['status']['today'];
+      if (!isset($report['today'])) {
+        return array();
+      }
+      $overview_report = $report['today'];
     }
     else {
-      $overview_report = $this->loadedReports['status']['all'];
+      if (!isset($report['all'])) {
+        return array();
+      }
+      $overview_report = $report['all'];
     }
 
     // Create report renderable.
@@ -1469,10 +1482,11 @@ class AcquiaLiftReport implements PersonalizeAgentReportInterface, AcquiaLiftRep
    *   An associative array with information about the performance of each choice.
    */
   protected function extractConfidenceReportData() {
-    $items = $this->loadedReports['raw']['confidence']['data']['items'];
-    if (empty($items)) {
+    $report = $this->loadedReports['raw']['confidence'];
+    if (!isset($report['data']) || empty($report['data']['items'])) {
       return array();
     }
+    $items = $report['data']['items'];
     $data = array(
       'point' => $items[0]['point'],
       'variations' => array(),
@@ -1610,30 +1624,4 @@ class AcquiaLiftReport implements PersonalizeAgentReportInterface, AcquiaLiftRep
     return $value;
   }
 
-  /**
-   * Gets the appropriate class name for a graph indicating percentage.
-   *
-   * @param $value
-   *   The percentage value expressed as a number between 0 and 1.
-   */
-  protected function getGraphLevelClass($value) {
-    if ($value >= 1) {
-      return 'acquia-lift-graph-level-5';
-    }
-    else if ($value >= .8) {
-      return 'acquia-lift-graph-level-4';
-    }
-    else if ($value >= .6 && $value < .8) {
-      return 'acquia-lift-graph-level-3';
-    }
-    else if ($value >= .4 && $value < .6) {
-      return 'acquia-lift-graph-level-2';
-    }
-    else if ($value >= .2 && $value < .4) {
-      return 'acquia-lift-graph-level-1';
-    }
-    else {
-      return 'acquia-lift-graph-level-0';
-    }
-  }
 }

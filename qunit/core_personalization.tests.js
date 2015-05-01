@@ -245,7 +245,7 @@ QUnit.test('Make decision', function(assert) {
   };
 
   var callback = sinon.spy();
-  Drupal.acquiaLift.getDecision('my-agent', {'some-feature': ['some-value', 'sc-some-value'],'other-feature': ['some,value'] }, {'first-decision': ['option-1', 'option-2']}, 'my-decision-point', {'first-decision': 0}, callback);
+  Drupal.acquiaLift.getDecision('my-agent', {'first-decision': ['option-1', 'option-2']}, 'my-decision-point', {'first-decision': 0}, callback);
 
   equal(sinon.requests.length, 1);
   var parsed = parseUri(sinon.requests[0].url);
@@ -253,7 +253,6 @@ QUnit.test('Make decision', function(assert) {
   equal(parsed.host, 'api.example.com');
   equal(parsed.path, "/someOwner/my-agent/decisions/first-decision:option-1,option-2");
   equal(parsed.queryKey.apikey, "xyz123");
-  equal(parsed.queryKey.features, "some-feature%3A%3Asome-value%2Csome-feature%3A%3Asc-some-value%2Cother-feature%3A%3Asome-value");
   equal(parsed.queryKey.session, "some-session-ID");
 
   requests[0].respond(200, { "Content-Type": "application/json" }, '{"decisions": {"first-decision":"option-2"}, "session": "some-session-ID"}');
@@ -281,10 +280,10 @@ function testMultipleDecisionsNoBatch(assert, known) {
   };
 
   var callback = sinon.spy();
-  Drupal.acquiaLift.getDecision('my-agent', {'some-feature': ['some-value', 'sc-some-value'],'other-feature': ['some,value'] }, {'first-decision': ['option-1', 'option-2']}, 'my-decision-point', {'first-decision': 0}, callback);
+  Drupal.acquiaLift.getDecision('my-agent', {'first-decision': ['option-1', 'option-2']}, 'my-decision-point', {'first-decision': 0}, callback);
   requests[0].respond(200, { "Content-Type": "application/json" }, '{"decisions": {"first-decision":"option-2"}, "session": "some-session-ID"}');
 
-  Drupal.acquiaLift.getDecision('my-agent', {'some-feature': ['some-value', 'sc-some-value'],'other-feature': ['some,value'] }, {'second-decision': ['option-1', 'option-2']}, 'other-decision-point', {'second-decision': 0}, callback);
+  Drupal.acquiaLift.getDecision('my-agent', {'second-decision': ['option-1', 'option-2']}, 'other-decision-point', {'second-decision': 0}, callback);
   requests[1].respond(200, { "Content-Type": "application/json" }, '{"decisions": {"second-decision":"option-2"}, "session": "some-session-ID"}');
 
   equal(sinon.requests.length, 2);
@@ -293,7 +292,6 @@ function testMultipleDecisionsNoBatch(assert, known) {
   equal(parsedUri1.host, 'api.example.com');
   equal(parsedUri1.path, "/someOwner/my-agent/decisions/first-decision:option-1,option-2");
   equal(parsedUri1.queryKey.apikey, "xyz123");
-  equal(parsedUri1.queryKey.features, "some-feature%3A%3Asome-value%2Csome-feature%3A%3Asc-some-value%2Cother-feature%3A%3Asome-value");
   if (known) {
     equal(parsedUri1.queryKey.session, "some-session-ID");
   }
@@ -302,7 +300,6 @@ function testMultipleDecisionsNoBatch(assert, known) {
   equal(parsedUri2.host, 'api.example.com');
   equal(parsedUri2.path, "/someOwner/my-agent/decisions/second-decision:option-1,option-2");
   equal(parsedUri2.queryKey.apikey, "xyz123");
-  equal(parsedUri2.queryKey.features, "some-feature%3A%3Asome-value%2Csome-feature%3A%3Asc-some-value%2Cother-feature%3A%3Asome-value");
   equal(parsedUri2.queryKey.session, "some-session-ID");
 
   ok(callback.callCount, 2);
@@ -331,8 +328,8 @@ function testBatchDecisions(assert, known) {
 
   var callback = sinon.spy();
   // Fire off two requests for decisions - only one HTTP request should be made.
-  Drupal.acquiaLift.getDecision('my-agent', {'some-feature': ['some-value', 'sc-some-value'],'other-feature': ['some,value'] }, {'first-decision': ['option-1', 'option-2']}, 'my-decision-point', {'first-decision': 0}, callback);
-  Drupal.acquiaLift.getDecision('my-agent', {'some-feature': ['some-value', 'sc-some-value'],'other-feature': ['some,value'] }, {'second-decision': ['option-1', 'option-2']}, 'other-decision-point', {'second-decision': 0}, callback);
+  Drupal.acquiaLift.getDecision('my-agent', {'first-decision': ['option-1', 'option-2']}, 'my-decision-point', {'first-decision': 0}, callback);
+  Drupal.acquiaLift.getDecision('my-agent', {'second-decision': ['option-1', 'option-2']}, 'other-decision-point', {'second-decision': 0}, callback);
   // This event lets the Lift js know there are no more decisions to wait for.
   $(document).trigger('personalizeDecisionsEnd');
   // Confirm a single request is made with the expected request body.
@@ -350,7 +347,6 @@ function testBatchDecisions(assert, known) {
         'query': {
           '_t': 0,
           'apikey': 'xyz123',
-          'features': "some-feature::some-value,some-feature::sc-some-value,other-feature::some-value",
           'point': 'my-decision-point',
           'session': 'some-session-ID'
         },
@@ -362,7 +358,6 @@ function testBatchDecisions(assert, known) {
         'query': {
           '_t': 0,
           'apikey': 'xyz123',
-          'features': "some-feature::some-value,some-feature::sc-some-value,other-feature::some-value",
           'point': 'other-decision-point',
           'session': 'some-session-ID'
         },
@@ -377,7 +372,6 @@ function testBatchDecisions(assert, known) {
         'query': {
           '_t': 0,
           'apikey': 'xyz123',
-          'features': "some-feature::some-value,some-feature::sc-some-value,other-feature::some-value",
           'point': 'my-decision-point'
         },
         'type': 'decisions'
@@ -388,7 +382,6 @@ function testBatchDecisions(assert, known) {
         'query': {
           '_t': 0,
           'apikey': 'xyz123',
-          'features': "some-feature::some-value,some-feature::sc-some-value,other-feature::some-value",
           'point': 'other-decision-point'
         },
         'type': 'decisions'
@@ -487,16 +480,15 @@ QUnit.test('Make decision after goal without session', function(assert) {
 
   // Now make decision requests and ensure that the session id is stored.
   var callback = sinon.spy();
-  Drupal.acquiaLift.getDecision('my-agent', {'some-feature': ['some-value', 'sc-some-value'],'other-feature': ['some,value'] }, {'first-decision': ['option-1', 'option-2']}, 'my-decision-point', {'first-decision': 0}, callback);
+  Drupal.acquiaLift.getDecision('my-agent', {'first-decision': ['option-1', 'option-2']}, 'my-decision-point', {'first-decision': 0}, callback);
   requests[1].respond(200, { "Content-Type": "application/json" }, '{"decisions": {"first-decision":"option-2"}, "session": "12345678"}');
 
   // The second decision should include the new session returned from the server.
-  Drupal.acquiaLift.getDecision('my-agent', {'some-feature': ['some-value', 'sc-some-value'],'other-feature': ['some,value'] }, {'second-decision': ['option-1', 'option-2']}, 'other-decision-point', {'second-decision': 0}, callback);
+  Drupal.acquiaLift.getDecision('my-agent', {'second-decision': ['option-1', 'option-2']}, 'other-decision-point', {'second-decision': 0}, callback);
   var parsedUri2 = parseUri(sinon.requests[2].url);
   equal(parsedUri2.host, 'api.example.com');
   equal(parsedUri2.path, "/someOwner/my-agent/decisions/second-decision:option-1,option-2");
   equal(parsedUri2.queryKey.apikey, "xyz123");
-  equal(parsedUri2.queryKey.features, "some-feature%3A%3Asome-value%2Csome-feature%3A%3Asc-some-value%2Cother-feature%3A%3Asome-value");
   equal(parsedUri2.queryKey.session, "12345678");
 
   requests[2].respond(200, { "Content-Type": "application/json" }, '{"decisions": {"second-decision":"option-2"}, "session": "12345678"}');
@@ -605,9 +597,7 @@ function initializeLiftSettings() {
   Drupal.settings.acquia_lift.baseUrl = 'http://api.example.com';
   Drupal.settings.acquia_lift.owner = 'someOwner';
   Drupal.settings.acquia_lift.apiKey = 'xyz123';
-  Drupal.settings.acquia_lift.featureStringSeparator = '::';
-  Drupal.settings.acquia_lift.featureStringMaxLength = 50;
-  Drupal.settings.acquia_lift.featureStringReplacePattern = '[^A-Za-z0-9_-]';
+  Drupal.settings.acquia_lift.stringReplacePattern = '[^A-Za-z0-9_-]';
   Drupal.settings.acquia_lift.batchMode = 0;
   setSessionID(true);
 }

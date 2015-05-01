@@ -246,12 +246,8 @@ function acquia_lift_get_sync_operations_for_agent($agent) {
         }
       }
 
-      // First sync the agent itself. We need to know if Lift already has
-      // a targeting rule set up for an agent with this name. It will need
-      // to be deleted if the version of the agent we are now pushing does
-      // not have one.
-      $targeting_rule_exists = $lift_api->hasAutoTargetingRule($agent_name);
-      $operations = array_merge($operations, $agent_instance->getAgentSyncOperations($targeting_rule_exists));
+      // First sync the agent itself.
+      $operations = array_merge($operations, $agent_instance->getAgentSyncOperations());
 
       // Now go through all option sets and sync those.
       $option_sets = personalize_option_set_load_by_agent($agent_name, TRUE);

@@ -532,16 +532,6 @@ function acquia_lift_personalize_campaign_wizard_targeting_alter(&$form, &$form_
     );
     return;
   }
-  // Explicit targeting is not allowed when auto-targeting is in use.
-  if (isset($agent_data->data['visitor_context']) && !empty($agent_data->data['visitor_context'])) {
-    unset($form['targeting'], $form['actions']);
-    $form['main'] = array(
-      '#markup' => t('Explicit targeting is not supported when automatic targeting is in place.  Remove automatic targeting in the <a href="!review">advanced section of the review screen</a> to continue.', array(
-        '!review' => url('admin/structure/personalize/manage/' . $agent_data->machine_name . '/review'),
-      )),
-    );
-    return;
-  }
   module_load_include('inc', 'acquia_lift', 'acquia_lift.admin');
   $editable = acquia_lift_target_definition_changes_allowed($agent_data);
   if (!$editable) {
@@ -814,13 +804,6 @@ function acquia_lift_personalize_campaign_wizard_review_alter(&$form, &$form_sta
       }
     }
   }
-  // If there is only one audience then there is no explicit targeting so
-  // check for auto-targeting options.
-  $context_element = FALSE;
-  if ($count_audiences < 2) {
-    $visitor_context = isset($agent_data->data['visitor_context']) ? $agent_data->data['visitor_context'] : array();
-    $context_element = personalize_admin_build_visitor_context_select($visitor_context, TRUE, $agent_data);
-  }
 
   // Show advanced testing options.
   $editable = acquia_lift_target_definition_changes_allowed($agent_data);
@@ -839,12 +822,7 @@ function acquia_lift_personalize_campaign_wizard_review_alter(&$form, &$form_sta
   if ($has_tests) {
     $form['review']['summary_column']['advanced']['options'] = _acquia_lift_personalize_campaign_wizard_review_tests($agent_data, array());
   }
-  if ($context_element !== FALSE) {
-    $form['review']['summary_column']['advanced']['visitor_context'] = $context_element;
-    $form['review']['summary_column']['advanced']['visitor_context']['#title'] = t('Visitor contexts to use for automatic targeting');
-    module_load_include('inc', 'acquia_lift', 'acquia_lift.ui');
-    acquia_lift_chosenify_element($form['review']['summary_column']['advanced']['visitor_context'], array('acquia-lift-chosen-select-half'));
-  }
+
   $form['review']['summary_column']['advanced']['cache_decisions'] = array(
     '#type' => 'checkbox',
     '#title' => 'Cache decisions made by this agent?',
@@ -1416,11 +1394,7 @@ function acquia_lift_personalize_campaign_wizard_review_submit(&$form, &$form_st
   if (isset($form_state['values']['explore_rate'])) {
     $agent_data->data['explore_rate'] = $form_state['values']['explore_rate'];
   }
-  $visitor_context = array();
-  if (isset($form_state['values']['visitor_context'])) {
-    $visitor_context = personalize_admin_convert_visitor_context_form_values($form_state['values']['visitor_context']);
-  }
-  $agent_data->data['visitor_context'] = $visitor_context;
+
   module_load_include('inc', 'personalize', 'personalize.admin.campaign');
   personalize_campaign_wizard_submit_variations_advanced_agent($form, $form_state, $agent_data);
 

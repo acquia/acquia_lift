@@ -5,17 +5,10 @@
   Drupal.personalize.agents.acquia_lift = {
     'getDecisionsForPoint': function(agent_name, visitor_context, choices, decision_point, fallbacks, callback) {
       // Our decision point may have multiple decisions, if doing MVT.
-      Drupal.acquiaLift.getDecision(agent_name, visitor_context, choices, decision_point, fallbacks, callback);
+      Drupal.acquiaLift.getDecision(agent_name, choices, decision_point, fallbacks, callback);
     },
     'sendGoalToAgent': function(agent_name, goal_name, goal_value, jsEvent) {
       Drupal.acquiaLift.sendGoal(agent_name, goal_name, goal_value, jsEvent);
-    },
-    'featureToContext': function(featureString) {
-      var contextArray = featureString.split(Drupal.settings.acquia_lift.featureStringSeparator);
-      return {
-        'key': contextArray[0],
-        'value': contextArray[1]
-      };
     }
   };
 
@@ -53,32 +46,8 @@
     }
 
     function cleanString(str) {
-      var regex = new RegExp(settings.featureStringReplacePattern, "g");
+      var regex = new RegExp(settings.stringReplacePattern, "g");
       return str.replace(regex, '-').replace(/\-{2,}/g, '-');
-    }
-
-    function convertContextToFeatureString(name, value) {
-      var prefix, val, feature_string, separator = settings.featureStringSeparator;
-      prefix = cleanString(name);
-      val = isNaN(value) ? cleanString(value) : value;
-      // Make a string of the visitor context item in the format Acquia Lift can
-      // consume.
-      feature_string = prefix + separator + val;
-
-      var prefixMaxLength = Math.floor((settings.featureStringMaxLength - separator.length) / 2);
-      while (feature_string.length > settings.featureStringMaxLength) {
-        // Acquia Lift has a hard character limit for feature strings.
-        if (prefix.length > prefixMaxLength) {
-          // Start by truncating the prefix down to half the max length.
-          prefix = prefix.slice(0, prefixMaxLength);
-          feature_string = prefix + separator + val;
-        }
-        else {
-          // Otherwise just truncate the whole thing down to the max length.
-          feature_string = feature_string.slice(0, settings.featureStringMaxLength);
-        }
-      }
-      return feature_string;
     }
 
     return {
@@ -87,11 +56,11 @@
       'processWaitingDecisions': function() {
         while (waitingDecisions.length > 0) {
           var decision = waitingDecisions.shift();
-          this.getDecision(decision.agent_name, decision.visitor_context, decision.choices, decision.point, decision.fallbacks, decision.callback);
+          this.getDecision(decision.agent_name, decision.choices, decision.point, decision.fallbacks, decision.callback);
         }
       },
       // Processes all decisions for a given decision point.
-      'getDecision': function(agent_name, visitor_context, choices, point, fallbacks, callback) {
+      'getDecision': function(agent_name, choices, point, fallbacks, callback) {
         var self = this;
         if (!initialized) {
           init(true);
@@ -99,7 +68,6 @@
           // Add this decision to the queue of waiting decisions.
           waitingDecisions.push({
             'agent_name' : agent_name,
-            'visitor_context' : visitor_context,
             'choices' : choices,
             'point' : point,
             'fallbacks' : fallbacks,
@@ -113,21 +81,6 @@
           point: cleanString(point),
           choices: choices
         };
-        // Process visitor_context
-        var data = [], i, j, feature_string;
-        for (i in visitor_context) {
-          if (visitor_context.hasOwnProperty(i)) {
-            for (j in visitor_context[i]) {
-              if (visitor_context[i].hasOwnProperty(j)) {
-                feature_string = convertContextToFeatureString(i, visitor_context[i][j]);
-                data.push(feature_string);
-              }
-            }
-          }
-        }
-        if (data.length > 0) {
-          options.features = data.join(',');
-        }
 
         // Format the fallbacks object into the structure required by the Acquia Lift
         // client.

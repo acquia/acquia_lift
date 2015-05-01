@@ -630,22 +630,6 @@ function acquia_lift_personalize_option_set_render(&$element, $option_set) {
 }
 
 /**
- * Implements hook_personalize_visitor_contexts().
- */
-function acquia_lift_personalize_visitor_context() {
-  $info = array();
-  $path = drupal_get_path('module', 'acquia_lift') . '/plugins';
-  $info['acquia_lift_context'] = array(
-    'path' => $path . '/visitor_context',
-    'handler' => array(
-      'file' => 'AcquiaLiftContext.inc',
-      'class' => 'AcquiaLiftContext',
-    ),
-  );
-  return $info;
-}
-
-/**
  * Implements hook_personalize_option_set_save().
  */
 function acquia_lift_personalize_option_set_save($option_set) {

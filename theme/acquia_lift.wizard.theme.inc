@@ -99,6 +99,10 @@ function theme_acquia_lift_revealing_input($variables) {
   if (empty($variables['element']['#children'])) {
     return '';
   }
+  if (!empty($variables['element']['#disabled'])) {
+    unset($variables['element']['#theme_wrappers']);
+    return drupal_render($variables['element']);
+  }
   drupal_add_library('acquia_lift', 'acquia_lift.inputs');
   $html = '';
   $html .= '<div class="acquia-lift-revealing-input clearfix">';

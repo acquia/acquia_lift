@@ -16,6 +16,12 @@
  */
 function acquia_lift_personalize_campaign_wizard_process_bar_alter(&$form, &$form_state, $form_id) {
   $agent = $form['#agent'];
+  module_load_include('inc', 'acquia_lift', 'acquia_lift.admin');
+  if (!acquia_lift_target_definition_changes_allowed($agent)) {
+    unset($form['process_bar']['actions']);
+    $form['actions']['submit']['#disabled'] = TRUE;
+    return;
+  }
   $nested = acquia_lift_get_nested_tests($agent);
   if (empty($nested)) {
     return;
@@ -50,8 +56,50 @@ function acquia_lift_personalize_campaign_wizard_process_bar_alter(&$form, &$for
  * Alter hook for the base campaign wizard form.
  */
 function acquia_lift_personalize_campaign_wizard_base_alter(&$form, &$form_state, $form_id) {
-  // Make the campaign name a self-revealing text input.
-  $form['agent_basic_info']['title']['#theme_wrappers'][] = 'acquia_lift_revealing_input';
+  $agent = $form['#agent'];
+  module_load_include('inc', 'acquia_lift', 'acquia_lift.admin');
+  if (acquia_lift_target_definition_changes_allowed($agent)) {
+    // Make the campaign name a self-revealing text input.
+    $form['agent_basic_info']['title']['#theme_wrappers'][] = 'acquia_lift_revealing_input';
+    return;
+  }
+  // Give instructions for how to make the campaign editable.
+  $form['agent_basic_info']['title']['#disabled'] = TRUE;
+  $status = personalize_agent_get_status($agent->machine_name);
+  switch ($status) {
+    case PERSONALIZE_STATUS_RUNNING:
+      $message = t('Personalizations that are running cannot be edited. Click "Pause" to allow it to be edited. Personalizations that are paused display the default variations to visitors.');
+      $button_text = t("Pause");
+      $next_status = PERSONALIZE_STATUS_PAUSED;
+      break;
+    case PERSONALIZE_STATUS_SCHEDULED:
+      $message = t('Personalizations with scheduled start dates cannot be edited.  Click "Make editable" to allow it to be edited. After you have made your changes, go to the Review section to restart the personalization.');
+      $button_text = t('Make editable');
+      $next_status = empty($agent->started) ? PERSONALIZE_STATUS_NOT_STARTED : PERSONALIZE_STATUS_PAUSED;
+      break;
+    case PERSONALIZE_STATUS_COMPLETED:
+      $message = t('Archived personalizations cannot be edited.  Click "Unarchive" for the personalization to restore it to a Paused status, allowing it to be edited.');
+      $button_text = t('Unarchive');
+      $next_status = PERSONALIZE_STATUS_PAUSED;
+      break;
+    default:
+      // Should not get here.
+      return;
+  }
+  drupal_set_message($message, 'warning');
+  $form['agent_basic_info']['status_submit'] = array(
+    '#type' => 'submit',
+    '#value' => $button_text,
+    '#personalize_next_status' => $next_status,
+    '#submit' => array('acquia_lift_personalize_campaign_wizard_submit_editable'),
+    '#limit_valiation_errors' => array('agent_basic_info'),
+    '#attributes' => array(
+      'class' => array(
+        'acquia-lift-submit-button',
+        'action-item-primary-active'
+      ),
+    ),
+  );
 }
 
 /**
@@ -71,7 +119,12 @@ function acquia_lift_personalize_campaign_wizard_variations_alter(&$form, &$form
   if (empty($agent_data->machine_name)) {
     return;
   }
-  $status = personalize_agent_get_status($agent_data->machine_name);
+
+  module_load_include('inc', 'acquia_lift', 'acquia_lift.admin');
+  $editable = acquia_lift_target_definition_changes_allowed($agent_data);
+  if (!$editable) {
+    $form['variations']['#disabled'] = TRUE;
+  }
   $variation_set_handling = '';
   if (isset($form_state['values']['variations']['add_variation']['variation_set_handling'])) {
     $variation_set_handling = $form_state['values']['variations']['add_variation']['variation_set_handling'];
@@ -79,8 +132,6 @@ function acquia_lift_personalize_campaign_wizard_variations_alter(&$form, &$form
   else if (isset($agent_data->data['variation_set_handling'])) {
     $variation_set_handling = $agent_data->data['variation_set_handling'];
   }
-
-  module_load_include('inc', 'acquia_lift', 'acquia_lift.admin');
 
   $option_sets = personalize_option_set_load_by_agent($agent_data->machine_name);
   if ($variation_set_handling == ACQUIA_LIFT_DECISION_MULTIVARIATE) {
@@ -90,10 +141,6 @@ function acquia_lift_personalize_campaign_wizard_variations_alter(&$form, &$form
     if ($mvt = personalize_agent_load($mvt_name)) {
       $option_sets = personalize_option_set_load_by_agent($mvt_name);
     }
-  }
-
-  if (!empty($option_sets) && !acquia_lift_target_definition_changes_allowed($agent_data)) {
-    drupal_set_message(t('Variations cannot be removed until the personalization is paused.'), 'warning');
   }
 
   // If this campaign already handles multiple variation sets then indicate
@@ -115,7 +162,6 @@ function acquia_lift_personalize_campaign_wizard_variations_alter(&$form, &$form
   // Add an option set edit card for each option set.
   foreach ($option_sets as $option_set) {
     $option_set_plugin = personalize_get_option_set_type($option_set->plugin);
-    $delete_allowed = !acquia_lift_target_option_set_targeted($agent_data->machine_name, $option_set);
     $form['variations']['option_sets']['option_set_' . $option_set->osid] = array(
       '#tree' => TRUE,
       '#type' => 'container',
@@ -137,7 +183,7 @@ function acquia_lift_personalize_campaign_wizard_variations_alter(&$form, &$form
     // Variation sets can be deleted only if the structure has not already been
     // implemented.
     // @see acquia_lift_implement_test_structure().
-    if ($delete_allowed && empty($agent_data->data['locked_for_variation_sets'])) {
+    if ($editable) {
       $delete_link = module_hook($option_set_plugin['module'], 'personalize_delete_link') ? module_invoke($option_set_plugin['module'], 'personalize_delete_link', $option_set) : '';
       if (!empty($delete_link)) {
         $form['variations']['option_sets']['option_set_' . $option_set->osid]['header']['delete'] = array(
@@ -185,10 +231,7 @@ function acquia_lift_personalize_campaign_wizard_variations_alter(&$form, &$form
   // Hide the agent advanced options which will be shown on the review screen.
   $form['variations']['advanced']['#access'] = FALSE;
 
-  if (!empty($agent_data->data['locked_for_variation_sets'])) {
-    // Variation sets can be added only if the structure has not already been
-    // implemented.
-    // @see acquia_lift_implement_test_structure().
+  if (!$editable) {
     return;
   }
 
@@ -199,6 +242,7 @@ function acquia_lift_personalize_campaign_wizard_variations_alter(&$form, &$form
     '#collapsed' => !empty($option_sets),
     '#title' => t('Add variation set'),
     '#collapsible' => TRUE,
+    '#access' => $editable,
     '#attributes' => array(
       'class' => array('acquia-lift-campaign-add'),
       'id' => 'acquia-lift-personalize-campaign-add-variation',
@@ -320,9 +364,9 @@ function acquia_lift_personalize_campaign_wizard_goals_alter(&$form, &$form_stat
   $form['#submit'] = array('acquia_lift_personalize_campaign_wizard_submit');
 
   module_load_include('inc', 'acquia_lift', 'acquia_lift.admin');
-  $enable_goals = acquia_lift_target_definition_changes_allowed($agent_data);
-  if (!$enable_goals) {
-    drupal_set_message(t('Goals cannot be changed while the personalization is running.'), 'warning');
+  $editable = acquia_lift_target_definition_changes_allowed($agent_data);
+  if (!$editable) {
+    $form['goals']['#disabled'] = TRUE;
   }
 
   // Alter the existing goals list form items.
@@ -336,7 +380,7 @@ function acquia_lift_personalize_campaign_wizard_goals_alter(&$form, &$form_stat
   $params = drupal_get_query_parameters();
   foreach ($goal_deltas as $delta) {
     $goal_id = $form['goals']['all_goals'][$delta]['goal_id']['#value'];
-    if ($enable_goals) {
+    if ($editable) {
       $form['goals']['all_goals'][$delta]['header'] = array(
         '#type' => 'container',
         'delete' => array(
@@ -368,7 +412,6 @@ function acquia_lift_personalize_campaign_wizard_goals_alter(&$form, &$form_stat
     $form['goals']['all_goals'][$delta]['#theme'] = 'acquia_lift_card';
     $form['goals']['all_goals'][$delta]['#collapsible'] = TRUE;
     $form['goals']['all_goals'][$delta]['#collapsed'] = !$expand;
-    $form['goals']['all_goals'][$delta]['#disabled'] = !$enable_goals;
     unset($form['goals']['all_goals'][$delta]['remove']);
   }
 
@@ -387,7 +430,7 @@ function acquia_lift_personalize_campaign_wizard_goals_alter(&$form, &$form_stat
     '#attributes' => array(
       'class' => array('acquia-lift-campaign-add'),
     ),
-    '#disabled' => !$enable_goals,
+    '#access' => $editable,
   );
   // Tricky: we need this container in order to hide the radio list when a
   // selection is made.  The radio type does not have a proper wrapping
@@ -500,6 +543,10 @@ function acquia_lift_personalize_campaign_wizard_targeting_alter(&$form, &$form_
     return;
   }
   module_load_include('inc', 'acquia_lift', 'acquia_lift.admin');
+  $editable = acquia_lift_target_definition_changes_allowed($agent_data);
+  if (!$editable) {
+    $form['targeting']['#disabled'] = TRUE;
+  }
   $option_set = acquia_lift_get_option_set_for_targeting($agent_data->machine_name);
 
   if (empty($option_set)) {
@@ -524,16 +571,16 @@ function acquia_lift_personalize_campaign_wizard_targeting_alter(&$form, &$form_
     // Get the current state of targeting work within the UI that has not
     // yet been saved to the agent.
     $saved_targeting = $agent_data->data['lift_targeting'];
-    if ($saved_targeting != $existing_targeting && $status != PERSONALIZE_STATUS_NOT_STARTED) {
-      drupal_set_message(t('The targeting settings shown here do not match what is currently running for this personalization.'), 'warning');
+    if ($editable && $saved_targeting != $existing_targeting && $status != PERSONALIZE_STATUS_NOT_STARTED) {
+      drupal_set_message(t('The targeting settings shown here do not match what is currently implemented for this personalization.'), 'warning');
       $show_revert = TRUE;
     }
   }
   else {
-    if ($status != PERSONALIZE_STATUS_NOT_STARTED) {
+    if ($editable && $status != PERSONALIZE_STATUS_NOT_STARTED) {
       // The current agent is running and there have been no UI changes made
       // since it was started.
-      drupal_set_message(t('The targeting settings shown here represent what is currently running for this personalization.'));
+      drupal_set_message(t('The targeting settings shown here represent what is currently implemented for this personalization.'));
     }
     // Set the saved targeting to be the same as existing targeting for
     // presentation within this form.
@@ -564,6 +611,7 @@ function acquia_lift_personalize_campaign_wizard_targeting_alter(&$form, &$form_
     '#attributes' => array(
       'class' => array('acquia-lift-campaign-add'),
     ),
+    '#access' => $editable,
   );
   $form['targeting']['audiences']['add']['details'] = _acquia_lift_personalize_campaign_wizard_targeting_audience($form, $form_state, $agent_data, 'add');
   $form['targeting']['audiences']['add']['save'] = array(
@@ -594,28 +642,29 @@ function acquia_lift_personalize_campaign_wizard_targeting_alter(&$form, &$form_
         '#type' => 'container'
       );
       if ($audience_id !== ACQUIA_LIFT_TARGETING_EVERYONE_ELSE) {
-        $form['targeting']['audiences'][$audience_id]['header']['edit'] = array(
-          '#type' => 'checkbox',
-          '#title' => t('Edit'),
-          '#attributes' => array(
-            'class' => array('acquia-lift-edit'),
-          ),
-        );
-        $form['targeting']['audiences'][$audience_id]['header']['delete'] = array(
-          '#markup' => l(t('Delete'), 'admin/structure/personalize/manage/' . $agent_data->machine_name . '/audience/' . $audience_id . '/delete', array(
-            'attributes' => array(
-              'class' => array('acquia-lift-delete')
+        if ($editable) {
+          $form['targeting']['audiences'][$audience_id]['header']['edit'] = array(
+            '#type' => 'checkbox',
+            '#title' => t('Edit'),
+            '#attributes' => array(
+              'class' => array('acquia-lift-edit'),
             ),
-          )),
-        );
-
-        // Show the form to edit the audience segment when edit is selected.
-        $form['targeting']['audiences'][$audience_id]['details'] = _acquia_lift_personalize_campaign_wizard_targeting_audience($form, $form_state, $agent_data, $audience_id, $audience);
-        $form['targeting']['audiences'][$audience_id]['details']['#states'] = array(
-          'visible' => array(
-            ':input[name="audiences[' . $audience_id . '][header][edit]"]' => array('checked' => TRUE),
-          )
-        );
+          );
+          $form['targeting']['audiences'][$audience_id]['header']['delete'] = array(
+            '#markup' => l(t('Delete'), 'admin/structure/personalize/manage/' . $agent_data->machine_name . '/audience/' . $audience_id . '/delete', array(
+              'attributes' => array(
+                'class' => array('acquia-lift-delete')
+              ),
+            )),
+          );
+          // Show the form to edit the audience segment when edit is selected.
+          $form['targeting']['audiences'][$audience_id]['details'] = _acquia_lift_personalize_campaign_wizard_targeting_audience($form, $form_state, $agent_data, $audience_id, $audience);
+          $form['targeting']['audiences'][$audience_id]['details']['#states'] = array(
+            'visible' => array(
+              ':input[name="audiences[' . $audience_id . '][header][edit]"]' => array('checked' => TRUE),
+            )
+          );
+        }
       }
       // Show the form to assign variations when not in edit mode.
       $classes = array('acquia-lift-targeting-assignment');
@@ -705,9 +754,21 @@ function acquia_lift_personalize_campaign_wizard_targeting_alter(&$form, &$form_
 }
 
 /**
+ * Alter hook for the scheduling portion of the campaign wizard.
+ */
+function acquia_lift_personalize_campaign_wizard_scheduling_alter(&$form, &$form_state, $form_id) {
+  module_load_include('inc', 'acquia_lift', 'acquia_lift.admin');
+  if (!acquia_lift_target_definition_changes_allowed($form['#agent'])) {
+    $form['scheduling']['#disabled'] = TRUE;
+  }
+}
+
+/**
  * Alter hook for the review portion of the campaign wizard.
  */
 function acquia_lift_personalize_campaign_wizard_review_alter(&$form, &$form_state, $form_id) {
+  module_load_include('inc', 'acquia_lift', 'acquia_lift.admin');
+
   // Take over the form validation and submit handling.
   $form['#validate'] = array('acquia_lift_personalize_campaign_wizard_validate');
   $form['#submit'] = array('acquia_lift_personalize_campaign_wizard_submit');
@@ -718,7 +779,6 @@ function acquia_lift_personalize_campaign_wizard_review_alter(&$form, &$form_sta
 
     // Add audiences to the summary section.
   $agent_data = $form['#agent'];
-  $status = personalize_agent_get_status($agent_data->machine_name);
 
   // If the agent has embedded tests then include the test settings form before
   // the summary.
@@ -736,7 +796,6 @@ function acquia_lift_personalize_campaign_wizard_review_alter(&$form, &$form_sta
     }
     else {
       // Otherwise read audience information from the option set targeting.
-      module_load_include('inc', 'acquia_lift', 'acquia_lift.admin');
       $option_set = acquia_lift_get_option_set_for_targeting($agent_data->machine_name);
       $targeting = acquia_lift_get_structure_from_targeting($option_set);
     }
@@ -764,7 +823,6 @@ function acquia_lift_personalize_campaign_wizard_review_alter(&$form, &$form_sta
   }
 
   // Show advanced testing options.
-  module_load_include('inc', 'acquia_lift', 'acquia_lift.admin');
   $editable = acquia_lift_target_definition_changes_allowed($agent_data);
   $form['review']['summary_column']['advanced'] = array(
     '#type' => 'container',
@@ -778,14 +836,6 @@ function acquia_lift_personalize_campaign_wizard_review_alter(&$form, &$form_sta
     ),
     '#disabled' => !$editable,
   );
-  if (!$editable) {
-    if ($status === PERSONALIZE_STATUS_COMPLETED) {
-      drupal_set_message(t('Advanced options can no longer be edited.'), 'warning');
-    }
-    else {
-      drupal_set_message(t('Advanced options cannot be edited while this personalization is running.'), 'warning');
-    }
-  }
   if ($has_tests) {
     $form['review']['summary_column']['advanced']['options'] = _acquia_lift_personalize_campaign_wizard_review_tests($agent_data, array());
   }
@@ -1134,12 +1184,25 @@ function acquia_lift_personalize_campaign_wizard_submit(&$form, &$form_state) {
 }
 
 /**
+ * Submit handler for changing campaign status to an editable campaign.
+ */
+function acquia_lift_personalize_campaign_wizard_submit_editable(&$form, &$form_state) {
+  // Run the base submit form handling.
+  $agent_data = personalize_campaign_wizard_submit_base($form, $form_state);
+  $next_status = $form_state['triggering_element']['#personalize_next_status'];
+  if (personalize_agent_set_status($agent_data->machine_name, $next_status)) {
+    drupal_set_message(t("The %campaign_name personalization is now editable.", array(
+      '%campaign_name' => $agent_data->label,
+    )));
+  }
+}
+
+/**
  * Submit function for variations form.
  */
 function acquia_lift_personalize_campaign_wizard_variations_submit(&$form, &$form_state, &$agent_data, $agent_instance) {
   // Save a reference to the full form state values.
   $values = $form_state['values'];
-  $click_id = $form_state['clicked_button']['#id'];
 
   if (isset($values['variations']['add_variation']['variation_set_handling'])) {
     $agent_data->data['variation_set_handling'] = $values['variations']['add_variation']['variation_set_handling'];
@@ -1363,21 +1426,28 @@ function acquia_lift_personalize_campaign_wizard_review_submit(&$form, &$form_st
 
   // If the "Start" button was pressed then we sync everything to Lift and start
   // the campaign.
-  if ($form_state['triggering_element']['#value'] === t('Start')) {
-    module_load_include('inc', 'acquia_lift', 'acquia_lift.admin');
-    module_load_include('inc', 'acquia_lift', 'acquia_lift.batch');
-    try {
-      $agent_data->tests_to_delete = acquia_lift_implement_test_structure($agent_data);
-      if (acquia_lift_batch_sync_tests_for_agent($agent_data)) {
-        personalize_agent_set_status($agent_data->machine_name, PERSONALIZE_STATUS_RUNNING);
-        return;
+  if (isset($form_state['triggering_element']['#personalize_next_status'])) {
+    $next_status = $form_state['triggering_element']['#personalize_next_status'];
+    if ($next_status == PERSONALIZE_STATUS_RUNNING || $next_status == PERSONALIZE_STATUS_SCHEDULED) {
+      module_load_include('inc', 'acquia_lift', 'acquia_lift.admin');
+      module_load_include('inc', 'acquia_lift', 'acquia_lift.batch');
+      try {
+        $agent_data->tests_to_delete = acquia_lift_implement_test_structure($agent_data);
+        if (acquia_lift_batch_sync_tests_for_agent($agent_data)) {
+          personalize_agent_set_status($agent_data->machine_name, $next_status);
+          return;
+        }
+        else {
+          drupal_set_message(t('There was a problem syncing your personalization components to Lift and it cannot be started at this time.'), 'error');
+        }
       }
-      else {
-        drupal_set_message(t('There was a problem syncing your personalization components to Lift and it cannot be started at this time.'), 'error');
+      catch (Exception $e) {
+        form_set_error(NULL, t('There was a problem implementing the personalization as defined.'));
       }
     }
-    catch (Exception $e) {
-      form_set_error(NULL, t('There was a problem implementing the personalization as defined.'));
+    else {
+      personalize_agent_set_status($agent_data->machine_name, $next_status);
+      return;
     }
   }
   // If we got here, some sort of error occurred so make sure we don't move to

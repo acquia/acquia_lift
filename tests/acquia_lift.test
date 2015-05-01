@@ -375,7 +375,7 @@ class AcquiaLiftWebTestBase extends DrupalWebTestCase
       case 'wizard_element_navigate':
         return t('Go');
       case 'create_campaign':
-        return t('Create personalization');
+        return t('Create and edit');
       case 'delete':
         return t('Delete');
       case 'config':
@@ -1762,6 +1762,30 @@ class AcquiaLiftWebTestTarget extends AcquiaLiftWebTestBase {
     $option_set = personalize_option_set_save($option_set);
     $this->assertEqual(count($option_set->options), 2);
 
+    // Schedule the agent.
+    $start_date = strtotime('+1 month midnight');
+    personalize_agent_set_start_date($agent->machine_name, $start_date);
+    personalize_agent_set_status($agent->machine_name, PERSONALIZE_STATUS_SCHEDULED);
+
+    // Try to edit the goal.
+    try {
+      personalize_goal_save($agent->machine_name, 'user_login', 5, $goal->id);
+      $this->fail('Should not ever get here because a cannot be saved when agent is running.');
+    } catch (Exception $e) {
+      $this->assertTrue($e instanceof PersonalizeException);
+      $this->assertEqual($e->getMessage(), 'Goals cannot be modified until the personalization is paused.');
+    }
+
+    // Try to delete a targeted option.
+    unset($option_set->options[1]);
+    try {
+      $option_set = personalize_option_set_save($option_set);
+      $this->fail('Should not get here because an error should be thrown while removing this variation.');
+    } catch (Exception $e) {
+      $this->assertTrue($e instanceof PersonalizeException);
+      $this->assertEqual($e->getMessage(), 'Variations used in targeting cannot be removed until the personalization is paused.');
+    }
+
     // Complete the agent.
     personalize_agent_set_status($agent->machine_name, PERSONALIZE_STATUS_COMPLETED);
 
@@ -2423,8 +2447,8 @@ class AcquiaLiftWebTestCampaignWizard extends AcquiaLiftWebTestBase {
     // Test assignments saves as anticipated.
     $this->drupalGet('admin/structure/personalize/manage/' . $first_agent->machine_name . '/targeting');
     // There are no targeting assignments so there should be no messages.
-    $this->assertNoText('The targeting settings shown here do not match what is currently running for this personalization.');
-    $this->assertNoText('The targeting settings shown here represent what is currently running for this personalization.');
+    $this->assertNoText('The targeting settings shown here do not match what is currently implemented for this personalization.');
+    $this->assertNoText('The targeting settings shown here represent what is currently implemented for this personalization.');
     // All variations should be assigned to the "Everyone else" audience.
     $this->assertOptionSelected('edit-audiences-everyone-else-assignment', $option_id_1);
     $this->assertOptionSelected('edit-audiences-everyone-else-assignment', $option_id_2);
@@ -2463,19 +2487,15 @@ class AcquiaLiftWebTestCampaignWizard extends AcquiaLiftWebTestBase {
     // A message should not display to indicate that the targeting isn't
     // finalized because the agent is still not started.
     $this->drupalGet('admin/structure/personalize/manage/' . $first_agent->machine_name . '/targeting');
-    $this->assertNoText('The targeting settings shown here do not match what is currently running for this personalization.');
-    $this->assertNoText('The targeting settings shown here represent what is currently running for this personalization.');
+    $this->assertNoText('The targeting settings shown here do not match what is currently implemented for this personalization.');
+    $this->assertNoText('The targeting settings shown here represent what is currently implemented for this personalization.');
 
     // Save the targeting structure and start the agent.
-    AcquiaLiftAPI::setTestInstance();
-    acquia_lift_implement_targeting($first_agent);
-    $first_agent = personalize_agent_load($first_agent->machine_name, TRUE);
-    personalize_agent_set_status($first_agent->machine_name, PERSONALIZE_STATUS_RUNNING);
-    $this->resetAll();
+    $this->drupalPost("admin/structure/personalize/manage/" . $first_agent->machine_name . '/review', array(), $this->getButton('wizard_start'));
 
+    // Pause the agent in order to make changes.
     $this->drupalGet('admin/structure/personalize/manage/' . $first_agent->machine_name . '/targeting');
-    $this->assertNoText('The targeting settings shown here do not match what is currently running for this personalization.');
-    $this->assertText('The targeting settings shown here represent what is currently running for this personalization.');
+    $this->drupalPost(NULL, array(), t("Pause"));
 
     // Make changes and verify the messaging.
     $edit = array(
@@ -2483,8 +2503,8 @@ class AcquiaLiftWebTestCampaignWizard extends AcquiaLiftWebTestBase {
     );
     $this->drupalPost(NULL, $edit, $this->getButton('wizard_next'));
     $this->drupalGet('admin/structure/personalize/manage/' . $first_agent->machine_name . '/targeting');
-    $this->assertText('The targeting settings shown here do not match what is currently running for this personalization.');
-    $this->assertNoText('The targeting settings shown here represent what is currently running for this personalization.');
+    $this->assertText('The targeting settings shown here do not match what is currently implemented for this personalization.');
+    $this->assertNoText('The targeting settings shown here represent what is currently implemented for this personalization.');
 
     // Revert the changes and verify.
     $this->drupalPost(NULL, NULL, t('Revert changes'));
@@ -2493,8 +2513,8 @@ class AcquiaLiftWebTestCampaignWizard extends AcquiaLiftWebTestBase {
     $this->resetAll();
 
     $this->drupalGet('admin/structure/personalize/manage/' . $first_agent->machine_name . '/targeting');
-    $this->assertNoText('The targeting settings shown here do not match what is currently running for this personalization.');
-    $this->assertText('The targeting settings shown here represent what is currently running for this personalization.');
+    $this->assertNoText('The targeting settings shown here do not match what is currently implemented for this personalization.');
+    $this->assertText('The targeting settings shown here represent what is currently implemented for this personalization.');
     $this->assertOptionSelected('edit-audiences-muppet-fans-assignment', $first_option_set->options[0]['option_id']);
     $this->assertOptionSelected('edit-audiences-muppet-fans-assignment', $first_option_set->options[1]['option_id']);
     $this->assertOptionSelected('edit-audiences-others-assignment', $first_option_set->options[2]['option_id']);
@@ -2649,17 +2669,6 @@ class AcquiaLiftWebTestCampaignWizard extends AcquiaLiftWebTestBase {
     $this->assertEqual($test_goals[1]->action, 'form_submit');
     $this->assertEqual($test_goals[1]->value, 5);
 
-    // Change the agent status and verify that goals cannot be edited.
-    personalize_agent_set_status($agent->machine_name, PERSONALIZE_STATUS_RUNNING);
-    $this->drupalGet("admin/structure/personalize/manage/{$agent->machine_name}/goals");
-    $this->assertText('Goals cannot be changed while the personalization is running.');
-    // @todo Can't find a way to assert that there is a failure from an underlying test post.
-
-    // Pause the agent and make sure that goals can be edited again.
-    personalize_agent_set_status($agent->machine_name, PERSONALIZE_STATUS_PAUSED);
-    $this->drupalGet("admin/structure/personalize/manage/{$agent->machine_name}/goals");
-    $this->assertNoText('Goals cannot be changed while the personalization is running.');
-
     $this->drupalPost(NULL, $edit, $this->getButton('wizard_save'));
   }
 
@@ -2686,7 +2695,6 @@ class AcquiaLiftWebTestCampaignWizard extends AcquiaLiftWebTestBase {
     // Options will be automatically added to the "Everyone else" audience
     // which means that there will be two options to test against.
     $this->drupalGet("admin/structure/personalize/manage/{$agent->machine_name}/review");
-    $this->assertNoText('Advanced options cannot be edited while this personalization is running.');
     $edit = array(
       'decision_style' => 'adaptive',
       'control_rate' => 25,
@@ -2710,13 +2718,6 @@ class AcquiaLiftWebTestCampaignWizard extends AcquiaLiftWebTestBase {
 
     $agent = personalize_agent_load($agent->machine_name, TRUE);
     $this->assertFalse($agent->data['cache_decisions']);
-
-    // Start the agent and verify that the options are no longer editable.
-    personalize_agent_set_status($agent->machine_name, PERSONALIZE_STATUS_RUNNING);
-    $this->resetAll();
-
-    $this->drupalGet("admin/structure/personalize/manage/{$agent->machine_name}/review");
-    $this->assertText('Advanced options cannot be edited while this personalization is running.');
   }
 
   /**
@@ -2760,6 +2761,145 @@ class AcquiaLiftWebTestCampaignWizard extends AcquiaLiftWebTestBase {
     // @todo Figure out a way to test a failure that happens *during* batch -
     //   the above failure happens before the batch even starts because an
     //   exception is thrown when trying to get the operations.
+  }
+
+  /**
+   * Tests review form status changes.
+   */
+  function testReviewFormStatus() {
+    $message_running = t('Personalizations that are running cannot be edited. Click "Pause" to allow it to be edited. Personalizations that are paused display the default variations to visitors.');
+    $message_scheduled = t('Personalizations with scheduled start dates cannot be edited.  Click "Make editable" to allow it to be edited. After you have made your changes, go to the Review section to restart the personalization.');
+    $message_completed = t('Archived personalizations cannot be edited.  Click "Unarchive" for the personalization to restore it to a Paused status, allowing it to be edited.');
+
+    $this->drupalLogin($this->managerUser);
+    $agent = $this->createTargetingAgent();
+    $machine_name = $agent->machine_name;
+
+    // Add option set.
+    $this->createPersonalizedBlock(0, $agent);
+
+    // Add a goal.
+    $this->drupalGet("admin/structure/personalize/manage/$machine_name/goals");
+    $edit = array(
+      'goals[add_goal][goal_types][goal_type]' => 'existing',
+    );
+    $this->drupalPostAJAX(NULL, $edit, 'goals[add_goal][goal_types][goal_type]');
+    $edit = array(
+      'action_name' => 'user_login',
+    );
+    $this->drupalPost(NULL, $edit, $this->getButton('wizard_save'));
+
+    // Start the campaign from the review screen.
+    $this->drupalGet("admin/structure/personalize/manage/$machine_name/review");
+    $this->drupalPost(NULL, array(), $this->getButton('wizard_start'));
+
+    // Verify that the correct messaging is shown on all campaign wizard pages.
+    $this->drupalGet("admin/structure/personalize/manage/$machine_name/variations");
+    $this->assertText($message_running);
+    $this->assertNoText($message_scheduled);
+    $this->assertNoText($message_completed);
+    $this->drupalGet("admin/structure/personalize/manage/$machine_name/goals");
+    $this->assertText($message_running);
+    $this->assertNoText($message_scheduled);
+    $this->assertNoText($message_completed);
+    $this->drupalGet("admin/structure/personalize/manage/$machine_name/targeting");
+    $this->assertText($message_running);
+    $this->assertNoText($message_scheduled);
+    $this->assertNoText($message_completed);
+    $this->drupalGet("admin/structure/personalize/manage/$machine_name/scheduling");
+    $this->assertText($message_running);
+    $this->assertNoText($message_scheduled);
+    $this->assertNoText($message_completed);
+    $this->drupalGet("admin/structure/personalize/manage/$machine_name/review");
+    $this->assertText($message_running);
+    $this->assertNoText($message_scheduled);
+    $this->assertNoText($message_completed);
+
+    // Pause the campaign and verify that messaging is removed.
+    $this->drupalPost(NULL, array(), t('Pause'));
+    $this->drupalGet("admin/structure/personalize/manage/$machine_name/variations");
+    $this->assertNoText($message_running);
+    $this->assertNoText($message_scheduled);
+    $this->assertNoText($message_completed);
+    $this->drupalGet("admin/structure/personalize/manage/$machine_name/goals");
+    $this->assertNoText($message_running);
+    $this->assertNoText($message_scheduled);
+    $this->assertNoText($message_completed);
+    $this->drupalGet("admin/structure/personalize/manage/$machine_name/targeting");
+    $this->assertNoText($message_running);
+    $this->assertNoText($message_scheduled);
+    $this->assertNoText($message_completed);
+    $this->drupalGet("admin/structure/personalize/manage/$machine_name/scheduling");
+    $this->assertNoText($message_running);
+    $this->assertNoText($message_scheduled);
+    $this->assertNoText($message_completed);
+    $this->drupalGet("admin/structure/personalize/manage/$machine_name/review");
+    $this->assertNoText($message_running);
+    $this->assertNoText($message_scheduled);
+    $this->assertNoText($message_completed);
+
+    // Schedule the campaign to start in the future.
+    $this->drupalGet("admin/structure/personalize/manage/$machine_name/scheduling");
+    $start_date = strtotime('+1 month midnight');
+
+    $edit = array(
+      'campaign_start' => 'specified',
+      'campaign_start_date[month]' => intval(date('m', $start_date)),
+      'campaign_start_date[day]' => date('d', $start_date),
+      'campaign_start_date[year]' => date('Y', $start_date),
+    );
+    $this->drupalPost(NULL, $edit, $this->getButton('wizard_next'));
+    module_load_include('inc', 'personalize', 'personalize.admin.campaign');
+    $button_text = t('Start on @start_date', array(
+      '@start_date' => _personalize_campaign_wizard_date($start_date),
+    ));
+    $this->drupalPost(NULL, array(), $button_text);
+
+    // Verify that the correct messaging is shown on all campaign wizard pages.
+    $this->drupalGet("admin/structure/personalize/manage/$machine_name/variations");
+    $this->assertNoText($message_running);
+    $this->assertText($message_scheduled);
+    $this->assertNoText($message_completed);
+    $this->drupalGet("admin/structure/personalize/manage/$machine_name/goals");
+    $this->assertNoText($message_running);
+    $this->assertText($message_scheduled);
+    $this->assertNoText($message_completed);
+    $this->drupalGet("admin/structure/personalize/manage/$machine_name/targeting");
+    $this->assertNoText($message_running);
+    $this->assertText($message_scheduled);
+    $this->assertNoText($message_completed);
+    $this->drupalGet("admin/structure/personalize/manage/$machine_name/scheduling");
+    $this->assertNoText($message_running);
+    $this->assertText($message_scheduled);
+    $this->assertNoText($message_completed);
+    $this->drupalGet("admin/structure/personalize/manage/$machine_name/review");
+    $this->assertNoText($message_running);
+    $this->assertText($message_scheduled);
+    $this->assertNoText($message_completed);
+
+    // Complete the campaign and verify messaging.
+    personalize_agent_set_status($machine_name, PERSONALIZE_STATUS_COMPLETED);
+    $this->resetAll();
+    $this->drupalGet("admin/structure/personalize/manage/$machine_name/variations");
+    $this->assertNoText($message_running);
+    $this->assertNoText($message_scheduled);
+    $this->assertText($message_completed);
+    $this->drupalGet("admin/structure/personalize/manage/$machine_name/goals");
+    $this->assertNoText($message_running);
+    $this->assertNoText($message_scheduled);
+    $this->assertText($message_completed);
+    $this->drupalGet("admin/structure/personalize/manage/$machine_name/targeting");
+    $this->assertNoText($message_running);
+    $this->assertNoText($message_scheduled);
+    $this->assertText($message_completed);
+    $this->drupalGet("admin/structure/personalize/manage/$machine_name/scheduling");
+    $this->assertNoText($message_running);
+    $this->assertNoText($message_scheduled);
+    $this->assertText($message_completed);
+    $this->drupalGet("admin/structure/personalize/manage/$machine_name/review");
+    $this->assertNoText($message_running);
+    $this->assertNoText($message_scheduled);
+    $this->assertText($message_completed);
   }
 
   /**

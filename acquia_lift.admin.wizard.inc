@@ -22,34 +22,6 @@ function acquia_lift_personalize_campaign_wizard_process_bar_alter(&$form, &$for
     $form['actions']['submit']['#disabled'] = TRUE;
     return;
   }
-  $nested = acquia_lift_get_nested_tests($agent);
-  if (empty($nested)) {
-    return;
-  }
-  // If we're editing an existing agent, add a "Reset data" button next to
-  // the Pause/Resume button.
-  // @todo Move this to the reports page.
-  $reset_form = array(
-    '#prefix' => '<div id="personalize-acquia-lift-reset-form">',
-    '#suffix' => '</div>'
-  );
-  $reset_form['actions']['reset'] = array(
-    '#prefix' => '<div id="personalize-acquia-lift-reset">',
-    '#suffix' => '</div>',
-    '#type' => 'submit',
-    '#name' => 'reset_submit',
-    '#value' => t('Reset data'),
-    '#attributes' => array(
-      'class' => array('action-item-primary-active'),
-    ),
-    '#ajax' => array(
-      'callback' => 'personalize_acquia_lift_ajax_callback',
-      'wrapper' => 'personalize-acquia-lift-reset-form',
-      'effect' => 'fade',
-    )
-  );
-  $reset_form['actions']['reset']['#submit'] = array('acquia_lift_reset_submit');
-  $form['process_bar']['actions']['reset_lift_agent'] = $reset_form;
 }
 
 /**

@@ -153,6 +153,13 @@ function acquia_lift_menu() {
     'type' => MENU_CALLBACK,
     'file' => 'acquia_lift.admin.wizard.inc',
   );
+  $items['admin/structure/personalize/manage/%personalize_agent/reset'] = array(
+    'page callback' => 'acquia_lift_reset_nested_agents',
+    'page arguments' => array(4),
+    'access callback' =>'acquia_lift_target_access',
+    'access arguments' => array(4),
+    'type' => MENU_CALLBACK,
+  );
   // Page callback for the list of legacy agents.
   $items['admin/structure/personalize/legacy'] = array(
     'title' => 'Legacy Campaigns',
@@ -1110,6 +1117,7 @@ function acquia_lift_library() {
     'version' => VERSION,
     'js' => array(
       $path . '/js/acquia_lift_target.admin.js' => array(),
+      $path . '/js/acquia_lift.admin.js' => array(),
     ),
     'css' => array(
       $path . '/css/acquia_lift.admin.css',
@@ -2199,37 +2207,67 @@ function acquia_lift_form_personalize_status_change_form_alter(&$form, &$form_st
 }
 
 /**
- * Ajax callback for the "Reset data" button.
+ *  Implements hook_personalize_campaign_action_links_alter().
  */
-function personalize_acquia_lift_ajax_callback($form, $form_state) {
-  return $form['agent_form']['agent_fieldset']['header']['reset_lift_agent'];
+function acquia_lift_personalize_campaign_action_links_alter(&$links, $agent_data, $destination) {
+  // If this agent has nested test agents, then provide a link to reset data.
+  $nested = acquia_lift_get_nested_tests($agent_data);
+  if (empty($nested)) {
+    return;
+  }
+  $links[] = array(
+    'title' => t('Reset data'),
+    'href' => 'admin/structure/personalize/manage/' . $agent_data->machine_name . '/reset',
+    'query' => array(
+      'destination' => $destination,
+    ),
+    'attributes' => array(
+      'class' => array('acquia-lift-reset'),
+    ),
+  );
 }
 
-
 /**
- * Submit callback for the "Reset data" button.
+ * Reset the data for a particular agent and redirect to the agent details.
+ *
+ * @param stdClass $parent_agent
+ *   The agent data for the parent agent to reset.
  */
-function acquia_lift_reset_submit($form, $form_state) {
-  $agent_name = $form_state['values']['agent'];
-  if ($parent_agent = personalize_agent_load($agent_name)) {
-    $nested_tests = acquia_lift_get_nested_tests($parent_agent);
-    foreach ($nested_tests as $name) {
-      acquia_lift_reset_agent($name);
-    }
+function acquia_lift_reset_nested_agents($parent_agent) {
+  $show_success = TRUE;
+  $nested_tests = acquia_lift_get_nested_tests($parent_agent);
+  foreach ($nested_tests as $name) {
+    if (!acquia_lift_reset_agent($name)) {
+      $show_success = FALSE;
+    };
   }
+  if ($show_success) {
+    drupal_set_message(t('The data has been reset for all tests within %campaign.', array(
+        '%campaign' => $parent_agent->label,
+    )));
+  }
+  drupal_goto('admin/structure/personalize/manage/' . $parent_agent->machine_name . '/review');
 }
 
 /**
  * Resets the data for the specified agent.
+ *
+ * @param string $agent_name
+ *   The name of the agent to reset
+ * @return bool
+ *   True if reset, false if exception thrown.
  */
 function acquia_lift_reset_agent($agent_name) {
+  $success = TRUE;
   try {
     $api = AcquiaLiftAPI::getInstance(variable_get('acquia_lift_account_info', array()));
     $api->resetAgentData($agent_name);
   }
   catch (Exception $e) {
+    $success = FALSE;
     drupal_set_message(t('The data for the specified agent could not be reset'), 'error');
   }
+  return $success;
 }
 
 /**

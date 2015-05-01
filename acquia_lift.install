@@ -640,7 +640,7 @@ function acquia_lift_update_7200() {
     ->fields(array('plugin' => 'acquia_lift'))
     ->execute();
   // Get all old-style agents and convert them where possible.
-  $result = db_query("SELECT a.machine_name, a.label, o.plugin, o.osid, o.decision_name, o.options, o.targeting FROM {personalize_agent} a INNER JOIN {personalize_option_sets} o ON o.agent = a.machine_name WHERE a.plugin = 'acquia_lift'");
+  $result = db_query("SELECT a.machine_name, a.label, a.data, o.plugin, o.osid, o.decision_name, o.options, o.targeting FROM {personalize_agent} a INNER JOIN {personalize_option_sets} o ON o.agent = a.machine_name WHERE a.plugin = 'acquia_lift'");
   // First organize our results into arrays of agents with their option sets.
   $agents = array();
   foreach ($result as $row) {
@@ -648,6 +648,7 @@ function acquia_lift_update_7200() {
     $agents[$row->machine_name][] = array(
       'agent_name' => $row->machine_name,
       'agent_label' => $row->label,
+      'agent_data' => unserialize($row->data),
       'osid' => $row->osid,
       'decision_name' => empty($row->decision_name) ? 'osid-' + $row->osid : $row->decision_name,
       'option_count' => count($options),
@@ -662,7 +663,7 @@ function acquia_lift_update_7200() {
   $personalize_enabled = module_exists('personalize');
   foreach ($agents as $agent_name => $details) {
     $option_set = reset($details);
-    if (!empty($option_set['targeting']) || !$personalize_enabled) {
+    if (!empty($option_set['targeting']) || !empty($details['agent_data']['visitor_context']) || !$personalize_enabled) {
       $legacy_agents[] = $agent_name;
       continue;
     }

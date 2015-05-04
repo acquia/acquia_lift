@@ -17,7 +17,7 @@ function theme_acquia_lift_card($variables) {
   $card_label = isset($element['#title']) ? $element['#title'] : '';
   $header_children = isset($element['header']) ? element_children($element['header']) : array();
   $card_flag = isset($element['#flag']) ? $element['#flag'] : '';
-unset($element['footer']);
+  unset($element['footer']);
 
   // Set default values
   $element['#collapsible'] = isset($element['#collapsible']) ? $element['#collapsible'] : TRUE;

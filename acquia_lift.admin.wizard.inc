@@ -1387,30 +1387,9 @@ function acquia_lift_personalize_campaign_wizard_review_submit(&$form, &$form_st
   // the campaign.
   if (isset($form_state['triggering_element']['#personalize_next_status'])) {
     $next_status = $form_state['triggering_element']['#personalize_next_status'];
-    if ($next_status == PERSONALIZE_STATUS_RUNNING || $next_status == PERSONALIZE_STATUS_SCHEDULED) {
-      module_load_include('inc', 'acquia_lift', 'acquia_lift.admin');
-      module_load_include('inc', 'acquia_lift', 'acquia_lift.batch');
-      try {
-        $agent_data->tests_to_delete = acquia_lift_implement_test_structure($agent_data);
-        if (acquia_lift_batch_sync_tests_for_agent($agent_data)) {
-          personalize_agent_set_status($agent_data->machine_name, $next_status);
-          // Unset the started property which will have been changed during
-          // status update and we don't want it getting clobbered by other
-          // saves of the agent.
-          unset($agent_data->started);
-          return;
-        }
-        else {
-          drupal_set_message(t('There was a problem syncing your personalization components to Lift and it cannot be started at this time.'), 'error');
-        }
-      }
-      catch (Exception $e) {
-        form_set_error(NULL, t('There was a problem implementing the personalization as defined.'));
-      }
-    }
-    else {
-      personalize_agent_set_status($agent_data->machine_name, $next_status);
-      return;
+    module_load_include('inc', 'acquia_lift', 'acquia_lift.admin');
+    if (!acquia_lift_target_set_status($agent_data, $next_status)) {
+      form_set_error(NULL, t('There was a problem implementing the personalization as defined.'));
     }
   }
   // If we got here, some sort of error occurred so make sure we don't move to

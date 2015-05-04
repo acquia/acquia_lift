@@ -1195,6 +1195,60 @@ function acquia_lift_validate_minimum_targeting($agent, $option_set) {
   acquia_lift_save_targeting_structure($agent, array(ACQUIA_LIFT_TARGETING_EVERYONE_ELSE => $unassigned_options));
 }
 
+/**
+ * Page callback to set the status of an acquia lift targeting agent
+ *
+ * @param stdClass $agent_data
+ *   The agent to update and synchronize if necessary.
+ * @param $next_status
+ *   The new status for the agent.
+ */
+function acquia_lift_target_status_callback($agent_data, $next_status) {
+  acquia_lift_target_set_status($agent_data, $next_status);
+  drupal_goto(url('admin/structure/personalize/manage/' . $agent_data->machine_name . '/review'));
+}
+
+/**
+ * Update the status of an acquia lift target agent and synchronize any
+ * necessary configuration to Lift.
+ *
+ * @param stdClass $agent_data
+ *   The agent to update and synchronize if necessary.
+ * @param $next_status
+ *   The new status for the agent.
+ * @return bool
+ *   True if the synchronization and status changes were successful.
+ */
+function acquia_lift_target_set_status($agent_data, $next_status) {
+  if ($agent_data->plugin !== 'acquia_lift_target') {
+    personalize_agent_set_status($agent_data->machine_name, $next_status);
+    return TRUE;
+  }
+  if ($next_status == PERSONALIZE_STATUS_RUNNING || $next_status == PERSONALIZE_STATUS_SCHEDULED) {
+    module_load_include('inc', 'acquia_lift', 'acquia_lift.batch');
+    try {
+      $agent_data->tests_to_delete = acquia_lift_implement_test_structure($agent_data);
+      if (acquia_lift_batch_sync_tests_for_agent($agent_data)) {
+        personalize_agent_set_status($agent_data->machine_name, $next_status);
+        // Unset the started property which will have been changed during
+        // status update and we don't want it getting clobbered by other
+        // saves of the agent.
+        unset($agent_data->started);
+        return TRUE;
+      }
+      else {
+        drupal_set_message(t('There was a problem syncing your personalization components to Lift and it cannot be started at this time.'), 'error');
+        return FALSE;
+      }
+    }
+    catch (Exception $e) {
+      return FALSE;
+    }
+  }
+  else {
+    return personalize_agent_set_status($agent_data->machine_name, $next_status);
+  }
+}
 
 /**
  * Sets up a multivariate test as defined by the variation sets created.

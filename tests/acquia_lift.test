@@ -171,6 +171,8 @@ class AcquiaLiftWebTestBase extends DrupalWebTestCase
     foreach ($parent_option_set->options as $option) {
       $option_ids[] = $option['option_id'];
     }
+    // Add a goal in order to save the agent.
+    personalize_goal_save($agent->machine_name, 'user_login', 1);
 
     $this->resetAll();
     $audience_name = personalize_generate_machine_name($this->randomName(), NULL, '-');
@@ -1243,6 +1245,7 @@ class AcquiaLiftWebTestTarget extends AcquiaLiftWebTestBase {
     variable_set('acquia_lift_target_enabled', TRUE);
   }
 
+
   function testCreateTargetAudiences() {
     module_load_include('inc', 'acquia_lift', 'acquia_lift.admin');
     $agent = $this->createTargetingAgent();
@@ -1308,23 +1311,23 @@ class AcquiaLiftWebTestTarget extends AcquiaLiftWebTestBase {
         ),
         'targeting_rules' => array(
           'some_context::sc-ohai' => array(
-              'context' => 'some_context',
-              'operator' => 'contains',
-              'match' => 'ohai',
-              'plugin' => 'some_plugin',
-            ),
+            'context' => 'some_context',
+            'operator' => 'contains',
+            'match' => 'ohai',
+            'plugin' => 'some_plugin',
+          ),
           'some_other_context::ss-stuff' => array(
-              'context' => 'some_other_context',
-              'operator' => 'starts',
-              'match' => 'stuff',
-              'plugin' => 'some_plugin',
-            ),
+            'context' => 'some_other_context',
+            'operator' => 'starts',
+            'match' => 'stuff',
+            'plugin' => 'some_plugin',
+          ),
           'some_context::kthxbai' => array(
-              'context' => 'some_context',
-              'operator' => 'equals',
-              'match' => 'kthxbai',
-              'plugin' => 'some_other_plugin',
-            ),
+            'context' => 'some_context',
+            'operator' => 'equals',
+            'match' => 'kthxbai',
+            'plugin' => 'some_other_plugin',
+          ),
         ),
         'targeting_strategy' => 'AND',
       )
@@ -1781,6 +1784,9 @@ class AcquiaLiftWebTestTarget extends AcquiaLiftWebTestBase {
     personalize_goal_save($agent->machine_name, 'user_login', 1);
     // Personalize blocks.
     $option_set = $this->createPersonalizedBlock(1, $agent, 2);
+
+    // Add a goal so that the agent meets requirements.
+    personalize_goal_save($agent->machine_name, 'user_login', 1);
 
     $pb_message = 'Variations in use cannot be removed from Personalized Block 2 until the ' . $agent->label . ' personalization is paused.';
     $this->drupalGet('admin/structure/personalize/variations/personalize-blocks/manage/1/edit');
@@ -2458,6 +2464,9 @@ class AcquiaLiftWebTestCampaignWizard extends AcquiaLiftWebTestBase {
     $this->drupalGet('admin/structure/personalize/manage/' . $first_agent->machine_name . '/targeting');
     $this->assertNoText('The targeting settings shown here do not match what is currently implemented for this personalization.');
     $this->assertNoText('The targeting settings shown here represent what is currently implemented for this personalization.');
+
+    // Add a goal so that the agent can be started.
+    personalize_goal_save($first_agent->machine_name, 'user_login', 1);
 
     // Save the targeting structure and start the agent.
     $this->drupalPost("admin/structure/personalize/manage/" . $first_agent->machine_name . '/review', array(), $this->getButton('wizard_start'));

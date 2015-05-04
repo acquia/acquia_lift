@@ -10,18 +10,20 @@
  * Provide general styles for cards.
  */
 .el-card__gist, .el-card__summary, .el-card {
-  border: 0.08rem solid #cccccc;
-  box-shadow: 0 0.05rem 0 #cccccc;
+  border: .08rem solid #cccccc;
+  box-shadow: 0 .05rem 0 #cccccc;
   font-family: "Helvetica Neue", helvetica, "Segoe UI", segoe, "Ubuntu", "Droid Sans", "Arial", sans-serif;
   margin: 1rem;
   position: relative;
   top: 0;
+  transition: all .4s;
 }
 
 .el-card__header {
   background-color: #e6e9ed;
   margin: 0;
   padding: 0 0.75rem;
+  transition: all .4s;
 }
 
 .el-card__title {
@@ -29,14 +31,18 @@
   line-height: 1.33333;
   margin-top: 0;
   padding-top: 0.37rem;
-  margin-bottom: 0.63rem;
   float: left;
   font-weight: bold;
 }
 
 .el-card__content {
+  box-sizing: border-box;
+  height: auto;
+  max-height: 100rem;
+  overflow: visible;
   padding: 0.75rem;
   background-color: #fff;
+  transition: all .4s;
 }
 
 .el-card__footer {
@@ -63,18 +69,59 @@ ul.el-card__actions {
   display: inline-block;
 }
 
+.el-card__flag {
+  position: relative;
+  margin-left: -.83rem; /* LTR */
+  margin-bottom: .88rem;
+}
+
+.el-card__flag__label {
+  position: absolute;
+  width: 0;
+  height: 0;
+  overflow: hidden;
+}
+
+.el-card__flag__content {
+  display: inline-block;
+  padding: 0 .75rem;
+  background-color: #90cd44;
+}
+.el-card__flag__content::before {
+  content: '';
+  display: block;
+  position: absolute;
+  top: 0;
+  left: -.769em; /* LTR */
+  width: 0;
+  height: 0;
+  overflow: hidden;
+  border: .769em solid transparent;
+  border-color: #90cd44 #90cd44 #90cd44 transparent; /* LTR */
+  transition: all .4s;
+}
+
 /**
  * Add styles for different variations.
  */
 /**
  * Add styles for different states.
  */
-.el-card.is-compact {
-  margin-top: 0.75rem;
-  margin-bottom: 0.75rem;
+html.js .is-compact .el-card__content {
+  max-height: 0;
+  padding-top: 0;
+  padding-bottom: 0;
+  overflow-y: hidden;
+}
+html.js .is-compact .el-card__flag__content::before {
+  -webkit-transform: scaleX(0);
+      -ms-transform: scaleX(0);
+          transform: scaleX(0);
 }
 
-.el-card.is-active {
+.is-active {
+  margin-right: .5rem;
+  margin-left: .5rem;
   box-shadow: 0 0.2rem 0.5rem rgba(170, 170, 170, 0.6);
   border-bottom-left-radius: .5rem;
   border-bottom-right-radius: .5rem;
@@ -86,22 +133,20 @@ ul.el-card__actions {
   padding-bottom: 0;
 }
 
-.el-card .el-card__header .el-card__title[aria-controls] {
+.el-card .el-card__title[aria-controls] {
   cursor: pointer;
 }
-.el-card .el-card__header .el-card__title[aria-controls]:before {
-  content: url('../images/000000/menu-collapsed.png'); /* LTR */
+html.js [data-card-collapsible="true"] .el-card__title:before {
   position: relative;
   margin-left: .5em; /* LTR */
   left: -.5em; /* LTR */
   vertical-align: text-bottom;
 }
-.is-active .el-card__header .el-card__title[aria-controls]:before {
+[data-card-collapsible="true"]:not(.is-compact) .el-card__header .el-card__title:before {
   content: url('../images/000000/menu-expanded.png');
 }
-
-.el-card:not(.is-active) .el-card__content {
-  display: none;
+.is-compact .el-card__header .el-card__title:before {
+  content: url('../images/000000/menu-collapsed.png'); /* LTR */
 }
 
 .el-card:not(.is-sortable) .el-card__dragger {
@@ -117,10 +162,10 @@ ul.el-card__actions {
   margin-left: -0.5rem;
 }
 
-.el-card.is-disabled .el-card__header {
+.is-disabled .el-card__header {
   background-color: #e6e9ed;
   color: #999;
 }
-.el-card.is-disabled .el-card__content {
+.is-disabled .el-card__content {
   opacity: 0.6;
 }

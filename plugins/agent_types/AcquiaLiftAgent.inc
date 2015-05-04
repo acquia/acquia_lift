@@ -806,15 +806,15 @@ class AcquiaLiftReport implements PersonalizeAgentReportInterface, AcquiaLiftRep
    */
   protected function extractOverviewReportData() {
     $config = $this->getReportConfiguration();
-    $report = $this->loadedReports['raw']['status'];
-    if (!isset($report['data']) || !isset($report['data'][$config['machine_name']])) {
+    $status_report = $this->loadedReports['raw']['status'];
+    if (!isset($status_report['data']) || !isset($status_report['data'][$config['machine_name']])) {
       return array();
     }
-    $items = $report['data']['items'];
+    $items = $status_report['data'][$config['machine_name']];
     $agent_data = $this->agent->getData();
     $decision_style = $agent_data['decision_style'] === 'adaptive' ? t('Auto-personalize') : t('A/B');
     $total_variations = isset($agent_data['decisions']) ? count($agent_data['decisions']) : 0;
-
+    $report = array();
     // Create an array of data for each time option.
     $report['today'] = array(
       'unformatted' => array(

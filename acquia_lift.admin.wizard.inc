@@ -22,6 +22,11 @@ function acquia_lift_personalize_campaign_wizard_process_bar_alter(&$form, &$for
     $form['actions']['submit']['#disabled'] = TRUE;
     return;
   }
+  // For each status form, handle the status change along with any
+  // nested agent implementations.
+  foreach (element_children($form['process_bar']['actions']['status']['status_wrapper']) as $form_element) {
+    $form['process_bar']['actions']['status']['status_wrapper'][$form_element]['#submit'] = array('acquia_lift_personalize_campaign_wizard_status_submit');
+  }
 }
 
 /**
@@ -1395,6 +1400,18 @@ function acquia_lift_personalize_campaign_wizard_review_submit(&$form, &$form_st
   // If we got here, some sort of error occurred so make sure we don't move to
   // the next step.
   $form_state['redirect'] = current_path();
+}
+
+/**
+ * Submit function for the status change buttons.
+ */
+function acquia_lift_personalize_campaign_wizard_status_submit($form, &$form_state) {
+  $next_status = $form_state['triggering_element']['#personalize_next_status'];
+  $agent_data = personalize_agent_load($form_state['values']['agent_name']);
+  module_load_include('inc', 'acquia_lift', 'acquia_lift.admin');
+  if (!acquia_lift_target_set_status($agent_data, $next_status)) {
+    form_set_error(NULL, t('There was a problem implementing the personalization as defined.'));
+  }
 }
 
 /**

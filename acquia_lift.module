@@ -180,11 +180,6 @@ function acquia_lift_menu_alter(&$items) {
   // access to Lift campaigns.
   $items['admin/structure/personalize/manage/%personalize_agent/edit']['access callback'] = 'acquia_lift_campaign_edit_access';
   $items['admin/structure/personalize/manage/%personalize_agent/edit']['access arguments'] = array(4);
-
-  // Updates to the callback for changing a campaign's status.
-  $items['admin/structure/personalize/manage/%personalize_agent/status/%']['page callback'] = 'acquia_lift_target_status_callback';
-  $items['admin/structure/personalize/manage/%personalize_agent/status/%']['file'] = 'acquia_lift.admin.inc';
-  $items['admin/structure/personalize/manage/%personalize_agent/status/%']['module'] = 'acquia_lift';
 }
 
 /**

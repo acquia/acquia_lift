@@ -1196,19 +1196,6 @@ function acquia_lift_validate_minimum_targeting($agent, $option_set) {
 }
 
 /**
- * Page callback to set the status of an acquia lift targeting agent
- *
- * @param stdClass $agent_data
- *   The agent to update and synchronize if necessary.
- * @param $next_status
- *   The new status for the agent.
- */
-function acquia_lift_target_status_callback($agent_data, $next_status) {
-  acquia_lift_target_set_status($agent_data, $next_status);
-  drupal_goto(url('admin/structure/personalize/manage/' . $agent_data->machine_name . '/review'));
-}
-
-/**
  * Update the status of an acquia lift target agent and synchronize any
  * necessary configuration to Lift.
  *

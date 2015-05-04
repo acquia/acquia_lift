@@ -654,11 +654,6 @@ function acquia_lift_personalize_option_set_save($option_set) {
   }
 
   if (isset($option_set->is_new)) {
-    if (isset($field['settings']['personalize']['auto_stop']) && $field['settings']['personalize']['auto_stop']) {
-      // We need to set the 'auto_stop' property on the newly created agent.
-      $agent->data['auto_stop'] = 1;
-      personalize_agent_save($agent);
-    }
     if (isset($field['settings']['personalize']['create_goal']) && $field['settings']['personalize']['create_goal']) {
       $goals = personalize_goal_load_by_conditions(array('agent' => $agent->machine_name));
       if (empty($goals)) {

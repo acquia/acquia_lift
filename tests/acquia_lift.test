@@ -2168,6 +2168,9 @@ class AcquiaLiftWebTestCampaignWizard extends AcquiaLiftWebTestBase {
   function testWhatElementForm() {
     $this->drupalLogin($this->managerUser);
     $agent = $this->createTargetingAgent();
+    // Add a goal to meet requirements for starting the agent.
+    personalize_goal_save($agent->machine_name, 'user_login', 1);
+
     $this->drupalGet('admin/structure/personalize/manage/' . $agent->machine_name . '/variations');
     // Indicate an element variation set type.
     $edit = array(

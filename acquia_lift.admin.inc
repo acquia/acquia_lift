@@ -544,12 +544,10 @@ function acquia_lift_report_custom($form, &$form_state, $agent, $agent_data, $op
     '#id' => 'acquia-lift-experiment-report-data',
   );
 
-  // We have to specify the include file so as not to lose it during rendering from ajax.
-  // @see drupal_retrieve_form():734
-  $form_state['build_info']['files'] = array(
-    drupal_get_path('module', 'acquia_lift') . '/acquia_lift.admin.inc',
-    drupal_get_path('module', 'acquia_lift') . '/acquia_lift.ui.inc',
-  );
+  if ($legacy) {
+    acquia_lift_legacy_report_form($form, $form_state, $reports, $report_title_additional);
+  }
+
   return $form;
 }
 

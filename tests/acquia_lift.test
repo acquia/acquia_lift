@@ -1928,16 +1928,11 @@ class AcquiaLiftWebTestTarget extends AcquiaLiftWebTestBase {
     $targeting_agent = $this->createTargetingAgent();
     $targeting_agent->data['variation_set_handling'] = ACQUIA_LIFT_DECISION_MULTIVARIATE;
     personalize_agent_save($targeting_agent);
-    // Add a couple of option sets with different numbers of options.
+    // Add a single option set, should not get past the review screen.
     $os1 = $this->createOptionSet(1, array(
       'agent' => $targeting_agent->machine_name,
       'plugin' => 'type1',
       'num_options' => 2,
-    ));
-    $os2 = $this->createOptionSet(2, array(
-      'agent' => $targeting_agent->machine_name,
-      'plugin' => 'type1',
-      'num_options' => 3,
     ));
 
     // Add a couple of goals.
@@ -1955,8 +1950,17 @@ class AcquiaLiftWebTestTarget extends AcquiaLiftWebTestBase {
     }
 
     $this->drupalGet('admin/structure/personalize/manage/' . $targeting_agent->machine_name . '/review');
+    $this->assertText('A multi-variate test requires at least two option sets.');
     $this->assertNoText('You have multiple variation sets with different numbers of variations - the personalization cannot be started until all variation sets have the same number of variations.');
-
+    // Add another option set.
+    $os2 = $this->createOptionSet(2, array(
+      'agent' => $targeting_agent->machine_name,
+      'plugin' => 'type1',
+      'num_options' => 3,
+    ));
+    $this->drupalGet('admin/structure/personalize/manage/' . $targeting_agent->machine_name . '/review');
+    $this->assertNoText('A multi-variate test requires at least two option sets.');
+    $this->assertNoText('You have multiple variation sets with different numbers of variations - the personalization cannot be started until all variation sets have the same number of variations.');
     // Implement the MVT.
     AcquiaLiftAPI::setTestInstance();
     acquia_lift_implement_mvt($targeting_agent);

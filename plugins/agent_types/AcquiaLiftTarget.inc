@@ -71,12 +71,55 @@ class AcquiaLiftTarget extends PersonalizeAgentBase implements PersonalizeExplic
   public function errors() {
     $data = $this->getData();
     $is_mvt = isset($data['variation_set_handling']) && $data['variation_set_handling'] == ACQUIA_LIFT_DECISION_MULTIVARIATE;
+    // If there are tests involved, first check that there's at least one goal
+    // set up.
+    $goals = personalize_goal_load_by_conditions(array('agent' => $this->getMachineName()));
+    $option_sets = personalize_option_set_load_by_agent($this->getMachineName());
     if ($is_mvt) {
+      $needs_goals = TRUE;
+      $test_agent_name = acquia_lift_get_mvt_name_for_agent($this->getMachineName());
+      if (empty($goals)) {
+        // MVTs that have been fully implemented have their goals and option sets
+        // set up directly on the test agent.
+        $goals = personalize_goal_load_by_conditions(array('agent' => $test_agent_name));
+      }
+      if (empty($option_sets)) {
+        $option_sets = personalize_option_set_load_by_agent($test_agent_name);
+      }
+    }
+    else {
+      $agent_data = personalize_agent_load($this->getMachineName());
+      $nested = acquia_lift_get_nested_tests($agent_data);
+      $needs_goals = !empty($nested);
+    }
+    if ($needs_goals && empty($goals)) {
+      return array(
+        t('You have not added any goals yet. Please add a goal in the <a href="!why_url">"Why" section</a>.', array(
+          '!why_url' => url('admin/structure/personalize/manage/' . $this->getMachineName() . '/goals'),
+        )),
+      );
+    }
+    if (empty($option_sets)) {
+      return array(
+        t('You have not added any variation sets yet. Please add a variation set in the <a href="!what_url">"What" section</a>.', array(
+          '!what_url' => url('admin/structure/personalize/manage/' . $this->getMachineName() . '/variations'),
+        )),
+      );
+    }
+    if ($is_mvt) {
+      if (count($option_sets) < 2) {
+        return array(
+          t('A multi-variate test requires at least two option sets. Please add another variation set in the <a href="!what_url">"What" section</a>.', array(
+            '!what_url' => url('admin/structure/personalize/manage/' . $this->getMachineName() . '/variations'),
+          )),
+        );
+      }
+      // The option number check doesn't apply to MVTs so if we got here, we're
+      // fine.
       return array();
     }
     // If there are multiple option sets, check that they all have the same number
     // of options.
-    $option_sets = personalize_option_set_load_by_agent($this->getMachineName());
     $equal_option_counts = TRUE;
     if (count($option_sets) > 1) {
       $first_os = array_shift($option_sets);

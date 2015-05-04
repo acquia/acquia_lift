@@ -1210,7 +1210,7 @@ function acquia_lift_implement_mvt($agent) {
     $option_sets = personalize_option_set_load_by_agent($mvt_name);
   }
   if (count($option_sets) < 2) {
-    throw new AcquiaLiftException('Cannot implement a multi-variate test wtih fewer than 2 variation sets');
+    throw new AcquiaLiftException('Cannot implement a multi-variate test with fewer than 2 variation sets');
   }
   $tests_to_delete = array();
   $goals = array();

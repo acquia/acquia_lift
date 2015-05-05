@@ -896,7 +896,7 @@ function acquia_lift_personalize_campaign_wizard_blocks_add($form, &$form_state)
   list($blocks, $key) = explode('_', $form_state['triggering_element']['#value']);
   $form_state['option_set_num_blocks'][$key]++;
   // Allows the new block form to be shown again upon form rebuild.
-  $form_state['values']['variations']['add_variation']['option_set_types']['option_set_type'] = 'block';
+  $form_state['values']['variations']['add_variation']['option_set_type'] = 'block';
   $form_state['rebuild'] = TRUE;
 }
 

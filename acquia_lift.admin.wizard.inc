@@ -524,6 +524,10 @@ function acquia_lift_personalize_campaign_wizard_goals_alter(&$form, &$form_stat
  */
 function acquia_lift_personalize_campaign_wizard_targeting_alter(&$form, &$form_state, $form_id) {
   $agent_data = $form['#agent'];
+  // If targeting was already found to be unsupported, then do not add.
+  if (isset($form['unsupported'])) {
+    return;
+  }
   // Explicit targeting is not allowed for multivariate tests.
   if (isset($agent_data->data['variation_set_handling']) && $agent_data->data['variation_set_handling'] == ACQUIA_LIFT_DECISION_MULTIVARIATE) {
     unset($form['targeting'], $form['actions']);

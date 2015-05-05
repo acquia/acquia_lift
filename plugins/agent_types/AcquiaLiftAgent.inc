@@ -248,7 +248,9 @@ class AcquiaLiftAgent extends PersonalizeAgentBase implements PersonalizeAgentGo
         $this->machineName,
         $this->title,
         $this->data['decision_style'],
-        $this->status,
+        // Always set the agent to enabled in Lift so that status changes don't
+        // need to be sync'd.
+        AcquiaLiftAPI::ENABLED_STATUS,
         $acquia_lift_control_rate,
         $acquia_lift_explore_rate,
         isset($this->data['cache_decisions']) && $this->data['cache_decisions']

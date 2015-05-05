@@ -1254,6 +1254,10 @@ function acquia_lift_personalize_campaign_wizard_variations_submit_element_add($
   // Set a session variable that we can check upon the next page load to
   // trigger element editing mode for element variations.
   $_SESSION['acquia_lift_element_trigger'] = true;
+  // Set a session variable to use as a destination upon completion of element
+  // creation.
+  $agent = $form['#agent'];
+  $_SESSION['acquia_lift_element_destination'] = url('admin/structure/personalize/manage/' . $agent->machine_name . '/variations');
 
   // Redirect to the requested URL to create an option set.
   $form_state['redirect'] = $form_state['values']['variations']['add_variation']['details']['element']['content']['url'];

@@ -562,6 +562,10 @@ function acquia_lift_personalize_goal_presave($goal) {
  * Implements hook_personalize_option_set_presave().
  */
 function acquia_lift_personalize_option_set_presave($option_set) {
+  // Only applies to saving of existing option sets.
+  if (empty($option_set->osid)) {
+    return;
+  }
   module_load_include('inc', 'acquia_lift', 'acquia_lift.admin');
   $agent_data = personalize_agent_load($option_set->agent);
   if (acquia_lift_target_definition_changes_allowed($agent_data)) {
@@ -585,29 +589,7 @@ function acquia_lift_personalize_option_set_render(&$element, $option_set) {
   // For administrative users and Acquia Lift target agents, indicate if option
   // sets are deletable (only applicable to personalize elements sets).
   if (user_access('manage personalized content')) {
-    $js_osid = personalize_stringify_osid($option_set->osid);
-    $option_set_settings = array();
-    if ($option_set->plugin === 'elements') {
-      // Personalize elements are always editable, but only deletable if not
-      // used in targeting in a running/competed campaign.
-      $agent_data = personalize_agent_load($option_set->agent);
-      if ($agent_data->plugin === 'acquia_lift_target') {
-        module_load_include('inc', 'acquia_lift', 'acquia_lift.admin');
-        $changes_enabled = acquia_lift_target_definition_changes_allowed($agent_data);
-        foreach($option_set->options as $option) {
-          $is_control = $option['option_id'] === PERSONALIZE_CONTROL_OPTION_ID;
-          $option_set_settings['acquia_lift']['option_sets'][$js_osid][$option['option_id']]['deletable'] = !$is_control && ($changes_enabled || !acquia_lift_target_option_targeted($agent_data->machine_name, $option['option_id']));
-          $option_set_settings['acquia_lift']['option_sets'][$js_osid][$option['option_id']]['editable'] = !$is_control;
-        }
-      }
-    }
-    else {
-      // Other types of options are not editable or deletable from the unibar.
-      foreach ($option_set->options as $option) {
-        $option_set_settings['acquia_lift']['option_sets'][$js_osid][$option['option_id']]['deletable'] = FALSE;
-        $option_set_settings['acquia_lift']['option_sets'][$js_osid][$option['option_id']]['editable'] = FALSE;
-      }
-    }
+    $option_set_settings = acquia_lift_get_option_set_editable_settings($option_set);
     $element['#attached']['js'][] = array('type' => 'setting', 'data' => $option_set_settings);
   }
 
@@ -641,6 +623,41 @@ function acquia_lift_personalize_option_set_render(&$element, $option_set) {
   );
   $assets['js'] = array_merge_recursive($assets['js'], array($settings_array));
   personalize_merge_element_assets($element, $assets);
+}
+
+/**
+ * Helper function to generate editable JavaScript settings for an option set.
+ *
+ * @param stdClass $option_set
+ *   The option set to generate settings for.
+ * @return array
+ *   An array of settings to be added to JavaScript.
+ */
+function acquia_lift_get_option_set_editable_settings($option_set) {
+  $js_osid = personalize_stringify_osid($option_set->osid);
+  $option_set_settings = array();
+  if ($option_set->plugin === 'elements') {
+    // Personalize elements are always editable, but only deletable if not
+    // used in targeting in a running/competed campaign.
+    $agent_data = personalize_agent_load($option_set->agent);
+    if ($agent_data->plugin === 'acquia_lift_target') {
+      module_load_include('inc', 'acquia_lift', 'acquia_lift.admin');
+      $changes_enabled = acquia_lift_target_definition_changes_allowed($agent_data);
+      foreach($option_set->options as $option) {
+        $is_control = $option['option_id'] === PERSONALIZE_CONTROL_OPTION_ID;
+        $option_set_settings['acquia_lift']['option_sets'][$js_osid][$option['option_id']]['deletable'] = !$is_control && ($changes_enabled || !acquia_lift_target_option_targeted($agent_data->machine_name, $option['option_id']));
+        $option_set_settings['acquia_lift']['option_sets'][$js_osid][$option['option_id']]['editable'] = !$is_control;
+      }
+    }
+  }
+  else {
+    // Other types of options are not editable or deletable from the unibar.
+    foreach ($option_set->options as $option) {
+      $option_set_settings['acquia_lift']['option_sets'][$js_osid][$option['option_id']]['deletable'] = FALSE;
+      $option_set_settings['acquia_lift']['option_sets'][$js_osid][$option['option_id']]['editable'] = FALSE;
+    }
+  }
+  return $option_set_settings;
 }
 
 /**
@@ -2621,6 +2638,30 @@ function acquia_lift_command_variation_preview($agent_name, $osid, $option_id) {
       'agentName' => $agent_name,
       'osid' => personalize_stringify_osid($osid),
       'optionId' => $option_id,
+    ),
+  );
+}
+
+/**
+ * Returns an AJAX command to add or edit an element variation.
+ *
+ * @param stdClass $option_set
+ *   The option set that owns the variation
+ * @param $option_id
+ *   The option id to edit or NULL if creating a new variation within the
+ *   option set.
+ * @return array
+ *   The command to be included in AJAX response.
+ */
+function acquia_lift_command_variation_edit($option_set, $option_id = NULL) {
+  return array(
+    'command' => 'acquia_lift_variation_edit',
+    'data' => array(
+      'variationType' => $option_set->data['personalize_elements_type'],
+      'selector' => $option_set->data['personalize_elements_selector'],
+      'agentName' => $option_set->agent,
+      'variationIndex' => empty($option_id) ? -1 : $option_id,
+      'osid' => $option_set->osid,
     ),
   );
 }

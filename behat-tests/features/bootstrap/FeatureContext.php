@@ -189,7 +189,8 @@ class FeatureContext extends RawDrupalContext implements SnippetAcceptingContext
       foreach ($goals as $goal_id => $goal) {
         personalize_goal_delete($goal_id);
       }
-      personalize_agent_set_status($saved->machine_name, PERSONALIZE_STATUS_RUNNING);
+      $agent_status = isset($agent->status) ? $agent->status : PERSONALIZE_STATUS_RUNNING;
+      personalize_agent_set_status($saved->machine_name, $agent_status);
     }
   }
 
@@ -248,6 +249,17 @@ class FeatureContext extends RawDrupalContext implements SnippetAcceptingContext
   /****************************************************
    *        A S S E R T I O N S
    ***************************************************/
+
+  /**
+   * @When /^I check the "([^”]*)" radio button$/
+   */
+  public function iCheckTheRadioButton($radioLabel) {
+    $radioButton = $this->getSession()->getPage()->findField($radioLabel);
+    if (null === $radioButton) {
+      throw new \Exception(sprintf('Cannot find radio button %s', $radioLabel));
+    }
+    $this->getSession()->getDriver()->click($radioButton->getXPath());
+  }
 
   /**
    * @Then I should see :count for the :type count
@@ -651,7 +663,7 @@ class FeatureContext extends RawDrupalContext implements SnippetAcceptingContext
     if (empty($agent_instance)) {
       throw new \Exception(sprintf('Cannot load the current agent instance for personalization %s.', $campaign));
     }
-    $option_sets = personalize_option_set_load_by_agent($campaign);
+    $option_sets = personalize_option_set_load_by_agent($campaign, TRUE);
     foreach ($option_sets as $option_set) {
       if ($option_set->label == $variation_set) {
         $osid = $option_set->osid;
@@ -663,6 +675,9 @@ class FeatureContext extends RawDrupalContext implements SnippetAcceptingContext
         }
         break;
       }
+    }
+    if (empty($osid)) {
+      throw new \Exception(sprintf('Cannot load the option set %s for personalization %s.', $variation_set, $campaign));
     }
     $css = '.acquia-lift-menu-item[data-acquia-lift-personalize-option-set="' . personalize_stringify_osid($osid) . '"]';
     switch ($link) {
@@ -720,10 +735,6 @@ class FeatureContext extends RawDrupalContext implements SnippetAcceptingContext
   private function findLinkInRegion($link, $region) {
     $regionObj = $this->getRegion($region);
     $element = $regionObj->findLink($link);
-
-    if (empty($element)) {
-      throw new \Exception(sprintf('Could not find element in "%s" using link "%s"', $region, $link));
-    }
     return $element;
   }
 

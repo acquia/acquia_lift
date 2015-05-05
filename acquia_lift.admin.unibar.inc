@@ -35,7 +35,15 @@ function acquia_lift_element_variation_details_form($form, &$form_state, $variat
     );
     return $form;
   }
-  if (!empty($osid)) {
+  if (empty($osid)) {
+    if ($agent = personalize_get_campaign_context()) {
+      $option_sets = personalize_option_set_load_by_agent($agent);
+      $default_set_name = t('Variation set #@num', array(
+        '@num' => count($option_sets) + 1,
+      ));
+    }
+  }
+  else {
     $osid = personalize_resolve_stringified_osid($osid);
     $option_set = personalize_option_set_load($osid);
     $edit_option = NULL;
@@ -85,6 +93,7 @@ function acquia_lift_element_variation_details_form($form, &$form_state, $variat
     '#type' => 'textfield',
     '#title' => t('Variation set name'),
     '#description' => t('Descriptive name for the variation set, used by Acquia Lift for administration and reporting.'),
+    '#default_value' => isset($default_set_name) ? $default_set_name : '',
     '#required' => TRUE,
     '#maxlength' => 255,
     '#access' => empty($osid),
@@ -116,11 +125,26 @@ function acquia_lift_element_variation_details_form($form, &$form_state, $variat
   // modal forms or else their submit buttons will be processed via Drupal ajax
   // rather than the main URL callbacks leading to a 200 response with an
   // empty response body.
-  $form['actions']['variation_type_submit_form'] = array(
+  $form['actions']['variation_type_submit_form_add'] = array(
     '#type' => 'submit',
-    '#value' => t('Save'),
+    '#value' => t('Save and add another'),
     '#attributes' => array(
       'class' => array('action-item-primary-active', 'acquia-lift-submit-button'),
+    ),
+    '#ajax' => array(
+      'callback' => 'acquia_lift_element_variation_details_form_ajax_callback',
+      'wrapper' => 'acquia-lift-element-variation-details-form',
+      'progress' => array(
+        'message' => NULL,
+        'type' => 'throbber',
+      ),
+    ),
+  );
+  $form['actions']['variation_type_submit_form'] = array(
+    '#type' => 'submit',
+    '#value' => t('Save and continue'),
+    '#attributes' => array(
+      'class' => array('acquia-lift-submit-button'),
     ),
     '#ajax' => array(
       'callback' => 'acquia_lift_element_variation_details_form_ajax_callback',
@@ -244,52 +268,91 @@ function acquia_lift_element_variation_details_form_submit($form, &$form_state) 
  */
 function acquia_lift_element_variation_details_form_ajax_callback($form, &$form_state) {
   $op = isset($form_state['values']['op']) ? $form_state['values']['op'] : '';
+  $add_another = ($op == t('Save and add another'));
+  $add_and_close = ($op == t('Save and continue'));
+  $cancel = ($op == t('Cancel'));
+  $has_destination = !empty($_SESSION['acquia_lift_element_destination']);
+
+  if ($has_destination) {
+    ctools_include('ajax');
+  }
+
   $commands = array();
-  if ($op == t('Save')) {
+
+  if ($add_another || $add_and_close) {
     $errors = form_get_errors();
     // If validation errors exist, return the form.
     if (!empty($errors)) {
       return $form;
     }
-    // Get the updated option sets for the element variation.
+
     $agent_name = $form_state['values']['agent'];
-    $option_sets = $form_state['storage']['option_sets'];
-    $option_set_settings = array_map('_personalize_convert_option_set_to_js_setting', $option_sets);
-    foreach($option_set_settings as $option_set_setting) {
-      $settings['personalize']['option_sets'][key($option_set_setting)] = reset($option_set_setting);
+    if (!$has_destination) {
+      $settings = array();
+      // Get the updated option sets for the element variation so that the
+      // unibar can display the latest information.
+      $option_sets = $form_state['storage']['option_sets'];
+      $option_set_settings = array_map('_personalize_convert_option_set_to_js_setting', $option_sets);
+      foreach($option_set_settings as $option_set_setting) {
+        $settings['personalize']['option_sets'][key($option_set_setting)] = reset($option_set_setting);
+      }
+      // Include whether the option sets are editable for unibar.
+      foreach ($option_sets as $option_set) {
+        $settings += acquia_lift_get_option_set_editable_settings($option_set);
+      }
+
+      // Also get the updated personalize elements options.
+      personalize_elements_limit_option_sets_by_path($option_sets, $form_state['values']['pages']);
+      $settings['personalize_elements']['elements'] = personalize_elements_element_settings($option_sets);
+      // We need to update the campaigns as well in case a campaign was paused by this action.
+      $settings['acquia_lift']['campaigns'] = acquia_lift_get_campaign_details();
+      // And the agent map.
+      $settings['personalize']['agent_map'][$agent_name] = personalize_agent_get_map_settings($agent_name);
+      // Note: JavaScript assets for personalize elements are included in
+      // personalize_elements_page_build when the module is enabled and therefore
+      // do not need to be explicitly added here.
+      $commands[] = ajax_command_settings($settings, TRUE);
     }
-    // Also get the updated personalize elements options.
-    personalize_elements_limit_option_sets_by_path($option_sets, $form_state['values']['pages']);
-    $settings['personalize_elements']['elements'] = personalize_elements_element_settings($option_sets);
-    // We need to update the campaigns as well in case a campaign was paused by this action.
-    $settings['acquia_lift']['campaigns'] = acquia_lift_get_campaign_details();
-    // And the agent map.
-    $settings['personalize']['agent_map'][$agent_name] = personalize_agent_get_map_settings($agent_name);
-    // Note: JavaScript assets for personalize elements are included in
-    // personalize_elements_page_build when the module is enabled and therefore
-    // do not need to be explicitly added here.
-    $commands[] = ajax_command_settings($settings, TRUE);
-    // Preview a specific variation.
-    $commands[] = acquia_lift_command_variation_preview($form_state['values']['agent'], $form_state['storage']['osid'], $form_state['storage']['option_id']);
-    // End the editing mode.
-    $commands[] = acquia_lift_command_variation_toggle(FALSE);
-    // Show a confirmation message.
-    $current_status = personalize_agent_get_status($agent_name);
-    $message = $form_state['storage']['confirmation_message'];
-    if ($current_status === PERSONALIZE_STATUS_NOT_STARTED) {
-      $errors = personalize_verify_agent($agent_name);
-      if (empty($errors)) {
-        $message .= ' ' . t('You can now start the personalization.');
+
+    if ($add_and_close) {
+      // End the editing mode.
+      $commands[] = acquia_lift_command_variation_toggle(FALSE);
+      if ($has_destination) {
+        $commands[] = ctools_ajax_command_redirect($_SESSION['acquia_lift_element_destination']);
+        unset($_SESSION['acquia_lift_element_destination']);
       }
       else {
-        $message .= ' ' . t('Add one or more goals by clicking Why &gt; Add goal.');
+        // Preview the new variation.
+        $commands[] = acquia_lift_command_variation_preview($form_state['values']['agent'], $form_state['storage']['osid'], $form_state['storage']['option_id']);
+        // Show a confirmation message.
+        $current_status = personalize_agent_get_status($agent_name);
+        $message = $form_state['storage']['confirmation_message'];
+        if ($current_status === PERSONALIZE_STATUS_NOT_STARTED) {
+          $errors = personalize_verify_agent($agent_name);
+          if (empty($errors)) {
+            $message .= ' ' . t('You can now start the personalization.');
+          }
+          else {
+            $message .= ' ' . t('Add one or more goals by clicking Why &gt; Add goal.');
+          }
+        }
+        $commands[] = acquia_lift_command_messagebox($message, 10);
       }
     }
-    $commands[] = acquia_lift_command_messagebox($message, 10);
+    else {
+      // Adding another variation.
+      $commands[] = acquia_lift_command_variation_preview($form_state['values']['agent'], $form_state['storage']['osid'], $form_state['storage']['option_id']);
+      $option_set = personalize_option_set_load($form_state['storage']['osid']);
+      $commands[] = acquia_lift_command_variation_edit($option_set);
+    }
   }
-  else if ($op === t('Cancel')) {
+  else if ($cancel) {
     // Turn off edit mode and redirect them.
     $commands[] = acquia_lift_command_variation_toggle(FALSE);
+    if ($has_destination) {
+      $commands[] = ctools_ajax_command_redirect($_SESSION['acquia_lift_element_destination']);
+      unset($_SESSION['acquia_lift_element_destination']);
+    }
   }
 
   return personalize_ajax_commands_deliver($commands, TRUE);

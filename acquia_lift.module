@@ -503,7 +503,7 @@ function acquia_lift_legacy_access() {
  * Access callback for campaign edit page.
  */
 function acquia_lift_campaign_edit_access($agent) {
-  if (in_array($agent->plugin, array('acquia_lift', 'acquia_lift_simple_ab'))) {
+  if ($agent->plugin === 'acquia_lift') {
     return FALSE;
   }
   return user_access('manage personalized content');
@@ -2414,10 +2414,9 @@ function acquia_lift_form_field_ui_field_edit_form_alter(&$form, &$form_state, $
     // personalizable checkbox is checked.
     $state = array(':input[name="field[settings][personalize][enabled]"]' => array('checked' => TRUE));
 
-    //  Make sure only acquia_lift_target shows up as an agent type.
-    foreach (array('acquia_lift', 'acquia_lift_simple_ab') as $type) {
-      unset($form['field']['settings']['personalize']['agent_type']['#options'][$type]);
-    }
+    //  Make sure only acquia_lift_target shows up as an agent type for lift
+    // agents.
+    unset($form['field']['settings']['personalize']['agent_type']['#options']['acquia_lift']);
 
     // Checkbox for auto creation of a goal should only be visible if the selected
     // campaign type is one of the Lift campaign types.
@@ -2707,7 +2706,7 @@ function acquia_lift_get_campaign_details() {
   $actions = visitor_actions_get_actions();
   // List the campaigns in Drupal.settings, excluding completed campaigns.
   foreach (personalize_agent_load_multiple(array(), array(), FALSE, FALSE, 'label') as $agent) {
-    if (in_array($agent->plugin, array('acquia_lift', 'acquia_lift_simple_ab'))) {
+    if ($agent->plugin === 'acquia_lift') {
       continue;
     }
     $plugin = personalize_agent_load_agent($agent->machine_name);
@@ -2759,7 +2758,7 @@ function acquia_lift_get_campaign_details() {
 function acquia_lift_personalize_agent_list_alter(&$agents) {
   // If this is a nested agent, it should not be listed.
   foreach ($agents as $agent_name => $agent) {
-    if (in_array($agent->plugin, array('acquia_lift', 'acquia_lift_simple_ab'))) {
+    if ($agent->plugin === 'acquia_lift') {
       unset($agents[$agent_name]);
     }
   }

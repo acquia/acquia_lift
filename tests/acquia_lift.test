@@ -725,7 +725,7 @@ class AcquiaLiftWebTestFundamentals extends AcquiaLiftWebTestBase {
             $test_agent->machine_name,
             'Sub-test for ' . $agent->label,
             'adaptive',
-            PERSONALIZE_STATUS_RUNNING,
+            'enabled',
             $control_rate / 100,
             $explore_rate / 100,
             TRUE,
@@ -1349,14 +1349,14 @@ class AcquiaLiftWebTestTarget extends AcquiaLiftWebTestBase {
       ),
     );
     $this->resetAll();
-    $saved = acquia_lift_target_audience_save($label, $agent->machine_name, $contexts, 'OR');
+    $saved = acquia_lift_target_audience_save($label, $agent->machine_name, $contexts, 'OR', 60);
     $this->assertTrue($saved);
 
     $option_set = personalize_option_set_load($option_set->osid, TRUE);
     $audience_names = array_keys($option_set->targeting);
     $expected_targeting[$audience_names[2]] = array(
       'label' => $label,
-      'weight' => 50,
+      'weight' => 60,
       'targeting_features' => array(
         'some_context::1',
         'some_other_context::0',

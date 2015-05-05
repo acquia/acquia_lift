@@ -2137,7 +2137,7 @@ function acquia_lift_form_personalize_status_change_form_alter(&$form, &$form_st
   $agent = personalize_agent_load($agent_name);
   $status = personalize_agent_get_status($agent_name);
   // If the personalization is already started, render the buttons; otherwise link to the review page.
-  if (acquia_lift_is_targeting_agent($agent) && $status === PERSONALIZE_STATUS_NOT_STARTED) {
+  if (acquia_lift_is_targeting_agent($agent) && ($status === PERSONALIZE_STATUS_NOT_STARTED || $status === PERSONALIZE_STATUS_PAUSED)) {
     $form['status_wrapper'] = array(
       '#type' => 'markup',
       '#markup' => l(t('Review and start'), 'admin/structure/personalize/manage/' . $agent_name . '/review'),

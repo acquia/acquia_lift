@@ -503,7 +503,7 @@ li.acquia-lift-targeting-draggable.ui-sortable-helper {
 }
 #acquia-lift-targeting-audiences .acquia-lift-draggable-variations li.acquia-lift-targeting-draggable,
 .acquia-lift-targeting-draggable {
-  background: #E6E9ED url(/sites/all/modules/contrib/acquia_lift/images/000000/drag.png) no-repeat;
+  background: #E6E9ED url(../images/000000/drag.png) no-repeat;
   background-position: left center;
   border: 1px solid #cfd1d5;
   max-width: 30em;

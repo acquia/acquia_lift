@@ -111,7 +111,7 @@ ul.el-card__actions {
   width: 24px;
   height: 24px;
   cursor: pointer;
-  background: transparent url(/sites/all/modules/contrib/acquia_lift/images/000000/drag.png) no-repeat;
+  background: transparent url(../images/000000/drag.png) no-repeat;
   float: left;
   margin-top: .37rem;
   margin-left: -0.5rem;

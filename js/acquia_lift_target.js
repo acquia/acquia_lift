@@ -109,7 +109,7 @@ Drupal.acquia_lift_target = (function() {
           ruleId = i;
           // If this is the "everyone else" target, then there are no features to be matched,
           // just execute the decision for this target.
-          if (ruleId == defaultTarget) {
+          if (agentRules[agent_name][ruleId].name == defaultTarget) {
             executeDecision(agentRules[agent_name][ruleId], decisions, choices, callback);
             return;
           }

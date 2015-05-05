@@ -967,7 +967,6 @@ function acquia_lift_add_new_test_for_audience(&$option_set, $audience, $parent_
 
   try {
     $agent = personalize_agent_save($agent);
-    personalize_agent_set_status($agent->machine_name, PERSONALIZE_STATUS_RUNNING);
     $nested_os = new stdClass();
     $nested_os->agent = $agent->machine_name;
     $nested_os->label = $agent->label;

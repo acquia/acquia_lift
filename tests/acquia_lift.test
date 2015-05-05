@@ -1655,6 +1655,27 @@ class AcquiaLiftWebTestTarget extends AcquiaLiftWebTestBase {
     $this->assertFieldByName($reset_button_name);
   }
 
+  function testNestedAgentStatus() {
+    $agent_with_nesting = $this->createTargetingAgentWithNestedTest();
+    $this->resetAll();
+    // The status for each should be not started.
+    $parent_status = personalize_agent_get_status($agent_with_nesting->machine_name);
+    $this->assertEqual(PERSONALIZE_STATUS_NOT_STARTED, $parent_status);
+    $nested = acquia_lift_get_nested_tests($agent_with_nesting);
+    $nested_agent_name = reset($nested);
+    $child_status = personalize_agent_get_status($nested_agent_name);
+    $this->assertEqual(PERSONALIZE_STATUS_NOT_STARTED, $child_status);
+    // Setting the status of the parent should result in the same status being
+    // set on the child.
+    personalize_agent_set_status($agent_with_nesting->machine_name, PERSONALIZE_STATUS_RUNNING);
+    $this->resetAll();
+    $parent_status = personalize_agent_get_status($agent_with_nesting->machine_name);
+    $this->assertEqual(PERSONALIZE_STATUS_RUNNING, $parent_status);
+
+    $child_status = personalize_agent_get_status($nested_agent_name);
+    $this->assertEqual(PERSONALIZE_STATUS_RUNNING, $child_status);
+  }
+
   /**
    * Tests which components of a campaign are editable when the depending on
    * agent status.

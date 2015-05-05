@@ -534,6 +534,20 @@ function acquia_lift_personalize_agent_presave($agent) {
 }
 
 /**
+ * Implements hook_personalize_agent_update_status().
+ */
+function acquia_lift_personalize_agent_update_status($agent_name, $old_status, $status) {
+  $agent = personalize_agent_load($agent_name);
+  if (!acquia_lift_is_targeting_agent($agent)) {
+    return;
+  }
+  $nested = acquia_lift_get_nested_tests($agent);
+  foreach ($nested as $test_agent) {
+    personalize_agent_set_status($test_agent, $status);
+  }
+}
+
+/**
  * Implements hook_personalize_goal_presave().
  */
 function acquia_lift_personalize_goal_presave($goal) {

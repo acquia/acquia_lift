@@ -643,13 +643,16 @@ class AcquiaLiftWebTestAgentAdmin extends AcquiaLiftWebTestBase {
     $this->drupalGet('admin/structure/personalize/add');
     $this->assertNoFieldByName('agent_basic_info[agent_type]');
     $this->drupalPost(NULL, array('agent_basic_info[title]' => $this->randomName()), $this->getButton('create_campaign'));
-    $this->assertLink(t('Review and start'));
-    $this->assertNoFieldByXPath('//input[@value="Start"]');
     $url = $this->getUrl();
     $pattern = '/admin\/structure\/personalize\/manage\/([a-z0-9\_\-]+)\//';
     preg_match($pattern, $url, $matches);
     $agent = personalize_agent_load($matches[1]);
     $this->assertEqual(ACQUIA_LIFT_TARGETING_AGENT, $agent->plugin);
+
+    // In Campaign list page, Draft campaign does not have a Start button, but a "Review and start" link.
+    $this->drupalGet('admin/structure/personalize');
+    $this->assertLink(t('Review and start'));
+    $this->assertNoFieldByXPath('//form[@id="personalize-change-status-' . $agent->machine_name . '-form"]//input[@value="' . t('Start') . '"]');
   }
 }
 

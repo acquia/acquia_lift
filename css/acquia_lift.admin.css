@@ -433,8 +433,9 @@ tr.acquia-lift-report-control {
 .personalize-wizard-section .form-item-variations-add-variation-details-element-content-url {
   display: inline-block;
 }
-.personalize-wizard-section .form-item-variations-add-variation-details-element-content-url > input[type="submit"] {
+.personalize-wizard-section .form-item-variations-add-variation-details-element-content-url + input[type="submit"] {
   display: inline-block;
+  vertical-align: text-bottom;
 }
 #edit-variations .personalize-wizard-column > fieldset {
   border: none;

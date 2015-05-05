@@ -1673,6 +1673,7 @@ function _acquia_lift_personalize_campaign_wizard_form_state_blocks_alter(&$form
  * element variation actions.
  */
 function _acquia_lift_personalize_campaign_wizard_variations_element(&$form, &$form_state, $agent_data, $option_set = NULL) {
+  global $base_url;
   $element = array();
   if (empty($option_set->osid)) {
     $element['url'] = array(
@@ -1682,6 +1683,8 @@ function _acquia_lift_personalize_campaign_wizard_variations_element(&$form, &$f
       '#allow_dynamic' => FALSE,
       '#allow_external' => TRUE,
       '#required' => TRUE,
+      '#field_prefix' => $base_url . base_path(),
+      '#description' => t('Enter either the path of the webpage that contains the element, or &lt;front&gt; for your website\'s home page.'),
     );
     $element['navigate'] = array(
       '#type' => 'submit',

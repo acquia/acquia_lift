@@ -1701,9 +1701,19 @@ class AcquiaLiftWebTestTarget extends AcquiaLiftWebTestBase {
     $this->assertEqual(count($goals), 1);
     $goal = reset($goals);
 
+    // Verify that the agent is shown for administration.
+    $this->drupalGet('');
+    $settings = $this->drupalGetSettings();
+    $this->assertTrue(!empty($settings['acquia_lift']['campaigns'][$agent->machine_name]));
+
     // Start the agent through the UI so that the targeting gets implemented.
     $this->drupalGet('admin/structure/personalize/manage/' . $agent->machine_name . '/review');
     $this->drupalPost(NULL, array(), $this->getButton('wizard_start'));
+
+    // Verify that the agent is no longer shown for administration.
+    $this->drupalGet('');
+    $settings = $this->drupalGetSettings();
+    $this->assertTrue(empty($settings['acquia_lift']['campaigns'][$agent->machine_name]));
 
     // Try to edit the goal.
     try {
@@ -1759,6 +1769,11 @@ class AcquiaLiftWebTestTarget extends AcquiaLiftWebTestBase {
     $option_set = personalize_option_set_save($option_set);
     $this->assertEqual(count($option_set->options), 2);
 
+    // Verify the settings for administration.
+    $this->drupalGet('');
+    $settings = $this->drupalGetSettings();
+    $this->assertTrue(!empty($settings['acquia_lift']['campaigns'][$agent->machine_name]));
+
     // Schedule the agent.
     $start_date = strtotime('+1 month midnight');
     personalize_agent_set_start_date($agent->machine_name, $start_date);
@@ -1783,6 +1798,12 @@ class AcquiaLiftWebTestTarget extends AcquiaLiftWebTestBase {
       $this->assertEqual($e->getMessage(), 'Variations used in targeting cannot be removed until the personalization is paused.');
     }
 
+    // Verify the agent can't be edited in JS settings.
+    $this->drupalGet('');
+    $settings = $this->drupalGetSettings();
+    $this->assertTrue(empty($settings['acquia_lift']['campaigns'][$agent->machine_name]));
+
+
     // Complete the agent.
     personalize_agent_set_status($agent->machine_name, PERSONALIZE_STATUS_COMPLETED);
 
@@ -1794,6 +1815,11 @@ class AcquiaLiftWebTestTarget extends AcquiaLiftWebTestBase {
       $this->assertTrue($e instanceof PersonalizeException);
       $this->assertEqual($e->getMessage(), 'Goals cannot be modified until the personalization is paused.');
     }
+
+    // Verify the agent still isn't loaded for front-end administration.
+    $this->drupalGet('');
+    $settings = $this->drupalGetSettings();
+    $this->assertTrue(empty($settings['acquia_lift']['campaigns'][$agent->machine_name]));
   }
 
   /**

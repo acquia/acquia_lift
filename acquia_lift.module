@@ -2749,6 +2749,7 @@ function acquia_lift_get_campaign_details() {
   if (is_array($campaigns)) {
     return $campaigns;
   }
+  module_load_include('inc', 'acquia_lift', 'acquia_lift.admin');
   $campaigns = array();
 
   // We need to provide information about all configured campaigns
@@ -2759,6 +2760,10 @@ function acquia_lift_get_campaign_details() {
     if ($agent->plugin === 'acquia_lift') {
       continue;
     }
+    if (!acquia_lift_target_definition_changes_allowed($agent)) {
+      continue;
+    }
+
     $plugin = personalize_agent_load_agent($agent->machine_name);
     if (!$plugin) {
       continue;

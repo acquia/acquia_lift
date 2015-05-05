@@ -69,7 +69,7 @@ Drupal.acquia_lift_target = (function() {
             callback(decisions);
           };
 
-          Drupal.personalize.agents[agent_plugin].getDecisionsForPoint(agent_name, {}, choiceNames, nestedPoint, fallbacks, subCallback);
+          Drupal.personalize.agents[agent_plugin].getDecisionsForPoint(agent_name, {}, choices, nestedPoint, fallbacks, subCallback);
           return;
         }
       }

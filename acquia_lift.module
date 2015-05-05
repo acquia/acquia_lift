@@ -548,6 +548,22 @@ function acquia_lift_personalize_agent_update_status($agent_name, $old_status, $
 }
 
 /**
+ * Implements hook_personalize_agent_delete().
+ */
+function acquia_lift_personalize_agent_delete($agent) {
+  if (!acquia_lift_is_testing_agent($agent)) {
+    return;
+  }
+  $acquia_lift_api = AcquiaLiftAPI::getInstance(variable_get('acquia_lift_account_info', array()));
+  try {
+    $acquia_lift_api->deleteAgent($agent->machine_name);
+  }
+  catch (AcquiaLiftException $e) {
+    // Nothing we can do. The error will have been logged by the API client.
+  }
+}
+
+/**
  * Implements hook_personalize_goal_presave().
  */
 function acquia_lift_personalize_goal_presave($goal) {
@@ -721,13 +737,24 @@ function acquia_lift_personalize_option_set_save($option_set) {
  */
 function acquia_lift_personalize_option_set_delete($option_set) {
   $agent = personalize_agent_load($option_set->agent);
-  if (acquia_lift_is_targeting_agent($agent) && !empty($agent->data['locked_for_variation_sets'])) {
-    // Somehow an option set is being deleted for an already implemented campaign.
-    // This is not supported via the UI and can cause problems for running
-    // campaigns. Set the campaign's status to completed to avoid any problematic
-    // decision calls being made.
-    personalize_agent_set_status($agent->machine_name, PERSONALIZE_STATUS_COMPLETED);
-    drupal_set_message(t('The @agent_name personalization has been set to completed because one of its variation sets was deleted', array('@agent_name' => $agent->machine_name)), 'warning');
+  if (acquia_lift_is_targeting_agent($agent)) {
+    // Ensure any nested tests are deleted too.
+    foreach ($option_set->targeting as $target) {
+      if (isset($target['osid'])) {
+        $nested_os = personalize_option_set_load($target['osid'], TRUE);
+        // Delete the option set, then delete the agent.
+        personalize_option_set_delete($nested_os->osid);
+        personalize_agent_delete($nested_os->agent);
+      }
+    }
+    if (!empty($agent->data['locked_for_variation_sets'])) {
+      // Somehow an option set is being deleted for an already implemented campaign.
+      // This is not supported via the UI and can cause problems for running
+      // campaigns. Set the campaign's status to completed to avoid any problematic
+      // decision calls being made.
+      personalize_agent_set_status($agent->machine_name, PERSONALIZE_STATUS_COMPLETED);
+      drupal_set_message(t('The @agent_name personalization has been set to completed because one of its variation sets was deleted', array('@agent_name' => $agent->machine_name)), 'warning');
+    }
   }
 }
 

@@ -1681,6 +1681,44 @@ class AcquiaLiftWebTestTarget extends AcquiaLiftWebTestBase {
     $this->assertEqual(PERSONALIZE_STATUS_RUNNING, $child_status);
   }
 
+  function testNestedAgentDeletion() {
+    $agent_with_nesting = $this->createTargetingAgentWithNestedTest();
+    $this->resetAll();
+    // Confirm the nested test has been created as expected.
+    $nested_tests = acquia_lift_get_nested_tests($agent_with_nesting);
+    $nested_agent_name = reset($nested_tests);
+    $nested_agent = personalize_agent_load($nested_agent_name, TRUE);
+    $this->assertNotNull($nested_agent);
+    $nested_os = personalize_option_set_load_by_agent($nested_agent_name);
+    $this->assertEqual(1, count($nested_os));
+    $nested_os = reset($nested_os);
+
+    $this->assertNotNull($nested_os);
+
+    DummyAcquiaLiftHttpClient::clearLoggedRequests();
+    // Delete the option set from the parent.
+    $option_set = acquia_lift_get_option_set_for_targeting($agent_with_nesting->machine_name);
+    AcquiaLiftAPI::setTestInstance();
+
+    personalize_option_set_delete($option_set->osid);
+    $this->resetAll();
+    $expected_requests = array(
+      array(
+        'type' => 'delete',
+        'uri' => "http://api.example.com/test-owner-code/agent-api/$nested_agent_name?apikey=test-admin-key",
+        'headers' => NULL,
+        'options' => array (),
+        'body' => NULL,
+      )
+    );
+    $requests = DummyAcquiaLiftHttpClient::getLoggedRequests();
+    $this->assertEqual($expected_requests, $requests);
+    $nested_agent = personalize_agent_load($nested_agent_name, TRUE);
+    $this->assertNull($nested_agent);
+    $nested_os = personalize_option_set_load_by_agent($nested_agent_name, TRUE);
+    $this->assertEqual(0, count($nested_os));
+  }
+
   /**
    * Tests which components of a campaign are editable when the depending on
    * agent status.

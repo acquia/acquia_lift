@@ -958,7 +958,7 @@ function acquia_lift_personalize_campaign_wizard_goals_ajax_all($form, &$form_st
  */
 function acquia_lift_personalize_campaign_wizard_targeting_add($form, &$form_state) {
   // Increment the number of contexts to be rendered.
-  $context_key = $form_state['triggering_element']['#array_parents'][1];
+  $context_key = $form_state['triggering_element']['#array_parents'][2];
   $form_state['num_contexts_audience'][$context_key]++;
   $form_state['rebuild'] = TRUE;
 }
@@ -979,8 +979,10 @@ function acquia_lift_personalize_campaign_wizard_targeting_remove($form, &$form_
  * Ajax callback for the add context and remove context buttons.
  */
 function acquia_lift_personalize_campaign_wizard_targeting_ajax($form, &$form_state) {
-  $context_key = $form_state['triggering_element']['#array_parents'][1];
-  return $form['audiences'][$context_key]['details']['mapping']['contexts'];
+  // Don't show any messages within the AJAX returned.
+  drupal_get_messages();
+  $context_key = $form_state['triggering_element']['#array_parents'][2];
+  return $form['targeting']['audiences'][$context_key]['details']['mapping']['contexts'];
 }
 
 /**

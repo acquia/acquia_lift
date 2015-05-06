@@ -2859,6 +2859,14 @@ class AcquiaLiftWebTestCampaignWizard extends AcquiaLiftWebTestBase {
     $agent = $this->createTargetingAgent();
     $machine_name = $agent->machine_name;
 
+    $campaign_pages = array(
+      "admin/structure/personalize/manage/$machine_name/variations",
+      "admin/structure/personalize/manage/$machine_name/goals",
+      "admin/structure/personalize/manage/$machine_name/targeting",
+      "admin/structure/personalize/manage/$machine_name/scheduling",
+      "admin/structure/personalize/manage/$machine_name/review",
+    );
+
     // Add option set.
     $this->createPersonalizedBlock(0, $agent);
 
@@ -2886,51 +2894,17 @@ class AcquiaLiftWebTestCampaignWizard extends AcquiaLiftWebTestBase {
     $this->drupalPost(NULL, $edit, $this->getButton('wizard_next'));
 
     // Verify options.
-    $this->drupalGet("admin/structure/personalize/manage/$machine_name/variations");
-    $this->assertNoText($message_running);
-    $this->assertNoText($message_scheduled);
-    $this->assertNoText($message_completed);
-    $this->assertFieldById('edit-save');
-    $this->assertFieldById('edit-submit-' . PERSONALIZE_STATUS_RUNNING);
-    $this->assertNoFieldById('edit-submit-' . PERSONALIZE_STATUS_PAUSED);
-    $this->assertNoFieldById('edit-submit-' . PERSONALIZE_STATUS_COMPLETED);
-    $this->assertFieldById('edit-submit-' . PERSONALIZE_STATUS_SCHEDULED);
-    $this->drupalGet("admin/structure/personalize/manage/$machine_name/goals");
-    $this->assertNoText($message_running);
-    $this->assertNoText($message_scheduled);
-    $this->assertNoText($message_completed);
-    $this->assertFieldById('edit-save');
-    $this->assertFieldById('edit-submit-' . PERSONALIZE_STATUS_RUNNING);
-    $this->assertNoFieldById('edit-submit-' . PERSONALIZE_STATUS_PAUSED);
-    $this->assertNoFieldById('edit-submit-' . PERSONALIZE_STATUS_COMPLETED);
-    $this->assertFieldById('edit-submit-' . PERSONALIZE_STATUS_SCHEDULED);
-    $this->drupalGet("admin/structure/personalize/manage/$machine_name/targeting");
-    $this->assertNoText($message_running);
-    $this->assertNoText($message_scheduled);
-    $this->assertNoText($message_completed);
-    $this->assertFieldById('edit-save');
-    $this->assertFieldById('edit-submit-' . PERSONALIZE_STATUS_RUNNING);
-    $this->assertNoFieldById('edit-submit-' . PERSONALIZE_STATUS_PAUSED);
-    $this->assertNoFieldById('edit-submit-' . PERSONALIZE_STATUS_COMPLETED);
-    $this->assertFieldById('edit-submit-' . PERSONALIZE_STATUS_SCHEDULED);
-    $this->drupalGet("admin/structure/personalize/manage/$machine_name/scheduling");
-    $this->assertNoText($message_running);
-    $this->assertNoText($message_scheduled);
-    $this->assertNoText($message_completed);
-    $this->assertFieldById('edit-save');
-    $this->assertFieldById('edit-submit-' . PERSONALIZE_STATUS_RUNNING);
-    $this->assertNoFieldById('edit-submit-' . PERSONALIZE_STATUS_PAUSED);
-    $this->assertNoFieldById('edit-submit-' . PERSONALIZE_STATUS_COMPLETED);
-    $this->assertFieldById('edit-submit-' . PERSONALIZE_STATUS_SCHEDULED);
-    $this->drupalGet("admin/structure/personalize/manage/$machine_name/review");
-    $this->assertNoText($message_running);
-    $this->assertNoText($message_scheduled);
-    $this->assertNoText($message_completed);
-    $this->assertFieldById('edit-save');
-    $this->assertFieldById('edit-submit-' . PERSONALIZE_STATUS_RUNNING);
-    $this->assertNoFieldById('edit-submit-' . PERSONALIZE_STATUS_PAUSED);
-    $this->assertNoFieldById('edit-submit-' . PERSONALIZE_STATUS_COMPLETED);
-    $this->assertFieldById('edit-submit-' . PERSONALIZE_STATUS_SCHEDULED);
+    foreach ($campaign_pages as $page) {
+      $this->drupalGet($page);
+      $this->assertNoText($message_running);
+      $this->assertNoText($message_scheduled);
+      $this->assertNoText($message_completed);
+      $this->assertFieldById('edit-save');
+      $this->assertFieldById('edit-submit-' . PERSONALIZE_STATUS_RUNNING);
+      $this->assertNoFieldById('edit-submit-' . PERSONALIZE_STATUS_PAUSED);
+      $this->assertNoFieldById('edit-submit-' . PERSONALIZE_STATUS_COMPLETED);
+      $this->assertFieldById('edit-submit-' . PERSONALIZE_STATUS_SCHEDULED);
+    }
 
     // Remove the scheduled date prior to starting the campaign.
     $this->drupalGet("admin/structure/personalize/manage/$machine_name/scheduling");
@@ -2940,109 +2914,49 @@ class AcquiaLiftWebTestCampaignWizard extends AcquiaLiftWebTestBase {
     );
     $this->drupalPost(NULL, $edit, $this->getButton('wizard_next'));
 
-    // Verify options and start the campaign from the review screen.
+    // Verify options.
+    foreach ($campaign_pages as $page) {
+      $this->drupalGet($page);
+      $this->assertNoText($message_running);
+      $this->assertNoText($message_scheduled);
+      $this->assertNoText($message_completed);
+      $this->assertFieldById('edit-save');
+      $this->assertFieldById('edit-submit-' . PERSONALIZE_STATUS_RUNNING);
+      $this->assertNoFieldById('edit-submit-' . PERSONALIZE_STATUS_PAUSED);
+      $this->assertNoFieldById('edit-submit-' . PERSONALIZE_STATUS_COMPLETED);
+      $this->assertNoFieldById('edit-submit-' . PERSONALIZE_STATUS_SCHEDULED);
+    }
+
+    // Start the campaign.
     $this->drupalGet("admin/structure/personalize/manage/$machine_name/review");
-    $this->assertFieldById('edit-save');
-    $this->assertFieldById('edit-submit-' . PERSONALIZE_STATUS_RUNNING);
-    $this->assertNoFieldById('edit-submit-' . PERSONALIZE_STATUS_PAUSED);
-    $this->assertNoFieldById('edit-submit-' . PERSONALIZE_STATUS_COMPLETED);
-    $this->assertNoFieldById('edit-submit-' . PERSONALIZE_STATUS_SCHEDULED);
     $this->drupalPost(NULL, array(), $this->getButton('wizard_start'));
 
     // Verify that the correct messaging is shown on all campaign wizard pages.
-    $this->drupalGet("admin/structure/personalize/manage/$machine_name/variations");
-    $this->assertText($message_running);
-    $this->assertNoText($message_scheduled);
-    $this->assertNoText($message_completed);
-    $this->assertNoFieldById('edit-save');
-    $this->assertNoFieldById('edit-submit-' . PERSONALIZE_STATUS_RUNNING);
-    $this->assertNoFieldById('edit-submit-' . PERSONALIZE_STATUS_PAUSED);
-    $this->assertNoFieldById('edit-submit-' . PERSONALIZE_STATUS_COMPLETED);
-    $this->assertNoFieldById('edit-submit-' . PERSONALIZE_STATUS_SCHEDULED);
-    $this->drupalGet("admin/structure/personalize/manage/$machine_name/goals");
-    $this->assertText($message_running);
-    $this->assertNoText($message_scheduled);
-    $this->assertNoText($message_completed);
-    $this->assertNoFieldById('edit-save');
-    $this->assertNoFieldById('edit-submit-' . PERSONALIZE_STATUS_RUNNING);
-    $this->assertNoFieldById('edit-submit-' . PERSONALIZE_STATUS_PAUSED);
-    $this->assertNoFieldById('edit-submit-' . PERSONALIZE_STATUS_COMPLETED);
-    $this->assertNoFieldById('edit-submit-' . PERSONALIZE_STATUS_SCHEDULED);
-    $this->drupalGet("admin/structure/personalize/manage/$machine_name/targeting");
-    $this->assertText($message_running);
-    $this->assertNoText($message_scheduled);
-    $this->assertNoText($message_completed);
-    $this->assertNoFieldById('edit-save');
-    $this->assertNoFieldById('edit-submit-' . PERSONALIZE_STATUS_RUNNING);
-    $this->assertNoFieldById('edit-submit-' . PERSONALIZE_STATUS_PAUSED);
-    $this->assertNoFieldById('edit-submit-' . PERSONALIZE_STATUS_COMPLETED);
-    $this->assertNoFieldById('edit-submit-' . PERSONALIZE_STATUS_SCHEDULED);
-    $this->drupalGet("admin/structure/personalize/manage/$machine_name/scheduling");
-    $this->assertText($message_running);
-    $this->assertNoText($message_scheduled);
-    $this->assertNoText($message_completed);
-    $this->assertNoFieldById('edit-save');
-    $this->assertNoFieldById('edit-submit-' . PERSONALIZE_STATUS_RUNNING);
-    $this->assertNoFieldById('edit-submit-' . PERSONALIZE_STATUS_PAUSED);
-    $this->assertNoFieldById('edit-submit-' . PERSONALIZE_STATUS_COMPLETED);
-    $this->assertNoFieldById('edit-submit-' . PERSONALIZE_STATUS_SCHEDULED);
-    $this->drupalGet("admin/structure/personalize/manage/$machine_name/review");
-    $this->assertText($message_running);
-    $this->assertNoText($message_scheduled);
-    $this->assertNoText($message_completed);
-    $this->assertNoFieldById('edit-save');
-    $this->assertNoFieldById('edit-submit-' . PERSONALIZE_STATUS_RUNNING);
-    $this->assertNoFieldById('edit-submit-' . PERSONALIZE_STATUS_PAUSED);
-    $this->assertNoFieldById('edit-submit-' . PERSONALIZE_STATUS_COMPLETED);
-    $this->assertNoFieldById('edit-submit-' . PERSONALIZE_STATUS_SCHEDULED);
+    foreach ($campaign_pages as $page) {
+      $this->drupalGet($page);
+      $this->assertText($message_running);
+      $this->assertNoText($message_scheduled);
+      $this->assertNoText($message_completed);
+      $this->assertNoFieldById('edit-save');
+      $this->assertNoFieldById('edit-submit-' . PERSONALIZE_STATUS_RUNNING);
+      $this->assertNoFieldById('edit-submit-' . PERSONALIZE_STATUS_PAUSED);
+      $this->assertNoFieldById('edit-submit-' . PERSONALIZE_STATUS_COMPLETED);
+      $this->assertNoFieldById('edit-submit-' . PERSONALIZE_STATUS_SCHEDULED);
+    }
 
     // Pause the campaign and verify that messaging is removed.
     $this->drupalPost(NULL, array(), t('Pause'));
-    $this->drupalGet("admin/structure/personalize/manage/$machine_name/variations");
-    $this->assertNoText($message_running);
-    $this->assertNoText($message_scheduled);
-    $this->assertNoText($message_completed);
-    $this->assertFieldById('edit-save');
-    $this->assertFieldById('edit-submit-' . PERSONALIZE_STATUS_RUNNING);
-    $this->assertNoFieldById('edit-submit-' . PERSONALIZE_STATUS_PAUSED);
-    $this->assertFieldById('edit-submit-' . PERSONALIZE_STATUS_COMPLETED);
-    $this->assertNoFieldById('edit-submit-' . PERSONALIZE_STATUS_SCHEDULED);
-    $this->drupalGet("admin/structure/personalize/manage/$machine_name/goals");
-    $this->assertNoText($message_running);
-    $this->assertNoText($message_scheduled);
-    $this->assertNoText($message_completed);
-    $this->assertFieldById('edit-save');
-    $this->assertFieldById('edit-submit-' . PERSONALIZE_STATUS_RUNNING);
-    $this->assertNoFieldById('edit-submit-' . PERSONALIZE_STATUS_PAUSED);
-    $this->assertFieldById('edit-submit-' . PERSONALIZE_STATUS_COMPLETED);
-    $this->assertNoFieldById('edit-submit-' . PERSONALIZE_STATUS_SCHEDULED);
-    $this->drupalGet("admin/structure/personalize/manage/$machine_name/targeting");
-    $this->assertNoText($message_running);
-    $this->assertNoText($message_scheduled);
-    $this->assertNoText($message_completed);
-    $this->assertFieldById('edit-save');
-    $this->assertFieldById('edit-submit-' . PERSONALIZE_STATUS_RUNNING);
-    $this->assertNoFieldById('edit-submit-' . PERSONALIZE_STATUS_PAUSED);
-    $this->assertFieldById('edit-submit-' . PERSONALIZE_STATUS_COMPLETED);
-    $this->assertNoFieldById('edit-submit-' . PERSONALIZE_STATUS_SCHEDULED);
-    $this->drupalGet("admin/structure/personalize/manage/$machine_name/scheduling");
-    $this->assertNoText($message_running);
-    $this->assertNoText($message_scheduled);
-    $this->assertNoText($message_completed);
-    $this->assertFieldById('edit-save');
-    $this->assertFieldById('edit-submit-' . PERSONALIZE_STATUS_RUNNING);
-    $this->assertNoFieldById('edit-submit-' . PERSONALIZE_STATUS_PAUSED);
-    $this->assertFieldById('edit-submit-' . PERSONALIZE_STATUS_COMPLETED);
-    $this->assertNoFieldById('edit-submit-' . PERSONALIZE_STATUS_SCHEDULED);
-    $this->drupalGet("admin/structure/personalize/manage/$machine_name/review");
-    $this->assertNoText($message_running);
-    $this->assertNoText($message_scheduled);
-    $this->assertNoText($message_completed);
-    $this->assertFieldById('edit-save');
-    $this->assertFieldById('edit-submit-' . PERSONALIZE_STATUS_RUNNING);
-    $this->assertNoFieldById('edit-submit-' . PERSONALIZE_STATUS_PAUSED);
-    $this->assertFieldById('edit-submit-' . PERSONALIZE_STATUS_COMPLETED);
-    $this->assertNoFieldById('edit-submit-' . PERSONALIZE_STATUS_SCHEDULED);
+    foreach ($campaign_pages as $page) {
+      $this->drupalGet($page);
+      $this->assertNoText($message_running);
+      $this->assertNoText($message_scheduled);
+      $this->assertNoText($message_completed);
+      $this->assertFieldById('edit-save');
+      $this->assertFieldById('edit-submit-' . PERSONALIZE_STATUS_RUNNING);
+      $this->assertNoFieldById('edit-submit-' . PERSONALIZE_STATUS_PAUSED);
+      $this->assertFieldById('edit-submit-' . PERSONALIZE_STATUS_COMPLETED);
+      $this->assertNoFieldById('edit-submit-' . PERSONALIZE_STATUS_SCHEDULED);
+    }
 
     // Schedule the campaign to start in the future.
     $this->drupalGet("admin/structure/personalize/manage/$machine_name/scheduling");
@@ -3057,51 +2971,17 @@ class AcquiaLiftWebTestCampaignWizard extends AcquiaLiftWebTestBase {
     $this->drupalPost(NULL, $edit, $this->getButton('wizard_next'));
 
     // Verify that the correct messaging is shown on all campaign wizard pages.
-    $this->drupalGet("admin/structure/personalize/manage/$machine_name/variations");
-    $this->assertNoText($message_running);
-    $this->assertNoText($message_scheduled);
-    $this->assertNoText($message_completed);
-    $this->assertFieldById('edit-save');
-    $this->assertFieldById('edit-submit-' . PERSONALIZE_STATUS_RUNNING);
-    $this->assertNoFieldById('edit-submit-' . PERSONALIZE_STATUS_PAUSED);
-    $this->assertFieldById('edit-submit-' . PERSONALIZE_STATUS_COMPLETED);
-    $this->assertFieldById('edit-submit-' . PERSONALIZE_STATUS_SCHEDULED);
-    $this->drupalGet("admin/structure/personalize/manage/$machine_name/goals");
-    $this->assertNoText($message_running);
-    $this->assertNoText($message_scheduled);
-    $this->assertNoText($message_completed);
-    $this->assertFieldById('edit-save');
-    $this->assertFieldById('edit-submit-' . PERSONALIZE_STATUS_RUNNING);
-    $this->assertNoFieldById('edit-submit-' . PERSONALIZE_STATUS_PAUSED);
-    $this->assertFieldById('edit-submit-' . PERSONALIZE_STATUS_COMPLETED);
-    $this->assertFieldById('edit-submit-' . PERSONALIZE_STATUS_SCHEDULED);
-    $this->drupalGet("admin/structure/personalize/manage/$machine_name/targeting");
-    $this->assertNoText($message_running);
-    $this->assertNoText($message_scheduled);
-    $this->assertNoText($message_completed);
-    $this->assertFieldById('edit-save');
-    $this->assertFieldById('edit-submit-' . PERSONALIZE_STATUS_RUNNING);
-    $this->assertNoFieldById('edit-submit-' . PERSONALIZE_STATUS_PAUSED);
-    $this->assertFieldById('edit-submit-' . PERSONALIZE_STATUS_COMPLETED);
-    $this->assertFieldById('edit-submit-' . PERSONALIZE_STATUS_SCHEDULED);
-    $this->drupalGet("admin/structure/personalize/manage/$machine_name/scheduling");
-    $this->assertNoText($message_running);
-    $this->assertNoText($message_scheduled);
-    $this->assertNoText($message_completed);
-    $this->assertFieldById('edit-save');
-    $this->assertFieldById('edit-submit-' . PERSONALIZE_STATUS_RUNNING);
-    $this->assertNoFieldById('edit-submit-' . PERSONALIZE_STATUS_PAUSED);
-    $this->assertFieldById('edit-submit-' . PERSONALIZE_STATUS_COMPLETED);
-    $this->assertFieldById('edit-submit-' . PERSONALIZE_STATUS_SCHEDULED);
-    $this->drupalGet("admin/structure/personalize/manage/$machine_name/review");
-    $this->assertNoText($message_running);
-    $this->assertNoText($message_scheduled);
-    $this->assertNoText($message_completed);
-    $this->assertFieldById('edit-save');
-    $this->assertFieldById('edit-submit-' . PERSONALIZE_STATUS_RUNNING);
-    $this->assertNoFieldById('edit-submit-' . PERSONALIZE_STATUS_PAUSED);
-    $this->assertFieldById('edit-submit-' . PERSONALIZE_STATUS_COMPLETED);
-    $this->assertFieldById('edit-submit-' . PERSONALIZE_STATUS_SCHEDULED);
+    foreach ($campaign_pages as $page) {
+      $this->drupalGet($page);
+      $this->assertNoText($message_running);
+      $this->assertNoText($message_scheduled);
+      $this->assertNoText($message_completed);
+      $this->assertFieldById('edit-save');
+      $this->assertFieldById('edit-submit-' . PERSONALIZE_STATUS_RUNNING);
+      $this->assertNoFieldById('edit-submit-' . PERSONALIZE_STATUS_PAUSED);
+      $this->assertFieldById('edit-submit-' . PERSONALIZE_STATUS_COMPLETED);
+      $this->assertFieldById('edit-submit-' . PERSONALIZE_STATUS_SCHEDULED);
+    }
 
     // Actually schedule the campaign.
     module_load_include('inc', 'personalize', 'personalize.admin.campaign');
@@ -3111,99 +2991,31 @@ class AcquiaLiftWebTestCampaignWizard extends AcquiaLiftWebTestBase {
     $this->drupalPost(NULL, array(), $button_text);
 
     // Verify that the correct messaging is shown on all campaign wizard pages.
-    $this->drupalGet("admin/structure/personalize/manage/$machine_name/variations");
-    $this->assertNoText($message_running);
-    $this->assertText($message_scheduled);
-    $this->assertNoText($message_completed);
-    $this->assertNoFieldById('edit-save');
-    $this->assertNoFieldById('edit-submit-' . PERSONALIZE_STATUS_RUNNING);
-    $this->assertNoFieldById('edit-submit-' . PERSONALIZE_STATUS_PAUSED);
-    $this->assertNoFieldById('edit-submit-' . PERSONALIZE_STATUS_COMPLETED);
-    $this->assertNoFieldById('edit-submit-' . PERSONALIZE_STATUS_SCHEDULED);
-    $this->drupalGet("admin/structure/personalize/manage/$machine_name/goals");
-    $this->assertNoText($message_running);
-    $this->assertText($message_scheduled);
-    $this->assertNoText($message_completed);
-    $this->assertNoFieldById('edit-save');
-    $this->assertNoFieldById('edit-submit-' . PERSONALIZE_STATUS_RUNNING);
-    $this->assertNoFieldById('edit-submit-' . PERSONALIZE_STATUS_PAUSED);
-    $this->assertNoFieldById('edit-submit-' . PERSONALIZE_STATUS_COMPLETED);
-    $this->assertNoFieldById('edit-submit-' . PERSONALIZE_STATUS_SCHEDULED);
-    $this->drupalGet("admin/structure/personalize/manage/$machine_name/targeting");
-    $this->assertNoText($message_running);
-    $this->assertText($message_scheduled);
-    $this->assertNoText($message_completed);
-    $this->assertNoFieldById('edit-save');
-    $this->assertNoFieldById('edit-submit-' . PERSONALIZE_STATUS_RUNNING);
-    $this->assertNoFieldById('edit-submit-' . PERSONALIZE_STATUS_PAUSED);
-    $this->assertNoFieldById('edit-submit-' . PERSONALIZE_STATUS_COMPLETED);
-    $this->assertNoFieldById('edit-submit-' . PERSONALIZE_STATUS_SCHEDULED);
-    $this->drupalGet("admin/structure/personalize/manage/$machine_name/scheduling");
-    $this->assertNoText($message_running);
-    $this->assertText($message_scheduled);
-    $this->assertNoText($message_completed);
-    $this->assertNoFieldById('edit-save');
-    $this->assertNoFieldById('edit-submit-' . PERSONALIZE_STATUS_RUNNING);
-    $this->assertNoFieldById('edit-submit-' . PERSONALIZE_STATUS_PAUSED);
-    $this->assertNoFieldById('edit-submit-' . PERSONALIZE_STATUS_COMPLETED);
-    $this->assertNoFieldById('edit-submit-' . PERSONALIZE_STATUS_SCHEDULED);
-    $this->drupalGet("admin/structure/personalize/manage/$machine_name/review");
-    $this->assertNoText($message_running);
-    $this->assertText($message_scheduled);
-    $this->assertNoText($message_completed);
-    $this->assertNoFieldById('edit-save');
-    $this->assertNoFieldById('edit-submit-' . PERSONALIZE_STATUS_RUNNING);
-    $this->assertNoFieldById('edit-submit-' . PERSONALIZE_STATUS_PAUSED);
-    $this->assertNoFieldById('edit-submit-' . PERSONALIZE_STATUS_COMPLETED);
-    $this->assertNoFieldById('edit-submit-' . PERSONALIZE_STATUS_SCHEDULED);
+    foreach ($campaign_pages as $page) {
+      $this->drupalGet($page);
+      $this->assertNoText($message_running);
+      $this->assertText($message_scheduled);
+      $this->assertNoText($message_completed);
+      $this->assertNoFieldById('edit-save');
+      $this->assertNoFieldById('edit-submit-' . PERSONALIZE_STATUS_RUNNING);
+      $this->assertNoFieldById('edit-submit-' . PERSONALIZE_STATUS_PAUSED);
+      $this->assertNoFieldById('edit-submit-' . PERSONALIZE_STATUS_COMPLETED);
+      $this->assertNoFieldById('edit-submit-' . PERSONALIZE_STATUS_SCHEDULED);
+    }
 
     // Complete the campaign and verify messaging.
     personalize_agent_set_status($machine_name, PERSONALIZE_STATUS_COMPLETED);
     $this->resetAll();
-    $this->drupalGet("admin/structure/personalize/manage/$machine_name/variations");
-    $this->assertNoText($message_running);
-    $this->assertNoText($message_scheduled);
-    $this->assertText($message_completed);
-    $this->assertNoFieldById('edit-save');
-    $this->assertNoFieldById('edit-submit-' . PERSONALIZE_STATUS_RUNNING);
-    $this->assertNoFieldById('edit-submit-' . PERSONALIZE_STATUS_PAUSED);
-    $this->assertNoFieldById('edit-submit-' . PERSONALIZE_STATUS_COMPLETED);
-    $this->assertNoFieldById('edit-submit-' . PERSONALIZE_STATUS_SCHEDULED);
-    $this->drupalGet("admin/structure/personalize/manage/$machine_name/goals");
-    $this->assertNoText($message_running);
-    $this->assertNoText($message_scheduled);
-    $this->assertText($message_completed);
-    $this->assertNoFieldById('edit-save');
-    $this->assertNoFieldById('edit-submit-' . PERSONALIZE_STATUS_RUNNING);
-    $this->assertNoFieldById('edit-submit-' . PERSONALIZE_STATUS_PAUSED);
-    $this->assertNoFieldById('edit-submit-' . PERSONALIZE_STATUS_COMPLETED);
-    $this->assertNoFieldById('edit-submit-' . PERSONALIZE_STATUS_SCHEDULED);
-    $this->drupalGet("admin/structure/personalize/manage/$machine_name/targeting");
-    $this->assertNoText($message_running);
-    $this->assertNoText($message_scheduled);
-    $this->assertText($message_completed);
-    $this->assertNoFieldById('edit-save');
-    $this->assertNoFieldById('edit-submit-' . PERSONALIZE_STATUS_RUNNING);
-    $this->assertNoFieldById('edit-submit-' . PERSONALIZE_STATUS_PAUSED);
-    $this->assertNoFieldById('edit-submit-' . PERSONALIZE_STATUS_COMPLETED);
-    $this->assertNoFieldById('edit-submit-' . PERSONALIZE_STATUS_SCHEDULED);
-    $this->drupalGet("admin/structure/personalize/manage/$machine_name/scheduling");
-    $this->assertNoText($message_running);
-    $this->assertNoText($message_scheduled);
-    $this->assertText($message_completed);
-    $this->assertNoFieldById('edit-save');
-    $this->assertNoFieldById('edit-submit-' . PERSONALIZE_STATUS_RUNNING);
-    $this->assertNoFieldById('edit-submit-' . PERSONALIZE_STATUS_PAUSED);
-    $this->assertNoFieldById('edit-submit-' . PERSONALIZE_STATUS_COMPLETED);
-    $this->assertNoFieldById('edit-submit-' . PERSONALIZE_STATUS_SCHEDULED);
-    $this->drupalGet("admin/structure/personalize/manage/$machine_name/review");
-    $this->assertNoText($message_running);
-    $this->assertNoText($message_scheduled);
-    $this->assertText($message_completed);
-    $this->assertNoFieldById('edit-save');
-    $this->assertNoFieldById('edit-submit-' . PERSONALIZE_STATUS_RUNNING);
-    $this->assertNoFieldById('edit-submit-' . PERSONALIZE_STATUS_PAUSED);
-    $this->assertNoFieldById('edit-submit-' . PERSONALIZE_STATUS_COMPLETED);
-    $this->assertNoFieldById('edit-submit-' . PERSONALIZE_STATUS_SCHEDULED);
+    foreach ($campaign_pages as $page) {
+      $this->drupalGet($page);
+      $this->assertNoText($message_running);
+      $this->assertNoText($message_scheduled);
+      $this->assertText($message_completed);
+      $this->assertNoFieldById('edit-save');
+      $this->assertNoFieldById('edit-submit-' . PERSONALIZE_STATUS_RUNNING);
+      $this->assertNoFieldById('edit-submit-' . PERSONALIZE_STATUS_PAUSED);
+      $this->assertNoFieldById('edit-submit-' . PERSONALIZE_STATUS_COMPLETED);
+      $this->assertNoFieldById('edit-submit-' . PERSONALIZE_STATUS_SCHEDULED);
+    }
   }
 }

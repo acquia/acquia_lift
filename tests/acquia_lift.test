@@ -1648,16 +1648,17 @@ class AcquiaLiftWebTestTarget extends AcquiaLiftWebTestBase {
 
   function testNestedAgentsButtons() {
     $this->drupalLogin($this->managerUser);
-    $reset_button_name = 'reset_submit';
     $targeting_agent_no_nesting = $this->createTargetingAgent();
-    $this->drupalGet('admin/structure/personalize/manage/' . $targeting_agent_no_nesting->machine_name . '/edit');
+    $this->drupalGet('admin/structure/personalize/manage/' . $targeting_agent_no_nesting->machine_name . '/variations');
     // There are no nested tests so there shouldn't be any buttons relating to
     // test agents.
-    $this->assertNoFieldByName($reset_button_name);
+    $reset_link = 'admin/structure/personalize/manage/' . $targeting_agent_no_nesting->machine_name . '/reset';
+    $this->assertNoLinkByHref($reset_link);
     $agent_with_nesting = $this->createTargetingAgentWithNestedTest();
-    $this->drupalGet('admin/structure/personalize/manage/' . $agent_with_nesting->machine_name . '/edit');
+    $this->drupalGet('admin/structure/personalize/manage/' . $agent_with_nesting->machine_name . '/variations');
     // This campaign has a nested test so those buttons should be visible.
-    $this->assertFieldByName($reset_button_name);
+    $reset_link = 'admin/structure/personalize/manage/' . $agent_with_nesting->machine_name . '/reset';
+    $this->assertLinkByHref($reset_link);
   }
 
   function testNestedAgentStatus() {

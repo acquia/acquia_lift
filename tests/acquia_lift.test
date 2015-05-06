@@ -2415,6 +2415,14 @@ class AcquiaLiftWebTestCampaignWizard extends AcquiaLiftWebTestBase {
 
     $target_name = $target_agent_data->machine_name;
 
+    // No audiences should be shown unless contexts are available.
+    $this->drupalGet('admin/structure/personalize/manage/' . $target_name . '/targeting');
+    $this->assertNoFieldByName('audiences[add][details][name]');
+    $this->assertText('Either your website does not have any enabled targeting contexts, or there are no targeting contexts available for your personalization.');
+    module_enable(array('personalize_url_context'));
+    $this->resetAll();
+    $this->resetAll();
+
     // No audiences should show before option sets are created.
     $this->drupalGet('admin/structure/personalize/manage/' . $target_name . '/targeting');
     $this->assertNoFieldByName('audiences[add][details][name]');

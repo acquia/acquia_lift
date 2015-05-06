@@ -813,14 +813,7 @@ function acquia_lift_update_7200() {
     }
   }
   // Update menu to match updated "Personalizations" terminology.
-  menu_delete_links('acquia-lift-controls');
-  _acquia_lift_build_menu('acquia-lift-controls');
-}
-
-/**
- * Remove Variations and Goals listings pages.
- */
-function acquia_lift_update_7201() {
+  // Remove Variations and Goals listings pages.
   menu_delete_links('acquia-lift-controls');
   _acquia_lift_build_menu('acquia-lift-controls');
 }

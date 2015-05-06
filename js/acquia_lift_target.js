@@ -56,9 +56,11 @@ Drupal.acquia_lift_target = (function() {
             agent_plugin = Drupal.settings.acquia_lift_target.test_agent_plugin,
             nestedPoint = optionSet.decision_point,
             nestedDecision = optionSet.decision_name,
-            choiceNames = optionSet.option_names,
+            subChoices = {},
             fallbacks = {};
+        subChoices[nestedDecision] = optionSet.option_names;
         fallbacks[nestedDecision] = 0;
+
         if (Drupal.settings.acquia_lift_target.agent_map.hasOwnProperty(agent_name)) {
           var subCallback = function(selection) {
             for (var decision_name in decisions) {
@@ -68,8 +70,7 @@ Drupal.acquia_lift_target = (function() {
             }
             callback(decisions);
           };
-
-          Drupal.personalize.agents[agent_plugin].getDecisionsForPoint(agent_name, {}, choices, nestedPoint, fallbacks, subCallback);
+          Drupal.personalize.agents[agent_plugin].getDecisionsForPoint(agent_name, {}, subChoices, nestedPoint, fallbacks, subCallback);
           return;
         }
       }

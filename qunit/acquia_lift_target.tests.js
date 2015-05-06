@@ -94,7 +94,7 @@ QUnit.test("test explicit targeting logic", function( assert ) {
 });
 
 QUnit.test("test nesting logic", function( assert ) {
-  expect(9);
+  expect(10);
   // Add settings for a targeting agent with a test nested in it..
   var agentName = 'my-parent-agent',
       decisionName = 'my-decision',
@@ -148,7 +148,7 @@ QUnit.test("test nesting logic", function( assert ) {
   Drupal.settings.acquia_lift_target.agent_map[sub_agent_name] = {
     'type': 'acquia_lift'
   };
-  var subOs_str = 'osid-' + 123;
+  var subOs_str = 'osid-' + subOS;
   Drupal.settings.acquia_lift_target.option_sets = Drupal.settings.acquia_lift_target.option_sets || {};
   Drupal.settings.acquia_lift_target.option_sets[subOs_str] = {
     'agent': sub_agent_name,
@@ -170,6 +170,9 @@ QUnit.test("test nesting logic", function( assert ) {
   Drupal.personalize.agents.acquia_lift = Drupal.personalize.agents.acquia_lift || {};
   // Mock the acquia_lift testing agent to just make it return the second option.
   Drupal.personalize.agents.acquia_lift.getDecisionsForPoint = function(agentName, evaluatedVisitorContexts, choices, decisionName, fallbacks, callback) {
+    var expected_chocies = {}
+    expected_chocies[subOs_str] = ['first-option', 'second-option'];
+    assert.deepEqual(choices, expected_chocies);
     var selection = {};
     selection[subOs_str] = 'second-option';
     callback(selection);

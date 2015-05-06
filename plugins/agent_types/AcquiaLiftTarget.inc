@@ -89,8 +89,24 @@ class AcquiaLiftTarget extends PersonalizeAgentBase implements PersonalizeExplic
     }
     else {
       $agent_data = personalize_agent_load($this->getMachineName());
-      $nested = acquia_lift_get_nested_tests($agent_data);
-      $needs_goals = !empty($nested);
+      // The way we verify the agent is different depending on whether the
+      // targeting structure has been implemented or not.
+      $implemented = empty($agent_data->data['lift_targeting']);
+      if ($implemented) {
+        $nested = acquia_lift_get_nested_tests($agent_data);
+        $needs_goals = !empty($nested);
+      }
+      else {
+        $needs_goals = FALSE;
+        // Check if there's an audience with more than one variation.
+        foreach ($agent_data->data['lift_targeting'] as $audience => $variations) {
+          if (count($variations) > 1) {
+            $needs_goals = TRUE;
+            break;
+          }
+        }
+      }
+
     }
     if ($needs_goals && empty($goals)) {
       return array(

@@ -6,8 +6,8 @@ QUnit.module("Acquia Lift Profiles", {
     Drupal.settings.personalize = Drupal.settings.personalize || {};
     Drupal.settings = Drupal.settings || {};
     Drupal.settings.acquia_lift_profiles = Drupal.settings.acquia_lift_profiles || {};
-    Drupal.settings.acquia_lift_profiles.udfMappings = {};
-    Drupal.settings.acquia_lift_profiles.udfMappingContextSeparator = '__';
+    Drupal.settings.acquia_lift_profiles.mappings = {};
+    Drupal.settings.acquia_lift_profiles.mappingContextSeparator = '__';
 
     Drupal.personalize = Drupal.personalize || {};
     Drupal.personalize.visitor_context = Drupal.personalize.visitor_context || {};
@@ -95,7 +95,7 @@ QUnit.module("Acquia Lift Profiles", {
 });
 
 QUnit.asyncTest( "init test", function( assert ) {
-  expect(5);
+  expect(8);
   Drupal.acquia_lift_profiles.resetAll();
   _tcaq = {
     'push':function(stf) {
@@ -104,13 +104,20 @@ QUnit.asyncTest( "init test", function( assert ) {
       assert.equal( stf[1], 'Content View',  'capture view is of type content view');
       assert.equal( stf[2].person_udf1, "some-value", 'value correctly assigned from context' );
       assert.equal( stf[2].person_udf2, "some-other-value", 'value correctly assigned from promise based context' );
-      assert.equal( stf[2].person_udf3, "some-other-value", 'same  value correctly assigned to a second UDF' );
+      assert.equal( stf[2].person_udf3, "some-other-value", 'same value correctly assigned to a second UDF' );
+      assert.equal( stf[2].content_section, "", 'empty value correctly assigned' );
+      assert.equal( stf[2].content_keywords, "some-value", 'value correctly assigned from context' );
+      assert.equal( stf[2].persona, "some-other-value-1,some-other-value-2", 'value correctly assigned from context' );
       QUnit.start();
     }
   };
   var settings = {
     acquia_lift_profiles: {
-      udfMappings: {
+      mappings: {
+        field: {
+          content_keywords: "my_first_plugin__some-context",
+          persona: "my_first_plugin__nested-value-context"
+        },
         person: {
           person_udf1: "my_first_plugin__some-context",
           person_udf2: "my_promise_plugin__some-other-context",
@@ -118,7 +125,7 @@ QUnit.asyncTest( "init test", function( assert ) {
           person_udf3: "my_promise_plugin__some-other-context"
         }
       },
-      udfMappingContextSeparator: '__'
+      mappingContextSeparator: '__'
     }
   };
 
@@ -129,7 +136,8 @@ QUnit.asyncTest( "init test", function( assert ) {
   Drupal.personalize.getVisitorContexts = function(plugins, callback) {
     var values = {
       'my_first_plugin': {
-        'some-context': 'some-value'
+        'some-context': 'some-value',
+        'nested-value-context': "some-other-value-1,some-other-value-2"
       },
       'my_promise_plugin': {
         'some-other-context': 'some-other-value'
@@ -353,4 +361,58 @@ QUnit.test( "Capture identity test", function( assert ) {
     ]
   };
   Drupal.acquia_lift_profiles.processServerSideActions(settings);
+});
+
+QUnit.asyncTest("Use UDF values in processEvent", function( assert ) {
+  expect(2);
+  Drupal.acquia_lift_profiles.resetAll();
+  // Mock the _tcaq object so we can assert on what gets passed to it.
+  _tcaq = {
+    'push':function(event) {
+      if (event[0] == "capture") {
+        assert.equal(event[1], "someEvent");
+        // This is what we're testing - when we process an event below,
+        // the UDF values that were gathered during the init call should get
+        // passed in the _tcaq.push call for the custom event.
+        assert.deepEqual(event[2], {
+          evalSegments: true,
+          person_udf1: "some-value",
+          person_udf2: "some-other-value"
+        });
+      }
+      QUnit.start();
+    }
+  };
+  // Set up some UDF values that will get mapped during the init() call.
+  var settings = {
+    acquia_lift_profiles: {
+      mappings: {
+        person: {
+          person_udf1: "my_first_plugin__some-context",
+          person_udf2: "my_promise_plugin__some-other-context"
+        }
+      },
+      mappingContextSeparator: '__'
+    }
+  };
+
+  // We need to mock the getVisitorContexts() method as this is called by the
+  // init method.
+  Drupal.personalize.getVisitorContexts = function(plugins, callback) {
+    var values = {
+      'my_first_plugin': {
+        'some-context': 'some-value'
+      },
+      'my_promise_plugin': {
+        'some-other-context': 'some-other-value'
+      }
+    };
+    callback.call(null, values);
+  };
+  // Call the init() function which will result in the UDF values getting mapped.
+  Drupal.acquia_lift_profiles.init(settings);
+  QUnit.stop();
+  // Now process a custom event - the UDF values that were evaluated during the
+  // init call should also get passed. The assertion is in our _tcaq mock above.
+  Drupal.acquia_lift_profiles.processEvent('someEvent', {}, {'context1': 'value1'});
 });

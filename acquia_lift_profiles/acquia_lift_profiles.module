@@ -6,6 +6,7 @@
  */
 
 define('ACQUIA_LIFT_PROFILES_THUMBNAIL_WIDGET_SEPARATOR', '|');
+define('ACQUIA_LIFT_PROFILES_DEFAULT_IDENTITY_TYPE_DEFAULT', 'email');
 
 /**
  * Implements hook_menu().
@@ -146,27 +147,35 @@ function acquia_lift_profiles_page_build(&$page) {
   }
   $js_path = variable_get('acquia_lift_profiles_js_path', '');
   $account_name = variable_get('acquia_lift_profiles_account_name', '');
-  $udf_mappings = variable_get('acquia_lift_profiles_udf_mappings', array());
+  $capture_identity = variable_get('acquia_lift_profiles_capture_identity', FALSE);
+  $mappings = variable_get('acquia_lift_profiles_udf_mappings', array());
+  $acquia_lift_profiles_field_mappings = variable_get('acquia_lift_profiles_field_mappings', array());
+  if (!empty($acquia_lift_profiles_field_mappings)) {
+    $mappings['field'] = $acquia_lift_profiles_field_mappings;
+  }
   $segments = acquia_lift_profiles_get_segments();
   $settings = array(
     'request_url' => $base_root . request_uri(),
     'available_segments' => $segments,
     'account_name' => $account_name,
     'currentPath' => current_path(),
-    'captureIdentity' => variable_get('acquia_lift_profiles_capture_identity', FALSE),
-    'udfMappings' => $udf_mappings,
+    'captureIdentity' => $capture_identity,
+    'mappings' => $mappings,
     // Since we are using the same separator as provided by personalize
     // module for targeting values, we need to tell our JS settings about
     // it.
-    'udfMappingContextSeparator' => PERSONALIZE_TARGETING_ADMIN_SEPARATOR,
+    'mappingContextSeparator' => PERSONALIZE_TARGETING_ADMIN_SEPARATOR,
   );
   // We need to make sure that all assets for visitor context plugins used in our udf
   // mappings are avaiable so that we can get the actual context values.
   $assets = $attached = $contexts = array();
   ctools_include('plugins');
   // Group the mappings by context plugins so we can load each plugin only once.
-  foreach ($udf_mappings as $type => $mappings) {
-    foreach ($mappings as $name => $mapping) {
+  foreach ($mappings as $field_mappings) {
+    foreach ($field_mappings as $mapping) {
+      if (empty($mapping)) {
+        continue;
+      }
       list($plugin, $context) = explode(PERSONALIZE_TARGETING_ADMIN_SEPARATOR, $mapping);
       if (!isset($contexts[$plugin])) {
         $contexts[$plugin] = array();
@@ -192,7 +201,7 @@ function acquia_lift_profiles_page_build(&$page) {
     $all_params = drupal_get_query_parameters();
     if (isset($all_params[$identity_param])) {
       $settings['identity'] = check_plain($all_params[$identity_param]);
-      $settings['identityType'] = 'email';
+      $settings['identityType'] = variable_get('acquia_lift_profiles_default_identity_type') ?: ACQUIA_LIFT_PROFILES_DEFAULT_IDENTITY_TYPE_DEFAULT;
       if (!empty($identity_type_param) && isset($all_params[$identity_type_param])) {
         $settings['identityType'] = check_plain($all_params[$identity_type_param]);
       }
@@ -438,15 +447,9 @@ function acquia_lift_profiles_ctools_render_alter(&$info, &$page, &$context) {
  *   Returns the taxonomy context for the page.
  */
 function acquia_lift_profiles_node_page_context($node = NULL, $primary = FALSE) {
-  // For each vocabulary, add any terms that are applied to the viewed node.
   $page_context = &drupal_static(__FUNCTION__);
-  $mappings = variable_get('acquia_lift_profiles_vocabulary_mappings', array());
-  $flipped = array_flip($mappings);
   if (!isset($page_context)) {
     $page_context = array();
-    foreach ($mappings as $name => $vid) {
-      $page_context[$name] = array();
-    }
   }
 
   // Add the content type of the page if this is the primary node displayed.
@@ -458,19 +461,6 @@ function acquia_lift_profiles_node_page_context($node = NULL, $primary = FALSE) 
     $account = user_load($node->uid);
     $page_context['author'] = $account->name;
     $page_context['page_type'] = 'node page';
-    // Add the node's taxonomy to the context.
-    if (isset($node)) {
-      $results = db_query('SELECT tid FROM {taxonomy_index} WHERE nid = :nid', array(':nid' => $node->nid));
-      $terms = taxonomy_term_load_multiple($results->fetchCol());
-      foreach($terms as $term) {
-        if (isset($flipped[$term->vid])) {
-          $name = $flipped[$term->vid];
-          if (!in_array($term->name, $page_context[$name])) {
-            $page_context[$name][] = $term->name;
-          }
-        }
-      }
-    }
     // Add the thumbnail image if specified in the content type and supplied.
     $page_context['thumbnail_url'] = acquia_lift_profiles_thumbnail_image('node', $node, $node->type);
   }

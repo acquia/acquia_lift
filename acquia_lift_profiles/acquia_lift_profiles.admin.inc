@@ -48,66 +48,87 @@ function acquia_lift_profiles_admin_form($form, &$form_state) {
     '#required' => TRUE,
   );
 
-  $form['acquia_lift_profiles_capture_identity'] = array(
+  $identity_parameter_display_value = variable_get('acquia_lift_profiles_identity_param') ?: 'identity';
+  $identity_type_parameter_display_value = variable_get('acquia_lift_profiles_identity_type_param') ?: 'identityType';
+  $default_identity_type_display_value = variable_get('acquia_lift_profiles_default_identity_type') ?: 'account';
+  $default_identity_type_default_value = variable_get('acquia_lift_profiles_default_identity_type') ?: ACQUIA_LIFT_PROFILES_DEFAULT_IDENTITY_TYPE_DEFAULT;
+  $form['acquia_lift_profiles_identity'] = array(
+    '#title' => t('Identity'),
+    '#type' => 'fieldset',
+    '#tree' => TRUE,
+  );
+  $form['acquia_lift_profiles_identity']['acquia_lift_profiles_capture_identity'] = array(
     '#type' => 'checkbox',
     '#title' => t('Capture identity on login / register'),
     '#description' => t('Check this if you want Acquia Lift Profiles to capture the identity of the user upon login or registration. This means sending their email address to the Acquia Lift Profile Manager.'),
     '#default_value' => variable_get('acquia_lift_profiles_capture_identity', FALSE),
   );
-  $form['acquia_lift_profiles_identity_param'] = array(
+  $form['acquia_lift_profiles_identity']['acquia_lift_profiles_identity_param'] = array(
     '#type' => 'textfield',
     '#title' => t('Identity parameter'),
-    '#description' => t('The query string parameter for a specific item of visitor information, such as the visitor\'s email address or social media username (for example, ?identity=person@example.com), which is sent to Acquia Lift Web.'),
+    '#description' => t('The query string parameter for specific visitor information, such as an email address or social media username, which is sent to the Acquia Lift service. Example: ?<ins>@identity_parameter_display_value</ins>=jdoe01', array(
+      '@identity_parameter_display_value' => $identity_parameter_display_value,
+    )),
     '#default_value' => variable_get('acquia_lift_profiles_identity_param', ''),
   );
-  $form['acquia_lift_profiles_identity_type_param'] = array(
+  $form['acquia_lift_profiles_identity']['acquia_lift_profiles_identity_type_param'] = array(
     '#type' => 'textfield',
     '#title' => t('Identity type parameter'),
-    '#description' => t('The query string parameter for the category of the visitor\'s identity information (for example, ?identity=person@example.com&identityType=email). Acquia Lift Web accepts only either a blank value (which defaults to "email") or one of the following values: email, account, facebook, twitter, name.'),
+    '#description' => t('The query string parameter for the category (standard or custom) of the visitor\'s identity information, as defined in the !help_link. Example: ?@identity_parameter_display_value=jdoe01&<ins>@identity_type_parameter_display_value</ins>=@default_identity_type_default_value', array(
+      '@identity_parameter_display_value' => $identity_parameter_display_value,
+      '@identity_type_parameter_display_value' => $identity_type_parameter_display_value,
+      '@default_identity_type_default_value' => $default_identity_type_default_value,
+      '!help_link' => l(t('Acquia Lift service'), 'https://docs.acquia.com/lift/recommend/admin/customer#custom-identifier', array('attributes' => array('target' => '_blank'))),
+    )),
     '#default_value' => variable_get('acquia_lift_profiles_identity_type_param', ''),
     '#states' => array(
       'visible' => array(
-        ':input[name="acquia_lift_profiles_identity_param"]' =>  array('!value' => '')
+        ':input[name="acquia_lift_profiles_identity[acquia_lift_profiles_identity_param]"]' => array('!value' => '')
       )
     )
   );
-  $vocabularies = taxonomy_get_vocabularies();
-  $mappings = variable_get('acquia_lift_profiles_vocabulary_mappings', array());
-  $vocab_options = array('' => t('Select...'));
-  foreach ($vocabularies as $vid => $voc) {
-    $vocab_options[$vid] = $voc->name;
-  }
-  $form['acquia_lift_profiles_vocabulary_mappings'] = array(
-    '#title' => t('Vocabulary Mappings'),
+  $form['acquia_lift_profiles_identity']['acquia_lift_profiles_default_identity_type'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Default identity type'),
+    '#attributes' => array(
+      'placeholder' => ACQUIA_LIFT_PROFILES_DEFAULT_IDENTITY_TYPE_DEFAULT,
+    ),
+    '#description' => t('The identity type category to use by default. Leave this field blank to default to <ins>@default</ins>. Example: <ins>@default_identity_type_display_value</ins> is "?@identity_parameter_display_value=jdoe01&@identity_type_parameter_display_value=<ins>@default_identity_type_display_value</ins>", while blank is the same as "?@identity_parameter_display_value=jdoe01&@identity_type_parameter_display_value=<ins>@default</ins>"', array(
+      '@default' => ACQUIA_LIFT_PROFILES_DEFAULT_IDENTITY_TYPE_DEFAULT,
+      '@identity_parameter_display_value' => $identity_parameter_display_value,
+      '@identity_type_parameter_display_value' => $identity_type_parameter_display_value,
+      '@default_identity_type_display_value' => $default_identity_type_display_value,
+    )),
+    '#default_value' => variable_get('acquia_lift_profiles_default_identity_type', ''),
+  );
+
+  // Retrieving all context options.
+  module_load_include('inc', 'personalize', 'personalize.admin');
+  $groups = personalize_get_grouped_context_options(NULL, TRUE, array('acquia_lift_profiles_context', 'acquia_lift_context'));
+
+  // Field mappings.
+  $form['acquia_lift_profiles_field_mappings'] = array(
+    '#title' => t('Field Mappings'),
+    '#description' => t('For the "content section", "content keywords", and "persona" fields in Acquia Lift Profiles, you can map them to different visitor contexts.'),
     '#type' => 'fieldset',
     '#tree' => TRUE,
   );
-  $form['acquia_lift_profiles_vocabulary_mappings']['content_section'] = array(
-    '#title' => t('Content Section'),
-    '#description' => t('The vocabulary to use for the content section'),
-    '#type' => 'select',
-    '#options' => $vocab_options,
-    '#default_value' => isset($mappings['content_section']) ? $mappings['content_section'] : '',
+  $field_list = array(
+    'content_section' => 'Content Section',
+    'content_keywords' => 'Content Keywords',
+    'persona' => 'Persona',
   );
-  $form['acquia_lift_profiles_vocabulary_mappings']['content_keywords'] = array(
-    '#title' => t('Content Keywords'),
-    '#description' => t('The vocabulary to use for the content keywords'),
-    '#type' => 'select',
-    '#options' => $vocab_options,
-    '#default_value' => isset($mappings['content_keywords']) ? $mappings['content_keywords'] : '',
-  );
-  $form['acquia_lift_profiles_vocabulary_mappings']['persona'] = array(
-    '#title' => t('Persona'),
-    '#description' => t('The vocabulary to use for the persona'),
-    '#type' => 'select',
-    '#options' => $vocab_options,
-    '#default_value' => isset($mappings['persona']) ? $mappings['persona'] : '',
-  );
+  $field_mappings = variable_get('acquia_lift_profiles_field_mappings', array());
+  foreach ($field_list as $field_name => $field_friendly_name) {
+    $default_value = isset($field_mappings[$field_name]) ? $field_mappings[$field_name] : NULL;
+    $select = acquia_lift_profiles_admin_build_visitor_context_select($groups, $default_value);
+    $form['acquia_lift_profiles_field_mappings'][$field_name] = $select;
+    $form['acquia_lift_profiles_field_mappings'][$field_name]['#title'] = t($field_friendly_name);
+  }
+
   // Only show the "Tracked actions" selector if acquia_lift_profiles has already been
   // configured for API connections.
   if (acquia_lift_profiles_is_configured(TRUE)) {
-    module_load_include('inc', 'personalize', 'personalize.admin');
-    $groups = personalize_get_grouped_context_options(NULL, TRUE, array('acquia_lift_profiles_context', 'acquia_lift_context'));
     $udf_mappings = variable_get('acquia_lift_profiles_udf_mappings', array());
     $form['acquia_lift_profiles_udf_mappings'] = array(
       '#title' => t('User Defined Field Mappings'),
@@ -134,7 +155,6 @@ function acquia_lift_profiles_admin_form($form, &$form_state) {
         }
       }
       foreach ($udfs as $i => $udf) {
-
         $default_value = isset($udf_mappings[$type][$udf]) ? $udf_mappings[$type][$udf] : NULL;
         $select = acquia_lift_profiles_admin_build_visitor_context_select($groups, $default_value);
         $select['#title'] = t('Context to map to the @field field', array('@field' => $udf));
@@ -142,7 +162,7 @@ function acquia_lift_profiles_admin_form($form, &$form_state) {
         if ($i == $min) {
           $form['acquia_lift_profiles_udf_mappings'][$type][$udf]['#prefix'] = '<div class="acquia-lift-profiles-hidden-udfs">';
         }
-        elseif ($i == $max - 1) {
+        if ($i == $max - 1) {
           $form['acquia_lift_profiles_udf_mappings'][$type][$udf]['#suffix'] = '</div>';
         }
       }
@@ -189,23 +209,37 @@ function acquia_lift_profiles_admin_form_submit($form, &$form_state) {
   // If the "capture identity" setting has changed we need to make sure the visitor
   // actions subscribers are cleared for the login and register actions.
   $capture_identity = variable_get('acquia_lift_profiles_capture_identity', FALSE);
-  if ($capture_identity != $form_state['values']['acquia_lift_profiles_capture_identity']) {
+  if ($capture_identity != $form_state['values']['acquia_lift_profiles_identity']['acquia_lift_profiles_capture_identity']) {
     visitor_actions_clear_subscribers('user_login');
     visitor_actions_clear_subscribers('user_register');
   }
+  // Credentials.
   $variables = array(
     'acquia_lift_profiles_account_name',
     'acquia_lift_profiles_site_name',
     'acquia_lift_profiles_access_key',
     'acquia_lift_profiles_secret_key',
-    'acquia_lift_profiles_capture_identity',
-    'acquia_lift_profiles_identity_param',
-    'acquia_lift_profiles_identity_type_param',
-    'acquia_lift_profiles_vocabulary_mappings'
   );
   foreach ($variables as $key) {
     variable_set($key, $form_state['values'][$key]);
   }
+  // Field mappings.
+  if (isset($form_state['values']['acquia_lift_profiles_field_mappings'])) {
+    // Don't save empty entries.
+    $acquia_lift_profiles_field_mappings = array_filter($form_state['values']['acquia_lift_profiles_field_mappings']);
+    variable_set('acquia_lift_profiles_field_mappings', $acquia_lift_profiles_field_mappings);
+  }
+  // Identity parameters.
+  $identity_variables = array(
+    'acquia_lift_profiles_capture_identity',
+    'acquia_lift_profiles_identity_param',
+    'acquia_lift_profiles_identity_type_param',
+    'acquia_lift_profiles_default_identity_type',
+  );
+  foreach ($identity_variables as $key) {
+    variable_set($key, $form_state['values']['acquia_lift_profiles_identity'][$key]);
+  }
+
   // Strip out any http/https protocol from urls and save.
   foreach (array('acquia_lift_profiles_api_url', 'acquia_lift_profiles_js_path') as $key) {
     variable_set($key, preg_replace('/(^[a-z]+:\/\/)/i', '', $form_state['values'][$key]));

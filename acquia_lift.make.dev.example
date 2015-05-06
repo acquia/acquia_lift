@@ -15,7 +15,7 @@ projects[drupal][version] = "7.34"
 projects[personalize][type] = "module"
 projects[personalize][download][type] = "git"
 projects[personalize][download][url] = "http://git.drupal.org/project/personalize.git"
-projects[personalize][download][branch] = "7.x-1.x"
+projects[personalize][download][branch] = "7.x-2.x"
 projects[personalize][subdir] = contrib
 
 ; Contrib module: visitor_actions
@@ -31,7 +31,7 @@ projects[visitor_actions][subdir] = contrib
 projects[acquia_lift][type] = "module"
 projects[acquia_lift][download][type] = "git"
 projects[acquia_lift][download][url] = "http://git.drupal.org/project/acquia_lift.git"
-projects[acquia_lift][download][branch] = "7.x-1.x"
+projects[acquia_lift][download][branch] = "7.x-2.x"
 projects[acquia_lift][subdir] = contrib
 
 ; Contrib module: ctools

@@ -651,7 +651,7 @@ function acquia_lift_update_7200() {
       'agent_label' => $row->label,
       'agent_data' => unserialize($row->data),
       'osid' => $row->osid,
-      'decision_name' => empty($row->decision_name) ? 'osid-' + $row->osid : $row->decision_name,
+      'decision_name' => empty($row->decision_name) ? 'osid-' . $row->osid : $row->decision_name,
       'option_count' => count($options),
       'options' => $options,
       'targeting' => unserialize($row->targeting),
@@ -718,9 +718,7 @@ function acquia_lift_update_7200() {
       $agent = personalize_agent_save($agent);
       // Set the status of our new agent to that of the original.
       $nested_agent_status = personalize_agent_get_status($original_agent_name);
-      personalize_agent_set_status($agent->machine_name, $nested_agent_status);
-      $agent->started = $nested_agent->started;
-      $agent = personalize_agent_save($agent);
+
       // Move goals over to the new agent.
       $goals = personalize_goal_load_by_conditions(array('agent' => $original_agent_name));
       foreach ($goals as $goal) {
@@ -774,6 +772,9 @@ function acquia_lift_update_7200() {
           personalize_option_set_delete($option_set_details['osid']);
         }
       }
+      personalize_agent_set_status($agent->machine_name, $nested_agent_status);
+      $agent->started = $nested_agent->started;
+      personalize_agent_save($agent);
     }
     catch (PersonalizeException $e) {
       personalize_agent_delete($agent->machine_name);

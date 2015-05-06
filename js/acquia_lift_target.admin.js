@@ -6,6 +6,19 @@
 
 (function ($, Drupal) {
 
+  /**
+   * Enable full section to be clickable when using radio lists as button lists
+   */
+  Drupal.behaviors.acquiaLiftRadioButtonList = {
+    attach: function(context, settings) {
+      $('.acquia-lift-radio-list-item', context).once().on('click', function(e) {
+        var $radio = $('input[type="radio"]', this);
+        $radio.attr('checked', true);
+        $radio.trigger('change');
+      });
+    }
+  };
+
   Drupal.behaviors.acquiaLiftTargetAdmin = {
     attach: function (context, settings) {
 

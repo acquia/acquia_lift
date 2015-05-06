@@ -58,7 +58,7 @@
         }
       });
     }
-  }
+  };
 
   /**
    * Adjust fills for percentage line fill components.
@@ -73,7 +73,7 @@
         $(this).css('width', percent + '%');
       });
     }
-  }
+  };
 
   /**
    * Adjusts the display of high-low components.
@@ -111,7 +111,7 @@
         $bounds.css('left', scaleLow + 'px');
       });
     }
-  }
+  };
 
   /**
    * Remove any duplicated message display areas.
@@ -124,5 +124,6 @@
       }
       $priorMessages = $('div.messages').not($newMessages).hide();
     }
-  }
+  };
+
 })(Drupal.jQuery);

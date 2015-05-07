@@ -5,11 +5,9 @@
 }
 
 .el-card__flag {
-  margin-right: -.83rem; /* RTL */
+  margin-right: -1.599rem; /* RTL */
   margin-left: auto; /* RTL */
 }
 .el-card__flag__content::before {
-  right: -.769em; /* RTL */
-  left: auto; /* RTL */
   border-color: #90cd44 transparent #90cd44 #90cd44; /* RTL */
 }

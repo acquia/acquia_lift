@@ -71,8 +71,24 @@ ul.el-card__actions {
 
 .el-card__flag {
   position: relative;
-  margin-left: -.83rem; /* LTR */
+  max-height: 3rem;
+  margin-left: -1.599rem; /* LTR */
   margin-bottom: .88rem;
+  padding-left: .769rem;
+  transition: all .4s;
+  -webkit-transform-origin: .384rem bottom;
+      -ms-transform-origin: .384rem bottom;
+          transform-origin: .384rem bottom;
+}
+.el-card__flag.is-hidden {
+  overflow: hidden;
+  max-height: 0;
+  margin-bottom: 0;
+  opacity: 0;
+  visibility: hidden;
+  -webkit-transform: scale(0);
+      -ms-transform: scale(0);
+          transform: scale(0);
 }
 
 .el-card__flag__label {
@@ -92,13 +108,16 @@ ul.el-card__actions {
   display: block;
   position: absolute;
   top: 0;
-  left: -.769em; /* LTR */
+  left: 0; /* LTR */
   width: 0;
   height: 0;
   overflow: hidden;
   border: .769em solid transparent;
   border-color: #90cd44 #90cd44 #90cd44 transparent; /* LTR */
   transition: all .4s;
+  -webkit-transform-origin: right;
+      -ms-transform-origin: right;
+          transform-origin: right;
 }
 
 /**

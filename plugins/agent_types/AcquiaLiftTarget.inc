@@ -69,6 +69,7 @@ class AcquiaLiftTarget extends PersonalizeAgentBase implements PersonalizeExplic
    * Implements PersonalizeAgentInterface::errors().
    */
   public function errors() {
+    $errors = array();
     $data = $this->getData();
     $is_mvt = isset($data['variation_set_handling']) && $data['variation_set_handling'] == ACQUIA_LIFT_DECISION_MULTIVARIATE;
     // If there are tests involved, first check that there's at least one goal
@@ -109,53 +110,44 @@ class AcquiaLiftTarget extends PersonalizeAgentBase implements PersonalizeExplic
 
     }
     if ($needs_goals && empty($goals)) {
-      return array(
-        t('You have not added any goals yet. Please add a goal in the <a href="!why_url">"Why" section</a>.', array(
-          '!why_url' => url('admin/structure/personalize/manage/' . $this->getMachineName() . '/goals'),
-        )),
-      );
+      $errors[] = t('You have not added any goals yet. Please add a goal in the <a href="!why_url">"Why" section</a>.', array(
+        '!why_url' => url('admin/structure/personalize/manage/' . $this->getMachineName() . '/goals'),
+      ));
     }
     if (empty($option_sets)) {
-      return array(
-        t('You have not added any variation sets yet. Please add a variation set in the <a href="!what_url">"What" section</a>.', array(
-          '!what_url' => url('admin/structure/personalize/manage/' . $this->getMachineName() . '/variations'),
-        )),
-      );
+      $errors[] = t('You have not added any variation sets yet. Please add a variation set in the <a href="!what_url">"What" section</a>.', array(
+        '!what_url' => url('admin/structure/personalize/manage/' . $this->getMachineName() . '/variations'),
+      ));
     }
     if ($is_mvt) {
       if (count($option_sets) < 2) {
-        return array(
-          t('A multi-variate test requires at least two option sets. Please add another variation set in the <a href="!what_url">"What" section</a>.', array(
-            '!what_url' => url('admin/structure/personalize/manage/' . $this->getMachineName() . '/variations'),
-          )),
-        );
+        $errors[] = t('A multi-variate test requires at least two option sets. Please add another variation set in the <a href="!what_url">"What" section</a>.', array(
+          '!what_url' => url('admin/structure/personalize/manage/' . $this->getMachineName() . '/variations'),
+        ));
       }
-      // The option number check doesn't apply to MVTs so if we got here, we're
-      // fine.
-      return array();
     }
-    // If there are multiple option sets, check that they all have the same number
-    // of options.
-    $equal_option_counts = TRUE;
-    if (count($option_sets) > 1) {
-      $first_os = array_shift($option_sets);
-      $num_options = count($first_os->options);
-      foreach ($option_sets as $os) {
-        if (count($os->options) != $num_options) {
-          $equal_option_counts = FALSE;
+    else {
+      // If there are multiple option sets, check that they all have the same number
+      // of options.
+      $equal_option_counts = TRUE;
+      if (count($option_sets) > 1) {
+        $first_os = array_shift($option_sets);
+        $num_options = count($first_os->options);
+        foreach ($option_sets as $os) {
+          if (count($os->options) != $num_options) {
+            $equal_option_counts = FALSE;
+          }
         }
       }
-    }
-    // Prevent submission if the numbers of options aren't the same.
-    if (!$equal_option_counts) {
-      // @todo Get proper text for this.
-      return array(
-        t('You have multiple variation sets with different numbers of variations - the personalization cannot be started until all variation sets have the same number of variations.  Fix this by making sure all variation sets have the same number of variations in the <a href="!what_url">"What" section</a>.', array(
+      // Prevent submission if the numbers of options aren't the same.
+      if (!$equal_option_counts) {
+        // @todo Get proper text for this.
+        $errors[] = t('You have multiple variation sets with different numbers of variations - the personalization cannot be started until all variation sets have the same number of variations.  Fix this by making sure all variation sets have the same number of variations in the <a href="!what_url">"What" section</a>.', array(
           '!what_url' => url('admin/structure/personalize/manage/' . $this->getMachineName() . '/variations'),
-        )),
-      );
+        ));
+      }
     }
-    return array();
+    return $errors;
   }
 
   /**

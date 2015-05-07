@@ -2210,21 +2210,59 @@ function acquia_lift_form_personalize_status_change_form_alter(&$form, &$form_st
  *  Implements hook_personalize_campaign_action_links_alter().
  */
 function acquia_lift_personalize_campaign_action_links_alter(&$links, $agent_data, $destination) {
-  // If this agent has nested test agents, then provide a link to reset data.
-  $nested = acquia_lift_get_nested_tests($agent_data);
-  if (empty($nested)) {
-    return;
+  module_load_include('inc', 'acquia_lift', 'acquia_lift.admin');
+  if (acquia_lift_target_definition_changes_allowed($agent_data)) {
+    // If this agent has nested test agents, then provide a link to reset data.
+    $nested = acquia_lift_get_nested_tests($agent_data);
+    if (empty($nested)) {
+      return;
+    }
+    $links[] = array(
+      'title' => t('Reset data'),
+      'href' => 'admin/structure/personalize/manage/' . $agent_data->machine_name . '/reset',
+      'query' => array(
+        'destination' => $destination,
+      ),
+      'attributes' => array(
+        'class' => array('acquia-lift-reset'),
+      ),
+    );
   }
-  $links[] = array(
-    'title' => t('Reset data'),
-    'href' => 'admin/structure/personalize/manage/' . $agent_data->machine_name . '/reset',
-    'query' => array(
-      'destination' => $destination,
-    ),
-    'attributes' => array(
-      'class' => array('acquia-lift-reset'),
-    ),
-  );
+  else {
+    // If no changes are allowed, then don't provide any actions except an
+    // action to 'pause' the campaign.
+    $status = personalize_agent_get_status($agent_data->machine_name);
+    switch ($status) {
+      case PERSONALIZE_STATUS_RUNNING:
+        $message = t('Personalizations that are running cannot be edited. Click "Pause" to allow it to be edited. Personalizations that are paused display the default variations to visitors.');
+        $button_text = t("Pause");
+        $next_status = PERSONALIZE_STATUS_PAUSED;
+        break;
+      case PERSONALIZE_STATUS_SCHEDULED:
+        $message = t('Personalizations with scheduled start dates cannot be edited.  Click "Make editable" to allow it to be edited. After you have made your changes, go to the Review section to restart the personalization.');
+        $button_text = t('Make editable');
+        $next_status = empty($agent_data->started) ? PERSONALIZE_STATUS_NOT_STARTED : PERSONALIZE_STATUS_PAUSED;
+        break;
+      case PERSONALIZE_STATUS_COMPLETED:
+        $message = t('Archived personalizations cannot be edited.  Click "Unarchive" for the personalization to restore it to a Paused status, allowing it to be edited.');
+        $button_text = t('Unarchive');
+        $next_status = PERSONALIZE_STATUS_PAUSED;
+        break;
+      default:
+        // Should not get here.
+        return;
+    }
+    drupal_set_message($message, 'warning');
+    $links = array(
+      array(
+        'title' => $button_text,
+        'href' => '#',
+        'attributes' => array(
+          'data-personalize-action' => 'personalize-wizard-status-' . $next_status,
+        ),
+      ),
+    );
+  }
 }
 
 /**

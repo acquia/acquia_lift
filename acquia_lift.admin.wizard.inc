@@ -15,13 +15,6 @@
  * Alter hook for the process bar on the campaign wizard form.
  */
 function acquia_lift_personalize_campaign_wizard_process_bar_alter(&$form, &$form_state, $form_id) {
-  $agent = $form['#agent'];
-  module_load_include('inc', 'acquia_lift', 'acquia_lift.admin');
-  if (!acquia_lift_target_definition_changes_allowed($agent)) {
-    unset($form['process_bar']['actions']);
-    $form['actions']['submit']['#disabled'] = TRUE;
-    return;
-  }
   // For each status form, handle the status change along with any
   // nested agent implementations.
   foreach (element_children($form['process_bar']['actions']['status']['status_wrapper']) as $form_element) {
@@ -38,45 +31,11 @@ function acquia_lift_personalize_campaign_wizard_base_alter(&$form, &$form_state
   if (acquia_lift_target_definition_changes_allowed($agent)) {
     // Make the campaign name a self-revealing text input.
     $form['agent_basic_info']['title']['#theme_wrappers'][] = 'acquia_lift_revealing_input';
-    return;
   }
-  // Give instructions for how to make the campaign editable.
-  $form['agent_basic_info']['title']['#disabled'] = TRUE;
-  $status = personalize_agent_get_status($agent->machine_name);
-  switch ($status) {
-    case PERSONALIZE_STATUS_RUNNING:
-      $message = t('Personalizations that are running cannot be edited. Click "Pause" to allow it to be edited. Personalizations that are paused display the default variations to visitors.');
-      $button_text = t("Pause");
-      $next_status = PERSONALIZE_STATUS_PAUSED;
-      break;
-    case PERSONALIZE_STATUS_SCHEDULED:
-      $message = t('Personalizations with scheduled start dates cannot be edited.  Click "Make editable" to allow it to be edited. After you have made your changes, go to the Review section to restart the personalization.');
-      $button_text = t('Make editable');
-      $next_status = empty($agent->started) ? PERSONALIZE_STATUS_NOT_STARTED : PERSONALIZE_STATUS_PAUSED;
-      break;
-    case PERSONALIZE_STATUS_COMPLETED:
-      $message = t('Archived personalizations cannot be edited.  Click "Unarchive" for the personalization to restore it to a Paused status, allowing it to be edited.');
-      $button_text = t('Unarchive');
-      $next_status = PERSONALIZE_STATUS_PAUSED;
-      break;
-    default:
-      // Should not get here.
-      return;
+  else {
+    // Give instructions for how to make the campaign editable.
+    $form['agent_basic_info']['title']['#disabled'] = TRUE;
   }
-  drupal_set_message($message, 'warning');
-  $form['agent_basic_info']['status_submit'] = array(
-    '#type' => 'submit',
-    '#value' => $button_text,
-    '#personalize_next_status' => $next_status,
-    '#submit' => array('acquia_lift_personalize_campaign_wizard_submit_editable'),
-    '#limit_valiation_errors' => array('agent_basic_info'),
-    '#attributes' => array(
-      'class' => array(
-        'acquia-lift-submit-button',
-        'action-item-primary-active'
-      ),
-    ),
-  );
 }
 
 /**

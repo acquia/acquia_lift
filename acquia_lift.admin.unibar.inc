@@ -41,11 +41,13 @@ function acquia_lift_element_variation_details_form($form, &$form_state, $variat
       $default_set_name = t('Variation set #@num', array(
         '@num' => count($option_sets) + 1,
       ));
+      $default_option_label = t('Variation #@num', array('@num' => 1));
     }
   }
   else {
     $osid = personalize_resolve_stringified_osid($osid);
     $option_set = personalize_option_set_load($osid);
+    $default_set_name = $option_set->label;
     $edit_option = NULL;
     if (!empty($option_id)) {
       if ($option_id === PERSONALIZE_CONTROL_OPTION_ID) {
@@ -65,6 +67,8 @@ function acquia_lift_element_variation_details_form($form, &$form_state, $variat
         }
       }
     }
+    $default_option_label = empty($edit_option) ?  t('Variation #@num', array('@num' => count($option_set->options))) : $edit_option['option_label'];
+
     $form['osid'] = array(
       '#type' => 'value',
       '#value' => $osid,
@@ -96,18 +100,14 @@ function acquia_lift_element_variation_details_form($form, &$form_state, $variat
     '#default_value' => isset($default_set_name) ? $default_set_name : '',
     '#required' => TRUE,
     '#maxlength' => 255,
-    '#access' => empty($osid),
   );
-  // Option label if editing.
-  $option_label = isset($option['option_label']) ? $option['option_label'] : '';
+  // Option label
   $form['option_label'] = array(
     '#type' => 'textfield',
     '#title' => t('Variation name'),
-    '#description' => t('Descriptive name for the variation, used by Acquia Lift for administration and reporting.'),
     '#required' => TRUE,
     '#maxlength' => PERSONALIZE_MACHINE_NAME_MAXLENGTH,
-    '#access' => !empty($option),
-    '#default_value' => filter_xss($option_label),
+    '#default_value' => filter_xss($default_option_label),
   );
   // Now include the details specific to this variation type.
   $form['personalize_elements_content'] = $types[$variation_type]['contextual']['formitem'];
@@ -127,7 +127,7 @@ function acquia_lift_element_variation_details_form($form, &$form_state, $variat
   // empty response body.
   $form['actions']['variation_type_submit_form_add'] = array(
     '#type' => 'submit',
-    '#value' => t('Save and add another'),
+    '#value' => t('Add another'),
     '#attributes' => array(
       'class' => array('action-item-primary-active', 'acquia-lift-submit-button'),
     ),
@@ -142,7 +142,7 @@ function acquia_lift_element_variation_details_form($form, &$form_state, $variat
   );
   $form['actions']['variation_type_submit_form'] = array(
     '#type' => 'submit',
-    '#value' => t('Save and continue'),
+    '#value' => t('Save'),
     '#attributes' => array(
       'class' => array('acquia-lift-submit-button'),
     ),
@@ -209,7 +209,7 @@ function acquia_lift_element_variation_details_form_submit($form, &$form_state) 
     // Creating a new option set and a new option within it.
     $values['options'] = array(
       array(
-        'option_label' => t('Variation #@num', array('@num' => 1)),
+        'option_label' => $values['option_label'],
         'personalize_elements_content' => $values['personalize_elements_content'],
       ),
     );
@@ -222,10 +222,11 @@ function acquia_lift_element_variation_details_form_submit($form, &$form_state) 
   }
   else {
     $option_set = personalize_option_set_load($values['osid']);
+    $option_set->label = $values['title'];
     if (empty($values['variation_number'])) {
       // Adding a variation to an existing option set.
       $option_set->options[] = array(
-        'option_label' => t('Variation #@num', array('@num' => count($option_set->options))),
+        'option_label' => $values['option_label'],
         'personalize_elements_content' => $values['personalize_elements_content'],
       );
       $message = t('The variation has been created.');
@@ -268,8 +269,8 @@ function acquia_lift_element_variation_details_form_submit($form, &$form_state) 
  */
 function acquia_lift_element_variation_details_form_ajax_callback($form, &$form_state) {
   $op = isset($form_state['values']['op']) ? $form_state['values']['op'] : '';
-  $add_another = ($op == t('Save and add another'));
-  $add_and_close = ($op == t('Save and continue'));
+  $add_another = ($op == t('Add another'));
+  $add_and_close = ($op == t('Save'));
   $cancel = ($op == t('Cancel'));
   $has_destination = !empty($_SESSION['acquia_lift_element_destination']);
 

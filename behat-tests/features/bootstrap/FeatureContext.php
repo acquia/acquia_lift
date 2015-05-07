@@ -189,8 +189,7 @@ class FeatureContext extends RawDrupalContext implements SnippetAcceptingContext
       foreach ($goals as $goal_id => $goal) {
         personalize_goal_delete($goal_id);
       }
-      $agent_status = isset($agent->status) ? $agent->status : PERSONALIZE_STATUS_RUNNING;
-      personalize_agent_set_status($saved->machine_name, $agent_status);
+      personalize_agent_set_status($saved->machine_name, PERSONALIZE_STATUS_NOT_STARTED);
     }
   }
 
@@ -226,7 +225,6 @@ class FeatureContext extends RawDrupalContext implements SnippetAcceptingContext
       array_unshift($options, $control_option);
       $option_set->options = $options;
       personalize_option_set_save($option_set);
-      personalize_agent_set_status($option_set->agent, PERSONALIZE_STATUS_RUNNING);
     }
   }
 

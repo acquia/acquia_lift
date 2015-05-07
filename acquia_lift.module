@@ -737,7 +737,7 @@ function acquia_lift_personalize_option_set_save($option_set) {
  */
 function acquia_lift_personalize_option_set_delete($option_set) {
   $agent = personalize_agent_load($option_set->agent);
-  if (acquia_lift_is_targeting_agent($agent)) {
+  if (acquia_lift_is_targeting_agent($agent) && !empty($option_set->targeting)) {
     // Ensure any nested tests are deleted too.
     foreach ($option_set->targeting as $target) {
       if (isset($target['osid'])) {
@@ -2796,7 +2796,7 @@ function acquia_lift_get_campaign_details() {
       continue;
     }
     $supports_goals = $plugin instanceof PersonalizeAgentGoalInterface;
-    $supports_targeting = $plugin instanceof PersonalizeAutoTargetingInterface || $plugin instanceof PersonalizeExplicitTargetingInterface;
+    $supports_targeting = $plugin instanceof PersonalizeExplicitTargetingInterface;
     if ($supports_goals) {
       foreach (personalize_goal_load_by_conditions(array('agent' => $agent->machine_name)) as $goal) {
         if (isset($actions[$goal->action])) {
@@ -2809,7 +2809,6 @@ function acquia_lift_get_campaign_details() {
     foreach ($option_sets as $option_set) {
       $option_set_types[] = $option_set->plugin;
     }
-    $current_status = personalize_agent_get_status($agent->machine_name);
     $report_is_active = $plugin instanceof PersonalizeAgentReportInterface && !empty($agent->started);
     $campaigns[$agent->machine_name] = array(
       'name' => $agent->machine_name,

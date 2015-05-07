@@ -301,12 +301,14 @@ function acquia_lift_personalize_campaign_wizard_variations_alter(&$form, &$form
   else if (empty($form_state['values']['variations']['add_variation']['option_set_type'])) {
     // If the user has just selected the variation set handling, then expand
     // the add card by default.
-    $form['variations']['add_variation']['#collapsed'] = FALSE;
+    if ($form_state['submitted']) {
+      $form['variations']['add_variation']['#collapsed'] = FALSE;
+    }
     // The user is ready to select the option set type so hide the variation set
     // handling list.
     $form['variations']['add_variation']['variation_set_handling']['#attributes']['class'][] = 'element-hidden';
   }
-  else {
+  else if (!empty($form_state['values']['variations']['add_variation']['option_set_type'])) {
     // Hide both the variation handling and option set type forms
     $form['variations']['add_variation']['variation_set_handling']['#attributes']['class'][] = 'element-hidden';
     $form['variations']['add_variation']['option_set_type']['#attributes']['class'][] = 'element-hidden';
@@ -348,6 +350,7 @@ function acquia_lift_personalize_campaign_wizard_variations_alter(&$form, &$form
         break;
     }
   }
+
 }
 
 /**
@@ -1260,7 +1263,7 @@ function acquia_lift_personalize_campaign_wizard_variations_submit_element_add($
   $_SESSION['acquia_lift_element_destination'] = url('admin/structure/personalize/manage/' . $agent->machine_name . '/variations');
 
   // Redirect to the requested URL to create an option set.
-  $form_state['redirect'] = $form_state['values']['variations']['add_variation']['details']['element']['content']['url'];
+  $form_state['redirect'] = $form_state['values']['variations']['add_variation']['details']['element']['content']['url'] ?: '<front>';
 }
 
 /**
@@ -1682,9 +1685,7 @@ function _acquia_lift_personalize_campaign_wizard_variations_element(&$form, &$f
       '#title' => t('Page where element exists'),
       '#allow_dynamic' => FALSE,
       '#allow_external' => TRUE,
-      '#required' => TRUE,
       '#field_prefix' => $base_url . base_path(),
-      '#description' => t('Enter either the path of the webpage that contains the element, or &lt;front&gt; for your website\'s home page.'),
     );
     $element['navigate'] = array(
       '#type' => 'submit',

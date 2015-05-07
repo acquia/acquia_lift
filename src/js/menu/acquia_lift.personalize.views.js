@@ -344,6 +344,7 @@
         this.listenTo(this.model, 'change', this.render);
         this.listenTo(this.model, 'remove', this.onOptionSetRemoved);
         this.listenTo(this.model, 'change:options', this.rebuild);
+        this.listenTo(this.model, 'change:label', this.rebuild);
       }
       this.listenTo(this.campaignModel, 'change:isActive', this.render);
 

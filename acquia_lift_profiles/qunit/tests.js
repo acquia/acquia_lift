@@ -177,6 +177,28 @@ QUnit.asyncTest("Get context values no cache", function( assert ) {
 
 });
 
+QUnit.asyncTest("Trigger retrievedSegments", function( assert ) {
+  expect(5);
+  var contextResult = Drupal.personalize.visitor_context.acquia_lift_profiles_context.getContext({'segment1':'segment1', 'segment2':'segment2'});
+  assert.ok(contextResult instanceof Promise);
+  var cached = Drupal.personalize.visitor_context_read('segment1', 'acquia_lift_profiles_context');
+  QUnit.stop();
+  Promise.all([contextResult]).then(function (loadedContexts) {
+    QUnit.start();
+    cached = Drupal.personalize.visitor_context_read('segment1', 'acquia_lift_profiles_context');
+  });
+
+  $(document).on( "retrievedSegments", function(segment, segments) {
+    assert.ok( true, "retrievedSegments was called!" );
+    assert.ok(segments != null, "Segments is not null");
+    assert.ok(segments.length == 1, "Segments has 1 element");
+    assert.equal(segments[0], "segment1", "Segment[0] is segment1");
+  });
+
+});
+
+
+
 QUnit.test("get context values with cache", function( assert ) {
   expect(3);
   Drupal.acquia_lift_profiles.clearSegmentMemoryCache();

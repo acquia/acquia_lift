@@ -15,41 +15,11 @@
  * Alter hook for the process bar on the campaign wizard form.
  */
 function acquia_lift_personalize_campaign_wizard_process_bar_alter(&$form, &$form_state, $form_id) {
-  $agent = $form['#agent'];
-  module_load_include('inc', 'acquia_lift', 'acquia_lift.admin');
-  if (!acquia_lift_target_definition_changes_allowed($agent)) {
-    unset($form['process_bar']['actions']);
-    $form['actions']['submit']['#disabled'] = TRUE;
-    return;
+  // For each status form, handle the status change along with any
+  // nested agent implementations.
+  foreach (element_children($form['process_bar']['actions']['status']['status_wrapper']) as $form_element) {
+    $form['process_bar']['actions']['status']['status_wrapper'][$form_element]['#submit'] = array('acquia_lift_personalize_campaign_wizard_status_submit');
   }
-  $nested = acquia_lift_get_nested_tests($agent);
-  if (empty($nested)) {
-    return;
-  }
-  // If we're editing an existing agent, add a "Reset data" button next to
-  // the Pause/Resume button.
-  // @todo Move this to the reports page.
-  $reset_form = array(
-    '#prefix' => '<div id="personalize-acquia-lift-reset-form">',
-    '#suffix' => '</div>'
-  );
-  $reset_form['actions']['reset'] = array(
-    '#prefix' => '<div id="personalize-acquia-lift-reset">',
-    '#suffix' => '</div>',
-    '#type' => 'submit',
-    '#name' => 'reset_submit',
-    '#value' => t('Reset data'),
-    '#attributes' => array(
-      'class' => array('action-item-primary-active'),
-    ),
-    '#ajax' => array(
-      'callback' => 'personalize_acquia_lift_ajax_callback',
-      'wrapper' => 'personalize-acquia-lift-reset-form',
-      'effect' => 'fade',
-    )
-  );
-  $reset_form['actions']['reset']['#submit'] = array('acquia_lift_reset_submit');
-  $form['process_bar']['actions']['reset_lift_agent'] = $reset_form;
 }
 
 /**
@@ -61,45 +31,11 @@ function acquia_lift_personalize_campaign_wizard_base_alter(&$form, &$form_state
   if (acquia_lift_target_definition_changes_allowed($agent)) {
     // Make the campaign name a self-revealing text input.
     $form['agent_basic_info']['title']['#theme_wrappers'][] = 'acquia_lift_revealing_input';
-    return;
   }
-  // Give instructions for how to make the campaign editable.
-  $form['agent_basic_info']['title']['#disabled'] = TRUE;
-  $status = personalize_agent_get_status($agent->machine_name);
-  switch ($status) {
-    case PERSONALIZE_STATUS_RUNNING:
-      $message = t('Personalizations that are running cannot be edited. Click "Pause" to allow it to be edited. Personalizations that are paused display the default variations to visitors.');
-      $button_text = t("Pause");
-      $next_status = PERSONALIZE_STATUS_PAUSED;
-      break;
-    case PERSONALIZE_STATUS_SCHEDULED:
-      $message = t('Personalizations with scheduled start dates cannot be edited.  Click "Make editable" to allow it to be edited. After you have made your changes, go to the Review section to restart the personalization.');
-      $button_text = t('Make editable');
-      $next_status = empty($agent->started) ? PERSONALIZE_STATUS_NOT_STARTED : PERSONALIZE_STATUS_PAUSED;
-      break;
-    case PERSONALIZE_STATUS_COMPLETED:
-      $message = t('Archived personalizations cannot be edited.  Click "Unarchive" for the personalization to restore it to a Paused status, allowing it to be edited.');
-      $button_text = t('Unarchive');
-      $next_status = PERSONALIZE_STATUS_PAUSED;
-      break;
-    default:
-      // Should not get here.
-      return;
+  else {
+    // Give instructions for how to make the campaign editable.
+    $form['agent_basic_info']['title']['#disabled'] = TRUE;
   }
-  drupal_set_message($message, 'warning');
-  $form['agent_basic_info']['status_submit'] = array(
-    '#type' => 'submit',
-    '#value' => $button_text,
-    '#personalize_next_status' => $next_status,
-    '#submit' => array('acquia_lift_personalize_campaign_wizard_submit_editable'),
-    '#limit_valiation_errors' => array('agent_basic_info'),
-    '#attributes' => array(
-      'class' => array(
-        'acquia-lift-submit-button',
-        'action-item-primary-active'
-      ),
-    ),
-  );
 }
 
 /**
@@ -1415,35 +1351,26 @@ function acquia_lift_personalize_campaign_wizard_review_submit(&$form, &$form_st
   // the campaign.
   if (isset($form_state['triggering_element']['#personalize_next_status'])) {
     $next_status = $form_state['triggering_element']['#personalize_next_status'];
-    if ($next_status == PERSONALIZE_STATUS_RUNNING || $next_status == PERSONALIZE_STATUS_SCHEDULED) {
-      module_load_include('inc', 'acquia_lift', 'acquia_lift.admin');
-      module_load_include('inc', 'acquia_lift', 'acquia_lift.batch');
-      try {
-        $agent_data->tests_to_delete = acquia_lift_implement_test_structure($agent_data);
-        if (acquia_lift_batch_sync_tests_for_agent($agent_data)) {
-          personalize_agent_set_status($agent_data->machine_name, $next_status);
-          // Unset the started property which will have been changed during
-          // status update and we don't want it getting clobbered by other
-          // saves of the agent.
-          unset($agent_data->started);
-          return;
-        }
-        else {
-          drupal_set_message(t('There was a problem syncing your personalization components to Lift and it cannot be started at this time.'), 'error');
-        }
-      }
-      catch (Exception $e) {
-        form_set_error(NULL, t('There was a problem implementing the personalization as defined.'));
-      }
-    }
-    else {
-      personalize_agent_set_status($agent_data->machine_name, $next_status);
-      return;
+    module_load_include('inc', 'acquia_lift', 'acquia_lift.admin');
+    if (!acquia_lift_target_set_status($agent_data, $next_status)) {
+      form_set_error(NULL, t('There was a problem implementing the personalization as defined.'));
     }
   }
   // If we got here, some sort of error occurred so make sure we don't move to
   // the next step.
   $form_state['redirect'] = current_path();
+}
+
+/**
+ * Submit function for the status change buttons.
+ */
+function acquia_lift_personalize_campaign_wizard_status_submit($form, &$form_state) {
+  $next_status = $form_state['triggering_element']['#personalize_next_status'];
+  $agent_data = personalize_agent_load($form_state['values']['agent_name']);
+  module_load_include('inc', 'acquia_lift', 'acquia_lift.admin');
+  if (!acquia_lift_target_set_status($agent_data, $next_status)) {
+    form_set_error(NULL, t('There was a problem implementing the personalization as defined.'));
+  }
 }
 
 /**

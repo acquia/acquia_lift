@@ -248,6 +248,8 @@ Feature: Personalize elements variations can be edited for an existing campaign.
 
     # I add a new personalized elements variation.
     When I check the "Webpage elements" radio button
+    And I wait for AJAX to finish
+    # Todo create a custom assertion for clicking a radio button list option
     And I fill in "node" for "variations[add_variation][details][element][content][url]"
     And I press "Go" in the "wizard_targeting_form" region
 

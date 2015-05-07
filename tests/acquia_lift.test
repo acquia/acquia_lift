@@ -1648,16 +1648,17 @@ class AcquiaLiftWebTestTarget extends AcquiaLiftWebTestBase {
 
   function testNestedAgentsButtons() {
     $this->drupalLogin($this->managerUser);
-    $reset_button_name = 'reset_submit';
     $targeting_agent_no_nesting = $this->createTargetingAgent();
-    $this->drupalGet('admin/structure/personalize/manage/' . $targeting_agent_no_nesting->machine_name . '/edit');
+    $this->drupalGet('admin/structure/personalize/manage/' . $targeting_agent_no_nesting->machine_name . '/variations');
     // There are no nested tests so there shouldn't be any buttons relating to
     // test agents.
-    $this->assertNoFieldByName($reset_button_name);
+    $reset_link = 'admin/structure/personalize/manage/' . $targeting_agent_no_nesting->machine_name . '/reset';
+    $this->assertNoLinkByHref($reset_link);
     $agent_with_nesting = $this->createTargetingAgentWithNestedTest();
-    $this->drupalGet('admin/structure/personalize/manage/' . $agent_with_nesting->machine_name . '/edit');
+    $this->drupalGet('admin/structure/personalize/manage/' . $agent_with_nesting->machine_name . '/variations');
     // This campaign has a nested test so those buttons should be visible.
-    $this->assertFieldByName($reset_button_name);
+    $reset_link = 'admin/structure/personalize/manage/' . $agent_with_nesting->machine_name . '/reset';
+    $this->assertLinkByHref($reset_link);
   }
 
   function testNestedAgentStatus() {
@@ -2858,6 +2859,14 @@ class AcquiaLiftWebTestCampaignWizard extends AcquiaLiftWebTestBase {
     $agent = $this->createTargetingAgent();
     $machine_name = $agent->machine_name;
 
+    $campaign_pages = array(
+      "admin/structure/personalize/manage/$machine_name/variations",
+      "admin/structure/personalize/manage/$machine_name/goals",
+      "admin/structure/personalize/manage/$machine_name/targeting",
+      "admin/structure/personalize/manage/$machine_name/scheduling",
+      "admin/structure/personalize/manage/$machine_name/review",
+    );
+
     // Add option set.
     $this->createPersonalizedBlock(0, $agent);
 
@@ -2872,54 +2881,82 @@ class AcquiaLiftWebTestCampaignWizard extends AcquiaLiftWebTestBase {
     );
     $this->drupalPost(NULL, $edit, $this->getButton('wizard_save'));
 
-    // Start the campaign from the review screen.
+    // Schedule the campaign to start in the future.
+    $this->drupalGet("admin/structure/personalize/manage/$machine_name/scheduling");
+    $start_date = strtotime('+1 month midnight');
+
+    $edit = array(
+      'campaign_start' => 'specified',
+      'campaign_start_date[month]' => intval(date('m', $start_date)),
+      'campaign_start_date[day]' => date('d', $start_date),
+      'campaign_start_date[year]' => date('Y', $start_date),
+    );
+    $this->drupalPost(NULL, $edit, $this->getButton('wizard_next'));
+
+    // Verify options.
+    foreach ($campaign_pages as $page) {
+      $this->drupalGet($page);
+      $this->assertNoText($message_running);
+      $this->assertNoText($message_scheduled);
+      $this->assertNoText($message_completed);
+      $this->assertFieldById('edit-save');
+      $this->assertFieldById('edit-submit-' . PERSONALIZE_STATUS_RUNNING);
+      $this->assertNoFieldById('edit-submit-' . PERSONALIZE_STATUS_PAUSED);
+      $this->assertNoFieldById('edit-submit-' . PERSONALIZE_STATUS_COMPLETED);
+      $this->assertFieldById('edit-submit-' . PERSONALIZE_STATUS_SCHEDULED);
+    }
+
+    // Remove the scheduled date prior to starting the campaign.
+    $this->drupalGet("admin/structure/personalize/manage/$machine_name/scheduling");
+
+    $edit = array(
+      'campaign_start' => 'none',
+    );
+    $this->drupalPost(NULL, $edit, $this->getButton('wizard_next'));
+
+    // Verify options.
+    foreach ($campaign_pages as $page) {
+      $this->drupalGet($page);
+      $this->assertNoText($message_running);
+      $this->assertNoText($message_scheduled);
+      $this->assertNoText($message_completed);
+      $this->assertFieldById('edit-save');
+      $this->assertFieldById('edit-submit-' . PERSONALIZE_STATUS_RUNNING);
+      $this->assertNoFieldById('edit-submit-' . PERSONALIZE_STATUS_PAUSED);
+      $this->assertNoFieldById('edit-submit-' . PERSONALIZE_STATUS_COMPLETED);
+      $this->assertNoFieldById('edit-submit-' . PERSONALIZE_STATUS_SCHEDULED);
+    }
+
+    // Start the campaign.
     $this->drupalGet("admin/structure/personalize/manage/$machine_name/review");
     $this->drupalPost(NULL, array(), $this->getButton('wizard_start'));
 
     // Verify that the correct messaging is shown on all campaign wizard pages.
-    $this->drupalGet("admin/structure/personalize/manage/$machine_name/variations");
-    $this->assertText($message_running);
-    $this->assertNoText($message_scheduled);
-    $this->assertNoText($message_completed);
-    $this->drupalGet("admin/structure/personalize/manage/$machine_name/goals");
-    $this->assertText($message_running);
-    $this->assertNoText($message_scheduled);
-    $this->assertNoText($message_completed);
-    $this->drupalGet("admin/structure/personalize/manage/$machine_name/targeting");
-    $this->assertText($message_running);
-    $this->assertNoText($message_scheduled);
-    $this->assertNoText($message_completed);
-    $this->drupalGet("admin/structure/personalize/manage/$machine_name/scheduling");
-    $this->assertText($message_running);
-    $this->assertNoText($message_scheduled);
-    $this->assertNoText($message_completed);
-    $this->drupalGet("admin/structure/personalize/manage/$machine_name/review");
-    $this->assertText($message_running);
-    $this->assertNoText($message_scheduled);
-    $this->assertNoText($message_completed);
+    foreach ($campaign_pages as $page) {
+      $this->drupalGet($page);
+      $this->assertText($message_running);
+      $this->assertNoText($message_scheduled);
+      $this->assertNoText($message_completed);
+      $this->assertNoFieldById('edit-save');
+      $this->assertNoFieldById('edit-submit-' . PERSONALIZE_STATUS_RUNNING);
+      $this->assertNoFieldById('edit-submit-' . PERSONALIZE_STATUS_PAUSED);
+      $this->assertNoFieldById('edit-submit-' . PERSONALIZE_STATUS_COMPLETED);
+      $this->assertNoFieldById('edit-submit-' . PERSONALIZE_STATUS_SCHEDULED);
+    }
 
     // Pause the campaign and verify that messaging is removed.
     $this->drupalPost(NULL, array(), t('Pause'));
-    $this->drupalGet("admin/structure/personalize/manage/$machine_name/variations");
-    $this->assertNoText($message_running);
-    $this->assertNoText($message_scheduled);
-    $this->assertNoText($message_completed);
-    $this->drupalGet("admin/structure/personalize/manage/$machine_name/goals");
-    $this->assertNoText($message_running);
-    $this->assertNoText($message_scheduled);
-    $this->assertNoText($message_completed);
-    $this->drupalGet("admin/structure/personalize/manage/$machine_name/targeting");
-    $this->assertNoText($message_running);
-    $this->assertNoText($message_scheduled);
-    $this->assertNoText($message_completed);
-    $this->drupalGet("admin/structure/personalize/manage/$machine_name/scheduling");
-    $this->assertNoText($message_running);
-    $this->assertNoText($message_scheduled);
-    $this->assertNoText($message_completed);
-    $this->drupalGet("admin/structure/personalize/manage/$machine_name/review");
-    $this->assertNoText($message_running);
-    $this->assertNoText($message_scheduled);
-    $this->assertNoText($message_completed);
+    foreach ($campaign_pages as $page) {
+      $this->drupalGet($page);
+      $this->assertNoText($message_running);
+      $this->assertNoText($message_scheduled);
+      $this->assertNoText($message_completed);
+      $this->assertFieldById('edit-save');
+      $this->assertFieldById('edit-submit-' . PERSONALIZE_STATUS_RUNNING);
+      $this->assertNoFieldById('edit-submit-' . PERSONALIZE_STATUS_PAUSED);
+      $this->assertFieldById('edit-submit-' . PERSONALIZE_STATUS_COMPLETED);
+      $this->assertNoFieldById('edit-submit-' . PERSONALIZE_STATUS_SCHEDULED);
+    }
 
     // Schedule the campaign to start in the future.
     $this->drupalGet("admin/structure/personalize/manage/$machine_name/scheduling");
@@ -2932,6 +2969,21 @@ class AcquiaLiftWebTestCampaignWizard extends AcquiaLiftWebTestBase {
       'campaign_start_date[year]' => date('Y', $start_date),
     );
     $this->drupalPost(NULL, $edit, $this->getButton('wizard_next'));
+
+    // Verify that the correct messaging is shown on all campaign wizard pages.
+    foreach ($campaign_pages as $page) {
+      $this->drupalGet($page);
+      $this->assertNoText($message_running);
+      $this->assertNoText($message_scheduled);
+      $this->assertNoText($message_completed);
+      $this->assertFieldById('edit-save');
+      $this->assertFieldById('edit-submit-' . PERSONALIZE_STATUS_RUNNING);
+      $this->assertNoFieldById('edit-submit-' . PERSONALIZE_STATUS_PAUSED);
+      $this->assertFieldById('edit-submit-' . PERSONALIZE_STATUS_COMPLETED);
+      $this->assertFieldById('edit-submit-' . PERSONALIZE_STATUS_SCHEDULED);
+    }
+
+    // Actually schedule the campaign.
     module_load_include('inc', 'personalize', 'personalize.admin.campaign');
     $button_text = t('Start on @start_date', array(
       '@start_date' => _personalize_campaign_wizard_date($start_date),
@@ -2939,50 +2991,31 @@ class AcquiaLiftWebTestCampaignWizard extends AcquiaLiftWebTestBase {
     $this->drupalPost(NULL, array(), $button_text);
 
     // Verify that the correct messaging is shown on all campaign wizard pages.
-    $this->drupalGet("admin/structure/personalize/manage/$machine_name/variations");
-    $this->assertNoText($message_running);
-    $this->assertText($message_scheduled);
-    $this->assertNoText($message_completed);
-    $this->drupalGet("admin/structure/personalize/manage/$machine_name/goals");
-    $this->assertNoText($message_running);
-    $this->assertText($message_scheduled);
-    $this->assertNoText($message_completed);
-    $this->drupalGet("admin/structure/personalize/manage/$machine_name/targeting");
-    $this->assertNoText($message_running);
-    $this->assertText($message_scheduled);
-    $this->assertNoText($message_completed);
-    $this->drupalGet("admin/structure/personalize/manage/$machine_name/scheduling");
-    $this->assertNoText($message_running);
-    $this->assertText($message_scheduled);
-    $this->assertNoText($message_completed);
-    $this->drupalGet("admin/structure/personalize/manage/$machine_name/review");
-    $this->assertNoText($message_running);
-    $this->assertText($message_scheduled);
-    $this->assertNoText($message_completed);
+    foreach ($campaign_pages as $page) {
+      $this->drupalGet($page);
+      $this->assertNoText($message_running);
+      $this->assertText($message_scheduled);
+      $this->assertNoText($message_completed);
+      $this->assertNoFieldById('edit-save');
+      $this->assertNoFieldById('edit-submit-' . PERSONALIZE_STATUS_RUNNING);
+      $this->assertNoFieldById('edit-submit-' . PERSONALIZE_STATUS_PAUSED);
+      $this->assertNoFieldById('edit-submit-' . PERSONALIZE_STATUS_COMPLETED);
+      $this->assertNoFieldById('edit-submit-' . PERSONALIZE_STATUS_SCHEDULED);
+    }
 
     // Complete the campaign and verify messaging.
     personalize_agent_set_status($machine_name, PERSONALIZE_STATUS_COMPLETED);
     $this->resetAll();
-    $this->drupalGet("admin/structure/personalize/manage/$machine_name/variations");
-    $this->assertNoText($message_running);
-    $this->assertNoText($message_scheduled);
-    $this->assertText($message_completed);
-    $this->drupalGet("admin/structure/personalize/manage/$machine_name/goals");
-    $this->assertNoText($message_running);
-    $this->assertNoText($message_scheduled);
-    $this->assertText($message_completed);
-    $this->drupalGet("admin/structure/personalize/manage/$machine_name/targeting");
-    $this->assertNoText($message_running);
-    $this->assertNoText($message_scheduled);
-    $this->assertText($message_completed);
-    $this->drupalGet("admin/structure/personalize/manage/$machine_name/scheduling");
-    $this->assertNoText($message_running);
-    $this->assertNoText($message_scheduled);
-    $this->assertText($message_completed);
-    $this->drupalGet("admin/structure/personalize/manage/$machine_name/review");
-    $this->assertNoText($message_running);
-    $this->assertNoText($message_scheduled);
-    $this->assertText($message_completed);
+    foreach ($campaign_pages as $page) {
+      $this->drupalGet($page);
+      $this->assertNoText($message_running);
+      $this->assertNoText($message_scheduled);
+      $this->assertText($message_completed);
+      $this->assertNoFieldById('edit-save');
+      $this->assertNoFieldById('edit-submit-' . PERSONALIZE_STATUS_RUNNING);
+      $this->assertNoFieldById('edit-submit-' . PERSONALIZE_STATUS_PAUSED);
+      $this->assertNoFieldById('edit-submit-' . PERSONALIZE_STATUS_COMPLETED);
+      $this->assertNoFieldById('edit-submit-' . PERSONALIZE_STATUS_SCHEDULED);
+    }
   }
-
 }

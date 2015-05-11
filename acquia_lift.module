@@ -491,8 +491,7 @@ function acquia_lift_personalize_agent_type() {
  */
 function acquia_lift_target_access($agent) {
   return acquia_lift_is_targeting_agent($agent) &&
-    user_access('manage personalized content') &&
-    variable_get('acquia_lift_target_enabled', FALSE);
+    user_access('manage personalized content');
 }
 
 /**

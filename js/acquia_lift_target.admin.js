@@ -190,6 +190,7 @@
             // Validate that the item can be dropped on this list.
             if (isDragItemInList(ui.item, this)) {
               ui.sender.sortable('cancel');
+              indicateControlVariation(ui.sender);
               return;
             }
             if (ui.sender.data().hasOwnProperty('acquialiftcopied')) {

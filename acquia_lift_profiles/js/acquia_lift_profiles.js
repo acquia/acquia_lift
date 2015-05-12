@@ -51,7 +51,7 @@ var _tcwq = _tcwq || [];
             }
           }
         }
-        $(document).trigger('retrievedSegments', [segments]);
+        $(document).trigger('acquiaLiftStoredSegments', [segments]);
         return visitorSegments;
       },
       'retrieve': function(settings) {

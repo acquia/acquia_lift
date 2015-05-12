@@ -177,26 +177,17 @@ QUnit.asyncTest("Get context values no cache", function( assert ) {
 
 });
 
-QUnit.asyncTest("Trigger retrievedSegments", function( assert ) {
-  expect(5);
-  var contextResult = Drupal.personalize.visitor_context.acquia_lift_profiles_context.getContext({'segment1':'segment1', 'segment2':'segment2'});
-  assert.ok(contextResult instanceof Promise);
-  var cached = Drupal.personalize.visitor_context_read('segment1', 'acquia_lift_profiles_context');
-  QUnit.stop();
-  Promise.all([contextResult]).then(function (loadedContexts) {
-    QUnit.start();
-    cached = Drupal.personalize.visitor_context_read('segment1', 'acquia_lift_profiles_context');
-  });
-
-  $(document).on( "retrievedSegments", function(segment, segments) {
-    assert.ok( true, "retrievedSegments was called!" );
+QUnit.asyncTest("Trigger acquiaLiftStoredSegments", function( assert ) {
+  expect(4);
+  Drupal.personalize.visitor_context.acquia_lift_profiles_context.getContext();
+  // Testing that acquiaLiftStoredSegments will be triggered and that segment1 will be retrieved.
+  $(document).on( "acquiaLiftStoredSegments", function(segment, segments) {
+    assert.ok( true, "acquiaLiftStoredSegments was called!" );
     assert.ok(segments != null, "Segments is not null");
     assert.ok(segments.length == 1, "Segments has 1 element");
     assert.equal(segments[0], "segment1", "Segment[0] is segment1");
   });
-
 });
-
 
 
 QUnit.test("get context values with cache", function( assert ) {

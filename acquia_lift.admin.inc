@@ -1176,13 +1176,9 @@ function acquia_lift_validate_minimum_targeting($agent, $option_set) {
     // be stored in the agent data property until the agent has been verified
     // to start.  After that time changes shouldn't be made automatically.
     $assigned = array();
-    if (!empty($agent->data['lift_targeting'])) {
-      foreach ($agent->data['lift_targeting'] as $audience_id => $options) {
-        if ($audience_id === ACQUIA_LIFT_TARGETING_EVERYONE_ELSE) {
-          continue;
-        }
-        $assigned = array_merge($assigned, $options);
-      }
+    $targeting = !empty($agent->data['lift_targeting']) ? $agent->data['lift_targeting'] : acquia_lift_get_structure_from_targeting($option_set);
+    foreach ($targeting as $audience_id => $options) {
+      $assigned = array_merge($assigned, $options);
     }
   }
   $targeting_options = array();
@@ -1192,7 +1188,10 @@ function acquia_lift_validate_minimum_targeting($agent, $option_set) {
   // Any unassigned option is automatically assigned to the "Everyone else"
   // category.
   $unassigned_options = array_diff($targeting_options, $assigned);
-  acquia_lift_save_targeting_structure($agent, array(ACQUIA_LIFT_TARGETING_EVERYONE_ELSE => $unassigned_options));
+  if (!empty($unassigned_options)) {
+    acquia_lift_save_targeting_structure($agent, array(ACQUIA_LIFT_TARGETING_EVERYONE_ELSE => $unassigned_options));
+  }
+
 }
 
 /**

@@ -1190,6 +1190,13 @@ function acquia_lift_personalize_campaign_wizard_variations_submit(&$form, &$for
  * Submit handler for entering a URL to begin creation an element variation.
  */
 function acquia_lift_personalize_campaign_wizard_variations_submit_element_add($form, &$form_state) {
+  // If this is the variation handling has been set in this process, save it
+  // to the campaign before redirecting.
+  if (isset($values['variations']['add_variation']['variation_set_handling'])) {
+    $agent_data = $form['#agent'];
+    $agent_data->data['variation_set_handling'] = $values['variations']['add_variation']['variation_set_handling'];
+    personalize_agent_save($agent_data);
+  }
   // Set a session variable that we can check upon the next page load to
   // trigger element editing mode for element variations.
   $_SESSION['acquia_lift_element_trigger'] = true;

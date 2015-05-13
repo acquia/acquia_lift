@@ -137,12 +137,13 @@
 
       // Add drag and drop behavior to assign variations to audiences.
       $('.acquia-lift-targeting-assignment').once(function() {
+        var cardDisabled = $(this).closest('.el-card').attr('data-card-enabled') === 'false';
         var $wrapperDiv = $(this).parent();
         var selectId = $(this).attr('id');
         var selectedOptions = [];
         var assignmentOrder;
         var allowMove = $(this).data('acquia-lift-targeting-allow-move');
-        var allowRemove = $(this).data('acquia-lift-targeting-allow-remove');
+        var allowRemove = !cardDisabled && $(this).data('acquia-lift-targeting-allow-remove');
         var variationsListHtml;
         var variationsListClasses = ['acquia-lift-draggable-variations'];
         if (allowMove) {
@@ -249,6 +250,11 @@
 
         // Make options removable if indicated.
         $('.acquia-lift-targeting-remove', $wrapperDiv).on('click', handleDraggableItemRemove);
+
+        // If the card is not editable, then all of this should be disabled.
+        if (cardDisabled) {
+          $('.acquia-lift-draggable-variations', $wrapperDiv).sortable('disable');
+        }
 
         // Hide the actual select input.
         $(this).hide();

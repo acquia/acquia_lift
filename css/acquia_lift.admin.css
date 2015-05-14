@@ -325,10 +325,9 @@ tr.acquia-lift-report-control {
   content: url('../images/actions__close.svg');
   float: right;
   opacity: 0;
-  -webkit-transition: opacity .2s;
-          transition: opacity .2s;
+  transition: opacity .2s;
 }
-.acquia-lift-campaign-add .el-card.is-active .el-card__title:after {
+.acquia-lift-campaign-add .el-card:not(.is-compact) .el-card__title:after {
   opacity: 1;
 }
 .el-card__action .acquia-lift-delete {
@@ -473,11 +472,9 @@ tr.acquia-lift-report-control {
 /* Drag and Drop audience targeting */
 li.acquia-lift-targeting-draggable {
   cursor: -webkit-grab;
-  cursor: -moz-grab;
 }
 li.acquia-lift-targeting-draggable.ui-sortable-helper {
   cursor: -webkit-grabbing;
-  cursor: -moz-grabbing;
 }
 .acquia-lift-targeting-empty {
   border: 1px dotted #cfd1d5;

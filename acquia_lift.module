@@ -2922,7 +2922,7 @@ function acquia_lift_get_campaign_details() {
 function acquia_lift_personalize_agent_list_alter(&$agents) {
   // If this is a nested agent, it should not be listed.
   foreach ($agents as $agent_name => $agent) {
-    if ($agent->plugin === 'acquia_lift') {
+    if (in_array($agent->plugin, array(ACQUIA_LIFT_TESTING_AGENT_V1, ACQUIA_LIFT_TESTING_AGENT_V2))) {
       unset($agents[$agent_name]);
     }
   }

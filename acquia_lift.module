@@ -716,6 +716,9 @@ function acquia_lift_personalize_option_set_insert($option_set) {
       return;
     }
   }
+  elseif (!variable_get('acquia_lift_auto_goal', TRUE)) {
+    return;
+  }
 
   // Only create a goal if there are no goals already set up for the agent.
   $goals = personalize_goal_load_by_conditions(array('agent' => $agent->machine_name));

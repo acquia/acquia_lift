@@ -1428,6 +1428,8 @@ function _acquia_lift_personalize_campaign_wizard_variations_block(&$form, &$for
   // multiple blocks forms per page.
   $form_state['option_set_num_blocks'][$form_state_key] = $form_state['num_blocks'];
   $form_state['option_set_pblock'][$form_state_key] = $form_state['pblock'];
+  // Clear the to_remove from the main option set keys
+  unset($form_state['option_set_to_remove'][$form_state_key]);
   // Set the form state values back.
   $form_state['values'] = $values;
 
@@ -1455,7 +1457,8 @@ function _acquia_lift_personalize_campaign_wizard_variations_block(&$form, &$for
   $element['pblock_wrapper']['blocks']['#attributes']['id'] = $blocks_id;
   $element['pblock_wrapper']['blocks']['#attributes']['class'][] = 'acquia-lift-personalize-blocks';
 
-  foreach (element_children($element['pblock_wrapper']['blocks']) as $key) {
+  $pblock_blocks = element_children($element['pblock_wrapper']['blocks']);
+  foreach ($pblock_blocks as $key) {
     $block = &$element['pblock_wrapper']['blocks'][$key];
     $block['block']['#attributes']['class'][] = 'acquia-lift-personalize-block-wrapper';
 
@@ -1478,6 +1481,9 @@ function _acquia_lift_personalize_campaign_wizard_variations_block(&$form, &$for
     // campaign.
     $option_id = isset($block['option_id']['#value']) ? $block['option_id']['#value'] : '';
     if (!empty($option_id) && !$changes_enabled && acquia_lift_target_option_targeted($agent_data->machine_name, $option_id)) {
+      $block['remove']['#access'] = FALSE;
+    }
+    if (count($pblock_blocks) <= 2) {
       $block['remove']['#access'] = FALSE;
     }
 

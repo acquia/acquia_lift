@@ -710,7 +710,7 @@ function acquia_lift_personalize_option_set_insert($option_set) {
     $field = field_info_field($option_set->data['personalize_fields_field_name']);
     if (!isset($field['settings']['personalize']) ||
       !$field['settings']['personalize']['enabled'] ||
-      isset($field['settings']['personalize']['create_goal']) ||
+      !isset($field['settings']['personalize']['create_goal']) ||
       !$field['settings']['personalize']['create_goal']
       ) {
       return;

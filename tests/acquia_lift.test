@@ -1188,6 +1188,44 @@ class AcquiaLiftWebTestWorkflow extends AcquiaLiftWebTestBase {
     $this->assertTrue(empty($goals));
   }
 
+  public function testAutoCreateGoal() {
+    $this->drupalLogin($this->adminUser);
+    $agent = $this->createTargetingAgent();
+    $option_set = $this->createPersonalizedBlock(0, $agent, 2);
+    $this->resetAll();
+    $goals = personalize_goal_load_by_conditions(array('agent' => $agent->machine_name));
+    $this->assertEqual(1, count($goals));
+    $goal = reset($goals);
+    $this->assertEqual('clicks_option_set_' . $option_set->osid, $goal->action);
+    $this->assertEqual(1, $goal->value);
+    // Delete the goal and confirm that saving the option set again does not
+    // result in another goal being created.
+    personalize_goal_delete($goal->id);
+    personalize_option_set_save($option_set);
+    $goals = personalize_goal_load_by_conditions(array('agent' => $agent->machine_name), TRUE);
+    $this->assertEqual(0, count($goals));
+
+    // Add an agent and create a goal before creating an option set. No second
+    // goal should be created for the option set.
+    $agent2 = $this->createTargetingAgent();
+    personalize_goal_save($agent2->machine_name, 'user_login', 2);
+    $this->createPersonalizedBlock(1, $agent2, 2);
+    $this->resetAll();
+    $goals = personalize_goal_load_by_conditions(array('agent' => $agent2->machine_name));
+    $this->assertEqual(1, count($goals));
+    $goal = reset($goals);
+    $this->assertEqual('user_login', $goal->action);
+    $this->assertEqual(2, $goal->value);
+
+    // Now set the variable that prevents auto-creation of goals.
+    variable_set('acquia_lift_auto_goal', FALSE);
+    $agent3 = $this->createTargetingAgent();
+    $this->createPersonalizedBlock(2, $agent3, 2);
+    $this->resetAll();
+    $goals = personalize_goal_load_by_conditions(array('agent' => $agent3->machine_name), TRUE);
+    $this->assertEqual(0, count($goals));
+  }
+
   /**
    * Tests campaign javascript settings.
    */

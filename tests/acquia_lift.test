@@ -3120,7 +3120,10 @@ class AcquiaLiftWebTestWorkflow extends AcquiaLiftWebTestBase {
         'option_label' => personalize_fields_generate_option_label(1, array('value' => 'second value'))
       )
     );
-    personalize_fields_option_set_save($option_set, 'node', $node, 'article_headline');
+    if (personalize_fields_option_set_prepare($option_set, 'node', $node->nid, $node, 'article_headline')) {
+      personalize_fields_option_set_save($option_set, 'node', $node->nid, 'article_headline');
+    }
+
     $this->resetAll();
     $agent_name = $option_set->agent;
     return array($node, $option_set, $agent_name);

@@ -716,6 +716,7 @@ function acquia_lift_personalize_option_set_insert($option_set) {
       return;
     }
   }
+  // @todo Expose this variable in the UI.
   elseif (!variable_get('acquia_lift_auto_goal', TRUE)) {
     return;
   }

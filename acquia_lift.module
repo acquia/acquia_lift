@@ -693,47 +693,58 @@ function acquia_lift_personalize_option_set_save($option_set) {
 
   module_load_include('inc', 'acquia_lift', 'acquia_lift.admin');
   acquia_lift_validate_minimum_targeting($agent, $option_set);
+}
 
-  // Unless this is a fields-based option set, we're done.
-  if ($option_set->plugin !== 'fields') {
+/**
+ * Implements hook_personalize_option_set_insert().
+ */
+function acquia_lift_personalize_option_set_insert($option_set) {
+  $agent = personalize_agent_load($option_set->agent);
+  if (!acquia_lift_is_targeting_agent($agent)) {
+    return;
+  }
+  // Create a goal for hte option set. If it's a fields-based option set we first
+  // check whether this is the configured behavior.
+  if ($option_set->plugin == 'fields') {
+    $field = field_info_field($option_set->data['personalize_fields_field_name']);
+    if (!isset($field['settings']['personalize']) ||
+      !$field['settings']['personalize']['enabled'] ||
+      !isset($field['settings']['personalize']['create_goal']) ||
+      !$field['settings']['personalize']['create_goal']
+      ) {
+      return;
+    }
+  }
+  // @todo Expose this variable in the UI.
+  elseif (!variable_get('acquia_lift_auto_goal', TRUE)) {
     return;
   }
 
-  // For fields-based option sets, we need to do some more set-up, depending on the
-  // field settings.
-  $field = field_info_field($option_set->data['personalize_fields_field_name']);
-  if (!isset($field['settings']['personalize']) || !$field['settings']['personalize']['enabled']) {
-    return;
-  }
-
-  if (isset($option_set->is_new)) {
-    if (isset($field['settings']['personalize']['create_goal']) && $field['settings']['personalize']['create_goal']) {
-      $goals = personalize_goal_load_by_conditions(array('agent' => $agent->machine_name));
-      if (empty($goals)) {
-        $js_id = personalize_stringify_osid($option_set->osid);
-        $plugin = 'link';
-        $action_label = t('Clicks @option_set', array('@option_set' => $option_set->label));
-        $action_name = personalize_generate_machine_name($action_label, 'visitor_actions_machine_name_exists', '_');
-        $pages = empty($field['settings']['personalize']['goal_pages']) ? '' : $field['settings']['personalize']['goal_pages'];
-        $action = array(
-          'label' => $action_label,
-          'machine_name' => $action_name,
-          'plugin' => $plugin,
-          'client_side' => 1,
-          'identifier' => '[data-personalize=' . $js_id . ']',
-          'event' => 'click',
-          'pages' => $pages,
-          'data' => array(),
-          'limited_use' => 1
-        );
-        // Allow the plugin to modify the action before saving.
-        if ($class = ctools_plugin_load_class('visitor_actions', 'actionable_element', $plugin, 'handler')) {
-          $action = call_user_func_array(array($class, 'actionPresave'), array($action));
-        }
-        if (visitor_actions_save_action($action)) {
-          personalize_goal_save($option_set->agent, $action_name, 1);
-        }
-      }
+  // Only create a goal if there are no goals already set up for the agent.
+  $goals = personalize_goal_load_by_conditions(array('agent' => $agent->machine_name));
+  if (empty($goals)) {
+    $js_id = personalize_stringify_osid($option_set->osid);
+    $plugin = 'link';
+    $action_label = t('Clicks @option_set', array('@option_set' => $option_set->label));
+    $action_name = personalize_generate_machine_name($action_label, 'visitor_actions_machine_name_exists', '_');
+    $pages = empty($field['settings']['personalize']['goal_pages']) ? '' : $field['settings']['personalize']['goal_pages'];
+    $action = array(
+      'label' => $action_label,
+      'machine_name' => $action_name,
+      'plugin' => $plugin,
+      'client_side' => 1,
+      'identifier' => '[data-personalize=' . $js_id . ']',
+      'event' => 'click',
+      'pages' => $pages,
+      'data' => array(),
+      'limited_use' => 1
+    );
+    // Allow the plugin to modify the action before saving.
+    if ($class = ctools_plugin_load_class('visitor_actions', 'actionable_element', $plugin, 'handler')) {
+      $action = call_user_func_array(array($class, 'actionPresave'), array($action));
+    }
+    if (visitor_actions_save_action($action)) {
+      personalize_goal_save($option_set->agent, $action_name, 1);
     }
   }
 }
@@ -2915,7 +2926,7 @@ function acquia_lift_get_campaign_details() {
 function acquia_lift_personalize_agent_list_alter(&$agents) {
   // If this is a nested agent, it should not be listed.
   foreach ($agents as $agent_name => $agent) {
-    if ($agent->plugin === 'acquia_lift') {
+    if (in_array($agent->plugin, array(ACQUIA_LIFT_TESTING_AGENT_V1, ACQUIA_LIFT_TESTING_AGENT_V2))) {
       unset($agents[$agent_name]);
     }
   }

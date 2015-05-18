@@ -120,6 +120,13 @@
                 .addClass(['acquia-lift-' + type.replace('_', '-'), 'menu'].join(' '))
                 .attr('data-acquia-lift-personalize-type', type);
             }
+            // Create a new ul element to hold the list of items so
+            // they can scroll independently of the add link.
+            var $menu = $('[data-acquia-lift-personalize-type="' + type + '"]');
+            var scrollable = document.createElement('ul');
+            scrollable.className += Drupal.settings.acquia_lift.menuClass + " acquia-lift-scrollable";
+            $menu.wrap('<div class="menu-wrapper">').before(scrollable);
+
             // Attach a view that will report the number of campaigns
             // if this link is in the Navbar.
             if ($link.closest('.navbar-tray').length) {
@@ -139,15 +146,6 @@
                       model: null
                     });
                     $('[data-acquia-lift-personalize-type="campaigns"]').prepend(element);
-                  }
-                  else {
-                    // Create a new ul element to hold the list of campaigns so
-                    // they can scroll independently of the "Add campaign"
-                    // link.
-                    var $menu = $('[data-acquia-lift-personalize-type="campaigns"]');
-                    var scrollable = document.createElement('ul');
-                    scrollable.className += Drupal.settings.acquia_lift.menuClass + " acquia-lift-scrollable";
-                    $menu.wrap('<div class="menu-wrapper">').before(scrollable);
                   }
                   break;
                 case 'option_sets': {
@@ -286,9 +284,10 @@
                         model: model,
                         el: element
                       });
-
+                      var $goalsScrollable = $goalsMenu.siblings('.acquia-lift-scrollable');
+                      var $goalsMenuList = $goalsScrollable.length > 0 ? $goalsScrollable : $goalsMenu;
                       ui.views.push(goalsView);
-                      $goalsMenu.prepend(goalsView.el);
+                      $goalsMenuList.prepend(goalsView.el);
                     }
                   }
                 });

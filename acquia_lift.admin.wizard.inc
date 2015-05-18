@@ -1171,10 +1171,10 @@ function acquia_lift_personalize_campaign_wizard_variations_submit(&$form, &$for
   }
 
   // Create any new option sets.
-  if (!empty($form_state['values']['variations']['add_variation']['option_set_type'])) {
+  if (!empty($form_state['values']['variations']['add_variation']['option_set_type']) && isset($form_state['values']['variations']['add_variation']['details'])) {
     switch ($form_state['values']['variations']['add_variation']['option_set_type']) {
       case "block":
-        $submitBlockHandler($values['variations']['add_variation']['details']['block']['content']);
+        $submitBlockHandler($form_state['values']['variations']['add_variation']['details']['block']['content']);
         break;
       case "element":
         break;

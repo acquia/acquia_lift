@@ -332,24 +332,68 @@
     },
 
     /**
-     * Helper function to start adding a content variation.
+     * Helper function to start adding a variation.
+     *
+     * This handles setting all the correct model parameters and sending an
+     * event notification.
      */
     startAddMode: function () {
+      // Don't restart if already in create mode.
+      if (this.get('isActive') && !this.get('isEditMode')) {
+        return;
+      }
+      this.set('variationIndex', -1);
+      this.set('isEditMode', false);
       this.set('isActive', true);
+      this.notifyTrigger();
     },
 
     /**
-     * Helper function to start editing a content variation.
+     * Helper function to start editing a variation.
+     *
+     * This handles setting all the correct model parameters and sending an
+     * event notification.
+     *
+     * @param variationIndex
+     *   Index of the variation to edit within the current campaign context.
      */
-    startEditMode: function () {
+    startEditMode: function (variationIndex) {
+      // Don't do anything if we are already editing the same variation.
+      if (this.get('isActive') && this.get('variationIndex') == variationIndex) {
+        return;
+      }
+      this.set('variationIndex', variationIndex);
+      this.set('isEditMode', true);
       this.set('isActive', true);
+      this.notifyTrigger();
     },
 
     /**
-     * Helper function to end editing mode for a content variation.
+     * Helper function to end editing mode for a variation.
+     *
+     * This handles setting all the correct model parameters back and sending
+     * an event notification.
      */
     endEditMode: function () {
+      // If editing mode isn't already active, then just return.
+      if (!this.get('isActive')) {
+        return;
+      }
+      this.set('variationIndex', -1);
+      this.set('isEditMode', false);
       this.set('isActive', false);
+      this.notifyTrigger();
+    },
+
+    /**
+     * Send a notification of the trigger in variation mode change.
+     */
+    notifyTrigger: function () {
+      var data = {
+        start: this.get('isActive'),
+        variationIndex: this.get('variationIndex')
+      };
+      $(document).trigger('acquiaLiftElementVariationModeTrigger', [data]);
     }
   });
 

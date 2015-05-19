@@ -302,9 +302,41 @@ var _tcwq = _tcwq || [];
       },
 
       'processLiftDecisions':function(e, decisionResponses) {
-       // decisionResponses is an array of objects each with an agent_name and an object
-       // containing the choices for each decision at a decision point. How do we push
-       // this batch of decisions to Lift Web?
+        var decisionResponse, agent_name;
+        // decisionResponses is an array of objects each with an agent_name and an object
+        // containing the choices for each decision at a decision point.
+        if (decisionResponses.length == 1) {
+          decisionResponse = decisionResponses[0];
+          agent_name = decisionResponse.agent;
+          for (var key in decisionResponse.decisions) {
+            if (decisionResponse.decisions.hasOwnProperty(key)) {
+              _tcaq.push(['capture', 'Campaign Action', {'targetcampaignid':agent_name, 'targetcampaignname':getAgentLabel(agent_name), 'targetofferid': decisionResponse.decisions[key], 'targetactionname':decisionResponse.decisions[key] } ]);
+            }
+          }
+        }
+        else {
+          var agent_names = [], agent_labels = [], choices = [];
+          for (var i in decisionResponses) {
+            if (decisionResponses.hasOwnProperty(i)) {
+              decisionResponse = decisionResponses[i];
+              agent_name = decisionResponse.agent;
+              agent_names.push(agent_name);
+              agent_labels.push(getAgentLabel(agent_name));
+              for (var j in decisionResponse.decisions) {
+                if (decisionResponse.decisions.hasOwnProperty(j)) {
+                  choices.push(decisionResponse.decisions[j]);
+                  // We can only deal with the first decision.
+                  break;
+                }
+              }
+            }
+          }
+          if (agent_names.length == 0 || choices.length == 0) {
+            return;
+          }
+          _tcaq.push( ['capture', 'Campaign Actions', { 'targetcampaignid' : agent_names.join(','), 'targetcampaignname' : agent_labels.join(','), 'targetofferid' : choices.join(','), 'targetactionname': choices.join(',') } ] );
+        }
+
       },
 
       'processSentGoalToAgent':function(e, agent_name, goal_name, goal_value) {

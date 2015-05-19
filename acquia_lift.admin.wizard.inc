@@ -1210,9 +1210,9 @@ function acquia_lift_personalize_campaign_wizard_variations_submit(&$form, &$for
 function acquia_lift_personalize_campaign_wizard_variations_submit_element_add($form, &$form_state) {
   // If this is the variation handling has been set in this process, save it
   // to the campaign before redirecting.
-  if (isset($values['variations']['add_variation']['variation_set_handling'])) {
+  if (isset($form_state['storage']['acquia_lift_variation_set_handling'])) {
     $agent_data = $form['#agent'];
-    $agent_data->data['variation_set_handling'] = $values['variations']['add_variation']['variation_set_handling'];
+    $agent_data->data['variation_set_handling'] = $form_state['storage']['acquia_lift_variation_set_handling'];
     personalize_agent_save($agent_data);
   }
   // Set a session variable that we can check upon the next page load to

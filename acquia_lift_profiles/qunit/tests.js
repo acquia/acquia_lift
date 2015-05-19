@@ -181,7 +181,7 @@ QUnit.test("get context values with cache", function( assert ) {
   assert.equal(contextResult['segment2'], 1, 'Segment2 has value 1');
 });
 
-QUnit.asyncTest( "personalize decision event", function( assert ) {
+QUnit.asyncTest( "Lift decision event", function( assert ) {
   expect(5);
   Drupal.acquia_lift_profiles.resetAll();
   _tcaq = {
@@ -208,7 +208,65 @@ QUnit.asyncTest( "personalize decision event", function( assert ) {
   };
 
   Drupal.acquia_lift_profiles.init(settings);
-  $(document).trigger("personalizeDecision", [{}, "test_decision", "test_osid", "my-agent" ]);
+  var myDecision = {
+    'agent': 'my-agent',
+    'decisions': {
+      'test_osid': 'test_decision'
+    }
+  };
+  var decisions = [myDecision];
+  $(document).trigger("acquiaLiftDecisions", [decisions]);
+});
+
+
+QUnit.asyncTest( "Multiple decisions event", function( assert ) {
+  expect(5);
+  Drupal.acquia_lift_profiles.resetAll();
+  _tcaq = {
+    'push':function(args) {
+      if ( args[1] == 'Campaign Actions' ) {
+        assert.equal( args[0], 'capture',  'capture view received');
+        assert.equal( args[1], 'Campaign Actions',  'capture view is of type campaign actions');
+        assert.equal( args[2].targetcampaignid, "my-agent,my-second-agent", 'value correctly assigned from event' );
+        assert.equal( args[2].targetcampaignname, "First Agent,Second Agent", 'value correctly assigned from event' );
+        assert.equal( args[2].targetactionname, "test_decision,test_decision2", 'value correctly assigned from event' );
+        QUnit.start();
+      }
+    }
+  };
+  var settings = jQuery.extend({}, Drupal.settings);
+  settings.personalize.agent_map = {
+    'my-agent': {
+      'active': 1,
+      'cache_decisions': false,
+      'enabled_contexts': [],
+      'type': 'test_agent',
+      'label' : 'First Agent'
+    },
+    'my-second-agent': {
+      'active': 1,
+      'cache_decisions': false,
+      'enabled_contexts': [],
+      'type': 'test_agent',
+      'label' : 'Second Agent'
+    }
+  };
+
+  Drupal.acquia_lift_profiles.init(settings);
+  var decisions = [];
+  decisions.push({
+    'agent': 'my-agent',
+    'decisions': {
+      'test_osid': 'test_decision'
+    }
+  });
+  decisions.push({
+    'agent': 'my-second-agent',
+    'decisions': {
+      'test_osid2': 'test_decision2'
+    }
+  });
+  $(document).trigger("acquiaLiftDecisions", [decisions]);
 });
 
 QUnit.asyncTest( "sent goal to agent event", function( assert ) {

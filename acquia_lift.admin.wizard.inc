@@ -1384,9 +1384,6 @@ function acquia_lift_personalize_campaign_wizard_review_submit(&$form, &$form_st
       form_set_error(NULL, t('There was a problem implementing the personalization as defined.'));
     }
   }
-  // If we got here, some sort of error occurred so make sure we don't move to
-  // the next step.
-  $form_state['redirect'] = current_path();
 }
 
 /**

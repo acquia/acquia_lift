@@ -66,6 +66,8 @@
         cursor: 'move',
         tolerance: 'pointer',
         handle: '.el-card__dragger',
+        appendTo: document.body,
+        helper: 'clone',
         update: function (event, ui) {
           // Update the weight values for each sortable element after
           // the positions have been updated.

@@ -468,10 +468,10 @@ tr.acquia-lift-report-control {
 }
 
 /* Edit checkbox in card header */
-#acquia-lift-targeting-audiences .el-card__action input[type="checkbox"].acquia-lift-edit {
+.el-card__action input[type="checkbox"].acquia-lift-edit {
   display: none;
 }
-#acquia-lift-targeting-audiences .el-card__action input[type="checkbox"].acquia-lift-edit + label {
+.el-card__action input[type="checkbox"].acquia-lift-edit + label {
   content: url(../images/000000/edit.png);
   height: 24px;
   width: 24px;
@@ -480,7 +480,7 @@ tr.acquia-lift-report-control {
   cursor: pointer;
   margin-top: .37rem;
 }
-#acquia-lift-targeting-audiences .el-card__action input[type="checkbox"].acquia-lift-edit:checked + label {
+.el-card__action input[type="checkbox"].acquia-lift-edit:checked + label {
   content: url(../images/0F93DE/edit.png);
 }
 
@@ -499,6 +499,7 @@ li.acquia-lift-targeting-draggable.ui-sortable-helper {
   max-width: 30em;
   height: 1em;
   margin: 1em 0;
+  list-style: none;
 }
 .acquia-lift-targeting-empty.is-active {
   background-color: #FFFFCC;
@@ -508,15 +509,15 @@ li.acquia-lift-targeting-draggable.ui-sortable-helper {
   height: 0;
 }
 
-#acquia-lift-targeting-audiences .acquia-lift-draggable-variations {
+.acquia-lift-draggable-variations {
   list-style-type: none;
   margin: 0;
 }
 
-#acquia-lift-targeting-audiences .acquia-lift-draggable-variations.acquia-lift-no-drop {
+.acquia-lift-draggable-variations.acquia-lift-no-drop {
   cursor: no-drop;
 }
-#acquia-lift-targeting-audiences .acquia-lift-draggable-variations li.acquia-lift-targeting-draggable,
+.acquia-lift-draggable-variations li.acquia-lift-targeting-draggable,
 .acquia-lift-targeting-draggable {
   background: #E6E9ED url(../images/000000/drag.png) no-repeat;
   background-position: left center;
@@ -527,7 +528,7 @@ li.acquia-lift-targeting-draggable.ui-sortable-helper {
   margin: 1em 0;
   list-style-type: none;
 }
-#acquia-lift-targeting-audiences .acquia-lift-targeting-draggable .acquia-lift-targeting-remove {
+.acquia-lift-targeting-draggable .acquia-lift-targeting-remove {
   float: right;
   display: inline-block;
   text-indent: -9999px;
@@ -535,7 +536,7 @@ li.acquia-lift-targeting-draggable.ui-sortable-helper {
   width: 20px;
   height: 20px;
 }
-#acquia-lift-targeting-audiences .acquia-lift-targeting-draggable .acquia-lift-targeting-remove {
+.acquia-lift-targeting-draggable .acquia-lift-targeting-remove {
   background: transparent url(../images/000000/close.png) no-repeat;
 }
 

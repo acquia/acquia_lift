@@ -288,7 +288,7 @@ function acquia_lift_element_variation_details_form_ajax_callback($form, &$form_
     }
 
     $agent_name = $form_state['values']['agent'];
-    if (!$has_destination) {
+    if ($add_another || !$has_destination) {
       $settings = array();
       // Get the updated option sets for the element variation so that the
       // unibar can display the latest information.

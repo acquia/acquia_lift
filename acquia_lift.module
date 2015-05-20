@@ -471,6 +471,13 @@ function acquia_lift_cron_queue_info() {
 }
 
 /**
+ * Implements hook_flush_caches().
+ */
+function acquia_lift_flush_caches() {
+  return array('cache_acquia_lift_reports');
+}
+
+/**
  * Returns the agent types this module provides.
  *
  * @return array

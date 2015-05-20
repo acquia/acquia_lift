@@ -287,6 +287,10 @@ tr.acquia-lift-report-control {
 }
 
 /* Acquia Lift campaign wizard form alterations */
+#personalize-campaign-wizard .personalize-wizard-section .personalize-wizard-column {
+  min-width: 520px;
+  margin: .5rem;
+}
 .acquia-lift-delete {
   background-image: url(../images/000000/delete.png);
   background-repeat: no-repeat;
@@ -344,6 +348,16 @@ tr.acquia-lift-report-control {
 .el-card__content fieldset.collapsible.collapsed {
   border: none;
 }
+
+.acquia-lift-informational .el-card .el-card__header {
+  background-color: #8A8B8E;
+  color: #FFF;
+}
+.acquia-lift-informational .el-card .el-card__header h2 {
+  color: #FFF;
+  font-weight: bold;
+}
+
 
 /* Radio list component */
 .acquia-lift-radio-list {

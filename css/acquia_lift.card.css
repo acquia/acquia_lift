@@ -13,7 +13,7 @@
   border: 0.08rem solid #cccccc;
   box-shadow: 0 0.05rem 0 #cccccc;
   font-family: "Helvetica Neue", helvetica, "Segoe UI", segoe, "Ubuntu", "Droid Sans", "Arial", sans-serif;
-  margin: 1rem;
+  margin: .5rem;
   position: relative;
   top: 0;
 }
@@ -35,7 +35,7 @@
 }
 
 .el-card__content {
-  padding: 0.75rem;
+  padding: 0.5rem;
   background-color: #fff;
 }
 

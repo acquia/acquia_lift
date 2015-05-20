@@ -683,6 +683,9 @@ function acquia_lift_personalize_campaign_wizard_targeting_alter(&$form, &$form_
     '#theme' => 'acquia_lift_card',
     '#title' => t('All variations'),
     '#collapsible' => FALSE,
+    '#attributes' => array(
+      'class' => array('acquia-lift-informational'),
+    ),
   );
   $form['targeting']['variations']['options']['instructions'] = array(
     '#markup' => t('Drag variations to the desired audience to display to that audience.'),
@@ -1493,7 +1496,7 @@ function _acquia_lift_personalize_campaign_wizard_variations_block(&$form, &$for
     $block['block']['add']['#collapsed'] = TRUE;
     $block['block']['add']['#title'] = t('Create new and add');
 
-    acquia_lift_chosenify_element($block['block']['bid'], array('acquia-lift-chosen-select-half'));
+    acquia_lift_chosenify_element($block['block']['bid'], array('acquia-lift-chosen-select-third'));
 
     // Hide the remove button if the option is currently targeted in a running
     // campaign.

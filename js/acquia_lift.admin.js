@@ -9,6 +9,8 @@
         var chosenWidth = '940px';
         if ($(this).hasClass('acquia-lift-chosen-select-half')) {
           chosenWidth = '470px';
+        } else if ($(this).hasClass('acquia-lift-chosen-select-third')) {
+          chosenWidth = '470px';
         }
         var options = {
           width: chosenWidth

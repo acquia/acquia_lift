@@ -30,8 +30,14 @@
         var $body = $('body');
         var paddingTop = parseInt($sidebar.css('margin-top')) + parseInt($sidebar.css('padding-top'));
         var scrollPaddingTop = paddingTop + parseInt($body.css('margin-top')) + parseInt($body.css('padding-top'));
+        var $columns = $('.personalize-wizard-column');
 
         $window.scroll(function() {
+          // Don't move if the columns have stacked vertically in cases of
+          // limited content area width.
+          if ($columns.first().offset().left == $columns.last().offset().left) {
+            return;
+          }
           if ($window.scrollTop() > offset.top) {
             $sidebar.stop().animate({
               marginTop: $window.scrollTop() - offset.top + scrollPaddingTop

@@ -86,9 +86,11 @@
         var optionId = $li.data('acquia-lift-option-id');
         var $select = $(this).closest('.form-item').children('select.acquia-lift-targeting-assignment');
         var selectedItems = $select.val();
+        var $orderInput = $(this).parents('.el-card__content').find('input.acquia-lift-targeting-assignment-order');
         // Remove it from the selected items.
         selectedItems.splice(selectedItems.indexOf(optionId), 1);
         $select.val(selectedItems);
+        $orderInput.val(selectedItems.join(','));
         // Remove the list item.
         $li.remove();
         checkTargetingPlaceholder($ul);

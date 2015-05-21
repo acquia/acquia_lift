@@ -472,16 +472,20 @@ tr.acquia-lift-report-control {
   display: none;
 }
 .el-card__action input[type="checkbox"].acquia-lift-edit + label {
-  content: url(../images/000000/edit.png);
   height: 24px;
   width: 24px;
   display: inline-block;
   padding: 0;
   cursor: pointer;
-  margin-top: .37rem;
+  margin-top: .37rem
+  /* Replace the text with an edit icon. */
+  white-space: nowrap;
+  overflow: hidden;
+  text-indent: 999rem;
+  background: url(../images/000000/edit.png) no-repeat;
 }
 .el-card__action input[type="checkbox"].acquia-lift-edit:checked + label {
-  content: url(../images/0F93DE/edit.png);
+  background-image: url(../images/0F93DE/edit.png);
 }
 
 /* Drag and Drop audience targeting */

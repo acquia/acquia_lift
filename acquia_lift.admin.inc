@@ -964,33 +964,25 @@ function acquia_lift_add_new_test_for_audience(&$option_set, $audience, $parent_
   $agent->plugin = acquia_lift_get_test_agent_plugin();
   $agent->data = array();
   $agent->machine_name = personalize_generate_machine_name($parent_agent->machine_name . '-test', 'personalize_agent_machine_name_exists');
-
-  try {
-    $agent = personalize_agent_save($agent);
-    $nested_os = new stdClass();
-    $nested_os->agent = $agent->machine_name;
-    $nested_os->label = $agent->label;
-    $nested_os->is_new = TRUE;
-    $nested_os->data = array();
-    $nested_os->options = array();
-    // This is basically a non-renderable option set - just set the plugin to
-    // 'options'.
-    $nested_os->plugin = 'options';
-    foreach ($variations as $option_id) {
-      $nested_os->options[] = array(
-        'option_id' => $option_id
-      );
-    }
-    $nested_os = personalize_option_set_save($nested_os);
-    $option_set->targeting[$audience]['osid'] = $nested_os->osid;
-    if (isset($option_set->targeting[$audience]['option_id'])) {
-      unset($option_set->targeting[$audience]['option_id']);
-    }
+  $agent = personalize_agent_save($agent);
+  $nested_os = new stdClass();
+  $nested_os->agent = $agent->machine_name;
+  $nested_os->label = $agent->label;
+  $nested_os->is_new = TRUE;
+  $nested_os->data = array();
+  $nested_os->options = array();
+  // This is basically a non-renderable option set - just set the plugin to
+  // 'options'.
+  $nested_os->plugin = 'options';
+  foreach ($variations as $option_id) {
+    $nested_os->options[] = array(
+      'option_id' => $option_id
+    );
   }
-  catch (PersonalizeException $e) {
-    // If anything goes wrong savign the new agent or option set, just print
-    // the error message and bail.
-    drupal_set_message($e->getMessage());
+  $nested_os = personalize_option_set_save($nested_os);
+  $option_set->targeting[$audience]['osid'] = $nested_os->osid;
+  if (isset($option_set->targeting[$audience]['option_id'])) {
+    unset($option_set->targeting[$audience]['option_id']);
   }
 }
 

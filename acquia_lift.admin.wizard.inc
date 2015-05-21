@@ -464,7 +464,7 @@ function acquia_lift_personalize_campaign_wizard_goals_alter(&$form, &$form_stat
       case 'element':
         ctools_include('ajax');
         ctools_add_js('ajax-responder');
-        $commands[] = ctools_ajax_command_redirect($goal_types['element']['path'], 0, array('query' => array('destination' => url('admin/structure/personalize/manage/' . $agent_data->machine_name . '/goals'))));
+        $commands[] = ctools_ajax_command_redirect($goal_types['element']['path'], 0, array('query' => array('destination' => 'admin/structure/personalize/manage/' . $agent_data->machine_name . '/goals')));
         print ajax_render($commands);
         exit;
     }

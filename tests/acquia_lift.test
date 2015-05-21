@@ -797,6 +797,13 @@ class AcquiaLiftWebTestFundamentals extends AcquiaLiftWebTestBase {
       ),
       array (
         'method' => 'saveGoal',
+        'args' => array (
+          $test_agent->machine_name,
+          'clicks_option_set_1',
+        ),
+      ),
+      array (
+        'method' => 'saveGoal',
         'args' =>
           array (
             $test_agent->machine_name,
@@ -1291,6 +1298,7 @@ class AcquiaLiftWebTestTarget extends AcquiaLiftWebTestBase {
   }
 
 
+
   function testCreateTargetAudiences() {
     module_load_include('inc', 'acquia_lift', 'acquia_lift.admin');
     $agent = $this->createTargetingAgent();
@@ -1759,7 +1767,7 @@ class AcquiaLiftWebTestTarget extends AcquiaLiftWebTestBase {
     $nested_os = personalize_option_set_load_by_agent($nested_agent_name, TRUE);
     $this->assertEqual(0, count($nested_os));
   }
-
+  
   /**
    * Tests which components of a campaign are editable when the depending on
    * agent status.
@@ -1774,8 +1782,7 @@ class AcquiaLiftWebTestTarget extends AcquiaLiftWebTestBase {
     ));
     $this->resetAll();
 
-    // Add a goal to this agent.
-    personalize_goal_save($agent->machine_name, 'user_login', 1);
+    // Load the automatic goal for reference.
     $goals = personalize_goal_load_by_conditions(array('agent' => $agent->machine_name));
     $this->assertEqual(count($goals), 1);
     $goal = reset($goals);
@@ -1796,7 +1803,7 @@ class AcquiaLiftWebTestTarget extends AcquiaLiftWebTestBase {
 
     // Try to edit the goal.
     try {
-      personalize_goal_save($agent->machine_name, 'user_login', 5, $goal->id);
+      personalize_goal_save($agent->machine_name, 'clicks_option_set_1', 5, $goal->id);
       $this->fail('Should not ever get here because a cannot be saved when agent is running.');
     } catch (Exception $e) {
       $this->assertTrue($e instanceof PersonalizeException);
@@ -1838,7 +1845,7 @@ class AcquiaLiftWebTestTarget extends AcquiaLiftWebTestBase {
     personalize_agent_set_status($agent->machine_name, PERSONALIZE_STATUS_PAUSED);
 
     // Edit the goal.
-    personalize_goal_save($agent->machine_name, 'user_login', 5, $goal->id);
+    personalize_goal_save($agent->machine_name, 'clicks_option_set_1', 5, $goal->id);
 
     // Verify the change.
     $goal = personalize_goal_load($goal->id);
@@ -1860,7 +1867,7 @@ class AcquiaLiftWebTestTarget extends AcquiaLiftWebTestBase {
 
     // Try to edit the goal.
     try {
-      personalize_goal_save($agent->machine_name, 'user_login', 5, $goal->id);
+      personalize_goal_save($agent->machine_name, 'clicks_option_set_1', 3, $goal->id);
       $this->fail('Should not ever get here because a cannot be saved when agent is running.');
     } catch (Exception $e) {
       $this->assertTrue($e instanceof PersonalizeException);
@@ -1888,7 +1895,7 @@ class AcquiaLiftWebTestTarget extends AcquiaLiftWebTestBase {
 
     // Try to edit the goal.
     try {
-      personalize_goal_save($agent->machine_name, 'user_login', 10, $goal->id);
+      personalize_goal_save($agent->machine_name, 'clicks_option_set_1', 10, $goal->id);
       $this->fail('Should not ever get here because a cannot be saved when agent is running.');
     } catch (Exception $e) {
       $this->assertTrue($e instanceof PersonalizeException);
@@ -1909,6 +1916,8 @@ class AcquiaLiftWebTestTarget extends AcquiaLiftWebTestBase {
     $this->resetAll();
     $admin_user = $this->drupalCreateUser(array('access administration pages', 'administer site configuration', 'access content', 'administer content types', 'administer nodes', 'bypass node access', 'manage personalized content'));
     $this->drupalLogin($admin_user);
+    // Set the test classes for working with option set manipulation.
+    AcquiaLiftAPI::setTestInstance();
 
     $agent = $this->createTargetingAgent();
     // Add a goal or it cannot be started.
@@ -2858,6 +2867,11 @@ class AcquiaLiftWebTestCampaignWizard extends AcquiaLiftWebTestBase {
     // Adjust the weights and verify that the "Everyone else" has the highest.
     module_load_include('inc', 'acquia_lift', 'acquia_lift.admin');
     $this->drupalPost('admin/structure/personalize/manage/' . $agent->machine_name . '/targeting', array(), $this->getButton('wizard_next'));
+
+    // Delete the goal that was created in order to force the agent to be in a
+    // state that is not ready to start.
+    $this->drupalGet('admin/structure/personalize/manage/' . $agent->machine_name . '/goals');
+    $this->drupalPostAJAX(NULL, array(), 'edit-goals-all-goals-0-header-delete');
 
     // Try to start the agent.
     $this->drupalPost('admin/structure/personalize/manage/' . $agent->machine_name . '/review', array(), $this->getButton('wizard_start'));

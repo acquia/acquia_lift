@@ -581,8 +581,8 @@ function acquia_lift_report_decision_point_dropdown($options, $selected, $agent_
     '#options' => $options,
     '#default_value' => $selected,
     '#ajax' => array(
-      'callback' => "acquia_lift_report_ajax_callback",
-      'wrapper' => "acquia-lift-report-" . $agent_name,
+      'callback' => 'acquia_lift_report_ajax_callback',
+      'wrapper' => 'acquia-lift-report-' . $agent_name,
     ),
     '#id' => 'acquia-lift-report-decision-point-filter',
   );
@@ -651,7 +651,7 @@ function acquia_lift_report_conversion_metric_dropdown($selected) {
  * Ajax callback for filtering options.
  */
 function acquia_lift_report_ajax_callback($form, &$form_state) {
-  return $form;
+  return $form['report'];
 }
 
 /**

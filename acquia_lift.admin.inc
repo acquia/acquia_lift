@@ -293,6 +293,9 @@ function acquia_lift_report($form, &$form_state, $agent_data, $option_set = NULL
     // Display a report for any nested test.
     $report = array();
     $option_set = acquia_lift_get_option_set_for_targeting($agent_data->machine_name);
+    if (empty($option_set->targeting)) {
+      return $report;
+    }
     foreach($option_set->targeting as $audience_name => $audience) {
       if (isset($audience['osid'])) {
         if ($option_set = personalize_option_set_load($audience['osid'])) {

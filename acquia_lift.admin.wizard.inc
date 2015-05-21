@@ -899,6 +899,7 @@ function acquia_lift_personalize_campaign_wizard_goals_ajax_delete($form, &$form
   $goal_id = $form_state['triggering_element']['#attributes']['data-acquia-lift-personalize-goal-id'];
   if (!empty($goal_id)) {
     personalize_goal_delete($goal_id);
+    $form_state['num_goals']--;
   }
   $form_state['rebuild'] = TRUE;
 }

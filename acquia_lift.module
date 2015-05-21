@@ -2144,6 +2144,14 @@ function acquia_lift_form_personalize_campaign_wizard_alter(&$form, &$form_state
     // All other modifications only apply to the edit form.
     return;
   }
+
+  // Only reports can be shown for legacy campaigns.
+  $legacy_campaigns = variable_get('acquia_lift_legacy_agents', array());
+  if (in_array($agent->machine_name, $legacy_campaigns)) {
+    module_load_include('inc', 'personalize', 'personalize_admin');
+    $form = personalize_campaign_report($agent);
+    return;
+  }
   if (!acquia_lift_is_targeting_agent($agent)) {
     return;
   }

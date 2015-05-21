@@ -94,7 +94,7 @@ QUnit.module("Acquia Lift Profiles", {
   }
 });
 
-QUnit.asyncTest( "init test", function( assert ) {
+QUnit.test( "init test", function( assert ) {
   expect(8);
   Drupal.acquia_lift_profiles.resetAll();
   _tcaq = {
@@ -108,7 +108,6 @@ QUnit.asyncTest( "init test", function( assert ) {
       assert.equal( stf[2].content_section, "", 'empty value correctly assigned' );
       assert.equal( stf[2].content_keywords, "some-value", 'value correctly assigned from context' );
       assert.equal( stf[2].persona, "some-other-value-1,some-other-value-2", 'value correctly assigned from context' );
-      QUnit.start();
     }
   };
   var settings = {
@@ -157,15 +156,32 @@ QUnit.test("Get context values with 'do not track' cookie", function( assert ) {
   $.cookie('tc_dnt', null, {path:'/'});
 });
 
-QUnit.asyncTest("Get context values no cache", function( assert ) {
+QUnit.test("Trigger acquiaLiftStoredSegments", function( assert ) {
+  expect(4);
+  var done = assert.async();
+  var onCall = function(segment, segments) {
+       done();
+       assert.ok( true, "acquiaLiftStoredSegments was called!" );
+       assert.ok(segments != null, "Segments is not null");
+       assert.ok(segments.length == 1, "Segments has 1 element");
+       assert.equal(segments[0], "segment1", "Segment[0] is segment1");
+       $(document).off( "acquiaLiftStoredSegments", onCall);
+   };
+
+  var contextResult = Drupal.personalize.visitor_context.acquia_lift_profiles_context.getContext();
+  $(document).on( "acquiaLiftStoredSegments", onCall);
+}); 
+
+QUnit.test("Get context values no cache", function( assert ) {
   expect(7);
+  var done = assert.async();
+  Drupal.acquia_lift_profiles.clearSegmentMemoryCache();
   var contextResult = Drupal.personalize.visitor_context.acquia_lift_profiles_context.getContext({'segment1':'segment1', 'segment2':'segment2'});
   assert.ok(contextResult instanceof Promise);
   var cached = Drupal.personalize.visitor_context_read('segment1', 'acquia_lift_profiles_context');
   assert.ok(cached === null);
-  QUnit.stop();
   Promise.all([contextResult]).then(function (loadedContexts) {
-    QUnit.start();
+    done();
     console.log(loadedContexts);
     assert.ok(loadedContexts[0].hasOwnProperty('segment1'), 'segment1 returned');
     assert.equal(loadedContexts[0]['segment1'], 1, 'segment1 has value 1');
@@ -177,19 +193,6 @@ QUnit.asyncTest("Get context values no cache", function( assert ) {
 
 });
 
-QUnit.asyncTest("Trigger acquiaLiftStoredSegments", function( assert ) {
-  expect(4);
-  Drupal.personalize.visitor_context.acquia_lift_profiles_context.getContext();
-  // Testing that acquiaLiftStoredSegments will be triggered and that segment1 will be retrieved.
-  $(document).on( "acquiaLiftStoredSegments", function(segment, segments) {
-    assert.ok( true, "acquiaLiftStoredSegments was called!" );
-    assert.ok(segments != null, "Segments is not null");
-    assert.ok(segments.length == 1, "Segments has 1 element");
-    assert.equal(segments[0], "segment1", "Segment[0] is segment1");
-  });
-});
-
-
 QUnit.test("get context values with cache", function( assert ) {
   expect(3);
   Drupal.acquia_lift_profiles.clearSegmentMemoryCache();
@@ -200,9 +203,10 @@ QUnit.test("get context values with cache", function( assert ) {
   assert.ok(!(contextResult instanceof Promise), 'Got the segments from the cache');
   assert.equal(contextResult['segment1'], 1, 'Segment1 has value 1');
   assert.equal(contextResult['segment2'], 1, 'Segment2 has value 1');
-});
+}); 
 
-QUnit.asyncTest( "personalize decision event", function( assert ) {
+
+QUnit.test( "personalize decision event", function( assert ) {
   expect(5);
   Drupal.acquia_lift_profiles.resetAll();
   _tcaq = {
@@ -213,7 +217,6 @@ QUnit.asyncTest( "personalize decision event", function( assert ) {
         assert.equal( args[2].targetcampaignid, "my-agent", 'value correctly assigned from event' );
         assert.equal( args[2].targetcampaignname, "Test Agent", 'value correctly assigned from event' );
         assert.equal( args[2].targetactionname, "test_decision", 'value correctly assigned from event' );
-        QUnit.start();
       }
     }
   };
@@ -232,7 +235,7 @@ QUnit.asyncTest( "personalize decision event", function( assert ) {
   $(document).trigger("personalizeDecision", [{}, "test_decision", "test_osid", "my-agent" ]);
 });
 
-QUnit.asyncTest( "sent goal to agent event", function( assert ) {
+QUnit.test( "sent goal to agent event", function( assert ) {
   expect(4);
   Drupal.acquia_lift_profiles.resetAll();
   _tcaq = {
@@ -242,7 +245,6 @@ QUnit.asyncTest( "sent goal to agent event", function( assert ) {
         assert.equal( args[1], 'goal-event',  'capture view is of type goal-event');
         assert.equal( args[2].targetcampaignid, "my-agent", 'value correctly assigned from event' );
         assert.equal( args[2].targetcampaignname, "Test Agent", 'value correctly assigned from event' );
-        QUnit.start();
       }
     }
   };
@@ -376,7 +378,7 @@ QUnit.test( "Capture identity test", function( assert ) {
   Drupal.acquia_lift_profiles.processServerSideActions(settings);
 });
 
-QUnit.asyncTest("Use UDF values in processEvent", function( assert ) {
+QUnit.test("Use UDF values in processEvent", function( assert ) {
   expect(2);
   Drupal.acquia_lift_profiles.resetAll();
   // Mock the _tcaq object so we can assert on what gets passed to it.
@@ -393,7 +395,6 @@ QUnit.asyncTest("Use UDF values in processEvent", function( assert ) {
           person_udf2: "some-other-value"
         });
       }
-      QUnit.start();
     }
   };
   // Set up some UDF values that will get mapped during the init() call.
@@ -424,7 +425,6 @@ QUnit.asyncTest("Use UDF values in processEvent", function( assert ) {
   };
   // Call the init() function which will result in the UDF values getting mapped.
   Drupal.acquia_lift_profiles.init(settings);
-  QUnit.stop();
   // Now process a custom event - the UDF values that were evaluated during the
   // init call should also get passed. The assertion is in our _tcaq mock above.
   Drupal.acquia_lift_profiles.processEvent('someEvent', {}, {'context1': 'value1'});

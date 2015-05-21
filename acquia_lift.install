@@ -635,6 +635,12 @@ function acquia_lift_update_7200() {
   // The queue is now gone so delete the queue class variable.
   variable_del('queue_class_acquia_lift_sync');
 
+  // Clear the ctools plugin "agent_type" cache for personalize, clear loaded
+  // files cache, and rebuild the autoloader class definitions.
+  cache_clear_all('plugins:personalize:agent_type', 'cache', TRUE);
+  cache_clear_all('ctools_plugin_files:personalize:agent_type', 'cache', TRUE);
+  registry_rebuild();
+
   // Convert simple A/B agents to regular Lift agents.
   db_update('personalize_agent')
     ->condition('plugin', 'acquia_lift_simple_ab')

@@ -374,7 +374,7 @@ function acquia_lift_agent_list() {
       array('data' => t('Name')),
       array('data' => t('Start date')),
       array('data' => t('Type')),
-      array('data' => t('Status')),
+      array('data' => t('Change status')),
       array('data' => t('Operations')),
     );
 
@@ -442,7 +442,7 @@ function acquia_lift_agent_list() {
         }
       }
 
-      //$status_change_form = drupal_get_form("personalize_change_status_{$agent->machine_name}_form", $agent);
+      $status_change_form = drupal_get_form("personalize_change_status_{$agent->machine_name}_form", $agent);
       // Determine the start date to show (either schedule or actual).
       switch ($status) {
         case PERSONALIZE_STATUS_SCHEDULED:
@@ -489,7 +489,7 @@ function acquia_lift_agent_list() {
         array('data' => check_plain($agent->label)),
         array('data' => $start_date > 0 ? format_date($start_date, 'custom', 'M d, Y') : ''),
         array('data' => $agent_type),
-        array('data' => 'status here'),// drupal_render($status_change_form)),
+        array('data' => drupal_render($status_change_form)),
         array('data' => theme('links', array('links' => $ops))),
       );
       $rows[] = array(

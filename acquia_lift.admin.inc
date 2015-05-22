@@ -274,6 +274,283 @@ function acquia_lift_admin_form_submit($form, &$form_state) {
 }
 
 /**
+ * Page callback for full campaign listings.
+ */
+function acquia_lift_agent_list() {
+  $agent_type_test = t('Test only');
+  $agent_type_target = t('Target only');
+  $agent_type_both = t('Test and target');
+
+  $build = array();
+  $build['#attached']['library'][] = array('personalize', 'admin.campaign.list');
+
+  $status_map = personalize_get_agent_status_map();
+
+  $agents = personalize_agent_load_multiple(array(), array(), FALSE, TRUE, 'acquia_lift_sort_agent_started');
+
+  if (empty($agents)) {
+    return array(
+      'no_agents' => array(
+        '#markup' => '<div>' . t('No personalizations available.') . '</div>'
+      )
+    );
+  }
+
+  $sorted_agents = array(
+    PERSONALIZE_STATUS_NOT_STARTED => array(),
+    PERSONALIZE_STATUS_SCHEDULED => array(),
+    PERSONALIZE_STATUS_RUNNING => array(),
+    PERSONALIZE_STATUS_PAUSED => array(),
+    PERSONALIZE_STATUS_COMPLETED => array()
+  );
+
+  foreach ($agents as $agent) {
+    $agent_status = personalize_agent_get_status($agent->machine_name);
+    $sorted_agents[$agent_status][] = $agent;
+  }
+  $build['personalizations_list'] = array(
+    '#type' => 'container',
+    '#attributes' => array(
+      'id' => 'personalize-personalizations-list',
+    ),
+  );
+  $navigation_bar = array();
+  foreach ($sorted_agents as $status => $agents) {
+    if (empty($agents)) {
+      continue;
+    }
+    // Notice the 'href', 'fragment', and 'external' here are made specific to theme an anchor link.
+    $navigation_bar['personalization-group-' . $status] = array(
+      'title' => theme('html_tag', array(
+        'element' => array(
+          '#tag' => 'h3',
+          '#value' => $status_map[$status],
+        ),
+      )),
+      'href' => '',
+      'fragment' => 'personalization-group-' . $status,
+      'external' => TRUE,
+      'html' => TRUE,
+    );
+    $build['personalizations_list']['navigation_bar'] = array(
+      '#markup' => theme('links', array('links' => $navigation_bar)),
+    );
+
+    $description = '';
+    switch($status) {
+      case PERSONALIZE_STATUS_NOT_STARTED:
+        $description = t('This table lists personalizations that have never been started.');
+        break;
+      case PERSONALIZE_STATUS_SCHEDULED:
+        $description = t('This table lists personalizations that are scheduled to start in the future.');
+        break;
+      case PERSONALIZE_STATUS_RUNNING:
+        $description = t('This table lists personalizations that are displaying personalized content to website visitors for each variation set.');
+        break;
+      case PERSONALIZE_STATUS_PAUSED:
+        $description = t('This table lists personalizations that use personalization JavaScript to display the fallback/winner variation for each variation set.');
+        break;
+      case PERSONALIZE_STATUS_COMPLETED:
+        $description = t('This table lists personalizations that use PHP (whenever possible) to display the fallback/winner variation for each variation set, which can cause variations to display more quickly than those in paused personalizations.');
+        break;
+    }
+    $build['personalizations_list']['personalization_group_' . $status] = array(
+      '#type' => 'container',
+      '#attributes' => array(
+        'id' => 'personalization-group-' . $status,
+      ),
+    );
+    $build['personalizations_list']['personalization_group_' . $status]['description'] = array(
+      '#markup' => theme('html_tag', array(
+        'element' => array(
+          '#tag' => 'p',
+          '#value' => $description,
+        )
+      )),
+    );
+
+    // Build the personalizations table.
+    $header = array(
+      array('data' => t('Name')),
+      array('data' => t('Start date')),
+      array('data' => t('Type')),
+      array('data' => t('Status')),
+      array('data' => t('Operations')),
+    );
+
+    $rows = array();
+    foreach ($agents as $agent) {
+      // If this is a nested agent, it should not be listed.
+      if (in_array($agent->plugin, array(ACQUIA_LIFT_TESTING_AGENT_V1, ACQUIA_LIFT_TESTING_AGENT_V2))) {
+        continue;
+      }
+      $plugin = personalize_agent_load_agent($agent->machine_name);
+      $targeting = array();
+
+      // Determine the agent type.
+      $agent_type = $agent->plugin;
+      if ($agent->plugin == 'acquia_lift_target') {
+        // Load targeting audiences
+        $targeting_os = acquia_lift_get_option_set_for_targeting($agent->machine_name);
+        if (!empty($agent->data['lift_targeting'])) {
+          // Use the currently saved targeting even if not yet implemented.
+          $targeting = $agent->data['lift_targeting'];
+        }
+        else {
+          // Use the stored targeting that is currently implemented.
+          $targeting = acquia_lift_get_structure_from_targeting($targeting_os);
+        }
+        if (count($targeting) == 1) {
+          $agent_type = $agent_type_test;
+        }
+        else {
+          $agent_type = $agent_type_target;
+          foreach ($targeting as $audience => $variations) {
+            if (count($variations) > 1) {
+              $agent_type = $agent_type_both;
+              break;
+            }
+          }
+        }
+      }
+
+      // The ability to delete depends on the storage type and on whether the campaign has started
+      // or contains option sets.
+      $can_delete = personalize_delete_agent_access($agent);
+      $delete_link = '';
+      // Determine storage
+      if ($can_delete) {
+        switch ($agent->export_type) {
+          case EXPORT_IN_DATABASE | EXPORT_IN_CODE:
+            $delete_link = array(
+              'title' => t('Revert'),
+              'href' => 'admin/structure/personalize/manage/'. $agent->machine_name .'/delete',
+              'attributes' => array(
+                'class' => 'acquia-lift-delete',
+              ),
+            );
+            break;
+          case EXPORT_IN_DATABASE:
+            $delete_link = array(
+              'title' => t('Delete'),
+              'href' => 'admin/structure/personalize/manage/'. $agent->machine_name .'/delete',
+              'attributes' => array(
+                'class' => 'acquia-lift-delete',
+              ),
+            );
+            break;
+        }
+      }
+
+      //$status_change_form = drupal_get_form("personalize_change_status_{$agent->machine_name}_form", $agent);
+      // Determine the start date to show (either schedule or actual).
+      switch ($status) {
+        case PERSONALIZE_STATUS_SCHEDULED:
+        case PERSONALIZE_STATUS_NOT_STARTED:
+          $start_date = personalize_agent_get_start_date($agent->machine_name);
+          break;
+        default:
+          $start_date = isset($agent->started) ? $agent->started : 0;
+          break;
+      }
+
+      // Report availability.
+      $show_report_link = $plugin instanceof PersonalizeAgentReportInterface && !empty($agent->started);
+      if ($agent->plugin == 'acquia_lift_target') {
+        // Lift target agents show reports if they contain tests.
+        $show_report_link = !empty($agent->started) && in_array($agent_type, array($agent_type_test, $agent_type_both));
+      }
+
+      // Generate operations list.
+      $ops = array(
+        array(
+          'title' => t('Edit'),
+          'href' => 'admin/structure/personalize/manage/'. $agent->machine_name . '/variations',
+          'attributes' => array(
+            'class' => array('acquia-lift-edit'),
+          ),
+        ),
+      );
+      if (!empty($delete_link)) {
+        $ops[] = $delete_link;
+      }
+      if ($show_report_link) {
+        $ops[] = array(
+          'title' => t('View reports'),
+          'href' => 'admin/structure/personalize/manage/'. $agent->machine_name .'/results',
+          'attributes' => array(
+            'class' => array('acquia-lift-reports'),
+          ),
+        );
+      }
+
+      // Generate actual table row data.
+      $tablerow = array(
+        array('data' => check_plain($agent->label)),
+        array('data' => $start_date > 0 ? format_date($start_date, 'custom', 'M d, Y') : ''),
+        array('data' => $agent_type),
+        array('data' => 'status here'),// drupal_render($status_change_form)),
+        array('data' => theme('links', array('links' => $ops))),
+      );
+      $rows[] = array(
+        'data' => $tablerow,
+        'no_striping' => TRUE,
+        'class' => array('acquia_lift_personalize_list_campaign'),
+      );
+
+      // Add rows for targeting.
+      if (!empty($targeting_os->targeting)) {
+        foreach ($targeting_os->targeting as $audience_id => $audience) {
+          if (empty($targeting[$audience_id])) {
+            continue;
+          }
+          $variations = $targeting[$audience_id];
+          $tablerow = array(
+            !empty($audience['label']) ? check_plain($audience['label']) : $audience_id,
+            '',
+            count($variations) > 1 ? t('Test') : t('Target'),
+            '',
+            $show_report_link && count($variations) > 1 ? l(t('View reports'), 'admin/structure/personalize/manage/' . $agent->machine_name . '/results', array(
+              'query' => array(
+                'audience_id' => $audience,
+              ),
+              'attributes' => array(
+                'class' => array('acquia-lift-reports'),
+              ),
+            )) : '',
+          );
+          $rows[] = array(
+            'data' => $tablerow,
+            'no_striping' => TRUE,
+            'class' => array('acquia_lift_personalize_list_audience'),
+          );
+        }
+      }
+    }
+
+    $build['personalizations_list']['personalization_group_' . $status]['table'] = array(
+      '#theme' => 'table',
+      '#header' => $header,
+      '#rows' => $rows,
+      '#attributes' => array(
+        'id' => 'personalize'
+      ),
+    );
+  }
+  return $build;
+}
+
+/**
+ * Sort function for agents by start time and then label.
+ */
+function acquia_lift_sort_agent_started($a, $b) {
+  if (!isset($a->started) || !isset($b->started) || $a->started == $b->started) {
+    return strcmp(drupal_strtolower($a->label), drupal_strtolower($b->label));
+  }
+  return $a->started < $b->started ? -1 : 1;
+}
+
+/**
  * =======================================================================
  *  A C Q U I A  L I F T  A G E N T  R E P O R T I N G
  * =======================================================================

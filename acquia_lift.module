@@ -199,6 +199,11 @@ function acquia_lift_menu_alter(&$items) {
   // access to Lift campaigns.
   $items['admin/structure/personalize/manage/%personalize_agent/edit']['access callback'] = 'acquia_lift_campaign_edit_access';
   $items['admin/structure/personalize/manage/%personalize_agent/edit']['access arguments'] = array(4);
+
+  // Take over the rendering for the campaign listing page.
+  $items['admin/structure/personalize']['page callback'] = 'acquia_lift_agent_list';
+  $items['admin/structure/personalize']['file'] = 'acquia_lift.admin.inc';
+  $items['admin/structure/personalize']['module'] = 'acquia_lift';
 }
 
 /**
@@ -2953,15 +2958,6 @@ function acquia_lift_get_campaign_details() {
   }
 
   return $campaigns;
-}
-
-function acquia_lift_personalize_agent_list_alter(&$agents) {
-  // If this is a nested agent, it should not be listed.
-  foreach ($agents as $agent_name => $agent) {
-    if (in_array($agent->plugin, array(ACQUIA_LIFT_TESTING_AGENT_V1, ACQUIA_LIFT_TESTING_AGENT_V2))) {
-      unset($agents[$agent_name]);
-    }
-  }
 }
 
 /**

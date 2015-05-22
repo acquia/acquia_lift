@@ -555,3 +555,42 @@ li.acquia-lift-targeting-draggable.ui-sortable-helper {
 #personalize-campaign-wizard .acquia-lift-test-options fieldset {
   border: none;
 }
+
+/* Personalization listing page */
+#personalize-personalizations-list table tr td {
+  vertical-align: top;
+}
+#personalize-personalizations-list table tr td form {
+  margin: 0;
+  padding: 0;
+}
+#personalize-personalizations-list table tr td form input{
+  margin: 0;
+}
+
+#personalize-personalizations-list .acquia-lift-list-operations li {
+  list-style-type: none;
+  display: inline;
+  padding-right: 0.3em; /* LTR */
+}
+
+#personalize-personalizations-list .acquia-lift-delete,
+#personalize-personalizations-list .acquia-lift-edit,
+#personalize-personalizations-list .acquia-lift-report {
+  display: inline-block;
+  background-repeat: no-repeat;
+  background-position: 50%;
+  width: 20px;
+  height: 20px;
+  text-indent: -9999px;
+  overflow: hidden;
+}
+#personalize-personalizations-list .acquia-lift-delete {
+  background-image: url(../images/8A8B8E/delete.png);
+}
+#personalize-personalizations-list .acquia-lift-edit {
+  background-image: url(../images/8A8B8E/edit.png);
+}
+/*#personalize-personalizations-list .acquia-lift-report {
+  background-image: url(../images/000000/delete.png);
+}*/

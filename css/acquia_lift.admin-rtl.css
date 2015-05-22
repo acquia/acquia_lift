@@ -1,0 +1,4 @@
+/* Personalization listing page */
+#personalize-personalizations-list .acquia-lift-list-operations li {
+  padding-left: 0.3em; /* RTL */
+}

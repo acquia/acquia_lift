@@ -283,6 +283,7 @@ function acquia_lift_agent_list() {
 
   $build = array();
   $build['#attached']['library'][] = array('personalize', 'admin.campaign.list');
+  $build['#attached']['css'][] = drupal_get_path('module', 'acquia_lift') . '/css/acquia_lift.admin.css';
 
   $status_map = personalize_get_agent_status_map();
 
@@ -427,6 +428,7 @@ function acquia_lift_agent_list() {
               'href' => 'admin/structure/personalize/manage/'. $agent->machine_name .'/delete',
               'attributes' => array(
                 'class' => 'acquia-lift-delete',
+                'title' => t('Delete @campaign', array('campaign' => $agent->label)),
               ),
             );
             break;
@@ -436,6 +438,7 @@ function acquia_lift_agent_list() {
               'href' => 'admin/structure/personalize/manage/'. $agent->machine_name .'/delete',
               'attributes' => array(
                 'class' => 'acquia-lift-delete',
+                'title' => t('Delete @campaign', array('campaign' => $agent->label)),
               ),
             );
             break;
@@ -468,6 +471,7 @@ function acquia_lift_agent_list() {
           'href' => 'admin/structure/personalize/manage/'. $agent->machine_name . '/variations',
           'attributes' => array(
             'class' => array('acquia-lift-edit'),
+            'title' => t('Edit @campaign', array('@campaign' => $agent->label)),
           ),
         ),
       );
@@ -479,7 +483,8 @@ function acquia_lift_agent_list() {
           'title' => t('View reports'),
           'href' => 'admin/structure/personalize/manage/'. $agent->machine_name .'/results',
           'attributes' => array(
-            'class' => array('acquia-lift-reports'),
+            'class' => array('acquia-lift-report'),
+            'title' => t('View reports for @campaign', array('@campaign' => $agent->label)),
           ),
         );
       }
@@ -490,7 +495,7 @@ function acquia_lift_agent_list() {
         array('data' => $start_date > 0 ? format_date($start_date, 'custom', 'M d, Y') : ''),
         array('data' => $agent_type),
         array('data' => drupal_render($status_change_form)),
-        array('data' => theme('links', array('links' => $ops))),
+        array('data' => theme('links', array('links' => $ops, 'attributes' => array('class' => array('acquia-lift-list-operations'))))),
       );
       $rows[] = array(
         'data' => $tablerow,
@@ -515,7 +520,11 @@ function acquia_lift_agent_list() {
                 'audience_id' => $audience,
               ),
               'attributes' => array(
-                'class' => array('acquia-lift-reports'),
+                'class' => array('acquia-lift-report'),
+                'title' => t('View reports for @campaign: @audience', array(
+                  '@campaign' => $agent->label,
+                  '@audience' => empty($audience['label']) ? $audience_id : $audience['label'],
+                )),
               ),
             )) : '',
           );

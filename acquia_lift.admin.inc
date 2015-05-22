@@ -1153,6 +1153,11 @@ function acquia_lift_get_structure_from_targeting($option_set) {
     $targeting_structure[$name] = array();
     if (isset($targ['osid'])) {
       $nested_option_set = personalize_option_set_load($targ['osid']);
+      if (empty($nested_option_set)) {
+        // @todo: Ensure that any deleted option sets are removed from nested
+        // targeting.
+        continue;
+      }
       foreach ($nested_option_set->options as $option) {
         $targeting_structure[$name][] = $option['option_id'];
       }

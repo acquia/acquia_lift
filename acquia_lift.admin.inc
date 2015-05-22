@@ -280,6 +280,23 @@ function acquia_lift_admin_form_submit($form, &$form_state) {
  */
 
 /**
+ * Menu callback for a report to be displayed within the wizard.
+ *
+ * @param $agent_data
+ *   The loaded agent to show a report for.
+ * @return array
+ *   A render array for the report page.
+ */
+function acquia_lift_report_wizard($agent_data) {
+  module_load_include('inc', 'personalize', 'personalize.admin.campaign');
+  $build = array(
+    'wizard' => drupal_get_form('personalize_campaign_wizard', $agent_data, 'results'),
+    'report' => drupal_get_form('acquia_lift_report', $agent_data)
+  );
+  return $build;
+}
+
+/**
  * Form build function for the Acquia Lift report, which has filters.
  *
  * @param stdClass $agent_data
@@ -287,69 +304,82 @@ function acquia_lift_admin_form_submit($form, &$form_state) {
  * @param stdClass $option_set
  *   (optional) The content variation to show in the default view.
  */
-function acquia_lift_report($form, &$form_state, $agent_data, $option_set = NULL, $nested = FALSE) {
-  $legacy = FALSE;
-  if (acquia_lift_is_targeting_agent($agent_data)) {
-    // Display a report for any nested test.
-    $report = array();
-    $option_set = acquia_lift_get_option_set_for_targeting($agent_data->machine_name);
-    if (empty($option_set->targeting)) {
-      return $report;
+function acquia_lift_report($form, &$form_state, $agent_data) {
+  if (!acquia_lift_is_targeting_agent($agent_data)) {
+    $legacy_campaigns = variable_get('acquia_lift_legacy_agents', array());
+    if (in_array($agent_data->machine_name, $legacy_campaigns)) {
+      $form['report'] = acquia_lift_report_custom($form_state, $agent_data, FALSE);
+      return $form;
     }
-    foreach($option_set->targeting as $audience_name => $audience) {
-      if (isset($audience['osid'])) {
-        if ($option_set = personalize_option_set_load($audience['osid'])) {
-          $nested_agent = personalize_agent_load($option_set->agent);
-          if (!empty($nested_agent)) {
-            $report[$nested_agent->machine_name] = array(
-              'title' => array(
-                '#markup' => '<h2>' . t('Test report for audience @audience', array('@audience' => $audience_name)) . '</h2>'
-              ),
-              'report' => acquia_lift_report($form, $form_state, $nested_agent, NULL, TRUE)
-            );
-          }
-        }
-      }
+    else {
+      return array();
     }
-    return $report;
   }
-  elseif (!$nested && acquia_lift_is_testing_agent($agent_data)) {
-    $legacy = TRUE;
-  }
+  $option_set = acquia_lift_get_option_set_for_targeting($agent_data->machine_name);
 
-  if ($agent_data->started == 0) {
-    return array(
-      'no_report' => array(
-        '#markup'=> t('This agent has not started running yet, no reports to show.')
-      )
-    );
-  }
-  // Instantiate the agent class to perform some further checks before trying to
-  // show reports for it.
-  if (!$agent_instance = personalize_agent_load_agent($agent_data->machine_name)) {
+  if (empty($option_set->targeting)) {
     return array();
   }
-  // If this agent is not currently enabled in Acquia Lift, there are no reports
-  // to show.
-  $errors = $agent_instance->errors();
-  if (!empty($errors)) {
-    return array(
-      'no_report' => array(
-        '#markup'=> t('This agent is not properly configured, no reports to show.')
-      )
-    );
+  // Display a report for the specified audience.
+  if (isset($form_state['values']['audience_filter'])) {
+    $audience = $form_state['values']['audience_filter'];
   }
-  // If this agent doesn't implement the reporting interface then there are no
-  // reports to show.
-  if (!$agent_instance instanceof PersonalizeAgentReportInterface) {
-    return array(
-      'no_report' => array(
-        '#markup' => t('This agent does not support reporting.')
-      )
-    );
+  else {
+    $audience = isset($_GET['targeting_audience']) ? $_GET['targeting_audience'] : NULL;
+  }
+  // Get audience options.
+  $audience_options = array();
+  foreach($option_set->targeting as $audience_name => $targeting) {
+    if (isset($targeting['osid'])) {
+      $audience_options[$audience_name] = $targeting['label'];
+    }
   }
 
-  return acquia_lift_report_custom($form, $form_state, $agent_instance, $agent_data, $option_set, $legacy);
+  if (empty($audience) && !isset($option_set->targeting[$audience]['osid'])) {
+    if (empty($audience_options)) {
+      return array(
+        'no_report' => array(
+          '#markup'=> t('This personalization does not contain tests, no reports to show.')
+        )
+      );
+    }
+    $audience = key($audience_options);
+  }
+
+  if ($option_set = personalize_option_set_load($option_set->targeting[$audience]['osid'])) {
+    $nested_agent = personalize_agent_load($option_set->agent);
+    if (!empty($nested_agent)) {
+      $form = array(
+        '#prefix' => '<div id="acquia-lift-reports">',
+        '#suffix' => '</div>',
+        '#attached' => array(
+          'css' => array(
+            drupal_get_path('module', 'acquia_lift') . '/css/acquia_lift.admin.css',
+          ),
+          'js' => array(
+            drupal_get_path('module', 'acquia_lift') . '/js/acquia_lift.admin.js',
+          ),
+          'library' => array(
+            array('acquia_lift', 'acquia_lift.reports'),
+          ),
+        ),
+      );
+      $form['audience_filter'] = array(
+        '#title' => t('Audience'),
+        '#type' => 'select',
+        '#options' => $audience_options,
+        '#default_value' => $audience,
+        '#ajax' => array(
+          'callback' => "acquia_lift_report_ajax_callback",
+          'wrapper' => "acquia-lift-reports",
+        ),
+        '#id' => 'acquia-lift-report-audience-filter',
+      );
+      $form['report'] = acquia_lift_report_custom($form_state, $nested_agent, FALSE);
+    }
+  }
+
+  return $form;
 }
 
 /**
@@ -362,14 +392,44 @@ function acquia_lift_report_submit($form, &$form_state) {
 /**
  * Form build function for a custom Acquia Lift agent report.
  *
- * @param AcquiaLiftAgentInterface $agent
- *   The instantiated agent for the selected campaign.
  * @param stdClass $agent_data
  *   The campaign agent data for this report.
  * @param stdClass $option_set
  *   (optional) The content variation to show in the default view.
  */
-function acquia_lift_report_custom($form, &$form_state, $agent, $agent_data, $option_set, $legacy = FALSE) {
+function acquia_lift_report_custom(&$form_state, $agent_data, $legacy = FALSE) {
+
+  if ($agent_data->started == 0) {
+    return array(
+      'no_report' => array(
+        '#markup'=> t('This agent has not started running yet, no reports to show.')
+      )
+    );
+  }
+  // Instantiate the agent class to perform some further checks before trying to
+  // show reports for it.
+  if (!$agent = personalize_agent_load_agent($agent_data->machine_name)) {
+    return array();
+  }
+  // If this agent is not currently enabled in Acquia Lift, there are no reports
+  // to show.
+  $errors = $agent->errors();
+  if (!empty($errors)) {
+    return array(
+      'no_report' => array(
+        '#markup'=> t('This agent is not properly configured, no reports to show.')
+      )
+    );
+  }
+  // If this agent doesn't implement the reporting interface then there are no
+  // reports to show.
+  if (!$agent instanceof PersonalizeAgentReportInterface) {
+    return array(
+      'no_report' => array(
+        '#markup' => t('This agent does not support reporting.')
+      )
+    );
+  }
   // Check for Rickshaw and D3 libraries and alert users if not exist.
   if (_acquia_lift_missing_library_warning(array('rickshaw', 'd3'), t('The following libraries are required in order to view the Acquia Lift reports:'))) {
     return array();
@@ -377,21 +437,6 @@ function acquia_lift_report_custom($form, &$form_state, $agent, $agent_data, $op
   $agent_name = $agent->getMachineName();
   // Generate report filters.
   $data = $agent->getData();
-  $form = array(
-    '#prefix' => '<div id="acquia-lift-report-' . $agent_name . '">',
-    '#suffix' => '</div>',
-    '#attached' => array(
-      'css' => array(
-        drupal_get_path('module', 'acquia_lift') . '/css/acquia_lift.admin.css',
-      ),
-      'js' => array(
-        drupal_get_path('module', 'acquia_lift') . '/js/acquia_lift.admin.js',
-      ),
-      'library' => array(
-        array('acquia_lift', 'acquia_lift.reports'),
-      ),
-    ),
-  );
 
   $form['report_filters'] = array(
     '#type' => 'container',
@@ -414,7 +459,7 @@ function acquia_lift_report_custom($form, &$form_state, $agent, $agent_data, $op
     $decision_point = $form_state['values']['decision_point'];
   }
   else {
-    $decision_point = !empty($option_set) ? personalize_get_decision_name_for_option_set($option_set) : key($decisions);
+    $decision_point = key($decisions);
   }
   $form['report_filters']['decision_point'] = acquia_lift_report_decision_point_dropdown($decision_options, $decision_point, $agent_name);
 
@@ -448,7 +493,7 @@ function acquia_lift_report_custom($form, &$form_state, $agent, $agent_data, $op
   $reports = $agent->buildCampaignReports($options);
   if (!($reports['#has_data'])) {
     // This campaign hasn't been shown yet, so there is no data for reporting.
-    return array(
+    $form = array(
       'no_report' => array(
         '#markup' => t('This personalization does not yet contain information about your visitors\' website interactions. This situation generally occurs for personalizations that have either just been started or do not generate much website traffic.'),
       ),
@@ -550,7 +595,6 @@ function acquia_lift_report_custom($form, &$form_state, $agent, $agent_data, $op
   if ($legacy) {
     acquia_lift_legacy_report_form($form, $form_state, $reports, $report_title_additional);
   }
-
   return $form;
 }
 
@@ -582,7 +626,7 @@ function acquia_lift_report_decision_point_dropdown($options, $selected, $agent_
     '#default_value' => $selected,
     '#ajax' => array(
       'callback' => 'acquia_lift_report_ajax_callback',
-      'wrapper' => 'acquia-lift-report-' . $agent_name,
+      'wrapper' => 'acquia-lift-reports',
     ),
     '#id' => 'acquia-lift-report-decision-point-filter',
   );
@@ -651,7 +695,7 @@ function acquia_lift_report_conversion_metric_dropdown($selected) {
  * Ajax callback for filtering options.
  */
 function acquia_lift_report_ajax_callback($form, &$form_state) {
-  return $form['report'];
+  return $form;
 }
 
 /**
@@ -1379,5 +1423,7 @@ function acquia_lift_legacy_campaign_list() {
   }
   $agents = personalize_agent_load_multiple($legacy_campaigns);
   module_load_include('inc', 'personalize', 'personalize.admin');
+  // @todo This will need to change once we have our own menu callback for listing
+  // campaigns. The regular list no longer has a report link.
   return personalize_agent_list($agents, FALSE, FALSE);
 }

@@ -1525,7 +1525,7 @@ function _acquia_lift_personalize_campaign_wizard_variations_block(&$form, &$for
             'attributes' => array(
               'class' => array('acquia-lift-delete'),
             ),
-            'query' => array('destination' => url('admin/structure/personalize/manage/' . $agent_data->machine_name . '/variations', array('absolute' => TRUE))),
+            'query' => array('destination' => 'admin/structure/personalize/manage/' . $agent_data->machine_name . '/variations'),
           )),
         );
       }
@@ -1747,7 +1747,7 @@ function _acquia_lift_personalize_campaign_wizard_variations_fields(&$form, &$fo
       '#href' => $edit_link,
       '#options' => array(
         'query' => array(
-          'destination' => url("admin/structure/personalize/manage/${machine_name}/variations"),
+          'destination' => "admin/structure/personalize/manage/${machine_name}/variations",
         ),
       ),
       '#title' => t('Edit variations in context'),

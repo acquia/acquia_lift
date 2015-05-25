@@ -305,6 +305,21 @@ function acquia_lift_report_wizard($agent_data) {
  *   (optional) The content variation to show in the default view.
  */
 function acquia_lift_report($form, &$form_state, $agent_data) {
+  $form = array(
+    '#prefix' => '<div id="acquia-lift-reports">',
+    '#suffix' => '</div>',
+    '#attached' => array(
+      'css' => array(
+        drupal_get_path('module', 'acquia_lift') . '/css/acquia_lift.admin.css',
+      ),
+      'js' => array(
+        drupal_get_path('module', 'acquia_lift') . '/js/acquia_lift.admin.js',
+      ),
+      'library' => array(
+        array('acquia_lift', 'acquia_lift.reports'),
+      ),
+    ),
+  );
   if (!acquia_lift_is_targeting_agent($agent_data)) {
     $legacy_campaigns = variable_get('acquia_lift_legacy_agents', array());
     if (in_array($agent_data->machine_name, $legacy_campaigns)) {
@@ -349,21 +364,6 @@ function acquia_lift_report($form, &$form_state, $agent_data) {
   if ($option_set = personalize_option_set_load($option_set->targeting[$audience]['osid'])) {
     $nested_agent = personalize_agent_load($option_set->agent);
     if (!empty($nested_agent)) {
-      $form = array(
-        '#prefix' => '<div id="acquia-lift-reports">',
-        '#suffix' => '</div>',
-        '#attached' => array(
-          'css' => array(
-            drupal_get_path('module', 'acquia_lift') . '/css/acquia_lift.admin.css',
-          ),
-          'js' => array(
-            drupal_get_path('module', 'acquia_lift') . '/js/acquia_lift.admin.js',
-          ),
-          'library' => array(
-            array('acquia_lift', 'acquia_lift.reports'),
-          ),
-        ),
-      );
       $form['audience_filter'] = array(
         '#title' => t('Audience'),
         '#type' => 'select',

@@ -1066,7 +1066,7 @@ class AcquiaLiftWebTestReports extends AcquiaLiftWebTestBase {
 
     // We call the report generating function and then check the request made to the
     // Lift API.
-    acquia_lift_report_custom(array(), $form_state, $agent_instance, $agent_data, $option_set);
+    acquia_lift_report_custom($form_state, $agent_data);
     $requests = DummyAcquiaLiftHttpClient::getLoggedRequests();
     $start_date = date('Y-m-d', $started);
     $now = time();
@@ -1088,7 +1088,7 @@ class AcquiaLiftWebTestReports extends AcquiaLiftWebTestBase {
     DummyAcquiaLiftHttpClient::clearLoggedRequests();
     // Again call the report generating function and then check the request made to the
     // Lift API. The end date should be different
-    acquia_lift_report_custom(array(), $form_state, $agent_instance, $agent_data, $option_set);
+    acquia_lift_report_custom($form_state, $agent_data);
     $requests = DummyAcquiaLiftHttpClient::getLoggedRequests();
     $start_date = date('Y-m-d', $started);
     $confidence_report_uri = $requests[0]['uri'];

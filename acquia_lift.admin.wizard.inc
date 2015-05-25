@@ -1644,7 +1644,7 @@ function _acquia_lift_personalize_campaign_wizard_variations_element(&$form, &$f
       '#title' => t('Page where element exists'),
       '#allow_dynamic' => FALSE,
       '#allow_external' => TRUE,
-      '#field_prefix' => $base_url . base_path(),
+      '#field_prefix' => $base_url . '/',
     );
     $element['navigate'] = array(
       '#type' => 'submit',

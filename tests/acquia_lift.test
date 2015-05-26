@@ -656,6 +656,130 @@ class AcquiaLiftWebTestAgentAdmin extends AcquiaLiftWebTestBase {
     $this->assertLink(t('Review and start'));
     $this->assertNoFieldByXPath('//form[@id="personalize-change-status-' . $agent->machine_name . '-form"]//input[@value="' . t('Start') . '"]');
   }
+
+  function testAgentList() {
+
+    module_disable(array('personalize_test'));
+    $admin_user = $this->drupalCreateUser(array('access administration pages', 'manage personalized content'));
+    $this->drupalLogin($admin_user);
+
+    // There should just be a message saying there are no agents.
+    $this->drupalGet('admin/structure/personalize');
+    $this->assertText(t('No personalizations available.'));
+    $this->assertNoRaw('<h3>Draft</h3>');
+    $this->assertNoRaw('<h3>Scheduled</h3>');
+    $this->assertNoRaw('<h3>Running</h3>');
+    $this->assertNoRaw('<h3>Paused</h3>');
+    $this->assertNoRaw('<h3>Completed</h3>');
+
+    // An agent without any variations should have a link to edit and delete
+    // but not for reports.
+    $agent = $this->createTargetingAgent();
+    $this->drupalGet('admin/structure/personalize');
+    $this->assertNoText(t('No personalizations available.'));
+    $this->assertLinkByHref('admin/structure/personalize/manage/' . $agent->machine_name . '/variations');
+    $this->assertLinkByHref('admin/structure/personalize/manage/' . $agent->machine_name . '/delete');
+    $this->assertNoLinkByHref('admin/structure/personalize/manage/' . $agent->machine_name . '/results');
+    $this->assertRaw('<h3>Draft</h3>');
+    $this->assertNoRaw('<h3>Scheduled</h3>');
+    $this->assertNoRaw('<h3>Running</h3>');
+    $this->assertNoRaw('<h3>Paused</h3>');
+    $this->assertNoRaw('<h3>Completed</h3>');
+
+    // Add a variation set with an automatic test created.
+    $option_set = $this->createPersonalizedBlock(0, $agent, 3);
+    $this->drupalGet('admin/structure/personalize');
+    $this->assertLinkByHref('admin/structure/personalize/manage/' . $agent->machine_name . '/variations');
+    $this->assertNoLinkByHref('admin/structure/personalize/manage/' . $agent->machine_name . '/delete');
+    $this->assertNoLinkByHref('admin/structure/personalize/manage/' . $agent->machine_name . '/results');
+    $this->assertText(t('Test only'));
+    $this->assertText(t('Everyone else'));
+
+    // Add two audiences and assign variations so that there is only targeting.
+    $audience_1 = personalize_generate_machine_name($this->randomName(), NULL, '-');
+    $this->createTargetAudience($option_set, $audience_1);
+    $audience_2 = personalize_generate_machine_name($this->randomName(), NULL, '-');
+    $this->createTargetAudience($option_set, $audience_2);
+    $targeting = array(
+      $audience_1 => array('option-1'),
+      $audience_2 => array('option-2'),
+      ACQUIA_LIFT_TARGETING_EVERYONE_ELSE => array('option-3'),
+    );
+    acquia_lift_save_targeting_structure($agent, $targeting);
+
+    $this->drupalGet('admin/structure/personalize');
+    $this->assertLinkByHref('admin/structure/personalize/manage/' . $agent->machine_name . '/variations');
+    $this->assertNoLinkByHref('admin/structure/personalize/manage/' . $agent->machine_name . '/delete');
+    $this->assertNoLinkByHref('admin/structure/personalize/manage/' . $agent->machine_name . '/results');
+    $this->assertText(t('Target only'));
+    $this->assertText($audience_1);
+    $this->assertText($audience_2);
+    $this->assertText(t('Everyone else'));
+
+    // Adjust variations so that there is testing and targeting.
+    $targeting = array(
+      $audience_1 => array('option-1', 'option-2'),
+      $audience_2 => array('option-2'),
+      ACQUIA_LIFT_TARGETING_EVERYONE_ELSE => array('option-3'),
+    );
+    acquia_lift_save_targeting_structure($agent, $targeting);
+
+    $this->drupalGet('admin/structure/personalize');
+    $this->assertLinkByHref('admin/structure/personalize/manage/' . $agent->machine_name . '/variations');
+    $this->assertNoLinkByHref('admin/structure/personalize/manage/' . $agent->machine_name . '/delete');
+    $this->assertNoLinkByHref('admin/structure/personalize/manage/' . $agent->machine_name . '/results');
+    $this->assertText(t('Test and target'));
+    $this->assertText($audience_1);
+    $this->assertText($audience_2);
+    $this->assertText(t('Everyone else'));
+
+    // Schedule and check heading.
+    personalize_agent_set_start_date($agent->machine_name, time() + 86400);
+    personalize_agent_set_status($agent->machine_name, PERSONALIZE_STATUS_SCHEDULED);
+    $this->drupalGet('admin/structure/personalize');
+    $this->assertLinkByHref('admin/structure/personalize/manage/' . $agent->machine_name . '/variations');
+    $this->assertNoLinkByHref('admin/structure/personalize/manage/' . $agent->machine_name . '/delete');
+    $this->assertNoLinkByHref('admin/structure/personalize/manage/' . $agent->machine_name . '/results');
+    $this->assertNoRaw('<h3>Draft</h3>');
+    $this->assertRaw('<h3>Scheduled</h3>');
+    $this->assertNoRaw('<h3>Running</h3>');
+    $this->assertNoRaw('<h3>Paused</h3>');
+    $this->assertNoRaw('<h3>Completed</h3>');
+
+    // Set it to running and check that the reporting link is now available
+    // and that the campaign is shown in the correct section.
+    personalize_agent_set_status($agent->machine_name, PERSONALIZE_STATUS_RUNNING);
+    $this->drupalGet('admin/structure/personalize');
+    $this->assertLinkByHref('admin/structure/personalize/manage/' . $agent->machine_name . '/variations');
+    $this->assertNoLinkByHref('admin/structure/personalize/manage/' . $agent->machine_name . '/delete');
+    $this->assertLinkByHref('admin/structure/personalize/manage/' . $agent->machine_name . '/results');
+    $this->assertLinkByHref('admin/structure/personalize/manage/' . $agent->machine_name . '/results?audience_id=' . $audience_1);
+    $this->assertNoLinkByHref('admin/structure/personalize/manage/' . $agent->machine_name . '/results?audience_id=' . $audience_2);
+    $this->assertNoLinkByHref('admin/structure/personalize/manage/' . $agent->machine_name . '/results?audience_id=' . ACQUIA_LIFT_TARGETING_EVERYONE_ELSE);
+    $this->assertNoRaw('<h3>Draft</h3>');
+    $this->assertNoRaw('<h3>Scheduled</h3>');
+    $this->assertRaw('<h3>Running</h3>');
+    $this->assertNoRaw('<h3>Paused</h3>');
+    $this->assertNoRaw('<h3>Completed</h3>');
+
+    // Pause and check heading.
+    personalize_agent_set_status($agent->machine_name, PERSONALIZE_STATUS_PAUSED);
+    $this->drupalGet('admin/structure/personalize');
+    $this->assertNoRaw('<h3>Draft</h3>');
+    $this->assertNoRaw('<h3>Scheduled</h3>');
+    $this->assertNoRaw('<h3>Running</h3>');
+    $this->assertRaw('<h3>Paused</h3>');
+    $this->assertNoRaw('<h3>Completed</h3>');
+
+    // Complete and check heading.
+    personalize_agent_set_status($agent->machine_name, PERSONALIZE_STATUS_COMPLETED);
+    $this->drupalGet('admin/structure/personalize');
+    $this->assertNoRaw('<h3>Draft</h3>');
+    $this->assertNoRaw('<h3>Scheduled</h3>');
+    $this->assertNoRaw('<h3>Running</h3>');
+    $this->assertNoRaw('<h3>Paused</h3>');
+    $this->assertRaw('<h3>Completed</h3>');
+  }
 }
 
 class AcquiaLiftWebTestFundamentals extends AcquiaLiftWebTestBase {

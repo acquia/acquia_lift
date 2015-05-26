@@ -284,6 +284,7 @@ function acquia_lift_agent_list() {
   $build = array();
   $build['#attached']['library'][] = array('personalize', 'admin.campaign.list');
   $build['#attached']['css'][] = drupal_get_path('module', 'acquia_lift') . '/css/acquia_lift.admin.css';
+  $build['#attached']['js'][] = drupal_get_path('module', 'acquia_lift') . '/js/acquia_lift.admin.js';
 
   $status_map = personalize_get_agent_status_map();
 
@@ -491,16 +492,17 @@ function acquia_lift_agent_list() {
 
       // Generate actual table row data.
       $tablerow = array(
-        array('data' => check_plain($agent->label)),
+        array('data' => check_plain($agent->label), 'class' => array('acquia-lift-campaign-title')),
         array('data' => $start_date > 0 ? format_date($start_date, 'custom', 'M d, Y') : ''),
         array('data' => $agent_type),
         array('data' => drupal_render($status_change_form)),
         array('data' => theme('links', array('links' => $ops, 'attributes' => array('class' => array('acquia-lift-list-operations'))))),
       );
+      $campaign_class = $agent->plugin == 'acquia_lift_target' && !empty($targeting_os->targeting) ? array('acquia-lift-personalize-list-campaign') : array();
       $rows[] = array(
         'data' => $tablerow,
         'no_striping' => TRUE,
-        'class' => array('acquia_lift_personalize_list_campaign'),
+        'class' => $campaign_class,
       );
 
       // Add rows for targeting.
@@ -511,7 +513,7 @@ function acquia_lift_agent_list() {
           }
           $variations = $targeting[$audience_id];
           $tablerow = array(
-            !empty($audience['label']) ? check_plain($audience['label']) : $audience_id,
+            array('data' => !empty($audience['label']) ? check_plain($audience['label']) : $audience_id, 'class' => 'acquia-lift-campaign-title'),
             '',
             count($variations) > 1 ? t('Test') : t('Target'),
             '',
@@ -531,7 +533,7 @@ function acquia_lift_agent_list() {
           $rows[] = array(
             'data' => $tablerow,
             'no_striping' => TRUE,
-            'class' => array('acquia_lift_personalize_list_audience'),
+            'class' => array('acquia-lift-personalize-list-audience', 'element-hidden'),
           );
         }
       }

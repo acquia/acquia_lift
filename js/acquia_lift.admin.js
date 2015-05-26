@@ -126,4 +126,51 @@
     }
   };
 
+  /**
+   * Campaign list display.
+   */
+  Drupal.behaviors.acquiaLiftCampaignList = {
+    attach: function (context, settings) {
+      $('#personalize-personalizations-list').once('acquia-lift-campaign-list', function () {
+        $('.acquia-lift-personalize-list-campaign .acquia-lift-campaign-title', this).on('click', function () {
+          var $audienceRows = $(this).parent().nextUntil('.acquia-lift-personalize-list-campaign');
+          // Cannot perform slide jquery animations on table rows.
+          if ($audienceRows.hasClass('element-hidden')) {
+            $audienceRows.find('td')
+              .wrapInner('<div style="display: block; display: none;" />')
+              .parent()
+              .removeClass('element-hidden')
+              .find('td > div')
+              .slideDown(400, function() {
+                $(this).parent().parent().removeClass('element-hidden');
+                $(this).contents().unwrap();
+                console.log('complete');
+              });
+            $(this).addClass('acquia-lift-is-open');
+          } else {
+            $audienceRows.find('td')
+              .wrapInner('<div style="display: block;">')
+              .parent()
+              .find('td > div')
+              .slideUp(400, function () {
+                $(this).parent().parent().addClass('element-hidden');
+                $(this).contents().unwrap();
+              });
+            $(this).removeClass('acquia-lift-is-open');
+          }
+          /*
+          if ($audienceRows.hasClass('element-hidden')) {
+            $audienceRows.slideDown(400, function() {
+              $(this).removeClass('element-hidden');
+            });
+          } else {
+            $audienceRows.slideUp(400, function() {
+              $(this).addClass('element-hidden');
+            })
+          }*/
+        });
+      });
+    }
+  }
+
 })(Drupal.jQuery);

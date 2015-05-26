@@ -2140,6 +2140,9 @@ function acquia_lift_navbar() {
  * Implements hook_form_FORM_ID_alter().
  */
 function acquia_lift_form_personalize_campaign_wizard_alter(&$form, &$form_state, $form_id) {
+  if ($form_state['storage']['step'] == 'results') {
+    unset($form['actions']);
+  }
   // Add in the basic functionality.
   $agent = $form['#agent'];
 

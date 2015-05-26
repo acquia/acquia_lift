@@ -506,7 +506,11 @@ function acquia_lift_personalize_agent_type() {
 /**
  * Implements hook_personalize_wizard_steps_alter().
  */
-function acquia_lift_personalize_wizard_steps_alter(&$steps) {
+function acquia_lift_personalize_wizard_steps_alter(&$steps, PersonalizeAgentInterface $agent_instance) {
+  if (!$agent_instance instanceof AcquiaLiftTarget) {
+    return;
+  }
+
   $steps['results'] = array(
     'label' => t('Reports'),
     'button_value' => t('Next')
@@ -1125,9 +1129,11 @@ function acquia_lift_library() {
     'version' => VERSION,
     'js' => array(
       $path . '/js/acquia_lift.reports.js' => array(),
+      $path . '/js/acquia_lift.admin.js' => array(),
     ),
     'css' => array(
       $path . '/css/acquia_lift.reports.css',
+      $path . '/css/acquia_lift.admin.css',
     ),
     'dependencies' => array(
       array('system', 'jquery'),

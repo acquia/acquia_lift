@@ -309,12 +309,6 @@ function acquia_lift_report($form, &$form_state, $agent_data) {
     '#prefix' => '<div id="acquia-lift-reports">',
     '#suffix' => '</div>',
     '#attached' => array(
-      'css' => array(
-        drupal_get_path('module', 'acquia_lift') . '/css/acquia_lift.admin.css',
-      ),
-      'js' => array(
-        drupal_get_path('module', 'acquia_lift') . '/js/acquia_lift.admin.js',
-      ),
       'library' => array(
         array('acquia_lift', 'acquia_lift.reports'),
       ),
@@ -361,20 +355,35 @@ function acquia_lift_report($form, &$form_state, $agent_data) {
     $audience = key($audience_options);
   }
 
-  if ($option_set = personalize_option_set_load($option_set->targeting[$audience]['osid'])) {
-    $nested_agent = personalize_agent_load($option_set->agent);
+  if ($nested_os = personalize_option_set_load($option_set->targeting[$audience]['osid'])) {
+    $nested_agent = personalize_agent_load($nested_os->agent);
     if (!empty($nested_agent)) {
-      $form['audience_filter'] = array(
-        '#title' => t('Audience'),
-        '#type' => 'select',
-        '#options' => $audience_options,
-        '#default_value' => $audience,
-        '#ajax' => array(
-          'callback' => "acquia_lift_report_ajax_callback",
-          'wrapper' => "acquia-lift-reports",
-        ),
-        '#id' => 'acquia-lift-report-audience-filter',
-      );
+      if (count($audience_options) == 1) {
+        $form['audience_label'] = array(
+          '#markup' => '<h2>' . t('Test for %audience audience', array('%audience' => $option_set->targeting[$audience]['label'])) . '</h2>'
+        );
+        $form['audience_filter'] = array(
+          '#type' => 'value',
+          '#value' => $audience
+        );
+      }
+      else {
+        $form['audience_filter'] = array(
+          '#title' => t('Audience'),
+          '#type' => 'select',
+          '#options' => $audience_options,
+          '#default_value' => $audience,
+          '#attributes' => array(
+            'class' => array('container-inline')
+          ),
+          '#ajax' => array(
+            'callback' => "acquia_lift_report_ajax_callback",
+            'wrapper' => "acquia-lift-reports",
+          ),
+          '#id' => 'acquia-lift-report-audience-filter',
+        );
+      }
+
       $form['report'] = acquia_lift_report_custom($form_state, $nested_agent, FALSE);
     }
   }
@@ -493,7 +502,7 @@ function acquia_lift_report_custom(&$form_state, $agent_data, $legacy = FALSE) {
   $reports = $agent->buildCampaignReports($options);
   if (!($reports['#has_data'])) {
     // This campaign hasn't been shown yet, so there is no data for reporting.
-    $form = array(
+    return array(
       'no_report' => array(
         '#markup' => t('This personalization does not yet contain information about your visitors\' website interactions. This situation generally occurs for personalizations that have either just been started or do not generate much website traffic.'),
       ),

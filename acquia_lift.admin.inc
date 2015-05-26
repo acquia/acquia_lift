@@ -405,7 +405,7 @@ function acquia_lift_agent_list() {
         if (count($targeting) == 1) {
           $agent_type = $agent_type_test;
         }
-        else {
+        else if (count($targeting) > 1) {
           $agent_type = $agent_type_target;
           foreach ($targeting as $audience => $variations) {
             if (count($variations) > 1) {

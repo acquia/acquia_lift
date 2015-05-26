@@ -506,8 +506,8 @@ function acquia_lift_personalize_agent_type() {
 /**
  * Implements hook_personalize_wizard_steps_alter().
  */
-function acquia_lift_personalize_wizard_steps_alter(&$steps, PersonalizeAgentInterface $agent_instance) {
-  if (!$agent_instance instanceof AcquiaLiftTarget) {
+function acquia_lift_personalize_wizard_steps_alter(&$steps, $agent_instance) {
+  if (empty($agent_instance) || !$agent_instance instanceof AcquiaLiftTarget) {
     return;
   }
 

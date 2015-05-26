@@ -605,6 +605,6 @@ li.acquia-lift-targeting-draggable.ui-sortable-helper {
 #personalize-personalizations-list .acquia-lift-edit {
   background-image: url(../images/8A8B8E/edit.png);
 }
-/*#personalize-personalizations-list .acquia-lift-report {
-  background-image: url(../images/000000/delete.png);
-}*/
+#personalize-personalizations-list .acquia-lift-report {
+  background-image: url(../images/8A8B8E/report.png);
+}

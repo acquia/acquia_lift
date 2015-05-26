@@ -519,7 +519,7 @@ function acquia_lift_agent_list() {
             '',
             $show_report_link && count($variations) > 1 ? l(t('View reports'), 'admin/structure/personalize/manage/' . $agent->machine_name . '/results', array(
               'query' => array(
-                'audience_id' => $audience,
+                'audience_id' => $audience_id,
               ),
               'attributes' => array(
                 'class' => array('acquia-lift-report'),

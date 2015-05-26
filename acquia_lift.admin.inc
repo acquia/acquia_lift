@@ -423,7 +423,7 @@ function acquia_lift_report_custom(&$form_state, $agent_data, $legacy = FALSE) {
   }
   // If this agent doesn't implement the reporting interface then there are no
   // reports to show.
-  if (!$agent instanceof PersonalizeAgentReportInterface) {
+  if (!$agent instanceof AcquiaLiftAgentInterface) {
     return array(
       'no_report' => array(
         '#markup' => t('This agent does not support reporting.')

@@ -8,7 +8,7 @@
  * Base class providing report data loading functionality common to all
  * Acquia Lift Reports.
  */
-class AcquiaLiftReportLegacy implements PersonalizeAgentReportInterface, AcquiaLiftReportInterface {
+class AcquiaLiftReportLegacy implements AcquiaLiftReportInterface {
 
   /**
    * The value to show when report data is not applicable.
@@ -67,20 +67,21 @@ class AcquiaLiftReportLegacy implements PersonalizeAgentReportInterface, AcquiaL
    * @param AcquiaLiftReportDataSourceInterface $report_data_src
    *   The source for the report data.
    */
-  function __construct(PersonalizeAgentInterface $agent, AcquiaLiftReportDataSourceInterface $report_data_src) {
+  function __construct(PersonalizeAgentInterface $agent, AcquiaLiftReportDataSourceInterface $report_data_src, $confidence_measure) {
     $this->agent = $agent;
     $this->reportDataSrc = $report_data_src;
+    $this->setConfidenceMeasure($confidence_measure);
   }
 
   /**
-   * Implements AcquiaLiftReportInterface()::getConfidenceMeasure().
+   * Gets the confidence_measure property.
    */
   public function getConfidenceMeasure() {
     return $this->confidence_measure;
   }
 
   /**
-   * Implements AcquiaLiftReportInterface()::setConfidenceMeasure().
+   * Sets the confidence_measure property.
    */
   public function setConfidenceMeasure($value) {
     if ($value < 0) {
@@ -977,47 +978,7 @@ class AcquiaLiftReportLegacy implements PersonalizeAgentReportInterface, AcquiaL
   }
 
   /**
-   * Implements PersonalizeAgentReportInterface::renderStatsForOptionSet().
-   */
-  public function renderStatsForOptionSet($option_set, $date_from, $date_to = NULL) {
-    $date_start = date('Y-m-d', $date_from);
-    if (empty($date_to)) {
-    $date_to = time();
-    }
-    $date_end = date('Y-m-d', $date_to);
-    $report_data = $this->generateReportConfiguration(array(
-      'start' => $date_start,
-      'end' => $date_end,
-    ));
-
-    if (!isset($report_data['confidence'])) {
-      $this->loadConfidenceData($report_data);
-      if (isset($report_data['raw']['confidence']['error']) || !isset($report_data['raw']['confidence']['data'])) {
-        return array();
-      }
-      else {
-        $data = $this->extractConfidenceReportData($report_data['raw']['confidence']['data']['items']);
-      }
-    }
-
-    $decisions = $goals = 0;
-    // Get a total count of all decisions made for this Option Set and all
-    // goals received.
-    foreach ($data['features'][self::NO_FEATURES] as $choice => $info) {
-      list($decision_name, $option_id) = explode(':', $choice);
-      if ($decision_name != $option_set->decision_name) {
-        continue;
-      }
-      $decisions += $info['decisions'];
-      $goals += $info['goals'];
-    }
-    $report[] = format_plural($decisions, '1 view', '@count views');
-    $report[] = format_plural($goals, '1 goal', '@count goals');
-    return $report;
-  }
-
-  /**
-   * Implements PersonalizeAgentReportInterface::buildCampaignReports().
+   * Implements AcquiaLiftReportInterface::buildCampaignReports().
    */
   public function buildCampaignReports($options) {
     $report_data = $this->loadReportData($options);

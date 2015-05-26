@@ -2923,7 +2923,7 @@ function acquia_lift_get_campaign_details() {
     foreach ($option_sets as $option_set) {
       $option_set_types[] = $option_set->plugin;
     }
-    $report_is_active = $plugin instanceof PersonalizeAgentReportInterface && !empty($agent->started);
+    $report_is_active = $plugin instanceof AcquiaLiftReportInterface && !empty($agent->started);
     $campaigns[$agent->machine_name] = array(
       'name' => $agent->machine_name,
       'label' => filter_xss($agent->label),

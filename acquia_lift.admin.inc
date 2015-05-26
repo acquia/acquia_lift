@@ -386,7 +386,6 @@ function acquia_lift_agent_list() {
       if (in_array($agent->plugin, array(ACQUIA_LIFT_TESTING_AGENT_V1, ACQUIA_LIFT_TESTING_AGENT_V2))) {
         continue;
       }
-      $plugin = personalize_agent_load_agent($agent->machine_name);
       $targeting = array();
 
       // Determine the agent type.
@@ -458,12 +457,8 @@ function acquia_lift_agent_list() {
           break;
       }
 
-      // Report availability.
-      $show_report_link = $plugin instanceof PersonalizeAgentReportInterface && !empty($agent->started);
-      if ($agent->plugin == 'acquia_lift_target') {
-        // Lift target agents show reports if they contain tests.
-        $show_report_link = !empty($agent->started) && in_array($agent_type, array($agent_type_test, $agent_type_both));
-      }
+      // Lift target agents show reports if they contain tests.
+      $show_report_link = $agent->plugin == 'acquia_lift_target' && !empty($agent->started) && in_array($agent_type, array($agent_type_test, $agent_type_both));
 
       // Generate operations list.
       $ops = array(

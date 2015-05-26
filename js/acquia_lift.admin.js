@@ -134,7 +134,8 @@
       $('#personalize-personalizations-list').once('acquia-lift-campaign-list', function () {
         $('.acquia-lift-personalize-list-campaign .acquia-lift-campaign-title', this).on('click', function () {
           var $audienceRows = $(this).parent().nextUntil('.acquia-lift-personalize-list-campaign');
-          // Cannot perform slide jquery animations on table rows.
+          // Cannot perform slide jquery animations on table rows so we have
+          // to wrap the cell contents in something that we can animate.
           if ($audienceRows.hasClass('element-hidden')) {
             $audienceRows.find('td')
               .wrapInner('<div style="display: block; display: none;" />')
@@ -158,16 +159,6 @@
               });
             $(this).removeClass('acquia-lift-is-open');
           }
-          /*
-          if ($audienceRows.hasClass('element-hidden')) {
-            $audienceRows.slideDown(400, function() {
-              $(this).removeClass('element-hidden');
-            });
-          } else {
-            $audienceRows.slideUp(400, function() {
-              $(this).addClass('element-hidden');
-            })
-          }*/
         });
       });
     }

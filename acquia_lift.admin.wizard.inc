@@ -1061,14 +1061,60 @@ function acquia_lift_personalize_campaign_wizard_goals_validate(&$form, &$form_s
  * Validation function for targeting form.
  */
 function acquia_lift_personalize_campaign_wizard_targeting_validate(&$form, &$form_state) {
-  // Verify that a new audience will have a unique machine name.
-  if (!empty($form_state['values']['audiences']['add']['details']['name'])) {
-    module_load_include('inc', 'acquia_lift', 'acquia_lift.admin');
-    $machine_name = personalize_generate_machine_name($form_state['values']['audiences']['add']['details']['name'], NULL, '-');
-    $agent_data = $form['#agent'];
-    $option_set = acquia_lift_get_option_set_for_targeting($agent_data->machine_name);
-    if (isset($option_set->targeting[$machine_name])) {
-      form_set_error('audiences[add][details][name', t('Please choose a different name for your audience as this one is already taken'));
+  // If we are adding - then validate the required audience fields.
+  if (in_array('add', $form_state['triggering_element']['#array_parents'])) {
+    if (empty($form_state['values']['audiences']['add']['details']['name'])) {
+      form_set_error('audiences[add][details][name', t('You must specify the name of the new audience.'));
+    }
+    else {
+      // Verify that a new audience will have a unique machine name.
+      module_load_include('inc', 'acquia_lift', 'acquia_lift.admin');
+      $machine_name = personalize_generate_machine_name($form_state['values']['audiences']['add']['details']['name'], NULL, '-');
+      $agent_data = $form['#agent'];
+      $option_set = acquia_lift_get_option_set_for_targeting($agent_data->machine_name);
+      if (isset($option_set->targeting[$machine_name])) {
+        form_set_error('audiences[add][details][name', t('Please choose a different name for your audience as this one is already taken'));
+      }
+    }
+  }
+  // Make sure that there is at least one filled in context.
+  foreach ($form_state['values']['audiences'] as $audience_id => $audience) {
+    if ($audience_id === ACQUIA_LIFT_TARGETING_EVERYONE_ELSE) {
+      continue;
+    }
+    if (empty($audience['details']['name'])) {
+      continue;
+    }
+    $has_context = FALSE;
+    $audience_label = $audience['details']['name'];
+    foreach (element_children($audience['details']['mapping']['contexts']) as $index) {
+      if (!empty($audience['details']['mapping']['contexts'][$index]['context'])) {
+        $has_operator = !empty($audience['details']['mapping']['contexts'][$index]['value']['operator']);
+        $has_value = !empty($audience['details']['mapping']['contexts'][$index]['value']['match']);
+        $context_value = $audience['details']['mapping']['contexts'][$index]['context'];
+        $context_label = $form['targeting']['audiences'][$audience_id]['details']['mapping']['contexts'][$index]['context']['#options'][$context_value];
+        // Make sure that an operator and value have been entered.
+        if (!$has_operator) {
+          form_set_error('audiences[' . $audience_id . '][details][mapping][contexts][' . $index . '][value][operator', t('Please choose the operator for %context in the %audience audience.', array(
+            '%context' => $context_label,
+            '%audience' => $audience_label,
+          )));
+        }
+        if (!$has_value) {
+          form_set_error('audiences[' . $audience_id . '][details][mapping][contexts][' . $index . '][value][match', t('Please choose the value for %context context in the %audience audience.', array(
+            '%context' => $context_label,
+            '%audience' => $audience_label,
+          )));
+        }
+        if ($has_operator && $has_value) {
+          $has_context = TRUE;
+        }
+      }
+    }
+    if (!$has_context) {
+      form_set_error('audiences[' . $audience_id . '][details][mapping][contexts][add][context', t('Please select at least one context to define the %audience audience.', array(
+        '%audience' => $audience_label,
+      )));
     }
   }
 }

@@ -19,11 +19,16 @@ interface AcquiaLiftAgentInterface {
    */
   public static function convertOptionSetsToDecisions($option_sets);
 
+}
+
+interface AcquiaLiftReportInterface {
+
   /**
-   * Retrieves a conversion report.
+   * Builds out all the reports for a campaign.
    *
    * @param $options
-   *   An array of report options.
+   *   An associative array of options controlling the report behavior with the
+   *   following keys:
    *   - decision_name: (Optional) The decision to get conversion report for.
    *   - goal: (Optional) The goal for limiting the report, defaults to all goals.
    *   - start: (Optional) The start time for report data in Y-m-d format.
@@ -31,26 +36,9 @@ interface AcquiaLiftAgentInterface {
    *   - end: (Optional) The end time for report data in Y-m-d format.  Defaults
    *     to the current date.
    * @return array
-   *   A renderable array.
+   *   A render array containing all of the report markup.
    */
-  public function buildConversionReport($options);
-}
-
-interface AcquiaLiftReportInterface {
-  /**
-   * Get the confidence measure for determining the statistical significance
-   * of tests.
-   */
-  public function getConfidenceMeasure();
-
-  /**
-   * Set the confidence measure for determining the statistical significance
-   * of tests.
-   *
-   * @param $value
-   *   The value as a number between 0 and 100.
-   */
-  public function setConfidenceMeasure($value);
+  public function buildCampaignReports($options);
 
   /**
    * Retrieves a conversion report.
@@ -97,13 +85,12 @@ class AcquiaLiftReportFactory {
     }
 
     $class = $legacy ? 'AcquiaLiftReportLegacy' : 'AcquiaLiftReport';
-    $report = new $class($agent_instance, $report_source);
-    $report->setConfidenceMeasure(variable_get('acquia_lift_confidence_measure', 95));
+    $report = new $class($agent_instance, $report_source, variable_get('acquia_lift_confidence_measure', 95));
     return $report;
   }
 }
 
-class AcquiaLiftAgent extends PersonalizeAgentBase implements PersonalizeAgentGoalInterface, AcquiaLiftAgentInterface, PersonalizeAgentReportInterface {
+class AcquiaLiftAgent extends PersonalizeAgentBase implements PersonalizeAgentGoalInterface, AcquiaLiftAgentInterface, AcquiaLiftReportInterface {
 
   /**
    * An object containing the agent data.
@@ -120,11 +107,11 @@ class AcquiaLiftAgent extends PersonalizeAgentBase implements PersonalizeAgentGo
   protected $liftAPI;
 
   /**
-   * An instance of PersonalizeAgentReportInterface.
+   * An instance of AcquiaLiftReportInterface.
    *
    * The agent acts as a facade to the reporting class for reporting requests.
    *
-   * @var PersonalizeAgentReportInterface
+   * @var AcquiaLiftReportInterface
    */
   protected $reporting;
 
@@ -273,16 +260,7 @@ class AcquiaLiftAgent extends PersonalizeAgentBase implements PersonalizeAgentGo
   }
 
   /**
-   * Implements PersonalizeAgentReportInterface::renderStatsForOptionSet().
-   *
-   * A facade to the reporting class.
-   */
-  public function renderStatsForOptionSet($option_set, $date_from, $date_to = NULL) {
-    return $this->getReporting()->renderStatsForOptionSet($option_set, $date_from, $date_to);
-  }
-
-  /**
-   * Implements PersonalizeAgentReportInterface::buildCampaignReports().
+   * Implements AcquiaLiftAgentInterface::buildCampaignReports().
    *
    * A facade to the reporting class.
    */
@@ -476,7 +454,7 @@ class AcquiaLiftAgent extends PersonalizeAgentBase implements PersonalizeAgentGo
  * Base class providing report data loading functionality common to all
  * Acquia Lift Reports.
  */
-class AcquiaLiftReport implements PersonalizeAgentReportInterface, AcquiaLiftReportInterface {
+class AcquiaLiftReport implements AcquiaLiftReportInterface {
 
   /**
    * The value to show when report data is not applicable.
@@ -523,20 +501,21 @@ class AcquiaLiftReport implements PersonalizeAgentReportInterface, AcquiaLiftRep
    * @param AcquiaLiftReportDataSourceInterface $report_data_src
    *   The source for the report data.
    */
-  function __construct(PersonalizeAgentInterface $agent, AcquiaLiftReportDataSourceInterface $report_data_src) {
+  function __construct(PersonalizeAgentInterface $agent, AcquiaLiftReportDataSourceInterface $report_data_src, $confidence_measure) {
     $this->agent = $agent;
     $this->reportDataSrc = $report_data_src;
+    $this->setConfidenceMeasure($confidence_measure);
   }
 
   /**
-   * Implements AcquiaLiftReportInterface()::getConfidenceMeasure().
+   * Gets the confidence_measure property.
    */
   public function getConfidenceMeasure() {
     return $this->confidence_measure;
   }
 
   /**
-   * Implements AcquiaLiftReportInterface()::setConfidenceMeasure().
+   * Sets the confidence_measure property.
    */
   public function setConfidenceMeasure($value) {
     if ($value < 0) {
@@ -1239,44 +1218,7 @@ class AcquiaLiftReport implements PersonalizeAgentReportInterface, AcquiaLiftRep
   }
 
   /**
-   * Implements PersonalizeAgentReportInterface::renderStatsForOptionSet().
-   */
-  public function renderStatsForOptionSet($option_set, $date_from, $date_to = NULL) {
-    $date_start = date('Y-m-d', $date_from);
-    if (empty($date_to)) {
-      $date_to = time();
-    }
-    $date_end = date('Y-m-d', $date_to);
-    $this->setReportConfiguration(array(
-      'start' => $date_start,
-      'end' => $date_end,
-    ));
-    $this->loadConfidenceData('confidence');
-    if (isset($this->loadedReports['raw']['confidence']['error']) || !isset($this->loadedReports['raw']['confidence']['data'])) {
-      return array();
-    }
-    else {
-      $data = $this->extractConfidenceReportData();
-    }
-
-    $decisions = $goals = 0;
-    // Get a total count of all decisions made for this Option Set and all
-    // goals received.
-    foreach ($data['variations'] as $choice => $info) {
-      list($decision_name, $option_id) = explode(':', $choice);
-      if ($decision_name != $option_set->decision_name) {
-        continue;
-      }
-      $decisions += $info['decisions'];
-      $goals += $info['goals'];
-    }
-    $report[] = format_plural($decisions, '1 view', '@count views');
-    $report[] = format_plural($goals, '1 goal', '@count goals');
-    return $report;
-  }
-
-  /**
-   * Implements PersonalizeAgentReportInterface::buildCampaignReports().
+   * Implements AcquiaLiftReportInterface::buildCampaignReports().
    */
   public function buildCampaignReports($options) {
     $this->setReportConfiguration($options);

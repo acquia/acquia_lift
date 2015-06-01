@@ -824,6 +824,85 @@ class AcquiaLiftWebTestReports extends AcquiaLiftWebTestBase {
       'group' => t('Personalize'),
     );
   }
+  public function testReportPage() {
+    // Test that a report page shows up for a personalization iwth a single test.
+    $this->drupalLogin($this->managerUser);
+    $agent = $this->createTargetingAgent();
+    $option_set = $this->createPersonalizedBlock(0, $agent, 3);
+    $option_ids = array();
+    foreach ($option_set->options as $option) {
+      $option_ids[] = $option['option_id'];
+    }
+    personalize_goal_save($agent->machine_name, 'new-goal', 1);
+
+    $targeting = array(
+      ACQUIA_LIFT_TARGETING_EVERYONE_ELSE => array($option_ids[0], $option_ids[1], $option_ids[2])
+    );
+    try {
+      acquia_lift_save_targeting_structure($agent, $targeting);
+    }
+    catch (AcquiaLiftException $e) {
+      $this->fail('Exception thrown when none expected.');
+    }
+    // Now implement the targeting structure and set the agent to running.
+    AcquiaLiftAPI::setTestInstance();
+    acquia_lift_implement_targeting($agent);
+    personalize_agent_set_status($agent->machine_name, PERSONALIZE_STATUS_RUNNING);
+    $this->resetAll();
+    $this->drupalGet('admin/structure/personalize/manage/' . $agent->machine_name . '/results');
+    $this->assertText('Test for Everyone else audience');
+    $this->assertNoFieldByName('audience_filter');
+
+    // Pause the agent and change it so that it has another test.
+    personalize_agent_set_status($agent->machine_name, PERSONALIZE_STATUS_PAUSED);
+    $this->resetAll();
+    $contexts = array(
+      array(
+        'context' => implode(PERSONALIZE_TARGETING_ADMIN_SEPARATOR, array('some_plugin', 'some_context')),
+        'operator' => 'contains',
+        'match' => 'ohai'
+      ),
+    );
+    acquia_lift_target_audience_save('My First Audience', $agent->machine_name, $contexts, 'OR', 50, 'my-first-audience');
+    $targeting['my-first-audience'] = array($option_ids[1], $option_ids[2]);
+    acquia_lift_save_targeting_structure($agent, $targeting);
+    // Now implement the targeting structure and set the agent to running.
+    AcquiaLiftAPI::setTestInstance();
+    acquia_lift_implement_targeting($agent);
+
+    personalize_agent_set_status($agent->machine_name, PERSONALIZE_STATUS_RUNNING);
+    $this->resetAll();
+    $this->drupalGet('admin/structure/personalize/manage/' . $agent->machine_name . '/results');
+    $this->assertNoText('Test for Everyone else audience');
+    $this->assertFieldByName('audience_filter');
+
+    // Change it again so that it has no tests.
+    personalize_agent_set_status($agent->machine_name, PERSONALIZE_STATUS_PAUSED);
+    $this->resetAll();
+    $contexts = array(
+      array(
+        'context' => implode(PERSONALIZE_TARGETING_ADMIN_SEPARATOR, array('some_plugin', 'some_context')),
+        'operator' => 'contains',
+        'match' => 'kthxbai'
+      ),
+    );
+    acquia_lift_target_audience_save('My Second Audience', $agent->machine_name, $contexts, 'OR', 10, 'my-second-audience');
+    $targeting = array(
+      ACQUIA_LIFT_TARGETING_EVERYONE_ELSE => array($option_ids[0]),
+      'my-first-audience' => array($option_ids[1]),
+      'my-second-audience' => array($option_ids[2]),
+    );
+    acquia_lift_save_targeting_structure($agent, $targeting);
+    // Now implement the targeting structure and set the agent to running.
+    AcquiaLiftAPI::setTestInstance();
+    acquia_lift_implement_targeting($agent);
+
+    personalize_agent_set_status($agent->machine_name, PERSONALIZE_STATUS_RUNNING);
+    $this->resetAll();
+    $this->drupalGet('admin/structure/personalize/manage/' . $agent->machine_name . '/results');
+    $this->assertText('This personalization does not contain tests, no reports to show.');
+    $this->assertNoFieldByName('audience_filter');
+  }
 
   public function testConversionReportAjaxEndpoint() {
     $agent = $this->createTestAgent(NULL, array(), 'acquia_lift');
@@ -1066,7 +1145,7 @@ class AcquiaLiftWebTestReports extends AcquiaLiftWebTestBase {
 
     // We call the report generating function and then check the request made to the
     // Lift API.
-    acquia_lift_report_custom(array(), $form_state, $agent_instance, $agent_data, $option_set);
+    acquia_lift_report_custom($form_state, $agent_data);
     $requests = DummyAcquiaLiftHttpClient::getLoggedRequests();
     $start_date = date('Y-m-d', $started);
     $now = time();
@@ -1088,7 +1167,7 @@ class AcquiaLiftWebTestReports extends AcquiaLiftWebTestBase {
     DummyAcquiaLiftHttpClient::clearLoggedRequests();
     // Again call the report generating function and then check the request made to the
     // Lift API. The end date should be different
-    acquia_lift_report_custom(array(), $form_state, $agent_instance, $agent_data, $option_set);
+    acquia_lift_report_custom($form_state, $agent_data);
     $requests = DummyAcquiaLiftHttpClient::getLoggedRequests();
     $start_date = date('Y-m-d', $started);
     $confidence_report_uri = $requests[0]['uri'];

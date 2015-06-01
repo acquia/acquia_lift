@@ -160,6 +160,16 @@ function acquia_lift_menu() {
     'access arguments' => array(4),
     'type' => MENU_CALLBACK,
   );
+  $items['admin/structure/personalize/manage/%personalize_agent/results'] = array(
+    'title callback' => 'personalize_campaign_title_callback',
+    'title arguments' => array(4),
+    'page callback' => 'acquia_lift_report_wizard',
+    'page arguments' => array(4),
+    'access callback' =>'acquia_lift_target_access',
+    'access arguments' => array(4),
+    'file' => 'acquia_lift.admin.inc',
+    'type' => MENU_NORMAL_ITEM,
+  );
   // Page callback for the list of legacy agents.
   $items['admin/structure/personalize/legacy'] = array(
     'title' => 'Legacy Campaigns',
@@ -167,6 +177,15 @@ function acquia_lift_menu() {
     'page callback' => 'acquia_lift_legacy_campaign_list',
     'access callback' => 'acquia_lift_legacy_access',
     'type' => MENU_LOCAL_TASK,
+    'file' => 'acquia_lift.admin.inc',
+  );
+  // Page callback for a legacy report.
+  $items['admin/structure/personalize/legacy/%personalize_agent/results'] = array(
+    'title' => 'Legacy Campaign Report',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('acquia_lift_report', 4),
+    'access callback' => 'acquia_lift_legacy_access',
+    'type' => MENU_CALLBACK,
     'file' => 'acquia_lift.admin.inc',
   );
   return $items;
@@ -482,6 +501,20 @@ function acquia_lift_personalize_agent_type() {
     }
   }
   return $info;
+}
+
+/**
+ * Implements hook_personalize_wizard_steps_alter().
+ */
+function acquia_lift_personalize_wizard_steps_alter(&$steps, $agent_instance) {
+  if (empty($agent_instance) || !$agent_instance instanceof AcquiaLiftTarget) {
+    return;
+  }
+
+  $steps['results'] = array(
+    'label' => t('Reports'),
+    'button_value' => t('Next')
+  );
 }
 
 /**
@@ -817,19 +850,6 @@ function acquia_lift_batch_sync_item($item, &$errors = array()) {
 }
 
 /**
- * Implements hook_personalize_campaign_report().
- */
-function acquia_lift_personalize_campaign_report($agent_data, $option_set = NULL, $form = NULL, &$form_state = NULL) {
-  module_load_include('inc', 'acquia_lift', 'acquia_lift.admin');
-  if (!empty($form) && !empty($form_state)) {
-    return acquia_lift_report($form, $form_state, $agent_data, $option_set);
-  }
-  else {
-    return drupal_get_form('acquia_lift_report', $agent_data, $option_set);
-  }
-}
-
-/**
  * Implements hook_library().
  */
 function acquia_lift_library() {
@@ -1109,9 +1129,11 @@ function acquia_lift_library() {
     'version' => VERSION,
     'js' => array(
       $path . '/js/acquia_lift.reports.js' => array(),
+      $path . '/js/acquia_lift.admin.js' => array(),
     ),
     'css' => array(
       $path . '/css/acquia_lift.reports.css',
+      $path . '/css/acquia_lift.admin.css',
     ),
     'dependencies' => array(
       array('system', 'jquery'),
@@ -2124,6 +2146,9 @@ function acquia_lift_navbar() {
  * Implements hook_form_FORM_ID_alter().
  */
 function acquia_lift_form_personalize_campaign_wizard_alter(&$form, &$form_state, $form_id) {
+  if ($form_state['storage']['step'] == 'results') {
+    unset($form['actions']);
+  }
   // Add in the basic functionality.
   $agent = $form['#agent'];
 
@@ -2149,7 +2174,7 @@ function acquia_lift_form_personalize_campaign_wizard_alter(&$form, &$form_state
   $legacy_campaigns = variable_get('acquia_lift_legacy_agents', array());
   if (in_array($agent->machine_name, $legacy_campaigns)) {
     module_load_include('inc', 'personalize', 'personalize_admin');
-    $form = personalize_campaign_report($agent);
+    $form = drupal_get_form('acquia_lift_report', $agent);
     return;
   }
   if (!acquia_lift_is_targeting_agent($agent)) {
@@ -2904,7 +2929,7 @@ function acquia_lift_get_campaign_details() {
     foreach ($option_sets as $option_set) {
       $option_set_types[] = $option_set->plugin;
     }
-    $report_is_active = $plugin instanceof PersonalizeAgentReportInterface && !empty($agent->started);
+    $report_is_active = $plugin instanceof AcquiaLiftReportInterface && !empty($agent->started);
     $campaigns[$agent->machine_name] = array(
       'name' => $agent->machine_name,
       'label' => filter_xss($agent->label),

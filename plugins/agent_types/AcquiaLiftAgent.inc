@@ -1238,7 +1238,7 @@ abstract class AcquiaLiftReportBase implements PersonalizeAgentReportInterface, 
       // Get the summary data for the whole campaign in order to have overall
       // statistics.
       $this->loadConversionReportHelper($report_data, FALSE, $options);
-      $report_options['goal'] = $options['gaol'];
+      $report_options['goal'] = $options['goal'];
       $actions = visitor_actions_get_actions();
       // If the action still exists, use the label, otherwise just use the goal
       // machine name.
@@ -1253,16 +1253,10 @@ abstract class AcquiaLiftReportBase implements PersonalizeAgentReportInterface, 
     $this->loadConversionReportHelper($report_data, TRUE, $report_options);
     $this->loadConversionReportHelper($report_data, FALSE, $report_options);
 
-    if ($report_data['conversion_all'] == FALSE) {
-      return array(
-        '#markup' => t('There was a problem generating the conversion report.'),
-      );
-    }
-
     $reports = $this->buildConversionReports(array(
       'name' => $report_name,
-      'detail' => empty($goal) ? $report_data['conversion_all']['detail'] : $report_data['conversion_goals'][$goal]['detail'],
-      'summary' => empty($goal) ? $report_data['conversion_all']['summary'] : $report_data['conversion_goals'][$goal]['summary'],
+      'detail' => empty($options['goal']) ? $report_data['conversion_all']['detail'] : $report_data['conversion_goals'][$options['goal']]['detail'],
+      'summary' => empty($options['goal']) ? $report_data['conversion_all']['summary'] : $report_data['conversion_goals'][$options['goal']]['summary'],
     ), $report_data);
     return $reports;
   }
@@ -1629,6 +1623,9 @@ abstract class AcquiaLiftReportBase implements PersonalizeAgentReportInterface, 
       if (isset($report_data['raw'][$report_name]['error'])) {
         return;
       }
+    }
+    if (!isset($report_data['raw'][$report_name]['data'])) {
+      return;
     }
     // Extract the data into full report data from the raw data.
     $detail_report[$subreport_name] = $detail ? $this->extractConversionReportData($report_data['raw'][$report_name]['data']['items']) : $this->extractConversionSummaryData($report_data['raw'][$report_name]['data']['items']);

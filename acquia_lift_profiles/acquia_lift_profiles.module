@@ -163,6 +163,7 @@ function acquia_lift_profiles_page_build(&$page) {
   }
   $js_path = variable_get('acquia_lift_profiles_js_path', '');
   $account_name = variable_get('acquia_lift_profiles_account_name', '');
+  $api_url = variable_get('acquia_lift_profiles_api_url', '');
   $capture_identity = variable_get('acquia_lift_profiles_capture_identity', FALSE);
   $mappings = variable_get('acquia_lift_profiles_udf_mappings', array());
   $acquia_lift_profiles_field_mappings = variable_get('acquia_lift_profiles_field_mappings', array());
@@ -174,6 +175,7 @@ function acquia_lift_profiles_page_build(&$page) {
     'request_url' => $base_root . request_uri(),
     'available_segments' => $segments,
     'account_name' => $account_name,
+    'apiUrl' => $api_url,
     'currentPath' => current_path(),
     'captureIdentity' => $capture_identity,
     'mappings' => $mappings,

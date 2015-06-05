@@ -1943,6 +1943,7 @@ function _acquia_lift_personalize_campaign_wizard_targeting_audience(&$form, &$f
       '#text' => t('Remove'),
       '#value' => 'remove_' . $delta,
       '#theme_wrappers' => array('personalize_html_tag'),
+      '#access' => count($mappings) > 1,
       '#attributes' => array(
         'class' => array('personalize-delete-context', 'form-submit',),
         'title' => t('Delete this context.'),

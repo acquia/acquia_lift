@@ -594,12 +594,7 @@ function acquia_lift_personalize_agent_delete($agent) {
     return;
   }
   $acquia_lift_api = AcquiaLiftAPI::getInstance(variable_get('acquia_lift_account_info', array()));
-  try {
-    $acquia_lift_api->deleteAgent($agent->machine_name);
-  }
-  catch (AcquiaLiftException $e) {
-    // Nothing we can do. The error will have been logged by the API client.
-  }
+  $acquia_lift_api->deleteAgent($agent->machine_name);
 }
 
 /**

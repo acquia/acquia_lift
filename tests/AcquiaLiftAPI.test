@@ -386,6 +386,62 @@ class AcquiaLiftTest extends DrupalUnitTestCase {
   }
 
   /**
+   * Test AcquiaLiftAPI->deleteAgent()
+   */
+  public function testDeleteAgent() {
+    $lift_api = $this->getAcquiaLiftAPI();
+
+    $agentName = 'some-test-agent';
+
+    $lift_api->deleteAgent($agentName);
+
+    // Define the requests we expect to have been made to our dummy http
+    // client for this operation.
+    $requests = array(
+      array(
+        'type' => 'delete',
+        'uri' => "{$lift_api->getApiUrl()}/{$lift_api->getOwnerCode()}/agent-api/$agentName?apikey={$lift_api->getAdminKey()}",
+        'headers' => NULL,
+        'options' => array(),
+        'body' => NULL,
+      )
+    );
+
+    // Confirm the expected requests were made.
+    $this->assertAPIRequests($requests);
+
+    $logs = array(
+      array(
+        'level' => PersonalizeLogLevel::INFO,
+        'message' => "The Acquia Lift personalization $agentName was deleted",
+      )
+    );
+
+    $this->assertLogs($logs);
+
+    $lift_api = $this->getAcquiaLiftAPI(TRUE);
+    try {
+      $lift_api->deleteAgent($agentName);
+    }
+    catch (Exception $e) {
+      // No exception should be thrown when trying to delete an agent.
+      $this->fail("Exception thrown when none expected");
+    }
+
+    // Confirm the expected requests were made.
+    $this->assertAPIRequests($requests);
+
+    $logs = array(
+      array(
+        'level' => PersonalizeLogLevel::ERROR,
+        'message' => "Could not delete Acquia Lift personalization $agentName",
+      )
+    );
+
+    $this->assertLogs($logs);
+  }
+
+  /**
    * Test AcquiaLiftAPI->deletePoint()
    */
   public function testDeletePoint() {
@@ -425,7 +481,8 @@ class AcquiaLiftTest extends DrupalUnitTestCase {
       $lift_api->deletePoint($agentName, $pointName);
     }
     catch (Exception $e) {
-      $this->assertTrue($e instanceof AcquiaLiftException);
+      // No exception should be thrown when trying to delete a point.
+      $this->fail("Exception thrown when none expected");
     }
 
     // Confirm the expected requests were made.
@@ -482,7 +539,8 @@ class AcquiaLiftTest extends DrupalUnitTestCase {
       $lift_api->deleteDecision($agentName, $pointName, $decisionName);
     }
     catch (Exception $e) {
-      $this->assertTrue($e instanceof AcquiaLiftException);
+      // No exception should be thrown when trying to delete a decision.
+      $this->fail("Exception thrown when none expected");
     }
 
     // Confirm the expected requests were made.
@@ -539,7 +597,8 @@ class AcquiaLiftTest extends DrupalUnitTestCase {
       $lift_api->deleteChoice($agentName, $pointName, $decisionName, $choiceName);
     }
     catch (Exception $e) {
-      $this->assertTrue($e instanceof AcquiaLiftException);
+      // No exception should be thrown when trying to delete a choice.
+      $this->fail("Exception thrown when none expected");
     }
 
     // Confirm the expected requests were made.

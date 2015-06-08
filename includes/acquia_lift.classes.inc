@@ -487,13 +487,17 @@ class AcquiaLiftAPI implements PersonalizeLoggerAwareInterface, AcquiaLiftReport
    *   Variables to pass to the message.
    * @param bool $log_failure
    *   Whether failures should be logged or not
+   * @param bool $soft_fail
+   *   Whether to fail softly, i.e. without throwing an exception.
    */
-  public function handleBadResponse($response_code, $fail_msg, $vars = array(), $log_failure = TRUE) {
+  public function handleBadResponse($response_code, $fail_msg, $vars = array(), $log_failure = TRUE, $soft_fail = FALSE) {
     if ($exception_class = self::mapBadResponseToExceptionClass($response_code)) {
       if ($log_failure) {
         $this->logger()->log(PersonalizeLogLevel::ERROR, $fail_msg, $vars);
       }
-      throw new $exception_class(t($fail_msg, $vars));
+      if (!$soft_fail) {
+        throw new $exception_class(t($fail_msg, $vars));
+      }
     }
     if (self::isSuccessful($response_code)) {
       // If the response wasn't actually bad but we still got here somehow, just
@@ -503,8 +507,10 @@ class AcquiaLiftAPI implements PersonalizeLoggerAwareInterface, AcquiaLiftReport
       }
       return;
     }
-    // Otherwise throw a generic exception.
-    throw new AcquiaLiftException(t($fail_msg, $vars));
+    if (!$soft_fail) {
+      // Otherwise throw a generic exception.
+      throw new AcquiaLiftException(t($fail_msg, $vars));
+    }
   }
 
   /**
@@ -618,7 +624,10 @@ class AcquiaLiftAPI implements PersonalizeLoggerAwareInterface, AcquiaLiftReport
       $this->logger()->log(PersonalizeLogLevel::INFO, $success_msg, $vars);
     }
     else {
-      $this->handleBadResponse($response->code, $fail_msg, $vars);
+      // The most likely reason this failed is that agent didn't exist - this
+      // should not result in a hard fail so we pass TRUE as the 5th parameter
+      // to indicate we want a soft failure, i.e. just logging.
+      $this->handleBadResponse($response->code, $fail_msg, $vars, TRUE, TRUE);
     }
   }
 
@@ -641,7 +650,7 @@ class AcquiaLiftAPI implements PersonalizeLoggerAwareInterface, AcquiaLiftReport
       $this->logger()->log(PersonalizeLogLevel::INFO, $success_msg, $vars);
     }
     else {
-      $this->handleBadResponse($response->code, $fail_msg, $vars);
+      $this->handleBadResponse($response->code, $fail_msg, $vars, TRUE, TRUE);
     }
   }
 
@@ -666,7 +675,7 @@ class AcquiaLiftAPI implements PersonalizeLoggerAwareInterface, AcquiaLiftReport
       $this->logger()->log(PersonalizeLogLevel::INFO, $success_msg, $vars);
     }
     else {
-      $this->handleBadResponse($response->code, $fail_msg, $vars);
+      $this->handleBadResponse($response->code, $fail_msg, $vars, TRUE, TRUE);
     }
   }
 
@@ -694,8 +703,7 @@ class AcquiaLiftAPI implements PersonalizeLoggerAwareInterface, AcquiaLiftReport
       $this->logger()->log(PersonalizeLogLevel::INFO, $success_msg, $vars);
     }
     else {
-      $this->logger()->log(PersonalizeLogLevel::ERROR, $fail_msg, $vars);
-      throw new AcquiaLiftException($fail_msg);
+      $this->handleBadResponse($response->code, $fail_msg, $vars, TRUE, TRUE);
     }
   }
 

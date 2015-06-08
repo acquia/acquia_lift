@@ -33,9 +33,8 @@ function acquia_lift_profiles_install() {
  * Implements hook_enable().
  */
 function acquia_lift_profiles_enable() {
-  // If the module were previously enabled and actions set to be tracked,
-  // the list of subscribers to those actions will need to be rebuilt.
-  rebuild_subscribers_for_tracked_actions();
+  // Clear the action subscriber cache.
+  visitor_actions_clear_subscribers();
   // Unhide the menu link if it's hidden.
   $item = _acquia_lift_profiles_get_menu_link();
   if (!empty($item) && $item['hidden'] == 1) {
@@ -50,7 +49,8 @@ function acquia_lift_profiles_enable() {
  * Implements hook_disable().
  */
 function acquia_lift_profiles_disable() {
-  rebuild_subscribers_for_tracked_actions();
+  // Clear the action subscriber cache.
+  visitor_actions_clear_subscribers();
 
   // Disable the Profiles web admin link.
   $item = _acquia_lift_profiles_get_menu_link();
@@ -83,15 +83,6 @@ function acquia_lift_profiles_uninstall() {
   $item = _acquia_lift_profiles_get_menu_link();
   if (!empty($item)) {
     menu_link_delete($item['mlid']);
-  }
-}
-
-/**
- * Rebuilds the list of subscribers for each action tracked.
- */
-function rebuild_subscribers_for_tracked_actions() {
-  foreach (variable_get('acquia_lift_profiles_tracked_actions', array()) as $action) {
-    visitor_actions_clear_subscribers($action);
   }
 }
 

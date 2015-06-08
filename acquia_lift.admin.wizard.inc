@@ -917,7 +917,9 @@ function acquia_lift_personalize_campaign_wizard_goals_ajax_all($form, &$form_st
  */
 function acquia_lift_personalize_campaign_wizard_targeting_add($form, &$form_state) {
   // Increment the number of contexts to be rendered.
-  $context_key = $form_state['triggering_element']['#array_parents'][2];
+  $parents = $form_state['triggering_element']['#parents'];
+  $context_key_pos = array_search('audiences', $parents) + 1;
+  $context_key = $parents[$context_key_pos];
   watchdog('debug', 'adding context to ' . $context_key);
   $form_state['num_contexts_audience'][$context_key]++;
   $form_state['rebuild'] = TRUE;
@@ -943,9 +945,9 @@ function acquia_lift_personalize_campaign_wizard_targeting_remove($form, &$form_
 function acquia_lift_personalize_campaign_wizard_targeting_ajax($form, &$form_state) {
   // Don't show any messages within the AJAX returned.
   drupal_get_messages();
-  watchdog('debug', 'parents: <pre>' . print_r($form_state['triggering_element']['#parents'], TRUE) . '</pre>');
-  watchdog('debug', 'search for audiences: ' . (array_search('audiences',$form_state['triggering_element']['#parents']) + 1));
-  $context_key = $form_state['triggering_element']['#array_parents'][2];
+  $parents = $form_state['triggering_element']['#parents'];
+  $context_key_pos = array_search('audiences', $parents) + 1;
+  $context_key = $parents[$context_key_pos];
   watchdog('debug', 'returning context ' . $context_key);
   return $form['targeting']['audiences'][$context_key]['details']['mapping']['contexts'];
 }
@@ -1067,6 +1069,11 @@ function acquia_lift_personalize_campaign_wizard_goals_validate(&$form, &$form_s
  * Validation function for targeting form.
  */
 function acquia_lift_personalize_campaign_wizard_targeting_validate(&$form, &$form_state) {
+  // Allow advanced AJAX functions such as add/remove contexts to skip
+  // validation and still operate on the full form value set.
+  if (!empty($form_state['triggering_element']['#skip_validation'])) {
+    return;
+  }
   // If we are adding - then validate the required audience fields.
   if (in_array('add', $form_state['triggering_element']['#array_parents'])) {
     if (empty($form_state['values']['audiences']['add']['details']['name'])) {
@@ -1874,20 +1881,6 @@ function _acquia_lift_personalize_campaign_wizard_targeting_audience(&$form, &$f
     ))),
   );
 
-  if (isset($form_state['to_remove_audience'])) {
-    watchdog('debug', 'remove audiences: <pre>' . print_r($form_state['to_remove_audience'], TRUE) . '</pre>');
-  }
-  else {
-    watchdog('debug', 'nothing to remove');
-  }
-  if (isset($form_state['num_contexts_audience'])) {
-    watchdog('debug', 'num contexts audiences: <pre>' . print_r($form_state['num_contexts_audience'], TRUE) . '</pre>');
-  }
-  else {
-    watchdog('debug', 'no context number set');
-  }
-
-
   // Load from the existing form if passed first, otherwise, load from audience.
   $mappings = array();
   if (isset($form_state['values']['audiences'][$parent_identifier]['details']['mapping']['contexts'])) {
@@ -1964,12 +1957,14 @@ function _acquia_lift_personalize_campaign_wizard_targeting_audience(&$form, &$f
       '#value' => 'remove_' . $delta,
       '#theme_wrappers' => array('personalize_html_tag'),
       '#access' => count($mappings) > 1,
+      '#name' => 'audiences[' . $parent_identifier . '][details][mapping][contexts][' . $delta . '][remove]',
       '#attributes' => array(
         'class' => array('personalize-delete-context', 'form-submit',),
         'title' => t('Delete this context.'),
         'id' => 'edit-audiences-' . $parent_identifier . '-details-mapping-contexts-' . $delta . '-remove',
       ),
       '#submit' => array('acquia_lift_personalize_campaign_wizard_targeting_remove'),
+      '#skip_validation' => TRUE,
       '#ajax' => array(
         'callback' => 'acquia_lift_personalize_campaign_wizard_targeting_ajax',
         'wrapper' => $main_wrapper_id,
@@ -1986,6 +1981,7 @@ function _acquia_lift_personalize_campaign_wizard_targeting_audience(&$form, &$f
     '#value' => 'add_context_' . $parent_identifier,
     '#theme_wrappers' => array('personalize_html_tag'),
     '#submit' => array('acquia_lift_personalize_campaign_wizard_targeting_add'),
+    '#name' => 'audiences[' . $parent_identifier . '][details][add_new]',
     '#attributes' => array(
       'class' => array('personalize-add-link'),
       'title' => t('Click here to add more contexts.'),
@@ -1996,6 +1992,7 @@ function _acquia_lift_personalize_campaign_wizard_targeting_audience(&$form, &$f
       'wrapper' => $main_wrapper_id,
       'effect' => 'fade',
     ),
+    '#skip_validation' => TRUE,
   );
   $element['strategies'] = array(
     '#type' => 'container',

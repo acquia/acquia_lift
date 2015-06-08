@@ -918,6 +918,7 @@ function acquia_lift_personalize_campaign_wizard_goals_ajax_all($form, &$form_st
 function acquia_lift_personalize_campaign_wizard_targeting_add($form, &$form_state) {
   // Increment the number of contexts to be rendered.
   $context_key = $form_state['triggering_element']['#array_parents'][2];
+  watchdog('debug', 'adding context to ' . $context_key);
   $form_state['num_contexts_audience'][$context_key]++;
   $form_state['rebuild'] = TRUE;
 }
@@ -926,8 +927,10 @@ function acquia_lift_personalize_campaign_wizard_targeting_add($form, &$form_sta
  * Submit handler for the "Remove Context" button.
  */
 function acquia_lift_personalize_campaign_wizard_targeting_remove($form, &$form_state) {
-  $context_key = $form_state['triggering_element']['#array_parents'][1];
-  $parents = $form_state['clicked_button']['#parents'];
+  $parents = $form_state['triggering_element']['#parents'];
+  $context_key_pos = array_search('audiences', $parents) + 1;
+  $context_key = $parents[$context_key_pos];
+  watchdog('debug', 'removing context from ' . $context_key);
   $delta_pos = array_search('contexts', $parents) + 1;
   $delta = $parents[$delta_pos];
   $form_state['to_remove_audience'][$context_key] = $delta;
@@ -940,7 +943,10 @@ function acquia_lift_personalize_campaign_wizard_targeting_remove($form, &$form_
 function acquia_lift_personalize_campaign_wizard_targeting_ajax($form, &$form_state) {
   // Don't show any messages within the AJAX returned.
   drupal_get_messages();
+  watchdog('debug', 'parents: <pre>' . print_r($form_state['triggering_element']['#parents'], TRUE) . '</pre>');
+  watchdog('debug', 'search for audiences: ' . (array_search('audiences',$form_state['triggering_element']['#parents']) + 1));
   $context_key = $form_state['triggering_element']['#array_parents'][2];
+  watchdog('debug', 'returning context ' . $context_key);
   return $form['targeting']['audiences'][$context_key]['details']['mapping']['contexts'];
 }
 
@@ -1867,6 +1873,20 @@ function _acquia_lift_personalize_campaign_wizard_targeting_audience(&$form, &$f
       '#value' => t('Definition'),
     ))),
   );
+
+  if (isset($form_state['to_remove_audience'])) {
+    watchdog('debug', 'remove audiences: <pre>' . print_r($form_state['to_remove_audience'], TRUE) . '</pre>');
+  }
+  else {
+    watchdog('debug', 'nothing to remove');
+  }
+  if (isset($form_state['num_contexts_audience'])) {
+    watchdog('debug', 'num contexts audiences: <pre>' . print_r($form_state['num_contexts_audience'], TRUE) . '</pre>');
+  }
+  else {
+    watchdog('debug', 'no context number set');
+  }
+
 
   // Load from the existing form if passed first, otherwise, load from audience.
   $mappings = array();

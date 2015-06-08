@@ -616,12 +616,6 @@ class AcquiaLiftReport implements AcquiaLiftReportInterface {
     $this->loadConversionReportHelper('confidence_detail', FALSE, $goal);
     $this->loadConversionReportHelper('confidence', TRUE, $goal);
 
-    if ($this->loadedReports['conversion_all'] == FALSE) {
-      return array(
-        '#markup' => t('There was a problem generating the conversion report.'),
-      );
-    }
-
     $reports = $this->buildConversionReports(array(
       'name' => $report_name,
       'detail' => empty($goal) ? $this->loadedReports['conversion_all']['detail'] : $this->loadedReports['conversion_goals'][$goal]['detail'],
@@ -773,6 +767,9 @@ class AcquiaLiftReport implements AcquiaLiftReportInterface {
       if (isset($this->loadedReports['raw'][$report_name]['error'])) {
         return;
       }
+    }
+    if (!isset($report_data['raw'][$report_name]['data'])) {
+      return;
     }
     // Extract the data into full report data from the raw data.
     $detail_report[$subreport_name] = $aggregated ? $this->extractConversionSummaryData($report_name) : $this->extractConversionReportData($report_name);

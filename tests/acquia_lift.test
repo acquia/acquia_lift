@@ -1176,6 +1176,24 @@ class AcquiaLiftWebTestReports extends AcquiaLiftWebTestBase {
     preg_match($pattern, $confidence_report_uri, $matches);
     $this->assertEqual(date('Y-m-d', $yesterday), $matches[1]);
   }
+
+  function testPerGoalReport() {
+    AcquiaLiftAPI::setTestInstance();
+    $agent = $this->createTestAgent();
+    $this->resetAll();
+    DummyAcquiaLiftHttpClient::clearLoggedRequests();
+    // Call the conversion report specifying a particular goal.
+    $agent->buildConversionReport(array('goal' => 'user_login'));
+    $requests = DummyAcquiaLiftHttpClient::getLoggedRequests();
+    $this->assertEqual(2, count($requests));
+    $agent_name = $agent->getMachineName();
+    $date = date('Y-m-d');
+    // Confirm that the report requests made include the goal in the parameters.
+    $summary_url = "http://api.example.com/test-owner-code/$agent_name/report/confidence/$date/$date?features=&apikey=test-admin-key&confidence-measure=0.95&aggregated-over-dates=true&goal=user_login&policies=explore";
+    $detail_url = "http://api.example.com/test-owner-code/$agent_name/report/confidence/$date/$date?features=&apikey=test-admin-key&confidence-measure=0.95&aggregated-over-dates=false&goal=user_login&policies=explore";
+    $this->assertEqual($summary_url, $requests[0]['uri']);
+    $this->assertEqual($detail_url, $requests[1]['uri']);
+  }
 }
 
 class AcquiaLiftWebTestWorkflow extends AcquiaLiftWebTestBase {
@@ -1985,7 +2003,6 @@ class AcquiaLiftWebTestTarget extends AcquiaLiftWebTestBase {
     $this->drupalGet('');
     $settings = $this->drupalGetSettings();
     $this->assertTrue(empty($settings['acquia_lift']['campaigns'][$agent->machine_name]));
-
 
     // Complete the agent.
     personalize_agent_set_status($agent->machine_name, PERSONALIZE_STATUS_COMPLETED);

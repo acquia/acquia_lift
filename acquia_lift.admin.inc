@@ -1223,8 +1223,15 @@ function acquia_lift_validate_minimum_targeting($agent, $option_set) {
     $assigned = array();
     $targeting = !empty($agent->data['lift_targeting']) ? $agent->data['lift_targeting'] : acquia_lift_get_structure_from_targeting($option_set);
     foreach ($targeting as $audience_id => $options) {
-      $assigned = array_merge($assigned, $options);
+      if ($audience_id != ACQUIA_LIFT_TARGETING_EVERYONE_ELSE) {
+        $assigned = array_merge($assigned, $options);
+      }
     }
+  }
+  // If the agent hasn't been started, then we should keep adding options to
+  // default targeting even if there is already an "Everyone else" audience.
+  if (personalize_agent_get_status($agent->machine_name) != PERSONALIZE_STATUS_NOT_STARTED) {
+    return;
   }
   $targeting_options = array();
   foreach ($targeting_option_set->options as $option) {
@@ -1233,10 +1240,11 @@ function acquia_lift_validate_minimum_targeting($agent, $option_set) {
   // Any unassigned option is automatically assigned to the "Everyone else"
   // category.
   $unassigned_options = array_diff($targeting_options, $assigned);
+  $targeting = !empty($agent->data['lift_targeting']) ? $agent->data['lift_targeting'] : array();
+  $targeting[ACQUIA_LIFT_TARGETING_EVERYONE_ELSE] = $unassigned_options;
   if (!empty($unassigned_options)) {
-    acquia_lift_save_targeting_structure($agent, array(ACQUIA_LIFT_TARGETING_EVERYONE_ELSE => $unassigned_options));
+    acquia_lift_save_targeting_structure($agent, $targeting);
   }
-
 }
 
 /**

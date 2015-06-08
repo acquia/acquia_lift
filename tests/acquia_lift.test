@@ -1528,24 +1528,6 @@ class AcquiaLiftWebTestTarget extends AcquiaLiftWebTestBase {
       'targeting_strategy' => 'OR',
     );
     $this->assertEqual($expected_targeting, $option_set->targeting);
-
-    // Set the campaign to a different status.
-    personalize_agent_set_status($agent->machine_name, PERSONALIZE_STATUS_PAUSED);
-
-    // Delete the option set which will delete its audiences/targeting and
-    // re-add to ensure that the "Everyone else" audience is re-created.
-    personalize_option_set_delete($option_set->osid);
-
-    $this->createOptionSet(0, array(
-      'plugin' => 'blocks',
-      'agent' => $agent->machine_name,
-      'option_ids' => array('first-choice', 'second-choice', 'third-choice')
-    ));
-    $this->resetAll();
-
-    $expected_targeting = array(ACQUIA_LIFT_TARGETING_EVERYONE_ELSE => array('first-choice', 'second-choice', 'third-choice'));
-    $agent = personalize_agent_load($agent->machine_name);
-    $this->assertEqual($expected_targeting, $agent->data['lift_targeting']);
   }
 
   function testAssignVariations() {
@@ -1559,10 +1541,20 @@ class AcquiaLiftWebTestTarget extends AcquiaLiftWebTestBase {
       'option_ids' => array('first-choice', 'second-choice', 'third-choice')
     ));
     $this->resetAll();
+
+    // The everyone else audience should have been created and automatically
+    // assigned the new variations.
+    $agent = personalize_agent_load($agent->machine_name);
+    $expected_targeting = array(
+      ACQUIA_LIFT_TARGETING_EVERYONE_ELSE => array('first-choice', 'second-choice', 'third-choice'),
+    );
+    $this->assertEqual($agent->data['lift_targeting'], $expected_targeting);
+
     // Try to set up targeting with a non-existent audience.
     $audience_name = personalize_generate_machine_name($this->randomName(), NULL, '-');
     $targeting = array(
-      $audience_name => array('second-choice', 'third-choice')
+      $audience_name => array('second-choice', 'third-choice'),
+      ACQUIA_LIFT_TARGETING_EVERYONE_ELSE => array('first-choice'),
     );
     try {
       acquia_lift_save_targeting_structure($agent, $targeting);
@@ -1581,6 +1573,76 @@ class AcquiaLiftWebTestTarget extends AcquiaLiftWebTestBase {
       $this->fail('Exception thrown when none expected.');
     }
     $this->assertEqual($targeting, $agent->data['lift_targeting']);
+
+    // Add a new variation to the option set and verify that it is added
+    // to "Everyone else".
+    $option_set->options[] = array(
+      'option_id' => 'fourth-choice',
+      'option_label' => 'Option D',
+    );
+    personalize_option_set_save($option_set);
+    $this->resetAll();
+
+    $targeting[ACQUIA_LIFT_TARGETING_EVERYONE_ELSE] = array('first-choice', 'fourth-choice');
+    $agent = personalize_agent_load($agent->machine_name);
+    $actual = $agent->data['lift_targeting'];
+    foreach ($actual as $audience_id => $options) {
+      $actual[$audience_id] = array_values($options);
+    }
+    $this->assertEqual($actual, $targeting);
+
+    // Simulate the campaign having been started an paused and verify that
+    // new variations are no longer saved in "Everyone else".
+    personalize_agent_set_status($agent->machine_name, PERSONALIZE_STATUS_PAUSED);
+
+    $option_set->options[] = array(
+      'option_id' => 'fifth-choice',
+      'option_label' => 'Option E',
+    );
+    personalize_option_set_save($option_set);
+    $this->resetAll();
+
+    $targeting = array(
+      $audience_name => array('second-choice', 'third-choice'),
+      ACQUIA_LIFT_TARGETING_EVERYONE_ELSE => array('first-choice', 'fourth-choice'),
+    );
+    $agent = personalize_agent_load($agent->machine_name);
+    $actual = $agent->data['lift_targeting'];
+    foreach ($actual as $audience_id => $options) {
+      $actual[$audience_id] = array_values($options);
+    }
+    $this->assertEqual($actual, $targeting);
+
+    // Now delete the option set and re-add to add the new audience but not
+    // the targeting variations.
+    personalize_option_set_delete($option_set->osid);
+    $agent->data['lift_targeting'] = array();
+    $agent = personalize_agent_save($agent);
+    $this->resetAll();
+
+    $option_set = $this->createOptionSet(1, array(
+      'plugin' => 'blocks',
+      'agent' => $agent->machine_name,
+      'option_ids' => array('first-choice', 'second-choice', 'third-choice')
+    ));
+
+    // Verify that there is no targeting on the campaign.
+    $agent = personalize_agent_load($agent->machine_name, TRUE);
+    $this->assertEqual($agent->data['lift_targeting'], array());
+
+    // Verify that the everyone else audience has been added.
+    $option_set = personalize_option_set_load($option_set->osid);
+    $expected = array (
+      ACQUIA_LIFT_TARGETING_EVERYONE_ELSE =>
+        array (
+          'label' => t('Everyone else'),
+          'weight' => 1,
+          'targeting_features' => array(),
+          'targeting_rules' => array (),
+          'targeting_strategy' => 'OR',
+        ),
+    );
+    $this->assertEqual($option_set->targeting, $expected);
   }
 
   function testImplementTargetingStructure() {

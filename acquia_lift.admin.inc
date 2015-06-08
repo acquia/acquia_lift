@@ -1205,9 +1205,6 @@ function acquia_lift_save_nested_test_options($parent_agent) {
  *   The object representing the agent that owns the targeting option set.
  */
 function acquia_lift_validate_minimum_targeting($agent, $option_set) {
-  if (personalize_agent_get_status($agent->machine_name) !== PERSONALIZE_STATUS_NOT_STARTED) {
-    return;
-  }
   // Check and create the "Everyone else" audience if it doesn't exist.
   $targeting_option_set = acquia_lift_get_option_set_for_targeting($agent->machine_name);
   if ($targeting_option_set->osid == $option_set->osid) {

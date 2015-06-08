@@ -1908,7 +1908,16 @@ class AcquiaLiftWebTestTarget extends AcquiaLiftWebTestBase {
   }
 
   function testNestedAgentDeletion() {
-    $agent_with_nesting = $this->createTargetingAgentWithNestedTest();
+    $agent_with_nesting = $this->createTargetingAgentWithNestedTest(NULL, 2, FALSE);
+    // Add another option set and make it lock-step.
+    $agent_with_nesting->data['variation_set_handling'] = ACQUIA_LIFT_DECISION_LOCKSTEP;
+    $second_os = $this->createOptionSet(1, array(
+      'agent' => $agent_with_nesting->machine_name,
+      'plugin' => 'some_plugin',
+      'num_options' => 2
+    ));
+    AcquiaLiftAPI::setTestInstance();
+    acquia_lift_implement_targeting($agent_with_nesting);
     $this->resetAll();
     // Confirm the nested test has been created as expected.
     $nested_tests = acquia_lift_get_nested_tests($agent_with_nesting);
@@ -1922,10 +1931,18 @@ class AcquiaLiftWebTestTarget extends AcquiaLiftWebTestBase {
     $this->assertNotNull($nested_os);
 
     DummyAcquiaLiftHttpClient::clearLoggedRequests();
-    // Delete the option set from the parent.
-    $option_set = acquia_lift_get_option_set_for_targeting($agent_with_nesting->machine_name);
     AcquiaLiftAPI::setTestInstance();
 
+    personalize_option_set_delete($second_os->osid);
+    $this->resetAll();
+    $requests = DummyAcquiaLiftHttpClient::getLoggedRequests();
+    $this->assertEqual(array(), $requests);
+    // Confirm the agent still exists.
+    $nested_agent = personalize_agent_load($nested_agent_name, TRUE);
+    $this->assertNotNull($nested_agent);
+
+    // Now delete the remaining option set.
+    $option_set = acquia_lift_get_option_set_for_targeting($agent_with_nesting->machine_name);
     personalize_option_set_delete($option_set->osid);
     $this->resetAll();
     $expected_requests = array(

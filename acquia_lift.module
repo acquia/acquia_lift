@@ -783,15 +783,19 @@ function acquia_lift_personalize_option_set_insert($option_set) {
 function acquia_lift_personalize_option_set_delete($option_set) {
   $agent = personalize_agent_load($option_set->agent);
   if (acquia_lift_is_targeting_agent($agent) && !empty($option_set->targeting)) {
-    // Ensure any nested tests are deleted too.
-    foreach ($option_set->targeting as $target) {
-      if (isset($target['osid'])) {
-        $nested_os = personalize_option_set_load($target['osid'], TRUE);
-        // Delete the option set, then delete the agent.
-        personalize_option_set_delete($nested_os->osid);
-        personalize_agent_delete($nested_os->agent);
+    $option_sets = personalize_option_set_load_by_agent($option_set->agent, TRUE);
+    if (empty($option_sets)) {
+      // Ensure any nested tests are deleted too
+      foreach ($option_set->targeting as $target) {
+        if (isset($target['osid'])) {
+          $nested_os = personalize_option_set_load($target['osid'], TRUE);
+          // Delete the option set, then delete the agent.
+          personalize_option_set_delete($nested_os->osid);
+          personalize_agent_delete($nested_os->agent);
+        }
       }
     }
+
     if (!empty($agent->data['locked_for_variation_sets'])) {
       // Somehow an option set is being deleted for an already implemented campaign.
       // This is not supported via the UI and can cause problems for running

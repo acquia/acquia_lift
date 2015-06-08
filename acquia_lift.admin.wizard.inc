@@ -929,7 +929,6 @@ function acquia_lift_personalize_campaign_wizard_targeting_add($form, &$form_sta
   $parents = $form_state['triggering_element']['#parents'];
   $context_key_pos = array_search('audiences', $parents) + 1;
   $context_key = $parents[$context_key_pos];
-  watchdog('debug', 'adding context to ' . $context_key);
   $form_state['num_contexts_audience'][$context_key]++;
   $form_state['rebuild'] = TRUE;
 }
@@ -941,7 +940,6 @@ function acquia_lift_personalize_campaign_wizard_targeting_remove($form, &$form_
   $parents = $form_state['triggering_element']['#parents'];
   $context_key_pos = array_search('audiences', $parents) + 1;
   $context_key = $parents[$context_key_pos];
-  watchdog('debug', 'removing context from ' . $context_key);
   $delta_pos = array_search('contexts', $parents) + 1;
   $delta = $parents[$delta_pos];
   $form_state['to_remove_audience'][$context_key] = $delta;
@@ -957,7 +955,6 @@ function acquia_lift_personalize_campaign_wizard_targeting_ajax($form, &$form_st
   $parents = $form_state['triggering_element']['#parents'];
   $context_key_pos = array_search('audiences', $parents) + 1;
   $context_key = $parents[$context_key_pos];
-  watchdog('debug', 'returning context ' . $context_key);
   return $form['targeting']['audiences'][$context_key]['details']['mapping']['contexts'];
 }
 

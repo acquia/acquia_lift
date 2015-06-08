@@ -436,7 +436,10 @@ function acquia_lift_personalize_campaign_wizard_goals_alter(&$form, &$form_stat
     switch ($form_state['values']['goals']['add_goal']['goal_types']['goal_type']) {
       case 'existing':
         $form['goals']['add_goal']['goal']['details'] = _acquia_lift_existing_goal_create_form($agent_data);
+        // TRICKY: Name must be specified or else it will default to "op" and
+        // conflict with the main process bar save button.
         $form['goals']['add_goal']['goal']['save'] = array(
+          '#name' => 'save_goal',
           '#type' => 'submit',
           '#value' => t('Save'),
         );
@@ -456,7 +459,10 @@ function acquia_lift_personalize_campaign_wizard_goals_alter(&$form, &$form_stat
           '#required' => TRUE,
           '#weight' => 10,
         );
+        // TRICKY: Name must be specified or else it will default to "op" and
+        // conflict with the main process bar save button.
         $form['goals']['add_goal']['goal']['save'] = array(
+          '#name' => 'save_new_goal',
           '#type' => 'submit',
           '#value' => t('Save'),
         );
@@ -563,7 +569,10 @@ function acquia_lift_personalize_campaign_wizard_targeting_alter(&$form, &$form_
     '#access' => $editable,
   );
   $form['targeting']['audiences']['add']['details'] = _acquia_lift_personalize_campaign_wizard_targeting_audience($form, $form_state, $agent_data, 'add');
-  $form['targeting']['audiences']['add']['save'] = array(
+  // TRICKY: Name must be specified or else it will default to "op" and
+  // conflict with the main process bar save button.
+  $form['targeting']['audiences']['add']['save_audience'] = array(
+    '#name' => 'save_new_audience',
     '#type' => 'submit',
     '#value' => t('Save'),
   );

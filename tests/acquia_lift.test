@@ -753,9 +753,9 @@ class AcquiaLiftWebTestAgentAdmin extends AcquiaLiftWebTestBase {
     $this->assertLinkByHref('admin/structure/personalize/manage/' . $agent->machine_name . '/variations');
     $this->assertNoLinkByHref('admin/structure/personalize/manage/' . $agent->machine_name . '/delete');
     $this->assertLinkByHref('admin/structure/personalize/manage/' . $agent->machine_name . '/results');
-    $this->assertLinkByHref('admin/structure/personalize/manage/' . $agent->machine_name . '/results?audience_id=' . $audience_1);
-    $this->assertNoLinkByHref('admin/structure/personalize/manage/' . $agent->machine_name . '/results?audience_id=' . $audience_2);
-    $this->assertNoLinkByHref('admin/structure/personalize/manage/' . $agent->machine_name . '/results?audience_id=' . ACQUIA_LIFT_TARGETING_EVERYONE_ELSE);
+    $this->assertLinkByHref('admin/structure/personalize/manage/' . $agent->machine_name . '/results?targeting_audience=' . $audience_1);
+    $this->assertNoLinkByHref('admin/structure/personalize/manage/' . $agent->machine_name . '/results?targeting_audience=' . $audience_2);
+    $this->assertNoLinkByHref('admin/structure/personalize/manage/' . $agent->machine_name . '/results?targeting_audience=' . ACQUIA_LIFT_TARGETING_EVERYONE_ELSE);
     $this->assertNoRaw('<h3>Draft</h3>');
     $this->assertNoRaw('<h3>Scheduled</h3>');
     $this->assertRaw('<h3>Running</h3>');

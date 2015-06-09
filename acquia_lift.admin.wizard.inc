@@ -188,6 +188,9 @@ function acquia_lift_personalize_campaign_wizard_variations_alter(&$form, &$form
   if (!empty($form_state['values']['variations']['add_variation']['option_set_type'])) {
     $form_state['acquia_lift_add_variations'] = TRUE;
   }
+  // TRICKY: Specify the ID here because upon subsequent AJAX renderings
+  // Drupal will append a counter to ensure unique IDs.  In order to target
+  // the same container for each AJAX replace we need to specify it.
   $form['variations']['add_variation'] = array(
     '#type' => 'container',
     '#theme' => 'acquia_lift_card',
@@ -214,6 +217,7 @@ function acquia_lift_personalize_campaign_wizard_variations_alter(&$form, &$form
     '#ajax' => array(
       'wrapper' => 'acquia-lift-personalize-campaign-add-variation',
       'callback' => 'acquia_lift_personalize_campaign_wizard_variations_ajax_add',
+      'method' => 'replace',
     ),
   );
   $form['variations']['add_variation']['variation_set_handling'][ACQUIA_LIFT_DECISION_LOCKSTEP]['#description'] = t('Use variation sets in Lock step if you want to test and target with a locked combination of variations. Each variation set should have the same number of variations so they can be evenly locked as combinations. Eg: AA, BB, CC.');

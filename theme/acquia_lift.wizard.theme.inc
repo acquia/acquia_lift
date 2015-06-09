@@ -29,6 +29,11 @@ function theme_acquia_lift_card($variables) {
   $element['#attributes']['data-card-sortable'] = $element['#sortable'] ? 'true' : 'false';
   $element['#attributes']['data-card-enabled'] = $element['#disabled'] ? 'false' : 'true';
   $element['#attributes']['class'][] = 'el-card';
+  // The ID will also be on the form wrapper for the card so we need to update
+  // it to make it unique.
+  if (!empty($element['#attributes']['id'])) {
+    $element['#attributes']['id'] .= '-card';
+  }
   drupal_add_library('acquia_lift', 'acquia_lift.card');
   $html = '';
   $html .= '<div ' . drupal_attributes($element['#attributes']) . '>';
@@ -61,7 +66,7 @@ function theme_acquia_lift_radio_list($variables) {
   $element = $variables['element'];
   $attributes = array();
   if (isset($element['#id'])) {
-    $attributes['id'] = $element['#id'];
+    $attributes['id'] = $element['#id'] . '-radio-list';
   }
   $attributes['class'] = 'form-radios acquia-lift-radio-list';
   if (!empty($element['#attributes']['class'])) {

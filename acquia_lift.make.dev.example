@@ -14,7 +14,7 @@ projects[drupal][version] = "7.34"
 ; ---------------------------------------
 projects[personalize][type] = "module"
 projects[personalize][download][type] = "git"
-projects[personalize][download][url] = "http://git.drupal.org/project/personalize.git"
+projects[personalize][download][url] = "https://github.com/acquia/personalize_module.git"
 projects[personalize][download][branch] = "7.x-2.x"
 projects[personalize][subdir] = contrib
 
@@ -22,7 +22,7 @@ projects[personalize][subdir] = contrib
 ; ---------------------------------------
 projects[visitor_actions][type] = "module"
 projects[visitor_actions][download][type] = "git"
-projects[visitor_actions][download][url] = "http://git.drupal.org/project/visitor_actions.git"
+projects[visitor_actions][download][url] = "https://github.com/acquia/visitor_actions.git"
 projects[visitor_actions][download][branch] = "7.x-1.x"
 projects[visitor_actions][subdir] = contrib
 
@@ -30,7 +30,7 @@ projects[visitor_actions][subdir] = contrib
 ; ---------------------------------------
 projects[acquia_lift][type] = "module"
 projects[acquia_lift][download][type] = "git"
-projects[acquia_lift][download][url] = "http://git.drupal.org/project/acquia_lift.git"
+projects[acquia_lift][download][url] = "https://github.com/acquia/acquia_lift.git"
 projects[acquia_lift][download][branch] = "7.x-2.x"
 projects[acquia_lift][subdir] = contrib
 

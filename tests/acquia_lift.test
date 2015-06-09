@@ -1303,7 +1303,7 @@ class AcquiaLiftWebTestReports extends AcquiaLiftWebTestBase {
 
   function testPerGoalReport() {
     AcquiaLiftAPI::setTestInstance();
-    $agent = $this->createTestAgent();
+    $agent = $this->createTestAgent(NULL, array(), 'acquia_lift');
     $this->resetAll();
     DummyAcquiaLiftHttpClient::clearLoggedRequests();
     // Call the conversion report specifying a particular goal.
@@ -1313,8 +1313,8 @@ class AcquiaLiftWebTestReports extends AcquiaLiftWebTestBase {
     $agent_name = $agent->getMachineName();
     $date = date('Y-m-d');
     // Confirm that the report requests made include the goal in the parameters.
-    $summary_url = "http://api.example.com/test-owner-code/$agent_name/report/confidence/$date/$date?features=&apikey=test-admin-key&confidence-measure=0.95&aggregated-over-dates=true&goal=user_login&policies=explore";
-    $detail_url = "http://api.example.com/test-owner-code/$agent_name/report/confidence/$date/$date?features=&apikey=test-admin-key&confidence-measure=0.95&aggregated-over-dates=false&goal=user_login&policies=explore";
+    $summary_url = "http://api.example.com/test-owner-code/$agent_name/report/confidence/$date/$date?features=(none)&apikey=test-admin-key&confidence-measure=0.95&aggregated-over-dates=true&goal=user_login";
+    $detail_url = "http://api.example.com/test-owner-code/$agent_name/report/confidence/$date/$date?features=(none)&apikey=test-admin-key&confidence-measure=0.95&aggregated-over-dates=false&goal=user_login";
     $this->assertEqual($summary_url, $requests[0]['uri']);
     $this->assertEqual($detail_url, $requests[1]['uri']);
   }

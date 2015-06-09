@@ -613,8 +613,8 @@ class AcquiaLiftReport implements AcquiaLiftReportInterface {
       }
 
     }
-    $this->loadConversionReportHelper('confidence_detail', FALSE, $goal);
-    $this->loadConversionReportHelper('confidence', TRUE, $goal);
+    $this->loadConversionReportHelper('confidence_detail', FALSE);
+    $this->loadConversionReportHelper('confidence', TRUE);
 
     $reports = $this->buildConversionReports(array(
       'name' => $report_name,
@@ -768,9 +768,7 @@ class AcquiaLiftReport implements AcquiaLiftReportInterface {
         return;
       }
     }
-    if (!isset($report_data['raw'][$report_name]['data'])) {
-      return;
-    }
+
     // Extract the data into full report data from the raw data.
     $detail_report[$subreport_name] = $aggregated ? $this->extractConversionSummaryData($report_name) : $this->extractConversionReportData($report_name);
   }

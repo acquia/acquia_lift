@@ -138,6 +138,28 @@ function acquia_lift_generate_ignore_selector() {
  */
 
 /**
+ * Helper function to get the types of handling available for multiple
+ * variation sets within the same campaign.
+ *
+ * @return array
+ *   An array for each type of variation type metadata.
+ *   - title: A title for te handling type
+ *   - description: A brief description
+ */
+function acquia_lift_multiple_variation_set_handling_ui() {
+  return array(
+    ACQUIA_LIFT_DECISION_LOCKSTEP => array(
+      'title' => t('Lock step'),
+      'description' => t('Use variation sets in Lock step if you want to test and target with a locked combination of variations. Each variation set should have the same number of variations so they can be evenly locked as combinations. Eg: AA, BB, CC.'),
+    ),
+    ACQUIA_LIFT_DECISION_MULTIVARIATE => array(
+      'title' => t('Multi-variate'),
+      'description' => t('Use multivariate variation sets when you want to test all possible combination of variations across your variation sets but are not interested in targeting them. You can have a different number of variations in each variation set. E.g. AA, AB, AC, BB, BC, CC.'),
+    ),
+  );
+}
+
+/**
  * Helper function to return a list of option set type metadata.
  *
  * @return array

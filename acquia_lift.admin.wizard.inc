@@ -57,6 +57,7 @@ function acquia_lift_personalize_campaign_wizard_variations_alter(&$form, &$form
   }
 
   module_load_include('inc', 'acquia_lift', 'acquia_lift.admin');
+  module_load_include('inc', 'acquia_lift', 'acquia_lift.ui');
   $editable = acquia_lift_target_definition_changes_allowed($agent_data);
   if (!$editable) {
     $form['variations']['#disabled'] = TRUE;
@@ -203,12 +204,15 @@ function acquia_lift_personalize_campaign_wizard_variations_alter(&$form, &$form
       'id' => 'acquia-lift-personalize-campaign-add-variation',
     ),
   );
+
+  $variation_set_handling_options = acquia_lift_multiple_variation_set_handling_ui();
+  $handling_type_options = array();
+  foreach ($variation_set_handling_options as $key => $handling) {
+    $handling_type_options[$key] = $handling['title'];
+  }
   $form['variations']['add_variation']['variation_set_handling'] = array(
     '#type' => 'radios',
-    '#options' => array(
-      ACQUIA_LIFT_DECISION_LOCKSTEP => t('Lock step'),
-      ACQUIA_LIFT_DECISION_MULTIVARIATE => t('Multi-variate')
-    ),
+    '#options' => $handling_type_options,
     '#theme' => 'acquia_lift_radio_list',
     '#attributes' => array(
       'autocomplete' => 'off',
@@ -220,8 +224,9 @@ function acquia_lift_personalize_campaign_wizard_variations_alter(&$form, &$form
       'method' => 'replace',
     ),
   );
-  $form['variations']['add_variation']['variation_set_handling'][ACQUIA_LIFT_DECISION_LOCKSTEP]['#description'] = t('Use variation sets in Lock step if you want to test and target with a locked combination of variations. Each variation set should have the same number of variations so they can be evenly locked as combinations. Eg: AA, BB, CC.');
-  $form['variations']['add_variation']['variation_set_handling'][ACQUIA_LIFT_DECISION_MULTIVARIATE]['#description'] = t('Use multivariate variation sets when you want to test all possible combination of variations across your variation sets but are not interested in targeting them. You can have a different number of variations in each variation set. E.g. AA, AB, AC, BB, BC, CC.');
+  foreach ($variation_set_handling_options as $key => $handling) {
+    $form['variations']['add_variation']['variation_set_handling'][$key]['#description'] = $handling['description'];
+  }
 
   // Once variation handling is selected (if necessary) then select the
   // type of option set to add.

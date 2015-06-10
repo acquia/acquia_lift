@@ -2445,11 +2445,11 @@ class AcquiaLiftWebTestTarget extends AcquiaLiftWebTestBase {
   }
 }
 
-class AcquiaLiftWebTestCampaignWizard extends AcquiaLiftWebTestBase {
+class AcquiaLiftWebTestCampaignWizardVariations extends AcquiaLiftWebTestBase {
   public static function getInfo() {
     return array(
-      'name' => t('Acquia Lift Web Tests - Personalization Wizard'),
-      'description' => t('Tests functionality related to the personalization management wizard.'),
+      'name' => t('Acquia Lift Web Tests - Personalization Wizard Variations'),
+      'description' => t('Tests functionality related to the personalization management wizard variation sets.'),
       'group' => t('Personalize'),
     );
   }
@@ -3027,6 +3027,21 @@ class AcquiaLiftWebTestCampaignWizard extends AcquiaLiftWebTestBase {
     $option_set = personalize_option_set_load($option_set->osid, TRUE);
     // The targeting should now have been saved to the option set.
     $this->assertFalse(empty($option_set->targeting['everyone-else']['osid']));
+  }
+}
+
+class AcquiaLiftWebTestCampaignWizard extends AcquiaLiftWebTestBase {
+  public static function getInfo() {
+    return array(
+      'name' => t('Acquia Lift Web Tests - Personalization Wizard - Others'),
+      'description' => t('Tests functionality related to the personalization management wizard all other tests (not variations).'),
+      'group' => t('Personalize'),
+    );
+  }
+
+  public function setUp() {
+    parent::setUp();
+    variable_set('acquia_lift_target_enabled', TRUE);
   }
 
   /**

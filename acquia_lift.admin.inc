@@ -183,6 +183,16 @@ function acquia_lift_admin_form($form, &$form_state) {
     '#description' => t('The number of variations selected by Acquia Lift for display to visitors before the personalization can be completed. Applies only to personalizations with the "End when personalization thresholds are reached" option selected.'),
     '#element_validate' => array('element_validate_number'),
   );
+  $form['acquia_lift_report_max_days'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Reporting history duration'),
+    '#size' => 3,
+    '#required' => TRUE,
+    '#default_value' => variable_get('acquia_lift_report_max_days', 14),
+    '#field_suffix' => t(' days'),
+    '#description' => t('The maximum number of days for which to show reporting history.'),
+    '#element_validate' => array('element_validate_integer_positive'),
+  );
   $form = system_settings_form($form);
   $form['#submit'][] = 'acquia_lift_admin_form_submit';
   return $form;
@@ -755,16 +765,8 @@ function acquia_lift_report_custom(&$form_state, $agent_data, $legacy = FALSE) {
   }
   $form['report_filters']['decision_point'] = acquia_lift_report_decision_point_dropdown($decision_options, $decision_point, $agent_name);
 
-  // Default to showing the complete history of the campaign.
-  $date_start_report = date('Y-m-d', $agent_data->started);
-  $date_end_report = $date_end_targeting = date('Y-m-d');
+  list($date_start_report, $date_end_report) = acquia_lift_get_report_dates_for_agent($agent_data);
 
-  // If the campaign's status is "completed" then we need to use the date it ended.
-  $agent_name = $agent->getMachineName();
-  $status = variable_get(_personalize_agent_get_status_variable($agent_name));
-  if ($status == PERSONALIZE_STATUS_COMPLETED && $end_time = personalize_agent_get_stop_date($agent_name)) {
-    $date_end_report = $date_end_targeting = date('Y-m-d', $end_time);
-  }
   // Conversion report filters.
   $selected_goal = empty($form_state['values']['goal']) ? NULL : $form_state['values']['goal'];
   $selected_metric = empty($form_state['values']['metric']) ? 'rate' : $form_state['values']['metric'];
@@ -988,6 +990,52 @@ function acquia_lift_report_conversion_metric_dropdown($selected) {
  */
 function acquia_lift_report_ajax_callback($form, &$form_state) {
   return $form;
+}
+
+/**
+ * Returns an array with start date and end date in Y-m-d format.
+ *
+ * @param $agent_data
+ *   The agent to get report dates for
+ * @return array
+ *   A two-element array, the first element of which is the start date in Y-m-d
+ *   format, the second of which is the end date in Y-m-d format.
+ */
+function acquia_lift_get_report_dates_for_agent($agent_data) {
+  // Default to showing the complete history of the campaign.
+  $start = $agent_data->started;
+  $end = time();
+  // If the campaign's status is "completed" then we need use the date it ended.
+  $status = variable_get(_personalize_agent_get_status_variable($agent_data->machine_name));
+  if ($status == PERSONALIZE_STATUS_COMPLETED && $end_time = variable_get(_personalize_agent_get_stoptime_variable($agent_data->machine_name), 0)) {
+    $end = $end_time;
+  }
+  // Ensure our time span is within the max number of days.
+  $start = acquia_lift_adjust_report_start_date($start, $end);
+  $date_start_report = date('Y-m-d', $start);
+  $date_end_report = date('Y-m-d', $end);
+  return array($date_start_report, $date_end_report);
+}
+
+/**
+ * Adjusts the start time so that the time interval is within the max.
+ *
+ * @param int $start
+ *   Timestamp representing the start date for the report.
+ * @param int $end
+ *   Timestamp representing the end date for the report.
+ * @return int
+ *   The adjusted start date as a timestamp.
+ */
+function acquia_lift_adjust_report_start_date($start, $end) {
+  $num_days = floor(($end - $start) / 86400);
+  $max_days = variable_get('acquia_lift_report_max_days', 14);
+  if ($num_days <= $max_days) {
+    return $start;
+  }
+  // Move the start date forward so that we are within the max.
+  $num_seconds = $max_days * 86400;
+  return $end - $num_seconds;
 }
 
 /**

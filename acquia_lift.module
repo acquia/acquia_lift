@@ -790,6 +790,12 @@ function acquia_lift_personalize_option_set_delete($option_set) {
   $agent = personalize_agent_load($option_set->agent);
   if (acquia_lift_is_targeting_agent($agent) && !empty($option_set->targeting)) {
     $option_sets = personalize_option_set_load_by_agent($option_set->agent, TRUE);
+    if (count($option_sets) <= 1 && !empty($agent->data['variation_set_handling'])) {
+      // Make sure that the variation set handling for multiple variations
+      // gets cleared out.
+      unset($agent->data['variation_set_handling']);
+      personalize_agent_save($agent);
+    }
     if (empty($option_sets)) {
       // Ensure any nested tests are deleted too
       foreach ($option_set->targeting as $target) {

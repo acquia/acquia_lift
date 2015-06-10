@@ -2712,7 +2712,13 @@ class AcquiaLiftWebTestCampaignWizardVariations extends AcquiaLiftWebTestBase {
     );
     $this->drupalPost(NULL, $edit, $this->getButton('wizard_element_navigate'));
     $this->assertNoText('You have specified an invalid path');
-    $this->assertUrl('http://www.google.com/');
+
+    // Adjust the current url to match expected URLs across environments.
+    $current_url = $this->url;
+    if (substr($current_url, -1) != '/') {
+      $current_url .= '/';
+    }
+    $this->assertEqual($current_url, 'http://www.google.com/');
 
     // Valid url by alias
     $this->drupalGet('admin/structure/personalize/manage/' . $agent->machine_name . '/variations');

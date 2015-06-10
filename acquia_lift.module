@@ -757,6 +757,7 @@ function acquia_lift_personalize_option_set_insert($option_set) {
   $goals = personalize_goal_load_by_conditions(array('agent' => $agent->machine_name));
   if (empty($goals)) {
     $js_id = personalize_stringify_osid($option_set->osid);
+    $selector = isset($option_set->data['personalize_elements_selector']) ? $option_set->data['personalize_elements_selector'] : '[data-personalize=' . $js_id . ']';
     $plugin = 'link';
     $action_label = t('Clicks @option_set', array('@option_set' => $option_set->label));
     $action_name = personalize_generate_machine_name($action_label, 'visitor_actions_machine_name_exists', '_');
@@ -766,7 +767,7 @@ function acquia_lift_personalize_option_set_insert($option_set) {
       'machine_name' => $action_name,
       'plugin' => $plugin,
       'client_side' => 1,
-      'identifier' => '[data-personalize=' . $js_id . ']',
+      'identifier' => $selector,
       'event' => 'click',
       'pages' => $pages,
       'data' => array(),

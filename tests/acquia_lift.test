@@ -2422,6 +2422,66 @@ class AcquiaLiftWebTestReports extends AcquiaLiftWebTestBase {
     $this->assertEqual($summary_url, $requests[0]['uri']);
     $this->assertEqual($detail_url, $requests[1]['uri']);
   }
+
+  public function testReportDates() {
+    $this->drupalLogin($this->managerUser);
+    AcquiaLiftAPI::setTestInstance();
+    $agents = array(
+      'first-agent' => array(
+        'num_options' => 2,
+        'num_days' => 12
+      ),
+      'second-agent' => array(
+        'num_options' => 2,
+        'num_days' => 30
+      ),
+    );
+    module_load_include('inc', 'acquia_lift', 'acquia_lift.admin');
+    $now = time();
+    foreach ($agents as $agent_name => &$agent_info) {
+      $agent_instance = $this->createTestAgent(array('name' => $agent_name), TRUE, FALSE);
+      $agent_name = $agent_instance->getMachineName();
+      $this->createOptionSet(0, array('plugin' => 'some_plugin', 'agent' => $agent_name, 'num_options' => $agent_info['num_options']));
+      personalize_goal_save($agent_name, 'user_login', 1);
+      variable_set(_personalize_agent_get_status_variable($agent_name), PERSONALIZE_STATUS_RUNNING);
+      $agent = personalize_agent_load($agent_name);
+      $started = $now;
+      $agent->started = $started - ($agent_info['num_days'] * 86400);
+      personalize_agent_save($agent);
+      $agent_info['report_dates'] = acquia_lift_get_report_dates_for_agent($agent);
+    }
+
+    // Now check that the report dates are properly adjusted for each agent.
+
+    // The first agent should show the complete history, i.e. 12 days.
+    $this->assertEqual(array(
+      date('Y-m-d', $now - (12 * 86400)),
+      date('Y-m-d', $now),
+    ), $agents['first-agent']['report_dates']);
+    // The second agent has been runnign for 60 days but should only show 14.
+    $this->assertEqual(array(
+      date('Y-m-d', $now - (14 * 86400)),
+      date('Y-m-d', $now),
+    ), $agents['second-agent']['report_dates']);
+
+    // Now set the max days to 30 instead of 14.
+    variable_set('acquia_lift_report_max_days', 30);
+    $this->resetAll();
+    foreach ($agents as $agent_name => &$agent_info) {
+      $agent = personalize_agent_load($agent_name);
+      $agent_info['report_dates'] = acquia_lift_get_report_dates_for_agent($agent);
+    }
+    // The first agent should still show the complete history, i.e. 12 days.
+    $this->assertEqual(array(
+      date('Y-m-d', $now - (12 * 86400)),
+      date('Y-m-d', $now),
+    ), $agents['first-agent']['report_dates']);
+    // The second agent should now also show the complete history, i.e. 30 days.
+    $this->assertEqual(array(
+      date('Y-m-d', $now - (30 * 86400)),
+      date('Y-m-d', $now),
+    ), $agents['second-agent']['report_dates']);
+  }
 }
 
 class AcquiaLiftWebTestWorkflow extends AcquiaLiftWebTestBase {

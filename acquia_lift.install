@@ -78,6 +78,7 @@ function acquia_lift_uninstall() {
     'acquia_lift_min_runtime_num',
     'acquia_lift_min_runtime_unit',
     'acquia_lift_min_decisions',
+    'acquia_lift_report_max_days',
   );
   foreach ($vars as $var) {
     variable_del($var);

@@ -44,7 +44,7 @@ class AcquiaLiftWebTestBase extends DrupalWebTestCase
     require_once(dirname(__FILE__) . '/../includes/acquia_lift.classes.inc');
     require_once(dirname(__FILE__) . '/acquia_lift.test_classes.inc');
 
-    parent::setUp(array('ctools', 'personalize', 'acquia_lift', 'personalize_blocks', 'personalize_test'));
+    parent::setUp(array('ctools', 'personalize', 'acquia_lift', 'personalize_blocks'));
 
     $this->adminUser = $this->drupalCreateUser(array('access administration pages', 'administer personalize configuration'));
 
@@ -56,6 +56,7 @@ class AcquiaLiftWebTestBase extends DrupalWebTestCase
       'api_key' => $this->liftAPIKey,
       'admin_key' => $this->liftAdminKey,
     ));
+    ALProfilesAPI::setTestInstance();
   }
 
   public function tearDown()
@@ -77,6 +78,9 @@ class AcquiaLiftWebTestBase extends DrupalWebTestCase
         'explore_rate' => 20,
         'cache_decisions' => 1
       );
+    }
+    else {
+      module_enable(array('personalize_test'));
     }
 
     if (empty($label)) {

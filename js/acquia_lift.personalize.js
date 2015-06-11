@@ -1574,6 +1574,57 @@
   });
 
   /**
+   * A view for the "Add a variation set" link.
+   *
+   * This is responsible for dynamically updating the link to include
+   * the current campaign.
+   *
+   * It receives the campaign collection as the "collection" in the initialize
+   * function.  The model is always set to the currently active campaign.
+   */
+  Drupal.acquiaLiftUI.MenuVariationSetAddView = ViewBase.extend({
+    /**
+     * {@inheritDoc}
+     */
+    initialize: function (options) {
+      // Set the base URL (which will not include a campaign).
+      this.baseUrl = this.$el.attr('href');
+      if (this.baseUrl[this.baseUrl.length - 1] != '/') {
+        this.baseUrl += '/';
+      }
+
+      this.collection = options.collection;
+
+      this.listenTo(this.collection, 'change:isActive', this.onActiveCampaignChange);
+      // Call the campaign change function to initialize the first campaign.
+      this.onActiveCampaignChange(this.collection.findWhere({'isActive': true}));
+    },
+
+    /**
+     * Event listener for when the currently active campaign has been changed.
+     *
+     * Responsible for setting the active campaign as the current model.
+     *
+     * @param changed
+     */
+    onActiveCampaignChange: function (changed) {
+      this.model = changed;
+      this.render();
+    },
+
+    /**
+     * {@inheritDoc}
+     */
+    render: function() {
+      if (!this.model) {
+        return;
+      }
+      // Update the link
+      this.$el.attr('href', this.baseUrl + this.model.get('name'));
+    }
+  });
+
+  /**
    * A "view" for the variation preview.
    *
    * This does not map to a specific
@@ -2323,6 +2374,14 @@
               }
             }
           });
+        });
+
+        // Add a view to the "Add variation set" link.
+        $('#acquia-lift-menu-option-set-add').once('acquia-lift-personalize-menu-add-variation-set', function() {
+          ui.views.push(new ui.MenuVariationSetAddView({
+            el: this,
+            collection: ui.collections.campaigns
+          }))
         });
 
         // Add the "Add a goal" functionality.

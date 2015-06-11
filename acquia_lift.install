@@ -270,7 +270,6 @@ function _acquia_lift_build_menu($menu_name) {
         'id' => 'acquia-lift-menu-option-set-add',
       ),
       'html' => FALSE,
-      'fragment' => 'content-variations',
     ),
     'expanded' => 1,
     'weight' => 3,

@@ -173,6 +173,14 @@
           });
         });
 
+        // Add a view to the "Add variation set" link.
+        $('#acquia-lift-menu-option-set-add').once('acquia-lift-personalize-menu-add-variation-set', function() {
+          ui.views.push(new ui.MenuVariationSetAddView({
+            el: this,
+            collection: ui.collections.campaigns
+          }))
+        });
+
         // Add the "Add a goal" functionality.
         $('.acquia-lift-goals-new').once('acquia-lift-personalize-menu-add-goal', function() {
           ui.views.push(new ui.MenuGoalAddView({

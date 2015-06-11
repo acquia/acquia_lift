@@ -1109,19 +1109,28 @@ function acquia_lift_personalize_campaign_wizard_review_validate(&$form, &$form_
 function acquia_lift_personalize_campaign_wizard_submit(&$form, &$form_state) {
   module_load_include('inc', 'personalize', 'personalize.admin');
   module_load_include('inc', 'personalize', 'personalize.admin.campaign');
+  module_load_include('inc', 'acquia_lift', 'acquia_lift.admin');
 
-  // Run the base submit form handling.
-  $agent_data = personalize_campaign_wizard_submit_base($form, $form_state);
-  $agent_instance = personalize_agent_load_agent($agent_data->machine_name);
+  // Only allow edit submit handlers to run if changes are allowed.
+  $agent_data = $form['#agent'];
+  if (acquia_lift_target_definition_changes_allowed($agent_data)) {
 
-  // Call any step-specific submission handlers.
-  $submit_function = 'acquia_lift_personalize_campaign_wizard_' . $form_state['storage']['step'] . '_submit';
-  if (function_exists($submit_function)) {
-    $submit_function($form, $form_state, $agent_data, $agent_instance);
+    // Run the base submit form handling.
+    $agent_data = personalize_campaign_wizard_submit_base($form, $form_state);
+    $agent_instance = personalize_agent_load_agent($agent_data->machine_name);
+
+    // Call any step-specific submission handlers.
+    $submit_function = 'acquia_lift_personalize_campaign_wizard_' . $form_state['storage']['step'] . '_submit';
+    if (function_exists($submit_function)) {
+      $submit_function($form, $form_state, $agent_data, $agent_instance);
+    }
+
+    // Save any changes to the campaign.
+    personalize_agent_save($agent_data);
   }
-
-  // Save any changes to the campaign.
-  personalize_agent_save($agent_data);
+  else {
+    $agent_instance = personalize_agent_load_agent($agent_data->machine_name);
+  }
 
   // If the subform submit handlers didn't already set a redirect, then set the
   // next step and rebuild the form.

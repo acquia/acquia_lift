@@ -33,14 +33,14 @@ Feature: Goals can be edited and managed for an Acquia Lift campaign from toolba
     When I click "New page goal" in the "modal_content" region
     And I wait for AJAX to finish
     When I select "scrolls to the bottom of" from "Event"
-    Then I should see the text "Offset from bottom" in the "modal_content" region
-    And I should not see the text "Time in seconds" in the "modal_content" region
+    Then I should see the text "pixels of the bottom" in the "modal_content" region
+    And I should not see the text "Trigger action after" in the "modal_content" region
     When I select "stays for longer than the specified time on" from "Event"
-    Then I should see the text "Time in seconds" in the "modal_content" region
-    And I should not see the text "Offset from bottom" in the "modal_content" region
+    Then I should see the text "Trigger action after" in the "modal_content" region
+    And I should not see the text "pixels of the bottom" in the "modal_content" region
     When I select "views" from "Event"
-    Then I should not see the text "Time in seconds" in the "modal_content" region
-    And I should not see the text "Offset from bottom" in the "modal_content" region
+    Then I should not see the text "Trigger action after" in the "modal_content" region
+    And I should not see the text "pixels of the bottom" in the "modal_content" region
     When I fill in "Test goal #1" for "Title"
     And I press "Add goal"
 

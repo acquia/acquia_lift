@@ -112,6 +112,73 @@ Feature: Personalize elements variations can be edited for an existing campaign.
     And I should visibly see the link "Variation #3" in the "lift_tray" region
     And I should not visibly see the link "Variation #4" in the "lift_tray" region
 
+  Scenario: Add multiple variation sets to the same campaign.
+    # I have a campaign and a variation set.
+    # I login wih the marketer role.
+    # I am on an article page.
+    Given "acquia_lift_target" agents:
+      | machine_name                         | label                                |
+      | testing-campaign-multiple-variations | Testing campaign multiple variations |
+    And personalized elements:
+      | label              | agent                                | selector    | type     | content                                  |
+      | Better page title  | testing-campaign-multiple-variations | #page-title | editText | I hope that something better comes along |
+    And I am logged in as a user with the "access administration pages,access toolbar,administer visitor actions,manage personalized content" permission
+    And I am viewing an "Article" content:
+      | title | Boring test article title |
+    When I click "Acquia Lift" in the "menu" region
+    Then I should visibly see the link "Personalizations" in the "lift_tray" region
+
+    # I open the variation set's menu.
+    When I hover over "Personalizations" in the "lift_tray" region
+    And I click "Testing campaign multiple variations" in the "lift_tray" region
+    Then I should visibly see the link "What" in the "lift_tray" region
+    And I should see "1" for the "variation set" count
+
+    # I bring up the add variation set interface.
+    When I hover over "What" in the "lift_tray" region
+    Then I should visibly see the link "Add variation set" in the "lift_tray" region
+    When I click "Add variation set"
+    Then I should see the modal with title "Add a variation set: multiple set handling"
+    And I should visibly see the link "Lock step" in the "modal_content" region
+    And I should visibly see the link "Multi-variate" in the "modal_content" region
+
+    # I select "Lock step" handling and create the second variation set.
+    When I click "Lock step" in the "modal_content" region
+    Then I should see the modal with title "Add a variation set"
+    And I should visibly see the link "Webpage elements" in the "modal_content" region
+    And I should visibly see the link "Drupal blocks" in the "modal_content" region
+
+    # I create a second variation set
+    When I click "Webpage elements" in the "modal_content" region
+    Then I should not see the modal
+
+    When I click "#page-title" element in the "page_content" region
+    Then I should see the text "<H1>" in the "dialog_variation_type" region
+    When I click "Add CSS class" in the "dialog_variation_type" region
+    Then I should not see the variation type dialog
+    And I should see the text "Add CSS class: <H1>" in the "dialog_variation_type_form" region
+    And the "title" field should contain "Variation set #2"
+    And the "option_label" field should contain "Variation #1"
+    When I fill in "rowlf" for "personalize_elements_content"
+    And I press "Save" in the "dialog_variation_type_form" region
+
+    # I verify my variation set is created.
+    Then I should see the message "The variation set has been created." in the messagebox
+    Then I should not see the variation type form dialog
+    And I should see "2" for the "variation set" count
+
+    # Adding a third variation set skips the variation type handling.
+    When I hover over "What" in the "lift_tray" region
+    Then I should visibly see the link "Add variation set" in the "lift_tray" region
+    When I click "Add variation set"
+    Then I should see the modal with title "Add a variation set"
+    And I should visibly see the link "Webpage elements" in the "modal_content" region
+    And I should visibly see the link "Drupal blocks" in the "modal_content" region
+
+    # I navigate to the campaign page to verify variation type handling.
+    When I am on "admin/structure/personalize/manage/testing-campaign-multiple-variations/variations"
+    Then I should see the text "Variation sets (Lock step)" in the "page_content" region
+
   Scenario: Edit existing personalize elements for an acquia_lift campaign.
     # I have a campaign and a variation set.
     # I login with the marketer role.

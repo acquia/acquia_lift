@@ -6,7 +6,7 @@ api = 2
 core = 7.x
 
 projects[drupal][type] = core
-projects[drupal][version] = "7.34"
+projects[drupal][version] = "7.37"
 
 ; Modules =====================================================================
 
@@ -33,6 +33,12 @@ projects[acquia_lift][download][type] = "git"
 projects[acquia_lift][download][url] = "https://github.com/acquia/acquia_lift.git"
 projects[acquia_lift][download][branch] = "7.x-2.x"
 projects[acquia_lift][subdir] = contrib
+
+
+; Contrib module: acquia_connector
+; ---------------------------------------
+projects[acquia_connector][subdir] = contrib
+projects[acquia_connector][version] = 2.15
 
 ; Contrib module: ctools
 ; ---------------------------------------

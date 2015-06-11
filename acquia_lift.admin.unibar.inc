@@ -368,17 +368,90 @@ function acquia_lift_element_variation_details_form_ajax_callback($form, &$form_
 /**
  * Page callback to create a new option set.
  *
- * @param string $agent_name
- *   The machine name of the current camaign.
  * @param string $ajax
  *   Indicates if request is from 'ajax' or 'nojs' support.
+ * @param stdClass $agent_data
+ *   The current campaign to which to add the variation set.
  */
-function acquia_lift_option_set_add_modal_callback($ajax) {
+function acquia_lift_option_set_add_modal_callback($ajax, $agent_data) {
   if (!$ajax) {
     drupal_goto('admin/structure/personalize');
     return;
   }
+  // If this is not a targeting agent, then proceed to selecting the option
+  // set type.
+  if (!acquia_lift_is_targeting_agent($agent_data)) {
+    acquia_lift_option_set_type_modal();
+    return;
+  }
+  // If it is targeting, then determine if multiple variation set handling
+  // needs to be determined.
+  $option_sets = personalize_option_set_load_by_agent($agent_data->machine_name);
+  if (count($option_sets) > 0 && empty($agent_data->data['variation_set_handling'])) {
+    // This will create a multiple variation set handling scenario and the user
+    // has not yet specified how to handle it for this campaign.
+    acquia_lift_multiple_variation_set_handling_modal($agent_data);
+  }
+  else {
+    // Select the type of variation set to create.
+    acquia_lift_option_set_type_modal();
+  }
+}
 
+/**
+ * Displays a modal window that allows the user to indicate how to handle
+ * multiple variation sets for the current campaign.
+ *
+ * @param stdClass $agent_data
+ *   The current campaign to which to add the variation set.
+*/
+function acquia_lift_multiple_variation_set_handling_modal($agent_data) {
+  // Show the modal to select the type of handling for multiple variation sets.
+  ctools_include('modal');
+  ctools_modal_add_js();
+
+  module_load_include('inc', 'acquia_lift', 'acquia_lift.ui');
+  $types = acquia_lift_multiple_variation_set_handling_ui();
+  foreach ($types as $key => &$type) {
+    $type['modal'] = TRUE;
+    $type['ctools_style'] = 'ctools-modal-acquia-lift-style';
+    $type['path'] = 'admin/structure/acquia_lift/variations/multiple/' . $agent_data->machine_name . '/' . $key;
+  }
+
+  $output = theme('acquia_lift_type_list', array(
+    'id' => 'acquia-lift-variation-set-handling-list',
+    'items' => $types,
+  ));
+  ctools_modal_render(t('Add a variation set: multiple set handling'), $output);
+}
+
+/**
+ * Save the preference for multiple variation set handling for a campaign and
+ * then show the next step to add a new variation set.
+ *
+ * @param $agent_data
+ *   The current campaign to which to add the variation set.
+ * @param $variation_set_handling
+ *   The type of handling for multiple variations, lock step or mvt.
+ */
+function acquia_lift_multiple_variation_set_handling_save_callback($agent_data, $variation_set_handling) {
+  // Make sure the indicated type is valid.
+  if (in_array($variation_set_handling, array(ACQUIA_LIFT_DECISION_LOCKSTEP, ACQUIA_LIFT_DECISION_MULTIVARIATE))) {
+    $agent_data->data['variation_set_handling'] = $variation_set_handling;
+    personalize_agent_save($agent_data);
+    acquia_lift_option_set_type_modal();
+  }
+  else {
+    // If not valid, allow the user to select it again.
+    acquia_lift_multiple_variation_set_handling_modal($agent_data);
+  }
+}
+
+/**
+ * Displays a modal window that allows the user to indicate what type of
+ * variation set to create.
+ */
+function acquia_lift_option_set_type_modal() {
   // Show the option set type selection form in a modal.
   ctools_include('modal');
   ctools_modal_add_js();
@@ -394,7 +467,7 @@ function acquia_lift_option_set_add_modal_callback($ajax) {
     'id' => 'acquia-lift-option-set-type-list',
     'items' => $types,
   ));
-  return ctools_modal_render(t('Add a variation set'), $output);
+  ctools_modal_render(t('Add a variation set'), $output);
 }
 
 /***************************************************************

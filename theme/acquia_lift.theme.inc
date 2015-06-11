@@ -286,7 +286,9 @@ function theme_acquia_lift_type_list($variables) {
   $html .= ' class="acquia-lift-type-list">';
   foreach ($items as $typestr => $type) {
     $html .= '<div class="acquia-lift-type clearfix">';
-    $html .= '<div class="acquia-lift-type-logo">' . $type['logo'] . '</div>';
+    if (!empty($type['logo'])) {
+      $html .= '<div class="acquia-lift-type-logo">' . $type['logo'] . '</div>';
+    }
     $html .= '<div class="acquia-lift-type-title">';
     $url_options = isset($type['url_options']) ? $type['url_options'] : array();
     if (!empty($type['modal'])) {

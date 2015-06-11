@@ -72,11 +72,20 @@ function acquia_lift_menu() {
     'theme callback' => 'ajax_base_page_theme',
   );
   // AJAX callback to add a new variation set to a campaign.
-  $items['admin/structure/acquia_lift/variations/add/%ctools_js'] = array(
+  $items['admin/structure/acquia_lift/variations/add/%ctools_js/%personalize_agent'] = array(
     'page callback' => 'acquia_lift_option_set_add_modal_callback',
-    'page arguments' => array(5),
+    'page arguments' => array(5, 6),
     'access arguments' => array('manage personalized content'),
     'type' => MENU_CALLBACK,
+    'file' => 'acquia_lift.admin.unibar.inc',
+    'theme callback' => 'ajax_base_page_theme',
+  );
+  // AJAX callback to set multiple variation set handling when adding.
+  $items['admin/structure/acquia_lift/variations/multiple/%personalize_agent/%'] = array(
+    'page callback' => 'acquia_lift_multiple_variation_set_handling_save_callback',
+    'page arguments' => array(5, 6),
+    'access callback' => 'acquia_lift_target_access',
+    'access arguments' => array(5),
     'file' => 'acquia_lift.admin.unibar.inc',
     'theme callback' => 'ajax_base_page_theme',
   );

@@ -2848,6 +2848,11 @@ class AcquiaLiftWebTestCampaignWizardVariations extends AcquiaLiftWebTestBase {
    * Target agents.
    */
   function testAudienceAvailability() {
+    // For this test we need to delete the tags vocabulary because otherwise it
+    // will show up as an available context via personalize_taxonomy_context.
+    $tags_vocab = taxonomy_vocabulary_machine_name_load('tags');
+    taxonomy_vocabulary_delete($tags_vocab->vid);
+    $this->resetAll();
     $target_agent_data = $this->createTargetingAgent();
 
     $target_name = $target_agent_data->machine_name;

@@ -67,6 +67,11 @@ function acquia_lift_personalize_campaign_wizard_variations_alter(&$form, &$form
   if (!$editable) {
     $form['variations']['#disabled'] = TRUE;
   }
+
+  $variation_set_handling = ACQUIA_LIFT_DECISION_LOCKSTEP;
+  /**
+   * Temporarily setting all variation set handling to lock step.
+   * See https://www.drupal.org/node/2505247
   $variation_set_handling = '';
   if (!empty($form_state['values']['variations']['add_variation']['variation_set_handling'])) {
     $variation_set_handling = $form_state['values']['variations']['add_variation']['variation_set_handling'];
@@ -79,7 +84,7 @@ function acquia_lift_personalize_campaign_wizard_variations_alter(&$form, &$form
   }
   else if (isset($agent_data->data['variation_set_handling'])) {
     $variation_set_handling = $agent_data->data['variation_set_handling'];
-  }
+  }*/
   // Set the option set type into storage to allow persistence across
   // multiple form call-backs.
   if (!empty($form_state['values']['variations']['add_variation']['option_set_type'])) {
@@ -98,10 +103,13 @@ function acquia_lift_personalize_campaign_wizard_variations_alter(&$form, &$form
 
   // If this campaign already handles multiple variation sets then indicate
   // the type of handling in the section title.
+  /* No need to indicate type currently until multi-variate is added back in.
+   * See https://www.drupal.org/node/2505247
   if (count($option_sets) > 1 && !empty($variation_set_handling)) {
     $variation_set_indicator = $variation_set_handling == ACQUIA_LIFT_DECISION_LOCKSTEP ? t('Lock step') : t('Multi-variate');
     $form['variations']['title']['#title'] .= ' (' . $variation_set_indicator . ')';
   }
+  */
 
   // Make a container to hold existing option sets.
   if (!empty($option_sets)) {
@@ -257,8 +265,16 @@ function acquia_lift_personalize_campaign_wizard_variations_alter(&$form, &$form
   // If adding the second option set then the user needs to indicate if it is
   // to be a multi-variate or lock-step campaign so hide the option set type
   // until ready for it.
+  // NOTE:  This feature is temporarily unavailable via the UI.  For the time
+  // being, all multiple variation set campaigns will be considered lock step.
+  // See https://www.drupal.org/node/2505247
   if (empty($agent_data->data['locked_for_variation_sets']) && count($option_sets) == 1 && empty($form_state['storage']['acquia_lift_variation_set_handling'])) {
-    $form['variations']['add_variation']['option_set_type']['#attributes']['class'][] = 'element-hidden';
+    //$form['variations']['add_variation']['option_set_type']['#attributes']['class'][] = 'element-hidden';
+    $form['variations']['add_variation']['variation_set_handling'] = array(
+      '#type' => 'value',
+      '#value' => ACQUIA_LIFT_DECISION_LOCKSTEP,
+    );
+    $form_state['storage']['acquia_lift_variation_set_handling'] = ACQUIA_LIFT_DECISION_LOCKSTEP;
   }
   else if (empty($form_state['storage']['acquia_lift_option_set_type'])) {
     // If the user has just selected the variation set handling, then expand

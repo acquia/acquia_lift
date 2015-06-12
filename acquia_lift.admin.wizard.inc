@@ -1408,7 +1408,9 @@ function acquia_lift_personalize_campaign_wizard_status_submit($form, &$form_sta
   $agent_data = personalize_agent_load($form_state['values']['agent_name']);
   module_load_include('inc', 'acquia_lift', 'acquia_lift.admin');
   if (!acquia_lift_target_set_status($agent_data, $next_status)) {
-    form_set_error(NULL, t('There was a problem implementing the personalization as defined.'));
+    drupal_set_message(t('There was a problem implementing the personalization as defined.  Please check the <a href="!review_url">review section</a> for more details.',array(
+      '!review_url' => url('admin/structure/personalize/manage/' . $agent_data->machine_name . '/review'),
+    )), 'error');
   }
 }
 

@@ -379,7 +379,8 @@ class AcquiaLiftWebTestBase extends DrupalWebTestCase
           $agent_instance = personalize_agent_load_agent($context['agent_name']);
         }
         $steps = _personalize_campaign_wizard_steps($agent_instance);
-        $next_info = $steps[$context['next_step']];
+        $next_step = _personalize_campaign_wizard_next_step(array('storage' => array('step' => $context['step'])), $agent_instance);
+        $next_info = $steps[$next_step];
         $button_text = 'Next: ' . $next_info['preview_message'];
         return t($button_text);
       case 'wizard_save':
@@ -2157,7 +2158,7 @@ class AcquiaLiftWebTestTarget extends AcquiaLiftWebTestBase {
     $nested_os = personalize_option_set_load_by_agent($nested_agent_name, TRUE);
     $this->assertEqual(0, count($nested_os));
   }
-  
+
   /**
    * Tests which components of a campaign are editable when the depending on
    * agent status.
@@ -2630,7 +2631,7 @@ class AcquiaLiftWebTestCampaignWizardVariations extends AcquiaLiftWebTestBase {
       'variations[add_variation][details][block][content][pblock_wrapper][blocks][0][block][bid]' => 'comment_delta_recent',
       'variations[add_variation][details][block][content][pblock_wrapper][blocks][1][block][bid]' => 'node_delta_recent',
     );
-    $this->drupalPost(NULL, $edit, $this->getButton('wizard_next', array('agent_name' => $agent->machine_name, 'next_step' => 'goals')));
+    $this->drupalPost(NULL, $edit, $this->getButton('wizard_next', array('agent_name' => $agent->machine_name, 'step' => 'variations')));
 
     $option_sets = personalize_option_set_load_by_agent($agent->machine_name);
     $this->assertEqual(count($option_sets), 1);
@@ -2647,8 +2648,8 @@ class AcquiaLiftWebTestCampaignWizardVariations extends AcquiaLiftWebTestBase {
     $this->resetAll();
     $this->drupalGet('admin/structure/personalize/manage/' . $agent->machine_name . '/variations');
     $this->assertFieldByName('variations[option_sets][option_set_1][content][title]', 'Muppets');
-    $this->assertOptionSelected('edit-variations-option-sets-option-set-1-content-pblock-wrapper-blocks-0-block-bid', 'comment_delta_recent');
-    $this->assertOptionSelected('edit-variations-option-sets-option-set-1-content-pblock-wrapper-blocks-1-block-bid', 'node_delta_recent');
+    $this->assertOptionSelected('personalize-block-1-0', 'comment_delta_recent');
+    $this->assertOptionSelected('personalize-block-1-1', 'node_delta_recent');
 
     // Edit the variation set title change the second block to a new block
     // created inline.
@@ -2660,7 +2661,7 @@ class AcquiaLiftWebTestCampaignWizardVariations extends AcquiaLiftWebTestBase {
       'variations[option_sets][option_set_1][content][pblock_wrapper][blocks][1][block][add][info]' => 'Piggy',
       'variations[option_sets][option_set_1][content][pblock_wrapper][blocks][1][block][add][body][value]' => 'complicated',
     );
-    $this->drupalPost(NULL, $edit, $this->getButton('wizard_next', array('agent_name' => $agent->machine_name, 'next_step' => 'goals')));
+    $this->drupalPost(NULL, $edit, $this->getButton('wizard_next', array('agent_name' => $agent->machine_name, 'step' => 'variations')));
 
     $option_sets = personalize_option_set_load_by_agent($agent->machine_name, TRUE);
     $this->assertEqual(count($option_sets), 1);
@@ -2679,12 +2680,12 @@ class AcquiaLiftWebTestCampaignWizardVariations extends AcquiaLiftWebTestBase {
       'variations[option_sets][option_set_1][advanced][preview_link]' => 'invalid url',
       'variations[option_sets][option_set_1][advanced][executor]' => 'callback',
     );
-    $this->drupalPost(NULL, $edit, $this->getButton('wizard_next', array('agent_name' => $agent->machine_name, 'next_step' => 'goals')));
+    $this->drupalPost(NULL, $edit, $this->getButton('wizard_next', array('agent_name' => $agent->machine_name, 'step' => 'variations')));
 
     $this->assertText('You have specified an invalid path');
     $edit['variations[option_sets][option_set_1][advanced][preview_link]'] = '<front>';
 
-    $this->drupalPost(NULL, $edit, $this->getButton('wizard_next', array('agent_name' => $agent->machine_name, 'next_step' => 'goals')));
+    $this->drupalPost(NULL, $edit, $this->getButton('wizard_next', array('agent_name' => $agent->machine_name, 'step' => 'variations')));
 
     $option_sets = personalize_option_set_load_by_agent($agent->machine_name, TRUE);
     $this->assertEqual(count($option_sets), 1);
@@ -2918,7 +2919,7 @@ class AcquiaLiftWebTestCampaignWizardVariations extends AcquiaLiftWebTestBase {
       'audiences[add][details][mapping][contexts][0][value][operator]' => 'equals',
       'audiences[add][details][strategy]' => 'OR',
     );
-    $this->drupalPost(NULL, $edit, $this->getButton('wizard_next', array('next_step' => 'scheduling')));
+    $this->drupalPost(NULL, $edit, $this->getButton('wizard_next', array('agent_name' => $first_agent->machine_name, 'step' => 'targeting')));
 
     $this->drupalGet('admin/structure/personalize/manage/' . $first_agent->machine_name . '/targeting');
 
@@ -2936,7 +2937,7 @@ class AcquiaLiftWebTestCampaignWizardVariations extends AcquiaLiftWebTestBase {
       'audiences[add][details][mapping][contexts][0][value][operator]' => 'equals',
       'audiences[add][details][mapping][contexts][0][value][match]' => 'Sad people',
     );
-    $this->drupalPost(NULL, $edit, $this->getButton('wizard_next', array('next_step' => 'scheduling')));
+    $this->drupalPost(NULL, $edit, $this->getButton('wizard_next', array('agent_name' => $first_agent->machine_name, 'step' => 'targeting')));
 
     $this->drupalGet('admin/structure/personalize/manage/' . $first_agent->machine_name . '/targeting');
 
@@ -2957,7 +2958,7 @@ class AcquiaLiftWebTestCampaignWizardVariations extends AcquiaLiftWebTestBase {
       'audiences[muppet-fans][details][weight]' => 50,
       'audiences[others][details][weight]' => 75,
     );
-    $this->drupalPost(NULL, $edit, $this->getButton('wizard_next', array('next_step' => 'scheduling')));
+    $this->drupalPost(NULL, $edit, $this->getButton('wizard_next', array('agent_name' => $first_agent->machine_name, 'step' => 'targeting')));
     $this->drupalGet('admin/structure/personalize/manage/' . $first_agent->machine_name . '/targeting');
     $option_set = acquia_lift_get_option_set_for_targeting($first_agent->machine_name);
     $this->assertEqual($option_set->targeting['muppet-fans']['weight'], 50);
@@ -2968,7 +2969,7 @@ class AcquiaLiftWebTestCampaignWizardVariations extends AcquiaLiftWebTestBase {
       'audiences[muppet-fans][details][weight]' => 5,
       'audiences[others][details][weight]' => 0,
     );
-    $this->drupalPost(NULL, $edit, $this->getButton('wizard_next', array('next_step' => 'scheduling')));
+    $this->drupalPost(NULL, $edit, $this->getButton('wizard_next', array('agent_name' => $first_agent->machine_name, 'step' => 'targeting')));
     $this->resetAll();
     $option_set = acquia_lift_get_option_set_for_targeting($first_agent->machine_name);
     $this->assertEqual($option_set->targeting['muppet-fans']['weight'], 5);
@@ -2998,7 +2999,7 @@ class AcquiaLiftWebTestCampaignWizardVariations extends AcquiaLiftWebTestBase {
       'audiences[others][assignment_order]' => $option_id_3,
       'audiences[everyone-else][assignment_order]' => $option_id_1,
     );
-    $this->drupalPost(NULL, $edit, $this->getButton('wizard_next', array('next_step' => 'scheduling')));
+    $this->drupalPost(NULL, $edit, $this->getButton('wizard_next', array('agent_name' => $first_agent->machine_name, 'step' => 'targeting')));
     // The targeting should be saved in the agent property.
     $first_agent = personalize_agent_load($first_agent->machine_name, TRUE);
     $expected_agent_targeting = array(
@@ -3036,7 +3037,7 @@ class AcquiaLiftWebTestCampaignWizardVariations extends AcquiaLiftWebTestBase {
     $edit = array(
       'audiences[muppet-fans][assignment_order]' => $option_id_2,
     );
-    $this->drupalPost(NULL, $edit, $this->getButton('wizard_next', array('next_step' => 'scheduling')));
+    $this->drupalPost(NULL, $edit, $this->getButton('wizard_next', array('agent_name' => $first_agent->machine_name, 'step' => 'targeting')));
     $this->drupalGet('admin/structure/personalize/manage/' . $first_agent->machine_name . '/targeting');
     $this->assertText('The targeting settings shown here do not match what is currently implemented for this personalization.');
     $this->assertNoText('The targeting settings shown here represent what is currently implemented for this personalization.');
@@ -3092,7 +3093,7 @@ class AcquiaLiftWebTestCampaignWizardVariations extends AcquiaLiftWebTestBase {
 
     // Adjust the weights and verify that the "Everyone else" has the highest.
     module_load_include('inc', 'acquia_lift', 'acquia_lift.admin');
-    $this->drupalPost('admin/structure/personalize/manage/' . $first_agent->machine_name . '/targeting', array(), $this->getButton('wizard_next', array('next_step' => 'scheduling')));
+    $this->drupalPost('admin/structure/personalize/manage/' . $first_agent->machine_name . '/targeting', array(), $this->getButton('wizard_next', array('agent_name' => $first_agent->machine_name, 'step' => 'targeting')));
 
     // The targeting should be saved in the agent property.
     $first_agent = personalize_agent_load($first_agent->machine_name, TRUE);
@@ -3281,10 +3282,6 @@ class AcquiaLiftWebTestCampaignWizard extends AcquiaLiftWebTestBase {
       'num_options' => 2,
     ));
 
-    // Adjust the weights and verify that the "Everyone else" has the highest.
-    module_load_include('inc', 'acquia_lift', 'acquia_lift.admin');
-    $this->drupalPost('admin/structure/personalize/manage/' . $agent->machine_name . '/targeting', array(), $this->getButton('wizard_next', array('next_step' => 'scheduling', array('next_step' => 'scheduling'))));
-
     // Delete the goal that was created in order to force the agent to be in a
     // state that is not ready to start.
     $this->drupalGet('admin/structure/personalize/manage/' . $agent->machine_name . '/goals');
@@ -3362,7 +3359,7 @@ class AcquiaLiftWebTestCampaignWizard extends AcquiaLiftWebTestBase {
       'campaign_start_date[day]' => date('d', $start_date),
       'campaign_start_date[year]' => date('Y', $start_date),
     );
-    $this->drupalPost(NULL, $edit, $this->getButton('wizard_next', array('next_step' => 'review')));
+    $this->drupalPost(NULL, $edit, $this->getButton('wizard_next', array('agent_name' => $machine_name, 'step' => 'scheduling')));
 
     // Verify options.
     foreach ($campaign_pages as $page) {
@@ -3383,7 +3380,7 @@ class AcquiaLiftWebTestCampaignWizard extends AcquiaLiftWebTestBase {
     $edit = array(
       'campaign_start' => 'none',
     );
-    $this->drupalPost(NULL, $edit, $this->getButton('wizard_next', array('next_step' => 'review')));
+    $this->drupalPost(NULL, $edit, $this->getButton('wizard_next', array('agent_name' => $machine_name, 'step' => 'scheduling')));
 
     // Verify options.
     foreach ($campaign_pages as $page) {
@@ -3439,7 +3436,7 @@ class AcquiaLiftWebTestCampaignWizard extends AcquiaLiftWebTestBase {
       'campaign_start_date[day]' => date('d', $start_date),
       'campaign_start_date[year]' => date('Y', $start_date),
     );
-    $this->drupalPost(NULL, $edit, $this->getButton('wizard_next', array('next_step' => 'review')));
+    $this->drupalPost(NULL, $edit, $this->getButton('wizard_next', array('agent_name' => $machine_name, 'step' => 'scheduling')));
 
     // Verify that the correct messaging is shown on all campaign wizard pages.
     foreach ($campaign_pages as $page) {

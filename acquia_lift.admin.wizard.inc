@@ -590,6 +590,7 @@ function acquia_lift_personalize_campaign_wizard_targeting_alter(&$form, &$form_
         '#title' => isset($audience['label']) ? $audience['label'] : 'Audience: ' . $audience_id,
         '#collapsible' => FALSE,
         '#sortable' => $audience_id !== ACQUIA_LIFT_TARGETING_EVERYONE_ELSE,
+        '#flag' => t('Test'),
       );
       $form['targeting']['audiences'][$audience_id]['header'] = array(
         '#type' => 'container'

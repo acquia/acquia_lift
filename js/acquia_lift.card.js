@@ -13,8 +13,8 @@
 
   var Card = function (element, options) {
     this.type =
-    this.options =
-    this.$element = null;
+      this.options =
+        this.$element = null;
 
     this.init('card', element, options);
   };
@@ -139,18 +139,13 @@
     }
     this.$element.addClass('is-transitioning');
     if (open) {
-      $content.hide();
-      $content.slideDown('fast', function () {
-        self.setOpen(true);
-        self.$element.removeClass('is-transitioning');
-        self.$element.trigger(self.options.eventExpanded);
-      });
+      self.setOpen(true);
+      self.$element.removeClass('is-transitioning');
+      self.$element.trigger(self.options.eventExpanded);
     } else {
-      $content.slideUp('fast', function () {
-        self.setOpen(false);
-        self.$element.removeClass('is-transitioning');
-        self.$element.trigger(self.options.eventCollapsed);
-      });
+      self.setOpen(false);
+      self.$element.removeClass('is-transitioning');
+      self.$element.trigger(self.options.eventCollapsed);
     }
   };
 
@@ -163,13 +158,10 @@
   Card.prototype.setOpen = function (open) {
     var $details = this.getDetails();
     if (open) {
-      this.$element.addClass('is-active');
-      $details.removeClass('element-hidden');
+      this.$element.removeClass('is-compact');
     } else {
-      this.$element.removeClass('is-active');
-      $details.addClass('element-hidden');
+      this.$element.addClass('is-compact');
     }
-    $details.css('display', '');
     $details.attr('aria-expanded', open);
   };
 
@@ -177,7 +169,7 @@
    * Returns whether the element is currently expanded (true) or collapsed.
    */
   Card.prototype.isOpen = function() {
-    return this.$element.hasClass('is-active');
+    return !this.$element.hasClass('is-compact');
   };
 
   /**

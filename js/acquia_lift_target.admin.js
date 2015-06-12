@@ -95,6 +95,7 @@
         $li.remove();
         checkTargetingPlaceholder($ul);
         indicateControlVariation($ul);
+        indicateTest($ul);
       }
 
       /**
@@ -133,6 +134,9 @@
        * Relabel the list to indicate the control.
        */
       function indicateControlVariation($ul) {
+        if (!$ul.hasClass('acquia-lift-draggable-connect')) {
+          return;
+        }
         var $variationItems = $ul.find('li.acquia-lift-targeting-draggable');
         var numberVariations = $variationItems.length;
         for (var i = 0; i < numberVariations; i++) {
@@ -143,6 +147,15 @@
           }
           $current.contents().get(0).nodeValue = itemText;
         }
+      }
+
+      /**
+       * Indicate if the audience contains a test.
+       */
+      function indicateTest($ul) {
+        var $variationItems = $ul.find('li.acquia-lift-targeting-draggable');
+        var numberVariations = $variationItems.length;
+        $ul.closest('.el-card').find('.el-card__flag').toggleClass('is-hidden', numberVariations <= 1);
       }
 
       // Add drag and drop behavior to assign variations to audiences.
@@ -202,6 +215,7 @@
             if (isDragItemInList(ui.item, this)) {
               ui.sender.sortable('cancel');
               indicateControlVariation(ui.sender);
+              indicateTest(ui.sender);
               return;
             }
             if (ui.sender.data().hasOwnProperty('acquialiftcopied')) {
@@ -231,6 +245,7 @@
             $orderInput.val(selectedOptions.join(','));
             checkTargetingPlaceholder($(this));
             indicateControlVariation($(this));
+            indicateTest($(this));
 
             // Make sure the droppable area is last in the list.
             $(this).append($('.acquia-lift-targeting-droppable', this));
@@ -239,6 +254,8 @@
         if (allowMove) {
           // Indicate the control option for any initial tests.
           indicateControlVariation($('ul.acquia-lift-draggable-variations', $wrapperDiv));
+          // Show/hide test indicator.
+          indicateTest($('ul.acquia-lift-draggable-variations', $wrapperDiv));
           // Add a placeholder list item.
           checkTargetingPlaceholder($('.acquia-lift-draggable-variations', $wrapperDiv));
         } else {

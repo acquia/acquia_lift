@@ -20,6 +20,11 @@ function acquia_lift_personalize_campaign_wizard_process_bar_alter(&$form, &$for
   foreach (element_children($form['process_bar']['actions']['status']['status_wrapper']) as $form_element) {
     $form['process_bar']['actions']['status']['status_wrapper'][$form_element]['#submit'] = array('acquia_lift_personalize_campaign_wizard_status_submit');
   }
+
+  $agent_data = $form['#agent'];
+  if (empty($agent_data->started)) {
+    $form['process_bar']['navigation']['#options']['results']['disabled'] = TRUE;
+  }
 }
 
 /**

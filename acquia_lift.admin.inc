@@ -301,10 +301,14 @@ function acquia_lift_agent_list() {
   $agents = personalize_agent_load_multiple(array(), array(), FALSE, TRUE, 'acquia_lift_sort_agent_started');
 
   if (empty($agents)) {
+    $no_agents_intro = '<p>' . t('Acquia Lift Target uses personalizations to control how different sets of content variations are displayed to your website visitors.') . '</p>';
+    $no_agents_intro .= '<p>' . t('When you create a new personalization, Acquia Lift Target will walk you through the process, helping you to add the set of variations that you want to display, create the goals that determine which variation is most effective, determine the visitor audience segments, and finally control when you want the personalization to run.') . '</p>';
+    $no_agents_intro .= '<p>' . t('To create your first new personalization, click the above Add Personalization link.') . '</p>';
+
     return array(
       'no_agents' => array(
-        '#markup' => '<div>' . t('No personalizations available.') . '</div>'
-      )
+        '#markup' => $no_agents_intro,
+      ),
     );
   }
 
@@ -351,19 +355,19 @@ function acquia_lift_agent_list() {
     $description = '';
     switch($status) {
       case PERSONALIZE_STATUS_NOT_STARTED:
-        $description = t('This table lists personalizations that have never been started.');
+        $description = t('These personalizations have not yet been manually started.');
         break;
       case PERSONALIZE_STATUS_SCHEDULED:
-        $description = t('This table lists personalizations that are scheduled to start in the future.');
+        $description = t('These personalizations are scheduled to start in the future.');
         break;
       case PERSONALIZE_STATUS_RUNNING:
-        $description = t('This table lists personalizations that are displaying personalized content to website visitors for each variation set.');
+        $description = t('These personalizations are currently displaying different content variations to visitors.');
         break;
       case PERSONALIZE_STATUS_PAUSED:
-        $description = t('This table lists personalizations that use personalization JavaScript to display the fallback/winner variation for each variation set.');
+        $description = t('These personalizations are displaying the fallback/winner for each variation set, using JavaScript.');
         break;
       case PERSONALIZE_STATUS_COMPLETED:
-        $description = t('This table lists personalizations that use PHP (whenever possible) to display the fallback/winner variation for each variation set, which can cause variations to display more quickly than those in paused personalizations.');
+        $description = t('These personalizations are displaying the fallback/winner for each variation set, using PHP whenever possible, which results in a faster display than Paused personalizations.');
         break;
     }
     $build['personalizations_list']['personalization_group_' . $status] = array(

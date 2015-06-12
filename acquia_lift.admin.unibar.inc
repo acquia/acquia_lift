@@ -749,7 +749,6 @@ function _acquia_lift_page_goal_create_form($agent) {
   );
   $form['title'] = array(
     '#title' => t('Title'),
-    '#description' => t('Name'),
     '#type' => 'textfield',
     '#required' => TRUE,
   );

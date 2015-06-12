@@ -518,6 +518,7 @@ function acquia_lift_personalize_wizard_steps_alter(&$steps, $agent_instance) {
 
   $steps['results'] = array(
     'label' => t('Reports'),
+    'description' => t('Review graphs and tables of personalization performance'),
     'button_value' => t('Next')
   );
 }
@@ -2301,7 +2302,7 @@ function acquia_lift_personalize_campaign_action_links_alter(&$links, $agent_dat
         // Should not get here.
         return;
     }
-    drupal_set_message($message, 'warning');
+    drupal_set_message($message, 'warning', FALSE);
     $links = array(
       array(
         'title' => $button_text,

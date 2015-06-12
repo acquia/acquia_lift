@@ -100,10 +100,8 @@ function acquia_lift_chosenify_element(&$element, $classes = array()) {
     'scope' => 'footer',
     'defer' => TRUE,
   );
-  $element['#attributes'] = array(
-    'class' => $classes,
-    'data-placeholder' => t('Choose a context...'),
-  );
+  $element['#attributes']['class'] = $classes;
+  $element['#attributes']['data-placeholder'] = t('Choose a context...');
   $element['#attached'] = array(
     'js' => array(
       $chosen_path . '/chosen.jquery.min.js' => array('group' => 'JS_LIBRARY'),
@@ -152,7 +150,7 @@ function acquia_lift_option_set_types_ui() {
   return array(
     'element' => array(
       'title' => t('Webpage elements'),
-      'description' => t('Create a variation set of personalized webpage elements, including a base and control version. Useful for quick tests and personalization on individual webpages.'),
+      'description' => t('This variation style allows you to select an item on a webpage and modify its HTML to create new variations of the content.'),
       'logo' => theme('image', array(
         'path' => $path . '/images/variation-type-element.png',
         'alt' => t('Webpage element'),
@@ -162,7 +160,7 @@ function acquia_lift_option_set_types_ui() {
     ),
     'block' => array(
       'title' => t('Drupal blocks'),
-      'description' => t('Create a variation set of personalized Drupal blocks of content. Useful for personalization and testing across your website where this block appears.'),
+      'description' => t('This variation style allows you to display personalized content in a Drupal block, wherever it may appear on your website.'),
       'logo' => theme('image', array(
         'path' => $path . '/images/variation-type-block.png',
         'alt' => t('Drupal block'),
@@ -187,7 +185,7 @@ function acquia_lift_goal_types_ui() {
   return array(
     'existing' => array(
       'title' => t('Predefined goal'),
-      'description' => t('Visitor actions already defined by Acquia Lift'),
+      'description' => t('Visitor actions that are already defined, such as signing in or submitting a form.'),
       'path' => 'admin/structure/acquia_lift/goal/add/existing',
       'logo' => theme('image', array(
         'path' => $path . '/images/goal-type-predefined.png',
@@ -197,7 +195,7 @@ function acquia_lift_goal_types_ui() {
     ),
     'element' => array(
       'title' => t('New element goal'),
-      'description' => t('Element-level visitor action, such as clicking a link or hovering over an image'),
+      'description' => t('Visitor actions that involve clicking a link, hovering over a link, or submitting a form.'),
       'path' => 'admin/structure/visitor_actions/add-in-context',
       'logo' => theme('image', array(
         'path' => $path . '/images/goal-type-element.png',
@@ -207,7 +205,7 @@ function acquia_lift_goal_types_ui() {
     ),
     'page' => array(
       'title' => t('New page goal'),
-      'description' => t('Page-level visitor action, such as scrolling to the bottom of the page'),
+      'description' => t('Visitor actions for a specific webpage that involve viewing, scrolling to the bottom of, or staying for a set timeframe.'),
       'path' => 'admin/structure/acquia_lift/goal/add/page',
       'logo' => theme('image', array(
         'path' => $path . '/images/goal-type-page.png',

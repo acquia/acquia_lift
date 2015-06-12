@@ -399,15 +399,14 @@ tr.acquia-lift-report-control {
   width: 1px;
 }
 /* Base form */
-.personalize-wizard-section #edit-agent-basic-info .acquia-lift-revealing-input {
+#edit-agent-basic-info .acquia-lift-revealing-input {
   margin-bottom: 1em;
 }
-
-/* Base form */
-.personalize-wizard-section #edit-agent-basic-info .acquia-lift-revealing-input {
-  margin-bottom: 1em;
+#edit-agent-basic-info .acquia-lift-revealing-input .acquia-lift-reveal-value,
+#edit-agent-basic-info .acquia-lift-revealing-input .acquia-lift-revealer,
+#edit-agent-basic-info .acquia-lift-revealing-input input {
+  font-size: 1.5em;
 }
-
 /* Process bar */
 #personalize-campaign-wizard-process-bar {
   margin: 1em 0;

@@ -44,6 +44,7 @@ function acquia_lift_personalize_campaign_wizard_base_alter(&$form, &$form_state
 function acquia_lift_personalize_campaign_wizard_variations_alter(&$form, &$form_state, $form_id) {
   // Rebuild the variations form to show the customized Lift approach.
   unset($form['variations']['title']['summary']);
+  $form['variations']['title']['#instructions'] = t('Create one or more sets of content variations, which Acquia Lift Target will use when displaying personalized content for your visitors.');
   unset($form['variations']['option_sets']);
   $form['variations']['#tree'] = TRUE;
 
@@ -315,7 +316,7 @@ function acquia_lift_personalize_campaign_wizard_variations_alter(&$form, &$form
 function acquia_lift_personalize_campaign_wizard_goals_alter(&$form, &$form_state, $form_id) {
   $agent_data = $form['#agent'];
 
-  unset($form['goals']['title']);
+  unset($form['goals']['title']['title_summary']);
   $form['goals']['#tree'] = TRUE;
 
   // Take over form validation and submit handling.
@@ -633,7 +634,7 @@ function acquia_lift_personalize_campaign_wizard_targeting_alter(&$form, &$form_
           'class' => array('acquia-lift-test-message'),
         ),
         'tests' => array(
-          '#markup' => t('These variations will be shown as a test.  The first variation will be the control variation.'),
+          '#markup' => t('These variations will be displayed as a test, with the first variation in the list as the control.'),
         ),
       );
       $form['targeting']['audiences'][$audience_id]['assignment'] = array(
@@ -670,6 +671,9 @@ function acquia_lift_personalize_campaign_wizard_targeting_alter(&$form, &$form_
     $form['actions']['revert'] = array(
       '#type' => 'submit',
       '#value' => t('Revert changes'),
+      '#attributes' => array(
+        'class' => array('acquia-lift-submit-button'),
+      ),
     );
   }
 
@@ -693,7 +697,7 @@ function acquia_lift_personalize_campaign_wizard_targeting_alter(&$form, &$form_
     ),
   );
   $form['targeting']['variations']['options']['instructions'] = array(
-    '#markup' => t('Drag variations to the desired audience to display to that audience.'),
+    '#markup' => t('To display a variation to a specific audience, drag the variation to the audience.'),
   );
   $form['targeting']['variations']['options']['assignment'] = array(
     '#type' => 'select',
@@ -1502,13 +1506,14 @@ function _acquia_lift_personalize_campaign_wizard_variations_block(&$form, &$for
     $block['option_label']['#title'] = _personalize_generate_option_index($key);
     // Weights are not manipulated here.
     $block['weight']['#access'] = FALSE;
-    // Remove the link to add a new block from the drop-down options.
-    unset($block['block']['bid']['#options']['add']);
-    unset($block['block']['add']['#states']);
-    // Hide the add form by default.
-    $block['block']['add']['#collapsible'] = TRUE;
-    $block['block']['add']['#collapsed'] = TRUE;
+    // Adjust ids for block type form states to accommidate multiple
+    // personalized blocks per page.
+    $bid_id = 'personalize-block-' . $form_state_key . '-' . $key;
+    $block['block']['bid']['#attributes']['id'] = $bid_id;
     $block['block']['add']['#title'] = t('Create new and add');
+    $block['block']['add']['#states']['visible'] = array(
+      '#' . $bid_id => array('value' => 'add'),
+    );
 
     acquia_lift_chosenify_element($block['block']['bid'], array('acquia-lift-chosen-select-third'));
 

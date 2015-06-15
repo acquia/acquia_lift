@@ -3290,7 +3290,7 @@ class AcquiaLiftWebTestCampaignWizard extends AcquiaLiftWebTestBase {
     // Try to start the agent.
     $this->drupalPost('admin/structure/personalize/manage/' . $agent->machine_name . '/review', array(), $this->getButton('wizard_start'));
     $this->assertText('No goals have been set up for agent ' . $agent->machine_name);
-    $this->assertText('There was a problem syncing your personalization components to Lift and it cannot be started at this time.');
+
     // Confirm the agent's status has not changed.
     personalize_agent_load($agent->machine_name, TRUE);
     $status = personalize_agent_get_status($agent->machine_name);

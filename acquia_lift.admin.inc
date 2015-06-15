@@ -218,9 +218,7 @@ function acquia_lift_batch_sync_form($form, &$form_state) {
  */
 function acquia_lift_batch_sync_form_submit($form, &$form_state) {
   module_load_include('inc', 'acquia_lift', 'acquia_lift.batch');
-  if (!acquia_lift_batch_sync_all()) {
-    form_set_error(NULL, t('A problem occurred during batch sync, please try again later'));
-  }
+  acquia_lift_batch_sync_all();
 }
 
 /**
@@ -1607,18 +1605,13 @@ function acquia_lift_target_set_status($agent_data, $next_status) {
     module_load_include('inc', 'acquia_lift', 'acquia_lift.batch');
     try {
       $agent_data->tests_to_delete = acquia_lift_implement_test_structure($agent_data);
-      if (acquia_lift_batch_sync_tests_for_agent($agent_data)) {
-        personalize_agent_set_status($agent_data->machine_name, $next_status);
-        // Unset the started property which will have been changed during
-        // status update and we don't want it getting clobbered by other
-        // saves of the agent.
-        unset($agent_data->started);
-        return TRUE;
-      }
-      else {
-        drupal_set_message(t('There was a problem syncing your personalization components to Lift and it cannot be started at this time.'), 'error');
-        return FALSE;
-      }
+      acquia_lift_batch_sync_tests_for_agent($agent_data, $next_status);
+      // Unset the started property which will have been changed during
+      // status update and we don't want it getting clobbered by other
+      // saves of the agent.
+      unset($agent_data->started);
+      return TRUE;
+
     }
     catch (Exception $e) {
       return FALSE;

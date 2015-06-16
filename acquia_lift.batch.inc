@@ -13,16 +13,24 @@
  * @return bool
  *   Returns TRUE if batch syncing completed successfully, FALSE otherwise.
  */
-function acquia_lift_batch_sync_tests_for_agent($agent) {
+function acquia_lift_batch_sync_tests_for_agent($agent, $status_change = NULL) {
   try {
     $operations = acquia_lift_get_sync_operations_for_agent($agent);
-    acquia_lift_do_batch_sync($operations);
-    $error = _acquia_lift_batch_get_error();
-    return !$error;
+    // We don't get to pass additional info to the callback, such as what we'd
+    // like it to do upon success, so we define a different callback depending
+    // on what has been passed as the $status_change parameter.
+    $finish_callback = 'acquia_lift_batch_finished';
+    if ($status_change == PERSONALIZE_STATUS_RUNNING) {
+      $finish_callback = 'acquia_lift_batch_finish_and_start_campaign';
+    }
+    elseif ($status_change == PERSONALIZE_STATUS_SCHEDULED) {
+      $finish_callback = 'acquia_lift_batch_finish_and_schedule_campaign';
+    }
+    $_SESSION['acquia_lift_agent_sync'] = $agent->machine_name;
+    acquia_lift_do_batch_sync($operations, $finish_callback);
   }
   catch (AcquiaLiftException $e) {
-    drupal_set_message($e->getMessage(), 'error');
-    return FALSE;
+    drupal_set_message(t('There was a problem syncing your personalization components to Lift: %error. Please !review your personalization and correct any problems listed.', array('%error' => $e->getMessage(), '!review' => l('review', 'admin/structure/personalize/manage/' . $agent->machine_name . '/review'))), 'error');
   }
 }
 
@@ -47,8 +55,6 @@ function acquia_lift_batch_sync_all() {
     }
   }
   acquia_lift_do_batch_sync($operations);
-  $error = _acquia_lift_batch_get_error();
-  return !$error;
 }
 
 /**
@@ -56,7 +62,7 @@ function acquia_lift_batch_sync_all() {
  *
  * @param $operations
  */
-function acquia_lift_do_batch_sync($operations) {
+function acquia_lift_do_batch_sync($operations, $finished = 'acquia_lift_batch_finished') {
   if (empty($operations)) {
     return;
   }
@@ -66,7 +72,7 @@ function acquia_lift_do_batch_sync($operations) {
   }
   $batch = array(
     'operations' => $batch_operations,
-    'finished' => 'acquia_lift_batch_finished',
+    'finished' => $finished,
     'title' => t('Syncing personalization components to Acquia Lift'),
     'init_message' => t('Starting personalization sync.'),
     'progress_message' => t('Processed @current out of @total.'),
@@ -119,7 +125,7 @@ function acquia_lift_batch_process_item($item, &$context) {
 }
 
 /**
- * Batch API callback for when processing of all items is complete.
+ * Batch API callback that also starts an agent after syncing items.
  *
  * @param $success
  *   Whether or not the batch completed successfully.
@@ -128,7 +134,38 @@ function acquia_lift_batch_process_item($item, &$context) {
  * @param $operations
  *   An array of unprocessed operations.
  */
-function acquia_lift_batch_finished($success, $results, $operations) {
+function acquia_lift_batch_finish_and_start_campaign($success, $results, $operations, $elapsed_time) {
+  acquia_lift_batch_finished($success, $results, $operations, $elapsed_time, PERSONALIZE_STATUS_RUNNING);
+}
+
+/**
+ * Batch API callback that also schedules an agent after syncing items.
+ *
+ * @param $success
+ *   Whether or not the batch completed successfully.
+ * @param $results
+ *   An array holding the results of each operation.
+ * @param $operations
+ *   An array of unprocessed operations.
+ */
+function acquia_lift_batch_finish_and_schedule_campaign($success, $results, $operations, $elapsed_time) {
+  acquia_lift_batch_finished($success, $results, $operations, $elapsed_time, PERSONALIZE_STATUS_SCHEDULED);
+}
+
+/**
+ * Batch API callback for when processing of all items is complete.
+ *
+ * @param $success
+ *   Whether or not the batch completed successfully.
+ * @param $results
+ *   An array holding the results of each operation.
+ * @param $operations
+ *   An array of unprocessed operations.
+ * @param $next_status
+ *   An optional next status to set the campaign to, if a single campaign was
+ *   being sync'd.
+ */
+function acquia_lift_batch_finished($success, $results, $operations, $elapsed_time, $next_status = NULL) {
   if ($success) {
     // See if any of the results contains an error.
     $errors = array();
@@ -140,47 +177,23 @@ function acquia_lift_batch_finished($success, $results, $operations) {
     if (empty($errors)) {
       $message = t('Sync operation completed successfully.');
       $message_type = 'status';
+      drupal_set_message($message, $message_type);
+      if (!empty($next_status)) {
+        if ($agent = $_SESSION['acquia_lift_agent_sync']) {
+          personalize_agent_set_status($agent, $next_status);
+        }
+      }
     }
     else {
       $message_type = 'error';
       $message = t('Some errors occurred while syncing personalizations to Acquia Lift:');
       $message .= theme('item_list', array('items' => $errors));
-      _acquia_lift_batch_set_error();
+      drupal_set_message($message, $message_type);
     }
-    drupal_set_message($message, $message_type);
   }
-  else {
-    // An error occurred.
-    _acquia_lift_batch_set_error();
+  if (isset($_SESSION['acquia_lift_agent_sync'])) {
+    unset($_SESSION['acquia_lift_agent_sync']);
   }
-}
-
-/**
- * Sets an error in a session variable indicating failure during batch sync.
- *
- * @param $error
- *   The error message to store.
- */
-function _acquia_lift_batch_set_error() {
-  $_SESSION['acquia_lift_batch_error'] = 1;
-}
-
-/**
- * Returns whether an error was set during batch syncing.
- *
- * Also unsets the session variable used to track the error. This function should
- * only ever be called by acquia_lift_batch_sync_tests_for_agent() and
- * acquia_lift_batch_sync_all().
- *
- * @return bool
- *   True if an error had been set by the batch sync, FALSE otherwise.
- */
-function _acquia_lift_batch_get_error() {
-  if (!empty($_SESSION['acquia_lift_batch_error'])) {
-    unset($_SESSION['acquia_lift_batch_error']);
-    return TRUE;
-  }
-  return FALSE;
 }
 
 /**
@@ -217,7 +230,7 @@ function acquia_lift_get_sync_operations_for_agent($agent) {
   $nested_tests = personalize_agent_load_multiple($nested);
   $goals = personalize_goal_load_by_conditions(array('agent' => $agent->machine_name));
   if (empty($goals)) {
-    throw new AcquiaLiftException('No goals have been set up for agent ' . $agent->machine_name);
+    throw new AcquiaLiftException('No goals have been set up for personalization ' . $agent->machine_name);
   }
   $lift_api = AcquiaLiftAPI::getInstance(variable_get('acquia_lift_account_info', array()));
   foreach ($nested_tests as $agent_name => $test) {

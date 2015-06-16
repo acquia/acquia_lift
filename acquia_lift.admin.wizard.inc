@@ -1139,7 +1139,8 @@ function acquia_lift_personalize_campaign_wizard_targeting_validate(&$form, &$fo
     foreach (element_children($audience['details']['mapping']['contexts']) as $index) {
       if (!empty($audience['details']['mapping']['contexts'][$index]['context'])) {
         $has_operator = !empty($audience['details']['mapping']['contexts'][$index]['value']['operator']);
-        $has_value = !empty($audience['details']['mapping']['contexts'][$index]['value']['match']);
+        $match = $audience['details']['mapping']['contexts'][$index]['value']['match'];
+        $has_value = !empty($match) || $match === '0';
         $context_value = $audience['details']['mapping']['contexts'][$index]['context'];
         $context_label = $form['targeting']['audiences'][$audience_id]['details']['mapping']['contexts'][$index]['context']['#options'][$context_value];
         // Make sure that an operator and value have been entered.

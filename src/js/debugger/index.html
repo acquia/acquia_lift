@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html>
+<head lang="en">
+    <meta charset="UTF-8">
+    <title></title>
+    <link href="css/debugger.css" rel="stylesheet">
+    <!--<link href="//netdna.bootstrapcdn.com/bootstrap/3.1.1/css/bootstrap.min.css" rel="stylesheet">-->
+</head>
+<body ng-app="debuggerModule" ng-controller="DebuggerController">
+
+    <p>{{url}}</p>
+
+    <div id="debugger">
+        <div class="debugger__actions">
+            <span class="debugger__action__maximize">
+                <i class="debugger__icon"></i>
+            </span>
+            <span class="debugger__action__open">
+                <i class="debugger__icon"></i>
+            </span>
+            <span class="debugger__action__close">
+                <i class="debugger__icon"></i>
+            </span>
+            <span class="debugger__action__destroy">
+                <i class="debugger__icon"></i>
+            </span>
+        </div>
+        <h2 class="debugger__title">lift debugger</h2>
+        <div class="debugger__content">
+            <p>{{debugger}}</p>
+            <button ng-click="tab = 'log'" >LOG</button>
+            <button ng-click="tab = 'profile'">PROFILE</button>
+
+            <div ng-show="tab == 'log'">
+                <table>
+                    <tr ng-repeat="item in items | orderBy:timestamp">
+                        <td>{{item.type}}</td>
+                        <td>{{item.timestamp}}</td>
+                        <td>{{item.page}}</td>
+                        <td>{{item.message}}</td>
+                        <td>{{item.severity}}</td>
+                        <td>{{item.resolution}}</td>
+                    </tr>
+                </table>
+            </div>
+
+            <div ng-show="tab == 'profile'">
+                <p>PersonId: {{profile.personId}}</p>
+
+                <p>TouchId: {{profile.touchId}}</p>
+
+                <p>Identities</p>
+                <div>
+                    <p ng-repeat="item in profile.identities">
+                        {{item}}
+                    </p>
+                </div>
+
+                <p>Current Segments:</p>
+                <div>
+                    <p ng-repeat="item in profile.currentSegments">
+                        {{item}}
+                    </p>
+                </div>
+
+                <p>All Segments:</p>
+                <div>
+                    <p ng-repeat="item in profile.allSegments">
+                        {{item}}
+                    </p>
+                </div>
+
+                <p>Override Segments:</p>
+                <div>
+                    <p ng-repeat="item in profile.overrideSegments">
+                        {{item}}
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</body>
+<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.1/jquery.min.js"></script>
+<script type="text/javascript">
+    var _tcaq = _tcaq || [];
+    var _tcwq = _tcwq || [];
+
+    var _cookie = document.cookie;
+    document.__defineSetter__("cookie", function(the_cookie) {
+        if ( _cookie ) {
+            _cookie=_cookie+"; "+the_cookie;
+        }
+        else {
+            _cookie=the_cookie;
+        }
+    } );
+    document.__defineGetter__("cookie", function() {
+        return _cookie;
+    } );
+    var Drupal = {
+        'jQuery' : jQuery,
+        'Settings' : {
+            'lift_user_profiles' : {
+                'apiUrl' : 'http://localhost:8080/Trucentric',
+                'accountName' : 'TCBIZMASTERK'
+            }
+        }
+    };
+</script>
+
+<script src="lib/tc.js"></script>
+
+<script src="lib/tc-widget.js"></script>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/angular.js/1.3.15/angular.min.js"></script>
+
+<script src="../personalize.debug.js"></script>
+<!--<script src="https://cdnjs.cloudflare.com/ajax/libs/angular-ui-bootstrap/0.13.0/ui-bootstrap-tpls.min.js"></script>-->
+<script src="app.js"></script>
+
+<script>
+    $( document ).ready(function() {
+        window.localStorage.setItem('personalize::debug::a', "{\"type\":\"log\"}");
+        window.localStorage.setItem('personalize::debug::b', "{\"type\":\"log\"}");
+
+        setTimeout(function(){
+            $(document).trigger('acquialiftDebugEvent', {
+                key: "personalize::debug::a"
+            });
+        }, 1000);
+
+        setTimeout(function(){
+            $(document).trigger('acquialiftDebugEvent', {
+                key: "personalize::debug::b"
+            });
+        }, 4000);
+    });
+</script>
+</html>

@@ -1,0 +1,254 @@
+[id="debugger"] {
+  display: none;
+}
+
+.debugger {
+  position: fixed;
+  display: block;
+  z-index: 1000;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  background: rgba(0, 68, 136, 0.8);
+  background: -webkit-linear-gradient(top, rgba(0, 68, 136, 0.9), rgba(0, 68, 136, 0.75) 20%, rgba(0, 68, 136, 0.75) 70%, rgba(0, 68, 136, 0.9) 100%);
+  background: linear-gradient(to bottom, rgba(0, 68, 136, 0.9), rgba(0, 68, 136, 0.75) 20%, rgba(0, 68, 136, 0.75) 70%, rgba(0, 68, 136, 0.9) 100%);
+  color: #fff;
+  font-family: sans-serif;
+  font-size: 14px;
+  line-height: 1.5;
+  box-shadow: 0 0 0.1em 0 rgba(0, 0, 0, 0.8);
+  border-top-right-radius: .4em;
+  border-top-left-radius: .4em;
+  -webkit-transition: all 300ms;
+  transition: all 300ms;
+}
+@media screen and (min-width: 600px) {
+  .debugger {
+    left: 1em;
+    width: calc(100% - 2em);
+  }
+}
+@media screen and (min-width: 68em) {
+  .debugger {
+    left: 50vw;
+    width: 66em;
+    margin-left: -33em;
+  }
+}
+.debugger,
+.debugger * {
+  box-sizing: border-box;
+}
+
+.debugger__actions {
+  float: right;
+  margin-top: -.8em;
+  margin-right: .4em;
+  margin-left: .4em;
+}
+
+[class*='debugger__action__'] {
+  display: inline-block;
+  background: #4bd;
+  line-height: 1.3;
+  font-size: 1.4em;
+  width: 1.4em;
+  height: 1.4em;
+  margin-right: .1em;
+  margin-left: .1em;
+  text-align: center;
+  border-radius: 50%;
+  cursor: pointer;
+  -webkit-transition: opacity 300ms;
+  transition: opacity 300ms;
+}
+
+.debugger__title {
+  text-transform: uppercase;
+  font-size: .88em;
+  font-weight: normal;
+  line-height: 1;
+  color: rgba(255, 255, 255, 0.7);
+  padding: .45em 1em .35em;
+  margin: 0;
+  border-top-right-radius: .4em;
+  border-top-left-radius: .4em;
+  -webkit-transition: all 300ms;
+  transition: all 300ms;
+}
+
+.debugger__content {
+  padding-right: 1em;
+  padding-left: 1em;
+  overflow-y: auto;
+  height: 0;
+  -webkit-transition: height 300ms, padding 300ms;
+  transition: height 300ms, padding 300ms;
+}
+
+.debugger__data th {
+  text-align: left;
+}
+.debugger__data tbody {
+  font-family: monospace;
+}
+
+.debugger.is-open {
+  box-shadow: 0 -0.1em 0.5em -0.01em rgba(0, 0, 0, 0.8);
+}
+.debugger.is-open .debugger__title {
+  background: #048;
+  color: #fff;
+}
+.debugger.is-open .debugger__content {
+  height: 20vh;
+  padding-top: 1em;
+  padding-bottom: 1em;
+}
+.debugger.is-maximized {
+  box-shadow: 0 -0.1em 0.5em -0.01em rgba(0, 0, 0, 0.8);
+}
+.debugger.is-maximized .debugger__title {
+  background: #048;
+  color: #fff;
+}
+.debugger.is-maximized .debugger__content {
+  height: 88vh;
+  padding-top: 1em;
+  padding-bottom: 1em;
+}
+
+.is-maximized .debugger__action__open {
+  -webkit-transform: scaleY(-1);
+  -ms-transform: scaleY(-1);
+  transform: scaleY(-1);
+}
+
+.is-open .debugger__action__maximize::before {
+  display: none;
+}
+
+.debugger__action__maximize {
+  position: relative;
+}
+.debugger__action__maximize::before {
+  content: '';
+  display: block;
+  position: absolute;
+  left: calc(50% - .15em / 2);
+  top: 22%;
+  width: .15em;
+  height: 60%;
+  background-color: #fff;
+}
+.debugger__action__maximize .debugger__icon::before, .debugger__action__maximize .debugger__icon::after {
+  content: '';
+  display: block;
+  position: absolute;
+  top: calc(30% - .15em / 2);
+  width: 30%;
+  height: .15em;
+  background-color: #fff;
+}
+.debugger__action__maximize .debugger__icon::before {
+  right: 26%;
+  -webkit-transform: rotate(40deg);
+  -ms-transform: rotate(40deg);
+  transform: rotate(40deg);
+}
+.debugger__action__maximize .debugger__icon::after {
+  left: 26%;
+  -webkit-transform: rotate(-40deg);
+  -ms-transform: rotate(-40deg);
+  transform: rotate(-40deg);
+}
+
+.debugger__action__open, .is-open .debugger__action__maximize {
+  position: relative;
+}
+.debugger__action__open .debugger__icon::before, .is-open .debugger__action__maximize .debugger__icon::before, .debugger__action__open .debugger__icon::after, .is-open .debugger__action__maximize .debugger__icon::after {
+  content: '';
+  display: block;
+  position: absolute;
+  top: calc(44% - .15em / 2);
+  width: 50%;
+  height: .15em;
+  background-color: #fff;
+}
+.debugger__action__open .debugger__icon::before, .is-open .debugger__action__maximize .debugger__icon::before {
+  right: 10%;
+  -webkit-transform: rotate(40deg);
+  -ms-transform: rotate(40deg);
+  transform: rotate(40deg);
+}
+.debugger__action__open .debugger__icon::after, .is-open .debugger__action__maximize .debugger__icon::after {
+  left: 10%;
+  -webkit-transform: rotate(-40deg);
+  -ms-transform: rotate(-40deg);
+  transform: rotate(-40deg);
+}
+
+.debugger__action__close {
+  position: relative;
+}
+.debugger__action__close .debugger__icon::before, .debugger__action__close .debugger__icon::after {
+  content: '';
+  display: block;
+  position: absolute;
+  top: calc(50% - .15em / 2);
+  width: 40%;
+  height: .15em;
+  background-color: #fff;
+}
+.debugger__action__close .debugger__icon::before {
+  right: 12%;
+  -webkit-transform: rotate(0);
+  -ms-transform: rotate(0);
+  transform: rotate(0);
+}
+.debugger__action__close .debugger__icon::after {
+  left: 12%;
+  -webkit-transform: rotate(0);
+  -ms-transform: rotate(0);
+  transform: rotate(0);
+}
+
+.debugger__action__destroy {
+  position: relative;
+}
+.debugger__action__destroy .debugger__icon::before, .debugger__action__destroy .debugger__icon::after {
+  content: '';
+  display: block;
+  position: absolute;
+  left: calc(20% - .15em / 2);
+  top: calc(50% - .15em / 2);
+  width: 70%;
+  height: .15em;
+  background-color: #fff;
+}
+.debugger__action__destroy .debugger__icon::before {
+  /* right: 10%; */
+  -webkit-transform: rotate(45deg);
+  -ms-transform: rotate(45deg);
+  transform: rotate(45deg);
+}
+.debugger__action__destroy .debugger__icon::after {
+  /* left: 10%; */
+  -webkit-transform: rotate(-45deg);
+  -ms-transform: rotate(-45deg);
+  transform: rotate(-45deg);
+}
+
+.debugger.is-open .debugger__action__open, .debugger.is-maximized .debugger__action__maximize, .debugger.is-closed .debugger__action__close {
+  opacity: 0;
+  visibility: hidden;
+  -webkit-transform: scale(0);
+  -ms-transform: scale(0);
+  transform: scale(0);
+  font-size: 0;
+  margin: 0;
+  cursor: default;
+}
+.debugger.is-open [aria-hidden="true"].debugger__action__open, .debugger.is-maximized [aria-hidden="true"].debugger__action__maximize, .debugger.is-closed [aria-hidden="true"].debugger__action__close {
+  display: none;
+}

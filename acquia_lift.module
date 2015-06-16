@@ -359,6 +359,10 @@ function acquia_lift_theme() {
       'function' => 'theme_acquia_lift_navbar_menu_tree',
       'preprocess functions' => array('template_preprocess_acquia_lift_navbar_menu_tree'),
     ),
+    'acquia_lift_debugger' => array(
+      'path' => $path . '/theme',
+      'file' => 'acquia_lift.theme.inc',
+    )
   );
 }
 
@@ -382,6 +386,16 @@ function acquia_lift_page_build(&$page) {
   if (user_access('manage personalized content')) {
     module_load_include('inc', 'acquia_lift', 'acquia_lift.ui');
     acquia_lift_build_page($page);
+  }
+  if (!path_is_admin(current_path()) && personalize_debug_mode_enabled()) {
+    $page['footer']['acquia_lift_debug'] = array(
+      '#attached' => array(
+        'library' => array(array('acquia_lift', 'debugger')),
+      ),
+      'container' => array(
+        '#markup' => theme('acquia_lift_debugger'),
+      ),
+    );
   }
 }
 
@@ -1497,6 +1511,25 @@ function acquia_lift_library() {
     ),
   );
 
+  // The Acquia Lift debugger.
+  $libraries['debugger'] = array(
+    'title' => 'Acquia Lift debugger',
+    'website' => '',
+    'version' => VERSION,
+    'js' => array(
+      $path . '/js/acquia_lift.debug.js' => $options,
+      'https://cdnjs.cloudflare.com/ajax/libs/angular.js/1.3.15/angular.min.js' => $options,
+      $path . '/js/acquia_lift.debugger.js' => $options,
+    ),
+    'css' => array(
+      $path . '/css/acquia_lift.debugger.css' => array(),
+    ),
+    'dependencies' => array(
+      array('system', 'jquery'),
+      array('personalize', 'storage'),
+    ),
+  );
+
   return $libraries;
 }
 
@@ -1512,7 +1545,6 @@ function acquia_lift_library_alter(&$libraries, $module) {
     $jquery_version = $libraries['jquery']['version'];
   }
   if ($jquery_version && $module == 'acquia_lift') {
-    $path = drupal_get_path('module', 'acquia_lift');
     // If the version of jQuery is old, we need to add `on` and `off`.
     if ($jquery_version < '1.7') {
       $vaui_path = drupal_get_path('module', 'visitor_actions_ui');

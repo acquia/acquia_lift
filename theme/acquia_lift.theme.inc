@@ -309,3 +309,46 @@ function theme_acquia_lift_create_type_change($variables) {
   $html .= ' class="acquia-lift-form-type">' . $variables['type'] . '</span>&nbsp;' . $variables['change_link'];
   return $html;
 }
+
+
+/**
+ * Theme function to return the markup required for the personalize debuggger.
+ */
+function theme_acquia_lift_debugger() {
+  $markup = <<<EOT
+<div ng-app="debuggerModule" ng-controller="DebuggerController">
+
+    <p>{{url}}</p>
+
+    <div id="debugger">
+        <span class="debugger__actions">
+            <span class="debugger__action__expand">^</span>
+            <span class="debugger__action__activate">+</span>
+            <span class="debugger__action__close">x</span>
+        </span>
+        <h2 class="debugger__title">lift debugger</h2>
+        <div class="debugger__content">
+            <p>{{debugger}}</p>
+            <!--<tabset>-->
+                <!--<tab heading="LOG">-->
+                    <table>
+                        <tr ng-repeat="item in items">
+                            <td>{{item.type}}</td>
+                            <td>{{item.timestamp}}</td>
+                            <td>{{item.page}}</td>
+                            <td>{{item.message}}</td>
+                            <td>{{item.severity}}</td>
+                            <td>{{item.resolution}}</td>
+                        </tr>
+                    </table>
+                <!--</tab>-->
+                <!--<tab heading="PROFILE">-->
+                    <!--{{tab.content}}-->
+                <!--</tab>-->
+            <!--</tabset>-->
+        </div>
+    </div>
+</div>
+EOT;
+  return $markup;
+}

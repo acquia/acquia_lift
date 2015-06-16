@@ -69,6 +69,30 @@ function acquia_lift_profiles_permission() {
 }
 
 /**
+ * Implements hook_library().
+ */
+function acquia_lift_profiles_library() {
+  $path = drupal_get_path('module', 'acquia_lift_profiles');
+  $options = array(
+    'scope' => 'footer',
+    'defer' => TRUE,
+  );
+  $libraries = array();
+  $libraries['debugger'] = array(
+    'title' => 'Acquia Lift Profiles debugger integration',
+    'website' => '',
+    'version' => VERSION,
+    'js' => array(
+      $path . '/js/acquia_lift_profiles.debug.js' => $options,
+    ),
+    'dependencies' => array(
+      array('system', 'jquery'),
+    ),
+  );
+  return $libraries;
+}
+
+/**
  * Returns whether or not Acquia Lift Profiles has been configured.
  *
  * @param bool $api_only
@@ -296,6 +320,9 @@ EOT;
     $attached['library'] = array();
   }
   $attached['library'][] =  array('system', 'jquery.cookie');
+  if (personalize_debug_mode_enabled()) {
+    $attached['library'][] = array('acquia_lift_profiles', 'debugger');
+  }
   $page['page_top']['acquia_lift_profiles'] = array(
     '#attached' => $attached
   );

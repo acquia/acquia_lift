@@ -44,6 +44,10 @@ module.exports = function(grunt) {
         'src/js/cards/acquia_lift.cards.js'
   ];
 
+  var debuggerjs = [
+        'src/js/debugger/app.js'
+  ];
+
   // Project configuration.
   grunt.initConfig({
     pkg: grunt.file.readJSON('package.json'),
@@ -88,6 +92,10 @@ module.exports = function(grunt) {
       cards: {
         src: cardsjs,
         dest: 'js/acquia_lift.card.js'
+      },
+      debugger: {
+        src: debuggerjs,
+        dest: 'js/acquia_lift.debugger.js'
       }
     },
     concurrent: {
@@ -108,7 +116,8 @@ module.exports = function(grunt) {
           'css/acquia_lift.help.css': 'src/css/acquia_lift.help.scss',
           'css/acquia_lift.reports.css': 'src/css/acquia_lift.reports.scss',
           'css/acquia_lift.navbar.css': 'src/css/acquia_lift.navbar.scss',
-          'css/acquia_lift.navbar_1-5.css': 'src/css/acquia_lift.navbar_1-5.scss'
+          'css/acquia_lift.navbar_1-5.css': 'src/css/acquia_lift.navbar_1-5.scss',
+          //'css/acquia_lift.debugger.css': 'src/css/acquia_lift.debugger.scss'
         }
       }
     },

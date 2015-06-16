@@ -622,7 +622,7 @@ function acquia_lift_personalize_campaign_wizard_targeting_alter(&$form, &$form_
         '#collapsible' => FALSE,
         '#sortable' => $audience_id !== ACQUIA_LIFT_TARGETING_EVERYONE_ELSE,
         '#flag' => t('Test'),
-        '#flag_visible' => count($saved_targeting[$audience_id]) > 1,
+        '#flag_visible' => isset($saved_targeting[$audience_id]) && count($saved_targeting[$audience_id]) > 1,
       );
       $form['targeting']['audiences'][$audience_id]['header'] = array(
         '#type' => 'container'

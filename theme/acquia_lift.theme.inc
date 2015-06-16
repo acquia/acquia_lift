@@ -316,6 +316,7 @@ function theme_acquia_lift_create_type_change($variables) {
  */
 function theme_acquia_lift_debugger() {
   $markup = <<<EOT
+<div id="debugger">
 <div ng-app="debuggerModule" ng-controller="DebuggerController">
       <div class="debugger__actions">
           <span class="debugger__action__maximize">
@@ -385,6 +386,7 @@ function theme_acquia_lift_debugger() {
           </div>
       </div>
   </div>
+</div>
 EOT;
   return $markup;
 }

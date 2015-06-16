@@ -18,6 +18,9 @@ function theme_acquia_lift_card($variables) {
   $header_children = isset($element['header']) ? element_children($element['header']) : array();
   $card_flag = isset($element['#flag']) ? $element['#flag'] : '';
   $card_flag_attributes = array('class' => array('el-card__flag'));
+  if (isset($element['#flag_visible']) && $element['#flag_visible'] === FALSE) {
+    $card_flag_attributes['class'][] = 'is-hidden';
+  }
   if (isset($element['card_flag_attributes'])) {
     $card_flag_attributes = array_merge_recursive($card_flag_attributes, $element['card_flag_attributes']);
   }

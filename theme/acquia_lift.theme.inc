@@ -317,38 +317,74 @@ function theme_acquia_lift_create_type_change($variables) {
 function theme_acquia_lift_debugger() {
   $markup = <<<EOT
 <div ng-app="debuggerModule" ng-controller="DebuggerController">
+      <div class="debugger__actions">
+          <span class="debugger__action__maximize">
+              <i class="debugger__icon"></i>
+          </span>
+          <span class="debugger__action__open">
+              <i class="debugger__icon"></i>
+          </span>
+          <span class="debugger__action__close">
+              <i class="debugger__icon"></i>
+          </span>
+          <span class="debugger__action__destroy">
+              <i class="debugger__icon"></i>
+          </span>
+      </div>
+      <h2 class="debugger__title">lift debugger</h2>
+      <div class="debugger__content">
+          <p>{{debugger}}</p>
+          <button ng-click="tab = 'log'" >LOG</button>
+          <button ng-click="tab = 'profile'">PROFILE</button>
 
-    <p>{{url}}</p>
+          <div ng-show="tab == 'log'">
+              <table>
+                  <tr ng-repeat="item in items | orderBy:timestamp">
+                      <td>{{item.type}}</td>
+                      <td>{{item.timestamp}}</td>
+                      <td>{{item.page}}</td>
+                      <td>{{item.message}}</td>
+                      <td>{{item.severity}}</td>
+                      <td>{{item.resolution}}</td>
+                  </tr>
+              </table>
+          </div>
 
-    <div id="debugger">
-        <span class="debugger__actions">
-            <span class="debugger__action__expand">^</span>
-            <span class="debugger__action__activate">+</span>
-            <span class="debugger__action__close">x</span>
-        </span>
-        <h2 class="debugger__title">lift debugger</h2>
-        <div class="debugger__content">
-            <p>{{debugger}}</p>
-            <!--<tabset>-->
-                <!--<tab heading="LOG">-->
-                    <table>
-                        <tr ng-repeat="item in items">
-                            <td>{{item.type}}</td>
-                            <td>{{item.timestamp}}</td>
-                            <td>{{item.page}}</td>
-                            <td>{{item.message}}</td>
-                            <td>{{item.severity}}</td>
-                            <td>{{item.resolution}}</td>
-                        </tr>
-                    </table>
-                <!--</tab>-->
-                <!--<tab heading="PROFILE">-->
-                    <!--{{tab.content}}-->
-                <!--</tab>-->
-            <!--</tabset>-->
-        </div>
-    </div>
-</div>
+          <div ng-show="tab == 'profile'">
+              <p>PersonId: {{profile.personId}}</p>
+
+              <p>TouchId: {{profile.touchId}}</p>
+
+              <p>Identities</p>
+              <div>
+                  <p ng-repeat="item in profile.identities">
+                      {{item}}
+                  </p>
+              </div>
+
+              <p>Current Segments:</p>
+              <div>
+                  <p ng-repeat="item in profile.currentSegments">
+                      {{item}}
+                  </p>
+              </div>
+
+              <p>All Segments:</p>
+              <div>
+                  <p ng-repeat="item in profile.allSegments">
+                      {{item}}
+                  </p>
+              </div>
+
+              <p>Override Segments:</p>
+              <div>
+                  <p ng-repeat="item in profile.overrideSegments">
+                      {{item}}
+                  </p>
+              </div>
+          </div>
+      </div>
+  </div>
 EOT;
   return $markup;
 }

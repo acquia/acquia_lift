@@ -149,14 +149,7 @@ function acquia_lift_batch_finish($success, $results, $operations) {
  *   An array of unprocessed operations.
  */
 function acquia_lift_batch_finish_and_start_campaign($success, $results, $operations) {
-  if (acquia_lift_batch_finished($success, $results, $operations)) {
-    $agent = $_SESSION['acquia_lift_agent_sync'];
-    if (empty($agent)) {
-      return;
-    }
-    personalize_agent_set_status($agent, PERSONALIZE_STATUS_RUNNING);
-  }
-  unset($_SESSION['acquia_lift_agent_sync']);
+  acquia_lift_batch_finished($success, $results, $operations, PERSONALIZE_STATUS_RUNNING);
 }
 
 /**
@@ -170,14 +163,7 @@ function acquia_lift_batch_finish_and_start_campaign($success, $results, $operat
  *   An array of unprocessed operations.
  */
 function acquia_lift_batch_finish_and_schedule_campaign($success, $results, $operations) {
-  if (acquia_lift_batch_finished($success, $results, $operations)) {
-    $agent = $_SESSION['acquia_lift_agent_sync'];
-    if (empty($agent)) {
-      return;
-    }
-    personalize_agent_set_status($agent, PERSONALIZE_STATUS_SCHEDULED);
-  }
-  unset($_SESSION['acquia_lift_agent_sync']);
+  acquia_lift_batch_finished($success, $results, $operations, PERSONALIZE_STATUS_SCHEDULED);
 }
 
 /**
@@ -185,9 +171,10 @@ function acquia_lift_batch_finish_and_schedule_campaign($success, $results, $ope
  * @param $success
  * @param $results
  * @param $operations
+ * @param $next_status
  * @throws \Exception
  */
-function acquia_lift_batch_finished($success, $results, $operations) {
+function acquia_lift_batch_finished($success, $results, $operations, $next_status = NULL) {
   if ($success) {
     // See if any of the results contains an error.
     $errors = array();
@@ -200,7 +187,11 @@ function acquia_lift_batch_finished($success, $results, $operations) {
       $message = t('Sync operation completed successfully.');
       $message_type = 'status';
       drupal_set_message($message, $message_type);
-      return TRUE;
+      if (!empty($next_status)) {
+        if ($agent = $_SESSION['acquia_lift_agent_sync']) {
+          personalize_agent_set_status($agent, $next_status);
+        }
+      }
     }
     else {
       $message_type = 'error';
@@ -209,7 +200,9 @@ function acquia_lift_batch_finished($success, $results, $operations) {
       drupal_set_message($message, $message_type);
     }
   }
-  return FALSE;
+  if (isset($_SESSION['acquia_lift_agent_sync'])) {
+    unset($_SESSION['acquia_lift_agent_sync']);
+  }
 }
 
 /**

@@ -386,13 +386,15 @@ function acquia_lift_agent_list() {
     );
 
     // Build the personalizations table.
-    $header = array(
-      array('data' => t('Name')),
-      array('data' => t('Start date')),
-      array('data' => t('Type')),
-      array('data' => t('Change status')),
-      array('data' => t('Operations')),
-    );
+    $show_status_change = $status != PERSONALIZE_STATUS_COMPLETED;
+    $header = array();
+    $header[] = array('data' => t('Name'));
+    $header[] = array('data' => t('Start date'));
+    $header[] = array('data' => t('Type'));
+    if ($show_status_change) {
+      $header[] = array('data' => t('Change status'));
+    }
+    $header[] = array('data' => t('Operations'));
 
     $rows = array();
     foreach ($agents as $agent) {
@@ -459,7 +461,6 @@ function acquia_lift_agent_list() {
         }
       }
 
-      $status_change_form = drupal_get_form("personalize_change_status_{$agent->machine_name}_form", $agent);
       // Determine the start date to show (either schedule or actual).
       switch ($status) {
         case PERSONALIZE_STATUS_SCHEDULED:
@@ -500,13 +501,16 @@ function acquia_lift_agent_list() {
       }
 
       // Generate actual table row data.
-      $tablerow = array(
-        array('data' => check_plain($agent->label), 'class' => array('acquia-lift-campaign-title')),
-        array('data' => $start_date > 0 ? format_date($start_date, 'custom', 'M d, Y') : ''),
-        array('data' => $agent_type),
-        array('data' => drupal_render($status_change_form)),
-        array('data' => theme('links', array('links' => $ops, 'attributes' => array('class' => array('acquia-lift-list-operations'))))),
-      );
+      $tablerow = array();
+      $tablerow[] = array('data' => check_plain($agent->label), 'class' => array('acquia-lift-campaign-title'));
+      $tablerow[] = array('data' => $start_date > 0 ? format_date($start_date, 'custom', 'M d, Y') : '');
+      $tablerow[] = array('data' => $agent_type);
+      if ($show_status_change) {
+        $status_change_form = drupal_get_form("personalize_change_status_{$agent->machine_name}_form", $agent);
+        $tablerow[] = array('data' => drupal_render($status_change_form));
+      }
+      $tablerow[] = array('data' => theme('links', array('links' => $ops, 'attributes' => array('class' => array('acquia-lift-list-operations')))));
+
       $campaign_class = $agent->plugin == 'acquia_lift_target' && !empty($targeting_os->targeting) ? array('acquia-lift-personalize-list-campaign') : array();
       $rows[] = array(
         'data' => $tablerow,
@@ -521,24 +525,25 @@ function acquia_lift_agent_list() {
             continue;
           }
           $variations = $targeting[$audience_id];
-          $tablerow = array(
-            array('data' => !empty($audience['label']) ? check_plain($audience['label']) : $audience_id, 'class' => 'acquia-lift-campaign-title'),
-            '',
-            count($variations) > 1 ? t('Test') : t('Target'),
-            '',
-            $show_report_link && count($variations) > 1 ? l(t('View reports'), 'admin/structure/personalize/manage/' . $agent->machine_name . '/results', array(
-              'query' => array(
-                'targeting_audience' => $audience_id,
-              ),
-              'attributes' => array(
-                'class' => array('acquia-lift-report'),
-                'title' => t('View reports for @campaign: @audience', array(
-                  '@campaign' => $agent->label,
-                  '@audience' => empty($audience['label']) ? $audience_id : $audience['label'],
-                )),
-              ),
-            )) : '',
-          );
+          $tablerow = array();
+          $tablerow[] = array('data' => !empty($audience['label']) ? check_plain($audience['label']) : $audience_id, 'class' => 'acquia-lift-campaign-title');
+          $tablerow[] =  '';
+          $tablerow[] = count($variations) > 1 ? t('Test') : t('Target');
+          if ($show_status_change) {
+            $tablerow[] = '';
+          }
+          $tablerow[] = $show_report_link && count($variations) > 1 ? l(t('View reports'), 'admin/structure/personalize/manage/' . $agent->machine_name . '/results', array(
+            'query' => array(
+              'targeting_audience' => $audience_id,
+            ),
+            'attributes' => array(
+              'class' => array('acquia-lift-report'),
+              'title' => t('View reports for @campaign: @audience', array(
+                '@campaign' => $agent->label,
+                '@audience' => empty($audience['label']) ? $audience_id : $audience['label'],
+              )),
+            ),
+          )) : '';
           $rows[] = array(
             'data' => $tablerow,
             'no_striping' => TRUE,

@@ -1993,7 +1993,7 @@ function _acquia_lift_personalize_campaign_wizard_targeting_audience(&$form, &$f
   $form_state['num_contexts_audience'][$parent_identifier] = count($mappings);
 
   foreach ($mappings as $delta => $mapping) {
-    $element['mapping']['contexts'][$delta] = personalize_explicit_targeting_mapping_element($mapping, $targeting_values, $delta);
+    $element['mapping']['contexts'][$delta] = personalize_explicit_targeting_mapping_element($mapping, $targeting_values, $parent_identifier . '-' . $delta);
 
     // Add a "remove" button for this context.
     // NOTE: ajax.js expects the ID of the element to match the element's name

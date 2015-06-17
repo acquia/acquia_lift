@@ -452,6 +452,9 @@ tr.acquia-lift-report-control {
 #edit-variations .personalize-wizard-column > fieldset {
   border: none;
 }
+#edit-variations .el-card .el-card__content {
+  max-height: inherit;
+}
 
 /* Targeting form */
 .acquia-lift-targeting .personalize-target-wrapper .form-item,

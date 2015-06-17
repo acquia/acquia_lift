@@ -325,11 +325,15 @@ tr.acquia-lift-report-control {
 .acquia-lift-campaign-add .el-card .el-card__header .el-card__title[aria-controls]:before {
   content: url('../images/actions__add.svg');
 }
+/* @todo move text to a translatable mechanism */
 .acquia-lift-campaign-add .el-card .el-card__title:after {
-  content: url('../images/actions__close.svg');
+  content: 'collapse';
   float: right;
   opacity: 0;
   transition: opacity .2s;
+  width: auto;
+  font-weight: normal;
+  font-size: 1rem;
 }
 .acquia-lift-campaign-add .el-card:not(.is-compact) .el-card__title:after {
   opacity: 1;

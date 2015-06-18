@@ -1190,8 +1190,10 @@ function acquia_lift_implement_test_structure($agent_data) {
  *   deleted in Lift.
  */
 function acquia_lift_implement_targeting($agent) {
-
   if (empty($agent->data['lift_targeting'])) {
+    // Just update the test options for any embedded tests and return an empty
+    // array.
+    acquia_lift_save_nested_test_options($agent);
     return array();
   }
   $all_option_sets = personalize_option_set_load_by_agent($agent->machine_name);
@@ -1514,23 +1516,21 @@ function acquia_lift_get_structure_from_targeting($option_set) {
  *   The parent targeting agent that may contain nested tests to update.
  */
 function acquia_lift_save_nested_test_options($parent_agent) {
-  $option_set = acquia_lift_get_option_set_for_targeting($parent_agent->machine_name);
-  if (!isset($option_set->targeting)) {
+  $tests = acquia_lift_get_nested_tests($parent_agent);
+  if (empty($tests)) {
     return;
   }
   $agent_data = array(
     'control_rate' => isset($parent_agent->data['control_rate']) ? $parent_agent->data['control_rate'] : 10,
     'explore_rate' => isset($parent_agent->data['explore_rate']) ? $parent_agent->data['explore_rate'] : 20,
     'decision_style' => isset($parent_agent->data['decision_style']) ? $parent_agent->data['decision_style'] : 'adaptive',
-    'cache_decisions' => isset($parent_agent->data['cache_decisions']) ? $parent_agent->data['cache_decisions'] : 1,
+    // We always cache decisions for tests, regardless of how this is set for
+    // the parent.
+    'cache_decisions' => 1,
   );
 
-  foreach ($option_set->targeting as $vars) {
-    if (!isset($vars['osid'])) {
-      continue;
-    }
-    $nested_option_set = personalize_option_set_load($vars['osid']);
-    $nested_agent = personalize_agent_load($nested_option_set->agent);
+  foreach ($tests as $test) {
+    $nested_agent = personalize_agent_load($test);
     $nested_agent->data = $agent_data;
     personalize_agent_save($nested_agent);
   }

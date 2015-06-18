@@ -779,32 +779,58 @@ function acquia_lift_personalize_campaign_wizard_review_alter(&$form, &$form_sta
   $is_mvt = isset($agent_data->data['variation_set_handling']) && $agent_data->data['variation_set_handling'] == ACQUIA_LIFT_DECISION_MULTIVARIATE;
   if ($is_mvt) {
     $has_tests = TRUE;
+    // Show the summary data for the MVT tests.
+    $form['review']['summary_column']['summary']['option_sets'] = array(
+      '#markup' => theme('personalize_wizard_summary_count', array(
+        'count' => 1,
+        'details' => theme('html_tag', array(
+          'element' => array(
+            '#tag' => 'h3',
+            '#value' => t('Multivariate Test'),
+          ),
+        )),
+      )),
+    );
   }
   else {
     $targeting = array();
+    $option_set = acquia_lift_get_option_set_for_targeting($agent_data->machine_name);
     if (!empty($agent_data->data['lift_targeting'])) {
       // Read audience information from the agent if changes have been made.
       $targeting = $agent_data->data['lift_targeting'];
     }
     else {
       // Otherwise read audience information from the option set targeting.
-      $option_set = acquia_lift_get_option_set_for_targeting($agent_data->machine_name);
       $targeting = acquia_lift_get_structure_from_targeting($option_set);
     }
-    $count_audiences = 0;
-    foreach ($targeting as $options) {
-      $num_options = count($options);
-      if ($num_options > 0) {
-        // Update the audience count if the audience has at least one
-        // option assigned.
-        $count_audiences++;
-        if ($num_options > 1) {
-          // If there is more than one option assigned, then this audience
-          // should be shown a test.
-          $has_tests = TRUE;
-        }
+    foreach ($targeting as $audience_id => $options) {
+      if (count($options) > 1) {
+        // If there is more than one option assigned, then this audience
+        // should be shown a test.
+        $has_tests = TRUE;
       }
     }
+
+    // Loop through the audiences and determine the label and variation count
+    // to display as summary data.
+    $items = array();
+    if (!empty($option_set->targeting)) {
+      foreach ($option_set->targeting as $audience_id => $audience) {
+        $num_variations = isset($targeting[$audience_id]) ? count($targeting[$audience_id]) : 0;
+        $items[] = $audience['label'] . ' (' . $num_variations . ' ' . format_plural($num_variations, 'variation', 'variations') . ')';
+      }
+    }
+    $count_audiences = count($items);
+    $form['review']['summary_column']['summary']['audiences'] = array(
+      '#markup' => theme('personalize_wizard_summary_count', array(
+          'count' => $count_audiences,
+          'details' => theme('item_list', array(
+            'title' => format_plural($count_audiences, 'Audience', 'Audiences'),
+            'items' => $items,
+          )),
+        )
+      )
+    );
   }
 
   // Show advanced testing options.
@@ -831,34 +857,6 @@ function acquia_lift_personalize_campaign_wizard_review_alter(&$form, &$form_sta
     '#description' => t('Check this if decisions made by this agent should stick, so that they don\'t have to be made again every time variation sets are rendered. This depends on the availability of local storage in the visitor\'s browser'),
     '#default_value' => isset($agent_data->data['cache_decisions']) ? $agent_data->data['cache_decisions'] : 1
   );
-
-  if ($is_mvt) {
-    $form['review']['summary_column']['summary']['option_sets'] = array(
-      '#markup' => theme('personalize_wizard_summary_count', array(
-        'count' => 1,
-        'details' => theme('html_tag', array(
-          'element' => array(
-            '#tag' => 'h3',
-            '#value' => t('Multivariate Test'),
-          ),
-        )),
-      )),
-    );
-  }
-  else {
-    $form['review']['summary_column']['summary']['audiences'] = array(
-      '#markup' => theme('personalize_wizard_summary_count', array(
-          'count' => $count_audiences,
-          'details' => theme('html_tag', array(
-            'element' => array(
-              '#tag' => 'h3',
-              '#value' => format_plural($count_audiences, 'Audience', 'Audiences'),
-            ),
-          )),
-        )
-      )
-    );
-  }
 
   // Move the scheduling summary element to the bottom.
   $form['review']['summary_column']['summary']['scheduling']['#weight'] = 10;

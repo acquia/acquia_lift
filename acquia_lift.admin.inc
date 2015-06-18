@@ -1526,6 +1526,8 @@ function acquia_lift_save_nested_test_options($parent_agent) {
     'decision_style' => isset($parent_agent->data['decision_style']) ? $parent_agent->data['decision_style'] : 'adaptive',
     // We always cache decisions for tests, regardless of how this is set for
     // the parent.
+    // @todo Remove this setting entirely from test agents, it should never be
+    //   used.
     'cache_decisions' => 1,
   );
 

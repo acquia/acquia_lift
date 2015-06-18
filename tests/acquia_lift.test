@@ -1958,7 +1958,7 @@ class AcquiaLiftWebTestTarget extends AcquiaLiftWebTestBase {
     $this->assertEqual($nested_agent->data['decision_style'], 'adaptive');
     $this->assertEqual($nested_agent->data['control_rate'], 25);
     $this->assertEqual($nested_agent->data['explore_rate'], 35);
-    $this->assertEqual($nested_agent->data['cache_decisions'], 0);
+    $this->assertEqual($nested_agent->data['cache_decisions'], 1);
 
     $option_sets = personalize_option_set_load_by_agent($nested_agent->machine_name);
 
@@ -2044,7 +2044,7 @@ class AcquiaLiftWebTestTarget extends AcquiaLiftWebTestBase {
       $this->assertEqual($nested->data['decision_style'], 'adaptive');
       $this->assertEqual($nested->data['control_rate'], 50);
       $this->assertEqual($nested->data['explore_rate'], 35);
-      $this->assertEqual($nested_agent->data['cache_decisions'], 0);
+      $this->assertEqual($nested_agent->data['cache_decisions'], 1);
 
       // Find the *new* nested agent.
       if ($nested->machine_name != $nested_agent->machine_name) {

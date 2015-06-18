@@ -284,10 +284,11 @@ function acquia_lift_admin_form_submit($form, &$form_state) {
 /**
  * Page callback for full campaign listings.
  */
-function acquia_lift_agent_list() {
+function acquia_lift_agent_list($agents = array(), $legacy = FALSE) {
   $agent_type_test = t('Test only');
   $agent_type_target = t('Target only');
   $agent_type_both = t('Test and target');
+  $agent_type_legacy = t('Legacy');
 
   $build = array();
   $build['#attached']['library'][] = array('personalize', 'admin.campaign.list');
@@ -295,8 +296,9 @@ function acquia_lift_agent_list() {
   $build['#attached']['js'][] = drupal_get_path('module', 'acquia_lift') . '/js/acquia_lift.admin.js';
 
   $status_map = personalize_get_agent_status_map();
-
-  $agents = personalize_agent_load_multiple(array(), array(), FALSE, TRUE, 'acquia_lift_sort_agent_started');
+  if (empty($agents)) {
+    $agents = personalize_agent_load_multiple(array(), array(), FALSE, TRUE, 'acquia_lift_sort_agent_started');
+  }
 
   if (empty($agents)) {
     $no_agents_intro = '<p>' . t('Acquia Lift Target uses personalizations to control how different sets of content variations are displayed to your website visitors.') . '</p>';
@@ -384,7 +386,7 @@ function acquia_lift_agent_list() {
     );
 
     // Build the personalizations table.
-    $show_status_change = $status != PERSONALIZE_STATUS_COMPLETED;
+    $show_status_change = !$legacy && ($status != PERSONALIZE_STATUS_COMPLETED);
     $header = array();
     $header[] = array('data' => t('Name'));
     $header[] = array('data' => t('Start date'));
@@ -397,13 +399,13 @@ function acquia_lift_agent_list() {
     $rows = array();
     foreach ($agents as $agent) {
       // If this is a nested agent, it should not be listed.
-      if (in_array($agent->plugin, array(ACQUIA_LIFT_TESTING_AGENT_V1, ACQUIA_LIFT_TESTING_AGENT_V2))) {
+      if (!$legacy && in_array($agent->plugin, array(ACQUIA_LIFT_TESTING_AGENT_V1, ACQUIA_LIFT_TESTING_AGENT_V2))) {
         continue;
       }
       $targeting = array();
 
       // Determine the agent type.
-      $agent_type = $agent->plugin;
+      $agent_type = $legacy ? $agent_type_legacy : $agent->plugin;
       if ($agent->plugin == 'acquia_lift_target') {
         // Load targeting audiences
         $targeting_os = acquia_lift_get_option_set_for_targeting($agent->machine_name);
@@ -471,26 +473,29 @@ function acquia_lift_agent_list() {
       }
 
       // Lift target agents show reports if they contain tests.
-      $show_report_link = $agent->plugin == 'acquia_lift_target' && !empty($agent->started) && in_array($agent_type, array($agent_type_test, $agent_type_both));
+      $show_report_link = $legacy || ($agent->plugin == 'acquia_lift_target' && !empty($agent->started) && in_array($agent_type, array($agent_type_test, $agent_type_both)));
 
       // Generate operations list.
-      $ops = array(
-        array(
+      $ops = array();
+      if (!$legacy) {
+        $ops[] = array(
           'title' => t('Edit'),
           'href' => 'admin/structure/personalize/manage/'. $agent->machine_name . '/variations',
           'attributes' => array(
             'class' => array('acquia-lift-edit'),
             'title' => t('Edit @campaign', array('@campaign' => $agent->label)),
           ),
-        ),
-      );
+        );
+      }
       if (!empty($delete_link)) {
         $ops[] = $delete_link;
       }
       if ($show_report_link) {
+        $href = $legacy ? 'admin/structure/personalize/legacy/'. $agent->machine_name .'/results' :
+          'admin/structure/personalize/manage/'. $agent->machine_name .'/results';
         $ops[] = array(
           'title' => t('View reports'),
-          'href' => 'admin/structure/personalize/manage/'. $agent->machine_name .'/results',
+          'href' => $href,
           'attributes' => array(
             'class' => array('acquia-lift-report'),
             'title' => t('View reports for @campaign', array('@campaign' => $agent->label)),
@@ -617,7 +622,7 @@ function acquia_lift_report($form, &$form_state, $agent_data) {
   if (!acquia_lift_is_targeting_agent($agent_data)) {
     $legacy_campaigns = variable_get('acquia_lift_legacy_agents', array());
     if (in_array($agent_data->machine_name, $legacy_campaigns)) {
-      $form['report'] = acquia_lift_report_custom($form_state, $agent_data, FALSE);
+      $form['report'] = acquia_lift_report_custom($form_state, $agent_data, TRUE);
       return $form;
     }
     else {
@@ -1776,8 +1781,5 @@ function acquia_lift_legacy_campaign_list() {
     drupal_goto('admin/structure/personalize');
   }
   $agents = personalize_agent_load_multiple($legacy_campaigns);
-  module_load_include('inc', 'personalize', 'personalize.admin');
-  // @todo This will need to change once we have our own menu callback for listing
-  // campaigns. The regular list no longer has a report link.
-  return personalize_agent_list($agents, FALSE, FALSE);
+  return acquia_lift_agent_list($agents, TRUE);
 }

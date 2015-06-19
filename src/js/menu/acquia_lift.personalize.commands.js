@@ -12,11 +12,26 @@
    * - optionId: The option id to preview.
    */
   Drupal.ajax.prototype.commands.acquia_lift_variation_preview = function (ajax, response, status) {
-    _.defer(function() {
+
+    function previewVariation() {
+      if (!Drupal.acquiaLiftUI.views.optionSets || !Drupal.acquiaLiftUI.views.optionSets[response.data.osid]) {
+        return;
+      }
       var view = Drupal.acquiaLiftUI.views.optionSets[response.data.osid];
       view.selectOption(response.data.osid, response.data.optionId, true);
+    }
+
+    // Allow waiting for only two cycles.
+    // @todo: Look into a fully asynchronous solution for this.
+    _.defer(function() {
+      if (Drupal.acquiaLiftUI.views.optionSets && Drupal.acquiaLiftUI.views.optionSets[response.data.osid]) {
+        previewVariation();
+      }
+      else {
+        _.defer(previewVariation);
+      }
     });
-  }
+  };
 
   /**
    * Custom AJAX command to indicate a deleted element variation.

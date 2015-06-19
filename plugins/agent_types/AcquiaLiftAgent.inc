@@ -872,7 +872,7 @@ class AcquiaLiftReport implements AcquiaLiftReportInterface {
 
       $rate = $total_count[$counter] > 0 ? ($total_goals[$counter]/$total_count[$counter]) * 100 : 0;
       $val_rate = $total_count[$counter] > 0 ? ($total_val[$counter]/$total_count[$counter]) : 0;
-      $margin = (($item['bHi'] - $item['bLo'])/2) * 100;
+      $margin = ($item['bHi'] - $item['bLo']) / 2;
 
       $data[] = array(
         'choice_id' => $choice_id,
@@ -960,8 +960,7 @@ class AcquiaLiftReport implements AcquiaLiftReportInterface {
       $count = $item['totals']['count'];
       // The format for percentages will already multiply by 100.
       $rate = $count > 0 ? ($goals/$count) : 0;
-      $margin = (($item['bHi'] - $item['bLo'])/2);
-
+      $margin = ($item['bHi'] - $item['bLo']) / 2;
       if ($item['signif']) {
         if (is_nan($winning_value) || $item['confidence'] > $winning_value) {
           $winning_value = $item['lift']['default'];
@@ -1022,7 +1021,7 @@ class AcquiaLiftReport implements AcquiaLiftReportInterface {
         'data' => t('Conversion value'),
         'data-conversion-metric' => 'value',
       ),
-      t('Margin of error (%)'),
+      t('Margin of error'),
     );
     $rows = array();
     foreach ($report_data as $choice_data) {

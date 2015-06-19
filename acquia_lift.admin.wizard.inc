@@ -583,25 +583,60 @@ function acquia_lift_personalize_campaign_wizard_targeting_alter(&$form, &$form_
   );
 
   // Add a new audience rule.
-  $form['targeting']['audiences']['add'] = array(
+  $new_audiences_id = 'acquia-lift-targeting-audiences-new';
+  $form['targeting']['audiences']['new'] = array(
     '#type' => 'container',
-    '#theme' => 'acquia_lift_card',
-    '#collapsible' => TRUE,
-    '#collapsed' => !empty($option_set->targeting),
-    '#title' => t('Add target audience'),
     '#attributes' => array(
-      'class' => array('acquia-lift-campaign-add'),
+      'id' => $new_audiences_id,
     ),
-    '#access' => $editable,
   );
-  $form['targeting']['audiences']['add']['details'] = _acquia_lift_personalize_campaign_wizard_targeting_audience($form, $form_state, $agent_data, 'add');
-  // TRICKY: Name must be specified or else it will default to "op" and
-  // conflict with the main process bar save button.
-  $form['targeting']['audiences']['add']['save_audience'] = array(
-    '#name' => 'save_new_audience',
+  $form['targeting']['audiences']['new']['add'] = array(
     '#type' => 'submit',
-    '#value' => t('Save'),
+    '#value' => t('Add target audience'),
+    '#theme_wrappers' => array('acquia_lift_add_card_button'),
+    '#access' => $editable,
+    '#submit' => array('acquia_lift_personalize_campaign_wizard_targeting_audience_add'),
+    '#limit_validation_errors' => array(),
+    '#ajax' => array(
+      'callback' => 'acquia_lift_personalize_campaign_wizard_targeting_audience_ajax',
+      'wrapper' => $new_audiences_id,
+      'effect' => 'fade',
+    )
   );
+  if (isset($form_state['new_audiences'])) {
+    foreach($form_state['new_audiences'] as $delta => $details) {
+      $form['targeting']['audiences']['new'][$delta] = array(
+        '#type' => 'container',
+        '#theme' => 'acquia_lift_card',
+        '#collapsible' => TRUE,
+        '#collapsed' => !isset($form_state['expanded_audience']) || $form_state['expanded_audience'] != $delta,
+        '#title' => t('Add target audience'),
+        '#attributes' => array(
+          'class' => array('acquia-lift-campaign-add'),
+        ),
+        '#access' => $editable,
+      );
+      $form['targeting']['audiences']['new'][$delta]['details'] = _acquia_lift_personalize_campaign_wizard_targeting_audience($form, $form_state, $agent_data, 'new', $delta);
+      // TRICKY: Name must be specified or else it will default to "op" and
+      // conflict with the main process bar save button.
+      $form['targeting']['audiences']['new'][$delta]['save_audience'] = array(
+        '#name' => 'save_new_audience_' . $delta,
+        '#type' => 'submit',
+        '#value' => t('Save'),
+      );
+      $form['targeting']['audiences']['new'][$delta]['cancel'] = array(
+        '#type' => 'submit',
+        '#value' => t('Cancel'),
+        '#limit_validation_errors' => array(),
+        '#submit' => array('acquia_lift_personalize_campaign_wizard_targeting_audience_cancel'),
+        '#ajax' => array(
+          'callback' => 'acquia_lift_personalize_campaign_wizard_targeting_audience_ajax',
+          'wrapper' => $new_audiences_id,
+          'effect' => 'fade',
+        ),
+      );
+    }
+  }
 
   // Load all existing audiences for the agent.
   if (isset($option_set->targeting)) {
@@ -614,8 +649,11 @@ function acquia_lift_personalize_campaign_wizard_targeting_alter(&$form, &$form_
         return $a['weight'] < $b['weight'] ? -1 : 1;
       }
     });
+    $form['targeting']['audiences']['existing'] = array(
+      '#type' => 'container',
+    );
     foreach ($option_set->targeting as $audience_id => $audience) {
-      $form['targeting']['audiences'][$audience_id] = array(
+      $form['targeting']['audiences']['existing'][$audience_id] = array(
         '#type' => 'container',
         '#theme' => 'acquia_lift_card',
         '#title' => isset($audience['label']) ? $audience['label'] : 'Audience: ' . $audience_id,
@@ -624,19 +662,19 @@ function acquia_lift_personalize_campaign_wizard_targeting_alter(&$form, &$form_
         '#flag' => t('Test'),
         '#flag_visible' => isset($saved_targeting[$audience_id]) && count($saved_targeting[$audience_id]) > 1,
       );
-      $form['targeting']['audiences'][$audience_id]['header'] = array(
+      $form['targeting']['audiences']['existing'][$audience_id]['header'] = array(
         '#type' => 'container'
       );
       if ($audience_id !== ACQUIA_LIFT_TARGETING_EVERYONE_ELSE) {
         if ($editable) {
-          $form['targeting']['audiences'][$audience_id]['header']['edit'] = array(
+          $form['targeting']['audiences']['existing'][$audience_id]['header']['edit'] = array(
             '#type' => 'checkbox',
             '#title' => t('Edit'),
             '#attributes' => array(
               'class' => array('acquia-lift-edit'),
             ),
           );
-          $form['targeting']['audiences'][$audience_id]['header']['delete'] = array(
+          $form['targeting']['audiences']['existing'][$audience_id]['header']['delete'] = array(
             '#markup' => l(t('Delete'), 'admin/structure/personalize/manage/' . $agent_data->machine_name . '/audience/' . $audience_id . '/delete', array(
               'attributes' => array(
                 'class' => array('acquia-lift-delete')
@@ -644,10 +682,10 @@ function acquia_lift_personalize_campaign_wizard_targeting_alter(&$form, &$form_
             )),
           );
           // Show the form to edit the audience segment when edit is selected.
-          $form['targeting']['audiences'][$audience_id]['details'] = _acquia_lift_personalize_campaign_wizard_targeting_audience($form, $form_state, $agent_data, $audience_id, $audience);
-          $form['targeting']['audiences'][$audience_id]['details']['#states'] = array(
+          $form['targeting']['audiences']['existing'][$audience_id]['details'] = _acquia_lift_personalize_campaign_wizard_targeting_audience($form, $form_state, $agent_data, 'existing', $audience_id, $audience);
+          $form['targeting']['audiences']['existing'][$audience_id]['details']['#states'] = array(
             'visible' => array(
-              ':input[name="audiences[' . $audience_id . '][header][edit]"]' => array('checked' => TRUE),
+              ':input[name="audiences[existing][' . $audience_id . '][header][edit]"]' => array('checked' => TRUE),
             )
           );
         }
@@ -659,7 +697,7 @@ function acquia_lift_personalize_campaign_wizard_targeting_alter(&$form, &$form_
       }
       // This message will only be shown when there two or more variations
       // assigned to an audience.
-      $form['targeting']['audiences'][$audience_id]['message'] = array(
+      $form['targeting']['audiences']['existing'][$audience_id]['message'] = array(
         '#type' => 'container',
         '#attributes' => array(
           'class' => array('acquia-lift-test-message'),
@@ -668,7 +706,7 @@ function acquia_lift_personalize_campaign_wizard_targeting_alter(&$form, &$form_
           '#markup' => t('These variations will be displayed as a test, with the first variation in the list as the control.'),
         ),
       );
-      $form['targeting']['audiences'][$audience_id]['assignment'] = array(
+      $form['targeting']['audiences']['existing'][$audience_id]['assignment'] = array(
         '#type' => 'select',
         '#title' => t('Add display option'),
         '#multiple' => TRUE,
@@ -677,7 +715,7 @@ function acquia_lift_personalize_campaign_wizard_targeting_alter(&$form, &$form_
         '#empty_option' => t('Select...'),
         '#states' => array(
           'visible' => array(
-            ':input[name="audiences[' . $audience_id . '][header][edit]"]' => array('checked' => FALSE),
+            ':input[name="audiences[existing][' . $audience_id . '][header][edit]"]' => array('checked' => FALSE),
           )
         ),
         '#attributes' => array(
@@ -688,7 +726,7 @@ function acquia_lift_personalize_campaign_wizard_targeting_alter(&$form, &$form_
         ),
       );
       // Keep track of the assignment order of options within the audience.
-      $form['targeting']['audiences'][$audience_id]['assignment_order'] = array(
+      $form['targeting']['audiences']['existing'][$audience_id]['assignment_order'] = array(
         '#type' => 'textfield',
         '#title' => t('Assignment order'),
         '#default_value' => isset($saved_targeting[$audience_id]) ? implode(',', $saved_targeting[$audience_id]) : '',
@@ -958,9 +996,14 @@ function acquia_lift_personalize_campaign_wizard_goals_ajax_all($form, &$form_st
 function acquia_lift_personalize_campaign_wizard_targeting_add($form, &$form_state) {
   // Increment the number of contexts to be rendered.
   $parents = $form_state['triggering_element']['#parents'];
-  $context_key_pos = array_search('audiences', $parents) + 1;
+  // New or existing indicator:
+  $type_pos = array_search('audiences', $parents, TRUE) + 1;
+  $type_key = $parents[$type_pos];
+  // ID within new or existing audiences:
+  $context_key_pos = $type_pos + 1;
   $context_key = $parents[$context_key_pos];
-  $form_state['num_contexts_audience'][$context_key]++;
+
+  $form_state['num_contexts_audience'][$type_key][$context_key]++;
   $form_state['rebuild'] = TRUE;
 }
 
@@ -969,11 +1012,17 @@ function acquia_lift_personalize_campaign_wizard_targeting_add($form, &$form_sta
  */
 function acquia_lift_personalize_campaign_wizard_targeting_remove($form, &$form_state) {
   $parents = $form_state['triggering_element']['#parents'];
-  $context_key_pos = array_search('audiences', $parents) + 1;
+
+  $type_key_pos = array_search('audiences', $parents, TRUE) + 1;
+  $type_key = $parents[$type_key_pos];
+
+  $context_key_pos = $type_key_pos + 1;
   $context_key = $parents[$context_key_pos];
-  $delta_pos = array_search('contexts', $parents) + 1;
+
+  $delta_pos = array_search('contexts', $parents, TRUE) + 1;
   $delta = $parents[$delta_pos];
-  $form_state['to_remove_audience'][$context_key] = $delta;
+
+  $form_state['to_remove_audience'][$type_key][$context_key] = $delta;
   $form_state['rebuild'] = TRUE;
 }
 
@@ -984,9 +1033,42 @@ function acquia_lift_personalize_campaign_wizard_targeting_ajax($form, &$form_st
   // Don't show any messages within the AJAX returned.
   drupal_get_messages();
   $parents = $form_state['triggering_element']['#parents'];
-  $context_key_pos = array_search('audiences', $parents) + 1;
+  $type_key_pos = array_search('audiences', $parents) + 1;
+  $type_key = $parents[$type_key_pos];
+
+  $context_key_pos = $type_key_pos + 1;
   $context_key = $parents[$context_key_pos];
-  return $form['targeting']['audiences'][$context_key]['details']['mapping']['contexts'];
+  return $form['targeting']['audiences'][$type_key][$context_key]['details']['mapping']['contexts'];
+}
+
+/**
+ * Submit handler for the "Add target audience" button.
+ */
+function acquia_lift_personalize_campaign_wizard_targeting_audience_add($form, &$form_state) {
+  // Since there are no types to select or other contextual data, just need
+  // to keep track of the indexes of the new audiences.
+  $form_state['new_audiences'][] = '';
+  end($form_state['new_audiences']);
+  $form_state['expanded_audience'] = key($form_state['new_audiences']);
+  $form_state['rebuild'] = TRUE;
+}
+
+/**
+ * Submit handler for the "Cancel" add audience button.
+ */
+function acquia_lift_personalize_campaign_wizard_targeting_audience_cancel($form, &$form_state) {
+  $parents = $form_state['triggering_element']['#parents'];
+  $context_key_pos = array_search('new', $parents) + 1;
+  $context_key = $parents[$context_key_pos];
+  unset($form_state['new_audiences'][$context_key]);
+  $form_state['rebuild'] = TRUE;
+}
+
+/**
+ * AJAX callback for the add and cancel audience buttons.
+ */
+function acquia_lift_personalize_campaign_wizard_targeting_audience_ajax($form, &$form_state) {
+  return $form['targeting']['audiences']['new'];
 }
 
 /**
@@ -1117,48 +1199,51 @@ function acquia_lift_personalize_campaign_wizard_targeting_validate(&$form, &$fo
   if (!empty($form_state['triggering_element']['#skip_validation'])) {
     return;
   }
-  // If we are adding - then validate the required audience fields.
-  if (in_array('add', $form_state['triggering_element']['#array_parents'])) {
-    if (empty($form_state['values']['audiences']['add']['details']['name'])) {
-      form_set_error('audiences[add][details][name', t('You must specify the name of the new audience.'));
+
+  $agent_data = $form['#agent'];
+
+  /**
+   * Anonymous function to validate a specific audience.
+   *
+   * @param
+   *
+   * @return
+   */
+  $validateAudienceFields = function($values, $form_prefix, $is_new, $contexts) use ($agent_data) {
+    if (empty($values['name'])) {
+      form_set_error($form_prefix . 'name', t('You must specify the name of the audience.'));
+      return;
     }
-    else {
+    else if ($is_new) {
       // Verify that a new audience will have a unique machine name.
       module_load_include('inc', 'acquia_lift', 'acquia_lift.admin');
-      $machine_name = personalize_generate_machine_name($form_state['values']['audiences']['add']['details']['name'], NULL, '-');
-      $agent_data = $form['#agent'];
+      $machine_name = personalize_generate_machine_name($values['name'], NULL, '-');
       $option_set = acquia_lift_get_option_set_for_targeting($agent_data->machine_name);
       if (isset($option_set->targeting[$machine_name])) {
-        form_set_error('audiences[add][details][name', t('Please choose a different name for your audience as this one is already taken'));
+        form_set_error($form_prefix . 'name', t('Please choose a different name for your audience as this one is already taken'));
+        return;
       }
     }
-  }
-  // Make sure that there is at least one filled in context.
-  foreach ($form_state['values']['audiences'] as $audience_id => $audience) {
-    if ($audience_id === ACQUIA_LIFT_TARGETING_EVERYONE_ELSE) {
-      continue;
-    }
-    if (empty($audience['details']['name'])) {
-      continue;
-    }
     $has_context = FALSE;
-    $audience_label = $audience['details']['name'];
-    foreach (element_children($audience['details']['mapping']['contexts']) as $index) {
-      if (!empty($audience['details']['mapping']['contexts'][$index]['context'])) {
-        $has_operator = !empty($audience['details']['mapping']['contexts'][$index]['value']['operator']);
-        $match = $audience['details']['mapping']['contexts'][$index]['value']['match'];
+    $audience_label = $values['name'];
+    $contexts = isset($values['mapping']['contexts']) ? element_children($values['mapping']['contexts']) : array();
+    foreach ($contexts as $index) {
+      if (!empty($values['mapping']['contexts'][$index]['context'])) {
+        $has_operator = !empty($values['mapping']['contexts'][$index]['value']['operator']);
+        $match = $values['mapping']['contexts'][$index]['value']['match'];
         $has_value = !empty($match) || $match === '0';
-        $context_value = $audience['details']['mapping']['contexts'][$index]['context'];
-        $context_label = $form['targeting']['audiences'][$audience_id]['details']['mapping']['contexts'][$index]['context']['#options'][$context_value];
+        $context_value = $values['mapping']['contexts'][$index]['context'];
+        $context_label = $contexts[$index]['context']['#options'][$context_value];
+        //$context_label = $form['targeting']['audiences'][$audience_id]['details']['mapping']['contexts'][$index]['context']['#options'][$context_value];
         // Make sure that an operator and value have been entered.
         if (!$has_operator) {
-          form_set_error('audiences[' . $audience_id . '][details][mapping][contexts][' . $index . '][value][operator', t('Please choose the operator for %context in the %audience audience.', array(
+          form_set_error($form_prefix . 'mapping][contexts][' . $index . '][value][operator', t('Please choose the operator for %context in the %audience audience.', array(
             '%context' => $context_label,
             '%audience' => $audience_label,
           )));
         }
         if (!$has_value) {
-          form_set_error('audiences[' . $audience_id . '][details][mapping][contexts][' . $index . '][value][match', t('Please choose the value for %context context in the %audience audience.', array(
+          form_set_error($form_prefix . 'mapping][contexts][' . $index . '][value][match', t('Please choose the value for %context context in the %audience audience.', array(
             '%context' => $context_label,
             '%audience' => $audience_label,
           )));
@@ -1169,9 +1254,31 @@ function acquia_lift_personalize_campaign_wizard_targeting_validate(&$form, &$fo
       }
     }
     if (!$has_context) {
-      form_set_error('audiences[' . $audience_id . '][details][mapping][contexts][add][context', t('Please select at least one context to define the %audience audience.', array(
+      form_set_error($form_prefix . 'mapping][contexts][add][context', t('Please select at least one context to define the %audience audience.', array(
         '%audience' => $audience_label,
       )));
+    }
+  };
+
+  // If we are adding a single audience validate the required audience fields.
+  $parents = $form_state['triggering_element']['#parents'];
+  if ($new_index = array_search('new', $parents) !== FALSE) {
+    $delta = $parents[$new_index + 1];
+    $validateAudienceFields($form_state['values']['audiences']['new'][$delta]['details'], 'audiences[new][' . $delta . '][details][', TRUE, $form['targeting']['audiences']['new'][$delta]['details']['mapping']['contexts']);
+    return;
+  }
+  // Validate all submitted audiences.
+  foreach ($form_state['values']['audiences'] as $type_id => $type_data) {
+    $is_new = $type_id === 'new';
+    foreach ($form_state['values']['audiences'][$type_id] as $audience_id => $audience) {
+      if ($audience_id === ACQUIA_LIFT_TARGETING_EVERYONE_ELSE) {
+        continue;
+      }
+      else if (!isset($audience['details'])) {
+        // Not an audience but some other form field.
+        continue;
+      }
+      $validateAudienceFields($audience['details'], 'audiences[' . $type_id . '][' . $audience_id . '][details][', $is_new, $audience['details']['mapping']['contexts']);
     }
   }
 }
@@ -1410,59 +1517,63 @@ function acquia_lift_personalize_campaign_wizard_targeting_submit(&$form, &$form
   $final_audience = _acquia_lift_personalize_campaign_wizard_everyone_else_audience();
 
   // Set the weight higher than any of the audience options.
-  foreach($form_state['values']['audiences'] as $audience_id => $audience) {
-    if ($audience_id === ACQUIA_LIFT_TARGETING_EVERYONE_ELSE || !isset($audience['details']['weight']) || empty($audience['details']['name'])) {
-      continue;
+  foreach($form_state['values']['audiences'] as $type_id => $type) {
+    foreach ($form_state['values']['audiences'][$type_id] as $audience_id => $audience) {
+      if ($audience_id === ACQUIA_LIFT_TARGETING_EVERYONE_ELSE || !isset($audience['details']['weight']) || empty($audience['details']['name'])) {
+        continue;
+      }
+      $final_audience['weight'] = $audience['details']['weight'] > $final_audience['weight'] ? $audience['details']['weight'] : $final_audience['weight'];
     }
-    $final_audience['weight'] = $audience['details']['weight'] > $final_audience['weight'] ? $audience['details']['weight'] : $final_audience['weight'];
   }
   $final_audience['weight'] += 10;
   // Now process all of the audiences.
-  foreach ($form_state['values']['audiences'] as $audience_id => $audience) {
-    if (empty($audience['details']['name']) && $audience_id !== ACQUIA_LIFT_TARGETING_EVERYONE_ELSE) {
-      continue;
-    }
+  foreach ($form_state['values']['audiences'] as $type_id => $type) {
+    foreach ($form_state['values']['audiences'][$type_id] as $audience_id => $audience) {
+      if (empty($audience['details']['name']) && $audience_id !== ACQUIA_LIFT_TARGETING_EVERYONE_ELSE) {
+        continue;
+      }
 
-    if ($audience_id === ACQUIA_LIFT_TARGETING_EVERYONE_ELSE) {
-      $audience_values = $final_audience;
-    }
-    else {
-      $audience_values = array(
-        'name' => $audience['details']['name'],
-        'weight' => $audience['details']['weight'],
-        'contexts' => array(),
-        'strategy' => $audience['details']['strategy'],
-        'id' => $audience_id === 'add' ? NULL : $audience_id,
-      );
-      // We need to massage the context information as submitted in the form into
-      // an array of contexts that can be consumed by the
-      // acquia_lift_target_audience_save() function.
-      foreach ($audience['details']['mapping']['contexts'] as $context_values) {
-        if ($context_values['context'] == '') {
-          continue;
+      if ($audience_id === ACQUIA_LIFT_TARGETING_EVERYONE_ELSE) {
+        $audience_values = $final_audience;
+      }
+      else {
+        $audience_values = array(
+          'name' => $audience['details']['name'],
+          'weight' => $audience['details']['weight'],
+          'contexts' => array(),
+          'strategy' => $audience['details']['strategy'],
+          'id' => $audience_id === 'add' ? NULL : $audience_id,
+        );
+        // We need to massage the context information as submitted in the form into
+        // an array of contexts that can be consumed by the
+        // acquia_lift_target_audience_save() function.
+        foreach ($audience['details']['mapping']['contexts'] as $context_values) {
+          if ($context_values['context'] == '') {
+            continue;
+          }
+          $context_values['match'] = $context_values['value']['match'];
+          $context_values['operator'] = $context_values['value']['operator'];
+          unset($context_values['value'], $context_values['remove']);
+          $audience_values['contexts'][] = $context_values;
         }
-        $context_values['match'] = $context_values['value']['match'];
-        $context_values['operator'] = $context_values['value']['operator'];
-        unset($context_values['value'], $context_values['remove']);
-        $audience_values['contexts'][] = $context_values;
       }
-    }
-    if (acquia_lift_target_audience_save($audience_values['name'], $agent_data->machine_name, $audience_values['contexts'], $audience_values['strategy'], $audience_values['weight'], $audience_values['id'])) {
-      if ($audience_id === 'add') {
-        drupal_set_message(t('The target audience %audience was created successfully', array(
+      if (acquia_lift_target_audience_save($audience_values['name'], $agent_data->machine_name, $audience_values['contexts'], $audience_values['strategy'], $audience_values['weight'], $audience_values['id'])) {
+        if ($type_id === 'new') {
+          drupal_set_message(t('The target audience %audience was created successfully', array(
+            '%audience' => $audience['details']['name'],
+          )));
+        }
+        $audience_count++;
+      }
+      else {
+        drupal_set_message(t('There was a problem saving the target audience %audience.', array(
           '%audience' => $audience['details']['name'],
-        )));
+        )), 'error');
       }
-      $audience_count++;
-    }
-    else {
-      drupal_set_message(t('There was a problem saving the target audience %audience.', array(
-        '%audience' => $audience['details']['name'],
-      )), 'error');
-    }
-    // Handle the assignment of options to audiences.
-    if (!empty($audience['assignment_order'])) {
-      $targeting[$audience_id] = explode(',', $audience['assignment_order']);
+      // Handle the assignment of options to audiences.
+      if (!empty($audience['assignment_order'])) {
+        $targeting[$audience_id] = explode(',', $audience['assignment_order']);
+      }
     }
   }
   acquia_lift_save_targeting_structure($agent_data, $targeting);
@@ -1876,6 +1987,9 @@ function _acquia_lift_personalize_campaign_wizard_variations_fields(&$form, &$fo
  *
  * @param $agent_data
  *   The current agent data.
+ * @param $parent_type
+ *   Indicates if this is "new" or "existing" (container names used for
+ *   audiences of those types).
  * @param $parent_identifier
  *   The identifier used for this audience within the form, either the
  *   machine_name or "add" for new audiences.
@@ -1890,10 +2004,10 @@ function _acquia_lift_personalize_campaign_wizard_variations_fields(&$form, &$fo
  * @return array
  *   The form element
  */
-function _acquia_lift_personalize_campaign_wizard_targeting_audience(&$form, &$form_state, $agent_data, $parent_identifier, $audience = NULL) {
+function _acquia_lift_personalize_campaign_wizard_targeting_audience(&$form, &$form_state, $agent_data, $parent_type, $parent_identifier, $audience = NULL) {
 // Build up a list of available context values for targeting.
   module_load_include('inc', 'personalize', 'personalize.admin');
-  $targeting_values = personalize_get_targeting_options_for_agent($agent_data);
+  $form['#targeting_values'] = $targeting_values = personalize_get_targeting_options_for_agent($agent_data);
   $element = array(
     '#type' => 'container',
   );
@@ -1917,7 +2031,7 @@ function _acquia_lift_personalize_campaign_wizard_targeting_audience(&$form, &$f
 
   // This is the portion of the form that will be replace when the "add new" or "remove
   // context" links are clicked.
-  $main_wrapper_id = 'acquia-lift-targeting-' . $parent_identifier;
+  $main_wrapper_id = 'acquia-lift-targeting-' . $parent_type . '-' . $parent_identifier;
 
   $element['mapping'] = array(
     '#tree' => TRUE,
@@ -1939,8 +2053,8 @@ function _acquia_lift_personalize_campaign_wizard_targeting_audience(&$form, &$f
 
   // Load from the existing form if passed first, otherwise, load from audience.
   $mappings = array();
-  if (isset($form_state['values']['audiences'][$parent_identifier]['details']['mapping']['contexts'])) {
-    foreach($form_state['values']['audiences'][$parent_identifier]['details']['mapping']['contexts'] as $delta => $context) {
+  if (isset($form_state['values']['audiences'][$parent_type][$parent_identifier]['details']['mapping']['contexts'])) {
+    foreach($form_state['values']['audiences'][$parent_type][$parent_identifier]['details']['mapping']['contexts'] as $delta => $context) {
       if (empty($context['context'])) {
         $plugin_name = $context_option = '';
       }
@@ -1964,12 +2078,12 @@ function _acquia_lift_personalize_campaign_wizard_targeting_audience(&$form, &$f
       }
     }
   }
-  // If the "Remove" button was clicked for a context, we need to remove that context
-  // from the form.
-  if (isset($form_state['to_remove_audience'][$parent_identifier])) {
-    unset($mappings[$form_state['to_remove_audience'][$parent_identifier]]);
-    unset($form_state['to_remove_audience'][$parent_identifier]);
-    $form_state['num_contexts_audience'][$parent_identifier]--;
+  // If the "Remove" button was clicked for a context for this audience, we
+  // need to remove that context from the form.
+  if (isset($form_state['to_remove_audience'][$parent_type][$parent_identifier])) {
+    unset($mappings[$form_state['to_remove_audience'][$parent_type][$parent_identifier]]);
+    unset($form_state['to_remove_audience'][$parent_type][$parent_identifier]);
+    $form_state['num_contexts_audience'][$parent_type][$parent_identifier]--;
   }
 
   // Make sure there is at least an empty context.
@@ -1985,8 +2099,8 @@ function _acquia_lift_personalize_campaign_wizard_targeting_audience(&$form, &$f
   // If the "Add another" button was clicked, we need to add contexts to get up
   // to the number indicated.
   $num_contexts = count($mappings);
-  if (isset($form_state['num_contexts_audience'][$parent_identifier]) && $form_state['num_contexts_audience'][$parent_identifier] > $num_contexts) {
-    while ($num_contexts < $form_state['num_contexts_audience'][$parent_identifier]) {
+  if (isset($form_state['num_contexts_audience'][$parent_type][$parent_identifier]) && $form_state['num_contexts_audience'][$parent_type][$parent_identifier] > $num_contexts) {
+    while ($num_contexts < $form_state['num_contexts_audience'][$parent_type][$parent_identifier]) {
       $mappings[] = array(
         'context' => '',
         'operator' => 'equals',
@@ -1996,7 +2110,7 @@ function _acquia_lift_personalize_campaign_wizard_targeting_audience(&$form, &$f
       $num_contexts++;
     }
   }
-  $form_state['num_contexts_audience'][$parent_identifier] = count($mappings);
+  $form_state['num_contexts_audience'][$parent_type][$parent_identifier] = count($mappings);
 
   foreach ($mappings as $delta => $mapping) {
     $element['mapping']['contexts'][$delta] = personalize_explicit_targeting_mapping_element($mapping, $targeting_values, $parent_identifier . '-' . $delta);
@@ -2013,11 +2127,11 @@ function _acquia_lift_personalize_campaign_wizard_targeting_audience(&$form, &$f
       '#value' => 'remove_' . $delta,
       '#theme_wrappers' => array('personalize_html_tag'),
       '#access' => count($mappings) > 1,
-      '#name' => 'audiences[' . $parent_identifier . '][details][mapping][contexts][' . $delta . '][remove]',
+      '#name' => 'audiences[' . $parent_type . '][' . $parent_identifier . '][details][mapping][contexts][' . $delta . '][remove]',
       '#attributes' => array(
         'class' => array('personalize-delete-context', 'form-submit',),
         'title' => t('Delete this context.'),
-        'id' => 'edit-audiences-' . $parent_identifier . '-details-mapping-contexts-' . $delta . '-remove',
+        'id' => 'edit-audiences-' . $parent_type . '-' . $parent_identifier . '-details-mapping-contexts-' . $delta . '-remove',
       ),
       '#submit' => array('acquia_lift_personalize_campaign_wizard_targeting_remove'),
       '#skip_validation' => TRUE,
@@ -2034,14 +2148,14 @@ function _acquia_lift_personalize_campaign_wizard_targeting_audience(&$form, &$f
     '#type' => 'submit',
     '#tag' => 'button',
     '#text' => t('Add context'),
-    '#value' => 'add_context_' . $parent_identifier,
+    '#value' => 'add_context_' . $parent_type . '_' . $parent_identifier,
     '#theme_wrappers' => array('personalize_html_tag'),
     '#submit' => array('acquia_lift_personalize_campaign_wizard_targeting_add'),
-    '#name' => 'audiences[' . $parent_identifier . '][details][add_new]',
+    '#name' => 'audiences[' . $parent_type . '][' . $parent_identifier . '][details][add_new]',
     '#attributes' => array(
       'class' => array('personalize-add-link'),
       'title' => t('Click here to add more contexts.'),
-      'id' => 'edit-audiences-' . $parent_identifier . '-details-add-new'
+      'id' => 'edit-audiences-' . $parent_type . '-' . $parent_identifier . '-details-add-new'
     ),
     '#ajax' => array(
       'callback' => 'acquia_lift_personalize_campaign_wizard_targeting_ajax',

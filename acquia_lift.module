@@ -276,6 +276,11 @@ function acquia_lift_theme() {
       'path' => $path . '/theme',
       'file' => 'acquia_lift.wizard.theme.inc',
     ),
+    'acquia_lift_add_card_button' => array(
+      'render element' => 'element',
+      'path' => $path . '/theme',
+      'file' => 'acquia_lift.wizard.theme.inc',
+    ),
     'acquia_lift_radio_list' => array(
       'render element' => 'element',
       'path' => $path . '/theme',

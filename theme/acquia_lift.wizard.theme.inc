@@ -89,6 +89,21 @@ function theme_acquia_lift_radio_list($variables) {
   return '<div' . drupal_attributes($attributes) . '>' . drupal_render_children($element) . '</div>';
 }
 
+/**
+ * Theme function to convert a submit button to an "add" button within the
+ * wizard process
+ */
+function theme_acquia_lift_add_card_button(&$variables) {
+  $element = &$variables['element'];
+  $element['#attributes']['class'][] = 'acquia-lift-wizard-add';
+  $element['#button_type'] = 'submit';
+  $html = '';
+  $html .= '<div class="acquia-lift-wizard-add-wrapper">';
+  $html .= theme('button', $element);
+  $html .= '</div>';
+  return $html;
+}
+
 
 /**
  * Theme wrapper function to wrap an individual radio button with it's image

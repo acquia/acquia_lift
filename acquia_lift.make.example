@@ -13,7 +13,7 @@ projects[drupal][version] = "7.34"
 ; Contrib module: personalize
 ; ---------------------------------------
 projects[personalize][subdir] = contrib
-projects[personalize][version] = 1.0-rc13
+projects[personalize][version] = 2.0-beta1
 
 ; Contrib module: visitor_actions
 ; ---------------------------------------
@@ -23,7 +23,7 @@ projects[visitor_actions][version] = 1.0
 ; Contrib module: acquia_lift
 ; ---------------------------------------
 projects[acquia_lift][subdir] = contrib
-projects[acquia_lift][version] = 1.0-rc16
+projects[acquia_lift][version] = 2.0-beta1
 
 ; Contrib module: ctools
 ; ---------------------------------------

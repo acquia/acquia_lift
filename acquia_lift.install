@@ -759,6 +759,11 @@ function acquia_lift_update_7200() {
         $main_os->decision_name = $option_set_details['decision_name'];
         $main_os->targeting = array(
           ACQUIA_LIFT_TARGETING_EVERYONE_ELSE => array(
+            'label' => t('Everyone else'),
+            'weight' => 1,
+            'targeting_features' => array(),
+            'targeting_rules' => array (),
+            'targeting_strategy' => 'OR',
             'osid' => $nested_osid
           )
         );

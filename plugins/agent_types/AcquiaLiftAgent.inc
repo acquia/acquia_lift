@@ -1722,7 +1722,7 @@ abstract class AcquiaLiftReportBase implements PersonalizeAgentReportInterface, 
 
       $rate = $total_count[$counter] > 0 ? ($total_goals[$counter]/$total_count[$counter]) * 100 : 0;
       $val_rate = $total_count[$counter] > 0 ? ($total_val[$counter]/$total_count[$counter]) : 0;
-      $margin = (($item['bHi'] - $item['bLo'])/2) * 100;
+      $margin = ($item['bHi'] - $item['bLo']) / 2;
 
       $data[$item['feature']][] = array(
         'choice_id' => $choice_id,
@@ -1821,8 +1821,7 @@ abstract class AcquiaLiftReportBase implements PersonalizeAgentReportInterface, 
       $count = $item['totals']['count'];
       // The format for percentages will already multiply by 100.
       $rate = $count > 0 ? ($goals/$count) : 0;
-      $margin = (($item['bHi'] - $item['bLo'])/2);
-
+      $margin = ($item['bHi'] - $item['bLo']) / 2;
       if ($item['signif']) {
         if (is_nan($winning_value) || $item['confidence'] > $winning_value) {
           $winning_value = $item['lift']['default'];
@@ -1886,7 +1885,7 @@ abstract class AcquiaLiftReportBase implements PersonalizeAgentReportInterface, 
         'data' => t('Conversion value'),
         'data-conversion-metric' => 'value',
       ),
-      t('Margin of error (%)'),
+      t('Margin of error'),
     );
     $rows = array();
     foreach ($report_data as $feature => $feature_data) {

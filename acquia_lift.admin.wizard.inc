@@ -1211,8 +1211,8 @@ function acquia_lift_personalize_campaign_wizard_submit(&$form, &$form_state) {
   module_load_include('inc', 'acquia_lift', 'acquia_lift.admin');
 
   // Only allow edit submit handlers to run if changes are allowed.
-  $agent_data = $form['#agent'];
-  if (acquia_lift_target_definition_changes_allowed($agent_data)) {
+  $step_name = $form_state['storage']['step'];
+  if (empty($form[$step_name]['#disabled'])) {
 
     // Run the base submit form handling.
     $agent_data = personalize_campaign_wizard_submit_base($form, $form_state);
@@ -1228,7 +1228,7 @@ function acquia_lift_personalize_campaign_wizard_submit(&$form, &$form_state) {
     personalize_agent_save($agent_data);
   }
   else {
-    $agent_instance = personalize_agent_load_agent($agent_data->machine_name);
+    $agent_instance = personalize_agent_load_agent($form['#agent']->machine_name);
   }
 
   // If the subform submit handlers didn't already set a redirect, then set the

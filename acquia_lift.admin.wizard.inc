@@ -1001,13 +1001,19 @@ function acquia_lift_personalize_campaign_wizard_targeting_ajax($form, &$form_st
  * Validation for the entire campaign wizard (all steps).
  */
 function acquia_lift_personalize_campaign_wizard_validate(&$form, &$form_state) {
+  $step_name = $form_state['storage']['step'];
+  // Do not validate if the form is disabled.
+  if (!empty($form[$step_name]['#disabled'])) {
+    return;
+  }
+
   // Run any base form validation if available.
   module_load_include('inc', 'personalize', 'personalize.admin.campaign');
   if (function_exists('personalize_campaign_wizard_validate_base')) {
     personalize_campaign_wizard_validate_base($form, $form_state);
   }
 
-  $function = 'acquia_lift_personalize_campaign_wizard_' . $form_state['storage']['step'] . '_validate';
+  $function = 'acquia_lift_personalize_campaign_wizard_' . $step_name . '_validate';
   if (function_exists($function)) {
     $function($form, $form_state);
   }

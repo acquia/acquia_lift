@@ -547,17 +547,15 @@ class AcquiaLiftReport extends AcquiaLiftReportBase {
    */
   protected function extractOverviewReportData() {
     $items = $this->getStatusReportItems();
+    if (!isset($items['totals']) || !isset($items['today'])) {
+      return array();
+    }
     $agent_data = $this->agent->getData();
     $decision_style = $agent_data['decision_style'] === 'adaptive' ? t('Auto-personalize') : t('A/B');
     $total_variations = isset($agent_data['decisions']) ? count($agent_data['decisions']) : 0;
     $report = array();
     // Create an array of data for each time option.
     $report['all'] = array(
-      'unformatted' => array(
-        'total_shown' => $items['totals']['sessions']['count'],
-        'total_goals' => $items['totals']['goals']['count'],
-        'total_lift' => $items['today']['liftOverDefaultUsingGoalsToDate'],
-      ),
       'test_type' => $decision_style,
       'total_shown' => $this->formatReportNumber($items['totals']['sessions']['count']),
       'total_goals' => $this->formatReportNumber($items['totals']['goals']['count']),
@@ -569,28 +567,37 @@ class AcquiaLiftReport extends AcquiaLiftReportBase {
   }
 
   protected function getDailyData() {
-    return $this->extractConversionReportData();
+    $data = $this->extractConversionReportData();
+    if (empty($data)) {
+      $this->hasData = FALSE;
+    }
+    return $data;
   }
 
   protected function getAggregatedData() {
     $data = $this->extractConversionSummaryData();
+    if (!isset($data['data'])) {
+      $this->hasData = FALSE;
+      return array();
+    }
     return $data['data'];
   }
 
   protected function getOverallConfidence() {
     $data = $this->extractConversionSummaryData();
-    return $data['overview']['confidence'];
+    return isset($data['overview']['confidence']) ? $data['overview']['confidence'] : 0;
   }
 
   protected function getOverallWinner() {
     $data = $this->extractConversionSummaryData();
-    return $data['overview']['winner'];
+    return isset($data['overview']['winner']) ? $data['overview']['winner'] : 0;
   }
 
   protected function getStatusReportItems() {
     $config = $this->getReportConfiguration();
     $status_report = $this->loadedReports['raw']['status'];
     if (!isset($status_report['data']) || !isset($status_report['data'][$config['machine_name']])) {
+      $this->hasData = FALSE;
       return array();
     }
     return $status_report['data'][$config['machine_name']];
@@ -823,6 +830,7 @@ class AcquiaLiftReport extends AcquiaLiftReportBase {
   protected function extractCampaignReportData() {
     $this->loadedReports['extracted_total'] = TRUE;
     if (!is_array($this->loadedReports['status']) || !is_array($this->loadedReports['confidence'])) {
+      $this->hasData = FALSE;
       return;
     }
 
@@ -843,7 +851,7 @@ class AcquiaLiftReport extends AcquiaLiftReportBase {
 
     // Update the status report data (used for overview report).
     foreach($this->loadedReports['status'] as &$report) {
-      $report['total_lift_positive'] = $report['unformatted']['total_lift'] > self::LIFT_THRESHHOLD && $total_confident > 0;
+      $report['total_lift_positive'] = $report['total_lift'] > self::LIFT_THRESHHOLD && $total_confident > 0;
       $report['total_confident'] = $total_confident;
       $report['confidence_level'] = $total_confident > 0 ? 'high' : 'low';
       $report['time_running'] = isset($interval) ? $interval->format('%mm, %dd') : '1d';
@@ -864,6 +872,7 @@ class AcquiaLiftReport extends AcquiaLiftReportBase {
   protected function extractConfidenceReportData() {
     $report = $this->loadedReports['raw']['confidence'];
     if (!isset($report['data']) || empty($report['data']['items'])) {
+      $this->hasData = FALSE;
       return array();
     }
     $items = $report['data']['items'];
@@ -889,10 +898,6 @@ class AcquiaLiftReport extends AcquiaLiftReportBase {
         }
       }
       $data['variations'][$choice] = array(
-        'unformatted' => array(
-          'lift_default' => $item['lift']['default'],
-          'lift_random' => $item['lift']['random'],
-        ),
         'counter' => $counter,
         'choice_id' => $choice_id,
         'raw_label' => $option_id,
@@ -921,11 +926,19 @@ class AcquiaLiftReport extends AcquiaLiftReportBase {
 
   protected  function getSessionCount() {
     $status_report_data = $this->getStatusReportItems();
+    if (!isset($status_report_data['totals']['sessions']['count'])) {
+      $this->hasData = FALSE;
+      return 0;
+    }
     return $this->formatReportNumber($status_report_data['totals']['sessions']['count']);
   }
 
   protected function getGoalCount() {
     $status_report_data = $this->getStatusReportItems();
+    if (!isset($status_report_data['totals']['goals']['count'])) {
+      $this->hasData = FALSE;
+      return 0;
+    }
     return $this->formatReportNumber($this->formatReportNumber($status_report_data['totals']['goals']['count']));
   }
 }

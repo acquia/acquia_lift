@@ -320,6 +320,11 @@ input[type="submit"].acquia-lift-wizard-add {
   line-height: 1.33333;
   box-sizing: border-box;
 }
+input[type="submit"].acquia-lift-wizard-add:hover {
+  color: #FFF;
+  background: #2FA6E5 url('../images/actions__add.svg') no-repeat .5em center;
+  font-weight: bold;
+}
 .el-card__action .acquia-lift-delete {
   display: inline-block;
   padding-top: .37rem;

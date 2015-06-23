@@ -29,6 +29,13 @@ abstract class AcquiaLiftReportBase {
   protected $loadedReports;
 
   /**
+   * Boolean indicating whether the report has data.
+   *
+   * @var bool
+   */
+  protected $hasData = TRUE;
+
+  /**
    * Constructs an AcquiaLiftReport object
    *
    * @param PersonalizeAgentInterface $agent
@@ -142,7 +149,7 @@ abstract class AcquiaLiftReportBase {
       'overview' => $this->buildOverviewReport($interval, $config['test_type'], $session_count, $goal_count),
       'experiment' => $this->buildConversionReports($name, $daily_data, $aggregated_data, $confidence, $winner),
     );
-    $reports['#has_data'] = TRUE;
+    $reports['#has_data'] = $this->hasData;
     return $reports;
   }
 

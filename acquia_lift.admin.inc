@@ -735,18 +735,23 @@ function acquia_lift_report_custom(&$form_state, $agent_data, $legacy = FALSE) {
       )
     );
   }
-  // If this agent doesn't implement the reporting interface then there are no
-  // reports to show.
-  if (!$agent instanceof AcquiaLiftAgentInterface) {
+
+  // If this isn't a learning agent, no reports to show..
+  if (!$agent instanceof AcquiaLiftLearningAgentInterface) {
     return array(
       'no_report' => array(
         '#markup' => t('This agent does not support reporting.')
       )
     );
   }
+
   // Check for Rickshaw and D3 libraries and alert users if not exist.
   if (_acquia_lift_missing_library_warning(array('rickshaw', 'd3'), t('The following libraries are required in order to view the Acquia Lift reports:'))) {
     return array();
+  }
+  if ($legacy) {
+    // The file containing the legacy report class needs to be explicitly loaded.
+    module_load_include('inc', 'acquia_lift', 'includes/AcquiaLiftReportLegacy');
   }
   $agent_name = $agent->getMachineName();
   // Generate report filters.
@@ -762,20 +767,26 @@ function acquia_lift_report_custom(&$form_state, $agent_data, $legacy = FALSE) {
 
   // Get the decision points for this agent so we can provide a filter on this.
   $option_sets = personalize_option_set_load_by_agent($agent_name);
-  $decisions = AcquiaLiftAgent::convertOptionSetsToDecisions($option_sets);
-  $decision_options = array();
-  foreach ($decisions as $name => $decision) {
-    $decision_options[$name] = personalize_get_label_for_decision_point_name($name);
-  }
+  if ($legacy) {
+    $decisions = AcquiaLiftAgent::convertOptionSetsToDecisions($option_sets);
+    $decision_options = array();
+    foreach ($decisions as $name => $decision) {
+      $decision_options[$name] = personalize_get_label_for_decision_point_name($name);
+    }
 
-  // Decision point filters.
-  if (isset($form_state['values']['decision_point'])) {
-    $decision_point = $form_state['values']['decision_point'];
+    // Decision point filters.
+    if (isset($form_state['values']['decision_point'])) {
+      $decision_point = $form_state['values']['decision_point'];
+    }
+    else {
+      $decision_point = key($decisions);
+    }
+    $form['report_filters']['decision_point'] = acquia_lift_report_decision_point_dropdown($decision_options, $decision_point, $agent_name);
   }
   else {
-    $decision_point = key($decisions);
+    $os = reset($option_sets);
+    $decision_point = $os->decision_point;
   }
-  $form['report_filters']['decision_point'] = acquia_lift_report_decision_point_dropdown($decision_options, $decision_point, $agent_name);
 
   list($date_start_report, $date_end_report) = acquia_lift_get_report_dates_for_agent($agent_data);
 
@@ -783,10 +794,6 @@ function acquia_lift_report_custom(&$form_state, $agent_data, $legacy = FALSE) {
   $selected_goal = empty($form_state['values']['goal']) ? NULL : $form_state['values']['goal'];
   $selected_metric = empty($form_state['values']['metric']) ? 'rate' : $form_state['values']['metric'];
 
-  if ($legacy) {
-    // The file containing the legacy report class needs to be explicitly loaded.
-    module_load_include('inc', 'acquia_lift', 'includes/AcquiaLiftReportLegacy');
-  }
   $options = array(
     'decision' => $decision_point,
     'start' => $date_start_report,
@@ -795,7 +802,6 @@ function acquia_lift_report_custom(&$form_state, $agent_data, $legacy = FALSE) {
     'conversion_metric' => $selected_metric,
     'legacy' => $legacy
   );
-
   $reports = $agent->buildCampaignReports($options);
   if (!($reports['#has_data'])) {
     // This campaign hasn't been shown yet, so there is no data for reporting.

@@ -3481,7 +3481,7 @@
 
         // Create View for the Report link.
         if (ui.collections.campaigns.length > 0) {
-          $('[href="' + reportPath + '"]')
+          $('[href*="' + reportPath + '"]')
             .once('acquia-lift-personalize-report')
             .each(function (index, element) {
               ui.views.push((new ui.MenuReportsView({
@@ -3491,12 +3491,12 @@
               })));
             });
         } else {
-          $('[href="' + reportPath + '"]').hide();
+          $('[href*="' + reportPath + '"]').hide();
         }
 
         // Create a View for the Status link.
         if (ui.collections.campaigns.length > 0) {
-          $('[href="' + statusPath + '"]')
+          $('[href*="' + statusPath + '"]')
             .once('acquia-lift-personalize-status')
             .each(function (index, element) {
               ui.views.push(new ui.MenuStatusView({
@@ -3505,7 +3505,7 @@
               }));
             });
         } else {
-          $('[href="' + statusPath + '"]').hide();
+          $('[href*="' + statusPath + '"]').hide();
         }
 
         // Refresh event delegation. This is necessary to rebind event delegation

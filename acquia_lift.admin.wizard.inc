@@ -352,10 +352,13 @@ function acquia_lift_personalize_campaign_wizard_goals_alter(&$form, &$form_stat
 
   // Alter the existing goals list form items.
   $goal_deltas = element_children($form['goals']['all_goals']);
-  if (count($goal_deltas) === 1 && empty($form['goals']['all_goals'][0]['goal_id']['#value'])) {
-    // The only goal form element is a placeholder for a new goal.
-    unset($form['goals']['all_goals'][0]);
-    $goal_deltas = array();
+  if (count($goal_deltas) === 1) {
+    $only_goal_delta = current($goal_deltas);
+    if (empty($form['goals']['all_goals'][$only_goal_delta]['goal_id']['#value'])) {
+      // The only goal form element is a placeholder for a new goal.
+      unset($form['goals']['all_goals'][$only_goal_delta]);
+      $goal_deltas = array();
+    }
   }
 
   $params = drupal_get_query_parameters();
@@ -519,6 +522,9 @@ function acquia_lift_personalize_campaign_wizard_goals_alter(&$form, &$form_stat
                 ':input[name="goals[new][' . $delta . '][details][event][page]"]' => $visible_states,
               );
             }
+            // Clear the element validation - instead it will be handled
+            // in the form validator.
+            unset($form['goals']['new'][$delta]['details']['#element_validate']);
             // Include the page for the validation callback.
             $form_state['build_info']['files'][] = drupal_get_path('module', 'acquia_lift') . '/acquia_lift.admin.unibar.inc';
             // The pages field needs to be manually populated.
@@ -1271,33 +1277,49 @@ function acquia_lift_personalize_campaign_wizard_variations_validate(&$form, &$f
  * Validation function for goals form.
  */
 function acquia_lift_personalize_campaign_wizard_goals_validate(&$form, &$form_state) {
-  dpm($form_state, 'goal validate');
-
   // Make sure that each action is only set once per campaign.
-  $proposed_actions = array();
+  // Note that the error message is only shown once as we only have access
+  // to the action machine name for display and it would be too repetitive to
+  // to show the same message over and over.
   $used_actions = array();
-  if (!empty($form_state['values']['all_goals'])) {
+  if (!empty($form_state['values']['goals']['all_goals'])) {
     foreach($form_state['values']['goals']['all_goals'] as $delta => $goal) {
-      $used_actions[$goal['action_name']];
+      if (empty($goal['action_name'])) {
+        continue;
+      }
+      if (array_search($goal['action_name'], $used_actions) !== FALSE) {
+        form_set_error('goals[all_goals][' . $delta . '][action_name]', t('Actions can only be used once per personalization.'));
+        return;
+      }
+      else {
+        $used_actions[] = $goal['action_name'];
+      }
     }
   }
-  foreach($form_state['new_goals'] as $delta => $type) {
-    if ($type !== 'existing') {
-      continue;
-    }
-
-  }
-  if (!empty($form_state['values']['action_name'])) {
-    $proposed_actions[$form_state['values']['action_name']] = 'action_name';
-  }
-  foreach ($form_state['values']['goals']['all_goals'] as $delta => $goal) {
-    if (!empty($proposed_actions[$goal['action_name']])) {
-      // Only show the message once in the error messages.
-      form_set_error('goals[all_goals][' . $delta . '][action_name]', t('Each action can only be used once per personalization.'));
-      break;
-    }
-    else {
-      $proposed_actions[$goal['action_name']] = 'goals[all_goals][' . $delta . '][action_name]';
+  if (!empty($form_state['new_goals'])) {
+    foreach ($form_state['new_goals'] as $delta => $type) {
+      if ($type == 'page') {
+        // Validate the page input via plugin valiator.
+        ctools_include('plugins');
+        if ($class = ctools_plugin_load_class('visitor_actions', 'actionable_element', 'page', 'handler')) {
+          // @todo Any validation errors shown will not be shown with the
+          // correct field highlighted, but the correct message still shows.
+          call_user_func_array(array($class, 'validate'), array($form_state['values']['goals']['new'][$delta]['details']));
+        }
+        continue;
+      }
+      if ($type !== 'existing') {
+        continue;
+      }
+      $new_action_name = $form_state['values']['goals']['new'][$delta]['details']['action_name'];
+      if (empty($new_action_name)) {
+        continue;
+      }
+      if (array_search($new_action_name, $used_actions) !== FALSE) {
+        form_set_error('goals[new][' . $delta . '][details][action_name]', t('Actions can only be used once per personalization.'));
+        return;
+      }
+      $used_actions[] = $new_action_name;
     }
   }
 }
@@ -1570,18 +1592,31 @@ function acquia_lift_personalize_campaign_wizard_goals_submit(&$form, &$form_sta
     return;
   }
 
-  // Get a reference to the original values.
-  $values = $form_state['values'];
+  // Check if any goals have been removed during editing.
+  $saved_goals = $existing_goals = array();
+  foreach (personalize_goal_load_by_conditions(array('agent' => $agent_data->machine_name)) as $goal) {
+    // We can only have one goal with a given action per agent, so
+    // we key the array of existing goals by action name.
+    $existing_goals[$goal->action] = $goal->id;
+  }
 
   // Check for any new goals.
-  if (!empty($form_state['values']['goal_add_type'])) {
-    $form_state['values']['goal_type'] = $form_state['values']['goal_add_type'];
-    $form_state['values']['agent'] = $agent_data;
-    if (isset($form['goals']['add_goal']['goal']['details']['action_name'])) {
-      $form['goal']['action_name'] = $form['goals']['add_goal']['goal']['details']['action_name'];
+  if (isset($form_state['new_goals'])) {
+    // Get a reference to the original values.
+    $values = $form_state['values'];
+    foreach ($form_state['new_goals'] as $delta => $type) {
+      if (empty($type)) {
+        continue;
+      }
+      $form_state['values'] = $values['goals']['new'][$delta]['details'];
+      $form_state['values']['agent'] = $agent_data;
+      $form_state['values']['goal_type'] = $type;
+      $save_form['goal']['action_name'] = ($type == 'existing') ? $form['goals']['new'][$delta]['details']['action_name'] : array();
+      module_load_include('inc', 'acquia_lift', 'acquia_lift.admin.unibar');
+      acquia_lift_goal_type_create_form_submit($save_form, $form_state);
     }
-    module_load_include('inc', 'acquia_lift', 'acquia_lift.admin.unibar');
-    acquia_lift_goal_type_create_form_submit($form, $form_state);
+    // Restore the form state values.
+    $form_state['values'] = $values;
   }
 
   // Update any existing goals.
@@ -1590,6 +1625,7 @@ function acquia_lift_personalize_campaign_wizard_goals_submit(&$form, &$form_sta
       if (!empty($goal['action_name'])) {
         try {
           personalize_goal_save($agent_data->machine_name, $goal['action_name'], $goal['value'], $goal['goal_id']);
+          $saved_goals[$goal['action_name']] = $goal['goal_id'];
         }
         catch (Exception $e) {
           drupal_set_message($e->getMessage(), 'error');
@@ -1598,8 +1634,12 @@ function acquia_lift_personalize_campaign_wizard_goals_submit(&$form, &$form_sta
     }
   }
 
-  // Restore the form state values.
-  $form_state['values'] = $values;
+  // The difference between existing goals and saved goals are the ones
+  // that need to be deleted.
+  $to_delete = array_diff_key($existing_goals, $saved_goals);
+  foreach ($to_delete as $goal_id) {
+    personalize_goal_delete($goal_id);
+  }
 }
 
 /**

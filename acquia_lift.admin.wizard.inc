@@ -1271,13 +1271,22 @@ function acquia_lift_personalize_campaign_wizard_variations_validate(&$form, &$f
  * Validation function for goals form.
  */
 function acquia_lift_personalize_campaign_wizard_goals_validate(&$form, &$form_state) {
+  dpm($form_state, 'goal validate');
+
   // Make sure that each action is only set once per campaign.
-  if (empty($form_state['values']['goals']['all_goals'])) {
-    // If there aren't any existing goals then this isn't a problem.
-    return;
-  }
-  // Save an array of action names and the field names where they are found.
   $proposed_actions = array();
+  $used_actions = array();
+  if (!empty($form_state['values']['all_goals'])) {
+    foreach($form_state['values']['goals']['all_goals'] as $delta => $goal) {
+      $used_actions[$goal['action_name']];
+    }
+  }
+  foreach($form_state['new_goals'] as $delta => $type) {
+    if ($type !== 'existing') {
+      continue;
+    }
+
+  }
   if (!empty($form_state['values']['action_name'])) {
     $proposed_actions[$form_state['values']['action_name']] = 'action_name';
   }

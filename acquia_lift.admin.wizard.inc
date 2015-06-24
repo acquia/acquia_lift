@@ -400,10 +400,8 @@ function acquia_lift_personalize_campaign_wizard_goals_alter(&$form, &$form_stat
 
   // If the triggering element is the goal type selection, then set it to
   // the form_state for the selected goal delta.
-  if (isset($form_state['triggering_element']) && end($form_state['triggering_element']['#parents']) == 'goal_type') {
-    $parents = $form_state['triggering_element']['#parents'];
-    $delta_pos = array_search('new', $parents, TRUE) + 1;
-    $delta = $parents[$delta_pos];
+  if (isset($form_state['triggering_element']) && end($form_state['triggering_element']['#array_parents']) == 'goal_type') {
+    $delta = _acquia_lift_personalize_campaign_wizard_next_element($form_state, 'new');
     $form_state['new_goals'][$delta] = $form_state['values']['goals']['new'][$delta]['goal_type'];
     $form_state['expanded_goal'] = $delta;
   }
@@ -1059,9 +1057,7 @@ function acquia_lift_personalize_campaign_wizard_goals_ajax_add($form, &$form_st
  */
 function acquia_lift_personalize_campaign_wizard_goals_ajax_change($form, &$form_state) {
   // Get the delta for the new goal.
-  $parents = $form_state['triggering_element']['#parents'];
-  $delta_pos = array_search('new', $parents, TRUE) + 1;
-  $delta = $parents[$delta_pos];
+  $delta = _acquia_lift_personalize_campaign_wizard_next_element($form_state, 'new');
   $form_state['new_goals'][$delta] = '';
   $form_state['expanded_goal'] = $delta;
   $form_state['rebuild'] = TRUE;
@@ -1072,9 +1068,7 @@ function acquia_lift_personalize_campaign_wizard_goals_ajax_change($form, &$form
  */
 function acquia_lift_personalize_campaign_wizard_goals_ajax_cancel($form, &$form_state) {
   // Get the delta for the cancelled goal.
-  $parents = $form_state['triggering_element']['#parents'];
-  $delta_pos = array_search('new', $parents, TRUE) + 1;
-  $delta = $parents[$delta_pos];
+  $delta = _acquia_lift_personalize_campaign_wizard_next_element($form_state, 'new');
   unset($form_state['new_goals'][$delta]);
   $form_state['rebuild'] = TRUE;
 }
@@ -1090,10 +1084,7 @@ function acquia_lift_personalize_campaign_wizard_goals_ajax($form, &$form_state)
  * Ajax handler when editing a specific new goal
  */
 function acquia_lift_personalize_campaign_wizard_goals_ajax_delta($form, &$form_state) {
-  // Get the delta for the cancelled goal.
-  $parents = $form_state['triggering_element']['#parents'];
-  $delta_pos = array_search('new', $parents, TRUE) + 1;
-  $delta = $parents[$delta_pos];
+  $delta = _acquia_lift_personalize_campaign_wizard_next_element($form_state, 'new');
   return $form['goals']['new'][$delta];
 }
 
@@ -1121,14 +1112,9 @@ function acquia_lift_personalize_campaign_wizard_goals_ajax_all($form, &$form_st
  * Submit handler for the "Add Context" button.
  */
 function acquia_lift_personalize_campaign_wizard_targeting_add($form, &$form_state) {
-  // Increment the number of contexts to be rendered.
-  $parents = $form_state['triggering_element']['#parents'];
   // New or existing indicator:
-  $type_pos = array_search('audiences', $parents, TRUE) + 1;
-  $type_key = $parents[$type_pos];
-  // ID within new or existing audiences:
-  $context_key_pos = $type_pos + 1;
-  $context_key = $parents[$context_key_pos];
+  $type_key = _acquia_lift_personalize_campaign_wizard_next_element($form_state, 'audiences');
+  $context_key = _acquia_lift_personalize_campaign_wizard_next_element($form_state, $type_key);
 
   $form_state['num_contexts_audience'][$type_key][$context_key]++;
   $form_state['rebuild'] = TRUE;
@@ -1138,16 +1124,9 @@ function acquia_lift_personalize_campaign_wizard_targeting_add($form, &$form_sta
  * Submit handler for the "Remove Context" button.
  */
 function acquia_lift_personalize_campaign_wizard_targeting_remove($form, &$form_state) {
-  $parents = $form_state['triggering_element']['#parents'];
-
-  $type_key_pos = array_search('audiences', $parents, TRUE) + 1;
-  $type_key = $parents[$type_key_pos];
-
-  $context_key_pos = $type_key_pos + 1;
-  $context_key = $parents[$context_key_pos];
-
-  $delta_pos = array_search('contexts', $parents, TRUE) + 1;
-  $delta = $parents[$delta_pos];
+  $type_key = _acquia_lift_personalize_campaign_wizard_next_element($form_state, 'audiences');
+  $context_key = _acquia_lift_personalize_campaign_wizard_next_element($form_state, $type_key);
+  $delta = _acquia_lift_personalize_campaign_wizard_next_element($form_state, 'contexts');
 
   $form_state['to_remove_audience'][$type_key][$context_key] = $delta;
   $form_state['rebuild'] = TRUE;
@@ -1159,12 +1138,8 @@ function acquia_lift_personalize_campaign_wizard_targeting_remove($form, &$form_
 function acquia_lift_personalize_campaign_wizard_targeting_ajax($form, &$form_state) {
   // Don't show any messages within the AJAX returned.
   drupal_get_messages();
-  $parents = $form_state['triggering_element']['#parents'];
-  $type_key_pos = array_search('audiences', $parents) + 1;
-  $type_key = $parents[$type_key_pos];
-
-  $context_key_pos = $type_key_pos + 1;
-  $context_key = $parents[$context_key_pos];
+  $type_key = _acquia_lift_personalize_campaign_wizard_next_element($form_state, 'audiences');
+  $context_key = _acquia_lift_personalize_campaign_wizard_next_element($form_state, $type_key);
   return $form['targeting']['audiences'][$type_key][$context_key]['details']['mapping']['contexts'];
 }
 
@@ -1184,9 +1159,7 @@ function acquia_lift_personalize_campaign_wizard_targeting_audience_add($form, &
  * Submit handler for the "Cancel" add audience button.
  */
 function acquia_lift_personalize_campaign_wizard_targeting_audience_cancel($form, &$form_state) {
-  $parents = $form_state['triggering_element']['#parents'];
-  $context_key_pos = array_search('new', $parents) + 1;
-  $context_key = $parents[$context_key_pos];
+  $context_key = _acquia_lift_personalize_campaign_wizard_next_element($form_state, 'new');
   unset($form_state['new_audiences'][$context_key]);
   $form_state['rebuild'] = TRUE;
 }
@@ -1395,9 +1368,8 @@ function acquia_lift_personalize_campaign_wizard_targeting_validate(&$form, &$fo
   };
 
   // If we are adding a single audience validate the required audience fields.
-  $parents = $form_state['triggering_element']['#parents'];
-  if ($new_index = array_search('new', $parents) !== FALSE) {
-    $delta = $parents[$new_index + 1];
+  $delta = _acquia_lift_personalize_campaign_wizard_next_element($form_state, 'new');
+  if (!empty($delta)) {
     $validateAudienceFields($form_state['values']['audiences']['new'][$delta]['details'], 'audiences[new][' . $delta . '][details][', TRUE, $form['targeting']['audiences']['new'][$delta]['details']['mapping']['contexts']);
     return;
   }
@@ -1783,6 +1755,36 @@ function acquia_lift_personalize_campaign_wizard_status_submit($form, &$form_sta
  *
  ********************************************************************
  */
+
+/**
+ * Retrieve the next nested element's name.
+ *
+ * Useful for when the element name is a dynamic counter and locatable based
+ * on its nesting within the parent structure.
+ *
+ * @param array $form_state
+ *   The current form state to retrieve parents
+ * @param string $previous
+ *   The previous element name.
+ * @param array $parents
+ *   An option array of parents.  If not provided, the triggering_element's
+ *   parents will be used.
+ * @return string
+ *   The next nested element's name.
+ */
+function _acquia_lift_personalize_campaign_wizard_next_element($form_state, $previous, $parents = NULL) {
+  if (!is_array($parents)) {
+    if (!isset($form_state['triggering_element'])) {
+      return '';
+    }
+    $parents = $form_state['triggering_element']['#array_parents'];
+  }
+  if (($delta_pos = array_search($previous, $parents, TRUE)) === FALSE) {
+    return '';
+  }
+  $delta_pos++;
+  return $parents[$delta_pos];
+}
 
 /**
  * Generate the blocks portion of the campaign wizard form.

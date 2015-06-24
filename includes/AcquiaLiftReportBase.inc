@@ -147,7 +147,7 @@ abstract class AcquiaLiftReportBase {
     $name = empty($config['goal']) ? t('All goals') : $config['goal'];
     $reports = array(
       'overview' => $this->buildOverviewReport($interval, $config['test_type'], $session_count, $goal_count),
-      'experiment' => $this->buildConversionReports($name, $daily_data, $aggregated_data, $confidence, $winner),
+      'experiment' => $this->buildExperimentReports($name, $daily_data, $aggregated_data, $confidence, $winner),
     );
     $reports['#has_data'] = $this->hasData;
     return $reports;
@@ -214,10 +214,10 @@ abstract class AcquiaLiftReportBase {
    *   - name: The name of the section
    *   - detail:  The detail report data
    *   - summary: The summary report data
-   * @return array|bool
+   * @return array
    *   The render array for the reports or false if invalid data.
    */
-  protected function buildConversionReports($title, $daily_data, $aggregated_data, $confidence, $winner) {
+  protected function buildExperimentReports($title, $daily_data, $aggregated_data, $confidence, $winner) {
     $build = array();
     $build['reports'] = array(
       '#type' => 'container',
@@ -270,7 +270,7 @@ abstract class AcquiaLiftReportBase {
             'data' => $choice_data['timestamp'],
           ),
           array(
-            'data' => $choice_data['choice_id'],
+            'data' => $choice_data['option_label'],
             'data-acquia-lift-variation-label' => $this->getVariationLabel($choice_data['counter'], $choice_data['control']),
           ),
           array(
@@ -351,7 +351,7 @@ abstract class AcquiaLiftReportBase {
     foreach ($report_data as $choice_id => $choice_data) {
       $row_data = array(
         array(
-          'data' => $choice_id,
+          'data' => $choice_data['option_label'],
           'data-acquia-lift-variation-label' => $this->getVariationLabel($choice_data['counter'], $choice_data['control']),
         ),
         array(
@@ -498,6 +498,7 @@ abstract class AcquiaLiftReportBase {
     }
     if (empty($value)) {
       $value = 0;
+
     }
     return $value;
   }

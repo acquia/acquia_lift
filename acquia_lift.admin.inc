@@ -689,7 +689,7 @@ function acquia_lift_report($form, &$form_state, $agent_data) {
         );
       }
 
-      $form['report'] = acquia_lift_report_custom($form_state, $nested_agent, FALSE);
+      $form['report'] = acquia_lift_report_custom($form_state, $nested_agent, FALSE, $agent_data);
     }
   }
 
@@ -711,7 +711,7 @@ function acquia_lift_report_submit($form, &$form_state) {
  * @param stdClass $option_set
  *   (optional) The content variation to show in the default view.
  */
-function acquia_lift_report_custom(&$form_state, $agent_data, $legacy = FALSE) {
+function acquia_lift_report_custom(&$form_state, $agent_data, $legacy = FALSE, $parent_agent = NULL) {
 
   if ($agent_data->started == 0) {
     return array(
@@ -802,7 +802,7 @@ function acquia_lift_report_custom(&$form_state, $agent_data, $legacy = FALSE) {
     'conversion_metric' => $selected_metric,
     'legacy' => $legacy
   );
-  $reports = $agent->buildCampaignReports($options);
+  $reports = $agent->getCampaignReports($options);
   if (!($reports['#has_data'])) {
     // This campaign hasn't been shown yet, so there is no data for reporting.
     return array(
@@ -878,14 +878,15 @@ function acquia_lift_report_custom(&$form_state, $agent_data, $legacy = FALSE) {
     );
   }
   // Get the conversion report options.
+  $goals_agent = !empty($parent_agent) ? $parent_agent->machine_name : $agent->getMachineName();
   $form['experiment_report']['header']['options'] = array(
     '#type' => 'container',
     '#attributes' => array(
       'class' => array('acquia-lift-report-section-options'),
     ),
     '#tree' => FALSE,
-    'goal' => acquia_lift_report_goal_dropdown($agent->getMachineName(), $selected_goal),
-    'metric' => acquia_lift_report_conversion_metric_dropdown($selected_metric),
+    'goal' => acquia_lift_report_goal_dropdown($goals_agent, $selected_goal),
+    'metric' => acquia_lift_report_experiment_metric_dropdown($selected_metric),
     'submit' => array(
       '#type' => 'submit',
       '#value' => t('Filter'),
@@ -990,7 +991,7 @@ function acquia_lift_report_goal_dropdown($agent_name, $selected = NULL) {
  * @return array
  *   A form element array to be used as the dropdown.
  */
-function acquia_lift_report_conversion_metric_dropdown($selected) {
+function acquia_lift_report_experiment_metric_dropdown($selected) {
   return array(
     '#type' => 'select',
     '#title' => t('Metrics'),
@@ -1066,7 +1067,7 @@ function acquia_lift_adjust_report_start_date($start, $end) {
  *   - end: (optional) the timestamp to use as the end date
  *   - goal: (optional) a goal name to limit results (defaults to all goals)
  */
-function acquia_lift_report_conversion() {
+function acquia_lift_report_experiment() {
   $params = drupal_get_query_parameters();
   $agent_name = empty($params['campaign']) ? NULL : filter_xss($params['campaign']);
   $options = array();
@@ -1087,8 +1088,9 @@ function acquia_lift_report_conversion() {
   }
 
   $reports = array();
-  if ($plugin = personalize_agent_load_agent($agent_name)) {
-    $reports = $plugin->buildConversionReport($options);
+  $plugin = personalize_agent_load_agent($agent_name);
+  if ($plugin instanceof AcquiaLiftLearningAgentInterface) {
+    $reports = $plugin->getExperimentReports($options);
   }
   $reports['#type'] = 'ajax';
   drupal_json_output(drupal_render($reports));

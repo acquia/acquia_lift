@@ -58,7 +58,7 @@ function acquia_lift_menu() {
   // Ajax callback to generate report data.
   $items['acquia_lift/reports/conversion'] = array(
     'type' => MENU_CALLBACK,
-    'page callback' => 'acquia_lift_report_conversion',
+    'page callback' => 'acquia_lift_report_experiment',
     'access arguments' => array('manage personalized content'),
     'file' => 'acquia_lift.admin.inc',
   );

@@ -173,19 +173,19 @@ class AcquiaLiftAgent extends PersonalizeAgentBase implements PersonalizeAgentGo
   }
 
   /**
-   * Implements AcquiaLiftAgentInterface::buildCampaignReports().
+   * Implements AcquiaLiftLearningAgentInterface::getCampaignReports().
    *
    * A facade to the reporting class.
    */
-  public function buildCampaignReports($options) {
+  public function getCampaignReports($options) {
     return $this->getReporting($options)->getCampaignReports();
   }
 
   /**
-   * Implements AcquiaLiftReportInterface()::buildConversionReport().
+   * Implements AcquiaLiftLearningAgentInterface()::getExperimentReports().
    */
-  public function buildConversionReport($options) {
-    return $this->getReporting($options)->getConversionReport();
+  public function getExperimentReports($options) {
+    return $this->getReporting($options)->getExperimentReports();
   }
 
   /**
@@ -359,8 +359,7 @@ class AcquiaLiftAgent extends PersonalizeAgentBase implements PersonalizeAgentGo
 }
 
 /**
- * Base class providing report data loading functionality common to all
- * Acquia Lift Reports.
+ * Class for Acquia Lift Reports.
  */
 class AcquiaLiftReport extends AcquiaLiftReportBase {
 
@@ -374,13 +373,50 @@ class AcquiaLiftReport extends AcquiaLiftReportBase {
    */
   const LIFT_THRESHHOLD = 0;
 
+  /**
+   * Holds the data used for per-day reports.
+   *
+   * @var array
+   */
+  protected $dailyReportData;
+
+  /**
+   * Holds the data used for the status report.
+   *
+   * @var array
+   */
+  protected $statusReportData;
+
+  /**
+   * Holds the data used for aggregated reports.
+   *
+   * @var array
+   */
+  protected $aggregatedData;
+
+  /**
+   * Constructs an AcquiaLiftReport object.
+   *
+   * @param \PersonalizeAgentInterface $agent
+   *   THe agent the report is for.
+   * @param array $options
+   *   An array of configuration options for the report.
+   * @param \AcquiaLiftReportDataSourceInterface $report_data_src
+   *   A AcquiaLiftReportDataSourceInterface object to retrieve the actual data
+   *   from.
+   */
   function __construct(PersonalizeAgentInterface $agent, $options, AcquiaLiftReportDataSourceInterface $report_data_src) {
     parent::__construct($agent, $options);
     $this->reportDataSrc = $report_data_src;
   }
 
+  /**
+   * Gets the render array for the main reporting page.
+   *
+   * @return array
+   *   An array of output to pass to drupal_render.
+   */
   public function getCampaignReports() {
-    $this->loadReportData();
     return $this->buildCampaignReports(
       $this->getSessionCount(),
       $this->getGoalCount(),
@@ -390,15 +426,16 @@ class AcquiaLiftReport extends AcquiaLiftReportBase {
       $this->getOverallWinner());
   }
 
-  public function getConversionReport() {
+  /**
+   * Returns a render array for the experimental portion of the reports.
+   * @return array
+   */
+  public function getExperimentReports() {
     $config = $this->getReportConfiguration();
     $report_name = t('All goals');
     $goal = NULL;
     if (!empty($config['goal'])) {
       $goal = $config['goal'];
-      // Get the summary data for the whole campaign in order to have overall
-      // statistics.
-      $this->loadConversionReportHelper('confidence_goal', TRUE, $goal);
       $actions = visitor_actions_get_actions();
       // If the action still exists, use the label, otherwise just use the goal
       // machine name.
@@ -409,536 +446,311 @@ class AcquiaLiftReport extends AcquiaLiftReportBase {
         $report_name = $goal;
       }
     }
-    $this->loadConversionReportHelper('confidence_detail', FALSE);
-    $this->loadConversionReportHelper('confidence', TRUE);
 
-    $reports = $this->buildConversionReports(
+    return $this->buildExperimentReports(
       $report_name,
       $this->getDailyData(),
       $this->getAggregatedData(),
       $this->getOverallConfidence(),
       $this->getOverallWinner());
-    return $reports;
   }
 
+
   /**
-   * Loads the agent status raw reporting data.
+   * Gets the agent status report from the report data source and stores it.
+   *
+   * @return array
+   *   An array representing the status report for the agent.
    */
-  protected function loadAgentStatusData() {
+  protected function getStatusReportData() {
     $config = $this->getReportConfiguration();
-    // Check and see if it is already loaded.
-    if (isset($this->loadedReports['raw']['status'])) {
-      return;
-    }
-    try {
-      if ($config['today_only']) {
-        $num_days = 1;
-      }
-      else {
+    if (empty($this->statusReportData)) {
+      try {
         $interval = date_diff(date_create($config['date_from']), date_create($config['date_to']));
         $num_days = $interval->days;
-      }
-      $this->loadedReports['raw']['status'] = $this->reportDataSrc->getAgentStatusReport(array($config['machine_name']), $num_days);
-    }
-    catch (Exception $e) {
-      $this->loadedReports['raw']['status']['error'] = $e->getMessage();
-    }
-  }
-
-  /**
-   * Loads the agent confidence raw reporting data.
-   *
-   * @param $report_name
-   *   The report name to use when adding this to the loadedReports property.
-   * @param $aggregated
-   *   (Optional) Whether to aggregate over dates.
-   * @param $goal
-   *   (Optional) A goal to restrict the report to.
-   */
-  protected function loadConfidenceData($report_name, $aggregated = TRUE, $goal = NULL) {
-    // Check and see if it is already loaded.
-    if (isset($this->loadedReports['raw'][$report_name])) {
-      return;
-    }
-
-    $config = $this->getReportConfiguration();
-    try {
-      $options = array(
-        'confidence-measure' => $config['confidence_measure'],
-        'aggregated-over-dates' => $aggregated,
-      );
-      if (!empty($goal)) {
-        $options['goal'] = $goal;
-      }
-      $this->loadedReports['raw'][$report_name] = $this->reportDataSrc->getConfidenceReport(
-        $config['machine_name'],
-        $config['date_from'],
-        $config['date_to'],
-        $config['decision_name'],
-        $options
-      );
-    }
-    catch (Exception $e) {
-      $this->loadedReports['raw'][$report_name]['error'] = $e->getMessage();
-    }
-  }
-
-
-  /**
-   * Handles all of the logic to load and extract a conversion report.
-   *
-   * @param $report_name
-   *   The report name to use when adding this to the loadedReports property.
-   * @param $aggregated
-   *   (Optional) Whether to aggregate over dates.
-   */
-  protected function loadConversionReportHelper($report_name, $aggregated) {
-    $config = $this->getReportConfiguration();
-    // Limit report results to the experimental group.
-    $options = array(
-      'policies' => 'explore',
-      'aggregated-over-dates' => $aggregated,
-    );
-    $goal = NULL;
-    if (!empty($config['goal'])) {
-      $goal = $config['goal'];
-      $options['goal'] = $goal;
-    }
-
-    if (!empty($goal)) {
-      // Add the report name for this goal to track which goals are included.
-      $this->loadedReports['goal_reports'][] = $report_name;
-      // Determine the parent for reports added by this helper.
-      if (!isset($this->loadedReports['conversion_goals'])) {
-        $this->loadedReports['conversion_goals'][$goal] = FALSE;
-      }
-      $detail_report = &$this->loadedReports[$goal];
-    }
-    else {
-      // Determine the parent for reports added by this helper.
-      if (!isset($this->loadedReports['conversion_all'])) {
-        $this->loadedReports['conversion_all'] = FALSE;
-      }
-      $detail_report = &$this->loadedReports['conversion_all'];
-    }
-    // Check if the report is already loaded.
-    $subreport_name = $aggregated ? 'summary' : 'detail';
-    if (isset($detail_report[$subreport_name])) {
-      return;
-    }
-    // Load the raw report data.
-    if (!isset($this->loadedReports['raw'][$report_name])) {
-      $this->loadConfidenceData($report_name, $aggregated, $goal);
-      if (isset($this->loadedReports['raw'][$report_name]['error'])) {
-        return;
-      }
-    }
-
-    // Extract the data into full report data from the raw data.
-    $detail_report[$subreport_name] = $aggregated ? $this->extractConversionSummaryData($report_name) : $this->extractConversionReportData($report_name);
-  }
-
-  /**
-   * Extracts the required overview data from the report data returned by
-   * Acquia Lift.
-
-   * @return array
-   *   An associative array with information for today's and the total overview.
-   */
-  protected function extractOverviewReportData() {
-    $items = $this->getStatusReportItems();
-    if (!isset($items['totals']) || !isset($items['today'])) {
-      return array();
-    }
-    $agent_data = $this->agent->getData();
-    $decision_style = $agent_data['decision_style'] === 'adaptive' ? t('Auto-personalize') : t('A/B');
-    $total_variations = isset($agent_data['decisions']) ? count($agent_data['decisions']) : 0;
-    $report = array();
-    // Create an array of data for each time option.
-    $report['all'] = array(
-      'test_type' => $decision_style,
-      'total_shown' => $this->formatReportNumber($items['totals']['sessions']['count']),
-      'total_goals' => $this->formatReportNumber($items['totals']['goals']['count']),
-      'total_goals_positive' => $items['totals']['goals']['count'] > 0,
-      'total_lift' => $this->formatReportPercentage($items['today']['liftOverDefaultUsingGoalsToDate']),
-      'total_variations' => $total_variations,
-    );
-    return $report;
-  }
-
-  protected function getDailyData() {
-    $data = $this->extractConversionReportData();
-    if (empty($data)) {
-      $this->hasData = FALSE;
-    }
-    return $data;
-  }
-
-  protected function getAggregatedData() {
-    $data = $this->extractConversionSummaryData();
-    if (!isset($data['data'])) {
-      $this->hasData = FALSE;
-      return array();
-    }
-    return $data['data'];
-  }
-
-  protected function getOverallConfidence() {
-    $data = $this->extractConversionSummaryData();
-    return isset($data['overview']['confidence']) ? $data['overview']['confidence'] : 0;
-  }
-
-  protected function getOverallWinner() {
-    $data = $this->extractConversionSummaryData();
-    return isset($data['overview']['winner']) ? $data['overview']['winner'] : 0;
-  }
-
-  protected function getStatusReportItems() {
-    $config = $this->getReportConfiguration();
-    $status_report = $this->loadedReports['raw']['status'];
-    if (!isset($status_report['data']) || !isset($status_report['data'][$config['machine_name']])) {
-      $this->hasData = FALSE;
-      return array();
-    }
-    return $status_report['data'][$config['machine_name']];
-  }
-
-  /**
-   * Extracts data from the raw confidence detail report that is prepared for use
-   * within the conversion report rendering process.
-   *
-   * @return array
-   *   An associative array with information about the performance of each choice.
-   */
-  protected function extractConversionReportData() {
-    $config = $this->getReportConfiguration();
-    $report_name = 'confidence_detail';
-    if (!empty($config['goal'])) {
-      $report_name = 'confidence_goal_detail';
-    }
-    $report = $this->loadedReports['raw'][$report_name];
-    if (!isset($report['data']) || empty($report['data']['items'])) {
-      return array();
-    }
-    $items = $report['data']['items'];
-
-    $shown = array();
-    $counter = NAN;
-    $data = array();
-    foreach ($items as $item) {
-      if ($item['feature'] != AcquiaLiftAPI::NO_FEATURES) {
-        continue;
-      }
-      // Check to see if we are in a new grouping of choices.
-      $check = $item['choice'];
-      if (is_nan($counter) || isset($shown[$check])) {
-        $shown = array();
-        $counter = 0;
-      }
-      else {
-        $counter++;
-      }
-      $shown[$check] = $check;
-
-      $choice = $option_id = $item['choice'];
-      $choice_id = $choice;
-      if (strpos($choice, ':') !== FALSE) {
-        list($decision_name, $option_id) = explode(':', $choice);
-      }
-      if ($option_label = personalize_get_option_label_for_decision_and_choice($decision_name, $option_id)) {
-        $choice_id = $option_label;
-      }
-      $goals = $item['totals']['goals'];
-      $count = $item['totals']['count'];
-      $val = $item['totals']['val'];
-      $total_count[$counter] = isset($total_count[$counter]) ? $total_count[$counter] + $count : $count;
-      $total_goals[$counter] = isset($total_goals[$counter]) ? $total_goals[$counter] + $goals : $goals;
-      $total_val[$counter] = isset($total_val[$counter]) ? $total_val[$counter] + $val : $val;
-
-      $rate = $total_count[$counter] > 0 ? ($total_goals[$counter]/$total_count[$counter]) * 100 : 0;
-      $val_rate = $total_count[$counter] > 0 ? ($total_val[$counter]/$total_count[$counter]) : 0;
-      $margin = ($item['bHi'] - $item['bLo']) / 2;
-
-      $data[] = array(
-        'choice_id' => $choice_id,
-        'raw_label' => $option_id,
-        'goals' => $total_goals[$counter],
-        'count' => $total_count[$counter],
-        'date' => $item['date'],
-        'timestamp' => strtotime($item['date']),
-        'conversion' => $this->formatReportNumber($rate, TRUE, 4),
-        'conversion_value' => $this->formatReportNumber($val_rate, TRUE, 4),
-        'estimated_value' => $this->formatReportNumber($item['vMean'], TRUE, 4),
-        'margin_error' => $this->formatReportNumber($margin, TRUE, 4),
-        'counter' => $counter,
-        'control' => $counter === 0,
-      );
-    }
-    return $data;
-  }
-
-  /**
-   * Loads and formats the necessary reporting data in order to generate a
-   * conversion metrics graph/report.
-   */
-  protected function loadConversionReportData() {
-
-    // All goals - summary report is always loaded in order to get the overview
-    // data for the campaign.
-    if (!isset($this->loadedReports['conversion'])) {
-      $this->loadConversionReportHelper('confidence', TRUE);
-    }
-    $config = $this->getReportConfiguration();
-    // All goals conversion report.
-    if (empty($config['goal'])) {
-      // All goals - detail report.
-      if (!isset($this->loadedReports['conversion_detail'])) {
-        $this->loadConversionReportHelper('confidence_detail', FALSE);
-      }
-      return;
-    }
-    // Load the detail and summary reports for the specified goal.
-    $actions = visitor_actions_get_actions();
-
-    $goal_id = $config['goal'];
-    if (!isset($this->loadedReports['conversion_goals'][$goal_id])) {
-      $this->loadedReports['conversion_goals'][$goal_id]['name'] = isset($actions[$goal_id]) ? $actions[$goal_id]['label'] : $goal_id;
-      // Summary report.
-      $this->loadConversionReportHelper('confidence_goal', TRUE);
-      // Detail report.
-      $this->loadConversionReportHelper('confidence_goal_detail', FALSE);
-    }
-  }
-
-  /**
-   * Extracts data from the raw aggregate confidence report that is prepared for
-   * use within the report rendering process.
-   *
-
-   * @return array
-   *   An associative array with information about the performance of each choice.
-   */
-  protected function extractConversionSummaryData() {
-    $config = $this->getReportConfiguration();
-    $report_name = 'confidence';
-    if (!empty($config['goal'])) {
-      $report_name = 'confidence_goal';
-    }
-    $report = $this->loadedReports['raw'][$report_name];
-    if (!isset($report['data']) || empty($report['data']['items'])) {
-      return array();
-    }
-    $items = $report['data']['items'];
-    $data = array();
-    $confidence = FALSE;
-    $winner = '';
-    $winning_value = NAN;
-    foreach ($items as $i => $item) {
-      if ($item['feature'] !== AcquiaLiftAPI::NO_FEATURES) {
-        continue;
-      }
-      $choice = $option_id = $item['choice'];
-      $choice_id = $choice;
-      if (strpos($choice, ':') !== FALSE) {
-        list($decision_name, $option_id) = explode(':', $choice);
-      }
-      if ($option_label = personalize_get_option_label_for_decision_and_choice($decision_name, $option_id)) {
-        $choice_id = $option_label;
-      }
-      $goals = $item['totals']['goals'];
-      $count = $item['totals']['count'];
-      // The format for percentages will already multiply by 100.
-      $rate = $count > 0 ? ($goals/$count) : 0;
-      $margin = ($item['bHi'] - $item['bLo']) / 2;
-      if ($item['signif']) {
-        if (is_nan($winning_value) || $item['confidence'] > $winning_value) {
-          $winning_value = $item['confidence'];
-          $winner = $i;
-          $confidence = TRUE;
+        $agent_name = $config['machine_name'];
+        $report_data = $this->reportDataSrc->getAgentStatusReport(array($agent_name), $num_days);
+        if (!isset($report_data['data']) || !isset($report_data['data'][$agent_name])) {
+          // If there's no data we should not try to retrieve it again so
+          // populate the statusReportData variable with an error.
+          $this->hasData = FALSE;
+          return array();
         }
+        $this->statusReportData = $report_data['data'][$agent_name];
       }
-
-      $data[$choice_id] = array(
-        'counter' => $i,
-        'choice_id' => $choice_id,
-        'raw_label' => $option_id,
-        'goals' => $goals,
-        'count' => $count,
-        'conversion' => $this->formatReportPercentage($rate),
-        'estimated_value' => $this->formatReportNumber($item['vMean'], TRUE, 4),
-        'estimated_higher' => $this->formatReportNumber($item['bHi'], TRUE, 4),
-        'estimated_lower' => $this->formatReportNumber($item['bLo'], TRUE, 4),
-        'margin_error' => $this->formatReportNumber($margin, TRUE, 4),
-        'significant' => $item['signif'],
-        'control' => $i === 0,
-        'confidence' => $i === 0 ? self::DATA_NA : $this->formatReportPercentage($item['confidence']/100),
-        'lift_default' => $i === 0 ? self::DATA_NA : $this->formatReportPercentage($item['lift']['default']/100, TRUE),
-        'lift_random' => $this->formatReportPercentage($item['lift']['random']/100, TRUE),
-      );
+      catch (Exception $e) {
+        $this->hasData = FALSE;
+        $this->statusReportData = array(
+          'error' => $e->getMessage()
+        );
+        return array();
+      }
     }
-    $report = array(
-      'data' => $data,
-      'overview' => array(
-        'confidence' => $confidence,
-        'winner' => $winner,
-      ),
-    );
-    return $report;
+    return $this->statusReportData;
   }
 
   /**
-   * Loads all of the data necessary to generate the reports for the agent.
-   */
-  protected function loadReportData() {
-    $this->loadConversionReportData();
-    // Agent status
-    if (!isset($this->loadedReports['status'])) {
-      $this->loadAgentStatusData();
-      if (isset($this->loadedReports['raw']['status']['error'])) {
-        $this->loadedReports['status'] = FALSE;
-      }
-      else {
-        $this->loadedReports['status'] = $this->extractOverviewReportData();
-      }
-    }
-    // Confidence report data.
-    if (!isset($this->loadedReports['confidence'])) {
-      $this->loadConfidenceData('confidence');
-      if (isset($this->loadedReports['raw']['confidence']['error'])) {
-        $this->loadedReports['confidence'] = FALSE;
-      }
-      else {
-        $this->loadedReports['confidence'] = $this->extractConfidenceReportData();
-      }
-    }
-
-    if (!isset($this->loadedReports['extracted_total'])) {
-      // Combine data to form all campaign report data.
-      $this->extractCampaignReportData();
-    }
-  }
-
-  /**
-   * Alter the report data returned from API calls to combine into data that is
-   * ready for presentation within individual campaign reports.
+   * Returns the total number of sessions for this campaign.
    *
-   * @see loadReportData()
-   * @see extractOverviewReportData()
-   * @see extractConfidenceReportData()
-   * @see extractPotentialTargetingValues()
+   * @return int
    */
-  protected function extractCampaignReportData() {
-    $this->loadedReports['extracted_total'] = TRUE;
-    if (!is_array($this->loadedReports['status']) || !is_array($this->loadedReports['confidence'])) {
-      $this->hasData = FALSE;
-      return;
-    }
-
-    // Determine overall confidence based on confidence in choices.
-    $total_confident = 0;
-    if (isset($this->loadedReports['confidence']['variations'])) {
-      foreach ($this->loadedReports['confidence']['variations'] as $choice) {
-        if ($choice['significant']) {
-          $total_confident++;
-        }
-      }
-    }
-
-    // Determine the overall time running for this agent.
-    $interval_start = new DateTime();
-    $interval_start->setTimestamp($this->agent->getStartTime());
-    $interval = date_diff($interval_start, date_create());
-
-    // Update the status report data (used for overview report).
-    foreach($this->loadedReports['status'] as &$report) {
-      $report['total_lift_positive'] = $report['total_lift'] > self::LIFT_THRESHHOLD && $total_confident > 0;
-      $report['total_confident'] = $total_confident;
-      $report['confidence_level'] = $total_confident > 0 ? 'high' : 'low';
-      $report['time_running'] = isset($interval) ? $interval->format('%mm, %dd') : '1d';
-    }
-
-    // Build the experiment report data
-    $this->loadedReports['experiment']['choices'] = isset($this->loadedReports['confidence']['variations']) ? $this->loadedReports['confidence']['variations'] : array();
-  }
-
-  /**
-   * Extracts the required confidence report data from the items returned by Acquia Lift.
-   *
-   * @param $items
-   *   An array of items as return from Acquia Lift.
-   * @return array
-   *   An associative array with information about the performance of each choice.
-   */
-  protected function extractConfidenceReportData() {
-    $report = $this->loadedReports['raw']['confidence'];
-    if (!isset($report['data']) || empty($report['data']['items'])) {
-      $this->hasData = FALSE;
-      return array();
-    }
-    $items = $report['data']['items'];
-    $data = array(
-      'point' => $items[0]['point'],
-      'variations' => array(),
-      'goal_value_differential' => FALSE,
-    );
-    $counter = 1;
-    foreach ($items as $i => $item) {
-      if ($item['feature'] != AcquiaLiftAPI::NO_FEATURES) {
-        continue;
-      }
-      $counter++;
-      $choice = $option_id = $item['choice'];
-      $choice_id = $choice;
-      if (strpos($choice, ':') !== FALSE) {
-        list($decision_name, $option_id) = explode(':', $choice);
-        // @todo: Would like to get rid of this function call in order to make
-        // the class unit-testable.
-        if ($option_label = personalize_get_option_label_for_decision_and_choice($decision_name, $option_id)) {
-          $choice_id = $option_label;
-        }
-      }
-      $data['variations'][$choice] = array(
-        'counter' => $counter,
-        'choice_id' => $choice_id,
-        'raw_label' => $option_id,
-        'decisions' => format_plural($item['totals']['count'], '1 time', '@count times'),
-        'goals' => $item['totals']['goals'],
-        'value' => $item['totals']['val'],
-        'estimated_value' => $this->formatReportNumber($item['vMean'], TRUE, 4),
-        'estimated_lower' => $this->formatReportNumber($item['bLo'], TRUE, 4),
-        'estimated_higher' => $this->formatReportNumber($item['bHi'], TRUE, 4),
-        'goals_per_decision' => $item['totals']['goals'] == 0 ? self::DATA_NA : $this->formatReportNumber($item['totals']['goalsPerDecision'], FALSE),
-        'value_per_decision' => $item['totals']['goals'] == 0 ? self::DATA_NA : $this->formatReportNumber($item['totals']['valPerDecision'], FALSE),
-        'selections' => $item['count'],
-        'conversion' => $item['totals']['goals'] > 0 ? $this->formatReportPercentage($item['totals']['goals'] / $item['totals']['count']) : self::DATA_NA,
-        'confidence' => $counter === 1 ? self::DATA_NA : $this->formatReportPercentage($item['confidence']/100),
-        'lift_default' => $counter === 1 ? self::DATA_NA : $this->formatReportPercentage($item['lift']['default']/100, TRUE),
-        'lift_random' => $this->formatReportPercentage($item['lift']['random']/100, TRUE),
-        'significant' => $item['signif'],
-        'control' => $counter === 1,
-      );
-      if (!$data['goal_value_differential'] && ($item['totals']['goals'] != $item['totals']['val'])) {
-        $data['goal_value_differential'] = TRUE;
-      }
-    }
-    return $data;
-  }
-
   protected  function getSessionCount() {
-    $status_report_data = $this->getStatusReportItems();
+    $status_report_data = $this->getStatusReportData();
     if (!isset($status_report_data['totals']['sessions']['count'])) {
       $this->hasData = FALSE;
       return 0;
     }
-    return $this->formatReportNumber($status_report_data['totals']['sessions']['count']);
+    return (int) $this->formatReportNumber($status_report_data['totals']['sessions']['count'], TRUE, 0);
   }
 
+  /**
+   * Returns the total number of sessions for this campaign.
+   *
+   * @return int
+   */
   protected function getGoalCount() {
-    $status_report_data = $this->getStatusReportItems();
+    $status_report_data = $this->getStatusReportData();
     if (!isset($status_report_data['totals']['goals']['count'])) {
       $this->hasData = FALSE;
       return 0;
     }
-    return $this->formatReportNumber($this->formatReportNumber($status_report_data['totals']['goals']['count']));
+    return (int) $this->formatReportNumber($this->formatReportNumber($status_report_data['totals']['goals']['count']), TRUE, 0);
   }
+
+  /**
+   * Gets the per-day confidence report from the report data source and stores it.
+   *
+   * @return array
+   *   An array of per-day reports.
+   */
+  protected function getDailyData() {
+    $config = $this->getReportConfiguration();
+    if (empty($this->dailyReportData)) {
+      try {
+        $options = array(
+          'confidence-measure' => $config['confidence_measure'],
+          'aggregated-over-dates' => FALSE,
+        );
+        if (!empty($config['goal'])) {
+          $options['goal'] = $config['goal'];
+        }
+        $report_data = $this->reportDataSrc->getConfidenceReport(
+          $config['machine_name'],
+          $config['date_from'],
+          $config['date_to'],
+          $config['decision_name'],
+          $options
+        );
+        if (empty($report_data) || !isset($report_data['data']) || empty($report_data['data']['items'])) {
+          $this->hasData = FALSE;
+          // If there's no data we should not try to retrieve it again so
+          // populate the dailyReportData variable with an error.
+          $this->dailyReportData = array(
+            'error' => t('No data')
+          );
+          return array();
+        }
+      }
+      catch (Exception $e) {
+        $this->hasData = FALSE;
+        $this->dailyReportData = array(
+          'error' => $e->getMessage()
+        );
+        return array();
+      }
+      $items = $report_data['data']['items'];
+      $data = $option_ids = array();
+      foreach ($items as $item) {
+        if ($item['feature'] != AcquiaLiftAPI::NO_FEATURES) {
+          continue;
+        }
+        $option_id = $option_label = $item['choice'];
+        if (strpos($item['choice'], ':') !== FALSE) {
+          list($decision_name, $option_id) = explode(':', $item['choice']);
+          $option_label = $option_id;
+          if ($label = personalize_get_option_label_for_decision_and_choice($decision_name, $option_id)) {
+            $option_label = $label;
+          }
+        }
+
+        // Keep track of the option's index so that we know whether or not
+        // it's the control option.
+        if (!in_array($option_id, $option_ids)) {
+          $option_ids[] = $option_id;
+        }
+        $idx = array_search($option_id, $option_ids);
+
+        $goals = $item['totals']['goals'];
+        $count = $item['totals']['count'];
+        $val = $item['totals']['val'];
+        $total_count[$idx] = isset($total_count[$idx]) ? $total_count[$idx] + $count : $count;
+        $total_goals[$idx] = isset($total_goals[$idx]) ? $total_goals[$idx] + $goals : $goals;
+        $total_val[$idx] = isset($total_val[$idx]) ? $total_val[$idx] + $val : $val;
+
+        $rate = $total_count[$idx] > 0 ? ($total_goals[$idx]/$total_count[$idx]) * 100 : 0;
+        $val_rate = $total_count[$idx] > 0 ? ($total_val[$idx]/$total_count[$idx]) : 0;
+        $margin = ($item['bHi'] - $item['bLo']) / 2;
+
+        $data[] = array(
+          'option_id' => $option_id,
+          'option_label' => $option_label,
+          'goals' => $total_goals[$idx],
+          'count' => $total_count[$idx],
+          'date' => $item['date'],
+          'timestamp' => strtotime($item['date']),
+          'conversion' => $this->formatReportNumber($rate, TRUE, 4),
+          'conversion_value' => $this->formatReportNumber($val_rate, TRUE, 4),
+          'estimated_value' => $this->formatReportNumber($item['vMean'], TRUE, 4),
+          'margin_error' => $this->formatReportNumber($margin, TRUE, 4),
+          'counter' => $idx,
+          'control' => $idx === 0,
+        );
+      }
+      $this->dailyReportData = $data;
+    }
+    return $this->dailyReportData;
+  }
+
+  /**
+   * Retrieves the aggregated confidence report data from the report data source.
+   *
+   * @return array
+   *   An associative array with the following keys
+   *   - data: the per-variation reports
+   *   - overview: an associative array with
+   *     - confidence: Boolean indicating whether the report has confidence.
+   *     - winner: The index of the winning variation, if there is one.
+   */
+  protected function getAggregatedConfidenceReport() {
+    $config = $this->getReportConfiguration();
+    if (empty($this->aggregatedData)) {
+      try {
+        // Pass the correct options to our data source.
+        $options = array(
+          'confidence-measure' => $config['confidence_measure'],
+          'aggregated-over-dates' => TRUE,
+        );
+        if (!empty($config['goal'])) {
+          $options['goal'] = $config['goal'];
+        }
+        $report_data = $this->reportDataSrc->getConfidenceReport(
+          $config['machine_name'],
+          $config['date_from'],
+          $config['date_to'],
+          $config['decision_name'],
+          $options
+        );
+        if (empty($report_data) || !isset($report_data['data']) || empty($report_data['data']['items'])) {
+          $this->hasData = FALSE;
+          // If there's no data we should not try to retrieve it again so
+          // populate the aggregatedData variable with an error.
+          $this->aggregatedData = array(
+            'error' => t('No data')
+          );
+          return array();
+        }
+      }
+      catch (Exception $e) {
+        $this->hasData = FALSE;
+        $this->aggregatedData = array(
+          'error' => $e->getMessage()
+        );
+        return array();
+      }
+
+      // Go through the items and extract the information we need.
+      $items = $report_data['data']['items'];
+      $data = array();
+      $confidence = FALSE;
+      $winner = '';
+      $winning_value = NAN;
+      foreach ($items as $i => $item) {
+        if ($item['feature'] !== AcquiaLiftAPI::NO_FEATURES) {
+          continue;
+        }
+        $option_id = $option_label = $item['choice'];
+        if (strpos($item['choice'], ':') !== FALSE) {
+          list($decision_name, $option_id) = explode(':', $item['choice']);
+          $option_label = $option_id;
+          if ($label = personalize_get_option_label_for_decision_and_choice($decision_name, $option_id)) {
+            $option_label = $label;
+          }
+        }
+
+        $goals = $item['totals']['goals'];
+        $count = $item['totals']['count'];
+        // The format for percentages will already multiply by 100.
+        $rate = $count > 0 ? ($goals/$count) : 0;
+        $margin = ($item['bHi'] - $item['bLo']) / 2;
+        if ($item['signif']) {
+          if (is_nan($winning_value) || $item['confidence'] > $winning_value) {
+            $winning_value = $item['confidence'];
+            $winner = $i;
+            $confidence = TRUE;
+          }
+        }
+        $data[$option_id] = array(
+          'counter' => $i,
+          'option_id' => $option_id,
+          'option_label' => $option_label,
+          'goals' => $goals,
+          'count' => $count,
+          'conversion' => $this->formatReportPercentage($rate),
+          'estimated_value' => $this->formatReportNumber($item['vMean'], TRUE, 4),
+          'estimated_higher' => $this->formatReportNumber($item['bHi'], TRUE, 4),
+          'estimated_lower' => $this->formatReportNumber($item['bLo'], TRUE, 4),
+          'margin_error' => $this->formatReportNumber($margin, TRUE, 4),
+          'significant' => $item['signif'],
+          'control' => $i === 0,
+          'confidence' => $i === 0 ? self::DATA_NA : $this->formatReportPercentage($item['confidence']/100),
+          'lift_default' => $i === 0 ? self::DATA_NA : $this->formatReportPercentage($item['lift']['default']/100, TRUE),
+          'lift_random' => $this->formatReportPercentage($item['lift']['random']/100, TRUE),
+        );
+      }
+      $this->aggregatedData = array(
+        'data' => $data,
+        'overview' => array(
+          'confidence' => $confidence,
+          'winner' => $winner,
+        ),
+      );
+    }
+    return $this->aggregatedData;
+  }
+
+  /**
+   * Returns the per-variation confidence report data aggregated over dates.
+   *
+   * @return array
+   *   An array of report data keyed by option id.
+   */
+  protected function getAggregatedData() {
+    $data = $this->getAggregatedConfidenceReport();
+    return isset($data['data']) ? $data['data'] : array();
+  }
+
+  /**
+   * Gets the overall confidence of the report, based on aggregated data.
+   *
+   * @return bool
+   *   TRUE if the report has overall confidence, FALSE otherwise.
+   */
+  protected function getOverallConfidence() {
+    $data = $this->getAggregatedConfidenceReport();
+    return isset($data['overview']['confidence']) ? $data['overview']['confidence'] : FALSE;
+  }
+
+  /**
+   * Gets the overall winner of the campaign, based on aggregated data.
+   *
+   * @return int|NULL
+   *   An integer representing the index of the winner variation, or NULL if
+   *   there isn't one.
+   */
+  protected function getOverallWinner() {
+    $data = $this->getAggregatedConfidenceReport();
+    return isset($data['overview']['winner']) ? $data['overview']['winner'] : NULL;
+  }
+
 }
+

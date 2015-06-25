@@ -1950,7 +1950,7 @@ abstract class AcquiaLiftReportBase implements PersonalizeAgentReportInterface, 
     if ($report_data === FALSE) {
       return FALSE;
     }
-    $confidence = $all_report_data['conversion_all']['summary']['overview']['confidence'];
+    $confidence = !empty($all_report_data['conversion_all']['summary']['overview']['confidence']);
     $winner = $all_report_data['conversion_all']['summary']['overview']['winner'];
     $headers = array(
       t('Variation'),
@@ -2004,7 +2004,7 @@ abstract class AcquiaLiftReportBase implements PersonalizeAgentReportInterface, 
           ),
         );
         // Add the winner column data.
-        if (empty($rows) && $report_data['overview']['confidence'] === FALSE) {
+        if (empty($rows) && !$confidence) {
           // If there is low confidence then show the message throughout the
           // winner column.
           $row_data[] = array(
@@ -2016,7 +2016,7 @@ abstract class AcquiaLiftReportBase implements PersonalizeAgentReportInterface, 
         }
         else if (!$confidence_message_shown) {
           // Show the winner indicator if this is the winning variation.
-          $row_data[] = $confidence && $winner == $data['counter'] ? '<span class="lift-winner">' . t('Winner') . '</span>' : '';
+          $row_data[] = $confidence && ($winner === $data['counter']) ? '<span class="lift-winner">' . t('Winner') . '</span>' : '';
         }
         $rows[] = array(
           'data' => $row_data,

@@ -16,7 +16,17 @@ class AcquiaLiftReportFactory {
    *   The AcquiaLiftReport class to use.
    */
   public static function create(AcquiaLiftLearningAgentInterface $agent_instance, $api_instance, $options) {
-    module_load_include('inc', 'acquia_lift', 'includes/AcquiaLiftReportBase');
+    // Load all reporting-related classes.
+    $report_class_files = array(
+      'AcquiaLiftReportBase',
+      'AcquiaLiftReport',
+      'AcquiaLiftReportCacheInterface',
+      'AcquiaLiftReportCache',
+      'AcquiaLiftReportDataFromFile',
+    );
+    foreach ($report_class_files as $file) {
+      module_load_include('inc', 'acquia_lift', 'includes/' . $file);
+    }
     $agent_type = $agent_instance->getType();
     switch ($agent_type) {
       case ACQUIA_LIFT_TESTING_AGENT_V2:

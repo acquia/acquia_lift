@@ -137,7 +137,20 @@ abstract class AcquiaLiftReportBase {
   }
 
   /**
-   * Implements AcquiaLiftReportInterface::buildCampaignReports().
+   * Given reporting data, returns the markup for all campaign reports.
+   *
+   * @param int $session_count
+   *   The total number of sessions.
+   * @param int $goal_count
+   *   The total number of goals received.
+   * @param array $daily_data
+   *   The per-variation results broken down by day (shown in the graph)
+   * @param array $aggregated_data
+   *   The per-variation results aggregated across all dates
+   * @param bool $confidence
+   *   Boolean indicating whether there is overall confidence
+   * @param int $winner
+   *   Index of the winning variation, or NULL if there isn't one.
    */
   public function buildCampaignReports($session_count, $goal_count, $daily_data, $aggregated_data, $confidence, $winner) {
     $config = $this->getReportConfiguration();
@@ -156,10 +169,18 @@ abstract class AcquiaLiftReportBase {
   /**
    * Returns a render array representing the overview report for the given dates.
    *
+   * @param DateInterval $interval
+   *   The length of the period this report represents, as a DateInterval object.
+   * @param string $type
+   *   THe type of personalization, e.g. 'A/B test'
+   * @param int $session_count
+   *   The total number of sessions.
+   * @param int $goal_count
+   *   The total number of goals received.
    * @return array
    *   A render array representing the overview report.
    */
-  protected function buildOverviewReport($interval, $type, $session_count, $goal_count) {
+  protected function buildOverviewReport(DateInterval $interval, $type, $session_count, $goal_count) {
     // Create report renderable.
     $build = array();
     $build['test_type'] = array(
@@ -207,15 +228,18 @@ abstract class AcquiaLiftReportBase {
   }
 
   /**
-   * Build a set of confidence reports from the report data.
+   * Returns a render array for the experimental (confidence) reports.
    *
-   * @param array $report_data
-   *   The extracted report data with the following keys:
-   *   - name: The name of the section
-   *   - detail:  The detail report data
-   *   - summary: The summary report data
-   * @return array
-   *   The render array for the reports or false if invalid data.
+   * @param string $title
+   *   The title of the report.
+   * @param array $daily_data
+   *   The per-variation results broken down by day (shown in the graph)
+   * @param array $aggregated_data
+   *   The per-variation results aggregated across all dates
+   * @param bool $confidence
+   *   Boolean indicating whether there is overall confidence
+   * @param int $winner
+   *   Index of the winning variation, or NULL if there isn't one.
    */
   protected function buildExperimentReports($title, $daily_data, $aggregated_data, $confidence, $winner) {
     $build = array();
@@ -242,12 +266,12 @@ abstract class AcquiaLiftReportBase {
   /**
    * Builds the render array for the metrics portion of the report.
    *
-   * @param array $report_data
-   *   All of the reporting data for this AB report.
-   * @param array|bool
-   *   A render array for the report or FALSE if it cannot be generated.
+   * @param array $daily_data
+   *   The per-variation results broken down by day (shown in the graph)
+   * @param array
+   *   A render array for the report.
    */
-  protected function buildConversionDetailReport($report_data) {
+  protected function buildConversionDetailReport($daily_data) {
     $config = $this->getReportConfiguration();
     $headers = array(
       t('Date'),
@@ -263,7 +287,7 @@ abstract class AcquiaLiftReportBase {
       t('Margin of error'),
     );
     $build = $rows = array();
-    foreach ($report_data as $choice_data) {
+    foreach ($daily_data as $choice_data) {
       $rows[] = array(
         'data' => array(
           array(
@@ -309,16 +333,16 @@ abstract class AcquiaLiftReportBase {
   /**
    * Builds the render array for the summary portion of the report.
    *
-   * @param array $report_data
-   *   Reporting data for this summary report.
+   * @param array $aggregated_data
+   *   The per-variation results aggregated across all dates
    * @param bool $confidence
    *   Whether the report has confidence.
    * @param bool $winner
    *   The index of the winning option or NULL if there's no winner
-   * @param array|bool
-   *   A render array for the report or FALSE if it cannot be generated.
+   * @param array
+   *   A render array for the report.
    */
-  protected function buildConversionSummaryReport($report_data, $confidence, $winner) {
+  protected function buildConversionSummaryReport($aggregated_data, $confidence, $winner) {
     $config = $this->getReportConfiguration();
     $headers = array(
       t('Variation'),
@@ -347,8 +371,8 @@ abstract class AcquiaLiftReportBase {
     );
     $confidence_message_shown = FALSE;
     $rows = array();
-    $num_rows = count($report_data);
-    foreach ($report_data as $choice_id => $choice_data) {
+    $num_rows = count($aggregated_data);
+    foreach ($aggregated_data as $choice_id => $choice_data) {
       $row_data = array(
         array(
           'data' => $choice_data['option_label'],

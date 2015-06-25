@@ -428,6 +428,7 @@ class AcquiaLiftReport extends AcquiaLiftReportBase {
 
   /**
    * Returns a render array for the experimental portion of the reports.
+   *
    * @return array
    */
   public function getExperimentReports() {

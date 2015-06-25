@@ -24,16 +24,44 @@ function acquia_lift_install() {
  */
 function acquia_lift_enable() {
 
-  _acquia_lift_build_menu('acquia-lift-controls');
+  $items = db_select('menu_links', 'ml')
+    ->fields('ml')
+    ->condition('module', 'menu')
+    ->condition('menu_name', 'acquia-lift-controls')
+    ->condition('hidden', 1)
+    ->execute()->fetchAllAssoc('mlid', PDO::FETCH_ASSOC);
+  // Enable links that are disabled.
+  if (!empty($items)) {
+    foreach ($items as $item) {
+      $item['options'] = unserialize($item['options']);
+      $item['hidden'] = 0;
+      menu_link_save($item);
+    }
+    // Update the menu router information.
+    menu_rebuild();
+  }
 }
 
 /**
  * Implements hook_disable().
  */
 function acquia_lift_disable() {
-  // Delete the menu links and rebuild router information.
-  menu_delete_links('acquia-lift-controls');
-  menu_rebuild();
+  $items = db_select('menu_links', 'ml')
+    ->fields('ml')
+    ->condition('module', 'menu')
+    ->condition('menu_name', 'acquia-lift-controls')
+    ->condition('hidden', 0)
+    ->execute()->fetchAllAssoc('mlid', PDO::FETCH_ASSOC);
+  // Disable links that are enabled.
+  if (!empty($items)) {
+    foreach ($items as $item) {
+      $item['options'] = unserialize($item['options']);
+      $item['hidden'] = 1;
+      menu_link_save($item);
+    }
+    // Update the menu router information.
+    menu_rebuild();
+  }
 }
 
 /**
@@ -56,10 +84,23 @@ function acquia_lift_uninstall() {
     variable_del($var);
   }
 
-  // Delete the menu items and rebuild router information.
-  menu_delete_links('acquia-lift-controls');
-  menu_rebuild();
-
+  if ($menu = menu_load('acquia-lift-controls')) {
+    // Delete the menu items.
+    $mlids = db_select('menu_links', 'ml')
+      ->fields('ml', array('mlid'))
+      ->condition('module', 'menu')
+      ->condition('menu_name', 'acquia-lift-controls')
+      ->execute()->fetchAllAssoc('mlid', PDO::FETCH_ASSOC);
+    // Delete links from the Personalize Controls menu.
+    if (!empty($mlids)) {
+      foreach ($mlids as $mlid) {
+        menu_link_delete($mlid);
+      }
+    }
+    menu_delete($menu);
+    // Update the menu router information.
+    menu_rebuild();
+  }
   // Delete any variables used to store report data sources for agents.
   foreach (personalize_agent_load_multiple() as $agent) {
     $variable_name = "acquia_lift_report_source_{$agent->machine_name}";

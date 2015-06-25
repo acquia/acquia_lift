@@ -20,7 +20,7 @@ interface AcquiaLiftLearningAgentInterface {
    * @return array
    *   A render array containing all of the report markup.
    */
-  public function buildCampaignReports($options);
+  public function getCampaignReports($options);
 
   /**
    * Retrieves a conversion report.
@@ -36,5 +36,5 @@ interface AcquiaLiftLearningAgentInterface {
    * @return array
    *   A renderable array.
    */
-  public function buildConversionReport($options);
+  public function getExperimentReports($options);
 }

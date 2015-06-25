@@ -7,8 +7,6 @@
 
 (function (Drupal, $, _) {
 
-  var reportPath = Drupal.settings.basePath + Drupal.settings.pathPrefix + 'admin/structure/personalize/manage/acquia-lift-placeholder/report';
-
   Drupal.behaviors.acquiaLiftPersonalize = {
     attach: function (context) {
       var settings = {

@@ -1132,7 +1132,7 @@ class AcquiaLiftReport implements AcquiaLiftReportInterface {
           ),
         );
         // Add the winner column data.
-        if (empty($rows) && $report_data['overview']['confidence'] === FALSE) {
+        if (empty($rows) && !$confidence) {
           // If there is low confidence then show the message throughout the
           // winner column.
           $row_data[] = array(
@@ -1144,7 +1144,7 @@ class AcquiaLiftReport implements AcquiaLiftReportInterface {
         }
         else if (!$confidence_message_shown) {
           // Show the winner indicator if this is the winning variation.
-          $row_data[] = $confidence && $winner == $choice_data['counter'] ? '<span class="lift-winner">' . t('Winner') . '</span>' : '';
+          $row_data[] = $confidence && ($winner === $choice_data['counter']) ? '<span class="lift-winner">' . t('Winner') . '</span>' : '';
         }
         $rows[] = array(
           'data' => $row_data,
@@ -1203,7 +1203,7 @@ class AcquiaLiftReport implements AcquiaLiftReportInterface {
       '#attributes' => array('class' => array('lift-statistic-category-name', 'element-invisible')),
     );
     $build['reports']['detail'] = $this->buildConversionDetailReport($report_data['detail']);
-    $confidence = $this->loadedReports['conversion_all']['summary']['overview']['confidence'];
+    $confidence = !empty($this->loadedReports['conversion_all']['summary']['overview']['confidence']);
     $winner = $this->loadedReports['conversion_all']['summary']['overview']['winner'];
     $build['reports']['summary'] = $this->buildConversionSummaryReport($report_data['summary'], $confidence, $winner);
     $build['reports']['#theme_wrappers'] = array('container');

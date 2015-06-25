@@ -420,6 +420,13 @@ function acquia_lift_percentage_validate($element, &$form_state) {
 }
 
 /**
+ * Implements hook_flush_caches().
+ */
+function acquia_lift_flush_caches() {
+  return array('cache_acquia_lift_reports');
+}
+
+/**
  * Returns the agent types this module provides.
  *
  * @return array

@@ -240,7 +240,6 @@ class AcquiaLiftAgent extends PersonalizeAgentBase implements PersonalizeAgentGo
         AcquiaLiftAPI::ENABLED_STATUS,
         $acquia_lift_control_rate,
         $acquia_lift_explore_rate,
-        isset($this->data['cache_decisions']) && $this->data['cache_decisions']
       ),
     );
 

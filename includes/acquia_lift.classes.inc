@@ -447,7 +447,7 @@ class AcquiaLiftAPI implements PersonalizeLoggerAwareInterface, AcquiaLiftReport
    * @return boolean
    *   TRUE if the agent has been saved to Acquia Lift, FALSE otherwise.
    */
-  public function saveAgent($machine_name, $label, $decision_style, $status = 'enabled', $control_rate = 0.1, $explore_rate = .2, $sticky = TRUE) {
+  public function saveAgent($machine_name, $label, $decision_style, $status = 'enabled', $control_rate = 0.1, $explore_rate = .2) {
     // The selection-mode argument can only be "random" or "adaptive", so coerce the
     // $decision_mode variable if it's somehow something else.
     if ($decision_style !== "random") {
@@ -461,7 +461,7 @@ class AcquiaLiftAPI implements PersonalizeLoggerAwareInterface, AcquiaLiftReport
       'status' => $status,
       'control-rate' => $control_rate,
       'explore-rate' => $explore_rate,
-      'decision-stickiness' => $sticky ? 'session' : 'none'
+      'decision-stickiness' => 'session'
     );
     $response = $this->httpClient()->put($url, array('Content-Type' => 'application/json; charset=utf-8', 'Accept' => 'application/json'), $agent);
     $data = json_decode($response->data, TRUE);

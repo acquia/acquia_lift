@@ -870,7 +870,6 @@ class AcquiaLiftWebTestFundamentals extends AcquiaLiftWebTestBase {
             'enabled',
             $control_rate / 100,
             $explore_rate / 100,
-            TRUE,
           ),
       ),
       array (

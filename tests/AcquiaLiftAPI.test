@@ -1131,16 +1131,8 @@ class AcquiaLiftTest extends DrupalUnitTestCase {
     $this->assertLogs($logs);
     $this->logger->clearLogs();
 
-    // Save an agent without sticky decisions
-    $lift_api->saveAgent($agentName, 'Some Test Agent', 'adaptive', 'enabled', 0.1, 0.4, 0);
-    $requests[0]['body']['decision-stickiness'] = 'none';
-    // Confirm the expected requests were made.
-    $this->assertAPIRequests($requests);
-    $this->assertLogs($logs);
-    $this->logger->clearLogs();
-
     // Try with something nonsensical for the decision mode.
-    $lift_api->saveAgent($agentName, 'Some Test Agent', 'narf', 'enabled', 0.1, 0.4, 0);
+    $lift_api->saveAgent($agentName, 'Some Test Agent', 'narf', 'enabled', 0.1, 0.4);
     // Confirm the expected requests were made.
     $this->assertAPIRequests($requests);
     $this->assertLogs($logs);
@@ -1149,7 +1141,7 @@ class AcquiaLiftTest extends DrupalUnitTestCase {
     // Now try with a broken http client.
     $lift_api = $this->getAcquiaLiftAPI(TRUE);
     try {
-      $lift_api->saveAgent('some-test-agent', 'Some Test Agent', 'adaptive', 'enabled', 0.1, 0.4, 0);
+      $lift_api->saveAgent('some-test-agent', 'Some Test Agent', 'adaptive', 'enabled', 0.1, 0.4);
     }
     catch (Exception $e) {
       $this->assertTrue($e instanceof AcquiaLiftException);

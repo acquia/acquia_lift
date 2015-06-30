@@ -855,7 +855,7 @@ function acquia_lift_personalize_campaign_wizard_review_alter(&$form, &$form_sta
     '#type' => 'checkbox',
     '#title' => 'Cache decisions made by this agent?',
     '#description' => t('Check this if decisions made by this agent should stick, so that they don\'t have to be made again every time variation sets are rendered. This depends on the availability of local storage in the visitor\'s browser'),
-    '#default_value' => isset($agent_data->data['cache_decisions']) ? $agent_data->data['cache_decisions'] : 1
+    '#default_value' => isset($agent_data->data['cache_decisions']) ? $agent_data->data['cache_decisions'] : 0
   );
 
   // Move the scheduling summary element to the bottom.

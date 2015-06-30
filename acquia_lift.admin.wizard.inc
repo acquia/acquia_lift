@@ -286,9 +286,11 @@ function acquia_lift_personalize_campaign_wizard_variations_alter(&$form, &$form
             // TRICKY: Name must be specified or else it will default to "op" and
             // conflict with the main process bar save button.
             $form['variations']['new'][$delta]['block']['save'] = array(
-              '#name' => 'save_block_option_set_' . $delta,
+              '#name' => 'single_save_' . $delta,
               '#type' => 'submit',
               '#value' => t('Save'),
+              '#submit' => array('acquia_lift_personalize_campaign_wizard_variations_single_submit'),
+              '#limit_validation_errors' => array(array('variations', 'new', $delta)),
             );
             $form['variations']['new'][$delta]['block']['cancel'] = array(
               '#type' => 'submit',
@@ -1263,15 +1265,58 @@ function acquia_lift_personalize_campaign_wizard_variations_validate(&$form, &$f
   // Get a reference to the full values array.
   $values = $form_state['values'];
 
+  // Handles validation of block values and setting form errors correctly.
+  // Using #limit_validation_errors for the single submit means that any
+  // form_set_error from the personalize_blocks_form_validate() function
+  // will never be set.  For now reproducing the relevant validation here.
+  // @todo there has to be a better way with some further refactoring.
+  $validateBlock = function($values, $form_error_parent) {
+    $valid = FALSE;
+    $first_block = '';
+    if (isset($values['blocks'])) {
+      $num_blocks = 0;
+      foreach ($values['blocks'] as $j => $block) {
+        if (empty($first_block)) {
+          $first_block = $j;
+        }
+        if (empty($block['option_label'])) {
+          form_set_error($form_error_parent . 'blocks][' . $j . '][option_label', t('A label is required for each block option.'));
+        }
+        if ($block['block']['bid'] === 'add') {
+          if (empty($block['block']['add']['info'])) {
+            form_set_error($form_error_parent . 'blocks][' . $j . '][block][add][info', t('A block description is required when creating a new block.'));
+          }
+          if (empty($block['block']['add']['body']['value'])) {
+            form_set_error($form_error_parent . 'blocks][' . $j . '][block][add][body', t('The block body is required when creating a new block.'));
+          }
+          // @see block_add_block_form_validate().
+          $custom_block_exists = (bool) db_query_range('SELECT 1 FROM {block_custom} WHERE info = :info', 0, 1, array(':info' => $block['block']['add']['info']))->fetchField();
+
+          if ($custom_block_exists) {
+            form_set_error($form_error_parent . 'blocks][' . $j . '][block][add][info', t('Ensure that each block description is unique.'));
+          }
+          else {
+            $num_blocks++;
+          }
+        }
+        if (!empty($block['block']['bid'])) {
+          $num_blocks++;
+        }
+      }
+      $valid = $num_blocks > 1;
+    }
+    if (!$valid) {
+      form_set_error($form_error_parent . 'blocks][' . $first_block . '][block][bid]', t('You must add at least 2 blocks to your personalized block'));
+    }
+  };
+
+
   // Validation for existing option set types.
   if (!empty($form_state['values']['variations']['option_sets'])) {
     foreach ($form_state['values']['variations']['option_sets'] as $option_set_id => $option_set_values) {
       switch ($option_set_values['option_set']->plugin) {
         case "block":
-          module_load_include('inc', 'personalize_blocks', 'personalize_blocks.admin');
-          _acquia_lift_personalize_campaign_wizard_form_state_blocks_alter($form_state, $option_set_values['content'], $option_set_values['option_set']);
-          personalize_blocks_form_validate($form, $form_state);
-          $form_state['values'] = $values;
+          $validateBlock($option_set_values['content']['pblock_wrapper'], 'variations][option_sets][' . $option_set_id . '][content][pblock_wrapper][');
           break;
         case "element":
           break;
@@ -1288,12 +1333,7 @@ function acquia_lift_personalize_campaign_wizard_variations_validate(&$form, &$f
       if ($type != 'block') {
         continue;
       }
-      module_load_include('inc', 'personalize_blocks', 'personalize_blocks.admin');
-      // @todo Fix error validation message so that they are applied to the right
-      // input element.
-      _acquia_lift_personalize_campaign_wizard_form_state_blocks_alter($form_state, $values['variations']['new'][$delta]['block']['content']);
-      personalize_blocks_form_validate($form, $form_state);
-      $form_state['values'] = $values;
+      $validateBlock($form_state['values']['variations']['new'][$delta]['block']['content']['pblock_wrapper'], 'variations][new][' . $delta . '][block][content][pblock_wrapper][');
     }
   }
 
@@ -1331,7 +1371,8 @@ function acquia_lift_personalize_campaign_wizard_goals_validate(&$form, &$form_s
         ctools_include('plugins');
         if ($class = ctools_plugin_load_class('visitor_actions', 'actionable_element', 'page', 'handler')) {
           // @todo Any validation errors shown will not be shown with the
-          // correct field highlighted, but the correct message still shows.
+          // correct field highlighted, or at all if limit_validation_errors
+          // is used.
           call_user_func_array(array($class, 'validate'), array($form_state['values']['goals']['new'][$delta]['details']));
         }
         continue;
@@ -1521,31 +1562,37 @@ function acquia_lift_personalize_campaign_wizard_submit_editable(&$form, &$form_
 }
 
 /**
+ * Helper submit function to save a single block variation.
+ */
+function _acquia_lift_personalize_campaign_wizard_block_single_save($block_content, $option_set = NULL, $form_state) {
+  module_load_include('inc', 'personalize_blocks', 'personalize_blocks.admin');
+  _acquia_lift_personalize_campaign_wizard_form_state_blocks_alter($form_state, $block_content, $option_set);
+  // Create any new blocks
+  foreach($form_state['values']['blocks'] as &$block) {
+    if ($block['block']['bid'] === 'add') {
+      $block['block']['bid'] = _personalize_blocks_add_custom_block($block['block']['add']);
+    }
+  }
+  $pblock = _personalize_blocks_convert_form_to_personalized_block($form_state);
+  personalize_option_set_save($pblock);
+}
+
+/**
+ * Submit function to submit a single new block variation.
+ */
+function acquia_lift_personalize_campaign_wizard_variations_single_submit($form, $form_state) {
+  list( , , $delta) = explode('_', $form_state['triggering_element']['#name']);
+  _acquia_lift_personalize_campaign_wizard_block_single_save($form_state['values']['variations']['new'][$delta]['block']['content'], NULL, $form_state);
+}
+
+/**
  * Submit function for variations form.
  */
 function acquia_lift_personalize_campaign_wizard_variations_submit(&$form, &$form_state, &$agent_data, $agent_instance) {
-  // Save a reference to the full form state values.
-  $values = $form_state['values'];
-
   if (!empty($form_state['storage']['acquia_lift_variation_set_handling'])) {
     $agent_data->data['variation_set_handling'] = $form_state['storage']['acquia_lift_variation_set_handling'];
     $agent_data = personalize_agent_save($agent_data);
   }
-
-  // Common functionality needed before submitting the block submission
-  // handler whether for new or existing blocks.
-  $submitBlockHandler = function ($block_content, $option_set = NULL) use ($form, $form_state) {
-    module_load_include('inc', 'personalize_blocks', 'personalize_blocks.admin');
-    _acquia_lift_personalize_campaign_wizard_form_state_blocks_alter($form_state, $block_content, $option_set);
-    // Create any new blocks
-    foreach($form_state['values']['blocks'] as &$block) {
-      if ($block['block']['bid'] === 'add') {
-        $block['block']['bid'] = _personalize_blocks_add_custom_block($block['block']['add']);
-      }
-    }
-    $pblock = _personalize_blocks_convert_form_to_personalized_block($form_state);
-    personalize_option_set_save($pblock);
-  };
 
   // Save any existing option sets.
   if (!empty($form_state['values']['variations']['option_sets'])) {
@@ -1553,7 +1600,7 @@ function acquia_lift_personalize_campaign_wizard_variations_submit(&$form, &$for
       $option_set = $option_set_values['option_set'];
       switch ($option_set_values['option_set']->plugin) {
         case "block":
-          $submitBlockHandler($option_set_values['content'], $option_set);
+          _acquia_lift_personalize_campaign_wizard_block_single_save($option_set_values['content'], $option_set, $form_state);
           break;
         case "element":
           break;
@@ -1578,7 +1625,7 @@ function acquia_lift_personalize_campaign_wizard_variations_submit(&$form, &$for
       if ($type !== 'block') {
         continue;
       }
-      $submitBlockHandler($form_state['values']['variations']['new'][$delta]['block']['content']);
+      _acquia_lift_personalize_campaign_wizard_block_single_save($form_state['values']['variations']['new'][$delta]['block']['content'], NULL, $form_state);
     }
   }
 

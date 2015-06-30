@@ -504,9 +504,11 @@ function acquia_lift_personalize_campaign_wizard_goals_alter(&$form, &$form_stat
             // TRICKY: Name must be specified or else it will default to "op" and
             // conflict with the main process bar save button.
             $form['goals']['new'][$delta]['save'] = array(
-              '#name' => 'save_existing_goal_' . $delta,
+              '#name' => 'single_save_' . $delta,
               '#type' => 'submit',
               '#value' => t('Save'),
+              '#limit_validation_errors' => array(array('goals', 'new', $delta)),
+              '#submit' => array('acquia_lift_personalize_campaign_wizard_goals_single_submit'),
             );
             $form['goals']['new'][$delta]['cancel'] = array(
               '#type' => 'submit',
@@ -551,9 +553,11 @@ function acquia_lift_personalize_campaign_wizard_goals_alter(&$form, &$form_stat
             // TRICKY: Name must be specified or else it will default to "op" and
             // conflict with the main process bar save button.
             $form['goals']['new'][$delta]['save'] = array(
-              '#name' => 'save_page_goal_' . $delta,
+              '#name' => 'single_save_' . $delta,
               '#type' => 'submit',
               '#value' => t('Save'),
+              '#limit_validation_errors' => array(array('goals', 'new', $delta)),
+              '#submit' => array('acquia_lift_personalize_campaign_wizard_goals_single_submit'),
             );
             $form['goals']['new'][$delta]['cancel'] = array(
               '#type' => 'submit',
@@ -1612,6 +1616,39 @@ function acquia_lift_personalize_campaign_wizard_variations_submit_element_add($
 }
 
 /**
+ * Helper submit function to handle saving a new goal.
+ */
+function _acquia_lift_personalize_campaign_wizard_goals_single_add($delta, $form, $form_state, $agent_data) {
+  $type = $form_state['new_goals'][$delta];
+  if (empty($type)) {
+    return;
+  }
+  // Get a reference to the original values.
+  $values = $form_state['values'];
+  $form_state['values'] = $values['goals']['new'][$delta]['details'];
+  $form_state['values']['agent'] = $agent_data;
+  $form_state['values']['goal_type'] = $type;
+  $save_form['goal']['action_name'] = ($type == 'existing') ? $form['goals']['new'][$delta]['details']['action_name'] : array();
+  module_load_include('inc', 'acquia_lift', 'acquia_lift.admin.unibar');
+  acquia_lift_goal_type_create_form_submit($save_form, $form_state);
+  // Restore the form state values.
+  $form_state['values'] = $values;
+}
+
+/**
+ * Submit function for a single goal
+ */
+function acquia_lift_personalize_campaign_wizard_goals_single_submit($form, &$form_state) {
+  $agent_data = $form['#agent'];
+  module_load_include('inc', 'acquia_lift', 'acquia_lift.admin');
+  if (!acquia_lift_target_definition_changes_allowed($agent_data)) {
+    return;
+  }
+  list( , , $delta) = explode('_', $form_state['triggering_element']['#name']);
+  _acquia_lift_personalize_campaign_wizard_goals_single_add($delta, $form, $form_state, $agent_data);
+}
+
+/**
  * Submit function for goals form.
  */
 function acquia_lift_personalize_campaign_wizard_goals_submit(&$form, &$form_state, &$agent_data, $agent_instance) {
@@ -1629,21 +1666,9 @@ function acquia_lift_personalize_campaign_wizard_goals_submit(&$form, &$form_sta
 
   // Check for any new goals.
   if (isset($form_state['new_goals'])) {
-    // Get a reference to the original values.
-    $values = $form_state['values'];
     foreach ($form_state['new_goals'] as $delta => $type) {
-      if (empty($type)) {
-        continue;
-      }
-      $form_state['values'] = $values['goals']['new'][$delta]['details'];
-      $form_state['values']['agent'] = $agent_data;
-      $form_state['values']['goal_type'] = $type;
-      $save_form['goal']['action_name'] = ($type == 'existing') ? $form['goals']['new'][$delta]['details']['action_name'] : array();
-      module_load_include('inc', 'acquia_lift', 'acquia_lift.admin.unibar');
-      acquia_lift_goal_type_create_form_submit($save_form, $form_state);
+      _acquia_lift_personalize_campaign_wizard_goals_single_add($delta, $form, $form_state, $agent_data);
     }
-    // Restore the form state values.
-    $form_state['values'] = $values;
   }
 
   // Update any existing goals.
@@ -1861,15 +1886,7 @@ function _acquia_lift_personalize_campaign_wizard_variations_block(&$form, &$for
   $element = array();
   $values = isset($form_state['values']) ? $form_state['values'] : array();
   if (empty($option_set->osid)) {
-    $block_content = $values;
-    foreach ($parents as $parent) {
-      if (isset($block_content[$parent])) {
-        $block_content = $block_content[$parent];
-      }
-      else {
-        $block_content = array();
-      }
-    }
+    $block_content = drupal_array_get_nested_value($form_state['values'], $parents);
     $form_state_key = implode('-', $parents);
   } else {
     $block_content = empty($values['variations']['option_sets']['option_set_' . $option_set->osid]['content']) ? array() : $values['variations']['option_sets']['option_set_' . $option_set->osid]['content'];

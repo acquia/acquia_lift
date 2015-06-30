@@ -166,22 +166,13 @@ Drupal.acquia_lift_target = (function() {
       if (!initialized) {
         init();
       }
-      var agent_plugin = Drupal.settings.acquia_lift_target.test_agent_plugin;
-      // Check if there is a nested test that this goal needs to be sent to.
-      if (agentRules.hasOwnProperty(agent_name)) {
-        for (var i in agentRules[agent_name]) {
-          if (agentRules[agent_name].hasOwnProperty(i)) {
-            var rule = agentRules[agent_name][i];
-            if (rule.hasOwnProperty('osid')) {
-              var osid = 'osid-' + rule.osid;
-              if (Drupal.settings.acquia_lift_target.option_sets.hasOwnProperty(osid)) {
-                var optionSet = Drupal.settings.acquia_lift_target.option_sets[osid];
-                var nested_agent = optionSet.agent;
-                if (Drupal.settings.acquia_lift_target.agent_map.hasOwnProperty(nested_agent)) {
-                  Drupal.personalize.agents[agent_plugin].sendGoalToAgent(nested_agent, goal_name, value);
-                }
-              }
-            }
+      // Find any nested tests this goal needs to be sent to.
+      var nested = Drupal.settings.acquia_lift_target.nested_tests;
+      if (nested.hasOwnProperty(agent_name)) {
+        var agent_plugin = Drupal.settings.acquia_lift_target.test_agent_plugin;
+        for (var i in nested[agent_name]) {
+          if (nested[agent_name].hasOwnProperty(i)) {
+            Drupal.personalize.agents[agent_plugin].sendGoalToAgent(nested[agent_name][i], goal_name, value);
           }
         }
       }

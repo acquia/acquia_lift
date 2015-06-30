@@ -175,8 +175,6 @@ class AcquiaLiftWebTestBase extends DrupalWebTestCase
     foreach ($parent_option_set->options as $option) {
       $option_ids[] = $option['option_id'];
     }
-    // Add a goal in order to save the agent.
-    personalize_goal_save($agent->machine_name, 'user_login', 1);
 
     $this->resetAll();
     $audience_name = personalize_generate_machine_name($this->randomName(), NULL, '-');
@@ -2074,6 +2072,44 @@ class AcquiaLiftWebTestTarget extends AcquiaLiftWebTestBase {
     else {
       $this->fail('Could not find the second option set');
     }
+  }
+
+  function testNestedAgentSettings() {
+    $agent = $this->createTargetingAgentWithNestedTest();
+    personalize_agent_set_status($agent->machine_name, PERSONALIZE_STATUS_RUNNING);
+    $this->resetAll();
+
+    $option_sets = personalize_option_set_load_by_agent($agent->machine_name);
+    $option_set = reset($option_sets);
+    $this->drupalGet('');
+    $settings = $this->drupalGetSettings();
+    $this->assertTrue(isset($settings['acquia_lift_target']['nested_tests']));
+    $sub_agent = $agent->machine_name . '-test';
+    $expected = array(
+      $agent->machine_name => array(
+        $sub_agent => $sub_agent
+      )
+    );
+    $this->assertEqual($settings['acquia_lift_target']['nested_tests'], $expected);
+    // Now let's place our personalized block and confirm that the settings are
+    // still as they should be.
+    $admin_user = $this->drupalCreateUser(array('access administration pages', 'manage personalized content', 'administer blocks'));
+    $this->drupalLogin($admin_user);
+    $edit = array(
+      'blocks[personalize_blocks_' . $option_set->osid . '][region]' => 'content',
+    );
+    $this->drupalPost('admin/structure/block', $edit, t('Save blocks'));
+    $this->drupalLogout();
+    $this->drupalGet('');
+    $settings = $this->drupalGetSettings();
+    $this->assertTrue(isset($settings['acquia_lift_target']['nested_tests']));
+    $sub_agent = $agent->machine_name . '-test';
+    $expected = array(
+      $agent->machine_name => array(
+        $sub_agent => $sub_agent
+      )
+    );
+    $this->assertEqual($settings['acquia_lift_target']['nested_tests'], $expected);
   }
 
   function testNestedAgentsButtons() {

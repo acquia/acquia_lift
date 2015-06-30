@@ -662,12 +662,7 @@ function acquia_lift_personalize_option_set_render(&$element, $option_set) {
   $rules = $option_set->targeting;
   // We add our own settings for nested agents as they won't have been added
   // by personalize.
-  $settings = array(
-    'default_target' => ACQUIA_LIFT_TARGETING_EVERYONE_ELSE,
-    'test_agent_plugin' => acquia_lift_get_test_agent_plugin(),
-    'agent_map' => array(),
-    'option_sets' => array()
-  );
+  $settings = acquia_lift_target_default_js_settings($option_set->agent);
   $assets = array('js' => array());
   foreach ($rules as $rule) {
     if (isset($rule['option_id']) || !isset($rule['osid'])) {
@@ -686,6 +681,31 @@ function acquia_lift_personalize_option_set_render(&$element, $option_set) {
   );
   $assets['js'] = array_merge_recursive($assets['js'], array($settings_array));
   personalize_merge_element_assets($element, $assets);
+}
+
+/**
+ * Returns the basic js settings needed by acquia_lift_target.
+ * @param null $agent_name
+ *   An optional agent to include nested_tests for.
+ * @return array
+ */
+function acquia_lift_target_default_js_settings($agent_name = NULL) {
+  $settings = array(
+    'default_target' => ACQUIA_LIFT_TARGETING_EVERYONE_ELSE,
+    'test_agent_plugin' => acquia_lift_get_test_agent_plugin(),
+    'agent_map' => array(),
+    'option_sets' => array(),
+    'nested_tests' => array()
+  );
+  if (!empty($agent_name)) {
+    $settings['nested_tests'][$agent_name] = array();
+    $agent = personalize_agent_load($agent_name);
+    $nested_tests = acquia_lift_get_nested_tests($agent);
+    foreach ($nested_tests as $test) {
+      $settings['nested_tests'][$agent_name][$test] = $test;
+    }
+  }
+  return $settings;
 }
 
 /**

@@ -16,7 +16,6 @@ function acquia_lift_install() {
     'description' => 'The <em>Acquia Lift personalize controls</em> menu contains actions to create and manage personalization campaigns.',
   );
   menu_save($menu);
-  _acquia_lift_build_menu($menu_name);
 }
 
 /**
@@ -24,7 +23,6 @@ function acquia_lift_install() {
  */
 function acquia_lift_enable() {
   variable_set('queue_class_acquia_lift_sync', 'AcquiaLiftQueue');
-
   _acquia_lift_build_menu('acquia-lift-controls');
 }
 

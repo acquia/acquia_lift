@@ -677,7 +677,20 @@ function acquia_lift_update_7200() {
     $agent = new stdClass();
     $agent->label = 'Converted: ' . $details[0]['agent_label'];
     $agent->plugin = 'acquia_lift_target';
-    $agent->data = array();
+    $agent->data = $details[0]['agent_data'];
+    // Preserve some data by keys, and discard others.
+    $preserved_data_keys = array(
+      'control_rate',
+      'decision_style',
+      'explore_rate',
+      'cache_decisions',
+    );
+    foreach ($agent->data as $key => $data_entry) {
+      if (in_array($key, $preserved_data_keys)) {
+        continue;
+      }
+      unset($agent->data[$key]);
+    }
     $agent->machine_name = personalize_generate_machine_name($original_agent_name . '-parent', 'personalize_agent_machine_name_exists');
     $nested_agent = personalize_agent_load($original_agent_name);
     try {
@@ -744,6 +757,10 @@ function acquia_lift_update_7200() {
         }
       }
       personalize_agent_set_status($agent->machine_name, $nested_agent_status);
+      $start_date = personalize_agent_get_start_date($original_agent_name);
+      personalize_agent_set_start_date($agent->machine_name, $start_date);
+      $end_date = personalize_agent_get_stop_date($original_agent_name);
+      personalize_agent_set_stop_date($agent->machine_name, $end_date);
       $agent->started = $nested_agent->started;
       personalize_agent_save($agent);
     }

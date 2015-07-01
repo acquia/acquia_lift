@@ -649,7 +649,9 @@ function acquia_lift_report($form, &$form_state, $agent_data) {
     }
   }
 
-  if (empty($audience) && !isset($option_set->targeting[$audience]['osid'])) {
+  // If no audience specified, or one that does not have a test, use the first
+  // audience option if there is one.
+  if (empty($audience) || !isset($option_set->targeting[$audience]['osid'])) {
     if (empty($audience_options)) {
       return array(
         'no_report' => array(
@@ -710,6 +712,8 @@ function acquia_lift_report_submit($form, &$form_state) {
  *   The campaign agent data for this report.
  * @param stdClass $option_set
  *   (optional) The content variation to show in the default view.
+ * @param stdClass $parent_agent
+ *   (optional) The parent agent if this is a nested test.
  */
 function acquia_lift_report_custom(&$form_state, $agent_data, $legacy = FALSE, $parent_agent = NULL) {
 

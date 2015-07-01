@@ -1,5 +1,16 @@
 <?php
 
+/**
+ * Class AcquiaLiftReportBase
+ *
+ * This class is provided as a base reporting class for displaying report markup
+ * regardless of where reporting data is coming from. It provides functions for
+ * building out the markup of overview and experiment reports, as well as some
+ * helper methods for formatting numbers, and methods for getting and setting
+ * the report configuration. Reporting classes should extend this base class
+ * and use it to generate the markup, while implementing their own logic for
+ * getting and manipulating the actual reporting data.
+ */
 abstract class AcquiaLiftReportBase {
 
   /**

@@ -3190,6 +3190,10 @@ class AcquiaLiftWebTestCampaignWizardVariations extends AcquiaLiftWebTestBase {
 }
 
 class AcquiaLiftWebTestCampaignWizard extends AcquiaLiftWebTestBase {
+
+  protected $addGoalElement;
+  protected $changeTypeElement;
+
   public static function getInfo() {
     return array(
       'name' => t('Acquia Lift Web Tests - Personalization Wizard - Others'),
@@ -3200,6 +3204,8 @@ class AcquiaLiftWebTestCampaignWizard extends AcquiaLiftWebTestBase {
 
   public function setUp() {
     parent::setUp();
+    $this->addGoalElement = array('op' => t('Add goal'));
+    $this->changeTypeElement = array('op' => t('Change type'));
     variable_set('acquia_lift_target_enabled', TRUE);
   }
 
@@ -3207,29 +3213,35 @@ class AcquiaLiftWebTestCampaignWizard extends AcquiaLiftWebTestBase {
    * Test goals form.
    */
   function testGoals() {
+    $goal_input_name = key($this->addGoalElement);
+    $goal_input_value = reset($this->addGoalElement);
+
     $this->drupalLogin($this->managerUser);
     $agent = $this->createTargetingAgent();
 
-    $element_action = 'action_name';
-    $page_event = 'event[page]';
+    $element_action = 'goals[new][0][details][action_name]';
+    $page_event = 'goals[new][0][details][event][page]';
 
     $this->drupalGet('admin/structure/personalize/manage/' . $agent->machine_name . '/goals');
     $this->assertNoText('Goals cannot be changed while the personalization is running.');
 
     // The type selection should be shown by default when there are no goals.
-    $this->assertNoFieldChecked('edit-goals-add-goal-goal-types-goal-type-existing');
-    $this->assertNoFieldChecked('edit-goals-add-goal-goal-types-goal-type-page');
-    $this->assertNoFieldChecked('edit-goals-add-goal-goal-types-goal-type-element');
+    $this->assertFieldByName($goal_input_name, $goal_input_value);
 
     // Actual forms should not be shown yet.
     $this->assertNoFieldByName($element_action);
     $this->assertNoFieldByName($page_event);
 
     // Check existing form.
+    $this->drupalPostAJAX(NULL, array(), $this->addGoalElement);
+    $this->assertNoFieldChecked('edit-goals-new-0-goal-type-existing');
+    $this->assertNoFieldChecked('edit-goals-new-0-goal-type-page');
+    $this->assertNoFieldChecked('edit-goals-new-0-goal-type-element');
+
     $edit = array(
-      'goals[add_goal][goal_types][goal_type]' => 'existing',
+      'goals[new][0][goal_type]' => 'existing',
     );
-    $this->drupalPostAJAX(NULL, $edit, 'goals[add_goal][goal_types][goal_type]');
+    $this->drupalPostAJAX(NULL, $edit, 'goals[new][0][goal_type]');
     $this->assertNoFieldByName($page_event);
     $this->assertFieldByName($element_action);
 
@@ -3239,22 +3251,25 @@ class AcquiaLiftWebTestCampaignWizard extends AcquiaLiftWebTestBase {
     );
     $this->drupalPost(NULL, $edit, $this->getButton('wizard_save'));
 
+    // Note that new goals are looped through with array indexes rather than
+    // by goal IDs so we can assume the values will be consecutive.
     $this->assertOptionSelected('edit-goals-all-goals-0-action-name', 'user_login');
     $this->assertFieldByName('goals[all_goals][0][value]', 1);
 
     // Add a page goal.
+    $this->drupalPostAJAX(NULL, array(), $this->addGoalElement);
     $edit = array(
-      'goals[add_goal][goal_types][goal_type]' => 'page',
+      'goals[new][0][goal_type]' => 'page',
     );
-    $this->drupalPostAJAX(NULL, $edit, 'goals[add_goal][goal_types][goal_type]');
+    $this->drupalPostAJAX(NULL, $edit, 'goals[new][0][goal_type]');
 
     $this->assertFieldByName($page_event);
     $this->assertNoFieldByName($element_action);
 
     $edit = array(
-      'title' => 'Test goal',
+      'goals[new][0][details][title]' => 'Test goal',
       $page_event => 'client::scrollToBottom',
-      'pages' => 'node',
+      'goals[new][0][details][pages]' => 'node',
     );
     $this->drupalPost(NULL, $edit, $this->getButton('wizard_save'));
 
@@ -3266,7 +3281,7 @@ class AcquiaLiftWebTestCampaignWizard extends AcquiaLiftWebTestBase {
       'goals[all_goals][1][action_name]' => 'user_login',
     );
     $this->drupalPost(NULL, $edit, $this->getButton('wizard_save'));
-    $this->assertText('Each action can only be used once per personalization.');
+    $this->assertText('Actions can only be used once per personalization.');
 
     // Edit the goal with valid values.
     $edit = array(
@@ -3276,15 +3291,14 @@ class AcquiaLiftWebTestCampaignWizard extends AcquiaLiftWebTestBase {
     $this->drupalPost(NULL, $edit, $this->getButton('wizard_save'));
 
     // Verify everything is as expected.
-    $this->assertNoFieldChecked('edit-goals-add-goal-goal-types-goal-type-existing');
-    $this->assertNoFieldChecked('edit-goals-add-goal-goal-types-goal-type-page');
-    $this->assertNoFieldChecked('edit-goals-add-goal-goal-types-goal-type-element');
+    $this->assertFieldByName($goal_input_name, $goal_input_value);
     $this->assertOptionSelected('edit-goals-all-goals-0-action-name', 'user_login');
     $this->assertFieldByName('goals[all_goals][0][value]', 1);
     $this->assertOptionSelected('edit-goals-all-goals-1-action-name', 'form_submit');
     $this->assertFieldByName('goals[all_goals][1][value]', 5);
 
     // Make sure all goals saved as expected too.
+    $this->resetAll();
     $goal_entities = personalize_goal_load_by_conditions(array('agent' => $agent->machine_name));
     $test_goals = array_values($goal_entities);
     $this->assertEqual(count($test_goals), 2);

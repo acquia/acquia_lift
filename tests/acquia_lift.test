@@ -3472,17 +3472,6 @@ class AcquiaLiftWebTestCampaignWizard extends AcquiaLiftWebTestBase {
     // Add option set.
     $this->createPersonalizedBlock(0, $agent);
 
-    // Add a goal.
-    $this->drupalGet("admin/structure/personalize/manage/$machine_name/goals");
-    $edit = array(
-      'goals[add_goal][goal_types][goal_type]' => 'existing',
-    );
-    $this->drupalPostAJAX(NULL, $edit, 'goals[add_goal][goal_types][goal_type]');
-    $edit = array(
-      'action_name' => 'user_login',
-    );
-    $this->drupalPost(NULL, $edit, $this->getButton('wizard_save'));
-
     // Schedule the campaign to start in the future.
     $this->drupalGet("admin/structure/personalize/manage/$machine_name/scheduling");
     $start_date = strtotime('+1 month midnight');

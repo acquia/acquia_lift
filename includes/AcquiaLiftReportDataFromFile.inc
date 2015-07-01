@@ -1,6 +1,11 @@
 <?php
 
-class AcquiaLiftReportDataFromFile implements AcquiaLiftReportDataSourceInterface {
+/**
+ * Class AcquiaLiftReportDataFromFileBase
+ *
+ * Reads reports from a file
+ */
+class AcquiaLiftReportDataFromFileBase {
 
   /**
    * The path to the file that acts as the reporting source.
@@ -27,21 +32,27 @@ class AcquiaLiftReportDataFromFile implements AcquiaLiftReportDataSourceInterfac
    * @param $agent_name
    *   The name of the agent to retrieve a report for.
    * @param $report_name
-   *   The name of teh report to retrieve, one of 'targeting-impact', 'confidence',
-   *   'agent-status', 'raw-learning', or 'context-filters'.
+   *   (Optional) The name of the report to retrieve.
    * @return array
    *   An array representing the report.
    */
-  public function getReport($agent_name, $report_name) {
+  public function getReport($agent_name, $report_name = NULL) {
 
     // First see if we already have the reports in memory.
     if ($this->reports) {
-      return isset($this->reports[$report_name]) ? $this->reports[$report_name] : array();
+      if (!empty($report_name)) {
+        return isset($this->reports[$report_name]) ? $this->reports[$report_name] : array();
+      }
+      return $this->reports;
     }
+
     // Check the cache if available
     if ($this->cache && $reports = $this->cache->getCachedReports($agent_name)) {
       $this->reports = $reports;
-      return isset($reports[$report_name]) ? $reports[$report_name] : array();
+      if (!empty($report_name)) {
+        return isset($this->reports[$report_name]) ? $this->reports[$report_name] : array();
+      }
+      return $this->reports;
     }
     // Otherwise resort to reading from a file.
     else {
@@ -55,15 +66,22 @@ class AcquiaLiftReportDataFromFile implements AcquiaLiftReportDataSourceInterfac
 
       if ($str = file_get_contents($file_name)) {
         $parsed = json_decode($str, TRUE);
-        $this->reports = $parsed['reports'];
+        $this->reports = isset($parsed['reports']) ? $parsed['reports'] : $parsed;
         if ($this->cache) {
           $this->cache->cacheReports($agent_name, $this->reports);
         }
-        return isset($this->reports[$report_name]) ? $this->reports[$report_name] : array();
+        if (!empty($report_name)) {
+          return isset($this->reports[$report_name]) ? $this->reports[$report_name] : array();
+        }
+        return $this->reports;
       }
     }
     return array();
   }
+
+}
+
+class AcquiaLiftReportDataFromFile extends AcquiaLiftReportDataFromFileBase implements AcquiaLiftReportDataSourceInterface {
 
   /**
    * Implements AcquiaLiftReportDataSourceInterface::getTargetingImpactReport().

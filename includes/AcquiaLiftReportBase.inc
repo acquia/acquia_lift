@@ -117,11 +117,10 @@ abstract class AcquiaLiftReportBase {
     $date_to = empty($options['end']) ? NULL : $options['end'];
 
     $machine_name = $this->agent->getMachineName();
-    $today_only = $date_from === date('Y-m-d') && empty($date_to);
     // Campaign start and end time could be different from the report dates and
     // are used for the "total time running" info.
-    $start_time = isset($options['campaign_start']) ? $options['campaign_start'] : $this->agent->getStartTime();
-    $end_time = isset($options['campaign_end']) ? $options['campaign_end'] : time();
+    $start_time = $this->agent->getStartTime();
+    $end_time = time();
     $date_from = empty($date_from) ? date('Y-m-d', $start_time) : $date_from;
     $date_to = empty($date_to) ? date('Y-m-d', $end_time) : $date_to;
 
@@ -134,9 +133,7 @@ abstract class AcquiaLiftReportBase {
     // Set the configuration for the reports.
     $this->reportConfig = array(
       'test_type' => $agent_data['decision_style'] === 'adaptive' ? t('Auto-personalize') : t('A/B'),
-      'today_only' => $today_only,
       'campaign_start' => $start_time,
-      'campaign_end' => $end_time,
       'date_from' => $date_from,
       'date_to' => $date_to,
       'decision_name' => $decision_name,

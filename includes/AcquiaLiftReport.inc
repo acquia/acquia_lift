@@ -113,13 +113,13 @@ class AcquiaLiftReport extends AcquiaLiftReportBase {
         $num_days = $interval->days;
         $agent_name = $config['machine_name'];
         $report_data = $this->reportDataSrc->getAgentStatusReport(array($agent_name), $num_days);
-        if (!isset($report_data['data']) || !isset($report_data['data'][$agent_name])) {
+        if (empty($report_data['data'])) {
           // If there's no data we should not try to retrieve it again so
           // populate the statusReportData variable with an error.
           $this->hasData = FALSE;
           return array();
         }
-        $this->statusReportData = $report_data['data'][$agent_name];
+        $this->statusReportData = reset($report_data['data']);
       }
       catch (Exception $e) {
         $this->hasData = FALSE;

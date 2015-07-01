@@ -2760,26 +2760,25 @@ class AcquiaLiftWebTestCampaignWizardVariations extends AcquiaLiftWebTestBase {
   function testWhatElementForm() {
     $this->drupalLogin($this->managerUser);
     $agent = $this->createTargetingAgent();
-    // Add a goal to meet requirements for starting the agent.
-    personalize_goal_save($agent->machine_name, 'user_login', 1);
 
     $this->drupalGet('admin/structure/personalize/manage/' . $agent->machine_name . '/variations');
+    $this->drupalPostAJAX(NULL, array(), $this->addVariationSetElement);
     // Indicate an element variation set type.
     $edit = array(
-      'variations[add_variation][option_set_type]' => 'element',
+      'variations[new][0][option_set_type]' => 'element',
     );
-    $this->drupalPostAJAX(NULL, $edit, 'variations[add_variation][option_set_type]');
+    $this->drupalPostAJAX(NULL, $edit, 'variations[new][0][option_set_type]');
 
     // Invalid url
     $edit = array(
-      'variations[add_variation][details][element][content][url]' => 'invalid url',
+      'variations[new][0][element][content][url]' => 'invalid url',
     );
     $this->drupalPost(NULL, $edit, $this->getButton('wizard_element_navigate'));
     $this->assertText('You have specified an invalid path');
 
     // Valid external url
     $edit = array(
-      'variations[add_variation][details][element][content][url]' => 'http://www.google.com',
+      'variations[new][0][element][content][url]' => 'http://www.google.com',
     );
     $this->drupalPost(NULL, $edit, $this->getButton('wizard_element_navigate'));
     $this->assertNoText('You have specified an invalid path');
@@ -2793,12 +2792,13 @@ class AcquiaLiftWebTestCampaignWizardVariations extends AcquiaLiftWebTestBase {
 
     // Valid url by alias
     $this->drupalGet('admin/structure/personalize/manage/' . $agent->machine_name . '/variations');
+    $this->drupalPostAJAX(NULL, array(), $this->addVariationSetElement);
     $edit = array(
-      'variations[add_variation][option_set_type]' => 'element',
+      'variations[new][0][option_set_type]' => 'element',
     );
-    $this->drupalPostAJAX(NULL, $edit, 'variations[add_variation][option_set_type]');
+    $this->drupalPostAJAX(NULL, $edit, 'variations[new][0][option_set_type]');
     $edit = array(
-      'variations[add_variation][details][element][content][url]' => 'admin/structure',
+      'variations[new][0][element][content][url]' => 'admin/structure',
     );
     $this->drupalPost(NULL, $edit, $this->getButton('wizard_element_navigate'));
     $this->assertNoText('You have specified an invalid path');
@@ -2806,13 +2806,14 @@ class AcquiaLiftWebTestCampaignWizardVariations extends AcquiaLiftWebTestBase {
 
     // Valid url by path
     $this->drupalGet('admin/structure/personalize/manage/' . $agent->machine_name . '/variations');
+    $this->drupalPostAJAX(NULL, array(), $this->addVariationSetElement);
     // Indicate an element variation set type.
     $edit = array(
-      'variations[add_variation][option_set_type]' => 'element',
+      'variations[new][0][option_set_type]' => 'element',
     );
-    $this->drupalPostAJAX(NULL, $edit, 'variations[add_variation][option_set_type]');
+    $this->drupalPostAJAX(NULL, $edit, 'variations[new][0][option_set_type]');
     $edit = array(
-      'variations[add_variation][details][element][content][url]' => 'node',
+      'variations[new][0][element][content][url]' => 'node',
     );
     $this->drupalPost(NULL, $edit, $this->getButton('wizard_element_navigate'));
     $this->assertNoText('You have specified an invalid path');

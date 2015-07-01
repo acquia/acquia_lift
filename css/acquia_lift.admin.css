@@ -300,43 +300,30 @@ tr.acquia-lift-report-control {
   text-indent: -9999px;
   overflow: hidden;
 }
-.acquia-lift-campaign-add .el-card .el-card__header {
-  background-color: #0074BD;
+.acquia-lift-wizard-add-wrapper {
+  padding-right: .85rem;
+}
+input[type="submit"].acquia-lift-wizard-add {
   color: #FFF;
-}
-.acquia-lift-campaign-add .el-card .el-card__header h2 {
-  color: #FFF;
+  background: #0074BD url('../images/actions__add.svg') no-repeat .5em center;
+  border-radius: 0;
+  border: .08rem solid #cccccc;
+  box-shadow: 0 .05rem 0 #cccccc;
+  margin: .5rem;
   font-weight: bold;
-}
-.acquia-lift-campaign-add .el-card__title {
-  display: block;
-  width: 100%;
-  font-weight: bold;
-}
-.acquia-lift-campaign-add .el-card .el-card__title:before,
-.acquia-lift-campaign-add .el-card .el-card__title:after {
   display: inline-block;
-  fill: #fff;
-  width: 1.4rem;
-  height: 1.4rem;
-  line-height: 1em;
-  vertical-align: text-bottom;
+  width: 100%;
+  left: 0;
+  text-align: inherit;
+  font-size: 1.125rem;
+  padding: .5rem 1rem .5rem 2.25rem;
+  line-height: 1.33333;
+  box-sizing: border-box;
 }
-.acquia-lift-campaign-add .el-card .el-card__header .el-card__title[aria-controls]:before {
-  content: url('../images/actions__add.svg');
-}
-/* @todo move text to a translatable mechanism */
-.acquia-lift-campaign-add .el-card .el-card__title:after {
-  content: 'collapse';
-  float: right;
-  opacity: 0;
-  transition: opacity .2s;
-  width: auto;
-  font-weight: normal;
-  font-size: 1rem;
-}
-.acquia-lift-campaign-add .el-card:not(.is-compact) .el-card__title:after {
-  opacity: 1;
+input[type="submit"].acquia-lift-wizard-add:hover {
+  color: #FFF;
+  background: #2FA6E5 url('../images/actions__add.svg') no-repeat .5em center;
+  font-weight: bold;
 }
 .el-card__action .acquia-lift-delete {
   display: inline-block;
@@ -438,7 +425,7 @@ tr.acquia-lift-report-control {
 .personalize-wizard-section .acquia-lift-personalize-block-wrapper {
   clear: both;
   background-color: #e6e9ed;
-  padding: .5em .5em 0 .5em;
+  padding: .5em;
   border: solid 1px #cfd1d5;
   border-radius: .5rem;
   margin-bottom: 1.5rem;
@@ -497,9 +484,11 @@ tr.acquia-lift-report-control {
 /* Drag and Drop audience targeting */
 li.acquia-lift-targeting-draggable {
   cursor: -webkit-grab;
+  cursor: -moz-grab;
 }
 li.acquia-lift-targeting-draggable.ui-sortable-helper {
   cursor: -webkit-grabbing;
+  cursor: -moz-grabbing;
 }
 .acquia-lift-targeting-empty {
   border: 1px dotted #cfd1d5;

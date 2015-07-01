@@ -1465,7 +1465,7 @@ function acquia_lift_personalize_campaign_wizard_targeting_validate(&$form, &$fo
 
   // If we are adding a single audience validate the required audience fields.
   $delta = _acquia_lift_personalize_campaign_wizard_next_element($form_state, 'new');
-  if (!empty($delta)) {
+  if (!empty($delta) && is_numeric($delta)) {
     $validateAudienceFields($form_state['values']['audiences']['new'][$delta]['details'], 'audiences[new][' . $delta . '][details][', TRUE, $form['targeting']['audiences']['new'][$delta]['details']['mapping']['contexts']);
     return;
   }
@@ -1910,6 +1910,9 @@ function _acquia_lift_personalize_campaign_wizard_next_element($form_state, $pre
     return '';
   }
   $delta_pos++;
+  if (count($parents) < $delta_pos) {
+    return '';
+  }
   return $parents[$delta_pos];
 }
 

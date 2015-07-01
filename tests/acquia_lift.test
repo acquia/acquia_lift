@@ -2565,6 +2565,7 @@ class AcquiaLiftWebTestCampaignWizardVariations extends AcquiaLiftWebTestBase {
 
   protected $addVariationSetElement;
   protected $changeTypeElement;
+  protected $addTargetAudienceElement;
 
   public static function getInfo() {
     return array(
@@ -2580,6 +2581,7 @@ class AcquiaLiftWebTestCampaignWizardVariations extends AcquiaLiftWebTestBase {
 
     $this->addVariationSetElement = array('op' => t('Add variation set'));
     $this->changeTypeElement = array('op' => t('Change type'));
+    $this->addTargetAudienceElement = array('op' => t('Add target audience'));
   }
 
   function testVariationTypeSelect() {
@@ -2916,6 +2918,9 @@ class AcquiaLiftWebTestCampaignWizardVariations extends AcquiaLiftWebTestBase {
    * Target agents.
    */
   function testAudienceAvailability() {
+    $audience_input_name = key($this->addTargetAudienceElement);
+    $audience_input_value = reset($this->addTargetAudienceElement);
+
     // For this test we need to delete the tags vocabulary because otherwise it
     // will show up as an available context via personalize_taxonomy_context.
     $tags_vocab = taxonomy_vocabulary_machine_name_load('tags');
@@ -2927,7 +2932,7 @@ class AcquiaLiftWebTestCampaignWizardVariations extends AcquiaLiftWebTestBase {
 
     // No audiences should be shown unless contexts are available.
     $this->drupalGet('admin/structure/personalize/manage/' . $target_name . '/targeting');
-    $this->assertNoFieldByName('audiences[add][details][name]');
+    $this->assertNoFieldByName($audience_input_name, $audience_input_value);
     $this->assertText('Either your website does not have any enabled targeting contexts, or there are no targeting contexts available for your personalization.');
     module_enable(array('personalize_url_context'));
     $this->resetAll();
@@ -2935,7 +2940,7 @@ class AcquiaLiftWebTestCampaignWizardVariations extends AcquiaLiftWebTestBase {
 
     // No audiences should show before option sets are created.
     $this->drupalGet('admin/structure/personalize/manage/' . $target_name . '/targeting');
-    $this->assertNoFieldByName('audiences[add][details][name]');
+    $this->assertNoFieldByName($audience_input_name, $audience_input_value);
     $this->assertText('You must create variation sets before targeting.');
 
     // Now add an option set.
@@ -2946,7 +2951,7 @@ class AcquiaLiftWebTestCampaignWizardVariations extends AcquiaLiftWebTestBase {
     ));
 
     $this->drupalGet('admin/structure/personalize/manage/' . $target_name . '/targeting');
-    $this->assertFieldByName('audiences[add][details][name]');
+    $this->assertFieldByName($audience_input_name, $audience_input_value);
     $this->assertNoText('You must create variation sets before targeting.');
   }
 
@@ -2954,6 +2959,9 @@ class AcquiaLiftWebTestCampaignWizardVariations extends AcquiaLiftWebTestBase {
    * Test the audience functionality.
    */
   function testTargeting() {
+    $audience_input_name = key($this->addTargetAudienceElement);
+    $audience_input_value = reset($this->addTargetAudienceElement);
+
     $first_agent = $this->createTargetingAgent();
     $first_option_set = $this->createOptionSet(1, array(
       'agent' => $first_agent->machine_name,
@@ -2969,51 +2977,60 @@ class AcquiaLiftWebTestCampaignWizardVariations extends AcquiaLiftWebTestBase {
     $context_1 = str_replace('field_', '', $user_profile_field_1['field_name']);
 
     $this->drupalGet('admin/structure/personalize/manage/' . $first_agent->machine_name . '/targeting');
+    $this->drupalPostAJAX(NULL, array(), $this->addTargetAudienceElement);
+
+    // There should now be a form to add a new audience as well as the button
+    // to generate a new add form.
+    $this->assertFieldByName($audience_input_name, $audience_input_value);
+    $this->assertFieldByName('audiences[new][0][details][name]');
+
     $edit = array(
-      'audiences[add][details][name]' => 'Muppet fans',
-      'audiences[add][details][mapping][contexts][0][context]' => 'user_profile_context' . PERSONALIZE_TARGETING_ADMIN_SEPARATOR . $context_1,
-      'audiences[add][details][mapping][contexts][0][value][match]' => 'some value',
-      'audiences[add][details][mapping][contexts][0][value][operator]' => 'equals',
-      'audiences[add][details][strategy]' => 'OR',
+      'audiences[new][0][details][name]' => 'Muppet fans',
+      'audiences[new][0][details][mapping][contexts][0][context]' => 'user_profile_context' . PERSONALIZE_TARGETING_ADMIN_SEPARATOR . $context_1,
+      'audiences[new][0][details][mapping][contexts][0][value][match]' => 'some value',
+      'audiences[new][0][details][mapping][contexts][0][value][operator]' => 'equals',
+      'audiences[new][0][details][strategy]' => 'OR',
     );
     $this->drupalPost(NULL, $edit, $this->getButton('wizard_next', array('agent_name' => $first_agent->machine_name, 'step' => 'targeting')));
 
     $this->drupalGet('admin/structure/personalize/manage/' . $first_agent->machine_name . '/targeting');
 
-    // Now there should be an existing audience as well as a form to create
+    // Now there should be an existing audience as well as a button to create
     // a new audience.
-    $this->assertFieldByName('audiences[muppet-fans][details][name]', 'Muppet fans');
-    $this->assertFieldByName('audiences[add][details][name]', '');
+    $this->assertFieldByName('audiences[existing][muppet-fans][details][name]', 'Muppet fans');
+    $this->assertFieldByName($audience_input_name, $audience_input_value);
 
     // Add a new audience and edit the existing audience.
+    $this->drupalPostAJAX(NULL, array(), $this->addTargetAudienceElement);
+
     $edit = array(
-      'audiences[muppet-fans][details][name]' => 'Muppet mania',
-      'audiences[muppet-fans][details][mapping][contexts][0][value][match]' => 'Kermit fans',
-      'audiences[add][details][name]' => 'Others',
-      'audiences[add][details][mapping][contexts][0][context]' => 'user_profile_context' . PERSONALIZE_TARGETING_ADMIN_SEPARATOR . $context_1,
-      'audiences[add][details][mapping][contexts][0][value][operator]' => 'equals',
-      'audiences[add][details][mapping][contexts][0][value][match]' => 'Sad people',
+      'audiences[existing][muppet-fans][details][name]' => 'Muppet mania',
+      'audiences[existing][muppet-fans][details][mapping][contexts][0][value][match]' => 'Kermit fans',
+      'audiences[new][0][details][name]' => 'Others',
+      'audiences[new][0][details][mapping][contexts][0][context]' => 'user_profile_context' . PERSONALIZE_TARGETING_ADMIN_SEPARATOR . $context_1,
+      'audiences[new][0][details][mapping][contexts][0][value][operator]' => 'equals',
+      'audiences[new][0][details][mapping][contexts][0][value][match]' => 'Sad people',
     );
     $this->drupalPost(NULL, $edit, $this->getButton('wizard_next', array('agent_name' => $first_agent->machine_name, 'step' => 'targeting')));
 
     $this->drupalGet('admin/structure/personalize/manage/' . $first_agent->machine_name . '/targeting');
 
-    // Now there should be two existing audiences as well as a form to create
+    // Now there should be two existing audiences as well as a button to create
     // a new audience.
-    $this->assertFieldByName('audiences[muppet-fans][details][name]', 'Muppet mania');
-    $this->assertFieldByname('audiences[muppet-fans][details][mapping][contexts][0][value][match]', 'Kermit fans');
-    $this->assertFieldByName('audiences[others][details][name]', 'Others');
-    $this->assertFieldByName('audiences[others][details][mapping][contexts][0][context]', 'user_profile_context' . PERSONALIZE_TARGETING_ADMIN_SEPARATOR . $context_1);
-    $this->assertOptionSelected('edit-audiences-others-details-mapping-contexts-0-value-operator', 'equals');
-    $this->assertFieldByName('audiences[others][details][mapping][contexts][0][value][match]', 'Sad people');
-    $this->assertFieldByName('audiences[add][details][name]', '');
+    $this->assertFieldByName('audiences[existing][muppet-fans][details][name]', 'Muppet mania');
+    $this->assertFieldByname('audiences[existing][muppet-fans][details][mapping][contexts][0][value][match]', 'Kermit fans');
+    $this->assertFieldByName('audiences[existing][others][details][name]', 'Others');
+    $this->assertFieldByName('audiences[existing][others][details][mapping][contexts][0][context]', 'user_profile_context' . PERSONALIZE_TARGETING_ADMIN_SEPARATOR . $context_1);
+    $this->assertOptionSelected('edit-audiences-existing-others-details-mapping-contexts-0-value-operator', 'equals');
+    $this->assertFieldByName('audiences[existing][others][details][mapping][contexts][0][value][match]', 'Sad people');
+    $this->assertFieldByName($audience_input_name, $audience_input_value);
 
     // Adjust the weights and verify that the "Everyone else" has the highest.
     module_load_include('inc', 'acquia_lift', 'acquia_lift.admin');
     $this->drupalGet('admin/structure/personalize/manage/' . $first_agent->machine_name . '/targeting');
     $edit = array(
-      'audiences[muppet-fans][details][weight]' => 50,
-      'audiences[others][details][weight]' => 75,
+      'audiences[existing][muppet-fans][details][weight]' => 50,
+      'audiences[existing][others][details][weight]' => 75,
     );
     $this->drupalPost(NULL, $edit, $this->getButton('wizard_next', array('agent_name' => $first_agent->machine_name, 'step' => 'targeting')));
     $this->drupalGet('admin/structure/personalize/manage/' . $first_agent->machine_name . '/targeting');
@@ -3023,8 +3040,8 @@ class AcquiaLiftWebTestCampaignWizardVariations extends AcquiaLiftWebTestBase {
     $this->assertEqual($option_set->targeting['everyone-else']['weight'], 85);
 
     $edit = array(
-      'audiences[muppet-fans][details][weight]' => 5,
-      'audiences[others][details][weight]' => 0,
+      'audiences[existing][muppet-fans][details][weight]' => 5,
+      'audiences[existing][others][details][weight]' => 0,
     );
     $this->drupalPost(NULL, $edit, $this->getButton('wizard_next', array('agent_name' => $first_agent->machine_name, 'step' => 'targeting')));
     $this->resetAll();
@@ -3040,21 +3057,21 @@ class AcquiaLiftWebTestCampaignWizardVariations extends AcquiaLiftWebTestBase {
     $this->assertNoText('The targeting settings shown here do not match what is currently implemented for this personalization.');
     $this->assertNoText('The targeting settings shown here represent what is currently implemented for this personalization.');
     // All variations should be assigned to the "Everyone else" audience.
-    $this->assertOptionSelected('edit-audiences-everyone-else-assignment', $option_id_1);
-    $this->assertOptionSelected('edit-audiences-everyone-else-assignment', $option_id_2);
-    $this->assertOptionSelected('edit-audiences-everyone-else-assignment', $option_id_3);
+    $this->assertOptionSelected('edit-audiences-existing-everyone-else-assignment', $option_id_1);
+    $this->assertOptionSelected('edit-audiences-existing-everyone-else-assignment', $option_id_2);
+    $this->assertOptionSelected('edit-audiences-existing-everyone-else-assignment', $option_id_3);
     // The other audiences should not have any assignments by default.
-    $this->assertNoOptionSelected('edit-audiences-muppet-fans-assignment', $option_id_1);
-    $this->assertNoOptionSelected('edit-audiences-muppet-fans-assignment', $option_id_2);
-    $this->assertNoOptionSelected('edit-audiences-muppet-fans-assignment', $option_id_3);
-    $this->assertNoOptionSelected('edit-audiences-others-assignment', $option_id_1);
-    $this->assertNoOptionSelected('edit-audiences-others-assignment', $option_id_2);
-    $this->assertNoOptionSelected('edit-audiences-others-assignment', $option_id_3);
+    $this->assertNoOptionSelected('edit-audiences-existing-muppet-fans-assignment', $option_id_1);
+    $this->assertNoOptionSelected('edit-audiences-existing-muppet-fans-assignment', $option_id_2);
+    $this->assertNoOptionSelected('edit-audiences-existing-muppet-fans-assignment', $option_id_3);
+    $this->assertNoOptionSelected('edit-audiences-existing-others-assignment', $option_id_1);
+    $this->assertNoOptionSelected('edit-audiences-existing-others-assignment', $option_id_2);
+    $this->assertNoOptionSelected('edit-audiences-existing-others-assignment', $option_id_3);
 
     $edit = array(
-      'audiences[muppet-fans][assignment_order]' => $option_id_1 . ',' . $option_id_2,
-      'audiences[others][assignment_order]' => $option_id_3,
-      'audiences[everyone-else][assignment_order]' => $option_id_1,
+      'audiences[existing][muppet-fans][assignment_order]' => $option_id_1 . ',' . $option_id_2,
+      'audiences[existing][others][assignment_order]' => $option_id_3,
+      'audiences[existing][everyone-else][assignment_order]' => $option_id_1,
     );
     $this->drupalPost(NULL, $edit, $this->getButton('wizard_next', array('agent_name' => $first_agent->machine_name, 'step' => 'targeting')));
     // The targeting should be saved in the agent property.
@@ -3092,7 +3109,7 @@ class AcquiaLiftWebTestCampaignWizardVariations extends AcquiaLiftWebTestBase {
 
     // Make changes and verify the messaging.
     $edit = array(
-      'audiences[muppet-fans][assignment_order]' => $option_id_2,
+      'audiences[existing][muppet-fans][assignment_order]' => $option_id_2,
     );
     $this->drupalPost(NULL, $edit, $this->getButton('wizard_next', array('agent_name' => $first_agent->machine_name, 'step' => 'targeting')));
     $this->drupalGet('admin/structure/personalize/manage/' . $first_agent->machine_name . '/targeting');
@@ -3108,10 +3125,10 @@ class AcquiaLiftWebTestCampaignWizardVariations extends AcquiaLiftWebTestBase {
     $this->drupalGet('admin/structure/personalize/manage/' . $first_agent->machine_name . '/targeting');
     $this->assertNoText('The targeting settings shown here do not match what is currently implemented for this personalization.');
     $this->assertText('The targeting settings shown here represent what is currently implemented for this personalization.');
-    $this->assertOptionSelected('edit-audiences-muppet-fans-assignment', $first_option_set->options[0]['option_id']);
-    $this->assertOptionSelected('edit-audiences-muppet-fans-assignment', $first_option_set->options[1]['option_id']);
-    $this->assertOptionSelected('edit-audiences-others-assignment', $first_option_set->options[2]['option_id']);
-    $this->assertOptionSelected('edit-audiences-everyone-else-assignment', $first_option_set->options[0]['option_id']);
+    $this->assertOptionSelected('edit-audiences-existing-muppet-fans-assignment', $first_option_set->options[0]['option_id']);
+    $this->assertOptionSelected('edit-audiences-existing-muppet-fans-assignment', $first_option_set->options[1]['option_id']);
+    $this->assertOptionSelected('edit-audiences-existing-others-assignment', $first_option_set->options[2]['option_id']);
+    $this->assertOptionSelected('edit-audiences-existing-everyone-else-assignment', $first_option_set->options[0]['option_id']);
 
     // Add an option to the existing option set and verify that it appears as
     // unassigned but available for targeting.
@@ -3127,12 +3144,11 @@ class AcquiaLiftWebTestCampaignWizardVariations extends AcquiaLiftWebTestBase {
     $this->assertOptionSelected('edit-variations-options-assignment', $first_option_set->options[0]['option_id']);
     $this->assertOptionSelected('edit-variations-options-assignment', $first_option_set->options[1]['option_id']);
     $this->assertOptionSelected('edit-variations-options-assignment', $first_option_set->options[2]['option_id']);
-    $this->assertOptionSelected('edit-audiences-muppet-fans-assignment', $first_option_set->options[0]['option_id']);
-    $this->assertOptionSelected('edit-audiences-muppet-fans-assignment', $first_option_set->options[1]['option_id']);
-    $this->assertOptionSelected('edit-audiences-others-assignment', $first_option_set->options[2]['option_id']);
-    $this->assertOptionSelected('edit-audiences-everyone-else-assignment', $first_option_set->options[0]['option_id']);
+    $this->assertOptionSelected('edit-audiences-existing-muppet-fans-assignment', $first_option_set->options[0]['option_id']);
+    $this->assertOptionSelected('edit-audiences-existing-muppet-fans-assignment', $first_option_set->options[1]['option_id']);
+    $this->assertOptionSelected('edit-audiences-existing-others-assignment', $first_option_set->options[2]['option_id']);
+    $this->assertOptionSelected('edit-audiences-existing-everyone-else-assignment', $first_option_set->options[0]['option_id']);
   }
-
 
   /**
    * Test doing a straight test, i.e. all variations assigned to "Everyone Else".

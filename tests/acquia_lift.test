@@ -2562,6 +2562,11 @@ class AcquiaLiftWebTestTarget extends AcquiaLiftWebTestBase {
 }
 
 class AcquiaLiftWebTestCampaignWizardVariations extends AcquiaLiftWebTestBase {
+
+  protected $addVariationSetElement;
+  protected $changeTypeElement;
+  protected $addTargetAudienceElement;
+
   public static function getInfo() {
     return array(
       'name' => t('Acquia Lift Web Tests - Personalization Wizard Variations'),
@@ -2573,44 +2578,54 @@ class AcquiaLiftWebTestCampaignWizardVariations extends AcquiaLiftWebTestBase {
   public function setUp() {
     parent::setUp();
     variable_set('acquia_lift_target_enabled', TRUE);
+
+    $this->addVariationSetElement = array('op' => t('Add variation set'));
+    $this->changeTypeElement = array('op' => t('Change type'));
+    $this->addTargetAudienceElement = array('op' => t('Add target audience'));
   }
 
   function testVariationTypeSelect() {
-    $block_title_name = 'variations[add_variation][details][block][content][title]';
-    $element_url_name = 'variations[add_variation][details][element][content][url]';
+    $block_title_name = 'variations[new][0][block][content][title]';
+    $element_url_name = 'variations[new][0][element][content][url]';
 
     $this->drupalLogin($this->managerUser);
     $agent = $this->createTargetingAgent();
 
     $this->drupalGet('admin/structure/personalize/manage/' . $agent->machine_name . '/variations');
+    $this->drupalPostAJAX(NULL, array(), $this->addVariationSetElement);
+
     // Make sure the type selection is shown by default without any selections.
-    $this->assertNoFieldChecked('edit-variations-add-variation-option-set-type-block');
-    $this->assertNoFieldChecked('edit-variations-add-variation-option-set-type-element');
+    $this->assertNoFieldChecked('edit-variations-new-0-option-set-type-block');
+    $this->assertNoFieldChecked('edit-variations-new-0-option-set-type-element');
 
     // Actual forms should not be shown yet.
     $this->assertNoFieldByName($block_title_name);
     $this->assertNoFieldByName($element_url_name);
 
     $edit = array(
-      'variations[add_variation][option_set_type]' => 'block',
+      'variations[new][0][option_set_type]' => 'block',
     );
 
-    $this->drupalPostAJAX(NULL, $edit, 'variations[add_variation][option_set_type]');
+    $this->drupalPostAJAX(NULL, $edit, 'variations[new][0][option_set_type]');
     $this->assertFieldByName($block_title_name);
     $this->assertNoFieldByName($element_url_name);
+    $this->drupalPostAJAX(NULL, array(), $this->changeTypeElement);
 
-    $this->drupalGet('admin/structure/personalize/manage/' . $agent->machine_name . '/variations');
-    // Actual forms should not be shown yet.
     $this->assertNoFieldByName($block_title_name);
     $this->assertNoFieldByName($element_url_name);
 
     $edit = array(
-      'variations[add_variation][option_set_type]' => 'element',
+      'variations[new][0][option_set_type]' => 'element',
     );
 
-    $this->drupalPostAJAX(NULL, $edit, 'variations[add_variation][option_set_type]');
+    $this->drupalPostAJAX(NULL, $edit, 'variations[new][0][option_set_type]');
     $this->assertNoFieldByName($block_title_name);
     $this->assertFieldByName($element_url_name);
+
+    $this->drupalPostAJAX(NULL, array(), $this->changeTypeElement);
+
+    $this->assertNoFieldByName($block_title_name);
+    $this->assertNoFieldByName($element_url_name);
 
     // Now test the selection process when there is an existing option set.
     /* Temporarily removed: https://www.drupal.org/node/2505247
@@ -2662,17 +2677,17 @@ class AcquiaLiftWebTestCampaignWizardVariations extends AcquiaLiftWebTestBase {
     $agent = $this->createTargetingAgent();
     // Create a personalized block from existing blocks.
     $this->drupalGet('admin/structure/personalize/manage/' . $agent->machine_name . '/variations');
+    $this->drupalPostAJAX(NULL, array(), $this->addVariationSetElement);
     // Indicate a block variation set type.
     $edit = array(
-      'variations[add_variation][option_set_type]' => 'block',
+      'variations[new][0][option_set_type]' => 'block',
     );
-    $this->drupalPostAJAX(NULL, $edit, 'variations[add_variation][option_set_type]');
+    $this->drupalPostAJAX(NULL, $edit, 'variations[new][0][option_set_type]');
 
     $edit = array(
-      'variations[add_variation][option_set_type]' => 'block',
-      'variations[add_variation][details][block][content][title]' => 'Muppets',
-      'variations[add_variation][details][block][content][pblock_wrapper][blocks][0][block][bid]' => 'comment_delta_recent',
-      'variations[add_variation][details][block][content][pblock_wrapper][blocks][1][block][bid]' => 'node_delta_recent',
+      'variations[new][0][block][content][title]' => 'Muppets',
+      'variations[new][0][block][content][pblock_wrapper][blocks][0][block][bid]' => 'comment_delta_recent',
+      'variations[new][0][block][content][pblock_wrapper][blocks][1][block][bid]' => 'node_delta_recent',
     );
     $this->drupalPost(NULL, $edit, $this->getButton('wizard_next', array('agent_name' => $agent->machine_name, 'step' => 'variations')));
 
@@ -2690,19 +2705,19 @@ class AcquiaLiftWebTestCampaignWizardVariations extends AcquiaLiftWebTestBase {
     // Now go to the variations page and verify the new option set is available.
     $this->resetAll();
     $this->drupalGet('admin/structure/personalize/manage/' . $agent->machine_name . '/variations');
-    $this->assertFieldByName('variations[option_sets][option_set_1][content][title]', 'Muppets');
-    $this->assertOptionSelected('personalize-block-1-0', 'comment_delta_recent');
-    $this->assertOptionSelected('personalize-block-1-1', 'node_delta_recent');
+    $this->assertFieldByName('variations[option_sets][option_set_' . $option_set->osid . '][content][title]', 'Muppets');
+    $this->assertOptionSelected('personalize-block-' . $option_set->osid . '-0', 'comment_delta_recent');
+    $this->assertOptionSelected('personalize-block-' . $option_set->osid . '-1', 'node_delta_recent');
 
     // Edit the variation set title change the second block to a new block
     // created inline.
     $edit = array(
-      'variations[option_sets][option_set_1][content][title]' => 'Great Muppet Caper',
-      'variations[option_sets][option_set_1][content][pblock_wrapper][blocks][0][block][bid]' => 'comment_delta_recent',
-      'variations[option_sets][option_set_1][content][pblock_wrapper][blocks][1][block][bid]' => '',
-      'variations[option_sets][option_set_1][content][pblock_wrapper][blocks][1][block][add][title]' => 'Kermit',
-      'variations[option_sets][option_set_1][content][pblock_wrapper][blocks][1][block][add][info]' => 'Piggy',
-      'variations[option_sets][option_set_1][content][pblock_wrapper][blocks][1][block][add][body][value]' => 'complicated',
+      'variations[option_sets][option_set_' . $option_set->osid . '][content][title]' => 'Great Muppet Caper',
+      'variations[option_sets][option_set_' . $option_set->osid . '][content][pblock_wrapper][blocks][0][block][bid]' => 'comment_delta_recent',
+      'variations[option_sets][option_set_' . $option_set->osid . '][content][pblock_wrapper][blocks][1][block][bid]' => 'add',
+      'variations[option_sets][option_set_' . $option_set->osid . '][content][pblock_wrapper][blocks][1][block][add][title]' => 'Kermit',
+      'variations[option_sets][option_set_' . $option_set->osid . '][content][pblock_wrapper][blocks][1][block][add][info]' => 'Piggy',
+      'variations[option_sets][option_set_' . $option_set->osid . '][content][pblock_wrapper][blocks][1][block][add][body][value]' => 'complicated',
     );
     $this->drupalPost(NULL, $edit, $this->getButton('wizard_next', array('agent_name' => $agent->machine_name, 'step' => 'variations')));
 
@@ -2719,14 +2734,14 @@ class AcquiaLiftWebTestCampaignWizardVariations extends AcquiaLiftWebTestBase {
     $this->drupalGet('admin/structure/personalize/manage/' . $agent->machine_name . '/variations');
 
     $edit = array(
-      'variations[option_sets][option_set_1][advanced][stateful]' => 1,
-      'variations[option_sets][option_set_1][advanced][preview_link]' => 'invalid url',
-      'variations[option_sets][option_set_1][advanced][executor]' => 'callback',
+      'variations[option_sets][option_set_' . $option_set->osid . '][advanced][stateful]' => 1,
+      'variations[option_sets][option_set_' . $option_set->osid . '][advanced][preview_link]' => 'invalid url',
+      'variations[option_sets][option_set_' . $option_set->osid . '][advanced][executor]' => 'callback',
     );
     $this->drupalPost(NULL, $edit, $this->getButton('wizard_next', array('agent_name' => $agent->machine_name, 'step' => 'variations')));
 
     $this->assertText('You have specified an invalid path');
-    $edit['variations[option_sets][option_set_1][advanced][preview_link]'] = '<front>';
+    $edit['variations[option_sets][option_set_' . $option_set->osid . '][advanced][preview_link]'] = '<front>';
 
     $this->drupalPost(NULL, $edit, $this->getButton('wizard_next', array('agent_name' => $agent->machine_name, 'step' => 'variations')));
 
@@ -2747,26 +2762,25 @@ class AcquiaLiftWebTestCampaignWizardVariations extends AcquiaLiftWebTestBase {
   function testWhatElementForm() {
     $this->drupalLogin($this->managerUser);
     $agent = $this->createTargetingAgent();
-    // Add a goal to meet requirements for starting the agent.
-    personalize_goal_save($agent->machine_name, 'user_login', 1);
 
     $this->drupalGet('admin/structure/personalize/manage/' . $agent->machine_name . '/variations');
+    $this->drupalPostAJAX(NULL, array(), $this->addVariationSetElement);
     // Indicate an element variation set type.
     $edit = array(
-      'variations[add_variation][option_set_type]' => 'element',
+      'variations[new][0][option_set_type]' => 'element',
     );
-    $this->drupalPostAJAX(NULL, $edit, 'variations[add_variation][option_set_type]');
+    $this->drupalPostAJAX(NULL, $edit, 'variations[new][0][option_set_type]');
 
     // Invalid url
     $edit = array(
-      'variations[add_variation][details][element][content][url]' => 'invalid url',
+      'variations[new][0][element][content][url]' => 'invalid url',
     );
     $this->drupalPost(NULL, $edit, $this->getButton('wizard_element_navigate'));
     $this->assertText('You have specified an invalid path');
 
     // Valid external url
     $edit = array(
-      'variations[add_variation][details][element][content][url]' => 'http://www.google.com',
+      'variations[new][0][element][content][url]' => 'http://www.google.com',
     );
     $this->drupalPost(NULL, $edit, $this->getButton('wizard_element_navigate'));
     $this->assertNoText('You have specified an invalid path');
@@ -2780,12 +2794,13 @@ class AcquiaLiftWebTestCampaignWizardVariations extends AcquiaLiftWebTestBase {
 
     // Valid url by alias
     $this->drupalGet('admin/structure/personalize/manage/' . $agent->machine_name . '/variations');
+    $this->drupalPostAJAX(NULL, array(), $this->addVariationSetElement);
     $edit = array(
-      'variations[add_variation][option_set_type]' => 'element',
+      'variations[new][0][option_set_type]' => 'element',
     );
-    $this->drupalPostAJAX(NULL, $edit, 'variations[add_variation][option_set_type]');
+    $this->drupalPostAJAX(NULL, $edit, 'variations[new][0][option_set_type]');
     $edit = array(
-      'variations[add_variation][details][element][content][url]' => 'admin/structure',
+      'variations[new][0][element][content][url]' => 'admin/structure',
     );
     $this->drupalPost(NULL, $edit, $this->getButton('wizard_element_navigate'));
     $this->assertNoText('You have specified an invalid path');
@@ -2793,13 +2808,14 @@ class AcquiaLiftWebTestCampaignWizardVariations extends AcquiaLiftWebTestBase {
 
     // Valid url by path
     $this->drupalGet('admin/structure/personalize/manage/' . $agent->machine_name . '/variations');
+    $this->drupalPostAJAX(NULL, array(), $this->addVariationSetElement);
     // Indicate an element variation set type.
     $edit = array(
-      'variations[add_variation][option_set_type]' => 'element',
+      'variations[new][0][option_set_type]' => 'element',
     );
-    $this->drupalPostAJAX(NULL, $edit, 'variations[add_variation][option_set_type]');
+    $this->drupalPostAJAX(NULL, $edit, 'variations[new][0][option_set_type]');
     $edit = array(
-      'variations[add_variation][details][element][content][url]' => 'node',
+      'variations[new][0][element][content][url]' => 'node',
     );
     $this->drupalPost(NULL, $edit, $this->getButton('wizard_element_navigate'));
     $this->assertNoText('You have specified an invalid path');
@@ -2902,6 +2918,9 @@ class AcquiaLiftWebTestCampaignWizardVariations extends AcquiaLiftWebTestBase {
    * Target agents.
    */
   function testAudienceAvailability() {
+    $audience_input_name = key($this->addTargetAudienceElement);
+    $audience_input_value = reset($this->addTargetAudienceElement);
+
     // For this test we need to delete the tags vocabulary because otherwise it
     // will show up as an available context via personalize_taxonomy_context.
     $tags_vocab = taxonomy_vocabulary_machine_name_load('tags');
@@ -2913,7 +2932,7 @@ class AcquiaLiftWebTestCampaignWizardVariations extends AcquiaLiftWebTestBase {
 
     // No audiences should be shown unless contexts are available.
     $this->drupalGet('admin/structure/personalize/manage/' . $target_name . '/targeting');
-    $this->assertNoFieldByName('audiences[add][details][name]');
+    $this->assertNoFieldByName($audience_input_name, $audience_input_value);
     $this->assertText('Either your website does not have any enabled targeting contexts, or there are no targeting contexts available for your personalization.');
     module_enable(array('personalize_url_context'));
     $this->resetAll();
@@ -2921,7 +2940,7 @@ class AcquiaLiftWebTestCampaignWizardVariations extends AcquiaLiftWebTestBase {
 
     // No audiences should show before option sets are created.
     $this->drupalGet('admin/structure/personalize/manage/' . $target_name . '/targeting');
-    $this->assertNoFieldByName('audiences[add][details][name]');
+    $this->assertNoFieldByName($audience_input_name, $audience_input_value);
     $this->assertText('You must create variation sets before targeting.');
 
     // Now add an option set.
@@ -2932,7 +2951,7 @@ class AcquiaLiftWebTestCampaignWizardVariations extends AcquiaLiftWebTestBase {
     ));
 
     $this->drupalGet('admin/structure/personalize/manage/' . $target_name . '/targeting');
-    $this->assertFieldByName('audiences[add][details][name]');
+    $this->assertFieldByName($audience_input_name, $audience_input_value);
     $this->assertNoText('You must create variation sets before targeting.');
   }
 
@@ -2940,6 +2959,9 @@ class AcquiaLiftWebTestCampaignWizardVariations extends AcquiaLiftWebTestBase {
    * Test the audience functionality.
    */
   function testTargeting() {
+    $audience_input_name = key($this->addTargetAudienceElement);
+    $audience_input_value = reset($this->addTargetAudienceElement);
+
     $first_agent = $this->createTargetingAgent();
     $first_option_set = $this->createOptionSet(1, array(
       'agent' => $first_agent->machine_name,
@@ -2955,51 +2977,60 @@ class AcquiaLiftWebTestCampaignWizardVariations extends AcquiaLiftWebTestBase {
     $context_1 = str_replace('field_', '', $user_profile_field_1['field_name']);
 
     $this->drupalGet('admin/structure/personalize/manage/' . $first_agent->machine_name . '/targeting');
+    $this->drupalPostAJAX(NULL, array(), $this->addTargetAudienceElement);
+
+    // There should now be a form to add a new audience as well as the button
+    // to generate a new add form.
+    $this->assertFieldByName($audience_input_name, $audience_input_value);
+    $this->assertFieldByName('audiences[new][0][details][name]');
+
     $edit = array(
-      'audiences[add][details][name]' => 'Muppet fans',
-      'audiences[add][details][mapping][contexts][0][context]' => 'user_profile_context' . PERSONALIZE_TARGETING_ADMIN_SEPARATOR . $context_1,
-      'audiences[add][details][mapping][contexts][0][value][match]' => 'some value',
-      'audiences[add][details][mapping][contexts][0][value][operator]' => 'equals',
-      'audiences[add][details][strategy]' => 'OR',
+      'audiences[new][0][details][name]' => 'Muppet fans',
+      'audiences[new][0][details][mapping][contexts][0][context]' => 'user_profile_context' . PERSONALIZE_TARGETING_ADMIN_SEPARATOR . $context_1,
+      'audiences[new][0][details][mapping][contexts][0][value][match]' => 'some value',
+      'audiences[new][0][details][mapping][contexts][0][value][operator]' => 'equals',
+      'audiences[new][0][details][strategy]' => 'OR',
     );
     $this->drupalPost(NULL, $edit, $this->getButton('wizard_next', array('agent_name' => $first_agent->machine_name, 'step' => 'targeting')));
 
     $this->drupalGet('admin/structure/personalize/manage/' . $first_agent->machine_name . '/targeting');
 
-    // Now there should be an existing audience as well as a form to create
+    // Now there should be an existing audience as well as a button to create
     // a new audience.
-    $this->assertFieldByName('audiences[muppet-fans][details][name]', 'Muppet fans');
-    $this->assertFieldByName('audiences[add][details][name]', '');
+    $this->assertFieldByName('audiences[existing][muppet-fans][details][name]', 'Muppet fans');
+    $this->assertFieldByName($audience_input_name, $audience_input_value);
 
     // Add a new audience and edit the existing audience.
+    $this->drupalPostAJAX(NULL, array(), $this->addTargetAudienceElement);
+
     $edit = array(
-      'audiences[muppet-fans][details][name]' => 'Muppet mania',
-      'audiences[muppet-fans][details][mapping][contexts][0][value][match]' => 'Kermit fans',
-      'audiences[add][details][name]' => 'Others',
-      'audiences[add][details][mapping][contexts][0][context]' => 'user_profile_context' . PERSONALIZE_TARGETING_ADMIN_SEPARATOR . $context_1,
-      'audiences[add][details][mapping][contexts][0][value][operator]' => 'equals',
-      'audiences[add][details][mapping][contexts][0][value][match]' => 'Sad people',
+      'audiences[existing][muppet-fans][details][name]' => 'Muppet mania',
+      'audiences[existing][muppet-fans][details][mapping][contexts][0][value][match]' => 'Kermit fans',
+      'audiences[new][0][details][name]' => 'Others',
+      'audiences[new][0][details][mapping][contexts][0][context]' => 'user_profile_context' . PERSONALIZE_TARGETING_ADMIN_SEPARATOR . $context_1,
+      'audiences[new][0][details][mapping][contexts][0][value][operator]' => 'equals',
+      'audiences[new][0][details][mapping][contexts][0][value][match]' => 'Sad people',
     );
     $this->drupalPost(NULL, $edit, $this->getButton('wizard_next', array('agent_name' => $first_agent->machine_name, 'step' => 'targeting')));
 
     $this->drupalGet('admin/structure/personalize/manage/' . $first_agent->machine_name . '/targeting');
 
-    // Now there should be two existing audiences as well as a form to create
+    // Now there should be two existing audiences as well as a button to create
     // a new audience.
-    $this->assertFieldByName('audiences[muppet-fans][details][name]', 'Muppet mania');
-    $this->assertFieldByname('audiences[muppet-fans][details][mapping][contexts][0][value][match]', 'Kermit fans');
-    $this->assertFieldByName('audiences[others][details][name]', 'Others');
-    $this->assertFieldByName('audiences[others][details][mapping][contexts][0][context]', 'user_profile_context' . PERSONALIZE_TARGETING_ADMIN_SEPARATOR . $context_1);
-    $this->assertOptionSelected('edit-audiences-others-details-mapping-contexts-0-value-operator', 'equals');
-    $this->assertFieldByName('audiences[others][details][mapping][contexts][0][value][match]', 'Sad people');
-    $this->assertFieldByName('audiences[add][details][name]', '');
+    $this->assertFieldByName('audiences[existing][muppet-fans][details][name]', 'Muppet mania');
+    $this->assertFieldByname('audiences[existing][muppet-fans][details][mapping][contexts][0][value][match]', 'Kermit fans');
+    $this->assertFieldByName('audiences[existing][others][details][name]', 'Others');
+    $this->assertFieldByName('audiences[existing][others][details][mapping][contexts][0][context]', 'user_profile_context' . PERSONALIZE_TARGETING_ADMIN_SEPARATOR . $context_1);
+    $this->assertOptionSelected('edit-audiences-existing-others-details-mapping-contexts-0-value-operator', 'equals');
+    $this->assertFieldByName('audiences[existing][others][details][mapping][contexts][0][value][match]', 'Sad people');
+    $this->assertFieldByName($audience_input_name, $audience_input_value);
 
     // Adjust the weights and verify that the "Everyone else" has the highest.
     module_load_include('inc', 'acquia_lift', 'acquia_lift.admin');
     $this->drupalGet('admin/structure/personalize/manage/' . $first_agent->machine_name . '/targeting');
     $edit = array(
-      'audiences[muppet-fans][details][weight]' => 50,
-      'audiences[others][details][weight]' => 75,
+      'audiences[existing][muppet-fans][details][weight]' => 50,
+      'audiences[existing][others][details][weight]' => 75,
     );
     $this->drupalPost(NULL, $edit, $this->getButton('wizard_next', array('agent_name' => $first_agent->machine_name, 'step' => 'targeting')));
     $this->drupalGet('admin/structure/personalize/manage/' . $first_agent->machine_name . '/targeting');
@@ -3009,8 +3040,8 @@ class AcquiaLiftWebTestCampaignWizardVariations extends AcquiaLiftWebTestBase {
     $this->assertEqual($option_set->targeting['everyone-else']['weight'], 85);
 
     $edit = array(
-      'audiences[muppet-fans][details][weight]' => 5,
-      'audiences[others][details][weight]' => 0,
+      'audiences[existing][muppet-fans][details][weight]' => 5,
+      'audiences[existing][others][details][weight]' => 0,
     );
     $this->drupalPost(NULL, $edit, $this->getButton('wizard_next', array('agent_name' => $first_agent->machine_name, 'step' => 'targeting')));
     $this->resetAll();
@@ -3026,21 +3057,21 @@ class AcquiaLiftWebTestCampaignWizardVariations extends AcquiaLiftWebTestBase {
     $this->assertNoText('The targeting settings shown here do not match what is currently implemented for this personalization.');
     $this->assertNoText('The targeting settings shown here represent what is currently implemented for this personalization.');
     // All variations should be assigned to the "Everyone else" audience.
-    $this->assertOptionSelected('edit-audiences-everyone-else-assignment', $option_id_1);
-    $this->assertOptionSelected('edit-audiences-everyone-else-assignment', $option_id_2);
-    $this->assertOptionSelected('edit-audiences-everyone-else-assignment', $option_id_3);
+    $this->assertOptionSelected('edit-audiences-existing-everyone-else-assignment', $option_id_1);
+    $this->assertOptionSelected('edit-audiences-existing-everyone-else-assignment', $option_id_2);
+    $this->assertOptionSelected('edit-audiences-existing-everyone-else-assignment', $option_id_3);
     // The other audiences should not have any assignments by default.
-    $this->assertNoOptionSelected('edit-audiences-muppet-fans-assignment', $option_id_1);
-    $this->assertNoOptionSelected('edit-audiences-muppet-fans-assignment', $option_id_2);
-    $this->assertNoOptionSelected('edit-audiences-muppet-fans-assignment', $option_id_3);
-    $this->assertNoOptionSelected('edit-audiences-others-assignment', $option_id_1);
-    $this->assertNoOptionSelected('edit-audiences-others-assignment', $option_id_2);
-    $this->assertNoOptionSelected('edit-audiences-others-assignment', $option_id_3);
+    $this->assertNoOptionSelected('edit-audiences-existing-muppet-fans-assignment', $option_id_1);
+    $this->assertNoOptionSelected('edit-audiences-existing-muppet-fans-assignment', $option_id_2);
+    $this->assertNoOptionSelected('edit-audiences-existing-muppet-fans-assignment', $option_id_3);
+    $this->assertNoOptionSelected('edit-audiences-existing-others-assignment', $option_id_1);
+    $this->assertNoOptionSelected('edit-audiences-existing-others-assignment', $option_id_2);
+    $this->assertNoOptionSelected('edit-audiences-existing-others-assignment', $option_id_3);
 
     $edit = array(
-      'audiences[muppet-fans][assignment_order]' => $option_id_1 . ',' . $option_id_2,
-      'audiences[others][assignment_order]' => $option_id_3,
-      'audiences[everyone-else][assignment_order]' => $option_id_1,
+      'audiences[existing][muppet-fans][assignment_order]' => $option_id_1 . ',' . $option_id_2,
+      'audiences[existing][others][assignment_order]' => $option_id_3,
+      'audiences[existing][everyone-else][assignment_order]' => $option_id_1,
     );
     $this->drupalPost(NULL, $edit, $this->getButton('wizard_next', array('agent_name' => $first_agent->machine_name, 'step' => 'targeting')));
     // The targeting should be saved in the agent property.
@@ -3078,7 +3109,7 @@ class AcquiaLiftWebTestCampaignWizardVariations extends AcquiaLiftWebTestBase {
 
     // Make changes and verify the messaging.
     $edit = array(
-      'audiences[muppet-fans][assignment_order]' => $option_id_2,
+      'audiences[existing][muppet-fans][assignment_order]' => $option_id_2,
     );
     $this->drupalPost(NULL, $edit, $this->getButton('wizard_next', array('agent_name' => $first_agent->machine_name, 'step' => 'targeting')));
     $this->drupalGet('admin/structure/personalize/manage/' . $first_agent->machine_name . '/targeting');
@@ -3094,10 +3125,10 @@ class AcquiaLiftWebTestCampaignWizardVariations extends AcquiaLiftWebTestBase {
     $this->drupalGet('admin/structure/personalize/manage/' . $first_agent->machine_name . '/targeting');
     $this->assertNoText('The targeting settings shown here do not match what is currently implemented for this personalization.');
     $this->assertText('The targeting settings shown here represent what is currently implemented for this personalization.');
-    $this->assertOptionSelected('edit-audiences-muppet-fans-assignment', $first_option_set->options[0]['option_id']);
-    $this->assertOptionSelected('edit-audiences-muppet-fans-assignment', $first_option_set->options[1]['option_id']);
-    $this->assertOptionSelected('edit-audiences-others-assignment', $first_option_set->options[2]['option_id']);
-    $this->assertOptionSelected('edit-audiences-everyone-else-assignment', $first_option_set->options[0]['option_id']);
+    $this->assertOptionSelected('edit-audiences-existing-muppet-fans-assignment', $first_option_set->options[0]['option_id']);
+    $this->assertOptionSelected('edit-audiences-existing-muppet-fans-assignment', $first_option_set->options[1]['option_id']);
+    $this->assertOptionSelected('edit-audiences-existing-others-assignment', $first_option_set->options[2]['option_id']);
+    $this->assertOptionSelected('edit-audiences-existing-everyone-else-assignment', $first_option_set->options[0]['option_id']);
 
     // Add an option to the existing option set and verify that it appears as
     // unassigned but available for targeting.
@@ -3113,12 +3144,11 @@ class AcquiaLiftWebTestCampaignWizardVariations extends AcquiaLiftWebTestBase {
     $this->assertOptionSelected('edit-variations-options-assignment', $first_option_set->options[0]['option_id']);
     $this->assertOptionSelected('edit-variations-options-assignment', $first_option_set->options[1]['option_id']);
     $this->assertOptionSelected('edit-variations-options-assignment', $first_option_set->options[2]['option_id']);
-    $this->assertOptionSelected('edit-audiences-muppet-fans-assignment', $first_option_set->options[0]['option_id']);
-    $this->assertOptionSelected('edit-audiences-muppet-fans-assignment', $first_option_set->options[1]['option_id']);
-    $this->assertOptionSelected('edit-audiences-others-assignment', $first_option_set->options[2]['option_id']);
-    $this->assertOptionSelected('edit-audiences-everyone-else-assignment', $first_option_set->options[0]['option_id']);
+    $this->assertOptionSelected('edit-audiences-existing-muppet-fans-assignment', $first_option_set->options[0]['option_id']);
+    $this->assertOptionSelected('edit-audiences-existing-muppet-fans-assignment', $first_option_set->options[1]['option_id']);
+    $this->assertOptionSelected('edit-audiences-existing-others-assignment', $first_option_set->options[2]['option_id']);
+    $this->assertOptionSelected('edit-audiences-existing-everyone-else-assignment', $first_option_set->options[0]['option_id']);
   }
-
 
   /**
    * Test doing a straight test, i.e. all variations assigned to "Everyone Else".
@@ -3160,6 +3190,10 @@ class AcquiaLiftWebTestCampaignWizardVariations extends AcquiaLiftWebTestBase {
 }
 
 class AcquiaLiftWebTestCampaignWizard extends AcquiaLiftWebTestBase {
+
+  protected $addGoalElement;
+  protected $changeTypeElement;
+
   public static function getInfo() {
     return array(
       'name' => t('Acquia Lift Web Tests - Personalization Wizard - Others'),
@@ -3170,6 +3204,8 @@ class AcquiaLiftWebTestCampaignWizard extends AcquiaLiftWebTestBase {
 
   public function setUp() {
     parent::setUp();
+    $this->addGoalElement = array('op' => t('Add goal'));
+    $this->changeTypeElement = array('op' => t('Change type'));
     variable_set('acquia_lift_target_enabled', TRUE);
   }
 
@@ -3177,29 +3213,35 @@ class AcquiaLiftWebTestCampaignWizard extends AcquiaLiftWebTestBase {
    * Test goals form.
    */
   function testGoals() {
+    $goal_input_name = key($this->addGoalElement);
+    $goal_input_value = reset($this->addGoalElement);
+
     $this->drupalLogin($this->managerUser);
     $agent = $this->createTargetingAgent();
 
-    $element_action = 'action_name';
-    $page_event = 'event[page]';
+    $element_action = 'goals[new][0][details][action_name]';
+    $page_event = 'goals[new][0][details][event][page]';
 
     $this->drupalGet('admin/structure/personalize/manage/' . $agent->machine_name . '/goals');
     $this->assertNoText('Goals cannot be changed while the personalization is running.');
 
     // The type selection should be shown by default when there are no goals.
-    $this->assertNoFieldChecked('edit-goals-add-goal-goal-types-goal-type-existing');
-    $this->assertNoFieldChecked('edit-goals-add-goal-goal-types-goal-type-page');
-    $this->assertNoFieldChecked('edit-goals-add-goal-goal-types-goal-type-element');
+    $this->assertFieldByName($goal_input_name, $goal_input_value);
 
     // Actual forms should not be shown yet.
     $this->assertNoFieldByName($element_action);
     $this->assertNoFieldByName($page_event);
 
     // Check existing form.
+    $this->drupalPostAJAX(NULL, array(), $this->addGoalElement);
+    $this->assertNoFieldChecked('edit-goals-new-0-goal-type-existing');
+    $this->assertNoFieldChecked('edit-goals-new-0-goal-type-page');
+    $this->assertNoFieldChecked('edit-goals-new-0-goal-type-element');
+
     $edit = array(
-      'goals[add_goal][goal_types][goal_type]' => 'existing',
+      'goals[new][0][goal_type]' => 'existing',
     );
-    $this->drupalPostAJAX(NULL, $edit, 'goals[add_goal][goal_types][goal_type]');
+    $this->drupalPostAJAX(NULL, $edit, 'goals[new][0][goal_type]');
     $this->assertNoFieldByName($page_event);
     $this->assertFieldByName($element_action);
 
@@ -3209,22 +3251,25 @@ class AcquiaLiftWebTestCampaignWizard extends AcquiaLiftWebTestBase {
     );
     $this->drupalPost(NULL, $edit, $this->getButton('wizard_save'));
 
+    // Note that new goals are looped through with array indexes rather than
+    // by goal IDs so we can assume the values will be consecutive.
     $this->assertOptionSelected('edit-goals-all-goals-0-action-name', 'user_login');
     $this->assertFieldByName('goals[all_goals][0][value]', 1);
 
     // Add a page goal.
+    $this->drupalPostAJAX(NULL, array(), $this->addGoalElement);
     $edit = array(
-      'goals[add_goal][goal_types][goal_type]' => 'page',
+      'goals[new][0][goal_type]' => 'page',
     );
-    $this->drupalPostAJAX(NULL, $edit, 'goals[add_goal][goal_types][goal_type]');
+    $this->drupalPostAJAX(NULL, $edit, 'goals[new][0][goal_type]');
 
     $this->assertFieldByName($page_event);
     $this->assertNoFieldByName($element_action);
 
     $edit = array(
-      'title' => 'Test goal',
+      'goals[new][0][details][title]' => 'Test goal',
       $page_event => 'client::scrollToBottom',
-      'pages' => 'node',
+      'goals[new][0][details][pages]' => 'node',
     );
     $this->drupalPost(NULL, $edit, $this->getButton('wizard_save'));
 
@@ -3236,7 +3281,7 @@ class AcquiaLiftWebTestCampaignWizard extends AcquiaLiftWebTestBase {
       'goals[all_goals][1][action_name]' => 'user_login',
     );
     $this->drupalPost(NULL, $edit, $this->getButton('wizard_save'));
-    $this->assertText('Each action can only be used once per personalization.');
+    $this->assertText('Actions can only be used once per personalization.');
 
     // Edit the goal with valid values.
     $edit = array(
@@ -3246,15 +3291,14 @@ class AcquiaLiftWebTestCampaignWizard extends AcquiaLiftWebTestBase {
     $this->drupalPost(NULL, $edit, $this->getButton('wizard_save'));
 
     // Verify everything is as expected.
-    $this->assertNoFieldChecked('edit-goals-add-goal-goal-types-goal-type-existing');
-    $this->assertNoFieldChecked('edit-goals-add-goal-goal-types-goal-type-page');
-    $this->assertNoFieldChecked('edit-goals-add-goal-goal-types-goal-type-element');
+    $this->assertFieldByName($goal_input_name, $goal_input_value);
     $this->assertOptionSelected('edit-goals-all-goals-0-action-name', 'user_login');
     $this->assertFieldByName('goals[all_goals][0][value]', 1);
     $this->assertOptionSelected('edit-goals-all-goals-1-action-name', 'form_submit');
     $this->assertFieldByName('goals[all_goals][1][value]', 5);
 
     // Make sure all goals saved as expected too.
+    $this->resetAll();
     $goal_entities = personalize_goal_load_by_conditions(array('agent' => $agent->machine_name));
     $test_goals = array_values($goal_entities);
     $this->assertEqual(count($test_goals), 2);
@@ -3441,17 +3485,6 @@ class AcquiaLiftWebTestCampaignWizard extends AcquiaLiftWebTestBase {
 
     // Add option set.
     $this->createPersonalizedBlock(0, $agent);
-
-    // Add a goal.
-    $this->drupalGet("admin/structure/personalize/manage/$machine_name/goals");
-    $edit = array(
-      'goals[add_goal][goal_types][goal_type]' => 'existing',
-    );
-    $this->drupalPostAJAX(NULL, $edit, 'goals[add_goal][goal_types][goal_type]');
-    $edit = array(
-      'action_name' => 'user_login',
-    );
-    $this->drupalPost(NULL, $edit, $this->getButton('wizard_save'));
 
     // Schedule the campaign to start in the future.
     $this->drupalGet("admin/structure/personalize/manage/$machine_name/scheduling");

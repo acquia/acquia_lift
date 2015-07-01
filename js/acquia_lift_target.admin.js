@@ -59,7 +59,7 @@
       });
       // Make the audiences sortable
       $('#acquia-lift-targeting-audiences').sortable({
-        items: "> .acquia-lift-sortable",
+        items: ".acquia-lift-sortable",
         placeholder: 'acquia-lift-sortable-placeholder',
         forcePlaceholderSize: true,
         opacity: 0.7,

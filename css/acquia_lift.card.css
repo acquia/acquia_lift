@@ -175,11 +175,17 @@ html.js [data-card-collapsible="true"] .el-card__title:before {
 .el-card .el-card__dragger {
   width: 24px;
   height: 24px;
-  cursor: pointer;
+  cursor: move;
+  cursor: -webkit-grab;
+  cursor: -moz-grab;
   background: transparent url(../images/000000/drag.png) no-repeat;
   float: left;
   margin-top: .37rem;
   margin-left: -0.5rem;
+}
+.el-card .el-card__dragger:active {
+  cursor: -webkit-grabbing;
+  cursor: -moz-grabbing;
 }
 
 .is-disabled .el-card__header {

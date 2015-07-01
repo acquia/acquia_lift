@@ -1079,11 +1079,7 @@ function acquia_lift_report_experiment() {
   $options['goal'] = empty($params['goal']) ? NULL : filter_xss($params['goal']);
   $options['start'] = empty($params['start']) ? NULL : check_plain($params['start']);
   $options['end'] = empty($params['end']) ? NULL : check_plain($params['end']);
-  $agent = personalize_agent_load($agent_name);
 
-  if (!acquia_lift_is_testing_agent($agent)) {
-    return array();
-  }
   if (is_numeric($options['start'])) {
     $options['start'] = date('Y-m-d', $options['start']);
   }
@@ -1091,13 +1087,19 @@ function acquia_lift_report_experiment() {
     $options['end'] = date('Y-m-d', $options['end']);
   }
 
-  $reports = array();
   $plugin = personalize_agent_load_agent($agent_name);
   if ($plugin instanceof AcquiaLiftLearningAgentInterface) {
     $reports = $plugin->getExperimentReports($options);
+    $reports['#type'] = 'ajax';
+    drupal_json_output(drupal_render($reports));
   }
-  $reports['#type'] = 'ajax';
-  drupal_json_output(drupal_render($reports));
+  else {
+    $report = array(
+      '#markup' => t('No report available for this personalization.')
+    );
+    drupal_json_output(drupal_render($report));
+  }
+
 }
 
 

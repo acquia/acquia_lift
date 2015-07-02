@@ -3289,44 +3289,235 @@ class AcquiaLiftWebTestCampaignWizard extends AcquiaLiftWebTestBase {
   }
 
   /**
+   * Test goals type form.
+   */
+  function testGoalTypeSelect() {
+    $goal_input_name = key($this->addGoalElement);
+    $goal_input_value = reset($this->addGoalElement);
+    $existing_action = 'goals[new][0][details][action_name]';
+    $page_event = 'goals[new][0][details][event][page]';
+    $element_url = 'goals[new][0][details][url]';
+    $goal_type_name = 'goals[new][0][goal_type]';
+    $cancel_element = array('cancel_goal_0' => t('Cancel'));
+
+    $this->drupalLogin($this->managerUser);
+    $agent = $this->createTargetingAgent();
+
+    $this->drupalGet('admin/structure/personalize/manage/' . $agent->machine_name . '/goals');
+    // Only a button to add a new goal shown by default
+    $this->assertFieldByName($goal_input_name, $goal_input_value);
+    $this->assertNoFieldByName($goal_type_name);
+    $this->assertNoFieldByName($existing_action);
+    $this->assertNoFieldByName($page_event);
+    $this->assertNoFieldByname($element_url);
+
+    $this->drupalPostAJAX(NULL, array(), $this->addGoalElement);
+
+    // Make sure the type selection is shown by default without any selections.
+    $this->assertFieldByName($goal_type_name);
+    $this->assertNoFieldChecked('edit-goals-new-0-goal-type-existing');
+    $this->assertNoFieldChecked('edit-goals-new-0-goal-type-page');
+    $this->assertNoFieldChecked('edit-goals-new-0-goal-type-element');
+    // Actual forms should not be shown yet.
+    $this->assertNoFieldByName($existing_action);
+    $this->assertNoFieldByName($page_event);
+    $this->assertNoFieldByname($element_url);
+    // Button to add a new goal should still be available.
+    $this->assertFieldByName($goal_input_name, $goal_input_value);
+
+    // Cancel goal creation.
+    $this->drupalPostAJAX(NULL, array(), $cancel_element);
+    $this->assertFieldByName($goal_input_name, $goal_input_value);
+    $this->assertNoFieldByName($goal_type_name);
+    $this->assertNoFieldByName($existing_action);
+    $this->assertNoFieldByName($page_event);
+    $this->assertNoFieldByname($element_url);
+
+    // Select an existing goal.
+    $this->drupalPostAJAX(NULL, array(), $this->addGoalElement);
+    $this->assertFieldByName($goal_type_name);
+    $this->assertNoFieldChecked('edit-goals-new-0-goal-type-existing');
+    $this->assertNoFieldChecked('edit-goals-new-0-goal-type-page');
+    $this->assertNoFieldChecked('edit-goals-new-0-goal-type-element');
+    $this->assertNoFieldByName($existing_action);
+    $this->assertNoFieldByName($page_event);
+    $this->assertNoFieldByname($element_url);
+    $this->assertFieldByName($goal_input_name, $goal_input_value);
+
+    $edit = array(
+      $goal_type_name => 'existing',
+    );
+    $this->drupalPostAJAX(NULL, $edit, $goal_type_name);
+
+    $this->assertFieldByName($goal_input_name, $goal_input_value);
+    $this->assertNoFieldByName($goal_type_name);
+    $this->assertFieldByName($existing_action);
+    $this->assertNoFieldByName($page_event);
+    $this->assertNoFieldByname($element_url);
+
+    // Change the type
+    $this->drupalPostAJAX(NULL, array(), $this->changeTypeElement);
+    $this->assertFieldByName($goal_type_name);
+    $this->assertNoFieldChecked('edit-goals-new-0-goal-type-existing');
+    $this->assertNoFieldChecked('edit-goals-new-0-goal-type-page');
+    $this->assertNoFieldChecked('edit-goals-new-0-goal-type-element');
+    $this->assertNoFieldByName($existing_action);
+    $this->assertNoFieldByName($page_event);
+    $this->assertNoFieldByname($element_url);
+    $this->assertFieldByName($goal_input_name, $goal_input_value);
+
+    // Select existing again.
+    $edit = array(
+      $goal_type_name => 'existing',
+    );
+    $this->drupalPostAJAX(NULL, $edit, $goal_type_name);
+
+    $this->assertFieldByName($goal_input_name, $goal_input_value);
+    $this->assertNoFieldByName($goal_type_name);
+    $this->assertFieldByName($existing_action);
+    $this->assertNoFieldByName($page_event);
+    $this->assertNoFieldByname($element_url);
+
+    // Cancel the creation of the goal.
+    $this->drupalPostAJAX(NULL, array(), $cancel_element);
+    $this->assertFieldByName($goal_input_name, $goal_input_value);
+    $this->assertNoFieldByName($goal_type_name);
+    $this->assertNoFieldByName($existing_action);
+    $this->assertNoFieldByName($page_event);
+    $this->assertNoFieldByname($element_url);
+
+    // Select a page goal
+    $this->drupalPostAJAX(NULL, array(), $this->addGoalElement);
+    $this->assertFieldByName($goal_type_name);
+    $this->assertNoFieldChecked('edit-goals-new-0-goal-type-existing');
+    $this->assertNoFieldChecked('edit-goals-new-0-goal-type-page');
+    $this->assertNoFieldChecked('edit-goals-new-0-goal-type-element');
+    $this->assertNoFieldByName($existing_action);
+    $this->assertNoFieldByName($page_event);
+    $this->assertNoFieldByname($element_url);
+    $this->assertFieldByName($goal_input_name, $goal_input_value);
+
+    $edit = array(
+      $goal_type_name => 'page',
+    );
+    $this->drupalPostAJAX(NULL, $edit, $goal_type_name);
+
+    $this->assertFieldByName($goal_input_name, $goal_input_value);
+    $this->assertNoFieldByName($goal_type_name);
+    $this->assertNoFieldByName($existing_action);
+    $this->assertFieldByName($page_event);
+    $this->assertNoFieldByname($element_url);
+
+    // Change the type
+    $this->drupalPostAJAX(NULL, array(), $this->changeTypeElement);
+    $this->assertFieldByName($goal_type_name);
+    $this->assertNoFieldChecked('edit-goals-new-0-goal-type-existing');
+    $this->assertNoFieldChecked('edit-goals-new-0-goal-type-page');
+    $this->assertNoFieldChecked('edit-goals-new-0-goal-type-element');
+    $this->assertNoFieldByName($existing_action);
+    $this->assertNoFieldByName($page_event);
+    $this->assertNoFieldByname($element_url);
+    $this->assertFieldByName($goal_input_name, $goal_input_value);
+
+    // Select page again.
+    $edit = array(
+      $goal_type_name => 'page',
+    );
+    $this->drupalPostAJAX(NULL, $edit, $goal_type_name);
+
+    $this->assertFieldByName($goal_input_name, $goal_input_value);
+    $this->assertNoFieldByName($goal_type_name);
+    $this->assertNoFieldByName($existing_action);
+    $this->assertFieldByName($page_event);
+    $this->assertNoFieldByname($element_url);
+
+    // Cancel the creation of the goal.
+    $this->drupalPostAJAX(NULL, array(), $cancel_element);
+    $this->assertFieldByName($goal_input_name, $goal_input_value);
+    $this->assertNoFieldByName($goal_type_name);
+    $this->assertNoFieldByName($existing_action);
+    $this->assertNoFieldByName($page_event);
+    $this->assertNoFieldByname($element_url);
+
+    // Select an element goal.
+    $this->drupalPostAJAX(NULL, array(), $this->addGoalElement);
+    $this->assertFieldByName($goal_type_name);
+    $this->assertNoFieldChecked('edit-goals-new-0-goal-type-existing');
+    $this->assertNoFieldChecked('edit-goals-new-0-goal-type-page');
+    $this->assertNoFieldChecked('edit-goals-new-0-goal-type-element');
+    $this->assertNoFieldByName($existing_action);
+    $this->assertNoFieldByName($page_event);
+    $this->assertNoFieldByname($element_url);
+    $this->assertFieldByName($goal_input_name, $goal_input_value);
+
+    $edit = array(
+      $goal_type_name => 'element',
+    );
+    $this->drupalPostAJAX(NULL, $edit, $goal_type_name);
+
+    $this->assertFieldByName($goal_input_name, $goal_input_value);
+    $this->assertNoFieldByName($goal_type_name);
+    $this->assertNoFieldByName($existing_action);
+    $this->assertNoFieldByName($page_event);
+    $this->assertFieldByname($element_url);
+
+    // Change the type
+    $this->drupalPostAJAX(NULL, array(), $this->changeTypeElement);
+    $this->assertFieldByName($goal_type_name);
+    $this->assertNoFieldChecked('edit-goals-new-0-goal-type-existing');
+    $this->assertNoFieldChecked('edit-goals-new-0-goal-type-page');
+    $this->assertNoFieldChecked('edit-goals-new-0-goal-type-element');
+    $this->assertNoFieldByName($existing_action);
+    $this->assertNoFieldByName($page_event);
+    $this->assertNoFieldByname($element_url);
+    $this->assertFieldByName($goal_input_name, $goal_input_value);
+
+    // Select existing again.
+    $edit = array(
+      $goal_type_name => 'element',
+    );
+    $this->drupalPostAJAX(NULL, $edit, $goal_type_name);
+
+    $this->assertFieldByName($goal_input_name, $goal_input_value);
+    $this->assertNoFieldByName($goal_type_name);
+    $this->assertNoFieldByName($existing_action);
+    $this->assertNoFieldByName($page_event);
+    $this->assertFieldByname($element_url);
+
+    // Cancel the creation of the goal.
+    $this->drupalPostAJAX(NULL, array(), $cancel_element);
+    $this->assertFieldByName($goal_input_name, $goal_input_value);
+    $this->assertNoFieldByName($goal_type_name);
+    $this->assertNoFieldByName($existing_action);
+    $this->assertNoFieldByName($page_event);
+    $this->assertNoFieldByname($element_url);
+  }
+
+  /**
    * Test goals form.
    */
   function testGoals() {
     $goal_input_name = key($this->addGoalElement);
     $goal_input_value = reset($this->addGoalElement);
+    $goal_type_name = 'goals[new][0][goal_type]';
 
     $this->drupalLogin($this->managerUser);
     $agent = $this->createTargetingAgent();
 
-    $element_action = 'goals[new][0][details][action_name]';
-    $page_event = 'goals[new][0][details][event][page]';
-
     $this->drupalGet('admin/structure/personalize/manage/' . $agent->machine_name . '/goals');
     $this->assertNoText('Goals cannot be changed while the personalization is running.');
 
-    // The type selection should be shown by default when there are no goals.
-    $this->assertFieldByName($goal_input_name, $goal_input_value);
-
-    // Actual forms should not be shown yet.
-    $this->assertNoFieldByName($element_action);
-    $this->assertNoFieldByName($page_event);
-
     // Check existing form.
     $this->drupalPostAJAX(NULL, array(), $this->addGoalElement);
-    $this->assertNoFieldChecked('edit-goals-new-0-goal-type-existing');
-    $this->assertNoFieldChecked('edit-goals-new-0-goal-type-page');
-    $this->assertNoFieldChecked('edit-goals-new-0-goal-type-element');
 
     $edit = array(
-      'goals[new][0][goal_type]' => 'existing',
+      $goal_type_name => 'existing',
     );
-    $this->drupalPostAJAX(NULL, $edit, 'goals[new][0][goal_type]');
-    $this->assertNoFieldByName($page_event);
-    $this->assertFieldByName($element_action);
+    $this->drupalPostAJAX(NULL, $edit, $goal_type_name);
 
     // Add an existing goal.
     $edit = array(
-      $element_action => 'user_login',
+      'goals[new][0][details][action_name]' => 'user_login',
     );
     $this->drupalPost(NULL, $edit, $this->getButton('wizard_save'));
 
@@ -3338,16 +3529,13 @@ class AcquiaLiftWebTestCampaignWizard extends AcquiaLiftWebTestBase {
     // Add a page goal.
     $this->drupalPostAJAX(NULL, array(), $this->addGoalElement);
     $edit = array(
-      'goals[new][0][goal_type]' => 'page',
+      $goal_type_name => 'page',
     );
-    $this->drupalPostAJAX(NULL, $edit, 'goals[new][0][goal_type]');
-
-    $this->assertFieldByName($page_event);
-    $this->assertNoFieldByName($element_action);
+    $this->drupalPostAJAX(NULL, $edit, $goal_type_name);
 
     $edit = array(
       'goals[new][0][details][title]' => 'Test goal',
-      $page_event => 'client::scrollToBottom',
+      'goals[new][0][details][event][page]' => 'client::scrollToBottom',
       'goals[new][0][details][pages]' => 'node',
     );
     $this->drupalPost(NULL, $edit, $this->getButton('wizard_save'));
@@ -3387,6 +3575,20 @@ class AcquiaLiftWebTestCampaignWizard extends AcquiaLiftWebTestBase {
     $this->assertEqual($test_goals[1]->value, 5);
 
     $this->drupalPost(NULL, $edit, $this->getButton('wizard_save'));
+
+    // Check elements form.
+    $this->drupalPostAJAX(NULL, array(), $this->addGoalElement);
+
+    $edit = array(
+      $goal_type_name => 'element',
+    );
+    $this->drupalPostAJAX(NULL, $edit, $goal_type_name);
+    $edit = array(
+      'goals[new][0][details][url]' => 'node',
+    );
+    $this->drupalPost(NULL, $edit, $this->getButton('wizard_element_navigate'));
+    $this->assertNoText('You have specified an invalid path');
+    $this->assertUrl('node');
   }
 
   /**

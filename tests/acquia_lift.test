@@ -3272,6 +3272,7 @@ class AcquiaLiftWebTestCampaignWizard extends AcquiaLiftWebTestBase {
 
   protected $addGoalElement;
   protected $changeTypeElement;
+  protected $addTargetAudienceElement;
 
   public static function getInfo() {
     return array(
@@ -3285,6 +3286,7 @@ class AcquiaLiftWebTestCampaignWizard extends AcquiaLiftWebTestBase {
     parent::setUp();
     $this->addGoalElement = array('op' => t('Add goal'));
     $this->changeTypeElement = array('op' => t('Change type'));
+    $this->addTargetAudienceElement = array('op' => t('Add target audience'));
     variable_set('acquia_lift_target_enabled', TRUE);
   }
 
@@ -3495,6 +3497,51 @@ class AcquiaLiftWebTestCampaignWizard extends AcquiaLiftWebTestBase {
 
     $nested1 = personalize_agent_load($nested1->machine_name, TRUE);
     $this->assertEqual($nested1->data, $nested_settings);
+  }
+
+  /**
+   * Tests the review submission for a targeting only test.
+   */
+  function testReviewSubmitTargeting() {
+    $agent = $this->createTargetingAgent();
+    $option_set = $this->createOptionSet(1, array(
+      'agent' => $agent->machine_name,
+      'plugin' => 'plugin_type',
+      'num_options' => 2,
+    ));
+    $option_id_1 = $option_set->options[0]['option_id'];
+    $option_id_2 = $option_set->options[1]['option_id'];
+
+    // Create user profile fields that we can use for targeting.
+    $user_profile_field_1 = $this->createUserProfileField();
+    $context_1 = str_replace('field_', '', $user_profile_field_1['field_name']);
+
+    // Create an audience for targeting.
+    $this->drupalGet('admin/structure/personalize/manage/' . $agent->machine_name . '/targeting');
+    $this->drupalPostAJAX(NULL, array(), $this->addTargetAudienceElement);
+
+    $edit = array(
+      'audiences[new][0][details][name]' => 'Muppet fans',
+      'audiences[new][0][details][mapping][contexts][0][context]' => 'user_profile_context' . PERSONALIZE_TARGETING_ADMIN_SEPARATOR . $context_1,
+      'audiences[new][0][details][mapping][contexts][0][value][match]' => 'some value',
+      'audiences[new][0][details][mapping][contexts][0][value][operator]' => 'equals',
+      'audiences[new][0][details][strategy]' => 'OR',
+    );
+    $this->drupalPost(NULL, $edit, $this->getButton('wizard_save'));
+
+    // Assign variations to audiences.
+    $edit = array(
+      'audiences[existing][muppet-fans][assignment_order]' => $option_id_1,
+      'audiences[existing][everyone-else][assignment_order]' => $option_id_2,
+    );
+    $this->drupalPost(NULL, $edit, $this->getButton('wizard_next', array('agent_name' => $agent->machine_name, 'step' => 'targeting')));
+
+    // Now start the campaign from the review screen.
+    $this->drupalPost(NULL, array(), $this->getButton('wizard_start'));
+    $this->resetAll();
+
+    // Confirm that the campaign was started
+    $this->assertEqual(personalize_agent_get_status($agent->machine_name), PERSONALIZE_STATUS_RUNNING);
   }
 
   /**

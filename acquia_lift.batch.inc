@@ -64,6 +64,7 @@ function acquia_lift_batch_sync_all() {
  */
 function acquia_lift_do_batch_sync($operations, $finished = 'acquia_lift_batch_finished') {
   if (empty($operations)) {
+    $finished(TRUE, array(), array(), 0);
     return;
   }
   $batch_operations = array();

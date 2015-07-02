@@ -235,7 +235,7 @@ Feature: Personalize elements variations can be edited for an existing campaign.
     and continue through campaign workflow.
     # I have a campaign and a variation set.
     # I login with the marketer role.
-    # I am on an article page.
+    # I have an article page.
     Given "acquia_lift_target" agents:
       | machine_name               | label                                  |
       | testing-campaign-roundtrip | Testing campaign round trip variations |
@@ -247,10 +247,13 @@ Feature: Personalize elements variations can be edited for an existing campaign.
     And I am on "admin/structure/personalize/manage/testing-campaign-roundtrip/variations"
 
     # I add a new personalized elements variation.
+    When I press "Add variation set" in the "wizard_targeting_form" region
+    Then I should see the text "Webpage elements" in the "wizard_targeting_form" region
+
     When I check the "Webpage elements" radio button
     And I wait for AJAX to finish
     # Todo create a custom assertion for clicking a radio button list option
-    And I fill in "node" for "variations[add_variation][details][element][content][url]"
+    And I fill in "node" for "variations[new][0][element][content][url]"
     And I press "Go" in the "wizard_targeting_form" region
 
     # I select an element to personalize.

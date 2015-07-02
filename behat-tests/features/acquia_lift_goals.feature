@@ -213,3 +213,40 @@ Feature: Goals can be edited and managed for an Acquia Lift campaign from toolba
     And I should see "0" for the "goal" count
     When I hover over "Why" in the "lift_tray" region
     Then I should see the text "No goals" in the "lift_tray" region
+
+  Scenario: Add an element goal to a campaign and be automatically directed
+    back to the campaign details page.
+    # I have a campaign
+    # I login with the marketer role.
+    # I have an article page.
+    Given "acquia_lift_target" agents:
+      | machine_name                  | label                         | status  |
+      | testing-campaign-element-goal | Testing campaign element goal | 1       |
+    And "article" content:
+      | title            | author     | status |
+      | My article title | Joe Editor | 1      |
+    And I am logged in as a user with the "access administration pages,access toolbar,administer visitor actions,manage personalized content" permission
+    And I am on "admin/structure/personalize/manage/testing-campaign-element-goal/goals"
+
+    # I add a new elements goal.
+    When I press "Add goal" in the "wizard_targeting_form" region
+    Then I should see "New element goal" in the "wizard_targeting_form" region
+
+    When I check the "New element goal" radio button
+    And I wait for AJAX to finish
+    # Todo create a custom assertion for clicking a radio button list option
+    And I fill in "node" for "goals[new][0][details][url]"
+    And I press "Go" in the "wizard_targeting_form" region
+
+    # I select an element to convert to a goal.
+    When I click "My article title" in the "page_content" region
+    Then I should see "Title" in the "dialog_goal_form" region
+    And I should see "Event" in the "dialog_goal_form" region
+    And I should visibly see the link "Advanced Options" in the "dialog_goal_form" region
+    When I fill in "Hovers over My article title" for "Title"
+    And I select "hovers over" from "Event"
+    And I press "Save" in the "dialog_goal_form" region
+
+    # I verify my new element goal is added and I am redirected.
+    Then I should see the message "The action Hovers over My article title was saved."
+    And I should be on "admin/structure/personalize/manage/testing-campaign-element-goal/goals"

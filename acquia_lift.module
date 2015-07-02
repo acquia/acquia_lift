@@ -2945,9 +2945,6 @@ function acquia_lift_get_campaign_details() {
     if ($agent->plugin === 'acquia_lift') {
       continue;
     }
-    if (!acquia_lift_target_definition_changes_allowed($agent)) {
-      continue;
-    }
 
     $plugin = personalize_agent_load_agent($agent->machine_name);
     if (!$plugin) {
@@ -2983,6 +2980,8 @@ function acquia_lift_get_campaign_details() {
       ),
       'optionSetTypes' => array_unique($option_set_types),
       'goals' => (isset($goals)) ? $goals : NULL,
+      'editable' => acquia_lift_target_definition_changes_allowed($agent),
+      'status' => personalize_agent_get_status($agent->machine_name),
     );
 
     // In the client, goals will render to an array when it is empty and an

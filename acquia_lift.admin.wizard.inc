@@ -491,7 +491,7 @@ function acquia_lift_personalize_campaign_wizard_goals_alter(&$form, &$form_stat
       } else {
         // Display a goal-type specific form for the new goal.
         module_load_include('inc', 'acquia_lift', 'acquia_lift.admin.unibar');
-        // Options for changing the type of goal selected.
+        // Add the form to change the type of goal selected.
         $selected_goal_type = $goal_types[$new_goal_type]['title'];
         $change_type_options = array(
           '#submit' => array('acquia_lift_personalize_campaign_wizard_goals_ajax_change'),
@@ -500,13 +500,10 @@ function acquia_lift_personalize_campaign_wizard_goals_alter(&$form, &$form_stat
             'wrapper' => $new_goal_details_id,
           ),
         );
+        $form['goals']['new'][$delta] += _acquia_lift_personalize_campaign_wizard_change_type_form($selected_goal_type, $change_type_options);
         switch ($new_goal_type) {
           case 'existing':
-            // Add the form to change the type of goal selected.
-            $form['goals']['new'][$delta] += _acquia_lift_personalize_campaign_wizard_change_type_form($selected_goal_type, $change_type_options);
             $form['goals']['new'][$delta]['details'] = _acquia_lift_existing_goal_create_form($agent_data);
-            // TRICKY: Name must be specified or else it will default to "op" and
-            // conflict with the main process bar save button.
             $form['goals']['new'][$delta]['save'] = array(
               '#name' => 'single_save_' . $delta,
               '#type' => 'submit',
@@ -514,21 +511,8 @@ function acquia_lift_personalize_campaign_wizard_goals_alter(&$form, &$form_stat
               '#limit_validation_errors' => array(array('goals', 'new', $delta)),
               '#submit' => array('acquia_lift_personalize_campaign_wizard_goals_single_submit'),
             );
-            $form['goals']['new'][$delta]['cancel'] = array(
-              '#type' => 'submit',
-              '#name' => 'cancel_goal_' . $delta,
-              '#value' => t('Cancel'),
-              '#submit' => array('acquia_lift_personalize_campaign_wizard_goals_ajax_cancel'),
-              '#limit_validation_errors' => array(),
-              '#ajax' => array(
-                'callback' => 'acquia_lift_personalize_campaign_wizard_goals_ajax',
-                'wrapper' => $new_goals_id,
-              ),
-            );
             break;
           case 'page':
-            // Add the form to change the type of goal selected.
-            $form['goals']['new'][$delta] += _acquia_lift_personalize_campaign_wizard_change_type_form($selected_goal_type, $change_type_options);
             $form['goals']['new'][$delta]['details'] = _acquia_lift_page_goal_create_form($agent_data);
             // Update the states properties for each page option.
             foreach (element_children($form['goals']['new'][$delta]['details']['options']['page']) as $page_option) {
@@ -555,8 +539,6 @@ function acquia_lift_personalize_campaign_wizard_goals_alter(&$form, &$form_stat
               '#required' => TRUE,
               '#weight' => 10,
             );
-            // TRICKY: Name must be specified or else it will default to "op" and
-            // conflict with the main process bar save button.
             $form['goals']['new'][$delta]['save'] = array(
               '#name' => 'single_save_' . $delta,
               '#type' => 'submit',
@@ -564,27 +546,22 @@ function acquia_lift_personalize_campaign_wizard_goals_alter(&$form, &$form_stat
               '#limit_validation_errors' => array(array('goals', 'new', $delta)),
               '#submit' => array('acquia_lift_personalize_campaign_wizard_goals_single_submit'),
             );
-            $form['goals']['new'][$delta]['cancel'] = array(
-              '#type' => 'submit',
-              '#name' => 'cancel_goal_' . $delta,
-              '#value' => t('Cancel'),
-              '#submit' => array('acquia_lift_personalize_campaign_wizard_goals_ajax_cancel'),
-              '#limit_validation_errors' => array(),
-              '#ajax' => array(
-                'callback' => 'acquia_lift_personalize_campaign_wizard_goals_ajax',
-                'wrapper' => $new_goals_id,
-              ),
-            );
             break;
           case 'element':
-            // @todo: If the user has multiple new goals or goal edits on the
-            // page and selects elements then these changes will be lost.
-            ctools_include('ajax');
-            ctools_add_js('ajax-responder');
-            $commands[] = ctools_ajax_command_redirect($goal_types['element']['path'], 0, array('query' => array('destination' => 'admin/structure/personalize/manage/' . $agent_data->machine_name . '/goals')));
-            print ajax_render($commands);
-            exit;
+            $form['goals']['new'][$delta]['details'] = _acquia_lift_personalize_campaign_wizard_goal_element_form();
+            break;
         }
+        $form['goals']['new'][$delta]['cancel'] = array(
+          '#type' => 'submit',
+          '#name' => 'cancel_goal_' . $delta,
+          '#value' => t('Cancel'),
+          '#submit' => array('acquia_lift_personalize_campaign_wizard_goals_ajax_cancel'),
+          '#limit_validation_errors' => array(),
+          '#ajax' => array(
+            'callback' => 'acquia_lift_personalize_campaign_wizard_goals_ajax',
+            'wrapper' => $new_goals_id,
+          ),
+        );
       }
     }
   }
@@ -1747,6 +1724,25 @@ function acquia_lift_personalize_campaign_wizard_goals_submit(&$form, &$form_sta
 }
 
 /**
+ * Submit handler for entering a URL to begin creation of an element goal.
+ */
+function acquia_lift_personalize_campaign_wizard_goals_submit_element_add($form, &$form_state) {
+  $agent_data = $form['#agent'];
+
+  // Redirect to the requested URL to create an option set.
+  $delta = _acquia_lift_personalize_campaign_wizard_next_element($form_state, 'new');
+  $_SESSION['visitor_actions_ui_edit_mode'] = 1;
+  $_SESSION['visitor_actions_ui_edit_mode_return'] = 'admin/structure/personalize/manage/' . $agent_data->machine_name . '/goals';
+
+  // Run the form submit handler in case any other variations were added or
+  // edited.
+  acquia_lift_personalize_campaign_wizard_submit($form, $form_state);
+
+  $element_page = $form_state['values']['goals']['new'][$delta]['details']['url'] ?: '<front>';
+  drupal_goto($element_page);
+}
+
+/**
  * Submit function for targeting form.
  */
 function acquia_lift_personalize_campaign_wizard_targeting_submit(&$form, &$form_state, &$agent_data, $agent_instance) {
@@ -2270,6 +2266,37 @@ function _acquia_lift_personalize_campaign_wizard_variations_fields(&$form, &$fo
   }
   return $element;
 }
+
+/**
+ * Form to select a page for a new element goal.
+ *
+ * @return array
+ *   The form element to enter a path to the page for an element goal.
+ *
+ * NOTE: limit_validation_errors is not set for either of this submit buttons
+ * due to a requirement to actually save the page content before exiting for
+ * element variation actions.
+ */
+function _acquia_lift_personalize_campaign_wizard_goal_element_form() {
+  global $base_url;
+  $form = array();
+
+  $form['url'] = array(
+    '#type' => 'textfield',
+    '#element_validate' => array('personalize_form_element_path_validate'),
+    '#title' => t('Page where element exists'),
+    '#allow_dynamic' => FALSE,
+    '#allow_external' => TRUE,
+    '#field_prefix' => $base_url . '/',
+  );
+  $form['navigate'] = array(
+    '#type' => 'submit',
+    '#submit' => array('acquia_lift_personalize_campaign_wizard_goals_submit_element_add'),
+    '#value' => t('Go'),
+  );
+  return $form;
+}
+
 
 /**
  * Helper function to generate a change type sub-section of a form.

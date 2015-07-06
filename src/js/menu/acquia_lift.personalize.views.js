@@ -4,6 +4,9 @@
  */
 (function (Drupal, $, _, Backbone) {
 
+  // Menu classes added for new disabled create menu links.
+  var liftAddMenuClasses = 'acquia-lift-disabled acquia-lift-menu-create acquia-lift-menu-link overlay-exclude navbar-menu-item visitor-actions-ui-ignore';
+
   /**
    * Returns the Backbone View of the Visitor Actions add action controller.
    *
@@ -307,6 +310,10 @@
       this.listenTo(this.campaignCollection, 'change:isActive', this.render);
       this.listenTo(this.campaignCollection, 'change:activeVariation', this.render);
       this.listenTo(this.campaignCollection, 'change:variations', this.render);
+      this.$addLink = this.$el.closest('li').find('#acquia-lift-menu-option-set-add');
+      this.$addLinkDisabled = '';
+      this.build();
+      this.render();
     },
 
     /**
@@ -315,7 +322,6 @@
     render: function() {
       var currentCampaign = this.campaignCollection.findWhere({'isActive': true});
       var text = Drupal.t('What');
-      var editable = currentCampaign ? currentCampaign.get('editable') : false;
       var $count = this.$el.find('i.acquia-lift-personalize-type-count').detach();
       if (!currentCampaign) {
         return;
@@ -325,7 +331,20 @@
         this.$el.prepend($count);
       }
       // Enable/disable 'add variation set' option
-      this.$el.closest('li').find('#acquia-lift-menu-option-set-add').toggle(editable);
+      var editable = currentCampaign.get('editable');
+      this.$addLink.toggle(editable);
+      this.$addLinkDisabled.toggle(!editable);
+    },
+
+    /**
+     * {@inheritDoc}
+     */
+    build: function() {
+      // Add a decoy link for the disabled state of adding a new option set.
+      // While ideally we'd just toggle a class, the integration with ctools
+      // and drupal ajax links makes this very difficult and messy.
+      this.$addLink.before('<a class="' + liftAddMenuClasses + ' acquia-lift-disabled">' + this.$addLink.text() + '</a>');
+      this.$addLinkDisabled = this.$addLink.parent().find('.acquia-lift-disabled');
     },
 
     /**
@@ -722,6 +741,12 @@
       this.campaignCollection = options.campaignCollection;
 
       this.listenTo(this.campaignCollection, 'change:isActive', this.render);
+      
+      this.$addLink = this.$el.closest('li').find('#acquia-lift-menu-goal-add');
+      this.$addLinkDisabled = '';
+      
+      this.build();
+      this.render();
     },
 
     /**
@@ -733,7 +758,20 @@
         return;
       }
       // Enable/disable the 'add goal' options
-      this.$el.closest('li').find('#acquia-lift-menu-goal-add').toggle(current.get('editable'));
+      var editable = current.get('editable');
+      this.$addLink.toggle(editable);
+      this.$addLinkDisabled.toggle(!editable);
+    },
+
+    /**
+     * {@inheritDoc}
+     */
+    build: function() {
+      // Add a decoy link for the disabled state of adding a new option set.
+      // While ideally we'd just toggle a class, the integration with ctools
+      // and drupal ajax links makes this very difficult and messy.
+      this.$addLink.before('<a class="' + liftAddMenuClasses + ' acquia-lift-disabled">' + this.$addLink.text() + '</a>');
+      this.$addLinkDisabled = this.$addLink.parent().find('.acquia-lift-disabled');
     },
 
     /**

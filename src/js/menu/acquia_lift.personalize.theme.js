@@ -371,22 +371,34 @@
     ];
 
     var renameHref = Drupal.settings.basePath + Drupal.settings.pathPrefix + 'admin/structure/acquia_lift/goal/rename/' + options.name + '/nojs';
+    var renameClasses = 'acquia-lift-goal-rename acquia-lift-menu-link';
     var renameAttrs = [
-      'class="acquia-lift-goal-rename acquia-lift-menu-link ctools-use-modal ctools-modal-acquia-lift-style"',
-      'title="' + Drupal.t('Rename goal') + '"',
       'aria-role="button"',
       'aria-pressed="false"',
-      'href="' + renameHref + '"'
     ];
+    if (options.editable) {
+      renameAttrs.push('title="' + Drupal.t('Rename goal') + '"');
+      renameAttrs.push('href="' + renameHref + '"');
+      renameAttrs.push('class="' + renameClasses + ' ctools-use-modal ctools-modal-acquia-lift-style"');
+    } else {
+      renameAttrs.push('title="' + Drupal.t('Goals cannot be edited until personalization is paused.') + '"');
+      renameAttrs.push('class="' + renameClasses + ' acquia-lift-disabled"');
+    }
 
     var deleteHref = Drupal.settings.basePath + Drupal.settings.pathPrefix + 'admin/structure/acquia_lift/goal/delete/' + options.campaignID + '/' + options.name + '/nojs';
+    var deleteClasses = 'acquia-lift-goal-delete acquia-lift-menu-link';
     var deleteAttrs = [
-      'class="acquia-lift-goal-delete acquia-lift-menu-link ctools-use-modal ctools-modal-acquia-lift-style"',
-      'title="' + Drupal.t('Delete goal') + '"',
       'aria-role="button"',
       'aria-pressed="false"',
-      'href="' + deleteHref + '"'
     ];
+    if (options.editable) {
+      deleteAttrs.push('title="' + Drupal.t('Delete goal') + '"');
+      deleteAttrs.push('href="' + deleteHref + '"');
+      deleteAttrs.push('class="' + deleteClasses + ' ctools-use-modal ctools-modal-acquia-lift-style"');
+    } else {
+      deleteAttrs.push('title="' + Drupal.t('Goals cannot be deleted until personalization is paused.') + '"');
+      deleteAttrs.push('class="' + deleteClasses + ' acquia-lift-disabled"');
+    }
 
     item += '<div class="acquia-lift-menu-item clearfix">\n';
     item += '<span ' + attrs.join(' ') + '>' + Drupal.t('@text', {'@text': options.label}) + '</span>\n';

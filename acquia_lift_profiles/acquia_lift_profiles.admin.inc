@@ -40,13 +40,6 @@ function acquia_lift_profiles_admin_form($form, &$form_state) {
     '#default_value' => variable_get('acquia_lift_profiles_secret_key', ''),
     '#required' => TRUE,
   );
-  $form['acquia_lift_profiles_js_path'] = array(
-    '#type' => 'textfield',
-    '#title' => t('Acquia Lift Profiles JavaScript path'),
-    '#field_prefix' => 'http(s)://',
-    '#default_value' => variable_get('acquia_lift_profiles_js_path', ''),
-    '#required' => TRUE,
-  );
 
   $identity_parameter_display_value = variable_get('acquia_lift_profiles_identity_param') ?: 'identity';
   $identity_type_parameter_display_value = variable_get('acquia_lift_profiles_identity_type_param') ?: 'identityType';
@@ -241,9 +234,7 @@ function acquia_lift_profiles_admin_form_submit($form, &$form_state) {
   }
 
   // Strip out any http/https protocol from urls and save.
-  foreach (array('acquia_lift_profiles_api_url', 'acquia_lift_profiles_js_path') as $key) {
-    variable_set($key, preg_replace('/(^[a-z]+:\/\/)/i', '', $form_state['values'][$key]));
-  }
+  variable_set('acquia_lift_profiles_api_url', preg_replace('/(^[a-z]+:\/\/)/i', '', $form_state['values']['acquia_lift_profiles_api_url']));
 
   // Refresh the segments from Acquia Lift Profiles.
   acquia_lift_profiles_refresh_segments_cache();

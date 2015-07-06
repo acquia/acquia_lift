@@ -8,6 +8,13 @@
 class AcquiaLiftWebTestBase extends DrupalWebTestCase
 {
   /**
+   * The string to use as the owner code.
+   *
+   * @var string
+   */
+  protected $liftAOwnerCode = 'Some_valid-owner123-code';
+
+  /**
    * The string to use as the runtime API key.
    *
    * @var string
@@ -29,11 +36,11 @@ class AcquiaLiftWebTestBase extends DrupalWebTestCase
   protected $liftAPIUrl = 'http://some.valid.url';
 
   /**
-   * The string to use as the owner code.
+   * The string to use as the JavaScript path.
    *
    * @var string
    */
-  protected $liftAOwnerCode = 'Some_valid-owner123-code';
+  protected $liftProfileJsPath = 'some.valid.javascript.path';
 
   protected $adminUser;
 
@@ -56,7 +63,7 @@ class AcquiaLiftWebTestBase extends DrupalWebTestCase
       'api_key' => $this->liftAPIKey,
       'admin_key' => $this->liftAdminKey,
     ));
-    ALProfilesAPI::setTestInstance();
+    variable_set('acquia_lift_profiles_js_path', $this->liftProfileJsPath);
   }
 
   public function tearDown()
@@ -406,6 +413,7 @@ class AcquiaLiftWebTestBase extends DrupalWebTestCase
       'acquia_lift_account_info[api_key]' => $this->liftAPIKey,
       'acquia_lift_account_info[admin_key]' => $this->liftAdminKey,
       'acquia_lift_account_info[api_url]' => $this->liftAPIUrl,
+      'acquia_lift_profiles_js_path' => $this->liftProfileJsPath,
     );
     $this->drupalLogin($this->adminUser);
     $this->drupalPost('admin/config/content/personalize/acquia_lift', $edit, $this->getButton('config'));
@@ -473,26 +481,34 @@ class AcquiaLiftWebTestConfig extends AcquiaLiftWebTestBase {
     );
   }
 
-  public function testLiftAgentAvailibility() {
-    // remove the account information
-    $lift_info = variable_get('acquia_lift_account_info', array());
+  public function testLiftAgentAvailability() {
+    // Fill all required information.
+    $this->configureAcquiaLiftAccount();
+    // Remove the account information.
     variable_del('acquia_lift_account_info');
     $this->resetAll();
-
     // Try to add a new campaign and verify that the Acquia Lift agent isn't presented.
+    $this->drupalLogin($this->managerUser);
     $this->drupalGet('admin/structure/personalize/add');
     $this->assertText(t('Your Acquia Lift account info has not been configured.'));
 
-    // Add the configuration information for the Lift account.
+    // Fill all required information.
     $this->configureAcquiaLiftAccount();
-
+    // Remove the JavaScript path.
+    variable_del('acquia_lift_profiles_js_path');
+    $this->resetAll();
+    // Try to add a new campaign and verify that the Acquia Lift agent isn't presented.
     $this->drupalLogin($this->managerUser);
+    $this->drupalGet('admin/structure/personalize/add');
+    $this->assertText(t('Your Acquia Lift account info has not been configured.'));
 
+    // Fill all required information.
+    $this->configureAcquiaLiftAccount();
     // Now confirm that Acquia Lift is an option for new campaigns.
+    $this->drupalLogin($this->managerUser);
     $this->drupalGet('admin/structure/personalize/add');
     $this->assertNoText(t('Your Acquia Lift account info has not been configured.'));
   }
-
 
   public function testConfigForm() {
     $this->drupalLogin($this->adminUser);
@@ -502,6 +518,7 @@ class AcquiaLiftWebTestConfig extends AcquiaLiftWebTestBase {
       'acquia_lift_account_info[api_key]' => $this->liftAPIKey,
       'acquia_lift_account_info[admin_key]' => $this->liftAdminKey,
       'acquia_lift_account_info[api_url]' => $this->liftAPIUrl,
+      'acquia_lift_profiles_js_path' => $this->liftProfileJsPath,
     );
     $this->drupalPost('admin/config/content/personalize/acquia_lift', $edit, $this->getButton('config'));
     $this->assertText('You must enter a valid owner code');
@@ -511,26 +528,45 @@ class AcquiaLiftWebTestConfig extends AcquiaLiftWebTestBase {
     $this->drupalPost('admin/config/content/personalize/acquia_lift', $edit, $this->getButton('config'));
     $this->assertNoText('You must enter a valid owner code');
     $account_info = variable_get('acquia_lift_account_info', array());
+    $js_path = variable_get('acquia_lift_profiles_js_path', '');
     $this->assertEqual($account_info['owner_code'], $this->liftAOwnerCode);
     $this->assertEqual($account_info['api_key'], $this->liftAPIKey);
     $this->assertEqual($account_info['admin_key'], $this->liftAdminKey);
     $this->assertEqual($account_info['api_url'], 'some.valid.url');
+    $this->assertEqual($js_path, $this->liftProfileJsPath);
     // Try entering an invalid API url.
     $edit['acquia_lift_account_info[api_url]'] = 'some\\invalid\\url';
     $this->drupalPost('admin/config/content/personalize/acquia_lift', $edit, $this->getButton('config'));
-    $this->assertText('You must enter a valid URL');
+    $this->assertText('You must enter a valid API URL');
     // Try a valid URL with no scheme.
     $edit['acquia_lift_account_info[api_url]'] = 'some.valid.url';
     $this->drupalPost('admin/config/content/personalize/acquia_lift', $edit, $this->getButton('config'));
-    $this->assertNoText('You must enter a valid URL');
+    $this->assertNoText('You must enter a valid API URL');
     // Try a valid URL with scheme.
     $edit['acquia_lift_account_info[api_url]'] = 'https://some.valid.url';
     $this->drupalPost('admin/config/content/personalize/acquia_lift', $edit, $this->getButton('config'));
-    $this->assertNoText('You must enter a valid URL');
+    $this->assertNoText('You must enter a valid API URL');
     $this->resetAll();
     $account_info = variable_get('acquia_lift_account_info', array());
     // The scheme should have been stripped out before saving.
     $this->assertEqual($account_info['api_url'], 'some.valid.url');
+
+    // Try entering an invalid JavaScript path.
+    $edit['acquia_lift_profiles_js_path'] = 'some\\invalid\\javascript\\path';
+    $this->drupalPost('admin/config/content/personalize/acquia_lift', $edit, $this->getButton('config'));
+    $this->assertText('You must enter a valid JavaScript path');
+    // Try a valid JavaScript path with no scheme.
+    $edit['acquia_lift_profiles_js_path'] = 'some.valid.javascript.path';
+    $this->drupalPost('admin/config/content/personalize/acquia_lift', $edit, $this->getButton('config'));
+    $this->assertNoText('You must enter a valid JavaScript path');
+    // Try a valid JavaScript path with scheme.
+    $edit['acquia_lift_profiles_js_path'] = 'https://some.valid.javascript.path';
+    $this->drupalPost('admin/config/content/personalize/acquia_lift', $edit, $this->getButton('config'));
+    $this->assertNoText('You must enter a valid JavaScript path');
+    $this->resetAll();
+    $js_path = variable_get('acquia_lift_profiles_js_path', '');
+    // The scheme should have been stripped out before saving.
+    $this->assertEqual($js_path, 'some.valid.javascript.path');
 
     // Submit bogus confidence measures.
     $bad_measures = array(
@@ -592,6 +628,7 @@ class AcquiaLiftWebTestConfig extends AcquiaLiftWebTestBase {
     $this->assertEqual($settings['acquia_lift']['edit_in_context_html_strip'], 1);
   }
 }
+
 class AcquiaLiftWebTestVariationSets extends AcquiaLiftWebTestBase {
 
   public static function getInfo() {

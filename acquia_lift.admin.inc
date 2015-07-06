@@ -78,11 +78,9 @@ function acquia_lift_admin_form($form, &$form_state) {
     '#collapsible' => TRUE,
     '#collapsed' => $account_info_provided
   );
-
   $form['acquia_lift_account_info']['msg'] = array(
     '#markup' => t("<p>This information is used to link your !acquialift account to Drupal.</p><p>If you are already an Acquia Lift customer, contact Acquia Support to obtain your credentials. Otherwise, contact !advocacyemail to purchase a subscription to the Acquia Lift service.</p>", array('!acquialift' => l(t('Acquia Lift'), 'http://www.acquia.com/products-services/website-personalization', array('attributes' => array('target' => '_blank'))), '!advocacyemail' => l('advocacy@acquia.com', 'mailto:advocacy@acquia.com'))),
   );
-
   $form['acquia_lift_account_info']['owner_code'] = array(
     '#type' => 'textfield',
     '#title' => t('Owner Code'),
@@ -92,7 +90,6 @@ function acquia_lift_admin_form($form, &$form_state) {
     '#description' => t("Paste in your Acquia Lift owner code"),
     '#required' => TRUE,
   );
-
   $form['acquia_lift_account_info']['api_key'] = array(
     '#type' => 'textfield',
     '#title' => t('Runtime API Key'),
@@ -102,7 +99,6 @@ function acquia_lift_admin_form($form, &$form_state) {
     '#description' => t("Paste in your Acquia Lift api key"),
     '#required' => TRUE,
   );
-
   $form['acquia_lift_account_info']['admin_key'] = array(
     '#type' => 'textfield',
     '#title' => t('Admin API Key'),
@@ -112,7 +108,6 @@ function acquia_lift_admin_form($form, &$form_state) {
     '#description' => t("Paste in your Acquia Lift admin key"),
     '#required' => TRUE,
   );
-
   $form['acquia_lift_account_info']['api_url'] = array(
     '#type' => 'textfield',
     '#title' => t('API Server URL'),
@@ -121,6 +116,14 @@ function acquia_lift_admin_form($form, &$form_state) {
     '#size' => 35,
     '#maxlength' => 50,
     '#description' => t("Paste in your Acquia Lift API URL"),
+    '#required' => TRUE,
+  );
+
+  $form['acquia_lift_profiles_js_path'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Acquia Lift / Acquia Lift Profile JavaScript path'),
+    '#field_prefix' => 'http(s)://',
+    '#default_value' => variable_get('acquia_lift_profiles_js_path', ''),
     '#required' => TRUE,
   );
   $form['acquia_lift_batch_decisions'] = array(
@@ -255,10 +258,15 @@ function acquia_lift_admin_form_validate($form, &$form_state) {
     form_set_error('acquia_lift_account_info][owner_code', 'You must enter a valid owner code');
   }
   if (!valid_url($form_state['values']['acquia_lift_account_info']['api_url'])) {
-    form_set_error('acquia_lift_account_info][api_url', t('You must enter a valid URL'));
+    form_set_error('acquia_lift_account_info][api_url', t('You must enter a valid API URL'));
   }
-  // Strip any scheme from the API URL.
+  if (!valid_url($form_state['values']['acquia_lift_profiles_js_path'])) {
+    form_set_error('acquia_lift_profiles_js_path', t('You must enter a valid JavaScript path'));
+  }
+  // Strip any scheme from the URLs.
   $form_state['values']['acquia_lift_account_info']['api_url'] = preg_replace('/(^[a-z]+:\/\/)/i', '', $form_state['values']['acquia_lift_account_info']['api_url']);
+  $form_state['values']['acquia_lift_profiles_js_path'] = preg_replace('/(^[a-z]+:\/\/)/i', '', $form_state['values']['acquia_lift_profiles_js_path']);
+
   if ($form_state['values']['acquia_lift_confidence_measure'] <= 0 || $form_state['values']['acquia_lift_confidence_measure'] >= 100) {
     form_set_error('acquia_lift_confidence_measure', t('Confidence measure must be a value between 0 and 100.'));
   }

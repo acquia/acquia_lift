@@ -314,8 +314,10 @@
    *   The campaign model to create goals display for.
    * @param object actions
    *   An object of all actions keyed by the action machine name.
+   * @param boolean editable
+   *   Indicates if the goal should have edit options.
    */
-  Drupal.theme.acquiaLiftCampaignGoals = function (model, actions) {
+  Drupal.theme.acquiaLiftCampaignGoals = function (model, actions, editable) {
     var goals = model.get('goals');
     var html = '<ul class="' + navbarMenuClassName + '">';
 
@@ -335,7 +337,8 @@
         campaignID: model.get('name'),
         name: goalId,
         label: goalModel.get('name'),
-        custom: custom
+        custom: custom,
+        editable: editable
       });
       html += '</li>';
     });
@@ -353,6 +356,7 @@
    *   - name: The goal ID.
    *   - label: The goal label.
    *   - custom: Boolean to indicate if a goal is custom or defined in code.
+   *   - editable: Boolean to indicate if the goal is editable.
    *
    * @return string
    */

@@ -240,6 +240,50 @@
     }
   });
 
+  /**
+   * View to show campaign specific messages within option set or goal lists.
+   *
+   * The collection property passed in at creation is the collection of all
+   * campaigns.
+   */
+  Drupal.acquiaLiftUI.MenuCampaignMessageView = ViewBase.extend({
+    initialize: function (options) {
+      this.collection = options.collection;
+      this.model = this.collection.findWhere({'isActive': true});
+
+      this.listenTo(this.collection, 'change:isActive', this.onActiveCampaignChange);
+
+      this.build();
+
+      // Set the initial campaign listeners if available.
+      this.onActiveCampaignChange();
+      this.render();
+    },
+
+    /**
+     * Listen to changes in the option sets for the active campaign and
+     * re-render.
+     */
+    onActiveCampaignChange: function () {
+      this.render();
+    },
+
+    build: function () {
+      var html = '';
+      html += Drupal.theme('acquiaLiftPersonalizeNoEditItem');
+      this.$el.html(html);
+    },
+
+    render: function () {
+      var current = this.collection.findWhere({'isActive': true});
+      if (!current) {
+        this.$el.hide();
+        return;
+      }
+      this.$el.toggle(!current.get('editable'));
+    }
+  });
+
   /***************************************************************
    *
    *            C O N T E N T  V A R I A T I O N S
@@ -548,50 +592,6 @@
   });
 
   /**
-   * View to show specific messages for the option sets for a campaign.
-   *
-   * The collection property passed in at creation is the collection of all
-   * campaigns.
-   */
-  Drupal.acquiaLiftUI.MenuOptionSetMessageView = ViewBase.extend({
-    initialize: function (options) {
-      this.collection = options.collection;
-      this.model = this.collection.findWhere({'isActive': true});
-
-      this.listenTo(this.collection, 'change:isActive', this.onActiveCampaignChange);
-
-      this.build();
-
-      // Set the initial campaign listeners if available.
-      this.onActiveCampaignChange();
-      this.render();
-    },
-
-    /**
-     * Listen to changes in the option sets for the active campaign and
-     * re-render.
-     */
-    onActiveCampaignChange: function () {
-      this.render();
-    },
-
-    build: function () {
-      var html = '';
-      html += Drupal.theme('acquiaLiftPersonalizeNoEditItem');
-      this.$el.html(html);
-    },
-
-    render: function () {
-      var current = this.collection.findWhere({'isActive': true});
-      if (!current) {
-        this.$el.hide();
-        return;
-      }
-      this.$el.toggle(!current.get('editable'));
-    }
-  });
-
-  /**
    * Display the content variation count for the active campaign.
    */
   Drupal.acquiaLiftUI.MenuContentVariationsCountView = ViewBase.extend({
@@ -716,6 +716,27 @@
     },
 
     /**
+     * {@inheritDoc}
+     */
+    initialize: function (options) {
+      this.campaignCollection = options.campaignCollection;
+
+      this.listenTo(this.campaignCollection, 'change:isActive', this.render);
+    },
+
+    /**
+     * {@inheritDoc}
+     */
+    render: function () {
+      var current = this.campaignCollection.findWhere({'isActive': true});
+      if (!current) {
+        return;
+      }
+      // Enable/disable the 'add gol' options
+      this.$el.closest('li').find('#acquia-lift-menu-goal-add').toggleClass(!current.get('editable'));
+    },
+
+    /**
      * Responds to clicks.
      *
      * @param jQuery.Event event
@@ -764,7 +785,7 @@
      * {@inheritdoc}
      */
     build: function () {
-      var html = Drupal.theme('acquiaLiftCampaignGoals', this.model, Drupal.settings.acquia_lift.customActions);
+      var html = Drupal.theme('acquiaLiftCampaignGoals', this.model, Drupal.settings.acquia_lift.customActions, this.model.get('editable'));
       this.$el.html(html);
     }
   });

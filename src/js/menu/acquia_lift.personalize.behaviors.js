@@ -164,7 +164,8 @@
                 }
                 case 'goals': {
                   Drupal.acquiaLiftUI.views.goalsMenuView = new Drupal.acquiaLiftUI.MenuGoalsMenuView({
-                    el: $link[0]
+                    el: $link[0],
+                    campaignCollection: ui.collections.campaigns
                   });
                   break;
                 }
@@ -327,14 +328,22 @@
           }
         }
 
-        // Add the message placeholder.
+        // Add the message placeholders.
         if ($('[data-acquia-lift-personalize-type="option_sets"]').length > 0 && !ui.views.messageOptionSetsView) {
           var messageElement = document.createElement('li');
-          ui.views.messageOptionSetsView = new ui.MenuOptionSetMessageView({
+          ui.views.messageOptionSetsView = new ui.MenuCampaignMessageView({
             el: messageElement,
             collection: ui.collections.campaigns
           });
           $('[data-acquia-lift-personalize-type="option_sets"]').closest('li').find('.acquia-lift-scrollable').prepend(ui.views.messageOptionSetsView.el);
+        }
+        if ($('[data-acquia-lift-personalize-type="goals"]').length > 0 && !ui.views.messageGoalsView) {
+          var messageElement = document.createElement('li');
+          ui.views.messageGoalsView = new ui.MenuCampaignMessageView({
+            el: messageElement,
+            collection: ui.collections.campaigns
+          });
+          $('[data-acquia-lift-personalize-type="goals"]').closest('li').find('.acquia-lift-scrollable').prepend(ui.views.messageGoalsView.el);
         }
 
         // Refresh event delegation. This is necessary to rebind event delegation

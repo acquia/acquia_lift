@@ -1247,6 +1247,50 @@
     }
   });
 
+  /**
+   * View to show campaign specific messages within option set or goal lists.
+   *
+   * The collection property passed in at creation is the collection of all
+   * campaigns.
+   */
+  Drupal.acquiaLiftUI.MenuCampaignMessageView = ViewBase.extend({
+    initialize: function (options) {
+      this.collection = options.collection;
+      this.model = this.collection.findWhere({'isActive': true});
+
+      this.listenTo(this.collection, 'change:isActive', this.onActiveCampaignChange);
+
+      this.build();
+
+      // Set the initial campaign listeners if available.
+      this.onActiveCampaignChange();
+      this.render();
+    },
+
+    /**
+     * Listen to changes in the option sets for the active campaign and
+     * re-render.
+     */
+    onActiveCampaignChange: function () {
+      this.render();
+    },
+
+    build: function () {
+      var html = '';
+      html += Drupal.theme('acquiaLiftPersonalizeNoEditItem');
+      this.$el.html(html);
+    },
+
+    render: function () {
+      var current = this.collection.findWhere({'isActive': true});
+      if (!current) {
+        this.$el.hide();
+        return;
+      }
+      this.$el.toggle(!current.get('editable'));
+    }
+  });
+
   /***************************************************************
    *
    *            C O N T E N T  V A R I A T I O N S
@@ -1551,50 +1595,6 @@
       }
       var numOptions = this.model.get('optionSets').length;
       this.$el.toggle(numOptions == 0);
-    }
-  });
-
-  /**
-   * View to show specific messages for the option sets for a campaign.
-   *
-   * The collection property passed in at creation is the collection of all
-   * campaigns.
-   */
-  Drupal.acquiaLiftUI.MenuOptionSetMessageView = ViewBase.extend({
-    initialize: function (options) {
-      this.collection = options.collection;
-      this.model = this.collection.findWhere({'isActive': true});
-
-      this.listenTo(this.collection, 'change:isActive', this.onActiveCampaignChange);
-
-      this.build();
-
-      // Set the initial campaign listeners if available.
-      this.onActiveCampaignChange();
-      this.render();
-    },
-
-    /**
-     * Listen to changes in the option sets for the active campaign and
-     * re-render.
-     */
-    onActiveCampaignChange: function () {
-      this.render();
-    },
-
-    build: function () {
-      var html = '';
-      html += Drupal.theme('acquiaLiftPersonalizeNoEditItem');
-      this.$el.html(html);
-    },
-
-    render: function () {
-      var current = this.collection.findWhere({'isActive': true});
-      if (!current) {
-        this.$el.hide();
-        return;
-      }
-      this.$el.toggle(!current.get('editable'));
     }
   });
 
@@ -2561,14 +2561,22 @@
           }
         }
 
-        // Add the message placeholder.
+        // Add the message placeholders.
         if ($('[data-acquia-lift-personalize-type="option_sets"]').length > 0 && !ui.views.messageOptionSetsView) {
           var messageElement = document.createElement('li');
-          ui.views.messageOptionSetsView = new ui.MenuOptionSetMessageView({
+          ui.views.messageOptionSetsView = new ui.MenuCampaignMessageView({
             el: messageElement,
             collection: ui.collections.campaigns
           });
           $('[data-acquia-lift-personalize-type="option_sets"]').closest('li').find('.acquia-lift-scrollable').prepend(ui.views.messageOptionSetsView.el);
+        }
+        if ($('[data-acquia-lift-personalize-type="goals"]').length > 0 && !ui.views.messageGoalsView) {
+          var messageElement = document.createElement('li');
+          ui.views.messageGoalsView = new ui.MenuCampaignMessageView({
+            el: messageElement,
+            collection: ui.collections.campaigns
+          });
+          $('[data-acquia-lift-personalize-type="goals"]').closest('li').find('.acquia-lift-scrollable').prepend(ui.views.messageGoalsView.el);
         }
 
         // Refresh event delegation. This is necessary to rebind event delegation

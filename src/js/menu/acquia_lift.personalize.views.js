@@ -137,7 +137,11 @@
         var label = Drupal.t('All personalizations');
         this.$el.attr('title', label);
       } else {
-        var label = Drupal.theme.acquiaLiftSelectedContext({'label': activeCampaign.get('label'), 'category': Drupal.t('Personalization')});
+        var label = Drupal.theme.acquiaLiftSelectedContext({
+          'label': activeCampaign.get('label'),
+          'append': Drupal.settings.personalize.status[activeCampaign.get('status')],
+          'category': Drupal.t('Personalization')
+        });
         this.$el.attr('title', activeCampaign.get('label'));
       }
       this.$el.html(label);

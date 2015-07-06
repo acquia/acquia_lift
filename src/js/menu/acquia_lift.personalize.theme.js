@@ -80,11 +80,16 @@
    *
    * @param $options
    * - label: The label of the selected context
+   * - append: Something to be appended to the label but not at the same
+   *   level of visual importance.
    * - category: The type of context
    */
   Drupal.theme.acquiaLiftSelectedContext = function (options) {
     var label = options.category + ': ';
     label += '<span class="acquia-lift-active">' + options.label + '</span>';
+    if (options.hasOwnProperty('append')) {
+      label += '&nbsp;(' + options.append + ')';
+    }
     return '<span class="acquia-lift-active-container">' + label + '</span>';
   }
 

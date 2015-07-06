@@ -154,6 +154,23 @@
    *****************************************/
 
   /**
+   * Returns a menu item that display information about an uneditable
+   * campaign.
+   */
+  Drupal.theme.acquiaLiftPersonalizeNoEditItem = function (options) {
+    var attrs = [
+      'class="acquia-lift-menu-campaign-warning"'
+    ];
+
+    var item = '';
+    item += '\n<span ' + attrs.join(' ') + '>\n';
+    item += Drupal.t('Personalizations that are running cannot be edited.') + '\n';
+    item += '</span>\n';
+
+    return item;
+  }
+
+  /**
    * Returns a list item that contains links to preview option set options.
    *
    * @param object options
@@ -162,6 +179,7 @@
    *   - os: The option set object.
    *   - os.label: The label of the option set.
    *   - os.agent: The campaign/agent to which this option set belongs.
+   *   - editalbe: Boolean indicating if the campaign is editable.
    *
    * @return string
    */
@@ -189,6 +207,7 @@
    *   - os.deletable: Boolean indicating if the option is deletable from the
    *     menu.
    *   - os.editable: Boolean indicating if the option is editable from the menu.
+   *   - editable: Boolean indicating if the entire campaign is editable.
    *
    * @return string
    */
@@ -203,11 +222,11 @@
         label: model.get('option_label'),
         osID: osID,
         osSelector: os_selector,
-        showDelete: model.get('deletable'),
-        showEdit: model.get('editable')
+        showDelete: options.editable && model.get('deletable'),
+        showEdit: options.editable && model.get('editable')
       });
     });
-    if (os.plugin === 'elements') {
+    if (options.editable && os.plugin === 'elements') {
       menu += '<li>';
       menu += '<a href="' + Drupal.settings.basePath + Drupal.settings.pathPrefix + 'admin/structure/personalize/variations/add/nojs"';
       menu += ' class="acquia-lift-variation-add acquia-lift-menu-link" title="' + Drupal.t('Add variation') + '" aria-role="button" aria-pressed="false">';
@@ -495,7 +514,9 @@
       links: {},
       name: '',
       isActive: false,
-      type: ''
+      type: '',
+      status: '',
+      editable: false
     },
 
     /**
@@ -1257,6 +1278,7 @@
     render: function() {
       var currentCampaign = this.campaignCollection.findWhere({'isActive': true});
       var text = Drupal.t('What');
+      var editable = currentCampaign ? currentCampaign.get('editable') : false;
       var $count = this.$el.find('i.acquia-lift-personalize-type-count').detach();
       if (!currentCampaign) {
         return;
@@ -1265,6 +1287,8 @@
       if ($count) {
         this.$el.prepend($count);
       }
+      // Enable/disable 'add variation set' option
+      this.$el.closest('li').find('#acquia-lift-menu-option-set-add').toggleClass('acquia-lift-disabled', !editable);
     },
 
     /**
@@ -1280,9 +1304,7 @@
   });
 
   /**
-   * View for all content variation sets for all campaigns.
-   *
-   * The model in this view is actually the campaign model.
+   * View for all content variation sets for a single campaigns.
    */
   Drupal.acquiaLiftUI.MenuContentVariationsView = ViewBase.extend({
 
@@ -1391,7 +1413,8 @@
       if (this.model) {
         html += Drupal.theme('acquiaLiftOptionSetItem', {
           osID: this.model.get('osid'),
-          os: this.model.attributes
+          os: this.model.attributes,
+          editable: this.campaignModel.get('editable')
         });
       }
       this.$el.html(html);
@@ -1528,6 +1551,50 @@
       }
       var numOptions = this.model.get('optionSets').length;
       this.$el.toggle(numOptions == 0);
+    }
+  });
+
+  /**
+   * View to show specific messages for the option sets for a campaign.
+   *
+   * The collection property passed in at creation is the collection of all
+   * campaigns.
+   */
+  Drupal.acquiaLiftUI.MenuOptionSetMessageView = ViewBase.extend({
+    initialize: function (options) {
+      this.collection = options.collection;
+      this.model = this.collection.findWhere({'isActive': true});
+
+      this.listenTo(this.collection, 'change:isActive', this.onActiveCampaignChange);
+
+      this.build();
+
+      // Set the initial campaign listeners if available.
+      this.onActiveCampaignChange();
+      this.render();
+    },
+
+    /**
+     * Listen to changes in the option sets for the active campaign and
+     * re-render.
+     */
+    onActiveCampaignChange: function () {
+      this.render();
+    },
+
+    build: function () {
+      var html = '';
+      html += Drupal.theme('acquiaLiftPersonalizeNoEditItem');
+      this.$el.html(html);
+    },
+
+    render: function () {
+      var current = this.collection.findWhere({'isActive': true});
+      if (!current) {
+        this.$el.hide();
+        return;
+      }
+      this.$el.toggle(!current.get('editable'));
     }
   });
 
@@ -2492,6 +2559,16 @@
           } else {
             $('[data-acquia-lift-personalize="' + linkType + '"]').hide();
           }
+        }
+
+        // Add the message placeholder.
+        if ($('[data-acquia-lift-personalize-type="option_sets"]').length > 0 && !ui.views.messageOptionSetsView) {
+          var messageElement = document.createElement('li');
+          ui.views.messageOptionSetsView = new ui.MenuOptionSetMessageView({
+            el: messageElement,
+            collection: ui.collections.campaigns
+          });
+          $('[data-acquia-lift-personalize-type="option_sets"]').closest('li').find('.acquia-lift-scrollable').prepend(ui.views.messageOptionSetsView.el);
         }
 
         // Refresh event delegation. This is necessary to rebind event delegation

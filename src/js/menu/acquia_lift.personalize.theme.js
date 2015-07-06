@@ -154,6 +154,23 @@
    *****************************************/
 
   /**
+   * Returns a menu item that display information about an uneditable
+   * campaign.
+   */
+  Drupal.theme.acquiaLiftPersonalizeNoEditItem = function (options) {
+    var attrs = [
+      'class="acquia-lift-menu-campaign-warning"'
+    ];
+
+    var item = '';
+    item += '\n<span ' + attrs.join(' ') + '>\n';
+    item += Drupal.t('Personalizations that are running cannot be edited.') + '\n';
+    item += '</span>\n';
+
+    return item;
+  }
+
+  /**
    * Returns a list item that contains links to preview option set options.
    *
    * @param object options
@@ -162,6 +179,7 @@
    *   - os: The option set object.
    *   - os.label: The label of the option set.
    *   - os.agent: The campaign/agent to which this option set belongs.
+   *   - editalbe: Boolean indicating if the campaign is editable.
    *
    * @return string
    */
@@ -189,6 +207,7 @@
    *   - os.deletable: Boolean indicating if the option is deletable from the
    *     menu.
    *   - os.editable: Boolean indicating if the option is editable from the menu.
+   *   - editable: Boolean indicating if the entire campaign is editable.
    *
    * @return string
    */
@@ -203,11 +222,11 @@
         label: model.get('option_label'),
         osID: osID,
         osSelector: os_selector,
-        showDelete: model.get('deletable'),
-        showEdit: model.get('editable')
+        showDelete: options.editable && model.get('deletable'),
+        showEdit: options.editable && model.get('editable')
       });
     });
-    if (os.plugin === 'elements') {
+    if (options.editable && os.plugin === 'elements') {
       menu += '<li>';
       menu += '<a href="' + Drupal.settings.basePath + Drupal.settings.pathPrefix + 'admin/structure/personalize/variations/add/nojs"';
       menu += ' class="acquia-lift-variation-add acquia-lift-menu-link" title="' + Drupal.t('Add variation') + '" aria-role="button" aria-pressed="false">';

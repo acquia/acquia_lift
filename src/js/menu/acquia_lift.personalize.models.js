@@ -12,7 +12,9 @@
       links: {},
       name: '',
       isActive: false,
-      type: ''
+      type: '',
+      status: '',
+      editable: false
     },
 
     /**

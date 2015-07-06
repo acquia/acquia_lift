@@ -327,6 +327,16 @@
           }
         }
 
+        // Add the message placeholder.
+        if ($('[data-acquia-lift-personalize-type="option_sets"]').length > 0 && !ui.views.messageOptionSetsView) {
+          var messageElement = document.createElement('li');
+          ui.views.messageOptionSetsView = new ui.MenuOptionSetMessageView({
+            el: messageElement,
+            collection: ui.collections.campaigns
+          });
+          $('[data-acquia-lift-personalize-type="option_sets"]').closest('li').find('.acquia-lift-scrollable').prepend(ui.views.messageOptionSetsView.el);
+        }
+
         // Refresh event delegation. This is necessary to rebind event delegation
         // to HTML that's been moved inside a jQuery dialog.
         _.each(ui.views, function (view) {

@@ -271,6 +271,7 @@
     render: function() {
       var currentCampaign = this.campaignCollection.findWhere({'isActive': true});
       var text = Drupal.t('What');
+      var editable = currentCampaign ? currentCampaign.get('editable') : false;
       var $count = this.$el.find('i.acquia-lift-personalize-type-count').detach();
       if (!currentCampaign) {
         return;
@@ -279,6 +280,8 @@
       if ($count) {
         this.$el.prepend($count);
       }
+      // Enable/disable 'add variation set' option
+      this.$el.closest('li').find('#acquia-lift-menu-option-set-add').toggleClass('acquia-lift-disabled', !editable);
     },
 
     /**
@@ -294,9 +297,7 @@
   });
 
   /**
-   * View for all content variation sets for all campaigns.
-   *
-   * The model in this view is actually the campaign model.
+   * View for all content variation sets for a single campaigns.
    */
   Drupal.acquiaLiftUI.MenuContentVariationsView = ViewBase.extend({
 
@@ -405,7 +406,8 @@
       if (this.model) {
         html += Drupal.theme('acquiaLiftOptionSetItem', {
           osID: this.model.get('osid'),
-          os: this.model.attributes
+          os: this.model.attributes,
+          editable: this.campaignModel.get('editable')
         });
       }
       this.$el.html(html);
@@ -542,6 +544,50 @@
       }
       var numOptions = this.model.get('optionSets').length;
       this.$el.toggle(numOptions == 0);
+    }
+  });
+
+  /**
+   * View to show specific messages for the option sets for a campaign.
+   *
+   * The collection property passed in at creation is the collection of all
+   * campaigns.
+   */
+  Drupal.acquiaLiftUI.MenuOptionSetMessageView = ViewBase.extend({
+    initialize: function (options) {
+      this.collection = options.collection;
+      this.model = this.collection.findWhere({'isActive': true});
+
+      this.listenTo(this.collection, 'change:isActive', this.onActiveCampaignChange);
+
+      this.build();
+
+      // Set the initial campaign listeners if available.
+      this.onActiveCampaignChange();
+      this.render();
+    },
+
+    /**
+     * Listen to changes in the option sets for the active campaign and
+     * re-render.
+     */
+    onActiveCampaignChange: function () {
+      this.render();
+    },
+
+    build: function () {
+      var html = '';
+      html += Drupal.theme('acquiaLiftPersonalizeNoEditItem');
+      this.$el.html(html);
+    },
+
+    render: function () {
+      var current = this.collection.findWhere({'isActive': true});
+      if (!current) {
+        this.$el.hide();
+        return;
+      }
+      this.$el.toggle(!current.get('editable'));
     }
   });
 

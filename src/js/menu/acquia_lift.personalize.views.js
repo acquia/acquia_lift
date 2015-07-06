@@ -325,7 +325,7 @@
         this.$el.prepend($count);
       }
       // Enable/disable 'add variation set' option
-      this.$el.closest('li').find('#acquia-lift-menu-option-set-add').toggleClass('acquia-lift-disabled', !editable);
+      this.$el.closest('li').find('#acquia-lift-menu-option-set-add').toggle(editable);
     },
 
     /**
@@ -732,8 +732,8 @@
       if (!current) {
         return;
       }
-      // Enable/disable the 'add gol' options
-      this.$el.closest('li').find('#acquia-lift-menu-goal-add').toggleClass(!current.get('editable'));
+      // Enable/disable the 'add goal' options
+      this.$el.closest('li').find('#acquia-lift-menu-goal-add').toggle(current.get('editable'));
     },
 
     /**

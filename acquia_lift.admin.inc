@@ -898,7 +898,7 @@ function acquia_lift_report_custom(&$form_state, $agent_data, $legacy = FALSE, $
   );
   $form['experiment_report']['header']['summary']['report_summary'] = array(
     '#theme_wrappers' => array('container'),
-    '#markup' => t('See which content variations are winning'),
+    '#markup' => t('See which content variations are winning. Note: all of the data below are from the experiment group only.'),
     '#attributes' => array(
       'class' => array('acquia-lift-report-summary'),
     ),

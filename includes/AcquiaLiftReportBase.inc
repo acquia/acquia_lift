@@ -355,20 +355,24 @@ abstract class AcquiaLiftReportBase {
     $headers = array(
       t('Variation'),
       array(
-        'data' => t('Total goals met'),
-        'data-help-tooltip' => t('Number of times visitors completed a goal after viewing the variation.'),
+        'data' => t('Times shown'),
+        'data-help-tooltip' => t('Number of times this variation was shown to the experimental group.'),
       ),
       array(
-        'data' => t('Total conversion rate'),
+        'data' => t('Goals met'),
+        'data-help-tooltip' => t('Number of times visitors in the experiement group completed a goal after viewing the variation.'),
+      ),
+      array(
+        'data' => t('Conversion rate'),
         'data-help-tooltip' => t('Percentage of goals met for each display of the variation.'),
       ),
       array(
         'data' => t('Chance to beat control'),
-        'data-help-tooltip' => t('Likelihood visitors will complete goals for a variation compared to the control.'),
+        'data-help-tooltip' => t('Confidence that this variation will perform better than the control.'),
       ),
       array(
         'data' => t('Lift'),
-        'data-help-tooltip' => t('Likelihood visitors will complete goals for a variation compared to the control.'),
+        'data-help-tooltip' => t('Estimated increase in conversions if this variation were to be shown all the time, versus the control.'),
       ),
       array(
         'data' => t('Winner'),
@@ -385,6 +389,9 @@ abstract class AcquiaLiftReportBase {
         array(
           'data' => $choice_data['option_label'],
           'data-acquia-lift-variation-label' => $this->getVariationLabel($choice_data['counter'], $choice_data['control']),
+        ),
+        array(
+          'data' => $choice_data['count'],
         ),
         array(
           'data' => $choice_data['goals'],

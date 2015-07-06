@@ -177,10 +177,8 @@ class AcquiaLiftWebTestBase extends DrupalWebTestCase
     }
 
     $this->resetAll();
-    $audience_name = personalize_generate_machine_name($this->randomName(), NULL, '-');
-    $this->createTargetAudience($parent_option_set, $audience_name);
     $targeting = array(
-      $audience_name => $option_ids
+      ACQUIA_LIFT_TARGETING_EVERYONE_ELSE => $option_ids
     );
     try {
       acquia_lift_save_targeting_structure($agent, $targeting);
@@ -1186,15 +1184,16 @@ class AcquiaLiftWebTestReports extends AcquiaLiftWebTestBase {
     $report = $agent_instance->getCampaignReports(array('decision' => 'osid-' . $option_sets[0]->osid, 'start' => $report_start_date));
     $this->assertTrue($report['#has_data'], 'Report data file indicates data to show.');
 
-    // Now the experiment report should show that Option A has a conversion rate of .19%
-    $this->assertEqual("Option A", $report['experiment']['reports']['conversion']['summary']['summary_holder']['summary_table']['#rows'][0]['data'][0]['data']);
-    $this->assertEqual("Control", $report['experiment']['reports']['conversion']['summary']['summary_holder']['summary_table']['#rows'][0]['data'][0]['data-acquia-lift-variation-label']);
-    $this->assertEqual("0.19%", $report['experiment']['reports']['conversion']['summary']['summary_holder']['summary_table']['#rows'][0]['data'][2]['data']);
+    // Now the experiment report should show that Option B has a conversion rate of .15%
+    $this->assertEqual("learn-more", $report['experiment']['reports']['conversion']['summary']['summary_holder']['summary_table']['#rows'][1]['data'][0]['data']);
+    $this->assertEqual("V1", $report['experiment']['reports']['conversion']['summary']['summary_holder']['summary_table']['#rows'][1]['data'][0]['data-acquia-lift-variation-label']);
+    $this->assertEqual("0.15%", $report['experiment']['reports']['conversion']['summary']['summary_holder']['summary_table']['#rows'][1]['data'][3]['data']);
     // The "Winner" flag should appear in the third option's last column, but
     // nowhere else.
-    $this->assertEqual('<span class="lift-winner">Winner</span>', $report['experiment']['reports']['conversion']['summary']['summary_holder']['summary_table']['#rows'][2]['data'][5]);
+    $this->assertEqual('<span class="lift-winner">Winner</span>', $report['experiment']['reports']['conversion']['summary']['summary_holder']['summary_table']['#rows'][2]['data'][6]);
+
     foreach (array(0, 1, 3, 4) as $variation_index) {
-      $this->assertEqual('', $report['experiment']['reports']['conversion']['summary']['summary_holder']['summary_table']['#rows'][$variation_index]['data'][5]);
+      $this->assertEqual('', $report['experiment']['reports']['conversion']['summary']['summary_holder']['summary_table']['#rows'][$variation_index]['data'][6]);
     }
 
     // The report for the second agent should still show the basic report data.
@@ -1594,8 +1593,6 @@ class AcquiaLiftWebTestTarget extends AcquiaLiftWebTestBase {
     parent::setUp();
     variable_set('acquia_lift_target_enabled', TRUE);
   }
-
-
 
   function testCreateTargetAudiences() {
     module_load_include('inc', 'acquia_lift', 'acquia_lift.admin');

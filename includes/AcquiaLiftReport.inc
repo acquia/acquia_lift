@@ -318,8 +318,8 @@ class AcquiaLiftReport extends AcquiaLiftReportBase {
           }
         }
 
-        $goals = $item['totals']['goals'];
-        $count = $item['totals']['count'];
+        $goals = $item['goals'];
+        $count = $item['count'];
         // The format for percentages will already multiply by 100.
         $rate = $count > 0 ? ($goals/$count) : 0;
         $margin = ($item['bHi'] - $item['bLo']) / 2;

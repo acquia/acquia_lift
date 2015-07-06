@@ -40,6 +40,7 @@ function acquia_lift_disable() {
 function acquia_lift_uninstall() {
   $vars = array(
     'acquia_lift_account_info',
+    'acquia_lift_profiles_js_path',
     'acquia_lift_client_side_goals',
     'acquia_lift_batch_decisions',
     'acquia_lift_confidence_measure',

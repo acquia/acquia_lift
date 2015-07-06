@@ -3,7 +3,6 @@ description = Extension to Personalize module that provides integration to the A
 configure = admin/config/content/personalize/acquia_lift
 
 dependencies[] = acquia_agent
-dependencies[] = acquia_lift_profiles
 dependencies[] = contextual
 dependencies[] = libraries
 dependencies[] = personalize

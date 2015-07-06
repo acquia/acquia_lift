@@ -71,7 +71,6 @@ function acquia_lift_profiles_uninstall() {
   variable_del('acquia_lift_profiles_access_key');
   variable_del('acquia_lift_profiles_secret_key');
   variable_del('acquia_lift_profiles_capture_identity');
-  variable_del('acquia_lift_profiles_js_path');
   variable_del('acquia_lift_profiles_field_mappings');
   variable_del('acquia_lift_profiles_tracked_actions');
   variable_del('acquia_lift_profiles_udf_mappings');

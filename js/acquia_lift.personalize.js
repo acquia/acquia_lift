@@ -184,7 +184,7 @@
    *   - os: The option set object.
    *   - os.label: The label of the option set.
    *   - os.agent: The campaign/agent to which this option set belongs.
-   *   - editalbe: Boolean indicating if the campaign is editable.
+   *   - editable: Boolean indicating if the campaign is editable.
    *
    * @return string
    */
@@ -227,8 +227,9 @@
         label: model.get('option_label'),
         osID: osID,
         osSelector: os_selector,
-        showDelete: options.editable && model.get('deletable'),
-        showEdit: options.editable && model.get('editable')
+        showDelete: model.get('deletable'),
+        showEdit: model.get('editable'),
+        editable: options.editable
       });
     });
     if (options.editable && os.plugin === 'elements') {
@@ -255,6 +256,7 @@
    *     particular item.
    *   - showEdit: Indicates if the edit option should be available for this
    *     item.
+   *   - editable: Indicates if campaign is editable.
    *
    * @return string
    */
@@ -279,7 +281,7 @@
     var deleteAttrs = [
       'data-acquia-lift-personalize-option-set-option="' + options.id + '"'
     ].concat(ariaAttrs);
-    if (options.showDelete) {
+    if (options.showDelete && options.editable) {
       deleteAttrs.push('class="' + deleteClasses + ' ctools-use-modal ctools-modal-acquia-lift-style"');
       deleteAttrs.push('title="' + Drupal.t('Delete variation') + '"');
       deleteAttrs.push('href="' + deleteHref + '"');
@@ -288,12 +290,19 @@
       deleteAttrs.push('title="' + Drupal.t('Variation cannot be deleted until the personalization is paused."'));
     }
 
+    var editClasses = 'acquia-lift-variation-edit acquia-lift-menu-link';
+    var editHref = '#';
     var editAttrs = [
-      'class="acquia-lift-variation-edit acquia-lift-menu-link"',
       'data-acquia-lift-personalize-option-set-option="' + options.id + '"',
-      'title="' + Drupal.t('Edit variation') + '"',
-      'href="#"'
     ].concat(ariaAttrs);
+    if (options.editable) {
+      editAttrs.push('class="' + editClasses + '"');
+      editAttrs.push('href="' + editHref + '"');
+      editAttrs.push('title="' + Drupal.t('Edit variation') + '"');
+    } else {
+      editAttrs.push('class="' + editClasses + ' acquia-lift-disabled"');
+      editAttrs.push('title="' + Drupal.t('Variations cannot be edited until the personalization is paused.') + '"');
+    }
 
     item += '<li>\n<div class="acquia-lift-menu-item clearfix" data-acquia-lift-personalize-option-set="' + options.osID + '">';
     item += '<a ' + previewAttrs.join(' ') + '>' + options.label + '</a> \n';

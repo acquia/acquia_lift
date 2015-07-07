@@ -1042,7 +1042,7 @@
 (function (Drupal, $, _, Backbone) {
 
   // Menu classes added for new disabled create menu links.
-  var liftAddMenuClasses = 'acquia-lift-disabled acquia-lift-menu-create acquia-lift-menu-link overlay-exclude navbar-menu-item visitor-actions-ui-ignore';
+  var liftAddMenuClasses = 'acquia-lift-menu-create acquia-lift-menu-link overlay-exclude navbar-menu-item visitor-actions-ui-ignore';
 
   /**
    * Returns the Backbone View of the Visitor Actions add action controller.
@@ -1384,7 +1384,7 @@
       // Add a decoy link for the disabled state of adding a new option set.
       // While ideally we'd just toggle a class, the integration with ctools
       // and drupal ajax links makes this very difficult and messy.
-      this.$addLink.before('<a class="' + liftAddMenuClasses + ' acquia-lift-disabled">' + this.$addLink.text() + '</a>');
+      this.$addLink.before('<a class="' + liftAddMenuClasses + ' acquia-lift-disabled" href="#">' + this.$addLink.text() + '</a>');
       this.$addLinkDisabled = this.$addLink.parent().find('.acquia-lift-disabled');
     },
 
@@ -1811,7 +1811,7 @@
       // Add a decoy link for the disabled state of adding a new option set.
       // While ideally we'd just toggle a class, the integration with ctools
       // and drupal ajax links makes this very difficult and messy.
-      this.$addLink.before('<a class="' + liftAddMenuClasses + ' acquia-lift-disabled">' + this.$addLink.text() + '</a>');
+      this.$addLink.before('<a class="' + liftAddMenuClasses + ' acquia-lift-disabled" href="#">' + this.$addLink.text() + '</a>');
       this.$addLinkDisabled = this.$addLink.parent().find('.acquia-lift-disabled');
     },
 

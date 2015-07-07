@@ -355,12 +355,36 @@ function acquia_lift_personalize_campaign_wizard_variations_alter(&$form, &$form
     ),
   );
 
+  // Display all the current variation options.
   $form['variations']['display'] = array(
     '#type' => 'container',
     '#attributes' => array(
       'class' => array('personalize-wizard-column'),
     ),
   );
+
+  // If there are any errors in the multiple variation set handling for this
+  // agent then show them here while the user can do something about it.
+  if (count($option_sets) > 1) {
+    $agent_instance = personalize_agent_load_agent($agent_data->machine_name);
+    $errors = $agent_instance->getMultipleOptionSetErrors($option_sets);
+    if (!empty($errors)) {
+      $form['variations']['display']['errors'] = array(
+        '#type' => 'container',
+        '#theme' => 'acquia_lift_card',
+        '#title' => t('Let\'s fix this'),
+        '#collapsible' => FALSE,
+      );
+      $form['variations']['display']['errors']['details'] = array(
+        '#markup' => theme('item_list', array(
+          'items' => $errors,
+          'attributes' => array(
+            'class' => array('personalize-wizard-review-warnings'),
+          ),
+        )),
+      );
+    }
+  }
   $form['variations']['display']['options'] = array(
     '#type' => 'container',
     '#theme' => 'acquia_lift_card',

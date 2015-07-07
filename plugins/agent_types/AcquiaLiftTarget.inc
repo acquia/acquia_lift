@@ -128,29 +128,45 @@ class AcquiaLiftTarget extends PersonalizeAgentBase implements PersonalizeExplic
         '!what_url' => url('admin/structure/personalize/manage/' . $this->getMachineName() . '/variations'),
       ));
     }
+    $errors += $this->getMultipleOptionSetErrors($option_sets);
+    return $errors;
+  }
+
+  /**
+   * Determine the error messaging to show based on multiple variation set
+   * handling configuration for the current agent.
+   *
+   * @param $option_sets
+   *   The option sets to check based on this agent's configuration.
+   * @return array
+   *   An array of error messages to display which will be empty if there are
+   *   no errors.
+   */
+  public function getMultipleOptionSetErrors($option_sets) {
+    $data = $this->getData();
+    $is_mvt = isset($data['variation_set_handling']) && $data['variation_set_handling'] == ACQUIA_LIFT_DECISION_MULTIVARIATE;
+
+    $count_os = count($option_sets);
+    $errors = array();
     if ($is_mvt) {
-      if (count($option_sets) < 2) {
+      if ($count_os < 2) {
         $errors[] = t('A multi-variate test requires at least two option sets. Please add another variation set in the <a href="!what_url">"What" section</a>.', array(
           '!what_url' => url('admin/structure/personalize/manage/' . $this->getMachineName() . '/variations'),
         ));
       }
     }
-    else {
+    if (count($option_sets) > 1) {
       // If there are multiple option sets, check that they all have the same number
       // of options.
       $equal_option_counts = TRUE;
-      if (count($option_sets) > 1) {
-        $first_os = array_shift($option_sets);
-        $num_options = count($first_os->options);
-        foreach ($option_sets as $os) {
-          if (count($os->options) != $num_options) {
-            $equal_option_counts = FALSE;
-          }
+      $first_os = array_shift($option_sets);
+      $num_options = count($first_os->options);
+      foreach ($option_sets as $os) {
+        if (count($os->options) != $num_options) {
+          $equal_option_counts = FALSE;
         }
       }
-      // Prevent submission if the numbers of options aren't the same.
       if (!$equal_option_counts) {
-        // @todo Get proper text for this.
         $errors[] = t('You have multiple variation sets with different numbers of variations - the personalization cannot be started until all variation sets have the same number of variations.  Fix this by making sure all variation sets have the same number of variations in the <a href="!what_url">"What" section</a>.', array(
           '!what_url' => url('admin/structure/personalize/manage/' . $this->getMachineName() . '/variations'),
         ));

@@ -2794,7 +2794,9 @@ class AcquiaLiftWebTestCampaignWizardVariations extends AcquiaLiftWebTestBase {
 
     $edit = array(
       'variations[new][0][block][content][title]' => 'Muppets',
+      'variations[new][0][block][content][pblock_wrapper][blocks][0][option_label]' => 'My variation 1',
       'variations[new][0][block][content][pblock_wrapper][blocks][0][block][bid]' => 'comment_delta_recent',
+      'variations[new][0][block][content][pblock_wrapper][blocks][1][option_label]' => 'My variation 2',
       'variations[new][0][block][content][pblock_wrapper][blocks][1][block][bid]' => 'node_delta_recent',
     );
     $this->drupalPost(NULL, $edit, $this->getButton('wizard_next', array('agent_name' => $agent->machine_name, 'step' => 'variations')));
@@ -2805,9 +2807,9 @@ class AcquiaLiftWebTestCampaignWizardVariations extends AcquiaLiftWebTestBase {
     $option_set = reset($option_sets);
     $this->assertEqual(count($option_set->options), 2);
     $this->assertEqual($option_set->label, t('Muppets'));
-    $this->assertEqual($option_set->options[0]['option_label'], 'Option A');
+    $this->assertEqual($option_set->options[0]['option_label'], 'My variation 1');
     $this->assertEqual($option_set->options[0]['bid'], 'comment_delta_recent');
-    $this->assertEqual($option_set->options[1]['option_label'], 'Option B');
+    $this->assertEqual($option_set->options[1]['option_label'], 'My variation 2');
     $this->assertEqual($option_set->options[1]['bid'], 'node_delta_recent');
 
     // Now go to the variations page and verify the new option set is available.

@@ -537,6 +537,27 @@ li.acquia-lift-targeting-draggable.ui-sortable-helper {
   background: transparent url(../images/000000/close.png) no-repeat;
 }
 
+/* All variations lists */
+ul.acquia-lift-variations-list,
+.acquia-lift-variations-list ul {
+  list-style-type: none;
+  width: 100%;
+  padding: 0;
+}
+[dir="ltr"] ul.acquia-lift-variations-list {
+  padding-left: 0;
+}
+.acquia-lift-variations-list > li + li {
+  border-top: 1px solid #999;
+}
+.acquia-lift-variations-list li {
+  max-width: inherit;
+}
+ul.acquia-lift-variations-list.acquia-lift-variations-lockstep > li {
+  background: url(../images/000000/link.png) no-repeat .5em center;
+  padding-left: 24px;
+}
+
 /* Review */
 #personalize-campaign-wizard .personalize-wizard-review-warnings li {
   list-style-type: none;

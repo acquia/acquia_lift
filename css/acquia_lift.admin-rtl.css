@@ -7,3 +7,8 @@
 #personalize-personalizations-list .acquia-lift-list-operations li {
   padding-left: 0.3em; /* RTL */
 }
+
+/* All variations lists */
+ul.acquia-lift-variations-list ul {
+  padding: 0;
+}

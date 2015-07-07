@@ -115,13 +115,6 @@ function acquia_lift_personalize_campaign_wizard_variations_alter(&$form, &$form
 
   // Keep track of all variations for display.
   $all_variations = array();
-  $addToAllVariations = function (&$all_variations, $label, $index) {
-    if (!isset($all_variations[$index])) {
-      $all_variations[$index] = array();
-    }
-    $all_variations[$index][] = $label;
-  };
-
   $form['variations']['editing'] = array(
     '#type' => 'container',
     '#attributes' => array(
@@ -139,9 +132,10 @@ function acquia_lift_personalize_campaign_wizard_variations_alter(&$form, &$form
     );
   }
   // Add an option set edit card for each option set.
+  $set_delta = 0;
   foreach ($option_sets as $option_set) {
     foreach ($option_set->options as $delta => $option) {
-      $addToAllVariations($all_variations, $option['option_label'], $delta);
+      $all_variations[$delta][$set_delta] = $option['option_label'];
     }
     $option_set_plugin = personalize_get_option_set_type($option_set->plugin);
     $form['variations']['editing']['option_sets']['option_set_' . $option_set->osid] = array(
@@ -209,6 +203,8 @@ function acquia_lift_personalize_campaign_wizard_variations_alter(&$form, &$form
     $form['variations']['editing']['option_sets']['option_set_' . $option_set->osid]['advanced']['label']['#access'] = FALSE;
     // Decision name is handled based on the type of tests created.
     $form['variations']['editing']['option_sets']['option_set_' . $option_set->osid]['advanced']['decision_name']['#access'] = FALSE;
+
+    $set_delta++;
   }
   // Hide the agent advanced options which will be shown on the review screen.
   $form['variations']['editing']['advanced']['#access'] = FALSE;
@@ -305,7 +301,7 @@ function acquia_lift_personalize_campaign_wizard_variations_alter(&$form, &$form
               '#type' => 'submit',
               '#value' => t('Save'),
               '#submit' => array('acquia_lift_personalize_campaign_wizard_variations_single_submit'),
-              '#limit_validation_errors' => array(array('variations', 'new', $delta)),
+              '#limit_validation_errors' => array(array('variations', 'editing', 'new', $delta)),
             );
             $form['variations']['editing']['new'][$delta]['block']['cancel'] = array(
               '#type' => 'submit',
@@ -365,7 +361,20 @@ function acquia_lift_personalize_campaign_wizard_variations_alter(&$form, &$form
       'class' => array('personalize-wizard-column'),
     ),
   );
-  //dpm($all_variations, 'all variations');
+  $form['variations']['display']['options'] = array(
+    '#type' => 'container',
+    '#theme' => 'acquia_lift_card',
+    '#title' => t('All variations'),
+    '#collapsible' => FALSE,
+    '#attributes' => array(
+      'class' => array('acquia-lift-informational'),
+    ),
+  );
+  $form['variations']['display']['options']['variations'] = array(
+    '#markup' => theme('acquia_lift_variations_list', array(
+      'items' => $all_variations,
+    )),
+  );
 }
 
 /**

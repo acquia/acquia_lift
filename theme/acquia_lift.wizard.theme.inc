@@ -140,3 +140,45 @@ function theme_acquia_lift_revealing_input($variables) {
   $html .= '</div>';
   return $html;
 }
+
+/**
+ * Theme function to output a list of variations as displays.
+ *
+ * @param $variables
+ *   array of theme variables including:
+ *   - items: an array of variations to display.  Each item in the array
+ *     will be an array of variations for that display.  If there is only
+ *     one variation set, then there will only be one variation per item key.
+ */
+function theme_acquia_lift_variations_list($variables) {
+  $items = $variables['items'];
+  $max_variations = 0;
+  $displays = array();
+  foreach ($items as $variations) {
+    $max_variations = max($max_variations, count($variations));
+  }
+  $fillEmptyVariations = function(&$variations, $max_variations) {
+    for ($i = 0; $i < $max_variations; $i++) {
+      if (!isset($variations[$i])) {
+        $variations[$i] = '-';
+      }
+    }
+    ksort($variations);
+  };
+  foreach ($items as $variations) {
+    $fillEmptyVariations($variations, $max_variations);
+    $displays[] = theme('item_list', array(
+      'items' => $variations,
+    ));
+  }
+  $list_classes = array('acquia-lift-variations-list');
+  if ($max_variations > 1) {
+    $list_classes[] = 'acquia-lift-variations-lockstep';
+  }
+  return theme('item_list', array(
+    'items' => $displays,
+    'attributes' => array(
+      'class' => $list_classes,
+    ),
+  ));
+}

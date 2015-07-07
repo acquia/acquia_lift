@@ -132,11 +132,7 @@ function acquia_lift_personalize_campaign_wizard_variations_alter(&$form, &$form
     );
   }
   // Add an option set edit card for each option set.
-  $set_delta = 0;
   foreach ($option_sets as $option_set) {
-    foreach ($option_set->options as $delta => $option) {
-      $all_variations[$delta][$set_delta] = $option['option_label'];
-    }
     $option_set_plugin = personalize_get_option_set_type($option_set->plugin);
     $form['variations']['editing']['option_sets']['option_set_' . $option_set->osid] = array(
       '#tree' => TRUE,
@@ -203,8 +199,6 @@ function acquia_lift_personalize_campaign_wizard_variations_alter(&$form, &$form
     $form['variations']['editing']['option_sets']['option_set_' . $option_set->osid]['advanced']['label']['#access'] = FALSE;
     // Decision name is handled based on the type of tests created.
     $form['variations']['editing']['option_sets']['option_set_' . $option_set->osid]['advanced']['decision_name']['#access'] = FALSE;
-
-    $set_delta++;
   }
   // Hide the agent advanced options which will be shown on the review screen.
   $form['variations']['editing']['advanced']['#access'] = FALSE;
@@ -355,6 +349,11 @@ function acquia_lift_personalize_campaign_wizard_variations_alter(&$form, &$form
     ),
   );
 
+  // The rest of the display is for displaying current variations.
+  if (count($option_sets) == 0) {
+    return;
+  }
+
   // Display all the current variation options.
   $form['variations']['display'] = array(
     '#type' => 'container',
@@ -394,6 +393,8 @@ function acquia_lift_personalize_campaign_wizard_variations_alter(&$form, &$form
       'class' => array('acquia-lift-informational'),
     ),
   );
+  $all_variations = _acquia_lift_personalize_campaign_wizard_variation_displays($option_sets, $variation_set_handling);
+  dpm($all_variations);
   $form['variations']['display']['options']['variations'] = array(
     '#markup' => theme('acquia_lift_variations_list', array(
       'items' => $all_variations,
@@ -1970,6 +1971,58 @@ function _acquia_lift_personalize_campaign_wizard_next_element($form_state, $pre
     return '';
   }
   return $parents[$delta_pos];
+}
+
+/**
+ * Generates a multidimensional array of variation display labels based on the option
+ * sets and type of multiple variation set handling.
+ *
+ * @todo: Implement MVT handling.
+ */
+function _acquia_lift_personalize_campaign_wizard_variation_displays($option_sets, $handling = ACQUIA_LIFT_DECISION_LOCKSTEP) {
+  $all_variations = array();
+  // Display for zero variations.
+  if (empty($option_sets)) {
+    return $all_variations;
+  }
+  // Handle display for a single variation set.
+  if (count($option_sets) == 1) {
+    $first_os = current($option_sets);
+    foreach($first_os->options as $delta => $option) {
+      $all_variations[0][$delta] = $option['option_label'];
+    }
+    return $all_variations;
+  }
+  // Specialty handling for multivariate tests.
+  if ($handling === ACQUIA_LIFT_DECISION_MULTIVARIATE) {
+    // @todo: Produce a cartesion product of all variation options.
+    return $all_variations;
+  }
+  // Default multiple handling is lock-step variation handling.
+  $set_delta = 0;
+  $max_variations = 0;
+  foreach ($option_sets as $osid => $option_set) {
+    foreach($option_set->options as $delta => $option) {
+      $all_variations[$delta][$set_delta] = $option['option_label'];
+      $max_variations = max($max_variations, count($all_variations[$delta]));
+    }
+    $set_delta++;
+  }
+
+  // Now fill the empty variations indexes and re-order so that
+  // the missing variations are obvious.
+  $fillEmptyVariations = function(&$variations, $max_variations) {
+    for ($i = 0; $i < $max_variations; $i++) {
+      if (!isset($variations[$i])) {
+        $variations[$i] = '';
+      }
+    }
+    ksort($variations);
+  };
+  foreach ($all_variations as &$variations) {
+    $fillEmptyVariations($variations, $max_variations);
+  }
+  return $all_variations;
 }
 
 /**

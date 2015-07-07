@@ -152,21 +152,15 @@ function theme_acquia_lift_revealing_input($variables) {
  */
 function theme_acquia_lift_variations_list($variables) {
   $items = $variables['items'];
-  $max_variations = 0;
   $displays = array();
+  $max_variations = 0;
   foreach ($items as $variations) {
     $max_variations = max($max_variations, count($variations));
-  }
-  $fillEmptyVariations = function(&$variations, $max_variations) {
-    for ($i = 0; $i < $max_variations; $i++) {
-      if (!isset($variations[$i])) {
-        $variations[$i] = '-';
-      }
-    }
-    ksort($variations);
-  };
-  foreach ($items as $variations) {
-    $fillEmptyVariations($variations, $max_variations);
+    // Replace any empty displays with a "-" placeholder.
+    $variations = array_map(function ($display) {
+      return empty($display) ? '-' : $display;
+    }, $variations);
+
     $displays[] = theme('item_list', array(
       'items' => $variations,
     ));

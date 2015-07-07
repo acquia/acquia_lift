@@ -2012,9 +2012,10 @@ function _acquia_lift_personalize_campaign_wizard_variations_block(&$form, &$for
   foreach ($pblock_blocks as $key) {
     $block = &$element['pblock_wrapper']['blocks'][$key];
     $block['block']['#attributes']['class'][] = 'acquia-lift-personalize-block-wrapper';
+    $option_id = isset($block['option_id']['#value']) ? $block['option_id']['#value'] : '';
 
     // Set the option label as a revealing input and give it a label.
-    if ($option_set) {
+    if ($option_set && !empty($option_id)) {
       $block['option_label']['#theme_wrappers'][] = 'acquia_lift_revealing_input';
       $block['option_label']['#title'] = _personalize_generate_option_index($key);
     }
@@ -2043,7 +2044,6 @@ function _acquia_lift_personalize_campaign_wizard_variations_block(&$form, &$for
 
     // Hide the remove button if the option is currently targeted in a running
     // campaign.
-    $option_id = isset($block['option_id']['#value']) ? $block['option_id']['#value'] : '';
     if (!empty($option_id) && !$changes_enabled && acquia_lift_target_option_targeted($agent_data->machine_name, $option_id)) {
       $block['remove']['#access'] = FALSE;
     }
@@ -2055,23 +2055,22 @@ function _acquia_lift_personalize_campaign_wizard_variations_block(&$form, &$for
     // whether it is an option that requires deletion or just an AJAX
     // re-display of the form.
     if (!isset($block['remove']['#access']) || $block['remove']['#access'] == TRUE) {
-      $block['option_label']['#weight'] = 10;
-      $block['remove']['#weight'] = 20;
+      $block['option_label']['#weight'] = 20;
+      $block['remove']['#weight'] = 10;
       $block['block']['#weight'] = 30;
       
       if (!empty($option_id)) {
         // If the option is an existing one, then redirect to a confirmation form
         // prior to deleting.
         $remove_url = "admin/structure/personalize/variations/personalize-blocks/manage/{$option_set->osid}/{$option_id}/delete";
-        $block['option_label']['#weight'] = 10;
         $block['remove'] = array(
-          '#weight' => 20,
           '#markup' => l(t('Delete'), $remove_url, array(
             'attributes' => array(
               'class' => array('acquia-lift-delete'),
             ),
             'query' => array('destination' => 'admin/structure/personalize/manage/' . $agent_data->machine_name . '/variations'),
           )),
+          '#weight' => 25,
         );
       }
       else {

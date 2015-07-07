@@ -35,16 +35,7 @@ function acquia_lift_element_variation_details_form($form, &$form_state, $variat
     );
     return $form;
   }
-  if (empty($osid)) {
-    if ($agent = personalize_get_campaign_context()) {
-      $option_sets = personalize_option_set_load_by_agent($agent);
-      $default_set_name = t('Variation set #@num', array(
-        '@num' => count($option_sets) + 1,
-      ));
-      $default_option_label = t('Variation #@num', array('@num' => 1));
-    }
-  }
-  else {
+  if (!empty($osid)) {
     $osid = personalize_resolve_stringified_osid($osid);
     $option_set = personalize_option_set_load($osid);
     $default_set_name = $option_set->label;
@@ -67,7 +58,7 @@ function acquia_lift_element_variation_details_form($form, &$form_state, $variat
         }
       }
     }
-    $default_option_label = empty($edit_option) ?  t('Variation #@num', array('@num' => count($option_set->options))) : $edit_option['option_label'];
+    $default_option_label = !empty($edit_option['option_label']) ?  $edit_option['option_label'] : '';
 
     $form['osid'] = array(
       '#type' => 'value',

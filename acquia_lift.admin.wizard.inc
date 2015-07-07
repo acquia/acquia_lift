@@ -282,13 +282,6 @@ function acquia_lift_personalize_campaign_wizard_variations_alter(&$form, &$form
               ),
             );
             $form['variations']['new'][$delta]['block']['content'] = _acquia_lift_personalize_campaign_wizard_variations_block($form, $form_state, $agent_data, array('variations', 'new', $delta, 'block', 'content'));
-            // Add a default variation set title to the form based on the number
-            // of option sets already in the campaign.
-            $new_count = count($option_sets) + 1 + $delta;
-            $default_title = t('Variation set #!counter', array(
-              '!counter' => $new_count,
-            ));
-            $form['variations']['new'][$delta]['block']['content']['title']['#default_value'] = $default_title;
             // TRICKY: Name must be specified or else it will default to "op" and
             // conflict with the main process bar save button.
             $form['variations']['new'][$delta]['block']['save'] = array(
@@ -1997,8 +1990,16 @@ function _acquia_lift_personalize_campaign_wizard_variations_block(&$form, &$for
     $block['block']['#attributes']['class'][] = 'acquia-lift-personalize-block-wrapper';
 
     // Set the option label as a revealing input and give it a label.
-    $block['option_label']['#theme_wrappers'][] = 'acquia_lift_revealing_input';
-    $block['option_label']['#title'] = _personalize_generate_option_index($key);
+    if ($option_set) {
+      $block['option_label']['#theme_wrappers'][] = 'acquia_lift_revealing_input';
+      $block['option_label']['#title'] = _personalize_generate_option_index($key);
+    }
+    else {
+      // Do not allow automatically generated option labels.
+      $block['option_label']['#default_value'] = '';
+      $block['option_label']['#title'] = t('Variation title');
+      unset($block['option_label']['#size']);
+    }
     // Weights are not manipulated here.
     $block['weight']['#access'] = FALSE;
 

@@ -40,10 +40,12 @@ Feature: Personalize elements variations can be edited for an existing campaign.
     When I click "Edit text" in the "dialog_variation_type" region
     Then I should not see the variation type dialog
     And I should see the text "Edit text: <H1>" in the "dialog_variation_type_form" region
-    And the "title" field should contain "Variation set #1"
-    And the "option_label" field should contain "Variation #1"
+    And the "title" field should contain ""
+    And the "option_label" field should contain ""
     And the "personalize_elements_content" field should contain text that has "Test Article Title - Original"
     When I fill in "Test Article Title - Updated 1" for "personalize_elements_content"
+    And I fill in "My variation set #1" for "title"
+    And I fill in "My variation #1" for "option_label"
     And I press "Save" in the "dialog_variation_type_form" region
 
     # I verify my variation set is created.
@@ -54,9 +56,9 @@ Feature: Personalize elements variations can be edited for an existing campaign.
 
     # I bring up the "Add variation" interface.
     When I hover over "What" in the "lift_tray" region
-    Then I should see the text "Variation set #1" in the "lift_tray" region
+    Then I should see the text "My variation set #1" in the "lift_tray" region
     And I should visibly see the link "Control variation" in the "lift_tray" region
-    And I should visibly see the link "Variation #1" in the "lift_tray" region
+    And I should visibly see the link "My variation #1" in the "lift_tray" region
     And I should visibly see the link "Add variation" in the "lift_tray" region
     And I should visibly see the link "Add variation set" in the "lift_tray" region
 
@@ -66,8 +68,8 @@ Feature: Personalize elements variations can be edited for an existing campaign.
     And I should see the text "Edit text: <H1>" in the "dialog_variation_type_form" region
     And the "personalize_elements_content" field should contain "Test Article Title - Updated 1"
     And I should not see the link "Edit selector" in the "dialog_variation_type_form" region
-    And the "title" field should contain "Variation set #1"
-    And the "option_label" field should contain "Variation #2"
+    And the "title" field should contain "My variation set #1"
+    And the "option_label" field should contain ""
     When I fill in "Test Article Title - Updated 2" for "personalize_elements_content"
     And I fill in "Variation set renamed" for "title"
     And I fill in "Variation renamed" for "option_label"
@@ -75,41 +77,42 @@ Feature: Personalize elements variations can be edited for an existing campaign.
 
     # I should immediately see the dialog to add a new variation.
     Then I should see the text "Edit text: <H1>" in the "dialog_variation_type_form" region
-    And the "personalize_elements_content" field should contain text that has "Test Article Title - Updated 2"
+    And the "personalize_elements_content" field should contain text that has "Test Article Title - Updated 1"
     And I should not see the link "Edit selector" in the "dialog_variation_type_form" region
 
     # The unibar should have updated in the background.
     When I hover over "What" in the "lift_tray" region
     Then I should see the text "Variation set renamed" in the "lift_tray" region
     And I should visibly see the link "Control variation" in the "lift_tray" region
-    And I should visibly see the link "Variation #1" in the "lift_tray" region
+    And I should visibly see the link "My variation #1" in the "lift_tray" region
     And I should visibly see the link "Variation renamed" in the "lift_tray" region
     And I should visibly see the link "Add variation" in the "lift_tray" region
     And I should visibly see the link "Add variation set" in the "lift_tray" region
 
     # I add the third variation.
     And the "title" field should contain "Variation set renamed"
-    And the "option_label" field should contain "Variation #3"
+    And the "option_label" field should contain ""
     When I fill in "Test Article Title - Updated 3" for "personalize_elements_content"
+    And I fill in "My variation #3" for "option_label"
     And I press "Add another" in the "dialog_variation_type_form" region
 
     # I cancel out of adding a fourth.
     Then I should see the text "Edit text: <H1>" in the "dialog_variation_type_form" region
-    And the "personalize_elements_content" field should contain text that has "Test Article Title - Updated 3"
+    And the "personalize_elements_content" field should contain text that has "Test Article Title - Updated 1"
     And the "title" field should contain "Variation set renamed"
-    And the "option_label" field should contain "Variation #4"
+    And the "option_label" field should contain ""
     And I should not see the link "Edit selector" in the "dialog_variation_type_form" region
     When I press "Cancel" in the "dialog_variation_type_form" region
 
     # I verify my new variation is added.
     Then I should not see the variation type form dialog
-    And I should see the text "Test Article Title - Updated 3" in the "page_content" region
+    And I should see the text "Test Article Title - Updated 1" in the "page_content" region
     And I should see "1" for the "variation set" count
     When I hover over "What" in the "lift_tray" region
     Then I should see the text "Variation set renamed" in the "lift_tray" region
-    And I should visibly see the link "Variation #1" in the "lift_tray" region
+    And I should visibly see the link "My variation #1" in the "lift_tray" region
     And I should visibly see the link "Variation renamed" in the "lift_tray" region
-    And I should visibly see the link "Variation #3" in the "lift_tray" region
+    And I should visibly see the link "My variation #3" in the "lift_tray" region
     And I should not visibly see the link "Variation #4" in the "lift_tray" region
 
   Scenario: Edit existing personalize elements for an acquia_lift campaign.
@@ -264,8 +267,8 @@ Feature: Personalize elements variations can be edited for an existing campaign.
 
     # I enter a new variation and choose to "continue".
     And I should see the text "Edit text: <A>" in the "dialog_variation_type_form" region
-    And the "title" field should contain "Variation set #1"
-    And the "option_label" field should contain "Variation #1"
+    And the "title" field should contain ""
+    And the "option_label" field should contain ""
     And the "personalize_elements_content" field should contain text that has "My article title"
     When I fill in "My Article Title - Updated 1" for "personalize_elements_content"
     And I fill in "Test variation set" for "title"

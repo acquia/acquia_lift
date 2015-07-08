@@ -2896,33 +2896,6 @@ function acquia_lift_command_goal_updates($agent_name) {
 }
 
 /**
- * Calculates and returns the minimum runtime for campaigns in seconds.
- *
- * @return int
- *   The minium number of seconds all campaigns must be allowed to run
- *   for before being stopped automatically when a winner is found.
- */
-function acquia_lift_config_min_runtime() {
-  $num = variable_get('acquia_lift_min_runtime_num', 2);
-  if (empty($num)) {
-    return 0;
-  }
-  $unit = variable_get('acquia_lift_min_runtime_unit', 'week');
-  switch ($unit) {
-    case 'minute':
-      return $num * 60;
-    case 'hour':
-      return $num * 60 * 60;
-    case 'day':
-      return $num * 60 * 60 * 24;
-    case 'week':
-      return $num * 60 * 60 * 24 * 7;
-  }
-  return 0;
-}
-
-
-/**
  * Generate an array of campaign settings that are currently configured.
  * This administrative information is used for navigation and campaign
  * management.

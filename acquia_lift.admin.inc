@@ -142,50 +142,6 @@ function acquia_lift_admin_form($form, &$form_state) {
     '#description' => t('The confidence percentage at which a test is considered statistically significant.'),
     '#element_validate' => array('element_validate_number'),
   );
-
-  $form['minimum_runtime'] = array(
-    '#type' => 'container',
-    '#tree' => FALSE,
-    '#attributes' => array(
-      'class' => array('acquia-lift-config-minimum-runtime'),
-    ),
-
-  );
-  $form['minimum_runtime']['acquia_lift_min_runtime_title'] = array(
-    '#type' => 'markup',
-    '#markup' => '<label for="acquia_lift_min_runtime_num">' . t('Duration') . '<span class="form-required" title="This field is required.">*</span></label>',
-  );
-  $form['minimum_runtime']['acquia_lift_min_runtime_num'] = array(
-    '#type' => 'textfield',
-    '#size' => 3,
-    '#required' => TRUE,
-    '#default_value' => variable_get('acquia_lift_min_runtime_num', 2),
-    '#element_validate' => array('element_validate_number'),
-  );
-  $form['minimum_runtime']['acquia_lift_min_runtime_unit'] = array(
-    '#type' => 'select',
-    '#required' => TRUE,
-    '#default_value' => variable_get('acquia_lift_min_runtime_unit', 'week'),
-    '#options' => array(
-      'minute' => t('minutes'),
-      'hour' => t('hours'),
-      'day' => t('days'),
-      'week' => t('weeks')
-    ),
-  );
-  $form['minimum_runtime']['acquia_lift_min_runtime_desc'] = array(
-    '#type' => 'markup',
-    '#markup' => '<div class="description">' . t('The amount of time a personalization will run before it can be completed. Applies only to personalizations with the "End when personalization thresholds are reached" option selected.') . '</div>',
-  );
-  $form['acquia_lift_min_decisions'] = array(
-    '#type' => 'textfield',
-    '#title' => t('Decisions'),
-    '#size' => 3,
-    '#required' => TRUE,
-    '#default_value' => variable_get('acquia_lift_min_decisions', 1000),
-    '#description' => t('The number of variations selected by Acquia Lift for display to visitors before the personalization can be completed. Applies only to personalizations with the "End when personalization thresholds are reached" option selected.'),
-    '#element_validate' => array('element_validate_number'),
-  );
   $form['acquia_lift_report_max_days'] = array(
     '#type' => 'textfield',
     '#title' => t('Reporting history duration'),

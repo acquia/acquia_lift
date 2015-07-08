@@ -39,8 +39,6 @@ class AcquiaLiftAgent extends PersonalizeAgentBase implements PersonalizeAgentGo
       $status = personalize_agent_get_status($agent_data->machine_name);
       $config = array(
         'confidence_measure' => variable_get('acquia_lift_confidence_measure', 95),
-        'minimum_runtime' => acquia_lift_config_min_runtime(),
-        'minimum_decisions' => variable_get('acquia_lift_min_decisions', 1000)
       );
       return new static($agent_data->machine_name, $agent_data->label, $agent_data->data, $status, !empty($agent_data->started) ? $agent_data->started : NULL, $acquia_lift_api, $config);
     }

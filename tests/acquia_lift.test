@@ -1626,11 +1626,6 @@ class AcquiaLiftWebTestTarget extends AcquiaLiftWebTestBase {
     );
   }
 
-  public function setUp() {
-    parent::setUp();
-    variable_set('acquia_lift_target_enabled', TRUE);
-  }
-
   function testCreateTargetAudiences() {
     module_load_include('inc', 'acquia_lift', 'acquia_lift.admin');
     $agent = $this->createTargetingAgent();
@@ -2611,8 +2606,6 @@ class AcquiaLiftWebTestCampaignWizardVariations extends AcquiaLiftWebTestBase {
 
   public function setUp() {
     parent::setUp();
-    variable_set('acquia_lift_target_enabled', TRUE);
-
     $this->addVariationSetElement = array('op' => t('Add variation set'));
     $this->changeTypeElement = array('op' => t('Change type'));
     $this->addTargetAudienceElement = array('op' => t('Add target audience'));
@@ -3321,7 +3314,6 @@ class AcquiaLiftWebTestCampaignWizard extends AcquiaLiftWebTestBase {
     $this->addGoalElement = array('op' => t('Add goal'));
     $this->changeTypeElement = array('op' => t('Change type'));
     $this->addTargetAudienceElement = array('op' => t('Add target audience'));
-    variable_set('acquia_lift_target_enabled', TRUE);
   }
 
   /**

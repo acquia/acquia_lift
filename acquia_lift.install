@@ -45,9 +45,6 @@ function acquia_lift_uninstall() {
     'acquia_lift_batch_decisions',
     'acquia_lift_confidence_measure',
     'queue_class_acquia_lift_sync',
-    'acquia_lift_min_runtime_num',
-    'acquia_lift_min_runtime_unit',
-    'acquia_lift_min_decisions',
     'acquia_lift_legacy_agents',
     'acquia_lift_report_max_days',
   );
@@ -803,6 +800,20 @@ function acquia_lift_update_7200() {
   // Remove Variations and Goals listings pages.
   menu_delete_links('acquia-lift-controls');
   _acquia_lift_build_menu('acquia-lift-controls');
+}
+
+/**
+ * Removes some variables that are no longer needed.
+ */
+function acquia_lift_update_7201() {
+  $variables = array(
+    'acquia_lift_min_runtime_num',
+    'acquia_lift_min_runtime_unit',
+    'acquia_lift_min_decisions',
+  );
+  foreach ($variables as $var) {
+    variable_del($var);
+  }
 }
 
 /**

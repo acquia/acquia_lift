@@ -2227,6 +2227,7 @@ function _acquia_lift_personalize_campaign_wizard_variations_block(&$form, &$for
   $element['pblock_wrapper']['blocks_more']['#theme_wrappers'] = array('personalize_html_tag');
   $element['pblock_wrapper']['blocks_more']['#attributes']['id'] = $more_id;
   $element['pblock_wrapper']['blocks_more']['#attributes']['class'][] = 'personalize-add-link';
+  $element['pblock_wrapper']['blocks_more']['#attributes']['name'] = 'blocks_add_variation_' . $form_state_key;
   $element['pblock_wrapper']['blocks_more']['#prefix'] = '<span class="personalize-add-link-prefix"></span>';
   $element['pblock_wrapper']['blocks_more']['#submit'] = array('acquia_lift_personalize_campaign_wizard_blocks_add');
   $element['pblock_wrapper']['blocks_more']['#ajax'] = array(

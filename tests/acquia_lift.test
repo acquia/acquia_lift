@@ -3033,6 +3033,71 @@ class AcquiaLiftWebTestCampaignWizardVariations extends AcquiaLiftWebTestCampaig
     $this->drupalPost(NULL, array(), t('Save'));
     $this->assertUrl("admin/structure/personalize/manage/$agent_name/variations");
   }
+
+  /**
+   * Test lock-step combinations of variation sets.
+   */
+  function testWhatLockStep() {
+    $error_heading = "Let's fix this";
+    $error_message = 'You have multiple variation sets with different numbers of variations - the personalization cannot be started until all variation sets have the same number of variations.';
+
+    $this->drupalLogin($this->managerUser);
+    $agent = $this->createTargetingAgent();
+
+    // Create a personalized block from existing blocks.
+    $this->drupalGet('admin/structure/personalize/manage/' . $agent->machine_name . '/variations');
+    $this->assertNoText($error_heading);
+    $this->assertNoText($error_message);
+
+    // Add two variation sets.
+    $this->drupalPostAJAX(NULL, array(), $this->addVariationSetElement);
+    $this->drupalPostAJAX(NULL, array(), $this->addVariationSetElement);
+
+    $edit = array(
+      'variations[editing][new][0][option_set_type]' => 'block',
+    );
+    $this->drupalPostAJAX(NULL, $edit, 'variations[editing][new][0][option_set_type]');
+    $edit = array(
+      'variations[editing][new][1][option_set_type]' => 'block',
+    );
+    $this->drupalPostAJAX(NULL, $edit, 'variations[editing][new][1][option_set_type]');
+    $this->drupalPostAJAX(NULL, array(), 'blocks_add_variation_add_1');
+
+    $edit = array(
+      'variations[editing][new][0][block][content][title]' => 'Muppets',
+      'variations[editing][new][0][block][content][pblock_wrapper][blocks][0][option_label]' => 'Muppets variation 1',
+      'variations[editing][new][0][block][content][pblock_wrapper][blocks][0][block][bid]' => 'comment_delta_recent',
+      'variations[editing][new][0][block][content][pblock_wrapper][blocks][1][option_label]' => 'Muppets variation 2',
+      'variations[editing][new][0][block][content][pblock_wrapper][blocks][1][block][bid]' => 'node_delta_recent',
+      'variations[editing][new][1][block][content][title]' => 'Sesame',
+      'variations[editing][new][1][block][content][pblock_wrapper][blocks][0][option_label]' => 'Sesame variation 1',
+      'variations[editing][new][1][block][content][pblock_wrapper][blocks][0][block][bid]' => 'system_delta_powered-by',
+      'variations[editing][new][1][block][content][pblock_wrapper][blocks][1][option_label]' => 'Sesme variation 2',
+      'variations[editing][new][1][block][content][pblock_wrapper][blocks][1][block][bid]' => 'system_delta_help',
+      'variations[editing][new][1][block][content][pblock_wrapper][blocks][2][option_label]' => 'Sesame variation 3',
+      'variations[editing][new][1][block][content][pblock_wrapper][blocks][2][block][bid]' => 'user_delta_new',
+    );
+    $this->drupalPost(NULL, $edit, $this->getButton('wizard_next', array('agent_name' => $agent->machine_name, 'step' => 'variations')));
+
+    $this->drupalGet('admin/structure/personalize/manage/' . $agent->machine_name . '/variations');
+    // Should still be on the variations page only now there should be a
+    // warning message.
+    $this->assertText($error_heading);
+    $this->assertText($error_message);
+
+    // Remove the extra variation.
+    $option_sets = personalize_option_set_load_by_agent($agent->machine_name);
+    $second_os = end($option_sets);
+
+    $edit = array(
+      'variations[editing][option_sets][option_set_' . $second_os->osid . '][content][pblock_wrapper][blocks][2][block][bid]' => '',
+    );
+    $this->drupalPost(NULL, $edit, $this->getButton('wizard_save'));
+
+    // Verify that the error message is gone.
+    $this->assertNoText($error_heading);
+    $this->assertNoText($error_message);
+  }
 }
 
 class AcquiaLiftWebTestCampaignWizardTargeting extends AcquiaLifTWebTestCampaignWizardBase {
@@ -3043,7 +3108,6 @@ class AcquiaLiftWebTestCampaignWizardTargeting extends AcquiaLifTWebTestCampaign
       'group' => t('Personalize'),
     );
   }
-
 
   /**
    * Verify that audience-style targeting is only available for Acquia Lift

@@ -3688,10 +3688,18 @@ class AcquiaLiftWebTestCampaignWizard extends AcquiaLiftWebTestBase {
     ));
     $this->resetAll();
 
-    // Start the agent and confirm the settings are propagated.
-    $this->drupalPost('admin/structure/personalize/manage/' . $agent->machine_name . '/review', array(), $this->getButton('wizard_start'));
-    $this->resetAll();
+    // Start the agent.
+    $this->drupalGet('admin/structure/personalize/manage/' . $agent->machine_name . '/review');
+    $this->assertNoText(t('Next steps'));
 
+    $this->drupalPost(NULL, array(), $this->getButton('wizard_start'));
+
+    // Confirm message and next steps block.
+    $this->assertText(t('Congratulations! You have started your personalization.'));
+    $this->assertText(t('Next steps'));
+
+    // Confirm settings are propagated.
+    $this->resetAll();
     personalize_agent_load($agent->machine_name, TRUE);
     $status = personalize_agent_get_status($agent->machine_name);
     $this->assertEqual($status, PERSONALIZE_STATUS_RUNNING);
@@ -3708,14 +3716,21 @@ class AcquiaLiftWebTestCampaignWizard extends AcquiaLiftWebTestBase {
     acquia_lift_target_set_status($agent, PERSONALIZE_STATUS_PAUSED);
     $this->resetAll();
     $this->drupalGet('admin/structure/personalize/manage/' . $agent->machine_name . '/review');
+
+    // Confirm that the next steps still show even after pausing.
+    $this->assertText(t('Next steps'));
+
     $changes = array(
       'control_rate' => 30,
       'explore_rate' => 60,
       'decision_style' => 'adaptive',
     );
     $this->drupalPost(NULL, $changes, $this->getButton('wizard_start'));
-    $this->resetAll();
 
+    $this->assertText(t('Congratulations! You have started your personalization.'));
+    $this->assertText(t('Next steps'));
+
+    $this->resetAll();
     $agent = personalize_agent_load($agent->machine_name, TRUE);
     // Confirm the changes propogated to the nested test.
     $parent_settings['control_rate'] = $nested_settings['control_rate'] = 30;

@@ -1288,11 +1288,11 @@ function acquia_lift_library() {
 
   // If navbar is enabled before the class names were changed from .menu then include the old css.
   if (acquia_lift_using_older_navbar()) {
-    $libraries['acquia_lift.navbar']['css'][$path . '/css/acquia_lift.navbar_1-5.css'] = array();
+    $libraries['acquia_lift.navbar']['css'][$path . '/css/acquia_lift.navbar_1-5.css'] = array('weight' => 100);
   }
   else {
     // Navbar is not enabled, or it is enabled with the later menu class names.
-    $libraries['acquia_lift.navbar']['css'][$path . '/css/acquia_lift.navbar.css'] = array();
+    $libraries['acquia_lift.navbar']['css'][$path . '/css/acquia_lift.navbar.css'] = array('weight' => 100);
   }
   // Save the menu class name to be used.
   $libraries['acquia_lift.navbar']['js'][] = array(

@@ -2625,9 +2625,11 @@ class AcquiaLiftWebTestCampaignWizardVariations extends AcquiaLiftWebTestCampaig
   function testVariationTypeSelect() {
     $variation_input_name = key($this->addVariationSetElement);
     $variation_input_value = reset($this->addVariationSetElement);
-    $block_title_name = 'variations[new][0][block][content][title]';
-    $element_url_name = 'variations[new][0][element][content][url]';
-    $option_set_type_name = 'variations[new][0][option_set_type]';
+    $block_title_name = 'variations[editing][new][0][block][content][title]';
+    $element_url_name = 'variations[editing][new][0][element][content][url]';
+    $option_set_type_name = 'variations[editing][new][0][option_set_type]';
+    $block_type_id = 'edit-variations-editing-new-0-option-set-type-block';
+    $element_type_id = 'edit-variations-editing-new-0-option-set-type-element';
 
     $this->drupalLogin($this->managerUser);
     $agent = $this->createTargetingAgent();
@@ -2637,8 +2639,8 @@ class AcquiaLiftWebTestCampaignWizardVariations extends AcquiaLiftWebTestCampaig
 
     // Make sure the type selection is shown by default without any selections.
     $this->assertFieldByName($option_set_type_name);
-    $this->assertNoFieldChecked('edit-variations-new-0-option-set-type-block');
-    $this->assertNoFieldChecked('edit-variations-new-0-option-set-type-element');
+    $this->assertNoFieldChecked($block_type_id);
+    $this->assertNoFieldChecked($element_type_id);
     // Actual forms should not be shown yet.
     $this->assertNoFieldByName($block_title_name);
     $this->assertNoFieldByName($element_url_name);
@@ -2655,8 +2657,8 @@ class AcquiaLiftWebTestCampaignWizardVariations extends AcquiaLiftWebTestCampaig
     // Select a block variation set.
     $this->drupalPostAJAX(NULL, array(), $this->addVariationSetElement);
     $this->assertFieldByName($option_set_type_name);
-    $this->assertNoFieldChecked('edit-variations-new-0-option-set-type-block');
-    $this->assertNoFieldChecked('edit-variations-new-0-option-set-type-element');
+    $this->assertNoFieldChecked($block_type_id);
+    $this->assertNoFieldChecked($element_type_id);
     $this->assertNoFieldByName($block_title_name);
     $this->assertNoFieldByName($element_url_name);
     $this->assertFieldByName($variation_input_name, $variation_input_value);
@@ -2674,8 +2676,8 @@ class AcquiaLiftWebTestCampaignWizardVariations extends AcquiaLiftWebTestCampaig
     // Change the type
     $this->drupalPostAJAX(NULL, array(), $this->changeTypeElement);
     $this->assertFieldByName($option_set_type_name);
-    $this->assertNoFieldChecked('edit-variations-new-0-option-set-type-block');
-    $this->assertNoFieldChecked('edit-variations-new-0-option-set-type-element');
+    $this->assertNoFieldChecked($block_type_id);
+    $this->assertNoFieldChecked($element_type_id);
     $this->assertNoFieldByName($block_title_name);
     $this->assertNoFieldByName($element_url_name);
     $this->assertFieldByName($variation_input_name, $variation_input_value);
@@ -2701,8 +2703,8 @@ class AcquiaLiftWebTestCampaignWizardVariations extends AcquiaLiftWebTestCampaig
     // Select an element variation set.
     $this->drupalPostAJAX(NULL, array(), $this->addVariationSetElement);
     $this->assertFieldByName($option_set_type_name);
-    $this->assertNoFieldChecked('edit-variations-new-0-option-set-type-block');
-    $this->assertNoFieldChecked('edit-variations-new-0-option-set-type-element');
+    $this->assertNoFieldChecked($block_type_id);
+    $this->assertNoFieldChecked($element_type_id);
     $this->assertNoFieldByName($block_title_name);
     $this->assertNoFieldByName($element_url_name);
     $this->assertFieldByName($variation_input_name, $variation_input_value);
@@ -2720,8 +2722,8 @@ class AcquiaLiftWebTestCampaignWizardVariations extends AcquiaLiftWebTestCampaig
     // Change the type.
     $this->drupalPostAJAX(NULL, array(), $this->changeTypeElement);
     $this->assertFieldByName($option_set_type_name);
-    $this->assertNoFieldChecked('edit-variations-new-0-option-set-type-block');
-    $this->assertNoFieldChecked('edit-variations-new-0-option-set-type-element');
+    $this->assertNoFieldChecked($block_type_id);
+    $this->assertNoFieldChecked($element_type_id);
     $this->assertNoFieldByName($block_title_name);
     $this->assertNoFieldByName($element_url_name);
     $this->assertFieldByName($variation_input_name, $variation_input_value);
@@ -2797,16 +2799,16 @@ class AcquiaLiftWebTestCampaignWizardVariations extends AcquiaLiftWebTestCampaig
     $this->drupalPostAJAX(NULL, array(), $this->addVariationSetElement);
     // Indicate a block variation set type.
     $edit = array(
-      'variations[new][0][option_set_type]' => 'block',
+      'variations[editing][new][0][option_set_type]' => 'block',
     );
-    $this->drupalPostAJAX(NULL, $edit, 'variations[new][0][option_set_type]');
+    $this->drupalPostAJAX(NULL, $edit, 'variations[editing][new][0][option_set_type]');
 
     $edit = array(
-      'variations[new][0][block][content][title]' => 'Muppets',
-      'variations[new][0][block][content][pblock_wrapper][blocks][0][option_label]' => 'My variation 1',
-      'variations[new][0][block][content][pblock_wrapper][blocks][0][block][bid]' => 'comment_delta_recent',
-      'variations[new][0][block][content][pblock_wrapper][blocks][1][option_label]' => 'My variation 2',
-      'variations[new][0][block][content][pblock_wrapper][blocks][1][block][bid]' => 'node_delta_recent',
+      'variations[editing][new][0][block][content][title]' => 'Muppets',
+      'variations[editing][new][0][block][content][pblock_wrapper][blocks][0][option_label]' => 'My variation 1',
+      'variations[editing][new][0][block][content][pblock_wrapper][blocks][0][block][bid]' => 'comment_delta_recent',
+      'variations[editing][new][0][block][content][pblock_wrapper][blocks][1][option_label]' => 'My variation 2',
+      'variations[editing][new][0][block][content][pblock_wrapper][blocks][1][block][bid]' => 'node_delta_recent',
     );
     $this->drupalPost(NULL, $edit, $this->getButton('wizard_next', array('agent_name' => $agent->machine_name, 'step' => 'variations')));
 
@@ -2831,12 +2833,12 @@ class AcquiaLiftWebTestCampaignWizardVariations extends AcquiaLiftWebTestCampaig
     // Edit the variation set title change the second block to a new block
     // created inline.
     $edit = array(
-      'variations[option_sets][option_set_' . $option_set->osid . '][content][title]' => 'Great Muppet Caper',
-      'variations[option_sets][option_set_' . $option_set->osid . '][content][pblock_wrapper][blocks][0][block][bid]' => 'comment_delta_recent',
-      'variations[option_sets][option_set_' . $option_set->osid . '][content][pblock_wrapper][blocks][1][block][block_type]' => 'add',
-      'variations[option_sets][option_set_' . $option_set->osid . '][content][pblock_wrapper][blocks][1][block][add][title]' => 'Kermit',
-      'variations[option_sets][option_set_' . $option_set->osid . '][content][pblock_wrapper][blocks][1][block][add][info]' => 'Piggy',
-      'variations[option_sets][option_set_' . $option_set->osid . '][content][pblock_wrapper][blocks][1][block][add][body][value]' => 'complicated',
+      'variations[editing][option_sets][option_set_' . $option_set->osid . '][content][title]' => 'Great Muppet Caper',
+      'variations[editing][option_sets][option_set_' . $option_set->osid . '][content][pblock_wrapper][blocks][0][block][bid]' => 'comment_delta_recent',
+      'variations[editing][option_sets][option_set_' . $option_set->osid . '][content][pblock_wrapper][blocks][1][block][block_type]' => 'add',
+      'variations[editing][option_sets][option_set_' . $option_set->osid . '][content][pblock_wrapper][blocks][1][block][add][title]' => 'Kermit',
+      'variations[editing][option_sets][option_set_' . $option_set->osid . '][content][pblock_wrapper][blocks][1][block][add][info]' => 'Piggy',
+      'variations[editing][option_sets][option_set_' . $option_set->osid . '][content][pblock_wrapper][blocks][1][block][add][body][value]' => 'complicated',
     );
     $this->drupalPost(NULL, $edit, $this->getButton('wizard_next', array('agent_name' => $agent->machine_name, 'step' => 'variations')));
 
@@ -2853,14 +2855,14 @@ class AcquiaLiftWebTestCampaignWizardVariations extends AcquiaLiftWebTestCampaig
     $this->drupalGet('admin/structure/personalize/manage/' . $agent->machine_name . '/variations');
 
     $edit = array(
-      'variations[option_sets][option_set_' . $option_set->osid . '][advanced][stateful]' => 1,
-      'variations[option_sets][option_set_' . $option_set->osid . '][advanced][preview_link]' => 'invalid url',
-      'variations[option_sets][option_set_' . $option_set->osid . '][advanced][executor]' => 'callback',
+      'variations[editing][option_sets][option_set_' . $option_set->osid . '][advanced][stateful]' => 1,
+      'variations[editing][option_sets][option_set_' . $option_set->osid . '][advanced][preview_link]' => 'invalid url',
+      'variations[editing][option_sets][option_set_' . $option_set->osid . '][advanced][executor]' => 'callback',
     );
     $this->drupalPost(NULL, $edit, $this->getButton('wizard_next', array('agent_name' => $agent->machine_name, 'step' => 'variations')));
 
     $this->assertText('You have specified an invalid path');
-    $edit['variations[option_sets][option_set_' . $option_set->osid . '][advanced][preview_link]'] = '<front>';
+    $edit['variations[editing][option_sets][option_set_' . $option_set->osid . '][advanced][preview_link]'] = '<front>';
 
     $this->drupalPost(NULL, $edit, $this->getButton('wizard_next', array('agent_name' => $agent->machine_name, 'step' => 'variations')));
 
@@ -2886,20 +2888,20 @@ class AcquiaLiftWebTestCampaignWizardVariations extends AcquiaLiftWebTestCampaig
     $this->drupalPostAJAX(NULL, array(), $this->addVariationSetElement);
     // Indicate an element variation set type.
     $edit = array(
-      'variations[new][0][option_set_type]' => 'element',
+      'variations[editing][new][0][option_set_type]' => 'element',
     );
-    $this->drupalPostAJAX(NULL, $edit, 'variations[new][0][option_set_type]');
+    $this->drupalPostAJAX(NULL, $edit, 'variations[editing][new][0][option_set_type]');
 
     // Invalid url
     $edit = array(
-      'variations[new][0][element][content][url]' => 'invalid url',
+      'variations[editing][new][0][element][content][url]' => 'invalid url',
     );
     $this->drupalPost(NULL, $edit, $this->getButton('wizard_element_navigate'));
     $this->assertText('You have specified an invalid path');
 
     // Valid external url
     $edit = array(
-      'variations[new][0][element][content][url]' => 'http://www.google.com',
+      'variations[editing][new][0][element][content][url]' => 'http://www.google.com',
     );
     $this->drupalPost(NULL, $edit, $this->getButton('wizard_element_navigate'));
     $this->assertNoText('You have specified an invalid path');
@@ -2915,11 +2917,11 @@ class AcquiaLiftWebTestCampaignWizardVariations extends AcquiaLiftWebTestCampaig
     $this->drupalGet('admin/structure/personalize/manage/' . $agent->machine_name . '/variations');
     $this->drupalPostAJAX(NULL, array(), $this->addVariationSetElement);
     $edit = array(
-      'variations[new][0][option_set_type]' => 'element',
+      'variations[editing][new][0][option_set_type]' => 'element',
     );
-    $this->drupalPostAJAX(NULL, $edit, 'variations[new][0][option_set_type]');
+    $this->drupalPostAJAX(NULL, $edit, 'variations[editing][new][0][option_set_type]');
     $edit = array(
-      'variations[new][0][element][content][url]' => 'admin/structure',
+      'variations[editing][new][0][element][content][url]' => 'admin/structure',
     );
     $this->drupalPost(NULL, $edit, $this->getButton('wizard_element_navigate'));
     $this->assertNoText('You have specified an invalid path');
@@ -2930,11 +2932,11 @@ class AcquiaLiftWebTestCampaignWizardVariations extends AcquiaLiftWebTestCampaig
     $this->drupalPostAJAX(NULL, array(), $this->addVariationSetElement);
     // Indicate an element variation set type.
     $edit = array(
-      'variations[new][0][option_set_type]' => 'element',
+      'variations[editing][new][0][option_set_type]' => 'element',
     );
-    $this->drupalPostAJAX(NULL, $edit, 'variations[new][0][option_set_type]');
+    $this->drupalPostAJAX(NULL, $edit, 'variations[editing][new][0][option_set_type]');
     $edit = array(
-      'variations[new][0][element][content][url]' => 'node',
+      'variations[editing][new][0][element][content][url]' => 'node',
     );
     $this->drupalPost(NULL, $edit, $this->getButton('wizard_element_navigate'));
     $this->assertNoText('You have specified an invalid path');

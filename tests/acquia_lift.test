@@ -2592,11 +2592,27 @@ class AcquiaLiftWebTestTarget extends AcquiaLiftWebTestBase {
   }
 }
 
-class AcquiaLiftWebTestCampaignWizardVariations extends AcquiaLiftWebTestBase {
-
+/**
+ * Base class for all campaign wizard tests.
+ *
+ * Class AcquiaLiftWebTestCampaignWizardBase
+ */
+class AcquiaLiftWebTestCampaignWizardBase extends AcquiaLiftWebTestBase {
   protected $addVariationSetElement;
   protected $changeTypeElement;
   protected $addTargetAudienceElement;
+  protected $addGoalElement;
+
+  public function setUp() {
+    parent::setUp();
+    $this->addVariationSetElement = array('op' => t('Add variation set'));
+    $this->changeTypeElement = array('op' => t('Change type'));
+    $this->addTargetAudienceElement = array('op' => t('Add target audience'));
+    $this->addGoalElement = array('op' => t('Add goal'));
+  }
+}
+
+class AcquiaLiftWebTestCampaignWizardVariations extends AcquiaLiftWebTestCampaignWizardBase {
 
   public static function getInfo() {
     return array(
@@ -2604,13 +2620,6 @@ class AcquiaLiftWebTestCampaignWizardVariations extends AcquiaLiftWebTestBase {
       'description' => t('Tests functionality related to the personalization management wizard variation sets.'),
       'group' => t('Personalize'),
     );
-  }
-
-  public function setUp() {
-    parent::setUp();
-    $this->addVariationSetElement = array('op' => t('Add variation set'));
-    $this->changeTypeElement = array('op' => t('Change type'));
-    $this->addTargetAudienceElement = array('op' => t('Add target audience'));
   }
 
   function testVariationTypeSelect() {
@@ -3022,6 +3031,17 @@ class AcquiaLiftWebTestCampaignWizardVariations extends AcquiaLiftWebTestBase {
     $this->drupalPost(NULL, array(), t('Save'));
     $this->assertUrl("admin/structure/personalize/manage/$agent_name/variations");
   }
+}
+
+class AcquiaLiftWebTestCampaignWizardTargeting extends AcquiaLifTWebTestCampaignWizardBase {
+  public static function getInfo() {
+    return array(
+      'name' => t('Acquia Lift Web Tests - Personalization Wizard Targeting'),
+      'description' => t('Tests functionality related to the personalization management wizard targeting forms.'),
+      'group' => t('Personalize'),
+    );
+  }
+
 
   /**
    * Verify that audience-style targeting is only available for Acquia Lift
@@ -3298,25 +3318,14 @@ class AcquiaLiftWebTestCampaignWizardVariations extends AcquiaLiftWebTestBase {
   }
 }
 
-class AcquiaLiftWebTestCampaignWizard extends AcquiaLiftWebTestBase {
-
-  protected $addGoalElement;
-  protected $changeTypeElement;
-  protected $addTargetAudienceElement;
+class AcquiaLiftWebTestCampaignWizardGoals extends AcquiaLiftWebTestCampaignWizardBase {
 
   public static function getInfo() {
     return array(
-      'name' => t('Acquia Lift Web Tests - Personalization Wizard - Others'),
-      'description' => t('Tests functionality related to the personalization management wizard all other tests (not variations).'),
+      'name' => t('Acquia Lift Web Tests - Personalization Wizard Goals'),
+      'description' => t('Tests functionality related to the personalization management wizard goals forms.'),
       'group' => t('Personalize'),
     );
-  }
-
-  public function setUp() {
-    parent::setUp();
-    $this->addGoalElement = array('op' => t('Add goal'));
-    $this->changeTypeElement = array('op' => t('Change type'));
-    $this->addTargetAudienceElement = array('op' => t('Add target audience'));
   }
 
   /**
@@ -3620,6 +3629,17 @@ class AcquiaLiftWebTestCampaignWizard extends AcquiaLiftWebTestBase {
     $this->drupalPost(NULL, $edit, $this->getButton('wizard_element_navigate'));
     $this->assertNoText('You have specified an invalid path');
     $this->assertUrl('node');
+  }
+}
+
+class AcquiaLiftWebTestCampaignWizardReview extends AcquiaLiftWebTestCampaignWizardBase {
+
+  public static function getInfo() {
+    return array(
+      'name' => t('Acquia Lift Web Tests - Personalization Wizard - Review'),
+      'description' => t('Tests functionality related to the personalization management wizard review and status.'),
+      'group' => t('Personalize'),
+    );
   }
 
   /**

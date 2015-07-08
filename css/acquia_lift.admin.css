@@ -537,6 +537,11 @@ li.acquia-lift-targeting-draggable.ui-sortable-helper {
   background: transparent url(../images/000000/close.png) no-repeat;
 }
 
+.acquia-lift-draggable-variations li[data-acquia-lift-option-id] .acquia-lift-variations-lockstep {
+  background: url(../images/000000/link.png) no-repeat 0 center;
+  padding-left: 30px;
+}
+
 /* All variations lists */
 ul.acquia-lift-variations-list,
 .acquia-lift-variations-list ul {

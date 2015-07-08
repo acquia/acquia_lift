@@ -172,13 +172,6 @@
         if (allowMove) {
           variationsListClasses.push('acquia-lift-draggable-connect');
         }
-        // Add any acquia lift classes from the server-side generated select
-        // to indicate variation set handling.
-        for (var i = 0; i< this.classList.length; i++) {
-          if (this.classList[i].indexOf('acquia-lift-variations-') == 0) {
-            variationsListClasses.push(this.classList[i]);
-          }
-        }
         variationsListHtml = '<ul class="' + variationsListClasses.join(' ') + '">';
 
         // Hide the label for the select element.

@@ -1964,16 +1964,6 @@ function acquia_lift_personalize_campaign_wizard_review_submit(&$form, &$form_st
     if (!acquia_lift_target_set_status($agent_data, $next_status)) {
       form_set_error(NULL, t('There was a problem implementing the personalization as defined.'));
     }
-
-    if ($next_status == PERSONALIZE_STATUS_RUNNING) {
-      drupal_set_message(t('Congratulations! You have started your personalization.'));
-    }
-    else if ($next_status == PERSONALIZE_STATUS_SCHEDULED) {
-      $start_date = personalize_agent_get_start_date($agent_data->machine_name);
-      drupal_set_message(t('Congratulations!  You have scheduled your personalization to start on @date', array(
-        '@date' => _personalize_campaign_wizard_date($start_date),
-      )));
-    }
     $form_state['redirect'] = 'admin/structure/personalize/manage/' . $agent_data->machine_name . '/review';
   }
 }

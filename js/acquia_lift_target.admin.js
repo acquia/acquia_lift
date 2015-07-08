@@ -141,7 +141,7 @@
         var numberVariations = $variationItems.length;
         for (var i = 0; i < numberVariations; i++) {
           var $current = $variationItems.eq(i);
-          var itemText = $current.data('acquia-lift-option-label');
+          var itemText = decodeURI($current.data('acquia-lift-option-label'));
           if (i == 0 && numberVariations > 1) {
             itemText += ' (' + Drupal.t('Control') + ')';
           }
@@ -171,6 +171,13 @@
         var variationsListClasses = ['acquia-lift-draggable-variations'];
         if (allowMove) {
           variationsListClasses.push('acquia-lift-draggable-connect');
+        }
+        // Add any acquia lift classes from the server-side generated select
+        // to indicate variation set handling.
+        for (var i = 0; i< this.classList.length; i++) {
+          if (this.classList[i].indexOf('acquia-lift-variations-') == 0) {
+            variationsListClasses.push(this.classList[i]);
+          }
         }
         variationsListHtml = '<ul class="' + variationsListClasses.join(' ') + '">';
 
@@ -220,7 +227,7 @@
             }
             if (ui.sender.data().hasOwnProperty('acquialiftcopied')) {
               // Make the new item removable.
-              ui.item.append(Drupal.theme('acquiaLiftTargetingItemRemove'));
+              ui.item.prepend(Drupal.theme('acquiaLiftTargetingItemRemove'));
               $('.acquia-lift-targeting-remove', ui.item).on('click', handleDraggableItemRemove);
 
               // This is a copy from the variation options list.
@@ -306,11 +313,11 @@
    */
   Drupal.theme.prototype.acquiaLiftTargetingDraggableItem = function(id, label, allowRemove) {
     var html = '';
-    html += '<li data-acquia-lift-option-id="' + id + '" data-acquia-lift-option-label="' + label + '" class="acquia-lift-targeting-draggable">';
-    html += label;
+    html += '<li data-acquia-lift-option-id="' + id + '" data-acquia-lift-option-label="' + encodeURI(label) + '" class="acquia-lift-targeting-draggable">';
     if (allowRemove) {
       html += Drupal.theme('acquiaLiftTargetingItemRemove');
     }
+    html += label;
     html += '</li>';
     return html;
   };

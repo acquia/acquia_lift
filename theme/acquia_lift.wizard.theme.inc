@@ -156,10 +156,6 @@ function theme_acquia_lift_variations_list($variables) {
   $max_variations = 0;
   foreach ($items as $variations) {
     $max_variations = max($max_variations, count($variations));
-    // Replace any empty displays with a "-" placeholder.
-    $variations = array_map(function ($display) {
-      return empty($display) ? '-' : $display;
-    }, $variations);
 
     $displays[] = theme('item_list', array(
       'items' => $variations,

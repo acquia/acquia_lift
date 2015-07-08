@@ -394,7 +394,6 @@ function acquia_lift_personalize_campaign_wizard_variations_alter(&$form, &$form
     ),
   );
   $all_variations = _acquia_lift_personalize_campaign_wizard_variation_displays($option_sets, $variation_set_handling);
-  dpm($all_variations);
   $form['variations']['display']['options']['variations'] = array(
     '#markup' => theme('acquia_lift_variations_list', array(
       'items' => $all_variations,
@@ -649,7 +648,8 @@ function acquia_lift_personalize_campaign_wizard_targeting_alter(&$form, &$form_
     return;
   }
   // Explicit targeting is not allowed for multivariate tests.
-  if (isset($agent_data->data['variation_set_handling']) && $agent_data->data['variation_set_handling'] == ACQUIA_LIFT_DECISION_MULTIVARIATE) {
+  $variation_set_handling = isset($agent_data->data['variation_set_handlng']) ? $agent_data->data['variation_set_handling'] : ACQUIA_LIFT_DECISION_LOCKSTEP;
+  if ($variation_set_handling == ACQUIA_LIFT_DECISION_MULTIVARIATE) {
     unset($form['targeting'], $form['actions']);
     $form['main'] = array(
       '#markup' => t('Targeting is not supported for multivariate tests.')
@@ -673,6 +673,25 @@ function acquia_lift_personalize_campaign_wizard_targeting_alter(&$form, &$form_
   unset($form['targeting']['option_sets']);
 
   $variation_options = $saved_targeting = array();
+  $option_sets = personalize_option_set_load_by_agent($agent_data->machine_name);
+  $all_variations = _acquia_lift_personalize_campaign_wizard_variation_displays($option_sets, $variation_set_handling, FALSE);
+  // Missing variations will be filled with placeholders for Lock-Step.
+  $total_variations_per_display = count(reset($all_variations));
+
+  // Convert the variations into an associative array of displays keyed by
+  // targeting option id that can be used as select input options.
+  foreach($all_variations as $displays) {
+    $variation_displays = array();
+    $targeting_option_id = '';
+    foreach ($displays as $option) {
+      $variation_displays[] = is_string($option) ? $option : $option['option_label'];
+      if (!empty($option['targeting'])) {
+        $targeting_option_id = $option['option_id'];
+      }
+    }
+    $variation_options[$targeting_option_id] = implode('<br />', $variation_displays);
+  }
+
   // Load the targeting that is currently in use for a campaign.
   $existing_targeting = acquia_lift_get_structure_from_targeting($option_set);
   // Track whether an option to revert targeting changes should be shown.
@@ -699,10 +718,6 @@ function acquia_lift_personalize_campaign_wizard_targeting_alter(&$form, &$form_
     // Set the saved targeting to be the same as existing targeting for
     // presentation within this form.
     $saved_targeting = $existing_targeting;
-  }
-  // Get the names of the options from the representative option set.
-  foreach ($option_set->options as $option) {
-    $variation_options[$option['option_id']] = $option['option_label'];
   }
 
   // Begin the audience form.
@@ -902,6 +917,13 @@ function acquia_lift_personalize_campaign_wizard_targeting_alter(&$form, &$form_
   $form['targeting']['variations']['options']['instructions'] = array(
     '#markup' => t('To display a variation to a specific audience, drag the variation to the audience.'),
   );
+
+  // Add select class to indicate variation set handling.
+  // NOTE: JavaScript code looks for prefix of 'acquia-lift-variations-'.
+  $all_variations_classes = array('acquia-lift-targeting-assignment');
+  if ($total_variations_per_display > 1) {
+    $all_variations_classes[] = 'acquia-lift-variations-lockstep';
+  }
   $form['targeting']['variations']['options']['assignment'] = array(
     '#type' => 'select',
     '#title' => t('Drag variations to the desired audiences.'),
@@ -909,7 +931,7 @@ function acquia_lift_personalize_campaign_wizard_targeting_alter(&$form, &$form_
     '#options' => $variation_options,
     '#default_value' => array_keys($variation_options),
     '#attributes' => array(
-      'class' => array('acquia-lift-targeting-assignment'),
+      'class' => $all_variations_classes,
       'data-acquia-lift-targeting-allow-copy' => TRUE,
       'data-acquia-lift-targeting-allow-move' => FALSE,
       'data-acquia-lift-targeting-allow-remove' => FALSE,
@@ -1974,22 +1996,37 @@ function _acquia_lift_personalize_campaign_wizard_next_element($form_state, $pre
 }
 
 /**
- * Generates a multidimensional array of variation display labels based on the option
- * sets and type of multiple variation set handling.
+ * Generates a multidimensional array of variation display labels based on the
+ * option sets and type of multiple variation set handling.
+ *
+ * Full option array can also be returned by specifying $labels_only = FALSE.
+ * In this case, a boolean targeting key will be added to options with
+ * lock step handling to indicate which options come from the option set
+ * used for targeting.
+ *
+ * @param array $option_sets
+ *   The option sets to be converted into a variation display array
+ * @param $handling
+ *   The type of variation handling to use for multiple option sets.
+ * @param $labels_only
+ *   If true, then only the option labels will be returned, otherwise, the
+ *   full option array will be returned in the arrays.
+ * @param $empty_indicator
+ *   The string to add when a variation is missing in a lock-step combination.
  *
  * @todo: Implement MVT handling.
  */
-function _acquia_lift_personalize_campaign_wizard_variation_displays($option_sets, $handling = ACQUIA_LIFT_DECISION_LOCKSTEP) {
+function _acquia_lift_personalize_campaign_wizard_variation_displays($option_sets, $handling = ACQUIA_LIFT_DECISION_LOCKSTEP, $labels_only = TRUE, $empty_indicator = '-') {
   $all_variations = array();
   // Display for zero variations.
   if (empty($option_sets)) {
     return $all_variations;
   }
+  $first_os = reset($option_sets);
   // Handle display for a single variation set.
   if (count($option_sets) == 1) {
-    $first_os = current($option_sets);
     foreach($first_os->options as $delta => $option) {
-      $all_variations[0][$delta] = $option['option_label'];
+      $all_variations[0][$delta] = $labels_only ? $option['option_label'] : $option;
     }
     return $all_variations;
   }
@@ -1999,11 +2036,17 @@ function _acquia_lift_personalize_campaign_wizard_variation_displays($option_set
     return $all_variations;
   }
   // Default multiple handling is lock-step variation handling.
+  if (!$labels_only) {
+    $targeting_os = acquia_lift_get_option_set_for_targeting($first_os->agent);
+  }
   $set_delta = 0;
   $max_variations = 0;
   foreach ($option_sets as $osid => $option_set) {
     foreach($option_set->options as $delta => $option) {
-      $all_variations[$delta][$set_delta] = $option['option_label'];
+      if (!$labels_only) {
+        $option['targeting'] = ($osid == $targeting_os->osid);
+      }
+      $all_variations[$delta][$set_delta] = $labels_only ? $option['option_label'] : $option;
       $max_variations = max($max_variations, count($all_variations[$delta]));
     }
     $set_delta++;
@@ -2011,10 +2054,10 @@ function _acquia_lift_personalize_campaign_wizard_variation_displays($option_set
 
   // Now fill the empty variations indexes and re-order so that
   // the missing variations are obvious.
-  $fillEmptyVariations = function(&$variations, $max_variations) {
+  $fillEmptyVariations = function(&$variations, $max_variations) use ($empty_indicator) {
     for ($i = 0; $i < $max_variations; $i++) {
       if (!isset($variations[$i])) {
-        $variations[$i] = '';
+        $variations[$i] = $empty_indicator;
       }
     }
     ksort($variations);

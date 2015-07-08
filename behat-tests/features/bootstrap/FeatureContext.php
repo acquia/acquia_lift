@@ -194,6 +194,33 @@ class FeatureContext extends RawDrupalContext implements SnippetAcceptingContext
   }
 
   /**
+   * @Given /^the "([^"]*)" personalization has the "([^"]*)" status$/
+   */
+  public function setCampaignStatus($agent_name, $status_name) {
+    $statuses = personalize_get_agent_status_map();
+    $status = array_search($status_name, $statuses);
+    if ($status === FALSE) {
+      throw new \Exception(sprintf('Status %s is invalid.', $status_name));
+    }
+    personalize_agent_set_status($agent_name, $status);
+  }
+
+
+  /**
+   * @Given /^goals:$/
+   */
+  public function createGoals(TableNode $goalsTable) {
+    foreach ($goalsTable->getHash() as $goalHash) {
+      $goal = (object) $goalHash;
+      $agent = $goal->agent;
+      $action_name = empty($goal->action_name) ? 'user_login' : $goal->action_name;
+      $goal_value = isset($goal->value) ? $goal->value : 1;
+
+      personalize_goal_save($agent, $action_name, $goal_value);
+    }
+  }
+
+  /**
    * @Given /^personalized elements:$/
    */
   public function createPersonalizedElements(TableNode $elementsTable) {
@@ -247,7 +274,6 @@ class FeatureContext extends RawDrupalContext implements SnippetAcceptingContext
   /****************************************************
    *        A S S E R T I O N S
    ***************************************************/
-
   /**
    * @When /^I check the "([^”]*)" radio button$/
    */
@@ -364,6 +390,25 @@ class FeatureContext extends RawDrupalContext implements SnippetAcceptingContext
   }
 
   /**
+   * @Then :variation_set set :variation variation :link link is disabled
+   *
+   * @throws \Exception
+   *   If the menu or link cannot be found.
+   */
+  public function assertRegionVariationHasLinkDisabled($variation_set, $variation, $link) {
+    $css = $this->getVariationLinkCss($variation_set, $variation, $link);
+    // Now find the link and return it.
+    $element = $this->findElementInRegion($css, 'lift_tray');
+    if (empty($element)) {
+      throw new \Exception(sprintf('Cannot load the link "%s" for set "%s" and variation "%s" on page %s using selector %s.', $link, $variation_set, $variation, $this->getSession()->getCurrentUrl(), $css));
+    }
+    if (!$element->hasClass('acquia-lift-disabled')) {
+      throw new \Exception(sprintf('The link "%s" for set "%s" and variation "%s" on page %s using selector %s is not disabled.', $link, $variation_set, $variation, $this->getSession()->getCurrentUrl(), $css));
+    }
+    return $element;
+  }
+
+  /**
    * @When I click :link link for the :variation_set set :variation variation
    *
    * @throws \Exception
@@ -430,10 +475,16 @@ class FeatureContext extends RawDrupalContext implements SnippetAcceptingContext
    *   If region or link within it cannot be found or is hidden.
    */
   public function assertLinkVisibleRegion($link, $region) {
-    $result = $this->findLinkInRegion($link, $region);
-    if (empty($result) || !$result->isVisible()) {
+    $results = $this->findLinksInRegion($link, $region);
+    if (empty($results)) {
       throw new \Exception(sprintf('No link to "%s" in the "%s" region on the page %s', $link, $region, $this->getSession()->getCurrentUrl()));
     }
+    foreach ($results as $result) {
+      if ($result->isVisible()) {
+        return;
+      }
+    }
+    throw new \Exception(sprintf('No link to "%s" is visible in the "%s" region on the page %s', $link, $region, $this->getSession()->getCurrentUrl()));
   }
 
   /**
@@ -443,9 +494,14 @@ class FeatureContext extends RawDrupalContext implements SnippetAcceptingContext
    *   If link is found in region and is visible.
    */
   public function assertNotLinkVisibleRegion($link, $region) {
-    $result = $this->findLinkInRegion($link, $region);
-    if (!empty($result) && $result->isVisible()) {
-      throw new \Exception(sprintf('Link to "%s" in the "%s" region on the page %s', $link, $region, $this->getSession()->getCurrentUrl()));
+    $result = $this->findLinksInRegion($link, $region);
+    if (empty($results)) {
+      return;
+    }
+    foreach($result as $element) {
+      if ($element->isVisible()) {
+        throw new \Exception(sprintf('Link to "%s" in the "%s" region on the page %s', $link, $region, $this->getSession()->getCurrentUrl()));
+      }
     }
   }
 
@@ -492,18 +548,33 @@ class FeatureContext extends RawDrupalContext implements SnippetAcceptingContext
    * @Given /^menu item "([^"]*)" should be "(active|inactive)"$/
    */
   public function assertMenuItemInactive($link, $status) {
-    $class = 'acquia-lift-menu-disabled';
-    $element = $this->findLinkInRegion($link, 'lift_tray');
-    if (empty($element)) {
+    $elements = $this->findLinksInRegion($link, 'lift_tray');
+    if (empty($elements)) {
       throw new \Exception(sprintf('The link element %s was not found on the page %s', $link, $this->getSession()->getCurrentUrl()));
     }
-    if ($element->hasClass($class)) {
-      if ($status === 'active') {
-        throw new \Exception(sprintf('The link element %s on page %s is inactive but should be active.', $link, $this->getSession()->getCurrentUrl()));
+    $found = FALSE;
+    foreach ($elements as $element) {
+      /**
+       * This logis is not ideal.  It would be better to actually only check each
+       * visible item and then report directly based on whether the item was
+       * inactive or active, however, there is a selenium bug that is treating
+       * both "Add variation set" links and "Add goal" links as invisible even
+       * when one is shown on the screen.
+       */
+      $found = TRUE;
+      if ($element->hasClass('acquia-lift-menu-disabled') || $element->hasClass('acquia-lift-disabled')) {
+        if ($status === 'inactive') {
+          $found = TRUE;
+          continue;
+        }
+      }
+      else if ($status === 'active') {
+        $found = TRUE;
+        continue;
       }
     }
-    else if ($status === 'inactive') {
-      throw new \Exception(sprintf('The link element %s on page %s is active but should be inactive.', $link, $this->getSession()->getCurrentUrl()));
+    if (!$found) {
+      throw new \Exception(sprintf('The link element %s was not %s on the page %s', $link, $status, $this->getSession()->getCurrentUrl()));
     }
   }
 
@@ -734,6 +805,26 @@ class FeatureContext extends RawDrupalContext implements SnippetAcceptingContext
     $regionObj = $this->getRegion($region);
     $element = $regionObj->findLink($link);
     return $element;
+  }
+
+  /**
+   * Helper function to return any link in a particular region marching the
+   * link by id, title, text, or alt.
+   *
+   * @param string $link
+   *   link id, title, text or image alt
+   * @param $region
+   *   region identifier from configuration.
+   *
+   * @return array|null
+   *   An array of  \Behat\Mink\Element\NodeElement objects.
+   */
+  private function findLinksInRegion($link, $region) {
+    $regionObj = $this->getRegion($region);
+    $session = $this->getSession();
+    $escapedValue = $session->getSelectorsHandler()->xpathLiteral($link);
+    $elements = $regionObj->findAll('named', array('link', $escapedValue));
+    return $elements;
   }
 
   /**

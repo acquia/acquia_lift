@@ -80,11 +80,16 @@
    *
    * @param $options
    * - label: The label of the selected context
+   * - append: Something to be appended to the label but not at the same
+   *   level of visual importance.
    * - category: The type of context
    */
   Drupal.theme.acquiaLiftSelectedContext = function (options) {
     var label = options.category + ': ';
     label += '<span class="acquia-lift-active">' + options.label + '</span>';
+    if (options.hasOwnProperty('append')) {
+      label += '&nbsp;(' + options.append + ')';
+    }
     return '<span class="acquia-lift-active-container">' + label + '</span>';
   }
 
@@ -154,6 +159,23 @@
    *****************************************/
 
   /**
+   * Returns a menu item that display information about an uneditable
+   * campaign.
+   */
+  Drupal.theme.acquiaLiftPersonalizeNoEditItem = function (options) {
+    var attrs = [
+      'class="acquia-lift-menu-campaign-warning"'
+    ];
+
+    var item = '';
+    item += '\n<span ' + attrs.join(' ') + '>\n';
+    item += Drupal.t('Personalizations that are running cannot be edited.') + '\n';
+    item += '</span>\n';
+
+    return item;
+  }
+
+  /**
    * Returns a list item that contains links to preview option set options.
    *
    * @param object options
@@ -162,6 +184,7 @@
    *   - os: The option set object.
    *   - os.label: The label of the option set.
    *   - os.agent: The campaign/agent to which this option set belongs.
+   *   - editable: Boolean indicating if the campaign is editable.
    *
    * @return string
    */
@@ -189,6 +212,7 @@
    *   - os.deletable: Boolean indicating if the option is deletable from the
    *     menu.
    *   - os.editable: Boolean indicating if the option is editable from the menu.
+   *   - editable: Boolean indicating if the entire campaign is editable.
    *
    * @return string
    */
@@ -204,10 +228,11 @@
         osID: osID,
         osSelector: os_selector,
         showDelete: model.get('deletable'),
-        showEdit: model.get('editable')
+        showEdit: model.get('editable'),
+        editable: options.editable
       });
     });
-    if (os.plugin === 'elements') {
+    if (options.editable && os.plugin === 'elements') {
       menu += '<li>';
       menu += '<a href="' + Drupal.settings.basePath + Drupal.settings.pathPrefix + 'admin/structure/personalize/variations/add/nojs"';
       menu += ' class="acquia-lift-variation-add acquia-lift-menu-link" title="' + Drupal.t('Add variation') + '" aria-role="button" aria-pressed="false">';
@@ -231,6 +256,7 @@
    *     particular item.
    *   - showEdit: Indicates if the edit option should be available for this
    *     item.
+   *   - editable: Indicates if campaign is editable.
    *
    * @return string
    */
@@ -255,7 +281,7 @@
     var deleteAttrs = [
       'data-acquia-lift-personalize-option-set-option="' + options.id + '"'
     ].concat(ariaAttrs);
-    if (options.showDelete) {
+    if (options.showDelete && options.editable) {
       deleteAttrs.push('class="' + deleteClasses + ' ctools-use-modal ctools-modal-acquia-lift-style"');
       deleteAttrs.push('title="' + Drupal.t('Delete variation') + '"');
       deleteAttrs.push('href="' + deleteHref + '"');
@@ -264,12 +290,19 @@
       deleteAttrs.push('title="' + Drupal.t('Variation cannot be deleted until the personalization is paused."'));
     }
 
+    var editClasses = 'acquia-lift-variation-edit acquia-lift-menu-link';
+    var editHref = '#';
     var editAttrs = [
-      'class="acquia-lift-variation-edit acquia-lift-menu-link"',
       'data-acquia-lift-personalize-option-set-option="' + options.id + '"',
-      'title="' + Drupal.t('Edit variation') + '"',
-      'href="#"'
     ].concat(ariaAttrs);
+    if (options.editable) {
+      editAttrs.push('class="' + editClasses + '"');
+      editAttrs.push('href="' + editHref + '"');
+      editAttrs.push('title="' + Drupal.t('Edit variation') + '"');
+    } else {
+      editAttrs.push('class="' + editClasses + ' acquia-lift-disabled"');
+      editAttrs.push('title="' + Drupal.t('Variations cannot be edited until the personalization is paused.') + '"');
+    }
 
     item += '<li>\n<div class="acquia-lift-menu-item clearfix" data-acquia-lift-personalize-option-set="' + options.osID + '">';
     item += '<a ' + previewAttrs.join(' ') + '>' + options.label + '</a> \n';
@@ -295,8 +328,10 @@
    *   The campaign model to create goals display for.
    * @param object actions
    *   An object of all actions keyed by the action machine name.
+   * @param boolean editable
+   *   Indicates if the goal should have edit options.
    */
-  Drupal.theme.acquiaLiftCampaignGoals = function (model, actions) {
+  Drupal.theme.acquiaLiftCampaignGoals = function (model, actions, editable) {
     var goals = model.get('goals');
     var html = '<ul class="' + navbarMenuClassName + '">';
 
@@ -316,7 +351,8 @@
         campaignID: model.get('name'),
         name: goalId,
         label: goalModel.get('name'),
-        custom: custom
+        custom: custom,
+        editable: editable
       });
       html += '</li>';
     });
@@ -334,6 +370,7 @@
    *   - name: The goal ID.
    *   - label: The goal label.
    *   - custom: Boolean to indicate if a goal is custom or defined in code.
+   *   - editable: Boolean to indicate if the goal is editable.
    *
    * @return string
    */
@@ -348,22 +385,34 @@
     ];
 
     var renameHref = Drupal.settings.basePath + Drupal.settings.pathPrefix + 'admin/structure/acquia_lift/goal/rename/' + options.name + '/nojs';
+    var renameClasses = 'acquia-lift-goal-rename acquia-lift-menu-link';
     var renameAttrs = [
-      'class="acquia-lift-goal-rename acquia-lift-menu-link ctools-use-modal ctools-modal-acquia-lift-style"',
-      'title="' + Drupal.t('Rename goal') + '"',
       'aria-role="button"',
       'aria-pressed="false"',
-      'href="' + renameHref + '"'
     ];
+    if (options.editable) {
+      renameAttrs.push('title="' + Drupal.t('Rename goal') + '"');
+      renameAttrs.push('href="' + renameHref + '"');
+      renameAttrs.push('class="' + renameClasses + ' ctools-use-modal ctools-modal-acquia-lift-style"');
+    } else {
+      renameAttrs.push('title="' + Drupal.t('Goals cannot be edited until personalization is paused.') + '"');
+      renameAttrs.push('class="' + renameClasses + ' acquia-lift-disabled"');
+    }
 
     var deleteHref = Drupal.settings.basePath + Drupal.settings.pathPrefix + 'admin/structure/acquia_lift/goal/delete/' + options.campaignID + '/' + options.name + '/nojs';
+    var deleteClasses = 'acquia-lift-goal-delete acquia-lift-menu-link';
     var deleteAttrs = [
-      'class="acquia-lift-goal-delete acquia-lift-menu-link ctools-use-modal ctools-modal-acquia-lift-style"',
-      'title="' + Drupal.t('Delete goal') + '"',
       'aria-role="button"',
       'aria-pressed="false"',
-      'href="' + deleteHref + '"'
     ];
+    if (options.editable) {
+      deleteAttrs.push('title="' + Drupal.t('Delete goal') + '"');
+      deleteAttrs.push('href="' + deleteHref + '"');
+      deleteAttrs.push('class="' + deleteClasses + ' ctools-use-modal ctools-modal-acquia-lift-style"');
+    } else {
+      deleteAttrs.push('title="' + Drupal.t('Goals cannot be deleted until personalization is paused.') + '"');
+      deleteAttrs.push('class="' + deleteClasses + ' acquia-lift-disabled"');
+    }
 
     item += '<div class="acquia-lift-menu-item clearfix">\n';
     item += '<span ' + attrs.join(' ') + '>' + Drupal.t('@text', {'@text': options.label}) + '</span>\n';

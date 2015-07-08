@@ -978,10 +978,115 @@ function acquia_lift_personalize_campaign_wizard_review_alter(&$form, &$form_sta
   $form['review']['summary_column']['summary']['scheduling']['#weight'] = 10;
 
   // Move the warnings into a card.
-  if (!empty($form['review']['warnings_column'])) {
-    $form['review']['warnings_column']['warnings']['#type'] = 'container';
-    $form['review']['warnings_column']['warnings']['#theme'] = 'acquia_lift_card';
+  if (!empty($form['review']['messages']['warnings'])) {
+    $form['review']['messages']['warnings']['#type'] = 'container';
+    $form['review']['messages']['warnings']['#theme'] = 'acquia_lift_card';
   }
+
+  // Provide summary data only available after a personalization has been
+  // started.
+  if (empty($agent_data->started)) {
+    return;
+  }
+  $form['review']['messages']['next'] = array(
+    '#type' => 'container',
+    '#title' => t('Next steps'),
+    '#theme' => 'acquia_lift_card',
+    '#collapsible' => FALSE,
+    '#attributes' => array(
+      'class' => array('acquia-lift-review-next-steps'),
+    ),
+  );
+  // Generate next steps.
+  $option_sets = personalize_option_set_load_by_agent($agent_data->machine_name);
+  $next_links = array(
+    'blocks' => array(),
+    'elements' => array(),
+    'fields' => array(),
+  );
+  $destination = 'admin/structure/personalize/manage/' . $agent_data->machine_name . '/review';
+  foreach($option_sets as $option_set) {
+    switch($option_set->plugin) {
+      case 'block':
+        $next_links['blocks'][] = l(check_plain($option_set->label), 'admin/structure/block', array('query' => array('destination' => $destination)));
+      break;
+      case 'elements':
+        $pages = $option_set->data['pages'];
+        if (!empty($pages)) {
+          $pages = preg_split('~[\r\n]+~', $pages);
+          $url = reset($url);
+          $next_links['elements'][] = l(check_plain($option_set->label), $url);
+        }
+      break;
+      case 'fields':
+        $url = _personalize_fields_get_entity_link_from_option_set($option_set);
+        $next_links['fields'][] = l(check_plain($option_set->label), $url, array('query' => array('destination' => $destination)));
+      break;
+    }
+  }
+  $shown_details = FALSE;
+  if (!empty($next_links['blocks'])) {
+    $form['review']['messages']['next']['blocks'] = array(
+      '#markup' => theme('item_list', array(
+        'items' => $next_links['blocks'],
+        'title' => format_plural(
+          count($next_links['blocks']),
+          'Place your personalized block on your website',
+          'Place your personalized blocks on your website'
+        ),
+      )),
+    );
+    $shown_details = TRUE;
+  }
+  if (!empty($next_links['elements'])) {
+    $form['review']['messages']['next']['elements'] = array(
+      '#markup' => theme('item_list', array(
+        'items' => $next_links['elements'],
+        'title' => format_plural(
+          count($next_links['elements']),
+          'View your element variation set page',
+          'View your element variation set pages'
+        ),
+      )),
+    );
+    $shown_details = TRUE;
+  }
+  if (!empty($next_links['fields'])) {
+    $form['review']['messages']['next']['fields'] = array(
+      '#markup' => theme('item_list', array(
+        'items' => $next_links['fields'],
+        'title' => format_plural(
+          count($next_links['fields']),
+          'View your field variation set page',
+          'View your field variation set pages'
+        ),
+      )),
+    );
+    $shown_details = TRUE;
+  }
+  if ($shown_details) {
+    // Provide a divider
+    $form['review']['messages']['next']['divider'] = array(
+      '#markup' => '<hr />',
+    );
+  }
+  $form['review']['messages']['next']['resources'] = array(
+    '#markup' => theme('links', array(
+      'links' => array(
+        array(
+          'title' => t('View your personalization reports'),
+          'href' => url('admin/structure/personalize/manage/' . $agent_data->machine_name . '/results'),
+        ),
+        array(
+          'title' => t('More Acquia Lift documentation'),
+          'href' => url(ACQUIA_LIFT_DOCUMENTATION),
+          'attributes' => array(
+            'target' => '_blank',
+          ),
+        ),
+      ),
+    )),
+  );
 }
 
 /**
@@ -1859,6 +1964,17 @@ function acquia_lift_personalize_campaign_wizard_review_submit(&$form, &$form_st
     if (!acquia_lift_target_set_status($agent_data, $next_status)) {
       form_set_error(NULL, t('There was a problem implementing the personalization as defined.'));
     }
+
+    if ($next_status == PERSONALIZE_STATUS_RUNNING) {
+      drupal_set_message(t('Congratulations! You have started your personalization.'));
+    }
+    else if ($next_status == PERSONALIZE_STATUS_SCHEDULED) {
+      $start_date = personalize_agent_get_start_date($agent_data->machine_name);
+      drupal_set_message(t('Congratulations!  You have scheduled your personalization to start on @date', array(
+        '@date' => _personalize_campaign_wizard_date($start_date),
+      )));
+    }
+    $form_state['redirect'] = 'admin/structure/personalize/manage/' . $agent_data->machine_name . '/review';
   }
 }
 

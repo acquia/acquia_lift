@@ -1597,6 +1597,8 @@ class AcquiaLiftWebTestWorkflow extends AcquiaLiftWebTestBase {
         ),
         'optionSetTypes' => array(),
         'goals' => NULL,
+        'editable' => TRUE,
+        'status' => PERSONALIZE_STATUS_NOT_STARTED,
       ),
     );
     $admin_user = $this->drupalCreateUser(array('access administration pages', 'manage personalized content'));
@@ -2262,7 +2264,7 @@ class AcquiaLiftWebTestTarget extends AcquiaLiftWebTestBase {
     // Verify that the agent is no longer shown for administration.
     $this->drupalGet('');
     $settings = $this->drupalGetSettings();
-    $this->assertTrue(empty($settings['acquia_lift']['campaigns'][$agent->machine_name]));
+    $this->assertFalse($settings['acquia_lift']['campaigns'][$agent->machine_name]['editable']);
 
     // Try to edit the goal.
     try {
@@ -2321,7 +2323,7 @@ class AcquiaLiftWebTestTarget extends AcquiaLiftWebTestBase {
     // Verify the settings for administration.
     $this->drupalGet('');
     $settings = $this->drupalGetSettings();
-    $this->assertTrue(!empty($settings['acquia_lift']['campaigns'][$agent->machine_name]));
+    $this->assertTrue($settings['acquia_lift']['campaigns'][$agent->machine_name]['editable']);
 
     // Schedule the agent.
     $start_date = strtotime('+1 month midnight');
@@ -2350,7 +2352,7 @@ class AcquiaLiftWebTestTarget extends AcquiaLiftWebTestBase {
     // Verify the agent can't be edited in JS settings.
     $this->drupalGet('');
     $settings = $this->drupalGetSettings();
-    $this->assertTrue(empty($settings['acquia_lift']['campaigns'][$agent->machine_name]));
+    $this->assertFalse($settings['acquia_lift']['campaigns'][$agent->machine_name]['editable']);
 
     // Complete the agent.
     personalize_agent_set_status($agent->machine_name, PERSONALIZE_STATUS_COMPLETED);

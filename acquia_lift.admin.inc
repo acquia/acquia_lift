@@ -121,7 +121,7 @@ function acquia_lift_admin_form($form, &$form_state) {
 
   $form['acquia_lift_profiles_js_path'] = array(
     '#type' => 'textfield',
-    '#title' => t('Acquia Lift / Acquia Lift Profile JavaScript path'),
+    '#title' => t('Acquia Lift JavaScript path'),
     '#field_prefix' => 'http(s)://',
     '#default_value' => variable_get('acquia_lift_profiles_js_path', ''),
     '#required' => TRUE,

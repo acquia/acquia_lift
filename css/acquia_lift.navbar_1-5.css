@@ -128,12 +128,6 @@
   padding-top: 0;
   padding-bottom: 0;
 }
-#navbar-administration .navbar-tray-horizontal .acquia-lift-menu-item .acquia-lift-campaign,
-#navbar-administration .navbar-tray-horizontal .acquia-lift-menu-item .acquia-lift-preview-option {
-  display: block;
-  width: 100%;
-  float: left;
-}
 #navbar-administration .navbar-tray-horizontal .acquia-lift-menu-item .acquia-lift-menu-actions {
   float: right;
   padding-left: .5em;
@@ -152,10 +146,6 @@
 }
 #navbar-administration .navbar-tray-horizontal .acquia-lift-menu-item .acquia-lift-campaign-edit {
   width: 4.2em;
-}
-#navbar-administration .navbar-tray-horizontal .acquia-lift-menu-item .acquia-lift-preview-option {
-  margin-right: -9em;
-  padding-right: 9em;
 }
 #navbar-administration .navbar-tray-horizontal .acquia-lift-menu-item .acquia-lift-variation-edit {
   width: 2.3em;

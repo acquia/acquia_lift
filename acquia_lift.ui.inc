@@ -148,16 +148,6 @@ function acquia_lift_generate_ignore_selector() {
 function acquia_lift_option_set_types_ui() {
   $path = drupal_get_path('module', 'acquia_lift');
   return array(
-    'element' => array(
-      'title' => t('Webpage elements'),
-      'description' => t('This variation style allows you to select an item on a webpage and modify its HTML to create new variations of the content.'),
-      'logo' => theme('image', array(
-        'path' => $path . '/images/variation-type-element.png',
-        'alt' => t('Webpage element'),
-        'title' => t('Select this option to create a variation set from web page elements.'),
-      )),
-      'path' => 'admin/structure/personalize/variations/personalize-elements/add',
-    ),
     'block' => array(
       'title' => t('Drupal blocks'),
       'description' => t('This variation style allows you to display personalized content in a Drupal block, wherever it may appear on your website.'),
@@ -167,6 +157,16 @@ function acquia_lift_option_set_types_ui() {
         'title' => t('Select this option to create a variation set from Drupal content blocks.'),
       )),
       'path' => 'admin/structure/personalize/variations/personalize-blocks/add',
+    ),
+    'element' => array(
+      'title' => t('Webpage elements'),
+      'description' => t('This variation style allows you to select an item on a webpage and modify its HTML to create new variations of the content.'),
+      'logo' => theme('image', array(
+        'path' => $path . '/images/variation-type-element.png',
+        'alt' => t('Webpage element'),
+        'title' => t('Select this option to create a variation set from web page elements.'),
+      )),
+      'path' => 'admin/structure/personalize/variations/personalize-elements/add',
     ),
   );
 }

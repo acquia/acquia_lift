@@ -2085,9 +2085,16 @@ function _acquia_lift_personalize_campaign_wizard_variation_displays($option_set
 function _acquia_lift_personalize_campaign_wizard_variations_block(&$form, &$form_state, $agent_data, $parents, $option_set = NULL) {
   $element = array();
   $values = isset($form_state['values']) ? $form_state['values'] : array();
+
   if (empty($option_set->osid)) {
-    $block_content = drupal_array_get_nested_value($form_state['values'], $parents);
-    $form_state_key = 'add_' . _acquia_lift_personalize_campaign_wizard_next_element($form_state, 'new', $parents);
+    if (isset($form_state['values'])) {
+      $block_content = drupal_array_get_nested_value($form_state['values'], $parents);
+      $form_state_key = 'add_' . _acquia_lift_personalize_campaign_wizard_next_element($form_state, 'new', $parents);
+    }
+    else {
+      $block_content = array();
+      $form_state_key = 'add_0';
+    }
   } else {
     $block_content = empty($values['variations']['editing']['option_sets']['option_set_' . $option_set->osid]['content']) ? array() : $values['variations']['editing']['option_sets']['option_set_' . $option_set->osid]['content'];
     $form_state_key = $option_set->osid;

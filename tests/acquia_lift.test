@@ -2814,15 +2814,15 @@ class AcquiaLiftWebTestCampaignWizardVariations extends AcquiaLiftWebTestBase {
     $this->resetAll();
     $this->drupalGet('admin/structure/personalize/manage/' . $agent->machine_name . '/variations');
     $this->assertFieldByName('variations[option_sets][option_set_' . $option_set->osid . '][content][title]', 'Muppets');
-    $this->assertOptionSelected('personalize-block-' . $option_set->osid . '-0', 'comment_delta_recent');
-    $this->assertOptionSelected('personalize-block-' . $option_set->osid . '-1', 'node_delta_recent');
+    $this->assertOptionSelected('edit-variations-option-sets-option-set-' . $option_set->osid . '-content-pblock-wrapper-blocks-0-block-bid', 'comment_delta_recent');
+    $this->assertOptionSelected('edit-variations-option-sets-option-set-' . $option_set->osid . '-content-pblock-wrapper-blocks-1-block-bid', 'node_delta_recent');
 
     // Edit the variation set title change the second block to a new block
     // created inline.
     $edit = array(
       'variations[option_sets][option_set_' . $option_set->osid . '][content][title]' => 'Great Muppet Caper',
       'variations[option_sets][option_set_' . $option_set->osid . '][content][pblock_wrapper][blocks][0][block][bid]' => 'comment_delta_recent',
-      'variations[option_sets][option_set_' . $option_set->osid . '][content][pblock_wrapper][blocks][1][block][bid]' => 'add',
+      'variations[option_sets][option_set_' . $option_set->osid . '][content][pblock_wrapper][blocks][1][block][block_type]' => 'add',
       'variations[option_sets][option_set_' . $option_set->osid . '][content][pblock_wrapper][blocks][1][block][add][title]' => 'Kermit',
       'variations[option_sets][option_set_' . $option_set->osid . '][content][pblock_wrapper][blocks][1][block][add][info]' => 'Piggy',
       'variations[option_sets][option_set_' . $option_set->osid . '][content][pblock_wrapper][blocks][1][block][add][body][value]' => 'complicated',

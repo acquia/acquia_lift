@@ -1264,7 +1264,7 @@ function acquia_lift_personalize_campaign_wizard_variations_validate(&$form, &$f
         if (empty($block['option_label'])) {
           form_set_error($form_error_parent . 'blocks][' . $j . '][option_label', t('A label is required for each block option.'));
         }
-        if ($block['block']['bid'] === 'add') {
+        if ($block['block']['block_type'] === 'add') {
           if (empty($block['block']['add']['info'])) {
             form_set_error($form_error_parent . 'blocks][' . $j . '][block][add][info', t('A block description is required when creating a new block.'));
           }
@@ -1288,7 +1288,7 @@ function acquia_lift_personalize_campaign_wizard_variations_validate(&$form, &$f
       $valid = $num_blocks > 1;
     }
     if (!$valid) {
-      form_set_error($form_error_parent . 'blocks][' . $first_block . '][block][bid]', t('You must add at least 2 blocks to your personalized block'));
+      form_set_error($form_error_parent . 'blocks][' . $first_block . '][block][block_type]', t('You must add at least 2 blocks to your personalized block'));
     }
   };
 
@@ -1551,7 +1551,7 @@ function _acquia_lift_personalize_campaign_wizard_block_single_save($block_conte
   _acquia_lift_personalize_campaign_wizard_form_state_blocks_alter($form_state, $block_content, $option_set);
   // Create any new blocks
   foreach($form_state['values']['blocks'] as &$block) {
-    if ($block['block']['bid'] === 'add') {
+    if ($block['block']['block_type'] === 'add') {
       $block['block']['bid'] = _personalize_blocks_add_custom_block($block['block']['add']);
     }
   }
@@ -1996,13 +1996,17 @@ function _acquia_lift_personalize_campaign_wizard_variations_block(&$form, &$for
     $block['option_label']['#title'] = _personalize_generate_option_index($key);
     // Weights are not manipulated here.
     $block['weight']['#access'] = FALSE;
-    // Adjust ids for block type form states to accommodate multiple
-    // personalized blocks per page.
-    $bid_id = 'personalize-block-' . $form_state_key . '-' . $key;
-    $block['block']['bid']['#attributes']['id'] = $bid_id;
-    $block['block']['add']['#title'] = t('Create new and add');
+
+    // Block type selection states
+    $select_class = 'select-' . $pblock_id . '-' . $key;
+    $block['block']['block_type']['#attributes']['class'][] = $select_class;
+    $block['block']['bid']['#states']['visible'] = array(
+      ':input.' . $select_class => array('value' => 'select'),
+    );
+
+    $block['block']['add']['#title'] = '';
     $block['block']['add']['#states']['visible'] = array(
-      '#' . $bid_id => array('value' => 'add'),
+      ':input.' . $select_class => array('value' => 'add'),
     );
 
     acquia_lift_chosenify_element($block['block']['bid'], array('acquia-lift-chosen-select-third'));

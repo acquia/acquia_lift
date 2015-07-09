@@ -10,5 +10,6 @@
 
 /* All variations lists */
 ul.acquia-lift-variations-list ul {
-  padding: 0;
+  padding-right: 0;
+  margin-right: 0;
 }

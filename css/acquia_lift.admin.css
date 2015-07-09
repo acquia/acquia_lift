@@ -551,16 +551,21 @@ ul.acquia-lift-variations-list,
 }
 [dir="ltr"] ul.acquia-lift-variations-list {
   padding-left: 0;
+  margin-left: 0;
 }
-.acquia-lift-variations-list > li + li {
+ul.acquia-lift-variations-list > li + li {
   border-top: 1px solid #999;
 }
-.acquia-lift-variations-list li {
+ul.acquia-lift-variations-list li {
   max-width: inherit;
 }
 ul.acquia-lift-variations-list.acquia-lift-variations-lockstep > li {
   background: url(../images/000000/link.png) no-repeat .5em center;
   padding-left: 24px;
+  list-style-type: none;
+}
+ul.acquia-lift-variations-list.acquia-lift-variations-lockstep > li li {
+  list-style-type: none;
 }
 
 /* Review */

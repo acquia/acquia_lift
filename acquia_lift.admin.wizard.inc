@@ -362,9 +362,7 @@ function acquia_lift_personalize_campaign_wizard_variations_alter(&$form, &$form
   // If there are any errors in the multiple variation set handling for this
   // agent then show them here while the user can do something about it.
   if (count($option_sets) > 1) {
-    $agent_instance = personalize_agent_load_agent($agent_data->machine_name);
-    $errors = $agent_instance->getMultipleOptionSetErrors($option_sets);
-    if (!empty($errors)) {
+    if (!acquia_lift_target_validate_lock_step($option_sets)) {
       $form['variations']['display']['errors'] = array(
         '#type' => 'container',
         '#theme' => 'acquia_lift_card',
@@ -373,7 +371,9 @@ function acquia_lift_personalize_campaign_wizard_variations_alter(&$form, &$form
       );
       $form['variations']['display']['errors']['details'] = array(
         '#markup' => theme('item_list', array(
-          'items' => $errors,
+          'items' => array(
+            t('Variation sets must contain an equal number of variations.'),
+          ),
           'attributes' => array(
             'class' => array('personalize-wizard-review-warnings'),
           ),

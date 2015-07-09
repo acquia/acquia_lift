@@ -754,6 +754,29 @@ function acquia_lift_get_option_set_editable_settings($option_set) {
 }
 
 /**
+ * Validate a set of option sets to see if they are valid for lock-step
+ * handling.
+ *
+ * @param array $option_sets
+ *   An array of option set stdClass objects to validate.
+ * @return boolean
+ *   TRUE if the option sets are valid for lock-step, false if otherwise.
+ */
+function acquia_lift_target_validate_lock_step($option_sets) {
+  $equal_option_counts = TRUE;
+  if (count($option_sets) > 1) {
+    $first_os = array_shift($option_sets);
+    $num_options = count($first_os->options);
+    foreach ($option_sets as $os) {
+      if (count($os->options) != $num_options) {
+        $equal_option_counts = FALSE;
+      }
+    }
+  }
+  return $equal_option_counts;
+}
+
+/**
  * Implements hook_personalize_option_set_save().
  */
 function acquia_lift_personalize_option_set_save($option_set) {

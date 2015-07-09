@@ -147,8 +147,9 @@
     ];
 
     var item = '<div class="acquia-lift-menu-item clearfix"><a ' + linkAttrs.join(' ') + '>' + options.link.label + '</a>';
+    item += '<div class="acquia-lift-menu-actions">';
     item += '<a ' + editAttrs.join(' ') + '>' + Drupal.t('Edit') + '</a>\n';
-    item += '</div>\n';
+    item += '</div></div>\n';
     //item += '<a ' + linkAttrs.join(' ') + '>' + options.link.label + '</a>\n';
 
     return item;
@@ -305,14 +306,15 @@
     }
 
     item += '<li>\n<div class="acquia-lift-menu-item clearfix" data-acquia-lift-personalize-option-set="' + options.osID + '">';
-    item += '<a ' + previewAttrs.join(' ') + '>' + options.label + '</a> \n';
-
     if (options.id !== Drupal.settings.personalize.controlOptionName) {
-      item += '<a ' + deleteAttrs.join(' ') + '>' + Drupal.t('Delete') + '</a>\n';
+      item += '<div class="acquia-lift-menu-actions">';
       if (options.showEdit) {
         item += '<a ' + editAttrs.join(' ') + '>' + Drupal.t('Edit') + '</a>\n';
       }
+      item += '<a ' + deleteAttrs.join(' ') + '>' + Drupal.t('Delete') + '</a>\n';
+      item += '</div>';
     }
+    item += '<a ' + previewAttrs.join(' ') + '>' + options.label + '</a> \n';
     item += '</div></li>';
     return item;
   };
@@ -415,12 +417,14 @@
     }
 
     item += '<div class="acquia-lift-menu-item clearfix">\n';
-    item += '<span ' + attrs.join(' ') + '>' + Drupal.t('@text', {'@text': options.label}) + '</span>\n';
-    item += '<a ' + deleteAttrs.join(' ') + '>' + Drupal.t('Delete') + '</a>\n';
+    item += '<div class="acquia-lift-menu-actions">';
     if (options.custom) {
       item += '<a ' + renameAttrs.join(' ') + '>' + Drupal.t('Rename') + '</a>\n';
     }
+    item += '<a ' + deleteAttrs.join(' ') + '>' + Drupal.t('Delete') + '</a>\n';
     item += '</div>';
+    item += '<span ' + attrs.join(' ') + '>' + Drupal.t('@text', {'@text': options.label}) + '</span>\n';
+    item += '</div>'
     return item;
   };
 

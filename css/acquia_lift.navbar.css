@@ -134,16 +134,17 @@
   width: 100%;
   float: left;
 }
+#navbar-administration .navbar-tray-horizontal .acquia-lift-menu-item .acquia-lift-menu-actions {
+  float: right;
+  padding-left: .5em;
+}
 #navbar-administration .navbar-tray-horizontal .acquia-lift-menu-item .acquia-lift-campaign-edit,
 #navbar-administration .navbar-tray-horizontal .acquia-lift-menu-item .acquia-lift-variation-delete,
 #navbar-administration .navbar-tray-horizontal .acquia-lift-menu-item .acquia-lift-variation-rename,
 #navbar-administration .navbar-tray-horizontal .acquia-lift-menu-item .acquia-lift-variation-edit,
 #navbar-administration .navbar-tray-horizontal .acquia-lift-menu-item .acquia-lift-goal-rename,
 #navbar-administration .navbar-tray-horizontal .acquia-lift-menu-item .acquia-lift-goal-delete {
-  position: relative;
-  display: block;
-  float: right;
-  text-align: right;
+  margin-left: .5em;
 }
 #navbar-administration .navbar-tray-horizontal .acquia-lift-menu-item .acquia-lift-campaign {
   margin-right: -4.2em;
@@ -279,11 +280,13 @@
   margin-left: -2em;
   text-align: right;
   font-weight: bold;
+  background-image: -webkit-linear-gradient(180deg, white, white 1.1em, rgba(255, 255, 255, 0) 100%);
   background-image: linear-gradient(270deg, white, white 1.1em, rgba(255, 255, 255, 0) 100%);
   color: rgba(51, 51, 51, 0.6);
 }
 html[dir="rtl"] #navbar-administration .acquia-lift-active-container::after {
   text-align: left;
+  background-image: -webkit-linear-gradient(0deg, white, white 1.1em, rgba(255, 255, 255, 0) 100%);
   background-image: linear-gradient(90deg, white, white 1.1em, rgba(255, 255, 255, 0) 100%);
 }
 #navbar-administration .acquia-lift-active-container, #navbar-administration .acquia-lift-active-container * {

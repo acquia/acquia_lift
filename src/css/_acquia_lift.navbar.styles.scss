@@ -158,16 +158,17 @@
         width: 100%;
         float: left;
       }
+      .acquia-lift-menu-actions {
+        float: right;
+        padding-left: .5em;
+      }
       .acquia-lift-campaign-edit,
       .acquia-lift-variation-delete,
       .acquia-lift-variation-rename,
       .acquia-lift-variation-edit,
       .acquia-lift-goal-rename,
       .acquia-lift-goal-delete {
-        position: relative;
-        display: block;
-        float: right;
-        text-align: right;
+        margin-left: .5em;
       }
       .acquia-lift-campaign {
         margin-right: -4.2em;

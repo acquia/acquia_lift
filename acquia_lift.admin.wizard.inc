@@ -1103,6 +1103,7 @@ function acquia_lift_personalize_campaign_wizard_variations_ajax_cancel($form, &
  * Ajax handler for the full new option set section.
  */
 function acquia_lift_personalize_campaign_wizard_variations_ajax($form, &$form_state) {
+  drupal_get_messages();
   return $form['variations']['editing']['new'];
 }
 
@@ -1110,6 +1111,7 @@ function acquia_lift_personalize_campaign_wizard_variations_ajax($form, &$form_s
  * Ajax handler for a specific new variation set.
  */
 function acquia_lift_personalize_campaign_wizard_variations_ajax_delta($form, &$form_state) {
+  drupal_get_messages();
   $delta = _acquia_lift_personalize_campaign_wizard_next_element($form_state, 'new');
   return $form['variations']['editing']['new'][$delta];
 }
@@ -1146,6 +1148,7 @@ function acquia_lift_personalize_campaign_wizard_blocks_remove($form, &$form_sta
  * Callback to for AJAX to generate the personalize block wrapper form.
  */
 function acquia_lift_personalize_campaign_wizard_blocks_ajax($form, &$form_state) {
+  drupal_get_messages();
   // Both the add and remove buttons have the osid as the last in a "_"
   // delimited list.
   $value_parts = explode('_', $form_state['triggering_element']['#value']);
@@ -1195,6 +1198,7 @@ function acquia_lift_personalize_campaign_wizard_goals_ajax_cancel($form, &$form
  * Ajax handler when adding a new goal.
  */
 function acquia_lift_personalize_campaign_wizard_goals_ajax($form, &$form_state) {
+  drupal_get_messages();
   return $form['goals']['new'];
 }
 
@@ -1202,6 +1206,7 @@ function acquia_lift_personalize_campaign_wizard_goals_ajax($form, &$form_state)
  * Ajax handler when editing a specific new goal
  */
 function acquia_lift_personalize_campaign_wizard_goals_ajax_delta($form, &$form_state) {
+  drupal_get_messages();
   $delta = _acquia_lift_personalize_campaign_wizard_next_element($form_state, 'new');
   return $form['goals']['new'][$delta];
 }
@@ -1222,6 +1227,7 @@ function acquia_lift_personalize_campaign_wizard_goals_ajax_delete($form, &$form
  * Ajax callback handler to return all existing goals in the form.
  */
 function acquia_lift_personalize_campaign_wizard_goals_ajax_all($form, &$form_state) {
+  drupal_get_messages();
   return $form['goals'];
 }
 
@@ -1286,6 +1292,7 @@ function acquia_lift_personalize_campaign_wizard_targeting_audience_cancel($form
  * AJAX callback for the add and cancel audience buttons.
  */
 function acquia_lift_personalize_campaign_wizard_targeting_audience_ajax($form, &$form_state) {
+  drupal_get_messages();
   return $form['targeting']['audiences']['new'];
 }
 

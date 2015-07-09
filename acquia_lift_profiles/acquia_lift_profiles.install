@@ -5,43 +5,15 @@
  */
 
 /**
- * Implements hook_install().
- */
-function acquia_lift_profiles_install() {
-  $menu_name = 'acquia-lift-controls';
-  // Create a link for accessing the Profiles web admin.
-  $item = array(
-    'link_title' => 'Acquia Lift Web Admin',
-    'link_path' => 'http://lift.acquia.com',
-    'menu_name' => $menu_name,
-    'options' => array(
-      'attributes' => array(
-        'class' => array('visitor-actions-ui-ignore', 'acquia-lift-menu-link', 'acquia-lift-web-admin'),
-        'target' => '_blank'
-      ),
-      'alter' => TRUE,
-      'html' => FALSE,
-    ),
-    'expanded' => 1,
-    'weight' => 99,
-  );
-  menu_link_save($item);
-  menu_rebuild();
-}
-
-/**
  * Implements hook_enable().
  */
 function acquia_lift_profiles_enable() {
   // Clear the action subscriber cache.
   visitor_actions_clear_subscribers();
-  // Unhide the menu link if it's hidden.
+  // Create the menu link if it's missing.
   $item = _acquia_lift_profiles_get_menu_link();
-  if (!empty($item) && $item['hidden'] == 1) {
-    $item['hidden'] = 0;
-    menu_link_save($item);
-    // Update the menu router information.
-    menu_rebuild();
+  if (empty($item)) {
+    _acquia_lift_profiles_build_menu_link();
   }
 }
 
@@ -54,10 +26,8 @@ function acquia_lift_profiles_disable() {
 
   // Disable the Profiles web admin link.
   $item = _acquia_lift_profiles_get_menu_link();
-  if (!empty($item) && $item['hidden'] == 0) {
-    $item['hidden'] = 1;
-    menu_link_save($item);
-    menu_rebuild();
+  if (!empty($item)) {
+    menu_link_delete($item['mlid']);
   }
 }
 
@@ -77,12 +47,31 @@ function acquia_lift_profiles_uninstall() {
   variable_del('acquia_lift_profiles_identity_param');
   variable_del('acquia_lift_profiles_identity_type_param');
   variable_del('acquia_lift_profiles_default_identity_type');
+}
 
-  // Delete the menu link
-  $item = _acquia_lift_profiles_get_menu_link();
-  if (!empty($item)) {
-    menu_link_delete($item['mlid']);
-  }
+/**
+ * Adds the menu link for web admin.
+ */
+function _acquia_lift_profiles_build_menu_link() {
+  $menu_name = 'acquia-lift-controls';
+  // Create a link for accessing the Profiles web admin.
+  $item = array(
+    'link_title' => 'Acquia Lift Web Admin',
+    'link_path' => 'http://lift.acquia.com',
+    'menu_name' => $menu_name,
+    'options' => array(
+      'attributes' => array(
+        'class' => array('visitor-actions-ui-ignore', 'acquia-lift-menu-link', 'acquia-lift-web-admin'),
+        'target' => '_blank'
+      ),
+      'alter' => TRUE,
+      'html' => FALSE,
+    ),
+    'expanded' => 1,
+    'weight' => 99,
+  );
+  menu_link_save($item);
+  menu_rebuild();
 }
 
 /**

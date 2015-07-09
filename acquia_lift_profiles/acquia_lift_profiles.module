@@ -39,6 +39,22 @@ function acquia_lift_profiles_translated_menu_link_alter(&$link) {
 }
 
 /**
+ * Implements hook_menu_link_insert().
+ */
+function acquia_lift_profiles_menu_link_insert($menu) {
+  module_load_install('acquia_lift_profiles');
+  if ($menu['menu_name'] !== 'acquia-lift-controls') {
+    return;
+  }
+  // If the Lift controls menu is being rebuilt, make sure
+  // that the Lift web link is included.
+  $item = _acquia_lift_profiles_get_menu_link();
+  if (empty($item)) {
+    _acquia_lift_profiles_build_menu_link();
+  }
+}
+
+/**
  * Implements hook_permission().
  */
 function acquia_lift_profiles_permission() {

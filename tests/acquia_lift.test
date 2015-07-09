@@ -2488,7 +2488,7 @@ class AcquiaLiftWebTestTarget extends AcquiaLiftWebTestBase {
     ));
 
     $this->drupalGet('admin/structure/personalize/manage/' . $targeting_agent->machine_name . '/review');
-    $this->assertText('You have multiple variation sets with different numbers of variations - the personalization cannot be started until all variation sets have the same number of variations.');
+    $this->assertText('Variation sets must contain an equal number of variations.');
 
     // Add a third variation to the first option set.
     $os1->options[] = array(
@@ -2497,7 +2497,7 @@ class AcquiaLiftWebTestTarget extends AcquiaLiftWebTestBase {
     personalize_option_set_save($os1);
     $this->resetAll();
     $this->drupalGet('admin/structure/personalize/manage/' . $targeting_agent->machine_name . '/review');
-    $this->assertNoText('You have multiple variation sets with different numbers of variations - the personalization cannot be started until all variation sets have the same number of variations.');
+    $this->assertNoText('Variation sets must contain an equal number of variations.');
     // Right now the option IDs will not be the same - at least the third one
     // will be different.
     $this->assertFalse($os1->options[2]['option_id'] == $os2->options[2]['option_id']);

@@ -265,7 +265,9 @@ function theme_acquia_lift_report_overview($variables) {
  *   - items: An array of types with the following keys
  *     - type:  What to display for the type
  *     - description: What to display as the description of the type
- *     - url: The url to create a new item of that type.
+ *     - path: The path to create a new item of that type.
+ *     - url_options: An optional array of options to pass when generating
+ *       the url from the path above.
  *     - logo: Logo to denote the type.
  *     - modal: true if url should continue in a modal, false if a new page
  *     - ctools_style: The ctools modal style to use for the next url (if

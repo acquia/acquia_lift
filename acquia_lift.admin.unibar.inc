@@ -388,6 +388,10 @@ function acquia_lift_option_set_add_modal_callback($ajax) {
   foreach ($types as $type) {
     $type['modal'] = FALSE;
   }
+  // Update the path for block creation.
+  $agent_name = personalize_get_campaign_context();
+  $types['block']['path'] = 'admin/structure/personalize/manage/' . $agent_name . '/variations';
+  $types['block']['url_options']['query'][] = array('create' => 'block');
 
   $output = theme('acquia_lift_type_list', array(
     'id' => 'acquia-lift-option-set-type-list',

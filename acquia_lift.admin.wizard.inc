@@ -90,6 +90,11 @@ function acquia_lift_personalize_campaign_wizard_variations_alter(&$form, &$form
     $form_state['new_option_sets'][$delta] = $form_state['values']['variations']['new'][$delta]['option_set_type'];
     $form_state['expanded_option_set'] = $delta;
   }
+  else if (isset($_GET['create']) && in_array($_GET['create'], array('block', 'element'))) {
+    // Has to be the first new option set because the base is just loading.
+    $form_state['new_option_sets'][0] = $_GET['create'];
+    $form_state['expanded_option_set'] = 0;
+  }
 
   $option_sets = personalize_option_set_load_by_agent($agent_data->machine_name);
   if ($variation_set_handling == ACQUIA_LIFT_DECISION_MULTIVARIATE) {

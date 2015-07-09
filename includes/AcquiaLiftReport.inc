@@ -143,7 +143,7 @@ class AcquiaLiftReport extends AcquiaLiftReportBase {
       $this->hasData = FALSE;
       return 0;
     }
-    return (int) $this->formatReportNumber($status_report_data['totals']['sessions']['count'], TRUE, 0);
+    return $this->formatReportNumber($status_report_data['totals']['sessions']['count'], TRUE, 0);
   }
 
   /**

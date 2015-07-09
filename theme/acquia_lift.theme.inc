@@ -171,40 +171,6 @@ function theme_acquia_lift_percentage($variables) {
 }
 
 /**
- * Theme function to show a percentage difference as a label.
- *
- * The percentage is shown as a line filled to the set percentage with optional
- * labels for the percentage indicated (and rest of percentage).
- *
- * @param $variables
- *   The theme variables that will include:
- *   - percent_label: The label for the main percentage selected
- *   - rest_label: The label for the rest of the percentage selected
- *   - percent: The required percentage selected as a float.
- */
-function theme_acquia_lift_percentage_label($variables) {
-  $percent = round($variables['percent'], 2);
-  $rest_percent = 100 - $percent;
-
-  $output = '<div class="acquia-lift-distribution form-item">';
-  if (!empty($variables['percent_label'])) {
-    $output .= '<div class="distribution-set">';
-    $output .= $variables['percent_label'] . ' (' . $variables['percent'] . '%)';
-    $output .= '</div>';
-  }
-  if (!empty($variables['rest_label'])) {
-    $output .= '<div class="distribution-rest">';
-    $output .= $variables['rest_label'] . ' (' . $rest_percent . '%)';
-    $output .= '</div>';
-  }
-  $output .= '<div class="distribution-graphic">';
-  $output .= '<div class="fill" data-acquia-lift-fill="' . $percent . '"></div>';
-  $output .= '</div>';
-  $output .= '</div>';
-  return $output;
-}
-
-/**
  * Theme function for generating the mark-up to display a high-low value.
  *
  * @param $variables

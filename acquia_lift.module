@@ -242,13 +242,6 @@ function acquia_lift_theme() {
       'path' => $path . '/theme',
       'file' => 'acquia_lift.theme.inc',
     ),
-    'acquia_lift_percentage_label' => array(
-      'path' => $path . '/theme',
-      'file' => 'acquia_lift.theme.inc',
-      'percent_label' => '',
-      'rest_label' => '',
-      'percent' => 0,
-    ),
     'acquia_lift_high_low' => array(
       'path' => $path . '/theme',
       'file' => 'acquia_lift.theme.inc',

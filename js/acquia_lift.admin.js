@@ -61,21 +61,6 @@
   };
 
   /**
-   * Adjust fills for percentage line fill components.
-   */
-  Drupal.behaviors.acquia_lift_percentage_label = {
-    attach: function(context, settings) {
-      $('.acquia-lift-distribution .distribution-graphic .fill', context).once().each(function() {
-        var percent = $(this).attr('data-acquia-lift-fill');
-        if (isNaN(parseFloat(percent))) {
-          return;
-        }
-        $(this).css('width', percent + '%');
-      });
-    }
-  };
-
-  /**
    * Adjusts the display of high-low components.
    */
   Drupal.behaviors.acquia_lift_high_low = {

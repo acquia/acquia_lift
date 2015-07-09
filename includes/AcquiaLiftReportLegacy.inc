@@ -1629,7 +1629,7 @@ class AcquiaLiftReportLegacy implements AcquiaLiftReportInterface {
   }
 }
 
-function acquia_lift_legacy_report_form(&$form, &$form_state, $reports, $report_title_additional) {
+function acquia_lift_legacy_report_form(&$form, &$form_state, $reports) {
   // The context and stability reports are only relevant if there is context
   // targeting in place for this campaign.
   if (empty($reports['targeting'])) {
@@ -1667,15 +1667,6 @@ function acquia_lift_legacy_report_form(&$form, &$form_state, $reports, $report_
       'class' => array('acquia-lift-report-section'),
     )
   );
-  if (!empty($report_title_additional)) {
-    $form['context_report']['header']['title']['groups'] = array(
-      '#markup' => t('random and personalized groups'),
-    );
-    $form['context_report']['header']['summary']['distribution'] = array(
-      '#markup' => $report_title_additional,
-      '#theme_wrappers' => array('container'),
-    );
-  }
   $form['context_report']['header']['summary']['report_summary'] = array(
     '#theme_wrappers' => array('container'),
     '#markup' => t('See who converts best for each content variation'),

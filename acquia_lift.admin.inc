@@ -780,16 +780,6 @@ function acquia_lift_report_custom(&$form_state, $agent_data, $legacy = FALSE, $
     );
   }
 
-  // Generate mark-up for adaptive style report labels.
-  $report_title_additional = '';
-  if ($data['decision_style'] === 'adaptive') {
-    $report_title_additional = theme('acquia_lift_percentage_label', array(
-      'percent_label' => t('Random'),
-      'rest_label' => t('Personalized'),
-      'percent' => $data['explore_rate']
-    ));
-  }
-
   // Overview report section.
   $form['overview_report'] = array(
     'overview_report_title' => array(
@@ -819,6 +809,7 @@ function acquia_lift_report_custom(&$form_state, $agent_data, $legacy = FALSE, $
         '#type' => 'container',
         '#attributes' => array(
           'class' => array('acquia-lift-report-section-title'),
+          'data-help-tooltip' => t('The portion of visitors who were shown a random variation, as opposed to the optimized variation. The data below are for the experiment group only.'),
         ),
         'report_title' => array(
           '#markup' => '<h2>' . t('Experiment') . '</h2>',
@@ -836,15 +827,10 @@ function acquia_lift_report_custom(&$form_state, $agent_data, $legacy = FALSE, $
       'class' => array('acquia-lift-report-section'),
     ),
   );
-  if (!empty($report_title_additional)) {
-    $form['experiment_report']['header']['title']['groups'] = array(
-      '#markup' => t('random group'),
-    );
-    $form['experiment_report']['header']['summary']['distribution'] = array(
-      '#markup' => $report_title_additional,
-      '#theme_wrappers' => array('container'),
-    );
-  }
+  $percentage = $data['decision_style'] === 'random' ? 100 : $data['explore_rate'];
+  $form['experiment_report']['header']['title']['groups'] = array(
+    '#markup' => t('(@percentage%)', array('@percentage' => $percentage)),
+  );
   // Get the conversion report options.
   $goals_agent = !empty($parent_agent) ? $parent_agent->machine_name : $agent->getMachineName();
   $form['experiment_report']['header']['options'] = array(
@@ -862,7 +848,7 @@ function acquia_lift_report_custom(&$form_state, $agent_data, $legacy = FALSE, $
   );
   $form['experiment_report']['header']['summary']['report_summary'] = array(
     '#theme_wrappers' => array('container'),
-    '#markup' => t('See which content variations are winning. Note: all of the data below are from the experiment group only.'),
+    '#markup' => t('See which content variations are winning.'),
     '#attributes' => array(
       'class' => array('acquia-lift-report-summary'),
     ),
@@ -874,7 +860,7 @@ function acquia_lift_report_custom(&$form_state, $agent_data, $legacy = FALSE, $
   );
 
   if ($legacy) {
-    acquia_lift_legacy_report_form($form, $form_state, $reports, $report_title_additional);
+    acquia_lift_legacy_report_form($form, $form_state, $reports);
   }
   return $form;
 }

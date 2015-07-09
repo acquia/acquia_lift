@@ -1184,7 +1184,7 @@ function acquia_lift_personalize_campaign_wizard_targeting_ajax($form, &$form_st
   drupal_get_messages();
   $type_key = _acquia_lift_personalize_campaign_wizard_next_element($form_state, 'audiences');
   $context_key = _acquia_lift_personalize_campaign_wizard_next_element($form_state, $type_key);
-  return $form['targeting']['audiences'][$type_key][$context_key]['details']['mapping']['contexts'];
+  return $form['targeting']['audiences'][$type_key][$context_key]['details'];
 }
 
 /**
@@ -2371,8 +2371,18 @@ function _acquia_lift_personalize_campaign_wizard_targeting_audience(&$form, &$f
 // Build up a list of available context values for targeting.
   module_load_include('inc', 'personalize', 'personalize.admin');
   $form['#targeting_values'] = $targeting_values = personalize_get_targeting_options_for_agent($agent_data);
+  // This is the portion of the form that will be replace when the "add new",
+  // "remove context" links are clicked
+  $main_wrapper_id = 'acquia-lift-targeting-' . $parent_type . '-' . $parent_identifier;
+
+  // TRICKY: can't replace the id with a custom ID or the states won't work here.
+  // Work-around is to add a prefix/suffix with the id we want to use for
+  // AJAX replacement.
+  // @see https://www.drupal.org/node/2138611
   $element = array(
     '#type' => 'container',
+    '#prefix' => '<div id="' . $main_wrapper_id . '">',
+    '#suffix' => '</div>',
   );
   $element['name'] = array(
     '#type' => 'textfield',
@@ -2392,10 +2402,6 @@ function _acquia_lift_personalize_campaign_wizard_targeting_audience(&$form, &$f
     '#access' => !empty($audience),
   );
 
-  // This is the portion of the form that will be replace when the "add new" or "remove
-  // context" links are clicked.
-  $main_wrapper_id = 'acquia-lift-targeting-' . $parent_type . '-' . $parent_identifier;
-
   $element['mapping'] = array(
     '#tree' => TRUE,
     '#theme_wrappers' => array('container'),
@@ -2403,7 +2409,6 @@ function _acquia_lift_personalize_campaign_wizard_targeting_audience(&$form, &$f
   $element['mapping']['contexts'] = array(
     '#type' => 'container',
     '#attributes' => array(
-      'id' => $main_wrapper_id,
       'class' => array('acquia-lift-targeting'),
     ),
   );
@@ -2533,19 +2538,27 @@ function _acquia_lift_personalize_campaign_wizard_targeting_audience(&$form, &$f
 
   // Add radio buttons so the user can select how multiple features for an option
   // should be treated.
-  $default_strategy = 'OR';
-  $element['strategy'] = array(
-    '#type' => 'select',
-    '#multiple' => FALSE,
-    '#field_prefix' => t('Visitor must have '),
-    '#field_suffix' => t(' of the specified contexts'),
-    '#description' => t('Choose how multiple contexts should be applied to options. Choose "any" if the rule should apply if the user has any of the contexts. Choose "all" if the rule should apply only if the user has all of the contexts.'),
-    '#options' => array(
-      'OR' => 'any',
-      'AND' => 'all'
-    ),
-    '#default_value' => $default_strategy,
-  );
+  $default_strategy = empty($audience['targeting_strategy']) ? 'OR' : $audience['targeting_strategy'];
+  if (count($mappings) > 1) {
+    $element['strategy'] = array(
+      '#type' => 'select',
+      '#multiple' => FALSE,
+      '#field_prefix' => t('Visitor must have '),
+      '#field_suffix' => t(' of the specified contexts'),
+      '#description' => t('Choose how multiple contexts should be applied to options. Choose "any" if the rule should apply if the user has any of the contexts. Choose "all" if the rule should apply only if the user has all of the contexts.'),
+      '#options' => array(
+        'OR' => 'any',
+        'AND' => 'all'
+      ),
+      '#default_value' => $default_strategy,
+    );
+  }
+  else {
+    $element['strategy'] = array(
+      '#type' => 'value',
+      '#value' => $default_strategy,
+    );
+  }
   return $element;
 }
 

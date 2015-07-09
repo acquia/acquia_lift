@@ -3097,7 +3097,6 @@ class AcquiaLiftWebTestCampaignWizardVariations extends AcquiaLiftWebTestBase {
       'audiences[new][0][details][mapping][contexts][0][context]' => 'user_profile_context' . PERSONALIZE_TARGETING_ADMIN_SEPARATOR . $context_1,
       'audiences[new][0][details][mapping][contexts][0][value][match]' => 'some value',
       'audiences[new][0][details][mapping][contexts][0][value][operator]' => 'equals',
-      'audiences[new][0][details][strategy]' => 'OR',
     );
     $this->drupalPost(NULL, $edit, $this->getButton('wizard_next', array('agent_name' => $first_agent->machine_name, 'step' => 'targeting')));
 
@@ -3755,7 +3754,6 @@ class AcquiaLiftWebTestCampaignWizard extends AcquiaLiftWebTestBase {
       'audiences[new][0][details][mapping][contexts][0][context]' => 'user_profile_context' . PERSONALIZE_TARGETING_ADMIN_SEPARATOR . $context_1,
       'audiences[new][0][details][mapping][contexts][0][value][match]' => 'some value',
       'audiences[new][0][details][mapping][contexts][0][value][operator]' => 'equals',
-      'audiences[new][0][details][strategy]' => 'OR',
     );
     $this->drupalPost(NULL, $edit, $this->getButton('wizard_save'));
 

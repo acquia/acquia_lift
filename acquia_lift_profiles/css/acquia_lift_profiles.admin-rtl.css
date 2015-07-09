@@ -4,15 +4,11 @@
 
 /* Link to Web Admin */
 #navbar-administration .navbar-tray-horizontal .navbar-menu .navbar-level-1 + .navbar-level-1.acquia-lift-navbar-secondary.acquia-lift-navbar-secondary {
-  float: right;
-  border-right: none;
-  margin-right: -1.5em; /* Make up for padding around navbar */
+  float: left;
+  border-left: none;
+  margin-left: -1.5em; /* Make up for padding around navbar */
 }
 #navbar-administration .navbar-tray-horizontal .menu .navbar-level-1.acquia-lift-navbar-marker,
 #navbar-administration .navbar-tray-horizontal .navbar-menu .navbar-level-1.acquia-lift-navbar-marker{
-  border-right: 1px solid #dddddd; /* LTR */
-}
-
-#navbar-administration .navbar-tray-vertical .navbar-level-1.acquia-lift-navbar-secondary {
-  border-top: 3px solid #dddddd
+  border-left: 1px solid #dddddd; /* LTR */
 }

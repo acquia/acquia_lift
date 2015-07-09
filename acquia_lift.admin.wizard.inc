@@ -203,16 +203,13 @@ function acquia_lift_personalize_campaign_wizard_variations_alter(&$form, &$form
   // Hide the agent advanced options which will be shown on the review screen.
   $form['variations']['editing']['advanced']['#access'] = FALSE;
 
-  if (!$editable) {
-    return;
-  }
-
   $new_option_sets_id = 'acquia-lift-option-sets-new';
   $form['variations']['editing']['new'] = array(
     '#type' => 'container',
     '#attributes' => array(
       'id' => $new_option_sets_id,
     ),
+    '#access' => $editable,
   );
 
   if (!empty($form_state['new_option_sets'])) {

@@ -959,7 +959,10 @@ function acquia_lift_visitor_action_edit_form($form, &$form_state, $action) {
   ctools_add_js('ajax-responder');
 
   module_load_include('inc', 'visitor_actions', 'visitor_actions.admin');
-  return visitor_actions_form($form, $form_state, NULL, TRUE, $action);
+  $form = visitor_actions_form($form, $form_state, NULL, TRUE, $action);
+  $form['actions']['submit_form']['#attributes']['class'][] = 'action-item-primary-active';
+  $form['actions']['submit_form']['#attributes']['class'][] = 'acquia-lift-submit-button';
+  return $form;
 }
 
 /**

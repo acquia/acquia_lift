@@ -56,14 +56,8 @@ class AcquiaLiftWebTestBase extends DrupalWebTestCase
     $this->adminUser = $this->drupalCreateUser(array('access administration pages', 'administer personalize configuration'));
 
     $this->managerUser = $this->drupalCreateUser(array('access administration pages', 'manage personalized content', 'administer visitor actions'));
+    $this->configureAcquiaLiftAccount();
     $this->drupalLogin($this->managerUser);
-
-    variable_set('acquia_lift_account_info', array(
-      'owner_code' => $this->liftAOwnerCode,
-      'api_key' => $this->liftAPIKey,
-      'admin_key' => $this->liftAdminKey,
-    ));
-    variable_set('acquia_lift_profiles_js_path', $this->liftProfileJsPath);
   }
 
   public function tearDown()
@@ -78,12 +72,10 @@ class AcquiaLiftWebTestBase extends DrupalWebTestCase
    */
   protected function createTestAgent($label = NULL, $options = array(), $type = 'test_agent') {
     if ($type == 'acquia_lift') {
-      $this->configureAcquiaLiftAccount();
       $options += array(
         'decision_style' => 'adaptive',
         'control_rate' => 10,
         'explore_rate' => 20,
-        'cache_decisions' => 1
       );
     }
     else {
@@ -482,8 +474,6 @@ class AcquiaLiftWebTestConfig extends AcquiaLiftWebTestBase {
   }
 
   public function testLiftAgentAvailability() {
-    // Fill all required information.
-    $this->configureAcquiaLiftAccount();
     // Remove the account information.
     variable_del('acquia_lift_account_info');
     $this->resetAll();
@@ -3792,6 +3782,7 @@ class AcquiaLiftWebTestCampaignWizardReview extends AcquiaLiftWebTestCampaignWiz
     $this->assertEqual($nested1->data, $nested_settings);
 
     $this->drupalGet('admin/structure/personalize/manage/' . $agent->machine_name . '/review');
+    module_load_include('inc', 'acquia_lift', 'acquia_lift.admin');
     acquia_lift_target_set_status($agent, PERSONALIZE_STATUS_PAUSED);
     $this->resetAll();
     $this->drupalGet('admin/structure/personalize/manage/' . $agent->machine_name . '/review');

@@ -4579,6 +4579,6 @@ class AcquiaLiftDebugger extends AcquiaLiftWebTestBase {
     // Turn off debugger mode.
     $this->drupalGet('', array('query' => array($url_param => 0)));
     $settings = $this->drupalGetSettings();
-    $this->assertTrue($settings['acquia_lift']['isDebugMode']);
+    $this->assertTrue(empty($settings['acquia_lift']['isDebugMode']));
   }
 }

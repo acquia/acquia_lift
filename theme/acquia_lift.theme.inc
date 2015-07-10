@@ -316,9 +316,11 @@ function theme_acquia_lift_create_type_change($variables) {
  */
 function theme_acquia_lift_debugger() {
   $markup = <<<EOT
-<div id="debugger">
 <div ng-app="debuggerModule" ng-controller="DebuggerController">
-      <div class="debugger__actions">
+
+<div id="debugger">
+  <div class="debugger__navigation">
+  <div class="debugger__actions">
           <span class="debugger__action__maximize">
               <i class="debugger__icon"></i>
           </span>
@@ -331,60 +333,113 @@ function theme_acquia_lift_debugger() {
           <span class="debugger__action__destroy">
               <i class="debugger__icon"></i>
           </span>
-      </div>
-      <h2 class="debugger__title">lift debugger</h2>
-      <div class="debugger__content">
-          <p>{{debugger}}</p>
-          <button ng-click="tab = 'log'" >LOG</button>
-          <button ng-click="tab = 'profile'">PROFILE</button>
+  </div>
+    <!--<ul class="debugger__navigation__top__bar">-->
+      <button class="debugger__navigation__item" ng-click="tab = 'profile'">Profile</button>
+      <button class="debugger__navigation__item" ng-click="tab = 'segments'">Site Preview</button>
+      <button class="debugger__navigation__item" ng-click="tab = 'log'">Event Log</button>
+    <!--</ul>-->
 
-          <div ng-show="tab == 'log'">
-              <table>
-                  <tr ng-repeat="item in items | orderBy:timestamp">
-                      <td>{{item.type}}</td>
-                      <td>{{item.timestamp}}</td>
-                      <td>{{item.page}}</td>
-                      <td>{{item.message}}</td>
-                      <td>{{item.severity}}</td>
-                      <td>{{item.resolution}}</td>
-                  </tr>
-              </table>
+    <!--<button class="navigation&#45;&#45;link"> option 1</button>-->
+  </div>
+  <div class="debugger__content">
+  <div ng-show="tab=='segments'">
+    <div class="debugger__filters"></div>
+    <div class="debugger__preview">
+      <table>x
+        <tr>
+          <td>Modify your active segments to change content views.</td>
+          <td><b>Active Preview Segments</b></td>
+        </tr>
+        <tr>
+          <td>
+            <div>
+              <autocomplete class="float" ng-model="yourchoice" data="allSegments" on-select="addPreview"></autocomplete>
+              <button ng-click="addPreviewItem(null)">Add</button>
+            </div>
+
+          <div>
+            <div class="float"><button ng-click="stopPreview()">Stop Preview</button></div><div class="float"><button ng-click="startPreview()"> Start Preview</button></div>
           </div>
+          </td>
+          <td>
+            <div ng-repeat="item in profile.overrideSegments">
+              <div class="float test" ng-click="deletePreviewItem(item)"><span> {{item}} &#x2716;</span></div>
+            </div>
+          </td>
+        </tr>
+      </table>
+    </div>
+  </div>
+    <div ng-show="tab == 'log'">
 
-          <div ng-show="tab == 'profile'">
-              <p>PersonId: {{profile.personId}}</p>
-
-              <p>TouchId: {{profile.touchId}}</p>
-
-              <p>Identities</p>
-              <div>
-                  <p ng-repeat="item in profile.identities">
-                      {{item}}
-                  </p>
-              </div>
-
-              <p>Current Segments:</p>
-              <div>
-                  <p ng-repeat="item in profile.currentSegments">
-                      {{item}}
-                  </p>
-              </div>
-
-              <p>All Segments:</p>
-              <div>
-                  <p ng-repeat="item in profile.allSegments">
-                      {{item}}
-                  </p>
-              </div>
-
-              <p>Override Segments:</p>
-              <div>
-                  <p ng-repeat="item in profile.overrideSegments">
-                      {{item}}
-                  </p>
-              </div>
-          </div>
+      <div class="debugger__filters">
+        <div class="float"><b>Filters</b></div>
+        <div
+        isteven-multi-select
+        input-model="severityFilter"
+        output-model="severity"
+        button-label="icon name"
+        item-label="icon name maker"
+        tick-property="ticked"
+        output-model-name="Severity">
+        </div>
+        <div
+        isteven-multi-select
+        input-model="typeFilter"
+        output-model="type"
+        button-label="icon name"
+        item-label="icon name maker"
+        tick-property="ticked"
+        output-model-name="Type">
+        </div>
       </div>
+      <!--<div class="debugger__log">-->
+        <table>
+          <th>
+          <th>Message</th>
+          <th>Type</th>
+          <th>Time</th>
+          <th>Page</th>
+          <th>Resolution</th>
+          </th>
+          <tr ng-repeat="item in items | filter:search | orderBy: '-timestamp'" class="minheight">
+            <td ng-bind-html="item.icon | to_trusted"></td>
+            <td>{{item.message}}</td>
+            <td>{{item.type}}</td>
+            <td>{{item.timestamp | date:'MM/dd/yyyy h:mma'}}</td>
+            <td>{{item.page}}</td>
+            <td>{{item.resolution}}</td>
+          </tr>
+        </table>
+      <!--</div>-->
+    </div>
+
+    <div ng-show="tab == 'profile'">
+      <div class="debugger__filters"></div>
+      <div class="debugger__profile">
+        <table>
+           <b><h5>Tracking ID: {{profile.personId}}</h5></b>
+          <tr>
+            <td>
+
+                <b>Touch ID: </b>{{profile.touchId}}
+                <br>
+                <b> 3rd Party Tracking: </b>{{profile.trackingID}}
+
+            </td>
+            <td> <b>Active Profile Segement</b>
+              <div>
+                <ul ng-repeat="item in profile.curSegments">
+                  <li> {{item}} </li>
+                </ul>
+              </div>
+            </td>
+          </tr>
+        </table>
+      </div>
+    </div>
+    </div>
   </div>
 </div>
 EOT;

@@ -60,12 +60,11 @@
             resolution: ''
           }
           var key = writeToStorage(data);
+          console.log(key);
 
           // Dispatch an event to alert the debugger that new stream data is
           // available.
-          $(document).trigger('acquiaLiftDebugEvent', {
-            'key': key
-          });
+          $(document).trigger('acquiaLiftDebugEvent', [key]);
         });
       });
     }

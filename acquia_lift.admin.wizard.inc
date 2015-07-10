@@ -484,6 +484,7 @@ function acquia_lift_personalize_campaign_wizard_goals_alter(&$form, &$form_stat
                   'ctools-modal-acquia-lift-style',
                   'acquia-lift-configure',
                 ),
+                'id' => 'edit-visitor-action-' . $edit_action,
               ),
             )
           );

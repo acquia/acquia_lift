@@ -940,7 +940,7 @@ class FeatureContext extends RawDrupalContext implements SnippetAcceptingContext
     if (!isset($audiences[$audience_label])) {
       throw new \Exception(sprintf('The current agent "%s" does not have an audience named "%s".', $agent_name, $audience_label));
     }
-    return $this->findElementInRegion('#edit-audiences-' . $audiences[$audience_label], 'wizard_targeting_form');
+    return $this->findElementInRegion('#edit-audiences-' . $audiences[$audience_label], 'campaign_workflow_form');
   }
 
   /**
@@ -953,7 +953,7 @@ class FeatureContext extends RawDrupalContext implements SnippetAcceptingContext
    *   If the variation is not available within the available variations.
    */
   private function getAssignableVariation($variation) {
-    $variations_list = $this->findElementInRegion('.form-item-variations-options-assignment', 'wizard_targeting_form');
+    $variations_list = $this->findElementInRegion('.form-item-variations-options-assignment', 'campaign_workflow_form');
     if (empty($variations_list)) {
       throw new \Exception('Could not find the variations bucket area for all variations.');
     }

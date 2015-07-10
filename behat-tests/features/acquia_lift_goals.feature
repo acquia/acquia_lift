@@ -229,14 +229,14 @@ Feature: Goals can be edited and managed for an Acquia Lift campaign from toolba
     And I am on "admin/structure/personalize/manage/testing-campaign-element-goal/goals"
 
     # I add a new elements goal.
-    When I press "Add goal" in the "wizard_targeting_form" region
-    Then I should see "New element goal" in the "wizard_targeting_form" region
+    When I press "Add goal" in the "campaign_workflow_form" region
+    Then I should see "New element goal" in the "campaign_workflow_form" region
 
     When I check the "New element goal" radio button
     And I wait for AJAX to finish
     # Todo create a custom assertion for clicking a radio button list option
     And I fill in "node" for "goals[new][0][details][url]"
-    And I press "Go" in the "wizard_targeting_form" region
+    And I press "Go" in the "campaign_workflow_form" region
 
     # I select an element to convert to a goal.
     When I click "My article title" in the "page_content" region

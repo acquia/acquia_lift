@@ -135,6 +135,14 @@ function acquia_lift_menu() {
     'file' => 'acquia_lift.admin.unibar.inc',
     'theme callback' => 'ajax_base_page_theme',
   );
+  $items['admin/structure/acquia_lift/visitor_action/%visitor_actions_custom'] = array(
+    'page callback' => 'acquia_lift_visitor_action_edit_modal_callback',
+    'page arguments' => array(4),
+    'access arguments' => array('administer visitor actions'),
+    'type' => MENU_CALLBACK,
+    'file' => 'acquia_lift.admin.unibar.inc',
+    'theme callback' => 'ajax_base_page_theme',
+  );
   $items['admin/structure/personalize/manage/%personalize_agent/audience/%/delete'] = array(
     'title' => 'Delete target audience',
     'page callback' => 'drupal_get_form',

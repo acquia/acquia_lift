@@ -429,6 +429,7 @@ function acquia_lift_personalize_campaign_wizard_goals_alter(&$form, &$form_stat
   }
 
   $params = drupal_get_query_parameters();
+  $all_actions = visitor_actions_get_actions();
   foreach ($goal_deltas as $delta) {
     $goal_id = $form['goals']['all_goals'][$delta]['goal_id']['#value'];
     $expand = FALSE;
@@ -459,15 +460,8 @@ function acquia_lift_personalize_campaign_wizard_goals_alter(&$form, &$form_stat
           '#limit_validation_errors' => array(),
         ),
       );
-      // Add edit link into the action label that gets updated when the
-      // action name selection changes.
-      $card_id = 'goals-all-goals-' . $delta;
-      $form['goals']['all_goals'][$delta]['#attributes']['id'] = $card_id;
-      $form['goals']['all_goals'][$delta]['action_name']['#ajax'] = array(
-        'callback' => 'acquia_lift_personalize_campaign_wizard_goals_ajax_existing',
-        'wrapper' => $card_id,
-      );
 
+      // Determine the current action selected.
       $edit_action = $form['goals']['all_goals'][$delta]['action_name']['#default_value'];
       if (isset($form_state['triggering_element']) && end($form_state['triggering_element']['#array_parents']) == 'action_name') {
         $trigger_delta = _acquia_lift_personalize_campaign_wizard_next_element($form_state, 'all_goals');
@@ -476,21 +470,38 @@ function acquia_lift_personalize_campaign_wizard_goals_alter(&$form, &$form_stat
           $expand = TRUE;
         }
       }
-      $edit_action_label = t('Visitor action') . ' ' . l(
-          t('Edit'),
-          'admin/structure/acquia_lift/visitor_action/' . $edit_action,
-          array(
-            'attributes' => array(
-              'class' => array(
-                'ctools-use-modal',
-                'ctools-modal-acquia-lift-style',
-                'acquia-lift-configure',
+      $visitor_action = $all_actions[$edit_action];
+
+      if (!empty($visitor_action['plugin'])) {
+        // Show a link to edit the associated action within the label.
+        $edit_action_label = t('Visitor action') . ' ' . l(
+            t('Edit'),
+            'admin/structure/acquia_lift/visitor_action/' . $edit_action,
+            array(
+              'attributes' => array(
+                'class' => array(
+                  'ctools-use-modal',
+                  'ctools-modal-acquia-lift-style',
+                  'acquia-lift-configure',
+                ),
               ),
-            ),
-          )
-        );
-      $form['goals']['all_goals'][$delta]['action_name']['#title'] = $edit_action_label;
+            )
+          );
+        $form['goals']['all_goals'][$delta]['action_name']['#title'] = $edit_action_label;
+      }
+      else {
+        // Not a custom action and therefore is not editable.
+        $form['goals']['all_goals'][$delta]['action_name']['#title'] = t('Visitor action');
+      }
     }
+    // Make sure the action label/link gets updated when the action
+    // selection changes.
+    $card_id = 'goals-all-goals-' . $delta;
+    $form['goals']['all_goals'][$delta]['#attributes']['id'] = $card_id;
+    $form['goals']['all_goals'][$delta]['action_name']['#ajax'] = array(
+      'callback' => 'acquia_lift_personalize_campaign_wizard_goals_ajax_existing',
+      'wrapper' => $card_id,
+    );
 
     // Convert the goals display into a card.
     $expand = $expand || count(element_children($form['goals']['all_goals'])) === 1 || (isset($params['goal']) && $params['goal'] == $goal_id);

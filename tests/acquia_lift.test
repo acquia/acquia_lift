@@ -166,7 +166,7 @@ class AcquiaLiftWebTestBase extends DrupalWebTestCase
     return $option_set;
   }
 
-  protected function createTargetingAgentWithNestedTest($label = NULL, $num_options = 3) {
+  protected function createTargetingAgentWithNestedTest($num_options = 3) {
     module_load_include('inc', 'acquia_lift', 'acquia_lift.admin');
     // First, set up our agent, option set, audience and desired targeting
     // structure.
@@ -865,7 +865,7 @@ class AcquiaLiftWebTestFundamentals extends AcquiaLiftWebTestBase {
     AcquiaLiftAPI::setTestInstance();
     module_load_include('inc', 'acquia_lift', 'acquia_lift.batch');
     // Create a targeting agent with a single nested test.
-    $agent = $this->createTargetingAgentWithNestedTest(NULL, 4);
+    $agent = $this->createTargetingAgentWithNestedTest(4);
     personalize_goal_save($agent->machine_name, 'user_login', 1);
     $this->resetAll();
 
@@ -2179,7 +2179,7 @@ class AcquiaLiftWebTestTarget extends AcquiaLiftWebTestBase {
   }
 
   function testNestedAgentDeletion() {
-    $agent_with_nesting = $this->createTargetingAgentWithNestedTest(NULL, 2, FALSE);
+    $agent_with_nesting = $this->createTargetingAgentWithNestedTest(2);
     // Add another option set and make it lock-step.
     $agent_with_nesting->data['variation_set_handling'] = ACQUIA_LIFT_DECISION_LOCKSTEP;
     $second_os = $this->createOptionSet(1, array(

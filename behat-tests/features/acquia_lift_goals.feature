@@ -250,3 +250,38 @@ Feature: Goals can be edited and managed for an Acquia Lift campaign from toolba
     # I verify my new element goal is added and I am redirected.
     Then I should see the message "The action Hovers over My article title was saved."
     And I should be on "admin/structure/personalize/manage/testing-campaign-element-goal/goals"
+
+  Scenario: Edit a visitor action in place from a goal
+    # I have a campaign
+    # My campaign has goals
+    # I login with the marketer role.
+    Given "acquia_lift_target" agents:
+      | machine_name                    | label                           | status  |
+      | testing-campaign-visitor-action | Testing campaign visitor action | 1       |
+    Given goals:
+      | action_name | agent                           | label       |
+      | muppet_test | testing-campaign-visitor-action | Muppet test |
+    And I am logged in as a user with the "access administration pages,access toolbar,administer visitor actions,manage personalized content" permission
+    And I am on "admin/structure/personalize/manage/testing-campaign-visitor-action/goals"
+
+    # I can see the link to edit a custom action
+    Then I should see the visitor action edit link for the "muppet_test" action
+
+    # I verify that I cannot see the link to edit a built in action
+    When I select "user_login" from "goals[all_goals][0][action_name]"
+    Then I should not see the visitor action edit link for the "user_login" action
+
+    # I verify that when I switch it back the link comes back
+    When I select "muppet_test" from "goals[all_goals][0][action_name]"
+    Then I should see the visitor action edit link for the "muppet_test" action
+
+    # I click on the edit link to bring up the actions form.
+    When I click the visitor action edit link for the "muppet_test" action
+    Then I should see the modal with title "Edit visitor action"
+    And the "title" field should contain "Muppet test"
+
+    # I edit the action name and verify it on the campaign wizard
+    When I fill in "Muppet test - edit" for "title"
+    And I press "edit-submit-form"
+    Then I should not see the modal
+    And I should see the text "Muppet test - edit" in the "campaign_workflow_form" region

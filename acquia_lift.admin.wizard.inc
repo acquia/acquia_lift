@@ -1721,6 +1721,8 @@ function _acquia_lift_personalize_campaign_wizard_block_single_save($block_conte
  *   The option set to be edited.
  */
 function _acquia_lift_personalize_campaign_wizard_element_single_save($values, $option_set) {
+  // Make sure to start with the latest option set information.
+  $option_set = personalize_option_set_load($option_set->osid);
   $option_set->label = $values['label'];
   foreach ($option_set->options as &$option) {
     $option['option_label'] = $values['options'][$option['option_id']]['option_label'];
@@ -1738,6 +1740,7 @@ function _acquia_lift_personalize_campaign_wizard_element_single_save($values, $
  *   The option set object submitted with the form.
  */
 function _acquia_lift_personalize_campaign_wizard_variations_single_save_general($values, $option_set) {
+  // Make sure to start with the latest option set information.
   $option_set = personalize_option_set_load($option_set->osid);
   // Advanced form expects the label within its options.
   if (isset($values['content'])) {

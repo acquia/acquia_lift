@@ -2816,6 +2816,30 @@
     }
   };
 
+  Drupal.behaviors.acquiaLiftAdditionalMenuItems = {
+    attach: function(context, settings) {
+      // Adjust the debugger link if included in the unibar.
+      $('#navbar-administration .acquia-lift-debugger').once('acquiaLiftDebugLink', function() {
+        // Adjust the link to toggle the debugger.  This cannot be done via
+        // Drupal because the menu functionality cannot accomodate query
+        // parameters.
+        var debuggerRunning = $(this).attr('data-acquia-lift-debugger-running') == 'true' ? true : false;
+        var toggle = debuggerRunning ? 0 : 1;
+        var href = $(this).attr('href');
+        $(this).attr('href', href + '?acquia_lift_debug_mode=' + toggle);
+        $(this).closest('li').addClass('acquia-lift-navbar-secondary');
+      });
+
+      // Any secondary link should also be moved into a container that can
+      // be placed
+      $('#navbar-administration a.acquia-lift-navbar-secondary').once('acquiaLiftNavbarSecondary', function() {
+        $(this).closest('li').addClass('acquia-lift-navbar-secondary');
+        // Get the first of the previous siblings that isn't a secondary navigation and mark it with a CSS selector.
+        $(this).closest('li').prevAll().not('.acquia-lift-navbar-secondary').first().addClass('acquia-lift-navbar-marker');
+      });
+    }
+  };
+
 }(Drupal, Drupal.jQuery, _));
 
 //# sourceMappingURL=acquia_lift.personalize.js.map

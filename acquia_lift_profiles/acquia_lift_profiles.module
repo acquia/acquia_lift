@@ -171,10 +171,7 @@ function acquia_lift_profiles_page_build(&$page) {
         'js' => array(
           drupal_get_path('module', 'acquia_lift_profiles') . '/js/acquia_lift_profiles.admin.js' => array()
         ),
-        'css' => array(
-          drupal_get_path('module', 'acquia_lift_profiles') . '/css/acquia_lift_profiles.admin.css' => array()
-        )
-      )
+      ),
     );
   }
 

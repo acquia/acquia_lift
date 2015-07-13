@@ -61,7 +61,7 @@ function _acquia_lift_profiles_build_menu_link() {
     'menu_name' => $menu_name,
     'options' => array(
       'attributes' => array(
-        'class' => array('visitor-actions-ui-ignore', 'acquia-lift-menu-link', 'acquia-lift-web-admin'),
+        'class' => array('visitor-actions-ui-ignore', 'acquia-lift-menu-link', 'acquia-lift-web-admin', 'acquia-lift-navbar-secondary'),
         'target' => '_blank'
       ),
       'alter' => TRUE,
@@ -196,4 +196,15 @@ function acquia_lift_profiles_update_7003() {
     variable_set('acquia_lift_profiles_field_mappings', $field_mappings);
   }
   variable_del('acquia_lift_profiles_vocabulary_mappings');
+}
+
+/**
+ * Update the styling for the web administration link.
+ */
+function acquia_lift_profiles_update_7004() {
+  $item = _acquia_lift_profiles_get_menu_link();
+  if (!empty($item)) {
+    menu_link_delete($item['mlid']);
+  }
+  _acquia_lift_profiles_build_menu_link();
 }

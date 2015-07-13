@@ -1704,6 +1704,22 @@ function _acquia_lift_personalize_campaign_wizard_block_single_save($block_conte
 }
 
 /**
+ * Helper submit function to save a single existing element variation.
+ *
+ * @param array $values
+ *   The values from the form state specific to this option set
+ * @param stdClass $option_set
+ *   The option set to be edited.
+ */
+function _acquia_lift_personalize_campaign_wizard_element_single_save($values, $option_set) {
+  $option_set->label = $values['label'];
+  foreach ($option_set->options as &$option) {
+    $option['option_label'] = $values['options'][$option['option_id']]['option_label'];
+  }
+  personalize_option_set_save($option_set);
+}
+
+/**
  * Submit function to submit a single new block variation.
  */
 function acquia_lift_personalize_campaign_wizard_variations_single_submit($form, $form_state) {
@@ -1728,7 +1744,8 @@ function acquia_lift_personalize_campaign_wizard_variations_submit(&$form, &$for
         case "block":
           _acquia_lift_personalize_campaign_wizard_block_single_save($option_set_values['content'], $option_set, $form_state);
           break;
-        case "element":
+        case "elements":
+          _acquia_lift_personalize_campaign_wizard_element_single_save($option_set_values['content'], $option_set);
           break;
         default:
           // Unsupported option set type.
@@ -2398,25 +2415,41 @@ function _acquia_lift_personalize_campaign_wizard_variations_element(&$form, &$f
     return $element;
   }
   // Form for an existing option set.
+  $editable = acquia_lift_target_definition_changes_allowed($agent_data);
   $element['label'] = array(
     '#type' => 'textfield',
     '#required' => TRUE,
-    '#theme_wrappers' => array('acquia_lift_revealing_input'),
     '#default_value' => $option_set->label,
     '#title' => t('Variation set')
   );
-  $items = array();
+  $show_delete = $editable && count($option_set->options) > 2;
   foreach ($option_set->options as $option) {
-    $items[] = $option['option_label'];
-  };
-  if (!empty($items)) {
-    $element['display'] = array(
-      '#markup' => theme('item_list', array(
-        'items' => $items,
-        'title' => t('Variations'),
-      )),
+    $option_id = $option['option_id'];
+    $element['options'][$option_id] = array(
+      '#type' => 'container',
+      '#attributes' => array(
+        'class' => array('acquia-lift-element-variations'),
+      ),
     );
-  }
+    $element['options'][$option_id]['option_label'] = array(
+      '#type' => 'textfield',
+      '#required' => TRUE,
+      '#default_value' => $option['option_label'],
+      '#title' => t('Variation'),
+      '#theme_wrappers' => array('acquia_lift_revealing_input'),
+    );
+    if ($show_delete) {
+      $remove_url = "admin/structure/personalize/variations/personalize-elements/manage/{$option_set->osid}/{$option_id}/delete";
+      $element['options'][$option_id]['remove'] = array(
+        '#markup' => l(t('Delete'), $remove_url, array(
+          'attributes' => array(
+            'class' => array('acquia-lift-delete'),
+          ),
+          'query' => array('destination' => 'admin/structure/personalize/manage/' . $agent_data->machine_name . '/variations'),
+        )),
+      );
+    }
+  };
   if (!empty($option_set->data['pages'])) {
     // Note that utilizing the personalize_html_tag theme here somehow prevents
     // the element and form-altered submit handlers from being called.

@@ -15,6 +15,7 @@ define('ACQUIA_LIFT_TESTING_AGENT_V2', 'acquia_lift_test');
 define('ACQUIA_LIFT_DECISION_LOCKSTEP', 'lockstep');
 define('ACQUIA_LIFT_DECISION_MULTIVARIATE', 'mvt');
 define('ACQUIA_LIFT_MULTIVARIATE_TEST_SUFFIX', '-mvt');
+define('ACQUIA_LIFT_DOCUMENTATION', 'https://docs.acquia.com/lift/drupal');
 
 /**
  * Implements hook_menu().

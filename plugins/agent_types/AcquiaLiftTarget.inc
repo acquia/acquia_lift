@@ -128,14 +128,34 @@ class AcquiaLiftTarget extends PersonalizeAgentBase implements PersonalizeExplic
         '!what_url' => url('admin/structure/personalize/manage/' . $this->getMachineName() . '/variations'),
       ));
     }
+    $errors += $this->getMultipleOptionSetErrors($option_sets);
+    return $errors;
+  }
+
+  /**
+   * Determine the error messaging to show based on multiple variation set
+   * handling configuration for the current agent.
+   *
+   * @param $option_sets
+   *   The option sets to check based on this agent's configuration.
+   * @return array
+   *   An array of error messages to display which will be empty if there are
+   *   no errors.
+   */
+  public function getMultipleOptionSetErrors($option_sets) {
+    $data = $this->getData();
+    $is_mvt = isset($data['variation_set_handling']) && $data['variation_set_handling'] == ACQUIA_LIFT_DECISION_MULTIVARIATE;
+
+    $count_os = count($option_sets);
+    $errors = array();
     if ($is_mvt) {
-      if (count($option_sets) < 2) {
+      if ($count_os < 2) {
         $errors[] = t('A multi-variate test requires at least two option sets. Please add another variation set in the <a href="!what_url">"What" section</a>.', array(
           '!what_url' => url('admin/structure/personalize/manage/' . $this->getMachineName() . '/variations'),
         ));
       }
     }
-    else {
+    if (count($option_sets) > 1) {
       // If there are multiple option sets, check that they all have the same number
       // of options.
       if (!acquia_lift_target_validate_lock_step($option_sets)) {

@@ -201,7 +201,7 @@ function acquia_lift_personalize_campaign_wizard_variations_alter(&$form, &$form
     $form['variations']['editing']['option_sets']['option_set_' . $option_set->osid]['advanced']['decision_name']['#access'] = FALSE;
   }
   // Hide the agent advanced options which will be shown on the review screen.
-  $form['variations']['editing']['advanced']['#access'] = FALSE;
+  $form['variations']['advanced']['#access'] = FALSE;
 
   $new_option_sets_id = 'acquia-lift-option-sets-new';
   $form['variations']['editing']['new'] = array(
@@ -1102,10 +1102,131 @@ function acquia_lift_personalize_campaign_wizard_review_alter(&$form, &$form_sta
   $form['review']['summary_column']['summary']['scheduling']['#weight'] = 10;
 
   // Move the warnings into a card.
-  if (!empty($form['review']['warnings_column'])) {
-    $form['review']['warnings_column']['warnings']['#type'] = 'container';
-    $form['review']['warnings_column']['warnings']['#theme'] = 'acquia_lift_card';
+  if (!empty($form['review']['messages']['warnings'])) {
+    $form['review']['messages']['warnings']['#type'] = 'container';
+    $form['review']['messages']['warnings']['#theme'] = 'acquia_lift_card';
   }
+
+  // Provide summary data only available after a personalization has been
+  // started.
+  if (empty($agent_data->started)) {
+    return;
+  }
+  // Generate next steps.
+  $option_sets = personalize_option_set_load_by_agent($agent_data->machine_name);
+  $next_links = array(
+    'blocks' => array(),
+    'elements' => array(),
+    'fields' => array(),
+  );
+  $destination = 'admin/structure/personalize/manage/' . $agent_data->machine_name . '/review';
+  $total_next_steps = 0;
+  foreach($option_sets as $option_set) {
+    switch($option_set->plugin) {
+      case 'block':
+        $next_links['blocks'][] = l(check_plain($option_set->label), 'admin/structure/block', array('query' => array('destination' => $destination)));
+      break;
+      case 'elements':
+        $pages = $option_set->data['pages'];
+        if (!empty($pages)) {
+          $pages = preg_split('~[\r\n]+~', $pages);
+          $url = reset($pages);
+          $next_links['elements'][] = l(check_plain($option_set->label), $url);
+        }
+      break;
+      case 'fields':
+        $url = _personalize_fields_get_entity_link_from_option_set($option_set);
+        $next_links['fields'][] = l(check_plain($option_set->label), $url, array('query' => array('destination' => $destination)));
+      break;
+    }
+  }
+  $total_next_steps = array_reduce($next_links, function($total, $type) {
+    $total += count($type);
+    return $total;
+  }, 0);
+  if ($total_next_steps > 0) {
+    $form['review']['messages']['next'] = array(
+      '#type' => 'container',
+      '#title' => format_plural($total_next_steps, 'Next step', 'Next steps'),
+      '#theme' => 'acquia_lift_card',
+      '#collapsible' => FALSE,
+      '#attributes' => array(
+        'class' => array('acquia-lift-review-next-steps'),
+      ),
+    );
+  }
+  if (!empty($next_links['blocks'])) {
+    $form['review']['messages']['next']['blocks'] = array(
+      '#markup' => theme('item_list', array(
+        'items' => $next_links['blocks'],
+        'title' => format_plural(
+          count($next_links['blocks']),
+          'Place your personalized block on your website',
+          'Place your personalized blocks on your website'
+        ),
+      )),
+    );
+  }
+  if (!empty($next_links['elements'])) {
+    $form['review']['messages']['next']['elements'] = array(
+      '#markup' => theme('item_list', array(
+        'items' => $next_links['elements'],
+        'title' => format_plural(
+          count($next_links['elements']),
+          'View your element variation set page',
+          'View your element variation set pages'
+        ),
+      )),
+    );
+  }
+  if (!empty($next_links['fields'])) {
+    $form['review']['messages']['next']['fields'] = array(
+      '#markup' => theme('item_list', array(
+        'items' => $next_links['fields'],
+        'title' => format_plural(
+          count($next_links['fields']),
+          'View your field variation set page',
+          'View your field variation set pages'
+        ),
+      )),
+    );
+  }
+
+  // Show resources for further troubleshooting.
+  $form['review']['messages']['resources'] = array(
+    '#type' => 'container',
+    '#title' => t('Need help?'),
+    '#theme' => 'acquia_lift_card',
+    '#collapsible' => FALSE,
+    '#attributes' => array(
+      'class' => array('acquia-lift-review-next-steps'),
+    ),
+  );
+  $url_options = array(
+    'external' => TRUE,
+    'attributes' => array(
+      'target' => 'acquia_lift_resources',
+    ),
+  );
+  $form['review']['messages']['resources']['links'] = array(
+    '#markup' => theme('item_list', array(
+      'items' => array(
+        l(t('Learn how to utilize your personalization\'s reports'),
+          ACQUIA_LIFT_DOCUMENTATION . '/campaign/report',
+          $url_options
+        ),
+        l(t('Read more Acquia Lift documentation'),
+          ACQUIA_LIFT_DOCUMENTATION,
+          $url_options
+        ),
+        l(t('Find answers to common questions'),
+          ACQUIA_LIFT_DOCUMENTATION . '/troubleshooting',
+          $url_options
+        ),
+      ),
+      'title' => t('Still having trouble with your personalization?'),
+    )),
+  );
 }
 
 /**
@@ -1999,6 +2120,7 @@ function acquia_lift_personalize_campaign_wizard_review_submit(&$form, &$form_st
     if (!acquia_lift_target_set_status($agent_data, $next_status)) {
       form_set_error(NULL, t('There was a problem implementing the personalization as defined.'));
     }
+    $form_state['redirect'] = 'admin/structure/personalize/manage/' . $agent_data->machine_name . '/review';
   }
 }
 
@@ -2104,12 +2226,14 @@ function _acquia_lift_personalize_campaign_wizard_variation_displays($option_set
   $set_delta = 0;
   $max_variations = 0;
   foreach ($option_sets as $osid => $option_set) {
-    foreach($option_set->options as $delta => $option) {
+    $delta = 0;
+    foreach($option_set->options as $option) {
       if (!$labels_only) {
         $option['targeting'] = ($osid == $targeting_os->osid);
       }
       $all_variations[$delta][$set_delta] = $labels_only ? $option['option_label'] : $option;
       $max_variations = max($max_variations, count($all_variations[$delta]));
+      $delta++;
     }
     $set_delta++;
   }

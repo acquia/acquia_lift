@@ -580,6 +580,10 @@ ul.acquia-lift-variations-list.acquia-lift-variations-lockstep > li li {
   border: none;
 }
 
+.acquia-lift-review-next-steps .item-list h3 {
+  font-size: 1rem;
+}
+
 /* Personalization listing page */
 #personalize-personalizations-list table tr td {
   vertical-align: middle;

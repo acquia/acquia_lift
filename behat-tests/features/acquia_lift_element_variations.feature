@@ -250,14 +250,14 @@ Feature: Personalize elements variations can be edited for an existing campaign.
     And I am on "admin/structure/personalize/manage/testing-campaign-roundtrip/variations"
 
     # I add a new personalized elements variation.
-    When I press "Add variation set" in the "wizard_targeting_form" region
-    Then I should see the text "Webpage elements" in the "wizard_targeting_form" region
+    When I press "Add variation set" in the "campaign_workflow_form" region
+    Then I should see the text "Webpage elements" in the "campaign_workflow_form" region
 
     When I check the "Webpage elements" radio button
     And I wait for AJAX to finish
     # Todo create a custom assertion for clicking a radio button list option
     And I fill in "node" for "variations[new][0][element][content][url]"
-    And I press "Go" in the "wizard_targeting_form" region
+    And I press "Go" in the "campaign_workflow_form" region
 
     # I select an element to personalize.
     When I click "My article title" in the "page_content" region

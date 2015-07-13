@@ -913,6 +913,68 @@ function acquia_lift_goal_rename_form_submit($form, &$form_state) {
 
 /***************************************************************
  *
+ * V I S I T O R  A C T I O N  E D I T
+ *
+ ***************************************************************/
+/**
+ * Page callback to generate a visitor action edit modal window.
+ *
+ * @param array $action
+ *   The action to edit.
+ */
+function acquia_lift_visitor_action_edit_modal_callback($action) {
+  acquia_lift_create_ctools_form(
+    t('Edit visitor action'),
+    'acquia_lift_visitor_action_edit_form',
+    array(
+      'action' => $action,
+    ),
+    'acquia_lift_visitor_action_edit_complete_callback'
+  );
+}
+
+/**
+ * Ctools processing complete handler for the editing of a visitor action.
+ * @see acquia_lift_create_ctools_form().
+ */
+function acquia_lift_visitor_action_edit_complete_callback($form, $form_state) {
+  $commands = array(
+    ctools_modal_command_dismiss(),
+    ctools_ajax_command_reload(),
+  );
+  return $commands;
+}
+
+/**
+ * Form handler to generate a form to edit a visitor action.
+ *
+ * This is called within a ctools modal window.
+ *
+ * @param array $action
+ *   The visitor action to edit.
+ */
+function acquia_lift_visitor_action_edit_form($form, &$form_state, $action) {
+  ctools_include('modal');
+  ctools_include('ajax');
+  ctools_add_js('ajax-responder');
+
+  module_load_include('inc', 'visitor_actions', 'visitor_actions.admin');
+  $form = visitor_actions_form($form, $form_state, NULL, TRUE, $action);
+  $form['actions']['submit_form']['#attributes']['class'][] = 'action-item-primary-active';
+  $form['actions']['submit_form']['#attributes']['class'][] = 'acquia-lift-submit-button';
+  return $form;
+}
+
+/**
+ * Submit handler for acquia_lift_visitor_action_edit_form().
+ */
+function acquia_lift_visitor_action_edit_form_submit($form, &$form_state) {
+  module_load_include('inc', 'visitor_actions', 'visitor_actions.admin');
+  return visitor_actions_form_submit($form, $form_state);
+}
+
+/***************************************************************
+ *
  * G O A L  D E L E T E
  *
  ***************************************************************/

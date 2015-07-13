@@ -632,3 +632,19 @@ ul.acquia-lift-variations-list.acquia-lift-variations-lockstep > li li {
 #personalize-personalizations-list .acquia-lift-report {
   background-image: url(../images/8A8B8E/report.png);
 }
+
+/* General icons*/
+a.acquia-lift-configure,
+a.acquia-lift-configure:link,
+a.acquia-lift-configure:visited {
+  background: url(../images/0074BD/configure.png) no-repeat left center;
+  padding-left: 1.3em;
+  display: inline-block;
+  background-size: 1.2em;
+  margin-left: .5em;
+  color: #0074BD;
+}
+a.acquia-lift-configure:hover {
+  background-image: url(../images/2FA6E5/configure.png);
+  color: #2FA6E5;
+}

@@ -113,7 +113,7 @@ class FeatureContext extends RawDrupalContext implements SnippetAcceptingContext
    */
   public function beforeJavascriptStep($event) {
     $text = $event->getStep()->getText();
-    if (preg_match('/(follow|press|click|submit|hover)/i', $text)) {
+    if (preg_match('/(follow|press|click|submit|hover|select)/i', $text)) {
       $this->spinUntilAjaxIsFinished();
     }
   }
@@ -125,7 +125,7 @@ class FeatureContext extends RawDrupalContext implements SnippetAcceptingContext
    */
   public function afterJavascriptStep($event) {
     $text = $event->getStep()->getText();
-    if (preg_match('/(follow|press|click|submit|hover)/i', $text)) {
+    if (preg_match('/(follow|press|click|submit|hover|select)/i', $text)) {
       $this->spinUntilAjaxIsFinished();
     }
   }
@@ -208,15 +208,39 @@ class FeatureContext extends RawDrupalContext implements SnippetAcceptingContext
 
   /**
    * @Given /^goals:$/
+   *
+   * Requires each row to have at least:
+   * - action_name: The machine_name for the goal.
+   * - agent: The campagin for the goal
+   * - label: The display name for the goal if it does not a pre-existing
+   *   visitor action.
+   * Optional values:
+   * - plugin: The type of goal, defaults to page.
+   * - event: The event on for the type of goal, defaults to views.
+   * - pages: The pages to limit for the goal, defaults to ''.
+   * - value: The value for the goal, defaults to 1.
    */
   public function createGoals(TableNode $goalsTable) {
     foreach ($goalsTable->getHash() as $goalHash) {
       $goal = (object) $goalHash;
-      $agent = $goal->agent;
-      $action_name = empty($goal->action_name) ? 'user_login' : $goal->action_name;
       $goal_value = isset($goal->value) ? $goal->value : 1;
 
-      personalize_goal_save($agent, $action_name, $goal_value);
+      $actions = visitor_actions_get_actions();
+
+      if (!isset($actions[$goal->action_name])) {
+        $action = array(
+          'label' => $goal->label,
+          'machine_name' => $goal->action_name,
+          'plugin' => isset($goal->plugin) ? $goal->plugin : 'page',
+          'client_side' => 0,
+          'identifier' => '',
+          'event' => isset($goal->event) ? $goal->event : 'views',
+          'pages' => isset($goal->pages) ? $goal->pages : '',
+          'data' => array(),
+        );
+        visitor_actions_save_action($action);
+      }
+      personalize_goal_save($goal->agent, $goal->action_name, $goal_value);
     }
   }
 
@@ -579,6 +603,37 @@ class FeatureContext extends RawDrupalContext implements SnippetAcceptingContext
   }
 
   /**
+   * @Then I should see the visitor action edit link for the :action action
+   */
+  public function assertVisitorActionEditLink($action_name) {
+    $element = $this->getVisitorActionEditLink($action_name);
+    if (empty($element)) {
+      throw new \Exception(sprintf('The edit link for %s action was not found in the %s region on page %s', $action_name, 'campaign_workflow_form', $this->getSession()->getCurrentUrl()));
+    }
+  }
+
+  /**
+   * @Then I should not see the visitor action edit link for the :action action
+   */
+  public function assertNoVisitorActionEditLink($action_name) {
+    $element = $this->getVisitorActionEditLink($action_name);
+    if (!empty($element)) {
+      throw new \Exception(sprintf('The edit link for %s action was found in the %s region on page %s', $action_name, 'campaign_workflow_form', $this->getSession()->getCurrentUrl()));
+    }
+  }
+
+  /**
+   * @When I click the visitor action edit link for the :action action
+   */
+  public function assertVisitorActionEditLinkClick($action_name) {
+    $element = $this->getVisitorActionEditLink($action_name);
+    if (empty($element)) {
+      throw new \Exception(sprintf('The edit link for %s action was not found in the %s region on page %s', $action_name, 'campaign_workflow_form', $this->getSession()->getCurrentUrl()));
+    }
+    $element->click();
+  }
+
+  /**
    * @Then I should see element with :id id in :region region with the :class class
    */
   public function assertElementWithIDHasClass($id, $region, $class) {
@@ -705,6 +760,19 @@ class FeatureContext extends RawDrupalContext implements SnippetAcceptingContext
   /****************************************************
    *        H E L P E R  F U N C T I O N S
    ***************************************************/
+
+  /**
+   * Helper function to get the visitor action edit link for a particular action
+   *
+   * @param string $action_name
+   *   The machine name for the visitor action
+   * @return \Behat\Mink\Element\NodeElement|null
+   *   The element node for the link or null if not found.
+   */
+  public function getVisitorActionEditLink($action_name) {
+    $id = '#edit-visitor-action-' . $action_name;
+    return $this->findElementInRegion($id, 'campaign_workflow_form');
+  }
 
   /**
    * Helper function to generate the css for a variation action link.
@@ -940,7 +1008,7 @@ class FeatureContext extends RawDrupalContext implements SnippetAcceptingContext
     if (!isset($audiences[$audience_label])) {
       throw new \Exception(sprintf('The current agent "%s" does not have an audience named "%s".', $agent_name, $audience_label));
     }
-    return $this->findElementInRegion('#edit-audiences-' . $audiences[$audience_label], 'wizard_targeting_form');
+    return $this->findElementInRegion('#edit-audiences-' . $audiences[$audience_label], 'campaign_workflow_form');
   }
 
   /**
@@ -953,7 +1021,7 @@ class FeatureContext extends RawDrupalContext implements SnippetAcceptingContext
    *   If the variation is not available within the available variations.
    */
   private function getAssignableVariation($variation) {
-    $variations_list = $this->findElementInRegion('.form-item-variations-options-assignment', 'wizard_targeting_form');
+    $variations_list = $this->findElementInRegion('.form-item-variations-options-assignment', 'campaign_workflow_form');
     if (empty($variations_list)) {
       throw new \Exception('Could not find the variations bucket area for all variations.');
     }

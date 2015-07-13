@@ -347,26 +347,28 @@ function theme_acquia_lift_debugger() {
   <div ng-show="tab=='segments'">
     <div class="debugger__filters"></div>
     <div class="debugger__preview">
-      <table>x
+      <table>
         <tr>
           <td>Modify your active segments to change content views.</td>
           <td><b>Active Preview Segments</b></td>
         </tr>
         <tr>
           <td>
-            <div>
+            <div class="addBox">
               <autocomplete class="float" ng-model="yourchoice" data="allSegments" on-select="addPreview"></autocomplete>
               <button ng-click="addPreviewItem(null)">Add</button>
             </div>
 
-          <div>
-            <div class="float"><button ng-click="stopPreview()">Stop Preview</button></div><div class="float"><button ng-click="startPreview()"> Start Preview</button></div>
+          <div class="previewBox">
+            <div class="float"><button ng-click="stopPreview()">Stop Preview</button></div>
+            <div class="float"><button ng-click="startPreview()"> Start Preview</button></div>
           </div>
+
           </td>
           <td>
-            <div ng-repeat="item in profile.overrideSegments">
-              <div class="float test" ng-click="deletePreviewItem(item)"><span> {{item}} &#x2716;</span></div>
-            </div>
+            <ul ng-repeat="item in profile.overrideSegments">
+              <li class="float test" ng-click="deletePreviewItem(item)"><span> {{item}} &#x2716;</span></div>
+            </ul>
           </td>
         </tr>
       </table>
@@ -395,25 +397,36 @@ function theme_acquia_lift_debugger() {
         output-model-name="Type">
         </div>
       </div>
-      <!--<div class="debugger__log">-->
+      <div class="debugger__log">
         <table>
+          <colgroup>
+            <col span="1" style="width: 10em;">
+            <col span="1" style="width: 100em;">
+            <col span="1" style="width: 10em;">
+            <col span="1" style="width: 20em;">
+            <col span="1" style="width: 20em;">
+            <col span="1" style="width: 70em;">
+            <col span="1" style="width: 15em;">
+          </colgroup>
           <th>
           <th>Message</th>
           <th>Type</th>
           <th>Time</th>
           <th>Page</th>
           <th>Resolution</th>
+          <th></th>
           </th>
           <tr ng-repeat="item in items | filter:search | orderBy: '-timestamp'" class="minheight">
-            <td ng-bind-html="item.icon | to_trusted"></td>
-            <td>{{item.message}}</td>
-            <td>{{item.type}}</td>
-            <td>{{item.timestamp | date:'MM/dd/yyyy h:mma'}}</td>
-            <td>{{item.page}}</td>
-            <td>{{item.resolution}}</td>
+            <td ng-bind-html="item.severity | to_icon"></td>
+            <td>{{item.message | cut:true:100:'...':item}}</td>
+            <td>{{item.type | cut:true:10:'...':item}}</td>
+            <td>{{item.timestamp |  date:'MM/dd/yyyy h:mma'}}</td>
+            <td>{{item.page | cut:true:20:'...':item}}</td>
+            <td>{{item.resolution | cut:true:70:'...':item}}</td>
+            <td><div ng-click="item.expand? item.expand = false : item.expand = true" class="clickable"> {{item.expand? '[ Read Less ]' : '[ Read More ]'}}</div></td>
           </tr>
         </table>
-      <!--</div>-->
+      </div>
     </div>
 
     <div ng-show="tab == 'profile'">

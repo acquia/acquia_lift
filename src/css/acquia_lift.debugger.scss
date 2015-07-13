@@ -15,7 +15,7 @@ $background-color:#efefef;
   left: 0;
   color: #333333;
   width: 100%;
-  background: white;
+  background: purple;
   font-family: sans-serif;
   font-size: $font-size;
   line-height: 1.5;
@@ -70,7 +70,6 @@ $background-color:#efefef;
   td{
     padding:0px;
     background-color: white;
-    vertical-align:middle;
     border-bottom:none;
   }
   tr{
@@ -250,10 +249,17 @@ $background-color:#efefef;
   ul{
     list-style: circle;
     display: inline;
-    background-color:green;
+
   }
   li{
-    list-style-type: circle;
+    list-style:none;
+    float:left;
+    min-width: 25%;
+
+    &::before{
+      content:'\25CF';
+      margin-right:0em;
+    }
   }
 }
 .debugger__data {
@@ -327,12 +333,40 @@ $background-color:#efefef;
   td:first-child{
     width: 30%;
   }
-
+  .addBox{
+    width: 100%
+    padding: 2em;
+  }
+  button{
+    height: 29px;
+  }
+  .previewBox{
+    width: 100%;
+    padding:{
+      left: 1em;
+      right: 1em;
+    }
+  }
 }
 
 .debugger__log{
-  padding:3em;
+  table{
+    table-layout:fixed;
+  }
+  .clickable{
+    color: #29aae1;
+    text-decoration: none;
+    -webkit-transition: color .2s ease-out;
+    transition: color .2s ease-out;
+    &:visited {
+      color: #018dc7;
+    }
+    &:hover, a:active, a:focus {
+      color: #56c1f8;
+    }
+  }
 }
+
 .debugger__action__open {
   @extend %debugger-arrow;
 

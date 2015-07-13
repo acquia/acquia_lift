@@ -40,12 +40,12 @@
 
     function writeToStorage(data) {
       var key = 'acquiaLift::debug::' + generateUUID();
-      Storage.write(key, data, false);
+      Storage.write(key, data);
       return key;
     };
 
 
-  // Log any personalize debug events to localStorage for inclusion in the
+  // Log any personalize debug events to sessionStorage for inclusion in the
   // Acquia Lift debugger panel.
   Drupal.behaviors.acquia_lift_debug = {
     attach: function (context, settings) {

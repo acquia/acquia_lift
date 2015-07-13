@@ -13,7 +13,7 @@
   width: 100%;
   background: white;
   font-family: sans-serif;
-  font-size: 0.8em;
+  font-size: 1em;
   line-height: 1.5;
   box-shadow: 0 0 0.1em 0 rgba(0, 0, 0, 0.8);
   border-top-right-radius: .4em;
@@ -65,7 +65,6 @@
 .debugger td {
   padding: 0px;
   background-color: white;
-  vertical-align: middle;
   border-bottom: none;
 }
 .debugger tr {
@@ -230,8 +229,7 @@
 .debugger__profile ul li {
   list-style:none;
   float:left;
-  min-width: 100px;
-  margin-right: 10px;
+  min-width: 25%;
 }
 .debugger__profile ul li:before {
   content:'\25CF';
@@ -276,17 +274,48 @@
 .debugger__preview {
   padding: 3em;
 }
-.debugger__preview table {
+.debugger__preview ul li {
+  list-style:none;
+  float:left;
+  min-width: 20%;
+}
+.debugger__preview table td {
+  vertical-align: top;
   padding: 1em;
+  padding-bottom: 0em;
 }
 .debugger__preview td:first-child {
   width: 30%;
 }
-
-.debugger__log {
-  padding: 3em;
+.debugger__preview .addBox{
+  width: 100%;
+  padding: 1em;
+  padding-top: 0em;
+  vertical-align: middle;
 }
 
+.debugger__preview button{
+  height: 29px;
+}
+.debugger__preview .previewBox{
+  width: 100%;
+  padding-left: 1em;
+  padding-right: 1em;
+}
+.debugger__log .clickable {
+  color: #29aae1;
+  text-decoration: none;
+  transition: color .2s ease-out;
+}
+.debugger__log .clickable:visited {
+  color: #018dc7;
+}
+.debugger__log .clickable:hover, .debugger__log .clickable a:active, .debugger__log .clickable a:focus {
+  color: #56c1f8;
+  cursor: pointer;
+}
+
+.debugger__
 .is-maximized .debugger__action__open {
   -webkit-transform: scaleY(-1);
   -ms-transform: scaleY(-1);

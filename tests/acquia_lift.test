@@ -2999,6 +2999,18 @@ class AcquiaLiftWebTestCampaignWizardVariations extends AcquiaLiftWebTestCampaig
     $this->assertTrue($settings['acquia_lift']['option_sets'][$js_osid]['option-A']['deletable']);
     $this->assertTrue($settings['acquia_lift']['option_sets'][$js_osid]['option-B']['editable']);
     $this->assertTrue($settings['acquia_lift']['option_sets'][$js_osid]['option-B']['deletable']);
+
+    // Verify that the elements variation can have general edits made from
+    // the campaign workflow.
+    $this->drupalGet('admin/structure/personalize/manage/' . $agent->machine_name . '/variations');
+    $edit = array(
+      'variations[editing][option_sets][option_set_' . $option_set->osid . '][content][label]' => 'Element test set 1 - EDIT',
+      'variations[editing][option_sets][option_set_' . $option_set->osid . '][content][options][option-A][option_label]' => 'Option A - EDIT',
+    );
+    $this->drupalPost(NULL, $edit, $this->getButton('wizard_next', array('agent_name' => $agent->machine_name, 'step' => 'variations')));
+    $option_set = personalize_option_set_load($option_set->osid, TRUE);
+    $this->assertTrue('Element test set 1 - EDIT', $option_set->label);
+    $this->assertTrue('Option A - EDIT', $option_set->label);
   }
 
   /**

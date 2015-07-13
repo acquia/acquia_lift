@@ -199,6 +199,15 @@ function acquia_lift_personalize_campaign_wizard_variations_alter(&$form, &$form
     $form['variations']['editing']['option_sets']['option_set_' . $option_set->osid]['advanced']['label']['#access'] = FALSE;
     // Decision name is handled based on the type of tests created.
     $form['variations']['editing']['option_sets']['option_set_' . $option_set->osid]['advanced']['decision_name']['#access'] = FALSE;
+
+    // Show save button specific to this option set.
+    $form['variations']['editing']['option_sets']['option_set_' . $option_set->osid]['save'] = array(
+      '#name' => $option_set->plugin . '_existing_' . $option_set->osid,
+      '#type' => 'submit',
+      '#value' => t('Save'),
+      '#submit' => array('acquia_lift_personalize_campaign_wizard_variations_single_submit'),
+      '#limit_validation_errors' => array(array('variations', 'editing', 'option_sets', 'option_set_' . $option_set->osid)),
+    );
   }
   // Hide the agent advanced options which will be shown on the review screen.
   $form['variations']['advanced']['#access'] = FALSE;
@@ -288,7 +297,7 @@ function acquia_lift_personalize_campaign_wizard_variations_alter(&$form, &$form
             // TRICKY: Name must be specified or else it will default to "op" and
             // conflict with the main process bar save button.
             $form['variations']['editing']['new'][$delta]['block']['save'] = array(
-              '#name' => 'single_save_' . $delta,
+              '#name' => 'block_new_' . $delta,
               '#type' => 'submit',
               '#value' => t('Save'),
               '#submit' => array('acquia_lift_personalize_campaign_wizard_variations_single_submit'),
@@ -1825,11 +1834,71 @@ function _acquia_lift_personalize_campaign_wizard_block_single_save($block_conte
 }
 
 /**
+ * Helper submit function to save a single existing element variation.
+ *
+ * @param array $values
+ *   The values from the form state specific to this option set
+ * @param stdClass $option_set
+ *   The option set to be edited.
+ */
+function _acquia_lift_personalize_campaign_wizard_element_single_save($values, $option_set) {
+  // Make sure to start with the latest option set information.
+  $option_set = personalize_option_set_load($option_set->osid);
+  $option_set->label = $values['label'];
+  foreach ($option_set->options as &$option) {
+    $option['option_label'] = $values['options'][$option['option_id']]['option_label'];
+  }
+  personalize_option_set_save($option_set);
+}
+
+/**
+ * Helper submit function to submit the general and advanced information
+ * for an existing option set.
+ *
+ * @param array $values
+ *   The form state values specific to the option set.
+ * @param stdClass $option_set
+ *   The option set object submitted with the form.
+ */
+function _acquia_lift_personalize_campaign_wizard_variations_single_save_general($values, $option_set) {
+  // Make sure to start with the latest option set information.
+  $option_set = personalize_option_set_load($option_set->osid);
+  // Advanced form expects the label within its options.
+  if (isset($values['content'])) {
+    $option_label = isset($values['content']['title']) ? $values['content']['title'] : $values['content']['label'];
+    $option_set->label = $option_label;
+    $values['advanced']['label'] = $option_label;
+  }
+  personalize_campaign_wizard_submit_variations_advanced($values, $option_set);
+  personalize_option_set_save($option_set);
+}
+
+/**
  * Submit function to submit a single new block variation.
  */
 function acquia_lift_personalize_campaign_wizard_variations_single_submit($form, $form_state) {
-  list( , , $delta) = explode('_', $form_state['triggering_element']['#name']);
-  _acquia_lift_personalize_campaign_wizard_block_single_save($form_state['values']['variations']['editing']['new'][$delta]['block']['content'], NULL, $form_state);
+  // Triggering submit name is {type}_{existing}_{delta} where
+  // {type} is the option set plugin
+  // {existing} is 'new' or 'existing'
+  // {delta} is the option set id for an existing edit or the index for a new
+  list($type, $existing, $delta) = explode('_', $form_state['triggering_element']['#name']);
+  $option_set = $existing == 'existing' ? $form_state['values']['variations']['editing']['option_sets']['option_set_' . $delta]['option_set'] : NULL;
+  switch ($type) {
+    case 'block':
+      if ($existing == 'new') {
+        _acquia_lift_personalize_campaign_wizard_block_single_save($form_state['values']['variations']['editing']['new'][$delta]['block']['content'], NULL, $form_state);
+      }
+      else {
+        _acquia_lift_personalize_campaign_wizard_block_single_save($form_state['values']['variations']['editing']['option_sets']['option_set_' . $delta]['content'], $option_set, $form_state);
+      }
+      break;
+    case 'elements':
+      // Only existing elements can be saved this way.
+      _acquia_lift_personalize_campaign_wizard_element_single_save($form_state['values']['variations']['editing']['option_sets']['option_set_' . $delta]['content'], $option_set);
+  }
+  if ($existing == 'existing') {
+    _acquia_lift_personalize_campaign_wizard_variations_single_save_general($form_state['values']['variations']['editing']['option_sets']['option_set_' . $delta], $option_set);
+  }
 }
 
 /**
@@ -1849,20 +1918,14 @@ function acquia_lift_personalize_campaign_wizard_variations_submit(&$form, &$for
         case "block":
           _acquia_lift_personalize_campaign_wizard_block_single_save($option_set_values['content'], $option_set, $form_state);
           break;
-        case "element":
+        case "elements":
+          _acquia_lift_personalize_campaign_wizard_element_single_save($option_set_values['content'], $option_set);
           break;
         default:
           // Unsupported option set type.
       }
-      $option_set = personalize_option_set_load($option_set->osid);
-      // Advanced form expects the label within its options.
-      if (isset($option_set_values['content'])) {
-        $option_label = isset($option_set_values['content']['title']) ? $option_set_values['content']['title'] : $option_set_values['content']['label'];
-        $option_set->label = $option_label;
-        $option_set_values['advanced']['label'] = $option_label;
-      }
-      personalize_campaign_wizard_submit_variations_advanced($option_set_values, $option_set);
-      personalize_option_set_save($option_set);
+      // Save general and advanced option set data.
+      _acquia_lift_personalize_campaign_wizard_variations_single_save_general($option_set_values, $option_set);
     }
   }
 
@@ -2522,25 +2585,41 @@ function _acquia_lift_personalize_campaign_wizard_variations_element(&$form, &$f
     return $element;
   }
   // Form for an existing option set.
+  $editable = acquia_lift_target_definition_changes_allowed($agent_data);
   $element['label'] = array(
     '#type' => 'textfield',
     '#required' => TRUE,
-    '#theme_wrappers' => array('acquia_lift_revealing_input'),
     '#default_value' => $option_set->label,
     '#title' => t('Variation set')
   );
-  $items = array();
+  $show_delete = $editable && count($option_set->options) > 2;
   foreach ($option_set->options as $option) {
-    $items[] = $option['option_label'];
-  };
-  if (!empty($items)) {
-    $element['display'] = array(
-      '#markup' => theme('item_list', array(
-        'items' => $items,
-        'title' => t('Variations'),
-      )),
+    $option_id = $option['option_id'];
+    $element['options'][$option_id] = array(
+      '#type' => 'container',
+      '#attributes' => array(
+        'class' => array('acquia-lift-element-variations'),
+      ),
     );
-  }
+    $element['options'][$option_id]['option_label'] = array(
+      '#type' => 'textfield',
+      '#required' => TRUE,
+      '#default_value' => $option['option_label'],
+      '#title' => t('Variation'),
+      '#theme_wrappers' => array('acquia_lift_revealing_input'),
+    );
+    if ($show_delete) {
+      $remove_url = "admin/structure/personalize/variations/personalize-elements/manage/{$option_set->osid}/{$option_id}/delete";
+      $element['options'][$option_id]['remove'] = array(
+        '#markup' => l(t('Delete'), $remove_url, array(
+          'attributes' => array(
+            'class' => array('acquia-lift-delete'),
+          ),
+          'query' => array('destination' => 'admin/structure/personalize/manage/' . $agent_data->machine_name . '/variations'),
+        )),
+      );
+    }
+  };
   if (!empty($option_set->data['pages'])) {
     // Note that utilizing the personalize_html_tag theme here somehow prevents
     // the element and form-altered submit handlers from being called.

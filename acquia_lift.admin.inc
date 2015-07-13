@@ -1723,7 +1723,7 @@ function acquia_lift_target_option_set_targeted($agent_name, $option_set) {
  */
 function _acquia_lift_personalize_campaign_wizard_everyone_else_audience() {
   return array(
-    'name' => t('Everyone else'),
+    'name' => t('Everyone'),
     'contexts' => array(),
     'weight' => 1,
     'strategy' => 'OR',

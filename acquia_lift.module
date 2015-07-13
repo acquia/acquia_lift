@@ -637,7 +637,14 @@ function acquia_lift_personalize_goal_presave($goal) {
  * Implements hook_personalize_option_set_presave().
  */
 function acquia_lift_personalize_option_set_presave($option_set) {
-  // Only applies to saving of existing option sets.
+  // If the everyone-else audience is the only audience, name it "Everyone";
+  // otherwise name it "Everyone else".
+  if (isset($option_set->targeting[ACQUIA_LIFT_TARGETING_EVERYONE_ELSE])) {
+    $everyone_else_name = count($option_set->targeting) > 1 ? t('Everyone else') : t("Everyone");
+    $option_set->targeting[ACQUIA_LIFT_TARGETING_EVERYONE_ELSE]['label'] = $everyone_else_name;
+  }
+
+  // The rest only applies to saving of existing option sets.
   if (empty($option_set->osid)) {
     return;
   }

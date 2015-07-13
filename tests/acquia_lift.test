@@ -729,7 +729,7 @@ class AcquiaLiftWebTestAgentAdmin extends AcquiaLiftWebTestBase {
     $this->assertNoLinkByHref('admin/structure/personalize/manage/' . $agent->machine_name . '/delete');
     $this->assertNoLinkByHref('admin/structure/personalize/manage/' . $agent->machine_name . '/results');
     $this->assertText(t('Test only'));
-    $this->assertText(t('Everyone else'));
+    $this->assertText(t('Everyone'));
 
     // Add two audiences and assign variations so that there is only targeting.
     $audience_1 = personalize_generate_machine_name($this->randomName(), NULL, '-');
@@ -1009,7 +1009,7 @@ class AcquiaLiftWebTestReports extends AcquiaLiftWebTestBase {
     personalize_agent_set_status($agent->machine_name, PERSONALIZE_STATUS_RUNNING);
     $this->resetAll();
     $this->drupalGet('admin/structure/personalize/manage/' . $agent->machine_name . '/results');
-    $this->assertText('Test for Everyone else audience');
+    $this->assertText('Test for Everyone audience');
     $this->assertNoFieldByName('audience_filter');
 
     // Pause the agent and change it so that it has another test.
@@ -1857,7 +1857,7 @@ class AcquiaLiftWebTestTarget extends AcquiaLiftWebTestBase {
     $expected = array (
       ACQUIA_LIFT_TARGETING_EVERYONE_ELSE =>
         array (
-          'label' => t('Everyone else'),
+          'label' => t('Everyone'),
           'weight' => 1,
           'targeting_features' => array(),
           'targeting_rules' => array (),

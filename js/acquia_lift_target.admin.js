@@ -141,11 +141,11 @@
         var numberVariations = $variationItems.length;
         for (var i = 0; i < numberVariations; i++) {
           var $current = $variationItems.eq(i);
-          var itemText = decodeURI($current.data('acquia-lift-option-label'));
+          // remove any current indicator.
+          $('.acquia-lift-control-indicator', $current).remove();
           if (i == 0 && numberVariations > 1) {
-            itemText += ' (' + Drupal.t('Control') + ')';
+            $current.append(Drupal.theme('acquiaLiftControlIndicator', 'acquia-lift-control-indicator'));
           }
-          $current.contents().get(0).nodeValue = itemText;
         }
       }
 
@@ -326,5 +326,13 @@
     html += '</li>';
     return html;
   };
+
+  Drupal.theme.prototype.acquiaLiftControlIndicator = function(controlClass) {
+    var html = '';
+    html = '<span class="' + controlClass + '">';
+    html += '(' + Drupal.t('Control') + ')';
+    html += '</span>';
+    return html;
+  }
 
 })(Drupal.jQuery, Drupal);

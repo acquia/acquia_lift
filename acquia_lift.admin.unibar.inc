@@ -813,7 +813,9 @@ function acquia_lift_goal_type_create_form_submit($form, &$form_state) {
       break;
   }
   try {
-    personalize_goal_save($agent_data->machine_name, $action_name, 1);
+    if (!empty($action_name)) {
+      personalize_goal_save($agent_data->machine_name, $action_name, 1);
+    }
   } catch (Exception $e) {
     drupal_set_message($e->getMessage(), 'error');
   }

@@ -552,7 +552,14 @@ li.acquia-lift-targeting-draggable.ui-sortable-helper {
 .acquia-lift-targeting-draggable .acquia-lift-targeting-remove {
   background: transparent url(../images/000000/close.png) no-repeat;
 }
-
+.acquia-lift-targeting-draggable .acquia-lift-control-indicator {
+  margin-left: 1em;
+  vertical-align: top;
+  display: inline-block;
+}
+.acquia-lift-draggable-variations li[data-acquia-lift-option-id] > div {
+  display: inline-block;
+}
 .acquia-lift-draggable-variations li[data-acquia-lift-option-id] .acquia-lift-variations-lockstep {
   background: url(../images/000000/link.png) no-repeat 0 center;
   padding-left: 30px;

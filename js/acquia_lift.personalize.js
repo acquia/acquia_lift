@@ -1548,6 +1548,11 @@
      * Responds to clicks to add or edit an existing elements variation.
      */
     onEdit: function(event) {
+      if ($(event.target).hasClass('acquia-lift-disabled')) {
+        event.preventDefault();
+        event.stopPropagation();
+        return false;
+      }
       var osData = this.model.get('data');
       var optionId = $(event.target).data('acquia-lift-personalize-option-set-option');
       var data = {

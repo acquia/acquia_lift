@@ -1,33 +1,52 @@
 /* Styles to override the CTools modals */
 
-div.ctools-modal-content.acquia-lift-modal {
+#modalContent div.ctools-modal-content.acquia-lift-modal {
   padding: 1em;
   color: #333;
   border-color: #555;
   max-width: 1000px;
 }
 
-div.ctools-modal-content.acquia-lift-modal .modal-header {
+#modalContent div.ctools-modal-content.acquia-lift-modal .modal-header {
   background-color: #fff;
   padding: 0;
+  border: 0;
+  border-radius: 0;
 }
 
-div.ctools-modal-content.acquia-lift-modal .modal-title {
+#modalContent div.ctools-modal-content.acquia-lift-modal .modal-title {
   font-family: "Helvetica Neue", helvetica, "Segoe UI", segoe, "Ubuntu", "Droid Sans", "Arial", sans-serif;
   font-size: 2.2em;
   font-weight: normal;
   color: #333;
+  padding: 0;
+
 }
 
-div.ctools-modal-content.acquia-lift-modal .modal-content {
+#modalContent div.ctools-modal-content.acquia-lift-modal .modal-content,
+#modalContent div.ctools-modal-content.acquia-lift-modal #modal-content {
   padding: .3em;
   color: #666;
   font-family: "Helvetica Neue", helvetica, "Segoe UI", segoe, "Ubuntu", "Droid Sans", "Arial", sans-serif;
   max-width: 1000px;
 }
 
-div.ctools-modal-content.acquia-lift-modal .form-item label {
+#modalContent div.ctools-modal-content.acquia-lift-modal #modal-content .form-item label {
   width: auto;
+}
+
+#modalContent div.ctools-modal-content.acquia-lift-modal #modal-content .fieldset-legend,
+#modalContent div.ctools-modal-content.acquia-lift-modal #modal-content fieldset legend {
+  background-color: #fff;
+  color: #999;
+}
+#modalContent div.ctools-modal-content.acquia-lift-modal #modal-content .fieldset-legend a,
+#modalContent div.ctools-modal-content.acquia-lift-modal #modal-content fieldset legend a {
+  color: #999;
+}
+#modalContent div.ctools-modal-content.acquia-lift-modal #modal-content .fieldset-legend a:hover,
+#modalContent div.ctools-modal-content.acquia-lift-modal #modal-content fieldset legend a:hover {
+  color: #ccc;
 }
 
 /* Styles specific to Acquia Lift's modal content */
@@ -69,7 +88,7 @@ div.ctools-modal-content.acquia-lift-modal .modal-content a.acquia-lift-type-sel
 }
 
 /* Styles specific to the campaign creation form */
-div.ctools-modal-content.acquia-lift-modal .modal-content label {
+div.ctools-modal-content.acquia-lift-modal #modal-content label {
   float: none;
 }
 

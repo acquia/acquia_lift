@@ -1552,14 +1552,14 @@ class AcquiaLiftWebTestWorkflow extends AcquiaLiftWebTestBase {
     $goals = personalize_goal_load_by_conditions(array('agent' => $agent->machine_name), TRUE);
     $this->assertEqual(0, count($goals));
 
-    // Add an agent and create a goal before creating an option set. No second
-    // goal should be created for the option set.
+    // Add an agent and create a goal before creating an option set. A second goal is
+    // automatically created when creating the option set.
     $agent2 = $this->createTargetingAgent();
     personalize_goal_save($agent2->machine_name, 'user_login', 2);
     $this->createPersonalizedBlock(1, $agent2, 2);
     $this->resetAll();
     $goals = personalize_goal_load_by_conditions(array('agent' => $agent2->machine_name));
-    $this->assertEqual(1, count($goals));
+    $this->assertEqual(2, count($goals));
     $goal = reset($goals);
     $this->assertEqual('user_login', $goal->action);
     $this->assertEqual(2, $goal->value);
@@ -2605,17 +2605,8 @@ class AcquiaLiftWebTestTarget extends AcquiaLiftWebTestBase {
     // Add a couple of goals.
     personalize_goal_save($targeting_agent->machine_name, 'form_submit', 1);
     personalize_goal_save($targeting_agent->machine_name, 'user_login', 2);
-    // Grab the goals created so we can assert that they get moved over to the
-    // MVT later.
-    $goals = personalize_goal_load_by_conditions(array('agent' => $targeting_agent->machine_name), TRUE);
-    // Just pull the details out into an array.
-    $original_goal_info = array();
-    foreach ($goals as $goal) {
-      $goal_array = (array) $goal;
-      unset($goal_array['agent']);
-      $original_goal_info[$goal->id] = $goal_array;
-    }
 
+    // Verify the error message.
     $this->drupalGet('admin/structure/personalize/manage/' . $targeting_agent->machine_name . '/review');
     $this->assertText('A multi-variate test requires at least two option sets.');
     $this->assertNoText('You have multiple variation sets with different numbers of variations - the personalization cannot be started until all variation sets have the same number of variations.');
@@ -2628,6 +2619,17 @@ class AcquiaLiftWebTestTarget extends AcquiaLiftWebTestBase {
     $this->drupalGet('admin/structure/personalize/manage/' . $targeting_agent->machine_name . '/review');
     $this->assertNoText('A multi-variate test requires at least two option sets.');
     $this->assertNoText('You have multiple variation sets with different numbers of variations - the personalization cannot be started until all variation sets have the same number of variations.');
+
+    // Grab the goals created so we can assert that they get moved over to the
+    // MVT later.
+    $goals = personalize_goal_load_by_conditions(array('agent' => $targeting_agent->machine_name), TRUE);
+    // Just pull the details out into an array.
+    $original_goal_info = array();
+    foreach ($goals as $goal) {
+      $goal_array = (array) $goal;
+      unset($goal_array['agent']);
+      $original_goal_info[$goal->id] = $goal_array;
+    }
     // Implement the MVT.
     AcquiaLiftAPI::setTestInstance();
     acquia_lift_implement_mvt($targeting_agent);

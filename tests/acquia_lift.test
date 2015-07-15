@@ -2580,6 +2580,52 @@ class AcquiaLiftWebTestTarget extends AcquiaLiftWebTestBase {
     $goals_original = personalize_goal_load_by_conditions(array('agent' => $targeting_agent->machine_name), TRUE);
     $this->assertTrue(empty($goals_original));
   }
+
+
+  function testLockstepVariations() {
+    $this->drupalLogin($this->managerUser);
+    $targeting_agent = $this->createTargetingAgent();
+    // Add a couple of option sets with different numbers of options.
+    $os1 = $this->createOptionSet(1, array(
+      'agent' => $targeting_agent->machine_name,
+      'plugin' => 'type1',
+      'num_options' => 3,
+    ));
+    $os2 = $this->createOptionSet(2, array(
+      'agent' => $targeting_agent->machine_name,
+      'plugin' => 'type1',
+      'num_options' => 3,
+    ));
+    $elements_os = $this->createPersonalizeElementsOptionSet($targeting_agent->machine_name,
+      array('add_control' => TRUE, 'num_options' => 2));
+    $targeting_option_set = acquia_lift_get_option_set_for_targeting($targeting_agent->machine_name);
+    $this->assertEqual($elements_os->osid, $targeting_option_set->osid);
+    $option_ids = array();
+    foreach ($targeting_option_set->options as $option) {
+      $option_ids[] = $option['option_id'];
+    }
+    // Now implement the structure. The option IDs on all option sets should be
+    // updated to match those of the targeting option set.
+    AcquiaLiftAPI::setTestInstance();
+    $targeting = array(
+      ACQUIA_LIFT_TARGETING_EVERYONE_ELSE => $option_ids
+    );
+    try {
+      acquia_lift_save_targeting_structure($targeting_agent, $targeting);
+    }
+    catch (AcquiaLiftException $e) {
+      $this->fail('Exception thrown when none expected.');
+    }
+    // Implement the targeting as a basic test.
+    acquia_lift_implement_targeting($targeting_agent);
+    $this->resetAll();
+    $this->drupalGet('');
+    $settings = $this->drupalGetSettings();
+    $option_set_settings = $settings['personalize']['option_sets'];
+    // Confirm that the control variation has the correct option id.
+    $this->assertEqual(PERSONALIZE_CONTROL_OPTION_ID,
+      $option_set_settings['osid-' . $elements_os->osid]['options'][0]['option_id']);
+  }
 }
 
 /**

@@ -3022,10 +3022,26 @@ function acquia_lift_get_option_set_for_targeting($agent_name) {
   if (empty($option_sets)) {
     return NULL;
   }
+  $targeting_osid = $targeting = NULL;
   foreach ($option_sets as $option_set) {
-    if (!empty($option_set->targeting)) {
-      return $option_set;
+    if (empty($targeting) && !empty($option_set->targeting)) {
+      $targeting_osid = $option_set->osid;
+      $targeting = $option_set->targeting;
     }
+    // If we have a personalize_elements option set then this one should be
+    // used because the option ids matter and should not be clobbered by
+    // other option ids.
+    if ($option_set->plugin == 'elements') {
+      $targeting_osid = $option_set->osid;
+      break;
+    }
+  }
+  if ($targeting_osid) {
+    if ($targeting && empty($option_sets[$targeting_osid]->targeting)) {
+      $option_sets[$targeting_osid]->targeting = $targeting;
+      personalize_option_set_save($option_sets[$targeting_osid]);
+    }
+    return $option_sets[$targeting_osid];
   }
   return reset($option_sets);
 }

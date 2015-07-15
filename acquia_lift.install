@@ -42,7 +42,6 @@ function acquia_lift_uninstall() {
     'acquia_lift_account_info',
     'acquia_lift_profiles_js_path',
     'acquia_lift_client_side_goals',
-    'acquia_lift_batch_decisions',
     'acquia_lift_confidence_measure',
     'queue_class_acquia_lift_sync',
     'acquia_lift_legacy_agents',
@@ -814,6 +813,13 @@ function acquia_lift_update_7201() {
   foreach ($variables as $var) {
     variable_del($var);
   }
+}
+
+/**
+ * Removes unused variable.
+ */
+function acquia_lift_update_7202() {
+  variable_del('acquia_lift_batch_decisions');
 }
 
 /**

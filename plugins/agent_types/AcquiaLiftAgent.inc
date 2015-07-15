@@ -84,7 +84,7 @@ class AcquiaLiftAgent extends PersonalizeAgentBase implements PersonalizeAgentGo
               'owner' => $this->liftAPI->getOwnerCode(),
               'baseUrl' => $this->liftAPI->getApiUrl(),
               'stringReplacePattern' => AcquiaLiftAPI::STRING_REPLACE_PATTERN,
-              'batchMode' => variable_get('acquia_lift_batch_decisions', FALSE)
+              'batchMode' => FALSE
             )
           )
         ),

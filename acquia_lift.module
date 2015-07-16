@@ -1181,6 +1181,7 @@ function acquia_lift_library() {
       array('acquia_lift', 'acquia_lift.navbar.announce'),
       array('acquia_lift', 'acquia_lift.navbar.displace'),
       array('acquia_lift', 'acquia_lift.navbar.menu'),
+      array('acquia_lift', 'acquia_lift.navbar.tableheader'),
     ),
   );
   // Set the menu class to be used.
@@ -1411,10 +1412,6 @@ function acquia_lift_library() {
     'js' => array(
       // Load this file well after Overlay code has loaded.
       $path . '/js/navbar/navbar-tableheader.js' => array('weight' => 100),
-      array(
-        'data' => array('tableHeaderOffset' => 'Drupal.navbar.height'),
-        'type' => 'setting'
-      ),
     ),
     'dependencies' => array(
       array('system', 'jquery'),
@@ -2131,9 +2128,9 @@ function acquia_lift_system_info_alter(&$info, $file, $type) {
  */
 function acquia_lift_js_alter(&$javascript) {
   // Only load the tableheader offset script if the core tableheader script
-  // is loaded.
-  if (isset($javascript['misc/tableheader.js']) && _acquia_lift_using_unified_navbar()) {
-    drupal_add_library('acquia_lift', 'acquia_lift.navbar.tableheader');
+  // is loaded and acquia lift is loaded.
+  if (isset($javascript['misc/tableheader.js']) && _acquia_lift_using_unified_navbar() && isset($javascript[drupal_get_path('module', 'acquia_lift') . '/js/acquia_lift.navbar.js'])) {
+    drupal_add_js(array('tableHeaderOffset' => 'Drupal.navbar.height'), array('type' => 'setting'));
   }
 }
 

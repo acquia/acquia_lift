@@ -247,7 +247,6 @@ function acquia_lift_agent_list($agents = array(), $legacy = FALSE) {
   $agent_type_target = t('Target only');
   $agent_type_both = t('Test and target');
   $agent_type_legacy = t('Legacy');
-
   $build = array();
   $build['#attached']['library'][] = array('personalize', 'admin.campaign.list');
   $build['#attached']['css'][] = drupal_get_path('module', 'acquia_lift') . '/css/acquia_lift.admin.css';
@@ -1734,5 +1733,8 @@ function acquia_lift_legacy_campaign_list() {
     drupal_goto('admin/structure/personalize');
   }
   $agents = personalize_agent_load_multiple($legacy_campaigns);
+  if (empty($agents)) {
+    drupal_goto('admin/structure/personalize');
+  }
   return acquia_lift_agent_list($agents, TRUE);
 }

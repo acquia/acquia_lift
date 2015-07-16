@@ -3125,6 +3125,13 @@ function acquia_lift_target_audience_delete_submit($form, &$form_state) {
   $option_set = $form_state['values']['option_set'];
   $audience_id = $form_state['values']['audience_id'];
   $audience_name = isset($option_set->targeting[$audience_id]['label']) ? $option_set->targeting[$audience_id]['label'] : $audience_id;
+  // First remove any agent-level targeting structure for this audience.
+  $agent = personalize_agent_load($option_set->agent);
+  if (isset($agent->data['lift_targeting'][$audience_id])) {
+    unset($agent->data['lift_targeting'][$audience_id]);
+    personalize_agent_save($agent);
+  }
+  // Delete the audience definition along with any saved targeting.
   unset($option_set->targeting[$audience_id]);
   personalize_option_set_save($option_set);
   drupal_set_message(t('The target audience %name has been removed.', array('%name' => $audience_name)));

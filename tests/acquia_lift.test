@@ -3340,8 +3340,17 @@ class AcquiaLiftWebTestCampaignWizardTargeting extends AcquiaLifTWebTestCampaign
     $this->assertNoText('The targeting settings shown here do not match what is currently implemented for this personalization.');
     $this->assertNoText('The targeting settings shown here represent what is currently implemented for this personalization.');
 
-    // Add a goal so that the agent can be started.
-    personalize_goal_save($first_agent->machine_name, 'user_login', 1);
+    // Delete an audience and verify that all adjusts accordingly.
+    $this->drupalGet('admin/structure/personalize/manage/' . $first_agent->machine_name . '/audience/others/delete');
+    $this->drupalPost(NULL, array(), t('Delete'));
+    $first_agent = personalize_agent_load($first_agent->machine_name, TRUE);
+    $expected_agent_targeting = array(
+      'muppet-fans' => array('option-A', 'option-B'),
+      'everyone-else' => array('option-C'),
+    );
+    $this->assertEqual($expected_agent_targeting['muppet-fans'], array_values($first_agent->data['lift_targeting']['muppet-fans']));
+    $this->assertEqual($expected_agent_targeting['everyone-else'], array_values($first_agent->data['lift_targeting']['everyone-else']));
+    $this->assertFalse(isset($first_agent->data['lift_targeting']['others']));
 
     // Save the targeting structure and start the agent.
     $this->drupalPost("admin/structure/personalize/manage/" . $first_agent->machine_name . '/review', array(), $this->getButton('wizard_start'));
@@ -3370,8 +3379,7 @@ class AcquiaLiftWebTestCampaignWizardTargeting extends AcquiaLifTWebTestCampaign
     $this->assertText('The targeting settings shown here represent what is currently implemented for this personalization.');
     $this->assertOptionSelected('edit-audiences-existing-muppet-fans-assignment', $first_option_set->options[0]['option_id']);
     $this->assertOptionSelected('edit-audiences-existing-muppet-fans-assignment', $first_option_set->options[1]['option_id']);
-    $this->assertOptionSelected('edit-audiences-existing-others-assignment', $first_option_set->options[2]['option_id']);
-    $this->assertOptionSelected('edit-audiences-existing-everyone-else-assignment', $first_option_set->options[0]['option_id']);
+    $this->assertOptionSelected('edit-audiences-existing-everyone-else-assignment', $first_option_set->options[2]['option_id']);
 
     // Add an option to the existing option set and verify that it appears as
     // unassigned but available for targeting.
@@ -3389,8 +3397,7 @@ class AcquiaLiftWebTestCampaignWizardTargeting extends AcquiaLifTWebTestCampaign
     $this->assertOptionSelected('edit-variations-options-assignment', $first_option_set->options[2]['option_id']);
     $this->assertOptionSelected('edit-audiences-existing-muppet-fans-assignment', $first_option_set->options[0]['option_id']);
     $this->assertOptionSelected('edit-audiences-existing-muppet-fans-assignment', $first_option_set->options[1]['option_id']);
-    $this->assertOptionSelected('edit-audiences-existing-others-assignment', $first_option_set->options[2]['option_id']);
-    $this->assertOptionSelected('edit-audiences-existing-everyone-else-assignment', $first_option_set->options[0]['option_id']);
+    $this->assertOptionSelected('edit-audiences-existing-everyone-else-assignment', $first_option_set->options[2]['option_id']);
   }
 
   /**

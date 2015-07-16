@@ -257,7 +257,17 @@ function acquia_lift_agent_list($agents = array(), $legacy = FALSE) {
     $agents = personalize_agent_load_multiple(array(), array(), FALSE, TRUE, 'acquia_lift_sort_agent_started');
   }
 
-  if (empty($agents)) {
+  $sorted_agents = array();
+  foreach ($agents as $agent) {
+    // If this is a nested agent, it should not be listed.
+    if (!$legacy && in_array($agent->plugin, array(ACQUIA_LIFT_TESTING_AGENT_V1, ACQUIA_LIFT_TESTING_AGENT_V2))) {
+      continue;
+    }
+    $agent_status = personalize_agent_get_status($agent->machine_name);
+    $sorted_agents[$agent_status][] = $agent;
+  }
+
+  if (empty($sorted_agents)) {
     $no_agents_intro = '<p>' . t('Acquia Lift Target uses personalizations to control how different sets of content variations are displayed to your website visitors.') . '</p>';
     $no_agents_intro .= '<p>' . t('When you create a new personalization, Acquia Lift Target will walk you through the process, helping you to add the set of variations that you want to display, create the goals that determine which variation is most effective, determine the visitor audience segments, and finally control when you want the personalization to run.') . '</p>';
     $no_agents_intro .= '<p>' . t('To create your first new personalization, click the above Add Personalization link.') . '</p>';
@@ -269,18 +279,6 @@ function acquia_lift_agent_list($agents = array(), $legacy = FALSE) {
     );
   }
 
-  $sorted_agents = array(
-    PERSONALIZE_STATUS_NOT_STARTED => array(),
-    PERSONALIZE_STATUS_SCHEDULED => array(),
-    PERSONALIZE_STATUS_RUNNING => array(),
-    PERSONALIZE_STATUS_PAUSED => array(),
-    PERSONALIZE_STATUS_COMPLETED => array()
-  );
-
-  foreach ($agents as $agent) {
-    $agent_status = personalize_agent_get_status($agent->machine_name);
-    $sorted_agents[$agent_status][] = $agent;
-  }
   $build['personalizations_list'] = array(
     '#type' => 'container',
     '#attributes' => array(
@@ -288,10 +286,8 @@ function acquia_lift_agent_list($agents = array(), $legacy = FALSE) {
     ),
   );
   $navigation_bar = array();
+  ksort($sorted_agents);
   foreach ($sorted_agents as $status => $agents) {
-    if (empty($agents)) {
-      continue;
-    }
     // Notice the 'href', 'fragment', and 'external' here are made specific to theme an anchor link.
     $navigation_bar['personalization-group-' . $status] = array(
       'title' => theme('html_tag', array(
@@ -355,10 +351,6 @@ function acquia_lift_agent_list($agents = array(), $legacy = FALSE) {
 
     $rows = array();
     foreach ($agents as $agent) {
-      // If this is a nested agent, it should not be listed.
-      if (!$legacy && in_array($agent->plugin, array(ACQUIA_LIFT_TESTING_AGENT_V1, ACQUIA_LIFT_TESTING_AGENT_V2))) {
-        continue;
-      }
       $targeting = array();
 
       // Determine the agent type.

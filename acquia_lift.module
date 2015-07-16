@@ -3037,10 +3037,6 @@ function acquia_lift_get_option_set_for_targeting($agent_name) {
     }
   }
   if ($targeting_osid) {
-    if ($targeting && empty($option_sets[$targeting_osid]->targeting)) {
-      $option_sets[$targeting_osid]->targeting = $targeting;
-      personalize_option_set_save($option_sets[$targeting_osid]);
-    }
     return $option_sets[$targeting_osid];
   }
   return reset($option_sets);

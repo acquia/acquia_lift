@@ -19,15 +19,17 @@
 
     var curSegmentCapture = {};
     var curSegments = [];
-    var curSegmentsOverride=[];
+    var curSegmentsOverride;
     var curIdentities = [];
 
     $(document).on("segmentsUpdated", function( event, data, capture ) {
       curSegmentCapture = capture;
       curSegments = data["segments"];
-      if ( curSegmentsOverride ) {
-        //data["segments"].length = 0;
-        //$(curSegmentsOverride).each( function(index,overrideSegment) { segments.push(overrideSegment); } );
+      curSegmentsOverride =  JSON.parse(window.sessionStorage.getItem("acquiaLift::debug::overrideSegments"));
+      if ( curSegmentsOverride && curSegmentsOverride.length > 0 ) {
+        console.log("test");
+        data["segments"].length = 0;
+        $(curSegmentsOverride).each( function(index,overrideSegment) { curSegments.push(overrideSegment); } );
       }
       var message = "Segments Returned: " + curSegments;
       Drupal.personalizeDebug.log( message , 1000);
@@ -75,17 +77,6 @@
         return Drupal.settings.acquia_lift_profiles.available_segments;
       },
 
-      //'getAllSegments' : function( callback ) {
-      //  jQuery.ajax( {
-      //    url : Drupal.settings.acquia_lift_profiles.apiUrl + '/dashboard/rest/'+
-      //    Drupal.settings.acquia_lift_profiles.account_name + '/segments',
-      //    cache : false,
-      //    dataType : 'json',
-      //    success : function( data, text, request ) {
-      //      callback( data );
-      //    }
-      //  });
-      //},
 
       'evaluateSegment' : function( segmentName, callback ) {
         var personId = this.getPersonId();
@@ -95,14 +86,18 @@
             url : apiUrl + "?tcla="+window.encodeURIComponent(Drupal.settings.acquia_lift_profiles.account_name)+
             "&tcptid="+window.encodeURIComponent(personId)+
             "&tcttid="+window.encodeURIComponent(touchId)+
-            "&evalSegment=TRUE",//+window.encodeURIComponent(segmentName),
+            "&evalSegment="+window.encodeURIComponent(segmentName),
             cache : false,
-            dataType : "jsonp",
+            dataType : "json",
             success : function( data, text, request ) {
               callback( data );
             }
           });
         }]);
+      },
+
+      'clearStorage' : function (data){
+        $(document).trigger('personalizeDebugClear', 'acquiaLift::debug');
       }
     };
   })();

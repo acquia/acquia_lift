@@ -336,8 +336,8 @@ function theme_acquia_lift_debugger() {
           </span>
   </div>
     <!--<ul class="debugger__navigation__top__bar">-->
-      <button class="debugger__navigation__item" ng-click="tab = 'profile'">Profile</button>
-      <button class="debugger__navigation__item" ng-click="tab = 'segments'">Site Preview</button>
+      <button class="debugger__navigation__item" ng-click="tab = 'profile'">Lift Profile</button>
+      <button id="sitePreviewTabLabel" class="debugger__navigation__item" ng-click="tab = 'segments'">{{"Site Preview" | previewStatus}} </button>
       <button class="debugger__navigation__item" ng-click="tab = 'log'">Event Log</button>
     <!--</ul>-->
 
@@ -355,7 +355,7 @@ function theme_acquia_lift_debugger() {
         <tr>
           <td>
             <div class="addBox">
-              <autocomplete class="float" ng-model="yourchoice" data="allSegments" on-select="addPreview"></autocomplete>
+              <autocomplete class="float" ng-model="overrideSegmentChoice" data="allSegments" on-select="addPreview"></autocomplete>
               <button ng-click="addPreviewItem(null)">Add</button>
             </div>
 
@@ -366,8 +366,8 @@ function theme_acquia_lift_debugger() {
 
           </td>
           <td>
-            <ul ng-repeat="item in profile.overrideSegments">
-              <li class="float test" ng-click="deletePreviewItem(item)"><span> {{item}} &#x2716;</span></div>
+            <ul ng-repeat="item in profile.overrideSegments" class="overrideSegments">
+              <li class="float clickable" ng-click="deletePreviewItem(item)"><span>{{item}}</span></div>
             </ul>
           </td>
         </tr>
@@ -377,25 +377,27 @@ function theme_acquia_lift_debugger() {
     <div ng-show="tab == 'log'">
 
       <div class="debugger__filters">
-        <div class="float"><b>Filters</b></div>
-        <div
-        isteven-multi-select
-        input-model="severityFilter"
-        output-model="severity"
-        button-label="icon name"
-        item-label="icon name maker"
-        tick-property="ticked"
-        output-model-name="Severity">
-        </div>
-        <div
-        isteven-multi-select
-        input-model="typeFilter"
-        output-model="type"
-        button-label="icon name"
-        item-label="icon name maker"
-        tick-property="ticked"
-        output-model-name="Type">
-        </div>
+        <div class="debugger__filter__label"><b>Filters: </b></div>
+        <div>
+          <div
+          isteven-multi-select
+          input-model="severityFilter"
+          output-model="severity"
+          button-label="name"
+          item-label="name maker"
+          tick-property="ticked"
+          output-model-name="Severity &#9662;">
+          </div>
+          <div
+          isteven-multi-select
+          input-model="typeFilter"
+          output-model="type"
+          button-label="name"
+          item-label="name maker"
+          tick-property="ticked"
+          output-model-name="Type &#9662;">
+          </div>
+         </div>
       </div>
       <div class="debugger__log">
         <table>
@@ -423,7 +425,7 @@ function theme_acquia_lift_debugger() {
             <td>{{item.timestamp |  date:'MM/dd/yyyy h:mma'}}</td>
             <td>{{item.page | cut:true:20:'...':item}}</td>
             <td>{{item.resolution | cut:true:70:'...':item}}</td>
-            <td><div ng-click="item.expand? item.expand = false : item.expand = true" class="clickable"> {{item.expand? '[ Read Less ]' : '[ Read More ]'}}</div></td>
+            <td><div ng-click="item.expand? item.expand = false : item.expand = true" class="clickable"> {{item.expand? '[Read Less]' : '[Read More]'}}</div></td>
           </tr>
         </table>
       </div>
@@ -442,7 +444,7 @@ function theme_acquia_lift_debugger() {
                 <b> 3rd Party Tracking: </b>{{profile.trackingID}}
 
             </td>
-            <td> <b>Active Profile Segement</b>
+            <td> <b>Active Profile Segment</b>
               <div>
                 <ul ng-repeat="item in profile.curSegments">
                   <li> {{item}} </li>

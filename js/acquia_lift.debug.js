@@ -44,6 +44,10 @@
       return key;
     };
 
+    function clearStorage(data){
+      Storage.clearStorage(data);
+    }
+
 
   // Log any personalize debug events to sessionStorage for inclusion in the
   // Acquia Lift debugger panel.
@@ -60,12 +64,13 @@
             resolution: ''
           }
           var key = writeToStorage(data);
-          console.log(key);
-
           // Dispatch an event to alert the debugger that new stream data is
           // available.
           $(document).trigger('acquiaLiftDebugEvent', [key]);
         });
+        $(document).on('personalizeDebugClear', function(data){
+          clearStorage(data);
+        })
       });
     }
   }

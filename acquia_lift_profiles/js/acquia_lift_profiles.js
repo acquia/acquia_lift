@@ -245,7 +245,7 @@ var _tcwq = _tcwq || [];
         };
 
         //checks if debug mode is on. sets the debug mode for tcwidget
-        if(settings.acquia_lift && settings.acquia_lift.isDebugMode){
+        if(Drupal.settings.acquia_lift.isDebugMode){
           _tcwq.push( ["setDebug", true]);
         }else{
           _tcwq.push(["setDebug", false]);

@@ -1,7 +1,11 @@
 $debugger-max-width: 80vw;
 $debugger-transition-duration: 300ms;
-$font-size: .8em;
+$font-size: 1em;
 $background-color:#efefef;
+$link-color:#29aae1;
+$link-color-hover:#56c1f8;
+$link-color-visited: #018dc7;
+$font-color: #333333;
 
 [id="debugger"] {
   display: none;
@@ -13,9 +17,9 @@ $background-color:#efefef;
   z-index: 1000;
   bottom: 0;
   left: 0;
-  color: #333333;
+  color: $font-color;
   width: 100%;
-  background: purple;
+  background: white;
   font-family: sans-serif;
   font-size: $font-size;
   line-height: 1.5;
@@ -38,13 +42,13 @@ $background-color:#efefef;
   }
   .float{
     float:left;
-    padding-right: 1em;
+    padding-right: 10px;
     vertical-align: middle;
     /*padding-left: 3em;*/
   }
 
   .debugger-font-size{
-    font-size:10px;
+    font-size:1em;
   }
 
   .minheight{
@@ -78,7 +82,7 @@ $background-color:#efefef;
 
   th{
     background-color:white;
-    color:black;
+    color:$font-color;
     padding:{
       top:.1em;
       bottom:.2em;
@@ -91,11 +95,8 @@ $background-color:#efefef;
     min-height: 10px;
     background-color: $background-color;
     border-radius: 0px;
-    font-size: $font-size;
-    border-color: lightgray;
     border-style: solid;
     border-width: 1px;
-    color: black;
   }
 
   h5 {
@@ -111,6 +112,9 @@ $background-color:#efefef;
   * {
     box-sizing: border-box;
   }
+  .clickable{
+    cursor: pointer;
+  }
 }
 .debugger__filters {
   min-height: 38px;
@@ -120,6 +124,12 @@ $background-color:#efefef;
   border-color:lightgray;
   background-color:$background-color;
 }
+
+.debugger__filter__label{
+  float: left;
+  padding-top: 10px;
+}
+
 .debugger__navigation{
   background-color:$background-color;
   height: 3em;
@@ -128,15 +138,32 @@ $background-color:#efefef;
   border-bottom-width: 2px;
 
   .debugger__navigation__item{
-    display: block;
     float: left;
-    width: 15%;
-    height:100%;
-    margin: 0px;
-    padding-right: 10px;
+    height: 100%;
+    font-size: 1.05em;
+    padding-left: 20px;
+    padding-right: 20px;
+    min-width: 45px;
+    border: 0px;
     border-right: 1px solid;
-    //margin: 0;
-    //padding: 0;
+    border-color: lightgray;
+    color: $link-color;
+
+    .debugger__lift__profile{
+      background-image: url("icons/787878/user.svg");
+      @extend %debugger-icon-formatting;
+      background-position: left;
+    }
+    .debugger__site__preview{
+      background-image: url("icons/787878/eye.svg");
+      @extend %debugger-icon-formatting;
+      background-position: left;
+    }
+    .debugger__event__log{
+      background-image: url("icons/787878/flag.svg");
+      @extend %debugger-icon-formatting;
+      background-position: left;
+    }
   }
   width:100%;
   display: inline-block;
@@ -147,15 +174,19 @@ $background-color:#efefef;
 .debugger__navigation__item{
   float:left;
   position:relative;
-  color:black;
   background-color:$background-color;
   border-color:darkgray;
   margin-bottom:0px;
   border-radius: 0rem;
+  color: $link-color;
+  text-decoration: none;
+  -webkit-transition: color .2s ease-out;
+  transition: color .2s ease-out;
 
   &:hover,
   &:focus {
     text-decoration: none;
+    color: $link-color-hover;
   }
 
   &:hover {
@@ -166,7 +197,7 @@ $background-color:#efefef;
     outline: $border-width-base solid rgba($link-color-base, .6);
     box-shadow: 0 0 .4rem rgba($link-color-base, .9);
     background-color: ghostwhite;
-    color: black;
+    color: $font-color;
   }
 
   &:active {
@@ -234,7 +265,6 @@ $background-color:#efefef;
   display:block;
   overflow-y: auto;
   height: 0;
-  float:up;
   //transition: height $debugger-transition-duration, padding $debugger-transition-duration;
 }
 
@@ -334,37 +364,60 @@ $background-color:#efefef;
     width: 30%;
   }
   .addBox{
-    width: 100%
-    padding: 2em;
+    width: 100%;
+    padding-bottom: 1em;
+    padding-top: 1em;
+    vertical-align: middle;
   }
   button{
     height: 29px;
+    margin-top: 2px;
   }
   .previewBox{
     width: 100%;
-    padding:{
-      left: 1em;
-      right: 1em;
+  }
+  li{
+    list-style: none;
+    float: left;
+    min-width: 25%;
+    font-size: $font-size;
+    &::after{
+      content:' \2716';
+      margin-right: 0em;
+      padding-right:10px;
     }
   }
 }
 
 .debugger__log{
-  table{
-    table-layout:fixed;
+  table td{
+    vertical-align: top;
+    padding-bottom: 15px;
   }
   .clickable{
-    color: #29aae1;
+    color: $link-color;
     text-decoration: none;
     -webkit-transition: color .2s ease-out;
     transition: color .2s ease-out;
     &:visited {
-      color: #018dc7;
+      color: $link-color-visited;
     }
     &:hover, a:active, a:focus {
-      color: #56c1f8;
+      color: $link-color-hover;
     }
   }
+}
+.debugger .debugger-icon-warning{
+  background-image: url("icons/e29700/warning.svg");
+  @extend %debugger-icon-formatting;
+}
+.debugger .debugger-icon-error{
+  background-image: url("icons/ea2800/error.svg");
+  @extend %debugger-icon-formatting;
+}
+.debugger .debugger-icon-info{
+  background-image: url("icons/73b355/info-circle.svg");
+  @extend %debugger-icon-formatting;
 }
 
 .debugger__action__open {
@@ -395,6 +448,10 @@ $background-color:#efefef;
   @extend %debugger-cross;
 }
 
+%debugger-icon-formatting{
+  background-repeat:no-repeat;
+  background-position: center;
+}
 %debugger-longarrow {
   position: relative;
 
@@ -485,9 +542,6 @@ $background-color:#efefef;
   }
 }
 
-.debugger__icon__error{
-  fill:red;
-}
 
 %debugger-cross {
   position: relative;
@@ -547,6 +601,8 @@ $background-color:#efefef;
   }
 
   button {
+    color: $font-color;
+    font-size: $font-size;
     position: relative;
     text-align: center;
     cursor: pointer;
@@ -590,32 +646,16 @@ $background-color:#efefef;
     border-radius: 4px;
     -webkit-box-shadow: 0 6px 12px rgba(0, 0, 0, 0.175);
     box-shadow: 0 6px 12px rgba(0, 0, 0, 0.175);
-    min-width:278px;
     display: none !important;
   }
 
   .inputFilter {
-    border-radius: 2px;
-    border: 1px solid #ccc;
-    height: 26px;
-    font-size: 10px;
-    width:100%;
-    padding-left:7px;
-    -webkit-box-sizing: border-box; /* Safari/Chrome, other WebKit */
-    -moz-box-sizing: border-box;    /* Firefox, other Gecko */
-    box-sizing: border-box;         /* Opera/IE 8+ */
-    color: #888;
-    -webkit-box-shadow: inset 0 1px 1px rgba(0, 0, 0, .075);
-    box-shadow: inset 0 1px 1px rgba(0, 0, 0, .075);
+    display:none
   }
 
   .checkBoxContainer {
     display: block;
-    padding:{
-      bottom: 8px;
-      left: 8px;
-      right: 8px;
-    }
+    padding:8px;
     overflow: hidden;
   }
 
@@ -637,6 +677,8 @@ $background-color:#efefef;
     position: relative;
     font-size: 10px;
     min-height: 32px;
+    padding-right:10px;
+    padding-left:30px;
 
     &:not(.multiSelectGroup).selected
     {
@@ -680,8 +722,7 @@ $background-color:#efefef;
   .tickMark {
     display:inline-block;
     position: absolute;
-    right: 10px;
-    top: 7px;
+    left: 10px;
     font-size: 10px;
   }
 
@@ -707,10 +748,11 @@ $background-color:#efefef;
   position: relative;
 
   input{
-    font-size: 1.2em;
+    font-size: 1em;
     width: 100%;
     border-radius: 0px;
     line-height: 1;
+    height: 29px;
     /*padding:0.4em;*/
   }
 
@@ -730,6 +772,7 @@ $background-color:#efefef;
     list-style:none;
     width: 100%;
     /*padding:0.4em;*/
+    font-size: $font-size;
     background-color: #fff;
   }
   li.active{

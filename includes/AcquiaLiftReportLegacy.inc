@@ -8,7 +8,7 @@
  * Base class providing report data loading functionality common to all
  * Acquia Lift Reports.
  */
-class AcquiaLiftReportLegacy implements AcquiaLiftReportInterface {
+class AcquiaLiftReportLegacy {
 
   /**
    * The value to show when report data is not applicable.
@@ -67,10 +67,11 @@ class AcquiaLiftReportLegacy implements AcquiaLiftReportInterface {
    * @param AcquiaLiftReportDataSourceInterface $report_data_src
    *   The source for the report data.
    */
-  function __construct(PersonalizeAgentInterface $agent, AcquiaLiftReportDataSourceInterface $report_data_src, $confidence_measure) {
+  function __construct(PersonalizeAgentInterface $agent, $options = array(), AcquiaLiftReportDataSourceInterface $report_data_src) {
     $this->agent = $agent;
     $this->reportDataSrc = $report_data_src;
-    $this->setConfidenceMeasure($confidence_measure);
+    $this->options = $options;
+    $this->setConfidenceMeasure($options['confidence_measure']);
   }
 
   /**
@@ -977,11 +978,15 @@ class AcquiaLiftReportLegacy implements AcquiaLiftReportInterface {
     return $build;
   }
 
+  public function getCampaignReports() {
+    return $this->buildCampaignReports();
+  }
+
   /**
    * Implements AcquiaLiftReportInterface::buildCampaignReports().
    */
-  public function buildCampaignReports($options) {
-    $report_data = $this->loadReportData($options);
+  public function buildCampaignReports() {
+    $report_data = $this->loadReportData($this->options);
     $reports = array(
       'overview' => $this->buildOverviewReport($report_data),
       'experiment' => $this->buildAllConversionReports($report_data),

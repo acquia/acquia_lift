@@ -1731,7 +1731,7 @@ function acquia_lift_personalize_campaign_wizard_targeting_validate(&$form, &$fo
       if ($audience_id === ACQUIA_LIFT_TARGETING_EVERYONE_ELSE) {
         continue;
       }
-      else if (!isset($audience['details'])) {
+      else if (empty($audience['details'])) {
         // Not an audience but some other form field.
         continue;
       }

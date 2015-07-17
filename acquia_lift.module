@@ -2972,7 +2972,8 @@ function acquia_lift_get_campaign_details() {
     foreach ($option_sets as $option_set) {
       $option_set_types[] = $option_set->plugin;
     }
-    $report_is_active = $plugin instanceof AcquiaLiftReportInterface && !empty($agent->started);
+    $targeting_option_set = acquia_lift_get_option_set_for_targeting($agent->machine_name);
+    $disable_reports = empty($agent->started) || empty($targeting_option_set->targeting);
     $campaigns[$agent->machine_name] = array(
       'name' => $agent->machine_name,
       'label' => filter_xss($agent->label),
@@ -2980,7 +2981,7 @@ function acquia_lift_get_campaign_details() {
       'links' => array(
         'view' => url('admin/structure/personalize/manage/' . $agent->machine_name),
         'edit' => url('admin/structure/personalize/manage/' . $agent->machine_name),
-        'report' => $report_is_active ? url('admin/structure/personalize/manage/' . $agent->machine_name . '/results') : '',
+        'report' => $disable_reports ? '' : url('admin/structure/personalize/manage/' . $agent->machine_name . '/results'),
         'goals' => $supports_goals ? url('admin/structure/personalize/manage/' . $agent->machine_name . '/goals') : '',
         'targeting' => $supports_targeting ? url('admin/structure/personalize/manage/' . $agent->machine_name . '/targeting') : '',
         'scheduling' => url('admin/structure/personalize/manage/' . $agent->machine_name . '/scheduling'),

@@ -30,6 +30,7 @@ Feature: Personalizations can be selected within the unibar and the appropriate
     And I should visibly see the link "When" in the "lift_tray" region
     And I should visibly see the link "Review" in the "lift_tray" region
     And I should visibly see the link "Reports" in the "lift_tray" region
+    And menu item "Reports" should be "inactive"
 
     # I should see links to add, edit, and delete variations and variation set.
     When I hover over "What" in the "lift_tray" region
@@ -79,6 +80,7 @@ Feature: Personalizations can be selected within the unibar and the appropriate
     And I should visibly see the link "When" in the "lift_tray" region
     And I should visibly see the link "Review" in the "lift_tray" region
     And I should visibly see the link "Reports" in the "lift_tray" region
+    And menu item "Reports" should be "active"
 
     # I should see the edit links have been disabled.
     When I hover over "What" in the "lift_tray" region

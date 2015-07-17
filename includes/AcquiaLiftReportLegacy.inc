@@ -95,7 +95,7 @@ class AcquiaLiftReportLegacy {
   }
 
   /**
-   * Implements AcquiaLiftReportInterface()::buildConversionReport().
+   * Build the conversion report.
    */
   public function buildConversionReport($options) {
     $report_data = $this->generateReportConfiguration($options);
@@ -983,7 +983,7 @@ class AcquiaLiftReportLegacy {
   }
 
   /**
-   * Implements AcquiaLiftReportInterface::buildCampaignReports().
+   * Build the conversion report.
    */
   public function buildCampaignReports() {
     $report_data = $this->loadReportData($this->options);

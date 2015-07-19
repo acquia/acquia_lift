@@ -568,7 +568,6 @@ li.acquia-lift-targeting-draggable.ui-sortable-helper {
 /* All variations lists */
 ul.acquia-lift-variations-list,
 .acquia-lift-variations-list ul {
-  list-style-type: none;
   width: 100%;
   padding: 0;
 }
@@ -585,9 +584,11 @@ ul.acquia-lift-variations-list li {
 ul.acquia-lift-variations-list.acquia-lift-variations-lockstep > li {
   background: url(../images/000000/link.png) no-repeat .5em center;
   padding-left: 24px;
-  list-style-type: none;
 }
-ul.acquia-lift-variations-list.acquia-lift-variations-lockstep > li li {
+.item-list ul.acquia-lift-variations-list,
+.item-list ul.acquia-lift-variations-list li,
+.item-list ul.acquia-lift-variations-list li + li,
+[dir="ltr"] ul.acquia-lift-variations-list {
   list-style-type: none;
 }
 

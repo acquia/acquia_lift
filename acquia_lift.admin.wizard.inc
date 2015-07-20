@@ -2662,7 +2662,21 @@ function _acquia_lift_personalize_campaign_wizard_variations_element(&$form, &$f
     }
   };
 
-  if (!empty($option_set->preview_link)) {
+  if ($option_set->data['personalize_elements_type'] == 'runJS') {
+    // Javascript changes can't be edited on the page they were created but
+    // only within the form.
+    // @todo change this to following the same gear icon UX convention used
+    // for editing visitor actions.
+    $element['edit'] = array(
+      '#type' => 'link',
+      '#href' => 'admin/structure/personalize/variations/personalize-elements/manage/' . $option_set->osid . '/edit',
+      '#title' => t('Edit variations'),
+      '#options' => array(
+        'query' => array('destination' => 'admin/structure/personalize/manage/' . $option_set->agent . '/variations'),
+      ),
+    );
+  }
+  else if (!empty($option_set->preview_link)) {
     // Note that utilizing the personalize_html_tag theme here somehow prevents
     // the element and form-altered submit handlers from being called.
     $element['edit'] = array(

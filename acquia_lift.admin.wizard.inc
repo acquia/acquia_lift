@@ -47,6 +47,8 @@ function acquia_lift_personalize_campaign_wizard_base_alter(&$form, &$form_state
  * Alter hook for the variations portions of the campaign wizard.
  */
 function acquia_lift_personalize_campaign_wizard_variations_alter(&$form, &$form_state, $form_id) {
+  global $base_url;
+
   // Rebuild the variations form to show the customized Lift approach.
   unset($form['variations']['title']['summary']);
   $form['variations']['title']['#instructions'] = t('Create one or more sets of content variations, which Acquia Lift Target will use when displaying personalized content for your visitors.');
@@ -199,6 +201,36 @@ function acquia_lift_personalize_campaign_wizard_variations_alter(&$form, &$form
     $form['variations']['editing']['option_sets']['option_set_' . $option_set->osid]['advanced']['label']['#access'] = FALSE;
     // Decision name is handled based on the type of tests created.
     $form['variations']['editing']['option_sets']['option_set_' . $option_set->osid]['advanced']['decision_name']['#access'] = FALSE;
+
+    // Add the pages options to the settings form for element variations.
+    if ($option_set->plugin == 'elements') {
+      $form['variations']['editing']['option_sets']['option_set_' . $option_set->osid]['advanced']['pages_all'] = array(
+        '#type' => 'radios',
+        '#title' => t('Execute on'),
+        '#options' => array(
+          '0' => t('Selected pages'),
+          '1' => t('All pages'),
+        ),
+        '#default_value' => isset($option_set->data['pages']) && empty($option_set->data['pages']) ? 1 : 0,
+      );
+
+      $form['variations']['editing']['option_sets']['option_set_' . $option_set->osid]['advanced']['pages'] = array(
+        '#type' => 'textarea',
+        '#title' => t('Pages'),
+        '#title_display' => 'invisible',
+        '#field_prefix' => $base_url . base_path(),
+        '#default_value' => isset($option_set->data['pages']) ? $option_set->data['pages'] : '',
+        '#description' => t("Specify pages by using specifying one path per line. The '*' character is a wildcard. Example paths are %blog for the blog page and %blog-wildcard for every personal blog. %front is the front page.", array('%blog' => 'blog', '%blog-wildcard' => 'blog/*', '%front' => '<front>')),
+        '#states' => array(
+          'disabled' => array(
+            ':input[name="variations[editing][option_sets][option_set_' . $option_set->osid . '][advanced][pages_all]"]' => array('value' => '1'),
+          ),
+        ),
+        // Specify the requirements for personalize_form_element_path_validate.
+        '#allow_dynamic' => TRUE,
+        '#allow_external' => FALSE,
+      );
+    }
 
     // Show save button specific to this option set.
     $form['variations']['editing']['option_sets']['option_set_' . $option_set->osid]['save'] = array(
@@ -1573,7 +1605,15 @@ function acquia_lift_personalize_campaign_wizard_variations_validate(&$form, &$f
         case "block":
           $validateBlock($option_set_values['content']['pblock_wrapper'], 'variations][editing][option_sets][' . $option_set_id . '][content][pblock_wrapper][');
           break;
-        case "element":
+        case "elements":
+          if ($option_set_values['advanced']['pages_all'] == 0) {
+            if (empty($option_set_values['advanced']['pages'])) {
+              form_set_error('variations][editing][option_sets][' . $option_set_id . '][advanced][pages]', t('There must be at least one page entered where the webpage element variation is executed.'));
+            }
+            else {
+              personalize_form_element_path_validate($form['variations']['editing']['option_sets'][$option_set_id]['advanced']['pages'], $form_state);
+            }
+          }
           break;
         default:
           // Unsupported option set type.
@@ -1844,10 +1884,11 @@ function _acquia_lift_personalize_campaign_wizard_block_single_save($block_conte
 function _acquia_lift_personalize_campaign_wizard_element_single_save($values, $option_set) {
   // Make sure to start with the latest option set information.
   $option_set = personalize_option_set_load($option_set->osid);
-  $option_set->label = $values['label'];
+  $option_set->label = $values['content']['label'];
   foreach ($option_set->options as &$option) {
-    $option['option_label'] = $values['options'][$option['option_id']]['option_label'];
+    $option['option_label'] = $values['content']['options'][$option['option_id']]['option_label'];
   }
+  $option_set->data['pages'] = isset($values['advanced']['pages_all']) && $values['advanced']['pages_all'] == 1 ? '' : $values['advanced']['pages'];
   personalize_option_set_save($option_set);
 }
 
@@ -1894,7 +1935,7 @@ function acquia_lift_personalize_campaign_wizard_variations_single_submit($form,
       break;
     case 'elements':
       // Only existing elements can be saved this way.
-      _acquia_lift_personalize_campaign_wizard_element_single_save($form_state['values']['variations']['editing']['option_sets']['option_set_' . $delta]['content'], $option_set);
+      _acquia_lift_personalize_campaign_wizard_element_single_save($form_state['values']['variations']['editing']['option_sets']['option_set_' . $delta], $option_set);
   }
   if ($existing == 'existing') {
     _acquia_lift_personalize_campaign_wizard_variations_single_save_general($form_state['values']['variations']['editing']['option_sets']['option_set_' . $delta], $option_set);
@@ -2620,6 +2661,7 @@ function _acquia_lift_personalize_campaign_wizard_variations_element(&$form, &$f
       );
     }
   };
+
   if (!empty($option_set->preview_link)) {
     // Note that utilizing the personalize_html_tag theme here somehow prevents
     // the element and form-altered submit handlers from being called.

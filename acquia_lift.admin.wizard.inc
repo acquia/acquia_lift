@@ -1960,7 +1960,7 @@ function acquia_lift_personalize_campaign_wizard_variations_submit(&$form, &$for
           _acquia_lift_personalize_campaign_wizard_block_single_save($option_set_values['content'], $option_set, $form_state);
           break;
         case "elements":
-          _acquia_lift_personalize_campaign_wizard_element_single_save($option_set_values['content'], $option_set);
+          _acquia_lift_personalize_campaign_wizard_element_single_save($option_set_values, $option_set);
           break;
         default:
           // Unsupported option set type.

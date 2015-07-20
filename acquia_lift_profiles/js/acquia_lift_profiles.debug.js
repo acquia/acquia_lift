@@ -27,7 +27,6 @@
       curSegments = data["segments"];
       curSegmentsOverride =  JSON.parse(window.sessionStorage.getItem("acquiaLift::debug::overrideSegments"));
       if ( curSegmentsOverride && curSegmentsOverride.length > 0 ) {
-        console.log("test");
         data["segments"].length = 0;
         $(curSegmentsOverride).each( function(index,overrideSegment) { curSegments.push(overrideSegment); } );
       }

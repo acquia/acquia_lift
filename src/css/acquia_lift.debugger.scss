@@ -6,6 +6,7 @@ $link-color:#29aae1;
 $link-color-hover:#56c1f8;
 $link-color-visited: #018dc7;
 $font-color: #333333;
+$dark-blue: #0073b9;
 
 [id="debugger"] {
   display: none;
@@ -38,7 +39,7 @@ $font-color: #333333;
   @media screen and (min-width: ($debugger-max-width + 2vw)) {
     left: 50vw;
     width: $debugger-max-width;
-    //margin-left: -($debugger-max-width / 2);
+    /*//margin-left: -($debugger-max-width / 2);*/
   }
   .float{
     float:left;
@@ -91,13 +92,13 @@ $font-color: #333333;
     }
     border-bottom:none;
   }
-  button{
-    min-height: 10px;
-    background-color: $background-color;
-    border-radius: 0px;
-    border-style: solid;
-    border-width: 1px;
-  }
+  // button{
+  //   min-height: 10px;
+  //   background-color: $backround-color;
+  //   border-radius: 0px;
+  //   border-style: solid;
+  //   border-width: 1px;
+  // }
 
   h5 {
     font-size: 1.125rem;
@@ -116,38 +117,49 @@ $font-color: #333333;
     cursor: pointer;
   }
 }
-.debugger__filters {
+.debugger__secondary__navigation {
   min-height: 38px;
   width:100%;
   display:inline-block;
   vertical-align:top;
-  border-color:lightgray;
   background-color:$background-color;
 }
 
 .debugger__filter__label{
   float: left;
   padding-top: 10px;
+  padding-right: 15px;
+}
+#debugger .debugger__navigation__top__bar a:hover, .debugger__navigation__top__bar a:focus, .debugger__navigation__top__bar a:active{   
+  color: $dark-blue;   
+  text-decoration: none;    
+  cursor: pointer;    
+  }   
+      
+#debugger ul.debugger__navigation__top__bar, ul.debugger__navigation__top__bar li{    
+  height: 100%;   
+  float:left;   
+  background-color: lightblue;    
 }
 
-.debugger__navigation{
+#debugger .debugger__navigation{
   background-color:$background-color;
   height: 3em;
   border-color: lightgray;
   border-bottom-style: solid;
   border-bottom-width: 2px;
 
-  .debugger__navigation__item{
+  a.debugger__navigation__item{
     float: left;
     height: 100%;
     font-size: 1.05em;
     padding-left: 20px;
     padding-right: 20px;
+    padding-top: 10px;
     min-width: 45px;
     border: 0px;
-    border-right: 1px solid;
-    border-color: lightgray;
     color: $link-color;
+    margin-right:2px;
 
     .debugger__lift__profile{
       background-image: url("icons/787878/user.svg");
@@ -168,6 +180,7 @@ $font-color: #333333;
   width:100%;
   display: inline-block;
 }
+
 .debugger__select__filter{
   float:left;
 }
@@ -292,6 +305,7 @@ $font-color: #333333;
     }
   }
 }
+
 .debugger__data {
   width: 100%;
 
@@ -368,6 +382,10 @@ $font-color: #333333;
     padding-bottom: 1em;
     padding-top: 1em;
     vertical-align: middle;
+    .addBox button {   
+      background-color: $dark-blue;    
+      color: white;   
+    }
   }
   button{
     height: 29px;
@@ -376,7 +394,8 @@ $font-color: #333333;
   .previewBox{
     width: 100%;
   }
-  li{
+  .overrideSegments{
+    li{
     list-style: none;
     float: left;
     min-width: 25%;
@@ -386,13 +405,20 @@ $font-color: #333333;
       margin-right: 0em;
       padding-right:10px;
     }
+    }
   }
+  
 }
 
 .debugger__log{
   table td{
     vertical-align: top;
     padding-bottom: 15px;
+    padding-right: 15px;
+  }
+
+  tr:hover td{
+    background-color:#fafafa;
   }
   .clickable{
     color: $link-color;
@@ -416,7 +442,7 @@ $font-color: #333333;
   @extend %debugger-icon-formatting;
 }
 .debugger .debugger-icon-info{
-  background-image: url("icons/73b355/info-circle.svg");
+  background-image: url("icons/0073b9/info-circle.svg");
   @extend %debugger-icon-formatting;
 }
 
@@ -461,7 +487,7 @@ $font-color: #333333;
     position: absolute;
     left: calc(50% - .15em / 2);
     top: 22%;
-    width: .15em;
+    width: 3px;
     height: 60%;
     background-color: #fff;
   }
@@ -474,7 +500,7 @@ $font-color: #333333;
       position: absolute;
       top: calc(30% - .15em / 2);
       width: 30%;
-      height: .15em;
+      height: 3px;
       background-color: #fff;
     }
 
@@ -501,7 +527,7 @@ $font-color: #333333;
       position: absolute;
       top: calc(44% - .15em / 2);
       width: 50%;
-      height: .15em;
+      height: 3px;
       background-color: #fff;
     }
     &::before {
@@ -517,7 +543,7 @@ $font-color: #333333;
 }
 
 %debugger-minus {
-  position: relative;
+ position: relative;
 
   .debugger__icon {
     &::before,
@@ -527,7 +553,7 @@ $font-color: #333333;
       position: absolute;
       top: calc(50% - .16em / 2);
       width: 40%;
-      height: .16em;
+      height: 3px;
       background-color: #fff;
     }
     &::before {
@@ -555,7 +581,7 @@ $font-color: #333333;
       left: calc(20% - .15em / 2);
       top: calc(50% - .15em / 2);
       width: 70%;
-      height: .15em;
+      height: 3px;
       background-color: #fff;
     }
     &::before {
@@ -787,4 +813,68 @@ $font-color: #333333;
     background: #666;
     color: #fff;
   }
+}
+
+@media only screen and (max-width: 550px), (min-device-width: 768px) and (max-device-width: 1024px) {   
+  /* Force table to not be like tables anymore */   
+    .debugger__log table, .debugger__log thead, .debugger__log tbody, .debugger__log td, .debugger__log tr, .debugger__profile tr, .debugger__profile td, .debugger__preview td, .debugger__preview tr {    
+    display: block;   
+    background-color:white;   
+    width:100%;   
+    }   
+        
+    /*Hide table headers (but not display: none;, for accessibility) */   
+    .debugger__log th , .debugger__preview th {   
+    position: absolute;   
+    top: -9999px;   
+    left: -9999px;    
+    }   
+        
+    .debugger__log tr { border: 1px solid #ccc; }   
+        
+    .debugger__log td {   
+    /* Behave like a "row" */   
+    border: none;   
+    border-bottom: 1px solid #eee;    
+    position: relative;   
+    padding-left: 50%;    
+    }   
+    .debugger__log td:before {    
+    /* Now like a table header */   
+    position: absolute;   
+    /* Top/left values mimic padding */   
+    width: 100%;    
+    top: 0px;   
+    font-weight: bold;    
+    background-color: #efefef;    
+    white-space: nowrap;    
+    }  
+
+    /*    
+    Label the data    
+    */    
+    .debugger__log td:nth-of-type(1)::before { content: ""; }   
+    .debugger__log td:nth-of-type(2)::before { content: "Message"; }    
+    .debugger__log td:nth-of-type(3)::before { content: "Type"; }   
+    .debugger__log td:nth-of-type(4):before { content: "Time"; }    
+    .debugger__log td:nth-of-type(5):before { content: "Page"; }    
+    .debugger__log td:nth-of-type(6):before { content: "Resolution"; }    
+    .debugger__log td:nth-of-type(7):before { content: ""; }    
+  }   
+
+@media only screen and (max-width: 550px), (min-device-width: 768px) and (max-device-width: 1024px) {   
+  .debugger .debugger__navigation a.debugger__navigation__item{   
+  padding-left: 10px;   
+  padding-right: 10px;    
+  }   
+}
+@media only screen and (max-width: 550px), (min-device-width: 768px) and (max-device-width: 1024px) {   
+  .debugger__profile td:first-child {   
+  width:100%;   
+  }   
+}
+@media only screen and (max-width: 550px), (min-device-width: 768px) and (max-device-width: 1024px) {   
+  .debugger__preview td:first-child {   
+  width:100%;   
+  }   
 }

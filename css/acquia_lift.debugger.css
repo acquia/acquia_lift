@@ -19,12 +19,12 @@
   border-top-right-radius: .4em;
   border-top-left-radius: .4em;
   -webkit-transform: rotate3d(0, 0, 0, 0) scale(0.88);
-  transform: rotate3d(0, 0, 0, 0) scale(0.88);
+          transform: rotate3d(0, 0, 0, 0) scale(0.88);
   -webkit-transform-origin: bottom;
-  -ms-transform-origin: bottom;
-  transform-origin: bottom;
+      -ms-transform-origin: bottom;
+          transform-origin: bottom;
   -webkit-transition: all 300ms;
-  transition: all 300ms;
+          transition: all 300ms;
 }
 @media screen and (min-width: 600px) {
   .debugger {
@@ -36,6 +36,7 @@
   .debugger {
     left: 50vw;
     width: 80vw;
+    /*//margin-left: -($debugger-max-width / 2);*/
   }
 }
 .debugger .float {
@@ -80,13 +81,6 @@
   padding-left: 0px;
   border-bottom: none;
 }
-.debugger button {
-  min-height: 10px;
-  background-color: #efefef;
-  border-radius: 0px;
-  border-style: solid;
-  border-width: 1px;
-}
 .debugger h5 {
   font-size: 1.125rem;
   line-height: 1.33333;
@@ -104,21 +98,33 @@
   cursor: pointer;
 }
 
-.debugger__filters {
+.debugger__secondary__navigation {
   min-height: 38px;
   width: 100%;
   display: inline-block;
   vertical-align: top;
-  border-color: lightgray;
   background-color: #efefef;
 }
 
 .debugger__filter__label {
   float: left;
   padding-top: 10px;
+  padding-right: 15px;
 }
 
-.debugger__navigation {
+#debugger .debugger__navigation__top__bar a:hover, .debugger__navigation__top__bar a:focus, .debugger__navigation__top__bar a:active {
+  color: #0073b9;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+#debugger ul.debugger__navigation__top__bar, ul.debugger__navigation__top__bar li {
+  height: 100%;
+  float: left;
+  background-color: lightblue;
+}
+
+#debugger .debugger__navigation {
   background-color: #efefef;
   height: 3em;
   border-color: lightgray;
@@ -127,27 +133,27 @@
   width: 100%;
   display: inline-block;
 }
-.debugger__navigation .debugger__navigation__item {
+#debugger .debugger__navigation a.debugger__navigation__item {
   float: left;
   height: 100%;
   font-size: 1.05em;
   padding-left: 20px;
   padding-right: 20px;
+  padding-top: 10px;
   min-width: 45px;
   border: 0px;
-  border-right: 1px solid;
-  border-color: lightgray;
   color: #29aae1;
+  margin-right: 2px;
 }
-.debugger__navigation .debugger__navigation__item .debugger__lift__profile {
+#debugger .debugger__navigation a.debugger__navigation__item .debugger__lift__profile {
   background-image: url("icons/787878/user.svg");
   background-position: left;
 }
-.debugger__navigation .debugger__navigation__item .debugger__site__preview {
+#debugger .debugger__navigation a.debugger__navigation__item .debugger__site__preview {
   background-image: url("icons/787878/eye.svg");
   background-position: left;
 }
-.debugger__navigation .debugger__navigation__item .debugger__event__log {
+#debugger .debugger__navigation a.debugger__navigation__item .debugger__event__log {
   background-image: url("icons/787878/flag.svg");
   background-position: left;
 }
@@ -174,8 +180,8 @@
 }
 .debugger__navigation__item:hover {
   -webkit-transform: scale(1.02, 1.02);
-  -ms-transform: scale(1.02, 1.02);
-  transform: scale(1.02, 1.02);
+      -ms-transform: scale(1.02, 1.02);
+          transform: scale(1.02, 1.02);
 }
 .debugger__navigation__item:focus {
   outline: 0.08rem solid rgba(41, 170, 225, 0.6);
@@ -186,8 +192,8 @@
 .debugger__navigation__item:active {
   background-image: none;
   -webkit-transform: scale(1, 1);
-  -ms-transform: scale(1, 1);
-  transform: scale(1, 1);
+      -ms-transform: scale(1, 1);
+          transform: scale(1, 1);
   background-color: white;
   box-shadow: 0 0 0.3rem rgba(41, 170, 225, 0.9), inset 0 0.1rem 0.3rem rgba(0, 0, 0, 0.4);
 }
@@ -218,7 +224,7 @@
   border-radius: 50%;
   cursor: pointer;
   -webkit-transition: opacity 300ms;
-  transition: opacity 300ms;
+          transition: opacity 300ms;
 }
 
 .debugger__title {
@@ -232,7 +238,7 @@
   border-top-right-radius: .4em;
   border-top-left-radius: .4em;
   -webkit-transition: all 300ms;
-  transition: all 300ms;
+          transition: all 300ms;
 }
 
 .debugger__content {
@@ -278,7 +284,7 @@
 .debugger.is-open {
   box-shadow: 0 -0.1em 0.5em -0.01em rgba(0, 0, 0, 0.8);
   -webkit-transform: rotate3d(0, 0, 0, 0) scale(1);
-  transform: rotate3d(0, 0, 0, 0) scale(1);
+          transform: rotate3d(0, 0, 0, 0) scale(1);
 }
 .debugger.is-open .debugger__title {
   background: #d7d7d7;
@@ -290,8 +296,8 @@
 .debugger.is-maximized {
   box-shadow: 0 -0.1em 0.5em -0.01em rgba(0, 0, 0, 0.8);
   -webkit-transform: scale(1);
-  -ms-transform: scale(1);
-  transform: scale(1);
+      -ms-transform: scale(1);
+          transform: scale(1);
 }
 .debugger.is-maximized .debugger__title {
   background: #efefef;
@@ -316,6 +322,10 @@
   padding-top: 1em;
   vertical-align: middle;
 }
+.debugger__preview .addBox .addBox button {
+  background-color: #0073b9;
+  color: white;
+}
 .debugger__preview button {
   height: 29px;
   margin-top: 2px;
@@ -323,7 +333,7 @@
 .debugger__preview .previewBox {
   width: 100%;
 }
-.debugger__preview li {
+.debugger__preview .overrideSegments li {
   list-style: none;
   float: left;
   min-width: 25%;
@@ -339,6 +349,9 @@
   vertical-align: top;
   padding-bottom: 15px;
   padding-right: 15px;
+}
+.debugger__log tr:hover td {
+  background-color: #fafafa;
 }
 .debugger__log .clickable {
   color: #29aae1;
@@ -362,20 +375,20 @@
 }
 
 .debugger .debugger-icon-info {
-  background-image: url("icons/73b355/info-circle.svg");
+  background-image: url("icons/0073b9/info-circle.svg");
 }
 
 .is-maximized .debugger__action__open {
   -webkit-transform: scaleY(-1);
-  -ms-transform: scaleY(-1);
-  transform: scaleY(-1);
+      -ms-transform: scaleY(-1);
+          transform: scaleY(-1);
 }
 
 .is-open .debugger__action__maximize::before {
   display: none;
 }
 
-.debugger__navigation .debugger__navigation__item .debugger__lift__profile, .debugger__navigation .debugger__navigation__item .debugger__site__preview, .debugger__navigation .debugger__navigation__item .debugger__event__log, .debugger .debugger-icon-warning, .debugger .debugger-icon-error, .debugger .debugger-icon-info {
+#debugger .debugger__navigation a.debugger__navigation__item .debugger__lift__profile, #debugger .debugger__navigation a.debugger__navigation__item .debugger__site__preview, #debugger .debugger__navigation a.debugger__navigation__item .debugger__event__log, .debugger .debugger-icon-warning, .debugger .debugger-icon-error, .debugger .debugger-icon-info {
   background-repeat: no-repeat;
   background-position: center;
 }
@@ -389,7 +402,7 @@
   position: absolute;
   left: calc(50% - .15em / 2);
   top: 22%;
-  width: .15em;
+  width: 3px;
   height: 60%;
   background-color: #fff;
 }
@@ -399,20 +412,20 @@
   position: absolute;
   top: calc(30% - .15em / 2);
   width: 30%;
-  height: .15em;
+  height: 3px;
   background-color: #fff;
 }
 .debugger__action__maximize .debugger__icon::before {
   right: 26%;
   -webkit-transform: rotate(40deg);
-  -ms-transform: rotate(40deg);
-  transform: rotate(40deg);
+      -ms-transform: rotate(40deg);
+          transform: rotate(40deg);
 }
 .debugger__action__maximize .debugger__icon::after {
   left: 26%;
   -webkit-transform: rotate(-40deg);
-  -ms-transform: rotate(-40deg);
-  transform: rotate(-40deg);
+      -ms-transform: rotate(-40deg);
+          transform: rotate(-40deg);
 }
 
 .debugger__action__open, .is-open .debugger__action__maximize {
@@ -424,20 +437,20 @@
   position: absolute;
   top: calc(44% - .15em / 2);
   width: 50%;
-  height: .15em;
+  height: 3px;
   background-color: #fff;
 }
 .debugger__action__open .debugger__icon::before, .is-open .debugger__action__maximize .debugger__icon::before {
   right: 10%;
   -webkit-transform: rotate(40deg);
-  -ms-transform: rotate(40deg);
-  transform: rotate(40deg);
+      -ms-transform: rotate(40deg);
+          transform: rotate(40deg);
 }
 .debugger__action__open .debugger__icon::after, .is-open .debugger__action__maximize .debugger__icon::after {
   left: 10%;
   -webkit-transform: rotate(-40deg);
-  -ms-transform: rotate(-40deg);
-  transform: rotate(-40deg);
+      -ms-transform: rotate(-40deg);
+          transform: rotate(-40deg);
 }
 
 .debugger__action__close {
@@ -449,20 +462,20 @@
   position: absolute;
   top: calc(50% - .16em / 2);
   width: 40%;
-  height: .16em;
+  height: 3px;
   background-color: #fff;
 }
 .debugger__action__close .debugger__icon::before {
   right: 12%;
   -webkit-transform: rotate(0);
-  -ms-transform: rotate(0);
-  transform: rotate(0);
+      -ms-transform: rotate(0);
+          transform: rotate(0);
 }
 .debugger__action__close .debugger__icon::after {
   left: 12%;
   -webkit-transform: rotate(0);
-  -ms-transform: rotate(0);
-  transform: rotate(0);
+      -ms-transform: rotate(0);
+          transform: rotate(0);
 }
 
 .debugger__action__destroy {
@@ -475,28 +488,28 @@
   left: calc(20% - .15em / 2);
   top: calc(50% - .15em / 2);
   width: 70%;
-  height: .15em;
+  height: 3px;
   background-color: #fff;
 }
 .debugger__action__destroy .debugger__icon::before {
   /* right: 10%; */
   -webkit-transform: rotate(45deg);
-  -ms-transform: rotate(45deg);
-  transform: rotate(45deg);
+      -ms-transform: rotate(45deg);
+          transform: rotate(45deg);
 }
 .debugger__action__destroy .debugger__icon::after {
   /* left: 10%; */
   -webkit-transform: rotate(-45deg);
-  -ms-transform: rotate(-45deg);
-  transform: rotate(-45deg);
+      -ms-transform: rotate(-45deg);
+          transform: rotate(-45deg);
 }
 
 .debugger.is-open .debugger__action__open, .debugger.is-maximized .debugger__action__maximize, .debugger.is-closed .debugger__action__close {
   opacity: 0;
   visibility: hidden;
   -webkit-transform: scale(0);
-  -ms-transform: scale(0);
-  transform: scale(0);
+      -ms-transform: scale(0);
+          transform: scale(0);
   font-size: 0;
   margin: 0;
   cursor: default;
@@ -682,4 +695,90 @@
 .autocomplete li.active .highlight {
   background: #666;
   color: #fff;
+}
+
+@media only screen and (max-width: 550px), (min-device-width: 768px) and (max-device-width: 1024px) {
+  /* Force table to not be like tables anymore */
+  .debugger__log table, .debugger__log thead, .debugger__log tbody, .debugger__log td, .debugger__log tr, .debugger__profile tr, .debugger__profile td, .debugger__preview td, .debugger__preview tr {
+    display: block;
+    background-color: white;
+    width: 100%;
+  }
+
+  /*Hide table headers (but not display: none;, for accessibility) */
+  .debugger__log th, .debugger__preview th {
+    position: absolute;
+    top: -9999px;
+    left: -9999px;
+  }
+
+  .debugger__log tr {
+    border: 1px solid #ccc;
+  }
+
+  .debugger__log td {
+    /* Behave like a "row" */
+    border: none;
+    border-bottom: 1px solid #eee;
+    position: relative;
+    padding-left: 50%;
+  }
+
+  .debugger__log td:before {
+    /* Now like a table header */
+    position: absolute;
+    /* Top/left values mimic padding */
+    width: 100%;
+    top: 0px;
+    font-weight: bold;
+    background-color: #efefef;
+    white-space: nowrap;
+  }
+
+  /*    
+  Label the data    
+  */
+  .debugger__log td:nth-of-type(1)::before {
+    content: "";
+  }
+
+  .debugger__log td:nth-of-type(2)::before {
+    content: "Message";
+  }
+
+  .debugger__log td:nth-of-type(3)::before {
+    content: "Type";
+  }
+
+  .debugger__log td:nth-of-type(4):before {
+    content: "Time";
+  }
+
+  .debugger__log td:nth-of-type(5):before {
+    content: "Page";
+  }
+
+  .debugger__log td:nth-of-type(6):before {
+    content: "Resolution";
+  }
+
+  .debugger__log td:nth-of-type(7):before {
+    content: "";
+  }
+}
+@media only screen and (max-width: 550px), (min-device-width: 768px) and (max-device-width: 1024px) {
+  .debugger .debugger__navigation a.debugger__navigation__item {
+    padding-left: 10px;
+    padding-right: 10px;
+  }
+}
+@media only screen and (max-width: 550px), (min-device-width: 768px) and (max-device-width: 1024px) {
+  .debugger__profile td:first-child {
+    width: 100%;
+  }
+}
+@media only screen and (max-width: 550px), (min-device-width: 768px) and (max-device-width: 1024px) {
+  .debugger__preview td:first-child {
+    width: 100%;
+  }
 }

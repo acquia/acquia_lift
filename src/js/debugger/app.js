@@ -235,6 +235,7 @@ app.factory('debuggerFactory', function($http, liftwebURl){
 app.controller("DebuggerController", function($scope, $timeout, debuggerFactory, $sessionStorage, $window, liftDebugger, debugPrefix, $document, previewStatus){
     $scope.items = [];
     $scope.tab = 'log';
+    $scope.preview = false;
     $scope.profile = {};
     var originalData;
     //loadFakeData($scope);
@@ -259,7 +260,6 @@ app.controller("DebuggerController", function($scope, $timeout, debuggerFactory,
                         $scope.profile.curSegments = Drupal.acquiaLiftProfilesDebug.getCurrentSegments().slice();
                         if(!$scope.profile.overrideSegments || $scope.profile.overrideSegments.length <=0 ){
                             $scope.profile.overrideSegments = Drupal.acquiaLiftProfilesDebug.getCurrentSegments().slice();
-                            //Drupal.acquiaLiftProfilesDebug.setOverrideSegments($scope.profile.overrideSegments);
                             $scope.allSegments =  $scope.profile.allSegments.filter(function(i) {return $scope.profile.overrideSegments .indexOf(i) < 0;});
                         };
                     }
@@ -277,7 +277,6 @@ app.controller("DebuggerController", function($scope, $timeout, debuggerFactory,
     $scope.profile.overrideSegments = Drupal.acquiaLiftProfilesDebug.getOverrideSegments();
 
 
-    //$scope.allSegments = _.difference($scope.profile.allSegments, $scope.profile.overrideSegments);
     if($scope.profile.overrideSegments){
         $scope.allSegments =  $scope.profile.allSegments.filter(function(i) {return $scope.profile.overrideSegments.indexOf(i) < 0;});
     }else{
@@ -329,35 +328,21 @@ app.controller("DebuggerController", function($scope, $timeout, debuggerFactory,
         if(indexAll > -1){
             $scope.allSegments.splice(indexAll, 1);
             $scope.profile.overrideSegments.push(value);
-            //Drupal.acquiaLiftProfilesDebug.setOverrideSegments($scope.profile.overrideSegments);
         }
     }
 
     $scope.deletePreviewItem = function(item){
-        console.log("delete preview item");
-        console.log(item);
-        console.log($scope.profile.overrideSegments);
-        console.log($scope.profile.curSegments);
         var index = $scope.profile.overrideSegments.indexOf(item);
         if(index > -1){
             $scope.profile.overrideSegments.splice(index, 1);
         }
         $scope.allSegments.push(item);
-        console.log($scope.profile.overrideSegments);
-        console.log($scope.profile.curSegments);
     }
 
     $scope.startPreview = function(){
         $sessionStorage.setObject(debugPrefix + "::originalSegments",$scope.profile.curSegments);
         $sessionStorage.setObject(debugPrefix + "::overrideSegments",$scope.profile.overrideSegments);
-        Drupal.acquiaLiftProfilesDebug.setOverrideSegments($scope.profile.overrideSegments);
-        document.getElementById("sitePreviewTabLabel").innerText="Site Preview - Active";
-        //$scope.profile.curSegments = Drupal.acquiaLiftProfilesDebug.getOverrideSegments();
-        //Drupal.acquiaLiftProfilesDebug.evaluateSegment('c', function(variable){
-        //    console.log(variable);
-        //})
-        //$scope.profile.curSegments = $scope.profile.overrideSegments;
-    }
+        Drupal.acquiaLiftProfilesDebug.setOverrideSegments($scope.profile.overrideSegments);    }
 
     $scope.stopPreview = function(){
         $scope.profile.overrideSegments = $sessionStorage.getObject(debugPrefix + "::overrideSegments");
@@ -365,24 +350,49 @@ app.controller("DebuggerController", function($scope, $timeout, debuggerFactory,
         if ($scope.profile.overrideSegments && $scope.profile.overrideSegments.length > 0){
             Drupal.acquiaLiftProfilesDebug.setOverrideSegments(null);
             $sessionStorage.removeItem(debugPrefix + "::overrideSegments");
-            document.getElementById("sitePreviewTabLabel").innerText="Site Preview";
-            //$sessionStorage.set(debugPrefix + "::overrideSegments", null);
         }
     }
-});
-angular.module('debuggerModule')
-    .filter('previewStatus', ['$sessionStorage', function($sessionStorage,debugPrefix,liftwebURl){
-        return function(text) {
-            console.log(window.sessionStorage.getItem("acquiaLift::debug::overrideSegments"));
-            //if(Drupal.acquiaLiftProfilesDebug.getOverrideSegments()){console.log("test")}else{console.log("test1")}
-            if(window.sessionStorage.getItem("acquiaLift::debug::overrideSegments")){
-                return (text + " - Active");
-            }else{
-                return text;
+
+    $scope.isPreview = function(){
+        if (window.sessionStorage.getItem("acquiaLift::debug::overrideSegments")){
+            $scope.previewButtonStop = {
+                'background-color': ' #0073b9',
+                'color':'white'
             }
-            return text;
-        };
-    }]);
+            $scope.previewButtonStart = {}
+            document.getElementById("sitePreviewTabLabel").innerText="Site Preview - Active";
+
+            return true;
+        }else{
+            $scope.previewButtonStart = {
+                'background-color': ' #0073b9',
+                'color':'white'
+            }
+            $scope.previewButtonStop={}
+            document.getElementById("sitePreviewTabLabel").innerText="Site Preview";
+            return false;
+        }
+    }
+
+    $scope.buttonClick = function(type){
+        var color = '#0073b9';
+        var bgColor = 'white';
+        var boxShadow = '0 0 0.3rem rgba(41, 170, 225, 0.9), inset 0 0.1rem 0.3rem rgba(0, 0, 0, 0.4)'
+        $scope.profileButton={};
+        $scope.logButton={};
+        $scope.previewButton={};
+        switch(type){
+            case 'log': $scope.logButton={'color':color, 'background-color' : bgColor, 'box-shadow':boxShadow};
+            break;
+            case 'profile': $scope.profileButton={'color':color, 'background-color' : bgColor, 'box-shadow':boxShadow};
+            break;
+            case 'preview': $scope.previewButton={'color':color, 'background-color' : bgColor, 'box-shadow':boxShadow};
+            break;
+        }
+    }
+    $scope.buttonClick('log');
+
+});
 angular.module('debuggerModule')
     .filter('to_icon', ['$sce', function($sce){
         return function(text) {
@@ -1338,8 +1348,8 @@ angular.module( 'isteven-multi-select', ['ng'] ).directive( 'istevenMultiSelect'
             // container of the helper elements
         '<div class="helperContainer" ng-if="helperStatus.filter || helperStatus.all || helperStatus.none || helperStatus.reset ">' +
             // the search box
-            //'<div class="line" style="position:relative" ng-if="helperStatus.filter">'+
-            //    // textfield
+        //'<div class="line" style="position:relative" ng-if="helperStatus.filter">'+
+        //    // textfield
         '<input placeholder="{{lang.search}}" type="text"' +
         'ng-click="select( \'filter\', $event )" '+
         'ng-model="inputLabel.labelFilter" '+
@@ -1347,7 +1357,7 @@ angular.module( 'isteven-multi-select', ['ng'] ).directive( 'istevenMultiSelect'
         '/">'+
             // clear button
             //'<button type="button" class="clearButton" ng-click="clearClicked( $event )" >×</button> '+
-            //'</div> '+
+        //'</div> '+
         '</div> '+
             // selection items
         '<div class="checkBoxContainer">'+
@@ -1506,10 +1516,8 @@ app.directive('autocomplete', function() {
             }
 
             if (attrs.clickActivation) {
-                console.log("open")
                 element[0].onclick = function(e){
                     if(!scope.searchParam){
-                        console.log("sdsds");
                         setTimeout(function() {
                             scope.completing = true;
                             scope.$apply();

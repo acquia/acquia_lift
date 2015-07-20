@@ -335,22 +335,20 @@ function theme_acquia_lift_debugger() {
               <i class="debugger__icon"></i>
           </span>
   </div>
-    <!--<ul class="debugger__navigation__top__bar">-->
-      <button class="debugger__navigation__item" ng-click="tab = 'profile'">Lift Profile</button>
-      <button id="sitePreviewTabLabel" class="debugger__navigation__item" ng-click="tab = 'segments'">{{"Site Preview" | previewStatus}} </button>
-      <button class="debugger__navigation__item" ng-click="tab = 'log'">Event Log</button>
-    <!--</ul>-->
-
-    <!--<button class="navigation&#45;&#45;link"> option 1</button>-->
+    <ul class="debugger__navigation__top__bar">
+      <li><a class="debugger__navigation__item" ng-click="tab = 'profile';buttonClick('profile')" ng-style="profileButton">Lift Profile</a></li>
+      <li><a id="sitePreviewTabLabel" class="debugger__navigation__item" ng-click="tab = 'segments';buttonClick('preview')" ng-style="previewButton"> </a></li>
+      <li><a class="debugger__navigation__item" ng-click="tab = 'log';buttonClick('log')" ng-style="logButton">Event Log</a></li>
+    </ul>
   </div>
   <div class="debugger__content">
   <div ng-show="tab=='segments'">
-    <div class="debugger__filters"></div>
+    <div class="debugger__secondary__navigation"></div>
     <div class="debugger__preview">
       <table>
         <tr>
-          <td>Modify your active segments to change content views.</td>
-          <td><b>Active Preview Segments</b></td>
+          <th>Modify your active segments to change content views.</th>
+          <th><b>Active Preview Segments</b></th>
         </tr>
         <tr>
           <td>
@@ -360,13 +358,13 @@ function theme_acquia_lift_debugger() {
             </div>
 
           <div class="previewBox">
-            <div class="float"><button ng-click="stopPreview()">Stop Preview</button></div>
-            <div class="float"><button ng-click="startPreview()"> Start Preview</button></div>
+            <button ng-click="stopPreview()" data-ng-disabled="!isPreview()" ng-style="previewButtonStop">Stop Preview</button>
+            <button ng-click="startPreview()" data-ng-disabled="isPreview()" ng-style="previewButtonStart"> Start Preview</button>
           </div>
 
           </td>
           <td>
-            <ul ng-repeat="item in profile.overrideSegments" class="overrideSegments">
+            <ul ng-repeat="item in profile.overrideSegments | orderBy: 'toString()'" class="overrideSegments">
               <li class="float clickable" ng-click="deletePreviewItem(item)"><span>{{item}}</span></div>
             </ul>
           </td>
@@ -375,8 +373,7 @@ function theme_acquia_lift_debugger() {
     </div>
   </div>
     <div ng-show="tab == 'log'">
-
-      <div class="debugger__filters">
+      <div class="debugger__secondary__navigation">
         <div class="debugger__filter__label"><b>Filters: </b></div>
         <div>
           <div
@@ -432,7 +429,7 @@ function theme_acquia_lift_debugger() {
     </div>
 
     <div ng-show="tab == 'profile'">
-      <div class="debugger__filters"></div>
+      <div class="debugger__secondary__navigation"></div>
       <div class="debugger__profile">
         <table>
            <b><h5>Tracking ID: {{profile.personId}}</h5></b>
@@ -444,9 +441,9 @@ function theme_acquia_lift_debugger() {
                 <b> 3rd Party Tracking: </b>{{profile.trackingID}}
 
             </td>
-            <td> <b>Active Profile Segment</b>
+            <td> <b>Last Evaluated Segments</b>
               <div>
-                <ul ng-repeat="item in profile.curSegments">
+                <ul ng-repeat="item in profile.curSegments | orderBy: 'toString()'">
                   <li> {{item}} </li>
                 </ul>
               </div>

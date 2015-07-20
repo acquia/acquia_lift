@@ -347,7 +347,7 @@
       // Add a decoy link for the disabled state of adding a new option set.
       // While ideally we'd just toggle a class, the integration with ctools
       // and drupal ajax links makes this very difficult and messy.
-      this.$addLink.before('<a class="' + liftAddMenuClasses + ' acquia-lift-disabled" href="#">' + this.$addLink.text() + '</a>');
+      this.$addLink.after('<a class="' + liftAddMenuClasses + ' acquia-lift-disabled" href="#">' + this.$addLink.text() + '</a>');
       this.$addLinkDisabled = this.$addLink.parent().find('.acquia-lift-disabled');
     },
 
@@ -779,7 +779,7 @@
       // Add a decoy link for the disabled state of adding a new option set.
       // While ideally we'd just toggle a class, the integration with ctools
       // and drupal ajax links makes this very difficult and messy.
-      this.$addLink.before('<a class="' + liftAddMenuClasses + ' acquia-lift-disabled" href="#">' + this.$addLink.text() + '</a>');
+      this.$addLink.after('<a class="' + liftAddMenuClasses + ' acquia-lift-disabled" href="#">' + this.$addLink.text() + '</a>');
       this.$addLinkDisabled = this.$addLink.parent().find('.acquia-lift-disabled');
     },
 

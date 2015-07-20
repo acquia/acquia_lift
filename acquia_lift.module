@@ -3146,6 +3146,9 @@ function acquia_lift_debug_mode_enabled() {
   if (!$enabled) {
     return FALSE;
   }
+  if (!acquia_lift_is_configured()) {
+    return FALSE;
+  }
   // Check to see if there is a session variable for debug mode.
   $in_session = isset($_SESSION['acquia_lift_debug_mode']);
   // Check to see if it was requested

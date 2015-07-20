@@ -2620,12 +2620,12 @@ function _acquia_lift_personalize_campaign_wizard_variations_element(&$form, &$f
       );
     }
   };
-  if (!empty($option_set->data['pages'])) {
+  if (!empty($option_set->preview_link)) {
     // Note that utilizing the personalize_html_tag theme here somehow prevents
     // the element and form-altered submit handlers from being called.
     $element['edit'] = array(
       '#type' => 'link',
-      '#href' => $option_set->data['pages'],
+      '#href' => $option_set->preview_link,
       '#title' => t('Edit variations in context'),
     );
   }

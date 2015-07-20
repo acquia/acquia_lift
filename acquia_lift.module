@@ -2334,9 +2334,7 @@ function acquia_lift_form_personalize_campaign_wizard_alter(&$form, &$form_state
   // Add in the basic functionality.
   $agent = $form['#agent'];
 
-  $account_info = variable_get('acquia_lift_account_info', array());
-  $js_path = variable_get('acquia_lift_profiles_js_path', '');
-  if (empty($account_info) || empty($js_path)) {
+  if (!acquia_lift_is_configured()) {
     drupal_set_message(t('Your Acquia Lift account info has not been configured. Acquia Lift personalizations can not be created until you configure your account info !here', array('!here' => l('here', 'admin/config/content/personalize/acquia_lift'))), 'error');
     $form['agent_basic_info']['create']['#disabled'] = TRUE;
   }
@@ -3095,6 +3093,41 @@ function acquia_lift_get_campaign_details() {
 }
 
 /**
+ * Determines if the Lift debugger should be enabled on the page request.
+ *
+ * @return bool
+ *   TRUE to include on the page, FALSE otherwise.
+ */
+function acquia_lift_debug_mode_enabled() {
+  $enabled = personalize_debug_mode_enabled();
+  if (!$enabled) {
+    return FALSE;
+  }
+  if (!acquia_lift_is_configured()) {
+    return FALSE;
+  }
+  // Check to see if there is a session variable for debug mode.
+  $in_session = isset($_SESSION['acquia_lift_debug_mode']);
+  // Check to see if it was requested
+  if ($in_session) {
+    // Check to see if it should be turned off from URL parameter.
+    if (isset($_GET['acquia_lift_debug_mode']) && $_GET['acquia_lift_debug_mode'] == FALSE) {
+      unset($_SESSION['acquia_lift_debug_mode']);
+      return FALSE;
+    }
+    return TRUE;
+  }
+  else {
+    // Check to see if it was requested via URL parameter.
+    if (!empty($_GET['acquia_lift_debug_mode'])) {
+      $_SESSION['acquia_lift_debug_mode'] = TRUE;
+      return TRUE;
+    }
+  }
+  return FALSE;
+}
+
+/**
  * Get the option set where targeting rules are defined.
  *
  * The assumption here is that if you have multiple option sets then targeting
@@ -3157,4 +3190,13 @@ function acquia_lift_get_nested_tests($agent) {
     }
   }
   return $agents;
+}
+
+/**
+ * Validates if the Acquia Lift account information has been configured.
+ */
+function acquia_lift_is_configured() {
+  $account_info = variable_get('acquia_lift_account_info', array());
+  $js_path = variable_get('acquia_lift_profiles_js_path', '');
+  return (!empty($account_info) && !empty($js_path));
 }

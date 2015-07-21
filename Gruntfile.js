@@ -117,7 +117,7 @@ module.exports = function(grunt) {
           'css/acquia_lift.reports.css': 'src/css/acquia_lift.reports.scss',
           'css/acquia_lift.navbar.css': 'src/css/acquia_lift.navbar.scss',
           'css/acquia_lift.navbar_1-5.css': 'src/css/acquia_lift.navbar_1-5.scss',
-          //'css/acquia_lift.debugger.css': 'src/css/acquia_lift.debugger.scss'
+          'css/acquia_lift.debugger.css': 'src/css/acquia_lift.debugger.scss'
         }
       }
     },

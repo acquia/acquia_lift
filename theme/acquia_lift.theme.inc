@@ -325,9 +325,6 @@ function theme_acquia_lift_debugger() {
           <span class="debugger__action__maximize">
               <i class="debugger__icon"></i>
           </span>
-          <span class="debugger__action__open">
-              <i class="debugger__icon"></i>
-          </span>
           <span class="debugger__action__close">
               <i class="debugger__icon"></i>
           </span>
@@ -341,13 +338,16 @@ function theme_acquia_lift_debugger() {
       <li><a class="debugger__navigation__item" ng-click="tab = 'log';buttonClick('log')" ng-style="logButton">Event Log</a></li>
     </ul>
   </div>
-  <div class="debugger__content">
+  <div class="debugger__content" resizable r-directions="['top']" r-flex="false">
   <div ng-show="tab=='segments'">
   <div class="debugger__preview">
     <div class="debugger__secondary__navigation"> <div class="previewBox">
             <button ng-click="stopPreview()" data-ng-disabled="!isPreview()" ng-style="previewButtonStop">Stop Preview</button>
             <button ng-click="startPreview()" data-ng-disabled="isPreview()" ng-style="previewButtonStart"> Start Preview</button>
-          </div></div>
+            
+          </div>
+          <div class="debugger__preview__notification"></div>
+          </div>
       <table>
         <tr>
           <td>
@@ -404,7 +404,6 @@ function theme_acquia_lift_debugger() {
             <col span="1" style="width: 10em;">
             <col span="1" style="width: 20em;">
             <col span="1" style="width: 20em;">
-            <col span="1" style="width: 70em;">
             <col span="1" style="width: 15em;">
           </colgroup>
           <th>
@@ -412,7 +411,6 @@ function theme_acquia_lift_debugger() {
           <th>Type</th>
           <th>Time</th>
           <th>Page</th>
-          <th>Resolution</th>
           <th></th>
           </th>
           <tr ng-repeat="item in items | filter:search | orderBy: '-timestamp'" class="minheight">
@@ -421,7 +419,6 @@ function theme_acquia_lift_debugger() {
             <td>{{item.type | cut:true:10:'...':item}}</td>
             <td>{{item.timestamp |  date:'MM/dd/yyyy h:mma'}}</td>
             <td>{{item.page | cut:true:20:'...':item}}</td>
-            <td>{{item.resolution | cut:true:70:'...':item}}</td>
             <td><div ng-click="item.expand? item.expand = false : item.expand = true" class="clickable"> {{item.expand? '[Read Less]' : '[Read More]'}}</div></td>
           </tr>
         </table>
@@ -435,9 +432,7 @@ function theme_acquia_lift_debugger() {
            <b><h5>Tracking ID: {{profile.personId}}</h5></b>
           <tr>
             <td>
-
                 <b>Touch ID: </b>{{profile.touchId}}
-
             </td>
             <td> <div id="profileSegmentLabel"></div>
               <div>
@@ -449,9 +444,6 @@ function theme_acquia_lift_debugger() {
           </tr>
         </table>
       </div>
-
-      <div id="asdasd" resizable r-directions="['bottom', 'right']" r-flex="false">TESTSETSTE</div>
-
     </div>
     </div>
   </div>

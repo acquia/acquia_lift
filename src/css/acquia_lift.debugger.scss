@@ -92,13 +92,6 @@ $dark-blue: #0073b9;
     }
     border-bottom:none;
   }
-  // button{
-  //   min-height: 10px;
-  //   background-color: $backround-color;
-  //   border-radius: 0px;
-  //   border-style: solid;
-  //   border-width: 1px;
-  // }
 
   h5 {
     font-size: 1.125rem;
@@ -115,6 +108,7 @@ $dark-blue: #0073b9;
   }
   .clickable{
     cursor: pointer;
+    padding-right: 15px;
   }
 }
 .debugger__secondary__navigation {
@@ -125,10 +119,15 @@ $dark-blue: #0073b9;
   background-color:$background-color;
 }
 
-.debugger__filter__label{
+.debugger__filter__label, .debugger__preview__notification{
   float: left;
   padding-top: 10px;
   padding-right: 15px;
+  padding-left: 15px;
+}
+.debugger__preview__notification{
+  opacity: 0;
+  color: $dark-blue;  
 }
 #debugger .debugger__navigation__top__bar a:hover, .debugger__navigation__top__bar a:focus, .debugger__navigation__top__bar a:active{   
   color: $dark-blue;   
@@ -267,10 +266,10 @@ $dark-blue: #0073b9;
   //transition: height $debugger-transition-duration, padding $debugger-transition-duration;
 }
 
-.debugger__profile{
-  padding:3em;
-  td:first-child{
-    width: 30%;
+#debugger .debugger__profile{
+  padding-left:10px;
+  td{
+    padding-right:10px;
   }
   table{
     font-size: $font-size;
@@ -284,7 +283,7 @@ $dark-blue: #0073b9;
     list-style:none;
     float:left;
     min-width: 25%;
-
+    padding-right: 10px;
     &::before{
       content:'\25CF';
       margin-right:0em;
@@ -305,28 +304,7 @@ $dark-blue: #0073b9;
 }
 
 .debugger {
-  &.is-open {
-    box-shadow: 0 -.1em .5em -.01em rgba(#000, .8);
-    transform: rotate3d(0, 0, 0, 0 ) scale(1);
-
-    .debugger__title {
-      background: #d7d7d7;
-      color: #fff;
-    }
-
-    .debugger__content {
-      height: 26vh;
-      //padding: {
-      //  top: 1em;
-      //  bottom: 1em;
-      //}
-    }
-
-    .debugger__action__open {
-      @extend %debugger-action-disabled;
-    }
-  }
-
+  
   &.is-maximized {
     box-shadow: 0 -.1em .5em -.01em rgba(#000, .8);
     transform: scale(1);
@@ -338,10 +316,10 @@ $dark-blue: #0073b9;
 
     .debugger__content {
       height: 80vh;
-      //padding: {
-      //  top: 1em;
-      //  bottom: 1em;
-      //}
+    }
+
+    .rg-top{
+
     }
 
     .debugger__action__maximize {
@@ -353,22 +331,26 @@ $dark-blue: #0073b9;
     .debugger__action__close {
       @extend %debugger-action-disabled;
     }
+    .rg-top{
+      cursor:default !important; 
+      visibility: hidden !important;
+    }
+    .debugger__content{
+      height: 0px;
+      height: 0vh !important;
+    }
   }
 }
 .debugger__preview{
-  padding:3em;
-  table{
-    padding:1em;
-  }
-  td:first-child{
-    width: 30%;
+  td{
+    padding-left: 10px;
   }
   .addBox{
     width: 100%;
     padding-bottom: 1em;
     padding-top: 1em;
     vertical-align: middle;
-    .addBox button {   
+    button {   
       background-color: $dark-blue;    
       color: white;   
     }
@@ -376,9 +358,14 @@ $dark-blue: #0073b9;
   button{
     height: 29px;
     margin-top: 2px;
+    border: none;
   }
   .previewBox{
-    width: 100%;
+    // width: 100%;
+    float:left;
+    margin-top: 2px;
+    margin-left: 5px;
+
   }
   .overrideSegments{
     li{
@@ -432,13 +419,6 @@ $dark-blue: #0073b9;
   @extend %debugger-icon-formatting;
 }
 
-.debugger__action__open {
-  @extend %debugger-arrow;
-
-  .is-maximized & {
-    transform: scaleY(-1);
-  }
-}
 
 .debugger__action__close {
   @extend %debugger-minus;
@@ -446,14 +426,6 @@ $dark-blue: #0073b9;
 
 .debugger__action__maximize {
   @extend %debugger-longarrow;
-
-  .is-open & {
-    @extend %debugger-arrow;
-
-    &::before {
-      display: none;
-    }
-  }
 }
 
 .debugger__action__destroy {
@@ -497,32 +469,6 @@ $dark-blue: #0073b9;
 
     &::after {
       left: 26%;
-      transform: rotate(-40deg);
-    }
-  }
-}
-
-%debugger-arrow {
-  position: relative;
-
-  .debugger__icon {
-    &::before,
-    &::after {
-      content: '';
-      display: block;
-      position: absolute;
-      top: calc(44% - .15em / 2);
-      width: 50%;
-      height: 3px;
-      background-color: #fff;
-    }
-    &::before {
-      right: 10%;
-      transform: rotate(40deg);
-    }
-
-    &::after {
-      left: 10%;
       transform: rotate(-40deg);
     }
   }
@@ -805,7 +751,6 @@ $dark-blue: #0073b9;
   /* Force table to not be like tables anymore */   
     .debugger__log table, .debugger__log thead, .debugger__log tbody, .debugger__log td, .debugger__log tr, .debugger__profile tr, .debugger__profile td, .debugger__preview td, .debugger__preview tr {    
     display: block;   
-    background-color:white;   
     width:100%;   
     }   
         
@@ -873,7 +818,7 @@ $dark-blue: #0073b9;
   transition: none !important;
 }
 
-.rg-right, .rg-left, .rg-top, .rg-bottom {
+.rg-top{
   display: block;
   width: 14px;
   height: 14px;
@@ -886,23 +831,14 @@ $dark-blue: #0073b9;
   user-select: none;
   background: transparent;
 }
-.rg-right span, .rg-left span, .rg-top span, .rg-bottom span {
+.rg-top span{
   position: absolute;
   box-sizing: border-box;
   display: block;
   border: 1px solid #ccc;
 }
 
-.rg-right span, .rg-left span {
-  border-width: 0 1px;
-  top: 50%;
-  margin-top: -10px;
-  margin: -10px 0 0 3.5px;
-  height: 20px;
-  width: 7px;
-}
-
-.rg-top span, .rg-bottom span {
+.rg-top span {
   border-width: 1px 0;
   left: 50%;
   margin: 3.5px 0 0 -10px;
@@ -914,33 +850,5 @@ $dark-blue: #0073b9;
   width: 100%;
   top: 0;
   left: 0;
-  margin-top: -14px;
-}
-
-.rg-right {
-  cursor: col-resize;
-  height: 100%;
-  right: 0;
-  top: 0;
-  margin-right: -14px;
-}
-
-.rg-bottom {
-  cursor: row-resize;
-  width: 100%;
-  bottom: 0;
-  left: 0;
-  margin-bottom: -14px;
-}
-
-.rg-left {
-  cursor: col-resize;
-  height: 100%;
-  left: 0;
-  top: 0;
-  margin-left: -14px;
-}
-
-#asdasd{
-  background-color:pink;
+  margin-top: -10px;
 }

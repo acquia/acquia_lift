@@ -7,169 +7,169 @@
     <!--<link href="//netdna.bootstrapcdn.com/bootstrap/3.1.1/css/bootstrap.min.css" rel="stylesheet">-->
 </head>
 <body ng-app="debuggerModule" ng-controller="DebuggerController">
-<div id="debugger">
-  <div class="debugger__navigation">
-  <div class="debugger__actions">
-          <span class="debugger__action__maximize">
-              <i class="debugger__icon"></i>
-          </span>
-          <span class="debugger__action__open">
-              <i class="debugger__icon"></i>
-          </span>
-          <span class="debugger__action__close">
-              <i class="debugger__icon"></i>
-          </span>
-          <span class="debugger__action__destroy">
-              <i class="debugger__icon"></i>
-          </span>
-  </div>
-    <ul class="debugger__navigation__top__bar">
-      <li><a class="debugger__navigation__item" ng-click="tab = 'profile';buttonClick('profile')" ng-style="profileButton">Lift Profile</a></li>
-      <li><a id="sitePreviewTabLabel" class="debugger__navigation__item" ng-click="tab = 'segments';buttonClick('preview')" ng-style="previewButton"> </a></li>
-      <li><a class="debugger__navigation__item" ng-click="tab = 'log';buttonClick('log')" ng-style="logButton">Event Log</a></li>
-    </ul>
-  </div>
-  <div class="debugger__content">
-  <div ng-show="tab=='segments'">
-    <div class="debugger__secondary__navigation"></div>
-    <div class="debugger__preview">
-      <table>
-        <tr>
-          <th>Modify your active segments to change content views.</th>
-          <th><b>Active Preview Segments</b></th>
-        </tr>
-        <tr>
-          <td>
-            <div class="addBox">
-              <autocomplete class="float" ng-model="overrideSegmentChoice" data="allSegments" on-select="addPreview"></autocomplete>
-              <button ng-click="addPreviewItem(null)">Add</button>
-            </div>
 
-          <div class="previewBox">
-            <button ng-click="stopPreview()" data-ng-disabled="!isPreview()" ng-style="previewButtonStop">Stop Preview</button>
-            <button ng-click="startPreview()" data-ng-disabled="isPreview()" ng-style="previewButtonStart"> Start Preview</button>
+    <div id="debugger">
+      <div class="debugger__navigation">
+          <div class="debugger__actions">
+              <span class="debugger__action__maximize">
+                  <i class="debugger__icon"></i>
+              </span>
+              <span class="debugger__action__open">
+                  <i class="debugger__icon"></i>
+              </span>
+              <span class="debugger__action__close">
+                  <i class="debugger__icon"></i>
+              </span>
+              <span class="debugger__action__destroy">
+                  <i class="debugger__icon"></i>
+              </span>
           </div>
+          <ul class="debugger__navigation__top__bar">
+              <li><a class="debugger__navigation__item" ng-click="tab = 'profile';buttonClick('profile')" ng-style="profileButton">Lift Profile</a></li>
+              <li><a id="sitePreviewTabLabel" class="debugger__navigation__item" ng-click="tab = 'segments';buttonClick('preview')" ng-style="previewButton"> </a></li>
+              <li><a class="debugger__navigation__item" ng-click="tab = 'log';buttonClick('log')" ng-style="logButton">Event Log</a></li>
+          </ul>
+      </div>
+      <div class="debugger__content">
+          <div ng-show="tab=='segments'">
+            <div class="debugger__secondary__navigation"> <div class="previewBox">
+                <button ng-click="stopPreview()" data-ng-disabled="!isPreview()" ng-style="previewButtonStop">Stop Preview</button>
+                <button ng-click="startPreview()" data-ng-disabled="isPreview()" ng-style="previewButtonStart"> Start Preview</button>
+            </div></div>
+            <div class="debugger__preview">
+              <table>
+                <tr>
+                  
+                  <th><b>Active Preview Segments</b></th>
+              </tr>
+              <tr>
+                  <td>
+                    <ul ng-repeat="item in profile.overrideSegments | orderBy: 'toString()'" class="overrideSegments">
+                      <li class="float clickable" ng-click="deletePreviewItem(item)"><span>{{item}}</span></div>
+                      </ul>
+                  </td>
+              </tr>
+              <tr>
+            <th>Modify your active segments</th>
+              </tr>
+              <tr><td>
+                <div class="addBox">
+                  <autocomplete class="float" ng-model="overrideSegmentChoice" data="allSegments" on-select="addPreview"></autocomplete>
+                  <button ng-click="addPreviewItem(null)">Add</button>
+                </div>
+            </td></tr>
 
-          </td>
-          <td>
-            <ul ng-repeat="item in profile.overrideSegments" class="overrideSegments">
-              <li class="float clickable" ng-click="deletePreviewItem(item)"><span>{{item}}</span></div>
-            </ul>
-          </td>
-        </tr>
       </table>
-    </div>
   </div>
-    <div ng-show="tab == 'log'">
-      <div class="debugger__secondary__navigation">
-        <div class="debugger__filter__label"><b>Filters: </b></div>
-        <div>
-          <div
-          isteven-multi-select
-          input-model="severityFilter"
-          output-model="severity"
-          button-label="name"
-          item-label="name maker"
-          tick-property="ticked"
-          output-model-name="Severity &#9662;">
-          </div>
-          <div
-          isteven-multi-select
-          input-model="typeFilter"
-          output-model="type"
-          button-label="name"
-          item-label="name maker"
-          tick-property="ticked"
-          output-model-name="Type &#9662;">
-          </div>
-         </div>
-      </div>
-      <div class="debugger__log">
-        <table>
-          <colgroup>
-            <col span="1" style="width: 10em;">
-            <col span="1" style="width: 100em;">
-            <col span="1" style="width: 10em;">
-            <col span="1" style="width: 20em;">
-            <col span="1" style="width: 20em;">
-            <col span="1" style="width: 70em;">
-            <col span="1" style="width: 15em;">
-          </colgroup>
-          <th>
-          <th>Message</th>
-          <th>Type</th>
-          <th>Time</th>
-          <th>Page</th>
-          <th>Resolution</th>
-          <th></th>
-          </th>
-          <tr ng-repeat="item in items | filter:search | orderBy: '-timestamp'" class="minheight">
-            <td ng-bind-html="item.severity | to_icon"></td>
-            <td>{{item.message | cut:true:100:'...':item}}</td>
-            <td>{{item.type | cut:true:10:'...':item}}</td>
-            <td>{{item.timestamp |  date:'MM/dd/yyyy h:mma'}}</td>
-            <td>{{item.page | cut:true:20:'...':item}}</td>
-            <td>{{item.resolution | cut:true:70:'...':item}}</td>
-            <td><div ng-click="item.expand? item.expand = false : item.expand = true" class="clickable"> {{item.expand? '[Read Less]' : '[Read More]'}}</div></td>
-          </tr>
-        </table>
-      </div>
-    </div>
-
-    <div ng-show="tab == 'profile'">
-      <div class="debugger__secondary__navigation"></div>
-      <div class="debugger__profile">
-        <table>
-           <b><h5>Tracking ID: {{profile.personId}}</h5></b>
-          <tr>
-            <td>
-
-                <b>Touch ID: </b>{{profile.touchId}}
-                <br>
-                <b> 3rd Party Tracking: </b>{{profile.trackingID}}
-
-            </td>
-            <td> <b>Active Profile Segment</b>
-              <div>
-                <ul ng-repeat="item in profile.curSegments | orderBy: 'value'">
-                  <li> {{item}} </li>
-                </ul>
-              </div>
-            </td>
-          </tr>
-        </table>
-      </div>
-    </div>
-    </div>
+</div>
+<div ng-show="tab == 'log'">
+  <div class="debugger__secondary__navigation">
+    <div class="debugger__filter__label"><b>Filters: </b></div>
+    <div>
+      <div
+      isteven-multi-select
+      input-model="severityFilter"
+      output-model="severity"
+      button-label="name"
+      item-label="name maker"
+      tick-property="ticked"
+      output-model-name="Severity &#9662;">
   </div>
+  <div
+  isteven-multi-select
+  input-model="typeFilter"
+  output-model="type"
+  button-label="name"
+  item-label="name maker"
+  tick-property="ticked"
+  output-model-name="Type &#9662;">
+</div>
+</div>
+</div>
+<div class="debugger__log">
+    <table>
+      <colgroup>
+      <col span="1" style="width: 10em;">
+      <col span="1" style="width: 100em;">
+      <col span="1" style="width: 10em;">
+      <col span="1" style="width: 20em;">
+      <col span="1" style="width: 20em;">
+      <col span="1" style="width: 70em;">
+      <col span="1" style="width: 15em;">
+  </colgroup>
+  <th>
+      <th>Message</th>
+      <th>Type</th>
+      <th>Time</th>
+      <th>Page</th>
+      <th>Resolution</th>
+      <th></th>
+  </th>
+  <tr ng-repeat="item in items | filter:search | orderBy: '-timestamp'" class="minheight">
+    <td ng-bind-html="item.severity | to_icon"></td>
+    <td>{{item.message | cut:true:100:'...':item}}</td>
+    <td>{{item.type | cut:true:10:'...':item}}</td>
+    <td>{{item.timestamp |  date:'MM/dd/yyyy h:mma'}}</td>
+    <td>{{item.page | cut:true:20:'...':item}}</td>
+    <td>{{item.resolution | cut:true:70:'...':item}}</td>
+    <td><div ng-click="item.expand? item.expand = false : item.expand = true" class="clickable"> {{item.expand? '[Read Less]' : '[Read More]'}}</div></td>
+</tr>
+</table>
+</div>
+</div>
+
+<div ng-show="tab == 'profile'">
+  <div class="debugger__secondary__navigation"></div>
+  <div class="debugger__profile">
+    <table>
+     <b><h5>Tracking ID: {{profile.personId}}</h5></b>
+     <tr>
+        <td>
+
+            <b>Touch ID: </b>{{profile.touchId}}
+
+        </td>
+        <td> <div id="profileSegmentLabel"></div>
+          <div>
+            <ul ng-repeat="item in profile.curSegments | orderBy: 'toString()'">
+              <li> {{item}} </li>
+          </ul>
+      </div>
+  </td>
+</tr>
+</table>
+</div>
+</div>
+</div>
+</div>
 </div>
 </body>
 <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.1/jquery.min.js"></script>
 <script type="text/javascript">
-    var _tcaq = _tcaq || [];
-    var _tcwq = _tcwq || [];
+var _tcaq = _tcaq || [];
+var _tcwq = _tcwq || [];
 
-    var _cookie = document.cookie;
-    document.__defineSetter__("cookie", function(the_cookie) {
-        if ( _cookie ) {
-            _cookie=_cookie+"; "+the_cookie;
+var _cookie = document.cookie;
+document.__defineSetter__("cookie", function(the_cookie) {
+    if ( _cookie ) {
+        _cookie=_cookie+"; "+the_cookie;
+    }
+    else {
+        _cookie=the_cookie;
+    }
+} );
+document.__defineGetter__("cookie", function() {
+    return _cookie;
+} );
+var Drupal = {
+    'jQuery' : jQuery,
+    'Settings' : {
+        'lift_user_profiles' : {
+            'apiUrl' : 'http://localhost:8080/Trucentric',
+            'accountName' : 'TCBIZMASTERK'
         }
-        else {
-            _cookie=the_cookie;
-        }
-    } );
-    document.__defineGetter__("cookie", function() {
-        return _cookie;
-    } );
-    var Drupal = {
-        'jQuery' : jQuery,
-        'Settings' : {
-            'lift_user_profiles' : {
-                'apiUrl' : 'http://localhost:8080/Trucentric',
-                'accountName' : 'TCBIZMASTERK'
-            }
-        }
-    };
+    }
+};
 </script>
 
 <script src="lib/tc.js"></script>
@@ -183,21 +183,21 @@
 <script src="app.js"></script>
 
 <script>
-    $( document ).ready(function() {
-        window.localStorage.setItem('personalize::debug::a', "{\"type\":\"log\"}");
-        window.localStorage.setItem('personalize::debug::b', "{\"type\":\"log\"}");
+$( document ).ready(function() {
+    window.localStorage.setItem('personalize::debug::a', "{\"type\":\"log\"}");
+    window.localStorage.setItem('personalize::debug::b', "{\"type\":\"log\"}");
 
-        setTimeout(function(){
-            $(document).trigger('acquialiftDebugEvent', {
-                key: "personalize::debug::a"
-            });
-        }, 1000);
+    setTimeout(function(){
+        $(document).trigger('acquialiftDebugEvent', {
+            key: "personalize::debug::a"
+        });
+    }, 1000);
 
-        setTimeout(function(){
-            $(document).trigger('acquialiftDebugEvent', {
-                key: "personalize::debug::b"
-            });
-        }, 4000);
-    });
+    setTimeout(function(){
+        $(document).trigger('acquialiftDebugEvent', {
+            key: "personalize::debug::b"
+        });
+    }, 4000);
+});
 </script>
 </html>

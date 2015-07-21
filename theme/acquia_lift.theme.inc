@@ -343,12 +343,23 @@ function theme_acquia_lift_debugger() {
   </div>
   <div class="debugger__content">
   <div ng-show="tab=='segments'">
-    <div class="debugger__secondary__navigation"></div>
-    <div class="debugger__preview">
+  <div class="debugger__preview">
+    <div class="debugger__secondary__navigation"> <div class="previewBox">
+            <button ng-click="stopPreview()" data-ng-disabled="!isPreview()" ng-style="previewButtonStop">Stop Preview</button>
+            <button ng-click="startPreview()" data-ng-disabled="isPreview()" ng-style="previewButtonStart"> Start Preview</button>
+          </div></div>
       <table>
         <tr>
-          <th>Modify your active segments to change content views.</th>
-          <th><b>Active Preview Segments</b></th>
+          <td>
+          <b>Define your list of segments for preview:</b>
+          </td>
+        </tr>
+        <tr>
+          <td>
+            <ul ng-repeat="item in profile.overrideSegments | orderBy: 'toString()'" class="overrideSegments">
+              <li class="float clickable" ng-click="deletePreviewItem(item)"><span>{{item}}</span></div>
+            </ul>
+          </td>
         </tr>
         <tr>
           <td>
@@ -356,17 +367,6 @@ function theme_acquia_lift_debugger() {
               <autocomplete class="float" ng-model="overrideSegmentChoice" data="allSegments" on-select="addPreview"></autocomplete>
               <button ng-click="addPreviewItem(null)">Add</button>
             </div>
-
-          <div class="previewBox">
-            <button ng-click="stopPreview()" data-ng-disabled="!isPreview()" ng-style="previewButtonStop">Stop Preview</button>
-            <button ng-click="startPreview()" data-ng-disabled="isPreview()" ng-style="previewButtonStart"> Start Preview</button>
-          </div>
-
-          </td>
-          <td>
-            <ul ng-repeat="item in profile.overrideSegments | orderBy: 'toString()'" class="overrideSegments">
-              <li class="float clickable" ng-click="deletePreviewItem(item)"><span>{{item}}</span></div>
-            </ul>
           </td>
         </tr>
       </table>
@@ -437,11 +437,9 @@ function theme_acquia_lift_debugger() {
             <td>
 
                 <b>Touch ID: </b>{{profile.touchId}}
-                <br>
-                <b> 3rd Party Tracking: </b>{{profile.trackingID}}
 
             </td>
-            <td> <b>Last Evaluated Segments</b>
+            <td> <div id="profileSegmentLabel"></div>
               <div>
                 <ul ng-repeat="item in profile.curSegments | orderBy: 'toString()'">
                   <li> {{item}} </li>
@@ -451,9 +449,13 @@ function theme_acquia_lift_debugger() {
           </tr>
         </table>
       </div>
+
+      <div id="asdasd" resizable r-directions="['bottom', 'right']" r-flex="false">TESTSETSTE</div>
+
     </div>
     </div>
   </div>
+
 </div>
 EOT;
   return $markup;

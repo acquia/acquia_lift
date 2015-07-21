@@ -421,8 +421,11 @@ function acquia_lift_agent_list($agents = array(), $legacy = FALSE) {
           break;
       }
 
+      // If there are any old tests that used to run for this agent, they will
+      // be listed here as well.
+      $old_tests = acquia_lift_get_retired_tests($agent->machine_name);
       // Lift target agents show reports if they contain tests.
-      $show_report_link = $legacy || ($agent->plugin == 'acquia_lift_target' && !empty($agent->started) && in_array($agent_type, array($agent_type_test, $agent_type_both)));
+      $show_report_link = $legacy || !empty($old_tests) || ($agent->plugin == 'acquia_lift_target' && !empty($agent->started) && in_array($agent_type, array($agent_type_test, $agent_type_both)));
 
       // Generate operations list.
       $ops = array();
@@ -503,6 +506,32 @@ function acquia_lift_agent_list($agents = array(), $legacy = FALSE) {
           );
         }
       }
+      // List retired tests.
+      foreach ($old_tests as $test) {
+        $tablerow = array();
+        $tablerow[] = array('data' => t('(retired test) ') . $test->label, 'class' => 'acquia-lift-campaign-title');
+        $tablerow[] =  '';
+        $tablerow[] = t('Retired test');
+        if ($show_status_change) {
+          $tablerow[] = '';
+        }
+        $tablerow[] = $show_report_link ? l(t('View reports'), 'admin/structure/personalize/manage/' . $agent->machine_name . '/results', array(
+          'query' => array(
+            'lift_retired_test' => $test->machine_name,
+          ),
+          'attributes' => array(
+            'class' => array('acquia-lift-report'),
+            'title' => t('View reports for retired test @test', array(
+              '@test' => $test->label,
+            )),
+          ),
+        )) : '';
+        $rows[] = array(
+          'data' => $tablerow,
+          'no_striping' => TRUE,
+          'class' => array('acquia-lift-personalize-list-audience', 'element-hidden'),
+        );
+      }
     }
 
     $build['personalizations_list']['personalization_group_' . $status]['table'] = array(
@@ -578,6 +607,12 @@ function acquia_lift_report($form, &$form_state, $agent_data) {
       return array();
     }
   }
+  if (isset($_GET['lift_retired_test'])) {
+    if ($nested_agent = personalize_agent_load($_GET['lift_retired_test'])) {
+      $form['report'] = acquia_lift_report_custom($form_state, $nested_agent, FALSE, $agent_data);
+      return $form;
+    }
+  }
   $option_set = acquia_lift_get_option_set_for_targeting($agent_data->machine_name);
 
   if (empty($option_set->targeting)) {
@@ -604,7 +639,7 @@ function acquia_lift_report($form, &$form_state, $agent_data) {
     if (empty($audience_options)) {
       return array(
         'no_report' => array(
-          '#markup'=> t('This personalization does not contain tests, no reports to show.')
+          '#markup' => t('This personalization does not contain tests, no reports to show.')
         )
       );
     }
@@ -1116,10 +1151,10 @@ function acquia_lift_target_audience_save($label, $agent_name, $contexts, $strat
  */
 function acquia_lift_implement_test_structure($agent_data) {
   if (isset($agent_data->data['variation_set_handling']) && $agent_data->data['variation_set_handling'] == ACQUIA_LIFT_DECISION_MULTIVARIATE) {
-    $tests_to_delete = acquia_lift_implement_mvt($agent_data);
+    acquia_lift_implement_mvt($agent_data);
   }
   else {
-    $tests_to_delete = acquia_lift_implement_targeting($agent_data);
+    acquia_lift_implement_targeting($agent_data);
   }
   // Once we implement the structure for a personalization, we do not allow
   // adding or removing variation sets.
@@ -1128,8 +1163,6 @@ function acquia_lift_implement_test_structure($agent_data) {
   //   variation sets so is small that it does not warrant such effort.
   $agent_data->data['locked_for_variation_sets'] = TRUE;
   personalize_agent_save($agent_data);
-
-  return $tests_to_delete;
 }
 
 /**
@@ -1148,7 +1181,7 @@ function acquia_lift_implement_targeting($agent) {
     // Just update the test options for any embedded tests and return an empty
     // array.
     acquia_lift_save_nested_test_options($agent);
-    return array();
+    return;
   }
   $all_option_sets = personalize_option_set_load_by_agent($agent->machine_name);
 
@@ -1199,13 +1232,10 @@ function acquia_lift_implement_targeting($agent) {
     }
   }
   // Keep track of nested agents that get deleted.
-  $to_delete = array();
   foreach (array_keys($existing_tests) as $audience) {
     if (!in_array($audience, $rules)) {
       // Delete the old test if it's no longer being used.
-      if ($deleted = acquia_lift_delete_old_nested_test($targeting_option_set, $audience)) {
-        $to_delete[] = $deleted;
-      }
+      acquia_lift_remove_nested_test($targeting_option_set, $audience, $agent);
     }
     else {
       // Change the audience for the test if necessary.
@@ -1248,7 +1278,6 @@ function acquia_lift_implement_targeting($agent) {
   // to the running targeting.
   $agent->data['lift_targeting'] = array();
   personalize_agent_save($agent);
-  return $to_delete;
 }
 
 /**
@@ -1370,30 +1399,31 @@ function acquia_lift_set_audience_for_test(&$option_set, $old_audience, $new_aud
 }
 
 /**
- * Deletes a nested test that is no longer needed.
+ * Removes a nested test from an audience.
+ *
+ * This does not actually delete the test - it is kept around so that reports
+ * can be viewed, but the test is removed from the audience.
  *
  * @param $option_set
  *   The option set whose targeting is being changed.
  * @param $audience
  *   THe name of the target audience the test was assigned to.
  * @throws \PersonalizeException
- *
- * @return string
- *   The machine name of the agent that was deleted so it can be scheduled for
- *   deletion in Lift.
  */
-function acquia_lift_delete_old_nested_test(&$option_set, $audience) {
-  $agent_to_delete = NULL;
+function acquia_lift_remove_nested_test(&$option_set, $audience, $parent_agent) {
   // Find the nested option set for the specified targeting rule.
   if (isset($option_set->targeting[$audience]) && isset($option_set->targeting[$audience]['osid'])) {
     $nested_os = personalize_option_set_load($option_set->targeting[$audience]['osid']);
-    // Delete the option set, then delete the agent.
-    personalize_option_set_delete($nested_os->osid);
-    $agent_to_delete = $nested_os->agent;
-    personalize_agent_delete($agent_to_delete);
+    // Preserve information about what the test had been used for.
+    $nested_agent = personalize_agent_load($nested_os->agent);
+    $nested_agent->data['lift_parent'] = $parent_agent->machine_name;
+    $nested_agent->data['lift_audience'] = $audience;
+    $audience_label = isset($option_set->targeting[$audience]['label']) ? $option_set->targeting[$audience]['label'] : $audience;
+    personalize_agent_set_status($nested_agent->machine_name, PERSONALIZE_STATUS_COMPLETED);
+    $nested_agent->label = $parent_agent->label . ': ' . $audience_label . t(" (Completed @date)", array('@date' => date("Y-m-d")));
+    personalize_agent_save($nested_agent);
     unset($option_set->targeting[$audience]['osid']);
   }
-  return $agent_to_delete;
 }
 
 /**
@@ -1560,7 +1590,7 @@ function acquia_lift_target_set_status($agent_data, $next_status) {
   if ($next_status == PERSONALIZE_STATUS_RUNNING || $next_status == PERSONALIZE_STATUS_SCHEDULED) {
     module_load_include('inc', 'acquia_lift', 'acquia_lift.batch');
     try {
-      $agent_data->tests_to_delete = acquia_lift_implement_test_structure($agent_data);
+      acquia_lift_implement_test_structure($agent_data);
       acquia_lift_batch_sync_tests_for_agent($agent_data, $next_status);
       // Unset the started property which will have been changed during
       // status update and we don't want it getting clobbered by other
@@ -1594,7 +1624,6 @@ function acquia_lift_implement_mvt($agent) {
   if (count($option_sets) < 2) {
     throw new AcquiaLiftException('Cannot implement a multi-variate test with fewer than 2 variation sets');
   }
-  $tests_to_delete = array();
   $goals = array();
   if ($mvt = personalize_agent_load($mvt_name)) {
     $old_goals = personalize_goal_load_by_conditions(array('agent' => $mvt_name));
@@ -1606,7 +1635,7 @@ function acquia_lift_implement_mvt($agent) {
     }
     // If this agent already exists delete it and recreate from scratch.
     personalize_agent_delete($mvt_name);
-    $tests_to_delete = array($mvt_name);
+    // @todo Should it be deleted from Lift?
   }
 
   // Create a test agent for the MVT.
@@ -1634,7 +1663,6 @@ function acquia_lift_implement_mvt($agent) {
   catch (PersonalizeException $e) {
 
   }
-  return $tests_to_delete;
 }
 
 /**
@@ -1714,6 +1742,32 @@ function _acquia_lift_personalize_campaign_wizard_everyone_else_audience() {
     'strategy' => 'OR',
     'id' => ACQUIA_LIFT_TARGETING_EVERYONE_ELSE,
   );
+}
+
+/**
+ * Returns any retired tests that exist for the specified agent.
+ *
+ * @param $agent_name
+ *   The agent to get retired tests for.
+ * @return array
+ *   An array of test objects.
+ */
+function acquia_lift_get_retired_tests($agent_name) {
+  $old_tests = &drupal_static(__FUNCTION__, NULL);
+  if ($old_tests == NULL) {
+    $old_tests = array();
+    $test_agents = personalize_agent_load_by_type(ACQUIA_LIFT_TESTING_AGENT_V1);
+    $test_agents = array_merge($test_agents, personalize_agent_load_by_type(ACQUIA_LIFT_TESTING_AGENT_V2));
+    foreach ($test_agents as $name => $agent) {
+      if (isset($agent->data['lift_parent'])) {
+        if (!isset($old_tests[$agent->data['lift_parent']])) {
+          $old_tests[$agent->data['lift_parent']] = array();
+        }
+        $old_tests[$agent->data['lift_parent']][] = $agent;
+      }
+    }
+  }
+  return isset($old_tests[$agent_name]) ? $old_tests[$agent_name] : array();
 }
 
 /**

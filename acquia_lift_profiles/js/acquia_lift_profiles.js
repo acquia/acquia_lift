@@ -243,6 +243,14 @@ var _tcwq = _tcwq || [];
 
           initialized = true;
         };
+
+        //checks if debug mode is on. sets the debug mode for tcwidget
+        if(settings.acquia_lift && settings.acquia_lift.isDebugMode){
+          _tcwq.push( ["setDebug", true]);
+        }else{
+          _tcwq.push(["setDebug", false]);
+        }
+
         $(document).bind('personalizeDecision', this["processPersonalizeDecision"]);
         $(document).bind('sentGoalToAgent', this["processSentGoalToAgent"]);
         Drupal.personalize.getVisitorContexts(plugins, callback);

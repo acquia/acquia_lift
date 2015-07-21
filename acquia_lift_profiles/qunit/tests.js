@@ -54,6 +54,10 @@ QUnit.module("Acquia Lift Profiles", {
     var callbackCalled = 0;
     _tcwq = {
       'push':function(stf) {
+        if (!jQuery.isFunction(stf[1])) {
+          // Debug mode callback also utilizes push but has no callback.
+          return;
+        }
         callbackCalled++;
         var values;
         setTimeout(function(){

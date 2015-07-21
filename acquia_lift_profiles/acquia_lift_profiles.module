@@ -320,7 +320,7 @@ EOT;
     $attached['library'] = array();
   }
   $attached['library'][] =  array('system', 'jquery.cookie');
-  if (personalize_debug_mode_enabled()) {
+  if (acquia_lift_debug_mode_enabled() && acquia_lift_profiles_is_configured()) {
     $attached['library'][] = array('acquia_lift_profiles', 'debugger');
   }
   $page['page_top']['acquia_lift_profiles'] = array(

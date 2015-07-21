@@ -17,7 +17,6 @@ app.factory('debuggerFactory', function($http, liftwebURl){
             console.log(data);
         });
     };
-
     return factory;
 })
 
@@ -32,13 +31,11 @@ app.factory('debuggerFactory', function($http, liftwebURl){
 
                 this.element =
                     this.options =
-                        this.triggerOpen =
-                            this.triggerMaximize =
-                                this.triggerClose =
-                                    this.triggerDestroy =
-                                        this.isOpen =
-                                            this.isMaximized =
-                                                this.isClosed = null;
+                        this.triggerMaximize =
+                            this.triggerClose =
+                                this.triggerDestroy =
+                                    this.isMaximized =
+                                        this.isClosed = null;
 
                 this.init(element, options);
 
@@ -50,11 +47,9 @@ app.factory('debuggerFactory', function($http, liftwebURl){
 
                 this.element = element;
                 this.options = options;
-                this.triggerOpen = this.getTrigger('open');
                 this.triggerMaximize = this.getTrigger('maximize');
                 this.triggerClose = this.getTrigger('close');
                 this.triggerDestroy = this.getTrigger('destroy');
-                this.isOpem = false;
                 this.isMaximized = false;
                 this.isClosed = true;
 
@@ -73,11 +68,6 @@ app.factory('debuggerFactory', function($http, liftwebURl){
 
             }
 
-            Lift.debugger.prototype.clickOpen = function (event) {
-                this.open();
-
-            }
-
             Lift.debugger.prototype.clickMaximize = function (event) {
                 this.maximize();
 
@@ -88,19 +78,12 @@ app.factory('debuggerFactory', function($http, liftwebURl){
 
             }
 
-      Lift.debugger.prototype.clickDestroy = function (event) {
-        Drupal.acquiaLiftProfilesDebug.clearStorage();
-        this.destroy();
-      }
+            Lift.debugger.prototype.clickDestroy = function (event) {
 
+                Drupal.acquiaLiftProfilesDebug.clearStorage()
+                this.destroy();
 
-            Lift.debugger.prototype.setOpen = function () {
-
-                this.isMaximized = false;
-                this.isClosed = false;
-                this.isOpen = true;
-
-            };
+            }
 
             Lift.debugger.prototype.setMaximized = function () {
 
@@ -115,12 +98,6 @@ app.factory('debuggerFactory', function($http, liftwebURl){
                 this.isOpen = false;
                 this.isMaximized = false;
                 this.isClosed = true;
-
-            };
-
-            Lift.debugger.prototype.open = function () {
-                this.setOpen();
-                this.render();
 
             };
 
@@ -144,30 +121,20 @@ app.factory('debuggerFactory', function($http, liftwebURl){
                 }
 
                 if (this.isClosed) {
-                    this.element.classList.remove('is-open');
                     this.element.classList.remove('is-maximized');
                     this.element.classList.add('is-closed');
-                    this.triggerOpen.setAttribute('aria-hidden', 'false');
                     this.triggerMaximize.setAttribute('aria-hidden', 'false');
                     this.triggerDestroy.setAttribute('aria-hidden', 'false');
                     this.triggerClose.setAttribute('aria-hidden', 'true');
                 }
 
-                if (this.isOpen) {
-                    this.element.classList.add('is-open');
-                    this.element.classList.remove('is-maximized');
-                    this.element.classList.remove('is-closed');
-                    this.triggerClose.setAttribute('aria-hidden', 'false');
-                    this.triggerMaximize.setAttribute('aria-hidden', 'false');
-                    this.triggerDestroy.setAttribute('aria-hidden', 'false');
-                    this.triggerOpen.setAttribute('aria-hidden', 'true');
-                }
-
                 if (this.isMaximized) {
                     this.element.classList.add('is-maximized');
-                    this.element.classList.remove('is-open');
+                    if(window.sessionStorage.getItem('acquiaLift::debug::debugWindowHeight')){
+                        var height = Math.min(window.sessionStorage.getItem('acquiaLift::debug::debugWindowHeight'), document.documentElement.clientHeight * 0.8);
+                        document.getElementsByClassName('debugger__content')[0].style.height = height + "px";
+                    }
                     this.element.classList.remove('is-closed');
-                    this.triggerOpen.setAttribute('aria-hidden', 'false');
                     this.triggerClose.setAttribute('aria-hidden', 'false');
                     this.triggerDestroy.setAttribute('aria-hidden', 'false');
                     this.triggerMaximize.setAttribute('aria-hidden', 'true');
@@ -176,8 +143,6 @@ app.factory('debuggerFactory', function($http, liftwebURl){
             };
 
             Lift.debugger.prototype.destroy = function () {
-
-                this.element.classList.remove('is-open');
                 this.element.classList.remove('is-maximized');
                 this.element.classList.remove('is-closed');
                 this.element.classList.remove('debugger');
@@ -284,14 +249,15 @@ app.controller("DebuggerController", function($scope, $timeout, debuggerFactory,
     }
 
     $scope.severityFilter = [
-        {  name: "Error",ticked: true },
+        {  name: "Errors",ticked: true },
         { name: "Warning", ticked: true  },
         {  name:"Info",ticked: true },
     ];
     $scope.typeFilter = [
-        { icon: "<img src=icons/icon_close--circle.svg />", name: "Target",ticked: false },
-        { icon: "<img src=icons/icon_warning.svg />", name: "Segment", ticked: false  },
-    ];
+
+        { name: "Target",ticked: false },
+        { name: "Segment", ticked: false  },
+    ];  
 
     $scope.search = function (row) {
         if(row) {
@@ -339,58 +305,61 @@ app.controller("DebuggerController", function($scope, $timeout, debuggerFactory,
         $scope.allSegments.push(item);
     }
 
-  $scope.startPreview = function(){
-    $sessionStorage.setObject(debugPrefix + "::originalSegments",$scope.profile.curSegments);
-    $sessionStorage.setObject(debugPrefix + "::overrideSegments",$scope.profile.overrideSegments);
-    Drupal.acquiaLiftProfilesDebug.setOverrideSegments($scope.profile.overrideSegments);    }
+    $scope.startPreview = function(){
+        $sessionStorage.setObject(debugPrefix + "::originalSegments",$scope.profile.curSegments);
+        $sessionStorage.setObject(debugPrefix + "::overrideSegments",$scope.profile.overrideSegments);
+        Drupal.acquiaLiftProfilesDebug.setOverrideSegments($scope.profile.overrideSegments);    
+        fade(document.getElementsByClassName('debugger__preview__notification')[0],"Please refresh page to see your changes");
+    }
 
-  $scope.stopPreview = function(){
-    $scope.profile.overrideSegments = $sessionStorage.getObject(debugPrefix + "::overrideSegments");
-    $scope.profile.curSegments = $sessionStorage.getObject(debugPrefix + "::originalSegments");
-    if ($scope.profile.overrideSegments && $scope.profile.overrideSegments.length > 0){
-      Drupal.acquiaLiftProfilesDebug.setOverrideSegments(null);
-      $sessionStorage.removeItem(debugPrefix + "::overrideSegments");
+    $scope.stopPreview = function(){
+        $scope.profile.overrideSegments = $sessionStorage.getObject(debugPrefix + "::overrideSegments");
+        $scope.profile.curSegments = $sessionStorage.getObject(debugPrefix + "::originalSegments");
+        if ($scope.profile.overrideSegments && $scope.profile.overrideSegments.length > 0){
+            Drupal.acquiaLiftProfilesDebug.setOverrideSegments(null);
+            $sessionStorage.removeItem(debugPrefix + "::overrideSegments");
         }
     }
 
-    $scope.isPreview = function(){
-        if (window.sessionStorage.getItem("acquiaLift::debug::overrideSegments")){
-            $scope.previewButtonStop = {
-                'background-color': ' #0073b9',
-                'color':'white'
-            }
-            $scope.previewButtonStart = {}
-            document.getElementById("sitePreviewTabLabel").innerText="Site Preview - Active";
+  $scope.isPreview = function(){
+    if (window.sessionStorage.getItem("acquiaLift::debug::overrideSegments")){
+      $scope.previewButtonStop = {
+        'background-color': ' #0073b9',
+        'color':'white'
+      }
+      $scope.previewButtonStart = {}
+      document.getElementById("sitePreviewTabLabel").innerText="Site Preview - Active";
 
-            return true;
-        }else{
-            $scope.previewButtonStart = {
-                'background-color': ' #0073b9',
-                'color':'white'
-            }
-            $scope.previewButtonStop={}
-            document.getElementById("sitePreviewTabLabel").innerText="Site Preview";
-            return false;
-        }
+      return true;
+    }else{
+      $scope.previewButtonStart = {
+        'background-color': ' #0073b9',
+        'color':'white'
+      }
+      $scope.previewButtonStop={}
+      document.getElementById("sitePreviewTabLabel").innerText="Site Preview";
+      return false;
     }
+  }
 
-    $scope.buttonClick = function(type){
-        var color = '#0073b9';
-        var bgColor = 'white';
-        var boxShadow = '0 0 0.3rem rgba(41, 170, 225, 0.9), inset 0 0.1rem 0.3rem rgba(0, 0, 0, 0.4)'
-        $scope.profileButton={};
-        $scope.logButton={};
-        $scope.previewButton={};
-        switch(type){
-            case 'log': $scope.logButton={'color':color, 'background-color' : bgColor, 'box-shadow':boxShadow};
-            break;
-            case 'profile': $scope.profileButton={'color':color, 'background-color' : bgColor, 'box-shadow':boxShadow};
-            break;
-            case 'preview': $scope.previewButton={'color':color, 'background-color' : bgColor, 'box-shadow':boxShadow};
-            break;
-        }
+  $scope.buttonClick = function(type){
+    var color = '#0073b9';
+    var bgColor = 'white';
+    var boxShadow = '0 0 0.3rem rgba(41, 170, 225, 0.9), inset 0 0.1rem 0.3rem rgba(0, 0, 0, 0.4)'
+    $scope.profileButton={};
+    $scope.logButton={};
+    $scope.previewButton={};
+    switch(type){
+      case 'log': $scope.logButton={'color':color, 'background-color' : bgColor, 'box-shadow':boxShadow};
+        break;
+      case 'profile': $scope.profileButton={'color':color, 'background-color' : bgColor, 'box-shadow':boxShadow};
+        break;
+      case 'preview': $scope.previewButton={'color':color, 'background-color' : bgColor, 'box-shadow':boxShadow};
+        break;
     }
+  }
     $scope.buttonClick('log');
+
 });
 angular.module('debuggerModule')
     .filter('to_icon', ['$sce', function($sce){
@@ -407,6 +376,21 @@ angular.module('debuggerModule')
             return $sce.trustAsHtml(icon);
         };
     }]);
+function fade(element, string) {
+    element.innerText = string;
+    // element.style.display = 'none';
+
+    var op = 0.1;  // initial opacity
+    var timer = setInterval(function () {
+        if (op >= 1){
+            clearInterval(timer);
+        }
+        element.style.opacity = op;
+        element.style.filter = 'alpha(opacity=' + op * 100 + ")";
+        op += op * 0.1;
+    }, 10);
+}
+
 function loadFakeData($scope){
     //faking some data here!
     for (i=0;i < 5;i++){
@@ -494,7 +478,7 @@ angular.module('debuggerModule')
  * copies or substantial portions of the Software.
  *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILIT
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
  * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
@@ -1442,7 +1426,6 @@ app.directive('autocomplete', function() {
                     $scope.searchFilter = $scope.searchParam;
                     $scope.selectedIndex = -1;
                 }
-
                 // function thats passed to on-type attribute gets executed
                 if($scope.onType)
                     $scope.onType($scope.searchParam);
@@ -1561,7 +1544,6 @@ app.directive('autocomplete', function() {
                 // implementation of the up and down movement in the list of suggestions
                 switch (keycode){
                     case key.up:
-
                         index = scope.getIndex()-1;
                         if(index<-1){
                             index = l-1;
@@ -1687,6 +1669,7 @@ app.directive('suggestion', function(){
         }
     };
 });
+
 angular.module('angularResizable', [])
     .directive('resizable', function() {
         var toCall;
@@ -1736,9 +1719,9 @@ angular.module('angularResizable', [])
                     dragDir,
                     axis,
                     info = {};
-
                 var updateInfo = function(e) {
-                    info.width = false; info.height = false;
+                    info.width = false; 
+                    info.height = false;
                     if(axis == 'x')
                         info.width = scope.rFlex ? parseInt(element[0].style.flexBasis) : parseInt(element[0].style.width);
                     else
@@ -1754,18 +1737,6 @@ angular.module('angularResizable', [])
                             if(scope.rFlex) { element[0].style.flexBasis = h + (offset * vy) + 'px'; }
                             else {            element[0].style.height = h + (offset * vy) + 'px'; }
                             break;
-                        case 'right':
-                            if(scope.rFlex) { element[0].style.flexBasis = w - (offset * vx) + 'px'; }
-                            else {            element[0].style.width = w - (offset * vx) + 'px'; }
-                            break;
-                        case 'bottom':
-                            if(scope.rFlex) { element[0].style.flexBasis = h - (offset * vy) + 'px'; }
-                            else {            element[0].style.height = h - (offset * vy) + 'px'; }
-                            break;
-                        case 'left':
-                            if(scope.rFlex) { element[0].style.flexBasis = w + (offset * vx) + 'px'; }
-                            else {            element[0].style.width = w + (offset * vx) + 'px'; }
-                            break;
                     }
                     updateInfo(e);
                     throttle(function() { scope.$emit("angular-resizable.resizing", info);});
@@ -1777,6 +1748,7 @@ angular.module('angularResizable', [])
                     document.removeEventListener('mouseup', dragEnd, false);
                     document.removeEventListener('mousemove', dragging, false);
                     element.removeClass('no-transition');
+                    window.sessionStorage.setItem('acquiaLift::debug::debugWindowHeight', info.height);
                 };
                 var dragStart = function(e, direction) {
                     dragDir = direction;
@@ -1810,7 +1782,7 @@ angular.module('angularResizable', [])
                         // add class for styling purposes
                         grabber.setAttribute('class', 'rg-' + dir[i]);
                         grabber.innerHTML = inner;
-                        element[0].appendChild(grabber);
+                        document.getElementById("debugger").appendChild(grabber);
                         grabber.ondragstart = function() { return false }
                         grabber.addEventListener('mousedown', function(e) {
                           disabled = (scope.rDisabled == 'true');
@@ -1825,5 +1797,5 @@ angular.module('angularResizable', [])
             }
         }
     });
+
 // # sourceMappingURL=acquia_lift.debugger.js.map
-//# sourceMappingURL=acquia_lift.debugger.js.map

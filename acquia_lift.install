@@ -823,6 +823,27 @@ function acquia_lift_update_7202() {
 }
 
 /**
+ * Update personalize elements variation sets to populate the preview link.
+ */
+function acquia_lift_update_7203() {
+  $result = db_query("SELECT o.osid, o.data, o.preview_link FROM {personalize_agent} a INNER JOIN {personalize_option_sets} o ON o.agent = a.machine_name WHERE a.plugin = 'acquia_lift_target' and o.plugin = 'elements'");
+  foreach ($result as $row) {
+    if (!empty($row->preview_link)) {
+      continue;
+    }
+    $data = unserialize($row->data);
+    // If pages is filled out and its only a single page without wild card
+    // then assign it as the preview link as well.
+    if (!empty($data['pages']) && preg_match('~[\r\n\*]+~', $data['pages']) === 0) {
+      db_update('personalize_option_sets')
+        ->fields(array('preview_link' => $data['pages']))
+        ->condition('osid', $row->osid)
+        ->execute();
+    }
+  }
+}
+
+/**
  * Helper to get the schema for the cache table.
  */
 function acquia_lift_get_report_cache_table_schema() {

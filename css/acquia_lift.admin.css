@@ -452,6 +452,9 @@ input[type="submit"].acquia-lift-wizard-add:hover {
 .personalize-wizard-section .acquia-lift-element-variations > * {
   display: inline-block;
 }
+.personalize-wizard-section .acquia-lift-element-variations > .acquia-lift-preview {
+  display: block;
+}
 .personalize-wizard-section .acquia-lift-element-variations {
   width: 100%;
   padding: 1em 0 .5em 0;

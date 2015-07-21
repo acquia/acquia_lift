@@ -229,6 +229,8 @@ class AcquiaLiftWebTestBase extends DrupalWebTestCase
    * Create personalize element option set.
    */
   protected function createPersonalizeElementsOptionSet($agent_name, $option_data) {
+    $pages_link = isset($option_data['pages']) ? $option_data['pages'] : 'node';
+    $preview_link = isset($option_data['preview_link']) ? $option_data['preview_link'] : $pages_link;
     $option_set = array(
       'label' => isset($option_data['label']) ? $option_data['label'] : 'Element test set 1',
       'plugin' => 'elements',
@@ -238,8 +240,9 @@ class AcquiaLiftWebTestBase extends DrupalWebTestCase
       'data' => array(
         'personalize_elements_selector' => isset($option_data['selector']) ? $option_data['selector'] : '#some-selector',
         'personalize_elements_type' => isset($option_data['type']) ? $option_data['type'] : 'editText',
-        'pages' => isset($option_data['pages']) ? $option_data['pages'] : 'node',
+        'pages' => $pages_link,
       ),
+      'preview_link' => $preview_link,
     );
     if (!empty($option_data['add_control'])) {
       $option_set['options'][] = array(
@@ -2917,7 +2920,9 @@ class AcquiaLiftWebTestCampaignWizardVariations extends AcquiaLiftWebTestCampaig
    * Test element variation set creation.
    */
   function testWhatElementForm() {
-    $this->drupalLogin($this->managerUser);
+    $admin_user = $this->drupalCreateUser(array('access administration pages', 'manage personalized content', 'use advanced personalize elements features'));
+    $this->drupalLogin($admin_user);
+
     $agent = $this->createTargetingAgent();
 
     $this->drupalGet('admin/structure/personalize/manage/' . $agent->machine_name . '/variations');
@@ -2992,6 +2997,7 @@ class AcquiaLiftWebTestCampaignWizardVariations extends AcquiaLiftWebTestCampaig
       'num_options' => 1,
       'add_control' => TRUE,
     ));
+
     // Go to the edit page and verify that this option set is displayed and
     // links to its "pages" page for editing.
     $this->drupalGet('admin/structure/personalize/manage/' . $agent->machine_name . '/variations');
@@ -3052,13 +3058,41 @@ class AcquiaLiftWebTestCampaignWizardVariations extends AcquiaLiftWebTestCampaig
     $edit = array(
       'variations[editing][option_sets][option_set_' . $option_set->osid . '][content][label]' => 'Element test set 1 - EDIT',
       'variations[editing][option_sets][option_set_' . $option_set->osid . '][content][options][option-A][option_label]' => 'Option A - EDIT',
+      'variations[editing][option_sets][option_set_' . $option_set->osid . '][advanced][pages_all]' => 0,
+      'variations[editing][option_sets][option_set_' . $option_set->osid . '][advanced][pages]' => "node\nadmin/*",
     );
     $this->drupalPost(NULL, $edit, $this->getButton('wizard_next', array('agent_name' => $agent->machine_name, 'step' => 'variations')));
     $option_set = personalize_option_set_load($option_set->osid, TRUE);
     $this->assertTrue('Element test set 1 - EDIT', $option_set->label);
-    $this->assertTrue('Option A - EDIT', $option_set->label);
-  }
+    foreach($option_set->options as $option) {
+      if ($option['option_id'] == 'option-A') {
+        $this->assertTrue('Option A - EDIT', $option_set->label);
+      }
+    }
+    $this->assertEqual($option_set->data['pages'], "node\nadmin/*");
+    $this->assertEqual($option_set->preview_link, 'node');
 
+    // Now add a javascript personalize elements variation.
+    $js_option_set = $this->createPersonalizeElementsOptionSet($agent->machine_name, array(
+      'type' => 'runJS',
+      'selector' => '',
+      'add_control' => TRUE,
+      'num_options' => 2,
+    ));
+    $this->drupalGet('admin/structure/personalize/manage/' . $agent->machine_name . '/variations');
+    $this->clickLink('Edit variations');
+
+    $this->assertOptionSelected('edit-variation-type', 'runJS');
+    $edit = array(
+      'title' => 'JavaScript variation set',
+    );
+    $this->drupalPost(NULL, $edit, t('Save'));
+
+    // Should be redirected back to the "What" page
+    $this->assertUrl('admin/structure/personalize/manage/' . $agent->machine_name . '/variations');
+    $this->assertFieldByName('variations[editing][option_sets][option_set_' . $js_option_set->osid . '][content][label]', 'JavaScript variation set');
+  }
+  
   /**
    * Test the personalize fields view of the "What" campaign subform.
    */
@@ -3073,8 +3107,27 @@ class AcquiaLiftWebTestCampaignWizardVariations extends AcquiaLiftWebTestCampaig
     list($node, $os, $agent_name) = $this->createPersonalizedField();
 
     $this->drupalGet("admin/structure/personalize/manage/{$agent_name}/variations");
+    // Text should be shown in preview.
     $this->assertText('first value');
     $this->assertText('second value');
+
+    // Basic variation editing should be available.
+    $edit = array(
+      'variations[editing][option_sets][option_set_' . $os->osid . '][content][label]' => 'Fields test edit',
+      'variations[editing][option_sets][option_set_' . $os->osid . '][content][options][first-value][option_label]' => 'Option A - EDIT',
+      'variations[editing][option_sets][option_set_' . $os->osid . '][content][options][second-value][option_label]' => 'Option B - EDIT',
+    );
+    $this->drupalPost(NULL, $edit, $this->getButton('wizard_next', array('agent_name' => $agent_name, 'step' => 'variations')));
+
+    // Go back and verify the changes.
+    $this->drupalGet("admin/structure/personalize/manage/{$agent_name}/variations");
+    $this->assertFieldByName('variations[editing][option_sets][option_set_' . $os->osid . '][content][label]', 'Fields test edit');
+    $this->assertFieldByName('variations[editing][option_sets][option_set_' . $os->osid . '][content][options][first-value][option_label]', 'Option A - EDIT');
+    $this->assertFieldByName('variations[editing][option_sets][option_set_' . $os->osid . '][content][options][second-value][option_label]', 'Option B - EDIT');
+    $this->assertText('first value');
+    $this->assertText('second value');
+
+    // Check the link to edit in context.
     $this->clickLink(t('Edit variations in context'));
 
     $this->assertUrl('node/' . $node->nid . '/edit', array('query' => array('destination' => "admin/structure/personalize/manage/{$agent_name}/variations")));

@@ -184,6 +184,7 @@ function acquia_lift_personalize_campaign_wizard_variations_alter(&$form, &$form
         break;
       // Unsupported display - get an edit link if provided by the plugin.
       default:
+        $form['variations']['editing']['option_sets']['option_set_' . $option_set->osid]['content'] = _acquia_lift_personalize_campaign_wizard_variations_general_edit($agent_data, $option_set);
         $edit_link = module_hook($option_set_plugin['module'], 'personalize_edit_link') ? module_invoke($option_set_plugin['module'], 'personalize_edit_link', $option_set) : '';
         if (!empty($edit_link)) {
           $markup = l(t('Edit this variation set'), $edit_link);
@@ -191,7 +192,7 @@ function acquia_lift_personalize_campaign_wizard_variations_alter(&$form, &$form
         else {
           $markup = t('Variation set type ' . $option_set->plugin . ' does not provide a link for editing.');
         }
-        $form['variations']['editing']['option_sets']['option_set_' . $option_set->osid]['content'] = array(
+        $form['variations']['editing']['option_sets']['option_set_' . $option_set->osid]['content']['edit'] = array(
           '#markup' => $markup,
         );
     }
@@ -1884,10 +1885,6 @@ function _acquia_lift_personalize_campaign_wizard_block_single_save($block_conte
 function _acquia_lift_personalize_campaign_wizard_element_single_save($values, $option_set) {
   // Make sure to start with the latest option set information.
   $option_set = personalize_option_set_load($option_set->osid);
-  $option_set->label = $values['content']['label'];
-  foreach ($option_set->options as &$option) {
-    $option['option_label'] = $values['content']['options'][$option['option_id']]['option_label'];
-  }
   $option_set->data['pages'] = isset($values['advanced']['pages_all']) && $values['advanced']['pages_all'] == 1 ? '' : $values['advanced']['pages'];
   personalize_option_set_save($option_set);
 }
@@ -1909,6 +1906,11 @@ function _acquia_lift_personalize_campaign_wizard_variations_single_save_general
     $option_label = isset($values['content']['title']) ? $values['content']['title'] : $values['content']['label'];
     $option_set->label = $option_label;
     $values['advanced']['label'] = $option_label;
+    foreach ($option_set->options as &$option) {
+      if (isset($values['content']['options'][$option['option_id']]['option_label'])) {
+        $option['option_label'] = $values['content']['options'][$option['option_id']]['option_label'];
+      }
+    }
   }
   personalize_campaign_wizard_submit_variations_advanced($values, $option_set);
   personalize_option_set_save($option_set);
@@ -2626,41 +2628,11 @@ function _acquia_lift_personalize_campaign_wizard_variations_element(&$form, &$f
     return $element;
   }
   // Form for an existing option set.
-  $editable = acquia_lift_target_definition_changes_allowed($agent_data);
-  $element['label'] = array(
-    '#type' => 'textfield',
-    '#required' => TRUE,
-    '#default_value' => $option_set->label,
-    '#title' => t('Variation set')
-  );
-  $show_delete = $editable && count($option_set->options) > 2;
+  $delete_links = array();
   foreach ($option_set->options as $option) {
-    $option_id = $option['option_id'];
-    $element['options'][$option_id] = array(
-      '#type' => 'container',
-      '#attributes' => array(
-        'class' => array('acquia-lift-element-variations'),
-      ),
-    );
-    $element['options'][$option_id]['option_label'] = array(
-      '#type' => 'textfield',
-      '#required' => TRUE,
-      '#default_value' => $option['option_label'],
-      '#title' => t('Variation'),
-      '#theme_wrappers' => array('acquia_lift_revealing_input'),
-    );
-    if ($show_delete) {
-      $remove_url = "admin/structure/personalize/variations/personalize-elements/manage/{$option_set->osid}/{$option_id}/delete";
-      $element['options'][$option_id]['remove'] = array(
-        '#markup' => l(t('Delete'), $remove_url, array(
-          'attributes' => array(
-            'class' => array('acquia-lift-delete'),
-          ),
-          'query' => array('destination' => 'admin/structure/personalize/manage/' . $agent_data->machine_name . '/variations'),
-        )),
-      );
-    }
-  };
+    $delete_links[$option['option_id']] = "admin/structure/personalize/variations/personalize-elements/manage/{$option_set->osid}/{$option['option_id']}/delete";
+  }
+  $element = _acquia_lift_personalize_campaign_wizard_variations_general_edit($agent_data, $option_set, $delete_links);
 
   if ($option_set->data['personalize_elements_type'] == 'runJS') {
     // Javascript changes can't be edited on the page they were created but
@@ -2689,6 +2661,60 @@ function _acquia_lift_personalize_campaign_wizard_variations_element(&$form, &$f
 }
 
 /**
+ * General markup to show the basic editing for an existing option set.
+ *
+ * This applies to all variation sets outside of blocks.
+ *
+ * @param stdClass $agent_data
+ *   The data for the personalization for this option set.
+ * @param stdClass $option_set
+ *   The option set to edit.
+ * @param array $delete_links
+ *   An array of links to delete options within the set keyed by the option id.
+ *   If there is no link for the option, then the option cannot be deleted.
+ * @return array
+ *   The form render structure.
+ */
+function _acquia_lift_personalize_campaign_wizard_variations_general_edit($agent_data, $option_set, $delete_links = array()) {
+  $element = array();
+  $editable = acquia_lift_target_definition_changes_allowed($agent_data);
+  $element['label'] = array(
+    '#type' => 'textfield',
+    '#required' => TRUE,
+    '#default_value' => $option_set->label,
+    '#title' => t('Variation set')
+  );
+  $show_delete = $editable && count($option_set->options) > 2;
+  foreach ($option_set->options as $option) {
+    $option_id = $option['option_id'];
+    $element['options'][$option_id] = array(
+      '#type' => 'container',
+      '#attributes' => array(
+        'class' => array('acquia-lift-element-variations'),
+      ),
+    );
+    $element['options'][$option_id]['option_label'] = array(
+      '#type' => 'textfield',
+      '#required' => TRUE,
+      '#default_value' => $option['option_label'],
+      '#title' => t('Variation'),
+      '#theme_wrappers' => array('acquia_lift_revealing_input'),
+    );
+    if ($show_delete && !empty($delete_links[$option_id])) {
+      $element['options'][$option_id]['remove'] = array(
+        '#markup' => l(t('Delete'), $delete_links[$option_id], array(
+          'attributes' => array(
+            'class' => array('acquia-lift-delete'),
+          ),
+          'query' => array('destination' => 'admin/structure/personalize/manage/' . $agent_data->machine_name . '/variations'),
+        )),
+      );
+    }
+  };
+  return $element;
+}
+
+/**
  * Form to edit a personalize fields variation.
  *
  * This provides a brief display of each field and the link to edit within the
@@ -2710,13 +2736,7 @@ function _acquia_lift_personalize_campaign_wizard_variations_element(&$form, &$f
  * requirement to actually save the page content before exiting for editing.
  */
 function _acquia_lift_personalize_campaign_wizard_variations_fields(&$form, &$form_state, $agent_data, $option_set) {
-  $element['label'] = array(
-    '#type' => 'textfield',
-    '#required' => TRUE,
-    '#theme_wrappers' => array('acquia_lift_revealing_input'),
-    '#default_value' => $option_set->label,
-    '#title' => t('Variation set')
-  );
+  $element = _acquia_lift_personalize_campaign_wizard_variations_general_edit($agent_data, $option_set);
 
   // Load the entity's field display for the personalized field.
   $entities = entity_load($option_set->field_info['entity_type'], array($option_set->field_info['entity_id']));
@@ -2724,24 +2744,22 @@ function _acquia_lift_personalize_campaign_wizard_variations_fields(&$form, &$fo
 
   // Customize the display based on the type of rendering to be better presented
   // in a small list.
-  $items = array();
-  foreach (element_children($display) as $id) {
+  $options = array_values($option_set->options);
+  foreach (element_children($display) as $delta => $id) {
     if (isset($display[$id]['#image_style'])) {
       $display[$id]['#image_style'] = 'thumbnail';
     }
     else if (isset($display[$id]['#markup'])) {
       $display[$id]['#markup'] = drupal_truncate_bytes($display[$id]['#markup'], 150);
     }
-    $items[] = drupal_render($display[$id]);
+    $option = $options[$delta];
+    $element['options'][$option['option_id']]['preview'] = array(
+      '#markup' => '<div class="acquia-lift-preview">' . drupal_render($display[$id]) . '</div>',
+    );
   }
   $field_title = !empty($display['#title']) ? $display['#title'] : $option_set->field_info['field_name'];
+  $element['label']['#description'] = t('Variation set created from %field_name field', array('%field_name' => $field_title));
 
-  $element['display'] = array(
-    '#markup' => theme('item_list', array(
-      'items' => $items,
-      'title' => t('Variations for %field_name', array('%field_name' => $field_title)),
-    )),
-  );
   $edit_link = personalize_fields_personalize_edit_link($option_set);
   $machine_name = $agent_data->machine_name;
   if (!empty($edit_link)) {

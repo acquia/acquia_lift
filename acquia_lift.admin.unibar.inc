@@ -209,6 +209,8 @@ function acquia_lift_element_variation_details_form_submit($form, &$form_state) 
 
     module_load_include('inc', 'personalize_elements', 'personalize_elements.admin');
     $option_set = personalize_elements_convert_form_values_to_option_set($values);
+    // For new variation sets the pages value is set to the current page by
+    // the JavaScript.
     $option_set->preview_link = $values['pages'];
     $message = t('The variation set has been created.');
   }

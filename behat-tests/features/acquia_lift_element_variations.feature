@@ -256,7 +256,7 @@ Feature: Personalize elements variations can be edited for an existing campaign.
     When I check the "Webpage elements" radio button
     And I wait for AJAX to finish
     # Todo create a custom assertion for clicking a radio button list option
-    And I fill in "node" for "variations[new][0][element][content][url]"
+    And I fill in "node" for "variations[editing][new][0][element][content][url]"
     And I press "Go" in the "campaign_workflow_form" region
 
     # I select an element to personalize.

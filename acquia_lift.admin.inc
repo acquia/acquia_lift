@@ -382,7 +382,8 @@ function acquia_lift_agent_list($agents = array(), $legacy = FALSE) {
 
       // The ability to delete depends on the storage type and on whether the campaign has started
       // or contains option sets.
-      $can_delete = personalize_delete_agent_access($agent);
+      $can_delete = acquia_lift_agent_delete_access($agent);
+
       $delete_link = '';
       // Determine storage
       if ($can_delete) {
@@ -390,7 +391,7 @@ function acquia_lift_agent_list($agents = array(), $legacy = FALSE) {
           case EXPORT_IN_DATABASE | EXPORT_IN_CODE:
             $delete_link = array(
               'title' => t('Revert'),
-              'href' => 'admin/structure/personalize/manage/'. $agent->machine_name .'/delete',
+              'href' => 'admin/structure/personalize/manage/'. $agent->machine_name .'/delete-all',
               'attributes' => array(
                 'class' => 'acquia-lift-delete',
                 'title' => t('Delete @campaign', array('campaign' => $agent->label)),
@@ -400,7 +401,7 @@ function acquia_lift_agent_list($agents = array(), $legacy = FALSE) {
           case EXPORT_IN_DATABASE:
             $delete_link = array(
               'title' => t('Delete'),
-              'href' => 'admin/structure/personalize/manage/'. $agent->machine_name .'/delete',
+              'href' => 'admin/structure/personalize/manage/'. $agent->machine_name .'/delete-all',
               'attributes' => array(
                 'class' => 'acquia-lift-delete',
                 'title' => t('Delete @campaign', array('campaign' => $agent->label)),
@@ -515,17 +516,32 @@ function acquia_lift_agent_list($agents = array(), $legacy = FALSE) {
         if ($show_status_change) {
           $tablerow[] = '';
         }
-        $tablerow[] = $show_report_link ? l(t('View reports'), 'admin/structure/personalize/manage/' . $agent->machine_name . '/results', array(
-          'query' => array(
-            'lift_retired_test' => $test->machine_name,
+        $ops = array(
+          // All retired tests have reports.
+          array(
+            'title' => t('View reports'),
+            'href' => 'admin/structure/personalize/manage/' . $agent->machine_name . '/results',
+            'query' => array(
+              'lift_retired_test' => $test->machine_name,
+            ),
+            'attributes' => array(
+              'class' => array('acquia-lift-report'),
+              'title' => t('View reports for retired test @test', array('@test' => $test->label)),
+            )
           ),
-          'attributes' => array(
-            'class' => array('acquia-lift-report'),
-            'title' => t('View reports for retired test @test', array(
-              '@test' => $test->label,
-            )),
-          ),
-        )) : '';
+          // All retired tests can be deleted.
+          array(
+            'title' => t('Delete'),
+            'href' => 'admin/structure/personalize/manage/'. $test->machine_name .'/delete-all',
+            'attributes' => array(
+              'class' => 'acquia-lift-delete',
+              'title' => t('Delete retired test @test', array('@test' => $test->label)),
+            ),
+          )
+        );
+
+        $tablerow[] = array('data' => theme('links', array('links' => $ops, 'attributes' => array('class' => array('acquia-lift-list-operations')))));
+
         $rows[] = array(
           'data' => $tablerow,
           'no_striping' => TRUE,
@@ -554,6 +570,34 @@ function acquia_lift_sort_agent_started($a, $b) {
     return strcmp(drupal_strtolower($a->label), drupal_strtolower($b->label));
   }
   return $a->started < $b->started ? -1 : 1;
+}
+
+/**
+ * Form for deleting an agent and all its variation sets.
+ */
+function acquia_lift_agent_delete_form($form, $form_state, $agent) {
+  $form['machine_name'] = array('#type' => 'hidden', '#value' => $agent->machine_name);
+  $form['title'] = array('#type' => 'hidden', '#value' => $agent->label);
+  $form['plugin'] = array('#type' => 'hidden', '#value' => $agent->plugin);
+  $agent_type = in_array($agent->plugin, array(ACQUIA_LIFT_TESTING_AGENT_V1, ACQUIA_LIFT_TESTING_AGENT_V2)) ? 'test' : 'personalization';
+
+  return confirm_form($form, t('Are you sure you want to delete the %agent %title?', array('%agent' => $agent_type, '%title' => $agent->label)), 'admin/structure/personalize', '', t('Delete'), t('Cancel'));
+}
+
+/**
+ * Submit handler for agent deletion form.
+ */
+function acquia_lift_agent_delete_form_submit($form, &$form_state) {
+  $agent_name = $form_state['values']['machine_name'];
+  $agent_type = in_array($form_state['values']['plugin'], array(ACQUIA_LIFT_TESTING_AGENT_V1, ACQUIA_LIFT_TESTING_AGENT_V2)) ? 'test' : 'personalization';
+  // First delete all option sets belonging to the agent.
+  $option_sets = personalize_option_set_load_by_agent($agent_name);
+  foreach ($option_sets as $option_set) {
+    personalize_option_set_delete($option_set->osid);
+  }
+  personalize_agent_delete($form_state['values']['machine_name']);
+  drupal_set_message(t('The %agent %name has been deleted.', array('%agent' => $agent_type, '%name' => $form_state['values']['title'])));
+  $form_state['redirect'] = 'admin/structure/personalize';
 }
 
 /**
@@ -1750,9 +1794,11 @@ function _acquia_lift_personalize_campaign_wizard_everyone_else_audience() {
  * @param $agent_name
  *   The agent to get retired tests for.
  * @return array
- *   An array of test objects.
+ *   An array of test objects for the specified agent, or if no agent was specified
+ *   an associative array whose keys are parent agents and whose values are
+ *   arrays of test objects.
  */
-function acquia_lift_get_retired_tests($agent_name) {
+function acquia_lift_get_retired_tests($agent_name = NULL) {
   $old_tests = &drupal_static(__FUNCTION__, NULL);
   if ($old_tests == NULL) {
     $old_tests = array();
@@ -1767,7 +1813,10 @@ function acquia_lift_get_retired_tests($agent_name) {
       }
     }
   }
-  return isset($old_tests[$agent_name]) ? $old_tests[$agent_name] : array();
+  if (!empty($agent_name)) {
+    return isset($old_tests[$agent_name]) ? $old_tests[$agent_name] : array();
+  }
+  return $old_tests;
 }
 
 /**

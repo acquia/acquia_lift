@@ -36,6 +36,7 @@ default:
         dialog_variation_type_form: '.visitor-actions-ui-dialog.acquia-lift-variation-type-form'
         dialog_goal_form: '#visitor-actions-form'
         campaign_workflow_form: '#personalize-campaign-wizard'
+        page: 'body'
       selectors:
         message_selector: '.messages'
         error_message_selector: '.messages.messages-error'

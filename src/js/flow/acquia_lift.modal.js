@@ -73,7 +73,7 @@
       var $selectorInput = $variationTypeForm.find('input[name="selector"]');
 
       if ($variationTypeForm.length > 0 && $selectorInput.length > 0) {
-        var editLink = '<a class="acquia-lift-selector-edit">' + Drupal.t('Edit selector') + '</a>';
+        var editLink = '<a id="acquia-lift-selector-edit" class="acquia-lift-selector-edit">' + Drupal.t('Edit selector') + '</a>';
         var $selector =  $selectorInput.closest('div');
         $variationTypeForm.parent().find('h2').append(editLink);
         $variationTypeForm.parent().find('.acquia-lift-selector-edit').on('click', function(e) {

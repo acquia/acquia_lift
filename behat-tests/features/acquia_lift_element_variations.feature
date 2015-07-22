@@ -43,7 +43,17 @@ Feature: Personalize elements variations can be edited for an existing campaign.
     And the "title" field should contain ""
     And the "option_label" field should contain ""
     And the "personalize_elements_content" field should contain text that has "Test Article Title - Original"
+
+    # Edit selector to invalid and verify response
+    When I click "#acquia-lift-selector-edit" element in the "page" region
+    Then the "Selector" field should contain "#page-title"
+    When I fill in "#my-invalid-id-for-behat-tests" for "Selector"
+    And I press "Save" in the "dialog_variation_type_form" region
+    Then I should see the text "The selector does not match any DOM elements" in the "dialog_variation_type_form" region
+
+    # Save the new variation set.
     When I fill in "Test Article Title - Updated 1" for "personalize_elements_content"
+    And I fill in "#page-title" for "Selector"
     And I fill in "My variation set #1" for "title"
     And I fill in "My variation #1" for "option_label"
     And I press "Save" in the "dialog_variation_type_form" region

@@ -1,9 +1,8 @@
 //var $ = JQuery;
 var app = angular.module("debuggerModule", ['isteven-multi-select', 'autocomplete','angularResizable']);
-app.constant('liftwebURl', "");
 app.value('debugPrefix', 'acquiaLift::debug');
 app.constant('previewStatus', "Site Preview")
-app.factory('debuggerFactory', function($http, liftwebURl){
+app.factory('debuggerFactory', function($http){
     var factory = {};
 
     factory.ajax = function(){
@@ -79,14 +78,13 @@ app.factory('debuggerFactory', function($http, liftwebURl){
             }
 
             Lift.debugger.prototype.clickDestroy = function (event) {
-
-                Drupal.acquiaLiftProfilesDebug.clearStorage()
+                //function to turn off debug mode.
+                Drupal.acquiaLiftProfilesDebug.clearStorage();
                 this.destroy();
 
             }
 
             Lift.debugger.prototype.setMaximized = function () {
-
                 this.isOpen = false;
                 this.isClosed = false;
                 this.isMaximized = true;
@@ -94,7 +92,6 @@ app.factory('debuggerFactory', function($http, liftwebURl){
             };
 
             Lift.debugger.prototype.setClosed = function () {
-
                 this.isOpen = false;
                 this.isMaximized = false;
                 this.isClosed = true;
@@ -104,42 +101,43 @@ app.factory('debuggerFactory', function($http, liftwebURl){
             Lift.debugger.prototype.maximize = function () {
                 this.setMaximized();
                 this.render();
-
             };
 
             Lift.debugger.prototype.close = function () {
-
                 this.setClosed();
                 this.render();
             };
 
             Lift.debugger.prototype.render = function () {
-
-                if (!this.element.classList.contains('debugger-processed')) {
+                //render only if debug mode is on.
+                if(Drupal.acquiaLiftProfilesDebug){
+                    if (!this.element.classList.contains('debugger-processed')) {
                     this.element.classList.add('debugger');
                     this.element.classList.add('debugger-processed');
-                }
-
-                if (this.isClosed) {
-                    this.element.classList.remove('is-maximized');
-                    this.element.classList.add('is-closed');
-                    this.triggerMaximize.setAttribute('aria-hidden', 'false');
-                    this.triggerDestroy.setAttribute('aria-hidden', 'false');
-                    this.triggerClose.setAttribute('aria-hidden', 'true');
-                }
-
-                if (this.isMaximized) {
-                    this.element.classList.add('is-maximized');
-                    if(window.sessionStorage.getItem('acquiaLift::debug::debugWindowHeight')){
-                        var height = Math.min(window.sessionStorage.getItem('acquiaLift::debug::debugWindowHeight'), document.documentElement.clientHeight * 0.8);
-                        document.getElementsByClassName('debugger__content')[0].style.height = height + "px";
                     }
-                    this.element.classList.remove('is-closed');
-                    this.triggerClose.setAttribute('aria-hidden', 'false');
-                    this.triggerDestroy.setAttribute('aria-hidden', 'false');
-                    this.triggerMaximize.setAttribute('aria-hidden', 'true');
-                }
 
+                    if (this.isClosed) {
+                        this.element.classList.remove('is-maximized');
+                        this.element.classList.add('is-closed');
+                        this.triggerMaximize.setAttribute('aria-hidden', 'false');
+                        this.triggerDestroy.setAttribute('aria-hidden', 'false');
+                        this.triggerClose.setAttribute('aria-hidden', 'true');
+                    }
+
+                    if (this.isMaximized) {
+                        this.element.classList.add('is-maximized');
+
+                        //if a debugger heigh was set in a previous page.
+                        if(window.sessionStorage.getItem('acquiaLift::debug::debugWindowHeight')){
+                            var height = Math.min(window.sessionStorage.getItem('acquiaLift::debug::debugWindowHeight'), document.documentElement.clientHeight * 0.8);
+                            document.getElementsByClassName('debugger__content')[0].style.height = height + "px";
+                        }
+                        this.element.classList.remove('is-closed');
+                        this.triggerClose.setAttribute('aria-hidden', 'false');
+                        this.triggerDestroy.setAttribute('aria-hidden', 'false');
+                        this.triggerMaximize.setAttribute('aria-hidden', 'true');
+                    }
+                }
             };
 
             Lift.debugger.prototype.destroy = function () {
@@ -198,12 +196,18 @@ app.factory('debuggerFactory', function($http, liftwebURl){
     }])
 
 app.controller("DebuggerController", function($scope, $timeout, debuggerFactory, $sessionStorage, $window, liftDebugger, debugPrefix, $document, previewStatus){
+    //check for existence of acqiuaLiftProfilesDebug, if do not proceed.
+    if(!Drupal.acquiaLiftProfilesDebug){
+        return;
+    }
+
+    //variables
     $scope.items = [];
     $scope.tab = 'log';
     $scope.preview = false;
     $scope.profile = {};
-    var originalData;
-    //loadFakeData($scope);
+
+    //loads keys from sessionStorage.
     for (var key in $window.sessionStorage){
         if(key.indexOf(debugPrefix) >= 0){
             $timeout(function(index){
@@ -214,40 +218,46 @@ app.controller("DebuggerController", function($scope, $timeout, debuggerFactory,
         }
     }
 
+    //renders the debugger
     var debugConsole = new liftDebugger.debugger(document.getElementById('debugger'));
 
+    //registers for any new debug events.
     $document.on('acquiaLiftDebugEvent', function(event, key){
         if(key.indexOf(debugPrefix) >= 0){
             $timeout(function(index){
                 return function(){
-                    $scope.items.push($sessionStorage.getObject(index));
-                    if($sessionStorage.getObject(index).message.indexOf("Segments Returned") >= 0){
-                        $scope.profile.curSegments = Drupal.acquiaLiftProfilesDebug.getCurrentSegments().slice();
-                        if(!$scope.profile.overrideSegments || $scope.profile.overrideSegments.length <=0 ){
-                            $scope.profile.overrideSegments = Drupal.acquiaLiftProfilesDebug.getCurrentSegments().slice();
-                            $scope.allSegments =  $scope.profile.allSegments.filter(function(i) {return $scope.profile.overrideSegments .indexOf(i) < 0;});
-                        };
+                    if(Drupal.acquiaLiftProfilesDebug){
+                        $scope.items.push($sessionStorage.getObject(index));
+                        if($sessionStorage.getObject(index).message.indexOf("Segments Returned") >= 0){
+                            $scope.profile.curSegments = Drupal.acquiaLiftProfilesDebug.getCurrentSegments().slice();
+                            if(!$scope.profile.overrideSegments || $scope.profile.overrideSegments.length <=0 ){
+                                $scope.profile.overrideSegments = Drupal.acquiaLiftProfilesDebug.getCurrentSegments().slice();
+                                $scope.allSegments =  $scope.profile.allSegments.filter(function(i) {return $scope.profile.overrideSegments .indexOf(i) < 0;});
+                            };
+                        }
                     }
+                    return;
                 }
             }(key));
         }
     });
 
-    //copy the values only
+    //copy the values only from our profile
     $scope.profile.personId = Drupal.acquiaLiftProfilesDebug.getPersonId();
     $scope.profile.touchId = Drupal.acquiaLiftProfilesDebug.getTouchId();
     $scope.profile.allSegments = Drupal.acquiaLiftProfilesDebug.getAllSegments().slice();
     $scope.profile.curSegments = Drupal.acquiaLiftProfilesDebug.getCurrentSegments().slice();
     $scope.profile.identities = Drupal.acquiaLiftProfilesDebug.getAdditionalIdentities().slice();
     $scope.profile.overrideSegments = Drupal.acquiaLiftProfilesDebug.getOverrideSegments();
-
-
+ 
+    //ensures that allSegments doesnt have duplicates from override segments. Fills out the segments for the dropDown list in the site preview tab
     if($scope.profile.overrideSegments){
         $scope.allSegments =  $scope.profile.allSegments.filter(function(i) {return $scope.profile.overrideSegments.indexOf(i) < 0;});
     }else{
         $scope.allSegments = $scope.profile.allSegments;
-    }
+    };
 
+    //additional filters and functions
     $scope.severityFilter = [
         {  name: "Errors",ticked: true },
         { name: "Warning", ticked: true  },
@@ -258,12 +268,11 @@ app.controller("DebuggerController", function($scope, $timeout, debuggerFactory,
         { name: "Target",ticked: false },
         { name: "Segment", ticked: false  },
     ];  
-
     $scope.search = function (row) {
         if(row) {
             if (row.severity !== undefined) {
                 for (var i = 0; i < $scope.severity.length; i++) {
-                    if (typeof($scope.severity[i]) === "object") {
+                    if (typeof($scope.severity[i].name) === "string") {
                         if ($scope.severity[i].name.toUpperCase() === row.severity.toUpperCase()) {
                             return true;
                         }
@@ -272,7 +281,7 @@ app.controller("DebuggerController", function($scope, $timeout, debuggerFactory,
             }
             if (row.type !== undefined) {
                 for (var i = 0; i < $scope.type.length; i++) {
-                    if (typeof($scope.type[i]) === "object") {
+                    if (typeof($scope.type[i].name) === "string") {
                         if ($scope.type[i].name.toUpperCase() === row.type.toUpperCase()) {
                             return true;
                         }
@@ -282,8 +291,9 @@ app.controller("DebuggerController", function($scope, $timeout, debuggerFactory,
         }
         return false;
     };
-    $scope.addPreviewItem = function (item) {
 
+    //functions
+    $scope.addPreviewItem = function (item) {
         var value;
         if (item==null){
             value = $scope.overrideSegmentChoice;
@@ -342,22 +352,47 @@ app.controller("DebuggerController", function($scope, $timeout, debuggerFactory,
     }
   }
 
-  $scope.buttonClick = function(type){
-    var color = '#0073b9';
-    var bgColor = 'white';
-    var boxShadow = '0 0 0.3rem rgba(41, 170, 225, 0.9), inset 0 0.1rem 0.3rem rgba(0, 0, 0, 0.4)'
-    $scope.profileButton={};
-    $scope.logButton={};
-    $scope.previewButton={};
-    switch(type){
-      case 'log': $scope.logButton={'color':color, 'background-color' : bgColor, 'box-shadow':boxShadow};
-        break;
-      case 'profile': $scope.profileButton={'color':color, 'background-color' : bgColor, 'box-shadow':boxShadow};
-        break;
-      case 'preview': $scope.previewButton={'color':color, 'background-color' : bgColor, 'box-shadow':boxShadow};
-        break;
+/**
+*Export code 
+*
+    $scope.exportData = function(){
+        var data = []
+        var index =0;
+        console.log($scope.items.length);
+        for (index = 0; index < $scope.items.length; index ++){
+            var item = $scope.items[index];
+            // console.log(item);
+            var arr = Object.keys(item).map(function (key) {return item[key]});
+            data.push(arr);
+            console.log(arr);
+        }
+        console.log(data);
+        var csvContent  = "data:text/csv;charset=utf-8," + data.join("\n");
+        var encodedUri = encodeURI(csvContent);
+        var link = document.createElement("a");
+        link.setAttribute("href", encodedUri);
+        link.setAttribute("download", "Event_log_export.csv");
+
+        link.click(); 
     }
-  }
+*/
+    $scope.buttonClick = function(type){
+        var color = '#0073b9';
+        var bgColor = 'white';
+        var boxShadow = '0 0 0.3rem rgba(41, 170, 225, 0.9), inset 0 0.1rem 0.3rem rgba(0, 0, 0, 0.4)'
+        $scope.profileButton={};
+        $scope.logButton={};
+        $scope.previewButton={};
+        switch(type){
+            case 'log': $scope.logButton={'color':color, 'background-color' : bgColor, 'box-shadow':boxShadow};
+            break;
+            case 'profile': $scope.profileButton={'color':color, 'background-color' : bgColor, 'box-shadow':boxShadow};
+            break;
+            case 'preview': $scope.previewButton={'color':color, 'background-color' : bgColor, 'box-shadow':boxShadow};
+            break;
+        }
+    }
+    //first click
     $scope.buttonClick('log');
 
 });
@@ -365,20 +400,22 @@ angular.module('debuggerModule')
     .filter('to_icon', ['$sce', function($sce){
         return function(text) {
             var icon;
-            switch(text.toUpperCase()){
-                case "WARNING": icon="<div class='debugger-icon-warning'>&nbsp;</div>";
-                    break;
-                case "ERROR" : icon="<div class='debugger-icon-error'>&nbsp;</div>";
-                    break;
-                case "INFO" : icon="<div class='debugger-icon-info'>&nbsp;</div>";
-                    break;
+            if(text){
+                switch(text.toUpperCase()){
+                    case "WARNING": icon="<div class='debugger-icon-warning'>&nbsp;</div>";
+                        break;
+                    case "ERROR" : icon="<div class='debugger-icon-error'>&nbsp;</div>";
+                        break;
+                    case "INFO" : icon="<div class='debugger-icon-info'>&nbsp;</div>";
+                        break;
+                }
+                return $sce.trustAsHtml(icon);   
             }
-            return $sce.trustAsHtml(icon);
+            return;
         };
     }]);
 function fade(element, string) {
     element.innerText = string;
-    // element.style.display = 'none';
 
     var op = 0.1;  // initial opacity
     var timer = setInterval(function () {
@@ -389,45 +426,6 @@ function fade(element, string) {
         element.style.filter = 'alpha(opacity=' + op * 100 + ")";
         op += op * 0.1;
     }, 10);
-}
-
-function loadFakeData($scope){
-    //faking some data here!
-    for (i=0;i < 5;i++){
-        var item={};
-        item.type="Segment";
-
-        item.message="here is a message";
-        item.severity = "WARNING";
-        //item.icon= "<img src=icons/icon_close--circle.svg />";
-        $scope.items.push(item);
-    }
-    for (i=0;i < 5;i++){
-        var item={};
-        item.type="Target";
-        item.message="here is a message";
-        item.severity = "ERROR";
-        $scope.items.push(item);
-    }
-    for (i=0;i < 5;i++){
-        var item={};
-        item.type="type";
-        item.message="here is a message";
-        item.severity = "INFO";
-        $scope.items.push(item);
-    }
-    for (i=0; i < $scope.items.length; i ++){
-        var item = $scope.items[i];
-        switch(item.severity.toUpperCase()){
-            case "WARNING": item.icon="<img src=icons/icon_warning.svg />";
-                break;
-            case "ERROR" : item.icon="<img src=icons/icon_close--circle.svg />";
-                break;
-            case "INFO" : item.icon="<img src=icons/icon_success.svg />";
-                break;
-        }
-    }
-////stop faking data
 }
 
 angular.module('debuggerModule')
@@ -454,6 +452,7 @@ angular.module('debuggerModule')
             return value;
         };
     });
+
 /*
  * Angular JS Multi Select
  * Creates a dropdown-like button with checkboxes.
@@ -1374,6 +1373,7 @@ angular.module( 'isteven-multi-select', ['ng'] ).directive( 'istevenMultiSelect'
         '</span>';
     $templateCache.put( 'isteven-multi-select.htm' , template );
 }]);
+
 /* --- Made by justgoscha and licensed under MIT license --- */
 
 var app = angular.module('autocomplete', []);

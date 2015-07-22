@@ -109,7 +109,6 @@
   float: left;
   padding-top: 10px;
   padding-right: 15px;
-  padding-left: 15px;
 }
 
 .debugger__preview__notification {
@@ -149,18 +148,6 @@
   border: 0px;
   color: #29aae1;
   margin-right: 2px;
-}
-#debugger .debugger__navigation a.debugger__navigation__item .debugger__lift__profile {
-  background-image: url("icons/787878/user.svg");
-  background-position: left;
-}
-#debugger .debugger__navigation a.debugger__navigation__item .debugger__site__preview {
-  background-image: url("icons/787878/eye.svg");
-  background-position: left;
-}
-#debugger .debugger__navigation a.debugger__navigation__item .debugger__event__log {
-  background-image: url("icons/787878/flag.svg");
-  background-position: left;
 }
 
 .debugger__select__filter {
@@ -314,6 +301,7 @@
   float: left;
   margin-top: 2px;
   margin-left: 5px;
+  margin-right: 15px;
 }
 .debugger__preview .overrideSegments li {
   list-style: none;
@@ -359,7 +347,7 @@
   background-image: url("icons/0073b9/info-circle.svg");
 }
 
-#debugger .debugger__navigation a.debugger__navigation__item .debugger__lift__profile, #debugger .debugger__navigation a.debugger__navigation__item .debugger__site__preview, #debugger .debugger__navigation a.debugger__navigation__item .debugger__event__log, .debugger .debugger-icon-warning, .debugger .debugger-icon-error, .debugger .debugger-icon-info {
+.debugger .debugger-icon-warning, .debugger .debugger-icon-error, .debugger .debugger-icon-info {
   background-repeat: no-repeat;
   background-position: center;
 }
@@ -438,13 +426,11 @@
   background-color: #fff;
 }
 .debugger__action__destroy .debugger__icon::before {
-  /* right: 10%; */
   -webkit-transform: rotate(45deg);
       -ms-transform: rotate(45deg);
           transform: rotate(45deg);
 }
 .debugger__action__destroy .debugger__icon::after {
-  /* left: 10%; */
   -webkit-transform: rotate(-45deg);
       -ms-transform: rotate(-45deg);
           transform: rotate(-45deg);
@@ -563,7 +549,6 @@
 }
 .multiSelect .multiSelectItem .acol label {
   display: inline-block;
-  /*padding-right: 30px;*/
   margin: 0px;
   font-weight: normal;
   line-height: normal;
@@ -590,7 +575,6 @@
   cursor: pointer;
 }
 .multiSelect img {
-  /*vertical-align: middle;*/
   margin-bottom: 0px;
   max-height: 22px;
   max-width: 22px;
@@ -607,7 +591,6 @@
   border-radius: 0px;
   line-height: 1;
   height: 29px;
-  /*padding:0.4em;*/
 }
 .autocomplete ul {
   position: absolute;
@@ -641,9 +624,8 @@
 
 @media only screen and (max-width: 550px), (min-device-width: 768px) and (max-device-width: 1024px) {
   /* Force table to not be like tables anymore */
-  .debugger__log table, .debugger__log thead, .debugger__log tbody, .debugger__log td, .debugger__log tr, .debugger__profile tr, .debugger__profile td, .debugger__preview td, .debugger__preview tr {
+  .debugger__log table, .debugger__log thead, .debugger__log tbody, .debugger__log td, .debugger__log tr, .debugger__profile tr, .debugger__profile td {
     display: block;
-    width: 100%;
   }
 
   /*Hide table headers (but not display: none;, for accessibility) */
@@ -662,7 +644,6 @@
     border: none;
     border-bottom: 1px solid #eee;
     position: relative;
-    padding-left: 50%;
   }
 
   .debugger__log td:before {
@@ -670,15 +651,36 @@
     position: absolute;
     /* Top/left values mimic padding */
     width: 100%;
-    top: 0px;
+    top: -1.5em;
     font-weight: bold;
     background-color: #efefef;
     white-space: nowrap;
   }
 
-  /*    
-  Label the data    
-  */
+  /* Label the icons */
+  .debugger .debugger__log [class*='debugger-icon-'] {
+    background-position: left;
+  }
+
+  .debugger .debugger__log .debugger-icon-info:after {
+    content: "Notification";
+    padding-left: 20px;
+    font-style: italic;
+  }
+
+  .debugger .debugger__log .debugger-icon-warning:after {
+    content: "Warning";
+    padding-left: 20px;
+    font-style: italic;
+  }
+
+  .debugger .debugger__log .debugger-icon-warning:after {
+    content: "Error";
+    padding-left: 20px;
+    font-style: italic;
+  }
+
+  /* Label the data */
   .debugger__log td:nth-of-type(1)::before {
     content: "";
   }
@@ -709,17 +711,12 @@
 }
 @media only screen and (max-width: 550px), (min-device-width: 768px) and (max-device-width: 1024px) {
   .debugger .debugger__navigation a.debugger__navigation__item {
-    padding-left: 10px;
-    padding-right: 10px;
+    padding-left: 5px;
+    padding-right: 5px;
   }
 }
 @media only screen and (max-width: 550px), (min-device-width: 768px) and (max-device-width: 1024px) {
   .debugger__profile td:first-child {
-    width: 100%;
-  }
-}
-@media only screen and (max-width: 550px), (min-device-width: 768px) and (max-device-width: 1024px) {
-  .debugger__preview td:first-child {
     width: 100%;
   }
 }

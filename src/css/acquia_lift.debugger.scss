@@ -123,7 +123,6 @@ $dark-blue: #0073b9;
   float: left;
   padding-top: 10px;
   padding-right: 15px;
-  padding-left: 15px;
 }
 .debugger__preview__notification{
   opacity: 0;
@@ -159,22 +158,6 @@ $dark-blue: #0073b9;
     border: 0px;
     color: $link-color;
     margin-right:2px;
-
-    .debugger__lift__profile{
-      background-image: url("icons/787878/user.svg");
-      @extend %debugger-icon-formatting;
-      background-position: left;
-    }
-    .debugger__site__preview{
-      background-image: url("icons/787878/eye.svg");
-      @extend %debugger-icon-formatting;
-      background-position: left;
-    }
-    .debugger__event__log{
-      background-image: url("icons/787878/flag.svg");
-      @extend %debugger-icon-formatting;
-      background-position: left;
-    }
   }
   width:100%;
   display: inline-block;
@@ -263,7 +246,6 @@ $dark-blue: #0073b9;
   display:block;
   overflow-y: auto;
   height: 0;
-  //transition: height $debugger-transition-duration, padding $debugger-transition-duration;
 }
 
 #debugger .debugger__profile{
@@ -361,10 +343,10 @@ $dark-blue: #0073b9;
     border: none;
   }
   .previewBox{
-    // width: 100%;
     float:left;
     margin-top: 2px;
     margin-left: 5px;
+    margin-right:15px;
 
   }
   .overrideSegments{
@@ -517,12 +499,10 @@ $dark-blue: #0073b9;
       background-color: #fff;
     }
     &::before {
-      /* right: 10%; */
       transform: rotate(45deg);
     }
 
     &::after {
-      /* left: 10%; */
       transform: rotate(-45deg);
     }
   }
@@ -577,9 +557,6 @@ $dark-blue: #0073b9;
     white-space: normal;
     background-color: $background-color;
     font-size: 10px;
-    //&:hover {
-    //  background-image: linear-gradient(#fff, #e9e9e9);
-    //}
 
     &:disabled {
       background-image: linear-gradient(#fff, #fff);
@@ -657,7 +634,6 @@ $dark-blue: #0073b9;
     }
     .acol label {
       display: inline-block;
-      /*padding-right: 30px;*/
       margin: 0px;
       font-weight: normal;
       line-height: normal;
@@ -691,7 +667,6 @@ $dark-blue: #0073b9;
     cursor: pointer;
   }
   img {
-    /*vertical-align: middle;*/
     margin-bottom:0px;
     max-height: 22px;
     max-width:22px;
@@ -711,7 +686,6 @@ $dark-blue: #0073b9;
     border-radius: 0px;
     line-height: 1;
     height: 29px;
-    /*padding:0.4em;*/
   }
 
   ul{
@@ -749,54 +723,80 @@ $dark-blue: #0073b9;
 
 @media only screen and (max-width: 550px), (min-device-width: 768px) and (max-device-width: 1024px) {   
   /* Force table to not be like tables anymore */   
-    .debugger__log table, .debugger__log thead, .debugger__log tbody, .debugger__log td, .debugger__log tr, .debugger__profile tr, .debugger__profile td, .debugger__preview td, .debugger__preview tr {    
-    display: block;   
-    width:100%;   
-    }   
-        
-    /*Hide table headers (but not display: none;, for accessibility) */   
-    .debugger__log th , .debugger__preview th {   
-    position: absolute;   
-    top: -9999px;   
-    left: -9999px;    
-    }   
-        
-    .debugger__log tr { border: 1px solid #ccc; }   
-        
-    .debugger__log td {   
-    /* Behave like a "row" */   
-    border: none;   
-    border-bottom: 1px solid #eee;    
-    position: relative;   
-    padding-left: 50%;    
-    }   
-    .debugger__log td:before {    
-    /* Now like a table header */   
-    position: absolute;   
-    /* Top/left values mimic padding */   
-    width: 100%;    
-    top: 0px;   
-    font-weight: bold;    
-    background-color: #efefef;    
-    white-space: nowrap;    
-    }  
-
-    /*    
-    Label the data    
-    */    
-    .debugger__log td:nth-of-type(1)::before { content: ""; }   
-    .debugger__log td:nth-of-type(2)::before { content: "Message"; }    
-    .debugger__log td:nth-of-type(3)::before { content: "Type"; }   
-    .debugger__log td:nth-of-type(4):before { content: "Time"; }    
-    .debugger__log td:nth-of-type(5):before { content: "Page"; }    
-    .debugger__log td:nth-of-type(6):before { content: "Resolution"; }    
-    .debugger__log td:nth-of-type(7):before { content: ""; }    
+  .debugger__log table, .debugger__log thead, .debugger__log tbody, .debugger__log td, .debugger__log tr, .debugger__profile tr, .debugger__profile td{    
+  display: block;   
   }   
+      
+  /*Hide table headers (but not display: none;, for accessibility) */   
+  .debugger__log th , .debugger__preview th {   
+  position: absolute;   
+  top: -9999px;   
+  left: -9999px;    
+  }   
+      
+  .debugger__log tr { border: 1px solid #ccc; }   
+      
+  .debugger__log td {   
+  /* Behave like a "row" */   
+  border: none;   
+  border-bottom: 1px solid #eee;    
+  position: relative;   
+  }   
+  .debugger__log td:before {    
+  /* Now like a table header */   
+  position: absolute;   
+  /* Top/left values mimic padding */   
+  width: 100%;    
+  top: -1.5em;   
+  font-weight: bold;    
+  background-color: #efefef;    
+  white-space: nowrap;    
+  }  
+
+  /* Label the icons */
+  .debugger .debugger__log [class*='debugger-icon-']{
+    background-position: left;
+  }
+    
+  .debugger .debugger__log .debugger-icon-info{
+    &:after{
+      content : "Notification";
+      padding-left: 20px;
+      font-style: italic;
+    }
+  }
+
+  .debugger .debugger__log .debugger-icon-warning{
+    &:after{
+      content: "Warning";
+      padding-left: 20px;
+      font-style: italic;
+    }
+  }
+
+  .debugger .debugger__log .debugger-icon-warning{
+    &:after{
+      content: "Error";
+      padding-left: 20px;
+      font-style: italic;
+    }
+  }
+  
+  /* Label the data */    
+  .debugger__log td:nth-of-type(1)::before { content: ""; }   
+  .debugger__log td:nth-of-type(2)::before { content: "Message"; }    
+  .debugger__log td:nth-of-type(3)::before { content: "Type"; }   
+  .debugger__log td:nth-of-type(4):before { content: "Time"; }    
+  .debugger__log td:nth-of-type(5):before { content: "Page"; }    
+  .debugger__log td:nth-of-type(6):before { content: "Resolution"; }    
+  .debugger__log td:nth-of-type(7):before { content: ""; }    
+}   
+
 
 @media only screen and (max-width: 550px), (min-device-width: 768px) and (max-device-width: 1024px) {   
   .debugger .debugger__navigation a.debugger__navigation__item{   
-  padding-left: 10px;   
-  padding-right: 10px;    
+  padding-left: 5px;   
+  padding-right: 5px;    
   }   
 }
 @media only screen and (max-width: 550px), (min-device-width: 768px) and (max-device-width: 1024px) {   
@@ -804,12 +804,6 @@ $dark-blue: #0073b9;
   width:100%;   
   }   
 }
-@media only screen and (max-width: 550px), (min-device-width: 768px) and (max-device-width: 1024px) {   
-  .debugger__preview td:first-child {   
-  width:100%;   
-  }   
-}
-
 
 .resizable {
   position: relative;

@@ -98,7 +98,7 @@ class FeatureContext extends RawDrupalContext implements SnippetAcceptingContext
     }
 
     $original_actions = $this->actions;
-    $all_actions = visitor_actions_custom_load_multiple();
+    $all_actions = visitor_actions_custom_load_multiple(array(), FALSE, TRUE);
     foreach ($all_actions as $name => $action) {
       if (!isset($original_actions[$name])) {
         visitor_actions_delete_action($name);
@@ -237,6 +237,7 @@ class FeatureContext extends RawDrupalContext implements SnippetAcceptingContext
           'event' => isset($goal->event) ? $goal->event : 'views',
           'pages' => isset($goal->pages) ? $goal->pages : '',
           'data' => array(),
+          'limited_use' => 1,
         );
         visitor_actions_save_action($action);
       }

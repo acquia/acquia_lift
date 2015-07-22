@@ -796,6 +796,10 @@
          *   True if valid, false if invalid.
          */
         function verifySelector($selectorInput) {
+          // If the selector input isn't shown, then no need to validate input.
+          if ($selectorInput.length == 0) {
+            return true;
+          }
           var selector = $selectorInput.val(),
             matches = 0,
             message = '';
@@ -845,12 +849,6 @@
         $('input[type="submit"].form-submit',this.$el).each(function() {
           Drupal.ajax[this.id].options.beforeSubmit = function (form_values, $element, options) {
             var $selectorInput = $('[name="selector"]', $element);
-
-            // If the selector wasn't shown then it doesn't need to be validated.
-            if ($selectorInput.length == 0) {
-              return true;
-            }
-
             return verifySelector($selectorInput);
           };
         });

@@ -1916,6 +1916,7 @@ class AcquiaLiftWebTestTarget extends AcquiaLiftWebTestBase {
     $agents = personalize_agent_load_by_type('acquia_lift');
     $this->assertEqual(1, count($agents));
     $nested_agent = reset($agents);
+    $nested_test_name = $nested_agent->machine_name;
 
     // Confirm the test options properties were set.
     $this->assertEqual($nested_agent->data['decision_style'], 'adaptive');
@@ -1970,18 +1971,26 @@ class AcquiaLiftWebTestTarget extends AcquiaLiftWebTestBase {
       $this->fail('Exception thrown when none expected.');
     }
     $this->resetAll();
-    // When we implement the new structure it should delete the existing nested
-    // option set and create a new one.
+    // When we implement the new structure it should retire the existing nested
+    // test and create a new one.
     AcquiaLiftAPI::setTestInstance();
     acquia_lift_implement_targeting($agent);
     $this->resetAll();
+    $parent_option_set = personalize_option_set_load($parent_option_set->osid, TRUE);
 
-    $nested_option_set = personalize_option_set_load($nested_osid, TRUE);
-    $this->assertFalse($nested_option_set);
+    $this->assertFalse(isset($parent_option_set->targeting[$audience_name]['osid']));
+    $this->assertNotEqual($nested_osid, $parent_option_set->targeting[$second_audience]['osid']);
+    // Load the original nested agent and confirm it has been retired.
+    $retired_test = personalize_agent_load($nested_test_name, TRUE);
+    $this->assertEqual(1, $retired_test->data['lift_retired']);
+    $this->assertEqual($agent->machine_name, $retired_test->data['lift_parent']);
+    $this->assertEqual($audience_name, $retired_test->data['lift_audience']);
+    $status = personalize_agent_get_status($nested_test_name);
+    $this->assertEqual(PERSONALIZE_STATUS_COMPLETED, $status);
+
     // Check the new agent and option set.
-    $agents = personalize_agent_load_by_type('acquia_lift');
-    $this->assertEqual(1, count($agents));
-    $nested_agent = reset($agents);
+    $nested_os = personalize_option_set_load($parent_option_set->targeting[$second_audience]['osid'], TRUE);
+    $nested_agent = personalize_agent_load($nested_os->agent);
 
     // Confirm the test options properties were set.
     $this->assertEqual($nested_agent->data['decision_style'], 'adaptive');
@@ -2063,21 +2072,22 @@ class AcquiaLiftWebTestTarget extends AcquiaLiftWebTestBase {
     $nested_option_set = personalize_option_set_load($nested_osid, TRUE);
     $this->assertTrue($nested_option_set);
     // We should have two nested agents each with one option set.
-    $agents = personalize_agent_load_by_type('acquia_lift');
-    $this->assertEqual(2, count($agents));
+    $nested = acquia_lift_get_nested_tests($agent);
+    $this->assertEqual(2, count($nested));
+    $nested_agents = personalize_agent_load_multiple($nested);
     // Find the osid of the new option set so we can check that it has been set
     // on the correct target audience.
-    foreach ($agents as $nested) {
+    foreach ($nested_agents as $test) {
       // Verify the test options.
       // Confirm the test options properties were set.
-      $this->assertEqual($nested->data['decision_style'], 'adaptive');
-      $this->assertEqual($nested->data['control_rate'], 50);
-      $this->assertEqual($nested->data['explore_rate'], 35);
-      $this->assertEqual($nested_agent->data['cache_decisions'], 1);
+      $this->assertEqual($test->data['decision_style'], 'adaptive');
+      $this->assertEqual($test->data['control_rate'], 50);
+      $this->assertEqual($test->data['explore_rate'], 35);
+      $this->assertEqual($test->data['cache_decisions'], 1);
 
       // Find the *new* nested agent.
-      if ($nested->machine_name != $nested_agent->machine_name) {
-        $option_sets = personalize_option_set_load_by_agent($nested->machine_name);
+      if ($test->machine_name != $nested_agent->machine_name) {
+        $option_sets = personalize_option_set_load_by_agent($test->machine_name);
         $nested_os = reset($option_sets);
         $nested_osid2 = $nested_os->osid;
       }

@@ -82,7 +82,7 @@
   display: block;
 }
 #navbar-administration .navbar-tray-acquia-lift.navbar-tray-horizontal .navbar-level-1 > ul, #navbar-administration .navbar-tray-acquia-lift.navbar-tray-horizontal .navbar-level-1 > .menu-wrapper {
-  border-color: #cccccc;
+  border-color: #ccc;
   border-style: solid;
   border-width: 0 0.1em 0.1em;
   box-shadow: 0px 0px 2px 0px rgba(0, 0, 0, 0.6);
@@ -92,16 +92,16 @@
 }
 #navbar-administration .navbar-tray-acquia-lift.navbar-tray-horizontal .navbar-level-1 > .menu-wrapper > .menu,
 #navbar-administration .navbar-tray-acquia-lift.navbar-tray-horizontal .navbar-level-1 > .menu {
-  max-width: 28em;
-  min-width: 22em;
+  max-width: 30em;
+  min-width: 26em;
 }
 #navbar-administration .navbar-tray-acquia-lift.navbar-tray-horizontal .acquia-lift-scrollable {
   max-height: 70vh;
   overflow-y: auto;
 }
 #navbar-administration .navbar-tray-acquia-lift.navbar-tray-horizontal .menu ul ul {
-  border-bottom: 0.1em solid #cccccc;
-  border-top: 0.1em solid #cccccc;
+  border-bottom: 0.1em solid #ccc;
+  border-top: 0.1em solid #ccc;
 }
 #navbar-administration .navbar-tray-acquia-lift.navbar-tray-horizontal .navbar-level-2 {
   clear: both;
@@ -113,16 +113,16 @@
 #navbar-administration .navbar-tray-acquia-lift.navbar-tray-horizontal .acquia-lift-personalize-type-count span {
   background-color: #85b200;
   border-radius: 1em;
-  color: white;
+  color: #fff;
   padding: 0 0.35em;
   font-weight: bold;
 }
 #navbar-administration .navbar-tray-acquia-lift.navbar-tray-horizontal .acquia-lift-personalize-type-count.acquia-lift-empty span {
-  background-color: #cccccc;
+  background-color: #ccc;
 }
 #navbar-administration .navbar-tray-acquia-lift.navbar-tray-horizontal .acquia-lift-content-variation {
-  border-top: 0.1em solid #cccccc;
-  background-color: #eeeeee;
+  border-top: 0.1em solid #ccc;
+  background-color: #eee;
 }
 
 /* Campaign drop-down */
@@ -185,13 +185,13 @@
   color: #007ec0;
 }
 #navbar-administration .navbar-tray .acquia-lift-menu-link.acquia-lift-disabled, #navbar-administration .menu .menu a.acquia-lift-menu-link.acquia-lift-disabled {
-  color: #999999;
+  color: #999;
   cursor: default;
 }
 
 /* Create links */
 #navbar-administration .navbar-tray-horizontal .acquia-lift-menu-create, #navbar-administration .navbar-tray-horizontal .acquia-lift-menu-all {
-  border-top: 0.1em solid #cccccc;
+  border-top: 0.1em solid #ccc;
   padding: 1.0em 1.3333em 1.0em 1.3333em;
 }
 #navbar-administration .navbar-tray-horizontal .menu ul li.last {
@@ -224,7 +224,7 @@
 #navbar-administration .navbar-tray .acquia-lift-menu-campaign-warning {
   padding-left: 38px;
   margin-left: 1.5em;
-  background: white url(../images/FF8000/alert.png) no-repeat left center;
+  background: #fff url(../images/FF8000/alert.png) no-repeat left center;
 }
 
 /* Nested menu uls for data grouping (rather than visual grouping) */
@@ -274,12 +274,14 @@
   margin-left: -2em;
   text-align: right;
   font-weight: bold;
-  background-image: linear-gradient(270deg, white, white 1.1em, rgba(255, 255, 255, 0) 100%);
+  background-image: -webkit-linear-gradient(180deg, #fff, #fff 1.1em, rgba(255, 255, 255, 0) 100%);
+  background-image: linear-gradient(270deg, #fff, #fff 1.1em, rgba(255, 255, 255, 0) 100%);
   color: rgba(51, 51, 51, 0.6);
 }
 html[dir="rtl"] #navbar-administration .acquia-lift-active-container::after {
   text-align: left;
-  background-image: linear-gradient(90deg, white, white 1.1em, rgba(255, 255, 255, 0) 100%);
+  background-image: -webkit-linear-gradient(0deg, #fff, #fff 1.1em, rgba(255, 255, 255, 0) 100%);
+  background-image: linear-gradient(90deg, #fff, #fff 1.1em, rgba(255, 255, 255, 0) 100%);
 }
 #navbar-administration .acquia-lift-active-container, #navbar-administration .acquia-lift-active-container * {
   white-space: pre;

@@ -3926,7 +3926,9 @@ class AcquiaLiftWebTestCampaignWizardReview extends AcquiaLiftWebTestCampaignWiz
     $status = personalize_agent_get_status($agent->machine_name);
     $this->assertEqual($status, PERSONALIZE_STATUS_RUNNING);
 
-    $this->assertEqual($agent->data, $parent_settings);
+    foreach ($parent_settings as $setting => $value) {
+      $this->assertEqual($agent->data[$setting], $value);
+    }
     $nested_tests = acquia_lift_get_nested_tests($agent);
     $nested_settings = $parent_settings;
     // All but the cache_decisions setting should be the same
@@ -3955,7 +3957,7 @@ class AcquiaLiftWebTestCampaignWizardReview extends AcquiaLiftWebTestCampaignWiz
 
     $this->resetAll();
     $agent = personalize_agent_load($agent->machine_name, TRUE);
-    // Confirm the changes propogated to the nested test.
+    // Confirm the changes propagated to the nested test.
     $parent_settings['control_rate'] = $nested_settings['control_rate'] = 30;
     $parent_settings = array_merge($parent_settings, $changes);
     $nested_settings = array_merge($nested_settings, $changes);

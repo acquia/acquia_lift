@@ -366,11 +366,14 @@ function acquia_lift_agent_list($agents = array(), $legacy = FALSE) {
           // Use the stored targeting that is currently implemented.
           $targeting = acquia_lift_get_structure_from_targeting($targeting_os);
         }
+        $agent_type = $agent_type_target;
         if (count($targeting) == 1) {
-          $agent_type = $agent_type_test;
+          $only_audience = reset($targeting);
+          if (count($only_audience) > 1) {
+            $agent_type = $agent_type_test;
+          }
         }
         else if (count($targeting) > 1) {
-          $agent_type = $agent_type_target;
           foreach ($targeting as $audience => $variations) {
             if (count($variations) > 1) {
               $agent_type = $agent_type_both;

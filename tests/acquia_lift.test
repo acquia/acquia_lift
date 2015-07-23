@@ -2107,6 +2107,58 @@ class AcquiaLiftWebTestTarget extends AcquiaLiftWebTestBase {
     }
   }
 
+  function testStopAndPickWinner() {
+    $agent = $this->createTargetingAgentWithNestedTest(3);
+    personalize_agent_set_status($agent->machine_name, PERSONALIZE_STATUS_COMPLETED);
+    $this->resetAll();
+    $option_sets = personalize_option_set_load_by_agent($agent->machine_name);
+    $option_set = reset($option_sets);
+    $nested_osid = $option_set->targeting[ACQUIA_LIFT_TARGETING_EVERYONE_ELSE]['osid'];
+    $nested_os = personalize_option_set_load($nested_osid);
+    $nested_agent_name = $nested_os->agent;
+    $expected_targeting = array(
+      ACQUIA_LIFT_TARGETING_EVERYONE_ELSE => array(
+        'label' => 'Everyone',
+        'weight' => 1,
+        'targeting_features' => array (),
+        'targeting_rules' => array (),
+        'targeting_strategy' => 'OR',
+        'osid' => $nested_osid
+      )
+    );
+    $this->assertEqual($expected_targeting, $option_set->targeting);
+    $this->drupalLogin($this->managerUser);
+    $this->drupalGet('admin/structure/personalize');
+    $this->assertNoLinkByHref('admin/structure/personalize/manage/' . $nested_agent_name . '/delete-all');
+    $this->assertText('Test only');
+    acquia_lift_stop_test_for_audience($agent, ACQUIA_LIFT_TARGETING_EVERYONE_ELSE, 'option-2');
+    $this->resetAll();
+    $option_set = personalize_option_set_load($option_set->osid, TRUE);
+    debug($option_set);
+    $expected_targeting = array(
+      ACQUIA_LIFT_TARGETING_EVERYONE_ELSE => array(
+        'label' => 'Everyone',
+        'weight' => 1,
+        'targeting_features' => array (),
+        'targeting_rules' => array (),
+        'targeting_strategy' => 'OR',
+        'option_id' => 'option-2'
+      )
+    );
+    $this->assertEqual($expected_targeting, $option_set->targeting);
+    $retired_test = personalize_agent_load($nested_agent_name, TRUE);
+    $this->assertEqual(1, $retired_test->data['lift_retired']);
+    $this->assertEqual($agent->machine_name, $retired_test->data['lift_parent']);
+    $this->assertEqual(ACQUIA_LIFT_TARGETING_EVERYONE_ELSE, $retired_test->data['lift_audience']);
+    $status = personalize_agent_get_status($nested_agent_name);
+    $this->assertEqual(PERSONALIZE_STATUS_COMPLETED, $status);
+    $this->drupalGet('admin/structure/personalize');
+    $date = date('Y-m-d');
+    $this->assertText("(retired test) {$agent->label}: Everyone (Completed $date)");
+    $this->assertLinkByHref('admin/structure/personalize/manage/' . $nested_agent_name . '/delete-all');
+    $this->assertNoText('Test only');
+  }
+
   function testNestedAgentSettings() {
     $agent = $this->createTargetingAgentWithNestedTest();
     personalize_agent_set_status($agent->machine_name, PERSONALIZE_STATUS_RUNNING);

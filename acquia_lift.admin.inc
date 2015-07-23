@@ -1458,16 +1458,30 @@ function acquia_lift_remove_nested_test(&$option_set, $audience, $parent_agent) 
   // Find the nested option set for the specified targeting rule.
   if (isset($option_set->targeting[$audience]) && isset($option_set->targeting[$audience]['osid'])) {
     $nested_os = personalize_option_set_load($option_set->targeting[$audience]['osid']);
-    // Preserve information about what the test had been used for.
+    // Retire the test.
     $nested_agent = personalize_agent_load($nested_os->agent);
-    $nested_agent->data['lift_parent'] = $parent_agent->machine_name;
-    $nested_agent->data['lift_audience'] = $audience;
     $audience_label = isset($option_set->targeting[$audience]['label']) ? $option_set->targeting[$audience]['label'] : $audience;
-    personalize_agent_set_status($nested_agent->machine_name, PERSONALIZE_STATUS_COMPLETED);
-    $nested_agent->label = $parent_agent->label . ': ' . $audience_label . t(" (Completed @date)", array('@date' => date("Y-m-d")));
-    personalize_agent_save($nested_agent);
+    acquia_lift_retire_test($nested_agent, $parent_agent->machine_name, $parent_agent->label, $audience, $audience_label);
     unset($option_set->targeting[$audience]['osid']);
   }
+}
+
+/**
+ * Retires a nested test, preserving information about what it had been used for.
+ *
+ * @param $test
+ * @param $parent_name
+ * @param $parent_label
+ * @param $audience_name
+ * @param $audience_label
+ */
+function acquia_lift_retire_test($test, $parent_name, $parent_label, $audience_name, $audience_label) {
+  $test->data['lift_retired'] = 1;
+  $test->data['lift_parent'] = $parent_name;
+  $test->data['lift_audience'] = $audience_name;
+  personalize_agent_set_status($test->machine_name, PERSONALIZE_STATUS_COMPLETED);
+  $test->label = $parent_label . ': ' . $audience_label . t(" (Completed @date)", array('@date' => date("Y-m-d")));
+  personalize_agent_save($test);
 }
 
 /**
@@ -1786,6 +1800,45 @@ function _acquia_lift_personalize_campaign_wizard_everyone_else_audience() {
     'strategy' => 'OR',
     'id' => ACQUIA_LIFT_TARGETING_EVERYONE_ELSE,
   );
+}
+
+/**
+ * Stops a test for the specified audience of the specified targeting agent.
+ *
+ * @param $agent
+ *   The targeting agent.
+ * @param $audience
+ *   The audience to stop the test for.
+ * @param $winner
+ *   (optional) The winning variation id to assign to the audience in place of
+ *   the test.
+ * @throws \AcquiaLiftException
+ * @throws \PersonalizeException
+ */
+function acquia_lift_stop_test_for_audience($agent, $audience, $winner = NULL) {
+  $option_set = acquia_lift_get_option_set_for_targeting($agent->machine_name);
+  if (empty($option_set) || !isset($option_set->targeting[$audience]) || !isset($option_set->targeting[$audience]['osid'])) {
+    throw new AcquiaLiftException('There is no test for this audience.');
+  }
+  $nested_os = personalize_option_set_load($option_set->targeting[$audience]['osid']);
+  // Assign the "winning" option to the audience. If no winner provided we use
+  // the first one.
+  if (empty($winner)) {
+    $winner = $nested_os->options[0]['option_id'];
+  }
+  unset($option_set->targeting[$audience]['osid']);
+  $option_set->targeting[$audience]['option_id'] = $winner;
+  try {
+    personalize_option_set_save($option_set);
+  }
+  catch (PersonalizeException $e) {
+    drupal_set_message(t('There was a problem updating the targeting for this personalization.'));
+    // Don't retire the test, something's amiss.
+    return;
+  }
+  $nested_agent = personalize_agent_load($nested_os->agent);
+  $audience_label = isset($option_set->targeting[$audience]['label']) ? $option_set->targeting[$audience]['label'] : $audience;
+  acquia_lift_retire_test($nested_agent, $agent->machine_name, $agent->label, $audience, $audience_label);
 }
 
 /**

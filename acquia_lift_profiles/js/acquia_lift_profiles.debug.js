@@ -97,6 +97,12 @@
 
       'clearStorage' : function (data){
         $(document).trigger('personalizeDebugClear', 'acquiaLift::debug');
+      },
+
+      'turnOffDebugMode' : function(){
+          var href = window.location.href;
+          href = href.replace(/(acquia_lift_debug_mode=(?:(?!&).)*)/g,"acquia_lift_debug_mode=0");
+          window.location.href = href;
       }
     };
   })();

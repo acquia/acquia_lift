@@ -78,7 +78,7 @@ app.factory('debuggerFactory', function($http){
             }
 
             Lift.debugger.prototype.clickDestroy = function (event) {
-                //function to turn off debug mode.
+                Drupal.acquiaLiftProfilesDebug.turnOffDebugMode();
                 Drupal.acquiaLiftProfilesDebug.clearStorage();
                 this.destroy();
 

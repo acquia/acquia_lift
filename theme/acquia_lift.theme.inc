@@ -138,6 +138,7 @@ function theme_acquia_lift_percentage($variables) {
 
   // Add classes for percentage control and collapsible details.
   $element['#attributes']['class'][] = 'acquia-lift-percentage-control';
+  $element['#attributes']['class'][] = 'clearfix';
   if (isset($element['#collapsible']) && $element['#collapsible']) {
     $element['#attributes']['class'][] = 'acquia-lift-collapsible';
     if (isset($element['#collapsed']) && $element['#collapsed']) {

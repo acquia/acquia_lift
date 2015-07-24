@@ -105,6 +105,7 @@
         checkTargetingPlaceholder($ul);
         indicateControlVariation($ul);
         indicateTest($ul);
+        showAdvancedTestSettings();
         indicatePickWinner($ul);
       }
 
@@ -167,6 +168,22 @@
         var numberVariations = $variationItems.length;
         $ul.closest('.el-card').find('.el-card__flag').toggleClass('is-hidden', numberVariations <= 1);
       }
+
+      /**
+       * Show/hide test settings based on whether there is currently
+       * a test configured.
+       */
+      function showAdvancedTestSettings() {
+        var showSettings = false;
+        $('#acquia-lift-targeting-audiences .acquia-lift-targeting-assignment').each(function() {
+          var selected = $(this).val();
+          if (selected && selected.length > 1) {
+            showSettings = true;
+          }
+        });
+        $('.acquia-lift-test-options').toggleClass('element-hidden', !showSettings);
+      }
+
 
       /**
        * Determine if the audience should show it's button to
@@ -256,6 +273,7 @@
               ui.sender.sortable('cancel');
               indicateControlVariation(ui.sender);
               indicateTest(ui.sender);
+              showAdvancedTestSettings();
               indicatePickWinner(ui.sender);
               return;
             }
@@ -285,9 +303,13 @@
             });
             $select.val(selectedOptions);
             $orderInput.val(selectedOptions.join(','));
+            checkTargetingPlaceholder($(this));
+            indicateControlVariation($(this));
+            indicateTest($(this));
             checkTargetingPlaceholder($this);
             indicateControlVariation($this);
             indicateTest($this);
+            showAdvancedTestSettings();
             indicatePickWinner($this);
 
             // Make sure the droppable area is last in the list.
@@ -332,6 +354,8 @@
 
       // Hide the assignment order fields.
       $('.acquia-lift-targeting-assignment-order').closest('.form-item').addClass('element-hidden');
+      // Check for whether advanced test settings should be shown by default.
+      showAdvancedTestSettings();
     }
   }
 

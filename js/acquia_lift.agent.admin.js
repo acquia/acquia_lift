@@ -58,7 +58,7 @@
       var hideText = Drupal.t('Hide info');
       $('.acquia-lift-collapsible', context).once(function() {
         var $container = $(this);
-        $container.prepend('<a class="acquia-lift-toggle-text" href="#"></a>');
+        $container.append('<a class="acquia-lift-toggle-text" href="#"></a>');
 
         $('.acquia-lift-toggle-text', this).click(function(e) {
           if ($container.hasClass('acquia-lift-collapsed')) {

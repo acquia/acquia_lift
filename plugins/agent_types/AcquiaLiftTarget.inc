@@ -116,8 +116,22 @@ class AcquiaLiftTarget extends PersonalizeAgentBase implements PersonalizeExplic
           }
         }
       }
-
     }
+    $variations_assigned = FALSE;
+    if (empty($data['lift_targeting'])) {
+      module_load_include('inc', 'acquia_lift', 'acquia_lift.admin');
+      $targeting_os = acquia_lift_get_option_set_for_targeting($this->getMachineName());
+      $audiences = acquia_lift_get_structure_from_targeting($targeting_os);
+    }
+    else {
+      $audiences = $data['lift_targeting'];
+    }
+    foreach ($audiences as $targeting) {
+      if (!empty($targeting)) {
+        $variations_assigned = TRUE;
+      }
+    }
+
     if ($needs_goals && empty($goals)) {
       $errors[] = t('You have not added any goals yet. Please add a goal in the <a href="!why_url">"Why" section</a>.', array(
         '!why_url' => url('admin/structure/personalize/manage/' . $this->getMachineName() . '/goals'),
@@ -128,7 +142,12 @@ class AcquiaLiftTarget extends PersonalizeAgentBase implements PersonalizeExplic
         '!what_url' => url('admin/structure/personalize/manage/' . $this->getMachineName() . '/variations'),
       ));
     }
-    $errors += $this->getMultipleOptionSetErrors($option_sets);
+    if (!$variations_assigned) {
+      $errors[] = t('You have not assigned any variations to audiences. Please add variations for targeting in the <a href="!who_url">"Who" section</a>.', array(
+        '!who_url' => url('admin/structure/personalize/manage/' . $this->getMachineName() . '/targeting'),
+      ));
+    }
+    $errors = array_merge($errors, $this->getMultipleOptionSetErrors($option_sets));
     return $errors;
   }
 

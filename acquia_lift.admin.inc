@@ -1492,8 +1492,7 @@ function acquia_lift_save_nested_test_options($parent_agent) {
  * is not available.
  *
  * Targeting agents should have a default "Everyone else" audience that has all
- * unassigned variations assigned.  Variations should only be automatically
- * added when the agent has not been started.
+ * unassigned variations assigned.
  *
  * @param stdClass $agent
  *   The object representing the agent that owns the targeting option set.
@@ -1507,37 +1506,6 @@ function acquia_lift_validate_minimum_targeting($agent, $option_set) {
   if (empty($targeting_option_set->targeting)) {
     $audience = _acquia_lift_personalize_campaign_wizard_everyone_else_audience();
     acquia_lift_target_audience_save($audience['name'], $agent->machine_name, $audience['contexts'], $audience['strategy'], $audience['weight'], $audience['id']);
-    // Indicate that there are no variations assigned.
-    $assigned = array();
-  }
-  else {
-    // Find all of the options that are assigned to other audiences.  This will
-    // be stored in the agent data property until the agent has been verified
-    // to start.  After that time changes shouldn't be made automatically.
-    $assigned = array();
-    $targeting = !empty($agent->data['lift_targeting']) ? $agent->data['lift_targeting'] : acquia_lift_get_structure_from_targeting($option_set);
-    foreach ($targeting as $audience_id => $options) {
-      if ($audience_id != ACQUIA_LIFT_TARGETING_EVERYONE_ELSE) {
-        $assigned = array_merge($assigned, $options);
-      }
-    }
-  }
-  // If the agent hasn't been started, then we should keep adding options to
-  // default targeting even if there is already an "Everyone else" audience.
-  if (personalize_agent_get_status($agent->machine_name) != PERSONALIZE_STATUS_NOT_STARTED) {
-    return;
-  }
-  $targeting_options = array();
-  foreach ($targeting_option_set->options as $option) {
-    $targeting_options[] = $option['option_id'];
-  }
-  // Any unassigned option is automatically assigned to the "Everyone else"
-  // category.
-  $unassigned_options = array_diff($targeting_options, $assigned);
-  $targeting = !empty($agent->data['lift_targeting']) ? $agent->data['lift_targeting'] : array();
-  $targeting[ACQUIA_LIFT_TARGETING_EVERYONE_ELSE] = $unassigned_options;
-  if (!empty($unassigned_options)) {
-    acquia_lift_save_targeting_structure($agent, $targeting);
   }
 }
 

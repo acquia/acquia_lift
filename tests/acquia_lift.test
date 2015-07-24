@@ -158,13 +158,13 @@ class AcquiaLiftWebTestBase extends DrupalWebTestCase
     return $option_set;
   }
 
-  protected function createTargetingAgentWithNestedTest($num_options = 3) {
+  protected function createTargetingAgentWithNestedTest($num_options = 3, $index = 0) {
     module_load_include('inc', 'acquia_lift', 'acquia_lift.admin');
     // First, set up our agent, option set, audience and desired targeting
     // structure.
     $agent = $this->createTargetingAgent();
     $this->resetAll();
-    $parent_option_set = $this->createPersonalizedBlock(0, $agent, $num_options);
+    $parent_option_set = $this->createPersonalizedBlock($index, $agent, $num_options);
     if (empty($parent_option_set)) {
       $this->fail('Could not create option set');
       return;

@@ -774,7 +774,16 @@ function acquia_lift_personalize_campaign_wizard_targeting_alter(&$form, &$form_
     $variation_displays = array();
     $targeting_option_id = '';
     foreach ($displays as $option) {
-      $variation_displays[] = is_string($option) ? $option : theme('acquia_lift_single_variation', array('option' => $option['option_label'], 'option_set' => $option['option_set_label']));
+      if (is_string($option)) {
+        $variation_displays[] = $option;
+      }
+      else {
+        $display_vars['option'] = $option['option_label'];
+        if (isset($option['option_set_label'])) {
+          $display_vars['option_set'] = $option['option_set_label'];
+        }
+        $variation_displays[] = theme('acquia_lift_single_variation', $display_vars);
+      }
       if (!$has_multiple || !empty($option['targeting'])) {
         $targeting_option_id = $option['option_id'];
       }

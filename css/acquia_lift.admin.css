@@ -484,6 +484,14 @@ input[type="submit"].acquia-lift-wizard-add:hover {
   float: right;
 }
 
+/* Spacing to separate out adding audiences from rest of list */
+#acquia-lift-targeting-audiences-new {
+  margin-bottom: 2em;
+}
+.acquia-lift-audience-priority h4 {
+  margin-top: 0;
+}
+
 /* Edit checkbox in card header */
 .el-card__action input[type="checkbox"].acquia-lift-edit {
   display: none;

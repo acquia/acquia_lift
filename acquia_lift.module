@@ -144,6 +144,15 @@ function acquia_lift_menu() {
     'file' => 'acquia_lift.admin.unibar.inc',
     'theme callback' => 'ajax_base_page_theme',
   );
+  $items['admin/structure/personalize/manage/%personalize_agent/delete-all'] = array(
+    'title' => 'Delete an agent and all its components',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('acquia_lift_agent_delete_form', 4),
+    'type' => MENU_CALLBACK,
+    'file' => 'acquia_lift.admin.inc',
+    'access callback' => 'acquia_lift_agent_delete_access',
+    'access arguments' => array(4),
+  );
   $items['admin/structure/personalize/manage/%personalize_agent/audience/%/delete'] = array(
     'title' => 'Delete target audience',
     'page callback' => 'drupal_get_form',
@@ -571,6 +580,38 @@ function acquia_lift_campaign_edit_access($agent) {
     return FALSE;
   }
   return user_access('manage personalized content');
+}
+
+/**
+ * Access callback for agent deletion.
+ */
+function acquia_lift_agent_delete_access($agent) {
+  // Personalize module is more restricted in what it allows deletion of it,
+  // so if we personalize module allows deletion, then so do we.
+  if (personalize_delete_agent_access($agent)) {
+    return TRUE;
+  }
+  $delete_allowed = FALSE;
+  // We also allow outright deletion of agents that are legacy agents, regardless
+  // of status, or nested tests that have been retired.
+  $legacy_campaigns = variable_get('acquia_lift_legacy_agents', array());
+  if (in_array($agent->machine_name, $legacy_campaigns)) {
+    $delete_allowed = TRUE;
+  }
+  else {
+    module_load_include('inc', 'acquia_lift', 'acquia_lift.admin');
+    $retired_tests = acquia_lift_get_retired_tests();
+    foreach ($retired_tests as $parent => $tests) {
+      foreach ($tests as $test) {
+        if ($agent->machine_name == $test->machine_name) {
+          // This is a retired test and can be deleted.
+          $delete_allowed = TRUE;
+          break 2;
+        }
+      }
+    }
+  }
+  return user_access('manage personalized content') && $delete_allowed;
 }
 
 /**

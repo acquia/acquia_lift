@@ -147,7 +147,7 @@ class AcquiaLiftTarget extends PersonalizeAgentBase implements PersonalizeExplic
         '!who_url' => url('admin/structure/personalize/manage/' . $this->getMachineName() . '/targeting'),
       ));
     }
-    $errors += $this->getMultipleOptionSetErrors($option_sets);
+    $errors = array_merge($errors, $this->getMultipleOptionSetErrors($option_sets));
     return $errors;
   }
 

@@ -2231,6 +2231,7 @@ class AcquiaLiftWebTestTarget extends AcquiaLiftWebTestBase {
     $this->assertTrue(!empty($settings['acquia_lift']['campaigns'][$agent->machine_name]));
 
     // Start the agent through the UI so that the targeting gets implemented.
+    $this->createTestFromOptionSet($agent, $option_set);
     $this->drupalGet('admin/structure/personalize/manage/' . $agent->machine_name . '/review');
     $this->drupalPost(NULL, array(), $this->getButton('wizard_start'));
 
@@ -2357,13 +2358,11 @@ class AcquiaLiftWebTestTarget extends AcquiaLiftWebTestBase {
     AcquiaLiftAPI::setTestInstance();
 
     $agent = $this->createTargetingAgent();
-    // Add a goal or it cannot be started.
-    personalize_goal_save($agent->machine_name, 'user_login', 1);
     // Personalize blocks.
     $option_set = $this->createPersonalizedBlock(1, $agent, 2);
 
-    // Add a goal so that the agent meets requirements.
-    personalize_goal_save($agent->machine_name, 'user_login', 1);
+    // Add targeting so that the agent meets requirements.
+    $this->createTestFromOptionSet($agent, $option_set);
 
     $pb_message = 'Variations in use cannot be removed from Personalized Block 2 until the ' . $agent->label . ' personalization is paused.';
     $this->drupalGet('admin/structure/personalize/variations/personalize-blocks/manage/1/edit');
@@ -2399,6 +2398,7 @@ class AcquiaLiftWebTestTarget extends AcquiaLiftWebTestBase {
     // Verify that one option was removed.
     $option_set = personalize_option_set_load($option_set->osid);
     $this->assertEqual(count($option_set->options), 3);
+    $this->createTestFromOptionSet($agent, $option_set);
 
     // Start the agent via the UI in order to implement targeting and nested agents.
     $this->drupalPost('admin/structure/personalize/manage/' . $agent->machine_name . '/review', array(), $this->getButton('wizard_start'));
@@ -2423,6 +2423,8 @@ class AcquiaLiftWebTestTarget extends AcquiaLiftWebTestBase {
     list($node, $os, $agent_name) = $this->createPersonalizedField();
 
     // Start the agent via the UI in order to implement targeting and nested agents.
+    $field_agent = personalize_agent_load($agent_name);
+    $this->createTestFromOptionSet($field_agent, $os);
     $this->drupalPost('admin/structure/personalize/manage/' . $agent_name . '/review', array(), $this->getButton('wizard_start'));
 
     // Verify you can't remove from a running agent.

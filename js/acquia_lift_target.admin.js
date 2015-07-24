@@ -73,7 +73,6 @@
         placeholder: 'acquia-lift-sortable-placeholder',
         forcePlaceholderSize: true,
         opacity: 0.7,
-        cursor: 'move',
         tolerance: 'pointer',
         handle: '.el-card__dragger',
         appendTo: document.body,

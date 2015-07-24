@@ -407,6 +407,11 @@ input[type="submit"].acquia-lift-wizard-add:hover {
 }
 
 /* Variations form */
+#edit-variations .acquia-lift-variation .acquia-lift-variation-set {
+  color: #8A8B8E;
+  font-size: smaller;
+}
+
 .personalize-wizard-section .acquia-lift-personalize-blocks .acquia-lift-revealing-input {
   float: left;
 }
@@ -470,6 +475,9 @@ input[type="submit"].acquia-lift-wizard-add:hover {
 }
 
 /* Targeting form */
+#edit-targeting .acquia-lift-variation .acquia-lift-variation-set {
+  font-size: smaller;
+}
 .acquia-lift-targeting .personalize-target-wrapper .form-item,
 .acquia-lift-targeting .personalize-target-wrapper .personalize-target-value,
 .acquia-lift-targeting .personalize-target-wrapper .personalize-target-value div,

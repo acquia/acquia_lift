@@ -179,3 +179,27 @@ function theme_acquia_lift_variations_list($variables) {
     ),
   ));
 }
+
+/**
+ * Theme function to output the option set and option name when showing
+ * variation listings.
+ * @param $variables
+ *   - option_set: the label for the option set
+ *   - option: the label for the option
+ */
+function theme_acquia_lift_single_variation($variables) {
+  $html = '';
+  $html = '<span class="acquia-lift-variation">';
+  if (empty($variables['option_set'])) {
+    $html .= $variables['option'];
+    $html .= '</span>';
+    return $html;
+  }
+  $html .= $variables['option'] . '&nbsp;';
+  $html .= '<span class="acquia-lift-variation-set">(';
+  $html .= $variables['option_set'];
+  $html .= ')</span>';
+  $html .= '</span>';
+
+  return $html;
+}

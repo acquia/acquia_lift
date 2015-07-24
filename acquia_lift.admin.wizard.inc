@@ -774,7 +774,7 @@ function acquia_lift_personalize_campaign_wizard_targeting_alter(&$form, &$form_
     $variation_displays = array();
     $targeting_option_id = '';
     foreach ($displays as $option) {
-      $variation_displays[] = is_string($option) ? $option : $option['option_label'];
+      $variation_displays[] = is_string($option) ? $option : theme('acquia_lift_single_variation', array('option' => $option['option_label'], 'option_set' => $option['option_set_label']));
       if (!$has_multiple || !empty($option['targeting'])) {
         $targeting_option_id = $option['option_id'];
       }
@@ -2359,7 +2359,7 @@ function _acquia_lift_personalize_campaign_wizard_variation_displays($option_set
   // Handle display for a single variation set.
   if (count($option_sets) == 1) {
     foreach($first_os->options as $delta => $option) {
-      $all_variations[$delta][0] = $labels_only ? $option['option_label'] : $option;
+      $all_variations[$delta][0] = $labels_only ? theme('acquia_lift_single_variation', array('option' => $option['option_label'])) : $option;
     }
     return $all_variations;
   }
@@ -2379,8 +2379,9 @@ function _acquia_lift_personalize_campaign_wizard_variation_displays($option_set
     foreach($option_set->options as $option) {
       if (!$labels_only) {
         $option['targeting'] = ($osid == $targeting_os->osid);
+        $option['option_set_label'] = $option_set->label;
       }
-      $all_variations[$delta][$set_delta] = $labels_only ? $option['option_label'] : $option;
+      $all_variations[$delta][$set_delta] = $labels_only ? theme('acquia_lift_single_variation', array('option_set' => $option_set->label, 'option' => $option['option_label'])) : $option;
       $max_variations = max($max_variations, count($all_variations[$delta]));
       $delta++;
     }

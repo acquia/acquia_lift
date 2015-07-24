@@ -217,8 +217,7 @@ function acquia_lift_batch_finished($success, $results, $operations, $elapsed_ti
  */
 function acquia_lift_get_sync_operations_for_agent($agent) {
   $operations = array();
-  // First see if there are any tests that need to be deleted from Lift because
-  // the parent agent was restructured.
+  // First see if there are any tests that need to be deleted from Lift.
   if (isset($agent->tests_to_delete)) {
     foreach ($agent->tests_to_delete as $old_test_agent) {
       $operations[] = array(

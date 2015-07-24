@@ -1811,7 +1811,9 @@ function acquia_lift_personalize_campaign_wizard_targeting_validate(&$form, &$fo
         continue;
       }
       $validateAudienceFields($audience['details'], 'audiences[' . $type_id . '][' . $audience_id . '][details][', $is_new, $audience['details']['mapping']['contexts']);
-      $has_tests = $has_tests || count(explode(',', $audience['assignment_order'])) > 1;
+      if (isset($audience['assignment_order'])) {
+        $has_tests = $has_tests || count(explode(',', $audience['assignment_order'])) > 1;
+      }
     }
   }
 

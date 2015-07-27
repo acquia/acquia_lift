@@ -287,6 +287,9 @@ tr.acquia-lift-report-control {
 }
 
 /* Acquia Lift campaign wizard form alterations */
+.acquia-lift-alert {
+  color: #FF0000;
+}
 #personalize-campaign-wizard .personalize-wizard-section .personalize-wizard-column {
   min-width: 520px;
   margin: .5rem;

@@ -1861,3 +1861,147 @@ function acquia_lift_legacy_campaign_list() {
   }
   return acquia_lift_agent_list($agents, TRUE);
 }
+
+/**
+ * Page callback to show the form to stop a test for a particular audience
+ * in a CTools modal window.
+ *
+ * @param stdClass $agent_data
+ *   The data for the campaign.
+ * @param string $audience_id
+ *   The id of the audience to complete.
+ */
+function acquia_lift_target_complete_audience_modal_callback($agent_data, $audience_id) {
+  module_load_include('inc', 'acquia_lift', 'acquia_lift.admin.unibar');
+  acquia_lift_create_ctools_form(
+    t('Choose test winner'),
+    'acquia_lift_target_complete_audience_form',
+    array(
+      'agent_data' => $agent_data,
+      'audience_id' => $audience_id,
+    ),
+    'acquia_lift_target_complete_audience_complete_callback'
+  );
+}
+
+/**
+ * Form handler to complete an audience within a campaign.
+ *
+ * This form is called within a ctools modal window.
+ *
+ * @param stdClass $agent_data
+ *   The data for the campaign.
+ * @param string $audience_id
+ *   The id of the audience to complete.
+ */
+function acquia_lift_target_complete_audience_form($form, &$form_state, $agent_data, $audience_id) {
+  ctools_include('modal');
+  ctools_include('ajax');
+  ctools_add_js('ajax-responder');
+
+  $option_set = acquia_lift_get_option_set_for_targeting($agent_data->machine_name);
+  $audience_label = isset($option_set->targeting[$audience_id]['label']) ? $option_set->targeting[$audience_id]['label'] : $audience_id;
+  if (!isset($option_set->targeting[$audience_id])) {
+    $form['error'] = array(
+      '#markup' => t('The specified audience does not exist in the %name personalization.  Close this window and refresh in order to see current options.', array(
+        '%name' => $agent_data->label,
+      )),
+    );
+    return $form;
+  }
+  else if (!isset($option_set->targeting[$audience_id]['osid'])) {
+    $form['error'] = array(
+      '#markup' => t('The %audience audience does not include a test.  Close this window and refresh in order to see current tests.', array(
+        '%audience' => $audience_label,
+      )),
+    );
+  }
+  // Get all the display variations for the option set.
+  $option_sets = personalize_option_set_load_by_agent($agent_data->machine_name);
+  module_load_include('inc', 'acquia_lift', 'acquia_lift.admin.wizard');
+  $all_variations = _acquia_lift_personalize_campaign_wizard_variation_displays($option_sets, isset($agent_data->data['variation_set_handling']) ? $agent_data->data['variation_set_handling'] : NULL, FALSE);
+
+  $options = array();
+  foreach ($all_variations as $displays) {
+    if (count($displays) == 1) {
+      $option_id = $displays[0]['option_id'];
+      $option_display = $displays[0]['option_label'];
+    }
+    else {
+      $option_displays = array();
+      foreach($displays as $option) {
+        if (!empty($option['targeting'])) {
+          $option_id = $option['option_id'];
+        }
+        // @todo: Implement theme function call for variations display from
+        // CH-3265 once merged in.
+        $option_displays[] = $option['option_label'];
+      }
+      $option_display = implode(', ', $option_displays);
+    }
+    $options[$option_id] = $option_display;
+  }
+
+  $instructions = t('Choose a winner for this test.  Once a winner is chosen, the test will end.');
+  $instructions .= '<br /><span class="acquia-lift-alert"><em>';
+  $instructions .= t('This action cannot be undone!');
+  $instructions .= '</em></span>';
+  $form = array();
+  $form['audience_id'] = array(
+    '#type' => 'value',
+    '#value' => $audience_id,
+  );
+  $form['audience_label'] = array(
+    '#type' => 'value',
+    '#value' => $audience_label,
+  );
+  $form['agent_data'] = array(
+    '#type' => 'value',
+    '#value' => $agent_data,
+  );
+  $form['instructions'] = array(
+    '#markup' => $instructions,
+  );
+  $form['winner'] = array(
+    '#type' => 'radios',
+    '#options' => $options,
+    '#required' => TRUE,
+    '#title' => t('Winning variation'),
+    '#title_display' => 'invisible',
+  );
+  $form['submit'] = array(
+    '#type' => 'submit',
+    '#value' => t('Complete test'),
+    '#attributes' => array(
+      'class' => array('action-item-primary-active acquia-lift-submit-button'),
+    ),
+  );
+  return $form;
+}
+
+/**
+ * Submit handler for acquia_lift_target_complete_audience_form().
+ */
+function acquia_lift_target_complete_audience_form_submit($form, &$form_state) {
+  try {
+    acquia_lift_stop_test_for_audience($form_state['values']['agent_data'], $form_state['values']['audience_id'], $form_state['values']['winner']);
+  } catch (Exception $e) {
+    drupal_set_message($e->getMessage(), 'error');
+    return;
+  }
+  drupal_set_message(t('The winner has been set for the %audience audience.', array(
+    '%audience' => $form_state['values']['audience_label'],
+  )));
+}
+
+/**
+ * Ctools form processing complete handler for the completing of an audience
+ * test.
+ *
+ * @see acquia_lift_create_ctools_form().
+ */
+function acquia_lift_target_complete_audience_complete_callback($form, $form_state) {
+  $commands = array();
+  $commands[] = ctools_ajax_command_reload();
+  return $commands;
+}

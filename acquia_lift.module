@@ -162,6 +162,15 @@ function acquia_lift_menu() {
     'access callback' => 'acquia_lift_target_access',
     'access arguments' => array(4),
   );
+  $items['admin/structure/personalize/manage/%personalize_agent/audience/%/complete'] = array(
+    'title' => 'Complete test for audience',
+    'page callback' => 'acquia_lift_target_complete_audience_modal_callback',
+    'page arguments' => array(4, 6),
+    'type' => MENU_CALLBACK,
+    'file' => 'acquia_lift.admin.inc',
+    'access callback' => 'acquia_lift_target_access',
+    'access arguments' => array(4),
+  );
   $items['admin/structure/personalize/manage/%personalize_agent/targeting/revert'] = array(
     'title' => 'Revert targeting changes',
     'page callback' => 'drupal_get_form',

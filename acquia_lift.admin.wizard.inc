@@ -1009,6 +1009,7 @@ function acquia_lift_personalize_campaign_wizard_targeting_alter(&$form, &$form_
               'acquia-lift-submit-button',
               'acquia-lift-complete-audience',
             ),
+            'data-acquia-lift-audience-id' => $audience_id,
           ),
           '#disabled' => FALSE,
         );

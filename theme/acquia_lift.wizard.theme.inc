@@ -14,6 +14,9 @@
 function theme_acquia_lift_card($variables) {
   $element = $variables['element'];
   $footer_children = empty($element['footer']) ? array() : element_children($element['footer']);
+  foreach($footer_children as $key) {
+    $footer_elements[] = $element['footer'][$key];
+  }
   $card_label = isset($element['#title']) ? $element['#title'] : '';
   $header_children = isset($element['header']) ? element_children($element['header']) : array();
   $card_flag = isset($element['#flag']) ? $element['#flag'] : '';
@@ -62,11 +65,11 @@ function theme_acquia_lift_card($variables) {
     $html .= '<div ' . drupal_attributes($card_flag_attributes) . '><span class="el-card__flag__label">' . t('Status') . ':</span> <span class="el-card__flag__content">' . $card_flag . '</span></div>';
   }
   $html .= drupal_render_children($element);
-  if (!empty($footer_children)) {
-    $html .= '<div class="el-card__footer">' . drupal_render($footer_children) . '</div>';
+  $html .= '</div>'; // Close content.
+  if (!empty($footer_elements)) {
+    $html .= '<div class="el-card__footer">' . drupal_render($footer_elements) . '</div>';
   }
-  $html .= '</div>';
-  $html .= '</div>';
+  $html .= '</div>'; // Close card.
   return $html;
 }
 

@@ -53,7 +53,7 @@
       // Get a mapping of audiences that allow the selection of a winner
       // and the combination of options that are assigned upon load.
       var winnerSelections = {};
-      $('.acquia-lift-complete-audience').once(function() {
+      $('#acquia-lift-targeting-audiences .acquia-lift-complete-audience').once(function() {
         var $card = $(this).closest('.el-card');
         var audience_id = $(this).attr('data-acquia-lift-audience-id');
         var assignments = $('.acquia-lift-targeting-assignment-order', $card).val();

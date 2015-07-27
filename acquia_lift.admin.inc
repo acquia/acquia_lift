@@ -694,26 +694,30 @@ function acquia_lift_report($form, &$form_state, $agent_data) {
   }
 
   if ($nested_os = personalize_option_set_load($option_set->targeting[$audience]['osid'])) {
+    $form['audience_container'] = array(
+      '#type' => 'container',
+      '#attributes' => array(
+        'class' => array('container-inline'),
+      ),
+      '#tree' => FALSE,
+    );
     $nested_agent = personalize_agent_load($nested_os->agent);
     if (!empty($nested_agent)) {
       if (count($audience_options) == 1) {
-        $form['audience_label'] = array(
+        $form['audience_container']['audience_label'] = array(
           '#markup' => '<h2>' . t('Test for %audience audience', array('%audience' => $option_set->targeting[$audience]['label'])) . '</h2>'
         );
-        $form['audience_filter'] = array(
+        $form['audience_container']['audience_filter'] = array(
           '#type' => 'value',
           '#value' => $audience
         );
       }
       else {
-        $form['audience_filter'] = array(
+        $form['audience_container']['audience_filter'] = array(
           '#title' => t('Audience'),
           '#type' => 'select',
           '#options' => $audience_options,
           '#default_value' => $audience,
-          '#attributes' => array(
-            'class' => array('container-inline')
-          ),
           '#ajax' => array(
             'callback' => "acquia_lift_report_ajax_callback",
             'wrapper' => "acquia-lift-reports",
@@ -721,6 +725,27 @@ function acquia_lift_report($form, &$form_state, $agent_data) {
           '#id' => 'acquia-lift-report-audience-filter',
         );
       }
+      $form['audience_container']['complete_url'] = array(
+        '#type' => 'hidden',
+        // Per ctools modals the class name is the #id of the triggering
+        // ajax button with "-url" suffix.
+        '#attributes' => array('class' => array('acquia-lift-complete-' . $audience . '-url')),
+        '#value' => url('admin/structure/personalize/manage/' . $agent_data->machine_name . '/audience/' . $audience . '/complete'),
+      );
+      $form['audience_container']['complete'] = array(
+        '#type' => 'button',
+        '#value' => t('End test and choose winner'),
+        '#attributes' => array(
+          'id' => 'acquia-lift-complete-' . $audience,
+          'class' => array(
+            'ctools-use-modal',
+            'ctools-modal-acquia-lift-style',
+            'action-item-primary-active',
+            'acquia-lift-submit-button',
+            'acquia-lift-complete-audience',
+          ),
+        ),
+      );
 
       $form['report'] = acquia_lift_report_custom($form_state, $nested_agent, FALSE, $agent_data);
     }

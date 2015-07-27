@@ -1807,6 +1807,10 @@ function acquia_lift_stop_test_for_audience($agent, $audience, $winner = NULL) {
     // Don't retire the test, something's amiss.
     return;
   }
+  if (isset($agent->data['lift_targeting'][$audience])) {
+    $agent->data['lift_targeting'][$audience] = array($winner);
+    personalize_agent_save($agent);
+  }
   $nested_agent = personalize_agent_load($nested_os->agent);
   $audience_label = isset($option_set->targeting[$audience]['label']) ? $option_set->targeting[$audience]['label'] : $audience;
   acquia_lift_retire_test($nested_agent, $agent->machine_name, $agent->label, $audience, $audience_label);

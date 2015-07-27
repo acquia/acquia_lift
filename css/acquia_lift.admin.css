@@ -481,6 +481,9 @@ input[type="submit"].acquia-lift-wizard-add:hover {
 .acquia-lift-targeting .personalize-target-wrapper .form-item label {
   display: none;
 }
+.el-card__footer .acquia-lift-complete-audience {
+  float: right;
+}
 
 /* Edit checkbox in card header */
 .el-card__action input[type="checkbox"].acquia-lift-edit {

@@ -978,6 +978,41 @@ function acquia_lift_personalize_campaign_wizard_targeting_alter(&$form, &$form_
           'class' => array('acquia-lift-targeting-assignment-order'),
         ),
       );
+      // Show the ability to select a winner for an audience if:
+      // - the campaign has run
+      // - the audience was used in targeting
+      // - the audience has a test currently implemented in Lift
+      // - the audience contents has not changed from what was implemented
+      if (!empty($agent_data->started) && isset($existing_targeting[$audience_id]) && count($existing_targeting[$audience_id]) > 1 && $existing_targeting[$audience_id] == $saved_targeting[$audience_id]) {
+        // Add this button to the footer so that it can still be available
+        // even when the card is disabled.  This allows availability even
+        // when the campaign is running.
+        $form['targeting']['audiences']['existing'][$audience_id]['footer'] = array(
+          '#type' => 'container',
+        );
+        $form['targeting']['audiences']['existing'][$audience_id]['footer']['complete_url'] = array(
+          '#type' => 'hidden',
+          // Per ctools modals the class name is the #id of the triggering
+          // ajax button with "-url" suffix.
+          '#attributes' => array('class' => array('acquia-lift-complete-' . $audience_id . '-url')),
+          '#value' => url('admin/structure/personalize/manage/' . $agent_data->machine_name . '/audience/' . $audience_id . '/complete'),
+        );
+        $form['targeting']['audiences']['existing'][$audience_id]['footer']['complete'] = array(
+          '#type' => 'button',
+          '#value' => t('End test and choose winner'),
+          '#attributes' => array(
+            'id' => 'acquia-lift-complete-' . $audience_id,
+            'class' => array(
+              'ctools-use-modal',
+              'ctools-modal-acquia-lift-style',
+              'action-item-primary-active',
+              'acquia-lift-submit-button',
+              'acquia-lift-complete-audience',
+            ),
+          ),
+          '#disabled' => FALSE,
+        );
+      }
     }
   }
   if ($show_revert) {

@@ -334,7 +334,7 @@ function theme_acquia_lift_debugger() {
   </div>
     <ul class="debugger__navigation__top__bar">
       <li><a class="debugger__navigation__item" ng-click="tab = 'profile';buttonClick('profile')" ng-style="profileButton">Lift Profile</a></li>
-      <li><a id="sitePreviewTabLabel" class="debugger__navigation__item" ng-click="tab = 'segments';buttonClick('preview')" ng-style="previewButton"> </a></li>
+      <li><a id="sitePreviewTabLabel" class="debugger__navigation__item" ng-click="tab = 'segments';buttonClick('preview')" ng-style="previewButton">Site Preview</a></li>
       <li><a class="debugger__navigation__item" ng-click="tab = 'log';buttonClick('log')" ng-style="logButton">Event Log</a></li>
     </ul>
   </div>
@@ -395,6 +395,7 @@ function theme_acquia_lift_debugger() {
           output-model-name="Type &#9662;">
           </div>
          </div>
+         <!--<button ng-click="exportData()">Export</button>-->
       </div>
       <div class="debugger__log">
         <table>

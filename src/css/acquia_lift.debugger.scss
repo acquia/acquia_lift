@@ -1,4 +1,4 @@
-$debugger-max-width: 80vw;
+$debugger-max-width: 95%;
 $debugger-transition-duration: 300ms;
 $font-size: 1em;
 $background-color:#efefef;
@@ -36,8 +36,8 @@ $dark-blue: #0073b9;
     width: calc(100% - 2em);
   }
 
-  @media screen and (min-width: ($debugger-max-width + 2vw)) {
-    left: 50vw;
+  @media screen and (min-width: ($debugger-max-width)) {
+    left: 2.5%;
     width: $debugger-max-width;
     /*//margin-left: -($debugger-max-width / 2);*/
   }

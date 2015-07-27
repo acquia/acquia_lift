@@ -30,10 +30,10 @@
     width: calc(100% - 2em);
   }
 }
-@media screen and (min-width: 82vw) {
+@media screen and (min-width: 95%) {
   .debugger {
-    left: 50vw;
-    width: 80vw;
+    left: 2.5%;
+    width: 95%;
     /*//margin-left: -($debugger-max-width / 2);*/
   }
 }

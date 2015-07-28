@@ -905,7 +905,7 @@ function acquia_lift_personalize_campaign_wizard_targeting_alter(&$form, &$form_
     $form['targeting']['audiences']['existing'] = array(
       '#type' => 'container',
     );
-    if (count($option_set->targeting) > 2) {
+    if (count($option_set->targeting) > 2 && $editable) {
       // Show instructions regarding re-ordering audiences.  This only applies
       // when there are at least two audiences beyond the "Everyone" audience.
       $form['targeting']['audiences']['existing']['priority'] = array(

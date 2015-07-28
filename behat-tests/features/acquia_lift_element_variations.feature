@@ -277,3 +277,53 @@ Feature: Personalize elements variations can be edited for an existing campaign.
 
     # I should be redirected back to the campaign page.
     Then I should be on "admin/structure/personalize/manage/testing-campaign-roundtrip/variations"
+
+  Scenario: Create a campaign with testing for audiences and then select a winner
+    for the test.
+    # I have a campaign, audiences, and variation sets with targeting.
+    # I log in with the marketer role.
+    Given "acquia_lift_target" agents:
+      | machine_name                   | label                            |
+      | testing-campaign-select-winner | Testing campaign select a winner |
+    And personalized elements:
+      | label                | agent                          | selector    | type     | content                                                          |
+      | Muppet title updated | testing-campaign-select-winner | #page-title | editText | The Rainbow Connection, Movin Right Along, Landstrider, Skeksis  |
+      And audiences:
+      | label         | agent                          |
+      | Muppet fans   | testing-campaign-select-winner |
+      | Creature fans | testing-campaign-select-winner |
+    And targeting:
+      | agent                          | audience      | options                    |
+      | testing-campaign-select-winner | muppet-fans   | option-1,option-2          |
+      | testing-campaign-select-winner | creature-fans | option-3,option-4          |
+      | testing-campaign-select-winner | everyone-else | option-1,option-2,option-4 |
+    And the "testing-campaign-select-winner" personalization has the "Running" status
+    And I am logged in as a user with the "access administration pages,access toolbar,administer visitor actions,manage personalized content" permission
+
+    # I should see buttons to set the winner for all audiences
+    When I am on "admin/structure/personalize/manage/testing-campaign-select-winner/targeting"
+    Then I should see the button "acquia-lift-complete-muppet-fans" in the "campaign_workflow_form" region
+    And I should see the button "acquia-lift-complete-creature-fans" in the "campaign_workflow_form" region
+    And I should see the button "acquia-lift-complete-everyone-else" in the "campaign_workflow_form" region
+
+    # When I open the form to select a winner
+    When I press "acquia-lift-complete-muppet-fans" in the "campaign_workflow_form" region
+    Then I should see the modal with title "Choose test winner"
+    And I should see the text "Option A" in the "modal_content" region
+    And I should see the text "Option B" in the "modal_content" region
+    And I should not see the text "Option C" in the "modal_content" region
+    And I should not see the text "Option D" in the "modal_content" region
+
+    # When I select a winner
+    When I check the "Option A" radio button
+    And I press "Complete test" in the "modal_content" region
+
+    # The page should refresh.
+    Then I should not see the modal
+
+    # Pause the campaign so that we can "see" all of the targeting elements
+    And I should not see the "#acquia-lift-complete-muppet-fans" element in the "campaign_workflow_form" region
+    And I should see the button "acquia-lift-complete-creature-fans" in the "campaign_workflow_form" region
+    And I should see the button "acquia-lift-complete-everyone-else" in the "campaign_workflow_form" region
+    And "Option A" variation should be assigned to the "Muppet fans" audience
+    And "Option B" variation should not be assigned to the "Muppet fans" audience

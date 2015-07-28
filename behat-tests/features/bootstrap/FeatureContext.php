@@ -202,6 +202,13 @@ class FeatureContext extends RawDrupalContext implements SnippetAcceptingContext
     if ($status === FALSE) {
       throw new \Exception(sprintf('Status %s is invalid.', $status_name));
     }
+    $agent = personalize_agent_load($agent_name);
+    if ($agent->plugin == 'acquia_lift_target') {
+      module_load_include('inc', 'acquia_lift', 'acquia_lift.admin');
+      // Implement the targeting before changing the status.
+      $agent_data = personalize_agent_load($agent_name);
+      acquia_lift_implement_targeting($agent_data);
+    }
     personalize_agent_set_status($agent_name, $status);
   }
 
@@ -263,6 +270,7 @@ class FeatureContext extends RawDrupalContext implements SnippetAcceptingContext
       foreach ($content_options as $index => $content) {
         $content = trim($content);
         $option = array(
+          'option_id' => 'option-' . ($index + 1),
           'option_label' => personalize_generate_option_label($index),
           'personalize_elements_content' => $content,
         );
@@ -293,6 +301,21 @@ class FeatureContext extends RawDrupalContext implements SnippetAcceptingContext
       $weight = isset($audience->weight) ? $audience->weight : 50;
       $strategy = isset($audience->strategy) ? $audience->strategy : 'OR';
       acquia_lift_target_audience_save($label, $agent_name, $context_values, $strategy, $weight);
+    }
+  }
+
+  /**
+   * @Given /^targeting:$/
+   */
+  public function createTargeting(TableNode $targetingTable) {
+    module_load_include('inc', 'acquia_lift', 'acquia_lift.admin');
+    $targeting = array();
+    foreach ($targetingTable->getHash() as $targetingHash) {
+      $targeting[$targetingHash['agent']][$targetingHash['audience']] = explode(',', $targetingHash['options']);
+    }
+    foreach ($targeting as $agent => $agent_targeting) {
+      $agent_data = personalize_agent_load($agent);
+      acquia_lift_save_targeting_structure($agent_data, $agent_targeting);
     }
   }
 
@@ -1009,7 +1032,7 @@ class FeatureContext extends RawDrupalContext implements SnippetAcceptingContext
     if (!isset($audiences[$audience_label])) {
       throw new \Exception(sprintf('The current agent "%s" does not have an audience named "%s".', $agent_name, $audience_label));
     }
-    return $this->findElementInRegion('#edit-audiences-' . $audiences[$audience_label], 'campaign_workflow_form');
+    return $this->findElementInRegion('#edit-audiences-existing-' . $audiences[$audience_label], 'campaign_workflow_form');
   }
 
   /**

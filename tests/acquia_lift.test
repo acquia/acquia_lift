@@ -3079,12 +3079,21 @@ class AcquiaLiftWebTestCampaignWizardVariations extends AcquiaLiftWebTestCampaig
     $option_set = $this->createPersonalizeElementsOptionSet($agent->machine_name, array(
       'num_options' => 1,
       'add_control' => TRUE,
+      'pages' => 'node',
     ));
 
     // Go to the edit page and verify that this option set is displayed and
     // links to its "pages" page for editing.
     $this->drupalGet('admin/structure/personalize/manage/' . $agent->machine_name . '/variations');
     $this->assertText('Element test set 1');
+    // Check the preview links are displayed.
+    $osid = $option_set->osid;
+    foreach ($option_set->options as $option) {
+      $this->assertLinkByHref(url('node', array(
+        PERSONALIZE_PRESELECTION_PARAM => 'osid-' . $osid . '--' . $option['option_id'],
+      )));
+    }
+    // Now verify that the edit link goes to the node page as well.
     $this->clickLink(t('Edit variations in context'));
     $this->assertUrl('node');
 
@@ -3200,6 +3209,7 @@ class AcquiaLiftWebTestCampaignWizardVariations extends AcquiaLiftWebTestCampaig
       'variations[editing][option_sets][option_set_' . $os->osid . '][content][label]' => 'Fields test edit',
       'variations[editing][option_sets][option_set_' . $os->osid . '][content][options][first-value][option_label]' => 'Option A - EDIT',
       'variations[editing][option_sets][option_set_' . $os->osid . '][content][options][second-value][option_label]' => 'Option B - EDIT',
+      'variations[editing][option_sets][option_set_' . $os->osid . '][advanced][preview_link]' => 'node/' . $node->nid,
     );
     $this->drupalPost(NULL, $edit, $this->getButton('wizard_next', array('agent_name' => $agent_name, 'step' => 'variations')));
 
@@ -3210,6 +3220,12 @@ class AcquiaLiftWebTestCampaignWizardVariations extends AcquiaLiftWebTestCampaig
     $this->assertFieldByName('variations[editing][option_sets][option_set_' . $os->osid . '][content][options][second-value][option_label]', 'Option B - EDIT');
     $this->assertText('first value');
     $this->assertText('second value');
+    $this->assertLinkByHref(url('node/' . $node->nid, array('query' => array(
+      PERSONALIZE_PRESELECTION_PARAM => personalize_stringify_osid($os->osid) . '--first-value',
+    ))));
+    $this->assertLinkByHref(url('node/' . $node->nid, array('query' => array(
+      PERSONALIZE_PRESELECTION_PARAM => personalize_stringify_osid($os->osid) . '--second-value',
+    ))));
 
     // Check the link to edit in context.
     $this->clickLink(t('Edit variations in context'));

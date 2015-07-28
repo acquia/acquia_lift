@@ -1610,7 +1610,7 @@ function acquia_lift_save_nested_test_options($parent_agent) {
   $agent_data = array(
     'control_rate' => isset($parent_agent->data['control_rate']) ? $parent_agent->data['control_rate'] : 10,
     'explore_rate' => isset($parent_agent->data['explore_rate']) ? $parent_agent->data['explore_rate'] : 20,
-    'decision_style' => isset($parent_agent->data['decision_style']) ? $parent_agent->data['decision_style'] : 'adaptive',
+    'decision_style' => isset($parent_agent->data['decision_style']) ? $parent_agent->data['decision_style'] : 'random',
   );
 
   foreach ($tests as $test) {

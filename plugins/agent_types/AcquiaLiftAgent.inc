@@ -128,8 +128,8 @@ class AcquiaLiftAgent extends PersonalizeAgentBase implements PersonalizeAgentGo
       // Acquia Lift takes the control rate as a number between 0 and 1.
       $acquia_lift_control_rate = $this->data['control_rate'] / 100;
     }
-    if (isset($this->data['explore_rate']) && isset($this->data['decision_style'])) {
-      if ($this->data['decision_style'] === 'adaptive') {
+    if (!isset($this->data['decision_style']) || $this->data['decision_style'] === 'adaptive') {
+      if (isset($this->data['explore_rate'])) {
         // Acquia Lift takes the explore rate as a number between 0 and 1.
         $acquia_lift_explore_rate = $this->data['explore_rate'] / 100;
       }

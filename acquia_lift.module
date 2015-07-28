@@ -643,7 +643,7 @@ function acquia_lift_personalize_agent_presave($agent) {
   }
   // Make sure the required configurations are set.
   if (!isset($agent->data['decision_style'])) {
-    $agent->data['decision_style'] = 'adaptive';
+    $agent->data['decision_style'] = 'random';
   }
   if (!isset($agent->data['control_rate'])) {
     $agent->data['control_rate'] = 10;

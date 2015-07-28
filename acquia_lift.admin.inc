@@ -1943,31 +1943,38 @@ function acquia_lift_target_complete_audience_form($form, &$form_state, $agent_d
   }
   // Get all the display variations for the option set.
   $option_sets = personalize_option_set_load_by_agent($agent_data->machine_name);
+
   module_load_include('inc', 'acquia_lift', 'acquia_lift.admin.wizard');
   $all_variations = _acquia_lift_personalize_campaign_wizard_variation_displays($option_sets, isset($agent_data->data['variation_set_handling']) ? $agent_data->data['variation_set_handling'] : NULL, FALSE);
 
-  $options = array();
-  foreach ($all_variations as $displays) {
-    if (count($displays) == 1) {
-      $option_id = $displays[0]['option_id'];
-      $option_display = $displays[0]['option_label'];
-    }
-    else {
-      $option_displays = array();
-      foreach($displays as $option) {
-        if (!empty($option['targeting'])) {
-          $option_id = $option['option_id'];
-        }
-        // @todo: Implement theme function call for variations display from
-        // CH-3265 once merged in.
-        $option_displays[] = $option['option_label'];
+  $has_multiple = count($option_sets) > 1;
+  foreach($all_variations as $displays) {
+    $variation_displays = array();
+    $targeting_option_id = '';
+    foreach ($displays as $option) {
+      $variation_displays[] = is_string($option) ? $option : $option['option_label'];
+      if (!$has_multiple || !empty($option['targeting'])) {
+        $targeting_option_id = $option['option_id'];
       }
-      $option_display = implode(', ', $option_displays);
     }
-    $options[$option_id] = $option_display;
+    // The targeting option id could remain empty if there are invalid
+    // combinations of options resulting in a smaller number of variations in
+    // the option set used for targeting.
+    if (!empty($targeting_option_id)) {
+      // @todo: Implement theme function call for variations display from
+      $variation_options[$targeting_option_id] = implode(', ', $variation_displays);
+    }
   }
 
-  $instructions = t('Choose a winner for this test.  Once a winner is chosen, the test will end.');
+  $existing_targeting = acquia_lift_get_structure_from_targeting($option_set);
+  $options = array();
+  foreach ($existing_targeting[$audience_id] as $option_id) {
+    $options[$option_id] = $variation_options[$option_id];
+  }
+
+  $instructions = t('Choose a winner for this test for the %audience audience.  Once a winner is chosen, the test will end.', array(
+    '%audience' => $audience_label,
+  ));
   $instructions .= '<br /><span class="acquia-lift-alert"><em>';
   $instructions .= t('This action cannot be undone!');
   $instructions .= '</em></span>';

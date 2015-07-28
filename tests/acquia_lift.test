@@ -2986,6 +2986,17 @@ class AcquiaLiftWebTestCampaignWizardVariations extends AcquiaLiftWebTestCampaig
     $this->assertEqual($option_set->stateful, 1);
     $this->assertEqual($option_set->preview_link, '<front>');
     $this->assertEqual($option_set->executor, 'callback');
+
+    $this->drupalGet('admin/structure/personalize/manage/' . $agent->machine_name . '/variations');
+    $osid = $option_set->osid;
+    foreach($option_set->options as $option) {
+      $preview_link = url('<front>', array(
+        'query' => array(
+          PERSONALIZE_PRESELECTION_PARAM => 'osid-' . $osid . '--' . $option['option_id'],
+        ),
+      ));
+      $this->assertLinkByHref($preview_link);
+    }
   }
 
   /**

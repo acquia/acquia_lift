@@ -1989,9 +1989,11 @@ function acquia_lift_target_complete_audience_form($form, &$form_state, $agent_d
     $options[$option_id] = $variation_options[$option_id];
   }
 
-  $instructions = t('Choose a winner for this test for the %audience audience.  Once a winner is chosen, the test will end.', array(
+  $instructions = t('Choose a winner for this test for the %audience audience.', array(
     '%audience' => $audience_label,
   ));
+  $instructions .= '<br />';
+  $instructions .=   t('After you select a winner, the test will end.');
   $instructions .= '<br /><span class="acquia-lift-alert"><em>';
   $instructions .= t('This action cannot be undone!');
   $instructions .= '</em></span>';

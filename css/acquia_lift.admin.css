@@ -449,11 +449,8 @@ input[type="submit"].acquia-lift-wizard-add:hover {
   max-height: 200rem;
 }
 
-.personalize-wizard-section .acquia-lift-element-variations,
-.personalize-wizard-section .acquia-lift-element-variations > * {
-  display: inline-block;
-}
-.personalize-wizard-section .acquia-lift-element-variations > .acquia-lift-preview {
+.personalize-wizard-section .acquia-lift-preview {
+  clear: both;
   display: block;
 }
 .personalize-wizard-section .acquia-lift-element-variations {

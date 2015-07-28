@@ -2703,13 +2703,6 @@ function _acquia_lift_personalize_campaign_wizard_variations_general_edit($agent
         'class' => array('acquia-lift-element-variations'),
       ),
     );
-    $element['options'][$option_id]['option_label'] = array(
-      '#type' => 'textfield',
-      '#required' => TRUE,
-      '#default_value' => $option['option_label'],
-      '#title' => t('Variation'),
-      '#theme_wrappers' => array('acquia_lift_revealing_input'),
-    );
     if ($show_delete && !empty($delete_links[$option_id])) {
       $element['options'][$option_id]['remove'] = array(
         '#markup' => l(t('Delete'), $delete_links[$option_id], array(
@@ -2720,6 +2713,13 @@ function _acquia_lift_personalize_campaign_wizard_variations_general_edit($agent
         )),
       );
     }
+    $element['options'][$option_id]['option_label'] = array(
+      '#type' => 'textfield',
+      '#required' => TRUE,
+      '#default_value' => $option['option_label'],
+      '#title' => t('Variation'),
+      '#theme_wrappers' => array('acquia_lift_revealing_input'),
+    );
     if (!empty($option_set->preview_link)) {
       $element['options'][$option_id]['preview'] = array(
         '#markup' => '<div class="acquia-lift-preview">' . l(t('Preview variation'), $option_set->preview_link, array(

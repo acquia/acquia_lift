@@ -744,6 +744,8 @@ class AcquiaLiftWebTestAgentAdmin extends AcquiaLiftWebTestBase {
     $this->assertNoLinkByHref('admin/structure/personalize/manage/' . $agent->machine_name . '/results');
     $this->assertText(t('Test only'));
     $this->assertText(t('Everyone'));
+    // No link to complete this test because it hasn't been started yet.
+    $this->assertNoLinkByHref('admin/structure/personalize/manage/' . $agent->machine_name . '/audience/everyone-else/complete');
 
     // Add two audiences and assign variations so that there is only targeting.
     $audience_1 = personalize_generate_machine_name($this->randomName(), NULL, '-');
@@ -765,6 +767,9 @@ class AcquiaLiftWebTestAgentAdmin extends AcquiaLiftWebTestBase {
     $this->assertText($audience_1);
     $this->assertText($audience_2);
     $this->assertText(t('Everyone else'));
+    $this->assertNoLinkByHref('admin/structure/personalize/manage/' . $agent->machine_name . '/audience/' . $audience_1 . '/complete');
+    $this->assertNoLinkByHref('admin/structure/personalize/manage/' . $agent->machine_name . '/audience/' . $audience_2 . '/complete');
+    $this->assertNoLinkByHref('admin/structure/personalize/manage/' . $agent->machine_name . '/audience/everyone-else/complete');
 
     // Adjust variations so that there is testing and targeting.
     $targeting = array(
@@ -782,6 +787,9 @@ class AcquiaLiftWebTestAgentAdmin extends AcquiaLiftWebTestBase {
     $this->assertText($audience_1);
     $this->assertText($audience_2);
     $this->assertText(t('Everyone else'));
+    $this->assertNoLinkByHref('admin/structure/personalize/manage/' . $agent->machine_name . '/audience/' . $audience_1 . '/complete');
+    $this->assertNoLinkByHref('admin/structure/personalize/manage/' . $agent->machine_name . '/audience/' . $audience_2 . '/complete');
+    $this->assertNoLinkByHref('admin/structure/personalize/manage/' . $agent->machine_name . '/audience/everyone-else/complete');
 
     // Schedule and check heading.
     personalize_agent_set_start_date($agent->machine_name, time() + 86400);
@@ -795,6 +803,9 @@ class AcquiaLiftWebTestAgentAdmin extends AcquiaLiftWebTestBase {
     $this->assertNoRaw('<h3>Running</h3>');
     $this->assertNoRaw('<h3>Paused</h3>');
     $this->assertNoRaw('<h3>Completed</h3>');
+    $this->assertNoLinkByHref('admin/structure/personalize/manage/' . $agent->machine_name . '/audience/' . $audience_1 . '/complete');
+    $this->assertNoLinkByHref('admin/structure/personalize/manage/' . $agent->machine_name . '/audience/' . $audience_2 . '/complete');
+    $this->assertNoLinkByHref('admin/structure/personalize/manage/' . $agent->machine_name . '/audience/everyone-else/complete');
 
     // Set it to running and check that the reporting link is now available
     // and that the campaign is shown in the correct section.
@@ -806,6 +817,9 @@ class AcquiaLiftWebTestAgentAdmin extends AcquiaLiftWebTestBase {
     $this->assertLinkByHref('admin/structure/personalize/manage/' . $agent->machine_name . '/results?targeting_audience=' . $audience_1);
     $this->assertNoLinkByHref('admin/structure/personalize/manage/' . $agent->machine_name . '/results?targeting_audience=' . $audience_2);
     $this->assertNoLinkByHref('admin/structure/personalize/manage/' . $agent->machine_name . '/results?targeting_audience=' . ACQUIA_LIFT_TARGETING_EVERYONE_ELSE);
+    $this->assertLinkByHref('admin/structure/personalize/manage/' . $agent->machine_name . '/audience/' . $audience_1 . '/complete');
+    $this->assertNoLinkByHref('admin/structure/personalize/manage/' . $agent->machine_name . '/audience/' . $audience_2 . '/complete');
+    $this->assertNoLinkByHref('admin/structure/personalize/manage/' . $agent->machine_name . '/audience/everyone-else/complete');
     $this->assertNoRaw('<h3>Draft</h3>');
     $this->assertNoRaw('<h3>Scheduled</h3>');
     $this->assertRaw('<h3>Running</h3>');
@@ -820,6 +834,9 @@ class AcquiaLiftWebTestAgentAdmin extends AcquiaLiftWebTestBase {
     $this->assertNoRaw('<h3>Running</h3>');
     $this->assertRaw('<h3>Paused</h3>');
     $this->assertNoRaw('<h3>Completed</h3>');
+    $this->assertLinkByHref('admin/structure/personalize/manage/' . $agent->machine_name . '/audience/' . $audience_1 . '/complete');
+    $this->assertNoLinkByHref('admin/structure/personalize/manage/' . $agent->machine_name . '/audience/' . $audience_2 . '/complete');
+    $this->assertNoLinkByHref('admin/structure/personalize/manage/' . $agent->machine_name . '/audience/everyone-else/complete');
 
     // Complete and check heading.
     personalize_agent_set_status($agent->machine_name, PERSONALIZE_STATUS_COMPLETED);
@@ -829,6 +846,10 @@ class AcquiaLiftWebTestAgentAdmin extends AcquiaLiftWebTestBase {
     $this->assertNoRaw('<h3>Running</h3>');
     $this->assertNoRaw('<h3>Paused</h3>');
     $this->assertRaw('<h3>Completed</h3>');
+    $this->assertNoLinkByHref('admin/structure/personalize/manage/' . $agent->machine_name . '/audience/' . $audience_1 . '/complete');
+    $this->assertNoLinkByHref('admin/structure/personalize/manage/' . $agent->machine_name . '/audience/' . $audience_2 . '/complete');
+    $this->assertNoLinkByHref('admin/structure/personalize/manage/' . $agent->machine_name . '/audience/everyone-else/complete');
+
   }
 }
 

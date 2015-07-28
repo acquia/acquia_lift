@@ -491,18 +491,35 @@ function acquia_lift_agent_list($agents = array(), $legacy = FALSE) {
           if ($show_status_change) {
             $tablerow[] = '';
           }
-          $tablerow[] = $show_report_link && count($variations) > 1 ? l(t('View reports'), 'admin/structure/personalize/manage/' . $agent->machine_name . '/results', array(
-            'query' => array(
-              'targeting_audience' => $audience_id,
-            ),
-            'attributes' => array(
-              'class' => array('acquia-lift-report'),
-              'title' => t('View reports for @campaign: @audience', array(
-                '@campaign' => $agent->label,
-                '@audience' => empty($audience['label']) ? $audience_id : $audience['label'],
-              )),
-            ),
-          )) : '';
+
+          $ops = array();
+          if ($show_report_link && count($variations) > 1) {
+            $ops[] = array(
+              'title' => t('View reports'),
+              'href' => 'admin/structure/personalize/manage/' . $agent->machine_name . '/results',
+              'query' => array(
+                'targeting_audience' => $audience_id,
+              ),
+              'attributes' => array(
+                'class' => array('acquia-lift-report'),
+                'title' => t('View reports for @campaign: @audience', array(
+                  '@campaign' => $agent->label,
+                  '@audience' => empty($audience['label']) ? $audience_id : $audience['label'],
+                )),
+              ),
+            );
+          }
+          if (count($variations) > 1 && !empty($agent->started) && $status != PERSONALIZE_STATUS_COMPLETED) {
+            $ops[] = array(
+              'title' => t('End test and choose winner'),
+              'href' => 'admin/structure/personalize/manage/' . $agent->machine_name . '/audience/' . $audience_id . '/complete',
+              'attributes' => array(
+                'class' => array('acquia-lift-complete', 'ctools-use-modal', 'ctools-modal-acquia-lift-style'),
+                'title' => t('End test and choose winner'),
+              ),
+            );
+          }
+          $tablerow[] = array('data' => theme('links', array('links' => $ops, 'attributes' => array('class' => array('acquia-lift-list-operations')))));;
           $rows[] = array(
             'data' => $tablerow,
             'no_striping' => TRUE,

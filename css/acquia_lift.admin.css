@@ -651,7 +651,8 @@ ul.acquia-lift-variations-list.acquia-lift-variations-lockstep > li {
 
 #personalize-personalizations-list .acquia-lift-delete,
 #personalize-personalizations-list .acquia-lift-edit,
-#personalize-personalizations-list .acquia-lift-report {
+#personalize-personalizations-list .acquia-lift-report,
+#personalize-personalizations-list .acquia-lift-complete {
   display: inline-block;
   background-repeat: no-repeat;
   background-position: 50%;
@@ -668,6 +669,9 @@ ul.acquia-lift-variations-list.acquia-lift-variations-lockstep > li {
 }
 #personalize-personalizations-list .acquia-lift-report {
   background-image: url(../images/8A8B8E/report.png);
+}
+#personalize-personalizations-list .acquia-lift-complete {
+  background-image: url(../images/8A8B8E/end_test.png);
 }
 
 /* General icons*/

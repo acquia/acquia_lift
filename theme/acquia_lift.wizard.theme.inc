@@ -133,9 +133,13 @@ function theme_acquia_lift_revealing_input($variables) {
     unset($variables['element']['#theme_wrappers']);
     return drupal_render($variables['element']);
   }
+  $classes = array('acquia-lift-revealing-input');
+  if (!isset($variables['element']['#fix']) || $variables['element']['#fix'] == TRUE) {
+    $classes[] = 'clearfix';
+  };
   drupal_add_library('acquia_lift', 'acquia_lift.inputs');
   $html = '';
-  $html .= '<div class="acquia-lift-revealing-input clearfix">';
+  $html .= '<div class="' . implode(' ', $classes) . '">';
   $html .= $variables['element']['#children'];
   $html .= '</div>';
   return $html;

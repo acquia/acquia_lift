@@ -147,7 +147,7 @@ class AcquiaLiftReport extends AcquiaLiftReportBase {
   }
 
   /**
-   * Returns the total number of sessions for this campaign.
+   * Returns the total number of goals for this campaign.
    *
    * @return int
    */
@@ -222,9 +222,9 @@ class AcquiaLiftReport extends AcquiaLiftReportBase {
           $option_ids[] = $option_id;
         }
         $idx = array_search($option_id, $option_ids);
-        $goals = $item['totals']['goals'];
-        $count = $item['totals']['count'];
-        $val = $item['totals']['val'];
+        $goals = $item['goals'];
+        $count = $item['count'];
+        $val = $item['val'];
         $total_count[$idx] = isset($total_count[$idx]) ? $total_count[$idx] + $count : $count;
         $total_goals[$idx] = isset($total_goals[$idx]) ? $total_goals[$idx] + $goals : $goals;
         $total_val[$idx] = isset($total_val[$idx]) ? $total_val[$idx] + $val : $val;

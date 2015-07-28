@@ -2771,7 +2771,7 @@ function _acquia_lift_personalize_campaign_wizard_variations_fields(&$form, &$fo
       $display[$id]['#markup'] = drupal_truncate_bytes($display[$id]['#markup'], 150);
     }
     $option = $options[$delta];
-    $element['options'][$option['option_id']]['preview'] = array(
+    $element['options'][$option['option_id']]['preview_display'] = array(
       '#markup' => '<div class="acquia-lift-preview">' . drupal_render($display[$id]) . '</div>',
     );
   }

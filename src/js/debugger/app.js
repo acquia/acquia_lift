@@ -259,7 +259,7 @@ app.controller("DebuggerController", function($scope, $timeout, debuggerFactory,
 
     //additional filters and functions
     $scope.severityFilter = [
-        {  name: "Errors",ticked: true },
+        {  name: "Error",ticked: true },
         { name: "Warning", ticked: true  },
         {  name:"Info",ticked: true },
     ];

@@ -5,9 +5,7 @@
 
 (function ($, Drupal) {
 
-  Drupal.acquiaLiftProfilesDebug = (function() {
-
-    function getFromCookie ( query )
+      function getFromCookie ( query )
     {
       var cookie = document.cookie;
       var regex = new RegExp('(?:^|;)\\s?' + query + '=(.*?)(?:;|$)','i');
@@ -15,27 +13,42 @@
       return match && window.decodeURIComponent(match[1]);
     };
 
-    //_tcwq.push( ["setDebug", true] );
+  Drupal.acquiaLiftProfilesDebug = (function() {
 
+    //_tcwq.push( ["setDebug", true] );
+    var debugPrefix = "acquiaLift::debug::"
     var curSegmentCapture = {};
     var curSegments = [];
     var curSegmentsOverride;
     var curIdentities = [];
-
+    var message;
+    var code;
     $(document).on("segmentsUpdated", function( event, data, capture ) {
       curSegmentCapture = capture;
-      curSegments = data["segments"];
-      curSegmentsOverride =  JSON.parse(window.sessionStorage.getItem("acquiaLift::debug::overrideSegments"));
-      if ( curSegmentsOverride && curSegmentsOverride.length > 0 ) {
-        data["segments"].length = 0;
-        $(curSegmentsOverride).each( function(index,overrideSegment) { curSegments.push(overrideSegment); } );
+      if(data){
+        curSegments = data["segments"];
+        curSegmentsOverride =  JSON.parse(window.sessionStorage.getItem(debugPrefix + "overrideSegments"));
+        if ( curSegmentsOverride && curSegmentsOverride.length > 0 ) {
+          if(data["segments"]){
+            data["segments"].length = 0;
+            $(curSegmentsOverride).each( function(index,overrideSegment) { data["segments"].push(overrideSegment); } );
+          }
+          curSegments = curSegmentsOverride.splice(0);
+        }
+        message = "Segments Returned: " + curSegments;
+        code = 1000;
+      }else{
+        message = "No Data found"
+        code = 3001;
       }
-      var message = "Segments Returned: " + curSegments;
-      Drupal.personalizeDebug.log( message , 1000);
+      Drupal.personalizeDebug.log( message , code);
     });
     $(document).bind("identitiesAdded", function( event, identities ) {
       // TODO: Check if the person id changed because TC_CONF.userIdentitySourceInTrackingId is true
-      $(identities).each( function (index, identity) { curIdentities.push( identity ); } );
+      if(identities){
+      $.each(identities, function (index, identity) { curIdentities.push( identity ); } );
+        
+      }
     });
 
     return {
@@ -56,6 +69,12 @@
       },
 
       'setOverrideSegments' : function( segmentsOverride ) {
+        if (segmentsOverride){
+          window.sessionStorage.setItem(debugPrefix + "originalSegments",JSON.stringify(curSegments));
+          window.sessionStorage.setItem(debugPrefix + "overrideSegments",JSON.stringify(segmentsOverride));
+        }else{
+          window.sessionStorage.removeItem(debugPrefix + "::overrideSegments");
+        }
         curSegmentsOverride = segmentsOverride;
       },
 
@@ -101,9 +120,10 @@
 
       'turnOffDebugMode' : function(){
           var href = window.location.href;
-          href = href.replace(/(acquia_lift_debug_mode=(?:(?!&).)*)/g,"acquia_lift_debug_mode=0");
+          href = href.replace(/(acquia_lift_debug_mode=[^]*)/g,"");
+          href += 'acquia_lift_debug_mode=0'
           window.location.href = href;
       }
     };
   })();
-})(Drupal.jQuery, Drupal);
+})(jQuery, Drupal);

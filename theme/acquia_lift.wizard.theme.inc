@@ -200,6 +200,56 @@ function theme_acquia_lift_single_variation($variables) {
   $html .= $variables['option_set'];
   $html .= ')</span>';
   $html .= '</span>';
+  return $html;
+}
 
+/**
+ * Section level help for the campaign wizard.
+ *
+ * @param $variables
+ *   Array of theme variables including the "element" to be themed.
+ *   The element may include properties:
+ *   - #image: An option image to display
+ *   - #alt: The alt text for the above image
+ *   - #text: The help text to display
+ */
+function theme_acquia_lift_wizard_section_help($variables) {
+  $element = $variables['element'];
+  // Currently just supports a single image and simple html text.
+  $help_image = isset($element['#image']) ? $element['#image'] : '';
+  $help_alt = isset($element['#alt']) ? $element['#alt'] : t('Help image for this section');
+  $help_text = isset($element['#text']) ? $element['#text'] : '';
+  $trigger_text = t('Show help');
+
+  $html = '';
+  $html .= '<div id="acquia-lift-campaign-wizard-section-help" class="clearfix">';
+  $html .= '<a class="acquia-lift-section-help-trigger" title="' . $trigger_text . '">' . $trigger_text . '</a>';
+  $html .= '<div class="acquia-lift-section-help-expanded">';
+  $html .= '<div class="acquia-lift-section-help clearfix">';
+  if (!empty($help_image)) {
+    $html .= theme('image', array(
+      'path' => $help_image,
+      'alt' => $help_alt,
+      'attributes' => array(
+        'class' => 'acquia-lift-section-help',
+      ),
+    ));
+  }
+  $html .= '<div class="acquia-lift-section-help">' . $help_text . '</div>';
+  $html .= '</div>';
+  $html .= theme('button', array(
+    'element' => array(
+      '#value' => t('OK, got it'),
+      '#button_type' => 'submit',
+      '#attributes' => array(
+        'class' => array(
+          'acquia-lift-submit-button',
+          'action-item-primary-active',
+          'acquia-lift-section-help-collapse',
+        ),
+      ),
+    ),
+  ));
+  $html .= '</div>';
   return $html;
 }

@@ -19,6 +19,41 @@
     }
   };
 
+  /**
+   * Section help
+   */
+  Drupal.behaviors.acquiaLiftCampaignHelp = {
+    attach: function(context, settings) {
+      $('#acquia-lift-campaign-wizard-section-help', context).once(function() {
+        function toggleHelp(e) {
+          if ($('#acquia-lift-campaign-wizard-section-help', context).hasClass('is-expanded')) {
+            // Collapse help.
+            $('#acquia-lift-campaign-wizard-section-help .acquia-lift-section-help-expanded').slideUp(400, function() {
+              var $container = $(this).parents('#acquia-lift-campaign-wizard-section-help');
+              //$(this).addClass('element-hidden');
+              $container.removeClass('is-expanded');
+              $container.find('.acquia-lift-section-help-trigger').attr('title', Drupal.t('Show help'));
+            });
+          } else {
+            // Expand help.
+            $('#acquia-lift-campaign-wizard-section-help .acquia-lift-section-help-expanded').slideDown(400, function() {
+              var $container = $(this).parents('#acquia-lift-campaign-wizard-section-help');
+              //$(this).addClass('element-hidden');
+              $container.addClass('is-expanded');
+              $container.find('.acquia-lift-section-help-trigger').attr('title', Drupal.t('Hide help'));
+            });
+          }
+          return false;
+        }
+        $('.acquia-lift-section-help-trigger', this).on('click', toggleHelp);
+        $('.acquia-lift-section-help-collapse', this).on('click', toggleHelp);
+      });
+    }
+  };
+
+  /**
+   * Targeting behaviors
+   */
   Drupal.behaviors.acquiaLiftTargetAdmin = {
     attach: function (context, settings) {
 

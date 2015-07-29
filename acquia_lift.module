@@ -328,6 +328,11 @@ function acquia_lift_theme() {
       'option' => '',
       'option_set' => '',
     ),
+    'acquia_lift_wizard_section_help' => array(
+      'path' => $path . '/theme',
+      'file' => 'acquia_lift.wizard.theme.inc',
+      'render element' => 'element',
+    ),
     // Unified navbar themes.
     'acquia_lift_navbar' => array(
       'render element' => 'element',

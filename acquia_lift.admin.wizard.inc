@@ -27,9 +27,19 @@ function acquia_lift_personalize_campaign_wizard_alter(&$form, &$form_state, $ag
   $editable = acquia_lift_target_definition_changes_allowed($agent_data);
 
 
-    // Call the alter hooks for the generic form parts.
+  // Call the alter hooks for the generic form parts.
   call_user_func_array('acquia_lift_personalize_campaign_wizard_process_bar_alter', array(&$form, &$form_state, $agent_data, $editable));
   call_user_func_array('acquia_lift_personalize_campaign_wizard_base_alter', array(&$form, &$form_state, $agent_data, $editable));
+
+  // Add in any section help if available.
+  $function = 'acquia_lift_personalize_campaign_wizard_' . $form_state['storage']['step'] . '_help';
+  if (function_exists($function)) {
+    $form['section_help'] = call_user_func_array($function, array(&$form, &$form_state, $agent_data, $editable));
+    $form['header']['#weight'] = -40;
+    $form['agent_basic_info']['#weight'] = -30;
+    $form['process_bar']['#weight'] = -20;
+    $form['section_help']['#weight'] = -10;
+  }
 
   // Now call any alter hooks that are specific to the storage step.
   $function = 'acquia_lift_personalize_campaign_wizard_' . $form_state['storage']['step'] . '_alter';
@@ -88,7 +98,6 @@ function acquia_lift_personalize_campaign_wizard_variations_alter(&$form, &$form
 
   // Rebuild the variations form to show the customized Lift approach.
   unset($form['variations']['title']['summary']);
-  $form['variations']['title']['#instructions'] = t('Create one or more sets of content variations, which Acquia Lift Target will use when displaying personalized content for your visitors.');
   unset($form['variations']['option_sets']);
   $form['variations']['#tree'] = TRUE;
 
@@ -1360,6 +1369,61 @@ function acquia_lift_personalize_campaign_wizard_review_alter(&$form, &$form_sta
     )),
   );
 }
+
+/**
+ ********************************************************************
+ * S E C T I O N  H E L P
+ *
+ * Note: unless form alteration callbacks, help functions return the
+ * renderable elements to be included as help rather than altering the form
+ * directly to allow for consistent placement within the page.
+ *
+ ********************************************************************
+ */
+
+/**
+ * Section help callback for variations section.
+ */
+function acquia_lift_personalize_campaign_wizard_variations_help(&$form, $form_state, $agent_data, $editable) {
+  unset($form['variations']['title']['#instructions']);
+  return array(
+    '#type' => 'container',
+    '#theme' => 'acquia_lift_wizard_section_help',
+    '#image' => drupal_get_path('module', 'acquia_lift') . '/images/help/section_what.png',
+    '#alt' => t('Structure of a variation set.'),
+    '#text' => t('Create one or more sets of content variations, which Acquia Lift Target will use when displaying personalized content for your visitors.'),
+  );
+}
+
+/**
+ * Section help callback for goals section.
+ */
+function acquia_lift_personalize_campaign_wizard_goals_help(&$form, $form_state, $agent_data, $editable) {
+  unset($form['goals']['title']['#instructions']);
+  return array(
+    '#type' => 'container',
+    '#theme' => 'acquia_lift_wizard_section_help',
+    '#image' => drupal_get_path('module', 'acquia_lift') . '/images/help/section_why.png',
+    '#alt' => t('Structure of a personalization with goals.'),
+    '#text' => t('Create your personalization\'s goals, which are the website actions that you want your visitors to take. Completed goals for a variation increase its chance of being the winning variation for a group of visitors.'),
+  );
+}
+
+/**
+ * Section help callback for targeting section.
+ */
+function acquia_lift_personalize_campaign_wizard_targeting_help(&$form, $form_state, $agent_data, $editable) {
+  unset($form['targeting']['title']['#instructions']);
+  return array(
+    '#type' => 'container',
+    '#theme' => 'acquia_lift_wizard_section_help',
+    '#image' => drupal_get_path('module', 'acquia_lift') . '/images/help/section_who.png',
+    '#alt' => t('Structure of a personalization with targeting.'),
+    '#text' => t('Determine which of the variations in your personalizations are displayed to specific groups of website visitors.'),
+  );
+}
+
+
 
 /**
  ********************************************************************

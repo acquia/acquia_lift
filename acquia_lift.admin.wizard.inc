@@ -3,6 +3,46 @@
  * @file acquia_lift.admin.wizard.inc Functions specific to the Acquia Lift
  * alteration of the campaign creation wizard.
  */
+
+/**
+ * Basic handler for altering any part of the campaign wizard form.
+ *
+ * @param array $form
+ *   The existing campaign form structure to alter.
+ * @param array $form_state
+ *   The form state.
+ * @param stdClass $agent_data
+ *   The agent that is being altered (optional if creating).  This will
+ *   always be a targeting agent.
+ */
+function acquia_lift_personalize_campaign_wizard_alter(&$form, &$form_state, $agent_data = NULL) {
+  $form['#attached']['library'][] = array('acquia_lift', 'acquia_lift.targeting_admin');
+
+  // We have to specify the include file so as not to lose it during rendering from ajax.
+  // @see personalize_agent_form_ajax_submit()
+  // @see drupal_retrieve_form():734
+  $form_state['build_info']['files'][] = drupal_get_path('module', 'acquia_lift') . '/acquia_lift.admin.wizard.inc';
+
+  module_load_include('inc', 'acquia_lift', 'acquia_lift.admin');
+  $editable = acquia_lift_target_definition_changes_allowed($agent_data);
+
+
+    // Call the alter hooks for the generic form parts.
+  call_user_func_array('acquia_lift_personalize_campaign_wizard_process_bar_alter', array(&$form, &$form_state, $agent_data, $editable));
+  call_user_func_array('acquia_lift_personalize_campaign_wizard_base_alter', array(&$form, &$form_state, $agent_data, $editable));
+
+  // Now call any alter hooks that are specific to the storage step.
+  $function = 'acquia_lift_personalize_campaign_wizard_' . $form_state['storage']['step'] . '_alter';
+  if (function_exists($function)) {
+    call_user_func_array($function, array(&$form, &$form_state, $agent_data, $editable));
+  }
+
+  // Update primary submit button.
+  if (!empty($form['actions']['submit'])) {
+    $form['actions']['submit']['#attributes']['class'][] = 'acquia-lift-submit-button';
+  }
+}
+
 /**
  ********************************************************************
  *
@@ -14,14 +54,13 @@
 /**
  * Alter hook for the process bar on the campaign wizard form.
  */
-function acquia_lift_personalize_campaign_wizard_process_bar_alter(&$form, &$form_state, $form_id) {
+function acquia_lift_personalize_campaign_wizard_process_bar_alter(&$form, &$form_state, $agent_data, $editable) {
   // For each status form, handle the status change along with any
   // nested agent implementations.
   foreach (element_children($form['process_bar']['actions']['status']['status_wrapper']) as $form_element) {
     $form['process_bar']['actions']['status']['status_wrapper'][$form_element]['#submit'] = array('acquia_lift_personalize_campaign_wizard_status_submit');
   }
 
-  $agent_data = $form['#agent'];
   if (empty($agent_data->started)) {
     $form['process_bar']['navigation']['#options']['results']['disabled'] = TRUE;
   }
@@ -30,15 +69,13 @@ function acquia_lift_personalize_campaign_wizard_process_bar_alter(&$form, &$for
 /**
  * Alter hook for the base campaign wizard form.
  */
-function acquia_lift_personalize_campaign_wizard_base_alter(&$form, &$form_state, $form_id) {
-  $agent = $form['#agent'];
+function acquia_lift_personalize_campaign_wizard_base_alter(&$form, &$form_state, $agent_data, $editable) {
   module_load_include('inc', 'acquia_lift', 'acquia_lift.admin');
-  if (acquia_lift_target_definition_changes_allowed($agent)) {
+  if ($editable) {
     // Make the campaign name a self-revealing text input.
     $form['agent_basic_info']['title']['#theme_wrappers'][] = 'acquia_lift_revealing_input';
   }
   else {
-    // Give instructions for how to make the campaign editable.
     $form['agent_basic_info']['title']['#disabled'] = TRUE;
   }
 }
@@ -46,7 +83,7 @@ function acquia_lift_personalize_campaign_wizard_base_alter(&$form, &$form_state
 /**
  * Alter hook for the variations portions of the campaign wizard.
  */
-function acquia_lift_personalize_campaign_wizard_variations_alter(&$form, &$form_state, $form_id) {
+function acquia_lift_personalize_campaign_wizard_variations_alter(&$form, &$form_state, $agent_data, $editable) {
   global $base_url;
 
   // Rebuild the variations form to show the customized Lift approach.
@@ -59,13 +96,10 @@ function acquia_lift_personalize_campaign_wizard_variations_alter(&$form, &$form
   $form['#validate'] = array('acquia_lift_personalize_campaign_wizard_validate');
   $form['#submit'] = array('acquia_lift_personalize_campaign_wizard_submit');
 
-  $agent_data = $form['#agent'];
   if (empty($agent_data->machine_name)) {
     return;
   }
 
-  module_load_include('inc', 'acquia_lift', 'acquia_lift.admin');
-  $editable = acquia_lift_target_definition_changes_allowed($agent_data);
   if (!$editable) {
     $form['variations']['#disabled'] = TRUE;
   }
@@ -443,9 +477,7 @@ function acquia_lift_personalize_campaign_wizard_variations_alter(&$form, &$form
 /**
  * Alter the goals form.
  */
-function acquia_lift_personalize_campaign_wizard_goals_alter(&$form, &$form_state, $form_id) {
-  $agent_data = $form['#agent'];
-
+function acquia_lift_personalize_campaign_wizard_goals_alter(&$form, &$form_state, $agent_data, $editable) {
   unset($form['goals']['title']['title_summary']);
   $form['goals']['#tree'] = TRUE;
 
@@ -453,8 +485,6 @@ function acquia_lift_personalize_campaign_wizard_goals_alter(&$form, &$form_stat
   $form['#validate'] = array('acquia_lift_personalize_campaign_wizard_validate');
   $form['#submit'] = array('acquia_lift_personalize_campaign_wizard_submit');
 
-  module_load_include('inc', 'acquia_lift', 'acquia_lift.admin');
-  $editable = acquia_lift_target_definition_changes_allowed($agent_data);
   if (!$editable) {
     $form['goals']['#disabled'] = TRUE;
   }
@@ -728,8 +758,7 @@ function acquia_lift_personalize_campaign_wizard_goals_alter(&$form, &$form_stat
  * Acquia Lift Target agents allow for audience designation to be used across
  * the agent.
  */
-function acquia_lift_personalize_campaign_wizard_targeting_alter(&$form, &$form_state, $form_id) {
-  $agent_data = $form['#agent'];
+function acquia_lift_personalize_campaign_wizard_targeting_alter(&$form, &$form_state, $agent_data, $editable) {
   // If targeting was already found to be unsupported, then do not add.
   if (isset($form['unsupported'])) {
     return;
@@ -743,8 +772,6 @@ function acquia_lift_personalize_campaign_wizard_targeting_alter(&$form, &$form_
     );
     return;
   }
-  module_load_include('inc', 'acquia_lift', 'acquia_lift.admin');
-  $editable = acquia_lift_target_definition_changes_allowed($agent_data);
   if (!$editable) {
     $form['targeting']['#disabled'] = TRUE;
   }
@@ -1108,9 +1135,8 @@ function acquia_lift_personalize_campaign_wizard_targeting_alter(&$form, &$form_
 /**
  * Alter hook for the scheduling portion of the campaign wizard.
  */
-function acquia_lift_personalize_campaign_wizard_scheduling_alter(&$form, &$form_state, $form_id) {
-  module_load_include('inc', 'acquia_lift', 'acquia_lift.admin');
-  if (!acquia_lift_target_definition_changes_allowed($form['#agent'])) {
+function acquia_lift_personalize_campaign_wizard_scheduling_alter(&$form, &$form_state, $agent_data, $editable) {
+  if (!$editable) {
     $form['scheduling']['#disabled'] = TRUE;
   }
 }
@@ -1118,7 +1144,7 @@ function acquia_lift_personalize_campaign_wizard_scheduling_alter(&$form, &$form
 /**
  * Alter hook for the review portion of the campaign wizard.
  */
-function acquia_lift_personalize_campaign_wizard_review_alter(&$form, &$form_state, $form_id) {
+function acquia_lift_personalize_campaign_wizard_review_alter(&$form, &$form_state, $agent_data, $editable) {
   module_load_include('inc', 'acquia_lift', 'acquia_lift.admin');
 
   // Take over the form validation and submit handling.
@@ -1130,7 +1156,6 @@ function acquia_lift_personalize_campaign_wizard_review_alter(&$form, &$form_sta
   $form['review']['summary_column']['summary']['#theme'] = 'acquia_lift_card';
 
     // Add audiences to the summary section.
-  $agent_data = $form['#agent'];
 
   // Add MVT and audience counts to the overview.
   $is_mvt = isset($agent_data->data['variation_set_handling']) && $agent_data->data['variation_set_handling'] == ACQUIA_LIFT_DECISION_MULTIVARIATE;
@@ -1180,6 +1205,30 @@ function acquia_lift_personalize_campaign_wizard_review_alter(&$form, &$form_sta
       )
     );
   }
+
+  // Show advanced testing options.
+  $form['review']['summary_column']['advanced'] = array(
+    '#type' => 'container',
+    '#theme' => 'acquia_lift_card',
+    '#title' => t('Advanced'),
+    '#collapsible' => TRUE,
+    '#collapsed' => TRUE,
+    '#tree' => FALSE,
+    '#attributes' => array(
+      'class' => array('acquia-lift-test-options'),
+    ),
+    '#disabled' => !$editable,
+  );
+  if ($has_tests) {
+    $form['review']['summary_column']['advanced']['options'] = _acquia_lift_personalize_campaign_wizard_review_tests($agent_data, array());
+  }
+
+  $form['review']['summary_column']['advanced']['cache_decisions'] = array(
+    '#type' => 'checkbox',
+    '#title' => 'Cache decisions made by this agent?',
+    '#description' => t('Check this if decisions made by this agent should stick, so that they don\'t have to be made again every time variation sets are rendered. This depends on the availability of local storage in the visitor\'s browser'),
+    '#default_value' => isset($agent_data->data['cache_decisions']) ? $agent_data->data['cache_decisions'] : 0
+  );
 
   // Move the scheduling summary element to the bottom.
   $form['review']['summary_column']['summary']['scheduling']['#weight'] = 10;

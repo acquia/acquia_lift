@@ -322,28 +322,28 @@ function theme_acquia_lift_debugger() {
 <div id="debugger">
   <div class="debugger__navigation">
   <div class="debugger__actions">
-          <span class="debugger__action__maximize">
+          <span class="debugger__action__maximize" id="debugger__action__maximize">
               <i class="debugger__icon"></i>
           </span>
-          <span class="debugger__action__close">
+          <span class="debugger__action__close" id="debugger__action__close">
               <i class="debugger__icon"></i>
           </span>
-          <span class="debugger__action__destroy">
+          <span class="debugger__action__destroy" id="debugger__action__destroy">
               <i class="debugger__icon"></i>
           </span>
   </div>
     <ul class="debugger__navigation__top__bar">
-      <li><a class="debugger__navigation__item" ng-click="tab = 'profile';buttonClick('profile')" ng-style="profileButton">Lift Profile</a></li>
+      <li><a id="liftProfileTabLabel" class="debugger__navigation__item" ng-click="tab = 'profile';buttonClick('profile')" ng-style="profileButton">Lift Profile</a></li>
       <li><a id="sitePreviewTabLabel" class="debugger__navigation__item" ng-click="tab = 'segments';buttonClick('preview')" ng-style="previewButton">Site Preview</a></li>
-      <li><a class="debugger__navigation__item" ng-click="tab = 'log';buttonClick('log')" ng-style="logButton">Event Log</a></li>
+      <li><a id="eventLogTabLabel" class="debugger__navigation__item" ng-click="tab = 'log';buttonClick('log')" ng-style="logButton">Event Log</a></li>
     </ul>
   </div>
   <div class="debugger__content" resizable r-directions="['top']" r-flex="false">
   <div ng-show="tab=='segments'">
   <div class="debugger__preview">
     <div class="debugger__secondary__navigation"> <div class="previewBox">
-            <button ng-click="stopPreview()" data-ng-disabled="!isPreview()" ng-style="previewButtonStop">Stop Preview</button>
-            <button ng-click="startPreview()" data-ng-disabled="isPreview()" ng-style="previewButtonStart"> Start Preview</button>
+            <button id="debugger__stopPreview" ng-click="stopPreview()" data-ng-disabled="!isPreview()" ng-style="previewButtonStop">Stop Preview</button>
+            <button id="debugger__startPreview" ng-click="startPreview()" data-ng-disabled="isPreview()" ng-style="previewButtonStart"> Start Preview</button>
             
           </div>
           <div class="debugger__preview__notification"></div>

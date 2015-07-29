@@ -1126,10 +1126,8 @@ function acquia_lift_personalize_campaign_wizard_review_alter(&$form, &$form_sta
   $agent_data = $form['#agent'];
 
   // Add MVT and audience counts to the overview.
-  $has_tests = FALSE;
   $is_mvt = isset($agent_data->data['variation_set_handling']) && $agent_data->data['variation_set_handling'] == ACQUIA_LIFT_DECISION_MULTIVARIATE;
   if ($is_mvt) {
-    $has_tests = TRUE;
     // Show the summary data for the MVT tests.
     $form['review']['summary_column']['summary']['option_sets'] = array(
       '#markup' => theme('personalize_wizard_summary_count', array(

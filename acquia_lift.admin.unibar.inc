@@ -35,6 +35,7 @@ function acquia_lift_element_variation_details_form($form, &$form_state, $variat
     );
     return $form;
   }
+  $default_option_label = '';
   if (!empty($osid)) {
     $osid = personalize_resolve_stringified_osid($osid);
     $option_set = personalize_option_set_load($osid);

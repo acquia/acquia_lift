@@ -92,6 +92,9 @@ function acquia_lift_element_variation_details_form($form, &$form_state, $variat
     '#default_value' => isset($default_set_name) ? $default_set_name : '',
     '#required' => TRUE,
     '#maxlength' => 255,
+    '#attributes' => array(
+      'placeholder' => t('Example: Front page offers'),
+    ),
   );
   // Option label
   $form['option_label'] = array(
@@ -100,6 +103,9 @@ function acquia_lift_element_variation_details_form($form, &$form_state, $variat
     '#required' => TRUE,
     '#maxlength' => PERSONALIZE_MACHINE_NAME_MAXLENGTH,
     '#default_value' => filter_xss($default_option_label),
+    '#attributes' => array(
+      'placeholder' => t('Example: Winter vacation'),
+    ),
   );
   // Now include the details specific to this variation type.
   $form['personalize_elements_content'] = $types[$variation_type]['contextual']['formitem'];
@@ -749,6 +755,9 @@ function _acquia_lift_page_goal_create_form($agent) {
     '#title' => t('Title'),
     '#type' => 'textfield',
     '#required' => TRUE,
+    '#attributes' => array(
+      'placeholder' => t('Example: Purchases any item'),
+    ),
   );
   // To be filled in on the client-side.
   $form['pages'] = array(

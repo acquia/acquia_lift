@@ -926,7 +926,7 @@ class AcquiaLiftWebTestFundamentals extends AcquiaLiftWebTestBase {
           array (
             $test_agent->machine_name,
             'Sub-test for ' . $agent->label,
-            'adaptive',
+            'random',
             'enabled',
             $control_rate / 100,
             $explore_rate / 100,

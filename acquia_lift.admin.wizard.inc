@@ -17,6 +17,7 @@
  */
 function acquia_lift_personalize_campaign_wizard_alter(&$form, &$form_state, $agent_data = NULL) {
   $form['#attached']['library'][] = array('acquia_lift', 'acquia_lift.targeting_admin');
+  $form['#attached']['library'][] = array('acquia_lift', 'acquia_lift.help');
 
   // We have to specify the include file so as not to lose it during rendering from ajax.
   // @see personalize_agent_form_ajax_submit()
@@ -154,8 +155,14 @@ function acquia_lift_personalize_campaign_wizard_variations_alter(&$form, &$form
   // If this campaign already handles multiple variation sets then indicate
   // the type of handling in the section title.
   if (count($option_sets) > 1 && !empty($variation_set_handling)) {
-    $variation_set_indicator = $variation_set_handling == ACQUIA_LIFT_DECISION_LOCKSTEP ? t('Lock step') : t('Multi-variate');
-    $form['variations']['title']['#title'] .= ' (' . $variation_set_indicator . ')';
+    $section_title = $form['variations']['title']['#title'];
+    if ($variation_set_handling == ACQUIA_LIFT_DECISION_LOCKSTEP) {
+      $section_title = '<span data-help-tooltip="' . t('Each variation set should have the same number of variations so they can be evenly locked as combinations. For example: AA, BB, CC.') . '">' . $section_title . ' (' . t('Lock step') . ')' . '</span>';
+    }
+    else {
+      $section_title .= ' (' . t('Multi-variate') . ')';
+    }
+    $form['variations']['title']['#title'] = $section_title;
   }
 
   // Keep track of all variations for display.
@@ -552,6 +559,11 @@ function acquia_lift_personalize_campaign_wizard_goals_alter(&$form, &$form_stat
         }
       }
       $visitor_action = $all_actions[$edit_action];
+
+      // If this was an automatically created goal then add an explanation.
+      if (!empty($visitor_action['data']['auto_created'])) {
+        $form['goals']['all_goals'][$delta]['#title_attributes']['data-help-tooltip'] = t('This goal was automatically created for you. Use it if you want to track any click within any variation in this variation set. If you do not want to track clicks in this variation set, feel free to delete this goal.');
+      }
 
       if (!empty($visitor_action['plugin'])) {
         // Show a link to edit the associated action within the label.
@@ -961,8 +973,17 @@ function acquia_lift_personalize_campaign_wizard_targeting_alter(&$form, &$form_
       $form['targeting']['audiences']['existing'][$audience_id]['header'] = array(
         '#type' => 'container'
       );
-      if ($audience_id !== ACQUIA_LIFT_TARGETING_EVERYONE_ELSE) {
-        if ($editable) {
+      if ($editable) {
+        if ($audience_id === ACQUIA_LIFT_TARGETING_EVERYONE_ELSE) {
+          if (count($option_set->targeting) == 1) {
+            $help = t('This audience is composed of all visitors who have not been selected to view a specific variation. Create a new audience above to assign specific variations to groups of visitors.');
+          }
+          else {
+            $help = t('This audience is composed of all visitors who have not been selected to view a specific variation. Variations in the Everyone else audience will be shown to any person that does not match the audiences you have listed here.');
+          }
+          $form['targeting']['audiences']['existing'][$audience_id]['#title_attributes']['data-help-tooltip'] = $help;
+        }
+        else {
           $form['targeting']['audiences']['existing'][$audience_id]['header']['edit'] = array(
             '#type' => 'checkbox',
             '#title' => t('Edit'),

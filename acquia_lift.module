@@ -899,7 +899,9 @@ function acquia_lift_personalize_option_set_insert($option_set) {
     'identifier' => $selector,
     'event' => 'click',
     'pages' => $pages,
-    'data' => array(),
+    'data' => array(
+      'auto_created' => $option_set->osid,
+    ),
     'limited_use' => 1
   );
   // Allow the plugin to modify the action before saving.

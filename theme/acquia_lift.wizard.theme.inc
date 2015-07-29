@@ -19,6 +19,7 @@ function theme_acquia_lift_card($variables) {
   }
   $card_label = isset($element['#title']) ? $element['#title'] : '';
   $header_children = isset($element['header']) ? element_children($element['header']) : array();
+  $title_attributes = isset($element['#title_attributes']) ? $element['#title_attributes'] : array();
   $card_flag = isset($element['#flag']) ? $element['#flag'] : '';
   $card_flag_attributes = array('class' => array('el-card__flag'));
   if (isset($element['#flag_visible']) && $element['#flag_visible'] === FALSE) {
@@ -50,7 +51,9 @@ function theme_acquia_lift_card($variables) {
   $html .= '<div ' . drupal_attributes($element['#attributes']) . '>';
   $html .= '<div class="el-card__header">';
   $html .= '<div class="el-card__dragger"></div>';
-  $html .= '<h2 class="el-card__title">' . $card_label . '</h2>';
+
+  $title_attributes['class'][] = 'el-card__title';
+  $html .= '<h2 ' . drupal_attributes($title_attributes) . '>' . $card_label . '</h2>';
   if (!empty($header_children)) {
     $html .= '<ul class="el-card__actions">';
     foreach ($header_children as $action) {

@@ -245,7 +245,7 @@ function acquia_lift_get_sync_operations_for_agent($agent) {
       continue;
     }
 
-    if ($agent_instance = personalize_agent_load_agent($agent_name)) {
+    if ($agent_instance = personalize_agent_load_agent($agent_name, TRUE)) {
       if (!$agent_instance instanceof AcquiaLiftAgent) {
         continue;
       }

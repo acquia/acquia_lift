@@ -322,6 +322,12 @@ function acquia_lift_theme() {
       'file' => 'acquia_lift.wizard.theme.inc',
       'items' => array(),
     ),
+    'acquia_lift_single_variation' => array(
+      'path' => $path . '/theme',
+      'file' => 'acquia_lift.wizard.theme.inc',
+      'option' => '',
+      'option_set' => '',
+    ),
     // Unified navbar themes.
     'acquia_lift_navbar' => array(
       'render element' => 'element',
@@ -637,7 +643,7 @@ function acquia_lift_personalize_agent_presave($agent) {
   }
   // Make sure the required configurations are set.
   if (!isset($agent->data['decision_style'])) {
-    $agent->data['decision_style'] = 'adaptive';
+    $agent->data['decision_style'] = 'random';
   }
   if (!isset($agent->data['control_rate'])) {
     $agent->data['control_rate'] = 10;

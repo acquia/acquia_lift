@@ -1610,7 +1610,7 @@ function acquia_lift_save_nested_test_options($parent_agent) {
   $agent_data = array(
     'control_rate' => isset($parent_agent->data['control_rate']) ? $parent_agent->data['control_rate'] : 10,
     'explore_rate' => isset($parent_agent->data['explore_rate']) ? $parent_agent->data['explore_rate'] : 20,
-    'decision_style' => isset($parent_agent->data['decision_style']) ? $parent_agent->data['decision_style'] : 'adaptive',
+    'decision_style' => isset($parent_agent->data['decision_style']) ? $parent_agent->data['decision_style'] : 'random',
   );
 
   foreach ($tests as $test) {
@@ -1969,7 +1969,12 @@ function acquia_lift_target_complete_audience_form($form, &$form_state, $agent_d
     $variation_displays = array();
     $targeting_option_id = '';
     foreach ($displays as $option) {
-      $variation_displays[] = is_string($option) ? $option : $option['option_label'];
+      if ($has_multiple && is_array($option) && isset($option['option_set_label'])) {
+        $variation_displays[] = theme('acquia_lift_single_variation', array('option' => $option['option_label'], 'option_set' => $option['option_set_label']));
+      }
+      else {
+        $variation_displays[] = is_string($option) ? $option : $option['option_label'];
+      }
       if (!$has_multiple || !empty($option['targeting'])) {
         $targeting_option_id = $option['option_id'];
       }
@@ -1978,7 +1983,6 @@ function acquia_lift_target_complete_audience_form($form, &$form_state, $agent_d
     // combinations of options resulting in a smaller number of variations in
     // the option set used for targeting.
     if (!empty($targeting_option_id)) {
-      // @todo: Implement theme function call for variations display from
       $variation_options[$targeting_option_id] = implode(', ', $variation_displays);
     }
   }

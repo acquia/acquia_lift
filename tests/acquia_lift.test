@@ -3669,7 +3669,10 @@ class AcquiaLiftWebTestCampaignWizardTargeting extends AcquiaLifTWebTestCampaign
       'audiences[new][0][details][mapping][contexts][0][value][match]' => 'some value',
       'audiences[new][0][details][mapping][contexts][0][value][operator]' => 'equals',
     );
-    $this->drupalPost(NULL, $edit, $this->getButton('wizard_next', array('agent_name' => $agent->machine_name, 'step' => 'targeting')));
+    $this->drupalPost(NULL, $edit, $this->getButton('wizard_next', array(
+          'agent_name' => $agent->machine_name,
+          'step' => 'targeting'
+        )));
 
     // Assign variations and verify that there is still no way to pick a winner.
     $this->drupalGet('admin/structure/personalize/manage/' . $agent->machine_name . '/targeting');
@@ -3677,7 +3680,10 @@ class AcquiaLiftWebTestCampaignWizardTargeting extends AcquiaLifTWebTestCampaign
       'audiences[existing][muppet-fans][assignment_order]' => 'option-A',
       'audiences[existing][everyone-else][assignment_order]' => 'option-B,option-C',
     );
-    $this->drupalPost(NULL, $edit, $this->getButton('wizard_next', array('agent_name' => $agent->machine_name, 'step' => 'targeting')));
+    $this->drupalPost(NULL, $edit, $this->getButton('wizard_next', array(
+          'agent_name' => $agent->machine_name,
+          'step' => 'targeting'
+        )));
 
     $this->drupalGet('admin/structure/personalize/manage/' . $agent->machine_name . '/targeting');
     $this->assertNoFieldById('acquia-lift-complete-everyone-else');
@@ -3739,6 +3745,55 @@ class AcquiaLiftWebTestCampaignWizardTargeting extends AcquiaLifTWebTestCampaign
     $this->drupalGet('admin/structure/personalize/manage/' . $agent->machine_name . '/targeting');
     $this->assertNoFieldById('acquia-lift-complete-everyone-else');
     $this->assertFieldById('acquia-lift-complete-muppet-fans');
+  }
+
+    /**
+   * Test the advanced test settings on the targeting page.
+   */
+  function testAdvancedTestSettings() {
+    // Enable a context to enable the targeting page.
+    module_enable(array('personalize_url_context'));
+    $this->resetAll();
+    $this->resetAll();
+
+    $this->drupalLogin($this->managerUser);
+    $agent = $this->createTargetingAgent();
+    $option_set = $this->createOptionSet(1, array(
+      'agent' => $agent->machine_name,
+      'plugin' => 'type1',
+      'num_options' => 2,
+      'option_ids' => array('option-1', 'option-2')
+    ));
+    $this->createTestFromOptionSet($agent, $option_set);
+
+    $this->drupalGet('admin/structure/personalize/manage/' . $agent->machine_name . '/targeting');
+    // Make some changes to the test settings and confirm that they save.
+    $edit = array(
+      'control_rate' => 30,
+      'explore_rate' => 40,
+      'decision_style' => 'adaptive',
+    );
+    $this->drupalPost(NULL, $edit, $this->getButton('wizard_next', array('agent_name' => $agent->machine_name, 'step' => 'targeting')));
+
+    $agent = personalize_agent_load($agent->machine_name, TRUE);
+    $this->assertEqual($agent->data['control_rate'], 30);
+    $this->assertEqual($agent->data['explore_rate'], 40);
+    $this->assertEqual($agent->data['decision_style'], 'adaptive');
+
+    // Now remove any tests and ensure that test settings can't be changed.
+    $edit = array(
+      'control_rate' => 10,
+      'explore_rate' => 10,
+      'decision_style' => 'random',
+      'audiences[existing][everyone-else][assignment_order]' => 'option-1',
+    );
+    $this->drupalPost('admin/structure/personalize/manage/' . $agent->machine_name . '/targeting', $edit, $this->getButton('wizard_next', array('agent_name' => $agent->machine_name, 'step' => 'targeting')));
+    // The test options should not have changed because they would have been
+    // hidden.
+    $agent = personalize_agent_load($agent->machine_name, TRUE);
+    $this->assertEqual($agent->data['control_rate'], 30);
+    $this->assertEqual($agent->data['explore_rate'], 40);
+    $this->assertEqual($agent->data['decision_style'], 'adaptive');
   }
 }
 
@@ -4067,59 +4122,15 @@ class AcquiaLiftWebTestCampaignWizardReview extends AcquiaLiftWebTestCampaignWiz
   }
 
   /**
-   * Test the review form.
-   */
-  function testReviewForm() {
-    $this->drupalLogin($this->managerUser);
-    $agent = $this->createTargetingAgent();
-
-    // There are no tests yet so the review page should not show any test
-    // options.
-    $this->drupalGet("admin/structure/personalize/manage/{$agent->machine_name}/review");
-    $this->assertNoFieldByName('decision_style');
-    $this->assertNoFieldByName('control_rate');
-    $this->assertNoFieldByName('explore_rate');
-
-    $option_set = $this->createOptionSet(1, array(
-      'agent' => $agent->machine_name,
-      'plugin' => 'type1',
-      'num_options' => 2,
-    ));
-    // Create a test from these options
-    $this->createTestFromOptionSet($agent, $option_set);
-
-
-    $this->drupalGet("admin/structure/personalize/manage/{$agent->machine_name}/review");
-    $edit = array(
-      'decision_style' => 'adaptive',
-      'control_rate' => 25,
-      'explore_rate' => 25,
-      'cache_decisions' => 1
-    );
-    $this->drupalPost(NULL, $edit, $this->getButton('wizard_save'));
-
-    $this->resetAll();
-    $agent = personalize_agent_load($agent->machine_name);
-    $this->assertEqual($agent->data['decision_style'], 'adaptive');
-    $this->assertEqual($agent->data['control_rate'], '25');
-    $this->assertEqual($agent->data['explore_rate'], 25);
-    $this->assertTrue($agent->data['cache_decisions']);
-
-    // Update decision cache.
-    $edit = array(
-      'cache_decisions' => FALSE,
-    );
-    $this->drupalPost(NULL, $edit, $this->getButton('wizard_save'));
-
-    $agent = personalize_agent_load($agent->machine_name, TRUE);
-    $this->assertFalse($agent->data['cache_decisions']);
-  }
-
-  /**
    * Tests the submission of the review form which results in nested tests
    * being created.
    */
   function testReviewSubmit() {
+    // Provide context options to enable targeting page.
+    module_enable(array('personalize_url_context'));
+    $this->resetAll();
+    $this->resetAll();
+
     $parent_settings = array(
       'control_rate' => 20,
       'explore_rate' => 40,
@@ -4175,8 +4186,9 @@ class AcquiaLiftWebTestCampaignWizardReview extends AcquiaLiftWebTestCampaignWiz
       'explore_rate' => 60,
       'decision_style' => 'adaptive',
     );
-    $this->drupalPost(NULL, $changes, $this->getButton('wizard_start'));
+    $this->drupalPost('admin/structure/personalize/manage/' . $agent->machine_name . '/targeting', $changes, $this->getButton('wizard_next', array('agent_name' => $agent->machine_name, 'step' => 'targeting')));
 
+    $this->drupalPost('admin/structure/personalize/manage/' . $agent->machine_name . '/review', array(), $this->getButton('wizard_start'));
     $this->assertText(t('Congratulations! You have started your personalization.'));
     $this->assertText(t('Need help?'));
 

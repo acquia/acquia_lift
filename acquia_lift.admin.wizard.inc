@@ -774,7 +774,16 @@ function acquia_lift_personalize_campaign_wizard_targeting_alter(&$form, &$form_
     $variation_displays = array();
     $targeting_option_id = '';
     foreach ($displays as $option) {
-      $variation_displays[] = is_string($option) ? $option : $option['option_label'];
+      if (is_string($option)) {
+        $variation_displays[] = $option;
+      }
+      else {
+        $display_vars['option'] = $option['option_label'];
+        if (isset($option['option_set_label'])) {
+          $display_vars['option_set'] = $option['option_set_label'];
+        }
+        $variation_displays[] = theme('acquia_lift_single_variation', $display_vars);
+      }
       if (!$has_multiple || !empty($option['targeting'])) {
         $targeting_option_id = $option['option_id'];
       }
@@ -896,13 +905,20 @@ function acquia_lift_personalize_campaign_wizard_targeting_alter(&$form, &$form_
     $form['targeting']['audiences']['existing'] = array(
       '#type' => 'container',
     );
+    if (count($option_set->targeting) > 2 && $editable) {
+      // Show instructions regarding re-ordering audiences.  This only applies
+      // when there are at least two audiences beyond the "Everyone" audience.
+      $form['targeting']['audiences']['existing']['priority'] = array(
+        '#markup' => '<div class="acquia-lift-audience-priority"><h4>' . t('Audience Priority') . '</h4><p>' . t('Drag and drop audiences to change the order in which they are targeted.  Audiences at the top of the list will be targeted before audiences below them.') . '</p></div>',
+      );
+    }
     foreach ($option_set->targeting as $audience_id => $audience) {
       $form['targeting']['audiences']['existing'][$audience_id] = array(
         '#type' => 'container',
         '#theme' => 'acquia_lift_card',
         '#title' => isset($audience['label']) ? $audience['label'] : 'Audience: ' . $audience_id,
         '#collapsible' => FALSE,
-        '#sortable' => $audience_id !== ACQUIA_LIFT_TARGETING_EVERYONE_ELSE,
+        '#sortable' => $audience_id !== ACQUIA_LIFT_TARGETING_EVERYONE_ELSE && count($option_set->targeting) > 2,
         '#flag' => t('Test'),
         '#flag_visible' => isset($saved_targeting[$audience_id]) && count($saved_targeting[$audience_id]) > 1,
       );
@@ -1015,7 +1031,26 @@ function acquia_lift_personalize_campaign_wizard_targeting_alter(&$form, &$form_
         );
       }
     }
+
+    // Show advanced settings for personalization.
+    // These only apply when tests exist, but these are created on the client
+    // so the mark-up needs to be here to show/hide dynamically.
+    $form['targeting']['audiences']['advanced'] = array(
+      '#type' => 'container',
+      '#theme' => 'acquia_lift_card',
+      '#title' => t('Test settings'),
+      '#collapsible' => TRUE,
+      '#collapsed' => TRUE,
+      '#tree' => FALSE,
+      '#attributes' => array(
+        'class' => array('acquia-lift-test-options'),
+      ),
+      '#disabled' => !$editable,
+    );
+    $form['targeting']['audiences']['advanced']['options'] = _acquia_lift_personalize_campaign_wizard_settings_tests($agent_data, array());
   }
+
+  // Add ability to revert changes to targeting.
   if ($show_revert) {
     $form['actions']['revert'] = array(
       '#type' => 'submit',
@@ -1090,13 +1125,9 @@ function acquia_lift_personalize_campaign_wizard_review_alter(&$form, &$form_sta
     // Add audiences to the summary section.
   $agent_data = $form['#agent'];
 
-  // If the agent has embedded tests then include the test settings form before
-  // the summary.
-  $count_audiences = 0;
-  $has_tests = FALSE;
+  // Add MVT and audience counts to the overview.
   $is_mvt = isset($agent_data->data['variation_set_handling']) && $agent_data->data['variation_set_handling'] == ACQUIA_LIFT_DECISION_MULTIVARIATE;
   if ($is_mvt) {
-    $has_tests = TRUE;
     // Show the summary data for the MVT tests.
     $form['review']['summary_column']['summary']['option_sets'] = array(
       '#markup' => theme('personalize_wizard_summary_count', array(
@@ -1111,7 +1142,6 @@ function acquia_lift_personalize_campaign_wizard_review_alter(&$form, &$form_sta
     );
   }
   else {
-    $targeting = array();
     $option_set = acquia_lift_get_option_set_for_targeting($agent_data->machine_name);
     if (!empty($agent_data->data['lift_targeting'])) {
       // Read audience information from the agent if changes have been made.
@@ -1120,13 +1150,6 @@ function acquia_lift_personalize_campaign_wizard_review_alter(&$form, &$form_sta
     else {
       // Otherwise read audience information from the option set targeting.
       $targeting = acquia_lift_get_structure_from_targeting($option_set);
-    }
-    foreach ($targeting as $audience_id => $options) {
-      if (count($options) > 1) {
-        // If there is more than one option assigned, then this audience
-        // should be shown a test.
-        $has_tests = TRUE;
-      }
     }
 
     // Loop through the audiences and determine the label and variation count
@@ -1150,31 +1173,6 @@ function acquia_lift_personalize_campaign_wizard_review_alter(&$form, &$form_sta
       )
     );
   }
-
-  // Show advanced testing options.
-  $editable = acquia_lift_target_definition_changes_allowed($agent_data);
-  $form['review']['summary_column']['advanced'] = array(
-    '#type' => 'container',
-    '#theme' => 'acquia_lift_card',
-    '#title' => t('Advanced'),
-    '#collapsible' => TRUE,
-    '#collapsed' => TRUE,
-    '#tree' => FALSE,
-    '#attributes' => array(
-      'class' => array('acquia-lift-test-options'),
-    ),
-    '#disabled' => !$editable,
-  );
-  if ($has_tests) {
-    $form['review']['summary_column']['advanced']['options'] = _acquia_lift_personalize_campaign_wizard_review_tests($agent_data, array());
-  }
-
-  $form['review']['summary_column']['advanced']['cache_decisions'] = array(
-    '#type' => 'checkbox',
-    '#title' => 'Cache decisions made by this agent?',
-    '#description' => t('Check this if decisions made by this agent should stick, so that they don\'t have to be made again every time variation sets are rendered. This depends on the availability of local storage in the visitor\'s browser'),
-    '#default_value' => isset($agent_data->data['cache_decisions']) ? $agent_data->data['cache_decisions'] : 0
-  );
 
   // Move the scheduling summary element to the bottom.
   $form['review']['summary_column']['summary']['scheduling']['#weight'] = 10;
@@ -1739,10 +1737,6 @@ function acquia_lift_personalize_campaign_wizard_targeting_validate(&$form, &$fo
 
   /**
    * Anonymous function to validate a specific audience.
-   *
-   * @param
-   *
-   * @return
    */
   $validateAudienceFields = function($values, $form_prefix, $is_new, $contexts) use ($agent_data) {
     if (empty($values['name'])) {
@@ -1802,6 +1796,7 @@ function acquia_lift_personalize_campaign_wizard_targeting_validate(&$form, &$fo
     return;
   }
   // Validate all submitted audiences.
+  $has_tests = FALSE;
   foreach ($form_state['values']['audiences'] as $type_id => $type_data) {
     $is_new = $type_id === 'new';
     foreach ($form_state['values']['audiences'][$type_id] as $audience_id => $audience) {
@@ -1813,14 +1808,13 @@ function acquia_lift_personalize_campaign_wizard_targeting_validate(&$form, &$fo
         continue;
       }
       $validateAudienceFields($audience['details'], 'audiences[' . $type_id . '][' . $audience_id . '][details][', $is_new, $audience['details']['mapping']['contexts']);
+      if (isset($audience['assignment_order'])) {
+        $has_tests = $has_tests || count(explode(',', $audience['assignment_order'])) > 1;
+      }
     }
   }
-}
 
-/**
- * Validation for the review page.
- */
-function acquia_lift_personalize_campaign_wizard_review_validate(&$form, &$form_state) {
+  // If any of the audiences contain tests, then also validate the test settings.
   if (isset($form_state['values']['control_rate'])) {
     $rate = $form_state['values']['control_rate'];
     if (!is_numeric($rate) || !($rate >= 0 && $rate <= 100)) {
@@ -2182,6 +2176,7 @@ function acquia_lift_personalize_campaign_wizard_targeting_submit(&$form, &$form
   }
   $final_audience['weight'] += 10;
   // Now process all of the audiences.
+  $has_tests = FALSE;
   foreach ($form_state['values']['audiences'] as $type_id => $type) {
     foreach ($form_state['values']['audiences'][$type_id] as $audience_id => $audience) {
       if (empty($audience['details']['name']) && $audience_id !== ACQUIA_LIFT_TARGETING_EVERYONE_ELSE) {
@@ -2228,32 +2223,33 @@ function acquia_lift_personalize_campaign_wizard_targeting_submit(&$form, &$form
       // Handle the assignment of options to audiences.
       if (!empty($audience['assignment_order'])) {
         $targeting[$audience_id] = explode(',', $audience['assignment_order']);
+        $has_tests = $has_tests || count($targeting[$audience_id]) > 1;
       }
     }
   }
   acquia_lift_save_targeting_structure($agent_data, $targeting);
+
+  // Save advanced test settings if applicable.
+  if ($has_tests) {
+    // Save the test options on the main targeting agent.  When the agent creates
+    // embedded tests then it will read these properties and set them on each
+    // test agent.
+    if (isset($form_state['values']['decision_style'])) {
+      $agent_data->data['decision_style'] = $form_state['values']['decision_style'];
+    }
+    if (isset($form_state['values']['control_rate'])) {
+      $agent_data->data['control_rate'] = $form_state['values']['control_rate'];
+    }
+    if (isset($form_state['values']['explore_rate'])) {
+      $agent_data->data['explore_rate'] = $form_state['values']['explore_rate'];
+    }
+  }
 }
 
 /**
  * Submit function for the review page.
  */
 function acquia_lift_personalize_campaign_wizard_review_submit(&$form, &$form_state, &$agent_data, $agent_instance) {
-  // Save the test options on the main targeting agent.  When the agent creates
-  // embedded tests then it will read these properties and set them on each
-  // test agent.
-  if (isset($form_state['values']['decision_style'])) {
-    $agent_data->data['decision_style'] = $form_state['values']['decision_style'];
-  }
-  if (isset($form_state['values']['control_rate'])) {
-    $agent_data->data['control_rate'] = $form_state['values']['control_rate'];
-  }
-  if (isset($form_state['values']['explore_rate'])) {
-    $agent_data->data['explore_rate'] = $form_state['values']['explore_rate'];
-  }
-
-  module_load_include('inc', 'personalize', 'personalize.admin.campaign');
-  personalize_campaign_wizard_submit_variations_advanced_agent($form, $form_state, $agent_data);
-
   // If the "Start" button was pressed then we sync everything to Lift and start
   // the campaign.
   if (isset($form_state['triggering_element']['#personalize_next_status'])) {
@@ -2352,7 +2348,7 @@ function _acquia_lift_personalize_campaign_wizard_variation_displays($option_set
   // Handle display for a single variation set.
   if (count($option_sets) == 1) {
     foreach($first_os->options as $delta => $option) {
-      $all_variations[$delta][0] = $labels_only ? $option['option_label'] : $option;
+      $all_variations[$delta][0] = $labels_only ? theme('acquia_lift_single_variation', array('option' => $option['option_label'])) : $option;
     }
     return $all_variations;
   }
@@ -2372,8 +2368,9 @@ function _acquia_lift_personalize_campaign_wizard_variation_displays($option_set
     foreach($option_set->options as $option) {
       if (!$labels_only) {
         $option['targeting'] = ($osid == $targeting_os->osid);
+        $option['option_set_label'] = $option_set->label;
       }
-      $all_variations[$delta][$set_delta] = $labels_only ? $option['option_label'] : $option;
+      $all_variations[$delta][$set_delta] = $labels_only ? theme('acquia_lift_single_variation', array('option_set' => $option_set->label, 'option' => $option['option_label'])) : $option;
       $max_variations = max($max_variations, count($all_variations[$delta]));
       $delta++;
     }
@@ -3127,7 +3124,7 @@ function _acquia_lift_personalize_campaign_wizard_targeting_audience(&$form, &$f
  * @return array
  *   The renderable form array for the test options.
  */
-function _acquia_lift_personalize_campaign_wizard_review_tests($agent_data, $element_parents) {
+function _acquia_lift_personalize_campaign_wizard_settings_tests($agent_data, $element_parents) {
   $form = array();
   $form['#attached'] = array(
     'js' => array(
@@ -3136,14 +3133,7 @@ function _acquia_lift_personalize_campaign_wizard_review_tests($agent_data, $ele
   );
 
   $control_rate = isset($agent_data->data['control_rate']) ? $agent_data->data['control_rate'] : 10;
-  $form['control'] = array(
-    '#type' => 'fieldset',
-    '#tree' => FALSE,
-    '#collapsible' => TRUE,
-    '#collapsed' => TRUE,
-    '#title' => t('Control (@control_rate%)', array('@control_rate' => $control_rate)),
-  );
-  $form['control']['control_rate'] = array(
+  $form['control_rate'] = array(
     '#type' => 'acquia_lift_percentage',
     '#title' => t('Control Group'),
     '#field_suffix' => '%',
@@ -3155,7 +3145,7 @@ function _acquia_lift_personalize_campaign_wizard_review_tests($agent_data, $ele
     '#collapsible' => TRUE,
     '#collapsed' => TRUE,
   );
-  $decision_style = isset($agent_data->data['decision_style']) ? $agent_data->data['decision_style'] : 'adaptive';
+  $decision_style = isset($agent_data->data['decision_style']) ? $agent_data->data['decision_style'] : 'random';
   $form['decision_style'] = array(
     '#type' => 'radios',
     '#title' => t('Decision Style'),
@@ -3176,22 +3166,16 @@ function _acquia_lift_personalize_campaign_wizard_review_tests($agent_data, $ele
   foreach ($decision_style_parents as $i => $parent_name) {
     $decision_style_form_element .= ($i ? '[' . $parent_name . ']' : $parent_name);
   }
-  $form['distribution'] = array(
-    '#type' => 'fieldset',
+  $form['explore_rate_container'] = array(
+    '#type' => 'container',
     '#tree' => FALSE,
-    '#collapsible' => TRUE,
-    '#collapsed' => TRUE,
-    '#title' => t('Distribution (@explore_rate/@rest)', array(
-      '@explore_rate' => $explore_rate,
-      '@rest' => (100 - $explore_rate),
-    )),
     '#states' => array(
       'visible' => array(
         ':input[name="' . $decision_style_form_element . '"]' => array('value' => 'adaptive'),
       ),
     ),
   );
-  $form['distribution']['explore_rate'] = array(
+  $form['explore_rate_container']['explore_rate'] = array(
     '#type' => 'acquia_lift_percentage',
     '#title' => t('Random Group'),
     '#field_suffix' => '%',

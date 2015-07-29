@@ -2292,6 +2292,7 @@ function acquia_lift_form_personalize_campaign_wizard_alter(&$form, &$form_state
       '#type' => 'value',
       '#value' => 'acquia_lift_target',
     );
+    $form['agent_basic_info']['title']['#attributes']['placeholder'] = t('Example: Q3 Summer Promotions');
     // All other modifications only apply to the edit form.
     return;
   }

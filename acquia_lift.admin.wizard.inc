@@ -2458,6 +2458,8 @@ function _acquia_lift_personalize_campaign_wizard_variations_block(&$form, &$for
     '#type' => 'value',
     '#value' => $agent_data->machine_name,
   );
+  // Add help text to the title.
+  $element['title']['#attributes']['placeholder'] = t('Example: Front page offers');
   // Make the variations wrapper a plain container rather than a fieldset.
   $element['pblock_wrapper']['#theme_wrappers'] = array('container');
   // Adjust the blocks container for our own user interface.
@@ -2477,7 +2479,11 @@ function _acquia_lift_personalize_campaign_wizard_variations_block(&$form, &$for
   $element['pblock_wrapper']['blocks']['#attributes']['class'][] = 'acquia-lift-personalize-blocks';
 
   $pblock_blocks = element_children($element['pblock_wrapper']['blocks']);
-  foreach ($pblock_blocks as $key) {
+  $placeholder_help = array(
+    t('Example: Winter vacation'),
+    t('Example: Island retreat'),
+  );
+  foreach ($pblock_blocks as $i => $key) {
     $block = &$element['pblock_wrapper']['blocks'][$key];
     $block['block']['#attributes']['class'][] = 'acquia-lift-personalize-block-wrapper';
     $option_id = isset($block['option_id']['#value']) ? $block['option_id']['#value'] : '';
@@ -2493,6 +2499,9 @@ function _acquia_lift_personalize_campaign_wizard_variations_block(&$form, &$for
       $block['option_label']['#default_value'] = '';
       $block['option_label']['#title'] = t('Variation title');
       unset($block['option_label']['#size']);
+      if (isset($placeholder_help[$i])) {
+        $block['option_label']['#attributes']['placeholder'] = $placeholder_help[$i];
+      }
     }
     if (!empty($option_set->preview_link) && !empty($option_id)) {
       $block['preview'] = array(
@@ -2948,6 +2957,9 @@ function _acquia_lift_personalize_campaign_wizard_targeting_audience(&$form, &$f
     '#title' => t('Audience name'),
     '#default_value' => !empty($audience['label']) ? $audience['label'] : '',
     '#required' => !empty($audience),
+    '#attributes' => array(
+      'placeholder' => t('Example: Los Angeles 18-25 year olds'),
+    ),
   );
   $element['weight'] = array(
     '#type' => 'textfield',

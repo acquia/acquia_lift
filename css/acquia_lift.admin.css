@@ -420,6 +420,7 @@ input[type="submit"].acquia-lift-wizard-add:hover {
   border: none;
   cursor: pointer;
   margin-bottom: .5rem;
+  padding-right: 1em;
 }
 
 .personalize-wizard-section .acquia-lift-personalize-block-wrapper {
@@ -448,19 +449,17 @@ input[type="submit"].acquia-lift-wizard-add:hover {
   max-height: 200rem;
 }
 
-.personalize-wizard-section .acquia-lift-element-variations,
-.personalize-wizard-section .acquia-lift-element-variations > * {
-  display: inline-block;
-}
-.personalize-wizard-section .acquia-lift-element-variations > .acquia-lift-preview {
+.personalize-wizard-section .acquia-lift-preview {
+  clear: both;
   display: block;
 }
 .personalize-wizard-section .acquia-lift-element-variations {
   width: 100%;
-  padding: 1em 0 .5em 0;
+  padding: 1em 0;
+  margin-bottom: .5em;
 }
-.personalize-wizard-section .acquia-lift-element-variations + .acquia-lift-element-variations {
-  border-top: 1px solid #cccccc;
+.personalize-wizard-section .acquia-lift-element-variations {
+  border-bottom: 1px solid #cccccc;
 }
 .personalize-wizard-section .acquia-lift-element-variations .acquia-lift-delete {
   float: right; /* RTL */

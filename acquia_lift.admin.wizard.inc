@@ -2446,6 +2446,7 @@ function _acquia_lift_personalize_campaign_wizard_variations_block(&$form, &$for
     if ($option_set && !empty($option_id)) {
       $block['option_label']['#theme_wrappers'][] = 'acquia_lift_revealing_input';
       $block['option_label']['#title'] = _personalize_generate_option_index($key);
+      $block['option_label']['#fix'] = FALSE;
     }
     else {
       // Do not allow automatically generated option labels.
@@ -2453,8 +2454,22 @@ function _acquia_lift_personalize_campaign_wizard_variations_block(&$form, &$for
       $block['option_label']['#title'] = t('Variation title');
       unset($block['option_label']['#size']);
     }
+    if (!empty($option_set->preview_link) && !empty($option_id)) {
+      $block['preview'] = array(
+        '#markup' => '<div class="acquia-lift-preview clearfix">' . l(t('Preview variation'), $option_set->preview_link, array(
+            'attributes' => array('target' => 'preview'),
+            'query' => array(PERSONALIZE_PRESELECTION_PARAM => personalize_stringify_osid($option_set->osid) . '--' . $option_id),
+          )) . '</div>',
+      );
+    }
     // Weights are not manipulated here.
     $block['weight']['#access'] = FALSE;
+
+    // Set the order for inputs within a block option.
+    $block['remove']['#weight'] = 10;
+    $block['option_label']['#weight'] = 20;
+    $block['preview']['#weight'] = 30;
+    $block['block']['#weight'] = 40;
 
     // Block type selection states
     $select_class = 'select-' . $pblock_id . '-' . $key;
@@ -2483,10 +2498,6 @@ function _acquia_lift_personalize_campaign_wizard_variations_block(&$form, &$for
     // whether it is an option that requires deletion or just an AJAX
     // re-display of the form.
     if (!isset($block['remove']['#access']) || $block['remove']['#access'] == TRUE) {
-      $block['option_label']['#weight'] = 20;
-      $block['remove']['#weight'] = 10;
-      $block['block']['#weight'] = 30;
-      
       if (!empty($option_id)) {
         // If the option is an existing one, then redirect to a confirmation form
         // prior to deleting.
@@ -2498,7 +2509,6 @@ function _acquia_lift_personalize_campaign_wizard_variations_block(&$form, &$for
             ),
             'query' => array('destination' => 'admin/structure/personalize/manage/' . $agent_data->machine_name . '/variations'),
           )),
-          '#weight' => 25,
         );
       }
       else {
@@ -2693,13 +2703,6 @@ function _acquia_lift_personalize_campaign_wizard_variations_general_edit($agent
         'class' => array('acquia-lift-element-variations'),
       ),
     );
-    $element['options'][$option_id]['option_label'] = array(
-      '#type' => 'textfield',
-      '#required' => TRUE,
-      '#default_value' => $option['option_label'],
-      '#title' => t('Variation'),
-      '#theme_wrappers' => array('acquia_lift_revealing_input'),
-    );
     if ($show_delete && !empty($delete_links[$option_id])) {
       $element['options'][$option_id]['remove'] = array(
         '#markup' => l(t('Delete'), $delete_links[$option_id], array(
@@ -2708,6 +2711,21 @@ function _acquia_lift_personalize_campaign_wizard_variations_general_edit($agent
           ),
           'query' => array('destination' => 'admin/structure/personalize/manage/' . $agent_data->machine_name . '/variations'),
         )),
+      );
+    }
+    $element['options'][$option_id]['option_label'] = array(
+      '#type' => 'textfield',
+      '#required' => TRUE,
+      '#default_value' => $option['option_label'],
+      '#title' => t('Variation'),
+      '#theme_wrappers' => array('acquia_lift_revealing_input'),
+    );
+    if (!empty($option_set->preview_link)) {
+      $element['options'][$option_id]['preview'] = array(
+        '#markup' => '<div class="acquia-lift-preview">' . l(t('Preview variation'), $option_set->preview_link, array(
+            'attributes' => array('target' => 'preview'),
+            'query' => array(PERSONALIZE_PRESELECTION_PARAM => personalize_stringify_osid($option_set->osid) . '--' . $option['option_id']),
+          )) . '</div>',
       );
     }
   };
@@ -2753,7 +2771,7 @@ function _acquia_lift_personalize_campaign_wizard_variations_fields(&$form, &$fo
       $display[$id]['#markup'] = drupal_truncate_bytes($display[$id]['#markup'], 150);
     }
     $option = $options[$delta];
-    $element['options'][$option['option_id']]['preview'] = array(
+    $element['options'][$option['option_id']]['preview_display'] = array(
       '#markup' => '<div class="acquia-lift-preview">' . drupal_render($display[$id]) . '</div>',
     );
   }

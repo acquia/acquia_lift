@@ -744,6 +744,8 @@ class AcquiaLiftWebTestAgentAdmin extends AcquiaLiftWebTestBase {
     $this->assertNoLinkByHref('admin/structure/personalize/manage/' . $agent->machine_name . '/results');
     $this->assertText(t('Test only'));
     $this->assertText(t('Everyone'));
+    // No link to complete this test because it hasn't been started yet.
+    $this->assertNoLinkByHref('admin/structure/personalize/manage/' . $agent->machine_name . '/audience/everyone-else/complete');
 
     // Add two audiences and assign variations so that there is only targeting.
     $audience_1 = personalize_generate_machine_name($this->randomName(), NULL, '-');
@@ -765,6 +767,9 @@ class AcquiaLiftWebTestAgentAdmin extends AcquiaLiftWebTestBase {
     $this->assertText($audience_1);
     $this->assertText($audience_2);
     $this->assertText(t('Everyone else'));
+    $this->assertNoLinkByHref('admin/structure/personalize/manage/' . $agent->machine_name . '/audience/' . $audience_1 . '/complete');
+    $this->assertNoLinkByHref('admin/structure/personalize/manage/' . $agent->machine_name . '/audience/' . $audience_2 . '/complete');
+    $this->assertNoLinkByHref('admin/structure/personalize/manage/' . $agent->machine_name . '/audience/everyone-else/complete');
 
     // Adjust variations so that there is testing and targeting.
     $targeting = array(
@@ -782,6 +787,9 @@ class AcquiaLiftWebTestAgentAdmin extends AcquiaLiftWebTestBase {
     $this->assertText($audience_1);
     $this->assertText($audience_2);
     $this->assertText(t('Everyone else'));
+    $this->assertNoLinkByHref('admin/structure/personalize/manage/' . $agent->machine_name . '/audience/' . $audience_1 . '/complete');
+    $this->assertNoLinkByHref('admin/structure/personalize/manage/' . $agent->machine_name . '/audience/' . $audience_2 . '/complete');
+    $this->assertNoLinkByHref('admin/structure/personalize/manage/' . $agent->machine_name . '/audience/everyone-else/complete');
 
     // Schedule and check heading.
     personalize_agent_set_start_date($agent->machine_name, time() + 86400);
@@ -795,6 +803,9 @@ class AcquiaLiftWebTestAgentAdmin extends AcquiaLiftWebTestBase {
     $this->assertNoRaw('<h3>Running</h3>');
     $this->assertNoRaw('<h3>Paused</h3>');
     $this->assertNoRaw('<h3>Completed</h3>');
+    $this->assertNoLinkByHref('admin/structure/personalize/manage/' . $agent->machine_name . '/audience/' . $audience_1 . '/complete');
+    $this->assertNoLinkByHref('admin/structure/personalize/manage/' . $agent->machine_name . '/audience/' . $audience_2 . '/complete');
+    $this->assertNoLinkByHref('admin/structure/personalize/manage/' . $agent->machine_name . '/audience/everyone-else/complete');
 
     // Set it to running and check that the reporting link is now available
     // and that the campaign is shown in the correct section.
@@ -806,6 +817,9 @@ class AcquiaLiftWebTestAgentAdmin extends AcquiaLiftWebTestBase {
     $this->assertLinkByHref('admin/structure/personalize/manage/' . $agent->machine_name . '/results?targeting_audience=' . $audience_1);
     $this->assertNoLinkByHref('admin/structure/personalize/manage/' . $agent->machine_name . '/results?targeting_audience=' . $audience_2);
     $this->assertNoLinkByHref('admin/structure/personalize/manage/' . $agent->machine_name . '/results?targeting_audience=' . ACQUIA_LIFT_TARGETING_EVERYONE_ELSE);
+    $this->assertLinkByHref('admin/structure/personalize/manage/' . $agent->machine_name . '/audience/' . $audience_1 . '/complete');
+    $this->assertNoLinkByHref('admin/structure/personalize/manage/' . $agent->machine_name . '/audience/' . $audience_2 . '/complete');
+    $this->assertNoLinkByHref('admin/structure/personalize/manage/' . $agent->machine_name . '/audience/everyone-else/complete');
     $this->assertNoRaw('<h3>Draft</h3>');
     $this->assertNoRaw('<h3>Scheduled</h3>');
     $this->assertRaw('<h3>Running</h3>');
@@ -820,6 +834,9 @@ class AcquiaLiftWebTestAgentAdmin extends AcquiaLiftWebTestBase {
     $this->assertNoRaw('<h3>Running</h3>');
     $this->assertRaw('<h3>Paused</h3>');
     $this->assertNoRaw('<h3>Completed</h3>');
+    $this->assertLinkByHref('admin/structure/personalize/manage/' . $agent->machine_name . '/audience/' . $audience_1 . '/complete');
+    $this->assertNoLinkByHref('admin/structure/personalize/manage/' . $agent->machine_name . '/audience/' . $audience_2 . '/complete');
+    $this->assertNoLinkByHref('admin/structure/personalize/manage/' . $agent->machine_name . '/audience/everyone-else/complete');
 
     // Complete and check heading.
     personalize_agent_set_status($agent->machine_name, PERSONALIZE_STATUS_COMPLETED);
@@ -829,6 +846,10 @@ class AcquiaLiftWebTestAgentAdmin extends AcquiaLiftWebTestBase {
     $this->assertNoRaw('<h3>Running</h3>');
     $this->assertNoRaw('<h3>Paused</h3>');
     $this->assertRaw('<h3>Completed</h3>');
+    $this->assertNoLinkByHref('admin/structure/personalize/manage/' . $agent->machine_name . '/audience/' . $audience_1 . '/complete');
+    $this->assertNoLinkByHref('admin/structure/personalize/manage/' . $agent->machine_name . '/audience/' . $audience_2 . '/complete');
+    $this->assertNoLinkByHref('admin/structure/personalize/manage/' . $agent->machine_name . '/audience/everyone-else/complete');
+
   }
 }
 
@@ -997,8 +1018,9 @@ class AcquiaLiftWebTestReports extends AcquiaLiftWebTestBase {
       'group' => t('Personalize'),
     );
   }
+
   public function testReportPage() {
-    // Test that a report page shows up for a personalization iwth a single test.
+    // Test that a report page shows up for a personalization with a single test.
     $this->drupalLogin($this->managerUser);
     $agent = $this->createTargetingAgent();
     $option_set = $this->createPersonalizedBlock(0, $agent, 3);
@@ -1025,6 +1047,7 @@ class AcquiaLiftWebTestReports extends AcquiaLiftWebTestBase {
     $this->drupalGet('admin/structure/personalize/manage/' . $agent->machine_name . '/results');
     $this->assertText('Test for Everyone audience');
     $this->assertNoFieldByName('audience_filter');
+    $this->assertFieldById('acquia-lift-complete-everyone-else');
 
     // Pause the agent and change it so that it has another test.
     personalize_agent_set_status($agent->machine_name, PERSONALIZE_STATUS_PAUSED);
@@ -1048,6 +1071,19 @@ class AcquiaLiftWebTestReports extends AcquiaLiftWebTestBase {
     $this->drupalGet('admin/structure/personalize/manage/' . $agent->machine_name . '/results');
     $this->assertNoText('Test for Everyone else audience');
     $this->assertFieldByName('audience_filter');
+    $this->assertOptionSelected('acquia-lift-report-audience-filter', 'everyone-else');
+    $this->assertFieldById('acquia-lift-complete-everyone-else');
+    $this->assertNoFieldById('acquia-lift-complete-my-first-audience');
+
+    // Now change the audience and verify that the complete button changes
+    $edit = array(
+      'audience_filter' => 'my-first-audience',
+    );
+    $this->drupalPostAJAX(NULL, $edit, 'audience_filter');
+    $this->assertFieldByName('audience_filter');
+    $this->assertOptionSelected('acquia-lift-report-audience-filter', 'my-first-audience');
+    $this->assertNoFieldById('acquia-lift-complete-everyone-else');
+    $this->assertFieldById('acquia-lift-complete-my-first-audience');
 
     // Change it again so that it has no tests.
     personalize_agent_set_status($agent->machine_name, PERSONALIZE_STATUS_PAUSED);
@@ -1075,6 +1111,9 @@ class AcquiaLiftWebTestReports extends AcquiaLiftWebTestBase {
     $this->drupalGet('admin/structure/personalize/manage/' . $agent->machine_name . '/results');
     $this->assertText('This personalization does not contain tests, no reports to show.');
     $this->assertNoFieldByName('audience_filter');
+    $this->assertNoFieldById('acquia-lift-complete-my-first-audience');
+    $this->assertNoFieldById('acquia-lift-complete-my-second-audience');
+    $this->assertNoFieldById('acquia-lift-complete-everyone-else');
   }
 
   public function testConversionReportAjaxEndpoint() {
@@ -3603,6 +3642,103 @@ class AcquiaLiftWebTestCampaignWizardTargeting extends AcquiaLifTWebTestCampaign
     $option_set = personalize_option_set_load($option_set->osid, TRUE);
     // The targeting should now have been saved to the option set.
     $this->assertFalse(empty($option_set->targeting['everyone-else']['osid']));
+  }
+
+  function testWinnerSelectionAvailability() {
+    // Create user profile fields that we can use for targeting.
+    $user_profile_field_1 = $this->createUserProfileField();
+    $context_1 = str_replace('field_', '', $user_profile_field_1['field_name']);
+
+    // Create an agent with option set but no tests.
+    $agent = $this->createTargetingAgent();
+    $option_set = $this->createOptionSet(1, array(
+      'agent' => $agent->machine_name,
+      'plugin' => 'type1',
+      'num_options' => 3,
+      'option_ids' => array('option-A', 'option-B', 'option-C'),
+    ));
+    $this->drupalGet('admin/structure/personalize/manage/' . $agent->machine_name . '/targeting');
+    // There is no test created yet so there should be no way to pick a winner.
+    $this->assertNoFieldById('acquia-lift-complete-everyone-else');
+
+    // Create an audience
+    $this->drupalPostAJAX(NULL, array(), $this->addTargetAudienceElement);
+    $edit = array(
+      'audiences[new][0][details][name]' => 'Muppet fans',
+      'audiences[new][0][details][mapping][contexts][0][context]' => 'user_profile_context' . PERSONALIZE_TARGETING_ADMIN_SEPARATOR . $context_1,
+      'audiences[new][0][details][mapping][contexts][0][value][match]' => 'some value',
+      'audiences[new][0][details][mapping][contexts][0][value][operator]' => 'equals',
+    );
+    $this->drupalPost(NULL, $edit, $this->getButton('wizard_next', array('agent_name' => $agent->machine_name, 'step' => 'targeting')));
+
+    // Assign variations and verify that there is still no way to pick a winner.
+    $this->drupalGet('admin/structure/personalize/manage/' . $agent->machine_name . '/targeting');
+    $edit = array(
+      'audiences[existing][muppet-fans][assignment_order]' => 'option-A',
+      'audiences[existing][everyone-else][assignment_order]' => 'option-B,option-C',
+    );
+    $this->drupalPost(NULL, $edit, $this->getButton('wizard_next', array('agent_name' => $agent->machine_name, 'step' => 'targeting')));
+
+    $this->drupalGet('admin/structure/personalize/manage/' . $agent->machine_name . '/targeting');
+    $this->assertNoFieldById('acquia-lift-complete-everyone-else');
+    $this->assertNoFieldById('acquia-lift-complete-muppet-fans');
+
+    // Start the agent and verify that the button is available for the test.
+    $this->drupalPost('admin/structure/personalize/manage/' . $agent->machine_name . '/review', array(), $this->getButton('wizard_start'));
+    $this->drupalGet('admin/structure/personalize/manage/' . $agent->machine_name . '/targeting');
+    $this->assertFieldById('acquia-lift-complete-everyone-else');
+    $this->assertNoFieldById('acquia-lift-complete-muppet-fans');
+
+    // Pause the agent and the button is still available.
+    personalize_agent_set_status($agent->machine_name, PERSONALIZE_STATUS_PAUSED);
+    $this->resetAll();
+    $this->drupalGet('admin/structure/personalize/manage/' . $agent->machine_name . '/targeting');
+    $this->assertFieldById('acquia-lift-complete-everyone-else');
+    $this->assertNoFieldById('acquia-lift-complete-muppet-fans');
+
+    // Adjust the assignments to convert the targeting audience to a test
+    // and verify that it still does not have a winner selection button.
+    $edit = array(
+      'audiences[existing][muppet-fans][assignment_order]' => 'option-A,option-B',
+      'audiences[existing][everyone-else][assignment_order]' => 'option-B,option-C',
+    );
+    $this->drupalPost(NULL, $edit, $this->getButton('wizard_next', array(
+      'agent_name' => $agent->machine_name,
+      'step' => 'targeting'
+    )));
+    $this->drupalGet('admin/structure/personalize/manage/' . $agent->machine_name . '/targeting');
+    $this->assertFieldById('acquia-lift-complete-everyone-else');
+    $this->assertNoFieldById('acquia-lift-complete-muppet-fans');
+
+    // Start the agent and now there should be buttons for both audiences.
+    $this->drupalPost('admin/structure/personalize/manage/' . $agent->machine_name . '/review', array(), $this->getButton('wizard_start'));
+    $this->drupalGet('admin/structure/personalize/manage/' . $agent->machine_name . '/targeting');
+    $this->assertFieldById('acquia-lift-complete-everyone-else');
+    $this->assertFieldById('acquia-lift-complete-muppet-fans');
+
+    // Pause the test again and convert a test to pure targeting.
+    personalize_agent_set_status($agent->machine_name, PERSONALIZE_STATUS_PAUSED);
+    $this->resetAll();
+    $this->drupalGet('admin/structure/personalize/manage/' . $agent->machine_name . '/targeting');
+    $this->assertFieldById('acquia-lift-complete-everyone-else');
+    $this->assertFieldById('acquia-lift-complete-muppet-fans');
+    $edit = array(
+      'audiences[existing][muppet-fans][assignment_order]' => 'option-A,option-B',
+      'audiences[existing][everyone-else][assignment_order]' => 'option-C',
+    );
+    $this->drupalPost(NULL, $edit, $this->getButton('wizard_next', array(
+      'agent_name' => $agent->machine_name,
+      'step' => 'targeting'
+    )));
+    $this->drupalGet('admin/structure/personalize/manage/' . $agent->machine_name . '/targeting');
+    $this->assertNoFieldById('acquia-lift-complete-everyone-else');
+    $this->assertFieldById('acquia-lift-complete-muppet-fans');
+
+    // Start the test again and confirm options remain the same.
+    $this->drupalPost('admin/structure/personalize/manage/' . $agent->machine_name . '/review', array(), $this->getButton('wizard_start'));
+    $this->drupalGet('admin/structure/personalize/manage/' . $agent->machine_name . '/targeting');
+    $this->assertNoFieldById('acquia-lift-complete-everyone-else');
+    $this->assertFieldById('acquia-lift-complete-muppet-fans');
   }
 }
 

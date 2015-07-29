@@ -287,6 +287,9 @@ tr.acquia-lift-report-control {
 }
 
 /* Acquia Lift campaign wizard form alterations */
+.acquia-lift-alert {
+  color: #FF0000;
+}
 #personalize-campaign-wizard .personalize-wizard-section .personalize-wizard-column {
   min-width: 520px;
   margin: .5rem;
@@ -477,6 +480,9 @@ input[type="submit"].acquia-lift-wizard-add:hover {
 .acquia-lift-targeting .personalize-target-wrapper .form-item label {
   display: none;
 }
+.el-card__footer .acquia-lift-complete-audience {
+  float: right;
+}
 
 /* Edit checkbox in card header */
 .el-card__action input[type="checkbox"].acquia-lift-edit {
@@ -644,7 +650,8 @@ ul.acquia-lift-variations-list.acquia-lift-variations-lockstep > li {
 
 #personalize-personalizations-list .acquia-lift-delete,
 #personalize-personalizations-list .acquia-lift-edit,
-#personalize-personalizations-list .acquia-lift-report {
+#personalize-personalizations-list .acquia-lift-report,
+#personalize-personalizations-list .acquia-lift-complete {
   display: inline-block;
   background-repeat: no-repeat;
   background-position: 50%;
@@ -661,6 +668,9 @@ ul.acquia-lift-variations-list.acquia-lift-variations-lockstep > li {
 }
 #personalize-personalizations-list .acquia-lift-report {
   background-image: url(../images/8A8B8E/report.png);
+}
+#personalize-personalizations-list .acquia-lift-complete {
+  background-image: url(../images/8A8B8E/end_test.png);
 }
 
 /* General icons*/

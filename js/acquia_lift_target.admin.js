@@ -50,6 +50,16 @@
         });
       });
 
+      // Get a mapping of audiences that allow the selection of a winner
+      // and the combination of options that are assigned upon load.
+      var winnerSelections = {};
+      $('#acquia-lift-targeting-audiences .acquia-lift-complete-audience').once(function() {
+        var $card = $(this).closest('.el-card');
+        var audience_id = $(this).attr('data-acquia-lift-audience-id');
+        var assignments = $('.acquia-lift-targeting-assignment-order', $card).val();
+        winnerSelections[audience_id] = assignments.split(',').sort();
+      });
+
       // Attach the drag 'n' drop behavior to audiences in order to determine
       // audience weight.
       $('#acquia-lift-targeting-audiences .el-card.is-sortable').once(function () {
@@ -96,6 +106,7 @@
         checkTargetingPlaceholder($ul);
         indicateControlVariation($ul);
         indicateTest($ul);
+        indicatePickWinner($ul);
       }
 
       /**
@@ -158,6 +169,36 @@
         $ul.closest('.el-card').find('.el-card__flag').toggleClass('is-hidden', numberVariations <= 1);
       }
 
+      /**
+       * Determine if the audience should show it's button to
+       * complete the test and pick a winner.
+       */
+      function indicatePickWinner($ul) {
+        var $card = $ul.closest('.el-card');
+        var $button = $('.acquia-lift-complete-audience', $card);
+        if ($button.length == 0) {
+          // This audience never had the option to pick a winner.
+          return;
+        }
+        var currentSelections = $('.acquia-lift-targeting-assignment-order', $card).val();
+        var sorted = currentSelections.split(',').sort();
+        var audience_id = $button.attr('data-acquia-lift-audience-id');
+        var showWinnerSelection = false;
+        var implemented = winnerSelections.hasOwnProperty(audience_id) ? winnerSelections[audience_id] : [];
+        if (implemented.length == sorted.length) {
+          showWinnerSelection = true;
+          for (var i=0; i < implemented.length; i++) {
+            if (implemented[i] !== sorted[i]) {
+              showWinnerSelection = false;
+              break;
+            }
+          }
+        }
+        // Can't just use element-hidden because some themes don't set the
+        // buttons properly.
+        $button.toggle(showWinnerSelection);
+      }
+
       // Add drag and drop behavior to assign variations to audiences.
       $('.acquia-lift-targeting-assignment').once(function() {
         var cardDisabled = $(this).closest('.el-card').attr('data-card-enabled') === 'false';
@@ -216,6 +257,7 @@
               ui.sender.sortable('cancel');
               indicateControlVariation(ui.sender);
               indicateTest(ui.sender);
+              indicatePickWinner(ui.sender);
               return;
             }
             if (ui.sender.data().hasOwnProperty('acquialiftcopied')) {
@@ -235,20 +277,22 @@
             }
             // Update the selected variations in the underlying select to
             // match the list contents.
-            var $select = $(this).parent().children('select.acquia-lift-targeting-assignment');
+            var $this = $(this);
+            var $select = $this.parent().children('select.acquia-lift-targeting-assignment');
             var selectedOptions = [];
-            var $orderInput = $(this).parents('.el-card__content').find('input.acquia-lift-targeting-assignment-order');
+            var $orderInput = $this.parents('.el-card__content').find('input.acquia-lift-targeting-assignment-order');
             $(this).children('li.acquia-lift-targeting-draggable').each(function () {
               selectedOptions.push($(this).data('acquia-lift-option-id'));
             });
             $select.val(selectedOptions);
             $orderInput.val(selectedOptions.join(','));
-            checkTargetingPlaceholder($(this));
-            indicateControlVariation($(this));
-            indicateTest($(this));
+            checkTargetingPlaceholder($this);
+            indicateControlVariation($this);
+            indicateTest($this);
+            indicatePickWinner($this);
 
             // Make sure the droppable area is last in the list.
-            $(this).append($('.acquia-lift-targeting-droppable', this));
+            $this.append($('.acquia-lift-targeting-droppable', this));
           }
         });
         if (allowMove) {

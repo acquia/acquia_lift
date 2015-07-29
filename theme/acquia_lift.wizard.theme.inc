@@ -222,7 +222,7 @@ function theme_acquia_lift_wizard_section_help($variables) {
   $help_image = isset($element['#image']) ? $element['#image'] : '';
   $help_alt = isset($element['#alt']) ? $element['#alt'] : t('Help image for this section');
   $help_text = isset($element['#text']) ? $element['#text'] : '';
-  $trigger_text = t('Show help');
+  $trigger_text = t('Help?');
 
   $html = '';
   $html .= '<div id="acquia-lift-campaign-wizard-section-help" class="clearfix">';

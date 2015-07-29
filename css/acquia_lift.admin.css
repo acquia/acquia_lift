@@ -415,10 +415,11 @@ input[type="submit"].acquia-lift-wizard-add:hover {
 }
 #acquia-lift-campaign-wizard-section-help .acquia-lift-section-help-trigger {
   float: right;
-  text-indent: -9999px;
-  background: transparent url(../images/help/help_icon.png) no-repeat;
+  background: transparent url(../images/help/help_icon.png) no-repeat left center;
+  padding-left: 22px;
   display: inline-block;
   cursor: pointer;
+  color: #2FA6E5;
 }
 #acquia-lift-campaign-wizard-section-help .acquia-lift-section-help-expanded {
   float: left;

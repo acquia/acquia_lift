@@ -398,7 +398,7 @@ function theme_acquia_lift_debugger() {
          <!--<button ng-click="exportData()">Export</button>-->
       </div>
       <div class="debugger__log">
-        <table>
+        <table id="debugger__log__table">
           <colgroup>
             <col span="1" style="width: 10em;">
             <col span="1" style="width: 100em;">
@@ -420,7 +420,7 @@ function theme_acquia_lift_debugger() {
             <td>{{item.type | cut:true:10:'...':item}}</td>
             <td>{{item.timestamp |  date:'MM/dd/yyyy h:mma'}}</td>
             <td>{{item.page | cut:true:20:'...':item}}</td>
-            <td><div ng-click="item.expand? item.expand = false : item.expand = true" class="clickable"> {{item.expand? '[Read Less]' : '[Read More]'}}</div></td>
+            <td><div ng-click="item.expand? item.expand = false : item.expand = true" id="clickable"> {{item.expand? '[Read Less]' : '[Read More]'}}</div></td>
           </tr>
         </table>
       </div>
@@ -435,12 +435,11 @@ function theme_acquia_lift_debugger() {
             <td>
                 <b>Touch ID: </b>{{profile.touchId}}
             </td>
+          </tr><tr>
             <td> <div id="profileSegmentLabel"></div>
-              <div>
                 <ul ng-repeat="item in profile.curSegments | orderBy: 'toString()'">
                   <li> {{item}} </li>
                 </ul>
-              </div>
             </td>
           </tr>
         </table>

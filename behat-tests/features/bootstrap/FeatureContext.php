@@ -407,25 +407,6 @@ class FeatureContext extends RawDrupalContext implements SnippetAcceptingContext
   }
 
   /**
-  * @When I click :selector element
-  **/
-  public function assertElementClick($selector) {
-        $session = $this->getSession();
-        $element = $session->getPage()->find(
-            'xpath',
-            $session->getSelectorsHandler()->selectorToXpath('css', $selector) // just changed xpath to css
-        );
-        if (null === $session->getPage()){
-          throw new \InvalidArgumentException(sprintf('got dammit'));
-        }
-        if (null === $element) {
-            throw new \InvalidArgumentException(sprintf('Could not evaluate CSS Selector: "%s"', $selector));
-        }
- 
-        $element->click();  }
-
-
-  /**
    * @Then :variation_set set :variation variation should have the :link link
    *
    * @throws \Exception
@@ -690,37 +671,6 @@ class FeatureContext extends RawDrupalContext implements SnippetAcceptingContext
   }
 
   /**
-  * @Then /^I should visibly see element with "([^"]*)" id in "([^"]*)" region is "(visible|hidden)"$/
-  */
-    public function assertElementVisibility($id, $region, $visible) {
-    $result = $this->findElementInRegion($id, $region);
-    $isVisible = false;
-    if (empty($result)) {
-      throw new \Exception(sprintf('The element with %s was not found in region %s', $id, $region));
-    }
-    if ($result->isVisible()) {
-      $isVisible = true;
-      if($visible === "hidden"){
-        throw new \Exception(sprintf('The element with %s is visible when it shouldn\'t be', $id));
-      }
-    }else{
-      $isVisible = false;
-      if($visible === "visible"){
-        throw new \Exception(sprintf('The element with %s is visible when it should be', $id));
-      }
-    }
-  }
-  /*
-  * @Then I should see element with :id selector in :region region
-  */
-    public function assertElementWithSelector($id, $region) {
-    $element = $this->findElementInRegion($id, $region);
-    if (empty($element)) {
-      throw new \Exception(sprintf('The element with %s was not found in region %s on the page %s', $id, $region, $this->getSession()->getCurrentUrl()));
-    }
-  }
-
-  /**
    * @Then I should see the message :text in the messagebox
    */
   public function assertTextInMessagebox($text) {
@@ -829,32 +779,6 @@ class FeatureContext extends RawDrupalContext implements SnippetAcceptingContext
     if (!empty($variation_display)) {
       throw new \Exception(sprintf('The "%s" variation is displayed for "%s" audience.', $variation_label, $audience_label));
     }
-  }
-
-  /**
-  * @Then /^I should see the "([^"]*)" region is "(visible|hidden)"$/
-  **/
-  public function findRegion($region, $visibility){
-      try{
-        $region = $this->getRegion($region);
-        
-      } catch (\Exception $e) {
-        if ($visibility === "visible"){
-          throw new \Exception(sprintf('The %s region is visible when it shouldn\'t be', $region));
-         }
-      }
-         if ($region === null && $visibility === "hidden"){
-           throw new \Exception(sprintf('The %s region is hidden when it shouldn\'t be', $region));
-         }
-      // }
-  }
-
-  /**
-  * @Then I wait a second
-  **/
-  public function waitASecond(){
-    //this is to allow angular to update
-     $this->getSession()->wait(10000);
   }
 
   /****************************************************

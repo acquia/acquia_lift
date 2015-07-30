@@ -2,18 +2,71 @@
   display: none;
 }
 
-.debugger {
+.debugger * {
+  background-color: transparent;
+  background-image: none;
+  background-position: 0 0;
+  background-repeat: none;
+  border: none;
+  box-shadow: none;
+  color: #333333;
+  content: normal;
+  counter-increment: none;
+  counter-reset: none;
+  font: normal;
+  font-family: sans-serif;
+  font-size: 12px;
+  font-style: normal;
+  font-variant: normal;
+  font-weight: normal;
+  height: auto;
+  left: auto;
+  letter-spacing: normal;
+  line-height: 1.5;
+  list-style: none;
+  margin: 0;
+  max-height: none;
+  max-width: none;
+  min-height: 0;
+  min-width: 0;
+  opacity: 1;
+  outline: none;
+  overflow: visible;
+  overflow-x: visible;
+  overflow-y: visible;
+  padding: 0;
+  position: static;
+  right: auto;
+  table-layout: auto;
+  text-align: inherit;
+  text-decoration: none;
+  -moz-text-decoration-color: inherit;
+       text-decoration-color: inherit;
+  -moz-text-decoration-line: none;
+       text-decoration-line: none;
+  -webkit-text-decoration-style: solid;
+     -moz-text-decoration-style: solid;
+          text-decoration-style: solid;
+  text-indent: 0;
+  text-shadow: none;
+  text-transform: none;
+  vertical-align: baseline;
+  visibility: visible;
+  z-index: auto;
+  unicode-bidi: normal;
+  white-space: normal;
+  width: auto;
+  word-spacing: normal;
+}
+
+#debugger {
   position: fixed;
   display: block;
   z-index: 1000;
   bottom: 0;
   left: 0;
-  color: #333333;
   width: 100%;
   background: white;
-  font-family: sans-serif;
-  font-size: 1em;
-  line-height: 1.5;
   box-shadow: 0 0 0.1em 0 rgba(0, 0, 0, 0.8);
   border-top-right-radius: .4em;
   border-top-left-radius: .4em;
@@ -25,62 +78,59 @@
   transition: all 300ms;
 }
 @media screen and (min-width: 600px) {
-  .debugger {
+  #debugger {
     left: 1em;
     width: calc(100% - 2em);
   }
 }
 @media screen and (min-width: 95%) {
-  .debugger {
+  #debugger {
     left: 2.5%;
     width: 95%;
-    /*//margin-left: -($debugger-max-width / 2);*/
   }
 }
-.debugger .float {
+#debugger .float {
   float: left;
   padding-right: 10px;
   vertical-align: middle;
-  /*padding-left: 3em;*/
 }
-.debugger .debugger-font-size {
-  font-size: 1em;
+#debugger .debugger-font-size {
+  font-size: 12px;
 }
-.debugger .minheight {
-  padding: 0px;
+#debugger button {
+  height: 31px;
+  padding-right: 10px;
+  padding-left: 10px;
+  margin-top: 2px;
 }
-.debugger table {
-  font-size: 1em;
+#debugger table {
   background-color: white;
+  width: 100%;
+  border: none;
 }
-.debugger table img {
+#debugger table img {
   width: 20px;
   padding-right: .15em;
   padding-left: .15em;
   padding-top: 0em;
   padding-bottom: 0em;
   vertical-align: middle;
-  margin: 0px;
 }
-.debugger td {
-  padding: 0px;
+#debugger td {
   background-color: white;
-  border-bottom: none;
 }
-.debugger tr {
+#debugger tr {
   padding: 0px;
 }
-.debugger th {
+#debugger th {
   background-color: white;
-  color: #333333;
   padding-top: .1em;
   padding-bottom: .2em;
   padding-right: 0px;
   padding-left: 0px;
-  border-bottom: none;
 }
-.debugger h5 {
-  font-size: 1.125rem;
+#debugger h5 {
+  font-size: 16px;
   line-height: 1.33333;
   margin-top: 0;
   padding-top: 0.37rem;
@@ -88,44 +138,37 @@
   font-family: "Helvetica Neue", helvetica, "Segoe UI", segoe, "Ubuntu", "Droid Sans", "Arial", sans-serif;
   font-weight: 400;
 }
-.debugger,
-.debugger * {
+#debugger,
+#debugger * {
   box-sizing: border-box;
 }
-.debugger .clickable {
+#debugger .clickable {
   cursor: pointer;
   padding-right: 15px;
 }
-
-.debugger__secondary__navigation {
+#debugger .debugger__secondary__navigation {
   min-height: 38px;
   width: 100%;
   display: inline-block;
   vertical-align: top;
   background-color: #efefef;
 }
-
-.debugger__filter__label, .debugger__preview__notification {
+#debugger .debugger__filter__label, #debugger .debugger__preview__notification {
   float: left;
   padding-top: 10px;
   padding-right: 15px;
 }
-
-.debugger__preview__notification {
-  opacity: 0;
+#debugger .debugger__preview__notification {
   color: #0073b9;
 }
-
-#debugger .debugger__navigation__top__bar a:hover, .debugger__navigation__top__bar a:focus, .debugger__navigation__top__bar a:active {
+#debugger .debugger__navigation__top__bar a:hover, #debugger .debugger__navigation__top__bar a:focus, #debugger .debugger__navigation__top__bar a:active {
   color: #0073b9;
   text-decoration: none;
   cursor: pointer;
 }
-
-#debugger ul.debugger__navigation__top__bar, ul.debugger__navigation__top__bar li {
+#debugger ul.debugger__navigation__top__bar, #debugger ul.debugger__navigation__top__bar li {
   height: 100%;
   float: left;
-  background-color: lightblue;
 }
 
 #debugger .debugger__navigation {
@@ -145,7 +188,6 @@
   padding-right: 20px;
   padding-top: 10px;
   min-width: 45px;
-  border: 0px;
   color: #29aae1;
   margin-right: 2px;
 }
@@ -183,7 +225,7 @@
 
 .debugger__actions {
   float: right;
-  margin-top: -.5em;
+  margin-top: .4em;
   margin-right: .4em;
   margin-left: .4em;
 }
@@ -217,7 +259,7 @@
 }
 
 .debugger__content {
-  margin-top: -.4em;
+  margin-top: -6px;
   display: block;
   overflow-y: auto;
   height: 0;
@@ -229,12 +271,8 @@
 #debugger .debugger__profile td {
   padding-right: 10px;
 }
-#debugger .debugger__profile table {
-  font-size: 1em;
-}
 #debugger .debugger__profile ul {
   list-style: circle;
-  display: inline;
 }
 #debugger .debugger__profile li {
   list-style: none;
@@ -257,97 +295,92 @@
   font-family: monospace;
 }
 
-.debugger.is-maximized {
+#debugger.is-maximized {
   box-shadow: 0 -0.1em 0.5em -0.01em rgba(0, 0, 0, 0.8);
   -webkit-transform: scale(1);
       -ms-transform: scale(1);
           transform: scale(1);
 }
-.debugger.is-maximized .debugger__title {
+#debugger.is-maximized .debugger__title {
   background: #efefef;
   color: #fff;
 }
-.debugger.is-maximized .debugger__content {
+#debugger.is-maximized .debugger__content {
   height: 80vh;
 }
-.debugger.is-closed .rg-top {
+#debugger.is-closed .rg-top {
   cursor: default !important;
-  visibility: hidden !important;
+  display: none !important;
 }
-.debugger.is-closed .debugger__content {
+#debugger.is-closed .debugger__content {
   height: 0px;
   height: 0vh !important;
 }
-
-.debugger__preview td {
+#debugger .debugger__preview td {
   padding-left: 10px;
 }
-.debugger__preview .addBox {
+#debugger .debugger__preview .addBox {
   width: 100%;
   padding-bottom: 1em;
   padding-top: 1em;
   vertical-align: middle;
 }
-.debugger__preview .addBox button {
+#debugger .debugger__preview .addBox button {
   background-color: #0073b9;
   color: white;
+  padding-top: 3px;
 }
-.debugger__preview button {
-  height: 29px;
-  margin-top: 2px;
-  border: none;
-}
-.debugger__preview .previewBox {
+#debugger .debugger__preview .previewBox {
   float: left;
   margin-top: 2px;
   margin-left: 5px;
   margin-right: 15px;
 }
-.debugger__preview .overrideSegments li {
+#debugger .debugger__preview .overrideSegments li {
   list-style: none;
   float: left;
   min-width: 25%;
-  font-size: 1em;
 }
-.debugger__preview .overrideSegments li::after {
+#debugger .debugger__preview .overrideSegments li::after {
   content: ' \2716';
   margin-right: 0em;
   padding-right: 10px;
 }
 
-.debugger__log table td {
+#debugger__log__table table td {
   vertical-align: top;
-  padding-bottom: 15px;
+  padding-bottom: 5px;
   padding-right: 15px;
 }
-.debugger__log tr:hover td {
-  background-color: #fafafa;
+#debugger__log__table tr:hover td {
+  background-color: #f2f2f2;
 }
-.debugger__log .clickable {
+#debugger__log__table #clickable {
   color: #29aae1;
   text-decoration: none;
   transition: color .2s ease-out;
+  cursor: pointer;
 }
-.debugger__log .clickable:visited {
+#debugger__log__table #clickable:visited {
   color: #018dc7;
 }
-.debugger__log .clickable:hover, .debugger__log .clickable a:active, .debugger__log .clickable a:focus {
+#debugger__log__table #clickable:hover, #debugger__log__table #clickable a:active, #debugger__log__table #clickable a:focus {
   color: #56c1f8;
 }
 
-.debugger .debugger-icon-warning {
+.debugger-icon-warning {
   background-image: url("icons/e29700/warning.svg");
 }
 
-.debugger .debugger-icon-error {
+.debugger-icon-error {
   background-image: url("icons/ea2800/error.svg");
 }
 
-.debugger .debugger-icon-info {
+.debugger-icon-info {
   background-image: url("icons/0073b9/info-circle.svg");
 }
 
-.debugger .debugger-icon-warning, .debugger .debugger-icon-error, .debugger .debugger-icon-info {
+.debugger-icon-warning, .debugger-icon-error, .debugger-icon-info {
   background-repeat: no-repeat;
   background-position: center;
 }
@@ -359,7 +392,7 @@
   content: '';
   display: block;
   position: absolute;
-  left: calc(50% - .15em / 2);
+  left: calc(50% - 3px);
   top: 22%;
   width: 3px;
   height: 60%;
@@ -369,19 +402,19 @@
   content: '';
   display: block;
   position: absolute;
-  top: calc(30% - .15em / 2);
+  top: calc(30% - 1.5px);
   width: 30%;
   height: 3px;
   background-color: #fff;
 }
 .debugger__action__maximize .debugger__icon::before {
-  right: 26%;
+  right: 24%;
   -webkit-transform: rotate(40deg);
       -ms-transform: rotate(40deg);
           transform: rotate(40deg);
 }
 .debugger__action__maximize .debugger__icon::after {
-  left: 26%;
+  left: 24%;
   -webkit-transform: rotate(-40deg);
       -ms-transform: rotate(-40deg);
           transform: rotate(-40deg);
@@ -436,7 +469,7 @@
           transform: rotate(-45deg);
 }
 
-.debugger.is-maximized .debugger__action__maximize, .debugger.is-closed .debugger__action__close {
+#debugger.is-maximized .debugger__action__maximize, #debugger.is-closed .debugger__action__close {
   opacity: 0;
   visibility: hidden;
   -webkit-transform: scale(0);
@@ -446,26 +479,25 @@
   margin: 0;
   cursor: default;
 }
-.debugger.is-maximized [aria-hidden="true"].debugger__action__maximize, .debugger.is-closed [aria-hidden="true"].debugger__action__close {
+#debugger.is-maximized [aria-hidden="true"].debugger__action__maximize, #debugger.is-closed [aria-hidden="true"].debugger__action__close {
   display: none;
 }
 
-.multiSelect .layout {
+#debugger .multiSelect .layout {
   float: none;
 }
-.multiSelect .line {
+#debugger .multiSelect .line {
   padding: 2px 2px 4px 2px;
   max-height: 30px;
   overflow: hidden;
   box-sizing: content-box;
 }
-.multiSelect .acol {
+#debugger .multiSelect .acol {
   display: inline-block;
   min-width: 12px;
 }
-.multiSelect button {
+#debugger .multiSelect button {
   color: #333333;
-  font-size: 1em;
   position: relative;
   text-align: center;
   cursor: pointer;
@@ -483,19 +515,19 @@
   background-color: #efefef;
   font-size: 10px;
 }
-.multiSelect button:disabled {
+#debugger .multiSelect button:disabled {
   background-image: linear-gradient(#fff, #fff);
   border: 1px solid #ddd;
   color: #999;
 }
-.multiSelect .buttonClicked {
+#debugger .multiSelect .buttonClicked {
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.15) inset, 0 1px 2px rgba(0, 0, 0, 0.05);
 }
-.multiSelect .buttonLabel {
+#debugger .multiSelect .buttonLabel {
   display: inline-block;
   padding: 5px 0px 5px 0px;
 }
-.multiSelect .checkboxLayer {
+#debugger .multiSelect .checkboxLayer {
   background-color: #fff;
   position: absolute;
   z-index: 999;
@@ -504,18 +536,18 @@
   box-shadow: 0 6px 12px rgba(0, 0, 0, 0.175);
   display: none !important;
 }
-.multiSelect .inputFilter {
+#debugger .multiSelect .inputFilter {
   display: none;
 }
-.multiSelect .checkBoxContainer {
+#debugger .multiSelect .checkBoxContainer {
   display: block;
   padding: 8px;
   overflow: hidden;
 }
-.multiSelect .show {
+#debugger .multiSelect .show {
   display: block !important;
 }
-.multiSelect .multiSelectItem {
+#debugger .multiSelect .multiSelectItem {
   display: block;
   padding: 3px;
   color: #444;
@@ -532,7 +564,7 @@
   padding-right: 10px;
   padding-left: 30px;
 }
-.multiSelect .multiSelectItem:not(.multiSelectGroup).selected {
+#debugger .multiSelect .multiSelectItem:not(.multiSelectGroup).selected {
   background-image: linear-gradient(#e9e9e9, #f1f1f1);
   color: #555;
   cursor: pointer;
@@ -541,58 +573,62 @@
   border-left: 1px solid #e4e4e4;
   border-right: 1px solid #d9d9d9;
 }
-.multiSelect .multiSelectItem:hover {
+#debugger .multiSelect .multiSelectItem:hover {
   background-image: linear-gradient(#c1c1c1, #999) !important;
   color: #fff !important;
   cursor: pointer;
   border: 1px solid #ccc !important;
 }
-.multiSelect .multiSelectItem .acol label {
+#debugger .multiSelect .multiSelectItem .acol label {
   display: inline-block;
   margin: 0px;
   font-weight: normal;
   line-height: normal;
 }
-.multiSelect .multiSelectFocus {
+#debugger .multiSelect .multiSelectFocus {
   background-image: linear-gradient(#c1c1c1, #999) !important;
   color: #fff !important;
   cursor: pointer;
   border: 1px solid #ccc !important;
 }
-.multiSelect .multiSelectFocus:hover {
+#debugger .multiSelect .multiSelectFocus:hover {
   cursor: pointer;
 }
-.multiSelect .tickMark {
+#debugger .multiSelect .tickMark {
   display: inline-block;
   position: absolute;
   left: 10px;
   font-size: 10px;
 }
-.multiSelect .checkbox {
+#debugger .multiSelect .checkbox {
   color: #ddd !important;
   position: absolute;
   left: -9999px;
   cursor: pointer;
 }
-.multiSelect img {
+#debugger .multiSelect img {
   margin-bottom: 0px;
   max-height: 22px;
   max-width: 22px;
 }
 
-.autocomplete {
+#debugger .autocomplete {
   width: 100%;
   border-radius: 0px;
   position: relative;
 }
-.autocomplete input {
-  font-size: 1em;
+#debugger .autocomplete input {
   width: 100%;
-  border-radius: 0px;
+  border-style: solid;
+  border-radius: 0;
+  border-color: lightgray;
+  border-width: 1px;
   line-height: 1;
   height: 29px;
+  margin-top: 3px;
+  padding-left: 5px;
 }
-.autocomplete ul {
+#debugger .autocomplete ul {
   position: absolute;
   left: 0;
   width: 100%;
@@ -602,133 +638,118 @@
   z-index: 1;
   background-color: white;
 }
-.autocomplete li {
+#debugger .autocomplete li {
   text-align: left;
   list-style: none;
   width: 100%;
-  /*padding:0.4em;*/
-  font-size: 1em;
+  font-size: 12px;
   background-color: #fff;
 }
-.autocomplete li.active {
+#debugger .autocomplete li.active {
   width: 100%;
   background-color: #4bf;
 }
-.autocomplete .highlight {
+#debugger .autocomplete .highlight {
   background-color: #E2E2E2;
 }
-.autocomplete li.active .highlight {
+#debugger .autocomplete li.active .highlight {
   background: #666;
   color: #fff;
 }
 
 @media only screen and (max-width: 550px), (min-device-width: 768px) and (max-device-width: 1024px) {
-  /* Force table to not be like tables anymore */
-  .debugger__log table, .debugger__log thead, .debugger__log tbody, .debugger__log td, .debugger__log tr, .debugger__profile tr, .debugger__profile td {
+  #debugger {
+    /* Force table to not be like tables anymore */
+    /*Hide table headers (but not display: none;, for accessibility) */
+    /* Label the icons */
+    /* Label the data */
+  }
+  #debugger .debugger__log table, #debugger .debugger__log thead, #debugger .debugger__log tbody, #debugger .debugger__log td, #debugger .debugger__log tr, #debugger .debugger__profile tr, #debugger .debugger__profile td {
     display: block;
   }
-
-  /*Hide table headers (but not display: none;, for accessibility) */
-  .debugger__log th, .debugger__preview th {
+  #debugger .debugger__log th, #debugger .debugger__preview th {
     position: absolute;
     top: -9999px;
     left: -9999px;
   }
-
-  .debugger__log tr {
+  #debugger .debugger__log tr {
     border: 1px solid #ccc;
   }
-
-  .debugger__log td {
+  #debugger .debugger__log td {
     /* Behave like a "row" */
     border: none;
     border-bottom: 1px solid #eee;
     position: relative;
+    padding-bottom: 14px;
   }
-
-  .debugger__log td:before {
+  #debugger .debugger__log td:before {
     /* Now like a table header */
     position: absolute;
     /* Top/left values mimic padding */
     width: 100%;
-    top: -1.5em;
+    top: -15px;
     font-weight: bold;
     background-color: #efefef;
     white-space: nowrap;
   }
-
-  /* Label the icons */
-  .debugger .debugger__log [class*='debugger-icon-'] {
+  #debugger .debugger__log [class*='debugger-icon-'] {
     background-position: left;
   }
-
-  .debugger .debugger__log .debugger-icon-info:after {
+  #debugger .debugger__log .debugger-icon-info:after {
     content: "Notification";
     padding-left: 20px;
     font-style: italic;
   }
-
-  .debugger .debugger__log .debugger-icon-warning:after {
+  #debugger .debugger__log .debugger-icon-warning:after {
     content: "Warning";
     padding-left: 20px;
     font-style: italic;
   }
-
-  .debugger .debugger__log .debugger-icon-warning:after {
+  #debugger .debugger__log .debugger-icon-warning:after {
     content: "Error";
     padding-left: 20px;
     font-style: italic;
   }
-
-  /* Label the data */
-  .debugger__log td:nth-of-type(1)::before {
+  #debugger .debugger__log td:nth-of-type(1)::before {
     content: "";
   }
-
-  .debugger__log td:nth-of-type(2)::before {
+  #debugger .debugger__log td:nth-of-type(2)::before {
     content: "Message";
   }
-
-  .debugger__log td:nth-of-type(3)::before {
+  #debugger .debugger__log td:nth-of-type(3)::before {
     content: "Type";
   }
-
-  .debugger__log td:nth-of-type(4):before {
+  #debugger .debugger__log td:nth-of-type(4):before {
     content: "Time";
   }
-
-  .debugger__log td:nth-of-type(5):before {
+  #debugger .debugger__log td:nth-of-type(5):before {
     content: "Page";
   }
-
-  .debugger__log td:nth-of-type(6):before {
+  #debugger .debugger__log td:nth-of-type(6):before {
     content: "Resolution";
   }
-
-  .debugger__log td:nth-of-type(7):before {
+  #debugger .debugger__log td:nth-of-type(7):before {
     content: "";
   }
 }
 @media only screen and (max-width: 550px), (min-device-width: 768px) and (max-device-width: 1024px) {
-  .debugger .debugger__navigation a.debugger__navigation__item {
+  #debugger .debugger__navigation a.debugger__navigation__item {
     padding-left: 5px;
     padding-right: 5px;
   }
 }
 @media only screen and (max-width: 550px), (min-device-width: 768px) and (max-device-width: 1024px) {
-  .debugger__profile td:first-child {
+  #debugger .debugger__profile td:first-child {
     width: 100%;
   }
 }
-.resizable {
+#debugger .resizable {
   position: relative;
 }
-
-.resizable.no-transition {
+#debugger .resizable.no-transition {
   transition: none !important;
 }
-
-.rg-top {
+#debugger .rg-top {
   display: block;
   width: 14px;
   height: 14px;
@@ -741,23 +762,23 @@
   user-select: none;
   background: transparent;
 }
-
-.rg-top span {
+#debugger .rg-top:hover {
+  cursor: row-resize;
+}
+#debugger .rg-top span {
   position: absolute;
   box-sizing: border-box;
   display: block;
   border: 1px solid #ccc;
 }
-
-.rg-top span {
+#debugger .rg-top span {
   border-width: 1px 0;
   left: 50%;
   margin: 3.5px 0 0 -10px;
   width: 20px;
   height: 7px;
 }
-
-.rg-top {
+#debugger .rg-top {
   cursor: row-resize;
   width: 100%;
   top: 0;

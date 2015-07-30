@@ -316,10 +316,11 @@ app.controller("DebuggerController", function($scope, $timeout, debuggerFactory,
     }
 
     $scope.startPreview = function(){
-        $sessionStorage.setObject(debugPrefix + "::originalSegments",$scope.profile.curSegments);
-        $sessionStorage.setObject(debugPrefix + "::overrideSegments",$scope.profile.overrideSegments);
+        // $sessionStorage.setObject(debugPrefix + "::originalSegments",$scope.profile.curSegments);
+        // $sessionStorage.setObject(debugPrefix + "::overrideSegments",$scope.profile.overrideSegments);
         Drupal.acquiaLiftProfilesDebug.setOverrideSegments($scope.profile.overrideSegments);    
-        fade(document.getElementsByClassName('debugger__preview__notification')[0],"Please refresh page to see your changes");
+        document.getElementsByClassName('debugger__preview__notification')[0].innerHTML = 'Please refresh page to see your changes';
+        document.getElementByClassName('debugger__preview__notification')
     }
 
     $scope.stopPreview = function(){
@@ -331,24 +332,28 @@ app.controller("DebuggerController", function($scope, $timeout, debuggerFactory,
         }
     }
 
-  $scope.isPreview = function(){
-    if (window.sessionStorage.getItem("acquiaLift::debug::overrideSegments")){
-      $scope.previewButtonStop = {
-        'background-color': ' #0073b9',
-        'color':'white'
-      }
-      $scope.previewButtonStart = {}
-      document.getElementById("sitePreviewTabLabel").innerText="Site Preview - Active";
+    $scope.isPreview = function(){
+        if (window.sessionStorage.getItem("acquiaLift::debug::overrideSegments")){
+            $scope.previewButtonStop = {
+                'background-color': ' #0073b9',
+                'color':'white'
+            }
+            $scope.previewButtonStart = {}
+            document.getElementById("sitePreviewTabLabel").innerHTML='Site Preview - Active';
+            document.getElementById("profileSegmentLabel").innerHTML='<b>Previewing site as these segments:</b>'
 
-      return true;
-    }else{
-      $scope.previewButtonStart = {
-        'background-color': ' #0073b9',
-        'color':'white'
-      }
-      $scope.previewButtonStop={}
-      document.getElementById("sitePreviewTabLabel").innerText="Site Preview";
-      return false;
+            return true;
+        }else{
+            $scope.previewButtonStart = {
+                'background-color': ' #0073b9',
+                'color':'white'
+            }
+            $scope.previewButtonStop={}
+            document.getElementById("sitePreviewTabLabel").innerHTML='Site Preview';
+            document.getElementById("profileSegmentLabel").innerHTML='<b>Last Evaluated Segments:</b>'
+
+            return false;
+        }
     }
   }
 
@@ -414,19 +419,6 @@ angular.module('debuggerModule')
             return;
         };
     }]);
-function fade(element, string) {
-    element.innerText = string;
-
-    var op = 0.1;  // initial opacity
-    var timer = setInterval(function () {
-        if (op >= 1){
-            clearInterval(timer);
-        }
-        element.style.opacity = op;
-        element.style.filter = 'alpha(opacity=' + op * 100 + ")";
-        op += op * 0.1;
-    }, 10);
-}
 
 angular.module('debuggerModule')
     .filter('cut', function () {

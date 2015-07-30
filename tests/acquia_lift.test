@@ -1047,7 +1047,7 @@ class AcquiaLiftWebTestReports extends AcquiaLiftWebTestBase {
     $this->drupalGet('admin/structure/personalize/manage/' . $agent->machine_name . '/results');
     $this->assertText('Test for Everyone audience');
     $this->assertNoFieldByName('audience_filter');
-    $this->assertFieldById('acquia-lift-complete-everyone-else');
+    $this->assertLinkByHref('admin/structure/personalize/manage/' . $agent->machine_name . '/audience/everyone-else/complete');
 
     // Pause the agent and change it so that it has another test.
     personalize_agent_set_status($agent->machine_name, PERSONALIZE_STATUS_PAUSED);
@@ -1072,8 +1072,8 @@ class AcquiaLiftWebTestReports extends AcquiaLiftWebTestBase {
     $this->assertNoText('Test for Everyone else audience');
     $this->assertFieldByName('audience_filter');
     $this->assertOptionSelected('acquia-lift-report-audience-filter', 'everyone-else');
-    $this->assertFieldById('acquia-lift-complete-everyone-else');
-    $this->assertNoFieldById('acquia-lift-complete-my-first-audience');
+    $this->assertLinkByHref('admin/structure/personalize/manage/' . $agent->machine_name . '/audience/everyone-else/complete');
+    $this->assertNoLinkByHref('admin/structure/personalize/manage/' . $agent->machine_name . '/audience/my-first-audience/complete');
 
     // Now change the audience and verify that the complete button changes
     $edit = array(
@@ -1082,8 +1082,9 @@ class AcquiaLiftWebTestReports extends AcquiaLiftWebTestBase {
     $this->drupalPostAJAX(NULL, $edit, 'audience_filter');
     $this->assertFieldByName('audience_filter');
     $this->assertOptionSelected('acquia-lift-report-audience-filter', 'my-first-audience');
-    $this->assertNoFieldById('acquia-lift-complete-everyone-else');
-    $this->assertFieldById('acquia-lift-complete-my-first-audience');
+    $this->assertNoLinkByHref('admin/structure/personalize/manage/' . $agent->machine_name . '/audience/everyone-else/complete');
+    $this->assertLinkByHref('admin/structure/personalize/manage/' . $agent->machine_name . '/audience/my-first-audience/complete');
+
 
     // Change it again so that it has no tests.
     personalize_agent_set_status($agent->machine_name, PERSONALIZE_STATUS_PAUSED);
@@ -1111,9 +1112,9 @@ class AcquiaLiftWebTestReports extends AcquiaLiftWebTestBase {
     $this->drupalGet('admin/structure/personalize/manage/' . $agent->machine_name . '/results');
     $this->assertText('This personalization does not contain tests, no reports to show.');
     $this->assertNoFieldByName('audience_filter');
-    $this->assertNoFieldById('acquia-lift-complete-my-first-audience');
-    $this->assertNoFieldById('acquia-lift-complete-my-second-audience');
-    $this->assertNoFieldById('acquia-lift-complete-everyone-else');
+    $this->assertNoLinkByHref('admin/structure/personalize/manage/' . $agent->machine_name . '/audience/everyone-else/complete');
+    $this->assertNoLinkByHref('admin/structure/personalize/manage/' . $agent->machine_name . '/audience/my-first-audience/complete');
+    $this->assertNoLinkByHref('admin/structure/personalize/manage/' . $agent->machine_name . '/audience/my-second-audience/complete');
   }
 
   public function testConversionReportAjaxEndpoint() {

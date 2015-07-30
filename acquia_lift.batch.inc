@@ -178,11 +178,11 @@ function acquia_lift_batch_finished($success, $results, $operations, $elapsed_ti
     if (empty($errors)) {
       if (!empty($next_status)) {
         if ($agent = $_SESSION['acquia_lift_agent_sync']) {
-          personalize_agent_set_status($agent, $next_status);
-          if ($next_status == PERSONALIZE_STATUS_RUNNING) {
+          $updated = personalize_agent_set_status($agent, $next_status);
+          if ($updated && $next_status == PERSONALIZE_STATUS_RUNNING) {
             drupal_set_message(t('Congratulations! You have started your personalization.'));
           }
-          else if ($next_status == PERSONALIZE_STATUS_SCHEDULED) {
+          else if ($updated && $next_status == PERSONALIZE_STATUS_SCHEDULED) {
             module_load_include('inc', 'personalize', 'personalize.admin.campaign');
             $start_date = personalize_agent_get_start_date($agent);
             drupal_set_message(t('Congratulations!  You have scheduled your personalization to start on @date', array(

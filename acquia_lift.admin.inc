@@ -742,28 +742,20 @@ function acquia_lift_report($form, &$form_state, $agent_data) {
           '#id' => 'acquia-lift-report-audience-filter',
         );
       }
-      $form['audience_container']['complete_url'] = array(
-        '#type' => 'hidden',
-        // Per ctools modals the class name is the #id of the triggering
-        // ajax button with "-url" suffix.
-        '#attributes' => array('class' => array('acquia-lift-complete-' . $audience . '-url')),
-        '#value' => url('admin/structure/personalize/manage/' . $agent_data->machine_name . '/audience/' . $audience . '/complete'),
-      );
       $form['audience_container']['complete'] = array(
-        '#type' => 'button',
-        '#value' => t('End test and choose winner'),
+        '#type' => 'link',
+        '#title' => t('End test and choose winner'),
+        '#href' => url('admin/structure/personalize/manage/' . $agent_data->machine_name . '/audience/' . $audience . '/complete'),
         '#attributes' => array(
-          'id' => 'acquia-lift-complete-' . $audience,
           'class' => array(
             'ctools-use-modal',
             'ctools-modal-acquia-lift-style',
             'action-item-primary-active',
             'acquia-lift-submit-button',
             'acquia-lift-complete-audience',
-          ),
-        ),
+          )
+        )
       );
-
       $form['report'] = acquia_lift_report_custom($form_state, $nested_agent, FALSE, $agent_data);
     }
   }

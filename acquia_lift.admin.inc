@@ -742,20 +742,22 @@ function acquia_lift_report($form, &$form_state, $agent_data) {
           '#id' => 'acquia-lift-report-audience-filter',
         );
       }
-      $form['audience_container']['complete'] = array(
-        '#type' => 'link',
-        '#title' => t('End test and choose winner'),
-        '#href' => url('admin/structure/personalize/manage/' . $agent_data->machine_name . '/audience/' . $audience . '/complete'),
-        '#attributes' => array(
-          'class' => array(
-            'ctools-use-modal',
-            'ctools-modal-acquia-lift-style',
-            'action-item-primary-active',
-            'acquia-lift-submit-button',
-            'acquia-lift-complete-audience',
+      if (personalize_agent_get_status($agent_data->machine_name) != PERSONALIZE_STATUS_COMPLETED) {
+        $form['audience_container']['complete'] = array(
+          '#type' => 'link',
+          '#title' => t('End test and choose winner'),
+          '#href' => url('admin/structure/personalize/manage/' . $agent_data->machine_name . '/audience/' . $audience . '/complete'),
+          '#attributes' => array(
+            'class' => array(
+              'ctools-use-modal',
+              'ctools-modal-acquia-lift-style',
+              'action-item-primary-active',
+              'acquia-lift-submit-button',
+              'acquia-lift-complete-audience',
+            )
           )
-        )
-      );
+        );
+      }
       $form['report'] = acquia_lift_report_custom($form_state, $nested_agent, FALSE, $agent_data);
     }
   }

@@ -3342,13 +3342,13 @@ function _acquia_lift_personalize_campaign_wizard_settings_tests($agent_data, $e
     ),
   );
 
-  $control_rate = isset($agent_data->data['control_rate']) ? $agent_data->data['control_rate'] : 10;
+  $control_rate = isset($agent_data->data['control_rate']) ? $agent_data->data['control_rate'] : 0;
   $form['control_rate'] = array(
     '#type' => 'acquia_lift_percentage',
-    '#title' => t('Control Group'),
+    '#title' => t('Exclusion Group'),
     '#field_suffix' => '%',
     '#size' => 3,
-    '#description' => t('A fixed baseline variation will be shown, by default the first variation in the set.'),
+    '#description' => t('A fixed variation will be shown to those excluded from the test, by default the first variation in the set.'),
     '#default_value' => $control_rate,
     '#rest_title' => t('Test Group'),
     '#rest_description' => t('Personalized variations will be shown.'),
@@ -3391,7 +3391,7 @@ function _acquia_lift_personalize_campaign_wizard_settings_tests($agent_data, $e
     '#field_suffix' => '%',
     '#description' => t('Variations will be shown randomly and tracked to adjust for false positives.'),
     '#size' => 3,
-    '#default_value' => isset($agent_data->data['explore_rate']) ? $agent_data->data['explore_rate'] : 20,
+    '#default_value' => $explore_rate,
     '#rest_title' => t('Personalized Group'),
     '#rest_description' => t('The "best" variation will be shown for each visitor based on our algorithm.'),
     '#collapsible' => TRUE,

@@ -408,10 +408,13 @@ input[type="submit"].acquia-lift-wizard-add:hover {
 
 /* Section help */
 #acquia-lift-campaign-wizard-section-help {
+  padding: 1em;
+  transitions: 4;
+}
+#acquia-lift-campaign-wizard-section-help.is-expanded {
   border: .08rem solid #cccccc;
   box-shadow: 0 .05rem 0 #cccccc;
   background-color: #e6e9ed;
-  padding: 1em;
 }
 #acquia-lift-campaign-wizard-section-help .acquia-lift-section-help-trigger {
   float: right;
@@ -436,6 +439,9 @@ input[type="submit"].acquia-lift-wizard-add:hover {
 #acquia-lift-campaign-wizard-section-help .acquia-lift-section-help-expanded .acquia-lift-section-help-collapse {
   float: right;
   min-height: 2.5em;
+}
+#acquia-lift-campaign-wizard-section-help p {
+  max-width: inherit;
 }
 
 /* Variations form */

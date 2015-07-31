@@ -226,7 +226,10 @@ function theme_acquia_lift_wizard_section_help($variables) {
   $trigger_text = t('Help?');
   $collapsed = isset($element['#collapsed']) ? $element['#collapsed'] : TRUE;
   $container_classes = array('clearfix');
-  if (!$collapsed) {
+  if ($collapsed) {
+    $container_classes[] = 'is-collapsed';
+  }
+  else {
     $container_classes[] = 'is-expanded';
   }
 

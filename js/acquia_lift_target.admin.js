@@ -28,19 +28,19 @@
         function toggleHelp(e) {
           if ($('#acquia-lift-campaign-wizard-section-help', context).hasClass('is-expanded')) {
             // Collapse help.
+            var $container = $('#acquia-lift-campaign-wizard-section-help');
+            $container.removeClass('is-expanded');
+            $container.find('.acquia-lift-section-help-trigger').attr('title', Drupal.t('Show help'));
             $('#acquia-lift-campaign-wizard-section-help .acquia-lift-section-help-expanded').slideUp(400, function() {
-              var $container = $(this).parents('#acquia-lift-campaign-wizard-section-help');
-              //$(this).addClass('element-hidden');
-              $container.removeClass('is-expanded');
-              $container.find('.acquia-lift-section-help-trigger').attr('title', Drupal.t('Show help'));
+              $('#acquia-lift-campaign-wizard-section-help').addClass('is-collapsed');
             });
           } else {
             // Expand help.
+            var $container = $('#acquia-lift-campaign-wizard-section-help');
+            $container.addClass('is-expanded');
+            $container.find('.acquia-lift-section-help-trigger').attr('title', Drupal.t('Hide help'));
             $('#acquia-lift-campaign-wizard-section-help .acquia-lift-section-help-expanded').slideDown(400, function() {
-              var $container = $(this).parents('#acquia-lift-campaign-wizard-section-help');
-              //$(this).addClass('element-hidden');
-              $container.addClass('is-expanded');
-              $container.find('.acquia-lift-section-help-trigger').attr('title', Drupal.t('Hide help'));
+              $('#acquia-lift-campaign-wizard-section-help').removeClass('is-collapsed');
             });
           }
           return false;

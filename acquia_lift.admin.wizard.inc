@@ -1236,30 +1236,6 @@ function acquia_lift_personalize_campaign_wizard_review_alter(&$form, &$form_sta
     );
   }
 
-  // Show advanced testing options.
-  $form['review']['summary_column']['advanced'] = array(
-    '#type' => 'container',
-    '#theme' => 'acquia_lift_card',
-    '#title' => t('Advanced'),
-    '#collapsible' => TRUE,
-    '#collapsed' => TRUE,
-    '#tree' => FALSE,
-    '#attributes' => array(
-      'class' => array('acquia-lift-test-options'),
-    ),
-    '#disabled' => !$editable,
-  );
-  if ($has_tests) {
-    $form['review']['summary_column']['advanced']['options'] = _acquia_lift_personalize_campaign_wizard_review_tests($agent_data, array());
-  }
-
-  $form['review']['summary_column']['advanced']['cache_decisions'] = array(
-    '#type' => 'checkbox',
-    '#title' => 'Cache decisions made by this agent?',
-    '#description' => t('Check this if decisions made by this agent should stick, so that they don\'t have to be made again every time variation sets are rendered. This depends on the availability of local storage in the visitor\'s browser'),
-    '#default_value' => isset($agent_data->data['cache_decisions']) ? $agent_data->data['cache_decisions'] : 0
-  );
-
   // Move the scheduling summary element to the bottom.
   $form['review']['summary_column']['summary']['scheduling']['#weight'] = 10;
 

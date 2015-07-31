@@ -122,7 +122,7 @@ class AcquiaLiftAgent extends PersonalizeAgentBase implements PersonalizeAgentGo
    */
   public function getAgentSyncOperations() {
     $items = array();
-    $acquia_lift_control_rate = .1;
+    $acquia_lift_control_rate = 0;
     $acquia_lift_explore_rate = 1;
     if (isset($this->data['control_rate'])) {
       // Acquia Lift takes the control rate as a number between 0 and 1.

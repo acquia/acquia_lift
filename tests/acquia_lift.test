@@ -902,7 +902,7 @@ class AcquiaLiftWebTestFundamentals extends AcquiaLiftWebTestBase {
     // operations.
     $agent->tests_to_delete = array('first-test', 'second-test');
     $operations = acquia_lift_get_sync_operations_for_agent($agent);
-    $control_rate = 10;
+    $control_rate = 0;
     $explore_rate = 100;
     $decision_point = $decision_name = 'osid-' . $sub_option_set->osid;
     $expected_operations = array(
@@ -4168,8 +4168,10 @@ class AcquiaLiftWebTestCampaignWizardReview extends AcquiaLiftWebTestCampaignWiz
     }
     $nested_tests = acquia_lift_get_nested_tests($agent);
     $nested_settings = $parent_settings;
-    // All but the cache_decisions setting should be the same
+    // The cache_decisions setting should be 1 instead of 0.
     $nested_settings['cache_decisions'] = 1;
+    // Explore rate should be set to 1;
+    $nested_settings['explore_rate'] = 1;
     $nested1 = personalize_agent_load($nested_tests[0]);
     $this->assertEqual($nested1->data, $nested_settings);
 

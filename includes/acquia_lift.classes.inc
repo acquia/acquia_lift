@@ -447,11 +447,11 @@ class AcquiaLiftAPI implements PersonalizeLoggerAwareInterface, AcquiaLiftReport
    * @return boolean
    *   TRUE if the agent has been saved to Acquia Lift, FALSE otherwise.
    */
-  public function saveAgent($machine_name, $label, $decision_style, $status = 'enabled', $control_rate = 0.1, $explore_rate = .2) {
+  public function saveAgent($machine_name, $label, $decision_style = 'random', $status = 'enabled', $control_rate = 0, $explore_rate = .2) {
     // The selection-mode argument can only be "random" or "adaptive", so coerce the
     // $decision_mode variable if it's somehow something else.
-    if ($decision_style !== "random") {
-      $decision_style = "adaptive";
+    if ($decision_style !== "adaptive") {
+      $decision_style = "random";
     }
     $status = self::mapStatus($status);
     $url = $this->generateEndpoint("/agent-api/$machine_name");

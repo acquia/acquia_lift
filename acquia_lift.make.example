@@ -6,24 +6,29 @@ api = 2
 core = 7.x
 
 projects[drupal][type] = core
-projects[drupal][version] = "7.34"
+projects[drupal][version] = "7.38"
 
 ; Modules =====================================================================
 
 ; Contrib module: personalize
 ; ---------------------------------------
 projects[personalize][subdir] = contrib
-projects[personalize][version] = 2.0-beta3
+projects[personalize][version] = 2.0-beta4
 
 ; Contrib module: visitor_actions
 ; ---------------------------------------
 projects[visitor_actions][subdir] = contrib
-projects[visitor_actions][version] = 1.1
+projects[visitor_actions][version] = 1.2
 
 ; Contrib module: acquia_lift
 ; ---------------------------------------
 projects[acquia_lift][subdir] = contrib
-projects[acquia_lift][version] = 2.0-beta3
+projects[acquia_lift][version] = 2.0-beta4
+
+; Contrib module: acquia_connector
+; ---------------------------------------
+projects[acquia_connector][subdir] = contrib
+projects[acquia_connector][version] = 2.15
 
 ; Contrib module: ctools
 ; ---------------------------------------

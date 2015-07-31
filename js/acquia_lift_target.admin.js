@@ -46,7 +46,7 @@
           return false;
         }
         $('.acquia-lift-section-help-trigger', this).on('click', toggleHelp);
-        $('.acquia-lift-section-help-collapse', this).on('click', toggleHelp);
+        $('.acquia-lift-section-help-collapse', this).on('mousedown', toggleHelp);
       });
     }
   };

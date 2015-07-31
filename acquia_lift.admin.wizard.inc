@@ -1406,13 +1406,36 @@ function acquia_lift_personalize_campaign_wizard_review_alter(&$form, &$form_sta
  * Section help callback for variations section.
  */
 function acquia_lift_personalize_campaign_wizard_variations_help(&$form, $form_state, $agent_data, $editable) {
+  global $user;
+  $dismissed = isset($user->data['acquia_lift_help_dismiss']) ? $user->data['acquia_lift_help_dismiss'] : array();
+
+  $help_text = '';
+  $help_text .= '<p>';
+  $help_text .= t('A Variation Set contains all Variations which will be shown in a specific area on your site.');
+  $help_text .= '</p><p>';
+  $help_text .= 'For example, a "Frontpage Offers" block or a "Homepage Banner" would be a Variation Set, and the individual Variations will be the text or creative that you\'ll want to show to different visitors. You will set up testing and targeting rules on the "Who" page. Here, you should simply create all the variations which you want to show.';
+  $help_text .= '</p><p>';
+  $help_text .= t('If more than one Variation Set exists in a personalization, then the Variations will be in "lock step" with one another, meaning if a user sees Variation A from one Variation Set, they will always be shown Variation A in the the other Variation Set, whether it is set up as a test or as targeting.');
+  $help_text .= '</p>';
+
   unset($form['variations']['title']['#instructions']);
   return array(
     '#type' => 'container',
     '#theme' => 'acquia_lift_wizard_section_help',
     '#image' => drupal_get_path('module', 'acquia_lift') . '/images/help/section_what.png',
     '#alt' => t('Structure of a variation set.'),
-    '#text' => t('Create one or more sets of content variations, which Acquia Lift Target will use when displaying personalized content for your visitors.'),
+    '#text' => $help_text,
+    '#collapsed' => array_search('variations', $dismissed) !== FALSE,
+    'dismiss' => array(
+      '#type' => 'button',
+      '#name' => 'dismiss_variations',
+      '#value' => t('OK, got it'),
+      '#ajax' => array(
+        'callback' => 'acquia_lift_personalize_campaign_wizard_help_ajax',
+        'progress' => array(),
+      ),
+      '#limit_validation_errors' => array(),
+    ),
   );
 }
 
@@ -1420,13 +1443,36 @@ function acquia_lift_personalize_campaign_wizard_variations_help(&$form, $form_s
  * Section help callback for goals section.
  */
 function acquia_lift_personalize_campaign_wizard_goals_help(&$form, $form_state, $agent_data, $editable) {
+  global $user;
+  $dismissed = isset($user->data['acquia_lift_help_dismiss']) ? $user->data['acquia_lift_help_dismiss'] : array();
+
   unset($form['goals']['title']['#instructions']);
+  $help_text = '';
+  $help_text .= '<p>';
+  $help_text .= t('Goals are the things that you want your visitors to do based on this personalization.');
+  $help_text .= '</p><p>';
+  $help_text .= t('Examples include clicking through on a link in the personalization, filling out a form on a later page, or completing a purchase. Completion of goals is how conversion rate will be determined and will show up in later reports.');
+  $help_text .= '</p><p>';
+  $help_text .= t('A default goal is created for each Variation Set which will capture a visitor clicking within any Variation in the Variation Set and in many cases you can simply use this goal and not add any others. If you create more than one goal, and they have different levels of importance, you can set goal value to reflect that and later view reports based on total Conversion Value rather than just Conversion Rate.');
+  $help_text .= '<p>';
+
   return array(
     '#type' => 'container',
     '#theme' => 'acquia_lift_wizard_section_help',
     '#image' => drupal_get_path('module', 'acquia_lift') . '/images/help/section_why.png',
     '#alt' => t('Structure of a personalization with goals.'),
-    '#text' => t('Create your personalization\'s goals, which are the website actions that you want your visitors to take. Completed goals for a variation increase its chance of being the winning variation for a group of visitors.'),
+    '#text' => $help_text,
+    '#collapsed' => array_search('goals', $dismissed) !== FALSE,
+    'dismiss' => array(
+      '#type' => 'button',
+      '#name' => 'dismiss_variations',
+      '#value' => t('OK, got it'),
+      '#ajax' => array(
+        'callback' => 'acquia_lift_personalize_campaign_wizard_help_ajax',
+        'progress' => array(),
+      ),
+      '#limit_validation_errors' => array(),
+    ),
   );
 }
 
@@ -1434,17 +1480,38 @@ function acquia_lift_personalize_campaign_wizard_goals_help(&$form, $form_state,
  * Section help callback for targeting section.
  */
 function acquia_lift_personalize_campaign_wizard_targeting_help(&$form, $form_state, $agent_data, $editable) {
+  global $user;
+  $dismissed = isset($user->data['acquia_lift_help_dismiss']) ? $user->data['acquia_lift_help_dismiss'] : array();
+
   unset($form['targeting']['title']['#instructions']);
+  $help_text = '';
+  $help_text .= '<p>';
+  $help_text .= t('Audiences are the groups of people you wish to show different variations to.');
+  $help_text .= '</p><p>';
+  $help_text .= t('For example, you can create an audience for "Visitors from Los Angeles aged 18-25" and then target them with the "Winter Vacation" variation. The Variation(s) in the Everyone / Everyone Else box will be shown to any visitor who does not fall into an audience above it.');
+  $help_text .= '</p><p>';
+  $help_text .= t('You can add more than one Variation to an Audience, which will automatically create an A/B test between those Variations. Each Audience can have its own A/B Test. Also note that in the case where a visitor is in more than one Audience, the first Audience (from top to bottom) that matches will be used, so you can drag the audiences to rearrange if necessary. If you simply wish to test with no targeting, place all variations in the "Everyone" box.');
+  $help_text .= '</p>';
+
   return array(
     '#type' => 'container',
     '#theme' => 'acquia_lift_wizard_section_help',
     '#image' => drupal_get_path('module', 'acquia_lift') . '/images/help/section_who.png',
     '#alt' => t('Structure of a personalization with targeting.'),
-    '#text' => t('Determine which of the variations in your personalizations are displayed to specific groups of website visitors.'),
+    '#text' => $help_text,
+    '#collapsed' => array_search('targeting', $dismissed) !== FALSE,
+    'dismiss' => array(
+      '#type' => 'button',
+      '#name' => 'dismiss_variations',
+      '#value' => t('OK, got it'),
+      '#ajax' => array(
+        'callback' => 'acquia_lift_personalize_campaign_wizard_help_ajax',
+        'progress' => array(),
+      ),
+      '#limit_validation_errors' => array(),
+    ),
   );
 }
-
-
 
 /**
  ********************************************************************
@@ -1453,6 +1520,20 @@ function acquia_lift_personalize_campaign_wizard_targeting_help(&$form, $form_st
  *
  ********************************************************************
  */
+
+/**
+ * Ajax submit handler for any help section dismissal button
+ */
+function acquia_lift_personalize_campaign_wizard_help_ajax($form, &$form_state) {
+  global $user;
+  $current_dismiss = !empty($user->data['acquia_lift_help_dismiss']) ? $user->data['acquia_lift_help_dismiss'] : array();
+  // #name property is "display_{step}"
+  $dismiss = preg_replace('/^dismiss_/', '', $form_state['triggering_element']['#name']);
+  if (!in_array($dismiss, $current_dismiss)) {
+    $current_dismiss[] = $dismiss;
+    user_save($user, array('data' => array('acquia_lift_help_dismiss' => $current_dismiss)));
+  }
+}
 
 /**
  * Ajax submit handler when adding a new variation set.

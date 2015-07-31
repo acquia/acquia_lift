@@ -217,15 +217,21 @@ function theme_acquia_lift_single_variation($variables) {
  *   - #text: The help text to display
  */
 function theme_acquia_lift_wizard_section_help($variables) {
+
   $element = $variables['element'];
   // Currently just supports a single image and simple html text.
   $help_image = isset($element['#image']) ? $element['#image'] : '';
   $help_alt = isset($element['#alt']) ? $element['#alt'] : t('Help image for this section');
   $help_text = isset($element['#text']) ? $element['#text'] : '';
   $trigger_text = t('Help?');
+  $collapsed = isset($element['#collapsed']) ? $element['#collapsed'] : TRUE;
+  $container_classes = array('clearfix');
+  if (!$collapsed) {
+    $container_classes[] = 'is-expanded';
+  }
 
   $html = '';
-  $html .= '<div id="acquia-lift-campaign-wizard-section-help" class="clearfix">';
+  $html .= '<div id="acquia-lift-campaign-wizard-section-help" class="' . implode(' ', $container_classes) . '">';
   $html .= '<a class="acquia-lift-section-help-trigger" title="' . $trigger_text . '">' . $trigger_text . '</a>';
   $html .= '<div class="acquia-lift-section-help-expanded">';
   $html .= '<div class="acquia-lift-section-help clearfix">';
@@ -240,19 +246,10 @@ function theme_acquia_lift_wizard_section_help($variables) {
   }
   $html .= '<div class="acquia-lift-section-help">' . $help_text . '</div>';
   $html .= '</div>';
-  $html .= theme('button', array(
-    'element' => array(
-      '#value' => t('OK, got it'),
-      '#button_type' => 'submit',
-      '#attributes' => array(
-        'class' => array(
-          'acquia-lift-submit-button',
-          'action-item-primary-active',
-          'acquia-lift-section-help-collapse',
-        ),
-      ),
-    ),
-  ));
+  $element['dismiss']['#attributes']['class'][] = 'acquia-lift-submit-button';
+  $element['dismiss']['#attributes']['class'][] = 'action-item-primary-active';
+  $element['dismiss']['#attributes']['class'][] = 'acquia-lift-section-help-collapse';
+  $html .= drupal_render($element['dismiss']);
   $html .= '</div>';
   return $html;
 }

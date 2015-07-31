@@ -426,6 +426,9 @@ input[type="submit"].acquia-lift-wizard-add:hover {
   width: 100%;
   display: none;
 }
+#acquia-lift-campaign-wizard-section-help.is-expanded .acquia-lift-section-help-expanded {
+  display: block;
+}
 #acquia-lift-campaign-wizard-section-help .acquia-lift-section-help img.acquia-lift-section-help {
   float: left;
   margin: 0 1em 1em 0;

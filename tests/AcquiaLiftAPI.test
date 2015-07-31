@@ -1066,6 +1066,41 @@ class AcquiaLiftTest extends DrupalUnitTestCase {
   function testSaveAgent() {
     $lift_api = $this->getAcquiaLiftAPI();
     $agentName = 'some-test-agent';
+
+    // Confirm that passing 'random' as the decision mode results in no explore
+    // rate param being sent, even if specified.
+    $lift_api->saveAgent($agentName, 'Some Test Agent', 'random', 'enabled', 0, 0.4);
+    // Define the requests we expect to have been made to our dummy http
+    // client for this operation.
+    $requests = array(
+      array(
+        'type' => 'put',
+        'uri' => "http://api.lift.acquia.com/{$this->liftOwnerCode}/agent-api/$agentName?apikey={$this->liftAdminKey}",
+        'headers' => array('Content-Type' => 'application/json; charset=utf-8', 'Accept' => 'application/json'),
+        'options' => array(),
+        'body' => array(
+          'name' => 'Some Test Agent',
+          'selection-mode' => 'random',
+          'status' => 'enabled',
+          'control-rate' => 0,
+          'decision-stickiness' => 'session'
+        )
+      )
+    );
+    // Confirm the expected requests were made.
+    $this->assertAPIRequests($requests);
+    DummyAcquiaLiftHttpClient::clearLoggedRequests();
+    // Confirm the expected messages were logged.
+    $logs = array(
+      array(
+        'level' => PersonalizeLogLevel::INFO,
+        'message' => "The personalization $agentName was pushed to Acquia Lift",
+      )
+    );
+    $this->assertLogs($logs);
+    $this->logger->clearLogs();
+
+    // Specifying adaptive we should get the default explore rate.
     $lift_api->saveAgent($agentName, 'Some Test Agent', 'adaptive', 'enabled');
     // Define the requests we expect to have been made to our dummy http
     // client for this operation.

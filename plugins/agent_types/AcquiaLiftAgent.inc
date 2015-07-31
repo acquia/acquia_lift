@@ -123,20 +123,18 @@ class AcquiaLiftAgent extends PersonalizeAgentBase implements PersonalizeAgentGo
   public function getAgentSyncOperations() {
     $items = array();
     $acquia_lift_control_rate = .1;
-    $acquia_lift_explore_rate = .2;
+    $acquia_lift_explore_rate = 1;
     if (isset($this->data['control_rate'])) {
       // Acquia Lift takes the control rate as a number between 0 and 1.
       $acquia_lift_control_rate = $this->data['control_rate'] / 100;
     }
+
     if (isset($this->data['decision_style']) && $this->data['decision_style'] === 'adaptive') {
+      // Default the explore rate to .2 for adaptive agents.
+      $acquia_lift_explore_rate = .2;
       if (isset($this->data['explore_rate'])) {
         // Acquia Lift takes the explore rate as a number between 0 and 1.
         $acquia_lift_explore_rate = $this->data['explore_rate'] / 100;
-      }
-      else {
-        // If the decision style is to only test, then the explore rate is the
-        // full group.
-        $acquia_lift_explore_rate = 1;
       }
     }
     // Add an item for saving the agent to Acquia Lift.

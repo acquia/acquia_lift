@@ -460,10 +460,14 @@ class AcquiaLiftAPI implements PersonalizeLoggerAwareInterface, AcquiaLiftReport
       'selection-mode' => $decision_style,
       'status' => $status,
       'control-rate' => $control_rate,
-      'explore-rate' => $explore_rate,
       'decision-stickiness' => 'session'
     );
+    // Only include explore-rate for adaptive agents.
+    if ($decision_style == 'adaptive') {
+      $agent['explore-rate'] = $explore_rate;
+    }
     $response = $this->httpClient()->put($url, array('Content-Type' => 'application/json; charset=utf-8', 'Accept' => 'application/json'), $agent);
+
     $data = json_decode($response->data, TRUE);
     $vars = array('agent' => $machine_name);
     $success_msg = 'The personalization {agent} was pushed to Acquia Lift';

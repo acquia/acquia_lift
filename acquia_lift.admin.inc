@@ -1606,7 +1606,7 @@ function acquia_lift_save_nested_test_options($parent_agent) {
   if (empty($tests)) {
     return;
   }
-  $explore_rate = 1;
+  $explore_rate = 100;
   $decision_style = 'random';
   if (isset($parent_agent->data['decision_style']) && $parent_agent->data['decision_style'] == 'adaptive') {
     $decision_style = 'adaptive';

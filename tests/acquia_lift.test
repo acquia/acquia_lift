@@ -4186,7 +4186,7 @@ class AcquiaLiftWebTestCampaignWizardReview extends AcquiaLiftWebTestCampaignWiz
     // The cache_decisions setting should be 1 instead of 0.
     $nested_settings['cache_decisions'] = 1;
     // Explore rate should be set to 1;
-    $nested_settings['explore_rate'] = 1;
+    $nested_settings['explore_rate'] = 100;
     $nested1 = personalize_agent_load($nested_tests[0]);
     $this->assertEqual($nested1->data, $nested_settings);
 

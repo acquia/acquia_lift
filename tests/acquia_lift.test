@@ -1507,6 +1507,7 @@ class AcquiaLiftWebTestWorkflow extends AcquiaLiftWebTestBase {
     $action = visitor_actions_custom_load($goal->action);
     $this->assertEqual('click', $action['event']);
     $this->assertEqual('[data-personalize=osid-1]', $action['identifier']);
+    $this->assertEqual($os1->osid, $action['data']['auto_created']);
     $action_name = personalize_generate_machine_name(t('Clicks @option_set', array('@option_set' => $os1->label)), NULL, '_');
 
     $this->assertEqual($action_name, $action['machine_name']);
@@ -1585,6 +1586,9 @@ class AcquiaLiftWebTestWorkflow extends AcquiaLiftWebTestBase {
     $goal = reset($goals);
     $this->assertEqual('clicks_option_set_' . $option_set->osid, $goal->action);
     $this->assertEqual(1, $goal->value);
+    $goal_action = visitor_actions_custom_load($goal->action);
+    $this->assertEqual($option_set->osid, $goal_action['data']['auto_created']);
+
     // Delete the goal and confirm that saving the option set again does not
     // result in another goal being created.
     personalize_goal_delete($goal->id);
@@ -1596,13 +1600,24 @@ class AcquiaLiftWebTestWorkflow extends AcquiaLiftWebTestBase {
     // automatically created when creating the option set.
     $agent2 = $this->createTargetingAgent();
     personalize_goal_save($agent2->machine_name, 'user_login', 2);
-    $this->createPersonalizedBlock(1, $agent2, 2);
+    // The goal should not have an auto created indicator.
+    $goals = personalize_goal_load_by_conditions(array('agent' => $agent2->machine_name));
+    $manual_goal = reset($goals);
+    $manual_goal_action = visitor_actions_custom_load($manual_goal->action);
+    $this->assertTrue(!isset($manual_goal_action['data']['auto_created']));
+
+    $option_set = $this->createPersonalizedBlock(1, $agent2, 2);
     $this->resetAll();
     $goals = personalize_goal_load_by_conditions(array('agent' => $agent2->machine_name));
     $this->assertEqual(2, count($goals));
     $goal = reset($goals);
     $this->assertEqual('user_login', $goal->action);
     $this->assertEqual(2, $goal->value);
+
+    $goal = end($goals);
+    $goal_action = visitor_actions_custom_load($goal->action);
+    $this->assertEqual($option_set->osid, $goal_action['data']['auto_created']);
+    $this->assertEqual(1, $goal->value);
 
     // Now set the variable that prevents auto-creation of goals.
     variable_set('acquia_lift_auto_goal', FALSE);
@@ -4171,7 +4186,7 @@ class AcquiaLiftWebTestCampaignWizardReview extends AcquiaLiftWebTestCampaignWiz
     // The cache_decisions setting should be 1 instead of 0.
     $nested_settings['cache_decisions'] = 1;
     // Explore rate should be set to 1;
-    $nested_settings['explore_rate'] = 1;
+    $nested_settings['explore_rate'] = 100;
     $nested1 = personalize_agent_load($nested_tests[0]);
     $this->assertEqual($nested1->data, $nested_settings);
 

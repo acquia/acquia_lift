@@ -328,6 +328,11 @@ function acquia_lift_theme() {
       'option' => '',
       'option_set' => '',
     ),
+    'acquia_lift_wizard_section_help' => array(
+      'path' => $path . '/theme',
+      'file' => 'acquia_lift.wizard.theme.inc',
+      'render element' => 'element',
+    ),
     // Unified navbar themes.
     'acquia_lift_navbar' => array(
       'render element' => 'element',
@@ -894,7 +899,9 @@ function acquia_lift_personalize_option_set_insert($option_set) {
     'identifier' => $selector,
     'event' => 'click',
     'pages' => $pages,
-    'data' => array(),
+    'data' => array(
+      'auto_created' => $option_set->osid,
+    ),
     'limited_use' => 1
   );
   // Allow the plugin to modify the action before saving.
@@ -2292,6 +2299,7 @@ function acquia_lift_form_personalize_campaign_wizard_alter(&$form, &$form_state
       '#type' => 'value',
       '#value' => 'acquia_lift_target',
     );
+    $form['agent_basic_info']['title']['#attributes']['placeholder'] = t('Example: Q3 Summer Promotions');
     // All other modifications only apply to the edit form.
     return;
   }
@@ -2306,27 +2314,8 @@ function acquia_lift_form_personalize_campaign_wizard_alter(&$form, &$form_state
   if (!acquia_lift_is_targeting_agent($agent)) {
     return;
   }
-  $form['#attached']['library'][] = array('acquia_lift', 'acquia_lift.targeting_admin');
-
   module_load_include('inc', 'acquia_lift', 'acquia_lift.admin.wizard');
-  // We have to specify the include file so as not to lose it during rendering from ajax.
-  // @see personalize_agent_form_ajax_submit()
-  // @see drupal_retrieve_form():734
-  $form_state['build_info']['files'][] = drupal_get_path('module', 'acquia_lift') . '/acquia_lift.admin.wizard.inc';
-  // Call the alter hooks for the generic form parts.
-  call_user_func_array('acquia_lift_personalize_campaign_wizard_process_bar_alter', array(&$form, &$form_state, $form_id));
-  call_user_func_array('acquia_lift_personalize_campaign_wizard_base_alter', array(&$form, &$form_state, $form_id));
-
-  // Now call any alter hooks that are specific to the storage step.
-  $function = 'acquia_lift_personalize_campaign_wizard_' . $form_state['storage']['step'] . '_alter';
-  if (function_exists($function)) {
-    call_user_func_array($function, array(&$form, &$form_state, $form_id));
-  }
-
-  // Update primary submit button.
-  if (!empty($form['actions']['submit'])) {
-    $form['actions']['submit']['#attributes']['class'][] = 'acquia-lift-submit-button';
-  }
+  acquia_lift_personalize_campaign_wizard_alter($form, $form_state, $agent);
 }
 
 /**

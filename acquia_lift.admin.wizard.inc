@@ -3,6 +3,57 @@
  * @file acquia_lift.admin.wizard.inc Functions specific to the Acquia Lift
  * alteration of the campaign creation wizard.
  */
+
+/**
+ * Basic handler for altering any part of the campaign wizard form.
+ *
+ * @param array $form
+ *   The existing campaign form structure to alter.
+ * @param array $form_state
+ *   The form state.
+ * @param stdClass $agent_data
+ *   The agent that is being altered (optional if creating).  This will
+ *   always be a targeting agent.
+ */
+function acquia_lift_personalize_campaign_wizard_alter(&$form, &$form_state, $agent_data = NULL) {
+  $form['#attached']['library'][] = array('acquia_lift', 'acquia_lift.targeting_admin');
+  $form['#attached']['library'][] = array('acquia_lift', 'acquia_lift.help');
+
+  // We have to specify the include file so as not to lose it during rendering from ajax.
+  // @see personalize_agent_form_ajax_submit()
+  // @see drupal_retrieve_form():734
+  $form_state['build_info']['files'][] = drupal_get_path('module', 'acquia_lift') . '/acquia_lift.admin.wizard.inc';
+
+  module_load_include('inc', 'acquia_lift', 'acquia_lift.admin');
+  $editable = acquia_lift_target_definition_changes_allowed($agent_data);
+
+
+  // Call the alter hooks for the generic form parts.
+  call_user_func_array('acquia_lift_personalize_campaign_wizard_process_bar_alter', array(&$form, &$form_state, $agent_data, $editable));
+  call_user_func_array('acquia_lift_personalize_campaign_wizard_base_alter', array(&$form, &$form_state, $agent_data, $editable));
+
+  // Add in any section help if available.
+  $function = 'acquia_lift_personalize_campaign_wizard_' . $form_state['storage']['step'] . '_help';
+  if (function_exists($function)) {
+    $form['section_help'] = call_user_func_array($function, array(&$form, &$form_state, $agent_data, $editable));
+    $form['header']['#weight'] = -40;
+    $form['agent_basic_info']['#weight'] = -30;
+    $form['process_bar']['#weight'] = -20;
+    $form['section_help']['#weight'] = -10;
+  }
+
+  // Now call any alter hooks that are specific to the storage step.
+  $function = 'acquia_lift_personalize_campaign_wizard_' . $form_state['storage']['step'] . '_alter';
+  if (function_exists($function)) {
+    call_user_func_array($function, array(&$form, &$form_state, $agent_data, $editable));
+  }
+
+  // Update primary submit button.
+  if (!empty($form['actions']['submit'])) {
+    $form['actions']['submit']['#attributes']['class'][] = 'acquia-lift-submit-button';
+  }
+}
+
 /**
  ********************************************************************
  *
@@ -14,14 +65,13 @@
 /**
  * Alter hook for the process bar on the campaign wizard form.
  */
-function acquia_lift_personalize_campaign_wizard_process_bar_alter(&$form, &$form_state, $form_id) {
+function acquia_lift_personalize_campaign_wizard_process_bar_alter(&$form, &$form_state, $agent_data, $editable) {
   // For each status form, handle the status change along with any
   // nested agent implementations.
   foreach (element_children($form['process_bar']['actions']['status']['status_wrapper']) as $form_element) {
     $form['process_bar']['actions']['status']['status_wrapper'][$form_element]['#submit'] = array('acquia_lift_personalize_campaign_wizard_status_submit');
   }
 
-  $agent_data = $form['#agent'];
   if (empty($agent_data->started)) {
     $form['process_bar']['navigation']['#options']['results']['disabled'] = TRUE;
   }
@@ -30,15 +80,13 @@ function acquia_lift_personalize_campaign_wizard_process_bar_alter(&$form, &$for
 /**
  * Alter hook for the base campaign wizard form.
  */
-function acquia_lift_personalize_campaign_wizard_base_alter(&$form, &$form_state, $form_id) {
-  $agent = $form['#agent'];
+function acquia_lift_personalize_campaign_wizard_base_alter(&$form, &$form_state, $agent_data, $editable) {
   module_load_include('inc', 'acquia_lift', 'acquia_lift.admin');
-  if (acquia_lift_target_definition_changes_allowed($agent)) {
+  if ($editable) {
     // Make the campaign name a self-revealing text input.
     $form['agent_basic_info']['title']['#theme_wrappers'][] = 'acquia_lift_revealing_input';
   }
   else {
-    // Give instructions for how to make the campaign editable.
     $form['agent_basic_info']['title']['#disabled'] = TRUE;
   }
 }
@@ -46,12 +94,11 @@ function acquia_lift_personalize_campaign_wizard_base_alter(&$form, &$form_state
 /**
  * Alter hook for the variations portions of the campaign wizard.
  */
-function acquia_lift_personalize_campaign_wizard_variations_alter(&$form, &$form_state, $form_id) {
+function acquia_lift_personalize_campaign_wizard_variations_alter(&$form, &$form_state, $agent_data, $editable) {
   global $base_url;
 
   // Rebuild the variations form to show the customized Lift approach.
   unset($form['variations']['title']['summary']);
-  $form['variations']['title']['#instructions'] = t('Create one or more sets of content variations, which Acquia Lift Target will use when displaying personalized content for your visitors.');
   unset($form['variations']['option_sets']);
   $form['variations']['#tree'] = TRUE;
 
@@ -59,13 +106,10 @@ function acquia_lift_personalize_campaign_wizard_variations_alter(&$form, &$form
   $form['#validate'] = array('acquia_lift_personalize_campaign_wizard_validate');
   $form['#submit'] = array('acquia_lift_personalize_campaign_wizard_submit');
 
-  $agent_data = $form['#agent'];
   if (empty($agent_data->machine_name)) {
     return;
   }
 
-  module_load_include('inc', 'acquia_lift', 'acquia_lift.admin');
-  $editable = acquia_lift_target_definition_changes_allowed($agent_data);
   if (!$editable) {
     $form['variations']['#disabled'] = TRUE;
   }
@@ -111,8 +155,14 @@ function acquia_lift_personalize_campaign_wizard_variations_alter(&$form, &$form
   // If this campaign already handles multiple variation sets then indicate
   // the type of handling in the section title.
   if (count($option_sets) > 1 && !empty($variation_set_handling)) {
-    $variation_set_indicator = $variation_set_handling == ACQUIA_LIFT_DECISION_LOCKSTEP ? t('Lock step') : t('Multi-variate');
-    $form['variations']['title']['#title'] .= ' (' . $variation_set_indicator . ')';
+    $section_title = $form['variations']['title']['#title'];
+    if ($variation_set_handling == ACQUIA_LIFT_DECISION_LOCKSTEP) {
+      $section_title = '<span data-help-tooltip="' . t('Each variation set should have the same number of variations so they can be evenly locked as combinations. For example: AA, BB, CC.') . '">' . $section_title . ' (' . t('Lock step') . ')' . '</span>';
+    }
+    else {
+      $section_title .= ' (' . t('Multi-variate') . ')';
+    }
+    $form['variations']['title']['#title'] = $section_title;
   }
 
   // Keep track of all variations for display.
@@ -443,9 +493,7 @@ function acquia_lift_personalize_campaign_wizard_variations_alter(&$form, &$form
 /**
  * Alter the goals form.
  */
-function acquia_lift_personalize_campaign_wizard_goals_alter(&$form, &$form_state, $form_id) {
-  $agent_data = $form['#agent'];
-
+function acquia_lift_personalize_campaign_wizard_goals_alter(&$form, &$form_state, $agent_data, $editable) {
   unset($form['goals']['title']['title_summary']);
   $form['goals']['#tree'] = TRUE;
 
@@ -453,8 +501,6 @@ function acquia_lift_personalize_campaign_wizard_goals_alter(&$form, &$form_stat
   $form['#validate'] = array('acquia_lift_personalize_campaign_wizard_validate');
   $form['#submit'] = array('acquia_lift_personalize_campaign_wizard_submit');
 
-  module_load_include('inc', 'acquia_lift', 'acquia_lift.admin');
-  $editable = acquia_lift_target_definition_changes_allowed($agent_data);
   if (!$editable) {
     $form['goals']['#disabled'] = TRUE;
   }
@@ -513,6 +559,11 @@ function acquia_lift_personalize_campaign_wizard_goals_alter(&$form, &$form_stat
         }
       }
       $visitor_action = $all_actions[$edit_action];
+
+      // If this was an automatically created goal then add an explanation.
+      if (!empty($visitor_action['data']['auto_created'])) {
+        $form['goals']['all_goals'][$delta]['#title_attributes']['data-help-tooltip'] = t('This goal was automatically created for you. Use it if you want to track any click within any variation in this variation set. If you do not want to track clicks in this variation set, feel free to delete this goal.');
+      }
 
       if (!empty($visitor_action['plugin'])) {
         // Show a link to edit the associated action within the label.
@@ -728,8 +779,7 @@ function acquia_lift_personalize_campaign_wizard_goals_alter(&$form, &$form_stat
  * Acquia Lift Target agents allow for audience designation to be used across
  * the agent.
  */
-function acquia_lift_personalize_campaign_wizard_targeting_alter(&$form, &$form_state, $form_id) {
-  $agent_data = $form['#agent'];
+function acquia_lift_personalize_campaign_wizard_targeting_alter(&$form, &$form_state, $agent_data, $editable) {
   // If targeting was already found to be unsupported, then do not add.
   if (isset($form['unsupported'])) {
     return;
@@ -743,8 +793,6 @@ function acquia_lift_personalize_campaign_wizard_targeting_alter(&$form, &$form_
     );
     return;
   }
-  module_load_include('inc', 'acquia_lift', 'acquia_lift.admin');
-  $editable = acquia_lift_target_definition_changes_allowed($agent_data);
   if (!$editable) {
     $form['targeting']['#disabled'] = TRUE;
   }
@@ -925,8 +973,17 @@ function acquia_lift_personalize_campaign_wizard_targeting_alter(&$form, &$form_
       $form['targeting']['audiences']['existing'][$audience_id]['header'] = array(
         '#type' => 'container'
       );
-      if ($audience_id !== ACQUIA_LIFT_TARGETING_EVERYONE_ELSE) {
-        if ($editable) {
+      if ($editable) {
+        if ($audience_id === ACQUIA_LIFT_TARGETING_EVERYONE_ELSE) {
+          if (count($option_set->targeting) == 1) {
+            $help = t('This audience is composed of all visitors who have not been selected to view a specific variation. Create a new audience above to assign specific variations to groups of visitors.');
+          }
+          else {
+            $help = t('This audience is composed of all visitors who have not been selected to view a specific variation. Variations in the Everyone else audience will be shown to any person that does not match the audiences you have listed here.');
+          }
+          $form['targeting']['audiences']['existing'][$audience_id]['#title_attributes']['data-help-tooltip'] = $help;
+        }
+        else {
           $form['targeting']['audiences']['existing'][$audience_id]['header']['edit'] = array(
             '#type' => 'checkbox',
             '#title' => t('Edit'),
@@ -1108,9 +1165,8 @@ function acquia_lift_personalize_campaign_wizard_targeting_alter(&$form, &$form_
 /**
  * Alter hook for the scheduling portion of the campaign wizard.
  */
-function acquia_lift_personalize_campaign_wizard_scheduling_alter(&$form, &$form_state, $form_id) {
-  module_load_include('inc', 'acquia_lift', 'acquia_lift.admin');
-  if (!acquia_lift_target_definition_changes_allowed($form['#agent'])) {
+function acquia_lift_personalize_campaign_wizard_scheduling_alter(&$form, &$form_state, $agent_data, $editable) {
+  if (!$editable) {
     $form['scheduling']['#disabled'] = TRUE;
   }
 }
@@ -1118,7 +1174,7 @@ function acquia_lift_personalize_campaign_wizard_scheduling_alter(&$form, &$form
 /**
  * Alter hook for the review portion of the campaign wizard.
  */
-function acquia_lift_personalize_campaign_wizard_review_alter(&$form, &$form_state, $form_id) {
+function acquia_lift_personalize_campaign_wizard_review_alter(&$form, &$form_state, $agent_data, $editable) {
   module_load_include('inc', 'acquia_lift', 'acquia_lift.admin');
 
   // Take over the form validation and submit handling.
@@ -1130,7 +1186,6 @@ function acquia_lift_personalize_campaign_wizard_review_alter(&$form, &$form_sta
   $form['review']['summary_column']['summary']['#theme'] = 'acquia_lift_card';
 
     // Add audiences to the summary section.
-  $agent_data = $form['#agent'];
 
   // Add MVT and audience counts to the overview.
   $is_mvt = isset($agent_data->data['variation_set_handling']) && $agent_data->data['variation_set_handling'] == ACQUIA_LIFT_DECISION_MULTIVARIATE;
@@ -1314,11 +1369,147 @@ function acquia_lift_personalize_campaign_wizard_review_alter(&$form, &$form_sta
 
 /**
  ********************************************************************
+ * S E C T I O N  H E L P
+ *
+ * Note: unless form alteration callbacks, help functions return the
+ * renderable elements to be included as help rather than altering the form
+ * directly to allow for consistent placement within the page.
+ *
+ ********************************************************************
+ */
+
+/**
+ * Section help callback for variations section.
+ */
+function acquia_lift_personalize_campaign_wizard_variations_help(&$form, $form_state, $agent_data, $editable) {
+  global $user;
+  $dismissed = isset($user->data['acquia_lift_help_dismiss']) ? $user->data['acquia_lift_help_dismiss'] : array();
+
+  $help_text = '';
+  $help_text .= '<p>';
+  $help_text .= t('A Variation Set contains all Variations which will be shown in a specific area on your site.');
+  $help_text .= '</p><p>';
+  $help_text .= 'For example, a "Frontpage Offers" block or a "Homepage Banner" would be a Variation Set, and the individual Variations will be the text or creative that you\'ll want to show to different visitors. You will set up testing and targeting rules on the "Who" page. Here, you should simply create all the variations which you want to show.';
+  $help_text .= '</p><p>';
+  $help_text .= t('If more than one Variation Set exists in a personalization, then the Variations will be in "lock step" with one another, meaning if a user sees Variation A from one Variation Set, they will always be shown Variation A in the the other Variation Set, whether it is set up as a test or as targeting.');
+  $help_text .= '</p>';
+
+  unset($form['variations']['title']['#instructions']);
+  return array(
+    '#type' => 'container',
+    '#theme' => 'acquia_lift_wizard_section_help',
+    '#image' => drupal_get_path('module', 'acquia_lift') . '/images/help/section_what.png',
+    '#alt' => t('Structure of a variation set.'),
+    '#text' => $help_text,
+    '#collapsed' => array_search('variations', $dismissed) !== FALSE,
+    'dismiss' => array(
+      '#type' => 'button',
+      '#name' => 'dismiss_variations',
+      '#value' => t('OK, got it'),
+      '#ajax' => array(
+        'callback' => 'acquia_lift_personalize_campaign_wizard_help_ajax',
+        'progress' => array(),
+      ),
+      '#limit_validation_errors' => array(),
+    ),
+  );
+}
+
+/**
+ * Section help callback for goals section.
+ */
+function acquia_lift_personalize_campaign_wizard_goals_help(&$form, $form_state, $agent_data, $editable) {
+  global $user;
+  $dismissed = isset($user->data['acquia_lift_help_dismiss']) ? $user->data['acquia_lift_help_dismiss'] : array();
+
+  unset($form['goals']['title']['#instructions']);
+  $help_text = '';
+  $help_text .= '<p>';
+  $help_text .= t('Goals are the things that you want your visitors to do based on this personalization.');
+  $help_text .= '</p><p>';
+  $help_text .= t('Examples include clicking through on a link in the personalization, filling out a form on a later page, or completing a purchase. Completion of goals is how conversion rate will be determined and will show up in later reports.');
+  $help_text .= '</p><p>';
+  $help_text .= t('A default goal is created for each Variation Set which will capture a visitor clicking within any Variation in the Variation Set and in many cases you can simply use this goal and not add any others. If you create more than one goal, and they have different levels of importance, you can set goal value to reflect that and later view reports based on total Conversion Value rather than just Conversion Rate.');
+  $help_text .= '<p>';
+
+  return array(
+    '#type' => 'container',
+    '#theme' => 'acquia_lift_wizard_section_help',
+    '#image' => drupal_get_path('module', 'acquia_lift') . '/images/help/section_why.png',
+    '#alt' => t('Structure of a personalization with goals.'),
+    '#text' => $help_text,
+    '#collapsed' => array_search('goals', $dismissed) !== FALSE,
+    'dismiss' => array(
+      '#type' => 'button',
+      '#name' => 'dismiss_variations',
+      '#value' => t('OK, got it'),
+      '#ajax' => array(
+        'callback' => 'acquia_lift_personalize_campaign_wizard_help_ajax',
+        'progress' => array(),
+      ),
+      '#limit_validation_errors' => array(),
+    ),
+  );
+}
+
+/**
+ * Section help callback for targeting section.
+ */
+function acquia_lift_personalize_campaign_wizard_targeting_help(&$form, $form_state, $agent_data, $editable) {
+  global $user;
+  $dismissed = isset($user->data['acquia_lift_help_dismiss']) ? $user->data['acquia_lift_help_dismiss'] : array();
+
+  unset($form['targeting']['title']['#instructions']);
+  $help_text = '';
+  $help_text .= '<p>';
+  $help_text .= t('Audiences are the groups of people you wish to show different variations to.');
+  $help_text .= '</p><p>';
+  $help_text .= t('For example, you can create an audience for "Visitors from Los Angeles aged 18-25" and then target them with the "Winter Vacation" variation. The Variation(s) in the Everyone / Everyone Else box will be shown to any visitor who does not fall into an audience above it.');
+  $help_text .= '</p><p>';
+  $help_text .= t('You can add more than one Variation to an Audience, which will automatically create an A/B test between those Variations. Each Audience can have its own A/B Test. Also note that in the case where a visitor is in more than one Audience, the first Audience (from top to bottom) that matches will be used, so you can drag the audiences to rearrange if necessary. If you simply wish to test with no targeting, place all variations in the "Everyone" box.');
+  $help_text .= '</p>';
+
+  return array(
+    '#type' => 'container',
+    '#theme' => 'acquia_lift_wizard_section_help',
+    '#image' => drupal_get_path('module', 'acquia_lift') . '/images/help/section_who.png',
+    '#alt' => t('Structure of a personalization with targeting.'),
+    '#text' => $help_text,
+    '#collapsed' => array_search('targeting', $dismissed) !== FALSE,
+    'dismiss' => array(
+      '#type' => 'button',
+      '#name' => 'dismiss_variations',
+      '#value' => t('OK, got it'),
+      '#ajax' => array(
+        'callback' => 'acquia_lift_personalize_campaign_wizard_help_ajax',
+        'progress' => array(),
+      ),
+      '#limit_validation_errors' => array(),
+    ),
+  );
+}
+
+/**
+ ********************************************************************
  *
  * A J A X  C A L L B A C K S
  *
  ********************************************************************
  */
+
+/**
+ * Ajax submit handler for any help section dismissal button
+ */
+function acquia_lift_personalize_campaign_wizard_help_ajax($form, &$form_state) {
+  global $user;
+  $current_dismiss = !empty($user->data['acquia_lift_help_dismiss']) ? $user->data['acquia_lift_help_dismiss'] : array();
+  // #name property is "display_{step}"
+  $dismiss = preg_replace('/^dismiss_/', '', $form_state['triggering_element']['#name']);
+  if (!in_array($dismiss, $current_dismiss)) {
+    $current_dismiss[] = $dismiss;
+    user_save($user, array('data' => array('acquia_lift_help_dismiss' => $current_dismiss)));
+  }
+}
 
 /**
  * Ajax submit handler when adding a new variation set.
@@ -2458,6 +2649,8 @@ function _acquia_lift_personalize_campaign_wizard_variations_block(&$form, &$for
     '#type' => 'value',
     '#value' => $agent_data->machine_name,
   );
+  // Add help text to the title.
+  $element['title']['#attributes']['placeholder'] = t('Example: Front page offers');
   // Make the variations wrapper a plain container rather than a fieldset.
   $element['pblock_wrapper']['#theme_wrappers'] = array('container');
   // Adjust the blocks container for our own user interface.
@@ -2477,7 +2670,11 @@ function _acquia_lift_personalize_campaign_wizard_variations_block(&$form, &$for
   $element['pblock_wrapper']['blocks']['#attributes']['class'][] = 'acquia-lift-personalize-blocks';
 
   $pblock_blocks = element_children($element['pblock_wrapper']['blocks']);
-  foreach ($pblock_blocks as $key) {
+  $placeholder_help = array(
+    t('Example: Winter vacation'),
+    t('Example: Island retreat'),
+  );
+  foreach ($pblock_blocks as $i => $key) {
     $block = &$element['pblock_wrapper']['blocks'][$key];
     $block['block']['#attributes']['class'][] = 'acquia-lift-personalize-block-wrapper';
     $option_id = isset($block['option_id']['#value']) ? $block['option_id']['#value'] : '';
@@ -2493,6 +2690,9 @@ function _acquia_lift_personalize_campaign_wizard_variations_block(&$form, &$for
       $block['option_label']['#default_value'] = '';
       $block['option_label']['#title'] = t('Variation title');
       unset($block['option_label']['#size']);
+      if (isset($placeholder_help[$i])) {
+        $block['option_label']['#attributes']['placeholder'] = $placeholder_help[$i];
+      }
     }
     if (!empty($option_set->preview_link) && !empty($option_id)) {
       $block['preview'] = array(
@@ -2948,6 +3148,9 @@ function _acquia_lift_personalize_campaign_wizard_targeting_audience(&$form, &$f
     '#title' => t('Audience name'),
     '#default_value' => !empty($audience['label']) ? $audience['label'] : '',
     '#required' => !empty($audience),
+    '#attributes' => array(
+      'placeholder' => t('Example: Los Angeles 18-25 year olds'),
+    ),
   );
   $element['weight'] = array(
     '#type' => 'textfield',

@@ -19,6 +19,7 @@ function theme_acquia_lift_card($variables) {
   }
   $card_label = isset($element['#title']) ? $element['#title'] : '';
   $header_children = isset($element['header']) ? element_children($element['header']) : array();
+  $title_attributes = isset($element['#title_attributes']) ? $element['#title_attributes'] : array();
   $card_flag = isset($element['#flag']) ? $element['#flag'] : '';
   $card_flag_attributes = array('class' => array('el-card__flag'));
   if (isset($element['#flag_visible']) && $element['#flag_visible'] === FALSE) {
@@ -50,7 +51,9 @@ function theme_acquia_lift_card($variables) {
   $html .= '<div ' . drupal_attributes($element['#attributes']) . '>';
   $html .= '<div class="el-card__header">';
   $html .= '<div class="el-card__dragger"></div>';
-  $html .= '<h2 class="el-card__title">' . $card_label . '</h2>';
+
+  $title_attributes['class'][] = 'el-card__title';
+  $html .= '<h2 ' . drupal_attributes($title_attributes) . '>' . $card_label . '</h2>';
   if (!empty($header_children)) {
     $html .= '<ul class="el-card__actions">';
     foreach ($header_children as $action) {
@@ -200,6 +203,56 @@ function theme_acquia_lift_single_variation($variables) {
   $html .= $variables['option_set'];
   $html .= ')</span>';
   $html .= '</span>';
+  return $html;
+}
 
+/**
+ * Section level help for the campaign wizard.
+ *
+ * @param $variables
+ *   Array of theme variables including the "element" to be themed.
+ *   The element may include properties:
+ *   - #image: An option image to display
+ *   - #alt: The alt text for the above image
+ *   - #text: The help text to display
+ */
+function theme_acquia_lift_wizard_section_help($variables) {
+
+  $element = $variables['element'];
+  // Currently just supports a single image and simple html text.
+  $help_image = isset($element['#image']) ? $element['#image'] : '';
+  $help_alt = isset($element['#alt']) ? $element['#alt'] : t('Help image for this section');
+  $help_text = isset($element['#text']) ? $element['#text'] : '';
+  $trigger_text = t('Help?');
+  $collapsed = isset($element['#collapsed']) ? $element['#collapsed'] : TRUE;
+  $container_classes = array('clearfix');
+  if ($collapsed) {
+    $container_classes[] = 'is-collapsed';
+  }
+  else {
+    $container_classes[] = 'is-expanded';
+  }
+
+  $html = '';
+  $html .= '<div id="acquia-lift-campaign-wizard-section-help" class="' . implode(' ', $container_classes) . '">';
+  $html .= '<a class="acquia-lift-section-help-trigger" title="' . $trigger_text . '">' . $trigger_text . '</a>';
+  $html .= '<div class="acquia-lift-section-help-expanded">';
+  $html .= '<div class="acquia-lift-section-help clearfix">';
+  if (!empty($help_image)) {
+    $html .= theme('image', array(
+      'path' => $help_image,
+      'alt' => $help_alt,
+      'attributes' => array(
+        'class' => 'acquia-lift-section-help',
+      ),
+    ));
+  }
+  $html .= '<div class="acquia-lift-section-help">' . $help_text . '</div>';
+  $html .= '</div>';
+  $element['dismiss']['#attributes']['class'][] = 'acquia-lift-submit-button';
+  $element['dismiss']['#attributes']['class'][] = 'action-item-primary-active';
+  $element['dismiss']['#attributes']['class'][] = 'acquia-lift-section-help-collapse';
+  $html .= drupal_render($element['dismiss']);
+  $html .= '</div>';
   return $html;
 }

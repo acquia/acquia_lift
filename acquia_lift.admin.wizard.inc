@@ -996,10 +996,17 @@ function acquia_lift_personalize_campaign_wizard_targeting_alter(&$form, &$form_
       );
       // Show the ability to select a winner for an audience if:
       // - the campaign has run
+      // - the campaign is not completed
       // - the audience was used in targeting
       // - the audience has a test currently implemented in Lift
       // - the audience contents has not changed from what was implemented
-      if (!empty($agent_data->started) && isset($existing_targeting[$audience_id]) && count($existing_targeting[$audience_id]) > 1 && isset($saved_targeting[$audience_id]) && $existing_targeting[$audience_id] == $saved_targeting[$audience_id]) {
+      $status = personalize_agent_get_status($agent_data->machine_name);
+      if (!empty($agent_data->started) &&
+        $status != PERSONALIZE_STATUS_COMPLETED &&
+        isset($existing_targeting[$audience_id]) &&
+        count($existing_targeting[$audience_id]) > 1 &&
+        isset($saved_targeting[$audience_id]) &&
+        $existing_targeting[$audience_id] == $saved_targeting[$audience_id]) {
         // Add this button to the footer so that it can still be available
         // even when the card is disabled.  This allows availability even
         // when the campaign is running.
@@ -3132,13 +3139,13 @@ function _acquia_lift_personalize_campaign_wizard_settings_tests($agent_data, $e
     ),
   );
 
-  $control_rate = isset($agent_data->data['control_rate']) ? $agent_data->data['control_rate'] : 10;
+  $control_rate = isset($agent_data->data['control_rate']) ? $agent_data->data['control_rate'] : 0;
   $form['control_rate'] = array(
     '#type' => 'acquia_lift_percentage',
-    '#title' => t('Control Group'),
+    '#title' => t('Exclusion Group'),
     '#field_suffix' => '%',
     '#size' => 3,
-    '#description' => t('A fixed baseline variation will be shown, by default the first variation in the set.'),
+    '#description' => t('A fixed variation will be shown to those excluded from the test, by default the first variation in the set.'),
     '#default_value' => $control_rate,
     '#rest_title' => t('Test Group'),
     '#rest_description' => t('Personalized variations will be shown.'),
@@ -3181,7 +3188,7 @@ function _acquia_lift_personalize_campaign_wizard_settings_tests($agent_data, $e
     '#field_suffix' => '%',
     '#description' => t('Variations will be shown randomly and tracked to adjust for false positives.'),
     '#size' => 3,
-    '#default_value' => isset($agent_data->data['explore_rate']) ? $agent_data->data['explore_rate'] : 20,
+    '#default_value' => $explore_rate,
     '#rest_title' => t('Personalized Group'),
     '#rest_description' => t('The "best" variation will be shown for each visitor based on our algorithm.'),
     '#collapsible' => TRUE,

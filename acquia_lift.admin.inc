@@ -742,28 +742,22 @@ function acquia_lift_report($form, &$form_state, $agent_data) {
           '#id' => 'acquia-lift-report-audience-filter',
         );
       }
-      $form['audience_container']['complete_url'] = array(
-        '#type' => 'hidden',
-        // Per ctools modals the class name is the #id of the triggering
-        // ajax button with "-url" suffix.
-        '#attributes' => array('class' => array('acquia-lift-complete-' . $audience . '-url')),
-        '#value' => url('admin/structure/personalize/manage/' . $agent_data->machine_name . '/audience/' . $audience . '/complete'),
-      );
-      $form['audience_container']['complete'] = array(
-        '#type' => 'button',
-        '#value' => t('End test and choose winner'),
-        '#attributes' => array(
-          'id' => 'acquia-lift-complete-' . $audience,
-          'class' => array(
-            'ctools-use-modal',
-            'ctools-modal-acquia-lift-style',
-            'action-item-primary-active',
-            'acquia-lift-submit-button',
-            'acquia-lift-complete-audience',
-          ),
-        ),
-      );
-
+      if (personalize_agent_get_status($agent_data->machine_name) != PERSONALIZE_STATUS_COMPLETED) {
+        $form['audience_container']['complete'] = array(
+          '#type' => 'link',
+          '#title' => t('End test and choose winner'),
+          '#href' => url('admin/structure/personalize/manage/' . $agent_data->machine_name . '/audience/' . $audience . '/complete'),
+          '#attributes' => array(
+            'class' => array(
+              'ctools-use-modal',
+              'ctools-modal-acquia-lift-style',
+              'action-item-primary-active',
+              'acquia-lift-submit-button',
+              'acquia-lift-complete-audience',
+            )
+          )
+        );
+      }
       $form['report'] = acquia_lift_report_custom($form_state, $nested_agent, FALSE, $agent_data);
     }
   }
@@ -918,7 +912,6 @@ function acquia_lift_report_custom(&$form_state, $agent_data, $legacy = FALSE, $
         '#type' => 'container',
         '#attributes' => array(
           'class' => array('acquia-lift-report-section-title'),
-          'data-help-tooltip' => t('The portion of visitors who were shown a random variation, as opposed to the optimized variation. The data below are for the experiment group only.'),
         ),
         'report_title' => array(
           '#markup' => '<h2>' . t('Experiment') . '</h2>',
@@ -936,10 +929,16 @@ function acquia_lift_report_custom(&$form_state, $agent_data, $legacy = FALSE, $
       'class' => array('acquia-lift-report-section'),
     ),
   );
-  $percentage = $data['decision_style'] === 'random' ? 100 : $data['explore_rate'];
-  $form['experiment_report']['header']['title']['groups'] = array(
-    '#markup' => t('(@percentage%)', array('@percentage' => $percentage)),
-  );
+  // Show the test (explore)  percentage if in adaptive mode.
+  if ($data['decision_style'] == 'adaptive') {
+    $percentage = $data['explore_rate'];
+    $form['experiment_report']['header']['title']['groups'] = array(
+      '#markup' => t('(@percentage%)', array('@percentage' => $percentage)),
+    );
+    // Also add help text to the heading to explain what this is.
+    $form['experiment_report']['header']['title']['#attributes']['data-help-tooltip'] = t('The portion of visitors who were shown a random variation, as opposed to the optimized variation. The data below are for the experiment group only.');
+  }
+
   // Get the conversion report options.
   $goals_agent = !empty($parent_agent) ? $parent_agent->machine_name : $agent->getMachineName();
   $form['experiment_report']['header']['options'] = array(
@@ -1607,10 +1606,16 @@ function acquia_lift_save_nested_test_options($parent_agent) {
   if (empty($tests)) {
     return;
   }
+  $explore_rate = 1;
+  $decision_style = 'random';
+  if (isset($parent_agent->data['decision_style']) && $parent_agent->data['decision_style'] == 'adaptive') {
+    $decision_style = 'adaptive';
+    $explore_rate = isset($parent_agent->data['explore_rate']) ? $parent_agent->data['explore_rate'] : 20;
+  }
   $agent_data = array(
-    'control_rate' => isset($parent_agent->data['control_rate']) ? $parent_agent->data['control_rate'] : 10,
-    'explore_rate' => isset($parent_agent->data['explore_rate']) ? $parent_agent->data['explore_rate'] : 20,
-    'decision_style' => isset($parent_agent->data['decision_style']) ? $parent_agent->data['decision_style'] : 'random',
+    'control_rate' => isset($parent_agent->data['control_rate']) ? $parent_agent->data['control_rate'] : 0,
+    'explore_rate' => $explore_rate,
+    'decision_style' => $decision_style,
   );
 
   foreach ($tests as $test) {

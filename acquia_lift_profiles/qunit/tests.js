@@ -50,21 +50,6 @@ QUnit.module("Acquia Lift Profiles", {
       }
     };
 
-    var myCache = {};
-    Drupal.personalize.visitor_context_write = function(segmentName, plugin, value) {
-      myCache[plugin] = myCache[plugin] || {};
-      myCache[plugin][segmentName] = value;
-    };
-    Drupal.personalize.visitor_context_read = function (segmentName, plugin) {
-      if (!myCache.hasOwnProperty(plugin)) {
-        return null;
-      }
-      if (!myCache[plugin].hasOwnProperty(segmentName)) {
-        return null;
-      }
-      return myCache[plugin][segmentName];
-    };
-
     Drupal.settings.acquia_lift_profiles.available_segments = ['segment1', 'segment2'];
     var callbackCalled = 0;
     _tcwq = {
@@ -158,11 +143,9 @@ QUnit.test("Get context values with 'do not track' cookie", function( assert ) {
 });
 
 QUnit.asyncTest("Get context values no cache", function( assert ) {
-  expect(7);
+  expect(5);
   var contextResult = Drupal.personalize.visitor_context.acquia_lift_profiles_context.getContext({'segment1':'segment1', 'segment2':'segment2'});
   assert.ok(contextResult instanceof Promise);
-  var cached = Drupal.personalize.visitor_context_read('segment1', 'acquia_lift_profiles_context');
-  assert.ok(cached === null);
   QUnit.stop();
   Promise.all([contextResult]).then(function (loadedContexts) {
     QUnit.start();
@@ -171,22 +154,8 @@ QUnit.asyncTest("Get context values no cache", function( assert ) {
     assert.equal(loadedContexts[0]['segment1'], 1, 'segment1 has value 1');
     assert.ok(loadedContexts[0].hasOwnProperty('segment2'), 'segment2 returned');
     assert.equal(loadedContexts[0]['segment2'], 0, 'segment2 has value 0');
-    cached = Drupal.personalize.visitor_context_read('segment1', 'acquia_lift_profiles_context');
-    assert.equal(cached, 1, 'Segment1 value has been cached');
   });
 
-});
-
-QUnit.test("get context values with cache", function( assert ) {
-  expect(3);
-  Drupal.acquia_lift_profiles.clearSegmentMemoryCache();
-  Drupal.personalize.visitor_context_write('segment1', 'acquia_lift_profiles_context', 1);
-  Drupal.personalize.visitor_context_write('segment2', 'acquia_lift_profiles_context', 1);
-  var contextResult = Drupal.personalize.visitor_context.acquia_lift_profiles_context.getContext({'segment1':'segment1', 'segment2':'segment2'});
-
-  assert.ok(!(contextResult instanceof Promise), 'Got the segments from the cache');
-  assert.equal(contextResult['segment1'], 1, 'Segment1 has value 1');
-  assert.equal(contextResult['segment2'], 1, 'Segment2 has value 1');
 });
 
 QUnit.asyncTest( "personalize decision event", function( assert ) {

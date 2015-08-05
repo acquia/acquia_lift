@@ -1969,6 +1969,10 @@ function acquia_lift_target_complete_audience_form($form, &$form_state, $agent_d
   ctools_include('ajax');
   ctools_add_js('ajax-responder');
 
+  // As this is just a small modal form without validation, don't show any
+  // dsm messages as they would be repetitive of what is on the main page.
+  drupal_get_messages();
+
   $option_set = acquia_lift_get_option_set_for_targeting($agent_data->machine_name);
   $audience_label = isset($option_set->targeting[$audience_id]['label']) ? $option_set->targeting[$audience_id]['label'] : $audience_id;
   if (!isset($option_set->targeting[$audience_id])) {

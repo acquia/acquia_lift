@@ -1441,7 +1441,7 @@ function acquia_lift_personalize_campaign_wizard_goals_help(&$form, $form_state,
     '#collapsed' => array_search('goals', $dismissed) !== FALSE,
     'dismiss' => array(
       '#type' => 'button',
-      '#name' => 'dismiss_variations',
+      '#name' => 'dismiss_goals',
       '#value' => t('OK, got it'),
       '#ajax' => array(
         'callback' => 'acquia_lift_personalize_campaign_wizard_help_ajax',
@@ -1478,7 +1478,7 @@ function acquia_lift_personalize_campaign_wizard_targeting_help(&$form, $form_st
     '#collapsed' => array_search('targeting', $dismissed) !== FALSE,
     'dismiss' => array(
       '#type' => 'button',
-      '#name' => 'dismiss_variations',
+      '#name' => 'dismiss_targeting',
       '#value' => t('OK, got it'),
       '#ajax' => array(
         'callback' => 'acquia_lift_personalize_campaign_wizard_help_ajax',

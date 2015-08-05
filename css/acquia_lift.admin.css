@@ -287,6 +287,10 @@ tr.acquia-lift-report-control {
 }
 
 /* Acquia Lift campaign wizard form alterations */
+.personalize-wizard-section-title h2 .acquia-lift-help {
+  font-size: .5em;
+}
+
 .acquia-lift-alert {
   color: #FF0000;
 }

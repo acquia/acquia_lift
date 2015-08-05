@@ -1071,17 +1071,17 @@ class AcquiaLiftWebTestReports extends AcquiaLiftWebTestBase {
     $this->drupalGet('admin/structure/personalize/manage/' . $agent->machine_name . '/results');
     $this->assertNoText('Test for Everyone else audience');
     $this->assertFieldByName('audience_filter');
-    $this->assertOptionSelected('acquia-lift-report-audience-filter', 'everyone-else');
+    $this->assertOptionSelected('acquia-lift-report-audience-filter', 'audience|everyone-else');
     $this->assertLinkByHref('admin/structure/personalize/manage/' . $agent->machine_name . '/audience/everyone-else/complete');
     $this->assertNoLinkByHref('admin/structure/personalize/manage/' . $agent->machine_name . '/audience/my-first-audience/complete');
 
     // Now change the audience and verify that the complete button changes
     $edit = array(
-      'audience_filter' => 'my-first-audience',
+      'audience_filter' => 'audience|my-first-audience',
     );
     $this->drupalPostAJAX(NULL, $edit, 'audience_filter');
     $this->assertFieldByName('audience_filter');
-    $this->assertOptionSelected('acquia-lift-report-audience-filter', 'my-first-audience');
+    $this->assertOptionSelected('acquia-lift-report-audience-filter', 'audience|my-first-audience');
     $this->assertNoLinkByHref('admin/structure/personalize/manage/' . $agent->machine_name . '/audience/everyone-else/complete');
     $this->assertLinkByHref('admin/structure/personalize/manage/' . $agent->machine_name . '/audience/my-first-audience/complete');
 
@@ -1110,8 +1110,14 @@ class AcquiaLiftWebTestReports extends AcquiaLiftWebTestBase {
     personalize_agent_set_status($agent->machine_name, PERSONALIZE_STATUS_RUNNING);
     $this->resetAll();
     $this->drupalGet('admin/structure/personalize/manage/' . $agent->machine_name . '/results');
-    $this->assertText('This personalization does not contain tests, no reports to show.');
-    $this->assertNoFieldByName('audience_filter');
+    $this->assertNoText('This personalization does not contain tests, no reports to show.');
+    $this->assertFieldByName('audience_filter');
+    // Only retired tests shown in the filter.
+    $retired = acquia_lift_get_retired_tests($agent->machine_name);
+    $this->assertEqual(count($retired), 2);
+    $this->assertOptionSelected('acquia-lift-report-audience-filter', 'retired|' . $retired[0]->machine_name);
+    $this->assertNoOptionSelected('acquia-lift-report-audience-filter', 'retired|' . $retired[1]->machine_name);
+    // No links to complete retired tests.
     $this->assertNoLinkByHref('admin/structure/personalize/manage/' . $agent->machine_name . '/audience/everyone-else/complete');
     $this->assertNoLinkByHref('admin/structure/personalize/manage/' . $agent->machine_name . '/audience/my-first-audience/complete');
     $this->assertNoLinkByHref('admin/structure/personalize/manage/' . $agent->machine_name . '/audience/my-second-audience/complete');

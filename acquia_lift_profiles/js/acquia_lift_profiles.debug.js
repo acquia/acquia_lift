@@ -28,12 +28,13 @@
       if(data){
         curSegments = data["segments"];
         curSegmentsOverride =  JSON.parse(window.sessionStorage.getItem(debugPrefix + "overrideSegments"));
-        if ( curSegmentsOverride && curSegmentsOverride.length > 0 ) {
+        if ( curSegmentsOverride ) {
           if(data["segments"]){
             data["segments"].length = 0;
             $(curSegmentsOverride).each( function(index,overrideSegment) { data["segments"].push(overrideSegment); } );
           }
           curSegments = curSegmentsOverride.splice(0);
+
         }
         message = "Segments Returned: " + curSegments;
         code = 1000;
@@ -41,7 +42,7 @@
         message = "No Data found"
         code = 3001;
       }
-      Drupal.personalizeDebug.log( message , code);
+      Drupal.personalizeDebug.log( message , code, 'Lift Web');
     });
     $(document).bind("identitiesAdded", function( event, identities ) {
       // TODO: Check if the person id changed because TC_CONF.userIdentitySourceInTrackingId is true

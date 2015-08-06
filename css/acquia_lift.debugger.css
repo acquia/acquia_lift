@@ -24,7 +24,7 @@
   letter-spacing: normal;
   line-height: 1.5;
   list-style: none;
-  margin: 0;
+  margin: 0px;
   max-height: none;
   max-width: none;
   min-height: 0;
@@ -75,7 +75,7 @@
   -webkit-transform-origin: bottom;
       -ms-transform-origin: bottom;
           transform-origin: bottom;
-  transition: all 300ms;
+  transition: all 0ms;
 }
 @media screen and (min-width: 600px) {
   #debugger {
@@ -94,9 +94,6 @@
   padding-right: 10px;
   vertical-align: middle;
 }
-#debugger .debugger-font-size {
-  font-size: 12px;
-}
 #debugger button {
   height: 31px;
   padding-right: 10px;
@@ -107,6 +104,8 @@
   background-color: white;
   width: 100%;
   border: none;
+  table-layout: fixed;
+  word-wrap: break-word;
 }
 #debugger table img {
   width: 20px;
@@ -124,6 +123,8 @@
 }
 #debugger th {
   background-color: white;
+  text-align: left;
+  font-weight: bold;
   padding-top: .1em;
   padding-bottom: .2em;
   padding-right: 0px;
@@ -153,27 +154,34 @@
   vertical-align: top;
   background-color: #efefef;
 }
-#debugger .debugger__filter__label, #debugger .debugger__preview__notification {
+#debugger div.debugger__filter__label * {
+  font-size: 11px;
+}
+#debugger .debugger__filter__label,
+#debugger .debugger__preview__notification {
   float: left;
-  padding-top: 10px;
+  padding-top: 12px;
   padding-right: 15px;
+  padding-left: 10px;
 }
 #debugger .debugger__preview__notification {
   color: #0073b9;
 }
-#debugger .debugger__navigation__top__bar a:hover, #debugger .debugger__navigation__top__bar a:focus, #debugger .debugger__navigation__top__bar a:active {
+#debugger .debugger__navigation__top__bar a:hover,
+#debugger .debugger__navigation__top__bar a:focus,
+#debugger .debugger__navigation__top__bar a:active {
   color: #0073b9;
   text-decoration: none;
   cursor: pointer;
 }
-#debugger ul.debugger__navigation__top__bar, #debugger ul.debugger__navigation__top__bar li {
+#debugger ul.debugger__navigation__top__bar,
+#debugger ul.debugger__navigation__top__bar li {
   height: 100%;
   float: left;
 }
-
 #debugger .debugger__navigation {
   background-color: #efefef;
-  height: 3em;
+  height: 40px;
   border-color: lightgray;
   border-bottom-style: solid;
   border-bottom-width: 2px;
@@ -191,12 +199,10 @@
   color: #29aae1;
   margin-right: 2px;
 }
-
-.debugger__select__filter {
+#debugger .debugger__select__filter {
   float: left;
 }
-
-.debugger__navigation__item {
+#debugger .debugger__navigation__item {
   float: left;
   position: relative;
   background-color: #efefef;
@@ -205,32 +211,29 @@
   border-radius: 0rem;
   color: #29aae1;
   text-decoration: none;
-  transition: color .2s ease-out;
 }
-.debugger__navigation__item:hover, .debugger__navigation__item:focus {
+#debugger .debugger__navigation__item:hover, #debugger .debugger__navigation__item:focus {
   text-decoration: none;
   color: #56c1f8;
 }
-.debugger__navigation__item:hover {
+#debugger .debugger__navigation__item:hover {
   -webkit-transform: scale(1.02, 1.02);
       -ms-transform: scale(1.02, 1.02);
           transform: scale(1.02, 1.02);
 }
-.debugger__navigation__item.disabled, .debugger__navigation__item[disabled], fieldset[disabled] .debugger__navigation__item {
+#debugger .debugger__navigation__item.disabled, #debugger .debugger__navigation__item[disabled], fieldset[disabled] #debugger .debugger__navigation__item {
   cursor: not-allowed;
   pointer-events: none;
   opacity: .65;
   box-shadow: none;
 }
-
-.debugger__actions {
+#debugger .debugger__actions {
   float: right;
   margin-top: .4em;
   margin-right: .4em;
   margin-left: .4em;
 }
-
-[class*='debugger__action__'] {
+#debugger [class*='debugger__action__'] {
   display: inline-block;
   background: #4bd;
   line-height: 1.3;
@@ -242,10 +245,9 @@
   text-align: center;
   border-radius: 50%;
   cursor: pointer;
-  transition: opacity 300ms;
+  transition: opacity 0ms;
 }
-
-.debugger__title {
+#debugger .debugger__title {
   text-transform: uppercase;
   font-size: .88em;
   font-weight: normal;
@@ -255,16 +257,14 @@
   margin: 0;
   border-top-right-radius: .4em;
   border-top-left-radius: .4em;
-  transition: all 300ms;
+  transition: all 0ms;
 }
-
-.debugger__content {
+#debugger .debugger__content {
   margin-top: -6px;
   display: block;
   overflow-y: auto;
   height: 0;
 }
-
 #debugger .debugger__profile {
   padding-left: 10px;
 }
@@ -284,17 +284,6 @@
   content: '\25CF';
   margin-right: 0em;
 }
-
-.debugger__data {
-  width: 100%;
-}
-.debugger__data th {
-  text-align: left;
-}
-.debugger__data tbody {
-  font-family: monospace;
-}
-
 #debugger.is-maximized {
   box-shadow: 0 -0.1em 0.5em -0.01em rgba(0, 0, 0, 0.8);
   -webkit-transform: scale(1);
@@ -324,6 +313,7 @@
   padding-bottom: 1em;
   padding-top: 1em;
   vertical-align: middle;
+  position: relative;
 }
 #debugger .debugger__preview .addBox button {
   background-color: #0073b9;
@@ -346,129 +336,62 @@
   margin-right: 0em;
   padding-right: 10px;
 }
-
-#debugger__log__table table td {
+#debugger #debugger__log__table table td {
   vertical-align: top;
   padding-bottom: 5px;
   padding-right: 15px;
 }
-#debugger__log__table tr:hover td {
+#debugger #debugger__log__table tr:hover td {
   background-color: #f2f2f2;
 }
-#debugger__log__table #clickable {
+#debugger #debugger__log__table #clickable {
   color: #29aae1;
   text-decoration: none;
   transition: color .2s ease-out;
   cursor: pointer;
 }
-#debugger__log__table #clickable:visited {
+#debugger #debugger__log__table #clickable:visited {
   color: #018dc7;
 }
-#debugger__log__table #clickable:hover, #debugger__log__table #clickable a:active, #debugger__log__table #clickable a:focus {
+#debugger #debugger__log__table #clickable:hover,
+#debugger #debugger__log__table #clickable a:active,
+#debugger #debugger__log__table #clickable a:focus {
   color: #56c1f8;
 }
-
-.debugger-icon-warning {
+#debugger .debugger-icon-warning {
   background-image: url("icons/e29700/warning.svg");
 }
-
-.debugger-icon-error {
+#debugger .debugger-icon-error {
   background-image: url("icons/ea2800/error.svg");
 }
-
-.debugger-icon-info {
+#debugger .debugger-icon-info {
   background-image: url("icons/0073b9/info-circle.svg");
 }
-
-.debugger-icon-warning, .debugger-icon-error, .debugger-icon-info {
+#debugger .debugger-icon-warning, #debugger .debugger-icon-error, #debugger .debugger-icon-info {
   background-repeat: no-repeat;
   background-position: center;
 }
-
-.debugger__action__maximize {
+#debugger .debugger__action__maximize {
   position: relative;
+  background-image: url("icons/ffffff/arrow-up.svg");
+  background-size: 1em 1em;
+  background-repeat: no-repeat;
+  background-position: center;
 }
-.debugger__action__maximize::before {
-  content: '';
-  display: block;
-  position: absolute;
-  left: calc(50% - 3px);
-  top: 22%;
-  width: 3px;
-  height: 60%;
-  background-color: #fff;
-}
-.debugger__action__maximize .debugger__icon::before, .debugger__action__maximize .debugger__icon::after {
-  content: '';
-  display: block;
-  position: absolute;
-  top: calc(30% - 1.5px);
-  width: 30%;
-  height: 3px;
-  background-color: #fff;
-}
-.debugger__action__maximize .debugger__icon::before {
-  right: 24%;
-  -webkit-transform: rotate(40deg);
-      -ms-transform: rotate(40deg);
-          transform: rotate(40deg);
-}
-.debugger__action__maximize .debugger__icon::after {
-  left: 24%;
-  -webkit-transform: rotate(-40deg);
-      -ms-transform: rotate(-40deg);
-          transform: rotate(-40deg);
-}
-
-.debugger__action__close {
+#debugger .debugger__action__close {
   position: relative;
+  background-image: url("icons/ffffff/arrow-down.svg");
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: 1em 1em;
 }
-.debugger__action__close .debugger__icon::before, .debugger__action__close .debugger__icon::after {
-  content: '';
-  display: block;
-  position: absolute;
-  top: calc(50% - .16em / 2);
-  width: 40%;
-  height: 3px;
-  background-color: #fff;
-}
-.debugger__action__close .debugger__icon::before {
-  right: 12%;
-  -webkit-transform: rotate(0);
-      -ms-transform: rotate(0);
-          transform: rotate(0);
-}
-.debugger__action__close .debugger__icon::after {
-  left: 12%;
-  -webkit-transform: rotate(0);
-      -ms-transform: rotate(0);
-          transform: rotate(0);
-}
-
-.debugger__action__destroy {
+#debugger .debugger__action__destroy {
   position: relative;
+  background-image: url("icons/ffffff/ex.svg");
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: 1em 1em;
 }
-.debugger__action__destroy .debugger__icon::before, .debugger__action__destroy .debugger__icon::after {
-  content: '';
-  display: block;
-  position: absolute;
-  left: calc(20% - .15em / 2);
-  top: calc(50% - .15em / 2);
-  width: 70%;
-  height: 3px;
-  background-color: #fff;
-}
-.debugger__action__destroy .debugger__icon::before {
-  -webkit-transform: rotate(45deg);
-      -ms-transform: rotate(45deg);
-          transform: rotate(45deg);
-}
-.debugger__action__destroy .debugger__icon::after {
-  -webkit-transform: rotate(-45deg);
-      -ms-transform: rotate(-45deg);
-          transform: rotate(-45deg);
-}
-
 #debugger.is-maximized .debugger__action__maximize, #debugger.is-closed .debugger__action__close {
   opacity: 0;
   visibility: hidden;
@@ -482,7 +405,6 @@
 #debugger.is-maximized [aria-hidden="true"].debugger__action__maximize, #debugger.is-closed [aria-hidden="true"].debugger__action__close {
   display: none;
 }
-
 #debugger .multiSelect .layout {
   float: none;
 }
@@ -611,7 +533,6 @@
   max-height: 22px;
   max-width: 22px;
 }
-
 #debugger .autocomplete {
   width: 100%;
   border-radius: 0px;
@@ -619,6 +540,7 @@
 }
 #debugger .autocomplete input {
   width: 100%;
+  margin: 0px;
   border-style: solid;
   border-radius: 0;
   border-color: lightgray;
@@ -631,6 +553,7 @@
 #debugger .autocomplete ul {
   position: absolute;
   left: 0;
+  overflow-y: scroll;
   width: 100%;
   border-left: 1px solid #888;
   border-right: 1px solid #888;
@@ -656,7 +579,6 @@
   background: #666;
   color: #fff;
 }
-
 @media only screen and (max-width: 550px), (min-device-width: 768px) and (max-device-width: 1024px) {
   #debugger {
     /* Force table to not be like tables anymore */
@@ -667,7 +589,8 @@
   #debugger .debugger__log table, #debugger .debugger__log thead, #debugger .debugger__log tbody, #debugger .debugger__log td, #debugger .debugger__log tr, #debugger .debugger__profile tr, #debugger .debugger__profile td {
     display: block;
   }
-  #debugger .debugger__log th, #debugger .debugger__preview th {
+  #debugger .debugger__log th,
+  #debugger .debugger__preview th {
     position: absolute;
     top: -9999px;
     left: -9999px;
@@ -784,4 +707,9 @@
   top: 0;
   left: 0;
   margin-top: -10px;
+}
+
+#debuggerSpacer {
+  height: calc(40px + 1em);
+  width: 100%;
 }

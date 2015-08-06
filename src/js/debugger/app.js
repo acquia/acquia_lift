@@ -1,4 +1,47 @@
-//var $ = JQuery;
+/**
+ * Prevents parent element from scrolling when hovering over debugger elements.
+ */
+function preventDefault(e) {
+    // converts event for all browsers
+    e = e || window.event; 
+    if (e.preventDefault) e.preventDefault(); 
+    e.returnValue = false;
+}
+var scrollElement = function(e,elementID){
+    var scroll;
+    if ( e.wheelDelta ) { // IE and Opera and Chrome
+        scroll = e.wheelDelta; //IE
+        if(e.wheelDeltaY){
+            scroll = e.wheelDeltaY; //Opera and Chrome
+        }
+    }
+    else if (e.detail) { // Mozilla FireFox
+        scroll= -e.detail;
+    }
+    //sets scroll amount if element is a class
+    if(document.getElementsByClassName(elementID)[0]){ 
+        document.getElementsByClassName(elementID)[0].scrollTop -= scroll;
+    //sets scroll amount if element is ID
+    }else if (document.getElementById(elementID)){ 
+        document.getElementById(elementID).scrollTop -= scroll;
+    }
+    //prevents parent elements from scrolling.
+    preventDefault(e);
+    e.stopPropagation();
+}
+
+//checks if user is scrolling in the debugger tool
+document.getElementById('debugger').onmousewheel = function (e) {
+    //scroll only the debugger content if mouse is hovering in the debugger section
+    scrollElement(e,'debugger__content'); 
+    if(document.getElementById('debugger__autocomplete__dropdown')){ 
+        //scroll only the autocomplete dropdown if mouse is hover in that space.
+        document.getElementById('debugger__autocomplete__dropdown').onmousewheel = function(e){
+            scrollElement(e,'debugger__autocomplete__dropdown')
+        }
+    }
+}
+
 var app = angular.module("debuggerModule", ['isteven-multi-select', 'autocomplete','angularResizable']);
 app.value('debugPrefix', 'acquiaLift::debug');
 app.constant('previewStatus', "Site Preview")
@@ -18,7 +61,10 @@ app.factory('debuggerFactory', function($http){
     };
     return factory;
 })
-
+    /**
+     *Setting the UI for the Lift Site Preview Tool depending on the the state.
+     *Renders the UI.
+     */
     .factory('liftDebugger', function(){
         var Lift = Lift || {};
 
@@ -49,8 +95,15 @@ app.factory('debuggerFactory', function($http){
                 this.triggerMaximize = this.getTrigger('maximize');
                 this.triggerClose = this.getTrigger('close');
                 this.triggerDestroy = this.getTrigger('destroy');
-                this.isMaximized = false;
-                this.isClosed = true;
+                //checks if debugger is aleady open, will keep open
+                if(window.sessionStorage.getItem('acquiaLift::debug::debugIsOpen')==="true"){
+                    this.isMaximized = true;
+                    this.isClosed = false;
+                }else{
+                    //if debugger is not already open. keeps the debugger minimized
+                    this.isMaximized = false;
+                    this.isClosed = true;
+                }
 
                 this.render();
 
@@ -78,9 +131,10 @@ app.factory('debuggerFactory', function($http){
             }
 
             Lift.debugger.prototype.clickDestroy = function (event) {
+                //tear down debugger
                 Drupal.acquiaLiftProfilesDebug.turnOffDebugMode();
                 Drupal.acquiaLiftProfilesDebug.clearStorage();
-                this.destroy();
+                
 
             }
 
@@ -97,13 +151,14 @@ app.factory('debuggerFactory', function($http){
                 this.isClosed = true;
 
             };
-
             Lift.debugger.prototype.maximize = function () {
+                window.sessionStorage.setItem('acquiaLift::debug::debugIsOpen', true);
                 this.setMaximized();
                 this.render();
             };
 
             Lift.debugger.prototype.close = function () {
+                window.sessionStorage.setItem('acquiaLift::debug::debugIsOpen', false);
                 this.setClosed();
                 this.render();
             };
@@ -127,7 +182,7 @@ app.factory('debuggerFactory', function($http){
                     if (this.isMaximized) {
                         this.element.classList.add('is-maximized');
 
-                        //if a debugger heigh was set in a previous page.
+                        //checks if a debugger heigh was set in a previous page. Else sets the height to 80% of max height
                         if(window.sessionStorage.getItem('acquiaLift::debug::debugWindowHeight')){
                             var height = Math.min(window.sessionStorage.getItem('acquiaLift::debug::debugWindowHeight'), document.documentElement.clientHeight * 0.8);
                             document.getElementsByClassName('debugger__content')[0].style.height = height + "px";
@@ -139,15 +194,6 @@ app.factory('debuggerFactory', function($http){
                     }
                 }
             };
-
-            Lift.debugger.prototype.destroy = function () {
-                this.element.classList.remove('is-maximized');
-                this.element.classList.remove('is-closed');
-                this.element.classList.remove('debugger');
-                this.element.classList.remove('debugger-processed');
-
-            };
-
         })(Lift);
         return Lift;
     })
@@ -196,18 +242,17 @@ app.factory('debuggerFactory', function($http){
     }])
 
 app.controller("DebuggerController", function($scope, $timeout, debuggerFactory, $sessionStorage, $window, liftDebugger, debugPrefix, $document, previewStatus){
-    //check for existence of acqiuaLiftProfilesDebug, if do not proceed.
+    //check for existence of acqiuaLiftProfilesDebug, if no do not proceed.
     if(!Drupal.acquiaLiftProfilesDebug){
         return;
     }
 
-    //variables
-    $scope.items = [];
-    $scope.tab = 'log';
-    $scope.preview = false;
-    $scope.profile = {};
+    //starting variables
+    $scope.items = []; //event log
+    $scope.tab = 'log'; //starting tab
+    $scope.profile = {}; //no segments in profile
 
-    //loads keys from sessionStorage.
+    //loads keys from sessionStorage into event log.
     for (var key in $window.sessionStorage){
         if(key.indexOf(debugPrefix) >= 0){
             $timeout(function(index){
@@ -223,14 +268,19 @@ app.controller("DebuggerController", function($scope, $timeout, debuggerFactory,
 
     //registers for any new debug events.
     $document.on('acquiaLiftDebugEvent', function(event, key){
+        //makes sure that the debug event has the corect debug prefix
         if(key.indexOf(debugPrefix) >= 0){
             $timeout(function(index){
                 return function(){
+                    //make sure that debug mode is enabled
                     if(Drupal.acquiaLiftProfilesDebug){
+                        //push the new log into the event log tab
                         $scope.items.push($sessionStorage.getObject(index));
                         if($sessionStorage.getObject(index).message.indexOf("Segments Returned") >= 0){
+                            //if the returned log is regarding segments, update our current saved segments.
                             $scope.profile.curSegments = Drupal.acquiaLiftProfilesDebug.getCurrentSegments().slice();
-                            if(!$scope.profile.overrideSegments || $scope.profile.overrideSegments.length <=0 ){
+                            //if override segments does not exist, set possible override segments to current segments. Update autocomplete list.
+                            if(!$scope.profile.overrideSegments){
                                 $scope.profile.overrideSegments = Drupal.acquiaLiftProfilesDebug.getCurrentSegments().slice();
                                 $scope.allSegments =  $scope.profile.allSegments.filter(function(i) {return $scope.profile.overrideSegments .indexOf(i) < 0;});
                             };
@@ -242,7 +292,7 @@ app.controller("DebuggerController", function($scope, $timeout, debuggerFactory,
         }
     });
 
-    //copy the values only from our profile
+    //copy the values from our profile
     $scope.profile.personId = Drupal.acquiaLiftProfilesDebug.getPersonId();
     $scope.profile.touchId = Drupal.acquiaLiftProfilesDebug.getTouchId();
     $scope.profile.allSegments = Drupal.acquiaLiftProfilesDebug.getAllSegments().slice();
@@ -265,12 +315,19 @@ app.controller("DebuggerController", function($scope, $timeout, debuggerFactory,
     ];
     $scope.typeFilter = [
 
-        { name: "Target",ticked: false },
-        { name: "Segment", ticked: false  },
+        { name: "Drupal",ticked: true },
+        { name: "Lift Web", ticked: true  },
+        { name: "Developer", ticked: false  },
     ];  
+
+    /**
+     * Determines if an event log row should be displayed depending on filters
+     *
+     * @return boolean
+     */
     $scope.search = function (row) {
         if(row) {
-            if (row.severity !== undefined) {
+            if (row.severity !== undefined && row.type !== undefined) {
                 for (var i = 0; i < $scope.severity.length; i++) {
                     if (typeof($scope.severity[i].name) === "string") {
                         if ($scope.severity[i].name.toUpperCase() === row.severity.toUpperCase()) {
@@ -278,8 +335,6 @@ app.controller("DebuggerController", function($scope, $timeout, debuggerFactory,
                         }
                     }
                 }
-            }
-            if (row.type !== undefined) {
                 for (var i = 0; i < $scope.type.length; i++) {
                     if (typeof($scope.type[i].name) === "string") {
                         if ($scope.type[i].name.toUpperCase() === row.type.toUpperCase()) {
@@ -292,7 +347,10 @@ app.controller("DebuggerController", function($scope, $timeout, debuggerFactory,
         return false;
     };
 
-    //functions
+    /**
+     * Adds an item to the list of segments to preview. 
+     * Removes that item from the list in autocomplete box.
+     */
     $scope.addPreviewItem = function (item) {
         var value;
         if (item==null){
@@ -307,6 +365,10 @@ app.controller("DebuggerController", function($scope, $timeout, debuggerFactory,
         }
     }
 
+    /**
+     * Removes an item to the list of segments to preview. 
+     * Adds that item from the list in autocomplete box.
+     */
     $scope.deletePreviewItem = function(item){
         var index = $scope.profile.overrideSegments.indexOf(item);
         if(index > -1){
@@ -315,29 +377,42 @@ app.controller("DebuggerController", function($scope, $timeout, debuggerFactory,
         $scope.allSegments.push(item);
     }
 
+    /**
+     * Sets override segments for preview
+     * Tells user to refresh page page to see changes
+     */
     $scope.startPreview = function(){
-        // $sessionStorage.setObject(debugPrefix + "::originalSegments",$scope.profile.curSegments);
-        // $sessionStorage.setObject(debugPrefix + "::overrideSegments",$scope.profile.overrideSegments);
         Drupal.acquiaLiftProfilesDebug.setOverrideSegments($scope.profile.overrideSegments);    
-        document.getElementsByClassName('debugger__preview__notification')[0].innerHTML = 'Please refresh page to see your changes';
+        document.getElementsByClassName('debugger__preview__notification')[0].innerHTML = 'Please refresh page to see your changes. You may have to clear your cache or refresh multiple times.';
     }
 
+    /**
+     * Changes override segments back to previous versions
+     * clears saved override segments.
+     */
     $scope.stopPreview = function(){
         $scope.profile.overrideSegments = $sessionStorage.getObject(debugPrefix + "::overrideSegments");
         $scope.profile.curSegments = $sessionStorage.getObject(debugPrefix + "::originalSegments");
-        if ($scope.profile.overrideSegments && $scope.profile.overrideSegments.length > 0){
+        if ($scope.profile.overrideSegments){
             Drupal.acquiaLiftProfilesDebug.setOverrideSegments(null);
             $sessionStorage.removeItem(debugPrefix + "::overrideSegments");
         }
     }
 
+    /**
+     * Sets button CSS depending on preview status.
+     * Sets Site Preview Tab label.
+     * Sets messages in the Lift Profile tab.
+     */
     $scope.isPreview = function(){
         if (window.sessionStorage.getItem("acquiaLift::debug::overrideSegments")){
             $scope.previewButtonStop = {
                 'background-color': ' #0073b9',
                 'color':'white'
             }
-            $scope.previewButtonStart = {}
+            $scope.previewButtonStart = {
+                'display': 'none'
+            }
             document.getElementById("sitePreviewTabLabel").innerHTML='Site Preview - Active';
             document.getElementById("profileSegmentLabel").innerHTML='<b>Previewing site as these segments:</b>'
 
@@ -347,7 +422,9 @@ app.controller("DebuggerController", function($scope, $timeout, debuggerFactory,
                 'background-color': ' #0073b9',
                 'color':'white'
             }
-            $scope.previewButtonStop={}
+            $scope.previewButtonStop={
+                'display': 'none'
+            }
             document.getElementById("sitePreviewTabLabel").innerHTML='Site Preview';
             document.getElementById("profileSegmentLabel").innerHTML='<b>Last Evaluated Segments:</b>'
 
@@ -356,30 +433,31 @@ app.controller("DebuggerController", function($scope, $timeout, debuggerFactory,
     }
   
 
-/**
-*Export code 
-*
+    /**
+     *Export code - disabled at the moment.
+     */
     $scope.exportData = function(){
-        var data = []
-        var index =0;
-        console.log($scope.items.length);
-        for (index = 0; index < $scope.items.length; index ++){
-            var item = $scope.items[index];
-            // console.log(item);
-            var arr = Object.keys(item).map(function (key) {return item[key]});
-            data.push(arr);
-            console.log(arr);
-        }
-        console.log(data);
-        var csvContent  = "data:text/csv;charset=utf-8," + data.join("\n");
-        var encodedUri = encodeURI(csvContent);
-        var link = document.createElement("a");
-        link.setAttribute("href", encodedUri);
-        link.setAttribute("download", "Event_log_export.csv");
+        // var data = []
+        // var index =0;
+        // for (index = 0; index < $scope.items.length; index ++){
+        //     var item = $scope.items[index];
+        //     var arr = Object.keys(item).map(function (key) {return item[key]});
+        //     data.push(arr);
+        // }
+        // var csvContent  = "data:text/csv;charset=utf-8," + data.join("\n");
+        // var encodedUri = encodeURI(csvContent);
+        // var link = document.createElement("a");
+        // link.setAttribute("href", encodedUri);
+        // link.setAttribute("download", "Event_log_export.csv");
 
-        link.click(); 
+        // link.click(); 
     }
-*/
+
+    /**
+     * Navigate between tabs
+     * Sets CSS of the active tab.
+     * Remove CSS of previous active tab.
+     */
     $scope.buttonClick = function(type){
         var color = '#0073b9';
         var bgColor = 'white';
@@ -396,10 +474,16 @@ app.controller("DebuggerController", function($scope, $timeout, debuggerFactory,
             break;
         }
     }
+
     //first click
     $scope.buttonClick('log');
 
 });
+
+
+/**
+ * CUSTOM ANGULAR FILTER: replaces severity with icons
+ */
 angular.module('debuggerModule')
     .filter('to_icon', ['$sce', function($sce){
         return function(text) {
@@ -419,6 +503,9 @@ angular.module('debuggerModule')
         };
     }]);
 
+/**
+ * CUSTOM ANGULAR FILTER: truncates event logs to 100 characters or less. adds '...' for truncated strings
+ */
 angular.module('debuggerModule')
     .filter('cut', function () {
         return function (value, wordwise, max, tail, item) {
@@ -452,29 +539,6 @@ angular.module('debuggerModule')
  * Current version: 4.0.0
  *
  * Released under the MIT License
- * --------------------------------------------------------------------------------
- * The MIT License (MIT)
- *
- * Copyright (c) 2014 Ignatius Steven (https://github.com/isteven)
- *
- * Permission is hereby granted, free of charge, to any person obtaining a copy
- * of this software and associated documentation files (the "Software"), to deal
- * in the Software without restriction, including without limitation the rights
- * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the Software is
- * furnished to do so, subject to the following conditions:
- *
- * The above copyright notice and this permission notice shall be included in all
- * copies or substantial portions of the Software.
- *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILIT
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
- * SOFTWARE.
- * --------------------------------------------------------------------------------
  */
 
 'use strict'
@@ -1402,16 +1466,16 @@ app.directive('autocomplete', function() {
             };
 
             // watches if the parameter filter should be changed
-            var watching = true;
+            var watching = false;
 
             // autocompleting drop down on/off
             $scope.completing = false;
-
             // starts autocompleting on typing in something
             $scope.$watch('searchParam', function(newValue, oldValue){
                 if (oldValue === newValue) {
                     return;
                 }
+
                 if(watching && typeof $scope.searchParam !== 'undefined' && $scope.searchParam !== null) {
                     $scope.completing = true;
                     $scope.searchFilter = $scope.searchParam;
@@ -1422,12 +1486,23 @@ app.directive('autocomplete', function() {
                     $scope.onType($scope.searchParam);
             });
 
+            $scope.showAll = function(){
+                $scope.completing = true;
+                watching = true;
+                if(typeof $scope.searchParam!=='undefined'){
+                    $scope.searchFilter = $scope.searchParam;
+                }else{
+                    $scope.searchFilter = '';
+                }
+            }
+
             // for hovering over suggestions
             this.preSelect = function(suggestion){
 
                 watching = false;
 
                 // this line determines if it is shown
+
                 // in the input field before it's selected:
                 //$scope.searchParam = suggestion;
 
@@ -1472,9 +1547,9 @@ app.directive('autocomplete', function() {
 
             // Default atts
             scope.attrs = {
-                "placeholder": "start typing...",
+                "placeholder": "Enter a segment...",
                 "class": "",
-                "id": "",
+                "id": "autocomplete_input",
                 "inputclass": "",
                 "inputid": ""
             };
@@ -1503,17 +1578,29 @@ app.directive('autocomplete', function() {
 
             document.addEventListener("keydown", function(e){
                 var keycode = e.keyCode || e.which;
-
                 switch (keycode){
                     case key.esc:
                         // disable suggestions on escape
                         scope.select();
                         scope.setIndex(-1);
                         scope.$apply();
-                        e.preventDefault();
+                        // e.preventDefault();
                 }
             }, true);
 
+            document.addEventListener("focus", function(e){
+                if(scope.$parent.tab === "segments" && e.target.tagName ==="INPUT"){
+                    var dropdown = document.getElementById('debugger__autocomplete__dropdown');
+                    var addbox = document.getElementsByClassName('addBox')[0].offsetTop;
+                    var debuggerHeight = window.sessionStorage.getItem('acquiaLift::debug::debugWindowHeight')
+                    var position = Math.min(debuggerHeight? debuggerHeight-addbox: 100000, window.innerHeight*0.80-addbox);
+                    position -= 50;
+                    position = (position < 0)? 15: position;
+                    scope.showAll();
+                    scope.$apply();
+                    dropdown.style.maxHeight = position.toString() + "px"
+                }
+            }, true);
             document.addEventListener("blur", function(e){
                 // disable suggestions on blur
                 // we do a timeout to prevent hiding it before a click event is registered
@@ -1613,7 +1700,7 @@ app.directive('autocomplete', function() {
             class="{{ attrs.inputclass }}"\
             id="{{ attrs.inputid }}"\
             ng-required="{{ autocompleteRequired }}" />\
-          <ul ng-show="completing && (suggestions | filter:searchFilter).length > 0">\
+          <ul id="debugger__autocomplete__dropdown" ng-show="completing && (suggestions | filter:searchFilter).length > 0">\
             <li\
               suggestion\
               ng-repeat="suggestion in suggestions | filter:searchFilter | orderBy:\'toString()\' track by $index"\
@@ -1789,4 +1876,4 @@ angular.module('angularResizable', [])
         }
     });
 
-// # sourceMappingURL=acquia_lift.debugger.js.map
+//# sourceMappingURL=acquia_lift.debugger.js.map

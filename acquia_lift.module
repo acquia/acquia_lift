@@ -3153,9 +3153,13 @@ function acquia_lift_debug_mode_enabled() {
   $in_session = isset($_SESSION['acquia_lift_debug_mode']);
   // Check to see if it was requested
   if ($in_session) {
+    //turns on the personalizeDebugMode cookie
+    setcookie('personalizeDebugMode',1, time()+60, '/');
     // Check to see if it should be turned off from URL parameter.
     if (isset($_GET['acquia_lift_debug_mode']) && $_GET['acquia_lift_debug_mode'] == FALSE) {
       unset($_SESSION['acquia_lift_debug_mode']);
+      //deletes the personalizeDebugMode cookie
+      setcookie('personalizeDebugMode',"", time()-3600 );
       return FALSE;
     }
     return TRUE;

@@ -316,10 +316,10 @@ function theme_acquia_lift_create_type_change($variables) {
  */
 function theme_acquia_lift_debugger() {
   $markup = <<<EOT
-
+<div id="debuggerSpacer"></div>
 <div ng-app="debuggerModule" ng-controller="DebuggerController">
 
-<div id="debugger">
+<div id="debugger" >
   <div class="debugger__navigation">
   <div class="debugger__actions">
           <span class="debugger__action__maximize" id="debugger__action__maximize">
@@ -395,17 +395,17 @@ function theme_acquia_lift_debugger() {
           output-model-name="Type &#9662;">
           </div>
          </div>
-         <!--<button ng-click="exportData()">Export</button>-->
+         <!--<button id="debugger__log__export" ng-click="exportData()">Export</button>-->
       </div>
       <div class="debugger__log">
         <table id="debugger__log__table">
           <colgroup>
-            <col span="1" style="width: 10em;">
-            <col span="1" style="width: 100em;">
-            <col span="1" style="width: 10em;">
-            <col span="1" style="width: 20em;">
-            <col span="1" style="width: 20em;">
-            <col span="1" style="width: 15em;">
+            <col span="1" style="width: 25px;">
+            <col span="1" style="width: 50%;">
+            <col span="1">
+            <col span="1">
+            <col span="1">
+            <col span="1">
           </colgroup>
           <th>
           <th>Message</th>
@@ -420,7 +420,7 @@ function theme_acquia_lift_debugger() {
             <td>{{item.type | cut:true:10:'...':item}}</td>
             <td>{{item.timestamp |  date:'MM/dd/yyyy h:mma'}}</td>
             <td>{{item.page | cut:true:20:'...':item}}</td>
-            <td><div ng-click="item.expand? item.expand = false : item.expand = true" id="clickable"> {{item.expand? '[Read Less]' : '[Read More]'}}</div></td>
+            <td><div ng-click="item.expand? item.expand = false : item.expand = true" id="clickable"> {{item.expand? 'Read Less' : 'Read More'}}</div></td>
           </tr>
         </table>
       </div>

@@ -19,6 +19,9 @@
 
 (function ($, Drupal, Storage) {
     function getSeverity(code) {
+      if (code === 2000 || code === 2020){
+        return '';
+      }
       if (code < 3000) {
         return 'info';
       }
@@ -48,7 +51,16 @@
       Storage.clearStorage(data);
     }
 
-
+    function getType(options){
+      if (options.type){
+        return options.type;
+      }else{
+        if (options.code === 2020 || options.code === 2000){
+          return 'Developer'
+        }
+        return 'Drupal'
+      }
+    }
   // Log any personalize debug events to sessionStorage for inclusion in the
   // Acquia Lift debugger panel.
   Drupal.behaviors.acquia_lift_debug = {
@@ -56,7 +68,7 @@
       $('body').once('acquiaLiftDebug', function () {
         $(document).on('personalizeDebugEvent', function (e, options) {
           var data = {
-            type: 'log',
+            type: getType(options),
             timestamp: new Date().getTime(),
             page: Drupal.settings.basePath + Drupal.settings.pathPrefix + Drupal.settings.visitor_actions.currentPath,
             message: options.message,

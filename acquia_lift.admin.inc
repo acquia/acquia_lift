@@ -1373,9 +1373,11 @@ function acquia_lift_implement_targeting($agent) {
   // Go through any other option sets for this personalization, assign the same
   // decision name and option IDs to each of them, and copy the targeting infor-
   // mation to them.
+  $targeting_option_set->options = array_values($targeting_option_set->options);
   foreach ($all_option_sets as $os) {
     if ($os->osid != $targeting_option_set->osid) {
       $os->targeting = $targeting_option_set->targeting;
+      $os->options = array_values($os->options);
       foreach ($os->options as $i => &$option) {
         $option['option_id'] = $targeting_option_set->options[$i]['option_id'];
       }

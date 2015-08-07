@@ -38,7 +38,7 @@ document.getElementById('debugger').onmousewheel = function (e) {
         //scroll only the autocomplete dropdown if mouse is hover in that space.
         document.getElementById('debugger__autocomplete__dropdown').onmousewheel = function(e){
             scrollElement(e,'debugger__autocomplete__dropdown')
-        }
+        } 
     }
 }
 
@@ -230,7 +230,11 @@ app.factory('debuggerFactory', function($http){
                 cache = null;
             },
             getObject: function(key) {
-                return JSON.parse($window.sessionStorage[key] || '{}');
+                try{
+                    return JSON.parse($window.sessionStorage[key] || '{}');
+                }catch (e){
+                    return;
+                }
             },
             removeItem: function(key){
                 $window.sessionStorage.removeItem(key);
@@ -243,10 +247,25 @@ app.factory('debuggerFactory', function($http){
 
 app.controller("DebuggerController", function($scope, $timeout, debuggerFactory, $sessionStorage, $window, liftDebugger, debugPrefix, $document, previewStatus){
     //check for existence of acqiuaLiftProfilesDebug, if no do not proceed.
-    if(!Drupal.acquiaLiftProfilesDebug){
-        return;
+    //checks for localstorage support. if no do not proceed.
+    function supports_html5_storage(){
+        try {
+            return 'localStorage' in window && window['localStorage'] !== null;
+        } catch(e) {
+            return false;
+        }
     }
 
+    if(!Drupal.acquiaLiftProfilesDebug){
+        return;
+    } 
+    if(!supports_html5_storage()){
+        var deb = document.getElementById("debugger");
+        if(deb){
+            deb.parentNode.removeChild(deb);
+        }
+        return;
+    }
     //starting variables
     $scope.items = []; //event log
     $scope.tab = 'log'; //starting tab
@@ -262,7 +281,6 @@ app.controller("DebuggerController", function($scope, $timeout, debuggerFactory,
             }(key));
         }
     }
-
     //renders the debugger
     var debugConsole = new liftDebugger.debugger(document.getElementById('debugger'));
 
@@ -291,6 +309,10 @@ app.controller("DebuggerController", function($scope, $timeout, debuggerFactory,
             }(key));
         }
     });
+    //set the tab to previously selected
+    if(window.sessionStorage.getItem("acquiaLift::debug::state")){
+        $scope.tab = window.sessionStorage.getItem("acquiaLift::debug::state");
+    }
 
     //copy the values from our profile
     $scope.profile.personId = Drupal.acquiaLiftProfilesDebug.getPersonId();
@@ -458,14 +480,14 @@ app.controller("DebuggerController", function($scope, $timeout, debuggerFactory,
      * Sets CSS of the active tab.
      * Remove CSS of previous active tab.
      */
-    $scope.buttonClick = function(type){
+    $scope.buttonClick = function(){
         var color = '#0073b9';
         var bgColor = 'white';
         var boxShadow = '0 0 0.3rem rgba(41, 170, 225, 0.9), inset 0 0.1rem 0.3rem rgba(0, 0, 0, 0.4)'
         $scope.profileButton={};
         $scope.logButton={};
         $scope.previewButton={};
-        switch(type){
+        switch($scope.tab){
             case 'log': $scope.logButton={'color':color, 'background-color' : bgColor, 'box-shadow':boxShadow};
             break;
             case 'profile': $scope.profileButton={'color':color, 'background-color' : bgColor, 'box-shadow':boxShadow};
@@ -473,10 +495,11 @@ app.controller("DebuggerController", function($scope, $timeout, debuggerFactory,
             case 'preview': $scope.previewButton={'color':color, 'background-color' : bgColor, 'box-shadow':boxShadow};
             break;
         }
+        window.sessionStorage.setItem('acquiaLift::debug::state', $scope.tab);
     }
 
     //first click
-    $scope.buttonClick('log');
+    $scope.buttonClick();
 
 });
 

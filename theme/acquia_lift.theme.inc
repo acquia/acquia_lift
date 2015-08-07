@@ -333,13 +333,13 @@ function theme_acquia_lift_debugger() {
           </span>
   </div>
     <ul class="debugger__navigation__top__bar">
-      <li><a id="liftProfileTabLabel" class="debugger__navigation__item" ng-click="tab = 'profile';buttonClick('profile')" ng-style="profileButton">Lift Profile</a></li>
-      <li><a id="sitePreviewTabLabel" class="debugger__navigation__item" ng-click="tab = 'segments';buttonClick('preview')" ng-style="previewButton">Site Preview</a></li>
-      <li><a id="eventLogTabLabel" class="debugger__navigation__item" ng-click="tab = 'log';buttonClick('log')" ng-style="logButton">Event Log</a></li>
+      <li><a id="liftProfileTabLabel" class="debugger__navigation__item" ng-click="tab = 'profile';buttonClick()" ng-style="profileButton">Lift Profile</a></li>
+      <li><a id="sitePreviewTabLabel" class="debugger__navigation__item" ng-click="tab = 'preview';buttonClick()" ng-style="previewButton">Site Preview</a></li>
+      <li><a id="eventLogTabLabel" class="debugger__navigation__item" ng-click="tab = 'log';buttonClick()" ng-style="logButton">Event Log</a></li>
     </ul>
   </div>
   <div class="debugger__content" resizable r-directions="['top']" r-flex="false">
-  <div ng-show="tab=='segments'">
+  <div ng-show="tab=='preview'">
   <div class="debugger__preview">
     <div class="debugger__secondary__navigation"> <div class="previewBox">
             <button id="debugger__stopPreview" ng-click="stopPreview()" data-ng-disabled="!isPreview()" ng-style="previewButtonStop">Stop Preview</button>

@@ -1,6 +1,7 @@
 /**
  * Prevents parent element from scrolling when hovering over debugger elements.
  */
+
 function preventDefault(e) {
     // converts event for all browsers
     e = e || window.event; 
@@ -1612,7 +1613,7 @@ app.directive('autocomplete', function() {
             }, true);
 
             document.addEventListener("focus", function(e){
-                if(scope.$parent.tab === "segments" && e.target.tagName ==="INPUT"){
+                if(scope.$parent.tab === "preview" && e.target.tagName ==="INPUT"){
                     var dropdown = document.getElementById('debugger__autocomplete__dropdown');
                     var addbox = document.getElementsByClassName('addBox')[0].offsetTop;
                     var debuggerHeight = window.sessionStorage.getItem('acquiaLift::debug::debugWindowHeight')

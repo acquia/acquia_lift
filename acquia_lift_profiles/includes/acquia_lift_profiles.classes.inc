@@ -351,17 +351,17 @@ class ALProfilesAPI {
     }
     $auth_header = $this->getAuthHeader('PUT', $url, $params, $headers);
     $headers += array('Authorization' => $auth_header);
-    $querystring = empty($this->customerSite) ? '?' : '?customerSite=' . $this->customerSite . '&';
+    $querystring = empty($this->customerSite) ? '?' : '?customerSite=' . rawurlencode($this->customerSite) . '&';
     $querystring .= 'label=' . rawurlencode($event_label) . '&type=' . $event_type;
     $response = $this->httpClient()->put($url . $querystring, $headers);
     $vars = array('eventname' => $event_name);
     $success_msg = 'The event {eventname} has been saved to Acquia Lift Profiles';
-    $fail_msg = 'Could not save event {eventname} to Acquia Lift Profiles';
+    $fail_msg = 'Could not save event '.$event_name.' to Acquia Lift Profiles';
     if ($response->code == 200) {
       $this->logger()->log(PersonalizeLogLevel::INFO, $success_msg, $vars);
     }
     else {
-      $this->logger()->log(PersonalizeLogLevel::ERROR, $fail_msg, $vars);
+      $this->logger()->log(PersonalizeLogLevel::ERROR, $fail_msg);
       throw new ALProfilesException($fail_msg);
     }
   }

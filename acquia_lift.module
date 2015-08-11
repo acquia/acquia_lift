@@ -1041,18 +1041,36 @@ function acquia_lift_library() {
     ),
   );
 
-  $libraries['acquia_lift.agent_api'] = array(
-    'title' => 'Adds the Acquia Lift API files.',
-    'version' => VERSION,
-    'js' => array(
-      $path . '/js/acquia_lift.goals_queue.js' => $options,
-      $path . '/js/acquia-lift-js-wrapper-min.js' => array('type' => 'file', 'scope' => 'header'),
-      $path . '/js/acquia_lift.api.js' => $options,
-    ),
-    'dependencies' => array(
-      array('system', 'jquery'),
-    ),
-  );
+  try {
+    $lift_api = AcquiaLiftAPI::getInstance(variable_get('acquia_lift_account_info', array()));
+    $libraries['acquia_lift.agent_api'] = array(
+      'title' => 'Adds the Acquia Lift API files.',
+      'version' => VERSION,
+      'js' => array(
+        $path . '/js/acquia_lift.goals_queue.js' => $options,
+        $path . '/js/acquia-lift-js-wrapper-min.js' => array('type' => 'file', 'scope' => 'header'),
+        $path . '/js/acquia_lift.api.js' => $options,
+        array(
+          'data' => array(
+            'acquia_lift' => array(
+              'apiKey' => $lift_api->getApiKey(),
+              'owner' => $lift_api->getOwnerCode(),
+              'baseUrl' => $lift_api->getApiUrl(),
+              'stringReplacePattern' => AcquiaLiftAPI::STRING_REPLACE_PATTERN,
+              'batchMode' => FALSE
+            )
+          ),
+          'type' => 'setting'
+        )
+      ),
+      'dependencies' => array(
+        array('system', 'jquery'),
+      ),
+    );
+  }
+  catch (AcquiaLiftCredsException $e) {
+
+  }
 
   $libraries['acquia_lift.fields'] = array(
     'title' => 'Add navigation to personalizable fields',

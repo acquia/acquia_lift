@@ -61,7 +61,7 @@ Drupal.acquia_lift_target = (function() {
         subChoices[nestedDecision] = optionSet.option_names;
         fallbacks[nestedDecision] = 0;
 
-        if (Drupal.settings.acquia_lift_target.agent_map.hasOwnProperty(agent_name)) {
+        if (Drupal.settings.acquia_lift_target.agent_map.hasOwnProperty(agent_name) && Drupal.personalize.agents.hasOwnProperty(agent_plugin)) {
           var subCallback = function(selection) {
             for (var decision_name in decisions) {
               if (decisions.hasOwnProperty(decision_name) && selection.hasOwnProperty(nestedDecision)) {
@@ -171,7 +171,7 @@ Drupal.acquia_lift_target = (function() {
       if (nested.hasOwnProperty(agent_name)) {
         var agent_plugin = Drupal.settings.acquia_lift_target.test_agent_plugin;
         for (var i in nested[agent_name]) {
-          if (nested[agent_name].hasOwnProperty(i)) {
+          if (nested[agent_name].hasOwnProperty(i) && Drupal.personalize.agents.hasOwnProperty(agent_plugin)) {
             Drupal.personalize.agents[agent_plugin].sendGoalToAgent(nested[agent_name][i], goal_name, value);
           }
         }

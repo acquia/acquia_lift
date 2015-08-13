@@ -397,7 +397,7 @@ function acquia_lift_agent_list($agents = array(), $legacy = FALSE) {
               'href' => 'admin/structure/personalize/manage/'. $agent->machine_name .'/delete-all',
               'attributes' => array(
                 'class' => 'acquia-lift-delete',
-                'title' => t('Delete @campaign', array('campaign' => $agent->label)),
+                'title' => t('Delete @campaign', array('@campaign' => $agent->label)),
               ),
             );
             break;
@@ -407,7 +407,7 @@ function acquia_lift_agent_list($agents = array(), $legacy = FALSE) {
               'href' => 'admin/structure/personalize/manage/'. $agent->machine_name .'/delete-all',
               'attributes' => array(
                 'class' => 'acquia-lift-delete',
-                'title' => t('Delete @campaign', array('campaign' => $agent->label)),
+                'title' => t('Delete @campaign', array('@campaign' => $agent->label)),
               ),
             );
             break;
@@ -443,9 +443,6 @@ function acquia_lift_agent_list($agents = array(), $legacy = FALSE) {
           ),
         );
       }
-      if (!empty($delete_link)) {
-        $ops[] = $delete_link;
-      }
       if ($show_report_link) {
         $href = $legacy ? 'admin/structure/personalize/legacy/'. $agent->machine_name .'/results' :
           'admin/structure/personalize/manage/'. $agent->machine_name .'/results';
@@ -457,6 +454,21 @@ function acquia_lift_agent_list($agents = array(), $legacy = FALSE) {
             'title' => t('View reports for @campaign', array('@campaign' => $agent->label)),
           ),
         );
+      }
+      if ($legacy && $status != PERSONALIZE_STATUS_COMPLETED) {
+        $ops[] = array(
+          'title' => t('Complete'),
+          'href' => 'admin/structure/personalize/manage/'. $agent->machine_name .'/complete',
+          'query' => array('destination' => current_path() . '#personalization-group-' . PERSONALIZE_STATUS_COMPLETED),
+          'attributes' => array(
+            'class' => array('acquia-lift-complete'),
+            'title' => t('Complete @campaign (WARMING: action is final)', array('@campaign' => $agent->label)),
+          ),
+        );
+      }
+      if (!empty($delete_link)) {
+        $delete_link['query'] = array('destination' => current_path());
+        $ops[] = $delete_link;
       }
 
       // Generate actual table row data.

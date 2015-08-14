@@ -209,24 +209,24 @@ abstract class AcquiaLiftReportBase {
       '#title' =>  $interval->format('%mm, %dd'),
       '#description' => t('total time running'),
     );
-
+    $formatted_session_count = $this->formatReportNumber($session_count, FALSE, 0);
     $build['shown'] = array(
       '#type' => 'container',
       '#theme' => 'acquia_lift_report_overview',
       '#attributes' => array(
         'id' => 'acquia-lift-overview-shown',
       ),
-      '#title' => $session_count,
+      '#title' => $formatted_session_count,
       '#description' => format_plural($session_count, 'time shown', 'times shown'),
     );
-
+    $formatted_goal_count = $this->formatReportNumber($goal_count, FALSE, 0);
     $build['goals'] = array(
       '#type' => 'container',
       '#theme' => 'acquia_lift_report_overview',
       '#attributes' => array(
         'id' => 'acquia-lift-overview-goals',
       ),
-      '#title' => $goal_count,
+      '#title' => $formatted_goal_count,
       '#description' => t('goals met'),
     );
     if ($goal_count > 0) {
@@ -528,7 +528,7 @@ abstract class AcquiaLiftReportBase {
   protected function formatReportNumber($value, $trim = TRUE, $decimals = 2, $padding = 1) {
     if (is_numeric($value)) {
       $value = number_format($value, $decimals);
-      if ($trim) {
+      if ($trim && strpos('.', $value) !== FALSE) {
         $value = rtrim(rtrim($value, '0'), '.');
       }
       if ($padding > 0) {

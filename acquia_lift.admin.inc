@@ -772,7 +772,7 @@ function acquia_lift_report($form, &$form_state, $agent_data) {
     $form['audience_container']['complete'] = array(
       '#type' => 'link',
       '#title' => t('End test and choose winner'),
-      '#href' => url('admin/structure/personalize/manage/' . $agent_data->machine_name . '/audience/' . $test_id . '/complete'),
+      '#href' => 'admin/structure/personalize/manage/' . $agent_data->machine_name . '/audience/' . $test_id . '/complete',
       '#attributes' => array(
         'class' => array(
           'ctools-use-modal',

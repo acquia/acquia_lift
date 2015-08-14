@@ -34,11 +34,8 @@ var _tcwq = _tcwq || [];
         visitorSegments = {};
         for (var i = 0; i < segments.length; i++){
           visitorSegments[segments[i]] = 1;
-          // Store this in localStorage so it can be retrieved for use as Lift
-          // visitor context.
-          Drupal.personalize.visitor_context_write(segments[i], plugin, 1);
         }
-        // Go through all available segments and add an entry in localStorage for
+        // Go through all available segments and add an entry in visitorSegments for
         // each one that the visitor does *not* have.
         if (Drupal.settings.acquia_lift_profiles.available_segments) {
           for (var j in Drupal.settings.acquia_lift_profiles.available_segments) {
@@ -46,27 +43,13 @@ var _tcwq = _tcwq || [];
               var segmentName = Drupal.settings.acquia_lift_profiles.available_segments[j];
               if (!visitorSegments.hasOwnProperty(segmentName)) {
                 visitorSegments[segmentName] = 0;
-                Drupal.personalize.visitor_context_write(segmentName, plugin, 0);
               }
             }
           }
         }
         return visitorSegments;
       },
-      'retrieve': function(settings) {
-        var i, val, segmentName, segments = settings.available_segments;
-        for (i in segments) {
-          if (segments.hasOwnProperty(i)) {
-            segmentName = segments[i];
-            if (visitorSegments === null || !visitorSegments.hasOwnProperty(segmentName)) {
-              val = Drupal.personalize.visitor_context_read(segmentName, plugin);
-              if (val !== null) {
-                visitorSegments = visitorSegments || {};
-                visitorSegments[segmentName] = val;
-              }
-            }
-          }
-        }
+      'retrieve': function() {
         return visitorSegments;
       },
       'reset': function() {
@@ -84,9 +67,9 @@ var _tcwq = _tcwq || [];
       }
 
       var i, j, context_values = {};
-      // First check to see if we have the acquia_lift_profiles segments already stored
-      // locally.
-      var cached = segmentCache.retrieve(Drupal.settings.acquia_lift_profiles);
+      // First check to see if we have the acquia_lift_profiles segments stored
+      // already.
+      var cached = segmentCache.retrieve();
       if (cached) {
         for (i in enabled) {
           if (enabled.hasOwnProperty(i) && cached.hasOwnProperty(i)) {

@@ -21,6 +21,12 @@ class ALProfilesAPITest extends DrupalUnitTestCase {
     parent::setUp();
   }
 
+  protected function tearDown() {
+    parent::tearDown();
+    $this->logger = NULL;
+    DummyAcquiaLiftHttpClient::clearLoggedRequests();
+  }
+
   /**
    * @var AcquiaLiftTestLogger
    */
@@ -368,7 +374,7 @@ class ALProfilesAPITest extends DrupalUnitTestCase {
     $acquia_lift_profiles_api = ALProfilesAPI::getInstance($this->accountName, $this->customerSite, $this->apiUrl, $this->accessKey, $this->secretKey);
     // Create a dummy http client for the Acquia Lift Profiles API to use. All
     // requests to it will be logged and retrievable for checking later.
-    $this->httpClient = new DummyALProfilesHttpClient($broken);
+    $this->httpClient = new DummyALProfilesHttpClient(ACQUIA_LIFT_TESTING_AGENT_V1, $broken);
     $acquia_lift_profiles_api->setHttpClient($this->httpClient);
     if ($this->logger === NULL) {
       // Create a dummy logger instance which will maintain a log in memory

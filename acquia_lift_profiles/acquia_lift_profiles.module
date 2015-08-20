@@ -240,29 +240,6 @@ function acquia_lift_profiles_page_build(&$page) {
       $settings['adminMode'] = TRUE;
     }
   }
-  $account_name = $settings['account_name'];
-
-  $init = <<<EOT
-var _tcaq = _tcaq || [];
-var _tcwq = _tcwq || [];
-_tcaq.push(['setAccount', '$account_name']);
-(function() {
-  function async_load()
-  {
-    var s = document.createElement('script');
-    s.type = 'text/javascript';
-    s.async = true;
-    s.src = ('https:' == document.location.protocol ? 'https' : 'http')
-      + '://$js_path';
-    var x = document.getElementsByTagName('script')[0];
-    x.parentNode.insertBefore(s, x);
-  }
-  if (window.attachEvent)
-    window.attachEvent('onload', async_load);
-  else
-    window.addEventListener('load', async_load, false);
-})();
-EOT;
 
   // Now we need to compile all the assets together with the js settings and files
   // needed for Acquia Lift Profiles itself.
@@ -282,13 +259,16 @@ EOT;
     $attached[$type] = array_merge($attached[$type], $data_array);
   }
 
+  // Add the capture script.
+  global $is_https;
+  $url_scheme = ($is_https) ? 'https://' : 'http://';
+  $tc_js = $url_scheme . $js_path;
+  $attached['js'][$tc_js] = array(
+    'weight' => JS_DEFAULT - 5
+  );
   $js_file = drupal_get_path('module', 'acquia_lift_profiles') . '/js/acquia_lift_profiles.js';
   $attached['js'][$js_file] = array(
     'weight' => JS_DEFAULT - 10
-  );
-  $attached['js'][] = array(
-    'data' => $init,
-    'type' => 'inline'
   );
   if (!isset($attached['library'])) {
     $attached['library'] = array();

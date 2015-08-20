@@ -95,7 +95,14 @@ var _tcwq = _tcwq || [];
         };
 
         // Register our callback for receiving segments.
+        // TODO: "onLoad" should happen before "init" and "pushTrack". However,
+        // current JS executing sequence is incorrect, therefore we are patching
+        // _tcwq by slotting "onLoad" in between "init" and "pushTrack".
+        var pushTrack = _tcwq.length > 0 ? _tcwq.pop() : null;
         _tcwq.push(["onLoad", segmentsCallback]);
+        if (pushTrack) {
+          _tcwq.push(pushTrack);
+        }
         callbackRegistered = true;
       });
     }
@@ -143,7 +150,7 @@ var _tcwq = _tcwq || [];
    */
   Drupal.acquia_lift_profiles = (function(){
 
-    var processedListeners = {}, initialized = false, initializing = false, pageFieldValues = {};
+    var processedListeners = {}, processedDecisions = {}, initialized = false, initializing = false, pageFieldValues = {};
     var agentNameToLabel = {};
 
     /**
@@ -166,6 +173,8 @@ var _tcwq = _tcwq || [];
           return;
         }
         initializing = true;
+        _tcaq.push(['setAccount', settings.acquia_lift_profiles.account_name]);
+
         if ( settings.personalize && settings.personalize.agent_map ) {
           var agent_map = settings.personalize.agent_map;
           for (var agent_name in agent_map) {
@@ -201,6 +210,9 @@ var _tcwq = _tcwq || [];
         }
 
         var callback = function(contextValues) {
+          if (initialized) {
+            return;
+          }
           for (var pluginName in contextValues) {
             if (contextValues.hasOwnProperty(pluginName)) {
               for (var contextName in contextValues[pluginName]) {
@@ -261,7 +273,14 @@ var _tcwq = _tcwq || [];
           };
 
           // Register our callback for receiving segments.
+          // TODO: "onLoad" should happen before "init" and "pushTrack". However,
+          // current JS executing sequence is incorrect, therefore we are patching
+          // _tcwq by slotting "onLoad" in between "init" and "pushTrack".
+          var pushTrack = _tcwq.length > 0 ? _tcwq.pop() : null;
           _tcwq.push(["onLoad", segmentsCallback]);
+          if (pushTrack) {
+            _tcwq.push(pushTrack);
+          }
           callbackRegistered = true;
         }
       },
@@ -292,10 +311,15 @@ var _tcwq = _tcwq || [];
       },
 
       'processPersonalizeDecision':function(e, $option_set, decision, osid, agent_name) {
+        // Only send this if it has never been sent or the decision has changed due to
+        // new targeting conditions being met.
+        if (processedDecisions.hasOwnProperty(agent_name) && processedDecisions[agent_name] == decision) {
+          return;
+        }
         if (decision == 'control-variation') {
           decision = 'Control';
         }
-
+        processedDecisions[agent_name] = decision;
         _tcaq.push(['capture', 'Campaign Action', {'targetcampaignid':agent_name, 'targetcampaignname':getAgentLabel(agent_name), 'targetofferid': decision, 'targetactionname':decision } ]);
 
       },

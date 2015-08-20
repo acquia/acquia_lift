@@ -239,14 +239,17 @@ function acquia_lift_get_sync_operations_for_agent($agent) {
   if (empty($goals)) {
     throw new AcquiaLiftException('No goals have been set up for personalization ' . $agent->machine_name);
   }
-  $lift_api = AcquiaLiftAPI::getInstance(variable_get('acquia_lift_account_info', array()));
+  $account_info = acquia_lift_get_account_info();
+  $version = acquia_lift_get_test_agent_plugin();
+  $lift_api = AcquiaLiftAPIClientFactory::create($account_info, $version);
+
   foreach ($nested_tests as $agent_name => $test) {
     if (!acquia_lift_is_testing_agent($test)) {
       continue;
     }
 
     if ($agent_instance = personalize_agent_load_agent($agent_name, TRUE)) {
-      if (!$agent_instance instanceof AcquiaLiftAgent) {
+      if (!$agent_instance instanceof AcquiaLiftLearningAgentInterface) {
         continue;
       }
 
@@ -265,10 +268,6 @@ function acquia_lift_get_sync_operations_for_agent($agent) {
           throw new AcquiaLiftException('There is a problem communicating with Lift, syncing cannot complete at this time.');
         }
       }
-
-      // First sync the agent itself.
-      $operations = array_merge($operations, $agent_instance->getAgentSyncOperations());
-
       // Now go through all option sets and sync those.
       $option_sets = personalize_option_set_load_by_agent($agent_name, TRUE);
       if (empty($option_sets)) {
@@ -278,9 +277,6 @@ function acquia_lift_get_sync_operations_for_agent($agent) {
       if (count($first_os->options) < 2) {
         throw new AcquiaLiftException('Test ' . $agent_name . ' has fewer than two variations.');
       }
-      $decisions = AcquiaLiftAgent::convertOptionSetsToDecisions($option_sets);
-
-      $operations = array_merge($operations, $agent_instance->getDecisionSyncOperations(array(), $decisions));
       $new_goals = $old_goals = array();
       foreach ($goals as $goal) {
         $new_goals[$goal->action] = $goal->value;
@@ -295,7 +291,8 @@ function acquia_lift_get_sync_operations_for_agent($agent) {
           $old_goals[$goal] = 1;
         }
       }
-      $operations = array_merge($operations, $agent_instance->getGoalSyncOperations($old_goals, $new_goals));
+      // Get all the operations required to sync this agent and its components.
+      $operations = array_merge($operations, $agent_instance->getAgentSyncOperations($option_sets, $new_goals, $old_goals));
     }
   }
   return $operations;

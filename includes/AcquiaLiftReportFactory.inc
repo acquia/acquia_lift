@@ -19,10 +19,14 @@ class AcquiaLiftReportFactory {
     // Load all reporting-related classes.
     $report_class_files = array(
       'AcquiaLiftReportBase',
+      'AcquiaLiftReportDataFromFileBase',
       'AcquiaLiftReport',
+      'AcquiaLiftLearnReport',
+      'AcquiaLiftLearnReportFromFile',
       'AcquiaLiftReportCacheInterface',
       'AcquiaLiftReportCache',
       'AcquiaLiftReportDataFromFile',
+
     );
     foreach ($report_class_files as $file) {
       module_load_include('inc', 'acquia_lift', 'includes/' . $file);

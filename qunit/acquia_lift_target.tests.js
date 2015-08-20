@@ -145,7 +145,7 @@ QUnit.test("test nesting logic - decisions", function( assert ) {
   var sub_agent_name = 'my-nested-agent';
 
   Drupal.settings.acquia_lift_target.agent_map[sub_agent_name] = {
-    'type': 'acquia_lift'
+    'type': 'acquia_lift_learn'
   };
   var subOs_str = 'osid-' + subOS;
   Drupal.settings.acquia_lift_target.option_sets = Drupal.settings.acquia_lift_target.option_sets || {};
@@ -166,9 +166,9 @@ QUnit.test("test nesting logic - decisions", function( assert ) {
     'stateful': 0,
     'winner': null
   };
-  Drupal.personalize.agents.acquia_lift = Drupal.personalize.agents.acquia_lift || {};
+  Drupal.personalize.agents.acquia_lift_learn = Drupal.personalize.agents.acquia_lift_learn || {};
   // Mock the acquia_lift testing agent to just make it return the second option.
-  Drupal.personalize.agents.acquia_lift.getDecisionsForPoint = function(agentName, evaluatedVisitorContexts, choices, decisionName, fallbacks, callback) {
+  Drupal.personalize.agents.acquia_lift_learn.getDecisionsForPoint = function(agentName, evaluatedVisitorContexts, choices, decisionName, fallbacks, callback) {
     var expected_chocies = {}
     expected_chocies[subOs_str] = ['first-option', 'second-option'];
     assert.deepEqual(choices, expected_chocies);
@@ -239,10 +239,11 @@ QUnit.test("test nesting logic - goals", function( assert ) {
 
   Drupal.settings.acquia_lift_target.nested_tests[agentName] = {};
   Drupal.settings.acquia_lift_target.nested_tests[agentName][sub_agent_name] = sub_agent_name;
-  // Fire a goal and confirm the acquia_lift agent gets it. We do this by mocking
-  // the acquia_lift agent's sendGoalToAgent function and confirming it gets called
+
+  // Fire a goal and confirm the acquia_lift_learn agent gets it. We do this by mocking
+  // the acquia_lift_learn agent's sendGoalToAgent function and confirming it gets called
   // with the correct arguments.
-  Drupal.personalize.agents.acquia_lift.sendGoalToAgent = function(agent_name, goal_name, value) {
+  Drupal.personalize.agents.acquia_lift_learn.sendGoalToAgent = function(agent_name, goal_name, value) {
     assert.equal(agent_name, sub_agent_name);
     assert.equal(goal_name, 'some-goal');
     assert.equal(value, 2);

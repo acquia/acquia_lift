@@ -17,6 +17,7 @@ class DummyAcquiaLiftHttpClient implements AcquiaLiftDrupalHttpClientInterface {
    */
   protected static $requests_received;
 
+  protected $version;
   /**
    * Whether or not this http client should return 500 errors.
    *
@@ -72,7 +73,8 @@ class DummyAcquiaLiftHttpClient implements AcquiaLiftDrupalHttpClientInterface {
    * @param array $data
    *   An array of dummy data that can be returned in responses.
    */
-  public function __construct($broken = FALSE, $data = array(), $simulate_client_side_breakage = FALSE) {
+  public function __construct($version, $broken = FALSE, $data = array(), $simulate_client_side_breakage = FALSE) {
+    $this->version = $version;
     $this->broken = $broken;
     $this->breakageType = $simulate_client_side_breakage ? 'client' : 'server';
     $this->data += $data;
@@ -127,126 +129,153 @@ class DummyAcquiaLiftHttpClient implements AcquiaLiftDrupalHttpClientInterface {
   protected function getDataForURI($uri, $headers = array()) {
     $parsed = parse_url($uri);
     $path_parts = explode('/', $parsed['path']);
-    // The first element of the $path_parts array will be an empty string and the second
-    // will be the owner code, which we don't need here.
-    $path_parts = array_slice($path_parts, 2);
-    switch($path_parts[0]) {
-      case 'list-agents':
-        return array(
-          'data' => array(
-            'agents' => isset($this->data['agents']) ? $this->data['agents'] : array()
-          )
-        );
-      case 'transforms-options':
-        return array(
-          'data' => array(
-            'options' => isset($this->data['options']) ? $this->data['options'] : array()
-          )
-        );
-      case '-':
-        // For some reason the endpoint for getting targeting values is '/-/potential-targeting'
-        if ($path_parts[1] != 'potential-targeting') {
-          return array();
-        }
-        if (isset($this->data['features'])) {
-          return array(
-            'data' => array(
-              'potential' => array(
-                'features' => $this->data['features']
-              )
-            )
-          );
-        }
-        if (isset($this->data['reports'])) {
-          // Grab the agent name from the querystring.
-          $query_params = explode('&', $parsed['query']);
-          $first_param = explode('=', reset($query_params));
-          if ($first_param[0] !== 'agent') {
-            return array();
-          }
-          $agent_name = $first_param[1];
-          if (isset($this->data['reports'][$agent_name]['context-filters'])) {
-            return $this->data['reports'][$agent_name]['context-filters'];
-          }
-        }
-        return array(
-          'data' => array(
-            'potential' => array(
-              'features' => array()
-            )
-          )
-        );
-      case 'agent-api':
-        $agent_name = $path_parts[1];
-        if (count($path_parts) == 2) {
-          return array(
-            'machine-name' => $agent_name,
-            'status' => PERSONALIZE_STATUS_NOT_STARTED,
-          );
-        }
-        switch ($path_parts[2]) {
-          case 'points':
-            // This request must be for the list of points for an agent, or the list of decisions
-            // for a point, or the list of choices for a decision. Use a regex to figure out which.
-            $matches = array();
-            $pattern = '/agent\-api\/[a-zA-Z0-9-_]+(\/points\/[a-zA-Z0-9-_]+\/decisions(\/[a-zA-Z0-9-_]+\/choices)?)?/';
-            if (!preg_match($pattern, $parsed['path'], $matches)) {
+    // The first element of the $path_parts array will be an empty string.
+    $path_parts = array_slice($path_parts, 1);
+    // @todo remove this switch statement once V1 is deprecated.
+    switch($this->version) {
+      case ACQUIA_LIFT_TESTING_AGENT_V2:
+        switch($path_parts[0]) {
+          case 'campaigns':
+            return isset($this->data['campaigns']) ? $this->data['campaigns'] : array();
+          case 'report':
+            $query_params = explode('&', $parsed['query']);
+            $first_param = explode('=', reset($query_params));
+            if ($first_param[0] !== 'campaign_id') {
               return array();
             }
-            switch (count($matches)) {
-              case 1:
-                // This is a request for points for an agent.
-                return isset($this->data['points'][$agent_name]) ? $this->data['points'][$agent_name] : array();
-              case 2:
-                // This is a request for decisions for a point.
-                $point_name = $path_parts[3];
-                return isset($this->data['decisions'][$agent_name][$point_name]) ? $this->data['decisions'][$agent_name][$point_name] : array();
-              case 3:
-                // This is a request for choices for a decision.
-                $point_name = $path_parts[3];
-                $decision_name = $path_parts[5];
-                return isset($this->data['choices'][$agent_name][$point_name][$decision_name]) ? $this->data['choices'][$agent_name][$point_name][$decision_name] : array();
-            }
-            return array();
-          case 'goals':
-            return isset($this->data['goals'][$agent_name]) ? $this->data['goals'][$agent_name] : array();
+            $agent_name = $first_param[1];
+            return isset($this->data['reports'][$agent_name]) ? $this->data['reports'][$agent_name] : array();
+          case 'ping':
+            return array('message' => 'pong!');
+            break;
         }
         break;
-    }
-    // Reports (unfortunately not all of which have the same url pattern)
-    if (strpos($parsed['path'], 'report/status') !== FALSE) {
-      $query_params = explode('&', $parsed['query']);
-      $first = explode('=', reset($query_params));
-      if ($first[0] !== 'codes') {
-        return array();
-      }
-      $agent_names = explode(',', $first[1]);
-      $agent_name = reset($agent_names);
-      return isset($this->data['reports'][$agent_name]['agent-status']) ? $this->data['reports'][$agent_name]['agent-status'] : array();
-    }
-    if (isset($path_parts[1]) && $path_parts[1] == 'report') {
-      $matches = array();
-      $pattern = '/([a-zA-Z0-9-_]+)\/report\/(confidence|targeting\-features|learning)/';
-      if (!preg_match($pattern, $parsed['path'], $matches)) {
-        return array();
-      }
-      $agent_name = $matches[1];
-      $report_type = $matches[2];
-      if ($report_type == 'confidence' && isset($headers['x-mpath-point'])) {
-        // We're getting a confidence report for a particular decision point.
-        if (isset($this->data['reports'][$agent_name]['confidence'])) {
-          $confidence_report = $this->data['reports'][$agent_name]['confidence'];
-          foreach ($confidence_report['data']['items'] as $i => $item) {
-            if ($item['point'] !== $headers['x-mpath-point']) {
-              unset($confidence_report['data']['items'][$i]);
+      case ACQUIA_LIFT_TESTING_AGENT_V1:
+      default:
+        // The first element of the $path_parts array will be the owner code,
+        // which we don't need here.
+        $path_parts = array_slice($path_parts, 1);
+        switch($path_parts[0]) {
+          case 'list-agents':
+            return array(
+              'data' => array(
+                'agents' => isset($this->data['agents']) ? $this->data['agents'] : array()
+              )
+            );
+          case 'transforms-options':
+            return array(
+              'data' => array(
+                'options' => isset($this->data['options']) ? $this->data['options'] : array()
+              )
+            );
+          case '-':
+            // For some reason the endpoint for getting targeting values is '/-/potential-targeting'
+            if ($path_parts[1] != 'potential-targeting') {
+              return array();
+            }
+            if (isset($this->data['features'])) {
+              return array(
+                'data' => array(
+                  'potential' => array(
+                    'features' => $this->data['features']
+                  )
+                )
+              );
+            }
+            if (isset($this->data['reports'])) {
+              // Grab the agent name from the querystring.
+              $query_params = explode('&', $parsed['query']);
+              $first_param = explode('=', reset($query_params));
+              if ($first_param[0] !== 'agent') {
+                return array();
+              }
+              $agent_name = $first_param[1];
+              if (isset($this->data['reports'][$agent_name]['context-filters'])) {
+                return $this->data['reports'][$agent_name]['context-filters'];
+              }
+            }
+            return array(
+              'data' => array(
+                'potential' => array(
+                  'features' => array()
+                )
+              )
+            );
+          case 'agent-api':
+            $agent_name = $path_parts[1];
+            if (count($path_parts) == 2) {
+              return array(
+                'machine-name' => $agent_name,
+                'status' => PERSONALIZE_STATUS_NOT_STARTED,
+              );
+            }
+            switch ($path_parts[2]) {
+              case 'points':
+                // This request must be for the list of points for an agent, or the list of decisions
+                // for a point, or the list of choices for a decision. Use a regex to figure out which.
+                $matches = array();
+                $pattern = '/agent\-api\/[a-zA-Z0-9-_]+(\/points\/[a-zA-Z0-9-_]+\/decisions(\/[a-zA-Z0-9-_]+\/choices)?)?/';
+                if (!preg_match($pattern, $parsed['path'], $matches)) {
+                  return array();
+                }
+                switch (count($matches)) {
+                  case 1:
+                    // This is a request for points for an agent.
+                    return isset($this->data['points'][$agent_name]) ? $this->data['points'][$agent_name] : array();
+                  case 2:
+                    // This is a request for decisions for a point.
+                    $point_name = $path_parts[3];
+                    return isset($this->data['decisions'][$agent_name][$point_name]) ? $this->data['decisions'][$agent_name][$point_name] : array();
+                  case 3:
+                    // This is a request for choices for a decision.
+                    $point_name = $path_parts[3];
+                    $decision_name = $path_parts[5];
+                    return isset($this->data['choices'][$agent_name][$point_name][$decision_name]) ? $this->data['choices'][$agent_name][$point_name][$decision_name] : array();
+                }
+                return array();
+              case 'goals':
+                return isset($this->data['goals'][$agent_name]) ? $this->data['goals'][$agent_name] : array();
+            }
+            break;
+        }
+        // Reports (unfortunately not all of which have the same url pattern)
+        if (strpos($parsed['path'], 'report/status') !== FALSE) {
+          $query_params = explode('&', $parsed['query']);
+          $first = explode('=', reset($query_params));
+          if ($first[0] !== 'codes') {
+            return array();
+          }
+          $agent_names = explode(',', $first[1]);
+          $agent_name = reset($agent_names);
+          return isset($this->data['reports'][$agent_name]['agent-status']) ? $this->data['reports'][$agent_name]['agent-status'] : array();
+        }
+        if (isset($path_parts[1]) && $path_parts[1] == 'report') {
+          $matches = array();
+          $pattern = '/([a-zA-Z0-9-_]+)\/report\/(confidence|targeting\-features|learning)/';
+          if (!preg_match($pattern, $parsed['path'], $matches)) {
+            return array();
+          }
+          $agent_name = $matches[1];
+          $report_type = $matches[2];
+          if ($report_type == 'confidence' && isset($headers['x-mpath-point'])) {
+            // We're getting a confidence report for a particular decision point.
+            if (isset($this->data['reports'][$agent_name]['confidence'])) {
+              $confidence_report = $this->data['reports'][$agent_name]['confidence'];
+              foreach ($confidence_report['data']['items'] as $i => $item) {
+                if ($item['point'] !== $headers['x-mpath-point']) {
+                  unset($confidence_report['data']['items'][$i]);
+                }
+              }
+              $confidence_report['data']['items'] = array_values($confidence_report['data']['items']);
+              return $confidence_report;
             }
           }
-          $confidence_report['data']['items'] = array_values($confidence_report['data']['items']);
-          return $confidence_report;
+          return isset($this->data['reports'][$agent_name][$report_type]) ? $this->data['reports'][$agent_name][$report_type] : array();
         }
-      }
-      return isset($this->data['reports'][$agent_name][$report_type]) ? $this->data['reports'][$agent_name][$report_type] : array();
+        break;
+
     }
+
     return array();
   }
 
@@ -674,5 +703,60 @@ class AcquiaLiftTestReports {
         ),
     );
     return $filters;
+  }
+
+  public static function getBasicV2Report() {
+    return array(
+      'results' => array(
+        array (
+          'decision_id' => 'option-a',
+          'results' => array(
+            array(
+              'timestamp' => '2015-07-07T00:00:00Z',
+              'total_play' => 250,
+              'total_goals' => 25,
+              'total_goals_value' => 25,
+              'total_plays_explore' => 100,
+              'total_goals_explore' => 12,
+              'total_goals_value_explore' => 12,
+            ),
+            array(
+              'timestamp' => '2015-07-08T00:00:00Z',
+              'total_play' => 240,
+              'total_goals' => 26,
+              'total_goals_value' => 26,
+              'total_plays_explore' => 101,
+              'total_goals_explore' => 13,
+              'total_goals_value_explore' => 13,
+            ),
+          ),
+        ),
+        array(
+          'decision_id' => 'option-b',
+          'results' => array(
+            array(
+              'timestamp' => '2015-07-07T00:00:00Z',
+              'total_play' => 265,
+              'total_goals' => 27,
+              'total_goals_value' => 27,
+              'total_plays_explore' => 99,
+              'total_goals_explore' => 11,
+              'total_goals_value_explore' => 11,
+            ),
+            array(
+              'timestamp' => '2015-07-08T00:00:00Z',
+              'total_play' => 245,
+              'total_goals' => 22,
+              'total_goals_value' => 22,
+              'total_plays_explore' => 100,
+              'total_goals_explore' => 10,
+              'total_goals_value_explore' => 10,
+            ),
+          ),
+        ),
+      ),
+      'total_plays' => 1000,
+      'total_goals' => 100,
+    );
   }
 }

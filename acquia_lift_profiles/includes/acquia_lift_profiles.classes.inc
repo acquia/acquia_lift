@@ -142,7 +142,7 @@ class ALProfilesAPI {
     module_load_include('inc', 'acquia_lift_profiles', 'tests/acquia_lift_profiles.test_classes');
     self::$instance = new self('TESTACCOUNT', 'TESTSITE', 'http://api.example.com', 'testUser', 'testPass');
     $test_data = variable_get('acquia_lift_profiles_web_test_data', array());
-    self::$instance->setHttpClient(new DummyALProfilesHttpClient($broken_http_client, $test_data));
+    self::$instance->setHttpClient(new DummyALProfilesHttpClient(ACQUIA_LIFT_TESTING_AGENT_V1, $broken_http_client, $test_data));
     self::$instance->setLogger(new AcquiaLiftTestLogger(TRUE));
   }
 
@@ -289,7 +289,9 @@ class ALProfilesAPI {
    */
   public function getAuthHeader($method, $path, $parameters = array(), $headers = array()) {
     $canonical = $this->canonicalizeRequest($method, $path, $parameters, $headers, is_a($this->httpClient(), 'AcquiaLiftDrupalHttpClient'));
-    $hmac = base64_encode(hash_hmac('sha1', (string) $canonical, $this->secretKey, TRUE));
+    $binary = hash_hmac('sha1', (string) $canonical, $this->secretKey, TRUE);
+    $hex = hash_hmac('sha1', (string) $canonical, $this->secretKey, FALSE);
+    $hmac = base64_encode($binary);
     return 'HMAC ' . $this->accessKey . ':' . $hmac;
   }
 

@@ -96,6 +96,37 @@ function acquia_lift_requirements($phase) {
         }
       }
     }
+
+    $subscription = acquia_agent_settings('acquia_subscription_data');
+    $v2 = variable_get('acquia_lift_v2_enabled', false);
+    $is_active = FALSE;
+    if (isset($subscription['heartbeat_data']['acquia_lift']['status']) && $subscription['heartbeat_data']['acquia_lift']['status']) {
+      $is_active = TRUE;
+    }
+
+    if ($v2) {
+      if ($is_active) {
+        $requirements['acquia_lift_status'] = array(
+          'title' => t('Acquia Lift Subscription status'),
+          'severity' => REQUIREMENT_OK,
+          'value' => t('Active'),
+          'description' => t('You can manually refresh the subscription status in the Acquia Subscription status section on this page.'),
+        );
+      }
+      else {
+        $requirements['acquia_lift_status'] = array(
+          'title' => t('Acquia Lift Subscription status'),
+          'severity' => REQUIREMENT_WARNING,
+          'value' => t('Inactive'),
+          'description' => t('Your subscription is expired or you are using an invalid identifier and key pair. You can check the subscription identifier and the subscription key at the <a href="@settings">Acquia Lift settings</a> page.', array('@settings' => url('admin/config/content/personalize/acquia_lift'))),
+        );
+      }
+    }
+
+  }
+  // Update the cached version whenever we may be updating the module.
+  if ($phase == 'runtime' || $phase == 'update') {
+    _acquia_lift_set_version();
   }
 
   return $requirements;

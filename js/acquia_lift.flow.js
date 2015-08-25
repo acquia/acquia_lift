@@ -12,13 +12,13 @@
         $(this).on('click', function(e) {
           var $link = $(this).find('a.acquia-lift-type-select');
           // Special handling based on href values.
-          if ($link.attr('href') == settings.basePath + settings.pathPrefix + 'admin/structure/visitor_actions/add-in-context') {
+          if (stringEndsWith($link.attr('href'), settings.basePath + settings.pathPrefix + 'admin/structure/visitor_actions/add-in-context')) {
             // Trigger goals in context.
             $('#acquiaLiftVisitorActionsConnector').find('a').trigger('click');
             $('.acquia-lift-modal .close', context).trigger('click');
             e.preventDefault();
             e.stopImmediatePropagation();
-          } else if ($link.attr('href') == settings.basePath + settings.pathPrefix + 'admin/structure/personalize/variations/personalize-elements/add') {
+          } else if (stringEndsWith($link.attr('href'), settings.basePath + settings.pathPrefix + 'admin/structure/personalize/variations/personalize-elements/add')) {
             // Trigger variations in context.
             $(document).trigger('acquiaLiftElementVariationModeTrigger', [{start: true}]);
             $('.acquia-lift-modal .close', context).trigger('click');
@@ -107,6 +107,10 @@
 
   function hidePageVisitorActionsButton() {
     $('#visitor-actions-ui-actionable-elements-without-identifiers').hide();
+  }
+
+  function stringEndsWith(str, suffix) {
+    return str.indexOf(suffix, str.length - suffix.length) !== -1;
   }
 
   /**

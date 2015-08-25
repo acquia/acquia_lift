@@ -15,13 +15,13 @@
           if ($link.attr('href') == settings.basePath + settings.pathPrefix + 'admin/structure/visitor_actions/add-in-context') {
             // Trigger goals in context.
             $('#acquiaLiftVisitorActionsConnector').find('a').trigger('click');
-            Drupal.CTools.Modal.dismiss();
+            $('.acquia-lift-modal .close', context).trigger('click');
             e.preventDefault();
             e.stopImmediatePropagation();
           } else if ($link.attr('href') == settings.basePath + settings.pathPrefix + 'admin/structure/personalize/variations/personalize-elements/add') {
             // Trigger variations in context.
             $(document).trigger('acquiaLiftElementVariationModeTrigger', [{start: true}]);
-            Drupal.CTools.Modal.dismiss();
+            $('.acquia-lift-modal .close', context).trigger('click');
             e.preventDefault();
             e.stopImmediatePropagation();
           } else if ($link.hasClass('ctools-use-modal')) {
@@ -1438,11 +1438,10 @@
     $('#modalContent').focus();
   };
 
-  var ctoolsUnmodalContent = Drupal.CTools.Modal.unmodalContent;
-  Drupal.CTools.Modal.unmodalContent = function (content, animation, speed) {
-    ctoolsUnmodalContent(content, animation, speed);
+  // Gets triggered upon Drupal.CTools.Modal.unmodalContent.
+  $(document).on('CToolsDetachBehaviors', function() {
     $(window).unbind('scroll', modalContentResize);
-  }
+  });
 
   Drupal.ajax.prototype.commands.modal_display = Drupal.CTools.Modal.modal_display;
   Drupal.ajax.prototype.commands.modal_dismiss = Drupal.CTools.Modal.modal_dismiss;

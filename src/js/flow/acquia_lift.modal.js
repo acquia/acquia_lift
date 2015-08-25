@@ -15,13 +15,13 @@
           if ($link.attr('href') == settings.basePath + settings.pathPrefix + 'admin/structure/visitor_actions/add-in-context') {
             // Trigger goals in context.
             $('#acquiaLiftVisitorActionsConnector').find('a').trigger('click');
-            Drupal.CTools.Modal.dismiss();
+            $('.acquia-lift-modal .close', context).trigger('click');
             e.preventDefault();
             e.stopImmediatePropagation();
           } else if ($link.attr('href') == settings.basePath + settings.pathPrefix + 'admin/structure/personalize/variations/personalize-elements/add') {
             // Trigger variations in context.
             $(document).trigger('acquiaLiftElementVariationModeTrigger', [{start: true}]);
-            Drupal.CTools.Modal.dismiss();
+            $('.acquia-lift-modal .close', context).trigger('click');
             e.preventDefault();
             e.stopImmediatePropagation();
           } else if ($link.hasClass('ctools-use-modal')) {

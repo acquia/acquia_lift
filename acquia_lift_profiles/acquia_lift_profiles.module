@@ -161,7 +161,7 @@ function acquia_lift_profiles_page_build(&$page) {
   if (!acquia_lift_profiles_is_configured()) {
     return;
   }
-  $js_path = variable_get('acquia_lift_profiles_js_path', '');
+
   $account_name = variable_get('acquia_lift_profiles_account_name', '');
   $capture_identity = variable_get('acquia_lift_profiles_capture_identity', FALSE);
   $mappings = variable_get('acquia_lift_profiles_udf_mappings', array());
@@ -259,13 +259,6 @@ function acquia_lift_profiles_page_build(&$page) {
     $attached[$type] = array_merge($attached[$type], $data_array);
   }
 
-  // Add the capture script.
-  global $is_https;
-  $url_scheme = ($is_https) ? 'https://' : 'http://';
-  $tc_js = $url_scheme . $js_path;
-  $attached['js'][$tc_js] = array(
-    'weight' => JS_DEFAULT - 5
-  );
   $js_file = drupal_get_path('module', 'acquia_lift_profiles') . '/js/acquia_lift_profiles.js';
   $attached['js'][$js_file] = array(
     'weight' => JS_DEFAULT - 10

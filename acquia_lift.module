@@ -1095,26 +1095,50 @@ function acquia_lift_library() {
     ),
   );
 
-  $libraries['acquia_lift.page'] = array(
-    'title' => 'Adds Acquia Lift page processing necessary for all page views.',
-    'version' => VERSION,
-    'js' => array(
-      $path . '/js/acquia_lift.page.js' => $options,
-      $path . '/js/acquia_lift.goals_queue.js' => $options,
-      array(
-        'data' => array(
-          'acquia_lift' => array(
-            'api_class' => variable_get('acquia_lift_v2_enabled', FALSE) ? 'acquiaLiftV2API' : 'acquiaLiftAPI'
-          )
+  $js_path = variable_get('acquia_lift_profiles_js_path', '');
+  if (!empty($js_path)) {
+    // Initialize the queues.
+    $init = <<<EOT
+var _tcaq = _tcaq || [];
+var _tcwq = _tcwq || [];
+EOT;
+    // Add the capture script.
+    global $is_https;
+    $url_scheme = ($is_https) ? 'https://' : 'http://';
+    $tc_js = $url_scheme . $js_path;
+    $libraries['acquia_lift.page'] = array(
+      'title' => 'Adds Acquia Lift page processing necessary for all page views.',
+      'version' => VERSION,
+      'js' => array(
+        array(
+          'data' => $init,
+          'type' => 'inline',
+          'weight' => JS_DEFAULT - 6
         ),
-        'type' => 'setting'
-      )
-    ),
-    'dependencies' => array(
-      array('system', 'jquery'),
-      array('system', 'jquery.once'),
-    ),
-  );
+        $tc_js => array(
+          'weight' => JS_DEFAULT - 5
+        ),
+        $path . '/js/acquia_lift.page.js' => $options,
+        $path . '/js/acquia_lift.goals_queue.js' => $options,
+        array(
+          'data' => array(
+            'acquia_lift' => array(
+              'api_class' => variable_get('acquia_lift_v2_enabled', FALSE) ? 'acquiaLiftV2API' : 'acquiaLiftAPI'
+            )
+          ),
+          'type' => 'setting'
+        ),
+      ),
+      'dependencies' => array(
+        array('system', 'jquery'),
+        array('system', 'jquery.once'),
+      ),
+    );
+  }
+  else {
+    drupal_set_message(t("Your Lift js path has not been configured. Personalization will not work."), 'error');
+  }
+
   $account_info = acquia_lift_get_account_info();
   if (variable_get('acquia_lift_v2_enabled', FALSE)) {
     $libraries['acquia_lift.page']['dependencies'][] = array('acquia_lift', 'acquia_lift.v2_agent_api');

@@ -395,7 +395,6 @@ function theme_acquia_lift_debugger() {
           output-model-name="Type &#9662;">
           </div>
          </div>
-         <!--<button id="debugger__log__export" ng-click="exportData()">Export</button>-->
       </div>
       <div class="debugger__log">
         <table id="debugger__log__table">

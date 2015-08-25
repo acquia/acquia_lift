@@ -183,7 +183,7 @@ app.factory('debuggerFactory', function($http){
                     if (this.isMaximized) {
                         this.element.classList.add('is-maximized');
 
-                        //checks if a debugger heigh was set in a previous page. Else sets the height to 80% of max height
+                        //checks if a debugger height was set in a previous page. Else sets the height to 80% of max height
                         if(window.sessionStorage.getItem('acquiaLift::debug::debugWindowHeight')){
                             var height = Math.min(window.sessionStorage.getItem('acquiaLift::debug::debugWindowHeight'), document.documentElement.clientHeight * 0.8);
                             document.getElementsByClassName('debugger__content')[0].style.height = height + "px";
@@ -349,25 +349,29 @@ app.controller("DebuggerController", function($scope, $timeout, debuggerFactory,
      * @return boolean
      */
     $scope.search = function (row) {
+        var returnValue = false;
         if(row) {
             if (row.severity !== undefined && row.type !== undefined) {
                 for (var i = 0; i < $scope.severity.length; i++) {
                     if (typeof($scope.severity[i].name) === "string") {
                         if ($scope.severity[i].name.toUpperCase() === row.severity.toUpperCase()) {
-                            return true;
+                            returnValue = true;
                         }
                     }
                 }
-                for (var i = 0; i < $scope.type.length; i++) {
-                    if (typeof($scope.type[i].name) === "string") {
-                        if ($scope.type[i].name.toUpperCase() === row.type.toUpperCase()) {
-                            return true;
+                if(returnValue){
+                    returnValue = false;
+                    for (var i = 0; i < $scope.type.length; i++) {
+                        if (typeof($scope.type[i].name) === "string") {
+                            if ($scope.type[i].name.toUpperCase() === row.type.toUpperCase()) {
+                                returnValue =  true;
+                            }
                         }
-                    }
+                    }       
                 }
             }
         }
-        return false;
+        return returnValue;
     };
 
     /**
@@ -454,28 +458,6 @@ app.controller("DebuggerController", function($scope, $timeout, debuggerFactory,
             return false;
         }
     }
-  
-
-    /**
-     *Export code - disabled at the moment.
-     */
-    $scope.exportData = function(){
-        // var data = []
-        // var index =0;
-        // for (index = 0; index < $scope.items.length; index ++){
-        //     var item = $scope.items[index];
-        //     var arr = Object.keys(item).map(function (key) {return item[key]});
-        //     data.push(arr);
-        // }
-        // var csvContent  = "data:text/csv;charset=utf-8," + data.join("\n");
-        // var encodedUri = encodeURI(csvContent);
-        // var link = document.createElement("a");
-        // link.setAttribute("href", encodedUri);
-        // link.setAttribute("download", "Event_log_export.csv");
-
-        // link.click(); 
-    }
-
     /**
      * Navigate between tabs
      * Sets CSS of the active tab.

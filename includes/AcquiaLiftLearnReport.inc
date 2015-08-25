@@ -185,7 +185,7 @@ class AcquiaLiftLearnReport extends AcquiaLiftReportBase {
   }
 
   /**
-   * Gets the per-day confidence report from the report data source and stores it.
+   * Gets the per-day confidence report from the report data source.
    *
    * @return array
    *   An array of per-day reports.
@@ -202,8 +202,6 @@ class AcquiaLiftLearnReport extends AcquiaLiftReportBase {
         continue;
       }
       foreach ($result['results'] as $single_day) {
-        // @todo Put this back to looking at explore mode totals once that's been
-        //   fixed.
         $count = $single_day['total_plays_explore'];
         $goals = $single_day['total_goals_explore'];
         $val = $single_day['total_goals_value_explore'];

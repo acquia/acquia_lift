@@ -320,7 +320,6 @@ app.controller("DebuggerController", function($scope, $timeout, debuggerFactory,
         // $sessionStorage.setObject(debugPrefix + "::overrideSegments",$scope.profile.overrideSegments);
         Drupal.acquiaLiftProfilesDebug.setOverrideSegments($scope.profile.overrideSegments);    
         document.getElementsByClassName('debugger__preview__notification')[0].innerHTML = 'Please refresh page to see your changes';
-        document.getElementByClassName('debugger__preview__notification')
     }
 
     $scope.stopPreview = function(){
@@ -355,7 +354,7 @@ app.controller("DebuggerController", function($scope, $timeout, debuggerFactory,
             return false;
         }
     }
-  }
+  
 
 /**
 *Export code 

@@ -298,10 +298,13 @@ tr.acquia-lift-report-control {
   min-width: 520px;
   margin: .5rem;
 }
-.acquia-lift-delete {
-  background-image: url(../images/000000/delete.png);
-  background-repeat: no-repeat;
-  background-position: 50%;
+.acquia-lift-delete,
+.acquia-lift-delete:hover,
+.acquia-lift-delete:active,
+input[type="submit"].acquia-lift-delete,
+input[type="submit"].acquia-lift-delete:hover,
+input[type="submit"].acquia-lift-delete:active {
+  background: transparent url(../images/000000/delete.png) no-repeat 50%;
   width: 24px;
   height: 24px;
   text-indent: -9999px;

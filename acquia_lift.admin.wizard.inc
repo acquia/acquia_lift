@@ -524,27 +524,21 @@ function acquia_lift_personalize_campaign_wizard_goals_alter(&$form, &$form_stat
 
     if ($editable) {
       // Add delete button to the header.
+      // We cannot make this an AJAX callback because the form values cannot
+      // be carried forward with an updated form build due to the storing of
+      // goal values by array index order.
       $form['goals']['all_goals'][$delta]['header'] = array(
         '#type' => 'container',
         'delete' => array(
+          '#name' => 'delete_goal_' . $delta,
           '#type' => 'submit',
-          '#tag' => 'button',
-          '#text' => t('Delete'),
-          '#value' => 'remove_' . $delta,
+          '#value' => t('Delete'),
           '#attributes' => array(
-            'id' => 'edit-goals-all-goals-' . $delta . '-header-delete',
             'data-acquia-lift-personalize-goal-id' => $goal_id,
             'title' => t('Delete the goal.'),
-            'name' => 'edit-goals-all-goals-' . $delta . '-header-delete',
-            'value' => t('Delete'),
             'class' => array('acquia-lift-delete'),
           ),
-          '#theme_wrappers' => array('personalize_html_tag'),
-          '#submit' => array('acquia_lift_personalize_campaign_wizard_goals_ajax_delete'),
-          '#ajax' => array(
-            'callback' => 'acquia_lift_personalize_campaign_wizard_goals_ajax_all',
-            'wrapper' => 'personalize-goals-container',
-          ),
+          '#submit' => array('acquia_lift_personalize_campaign_wizard_goals_submit_delete'),
           '#limit_validation_errors' => array(),
         ),
       );
@@ -1664,27 +1658,6 @@ function acquia_lift_personalize_campaign_wizard_goals_ajax_existing($form, &$fo
 }
 
 /**
- * Ajax submit handler to delete a goal.
- */
-function acquia_lift_personalize_campaign_wizard_goals_ajax_delete($form, &$form_state) {
-  $goal_id = $form_state['triggering_element']['#attributes']['data-acquia-lift-personalize-goal-id'];
-  if (!empty($goal_id)) {
-    personalize_goal_delete($goal_id);
-    $form_state['num_goals']--;
-  }
-  $form_state['rebuild'] = TRUE;
-}
-
-/**
- * Ajax callback handler to return all existing goals in the form.
- */
-function acquia_lift_personalize_campaign_wizard_goals_ajax_all($form, &$form_state) {
-  drupal_get_messages();
-  return $form['goals'];
-}
-
-
-/**
  * Submit handler for the "Add Context" button.
  */
 function acquia_lift_personalize_campaign_wizard_targeting_add($form, &$form_state) {
@@ -2270,6 +2243,9 @@ function acquia_lift_personalize_campaign_wizard_goals_single_submit($form, &$fo
   }
   list( , , $delta) = explode('_', $form_state['triggering_element']['#name']);
   _acquia_lift_personalize_campaign_wizard_goals_single_add($delta, $form, $form_state, $agent_data);
+  unset($form_state['new_goals'][$delta]);
+  unset($form_state['expanded_goal']);
+  $form_state['rebuild'] = TRUE;
 }
 
 /**
@@ -2335,6 +2311,17 @@ function acquia_lift_personalize_campaign_wizard_goals_submit_element_add($form,
 
   $element_page = $form_state['values']['goals']['new'][$delta]['details']['url'] ?: '<front>';
   drupal_goto($element_page);
+}
+
+/**
+ * Submit handler to delete a goal.
+ */
+function acquia_lift_personalize_campaign_wizard_goals_submit_delete($form, &$form_state) {
+  $goal_id = $form_state['triggering_element']['#attributes']['data-acquia-lift-personalize-goal-id'];
+  if (!empty($goal_id)) {
+    personalize_goal_delete($goal_id);
+    $form_state['num_goals']--;
+  }
 }
 
 /**

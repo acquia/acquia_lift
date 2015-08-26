@@ -6,7 +6,7 @@
  * Time: 8:04 AM
  */
 
-namespace Drupal\acquia_lift_data_connector\Controller;
+namespace Drupal\acquia_lift\Controller;
 
 
 use Drupal\Core\Controller\ControllerBase;

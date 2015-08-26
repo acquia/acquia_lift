@@ -6,7 +6,7 @@
  * Time: 2:24 PM
  */
 
-namespace Drupal\acquia_lift_data_connector;
+namespace Drupal\acquia_lift;
 
 
 interface AcquiaLiftDataInterface {

@@ -1,4 +1,4 @@
 services:
   acquia_lift_data_connector:
-    class: Drupal\acquia_lift_data_connector\AcquiaLiftDataAPI
+    class: Drupal\acquia_lift\AcquiaLiftDataAPI
     arguments: ['@config.factory', '@http_client', '@router.request_context']

@@ -4,10 +4,10 @@
  * @file
  * Provides an agent type for Acquia Lift Profiles
  */
-namespace Drupal\acquia_lift_data_connector;
+namespace Drupal\acquia_lift;
 
-use Drupal\acquia_lift_data_connector\Exception\AcquiaLiftDataConnectorCredsException;
-use Drupal\acquia_lift_data_connector\Exception\AcquiaLiftDataConnectorException;
+use Drupal\acquia_lift\Exception\AcquiaLiftDataConnectorCredsException;
+use Drupal\acquia_lift\Exception\AcquiaLiftDataConnectorException;
 use Drupal\Component\Utility\SafeMarkup;
 use Drupal\Component\Utility\UrlHelper;
 use Drupal\Core\Config\ConfigFactory;
@@ -96,9 +96,9 @@ class AcquiaLiftDataAPI implements AcquiaLiftDataInterface {
    * @throws AcquiaLiftDataConnectorCredsException
    */
   public function __construct(ConfigFactory $config_factory, ClientInterface $http_client, RequestContext $context) {
-    $config = $config_factory->get('acquia_lift_data_connector.settings');
+    $config = $config_factory->get('acquia_lift.settings');
     $this->context = $context;
-    $this->logger = \Drupal::logger('acquia_lift_data_connector');
+    $this->logger = \Drupal::logger('acquia_lift');
 
     $this->accountName = $config->get('account_name');
     $this->apiUrl = $config->get('api_url');
@@ -108,10 +108,10 @@ class AcquiaLiftDataAPI implements AcquiaLiftDataInterface {
 
     // If either account name or API URL is still missing, bail.
     if (empty($this->apiUrl) || empty($this->accountName) || empty($this->accessKey) || empty($this->secretKey)) {
-      throw new AcquiaLiftDataConnectorCredsException('Missing acquia_lift_data_connector account information.');
+      throw new AcquiaLiftDataConnectorCredsException('Missing acquia_lift data account information.');
     }
     if (!UrlHelper::isValid($this->apiUrl)) {
-      throw new AcquiaLiftDataConnectorCredsException('API URL is not a valid URL.');
+      throw new AcquiaLiftDataConnectorCredsException('Acquia Lift Data API URL is not a valid URL.');
     }
 
     $this->httpClient = $http_client;

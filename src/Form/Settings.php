@@ -5,7 +5,7 @@
  * Contains \Drupal\acquia_lift_manager\Form\Settings.
  */
 
-namespace Drupal\acquia_lift_data_connector\Form;
+namespace Drupal\acquia_lift\Form;
 
 use Drupal\Core\Form\ConfigFormBase;
 use Drupal\Core\Form\FormStateInterface;
@@ -19,7 +19,7 @@ class Settings extends ConfigFormBase {
    * {@inheritdoc}
    */
   public function getFormID() {
-    return 'acquia_lift_data_connector_settings_form';
+    return 'acquia_lift_settings_form';
   }
 
   /**
@@ -27,7 +27,7 @@ class Settings extends ConfigFormBase {
    */
   protected function getEditableConfigNames() {
     return [
-      'acquia_lift_data_connector.settings',
+      'acquia_lift.settings',
     ];
   }
 
@@ -35,7 +35,7 @@ class Settings extends ConfigFormBase {
    * {@inheritdoc}
    */
   public function buildForm(array $form, FormStateInterface $form_state, Request $request = NULL) {
-    $config = $this->config('acquia_lift_data_connector.settings');
+    $config = $this->config('acquia_lift.settings');
 
     $form['account_name'] = array(
       '#type' => 'textfield',
@@ -75,7 +75,7 @@ class Settings extends ConfigFormBase {
    */
   public function submitForm(array &$form, FormStateInterface $form_state) {
     $values = $form_state->getValues();
-    $config = $this->config('acquia_lift_data_connector.settings');
+    $config = $this->config('acquia_lift.settings');
 
     $config->set('account_name', $values['account_name'])
       ->set('site_name', $values['site_name'])

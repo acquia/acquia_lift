@@ -1,6 +1,6 @@
 <?php
 
-namespace Drupal\acquia_lift_data_connector\Exception;
+namespace Drupal\acquia_lift\Exception;
 
 class AcquiaLiftDataConnectorCredsException extends AcquiaLiftDataConnectorException {
 

@@ -344,6 +344,7 @@ function acquia_lift_profiles_form_node_type_form_alter(&$form, &$form_state) {
  *   An array, passed by reference, to add any errors to.
  */
 function acquia_lift_profiles_put_action($action_name, $label, &$errors = array()) {
+
   try {
     $acquia_lift_profiles_api = ALProfilesAPI::getInstance(variable_get('acquia_lift_profiles_account_name', ''), variable_get('acquia_lift_profiles_site_name', ''), variable_get('acquia_lift_profiles_api_url', ''));
     $acquia_lift_profiles_api->saveEvent($action_name, $label);

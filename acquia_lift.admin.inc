@@ -111,6 +111,11 @@ function acquia_lift_admin_form($form, &$form_state) {
           '!apiurl' => $account_info['api_url']
         )),
       );
+      $form['acquia_lift_account_info']['js_path'] = array(
+        '#markup' => t("<p>User Profile Creation (JS): <strong>!jspath</strong></p>", array(
+          '!jspath' => $account_info['js_path']
+        )),
+      );
     }
     else {
       $form['acquia_lift_account_info']['msg'] = array(
@@ -167,13 +172,6 @@ function acquia_lift_admin_form($form, &$form_state) {
     );
   }
 
-  $form['acquia_lift_profiles_js_path'] = array(
-    '#type' => 'textfield',
-    '#title' => t('Acquia Lift JavaScript path'),
-    '#field_prefix' => 'http(s)://',
-    '#default_value' => variable_get('acquia_lift_profiles_js_path', ''),
-    '#required' => TRUE,
-  );
   $form['acquia_lift_confidence_measure'] = array(
     '#type' => 'textfield',
     '#title' => t('Confidence measure'),

@@ -491,8 +491,18 @@ function acquia_lift_get_account_info() {
       if (isset($acquia_lift_data['decision']['private_key']) && empty($account_info['private_key'])) {
         $account_info['private_key'] = $acquia_lift_data['decision']['private_key'];
       }
-      if (isset($acquia_lift_data['hostname']) && empty($account_info['api_url'])) {
-        $account_info['api_url'] = $acquia_lift_data['hostname'];
+      if (isset($acquia_lift_data['decision']['hostname']) && empty($account_info['api_url'])) {
+        $account_info['api_url'] = $acquia_lift_data['decision']['hostname'];
+      }
+      if (isset($acquia_lift_data['profile']['js_path']) && empty($account_info['js_path'])) {
+        // @todo remove the variable set when we no longer need the variable but
+        // are able to read it in from the account_info array
+        $existing_js_path = variable_get('acquia_lift_profiles_js_path', '');
+        // Set our variable if the data coming from Acquia Network is different
+        if ($existing_js_path != $acquia_lift_data['profile']['js_path']) {
+          variable_set('acquia_lift_profiles_js_path', $acquia_lift_data['profile']['js_path']);
+        }
+        $account_info['js_path'] = $acquia_lift_data['profile']['js_path'];
       }
     }
     // Whether or not to check the response value.

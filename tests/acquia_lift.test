@@ -4520,8 +4520,8 @@ class AcquiaLiftWebTestCampaignWizardReview extends AcquiaLiftWebTestCampaignWiz
 class AcquiaLiftDebugger extends AcquiaLiftWebTestBase {
   public static function getInfo() {
     return array(
-      'name' => t('Acquia Lift Debugger Tests'),
-      'description' => t('Tests the basic functionality of the Acquia Lift Web Debugger'),
+      'name' => t('Acquia Lift Inspector Tests'),
+      'description' => t('Tests the basic functionality of the Acquia Lift Web Inspector'),
       'group' => t('Personalize'),
     );
   }
@@ -4530,13 +4530,13 @@ class AcquiaLiftDebugger extends AcquiaLiftWebTestBase {
    * Test the availability of the debugger.
    */
   function testAccess() {
-    $url_param = 'acquia_lift_debug_mode';
+    $url_param = 'acquia_lift_inspector_mode';
     $this->drupalLogin($this->adminUser);
 
     // Make sure that debug mode is not enabled.
     $this->drupalGet('admin/config/content/personalize/');
     $edit = array(
-      'personalize_enable_debug_mode' => FALSE,
+      'personalize_enable_inspector_mode' => FALSE,
     );
     $this->drupalPost(NULL, $edit, $this->getButton('config'));
 
@@ -4548,7 +4548,7 @@ class AcquiaLiftDebugger extends AcquiaLiftWebTestBase {
     // Enable debug mode for the site.
     $this->drupalGet('admin/config/content/personalize/');
     $edit = array(
-      'personalize_enable_debug_mode' => TRUE,
+      'personalize_enable_inspector_mode' => TRUE,
     );
     $this->drupalPost(NULL, $edit, $this->getButton('config'));
 

@@ -2826,7 +2826,7 @@
         var debuggerRunning = $(this).attr('data-acquia-lift-debugger-running') == 'true' ? true : false;
         var toggle = debuggerRunning ? 0 : 1;
         var href = $(this).attr('href');
-        $(this).attr('href', href + '?acquia_lift_debug_mode=' + toggle);
+        $(this).attr('href', href + '?acquia_lift_inspect_mode=' + toggle);
         $(this).closest('li').addClass('acquia-lift-navbar-secondary');
       });
 

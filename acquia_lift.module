@@ -2283,7 +2283,7 @@ function acquia_lift_navbar() {
   if (personalize_debug_mode_enabled()) {
     $debugger_running = acquia_lift_debug_mode_enabled();
     $debugger_link = current_path();
-    $link_title = $debugger_running ? t('End Acquia Lift debugger session') : t('Start Acquia Lift debugger');
+    $link_title = $debugger_running ? t('End Acquia Lift Inspector session') : t('Start Acquia Lift Inspector');
     // Add in a link to enable/disable the debugger.
     $menu[] = array(
       'link' => array(
@@ -3150,14 +3150,14 @@ function acquia_lift_debug_mode_enabled() {
     return FALSE;
   }
   // Check to see if there is a session variable for debug mode.
-  $in_session = isset($_SESSION['acquia_lift_debug_mode']);
+  $in_session = isset($_SESSION['acquia_lift_inspect_mode']);
   // Check to see if it was requested
   if ($in_session) {
     //turns on the personalizeDebugMode cookie
     setcookie('personalizeDebugMode',1, time()+60, '/');
     // Check to see if it should be turned off from URL parameter.
-    if (isset($_GET['acquia_lift_debug_mode']) && $_GET['acquia_lift_debug_mode'] == FALSE) {
-      unset($_SESSION['acquia_lift_debug_mode']);
+    if (isset($_GET['acquia_lift_inspect_mode']) && $_GET['acquia_lift_inspect_mode'] == FALSE) {
+      unset($_SESSION['acquia_lift_inspect_mode']);
       //deletes the personalizeDebugMode cookie
       setcookie('personalizeDebugMode',"", time()-3600 );
       return FALSE;
@@ -3166,8 +3166,8 @@ function acquia_lift_debug_mode_enabled() {
   }
   else {
     // Check to see if it was requested via URL parameter.
-    if (!empty($_GET['acquia_lift_debug_mode'])) {
-      $_SESSION['acquia_lift_debug_mode'] = TRUE;
+    if (!empty($_GET['acquia_lift_inspect_mode'])) {
+      $_SESSION['acquia_lift_inspect_mode'] = TRUE;
       return TRUE;
     }
   }

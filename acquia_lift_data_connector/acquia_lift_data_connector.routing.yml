@@ -1,0 +1,14 @@
+acquia_lift_data_connector.settings:
+  path: 'admin/config/services/acquia_lift_data_connector'
+  defaults:
+    _form: '\Drupal\acquia_lift_data_connector\Form\Settings'
+    _title: 'Acquia Lift Data Connector settings'
+  requirements:
+    _permission: 'administer acquia lift data connector'
+acquia_lift_data_connector.test:
+  path: 'admin/config/services/acquia_lift_data_connector/test'
+  defaults:
+    _controller: '\Drupal\acquia_lift_data_connector\Controller\TestController::test'
+    _title: 'Acquia Lift Data Connector testing'
+  requirements:
+    _permission: 'administer acquia lift data connector'

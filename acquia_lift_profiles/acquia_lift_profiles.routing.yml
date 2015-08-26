@@ -1,7 +1,0 @@
-acquia_lift_profiles.admin_form:
-  path: /admin/config/content/personalize/acquia_lift_profiles
-  defaults:
-    _title: 'Acquia Lift Profiles'
-    _form: \Drupal\acquia_lift_profiles\Form\AcquiaLiftProfilesAdminForm
-  requirements:
-    _permission: 'administer acquia_lift_profiles configuration'

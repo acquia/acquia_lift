@@ -1,7 +1,0 @@
-name: Acquia Lift
-description: Extension to Personalize module that provides integration to the Acquia Lift service for machine-learning-based personalization
-package: Personalization
-core:  8.x
-type: module
-dependencies:
-  - personalize

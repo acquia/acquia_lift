@@ -1,5 +1,0 @@
-acquia_lift_profiles.admin_form:
-  title: 'Acquia Lift Profiles'
-  description: 'Configuration settings for the Acquia Lift Profiles integration module.'
-  parent: system.admin_config_content
-  description: 'Configure security, connection and data mapping information for Acquia Lift Profiles functionality.'

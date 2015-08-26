@@ -1,0 +1,6 @@
+name: 'Acquia Lift Data Connector'
+description: 'The Acquia Lift Data Connector module provides integration with the Acquia Lift service'
+package: Acquia
+core: 8.x
+type: module
+configure: acquia_lift_data_connector.settings

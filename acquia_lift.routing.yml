@@ -1,7 +1,0 @@
-acquia_lift_settings:
-  path: '/admin/config/content/personalize/acquia_lift'
-  defaults:
-    _form: '\Drupal\acquia_lift\Form\SettingsForm'
-    _title: 'Acquia Lift Settings'
-  requirements:
-    _permission: 'administer personalization'

@@ -26,20 +26,22 @@ function acquia_lift_profiles_drush_command() {
  * @param null $secretKey Optional secret key to use (if null then the configured secret key is used)
  */
 function drush_acquia_lift_profiles_get_segments($accessKey = NULL, $secretKey = NULL) {
+  $account_info = acquia_lift_profiles_get_account_info();
   drupal_set_message(T('Get Segments') );
-  drupal_set_message(T('Account Name : '.variable_get('acquia_lift_profiles_account_name', '')));
-  drupal_set_message(T('API URL : '.variable_get('acquia_lift_profiles_api_url', '')));
+  drupal_set_message(T('Account Name : ' . $account_info['account_name']));
+  drupal_set_message(T('API URL : ' . $account_info['hostname']));
+
   if ( $accessKey == NULL ) {
-    $accessKey = variable_get('acquia_lift_profiles_access_key', '');
+    $accessKey = $account_info['public_key'];
   }
   if ( $secretKey == NULL ) {
-    $secretKey = variable_get('acquia_lift_profiles_secret_key', '');
+    $secretKey = $account_info['secret_key'];
   }
   drupal_set_message(T('Access Key : '.$accessKey));
   drupal_set_message(T('Secret Key : '.$secretKey));
   drupal_set_message(T('Segments : '));
   try {
-    $returnSegments = ALProfilesAPI::getInstance(variable_get('acquia_lift_profiles_account_name', ''), variable_get('acquia_lift_profiles_site_name', ''), variable_get('acquia_lift_profiles_api_url', ''), $accessKey, $secretKey)
+    $returnSegments = ALProfilesAPI::getInstance($account_info['account_name'], variable_get('acquia_lift_profiles_site_name', ''), $account_info['hostname'], $account_info['public_key'], $account_info['secret_key'])
       ->getSegments();
     foreach ($returnSegments as $segment) {
       drupal_set_message($segment);

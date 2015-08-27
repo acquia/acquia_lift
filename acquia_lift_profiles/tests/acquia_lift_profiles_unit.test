@@ -80,10 +80,10 @@ class ALProfilesAPITest extends DrupalUnitTestCase {
     // an empty string.
     global $conf;
     $original_conf = $conf;
-    $conf['acquia_lift_profiles_account_name'] = '';
-    $conf['acquia_lift_profiles_api_url'] = '';
-    $conf['acquia_lift_profiles_access_key'] = '';
-    $conf['acquia_lift_profiles_secret_key'] = '';
+    $conf['acquia_subscription_data']['heartbeat_data']['acquia_lift']['profile']['account_name'] = '';
+    $conf['acquia_subscription_data']['heartbeat_data']['acquia_lift']['profile']['hostname'] = '';
+    $conf['acquia_subscription_data']['heartbeat_data']['acquia_lift']['profile']['public_key'] = '';
+    $conf['acquia_subscription_data']['heartbeat_data']['acquia_lift']['profile']['secret_key'] = '';
     try {
       $acquia_lift_profiles_api = ALProfilesAPI::getInstance('', 'ohai');
       $this->fail('Should never reach here.');

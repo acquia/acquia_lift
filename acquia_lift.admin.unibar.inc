@@ -102,7 +102,7 @@ function acquia_lift_element_variation_details_form($form, &$form_state, $variat
     '#title' => t('Variation name'),
     '#required' => TRUE,
     '#maxlength' => PERSONALIZE_MACHINE_NAME_MAXLENGTH,
-    '#default_value' => filter_xss($default_option_label),
+    '#default_value' => personalize_sanitize_string($default_option_label),
     '#attributes' => array(
       'placeholder' => t('Example: Winter vacation'),
     ),
@@ -626,10 +626,10 @@ function acquia_lift_goal_type_create_completed_callback($form, &$form_state) {
   $agent = $form_state['values']['agent'];
   $settings = acquia_lift_get_campaign_details();
   if ($settings[$agent->machine_name]['verified'] && personalize_agent_get_status($agent->machine_name) === PERSONALIZE_STATUS_NOT_STARTED) {
-    $message = t('Goal added.  You can now !start the personalization.', array('!start' => l(t('start'), 'admin/structure/personalize/' . $agent->machine_name)));
+    $message = t('Goal added. You can now !start the personalization.', array('!start' => l(t('start'), 'admin/structure/personalize/' . $agent->machine_name)));
   }
   else {
-    $message = t('!goal goal added to personalization.', array('!goal' => filter_xss($form_state['acquia_lift']['goal_name'])));
+    $message = personalize_sanitize_string($form_state['acquia_lift']['goal_name']) . ' ' . t('goal added to personalization.');
   }
   // Load updated data about custom defined visitor actions.
   $actions = visitor_actions_custom_load_multiple();

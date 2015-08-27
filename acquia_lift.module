@@ -888,7 +888,7 @@ function acquia_lift_personalize_option_set_insert($option_set) {
   $js_id = personalize_stringify_osid($option_set->osid);
   $selector = isset($option_set->data['personalize_elements_selector']) ? $option_set->data['personalize_elements_selector'] : '[data-personalize=' . $js_id . ']';
   $plugin = 'link';
-  $action_label = t('Clicks @option_set', array('@option_set' => $option_set->label));
+  $action_label = t('Clicks') . ' ' . personalize_sanitize_string($option_set->label);
   $action_name = personalize_generate_machine_name($action_label, 'visitor_actions_machine_name_exists', '_');
   $pages = empty($field['settings']['personalize']['goal_pages']) ? '' : $field['settings']['personalize']['goal_pages'];
   $action = array(
@@ -3023,7 +3023,7 @@ function acquia_lift_get_campaign_details() {
     if ($supports_goals) {
       foreach (personalize_goal_load_by_conditions(array('agent' => $agent->machine_name)) as $goal) {
         if (isset($actions[$goal->action])) {
-          $goals[$goal->action] = filter_xss($actions[$goal->action]['label']);
+          $goals[$goal->action] = personalize_sanitize_string($actions[$goal->action]['label']);
         }
       }
     }
@@ -3036,7 +3036,7 @@ function acquia_lift_get_campaign_details() {
     $disable_reports = empty($agent->started) || empty($targeting_option_set->targeting);
     $campaigns[$agent->machine_name] = array(
       'name' => $agent->machine_name,
-      'label' => filter_xss($agent->label),
+      'label' => personalize_sanitize_string($agent->label),
       'type' => $agent->plugin,
       'links' => array(
         'view' => url('admin/structure/personalize/manage/' . $agent->machine_name),

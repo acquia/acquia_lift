@@ -1166,10 +1166,10 @@ function acquia_lift_adjust_report_start_date($start, $end) {
  */
 function acquia_lift_report_experiment() {
   $params = drupal_get_query_parameters();
-  $agent_name = empty($params['campaign']) ? NULL : filter_xss($params['campaign']);
+  $agent_name = empty($params['campaign']) ? NULL : personalize_sanitize_string($params['campaign']);
   $options = array();
-  $options['decision'] = empty($params['decision']) ? NULL : filter_xss($params['decision']);
-  $options['goal'] = empty($params['goal']) ? NULL : filter_xss($params['goal']);
+  $options['decision'] = empty($params['decision']) ? NULL : personalize_sanitize_string($params['decision']);
+  $options['goal'] = empty($params['goal']) ? NULL : personalize_sanitize_string($params['goal']);
   $options['start'] = empty($params['start']) ? NULL : check_plain($params['start']);
   $options['end'] = empty($params['end']) ? NULL : check_plain($params['end']);
 

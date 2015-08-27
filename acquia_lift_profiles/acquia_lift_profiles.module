@@ -31,8 +31,7 @@ function acquia_lift_profiles_menu() {
 function acquia_lift_profiles_translated_menu_link_alter(&$link) {
   // Update the admin link if the API url is specified in the config.
   if ($link['menu_name'] === 'acquia-lift-controls' && $link['link_path'] === 'http://lift.acquia.com') {
-    $account_info = acquia_lift_profiles_get_account_info();
-    $updated_link = 'http://' . $account_info['hostname'];
+    $updated_link = 'http://' . variable_get('acquia_lift_profiles_api_url', 'lift.acquia.com');
     if (valid_url($updated_link, TRUE)) {
       $link['href'] = $updated_link;
     }
@@ -79,15 +78,20 @@ function acquia_lift_profiles_permission() {
  *   TRUE if all relevant configuration settings have been set, FALSE
  *   otherwise.
  */
-function acquia_lift_profiles_is_configured() {
+function acquia_lift_profiles_is_configured($api_only = FALSE) {
   $api_configured = TRUE;
-  $account_info = acquia_lift_profiles_get_account_info();
-  foreach (array('account_name', 'hostname', 'public_key', 'secret_key') as $key) {
-    if (empty($account_info[$key])) {
+  foreach (array('acquia_lift_profiles_account_name','acquia_lift_profiles_api_url', 'acquia_lift_profiles_access_key', 'acquia_lift_profiles_secret_key') as $api_config) {
+    $val = variable_get($api_config, '');
+    if (empty($val)) {
       $api_configured = FALSE;
     }
   }
-  return $api_configured;
+
+  if ($api_only) {
+    return $api_configured;
+  }
+  $js_path = variable_get('acquia_lift_profiles_js_path', '');
+  return $api_configured && !empty($js_path);
 }
 
 /**
@@ -101,7 +105,7 @@ function acquia_lift_profiles_refresh_segments_cache() {
     return FALSE;
   }
   try {
-    $segments = ALProfilesAPI::getInstance()->getSegments();
+    $segments = ALProfilesAPI::getInstance(variable_get('acquia_lift_profiles_account_name', ''), variable_get('acquia_lift_profiles_site_name', ''), variable_get('acquia_lift_profiles_api_url', ''))->getSegments();
     variable_set('acquia_lift_profiles_segments', $segments);
     return TRUE;
   }
@@ -157,8 +161,8 @@ function acquia_lift_profiles_page_build(&$page) {
   if (!acquia_lift_profiles_is_configured()) {
     return;
   }
-  $account_info = acquia_lift_profiles_get_account_info();
-  $account_name = $account_info['account_name'];
+
+  $account_name = variable_get('acquia_lift_profiles_account_name', '');
   $capture_identity = variable_get('acquia_lift_profiles_capture_identity', FALSE);
   $mappings = variable_get('acquia_lift_profiles_udf_mappings', array());
   $acquia_lift_profiles_field_mappings = variable_get('acquia_lift_profiles_field_mappings', array());
@@ -342,7 +346,7 @@ function acquia_lift_profiles_form_node_type_form_alter(&$form, &$form_state) {
 function acquia_lift_profiles_put_action($action_name, $label, &$errors = array()) {
 
   try {
-    $acquia_lift_profiles_api = ALProfilesAPI::getInstance();
+    $acquia_lift_profiles_api = ALProfilesAPI::getInstance(variable_get('acquia_lift_profiles_account_name', ''), variable_get('acquia_lift_profiles_site_name', ''), variable_get('acquia_lift_profiles_api_url', ''));
     $acquia_lift_profiles_api->saveEvent($action_name, $label);
     watchdog('acquia_lift_profiles', 'Synchronized the action @action to Acquia Lift Web.', array('@action' => $action_name), WATCHDOG_INFO);
   }
@@ -372,7 +376,7 @@ function acquia_lift_profiles_visitor_actions_save_action($action) {
  */
 function acquia_lift_profiles_delete_action($action_name) {
   try {
-    $acquia_lift_profiles_api = ALProfilesAPI::getInstance();
+    $acquia_lift_profiles_api = ALProfilesAPI::getInstance(variable_get('acquia_lift_profiles_account_name', ''), variable_get('acquia_lift_profiles_site_name', ''), variable_get('acquia_lift_profiles_api_url', ''));
     $acquia_lift_profiles_api->deleteEvent($action_name);
   }
   catch (ALProfilesException $e) {
@@ -670,34 +674,4 @@ function acquia_lift_profiles_get_udfs() {
     }
   }
   return $udfs;
-}
-
-
-/**
- * Retrieve the Acquia Lift Profiles Credentials.
- * @return array
- *   An associatve array with the following keys:
- *   - account_name
- *   - hostname
- *   - public_key
- *   - secret_key
- */
-function acquia_lift_profiles_get_account_info() {
-  $account_info = &drupal_static(__FUNCTION__, array());
-  if (empty($account_info)) {
-    $subscription_data = acquia_agent_settings('acquia_subscription_data');
-    if (isset($subscription_data['heartbeat_data']['acquia_lift'])) {
-      $account_info = $subscription_data['heartbeat_data']['acquia_lift']['profile'];
-    }
-    else {
-      $account_info = array(
-        'account_name' => variable_get('acquia_lift_profiles_account_name', ''),
-        'hostname' => variable_get('acquia_lift_profiles_api_url', ''),
-        'public_key' => variable_get('acquia_lift_profiles_access_key', ''),
-        'secret_key' => variable_get('acquia_lift_profiles_secret_key', '')
-      );
-    }
-  }
-
-  return $account_info;
 }

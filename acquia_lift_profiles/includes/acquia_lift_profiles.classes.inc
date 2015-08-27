@@ -86,22 +86,21 @@ class ALProfilesAPI {
         return self::$instance;
       }
       // If no account name or api url has been passed in, fallback to getting them
-      // from the conifg.
-      $account_info = acquia_lift_profiles_get_account_info();
+      // from the variables.
       if (empty($account_name)) {
-        $account_name = $account_info['account_name'];
+        $account_name = variable_get('acquia_lift_profiles_account_name', '');
       }
       if (empty($customer_site)) {
         $customer_site = variable_get('acquia_lift_profiles_site_name', '');
       }
       if (empty($api_url)) {
-        $api_url = $account_info['hostname'];
+        $api_url = variable_get('acquia_lift_profiles_api_url', '');
       }
       if (empty($access_key)) {
-        $access_key = $account_info['public_key'];
+        $access_key = variable_get('acquia_lift_profiles_access_key', '');
       }
       if (empty($secret_key)) {
-        $secret_key = $account_info['secret_key'];
+        $secret_key = variable_get('acquia_lift_profiles_secret_key', '');
       }
       // If either account name or API URL is still missing, bail.
       if (empty($api_url) || empty($account_name) || empty($access_key) || empty($secret_key)) {

@@ -388,42 +388,21 @@ QUnit.asyncTest("Use UDF values in processEvent", function( assert ) {
   // Now process a custom event - the UDF values that were evaluated during the
   // init call should also get passed. The assertion is in our _tcaq mock above.
   Drupal.acquia_lift_profiles.processEvent('someEvent', {}, {'context1': 'value1'});
-});
-
-//Here I mock cookies. 
-(function (document) {
-    var cookies = {};
-    document.__defineGetter__('cookie', function () {
-        var output = [];
-        for (var cookieName in cookies) {
-            output.push(cookieName + "=" + cookies[cookieName]);
-        }
-        return output.join(";");
-    });
-    document.__defineSetter__('cookie', function (s) {
-        var indexOfSeparator = s.indexOf("=");
-        var key = s.substr(0, indexOfSeparator);
-        var value = s.substring(indexOfSeparator + 1);
-        cookies[key] = value;
-        return key + "=" + value;
-    });
-    document.clearCookies = function () {
-        cookies = {};
-    };
-  })(document);
+}); 
 
 QUnit.test ("debugger - get personID and touchId", function(assert){
   expect(4);
-  
-  document.cookie="tc_ptid=someTestUser;";
-  document.cookie+="tc_ttid=someTouchId;";
+  $.cookie('tc_ptid', 'someTestUser', {path:'/'});
+  $.cookie('tc_ttid', 'someTouchId', {path:'/'});
   assert.equal(Drupal.acquiaLiftProfilesDebug.getPersonId(), 'someTestUser', "Correct person id from cookie");
   assert.equal(Drupal.acquiaLiftProfilesDebug.getTouchId(), 'someTouchId', "Correct touch id form cookie");
-  document.clearCookies();
-  document.cookie="tc_ptid=someOtherTestUser;";
-  document.cookie+="tc_ttid=someOtherTouchId;";
+  $.cookie('tc_ptid', 'someOtherTestUser', {path:'/'});
+  $.cookie('tc_ttid', 'someOtherTouchId', {path:'/'});
   assert.equal(Drupal.acquiaLiftProfilesDebug.getPersonId(), 'someOtherTestUser', "correct Updated person id from cookie");
   assert.equal(Drupal.acquiaLiftProfilesDebug.getTouchId(), 'someOtherTouchId', "correct Updated touch id from cookie");
+  //clear cookies.
+  $.cookie('tc_ptid', null, {path:'/'});
+  $.cookie('tc_ttid', null, {path:'/'});
 })
 QUnit.test ("debugger - update identities", function(assert){
   expect (1);
@@ -494,7 +473,6 @@ QUnit.test("debugger set override segments", function(assert){
   }
 
   Drupal.acquiaLiftProfilesDebug.setOverrideSegments(mockedData.segments);
-  console.log(Drupal.acquiaLiftProfilesDebug.getOverrideSegments());
   mockedData.segments = ['segments1', 'segments2'];
   $(document).trigger("segmentsUpdated",mockedData, capture);
 

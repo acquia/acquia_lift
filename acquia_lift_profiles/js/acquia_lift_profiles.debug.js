@@ -5,17 +5,7 @@
 
 (function ($, Drupal) {
 
-      function getFromCookie ( query )
-    {
-      var cookie = document.cookie;
-      var regex = new RegExp('(?:^|;)\\s?' + query + '=(.*?)(?:;|$)','i');
-      var match = cookie.match(regex);
-      return match && window.decodeURIComponent(match[1]);
-    };
-
   Drupal.acquiaLiftProfilesDebug = (function() {
-
-    //_tcwq.push( ["setDebug", true] );
     var debugPrefix = "acquiaLift::debug::"
     var curSegmentCapture = {};
     var curSegments = [];
@@ -47,18 +37,17 @@
     $(document).bind("identitiesAdded", function( event, identities ) {
       // TODO: Check if the person id changed because TC_CONF.userIdentitySourceInTrackingId is true
       if(identities){
-      $.each(identities, function (index, identity) { curIdentities.push( identity ); } );
-        
+        $.each(identities, function (index, identity) { curIdentities.push( identity ); } );
       }
     });
 
     return {
       'getPersonId' : function() {
-        return getFromCookie("tc_ptid");
+        return $.cookie("tc_ptid");
       },
 
       'getTouchId' : function() {
-        return getFromCookie("tc_ttid");
+        return $.cookie("tc_ttid");
       },
 
       'isThirdPartyPersonId' : function() {

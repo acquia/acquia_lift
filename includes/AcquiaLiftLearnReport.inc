@@ -113,7 +113,6 @@ class AcquiaLiftLearnReport extends AcquiaLiftReportBase {
         drupal_set_message(t('There was a problem retrieving reporting data for this campaign, please try again later.'));
       }
     }
-
     return $this->reportData;
   }
 
@@ -132,7 +131,7 @@ class AcquiaLiftLearnReport extends AcquiaLiftReportBase {
       if (!isset($data['results'])) {
         return $this->aggregatedResults;
       }
-      $aggregated = $aggregated_per_variation = array();
+      $aggregated_per_variation = array();
       foreach ($data['results'] as $result) {
         if (empty($result['results'])) {
           continue;
@@ -148,16 +147,15 @@ class AcquiaLiftLearnReport extends AcquiaLiftReportBase {
             if (!isset($aggregated_per_variation[$choice_id][$key])) {
               $aggregated_per_variation[$choice_id][$key] = 0;
             }
-            if (!isset($aggregated[$key])) {
-              $aggregated[$key] = 0;
-            }
             $aggregated_per_variation[$choice_id][$key] += $single_day[$key];
-            $aggregated[$key] += $single_day[$key];
           }
         }
       }
       $this->aggregatedResults = array(
-        'totals' => $aggregated,
+        'totals' => array(
+          'plays' => $data['total_plays'],
+          'goals' => $data['total_goals']
+        ),
         'totals_by_var' => $aggregated_per_variation
       );
     }
@@ -171,7 +169,7 @@ class AcquiaLiftLearnReport extends AcquiaLiftReportBase {
    */
   protected function getSessionCount() {
     $data = $this->getAggregateResults();
-    return isset($data['totals']['total_play']) ? $data['totals']['total_play'] : 0;
+    return isset($data['totals']['plays']) ? $data['totals']['plays'] : 0;
   }
 
   /**
@@ -181,7 +179,7 @@ class AcquiaLiftLearnReport extends AcquiaLiftReportBase {
    */
   protected function getGoalCount() {
     $data = $this->getAggregateResults();
-    return isset($data['totals']['total_goals']) ? $data['totals']['total_goals'] : 0;
+    return isset($data['totals']['goals']) ? $data['totals']['goals'] : 0;
   }
 
   /**

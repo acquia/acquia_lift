@@ -111,10 +111,19 @@ function acquia_lift_admin_form($form, &$form_state) {
           '!apiurl' => $account_info['api_url']
         )),
       );
-      $form['acquia_lift_account_info']['js_path'] = array(
-        '#markup' => t("<p>User Profile Creation (JS): <strong>!jspath</strong></p>", array(
-          '!jspath' => $account_info['js_path']
-        )),
+
+      // Add in the JS path.
+      $public_key_desc = false;
+      if ($account_info['js_path'] != variable_get('acquia_lift_profiles_js_path', '')) {
+        $public_key_desc = t("Suggested: !js_path", array('!js_path' => $account_info['js_path']));
+      }
+      $form['acquia_lift_profiles_js_path'] = array(
+        '#type' => 'textfield',
+        '#title' => t('Acquia Lift JavaScript path'),
+        '#field_prefix' => 'http(s)://',
+        '#default_value' => variable_get('acquia_lift_profiles_js_path', $account_info['js_path']),
+        '#required' => TRUE,
+        '#description' => $public_key_desc ? $public_key_desc : false,
       );
     }
     else {
@@ -170,7 +179,17 @@ function acquia_lift_admin_form($form, &$form_state) {
       '#description' => t("Paste in your Acquia Lift API URL"),
       '#required' => TRUE,
     );
+
+    $form['acquia_lift_profiles_js_path'] = array(
+      '#type' => 'textfield',
+      '#title' => t('Acquia Lift JavaScript path'),
+      '#field_prefix' => 'http(s)://',
+      '#default_value' => variable_get('acquia_lift_profiles_js_path', ''),
+      '#required' => TRUE,
+    );
+
   }
+
 
   $form['acquia_lift_confidence_measure'] = array(
     '#type' => 'textfield',

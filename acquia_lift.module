@@ -475,40 +475,107 @@ function acquia_lift_get_account_info() {
     $acquia_lift_data = array();
     if (isset($subscription_data['heartbeat_data']['acquia_lift'])) {
       $acquia_lift_data = $subscription_data['heartbeat_data']['acquia_lift'];
+      $default_lift_data = array(
+        'status' => false,
+        'decision' => array(
+          'public_key' => '',
+          'private_key' => '',
+          'api_url' => ''
+        ),
+        'profile' => array(
+          'js_path' => '',
+          'account_name' => '',
+          'hostname' => '',
+          'private_key' => '',
+          'secret_key' => ''
+        )
+      );
+      // make sure there is always the base set that we can rely on. This
+      // prevents us from forcing an isset before working with the data.
+      $acquia_lift_data = array_merge($default_lift_data, $acquia_lift_data);
     }
+
     // Set default url
     $account_info['api_url'] = variable_get('acquia_lift_apiv2_url', '');
     if (empty($account_info['api_url'])) {
       $account_info['api_url'] = 'http://api-production-us-east-1.dice.acquia.com';
     }
 
-    // Find out if there is Acquia Lift information in there.
+    // Find out if there is Acquia Lift information in the provided subscription information.
     if (isset($acquia_lift_data['status']) && $acquia_lift_data['status'] == TRUE) {
-      // If it was overridden in settings.php - do not override again with Acquia Network creds.
-      if (isset($acquia_lift_data['decision']['public_key']) && empty($account_info['public_key'])) {
-        $account_info['public_key'] = $acquia_lift_data['decision']['public_key'];
-      }
-      if (isset($acquia_lift_data['decision']['private_key']) && empty($account_info['private_key'])) {
-        $account_info['private_key'] = $acquia_lift_data['decision']['private_key'];
-      }
-      if (isset($acquia_lift_data['decision']['hostname']) && empty($account_info['api_url'])) {
-        $account_info['api_url'] = $acquia_lift_data['decision']['hostname'];
-      }
-      if (isset($acquia_lift_data['profile']['js_path']) && empty($account_info['js_path'])) {
-        // @todo remove the variable set when we no longer need the variable but
-        // are able to read it in from the account_info array
-        $existing_js_path = variable_get('acquia_lift_profiles_js_path', '');
-        // Set our variable if the data coming from Acquia Network is different
-        if ($existing_js_path != $acquia_lift_data['profile']['js_path']) {
-          variable_set('acquia_lift_profiles_js_path', $acquia_lift_data['profile']['js_path']);
+      foreach ($acquia_lift_data['decision'] as $key => $value) {
+        switch ($key) {
+          case "public_key":
+          case "private_key":
+          case "api_url":
+             // If it was overridden in settings.php - do not override again
+             // with Acquia Network creds.
+             $account_info[$key] = empty($account_info[$key]) ? $value : $account_info[$key];
+            break;
         }
-        $account_info['js_path'] = $acquia_lift_data['profile']['js_path'];
       }
+      foreach ($acquia_lift_data['profile'] as $key => $value) {
+        switch ($key) {
+          case "js_path":
+            $variable_name = 'acquia_lift_profiles_js_path';
+            // js path is a special case as we require it also for regular
+            // Acquia Lift. Therefor we add it to our main data set as an
+            // exception. If it was overridden in settings.php - do not
+            // override again with Acquia Network creds.
+            $account_info[$key] = empty($account_info[$key]) ? $value : $account_info[$key];
+            break;
+          case "account_name":
+            $variable_name = 'acquia_lift_profiles_account_name';
+            break;
+          case "hostname":
+            $variable_name = 'acquia_lift_profiles_api_url';
+            break;
+          case "public_key":
+            $variable_name = 'acquia_lift_profiles_access_key';
+            break;
+          case "secret_key":
+            $variable_name = 'acquia_lift_profiles_secret_key';
+            break;
+          default:
+            $variable_name = false;
+            break;
+        }
+        // Set variable if it was not set.
+        if ($variable_name) {
+          _acquia_lift_set_variable_if_not_set($variable_name, $value);
+          $account_info['profiles'][$key] = empty($account_info['profiles'][$key]) ? $value : $account_info[$key];
+        }
+      }
+      // unset the js_path from profiles since that is a special case
+      // @todo Get rid of the special case...
+      unset($account_info['profiles']['js_path']);
+
     }
     // Whether or not to check the response value.
     $account_info['validate_response'] = variable_get('acquia_lift_validate_response', TRUE);
   }
   return $account_info;
+}
+
+/**
+ * Helper function to set a non existing variable. This is needed
+ * during clean installs of acquia lift where the variables are not set yet
+ * and we want to set them with a default value. We can't do this during
+ * installation because the Acquia Connector is not set yet.
+ *
+ * @param $variable_name
+ *    The name of the variable
+ * @param $variable_value
+ *    The value of the variable
+ */
+function _acquia_lift_set_variable_if_not_set($variable_name, $variable_value) {
+  // @todo remove the variable set when we no longer need the variable but
+  // are able to read it in from the account_info array
+  $existing_var = variable_get($variable_name, '');
+  // Set our variable if the variable was not set yet.
+  if ($existing_var == '') {
+    variable_set($variable_name, $variable_value);
+  }
 }
 
 /*

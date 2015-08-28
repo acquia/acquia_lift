@@ -11,17 +11,11 @@
 function acquia_lift_profiles_admin_form($form, &$form_state) {
   $form['#attached']['js'][] = drupal_get_path('module', 'acquia_lift_profiles') . '/js/acquia_lift_profiles.admin.js';
 
-  // Retrieve data from Acquia Network
-  $subscription_data = acquia_agent_settings('acquia_subscription_data');
-  $acquia_lift_data = array();
-  if (isset($subscription_data['heartbeat_data']['acquia_lift'])) {
-    $acquia_lift_data = $subscription_data['heartbeat_data']['acquia_lift'];
-  }
-  $pdata = $acquia_lift_data['profile'];
+  // Get Acquia Lift Account information.
+  $account_info = acquia_lift_get_account_info();
 
-
-  if ($pdata['account_name'] != "") {
-    $acc_name_desc = t("Short abbreviation of your account name. Suggested: !accountname", array('!accountname' => $pdata['account_name']));
+  if ($account_info['profiles']['account_name'] != "") {
+    $acc_name_desc = t("Short abbreviation of your account name. Suggested: !accountname", array('!accountname' => $account_info['profiles']['account_name']));
   }
   else {
     $acc_name_desc = t("Short abbreviation of your account name, such as MYACCOUNT01.");
@@ -29,7 +23,7 @@ function acquia_lift_profiles_admin_form($form, &$form_state) {
   $form['acquia_lift_profiles_account_name'] = array(
     '#type' => 'textfield',
     '#title' => t('Acquia Lift Profiles Account Name'),
-    '#default_value' => variable_get('acquia_lift_profiles_account_name', $pdata['account_name']),
+    '#default_value' => variable_get('acquia_lift_profiles_account_name', $account_info['profiles']['account_name']),
     '#description' => $acc_name_desc,
     '#required' => TRUE,
   );
@@ -45,33 +39,33 @@ function acquia_lift_profiles_admin_form($form, &$form_state) {
     '#type' => 'textfield',
     '#title' => t('Acquia Lift Profiles API URL'),
     '#field_prefix' => 'http(s)://',
-    '#default_value' => variable_get('acquia_lift_profiles_api_url', $pdata['hostname']),
+    '#default_value' => variable_get('acquia_lift_profiles_api_url', $account_info['profiles']['hostname']),
     '#description' => t("Server where we send the Acquia Lift Profiles to."),
     '#required' => TRUE,
   );
 
-  if ($pdata['public_key'] != "" && variable_get('acquia_lift_profiles_access_key', '') == "<reset>") {
-    $public_key_desc = t("Suggested: !public_key", array('!public_key' => $pdata['public_key']));
+  if ($account_info['profiles']['public_key'] != "" && variable_get('acquia_lift_profiles_access_key', '') == "<reset>") {
+    $public_key_desc = t("Suggested: !public_key", array('!public_key' => $account_info['profiles']['public_key']));
   } else {
     $public_key_desc = t("Write %reset in the field to show the access key", array("%reset" => "<reset>"));
   }
   $form['acquia_lift_profiles_access_key'] = array(
     '#type' => 'textfield',
     '#title' => t('Acquia Lift Profiles API Access Key'),
-    '#default_value' => variable_get('acquia_lift_profiles_access_key', $pdata['public_key']),
+    '#default_value' => variable_get('acquia_lift_profiles_access_key', $account_info['profiles']['public_key']),
     '#description' => $public_key_desc,
     '#required' => TRUE,
   );
 
-  if ($pdata['secret_key'] != "" && variable_get('acquia_lift_profiles_secret_key', '') == "<reset>") {
-    $secret_key_desc = t("Suggested: !secret_key", array('!secret_key' => $pdata['secret_key']));
+  if ($account_info['profiles']['secret_key'] != "" && variable_get('acquia_lift_profiles_secret_key', '') == "<reset>") {
+    $secret_key_desc = t("Suggested: !secret_key", array('!secret_key' => $account_info['profiles']['secret_key']));
   } else {
     $secret_key_desc = t("Write %reset in the field to show the secret key", array("%reset" => "<reset>"));
   }
   $form['acquia_lift_profiles_secret_key'] = array(
     '#type' => 'textfield',
     '#title' => t('Acquia Lift Profiles API Secret Key'),
-    '#default_value' => variable_get('acquia_lift_profiles_secret_key', $pdata['secret_key']),
+    '#default_value' => variable_get('acquia_lift_profiles_secret_key', $account_info['profiles']['secret_key']),
     '#description' => $secret_key_desc,
     '#required' => TRUE,
   );

@@ -56,9 +56,11 @@ function acquia_lift_uninstall() {
   menu_rebuild();
 
   // Delete any variables used to store report data sources for agents.
-  foreach (personalize_agent_load_multiple() as $agent) {
-    $variable_name = "acquia_lift_report_source_{$agent->machine_name}";
-    variable_del($variable_name);
+  if (function_exists('personalize_agent_load_multiple')) {
+    foreach (personalize_agent_load_multiple() as $agent) {
+      $variable_name = "acquia_lift_report_source_{$agent->machine_name}";
+      variable_del($variable_name);
+    }
   }
 }
 

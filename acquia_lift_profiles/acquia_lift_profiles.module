@@ -110,6 +110,7 @@ function acquia_lift_profiles_refresh_segments_cache() {
     return TRUE;
   }
   catch(Exception $e) {
+
     watchdog('acquia_lift_profiles', $e->getMessage());
     return FALSE;
   }

@@ -467,8 +467,8 @@ function acquia_lift_percentage_validate($element, &$form_state) {
  *   connector credentials.
  */
 function acquia_lift_get_account_info() {
-  $account_info = variable_get('acquia_lift_account_info', array('public_key' => '', 'private_key' => ''));
   if (variable_get('acquia_lift_v2_enabled', FALSE)) {
+    $account_info = variable_get('acquia_lift_account_info', array('public_key' => '', 'private_key' => ''));
     // @todo : Check here if Lift V2 is enabled by checking the subscription values
     // Get Acquia Subscription Data
     $subscription_data = acquia_agent_settings('acquia_subscription_data');
@@ -518,6 +518,8 @@ function acquia_lift_get_account_info() {
         switch ($key) {
           case "js_path":
             $variable_name = 'acquia_lift_profiles_js_path';
+            // Strip any http/https prefix
+            $value = preg_replace('/(^[a-z]+:\/\/)/i', '', $value);
             // js path is a special case as we require it also for regular
             // Acquia Lift. Therefor we add it to our main data set as an
             // exception. If it was overridden in settings.php - do not
@@ -553,6 +555,10 @@ function acquia_lift_get_account_info() {
     }
     // Whether or not to check the response value.
     $account_info['validate_response'] = variable_get('acquia_lift_validate_response', TRUE);
+  }
+  else {
+    // this is for version V1
+    $account_info = variable_get('acquia_lift_account_info', array('api_key' => '', 'admin_key' => '', 'owner_code' => ''));
   }
   return $account_info;
 }
@@ -1245,31 +1251,41 @@ EOT;
     );
   }
   else {
-    $lift_api = AcquiaLiftAPIClientFactory::create($account_info, ACQUIA_LIFT_TESTING_AGENT_V1);
-    $libraries['acquia_lift.page']['dependencies'][] = array('acquia_lift', 'acquia_lift.agent_api');
-    $libraries['acquia_lift.agent_api'] = array(
-      'title' => 'Adds the Acquia Lift API files.',
-      'version' => VERSION,
-      'js' => array(
-        $path . '/js/acquia-lift-js-wrapper-min.js' => array('type' => 'file', 'scope' => 'header'),
-        $path . '/js/acquia_lift.api.js' => $options,
-        array(
-          'data' => array(
-            'acquia_lift' => array(
-              'apiKey' => $lift_api->getApiKey(),
-              'owner' => $lift_api->getOwnerCode(),
-              'baseUrl' => $lift_api->getApiUrl(),
-              'stringReplacePattern' => AcquiaLiftAPI::STRING_REPLACE_PATTERN,
-              'batchMode' => FALSE
-            )
+    try {
+      $lift_api = AcquiaLiftAPIClientFactory::create($account_info, ACQUIA_LIFT_TESTING_AGENT_V1);
+      $libraries['acquia_lift.page']['dependencies'][] = array(
+        'acquia_lift',
+        'acquia_lift.agent_api'
+      );
+      $libraries['acquia_lift.agent_api'] = array(
+        'title' => 'Adds the Acquia Lift API files.',
+        'version' => VERSION,
+        'js' => array(
+          $path . '/js/acquia-lift-js-wrapper-min.js' => array(
+            'type' => 'file',
+            'scope' => 'header'
           ),
-          'type' => 'setting'
-        )
-      ),
-      'dependencies' => array(
-        array('system', 'jquery'),
-      ),
-    );
+          $path . '/js/acquia_lift.api.js' => $options,
+          array(
+            'data' => array(
+              'acquia_lift' => array(
+                'apiKey' => $lift_api->getApiKey(),
+                'owner' => $lift_api->getOwnerCode(),
+                'baseUrl' => $lift_api->getApiUrl(),
+                'stringReplacePattern' => AcquiaLiftAPI::STRING_REPLACE_PATTERN,
+                'batchMode' => FALSE
+              )
+            ),
+            'type' => 'setting'
+          )
+        ),
+        'dependencies' => array(
+          array('system', 'jquery'),
+        ),
+      );
+    } catch (\Exception $e) {
+      // do nothing. This fails when there are no keys present.
+    }
   }
 
   $libraries['acquia_lift.fields'] = array(

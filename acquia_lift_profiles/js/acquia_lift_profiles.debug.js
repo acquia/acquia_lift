@@ -2,8 +2,7 @@
  * Defines JavaScript functions needed by the Acquia Lift debugger in
  * order to provide customer profile information.
  */
-
-(function ($, Drupal) {
+(function ($, Drupal, Storage) {
 
   Drupal.acquiaLiftProfilesDebug = (function() {
     var debugPrefix = "acquiaLift::debug::"
@@ -13,18 +12,30 @@
     var curIdentities = [];
     var message;
     var code;
-    $(document).on("segmentsUpdated", function( event, data, capture ) {
+    console.log(Storage);
+    //tc-widget.js triggers acquiaLiftSegmentsUpdated event when segments are returned. This function will save them
+    /**
+     *tc-widget.js triggers acquiaLiftSegmentUpdated event when segments are returned. 
+     * String Event - the name of the event
+     * Object data - the data returned back from tcwidget's ajax call. (tcoffer) 
+     * Capture - the capture data. 
+     */
+    $(document).on("acquiaLiftSegmentsUpdated", function( event, data, capture ) {
+      //saves the capture
       curSegmentCapture = capture;
+      //if data exists
       if(data){
         curSegments = data["segments"];
-        curSegmentsOverride =  JSON.parse(window.sessionStorage.getItem(debugPrefix + "overrideSegments"));
+        curSegmentsOverride =  Storage.read(debugPrefix + "overrideSegments");
+        //if overriding segments
         if ( curSegmentsOverride ) {
+          //replaces the segments stored in the data object with the ones specified by user
           if(data["segments"]){
             data["segments"].length = 0;
             $(curSegmentsOverride).each( function(index,overrideSegment) { data["segments"].push(overrideSegment); } );
           }
+          //saves copy of override segments to current segments
           curSegments = curSegmentsOverride.splice(0);
-
         }
         message = "Segments Returned: " + curSegments;
         code = 1000;
@@ -32,10 +43,11 @@
         message = "No Data found"
         code = 3001;
       }
+      //adds the message and code to sessionStorage logs with type 'Lift Web' 
       Drupal.personalizeDebug.log( message , code, 'Lift Web');
     });
-    $(document).bind("identitiesAdded", function( event, identities ) {
-      // TODO: Check if the person id changed because TC_CONF.userIdentitySourceInTrackingId is true
+    //updates saved identities when triggered.
+    $(document).bind("acquiaLiftIdentitiesAdded", function( event, identities ) {
       if(identities){
         $.each(identities, function (index, identity) { curIdentities.push( identity ); } );
       }
@@ -50,20 +62,16 @@
         return $.cookie("tc_ttid");
       },
 
-      'isThirdPartyPersonId' : function() {
-        return TC_CONF && TC_CONF.thirdPartyCookie == true;
-      },
-
       'getCurrentSegments' : function() {
         return curSegments;
       },
 
       'setOverrideSegments' : function( segmentsOverride ) {
         if (segmentsOverride){
-          window.sessionStorage.setItem(debugPrefix + "originalSegments",JSON.stringify(curSegments));
-          window.sessionStorage.setItem(debugPrefix + "overrideSegments",JSON.stringify(segmentsOverride));
+          Storage.write(debugPrefix + "originalSegments", curSegments);
+          Storage.write(debugPrefix + "overrideSegments", segmentsOverride)
         }else{
-          window.sessionStorage.removeItem(debugPrefix + "::overrideSegments");
+          Storage.write(debugPrefix + "overrideSegments");
         }
         curSegmentsOverride = segmentsOverride;
       },
@@ -121,4 +129,4 @@
       }
     };
   })();
-})(jQuery, Drupal);
+})(jQuery, Drupal,  Drupal.personalizeStorage);

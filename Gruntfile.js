@@ -45,7 +45,10 @@ module.exports = function(grunt) {
   ];
 
   var debuggerjs = [
-        'src/js/debugger/app.js'
+        'src/js/debugger/acquia_lift.debugger.app.js',
+        'src/js/debugger/acquia_lift.debugger.angularAutocomplete.js',
+        'src/js/debugger/acquia_lift.debugger.angularMultiSelect.js',
+        'src/js/debugger/acquia_lift.debugger.angularResizable.js'
   ];
 
   // Project configuration.

@@ -16,6 +16,7 @@ define('ACQUIA_LIFT_DECISION_LOCKSTEP', 'lockstep');
 define('ACQUIA_LIFT_DECISION_MULTIVARIATE', 'mvt');
 define('ACQUIA_LIFT_MULTIVARIATE_TEST_SUFFIX', '-mvt');
 define('ACQUIA_LIFT_DOCUMENTATION', 'https://docs.acquia.com/lift/drupal');
+define('ACQUIA_LIFT_INSPECTOR_URL', 'acquia_lift_inspect_mode');
 
 /**
  * Implements hook_menu().
@@ -1516,6 +1517,7 @@ function acquia_lift_library() {
     'title' => 'Acquia Lift debugger',
     'website' => '',
     'version' => VERSION,
+    //@todo: the angular import should be done as a library dependency (similiar to backbone and underscore)
     'js' => array(
       $path . '/js/acquia_lift.debug.js' => $options,
       'https://cdnjs.cloudflare.com/ajax/libs/angular.js/1.4.2/angular.min.js' => $options,
@@ -3150,14 +3152,14 @@ function acquia_lift_debug_mode_enabled() {
     return FALSE;
   }
   // Check to see if there is a session variable for debug mode.
-  $in_session = isset($_SESSION['acquia_lift_inspect_mode']);
+  $in_session = isset($_SESSION[ACQUIA_LIFT_INSPECTOR_URL]);
   // Check to see if it was requested
   if ($in_session) {
     //turns on the personalizeDebugMode cookie
     setcookie('personalizeDebugMode',1, time()+60, '/');
     // Check to see if it should be turned off from URL parameter.
-    if (isset($_GET['acquia_lift_inspect_mode']) && $_GET['acquia_lift_inspect_mode'] == FALSE) {
-      unset($_SESSION['acquia_lift_inspect_mode']);
+    if (isset($_GET[ACQUIA_LIFT_INSPECTOR_URL]) && $_GET[ACQUIA_LIFT_INSPECTOR_URL] == FALSE) {
+      unset($_SESSION[ACQUIA_LIFT_INSPECTOR_URL]);
       //deletes the personalizeDebugMode cookie
       setcookie('personalizeDebugMode',"", time()-3600 );
       return FALSE;
@@ -3166,8 +3168,8 @@ function acquia_lift_debug_mode_enabled() {
   }
   else {
     // Check to see if it was requested via URL parameter.
-    if (!empty($_GET['acquia_lift_inspect_mode'])) {
-      $_SESSION['acquia_lift_inspect_mode'] = TRUE;
+    if (!empty($_GET[ACQUIA_LIFT_INSPECTOR_URL])) {
+      $_SESSION[ACQUIA_LIFT_INSPECTOR_URL] = TRUE;
       return TRUE;
     }
   }

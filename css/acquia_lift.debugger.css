@@ -227,6 +227,11 @@
   opacity: .65;
   box-shadow: none;
 }
+#debugger .debugger__navigation__item__active {
+  color: '#0073b9';
+  background-color: white;
+  box-shadow: 0 0 0.3rem rgba(41, 170, 225, 0.9), inset 0 0.1rem 0.3rem rgba(0, 0, 0, 0.4);
+}
 #debugger .debugger__actions {
   float: right;
   margin-top: .4em;
@@ -335,6 +340,14 @@
   content: ' \2716';
   margin-right: 0em;
   padding-right: 10px;
+}
+#debugger .debugger__preview .preview__button__active {
+  background-color: #0073b9;
+  color: white;
+  display: inline;
+}
+#debugger .debugger__preview .preview__button__inactive {
+  display: none;
 }
 #debugger #debugger__log__table table td {
   vertical-align: top;

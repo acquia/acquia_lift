@@ -14,11 +14,23 @@ class AcquiaLiftLearnReport extends AcquiaLiftReportBase {
   protected $reportData;
 
   /**
-   * The aggregated confidence results.
+   * The results aggregated across all dates
    *
    * @var array
    */
   protected $aggregatedResults;
+
+  /**
+   * The aggregated results interpreted for confidence and lift.
+   *
+   * @var array
+   */
+  protected $interpretedResults;
+
+
+  const NA_STRING = '--';
+
+  const MIN_DECISION_THRESHOLD = 20;
 
   /**
    * An array of probabilities corresponding to quantiles.
@@ -241,89 +253,112 @@ class AcquiaLiftLearnReport extends AcquiaLiftReportBase {
    *   An array of report data keyed by option id.
    */
   protected function getAggregatedData() {
-    $report_data = $this->getAggregateResults();
-    if (empty($report_data['totals_by_var'])) {
-      $this->hasData = FALSE;
-      return array();
-    }
-    $data = array();
-    $i = $total_means = $mean_control = $var_control = $num_control = 0;
-    $num_variations = count($report_data['totals_by_var']);
-    // We'll be getting a confidence interval for the conversion rate of each
-    // variation based on the configured confidence measure. We need to convert
-    // this into a p-value to look up the correct normal quantile.
-    $desired_p_value = (1 - ($this->getConfidenceMeasure() / 100)) / 2;
-    if (in_array($desired_p_value, self::$probabilities)) {
-      $pos = array_search($desired_p_value, self::$probabilities);
-    }
-    else {
-      $pos = 0;
-      while($desired_p_value < self::$probabilities[$pos]) {
-        $pos++;
+    if (empty($this->interpretedResults)) {
+      $this->interpretedResults = array(
+        'confidence' => FALSE,
+        'winner' => NULL,
+        'data' => array()
+      );
+      $report_data = $this->getAggregateResults();
+      if (empty($report_data['totals_by_var'])) {
+        $this->hasData = FALSE;
+        return array();
       }
-    }
-    $quantile = self::$normal_quantiles[$pos];
-    foreach ($report_data['totals_by_var'] as $choice_id => $results) {
-      // @todo Put this back to looking at explore mode totals once that's been
-      //   fixed.
-      $count = $results['total_plays_explore'];
-      $goals = $results['total_goals_explore'];
-      $val = $results['total_goals_value_explore'];
-      $rate = $count > 0 ? ($goals / $count) : 0;
-      $mean = $count > 0 ? ($val / $count) : 0;
-      $goal_value = $goals ? floor($val / $goals) : 0;
-      // Calculate confidence bounds for conversion rate.
-      $sd = $count ? sqrt(($rate*(1-$rate))/($count)) : 0;
-      $upper = $goal_value * ($rate + ($quantile * $sd));
-      $lower = $goal_value * ($rate - ($quantile * $sd));
-      $variance = $count > 1 ? (($goals * pow($goal_value - $mean, 2)) + (($count-$goals) * pow($mean,2))) / ($count-1) : 0;
-      // If this is the control we need to use its mean and variance for confidence
-      // and lift calculations.
-      if ($i == 0) {
-        $num_control = $count;
-        $mean_control = $mean;
-        $var_control = $variance;
-        $lift_default = 0;
-        $confidence = '--';
+      $data = array();
+      $i = $total_means = $mean_control = $var_control = $num_control = 0;
+      $num_variations = count($report_data['totals_by_var']);
+      // We'll be getting a confidence interval for the conversion rate of each
+      // variation based on the configured confidence measure. We need to convert
+      // this into a p-value to look up the correct normal quantile.
+      $desired_p_value = (1 - ($this->getConfidenceMeasure() / 100)) / 2;
+      if (in_array($desired_p_value, self::$probabilities)) {
+        $pos = array_search($desired_p_value, self::$probabilities);
       }
       else {
-        $lift_default = $mean_control ? (($mean - $mean_control)/$mean_control) * 100 : 0;
-        $confidence = self::getConfidence(self::getTScore($count, $num_control, $mean, $mean_control, $variance, $var_control), self::getDGFree($count, $num_control, $variance, $var_control));
+        $pos = 0;
+        while($desired_p_value < self::$probabilities[$pos]) {
+          $pos++;
+        }
       }
-      $option_label = $this->getOptionLabelForChoice($choice_id);
-      $data[$choice_id] = array(
-        'counter' => $i,
-        'option_id' => $choice_id,
-        'option_label' => $option_label,
-        'goals' => $goals,
-        'count' => $count,
-        'conversion' => $this->formatReportPercentage($rate),
-        'estimated_value' => $this->formatReportNumber($mean, TRUE, 4),
-        'estimated_higher' => $this->formatReportNumber($upper, TRUE, 4),
-        'estimated_lower' => $this->formatReportNumber($lower, TRUE, 4),
-        'margin_error' => $this->formatReportNumber(($upper - $lower) / 2, TRUE, 4),
-        'significant' => FALSE,
-        'control' => $i === 0,
-        'confidence' => $i === 0 ? $confidence : $this->formatReportPercentage($confidence),
-        'lift_default' =>  $this->formatReportNumber($lift_default, TRUE, 4),
-        'lift_random' => 0,
-      );
-      $total_means += $mean;
-      $i++;
+      $quantile = self::$normal_quantiles[$pos];
+      foreach ($report_data['totals_by_var'] as $choice_id => $results) {
+        $count = $results['total_plays_explore'];
+        $goals = $results['total_goals_explore'];
+        $val = $results['total_goals_value_explore'];
+        $rate = $count > 0 ? ($goals / $count) : 0;
+        $mean = $count > 0 ? ($val / $count) : 0;
+        $goal_value = $goals ? floor($val / $goals) : 0;
+        // Calculate confidence bounds for conversion rate.
+        $sd = $count ? sqrt(($rate*(1-$rate))/($count)) : 0;
+        $upper = $goal_value * ($rate + ($quantile * $sd));
+        $lower = $goal_value * ($rate - ($quantile * $sd));
+        $variance = $count > 1 ? (($goals * pow($goal_value - $mean, 2)) + (($count-$goals) * pow($mean,2))) / ($count-1) : 0;
+        // If this is the control we need to use its mean and variance for confidence
+        // and lift calculations.
+        $lift_default_formatted = $confidence_formatted = self::NA_STRING;
+        if ($i == 0) {
+          $num_control = $count;
+          $mean_control = $mean;
+          $var_control = $variance;
+        }
+        else {
+          // It only makes sense to calculate lift over default if there has been
+          // at least one decision for each variation and we have a non-zero value
+          // for the mean of the default.
+          if ($num_control && $mean_control && $count) {
+            $lift_default = (($mean - $mean_control)/$mean_control) * 100;
+            $lift_default_formatted = $this->formatReportNumber($lift_default, TRUE, 4);
+          }
+          // We impose a threshold of a minimum number of decisions before
+          // presenting a confidence value.
+          if ($count >= self::MIN_DECISION_THRESHOLD) {
+            $confidence = self::getConfidence(self::getTScore($count, $num_control, $mean, $mean_control, $variance, $var_control), self::getDGFree($count, $num_control, $variance, $var_control));
+            if (empty($this->interpretedResults['confidence']) || $this->interpretedResults['confidence'] < $confidence) {
+              $this->interpretedResults['confidence'] = $confidence;
+              if ($confidence >= ($this->confidence_measure / 100)) {
+                $this->interpretedResults['winner'] = $i;
+              }
+            }
+            $confidence_formatted = $this->formatReportPercentage($confidence);
+          }
+
+        }
+        $option_label = $this->getOptionLabelForChoice($choice_id);
+        $data[$choice_id] = array(
+          'counter' => $i,
+          'option_id' => $choice_id,
+          'option_label' => $option_label,
+          'goals' => $goals,
+          'count' => $count,
+          'conversion' => $this->formatReportPercentage($rate),
+          'estimated_value' => $this->formatReportNumber($mean, TRUE, 4),
+          'estimated_higher' => $this->formatReportNumber($upper, TRUE, 4),
+          'estimated_lower' => $this->formatReportNumber($lower, TRUE, 4),
+          'margin_error' => $this->formatReportNumber(($upper - $lower) / 2, TRUE, 4),
+          'control' => $i === 0,
+          'confidence' => $confidence_formatted,
+          'lift_default' =>  $lift_default_formatted,
+          'lift_random' => 0,
+        );
+        $total_means += $mean;
+        $i++;
+      }
+
+      // Now our $total_means figure will allow us to calculate lift over random.
+      $rand_mean = $total_means / $num_variations;
+      foreach ($data as $choice_id => &$values) {
+        if ($rand_mean) {
+          $lift_random = (($values['estimated_value'] - $rand_mean)/$rand_mean) * 100;
+        }
+        else {
+          $lift_random = 0;
+        }
+        $values['lift_random'] = $values['count'] > 0 ? $lift_random : self::NA_STRING;
+      }
+      $this->interpretedResults['data'] = $data;
     }
 
-    // Now our $total_means figure will allow us to calculate lift over random.
-    $rand_mean = $total_means / $num_variations;
-    foreach ($data as $choice_id => &$values) {
-      if ($rand_mean) {
-        $lift_random = (($values['estimated_value'] - $rand_mean)/$rand_mean) * 100;
-      }
-      else {
-        $lift_random = 0;
-      }
-      $values['lift_random'] = $lift_random;
-    }
-    return $data;
+    return $this->interpretedResults['data'];
   }
 
   /**
@@ -333,8 +368,10 @@ class AcquiaLiftLearnReport extends AcquiaLiftReportBase {
    *   TRUE if the report has overall confidence, FALSE otherwise.
    */
   protected function getOverallConfidence() {
-    $data = $this->getReportData();
-    return FALSE;
+    if (empty($this->interpretedResults)) {
+      $this->getAggregatedData();
+    }
+    return $this->interpretedResults['confidence'];
   }
 
   /**
@@ -345,8 +382,10 @@ class AcquiaLiftLearnReport extends AcquiaLiftReportBase {
    *   there isn't one.
    */
   protected function getOverallWinner() {
-    $data = $this->getReportData();
-    return NULL;
+    if (empty($this->interpretedResults)) {
+      $this->getAggregatedData();
+    }
+    return $this->interpretedResults['winner'];
   }
 
   /**

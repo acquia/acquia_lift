@@ -1062,6 +1062,11 @@ class AcquiaLiftV2WebTestTarget extends AcquiaLiftV2WebTestBase {
     );
   }
 
+  public function setUp() {
+    parent::setUp();
+    $this->configureAcquiaLiftAccount();
+  }
+
   function testCreateTargetAudiences() {
     module_load_include('inc', 'acquia_lift', 'acquia_lift.admin');
     $agent = $this->createTargetingAgent();

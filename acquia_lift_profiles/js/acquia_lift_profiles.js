@@ -17,6 +17,7 @@ var _tcwq = _tcwq || [];
 
   Drupal.behaviors.acquia_lift_profiles = {
     'attach': function (context, settings) {
+      settings.acquia_lift_profiles = settings.acquia_lift_profiles || {};
       Drupal.acquia_lift_profiles.init(settings);
       Drupal.acquia_lift_profiles.addActionListener(settings);
       Drupal.acquia_lift_profiles.processServerSideActions(settings);
@@ -169,7 +170,7 @@ var _tcwq = _tcwq || [];
 
     return {
       'init': function(settings) {
-        if (initialized || initializing) {
+        if (initialized || initializing || !settings.acquia_lift_profiles.hasOwnProperty('account_name')) {
           return;
         }
         initializing = true;

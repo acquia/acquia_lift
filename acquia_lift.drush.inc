@@ -223,12 +223,21 @@ function acquia_lift_archive_test_report(AcquiaLiftAPI $lift_api, $agent, $goals
   $message = "\n" . dt('Archiving test ') . $agent->machine_name . " ...";
   drush_print($message);
   try {
-    $start = date('Y-m-d', $agent->started);
-    $end = date('Y-m-d');
+    // Use today's date as the report end date unless the campaign has been
+    // completed.
+    $end_ts = time();
     $status = personalize_agent_get_status($agent->machine_name);
     if ($status == PERSONALIZE_STATUS_COMPLETED) {
       $end_ts = personalize_agent_get_stop_date($agent->machine_name);
-      $end = date('Y-m-d', $end_ts);
+    }
+    $end = date('Y-m-d', $end_ts);
+    if (is_numeric($agent->started) && $agent->started > 0) {
+      $start = date('Y-m-d', $agent->started);
+    }
+    else {
+      // Just take two weeks off the end date.
+      $start_ts = $end_ts - (14 * 86400);
+      $start = date('Y-m-d', $start_ts);
     }
 
     $json = '{"reports":{"agent-status":';
@@ -256,6 +265,11 @@ function acquia_lift_archive_test_report(AcquiaLiftAPI $lift_api, $agent, $goals
   catch (AcquiaLiftNotFoundException $e) {
     // If the report cannot be found, there's nothing to be archived... all good.
     return TRUE;
+  }
+  catch (AcquiaLiftException $e) {
+    // Something else went wrong and we should not proceed.
+    drush_print($e->getMessage());
+    return FALSE;
   }
 
   if ($destination == NULL) {

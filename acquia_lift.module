@@ -564,12 +564,15 @@ function acquia_lift_get_account_info() {
   }
   else {
     // this is for version V1
-    $account_info = variable_get('acquia_lift_account_info', array('api_key' => '', 'admin_key' => '', 'owner_code' => '', 'profiles' => array(
-      'account_name' => '',
-      'hostname' => '',
-      'public_key' => '',
-      'secret_key' => ''
-    )));
+    $account_info = variable_get('acquia_lift_account_info', array('api_key' => '', 'admin_key' => '', 'owner_code' => ''));
+    if (!isset($account_info['profiles'])) {
+      $account_info['profiles'] = array(
+        'account_name' => '',
+        'hostname' => '',
+        'public_key' => '',
+        'secret_key' => ''
+      );
+    }
   }
   return $account_info;
 }

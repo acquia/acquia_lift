@@ -356,13 +356,14 @@ class ALProfilesAPI {
     $response = $this->httpClient()->put($url . $querystring, $headers);
     $vars = array('eventname' => $event_name);
     $success_msg = 'The event {eventname} has been saved to Acquia Lift Profiles';
-    $fail_msg = 'Could not save event '.$event_name.' to Acquia Lift Profiles';
+    $fail_msg = 'Could not delete event {eventname} from Acquia Lift Profiles';
+    $exception_msg = 'Could not save event';
     if ($response->code == 200) {
       $this->logger()->log(PersonalizeLogLevel::INFO, $success_msg, $vars);
     }
     else {
-      $this->logger()->log(PersonalizeLogLevel::ERROR, $fail_msg);
-      throw new ALProfilesException($fail_msg);
+      $this->logger()->log(PersonalizeLogLevel::ERROR, $fail_msg, $vars);
+      throw new ALProfilesException($exception_msg);
     }
   }
 
@@ -389,12 +390,13 @@ class ALProfilesAPI {
     $vars = array('eventname' => $event_name);
     $success_msg = 'The event {eventname} was deleted from Acquia Lift Profiles';
     $fail_msg = 'Could not delete event {eventname} from Acquia Lift Profiles';
+    $exception_msg = 'Could not delete event';
     if ($response->code == 200) {
       $this->logger()->log(PersonalizeLogLevel::INFO, $success_msg, $vars);
     }
     else {
       $this->logger()->log(PersonalizeLogLevel::ERROR, $fail_msg, $vars);
-      throw new ALProfilesException($fail_msg);
+      throw new ALProfilesException($exception_msg);
     }
   }
 

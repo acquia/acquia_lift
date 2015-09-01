@@ -462,7 +462,7 @@ function acquia_lift_agent_list($agents = array(), $legacy = FALSE) {
           'query' => array('destination' => current_path() . '#personalization-group-' . PERSONALIZE_STATUS_COMPLETED),
           'attributes' => array(
             'class' => array('acquia-lift-complete'),
-            'title' => t('Complete @campaign (WARMING: action is final)', array('@campaign' => $agent->label)),
+            'title' => t('Complete @campaign (WARNING: action is final)', array('@campaign' => $agent->label)),
           ),
         );
       }

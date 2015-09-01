@@ -1784,6 +1784,7 @@ function acquia_lift_target_set_status($agent_data, $next_status) {
 
     }
     catch (Exception $e) {
+      watchdog('Acquia Lift', $e->getMessage());
       return FALSE;
     }
   }

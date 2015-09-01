@@ -2984,26 +2984,37 @@ function _acquia_lift_personalize_campaign_wizard_variations_fields(&$form, &$fo
   $element = _acquia_lift_personalize_campaign_wizard_variations_general_edit($agent_data, $option_set);
 
   // Load the entity's field display for the personalized field.
-  $entities = entity_load($option_set->field_info['entity_type'], array($option_set->field_info['entity_id']));
-  $display = field_view_field($option_set->field_info['entity_type'], $entities[$option_set->field_info['entity_id']], $option_set->field_info['field_name']);
+  try {
+    $entities = entity_load($option_set->field_info['entity_type'], array($option_set->field_info['entity_id']));
+    $display = field_view_field($option_set->field_info['entity_type'], $entities[$option_set->field_info['entity_id']], $option_set->field_info['field_name']);
 
-  // Customize the display based on the type of rendering to be better presented
-  // in a small list.
-  $options = array_values($option_set->options);
-  foreach (element_children($display) as $delta => $id) {
-    if (isset($display[$id]['#image_style'])) {
-      $display[$id]['#image_style'] = 'thumbnail';
+    // Customize the display based on the type of rendering to be better presented
+    // in a small list.
+    $options = array_values($option_set->options);
+    foreach (element_children($display) as $delta => $id) {
+      if (isset($display[$id]['#image_style'])) {
+        $display[$id]['#image_style'] = 'thumbnail';
+      }
+      else {
+        if (isset($display[$id]['#markup'])) {
+          $display[$id]['#markup'] = drupal_truncate_bytes($display[$id]['#markup'], 150);
+        }
+      }
+      $option = $options[$delta];
+      $element['options'][$option['option_id']]['preview_display'] = array(
+        '#markup' => '<div class="acquia-lift-preview">' . drupal_render($display[$id]) . '</div>',
+      );
     }
-    else if (isset($display[$id]['#markup'])) {
-      $display[$id]['#markup'] = drupal_truncate_bytes($display[$id]['#markup'], 150);
-    }
-    $option = $options[$delta];
-    $element['options'][$option['option_id']]['preview_display'] = array(
-      '#markup' => '<div class="acquia-lift-preview">' . drupal_render($display[$id]) . '</div>',
-    );
+    $field_title = !empty($display['#title']) ? $display['#title'] : $option_set->field_info['field_name'];
+    $element['label']['#description'] = t('Variation set created from %field_name field', array('%field_name' => $field_title));
   }
-  $field_title = !empty($display['#title']) ? $display['#title'] : $option_set->field_info['field_name'];
-  $element['label']['#description'] = t('Variation set created from %field_name field', array('%field_name' => $field_title));
+  catch (Exception $e) {
+    // There is something wrong with loading the entity's personalized fields.
+    // Either the entity does not exist or we are unable to display in
+    // traditional ways.
+    // Log this message for reference but allow page processing to continue.
+    watchdog('php', 'Cannot load entity for personalized fields display: ' . $e->getMessage(), WATCHDOG_ERROR);
+  }
 
   $edit_link = personalize_fields_personalize_edit_link($option_set);
   $machine_name = $agent_data->machine_name;

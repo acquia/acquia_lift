@@ -87,6 +87,7 @@ function acquia_lift_profiles_library() {
     ),
     'dependencies' => array(
       array('system', 'jquery'),
+      array('personalize', 'storage'),
     ),
   );
   return $libraries;

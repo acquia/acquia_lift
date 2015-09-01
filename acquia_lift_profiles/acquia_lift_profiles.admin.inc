@@ -15,7 +15,7 @@ function acquia_lift_profiles_admin_form($form, &$form_state) {
   $account_info = acquia_lift_get_account_info();
 
   if ($account_info['profiles']['account_name'] != "") {
-    $acc_name_desc = t("Short abbreviation of your account name. Suggested: !accountname", array('!accountname' => $account_info['profiles']['account_name']));
+    $acc_name_desc = t("Short abbreviation of your account name. Suggested: @accountname", array('@accountname' => $account_info['profiles']['account_name']));
   }
   else {
     $acc_name_desc = t("Short abbreviation of your account name, such as MYACCOUNT01.");
@@ -45,7 +45,7 @@ function acquia_lift_profiles_admin_form($form, &$form_state) {
   );
 
   if ($account_info['profiles']['public_key'] != "" && variable_get('acquia_lift_profiles_access_key', '') == "<reset>") {
-    $public_key_desc = t("Suggested: !public_key", array('!public_key' => $account_info['profiles']['public_key']));
+    $public_key_desc = t("Suggested: @public_key", array('@public_key' => $account_info['profiles']['public_key']));
   } else {
     $public_key_desc = t("Write %reset in the field to show the access key", array("%reset" => "<reset>"));
   }
@@ -58,7 +58,7 @@ function acquia_lift_profiles_admin_form($form, &$form_state) {
   );
 
   if ($account_info['profiles']['secret_key'] != "" && variable_get('acquia_lift_profiles_secret_key', '') == "<reset>") {
-    $secret_key_desc = t("Suggested: !secret_key", array('!secret_key' => $account_info['profiles']['secret_key']));
+    $secret_key_desc = t("Suggested: @secret_key", array('@secret_key' => $account_info['profiles']['secret_key']));
   } else {
     $secret_key_desc = t("Write %reset in the field to show the secret key", array("%reset" => "<reset>"));
   }

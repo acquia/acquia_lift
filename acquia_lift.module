@@ -498,7 +498,7 @@ function acquia_lift_get_account_info() {
     // Set default url
     $account_info['api_url'] = variable_get('acquia_lift_apiv2_url', '');
     if (empty($account_info['api_url'])) {
-      $account_info['api_url'] = 'http://api-production-us-east-1.dice.acquia.com';
+      $account_info['api_url'] = 'us-east-1-decision.lift.acquia.com';
     }
 
     // Find out if there is Acquia Lift information in the provided subscription information.
@@ -1238,31 +1238,36 @@ EOT;
 
   $account_info = acquia_lift_get_account_info();
   if (variable_get('acquia_lift_v2_enabled', FALSE)) {
-    $libraries['acquia_lift.page']['dependencies'][] = array('acquia_lift', 'acquia_lift.v2_agent_api');
-    $site_name = variable_get('acquia_lift_profiles_site_name', '');
-    if (empty($site_name)) {
-      $site_name = 'drupal';
+    try {
+      $lift_api = AcquiaLiftAPIClientFactory::create($account_info, ACQUIA_LIFT_TESTING_AGENT_V2);
+      $libraries['acquia_lift.page']['dependencies'][] = array('acquia_lift', 'acquia_lift.v2_agent_api');
+      $site_name = variable_get('acquia_lift_profiles_site_name', '');
+      if (empty($site_name)) {
+        $site_name = 'drupal';
+      }
+      $libraries['acquia_lift.v2_agent_api'] = array(
+        'title' => 'Adds the Acquia Lift V2 API files.',
+        'version' => VERSION,
+        'js' => array(
+          $path . '/js/acquia_lift.v2.js' => $options,
+          array(
+            'data' => array(
+              'acquia_lift_learn' => array(
+                'baseUrl' => $lift_api->getApiUrl(),
+                'clientId' => $lift_api->getPublicKey(),
+                'applicationHash' => $site_name
+              )
+            ),
+            'type' => 'setting'
+          )
+        ),
+        'dependencies' => array(
+          array('system', 'jquery'),
+        ),
+      );
+    } catch (\Exception $e) {
+      // do nothing. This fails when there are no keys present.
     }
-    $libraries['acquia_lift.v2_agent_api'] = array(
-      'title' => 'Adds the Acquia Lift V2 API files.',
-      'version' => VERSION,
-      'js' => array(
-        $path . '/js/acquia_lift.v2.js' => $options,
-        array(
-          'data' => array(
-            'acquia_lift_learn' => array(
-              'baseUrl' => $account_info['api_url'],
-              'clientId' => $account_info['public_key'],
-              'applicationHash' => $site_name
-            )
-          ),
-          'type' => 'setting'
-        )
-      ),
-      'dependencies' => array(
-        array('system', 'jquery'),
-      ),
-    );
   }
   else {
     try {

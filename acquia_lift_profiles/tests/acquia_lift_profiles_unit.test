@@ -365,7 +365,12 @@ class ALProfilesAPITest extends DrupalUnitTestCase {
    *   A ALProfilesAPI instance.
    */
   protected function getALProfilesAPI($broken = FALSE) {
+    // Make sure calls to variable_get() for the customer site return an empty string.
+    global $conf;
+    $original_conf = $conf;
+    $conf['acquia_lift_profiles_site_name'] = '';
     $acquia_lift_profiles_api = ALProfilesAPI::getInstance($this->accountName, $this->customerSite, $this->apiUrl, $this->accessKey, $this->secretKey);
+    $conf = $original_conf;
     // Create a dummy http client for the Acquia Lift Profiles API to use. All
     // requests to it will be logged and retrievable for checking later.
     $this->httpClient = new DummyALProfilesHttpClient($broken);

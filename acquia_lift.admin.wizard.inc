@@ -2675,7 +2675,7 @@ function _acquia_lift_personalize_campaign_wizard_variations_block(&$form, &$for
     else {
       // Do not allow automatically generated option labels.
       $block['option_label']['#default_value'] = '';
-      $block['option_label']['#title'] = t('Variation title');
+      $block['option_label']['#title'] = t('Variation title') . ' <span class="form-required" title="This field is required.">*</span>';
       unset($block['option_label']['#size']);
       if (isset($placeholder_help[$i])) {
         $block['option_label']['#attributes']['placeholder'] = $placeholder_help[$i];

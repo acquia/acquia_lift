@@ -796,11 +796,11 @@ debug($report['experiment']['reports']['conversion']['summary']);
     $agents = array(
       'first-agent' => array(
         'num_options' => 2,
-        'num_days' => 12
+        'num_days' => 58
       ),
       'second-agent' => array(
         'num_options' => 2,
-        'num_days' => 30
+        'num_days' => 70
       ),
     );
     module_load_include('inc', 'acquia_lift', 'acquia_lift.admin');
@@ -820,32 +820,32 @@ debug($report['experiment']['reports']['conversion']['summary']);
 
     // Now check that the report dates are properly adjusted for each agent.
 
-    // The first agent should show the complete history, i.e. 12 days.
+    // The first agent should show the complete history, i.e. 58 days.
     $this->assertEqual(array(
-      date('Y-m-d', $now - (12 * 86400)),
+      date('Y-m-d', $now - (58 * 86400)),
       date('Y-m-d', $now),
     ), $agents['first-agent']['report_dates']);
-    // The second agent has been runnign for 60 days but should only show 14.
+    // The second agent has been runnign for 70 days but should only show 60.
     $this->assertEqual(array(
-      date('Y-m-d', $now - (14 * 86400)),
+      date('Y-m-d', $now - (60 * 86400)),
       date('Y-m-d', $now),
     ), $agents['second-agent']['report_dates']);
 
-    // Now set the max days to 30 instead of 14.
-    variable_set('acquia_lift_report_max_days', 30);
+    // Now set the max days to 90 instead of 60.
+    variable_set('acquia_lift_report_max_days', 90);
     $this->resetAll();
     foreach ($agents as $agent_name => &$agent_info) {
       $agent = personalize_agent_load($agent_name);
       $agent_info['report_dates'] = acquia_lift_get_report_dates_for_agent($agent);
     }
-    // The first agent should still show the complete history, i.e. 12 days.
+    // The first agent should still show the complete history, i.e. 58 days.
     $this->assertEqual(array(
-      date('Y-m-d', $now - (12 * 86400)),
+      date('Y-m-d', $now - (58 * 86400)),
       date('Y-m-d', $now),
     ), $agents['first-agent']['report_dates']);
-    // The second agent should now also show the complete history, i.e. 30 days.
+    // The second agent should now also show the complete history, i.e. 70 days.
     $this->assertEqual(array(
-      date('Y-m-d', $now - (30 * 86400)),
+      date('Y-m-d', $now - (70 * 86400)),
       date('Y-m-d', $now),
     ), $agents['second-agent']['report_dates']);
   }

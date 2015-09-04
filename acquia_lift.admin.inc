@@ -201,12 +201,13 @@ function acquia_lift_admin_form($form, &$form_state) {
     '#description' => t('The confidence percentage at which a test is considered statistically significant.'),
     '#element_validate' => array('element_validate_number'),
   );
+  $default_max_days = variable_get('acquia_lift_v2_enabled', FALSE) ? 60 : 14;
   $form['acquia_lift_report_max_days'] = array(
     '#type' => 'textfield',
     '#title' => t('Reporting history duration'),
     '#size' => 3,
     '#required' => TRUE,
-    '#default_value' => variable_get('acquia_lift_report_max_days', 60),
+    '#default_value' => variable_get('acquia_lift_report_max_days', $default_max_days),
     '#field_suffix' => t(' days'),
     '#description' => t('The maximum number of days for which to show reporting history.'),
     '#element_validate' => array('element_validate_integer_positive'),
@@ -1216,7 +1217,8 @@ function acquia_lift_get_report_dates_for_agent($agent_data) {
  */
 function acquia_lift_adjust_report_start_date($start, $end) {
   $num_days = floor(($end - $start) / 86400);
-  $max_days = variable_get('acquia_lift_report_max_days', 60);
+  $default_max_days = variable_get('acquia_lift_v2_enabled', FALSE) ? 60 : 14;
+  $max_days = variable_get('acquia_lift_report_max_days', $default_max_days);
   if ($num_days <= $max_days) {
     return $start;
   }

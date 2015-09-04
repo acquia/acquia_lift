@@ -74,8 +74,15 @@
             return;
           }
           if ($window.scrollTop() > offset.top) {
+            var firstColumnHeight = $columns.first().height(),
+                sidebarMarginTop = $window.scrollTop() - offset.top + scrollPaddingTop;
+            // If the new margin-top and the height is bigger than the first column,
+            // maximize the margin.
+            if (firstColumnHeight < sidebarMarginTop + $sidebar.height()) {
+              sidebarMarginTop = firstColumnHeight - $sidebar.height();
+            }
             $sidebar.stop().animate({
-              marginTop: $window.scrollTop() - offset.top + scrollPaddingTop
+              marginTop: sidebarMarginTop
             }, 'fast');
           } else {
             $sidebar.stop().animate({

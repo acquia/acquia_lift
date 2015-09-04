@@ -1,0 +1,626 @@
+<?php
+
+/**
+ * @file
+ * Unit tests for Acquia Lift module.
+ */
+
+class AcquiaLiftV2Test extends DrupalUnitTestCase {
+
+  public static function getInfo() {
+    return array(
+      'name' => t('Acquia Lift API V2 Unit Tests'),
+      'description' => t('Unit tests for AcquiaLiftAPIV2 methods.'),
+      'group' => t('Personalize'),
+    );
+  }
+
+  protected function setUp() {
+    require_once(dirname(__FILE__) . '/../includes/acquia_lift.classes.inc');
+    require_once(dirname(__FILE__) . '/../includes/AcquiaLiftLearnReportDataSourceInterface.inc');
+    require_once(dirname(__FILE__) . '/../includes/AcquiaLiftAPIBase.inc');
+    require_once(dirname(__FILE__) . '/../includes/AcquiaLiftAPIV2.inc');
+    require_once(dirname(__FILE__) . '/../includes/AcquiaLiftReportBase.inc');
+    require_once(dirname(__FILE__) . '/../includes/AcquiaLiftLearnReport.inc');
+    require_once(dirname(__FILE__) . '/acquia_lift.test_classes.inc');
+
+    parent::setUp();
+  }
+
+  protected function tearDown() {
+    parent::tearDown();
+    DummyAcquiaLiftHttpClient::clearLoggedRequests();
+  }
+
+  /**
+   * @var AcquiaLiftTestLogger
+   */
+  protected $logger = NULL;
+
+  /**
+   * @var DummyAcquiaLiftHttpClient
+   */
+  protected $httpClient = NULL;
+
+  /**
+   * The string to use as the runtime API key.
+   *
+   * @var string
+   */
+  protected $publicKey = 'thisismypublictestkey';
+
+  /**
+   * The string to use as the runtime API key.
+   *
+   * @var string
+   */
+  protected $privateKey = 'thisismyprivatetestkey';
+
+  /**
+   * Tests getting a AcquiaLiftAPI instance with invalid and valid credentials.
+   */
+  function testGetInstance() {
+    try {
+      $lift_api = AcquiaLiftAPIV2::getInstance(array());
+      $this->fail('Should never reach here.');
+    }
+    catch (Exception $e) {
+      $this->assertTrue($e instanceof AcquiaLiftCredsException);
+      $this->assertEqual('Acquia Lift API URL is missing or not a valid URL.', $e->getMessage());
+      try {
+        $lift_api = AcquiaLiftAPIV2::getInstance(array('api_url' => 'some.valid.url.com'));
+        $this->fail('Should never reach here.');
+      }
+      catch (Exception $e) {
+        $this->assertTrue($e instanceof AcquiaLiftCredsException);
+        $this->assertEqual('Acquia Lift Public Key was not found.', $e->getMessage());
+        try{
+          $lift_api = AcquiaLiftAPIV2::getInstance(array('api_url' => 'some.valid.url.com', 'public_key' => $this->publicKey));
+          $this->fail('Should never reach here.');
+        }
+        catch (Exception $e) {
+          $this->assertTrue($e instanceof AcquiaLiftCredsException);
+          $this->assertEqual('Acquia Lift Private Key was not found.', $e->getMessage());
+          try{
+            $lift_api = AcquiaLiftAPIV2::getInstance(array('api_url' => 'some.valid.url.com', 'private_key' => $this->privateKey, 'public_key' => $this->publicKey, 'validate_response' => TRUE));
+          }
+          catch (Exception $e) {
+            $this->fail('Exception thrown when none expected.');
+          }
+
+        }
+      }
+    }
+    AcquiaLiftAPIV2::reset();
+  }
+
+  /**
+   * Tests getting a AcquiaLiftAPI instance that uses the default API url.
+   */
+  function testGetInstanceWithAPIUrl() {
+    AcquiaLiftAPIV2::reset();
+    // Test passing an invalid URL.
+    try {
+      $lift_api = AcquiaLiftAPIV2::getInstance(array('api_url' => 'some\\invalid\\url', 'private_key' => $this->privateKey, 'public_key' => $this->publicKey));
+      $this->fail('Should never reach here.');
+    }
+    catch (Exception $e) {
+      $this->assertTrue($e instanceof AcquiaLiftCredsException);
+      $this->assertEqual('Acquia Lift API URL is missing or not a valid URL.', $e->getMessage());
+    }
+
+    // Test passing a valid URL with no scheme.
+    $lift_api = AcquiaLiftAPIV2::getInstance(array('api_url' => 'test-api.example.com', 'private_key' => $this->privateKey, 'public_key' => $this->publicKey, 'validate_response' => FALSE));
+
+    // The scheme will match whatever the current scheme is.
+    global $is_https;
+    $url_scheme = ($is_https) ? 'https://' : 'http://';
+    // Check that the URL is as expected.
+    $this->assertEqual($url_scheme . 'test-api.example.com', $lift_api->getApiUrl());
+
+    AcquiaLiftAPIV2::reset();
+    // Test passing a valid URL with the scheme specified.
+    $lift_api = AcquiaLiftAPIV2::getInstance(array('api_url' => 'https://test-api.example.com', 'private_key' => $this->privateKey, 'public_key' => $this->publicKey, 'validate_response' => FALSE));
+    // Check that the URL is as expected.
+    $this->assertEqual('https://test-api.example.com', $lift_api->getApiUrl());
+    AcquiaLiftAPIV2::reset();
+  }
+
+  /**
+   * Test AcquiaLiftAPI->pingTest()
+   */
+  public function testPingTest() {
+    $lift_api = $this->getAcquiaLiftAPI();
+    $ping_test = $lift_api->ping();
+    $this->assertTrue($ping_test);
+    $logged_requests = DummyAcquiaLiftHttpClient::getLoggedRequests();
+    $this->assertAPIRequestURI("{$lift_api->getApiUrl()}/ping?client_id={$lift_api->getPublicKey()}", $logged_requests[0]['uri']);
+    DummyAcquiaLiftHttpClient::clearLoggedRequests();
+    // Now test with a broken connection.
+    $lift_api = $this->getAcquiaLiftAPI(TRUE);
+    $ping_test = $lift_api->ping();
+    $this->assertFALSE($ping_test);
+    $logged_requests = DummyAcquiaLiftHttpClient::getLoggedRequests();
+    $this->assertAPIRequestURI("{$lift_api->getApiUrl()}/ping?client_id={$lift_api->getPublicKey()}", $logged_requests[0]['uri']);
+    DummyAcquiaLiftHttpClient::clearLoggedRequests();
+  }
+
+  /**
+   * Test AcquiaLiftAPI->saveDecisionSet()
+   */
+  public function testSaveDecisionSet() {
+    $lift_api = $this->getAcquiaLiftAPI();
+
+    $name = 'some-test-decision';
+    $title = 'Some Test Decision';
+    $options = array(
+      array(
+        'option_id' => 'option-1',
+      ),
+      array(
+        'option_id' => 'option-2',
+      ),
+    );
+
+    $lift_api->saveDecisionSet($name, $title, $options);
+    $logged_requests = DummyAcquiaLiftHttpClient::getLoggedRequests();
+    $expected_uri = "{$lift_api->getApiUrl()}/decision_sets?client_id={$lift_api->getPublicKey()}";
+    $expected_body = json_encode(array(
+      "id" => "some-test-decision",
+      "title" => "Some Test Decision",
+      "decisions"=> array(
+        array("external_id" => "option-1"),
+        array("external_id" => "option-2"),
+      )
+    ));
+
+    // Confirm the request URI and body are as expected.
+    $this->assertAPIRequestURI($expected_uri, $logged_requests[0]['uri']);
+    $this->assertEqual($expected_body, $logged_requests[0]['body']);
+
+    $logs = array(
+      array(
+        'level' => PersonalizeLogLevel::INFO,
+        'message' => "The Decision Set $title was pushed to Acquia Lift"
+      )
+    );
+
+    $this->assertLogs($logs);
+    DummyAcquiaLiftHttpClient::clearLoggedRequests();
+    $this->logger->clearLogs();
+
+    $lift_api = $this->getAcquiaLiftAPI(TRUE);
+    try {
+      $lift_api->saveDecisionSet($name, $title, $options);
+    }
+    catch (Exception $e) {
+      $this->assertTrue($e instanceof AcquiaLiftException);
+    }
+
+    // Confirm the request URI and body are as expected.
+    $this->assertAPIRequestURI($expected_uri, $logged_requests[0]['uri']);
+    $this->assertEqual($expected_body, $logged_requests[0]['body']);
+
+    $logs = array(
+      array(
+        'level' => PersonalizeLogLevel::ERROR,
+        'message' => "The Decision Set $title could not be pushed to Acquia Lift"
+      )
+    );
+    $this->assertLogs($logs);
+    DummyAcquiaLiftHttpClient::clearLoggedRequests();
+    $this->logger->clearLogs();
+  }
+
+  /**
+   * Test AcquiaLiftAPI->saveGoal()
+   */
+  public function testSaveGoal() {
+    $lift_api = $this->getAcquiaLiftAPI();
+
+    $goalName = 'Some Test Goal';
+
+    $lift_api->saveGoal($goalName);
+    $logged_requests = DummyAcquiaLiftHttpClient::getLoggedRequests();
+    $expected_uri = "{$lift_api->getApiUrl()}/goals?client_id={$lift_api->getPublicKey()}";
+    $expected_body = json_encode(array(
+      'id' => $goalName,
+      'title' => $goalName,
+      'description' => $goalName
+    ));
+
+    // Confirm the request URI and body are as expected.
+    $this->assertAPIRequestURI($expected_uri, $logged_requests[0]['uri']);
+    $this->assertEqual($expected_body, $logged_requests[0]['body']);
+    $logs = array(
+      array(
+        'level' => PersonalizeLogLevel::INFO,
+        'message' => "The Goal $goalName was pushed to Acquia Lift",
+      )
+    );
+
+    $this->assertLogs($logs);
+    DummyAcquiaLiftHttpClient::clearLoggedRequests();
+    $this->logger->clearLogs();
+
+    $lift_api = $this->getAcquiaLiftAPI(TRUE);
+    try {
+      $lift_api->saveGoal($goalName);
+    }
+    catch (Exception $e) {
+      $this->assertTrue($e instanceof AcquiaLiftException);
+    }
+
+    // Confirm the request URI and body are as expected.
+    $this->assertAPIRequestURI($expected_uri, $logged_requests[0]['uri']);
+    $this->assertEqual($expected_body, $logged_requests[0]['body']);
+    $logs = array(
+      array(
+        'level' => PersonalizeLogLevel::ERROR,
+        'message' => "The Goal $goalName could not be pushed to Acquia Lift",
+      )
+    );
+    $this->assertLogs($logs);
+    DummyAcquiaLiftHttpClient::clearLoggedRequests();
+    $this->logger->clearLogs();
+  }
+
+  /**
+   * Tests the saveCampaign method.
+   *
+   * @todo Add tests for other settings being passed.
+   */
+  function testSaveCampaign() {
+    $lift_api = $this->getAcquiaLiftAPI();
+    $agent_name = 'some-test-agent';
+    $agent_title = 'Some Test Agent';
+    $lift_api->saveCampaign($agent_name, $agent_title, 'some-decision', array('some-goal'));
+
+    $logged_requests = DummyAcquiaLiftHttpClient::getLoggedRequests();
+    $expected_uri = "{$lift_api->getApiUrl()}/campaigns?client_id={$lift_api->getPublicKey()}";
+    $expected_body = json_encode(array(
+      'id' => $agent_name,
+      'title' => $agent_title,
+      'algorithm' => 'mab',
+      'decision_sets' => array('some-decision'),
+      'goals' => array('some-goal'),
+      'traffic_fraction'  =>  1,
+      'explore_fraction' => 1,
+    ));
+
+    // Confirm the request URI and body are as expected.
+    $this->assertAPIRequestURI($expected_uri, $logged_requests[0]['uri']);
+    $this->assertEqual($expected_body, $logged_requests[0]['body']);
+    $logs = array(
+      array(
+        'level' => PersonalizeLogLevel::INFO,
+        'message' => "The personalization $agent_name was pushed to Acquia Lift",
+      )
+    );
+
+    $this->assertLogs($logs);
+    DummyAcquiaLiftHttpClient::clearLoggedRequests();
+    $this->logger->clearLogs();
+
+    // Now specify different options for the test.
+    $agent_name = 'new-test-agent';
+    $agent_title = 'New Test Agent';
+    $lift_api->saveCampaign($agent_name, $agent_title, 'some-decision', array('some-goal'), TRUE, 0, .4);
+
+    $logged_requests = DummyAcquiaLiftHttpClient::getLoggedRequests();
+    $expected_uri = "{$lift_api->getApiUrl()}/campaigns?client_id={$lift_api->getPublicKey()}";
+    $expected_body = json_encode(array(
+      'id' => $agent_name,
+      'title' => $agent_title,
+      'algorithm' => 'mab',
+      'decision_sets' => array('some-decision'),
+      'goals' => array('some-goal'),
+      'traffic_fraction'  =>  1,
+      'explore_fraction' => 0.4,
+    ));
+
+    // Confirm the request URI and body are as expected.
+    $this->assertAPIRequestURI($expected_uri, $logged_requests[0]['uri']);
+    $this->assertEqual($expected_body, $logged_requests[0]['body']);
+    $logs = array(
+      array(
+        'level' => PersonalizeLogLevel::INFO,
+        'message' => "The personalization $agent_name was pushed to Acquia Lift",
+      )
+    );
+
+    $this->assertLogs($logs);
+    DummyAcquiaLiftHttpClient::clearLoggedRequests();
+    $this->logger->clearLogs();
+    // Now try with a broken http client.
+    $lift_api = $this->getAcquiaLiftAPI(TRUE);
+    try {
+      $lift_api->saveCampaign($agent_name, $agent_title, 'some-decision', array('some-goal'));
+    }
+    catch (Exception $e) {
+      $this->assertTrue($e instanceof AcquiaLiftException);
+    }
+    // The same requests should be made.
+    $this->assertAPIRequestURI($expected_uri, $logged_requests[0]['uri']);
+    // Confirm the expected error message was logged.
+    $logs = array(
+      array(
+        'level' => PersonalizeLogLevel::ERROR,
+        'message' => "The personalization $agent_name could not be pushed to Acquia Lift",
+      )
+    );
+    $this->assertLogs($logs);
+    $this->logger->clearLogs();
+    DummyAcquiaLiftHttpClient::clearLoggedRequests();
+  }
+
+  /**
+   * Test AcquiaLiftAPI->getAgent()
+   */
+  public function testGetAgent() {
+    $lift_api = $this->getAcquiaLiftAPI();
+
+    $machineName = 'some_machine_name';
+    $lift_api->getAgent($machineName);
+
+    $logged_requests = DummyAcquiaLiftHttpClient::getLoggedRequests();
+    $expected_uri = "{$lift_api->getApiUrl()}/campaigns/$machineName?client_id={$lift_api->getPublicKey()}";
+
+    // Confirm the request URI is as expected.
+    $this->assertAPIRequestURI($expected_uri, $logged_requests[0]['uri']);
+    $logs = array();
+    $this->assertLogs($logs);
+    DummyAcquiaLiftHttpClient::clearLoggedRequests();
+
+    $lift_api = $this->getAcquiaLiftAPI(TRUE);
+    try {
+      $lift_api->getAgent($machineName);
+      $this->fail('Should not reach here');
+    }
+    catch (AcquiaLiftException $e) {
+
+    }
+    // Confirm the expected requests and logs.
+    $this->assertAPIRequestURI($expected_uri, $logged_requests[0]['uri']);
+    $logs = array(
+      array(
+        'level' => 'error',
+        'message' => 'Could not retrieve the specified agent from Lift'
+      )
+    );
+    $this->assertLogs($logs);
+    DummyAcquiaLiftHttpClient::clearLoggedRequests();
+  }
+
+  /**
+   * Test AcquiaLiftAPI->getExistingAgents()
+   */
+  public function testGetCampaigns() {
+    $lift_api = $this->getAcquiaLiftAPI();
+
+    $lift_api->getCampaigns();
+    $logged_requests = DummyAcquiaLiftHttpClient::getLoggedRequests();
+    $expected_uri = "{$lift_api->getApiUrl()}/campaigns?client_id={$lift_api->getPublicKey()}";
+
+    // Confirm the request URI is as expected.
+    $this->assertAPIRequestURI($expected_uri, $logged_requests[0]['uri']);
+    $logs = array();
+    $this->assertLogs($logs);
+    DummyAcquiaLiftHttpClient::clearLoggedRequests();
+
+    $lift_api = $this->getAcquiaLiftAPI(TRUE);
+    try {
+      $lift_api->getCampaigns();
+    }
+    catch (Exception $e) {
+      $this->assertTrue($e instanceof AcquiaLiftException);
+    }
+    // Confirm the expected requests and logs.
+    $this->assertAPIRequestURI($expected_uri, $logged_requests[0]['uri']);
+    $logs = array(
+      array(
+        'level' => PersonalizeLogLevel::ERROR,
+        'message' => 'Could not retrieve agents from Lift',
+      )
+    );
+    $this->assertLogs($logs);
+    DummyAcquiaLiftHttpClient::clearLoggedRequests();
+  }
+
+  function testEnsureUniqueAgentName() {
+    // We can't use getAcquiaLiftAPI() here because we need to pass some dummy
+    // data to the http client.
+    $lift_api = AcquiaLiftAPIV2::getInstance(array('api_url' => 'https://test-api.example.com', 'private_key' => $this->privateKey, 'public_key' => $this->publicKey, 'validate_response' => FALSE));
+    // Pass some dummy agent data to our dummy http client.
+    $agents = array();
+    $agent_codes = array(
+      'first-agent',
+      'first-agent-0',
+      'first-agent-1',
+      'abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwx',
+      'abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuv-0',
+      'abcdefghijklmnopqrstuvwxyzabcdef',
+      'abcdefghijklmnopqrstuvwxyzabcd-0',
+      'abcdefghijklmnopqrstuvwxyzabcd-1',
+      'abcdefghijklmnopqrstuvwxyzabcd-2',
+      'abcdefghijklmnopqrstuvwxyzabcd-3',
+      'abcdefghijklmnopqrstuvwxyzabcd-4',
+      'abcdefghijklmnopqrstuvwxyzabcd-5',
+      'abcdefghijklmnopqrstuvwxyzabcd-6',
+      'abcdefghijklmnopqrstuvwxyzabcd-7',
+      'abcdefghijklmnopqrstuvwxyzabcd-8',
+      'abcdefghijklmnopqrstuvwxyzabcd-9',
+    );
+    foreach ($agent_codes as $code) {
+      $agent = new stdClass();
+      $agent->title = $code;
+      $agent->id = $code;
+      $agent->algorithm = 'bernoulli';
+      $agent->created = "4605-05-17T10:47:17.530Z";
+      $agent->decisions_sets = array();
+      $agent->goals = array();
+      $agents[] = $agent;
+    }
+
+    $lift_api->setHttpClient(new DummyAcquiaLiftHttpClient(ACQUIA_LIFT_TESTING_AGENT_V2, FALSE, array('campaigns' => $agents)));
+    $lift_api->setLogger(new AcquiaLiftTestLogger());
+    // Try to get a unique name based on 'first-agent'
+    $new_name = $lift_api->ensureUniqueAgentName($agent_codes[0], 64);
+    $this->assertEqual('first-agent-2', $new_name);
+    // Try to get a unique name based on a long string.
+    $new_name = $lift_api->ensureUniqueAgentName('abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz', 64);
+    $this->assertEqual('abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuv-1', $new_name);
+
+    // Now try with a max length restriction that is shorter than the one
+    // for Acquia Lift
+    $new_name = $lift_api->ensureUniqueAgentName('abcdefghijklmnopqrstuvwxyzabcde1f', 32);
+    $this->assertEqual('abcdefghijklmnopqrstuvwxyzabcde1', $new_name);
+    $new_name = $lift_api->ensureUniqueAgentName('abcdefghijklmnopqrstuvwxyzabcdef', 32);
+    $this->assertEqual('abcdefghijklmnopqrstuvwxyzabc-10', $new_name);
+  }
+
+  public function testGetConfidence() {
+   // These are some randomly generated test statistics.
+    $tscores = array(0.4805467, 1.0867155, 2.0304100, 0.6468293, 0.7536823, 0.8284474, 3.0653412, 3.6732662, 0.1418540, 3.7283742, 2.0828125, 3.3117355, 2.2406360, 0.2041437, 1.9577210, 1.5808247, 0.7013603, 1.1398363, 1.0242696, 0.6061602);
+    // These are the correct confidence calculations for each of the test statistics
+    // for various numbers of degrees of freedom. The confidence calculation was
+    // calculated as 1 - (2*pvalue), where pvalue is the one-sided p-value for
+    // the test statistic in a t-distribution with the given number of degrees
+    // of freedom.
+    $expected_conf_for_df = array(
+      1 => array(
+        0.28518286, 0.52644014, 0.70865811, 0.36551081, 0.41116319, 0.44044402, 0.79924695
+    , 0.83078906, 0.08970851, 0.83317640, 0.71503783, 0.81331077, 0.73276339, 0.12820038,0.69935717, 0.64092581, 0.38938105, 0.54154342, 0.50763227, 0.34691752),
+      2 => array(
+        0.321731133778587, 0.609308720517642, 0.820572669919182, 0.4159361722188, 0.470313762361463, 0.505458687321669, 0.90802241111149, 0.933224775169066, 0.099805071823134, 0.934997304904042, 0.827313975647084, 0.919657199583924, 0.845646477754138, 0.142870544798576, 0.810619488215369, 0.74529016194306, 0.444298979128066, 0.627532739628972, 0.586578904550922, 0.39395701965503),
+      3 => array(
+        0.33629480709496, 0.643323511797734, 0.864709487640965, 0.436178847682057, 0.494202014927769, 0.53182827923953, 0.945237516690831, 0.9650794718085, 0.103814085430066, 0.966387538004865, 0.871343536460682, 0.954666745466566, 0.88910385799165, 0.148694462126641, 0.854825248439982, 0.787945836328694, 0.466411468106253, 0.662879846637519, 0.61891190400939, 0.412800864588036
+          ),
+      4 => array(
+        0.344060732520784, 0.66173425697076, 0.88783964145001, 0.447012711543791, 0.507025144219932, 0.546014051757527, 0.962537258394631, 0.97867020790152, 0.105946804742343, 0.979674366628576, 0.894313876262353, 0.970393663265782, 0.911440543372091, 0.151792836936525, 0.878127261469194, 0.810926332328602, 0.478263655611114, 0.682025435645122, 0.636392561607109, 0.422875640739763
+          ),
+      5 => array(
+        0.348872590213502, 0.673247577857089, 0.901940084884362, 0.453740741011865, 0.515003145765327, 0.554851631846377, 0.972068452678761, 0.985605746666516, 0.107266079646819, 0.986406176389672, 0.908266482557063, 0.97880007180349, 0.924845369552082, 0.15370959818393, 0.892398658774908, 0.825241501794211, 0.485630805355636, 0.694003512672696, 0.647316580023835, 0.429128283586675
+          ),
+      7 => array(
+        0.354506492642159, 0.686839551363136, 0.918136762308111, 0.461634172393793, 0.52437834322903, 0.565249338381959, 0.981813736854778, 0.992070073554429, 0.108808277611316, 0.992625537185657, 0.924230145444987, 0.987089266518561, 0.939978461255006, 0.155950446508762, 0.908874841151574, 0.842069356759047, 0.494281088965469, 0.708149574285593, 0.660204772993723, 0.436459827861411
+          ),
+      10 => array(
+        0.358821640881669, 0.697337674983186, 0.930243205020935, 0.467692447239002, 0.531585781419877, 0.573252532697909, 0.988064738894333, 0.995706120627185, 0.109987468927327, 0.996079165912913, 0.936104513746093, 0.992143727011932, 0.951048608534409, 0.157664028996801, 0.92126653113738, 0.85500072502173, 0.500925719280955, 0.719079855770193, 0.670152980753418, 0.442083618851362
+          ),
+      15 => array(
+        0.362227942789561, 0.705682298260295, 0.939565083845544, 0.472482908493155, 0.537292675193398, 0.579595833545905, 0.992146229588172, 0.997740494991185, 0.110916931705493, 0.997981654839318, 0.945203287091726, 0.995256623846651, 0.959388442269268, 0.159014851406112, 0.930866724141701, 0.865229334281472, 0.506183388802112, 0.727770699115161, 0.678056343657847, 0.446528417713003
+          ),
+      17 => array(
+        0.363035503306125, 0.707668428772818, 0.941739428268972, 0.47361972531188, 0.538648014019032, 0.581103166834317, 0.992994425853601, 0.998115913229186, 0.111137098312304, 0.998328395278229, 0.94731885743241, 0.995875741758514, 0.961305919285539, 0.159334848040135, 0.933114899527684, 0.867656434934316, 0.507431557366054, 0.72983959745938, 0.679936887760102, 0.44758292290387
+          ),
+      20 => array(
+        0.363946690979086, 0.709913114386589, 0.944174663334389, 0.474902940211458, 0.540178384961919, 0.582805564199948, 0.993894157366836, 0.998491773164986, 0.111385426720091, 0.998673427981963, 0.949684841603395, 0.99651868591887, 0.963439368169264, 0.159695785849071, 0.935637363065205, 0.870395766283665, 0.508840689825675, 0.732177996158949, 0.682061976654317, 0.448773092728646
+          ),
+      30 => array(
+        0.365675398529195, 0.714182705704945, 0.948738228251312, 0.477339001602929, 0.543085110200437, 0.586040225423774, 0.995430133349328, 0.999070811580651, 0.111856286455336, 0.999199169591111, 0.954107973019022, 0.997575989207067, 0.967393616097289, 0.160380196437941, 0.940378532642214, 0.875594675425648, 0.511516463712829, 0.736626342508035, 0.686103296886397, 0.451032121509195
+          ),
+      33 => array(
+        0.365990751995235, 0.714963146057895, 0.949562244950443, 0.477783612820041, 0.543615832843731, 0.58663099555738, 0.995685749787549, 0.999158293668445, 0.111942142533966, 0.999277752642082, 0.954905029171162, 0.997745983125873, 0.968101041106194, 0.160504995571902, 0.94123674729256, 0.876543271421895, 0.512004921409688, 0.73743952965685, 0.686841898487861, 0.451444365457069
+          ),
+      40 => array(
+        0.366543378686206, 0.716331982066238, 0.950999610545224, 0.478562918066783, 0.544546230294766, 0.587666790211157, 0.996115171406128, 0.999298726309025, 0.112092567623536, 0.999403262649842, 0.956294105704047, 0.998026988650297, 0.969329874587483, 0.160723654646787, 0.942735441178112, 0.878205705700574, 0.512861152191222, 0.738865855392769, 0.688137267081932, 0.452166895360514
+          ),
+      57 => array(
+        0.367321992678436, 0.718263173953889, 0.953009912999637, 0.479661270281878, 0.545857875791458, 0.589127303406635, 0.996679933230877, 0.999469809239211, 0.112304442139025, 0.999554851873905, 0.958234053494374, 0.998386723140775, 0.971037015342133, 0.161031644502609, 0.944835264066759, 0.880548144404564, 0.514068080798177, 0.740878273369558, 0.689964623105861, 0.453185135504987
+          ),
+      60 => array(
+        0.367413716925937, 0.718490878451717, 0.953245558325412, 0.479790689319615, 0.546012453899267, 0.589299447528958, 0.99674335075119, 0.999487976412148, 0.112329396909682, 0.999570845625073, 0.958461227754519, 0.998426341287789, 0.971236209872293, 0.161067920404185, 0.945081701125294, 0.880824104051006, 0.514210305633712, 0.741115564274432, 0.690180070009289, 0.453305107716232
+          ),
+      80 => array(
+        0.36784975611477, 0.719573925997053, 0.954362283975042, 0.48040600396436, 0.546747463181902, 0.590118045622644, 0.997035824627958, 0.999568828198109, 0.112448012469306, 0.999641732808476, 0.959537144189648, 0.998606808111039, 0.972177486131304, 0.161240349503513, 0.94625045376088, 0.882135979320654, 0.514886540094607, 0.742244234830493, 0.691204773951122, 0.453875487115079
+          ),
+      120 => array(
+        0.368286367685257, 0.720659368696563, 0.955474587013883, 0.48102226236432, 0.547483728623568, 0.590938148419598, 0.997313763688539, 0.999640947284813, 0.112566759480835, 0.999704497085381, 0.960607676272085, 0.998774607575318, 0.973110461355534, 0.161412972522644, 0.947416073636598, 0.883449590370861, 0.515563870736662, 0.743375445461584, 0.692231674245192, 0.454446706574094
+          ),
+      1000 => array(
+        0.369056176583741, 0.722575555017276, 0.957420884676493, 0.48210914875127, 0.548782586378181, 0.592385164904709, 0.99776743572675, 0.99974783504205, 0.112776067753023, 0.999796463624135, 0.962478047643747, 0.999039621631611, 0.974731446622683, 0.161717251830057, 0.949459443486883, 0.885765647068382, 0.516758614347958, 0.745372536268692, 0.694044341033876, 0.455454072967608
+      ),
+      1020 => array(
+        0.369058237220439, 0.722580688425125, 0.957426068472277, 0.482112058722065, 0.548786064415127, 0.592389040123939, 0.997768587892168, 0.999748088161675, 0.11277662792957, 0.99979667955566, 0.962483024213869, 0.999040279095181, 0.974735743669313, 0.161718066191921, 0.949464892495558, 0.885771846597004, 0.516761813339561, 0.745377886603245, 0.694049196819958, 0.455456769888718
+      ),
+    );
+    // We'll confirm that our getConfidence method returns a confidence measure
+    // that is either equal to 0.5 if the expected result is <= 0.5 or within
+    // 0.015 of the expected result otherwise.
+    foreach ($expected_conf_for_df as $df => $expected) {
+      foreach ($tscores as $i => $tscore) {
+        $conf = AcquiaLiftLearnReport::getConfidence($tscore, $df);
+        if ($expected[$i] <= 0.5) {
+          $this->assertTrue($conf == 0.5);
+        }
+        else {
+          $diff = abs($expected[$i] - $conf);
+          $this->assertTrue($diff < 0.015);
+        }
+      }
+    }
+
+  }
+
+  /**
+   * Returns a AcquiaLiftAPI instance that can be used to test methods.
+   *
+   * @param bool $broken
+   *   Whether the HTTP client used by the API class should be broken, simulating
+   *   500 responses from Acquia Lift.
+   * @return AcquiaLiftAPIV2
+   *   A AcquiaLiftAPI instance.
+   */
+  protected function getAcquiaLiftAPI($broken = FALSE) {
+    $lift_api = AcquiaLiftAPIV2::getInstance(array('api_url' => 'https://test-api.example.com', 'private_key' => $this->privateKey, 'public_key' => $this->publicKey, 'validate_response' => FALSE));
+
+    // Create a dummy http client for the Acquia Lift API to use. All
+    // requests to it will be logged and retrievable for checking later.
+    $this->httpClient = new DummyAcquiaLiftHttpClient(ACQUIA_LIFT_TESTING_AGENT_V2, $broken);
+    $lift_api->setHttpClient($this->httpClient);
+    if ($this->logger === NULL) {
+      // Create a dummy logger instance which will maintain a log in memory
+      // that we can retrieve for checking later.
+      $this->logger = new AcquiaLiftTestLogger();
+    }
+    else {
+      $this->logger->clearLogs();
+    }
+    $lift_api->setLogger($this->logger);
+    return $lift_api;
+  }
+
+  /**
+   * Asserts that the expected requests were made to the http client.
+   *
+   * @param $expected_requests
+   */
+  protected function assertAPIRequests($expected_requests) {
+    $logged_requests = DummyAcquiaLiftHttpClient::getLoggedRequests();
+    $this->assertEqual($expected_requests, $logged_requests);
+    DummyAcquiaLiftHttpClient::clearLoggedRequests();
+  }
+
+  protected function assertAPIRequestURI($expected_uri, $request_uri) {
+    debug($expected_uri);
+    debug($request_uri);
+    // Since we can't anticipate the request_id part of the URI we'll use a
+    // regex pattern and make sure everything else matches.
+    $parts = explode('?', $expected_uri);
+    $pattern = preg_quote($parts[0] . '?request_id=', '#') . '[a-zA-Z0-9-_]*' . preg_quote('&' . $parts[1], '#');
+    $this->assertTrue(preg_match("#$pattern#", $request_uri));
+  }
+
+  /**
+   * Asserts that the expected messages were logged to the logger.
+   *
+   * @param $expected_logs
+   */
+  protected function assertLogs($expected_logs) {
+    $logs = $this->logger->getLogs();
+    $this->assertEqual($expected_logs, $logs);
+    $this->logger->clearLogs();
+  }
+
+}

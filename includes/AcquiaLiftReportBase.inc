@@ -162,9 +162,14 @@ abstract class AcquiaLiftReportBase {
    */
   public function buildCampaignReports($session_count, $goal_count, $daily_data, $aggregated_data, $confidence, $winner) {
     $config = $this->getReportConfiguration();
-    $from = isset($config['campaign_start']) ?  date('Y-m-d', $config['campaign_start']) : $config['date_from'];
-    $to = isset($config['campaign_completed']) ?  date('Y-m-d', $config['campaign_completed']) : $config['date_to'];
-    $interval = date_diff(date_create($from), date_create($to));
+    $from = isset($config['campaign_start']) ? $config['campaign_start'] : strtotime($config['date_from']);
+    $from_datetime = date_create();
+    date_timestamp_set($from_datetime, $from);
+    $to = isset($config['campaign_completed']) ?  $config['campaign_completed'] : time();
+    $to_datetime = date_create();
+    date_timestamp_set($to_datetime, $to);
+
+    $interval = date_diff($from_datetime, $to_datetime);
     $name = empty($config['goal']) ? t('All goals') : $config['goal'];
     $reports = array(
       'overview' => $this->buildOverviewReport($interval, $config['test_type'], $session_count, $goal_count),
@@ -206,7 +211,7 @@ abstract class AcquiaLiftReportBase {
       '#attributes' => array(
         'id' => 'acquia-lift-overview-running',
       ),
-      '#title' =>  $interval->format('%mm, %dd'),
+      '#title' =>  $interval->format('%d days, %h hours'),
       '#description' => t('total time running'),
     );
     $formatted_session_count = $this->formatReportNumber($session_count, FALSE, 0);

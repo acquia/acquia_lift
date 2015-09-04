@@ -110,6 +110,7 @@ function acquia_lift_profiles_refresh_segments_cache() {
     return TRUE;
   }
   catch(Exception $e) {
+
     watchdog('acquia_lift_profiles', $e->getMessage());
     return FALSE;
   }
@@ -161,7 +162,7 @@ function acquia_lift_profiles_page_build(&$page) {
   if (!acquia_lift_profiles_is_configured()) {
     return;
   }
-  $js_path = variable_get('acquia_lift_profiles_js_path', '');
+
   $account_name = variable_get('acquia_lift_profiles_account_name', '');
   $capture_identity = variable_get('acquia_lift_profiles_capture_identity', FALSE);
   $mappings = variable_get('acquia_lift_profiles_udf_mappings', array());
@@ -240,29 +241,6 @@ function acquia_lift_profiles_page_build(&$page) {
       $settings['adminMode'] = TRUE;
     }
   }
-  $account_name = $settings['account_name'];
-
-  $init = <<<EOT
-var _tcaq = _tcaq || [];
-var _tcwq = _tcwq || [];
-_tcaq.push(['setAccount', '$account_name']);
-(function() {
-  function async_load()
-  {
-    var s = document.createElement('script');
-    s.type = 'text/javascript';
-    s.async = true;
-    s.src = ('https:' == document.location.protocol ? 'https' : 'http')
-      + '://$js_path';
-    var x = document.getElementsByTagName('script')[0];
-    x.parentNode.insertBefore(s, x);
-  }
-  if (window.attachEvent)
-    window.attachEvent('onload', async_load);
-  else
-    window.addEventListener('load', async_load, false);
-})();
-EOT;
 
   // Now we need to compile all the assets together with the js settings and files
   // needed for Acquia Lift Profiles itself.
@@ -285,10 +263,6 @@ EOT;
   $js_file = drupal_get_path('module', 'acquia_lift_profiles') . '/js/acquia_lift_profiles.js';
   $attached['js'][$js_file] = array(
     'weight' => JS_DEFAULT - 10
-  );
-  $attached['js'][] = array(
-    'data' => $init,
-    'type' => 'inline'
   );
   if (!isset($attached['library'])) {
     $attached['library'] = array();
@@ -371,6 +345,7 @@ function acquia_lift_profiles_form_node_type_form_alter(&$form, &$form_state) {
  *   An array, passed by reference, to add any errors to.
  */
 function acquia_lift_profiles_put_action($action_name, $label, &$errors = array()) {
+
   try {
     $acquia_lift_profiles_api = ALProfilesAPI::getInstance(variable_get('acquia_lift_profiles_account_name', ''), variable_get('acquia_lift_profiles_site_name', ''), variable_get('acquia_lift_profiles_api_url', ''));
     $acquia_lift_profiles_api->saveEvent($action_name, $label);

@@ -16,6 +16,10 @@ function acquia_lift_drush_command() {
     'description' => 'Sync all or one Lift personalization(s).',
     'aliases' => array('al-sync'),
   );
+  $items['acquia-lift-enable-v2'] = array (
+    'description' => 'Convert to the V2 decision back-end.',
+    'aliases' => array('al-v2'),
+  );
   return $items;
 }
 
@@ -119,6 +123,169 @@ function drush_acquia_lift_campaign_sync() {
     $batch['progressive'] = false;
     drush_backend_batch_process();
   }
+}
+
+function drush_acquia_lift_enable_v2() {
+  // First ensure v2 is *not* enabled yet.
+  variable_set('acquia_lift_v2_enabled', FALSE);
+  $agents = personalize_agent_load_by_type('acquia_lift');
+  $options = array(
+    'yes' => dt('Confirm'),
+  );
+  $options_message = "\n" . dt('Confirm that you want to retire all existing V1 tests and switch to using V2:'). "\n- " . implode("\n- ", array_keys($agents));
+  $confirm_selection = drush_choice($options, $options_message);
+  if (!$confirm_selection) {
+    return;
+  }
+  module_load_include('inc', 'acquia_lift', 'acquia_lift.admin');
+  $parent_personalizations = personalize_agent_load_by_type('acquia_lift_target');
+  // We'll create a mapping of parent names to test names.
+  $parents = array();
+  foreach ($parent_personalizations as $parent_name => $parent) {
+    $nested = acquia_lift_get_nested_tests($parent);
+    foreach ($nested as $test_name) {
+      $parents[$test_name] = $parent_name;
+    }
+  }
+  $account_info = acquia_lift_get_account_info();
+  // Get an instance of the V1 API client to get the reports.
+  $lift_api = AcquiaLiftAPIClientFactory::create($account_info, ACQUIA_LIFT_TESTING_AGENT_V1);
+  // Go through each test, archive its report, and then retire it.
+  $errors = 0;
+  foreach ($agents as $name => $agent) {
+    if (!isset($parents[$name])) {
+      if (!empty($agent->data['lift_retired'])) {
+        drush_print("Test $name already retired.");
+      }
+      else {
+        // This test has no parent, must be legacy - just complete it.
+        //personalize_agent_set_status($name, PERSONALIZE_STATUS_COMPLETED);
+        drush_print("Legacy campaign $name status set to completed");
+      }
+      continue;
+    }
+    $option_sets = personalize_option_set_load_by_agent($name);
+    if (empty($option_sets)) {
+      continue;
+    }
+    $os = reset($option_sets);
+    $parent_name = $parents[$name];
+    // The goals will be on the parent personalization, not the test itself.
+    $goals = personalize_goal_load_by_conditions(array('agent' => $parent_name));
+    $goal_names = array();
+    foreach ($goals as $goal) {
+      $goal_names[] = $goal->action;
+    }
+
+    $archived = acquia_lift_archive_test_report($lift_api, $agent, $goal_names);
+    if (!$archived) {
+      drush_print("There was a problem archiving test $name. Skipping", 0, STDERR);
+      $errors++;
+      continue;
+    }
+    // We need to find which audience in the parent personalization this test
+    // is running for.
+    $parent_os = acquia_lift_get_option_set_for_targeting($parent_name);
+    foreach ($parent_os->targeting as $audience => $targeting) {
+      if (isset($targeting['osid']) && $targeting['osid'] == $os->osid) {
+        $audience_name = $audience;
+        break;
+      }
+    }
+    if (isset($audience_name)) {
+      drush_print("Stopping test for audience $audience_name of personalization $parent_name");
+      acquia_lift_stop_test_for_audience($parent_personalizations[$parent_name], $audience_name);
+    }
+    else {
+      drush_print("Could not find audience for $name, setting status to completed");
+      // At least just set the status of the test to completed.
+      personalize_agent_set_status($name, PERSONALIZE_STATUS_COMPLETED);
+    }
+  }
+  if (!$errors) {
+    // Finally, enable V2 :)
+    variable_set('acquia_lift_v2_enabled', TRUE);
+  }
+  else {
+    drush_print("V2 has not been enabled due to errors archiving some tests. Please fix the issue and try again.");
+  }
+}
+
+/**
+ * Pulls all reports for a V1 and puts them in a json file.
+ * @param \AcquiaLiftAPI $lift_api
+ * @param $agent
+ * @param $goals
+ * @param null $destination
+ * @return bool
+ */
+function acquia_lift_archive_test_report(AcquiaLiftAPI $lift_api, $agent, $goals, $destination = NULL) {
+  $message = "\n" . dt('Archiving test ') . $agent->machine_name . " ...";
+  drush_print($message);
+  try {
+    // Use today's date as the report end date unless the campaign has been
+    // completed.
+    $end_ts = time();
+    $status = personalize_agent_get_status($agent->machine_name);
+    if ($status == PERSONALIZE_STATUS_COMPLETED) {
+      $end_ts = personalize_agent_get_stop_date($agent->machine_name);
+    }
+    $end = date('Y-m-d', $end_ts);
+    if (is_numeric($agent->started) && $agent->started > 0) {
+      $start = date('Y-m-d', $agent->started);
+    }
+    else {
+      // Just take two weeks off the end date.
+      $start_ts = $end_ts - (14 * 86400);
+      $start = date('Y-m-d', $start_ts);
+    }
+
+    $json = '{"reports":{"agent-status":';
+    // ...get agent status report
+    $agent_status_report = $lift_api->getAgentStatusReport(array($agent->machine_name), NULL, TRUE);
+    $json .= $agent_status_report;
+    $json .= ', "confidence":';
+    // ...get confidence report, aggregated.
+    $conf_report_aggr = $lift_api->getConfidenceReport($agent->machine_name, $start, $end, NULL, array('aggregated-over-dates' => TRUE), TRUE);
+    $json .= $conf_report_aggr;
+    $json .= ', "confidence_detail":';
+    // ...get confidence report, unaggregated.
+    $conf_report_detail = $lift_api->getConfidenceReport($agent->machine_name, $start, $end, NULL, array('aggregated-over-dates' => FALSE), TRUE);
+    $json .= $conf_report_detail;
+    foreach ($goals as $goal) {
+      $json .= ', "confidence_' . $goal . '":';
+      // ...get confidence report for goal, aggregated.
+      $json .= $lift_api->getConfidenceReport($agent->machine_name, $start, $end, NULL, array('aggregated-over-dates' => TRUE, 'goal' => $goal), TRUE);
+      $json .= ', "confidence_' . $goal . '_detail":';
+      // ...get confidence report for goal, unaggregated.
+      $json .= $lift_api->getConfidenceReport($agent->machine_name, $start, $end, NULL, array('aggregated-over-dates' => FALSE, 'goal' => $goal), TRUE);
+    }
+    $json .= '}}';
+  }
+  catch (AcquiaLiftNotFoundException $e) {
+    // If the report cannot be found, there's nothing to be archived... all good.
+    return TRUE;
+  }
+  catch (AcquiaLiftException $e) {
+    // Something else went wrong and we should not proceed.
+    drush_print($e->getMessage());
+    return FALSE;
+  }
+
+  if ($destination == NULL) {
+    $destination = variable_get('file_public_path', conf_path() . DIRECTORY_SEPARATOR . 'files');
+  }
+
+  $file_name = "$destination/{$agent->machine_name}-reports.json";
+  if (file_exists($file_name)) {
+    unlink($file_name);
+  }
+  if (file_put_contents($file_name, $json)) {
+    drush_print("Report for {$agent->machine_name} archived successfully");
+    variable_set('acquia_lift_report_source_' . $agent->machine_name, $file_name);
+    return TRUE;
+  }
+  return FALSE;
 }
 
 /**

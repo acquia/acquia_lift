@@ -173,11 +173,12 @@ QUnit.test("Goals queue", function(assert) {
   // testing the queue process here.  Tests specific to goals processing with
   // handle deeper checkers of parameters, etc.
   assert.equal(sinon.requests.length, 1, 'The api was called once.');
+
   var parsed = parseUri(sinon.requests[0].url);
   assert.equal(parsed.host, 'api.example.com', 'API host is correct.');
-  assert.equal(parsed.path, '/feedback', 'API path is correct.');
+  assert.equal(parsed.path, '/someOwner/' + agentName + '/goal/' + testGoal1.goal, 'API path is correct.');
 
-  sinon.requests[0].respond(200, { "Content-Type": "application/json" }, '{ "session": "some-session-ID", "feedback_id":"some-string", "submitted":"12345566"}');
+  sinon.requests[0].respond(200, { "Content-Type": "application/json" }, '{"agent": "' + agentName + '", "session": "some-session-ID", "reward":"' + testGoal1.reward + '", "goal":"' + testGoal1.goal + '"}');
   assert.equal(Drupal.acquiaLiftUtility.Queue.remove.callCount, 1, 'The remove call was made once.');
   var removeCall = Drupal.acquiaLiftUtility.Queue.remove.getCall(0);
   assert.ok(item.equals(removeCall.args[0]), 'The remove call was made with the goal item previously added.');
@@ -187,39 +188,39 @@ QUnit.test("Goals queue", function(assert) {
   Drupal.acquiaLiftUtility.GoalQueue.addGoal(agentName, testGoal2);
   assert.ok(Drupal.acquiaLiftUtility.Queue.add.calledWith(queueData2), 'The second goal was added to the queue.');
   assert.equal(sinon.requests.length, 2, 'Another api call was made.');
-  sinon.requests[1].respond(500, {"Content-Type": "application/json"}, '{"status": "Server error"}');
+  sinon.requests[1].respond(500, {"Content-Type": "application/json"}, '[{"status": 500}]');
   assert.equal(Drupal.acquiaLiftUtility.Queue.remove.callCount, 1, 'The remove call was not called again.');
   var nextGoal = Drupal.acquiaLiftUtility.Queue.getNext();
   assert.equal(nextGoal.getNumberTried(), 1, 'The goal has been tried once.');
   assert.deepEqual(nextGoal.getData(), queueData2, 'The second goal is still in the queue.');
-  var req;
+
   // Execute tries 2 through 4 (max retries = 5).
   for (var i = 2; i < 5; i++) {
     Drupal.acquiaLiftUtility.GoalQueue.processQueue(true);
-    req = sinon.requests.pop();
-    req.respond(500, {"Content-Type": "application/json"}, '{"status": "Server error"}');
+    var req = sinon.requests.pop();
+    req.respond(500, {"Content-Type": "application/json"}, '[{"status": 500}]');
     assert.equal(Drupal.acquiaLiftUtility.Queue.remove.callCount, 1, 'The remove call was not called again.');
-    nextGoal = Drupal.acquiaLiftUtility.Queue.getNext();
+    var nextGoal = Drupal.acquiaLiftUtility.Queue.getNext();
     assert.equal(nextGoal.getNumberTried(), i, 'The goal has been tried ' + i + ' times.');
     assert.deepEqual(nextGoal.getData(), queueData2, 'The second goal is still in the queue.');
   }
 
   // The fifth failure should result in the item being removed from the queue.
   Drupal.acquiaLiftUtility.GoalQueue.processQueue(true);
-  req = sinon.requests.pop();
-  req.respond(500, {"Content-Type": "application/json"}, '{"status": "Server error"}');
+  var req = sinon.requests.pop();
+  req.respond(500, {"Content-Type": "application/json"}, '[{"status": 500}]');
   assert.equal(Drupal.acquiaLiftUtility.Queue.remove.callCount, 2, 'The remove call was called again.');
-  nextGoal = Drupal.acquiaLiftUtility.Queue.getNext();
+  var nextGoal = Drupal.acquiaLiftUtility.Queue.getNext();
   assert.ok(nextGoal == null, 'There are no more items in the queue.');
 
   // Now add a goal that fails and is not retryable.
   Drupal.acquiaLiftUtility.GoalQueue.addGoal(agentName, testGoal3);
   assert.ok(Drupal.acquiaLiftUtility.Queue.add.calledWith(queueData3), 'The third goal was added to the queue.');
   var request = sinon.requests.pop();
-  request.respond(202, { "Content-Type": "*/*" }, '{ "session": "some-session-ID", "submitted": "12345678"}');
+  request.respond(202, { "Content-Type": "*/*" }, '{"agent": "' + agentName + '", "session": "some-session-ID", "reward":"' + testGoal3.reward + '", "goal":"' + testGoal3.goal + '"}');
   // This should return not retryable and be deleted.
   assert.equal(Drupal.acquiaLiftUtility.Queue.remove.callCount, 3, 'The remove call was called for non-retryable goal.');
-  nextGoal = Drupal.acquiaLiftUtility.Queue.getNext();
+  var nextGoal = Drupal.acquiaLiftUtility.Queue.getNext();
   assert.ok(nextGoal == null, 'There are no more items in the queue.');
 
   // Clean up after the sinon wrappers.
@@ -231,38 +232,46 @@ QUnit.test("Goals queue", function(assert) {
 QUnit.module("Acquia Lift service calls", {
   'setup': function() {
     initializeLiftSettings();
-  },
-  'teardown': function() {
-    sinon.restore();
   }
 });
 
 QUnit.test('Make decision', function(assert) {
   var xhr = sinon.useFakeXMLHttpRequest();
   var requests = sinon.requests = [];
+  initializeLiftSettings();
 
   xhr.onCreate = function (request) {
     requests.push(request);
   };
 
   var callback = sinon.spy();
-  Drupal.acquiaLiftLearn.getDecision('my-agent', {'first-decision': ['option-1', 'option-2']}, 'my-decision-point', {'first-decision': 0}, callback);
+  Drupal.acquiaLift.getDecision('my-agent', {'first-decision': ['option-1', 'option-2']}, 'my-decision-point', {'first-decision': 0}, callback);
 
   equal(sinon.requests.length, 1);
   var parsed = parseUri(sinon.requests[0].url);
-  equal(parsed.host, 'api.example.com');
-  equal(parsed.path, "/play");
-  equal(parsed.queryKey.client_id, "ohai");
-  equal(parsed.queryKey.user_hash, "some-session-ID");
-  equal(parsed.queryKey.campaign_id, "my-agent");
-  equal(parsed.queryKey.application_hash, "drupal");
 
-  requests[0].respond(200, { "Content-Type": "application/json" }, '{"outcome": [{"decision_set_id": "first-decision", "external_id":"option-2"}], "session": "some-session-ID"}');
+  equal(parsed.host, 'api.example.com');
+  equal(parsed.path, "/someOwner/my-agent/decisions/first-decision:option-1,option-2");
+  equal(parsed.queryKey.apikey, "xyz123");
+  equal(parsed.queryKey.session, "some-session-ID");
+
+  requests[0].respond(200, { "Content-Type": "application/json" }, '{"decisions": {"first-decision":"option-2"}, "session": "some-session-ID"}');
   ok(callback.called);
-  assert.deepEqual(callback.args[0][0], {"first-decision": "option-2"});
+
+  cleanUp();
 });
 
-QUnit.test('Multiple decisions', function(assert) {
+QUnit.test('Multiple decisions no batching', function(assert) {
+  setSessionID(true);
+  testMultipleDecisionsNoBatch(assert, true);
+});
+
+QUnit.test('Multiple decisions no session', function(assert) {
+  setSessionID(false);
+  testMultipleDecisionsNoBatch(assert, false);
+});
+
+function testMultipleDecisionsNoBatch(assert, known) {
   var xhr = sinon.useFakeXMLHttpRequest();
   var requests = sinon.requests = [];
 
@@ -271,35 +280,125 @@ QUnit.test('Multiple decisions', function(assert) {
   };
 
   var callback = sinon.spy();
-  Drupal.acquiaLiftLearn.getDecision('my-agent', {'first-decision': ['option-1', 'option-2']}, 'my-decision-point', {'first-decision': 0}, callback);
-  requests[0].respond(200, { "Content-Type": "application/json" }, '{"outcome": [{"decision_set_id": "first-decision", "external_id":"option-2"}], "session": "some-session-ID"}');
+  Drupal.acquiaLift.getDecision('my-agent', {'first-decision': ['option-1', 'option-2']}, 'my-decision-point', {'first-decision': 0}, callback);
+  requests[0].respond(200, { "Content-Type": "application/json" }, '{"decisions": {"first-decision":"option-2"}, "session": "some-session-ID"}');
 
-  Drupal.acquiaLiftLearn.getDecision('my-agent', {'second-decision': ['option-1', 'option-2']}, 'other-decision-point', {'second-decision': 0}, callback);
-  requests[1].respond(200, { "Content-Type": "application/json" }, '{"outcome": [{"decision_set_id": "second-decision", "external_id":"option-1}], "session": "some-session-ID"}');
+  Drupal.acquiaLift.getDecision('my-agent', {'second-decision': ['option-1', 'option-2']}, 'other-decision-point', {'second-decision': 0}, callback);
+  requests[1].respond(200, { "Content-Type": "application/json" }, '{"decisions": {"second-decision":"option-2"}, "session": "some-session-ID"}');
 
   equal(sinon.requests.length, 2);
 
   var parsedUri1 = parseUri(sinon.requests[0].url);
   equal(parsedUri1.host, 'api.example.com');
-  equal(parsedUri1.path, "/play");
-  equal(parsedUri1.queryKey.client_id, "ohai");
-  equal(parsedUri1.queryKey.user_hash, "some-session-ID");
-  equal(parsedUri1.queryKey.campaign_id, "my-agent");
-  equal(parsedUri1.queryKey.application_hash, "drupal");
+  equal(parsedUri1.path, "/someOwner/my-agent/decisions/first-decision:option-1,option-2");
+  equal(parsedUri1.queryKey.apikey, "xyz123");
+  if (known) {
+    equal(parsedUri1.queryKey.session, "some-session-ID");
+  }
 
   var parsedUri2 = parseUri(sinon.requests[1].url);
   equal(parsedUri2.host, 'api.example.com');
-  equal(parsedUri2.path, "/play");
-  equal(parsedUri2.queryKey.client_id, "ohai");
-  equal(parsedUri2.queryKey.user_hash, "some-session-ID");
-  equal(parsedUri2.queryKey.campaign_id, "my-agent");
-  equal(parsedUri2.queryKey.application_hash, "drupal");
+  equal(parsedUri2.path, "/someOwner/my-agent/decisions/second-decision:option-1,option-2");
+  equal(parsedUri2.queryKey.apikey, "xyz123");
+  equal(parsedUri2.queryKey.session, "some-session-ID");
 
   ok(callback.callCount, 2);
-  assert.deepEqual(callback.args[0][0], {"first-decision": "option-2"});
-  assert.deepEqual(callback.args[1][0], {"second-decision": "option-1"});
 
+  cleanUp();
+}
+
+QUnit.test('Make batched decisions', function(assert) {
+  setSessionID(true);
+  testBatchDecisions(assert, true);
 });
+
+QUnit.test('Make batched decisions no session', function(assert) {
+  setSessionID(false);
+  testBatchDecisions(assert, false);
+});
+
+function testBatchDecisions(assert, known) {
+  Drupal.settings.acquia_lift.batchMode = true;
+  var xhr = sinon.useFakeXMLHttpRequest();
+  var requests = sinon.requests = [];
+
+  xhr.onCreate = function (request) {
+    requests.push(request);
+  };
+
+  var callback = sinon.spy();
+  // Fire off two requests for decisions - only one HTTP request should be made.
+  Drupal.acquiaLift.getDecision('my-agent', {'first-decision': ['option-1', 'option-2']}, 'my-decision-point', {'first-decision': 0}, callback);
+  Drupal.acquiaLift.getDecision('my-agent', {'second-decision': ['option-1', 'option-2']}, 'other-decision-point', {'second-decision': 0}, callback);
+  // This event lets the Lift js know there are no more decisions to wait for.
+  $(document).trigger('personalizeDecisionsEnd');
+  // Confirm a single request is made with the expected request body.
+  assert.equal(sinon.requests.length, 1);
+
+  // Mock a response from the server so that the request completes.
+  requests[0].respond(200, { "Content-Type": "application/json" }, '[{"status": 200, "data": {"agent": "my-agent", "decisions": {"first-decision":"option-2"}, "session": "some-session-ID"}}, {"status": 200, "data": {"agent": "my-agent", "decisions": {"second-decision":"option-2"}, "session": "some-session-ID"}}]');
+  var parsedUri = parseUri(sinon.requests[0].url);
+  var requestBody = JSON.parse(sinon.requests[0].requestBody);
+  if (known) {
+    var expectedRequestBody = [
+      {
+        'agent': 'my-agent',
+        'choices': "first-decision:option-1,option-2",
+        'query': {
+          '_t': 0,
+          'apikey': 'xyz123',
+          'point': 'my-decision-point',
+          'session': 'some-session-ID'
+        },
+        'type': 'decisions'
+      },
+      {
+        'agent': 'my-agent',
+        'choices': "second-decision:option-1,option-2",
+        'query': {
+          '_t': 0,
+          'apikey': 'xyz123',
+          'point': 'other-decision-point',
+          'session': 'some-session-ID'
+        },
+        'type': 'decisions'
+      }
+    ];
+  } else {
+    var expectedRequestBody = [
+      {
+        'agent': 'my-agent',
+        'choices': "first-decision:option-1,option-2",
+        'query': {
+          '_t': 0,
+          'apikey': 'xyz123',
+          'point': 'my-decision-point'
+        },
+        'type': 'decisions'
+      },
+      {
+        'agent': 'my-agent',
+        'choices': "second-decision:option-1,option-2",
+        'query': {
+          '_t': 0,
+          'apikey': 'xyz123',
+          'point': 'other-decision-point'
+        },
+        'type': 'decisions'
+      }
+    ];
+  }
+  assert.deepEqual(requestBody, expectedRequestBody);
+  assert.equal(parsedUri.host, 'api.example.com');
+  assert.equal(parsedUri.path, "/someOwner/-/batch");
+  if (known) {
+    assert.equal(parsedUri.queryKey.session, "some-session-ID");
+  }
+
+  assert.ok(callback.called);
+
+  cleanUp();
+}
 
 QUnit.test('Send goal', function(assert) {
   var xhr = sinon.useFakeXMLHttpRequest();
@@ -309,28 +408,100 @@ QUnit.test('Send goal', function(assert) {
     requests.push(request);
   };
 
-  Drupal.acquiaLiftLearn.sendGoal('my-agent', 'some-goal', 2);
+  Drupal.acquiaLift.sendGoal('my-agent', 'some-goal', 2);
 
   assert.equal(sinon.requests.length, 1);
-  console.log(sinon.requests[0]);
-  var parsedUrl = parseUri(sinon.requests[0].url);
-  var parsedBody = JSON.parse(sinon.requests[0].requestBody);
-  assert.equal(parsedUrl.host, 'api.example.com');
-  assert.equal(parsedUrl.path, "/feedback");
-  assert.equal(parsedUrl.queryKey.client_id, "ohai");
-  assert.equal(parsedBody.user_hash, "some-session-ID");
-  assert.equal(parsedBody.application_hash, "drupal");
-  assert.equal(parsedBody.campaign_id, "my-agent");
-  assert.equal(parsedBody.goal_id, "some-goal");
-  assert.equal(parsedBody.score, 2);
+  var parsed = parseUri(sinon.requests[0].url);
+  assert.equal(parsed.host, 'api.example.com');
+  assert.equal(parsed.path, "/someOwner/my-agent/goal/some-goal");
+  assert.equal(parsed.queryKey.apikey, "xyz123");
+  // For some reason the URI parser has trouble with the first param in a querystring
+  assert.ok(parsed.query.indexOf('reward=2') != -1);
 
-  requests[0].respond(200, { "Content-Type": "application/json" }, '{"session": "some-session-ID", "feedback_id": "some-string", "submitted": "12345678"}');
+  requests[0].respond(200, { "Content-Type": "application/json" }, '{"agent": "my-agent", "session": "some-session-ID", "reward":2, "goal": "some-goal"}');
 
+  cleanUp();
+});
+
+QUnit.test('Send goal in batch mode', function(assert) {
+  Drupal.settings.acquia_lift.batchMode = true;
+  var xhr = sinon.useFakeXMLHttpRequest();
+  var requests = sinon.requests = [];
+
+  xhr.onCreate = function (request) {
+    requests.push(request);
+  };
+
+  Drupal.acquiaLift.sendGoal('my-agent', 'some-goal', 2);
+
+  assert.equal(sinon.requests.length, 1);
+  var requestBody = JSON.parse(sinon.requests[0].requestBody);
+  var expectedRequestBody = [
+    {
+      'agent': 'my-agent',
+      'goal': "some-goal",
+      'query': {
+        '_t': 0,
+        'apikey': 'xyz123',
+        'reward': 2,
+        'session': 'some-session-ID'
+      },
+      'type': 'goal'
+    },
+  ];
+  assert.deepEqual(expectedRequestBody, requestBody);
+  var parsedUri = parseUri(sinon.requests[0].url);
+  console.log(parsedUri);
+
+  assert.equal(parsedUri.host, 'api.example.com');
+  assert.equal(parsedUri.path, "/someOwner/-/batch");
+
+  requests[0].respond(200, { "Content-Type": "application/json" }, '[{"status": 200, "data": {"agent": "my-agent", "session": "some-session-ID", "reward":2, "goal":"some-goal"}}]');
+
+  cleanUp();
+});
+
+QUnit.test('Make decision after goal without session', function(assert) {
+  var xhr = sinon.useFakeXMLHttpRequest();
+  var requests = sinon.requests = [];
+  initializeLiftSettings();
+
+  xhr.onCreate = function (request) {
+    requests.push(request);
+  };
+
+  // Update so that no session id is returned from the module.
+  setSessionID(false);
+
+  // Send goal.
+  Drupal.acquiaLift.sendGoal('my-agent', 'some-goal', 2);
+
+  assert.equal(sinon.requests.length, 1);
+
+  // Now make decision requests and ensure that the session id is stored.
+  var callback = sinon.spy();
+  Drupal.acquiaLift.getDecision('my-agent', {'first-decision': ['option-1', 'option-2']}, 'my-decision-point', {'first-decision': 0}, callback);
+  requests[1].respond(200, { "Content-Type": "application/json" }, '{"decisions": {"first-decision":"option-2"}, "session": "12345678"}');
+
+  // The second decision should include the new session returned from the server.
+  Drupal.acquiaLift.getDecision('my-agent', {'second-decision': ['option-1', 'option-2']}, 'other-decision-point', {'second-decision': 0}, callback);
+  var parsedUri2 = parseUri(sinon.requests[2].url);
+  equal(parsedUri2.host, 'api.example.com');
+  equal(parsedUri2.path, "/someOwner/my-agent/decisions/second-decision:option-1,option-2");
+  equal(parsedUri2.queryKey.apikey, "xyz123");
+  equal(parsedUri2.queryKey.session, "12345678");
+
+  requests[2].respond(200, { "Content-Type": "application/json" }, '{"decisions": {"second-decision":"option-2"}, "session": "12345678"}');
+  equal(callback.callCount, 2);
+  equal(sinon.requests.length, 3);
+
+  cleanUp();
 });
 
 QUnit.test('Page load goals queue processing', function(assert) {
   var xhr = sinon.useFakeXMLHttpRequest();
   var requests = sinon.requests = [];
+  initializeLiftSettings();
 
   xhr.onCreate = function (request) {
     requests.push(request);
@@ -360,19 +531,14 @@ QUnit.test('Page load goals queue processing', function(assert) {
 
   // Make sure the correct URL was called.
   assert.equal(sinon.requests.length, 1);
-  var parsedUrl = parseUri(sinon.requests[0].url);
-  assert.equal(parsedUrl.host, 'api.example.com');
-  assert.equal(parsedUrl.path, "/feedback");
-  assert.equal(parsedUrl.queryKey.client_id, "ohai");
-  var parsedBody = JSON.parse(sinon.requests[0].requestBody);
-  console.log(parsedBody);
-  assert.equal(parsedBody.user_hash, "some-session-ID");
-  assert.equal(parsedBody.application_hash, "drupal");
-  assert.equal(parsedBody.campaign_id, "test-agent");
-  assert.equal(parsedBody.goal_id, "goal1");
-  assert.equal(parsedBody.score, 1);
+  var parsed = parseUri(sinon.requests[0].url);
+  assert.equal(parsed.host, 'api.example.com');
+  assert.equal(parsed.path, "/someOwner/test-agent/goal/goal1");
+  assert.equal(parsed.queryKey.apikey, "xyz123");
+  assert.equal(parsed.queryKey.session, "some-session-ID");
+  assert.ok(parsed.query.indexOf('reward=1') != -1);
 
-  requests[0].respond(200, { "Content-Type": "application/json" }, '{ "session": "some-session-ID", "feedback_id": "some-string", "submitted": "12345678"}');
+  requests[0].respond(200, { "Content-Type": "application/json" }, '{"agent": "test-agent", "session": "some-session-ID", "reward":1, "goal": "goal1"}');
 
   // Make sure the cookie queue was emptied.
   assert.ok(Drupal.acquiaLiftUtility.GoalQueue.processQueue.called, 'Process queue was called');
@@ -381,7 +547,8 @@ QUnit.test('Page load goals queue processing', function(assert) {
   queue = readCookieQueue();
   assert.equal(queue.length, 0, 'Goals queue is empty.');
 
-});
+  cleanUp();
+})
 
 // Helper for parsing the ajax request URI
 
@@ -420,28 +587,35 @@ parseUri.options = {
 // Helper function to read the queue cookie contents.
 function readCookieQueue() {
   return $.parseJSON($.cookie('acquiaLiftQueue'));
-}
+};
 
 // Helper function to initialize the lift API settings.
 function initializeLiftSettings() {
+  Drupal.acquiaLift.reset();
   Drupal.settings.personalize = Drupal.settings.personalize || {};
   Drupal.settings.acquia_lift = Drupal.settings.acquia_lift || {};
-  Drupal.settings.acquia_lift.api_class = 'acquiaLiftV2API';
-  Drupal.settings.acquia_lift_learn = Drupal.settings.acquia_lift_learn || {};
-  Drupal.settings.acquia_lift_learn.baseUrl = 'http://api.example.com';
-  Drupal.settings.acquia_lift_learn.clientId = 'ohai';
-  Drupal.settings.acquia_lift_learn.applicationHash = 'drupal';
-
-  TC = {
-    getSessionID : function() {
-      return 'some-session-ID';
-    }
-  };
-  Drupal.personalize.saveSessionID = function(sessionID) {
-
-  };
-  Drupal.personalize.initializeSessionID = function() {
-    return 'some-session-ID';
-  };
+  Drupal.settings.acquia_lift.api_class = 'acquiaLiftAPI';
+  Drupal.settings.acquia_lift.baseUrl = 'http://api.example.com';
+  Drupal.settings.acquia_lift.owner = 'someOwner';
+  Drupal.settings.acquia_lift.apiKey = 'xyz123';
+  Drupal.settings.acquia_lift.stringReplacePattern = '[^A-Za-z0-9_-]';
+  Drupal.settings.acquia_lift.batchMode = 0;
+  setSessionID(true);
 }
 
+// Helper function to mimic a known or unknown session.
+function setSessionID(known) {
+  if (known) {
+    Drupal.personalize.initializeSessionID = function() {
+      return 'some-session-ID';
+    };
+  } else {
+    Drupal.personalize.initializeSessionID = function() { return null };
+  }
+}
+
+// Helper function to clean up after tests.
+function cleanUp() {
+  Drupal.acquiaLift.reset();
+  sinon.restore();
+}

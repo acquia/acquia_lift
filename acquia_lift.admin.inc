@@ -30,8 +30,19 @@ function acquia_lift_admin_form($form, &$form_state) {
       ),
     ),
   );
-  $account_info = variable_get('acquia_lift_account_info', array());
-  $account_info_provided = !empty($account_info['owner_code']) && !empty($account_info['api_key']);
+  $account_info = acquia_lift_get_account_info();
+
+  $account_info_provided = false;
+  $v2 = variable_get('acquia_lift_v2_enabled', false);
+  if ($v2) {
+    if (!empty($account_info['public_key']) && !empty($account_info['private_key'])) {
+      $account_info_provided = true;
+    }
+  }
+  else {
+    $account_info_provided = !empty($account_info['owner_code']) && !empty($account_info['api_key']);
+  }
+
   if ($account_info_provided) {
     // Add a button for checking the connection.
     $form['ping_test_wrapper'] = array(
@@ -50,24 +61,27 @@ function acquia_lift_admin_form($form, &$form_state) {
       ),
       '#limit_validation_errors' => array(),
     );
-    // Add info about number of API calls made last month and current month
-    // to date.
-    try {
-      $api = AcquiaLiftAPI::getInstance(variable_get('acquia_lift_account_info', array()));
-      $ts = time();
-      $calls_last_month = $api->getTotalRuntimeCallsForPreviousMonth($ts);
-      $form['calls_last_month'] = array(
-        '#type' => 'markup',
-        '#markup' => '<div>' . t('Number of API calls made last month: ') . $calls_last_month . '</div>',
-      );
-      $calls_this_month = $api->getTotalRuntimeCallsForMonthToDate($ts);
-      $form['calls_this_month'] = array(
-        '#type' => 'markup',
-        '#markup' => '<div>' . t('Number of API calls made so far this month: ') . $calls_this_month . '</div>',
-      );
-    }
-    catch (Exception $e) {
-      drupal_set_message($e->getMessage());
+
+    if (!$v2) {
+      // Add info about number of API calls made last month and current month
+      // to date.
+      try {
+        $api = AcquiaLiftAPI::getInstance($account_info);
+        $ts = time();
+        $calls_last_month = $api->getTotalRuntimeCallsForPreviousMonth($ts);
+        $form['calls_last_month'] = array(
+          '#type' => 'markup',
+          '#markup' => '<div>' . t('Number of API calls made last month: ') . $calls_last_month . '</div>',
+        );
+        $calls_this_month = $api->getTotalRuntimeCallsForMonthToDate($ts);
+        $form['calls_this_month'] = array(
+          '#type' => 'markup',
+          '#markup' => '<div>' . t('Number of API calls made so far this month: ') . $calls_this_month . '</div>',
+        );
+      }
+      catch (Exception $e) {
+        drupal_set_message($e->getMessage());
+      }
     }
   }
 
@@ -78,54 +92,105 @@ function acquia_lift_admin_form($form, &$form_state) {
     '#collapsible' => TRUE,
     '#collapsed' => $account_info_provided
   );
-  $form['acquia_lift_account_info']['msg'] = array(
-    '#markup' => t("<p>This information is used to link your !acquialift account to Drupal.</p><p>If you are already an Acquia Lift customer, contact Acquia Support to obtain your credentials. Otherwise, contact !advocacyemail to purchase a subscription to the Acquia Lift service.</p>", array('!acquialift' => l(t('Acquia Lift'), 'http://www.acquia.com/products-services/website-personalization', array('attributes' => array('target' => '_blank'))), '!advocacyemail' => l('advocacy@acquia.com', 'mailto:advocacy@acquia.com'))),
-  );
-  $form['acquia_lift_account_info']['owner_code'] = array(
-    '#type' => 'textfield',
-    '#title' => t('Owner Code'),
-    '#default_value' => !empty($account_info['owner_code']) ? $account_info['owner_code'] : '',
-    '#size' => 35,
-    '#maxlength' => 50,
-    '#description' => t("Paste in your Acquia Lift owner code"),
-    '#required' => TRUE,
-  );
-  $form['acquia_lift_account_info']['api_key'] = array(
-    '#type' => 'textfield',
-    '#title' => t('Runtime API Key'),
-    '#default_value' => !empty($account_info['api_key']) ? $account_info['api_key'] : '',
-    '#size' => 35,
-    '#maxlength' => 50,
-    '#description' => t("Paste in your Acquia Lift api key"),
-    '#required' => TRUE,
-  );
-  $form['acquia_lift_account_info']['admin_key'] = array(
-    '#type' => 'textfield',
-    '#title' => t('Admin API Key'),
-    '#default_value' => !empty($account_info['admin_key']) ? $account_info['admin_key'] : '',
-    '#size' => 35,
-    '#maxlength' => 50,
-    '#description' => t("Paste in your Acquia Lift admin key"),
-    '#required' => TRUE,
-  );
-  $form['acquia_lift_account_info']['api_url'] = array(
-    '#type' => 'textfield',
-    '#title' => t('API Server URL'),
-    '#default_value' => !empty($account_info['api_url']) ? $account_info['api_url'] : '',
-    '#field_prefix' => 'http(s)://',
-    '#size' => 35,
-    '#maxlength' => 50,
-    '#description' => t("Paste in your Acquia Lift API URL"),
-    '#required' => TRUE,
-  );
+  // If V2 is enabled, we no longer show the configuration codes
+  if ($v2) {
+    if ($account_info_provided) {
+      $form['acquia_lift_account_info']['msg'] = array(
+        '#markup' => t("<p>We automatically obtained your credentials from your Acquia Account. Everything is good to go!</p>", array(
+          '!acquialift' => l(t('Acquia Lift'), 'http://www.acquia.com/products-services/website-personalization', array('attributes' => array('target' => '_blank'))),
+          '!advocacyemail' => l('advocacy@acquia.com', 'mailto:advocacy@acquia.com')
+        )),
+      );
+      $form['acquia_lift_account_info']['public_key'] = array(
+        '#markup' => t("<p>Public Key: <strong>!publickey</strong></p>", array(
+          '!publickey' => $account_info['public_key']
+        )),
+      );
+      $form['acquia_lift_account_info']['apiurl'] = array(
+        '#markup' => t("<p>API URL: <strong>!apiurl</strong></p>", array(
+          '!apiurl' => $account_info['api_url']
+        )),
+      );
 
-  $form['acquia_lift_profiles_js_path'] = array(
-    '#type' => 'textfield',
-    '#title' => t('Acquia Lift JavaScript path'),
-    '#field_prefix' => 'http(s)://',
-    '#default_value' => variable_get('acquia_lift_profiles_js_path', ''),
-    '#required' => TRUE,
-  );
+      // Add in the JS path.
+      $public_key_desc = false;
+      if ($account_info['js_path'] != variable_get('acquia_lift_profiles_js_path', '')) {
+        $public_key_desc = t("Suggested: !js_path", array('!js_path' => $account_info['js_path']));
+      }
+      $form['acquia_lift_profiles_js_path'] = array(
+        '#type' => 'textfield',
+        '#title' => t('Acquia Lift JavaScript path'),
+        '#field_prefix' => 'http(s)://',
+        '#default_value' => variable_get('acquia_lift_profiles_js_path', $account_info['js_path']),
+        '#required' => TRUE,
+        '#description' => $public_key_desc ? $public_key_desc : false,
+      );
+    }
+    else {
+      $form['acquia_lift_account_info']['msg'] = array(
+        '#markup' => t("<p>It doesn't look like we could find your credentials. Have you enabled and configured the Acquia Connector module? Please contact support if you have purchased Acquia Lift and are connected with the Acquia Connector, otherwise, contact !advocacyemail to purchase a subscription to the !acquialift service.</p>", array(
+          '!acquialift' => l(t('Acquia Lift'), 'http://www.acquia.com/products-services/website-personalization', array('attributes' => array('target' => '_blank'))),
+          '!advocacyemail' => l('advocacy@acquia.com', 'mailto:advocacy@acquia.com')
+        )),
+      );
+    }
+  }
+  else {
+    $form['acquia_lift_account_info']['msg'] = array(
+      '#markup' => t("<p>This information is used to link your !acquialift account to Drupal.</p><p>If you are already an Acquia Lift customer, contact Acquia Support to obtain your credentials. Otherwise, contact !advocacyemail to purchase a subscription to the Acquia Lift service.</p>", array('!acquialift' => l(t('Acquia Lift'), 'http://www.acquia.com/products-services/website-personalization', array('attributes' => array('target' => '_blank'))), '!advocacyemail' => l('advocacy@acquia.com', 'mailto:advocacy@acquia.com'))),
+    );
+    $form['acquia_lift_account_info']['owner_code'] = array(
+      '#type' => 'textfield',
+      '#title' => t('Owner Code'),
+      '#default_value' => !empty($account_info['owner_code']) ? $account_info['owner_code'] : '',
+      '#size' => 35,
+      '#maxlength' => 50,
+      '#description' => t("Paste in your Acquia Lift owner code"),
+      '#required' => TRUE,
+    );
+
+    $form['acquia_lift_account_info']['api_key'] = array(
+      '#type' => 'textfield',
+      '#title' => t('Runtime API Key'),
+      '#default_value' => !empty($account_info['api_key']) ? $account_info['api_key'] : '',
+      '#size' => 35,
+      '#maxlength' => 50,
+      '#description' => t("Paste in your Acquia Lift api key"),
+      '#required' => TRUE,
+    );
+
+    $form['acquia_lift_account_info']['admin_key'] = array(
+      '#type' => 'textfield',
+      '#title' => t('Admin API Key'),
+      '#default_value' => !empty($account_info['admin_key']) ? $account_info['admin_key'] : '',
+      '#size' => 35,
+      '#maxlength' => 50,
+      '#description' => t("Paste in your Acquia Lift admin key"),
+      '#required' => TRUE,
+    );
+
+    $form['acquia_lift_account_info']['api_url'] = array(
+      '#type' => 'textfield',
+      '#title' => t('API Server URL'),
+      '#default_value' => !empty($account_info['api_url']) ? $account_info['api_url'] : '',
+      '#field_prefix' => 'http(s)://',
+      '#size' => 35,
+      '#maxlength' => 50,
+      '#description' => t("Paste in your Acquia Lift API URL"),
+      '#required' => TRUE,
+    );
+
+    $form['acquia_lift_profiles_js_path'] = array(
+      '#type' => 'textfield',
+      '#title' => t('Acquia Lift JavaScript path'),
+      '#field_prefix' => 'http(s)://',
+      '#default_value' => variable_get('acquia_lift_profiles_js_path', ''),
+      '#required' => TRUE,
+    );
+
+  }
+
+
   $form['acquia_lift_confidence_measure'] = array(
     '#type' => 'textfield',
     '#title' => t('Confidence measure'),
@@ -136,12 +201,13 @@ function acquia_lift_admin_form($form, &$form_state) {
     '#description' => t('The confidence percentage at which a test is considered statistically significant.'),
     '#element_validate' => array('element_validate_number'),
   );
+  $default_max_days = variable_get('acquia_lift_v2_enabled', FALSE) ? 60 : 14;
   $form['acquia_lift_report_max_days'] = array(
     '#type' => 'textfield',
     '#title' => t('Reporting history duration'),
     '#size' => 3,
     '#required' => TRUE,
-    '#default_value' => variable_get('acquia_lift_report_max_days', 14),
+    '#default_value' => variable_get('acquia_lift_report_max_days', $default_max_days),
     '#field_suffix' => t(' days'),
     '#description' => t('The maximum number of days for which to show reporting history.'),
     '#element_validate' => array('element_validate_integer_positive'),
@@ -178,12 +244,14 @@ function acquia_lift_batch_sync_form_submit($form, &$form_state) {
  * Submit callback for the ping test button.
  */
 function acquia_lift_ping_test_submit($form, &$form_state) {
-  $api = AcquiaLiftAPI::getInstance(variable_get('acquia_lift_account_info', array()));
-  if ($api->pingTest()) {
+  $account_info = acquia_lift_get_account_info();
+  $version = acquia_lift_get_test_agent_plugin();
+  $api = AcquiaLiftAPIClientFactory::create($account_info, $version);
+  if ($api->ping()) {
     drupal_set_message(t('Successfully connected to the Acquia Lift service'));
   }
   else {
-    drupal_set_message(t('There was a problem connecting to the Acquia Lift service. Please check your credentials'), 'error');
+    drupal_set_message(t('There was a problem connecting to the Acquia Lift service. Please check your subscription or ask Acquia Support for help.'), 'error');
   }
 }
 
@@ -204,19 +272,21 @@ function acquia_lift_ping_test_ajax_callback($form, &$form_state) {
  * Validation callback for the Acquia Lift admin form.
  */
 function acquia_lift_admin_form_validate($form, &$form_state) {
-  if (!AcquiaLiftAPI::codeIsValid($form_state['values']['acquia_lift_account_info']['owner_code'])) {
-    form_set_error('acquia_lift_account_info][owner_code', 'You must enter a valid owner code');
-  }
-  if (!valid_url($form_state['values']['acquia_lift_account_info']['api_url'])) {
-    form_set_error('acquia_lift_account_info][api_url', t('You must enter a valid API URL'));
+  // Only do those validations if V2 is not enabled
+  if (!variable_get('acquia_lift_v2_enabled', false)) {
+    if (!AcquiaLiftAPI::codeIsValid($form_state['values']['acquia_lift_account_info']['owner_code'])) {
+      form_set_error('acquia_lift_account_info][owner_code', 'You must enter a valid owner code');
+    }
+    if (!valid_url($form_state['values']['acquia_lift_account_info']['api_url'])) {
+      form_set_error('acquia_lift_account_info][api_url', t('You must enter a valid API URL'));
+    }
+    // Strip any scheme from the URLs.
+    $form_state['values']['acquia_lift_account_info']['api_url'] = preg_replace('/(^[a-z]+:\/\/)/i', '', $form_state['values']['acquia_lift_account_info']['api_url']);
   }
   if (!valid_url($form_state['values']['acquia_lift_profiles_js_path'])) {
     form_set_error('acquia_lift_profiles_js_path', t('You must enter a valid JavaScript path'));
   }
-  // Strip any scheme from the URLs.
-  $form_state['values']['acquia_lift_account_info']['api_url'] = preg_replace('/(^[a-z]+:\/\/)/i', '', $form_state['values']['acquia_lift_account_info']['api_url']);
   $form_state['values']['acquia_lift_profiles_js_path'] = preg_replace('/(^[a-z]+:\/\/)/i', '', $form_state['values']['acquia_lift_profiles_js_path']);
-
   if ($form_state['values']['acquia_lift_confidence_measure'] <= 0 || $form_state['values']['acquia_lift_confidence_measure'] >= 100) {
     form_set_error('acquia_lift_confidence_measure', t('Confidence measure must be a value between 0 and 100.'));
   }
@@ -982,7 +1052,9 @@ function acquia_lift_report_custom(&$form_state, $agent_data, $legacy = FALSE, $
       'class' => array('acquia-lift-report-section-options'),
     ),
     '#tree' => FALSE,
-    'goal' => acquia_lift_report_goal_dropdown($goals_agent, $selected_goal),
+    // @todo Uncomment this once we are recording when new goals get added to
+    //   running personalizations.
+    //'goal' => acquia_lift_report_goal_dropdown($goals_agent, $selected_goal),
     'metric' => acquia_lift_report_experiment_metric_dropdown($selected_metric),
     'submit' => array(
       '#type' => 'submit',
@@ -1145,7 +1217,8 @@ function acquia_lift_get_report_dates_for_agent($agent_data) {
  */
 function acquia_lift_adjust_report_start_date($start, $end) {
   $num_days = floor(($end - $start) / 86400);
-  $max_days = variable_get('acquia_lift_report_max_days', 14);
+  $default_max_days = variable_get('acquia_lift_v2_enabled', FALSE) ? 60 : 14;
+  $max_days = variable_get('acquia_lift_report_max_days', $default_max_days);
   if ($num_days <= $max_days) {
     return $start;
   }
@@ -1713,6 +1786,7 @@ function acquia_lift_target_set_status($agent_data, $next_status) {
 
     }
     catch (Exception $e) {
+      watchdog('Acquia Lift', $e->getMessage());
       return FALSE;
     }
   }

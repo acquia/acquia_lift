@@ -412,18 +412,22 @@
      *   - a boolean indicating if the processing was successful.
      */
     function processGoalItem(queueItem, callback) {
-      var api = Drupal.acquiaLiftAPI.getInstance();
+      var api_class = Drupal.settings.acquia_lift.api_class;
+      if (!Drupal.hasOwnProperty(api_class)) {
+        throw new Error('Cannot communicate with Lift API.');
+      }
+      acquiaLiftAPI = Drupal[api_class].getInstance();
       var goal = convertQueueDataToGoal(queueItem.getData());
       if (!goal.agentName || !goal.options) {
         throw new Error('Invalid goal data.');
       }
-      api.goal(goal.agentName, goal.options, function(accepted, session, retryable) {
+      acquiaLiftAPI.goal(goal.agentName, goal.options, function(accepted, session, retryable) {
         if (callback && typeof callback === 'function') {
           callback(queueItem, accepted, session, retryable);
         }
       });
-      if (api.isManualBatch()) {
-        api.batchSend();
+      if (typeof acquiaLiftAPI.isManualBatch == "function" && acquiaLiftAPI.isManualBatch()) {
+        acquiaLiftAPI.batchSend();
       }
     }
 

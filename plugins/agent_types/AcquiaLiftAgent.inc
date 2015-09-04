@@ -35,17 +35,27 @@ class AcquiaLiftAgent extends PersonalizeAgentBase implements PersonalizeAgentGo
    */
   public static function create($agent_data) {
     try {
-      $acquia_lift_api = AcquiaLiftAPI::getInstance(variable_get('acquia_lift_account_info', array()));
+      $acquia_lift_api = self::getAPIInstance();
       $status = personalize_agent_get_status($agent_data->machine_name);
       $config = array(
         'confidence_measure' => variable_get('acquia_lift_confidence_measure', 95),
       );
+
       return new static($agent_data->machine_name, $agent_data->label, $agent_data->data, $status, !empty($agent_data->started) ? $agent_data->started : NULL, $acquia_lift_api, $config);
     }
     catch (AcquiaLiftException $e) {
       watchdog('Acquia Lift', 'Unable to instantiate Acquia Lift Agent');
       return NULL;
     }
+  }
+
+  /**
+   * Implements AcquiaLiftLearningAgentInterface::getAPIInstance().
+   */
+  public static function getAPIInstance() {
+    $account_info = acquia_lift_get_account_info();
+    $acquia_lift_api = AcquiaLiftAPIClientFactory::create($account_info, ACQUIA_LIFT_TESTING_AGENT_V1);
+    return $acquia_lift_api;
   }
 
   /**
@@ -66,7 +76,7 @@ class AcquiaLiftAgent extends PersonalizeAgentBase implements PersonalizeAgentGo
    * Implements PersonalizeAgentInterface::getType();
    */
   public function getType() {
-    return 'acquia_lift';
+    return ACQUIA_LIFT_TESTING_AGENT_V1;
   }
 
   /**
@@ -76,18 +86,6 @@ class AcquiaLiftAgent extends PersonalizeAgentBase implements PersonalizeAgentGo
     $path = drupal_get_path('module', 'acquia_lift');
     return array(
       'js' => array(
-        array(
-          'type' => 'setting',
-          'data' => array(
-            'acquia_lift' => array(
-              'apiKey' => $this->liftAPI->getApiKey(),
-              'owner' => $this->liftAPI->getOwnerCode(),
-              'baseUrl' => $this->liftAPI->getApiUrl(),
-              'stringReplacePattern' => AcquiaLiftAPI::STRING_REPLACE_PATTERN,
-              'batchMode' => FALSE
-            )
-          )
-        ),
         // Add the Acquia Lift API js wrapper and the Acquia Lift integration js.
         $path . '/js/acquia_lift.js' => array('type' => 'file', 'scope' => 'footer', 'defer' => TRUE),
       ),
@@ -112,15 +110,9 @@ class AcquiaLiftAgent extends PersonalizeAgentBase implements PersonalizeAgentGo
   }
 
   /**
-   * Returns the operations needed to sync an agent to Acquia Lift.
-   *
-   * @param $targeting_rule_exists
-   *   Whether the existing agent in Lift has a targeting rule set up that may
-   *   need to be deleted.
-   * @return array
-   *   An array of items representing API calls to be made to Acquia Lift.
+   * Implements AcquiaLiftLearningAgentInterface::getAgentSyncOperations().
    */
-  public function getAgentSyncOperations() {
+  public function getAgentSyncOperations($option_sets, $new_goals, $old_goals = array()) {
     $items = array();
     $acquia_lift_control_rate = 0;
     $acquia_lift_explore_rate = 1;
@@ -152,6 +144,9 @@ class AcquiaLiftAgent extends PersonalizeAgentBase implements PersonalizeAgentGo
       ),
     );
 
+    $decisions = self::convertOptionSetsToDecisions($option_sets);
+    $items = array_merge($items, $this->getDecisionSyncOperations($decisions));
+    $items = array_merge($items, $this->getGoalSyncOperations($old_goals, $new_goals));
     return $items;
   }
 
@@ -235,7 +230,7 @@ class AcquiaLiftAgent extends PersonalizeAgentBase implements PersonalizeAgentGo
    * @return array
    *   An array of items representing API calls to be made to Acquia Lift.
    */
-  public function getDecisionSyncOperations($old_decisions, $new_decisions) {
+  public function getDecisionSyncOperations($new_decisions) {
     $items = array();
     // Save everything in $new_decisions to Acquia Lift.
     foreach ($new_decisions as $point => $decisions) {
@@ -265,50 +260,6 @@ class AcquiaLiftAgent extends PersonalizeAgentBase implements PersonalizeAgentGo
               $choice
             )
           );
-        }
-      }
-    }
-    // Now remove anything that was in $old_decisions but not in
-    // $new_decisions.
-    foreach ($old_decisions as $point => $decisions) {
-      if (!isset($new_decisions[$point])) {
-        $items[] = array(
-          'method' => 'deletePoint',
-          'args' => array(
-            $this->machineName,
-            $point
-          )
-        );
-      }
-      else {
-        foreach ($decisions as $decision_name => $choices) {
-          if (!isset($new_decisions[$point][$decision_name])) {
-            // Delete this decision from the decision point.
-            $items[] = array(
-              'method' => 'deleteDecision',
-              'args' => array(
-                $this->machineName,
-                $point,
-                $decision_name
-              )
-            );
-          }
-          else {
-            foreach ($choices as $choice) {
-              if (!in_array($choice, $new_decisions[$point][$decision_name])) {
-                // Delete this choice from the decision.
-                $items[] = array(
-                  'method' => 'deleteChoice',
-                  'args' => array(
-                    $this->machineName,
-                    $point,
-                    $decision_name,
-                    $choice
-                  )
-                );
-              }
-            }
-          }
         }
       }
     }

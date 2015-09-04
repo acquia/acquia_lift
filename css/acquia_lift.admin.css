@@ -499,7 +499,7 @@ input[type="submit"].acquia-lift-wizard-add:hover {
 }
 
 #edit-variations .el-card:not(.is-compact) .el-card__content {
-  max-height: 200rem;
+  max-height: 2000rem;
 }
 
 .personalize-wizard-section .acquia-lift-preview {

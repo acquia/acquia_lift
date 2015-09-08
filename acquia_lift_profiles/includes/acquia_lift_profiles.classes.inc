@@ -305,10 +305,14 @@ class ALProfilesAPI {
     // First get our Authorization header.
     $headers = array('Accept' => 'application/json');
     $url = $this->generateEndpoint('segments');
-    $auth_header = $this->getAuthHeader('GET', $url, array(), $headers);
+    $params = array();
+    if (!empty($this->customerSite)) {
+      $params['customerSite'] = $this->customerSite;
+    }
+    $auth_header = $this->getAuthHeader('GET', $url, $params, $headers);
     $headers += array('Authorization' => $auth_header);
-
-    $response = $this->httpClient()->get($url, $headers);
+    $querystring = empty($this->customerSite) ? '' : '?customerSite=' . rawurlencode($this->customerSite);
+    $response = $this->httpClient()->get($url . $querystring, $headers);
     if ($response->code != 200 || !isset($response->data)) {
       if ($response->code != 200) {
         $vars = array(

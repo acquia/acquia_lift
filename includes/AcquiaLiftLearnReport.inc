@@ -287,6 +287,10 @@ class AcquiaLiftLearnReport extends AcquiaLiftReportBase {
         $val = $results['total_goals_value_explore'];
         $rate = $count > 0 ? ($goals / $count) : 0;
         $mean = $count > 0 ? ($val / $count) : 0;
+        // @todo We are making an assumption here that all goals received had the
+        //   same value. In the rare cases where there are multiple goals of
+        //   different values, this will result in an inaccurate calculation of
+        //   the variance. We will be fixing this in our next gen reporting.
         $goal_value = $goals ? floor($val / $goals) : 0;
         // Calculate confidence bounds for conversion rate.
         $sd = $count ? sqrt(($rate*(1-$rate))/($count)) : 0;

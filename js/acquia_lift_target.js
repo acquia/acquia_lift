@@ -65,7 +65,7 @@ Drupal.acquia_lift_target = (function() {
           decisions[decision_name] = rule.option_id;
         }
       }
-      callback(decisions, 'targeting');
+      callback(decisions, 'targeting', rule.name);
       return;
     }
     else if (rule.hasOwnProperty('osid')) {
@@ -91,14 +91,14 @@ Drupal.acquia_lift_target = (function() {
                 decisions[decision_name] = selection[nestedDecision];
               }
             }
-            callback(decisions, policy);
+            callback(decisions, policy, rule.name);
           };
           Drupal.personalize.agents[agent_plugin].getDecisionsForPoint(test_agent_name, {}, subChoices, nestedPoint, fallbacks, subCallback);
           return;
         }
       }
     }
-    callback(decisions, 'fallback');
+    callback(decisions, 'fallback', rule.name);
   }
 
   return {
@@ -107,7 +107,7 @@ Drupal.acquia_lift_target = (function() {
         init();
       }
 
-      var callback_wrapper = function(decisions, policy) {
+      var callback_wrapper = function(decisions, policy, audience) {
         if (v2_enabled && policy != "repeat") {
           writeDecisionsToStorage(agent_name, decisions, policy);
           // In theory there could be mulitple desicions here (if it's an MVT), in
@@ -125,7 +125,7 @@ Drupal.acquia_lift_target = (function() {
               index++;
             }
           }
-          $(document).trigger('liftDecision', [agent_name, decision_str, choice_str, policy]);
+          $(document).trigger('liftDecision', [agent_name, audience, decision_str, choice_str, policy]);
         }
         callback(decisions);
       };

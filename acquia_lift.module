@@ -469,6 +469,15 @@ function acquia_lift_percentage_validate($element, &$form_state) {
 function acquia_lift_get_account_info() {
   if (variable_get('acquia_lift_v2_enabled', FALSE)) {
     $account_info = variable_get('acquia_lift_account_info', array('public_key' => '', 'private_key' => ''));
+    if (!isset($account_info['profiles'])) {
+      $account_info['profiles'] = array(
+        'account_name' => '',
+        'hostname' => '',
+        'public_key' => '',
+        'secret_key' => ''
+      );
+    }
+
     // @todo : Check here if Lift V2 is enabled by checking the subscription values
     // Get Acquia Subscription Data
     $subscription_data = acquia_agent_settings('acquia_subscription_data');
@@ -514,12 +523,6 @@ function acquia_lift_get_account_info() {
             break;
         }
       }
-      $account_info['profiles'] = array(
-        'account_name' => '',
-        'hostname' => '',
-        'public_key' => '',
-        'secret_key' => ''
-      );
       foreach ($acquia_lift_data['profile'] as $key => $value) {
         switch ($key) {
           case "js_path":

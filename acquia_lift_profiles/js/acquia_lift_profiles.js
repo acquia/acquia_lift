@@ -264,8 +264,8 @@ var _tcwq = _tcwq || [];
           _tcwq.push(["setDebug", false]);
         }
 
-        $(document).bind('personalizeDecision', this["processPersonalizeDecision"]);
-        $(document).bind('sentGoalToAgent', this["processSentGoalToAgent"]);
+        $(document).bind('liftDecision', this["processLiftDecision"]);
+        $(document).bind('liftGoal', this["processLiftGoal"]);
         Drupal.personalize.getVisitorContexts(plugins, callback);
       },
       'getTrackingID': function () {
@@ -325,22 +325,25 @@ var _tcwq = _tcwq || [];
         }
       },
 
-      'processPersonalizeDecision':function(e, $option_set, decision, osid, agent_name) {
+
+      'processLiftDecision':function(e, agent_name, decision_name, choice, policy) {
         // Only send this if it has never been sent or the decision has changed due to
         // new targeting conditions being met.
-        if (processedDecisions.hasOwnProperty(agent_name) && processedDecisions[agent_name] == decision) {
+        if (processedDecisions.hasOwnProperty(agent_name) && processedDecisions[agent_name] == choice) {
           return;
         }
-        if (decision == 'control-variation') {
-          decision = 'Control';
+        if (choice == 'control-variation') {
+          choice = 'Control';
         }
-        processedDecisions[agent_name] = decision;
-        _tcaq.push(['capture', 'Campaign Action', {'targetcampaignid':agent_name, 'targetcampaignname':getAgentLabel(agent_name), 'targetofferid': decision, 'targetactionname':decision } ]);
+        processedDecisions[agent_name] = choice;
+        console.log("decision for " + agent_name + " with policy " + policy);
+        _tcaq.push(['capture', 'Campaign Action', {'targetcampaignid':agent_name, 'targetcampaignname':getAgentLabel(agent_name), 'targetofferid': choice, 'targetactionname':choice, 'event_udf3': policy } ]);
 
       },
 
-      'processSentGoalToAgent':function(e, agent_name, goal_name, goal_value) {
-        _tcaq.push(['capture', goal_name, {'targetcampaignid':agent_name, 'targetcampaignname':getAgentLabel(agent_name), 'targetgoalvalue':goal_value}]);
+      'processLiftGoal':function(e, agent_name, decision_name, choice, policy, goal_name, goal_value) {
+        console.log("goal for " + agent_name + " with policy " + policy);
+        _tcaq.push(['capture', goal_name, {'targetcampaignid':agent_name, 'targetcampaignname':getAgentLabel(agent_name), 'targetgoalvalue':goal_value, 'targetofferid': choice, 'targetactionname':choice,  'event_udf3': policy}]);
       },
       /**
        * Add an action listener for client-side goal events.

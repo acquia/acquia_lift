@@ -46,11 +46,19 @@
         }
         return this.send(path, params, null, (function() {
           return function(res) {
-            var selection = fb;
-            if (res && res.hasOwnProperty('outcome')) {
-              selection = res.outcome;
+            var selection = fb, policy;
+            if (res) {
+              if (res.hasOwnProperty('outcome')) {
+                selection = res.outcome;
+              }
+              if (res.hasOwnProperty('policy')) {
+                policy = res.policy;
+              }
+              else if (res.outcome[0].hasOwnProperty('policy')) {
+                policy = res.outcome[0].policy;
+              }
             }
-            return callback(selection);
+            return callback(selection, policy);
           };
         })(this));
       },

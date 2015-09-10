@@ -2,9 +2,10 @@
 
 Drupal.acquia_lift_target = (function() {
 
-  var agentRules = {}, initialized = false;
+  var agentRules = {}, initialized = false, v2_enabled = false;
 
   function init() {
+    v2_enabled = Drupal.settings.acquia_lift.api_class == 'acquiaLiftDiceAPI';
     var i, optionSet, agentName;
     var option_sets = Drupal.settings.personalize.option_sets;
     var agent_map = Drupal.settings.personalize.agent_map;
@@ -38,7 +39,24 @@ Drupal.acquia_lift_target = (function() {
     return feature_strings;
   }
 
-  function executeDecision(rule, decisions, choices, callback) {
+  function readDecisionsFromStorage(agent_name) {
+    var bucket = Drupal.personalize.storage.utilities.getBucket('lift');
+    return bucket.read(agent_name);
+  }
+
+  function writeDecisionsToStorage(agent_name, decisions, policy, goals) {
+    var bucket = Drupal.personalize.storage.utilities.getBucket('lift');
+    var value = {
+      'policy': policy,
+      'decisions' : decisions
+    };
+    if (goals != undefined) {
+      value.goals = goals;
+    }
+    bucket.write(agent_name, value);
+  }
+
+  function executeDecision(agent_name, rule, decisions, choices, callback) {
     // The rule we matched could specify a single option, a combination of options,
     // or another option set with a different decision agent.
     if (rule.hasOwnProperty('option_id')) {
@@ -47,12 +65,14 @@ Drupal.acquia_lift_target = (function() {
           decisions[decision_name] = rule.option_id;
         }
       }
+      callback(decisions, 'targeting');
+      return;
     }
     else if (rule.hasOwnProperty('osid')) {
       var osid = 'osid-' + rule.osid;
       if (Drupal.settings.acquia_lift_target.option_sets.hasOwnProperty(osid)) {
         var optionSet = Drupal.settings.acquia_lift_target.option_sets[osid];
-        var agent_name = optionSet.agent,
+        var test_agent_name = optionSet.agent,
             agent_plugin = Drupal.settings.acquia_lift_target.test_agent_plugin,
             nestedPoint = optionSet.decision_point,
             nestedDecision = optionSet.decision_name,
@@ -61,24 +81,24 @@ Drupal.acquia_lift_target = (function() {
         subChoices[nestedDecision] = optionSet.option_names;
         fallbacks[nestedDecision] = 0;
 
-        if (Drupal.settings.acquia_lift_target.agent_map.hasOwnProperty(agent_name) && Drupal.personalize.agents.hasOwnProperty(agent_plugin)) {
-          if (Drupal.settings.acquia_lift_target.agent_map[agent_name].type !== agent_plugin) {
+        if (Drupal.settings.acquia_lift_target.agent_map.hasOwnProperty(test_agent_name) && Drupal.personalize.agents.hasOwnProperty(agent_plugin)) {
+          if (Drupal.settings.acquia_lift_target.agent_map[test_agent_name].type !== agent_plugin) {
             return;
           }
-          var subCallback = function(selection) {
+          var subCallback = function(selection, policy) {
             for (var decision_name in decisions) {
               if (decisions.hasOwnProperty(decision_name) && selection.hasOwnProperty(nestedDecision)) {
                 decisions[decision_name] = selection[nestedDecision];
               }
             }
-            callback(decisions);
+            callback(decisions, policy);
           };
-          Drupal.personalize.agents[agent_plugin].getDecisionsForPoint(agent_name, {}, subChoices, nestedPoint, fallbacks, subCallback);
+          Drupal.personalize.agents[agent_plugin].getDecisionsForPoint(test_agent_name, {}, subChoices, nestedPoint, fallbacks, subCallback);
           return;
         }
       }
     }
-    callback(decisions);
+    callback(decisions, 'fallback');
   }
 
   return {
@@ -87,9 +107,32 @@ Drupal.acquia_lift_target = (function() {
         init();
       }
 
+      var callback_wrapper = function(decisions, policy) {
+        if (v2_enabled && policy != "repeat") {
+          writeDecisionsToStorage(agent_name, decisions, policy);
+          // In theory there could be mulitple desicions here (if it's an MVT), in
+          // which case we'll concatenate the decision names and the choice names,
+          // separated by ','.
+          var decision_str = '', choice_str = '', index = 0;
+          for (var decision_name in decisions) {
+            if (decisions.hasOwnProperty(decision_name)) {
+              if (index > 0) {
+                decision_str += ',';
+                choice_str += ',';
+              }
+              decision_str += decision_name;
+              choice_str += decisions[decision_name];
+              index++;
+            }
+          }
+          $(document).trigger('liftDecision', [agent_name, decision_str, choice_str, policy]);
+        }
+        callback(decisions);
+      };
       if (!agentRules.hasOwnProperty(agent_name)) {
         // Just delegate to the testing agent.
-        Drupal.personalize.agents.acquia_lift.getDecisionsForPoint(agent_name, visitor_context, choices, decision_point, fallbacks, callback);
+        var agent_plugin = Drupal.settings.acquia_lift_target.test_agent_plugin;
+        Drupal.personalize.agents[agent_plugin].getDecisionsForPoint(agent_name, visitor_context, choices, decision_point, fallbacks, callback_wrapper);
         return;
       }
       var decisions = {},
@@ -99,7 +142,7 @@ Drupal.acquia_lift_target = (function() {
           ruleId,
           strategy,
           feature_strings = convertContextToFeatureStrings(visitor_context),
-          fallbackIndex = fallbacks.hasOwnProperty(decision_name) ? fallbacks[decision_name] : 0,
+          fallbackIndex = 0,
           defaultTarget = Drupal.settings.acquia_lift_target.default_target;
       // Initialize each decision to the fallback option.
       for (var decision_name in choices) {
@@ -114,7 +157,7 @@ Drupal.acquia_lift_target = (function() {
           // If this is the "everyone else" target, then there are no features to be matched,
           // just execute the decision for this target.
           if (agentRules[agent_name][ruleId].name == defaultTarget) {
-            executeDecision(agentRules[agent_name][ruleId], decisions, choices, callback);
+            executeDecision(agent_name, agentRules[agent_name][ruleId], decisions, choices, callback_wrapper);
             return;
           }
           if (!agentRules[agent_name][ruleId].hasOwnProperty('targeting_features') || agentRules[agent_name][ruleId].targeting_features.length == 0) {
@@ -136,7 +179,7 @@ Drupal.acquia_lift_target = (function() {
                 }
               }
               if (matched) {
-                executeDecision(agentRules[agent_name][ruleId], decisions, choices, callback);
+                executeDecision(agent_name, agentRules[agent_name][ruleId], decisions, choices, callback_wrapper);
                 return;
               }
               break;
@@ -154,7 +197,7 @@ Drupal.acquia_lift_target = (function() {
                 }
               }
               if (matched) {
-                executeDecision(agentRules[agent_name][ruleId], decisions, choices, callback);
+                executeDecision(agent_name, agentRules[agent_name][ruleId], decisions, choices, callback_wrapper);
                 return;
               }
               break;
@@ -163,12 +206,45 @@ Drupal.acquia_lift_target = (function() {
       }
       // If we got here there was no matched targeting rule so we just call the
       // callback with the fallback decisions.
-      callback(decisions);
+      callback_wrapper(decisions, 'fallback');
     },
     'sendGoal': function(agent_name, goal_name, value) {
       if (!initialized) {
         init();
       }
+      if (v2_enabled) {
+        var stored = readDecisionsFromStorage(agent_name);
+        if (stored.hasOwnProperty('decisions')) {
+          // First see if this goal was already attained.
+          var goals = stored.hasOwnProperty('goals') ? stored.goals : [];
+          if (goals.indexOf(goal_name) !== -1) {
+            return;
+          }
+
+          goals.push(goal_name);
+          writeDecisionsToStorage(agent_name, stored.decisions, stored.policy, goals);
+          // In theory there could be mulitple desicions here (if it's an MVT), in
+          // which case we'll concatenate the decision names and the choice names,
+          // separated by ','.
+          var decision_str = '', choice_str = '', index = 0;
+          for (var decision_name in stored.decisions) {
+            if (stored.decisions.hasOwnProperty(decision_name)) {
+              if (index > 0) {
+                decision_str += ',';
+                choice_str += ',';
+              }
+              decision_str += decision_name;
+              choice_str += stored.decisions[decision_name];
+              index++;
+            }
+          }
+          $(document).trigger('liftGoal', [agent_name, decision_str, choice_str, stored.policy, goal_name, value ]);
+        }
+      }
+      if (stored.hasOwnProperty("policy") && stored.policy == 'targeting') {
+        return;
+      }
+
       // Find any nested tests this goal needs to be sent to.
       var nested = Drupal.settings.acquia_lift_target.nested_tests;
       if (nested.hasOwnProperty(agent_name)) {
@@ -243,7 +319,7 @@ Drupal.acquiaLiftLearn = (function() {
         }
       }
       options.fallback = fb;
-      api.decision(agent_name, options, function(outcome) {
+      api.decision(agent_name, options, function(outcome, policy) {
         // We need to send back an object with decision names as keys
         // and the chosen option for each one as the value.
         var decisions = {};
@@ -253,7 +329,7 @@ Drupal.acquiaLiftLearn = (function() {
             decisions[outcome[i].decision_set_id] = outcome[i].external_id;
           }
         }
-        callback(decisions);
+        callback(decisions, policy);
       });
     },
     'sendGoal': function(agent_name, goal_name, value) {

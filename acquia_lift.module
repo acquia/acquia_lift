@@ -1239,6 +1239,11 @@ EOT;
           'data' => array(
             'acquia_lift' => array(
               'api_class' => variable_get('acquia_lift_v2_enabled', FALSE) ? 'acquiaLiftV2API' : 'acquiaLiftAPI'
+            ),
+            'personalize' => array(
+              'cacheExpiration' => array(
+                'lift' => 'session'
+              )
             )
           ),
           'type' => 'setting'

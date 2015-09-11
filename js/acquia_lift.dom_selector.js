@@ -11,8 +11,9 @@
    */
   var pluginName = 'DOMSelector',
     indicatorClass = 'acquia-lift-active-element',
-    selectorIgnoreClasses = new RegExp(Drupal.settings.visitor_actions.ignoreClasses);
-    selectorIgnoreId = tipIgnoreId = new RegExp(Drupal.settings.visitor_actions.ignoreIds);
+    selectorIgnoreClasses = new RegExp(Drupal.settings.visitor_actions.ignoreClasses),
+    tipIgnoreId = new RegExp(Drupal.settings.visitor_actions.ignoreIds),
+    selectorIgnoreId = tipIgnoreId,
 
   defaults = {
       hoverClass: 'acquia-lift-dom-highlight',
@@ -81,6 +82,8 @@
           position: {
             target: 'mouse',
             adjust: {
+              x: -$('body').offset().left,
+              screen: true,
               mouse: true
             }
           },

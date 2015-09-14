@@ -115,7 +115,7 @@ class ALProfilesAPITest extends DrupalUnitTestCase {
     $conf = $original_conf;
   }
 
-  function testGetSegements() {
+  function testGetSegments() {
     $acquia_lift_profiles_api = $this->getALProfilesAPI();
     $acquia_lift_profiles_api->getSegments();
 
@@ -158,7 +158,34 @@ class ALProfilesAPITest extends DrupalUnitTestCase {
     );
     $this->assertLogs($logs);
 
+    // Now try with a non-empty customer site
     ALProfilesAPI::reset();
+    $this->customerSite = 'TESTSITE';
+    $acquia_lift_profiles_api = $this->getALProfilesAPI();
+    $acquia_lift_profiles_api->getSegments();
+
+    // Define the requests we expect to have been made to our dummy http
+    // client for this operation.
+    $canonicalRequest = "GET\naccept:application/json\n/dashboard/rest/{$acquia_lift_profiles_api->getAccountName()}/segments?customerSite={$this->customerSite}";
+    $hmac = base64_encode(hash_hmac('sha1', $canonicalRequest, $this->secretKey, TRUE));
+    $auth_header = 'HMAC ' . $this->accessKey . ':' . $hmac;
+    $requests = array(
+      array(
+        'type' => 'get',
+        'uri' => "{$acquia_lift_profiles_api->getApiUrl()}/dashboard/rest/{$acquia_lift_profiles_api->getAccountName()}/segments?customerSite={$this->customerSite}",
+        'headers' => array('Authorization' => $auth_header, 'Accept' => 'application/json'),
+        'options' => array(),
+        'body' => NULL,
+      )
+    );
+
+    // Confirm the expected requests were made.
+    $this->assertAPIRequests($requests);
+    $logs = array();
+    $this->assertLogs($logs);
+
+    ALProfilesAPI::reset();
+    $this->customerSite = '';
   }
 
   /**

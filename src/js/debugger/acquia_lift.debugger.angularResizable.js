@@ -114,7 +114,7 @@ angular.module('angularResizable', [])
                         document.getElementById("debugger").appendChild(grabber);
                         grabber.ondragstart = function() { return false }
                         grabber.addEventListener('mousedown', function(e) {
-                          disabled = (scope.rDisabled == 'true');
+                          var disabled = (scope.rDisabled == 'true');
                           if (!disabled && e.which == 1) {
                             // left mouse click
                             dragStart(e, direction);

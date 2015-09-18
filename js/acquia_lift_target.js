@@ -5,7 +5,7 @@ Drupal.acquia_lift_target = (function() {
   var agentRules = {}, initialized = false, v2_enabled = false;
 
   function init() {
-    v2_enabled = Drupal.settings.acquia_lift.api_class == 'acquiaLiftDiceAPI';
+    v2_enabled = Drupal.settings.acquia_lift.api_class == 'acquiaLiftV2API';
     var i, optionSet, agentName;
     var option_sets = Drupal.settings.personalize.option_sets;
     var agent_map = Drupal.settings.personalize.agent_map;
@@ -44,7 +44,7 @@ Drupal.acquia_lift_target = (function() {
     return bucket.read(agent_name);
   }
 
-  function writeDecisionsToStorage(agent_name, decisions, policy, goals) {
+  function writeDecisionsToStorage(agent_name, decisions, policy, goals, audience) {
     var bucket = Drupal.personalize.storage.utilities.getBucket('lift');
     var value = {
       'policy': policy,
@@ -52,6 +52,9 @@ Drupal.acquia_lift_target = (function() {
     };
     if (goals != undefined) {
       value.goals = goals;
+    }
+    if (audience != undefined) {
+      value.audience = audience;
     }
     bucket.write(agent_name, value);
   }
@@ -109,7 +112,7 @@ Drupal.acquia_lift_target = (function() {
 
       var callback_wrapper = function(decisions, policy, audience) {
         if (v2_enabled && policy != "repeat") {
-          writeDecisionsToStorage(agent_name, decisions, policy);
+          writeDecisionsToStorage(agent_name, decisions, policy, null, audience);
           // In theory there could be mulitple desicions here (if it's an MVT), in
           // which case we'll concatenate the decision names and the choice names,
           // separated by ','.
@@ -222,7 +225,7 @@ Drupal.acquia_lift_target = (function() {
           }
 
           goals.push(goal_name);
-          writeDecisionsToStorage(agent_name, stored.decisions, stored.policy, goals);
+          writeDecisionsToStorage(agent_name, stored.decisions, stored.policy, goals, stored.audience);
           // In theory there could be mulitple desicions here (if it's an MVT), in
           // which case we'll concatenate the decision names and the choice names,
           // separated by ','.
@@ -238,7 +241,7 @@ Drupal.acquia_lift_target = (function() {
               index++;
             }
           }
-          $(document).trigger('liftGoal', [agent_name, decision_str, choice_str, stored.policy, goal_name, value ]);
+          $(document).trigger('liftGoal', [agent_name, stored.audience, decision_str, choice_str, stored.policy, goal_name, value ]);
         }
       }
       if (stored.hasOwnProperty("policy") && stored.policy == 'targeting') {

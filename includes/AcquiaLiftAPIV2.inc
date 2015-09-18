@@ -334,7 +334,7 @@ class AcquiaLiftAPIV2 extends AcquiaLiftAPIBase implements AcquiaLiftLearnReport
     $path = "report?campaign_id=$name&from=$from&days=$days";
     $url = $this->generateEndpoint($path);
     $vars = array('name' => $name);
-    $fail_msg = 'Could not retrieve report for {name} from Acquia Lift';
+    $fail_msg = 'Could not retrieve report from Acquia Lift';
     return $this->makeGetRequest($url, $this->getStandardHeaders(), $fail_msg, $vars);
   }
 

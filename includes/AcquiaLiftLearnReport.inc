@@ -122,7 +122,7 @@ class AcquiaLiftLearnReport extends AcquiaLiftReportBase {
 
       }
       catch (Exception $e) {
-        drupal_set_message(t('There was a problem retrieving reporting data for this campaign, please try again later.'));
+        drupal_set_message(t('There was a problem retrieving reporting data for this campaign, please try again later.', 'error'));
       }
     }
     return $this->reportData;

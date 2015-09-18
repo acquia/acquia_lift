@@ -312,7 +312,7 @@ function theme_acquia_lift_create_type_change($variables) {
 
 
 /**
- * Theme function to return the markup required for the personalize debuggger.
+ * Theme function to return the markup required for the personalize debugger.
  */
 function theme_acquia_lift_debugger() {
   $markup = <<<EOT
@@ -343,27 +343,26 @@ function theme_acquia_lift_debugger() {
   <div class="debugger__preview">
     <div class="debugger__secondary__navigation"> <div class="previewBox">
             <button id="debugger__stopPreview" ng-click="stopPreview()" data-ng-disabled="!isPreview()" ng-class="previewButtonStop">Stop Preview</button>
-            <button id="debugger__startPreview" ng-click="startPreview()" data-ng-disabled="isPreview()" ng-class="previewButtonStart"> Start Preview</button>
-            
+            <button id="debugger__startPreview" ng-click="startPreview()" data-ng-disabled="isPreview()" ng-class="previewButtonStart">Start Preview</button>
           </div>
           <div class="debugger__preview__notification"></div>
           </div>
       <table>
         <tr>
           <td>
-          <b>Define your list of segments for preview:</b>
+            <div id="sitePreviewSegmentsLabel"></div>
           </td>
         </tr>
         <tr>
           <td>
             <ul ng-repeat="item in profile.overrideSegments | orderBy: 'toString()'" class="overrideSegments">
-              <li class="float clickable" ng-click="deletePreviewItem(item)"><span>{{item}}</span></div>
+              <li class="float"><span>{{item}}</span> <span class="clickable" ng-class="previewActive" ng-click="deletePreviewItem(item)">&#10006;</span></div>
             </ul>
           </td>
         </tr>
         <tr>
           <td>
-            <div class="addBox">
+            <div class="addBox" ng-class="previewActive">
               <autocomplete class="float" ng-model="overrideSegmentChoice" data="allSegments" on-select="addPreview"></autocomplete>
               <button ng-click="addPreviewItem(null)">Add</button>
             </div>
@@ -404,14 +403,12 @@ function theme_acquia_lift_debugger() {
             <col span="1">
             <col span="1">
             <col span="1">
-            <col span="1">
           </colgroup>
           <th>
           <th>Message</th>
           <th>Type</th>
           <th>Time</th>
           <th>Page</th>
-          <th></th>
           </th>
           <tr ng-repeat="item in items | filter:search | orderBy: '-timestamp'" class="minheight">
             <td ng-bind-html="item.severity | to_icon"></td>
@@ -419,7 +416,6 @@ function theme_acquia_lift_debugger() {
             <td>{{item.type | cut:true:10:'...':item}}</td>
             <td>{{item.timestamp |  date:'MM/dd/yyyy h:mma'}}</td>
             <td>{{item.page | cut:true:20:'...':item}}</td>
-            <td><div ng-click="item.expand? item.expand = false : item.expand = true" id="clickable"> {{item.expand? 'Read Less' : 'Read More'}}</div></td>
           </tr>
         </table>
       </div>

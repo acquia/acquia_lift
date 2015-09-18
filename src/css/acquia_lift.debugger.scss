@@ -358,11 +358,6 @@ $input-height: 29px;
                 list-style: none;
                 float: left;
                 min-width: 25%;
-                &::after {
-                    content: ' \2716';
-                    margin-right: 0em;
-                    padding-right: 10px;
-                }
             }
         }
         .preview__button__active{

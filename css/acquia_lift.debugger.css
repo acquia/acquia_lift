@@ -336,11 +336,6 @@
   float: left;
   min-width: 25%;
 }
-#debugger .debugger__preview .overrideSegments li::after {
-  content: ' \2716';
-  margin-right: 0em;
-  padding-right: 10px;
-}
 #debugger .debugger__preview .preview__button__active {
   background-color: #0073b9;
   color: white;

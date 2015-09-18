@@ -64,4 +64,6 @@ http://docs.acquia.com/lift
 Current maintainers:
 -------------------------------------------------------------------------------
  * Katherine Bailey (katbailey) - http://drupal.org/user/172987
+ * Lisa Backer (eshta) - http://drupal.org/user/1951462
  * Dave Ingram (Dave.Ingram) - http://drupal.org/user/352282
+ * Yuan Xie (ynx) - https://www.drupal.org/user/3161427

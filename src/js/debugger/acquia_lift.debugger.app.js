@@ -384,6 +384,7 @@ app.controller("DebuggerController", function($scope, $timeout, debuggerFactory,
             $scope.allSegments.splice(indexAll, 1);
             $scope.profile.overrideSegments.push(value);
         }
+        $scope.overrideSegmentChoice = null;
     }
 
     /**
@@ -404,7 +405,7 @@ app.controller("DebuggerController", function($scope, $timeout, debuggerFactory,
      */
     $scope.startPreview = function(){
         Drupal.acquiaLiftProfilesDebug.setOverrideSegments($scope.profile.overrideSegments);    
-        document.getElementsByClassName('debugger__preview__notification')[0].innerHTML = 'Please refresh page to see your changes. You may have to clear your cache or refresh multiple times.';
+        document.getElementsByClassName('debugger__preview__notification')[0].innerHTML = 'Please refresh page to see your changes. You may have to clear your cache as well.';
     }
 
     /**
@@ -427,16 +428,20 @@ app.controller("DebuggerController", function($scope, $timeout, debuggerFactory,
      */
     $scope.isPreview = function(){
         if (window.sessionStorage.getItem("acquiaLift::debug::overrideSegments")){
+            $scope.previewActive = "preview__button__inactive";
             $scope.previewButtonStop = "preview__button__active";
             $scope.previewButtonStart = "preview__button__inactive";
             document.getElementById("sitePreviewTabLabel").innerHTML='Site Preview - Active';
+            document.getElementById("sitePreviewSegmentsLabel").innerHTML='<b>Previewing site as these segments:</b>';
             document.getElementById("profileSegmentLabel").innerHTML='<b>Previewing site as these segments:</b>'
 
             return true;
         }else{
+            $scope.previewActive = null;
             $scope.previewButtonStart = "preview__button__active";
             $scope.previewButtonStop="preview__button__inactive";
             document.getElementById("sitePreviewTabLabel").innerHTML='Site Preview';
+            document.getElementById("sitePreviewSegmentsLabel").innerHTML='<b>Define your list of segments before starting to preview:</b>';
             document.getElementById("profileSegmentLabel").innerHTML='<b>Last Evaluated Segments:</b>'
 
             return false;

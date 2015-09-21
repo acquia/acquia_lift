@@ -405,7 +405,7 @@ app.controller("DebuggerController", function($scope, $timeout, debuggerFactory,
      */
     $scope.startPreview = function(){
         Drupal.acquiaLiftProfilesDebug.setOverrideSegments($scope.profile.overrideSegments);    
-        document.getElementsByClassName('debugger__preview__notification')[0].innerHTML = 'Please refresh page to see your changes. You may have to clear your cache or refresh multiple times.';
+        document.getElementsByClassName('debugger__preview__notification')[0].innerHTML = 'Please refresh page to see your changes. You may have to clear your cache as well.';
     }
 
     /**

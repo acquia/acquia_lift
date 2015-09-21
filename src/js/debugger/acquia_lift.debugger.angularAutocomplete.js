@@ -117,7 +117,7 @@ app.directive('autocomplete', function() {
 
             // Default atts
             scope.attrs = {
-                "placeholder": "Enter a segments...",
+                "placeholder": "Enter a segment...",
                 "class": "",
                 "id": "autocomplete_input",
                 "inputclass": "",

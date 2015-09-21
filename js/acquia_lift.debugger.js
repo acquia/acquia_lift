@@ -384,7 +384,7 @@ app.controller("DebuggerController", function($scope, $timeout, debuggerFactory,
             $scope.allSegments.splice(indexAll, 1);
             $scope.profile.overrideSegments.push(value);
         }
-        $scope.overrideSegmentChoice = null;
+        $scope.overrideSegmentChoice = '';
     }
 
     /**
@@ -642,7 +642,7 @@ app.directive('autocomplete', function() {
 
             // Default atts
             scope.attrs = {
-                "placeholder": "Enter a segments...",
+                "placeholder": "Enter a segment...",
                 "class": "",
                 "id": "autocomplete_input",
                 "inputclass": "",

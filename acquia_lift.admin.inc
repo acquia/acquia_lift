@@ -854,7 +854,6 @@ function acquia_lift_report($form, &$form_state, $agent_data) {
       )
     );
   }
-
   if ($test_type == 'retired') {
     $nested_agent = personalize_agent_load($test_id);
     $form['report'] = acquia_lift_report_custom($form_state, $nested_agent, FALSE, $agent_data);

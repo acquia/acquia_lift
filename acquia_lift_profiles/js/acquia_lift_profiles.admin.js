@@ -33,14 +33,6 @@
           return false;
         });
       });
-
-      // Positions the Web Admin menu link to the right.
-      $('a.acquia-lift-web-admin').once(function() {
-        var $parentLi = $(this).parents('li');
-        var $previousLi = $parentLi.prev('li');
-        $parentLi.addClass('acquia-lift-navbar-secondary');
-        $previousLi.addClass('acquia-lift-navbar-marker');
-      });
     }
   };
 

@@ -384,7 +384,7 @@ app.controller("DebuggerController", function($scope, $timeout, debuggerFactory,
             $scope.allSegments.splice(indexAll, 1);
             $scope.profile.overrideSegments.push(value);
         }
-        $scope.overrideSegmentChoice = '';
+        $scope.overrideSegmentChoice = undefined;
     }
 
     /**

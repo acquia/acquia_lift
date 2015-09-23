@@ -384,7 +384,7 @@ app.controller("DebuggerController", function($scope, $timeout, debuggerFactory,
             $scope.allSegments.splice(indexAll, 1);
             $scope.profile.overrideSegments.push(value);
         }
-        $scope.overrideSegmentChoice = '';
+        $scope.overrideSegmentChoice = undefined;
     }
 
     /**
@@ -567,7 +567,7 @@ app.directive('autocomplete', function() {
             $scope.completing = false;
             // starts autocompleting on typing in something
             $scope.$watch('searchParam', function(newValue, oldValue){
-                if (oldValue === newValue) {
+                if (oldValue === newValue || newValue === undefined) {
                     return;
                 }
 
@@ -684,19 +684,23 @@ app.directive('autocomplete', function() {
             }, true);
 
             document.addEventListener("focus", function(e){
-                if(scope.$parent.tab === "preview"  && e.target.tagName ==="INPUT"){
-                    var dropdown = document.getElementById('debugger__autocomplete__dropdown');
-                    var addbox = document.getElementsByClassName('addBox')[0].offsetTop;
-                    var debuggerHeight = window.sessionStorage.getItem('acquiaLift::debug::debugWindowHeight')
-                    var position = Math.min(debuggerHeight? debuggerHeight-addbox: 100000, window.innerHeight*0.80-addbox);
-                    position -= 50;
-                    position = (position < 0)? 15: position;
-                    scope.showAll();
-                    scope.$apply();
-                    dropdown.style.maxHeight = position.toString() + "px"
+                if(scope.$parent.tab !== "preview" || e.target.tagName !== "INPUT"){
+                    return;
                 }
+                var dropdown = document.getElementById('debugger__autocomplete__dropdown');
+                var addbox = document.getElementsByClassName('addBox')[0].offsetTop;
+                var debuggerHeight = window.sessionStorage.getItem('acquiaLift::debug::debugWindowHeight')
+                var position = Math.min(debuggerHeight? debuggerHeight-addbox: 100000, window.innerHeight*0.80-addbox);
+                position -= 50;
+                position = (position < 0)? 15: position;
+                scope.showAll();
+                scope.$apply();
+                dropdown.style.maxHeight = position.toString() + "px";
             }, true);
             document.addEventListener("blur", function(e){
+                if(scope.$parent.tab !== "preview" || e.target.tagName !== "INPUT"){
+                    return;
+                }
                 // disable suggestions on blur
                 // we do a timeout to prevent hiding it before a click event is registered
                 setTimeout(function() {

@@ -9,6 +9,7 @@
   Drupal.acquiaLiftUtility.GoalQueue = Drupal.acquiaLiftUtility.GoalQueue || (function($) {
 
     var acquiaLiftAPI;
+    var isProcessing = false;
 
     /**
      * Converts the data for a goal into the format for saving in the queue.
@@ -108,7 +109,15 @@
        *   tried (such as in an initial processing for the page request).
        */
       'processQueue': function (reset) {
+        var that = this;
         reset = reset || false;
+        if (isProcessing) {
+          setTimeout(function() {
+            that.processQueue(reset);
+          }, 2)
+          return;
+        }
+        isProcessing = true;
         // The processing status should be reset upon the initial page load.
         if (reset) {
           Drupal.acquiaLiftUtility.Queue.reset();
@@ -136,6 +145,7 @@
             for (i = 0; i < num; i++) {
               Drupal.acquiaLiftUtility.Queue.add(failed[i]);
             }
+            isProcessing = false;
           }
         }
 
@@ -150,6 +160,14 @@
         }
         // Kick off the queue.
         processNext();
+      },
+
+      /**
+       * Reset the queue for testing purposes.
+       */
+      'reset': function() {
+        isProcessing = false;
+        Drupal.acquiaLiftUtility.Queue.reset();
       }
     }
   }($));

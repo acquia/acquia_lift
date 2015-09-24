@@ -41,6 +41,8 @@ QUnit.test("QueueItem unit tests", function(assert) {
   assert.equal(item.isProcessing(), true, 'Queue item has processing value changed.');
   item.reset();
   assert.equal(item.isProcessing(), false, 'Queue item processing can be reset.');
+
+  cleanUp();
 });
 
 QUnit.test("Queue unit tests", function(assert) {
@@ -104,6 +106,8 @@ QUnit.test("Queue unit tests", function(assert) {
   Drupal.acquiaLiftUtility.Queue.reset();
   var queue = readCookieQueue();
   assert.equal(queue[0].pflag, false, 'The remaining item has been reset.');
+
+  cleanUp();
 });
 
 QUnit.test("Goals queue", function(assert) {
@@ -227,6 +231,7 @@ QUnit.test("Goals queue", function(assert) {
   xhr.restore();
   Drupal.acquiaLiftUtility.Queue.add.restore();
   Drupal.acquiaLiftUtility.Queue.remove.restore();
+  cleanUp();
 });
 
 QUnit.module("Acquia Lift service calls", {
@@ -547,6 +552,8 @@ QUnit.test('Page load goals queue processing', function(assert) {
   queue = readCookieQueue();
   assert.equal(queue.length, 0, 'Goals queue is empty.');
 
+  xhr.restore();
+  Drupal.acquiaLiftUtility.GoalQueue.processQueue.restore();
   cleanUp();
 })
 
@@ -618,4 +625,5 @@ function setSessionID(known) {
 function cleanUp() {
   Drupal.acquiaLift.reset();
   sinon.restore();
+  $('body').removeClass('acquiaLiftGoalsQueue-processed');
 }

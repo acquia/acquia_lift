@@ -228,6 +228,59 @@ QUnit.test("Goals queue", function(assert) {
   Drupal.acquiaLiftUtility.Queue.remove.restore();
 });
 
+QUnit.test("Goals queue duplication", function(assert) {
+  // Clear out the queue
+  // Qunit/sinon resets all dates which affects our automatic ids.
+  if (this.clock) {
+    this.clock.restore();
+  }
+
+  expect(5);
+
+  // Create a fake request for the goals api call.
+  var xhr = sinon.useFakeXMLHttpRequest();
+  var requests = sinon.requests = [];
+
+  xhr.onCreate = function (request) {
+    requests.push(request);
+  };
+
+  // Start by clearing the queue so we can test.
+  Drupal.acquiaLiftUtility.Queue.empty();
+  assert.deepEqual(readCookieQueue(), [], 'Cookie queue is empty.');
+
+  var agentName = 'test-agent';
+  var testGoal1 = {
+    reward: 1,
+    goal: 'goal1'
+  };
+
+  // Add a goal to the goals queue and start processing.
+  Drupal.acquiaLiftUtility.GoalQueue.addGoal(agentName, testGoal1, true);
+
+  // Now go ahead and process the queue again forcing a new process.
+  Drupal.acquiaLiftUtility.GoalQueue.processQueue(true);
+
+  // Go ahead and respond with a success.
+  sinon.requests[0].respond(200, { "Content-Type": "application/json" }, '{ "session": "some-session-ID", "feedback_id":"some-string", "submitted":"12345566"}');
+
+  // click forward
+  this.clock.tick(5000);
+
+  // Verify that the queue is empty and that only one API call was made.
+  nextGoal = Drupal.acquiaLiftUtility.Queue.getNext();
+  assert.ok(nextGoal == null, 'There are no more items in the queue.');
+
+  // Check that a single request was made to the right place..
+  assert.equal(sinon.requests.length, 1, 'The api was called once.');
+  var parsed = parseUri(sinon.requests[0].url);
+  assert.equal(parsed.host, 'api.example.com', 'API host is correct.');
+  assert.equal(parsed.path, '/feedback', 'API path is correct.');
+
+  // Clean up after the sinon wrappers.
+  xhr.restore();
+});
+
 QUnit.module("Acquia Lift service calls", {
   'setup': function() {
     initializeLiftSettings();
@@ -260,6 +313,8 @@ QUnit.test('Make decision', function(assert) {
   requests[0].respond(200, { "Content-Type": "application/json" }, '{"outcome": [{"decision_set_id": "first-decision", "external_id":"option-2"}], "session": "some-session-ID"}');
   ok(callback.called);
   assert.deepEqual(callback.args[0][0], {"first-decision": "option-2"});
+
+  xhr.restore();
 });
 
 QUnit.test('Multiple decisions', function(assert) {
@@ -299,6 +354,7 @@ QUnit.test('Multiple decisions', function(assert) {
   assert.deepEqual(callback.args[0][0], {"first-decision": "option-2"});
   assert.deepEqual(callback.args[1][0], {"second-decision": "option-1"});
 
+  xhr.restore();
 });
 
 QUnit.test('Send goal', function(assert) {
@@ -326,6 +382,7 @@ QUnit.test('Send goal', function(assert) {
 
   requests[0].respond(200, { "Content-Type": "application/json" }, '{"session": "some-session-ID", "feedback_id": "some-string", "submitted": "12345678"}');
 
+  xhr.restore();
 });
 
 QUnit.test('Page load goals queue processing', function(assert) {
@@ -381,6 +438,8 @@ QUnit.test('Page load goals queue processing', function(assert) {
   queue = readCookieQueue();
   assert.equal(queue.length, 0, 'Goals queue is empty.');
 
+  xhr.restore();
+  Drupal.acquiaLiftUtility.GoalQueue.processQueue.restore();
 });
 
 // Helper for parsing the ajax request URI

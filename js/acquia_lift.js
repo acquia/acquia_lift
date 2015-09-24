@@ -141,6 +141,8 @@
         api = null;
         initialized = false;
         waitingDecisions = [];
+        // Reset the goals queue.
+        Drupal.acquiaLiftUtility.GoalQueue.reset();
       }
     }
   })();

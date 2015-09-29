@@ -276,9 +276,7 @@
     var docWidth = $(document).width();
     var winHeight = $(window).height();
     var winWidth = $(window).width();
-    var bodyHeight = $('body').height();
     var bodyWidth = $('body').width();
-    if( winHeight > bodyHeight ) winHeight = bodyHeight;
     if( winWidth > bodyWidth ) winWidth = bodyWidth;
     if( docHeight < winHeight ) docHeight = winHeight;
 
@@ -410,9 +408,7 @@
     var docWidth = $(document).width();
     var winHeight = $(window).height();
     var winWidth = $(window).width();
-    var bodyHeight = $('body').height();
     var bodyWidth = $('body').width();
-    if( winHeight > bodyHeight ) winHeight = bodyHeight;
     if( winWidth > bodyWidth ) winWidth = bodyWidth;
     if( docHeight < winHeight ) docHeight = winHeight;
 

@@ -211,16 +211,20 @@ class AcquiaLiftLearnReport extends AcquiaLiftReportBase {
       if (empty($result['results'])) {
         continue;
       }
+      $count = $goals = $val = 0;
       foreach ($result['results'] as $single_day) {
-        $count = $single_day['total_plays_explore'];
-        $goals = $single_day['total_goals_explore'];
-        $val = $single_day['total_goals_value_explore'];
+        $count += $single_day['total_plays_explore'];
+        $goals += $single_day['total_goals_explore'];
+
+        $val += $single_day['total_goals_value_explore'];
         $rate = $count > 0 ? ($goals / $count) : 0;
         $mean = $count > 0 ? ($val / $count) : 0;
-        $goal_value = $goals ? floor($val / $goals) : 0;
+        $goal_value = $goals ? floor($val / $goals) : 1;
         // Calculate confidence bounds for conversion rate.
         $sd = $count ? sqrt(($rate*(1-$rate))/($count)) : 0;
-        $quantile = 1.64; // @todo Add normal quantile lookup table.
+        // We want a 90% confidence interval, which means we need the 95th
+        // quantile, given the two tails of the distribution.
+        $quantile = self::$normal_quantiles[4];
         $upper = $goal_value * ($rate + ($quantile * $sd));
         $lower = $goal_value * ($rate - ($quantile * $sd));
 
@@ -230,12 +234,12 @@ class AcquiaLiftLearnReport extends AcquiaLiftReportBase {
         $data[] = array(
           'option_id' => $result['decision_id'],
           'option_label' => $option_label,
-          'goals' => $goals,
-          'count' => $count,
+          'goals' => $single_day['total_goals_explore'],
+          'count' => $single_day['total_plays_explore'],
           'date' => $date,
           'timestamp' => $ts,
           'conversion' => $this->formatReportPercentage($rate),
-          'conversion_value' => $this->formatReportPercentage($mean),
+          'conversion_value' => $this->formatReportNumber($mean),
           'estimated_value' => $this->formatReportNumber($mean, TRUE, 4),
           'margin_error' => $this->formatReportNumber(($upper - $lower) / 2, TRUE, 4),
           'counter' => $i,
@@ -310,8 +314,8 @@ class AcquiaLiftLearnReport extends AcquiaLiftReportBase {
           // at least one decision for each variation and we have a non-zero value
           // for the mean of the default.
           if ($num_control && $mean_control && $count) {
-            $lift_default = (($mean - $mean_control)/$mean_control) * 100;
-            $lift_default_formatted = $this->formatReportNumber($lift_default, TRUE, 4);
+            $lift_default = (($mean - $mean_control)/$mean_control);
+            $lift_default_formatted = $this->formatReportPercentage($lift_default , TRUE, TRUE, 2);
           }
           // We impose a threshold of a minimum number of decisions before
           // presenting a confidence value.

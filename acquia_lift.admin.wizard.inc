@@ -271,13 +271,13 @@ function acquia_lift_personalize_campaign_wizard_variations_alter(&$form, &$form
         '#title_display' => 'invisible',
         '#field_prefix' => $base_url . base_path(),
         '#default_value' => isset($option_set->data['pages']) ? $option_set->data['pages'] : '',
-        '#description' => t("Specify pages by using specifying one path per line. The '*' character is a wildcard. Example paths are %blog for the blog page and %blog-wildcard for every personal blog. %front is the front page.", array('%blog' => 'blog', '%blog-wildcard' => 'blog/*', '%front' => '<front>')),
+        '#description' => t("Specify pages by using specifying one path per line. The '*' character is a wildcard. Example paths are %blog for the blog page and %blog-wildcard for every personal blog. %front is the front page. If the URL's language prefix is skipped, all languages of the same URL will be selected.", array('%blog' => 'blog', '%blog-wildcard' => 'blog/*', '%front' => '<front>')),
         '#states' => array(
           'disabled' => array(
             ':input[name="variations[editing][option_sets][option_set_' . $option_set->osid . '][advanced][pages_all]"]' => array('value' => '1'),
           ),
         ),
-        // Specify the requirements for personalize_form_element_path_validate.
+        // Specify the requirements for visitor_actions_form_element_path_validate.
         '#allow_dynamic' => TRUE,
         '#allow_external' => FALSE,
       );
@@ -718,9 +718,9 @@ function acquia_lift_personalize_campaign_wizard_goals_alter(&$form, &$form_stat
             // The pages field needs to be manually populated.
             $form['goals']['new'][$delta]['details']['pages'] = array(
               '#type' => 'textarea',
-              '#element_validate' => array('personalize_form_element_path_validate'),
+              '#element_validate' => array('visitor_actions_form_element_path_validate'),
               '#title' => t('Pages'),
-              '#description' => t("Specify pages by using specifying one path per line. The '*' character is a wildcard. Example paths are blog for the blog page and blog/* for every personal blog. &lt;front&gt; is the front page."),
+              '#description' => t("Specify pages by using specifying one path per line. The '*' character is a wildcard. Example paths are %blog for the blog page and %blog-wildcard for every personal blog. %front is the front page. If the URL's language prefix is skipped, all languages of the same URL will be selected.", array('%blog' => 'blog', '%blog-wildcard' => 'blog/*', '%front' => '<front>')),
               '#allow_dynamic' => TRUE,
               '#allow_external' => FALSE,
               '#required' => TRUE,
@@ -1817,7 +1817,7 @@ function acquia_lift_personalize_campaign_wizard_variations_validate(&$form, &$f
               form_set_error('variations][editing][option_sets][' . $option_set_id . '][advanced][pages]', t('There must be at least one page entered where the webpage element variation is executed.'));
             }
             else {
-              personalize_form_element_path_validate($form['variations']['editing']['option_sets'][$option_set_id]['advanced']['pages'], $form_state);
+              visitor_actions_form_element_path_validate($form['variations']['editing']['option_sets'][$option_set_id]['advanced']['pages'], $form_state);
             }
           }
           break;
@@ -2851,7 +2851,7 @@ function _acquia_lift_personalize_campaign_wizard_variations_element(&$form, &$f
   if (empty($option_set->osid)) {
     $element['url'] = array(
       '#type' => 'textfield',
-      '#element_validate' => array('personalize_form_element_path_validate'),
+      '#element_validate' => array('visitor_actions_form_element_path_validate'),
       '#title' => t('Page where element exists'),
       '#allow_dynamic' => FALSE,
       '#allow_external' => TRUE,
@@ -3049,7 +3049,7 @@ function _acquia_lift_personalize_campaign_wizard_goal_element_form() {
 
   $form['url'] = array(
     '#type' => 'textfield',
-    '#element_validate' => array('personalize_form_element_path_validate'),
+    '#element_validate' => array('visitor_actions_form_element_path_validate'),
     '#title' => t('Page where element exists'),
     '#allow_dynamic' => FALSE,
     '#allow_external' => TRUE,

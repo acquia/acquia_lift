@@ -2509,7 +2509,10 @@ class AcquiaLiftV2WebTestCampaignWizardVariations extends AcquiaLiftV2WebTestCam
     if (substr($current_url, -1) != '/') {
       $current_url .= '/';
     }
-    $this->assertEqual($current_url, 'http://www.google.com/');
+    // Assert current url's prefix a google url (but possibly already redirected by IP's country).
+    $current_url_expected_prefix = 'http://www.google.';
+    $current_url_expected_prefix_length = strlen($current_url_expected_prefix);
+    $this->assertTrue(substr($current_url, 0, $current_url_expected_prefix_length) === $current_url_expected_prefix);
 
     // Valid url by alias
     $this->drupalGet('admin/structure/personalize/manage/' . $agent->machine_name . '/variations');

@@ -6,6 +6,70 @@
  */
 
 /**
+ * Admin form for configuring lift_event_values behavior.
+ */
+function acquia_lift_profiles_lift_event_values_form($form, &$form_state) {
+  $form = array(
+    '#attached' => array(
+      'css' => array(
+        drupal_get_path('module', 'acquia_lift') . '/css/acquia_lift.admin.css',
+      ),
+    ),
+  );
+
+  $form['acquia_lift_profiles_lift_event_values'] = array(
+    '#tree' => TRUE,
+    '#theme' => 'acquia_lift_profiles_lift_event_value_form_table',
+  );
+  $lift_event_values = variable_get('acquia_lift_profiles_lift_event_values', array());
+  foreach(visitor_actions_get_actions() as $machine_name => $action) {
+    $action_values = isset($lift_event_values[$machine_name]) ? $lift_event_values[$machine_name] : array();
+    $engagement_score = isset($action_values['engagement_score']) ? $action_values['engagement_score'] : ACQUIA_LIFT_PROFILES_ENGAGEMENT_SCORE_DEFAULT;
+    $global_value = isset($action_values['global_value']) ? $action_values['global_value'] : ACQUIA_LIFT_PROFILES_GLOBAL_VALUE_DEFAULT;
+    $row_label = $action['label'];
+    // If the action has a machine_name, then it is a custom action and can have
+    // a "Edit" link.
+    if (isset($action['machine_name'])) {
+      $row_label .= ' ' . l(
+        t('Edit'),
+        'admin/structure/acquia_lift/visitor_action/' . $machine_name . '/edit',
+        array(
+          'attributes' => array(
+            'class' => array(
+              'ctools-use-modal',
+              'ctools-modal-acquia-lift-style',
+              'acquia-lift-configure',
+            ),
+            'id' => 'edit-visitor-action-' . $machine_name,
+          ),
+        )
+      );
+    }
+    $row_engagement_score = array(
+      '#type' => 'textfield',
+      '#size' => 5,
+      '#title' => NULL,
+      '#default_value' => $engagement_score,
+      '#element_validate' => array('element_validate_integer_positive'),
+    );
+    $row_global_value = array(
+      '#type' => 'textfield',
+      '#size' => 5,
+      '#title' => NULL,
+      '#default_value' => $global_value,
+      '#element_validate' => array('element_validate_integer_positive'),
+    );
+    $form['acquia_lift_profiles_lift_event_values'][$machine_name] = array(
+      '#label' => $row_label,
+      'engagement_score' => $row_engagement_score,
+      'global_value' => $row_global_value,
+    );
+  }
+
+  return system_settings_form($form);
+}
+
+/**
  * Admin form for configuring acquia_lift_profiles behavior.
  */
 function acquia_lift_profiles_admin_form($form, &$form_state) {
@@ -225,7 +289,7 @@ function acquia_lift_profiles_admin_build_visitor_context_select($groups, $defau
 
 
 /**
- * Submit handler for the configuration form.
+ * Submit handler for the acquia_lift_profiles configuration form.
  */
 function acquia_lift_profiles_admin_form_submit($form, &$form_state) {
   // If the "capture identity" setting has changed we need to make sure the visitor

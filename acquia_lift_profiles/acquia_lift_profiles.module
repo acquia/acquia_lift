@@ -7,6 +7,8 @@
 
 define('ACQUIA_LIFT_PROFILES_THUMBNAIL_WIDGET_SEPARATOR', '|');
 define('ACQUIA_LIFT_PROFILES_DEFAULT_IDENTITY_TYPE_DEFAULT', 'email');
+define('ACQUIA_LIFT_PROFILES_ENGAGEMENT_SCORE_DEFAULT', 1);
+define('ACQUIA_LIFT_PROFILES_GLOBAL_VALUE_DEFAULT', 1);
 
 /**
  * Implements hook_menu().
@@ -22,7 +24,30 @@ function acquia_lift_profiles_menu() {
     'access arguments' => array('administer acquia_lift_profiles configuration'),
     'file' => 'acquia_lift_profiles.admin.inc'
   );
+  $items['admin/config/content/personalize/lift_event_values'] = array(
+    'type' => MENU_LOCAL_TASK,
+    'title' => 'Lift Event Values',
+    'description' => 'Configuration settings for visitor actions\' event values.',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('acquia_lift_profiles_lift_event_values_form'),
+    'access arguments' => array('administer acquia_lift_profiles configuration'),
+    'file' => 'acquia_lift_profiles.admin.inc'
+  );
   return $items;
+}
+
+/**
+ * Implementation of hook_theme().
+ */
+function acquia_lift_profiles_theme() {
+  $path = drupal_get_path('module', 'acquia_lift_profiles');
+  return array(
+    'acquia_lift_profiles_lift_event_value_form_table' => array(
+      'render element' => 'element',
+      'path' => $path . '/theme',
+      'file' => 'acquia_lift_profiles.theme.inc',
+    ),
+  );
 }
 
 /**
@@ -314,6 +339,15 @@ function acquia_lift_profiles_personalize_agent_save($agent) {
  * Implements hook_visitor_actions_page_build().
  */
 function acquia_lift_profiles_visitor_actions_page_build(&$page, $actions) {
+  // Retrieving engagement scores.
+  $lift_event_values = variable_get('acquia_lift_profiles_lift_event_values', array());
+  $engagement_scores = array();
+  $global_values = array();
+  foreach ($actions as $machine_name) {
+    $action_values = isset($lift_event_values[$machine_name]) ? $lift_event_values[$machine_name] : array();
+    $engagement_scores[$machine_name] = isset($action_values['engagement_score']) ? (int) $action_values['engagement_score'] : ACQUIA_LIFT_PROFILES_ENGAGEMENT_SCORE_DEFAULT;
+    $global_values[$machine_name] = isset($action_values['global_value']) ? (int) $action_values['global_value'] : ACQUIA_LIFT_PROFILES_GLOBAL_VALUE_DEFAULT;
+  }
   // Add info about client-side actions to Drupal.settings so that our client-
   // side action listener can process them.
   if (!empty($actions)) {
@@ -324,6 +358,8 @@ function acquia_lift_profiles_visitor_actions_page_build(&$page, $actions) {
             'data' => array(
               'acquia_lift_profiles' => array(
                 'tracked_actions' => $actions,
+                'engagement_scores' => $engagement_scores,
+                'global_values' => $global_values,
               ),
             ),
             'type' => 'setting'

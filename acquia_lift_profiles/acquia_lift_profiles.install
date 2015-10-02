@@ -43,6 +43,7 @@ function acquia_lift_profiles_uninstall() {
   variable_del('acquia_lift_profiles_capture_identity');
   variable_del('acquia_lift_profiles_field_mappings');
   variable_del('acquia_lift_profiles_tracked_actions');
+  variable_del('acquia_lift_profiles_lift_event_values');
   variable_del('acquia_lift_profiles_udf_mappings');
   variable_del('acquia_lift_profiles_identity_param');
   variable_del('acquia_lift_profiles_identity_type_param');

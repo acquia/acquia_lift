@@ -9,6 +9,8 @@ QUnit.module("Acquia Lift Profiles", {
     Drupal.settings.acquia_lift_profiles.mappings = {};
     Drupal.settings.acquia_lift_profiles.mappingContextSeparator = '__';
     Drupal.settings.acquia_lift_profiles.account_name = 'TESTACCOUNT';
+    Drupal.settings.acquia_lift_profiles.engagement_scores = {};
+    Drupal.settings.acquia_lift_profiles.global_values = {};
 
     Drupal.personalize = Drupal.personalize || {};
     Drupal.personalize.visitor_context = Drupal.personalize.visitor_context || {};
@@ -356,6 +358,8 @@ QUnit.asyncTest("Use UDF values in processEvent", function( assert ) {
         // the UDF values that were gathered during the init call should get
         // passed in the _tcaq.push call for the custom event.
         assert.deepEqual(event[2], {
+          engagement_score: 13579,
+          targetgoalvalue: 24680,
           evalSegments: true,
           person_udf1: "some-value",
           person_udf2: "some-other-value"
@@ -375,6 +379,12 @@ QUnit.asyncTest("Use UDF values in processEvent", function( assert ) {
           person_udf1: "my_first_plugin__some-context",
           person_udf2: "my_promise_plugin__some-other-context"
         }
+      },
+      engagement_scores: {
+        someEvent: 13579
+      },
+      global_values: {
+        someEvent: 24680
       },
       mappingContextSeparator: '__'
     }
@@ -398,8 +408,8 @@ QUnit.asyncTest("Use UDF values in processEvent", function( assert ) {
   QUnit.stop();
   // Now process a custom event - the UDF values that were evaluated during the
   // init call should also get passed. The assertion is in our _tcaq mock above.
-  Drupal.acquia_lift_profiles.processEvent('someEvent', {}, {'context1': 'value1'});
-}); 
+  Drupal.acquia_lift_profiles.processEvent('someEvent', settings, {'context1': 'value1'});
+});
 /**
  * DEBUGGER/INSPECTOR TESTS START HERE
  */

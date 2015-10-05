@@ -16,6 +16,7 @@ define('ACQUIA_LIFT_DECISION_LOCKSTEP', 'lockstep');
 define('ACQUIA_LIFT_DECISION_MULTIVARIATE', 'mvt');
 define('ACQUIA_LIFT_MULTIVARIATE_TEST_SUFFIX', '-mvt');
 define('ACQUIA_LIFT_DOCUMENTATION', 'https://docs.acquia.com/lift/drupal');
+define('ACQUIA_LIFT_INSPECTOR_URL', 'acquia_lift_inspect_mode');
 
 /**
  * Implements hook_menu().
@@ -359,6 +360,10 @@ function acquia_lift_theme() {
       'function' => 'theme_acquia_lift_navbar_menu_tree',
       'preprocess functions' => array('template_preprocess_acquia_lift_navbar_menu_tree'),
     ),
+    'acquia_lift_debugger' => array(
+      'path' => $path . '/theme',
+      'file' => 'acquia_lift.theme.inc',
+    )
   );
 }
 
@@ -382,6 +387,16 @@ function acquia_lift_page_build(&$page) {
   if (user_access('manage personalized content')) {
     module_load_include('inc', 'acquia_lift', 'acquia_lift.ui');
     acquia_lift_build_page($page);
+  }
+  if (!path_is_admin(current_path()) && acquia_lift_debug_mode_enabled()) {
+    $page['footer']['acquia_lift_debug'] = array(
+      '#attached' => array(
+        'library' => array(array('acquia_lift', 'debugger')),
+      ),
+      'container' => array(
+        '#markup' => theme('acquia_lift_debugger'),
+      ),
+    );
   }
 }
 
@@ -1735,6 +1750,34 @@ EOT;
     ),
   );
 
+  // The Acquia Lift debugger.
+  $libraries['debugger'] = array(
+    'title' => 'Acquia Lift debugger',
+    'website' => '',
+    'version' => VERSION,
+    //@todo: the angular import should be done as a library dependency (similiar to backbone and underscore)
+    'js' => array(
+      $path . '/js/acquia_lift.debug.js' => $options,
+      'https://cdnjs.cloudflare.com/ajax/libs/angular.js/1.4.2/angular.min.js' => $options,
+      $path . '/js/acquia_lift.debugger.js' => $options,
+      array(
+        'data' => array(
+          'acquia_lift' => array(
+            'isDebugMode' => TRUE,
+          ),
+        ),
+        'type' => 'setting'
+      ),
+    ),
+    'css' => array(
+      $path . '/css/acquia_lift.debugger.css' => array(),
+    ),
+    'dependencies' => array(
+      array('system', 'jquery'),
+      array('personalize', 'storage'),
+    ),
+  );
+
   return $libraries;
 }
 
@@ -1750,7 +1793,6 @@ function acquia_lift_library_alter(&$libraries, $module) {
     $jquery_version = $libraries['jquery']['version'];
   }
   if ($jquery_version && $module == 'acquia_lift') {
-    $path = drupal_get_path('module', 'acquia_lift');
     // If the version of jQuery is old, we need to add `on` and `off`.
     if ($jquery_version < '1.7') {
       $vaui_path = drupal_get_path('module', 'visitor_actions_ui');
@@ -2478,6 +2520,41 @@ function acquia_lift_navbar() {
 
   $menu = menu_tree_all_data('acquia-lift-controls');
   $usingUnifiedNavbar = _acquia_lift_using_unified_navbar();
+  if (personalize_debug_mode_enabled()) {
+    $debugger_running = acquia_lift_debug_mode_enabled();
+    $debugger_link = current_path();
+    $link_title = $debugger_running ? t('End Acquia Lift Inspector session') : t('Start Acquia Lift Inspector');
+    // Add in a link to enable/disable the debugger.
+    $menu[] = array(
+      'link' => array(
+        'mlid' => 'acquia_lift_debugger_id',
+        'link_title' => $link_title,
+        'title' => $link_title,
+        'menu_name' => 'acquia-lift-controls',
+        'link_path' => $debugger_link,
+        'href' => $debugger_link,
+        'has_children' => '0',
+        'expanded' => '1',
+        'depth' => '1',
+        'weight' => '50',
+        'hidden' => '0',
+        'access' => '1',
+        'in_active_trail' => FALSE,
+        'localized_options' => array(
+          'attributes' => array(
+            'class' => array(
+              'visitor-actions-ui-ignore',
+              'acquia-lift-menu-link',
+              'acquia-lift-debugger',
+              'acquia-lift-navbar-secondary',
+            ),
+            'data-acquia-lift-debugger-running' => $debugger_running ? 'true': 'false',
+          ),
+        ),
+      ),
+      'below' => array(),
+    );
+  }
 
   if (!empty($menu)) {
     $items['acquia_lift'] = array(
@@ -3300,6 +3377,45 @@ function acquia_lift_get_campaign_details() {
   }
 
   return $campaigns;
+}
+
+/**
+ * Determines if the Lift debugger should be enabled on the page request.
+ *
+ * @return bool
+ *   TRUE to include on the page, FALSE otherwise.
+ */
+function acquia_lift_debug_mode_enabled() {
+  $enabled = personalize_debug_mode_enabled();
+  if (!$enabled) {
+    return FALSE;
+  }
+  if (!acquia_lift_is_configured()) {
+    return FALSE;
+  }
+  // Check to see if there is a session variable for debug mode.
+  $in_session = isset($_SESSION[ACQUIA_LIFT_INSPECTOR_URL]);
+  // Check to see if it was requested
+  if ($in_session) {
+    //turns on the personalizeDebugMode cookie
+    setcookie('personalizeDebugMode',1, time()+60, '/');
+    // Check to see if it should be turned off from URL parameter.
+    if (isset($_GET[ACQUIA_LIFT_INSPECTOR_URL]) && $_GET[ACQUIA_LIFT_INSPECTOR_URL] == FALSE) {
+      unset($_SESSION[ACQUIA_LIFT_INSPECTOR_URL]);
+      //deletes the personalizeDebugMode cookie
+      setcookie('personalizeDebugMode',"", time()-3600 );
+      return FALSE;
+    }
+    return TRUE;
+  }
+  else {
+    // Check to see if it was requested via URL parameter.
+    if (!empty($_GET[ACQUIA_LIFT_INSPECTOR_URL])) {
+      $_SESSION[ACQUIA_LIFT_INSPECTOR_URL] = TRUE;
+      return TRUE;
+    }
+  }
+  return FALSE;
 }
 
 /**

@@ -55,6 +55,10 @@ QUnit.module("Acquia Lift Profiles", {
     var callbackCalled = 0;
     _tcwq = {
       'push':function(stf) {
+        if (!jQuery.isFunction(stf[1])) {
+          // Debug mode callback also utilizes push but has no callback.
+          return;
+        }
         callbackCalled++;
         var values;
         setTimeout(function(){
@@ -395,4 +399,100 @@ QUnit.asyncTest("Use UDF values in processEvent", function( assert ) {
   // Now process a custom event - the UDF values that were evaluated during the
   // init call should also get passed. The assertion is in our _tcaq mock above.
   Drupal.acquia_lift_profiles.processEvent('someEvent', {}, {'context1': 'value1'});
+}); 
+/**
+ * DEBUGGER/INSPECTOR TESTS START HERE
+ */
+QUnit.test ("debugger - get personID and touchId", function(assert){
+  expect(4);
+  $.cookie('tc_ptid', 'someTestUser', {path:'/'});
+  $.cookie('tc_ttid', 'someTouchId', {path:'/'});
+  assert.equal(Drupal.acquiaLiftProfilesDebug.getPersonId(), 'someTestUser', "Correct person id from cookie");
+  assert.equal(Drupal.acquiaLiftProfilesDebug.getTouchId(), 'someTouchId', "Correct touch id form cookie");
+  $.cookie('tc_ptid', 'someOtherTestUser', {path:'/'});
+  $.cookie('tc_ttid', 'someOtherTouchId', {path:'/'});
+  assert.equal(Drupal.acquiaLiftProfilesDebug.getPersonId(), 'someOtherTestUser', "correct Updated person id from cookie");
+  assert.equal(Drupal.acquiaLiftProfilesDebug.getTouchId(), 'someOtherTouchId', "correct Updated touch id from cookie");
+  //clear cookies.
+  $.cookie('tc_ptid', null, {path:'/'});
+  $.cookie('tc_ttid', null, {path:'/'});
+})
+QUnit.test ("debugger - update identities", function(assert){
+  expect (1);
+  var identities = [];
+  identities.push( { 'identity' : 'someIdentity', 'type' : 'someType' });
+  identities.push( { 'identity' : 'someOtherIdentity', 'type' : 'someOtherType' });
+
+  $(document).trigger("acquiaLiftIdentitiesAdded", identities);
+  assert.equal(Drupal.acquiaLiftProfilesDebug.getAdditionalIdentities().length,2,"identities updated properly");
+
+})
+QUnit.test("debugger - no segments, malformed data", function(assert){
+  expect (2);
+  var capture;
+  var mockedData;
+  var mockedSessionStorage = [];
+
+
+  Drupal.personalizeDebug.log = function(message, code){
+    mockedSessionStorage.push(message);
+  }
+  Drupal.personalizeStorage.read = function(key){
+    return (mockedSessionStorage[key]);
+  }
+
+  $(document).trigger("acquiaLiftSegmentsUpdated", mockedData, capture);
+
+  mockedData={};
+  mockedData.segments=[];
+
+  $(document).trigger("acquiaLiftSegmentsUpdated", mockedData, capture);
+
+  assert.equal(mockedSessionStorage.length,2,"correct number of messages");
+  ok(true, "function did not crash");
 });
+QUnit.test("debugger - update segments", function( assert ) {
+  expect(4);
+  var capture
+  var mockedData = {};
+  mockedData.segments = ['segment1', 'segment2'];
+  var mockedSessionStorage = [];
+
+  Drupal.personalizeDebug.log = function (message, code){
+    mockedSessionStorage.push(message);
+  }
+
+  $(document).trigger("acquiaLiftSegmentsUpdated",mockedData, capture);
+  assert.equal(Drupal.acquiaLiftProfilesDebug.getCurrentSegments(), mockedData.segments,"Segments updated properly");
+  assert.equal(mockedSessionStorage.length,1, "first message added to sessionStorage");
+
+  mockedData.segments = ['segment1', 'segment2', 'segment3'];
+  $(document).trigger("acquiaLiftSegmentsUpdated",mockedData, capture);
+
+  assert.equal(Drupal.acquiaLiftProfilesDebug.getCurrentSegments(), mockedData.segments, "new segments updated properly");
+  assert.equal(mockedSessionStorage.length,2,"new message added to sessionStorage");
+
+});
+
+QUnit.test("debugger set override segments", function(assert){
+  expect(1);
+  var capture;
+  var mockedData = {}
+  mockedData.segments = ['segment1'];
+  var mockedSessionStorage = {};
+
+  //mocking the sessionStorage functions
+  Drupal.personalizeStorage.read = function(key){
+    return (mockedSessionStorage[key]);
+  }
+  Drupal.personalizeStorage.write = function (key, value){
+    mockedSessionStorage[key] = value;
+  }
+
+  Drupal.acquiaLiftProfilesDebug.setOverrideSegments(mockedData.segments);
+  mockedData.segments = ['segments1', 'segments2'];
+  $(document).trigger("acquiaLiftSegmentsUpdated",mockedData, capture);
+
+  assert.equal(Drupal.acquiaLiftProfilesDebug.getCurrentSegments().length, 1,"override segments properly");
+});
+

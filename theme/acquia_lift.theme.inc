@@ -309,3 +309,141 @@ function theme_acquia_lift_create_type_change($variables) {
   $html .= ' class="acquia-lift-form-type">' . $variables['type'] . '</span>&nbsp;' . $variables['change_link'];
   return $html;
 }
+
+
+/**
+ * Theme function to return the markup required for the personalize debugger.
+ */
+function theme_acquia_lift_debugger() {
+  $markup = <<<EOT
+<div id="debuggerSpacer"></div>
+<div ng-app="debuggerModule" ng-controller="DebuggerController">
+
+<div id="debugger" >
+  <div class="debugger__navigation">
+  <div class="debugger__actions">
+          <span class="debugger__action__maximize" id="debugger__action__maximize">
+              <i class="debugger__icon"></i>
+          </span>
+          <span class="debugger__action__close" id="debugger__action__close">
+              <i class="debugger__icon"></i>
+          </span>
+          <span class="debugger__action__destroy" id="debugger__action__destroy">
+              <i class="debugger__icon"></i>
+          </span>
+  </div>
+    <ul class="debugger__navigation__top__bar">
+      <li><a id="liftProfileTabLabel" class="debugger__navigation__item" ng-click="tab = 'profile';buttonClick()" ng-class="profileButton">Lift Profile</a></li>
+      <li><a id="sitePreviewTabLabel" class="debugger__navigation__item" ng-click="tab = 'preview';buttonClick()" ng-class="previewButton">Site Preview</a></li>
+      <li><a id="eventLogTabLabel" class="debugger__navigation__item" ng-click="tab = 'log';buttonClick()" ng-class="logButton">Event Log</a></li>
+    </ul>
+  </div>
+  <div class="debugger__content" resizable r-directions="['top']" r-flex="false">
+  <div ng-show="tab=='preview'">
+  <div class="debugger__preview">
+    <div class="debugger__secondary__navigation"> <div class="previewBox">
+            <button id="debugger__stopPreview" ng-click="stopPreview()" data-ng-disabled="!isPreview()" ng-class="previewButtonStop">Stop Preview</button>
+            <button id="debugger__startPreview" ng-click="startPreview()" data-ng-disabled="isPreview()" ng-class="previewButtonStart">Start Preview</button>
+          </div>
+          <div class="debugger__preview__notification"></div>
+          </div>
+      <table>
+        <tr>
+          <td>
+            <div id="sitePreviewSegmentsLabel"></div>
+          </td>
+        </tr>
+        <tr>
+          <td>
+            <ul ng-repeat="item in profile.overrideSegments | orderBy: 'toString()'" class="overrideSegments">
+              <li class="float"><span>{{item}}</span> <span class="clickable" ng-class="previewActive" ng-click="deletePreviewItem(item)">&#10006;</span></div>
+            </ul>
+          </td>
+        </tr>
+        <tr>
+          <td>
+            <div class="addBox" ng-class="previewActive">
+              <autocomplete class="float" ng-model="overrideSegmentChoice" data="allSegments" on-select="addPreview"></autocomplete>
+              <button ng-click="addPreviewItem(null)">Add</button>
+            </div>
+          </td>
+        </tr>
+      </table>
+    </div>
+  </div>
+    <div ng-show="tab == 'log'">
+      <div class="debugger__secondary__navigation">
+        <div class="debugger__filter__label"><b>Filters: </b></div>
+        <div>
+          <div
+          isteven-multi-select
+          input-model="severityFilter"
+          output-model="severity"
+          button-label="name"
+          item-label="name maker"
+          tick-property="ticked"
+          output-model-name="Severity &#9662;">
+          </div>
+          <div
+          isteven-multi-select
+          input-model="typeFilter"
+          output-model="type"
+          button-label="name"
+          item-label="name maker"
+          tick-property="ticked"
+          output-model-name="Type &#9662;">
+          </div>
+         </div>
+      </div>
+      <div class="debugger__log">
+        <table id="debugger__log__table">
+          <colgroup>
+            <col span="1" style="width: 25px;">
+            <col span="1" style="width: 50%;">
+            <col span="1">
+            <col span="1">
+            <col span="1">
+          </colgroup>
+          <th>
+          <th>Message</th>
+          <th>Type</th>
+          <th>Time</th>
+          <th>Page</th>
+          </th>
+          <tr ng-repeat="item in items | filter:search | orderBy: '-timestamp'" class="minheight">
+            <td ng-bind-html="item.severity | to_icon"></td>
+            <td>{{item.message | cut:true:100:'...':item}}</td>
+            <td>{{item.type | cut:true:10:'...':item}}</td>
+            <td>{{item.timestamp |  date:'MM/dd/yyyy h:mma'}}</td>
+            <td>{{item.page | cut:true:20:'...':item}}</td>
+          </tr>
+        </table>
+      </div>
+    </div>
+
+    <div ng-show="tab == 'profile'">
+      <div class="debugger__secondary__navigation"></div>
+      <div class="debugger__profile">
+        <table>
+           <b><h5>Tracking ID: {{profile.personId}}</h5></b>
+          <tr>
+            <td>
+                <b>Touch ID: </b>{{profile.touchId}}
+            </td>
+          </tr><tr>
+            <td> <div id="profileSegmentLabel"></div>
+                <ul ng-repeat="item in profile.curSegments | orderBy: 'toString()'">
+                  <li> {{item}} </li>
+                </ul>
+            </td>
+          </tr>
+        </table>
+      </div>
+    </div>
+    </div>
+  </div>
+
+</div>
+EOT;
+  return $markup;
+}

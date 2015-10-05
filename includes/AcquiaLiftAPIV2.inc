@@ -39,6 +39,12 @@ class AcquiaLiftAPIV2 extends AcquiaLiftAPIBase implements AcquiaLiftLearnReport
   protected $validate_response;
 
   /**
+   * Holds the account and site name for Lift Profiles.
+   * @var array
+   */
+  protected $lift_profiles_account_name;
+
+  /**
    * The singleton instance.
    *
    * @var AcquiaLiftAPI
@@ -99,12 +105,13 @@ class AcquiaLiftAPIV2 extends AcquiaLiftAPIBase implements AcquiaLiftLearnReport
         $acquia_lift_version = $account_info['acquia_lift_version'];
       }
       $validate_response = $account_info['validate_response'];
+      $lift_profiles_account_name = isset($account_info['profiles']['account_name']) ? $account_info['profiles']['account_name'] : '';
       // @todo Add integration with Acquia Customer Auth here. Can only happen
       // after Acquia Decision Service has integrated with Acquia Customer Auth and
       // customer auth has become public. This will add additional security as
       // we then can self-generate public and private keys per customer. They
       // will also be able to expire easily.
-      self::$instance = new self($api_url, $public_key, $private_key, $acquia_lift_version, $validate_response);
+      self::$instance = new self($api_url, $public_key, $private_key, $acquia_lift_version, $validate_response, $lift_profiles_account_name);
     }
     return self::$instance;
   }
@@ -130,12 +137,13 @@ class AcquiaLiftAPIV2 extends AcquiaLiftAPIBase implements AcquiaLiftLearnReport
    * @param string $api_url
    *   A string representing an Acquia Lift API url.
    */
-  private function __construct($api_url, $public_key, $private_key, $acquia_lift_version, $validate_response = TRUE) {
+  private function __construct($api_url, $public_key, $private_key, $acquia_lift_version, $validate_response = TRUE, $profiles_account_name = '') {
     $this->api_url = $api_url;
     $this->api_public_key = $public_key;
     $this->api_private_key = $private_key;
     $this->lift_version = $acquia_lift_version;
     $this->validate_response = $validate_response;
+    $this->lift_profiles_account_name = $profiles_account_name;
   }
 
   /**
@@ -328,9 +336,41 @@ class AcquiaLiftAPIV2 extends AcquiaLiftAPIBase implements AcquiaLiftLearnReport
       $interval = date_diff(date_create($from), date_create($to));
       $days = $interval->format('%d');
     }
+    drupal_get_user_timezone();
     $date = new DateTime($from, new DateTimeZone("UTC"));
     $from = $date->format("Y-m-d\TH:i:s\Z");
     $path = "report?campaign_id=$name&from=$from&days=$days";
+    $url = $this->generateEndpoint($path);
+    $vars = array('name' => $name);
+    $fail_msg = 'Could not retrieve report from Acquia Lift';
+    return $this->makeGetRequest($url, $this->getStandardHeaders(), $fail_msg, $vars);
+  }
+
+  public function getPersonalizationOverviewReport($name, $variations) {
+    if (empty($this->lift_profiles_account_name)) {
+      throw new AcquiaLiftCredsException('No account name for Lift Profiles configured');
+    }
+    $site_name = variable_get('acquia_lift_profiles_site_name', 'Drupal');
+    $variations_str = implode(',', $variations);
+    $path = "report/{$this->lift_profiles_account_name}/{$site_name}/$name/overview?variations={$variations_str}";
+    $url = $this->generateEndpoint($path);
+    $vars = array('name' => $name);
+    $fail_msg = 'Could not retrieve report from Acquia Lift';
+    return $this->makeGetRequest($url, $this->getStandardHeaders(), $fail_msg, $vars);
+  }
+
+  public function getAudienceReport($name, $audience, $variations, $type, $from, $to) {
+    if (empty($this->lift_profiles_account_name)) {
+      throw new AcquiaLiftCredsException('No account name for Lift Profiles configured');
+    }
+    $site_name = variable_get('acquia_lift_profiles_site_name', 'Drupal');
+    $variations_str = implode(',', $variations);
+    $tz = drupal_get_user_timezone();
+    $from_date = new DateTime($from, new DateTimeZone($tz));
+    $from_str = $from_date->format("Y-m-d");
+    $to_date = new DateTime($to, new DateTimeZone($tz));
+    $to_str = $to_date->format("Y-m-d");
+    $path = "report/{$this->lift_profiles_account_name}/{$site_name}/$name/$type/$audience?variations={$variations_str}&from=$from_str&to=$to_str";
     $url = $this->generateEndpoint($path);
     $vars = array('name' => $name);
     $fail_msg = 'Could not retrieve report from Acquia Lift';

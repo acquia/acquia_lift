@@ -868,6 +868,205 @@ function acquia_lift_report($form, &$form_state, $agent_data) {
 
   return $form;
 }
+function acquia_lift_report_full($form, &$form_state, $agent_data) {
+  $form = array(
+    '#prefix' => '<div id="acquia-lift-reports">',
+    '#suffix' => '</div>',
+    '#attached' => array(
+      'library' => array(
+        array('acquia_lift', 'acquia_lift.reports'),
+      ),
+    ),
+  );
+  if (!acquia_lift_is_targeting_agent($agent_data)) {
+    return array();
+  }
+  if (isset($_GET['lift_retired_test'])) {
+    if ($nested_agent = personalize_agent_load($_GET['lift_retired_test'])) {
+      $form['report'] = acquia_lift_report_retired($form_state, $_GET['lift_retired_test'], $agent_data);
+      return $form;
+    }
+  }
+  $option_set = acquia_lift_get_option_set_for_targeting($agent_data->machine_name);
+
+  if (empty($option_set->targeting)) {
+    return array();
+  }
+  // Display a report for the specified audience.
+  if (isset($form_state['values']['audience_filter'])) {
+    $audience = $form_state['values']['audience_filter'];
+  }
+  else {
+    $audience = isset($_GET['targeting_audience']) ? 'audience|' . $_GET['targeting_audience'] : NULL;
+  }
+  // Get audience options.
+  $audience_options = array();
+  foreach($option_set->targeting as $audience_name => $targeting) {
+    $audience_options['audience|' . $audience_name] = $targeting['label'];
+  }
+  // Get retired tests as well.
+  $old_tests = acquia_lift_get_retired_tests($agent_data->machine_name);
+  foreach($old_tests as $retired_test) {
+    $audience_options['retired|' . $retired_test->machine_name] = $retired_test->label;
+  }
+  if (empty($audience_options)) {
+    return array(
+      'no_report' => array(
+        '#markup' => t('This personalization does not contain tests, no reports to show.')
+      )
+    );
+  }
+  // If no audience specified, or one that does not have a test, use the first
+  // audience option.
+  if (empty($audience)) {
+    $audience = key($audience_options);
+  }
+  list($test_type, $test_id) = explode('|', $audience);
+  if ($test_type == 'retired') {
+    $nested_agent = personalize_agent_load($test_id);
+    $test_label = $nested_agent->label;
+  }
+  else {
+    $test_label = $option_set->targeting[$test_id]['label'];
+  }
+
+  // Show the audience filter.
+  $form['audience_container'] = array(
+    '#type' => 'container',
+    '#attributes' => array(
+      'class' => array('container-inline'),
+    ),
+    '#tree' => FALSE,
+  );
+  if (count($audience_options) == 1) {
+    $form['audience_container']['audience_label'] = array(
+      '#markup' => '<h2>' . t('Report for %audience audience', array('%audience' => $test_label)) . '</h2>'
+    );
+    $form['audience_container']['audience_filter'] = array(
+      '#type' => 'value',
+      '#value' => $audience
+    );
+  }
+  else {
+    $form['audience_container']['audience_filter'] = array(
+      '#title' => t('Audience'),
+      '#type' => 'select',
+      '#options' => $audience_options,
+      '#default_value' => $audience,
+      '#ajax' => array(
+        'callback' => "acquia_lift_report_ajax_callback",
+        'wrapper' => "acquia-lift-reports",
+      ),
+      '#id' => 'acquia-lift-report-audience-filter',
+    );
+  }
+  if ($test_type == 'audience' && personalize_agent_get_status($agent_data->machine_name) != PERSONALIZE_STATUS_COMPLETED) {
+    $form['audience_container']['complete'] = array(
+      '#type' => 'link',
+      '#title' => t('End test and choose winner'),
+      '#href' => 'admin/structure/personalize/manage/' . $agent_data->machine_name . '/audience/' . $test_id . '/complete',
+      '#attributes' => array(
+        'class' => array(
+          'ctools-use-modal',
+          'ctools-modal-acquia-lift-style',
+          'action-item-primary-active',
+          'acquia-lift-submit-button',
+          'acquia-lift-complete-audience',
+        )
+      )
+    );
+  }
+
+  if ($test_type == 'retired') {
+    $form['report'] = acquia_lift_report_retired($form_state, $test_id, $agent_data);
+  }
+  else {
+    $form['report'] = acquia_lift_report_audience($form_state, $agent_data, $option_set, $audience);
+  }
+  return $form;
+}
+
+function acquia_lift_report_retired($form_state, $retired_test_name, $agent_data) {
+  return array();
+}
+
+function acquia_lift_report_audience($form_state, $personalization_data, $targeting_option_set, $audience) {
+  $audience_type = isset($targeting_option_set[$audience]['osid']) ? 'test' : 'targeting';
+  // Overview report section.
+  $form['overview_report'] = array(
+    'overview_report_title' => array(
+      '#markup' => '<h2>' . t('Overview') . '</h2>',
+    ),
+    '#theme_wrappers' => array('container'),
+    '#attributes' => array(
+      'id' => 'acquia-lift-overview-report',
+      'class' => array('acquia-lift-report-section', 'clearfix'),
+    ),
+  );
+  $form['overview_report']['report'] = array(
+    '#markup' => 'ohai',
+    '#theme_wrappers' => array('container'),
+    '#id' => 'acquia-lift-overview-report-data',
+  );
+
+  if ($audience_type == 'test') {
+    $nested_os = personalize_option_set_load($targeting_option_set[$audience]['osid']);
+    $nested_agent = personalize_agent_load($nested_os->agent);
+    // Conversion details section.
+    $form['experiment_report'] = array(
+      '#type' => 'container',
+      'header' => array(
+        '#type' => 'container',
+        '#attributes' => array(
+          'class' => array('acquia-lift-report-section-header', 'clearfix'),
+        ),
+        'title' => array(
+          '#type' => 'container',
+          '#attributes' => array(
+            'class' => array('acquia-lift-report-section-title'),
+          ),
+          'report_title' => array(
+            '#markup' => '<h2>' . t('Experiment') . '</h2>',
+          ),
+        ),
+      ),
+      'summary' => array(
+        '#type' => 'container',
+        '#attributes' => array(
+          'class' => array('acquia-lift-report-header-summary'),
+        )
+      ),
+      '#attributes' => array(
+        'id' => 'acquia-lift-experiment-report',
+        'class' => array('acquia-lift-report-section'),
+      ),
+    );
+    // Show the test (explore)  percentage if in adaptive mode.
+    if ($nested_agent->data['decision_style'] == 'adaptive') {
+      $percentage = $nested_agent->data['explore_rate'];
+      $form['experiment_report']['header']['title']['groups'] = array(
+        '#markup' => t('(@percentage%)', array('@percentage' => $percentage)),
+      );
+      // Also add help text to the heading to explain what this is.
+      $form['experiment_report']['header']['title']['#attributes']['data-help-tooltip'] = t('The portion of visitors who were shown a random variation, as opposed to the optimized variation. The data below are for the experiment group only.');
+    }
+
+    $form['experiment_report']['header']['summary']['report_summary'] = array(
+      '#theme_wrappers' => array('container'),
+      '#markup' => t('See which content variations are winning.'),
+      '#attributes' => array(
+        'class' => array('acquia-lift-report-summary'),
+      ),
+    );
+    $form['experiment_report']['report'] = array(
+      '#markup' => drupal_render($reports['experiment']),
+      '#theme_wrappers' => array('container'),
+      '#id' => 'acquia-lift-experiment-report-data',
+    );
+  }
+
+  return $form;
+}
 
 /**
  * Submit handler for Acquia Lift reports.

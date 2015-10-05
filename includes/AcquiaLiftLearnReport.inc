@@ -119,13 +119,25 @@ class AcquiaLiftLearnReport extends AcquiaLiftReportBase {
       $config = $this->getReportConfiguration();
       try {
         $this->reportData = $this->reportDataSrc->getReportForDateRange($this->agent->getMachineName(), $config['date_from'], $config['date_to']);
-
       }
       catch (Exception $e) {
         drupal_set_message(t('There was a problem retrieving reporting data for this campaign, please try again later.'), 'error');
       }
     }
     return $this->reportData;
+  }
+
+  protected function getAudienceReportData() {
+    if (empty($this->audienceReportData)) {
+      $config = $this->getReportConfiguration();
+      try {
+        $this->audienceReportData = $this->reportDataSrc->getAudienceReport($this->agent->getMachineName());
+      }
+      catch (Exception $e) {
+        drupal_set_message(t('There was a problem retrieving reporting data for this campaign, please try again later.'), 'error');
+      }
+    }
+    return array();
   }
 
   /**

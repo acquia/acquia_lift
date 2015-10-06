@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
     <title>Personalize JS Tests</title>
-    <link rel="stylesheet" href="http://code.jquery.com/qunit/qunit-1.14.0.css">
+    <link rel="stylesheet" href="http://code.jquery.com/qunit/qunit-1.19.0.css">
 </head>
 <body>
 
@@ -12,7 +12,7 @@
 </div>
 
 
-<script src="http://code.jquery.com/qunit/qunit-1.14.0.js"></script>
+<script src="http://code.jquery.com/qunit/qunit-1.19.0.js"></script>
 <script src="http://code.jquery.com/jquery-1.4.4.js"></script>
 <script type="text/javascript">
     var Drupal = Drupal || {};
@@ -21,13 +21,32 @@
     Drupal.settings = Drupal.settings || {};
     Drupal.theme = Drupal.theme || {};
     Drupal.settings.personalize = Drupal.settings.personalize || {};
+    Drupal.settings.acquia_lift = Drupal.settings.acquia_lift || {};
+    Drupal.settings.acquia_lift.api_class = 'acquiaLiftV2API';
     Drupal.settings.acquia_lift_target = Drupal.settings.acquia_lift_target || {};
     Drupal.settings.acquia_lift_target.nested_tests = Drupal.settings.acquia_lift_target.nested_tests || {};
     Drupal.settings.acquia_lift_target.agent_map = Drupal.settings.acquia_lift_target.agent_map || {};
     Drupal.settings.acquia_lift_target.default_target = 'everyone-else';
     Drupal.settings.acquia_lift_target.test_agent_plugin = 'acquia_lift_learn';
+    // Mock the storage
+    window.personalizeMockBuckets = {};
+    Drupal.personalize = Drupal.personalize || {};
+    Drupal.personalize.storage = Drupal.personalize.storage || {};
+    Drupal.personalize.storage.utilities = {
+      getBucket: function () {
+        return {
+          write: function (key, value) {
+            window.personalizeMockBuckets[key] = value;
+          },
+          read: function (key) {
+            return window.personalizeMockBuckets[key];
+          }
+        };
+      }
+    };
 </script>
 
+<script src="../../../../../../misc/ajax.js"></script>
 <script src="../js/acquia_lift_target.js"></script>
 <script src="acquia_lift_target.tests.js"></script>
 </body>

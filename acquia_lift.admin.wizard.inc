@@ -271,7 +271,7 @@ function acquia_lift_personalize_campaign_wizard_variations_alter(&$form, &$form
         '#title_display' => 'invisible',
         '#field_prefix' => $base_url . base_path(),
         '#default_value' => isset($option_set->data['pages']) ? $option_set->data['pages'] : '',
-        '#description' => t("Specify pages by using specifying one path per line. The '*' character is a wildcard. Example paths are %blog for the blog page and %blog-wildcard for every personal blog. %front is the front page. If the URL's language prefix is skipped, all languages of the same URL will be selected.", array('%blog' => 'blog', '%blog-wildcard' => 'blog/*', '%front' => '<front>')),
+        '#description' => t("Specify pages by using one path per line. The '*' character is a wildcard. Example paths are %blog for the blog page and %blog-wildcard for every personal blog. %front is the front page. If the URL's language prefix is skipped, all languages of the same URL will be selected.", array('%blog' => 'blog', '%blog-wildcard' => 'blog/*', '%front' => '<front>')),
         '#states' => array(
           'disabled' => array(
             ':input[name="variations[editing][option_sets][option_set_' . $option_set->osid . '][advanced][pages_all]"]' => array('value' => '1'),
@@ -720,7 +720,7 @@ function acquia_lift_personalize_campaign_wizard_goals_alter(&$form, &$form_stat
               '#type' => 'textarea',
               '#element_validate' => array('visitor_actions_form_element_path_validate'),
               '#title' => t('Pages'),
-              '#description' => t("Specify pages by using specifying one path per line. The '*' character is a wildcard. Example paths are %blog for the blog page and %blog-wildcard for every personal blog. %front is the front page. If the URL's language prefix is skipped, all languages of the same URL will be selected.", array('%blog' => 'blog', '%blog-wildcard' => 'blog/*', '%front' => '<front>')),
+              '#description' => t("Specify pages by using one path per line. The '*' character is a wildcard. Example paths are %blog for the blog page and %blog-wildcard for every personal blog. %front is the front page. If the URL's language prefix is skipped, all languages of the same URL will be selected.", array('%blog' => 'blog', '%blog-wildcard' => 'blog/*', '%front' => '<front>')),
               '#allow_dynamic' => TRUE,
               '#allow_external' => FALSE,
               '#required' => TRUE,

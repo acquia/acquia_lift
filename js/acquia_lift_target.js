@@ -145,12 +145,11 @@ Drupal.acquia_lift_target = (function() {
           ruleId,
           strategy,
           feature_strings = convertContextToFeatureStrings(visitor_context),
-          fallbackIndex = 0,
           defaultTarget = Drupal.settings.acquia_lift_target.default_target;
       // Initialize each decision to the fallback option.
       for (var decision_name in choices) {
         if (choices.hasOwnProperty(decision_name)) {
-          decisions[decision_name] = choices[decision_name][fallbackIndex];
+          decisions[decision_name] = choices[decision_name][0];
         }
       }
 

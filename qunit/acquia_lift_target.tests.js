@@ -1,5 +1,5 @@
 QUnit.test("test explicit targeting logic", function( assert ) {
-  expect(6);
+  expect(21);
   // Add settings for a targeting agent with some fixed targeting rules on its single
   // option set.
   var agentName = 'my-test-agent',
@@ -26,6 +26,7 @@ QUnit.test("test explicit targeting logic", function( assert ) {
     ],
     targeting = [
       {
+        'name': 'second-audience',
         'option_id': 'second-option',
         // Add fixed targeting rules such that this option should be shown if two
         // feature strings are present.
@@ -36,6 +37,7 @@ QUnit.test("test explicit targeting logic", function( assert ) {
         'targeting_strategy': 'AND'
       },
       {
+        'name': 'third-audience',
         'option_id': 'third-option',
         // Add fixed targeting rules such that this option should be shown if one of
         // two feature strings is present.
@@ -55,7 +57,15 @@ QUnit.test("test explicit targeting logic", function( assert ) {
   choices[decisionName] = ['first-option', 'second-option', 'third-option'];
   fallbacks[decisionName] = 0;
   // Try first with no visitor contexts present, we should get the first (fallback) option.
-  Drupal.personalize.agents.acquia_lift_target.getDecisionsForPoint(agentName, evaluatedVisitorContexts, choices, decisionName, fallbacks,     callback = function(decisions) {
+  $(document).bind('liftDecision', function (e, agent_name, audience, decision_name, choice, policy) {
+    assert.equal(agent_name, "my-test-agent", 'agent name correctly assigned from event');
+    assert.equal(audience, undefined, 'audience correctly assigned from event');
+    assert.equal(decision_name, "my-decision", 'decision name correctly assigned from event');
+    assert.equal(choice, "first-option", 'choice correctly assigned from event');
+    assert.equal(policy, "fallback", 'policy correctly assigned from event');
+    $(document).unbind('liftDecision');
+  });
+  Drupal.personalize.agents.acquia_lift_target.getDecisionsForPoint(agentName, evaluatedVisitorContexts, choices, decisionName, fallbacks, callback = function(decisions) {
     assert.ok(decisions.hasOwnProperty(decisionName));
     assert.equal(decisions[decisionName], 'first-option');
   });
@@ -71,6 +81,14 @@ QUnit.test("test explicit targeting logic", function( assert ) {
       'ss-other'
     ]
   };
+  $(document).bind('liftDecision', function (e, agent_name, audience, decision_name, choice, policy) {
+    assert.equal(agent_name, "my-test-agent", 'agent name correctly assigned from event');
+    assert.equal(audience, "second-audience", 'audience correctly assigned from event');
+    assert.equal(decision_name, "my-decision", 'decision name correctly assigned from event');
+    assert.equal(choice, "second-option", 'choice correctly assigned from event');
+    assert.equal(policy, "targeting", 'policy correctly assigned from event');
+    $(document).unbind('liftDecision');
+  });
   Drupal.personalize.agents.acquia_lift_target.getDecisionsForPoint(agentName, evaluatedVisitorContexts, choices, decisionName, fallbacks,     callback = function(decisions) {
     assert.ok(decisions.hasOwnProperty(decisionName));
     assert.equal(decisions[decisionName], 'second-option');
@@ -87,14 +105,22 @@ QUnit.test("test explicit targeting logic", function( assert ) {
       'my-other-value'
     ]
   };
-  Drupal.personalize.agents.acquia_lift_target.getDecisionsForPoint(agentName, evaluatedVisitorContexts, choices, decisionName, fallbacks,     callback = function(decisions) {
+  $(document).bind('liftDecision', function (e, agent_name, audience, decision_name, choice, policy) {
+    assert.equal(agent_name, "my-test-agent", 'agent name correctly assigned from event');
+    assert.equal(audience, "third-audience", 'audience correctly assigned from event');
+    assert.equal(decision_name, "my-decision", 'decision name correctly assigned from event');
+    assert.equal(choice, "third-option", 'choice correctly assigned from event');
+    assert.equal(policy, "targeting", 'policy correctly assigned from event');
+    $(document).unbind('liftDecision');
+  });
+  Drupal.personalize.agents.acquia_lift_target.getDecisionsForPoint(agentName, evaluatedVisitorContexts, choices, decisionName, fallbacks, callback = function(decisions) {
     assert.ok(decisions.hasOwnProperty(decisionName));
     assert.equal(decisions[decisionName], 'third-option');
   });
 });
 
 QUnit.test("test nesting logic - decisions", function( assert ) {
-  expect(7);
+  expect(27);
   // Add settings for a targeting agent with a test nested in it..
   var agentName = 'my-parent-agent',
       decisionName = 'my-decision',
@@ -123,6 +149,7 @@ QUnit.test("test nesting logic - decisions", function( assert ) {
         {
           // If this rule matches then a nested option set decides between the
           // first and second options.
+          'name': 'my-audience',
           'osid': subOS,
           'targeting_features': [
             "some-context::some-value",
@@ -132,6 +159,7 @@ QUnit.test("test nesting logic - decisions", function( assert ) {
         },
         {
           // If this rule matches then the third option is shown.
+          'name': 'third-audience',
           'option_id': 'third-option',
           'targeting_features': [
             "some-context::some-value",
@@ -167,6 +195,14 @@ QUnit.test("test nesting logic - decisions", function( assert ) {
     'winner': null
   };
   Drupal.personalize.agents.acquia_lift_learn = Drupal.personalize.agents.acquia_lift_learn || {};
+  $(document).bind('liftDecision', function (e, agent_name, audience, decision_name, choice, policy) {
+    assert.equal(agent_name, "my-parent-agent", 'agent name correctly assigned from event');
+    assert.equal(audience, undefined, 'audience correctly assigned from event');
+    assert.equal(decision_name, "my-decision", 'decision name correctly assigned from event');
+    assert.equal(choice, "first-option", 'choice correctly assigned from event');
+    assert.equal(policy, "fallback", 'policy correctly assigned from event');
+    $(document).unbind('liftDecision');
+  });
   // Mock the acquia_lift testing agent to just make it return the second option.
   Drupal.personalize.agents.acquia_lift_learn.getDecisionsForPoint = function(agentName, evaluatedVisitorContexts, choices, decisionName, fallbacks, callback) {
     var expected_chocies = {}
@@ -183,6 +219,14 @@ QUnit.test("test nesting logic - decisions", function( assert ) {
       fallbacks = {};
   choices[decisionName] = ['first-option', 'second-option', 'third-option'];
   fallbacks[decisionName] = 0;
+  $(document).bind('liftDecision', function (e, agent_name, audience, decision_name, choice, policy) {
+    assert.equal(agent_name, "my-parent-agent", 'agent name correctly assigned from event');
+    assert.equal(audience, undefined, 'audience correctly assigned from event');
+    assert.equal(decision_name, "my-decision", 'decision name correctly assigned from event');
+    assert.equal(choice, "first-option", 'choice correctly assigned from event');
+    assert.equal(policy, "fallback", 'policy correctly assigned from event');
+    $(document).unbind('liftDecision');
+  });
   // Try first with no visitor contexts present, we should get the first (fallback) option.
   Drupal.personalize.agents.acquia_lift_target.getDecisionsForPoint(agentName, evaluatedVisitorContexts, choices, decisionName, fallbacks, function(decisions) {
     assert.ok(decisions.hasOwnProperty(decisionName));
@@ -200,6 +244,14 @@ QUnit.test("test nesting logic - decisions", function( assert ) {
       'ss-other'
     ]
   };
+  $(document).bind('liftDecision', function (e, agent_name, audience, decision_name, choice, policy) {
+    assert.equal(agent_name, "my-parent-agent", 'agent name correctly assigned from event');
+    assert.equal(audience, 'my-audience', 'audience correctly assigned from event');
+    assert.equal(decision_name, "my-decision", 'decision name correctly assigned from event');
+    assert.equal(choice, "second-option", 'choice correctly assigned from event');
+    assert.equal(policy, undefined, 'policy correctly assigned from event');
+    $(document).unbind('liftDecision');
+  });
   Drupal.personalize.agents.acquia_lift_target.getDecisionsForPoint(agentName, evaluatedVisitorContexts, choices, decisionName, fallbacks, function(decisions) {
     assert.ok(decisions.hasOwnProperty(decisionName));
     assert.equal(decisions[decisionName], 'second-option');
@@ -215,6 +267,14 @@ QUnit.test("test nesting logic - decisions", function( assert ) {
       'my-other-value'
     ]
   };
+  $(document).bind('liftDecision', function (e, agent_name, audience, decision_name, choice, policy) {
+    assert.equal(agent_name, "my-parent-agent", 'agent name correctly assigned from event');
+    assert.equal(audience, "third-audience", 'audience correctly assigned from event');
+    assert.equal(decision_name, "my-decision", 'decision name correctly assigned from event');
+    assert.equal(choice, "third-option", 'choice correctly assigned from event');
+    assert.equal(policy, "targeting", 'policy correctly assigned from event');
+    $(document).unbind('liftDecision');
+  });
   Drupal.personalize.agents.acquia_lift_target.getDecisionsForPoint(agentName, evaluatedVisitorContexts, choices, decisionName, fallbacks, function(decisions) {
     assert.ok(decisions.hasOwnProperty(decisionName));
     assert.equal(decisions[decisionName], 'third-option');
@@ -223,7 +283,7 @@ QUnit.test("test nesting logic - decisions", function( assert ) {
 
 
 QUnit.test("test nesting logic - goals", function( assert ) {
-  expect(3);
+  expect(7);
   // Add settings for a targeting agent with a test nested in it..
   var agentName = 'my-parent-agent';
 
@@ -240,13 +300,21 @@ QUnit.test("test nesting logic - goals", function( assert ) {
   Drupal.settings.acquia_lift_target.nested_tests[agentName] = {};
   Drupal.settings.acquia_lift_target.nested_tests[agentName][sub_agent_name] = sub_agent_name;
 
-  // Fire a goal and confirm the acquia_lift_learn agent gets it. We do this by mocking
-  // the acquia_lift_learn agent's sendGoalToAgent function and confirming it gets called
-  // with the correct arguments.
-  Drupal.personalize.agents.acquia_lift_learn.sendGoalToAgent = function(agent_name, goal_name, value) {
-    assert.equal(agent_name, sub_agent_name);
-    assert.equal(goal_name, 'some-goal');
-    assert.equal(value, 2);
+  // Fire a goal and confirm a liftGoal event is then fired, and acquia_lift_learn's sendGoalToAgent()
+  // is not called. We do this by listening to liftGoal event, and also mocking the acquia_lift_learn agent's
+  // sendGoalToAgent() function.
+  $(document).bind('liftGoal', function (e, agent_name, audience, decision_name, choice, policy, goal_name, goal_value) {
+    assert.equal(agent_name, "my-parent-agent", 'agent name correctly assigned from event');
+    assert.equal(audience, "third-audience", 'audience correctly assigned from event');
+    assert.equal(decision_name, "my-decision", 'decision name correctly assigned from event');
+    assert.equal(choice, "third-option", 'choice correctly assigned from event');
+    assert.equal(policy, "targeting", 'policy correctly assigned from event');
+    assert.equal(goal_name, "some-goal", 'goal name correctly assigned from event');
+    assert.equal(goal_value, 2, 'goal value correctly assigned from event');
+    $(document).unbind('liftGoal');
+  });
+  Drupal.personalize.agents.acquia_lift_learn.sendGoalToAgent = function() {
+    assert.ok(false, 'acquia_lift_learn\'s sendGoalToAgent() is not called');
   };
   Drupal.personalize.agents.acquia_lift_target.sendGoalToAgent(agentName, 'some-goal', 2);
 

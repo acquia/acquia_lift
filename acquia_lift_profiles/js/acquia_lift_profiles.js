@@ -325,7 +325,6 @@ var _tcwq = _tcwq || [];
         }
       },
 
-
       'processLiftDecision':function(e, agent_name, audience, decision_name, choice, policy) {
         // Only send this if it has never been sent or the decision has changed due to
         // new targeting conditions being met.
@@ -336,15 +335,13 @@ var _tcwq = _tcwq || [];
           choice = 'Control';
         }
         processedDecisions[agent_name] = choice;
-        console.log("decision for " + agent_name + " with audience " + audience + " and policy " + policy);
-        _tcaq.push(['capture', 'Campaign Action', {'targetcampaignid':agent_name, 'targetcampaignname':getAgentLabel(agent_name), 'targetofferid': choice, 'targetactionname':choice, 'event_udf3': policy, 'event_udf4': audience } ]);
-
+        _tcaq.push(['capture', 'Decision', {'personalizationname': getAgentLabel(agent_name), 'personalizationmachinename':agent_name, 'personalizationaudiencename': audience, 'personalizationchosenvariation': choice, 'personalizationdecisionpolicy': policy }]);
       },
 
       'processLiftGoal':function(e, agent_name, audience, decision_name, choice, policy, goal_name, goal_value) {
-        console.log("goal for " + agent_name + " with audience " + audience + " and  policy " + policy);
-        _tcaq.push(['capture', goal_name, {'targetcampaignid':agent_name, 'targetcampaignname':getAgentLabel(agent_name), 'targetgoalvalue':goal_value, 'targetofferid': choice, 'targetactionname':choice,  'event_udf3': policy, 'event_udf4': audience}]);
+        _tcaq.push(['capture', 'Goal', {'personalizationname': getAgentLabel(agent_name), 'personalizationmachinename':agent_name, 'personalizationaudiencename': audience, 'personalizationchosenvariation': choice, 'personalizationdecisionpolicy': policy, 'personalizationgoalname': goal_name, 'personalizationgoalvalue': goal_value }]);
       },
+
       /**
        * Add an action listener for client-side goal events.
        */
@@ -410,8 +407,8 @@ var _tcwq = _tcwq || [];
         agentNameToLabel = {};
         identityCaptured = false;
         pageFieldValues = {};
-        $(document).unbind('personalizeDecision', this["processPersonalizeDecision"]);
-        $(document).unbind('sentGoalToAgent', this["processSentGoalToAgent"]);
+        $(document).unbind('liftDecision', this["processLiftDecision"]);
+        $(document).unbind('liftGoal', this["processLiftGoal"]);
       }
     }
   })();

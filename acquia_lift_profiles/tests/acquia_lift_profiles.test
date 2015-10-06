@@ -454,9 +454,9 @@ class ALProfilesWebTest extends DrupalWebTestCase {
     $this->assertFieldByName('acquia_lift_profiles_lift_event_values[acquia_lift_profiles_form_hover][engagement_score]', 1);
     $this->assertFieldByName('acquia_lift_profiles_lift_event_values[acquia_lift_profiles_form_hover][global_value]', 789);
     // Assert system actions don't have "Edit" links, and custom actions do.
-    $this->assertNoLinkByHref('/acquia_lift/admin/structure/acquia_lift/visitor_action/scroll_to_bottom/edit');
-    $this->assertLinkByHref('/acquia_lift/admin/structure/acquia_lift/visitor_action/acquia_lift_profiles_form_click/edit');
-    $this->assertLinkByHref('/acquia_lift/admin/structure/acquia_lift/visitor_action/acquia_lift_profiles_form_hover/edit');
+    $this->assertNoLinkByHref('admin/structure/acquia_lift/visitor_action/scroll_to_bottom/edit');
+    $this->assertLinkByHref('admin/structure/acquia_lift/visitor_action/acquia_lift_profiles_form_click/edit');
+    $this->assertLinkByHref('admin/structure/acquia_lift/visitor_action/acquia_lift_profiles_form_hover/edit');
     // Assert the values are set in the DB.
     $lift_event_values = variable_get('acquia_lift_profiles_lift_event_values', array());
     $this->assertEqual($lift_event_values['scroll_to_bottom']['engagement_score'], 1);

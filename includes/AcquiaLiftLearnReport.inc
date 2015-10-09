@@ -323,13 +323,15 @@ class AcquiaLiftLearnReport extends AcquiaLiftReportBase {
             $confidence = self::getConfidence(self::getTScore($count, $num_control, $mean, $mean_control, $variance, $var_control), self::getDGFree($count, $num_control, $variance, $var_control));
             if (empty($this->interpretedResults['confidence']) || $this->interpretedResults['confidence'] < $confidence) {
               $this->interpretedResults['confidence'] = $confidence;
-              if ($confidence >= ($this->confidence_measure / 100)) {
+              if ($confidence >= ($this->confidence_measure / 100) && $num_variations == 2) {
+                // Right now we can only say this is the winner if it's the only
+                // other variation besides the control.
+                // @todo Run t-tests between each pair of variations.
                 $this->interpretedResults['winner'] = $i;
               }
             }
             $confidence_formatted = $this->formatReportPercentage($confidence);
           }
-
         }
         $option_label = $this->getOptionLabelForChoice($choice_id);
         $data[$choice_id] = array(

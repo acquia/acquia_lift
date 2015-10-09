@@ -508,12 +508,12 @@ abstract class AcquiaLiftReportBase {
    * @return string
    *   The formatted number to display.
    */
-  protected function formatReportPercentage($value, $include_sign = FALSE, $trim = TRUE, $decimals = 2, $padding = 1) {
+  public static function formatReportPercentage($value, $include_sign = FALSE, $trim = TRUE, $decimals = 2, $padding = 1) {
     $percent = (float) $value * 100;
     if ($percent > 0 && $include_sign) {
-      return '+' . $this->formatReportNumber($percent, $trim, $decimals, $padding) . '%';
+      return '+' . self::formatReportNumber($percent, $trim, $decimals, $padding) . '%';
     }
-    return $this->formatReportNumber($percent, $trim, $decimals, $padding) . '%';
+    return self::formatReportNumber($percent, $trim, $decimals, $padding) . '%';
   }
 
   /**
@@ -530,7 +530,7 @@ abstract class AcquiaLiftReportBase {
    * @return string
    *   The formatted number to display.
    */
-  protected function formatReportNumber($value, $trim = TRUE, $decimals = 2, $padding = 1) {
+  public static function formatReportNumber($value, $trim = TRUE, $decimals = 2, $padding = 1) {
     if (is_numeric($value)) {
       $value = number_format($value, $decimals);
       if ($trim && strpos('.', $value) !== FALSE) {

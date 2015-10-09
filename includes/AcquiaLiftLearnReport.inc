@@ -44,7 +44,7 @@ class AcquiaLiftLearnReport extends AcquiaLiftReportBase {
    *
    * @var array
    */
-  protected static $normal_quantiles = array(0.674,0.841,1.036,1.282,1.645,1.960,2.054,2.326,2.576,2.807,3.091,3.291);
+  public static $normal_quantiles = array(0.674,0.841,1.036,1.282,1.645,1.960,2.054,2.326,2.576,2.807,3.091,3.291);
 
   /**
    * Constructs an AcquiaLiftReport object
@@ -250,10 +250,10 @@ class AcquiaLiftLearnReport extends AcquiaLiftReportBase {
           'count' => $single_day['total_plays_explore'],
           'date' => $date,
           'timestamp' => $ts,
-          'conversion' => $this->formatReportPercentage($rate),
-          'conversion_value' => $this->formatReportNumber($mean),
-          'estimated_value' => $this->formatReportNumber($mean, TRUE, 4),
-          'margin_error' => $this->formatReportNumber(($upper - $lower) / 2, TRUE, 4),
+          'conversion' => self::formatReportPercentage($rate),
+          'conversion_value' => self::formatReportNumber($mean),
+          'estimated_value' => self::formatReportNumber($mean, TRUE, 4),
+          'margin_error' => self::formatReportNumber(($upper - $lower) / 2, TRUE, 4),
           'counter' => $i,
           'control' => $i === 0,
         );
@@ -317,6 +317,7 @@ class AcquiaLiftLearnReport extends AcquiaLiftReportBase {
         $upper = $goal_value * ($rate + ($quantile * $sd));
         $lower = $goal_value * ($rate - ($quantile * $sd));
         $variance = $count > 1 ? (($goals * pow($goal_value - $mean, 2)) + (($count-$goals) * pow($mean,2))) / ($count-1) : 0;
+
         $option_label = $this->getOptionLabelForChoice($choice_id);
         $data[$choice_id] = array(
           'counter' => $i,
@@ -326,11 +327,11 @@ class AcquiaLiftLearnReport extends AcquiaLiftReportBase {
           'count' => $count,
           'mean' => $mean,
           'variance' => $variance,
-          'conversion' => $this->formatReportPercentage($rate),
-          'estimated_value' => $this->formatReportNumber($mean, TRUE, 4),
-          'estimated_higher' => $this->formatReportNumber($upper, TRUE, 4),
-          'estimated_lower' => $this->formatReportNumber($lower, TRUE, 4),
-          'margin_error' => $this->formatReportNumber(($upper - $lower) / 2, TRUE, 4),
+          'conversion' => self::formatReportPercentage($rate),
+          'estimated_value' => self::formatReportNumber($mean, TRUE, 4),
+          'estimated_higher' => self::formatReportNumber($upper, TRUE, 4),
+          'estimated_lower' => self::formatReportNumber($lower, TRUE, 4),
+          'margin_error' => self::formatReportNumber(($upper - $lower) / 2, TRUE, 4),
           'control' => $i === 0,
           'confidence' => self::NA_STRING,
           'lift_default' =>  self::NA_STRING,
@@ -357,7 +358,7 @@ class AcquiaLiftLearnReport extends AcquiaLiftReportBase {
         // for the mean of the default.
         if (!$values['control'] && $control_variation['count'] && $control_variation['mean'] && $values['count']) {
           $lift_default = ($values['mean'] - $control_variation['mean'])/$control_variation['mean'];
-          $values['lift_default'] = $this->formatReportPercentage($lift_default , TRUE, TRUE, 2);
+          $values['lift_default'] = self::formatReportPercentage($lift_default , TRUE, TRUE, 2);
         }
         // Only calculate confidence if our minimum decision threshold was reached
         // for each variation.
@@ -395,7 +396,7 @@ class AcquiaLiftLearnReport extends AcquiaLiftReportBase {
       // If the comparison is against the control variation, then this confidence
       // metric is what we display as "chance to beat control".
       if ($var['option_id'] == $control_variation['option_id']) {
-        $variation['confidence'] = $this->formatReportPercentage($confidence);
+        $variation['confidence'] = self::formatReportPercentage($confidence);
       }
       if ($confidence < ($this->confidence_measure / 100)) {
         // No point doing anymore comparisons, this is not a winner.

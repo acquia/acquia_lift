@@ -336,7 +336,6 @@ class AcquiaLiftAPIV2 extends AcquiaLiftAPIBase implements AcquiaLiftLearnReport
       $interval = date_diff(date_create($from), date_create($to));
       $days = $interval->format('%d');
     }
-    drupal_get_user_timezone();
     $date = new DateTime($from, new DateTimeZone("UTC"));
     $from = $date->format("Y-m-d\TH:i:s\Z");
     $path = "report?campaign_id=$name&from=$from&days=$days";
@@ -347,12 +346,19 @@ class AcquiaLiftAPIV2 extends AcquiaLiftAPIBase implements AcquiaLiftLearnReport
   }
 
   public function getPersonalizationOverviewReport($name, $variations) {
+    // @todo Remove this line :)
+    $this->api_url = "http://127.0.0.1:8080";
     if (empty($this->lift_profiles_account_name)) {
       throw new AcquiaLiftCredsException('No account name for Lift Profiles configured');
     }
-    $site_name = variable_get('acquia_lift_profiles_site_name', 'Drupal');
-    $variations_str = implode(',', $variations);
-    $path = "report/{$this->lift_profiles_account_name}/{$site_name}/$name/overview?variations={$variations_str}";
+    $site_name = variable_get('acquia_lift_profiles_site_name', '');
+    if (empty($site_name)) {
+      $site_name = 'Drupal';
+    }
+    $path = "report/overview?account={$this->lift_profiles_account_name}&site=$site_name&campaign=$name";
+    foreach ($variations as $variation) {
+      $path .= "&variation=$variation";
+    }
     $url = $this->generateEndpoint($path);
     $vars = array('name' => $name);
     $fail_msg = 'Could not retrieve report from Acquia Lift';
@@ -360,17 +366,24 @@ class AcquiaLiftAPIV2 extends AcquiaLiftAPIBase implements AcquiaLiftLearnReport
   }
 
   public function getAudienceReport($name, $audience, $variations, $type, $from, $to) {
+    // @todo Remove this line :)
+    $this->api_url = "http://127.0.0.1:8080";
     if (empty($this->lift_profiles_account_name)) {
       throw new AcquiaLiftCredsException('No account name for Lift Profiles configured');
     }
-    $site_name = variable_get('acquia_lift_profiles_site_name', 'Drupal');
-    $variations_str = implode(',', $variations);
+    $site_name = variable_get('acquia_lift_profiles_site_name', '');
+    if (empty($site_name)) {
+      $site_name = 'Drupal';
+    }
     $tz = drupal_get_user_timezone();
-    $from_date = new DateTime($from, new DateTimeZone($tz));
-    $from_str = $from_date->format("Y-m-d");
-    $to_date = new DateTime($to, new DateTimeZone($tz));
-    $to_str = $to_date->format("Y-m-d");
-    $path = "report/{$this->lift_profiles_account_name}/{$site_name}/$name/$type/$audience?variations={$variations_str}&from=$from_str&to=$to_str";
+    $from_datetime = date_create("@$from", new DateTimeZone($tz));
+    $to_datetime = date_create("@$to", new DateTimeZone($tz));
+    $from_str = $from_datetime->format('Y-m-d');
+    $to_str = $to_datetime->format('Y-m-d');
+    $path = "report/$type?account={$this->lift_profiles_account_name}&site=$site_name&campaign=$name&audience=$audience&from=$from_str&to=$to_str";
+    foreach ($variations as $variation) {
+      $path .= "&variation=$variation";
+    }
     $url = $this->generateEndpoint($path);
     $vars = array('name' => $name);
     $fail_msg = 'Could not retrieve report from Acquia Lift';

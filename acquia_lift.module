@@ -486,7 +486,7 @@ function acquia_lift_get_account_info() {
     $account_info = variable_get('acquia_lift_account_info', array('public_key' => '', 'private_key' => ''));
     if (!isset($account_info['profiles'])) {
       $account_info['profiles'] = array(
-        'account_name' => '',
+        'account_name' => variable_get('acquia_lift_profiles_account_name', ''),
         'hostname' => '',
         'public_key' => '',
         'secret_key' => ''
@@ -569,7 +569,7 @@ function acquia_lift_get_account_info() {
         // Set variable if it was not set.
         if ($variable_name) {
           _acquia_lift_set_variable_if_not_set($variable_name, $value);
-          $account_info['profiles'][$key] = empty($account_info['profiles'][$key]) ? $value : $account_info[$key];
+          $account_info['profiles'][$key] = empty($account_info['profiles'][$key]) ? $value : $account_info['profiles'][$key];
         }
       }
       // unset the js_path from profiles since that is a special case

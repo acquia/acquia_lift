@@ -216,7 +216,7 @@ QUnit.test("Goals queue", function(assert) {
   Drupal.acquiaLiftUtility.GoalQueue.addGoal(agentName, testGoal3);
   assert.ok(Drupal.acquiaLiftUtility.Queue.add.calledWith(queueData3), 'The third goal was added to the queue.');
   var request = sinon.requests.pop();
-  request.respond(202, { "Content-Type": "*/*" }, '{ "session": "some-session-ID", "submitted": "12345678"}');
+  request.respond(202, { "Content-Type": "*/*" }, '{ "error": "The request has been accepted for processing but has not been processed."}');
   // This should return not retryable and be deleted.
   assert.equal(Drupal.acquiaLiftUtility.Queue.remove.callCount, 3, 'The remove call was called for non-retryable goal.');
   nextGoal = Drupal.acquiaLiftUtility.Queue.getNext();

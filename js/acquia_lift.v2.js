@@ -68,11 +68,13 @@
         };
         return this.send(path, params, body, (function(_this) {
           return function(res) {
-            var accepted, retryable;
+            var success, nodecision, accepted, retryable;
             if (callback == null) {
               return;
             }
-            accepted = (res != null ? res.feedback_id : void 0) > 0;
+            success = res != null && res.hasOwnProperty('feedback_id');
+            nodecision = res != null && res.hasOwnProperty('error') && res.error.indexOf("The request has been accepted for processing") === 0;
+            accepted = success || nodecision;
             retryable = (res != null ? res.submitted : void 0) == null;
             return callback(accepted, _this.options.user_hash, retryable);
           };

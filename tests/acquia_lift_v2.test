@@ -850,6 +850,52 @@ debug($report['experiment']['reports']['conversion']['summary']);
     ), $agents['second-agent']['report_dates']);
   }
 
+  function testWinnerLogic() {
+    require_once(dirname(__FILE__) . '/../includes/acquia_lift.classes.inc');
+    require_once(dirname(__FILE__) . '/../includes/AcquiaLiftLearnReportDataSourceInterface.inc');
+    require_once(dirname(__FILE__) . '/../includes/AcquiaLiftAPIBase.inc');
+    require_once(dirname(__FILE__) . '/../includes/AcquiaLiftAPIV2.inc');
+    require_once(dirname(__FILE__) . '/../includes/AcquiaLiftReportBase.inc');
+    require_once(dirname(__FILE__) . '/../includes/AcquiaLiftReportDataFromFileBase.inc');
+    require_once(dirname(__FILE__) . '/../includes/AcquiaLiftLearnReport.inc');
+    require_once(dirname(__FILE__) . '/../includes/AcquiaLiftLearnReportFromFile.inc');
+
+    require_once(dirname(__FILE__) . '/acquia_lift.test_classes.inc');
+    AcquiaLiftAPIV2::setTestInstance();
+    $agent_instance = $this->createTestAgent('my-test-agent', array(), self::$agent_plugin);
+
+    $path = drupal_get_path('module', 'acquia_lift');
+    $report_src = new AcquiaLiftLearnReportFromFile("/$path/tests/test_report_v2_no_winner.json");
+    $report = new AcquiaLiftLearnReport($agent_instance, array('confidence_measure' => 95), $report_src);
+    $this->assertNull($report->getOverallWinner());
+    $this->assertFalse($report->getOverallConfidence());
+    // In this report, 2 variations are beating the control, but neither is beating
+    // the other.
+    $report_src = new AcquiaLiftLearnReportFromFile("/$path/tests/test_report_v2_no_winner_3_vars.json");
+    $report = new AcquiaLiftLearnReport($agent_instance, array('confidence_measure' => 95), $report_src);
+    $this->assertNull($report->getOverallWinner());
+    $this->assertFalse($report->getOverallConfidence());
+    // In this report, option-b is the clear winner over option-a and option-c
+    $report_src = new AcquiaLiftLearnReportFromFile("/$path/tests/test_report_v2_winner_3_vars.json");
+    $report = new AcquiaLiftLearnReport($agent_instance, array('confidence_measure' => 95), $report_src);
+    $this->assertEqual('option-b', $report->getOverallWinner());
+    $this->assertEqual(0.999, $report->getOverallConfidence());
+    // In this report the control option (option-a) is the winner over option-b
+    $report_src = new AcquiaLiftLearnReportFromFile("/$path/tests/test_report_v2_control_winner.json");
+    $report = new AcquiaLiftLearnReport($agent_instance, array('confidence_measure' => 95), $report_src);
+    $this->assertEqual('option-a', $report->getOverallWinner());
+    $this->assertTrue(abs(0.998 - $report->getOverallConfidence()) < 0.001);
+    // In this report there is no winner at 95% confidence, but there is at 90%
+    $report_src = new AcquiaLiftLearnReportFromFile("/$path/tests/test_report_v2_winner_at_90.json");
+    $report = new AcquiaLiftLearnReport($agent_instance, array('confidence_measure' => 95), $report_src);
+    $this->assertNull($report->getOverallWinner());
+    $this->assertFalse($report->getOverallConfidence());
+    $report_src = new AcquiaLiftLearnReportFromFile("/$path/tests/test_report_v2_winner_at_90.json");
+    $report = new AcquiaLiftLearnReport($agent_instance, array('confidence_measure' => 90), $report_src);
+    $this->assertEqual('option-c', $report->getOverallWinner());
+    $this->assertTrue(abs(0.935 - $report->getOverallConfidence()) < 0.001);
+  }
+
 }
 
 class AcquiaLiftV2WebTestWorkflow extends AcquiaLiftV2WebTestBase {

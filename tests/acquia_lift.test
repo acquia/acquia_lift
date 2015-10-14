@@ -404,6 +404,8 @@ class AcquiaLiftWebTestBase extends DrupalWebTestCase
    * Helper method to configure an Acquia Lift account.
    */
   protected function configureAcquiaLiftAccount() {
+    variable_set('acquia_lift_v2_enabled', FALSE);
+    $this->resetAll();
     $edit = array(
       'acquia_lift_account_info[owner_code]' => $this->liftOwnerCode,
       'acquia_lift_account_info[api_key]' => $this->liftAPIKey,

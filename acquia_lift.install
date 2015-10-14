@@ -16,6 +16,8 @@ function acquia_lift_install() {
     'description' => 'The <em>Acquia Lift personalize controls</em> menu contains actions to create and manage personalizations.',
   );
   menu_save($menu);
+  // New installs should default to the V2 testing agent.
+  variable_set('acquia_lift_v2_enabled', TRUE);
 }
 
 /**
@@ -46,6 +48,7 @@ function acquia_lift_uninstall() {
     'queue_class_acquia_lift_sync',
     'acquia_lift_legacy_agents',
     'acquia_lift_report_max_days',
+    'acquia_lift_v2_enabled',
   );
   foreach ($vars as $var) {
     variable_del($var);

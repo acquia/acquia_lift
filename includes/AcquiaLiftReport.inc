@@ -326,7 +326,7 @@ class AcquiaLiftReport extends AcquiaLiftReportBase {
         if ($item['signif'] && $item['confidence'] > $config['confidence_measure']) {
           if (is_nan($winning_value) || $item['confidence'] > $winning_value) {
             $winning_value = $item['confidence'];
-            $winner = $i;
+            $winner = $option_id;
             $confidence = TRUE;
           }
         }

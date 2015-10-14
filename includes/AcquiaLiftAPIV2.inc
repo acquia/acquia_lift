@@ -120,7 +120,6 @@ class AcquiaLiftAPIV2 extends AcquiaLiftAPIBase implements AcquiaLiftLearnReport
     // This method is only ever called within the context of a simpletest web
     // test, so the call to variable_get() is ok here.
     $test_data = variable_get('acquia_lift_web_test_data', array());
-    debug($test_data);
     self::$instance->setHttpClient(new DummyAcquiaLiftHttpClient(ACQUIA_LIFT_TESTING_AGENT_V2, $broken_http_client, $test_data, $simulate_client_side_breakage));
     self::$instance->setLogger(new AcquiaLiftTestLogger(FALSE));
   }

@@ -878,12 +878,12 @@ debug($report['experiment']['reports']['conversion']['summary']);
     // In this report, option-b is the clear winner over option-a and option-c
     $report_src = new AcquiaLiftLearnReportFromFile("/$path/tests/test_report_v2_winner_3_vars.json");
     $report = new AcquiaLiftLearnReport($agent_instance, array('confidence_measure' => 95), $report_src);
-    $this->assertEqual(1, $report->getOverallWinner());
+    $this->assertEqual('option-b', $report->getOverallWinner());
     $this->assertEqual(0.999, $report->getOverallConfidence());
     // In this report the control option (option-a) is the winner over option-b
     $report_src = new AcquiaLiftLearnReportFromFile("/$path/tests/test_report_v2_control_winner.json");
     $report = new AcquiaLiftLearnReport($agent_instance, array('confidence_measure' => 95), $report_src);
-    $this->assertEqual(0, $report->getOverallWinner());
+    $this->assertEqual('option-a', $report->getOverallWinner());
     $this->assertTrue(abs(0.998 - $report->getOverallConfidence()) < 0.001);
     // In this report there is no winner at 95% confidence, but there is at 90%
     $report_src = new AcquiaLiftLearnReportFromFile("/$path/tests/test_report_v2_winner_at_90.json");
@@ -892,7 +892,7 @@ debug($report['experiment']['reports']['conversion']['summary']);
     $this->assertFalse($report->getOverallConfidence());
     $report_src = new AcquiaLiftLearnReportFromFile("/$path/tests/test_report_v2_winner_at_90.json");
     $report = new AcquiaLiftLearnReport($agent_instance, array('confidence_measure' => 90), $report_src);
-    $this->assertEqual(2, $report->getOverallWinner());
+    $this->assertEqual('option-c', $report->getOverallWinner());
     $this->assertTrue(abs(0.935 - $report->getOverallConfidence()) < 0.001);
   }
 

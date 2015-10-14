@@ -285,9 +285,12 @@ class AcquiaLiftLearnReport extends AcquiaLiftReportBase {
         }
       }
       $quantile = self::$normal_quantiles[$pos];
-
+      $min_decisions_reached = TRUE;
       foreach ($report_data['totals_by_var'] as $choice_id => $results) {
         $count = $results['total_plays_explore'];
+        if ($count < self::MIN_DECISION_THRESHOLD) {
+          $min_decisions_reached = FALSE;
+        }
         $goals = $results['total_goals_explore'];
         $val = $results['total_goals_value_explore'];
         $rate = $count > 0 ? ($goals / $count) : 0;
@@ -327,49 +330,9 @@ class AcquiaLiftLearnReport extends AcquiaLiftReportBase {
       $control_variation = reset($data);
       // Now we can do some comparisons of the data.
       $rand_mean = $total_means / $num_variations;
-      $choice_ids = array_keys($data);
 
       foreach ($data as $choice_id => &$values) {
-        // We impose a threshold of a minimum number of decisions before
-        // presenting a confidence value.
-        if ($values['count'] >= self::MIN_DECISION_THRESHOLD) {
-          // We need an array that holds all *but* this variation.
-          $other_variations = drupal_map_assoc($choice_ids);
-          unset($other_variations[$choice_id]);
-          // Kep track of how many other variations this variation beats.
-          $number_beaten = $overall_confidence = 0;
-          foreach ($other_variations as $var) {
-            $confidence = self::getConfidence(self::getTScore($values['count'], $data[$var]['count'], $values['mean'], $data[$var]['mean'], $values['variance'], $data[$var]['variance']), self::getDGFree($values['count'], $data[$var]['count'], $values['variance'], $data[$var]['variance']));
-            // If the comparison is against the control variation, then this confidence
-            // metric is what we display as "chance to beat control".
-            if ($var == $control_variation['option_id']) {
-              $values['confidence'] = $this->formatReportPercentage($confidence);
-            }
-            if ($confidence < ($this->confidence_measure / 100)) {
-              // No point doing anymore comparisons, this is not a winner.
-              break;
-            }
-            // If this is the lowest confidence value we've seen, then this is
-            // what we'll show as the overall confidence for the test, if this
-            // variation turns out to be the overall winner.
-            if (empty($overall_confidence) || $confidence < $overall_confidence) {
-              $overall_confidence = $confidence;
-            }
-            $number_beaten++;
-          }
-          if ($number_beaten === count($other_variations)) {
-            $this->interpretedResults['winner'] = array_search($choice_id, $choice_ids);
-            $this->interpretedResults['confidence'] = $overall_confidence;
-          }
-        }
-        // It only makes sense to calculate lift over default if there has been
-        // at least one decision for each variation and we have a non-zero value
-        // for the mean of the default.
-        if (!$values['control'] && $control_variation['count'] && $control_variation['mean'] && $values['count']) {
-          $lift_default = (($values['mean'] - $control_variation['mean'])/$control_variation['mean']);
-          $values['lift_default'] = $this->formatReportPercentage($lift_default , TRUE, TRUE, 2);
-        }
-
+        // Calculate lift over random.
         if ($rand_mean) {
           $lift_random = (($values['estimated_value'] - $rand_mean)/$rand_mean) * 100;
         }
@@ -377,10 +340,67 @@ class AcquiaLiftLearnReport extends AcquiaLiftReportBase {
           $lift_random = 0;
         }
         $values['lift_random'] = $values['count'] > 0 ? $lift_random : self::NA_STRING;
+        // It only makes sense to calculate lift over default if there has been
+        // at least one decision for each variation and we have a non-zero value
+        // for the mean of the default.
+        if (!$values['control'] && $control_variation['count'] && $control_variation['mean'] && $values['count']) {
+          $lift_default = ($values['mean'] - $control_variation['mean'])/$control_variation['mean'];
+          $values['lift_default'] = $this->formatReportPercentage($lift_default , TRUE, TRUE, 2);
+        }
+        // Only calculate confidence if our minimum decision threshold was reached
+        // for each variation.
+        if ($min_decisions_reached) {
+          $other_variations = $data;
+          unset($other_variations[$choice_id]);
+          $this->doComparisons($values, $other_variations);
+        }
       }
       $this->interpretedResults['data'] = $data;
     }
     return $this->interpretedResults['data'];
+  }
+
+  /**
+   * Runs a t-test comparing $variation to each of the $other_variations.
+   *
+   * If $variation beats each of the $other_variations, then the 'overAllWinner'
+   * property is set to this variation's id, and the overallConfidence property
+   * is set to the lowest confidence value found during the comparisons.
+   *
+   * @param $variation
+   *   The variation to compare against each other variations.
+   * @param $other_variations
+   *   The other variations to compare against. If the $variation param is not
+   *   the control for this test, then the first of the $other_variations is
+   *   assumed to be the control.
+   */
+  protected function doComparisons(&$variation, $other_variations) {
+    $control_variation = $variation['control'] ? $variation : reset($other_variations);
+    // Keep track of how many other variations this variation beats.
+    $number_beaten = $overall_confidence = 0;
+    foreach ($other_variations as $var) {
+      $confidence = self::getConfidence(self::getTScore($variation['count'], $var['count'], $variation['mean'], $var['mean'], $variation['variance'], $var['variance']), self::getDGFree($variation['count'], $var['count'], $variation['variance'], $var['variance']));
+      // If the comparison is against the control variation, then this confidence
+      // metric is what we display as "chance to beat control".
+      if ($var['option_id'] == $control_variation['option_id']) {
+        $variation['confidence'] = $this->formatReportPercentage($confidence);
+      }
+      if ($confidence < ($this->confidence_measure / 100)) {
+        // No point doing anymore comparisons, this is not a winner.
+        break;
+      }
+      // If this is the lowest confidence value we've seen, then this is
+      // what we'll show as the overall confidence for the test, if this
+      // variation turns out to be the overall winner.
+      if (empty($overall_confidence) || $confidence < $overall_confidence) {
+        $overall_confidence = $confidence;
+      }
+      $number_beaten++;
+    }
+    if ($number_beaten === count($other_variations)) {
+      $this->interpretedResults['winner'] = $variation['option_id'];
+      $this->interpretedResults['confidence'] = $overall_confidence;
+    }
   }
 
   /**

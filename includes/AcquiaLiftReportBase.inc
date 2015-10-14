@@ -351,7 +351,7 @@ abstract class AcquiaLiftReportBase {
    * @param bool $confidence
    *   Whether the report has confidence.
    * @param bool $winner
-   *   The index of the winning option or NULL if there's no winner
+   *   The id of the winning option or NULL if there's no winner
    * @param array
    *   A render array for the report.
    */
@@ -424,7 +424,7 @@ abstract class AcquiaLiftReportBase {
       }
       else if (!$confidence_message_shown) {
         // Show the winner indicator if this is the winning variation.
-        $row_data[] = $confidence && ($winner === $choice_data['counter']) ? '<span class="lift-winner">' . t('Winner') . '</span>' : '';
+        $row_data[] = $confidence && ($winner === $choice_id) ? '<span class="lift-winner">' . t('Winner') . '</span>' : '';
       }
       $rows[] = array(
         'data' => $row_data,

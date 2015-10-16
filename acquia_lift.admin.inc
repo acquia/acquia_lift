@@ -888,7 +888,13 @@ function acquia_lift_report_full($form, &$form_state, $agent_data) {
   // all audiences.
   $account_info = acquia_lift_get_account_info();
   $lift_api = AcquiaLiftAPIClientFactory::create($account_info, ACQUIA_LIFT_TESTING_AGENT_V2);
-  $overview_stats = $lift_api->getPersonalizationOverviewReport($agent_data->machine_name, $option_ids);
+  try {
+    $overview_stats = $lift_api->getPersonalizationOverviewReport($agent_data->machine_name, $option_ids);
+  }
+  catch (AcquiaLiftException $e) {
+    $overview_stats = array();
+  }
+
   list($start_time, $end_time) = acquia_lift_get_report_dates_for_agent($agent_data, FALSE);
   $from_datetime = date_create();
   date_timestamp_set($from_datetime, $start_time);
@@ -907,7 +913,7 @@ function acquia_lift_report_full($form, &$form_state, $agent_data) {
   );
   $decision_count = $conversion_count = 0;
   $breakdown_text = t('Breakdown:');
-  foreach ($overview_stats['results'] as $variation => $stats) {
+  foreach ($overview_stats as $variation => $stats) {
     $decision_count += $stats['decision_count'];
     $conversion_count += $stats['conversion_count'];
     $breakdown_text .= t(" Variation <strong>@var</strong> decisions: @dec, conversions: @conv.", array('@var' => $variation, '@dec' => $stats['decision_count'], '@conv' => $stats['conversion_count']));
@@ -1031,8 +1037,18 @@ function acquia_lift_report_audience($form_state, $personalization_data, $target
   module_load_include('inc', 'acquia_lift', 'includes/AcquiaLiftLearnReport');
   $audience_type = isset($targeting_option_set->targeting[$audience]['osid']) ? 'test' : 'target';
   $variations = acquia_lift_get_structure_from_targeting($targeting_option_set);
-  $audience_report = $lift_api->getAudienceReport($personalization_data->machine_name, $audience, $variations[$audience], $audience_type, $from, $to);
-  dpm($audience_report);
+  try {
+    $audience_report = $lift_api->getAudienceReport($personalization_data->machine_name, $audience, $variations[$audience], $audience_type, $from, $to);
+    dpm($audience_report);
+  }
+  catch (AcquiaLiftException $e) {
+    dpm($e->getMessage());
+    $audience_report = array(
+      'overall_stats' => array(),
+      'daily_stats' => array()
+    );
+  }
+
   // Audience Overview report section.
   $form['audience_overview_report'] = array(
     'audience_overview_report_title' => array(
@@ -1059,18 +1075,23 @@ function acquia_lift_report_audience($form_state, $personalization_data, $target
   // Show the daily graph.
   $daily_data = array();
   $i = 0;
-  foreach ($audience_report['daily_stats'] as $variation => $daily_stats) {
-    $count = $goals = $val = 0;
-    foreach ($daily_stats as $day => $stats) {
-      $count += $stats['decision_count'];
-      $goals += $stats['conversion_count'];
+  $counts = $goals = $vals = array();
+  foreach ($audience_report['daily_stats'] as $daily_stats) {
+    $day = $daily_stats['timestamp'];
+    foreach ($daily_stats['variations'] as $stats) {
+      $variation = $stats['variation_id'];
+      if (!isset($counts[$variation])) {
+        $counts[$variation] = $goals[$variation] =  $vals[$variation] = 0;
+      }
+      $counts[$variation] += $stats['decision_count'];
+      $goals[$variation] += $stats['conversion_count'];
 
-      $val += $stats['conversion_value'];
-      $rate = $count > 0 ? ($goals / $count) : 0;
-      $mean = $count > 0 ? ($val / $count) : 0;
-      $goal_value = $goals ? floor($val / $goals) : 1;
+      $vals[$variation] += $stats['conversion_value'];
+      $rate = $counts[$variation] > 0 ? ($goals[$variation] / $counts[$variation]) : 0;
+      $mean = $counts[$variation] > 0 ? ($vals[$variation] / $counts[$variation]) : 0;
+      $goal_value = $goals[$variation] ? floor($vals[$variation] / $goals[$variation]) : 1;
       // Calculate confidence bounds for conversion rate.
-      $sd = $count ? sqrt(($rate*(1-$rate))/($count)) : 0;
+      $sd = $counts[$variation] > 0 ? sqrt(($rate*(1-$rate))/$counts[$variation]) : 0;
       // We want a 90% confidence interval, which means we need the 95th
       // quantile, given the two tails of the distribution.
       $quantile = AcquiaLiftLearnReport::$normal_quantiles[4];

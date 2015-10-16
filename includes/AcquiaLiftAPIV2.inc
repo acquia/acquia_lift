@@ -355,7 +355,7 @@ class AcquiaLiftAPIV2 extends AcquiaLiftAPIBase implements AcquiaLiftLearnReport
     if (empty($site_name)) {
       $site_name = 'Drupal';
     }
-    $path = "report/overview?account={$this->lift_profiles_account_name}&site=$site_name&campaign=$name";
+    $path = "report/overview?account={$this->lift_profiles_account_name}&site=$site_name&personalization=$name";
     foreach ($variations as $variation) {
       $path .= "&variation=$variation";
     }
@@ -366,6 +366,9 @@ class AcquiaLiftAPIV2 extends AcquiaLiftAPIBase implements AcquiaLiftLearnReport
   }
 
   public function getAudienceReport($name, $audience, $variations, $type, $from, $to) {
+    if ($type == 'target' && count($variations) > 1) {
+      throw new AcquiaLiftException("Can't retrieve targeting report for more than one variation");
+    }
     // @todo Remove this line :)
     $this->api_url = "http://127.0.0.1:8080";
     if (empty($this->lift_profiles_account_name)) {
@@ -380,7 +383,7 @@ class AcquiaLiftAPIV2 extends AcquiaLiftAPIBase implements AcquiaLiftLearnReport
     $to_datetime = date_create("@$to", new DateTimeZone($tz));
     $from_str = $from_datetime->format('Y-m-d');
     $to_str = $to_datetime->format('Y-m-d');
-    $path = "report/$type?account={$this->lift_profiles_account_name}&site=$site_name&campaign=$name&audience=$audience&from=$from_str&to=$to_str";
+    $path = "report/$type?account={$this->lift_profiles_account_name}&site=$site_name&personalization=$name&audience=$audience&from=$from_str&to=$to_str";
     foreach ($variations as $variation) {
       $path .= "&variation=$variation";
     }

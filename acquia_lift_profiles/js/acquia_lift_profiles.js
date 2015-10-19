@@ -174,7 +174,7 @@ var _tcwq = _tcwq || [];
           return;
         }
         initializing = true;
-        _tcaq.push(['setAccount', settings.acquia_lift_profiles.account_name]);
+        _tcaq.push(['setAccount', settings.acquia_lift_profiles.account_name, settings.acquia_lift_profiles.customer_site]);
 
         if ( settings.personalize && settings.personalize.agent_map ) {
           var agent_map = settings.personalize.agent_map;

@@ -519,6 +519,9 @@ function acquia_lift_profiles_action_subscriber($name, $context) {
  * @see acquia_lift_profiles_process_server_side_actions().
  */
 function acquia_lift_profiles_set_server_side_action($action_name, $context) {
+  if ($action_name == 'form_submit' && $context['form_id'] == 'views_exposed_form') {
+    return;
+  }
   if (!isset($_SESSION['acquia_lift_profiles_actions'])) {
     $_SESSION['acquia_lift_profiles_actions'] = array();
   }

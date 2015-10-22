@@ -916,7 +916,7 @@ function acquia_lift_report_full($form, &$form_state, $agent_data) {
   foreach ($overview_stats as $variation => $stats) {
     $decision_count += $stats['decision_count'];
     $conversion_count += $stats['conversion_count'];
-    $breakdown_text .= t(" Variation <strong>@var</strong> decisions: @dec, conversions: @conv.", array('@var' => $variation, '@dec' => $stats['decision_count'], '@conv' => $stats['conversion_count']));
+    $breakdown_text .= t(" Variation <strong>@var</strong> decisions: @dec, conversions: @conv.", array('@var' => $stats['variation_id'], '@dec' => $stats['decision_count'], '@conv' => $stats['conversion_count']));
   }
   $overview_report = acquia_lift_build_stats_report($decision_count, $conversion_count, $interval);
   $form['overview_report']['report'] = array(
@@ -1042,7 +1042,6 @@ function acquia_lift_report_audience($form_state, $personalization_data, $target
     dpm($audience_report);
   }
   catch (AcquiaLiftException $e) {
-    dpm($e->getMessage());
     $audience_report = array(
       'overall_stats' => array(),
       'daily_stats' => array()
@@ -1077,16 +1076,17 @@ function acquia_lift_report_audience($form_state, $personalization_data, $target
   $i = 0;
   $counts = $goals = $vals = array();
   foreach ($audience_report['daily_stats'] as $daily_stats) {
-    $day = $daily_stats['timestamp'];
-    foreach ($daily_stats['variations'] as $stats) {
-      $variation = $stats['variation_id'];
+    $variation = $daily_stats['variation_id'];
+    foreach ($daily_stats['results'] as $stats) {
+      $day = $stats['timestamp'];
+      $results = $stats['result'];
       if (!isset($counts[$variation])) {
         $counts[$variation] = $goals[$variation] =  $vals[$variation] = 0;
       }
-      $counts[$variation] += $stats['decision_count'];
-      $goals[$variation] += $stats['conversion_count'];
+      $counts[$variation] += $results['decision_count'];
+      $goals[$variation] += $results['conversion_count'];
 
-      $vals[$variation] += $stats['conversion_value'];
+      $vals[$variation] += $results['conversion_value'];
       $rate = $counts[$variation] > 0 ? ($goals[$variation] / $counts[$variation]) : 0;
       $mean = $counts[$variation] > 0 ? ($vals[$variation] / $counts[$variation]) : 0;
       $goal_value = $goals[$variation] ? floor($vals[$variation] / $goals[$variation]) : 1;
@@ -1100,8 +1100,8 @@ function acquia_lift_report_audience($form_state, $personalization_data, $target
       $daily_data[] = array(
         'option_id' => $variation,
         'option_label' => $variation,
-        'goals' => $stats['conversion_count'],
-        'count' => $stats['decision_count'],
+        'goals' => $results['conversion_count'],
+        'count' => $results['decision_count'],
         'date' => $day,
         'timestamp' => strtotime($day),
         'conversion' => AcquiaLiftReportBase::formatReportPercentage($rate),

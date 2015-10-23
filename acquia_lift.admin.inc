@@ -1133,14 +1133,29 @@ function acquia_lift_report_audience($form_state, $personalization_data, $target
       ),
     ),
     '#attributes' => array(
-      'id' => 'acquia-lift-experiment-report',
-      'class' => array('acquia-lift-report-section'),
+      'id' => 'acquia-lift-daily-report',
+      'class' => array('lift-statistics'),
+    ),
+  );
+  $form['daily_report']['header']['options'] = array(
+    '#type' => 'container',
+    '#attributes' => array(
+      'class' => array('acquia-lift-report-section-options'),
+    ),
+    '#tree' => FALSE,
+    // @todo Uncomment this once we are recording when new goals get added to
+    //   running personalizations.
+    //'goal' => acquia_lift_report_goal_dropdown($goals_agent, $selected_goal),
+    'metric' => acquia_lift_report_experiment_metric_dropdown('rate'),
+    'submit' => array(
+      '#type' => 'submit',
+      '#value' => t('Filter'),
     ),
   );
   $form['daily_report']['report'] = array(
     '#markup' => drupal_render($daily_report),
     '#theme_wrappers' => array('container'),
-    '#id' => 'acquia-lift-experiment-report-data',
+    '#id' => 'acquia-lift-daily-report-data',
   );
   if ($audience_type == 'test') {
     $nested_os = personalize_option_set_load($targeting_option_set->targeting[$audience]['osid']);

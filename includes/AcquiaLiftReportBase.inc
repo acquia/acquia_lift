@@ -172,7 +172,7 @@ abstract class AcquiaLiftReportBase {
     $interval = date_diff($from_datetime, $to_datetime);
     $name = empty($config['goal']) ? t('All goals') : $config['goal'];
     $reports = array(
-      'overview' => $this->buildOverviewReport($interval, $config['test_type'], $session_count, $goal_count),
+      'overview' => self::buildOverviewReport($session_count, $goal_count, $interval, $config['test_type']),
       'experiment' => $this->buildExperimentReports($name, $daily_data, $aggregated_data, $confidence, $winner),
     );
     $reports['#has_data'] = $this->hasData;
@@ -193,28 +193,32 @@ abstract class AcquiaLiftReportBase {
    * @return array
    *   A render array representing the overview report.
    */
-  protected function buildOverviewReport(DateInterval $interval, $type, $session_count, $goal_count) {
+  public static function buildOverviewReport($session_count, $goal_count, DateInterval $interval = null, $type = null) {
     // Create report renderable.
     $build = array();
-    $build['test_type'] = array(
-      '#type' => 'container',
-      '#theme' => 'acquia_lift_report_overview',
-      '#title' => $type,
-      '#description' => t('test type'),
-      '#attributes' => array(
-        'id' => 'acquia-lift-overview-type',
-      )
-    );
-    $build['total_running'] = array(
-      '#type' => 'container',
-      '#theme' => 'acquia_lift_report_overview',
-      '#attributes' => array(
-        'id' => 'acquia-lift-overview-running',
-      ),
-      '#title' =>  $interval->format('%d days, %h hours'),
-      '#description' => t('total time running'),
-    );
-    $formatted_session_count = $this->formatReportNumber($session_count, FALSE, 0);
+    if (!empty($type)) {
+      $build['test_type'] = array(
+        '#type' => 'container',
+        '#theme' => 'acquia_lift_report_overview',
+        '#title' => $type,
+        '#description' => t('test type'),
+        '#attributes' => array(
+          'id' => 'acquia-lift-overview-type',
+        )
+      );
+    }
+    if (!empty($interval)) {
+      $build['total_running'] = array(
+        '#type' => 'container',
+        '#theme' => 'acquia_lift_report_overview',
+        '#attributes' => array(
+          'id' => 'acquia-lift-overview-running',
+        ),
+        '#title' => $interval->format('%d days, %h hours'),
+        '#description' => t('total time running'),
+      );
+    }
+    $formatted_session_count = self::formatReportNumber($session_count, FALSE, 0);
     $build['shown'] = array(
       '#type' => 'container',
       '#theme' => 'acquia_lift_report_overview',
@@ -224,7 +228,7 @@ abstract class AcquiaLiftReportBase {
       '#title' => $formatted_session_count,
       '#description' => format_plural($session_count, 'time shown', 'times shown'),
     );
-    $formatted_goal_count = $this->formatReportNumber($goal_count, FALSE, 0);
+    $formatted_goal_count = self::formatReportNumber($goal_count, FALSE, 0);
     $build['goals'] = array(
       '#type' => 'container',
       '#theme' => 'acquia_lift_report_overview',
@@ -269,8 +273,9 @@ abstract class AcquiaLiftReportBase {
       '#value' => $title,
       '#attributes' => array('class' => array('lift-statistic-category-name', 'element-invisible')),
     );
-    $build['reports']['conversion']['detail'] = $this->buildConversionDetailReport($daily_data);
-    $build['reports']['conversion']['summary'] = $this->buildConversionSummaryReport($aggregated_data, $confidence, $winner);
+    $config = $this->getReportConfiguration();
+    $build['reports']['conversion']['detail'] = self::buildConversionDetailReport($daily_data, $config['machine_name'], $config['decision_name']);
+    $build['reports']['conversion']['summary'] = self::buildConversionSummaryReport($aggregated_data, $confidence, $winner, $config['machine_name'], $config['decision_name'], $this->confidence_measure);
     $build['reports']['conversion']['#theme_wrappers'] = array('container');
     $build['reports']['conversion']['#attributes'] = array('class' => array('lift-statistic-category'));
     return $build;
@@ -284,8 +289,7 @@ abstract class AcquiaLiftReportBase {
    * @param array
    *   A render array for the report.
    */
-  protected function buildConversionDetailReport($daily_data) {
-    $config = $this->getReportConfiguration();
+  public static function buildConversionDetailReport($daily_data, $personalization_name, $audience_name) {
     $headers = array(
       t('Date'),
       t('Content variation'),
@@ -308,7 +312,7 @@ abstract class AcquiaLiftReportBase {
           ),
           array(
             'data' => $choice_data['option_label'],
-            'data-acquia-lift-variation-label' => $this->getVariationLabel($choice_data['counter'], $choice_data['control']),
+            'data-acquia-lift-variation-label' => self::getVariationLabel($choice_data['counter'], $choice_data['control']),
           ),
           array(
             'data' => $choice_data['conversion'],
@@ -335,8 +339,8 @@ abstract class AcquiaLiftReportBase {
           'data-liftGraph-columnX' => '1',
           'data-liftGraph-renderer' => 'line',
           'data-liftgraph-excluded' => '5',
-          'data-acquia-lift-campaign' => $config['machine_name'],
-          'data-acquia-lift-decision-name' => $config['decision_name'],
+          'data-acquia-lift-campaign' => $personalization_name,
+          'data-acquia-lift-decision-name' => $audience_name,
         )
       );
     }
@@ -355,8 +359,7 @@ abstract class AcquiaLiftReportBase {
    * @param array
    *   A render array for the report.
    */
-  protected function buildConversionSummaryReport($aggregated_data, $confidence, $winner) {
-    $config = $this->getReportConfiguration();
+  public static function buildConversionSummaryReport($aggregated_data, $confidence, $winner, $personalization_name, $audience_name, $confidence_measure = 95) {
     $headers = array(
       t('Variation'),
       array(
@@ -382,7 +385,7 @@ abstract class AcquiaLiftReportBase {
       array(
         'data' => t('Winner'),
         'data-help-tooltip' => t('Most effective variation for visitors based on a @confidence% confidence level.', array(
-          '@confidence' => $this->getConfidenceMeasure(),
+          '@confidence' => $confidence_measure,
         )),
       ),
     );
@@ -393,7 +396,7 @@ abstract class AcquiaLiftReportBase {
       $row_data = array(
         array(
           'data' => $choice_data['option_label'],
-          'data-acquia-lift-variation-label' => $this->getVariationLabel($choice_data['counter'], $choice_data['control']),
+          'data-acquia-lift-variation-label' => self::getVariationLabel($choice_data['counter'], $choice_data['control']),
         ),
         array(
           'data' => $choice_data['count'],
@@ -416,7 +419,7 @@ abstract class AcquiaLiftReportBase {
         // If there is low confidence then show the message throughout the
         // winner column.
         $row_data[] = array(
-          'data' => $this->getLowConfidenceMessage(),
+          'data' => self::getLowConfidenceMessage($confidence_measure),
           'rowspan' => $num_rows,
           'class' => array('acquia-lift-ab-winner'),
         );
@@ -448,8 +451,8 @@ abstract class AcquiaLiftReportBase {
       '#sticky' => FALSE,
       '#attributes' => array(
         'class' => array('lift-graph-result-data'),
-        'data-acquia-lift-campaign' => $config['machine_name'],
-        'data-acquia-lift-decision-name' => $config['decision_name'],
+        'data-acquia-lift-campaign' => $personalization_name,
+        'data-acquia-lift-decision-name' => $audience_name,
       ),
       '#attached' => array(
         'library' => array(
@@ -467,9 +470,9 @@ abstract class AcquiaLiftReportBase {
    *
    * @return string
    */
-  protected function getLowConfidenceMessage() {
+  protected static function getLowConfidenceMessage($confidence_measure) {
     return t('There is not enough data to declare a winner with @confidence% confidence. Consider letting the test run longer before using the results.', array(
-      '@confidence' => $this->getConfidenceMeasure(),
+      '@confidence' => $confidence_measure,
     ));
   }
 
@@ -481,7 +484,7 @@ abstract class AcquiaLiftReportBase {
    * @param $is_control
    *   True if this is the control option.
    */
-  protected function getVariationLabel($counter, $is_control) {
+  protected static function getVariationLabel($counter, $is_control) {
     if ($is_control) {
       return t('Control');
     }

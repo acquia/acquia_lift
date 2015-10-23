@@ -7,7 +7,7 @@ class AcquiaLiftAPIClientFactory {
   * @param string $version
   * @return AcquiaLiftAPIInterface
   */
-  public static function create($account_info, $version = ACQUIA_LIFT_TESTING_AGENT_V1) {
+  public static function create($account_info, $version = ACQUIA_LIFT_TESTING_AGENT_V2) {
     $class_map = array(
       ACQUIA_LIFT_TESTING_AGENT_V1 => 'AcquiaLiftAPI',
       ACQUIA_LIFT_TESTING_AGENT_V2 => 'AcquiaLiftAPIV2',

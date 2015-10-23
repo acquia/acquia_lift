@@ -16,8 +16,6 @@ function acquia_lift_install() {
     'description' => 'The <em>Acquia Lift personalize controls</em> menu contains actions to create and manage personalizations.',
   );
   menu_save($menu);
-  // New installs should default to the V2 testing agent.
-  variable_set('acquia_lift_v2_enabled', TRUE);
 }
 
 /**
@@ -42,13 +40,31 @@ function acquia_lift_disable() {
 function acquia_lift_uninstall() {
   $vars = array(
     'acquia_lift_account_info',
-    'acquia_lift_profiles_js_path',
+    'acquia_lift_apiv2_url',
+    'acquia_lift_auto_goal',
     'acquia_lift_client_side_goals',
     'acquia_lift_confidence_measure',
-    'queue_class_acquia_lift_sync',
+    'acquia_lift_html_context_strip',
     'acquia_lift_legacy_agents',
+    'acquia_lift_version',
+    'acquia_lift_profiles_access_key',
+    'acquia_lift_profiles_account_name',
+    'acquia_lift_profiles_api_url',
+    'acquia_lift_profiles_capture_identity',
+    'acquia_lift_profiles_default_identity_type',
+    'acquia_lift_profiles_field_mappings',
+    'acquia_lift_profiles_identity_param',
+    'acquia_lift_profiles_identity_type_param',
+    'acquia_lift_profiles_lift_event_values',
+    'acquia_lift_profiles_js_path',
+    'acquia_lift_profiles_secret_key',
+    'acquia_lift_profiles_segments',
+    'acquia_lift_profiles_site_name',
+    'acquia_lift_profiles_udf_mappings',
     'acquia_lift_report_max_days',
-    'acquia_lift_v2_enabled',
+    'acquia_lift_unibar_allow_status_change',
+    'acquia_lift_v2_report_upgrade_timestamp',
+    'acquia_lift_validate_response',
   );
   foreach ($vars as $var) {
     variable_del($var);
@@ -103,31 +119,27 @@ function acquia_lift_requirements($phase) {
     }
 
     $subscription = acquia_agent_settings('acquia_subscription_data');
-    $v2 = variable_get('acquia_lift_v2_enabled', false);
     $is_active = FALSE;
     if (isset($subscription['heartbeat_data']['acquia_lift']['status']) && $subscription['heartbeat_data']['acquia_lift']['status']) {
       $is_active = TRUE;
     }
 
-    if ($v2) {
-      if ($is_active) {
-        $requirements['acquia_lift_status'] = array(
-          'title' => t('Acquia Lift Subscription status'),
-          'severity' => REQUIREMENT_OK,
-          'value' => t('Active'),
-          'description' => t('You can manually refresh the subscription status in the Acquia Subscription status section on this page.'),
-        );
-      }
-      else {
-        $requirements['acquia_lift_status'] = array(
-          'title' => t('Acquia Lift Subscription status'),
-          'severity' => REQUIREMENT_WARNING,
-          'value' => t('Inactive'),
-          'description' => t('Your subscription is expired or you are using an invalid identifier and key pair. You can check the subscription identifier and the subscription key at the <a href="@settings">Acquia Lift settings</a> page.', array('@settings' => url('admin/config/content/personalize/acquia_lift'))),
-        );
-      }
+    if ($is_active) {
+      $requirements['acquia_lift_status'] = array(
+        'title' => t('Acquia Lift Subscription status'),
+        'severity' => REQUIREMENT_OK,
+        'value' => t('Active'),
+        'description' => t('You can manually refresh the subscription status in the Acquia Subscription status section on this page.'),
+      );
     }
-
+    else {
+      $requirements['acquia_lift_status'] = array(
+        'title' => t('Acquia Lift Subscription status'),
+        'severity' => REQUIREMENT_WARNING,
+        'value' => t('Inactive'),
+        'description' => t('Your subscription is expired or you are using an invalid identifier and key pair. You can check the subscription identifier and the subscription key at the <a href="@settings">Acquia Lift settings</a> page.', array('@settings' => url('admin/config/content/personalize/acquia_lift'))),
+      );
+    }
   }
   // Update the cached version whenever we may be updating the module.
   if ($phase == 'runtime' || $phase == 'update') {
@@ -888,6 +900,19 @@ function acquia_lift_update_7204() {
   cache_clear_all('plugins:personalize:agent_type', 'cache', TRUE);
   cache_clear_all('ctools_plugin_files:personalize:agent_type', 'cache', TRUE);
   registry_rebuild();
+}
+
+/**
+ * Retire first generation decision engine's tests.
+ * Store the time that the system has performed V2 report upgrade.
+ */
+function acquia_lift_update_7205() {
+
+  // Delete the 'acquia_lift_v2_enabled' variable, because "true" became default.
+  variable_del('acquia_lift_v2_enabled');
+
+  // Store the time that the system has performed V2 report upgrade.
+  variable_set('acquia_lift_v2_report_upgrade_timestamp', time());
 }
 
 /**

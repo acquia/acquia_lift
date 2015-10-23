@@ -51,9 +51,10 @@ class AcquiaLiftLearn extends PersonalizeAgentBase implements AcquiaLiftLearning
    */
   public static function getAPIInstance() {
     $account_info = acquia_lift_get_account_info();
-    $acquia_lift_api = AcquiaLiftAPIClientFactory::create($account_info, ACQUIA_LIFT_TESTING_AGENT_V2);
+    $acquia_lift_api = AcquiaLiftAPIClientFactory::create($account_info);
     return $acquia_lift_api;
   }
+
   /**
    * Constructs an Acquia Lift agent.
    *

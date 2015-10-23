@@ -126,8 +126,6 @@ function drush_acquia_lift_campaign_sync() {
 }
 
 function drush_acquia_lift_enable_v2() {
-  // First ensure v2 is *not* enabled yet.
-  variable_set('acquia_lift_v2_enabled', FALSE);
   $agents = personalize_agent_load_by_type('acquia_lift');
   $options = array(
     'yes' => dt('Confirm'),
@@ -202,11 +200,7 @@ function drush_acquia_lift_enable_v2() {
       personalize_agent_set_status($name, PERSONALIZE_STATUS_COMPLETED);
     }
   }
-  if (!$errors) {
-    // Finally, enable V2 :)
-    variable_set('acquia_lift_v2_enabled', TRUE);
-  }
-  else {
+  if ($errors) {
     drush_print("V2 has not been enabled due to errors archiving some tests. Please fix the issue and try again.");
   }
 }

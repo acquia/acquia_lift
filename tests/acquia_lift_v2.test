@@ -33,8 +33,6 @@ class AcquiaLiftV2WebTestBase extends AcquiaLiftWebTestBase
 
   public function setUp() {
     parent::setUp();
-    // This must go here as the parent's setUp explicitly sets this to FALSE.
-    variable_set('acquia_lift_v2_enabled', TRUE);
   }
 }
 
@@ -2137,7 +2135,7 @@ class AcquiaLiftV2WebTestTarget extends AcquiaLiftV2WebTestBase {
     AcquiaLiftAPIV2::setTestInstance();
     acquia_lift_implement_mvt($targeting_agent);
     $this->resetAll();
-    $nested = personalize_agent_load_by_type(acquia_lift_get_test_agent_plugin(), TRUE);
+    $nested = personalize_agent_load_by_type(ACQUIA_LIFT_TESTING_AGENT_V2, TRUE);
     $nested_mvt = reset($nested);
     $this->assertEqual($nested_mvt->machine_name, acquia_lift_get_mvt_name_for_agent($targeting_agent->machine_name));
     $option_sets = personalize_option_set_load_by_agent($nested_mvt->machine_name, TRUE);

@@ -256,6 +256,14 @@ var _tcwq = _tcwq || [];
 
           initialized = true;
         };
+
+        //checks if debug mode is on. sets the debug mode for tcwidget
+        if(Drupal.settings.acquia_lift.isDebugMode){
+          _tcwq.push( ["setDebug", true]);
+        }else{
+          _tcwq.push(["setDebug", false]);
+        }
+
         $(document).bind('personalizeDecision', this["processPersonalizeDecision"]);
         $(document).bind('sentGoalToAgent', this["processSentGoalToAgent"]);
         Drupal.personalize.getVisitorContexts(plugins, callback);
@@ -294,12 +302,18 @@ var _tcwq = _tcwq || [];
        * @param eventName
        */
       'processEvent': function(eventName, settings, context) {
-        var extra = {
-          evalSegments: true
-        };
+        var engagement_scores = settings.acquia_lift_profiles.engagement_scores,
+          global_values = settings.acquia_lift_profiles.global_values,
+          engagement_score = engagement_scores.hasOwnProperty(eventName) ? engagement_scores[eventName] : 1,
+          global_value = global_values.hasOwnProperty(eventName) ? global_values[eventName] : 1,
+          extra = {
+            engagement_score: engagement_score,
+            targetgoalvalue: global_value,
+            evalSegments: true
+          };
         // Add the field and UDF values to the extra info we're sending about the event. The assumption
         // here is that this event is being processed *after* the initial page view capture has
-        // already retrieved all the visitor context valuess. Since this happens asynchronously
+        // already retrieved all the visitor context values. Since this happens asynchronously
         // it is not guaranteed that this is the case.
         $.extend(extra, pageFieldValues);
         // Send to acquia_lift_profiles.

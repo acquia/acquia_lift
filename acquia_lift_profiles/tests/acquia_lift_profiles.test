@@ -434,10 +434,63 @@ class ALProfilesWebTest extends DrupalWebTestCase {
     $this->assertEqual($expected, $settings['personalize_user_profile_context']);
   }
 
+  function testLiftEventValuesConfig() {
+    $this->drupalLogin($this->admin_user);
+    $this->createVisitorActions();
+
+    // Set some engagement score global values.
+    $edit = array(
+      'acquia_lift_profiles_lift_event_values[scroll_to_bottom][global_value]' => 123,
+      'acquia_lift_profiles_lift_event_values[acquia_lift_profiles_form_click][engagement_score]' => 456,
+      'acquia_lift_profiles_lift_event_values[acquia_lift_profiles_form_hover][global_value]' => 789,
+    );
+    $this->drupalPost('admin/config/content/personalize/lift_event_values', $edit, t('Save configuration'));
+    // Assert no error message, and the new values are correctly set on the form.
+    $this->assertNoText('must be a positive integer.');
+    $this->assertFieldByName('acquia_lift_profiles_lift_event_values[scroll_to_bottom][engagement_score]', 1);
+    $this->assertFieldByName('acquia_lift_profiles_lift_event_values[scroll_to_bottom][global_value]', 123);
+    $this->assertFieldByName('acquia_lift_profiles_lift_event_values[acquia_lift_profiles_form_click][engagement_score]', 456);
+    $this->assertFieldByName('acquia_lift_profiles_lift_event_values[acquia_lift_profiles_form_click][global_value]', 1);
+    $this->assertFieldByName('acquia_lift_profiles_lift_event_values[acquia_lift_profiles_form_hover][engagement_score]', 1);
+    $this->assertFieldByName('acquia_lift_profiles_lift_event_values[acquia_lift_profiles_form_hover][global_value]', 789);
+    // Assert system actions don't have "Edit" links, and custom actions do.
+    $this->assertNoLinkByHref('admin/structure/acquia_lift/visitor_action/scroll_to_bottom/edit');
+    $this->assertLinkByHref('admin/structure/acquia_lift/visitor_action/acquia_lift_profiles_form_click/edit');
+    $this->assertLinkByHref('admin/structure/acquia_lift/visitor_action/acquia_lift_profiles_form_hover/edit');
+    // Assert the values are set in the DB.
+    $lift_event_values = variable_get('acquia_lift_profiles_lift_event_values', array());
+    $this->assertEqual($lift_event_values['scroll_to_bottom']['engagement_score'], 1);
+    $this->assertEqual($lift_event_values['scroll_to_bottom']['global_value'], 123);
+    $this->assertEqual($lift_event_values['acquia_lift_profiles_form_click']['engagement_score'], 456);
+    $this->assertEqual($lift_event_values['acquia_lift_profiles_form_click']['global_value'], 1);
+    $this->assertEqual($lift_event_values['acquia_lift_profiles_form_hover']['engagement_score'], 1);
+    $this->assertEqual($lift_event_values['acquia_lift_profiles_form_hover']['global_value'], 789);
+
+    // Attempt to set an unacceptable value.
+    $edit = array(
+      'acquia_lift_profiles_lift_event_values[scroll_to_bottom][engagement_score]' => -1,
+    );
+    $this->drupalPost('admin/config/content/personalize/lift_event_values', $edit, t('Save configuration'));
+    // Assert the error message, as well as the values were unchanged.
+    $this->assertText('must be a positive integer.');
+    $lift_event_values = variable_get('acquia_lift_profiles_lift_event_values', array());
+    $this->assertEqual($lift_event_values['scroll_to_bottom']['global_value'], 123);
+
+    // Assert the engagement score and global value settings are now on the page.
+    $this->drupalGet('node');
+    $this->assertEqual($this->drupalSettings['acquia_lift_profiles']['engagement_scores']['scroll_to_bottom'], 1);
+    $this->assertEqual($this->drupalSettings['acquia_lift_profiles']['global_values']['scroll_to_bottom'], 123);
+    $this->assertEqual($this->drupalSettings['acquia_lift_profiles']['engagement_scores']['acquia_lift_profiles_form_click'], 456);
+    $this->assertEqual($this->drupalSettings['acquia_lift_profiles']['global_values']['acquia_lift_profiles_form_click'], 1);
+    // Because the action does not apply to the "node" page, we should not see its settings.
+    $this->assertFalse(isset($this->drupalSettings['acquia_lift_profiles']['engagement_scores']['acquia_lift_profiles_form_hover']));
+    $this->assertFalse(isset($this->drupalSettings['acquia_lift_profiles']['global_values']['acquia_lift_profiles_form_hover']));
+  }
+
   /**
    * Helper function to configure acquia_lift_profiles settings.
    */
-  function configureALProfiles() {
+  protected function configureALProfiles() {
     $this->drupalLogin($this->admin_user);
 
     // Variable acquia_lift_profiles_js_path is set in Acquia Lift module, and has no UI in Acquia Lift Profile.
@@ -517,5 +570,36 @@ class ALProfilesWebTest extends DrupalWebTestCase {
       }
     }
     $this->assertEqual('Link not found', $check_href);
+  }
+
+  /**
+   * Create a list of visitor actions as test fixtures.
+   */
+  protected function createVisitorActions() {
+    $actions = array(
+      'acquia_lift_profiles_form_click' => array(
+        'machine_name' => 'acquia_lift_profiles_form_click',
+        'plugin' => 'link',
+        'label' => t('clicks the click-test link'),
+        'client_side' => TRUE,
+        'pages' => 'node',
+        'identifier' => '.click-test',
+        'data' => array(),
+        'event' => 'click'
+      ),
+      'acquia_lift_profiles_form_hover' => array(
+        'machine_name' => 'acquia_lift_profiles_form_hover',
+        'plugin' => 'link',
+        'label' => t('hovers over the hover-test link'),
+        'client_side' => TRUE,
+        'pages' => 'node/1',
+        'identifier' => '.hover-test',
+        'data' => array(),
+        'event' => 'mouseenter'
+      ),
+    );
+    foreach ($actions as $action) {
+      visitor_actions_save_action($action);
+    }
   }
 }

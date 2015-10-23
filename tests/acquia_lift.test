@@ -4530,3 +4530,69 @@ class AcquiaLiftWebTestCampaignWizardReview extends AcquiaLiftWebTestCampaignWiz
     }
   }
 }
+
+class AcquiaLiftDebugger extends AcquiaLiftWebTestBase {
+  public static function getInfo() {
+    return array(
+      'name' => t('Acquia Lift Inspector Tests'),
+      'description' => t('Tests the basic functionality of the Acquia Lift Web Inspector'),
+      'group' => t('Personalize'),
+    );
+  }
+
+  /**
+   * Test the availability of the debugger.
+   */
+  function testAccess() {
+    $url_param = 'acquia_lift_inspect_mode';
+    $this->drupalLogin($this->adminUser);
+
+    // Make sure that debug mode is not enabled.
+    $this->drupalGet('admin/config/content/personalize/');
+    $edit = array(
+      'personalize_enable_debug_mode' => FALSE,
+    );
+    $this->drupalPost(NULL, $edit, $this->getButton('config'));
+
+    // Go to the main site and verify that the debugger is not loaded.
+    $this->drupalGet('', array('query' => array($url_param => 1)));
+    $settings = $this->drupalGetSettings();
+    $this->assertTrue(empty($settings['acquia_lift']['isDebugMode']));
+
+    // Enable debug mode for the site.
+    $this->drupalGet('admin/config/content/personalize/');
+    $edit = array(
+      'personalize_enable_debug_mode' => TRUE,
+    );
+    $this->drupalPost(NULL, $edit, $this->getButton('config'));
+
+    // Make sure that this doesn't automatically display the debugger.
+    $this->drupalGet('');
+    $this->assertTrue(empty($settings['acquia_lift']['isDebugMode']));
+
+    // Now call the page with debug mode requested.
+    $this->drupalGet('', array('query' => array($url_param => 1)));
+    $settings = $this->drupalGetSettings();
+    $this->assertTrue($settings['acquia_lift']['isDebugMode']);
+
+    // Navigate to another page and debugger mode should continue automatically.
+    $this->drupalGet('node');
+    $settings = $this->drupalGetSettings();
+    $this->assertTrue($settings['acquia_lift']['isDebugMode']);
+
+    // Navigate to an admin page and debugger should be disabled.
+    $this->drupalGet('admin/config');
+    $settings = $this->drupalGetSettings();
+    $this->assertTrue(empty($settings['acquia_lift']['isDebugMode']));
+
+    // Go back to the front-end.
+    $this->drupalGet('node');
+    $settings = $this->drupalGetSettings();
+    $this->assertTrue($settings['acquia_lift']['isDebugMode']);
+
+    // Turn off debugger mode.
+    $this->drupalGet('', array('query' => array($url_param => 0)));
+    $settings = $this->drupalGetSettings();
+    $this->assertTrue(empty($settings['acquia_lift']['isDebugMode']));
+  }
+}

@@ -1158,9 +1158,32 @@ function acquia_lift_report_audience($form_state, $personalization_data, $target
     '#theme_wrappers' => array('container'),
     '#id' => 'acquia-lift-daily-report-data',
   );
-  if ($audience_type == 'test') {
+  if ($audience_type == 'test' && isset($audience_report['test_results'])) {
     $nested_os = personalize_option_set_load($targeting_option_set->targeting[$audience]['osid']);
     $nested_agent = personalize_agent_load($nested_os->agent);
+    $aggregated_data = array();
+    $i = 0;
+    foreach ($audience_report['test_results'] as $result) {
+      $variation = $result['variation_id'];
+      $rate = $result['decision_count'] > 0 ? ($result['conversion_count'] / $result['decision_count']) : 0;
+      $aggregated_data[$variation] = array(
+        'counter' => $i,
+        'option_id' => $variation,
+        'option_label' => $variation,
+        'goals' => $result['conversion_count'],
+        'count' => $result['decision_count'],
+        'conversion' => AcquiaLiftReportBase::formatReportPercentage($rate),
+        'estimated_value' => AcquiaLiftReportBase::formatReportNumber($result['mean'], TRUE, 4),
+        'control' => $i === 0,
+        'confidence' => $result['confidence'],
+        'lift_default' =>  $result['lift_default'],
+        'lift_random' => $result['lift_random'],
+      );
+      $i++;
+    }
+    $confidence = !empty($audience_report['overall_confidence']) ? $audience_report['overall_confidence'] : 0;
+    $winner = !empty($audience_report['winner']) ? $audience_report['winner'] : null;
+    $experiment_report = AcquiaLiftReportBase::buildConversionSummaryReport($aggregated_data, $confidence, $winner, $personalization_data->machine_name, $audience, variable_get('acquia_lift_confidence_measure', 95));
     // Conversion details section.
     $form['experiment_report'] = array(
       '#type' => 'container',
@@ -1208,7 +1231,7 @@ function acquia_lift_report_audience($form_state, $personalization_data, $target
       ),
     );
     $form['experiment_report']['report'] = array(
-      '#markup' => 'ohai',
+      '#markup' => drupal_render($experiment_report),
       '#theme_wrappers' => array('container'),
       '#id' => 'acquia-lift-experiment-report-data',
     );

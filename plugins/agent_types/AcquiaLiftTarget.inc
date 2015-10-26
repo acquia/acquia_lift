@@ -42,7 +42,6 @@ class AcquiaLiftTarget extends PersonalizeAgentBase implements PersonalizeExplic
     );
     $assets = array(
       'js' => array(
-        drupal_get_path('module', 'acquia_lift') . '/js/acquia_lift.js' => array('type' => 'file', 'scope' => 'footer', 'defer' => TRUE),
         drupal_get_path('module', 'acquia_lift') . '/js/acquia_lift_target.js' => array('type' => 'file', 'scope' => 'footer', 'defer' => TRUE),
         $settings_array,
       )

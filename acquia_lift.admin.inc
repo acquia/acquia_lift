@@ -730,10 +730,8 @@ function acquia_lift_report_wizard($agent_data) {
  *
  * @param stdClass $agent_data
  *   The campaign agent data for this report.
- * @param stdClass $option_set
- *   (optional) The content variation to show in the default view.
  */
-function acquia_lift_report($form, &$form_state, $agent_data) {
+function acquia_lift_report_legacy($form, &$form_state, $agent_data) {
   $form = array(
     '#prefix' => '<div id="acquia-lift-reports">',
     '#suffix' => '</div>',
@@ -746,7 +744,7 @@ function acquia_lift_report($form, &$form_state, $agent_data) {
   if (!acquia_lift_is_targeting_agent($agent_data)) {
     $legacy_campaigns = variable_get('acquia_lift_legacy_agents', array());
     if (in_array($agent_data->machine_name, $legacy_campaigns)) {
-      $form['report'] = acquia_lift_report_custom($form_state, $agent_data, TRUE);
+      $form['report'] = _acquia_lift_get_subreport($form_state, $agent_data, TRUE);
       return $form;
     }
     else {
@@ -755,7 +753,7 @@ function acquia_lift_report($form, &$form_state, $agent_data) {
   }
   if (isset($_GET['lift_retired_test'])) {
     if ($nested_agent = personalize_agent_load($_GET['lift_retired_test'])) {
-      $form['report'] = acquia_lift_report_custom($form_state, $nested_agent, FALSE, $agent_data);
+      $form['report'] = _acquia_lift_get_subreport($form_state, $nested_agent, FALSE, $agent_data);
       return $form;
     }
   }
@@ -856,20 +854,20 @@ function acquia_lift_report($form, &$form_state, $agent_data) {
   }
   if ($test_type == 'retired') {
     $nested_agent = personalize_agent_load($test_id);
-    $form['report'] = acquia_lift_report_custom($form_state, $nested_agent, FALSE, $agent_data);
+    $form['report'] = _acquia_lift_get_subreport($form_state, $nested_agent, $agent_data);
     return $form;
   }
   if ($nested_os = personalize_option_set_load($option_set->targeting[$test_id]['osid'])) {
     $nested_agent = personalize_agent_load($nested_os->agent);
     if (!empty($nested_agent)) {
-      $form['report'] = acquia_lift_report_custom($form_state, $nested_agent, FALSE, $agent_data);
+      $form['report'] = _acquia_lift_get_subreport($form_state, $nested_agent, $agent_data);
     }
   }
 
   return $form;
 }
 
-function acquia_lift_report_full($form, &$form_state, $agent_data) {
+function acquia_lift_report($form, &$form_state, $agent_data) {
   module_load_include('inc', 'acquia_lift', 'includes/AcquiaLiftReportBase');
   $form = array(
     '#prefix' => '<div id="acquia-lift-reports">',
@@ -940,12 +938,12 @@ function acquia_lift_report_full($form, &$form_state, $agent_data) {
     $audience = $form_state['values']['audience_filter'];
   }
   else {
-    $audience = isset($_GET['targeting_audience']) ? 'audience|' . $_GET['targeting_audience'] : NULL;
+    $audience = isset($_GET['targeting_audience']) ? 'active|' . $_GET['targeting_audience'] : NULL;
   }
   // Get audience options.
   $audience_options = array();
   foreach($option_set->targeting as $audience_name => $targeting) {
-    $audience_options['audience|' . $audience_name] = $targeting['label'];
+    $audience_options['active|' . $audience_name] = $targeting['label'];
   }
   // Get retired tests as well.
   $old_tests = acquia_lift_get_retired_tests($agent_data->machine_name);
@@ -965,13 +963,17 @@ function acquia_lift_report_full($form, &$form_state, $agent_data) {
   if (empty($audience)) {
     $audience = key($audience_options);
   }
-  list($test_type, $test_id) = explode('|', $audience);
-  if ($test_type == 'retired') {
-    $nested_agent = personalize_agent_load($test_id);
+  list($audience_status, $name) = explode('|', $audience);
+  $audience_type = 'test';
+  if ($audience_status == 'retired') {
+    $nested_agent = personalize_agent_load($name);
     $test_label = $nested_agent->label;
   }
   else {
-    $test_label = $option_set->targeting[$test_id]['label'];
+    if (isset($option_set->targeting[$name]['option_id'])) {
+      $audience_type = 'target';
+    }
+    $test_label = $option_set->targeting[$name]['label'];
   }
 
   // Show the audience filter.
@@ -1004,11 +1006,11 @@ function acquia_lift_report_full($form, &$form_state, $agent_data) {
       '#id' => 'acquia-lift-report-audience-filter',
     );
   }
-  if ($test_type == 'audience' && personalize_agent_get_status($agent_data->machine_name) != PERSONALIZE_STATUS_COMPLETED) {
+  if ($audience_status == 'active' && $audience_type == 'test' && personalize_agent_get_status($agent_data->machine_name) != PERSONALIZE_STATUS_COMPLETED) {
     $form['audience_container']['complete'] = array(
       '#type' => 'link',
       '#title' => t('End test and choose winner'),
-      '#href' => 'admin/structure/personalize/manage/' . $agent_data->machine_name . '/audience/' . $test_id . '/complete',
+      '#href' => 'admin/structure/personalize/manage/' . $agent_data->machine_name . '/audience/' . $name . '/complete',
       '#attributes' => array(
         'class' => array(
           'ctools-use-modal',
@@ -1021,11 +1023,11 @@ function acquia_lift_report_full($form, &$form_state, $agent_data) {
     );
   }
 
-  if ($test_type == 'retired') {
-    $form['report'] = acquia_lift_report_retired($form_state, $test_id, $agent_data);
+  if ($audience_status == 'retired') {
+    $form['report'] = acquia_lift_report_retired($form_state, $name, $agent_data);
   }
   else {
-    $form['report'] = acquia_lift_report_audience($form_state, $agent_data, $option_set, $test_id, $lift_api, $start_time, $end_time);
+    $form['report'] = acquia_lift_report_audience($form_state, $agent_data, $option_set, $name, $lift_api, $start_time, $end_time);
   }
   return $form;
 }
@@ -1040,7 +1042,6 @@ function acquia_lift_report_audience($form_state, $personalization_data, $target
   $variations = acquia_lift_get_structure_from_targeting($targeting_option_set);
   try {
     $audience_report = $lift_api->getAudienceReport($personalization_data->machine_name, $audience, $variations[$audience], $audience_type, $from, $to);
-    dpm($audience_report);
   }
   catch (AcquiaLiftException $e) {
     $audience_report = array(
@@ -1248,16 +1249,16 @@ function acquia_lift_report_submit($form, &$form_state) {
 }
 
 /**
- * Form build function for a custom Acquia Lift agent report.
+ * Builds a limited report for a test directly from the test stats.
+ *
+ * Used for tests that were running before data was being pushed to Lift Web.
  *
  * @param stdClass $agent_data
- *   The campaign agent data for this report.
- * @param stdClass $option_set
- *   (optional) The content variation to show in the default view.
+ *   The agent data for this test report.
  * @param stdClass $parent_agent
- *   (optional) The parent agent if this is a nested test.
+ *   The parent personalization.
  */
-function acquia_lift_report_custom(&$form_state, $agent_data, $legacy = FALSE, $parent_agent = NULL) {
+function _acquia_lift_get_subreport(&$form_state, $agent_data, $parent_agent) {
 
   if ($agent_data->started == 0) {
     return array(
@@ -1295,10 +1296,6 @@ function acquia_lift_report_custom(&$form_state, $agent_data, $legacy = FALSE, $
   if (_acquia_lift_missing_library_warning(array('rickshaw', 'd3'), t('The following libraries are required in order to view the Acquia Lift reports:'))) {
     return array();
   }
-  if ($legacy) {
-    // The file containing the legacy report class needs to be explicitly loaded.
-    module_load_include('inc', 'acquia_lift', 'includes/AcquiaLiftReportLegacy');
-  }
   $agent_name = $agent->getMachineName();
   // Generate report filters.
   $data = $agent->getData();
@@ -1313,26 +1310,8 @@ function acquia_lift_report_custom(&$form_state, $agent_data, $legacy = FALSE, $
 
   // Get the decision points for this agent so we can provide a filter on this.
   $option_sets = personalize_option_set_load_by_agent($agent_name);
-  if ($legacy) {
-    $decisions = AcquiaLiftAgent::convertOptionSetsToDecisions($option_sets);
-    $decision_options = array();
-    foreach ($decisions as $name => $decision) {
-      $decision_options[$name] = personalize_get_label_for_decision_point_name($name);
-    }
-
-    // Decision point filters.
-    if (isset($form_state['values']['decision_point'])) {
-      $decision_point = $form_state['values']['decision_point'];
-    }
-    else {
-      $decision_point = key($decisions);
-    }
-    $form['report_filters']['decision_point'] = acquia_lift_report_decision_point_dropdown($decision_options, $decision_point, $agent_name);
-  }
-  else {
-    $os = reset($option_sets);
-    $decision_point = $os->decision_point;
-  }
+  $os = reset($option_sets);
+  $decision_point = $os->decision_point;
 
   list($date_start_report, $date_end_report) = acquia_lift_get_report_dates_for_agent($agent_data);
 
@@ -1415,16 +1394,12 @@ function acquia_lift_report_custom(&$form_state, $agent_data, $legacy = FALSE, $
   }
 
   // Get the conversion report options.
-  $goals_agent = !empty($parent_agent) ? $parent_agent->machine_name : $agent->getMachineName();
   $form['experiment_report']['header']['options'] = array(
     '#type' => 'container',
     '#attributes' => array(
       'class' => array('acquia-lift-report-section-options'),
     ),
     '#tree' => FALSE,
-    // @todo Uncomment this once we are recording when new goals get added to
-    //   running personalizations.
-    //'goal' => acquia_lift_report_goal_dropdown($goals_agent, $selected_goal),
     'metric' => acquia_lift_report_experiment_metric_dropdown($selected_metric),
     'submit' => array(
       '#type' => 'submit',
@@ -1444,9 +1419,6 @@ function acquia_lift_report_custom(&$form_state, $agent_data, $legacy = FALSE, $
     '#id' => 'acquia-lift-experiment-report-data',
   );
 
-  if ($legacy) {
-    acquia_lift_legacy_report_form($form, $form_state, $reports);
-  }
   return $form;
 }
 

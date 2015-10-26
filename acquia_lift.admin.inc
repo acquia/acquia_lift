@@ -158,7 +158,7 @@ function acquia_lift_batch_sync_form_submit($form, &$form_state) {
  */
 function acquia_lift_ping_test_submit($form, &$form_state) {
   $account_info = acquia_lift_get_account_info();
-  $api = AcquiaLiftAPIClientFactory::create($account_info);
+  $api = AcquiaLiftAPIV2::getInstance($account_info);
   if ($api->ping()) {
     drupal_set_message(t('Successfully connected to the Acquia Lift service'));
   }
@@ -787,7 +787,7 @@ function acquia_lift_report($form, &$form_state, $agent_data) {
   // First get the overview report, i.e. total decisions and conversions across
   // all audiences.
   $account_info = acquia_lift_get_account_info();
-  $lift_api = AcquiaLiftAPIClientFactory::create($account_info);
+  $lift_api = AcquiaLiftAPIV2::getInstance($account_info);
   try {
     $overview_stats = $lift_api->getPersonalizationOverviewReport($agent_data->machine_name, $option_ids);
   }

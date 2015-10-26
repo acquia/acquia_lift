@@ -54,7 +54,7 @@ class AcquiaLiftAgent extends PersonalizeAgentBase implements PersonalizeAgentGo
    */
   public static function getAPIInstance() {
     $account_info = acquia_lift_get_account_info();
-    $acquia_lift_api = AcquiaLiftAPIClientFactory::create($account_info, ACQUIA_LIFT_TESTING_AGENT_V1);
+    $acquia_lift_api = AcquiaLiftAPI::getInstance($account_info);
     return $acquia_lift_api;
   }
 

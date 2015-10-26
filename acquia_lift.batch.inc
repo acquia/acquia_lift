@@ -240,7 +240,7 @@ function acquia_lift_get_sync_operations_for_agent($agent) {
     throw new AcquiaLiftException('No goals have been set up for personalization ' . $agent->machine_name);
   }
   $account_info = acquia_lift_get_account_info();
-  $lift_api = AcquiaLiftAPIClientFactory::create($account_info);
+  $lift_api = AcquiaLiftAPIV2::getInstance($account_info);
 
   foreach ($nested_tests as $agent_name => $test) {
     if (!acquia_lift_is_testing_agent($test)) {

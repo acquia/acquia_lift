@@ -47,23 +47,9 @@ function acquia_lift_uninstall() {
     'acquia_lift_html_context_strip',
     'acquia_lift_legacy_agents',
     'acquia_lift_version',
-    'acquia_lift_profiles_access_key',
-    'acquia_lift_profiles_account_name',
-    'acquia_lift_profiles_api_url',
-    'acquia_lift_profiles_capture_identity',
-    'acquia_lift_profiles_default_identity_type',
-    'acquia_lift_profiles_field_mappings',
-    'acquia_lift_profiles_identity_param',
-    'acquia_lift_profiles_identity_type_param',
-    'acquia_lift_profiles_lift_event_values',
-    'acquia_lift_profiles_js_path',
-    'acquia_lift_profiles_secret_key',
-    'acquia_lift_profiles_segments',
-    'acquia_lift_profiles_site_name',
-    'acquia_lift_profiles_udf_mappings',
     'acquia_lift_report_max_days',
     'acquia_lift_unibar_allow_status_change',
-    'acquia_lift_v2_report_upgrade_timestamp',
+    'acquia_lift_report_upgrade_timestamp',
     'acquia_lift_validate_response',
   );
   foreach ($vars as $var) {
@@ -912,7 +898,7 @@ function acquia_lift_update_7205() {
   variable_del('acquia_lift_v2_enabled');
 
   // Store the time that the system has performed V2 report upgrade.
-  variable_set('acquia_lift_v2_report_upgrade_timestamp', time());
+  variable_set('acquia_lift_report_upgrade_timestamp', time());
 }
 
 /**

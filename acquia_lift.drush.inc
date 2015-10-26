@@ -147,7 +147,7 @@ function drush_acquia_lift_enable_v2() {
   }
   $account_info = acquia_lift_get_account_info();
   // Get an instance of the V1 API client to get the reports.
-  $lift_api = AcquiaLiftAPIClientFactory::create($account_info, ACQUIA_LIFT_TESTING_AGENT_V1);
+  $lift_api = AcquiaLiftAPI::getInstance($account_info);
   // Go through each test, archive its report, and then retire it.
   $errors = 0;
   foreach ($agents as $name => $agent) {

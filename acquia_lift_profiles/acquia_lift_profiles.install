@@ -35,19 +35,25 @@ function acquia_lift_profiles_disable() {
  * Implements hook_uninstall().
  */
 function acquia_lift_profiles_uninstall() {
-  variable_del('acquia_lift_profiles_account_name');
-  variable_del('acquia_lift_profiles_site_name');
-  variable_del('acquia_lift_profiles_api_url');
-  variable_del('acquia_lift_profiles_access_key');
-  variable_del('acquia_lift_profiles_secret_key');
-  variable_del('acquia_lift_profiles_capture_identity');
-  variable_del('acquia_lift_profiles_field_mappings');
-  variable_del('acquia_lift_profiles_tracked_actions');
-  variable_del('acquia_lift_profiles_lift_event_values');
-  variable_del('acquia_lift_profiles_udf_mappings');
-  variable_del('acquia_lift_profiles_identity_param');
-  variable_del('acquia_lift_profiles_identity_type_param');
-  variable_del('acquia_lift_profiles_default_identity_type');
+  $vars = array(
+  'acquia_lift_profiles_access_key',
+    'acquia_lift_profiles_account_name',
+    'acquia_lift_profiles_api_url',
+    'acquia_lift_profiles_capture_identity',
+    'acquia_lift_profiles_default_identity_type',
+    'acquia_lift_profiles_field_mappings',
+    'acquia_lift_profiles_identity_param',
+    'acquia_lift_profiles_identity_type_param',
+    'acquia_lift_profiles_lift_event_values',
+    'acquia_lift_profiles_js_path',
+    'acquia_lift_profiles_secret_key',
+    'acquia_lift_profiles_segments',
+    'acquia_lift_profiles_site_name',
+    'acquia_lift_profiles_udf_mappings',
+  );
+  foreach ($vars as $var) {
+    variable_del($var);
+  }
 }
 
 /**

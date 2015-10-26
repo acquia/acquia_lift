@@ -643,18 +643,11 @@ function acquia_lift_report_legacy($form, &$form_state, $agent_data) {
     ),
   );
   if (!acquia_lift_is_targeting_agent($agent_data)) {
-    $legacy_campaigns = variable_get('acquia_lift_legacy_agents', array());
-    if (in_array($agent_data->machine_name, $legacy_campaigns)) {
-      $form['report'] = _acquia_lift_get_subreport($form_state, $agent_data, TRUE);
-      return $form;
-    }
-    else {
-      return array();
-    }
+    return array();
   }
   if (isset($_GET['lift_retired_test'])) {
     if ($nested_agent = personalize_agent_load($_GET['lift_retired_test'])) {
-      $form['report'] = _acquia_lift_get_subreport($form_state, $nested_agent, FALSE, $agent_data);
+      $form['report'] = _acquia_lift_get_subreport($form_state, $nested_agent);
       return $form;
     }
   }
@@ -755,13 +748,13 @@ function acquia_lift_report_legacy($form, &$form_state, $agent_data) {
   }
   if ($test_type == 'retired') {
     $nested_agent = personalize_agent_load($test_id);
-    $form['report'] = _acquia_lift_get_subreport($form_state, $nested_agent, $agent_data);
+    $form['report'] = _acquia_lift_get_subreport($form_state, $nested_agent);
     return $form;
   }
   if ($nested_os = personalize_option_set_load($option_set->targeting[$test_id]['osid'])) {
     $nested_agent = personalize_agent_load($nested_os->agent);
     if (!empty($nested_agent)) {
-      $form['report'] = _acquia_lift_get_subreport($form_state, $nested_agent, $agent_data);
+      $form['report'] = _acquia_lift_get_subreport($form_state, $nested_agent);
     }
   }
 
@@ -1156,10 +1149,8 @@ function acquia_lift_report_submit($form, &$form_state) {
  *
  * @param stdClass $agent_data
  *   The agent data for this test report.
- * @param stdClass $parent_agent
- *   The parent personalization.
  */
-function _acquia_lift_get_subreport(&$form_state, $agent_data, $parent_agent) {
+function _acquia_lift_get_subreport(&$form_state, $agent_data) {
 
   if ($agent_data->started == 0) {
     return array(
@@ -1185,7 +1176,7 @@ function _acquia_lift_get_subreport(&$form_state, $agent_data, $parent_agent) {
   }
 
   // If this isn't a learning agent, no reports to show..
-  if (!$agent instanceof AcquiaLiftLearningAgentInterface) {
+  if (!$agent instanceof AcquiaLiftLearn) {
     return array(
       'no_report' => array(
         '#markup' => t('This agent does not support reporting.')
@@ -1226,7 +1217,6 @@ function _acquia_lift_get_subreport(&$form_state, $agent_data, $parent_agent) {
     'end' => $date_end_report,
     'goal' => $selected_goal,
     'conversion_metric' => $selected_metric,
-    'legacy' => $legacy
   );
   $reports = $agent->getCampaignReports($options);
   if (!($reports['#has_data'])) {

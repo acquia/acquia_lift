@@ -41,9 +41,6 @@ class AcquiaLiftReportFactory {
       default:
         $class = 'AcquiaLiftReport';
         $file_source_class = 'AcquiaLiftReportDataFromFile';
-        if (!empty($options['legacy'])) {
-          $class = 'AcquiaLiftReportLegacy';
-        }
         break;
     }
     if (!isset($options['confidence_measure'])) {

@@ -5,10 +5,367 @@
  * Integration tests for Acquia Lift module.
  */
 
-class AcquiaLiftV2WebTestBase extends AcquiaLiftWebTestBase
+class AcquiaLiftV2WebTestBase extends DrupalWebTestCase
 {
-  protected static $agent_plugin = 'acquia_lift_learn';
 
+  protected static $agent_plugin = 'acquia_lift_learn';
+  protected $adminUser;
+
+  protected $managerUser;
+
+  public function setUp()
+  {
+    require_once(dirname(__FILE__) . '/../includes/acquia_lift.classes.inc');
+    require_once(dirname(__FILE__) . '/acquia_lift.test_classes.inc');
+
+    parent::setUp(array('ctools', 'personalize', 'acquia_lift', 'personalize_blocks'));
+
+    $this->adminUser = $this->drupalCreateUser(array('access administration pages', 'administer personalize configuration'));
+
+    $this->managerUser = $this->drupalCreateUser(array('access administration pages', 'manage personalized content', 'administer visitor actions'));
+    $this->configureAcquiaLiftAccount();
+    $this->drupalLogin($this->managerUser);
+    variable_set('acquia_lift_v2_enabled', FALSE);
+  }
+
+  public function tearDown()
+  {
+    variable_del('acquia_lift_web_test_data');
+    variable_del('acquia_lift_web_test_broken_client');
+    parent::tearDown();
+  }
+
+  /**
+   * Helper function to create an agent.
+   */
+  protected function createTestAgent($label = NULL, $options = array(), $type = 'test_agent') {
+    if ($type == 'acquia_lift') {
+      $options += array(
+        'decision_style' => 'adaptive',
+        'control_rate' => 10,
+        'explore_rate' => 20,
+      );
+    }
+    else {
+      module_enable(array('personalize_test'));
+    }
+
+    if (empty($label)) {
+      $label = $this->randomName();
+    }
+    $agent = new stdClass();
+    $agent->label = $label;
+    $agent->plugin = $type;
+    $agent->data = $options;
+    $agent->machine_name = personalize_generate_machine_name($label, 'personalize_agent_machine_name_exists');
+    $agent = personalize_agent_save($agent);
+    $this->resetAll();
+    $agent_instance = personalize_agent_load_agent($agent->machine_name, TRUE);
+    return $agent_instance;
+  }
+
+  /**
+   * A helper function to create an acquia_lift_target agent.
+   * @param string $label
+   *   (Optional) The label for the new agent.
+   * @return stdClass
+   *   The newly created agent data.
+   */
+  protected function createTargetingAgent($label = NULL, $data = array()) {
+    if (empty($label)) {
+      $label = $this->randomName();
+    }
+    $agent = new stdClass();
+    $agent->label = $label;
+    $agent->plugin = 'acquia_lift_target';
+    $agent->data = $data;
+    $agent->machine_name = personalize_generate_machine_name($label, 'personalize_agent_machine_name_exists');
+    $agent = personalize_agent_save($agent);
+    $this->resetAll();
+    $this->resetAll();
+    return $agent;
+  }
+
+  protected function createOptionSet($index, $optionData) {
+    $option_set = array(
+      'plugin' => $optionData['plugin'],
+      'label' => 'Option Set ' . ($index + 1),
+      'agent' => $optionData['agent'],
+    );
+    $options = array();
+    $choice_ids = array();
+    if (!isset($optionData['option_ids'])) {
+      for ($j = 0; $j < $optionData['num_options']; $j++) {
+        $option_id = personalize_generate_option_id($j);
+        $choice_ids[] = $option_id;
+        $options[$j] = array(
+          'option_id' => $option_id,
+          'option_label' => personalize_generate_option_label($j),
+        );
+      }
+    }
+    else {
+      foreach ($optionData['option_ids'] as $i => $option_id) {
+        $choice_ids[] = $option_id;
+        $options[$i] = array(
+          'option_id' => $option_id,
+          'option_label' => personalize_generate_option_label($i),
+        );
+      }
+    }
+
+    $option_set['options'] = $options;
+    $option_set = (object) $option_set;
+    try {
+      personalize_option_set_save($option_set);
+    }
+    catch (PersonalizeException $e) {
+      $this->fail('Exception thrown with message: . ' . $e->getMessage());
+    }
+
+    return $option_set;
+  }
+
+  protected function createTargetingAgentWithNestedTest($num_options = 3, $index = 0) {
+    module_load_include('inc', 'acquia_lift', 'acquia_lift.admin');
+    // First, set up our agent, option set, audience and desired targeting
+    // structure.
+    $agent = $this->createTargetingAgent();
+    $this->resetAll();
+    $parent_option_set = $this->createPersonalizedBlock($index, $agent, $num_options);
+    if (empty($parent_option_set)) {
+      $this->fail('Could not create option set');
+      return;
+    }
+    // Keep the option ids in an array.
+    $option_ids = array();
+    foreach ($parent_option_set->options as $option) {
+      $option_ids[] = $option['option_id'];
+    }
+
+    $this->resetAll();
+    $targeting = array(
+      ACQUIA_LIFT_TARGETING_EVERYONE_ELSE => $option_ids
+    );
+    try {
+      acquia_lift_save_targeting_structure($agent, $targeting);
+    }
+    catch (AcquiaLiftException $e) {
+      $this->fail('Exception thrown when none expected.');
+    }
+    // Now implement the targeting structure that is currently just stored in
+    // the 'lift_targeting' property.
+    AcquiaLiftAPI::setTestInstance();
+    acquia_lift_implement_targeting($agent);
+    return $agent;
+  }
+
+  /**
+   * Helper that adds a target audience using two contexts AND'd together.
+   *
+   * @param $option_set
+   * @param null $machine_name
+   * @return null|string
+   */
+  protected function createTargetAudience($option_set, $machine_name = NULL, $contexts = array()) {
+    if (empty($machine_name)) {
+      $label = $this->randomName();
+      $machine_name = personalize_generate_machine_name($label, NULL, '-');
+    }
+    if (empty($contexts)) {
+      $contexts = array(
+        array(
+          'context' => implode(PERSONALIZE_TARGETING_ADMIN_SEPARATOR, array('some_plugin', 'some_context')),
+          'operator' => 'contains',
+          'match' => 'ohai'
+        ),
+        array(
+          'context' => implode(PERSONALIZE_TARGETING_ADMIN_SEPARATOR, array('some_plugin', 'some_other_context')),
+          'operator' => 'starts',
+          'match' => 'stuff'
+        ),
+      );
+    }
+
+    module_load_include('inc', 'acquia_lift', 'acquia_lift.admin');
+    acquia_lift_target_audience_save($machine_name, $option_set->agent, $contexts, 'AND');
+    $this->resetAll();
+    return $machine_name;
+  }
+
+  /**
+   * Create personalize element option set.
+   */
+  protected function createPersonalizeElementsOptionSet($agent_name, $option_data) {
+    $pages_link = isset($option_data['pages']) ? $option_data['pages'] : 'node';
+    $preview_link = isset($option_data['preview_link']) ? $option_data['preview_link'] : $pages_link;
+    $option_set = array(
+      'label' => isset($option_data['label']) ? $option_data['label'] : 'Element test set 1',
+      'plugin' => 'elements',
+      'agent' => $agent_name,
+      'executor' => 'personalizeElements',
+      'options' => array(),
+      'data' => array(
+        'personalize_elements_selector' => isset($option_data['selector']) ? $option_data['selector'] : '#some-selector',
+        'personalize_elements_type' => isset($option_data['type']) ? $option_data['type'] : 'editText',
+        'pages' => $pages_link,
+      ),
+      'preview_link' => $preview_link,
+    );
+    if (!empty($option_data['add_control'])) {
+      $option_set['options'][] = array(
+        'option_label' => PERSONALIZE_CONTROL_OPTION_LABEL,
+        'option_id' => PERSONALIZE_CONTROL_OPTION_ID,
+        'personalize_elements_content' => '',
+      );
+    }
+    $num_options = empty($option_data['num_options']) ? 2 : $option_data['num_options'];
+    for ($i = 0; $i < $num_options; $i++) {
+      $option_set['options'][] = array(
+        'option_id' => personalize_generate_option_id($i),
+        'option_label' => personalize_generate_option_label($i),
+        'personalize_elements_content' => 'Generated content ' . ($i + 1),
+      );
+    }
+    return personalize_option_set_save((object) $option_set);
+  }
+
+  /**
+   * Creates a user profile field which can be used for targeting.
+   *
+   * @return array
+   *   An associative array representing the field.
+   */
+  protected function createUserProfileField($field_name = NULL) {
+    $field_name = $field_name ?: $this->randomName();
+    $field = array(
+      'field_name' => 'field_' . drupal_strtolower($field_name),
+      'type' => 'text',
+      'cardinality' => 1,
+    );
+
+    field_create_field($field);
+    $fieldInstance = array(
+      'field_name' => $field['field_name'],
+      'entity_type' => 'user',
+      'bundle' => 'user',
+      'settings' => array(
+        'user_register_form' => FALSE,
+      ),
+    );
+
+    field_create_instance($fieldInstance);
+    return $field;
+  }
+
+  /**
+   * Adds a personalizable field to the article node type.
+   */
+  protected function createPersonalizedArticleField() {
+    // Add personalizable field to the article node type.
+    $field = array(
+      'type' => 'text',
+      'field_name' => 'article_headline',
+      'cardinality' => -1,
+      'settings' => array(
+        'personalize' => array(
+          'enabled' => 1,
+          'agent_type' => 'acquia_lift_target',
+          'options' => array(),
+          'create_goal' => 1,
+        ),
+      ),
+    );
+    field_create_field($field);
+    $instance = array(
+      'field_name' => 'article_headline',
+      'entity_type' => 'node',
+      'label' => 'Personalizable Headline',
+      'bundle' => 'article',
+      'required' => FALSE
+    );
+    field_create_instance($instance);
+  }
+
+  /**
+   * Creates an article node with a personalized headline field.
+   */
+  protected  function createPersonalizedField() {
+    AcquiaLiftAPI::setTestInstance();
+    // Create a node which we will attach a fields-based option set to. We can't
+    // do this via the form because of the way we alter the form, which makes the
+    // "Add an option" button not findable by simpletest.
+    $node = new stdClass();
+    $node->type = 'article';
+    $node->language = LANGUAGE_NONE;
+    node_object_prepare($node);
+    $node->title = $this->randomName();
+    $node->article_headline['und'][0] = array('value' => 'first value');
+    $node->article_headline['und'][1] = array('value' => 'second value');
+    node_save($node);
+
+    // Now create the option set.
+    $option_set = new stdClass();
+    $option_set->is_new = TRUE;
+    $option_set->data = array();
+    $option_set->options = array();
+    $option_set->plugin = 'fields';
+    $option_set->new_agent_title = 'Article: Personalizable Headline';
+    $option_set->options = array(
+      array(
+        'option_label' => personalize_fields_generate_option_label(0, array('value' => 'first value'))
+      ),
+      array(
+        'option_label' => personalize_fields_generate_option_label(1, array('value' => 'second value'))
+      )
+    );
+    if (personalize_fields_option_set_prepare($option_set, 'node', $node->nid, $node, 'article_headline')) {
+      personalize_fields_option_set_save($option_set, 'node', $node->nid, 'article_headline');
+    }
+    $this->resetAll();
+    $agent_name = $option_set->agent;
+    return array($node, $option_set, $agent_name);
+  }
+
+  /**
+   * Helper method to move buttons names to one pace to simplify
+   * it's maintaining
+   *
+   * Kind of Page Objects Patterns
+   *
+   * @param $type string
+   * @return string
+   */
+  protected function getButton($type = '', $context = array()) {
+    switch ($type) {
+      case 'wizard_next':
+        module_load_include('inc', 'personalize', 'personalize.admin.campaign');
+        $agent_instance = NULL;
+        if (isset($context['agent_name'])) {
+          $agent_instance = personalize_agent_load_agent($context['agent_name']);
+        }
+        $steps = _personalize_campaign_wizard_steps($agent_instance);
+        $next_step = _personalize_campaign_wizard_next_step(array('storage' => array('step' => $context['step'])), $agent_instance);
+        $next_info = $steps[$next_step];
+        $button_text = 'Next: ' . $next_info['preview_message'];
+        return t($button_text);
+      case 'wizard_save':
+      case 'wizard_done':
+        return t('Save');
+      case 'wizard_start':
+        return t('Start');
+      case 'wizard_element_navigate':
+        return t('Go');
+      case 'create_campaign':
+        return t('Create and edit');
+      case 'delete':
+        return t('Delete');
+      case 'config':
+        return t('Save configuration');
+      default:
+        return t('Save');
+    }
+  }
   /**
    * Helper method to configure an Acquia Lift account.
    */
@@ -31,9 +388,64 @@ class AcquiaLiftV2WebTestBase extends AcquiaLiftWebTestBase
     $this->resetAll();
   }
 
-  public function setUp() {
-    parent::setUp();
+  /**
+   * Creates the required number of custom blocks.
+   *
+   * @param int $num
+   *   The number of blocks to create.
+   *
+   * @return array
+   *   An array of block deltas for use in personalized blocks.
+   */
+  protected function createPersonalizedBlock($index, $agent, $num_options = 2) {
+    $option_set = array(
+      'plugin' => 'block',
+      'label' => 'Option Set ' . ($index + 1),
+      'agent' => $agent->machine_name,
+      'data' => array(
+        'block_title' => 'Personalized Block ' . ($index + 1)
+      )
+    );
+    $options = array();
+    module_load_include('inc', 'personalize_blocks', 'personalize_blocks.admin');
+    for ($i = 1; $i <= $num_options; $i++) {
+      $title = t('Custom block @num from @index', array('@num' => $i, '@index' => $index));
+      $values = array(
+        'title' => $title,
+        'info' => $title,
+        'body' => array(
+          'format' => 'filtered_html',
+          'value' => 'Some value',
+        )
+      );
+      $option = array(
+        'option_label' => 'Option ' . ($i),
+        'option_id' => 'option-' . $i,
+        'bid' => _personalize_blocks_add_custom_block($values)
+      );
+      $options[] = $option;
+    }
+    $option_set['options'] = $options;
+    $option_set = (object) $option_set;
+    try {
+      personalize_option_set_save($option_set);
+    }
+    catch (PersonalizeException $e) {
+      $this->fail('Exception thrown with message: . ' . $e->getMessage());
+      return NULL;
+    }
+    return $option_set;
   }
+
+  function createTestFromOptionSet($agent_data, $option_set) {
+    module_load_include('inc', 'acquia_lift', 'acquia_lift.admin');
+    $option_ids = array();
+    foreach($option_set->options as $option) {
+      $option_ids[] = $option['option_id'];
+    }
+    acquia_lift_save_targeting_structure($agent_data, array(ACQUIA_LIFT_TARGETING_EVERYONE_ELSE => $option_ids));
+  }
+
 }
 
 class AcquiaLiftV2WebTestConfig extends AcquiaLiftV2WebTestBase {

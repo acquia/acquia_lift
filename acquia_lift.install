@@ -899,6 +899,77 @@ function acquia_lift_update_7205() {
 
   // Store the time that the system has performed V2 report upgrade.
   variable_set('acquia_lift_report_upgrade_timestamp', time());
+
+  // Retire all V1 tests.
+  if (!module_exists('acquia_lift')) {
+    // The best we can do is set all Lift personalizations' status to completed.
+    // We can't rely on personalize module being enabled so we can't use any of
+    // its API functions or constants. Just talk directly to the db and hard-code
+    // variable names and status codes.
+    $result = db_query('SELECT machine_name, label FROM personalize_agent WHERE plugin IN ("acquia_lift", "acquia_lift_target", "acquia_lift_learn")');
+    $now = time();
+    foreach ($result as $row) {
+      // Set the stop time of the agent.
+      variable_set("personalize_campaign_{$row->machine_name}_stop", $now);
+      // Set the status to 8, which is "completed"
+      variable_set("personalize_campaign_{$row->$machine_name}_status", 8);
+    }
+    drupal_set_message(t('Acquia Lift module was disabled so v1 style tests could not be retired. All Lift personalizations have been set to completed.'), 'warning');
+  }
+  else {
+    module_load_include('inc', 'acquia_lift', 'acquia_lift.admin');
+    $parent_personalizations = personalize_agent_load_by_type('acquia_lift_target', TRUE);
+    // We'll create a mapping of parent names to test names.
+    $parents = array();
+    foreach ($parent_personalizations as $parent_name => $parent) {
+      $nested = acquia_lift_get_nested_tests($parent);
+      foreach ($nested as $test_name) {
+        $parents[$test_name] = $parent_name;
+      }
+    }
+
+    // Go through each test and retire it.
+    $agents = personalize_agent_load_by_type('acquia_lift', TRUE);
+    foreach ($agents as $name => $agent) {
+      if (!isset($parents[$name])) {
+        if (empty($agent->data['lift_retired'])) {
+          // This test has no parent, must be legacy - just complete it.
+          personalize_agent_set_status($name, PERSONALIZE_STATUS_COMPLETED);
+        }
+        continue;
+      }
+      $option_sets = personalize_option_set_load_by_agent($name);
+      if (empty($option_sets)) {
+        continue;
+      }
+      $os = reset($option_sets);
+      $parent_name = $parents[$name];
+      // The goals will be on the parent personalization, not the test itself.
+      $goals = personalize_goal_load_by_conditions(array('agent' => $parent_name));
+      $goal_names = array();
+      foreach ($goals as $goal) {
+        $goal_names[] = $goal->action;
+      }
+      // We need to find which audience in the parent personalization this test
+      // is running for.
+      $parent_os = acquia_lift_get_option_set_for_targeting($parent_name);
+      foreach ($parent_os->targeting as $audience => $targeting) {
+        if (isset($targeting['osid']) && $targeting['osid'] == $os->osid) {
+          $audience_name = $audience;
+          break;
+        }
+      }
+      if (isset($audience_name)) {
+        acquia_lift_stop_test_for_audience($parent_personalizations[$parent_name], $audience_name);
+      }
+      else {
+        // At least just set the status of the test to completed.
+        personalize_agent_set_status($name, PERSONALIZE_STATUS_COMPLETED);
+      }
+    }
+    $names = array_keys($agents);
+    drupal_set_message(t("The following v1 tests have been retired: @agents", array("@agents" => implode(',', $names))));
+  }
 }
 
 /**

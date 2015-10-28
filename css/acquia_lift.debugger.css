@@ -300,7 +300,7 @@
   color: #fff;
 }
 #debugger.is-maximized .debugger__content {
-  height: 80vh;
+  height: 35vh;
 }
 #debugger.is-closed .rg-top {
   cursor: default !important;

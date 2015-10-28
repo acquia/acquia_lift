@@ -186,9 +186,9 @@ app.factory('debuggerFactory', function($http){
                     if (this.isMaximized) {
                         this.element.classList.add('is-maximized');
 
-                        //checks if a debugger height was set in a previous page. Else sets the height to 80% of max height
+                        //checks if a debugger height was set in a previous page. Else sets the height to 35% of max height
                         if(window.sessionStorage.getItem('acquiaLift::debug::debugWindowHeight')){
-                            var height = Math.min(window.sessionStorage.getItem('acquiaLift::debug::debugWindowHeight'), document.documentElement.clientHeight * 0.8);
+                            var height = Math.min(window.sessionStorage.getItem('acquiaLift::debug::debugWindowHeight'), document.documentElement.clientHeight * 0.35);
                             document.getElementsByClassName('debugger__content')[0].style.height = height + "px";
                         }
                         this.element.classList.remove('is-closed');

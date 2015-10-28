@@ -192,24 +192,6 @@ function acquia_lift_menu() {
     'file' => 'acquia_lift.admin.inc',
     'type' => MENU_NORMAL_ITEM,
   );
-  // Page callback for the list of legacy agents.
-  $items['admin/structure/personalize/legacy'] = array(
-    'title' => 'Legacy Campaigns',
-    'description' => 'List legacy Lift Campaigns',
-    'page callback' => 'acquia_lift_legacy_campaign_list',
-    'access callback' => 'acquia_lift_legacy_access',
-    'type' => MENU_LOCAL_TASK,
-    'file' => 'acquia_lift.admin.inc',
-  );
-  // Page callback for a legacy report.
-  $items['admin/structure/personalize/legacy/%personalize_agent/results'] = array(
-    'title' => 'Legacy Campaign Report',
-    'page callback' => 'drupal_get_form',
-    'page arguments' => array('acquia_lift_report', 4),
-    'access callback' => 'acquia_lift_legacy_access',
-    'type' => MENU_CALLBACK,
-    'file' => 'acquia_lift.admin.inc',
-  );
   return $items;
 }
 

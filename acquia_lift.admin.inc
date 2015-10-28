@@ -213,11 +213,10 @@ function acquia_lift_admin_form_submit($form, &$form_state) {
 /**
  * Page callback for full campaign listings.
  */
-function acquia_lift_agent_list($agents = array(), $legacy = FALSE) {
+function acquia_lift_agent_list($agents = array()) {
   $agent_type_test = t('Test only');
   $agent_type_target = t('Target only');
   $agent_type_both = t('Test and target');
-  $agent_type_legacy = t('Legacy');
   $build = array();
   $build['#attached']['library'][] = array('personalize', 'admin.campaign.list');
   $build['#attached']['css'][] = drupal_get_path('module', 'acquia_lift') . '/css/acquia_lift.admin.css';
@@ -231,7 +230,7 @@ function acquia_lift_agent_list($agents = array(), $legacy = FALSE) {
   $sorted_agents = array();
   foreach ($agents as $agent) {
     // If this is a nested agent, it should not be listed.
-    if (!$legacy && in_array($agent->plugin, array(ACQUIA_LIFT_TESTING_AGENT_V1, ACQUIA_LIFT_TESTING_AGENT_V2))) {
+    if ($agent->plugin !=  'acquia_lift_target') {
       continue;
     }
     $agent_status = personalize_agent_get_status($agent->machine_name);
@@ -310,7 +309,7 @@ function acquia_lift_agent_list($agents = array(), $legacy = FALSE) {
     );
 
     // Build the personalizations table.
-    $show_status_change = !$legacy && ($status != PERSONALIZE_STATUS_COMPLETED);
+    $show_status_change = $status != PERSONALIZE_STATUS_COMPLETED;
     $header = array();
     $header[] = array('data' => t('Name'));
     $header[] = array('data' => t('Start date'));
@@ -322,34 +321,28 @@ function acquia_lift_agent_list($agents = array(), $legacy = FALSE) {
 
     $rows = array();
     foreach ($agents as $agent) {
-      $targeting = array();
-
-      // Determine the agent type.
-      $agent_type = $legacy ? $agent_type_legacy : $agent->plugin;
-      if ($agent->plugin == 'acquia_lift_target') {
-        // Load targeting audiences
-        $targeting_os = acquia_lift_get_option_set_for_targeting($agent->machine_name);
-        if (!empty($agent->data['lift_targeting'])) {
-          // Use the currently saved targeting even if not yet implemented.
-          $targeting = $agent->data['lift_targeting'];
+      // Load targeting audiences
+      $targeting_os = acquia_lift_get_option_set_for_targeting($agent->machine_name);
+      if (!empty($agent->data['lift_targeting'])) {
+        // Use the currently saved targeting even if not yet implemented.
+        $targeting = $agent->data['lift_targeting'];
+      }
+      else {
+        // Use the stored targeting that is currently implemented.
+        $targeting = acquia_lift_get_structure_from_targeting($targeting_os);
+      }
+      $agent_type = $agent_type_target;
+      if (count($targeting) == 1) {
+        $only_audience = reset($targeting);
+        if (count($only_audience) > 1) {
+          $agent_type = $agent_type_test;
         }
-        else {
-          // Use the stored targeting that is currently implemented.
-          $targeting = acquia_lift_get_structure_from_targeting($targeting_os);
-        }
-        $agent_type = $agent_type_target;
-        if (count($targeting) == 1) {
-          $only_audience = reset($targeting);
-          if (count($only_audience) > 1) {
-            $agent_type = $agent_type_test;
-          }
-        }
-        else if (count($targeting) > 1) {
-          foreach ($targeting as $audience => $variations) {
-            if (count($variations) > 1) {
-              $agent_type = $agent_type_both;
-              break;
-            }
+      }
+      else if (count($targeting) > 1) {
+        foreach ($targeting as $audience => $variations) {
+          if (count($variations) > 1) {
+            $agent_type = $agent_type_both;
+            break;
           }
         }
       }
@@ -400,23 +393,22 @@ function acquia_lift_agent_list($agents = array(), $legacy = FALSE) {
       // be listed here as well.
       $old_tests = acquia_lift_get_retired_tests($agent->machine_name);
       // Lift target agents show reports if they contain tests.
-      $show_report_link = $legacy || !empty($old_tests) || ($agent->plugin == 'acquia_lift_target' && !empty($agent->started) && in_array($agent_type, array($agent_type_test, $agent_type_both)));
+      $show_report_link = !empty($old_tests) || ($agent->plugin == 'acquia_lift_target' && !empty($agent->started) && in_array($agent_type, array($agent_type_test, $agent_type_both)));
 
       // Generate operations list.
-      $ops = array();
-      if (!$legacy) {
-        $ops[] = array(
+      $ops = array(
+        array(
           'title' => t('Edit'),
           'href' => 'admin/structure/personalize/manage/'. $agent->machine_name . '/variations',
           'attributes' => array(
             'class' => array('acquia-lift-edit'),
             'title' => t('Edit @campaign', array('@campaign' => $agent->label)),
           ),
-        );
-      }
+        )
+      );
+
       if ($show_report_link) {
-        $href = $legacy ? 'admin/structure/personalize/legacy/'. $agent->machine_name .'/results' :
-          'admin/structure/personalize/manage/'. $agent->machine_name .'/results';
+        $href = 'admin/structure/personalize/manage/'. $agent->machine_name .'/results';
         $ops[] = array(
           'title' => t('View reports'),
           'href' => $href,
@@ -426,17 +418,7 @@ function acquia_lift_agent_list($agents = array(), $legacy = FALSE) {
           ),
         );
       }
-      if ($legacy && $status != PERSONALIZE_STATUS_COMPLETED) {
-        $ops[] = array(
-          'title' => t('Complete'),
-          'href' => 'admin/structure/personalize/manage/'. $agent->machine_name .'/complete',
-          'query' => array('destination' => current_path() . '#personalization-group-' . PERSONALIZE_STATUS_COMPLETED),
-          'attributes' => array(
-            'class' => array('acquia-lift-complete'),
-            'title' => t('Complete @campaign (WARNING: action is final)', array('@campaign' => $agent->label)),
-          ),
-        );
-      }
+
       if (!empty($delete_link)) {
         $delete_link['query'] = array('destination' => current_path());
         $ops[] = $delete_link;
@@ -624,141 +606,6 @@ function acquia_lift_report_wizard($agent_data) {
     'report' => drupal_get_form('acquia_lift_report', $agent_data)
   );
   return $build;
-}
-
-/**
- * Form build function for the Acquia Lift report, which has filters.
- *
- * @param stdClass $agent_data
- *   The campaign agent data for this report.
- */
-function acquia_lift_report_legacy($form, &$form_state, $agent_data) {
-  $form = array(
-    '#prefix' => '<div id="acquia-lift-reports">',
-    '#suffix' => '</div>',
-    '#attached' => array(
-      'library' => array(
-        array('acquia_lift', 'acquia_lift.reports'),
-      ),
-    ),
-  );
-  if (!acquia_lift_is_targeting_agent($agent_data)) {
-    return array();
-  }
-  if (isset($_GET['lift_retired_test'])) {
-    if ($nested_agent = personalize_agent_load($_GET['lift_retired_test'])) {
-      $form['report'] = _acquia_lift_get_subreport($form_state, $nested_agent);
-      return $form;
-    }
-  }
-  $option_set = acquia_lift_get_option_set_for_targeting($agent_data->machine_name);
-
-  if (empty($option_set->targeting)) {
-    return array();
-  }
-  // Display a report for the specified audience.
-  if (isset($form_state['values']['audience_filter'])) {
-    $audience = $form_state['values']['audience_filter'];
-  }
-  else {
-    $audience = isset($_GET['targeting_audience']) ? 'audience|' . $_GET['targeting_audience'] : NULL;
-  }
-  // Get audience options.
-  $audience_options = array();
-  foreach($option_set->targeting as $audience_name => $targeting) {
-    if (isset($targeting['osid'])) {
-      $audience_options['audience|' . $audience_name] = $targeting['label'];
-    }
-  }
-  // Get retired tests as well.
-  $old_tests = acquia_lift_get_retired_tests($agent_data->machine_name);
-  foreach($old_tests as $retired_test) {
-    $audience_options['retired|' . $retired_test->machine_name] = $retired_test->label;
-  }
-
-  // If no audience specified, or one that does not have a test, use the first
-  // audience option if there is one.
-  if (!empty($audience)) {
-    list($test_type, $test_id) = explode('|', $audience);
-  }
-  if (empty($audience) || ($test_type == 'audience' && !isset($option_set->targeting[$test_id]['osid']))) {
-    if (empty($audience_options)) {
-      return array(
-        'no_report' => array(
-          '#markup' => t('This personalization does not contain tests, no reports to show.')
-        )
-      );
-    }
-    $audience = key($audience_options);
-    list($test_type, $test_id) = explode('|', $audience);
-  }
-  if ($test_type == 'retired') {
-    $nested_agent = personalize_agent_load($test_id);
-    $test_label = $nested_agent->label;
-  }
-  else {
-    $test_label = $option_set->targeting[$test_id]['label'];
-  }
-
-  // Show the audience filter.
-  $form['audience_container'] = array(
-    '#type' => 'container',
-    '#attributes' => array(
-      'class' => array('container-inline'),
-    ),
-    '#tree' => FALSE,
-  );
-  if (count($audience_options) == 1) {
-    $form['audience_container']['audience_label'] = array(
-      '#markup' => '<h2>' . t('Test for %audience audience', array('%audience' => $test_label)) . '</h2>'
-    );
-    $form['audience_container']['audience_filter'] = array(
-      '#type' => 'value',
-      '#value' => $audience
-    );
-  }
-  else {
-    $form['audience_container']['audience_filter'] = array(
-      '#title' => t('Audience'),
-      '#type' => 'select',
-      '#options' => $audience_options,
-      '#default_value' => $audience,
-      '#ajax' => array(
-        'callback' => "acquia_lift_report_ajax_callback",
-        'wrapper' => "acquia-lift-reports",
-      ),
-      '#id' => 'acquia-lift-report-audience-filter',
-    );
-  }
-  if ($test_type == 'audience' && personalize_agent_get_status($agent_data->machine_name) != PERSONALIZE_STATUS_COMPLETED) {
-    $form['audience_container']['complete'] = array(
-      '#type' => 'link',
-      '#title' => t('End test and choose winner'),
-      '#href' => 'admin/structure/personalize/manage/' . $agent_data->machine_name . '/audience/' . $test_id . '/complete',
-      '#attributes' => array(
-        'class' => array(
-          'ctools-use-modal',
-          'ctools-modal-acquia-lift-style',
-          'action-item-primary-active',
-          'acquia-lift-submit-button',
-          'acquia-lift-complete-audience',
-        )
-      )
-    );
-  }
-  if ($test_type == 'retired') {
-    $nested_agent = personalize_agent_load($test_id);
-    $form['report'] = _acquia_lift_get_subreport($form_state, $nested_agent);
-    return $form;
-  }
-  if ($nested_os = personalize_option_set_load($option_set->targeting[$test_id]['osid'])) {
-    $nested_agent = personalize_agent_load($nested_os->agent);
-    if (!empty($nested_agent)) {
-      $form['report'] = _acquia_lift_get_subreport($form_state, $nested_agent);
-    }
-  }
-
-  return $form;
 }
 
 function acquia_lift_report($form, &$form_state, $agent_data) {
@@ -2223,8 +2070,7 @@ function acquia_lift_get_retired_tests($agent_name = NULL) {
   $old_tests = &drupal_static(__FUNCTION__, NULL);
   if ($old_tests == NULL) {
     $old_tests = array();
-    $test_agents = personalize_agent_load_by_type(ACQUIA_LIFT_TESTING_AGENT_V1);
-    $test_agents = array_merge($test_agents, personalize_agent_load_by_type(ACQUIA_LIFT_TESTING_AGENT_V2));
+    $test_agents = personalize_agent_load_by_type(ACQUIA_LIFT_TESTING_AGENT_V2);
     foreach ($test_agents as $name => $agent) {
       if (isset($agent->data['lift_parent'])) {
         if (!isset($old_tests[$agent->data['lift_parent']])) {
@@ -2238,21 +2084,6 @@ function acquia_lift_get_retired_tests($agent_name = NULL) {
     return isset($old_tests[$agent_name]) ? $old_tests[$agent_name] : array();
   }
   return $old_tests;
-}
-
-/**
- * Page callback for the legacy campaign listing.
- */
-function acquia_lift_legacy_campaign_list() {
-  $legacy_campaigns = variable_get('acquia_lift_legacy_agents', array());
-  if (empty($legacy_campaigns)) {
-    drupal_goto('admin/structure/personalize');
-  }
-  $agents = personalize_agent_load_multiple($legacy_campaigns);
-  if (empty($agents)) {
-    drupal_goto('admin/structure/personalize');
-  }
-  return acquia_lift_agent_list($agents, TRUE);
 }
 
 /**

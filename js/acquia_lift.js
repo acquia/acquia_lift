@@ -216,7 +216,7 @@ Drupal.acquia_lift_target = (function() {
       }
       if (v2_enabled) {
         var stored = readDecisionsFromStorage(agent_name);
-        if (stored.hasOwnProperty('decisions')) {
+        if (stored && stored.hasOwnProperty('decisions')) {
           // First see if this goal was already attained.
           var goals = stored.hasOwnProperty('goals') ? stored.goals : [];
           if (goals.indexOf(goal_name) !== -1) {

@@ -19,9 +19,6 @@
 
 (function ($, Drupal, Storage) {
     function getSeverity(code) {
-      if (code === 2000 || code === 2020){
-        return '';
-      }
       if (code < 3000) {
         return 'info';
       }
@@ -55,10 +52,10 @@
       if (options.type){
         return options.type;
       }else{
-        if (options.code === 2020 || options.code === 2000){
-          return 'Developer'
+        if (options.code < 3000){
+          return 'Developer';
         }
-        return 'Drupal'
+        return 'Drupal';
       }
     }
   // Log any personalize debug events to sessionStorage for inclusion in the

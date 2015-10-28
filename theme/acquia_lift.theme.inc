@@ -412,10 +412,10 @@ function theme_acquia_lift_debugger() {
           </th>
           <tr ng-repeat="item in items | filter:search | orderBy: '-timestamp'" class="minheight">
             <td ng-bind-html="item.severity | to_icon"></td>
-            <td>{{item.message | cut:true:100:'...':item}}</td>
-            <td>{{item.type | cut:true:10:'...':item}}</td>
+            <td>{{item.message | cut:true:200:'...':item}}</td>
+            <td>{{item.type | cut:true:15:'...':item}}</td>
             <td>{{item.timestamp |  date:'MM/dd/yyyy h:mma'}}</td>
-            <td>{{item.page | cut:true:20:'...':item}}</td>
+            <td>{{item.page | cut:true:40:'...':item}}</td>
           </tr>
         </table>
       </div>

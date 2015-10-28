@@ -319,23 +319,22 @@ app.controller("DebuggerController", function($scope, $timeout, debuggerFactory,
  
     //ensures that allSegments doesnt have duplicates from override segments. Fills out the segments for the dropDown list in the site preview tab
     if($scope.profile.overrideSegments){
-        $scope.allSegments =  $scope.profile.allSegments.filter(function(i) {return $scope.profile.overrideSegments.indexOf(i) < 0;});
+        $scope.allSegments = $scope.profile.allSegments.filter(function(i) {return $scope.profile.overrideSegments.indexOf(i) < 0;});
     }else{
         $scope.allSegments = $scope.profile.allSegments;
     };
 
     //additional filters and functions
     $scope.severityFilter = [
-        {  name: "Error",ticked: true },
-        { name: "Warning", ticked: true  },
-        {  name:"Info",ticked: true },
+        { name: "Error", ticked: true },
+        { name: "Warning", ticked: true },
+        { name: "Info", ticked: true },
     ];
     $scope.typeFilter = [
-
-        { name: "Drupal",ticked: true },
-        { name: "Lift Web", ticked: true  },
-        { name: "Developer", ticked: false  },
-    ];  
+        { name: "Drupal", ticked: true },
+        { name: "Lift Web", ticked: true },
+        { name: "Developer", ticked: false },
+    ];
 
     /**
      * Determines if an event log row should be displayed depending on filters
@@ -344,24 +343,22 @@ app.controller("DebuggerController", function($scope, $timeout, debuggerFactory,
      */
     $scope.search = function (row) {
         var returnValue = false;
-        if(row) {
-            if (row.severity !== undefined && row.type !== undefined) {
-                for (var i = 0; i < $scope.severity.length; i++) {
-                    if (typeof($scope.severity[i].name) === "string") {
-                        if ($scope.severity[i].name.toUpperCase() === row.severity.toUpperCase()) {
-                            returnValue = true;
-                        }
+        if (row && row.severity !== undefined && row.type !== undefined) {
+            for (var i = 0; i < $scope.severity.length; i++) {
+                if (typeof($scope.severity[i].name) === "string") {
+                    if ($scope.severity[i].name.toUpperCase() === row.severity.toUpperCase()) {
+                        returnValue = true;
                     }
                 }
-                if(returnValue){
-                    returnValue = false;
-                    for (var i = 0; i < $scope.type.length; i++) {
-                        if (typeof($scope.type[i].name) === "string") {
-                            if ($scope.type[i].name.toUpperCase() === row.type.toUpperCase()) {
-                                returnValue =  true;
-                            }
+            }
+            if(returnValue){
+                returnValue = false;
+                for (var i = 0; i < $scope.type.length; i++) {
+                    if (typeof($scope.type[i].name) === "string") {
+                        if ($scope.type[i].name.toUpperCase() === row.type.toUpperCase()) {
+                            returnValue =  true;
                         }
-                    }       
+                    }
                 }
             }
         }
@@ -516,7 +513,7 @@ angular.module('debuggerModule')
                             value = value.substr(0, lastspace);
                         }
                     }
-                    return value + (tail || ' …');
+                    return value + (tail || '...');
                 }
             }
             return value;

@@ -12,9 +12,9 @@
   // ================================
 
   var Card = function (element, options) {
-    this.type =
-      this.options =
-        this.$element = null;
+    this.type = null;
+    this.options = null;
+    this.$element = null;
 
     this.init('card', element, options);
   };

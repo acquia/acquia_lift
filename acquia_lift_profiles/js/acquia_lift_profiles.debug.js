@@ -47,7 +47,7 @@
       Drupal.personalizeDebug.log( message , code, 'Lift Web');
     });
     //updates saved identities when triggered.
-    $(document).bind("acquiaLiftIdentitiesAdded", function( event, identities ) {
+    $(document).on("acquiaLiftIdentitiesAdded", function( event, identities ) {
       if(identities){
         $.each(identities, function (index, identity) { curIdentities.push( identity ); } );
       }

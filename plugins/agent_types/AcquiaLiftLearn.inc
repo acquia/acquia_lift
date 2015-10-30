@@ -175,30 +175,4 @@ class AcquiaLiftLearn extends PersonalizeAgentBase implements AcquiaLiftLearning
 
   }
 
-  /**
-   * Implements AcquiaLiftReportInterface()::getCampaignReports().
-   */
-  public function getCampaignReports($options) {
-
-    return $this->getReporting($options)->getCampaignReports();
-  }
-
-  /**
-   * Implements AcquiaLiftReportInterface()::getExperimentReports().
-   */
-  public function getExperimentReports($options) {
-    return $this->getReporting($options)->getExperimentReports();
-  }
-
-  /**
-   * Get a reference to this agent's reporting class.
-   *
-   * Allows for delayed instantiation of reporting class.
-   */
-  protected function getReporting($options) {
-    if (empty($this->reporting)) {
-      $this->reporting = AcquiaLiftReportFactory::create($this, $this->liftAPI, $options);
-    }
-    return $this->reporting;
-  }
 }

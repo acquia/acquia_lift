@@ -755,7 +755,7 @@ function acquia_lift_personalize_agent_presave($agent) {
   $current = personalize_agent_load($agent->machine_name);
   if (empty($current)) {
     $account_info = acquia_lift_get_account_info();
-    $lift_api = AcquiaLiftAPIV2::getInstance($account_info);
+    $lift_api = AcquiaLiftAPI::getInstance($account_info);
     $agent->machine_name = $lift_api->ensureUniqueAgentName($agent->machine_name, PERSONALIZE_MACHINE_NAME_MAXLENGTH);
   }
   // Make sure the required configurations are set.
@@ -793,7 +793,7 @@ function acquia_lift_personalize_agent_delete($agent) {
   }
   $account_info = acquia_lift_get_account_info();
   try {
-    $lift_api = AcquiaLiftAPIV2::getInstance($account_info);
+    $lift_api = AcquiaLiftAPI::getInstance($account_info);
     $lift_api->deleteAgent($agent->machine_name);
   }
   catch (Exception $e) {
@@ -1076,7 +1076,7 @@ function acquia_lift_sync_item($item) {
   //   of callables better.
   if (isset($item['method'])) {
     $account_info = acquia_lift_get_account_info();
-    $acquia_lift_api = AcquiaLiftAPIV2::getInstance($account_info);
+    $acquia_lift_api = AcquiaLiftAPI::getInstance($account_info);
     call_user_func_array(array($acquia_lift_api, $item['method']), $item['args']);
   }
   else {
@@ -1198,7 +1198,7 @@ EOT;
 
   $account_info = acquia_lift_get_account_info();
   try {
-    $lift_api = AcquiaLiftAPIV2::getInstance($account_info);
+    $lift_api = AcquiaLiftAPI::getInstance($account_info);
     $libraries['acquia_lift.page']['dependencies'][] = array('acquia_lift', 'acquia_lift.v2_agent_api');
     $site_name = variable_get('acquia_lift_profiles_site_name', '');
     if (empty($site_name)) {

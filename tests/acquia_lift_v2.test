@@ -758,7 +758,7 @@ class AcquiaLiftV2WebTestFundamentals extends AcquiaLiftV2WebTestBase {
       'campaigns' => array($agent),
     );
     variable_set('acquia_lift_web_test_data', $test_data);
-    AcquiaLiftAPIV2::setTestInstance();
+    AcquiaLiftAPI::setTestInstance();
     // Try to create a new agent with the same name as one that exists in Lift.
     $this->createTestAgent('my-existing-agent', array('control_rate' => 10, 'explore_rate' => 30), self::$agent_plugin);
     $this->resetAll();
@@ -773,7 +773,7 @@ class AcquiaLiftV2WebTestFundamentals extends AcquiaLiftV2WebTestBase {
    * components to Lift.
    */
   public function testBatchSyncOperations() {
-    AcquiaLiftAPIV2::setTestInstance();
+    AcquiaLiftAPI::setTestInstance();
     module_load_include('inc', 'acquia_lift', 'acquia_lift.batch');
     // Create a targeting agent with a single nested test.
     $agent = $this->createTargetingAgentWithNestedTest(4);
@@ -895,7 +895,7 @@ class AcquiaLiftV2WebTestReports extends AcquiaLiftV2WebTestBase {
       $this->fail('Exception thrown when none expected.');
     }
     // Now implement the targeting structure and set the agent to running.
-    AcquiaLiftAPIV2::setTestInstance();
+    AcquiaLiftAPI::setTestInstance();
     acquia_lift_implement_targeting($agent);
     personalize_agent_set_status($agent->machine_name, PERSONALIZE_STATUS_RUNNING);
     $this->resetAll();
@@ -918,7 +918,7 @@ class AcquiaLiftV2WebTestReports extends AcquiaLiftV2WebTestBase {
     $targeting['my-first-audience'] = array($option_ids[1], $option_ids[2]);
     acquia_lift_save_targeting_structure($agent, $targeting);
     // Now implement the targeting structure and set the agent to running.
-    AcquiaLiftAPIV2::setTestInstance();
+    AcquiaLiftAPI::setTestInstance();
     acquia_lift_implement_targeting($agent);
 
     personalize_agent_set_status($agent->machine_name, PERSONALIZE_STATUS_RUNNING);
@@ -959,7 +959,7 @@ class AcquiaLiftV2WebTestReports extends AcquiaLiftV2WebTestBase {
     );
     acquia_lift_save_targeting_structure($agent, $targeting);
     // Now implement the targeting structure and set the agent to running.
-    AcquiaLiftAPIV2::setTestInstance();
+    AcquiaLiftAPI::setTestInstance();
     acquia_lift_implement_targeting($agent);
 
     personalize_agent_set_status($agent->machine_name, PERSONALIZE_STATUS_RUNNING);
@@ -1045,7 +1045,7 @@ class AcquiaLiftV2WebTestReports extends AcquiaLiftV2WebTestBase {
 
       $report_start_date = 1407499650;
       // Test to ensure that an initial report at this point returns no data.
-      AcquiaLiftAPIV2::setTestInstance();
+      AcquiaLiftAPI::setTestInstance();
       $agent_instance = personalize_agent_load_agent($agent_name);
       $report = $agent_instance->getCampaignReports(array('decision' => 'osid-' . $option_sets[0]->osid, 'start' => $report_start_date));
       $this->assertFalse($report['#has_data'], 'Report has no data.');
@@ -1060,7 +1060,7 @@ class AcquiaLiftV2WebTestReports extends AcquiaLiftV2WebTestBase {
     }
     variable_set('acquia_lift_web_test_data', $test_data);
     $this->resetAll();
-    AcquiaLiftAPIV2::setTestInstance();
+    AcquiaLiftAPI::setTestInstance();
     $agent_instance = personalize_agent_load_agent($first_agent);
 
     // We use the date that the test report was created.
@@ -1137,7 +1137,7 @@ debug($report['experiment']['reports']['conversion']['summary']);
     $this->resetAll();
     DummyAcquiaLiftHttpClient::clearLoggedRequests();
 
-    AcquiaLiftAPIV2::setTestInstance();
+    AcquiaLiftAPI::setTestInstance();
     $form_state = array();
     $agent_data = personalize_agent_load($agent_name);
 
@@ -1173,7 +1173,7 @@ debug($report['experiment']['reports']['conversion']['summary']);
   }
 
 /*  function testPerGoalReport() {
-    AcquiaLiftAPIV2::setTestInstance();
+    AcquiaLiftAPI::setTestInstance();
     $agent = $this->createTestAgent(NULL, array(), self::$agent_plugin);
     $this->resetAll();
     DummyAcquiaLiftHttpClient::clearLoggedRequests();
@@ -1192,7 +1192,7 @@ debug($report['experiment']['reports']['conversion']['summary']);
 
   public function testReportDates() {
     $this->drupalLogin($this->managerUser);
-    AcquiaLiftAPIV2::setTestInstance();
+    AcquiaLiftAPI::setTestInstance();
     $agents = array(
       'first-agent' => array(
         'num_options' => 2,
@@ -1254,14 +1254,14 @@ debug($report['experiment']['reports']['conversion']['summary']);
     require_once(dirname(__FILE__) . '/../includes/acquia_lift.classes.inc');
     require_once(dirname(__FILE__) . '/../includes/AcquiaLiftLearnReportDataSourceInterface.inc');
     require_once(dirname(__FILE__) . '/../includes/AcquiaLiftAPIBase.inc');
-    require_once(dirname(__FILE__) . '/../includes/AcquiaLiftAPIV2.inc');
+    require_once(dirname(__FILE__) . '/../includes/AcquiaLiftAPI.inc');
     require_once(dirname(__FILE__) . '/../includes/AcquiaLiftReportBase.inc');
     require_once(dirname(__FILE__) . '/../includes/AcquiaLiftReportDataFromFileBase.inc');
     require_once(dirname(__FILE__) . '/../includes/AcquiaLiftLearnReport.inc');
     require_once(dirname(__FILE__) . '/../includes/AcquiaLiftLearnReportFromFile.inc');
 
     require_once(dirname(__FILE__) . '/acquia_lift.test_classes.inc');
-    AcquiaLiftAPIV2::setTestInstance();
+    AcquiaLiftAPI::setTestInstance();
     $agent_instance = $this->createTestAgent('my-test-agent', array(), self::$agent_plugin);
 
     $path = drupal_get_path('module', 'acquia_lift');
@@ -1488,7 +1488,7 @@ class AcquiaLiftV2WebTestWorkflow extends AcquiaLiftV2WebTestBase {
     $this->assertEqual($settings['acquia_lift']['campaigns'][$first_agent_machine_name], $expected[$first_agent_machine_name]);
 
     // Add a goal to the agent.
-    AcquiaLiftAPIV2::setTestInstance();
+    AcquiaLiftAPI::setTestInstance();
     personalize_goal_save($first_agent_machine_name, 'user_login', 3);
     $this->drupalGet('/');
     $settings = $this->drupalGetSettings();
@@ -1770,7 +1770,7 @@ class AcquiaLiftV2WebTestTarget extends AcquiaLiftV2WebTestBase {
     }
     // Now implement the targeting structure that is currently just stored in
     // the 'lift_targeting' property.
-    AcquiaLiftAPIV2::setTestInstance();
+    AcquiaLiftAPI::setTestInstance();
     acquia_lift_implement_targeting($agent);
     // We should have a new nested acquia_lift agent and option set.
     $this->resetAll();
@@ -1834,7 +1834,7 @@ class AcquiaLiftV2WebTestTarget extends AcquiaLiftV2WebTestBase {
     $this->resetAll();
     // When we implement the new structure it should retire the existing nested
     // test and create a new one.
-    AcquiaLiftAPIV2::setTestInstance();
+    AcquiaLiftAPI::setTestInstance();
     acquia_lift_implement_targeting($agent);
     $this->resetAll();
     $parent_option_set = personalize_option_set_load($parent_option_set->osid, TRUE);
@@ -1927,7 +1927,7 @@ class AcquiaLiftV2WebTestTarget extends AcquiaLiftV2WebTestBase {
     $this->resetAll();
     // When we implement the new structure it should not delete the existing nested
     // option set but it should change the audience it belongs to.
-    AcquiaLiftAPIV2::setTestInstance();
+    AcquiaLiftAPI::setTestInstance();
     acquia_lift_implement_targeting($agent);
     $this->resetAll();
     $nested_option_set = personalize_option_set_load($nested_osid, TRUE);
@@ -2167,7 +2167,7 @@ class AcquiaLiftV2WebTestTarget extends AcquiaLiftV2WebTestBase {
       'plugin' => 'some_plugin',
       'num_options' => 2
     ));
-    AcquiaLiftAPIV2::setTestInstance();
+    AcquiaLiftAPI::setTestInstance();
     acquia_lift_implement_targeting($agent_with_nesting);
     $this->resetAll();
     // Confirm the nested test has been created as expected.
@@ -2182,7 +2182,7 @@ class AcquiaLiftV2WebTestTarget extends AcquiaLiftV2WebTestBase {
     $this->assertNotNull($nested_os);
 
     DummyAcquiaLiftHttpClient::clearLoggedRequests();
-    AcquiaLiftAPIV2::setTestInstance();
+    AcquiaLiftAPI::setTestInstance();
 
     personalize_option_set_delete($second_os->osid);
     $this->resetAll();
@@ -2356,7 +2356,7 @@ class AcquiaLiftV2WebTestTarget extends AcquiaLiftV2WebTestBase {
     $admin_user = $this->drupalCreateUser(array('access administration pages', 'administer site configuration', 'access content', 'administer content types', 'administer nodes', 'bypass node access', 'manage personalized content'));
     $this->drupalLogin($admin_user);
     // Set the test classes for working with option set manipulation.
-    AcquiaLiftAPIV2::setTestInstance();
+    AcquiaLiftAPI::setTestInstance();
 
     $agent = $this->createTargetingAgent();
     // Personalize blocks.
@@ -2480,7 +2480,7 @@ class AcquiaLiftV2WebTestTarget extends AcquiaLiftV2WebTestBase {
 
     // Now implement the structure. The option IDs on all option sets should be
     // updated to match those of the targeting option set.
-    AcquiaLiftAPIV2::setTestInstance();
+    AcquiaLiftAPI::setTestInstance();
     // Implement the targeting as a basic test.
     $targeting_agent->data['lift_targeting'] = array(
       ACQUIA_LIFT_TARGETING_EVERYONE_ELSE => array(
@@ -2544,7 +2544,7 @@ class AcquiaLiftV2WebTestTarget extends AcquiaLiftV2WebTestBase {
       $original_goal_info[$goal->id] = $goal_array;
     }
     // Implement the MVT.
-    AcquiaLiftAPIV2::setTestInstance();
+    AcquiaLiftAPI::setTestInstance();
     acquia_lift_implement_mvt($targeting_agent);
     $this->resetAll();
     $nested = personalize_agent_load_by_type(ACQUIA_LIFT_TESTING_AGENT_V2, TRUE);

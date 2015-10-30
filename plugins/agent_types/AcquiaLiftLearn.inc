@@ -16,7 +16,7 @@ class AcquiaLiftLearn extends PersonalizeAgentBase implements AcquiaLiftLearning
   /**
    * An instance of AcquiaLiftAPI.
    *
-   * @var AcquiaLiftAPIV2
+   * @var AcquiaLiftAPI
    */
   protected $liftAPI;
 
@@ -51,7 +51,7 @@ class AcquiaLiftLearn extends PersonalizeAgentBase implements AcquiaLiftLearning
    */
   public static function getAPIInstance() {
     $account_info = acquia_lift_get_account_info();
-    $acquia_lift_api = AcquiaLiftAPIV2::getInstance($account_info);
+    $acquia_lift_api = AcquiaLiftAPI::getInstance($account_info);
     return $acquia_lift_api;
   }
 
@@ -63,7 +63,7 @@ class AcquiaLiftLearn extends PersonalizeAgentBase implements AcquiaLiftLearning
    * @param $acquia_lift_api
    *   An instance of the AcquiaLiftAPI class.
    */
-  public function __construct($machine_name, $title, $data, $status, $started, AcquiaLiftAPIV2 $acquia_lift_api) {
+  public function __construct($machine_name, $title, $data, $status, $started, AcquiaLiftAPI $acquia_lift_api) {
     parent::__construct($machine_name, $title, $data, $status, $started);
     $this->liftAPI = $acquia_lift_api;
   }

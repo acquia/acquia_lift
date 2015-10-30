@@ -18,9 +18,7 @@ class AcquiaLiftV2Test extends DrupalUnitTestCase {
   protected function setUp() {
     require_once(dirname(__FILE__) . '/../includes/acquia_lift.classes.inc');
     require_once(dirname(__FILE__) . '/../includes/AcquiaLiftLearnReportDataSourceInterface.inc');
-    require_once(dirname(__FILE__) . '/../includes/AcquiaLiftAPIBase.inc');
-    require_once(dirname(__FILE__) . '/../includes/AcquiaLiftAPIV2.inc');
-    require_once(dirname(__FILE__) . '/../includes/AcquiaLiftReportBase.inc');
+    require_once(dirname(__FILE__) . '/../includes/AcquiaLiftAPI.inc');
     require_once(dirname(__FILE__) . '/../includes/AcquiaLiftLearnReport.inc');
     require_once(dirname(__FILE__) . '/acquia_lift.test_classes.inc');
 
@@ -61,28 +59,28 @@ class AcquiaLiftV2Test extends DrupalUnitTestCase {
    */
   function testGetInstance() {
     try {
-      $lift_api = AcquiaLiftAPIV2::getInstance(array());
+      $lift_api = AcquiaLiftAPI::getInstance(array());
       $this->fail('Should never reach here.');
     }
     catch (Exception $e) {
       $this->assertTrue($e instanceof AcquiaLiftCredsException);
       $this->assertEqual('Acquia Lift API URL is missing or not a valid URL.', $e->getMessage());
       try {
-        $lift_api = AcquiaLiftAPIV2::getInstance(array('api_url' => 'some.valid.url.com'));
+        $lift_api = AcquiaLiftAPI::getInstance(array('api_url' => 'some.valid.url.com'));
         $this->fail('Should never reach here.');
       }
       catch (Exception $e) {
         $this->assertTrue($e instanceof AcquiaLiftCredsException);
         $this->assertEqual('Acquia Lift Public Key was not found.', $e->getMessage());
         try{
-          $lift_api = AcquiaLiftAPIV2::getInstance(array('api_url' => 'some.valid.url.com', 'public_key' => $this->publicKey));
+          $lift_api = AcquiaLiftAPI::getInstance(array('api_url' => 'some.valid.url.com', 'public_key' => $this->publicKey));
           $this->fail('Should never reach here.');
         }
         catch (Exception $e) {
           $this->assertTrue($e instanceof AcquiaLiftCredsException);
           $this->assertEqual('Acquia Lift Private Key was not found.', $e->getMessage());
           try{
-            $lift_api = AcquiaLiftAPIV2::getInstance(array('api_url' => 'some.valid.url.com', 'private_key' => $this->privateKey, 'public_key' => $this->publicKey, 'validate_response' => TRUE));
+            $lift_api = AcquiaLiftAPI::getInstance(array('api_url' => 'some.valid.url.com', 'private_key' => $this->privateKey, 'public_key' => $this->publicKey, 'validate_response' => TRUE));
           }
           catch (Exception $e) {
             $this->fail('Exception thrown when none expected.');
@@ -91,17 +89,17 @@ class AcquiaLiftV2Test extends DrupalUnitTestCase {
         }
       }
     }
-    AcquiaLiftAPIV2::reset();
+    AcquiaLiftAPI::reset();
   }
 
   /**
    * Tests getting a AcquiaLiftAPI instance that uses the default API url.
    */
   function testGetInstanceWithAPIUrl() {
-    AcquiaLiftAPIV2::reset();
+    AcquiaLiftAPI::reset();
     // Test passing an invalid URL.
     try {
-      $lift_api = AcquiaLiftAPIV2::getInstance(array('api_url' => 'some\\invalid\\url', 'private_key' => $this->privateKey, 'public_key' => $this->publicKey));
+      $lift_api = AcquiaLiftAPI::getInstance(array('api_url' => 'some\\invalid\\url', 'private_key' => $this->privateKey, 'public_key' => $this->publicKey));
       $this->fail('Should never reach here.');
     }
     catch (Exception $e) {
@@ -110,7 +108,7 @@ class AcquiaLiftV2Test extends DrupalUnitTestCase {
     }
 
     // Test passing a valid URL with no scheme.
-    $lift_api = AcquiaLiftAPIV2::getInstance(array('api_url' => 'test-api.example.com', 'private_key' => $this->privateKey, 'public_key' => $this->publicKey, 'validate_response' => FALSE));
+    $lift_api = AcquiaLiftAPI::getInstance(array('api_url' => 'test-api.example.com', 'private_key' => $this->privateKey, 'public_key' => $this->publicKey, 'validate_response' => FALSE));
 
     // The scheme will match whatever the current scheme is.
     global $is_https;
@@ -118,12 +116,12 @@ class AcquiaLiftV2Test extends DrupalUnitTestCase {
     // Check that the URL is as expected.
     $this->assertEqual($url_scheme . 'test-api.example.com', $lift_api->getApiUrl());
 
-    AcquiaLiftAPIV2::reset();
+    AcquiaLiftAPI::reset();
     // Test passing a valid URL with the scheme specified.
-    $lift_api = AcquiaLiftAPIV2::getInstance(array('api_url' => 'https://test-api.example.com', 'private_key' => $this->privateKey, 'public_key' => $this->publicKey, 'validate_response' => FALSE));
+    $lift_api = AcquiaLiftAPI::getInstance(array('api_url' => 'https://test-api.example.com', 'private_key' => $this->privateKey, 'public_key' => $this->publicKey, 'validate_response' => FALSE));
     // Check that the URL is as expected.
     $this->assertEqual('https://test-api.example.com', $lift_api->getApiUrl());
-    AcquiaLiftAPIV2::reset();
+    AcquiaLiftAPI::reset();
   }
 
   /**
@@ -430,7 +428,7 @@ class AcquiaLiftV2Test extends DrupalUnitTestCase {
   function testEnsureUniqueAgentName() {
     // We can't use getAcquiaLiftAPI() here because we need to pass some dummy
     // data to the http client.
-    $lift_api = AcquiaLiftAPIV2::getInstance(array('api_url' => 'https://test-api.example.com', 'private_key' => $this->privateKey, 'public_key' => $this->publicKey, 'validate_response' => FALSE));
+    $lift_api = AcquiaLiftAPI::getInstance(array('api_url' => 'https://test-api.example.com', 'private_key' => $this->privateKey, 'public_key' => $this->publicKey, 'validate_response' => FALSE));
     // Pass some dummy agent data to our dummy http client.
     $agents = array();
     $agent_codes = array(
@@ -569,11 +567,11 @@ class AcquiaLiftV2Test extends DrupalUnitTestCase {
    * @param bool $broken
    *   Whether the HTTP client used by the API class should be broken, simulating
    *   500 responses from Acquia Lift.
-   * @return AcquiaLiftAPIV2
+   * @return AcquiaLiftAPI
    *   A AcquiaLiftAPI instance.
    */
   protected function getAcquiaLiftAPI($broken = FALSE) {
-    $lift_api = AcquiaLiftAPIV2::getInstance(array('api_url' => 'https://test-api.example.com', 'private_key' => $this->privateKey, 'public_key' => $this->publicKey, 'validate_response' => FALSE));
+    $lift_api = AcquiaLiftAPI::getInstance(array('api_url' => 'https://test-api.example.com', 'private_key' => $this->privateKey, 'public_key' => $this->publicKey, 'validate_response' => FALSE));
 
     // Create a dummy http client for the Acquia Lift API to use. All
     // requests to it will be logged and retrievable for checking later.

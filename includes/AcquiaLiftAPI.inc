@@ -1,6 +1,6 @@
 <?php
 
-class AcquiaLiftAPIV2 implements AcquiaLiftLearnReportDataSourceInterface {
+class AcquiaLiftAPI implements AcquiaLiftLearnReportDataSourceInterface {
 
   const NAME_MAX_LENGTH = 255;
 
@@ -141,7 +141,7 @@ class AcquiaLiftAPIV2 implements AcquiaLiftLearnReportDataSourceInterface {
   /**
    * Singleton factory method.
    *
-   * @return AcquiaLiftAPIV2
+   * @return AcquiaLiftAPI
    */
   public static function getInstance($account_info) {
     if (empty(self::$instance)) {
@@ -195,7 +195,7 @@ class AcquiaLiftAPIV2 implements AcquiaLiftLearnReportDataSourceInterface {
   }
 
   /**
-   * Returns an AcquiaLiftAPIV2 instance with dummy creds and a dummy HttpClient.
+   * Returns an AcquiaLiftAPI instance with dummy creds and a dummy HttpClient.
    *
    * This is used during simpletest web tests.
    */

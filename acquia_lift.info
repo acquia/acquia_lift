@@ -17,11 +17,7 @@ core = 7.x
 
 files[] = includes/acquia_lift.classes.inc
 files[] = includes/AcquiaLiftLearningAgentInterface.inc
-files[] = includes/AcquiaLiftAPIInterface.inc
-files[] = includes/AcquiaLiftAPIBase.inc
-files[] = includes/AcquiaLiftAPI.inc
 files[] = includes/AcquiaLiftAPIV2.inc
-files[] = includes/AcquiaLiftReportDataSourceInterface.inc
 files[] = includes/AcquiaLiftLearnReportDataSourceInterface.inc
 files[] = includes/AcquiaLiftReportFactory.inc
 files[] = includes/AcquiaLiftDrupalHttpClientInterface.inc

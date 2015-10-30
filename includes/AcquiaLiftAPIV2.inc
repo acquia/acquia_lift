@@ -260,7 +260,7 @@ class AcquiaLiftAPIV2 implements AcquiaLiftLearnReportDataSourceInterface {
   }
 
   /**
-   * Implements AcquiaLiftAPIInterface::getExistingAgentNames().
+   * Retrieves a list of existing campaigns..
    */
   public function getExistingAgentNames() {
     $campaigns = $this->getCampaigns();
@@ -282,7 +282,7 @@ class AcquiaLiftAPIV2 implements AcquiaLiftLearnReportDataSourceInterface {
   }
 
   /**
-   * Implements AcquiaLiftAPIInterface::getAgent();
+   * Returns the campaign with the provided name if it exists, FALSE otherwise.
    */
   public function getAgent($agent_name) {
     $url = $this->generateEndpoint("campaigns/$agent_name");
@@ -295,7 +295,7 @@ class AcquiaLiftAPIV2 implements AcquiaLiftLearnReportDataSourceInterface {
   }
 
   /**
-   * Implements AcquiaLiftAPIInterface::deleteAgent();
+   * Deletes the campaign with the specified name.
    */
   public function deleteAgent($agent_name) {
     $url = $this->generateEndpoint("campaigns/$agent_name");
@@ -306,7 +306,7 @@ class AcquiaLiftAPIV2 implements AcquiaLiftLearnReportDataSourceInterface {
   }
 
   /**
-   * Implements AcquiaLiftAPIInterface::getGoalsForAgent();
+   * Retieves the goals defined for hte specified campaign.
    */
   public function getGoalsForAgent($agent_name) {
     return array();

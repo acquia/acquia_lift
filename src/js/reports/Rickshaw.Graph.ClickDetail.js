@@ -47,14 +47,16 @@ Rickshaw.Graph.ClickDetail = Rickshaw.Class.create(Rickshaw.Graph.HoverDetail, {
         nameKey = columns[options.columnName - 1],
         data = this.graph.rawData.groups,
         time = new Date(x * 1000),
-        months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
-        humanDate = months[time.getUTCMonth()] + ' ' + time.getDate() + ', ' + time.getFullYear()
+        months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'],
+        humanDate = months[time.getUTCMonth()] + ' ' + time.getDate() + ', ' + time.getFullYear(),
         head = function () {
           var date = '<th>' + humanDate + '</th>',
               variations = '';
 
-          for (var i = 0; i < self.graph.series.length; i++) {
-            variations += '<th style="background-color: ' + self.graph.series[i].color + ';">' + self.graph.series[i].shortName + '</th>';
+          if (self.graph.series.length > 1) {
+            for (var i = 0; i < self.graph.series.length; i++) {
+              variations += '<th style="background-color: ' + self.graph.series[i].color + ';">' + self.graph.series[i].shortName + '</th>';
+            }
           }
 
           return '<thead><tr>' + date + variations + '</tr></thead>';

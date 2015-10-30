@@ -135,14 +135,16 @@ Rickshaw.Graph.ClickDetail = Rickshaw.Class.create(Rickshaw.Graph.HoverDetail, {
         nameKey = columns[options.columnName - 1],
         data = this.graph.rawData.groups,
         time = new Date(x * 1000),
-        months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
-        humanDate = months[time.getUTCMonth()] + ' ' + time.getDate() + ', ' + time.getFullYear()
+        months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'],
+        humanDate = months[time.getUTCMonth()] + ' ' + time.getDate() + ', ' + time.getFullYear(),
         head = function () {
           var date = '<th>' + humanDate + '</th>',
               variations = '';
 
-          for (var i = 0; i < self.graph.series.length; i++) {
-            variations += '<th style="background-color: ' + self.graph.series[i].color + ';">' + self.graph.series[i].shortName + '</th>';
+          if (self.graph.series.length > 1) {
+            for (var i = 0; i < self.graph.series.length; i++) {
+              variations += '<th style="background-color: ' + self.graph.series[i].color + ';">' + self.graph.series[i].shortName + '</th>';
+            }
           }
 
           return '<thead><tr>' + date + variations + '</tr></thead>';
@@ -933,7 +935,8 @@ Rickshaw.Graph.TableLegend = Rickshaw.Class.create(Rickshaw.Graph.Legend, {
       $('.lift-statistics').once('acquiaLiftReports', function () {
         var $statistics = $(this),
             $data = $statistics.find('table[data-lift-statistics]'),
-            campaign = $data.attr('data-acquia-lift-campaign'),
+            personalization = $data.attr('data-acquia-lift-personalization'),
+            audience = $data.attr('data-acquia-lift-audience'),
             $goalSelect = $('.acquia-lift-report-section-options .form-item-goal select'),
             $metricSelect = $('.acquia-lift-report-section-options .form-item-metric select'),
             metric = $metricSelect.val(),
@@ -952,7 +955,8 @@ Rickshaw.Graph.TableLegend = Rickshaw.Class.create(Rickshaw.Graph.Legend, {
         $goalSelect.change(function() {
           // Construct the GET path.
           var args = {
-                campaign: campaign,
+                personalization: personalization,
+                audience: audience,
                 goal: $(this).val()
               },
               path = Drupal.settings.basePath + Drupal.settings.pathPrefix + 'acquia_lift/reports/conversion?' + $.param(args);
@@ -967,7 +971,7 @@ Rickshaw.Graph.TableLegend = Rickshaw.Class.create(Rickshaw.Graph.Legend, {
             // Make sure the proper metric column is set and render the graph.
             $data.attr('data-liftgraph-columny', metricColumn()).liftGraph();
           });
-        })
+        });
 
         // Attach a data column to a metric option.
         // Change the data fed to the y-axis and update the graph.

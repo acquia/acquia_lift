@@ -4,7 +4,23 @@
  * Class for Acquia Lift Learn Reports.
  */
 
-class AcquiaLiftLearnReport extends AcquiaLiftReportBase {
+class AcquiaLiftLearnReport {
+
+  /**
+   * The Acquia Lift agent instance for reporting on.
+   *
+   * @var AcquiaLiftAgent
+   */
+  protected $agent;
+
+  /**
+   * The confidence measure for determining statistical significance.
+   */
+  protected $confidence_measure = 95;
+
+  protected $start_time;
+
+  protected $end_time;
 
   /**
    * The report data that has been extracted from the report data source.
@@ -56,56 +72,18 @@ class AcquiaLiftLearnReport extends AcquiaLiftReportBase {
    *   The source for the report data.
    */
   function __construct(PersonalizeAgentInterface $agent, $options, AcquiaLiftLearnReportDataSourceInterface $report_data_src) {
-    parent::__construct($agent, $options);
-    $this->reportDataSrc = $report_data_src;
-  }
-
-  /**
-   * Gets the render array for the main reporting page.
-   *
-   * @return array
-   *   An array of output to pass to drupal_render.
-   */
-  public function getCampaignReports() {
-    return $this->buildCampaignReports(
-      $this->getSessionCount(),
-      $this->getGoalCount(),
-      $this->getDailyData(),
-      $this->getAggregatedData(),
-      $this->getOverallConfidence(),
-      $this->getOverallWinner()
-    );
-  }
-
-  /**
-   * Returns a render array for the experimental portion of the reports.
-   *
-   * @return array
-   */
-  public function getExperimentReports() {
-    $config = $this->getReportConfiguration();
-    $report_name = t('All goals');
-    $goal = NULL;
-    if (!empty($config['goal'])) {
-      $goal = $config['goal'];
-      $actions = visitor_actions_get_actions();
-      // If the action still exists, use the label, otherwise just use the goal
-      // machine name.
-      if (isset($actions[$goal])) {
-        $report_name = $actions[$goal]['label'];
-      }
-      else {
-        $report_name = $goal;
-      }
+    $this->agent = $agent;
+    $confidence_measure = $options['confidence_measure'];
+    if ($confidence_measure < 0) {
+      $confidence_measure = 0;
     }
-
-    $reports = $this->buildExperimentReports(
-      $report_name,
-      $this->getDailyData(),
-      $this->getAggregatedData(),
-      $this->getOverallConfidence(),
-      $this->getOverallWinner());
-    return $reports;
+    if ($confidence_measure > 100) {
+      $confidence_measure = 100;
+    }
+    $this->confidence_measure = $confidence_measure;
+    $this->start_time = $options['start_time'];
+    $this->end_time = $options['end_time'];
+    $this->reportDataSrc = $report_data_src;
   }
 
   /**
@@ -116,28 +94,14 @@ class AcquiaLiftLearnReport extends AcquiaLiftReportBase {
    */
   protected function getReportData() {
     if (empty($this->reportData)) {
-      $config = $this->getReportConfiguration();
       try {
-        $this->reportData = $this->reportDataSrc->getReportForDateRange($this->agent->getMachineName(), $config['date_from'], $config['date_to']);
+        $this->reportData = $this->reportDataSrc->getReportForDateRange($this->agent->getMachineName(), date('Y-m-d', $this->start_time), date('Y-m-d', $this->end_time));
       }
       catch (Exception $e) {
         drupal_set_message(t('There was a problem retrieving reporting data for this campaign, please try again later.'), 'error');
       }
     }
     return $this->reportData;
-  }
-
-  protected function getAudienceReportData() {
-    if (empty($this->audienceReportData)) {
-      $config = $this->getReportConfiguration();
-      try {
-        $this->audienceReportData = $this->reportDataSrc->getAudienceReport($this->agent->getMachineName());
-      }
-      catch (Exception $e) {
-        drupal_set_message(t('There was a problem retrieving reporting data for this campaign, please try again later.'), 'error');
-      }
-    }
-    return array();
   }
 
   /**
@@ -191,7 +155,7 @@ class AcquiaLiftLearnReport extends AcquiaLiftReportBase {
    *
    * @return int
    */
-  protected function getSessionCount() {
+  public function getSessionCount() {
     $data = $this->getAggregateResults();
     return isset($data['totals']['plays']) ? $data['totals']['plays'] : 0;
   }
@@ -201,7 +165,7 @@ class AcquiaLiftLearnReport extends AcquiaLiftReportBase {
    *
    * @return int
    */
-  protected function getGoalCount() {
+  public function getGoalCount() {
     $data = $this->getAggregateResults();
     return isset($data['totals']['goals']) ? $data['totals']['goals'] : 0;
   }
@@ -212,7 +176,7 @@ class AcquiaLiftLearnReport extends AcquiaLiftReportBase {
    * @return array
    *   An array of per-day reports.
    */
-  protected function getDailyData() {
+  public function getDailyData() {
     $report_data = $this->getReportData();
     if (!isset($report_data['results'])) {
       $this->hasData = FALSE;
@@ -250,10 +214,10 @@ class AcquiaLiftLearnReport extends AcquiaLiftReportBase {
           'count' => $single_day['total_plays_explore'],
           'date' => $date,
           'timestamp' => $ts,
-          'conversion' => self::formatReportPercentage($rate),
-          'conversion_value' => self::formatReportNumber($mean),
-          'estimated_value' => self::formatReportNumber($mean, TRUE, 4),
-          'margin_error' => self::formatReportNumber(($upper - $lower) / 2, TRUE, 4),
+          'conversion' => _format_report_percentage($rate),
+          'conversion_value' => _format_report_number($mean),
+          'estimated_value' => _format_report_number($mean, TRUE, 4),
+          'margin_error' => _format_report_number(($upper - $lower) / 2, TRUE, 4),
           'counter' => $i,
           'control' => $i === 0,
         );
@@ -268,7 +232,7 @@ class AcquiaLiftLearnReport extends AcquiaLiftReportBase {
    * @return array
    *   An array of report data keyed by option id.
    */
-  protected function getAggregatedData() {
+  public function getAggregatedData() {
     if (empty($this->interpretedResults)) {
       $this->interpretedResults = array(
         'confidence' => FALSE,
@@ -286,7 +250,7 @@ class AcquiaLiftLearnReport extends AcquiaLiftReportBase {
       // We'll be getting a confidence interval for the conversion rate of each
       // variation based on the configured confidence measure. We need to convert
       // this into a p-value to look up the correct normal quantile.
-      $desired_p_value = (1 - ($this->getConfidenceMeasure() / 100)) / 2;
+      $desired_p_value = (1 - ($this->confidence_measure / 100)) / 2;
       if (in_array($desired_p_value, self::$probabilities)) {
         $pos = array_search($desired_p_value, self::$probabilities);
       }
@@ -327,11 +291,11 @@ class AcquiaLiftLearnReport extends AcquiaLiftReportBase {
           'count' => $count,
           'mean' => $mean,
           'variance' => $variance,
-          'conversion' => self::formatReportPercentage($rate),
-          'estimated_value' => self::formatReportNumber($mean, TRUE, 4),
-          'estimated_higher' => self::formatReportNumber($upper, TRUE, 4),
-          'estimated_lower' => self::formatReportNumber($lower, TRUE, 4),
-          'margin_error' => self::formatReportNumber(($upper - $lower) / 2, TRUE, 4),
+          'conversion' => _format_report_percentage($rate),
+          'estimated_value' => _format_report_number($mean, TRUE, 4),
+          'estimated_higher' => _format_report_number($upper, TRUE, 4),
+          'estimated_lower' => _format_report_number($lower, TRUE, 4),
+          'margin_error' => _format_report_number(($upper - $lower) / 2, TRUE, 4),
           'control' => $i === 0,
           'confidence' => self::NA_STRING,
           'lift_default' =>  self::NA_STRING,
@@ -358,7 +322,7 @@ class AcquiaLiftLearnReport extends AcquiaLiftReportBase {
         // for the mean of the default.
         if (!$values['control'] && $control_variation['count'] && $control_variation['mean'] && $values['count']) {
           $lift_default = ($values['mean'] - $control_variation['mean'])/$control_variation['mean'];
-          $values['lift_default'] = self::formatReportPercentage($lift_default , TRUE, TRUE, 2);
+          $values['lift_default'] = _format_report_percentage($lift_default , TRUE, TRUE, 2);
         }
         // Only calculate confidence if our minimum decision threshold was reached
         // for each variation.
@@ -396,7 +360,7 @@ class AcquiaLiftLearnReport extends AcquiaLiftReportBase {
       // If the comparison is against the control variation, then this confidence
       // metric is what we display as "chance to beat control".
       if ($var['option_id'] == $control_variation['option_id']) {
-        $variation['confidence'] = self::formatReportPercentage($confidence);
+        $variation['confidence'] = _format_report_percentage($confidence);
       }
       if ($confidence < ($this->confidence_measure / 100)) {
         // No point doing anymore comparisons, this is not a winner.

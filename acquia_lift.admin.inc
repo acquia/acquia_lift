@@ -622,6 +622,11 @@ function acquia_lift_report($form, &$form_state, $agent_data) {
   if (!acquia_lift_is_targeting_agent($agent_data)) {
     return array();
   }
+  $date_upgraded = variable_get('acquia_lift_report_upgrade_timestamp', 0);
+  if ($agent_data->started < $date_upgraded) {
+    $missing_report_data = TRUE;
+    drupal_set_message(t('Only displaying data starting from @date, which is the date Lift was upgraded to use the new reporting API. If the personalization contains tests, the old reports for these tests are still available at the links provided.', array('@date' => date('Y-m-d', $date_upgraded))));
+  }
   $option_set = acquia_lift_get_option_set_for_targeting($agent_data->machine_name);
   $option_ids = array_map(function($option) {return $option['option_id'];}, $option_set->options);
   // First get the overview report, i.e. total decisions and conversions across
@@ -658,7 +663,7 @@ function acquia_lift_report($form, &$form_state, $agent_data) {
     $conversion_count += $stats['conversion_count'];
     $breakdown_text .= t(" Variation <strong>@var</strong> decisions: @dec, conversions: @conv.", array('@var' => $stats['variation_id'], '@dec' => $stats['decision_count'], '@conv' => $stats['conversion_count']));
   }
-  $overview_report = AcquiaLiftReportBase::buildOverviewReport($decision_count, $conversion_count, $interval);
+  $overview_report = _build_overview_report($decision_count, $conversion_count, $interval);
   $form['overview_report']['report'] = array(
     '#markup' => drupal_render($overview_report) . '<div class="lift-overview-report-breakdown">' . $breakdown_text . '</div>',
     '#theme_wrappers' => array('container'),
@@ -716,7 +721,13 @@ function acquia_lift_report($form, &$form_state, $agent_data) {
     }
     $test_label = $option_set->targeting[$name]['label'];
   }
-
+  if (isset($_GET['use_old_stats']) || !empty($form_state['values']['use_old_stats'])) {
+    $use_old_stats = TRUE;
+  }
+  $form['use_old_stats'] = array(
+    '#type' => 'hidden',
+    '#value' => $use_old_stats
+  );
   // Show the audience filter.
   $form['audience_container'] = array(
     '#type' => 'container',
@@ -768,7 +779,7 @@ function acquia_lift_report($form, &$form_state, $agent_data) {
     $form['report'] = acquia_lift_report_retired($form_state, $name, $agent_data);
   }
   else {
-    $form['report'] = acquia_lift_report_audience($form_state, $agent_data, $option_set, $name, $lift_api, $start_time, $end_time);
+    $form['report'] = acquia_lift_report_audience($form_state, $agent_data, $option_set, $name, $lift_api, $start_time, $end_time, $use_old_stats);
   }
   return $form;
 }
@@ -777,18 +788,56 @@ function acquia_lift_report_retired($form_state, $retired_test_name, $agent_data
   return array();
 }
 
-function acquia_lift_report_audience($form_state, $personalization_data, $targeting_option_set, $audience, $lift_api, $from, $to) {
+function acquia_lift_report_audience($form_state, $personalization_data, $targeting_option_set, $audience, $lift_api, $from, $to, $use_old_stats = FALSE) {
+  // Conversion report filters.
+  $selected_goal = empty($form_state['values']['goal']) ? NULL : $form_state['values']['goal'];
+  $selected_metric = empty($form_state['values']['metric']) ? 'rate' : $form_state['values']['metric'];
+
   module_load_include('inc', 'acquia_lift', 'includes/AcquiaLiftLearnReport');
   $audience_type = isset($targeting_option_set->targeting[$audience]['osid']) ? 'test' : 'target';
   $variations = acquia_lift_get_structure_from_targeting($targeting_option_set);
-  try {
-    $audience_report = $lift_api->getAudienceReport($personalization_data->machine_name, $audience, $variations[$audience], $audience_type, $from, $to);
+  $session_count = $goal_count = $confidence = 0;
+  $winner = NULL;
+  $daily_data = $experiment_results = array();
+  $nested_agent = NULL;
+  if ($audience_type == 'test') {
+    $nested_os = personalize_option_set_load($targeting_option_set->targeting[$audience]['osid']);
+    $nested_agent = personalize_agent_load($nested_os->agent);
   }
-  catch (AcquiaLiftException $e) {
-    $audience_report = array(
-      'overall_stats' => array(),
-      'daily_stats' => array()
-    );
+  if ($audience_type == 'test' && $use_old_stats) {
+    // Get our test results the old way, i.e. pre-reporting-API
+    $agent_instance = personalize_agent_load_agent($nested_agent->machine_name);
+    if ($agent_instance instanceof AcquiaLiftLearn) {
+      $options = array(
+        'start_time' => $from,
+        'end_time' => $to,
+        'goal' => $selected_goal,
+      );
+      $learn_report = AcquiaLiftReportFactory::create($agent_instance, $lift_api, $options);
+      $session_count = $learn_report->getSessionCount();
+      $goal_count = $learn_report->getGoalCount();
+      $daily_data = $learn_report->getDailyData();
+      $experiment_results = $learn_report->getAggregatedData();
+    }
+  }
+  else {
+    // Pull the stats directly from the reporting API.
+    try {
+      $audience_report = $lift_api->getAudienceReport($personalization_data->machine_name, $audience, $variations[$audience], $audience_type, $from, $to);
+      foreach ($audience_report['overall_stats'] as $variation => $stats) {
+        $session_count += $stats['decision_count'];
+        $goal_count += $stats['conversion_count'];
+      }
+      $daily_data = _extract_daily_data($audience_report['daily_stats']);
+      if (isset($audience_report['test_results'])) {
+        $experiment_results = _extract_experiment_results($audience_report['test_results']);
+        $confidence = !empty($audience_report['overall_confidence']) ? $audience_report['overall_confidence'] : 0;
+        $winner = !empty($audience_report['winner']) ? $audience_report['winner'] : null;
+      }
+    }
+    catch (AcquiaLiftException $e) {
+      drupal_set_message(t('There was a problem retrieving the reporting data from the API'), 'error');
+    }
   }
 
   // Audience Overview report section.
@@ -802,62 +851,15 @@ function acquia_lift_report_audience($form_state, $personalization_data, $target
       'class' => array('acquia-lift-report-section', 'clearfix'),
     ),
   );
-  $session_count = $goal_count = 0;
-  foreach ($audience_report['overall_stats'] as $variation => $stats) {
-    $session_count += $stats['decision_count'];
-    $goal_count += $stats['conversion_count'];
-  }
-  $audience_overview_report = AcquiaLiftReportBase::buildOverviewReport($session_count, $goal_count);
+
+  $audience_overview_report = _build_overview_report($session_count, $goal_count);
   $form['audience_overview_report']['report'] = array(
     '#markup' => drupal_render($audience_overview_report),
     '#theme_wrappers' => array('container'),
     '#id' => 'acquia-lift-overview-report-data',
   );
 
-  // Show the daily graph.
-  $daily_data = array();
-  $i = 0;
-  $counts = $goals = $vals = array();
-  foreach ($audience_report['daily_stats'] as $daily_stats) {
-    $variation = $daily_stats['variation_id'];
-    foreach ($daily_stats['results'] as $stats) {
-      $day = $stats['timestamp'];
-      $results = $stats['result'];
-      if (!isset($counts[$variation])) {
-        $counts[$variation] = $goals[$variation] =  $vals[$variation] = 0;
-      }
-      $counts[$variation] += $results['decision_count'];
-      $goals[$variation] += $results['conversion_count'];
-
-      $vals[$variation] += $results['conversion_value'];
-      $rate = $counts[$variation] > 0 ? ($goals[$variation] / $counts[$variation]) : 0;
-      $mean = $counts[$variation] > 0 ? ($vals[$variation] / $counts[$variation]) : 0;
-      $goal_value = $goals[$variation] ? floor($vals[$variation] / $goals[$variation]) : 1;
-      // Calculate confidence bounds for conversion rate.
-      $sd = $counts[$variation] > 0 ? sqrt(($rate*(1-$rate))/$counts[$variation]) : 0;
-      // We want a 90% confidence interval, which means we need the 95th
-      // quantile, given the two tails of the distribution.
-      $quantile = AcquiaLiftLearnReport::$normal_quantiles[4];
-      $upper = $goal_value * ($rate + ($quantile * $sd));
-      $lower = $goal_value * ($rate - ($quantile * $sd));
-      $daily_data[] = array(
-        'option_id' => $variation,
-        'option_label' => $variation,
-        'goals' => $results['conversion_count'],
-        'count' => $results['decision_count'],
-        'date' => $day,
-        'timestamp' => strtotime($day),
-        'conversion' => AcquiaLiftReportBase::formatReportPercentage($rate),
-        'conversion_value' => AcquiaLiftReportBase::formatReportNumber($mean),
-        'estimated_value' => AcquiaLiftReportBase::formatReportNumber($mean, TRUE, 4),
-        'margin_error' => AcquiaLiftReportBase::formatReportNumber(($upper - $lower) / 2, TRUE, 4),
-        'counter' => $i,
-        'control' => $i === 0,
-      );
-    }
-    $i++;
-  }
-  $daily_report = AcquiaLiftReportBase::buildConversionDetailReport($daily_data, $personalization_data->machine_name, $audience);
+  $daily_report = _build_daily_report($daily_data, $personalization_data->machine_name, $audience);
   $form['daily_report'] = array(
     '#type' => 'container',
     'header' => array(
@@ -889,7 +891,7 @@ function acquia_lift_report_audience($form_state, $personalization_data, $target
     // @todo Uncomment this once we are recording when new goals get added to
     //   running personalizations.
     //'goal' => acquia_lift_report_goal_dropdown($goals_agent, $selected_goal),
-    'metric' => acquia_lift_report_experiment_metric_dropdown('rate'),
+    'metric' => acquia_lift_report_experiment_metric_dropdown($selected_metric),
     'submit' => array(
       '#type' => 'submit',
       '#value' => t('Filter'),
@@ -900,32 +902,8 @@ function acquia_lift_report_audience($form_state, $personalization_data, $target
     '#theme_wrappers' => array('container'),
     '#id' => 'acquia-lift-daily-report-data',
   );
-  if ($audience_type == 'test' && isset($audience_report['test_results'])) {
-    $nested_os = personalize_option_set_load($targeting_option_set->targeting[$audience]['osid']);
-    $nested_agent = personalize_agent_load($nested_os->agent);
-    $aggregated_data = array();
-    $i = 0;
-    foreach ($audience_report['test_results'] as $result) {
-      $variation = $result['variation_id'];
-      $rate = $result['decision_count'] > 0 ? ($result['conversion_count'] / $result['decision_count']) : 0;
-      $aggregated_data[$variation] = array(
-        'counter' => $i,
-        'option_id' => $variation,
-        'option_label' => $variation,
-        'goals' => $result['conversion_count'],
-        'count' => $result['decision_count'],
-        'conversion' => AcquiaLiftReportBase::formatReportPercentage($rate),
-        'estimated_value' => AcquiaLiftReportBase::formatReportNumber($result['mean'], TRUE, 4),
-        'control' => $i === 0,
-        'confidence' => $result['confidence'],
-        'lift_default' =>  $result['lift_default'],
-        'lift_random' => $result['lift_random'],
-      );
-      $i++;
-    }
-    $confidence = !empty($audience_report['overall_confidence']) ? $audience_report['overall_confidence'] : 0;
-    $winner = !empty($audience_report['winner']) ? $audience_report['winner'] : null;
-    $experiment_report = AcquiaLiftReportBase::buildConversionSummaryReport($aggregated_data, $confidence, $winner, $personalization_data->machine_name, $audience, variable_get('acquia_lift_confidence_measure', 95));
+  if ($audience_type == 'test') {
+   $experiment_report = _build_experiment_report($experiment_results, $confidence, $winner, $personalization_data->machine_name, $audience, variable_get('acquia_lift_confidence_measure', 95));
     // Conversion details section.
     $form['experiment_report'] = array(
       '#type' => 'container',
@@ -955,6 +933,8 @@ function acquia_lift_report_audience($form_state, $personalization_data, $target
         'class' => array('acquia-lift-report-section'),
       ),
     );
+    $nested_os = personalize_option_set_load($targeting_option_set->targeting[$audience]['osid']);
+    $nested_agent = personalize_agent_load($nested_os->agent);
     // Show the test (explore)  percentage if in adaptive mode.
     if ($nested_agent->data['decision_style'] == 'adaptive') {
       $percentage = $nested_agent->data['explore_rate'];
@@ -990,6 +970,84 @@ function acquia_lift_report_submit($form, &$form_state) {
 }
 
 /**
+ * Extracts daily stats from the reporting API into results
+ * that can be displayed.
+ */
+function _extract_daily_data($daily_data) {
+  $daily_results = array();
+  $i = 0;
+  $counts = $goals = $vals = array();
+  foreach ($daily_data as $variation_results) {
+    $variation = $variation_results['variation_id'];
+    foreach ($variation_results['results'] as $stats) {
+      $day = $stats['timestamp'];
+      $results = $stats['result'];
+      if (!isset($counts[$variation])) {
+        $counts[$variation] = $goals[$variation] =  $vals[$variation] = 0;
+      }
+      $counts[$variation] += $results['decision_count'];
+      $goals[$variation] += $results['conversion_count'];
+
+      $vals[$variation] += $results['conversion_value'];
+      $rate = $counts[$variation] > 0 ? ($goals[$variation] / $counts[$variation]) : 0;
+      $mean = $counts[$variation] > 0 ? ($vals[$variation] / $counts[$variation]) : 0;
+      $goal_value = $goals[$variation] ? floor($vals[$variation] / $goals[$variation]) : 1;
+      // Calculate confidence bounds for conversion rate.
+      $sd = $counts[$variation] > 0 ? sqrt(($rate*(1-$rate))/$counts[$variation]) : 0;
+      // We want a 90% confidence interval, which means we need the 95th
+      // quantile, given the two tails of the distribution.
+      $quantile = AcquiaLiftLearnReport::$normal_quantiles[4];
+      $upper = $goal_value * ($rate + ($quantile * $sd));
+      $lower = $goal_value * ($rate - ($quantile * $sd));
+      $daily_results[] = array(
+        'option_id' => $variation,
+        'option_label' => $variation,
+        'goals' => $results['conversion_count'],
+        'count' => $results['decision_count'],
+        'date' => $day,
+        'timestamp' => strtotime($day),
+        'conversion' => _format_report_percentage($rate),
+        'conversion_value' => _format_report_number($mean),
+        'estimated_value' => _format_report_number($mean, TRUE, 4),
+        'margin_error' => _format_report_number(($upper - $lower) / 2, TRUE, 4),
+        'counter' => $i,
+        'control' => $i === 0,
+      );
+    }
+    $i++;
+  }
+  return $daily_results;
+}
+
+/**
+ * Extracts aggregated stats from the reporting API into results
+ * that can be displayed.
+ */
+function _extract_experiment_results($aggregated_data) {
+  $aggregated_results = array();
+  $i = 0;
+  foreach ($aggregated_data as $result) {
+    $variation = $result['variation_id'];
+    $rate = $result['decision_count'] > 0 ? ($result['conversion_count'] / $result['decision_count']) : 0;
+    $aggregated_results[$variation] = array(
+      'counter' => $i,
+      'option_id' => $variation,
+      'option_label' => $variation,
+      'goals' => $result['conversion_count'],
+      'count' => $result['decision_count'],
+      'conversion' => _format_report_percentage($rate),
+      'estimated_value' => _format_report_number($result['mean'], TRUE, 4),
+      'control' => $i === 0,
+      'confidence' => $result['confidence'],
+      'lift_default' =>  $result['lift_default'],
+      'lift_random' => $result['lift_random'],
+    );
+    $i++;
+  }
+  return $aggregated_results;
+}
+
+/**
  * Builds a limited report for a test directly from the test stats.
  *
  * Used for tests that were running before data was being pushed to Lift Web.
@@ -1010,25 +1068,6 @@ function _acquia_lift_get_subreport(&$form_state, $agent_data) {
   // show reports for it.
   if (!$agent = personalize_agent_load_agent($agent_data->machine_name)) {
     return array();
-  }
-  // If this agent is not currently enabled in Acquia Lift, there are no reports
-  // to show.
-  $errors = $agent->errors();
-  if (!empty($errors)) {
-    return array(
-      'no_report' => array(
-        '#markup'=> t('This agent is not properly configured, no reports to show.')
-      )
-    );
-  }
-
-  // If this isn't a learning agent, no reports to show..
-  if (!$agent instanceof AcquiaLiftLearn) {
-    return array(
-      'no_report' => array(
-        '#markup' => t('This agent does not support reporting.')
-      )
-    );
   }
 
   // Check for Rickshaw and D3 libraries and alert users if not exist.
@@ -1161,40 +1200,6 @@ function _acquia_lift_get_subreport(&$form_state, $agent_data) {
 }
 
 /**
- * Returns a dropdown for filtering by decision point.
- *
- * @param array $options
- *   The different decision point options.
- * @param $selected
- *   The decision point to set as the default value.
- * @return array
- *   An array representing a dropdown select list.
- */
-function acquia_lift_report_decision_point_dropdown($options, $selected, $agent_name) {
-  if (empty($options)) {
-    return array();
-  }
-  if (count($options) == 1) {
-    $option = key($options);
-    return array(
-      '#type' => 'hidden',
-      '#value' => $option,
-    );
-  }
-  return array(
-    '#title' => t('Variation Set'),
-    '#type' => 'select',
-    '#options' => $options,
-    '#default_value' => $selected,
-    '#ajax' => array(
-      'callback' => 'acquia_lift_report_ajax_callback',
-      'wrapper' => 'acquia-lift-reports',
-    ),
-    '#id' => 'acquia-lift-report-decision-point-filter',
-  );
-}
-
-/**
  * Returns the drop-down for filtering reports by goal.
  *
  * @param $agent_name
@@ -1310,18 +1315,18 @@ function acquia_lift_adjust_report_start_date($start, $end) {
 }
 
 /**
- * AJAX callback to return the tabular HTML for conversion reports.
+ * AJAX callback to return the daily conversion report.
  *
  * The following parameters are supplied within the query string:
- *   - campaign: the machine name of the campaign
- *   - decision: the decision name to get data
+ *   - personalization: the machine name of the personalization
+ *   - audience: the audience to get data for
  *   - start: (optional) the timestamp to use as start date
  *   - end: (optional) the timestamp to use as the end date
  *   - goal: (optional) a goal name to limit results (defaults to all goals)
  */
 function acquia_lift_report_experiment() {
   $params = drupal_get_query_parameters();
-  $agent_name = empty($params['campaign']) ? NULL : personalize_sanitize_string($params['campaign']);
+  $personalization_name = empty($params['personalization']) ? NULL : personalize_sanitize_string($params['personalization']);
   $options = array();
   $options['decision'] = empty($params['decision']) ? NULL : personalize_sanitize_string($params['decision']);
   $options['goal'] = empty($params['goal']) ? NULL : personalize_sanitize_string($params['goal']);
@@ -1334,20 +1339,18 @@ function acquia_lift_report_experiment() {
   if (is_numeric($options['end'])) {
     $options['end'] = date('Y-m-d', $options['end']);
   }
+  $report = array(
+    '#markup' => t('No report available for this personalization.')
+  );
+  $personalization_name = personalize_agent_load_agent($personalization_name);
+  // @todo Uncomment this when we have a reasonable way of pulling this report
+  //   that works for old and new report types.
+/*  if ($plugin instanceof AcquiaLiftLearningAgentInterface) {
+    $report = $plugin->getExperimentReports($options);
+    $report['#type'] = 'ajax';
+  }*/
 
-  $plugin = personalize_agent_load_agent($agent_name);
-  if ($plugin instanceof AcquiaLiftLearningAgentInterface) {
-    $reports = $plugin->getExperimentReports($options);
-    $reports['#type'] = 'ajax';
-    drupal_json_output(drupal_render($reports));
-  }
-  else {
-    $report = array(
-      '#markup' => t('No report available for this personalization.')
-    );
-    drupal_json_output(drupal_render($report));
-  }
-
+  drupal_json_output(drupal_render($report));
 }
 
 
@@ -2245,4 +2248,348 @@ function acquia_lift_target_complete_audience_complete_callback($form, $form_sta
   $commands = array();
   $commands[] = ctools_ajax_command_reload();
   return $commands;
+}
+
+/**
+ * =======================================================================
+ *  R E P O R T  O U T P U T  F U N C T I O N S
+ * =======================================================================
+ */
+
+
+/**
+ * Returns a render array representing the overview report for the given dates.
+ *
+ * @param DateInterval $interval
+ *   The length of the period this report represents, as a DateInterval object.
+ * @param string $type
+ *   THe type of personalization, e.g. 'A/B test'
+ * @param int $session_count
+ *   The total number of sessions.
+ * @param int $goal_count
+ *   The total number of goals received.
+ * @return array
+ *   A render array representing the overview report.
+ */
+function _build_overview_report($session_count, $goal_count, DateInterval $interval = null, $type = null) {
+  // Create report renderable.
+  $build = array();
+  if (!empty($type)) {
+    $build['test_type'] = array(
+      '#type' => 'container',
+      '#theme' => 'acquia_lift_report_overview',
+      '#title' => $type,
+      '#description' => t('test type'),
+      '#attributes' => array(
+        'id' => 'acquia-lift-overview-type',
+      )
+    );
+  }
+  if (!empty($interval)) {
+    $build['total_running'] = array(
+      '#type' => 'container',
+      '#theme' => 'acquia_lift_report_overview',
+      '#attributes' => array(
+        'id' => 'acquia-lift-overview-running',
+      ),
+      '#title' => $interval->format('%d days, %h hours'),
+      '#description' => t('total time running'),
+    );
+  }
+  $formatted_session_count = _format_report_number($session_count, FALSE, 0);
+  $build['shown'] = array(
+    '#type' => 'container',
+    '#theme' => 'acquia_lift_report_overview',
+    '#attributes' => array(
+      'id' => 'acquia-lift-overview-shown',
+    ),
+    '#title' => $formatted_session_count,
+    '#description' => format_plural($session_count, 'time shown', 'times shown'),
+  );
+  $formatted_goal_count = _format_report_number($goal_count, FALSE, 0);
+  $build['goals'] = array(
+    '#type' => 'container',
+    '#theme' => 'acquia_lift_report_overview',
+    '#attributes' => array(
+      'id' => 'acquia-lift-overview-goals',
+    ),
+    '#title' => $formatted_goal_count,
+    '#description' => t('goals met'),
+  );
+  if ($goal_count > 0) {
+    $build['goals']['#attributes']['class'] = array('acquia-lift-report-positive');
+  }
+  return $build;
+}
+
+/**
+ * Builds the render array for the metrics portion of the report.
+ *
+ * @param array $daily_data
+ *   The per-variation results broken down by day (shown in the graph)
+ * @param array
+ *   A render array for the report.
+ */
+function _build_daily_report($daily_data, $personalization_name, $audience_name) {
+  $headers = array(
+    t('Date'),
+    t('Content variation'),
+    array(
+      'data' => t('Conversion rate (%)'),
+      'data-conversion-metric' => 'rate',
+    ),
+    array(
+      'data' => t('Conversion value'),
+      'data-conversion-metric' => 'value',
+    ),
+    t('Margin of error'),
+  );
+  $build = $rows = array();
+  foreach ($daily_data as $choice_data) {
+    $rows[] = array(
+      'data' => array(
+        array(
+          'data' => $choice_data['timestamp'],
+        ),
+        array(
+          'data' => $choice_data['option_label'],
+          'data-acquia-lift-variation-label' => _get_variation_label($choice_data['counter'], $choice_data['control']),
+        ),
+        array(
+          'data' => $choice_data['conversion'],
+        ),
+        array(
+          'data' => $choice_data['conversion_value'],
+        ),
+        array(
+          'data' => $choice_data['margin_error'],
+        ),
+      ),
+      'no_striping' => TRUE,
+    );
+  }
+  if (!empty($rows)) {
+    $build['metric_table'] = array(
+      '#theme' => 'table',
+      '#header' => $headers,
+      '#rows' => $rows,
+      '#sticky' => FALSE,
+      '#attributes' => array(
+        'data-lift-statistics' => '',
+        'data-liftGraph-columnName' => '2',
+        'data-liftGraph-columnX' => '1',
+        'data-liftGraph-renderer' => 'line',
+        'data-liftgraph-excluded' => '5',
+        'data-acquia-lift-personalization' => $personalization_name,
+        'data-acquia-lift-audience' => $audience_name,
+      )
+    );
+  }
+  return $build;
+}
+
+  /**
+   * Builds the render array for the summary portion of the report.
+   *
+   * @param array $aggregated_data
+   *   The per-variation results aggregated across all dates
+   * @param bool $confidence
+   *   Whether the report has confidence.
+   * @param bool $winner
+   *   The id of the winning option or NULL if there's no winner
+   * @param array
+   *   A render array for the report.
+   */
+function _build_experiment_report($aggregated_data, $confidence, $winner, $personalization_name, $audience_name, $confidence_measure) {
+  $headers = array(
+    t('Variation'),
+    array(
+      'data' => t('Times shown'),
+      'data-help-tooltip' => t('Number of times this variation was shown to the experimental group.'),
+    ),
+    array(
+      'data' => t('Goals met'),
+      'data-help-tooltip' => t('Number of times visitors in the experiement group completed a goal after viewing the variation.'),
+    ),
+    array(
+      'data' => t('Conversion rate'),
+      'data-help-tooltip' => t('Percentage of goals met for each display of the variation.'),
+    ),
+    array(
+      'data' => t('Chance to beat control'),
+      'data-help-tooltip' => t('Confidence that this variation will perform better than the control.'),
+    ),
+    array(
+      'data' => t('Lift'),
+      'data-help-tooltip' => t('Estimated increase in conversions if this variation were to be shown all the time, versus the control.'),
+    ),
+    array(
+      'data' => t('Winner'),
+      'data-help-tooltip' => t('Most effective variation for visitors based on a @confidence% confidence level.', array(
+        '@confidence' => $confidence_measure,
+      )),
+    ),
+  );
+  $confidence_message_shown = FALSE;
+  $rows = array();
+  $num_rows = count($aggregated_data);
+  foreach ($aggregated_data as $choice_id => $choice_data) {
+    $row_data = array(
+      array(
+        'data' => $choice_data['option_label'],
+        'data-acquia-lift-variation-label' => _get_variation_label($choice_data['counter'], $choice_data['control']),
+      ),
+      array(
+        'data' => $choice_data['count'],
+      ),
+      array(
+        'data' => $choice_data['goals'],
+      ),
+      array(
+        'data' => $choice_data['conversion'],
+      ),
+      array(
+        'data' => $choice_data['confidence'],
+      ),
+      array(
+        'data' => $choice_data['lift_default'],
+      ),
+    );
+    // Add the winner column data.
+    if (empty($rows) && !$confidence) {
+      // If there is low confidence then show the message throughout the
+      // winner column.
+      $row_data[] = array(
+        'data' => _get_low_confidence_message($confidence_measure),
+        'rowspan' => $num_rows,
+        'class' => array('acquia-lift-ab-winner'),
+      );
+      $confidence_message_shown = TRUE;
+    }
+    else if (!$confidence_message_shown) {
+      // Show the winner indicator if this is the winning variation.
+      $row_data[] = $confidence && ($winner === $choice_id) ? '<span class="lift-winner">' . t('Winner') . '</span>' : '';
+    }
+    $rows[] = array(
+      'data' => $row_data,
+      'no_striping' => TRUE,
+    );
+
+  }
+  if (empty($rows)) {
+    return array();
+  }
+  $build['summary_holder'] = array(
+    '#type' => 'container',
+    '#attributes' => array(
+      'class' => array('lift-graph-result'),
+    ),
+  );
+  $build['summary_holder']['summary_table'] = array(
+    '#theme' => 'table',
+    '#header' => $headers,
+    '#rows' => $rows,
+    '#sticky' => FALSE,
+    '#attributes' => array(
+      'class' => array('lift-graph-result-data'),
+      'data-acquia-lift-personalization' => $personalization_name,
+      'data-acquia-lift-audience' => $audience_name,
+    ),
+    '#attached' => array(
+      'library' => array(
+        array('acquia_lift', 'acquia_lift.help'),
+      ),
+    ),
+  );
+  return $build;
+}
+
+/**
+ * Generates a message to show when there is insufficient confidence in the
+ * test results.
+ *
+ * @return string
+ */
+function _get_low_confidence_message($confidence_measure) {
+  return t('There is not enough data to declare a winner with @confidence% confidence. Consider letting the test run longer before using the results.', array(
+    '@confidence' => $confidence_measure,
+  ));
+}
+
+  /**
+   * Generates the variation abbreviated label.
+   *
+   * @param $counter
+   *   Indicates the number for the variation.
+   * @param $is_control
+   *   True if this is the control option.
+   */
+function _get_variation_label($counter, $is_control) {
+  if ($is_control) {
+    return t('Control');
+  }
+  else {
+    if (!$counter) {
+      $counter = 1;
+    }
+    return t('V@num', array('@num' => $counter));
+  }
+}
+
+
+/**
+ * Formats a percentage value for use in reports.
+ *
+ * @param $value
+ *   The number to show as a percentage.
+ * @param bool $include_sign
+ *   True to include positive/negative sign indicators.
+ * @param $trim
+ *   Boolean indicating whether the number should be trimmed of trailing 0s.
+ * @param $decimals
+ *   The number of decimal places to display.
+ * @param $padding
+ *   The total number of characters (including decimal) for padding of the
+ *   final number.  This allows numbers to align properly  in column views.
+ *   This will have no effect if trim is set to true.
+ * @return string
+ *   The formatted number to display.
+ */
+function _format_report_percentage($value, $include_sign = FALSE, $trim = TRUE, $decimals = 2, $padding = 1) {
+  $percent = (float) $value * 100;
+  if ($percent > 0 && $include_sign) {
+    return '+' . _format_report_number($percent, $trim, $decimals, $padding) . '%';
+  }
+  return _format_report_number($percent, $trim, $decimals, $padding) . '%';
+}
+
+  /**
+   * Formats a number value for use in reports.
+   *
+   * @param $value
+   *   The number of format (or an empty value).
+   * @param $trim
+   *   Boolean indicating whether the number should be trimmed of trailing 0s.
+   * @param $decimals
+   *   The number of decimal places to display.
+   * @param $padding
+   *   The total number of characters to pad to the left of the decimal point.
+   * @return string
+   *   The formatted number to display.
+   */
+function _format_report_number($value, $trim = TRUE, $decimals = 2, $padding = 1) {
+  if (is_numeric($value)) {
+    $value = number_format($value, $decimals);
+    if ($trim && strpos('.', $value) !== FALSE) {
+      $value = rtrim(rtrim($value, '0'), '.');
+    }
+    if ($padding > 0) {
+      $value = str_pad($value, $padding, '0', STR_PAD_LEFT);
+    }
+  }
+  if (empty($value)) {
+    $value = 0;
+
+  }
+  return $value;
 }

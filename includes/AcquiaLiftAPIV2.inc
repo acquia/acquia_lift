@@ -329,12 +329,11 @@ class AcquiaLiftAPIV2 extends AcquiaLiftAPIBase implements AcquiaLiftLearnReport
    * Implements AcquiaLiftLearnReportDataSourceInterface::getReportForDateRange().
    */
   public function getReportForDateRange($name, $from, $to) {
-    if ($from == $to) {
-      $days = 1;
+    if ($from != $to && ($interval = date_diff(date_create($from), date_create($to)))) {
+      $days = $interval->format('%d');
     }
     else {
-      $interval = date_diff(date_create($from), date_create($to));
-      $days = $interval->format('%d');
+      $days = 1;
     }
     $date = new DateTime($from, new DateTimeZone("UTC"));
     $from = $date->format("Y-m-d\TH:i:s\Z");

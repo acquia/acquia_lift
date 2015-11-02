@@ -205,7 +205,7 @@ class AcquiaLiftAPI implements AcquiaLiftLearnReportDataSourceInterface {
     // This method is only ever called within the context of a simpletest web
     // test, so the call to variable_get() is ok here.
     $test_data = variable_get('acquia_lift_web_test_data', array());
-    self::$instance->setHttpClient(new DummyAcquiaLiftHttpClient(ACQUIA_LIFT_TESTING_AGENT_V2, $broken_http_client, $test_data, $simulate_client_side_breakage));
+    self::$instance->setHttpClient(new DummyAcquiaLiftHttpClient($broken_http_client, $test_data, $simulate_client_side_breakage));
     self::$instance->setLogger(new AcquiaLiftTestLogger(FALSE));
   }
 
@@ -815,7 +815,7 @@ class AcquiaLiftAPI implements AcquiaLiftLearnReportDataSourceInterface {
     $nonce = self::nonce();
     $timestamp = time();
     $this->prepareRequest('PUT', $url, $headers, $payload, $nonce, $timestamp);
-    $response = $this->httpClient()->put($url, $headers, $body);
+    $response = $this->httpClient()->put($url, $headers, $payload);
     if ($response->code == 200) {
       $this->logger()->log(PersonalizeLogLevel::INFO, $success_msg, $vars);
     }
@@ -847,7 +847,7 @@ class AcquiaLiftAPI implements AcquiaLiftLearnReportDataSourceInterface {
     $nonce = self::nonce();
     $timestamp = time();
     $this->prepareRequest('POST', $url, $headers, $payload, $nonce, $timestamp);
-    $response = $this->httpClient()->post($url, $headers, $body);
+    $response = $this->httpClient()->post($url, $headers, $payload);
     if ($response->code == 200) {
       $this->logger()->log(PersonalizeLogLevel::INFO, $success_msg, $vars);
     }

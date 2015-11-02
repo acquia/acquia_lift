@@ -22,5 +22,5 @@ files[] = includes/AcquiaLiftLearnReportDataSourceInterface.inc
 files[] = includes/AcquiaLiftReportFactory.inc
 files[] = includes/AcquiaLiftDrupalHttpClientInterface.inc
 files[] = includes/AcquiaLiftDrupalHttpClient.inc
-files[] = tests/acquia_lift_v2.test
-files[] = tests/AcquiaLiftAPIV2.test
+files[] = tests/acquia_lift.test
+files[] = tests/AcquiaLiftAPI.test

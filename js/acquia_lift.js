@@ -2,10 +2,9 @@
 
 Drupal.acquia_lift_target = (function() {
 
-  var agentRules = {}, initialized = false, v2_enabled = false;
+  var agentRules = {}, initialized = false;
 
   function init() {
-    v2_enabled = Drupal.settings.acquia_lift.api_class == 'acquiaLiftV2API';
     var i, optionSet, agentName;
     var option_sets = Drupal.settings.personalize.option_sets;
     var agent_map = Drupal.settings.personalize.agent_map;
@@ -111,7 +110,7 @@ Drupal.acquia_lift_target = (function() {
       }
 
       var callback_wrapper = function(decisions, policy, audience) {
-        if (v2_enabled && policy != "repeat") {
+        if (policy != "repeat") {
           writeDecisionsToStorage(agent_name, decisions, policy, null, audience);
           // In theory there could be mulitple desicions here (if it's an MVT), in
           // which case we'll concatenate the decision names and the choice names,
@@ -214,35 +213,35 @@ Drupal.acquia_lift_target = (function() {
       if (!initialized) {
         init();
       }
-      if (v2_enabled) {
-        var stored = readDecisionsFromStorage(agent_name);
-        if (stored && stored.hasOwnProperty('decisions')) {
-          // First see if this goal was already attained.
-          var goals = stored.hasOwnProperty('goals') ? stored.goals : [];
-          if (goals.indexOf(goal_name) !== -1) {
-            return;
-          }
 
-          goals.push(goal_name);
-          writeDecisionsToStorage(agent_name, stored.decisions, stored.policy, goals, stored.audience);
-          // In theory there could be mulitple desicions here (if it's an MVT), in
-          // which case we'll concatenate the decision names and the choice names,
-          // separated by ','.
-          var decision_str = '', choice_str = '', index = 0;
-          for (var decision_name in stored.decisions) {
-            if (stored.decisions.hasOwnProperty(decision_name)) {
-              if (index > 0) {
-                decision_str += ',';
-                choice_str += ',';
-              }
-              decision_str += decision_name;
-              choice_str += stored.decisions[decision_name];
-              index++;
-            }
-          }
-          $(document).trigger('liftGoal', [agent_name, stored.audience, decision_str, choice_str, stored.policy, goal_name, value ]);
+      var stored = readDecisionsFromStorage(agent_name);
+      if (stored && stored.hasOwnProperty('decisions')) {
+        // First see if this goal was already attained.
+        var goals = stored.hasOwnProperty('goals') ? stored.goals : [];
+        if (goals.indexOf(goal_name) !== -1) {
+          return;
         }
+
+        goals.push(goal_name);
+        writeDecisionsToStorage(agent_name, stored.decisions, stored.policy, goals, stored.audience);
+        // In theory there could be mulitple desicions here (if it's an MVT), in
+        // which case we'll concatenate the decision names and the choice names,
+        // separated by ','.
+        var decision_str = '', choice_str = '', index = 0;
+        for (var decision_name in stored.decisions) {
+          if (stored.decisions.hasOwnProperty(decision_name)) {
+            if (index > 0) {
+              decision_str += ',';
+              choice_str += ',';
+            }
+            decision_str += decision_name;
+            choice_str += stored.decisions[decision_name];
+            index++;
+          }
+        }
+        $(document).trigger('liftGoal', [agent_name, stored.audience, decision_str, choice_str, stored.policy, goal_name, value ]);
       }
+
       if (stored.hasOwnProperty("policy") && stored.policy == 'targeting') {
         return;
       }
@@ -301,7 +300,7 @@ Drupal.acquiaLiftLearn = (function() {
   function init() {
     initializeSession();
     settings = Drupal.settings.acquia_lift_learn;
-    api = Drupal.acquiaLiftV2API.getInstance();
+    api = Drupal.acquiaLiftAPI.getInstance();
     initialized = true;
   }
 

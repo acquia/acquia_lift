@@ -5,8 +5,14 @@
  * Integration tests for Acquia Lift module.
  */
 
-class AcquiaLiftV2WebTestBase extends DrupalWebTestCase
+class AcquiaLiftWebTestBase extends DrupalWebTestCase
 {
+  /**
+   * The string to use as the JavaScript path.
+   *
+   * @var string
+   */
+  protected $liftProfileJsPath = 'some.valid.javascript.path';
 
   protected static $agent_plugin = 'acquia_lift_learn';
   protected $adminUser;
@@ -25,7 +31,6 @@ class AcquiaLiftV2WebTestBase extends DrupalWebTestCase
     $this->managerUser = $this->drupalCreateUser(array('access administration pages', 'manage personalized content', 'administer visitor actions'));
     $this->configureAcquiaLiftAccount();
     $this->drupalLogin($this->managerUser);
-    variable_set('acquia_lift_v2_enabled', FALSE);
   }
 
   public function tearDown()
@@ -448,12 +453,12 @@ class AcquiaLiftV2WebTestBase extends DrupalWebTestCase
 
 }
 
-class AcquiaLiftV2WebTestConfig extends AcquiaLiftV2WebTestBase {
+class AcquiaLiftWebTestConfig extends AcquiaLiftWebTestBase {
 
   public static function getInfo() {
     return array(
-      'name' => t('Acquia Lift V2 Web Tests - Configuration'),
-      'description' => t('V2: Tests related to configuring Acquia Lift.'),
+      'name' => t('Acquia Lift Web Tests - Configuration'),
+      'description' => t('Tests related to configuring Acquia Lift.'),
       'group' => t('Personalize'),
     );
   }
@@ -511,12 +516,12 @@ class AcquiaLiftV2WebTestConfig extends AcquiaLiftV2WebTestBase {
   }
 }
 
-class AcquiaLiftV2WebTestVariationSets extends AcquiaLiftV2WebTestBase {
+class AcquiaLiftWebTestVariationSets extends AcquiaLiftWebTestBase {
 
   public static function getInfo() {
     return array(
-      'name' => t('Acquia Lift V2 Web Tests - Variation Sets'),
-      'description' => t('V2: Tests functionality related to variation set creation.'),
+      'name' => t('Acquia Lift Web Tests - Variation Sets'),
+      'description' => t('Tests functionality related to variation set creation.'),
       'group' => t('Personalize'),
     );
   }
@@ -551,11 +556,11 @@ class AcquiaLiftV2WebTestVariationSets extends AcquiaLiftV2WebTestBase {
   }
 }
 
-class AcquiaLiftV2WebTestAgentAdmin extends AcquiaLiftV2WebTestBase {
+class AcquiaLiftWebTestAgentAdmin extends AcquiaLiftWebTestBase {
   public static function getInfo() {
     return array(
-      'name' => t('Acquia Lift V2 Web Tests - Agent Administration'),
-      'description' => t('V2: Tests functionality of adminstering Acquia Lift agents and their components.'),
+      'name' => t('Acquia Lift Web Tests - Agent Administration'),
+      'description' => t('Tests functionality of adminstering Acquia Lift agents and their components.'),
       'group' => t('Personalize'),
     );
   }
@@ -734,11 +739,11 @@ class AcquiaLiftV2WebTestAgentAdmin extends AcquiaLiftV2WebTestBase {
   }
 }
 
-class AcquiaLiftV2WebTestFundamentals extends AcquiaLiftV2WebTestBase {
+class AcquiaLiftWebTestFundamentals extends AcquiaLiftWebTestBase {
   public static function getInfo() {
     return array(
-      'name' => t('Acquia Lift V2 Web Tests - Fundamentals'),
-      'description' => t('V2: Tests the module\'s underlying machinery.'),
+      'name' => t('Acquia Lift Web Tests - Fundamentals'),
+      'description' => t('Tests the module\'s underlying machinery.'),
       'group' => t('Personalize'),
     );
   }
@@ -861,11 +866,11 @@ class AcquiaLiftV2WebTestFundamentals extends AcquiaLiftV2WebTestBase {
   }
 }
 
-class AcquiaLiftV2WebTestReports extends AcquiaLiftV2WebTestBase {
+class AcquiaLiftWebTestReports extends AcquiaLiftWebTestBase {
   public static function getInfo() {
     return array(
-      'name' => t('Acquia Lift V2 Web Tests - Reporting'),
-      'description' => t('V2: Tests the reporting functionality for Acquia Lift.'),
+      'name' => t('Acquia Lift Web Tests - Reporting'),
+      'description' => t('Tests the reporting functionality for Acquia Lift.'),
       'group' => t('Personalize'),
     );
   }
@@ -1054,7 +1059,7 @@ class AcquiaLiftV2WebTestReports extends AcquiaLiftV2WebTestBase {
       $test_data = array_merge_recursive($test_data, array(
         // Now add the reports.
         'reports' => array(
-          $agent_name => AcquiaLiftTestReports::getBasicV2Report()
+          $agent_name => AcquiaLiftTestReports::getBasicReport()
         )
       ));
     }
@@ -1130,7 +1135,7 @@ debug($report['experiment']['reports']['conversion']['summary']);
     $test_data = array(
       // Now add the reports.
       'reports' => array(
-        $agent_name => AcquiaLiftTestReports::getBasicV2Report()
+        $agent_name => AcquiaLiftTestReports::getBasicReport()
       )
     );
     variable_set('acquia_lift_web_test_data', $test_data);
@@ -1298,11 +1303,11 @@ debug($report['experiment']['reports']['conversion']['summary']);
 
 }
 
-class AcquiaLiftV2WebTestWorkflow extends AcquiaLiftV2WebTestBase {
+class AcquiaLiftWebTestWorkflow extends AcquiaLiftWebTestBase {
   public static function getInfo() {
     return array(
-      'name' => t('Acquia Lift V2 Web Tests - Workflows'),
-      'description' => t('V2: Tests functionality related to particular personalization workflows.'),
+      'name' => t('Acquia Lift Web Tests - Workflows'),
+      'description' => t('Tests functionality related to particular personalization workflows.'),
       'group' => t('Personalize'),
     );
   }
@@ -1499,11 +1504,11 @@ class AcquiaLiftV2WebTestWorkflow extends AcquiaLiftV2WebTestBase {
   }
 }
 
-class AcquiaLiftV2WebTestTarget extends AcquiaLiftV2WebTestBase {
+class AcquiaLiftWebTestTarget extends AcquiaLiftWebTestBase {
   public static function getInfo() {
     return array(
-      'name' => t('Acquia Lift V2 Web Tests - Target'),
-      'description' => t('V2: Tests functionality related acquia_lift_target personalizations.'),
+      'name' => t('Acquia Lift Web Tests - Target'),
+      'description' => t('Tests functionality related acquia_lift_target personalizations.'),
       'group' => t('Personalize'),
     );
   }
@@ -2063,7 +2068,7 @@ class AcquiaLiftV2WebTestTarget extends AcquiaLiftV2WebTestBase {
       )
     );
     $this->assertEqual($settings['acquia_lift_target']['nested_tests'], $expected);
-    $this->assertEqual($settings['acquia_lift']['api_class'], 'acquiaLiftV2API');
+    $this->assertEqual($settings['acquia_lift']['api_class'], 'acquiaLiftAPI');
     $this->assertEqual($settings['acquia_lift_learn']['baseUrl'], 'http://api.example.com');
     // Now let's place our personalized block and confirm that the settings are
     // still as they should be.
@@ -2084,7 +2089,7 @@ class AcquiaLiftV2WebTestTarget extends AcquiaLiftV2WebTestBase {
       )
     );
     $this->assertEqual($settings['acquia_lift_target']['nested_tests'], $expected);
-    $this->assertEqual($settings['acquia_lift']['api_class'], 'acquiaLiftV2API');
+    $this->assertEqual($settings['acquia_lift']['api_class'], 'acquiaLiftAPI');
     $this->assertEqual($settings['acquia_lift_learn']['baseUrl'], 'http://api.example.com');
   }
 
@@ -2621,9 +2626,9 @@ class AcquiaLiftV2WebTestTarget extends AcquiaLiftV2WebTestBase {
 /**
  * Base class for all campaign wizard tests.
  *
- * Class AcquiaLiftV2WebTestCampaignWizardBase
+ * Class AcquiaLiftWebTestCampaignWizardBase
  */
-class AcquiaLiftV2WebTestCampaignWizardBase extends AcquiaLiftV2WebTestBase {
+class AcquiaLiftWebTestCampaignWizardBase extends AcquiaLiftWebTestBase {
   protected $addVariationSetElement;
   protected $changeTypeElement;
   protected $addTargetAudienceElement;
@@ -2641,14 +2646,14 @@ class AcquiaLiftV2WebTestCampaignWizardBase extends AcquiaLiftV2WebTestBase {
 
 }
 
-class AcquiaLiftV2WebTestCampaignWizardVariations extends AcquiaLiftV2WebTestCampaignWizardBase {
+class AcquiaLiftWebTestCampaignWizardVariations extends AcquiaLiftWebTestCampaignWizardBase {
 
 
 
   public static function getInfo() {
     return array(
-      'name' => t('Acquia Lift V2 Web Tests - Personalization Wizard Variations'),
-      'description' => t('V2: Tests functionality related to the personalization management wizard variation sets.'),
+      'name' => t('Acquia Lift Web Tests - Personalization Wizard Variations'),
+      'description' => t('Tests functionality related to the personalization management wizard variation sets.'),
       'group' => t('Personalize'),
     );
   }
@@ -3224,7 +3229,7 @@ class AcquiaLiftV2WebTestCampaignWizardVariations extends AcquiaLiftV2WebTestCam
   }
 }
 
-class AcquiaLiftV2WebTestCampaignWizardTargeting extends AcquiaLifTV2WebTestCampaignWizardBase {
+class AcquiaLiftWebTestCampaignWizardTargeting extends AcquiaLiftWebTestCampaignWizardBase {
   public static function getInfo() {
     return array(
       'name' => t('Acquia Lift Web Tests - Personalization Wizard Targeting'),
@@ -3681,12 +3686,12 @@ class AcquiaLiftV2WebTestCampaignWizardTargeting extends AcquiaLifTV2WebTestCamp
   }
 }
 
-class AcquiaLiftV2WebTestCampaignWizard extends AcquiaLiftV2WebTestCampaignWizardBase {
+class AcquiaLiftWebTestCampaignWizard extends AcquiaLiftWebTestCampaignWizardBase {
 
   public static function getInfo() {
     return array(
-      'name' => t('Acquia Lift V2 Web Tests - Personalization Wizard Goals'),
-      'description' => t('V2: Tests functionality related to the personalization management wizard goals forms.'),
+      'name' => t('Acquia Lift Web Tests - Personalization Wizard Goals'),
+      'description' => t('Tests functionality related to the personalization management wizard goals forms.'),
       'group' => t('Personalize'),
     );
   }
@@ -3993,12 +3998,12 @@ class AcquiaLiftV2WebTestCampaignWizard extends AcquiaLiftV2WebTestCampaignWizar
   }
 }
 
-class AcquiaLiftV2WebTestCampaignWizardReview extends AcquiaLiftV2WebTestCampaignWizardBase {
+class AcquiaLiftWebTestCampaignWizardReview extends AcquiaLiftWebTestCampaignWizardBase {
 
   public static function getInfo() {
     return array(
       'name' => t('Acquia Lift Web Tests - Personalization Wizard - Review'),
-      'description' => t('V2: Tests functionality related to the personalization management wizard review and status.'),
+      'description' => t('Tests functionality related to the personalization management wizard review and status.'),
       'group' => t('Personalize'),
     );
   }

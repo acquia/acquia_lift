@@ -7,7 +7,7 @@
 
 (function ($, Drupal) {
   var instance;
-  Drupal.acquiaLiftV2API = (function () {
+  Drupal.acquiaLiftAPI = (function () {
 
     /**
      * The Singleton API instance.  All callers will be accessing the functions

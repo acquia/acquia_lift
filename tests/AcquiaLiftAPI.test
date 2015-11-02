@@ -5,12 +5,12 @@
  * Unit tests for Acquia Lift module.
  */
 
-class AcquiaLiftV2Test extends DrupalUnitTestCase {
+class AcquiaLiftTest extends DrupalUnitTestCase {
 
   public static function getInfo() {
     return array(
-      'name' => t('Acquia Lift API V2 Unit Tests'),
-      'description' => t('Unit tests for AcquiaLiftAPIV2 methods.'),
+      'name' => t('Acquia Lift API Unit Tests'),
+      'description' => t('Unit tests for AcquiaLiftAPI methods.'),
       'group' => t('Personalize'),
     );
   }
@@ -460,13 +460,13 @@ class AcquiaLiftV2Test extends DrupalUnitTestCase {
       $agents[] = $agent;
     }
 
-    $lift_api->setHttpClient(new DummyAcquiaLiftHttpClient(ACQUIA_LIFT_TESTING_AGENT_V2, FALSE, array('campaigns' => $agents)));
+    $lift_api->setHttpClient(new DummyAcquiaLiftHttpClient(FALSE, array('campaigns' => $agents)));
     $lift_api->setLogger(new AcquiaLiftTestLogger());
     // Try to get a unique name based on 'first-agent'
     $new_name = $lift_api->ensureUniqueAgentName($agent_codes[0], 64);
     $this->assertEqual('first-agent-2', $new_name);
     // Try to get a unique name based on a long string.
-    $new_name = $lift_api->ensureUniqueAgentName('abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz', 64);
+    $new_name = $lift_api->ensureUniqueAgentName('abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz', 50);
     $this->assertEqual('abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuv-1', $new_name);
 
     // Now try with a max length restriction that is shorter than the one
@@ -575,7 +575,7 @@ class AcquiaLiftV2Test extends DrupalUnitTestCase {
 
     // Create a dummy http client for the Acquia Lift API to use. All
     // requests to it will be logged and retrievable for checking later.
-    $this->httpClient = new DummyAcquiaLiftHttpClient(ACQUIA_LIFT_TESTING_AGENT_V2, $broken);
+    $this->httpClient = new DummyAcquiaLiftHttpClient($broken);
     $lift_api->setHttpClient($this->httpClient);
     if ($this->logger === NULL) {
       // Create a dummy logger instance which will maintain a log in memory

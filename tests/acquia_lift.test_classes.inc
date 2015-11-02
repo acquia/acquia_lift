@@ -17,7 +17,6 @@ class DummyAcquiaLiftHttpClient implements AcquiaLiftDrupalHttpClientInterface {
    */
   protected static $requests_received;
 
-  protected $version;
   /**
    * Whether or not this http client should return 500 errors.
    *
@@ -73,8 +72,7 @@ class DummyAcquiaLiftHttpClient implements AcquiaLiftDrupalHttpClientInterface {
    * @param array $data
    *   An array of dummy data that can be returned in responses.
    */
-  public function __construct($version, $broken = FALSE, $data = array(), $simulate_client_side_breakage = FALSE) {
-    $this->version = $version;
+  public function __construct($broken = FALSE, $data = array(), $simulate_client_side_breakage = FALSE) {
     $this->broken = $broken;
     $this->breakageType = $simulate_client_side_breakage ? 'client' : 'server';
     $this->data += $data;
@@ -228,7 +226,7 @@ class AcquiaLiftTestLogger implements PersonalizeLoggerInterface {
  */
 class AcquiaLiftTestReports {
 
-  public static function getBasicV2Report() {
+  public static function getBasicReport() {
     return array(
       'results' => array(
         array (

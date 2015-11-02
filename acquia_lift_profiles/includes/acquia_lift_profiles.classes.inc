@@ -142,7 +142,7 @@ class ALProfilesAPI {
     module_load_include('inc', 'acquia_lift_profiles', 'tests/acquia_lift_profiles.test_classes');
     self::$instance = new self('TESTACCOUNT', 'TESTSITE', 'http://api.example.com', 'testUser', 'testPass');
     $test_data = variable_get('acquia_lift_profiles_web_test_data', array());
-    self::$instance->setHttpClient(new DummyALProfilesHttpClient(ACQUIA_LIFT_TESTING_AGENT_V1, $broken_http_client, $test_data));
+    self::$instance->setHttpClient(new DummyALProfilesHttpClient($broken_http_client, $test_data));
     self::$instance->setLogger(new AcquiaLiftTestLogger(TRUE));
   }
 

@@ -485,7 +485,7 @@ function readCookieQueue() {
 function initializeLiftSettings() {
   Drupal.settings.personalize = Drupal.settings.personalize || {};
   Drupal.settings.acquia_lift = Drupal.settings.acquia_lift || {};
-  Drupal.settings.acquia_lift.api_class = 'acquiaLiftV2API';
+  Drupal.settings.acquia_lift.api_class = 'acquiaLiftAPI';
   Drupal.settings.acquia_lift_learn = Drupal.settings.acquia_lift_learn || {};
   Drupal.settings.acquia_lift_learn.baseUrl = 'http://api.example.com';
   Drupal.settings.acquia_lift_learn.clientId = 'ohai';

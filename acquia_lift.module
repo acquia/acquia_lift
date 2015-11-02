@@ -1175,7 +1175,7 @@ EOT;
         array(
           'data' => array(
             'acquia_lift' => array(
-              'api_class' => 'acquiaLiftV2API'
+              'api_class' => 'acquiaLiftAPI'
             ),
             'personalize' => array(
               'cacheExpiration' => array(

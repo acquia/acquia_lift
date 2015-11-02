@@ -721,9 +721,7 @@ function acquia_lift_report($form, &$form_state, $agent_data) {
     }
     $test_label = $option_set->targeting[$name]['label'];
   }
-  if (isset($_GET['use_old_stats']) || !empty($form_state['values']['use_old_stats'])) {
-    $use_old_stats = TRUE;
-  }
+  $use_old_stats = isset($_GET['use_old_stats']) || !empty($form_state['values']['use_old_stats']);
   $form['use_old_stats'] = array(
     '#type' => 'hidden',
     '#value' => $use_old_stats

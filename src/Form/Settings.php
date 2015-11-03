@@ -65,7 +65,8 @@ class Settings extends ConfigFormBase {
       '#type' => 'password',
       '#title' => t('API Secret Key'),
       '#default_value' => $config->get('secret_key'),
-      '#required' => TRUE,
+      '#required' => empty($config->get('secret_key')),
+      '#description' => !empty($config->get('secret_key')) ? t('Only necessary if updating') : '',
     );
     return parent::buildForm($form, $form_state);
   }
@@ -77,11 +78,14 @@ class Settings extends ConfigFormBase {
     $values = $form_state->getValues();
     $config = $this->config('acquia_lift.settings');
 
+    if (!empty($values['secret_key'])) {
+      $config->set('secret_key', $values['secret_key']);
+    }
+
     $config->set('account_name', $values['account_name'])
       ->set('site_name', $values['site_name'])
       ->set('api_url', $values['api_url'])
       ->set('access_key', $values['access_key'])
-      ->set('secret_key', $values['secret_key'])
       ->save();
 
     parent::submitForm($form, $form_state);

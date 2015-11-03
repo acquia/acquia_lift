@@ -1,0 +1,5 @@
+acquia_lift.settings:
+  title: 'Acquia Lift settings'
+  description: 'Configure Acquia Lift settings.'
+  route_name: acquia_lift.settings
+  parent: 'system.admin_config_content'

@@ -967,8 +967,10 @@ function acquia_lift_update_7205() {
         personalize_agent_set_status($name, PERSONALIZE_STATUS_COMPLETED);
       }
     }
-    $names = array_keys($agents);
-    drupal_set_message(t("The following v1 tests have been retired: @agents", array("@agents" => implode(',', $names))));
+    if (!empty($agents)) {
+      $names = array_keys($agents);
+      drupal_set_message(t("The following v1 tests have been retired: @agents", array("@agents" => implode(',', $names))));
+    }
   }
 }
 

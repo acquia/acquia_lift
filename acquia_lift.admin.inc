@@ -624,8 +624,7 @@ function acquia_lift_report($form, &$form_state, $agent_data) {
   }
   $date_upgraded = variable_get('acquia_lift_report_upgrade_timestamp', 0);
   if ($agent_data->started < $date_upgraded) {
-    $missing_report_data = TRUE;
-    drupal_set_message(t('Only displaying data starting from @date, which is the date Lift was upgraded to use the new reporting API. If the personalization contains tests, the old reports for these tests are still available at the links provided.', array('@date' => date('Y-m-d', $date_upgraded))));
+    drupal_set_message(t('Only displaying data starting from @date, which is the date Lift was upgraded to use the new reporting API. Click !here to show the old reports for any tests contained in this personalization', array('@date' => date('Y-m-d', $date_upgraded), '!here' => l('here', $_GET['q'], array('query' => array('use_old_stats' => 1))))));
   }
   $option_set = acquia_lift_get_option_set_for_targeting($agent_data->machine_name);
   $option_ids = array_map(function($option) {return $option['option_id'];}, $option_set->options);
@@ -1418,6 +1417,26 @@ function acquia_lift_target_audience_save($label, $agent_name, $contexts, $strat
   }
 }
 
+function acquia_lift_target_audience_copy($option_set, $audience_to_copy, $new_machine_name = NULL, $new_label = NULL, $weight = NULL) {
+  // Create a function for checking unique qudience names within an option set.
+  $all_audience_names = array_keys($option_set->targeting);
+  $name_check_callback = function($name) use ($all_audience_names) {
+    return in_array($name, $all_audience_names);
+  };
+  $label = empty($new_label) ? $option_set->targeting[$audience_to_copy]['label'] : $new_label;
+  $machine_name = empty($machine_name) ? personalize_generate_machine_name($label, $name_check_callback, '-') : $machine_name;
+  // Copy the necessary info from the existing audience.
+  $option_set->targeting[$machine_name] = array(
+    'label' => $label,
+    'weight' => empty($weight) ? $option_set->targeting[$audience_to_copy]['weight'] : $weight,
+    'targeting_features' => $option_set->targeting[$audience_to_copy]['targeting_features'],
+    'targeting_rules' => $option_set->targeting[$audience_to_copy]['targeting_rules'],
+    'targeting_strategy' => $option_set->targeting[$audience_to_copy]['targeting_strategy'],
+  );
+  personalize_option_set_save($option_set);
+  return $machine_name;
+}
+
 /**
  * Implements the structure, including all sub-tests, required by the targeting.
  *
@@ -1450,10 +1469,6 @@ function acquia_lift_implement_test_structure($agent_data) {
  *
  * @param stdClass $agent
  *   The agent to create the targeting structure for.
- *
- * @return array
- *   An array of agent names that have been deleted and therefore need to be
- *   deleted in Lift.
  */
 function acquia_lift_implement_targeting($agent) {
   if (empty($agent->data['lift_targeting'])) {
@@ -1479,8 +1494,7 @@ function acquia_lift_implement_targeting($agent) {
   $targeting_option_set = acquia_lift_get_option_set_for_targeting($agent->machine_name);
   // Make sure we only have one reference to the targeting option set.
   $all_option_sets[$targeting_option_set->osid] = $targeting_option_set;
-  $existing_structure = acquia_lift_get_structure_from_targeting($targeting_option_set);
-
+  $existing_structure = acquia_lift_get_structure_from_targeting($targeting_option_set, FALSE);
   // Any target audience that has multiple variations in it has a test running.
   $existing_tests = $existing_options = array();
   foreach ($existing_structure as $audience => $variations) {
@@ -1491,23 +1505,45 @@ function acquia_lift_implement_targeting($agent) {
       $existing_options[$audience] = reset($variations);
     }
   }
+
   // Now look at the tests and options required by the new structure.
-  $rules = $new_tests = $new_options = array();
+  $rules = $new_tests = $new_options = $remove_audiences = array();
   foreach ($agent->data['lift_targeting'] as $new_audience => $variations) {
+    $audience_name = $new_audience;
     if (count($variations) == 1) {
-      $new_options[$new_audience] = reset($variations);
+      if (isset($existing_structure[$audience_name]) && count($existing_structure[$audience_name]) > 1) {
+        // This used to be a test - create a new audience so that the new
+        // reporting data won't interfere with the reporting data for the test.
+        $new_name = acquia_lift_target_audience_copy($targeting_option_set, $audience_name);
+        // Reload the option set.
+        $targeting_option_set = personalize_option_set_load($targeting_option_set->osid, TRUE);
+        // Mark the old audience for removal
+        $remove_audiences[] = $audience_name;
+        $audience_name = $new_name;
+      }
+      $new_options[$audience_name] = reset($variations);
       continue;
     }
-    // See if this variation combination already exists as a test.
-    foreach ($existing_tests as $existing_audience => $vars) {
-      if ($variations == $vars) {
-        $rules[$new_audience] = $existing_audience;
+    if (isset($existing_structure[$audience_name])) {
+      if ($existing_structure[$audience_name] != $variations) {
+        // This audience is getting a different test from what it had before -
+        // change its name so that the old test report will still make sense.
+        $new_name = acquia_lift_target_audience_copy($targeting_option_set, $audience_name);
+        // Reload the option set.
+        $targeting_option_set = personalize_option_set_load($targeting_option_set->osid, TRUE);
+        // Mark the original audience for removal.
+        $remove_audiences[] = $audience_name;
+        $audience_name = $new_name;
+      }
+      else {
+        $rules[$audience_name] = $audience_name;
       }
     }
+
     // If we didn't find an existing test corresponding to this combination,
     // we'll need to create a new one.
-    if (!isset($rules[$new_audience])) {
-      $new_tests[$new_audience] = $variations;
+    if (!isset($rules[$audience_name])) {
+      $new_tests[$audience_name] = $variations;
     }
   }
   // Keep track of nested agents that get deleted.
@@ -1515,13 +1551,6 @@ function acquia_lift_implement_targeting($agent) {
     if (!in_array($audience, $rules)) {
       // Delete the old test if it's no longer being used.
       acquia_lift_remove_nested_test($targeting_option_set, $audience, $agent);
-    }
-    else {
-      // Change the audience for the test if necessary.
-      $new_audience = array_search($audience, $rules);
-      if ($new_audience != $audience) {
-        acquia_lift_set_audience_for_test($targeting_option_set, $audience, $new_audience);
-      }
     }
   }
   foreach ($existing_options as $audience => $option) {
@@ -1538,6 +1567,12 @@ function acquia_lift_implement_targeting($agent) {
     acquia_lift_set_option_for_audience($targeting_option_set, $option, $audience);
   }
 
+  // Remove any audiences that are now defunct.
+  foreach ($remove_audiences as $audience_name) {
+    unset($targeting_option_set->targeting[$audience_name]);
+  }
+  // Refresh the reference to teh targeting option set, in case it got reloaed.
+  $all_option_sets[$targeting_option_set->osid] = $targeting_option_set;
   // Go through any other option sets for this personalization, assign the same
   // decision name and option IDs to each of them, and copy the targeting infor-
   // mation to them.
@@ -1763,7 +1798,7 @@ function acquia_lift_save_targeting_structure($agent, $targeting) {
  *   An associative array whose keys are target audiences and whose values are
  *   arrays of option IDs.
  */
-function acquia_lift_get_structure_from_targeting($option_set) {
+function acquia_lift_get_structure_from_targeting($option_set, $include_empty_audiences = TRUE) {
   if (empty($option_set->targeting)) {
     return array();
   }
@@ -1783,6 +1818,9 @@ function acquia_lift_get_structure_from_targeting($option_set) {
     }
     elseif (isset($targ['option_id'])) {
       $targeting_structure[$name][] = $targ['option_id'];
+    }
+    if (!$include_empty_audiences && empty($targeting_structure[$name])) {
+      unset($targeting_structure[$name]);
     }
   }
   return $targeting_structure;

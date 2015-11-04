@@ -1887,9 +1887,10 @@ class AcquiaLiftWebTestTarget extends AcquiaLiftWebTestBase {
     // This audience should not have an option id property.
     $this->assertFalse(isset($parent_option_set->targeting[$second_audience]['option_id']));
     // Confirm the option_id property is now on the original audience.
-    $this->assertEqual($option_ids[2], $parent_option_set->targeting[$audience_name]['option_id']);
+    $first_audience = $audience_name . '-2'; // Machine name will have changed.
+    $this->assertEqual($option_ids[2], $parent_option_set->targeting[$first_audience]['option_id']);
     // It should no longer have an osid property.
-    $this->assertFalse(isset($parent_option_set->targeting[$audience_name]['osid']));
+    $this->assertFalse(isset($parent_option_set->targeting[$first_audience]['osid']));
 
     // Now let's place our personalized block so we can test how it gets rendered.
     $admin_user = $this->drupalCreateUser(array('access administration pages', 'manage personalized content', 'administer blocks'));
@@ -1916,7 +1917,7 @@ class AcquiaLiftWebTestTarget extends AcquiaLiftWebTestBase {
 
     // Change the targeting structure again to have two nested tests.
     $targeting = array(
-      $audience_name => array($option_ids[0], $option_ids[1]),
+      $first_audience => array($option_ids[0], $option_ids[1]),
       $second_audience => array($option_ids[0], $option_ids[2])
     );
     // Update another test option too.
@@ -1959,11 +1960,14 @@ class AcquiaLiftWebTestTarget extends AcquiaLiftWebTestBase {
       }
     }
     if (isset($nested_osid2)) {
-      // Confirm that the correct osid is assigend to each of the two target
+      // Confirm that the correct osid is assigned to each of the two target
       // audiences.
       $parent_option_set = personalize_option_set_load($parent_option_set->osid, TRUE);
       $this->assertEqual(3, count($parent_option_set->targeting));
-      foreach (array($audience_name => $nested_osid, $second_audience => $nested_osid2) as $audience => $osid) {
+      // THe first audience's name will have changed again.
+      $first_audience = $audience_name . '-3';
+      debug(array_keys($parent_option_set->targeting));
+      foreach (array($first_audience => $nested_osid, $second_audience => $nested_osid2) as $audience => $osid) {
         $this->assertEqual($osid, $parent_option_set->targeting[$audience]['osid']);
         $this->assertFalse(isset($parent_option_set->targeting[$audience]['option_id']));
       }
@@ -2618,6 +2622,108 @@ class AcquiaLiftWebTestTarget extends AcquiaLiftWebTestBase {
     // Confirm that the control variation has the correct option id.
     $this->assertEqual(PERSONALIZE_CONTROL_OPTION_ID,
       $option_set_settings['osid-' . $elements_os->osid]['options'][0]['option_id']);
+  }
+
+  function testAudienceChanges() {
+    module_load_include('inc', 'acquia_lift', 'acquia_lift.admin');
+    // First, set up our agent, option set, audience and desired targeting
+    // structure.
+    $agent = $this->createTargetingAgent();
+    $parent_option_set = $this->createPersonalizedBlock(0, $agent, 3);
+
+    // Keep the option ids in an array.
+    $option_ids = array();
+    foreach ($parent_option_set->options as $option) {
+      $option_ids[] = $option['option_id'];
+    }
+
+    $this->resetAll();
+    $first_audience = personalize_generate_machine_name($this->randomName(), NULL, '-');
+    $this->createTargetAudience($parent_option_set, $first_audience);
+    $second_audience = personalize_generate_machine_name($this->randomName(), NULL, '-');
+    $this->createTargetAudience($parent_option_set, $second_audience);
+    $targeting = array(
+      $first_audience => array($option_ids[1], $option_ids[2]),
+      $second_audience => array($option_ids[0]),
+    );
+    acquia_lift_save_targeting_structure($agent, $targeting);
+    // Now implement the targeting structure..
+    AcquiaLiftAPI::setTestInstance();
+    acquia_lift_implement_targeting($agent);
+    $this->resetAll();
+    $os = acquia_lift_get_option_set_for_targeting($agent->machine_name);
+
+    // There should be three audiences - the two we created plus the "everyone"
+    // audience.
+    $this->assertEqual(3, count(array_keys($os->targeting)));
+    // The first audience should have an osid but no option_id
+    $this->assertTrue(isset($os->targeting[$first_audience]));
+    $this->assertTrue(isset($os->targeting[$first_audience]['osid']));
+    $this->assertFalse(isset($os->targeting[$first_audience]['option_id']));
+    // The second audience should have an option_id but no osid
+    $this->assertTrue(isset($os->targeting[$second_audience]));
+    $this->assertFalse(isset($os->targeting[$second_audience]['osid']));
+    $this->assertTrue(isset($os->targeting[$second_audience]['option_id']));
+
+    // Now change the structure so that that the first audience no longer gets a
+    // test and the second one gets a test.
+    $targeting2 = array(
+      $first_audience => array($option_ids[0]),
+      $second_audience => array($option_ids[1], $option_ids[2]),
+    );
+    acquia_lift_save_targeting_structure($agent, $targeting2);
+    AcquiaLiftAPI::setTestInstance();
+    acquia_lift_implement_targeting($agent);
+    $this->resetAll();
+    $os = acquia_lift_get_option_set_for_targeting($agent->machine_name);
+
+    $this->assertEqual(3, count(array_keys($os->targeting)));
+    // The first audience's name should have been changed.
+    $this->assertFalse(isset($os->targeting[$first_audience]));
+    $new_first_audience = $first_audience . '-2';
+    // The new first audience should now have an option_id but no osid.
+    $this->assertTrue(isset($os->targeting[$new_first_audience]));
+    $this->assertFalse(isset($os->targeting[$new_first_audience]['osid']));
+    $this->assertTrue(isset($os->targeting[$new_first_audience]['option_id']));
+    $this->assertEqual('option-1', $os->targeting[$new_first_audience]['option_id']);
+    // The second audience's name should also have been changed.
+    $this->assertFalse(isset($os->targeting[$second_audience]));
+    $new_second_audience = $second_audience . '-2';
+    // The second audience should have an option_id but no osid
+    $this->assertTrue(isset($os->targeting[$new_second_audience]));
+    $this->assertTrue(isset($os->targeting[$new_second_audience]['osid']));
+    $this->assertFalse(isset($os->targeting[$new_second_audience]['option_id']));
+
+    // The original test that existed for the first audience should now exist
+    // as a retired test.
+    $retired = acquia_lift_get_retired_tests($agent->machine_name);
+    $this->assertEqual(1, count($retired));
+    $this->assertEqual($first_audience, $retired[0]->data['lift_audience']);
+
+
+    // Now change the first audience to get a different fixed targeting option.
+    // The audience name should stay the same.
+    $targeting3 = array(
+      $new_first_audience => array($option_ids[1]),
+      $new_second_audience => array($option_ids[1], $option_ids[2]),
+    );
+    acquia_lift_save_targeting_structure($agent, $targeting3);
+    AcquiaLiftAPI::setTestInstance();
+    acquia_lift_implement_targeting($agent);
+    $this->resetAll();
+    $os = acquia_lift_get_option_set_for_targeting($agent->machine_name);
+
+    $this->assertEqual(3, count(array_keys($os->targeting)));
+
+    // The new first audience should now have an option_id but no osid.
+    $this->assertTrue(isset($os->targeting[$new_first_audience]));
+    $this->assertFalse(isset($os->targeting[$new_first_audience]['osid']));
+    $this->assertTrue(isset($os->targeting[$new_first_audience]['option_id']));
+    $this->assertEqual('option-2', $os->targeting[$new_first_audience]['option_id']);
+    // The second audience should be the same as before.
+    $this->assertTrue(isset($os->targeting[$new_second_audience]));
+    $this->assertTrue(isset($os->targeting[$new_second_audience]['osid']));
+    $this->assertFalse(isset($os->targeting[$new_second_audience]['option_id']));
   }
 }
 

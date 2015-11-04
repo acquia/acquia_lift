@@ -1424,7 +1424,7 @@ function acquia_lift_target_audience_copy($option_set, $audience_to_copy, $new_m
     return in_array($name, $all_audience_names);
   };
   $label = empty($new_label) ? $option_set->targeting[$audience_to_copy]['label'] : $new_label;
-  $machine_name = empty($machine_name) ? personalize_generate_machine_name($label, $name_check_callback, '-') : $machine_name;
+  $machine_name = empty($new_machine_name) ? personalize_generate_machine_name($audience_to_copy, $name_check_callback, '-') : $new_machine_name;
   // Copy the necessary info from the existing audience.
   $option_set->targeting[$machine_name] = array(
     'label' => $label,

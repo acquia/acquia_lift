@@ -1846,6 +1846,8 @@ class AcquiaLiftWebTestTarget extends AcquiaLiftWebTestBase {
 
     $this->assertFalse(isset($parent_option_set->targeting[$audience_name]['osid']));
     $this->assertNotEqual($nested_osid, $parent_option_set->targeting[$second_audience]['osid']);
+    $retired = acquia_lift_get_retired_tests($agent->machine_name);
+    $this->assertEqual(1, count($retired));
     // Load the original nested agent and confirm it has been retired.
     $retired_test = personalize_agent_load($nested_test_name, TRUE);
     $this->assertEqual(1, $retired_test->data['lift_retired']);
@@ -1931,19 +1933,23 @@ class AcquiaLiftWebTestTarget extends AcquiaLiftWebTestBase {
       $this->fail('Exception thrown when none expected.');
     }
     $this->resetAll();
-    // When we implement the new structure it should not delete the existing nested
-    // option set but it should change the audience it belongs to.
+    // When we implement the new structure it should retire one test and create
+    // two new tests.
     AcquiaLiftAPI::setTestInstance();
     acquia_lift_implement_targeting($agent);
     $this->resetAll();
-    $nested_option_set = personalize_option_set_load($nested_osid, TRUE);
-    $this->assertTrue($nested_option_set);
+    $retired = acquia_lift_get_retired_tests($agent->machine_name);
+    $this->assertEqual(2, count($retired));
+    // Both audiences' names will have changed.
+    $first_audience = $first_audience . '-2';
+    $second_audience = $second_audience . '-2';
     // We should have two nested agents each with one option set.
     $nested = acquia_lift_get_nested_tests($agent);
     $this->assertEqual(2, count($nested));
     $nested_agents = personalize_agent_load_multiple($nested);
-    // Find the osid of the new option set so we can check that it has been set
-    // on the correct target audience.
+    // Find the osids of the new option sets so we can check they've been assigned
+    // to the correct audiences.
+    $new_osids = array();
     foreach ($nested_agents as $test) {
       // Verify the test options.
       // Confirm the test options properties were set.
@@ -1951,29 +1957,27 @@ class AcquiaLiftWebTestTarget extends AcquiaLiftWebTestBase {
       $this->assertEqual($test->data['control_rate'], 50);
       $this->assertEqual($test->data['explore_rate'], 35);
       $this->assertEqual($test->data['cache_decisions'], 1);
-
-      // Find the *new* nested agent.
-      if ($test->machine_name != $nested_agent->machine_name) {
-        $option_sets = personalize_option_set_load_by_agent($test->machine_name);
-        $nested_os = reset($option_sets);
-        $nested_osid2 = $nested_os->osid;
+      $os = personalize_option_set_load_by_agent($test->machine_name);
+      // Check the option ids to ascertain which audience the option set *should*
+      // be assigned to.
+      $o = reset($os);
+      $ids = array_map(function ($option) {
+        return $option['option_id'];
+      }, $o->options);
+      if (in_array('option-3', $ids)) {
+        $new_osids[$second_audience] = $o->osid;
+      }
+      else {
+        $new_osids[$first_audience] = $o->osid;
       }
     }
-    if (isset($nested_osid2)) {
-      // Confirm that the correct osid is assigned to each of the two target
-      // audiences.
-      $parent_option_set = personalize_option_set_load($parent_option_set->osid, TRUE);
-      $this->assertEqual(3, count($parent_option_set->targeting));
-      // THe first audience's name will have changed again.
-      $first_audience = $audience_name . '-3';
-      debug(array_keys($parent_option_set->targeting));
-      foreach (array($first_audience => $nested_osid, $second_audience => $nested_osid2) as $audience => $osid) {
-        $this->assertEqual($osid, $parent_option_set->targeting[$audience]['osid']);
-        $this->assertFalse(isset($parent_option_set->targeting[$audience]['option_id']));
-      }
-    }
-    else {
-      $this->fail('Could not find the second option set');
+    // Confirm that the correct osid is assigned to each of the two target
+    // audiences.
+    $parent_option_set = personalize_option_set_load($parent_option_set->osid, TRUE);
+    $this->assertEqual(3, count($parent_option_set->targeting));
+    foreach ($new_osids as $audience => $osid) {
+      $this->assertEqual($osid, $parent_option_set->targeting[$audience]['osid']);
+      $this->assertFalse(isset($parent_option_set->targeting[$audience]['option_id']));
     }
   }
 

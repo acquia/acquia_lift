@@ -818,9 +818,9 @@ function acquia_lift_personalize_goal_presave($goal) {
 function acquia_lift_personalize_option_set_presave($option_set) {
   // If the everyone-else audience is the only audience, name it "Everyone";
   // otherwise name it "Everyone else".
-  if (isset($option_set->targeting[ACQUIA_LIFT_TARGETING_EVERYONE_ELSE])) {
-    $everyone_else_name = count($option_set->targeting) > 1 ? t('Everyone else') : t("Everyone");
-    $option_set->targeting[ACQUIA_LIFT_TARGETING_EVERYONE_ELSE]['label'] = $everyone_else_name;
+  if (!empty($option_set->targeting) && $fallback_audience_id = acquia_lift_get_fallback_audience_name(array_keys($option_set->targeting))) {
+    $fallback_audience_name = count($option_set->targeting) > 1 ? t('Everyone else') : t("Everyone");
+    $option_set->targeting[$fallback_audience_id]['label'] = $fallback_audience_name;
   }
 
   // The rest only applies to saving of existing option sets.
@@ -3327,6 +3327,22 @@ function acquia_lift_get_nested_tests($agent) {
     }
   }
   return $agents;
+}
+
+/**
+ * Identifies the fallback audience among the audiences provided.
+ *
+ * @param $audiences
+ *   An array of audience names.
+ * @return string|bool
+ */
+function acquia_lift_get_fallback_audience_name($audiences) {
+  foreach ($audiences as $audience) {
+    if (strpos($audience, ACQUIA_LIFT_TARGETING_EVERYONE_ELSE) === 0) {
+      return $audience;
+    }
+  }
+  return FALSE;
 }
 
 /**

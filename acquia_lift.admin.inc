@@ -622,9 +622,18 @@ function acquia_lift_report($form, &$form_state, $agent_data) {
   if (!acquia_lift_is_targeting_agent($agent_data)) {
     return array();
   }
+  $path = $_GET['q'];
+  if ($path == 'system/ajax') {
+    $path = $form_state['values']['path'];
+  }
+  $form['path'] = array(
+    '#type' => 'hidden',
+    '#value' => $path
+  );
   $date_upgraded = variable_get('acquia_lift_report_upgrade_timestamp', 0);
   if ($agent_data->started < $date_upgraded) {
-    drupal_set_message(t('Only displaying data starting from @date, which is the date Lift was upgraded to use the new reporting API. Click !here to show the old reports for any tests contained in this personalization', array('@date' => date('Y-m-d', $date_upgraded), '!here' => l('here', $_GET['q'], array('query' => array('use_old_stats' => 1))))));
+
+    drupal_set_message(t('Only displaying data starting from @date, which is the date Lift was upgraded to use the new reporting API. Click !here to show the old reports for any tests contained in this personalization', array('@date' => date('Y-m-d', $date_upgraded), '!here' => l('here', $path, array('query' => array('use_old_stats' => 1))))));
   }
   $option_set = acquia_lift_get_option_set_for_targeting($agent_data->machine_name);
   $option_ids = array_map(function($option) {return $option['option_id'];}, $option_set->options);
@@ -669,10 +678,7 @@ function acquia_lift_report($form, &$form_state, $agent_data) {
     '#id' => 'acquia-lift-overview-report-data',
   );
   if (isset($_GET['lift_retired_test'])) {
-    if ($nested_agent = personalize_agent_load($_GET['lift_retired_test'])) {
-      $form['report'] = acquia_lift_report_retired($form_state, $_GET['lift_retired_test'], $agent_data);
-      return $form;
-    }
+
   }
 
   if (empty($option_set->targeting)) {
@@ -693,7 +699,14 @@ function acquia_lift_report($form, &$form_state, $agent_data) {
   // Get retired tests as well.
   $old_tests = acquia_lift_get_retired_tests($agent_data->machine_name);
   foreach($old_tests as $retired_test) {
-    $audience_options['retired|' . $retired_test->machine_name] = $retired_test->label;
+    $label = $retired_test->label;
+    // The label for the retired test includes the personalization name. Strip
+    // it off as it is redundant here and makes the option name far too long.
+    $prefix = $agent_data->label . ': ';
+    if (strpos($label, $prefix) === 0) {
+      $label = substr($label, strlen($prefix));
+    }
+    $audience_options['retired|' . $retired_test->machine_name] = $label;
   }
   if (empty($audience_options)) {
     return array(
@@ -772,34 +785,45 @@ function acquia_lift_report($form, &$form_state, $agent_data) {
     );
   }
 
-  if ($audience_status == 'retired') {
-    $form['report'] = acquia_lift_report_retired($form_state, $name, $agent_data);
-  }
-  else {
-    $form['report'] = acquia_lift_report_audience($form_state, $agent_data, $option_set, $name, $lift_api, $start_time, $end_time, $use_old_stats);
-  }
+  $form['report'] = acquia_lift_report_audience($form_state, $agent_data, $option_set, $name, $lift_api, $start_time, $end_time, $use_old_stats, $audience_status == 'retired');
   return $form;
 }
 
-function acquia_lift_report_retired($form_state, $retired_test_name, $agent_data) {
-  return array();
-}
-
-function acquia_lift_report_audience($form_state, $personalization_data, $targeting_option_set, $audience, $lift_api, $from, $to, $use_old_stats = FALSE) {
+function acquia_lift_report_audience($form_state, $personalization_data, $targeting_option_set, $audience, $lift_api, $from, $to, $use_old_stats = FALSE, $retired = FALSE) {
+  $audience_type = isset($targeting_option_set->targeting[$audience]['osid']) ? 'test' : 'target';
+  module_load_include('inc', 'acquia_lift', 'includes/AcquiaLiftLearnReport');
+  $variations = acquia_lift_get_structure_from_targeting($targeting_option_set);
+  if ($retired) {
+    $audience_type = 'test';
+    $tests = acquia_lift_get_retired_tests($personalization_data->machine_name);
+    foreach ($tests as $test) {
+      // If it's a retired test, then the $audience param is actually the machine
+      // name of the test.
+      if ($test->machine_name == $audience) {
+        $audience = $test->data['lift_audience'];
+        $test_os = personalize_option_set_load_by_agent($test->machine_name);
+        $test_os = reset($test_os);
+        $variations[$audience] = array_map(function($option) { return $option['option_id'];}, $test_os->options);
+        $retired_test = $test; // We'll need this if using the old reporting.
+        break;
+      }
+    }
+  }
   // Conversion report filters.
   $selected_goal = empty($form_state['values']['goal']) ? NULL : $form_state['values']['goal'];
   $selected_metric = empty($form_state['values']['metric']) ? 'rate' : $form_state['values']['metric'];
-
-  module_load_include('inc', 'acquia_lift', 'includes/AcquiaLiftLearnReport');
-  $audience_type = isset($targeting_option_set->targeting[$audience]['osid']) ? 'test' : 'target';
-  $variations = acquia_lift_get_structure_from_targeting($targeting_option_set);
   $session_count = $goal_count = $confidence = 0;
   $winner = NULL;
   $daily_data = $experiment_results = array();
   $nested_agent = NULL;
   if ($audience_type == 'test') {
-    $nested_os = personalize_option_set_load($targeting_option_set->targeting[$audience]['osid']);
-    $nested_agent = personalize_agent_load($nested_os->agent);
+    if (isset($retired_test)) {
+      $nested_agent = $retired_test;
+    }
+    else {
+      $nested_os = personalize_option_set_load($targeting_option_set->targeting[$audience]['osid']);
+      $nested_agent = personalize_agent_load($nested_os->agent);
+    }
   }
   if ($audience_type == 'test' && $use_old_stats) {
     // Get our test results the old way, i.e. pre-reporting-API
@@ -844,7 +868,7 @@ function acquia_lift_report_audience($form_state, $personalization_data, $target
     ),
     '#theme_wrappers' => array('container'),
     '#attributes' => array(
-      'id' => 'acquia-lift-overview-report',
+      'id' => 'acquia-lift-audience-overview-report',
       'class' => array('acquia-lift-report-section', 'clearfix'),
     ),
   );
@@ -853,7 +877,7 @@ function acquia_lift_report_audience($form_state, $personalization_data, $target
   $form['audience_overview_report']['report'] = array(
     '#markup' => drupal_render($audience_overview_report),
     '#theme_wrappers' => array('container'),
-    '#id' => 'acquia-lift-overview-report-data',
+    '#id' => 'acquia-lift-audience-overview-report-data',
   );
 
   $daily_report = _build_daily_report($daily_data, $personalization_data->machine_name, $audience);
@@ -1860,8 +1884,7 @@ function acquia_lift_save_nested_test_options($parent_agent) {
  * Validate that an agent has the minimum targeting required and add it if it
  * is not available.
  *
- * Targeting agents should have a default "Everyone else" audience that has all
- * unassigned variations assigned.
+ * Targeting agents should have a default "Everyone else".
  *
  * @param stdClass $agent
  *   The object representing the agent that owns the targeting option set.
@@ -2310,6 +2333,7 @@ function acquia_lift_target_complete_audience_complete_callback($form, $form_sta
 function _build_overview_report($session_count, $goal_count, DateInterval $interval = null, $type = null) {
   // Create report renderable.
   $build = array();
+  $is_audience_report = empty($interval);
   if (!empty($type)) {
     $build['test_type'] = array(
       '#type' => 'container',
@@ -2337,7 +2361,7 @@ function _build_overview_report($session_count, $goal_count, DateInterval $inter
     '#type' => 'container',
     '#theme' => 'acquia_lift_report_overview',
     '#attributes' => array(
-      'id' => 'acquia-lift-overview-shown',
+      'id' => $is_audience_report ? 'acquia-lift-audience-overview-shown' : 'acquia-lift-overview-shown',
     ),
     '#title' => $formatted_session_count,
     '#description' => format_plural($session_count, 'time shown', 'times shown'),
@@ -2347,7 +2371,7 @@ function _build_overview_report($session_count, $goal_count, DateInterval $inter
     '#type' => 'container',
     '#theme' => 'acquia_lift_report_overview',
     '#attributes' => array(
-      'id' => 'acquia-lift-overview-goals',
+      'id' => $is_audience_report ? 'acquia-lift-audience-overview-goals' : 'acquia-lift-overview-goals',
     ),
     '#title' => $formatted_goal_count,
     '#description' => t('goals met'),

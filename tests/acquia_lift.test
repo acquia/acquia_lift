@@ -388,7 +388,7 @@ class AcquiaLiftWebTestBase extends DrupalWebTestCase
 
     $this->drupalLogin($this->adminUser);
     $this->drupalPost('admin/config/content/personalize/acquia_lift', $edit, $this->getButton('config'));
-    variable_set('acquia_lift_apiv2_url', 'http://api.example.com');
+    variable_set('acquia_lift_api_url', 'http://api.example.com');
 
     $this->resetAll();
   }

@@ -900,6 +900,15 @@ function acquia_lift_update_7205() {
   // Store the time that the system has performed V2 report upgrade.
   variable_set('acquia_lift_report_upgrade_timestamp', time());
 
+  // Delete the V1 account info.
+  variable_del('acquia_lift_account_info');
+  // Rename the variable that stores api url.
+  $api_url = variable_get('acquia_lift_apiv2_url', '');
+  if (!empty($api_url)) {
+    variable_set('acquia_lift_api_url', $api_url);
+  }
+  variable_del('acquia_lift_apiv2_url');
+
   // Retire all V1 tests.
   if (!module_exists('acquia_lift')) {
     // The best we can do is set all Lift personalizations' status to completed.

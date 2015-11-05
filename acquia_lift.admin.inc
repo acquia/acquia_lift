@@ -32,10 +32,7 @@ function acquia_lift_admin_form($form, &$form_state) {
   );
   $account_info = acquia_lift_get_account_info();
 
-  $account_info_provided = false;
-  if (!empty($account_info['public_key']) && !empty($account_info['private_key'])) {
-    $account_info_provided = true;
-  }
+  $account_info_provided = !empty($account_info['public_key']) && !empty($account_info['private_key']);
 
   if ($account_info_provided) {
     // Add a button for checking the connection.

@@ -677,9 +677,6 @@ function acquia_lift_report($form, &$form_state, $agent_data) {
     '#theme_wrappers' => array('container'),
     '#id' => 'acquia-lift-overview-report-data',
   );
-  if (isset($_GET['lift_retired_test'])) {
-
-  }
 
   if (empty($option_set->targeting)) {
     return array();
@@ -706,7 +703,11 @@ function acquia_lift_report($form, &$form_state, $agent_data) {
     if (strpos($label, $prefix) === 0) {
       $label = substr($label, strlen($prefix));
     }
-    $audience_options['retired|' . $retired_test->machine_name] = $label;
+    $retired_test_audience_option = 'retired|' . $retired_test->machine_name;
+    $audience_options[$retired_test_audience_option] = $label;
+    if (isset($_GET['lift_retired_test']) && $_GET['lift_retired_test'] == $retired_test->machine_name) {
+      $audience = $retired_test_audience_option;
+    }
   }
   if (empty($audience_options)) {
     return array(

@@ -788,7 +788,11 @@ class AcquiaLiftAPI implements AcquiaLiftLearnReportDataSourceInterface {
     $nonce = self::nonce();
     $timestamp = time();
     $this->prepareRequest('GET', $url, $headers, "", $nonce, $timestamp);
-    $response = parent::makeGetRequest($url, $headers, $fail_msg);
+    $response = $this->httpClient()->get($url, $headers);
+    if ($response->code != 200) {
+      $this->handleBadResponse($response->code, $fail_msg);
+      return array();
+    }
     $this->authenticateResponse($nonce, $timestamp, $response);
     return json_decode($response->data, TRUE);
   }

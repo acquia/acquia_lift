@@ -2354,6 +2354,8 @@ function acquia_lift_personalize_campaign_wizard_targeting_submit(&$form, &$form
   // Set the weight higher than any of the audience options.
   foreach($form_state['values']['audiences'] as $type_id => $type) {
     foreach ($form_state['values']['audiences'][$type_id] as $audience_id => $audience) {
+      // The machine name of the "everyone-else" audience may have changed, if
+      // tests for hte audience have changed, so it may have a suffix, like '-2'.
       $is_everyone_audience = strpos($audience_id, ACQUIA_LIFT_TARGETING_EVERYONE_ELSE) === 0;
       if ($is_everyone_audience) {
         $final_audience['id'] = $audience_id;

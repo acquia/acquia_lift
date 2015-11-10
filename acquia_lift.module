@@ -10,7 +10,6 @@ define('ACQUIA_LIFT_OPERATION_ERROR_PREFIX', 'Errors: ');
 define('ACQUIA_LIFT_AGENT_VERIFY_CACHE', 'acquia_lift:agent:verification');
 define('ACQUIA_LIFT_TARGETING_EVERYONE_ELSE', 'everyone-else');
 define('ACQUIA_LIFT_TARGETING_AGENT', 'acquia_lift_target');
-define('ACQUIA_LIFT_TESTING_AGENT_V1', 'acquia_lift');
 define('ACQUIA_LIFT_TESTING_AGENT_V2', 'acquia_lift_learn');
 define('ACQUIA_LIFT_DECISION_LOCKSTEP', 'lockstep');
 define('ACQUIA_LIFT_DECISION_MULTIVARIATE', 'mvt');
@@ -598,10 +597,6 @@ function acquia_lift_get_agent_types() {
       'class' => 'AcquiaLiftTarget',
       'file' => 'AcquiaLiftTarget.inc',
     ),
-    ACQUIA_LIFT_TESTING_AGENT_V1 => array(
-      'class' => 'AcquiaLiftAgent',
-      'file' => 'AcquiaLiftAgent.inc',
-    ),
     ACQUIA_LIFT_TESTING_AGENT_V2 => array(
       'class' => 'AcquiaLiftLearn',
       'file' => 'AcquiaLiftLearn.inc',
@@ -624,7 +619,7 @@ function acquia_lift_is_testing_agent($agent) {
   if (empty($agent)) {
     return FALSE;
   }
-  return in_array($agent->plugin, array(ACQUIA_LIFT_TESTING_AGENT_V1, ACQUIA_LIFT_TESTING_AGENT_V2));
+  return $agent->plugin == ACQUIA_LIFT_TESTING_AGENT_V2;
 }
 
 /**

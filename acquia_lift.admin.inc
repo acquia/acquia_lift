@@ -561,7 +561,7 @@ function acquia_lift_agent_delete_form($form, $form_state, $agent) {
   $form['machine_name'] = array('#type' => 'hidden', '#value' => $agent->machine_name);
   $form['title'] = array('#type' => 'hidden', '#value' => $agent->label);
   $form['plugin'] = array('#type' => 'hidden', '#value' => $agent->plugin);
-  $agent_type = in_array($agent->plugin, array(ACQUIA_LIFT_TESTING_AGENT_V1, ACQUIA_LIFT_TESTING_AGENT_V2)) ? 'test' : 'personalization';
+  $agent_type = $agent->plugin == ACQUIA_LIFT_TESTING_AGENT_V2 ? 'test' : 'personalization';
 
   return confirm_form($form, t('Are you sure you want to delete the %agent %title?', array('%agent' => $agent_type, '%title' => $agent->label)), 'admin/structure/personalize', '', t('Delete'), t('Cancel'));
 }
@@ -571,7 +571,7 @@ function acquia_lift_agent_delete_form($form, $form_state, $agent) {
  */
 function acquia_lift_agent_delete_form_submit($form, &$form_state) {
   $agent_name = $form_state['values']['machine_name'];
-  $agent_type = in_array($form_state['values']['plugin'], array(ACQUIA_LIFT_TESTING_AGENT_V1, ACQUIA_LIFT_TESTING_AGENT_V2)) ? 'test' : 'personalization';
+  $agent_type = $form_state['values']['plugin'] == ACQUIA_LIFT_TESTING_AGENT_V2 ? 'test' : 'personalization';
   // First delete all option sets belonging to the agent.
   $option_sets = personalize_option_set_load_by_agent($agent_name);
   foreach ($option_sets as $option_set) {

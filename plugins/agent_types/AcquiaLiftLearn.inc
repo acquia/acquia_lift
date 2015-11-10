@@ -72,7 +72,7 @@ class AcquiaLiftLearn extends PersonalizeAgentBase implements AcquiaLiftLearning
    * Implements PersonalizeAgentInterface::getType();
    */
   public function getType() {
-    return ACQUIA_LIFT_TESTING_AGENT_V2;
+    return ACQUIA_LIFT_TESTING_AGENT;
   }
 
   /**

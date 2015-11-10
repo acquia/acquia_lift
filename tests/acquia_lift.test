@@ -785,7 +785,7 @@ class AcquiaLiftWebTestFundamentals extends AcquiaLiftWebTestBase {
     personalize_goal_save($agent->machine_name, 'user_login', 1);
     $this->resetAll();
 
-    $test_agents = personalize_agent_load_by_type(ACQUIA_LIFT_TESTING_AGENT_V2);
+    $test_agents = personalize_agent_load_by_type(ACQUIA_LIFT_TESTING_AGENT);
     $test_agent = reset($test_agents);
     $os = personalize_option_set_load_by_agent($test_agent->machine_name);
     $sub_option_set = reset($os);
@@ -2469,7 +2469,7 @@ class AcquiaLiftWebTestTarget extends AcquiaLiftWebTestBase {
     AcquiaLiftAPI::setTestInstance();
     acquia_lift_implement_mvt($targeting_agent);
     $this->resetAll();
-    $nested = personalize_agent_load_by_type(ACQUIA_LIFT_TESTING_AGENT_V2, TRUE);
+    $nested = personalize_agent_load_by_type(ACQUIA_LIFT_TESTING_AGENT, TRUE);
     $nested_mvt = reset($nested);
     $this->assertEqual($nested_mvt->machine_name, acquia_lift_get_mvt_name_for_agent($targeting_agent->machine_name));
     $option_sets = personalize_option_set_load_by_agent($nested_mvt->machine_name, TRUE);

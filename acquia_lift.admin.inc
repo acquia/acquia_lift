@@ -561,7 +561,7 @@ function acquia_lift_agent_delete_form($form, $form_state, $agent) {
   $form['machine_name'] = array('#type' => 'hidden', '#value' => $agent->machine_name);
   $form['title'] = array('#type' => 'hidden', '#value' => $agent->label);
   $form['plugin'] = array('#type' => 'hidden', '#value' => $agent->plugin);
-  $agent_type = $agent->plugin == ACQUIA_LIFT_TESTING_AGENT_V2 ? 'test' : 'personalization';
+  $agent_type = $agent->plugin == ACQUIA_LIFT_TESTING_AGENT ? 'test' : 'personalization';
 
   return confirm_form($form, t('Are you sure you want to delete the %agent %title?', array('%agent' => $agent_type, '%title' => $agent->label)), 'admin/structure/personalize', '', t('Delete'), t('Cancel'));
 }
@@ -571,7 +571,7 @@ function acquia_lift_agent_delete_form($form, $form_state, $agent) {
  */
 function acquia_lift_agent_delete_form_submit($form, &$form_state) {
   $agent_name = $form_state['values']['machine_name'];
-  $agent_type = $form_state['values']['plugin'] == ACQUIA_LIFT_TESTING_AGENT_V2 ? 'test' : 'personalization';
+  $agent_type = $form_state['values']['plugin'] == ACQUIA_LIFT_TESTING_AGENT ? 'test' : 'personalization';
   // First delete all option sets belonging to the agent.
   $option_sets = personalize_option_set_load_by_agent($agent_name);
   foreach ($option_sets as $option_set) {
@@ -1678,7 +1678,7 @@ function acquia_lift_add_new_test_for_audience(&$option_set, $audience, $parent_
   // First we need to create a new agent.
   $agent = new stdClass();
   $agent->label = 'Sub-test for ' . $parent_agent->label;
-  $agent->plugin = ACQUIA_LIFT_TESTING_AGENT_V2;
+  $agent->plugin = ACQUIA_LIFT_TESTING_AGENT;
   $agent->data = array();
   $agent->machine_name = personalize_generate_machine_name($parent_agent->machine_name . '-test', 'personalize_agent_machine_name_exists');
   $agent = personalize_agent_save($agent);
@@ -1970,7 +1970,7 @@ function acquia_lift_implement_mvt($agent) {
   // Create a test agent for the MVT.
   $mvt_agent = new stdClass();
   $mvt_agent->label = 'MVT for ' . $agent->label;
-  $mvt_agent->plugin = ACQUIA_LIFT_TESTING_AGENT_V2;
+  $mvt_agent->plugin = ACQUIA_LIFT_TESTING_AGENT;
   $mvt_agent->data = array();
   $mvt_agent->machine_name = $mvt_name;
   try {
@@ -2130,7 +2130,7 @@ function acquia_lift_get_retired_tests($agent_name = NULL) {
   $old_tests = &drupal_static(__FUNCTION__, NULL);
   if ($old_tests == NULL) {
     $old_tests = array();
-    $test_agents = personalize_agent_load_by_type(ACQUIA_LIFT_TESTING_AGENT_V2);
+    $test_agents = personalize_agent_load_by_type(ACQUIA_LIFT_TESTING_AGENT);
     foreach ($test_agents as $name => $agent) {
       if (isset($agent->data['lift_parent'])) {
         if (!isset($old_tests[$agent->data['lift_parent']])) {

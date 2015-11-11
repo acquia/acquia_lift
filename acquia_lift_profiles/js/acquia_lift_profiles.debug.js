@@ -20,28 +20,31 @@
      * Object data - the data returned back from tcwidget's ajax call. (tcoffer) 
      * Capture - the capture data. 
      */
-    $(document).on("acquiaLiftSegmentsUpdated", function( event, data, capture ) {
+    $(document).on("acquiaLiftSegmentsUpdated", function(event, data, capture) {
       //saves the capture
       curSegmentCapture = capture;
-      //if data exists
-      if(data){
+      //if no data
+      if (!data) {
+        message = "No Data found";
+        code = 3001;
+      //if data segment exists
+      } else if (data["segments"]){
         curSegments = data["segments"];
-        curSegmentsOverride =  Storage.read(debugPrefix + "overrideSegments");
+        curSegmentsOverride = Storage.read(debugPrefix + "overrideSegments");
         //if overriding segments
-        if ( curSegmentsOverride ) {
+        if (curSegmentsOverride) {
           //replaces the segments stored in the data object with the ones specified by user
           if(data["segments"]){
             data["segments"].length = 0;
-            $(curSegmentsOverride).each( function(index,overrideSegment) { data["segments"].push(overrideSegment); } );
+            $(curSegmentsOverride).each(
+              function(index,overrideSegment) { data["segments"].push(overrideSegment); }
+            );
           }
           //saves copy of override segments to current segments
           curSegments = curSegmentsOverride.splice(0);
         }
         message = "Segments Returned: " + curSegments;
         code = 1000;
-      }else{
-        message = "No Data found"
-        code = 3001;
       }
       //adds the message and code to sessionStorage logs with type 'Lift Web' 
       Drupal.personalizeDebug.log( message , code, 'Lift Web');

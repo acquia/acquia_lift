@@ -18,7 +18,7 @@ class Settings extends ConfigFormBase {
   /**
    * {@inheritdoc}
    */
-  public function getFormID() {
+  public function getFormId() {
     return 'acquia_lift_settings_form';
   }
 

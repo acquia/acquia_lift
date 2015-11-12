@@ -87,14 +87,12 @@ QUnit.module("Acquia Lift Profiles", {
 });
 
 QUnit.asyncTest("init test", function( assert ) {
-  expect(8);
+  expect(7);
   Drupal.acquia_lift_profiles.resetAll();
   QUnit.start();
   _tcaq = {
     'push':function(stf) {
-      if (stf[0] == 'setAccount') {
-        assert.equal( stf[1], 'TESTACCOUNT',  'correct account name pushed');
-      } else if (stf[0] == 'captureView') {
+      if (stf[0] == 'captureView') {
         assert.equal( stf[1], 'Content View',  'capture view is of type content view');
         assert.equal( stf[2].person_udf1, "some-value", 'value correctly assigned from context' );
         assert.equal( stf[2].person_udf2, "some-other-value", 'value correctly assigned from promise based context' );

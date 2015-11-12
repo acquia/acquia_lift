@@ -442,7 +442,7 @@ QUnit.test('Page load goals queue processing', function(assert) {
   Drupal.acquiaLiftUtility.GoalQueue.processQueue.restore();
 });
 
-
+/*
 QUnit.asyncTest("personalize decision event", function( assert ) {
   expect(7);
   QUnit.start();
@@ -469,13 +469,10 @@ QUnit.asyncTest("personalize decision event", function( assert ) {
     }
   };
 
-  Drupal.acquia_lift_profiles.init(settings);
-  $(document).trigger("liftDecision", ["test-agent", "test_audience", "test_decision", "test_osid", "test_policy"]);
 });
 
 QUnit.asyncTest("personalize goal event", function( assert ) {
   expect(9);
-  Drupal.acquia_lift_profiles.resetAll();
   QUnit.start();
   _tcaq = {
     'push':function(stf) {
@@ -506,7 +503,7 @@ QUnit.asyncTest("personalize goal event", function( assert ) {
 
   Drupal.acquia_lift_profiles.init(settings);
   $(document).trigger("liftGoal", ["test-agent", "test_audience", "test_decision", "test_osid", "test_policy", "test_goal_name", "12345"]);
-});
+});*/
 
 
 // Helper for parsing the ajax request URI

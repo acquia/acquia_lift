@@ -2,6 +2,6 @@
 
 namespace Drupal\acquia_lift\Exception;
 
-class AcquiaLiftDataConnectorCredsException extends AcquiaLiftDataConnectorException {
+class AcquiaLiftDataConnectorCredentialException extends AcquiaLiftDataConnectorException {
 
 }

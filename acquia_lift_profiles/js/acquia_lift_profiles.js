@@ -151,22 +151,7 @@ var _tcwq = _tcwq || [];
    */
   Drupal.acquia_lift_profiles = (function(){
 
-    var processedListeners = {}, processedDecisions = {}, initialized = false, initializing = false, pageFieldValues = {};
-    var agentNameToLabel = {};
-
-    /**
-     * Returns the agent label for the given agent name.
-     * If there is no label then the agent name is returned.
-     *
-     * @param agent_name
-     */
-    function getAgentLabel( agent_name ) {
-      var agent_label = agent_name;
-      if ( agentNameToLabel[agent_name] ) {
-        agent_label = agentNameToLabel[agent_name];
-      }
-      return agent_label;
-    }
+    var processedListeners = {}, initialized = false, initializing = false, pageFieldValues = {};
 
     return {
       'init': function(settings) {
@@ -174,18 +159,7 @@ var _tcwq = _tcwq || [];
           return;
         }
         initializing = true;
-        _tcaq.push(['setAccount', settings.acquia_lift_profiles.account_name, settings.acquia_lift_profiles.customer_site]);
 
-        if ( settings.personalize && settings.personalize.agent_map ) {
-          var agent_map = settings.personalize.agent_map;
-          for (var agent_name in agent_map) {
-            if (agent_map.hasOwnProperty(agent_name)) {
-              if (agent_map[agent_name].label) {
-                agentNameToLabel[agent_name] = agent_map[agent_name].label;
-              }
-            }
-          }
-        }
         var mappings = settings.acquia_lift_profiles.mappings, context_separator = settings.acquia_lift_profiles.mappingContextSeparator, plugins = {}, reverseMapping = {};
         for(var type in mappings) {
           if (mappings.hasOwnProperty(type)) {
@@ -264,8 +238,6 @@ var _tcwq = _tcwq || [];
           _tcwq.push(["setDebug", false]);
         }
 
-        $(document).bind('liftDecision', this["processLiftDecision"]);
-        $(document).bind('liftGoal', this["processLiftGoal"]);
         Drupal.personalize.getVisitorContexts(plugins, callback);
       },
       'getTrackingID': function () {
@@ -323,23 +295,6 @@ var _tcwq = _tcwq || [];
         if (typeof this.specialEvents[eventName] == 'function') {
           this.specialEvents[eventName].call(this, settings.acquia_lift_profiles, context);
         }
-      },
-
-      'processLiftDecision':function(e, agent_name, audience, decision_name, choice, policy) {
-        // Only send this if it has never been sent or the decision has changed due to
-        // new targeting conditions being met.
-        if (processedDecisions.hasOwnProperty(agent_name) && processedDecisions[agent_name] == choice) {
-          return;
-        }
-        if (choice == 'control-variation') {
-          choice = 'Control';
-        }
-        processedDecisions[agent_name] = choice;
-        _tcaq.push(['capture', 'Decision', {'personalizationname': getAgentLabel(agent_name), 'personalizationmachinename':agent_name, 'personalizationaudiencename': audience, 'personalizationchosenvariation': choice, 'personalizationdecisionpolicy': policy }]);
-      },
-
-      'processLiftGoal':function(e, agent_name, audience, decision_name, choice, policy, goal_name, goal_value) {
-        _tcaq.push(['capture', 'Goal', {'personalizationname': getAgentLabel(agent_name), 'personalizationmachinename':agent_name, 'personalizationaudiencename': audience, 'personalizationchosenvariation': choice, 'personalizationdecisionpolicy': policy, 'personalizationgoalname': goal_name, 'personalizationgoalvalue': goal_value }]);
       },
 
       /**
@@ -404,11 +359,8 @@ var _tcwq = _tcwq || [];
         processedListeners = {};
         initialized = false;
         initializing = false;
-        agentNameToLabel = {};
         identityCaptured = false;
         pageFieldValues = {};
-        $(document).unbind('liftDecision', this["processLiftDecision"]);
-        $(document).unbind('liftGoal', this["processLiftGoal"]);
       }
     }
   })();

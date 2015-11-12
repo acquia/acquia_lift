@@ -1,24 +1,26 @@
+var _tcaq = _tcaq || [];
+var _tcwq = _tcwq || [];
+
 (function ($) {
 
 Drupal.acquia_lift_target = (function() {
 
-  var agentRules = {}, initialized = false;
+  var agentRules = {}, initialized = false, processedDecisions = {}, agentLabels = {};
 
-  function init() {
-    var i, optionSet, agentName;
-    var option_sets = Drupal.settings.personalize.option_sets;
-    var agent_map = Drupal.settings.personalize.agent_map;
-    for (i in option_sets) {
-      if (option_sets.hasOwnProperty(i) && agent_map.hasOwnProperty(option_sets[i].agent) && agent_map[option_sets[i].agent]['type'] == 'acquia_lift_target') {
-        optionSet = option_sets[i];
-        agentName = optionSet.agent;
-        if (agentRules.hasOwnProperty(agentName) || !optionSet.hasOwnProperty('targeting')) {
-          continue;
-        }
-        agentRules[agentName] = optionSet.targeting;
-      }
+  /**
+   * Returns the agent label for the given agent name.
+   * If there is no label then the agent name is returned.
+   *
+   * @param agent_name
+   */
+  function getAgentLabel(agent_name) {
+    var agent_label = agent_name;
+    if (agentLabels[agent_name]) {
+      agent_label = agentLabels[agent_name];
     }
+    return agent_label;
   }
+
 
   function contextToFeatureString(key, value) {
     return key + '::' + value;
@@ -104,9 +106,32 @@ Drupal.acquia_lift_target = (function() {
   }
 
   return {
+    'init': function(settings) {
+      _tcaq.push(['setAccount', settings.acquia_lift.account_name, settings.acquia_lift.customer_site]);
+      var i, optionSet, agentName;
+      var option_sets = settings.personalize.option_sets;
+      var agent_map = settings.personalize.agent_map;
+      for (i in option_sets) {
+        if (option_sets.hasOwnProperty(i) && agent_map.hasOwnProperty(option_sets[i].agent) && agent_map[option_sets[i].agent]['type'] == 'acquia_lift_target') {
+          optionSet = option_sets[i];
+          agentName = optionSet.agent;
+          if (agentRules.hasOwnProperty(agentName) || !optionSet.hasOwnProperty('targeting')) {
+            continue;
+          }
+          agentRules[agentName] = optionSet.targeting;
+        }
+      }
+      for (var agent_name in agent_map) {
+        if (agent_map.hasOwnProperty(agent_name)) {
+          if (agent_map[agent_name].label) {
+            agentLabels[agent_name] = agent_map[agent_name].label;
+          }
+        }
+      }
+    },
     'getDecision': function(agent_name, visitor_context, choices, decision_point, fallbacks, callback) {
       if (!initialized) {
-        init();
+        this.init(Drupal.settings);
       }
 
       var callback_wrapper = function(decisions, policy, audience) {
@@ -127,7 +152,16 @@ Drupal.acquia_lift_target = (function() {
               index++;
             }
           }
-          $(document).trigger('liftDecision', [agent_name, audience, decision_str, choice_str, policy]);
+          // Send this to Lift Web if it has never been sent or the decision has changed due to
+          // new targeting conditions being met.
+          if (processedDecisions.hasOwnProperty(agent_name) && processedDecisions[agent_name] == choice_str) {
+            return;
+          }
+          if (choice_str == 'control-variation') {
+            choice_str = 'Control';
+          }
+          processedDecisions[agent_name] = choice_str;
+          _tcaq.push(['capture', 'Decision', {'personalizationname': getAgentLabel(agent_name), 'personalizationmachinename':agent_name, 'personalizationaudiencename': audience, 'personalizationchosenvariation': choice_str, 'personalizationdecisionpolicy': policy }]);
         }
         callback(decisions);
       };
@@ -211,7 +245,7 @@ Drupal.acquia_lift_target = (function() {
     },
     'sendGoal': function(agent_name, goal_name, value) {
       if (!initialized) {
-        init();
+        this.init(Drupal.settings);
       }
 
       var stored = readDecisionsFromStorage(agent_name);
@@ -239,7 +273,7 @@ Drupal.acquia_lift_target = (function() {
             index++;
           }
         }
-        $(document).trigger('liftGoal', [agent_name, stored.audience, decision_str, choice_str, stored.policy, goal_name, value ]);
+        _tcaq.push(['capture', 'Goal', {'personalizationname': getAgentLabel(agent_name), 'personalizationmachinename':agent_name, 'personalizationaudiencename': stored.audience, 'personalizationchosenvariation': choice_str, 'personalizationdecisionpolicy': stored.policy, 'personalizationgoalname': goal_name, 'personalizationgoalvalue': value }]);
       }
 
       if (stored.hasOwnProperty("policy") && stored.policy == 'targeting') {

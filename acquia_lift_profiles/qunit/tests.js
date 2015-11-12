@@ -167,74 +167,6 @@ QUnit.asyncTest("Get context values no cache", function( assert ) {
 
 });
 
-QUnit.asyncTest("personalize decision event", function( assert ) {
-  expect(7);
-  Drupal.acquia_lift_profiles.resetAll();
-  QUnit.start();
-  _tcaq = {
-    'push':function(stf) {
-      if (stf[0] == 'setAccount') {
-        assert.equal( stf[1], 'TESTACCOUNT',  'correct account name pushed');
-      } else if (stf[0] == 'capture') {
-        assert.equal(stf[1], 'Decision', 'capture view is of type decision');
-        assert.equal(stf[2].personalizationname, "Test Agent", 'name correctly assigned from event');
-        assert.equal(stf[2].personalizationmachinename, "test-agent", 'machine name correctly assigned from event');
-        assert.equal(stf[2].personalizationaudiencename, "test_audience", 'audience name correctly assigned from event');
-        assert.equal(stf[2].personalizationchosenvariation, "test_osid", 'chosen variation correctly assigned from event');
-        assert.equal(stf[2].personalizationdecisionpolicy, "test_policy", 'decision policy correctly assigned from event');
-      }
-    }
-  };
-  var settings = jQuery.extend({}, Drupal.settings);
-  settings.personalize.agent_map = {
-    'test-agent': {
-      'active': 1,
-      'cache_decisions': false,
-      'enabled_contexts': [],
-      'type': 'test_agent',
-      'label' : 'Test Agent'
-    }
-  };
-
-  Drupal.acquia_lift_profiles.init(settings);
-  $(document).trigger("liftDecision", ["test-agent", "test_audience", "test_decision", "test_osid", "test_policy"]);
-});
-
-QUnit.asyncTest("personalize goal event", function( assert ) {
-  expect(9);
-  Drupal.acquia_lift_profiles.resetAll();
-  QUnit.start();
-  _tcaq = {
-    'push':function(stf) {
-      if (stf[0] == 'setAccount') {
-        assert.equal(stf[1], 'TESTACCOUNT', 'correct account name pushed');
-      } else if (stf[0] == 'capture') {
-        assert.equal(stf[1], 'Goal',  'capture view is of type goal');
-        assert.equal(stf[2].personalizationname, "Test Agent", 'name correctly assigned from event' );
-        assert.equal(stf[2].personalizationmachinename, "test-agent", 'machine name correctly assigned from event' );
-        assert.equal(stf[2].personalizationaudiencename, "test_audience", 'audience name correctly assigned from event' );
-        assert.equal(stf[2].personalizationchosenvariation, "test_osid", 'chosen variation correctly assigned from event' );
-        assert.equal(stf[2].personalizationdecisionpolicy, "test_policy", 'decision policy correctly assigned from event' );
-        assert.equal(stf[2].personalizationgoalname, "test_goal_name", 'goal name correctly assigned from event' );
-        assert.equal(stf[2].personalizationgoalvalue, "12345", 'goal value correctly assigned from event' );
-      }
-    }
-  };
-  var settings = jQuery.extend({}, Drupal.settings);
-  settings.personalize.agent_map = {
-    'test-agent': {
-      'active': 1,
-      'cache_decisions': false,
-      'enabled_contexts': [],
-      'type': 'test_agent',
-      'label' : 'Test Agent'
-    }
-  };
-
-  Drupal.acquia_lift_profiles.init(settings);
-  $(document).trigger("liftGoal", ["test-agent", "test_audience", "test_decision", "test_osid", "test_policy", "test_goal_name", "12345"]);
-});
-
 QUnit.test( "Server-side events no email", function( assert ) {
   expect(4);
   Drupal.acquia_lift_profiles.resetAll();
@@ -430,7 +362,7 @@ QUnit.test ("debugger - get personID and touchId", function(assert){
   //clear cookies.
   $.cookie('tc_ptid', null, {path:'/'});
   $.cookie('tc_ttid', null, {path:'/'});
-})
+});
 QUnit.test ("debugger - update identities", function(assert){
   expect (1);
   var identities = [];

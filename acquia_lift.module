@@ -457,15 +457,16 @@ function acquia_lift_percentage_validate($element, &$form_state) {
  *   connector credentials.
  */
 function acquia_lift_get_account_info() {
-  $account_info = variable_get('acquia_lift_account_info', array('public_key' => '', 'private_key' => ''));
-  if (!isset($account_info['profiles'])) {
-    $account_info['profiles'] = array(
+  $account_info = array(
+    'public_key' => '',
+    'private_key' => '',
+    'profiles' => array(
       'account_name' => variable_get('acquia_lift_profiles_account_name', ''),
       'hostname' => '',
       'public_key' => '',
       'secret_key' => ''
-    );
-  }
+    )
+  );
 
   // Get Acquia Subscription Data
   $subscription_data = acquia_agent_settings('acquia_subscription_data');
@@ -493,7 +494,7 @@ function acquia_lift_get_account_info() {
   }
 
   // Set default url
-  $account_info['api_url'] = variable_get('acquia_lift_apiv2_url', '');
+  $account_info['api_url'] = variable_get('acquia_lift_api_url', '');
   if (empty($account_info['api_url'])) {
     $account_info['api_url'] = 'us-east-1-decision.lift.acquia.com';
   }
@@ -1153,6 +1154,8 @@ EOT;
     global $is_https;
     $url_scheme = ($is_https) ? 'https://' : 'http://';
     $tc_js = $url_scheme . $js_path;
+    $account_name = variable_get('acquia_lift_profiles_account_name', '');
+    $customer_site = variable_get('acquia_lift_profiles_site_name', 'Drupal');
     $libraries['acquia_lift.page'] = array(
       'title' => 'Adds Acquia Lift page processing necessary for all page views.',
       'version' => VERSION,
@@ -1170,7 +1173,9 @@ EOT;
         array(
           'data' => array(
             'acquia_lift' => array(
-              'api_class' => 'acquiaLiftAPI'
+              'api_class' => 'acquiaLiftAPI',
+              'account_name' => $account_name,
+              'customer_site' => $customer_site,
             ),
             'personalize' => array(
               'cacheExpiration' => array(

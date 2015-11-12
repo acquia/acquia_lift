@@ -57,13 +57,13 @@ function acquia_lift_admin_form($form, &$form_state) {
   $form['acquia_lift_account_info'] = array(
     '#type' => 'fieldset',
     '#title' => 'Acquia Lift Account Settings',
-    '#tree' => TRUE,
+    '#tree' => FALSE,
     '#collapsible' => TRUE,
     '#collapsed' => $account_info_provided
   );
   if ($account_info_provided) {
     $form['acquia_lift_account_info']['msg'] = array(
-      '#markup' => t("<p>We automatically obtained your credentials from your Acquia Account. Everything is good to go!</p>", array(
+      '#markup' => t("<p>We automatically obtained your Lift Decision credentials from your Acquia Account. Everything is good to go!</p>", array(
         '!acquialift' => l(t('Acquia Lift'), 'http://www.acquia.com/products-services/website-personalization', array('attributes' => array('target' => '_blank'))),
         '!advocacyemail' => l('advocacy@acquia.com', 'mailto:advocacy@acquia.com')
       )),
@@ -84,13 +84,70 @@ function acquia_lift_admin_form($form, &$form_state) {
     if ($account_info['js_path'] != variable_get('acquia_lift_profiles_js_path', '')) {
       $public_key_desc = t("Suggested: !js_path", array('!js_path' => $account_info['js_path']));
     }
-    $form['acquia_lift_profiles_js_path'] = array(
+    // Lift Web account info.
+    $form['acquia_lift_account_info']['acquia_lift_profiles_js_path'] = array(
       '#type' => 'textfield',
       '#title' => t('Acquia Lift JavaScript path'),
       '#field_prefix' => 'http(s)://',
       '#default_value' => variable_get('acquia_lift_profiles_js_path', $account_info['js_path']),
       '#required' => TRUE,
       '#description' => $public_key_desc ? $public_key_desc : false,
+    );
+
+    if ($account_info['profiles']['account_name'] != "") {
+      $acc_name_desc = t("Short abbreviation of your account name. Suggested: @accountname", array('@accountname' => $account_info['profiles']['account_name']));
+    }
+    else {
+      $acc_name_desc = t("Short abbreviation of your account name, such as MYACCOUNT01.");
+    }
+    $form['acquia_lift_account_info']['acquia_lift_profiles_account_name'] = array(
+      '#type' => 'textfield',
+      '#title' => t('Acquia Lift Web Account Name'),
+      '#default_value' => variable_get('acquia_lift_profiles_account_name', $account_info['profiles']['account_name']),
+      '#description' => $acc_name_desc,
+      '#required' => TRUE,
+    );
+
+    $form['acquia_lift_account_info']['acquia_lift_profiles_site_name'] = array(
+      '#type' => 'textfield',
+      '#title' => t('Acquia Lift Web Customer Site'),
+      '#default_value' => variable_get('acquia_lift_profiles_site_name', ''),
+      '#description' => t("When you are using multiple sites with the same Acquia Lift Web account, use this. Otherwise, leave it empty")
+    );
+
+    $form['acquia_lift_account_info']['acquia_lift_profiles_api_url'] = array(
+      '#type' => 'textfield',
+      '#title' => t('Acquia Lift Web API URL'),
+      '#field_prefix' => 'http(s)://',
+      '#default_value' => variable_get('acquia_lift_profiles_api_url', $account_info['profiles']['hostname']),
+      '#description' => t("Server where your Acquia Lift Web account resides."),
+      '#required' => TRUE,
+    );
+
+    if ($account_info['profiles']['public_key'] != "" && variable_get('acquia_lift_profiles_access_key', '') == "<reset>") {
+      $public_key_desc = t("Suggested: @public_key", array('@public_key' => $account_info['profiles']['public_key']));
+    } else {
+      $public_key_desc = t("Write %reset in the field to show the access key", array("%reset" => "<reset>"));
+    }
+    $form['acquia_lift_account_info']['acquia_lift_profiles_access_key'] = array(
+      '#type' => 'textfield',
+      '#title' => t('Acquia Lift Web API Access Key'),
+      '#default_value' => variable_get('acquia_lift_profiles_access_key', $account_info['profiles']['public_key']),
+      '#description' => $public_key_desc,
+      '#required' => TRUE,
+    );
+
+    if ($account_info['profiles']['secret_key'] != "" && variable_get('acquia_lift_profiles_secret_key', '') == "<reset>") {
+      $secret_key_desc = t("Suggested: @secret_key", array('@secret_key' => $account_info['profiles']['secret_key']));
+    } else {
+      $secret_key_desc = t("Write %reset in the field to show the secret key", array("%reset" => "<reset>"));
+    }
+    $form['acquia_lift_account_info']['acquia_lift_profiles_secret_key'] = array(
+      '#type' => 'textfield',
+      '#title' => t('Acquia Lift Web API Secret Key'),
+      '#default_value' => variable_get('acquia_lift_profiles_secret_key', $account_info['profiles']['secret_key']),
+      '#description' => $secret_key_desc,
+      '#required' => TRUE,
     );
   }
   else {
@@ -185,6 +242,14 @@ function acquia_lift_admin_form_validate($form, &$form_state) {
     form_set_error('acquia_lift_profiles_js_path', t('You must enter a valid JavaScript path'));
   }
   $form_state['values']['acquia_lift_profiles_js_path'] = preg_replace('/(^[a-z]+:\/\/)/i', '', $form_state['values']['acquia_lift_profiles_js_path']);
+
+  // Validate the profiles api url.
+  if (!valid_url($form_state['values']['acquia_lift_profiles_api_url'])) {
+    form_set_error('acquia_lift_profiles_api_url', t('You must enter a valid API URL'));
+  }
+  // Strip any scheme from the API URL.
+  $form_state['values']['acquia_lift_profiles_api_url'] = preg_replace('/(^[a-z]+:\/\/)/i', '', $form_state['values']['acquia_lift_profiles_api_url']);
+
   if ($form_state['values']['acquia_lift_confidence_measure'] <= 0 || $form_state['values']['acquia_lift_confidence_measure'] >= 100) {
     form_set_error('acquia_lift_confidence_measure', t('Confidence measure must be a value between 0 and 100.'));
   }
@@ -630,7 +695,7 @@ function acquia_lift_report($form, &$form_state, $agent_data) {
   $date_upgraded = variable_get('acquia_lift_report_upgrade_timestamp', 0);
   if ($agent_data->started < $date_upgraded) {
 
-    drupal_set_message(t('Only displaying data starting from @date, which is the date Lift was upgraded to use the new reporting API. Click !here to show the old reports for any tests contained in this personalization', array('@date' => date('Y-m-d', $date_upgraded), '!here' => l('here', $path, array('query' => array('use_old_stats' => 1))))));
+    drupal_set_message(t('Only displaying data starting from @date, which is the date Lift was upgraded to use the new reporting API. Click !here to show the old reports for any tests contained in this personalization', array('@date' => date('Y-m-d', $date_upgraded), '!here' => l('here', $path, array('query' => array('use_old_stats' => 1))))), 'warning');
   }
   $option_set = acquia_lift_get_option_set_for_targeting($agent_data->machine_name);
   $option_ids = array_map(function($option) {return $option['option_id'];}, $option_set->options);
@@ -1057,8 +1122,8 @@ function _extract_experiment_results($aggregated_data) {
       'conversion' => _format_report_percentage($rate),
       'estimated_value' => _format_report_number($result['mean'], TRUE, 4),
       'control' => $i === 0,
-      'confidence' => $result['confidence'],
-      'lift_default' =>  $result['lift_default'],
+      'confidence' => _format_report_percentage($result['confidence']),
+      'lift_default' =>  _format_report_number($result['lift_default']) . '%',
       'lift_random' => $result['lift_random'],
     );
     $i++;

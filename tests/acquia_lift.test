@@ -375,22 +375,29 @@ class AcquiaLiftWebTestBase extends DrupalWebTestCase
    * Helper method to configure an Acquia Lift account.
    */
   protected function configureAcquiaLiftAccount() {
-    $edit = array(
-      'acquia_lift_profiles_js_path' => $this->liftProfileJsPath,
+    // Set the subscription data variable.
+    variable_set('acquia_subscription_data',
+      array(
+        'active' => TRUE,
+        'heartbeat_data' => array(
+          'acquia_lift' => array(
+            'status' => TRUE,
+            'decision' => array(
+              'public_key' => 'some-public-key',
+              'private_key' => 'some-private-key',
+              'api_url' => 'api.example.com'
+            ),
+            'profile' => array(
+              'js_path' => 'acquia_lift_profiles.example.com/path/to.js',
+              'account_name' => 'MYALPROFILESACCOUNT',
+              'hostname' => 'web-api.example.com',
+              'private_key' => 'abc123',
+              'secret_key' => 'xyz987'
+            )
+          )
+        )
+      )
     );
-    $acquia_lift_account_info = array(
-      'public_key' => 'some-id',
-      'private_key' => 'some_key',
-      'api_url' => 'http://api.example.com',
-      'js_path' => $this->liftProfileJsPath
-    );
-    variable_set('acquia_lift_account_info', $acquia_lift_account_info);
-
-    $this->drupalLogin($this->adminUser);
-    $this->drupalPost('admin/config/content/personalize/acquia_lift', $edit, $this->getButton('config'));
-    variable_set('acquia_lift_api_url', 'http://api.example.com');
-
-    $this->resetAll();
   }
 
   /**
@@ -467,7 +474,7 @@ class AcquiaLiftWebTestConfig extends AcquiaLiftWebTestBase {
     // Fill all required information.
     $this->configureAcquiaLiftAccount();
     // Remove the JavaScript path.
-    variable_del('acquia_lift_profiles_js_path');
+    variable_del('acquia_subscription_data');
     $this->resetAll();
     // Try to add a new campaign and verify that the Acquia Lift agent isn't presented.
     $this->drupalLogin($this->managerUser);

@@ -75,65 +75,6 @@ function acquia_lift_profiles_lift_event_values_form($form, &$form_state) {
 function acquia_lift_profiles_admin_form($form, &$form_state) {
   $form['#attached']['js'][] = drupal_get_path('module', 'acquia_lift_profiles') . '/js/acquia_lift_profiles.admin.js';
 
-  // Get Acquia Lift Account information.
-  $account_info = acquia_lift_get_account_info();
-
-  if ($account_info['profiles']['account_name'] != "") {
-    $acc_name_desc = t("Short abbreviation of your account name. Suggested: @accountname", array('@accountname' => $account_info['profiles']['account_name']));
-  }
-  else {
-    $acc_name_desc = t("Short abbreviation of your account name, such as MYACCOUNT01.");
-  }
-  $form['acquia_lift_profiles_account_name'] = array(
-    '#type' => 'textfield',
-    '#title' => t('Acquia Lift Profiles Account Name'),
-    '#default_value' => variable_get('acquia_lift_profiles_account_name', $account_info['profiles']['account_name']),
-    '#description' => $acc_name_desc,
-    '#required' => TRUE,
-  );
-
-  $form['acquia_lift_profiles_site_name'] = array(
-    '#type' => 'textfield',
-    '#title' => t('Acquia Lift Profiles Customer Site'),
-    '#default_value' => variable_get('acquia_lift_profiles_site_name', ''),
-    '#description' => t("When you are using multiple sites with the same Acquia Lift Profiles account, use this. Otherwise, leave it empty")
-  );
-
-  $form['acquia_lift_profiles_api_url'] = array(
-    '#type' => 'textfield',
-    '#title' => t('Acquia Lift Profiles API URL'),
-    '#field_prefix' => 'http(s)://',
-    '#default_value' => variable_get('acquia_lift_profiles_api_url', $account_info['profiles']['hostname']),
-    '#description' => t("Server where we send the Acquia Lift Profiles to."),
-    '#required' => TRUE,
-  );
-
-  if ($account_info['profiles']['public_key'] != "" && variable_get('acquia_lift_profiles_access_key', '') == "<reset>") {
-    $public_key_desc = t("Suggested: @public_key", array('@public_key' => $account_info['profiles']['public_key']));
-  } else {
-    $public_key_desc = t("Write %reset in the field to show the access key", array("%reset" => "<reset>"));
-  }
-  $form['acquia_lift_profiles_access_key'] = array(
-    '#type' => 'textfield',
-    '#title' => t('Acquia Lift Profiles API Access Key'),
-    '#default_value' => variable_get('acquia_lift_profiles_access_key', $account_info['profiles']['public_key']),
-    '#description' => $public_key_desc,
-    '#required' => TRUE,
-  );
-
-  if ($account_info['profiles']['secret_key'] != "" && variable_get('acquia_lift_profiles_secret_key', '') == "<reset>") {
-    $secret_key_desc = t("Suggested: @secret_key", array('@secret_key' => $account_info['profiles']['secret_key']));
-  } else {
-    $secret_key_desc = t("Write %reset in the field to show the secret key", array("%reset" => "<reset>"));
-  }
-  $form['acquia_lift_profiles_secret_key'] = array(
-    '#type' => 'textfield',
-    '#title' => t('Acquia Lift Profiles API Secret Key'),
-    '#default_value' => variable_get('acquia_lift_profiles_secret_key', $account_info['profiles']['secret_key']),
-    '#description' => $secret_key_desc,
-    '#required' => TRUE,
-  );
-
   $identity_parameter_display_value = variable_get('acquia_lift_profiles_identity_param') ?: 'identity';
   $identity_type_parameter_display_value = variable_get('acquia_lift_profiles_identity_type_param') ?: 'identityType';
   $default_identity_type_display_value = variable_get('acquia_lift_profiles_default_identity_type') ?: 'account';
@@ -299,16 +240,7 @@ function acquia_lift_profiles_admin_form_submit($form, &$form_state) {
     visitor_actions_clear_subscribers('user_login');
     visitor_actions_clear_subscribers('user_register');
   }
-  // Credentials.
-  $variables = array(
-    'acquia_lift_profiles_account_name',
-    'acquia_lift_profiles_site_name',
-    'acquia_lift_profiles_access_key',
-    'acquia_lift_profiles_secret_key',
-  );
-  foreach ($variables as $key) {
-    variable_set($key, $form_state['values'][$key]);
-  }
+
   // Field mappings.
   if (isset($form_state['values']['acquia_lift_profiles_field_mappings'])) {
     // Don't save empty entries.
@@ -325,9 +257,6 @@ function acquia_lift_profiles_admin_form_submit($form, &$form_state) {
   foreach ($identity_variables as $key) {
     variable_set($key, $form_state['values']['acquia_lift_profiles_identity'][$key]);
   }
-
-  // Strip out any http/https protocol from urls and save.
-  variable_set('acquia_lift_profiles_api_url', preg_replace('/(^[a-z]+:\/\/)/i', '', $form_state['values']['acquia_lift_profiles_api_url']));
 
   // Refresh the segments from Acquia Lift Profiles.
   acquia_lift_profiles_refresh_segments_cache();

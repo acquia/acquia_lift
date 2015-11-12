@@ -209,9 +209,6 @@ function acquia_lift_profiles_page_build(&$page) {
   if (!acquia_lift_profiles_is_configured()) {
     return;
   }
-
-  $account_name = variable_get('acquia_lift_profiles_account_name', '');
-  $customer_site = variable_get('acquia_lift_profiles_site_name', 'Drupal');
   $api_url = variable_get('acquia_lift_profiles_api_url', '');
   $capture_identity = variable_get('acquia_lift_profiles_capture_identity', FALSE);
   $mappings = variable_get('acquia_lift_profiles_udf_mappings', array());
@@ -223,8 +220,6 @@ function acquia_lift_profiles_page_build(&$page) {
   $settings = array(
     'request_url' => $base_root . request_uri(),
     'available_segments' => $segments,
-    'account_name' => $account_name,
-    'customer_site' => $customer_site,
     'apiUrl' => $api_url,
     'currentPath' => current_path(),
     'captureIdentity' => $capture_identity,

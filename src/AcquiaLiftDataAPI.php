@@ -2,8 +2,9 @@
 
 /**
  * @file
- * Provides an agent type for Acquia Lift Profiles
+ * Contains \Drupal\acquia_lift\AcquiaLiftDataAPI.
  */
+
 namespace Drupal\acquia_lift;
 
 use Drupal\acquia_lift\Exception\AcquiaLiftDataConnectorCredentialException;
@@ -14,7 +15,6 @@ use Drupal\Core\Config\ConfigFactory;
 use Drupal\Core\Routing\RequestContext;
 use GuzzleHttp\ClientInterface;
 use GuzzleHttp\Psr7\Request;
-
 
 class AcquiaLiftDataAPI implements AcquiaLiftDataInterface {
 

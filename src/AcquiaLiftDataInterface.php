@@ -1,13 +1,11 @@
 <?php
+
 /**
- * Created by PhpStorm.
- * User: lisa.backer
- * Date: 8/25/15
- * Time: 2:24 PM
+ * @file
+ * Contains \Drupal\acquia_lift\AcquiaLiftDataInterface.
  */
 
 namespace Drupal\acquia_lift;
-
 
 interface AcquiaLiftDataInterface {
   /**

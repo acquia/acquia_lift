@@ -2,7 +2,7 @@
 
 /**
  * @file
- * Contains \Drupal\acquia_lift_manager\Form\Settings.
+ * Contains \Drupal\acquia_lift\Form\Settings.
  */
 
 namespace Drupal\acquia_lift\Form;

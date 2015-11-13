@@ -1,13 +1,11 @@
 <?php
+
 /**
- * Created by PhpStorm.
- * User: lisa.backer
- * Date: 8/25/15
- * Time: 8:04 AM
+ * @file
+ * Contains \Drupal\acquia_lift\Controller\TestController.
  */
 
 namespace Drupal\acquia_lift\Controller;
-
 
 use Drupal\Core\Controller\ControllerBase;
 

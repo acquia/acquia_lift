@@ -1,8 +1,36 @@
 <?php
 
+use Drupal\acquia_lift\Entity\Credential;
+
 /**
  * Implements hook_page_attachments() to insert JavaScript to the appropriate scope/region of the page.
  */
 function acquia_lift_page_attachments(array &$page) {
+  $settings = \Drupal::config('acquia_lift.settings');
+  $credential = new Credential($settings->get('credential'));
 
+  // Don't attach anything to the page until the credential is valid.
+  if (!$credential->isValid()) {
+    return;
+  }
+
+  $settings = array(
+    'test' => 123,
+  );
+
+  if (!empty($link_settings)) {
+    $page['#attached']['drupalSettings']['acquia_lift'] = $settings;
+  }
+
+  $page['#attached']['html_head'][] = [
+    // The data.
+    [
+      // The HTML tag to add, in this case a <script> tag.
+      '#tag' => 'script',
+      // The value of the HTML tag, here we want to end up with <script>console.log("loaded!");</script>.
+      '#value' => 'console.log("loaded!");',
+    ],
+    // A key, to make it possible to recognize this HTML <HEAD> element when altering.
+    'acquia_lift_loaded'
+  ];
 }

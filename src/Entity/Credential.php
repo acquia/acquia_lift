@@ -7,27 +7,25 @@
 
 namespace Drupal\acquia_lift\Entity;
 
-use Drupal\Core\Config\Config;
-
 /**
  * Defines the Credential entity class.
  */
 class Credential {
   /**
-   * Config.
+   * Credential.
    *
-   * @var \Drupal\Core\Config\Config $config
+   * @var array $credential
    */
-  private $config;
+  private $credential;
 
   /**
    * Constructor.
    *
-   * @param \Drupal\Core\Config\Config $config
-   *  Config
+   * @param array|NULL $credential
+   *  Credential
    */
-  public function __construct(Config $config) {
-    $this->config = $config;
+  public function __construct($credential) {
+    $this->credential = $credential ?: array();
   }
 
   /**
@@ -37,7 +35,7 @@ class Credential {
    *   Account name.
    */
   public function getAccountName() {
-    return $this->config->get('account_name');
+    return $this->credential['account_name'];
   }
 
   /**
@@ -47,7 +45,7 @@ class Credential {
    *   Customer site.
    */
   public function getCustomerSite() {
-    return $this->config->get('customer_site');
+    return $this->credential['customer_site'];
   }
 
   /**
@@ -57,7 +55,7 @@ class Credential {
    *   API URL.
    */
   public function getApiUrl() {
-    return $this->config->get('api_url');
+    return $this->credential['api_url'];
   }
 
   /**
@@ -67,7 +65,7 @@ class Credential {
    *   Access key.
    */
   public function getAccessKey() {
-    return $this->config->get('access_key');
+    return $this->credential['access_key'];
   }
 
   /**
@@ -77,7 +75,7 @@ class Credential {
    *   Secret key.
    */
   public function getSecretKey() {
-    return $this->config->get('secret_key');
+    return $this->credential['secret_key'];
   }
 
   /**
@@ -87,7 +85,7 @@ class Credential {
    *   JavaScript path.
    */
   public function getJsPath() {
-    return $this->config->get('js_path');
+    return $this->credential['js_path'];
   }
 
   /**

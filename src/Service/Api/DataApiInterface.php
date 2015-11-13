@@ -2,10 +2,10 @@
 
 /**
  * @file
- * Contains \Drupal\acquia_lift\Api\DataApiInterface.
+ * Contains \Drupal\acquia_lift\Service\Api\DataApiInterface.
  */
 
-namespace Drupal\acquia_lift\Api;
+namespace Drupal\acquia_lift\Service\Api;
 
 interface DataApiInterface {
   /**
@@ -15,4 +15,4 @@ interface DataApiInterface {
    *   An array of segment names.
    */
   public function getSegments();
-} 
+}

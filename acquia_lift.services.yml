@@ -1,4 +1,4 @@
 services:
-  acquia_lift.api.data_api:
-    class: '\Drupal\acquia_lift\Api\DataApi'
+  acquia_lift.service.api.data_api:
+    class: '\Drupal\acquia_lift\Service\Api\DataApi'
     arguments: ['@config.factory', '@http_client', '@router.request_context']

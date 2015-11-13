@@ -2,10 +2,10 @@
 
 /**
  * @file
- * Contains \Drupal\acquia_lift\Api\DataApi.
+ * Contains \Drupal\acquia_lift\Service\Api\DataApi.
  */
 
-namespace Drupal\acquia_lift\Api;
+namespace Drupal\acquia_lift\Service\Api;
 
 use Drupal\acquia_lift\Exception\DataApiCredentialException;
 use Drupal\acquia_lift\Exception\DataApiException;

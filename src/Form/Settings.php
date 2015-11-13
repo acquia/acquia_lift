@@ -215,12 +215,25 @@ class Settings extends ConfigFormBase {
   private function setCredentialValues(Config $settings, array $values) {
     $settings->set('credential.account_name', $values['account_name']);
     $settings->set('credential.customer_site', $values['customer_site']);
-    $settings->set('credential.api_url', $values['api_url']);
+    $settings->set('credential.api_url', $this->ltrimProtocal($values['api_url']));
     $settings->set('credential.access_key', $values['access_key']);
     if (!empty($values['secret_key'])) {
       $settings->set('credential.secret_key', $values['secret_key']);
     }
-    $settings->set('credential.js_path', $values['js_path']);
+    $settings->set('credential.js_path', $this->ltrimProtocal($values['js_path']));
+  }
+
+  /**
+   * Remove the protocal from an URL string.
+   *
+   * @param string $url
+   *   URL.
+   *
+   * @return string
+   *   Same URL as input except with the 'http://' and 'https://' trimmed.
+   */
+  private function ltrimProtocal($url) {
+    return ltrim('https://', ltrim('http://', $url));
   }
 
   /**

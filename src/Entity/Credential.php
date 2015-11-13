@@ -7,6 +7,8 @@
 
 namespace Drupal\acquia_lift\Entity;
 
+use Drupal\Component\Utility\UrlHelper;
+
 /**
  * Defines the Credential entity class.
  */
@@ -97,10 +99,21 @@ class Credential {
    * @todo This is quick and primitive. Class is to be updated later.
    */
   public function isValid() {
-    return !empty($this->getAccountName()) &&
-      !empty($this->getApiUrl()) &&
-      !empty($this->getAccessKey()) &&
-      !empty($this->getSecretKey()) &&
-      !empty($this->getJsPath());
+    // Required credential need to be filled.
+    if (empty($this->getAccountName()) ||
+      empty($this->getApiUrl()) ||
+      empty($this->getAccessKey()) ||
+      empty($this->getSecretKey()) ||
+      empty($this->getJsPath())
+    ) {
+      return FALSE;
+    }
+
+    // URLs need to be valid.
+    if (!UrlHelper::isValid($this->getApiUrl()) || !UrlHelper::isValid($this->getJsPath())) {
+      return FALSE;
+    }
+
+    return TRUE;
   }
 }

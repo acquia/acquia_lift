@@ -10,11 +10,11 @@ namespace Drupal\acquia_lift\Api;
 use Drupal\acquia_lift\Exception\DataApiCredentialException;
 use Drupal\acquia_lift\Exception\DataApiException;
 use Drupal\Component\Utility\SafeMarkup;
-use Drupal\Component\Utility\UrlHelper;
 use Drupal\Core\Config\ConfigFactory;
 use Drupal\Core\Routing\RequestContext;
 use GuzzleHttp\ClientInterface;
 use GuzzleHttp\Psr7\Request;
+use Drupal\acquia_lift\Entity\Credential;
 
 class DataApi implements DataApiInterface {
   /**
@@ -25,46 +25,25 @@ class DataApi implements DataApiInterface {
   private $httpClient;
 
   /**
-   * The API URL for Acquia Lift Data collection.
-   *
-   * @var string
-   */
-  private $apiUrl;
-
-  /**
-   * The Acquia Lift account name to use.
-   *
-   * @var string
-   */
-  private $accountName;
-
-  /**
-   * The customer site to use.
-   *
-   * @var string
-   */
-  private $siteName;
-
-  /**
-   * The access key to use for authorization.
-   *
-   * @var string
-   */
-  private $accessKey;
-
-  /**
-   * The secret key to use for authorization.
-   *
-   * @var string
-   */
-  private $secretKey;
-
-  /**
    * The current Drupal request.
    *
    * @var \Drupal\Core\Routing\RequestContext
    */
   private $context;
+
+  /**
+   * The logger to use for errors and notices.
+   *
+   * @var \Psr\Log\LoggerInterface;
+   */
+  private $logger = NULL;
+
+  /**
+   * Acquia Lift credential.
+   *
+   * @var Drupal\acquia_lift\Entity\Credential
+   */
+  private $credential;
 
   /**
    * The list of headers that can be used in the canonical request.
@@ -78,13 +57,6 @@ class DataApi implements DataApiInterface {
   );
 
   /**
-   * The logger to use for errors and notices.
-   *
-   * @var \Psr\Log\LoggerInterface;
-   */
-  private $logger = NULL;
-
-  /**
    * Constructor.
    * @param ConfigFactory $config_factory
    *   The config factory service
@@ -95,34 +67,14 @@ class DataApi implements DataApiInterface {
    * @throws DataApiCredentialException
    */
   public function __construct(ConfigFactory $config_factory, ClientInterface $http_client, RequestContext $context) {
-    $config = $config_factory->get('acquia_lift.settings');
+    $this->httpClient = $http_client;
     $this->context = $context;
     $this->logger = \Drupal::logger('acquia_lift');
 
-    $this->accountName = $config->get('account_name');
-    $this->apiUrl = $config->get('api_url');
-    $this->accessKey = $config->get('access_key');
-    $this->secretKey = $config->get('secret_key');
-    $this->siteName = $config->get('customer_site');
-
-    // If either account name or API URL is still missing, bail.
-    if (empty($this->apiUrl) || empty($this->accountName) || empty($this->accessKey) || empty($this->secretKey)) {
-      throw new DataApiCredentialException('Missing acquia_lift data account information.');
-    }
-    if (!UrlHelper::isValid($this->apiUrl)) {
-      throw new DataApiCredentialException('Acquia Lift Data API URL is not a valid URL.');
-    }
-
-    $this->httpClient = $http_client;
-
-    $needs_scheme = strpos($this->apiUrl, '://') === FALSE;
-    if ($needs_scheme) {
-      // Use the same scheme for Acquia Lift Profiles as we are using here.
-      $url_scheme = ($this->context->getScheme() == 'https') ? 'https://' : 'http://';
-      $this->apiUrl = $url_scheme . $this->apiUrl;
-    }
-    if (substr($this->apiUrl, -1) === '/') {
-      $this->apiUrl = substr($this->apiUrl, 0, -1);
+    $credential_settings = $config_factory->get('acquia_lift.settings')->get('credential');
+    $this->credential = new Credential($credential_settings);
+    if (!$this->credential->isValid()) {
+      throw new DataApiCredentialException('Acquia Lift credential is invalid.');
     }
   }
 
@@ -148,7 +100,7 @@ class DataApi implements DataApiInterface {
    *   The endpoint to make calls to.
    */
   private function generateEndpoint($path) {
-    return $this->apiUrl . '/dashboard/rest/' . $this->accountName . '/' . $path;
+    return 'http://' . $this->credential->getApiUrl() . '/dashboard/rest/' . $this->credential->getAccountName() . '/' . $path;
   }
 
   /**
@@ -210,8 +162,8 @@ class DataApi implements DataApiInterface {
    */
   private function getAuthHeader($method, $path, $parameters = array(), $headers = array()) {
     $canonical = $this->canonicalizeRequest($method, $path, $parameters, $headers);
-    $hmac = base64_encode(hash_hmac('sha1', (string) $canonical, $this->secretKey, TRUE));
-    return 'HMAC ' . $this->accessKey . ':' . $hmac;
+    $hmac = base64_encode(hash_hmac('sha1', (string) $canonical, $this->credential->getSecretKey(), TRUE));
+    return 'HMAC ' . $this->credential->getAccessKey() . ':' . $hmac;
   }
 
   /**

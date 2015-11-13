@@ -7,8 +7,8 @@
 
 namespace Drupal\acquia_lift;
 
-use Drupal\acquia_lift\Exception\AcquiaLiftDataConnectorCredentialException;
-use Drupal\acquia_lift\Exception\AcquiaLiftDataConnectorException;
+use Drupal\acquia_lift\Exception\DataConnectorCredentialException;
+use Drupal\acquia_lift\Exception\DataConnectorException;
 use Drupal\Component\Utility\SafeMarkup;
 use Drupal\Component\Utility\UrlHelper;
 use Drupal\Core\Config\ConfigFactory;
@@ -93,7 +93,7 @@ class AcquiaLiftDataAPI implements AcquiaLiftDataInterface {
    *   A Guzzle client interface
    * @param RequestContext $context
    *   The current request
-   * @throws AcquiaLiftDataConnectorCredentialException
+   * @throws DataConnectorCredentialException
    */
   public function __construct(ConfigFactory $config_factory, ClientInterface $http_client, RequestContext $context) {
     $config = $config_factory->get('acquia_lift.settings');
@@ -108,10 +108,10 @@ class AcquiaLiftDataAPI implements AcquiaLiftDataInterface {
 
     // If either account name or API URL is still missing, bail.
     if (empty($this->apiUrl) || empty($this->accountName) || empty($this->accessKey) || empty($this->secretKey)) {
-      throw new AcquiaLiftDataConnectorCredentialException('Missing acquia_lift data account information.');
+      throw new DataConnectorCredentialException('Missing acquia_lift data account information.');
     }
     if (!UrlHelper::isValid($this->apiUrl)) {
-      throw new AcquiaLiftDataConnectorCredentialException('Acquia Lift Data API URL is not a valid URL.');
+      throw new DataConnectorCredentialException('Acquia Lift Data API URL is not a valid URL.');
     }
 
     $this->httpClient = $http_client;
@@ -278,7 +278,7 @@ class AcquiaLiftDataAPI implements AcquiaLiftDataInterface {
    *   The type of event, can be one of 'CAMPAIGN_ACTION', 'CAMPAIGN_CLICK_THROUGH',
    *   'CAMPAIGN_CONVERSION', or 'OTHER' (default).
    *
-   * @throws AcquiaLiftDataConnectorException
+   * @throws DataConnectorException
    */
   public function saveEvent($event_name, $event_type = 'OTHER') {
     // First get our Authorization header.
@@ -297,7 +297,7 @@ class AcquiaLiftDataAPI implements AcquiaLiftDataInterface {
     }
     else {
       $this->logger->error($fail_msg);
-      throw new AcquiaLiftDataConnectorException($fail_msg);
+      throw new DataConnectorException($fail_msg);
     }
   }
 
@@ -307,7 +307,7 @@ class AcquiaLiftDataAPI implements AcquiaLiftDataInterface {
    * @param $event_name
    *   The name of the event.
    *
-   * @throws AcquiaLiftDataConnectorException
+   * @throws DataConnectorException
    */
   public function deleteEvent($event_name) {
     // First get our Authorization header.
@@ -325,7 +325,7 @@ class AcquiaLiftDataAPI implements AcquiaLiftDataInterface {
     }
     else {
       $this->logger->error($fail_msg);
-      throw new AcquiaLiftDataConnectorException($fail_msg);
+      throw new DataConnectorException($fail_msg);
     }
   }
 }

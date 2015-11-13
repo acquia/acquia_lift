@@ -58,8 +58,9 @@ class Settings extends ConfigFormBase {
   private function buildCredentialForm(Config $config) {
     $form = array(
       '#title' => t('Credential'),
-      '#type' => 'fieldset',
+      '#type' => 'details',
       '#tree' => TRUE,
+      '#open' => !$this->hasValidCredential($config),
     );
     $form['account_name'] = array(
       '#type' => 'textfield',
@@ -104,6 +105,23 @@ class Settings extends ConfigFormBase {
   }
 
   /**
+   * Has valid credential.
+   *
+   * @param \Drupal\Core\Config\Config $config
+   *   Acquia Lift Config.
+   *
+   * @return boolean
+   *   True if config contains valid credential.
+   */
+  private function hasValidCredential(Config $config) {
+    return !empty($config->get('account_name')) &&
+      !empty($config->get('api_url')) &&
+      !empty($config->get('access_key')) &&
+      !empty($config->get('secret_key')) &&
+      !empty($config->get('js_path'));
+  }
+
+  /**
    * Build identity form.
    *
    * @param \Drupal\Core\Config\Config $config
@@ -115,8 +133,9 @@ class Settings extends ConfigFormBase {
   private function buildIdentityForm(Config $config) {
     $form = array(
       '#title' => t('Identity'),
-      '#type' => 'fieldset',
+      '#type' => 'details',
       '#tree' => TRUE,
+      '#open' => TRUE,
     );
     $form['capture_identity'] = array(
       '#type' => 'checkbox',
@@ -160,8 +179,9 @@ class Settings extends ConfigFormBase {
 
     $form = array(
       '#title' => t('Field Mappings'),
-      '#type' => 'fieldset',
+      '#type' => 'details',
       '#tree' => TRUE,
+      '#open' => TRUE,
     );
     $form['content_section'] = array(
       '#type' => 'select',

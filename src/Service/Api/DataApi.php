@@ -59,13 +59,14 @@ class DataApi implements DataApiInterface {
   /**
    * Constructor.
    *
-   * @param ConfigFactory $config_factory
+   * @param \Drupal\Core\Config\ConfigFactory $config_factory
    *   The config factory service
-   * @param ClientInterface $http_client
+   * @param \GuzzleHttp\ClientInterface $http_client
    *   A Guzzle client interface
-   * @param RequestContext $context
+   * @param \Drupal\Core\Routing\RequestContext $context
    *   The current request
-   * @throws DataApiCredentialException
+   *
+   * @throws \Drupal\acquia_lift\Exception\DataApiCredentialException
    */
   public function __construct(ConfigFactory $config_factory, ClientInterface $http_client, RequestContext $context) {
     $this->httpClient = $http_client;

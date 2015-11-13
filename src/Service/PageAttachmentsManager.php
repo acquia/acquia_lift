@@ -27,9 +27,6 @@ class PageAttachmentsManager {
   public function __construct(ConfigFactory $config_factory) {
     $credential_settings = $config_factory->get('acquia_lift.settings')->get('credential');
     $this->credential = new Credential($credential_settings);
-    if (!$this->credential->isValid()) {
-      throw new DataApiCredentialException('Acquia Lift credential is invalid.');
-    }
   }
 
   /**

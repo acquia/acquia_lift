@@ -141,6 +141,7 @@ class Settings extends ConfigFormBase {
     $values = $form_state->getValues();
 
     $this->setCredentialValues($config, $values['credential']);
+    $this->setIdentityValues($config, $values['identity']);
 
     $config->save();
 
@@ -155,13 +156,28 @@ class Settings extends ConfigFormBase {
    * @param array $values
    *   Credential values.
    */
-  private function setCredentialValues(Config $config, $values) {
+  private function setCredentialValues(Config $config, array $values) {
     if (!empty($values['secret_key'])) {
       $config->set('secret_key', $values['secret_key']);
     }
-    $config->set('account_name', $values['account_name'])
-      ->set('customer_site', $values['customer_site'])
-      ->set('api_url', $values['api_url'])
-      ->set('access_key', $values['access_key']);
+    $config->set('account_name', $values['account_name']);
+    $config->set('customer_site', $values['customer_site']);
+    $config->set('api_url', $values['api_url']);
+    $config->set('access_key', $values['access_key']);
+  }
+
+  /**
+   * Set identity values.
+   *
+   * @param \Drupal\Core\Config\Config $config
+   *   Acquia Lift Config.
+   * @param array $values
+   *   Identity values.
+   */
+  private function setIdentityValues(Config $config, array $values) {
+    $config->set('capture_identity', $values['capture_identity']);
+    $config->set('identity_parameter', $values['identity_parameter']);
+    $config->set('identity_type_parameter', $values['identity_type_parameter']);
+    $config->set('default_identity_type', $values['default_identity_type']);
   }
 }

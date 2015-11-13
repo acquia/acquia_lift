@@ -37,7 +37,9 @@ class Settings extends ConfigFormBase {
    */
   public function buildForm(array $form, FormStateInterface $form_state, Request $request = NULL) {
     $config = $this->config('acquia_lift.settings');
+
     $form['credential'] = $this->buildCredentialForm($config);
+    $form['identity'] = $this->buildIdentityForm($config);
 
     return parent::buildForm($form, $form_state);
   }
@@ -87,6 +89,45 @@ class Settings extends ConfigFormBase {
       '#default_value' => $config->get('secret_key'),
       '#required' => empty($config->get('secret_key')),
       '#description' => !empty($config->get('secret_key')) ? t('Only necessary if updating') : '',
+    );
+
+    return $form;
+  }
+
+  /**
+   * Build identity form.
+   *
+   * @param \Drupal\Core\Config\Config $config
+   *   Acquia Lift Config.
+   *
+   * @return array
+   *   Identity form.
+   */
+  private function buildIdentityForm(Config $config) {
+    $form = array(
+      '#title' => t('Identity'),
+      '#type' => 'fieldset',
+      '#tree' => TRUE,
+    );
+    $form['capture_identity'] = array(
+      '#type' => 'checkbox',
+      '#title' => t('Capture identity on login / register'),
+      '#default_value' => $config->get('capture_identity'),
+    );
+    $form['identity_parameter'] = array(
+      '#type' => 'textfield',
+      '#title' => t('Identity Parameter'),
+      '#default_value' => $config->get('identity_parameter'),
+    );
+    $form['identity_type_parameter'] = array(
+      '#type' => 'textfield',
+      '#title' => t('Identity Type Parameter'),
+      '#default_value' => $config->get('identity_type_parameter'),
+    );
+    $form['default_identity_type'] = array(
+      '#type' => 'textfield',
+      '#title' => t('Default Identity Type'),
+      '#default_value' => $config->get('default_identity_type'),
     );
 
     return $form;

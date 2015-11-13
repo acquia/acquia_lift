@@ -1,1 +1,8 @@
 <?php
+
+/**
+ * Implements hook_page_attachments() to insert JavaScript to the appropriate scope/region of the page.
+ */
+function acquia_lift_page_attachments(array &$page) {
+
+}

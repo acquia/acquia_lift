@@ -2,7 +2,7 @@
 
 /**
  * @file
- * Contains \Drupal\acquia_lift\Form\Settings.
+ * Contains \Drupal\acquia_lift\Form\AdminSettingsForm.
  */
 
 namespace Drupal\acquia_lift\Form;
@@ -17,7 +17,7 @@ use Drupal\acquia_lift\Entity\Credential;
 /**
  * Defines a form that configures settings.
  */
-class Settings extends ConfigFormBase {
+class AdminSettingsForm extends ConfigFormBase {
   /**
    * {@inheritdoc}
    */
@@ -233,7 +233,7 @@ class Settings extends ConfigFormBase {
    *   Same URL as input except with the 'http://' and 'https://' trimmed.
    */
   private function ltrimProtocal($url) {
-    return ltrim('https://', ltrim('http://', $url));
+    return ltrim(ltrim($url, 'http://'), 'https://');
   }
 
   /**

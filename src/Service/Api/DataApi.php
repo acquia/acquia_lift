@@ -41,7 +41,7 @@ class DataApi implements DataApiInterface {
   /**
    * Acquia Lift credential.
    *
-   * @var Drupal\acquia_lift\Entity\Credential
+   * @var \Drupal\acquia_lift\Entity\Credential
    */
   private $credential;
 
@@ -58,6 +58,7 @@ class DataApi implements DataApiInterface {
 
   /**
    * Constructor.
+   *
    * @param ConfigFactory $config_factory
    *   The config factory service
    * @param ClientInterface $http_client

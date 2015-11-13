@@ -6,11 +6,9 @@ use Drupal\acquia_lift\Entity\Credential;
  * Implements hook_page_attachments() to insert JavaScript to the appropriate scope/region of the page.
  */
 function acquia_lift_page_attachments(array &$page) {
-  $settings = \Drupal::config('acquia_lift.settings');
-  $credential = new Credential($settings->get('credential'));
+  $page_attachments_manager = \Drupal::service('acquia_lift.service.page_attachments_manager');
 
-  // Don't attach anything to the page until the credential is valid.
-  if (!$credential->isValid()) {
+  if (!$page_attachments_manager->shouldAttach()) {
     return;
   }
 
@@ -18,7 +16,7 @@ function acquia_lift_page_attachments(array &$page) {
     'test' => 123,
   );
 
-  if (!empty($link_settings)) {
+  if (!empty($settings)) {
     $page['#attached']['drupalSettings']['acquia_lift'] = $settings;
   }
 

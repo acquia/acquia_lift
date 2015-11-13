@@ -11,8 +11,8 @@ use Drupal\Core\Controller\ControllerBase;
 
 class TestController extends ControllerBase {
   public function test() {
-    $webapi = \Drupal::service('acquia_lift.data_connector');
-    $segments = $webapi->getSegments();
+    $data_api = \Drupal::service('acquia_lift.api.data_api');
+    $segments = $data_api->getSegments();
     $build['segments'] = array(
       '#markup' => print_r($segments, TRUE),
     );

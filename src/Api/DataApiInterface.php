@@ -2,12 +2,12 @@
 
 /**
  * @file
- * Contains \Drupal\acquia_lift\AcquiaLiftDataInterface.
+ * Contains \Drupal\acquia_lift\Api\DataApiInterface.
  */
 
-namespace Drupal\acquia_lift;
+namespace Drupal\acquia_lift\Api;
 
-interface AcquiaLiftDataInterface {
+interface DataApiInterface {
   /**
    * Gets a list of available segments for the current configuration.
    *

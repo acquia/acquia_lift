@@ -92,6 +92,13 @@ class Settings extends ConfigFormBase {
       '#required' => empty($config->get('secret_key')),
       '#description' => !empty($config->get('secret_key')) ? t('Only necessary if updating') : '',
     );
+    $form['js_path'] = array(
+      '#type' => 'textfield',
+      '#title' => t('JavaScript Path'),
+      '#field_prefix' => 'http(s)://',
+      '#default_value' => $config->get('js_path'),
+      '#required' => TRUE,
+    );
 
     return $form;
   }
@@ -206,13 +213,14 @@ class Settings extends ConfigFormBase {
    *   Credential values.
    */
   private function setCredentialValues(Config $config, array $values) {
-    if (!empty($values['secret_key'])) {
-      $config->set('secret_key', $values['secret_key']);
-    }
     $config->set('account_name', $values['account_name']);
     $config->set('customer_site', $values['customer_site']);
     $config->set('api_url', $values['api_url']);
     $config->set('access_key', $values['access_key']);
+    if (!empty($values['secret_key'])) {
+      $config->set('secret_key', $values['secret_key']);
+    }
+    $config->set('js_path', $values['js_path']);
   }
 
   /**

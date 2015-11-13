@@ -17,62 +17,61 @@ use GuzzleHttp\ClientInterface;
 use GuzzleHttp\Psr7\Request;
 
 class DataApi implements DataApiInterface {
-
   /**
    * An http client for making calls to Acquia Lift web data collection service.
    *
    * @var \GuzzleHttp\ClientInterface
    */
-  protected $httpClient;
+  private $httpClient;
 
   /**
    * The API URL for Acquia Lift Data collection.
    *
    * @var string
    */
-  protected $apiUrl;
+  private $apiUrl;
 
   /**
    * The Acquia Lift account name to use.
    *
    * @var string
    */
-  protected $accountName;
+  private $accountName;
 
   /**
    * The customer site to use.
    *
    * @var string
    */
-  protected $siteName;
+  private $siteName;
 
   /**
    * The access key to use for authorization.
    *
    * @var string
    */
-  protected $accessKey;
+  private $accessKey;
 
   /**
    * The secret key to use for authorization.
    *
    * @var string
    */
-  protected $secretKey;
+  private $secretKey;
 
   /**
    * The current Drupal request.
    *
    * @var \Drupal\Core\Routing\RequestContext
    */
-  protected $context;
+  private $context;
 
   /**
    * The list of headers that can be used in the canonical request.
    *
    * @var array
    */
-  protected $headerWhitelist = array(
+  private $headerWhitelist = array(
     'Accept',
     'Host',
     'User-Agent'
@@ -83,7 +82,7 @@ class DataApi implements DataApiInterface {
    *
    * @var \Psr\Log\LoggerInterface;
    */
-  protected $logger = NULL;
+  private $logger = NULL;
 
   /**
    * Constructor.
@@ -141,33 +140,6 @@ class DataApi implements DataApiInterface {
   }
 
   /**
-   * Accessor for the accountName property.
-   *
-   * @return string
-   */
-  public function getAccountName() {
-    return $this->accountName;
-  }
-
-  /**
-   * Accessor for the apiUrl property.
-   *
-   * @return string
-   */
-  public function getApiUrl() {
-    return $this->apiUrl;
-  }
-
-  /**
-   * Returns an http client to use for Acquia Lift Profiles calls.
-   *
-   * @return \GuzzleHttp\ClientInterface
-   */
-  protected function httpClient() {
-    return $this->httpClient;
-  }
-
-  /**
    * Generates an endpoint for a particular section of the Acquia Lift Data API.
    *
    * @param string $path
@@ -175,7 +147,7 @@ class DataApi implements DataApiInterface {
    * @return string
    *   The endpoint to make calls to.
    */
-  protected function generateEndpoint($path) {
+  private function generateEndpoint($path) {
     return $this->apiUrl . '/dashboard/rest/' . $this->accountName . '/' . $path;
   }
 
@@ -194,13 +166,13 @@ class DataApi implements DataApiInterface {
    * @return string
    *   The canonical representation of the request.
    */
-  public function canonicalizeRequest($method, $url, $parameters = array(), $headers = array()) {
+  private function canonicalizeRequest($method, $url, $parameters = array(), $headers = array()) {
     $parsed_url = parse_url($url);
     $str = strtoupper($method) . "\n";
     // Certain headers may get added to the actual request so we need to
     // add them here.
     if (!isset($headers['User-Agent'])) {
-      $client_config = $this->httpClient()->getConfig();
+      $client_config = $this->httpClient->getConfig();
       $headers['User-Agent'] = $client_config['headers']['User-Agent'];
     }
     if (!isset($headers['Host'])) {
@@ -236,7 +208,7 @@ class DataApi implements DataApiInterface {
    *
    * @return string
    */
-  public function getAuthHeader($method, $path, $parameters = array(), $headers = array()) {
+  private function getAuthHeader($method, $path, $parameters = array(), $headers = array()) {
     $canonical = $this->canonicalizeRequest($method, $path, $parameters, $headers);
     $hmac = base64_encode(hash_hmac('sha1', (string) $canonical, $this->secretKey, TRUE));
     return 'HMAC ' . $this->accessKey . ':' . $hmac;
@@ -256,7 +228,7 @@ class DataApi implements DataApiInterface {
     $headers += array('Authorization' => $auth_header);
 
     $request = new Request('GET', $url, $headers);
-    $response = $this->httpClient()->send($request);
+    $response = $this->httpClient->send($request);
     $data = $response->getBody();
     if (empty($data)) {
       return array();
@@ -288,7 +260,7 @@ class DataApi implements DataApiInterface {
     $headers += array('Authorization' => $auth_header);
 
     $request = new Request('PUT', $url . '?type=' . $event_type, $headers);
-    $response = $this->httpClient()->send($request);
+    $response = $this->httpClient->send($request);
     $vars = array('@eventname' => $event_name);
     $success_msg = SafeMarkup::format('The event @eventname has been saved to Acquia Lift', $vars);
     $fail_msg = SafeMarkup::format('Could not save event @eventname to Acquia Lift', $vars);
@@ -315,7 +287,7 @@ class DataApi implements DataApiInterface {
     $auth_header = $this->getAuthHeader('DELETE', $url);
 
     $request = new Request('DELETE', $url, array('Authorization' => $auth_header));
-    $response = $this->httpClient()->send($request);
+    $response = $this->httpClient->send($request);
 
     $vars = array('@eventname' => $event_name);
     $success_msg = SafeMarkup::format('The event @eventname was deleted from Acquia Lift Profiles', $vars);

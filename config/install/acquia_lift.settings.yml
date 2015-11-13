@@ -4,7 +4,7 @@ api_url: ''
 access_key: ''
 secret_key: ''
 js_path: ''
-capture_identity: FALSE
+capture_identity: false
 identity_parameter: ''
 identity_type_parameter: ''
 default_identity_type: ''

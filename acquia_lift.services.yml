@@ -4,4 +4,4 @@ services:
     arguments: ['@config.factory', '@http_client', '@router.request_context']
   acquia_lift.service.page_attachments_manager:
     class: Drupal\acquia_lift\Service\PageAttachmentsManager
-    arguments: ['@config.factory']
+    arguments: ['@config.factory', '@path.current', '@path.alias_manager', '@path.matcher']

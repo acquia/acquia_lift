@@ -60,11 +60,11 @@ class DataApi implements DataApiInterface {
    * Constructor.
    *
    * @param \Drupal\Core\Config\ConfigFactory $config_factory
-   *   The config factory service
+   *   The config factory service.
    * @param \GuzzleHttp\ClientInterface $http_client
-   *   A Guzzle client interface
+   *   A Guzzle client interface.
    * @param \Drupal\Core\Routing\RequestContext $context
-   *   The current request
+   *   The current request.
    *
    * @throws \Drupal\acquia_lift\Exception\DataApiCredentialException
    */
@@ -102,7 +102,8 @@ class DataApi implements DataApiInterface {
    *   The endpoint to make calls to.
    */
   private function generateEndpoint($path) {
-    return 'http://' . $this->credential->getApiUrl() . '/dashboard/rest/' . $this->credential->getAccountName() . '/' . $path;
+    $url_scheme = ($this->context->getScheme() == 'https') ? 'https://' : 'http://';
+    return $url_scheme . $this->credential->getApiUrl() . '/dashboard/rest/' . $this->credential->getAccountName() . '/' . $path;
   }
 
   /**

@@ -11,6 +11,7 @@ use Drupal\Core\Config\Config;
 use Drupal\Core\Form\ConfigFormBase;
 use Drupal\Core\Form\FormStateInterface;
 use Symfony\Component\HttpFoundation\Request;
+use Drupal\taxonomy\Entity\Vocabulary;
 
 /**
  * Defines a form that configures devel settings.
@@ -40,6 +41,7 @@ class Settings extends ConfigFormBase {
 
     $form['credential'] = $this->buildCredentialForm($config);
     $form['identity'] = $this->buildIdentityForm($config);
+    $form['field_mappings'] = $this->buildFieldMappingsForm($config);
 
     return parent::buildForm($form, $form_state);
   }
@@ -134,6 +136,52 @@ class Settings extends ConfigFormBase {
   }
 
   /**
+   * Build field mappings form.
+   *
+   * @param \Drupal\Core\Config\Config $config
+   *   Acquia Lift Config.
+   *
+   * @return array
+   *   Field mappings form.
+   */
+  private function buildFieldMappingsForm(Config $config) {
+    $vocabularies = Vocabulary::loadMultiple();
+    $vocabulary_options = array();
+    foreach ($vocabularies as $vocabulary_vid => $vocabulary) {
+      $vocabulary_options[$vocabulary_vid] = $vocabulary->label();
+    }
+
+    $form = array(
+      '#title' => t('Field Mappings'),
+      '#type' => 'fieldset',
+      '#tree' => TRUE,
+    );
+    $form['content_section'] = array(
+      '#type' => 'select',
+      '#title' => t('Content Section'),
+      '#empty_value' => '',
+      '#options' => $vocabulary_options,
+      '#default_value' => $config->get('content_section'),
+    );
+    $form['content_keywords'] = array(
+      '#type' => 'select',
+      '#title' => t('Content Keywords'),
+      '#empty_value' => '',
+      '#options' => $vocabulary_options,
+      '#default_value' => $config->get('content_keywords'),
+    );
+    $form['persona'] = array(
+      '#type' => 'select',
+      '#title' => t('Persona'),
+      '#empty_value' => '',
+      '#options' => $vocabulary_options,
+      '#default_value' => $config->get('persona'),
+    );
+
+    return $form;
+  }
+
+  /**
    * {@inheritdoc}
    */
   public function submitForm(array &$form, FormStateInterface $form_state) {
@@ -142,6 +190,7 @@ class Settings extends ConfigFormBase {
 
     $this->setCredentialValues($config, $values['credential']);
     $this->setIdentityValues($config, $values['identity']);
+    $this->setFieldMappingsValues($config, $values['field_mappings']);
 
     $config->save();
 
@@ -179,5 +228,19 @@ class Settings extends ConfigFormBase {
     $config->set('identity_parameter', $values['identity_parameter']);
     $config->set('identity_type_parameter', $values['identity_type_parameter']);
     $config->set('default_identity_type', $values['default_identity_type']);
+  }
+
+  /**
+   * Set field mapping values.
+   *
+   * @param \Drupal\Core\Config\Config $config
+   *   Acquia Lift Config.
+   * @param array $values
+   *   Field mappings values.
+   */
+  private function setFieldMappingsValues(Config $config, array $values) {
+    $config->set('content_section', $values['content_section']);
+    $config->set('content_keywords', $values['content_keywords']);
+    $config->set('persona', $values['persona']);
   }
 }

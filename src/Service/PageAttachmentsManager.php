@@ -156,7 +156,7 @@ class PageAttachmentsManager {
    * Get library.
    *
    * @return string
-   *   Liberary identifier.
+   *   Library identifier.
    */
   public function getLibrary() {
     return 'acquia_lift/acquia_lift';

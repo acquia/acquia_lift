@@ -5,8 +5,6 @@ var _tcwq = _tcwq || [];
 
   "use strict";
 
-  Drupal.acquia_lift = {};
-
   function generateTrackingId(){
     var d = new Date().getTime();
     var uuid = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g,
@@ -24,6 +22,8 @@ var _tcwq = _tcwq || [];
       Drupal.acquia_lift.initialize();
     }
   };
+
+  Drupal.acquia_lift = {};
 
   /**
    * Initialize.

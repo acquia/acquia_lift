@@ -8,6 +8,7 @@
 namespace Drupal\acquia_lift\Service;
 
 use Drupal\Core\Config\ConfigFactory;
+use Drupal\Core\Entity\EntityInterface;
 use Drupal\Core\Path\CurrentPathStack;
 use Drupal\Core\Path\AliasManager;
 use Drupal\Core\Path\PathMatcher;
@@ -35,6 +36,27 @@ class PageAttachmentsManager {
    * @var \Drupal\acquia_lift\Entity\Credential
    */
   private $credential;
+
+  /**
+   * Page context.
+   *
+   * @var array
+   */
+  private $pageContext =  array(
+    'content_title' => 'Untitled',
+    'content_type' => 'page',
+    'page_type' => 'content page',
+    'content_section' => '',
+    'content_keywords' => '',
+    'post_id' => '',
+    'published_date' => '',
+    'thumbnail_url' => '',
+    'persona' => '',
+    'engagement_score' => '1',
+    'author' => '',
+    'evalSegments' => TRUE,
+    'trackingId' => '',
+  );
 
   /**
    * Visibility.
@@ -122,34 +144,36 @@ class PageAttachmentsManager {
    */
   public function getDrupalSettings() {
     $settings['credential'] = $this->credential->toArray();
-    $settings['pageContext'] = $this->getDrupalSettingsPageContext();
+    $settings['pageContext'] = $this->getPageContext();
 //    $settings['identity'] = array();
 
     return $settings;
   }
 
   /**
-   * Get Drupal JavaScript settings, page context.
+   * Get page context.
    *
    * @return array
-   *   Page context settings.
+   *   Page context.
    */
-  private function getDrupalSettingsPageContext() {
-    return array(
-      'content_title' => 'Untitled',
-      'content_type' => 'page',
-      'page_type' => 'content page',
-      'content_section' => '',
-      'content_keywords' => '',
-      'post_id' => '',
-      'published_date' => '',
-      'thumbnail_url' => '',
-      'persona' => '',
-      'engagement_score' => '1',
-      'author' => '',
-      'evalSegments' => TRUE,
-      'trackingId' => '',
-    );
+  private function getPageContext() {
+    return $this->pageContext;
+  }
+
+  /**
+   * Set page context.
+   *
+   * @param \Drupal\Core\Entity\EntityInterface $node
+   *   Node.
+   */
+  public function setPageContext(EntityInterface $node) {
+    $this->pageContext['content_type'] = $node->getType();
+    $this->pageContext['content_title'] = $node->getTitle();
+    $this->pageContext['published_date'] = $node->getCreatedTime();
+    $this->pageContext['post_id'] = $node->id();
+    $this->pageContext['author'] = $node->getOwner()->getUsername();
+    $this->pageContext['page_type'] = 'node page';
+    $this->pageContext['thumbnail_url'] = $node->field_image->entity->url();
   }
 
   /**

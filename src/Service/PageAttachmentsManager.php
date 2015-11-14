@@ -113,4 +113,28 @@ class PageAttachmentsManager {
 
     return FALSE;
   }
+
+  /**
+   * Get Drupal JavaScript settings.
+   *
+   * @return array
+   *   Settings.
+   */
+  public function getDrupalSettings() {
+    $settings = array(
+      'test' => 123,
+    );
+
+    return $settings;
+  }
+
+  /**
+   * Get library.
+   *
+   * @return string
+   *   Liberary identifier.
+   */
+  public function getLibrary() {
+    return 'acquia_lift/acquia_lift';
+  }
 }

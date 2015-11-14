@@ -122,8 +122,34 @@ class PageAttachmentsManager {
    */
   public function getDrupalSettings() {
     $settings['credential'] = $this->credential->toArray();
+    $settings['pageContext'] = $this->getDrupalSettingsPageContext();
+//    $settings['identity'] = array();
 
     return $settings;
+  }
+
+  /**
+   * Get Drupal JavaScript settings, page context.
+   *
+   * @return array
+   *   Page context settings.
+   */
+  private function getDrupalSettingsPageContext() {
+    return array(
+      'content_title' => 'Untitled',
+      'content_type' => 'page',
+      'page_type' => 'content page',
+      'content_section' => '',
+      'content_keywords' => '',
+      'post_id' => '',
+      'published_date' => '',
+      'thumbnail_url' => '',
+      'persona' => '',
+      'engagement_score' => '1',
+      'author' => '',
+      'evalSegments' => TRUE,
+      'trackingId' => '',
+    );
   }
 
   /**

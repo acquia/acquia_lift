@@ -1,7 +1,7 @@
 var _tcaq = _tcaq || [];
 var _tcwq = _tcwq || [];
 
-(function ($, Drupal, drupalSettings) {
+(function ($, Drupal, settings) {
 
   "use strict";
 
@@ -17,7 +17,7 @@ var _tcwq = _tcwq || [];
       });
     return uuid;
   }
-  drupalSettings.acquia_lift.trackingId = generateTrackingId();
+  settings.pageContext.trackingId = generateTrackingId();
 
   Drupal.behaviors.acquia_lift = {
     attach: function () {
@@ -29,17 +29,26 @@ var _tcwq = _tcwq || [];
    * Initialize.
    */
   Drupal.acquia_lift.initialize = function () {
-    var credential = drupalSettings.acquia_lift.credential;
-    _tcaq.push(['setAccount', credential.account_name, credential.customer_site]);
+    // Set account.
+    _tcaq.push(['setAccount', settings.credential.account_name, settings.credential.customer_site]);
 
+    // Capture view.
+    _tcaq.push([ 'captureView', 'Content View', settings.pageContext]);
+
+    // Capture identity.
+    if(settings.hasOwnProperty('identity')) {
+      _tcaq.push(['captureIdentity', settings.identity.identity, settings.identity.identityType]);
+    }
+
+    // Load and run capture scripts.
     (function() {
       function async_load() {
-        var s = document.createElement('script');
-        s.type = 'text/javascript';
-        s.async = true;
-        s.src = ('https:' == document.location.protocol ? 'https' : 'http') + '://' + credential.js_path;
-        var x = document.getElementsByTagName('script')[0];
-        x.parentNode.insertBefore(s, x);
+        var script = document.createElement('script'),
+          firstScript = document.getElementsByTagName('script')[0];
+        script.type = 'text/javascript';
+        script.async = true;
+        script.src = ('https:' == document.location.protocol ? 'https://' : 'http://') + settings.credential.js_path;
+        firstScript.parentNode.insertBefore(script, firstScript);
       }
       if (window.attachEvent) {
         window.attachEvent('onload', async_load);
@@ -50,4 +59,4 @@ var _tcwq = _tcwq || [];
     })();
   };
 
-})(jQuery, Drupal, drupalSettings);
+})(jQuery, Drupal, drupalSettings.acquia_lift);

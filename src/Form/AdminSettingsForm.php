@@ -132,6 +132,11 @@ class AdminSettingsForm extends ConfigFormBase {
       '#type' => 'textfield',
       '#title' => t('Identity Type Parameter'),
       '#default_value' => $identity_settings['identity_type_parameter'],
+      '#states' => array(
+        'visible' => array(
+          ':input[name="identity[identity_parameter]"]' => array('!value' => '')
+        )
+      )
     );
     $form['default_identity_type'] = array(
       '#type' => 'textfield',

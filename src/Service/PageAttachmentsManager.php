@@ -148,20 +148,10 @@ class PageAttachmentsManager {
    */
   public function getDrupalSettings() {
     $settings['credential'] = $this->credential->toArray();
-    $settings['pageContext'] = $this->getPageContext();
+    $settings['pageContext'] = $this->pageContext;
 //    $settings['identity'] = array();
 
     return $settings;
-  }
-
-  /**
-   * Get page context.
-   *
-   * @return array
-   *   Page context.
-   */
-  private function getPageContext() {
-    return $this->pageContext;
   }
 
   /**

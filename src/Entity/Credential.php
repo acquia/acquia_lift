@@ -91,6 +91,16 @@ class Credential {
   }
 
   /**
+   * To array.
+   *
+   * @return array
+   *   The credential info in array format.
+   */
+  public function toArray() {
+    return $this->credential;
+  }
+
+  /**
    * Is a valid credential.
    *
    * @return boolean

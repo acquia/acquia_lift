@@ -121,9 +121,7 @@ class PageAttachmentsManager {
    *   Settings.
    */
   public function getDrupalSettings() {
-    $settings = array(
-      'test' => 123,
-    );
+    $settings['credential'] = $this->credential->toArray();
 
     return $settings;
   }

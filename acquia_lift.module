@@ -11,6 +11,6 @@ function acquia_lift_page_attachments(array &$page) {
     return;
   }
 
-  $page['#attached']['drupalSettings']['acquia_lift'] = $page_attachments_manager->getSettings();
+  $page['#attached']['drupalSettings']['acquia_lift'] = $page_attachments_manager->getDrupalSettings();
   $page['#attached']['library'][] = $page_attachments_manager->getLibrary();
 }

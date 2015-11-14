@@ -41,6 +41,8 @@ class PageAttachmentsManager {
    * Page context.
    *
    * @var array
+   *
+   * @todo: pageContext should be its own service.
    */
   private $pageContext =  array(
     'content_title' => 'Untitled',
@@ -69,6 +71,8 @@ class PageAttachmentsManager {
    * Current path.
    *
    * @var string
+   *
+   * @todo: currentPath, aliasManager, and pathMatcher should be extracted to a new service.
    */
   private $currentPath;
 
@@ -173,6 +177,7 @@ class PageAttachmentsManager {
     $this->pageContext['post_id'] = $node->id();
     $this->pageContext['author'] = $node->getOwner()->getUsername();
     $this->pageContext['page_type'] = 'node page';
+    //@todo: this needs to be converted to a proper thumbnail_url.
     $this->pageContext['thumbnail_url'] = $node->field_image->entity->url();
   }
 

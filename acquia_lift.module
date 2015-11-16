@@ -7,7 +7,7 @@ use Drupal\Core\Entity\Display\EntityViewDisplayInterface;
  * Implements hook_page_attachments() to insert JavaScript to the appropriate scope/region of the page.
  */
 function acquia_lift_page_attachments(array &$page) {
-  $page_attachments_manager = \Drupal::service('acquia_lift.service.page_attachments_manager');
+  $page_attachments_manager = \Drupal::service('acquia_lift.service.page.page_attachments_manager');
   if (!$page_attachments_manager->shouldAttach()) {
     return;
   }
@@ -25,5 +25,5 @@ function acquia_lift_node_view_alter(array &$build, EntityInterface $node, Entit
     return;
   }
 
-  \Drupal::service('acquia_lift.service.page_attachments_manager')->setPageContext($node);
+  \Drupal::service('acquia_lift.service.page.page_context')->set($node);
 }

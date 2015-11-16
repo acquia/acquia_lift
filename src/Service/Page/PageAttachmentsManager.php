@@ -5,15 +5,15 @@
  * Contains \Drupal\acquia_lift\Service\Api\DataApi.
  */
 
-namespace Drupal\acquia_lift\Service;
+namespace Drupal\acquia_lift\Service\Page;
 
 use Drupal\Core\Config\ConfigFactory;
-use Drupal\Core\Entity\EntityInterface;
 use Drupal\Core\Path\CurrentPathStack;
 use Drupal\Core\Path\AliasManager;
 use Drupal\Core\Path\PathMatcher;
 use Drupal\Component\Utility\Unicode;
 use Drupal\acquia_lift\Entity\Credential;
+use Drupal\acquia_lift\Service\Page\PageContext;
 
 class PageAttachmentsManager {
   /**
@@ -40,25 +40,9 @@ class PageAttachmentsManager {
   /**
    * Page context.
    *
-   * @var array
-   *
-   * @todo: pageContext should be its own service.
+   * @var \Drupal\acquia_lift\Service\Page\PageContext
    */
-  private $pageContext =  array(
-    'content_title' => 'Untitled',
-    'content_type' => 'page',
-    'page_type' => 'content page',
-    'content_section' => '',
-    'content_keywords' => '',
-    'post_id' => '',
-    'published_date' => '',
-    'thumbnail_url' => '',
-    'persona' => '',
-    'engagement_score' => '1',
-    'author' => '',
-    'evalSegments' => TRUE,
-    'trackingId' => '',
-  );
+  private $pageContext;
 
   /**
    * Visibility.
@@ -83,17 +67,20 @@ class PageAttachmentsManager {
    *   The config factory service.
    * @param \Drupal\Core\Path\CurrentPathStack $current_path_stack
    *   The current path service.
+   * @param \Drupal\acquia_lift\Service\Page\PageContext $pageContext
+   *   The page context.
    * @param \Drupal\Core\Path\AliasManager $alias_manager
    *   The alias manager service.
    * @param \Drupal\Core\Path\PathMatcher $path_matcher
    *   The path matcher service.
    */
-  public function __construct(ConfigFactory $config_factory, CurrentPathStack $current_path_stack, AliasManager $alias_manager, PathMatcher $path_matcher) {
+  public function __construct(ConfigFactory $config_factory, CurrentPathStack $current_path_stack, PageContext $pageContext, AliasManager $alias_manager, PathMatcher $path_matcher) {
     $settings = $config_factory->get('acquia_lift.settings');
     $credential_settings = $settings->get('credential');
     $this->credential = new Credential($credential_settings);
     $this->visibility = $settings->get('visibility');
     $this->currentPath = $current_path_stack->getPath();
+    $this->pageContext = $pageContext;
     $this->aliasManager = $alias_manager;
     $this->pathMatcher = $path_matcher;
   }
@@ -148,27 +135,10 @@ class PageAttachmentsManager {
    */
   public function getDrupalSettings() {
     $settings['credential'] = $this->credential->toArray();
-    $settings['pageContext'] = $this->pageContext;
+    $settings['pageContext'] = $this->pageContext->get();
 //    $settings['identity'] = array();
 
     return $settings;
-  }
-
-  /**
-   * Set page context.
-   *
-   * @param \Drupal\Core\Entity\EntityInterface $node
-   *   Node.
-   */
-  public function setPageContext(EntityInterface $node) {
-    $this->pageContext['content_type'] = $node->getType();
-    $this->pageContext['content_title'] = $node->getTitle();
-    $this->pageContext['published_date'] = $node->getCreatedTime();
-    $this->pageContext['post_id'] = $node->id();
-    $this->pageContext['author'] = $node->getOwner()->getUsername();
-    $this->pageContext['page_type'] = 'node page';
-    //@todo: this needs to be converted to a proper thumbnail_url.
-    $this->pageContext['thumbnail_url'] = $node->field_image->entity->url();
   }
 
   /**

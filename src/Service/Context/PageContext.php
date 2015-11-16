@@ -2,10 +2,10 @@
 
 /**
  * @file
- * Contains \Drupal\acquia_lift\Service\Api\DataApi.
+ * Contains \Drupal\acquia_lift\Service\Context\PageContext.
  */
 
-namespace Drupal\acquia_lift\Service\Page;
+namespace Drupal\acquia_lift\Service\Context;
 
 use Drupal\Core\Entity\EntityInterface;
 

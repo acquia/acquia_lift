@@ -25,5 +25,5 @@ function acquia_lift_node_view_alter(array &$build, EntityInterface $node, Entit
     return;
   }
 
-  \Drupal::service('acquia_lift.service.page.page_context')->set($node);
+  \Drupal::service('acquia_lift.service.context.page_context')->set($node);
 }

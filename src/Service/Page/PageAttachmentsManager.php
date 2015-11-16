@@ -2,34 +2,17 @@
 
 /**
  * @file
- * Contains \Drupal\acquia_lift\Service\Api\DataApi.
+ * Contains \Drupal\acquia_lift\Service\Page\PageAttachmentsManager.
  */
 
 namespace Drupal\acquia_lift\Service\Page;
 
 use Drupal\Core\Config\ConfigFactory;
-use Drupal\Core\Path\CurrentPathStack;
-use Drupal\Core\Path\AliasManager;
-use Drupal\Core\Path\PathMatcher;
-use Drupal\Component\Utility\Unicode;
 use Drupal\acquia_lift\Entity\Credential;
-use Drupal\acquia_lift\Service\Page\PageContext;
+use Drupal\acquia_lift\Service\Context\PageContext;
+use Drupal\acquia_lift\Service\Context\PathContext;
 
 class PageAttachmentsManager {
-  /**
-   * Alias manager.
-   *
-   * @var \Drupal\Core\Path\AliasManager
-   */
-  private $aliasManager;
-
-  /**
-   * Path matcher.
-   *
-   * @var \Drupal\Core\Path\PathMatcher
-   */
-  private $pathMatcher;
-
   /**
    * Acquia Lift credential.
    *
@@ -40,49 +23,43 @@ class PageAttachmentsManager {
   /**
    * Page context.
    *
-   * @var \Drupal\acquia_lift\Service\Page\PageContext
+   * @var \Drupal\acquia_lift\Service\Context\PageContext
    */
   private $pageContext;
 
   /**
-   * Visibility.
+   * Path context.
    *
-   * @var array
+   * @var \Drupal\acquia_lift\Service\Context\PathContext
    */
-  private $visibility;
+  private $pathContext;
 
   /**
-   * Current path.
+   * Path matcher.
    *
-   * @var string
-   *
-   * @todo: currentPath, aliasManager, and pathMatcher should be extracted to a new service.
+   * @var \Drupal\acquia_lift\Service\Page\PathMatcher
    */
-  private $currentPath;
+  private $pathMatcher;
 
   /**
    * Constructor.
    *
    * @param \Drupal\Core\Config\ConfigFactory $config_factory
    *   The config factory service.
-   * @param \Drupal\Core\Path\CurrentPathStack $current_path_stack
-   *   The current path service.
-   * @param \Drupal\acquia_lift\Service\Page\PageContext $pageContext
+   * @param \Drupal\acquia_lift\Service\Context\PageContext $pageContext
    *   The page context.
-   * @param \Drupal\Core\Path\AliasManager $alias_manager
-   *   The alias manager service.
-   * @param \Drupal\Core\Path\PathMatcher $path_matcher
-   *   The path matcher service.
+   * @param \Drupal\acquia_lift\Service\Context\PathContext $pathContext
+   *   The path context.
+   * @param \Drupal\acquia_lift\Service\Page\PathMatcher $pathMatcher
+   *   The path matcher.
    */
-  public function __construct(ConfigFactory $config_factory, CurrentPathStack $current_path_stack, PageContext $pageContext, AliasManager $alias_manager, PathMatcher $path_matcher) {
+  public function __construct(ConfigFactory $config_factory, PageContext $pageContext, PathContext $pathContext, PathMatcher $pathMatcher) {
     $settings = $config_factory->get('acquia_lift.settings');
     $credential_settings = $settings->get('credential');
     $this->credential = new Credential($credential_settings);
-    $this->visibility = $settings->get('visibility');
-    $this->currentPath = $current_path_stack->getPath();
     $this->pageContext = $pageContext;
-    $this->aliasManager = $alias_manager;
-    $this->pathMatcher = $path_matcher;
+    $this->pathContext = $pathContext;
+    $this->pathMatcher = $pathMatcher;
   }
 
   /**
@@ -92,39 +69,20 @@ class PageAttachmentsManager {
    *   True if should attach.
    */
   public function shouldAttach() {
-    // Credential need to be filled.
+    // Should not attach if credential is invalid.
     if (!$this->credential->isValid()) {
       return FALSE;
     }
 
-    // Current path cannot match the path patterns.
-    if ($this->matchRequestPath()) {
+    // Should not attach if current path match the path patterns.
+    $path = $this->pathContext->getCurrentPath();
+    $pathPatterns = $this->pathContext->getRequestPathPatterns();
+    if ($this->pathMatcher->match($path, $pathPatterns)) {
       return FALSE;
     }
 
+    // Should attach.
     return TRUE;
-  }
-
-  /**
-   * Determine if the request path falls into one of the allowed paths.
-   *
-   * @return boolean
-   *   True if should attach.
-   */
-  private function matchRequestPath() {
-    // Convert path to lowercase and match.
-    $path_patterns = Unicode::strtolower($this->visibility['request_path_pages']);
-    if ($this->pathMatcher->matchPath($this->currentPath, $path_patterns)) {
-      return TRUE;
-    }
-
-    // Compare the lowercase path alias (if any) and internal path.
-    $path_alias = Unicode::strtolower($this->aliasManager->getAliasByPath($this->currentPath));
-    if (($this->currentPath != $path_alias) && $this->pathMatcher->matchPath($path_alias, $path_patterns)) {
-      return TRUE;
-    }
-
-    return FALSE;
   }
 
   /**
@@ -134,7 +92,7 @@ class PageAttachmentsManager {
    *   Settings.
    */
   public function getDrupalSettings() {
-    $settings['credential'] = $this->credential->toArray();
+    $settings['credential'] = $this->credential->getJavaScriptArray();
     $settings['pageContext'] = $this->pageContext->get();
 //    $settings['identity'] = array();
 

@@ -91,13 +91,17 @@ class Credential {
   }
 
   /**
-   * To array.
+   * Get JavaScript array.
    *
    * @return array
-   *   The credential info in array format.
+   *   Get the array for rendering in front end JavaScript.
    */
-  public function toArray() {
-    return $this->credential;
+  public function getJavaScriptArray() {
+    return array(
+      'account_name' => $this->getAccountName(),
+      'customer_site' => $this->getCustomerSite(),
+      'js_path' => $this->getJsPath(),
+    );
   }
 
   /**

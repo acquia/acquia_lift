@@ -2,8 +2,14 @@ services:
   acquia_lift.service.api.data_api:
     class: '\Drupal\acquia_lift\Service\Api\DataApi'
     arguments: ['@config.factory', '@http_client', '@router.request_context']
-  acquia_lift.service.page.page_context:
-    class: Drupal\acquia_lift\Service\Page\PageContext
+  acquia_lift.service.context.page_context:
+    class: Drupal\acquia_lift\Service\Context\PageContext
+  acquia_lift.service.context.path_context:
+    class: Drupal\acquia_lift\Service\Context\PathContext
+    arguments: ['@config.factory', '@path.current']
   acquia_lift.service.page.page_attachments_manager:
     class: Drupal\acquia_lift\Service\Page\PageAttachmentsManager
-    arguments: ['@config.factory', '@path.current', '@acquia_lift.service.page.page_context', '@path.alias_manager', '@path.matcher']
+    arguments: ['@config.factory', '@acquia_lift.service.context.page_context', '@acquia_lift.service.context.path_context', '@acquia_lift.service.page.path_matcher']
+  acquia_lift.service.page.path_matcher:
+    class: Drupal\acquia_lift\Service\Page\PathMatcher
+    arguments: ['@path.alias_manager', '@path.matcher']

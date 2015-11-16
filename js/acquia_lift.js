@@ -107,6 +107,9 @@ Drupal.acquia_lift_target = (function() {
 
   return {
     'init': function(settings) {
+      if (initialized) {
+        return;
+      }
       _tcaq.push(['setAccount', settings.acquia_lift.account_name, settings.acquia_lift.customer_site]);
       var i, optionSet, agentName;
       var option_sets = settings.personalize.option_sets;
@@ -128,6 +131,7 @@ Drupal.acquia_lift_target = (function() {
           }
         }
       }
+      initialized = true;
     },
     'getDecision': function(agent_name, visitor_context, choices, decision_point, fallbacks, callback) {
       if (!initialized) {

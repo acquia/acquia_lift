@@ -91,12 +91,12 @@ class Credential {
   }
 
   /**
-   * Get JavaScript array.
+   * Get front-end config.
    *
    * @return array
-   *   Get the array for rendering in front end JavaScript.
+   *   Get front end config array.
    */
-  public function getJavaScriptArray() {
+  public function getFrontEndConfig() {
     return array(
       'account_name' => $this->getAccountName(),
       'customer_site' => $this->getCustomerSite(),

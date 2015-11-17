@@ -42,8 +42,6 @@ class PathMatcher {
   /**
    * Determine if the path falls into one of the allowed paths (in terms of path patterns).
    *
-   * @todo: $path needs to be able to take alias (and verify its path), as well.
-   *
    * @param string $path
    *   The actual path that's being matched by.
    * @param string $path_patterns

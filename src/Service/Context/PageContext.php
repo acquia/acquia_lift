@@ -49,12 +49,12 @@ class PageContext {
   }
 
   /**
-   * Get page context.
+   * Get all.
    *
    * @return array
-   *   Page context.
+   *   Get All.
    */
-  public function get() {
+  public function getAll() {
     return $this->pageContext;
   }
 }

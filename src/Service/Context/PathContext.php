@@ -26,11 +26,11 @@ class PathContext {
   private $currentPath;
 
   /**
-   * Current parameters.
+   * Identity.
    *
    * @var array
    */
-  private $currentParameters;
+  private $identity;
 
   /**
    * Constructor.
@@ -64,5 +64,15 @@ class PathContext {
    */
   public function getCurrentPath() {
     return $this->currentPath;
+  }
+
+  /**
+   * Get identity.
+   *
+   * @return string
+   *   Identity.
+   */
+  public function getIdentity() {
+    return $this->identity;
   }
 }

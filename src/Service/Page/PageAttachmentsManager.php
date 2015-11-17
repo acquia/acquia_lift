@@ -92,9 +92,9 @@ class PageAttachmentsManager {
    *   Settings.
    */
   public function getDrupalSettings() {
-    $settings['credential'] = $this->credential->getJavaScriptArray();
-    $settings['pageContext'] = $this->pageContext->get();
-//    $settings['identity'] = array();
+    $settings['credential'] = $this->credential->getFrontEndConfig();
+    $settings['pageContext'] = $this->pageContext->getAll();
+    $settings['identity'] = $this->pathContext->getIdentity();
 
     return $settings;
   }

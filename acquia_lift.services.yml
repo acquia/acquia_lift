@@ -4,6 +4,7 @@ services:
     arguments: ['@config.factory', '@http_client', '@router.request_context']
   acquia_lift.service.context.page_context:
     class: Drupal\acquia_lift\Service\Context\PageContext
+    arguments: ['@config.factory', '@entity_type.manager']
   acquia_lift.service.context.path_context:
     class: Drupal\acquia_lift\Service\Context\PathContext
     arguments: ['@config.factory', '@path.current']

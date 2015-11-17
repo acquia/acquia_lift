@@ -10,7 +10,7 @@ namespace Drupal\acquia_lift\Service\Api;
 use Drupal\acquia_lift\Exception\DataApiCredentialException;
 use Drupal\acquia_lift\Exception\DataApiException;
 use Drupal\Component\Utility\SafeMarkup;
-use Drupal\Core\Config\ConfigFactory;
+use Drupal\Core\Config\ConfigFactoryInterface;
 use Drupal\Core\Routing\RequestContext;
 use GuzzleHttp\ClientInterface;
 use GuzzleHttp\Psr7\Request;
@@ -59,7 +59,7 @@ class DataApi implements DataApiInterface {
   /**
    * Constructor.
    *
-   * @param \Drupal\Core\Config\ConfigFactory $config_factory
+   * @param \Drupal\Core\Config\ConfigFactoryInterface $config_factory
    *   The config factory service.
    * @param \GuzzleHttp\ClientInterface $http_client
    *   A Guzzle client interface.
@@ -68,7 +68,7 @@ class DataApi implements DataApiInterface {
    *
    * @throws \Drupal\acquia_lift\Exception\DataApiCredentialException
    */
-  public function __construct(ConfigFactory $config_factory, ClientInterface $http_client, RequestContext $context) {
+  public function __construct(ConfigFactoryInterface $config_factory, ClientInterface $http_client, RequestContext $context) {
     $this->httpClient = $http_client;
     $this->context = $context;
     $this->logger = \Drupal::logger('acquia_lift');

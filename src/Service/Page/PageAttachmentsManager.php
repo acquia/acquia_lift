@@ -7,7 +7,7 @@
 
 namespace Drupal\acquia_lift\Service\Page;
 
-use Drupal\Core\Config\ConfigFactory;
+use Drupal\Core\Config\ConfigFactoryInterface;
 use Drupal\acquia_lift\Entity\Credential;
 use Drupal\acquia_lift\Service\Context\PageContext;
 use Drupal\acquia_lift\Service\Context\PathContext;
@@ -44,7 +44,7 @@ class PageAttachmentsManager {
   /**
    * Constructor.
    *
-   * @param \Drupal\Core\Config\ConfigFactory $config_factory
+   * @param \Drupal\Core\Config\ConfigFactoryInterface $config_factory
    *   The config factory service.
    * @param \Drupal\acquia_lift\Service\Context\PageContext $pageContext
    *   The page context.
@@ -53,7 +53,7 @@ class PageAttachmentsManager {
    * @param \Drupal\acquia_lift\Service\Page\PathMatcher $pathMatcher
    *   The path matcher.
    */
-  public function __construct(ConfigFactory $config_factory, PageContext $pageContext, PathContext $pathContext, PathMatcher $pathMatcher) {
+  public function __construct(ConfigFactoryInterface $config_factory, PageContext $pageContext, PathContext $pathContext, PathMatcher $pathMatcher) {
     $settings = $config_factory->get('acquia_lift.settings');
     $credential_settings = $settings->get('credential');
     $this->credential = new Credential($credential_settings);

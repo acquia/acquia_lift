@@ -280,7 +280,7 @@ Drupal.acquia_lift_target = (function() {
         _tcaq.push(['capture', 'Goal', {'personalizationname': getAgentLabel(agent_name), 'personalizationmachinename':agent_name, 'personalizationaudiencename': stored.audience, 'personalizationchosenvariation': choice_str, 'personalizationdecisionpolicy': stored.policy, 'personalizationgoalname': goal_name, 'personalizationgoalvalue': value }]);
       }
 
-      if (stored.hasOwnProperty("policy") && stored.policy == 'targeting') {
+      if (!stored || (stored.hasOwnProperty("policy") && stored.policy == 'targeting')) {
         return;
       }
 

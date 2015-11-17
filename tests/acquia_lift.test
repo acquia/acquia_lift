@@ -2048,24 +2048,6 @@ class AcquiaLiftWebTestTarget extends AcquiaLiftWebTestBase {
     $this->assertTrue(!empty($settings['acquia_lift']));
   }
 
-  /**
-   * @todo Remove this test once the "reset data" button has gone away.
-   */
-  function testNestedAgentsButtons() {
-    $this->drupalLogin($this->managerUser);
-    $targeting_agent_no_nesting = $this->createTargetingAgent();
-    $this->drupalGet('admin/structure/personalize/manage/' . $targeting_agent_no_nesting->machine_name . '/variations');
-    // There are no nested tests so there shouldn't be any buttons relating to
-    // test agents.
-    $reset_link = 'admin/structure/personalize/manage/' . $targeting_agent_no_nesting->machine_name . '/reset';
-    $this->assertNoLinkByHref($reset_link);
-    $agent_with_nesting = $this->createTargetingAgentWithNestedTest();
-    $this->drupalGet('admin/structure/personalize/manage/' . $agent_with_nesting->machine_name . '/variations');
-    // With V2 enabled the reset data button should not be visible.
-    $reset_link = 'admin/structure/personalize/manage/' . $agent_with_nesting->machine_name . '/reset';
-    $this->assertNoLinkByHref($reset_link);
-  }
-
   function testNestedAgentStatus() {
     $agent_with_nesting = $this->createTargetingAgentWithNestedTest();
     $this->resetAll();

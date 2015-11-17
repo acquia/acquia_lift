@@ -1199,16 +1199,16 @@ EOT;
   $account_info = acquia_lift_get_account_info();
   try {
     $lift_api = AcquiaLiftAPI::getInstance($account_info);
-    $libraries['acquia_lift.page']['dependencies'][] = array('acquia_lift', 'acquia_lift.v2_agent_api');
+    $libraries['acquia_lift.page']['dependencies'][] = array('acquia_lift', 'acquia_lift.agent_api');
     $site_name = variable_get('acquia_lift_profiles_site_name', '');
     if (empty($site_name)) {
       $site_name = 'drupal';
     }
-    $libraries['acquia_lift.v2_agent_api'] = array(
-      'title' => 'Adds the Acquia Lift V2 API files.',
+    $libraries['acquia_lift.agent_api'] = array(
+      'title' => 'Adds the Acquia Lift API files.',
       'version' => VERSION,
       'js' => array(
-        $path . '/js/acquia_lift.v2.js' => $options,
+        $path . '/js/acquia_lift.api.js' => $options,
         array(
           'data' => array(
             'acquia_lift_learn' => array(
@@ -3331,6 +3331,9 @@ function acquia_lift_get_nested_tests($agent) {
 
 /**
  * Identifies the fallback audience among the audiences provided.
+ *
+ * The machine name of the "everyone-else" audience may have changed, if tests
+ * tests for the audience have changed, so it may have a suffix, like '-2'.
  *
  * @param $audiences
  *   An array of audience names.

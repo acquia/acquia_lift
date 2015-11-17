@@ -12,6 +12,11 @@ use Drupal\Core\Path\CurrentPathStack;
 
 class PathContext {
   /**
+   * Default identity type's default value.
+   */
+  const DEFAULT_IDENTITY_TYPE_DEFAULT = 'email';
+
+  /**
    * Request path patterns (exclusion).
    *
    * @var array
@@ -30,7 +35,10 @@ class PathContext {
    *
    * @var array
    */
-  private $identity;
+  private $identity = array(
+    'identity' => '',
+    'identity_type' => self::DEFAULT_IDENTITY_TYPE_DEFAULT,
+  );
 
   /**
    * Constructor.

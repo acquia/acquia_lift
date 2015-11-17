@@ -11,6 +11,11 @@ use Drupal\Core\Entity\EntityInterface;
 
 class PageContext {
   /**
+   * Engagement score's default value.
+   */
+  const ENGAGEMENT_SCORE_DEFAULT = 1;
+
+  /**
    * Page context.
    *
    * @var array
@@ -25,7 +30,7 @@ class PageContext {
     'published_date' => '',
     'thumbnail_url' => '',
     'persona' => '',
-    'engagement_score' => '1',
+    'engagement_score' => self::ENGAGEMENT_SCORE_DEFAULT,
     'author' => '',
     'evalSegments' => TRUE,
     'trackingId' => '',

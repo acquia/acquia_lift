@@ -22,7 +22,7 @@ var _tcwq = _tcwq || [];
 
     // Capture view.
     Drupal.acquia_lift.generateTrackingId();
-    _tcaq.push([ 'captureView', 'Content View', settings.pageContext]);
+    _tcaq.push([ 'captureView', 'Content View', $.extend({}, settings.pageContext)]);
 
     // Capture identity.
     if(settings.hasOwnProperty('identity')) {

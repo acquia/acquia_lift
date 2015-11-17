@@ -852,7 +852,7 @@ function acquia_lift_report($form, &$form_state, $agent_data) {
   return $form;
 }
 
-function acquia_lift_report_audience($form_state, $personalization_data, $targeting_option_set, $audience, $lift_api, $from, $to, $use_old_stats = FALSE, $retired = FALSE) {
+function acquia_lift_report_audience($form_state, $personalization_data, $targeting_option_set, $audience, AcquiaLiftAPI $lift_api, $from, $to, $use_old_stats = FALSE, $retired = FALSE) {
   $audience_type = isset($targeting_option_set->targeting[$audience]['osid']) ? 'test' : 'target';
   module_load_include('inc', 'acquia_lift', 'includes/AcquiaLiftLearnReport');
   $variations = acquia_lift_get_structure_from_targeting($targeting_option_set);

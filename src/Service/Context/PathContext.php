@@ -11,6 +11,7 @@ use Symfony\Component\HttpFoundation\RequestStack;
 use Drupal\Core\Config\ConfigFactoryInterface;
 use Drupal\Core\Path\CurrentPathStack;
 use Drupal\Component\Utility\UrlHelper;
+use Drupal\Component\Utility\Html;
 
 class PathContext {
   /**
@@ -55,24 +56,42 @@ class PathContext {
     $this->currentPath = $current_path_stack->getPath();
 
     // Set identity.
-    $identityConfig = $config_factory->get('acquia_lift.settings')->get('identity');
-    if (!$identityConfig['capture_identity'] || empty($identityConfig['identity_parameter'])) {
+    $identity_config = $config_factory->get('acquia_lift.settings')->get('identity');
+    $this->setIdentity($identity_config, $request_stack);
+  }
+
+  /**
+   * Set Identity.
+   *
+   * @return array $identity_config
+   *   Identity config.
+   * @param \Symfony\Component\HttpFoundation\RequestStack $request_stack
+   *   The request stack.
+   */
+  private function setIdentity($identity_config, $request_stack) {
+    // Stop, if "capture identity" flag is not on or there is no "identity parameter".
+    if (!$identity_config['capture_identity'] || empty($identity_config['identity_parameter'])) {
       return;
     }
     $query_string = $request_stack->getCurrentRequest()->getQueryString();
     $parsed_query_string = UrlHelper::parse('?'.$query_string);
     $queries = $parsed_query_string['query'];
-
-    $identity_parameter = $identityConfig['identity_parameter'];
-    $identity_type_parameter = $identityConfig['identity_type_parameter'];
-    $default_identity_type = $identityConfig['default_identity_type'];
-    if (!empty($queries[$identity_parameter])) {
-      $this->identity['identity'] = $queries[$identity_parameter];
-      $this->identity['identityType'] = empty($default_identity_type) ? SELF::DEFAULT_IDENTITY_TYPE_DEFAULT : $default_identity_type;
-      if (!empty($identity_type_parameter) && isset($queries[$identity_type_parameter])) {
-        $this->identity['identityType'] = $queries[$identity_type_parameter];
-      }
+    $identity_parameter = $identity_config['identity_parameter'];
+    // Stop, if there is no or empty identity parameter in the query string.
+    if (empty($queries[$identity_parameter])) {
+      return;
     }
+    // Gather the identity and identity type by configuration.
+    $identity_type_parameter = $identity_config['identity_type_parameter'];
+    $default_identity_type = $identity_config['default_identity_type'];
+    $identity = $queries[$identity_parameter];
+    $identityType = empty($default_identity_type) ? SELF::DEFAULT_IDENTITY_TYPE_DEFAULT : $default_identity_type;
+    if (!empty($identity_type_parameter) && isset($queries[$identity_type_parameter])) {
+      $identityType = $queries[$identity_type_parameter];
+    }
+    // Sanitize string and output.
+    $this->identity['identity'] = Html::escape($identity);
+    $this->identity['identityType'] = Html::escape($identityType);
   }
 
   /**

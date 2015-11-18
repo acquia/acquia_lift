@@ -73,14 +73,18 @@ class PathContext {
     if (!$identity_config['capture_identity'] || empty($identity_config['identity_parameter'])) {
       return;
     }
+
+    // Find the current URL queries.
     $query_string = $request_stack->getCurrentRequest()->getQueryString();
     $parsed_query_string = UrlHelper::parse('?'.$query_string);
     $queries = $parsed_query_string['query'];
     $identity_parameter = $identity_config['identity_parameter'];
+
     // Stop, if there is no or empty identity parameter in the query string.
     if (empty($queries[$identity_parameter])) {
       return;
     }
+
     // Gather the identity and identity type by configuration.
     $identity_type_parameter = $identity_config['identity_type_parameter'];
     $default_identity_type = $identity_config['default_identity_type'];
@@ -89,6 +93,7 @@ class PathContext {
     if (!empty($identity_type_parameter) && isset($queries[$identity_type_parameter])) {
       $identityType = $queries[$identity_type_parameter];
     }
+
     // Sanitize string and output.
     $this->identity['identity'] = Html::escape($identity);
     $this->identity['identityType'] = Html::escape($identityType);

@@ -104,7 +104,7 @@ class PageContext {
       $vocabulary_term_names[$vocabulary_id][] = $term_name;
     }
 
-    // Set the page context
+    // Set the page context.
     foreach ($this->fieldMappings as $page_context_name => $vocabulary_id) {
       if(!isset($vocabulary_term_names[$vocabulary_id])) {
         continue;

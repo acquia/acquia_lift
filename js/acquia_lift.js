@@ -25,7 +25,7 @@ var _tcwq = _tcwq || [];
     _tcaq.push([ 'captureView', 'Content View', $.extend({}, settings.pageContext)]);
 
     // Capture identity.
-    if(settings.hasOwnProperty('identity')) {
+    if(settings.hasOwnProperty('identity') && settings.identity.hasOwnProperty('identity') && settings.identity.hasOwnProperty('identityType')) {
       _tcaq.push(['captureIdentity', settings.identity.identity, settings.identity.identityType]);
     }
 

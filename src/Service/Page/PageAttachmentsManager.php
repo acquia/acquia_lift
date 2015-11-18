@@ -94,7 +94,12 @@ class PageAttachmentsManager {
   public function getDrupalSettings() {
     $settings['credential'] = $this->credential->getFrontEndConfig();
     $settings['pageContext'] = $this->pageContext->getAll();
-    $settings['identity'] = $this->pathContext->getIdentity();
+
+    // Capture identity.
+    $identity = $this->pathContext->getIdentity();
+    if (!empty($identity)) {
+      $settings['identity'] = $this->pathContext->getIdentity();
+    }
 
     return $settings;
   }

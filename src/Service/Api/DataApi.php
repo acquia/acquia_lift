@@ -36,7 +36,7 @@ class DataApi implements DataApiInterface {
    *
    * @var \Psr\Log\LoggerInterface;
    */
-  private $logger = NULL;
+  private $logger;
 
   /**
    * Acquia Lift credential.

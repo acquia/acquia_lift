@@ -205,6 +205,7 @@ class AdminSettingsForm extends ConfigFormBase {
     $this->setFieldMappingsValues($settings, $values['field_mappings']);
 
     $settings->save();
+    drupal_set_message(t('Please refresh your page cache to apply the latest configuration.'), 'status');
 
     parent::submitForm($form, $form_state);
   }

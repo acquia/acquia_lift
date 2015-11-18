@@ -10,6 +10,7 @@ namespace Drupal\acquia_lift\Service\Context;
 use Drupal\Core\Entity\EntityInterface;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\Core\Config\ConfigFactoryInterface;
+use Drupal\image\Entity\ImageStyle;
 
 class PageContext {
   /**
@@ -78,10 +79,24 @@ class PageContext {
     $this->pageContext['post_id'] = $node->id();
     $this->pageContext['author'] = $node->getOwner()->getUsername();
     $this->pageContext['page_type'] = 'node page';
-    //@todo: this needs to be converted to a proper thumbnail_url.
-    $this->pageContext['thumbnail_url'] = $node->field_image->entity->url();
 
+    $this->setThumbnailUrl($node);
     $this->setFields($node);
+  }
+
+  /**
+   * Set thumbnail URL.
+   *
+   * @param \Drupal\Core\Entity\EntityInterface $node
+   *   Node.
+   */
+  private function setThumbnailUrl(EntityInterface $node) {
+    if (!isset($node->field_image)) {
+      return;
+    }
+    $fileUri = $node->field_image->entity->getFileUri();
+    $thumbnail_uri = ImageStyle::load('thumbnail')->buildUrl($fileUri);
+    $this->pageContext['thumbnail_url'] = file_create_url($thumbnail_uri);
   }
 
   /**
@@ -90,7 +105,7 @@ class PageContext {
    * @param \Drupal\Core\Entity\EntityInterface $node
    *   Node.
    */
-  private function setFields($node) {
+  private function setFields(EntityInterface $node) {
     // Find the node's terms.
     $nids = array($node->id());
     $terms = $this->taxonomyTermStorage->getNodeTerms($nids, $this->fieldMappings);

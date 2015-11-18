@@ -221,12 +221,12 @@ class AdminSettingsForm extends ConfigFormBase {
   private function setCredentialValues(Config $settings, array $values) {
     $settings->set('credential.account_name', $values['account_name']);
     $settings->set('credential.customer_site', $values['customer_site']);
-    $settings->set('credential.api_url', $this->ltrimProtocal($values['api_url']));
+    $settings->set('credential.api_url', $this->removeProtocal($values['api_url']));
     $settings->set('credential.access_key', $values['access_key']);
     if (!empty($values['secret_key'])) {
       $settings->set('credential.secret_key', $values['secret_key']);
     }
-    $settings->set('credential.js_path', $this->ltrimProtocal($values['js_path']));
+    $settings->set('credential.js_path', $this->removeProtocal($values['js_path']));
   }
 
   /**
@@ -238,8 +238,8 @@ class AdminSettingsForm extends ConfigFormBase {
    * @return string
    *   Same URL as input except with the 'http://' and 'https://' trimmed.
    */
-  private function ltrimProtocal($url) {
-    return ltrim(ltrim($url, 'http://'), 'https://');
+  private function removeProtocal($url) {
+    return preg_replace('~^https?://~', '', $url);
   }
 
   /**

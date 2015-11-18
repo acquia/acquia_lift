@@ -1039,6 +1039,7 @@ function acquia_lift_personalize_campaign_wizard_targeting_alter(&$form, &$form_
       // Keep track of the assignment order of options within the audience.
       $form['targeting']['audiences']['existing'][$audience_id]['assignment_order'] = array(
         '#type' => 'textfield',
+        '#maxlength' => NULL,
         '#title' => t('Assignment order'),
         '#default_value' => isset($saved_targeting[$audience_id]) ? implode(',', $saved_targeting[$audience_id]) : '',
         '#attributes' => array(

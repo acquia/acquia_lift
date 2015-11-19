@@ -109,7 +109,7 @@ class PageContext {
     // Find the node's terms.
     $nids = array($node->id());
     $terms = $this->taxonomyTermStorage->getNodeTerms($nids, $this->fieldMappings);
-    $node_terms = $terms[$node->id()];
+    $node_terms = isset($terms[$node->id()]) ? $terms[$node->id()] : array();
 
     // Find the term names.
     $vocabulary_term_names = array();

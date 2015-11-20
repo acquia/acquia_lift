@@ -1,6 +1,6 @@
 services:
   acquia_lift.service.api.data_api:
-    class: '\Drupal\acquia_lift\Service\Api\DataApi'
+    class: Drupal\acquia_lift\Service\Api\DataApi
     arguments: ['@config.factory', '@http_client', '@router.request_context']
   acquia_lift.service.context.page_context:
     class: Drupal\acquia_lift\Service\Context\PageContext

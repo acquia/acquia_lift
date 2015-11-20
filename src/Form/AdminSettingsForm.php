@@ -41,6 +41,7 @@ class AdminSettingsForm extends ConfigFormBase {
     $form['credential'] = $this->buildCredentialForm();
     $form['identity'] = $this->buildIdentityForm();
     $form['field_mappings'] = $this->buildFieldMappingsForm();
+    $form['visibility'] = $this->buildVisibilityForm();
 
     return parent::buildForm($form, $form_state);
   }
@@ -194,6 +195,31 @@ class AdminSettingsForm extends ConfigFormBase {
   }
 
   /**
+   * Build visibility form.
+   *
+   * @return array
+   *   Visibility form.
+   */
+  private function buildVisibilityForm() {
+    $visibility_settings = $this->config('acquia_lift.settings')->get('visibility');
+
+    $form = array(
+      '#title' => t('Visibility'),
+      '#type' => 'details',
+      '#tree' => TRUE,
+      '#open' => TRUE,
+    );
+    $form['path_patterns'] = array(
+      '#type' => 'textarea',
+      '#title' => t('Path patterns'),
+      '#description' => t('Lift will skip data collection on those URLs and their aliases.'),
+      '#default_value' => $visibility_settings['path_patterns'],
+    );
+
+    return $form;
+  }
+
+  /**
    * {@inheritdoc}
    */
   public function submitForm(array &$form, FormStateInterface $form_state) {
@@ -203,6 +229,7 @@ class AdminSettingsForm extends ConfigFormBase {
     $this->setCredentialValues($settings, $values['credential']);
     $this->setIdentityValues($settings, $values['identity']);
     $this->setFieldMappingsValues($settings, $values['field_mappings']);
+    $this->setVisibilityValues($settings, $values['visibility']);
 
     $settings->save();
     drupal_set_message(t('Please refresh your page cache to apply the latest configuration.'), 'status');
@@ -269,5 +296,17 @@ class AdminSettingsForm extends ConfigFormBase {
     $settings->set('field_mappings.content_section', $values['content_section']);
     $settings->set('field_mappings.content_keywords', $values['content_keywords']);
     $settings->set('field_mappings.persona', $values['persona']);
+  }
+
+  /**
+   * Set visibility values.
+   *
+   * @param \Drupal\Core\Config\Config $settings
+   *   Acquia Lift config settings.
+   * @param array $values
+   *   Visibility values.
+   */
+  private function setVisibilityValues(Config $settings, array $values) {
+    $settings->set('visibility.path_patterns', $values['path_patterns']);
   }
 }

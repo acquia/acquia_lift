@@ -39,6 +39,12 @@ class AdminSettingsForm extends ConfigFormBase {
    */
   public function buildForm(array $form, FormStateInterface $form_state, Request $request = NULL) {
     $form['credential'] = $this->buildCredentialForm();
+
+    // Data collection settings.
+    $form['data_collection_settings'] = array(
+      '#type' => 'vertical_tabs',
+      '#title' => t('Data collection settings'),
+    );
     $form['identity'] = $this->buildIdentityForm();
     $form['field_mappings'] = $this->buildFieldMappingsForm();
     $form['visibility'] = $this->buildVisibilityForm();
@@ -117,7 +123,7 @@ class AdminSettingsForm extends ConfigFormBase {
       '#title' => t('Identity'),
       '#type' => 'details',
       '#tree' => TRUE,
-      '#open' => TRUE,
+      '#group' => 'data_collection_settings',
     );
     $form['capture_identity'] = array(
       '#type' => 'checkbox',
@@ -167,7 +173,7 @@ class AdminSettingsForm extends ConfigFormBase {
       '#title' => t('Field Mappings'),
       '#type' => 'details',
       '#tree' => TRUE,
-      '#open' => TRUE,
+      '#group' => 'data_collection_settings',
     );
     $form['content_section'] = array(
       '#type' => 'select',
@@ -207,7 +213,7 @@ class AdminSettingsForm extends ConfigFormBase {
       '#title' => t('Visibility'),
       '#type' => 'details',
       '#tree' => TRUE,
-      '#open' => TRUE,
+      '#group' => 'data_collection_settings',
     );
     $form['path_patterns'] = array(
       '#type' => 'textarea',

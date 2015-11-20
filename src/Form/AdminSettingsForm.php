@@ -238,7 +238,7 @@ class AdminSettingsForm extends ConfigFormBase {
     $this->setVisibilityValues($settings, $values['visibility']);
 
     $settings->save();
-    drupal_set_message(t('Please refresh your page cache to apply the latest configuration.'), 'status');
+    drupal_set_message(t('Please refresh the site\'s page cache to apply the latest configuration.'), 'status');
 
     parent::submitForm($form, $form_state);
   }

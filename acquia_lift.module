@@ -22,7 +22,7 @@ use Drupal\Core\Routing\RouteMatchInterface;
 function acquia_lift_help($route_name, RouteMatchInterface $route_match) {
   switch ($route_name) {
     case 'acquia_lift.admin_settings_form':
-      $help_message = t('You can find more info at <a href=":acquia_lift_documentation_url" target="_blank">Acquia Lift Documentation</a>', [':acquia_lift_documentation_url' => 'https://docs.acquia.com/lift/']);
+      $help_message = t('You can find more info in <a href=":acquia_lift_documentation_url" target="_blank">Acquia Lift Documentation</a>', [':acquia_lift_documentation_url' => 'https://docs.acquia.com/lift/']);
       $credential_settings = \Drupal::config('acquia_lift.settings')->get('credential');
       if(!empty($credential_settings['api_url'])) {
         $help_message .= t(' and control your web services settings at <a href=":acquia_lift_web_admin_url" target="_blank">Acquia Lift Web Admin</a>', [':acquia_lift_web_admin_url' => 'https://' . $credential_settings['api_url']]);

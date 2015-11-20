@@ -37,7 +37,7 @@ class PageContext {
    *
    * @var array
    */
-  private $pageContext =  array(
+  private $pageContext = [
     'content_title' => 'Untitled',
     'content_type' => 'page',
     'page_type' => 'content page',
@@ -51,7 +51,7 @@ class PageContext {
     'author' => '',
     'evalSegments' => TRUE,
     'trackingId' => '',
-  );
+  ];
 
   /**
    * Constructor.
@@ -107,12 +107,12 @@ class PageContext {
    */
   private function setFields(EntityInterface $node) {
     // Find the node's terms.
-    $nids = array($node->id());
+    $nids = [$node->id()];
     $terms = $this->taxonomyTermStorage->getNodeTerms($nids, $this->fieldMappings);
-    $node_terms = isset($terms[$node->id()]) ? $terms[$node->id()] : array();
+    $node_terms = isset($terms[$node->id()]) ? $terms[$node->id()] : [];
 
     // Find the term names.
-    $vocabulary_term_names = array();
+    $vocabulary_term_names = [];
     foreach ($node_terms as $term) {
       $vocabulary_id = $term->getVocabularyId();
       $term_name = $term->getName();

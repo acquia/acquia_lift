@@ -41,10 +41,10 @@ class AdminSettingsForm extends ConfigFormBase {
     $form['credential'] = $this->buildCredentialForm();
 
     // Data collection settings.
-    $form['data_collection_settings'] = array(
+    $form['data_collection_settings'] = [
       '#type' => 'vertical_tabs',
       '#title' => t('Data collection settings'),
-    );
+    ];
     $form['identity'] = $this->buildIdentityForm();
     $form['field_mappings'] = $this->buildFieldMappingsForm();
     $form['visibility'] = $this->buildVisibilityForm();
@@ -62,50 +62,50 @@ class AdminSettingsForm extends ConfigFormBase {
     $credential_settings = $this->config('acquia_lift.settings')->get('credential');
     $credential = new Credential($credential_settings);
 
-    $form = array(
+    $form = [
       '#title' => t('Credential'),
       '#type' => 'details',
       '#tree' => TRUE,
       '#open' => !$credential->isValid(),
-    );
-    $form['account_name'] = array(
+    ];
+    $form['account_name'] = [
       '#type' => 'textfield',
       '#title' => t('Account Name'),
       '#default_value' => $credential->getAccountName(),
       '#required' => TRUE,
-    );
-    $form['customer_site'] = array(
+    ];
+    $form['customer_site'] = [
       '#type' => 'textfield',
       '#title' => t('Customer Site'),
       '#default_value' => $credential->getCustomerSite(),
-    );
-    $form['api_url'] = array(
+    ];
+    $form['api_url'] = [
       '#type' => 'textfield',
       '#title' => t('API URL'),
       '#field_prefix' => 'http(s)://',
       '#default_value' => $credential->getApiUrl(),
       '#required' => TRUE,
-    );
-    $form['access_key'] = array(
+    ];
+    $form['access_key'] = [
       '#type' => 'textfield',
       '#title' => t('API Access Key'),
       '#default_value' => $credential->getAccessKey(),
       '#required' => TRUE,
-    );
-    $form['secret_key'] = array(
+    ];
+    $form['secret_key'] = [
       '#type' => 'password',
       '#title' => t('API Secret Key'),
       '#default_value' => $credential->getSecretKey(),
       '#required' => empty($credential->getSecretKey()),
       '#description' => !empty($credential->getSecretKey()) ? t('Only necessary if updating') : '',
-    );
-    $form['js_path'] = array(
+    ];
+    $form['js_path'] = [
       '#type' => 'textfield',
       '#title' => t('JavaScript Path'),
       '#field_prefix' => 'http(s)://',
       '#default_value' => $credential->getJsPath(),
       '#required' => TRUE,
-    );
+    ];
 
     return $form;
   }
@@ -119,37 +119,37 @@ class AdminSettingsForm extends ConfigFormBase {
   private function buildIdentityForm() {
     $identity_settings = $this->config('acquia_lift.settings')->get('identity');
 
-    $form = array(
+    $form = [
       '#title' => t('Identity'),
       '#type' => 'details',
       '#tree' => TRUE,
       '#group' => 'data_collection_settings',
-    );
-    $form['capture_identity'] = array(
+    ];
+    $form['capture_identity'] = [
       '#type' => 'checkbox',
       '#title' => t('Capture identity on login / register'),
       '#default_value' => $identity_settings['capture_identity'],
-    );
-    $form['identity_parameter'] = array(
+    ];
+    $form['identity_parameter'] = [
       '#type' => 'textfield',
       '#title' => t('Identity Parameter'),
       '#default_value' => $identity_settings['identity_parameter'],
-    );
-    $form['identity_type_parameter'] = array(
+    ];
+    $form['identity_type_parameter'] = [
       '#type' => 'textfield',
       '#title' => t('Identity Type Parameter'),
       '#default_value' => $identity_settings['identity_type_parameter'],
-      '#states' => array(
-        'visible' => array(
-          ':input[name="identity[identity_parameter]"]' => array('!value' => '')
-        )
-      )
-    );
-    $form['default_identity_type'] = array(
+      '#states' => [
+        'visible' => [
+          ':input[name="identity[identity_parameter]"]' => ['!value' => ''],
+        ],
+      ],
+    ];
+    $form['default_identity_type'] = [
       '#type' => 'textfield',
       '#title' => t('Default Identity Type'),
       '#default_value' => $identity_settings['default_identity_type'],
-    );
+    ];
 
     return $form;
   }
@@ -164,38 +164,38 @@ class AdminSettingsForm extends ConfigFormBase {
     $field_mappings_settings = $this->config('acquia_lift.settings')->get('field_mappings');
 
     $vocabularies = Vocabulary::loadMultiple();
-    $vocabulary_options = array();
+    $vocabulary_options = [];
     foreach ($vocabularies as $vocabulary_vid => $vocabulary) {
       $vocabulary_options[$vocabulary_vid] = $vocabulary->label();
     }
 
-    $form = array(
+    $form = [
       '#title' => t('Field Mappings'),
       '#type' => 'details',
       '#tree' => TRUE,
       '#group' => 'data_collection_settings',
-    );
-    $form['content_section'] = array(
+    ];
+    $form['content_section'] = [
       '#type' => 'select',
       '#title' => t('Content Section'),
       '#empty_value' => '',
       '#options' => $vocabulary_options,
       '#default_value' => $field_mappings_settings['content_section'],
-    );
-    $form['content_keywords'] = array(
+    ];
+    $form['content_keywords'] = [
       '#type' => 'select',
       '#title' => t('Content Keywords'),
       '#empty_value' => '',
       '#options' => $vocabulary_options,
       '#default_value' => $field_mappings_settings['content_keywords'],
-    );
-    $form['persona'] = array(
+    ];
+    $form['persona'] = [
       '#type' => 'select',
       '#title' => t('Persona'),
       '#empty_value' => '',
       '#options' => $vocabulary_options,
       '#default_value' => $field_mappings_settings['persona'],
-    );
+    ];
 
     return $form;
   }
@@ -209,18 +209,18 @@ class AdminSettingsForm extends ConfigFormBase {
   private function buildVisibilityForm() {
     $visibility_settings = $this->config('acquia_lift.settings')->get('visibility');
 
-    $form = array(
+    $form = [
       '#title' => t('Visibility'),
       '#type' => 'details',
       '#tree' => TRUE,
       '#group' => 'data_collection_settings',
-    );
-    $form['path_patterns'] = array(
+    ];
+    $form['path_patterns'] = [
       '#type' => 'textarea',
       '#title' => t('Path patterns'),
       '#description' => t('Lift will skip data collection on those URLs and their aliases.'),
       '#default_value' => $visibility_settings['path_patterns'],
-    );
+    ];
 
     return $form;
   }

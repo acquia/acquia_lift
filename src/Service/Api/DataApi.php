@@ -50,11 +50,11 @@ class DataApi implements DataApiInterface {
    *
    * @var array
    */
-  private $headerWhitelist = array(
+  private $headerWhitelist = [
     'Accept',
     'Host',
-    'User-Agent'
-  );
+    'User-Agent',
+  ];
 
   /**
    * Constructor.
@@ -121,7 +121,7 @@ class DataApi implements DataApiInterface {
    * @return string
    *   The canonical representation of the request.
    */
-  private function canonicalizeRequest($method, $url, $parameters = array(), $headers = array()) {
+  private function canonicalizeRequest($method, $url, $parameters = [], $headers = []) {
     $parsed_url = parse_url($url);
     $str = strtoupper($method) . "\n";
     // Certain headers may get added to the actual request so we need to
@@ -163,7 +163,7 @@ class DataApi implements DataApiInterface {
    *
    * @return string
    */
-  private function getAuthHeader($method, $path, $parameters = array(), $headers = array()) {
+  private function getAuthHeader($method, $path, $parameters = [], $headers = []) {
     $canonical = $this->canonicalizeRequest($method, $path, $parameters, $headers);
     $hmac = base64_encode(hash_hmac('sha1', (string) $canonical, $this->credential->getSecretKey(), TRUE));
     return 'HMAC ' . $this->credential->getAccessKey() . ':' . $hmac;
@@ -177,23 +177,23 @@ class DataApi implements DataApiInterface {
    */
   public function getSegments() {
     // First get our Authorization header.
-    $headers = array('Accept' => 'application/json');
+    $headers = ['Accept' => 'application/json'];
     $url = $this->generateEndpoint('segments');
-    $auth_header = $this->getAuthHeader('GET', $url, array(), $headers);
-    $headers += array('Authorization' => $auth_header);
+    $auth_header = $this->getAuthHeader('GET', $url, [], $headers);
+    $headers += ['Authorization' => $auth_header];
 
     $request = new Request('GET', $url, $headers);
     $response = $this->httpClient->send($request);
     $data = $response->getBody();
     if (empty($data)) {
-      return array();
+      return [];
     }
     $data = json_decode($data, TRUE);
     if (is_array($data)) {
       $segments = array_values(array_filter($data));
       return $segments;
     }
-    return array();
+    return [];
   }
 
   /**
@@ -209,14 +209,14 @@ class DataApi implements DataApiInterface {
    */
   public function saveEvent($event_name, $event_type = 'OTHER') {
     // First get our Authorization header.
-    $headers = array('Accept' => 'application/json');
+    $headers = ['Accept' => 'application/json'];
     $url = $this->generateEndpoint('events/' . $event_name);
-    $auth_header = $this->getAuthHeader('PUT', $url, array('type' => $event_type), $headers);
-    $headers += array('Authorization' => $auth_header);
+    $auth_header = $this->getAuthHeader('PUT', $url, ['type' => $event_type], $headers);
+    $headers += ['Authorization' => $auth_header];
 
     $request = new Request('PUT', $url . '?type=' . $event_type, $headers);
     $response = $this->httpClient->send($request);
-    $vars = array('@eventname' => $event_name);
+    $vars = ['@eventname' => $event_name];
     $success_msg = SafeMarkup::format('The event @eventname has been saved to Acquia Lift', $vars);
     $fail_msg = SafeMarkup::format('Could not save event @eventname to Acquia Lift', $vars);
     if ($response->getStatusCode() == 200) {
@@ -241,10 +241,10 @@ class DataApi implements DataApiInterface {
     $url = $this->generateEndpoint('events/' . $event_name);
     $auth_header = $this->getAuthHeader('DELETE', $url);
 
-    $request = new Request('DELETE', $url, array('Authorization' => $auth_header));
+    $request = new Request('DELETE', $url, ['Authorization' => $auth_header]);
     $response = $this->httpClient->send($request);
 
-    $vars = array('@eventname' => $event_name);
+    $vars = ['@eventname' => $event_name];
     $success_msg = SafeMarkup::format('The event @eventname was deleted from Acquia Lift Profiles', $vars);
     $fail_msg = SafeMarkup::format('Could not delete event @eventname from Acquia Lift Profiles', $vars);
     if ($response->getStatusCode() == 200) {

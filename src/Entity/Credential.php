@@ -27,7 +27,7 @@ class Credential {
    *  Credential
    */
   public function __construct($credential) {
-    $this->credential = $credential ?: array();
+    $this->credential = $credential ?: [];
   }
 
   /**
@@ -97,11 +97,11 @@ class Credential {
    *   Get front end config array.
    */
   public function getFrontEndConfig() {
-    return array(
+    return [
       'account_name' => $this->getAccountName(),
       'customer_site' => $this->getCustomerSite(),
       'js_path' => $this->getJsPath(),
-    );
+    ];
   }
 
   /**

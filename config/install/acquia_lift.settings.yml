@@ -14,6 +14,9 @@ field_mappings:
   content_section: ''
   content_keywords: ''
   persona: ''
+thumbnail:
+  field: ''
+  style: ''
 visibility:
   # Track, only when the page URL falls OUTSIDE OF these path patterns.
   path_patterns: "/admin\n/admin/*\n/batch\n/node/add*\n/node/*/*\n/user/*/*"

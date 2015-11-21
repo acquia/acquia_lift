@@ -37,6 +37,8 @@ function acquia_lift_help($route_name, RouteMatchInterface $route_match) {
  */
 function acquia_lift_page_attachments(array &$page) {
   $page_attachments_manager = \Drupal::service('acquia_lift.service.page.page_attachments_manager');
+  // @todo: shouldAttach() should be extracted from page attachments manager because
+  // when false, fewest (as opposed to, all) Lift services should be initialized.
   if (!$page_attachments_manager->shouldAttach()) {
     return;
   }
@@ -55,4 +57,55 @@ function acquia_lift_node_view_alter(array &$build, EntityInterface $node, Entit
   }
 
   \Drupal::service('acquia_lift.service.context.page_context')->set($node);
+}
+
+/**
+ * Implements hook_form_FORM_ID_alter().
+ *
+ * @todo: refactor to move logic into services as much as possible.
+ */
+function acquia_lift_form_node_type_form_alter(&$form, &$form_state) {
+  $node_type = $form_state->getFormObject()->getEntity()->id();
+  $field_definitions = \Drupal::entityManager()->getFieldDefinitions('node', $node_type);
+
+  $thumbnail_fields = [];
+  foreach ($field_definitions as $field_name => $field_definition) {
+    if ($field_definition->getType() === 'image') {
+      $thumbnail_fields[$field_name] = $field_definition->getLabel();
+    }
+  }
+  if (empty($thumbnail_fields)) {
+    return;
+  }
+  $thumbnail_styles = image_style_options(FALSE);
+  if (empty($thumbnail_styles)) {
+    return;
+  }
+
+  $thumbnail_settings = \Drupal::config('acquia_lift.settings')->get('thumbnail');
+  $form['acquia_lift'] = [
+    '#title' => t('Acquia Lift'),
+    '#type' => 'details',
+    '#tree' => TRUE,
+    '#group' => 'additional_settings',
+  ];
+  $form['acquia_lift']['field'] = [
+    '#type' => 'select',
+    '#title' => t('Select preview image to use for content recommendations.'),
+    '#options' => $thumbnail_fields,
+    '#default_value' => $thumbnail_settings['field'],
+    '#empty_option' => t('None'),
+    '#empty_value' => '',
+  ];
+  $form['acquia_lift']['style'] = [
+    '#type' => 'select',
+    '#title' => t('Select the style to use for the thumbnail.'),
+    '#options' => $thumbnail_styles,
+    '#default_value' => $thumbnail_settings['style'],
+    '#states' => [
+      'visible' => [
+        ':input[name="acquia_lift[field]"]' => ['!value' => ''],
+      ],
+    ],
+  ];
 }

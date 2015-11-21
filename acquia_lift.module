@@ -71,7 +71,7 @@ function acquia_lift_form_node_type_form_alter(&$form, &$form_state) {
   $thumbnail_fields = [];
   foreach ($field_definitions as $field_name => $field_definition) {
     if ($field_definition->getType() === 'image') {
-      $thumbnail_fields[$field_name] = $field_definition->getLabel();
+      $thumbnail_fields[$field_name] = t($field_definition->getLabel()) . ' (' . $field_name . ')';
     }
   }
   if (empty($thumbnail_fields)) {

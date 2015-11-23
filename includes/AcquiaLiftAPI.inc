@@ -319,8 +319,6 @@ class AcquiaLiftAPI implements AcquiaLiftLearnReportDataSourceInterface {
    *   TRUE if the connection succeeded, FALSE otherwise.
    */
   public function ping() {
-    // We use the list-agents endpoint for our ping test, in the absence of
-    // an endpoint specifically provided for this purpose.
     $url = $this->generateEndpoint("ping");
     $fail_msg = 'Acquia Lift Testing Service could not be reached';
     try {

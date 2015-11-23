@@ -750,9 +750,22 @@ function acquia_lift_personalize_agent_presave($agent) {
   }
   $current = personalize_agent_load($agent->machine_name);
   if (empty($current)) {
-    $account_info = acquia_lift_get_account_info();
-    $lift_api = AcquiaLiftAPI::getInstance($account_info);
-    $agent->machine_name = $lift_api->ensureUniqueAgentName($agent->machine_name, PERSONALIZE_MACHINE_NAME_MAXLENGTH);
+    $fail_msg = t('There is a problem with your Lift credentials. Personalizations will not work until this has been resolved.');
+    try {
+      $account_info = acquia_lift_get_account_info();
+      $lift_api = AcquiaLiftAPI::getInstance($account_info);
+      $agent->machine_name = $lift_api->ensureUniqueAgentName($agent->machine_name, PERSONALIZE_MACHINE_NAME_MAXLENGTH);
+    }
+    catch (AcquiaLiftCredsException $e) {
+      // The creds haven't been set up yet, so it's probably safe to go with the
+       // given machine name, but set an error message for the user.
+      drupal_set_message($fail_msg, 'error');
+    }
+    catch (AcquiaLiftForbiddenException $e) {
+      // Creds have been configured but not correctly, so again it is probably
+      // ok to go ahead, but set an error message for the user.
+      drupal_set_message($fail_msg, 'error');
+    }
   }
   // Make sure the required configurations are set.
   if (!isset($agent->data['decision_style'])) {

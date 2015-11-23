@@ -9,8 +9,10 @@ namespace Drupal\acquia_lift\Form;
 
 use Symfony\Component\HttpFoundation\Request;
 use Drupal\Core\Config\Config;
+use Drupal\node\Entity\NodeType;
 use Drupal\Core\Form\ConfigFormBase;
 use Drupal\Core\Form\FormStateInterface;
+use Drupal\Core\Url;
 use Drupal\taxonomy\Entity\Vocabulary;
 use Drupal\acquia_lift\Entity\Credential;
 
@@ -48,6 +50,7 @@ class AdminSettingsForm extends ConfigFormBase {
     $form['identity'] = $this->buildIdentityForm();
     $form['field_mappings'] = $this->buildFieldMappingsForm();
     $form['visibility'] = $this->buildVisibilityForm();
+    $form['thumbnail_url'] = $this->buildThumbnailUrlForm();
 
     return parent::buildForm($form, $form_state);
   }
@@ -221,6 +224,41 @@ class AdminSettingsForm extends ConfigFormBase {
       '#description' => t('Lift will skip data collection on those URLs and their aliases.'),
       '#default_value' => $visibility_settings['path_patterns'],
     ];
+
+    return $form;
+  }
+
+  /**
+   * Display thumbnail URL form.
+   *
+   * @return array
+   *   Thumbnail URL form.
+   */
+  private function buildThumbnailUrlForm() {
+    $form = [
+      '#title' => t('Thumbnail URL'),
+      '#type' => 'details',
+      '#tree' => TRUE,
+      '#group' => 'data_collection_settings',
+    ];
+    $form['link_list'] = [
+      '#type' => 'markup',
+      '#markup' => '<div>' . t('There are no node types. Please create a node type first.') . '</div>',
+    ];
+
+    $node_types = NodeType::loadMultiple();
+    if (empty($node_types)) {
+      return $form;
+    }
+
+    $links = [];
+    $link_attributes = ['attributes' => ['target' => '_blank']];
+    foreach ($node_types as $node_type) {
+      $url = Url::fromRoute('entity.node_type.edit_form', ['node_type' => $node_type->id()], $link_attributes);
+      $links[] = '<p>' . \Drupal::l($node_type->label(), $url) . '</p>';
+    }
+    $form['link_list']['#markup'] = t('Configure thumbnail URLs on each node type pages (link opens new window):');
+    $form['link_list']['#markup'] .= implode('', $links);
 
     return $form;
   }

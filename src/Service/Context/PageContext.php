@@ -101,21 +101,25 @@ class PageContext {
    */
   private function setThumbnailUrl(EntityInterface $node) {
     $node_type = $node->getType();
+
     // Return empty string if no thumbnail has been configured.
     if (!isset($this->thumbnailConfig[$node_type])) {
       return;
     }
     $node_type_thumbnail_config = $this->thumbnailConfig[$node_type];
+
     // Return empty string if node has no such field.
     if (empty($node->{$node_type_thumbnail_config['field']})) {
       return;
     }
     $fileUri = $node->{$node_type_thumbnail_config['field']}->entity->getFileUri();
     $image_style = ImageStyle::load($node_type_thumbnail_config['style']);
+
     // Return empty if no such image style.
     if (empty($image_style)) {
       return;
     }
+    // Generate image URL.
     $thumbnail_uri = $image_style->buildUrl($fileUri);
     $this->pageContext['thumbnail_url'] = file_create_url($thumbnail_uri);
   }

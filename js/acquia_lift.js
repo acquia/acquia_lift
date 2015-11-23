@@ -165,7 +165,7 @@ Drupal.acquia_lift_target = (function() {
             choice_str = 'Control';
           }
           processedDecisions[agent_name] = choice_str;
-          _tcaq.push(['capture', 'Decision', {'personalizationname': getAgentLabel(agent_name), 'personalizationmachinename':agent_name, 'personalizationaudiencename': audience, 'personalizationchosenvariation': choice_str, 'personalizationdecisionpolicy': policy }]);
+          _tcaq.push(['capture', 'Decision', {'personalization_name': getAgentLabel(agent_name), 'personalization_machine_name':agent_name, 'personalization_audience_name': audience, 'personalization_chosen_variation': choice_str, 'personalization_decision_policy': policy }]);
         }
         callback(decisions);
       };
@@ -277,7 +277,7 @@ Drupal.acquia_lift_target = (function() {
             index++;
           }
         }
-        _tcaq.push(['capture', 'Goal', {'personalizationname': getAgentLabel(agent_name), 'personalizationmachinename':agent_name, 'personalizationaudiencename': stored.audience, 'personalizationchosenvariation': choice_str, 'personalizationdecisionpolicy': stored.policy, 'personalizationgoalname': goal_name, 'personalizationgoalvalue': value }]);
+        _tcaq.push(['capture', 'Goal', {'personalization_name': getAgentLabel(agent_name), 'personalization_machine_name':agent_name, 'personalization_audience_name': stored.audience, 'personalization_chosen_variation': choice_str, 'personalization_decision_policy': stored.policy, 'personalization_goal_name': goal_name, 'personalization_goal_value': value }]);
       }
 
       if (!stored || (stored.hasOwnProperty("policy") && stored.policy == 'targeting')) {

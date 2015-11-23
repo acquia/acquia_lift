@@ -445,8 +445,6 @@ class AcquiaLiftAPI implements AcquiaLiftLearnReportDataSourceInterface {
   }
 
   public function getPersonalizationOverviewReport($name, $variations) {
-    // @todo Remove this line :)
-    $this->api_url = "http://127.0.0.1:8080";
     if (empty($this->lift_profiles_account_name)) {
       throw new AcquiaLiftCredsException('No account name for Lift Profiles configured');
     }
@@ -468,8 +466,6 @@ class AcquiaLiftAPI implements AcquiaLiftLearnReportDataSourceInterface {
     if ($type == 'target' && count($variations) > 1) {
       throw new AcquiaLiftException("Can't retrieve targeting report for more than one variation");
     }
-    // @todo Remove this line :)
-    $this->api_url = "http://127.0.0.1:8080";
     if (empty($this->lift_profiles_account_name)) {
       throw new AcquiaLiftCredsException('No account name for Lift Profiles configured');
     }

@@ -252,12 +252,12 @@ class AdminSettingsForm extends ConfigFormBase {
     }
 
     $links = [];
-    $link_attributes = ['attributes' => ['target' => '_blank']];
+    $link_attributes = ['attributes' => ['target' => '_blank'], 'fragment' => 'edit-acquia-lift'];
     foreach ($node_types as $node_type) {
       $url = Url::fromRoute('entity.node_type.edit_form', ['node_type' => $node_type->id()], $link_attributes);
       $links[] = '<p>' . \Drupal::l($node_type->label(), $url) . '</p>';
     }
-    $form['link_list']['#markup'] = t('Configure thumbnail URLs by each content type (in a new window):');
+    $form['link_list']['#markup'] = t('Configure thumbnail URLs on each content type\'s edit page (in a new window):');
     $form['link_list']['#markup'] .= implode('', $links);
 
     return $form;

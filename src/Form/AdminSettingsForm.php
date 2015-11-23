@@ -257,7 +257,7 @@ class AdminSettingsForm extends ConfigFormBase {
       $url = Url::fromRoute('entity.node_type.edit_form', ['node_type' => $node_type->id()], $link_attributes);
       $links[] = '<p>' . \Drupal::l($node_type->label(), $url) . '</p>';
     }
-    $form['link_list']['#markup'] = t('Configure thumbnail URLs on each node type pages (link opens new window):');
+    $form['link_list']['#markup'] = t('Configure thumbnail URLs on each node type pages (in a new window):');
     $form['link_list']['#markup'] .= implode('', $links);
 
     return $form;

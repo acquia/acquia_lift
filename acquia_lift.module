@@ -80,20 +80,37 @@ function acquia_lift_node_view_alter(array &$build, EntityInterface $node, Entit
  * @todo: refactor to move logic into services as much as possible.
  */
 function acquia_lift_form_node_type_form_alter(&$form, &$form_state) {
+  $form['acquia_lift'] = [
+    '#title' => t('Acquia Lift'),
+    '#type' => 'details',
+    '#tree' => TRUE,
+    '#group' => 'additional_settings',
+  ];
+
+  // Find image fields.
   $node_type = $form_state->getFormObject()->getEntity()->id();
   $field_definitions = \Drupal::entityManager()->getFieldDefinitions('node', $node_type);
-
-  $thumbnail_fields = [];
+  $image_fields = [];
   foreach ($field_definitions as $field_name => $field_definition) {
     if ($field_definition->getType() === 'image') {
-      $thumbnail_fields[$field_name] = t($field_definition->getLabel()) . ' (' . $field_name . ')';
+      $image_fields[$field_name] = t($field_definition->getLabel()) . ' (' . $field_name . ')';
     }
   }
-  if (empty($thumbnail_fields)) {
+  if (empty($image_fields)) {
+    $form['acquia_lift']['no_image_field'] = [
+      '#type' => 'markup',
+      '#markup' => '<div>' . t('This content type has no image field yet.') . '</div>',
+    ];
     return;
   }
-  $thumbnail_styles = image_style_options(FALSE);
-  if (empty($thumbnail_styles)) {
+
+  // Find image styles.
+  $image_styles = image_style_options(FALSE);
+  if (empty($image_styles)) {
+    $form['acquia_lift']['no_image_styles'] = [
+      '#type' => 'markup',
+      '#markup' => '<div>' . t('This site has no image style yet. Please define an image style first.') . '</div>',
+    ];
     return;
   }
 
@@ -101,16 +118,10 @@ function acquia_lift_form_node_type_form_alter(&$form, &$form_state) {
   $node_type_thumbnail_settings = isset($thumbnail_settings[$node_type]) ?
     $thumbnail_settings[$node_type] :
     ['field' => '', 'style' => ''];
-  $form['acquia_lift'] = [
-    '#title' => t('Acquia Lift'),
-    '#type' => 'details',
-    '#tree' => TRUE,
-    '#group' => 'additional_settings',
-  ];
   $form['acquia_lift']['field'] = [
     '#type' => 'select',
     '#title' => t('Select preview image to use for content recommendations.'),
-    '#options' => $thumbnail_fields,
+    '#options' => $image_fields,
     '#default_value' => $node_type_thumbnail_settings['field'],
     '#empty_option' => t('None'),
     '#empty_value' => '',
@@ -118,7 +129,7 @@ function acquia_lift_form_node_type_form_alter(&$form, &$form_state) {
   $form['acquia_lift']['style'] = [
     '#type' => 'select',
     '#title' => t('Select the style to use for the thumbnail.'),
-    '#options' => $thumbnail_styles,
+    '#options' => $image_styles,
     '#default_value' => $node_type_thumbnail_settings['style'],
     '#empty_option' => t('None'),
     '#empty_value' => '',

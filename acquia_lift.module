@@ -87,7 +87,7 @@ function acquia_lift_form_node_type_form_alter(&$form, &$form_state) {
   $thumbnail_settings = \Drupal::config('acquia_lift.settings')->get('thumbnail');
   $node_type_thumbnail_settings = isset($thumbnail_settings[$node_type]) ?
     $thumbnail_settings[$node_type] :
-    ['field' => '', 'style' => 'thumbnail'];
+    ['field' => '', 'style' => ''];
   $form['acquia_lift'] = [
     '#title' => t('Acquia Lift'),
     '#type' => 'details',
@@ -107,6 +107,8 @@ function acquia_lift_form_node_type_form_alter(&$form, &$form_state) {
     '#title' => t('Select the style to use for the thumbnail.'),
     '#options' => $thumbnail_styles,
     '#default_value' => $node_type_thumbnail_settings['style'],
+    '#empty_option' => t('None'),
+    '#empty_value' => '',
     '#states' => [
       'visible' => [
         ':input[name="acquia_lift[field]"]' => ['!value' => ''],

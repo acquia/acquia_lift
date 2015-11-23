@@ -26,6 +26,13 @@ class PageContext {
   private $fieldMappings;
 
   /**
+   * Thumbnail config.
+   *
+   * @var array
+   */
+  private $thumbnailConfig;
+
+  /**
    * Taxonomy term storage.
    *
    * @var \Drupal\Core\Entity\EntityStorageInterface
@@ -62,7 +69,9 @@ class PageContext {
    *   Entity type manager.
    */
   public function __construct(ConfigFactoryInterface $config_factory, EntityTypeManagerInterface $entity_type_manager) {
-    $this->fieldMappings = $config_factory->get('acquia_lift.settings')->get('field_mappings');
+    $settings = $config_factory->get('acquia_lift.settings');
+    $this->fieldMappings = $settings->get('field_mappings');
+    $this->thumbnailConfig = $settings->get('thumbnail');
     $this->taxonomyTermStorage = $entity_type_manager->getStorage('taxonomy_term');
   }
 
@@ -91,11 +100,23 @@ class PageContext {
    *   Node.
    */
   private function setThumbnailUrl(EntityInterface $node) {
-    if (!isset($node->field_image)) {
+    $node_type = $node->getType();
+    // Return empty string if no thumbnail has been configured.
+    if (!isset($this->thumbnailConfig[$node_type])) {
       return;
     }
-    $fileUri = $node->field_image->entity->getFileUri();
-    $thumbnail_uri = ImageStyle::load('thumbnail')->buildUrl($fileUri);
+    $node_type_thumbnail_config = $this->thumbnailConfig[$node_type];
+    // Return empty string if node has no such field.
+    if (empty($node->{$node_type_thumbnail_config['field']})) {
+      return;
+    }
+    $fileUri = $node->{$node_type_thumbnail_config['field']}->entity->getFileUri();
+    $image_style = ImageStyle::load($node_type_thumbnail_config['style']);
+    // Return empty if no such image style.
+    if (empty($image_style)) {
+      return;
+    }
+    $thumbnail_uri = $image_style->buildUrl($fileUri);
     $this->pageContext['thumbnail_url'] = file_create_url($thumbnail_uri);
   }
 

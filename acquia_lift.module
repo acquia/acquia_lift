@@ -15,6 +15,8 @@
 use Drupal\Core\Entity\EntityInterface;
 use Drupal\Core\Entity\Display\EntityViewDisplayInterface;
 use Drupal\Core\Routing\RouteMatchInterface;
+use Drupal\Core\Form\FormStateInterface;
+use Drupal\node\NodeTypeInterface;
 
 /**
  * Implements hook_help().
@@ -83,6 +85,9 @@ function acquia_lift_form_node_type_form_alter(&$form, &$form_state) {
   }
 
   $thumbnail_settings = \Drupal::config('acquia_lift.settings')->get('thumbnail');
+  $node_type_thumbnail_settings = isset($thumbnail_settings[$node_type]) ?
+    $thumbnail_settings[$node_type] :
+    ['field' => '', 'style' => 'thumbnail'];
   $form['acquia_lift'] = [
     '#title' => t('Acquia Lift'),
     '#type' => 'details',
@@ -93,7 +98,7 @@ function acquia_lift_form_node_type_form_alter(&$form, &$form_state) {
     '#type' => 'select',
     '#title' => t('Select preview image to use for content recommendations.'),
     '#options' => $thumbnail_fields,
-    '#default_value' => $thumbnail_settings['field'],
+    '#default_value' => $node_type_thumbnail_settings['field'],
     '#empty_option' => t('None'),
     '#empty_value' => '',
   ];
@@ -101,11 +106,26 @@ function acquia_lift_form_node_type_form_alter(&$form, &$form_state) {
     '#type' => 'select',
     '#title' => t('Select the style to use for the thumbnail.'),
     '#options' => $thumbnail_styles,
-    '#default_value' => $thumbnail_settings['style'],
+    '#default_value' => $node_type_thumbnail_settings['style'],
     '#states' => [
       'visible' => [
         ':input[name="acquia_lift[field]"]' => ['!value' => ''],
       ],
     ],
   ];
+
+  $form['actions']['submit']['#submit'][] = 'acquia_lift_form_node_type_form_submit';
+}
+
+/**
+ * Submit handler for the node type form with acquia lift options.
+ *
+ * @see acquia_lift_form_node_type_form_alter().
+ */
+function acquia_lift_form_node_type_form_submit($form, &$form_state) {
+  $node_type = $form_state->getFormObject()->getEntity()->id();
+  $settings = \Drupal::configFactory()->getEditable('acquia_lift.settings');
+  $thumbnail_settings = $settings->get('thumbnail');
+  $thumbnail_settings[$node_type] = $form_state->getValue('acquia_lift');
+  $settings->set('thumbnail', $thumbnail_settings)->save();
 }

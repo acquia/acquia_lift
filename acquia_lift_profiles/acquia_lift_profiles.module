@@ -394,6 +394,25 @@ function acquia_lift_profiles_form_node_type_form_alter(&$form, &$form_state) {
   $form['acquia_lift_profiles']['#group'] = 'additional_settings';
 }
 
+
+/**
+ * Implements hook_form_FORM_ID_alter().
+ */
+function acquia_lift_profiles_form_acquia_lift_admin_form_alter(&$form, &$form_state) {
+  $form['#submit'][] = 'acquia_lift_profiles_creds_submit';
+}
+
+/**
+ * Submit callback for the Acquia Lift admin form.
+ */
+function acquia_lift_profiles_creds_submit() {
+  // Refresh the segments from Acquia Lift Profiles.
+  acquia_lift_profiles_refresh_segments_cache();
+  // Batch sync all visitor actions to Lift Web.
+  module_load_include('inc', 'acquia_lift_profiles', 'acquia_lift_profiles.batch');
+  acquia_lift_batch_sync_actions();
+}
+
 /**
  * Calls the Acquia Lift Profiles API to create/update an event corresponding to a Visitor Actions action.
  *

@@ -276,8 +276,6 @@ function acquia_lift_profiles_admin_form_submit($form, &$form_state) {
     variable_set('acquia_lift_profiles_udf_mappings', $mapped_contexts);
   }
 
-  module_load_include('inc', 'acquia_lift_profiles', 'acquia_lift_profiles.batch');
-  acquia_lift_batch_sync_actions();
   drupal_set_message(t('The configuration settings have been saved.'), 'status');
 }
 

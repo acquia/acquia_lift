@@ -417,6 +417,6 @@ html[dir="rtl"] .lift-graph-result .label {
   margin-left: -0.5em;
 }
 
-.lift-overview-report-breakdown {
-  clear: both;
+.lift-variation-breakdown table {
+  width: 50%;
 }

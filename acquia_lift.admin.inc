@@ -730,17 +730,27 @@ function acquia_lift_report($form, &$form_state, $agent_data) {
     ),
   );
   $decision_count = $conversion_count = 0;
-  $breakdown_text = t('Breakdown:');
+  $variation_counts = array();
   foreach ($overview_stats as $variation => $stats) {
     $decision_count += $stats['decision_count'];
     $conversion_count += $stats['conversion_count'];
-    $breakdown_text .= t(" Variation <strong>@var</strong> decisions: @dec, conversions: @conv.", array('@var' => $stats['variation_id'], '@dec' => $stats['decision_count'], '@conv' => $stats['conversion_count']));
+    $variation_counts[$stats['variation_id']] = array(
+      'option_label' => _get_variation_label($stats['variation_id'], $agent_data->machine_name),
+      'decision_count' => $stats['decision_count'],
+      'goal_count' => $stats['conversion_count'],
+    );
   }
   $overview_report = _build_overview_report($decision_count, $conversion_count, $interval);
   $form['overview_report']['report'] = array(
-    '#markup' => drupal_render($overview_report) . '<div class="lift-overview-report-breakdown">' . $breakdown_text . '</div>',
+    '#markup' => drupal_render($overview_report),
     '#theme_wrappers' => array('container'),
     '#id' => 'acquia-lift-overview-report-data',
+  );
+  $variation_breakdown = _build_variation_breakdown($variation_counts);
+  $form['variation_breakdown'] = array(
+    '#markup' => drupal_render($variation_breakdown),
+    '#theme_wrappers' => array('container'),
+    '#id' => 'acquia-lift-variation-breakdown',
   );
 
   if (empty($option_set->targeting)) {
@@ -806,6 +816,9 @@ function acquia_lift_report($form, &$form_state, $agent_data) {
   );
   // Show the audience filter.
   $form['audience_container'] = array(
+    'audience_overview_report_title' => array(
+      '#markup' => '<h2>' . t('Audience Overview') . '</h2>',
+    ),
     '#type' => 'container',
     '#attributes' => array(
       'class' => array('container-inline'),
@@ -814,7 +827,7 @@ function acquia_lift_report($form, &$form_state, $agent_data) {
   );
   if (count($audience_options) == 1) {
     $form['audience_container']['audience_label'] = array(
-      '#markup' => '<h2>' . t('Report for %audience audience', array('%audience' => $test_label)) . '</h2>'
+      '#markup' => '<p>' . t('%audience audience', array('%audience' => $test_label)) . '</p>'
     );
     $form['audience_container']['audience_filter'] = array(
       '#type' => 'value',
@@ -834,8 +847,10 @@ function acquia_lift_report($form, &$form_state, $agent_data) {
       '#id' => 'acquia-lift-report-audience-filter',
     );
   }
+
+  $form['report'] = acquia_lift_report_audience($form_state, $agent_data, $option_set, $name, $lift_api, $start_time, $end_time, $use_old_stats, $audience_status == 'retired');
   if ($audience_status == 'active' && $audience_type == 'test' && personalize_agent_get_status($agent_data->machine_name) != PERSONALIZE_STATUS_COMPLETED) {
-    $form['audience_container']['complete'] = array(
+    $form['complete_audience'] = array(
       '#type' => 'link',
       '#title' => t('End test and choose winner'),
       '#href' => 'admin/structure/personalize/manage/' . $agent_data->machine_name . '/audience/' . $name . '/complete',
@@ -850,8 +865,6 @@ function acquia_lift_report($form, &$form_state, $agent_data) {
       )
     );
   }
-
-  $form['report'] = acquia_lift_report_audience($form_state, $agent_data, $option_set, $name, $lift_api, $start_time, $end_time, $use_old_stats, $audience_status == 'retired');
   return $form;
 }
 
@@ -915,7 +928,7 @@ function acquia_lift_report_audience($form_state, $personalization_data, $target
         $session_count += $stats['decision_count'];
         $goal_count += $stats['conversion_count'];
       }
-      $daily_data = _extract_daily_data($audience_report['daily_stats']);
+      $daily_data = _extract_daily_data($audience_report['daily_stats'], $personalization_data->machine_name);
       if (isset($audience_report['test_results'])) {
         $experiment_results = _extract_experiment_results($audience_report['test_results']);
         $confidence = !empty($audience_report['overall_confidence']) ? $audience_report['overall_confidence'] : 0;
@@ -929,9 +942,6 @@ function acquia_lift_report_audience($form_state, $personalization_data, $target
 
   // Audience Overview report section.
   $form['audience_overview_report'] = array(
-    'audience_overview_report_title' => array(
-      '#markup' => '<h2>' . t('Audience Overview') . '</h2>',
-    ),
     '#theme_wrappers' => array('container'),
     '#attributes' => array(
       'id' => 'acquia-lift-audience-overview-report',
@@ -1060,7 +1070,7 @@ function acquia_lift_report_submit($form, &$form_state) {
  * Extracts daily stats from the reporting API into results
  * that can be displayed.
  */
-function _extract_daily_data($daily_data) {
+function _extract_daily_data($daily_data, $personalization_name) {
   $daily_results = array();
   $i = 0;
   $counts = $goals = $vals = array();
@@ -1088,7 +1098,7 @@ function _extract_daily_data($daily_data) {
       $lower = $goal_value * ($rate - ($quantile * $sd));
       $daily_results[] = array(
         'option_id' => $variation,
-        'option_label' => $variation,
+        'option_label' => _get_variation_label($variation, $personalization_name),
         'goals' => $results['conversion_count'],
         'count' => $results['decision_count'],
         'date' => $day,
@@ -2479,7 +2489,7 @@ function _build_daily_report($daily_data, $personalization_name, $audience_name)
         ),
         array(
           'data' => $choice_data['option_label'],
-          'data-acquia-lift-variation-label' => _get_variation_label($choice_data['counter'], $choice_data['control']),
+          'data-acquia-lift-variation-label' => _get_variation_label_abbreviated($choice_data['counter'], $choice_data['control']),
         ),
         array(
           'data' => $choice_data['conversion'],
@@ -2563,7 +2573,7 @@ function _build_experiment_report($aggregated_data, $confidence, $winner, $perso
     $row_data = array(
       array(
         'data' => $choice_data['option_label'],
-        'data-acquia-lift-variation-label' => _get_variation_label($choice_data['counter'], $choice_data['control']),
+        'data-acquia-lift-variation-label' => _get_variation_label_abbreviated($choice_data['counter'], $choice_data['control']),
       ),
       array(
         'data' => $choice_data['count'],
@@ -2630,6 +2640,61 @@ function _build_experiment_report($aggregated_data, $confidence, $winner, $perso
   return $build;
 }
 
+
+/**
+ * Builds the render array for the breakdown per variation.
+ */
+function _build_variation_breakdown($variation_counts) {
+  $headers = array(
+    t('Variation'),
+    array(
+      'data' => t('Times shown'),
+      'data-help-tooltip' => t('Number of times this variation was shown across all audiences.'),
+    ),
+    array(
+      'data' => t('Goals met'),
+      'data-help-tooltip' => t('Number of times visitors across all audiences completed a goal after viewing the variation.'),
+    ),
+  );
+  $rows = array();
+  foreach ($variation_counts as $choice_id => $info) {
+    $row_data = array(
+      array(
+        'data' => $info['option_label'],
+      ),
+      array(
+        'data' => $info['decision_count'],
+      ),
+      array(
+        'data' => $info['goal_count'],
+      ),
+    );
+
+    $rows[] = array(
+      'data' => $row_data,
+      'no_striping' => TRUE,
+    );
+
+  }
+  if (empty($rows)) {
+    return array();
+  }
+  $build['summary_holder'] = array(
+    '#type' => 'container',
+    '#attributes' => array(
+      'class' => array('lift-variation-breakdown'),
+    ),
+  );
+  $build['summary_holder']['summary_table'] = array(
+    '#theme' => 'table',
+    '#header' => $headers,
+    '#rows' => $rows,
+    '#sticky' => FALSE,
+  );
+
+  return $build;
+}
+
 /**
  * Generates a message to show when there is insufficient confidence in the
  * test results.
@@ -2650,7 +2715,7 @@ function _get_low_confidence_message($confidence_measure) {
    * @param $is_control
    *   True if this is the control option.
    */
-function _get_variation_label($counter, $is_control) {
+function _get_variation_label_abbreviated($counter, $is_control) {
   if ($is_control) {
     return t('Control');
   }
@@ -2661,7 +2726,15 @@ function _get_variation_label($counter, $is_control) {
     return t('V@num', array('@num' => $counter));
   }
 }
-
+function _get_variation_label($variation_id, $personalization_name) {
+  $os = acquia_lift_get_option_set_for_targeting($personalization_name, FALSE);
+  foreach ($os->options as $option) {
+    if ($option['option_id'] == $variation_id) {
+      return $option['option_label'];
+    }
+  }
+  return $variation_id;
+}
 
 /**
  * Formats a percentage value for use in reports.

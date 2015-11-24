@@ -3295,8 +3295,8 @@ function acquia_lift_debug_mode_enabled() {
  *   The option set to use for targeting rules or NULL if the agent has no option
  *   sets.
  */
-function acquia_lift_get_option_set_for_targeting($agent_name) {
-  $option_sets = personalize_option_set_load_by_agent($agent_name, TRUE);
+function acquia_lift_get_option_set_for_targeting($agent_name, $reset = TRUE) {
+  $option_sets = personalize_option_set_load_by_agent($agent_name, $reset);
   if (empty($option_sets)) {
     return NULL;
   }

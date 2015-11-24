@@ -78,77 +78,6 @@ function acquia_lift_admin_form($form, &$form_state) {
         '!apiurl' => $account_info['api_url']
       )),
     );
-
-    // Add in the JS path.
-    $public_key_desc = false;
-    if ($account_info['js_path'] != variable_get('acquia_lift_profiles_js_path', '')) {
-      $public_key_desc = t("Suggested: !js_path", array('!js_path' => $account_info['js_path']));
-    }
-    // Lift Web account info.
-    $form['acquia_lift_account_info']['acquia_lift_profiles_js_path'] = array(
-      '#type' => 'textfield',
-      '#title' => t('Acquia Lift JavaScript path'),
-      '#field_prefix' => 'http(s)://',
-      '#default_value' => variable_get('acquia_lift_profiles_js_path', $account_info['js_path']),
-      '#required' => TRUE,
-      '#description' => $public_key_desc ? $public_key_desc : false,
-    );
-
-    if ($account_info['profiles']['account_name'] != "") {
-      $acc_name_desc = t("Short abbreviation of your account name. Suggested: @accountname", array('@accountname' => $account_info['profiles']['account_name']));
-    }
-    else {
-      $acc_name_desc = t("Short abbreviation of your account name, such as MYACCOUNT01.");
-    }
-    $form['acquia_lift_account_info']['acquia_lift_profiles_account_name'] = array(
-      '#type' => 'textfield',
-      '#title' => t('Acquia Lift Web Account Name'),
-      '#default_value' => variable_get('acquia_lift_profiles_account_name', $account_info['profiles']['account_name']),
-      '#description' => $acc_name_desc,
-      '#required' => TRUE,
-    );
-
-    $form['acquia_lift_account_info']['acquia_lift_profiles_site_name'] = array(
-      '#type' => 'textfield',
-      '#title' => t('Acquia Lift Web Customer Site'),
-      '#default_value' => variable_get('acquia_lift_profiles_site_name', ''),
-      '#description' => t("When you are using multiple sites with the same Acquia Lift Web account, use this. Otherwise, leave it empty")
-    );
-
-    $form['acquia_lift_account_info']['acquia_lift_profiles_api_url'] = array(
-      '#type' => 'textfield',
-      '#title' => t('Acquia Lift Web API URL'),
-      '#field_prefix' => 'http(s)://',
-      '#default_value' => variable_get('acquia_lift_profiles_api_url', $account_info['profiles']['hostname']),
-      '#description' => t("Server where your Acquia Lift Web account resides."),
-      '#required' => TRUE,
-    );
-
-    if ($account_info['profiles']['public_key'] != "" && variable_get('acquia_lift_profiles_access_key', '') == "<reset>") {
-      $public_key_desc = t("Suggested: @public_key", array('@public_key' => $account_info['profiles']['public_key']));
-    } else {
-      $public_key_desc = t("Write %reset in the field to show the access key", array("%reset" => "<reset>"));
-    }
-    $form['acquia_lift_account_info']['acquia_lift_profiles_access_key'] = array(
-      '#type' => 'textfield',
-      '#title' => t('Acquia Lift Web API Access Key'),
-      '#default_value' => variable_get('acquia_lift_profiles_access_key', $account_info['profiles']['public_key']),
-      '#description' => $public_key_desc,
-      '#required' => TRUE,
-    );
-
-    if ($account_info['profiles']['secret_key'] != "" && variable_get('acquia_lift_profiles_secret_key', '') == "<reset>") {
-      $secret_key_desc = t("Suggested: @secret_key", array('@secret_key' => $account_info['profiles']['secret_key']));
-    } else {
-      $secret_key_desc = t("Write %reset in the field to show the secret key", array("%reset" => "<reset>"));
-    }
-    $form['acquia_lift_account_info']['acquia_lift_profiles_secret_key'] = array(
-      '#type' => 'textfield',
-      '#title' => t('Acquia Lift Web API Secret Key'),
-      '#default_value' => variable_get('acquia_lift_profiles_secret_key', $account_info['profiles']['secret_key']),
-      '#description' => $secret_key_desc,
-      '#required' => TRUE,
-    );
   }
   else {
     $form['acquia_lift_account_info']['msg'] = array(
@@ -158,6 +87,80 @@ function acquia_lift_admin_form($form, &$form_state) {
       )),
     );
   }
+
+
+  // Add in the JS path.
+  $js_path_desc = false;
+  $default_path = variable_get('acquia_lift_profiles_js_path', '');
+  if (isset($account_info['js_path']) && $account_info['js_path'] != $default_path) {
+    $js_path_desc = t("Suggested: !js_path", array('!js_path' => $account_info['js_path']));
+    $default_path = $account_info['js_path'];
+  }
+  // Lift Web account info.
+  $form['acquia_lift_account_info']['acquia_lift_profiles_js_path'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Acquia Lift JavaScript path'),
+    '#field_prefix' => 'http(s)://',
+    '#default_value' => variable_get('acquia_lift_profiles_js_path', $default_path),
+    '#required' => TRUE,
+    '#description' => $js_path_desc ? $js_path_desc : false,
+  );
+
+  if ($account_info['profiles']['account_name'] != "") {
+    $acc_name_desc = t("Short abbreviation of your account name. Suggested: @accountname", array('@accountname' => $account_info['profiles']['account_name']));
+  }
+  else {
+    $acc_name_desc = t("Short abbreviation of your account name, such as MYACCOUNT01.");
+  }
+  $form['acquia_lift_account_info']['acquia_lift_profiles_account_name'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Acquia Lift Web Account Name'),
+    '#default_value' => variable_get('acquia_lift_profiles_account_name', $account_info['profiles']['account_name']),
+    '#description' => $acc_name_desc,
+    '#required' => TRUE,
+  );
+
+  $form['acquia_lift_account_info']['acquia_lift_profiles_site_name'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Acquia Lift Web Customer Site'),
+    '#default_value' => variable_get('acquia_lift_profiles_site_name', ''),
+    '#description' => t("When you are using multiple sites with the same Acquia Lift Web account, use this. Otherwise, leave it empty")
+  );
+
+  $form['acquia_lift_account_info']['acquia_lift_profiles_api_url'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Acquia Lift Web API URL'),
+    '#field_prefix' => 'http(s)://',
+    '#default_value' => variable_get('acquia_lift_profiles_api_url', $account_info['profiles']['hostname']),
+    '#description' => t("Server where your Acquia Lift Web account resides."),
+    '#required' => TRUE,
+  );
+
+  if ($account_info['profiles']['public_key'] != "" && variable_get('acquia_lift_profiles_access_key', '') == "<reset>") {
+    $public_key_desc = t("Suggested: @public_key", array('@public_key' => $account_info['profiles']['public_key']));
+  } else {
+    $public_key_desc = t("Write %reset in the field to show the access key", array("%reset" => "<reset>"));
+  }
+  $form['acquia_lift_account_info']['acquia_lift_profiles_access_key'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Acquia Lift Web API Access Key'),
+    '#default_value' => variable_get('acquia_lift_profiles_access_key', $account_info['profiles']['public_key']),
+    '#description' => $public_key_desc,
+    '#required' => TRUE,
+  );
+
+  if ($account_info['profiles']['secret_key'] != "" && variable_get('acquia_lift_profiles_secret_key', '') == "<reset>") {
+    $secret_key_desc = t("Suggested: @secret_key", array('@secret_key' => $account_info['profiles']['secret_key']));
+  } else {
+    $secret_key_desc = t("Write %reset in the field to show the secret key", array("%reset" => "<reset>"));
+  }
+  $form['acquia_lift_account_info']['acquia_lift_profiles_secret_key'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Acquia Lift Web API Secret Key'),
+    '#default_value' => variable_get('acquia_lift_profiles_secret_key', $account_info['profiles']['secret_key']),
+    '#description' => $secret_key_desc,
+    '#required' => TRUE,
+  );
 
   $form['acquia_lift_confidence_measure'] = array(
     '#type' => 'textfield',

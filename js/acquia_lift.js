@@ -5,6 +5,8 @@ var _tcwq = _tcwq || [];
 
   "use strict";
 
+  var initialized = false;
+
   Drupal.behaviors.acquia_lift = {
     attach: function () {
       Drupal.acquia_lift.initialize();
@@ -17,6 +19,11 @@ var _tcwq = _tcwq || [];
    * Initialize.
    */
   Drupal.acquia_lift.initialize = function () {
+    if (initialized) {
+      return;
+    }
+    initialized = true;
+
     // Set account.
     _tcaq.push(['setAccount', settings.credential.account_name, settings.credential.customer_site]);
 

@@ -18,6 +18,7 @@ use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Routing\RouteMatchInterface;
 use Drupal\Core\Url;
 use Drupal\node\NodeTypeInterface;
+use Drupal\user\UserInterface;
 
 /**
  * Implements hook_help().
@@ -154,4 +155,13 @@ function acquia_lift_form_node_type_form_submit($form, &$form_state) {
   $thumbnail_settings = $settings->get('thumbnail');
   $thumbnail_settings[$node_type] = $form_state->getValue('acquia_lift');
   $settings->set('thumbnail', $thumbnail_settings)->save();
+}
+
+/**
+ * On user login (and user register) event, capture identity.
+ *
+ * Implements hook_user_login().
+ */
+function acquia_lift_user_login(UserInterface $user) {
+  \Drupal::service('acquia_lift.service.context.path_context')->setIdentityByUser($user);
 }

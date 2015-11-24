@@ -495,9 +495,6 @@ function acquia_lift_get_account_info() {
 
   // Set default url
   $account_info['api_url'] = variable_get('acquia_lift_api_url', '');
-  if (empty($account_info['api_url'])) {
-    $account_info['api_url'] = 'us-east-1-decision.lift.acquia.com';
-  }
 
   // Find out if there is Acquia Lift information in the provided subscription information.
   if (isset($acquia_lift_data['status']) && $acquia_lift_data['status'] == TRUE) {
@@ -505,13 +502,21 @@ function acquia_lift_get_account_info() {
       switch ($key) {
         case "public_key":
         case "private_key":
-        case "api_url":
            // If it was overridden in settings.php - do not override again
            // with Acquia Network creds.
            $account_info[$key] = empty($account_info[$key]) ? $value : $account_info[$key];
           break;
       }
     }
+    if (empty($account_info['api_url'])) {
+      if (empty($acquia_lift_data['decision']['hostname'])) {
+        $account_info['api_url'] = 'us-east-1-decision.lift.acquia.com';
+      }
+      else {
+        $account_info['api_url'] = $acquia_lift_data['decision']['hostname'];
+      }
+    }
+
     foreach ($acquia_lift_data['profile'] as $key => $value) {
       switch ($key) {
         case "js_path":

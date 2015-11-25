@@ -2,10 +2,10 @@
 
 /**
  * @file
- * Contains \Drupal\acquia_lift\Service\Page\PathMatcher.
+ * Contains \Drupal\acquia_lift\Service\Helper\PathMatcher.
  */
 
-namespace Drupal\acquia_lift\Service\Page;
+namespace Drupal\acquia_lift\Service\Helper;
 
 use Drupal\Core\Path\AliasManager;
 use Drupal\Core\Path\PathMatcher as BasePathMatcher;

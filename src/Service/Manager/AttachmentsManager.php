@@ -2,10 +2,10 @@
 
 /**
  * @file
- * Contains \Drupal\acquia_lift\Service\Page\AttachmentsManager.
+ * Contains \Drupal\acquia_lift\Service\Manager\AttachmentsManager.
  */
 
-namespace Drupal\acquia_lift\Service\Page;
+namespace Drupal\acquia_lift\Service\Manager;
 
 use Drupal\Core\Config\ConfigFactoryInterface;
 use Drupal\acquia_lift\Entity\Credential;

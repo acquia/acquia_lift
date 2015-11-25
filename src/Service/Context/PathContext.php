@@ -14,7 +14,7 @@ use Drupal\Component\Utility\UrlHelper;
 use Drupal\Component\Utility\Html;
 use Drupal\user\UserInterface;
 use Drupal\acquia_lift\Entity\Credential;
-use Drupal\acquia_lift\Service\Page\PathMatcher;
+use Drupal\acquia_lift\Service\Helper\PathMatcher;
 
 class PathContext {
   /**
@@ -53,7 +53,7 @@ class PathContext {
   /**
    * Path matcher.
    *
-   * @var \Drupal\acquia_lift\Service\Page\PathMatcher
+   * @var \Drupal\acquia_lift\Service\Helper\PathMatcher
    */
   private $pathMatcher;
 
@@ -73,7 +73,7 @@ class PathContext {
    *   The current path service.
    * @param \Symfony\Component\HttpFoundation\RequestStack $request_stack
    *   The request stack.
-   * @param \Drupal\acquia_lift\Service\Page\PathMatcher $pathMatcher
+   * @param \Drupal\acquia_lift\Service\Helper\PathMatcher $pathMatcher
    *   The path matcher.
    */
   public function __construct(ConfigFactoryInterface $config_factory, CurrentPathStack $current_path_stack, RequestStack $request_stack, PathMatcher $pathMatcher) {

@@ -63,7 +63,7 @@ function acquia_lift_node_view_alter(array &$build, EntityInterface $node, Entit
 
   \Drupal::service('acquia_lift.service.context.page_context')->set($node);
 
-  $attachments_manager = \Drupal::service('acquia_lift.service.page.attachments_manager');
+  $attachments_manager = \Drupal::service('acquia_lift.service.manager.attachments_manager');
   $build['#attached']['drupalSettings']['acquia_lift'] = $attachments_manager->getDrupalSettings();
   $build['#attached']['library'][] = $attachments_manager->getLibrary();
 }

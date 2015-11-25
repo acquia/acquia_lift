@@ -7,10 +7,10 @@ services:
     arguments: ['@config.factory', '@entity_type.manager']
   acquia_lift.service.context.path_context:
     class: Drupal\acquia_lift\Service\Context\PathContext
-    arguments: ['@config.factory', '@path.current', '@request_stack', '@acquia_lift.service.page.path_matcher']
-  acquia_lift.service.page.attachments_manager:
-    class: Drupal\acquia_lift\Service\Page\AttachmentsManager
+    arguments: ['@config.factory', '@path.current', '@request_stack', '@acquia_lift.service.helper.path_matcher']
+  acquia_lift.service.manager.attachments_manager:
+    class: Drupal\acquia_lift\Service\Manager\AttachmentsManager
     arguments: ['@config.factory', '@acquia_lift.service.context.page_context', '@acquia_lift.service.context.path_context']
-  acquia_lift.service.page.path_matcher:
-    class: Drupal\acquia_lift\Service\Page\PathMatcher
+  acquia_lift.service.helper.path_matcher:
+    class: Drupal\acquia_lift\Service\Helper\PathMatcher
     arguments: ['@path.alias_manager', '@path.matcher']

@@ -119,6 +119,11 @@ div.acquia-lift-percentage-rest { /* added selector -KO */
   color: #85B200;
 }
 
+#audience-report-container {
+  border-top: 2px solid #999;
+  padding-top: 10px;
+}
+
 #acquia-lift-experiment-report-data td.acquia-lift-report-positive {
   color: #85B200;
   font-weight: bold;

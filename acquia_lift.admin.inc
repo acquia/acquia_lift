@@ -798,14 +798,15 @@ function acquia_lift_report($form, &$form_state, $agent_data) {
     $audience = key($audience_options);
   }
   list($audience_status, $name) = explode('|', $audience);
-  $audience_type = 'test';
+  $audience_type = 'target';
   if ($audience_status == 'retired') {
+    $audience_type = 'test';
     $nested_agent = personalize_agent_load($name);
     $test_label = $nested_agent->label;
   }
   else {
-    if (isset($option_set->targeting[$name]['option_id'])) {
-      $audience_type = 'target';
+    if (isset($option_set->targeting[$name]['osid'])) {
+      $audience_type = 'test';
     }
     $test_label = $option_set->targeting[$name]['label'];
   }
@@ -821,6 +822,7 @@ function acquia_lift_report($form, &$form_state, $agent_data) {
     ),
     '#type' => 'container',
     '#attributes' => array(
+      'id' => 'audience-report-container',
       'class' => array('container-inline'),
     ),
     '#tree' => FALSE,
@@ -868,6 +870,27 @@ function acquia_lift_report($form, &$form_state, $agent_data) {
   return $form;
 }
 
+/**
+ * Builds the audience-specific report.
+ * @param $form_state
+ * @param stdClass $personalization_data
+ *   Object reprsenting the personalization
+ * @param stdClass $targeting_option_set
+ *   Object representing the targeting option set for hte personalization
+ * @param string $audience
+ *   The audience to pull a report for
+ * @param \AcquiaLiftAPI $lift_api
+ *   The lift API client wrapper.
+ * @param $from
+ *   Start date for the report
+ * @param $to
+ *   End date for the report
+ * @param bool $use_old_stats
+ *   Whether to use the legacy reports (i.e. direct from the decision engine)
+ * @param bool $retired
+ *   Whether this is a report for a retired test
+ * @return mixed
+ */
 function acquia_lift_report_audience($form_state, $personalization_data, $targeting_option_set, $audience, AcquiaLiftAPI $lift_api, $from, $to, $use_old_stats = FALSE, $retired = FALSE) {
   $audience_type = isset($targeting_option_set->targeting[$audience]['osid']) ? 'test' : 'target';
   module_load_include('inc', 'acquia_lift', 'includes/AcquiaLiftLearnReport');
@@ -924,15 +947,22 @@ function acquia_lift_report_audience($form_state, $personalization_data, $target
     // Pull the stats directly from the reporting API.
     try {
       $audience_report = $lift_api->getAudienceReport($personalization_data->machine_name, $audience, $variations[$audience], $audience_type, $from, $to);
-      foreach ($audience_report['overall_stats'] as $variation => $stats) {
-        $session_count += $stats['decision_count'];
-        $goal_count += $stats['conversion_count'];
+      if (!empty($audience_report['overall_stats']) && !empty($audience_report['daily_stats'])) {
+        foreach ($audience_report['overall_stats'] as $variation => $stats) {
+          $session_count += $stats['decision_count'];
+          $goal_count += $stats['conversion_count'];
+        }
+        $daily_data = _extract_daily_data($audience_report['daily_stats'], $personalization_data->machine_name);
+        if (isset($audience_report['test_results'])) {
+          $experiment_results = _extract_experiment_results($audience_report['test_results']);
+          $confidence = !empty($audience_report['overall_confidence']) ? $audience_report['overall_confidence'] : 0;
+          $winner = !empty($audience_report['winner']) ? $audience_report['winner'] : null;
+        }
       }
-      $daily_data = _extract_daily_data($audience_report['daily_stats'], $personalization_data->machine_name);
-      if (isset($audience_report['test_results'])) {
-        $experiment_results = _extract_experiment_results($audience_report['test_results']);
-        $confidence = !empty($audience_report['overall_confidence']) ? $audience_report['overall_confidence'] : 0;
-        $winner = !empty($audience_report['winner']) ? $audience_report['winner'] : null;
+      else {
+        return array(
+          '#markup' => t('No data available for this audience.')
+        );
       }
     }
     catch (AcquiaLiftException $e) {

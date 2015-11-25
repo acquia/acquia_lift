@@ -128,11 +128,11 @@ class AdminSettingsForm extends ConfigFormBase {
       '#tree' => TRUE,
       '#group' => 'data_collection_settings',
     ];
-    $form['capture_identity'] = [
-      '#type' => 'checkbox',
-      '#title' => t('Capture identity on login / register'),
-      '#default_value' => $identity_settings['capture_identity'],
-    ];
+//    $form['capture_identity'] = [
+//      '#type' => 'checkbox',
+//      '#title' => t('Capture identity on login / register'),
+//      '#default_value' => $identity_settings['capture_identity'],
+//    ];
     $form['identity_parameter'] = [
       '#type' => 'textfield',
       '#title' => t('Identity Parameter'),
@@ -323,7 +323,7 @@ class AdminSettingsForm extends ConfigFormBase {
    *   Identity values.
    */
   private function setIdentityValues(Config $settings, array $values) {
-    $settings->set('identity.capture_identity', $values['capture_identity']);
+//    $settings->set('identity.capture_identity', $values['capture_identity']);
     $settings->set('identity.identity_parameter', $values['identity_parameter']);
     $settings->set('identity.identity_type_parameter', $values['identity_type_parameter']);
     $settings->set('identity.default_identity_type', $values['default_identity_type']);

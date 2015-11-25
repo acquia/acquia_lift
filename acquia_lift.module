@@ -49,30 +49,40 @@ function acquia_lift_help($route_name, RouteMatchInterface $route_match) {
 }
 
 /**
- * Implements hook_page_attachments() to insert JavaScript to the appropriate scope/region of the page.
- */
-function acquia_lift_page_attachments(array &$page) {
-  $page_attachments_manager = \Drupal::service('acquia_lift.service.page.page_attachments_manager');
-  // @todo: shouldAttach() should be extracted from page attachments manager because
-  // when false, fewest (as opposed to, all) Lift services should be initialized.
-  if (!$page_attachments_manager->shouldAttach()) {
-    return;
-  }
-
-  $page['#attached']['drupalSettings']['acquia_lift'] = $page_attachments_manager->getDrupalSettings();
-  $page['#attached']['library'][] = $page_attachments_manager->getLibrary();
-}
-
-/**
- * Implements hook_ENTITY_TYPE_view_alter() for node entities.
+ * Implements hook_ENTITY_TYPE_view_alter().
  */
 function acquia_lift_node_view_alter(array &$build, EntityInterface $node, EntityViewDisplayInterface $display) {
-  // When viewing a node, create populate its page context.
-  if ($display->getOriginalMode() !== 'full') {
+  // Create and attach settings and library only when:
+  //   1) viewing a node in "full" mode, and
+  //   2) path context agrees on attaching.
+  if ($display->getOriginalMode() !== 'full' ||
+    !\Drupal::service('acquia_lift.service.context.path_context')->shouldAttach()
+  ) {
     return;
   }
 
   \Drupal::service('acquia_lift.service.context.page_context')->set($node);
+
+  $attachments_manager = \Drupal::service('acquia_lift.service.page.attachments_manager');
+  $build['#attached']['drupalSettings']['acquia_lift'] = $attachments_manager->getDrupalSettings();
+  $build['#attached']['library'][] = $attachments_manager->getLibrary();
+}
+
+/**
+ * Implements hook_page_attachments().
+ */
+function acquia_lift_page_attachments(array &$page) {
+  // Create and attach settings and library only when path context agrees on attaching.
+  if (!\Drupal::service('acquia_lift.service.context.path_context')->shouldAttach()
+  ) {
+    return;
+  }
+
+  // Attach identity settings.
+  $identity = \Drupal::service('acquia_lift.service.context.path_context')->getIdentity();
+  if ($identity) {
+    $page['#attached']['drupalSettings']['acquia_lift']['identity'] = $identity;
+  }
 }
 
 /**

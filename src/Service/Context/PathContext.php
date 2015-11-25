@@ -13,12 +13,28 @@ use Drupal\Core\Path\CurrentPathStack;
 use Drupal\Component\Utility\UrlHelper;
 use Drupal\Component\Utility\Html;
 use Drupal\user\UserInterface;
+use Drupal\acquia_lift\Entity\Credential;
+use Drupal\acquia_lift\Service\Page\PathMatcher;
 
 class PathContext {
   /**
    * Default identity type's default value.
    */
   const DEFAULT_IDENTITY_TYPE_DEFAULT = 'email';
+
+  /**
+   * Acquia Lift credential.
+   *
+   * @var \Drupal\acquia_lift\Entity\Credential
+   */
+  private $credential;
+
+  /**
+   * Identity settings.
+   *
+   * @var array
+   */
+  private $identitySettings;
 
   /**
    * Request path patterns (exclusion).
@@ -35,11 +51,11 @@ class PathContext {
   private $currentPath;
 
   /**
-   * Identity settings.
+   * Path matcher.
    *
-   * @var array
+   * @var \Drupal\acquia_lift\Service\Page\PathMatcher
    */
-  private $identitySettings;
+  private $pathMatcher;
 
   /**
    * Identity.
@@ -57,14 +73,43 @@ class PathContext {
    *   The current path service.
    * @param \Symfony\Component\HttpFoundation\RequestStack $request_stack
    *   The request stack.
+   * @param \Drupal\acquia_lift\Service\Page\PathMatcher $pathMatcher
+   *   The path matcher.
    */
-  public function __construct(ConfigFactoryInterface $config_factory, CurrentPathStack $current_path_stack, RequestStack $request_stack) {
+  public function __construct(ConfigFactoryInterface $config_factory, CurrentPathStack $current_path_stack, RequestStack $request_stack, PathMatcher $pathMatcher) {
     $settings = $config_factory->get('acquia_lift.settings');
+    $credential_settings = $settings->get('credential');
+    $identity_settings = $settings->get('identity');
     $visibilitySettings = $settings->get('visibility');
+
+    $this->credential = new Credential($credential_settings);
+    $this->identitySettings = $identity_settings;
     $this->requestPathPatterns = $visibilitySettings['path_patterns'];
     $this->currentPath = $current_path_stack->getPath();
-    $this->identitySettings = $settings->get('identity');
+    $this->pathMatcher = $pathMatcher;
+
     $this->setIdentityByRequest($request_stack);
+  }
+
+  /**
+   * Should attach.
+   *
+   * @return boolean
+   *   True if should attach.
+   */
+  public function shouldAttach() {
+    // Should not attach if credential is invalid.
+    if (!$this->credential->isValid()) {
+      return FALSE;
+    }
+
+    // Should not attach if current path match the path patterns.
+    if ($this->pathMatcher->match($this->currentPath, $this->requestPathPatterns)) {
+      return FALSE;
+    }
+
+    // Should attach.
+    return TRUE;
   }
 
   /**
@@ -128,26 +173,6 @@ class PathContext {
     // Sanitize string and output.
     $this->identity['identity'] = Html::escape($identity);
     $this->identity['identityType'] = Html::escape($identityType);
-  }
-
-  /**
-   * Get request path patterns.
-   *
-   * @return string
-   *   Request path patterns (to be excluded).
-   */
-  public function getRequestPathPatterns() {
-    return $this->requestPathPatterns;
-  }
-
-  /**
-   * Get current path.
-   *
-   * @return string
-   *   Current path.
-   */
-  public function getCurrentPath() {
-    return $this->currentPath;
   }
 
   /**

@@ -221,11 +221,10 @@ class DataApi implements DataApiInterface {
     $fail_msg = SafeMarkup::format('Could not save event @eventname to Acquia Lift', $vars);
     if ($response->getStatusCode() == 200) {
       $this->logger->info($success_msg);
+      return;
     }
-    else {
-      $this->logger->error($fail_msg);
-      throw new DataApiException($fail_msg);
-    }
+    $this->logger->error($fail_msg);
+    throw new DataApiException($fail_msg);
   }
 
   /**
@@ -249,10 +248,9 @@ class DataApi implements DataApiInterface {
     $fail_msg = SafeMarkup::format('Could not delete event @eventname from Acquia Lift Profiles', $vars);
     if ($response->getStatusCode() == 200) {
       $this->logger->info($success_msg);
+      return;
     }
-    else {
-      $this->logger->error($fail_msg);
-      throw new DataApiException($fail_msg);
-    }
+    $this->logger->error($fail_msg);
+    throw new DataApiException($fail_msg);
   }
 }

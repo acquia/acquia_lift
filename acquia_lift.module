@@ -158,18 +158,26 @@ function acquia_lift_form_node_type_form_alter(&$form, &$form_state) {
  *   The concatenated entity field keys that has been traversed through.
  * @param string $label_prefix
  *   The concatenated entity labels that has been traversed through.
+ * @param array $processed_field_hashes
+ *   A collection of hashes of fields that has already been processed.
  * @param array $image_fields
  *   The "roadmaps" to image fields that's been collected so far.
  */
-function _acquia_lift_get_image_fields($target_type, $type, $key_prefix = '', $label_prefix = '', $image_fields = []) {
+function _acquia_lift_get_image_fields($target_type, $type, $key_prefix = '', $label_prefix = '', $processed_field_hashes = [], $image_fields = []) {
   $field_definitions = \Drupal::entityManager()->getFieldDefinitions($target_type, $type);
-
   foreach ($field_definitions as $field_key => $field_definition) {
     $field_type = $field_definition->getType();
     $field_target_type = $field_definition->getSetting('target_type');
     $field_label = $field_definition->getLabel();
     $full_label = $label_prefix . $field_label;
     $full_key = $key_prefix . $field_key;
+
+    // Keep this field, if the field has already been processed.
+    $field_hash = spl_object_hash($field_definition);
+    if (isset($processed_field_hashes[$field_hash])) {
+      continue;
+    }
+    $processed_field_hashes[$field_hash] = TRUE;
 
     // 1) Image type.
     if ($field_type === 'image') {
@@ -178,8 +186,10 @@ function _acquia_lift_get_image_fields($target_type, $type, $key_prefix = '', $l
     }
 
     // 2) Entity reference type.
-    if ($field_type === 'entity_reference' && $field_target_type === 'media') {
-      $image_fields = _acquia_lift_get_image_fields($field_target_type, $field_type, $full_key . '->', $full_label . '->', $image_fields);
+    if ($field_type === 'entity_reference' &&
+      \Drupal::entityManager()->getDefinition($field_target_type)->isSubclassOf('\Drupal\Core\Entity\FieldableEntityInterface')
+    ) {
+      $image_fields = _acquia_lift_get_image_fields($field_target_type, $field_type, $full_key . '->', $full_label . '->', $processed_field_hashes, $image_fields);
       continue;
     }
   }

@@ -1015,15 +1015,17 @@ function acquia_lift_report_audience($form_state, $personalization_data, $target
       'class' => array('acquia-lift-report-section-options'),
     ),
     '#tree' => FALSE,
-    // @todo Uncomment this once we are recording when new goals get added to
-    //   running personalizations.
-    //'goal' => acquia_lift_report_goal_dropdown($goals_agent, $selected_goal),
+
     'metric' => acquia_lift_report_experiment_metric_dropdown($selected_metric),
     'submit' => array(
       '#type' => 'submit',
       '#value' => t('Filter'),
     ),
   );
+  // We only support per-goal reporting for the new reports.
+  if (!$use_old_stats) {
+    $form['daily_report']['header']['options']['goal'] = acquia_lift_report_goal_dropdown($personalization_data->machine_name, $selected_goal);
+  }
   $form['daily_report']['report'] = array(
     '#markup' => drupal_render($daily_report),
     '#theme_wrappers' => array('container'),
@@ -1123,6 +1125,7 @@ function _extract_daily_data($daily_data, $personalization_name) {
       $sd = $counts[$variation] > 0 ? sqrt(($rate*(1-$rate))/$counts[$variation]) : 0;
       // We want a 90% confidence interval, which means we need the 95th
       // quantile, given the two tails of the distribution.
+      module_load_include('inc', 'acquia_lift','includes/AcquiaLiftLearnReport');
       $quantile = AcquiaLiftLearnReport::$normal_quantiles[4];
       $upper = $goal_value * ($rate + ($quantile * $sd));
       $lower = $goal_value * ($rate - ($quantile * $sd));
@@ -1447,35 +1450,49 @@ function acquia_lift_adjust_report_start_date($start, $end) {
  * The following parameters are supplied within the query string:
  *   - personalization: the machine name of the personalization
  *   - audience: the audience to get data for
- *   - start: (optional) the timestamp to use as start date
- *   - end: (optional) the timestamp to use as the end date
  *   - goal: (optional) a goal name to limit results (defaults to all goals)
  */
-function acquia_lift_report_experiment() {
+function acquia_lift_report_daily_conversions() {
   $params = drupal_get_query_parameters();
-  $personalization_name = empty($params['personalization']) ? NULL : personalize_sanitize_string($params['personalization']);
-  $options = array();
-  $options['decision'] = empty($params['decision']) ? NULL : personalize_sanitize_string($params['decision']);
-  $options['goal'] = empty($params['goal']) ? NULL : personalize_sanitize_string($params['goal']);
-  $options['start'] = empty($params['start']) ? NULL : check_plain($params['start']);
-  $options['end'] = empty($params['end']) ? NULL : check_plain($params['end']);
-
-  if (is_numeric($options['start'])) {
-    $options['start'] = date('Y-m-d', $options['start']);
-  }
-  if (is_numeric($options['end'])) {
-    $options['end'] = date('Y-m-d', $options['end']);
-  }
   $report = array(
-    '#markup' => t('No report available for this personalization.')
+    '#markup' => t('No report available for this personalization.'),
   );
-  $personalization_name = personalize_agent_load_agent($personalization_name);
-  // @todo Uncomment this when we have a reasonable way of pulling this report
-  //   that works for old and new report types.
-/*  if ($plugin instanceof AcquiaLiftLearningAgentInterface) {
-    $report = $plugin->getExperimentReports($options);
-    $report['#type'] = 'ajax';
-  }*/
+  if (empty($params['personalization']) || empty($params['audience'])) {
+    drupal_json_output(drupal_render($report));
+    return;
+  }
+  $personalization_name = personalize_sanitize_string($params['personalization']);
+  $audience = personalize_sanitize_string($params['audience']);
+  $goal = empty($params['goal']) ? NULL : personalize_sanitize_string($params['goal']);
+
+  $personalization = personalize_agent_load($personalization_name);
+
+  if ($personalization->plugin  == "acquia_lift_target") {
+    $account_info = acquia_lift_get_account_info();
+    $api = AcquiaLiftAPI::getInstance($account_info);
+
+    $targeting_option_set = acquia_lift_get_option_set_for_targeting($personalization_name, FALSE);
+    $targeting_structure = acquia_lift_get_structure_from_targeting($targeting_option_set, FALSE);
+    if (!isset($targeting_structure[$audience])) {
+      drupal_json_output(drupal_render($report));
+      return;
+    }
+    $audience_type = isset($targeting_option_set->targeting[$audience]['osid']) ? 'test' : 'target';
+    list($start_time, $end_time) = acquia_lift_get_report_dates_for_agent($personalization, FALSE);
+
+    try {
+      $audience_report = $api->getAudienceReport($personalization_name, $audience, $targeting_structure[$audience], $audience_type, $start_time, $end_time, $goal);
+      if (!empty($audience_report['daily_stats'])) {
+        $daily_data = _extract_daily_data($audience_report['daily_stats'], $personalization_name);
+        $daily_report = _build_daily_report($daily_data, $personalization_name, $audience);
+        drupal_json_output('<div id="acquia-lift-daily-report-data">' . drupal_render($daily_report) . "</div>");
+        return;
+      }
+    }
+    catch (AcquiaLiftException $e) {
+
+    }
+  }
 
   drupal_json_output(drupal_render($report));
 }
@@ -2603,7 +2620,7 @@ function _build_experiment_report($aggregated_data, $confidence, $winner, $perso
     $row_data = array(
       array(
         'data' => $choice_data['option_label'],
-        'data-acquia-lift-variation-label' => _get_variation_label_abbreviated($choice_data['counter'], $choice_data['control']),
+        'data-acquia-lift-variation-label' => _get_variation_label($choice_id, $personalization_name),
       ),
       array(
         'data' => $choice_data['count'],

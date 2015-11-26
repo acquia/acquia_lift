@@ -460,7 +460,7 @@ class AcquiaLiftAPI implements AcquiaLiftLearnReportDataSourceInterface {
     return $this->makeGetRequest($url, $this->getStandardHeaders(), $fail_msg, $vars);
   }
 
-  public function getAudienceReport($name, $audience, $variations, $type, $from, $to) {
+  public function getAudienceReport($name, $audience, $variations, $type, $from, $to, $goal = NULL) {
     if ($type == 'target' && count($variations) > 1) {
       throw new AcquiaLiftException("Can't retrieve targeting report for more than one variation");
     }
@@ -479,6 +479,9 @@ class AcquiaLiftAPI implements AcquiaLiftLearnReportDataSourceInterface {
     $path = "report/$type?account={$this->lift_profiles_account_name}&site=$site_name&personalization=$name&audience=$audience&from=$from_str&to=$to_str";
     foreach ($variations as $variation) {
       $path .= "&variation=$variation";
+    }
+    if (!empty($goal)) {
+      $path .= "&goal=$goal";
     }
     $url = $this->generateEndpoint($path);
     $vars = array('name' => $name);

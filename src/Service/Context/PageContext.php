@@ -108,30 +108,23 @@ class PageContext {
     }
     $node_type_thumbnail_config = $this->thumbnailConfig[$node_type];
 
-    // Don't set, if node has no such field or field has no such entity.
-    if (empty($node->{$node_type_thumbnail_config['field']}->entity) ||
-      $node->{$node_type_thumbnail_config['field']}->isEmpty()
-    ) {
+    $thumbnail_config_array = explode('->', $node_type_thumbnail_config['field']);
+
+    $entity = $node;
+    foreach ($thumbnail_config_array as $field_key) {
+      // Don't set, if node has no such field or field has no such entity.
+      if (empty($entity->{$field_key}->entity) ||
+        $entity->{$field_key}->isEmpty()
+      ) {
+        return;
+      }
+      $entity = $entity->{$field_key}->entity;
+    }
+
+    if ($entity->bundle() !== 'file') {
       return;
     }
-    $field_entity = $node->{$node_type_thumbnail_config['field']}->entity;
-
-    // 1) Image type.
-    if ($field_entity->bundle() === 'file') {
-      $fileUri = $field_entity->getFileUri();
-    }
-
-    // 2) Entity Reference type to Image type.
-    if ($field_entity->bundle() === 'image' &&
-      !empty($field_entity->field_image->entity) &&
-      !$field_entity->field_image->isEmpty()
-    ) {
-      $fileUri = $field_entity->field_image->entity->getFileUri();
-    }
-
-    if (empty($fileUri)) {
-      return;
-    }
+    $fileUri = $entity->getFileUri();
 
     // Process Image style.
     $image_style = ImageStyle::load($node_type_thumbnail_config['style']);

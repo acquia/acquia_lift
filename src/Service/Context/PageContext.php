@@ -107,7 +107,6 @@ class PageContext {
       return;
     }
     $node_type_thumbnail_config = $this->thumbnailConfig[$node_type];
-
     $thumbnail_config_array = explode('->', $node_type_thumbnail_config['field']);
 
     $entity = $node;

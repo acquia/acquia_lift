@@ -103,8 +103,16 @@ function acquia_lift_form_node_type_form_alter(&$form, &$form_state) {
   $field_definitions = \Drupal::entityManager()->getFieldDefinitions('node', $node_type);
   $image_fields = [];
   foreach ($field_definitions as $field_name => $field_definition) {
+    // 1) Image type.
     if ($field_definition->getType() === 'image') {
       $image_fields[$field_name] = t($field_definition->getLabel()) . ' (' . $field_name . ')';
+      continue;
+    }
+
+    // 2) Entity reference type.
+    if ($field_definition->getType() === 'entity_reference' && $field_definition->getSetting('target_type') === 'media') {
+      $image_fields[$field_name] = t($field_definition->getLabel()) . ' (' . $field_name . ')';
+      continue;
     }
   }
   if (empty($image_fields)) {

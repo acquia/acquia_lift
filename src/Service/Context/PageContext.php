@@ -102,23 +102,44 @@ class PageContext {
   private function setThumbnailUrl(EntityInterface $node) {
     $node_type = $node->getType();
 
-    // Return empty string if no thumbnail has been configured.
+    // Don't set, if no thumbnail has been configured.
     if (!isset($this->thumbnailConfig[$node_type])) {
       return;
     }
     $node_type_thumbnail_config = $this->thumbnailConfig[$node_type];
 
-    // Return empty string if node has no such field.
-    if (empty($node->{$node_type_thumbnail_config['field']})) {
+    // Don't set, if node has no such field or field has no such entity.
+    if (empty($node->{$node_type_thumbnail_config['field']}->entity) ||
+      $node->{$node_type_thumbnail_config['field']}->isEmpty()
+    ) {
       return;
     }
-    $fileUri = $node->{$node_type_thumbnail_config['field']}->entity->getFileUri();
-    $image_style = ImageStyle::load($node_type_thumbnail_config['style']);
+    $field_entity = $node->{$node_type_thumbnail_config['field']}->entity;
 
+    // 1) Image type.
+    if ($field_entity->bundle() === 'file') {
+      $fileUri = $field_entity->getFileUri();
+    }
+
+    // 2) Entity Reference type to Image type.
+    if ($field_entity->bundle() === 'image' &&
+      !empty($field_entity->field_image->entity) &&
+      !$field_entity->field_image->isEmpty()
+    ) {
+      $fileUri = $field_entity->field_image->entity->getFileUri();
+    }
+
+    if (empty($fileUri)) {
+      return;
+    }
+
+    // Process Image style.
+    $image_style = ImageStyle::load($node_type_thumbnail_config['style']);
     // Return empty if no such image style.
     if (empty($image_style)) {
       return;
     }
+
     // Generate image URL.
     $thumbnail_uri = $image_style->buildUrl($fileUri);
     $this->pageContext['thumbnail_url'] = file_create_url($thumbnail_uri);

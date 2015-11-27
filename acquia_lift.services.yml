@@ -14,3 +14,6 @@ services:
   acquia_lift.service.helper.path_matcher:
     class: Drupal\acquia_lift\Service\Helper\PathMatcher
     arguments: ['@path.alias_manager', '@path.matcher']
+  acquia_lift.service.helper.help_message_helper:
+    class: Drupal\acquia_lift\Service\Helper\HelpMessageHelper
+    arguments: ['@config.factory']

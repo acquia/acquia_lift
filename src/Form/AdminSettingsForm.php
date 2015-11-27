@@ -74,39 +74,39 @@ class AdminSettingsForm extends ConfigFormBase {
     $form['account_name'] = [
       '#type' => 'textfield',
       '#title' => t('Account Name'),
-      '#default_value' => $credential->getAccountName(),
+      '#default_value' => $credential->get('account_name'),
       '#required' => TRUE,
     ];
     $form['customer_site'] = [
       '#type' => 'textfield',
       '#title' => t('Customer Site'),
-      '#default_value' => $credential->getCustomerSite(),
+      '#default_value' => $credential->get('customer_site'),
     ];
     $form['api_url'] = [
       '#type' => 'textfield',
       '#title' => t('API URL'),
       '#field_prefix' => 'http(s)://',
-      '#default_value' => $credential->getApiUrl(),
+      '#default_value' => $credential->get('api_url'),
       '#required' => TRUE,
     ];
     $form['access_key'] = [
       '#type' => 'textfield',
       '#title' => t('API Access Key'),
-      '#default_value' => $credential->getAccessKey(),
+      '#default_value' => $credential->get('access_key'),
       '#required' => TRUE,
     ];
     $form['secret_key'] = [
       '#type' => 'password',
       '#title' => t('API Secret Key'),
-      '#default_value' => $credential->getSecretKey(),
-      '#required' => empty($credential->getSecretKey()),
-      '#description' => !empty($credential->getSecretKey()) ? t('Only necessary if updating') : '',
+      '#default_value' => $credential->get('secret_key'),
+      '#required' => empty($credential->get('secret_key')),
+      '#description' => !empty($credential->get('secret_key')) ? t('Only necessary if updating') : '',
     ];
     $form['js_path'] = [
       '#type' => 'textfield',
       '#title' => t('JavaScript Path'),
       '#field_prefix' => 'http(s)://',
-      '#default_value' => $credential->getJsPath(),
+      '#default_value' => $credential->get('js_path'),
       '#required' => TRUE,
     ];
 

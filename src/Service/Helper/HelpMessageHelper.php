@@ -51,7 +51,7 @@ class HelpMessageHelper {
         $help_message = t('You can find more info in ') . $documentation_external_link;
 
         // Generate Acquia Lift Web Admin link.
-        $api_url = $this->credential->getApiUrl();
+        $api_url = $this->credential->get('api_url');
         if (!empty($api_url)) {
           $lift_web_link_text = t('Acquia Lift Web Admin');
           $lift_web_link_url = Url::fromUri('https://' . $api_url, $link_attributes);

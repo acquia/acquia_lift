@@ -103,7 +103,7 @@ class DataApi implements DataApiInterface {
    */
   private function generateEndpoint($path) {
     $url_scheme = ($this->context->getScheme() == 'https') ? 'https://' : 'http://';
-    return $url_scheme . $this->credential->getApiUrl() . '/dashboard/rest/' . $this->credential->getAccountName() . '/' . $path;
+    return $url_scheme . $this->credential->get('api_url') . '/dashboard/rest/' . $this->credential->get('account_name') . '/' . $path;
   }
 
   /**
@@ -165,8 +165,8 @@ class DataApi implements DataApiInterface {
    */
   private function getAuthHeader($method, $path, $parameters = [], $headers = []) {
     $canonical = $this->canonicalizeRequest($method, $path, $parameters, $headers);
-    $hmac = base64_encode(hash_hmac('sha1', (string) $canonical, $this->credential->getSecretKey(), TRUE));
-    return 'HMAC ' . $this->credential->getAccessKey() . ':' . $hmac;
+    $hmac = base64_encode(hash_hmac('sha1', (string) $canonical, $this->credential->get('secret_key'), TRUE));
+    return 'HMAC ' . $this->credential->get('access_key') . ':' . $hmac;
   }
 
   /**

@@ -14,80 +14,36 @@ use Drupal\Component\Utility\UrlHelper;
  */
 class Credential {
   /**
-   * Credential.
+   * Settings.
    *
-   * @var array $credential
+   * @var array $settings
    */
-  private $credential;
+  private $settings;
 
   /**
    * Constructor.
    *
-   * @param array|NULL $credential
-   *  Credential
+   * @param array|NULL $settings
+   *  Settings
    */
-  public function __construct($credential) {
-    $this->credential = $credential ?: [];
+  public function __construct($settings) {
+    $this->settings = $settings ?: [];
   }
 
   /**
-   * Get account name.
+   * Get by key.
+   *
+   * @param string $key
+   *   Key.
    *
    * @return string
-   *   Account name.
+   *   Value.
    */
-  public function getAccountName() {
-    return $this->credential['account_name'];
-  }
-
-  /**
-   * Get customer site.
-   *
-   * @return string
-   *   Customer site.
-   */
-  public function getCustomerSite() {
-    return $this->credential['customer_site'];
-  }
-
-  /**
-   * Get API URL.
-   *
-   * @return string
-   *   API URL.
-   */
-  public function getApiUrl() {
-    return $this->credential['api_url'];
-  }
-
-  /**
-   * Get access key.
-   *
-   * @return string
-   *   Access key.
-   */
-  public function getAccessKey() {
-    return $this->credential['access_key'];
-  }
-
-  /**
-   * Get secret key.
-   *
-   * @return string
-   *   Secret key.
-   */
-  public function getSecretKey() {
-    return $this->credential['secret_key'];
-  }
-
-  /**
-   * Get JavaScript path.
-   *
-   * @return string
-   *   JavaScript path.
-   */
-  public function getJsPath() {
-    return $this->credential['js_path'];
+  public function get($key) {
+    if (empty($this->settings[$key])) {
+      return '';
+    };
+    return $this->settings[$key];
   }
 
   /**
@@ -98,9 +54,9 @@ class Credential {
    */
   public function getFrontEndConfig() {
     return [
-      'account_name' => $this->getAccountName(),
-      'customer_site' => $this->getCustomerSite(),
-      'js_path' => $this->getJsPath(),
+      'account_name' => $this->get('account_name'),
+      'customer_site' => $this->get('customer_site'),
+      'js_path' => $this->get('js_path'),
     ];
   }
 
@@ -114,17 +70,17 @@ class Credential {
    */
   public function isValid() {
     // Required credential need to be filled.
-    if (empty($this->getAccountName()) ||
-      empty($this->getApiUrl()) ||
-      empty($this->getAccessKey()) ||
-      empty($this->getSecretKey()) ||
-      empty($this->getJsPath())
+    if (empty($this->get('account_name')) ||
+      empty($this->get('api_url')) ||
+      empty($this->get('access_key')) ||
+      empty($this->get('secret_key')) ||
+      empty($this->get('js_path'))
     ) {
       return FALSE;
     }
 
     // URLs need to be valid.
-    if (!UrlHelper::isValid($this->getApiUrl()) || !UrlHelper::isValid($this->getJsPath())) {
+    if (!UrlHelper::isValid($this->get('api_url')) || !UrlHelper::isValid($this->get('js_path'))) {
       return FALSE;
     }
 

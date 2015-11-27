@@ -15,6 +15,7 @@
 use Drupal\Core\Entity\EntityInterface;
 use Drupal\Core\Entity\Display\EntityViewDisplayInterface;
 use Drupal\Core\Routing\RouteMatchInterface;
+use Drupal\Core\Form\FormStateInterface;
 use Drupal\user\UserInterface;
 
 /**
@@ -63,116 +64,11 @@ function acquia_lift_page_attachments(array &$page) {
 
 /**
  * Implements hook_form_FORM_ID_alter().
- *
- * @todo: refactor to move logic into services as much as possible.
  */
-function acquia_lift_form_node_type_form_alter(&$form, &$form_state) {
-  $form['acquia_lift'] = [
-    '#title' => t('Acquia Lift'),
-    '#type' => 'details',
-    '#tree' => TRUE,
-    '#group' => 'additional_settings',
-  ];
-
-  // Find image fields.
+function acquia_lift_form_node_type_form_alter(array &$form, FormStateInterface &$form_state) {
   $node_type = $form_state->getFormObject()->getEntity()->id();
-  $image_fields = _acquia_lift_get_image_fields('node', $node_type);
-  if (empty($image_fields)) {
-    $form['acquia_lift']['no_image_field'] = [
-      '#type' => 'markup',
-      '#markup' => '<div>' . t('This content type has no image field yet.') . '</div>',
-    ];
-    return;
-  }
-
-  // Find image styles.
-  $image_styles = image_style_options(FALSE);
-  if (empty($image_styles)) {
-    $form['acquia_lift']['no_image_styles'] = [
-      '#type' => 'markup',
-      '#markup' => '<div>' . t('This site has no image style yet. Please define an image style first.') . '</div>',
-    ];
-    return;
-  }
-
-  $thumbnail_settings = \Drupal::config('acquia_lift.settings')->get('thumbnail');
-  $node_type_thumbnail_settings = isset($thumbnail_settings[$node_type]) ?
-    $thumbnail_settings[$node_type] :
-    ['field' => '', 'style' => ''];
-  $form['acquia_lift']['field'] = [
-    '#type' => 'select',
-    '#title' => t('Select preview image to use for content recommendations.'),
-    '#options' => $image_fields,
-    '#default_value' => $node_type_thumbnail_settings['field'],
-    '#empty_option' => t('None'),
-    '#empty_value' => '',
-  ];
-  $form['acquia_lift']['style'] = [
-    '#type' => 'select',
-    '#title' => t('Select the style to use for the thumbnail.'),
-    '#options' => $image_styles,
-    '#default_value' => $node_type_thumbnail_settings['style'],
-    '#empty_option' => t('None'),
-    '#empty_value' => '',
-    '#states' => [
-      'visible' => [
-        ':input[name="acquia_lift[field]"]' => ['!value' => ''],
-      ],
-    ],
-  ];
-
+  $form['acquia_lift'] = \Drupal::service('acquia_lift.service.helper.node_type_thumbnail_form_helper')->getForm($node_type);
   $form['actions']['submit']['#submit'][] = 'acquia_lift_form_node_type_form_submit';
-}
-
-/**
- * Traverse the FieldableEntity and its fields, collect a field "roadmap" that
- * can lead to a image file.
- *
- * @param string $target_type
- *   Fieldable entity's identitfier.
- * @param string $type
- *   Type of the fieldable entity.
- * @param string $key_prefix
- *   The concatenated entity field keys that has been traversed through.
- * @param string $label_prefix
- *   The concatenated entity labels that has been traversed through.
- * @param array $processed_field_hashes
- *   A collection of hashes of fields that has already been processed.
- * @param array $image_fields
- *   The "roadmaps" to image fields that's been collected so far.
- */
-function _acquia_lift_get_image_fields($target_type, $type, $key_prefix = '', $label_prefix = '', $processed_field_hashes = [], $image_fields = []) {
-  $field_definitions = \Drupal::entityManager()->getFieldDefinitions($target_type, $type);
-  foreach ($field_definitions as $field_key => $field_definition) {
-    $field_type = $field_definition->getType();
-    $field_target_type = $field_definition->getSetting('target_type');
-    $field_label = $field_definition->getLabel();
-    $full_label = $label_prefix . $field_label;
-    $full_key = $key_prefix . $field_key;
-
-    // Keep this field, if the field has already been processed.
-    $field_hash = spl_object_hash($field_definition);
-    if (isset($processed_field_hashes[$field_hash])) {
-      continue;
-    }
-    $processed_field_hashes[$field_hash] = TRUE;
-
-    // 1) Image type.
-    if ($field_type === 'image') {
-      $image_fields[$full_key] = $full_label . ' (' . $full_key . ')';
-      continue;
-    }
-
-    // 2) Entity reference type.
-    if ($field_type === 'entity_reference' &&
-      \Drupal::entityManager()->getDefinition($field_target_type)->isSubclassOf('\Drupal\Core\Entity\FieldableEntityInterface')
-    ) {
-      $image_fields = _acquia_lift_get_image_fields($field_target_type, $field_type, $full_key . '->', $full_label . '->', $processed_field_hashes, $image_fields);
-      continue;
-    }
-  }
-
-  return $image_fields;
 }
 
 /**
@@ -180,12 +76,10 @@ function _acquia_lift_get_image_fields($target_type, $type, $key_prefix = '', $l
  *
  * @see acquia_lift_form_node_type_form_alter().
  */
-function acquia_lift_form_node_type_form_submit($form, &$form_state) {
+function acquia_lift_form_node_type_form_submit(array $form, FormStateInterface &$form_state) {
   $node_type = $form_state->getFormObject()->getEntity()->id();
-  $settings = \Drupal::configFactory()->getEditable('acquia_lift.settings');
-  $thumbnail_settings = $settings->get('thumbnail');
-  $thumbnail_settings[$node_type] = $form_state->getValue('acquia_lift');
-  $settings->set('thumbnail', $thumbnail_settings)->save();
+  $settings = $form_state->getValue('acquia_lift');
+  \Drupal::service('acquia_lift.service.helper.node_type_thumbnail_form_helper')->saveSettings($node_type, $settings);
 }
 
 /**

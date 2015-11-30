@@ -6,7 +6,6 @@ before_install:
 script:
 - phantomjs runner.js qunit/core_personalization.html
 - phantomjs runner.js acquia_lift_profiles/qunit/test.html
-- phantomjs runner.js qunit/acquia_lift.html
 - phantomjs runner.js qunit/administration.html
 notifications:
   slack:

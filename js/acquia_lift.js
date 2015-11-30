@@ -133,6 +133,12 @@ Drupal.acquia_lift_target = (function() {
       }
       initialized = true;
     },
+    'reset': function() {
+      agentRules = {};
+      initialized = false;
+      processedDecisions = {};
+      agentLabels = {};
+    },
     'getDecision': function(agent_name, visitor_context, choices, decision_point, fallbacks, callback) {
       if (!initialized) {
         this.init(Drupal.settings);

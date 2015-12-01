@@ -5,10 +5,10 @@ QUnit.module("Acquia Lift Profiles", {
   setup: function() {
     Drupal.settings.personalize = Drupal.settings.personalize || {};
     Drupal.settings = Drupal.settings || {};
+    Drupal.settings.acquia_lift = {account_name: 'TESTACCOUNT'};
     Drupal.settings.acquia_lift_profiles = Drupal.settings.acquia_lift_profiles || {};
     Drupal.settings.acquia_lift_profiles.mappings = {};
     Drupal.settings.acquia_lift_profiles.mappingContextSeparator = '__';
-    Drupal.settings.acquia_lift_profiles.account_name = 'TESTACCOUNT';
     Drupal.settings.acquia_lift_profiles.engagement_scores = {};
     Drupal.settings.acquia_lift_profiles.global_values = {};
 
@@ -104,8 +104,8 @@ QUnit.asyncTest("init test", function( assert ) {
     }
   };
   var settings = {
+    acquia_lift: {account_name: 'TESTACCOUNT'},
     acquia_lift_profiles: {
-      account_name: 'TESTACCOUNT',
       mappings: {
         field: {
           content_keywords: "my_first_plugin__some-context",
@@ -306,8 +306,8 @@ QUnit.asyncTest("Use UDF values in processEvent", function( assert ) {
   };
   // Set up some UDF values that will get mapped during the init() call.
   var settings = {
+    acquia_lift: {account_name: 'TESTACCOUNT'},
     acquia_lift_profiles: {
-      account_name: 'TESTACCOUNT',
       mappings: {
         person: {
           person_udf1: "my_first_plugin__some-context",

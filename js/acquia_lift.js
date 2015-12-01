@@ -2,6 +2,18 @@ var _tcaq = _tcaq || [];
 var _tcwq = _tcwq || [];
 
 (function ($) {
+Drupal.acquia_lift = Drupal.acquia_lift || {
+  account_set: false
+};
+
+Drupal.behaviors.acquia_lift = {
+  'attach': function(context, settings) {
+    if (!Drupal.acquia_lift.account_set) {
+      _tcaq.push(['setAccount', settings.acquia_lift.account_name, settings.acquia_lift.customer_site]);
+      Drupal.acquia_lift.account_set = true;
+    }
+  }
+};
 
 Drupal.acquia_lift_target = (function() {
 
@@ -110,7 +122,6 @@ Drupal.acquia_lift_target = (function() {
       if (initialized) {
         return;
       }
-      _tcaq.push(['setAccount', settings.acquia_lift.account_name, settings.acquia_lift.customer_site]);
       var i, optionSet, agentName;
       var option_sets = settings.personalize.option_sets;
       var agent_map = settings.personalize.agent_map;

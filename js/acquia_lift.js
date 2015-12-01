@@ -178,9 +178,6 @@ Drupal.acquia_lift_target = (function() {
           if (processedDecisions.hasOwnProperty(agent_name) && processedDecisions[agent_name] == choice_str) {
             return;
           }
-          if (choice_str == 'control-variation') {
-            choice_str = 'Control';
-          }
           processedDecisions[agent_name] = choice_str;
           _tcaq.push(['capture', 'Decision', {'personalization_name': getAgentLabel(agent_name), 'personalization_machine_name':agent_name, 'personalization_audience_name': audience, 'personalization_chosen_variation': choice_str, 'personalization_decision_policy': policy }]);
         }

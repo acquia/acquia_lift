@@ -1185,7 +1185,8 @@
       modalOptions: {
         opacity: .55,
         background: '#fff'
-      }
+      },
+      modalClass: 'default'
     };
 
     var settings = {};
@@ -1203,7 +1204,7 @@
     }
 
     $('#modal-title', Drupal.CTools.Modal.modal).html(Drupal.CTools.Modal.currentSettings.loadingText);
-    Drupal.CTools.Modal.modalContent(Drupal.CTools.Modal.modal, settings.modalOptions, settings.animation, settings.animationSpeed);
+    Drupal.CTools.Modal.modalContent(Drupal.CTools.Modal.modal, settings.modalOptions, settings.animation, settings.animationSpeed, settings.modalClass);
     $('#modal-content').html(Drupal.theme(settings.throbberTheme));
 
     $(window).trigger('resize');

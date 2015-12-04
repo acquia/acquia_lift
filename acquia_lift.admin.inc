@@ -731,6 +731,10 @@ function acquia_lift_report($form, &$form_state, $agent_data) {
   );
   $decision_count = $conversion_count = 0;
   $variation_counts = array();
+  if (isset($overview_stats['error'])) {
+    drupal_set_message(t("There was a problem retrieving the reports for your personalization - please try again later."), 'error');
+    return array();
+  }
   foreach ($overview_stats as $variation => $stats) {
     $decision_count += $stats['decision_count'];
     $conversion_count += $stats['conversion_count'];

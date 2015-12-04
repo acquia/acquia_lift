@@ -1382,11 +1382,11 @@ function acquia_lift_personalize_campaign_wizard_variations_help(&$form, $form_s
 
   $help_text = '';
   $help_text .= '<p>';
-  $help_text .= t('A Variation Set contains all Variations which will be shown in a specific area on your site.');
+  $help_text .= t('Variation sets contain the different customized items (variations) for display to visitors in a specific area of your website.');
   $help_text .= '</p><p>';
-  $help_text .= 'For example, a "Frontpage Offers" block or a "Homepage Banner" would be a Variation Set, and the individual Variations will be the text or creative that you\'ll want to show to different visitors. You will set up testing and targeting rules on the "Who" page. Here, you should simply create all the variations which you want to show.';
+  $help_text .= t('For example, to display different variations in a block on your home page, in your personalization you can create a variation set based on Drupal blocks called "Frontpage Offers" to which you can add all of your variations for display.');
   $help_text .= '</p><p>';
-  $help_text .= t('If more than one Variation Set exists in a personalization, then the Variations will be in "lock step" with one another, meaning if a user sees Variation A from one Variation Set, they will always be shown Variation A in the the other Variation Set, whether it is set up as a test or as targeting.');
+  $help_text .= l(t('Learn more about variation sets'), 'https://docs.acquia.com/lift/drupal/what', array('attributes' => array('target'=>'_blank')));
   $help_text .= '</p>';
 
   unset($form['variations']['title']['#instructions']);
@@ -1420,12 +1420,12 @@ function acquia_lift_personalize_campaign_wizard_goals_help(&$form, $form_state,
   unset($form['goals']['title']['#instructions']);
   $help_text = '';
   $help_text .= '<p>';
-  $help_text .= t('Goals are the things that you want your visitors to do based on this personalization.');
+  $help_text .= t('Goals are the actions that you want your visitors to take based on this personalization.');
   $help_text .= '</p><p>';
-  $help_text .= t('Examples include clicking through on a link in the personalization, filling out a form on a later page, or completing a purchase. Completion of goals is how conversion rate will be determined and will show up in later reports.');
+  $help_text .= t('Examples of goals include clicking through on a link in the personalization, filling out a form on a later page, or completing a purchase. Completion of goals will determine the conversion rate that will display in reports for this personalization.');
   $help_text .= '</p><p>';
-  $help_text .= t('A default goal is created for each Variation Set which will capture a visitor clicking within any Variation in the Variation Set and in many cases you can simply use this goal and not add any others. If you create more than one goal, and they have different levels of importance, you can set goal value to reflect that and later view reports based on total Conversion Value rather than just Conversion Rate.');
-  $help_text .= '<p>';
+  $help_text .= l(t('Learn more about goals'), 'https://docs.acquia.com/lift/drupal/why', array('attributes' => array('target'=>'_blank')));
+  $help_text .= '</p>';
 
   return array(
     '#type' => 'container',
@@ -1457,11 +1457,13 @@ function acquia_lift_personalize_campaign_wizard_targeting_help(&$form, $form_st
   unset($form['targeting']['title']['#instructions']);
   $help_text = '';
   $help_text .= '<p>';
-  $help_text .= t('Audiences are the groups of people you wish to show different variations to.');
+  $help_text .= t('Audiences are the groups of people to whom you want to display your personalization\'s different variations.');
   $help_text .= '</p><p>';
-  $help_text .= t('For example, you can create an audience for "Visitors from Los Angeles aged 18-25" and then target them with the "Winter Vacation" variation. The Variation(s) in the Everyone / Everyone Else box will be shown to any visitor who does not fall into an audience above it.');
+  $help_text .= t('For example, you can create an audience called "Visitors from Los Angeles aged 18-25", and then target them with the "Winter Vacation" variation. The variation or variations in the pre-made Everyone/Everyone Else audience are displayed to visitors that do not meet any audience criteria.');
   $help_text .= '</p><p>';
-  $help_text .= t('You can add more than one Variation to an Audience, which will automatically create an A/B test between those Variations. Each Audience can have its own A/B Test. Also note that in the case where a visitor is in more than one Audience, the first Audience (from top to bottom) that matches will be used, so you can drag the audiences to rearrange if necessary. If you simply wish to test with no targeting, place all variations in the "Everyone" box.');
+  $help_text .= t('If a visitor qualifies for more than one audience, they will be placed into the first audience displayed on the page that matches, based on the displayed page order. For example, if Acquia Lift displays the audiences as "Group A" and "Group B" and both audiences qualifiy, the visitor is placed into Group A.');
+  $help_text .= '</p><p>';
+  $help_text .= l(t('Learn more about audiences'), 'https://docs.acquia.com/lift/drupal/who', array('attributes' => array('target'=>'_blank')));
   $help_text .= '</p>';
 
   return array(

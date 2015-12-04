@@ -412,8 +412,8 @@ function acquia_lift_agent_list($agents = array()) {
         }
       }
 
-      // The ability to delete depends on the storage type and on whether the campaign has started
-      // or contains option sets.
+      // The ability to delete depends on the storage type and on whether the
+      // campaign has started or contains option sets.
       $can_delete = acquia_lift_agent_delete_access($agent);
 
       $delete_link = '';
@@ -454,11 +454,8 @@ function acquia_lift_agent_list($agents = array()) {
           break;
       }
 
-      // If there are any old tests that used to run for this agent, they will
-      // be listed here as well.
-      $old_tests = acquia_lift_get_retired_tests($agent->machine_name);
       // Lift target agents show reports if they contain tests.
-      $show_report_link = !empty($old_tests) || ($agent->plugin == 'acquia_lift_target' && !empty($agent->started) && in_array($agent_type, array($agent_type_test, $agent_type_both)));
+      $show_report_link = $agent->plugin == 'acquia_lift_target' && !empty($agent->started);
 
       // Generate operations list.
       $ops = array(
@@ -557,7 +554,9 @@ function acquia_lift_agent_list($agents = array()) {
           );
         }
       }
-      // List retired tests.
+      // If there are any old tests that used to run for this agent, they will
+      // be listed here as well.
+      $old_tests = acquia_lift_get_retired_tests($agent->machine_name);
       foreach ($old_tests as $test) {
         $tablerow = array();
         $tablerow[] = array('data' => t('(retired test) ') . $test->label, 'class' => 'acquia-lift-campaign-title');

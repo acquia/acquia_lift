@@ -1,150 +1,409 @@
-(function ($, Drupal) {
+var _tcaq = _tcaq || [];
+var _tcwq = _tcwq || [];
 
-  Drupal.personalize = Drupal.personalize || {};
-  Drupal.personalize.agents = Drupal.personalize.agents || {};
-  Drupal.personalize.agents.acquia_lift = {
-    'getDecisionsForPoint': function(agent_name, visitor_context, choices, decision_point, fallbacks, callback) {
-      // Our decision point may have multiple decisions, if doing MVT.
-      Drupal.acquiaLift.getDecision(agent_name, choices, decision_point, fallbacks, callback);
-    },
-    'sendGoalToAgent': function(agent_name, goal_name, goal_value, jsEvent) {
-      Drupal.acquiaLift.sendGoal(agent_name, goal_name, goal_value, jsEvent);
+(function ($) {
+Drupal.acquia_lift = Drupal.acquia_lift || {
+  account_set: false
+};
+
+Drupal.behaviors.acquia_lift = {
+  'attach': function(context, settings) {
+    if (!Drupal.acquia_lift.account_set) {
+      _tcaq.push(['setAccount', settings.acquia_lift.account_name, settings.acquia_lift.customer_site]);
+      Drupal.acquia_lift.account_set = true;
     }
-  };
+  }
+};
+
+Drupal.acquia_lift_target = (function() {
+
+  var agentRules = {}, initialized = false, processedDecisions = {}, agentLabels = {};
 
   /**
-   * Adapter for the Acquia Lift API.
+   * Returns the agent label for the given agent name.
+   * If there is no label then the agent name is returned.
+   *
+   * @param agent_name
    */
-  Drupal.acquiaLift = (function() {
+  function getAgentLabel(agent_name) {
+    var agent_label = agent_name;
+    if (agentLabels[agent_name]) {
+      agent_label = agentLabels[agent_name];
+    }
+    return agent_label;
+  }
 
-    var settings, api, initialized = false, waitingDecisions = [];
 
-    /**
-     * Initialize the API and page level processing.
-     *
-     * @param initializeSession
-     *   If true, also trigger the setting of the session.  This should
-     *   only be done by the decisions function and not by the goals function
-     *   as the decision functionality allows for setting of the session ID upon
-     *   the api result, whereas the goals functionality will not.
-     */
-    function init(initializeSession) {
-      settings = Drupal.settings.acquia_lift;
+  function contextToFeatureString(key, value) {
+    return key + '::' + value;
+  }
 
-      api = Drupal.acquiaLiftAPI.getInstance();
+  function convertContextToFeatureStrings(visitor_context) {
+    var i, j, feature_strings = [];
+    for (i in visitor_context) {
+      if (visitor_context.hasOwnProperty(i)) {
+        for (j in visitor_context[i]) {
+          if (visitor_context[i].hasOwnProperty(j)) {
+            feature_strings.push(contextToFeatureString(i, visitor_context[i][j]));
+          }
+        }
+      }
+    }
+    return feature_strings;
+  }
 
-      if (initializeSession) {
-        api.initializeSessionID();
+  function readDecisionsFromStorage(agent_name) {
+    var bucket = Drupal.personalize.storage.utilities.getBucket('lift');
+    return bucket.read(agent_name);
+  }
+
+  function writeDecisionsToStorage(agent_name, decisions, policy, goals, audience) {
+    var bucket = Drupal.personalize.storage.utilities.getBucket('lift');
+    var value = {
+      'policy': policy,
+      'decisions' : decisions
+    };
+    if (goals != undefined) {
+      value.goals = goals;
+    }
+    if (audience != undefined) {
+      value.audience = audience;
+    }
+    bucket.write(agent_name, value);
+  }
+
+  function executeDecision(agent_name, rule, decisions, choices, callback) {
+    // The rule we matched could specify a single option, a combination of options,
+    // or another option set with a different decision agent.
+    if (rule.hasOwnProperty('option_id')) {
+      for (var decision_name in decisions) {
+        if (decisions.hasOwnProperty(decision_name) && choices.hasOwnProperty(decision_name) && choices[decision_name].indexOf(rule.option_id) != -1) {
+          decisions[decision_name] = rule.option_id;
+        }
+      }
+      callback(decisions, 'targeting', rule.name);
+      return;
+    }
+    else if (rule.hasOwnProperty('osid')) {
+      var osid = 'osid-' + rule.osid;
+      if (Drupal.settings.acquia_lift_target.option_sets.hasOwnProperty(osid)) {
+        var optionSet = Drupal.settings.acquia_lift_target.option_sets[osid];
+        var test_agent_name = optionSet.agent,
+            agent_plugin = Drupal.settings.acquia_lift_target.test_agent_plugin,
+            nestedPoint = optionSet.decision_point,
+            nestedDecision = optionSet.decision_name,
+            subChoices = {},
+            fallbacks = {};
+        subChoices[nestedDecision] = optionSet.option_names;
+        fallbacks[nestedDecision] = 0;
+
+        if (Drupal.settings.acquia_lift_target.agent_map.hasOwnProperty(test_agent_name) && Drupal.personalize.agents.hasOwnProperty(agent_plugin)) {
+          if (Drupal.settings.acquia_lift_target.agent_map[test_agent_name].type !== agent_plugin) {
+            return;
+          }
+          var subCallback = function(selection, policy) {
+            for (var decision_name in decisions) {
+              if (decisions.hasOwnProperty(decision_name) && selection.hasOwnProperty(nestedDecision)) {
+                decisions[decision_name] = selection[nestedDecision];
+              }
+            }
+            callback(decisions, policy, rule.name);
+          };
+          Drupal.personalize.agents[agent_plugin].getDecisionsForPoint(test_agent_name, {}, subChoices, nestedPoint, fallbacks, subCallback);
+          return;
+        }
+      }
+    }
+    callback(decisions, 'fallback', rule.name);
+  }
+
+  return {
+    'init': function(settings) {
+      if (initialized) {
+        return;
+      }
+      var i, optionSet, agentName;
+      var option_sets = settings.personalize.option_sets;
+      var agent_map = settings.personalize.agent_map;
+      for (i in option_sets) {
+        if (option_sets.hasOwnProperty(i) && agent_map.hasOwnProperty(option_sets[i].agent) && agent_map[option_sets[i].agent]['type'] == 'acquia_lift_target') {
+          optionSet = option_sets[i];
+          agentName = optionSet.agent;
+          if (agentRules.hasOwnProperty(agentName) || !optionSet.hasOwnProperty('targeting')) {
+            continue;
+          }
+          agentRules[agentName] = optionSet.targeting;
+        }
+      }
+      for (var agent_name in agent_map) {
+        if (agent_map.hasOwnProperty(agent_name)) {
+          if (agent_map[agent_name].label) {
+            agentLabels[agent_name] = agent_map[agent_name].label;
+          }
+        }
+      }
+      initialized = true;
+    },
+    'reset': function() {
+      agentRules = {};
+      initialized = false;
+      processedDecisions = {};
+      agentLabels = {};
+    },
+    'getDecision': function(agent_name, visitor_context, choices, decision_point, fallbacks, callback) {
+      if (!initialized) {
+        this.init(Drupal.settings);
       }
 
-      $(document).bind('personalizeDecisionsEnd', function(e) {
-        if (settings.batchMode) {
-          api.batchSend();
+      var callback_wrapper = function(decisions, policy, audience) {
+        if (policy != "repeat") {
+          writeDecisionsToStorage(agent_name, decisions, policy, null, audience);
+          // In theory there could be mulitple desicions here (if it's an MVT), in
+          // which case we'll concatenate the decision names and the choice names,
+          // separated by ','.
+          var decision_str = '', choice_str = '', index = 0;
+          for (var decision_name in decisions) {
+            if (decisions.hasOwnProperty(decision_name)) {
+              if (index > 0) {
+                decision_str += ',';
+                choice_str += ',';
+              }
+              decision_str += decision_name;
+              choice_str += decisions[decision_name];
+              index++;
+            }
+          }
+          // Send this to Lift Web if it has never been sent or the decision has changed due to
+          // new targeting conditions being met.
+          if (processedDecisions.hasOwnProperty(agent_name) && processedDecisions[agent_name] == choice_str) {
+            return;
+          }
+          processedDecisions[agent_name] = choice_str;
+          _tcaq.push(['capture', 'Decision', {'personalization_name': getAgentLabel(agent_name), 'personalization_machine_name':agent_name, 'personalization_audience_name': audience, 'personalization_chosen_variation': choice_str, 'personalization_decision_policy': policy }]);
         }
-      });
-      initialized = true;
-    }
-
-    function cleanString(str) {
-      var regex = new RegExp(settings.stringReplacePattern, "g");
-      return str.replace(regex, '-').replace(/\-{2,}/g, '-');
-    }
-
-    return {
-      // Processes any decisions that have been queued up while the session was
-      // initializing.
-      'processWaitingDecisions': function() {
-        while (waitingDecisions.length > 0) {
-          var decision = waitingDecisions.shift();
-          this.getDecision(decision.agent_name, decision.choices, decision.point, decision.fallbacks, decision.callback);
+        callback(decisions);
+      };
+      if (!agentRules.hasOwnProperty(agent_name)) {
+        // Just delegate to the testing agent.
+        var agent_plugin = Drupal.settings.acquia_lift_target.test_agent_plugin;
+        Drupal.personalize.agents[agent_plugin].getDecisionsForPoint(agent_name, visitor_context, choices, decision_point, fallbacks, callback_wrapper);
+        return;
+      }
+      var decisions = {},
+          matched,
+          i,
+          j,
+          ruleId,
+          strategy,
+          feature_strings = convertContextToFeatureStrings(visitor_context),
+          defaultTarget = Drupal.settings.acquia_lift_target.default_target;
+      // Initialize each decision to the fallback option.
+      for (var decision_name in choices) {
+        if (choices.hasOwnProperty(decision_name)) {
+          decisions[decision_name] = choices[decision_name][0];
         }
-      },
-      // Processes all decisions for a given decision point.
-      'getDecision': function(agent_name, choices, point, fallbacks, callback) {
-        var self = this;
-        if (!initialized) {
-          init(true);
-        } else if (api.initializingSession && !api.isManualBatch()) {
-          // Add this decision to the queue of waiting decisions.
-          waitingDecisions.push({
-            'agent_name' : agent_name,
-            'choices' : choices,
-            'point' : point,
-            'fallbacks' : fallbacks,
-            'callback' : callback
-          });
+      }
+
+      for (i in agentRules[agent_name]) {
+        if (agentRules[agent_name].hasOwnProperty(i)) {
+          ruleId = i;
+          // If this is the "everyone else" target, then there are no features to be matched,
+          // just execute the decision for this target.
+          if (agentRules[agent_name][ruleId].name.indexOf(defaultTarget) == 0) {
+            executeDecision(agent_name, agentRules[agent_name][ruleId], decisions, choices, callback_wrapper);
+            return;
+          }
+          if (!agentRules[agent_name][ruleId].hasOwnProperty('targeting_features') || agentRules[agent_name][ruleId].targeting_features.length == 0) {
+            continue;
+          }
+          strategy = agentRules[agent_name][ruleId].targeting_strategy;
+          switch (strategy) {
+            case 'AND':
+              // If all features are present, call the callback with this option
+              // as the chosen option.
+              matched = true;
+              // Set matched to false if any feature is missing.
+              for (j in agentRules[agent_name][ruleId].targeting_features) {
+                if (agentRules[agent_name][ruleId].targeting_features.hasOwnProperty(j)) {
+                  if (feature_strings.indexOf(agentRules[agent_name][ruleId].targeting_features[j]) === -1) {
+                    matched = false;
+                    break;
+                  }
+                }
+              }
+              if (matched) {
+                executeDecision(agent_name, agentRules[agent_name][ruleId], decisions, choices, callback_wrapper);
+                return;
+              }
+              break;
+            default:
+              // If any of the features are present, call the callback with this option
+              // as the chosen option.
+              matched = false;
+              // Set matched to true if *any* feature is present.
+              for (j in agentRules[agent_name][ruleId].targeting_features) {
+                if (agentRules[agent_name][ruleId].targeting_features.hasOwnProperty(j)) {
+                  if (feature_strings.indexOf(agentRules[agent_name][ruleId].targeting_features[j]) !== -1) {
+                    matched = true;
+                    break;
+                  }
+                }
+              }
+              if (matched) {
+                executeDecision(agent_name, agentRules[agent_name][ruleId], decisions, choices, callback_wrapper);
+                return;
+              }
+              break;
+          }
+        }
+      }
+      // If we got here there was no matched targeting rule so we just call the
+      // callback with the fallback decisions.
+      callback_wrapper(decisions, 'fallback');
+    },
+    'sendGoal': function(agent_name, goal_name, value) {
+      if (!initialized) {
+        this.init(Drupal.settings);
+      }
+
+      var stored = readDecisionsFromStorage(agent_name);
+      if (stored && stored.hasOwnProperty('decisions')) {
+        // First see if this goal was already attained.
+        var goals = stored.hasOwnProperty('goals') ? stored.goals : [];
+        if (goals.indexOf(goal_name) !== -1) {
           return;
         }
 
-        // Prepare the options for our decision.
-        var options = {
-          point: cleanString(point),
-          choices: choices
-        };
-
-        // Format the fallbacks object into the structure required by the Acquia Lift
-        // client.
-        var fb = {};
-        for (var key in fallbacks) {
-          if (fallbacks.hasOwnProperty(key) && choices.hasOwnProperty(key)) {
-            fb[key] = {code: choices[key][fallbacks[key]]}
-          }
-        }
-        options.fallback = fb;
-        api.decision(agent_name, options, function(selection, session) {
-          if (window.console) {
-            console.log(selection);
-          }
-          if (!api.getSessionID() && session) {
-            api.setSessionID(session);
-            Drupal.personalize.saveSessionID(session);
-          }
-          if (!session) {
-            // This means the call to Lift was unsuccessful and we are showing
-            // the fallback option. Log this as an error.
-            Drupal.personalize.debug('Could not get decision from Lift for ' + agent_name + ', showing fallback option', 5100);
-          }
-
-          // We need to send back an object with decision names as keys
-          // and the chosen option for each one as the value.
-          var decisions = {};
-          for (var key in selection) {
-            if (selection.hasOwnProperty(key)) {
-              decisions[key] = selection[key].code;
+        goals.push(goal_name);
+        writeDecisionsToStorage(agent_name, stored.decisions, stored.policy, goals, stored.audience);
+        // In theory there could be mulitple desicions here (if it's an MVT), in
+        // which case we'll concatenate the decision names and the choice names,
+        // separated by ','.
+        var decision_str = '', choice_str = '', index = 0;
+        for (var decision_name in stored.decisions) {
+          if (stored.decisions.hasOwnProperty(decision_name)) {
+            if (index > 0) {
+              decision_str += ',';
+              choice_str += ',';
             }
+            decision_str += decision_name;
+            choice_str += stored.decisions[decision_name];
+            index++;
           }
-          callback(decisions);
-          // Now unblock all future decision requests.
-          api.initializingSession = false;
-          // Process any decisions that have been waiting in the queue.
-          self.processWaitingDecisions();
-        });
-      },
+        }
+        _tcaq.push(['capture', 'Goal', {'personalization_name': getAgentLabel(agent_name), 'personalization_machine_name':agent_name, 'personalization_audience_name': stored.audience, 'personalization_chosen_variation': choice_str, 'personalization_decision_policy': stored.policy, 'personalization_goal_name': goal_name, 'personalization_goal_value': value }]);
+      }
 
-      // Sends a goal to an agent.
-      'sendGoal': function(agent_name, goal_name, value, jsEvent) {
-        if (!initialized) {
-          init(false);
+      if (!stored || (stored.hasOwnProperty("policy") && stored.policy == 'targeting')) {
+        return;
+      }
+
+      // Find any nested tests this goal needs to be sent to.
+      var nested = Drupal.settings.acquia_lift_target.nested_tests;
+      if (nested.hasOwnProperty(agent_name)) {
+        var agent_plugin = Drupal.settings.acquia_lift_target.test_agent_plugin;
+        for (var i in nested[agent_name]) {
+          if (nested[agent_name].hasOwnProperty(i) && Drupal.personalize.agents.hasOwnProperty(agent_plugin)) {
+            Drupal.personalize.agents[agent_plugin].sendGoalToAgent(nested[agent_name][i], goal_name, value);
+          }
         }
-        var options = {
-          reward: value,
-          goal: goal_name
-        };
-        Drupal.acquiaLiftUtility.GoalQueue.addGoal(agent_name, options);
-      },
-      'reset': function() {
-        // Reset the initialization of the shared instance.
-        if (api) {
-          api.reset();
-        }
-        // Reset the reference.
-        api = null;
-        initialized = false;
-        waitingDecisions = [];
-        // Reset the goals queue.
-        Drupal.acquiaLiftUtility.GoalQueue.reset();
       }
     }
-  })();
+  }
+})();
 
-})(Drupal.jQuery, Drupal);
+Drupal.personalize = Drupal.personalize || {};
+Drupal.personalize.agents = Drupal.personalize.agents || {};
+Drupal.personalize.agents.acquia_lift_target = {
+  'getDecisionsForPoint': function(agent_name, visitor_context, choices, decision_point, fallbacks, callback) {
+    Drupal.acquia_lift_target.getDecision(agent_name, visitor_context, choices, decision_point, fallbacks, callback);
+  },
+  'sendGoalToAgent': function(agent_name, goal_name, value) {
+    Drupal.acquia_lift_target.sendGoal(agent_name, goal_name, value);
+  },
+  'featureToContext': function(featureString) {
+    var contextArray = featureString.split('::');
+    return {
+      'key': contextArray[0],
+      'value': contextArray[1]
+    }
+  }
+};
+
+Drupal.personalize.agents.acquia_lift_learn = {
+  'getDecisionsForPoint': function(agent_name, visitor_context, choices, decision_point, fallbacks, callback) {
+    // Our decision point may have multiple decisions, if doing MVT.
+    Drupal.acquiaLiftLearn.getDecision(agent_name, choices, decision_point, fallbacks, callback);
+  },
+  'sendGoalToAgent': function(agent_name, goal_name, goal_value, jsEvent) {
+    Drupal.acquiaLiftLearn.sendGoal(agent_name, goal_name, goal_value, jsEvent);
+  }
+};
+Drupal.acquiaLiftLearn = (function() {
+
+  var settings, api, initialized = false, sessionID = null;
+
+  function initializeSession() {
+    if (sessionID == null) {
+      sessionID = TC.getSessionID();
+      Drupal.personalize.saveSessionID(sessionID);
+    }
+  }
+  function init() {
+    initializeSession();
+    settings = Drupal.settings.acquia_lift_learn;
+    api = Drupal.acquiaLiftAPI.getInstance();
+    initialized = true;
+  }
+
+  return {
+    'getDecision': function(agent_name, choices, decision_point, fallbacks, callback) {
+      if (!initialized) {
+        init();
+      }
+      var options = {};
+      var fb = [];
+      for (var key in fallbacks) {
+        if (fallbacks.hasOwnProperty(key) && choices.hasOwnProperty(key)) {
+          fb.push({
+            'decision_set_id': key,
+            'external_id': choices[key][fallbacks[key]]
+          });
+        }
+      }
+      options.fallback = fb;
+      api.decision(agent_name, options, function(outcome, policy) {
+        // We need to send back an object with decision names as keys
+        // and the chosen option for each one as the value.
+        var decisions = {};
+        for (var i in outcome) {
+          if (outcome.hasOwnProperty(i) && outcome[i].hasOwnProperty('decision_set_id') &&
+              outcome[i].hasOwnProperty('external_id')) {
+            decisions[outcome[i].decision_set_id] = outcome[i].external_id;
+          }
+        }
+        callback(decisions, policy);
+      });
+    },
+    'sendGoal': function(agent_name, goal_name, value) {
+      if (!initialized) {
+        init();
+      }
+      var options = {
+        reward: value,
+        goal: goal_name
+      };
+      Drupal.acquiaLiftUtility.GoalQueue.addGoal(agent_name, options);
+    },
+    // @todo Remove this once we can just pass the session id in the api's
+    //   getInstance call (i.e. once V1's js has gone away.
+    'getSessionID': function() {
+      if (sessionID == null) {
+        initializeSession();
+      }
+      return sessionID;
+    }
+  }
+})();
+
+})(jQuery);

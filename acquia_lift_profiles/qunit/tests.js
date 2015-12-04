@@ -5,10 +5,10 @@ QUnit.module("Acquia Lift Profiles", {
   setup: function() {
     Drupal.settings.personalize = Drupal.settings.personalize || {};
     Drupal.settings = Drupal.settings || {};
+    Drupal.settings.acquia_lift = {account_name: 'TESTACCOUNT'};
     Drupal.settings.acquia_lift_profiles = Drupal.settings.acquia_lift_profiles || {};
     Drupal.settings.acquia_lift_profiles.mappings = {};
     Drupal.settings.acquia_lift_profiles.mappingContextSeparator = '__';
-    Drupal.settings.acquia_lift_profiles.account_name = 'TESTACCOUNT';
     Drupal.settings.acquia_lift_profiles.engagement_scores = {};
     Drupal.settings.acquia_lift_profiles.global_values = {};
 
@@ -86,17 +86,13 @@ QUnit.module("Acquia Lift Profiles", {
   }
 });
 
-QUnit.asyncTest( "init test", function( assert ) {
-  expect(9);
+QUnit.asyncTest("init test", function( assert ) {
+  expect(7);
   Drupal.acquia_lift_profiles.resetAll();
+  QUnit.start();
   _tcaq = {
     'push':function(stf) {
-      console.log(stf);
-      if (stf[0] == 'setAccount') {
-        assert.equal( stf[1], 'TESTACCOUNT',  'correct account name pushed');
-      }
-      else {
-        assert.equal( stf[0], 'captureView',  'capture view received');
+      if (stf[0] == 'captureView') {
         assert.equal( stf[1], 'Content View',  'capture view is of type content view');
         assert.equal( stf[2].person_udf1, "some-value", 'value correctly assigned from context' );
         assert.equal( stf[2].person_udf2, "some-other-value", 'value correctly assigned from promise based context' );
@@ -104,14 +100,12 @@ QUnit.asyncTest( "init test", function( assert ) {
         assert.equal( stf[2].content_section, "", 'empty value correctly assigned' );
         assert.equal( stf[2].content_keywords, "some-value", 'value correctly assigned from context' );
         assert.equal( stf[2].persona, "some-other-value-1,some-other-value-2", 'value correctly assigned from context' );
-        QUnit.start();
       }
-
     }
   };
   var settings = {
+    acquia_lift: {account_name: 'TESTACCOUNT'},
     acquia_lift_profiles: {
-      account_name: 'TESTACCOUNT',
       mappings: {
         field: {
           content_keywords: "my_first_plugin__some-context",
@@ -163,72 +157,12 @@ QUnit.asyncTest("Get context values no cache", function( assert ) {
   QUnit.stop();
   Promise.all([contextResult]).then(function (loadedContexts) {
     QUnit.start();
-    console.log(loadedContexts);
     assert.ok(loadedContexts[0].hasOwnProperty('segment1'), 'segment1 returned');
     assert.equal(loadedContexts[0]['segment1'], 1, 'segment1 has value 1');
     assert.ok(loadedContexts[0].hasOwnProperty('segment2'), 'segment2 returned');
     assert.equal(loadedContexts[0]['segment2'], 0, 'segment2 has value 0');
   });
 
-});
-
-QUnit.asyncTest( "personalize decision event", function( assert ) {
-  expect(5);
-  Drupal.acquia_lift_profiles.resetAll();
-  _tcaq = {
-    'push':function(args) {
-      if ( args[1] == 'Campaign Action' ) {
-        assert.equal( args[0], 'capture',  'capture view received');
-        assert.equal( args[1], 'Campaign Action',  'capture view is of type campaign action');
-        assert.equal( args[2].targetcampaignid, "my-agent", 'value correctly assigned from event' );
-        assert.equal( args[2].targetcampaignname, "Test Agent", 'value correctly assigned from event' );
-        assert.equal( args[2].targetactionname, "test_decision", 'value correctly assigned from event' );
-        QUnit.start();
-      }
-    }
-  };
-  var settings = jQuery.extend({}, Drupal.settings);
-  settings.personalize.agent_map = {
-    'my-agent': {
-      'active': 1,
-      'cache_decisions': false,
-      'enabled_contexts': [],
-      'type': 'test_agent',
-      'label' : 'Test Agent'
-    }
-  };
-
-  Drupal.acquia_lift_profiles.init(settings);
-  $(document).trigger("personalizeDecision", [{}, "test_decision", "test_osid", "my-agent" ]);
-});
-
-QUnit.asyncTest( "sent goal to agent event", function( assert ) {
-  expect(4);
-  Drupal.acquia_lift_profiles.resetAll();
-  _tcaq = {
-    'push':function(args) {
-      if ( args[1] == 'goal-event' ) {
-        assert.equal( args[0], 'capture',  'capture received');
-        assert.equal( args[1], 'goal-event',  'capture view is of type goal-event');
-        assert.equal( args[2].targetcampaignid, "my-agent", 'value correctly assigned from event' );
-        assert.equal( args[2].targetcampaignname, "Test Agent", 'value correctly assigned from event' );
-        QUnit.start();
-      }
-    }
-  };
-  var settings = jQuery.extend({}, Drupal.settings);
-  settings.personalize.agent_map = {
-    'my-agent': {
-      'active': 1,
-      'cache_decisions': false,
-      'enabled_contexts': [],
-      'type': 'test_agent',
-      'label' : 'Test Agent'
-    }
-  };
-
-  Drupal.acquia_lift_profiles.init(settings);
-  $(document).trigger("sentGoalToAgent", ["my-agent", "goal-event", "goal-value"]);
 });
 
 QUnit.test( "Server-side events no email", function( assert ) {
@@ -372,8 +306,8 @@ QUnit.asyncTest("Use UDF values in processEvent", function( assert ) {
   };
   // Set up some UDF values that will get mapped during the init() call.
   var settings = {
+    acquia_lift: {account_name: 'TESTACCOUNT'},
     acquia_lift_profiles: {
-      account_name: 'TESTACCOUNT',
       mappings: {
         person: {
           person_udf1: "my_first_plugin__some-context",
@@ -426,7 +360,7 @@ QUnit.test ("debugger - get personID and touchId", function(assert){
   //clear cookies.
   $.cookie('tc_ptid', null, {path:'/'});
   $.cookie('tc_ttid', null, {path:'/'});
-})
+});
 QUnit.test ("debugger - update identities", function(assert){
   expect (1);
   var identities = [];

@@ -18,34 +18,16 @@ class AcquiaLiftReportFactory {
   public static function create(AcquiaLiftLearningAgentInterface $agent_instance, $api_instance, $options) {
     // Load all reporting-related classes.
     $report_class_files = array(
-      'AcquiaLiftReportBase',
       'AcquiaLiftReportDataFromFileBase',
-      'AcquiaLiftReport',
       'AcquiaLiftLearnReport',
       'AcquiaLiftLearnReportFromFile',
       'AcquiaLiftReportCacheInterface',
       'AcquiaLiftReportCache',
-      'AcquiaLiftReportDataFromFile',
-
     );
     foreach ($report_class_files as $file) {
       module_load_include('inc', 'acquia_lift', 'includes/' . $file);
     }
-    $agent_type = $agent_instance->getType();
-    switch ($agent_type) {
-      case ACQUIA_LIFT_TESTING_AGENT_V2:
-        $class = 'AcquiaLiftLearnReport';
-        $file_source_class = 'AcquiaLiftLearnReportFromFile';
-        break;
-      case ACQUIA_LIFT_TESTING_AGENT_V1;
-      default:
-        $class = 'AcquiaLiftReport';
-        $file_source_class = 'AcquiaLiftReportDataFromFile';
-        if (!empty($options['legacy'])) {
-          $class = 'AcquiaLiftReportLegacy';
-        }
-        break;
-    }
+
     if (!isset($options['confidence_measure'])) {
       $options['confidence_measure'] = variable_get('acquia_lift_confidence_measure', 95);
     }
@@ -54,12 +36,12 @@ class AcquiaLiftReportFactory {
     // calling the API.
     $report_file = variable_get("acquia_lift_report_source_$agent_name", '');
     if (!empty($report_file)) {
-      $report_source = new $file_source_class($report_file, new AcquiaLiftReportCache());
+      $report_source = new AcquiaLiftLearnReportFromFile($report_file, new AcquiaLiftReportCache());
     }
     else {
       $report_source = $api_instance;
     }
-    $report = new $class($agent_instance, $options, $report_source);
+    $report = new AcquiaLiftLearnReport($agent_instance, $options, $report_source);
     return $report;
   }
 }

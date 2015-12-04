@@ -16,7 +16,7 @@ class AcquiaLiftLearn extends PersonalizeAgentBase implements AcquiaLiftLearning
   /**
    * An instance of AcquiaLiftAPI.
    *
-   * @var AcquiaLiftAPIV2
+   * @var AcquiaLiftAPI
    */
   protected $liftAPI;
 
@@ -51,9 +51,10 @@ class AcquiaLiftLearn extends PersonalizeAgentBase implements AcquiaLiftLearning
    */
   public static function getAPIInstance() {
     $account_info = acquia_lift_get_account_info();
-    $acquia_lift_api = AcquiaLiftAPIClientFactory::create($account_info, ACQUIA_LIFT_TESTING_AGENT_V2);
+    $acquia_lift_api = AcquiaLiftAPI::getInstance($account_info);
     return $acquia_lift_api;
   }
+
   /**
    * Constructs an Acquia Lift agent.
    *
@@ -62,7 +63,7 @@ class AcquiaLiftLearn extends PersonalizeAgentBase implements AcquiaLiftLearning
    * @param $acquia_lift_api
    *   An instance of the AcquiaLiftAPI class.
    */
-  public function __construct($machine_name, $title, $data, $status, $started, AcquiaLiftAPIV2 $acquia_lift_api) {
+  public function __construct($machine_name, $title, $data, $status, $started, AcquiaLiftAPI $acquia_lift_api) {
     parent::__construct($machine_name, $title, $data, $status, $started);
     $this->liftAPI = $acquia_lift_api;
   }
@@ -71,7 +72,7 @@ class AcquiaLiftLearn extends PersonalizeAgentBase implements AcquiaLiftLearning
    * Implements PersonalizeAgentInterface::getType();
    */
   public function getType() {
-    return ACQUIA_LIFT_TESTING_AGENT_V2;
+    return ACQUIA_LIFT_TESTING_AGENT;
   }
 
   /**
@@ -174,30 +175,4 @@ class AcquiaLiftLearn extends PersonalizeAgentBase implements AcquiaLiftLearning
 
   }
 
-  /**
-   * Implements AcquiaLiftReportInterface()::getCampaignReports().
-   */
-  public function getCampaignReports($options) {
-
-    return $this->getReporting($options)->getCampaignReports();
-  }
-
-  /**
-   * Implements AcquiaLiftReportInterface()::getExperimentReports().
-   */
-  public function getExperimentReports($options) {
-    return $this->getReporting($options)->getExperimentReports();
-  }
-
-  /**
-   * Get a reference to this agent's reporting class.
-   *
-   * Allows for delayed instantiation of reporting class.
-   */
-  protected function getReporting($options) {
-    if (empty($this->reporting)) {
-      $this->reporting = AcquiaLiftReportFactory::create($this, $this->liftAPI, $options);
-    }
-    return $this->reporting;
-  }
 }

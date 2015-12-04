@@ -11,7 +11,8 @@
       $('.lift-statistics').once('acquiaLiftReports', function () {
         var $statistics = $(this),
             $data = $statistics.find('table[data-lift-statistics]'),
-            campaign = $data.attr('data-acquia-lift-campaign'),
+            personalization = $data.attr('data-acquia-lift-personalization'),
+            audience = $data.attr('data-acquia-lift-audience'),
             $goalSelect = $('.acquia-lift-report-section-options .form-item-goal select'),
             $metricSelect = $('.acquia-lift-report-section-options .form-item-metric select'),
             metric = $metricSelect.val(),
@@ -30,22 +31,23 @@
         $goalSelect.change(function() {
           // Construct the GET path.
           var args = {
-                campaign: campaign,
+                personalization: personalization,
+                audience: audience,
                 goal: $(this).val()
               },
-              path = Drupal.settings.basePath + Drupal.settings.pathPrefix + 'acquia_lift/reports/conversion?' + $.param(args);
+              path = Drupal.settings.basePath + Drupal.settings.pathPrefix + 'acquia_lift/reports/conversions-by-goal?' + $.param(args);
 
           // Get the new report and replace the existing report(s) with it.
           $.get(path, function (html) {
             var $html = $(html);
-            $statistics.find('.lift-statistic-category').remove();
-            $statistics.prepend($html);
+            $statistics.find('#acquia-lift-daily-report-data').remove();
+            $statistics.append($html);
             // Simultaneously replace $data with the new table.
             $data = $html.find('table[data-lift-statistics]');
             // Make sure the proper metric column is set and render the graph.
             $data.attr('data-liftgraph-columny', metricColumn()).liftGraph();
           });
-        })
+        });
 
         // Attach a data column to a metric option.
         // Change the data fed to the y-axis and update the graph.

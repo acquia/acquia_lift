@@ -954,13 +954,14 @@ function acquia_lift_personalize_campaign_wizard_targeting_alter(&$form, &$form_
         '#markup' => '<div class="acquia-lift-audience-priority"><h4>' . t('Audience Priority') . '</h4><p>' . t('Drag and drop audiences to change the order in which they are targeted.  Audiences at the top of the list will be targeted before audiences below them.') . '</p></div>',
       );
     }
+    $fallback_audience = acquia_lift_get_fallback_audience_name(array_keys($option_set->targeting));
     foreach ($option_set->targeting as $audience_id => $audience) {
       $form['targeting']['audiences']['existing'][$audience_id] = array(
         '#type' => 'container',
         '#theme' => 'acquia_lift_card',
         '#title' => isset($audience['label']) ? $audience['label'] : 'Audience: ' . $audience_id,
         '#collapsible' => FALSE,
-        '#sortable' => $audience_id !== ACQUIA_LIFT_TARGETING_EVERYONE_ELSE && count($option_set->targeting) > 2,
+        '#sortable' => $audience_id !== $fallback_audience && count($option_set->targeting) > 2,
         '#flag' => t('Test'),
         '#flag_visible' => isset($saved_targeting[$audience_id]) && count($saved_targeting[$audience_id]) > 1,
       );
@@ -968,7 +969,7 @@ function acquia_lift_personalize_campaign_wizard_targeting_alter(&$form, &$form_
         '#type' => 'container'
       );
       if ($editable) {
-        if ($audience_id === ACQUIA_LIFT_TARGETING_EVERYONE_ELSE) {
+        if ($audience_id === $fallback_audience) {
           if (count($option_set->targeting) == 1) {
             $help = t('This audience is composed of all visitors who have not been selected to view a specific variation. Create a new audience above to assign specific variations to groups of visitors.');
           }
@@ -1003,7 +1004,7 @@ function acquia_lift_personalize_campaign_wizard_targeting_alter(&$form, &$form_
       }
       // Show the form to assign variations when not in edit mode.
       $classes = array('acquia-lift-targeting-assignment');
-      if ($audience_id === ACQUIA_LIFT_TARGETING_EVERYONE_ELSE) {
+      if ($audience_id === $fallback_audience) {
         $classes[] = 'acquia-lift-targeting-everyone-else';
       }
       // This message will only be shown when there two or more variations
@@ -1972,7 +1973,7 @@ function acquia_lift_personalize_campaign_wizard_targeting_validate(&$form, &$fo
   foreach ($form_state['values']['audiences'] as $type_id => $type_data) {
     $is_new = $type_id === 'new';
     foreach ($form_state['values']['audiences'][$type_id] as $audience_id => $audience) {
-      if ($audience_id === ACQUIA_LIFT_TARGETING_EVERYONE_ELSE) {
+      if (strpos($audience_id, ACQUIA_LIFT_TARGETING_EVERYONE_ELSE) === 0) {
         continue;
       }
       else if (!is_array($audience) || !isset($audience['details'])) {
@@ -2354,7 +2355,13 @@ function acquia_lift_personalize_campaign_wizard_targeting_submit(&$form, &$form
   // Set the weight higher than any of the audience options.
   foreach($form_state['values']['audiences'] as $type_id => $type) {
     foreach ($form_state['values']['audiences'][$type_id] as $audience_id => $audience) {
-      if ($audience_id === ACQUIA_LIFT_TARGETING_EVERYONE_ELSE || !isset($audience['details']['weight']) || empty($audience['details']['name'])) {
+      // The machine name of the "everyone-else" audience may have changed, if
+      // tests for hte audience have changed, so it may have a suffix, like '-2'.
+      $is_everyone_audience = strpos($audience_id, ACQUIA_LIFT_TARGETING_EVERYONE_ELSE) === 0;
+      if ($is_everyone_audience) {
+        $final_audience['id'] = $audience_id;
+      }
+      if ($is_everyone_audience || !isset($audience['details']['weight']) || empty($audience['details']['name'])) {
         continue;
       }
       $final_audience['weight'] = $audience['details']['weight'] > $final_audience['weight'] ? $audience['details']['weight'] : $final_audience['weight'];
@@ -2365,11 +2372,11 @@ function acquia_lift_personalize_campaign_wizard_targeting_submit(&$form, &$form
   $has_tests = FALSE;
   foreach ($form_state['values']['audiences'] as $type_id => $type) {
     foreach ($form_state['values']['audiences'][$type_id] as $audience_id => $audience) {
-      if (empty($audience['details']['name']) && $audience_id !== ACQUIA_LIFT_TARGETING_EVERYONE_ELSE) {
+      if (empty($audience['details']['name']) && strpos($audience_id, ACQUIA_LIFT_TARGETING_EVERYONE_ELSE) === FALSE) {
         continue;
       }
 
-      if ($audience_id === ACQUIA_LIFT_TARGETING_EVERYONE_ELSE) {
+      if (strpos($audience_id, ACQUIA_LIFT_TARGETING_EVERYONE_ELSE) === 0) {
         $audience_values = $final_audience;
       }
       else {

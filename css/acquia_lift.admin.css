@@ -80,25 +80,23 @@ div.acquia-lift-percentage-rest { /* added selector -KO */
   padding-bottom: 10px;
 }
 
-#acquia-lift-overview-report .form-wrapper > div {
+#acquia-lift-overview-report .form-wrapper > div,
+#acquia-lift-audience-overview-report .form-wrapper > div{
   float: left;
   margin-right: 1.4em;
 }
-#acquia-lift-overview-report .acquia-lift-overview-item {
+#acquia-lift-overview-report .acquia-lift-overview-item,
+#acquia-lift-audience-overview-report .acquia-lift-overview-item{
   font-size: 1.4em;
   font-weight: bold;
   min-height: 24px;
 }
 
-/* Reporting: positive/negative indicators. */
-#acquia-lift-experiment-report .acquia-lift-report-negative,
-#acquia-lift-context-report .acquia-lift-report-negative,
-#acquia-lift-stability-report .acquia-lift-report-negative,
-#acquia-lift-overview-report .acquia-lift-report-negative .acquia-lift-overview-item,
+
+/* Reporting: positive indicators. */
 #acquia-lift-experiment-report .acquia-lift-report-positive,
-#acquia-lift-context-report .acquia-lift-report-positive,
-#acquia-lift-stability-report .acquia-lift-report-positive,
-#acquia-lift-overview-report .acquia-lift-report-positive .acquia-lift-overview-item {
+#acquia-lift-overview-report .acquia-lift-report-positive .acquia-lift-overview-item,
+#acquia-lift-audience-overview-report .acquia-lift-report-positive .acquia-lift-overview-item {
   background-color: transparent;
   background-repeat: no-repeat;
   background-position: left center;
@@ -106,48 +104,32 @@ div.acquia-lift-percentage-rest { /* added selector -KO */
   padding-left: 20px;
 }
 #acquia-lift-experiment-report .acquia-lift-report-positive,
-#acquia-lift-context-report .acquia-lift-report-positive,
-#acquia-lift-stability-report .acquia-lift-report-positive,
-#acquia-lift-overview-report .acquia-lift-report-positive .acquia-lift-overview-item {
+#acquia-lift-overview-report .acquia-lift-report-positive .acquia-lift-overview-item,
+#acquia-lift-audience-overview-report .acquia-lift-report-positive .acquia-lift-overview-item {
   background-image: url(../images/85b200/confirm.png);
   background-image: url(../images/85b200/confirm.svg), none;
 }
-#acquia-lift-experiment-report .acquia-lift-report-negative,
-#acquia-lift-context-report .acquia-lift-report-negative,
-#acquia-lift-stability-report .acquia-lift-report-negative,
-#acquia-lift-overview-report .acquia-lift-report-negative .acquia-lift-overview-item {
-  background-image: url(../images/FF8000/alert.png);
-  background-image: url(../images/FF8000/alert.svg), none;
-}
-#acquia-lift-overview-report .acquia-lift-report-negative .acquia-lift-overview-item,
-#acquia-lift-overview-report .acquia-lift-report-positive .acquia-lift-overview-item {
+
+#acquia-lift-overview-report .acquia-lift-report-positive .acquia-lift-overview-item,
+#acquia-lift-audience-overview-report .acquia-lift-report-positive .acquia-lift-overview-item {
   background-position: left top;
 }
-#acquia-lift-overview-report .acquia-lift-report-positive .acquia-lift-overview-item {
+#acquia-lift-overview-report .acquia-lift-report-positive .acquia-lift-overview-item,
+#acquia-lift-audience-overview-report .acquia-lift-report-positive .acquia-lift-overview-item{
   color: #85B200;
 }
-#acquia-lift-overview-report .acquia-lift-report-negative .acquia-lift-overview-item {
-  color: #F7941F;
+
+#audience-report-container {
+  border-top: 2px solid #999;
+  padding-top: 10px;
 }
 
-#acquia-lift-context-report td.acquia-lift-report-positive,
-#acquia-lift-experiment-report-data td.acquia-lift-report-positive,
-#acquia-lift-stability-report-data td.acquia-lift-report-positive {
+#acquia-lift-experiment-report-data td.acquia-lift-report-positive {
   color: #85B200;
   font-weight: bold;
 }
 
 /* Reporting: content variation special indicators */
-#acquia-lift-context-report td.acquia-lift-context-best .acquia-lift-best {
-  background-image: url(../images/85b200/confirm.png);
-  background-image: url(../images/85b200/confirm.svg), none;
-  background-color: transparent;
-  background-repeat: no-repeat;
-  background-position: right;
-  background-size: 18px;
-  float: right;
-  padding-right: 20px;
-}
 
 tr.acquia-lift-report-control {
   background-color: #FAFAEA;

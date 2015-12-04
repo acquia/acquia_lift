@@ -34,35 +34,12 @@ class ALProfilesWebTest extends DrupalWebTestCase {
     parent::tearDown();
   }
 
-  function testBasicConfig() {
-    $this->drupalLogin($this->admin_user);
-
+  function testAdminLink() {
     // Verify that the Acquia Lift Web Admin link is the default.
     $this->assertAcquiaLiftWebAdminLink('http://lift.acquia.com');
+    $this->configureALProfiles();
 
-    $edit = array(
-      'acquia_lift_profiles_account_name' => 'MYALPROFILESACCOUNT',
-      'acquia_lift_profiles_site_name' => 'MYALPROFILESSITE',
-      'acquia_lift_profiles_api_url' => 'api.example.com',
-      'acquia_lift_profiles_access_key' => 'abc123',
-      'acquia_lift_profiles_secret_key' => 'xyz987',
-    );
-    $this->drupalPost('admin/config/content/personalize/acquia_lift_profiles', $edit, t('Save'));
-
-    // Since this is not a system_settings_form we need to assert that the
-    // variables do in fact get set.
-    foreach (array('acquia_lift_profiles_account_name', 'acquia_lift_profiles_site_name', 'acquia_lift_profiles_api_url', 'acquia_lift_profiles_access_key', 'acquia_lift_profiles_secret_key') as $key) {
-      $variable = variable_get($key);
-      $this->assertEqual($edit[$key], $variable);
-    }
-
-    // Now verify that protocols are stripped from configuration URLs.
-    $edit['acquia_lift_profiles_api_url'] = 'http://api.example.com';
-    $this->drupalPost('admin/config/content/personalize/acquia_lift_profiles', $edit, t('Save'));
-
-    $this->assertEqual(variable_get('acquia_lift_profiles_api_url', ''), 'api.example.com');
-
-    // Assert that the web admin link was also updated.
+    // Assert that the web admin link was updated.
     $this->assertAcquiaLiftWebAdminLink('http://api.example.com');
   }
 
@@ -491,20 +468,17 @@ class ALProfilesWebTest extends DrupalWebTestCase {
    * Helper function to configure acquia_lift_profiles settings.
    */
   protected function configureALProfiles() {
-    $this->drupalLogin($this->admin_user);
-
-    // Variable acquia_lift_profiles_js_path is set in Acquia Lift module, and has no UI in Acquia Lift Profile.
-    variable_set('acquia_lift_profiles_js_path', 'acquia_lift_profiles.example.com/path/to.js');
-
-    $edit = array(
+    $settings = array(
+      'acquia_lift_profiles_js_path' => 'acquia_lift_profiles.example.com/path/to.js',
       'acquia_lift_profiles_account_name' => 'MYALPROFILESACCOUNT',
       'acquia_lift_profiles_site_name' => 'MYALPROFILESSITE',
       'acquia_lift_profiles_api_url' => 'api.example.com',
       'acquia_lift_profiles_access_key' => 'abc123',
       'acquia_lift_profiles_secret_key' => 'xyz987',
     );
-    $this->drupalPost('admin/config/content/personalize/acquia_lift_profiles', $edit, t('Save'));
-    $this->drupalLogout();
+    foreach ($settings as $setting => $value) {
+      variable_set($setting, $value);
+    }
   }
 
   /**
@@ -549,30 +523,6 @@ class ALProfilesWebTest extends DrupalWebTestCase {
   }
 
   /**
-   * Helper function to assert that the Acquia Lift Web Admin link is set to a
-   * specific href.
-   *
-   * This can't be tested via the UI because there isn't a way to activate the
-   * Acquia Lift menu, but we can all the menu functions to verify that the href
-   * is updated as expected.
-   *
-   * @param $check_href
-   */
-  protected function assertAcquiaLiftWebAdminLink($check_href) {
-    // Make sure we get a new copy of the data each time we assert.
-    drupal_static_reset('menu_tree_all_data');
-    drupal_static_reset('_menu_build_tree');
-    $menu = menu_tree_all_data('acquia-lift-controls');
-    foreach ($menu as $link) {
-      if ($link['link']['link_path'] === 'http://lift.acquia.com') {
-        $this->assertEqual($link['link']['href'], $check_href);
-        return;
-      }
-    }
-    $this->assertEqual('Link not found', $check_href);
-  }
-
-  /**
    * Create a list of visitor actions as test fixtures.
    */
   protected function createVisitorActions() {
@@ -602,4 +552,30 @@ class ALProfilesWebTest extends DrupalWebTestCase {
       visitor_actions_save_action($action);
     }
   }
+
+
+  /**
+   * Helper function to assert that the Acquia Lift Web Admin link is set to a
+   * specific href.
+   *
+   * This can't be tested via the UI because there isn't a way to activate the
+   * Acquia Lift menu, but we can all the menu functions to verify that the href
+   * is updated as expected.
+   *
+   * @param $check_href
+   */
+  protected function assertAcquiaLiftWebAdminLink($check_href) {
+    // Make sure we get a new copy of the data each time we assert.
+    drupal_static_reset('menu_tree_all_data');
+    drupal_static_reset('_menu_build_tree');
+    $menu = menu_tree_all_data('acquia-lift-controls');
+    foreach ($menu as $link) {
+      if ($link['link']['link_path'] === 'http://lift.acquia.com') {
+        $this->assertEqual($link['link']['href'], $check_href);
+        return;
+      }
+    }
+    $this->assertEqual('Link not found', $check_href);
+  }
+
 }

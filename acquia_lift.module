@@ -10,13 +10,13 @@ define('ACQUIA_LIFT_OPERATION_ERROR_PREFIX', 'Errors: ');
 define('ACQUIA_LIFT_AGENT_VERIFY_CACHE', 'acquia_lift:agent:verification');
 define('ACQUIA_LIFT_TARGETING_EVERYONE_ELSE', 'everyone-else');
 define('ACQUIA_LIFT_TARGETING_AGENT', 'acquia_lift_target');
-define('ACQUIA_LIFT_TESTING_AGENT_V1', 'acquia_lift');
-define('ACQUIA_LIFT_TESTING_AGENT_V2', 'acquia_lift_learn');
+define('ACQUIA_LIFT_TESTING_AGENT', 'acquia_lift_learn');
 define('ACQUIA_LIFT_DECISION_LOCKSTEP', 'lockstep');
 define('ACQUIA_LIFT_DECISION_MULTIVARIATE', 'mvt');
 define('ACQUIA_LIFT_MULTIVARIATE_TEST_SUFFIX', '-mvt');
 define('ACQUIA_LIFT_DOCUMENTATION', 'https://docs.acquia.com/lift/drupal');
 define('ACQUIA_LIFT_INSPECTOR_URL', 'acquia_lift_inspect_mode');
+define('ACQUIA_LIFT_DEFAULT_MAX_DAYS', 60);
 
 /**
  * Implements hook_menu().
@@ -58,9 +58,9 @@ function acquia_lift_menu() {
     'type' => MENU_CALLBACK,
   );
   // Ajax callback to generate report data.
-  $items['acquia_lift/reports/conversion'] = array(
+  $items['acquia_lift/reports/conversions-by-goal'] = array(
     'type' => MENU_CALLBACK,
-    'page callback' => 'acquia_lift_report_experiment',
+    'page callback' => 'acquia_lift_report_daily_conversions',
     'access arguments' => array('manage personalized content'),
     'file' => 'acquia_lift.admin.inc',
   );
@@ -181,13 +181,6 @@ function acquia_lift_menu() {
     'type' => MENU_CALLBACK,
     'file' => 'acquia_lift.admin.wizard.inc',
   );
-  $items['admin/structure/personalize/manage/%personalize_agent/reset'] = array(
-    'page callback' => 'acquia_lift_reset_nested_agents',
-    'page arguments' => array(4),
-    'access callback' =>'acquia_lift_reset_data_access',
-    'access arguments' => array(4),
-    'type' => MENU_CALLBACK,
-  );
   $items['admin/structure/personalize/manage/%personalize_agent/results'] = array(
     'title callback' => 'personalize_campaign_title_callback',
     'title arguments' => array(4),
@@ -197,24 +190,6 @@ function acquia_lift_menu() {
     'access arguments' => array(4),
     'file' => 'acquia_lift.admin.inc',
     'type' => MENU_NORMAL_ITEM,
-  );
-  // Page callback for the list of legacy agents.
-  $items['admin/structure/personalize/legacy'] = array(
-    'title' => 'Legacy Campaigns',
-    'description' => 'List legacy Lift Campaigns',
-    'page callback' => 'acquia_lift_legacy_campaign_list',
-    'access callback' => 'acquia_lift_legacy_access',
-    'type' => MENU_LOCAL_TASK,
-    'file' => 'acquia_lift.admin.inc',
-  );
-  // Page callback for a legacy report.
-  $items['admin/structure/personalize/legacy/%personalize_agent/results'] = array(
-    'title' => 'Legacy Campaign Report',
-    'page callback' => 'drupal_get_form',
-    'page arguments' => array('acquia_lift_report', 4),
-    'access callback' => 'acquia_lift_legacy_access',
-    'type' => MENU_CALLBACK,
-    'file' => 'acquia_lift.admin.inc',
   );
   return $items;
 }
@@ -482,116 +457,108 @@ function acquia_lift_percentage_validate($element, &$form_state) {
  *   connector credentials.
  */
 function acquia_lift_get_account_info() {
-  if (variable_get('acquia_lift_v2_enabled', FALSE)) {
-    $account_info = variable_get('acquia_lift_account_info', array('public_key' => '', 'private_key' => ''));
-    if (!isset($account_info['profiles'])) {
-      $account_info['profiles'] = array(
+  $account_info = array(
+    'public_key' => '',
+    'private_key' => '',
+    'profiles' => array(
+      'account_name' => variable_get('acquia_lift_profiles_account_name', ''),
+      'hostname' => '',
+      'public_key' => '',
+      'secret_key' => ''
+    )
+  );
+
+  // Get Acquia Subscription Data
+  $subscription_data = acquia_agent_settings('acquia_subscription_data');
+  $acquia_lift_data = array();
+  if (isset($subscription_data['heartbeat_data']['acquia_lift'])) {
+    $acquia_lift_data = $subscription_data['heartbeat_data']['acquia_lift'];
+    $default_lift_data = array(
+      'status' => false,
+      'decision' => array(
+        'public_key' => '',
+        'private_key' => '',
+        'api_url' => ''
+      ),
+      'profile' => array(
+        'js_path' => '',
         'account_name' => '',
         'hostname' => '',
-        'public_key' => '',
+        'private_key' => '',
         'secret_key' => ''
-      );
-    }
+      )
+    );
+    // make sure there is always the base set that we can rely on. This
+    // prevents us from forcing an isset before working with the data.
+    $acquia_lift_data = array_merge($default_lift_data, $acquia_lift_data);
+  }
 
-    // @todo : Check here if Lift V2 is enabled by checking the subscription values
-    // Get Acquia Subscription Data
-    $subscription_data = acquia_agent_settings('acquia_subscription_data');
-    $acquia_lift_data = array();
-    if (isset($subscription_data['heartbeat_data']['acquia_lift'])) {
-      $acquia_lift_data = $subscription_data['heartbeat_data']['acquia_lift'];
-      $default_lift_data = array(
-        'status' => false,
-        'decision' => array(
-          'public_key' => '',
-          'private_key' => '',
-          'api_url' => ''
-        ),
-        'profile' => array(
-          'js_path' => '',
-          'account_name' => '',
-          'hostname' => '',
-          'private_key' => '',
-          'secret_key' => ''
-        )
-      );
-      // make sure there is always the base set that we can rely on. This
-      // prevents us from forcing an isset before working with the data.
-      $acquia_lift_data = array_merge($default_lift_data, $acquia_lift_data);
-    }
+  // Set default url
+  $account_info['api_url'] = variable_get('acquia_lift_api_url', '');
 
-    // Set default url
-    $account_info['api_url'] = variable_get('acquia_lift_apiv2_url', '');
+  // Find out if there is Acquia Lift information in the provided subscription information.
+  if (isset($acquia_lift_data['status']) && $acquia_lift_data['status'] == TRUE) {
+    foreach ($acquia_lift_data['decision'] as $key => $value) {
+      switch ($key) {
+        case "public_key":
+        case "private_key":
+           // If it was overridden in settings.php - do not override again
+           // with Acquia Network creds.
+           $account_info[$key] = empty($account_info[$key]) ? $value : $account_info[$key];
+          break;
+      }
+    }
     if (empty($account_info['api_url'])) {
-      $account_info['api_url'] = 'us-east-1-decision.lift.acquia.com';
+      if (empty($acquia_lift_data['decision']['hostname'])) {
+        $account_info['api_url'] = 'us-east-1-decision.lift.acquia.com';
+      }
+      else {
+        $account_info['api_url'] = $acquia_lift_data['decision']['hostname'];
+      }
     }
 
-    // Find out if there is Acquia Lift information in the provided subscription information.
-    if (isset($acquia_lift_data['status']) && $acquia_lift_data['status'] == TRUE) {
-      foreach ($acquia_lift_data['decision'] as $key => $value) {
-        switch ($key) {
-          case "public_key":
-          case "private_key":
-          case "api_url":
-             // If it was overridden in settings.php - do not override again
-             // with Acquia Network creds.
-             $account_info[$key] = empty($account_info[$key]) ? $value : $account_info[$key];
-            break;
-        }
+    foreach ($acquia_lift_data['profile'] as $key => $value) {
+      switch ($key) {
+        case "js_path":
+          $variable_name = 'acquia_lift_profiles_js_path';
+          // Strip any http/https prefix
+          $value = preg_replace('/(^[a-z]+:\/\/)/i', '', $value);
+          // js path is a special case as we require it also for regular
+          // Acquia Lift. Therefor we add it to our main data set as an
+          // exception. If it was overridden in settings.php - do not
+          // override again with Acquia Network creds.
+          $account_info[$key] = empty($account_info[$key]) ? $value : $account_info[$key];
+          break;
+        case "account_name":
+          $variable_name = 'acquia_lift_profiles_account_name';
+          break;
+        case "hostname":
+          $variable_name = 'acquia_lift_profiles_api_url';
+          break;
+        case "public_key":
+          $variable_name = 'acquia_lift_profiles_access_key';
+          break;
+        case "secret_key":
+          $variable_name = 'acquia_lift_profiles_secret_key';
+          break;
+        default:
+          $variable_name = false;
+          break;
       }
-      foreach ($acquia_lift_data['profile'] as $key => $value) {
-        switch ($key) {
-          case "js_path":
-            $variable_name = 'acquia_lift_profiles_js_path';
-            // Strip any http/https prefix
-            $value = preg_replace('/(^[a-z]+:\/\/)/i', '', $value);
-            // js path is a special case as we require it also for regular
-            // Acquia Lift. Therefor we add it to our main data set as an
-            // exception. If it was overridden in settings.php - do not
-            // override again with Acquia Network creds.
-            $account_info[$key] = empty($account_info[$key]) ? $value : $account_info[$key];
-            break;
-          case "account_name":
-            $variable_name = 'acquia_lift_profiles_account_name';
-            break;
-          case "hostname":
-            $variable_name = 'acquia_lift_profiles_api_url';
-            break;
-          case "public_key":
-            $variable_name = 'acquia_lift_profiles_access_key';
-            break;
-          case "secret_key":
-            $variable_name = 'acquia_lift_profiles_secret_key';
-            break;
-          default:
-            $variable_name = false;
-            break;
-        }
-        // Set variable if it was not set.
-        if ($variable_name) {
-          _acquia_lift_set_variable_if_not_set($variable_name, $value);
-          $account_info['profiles'][$key] = empty($account_info['profiles'][$key]) ? $value : $account_info[$key];
-        }
+      // Set variable if it was not set.
+      if ($variable_name) {
+        _acquia_lift_set_variable_if_not_set($variable_name, $value);
+        $account_info['profiles'][$key] = empty($account_info['profiles'][$key]) ? $value : $account_info['profiles'][$key];
       }
-      // unset the js_path from profiles since that is a special case
-      // @todo Get rid of the special case...
-      unset($account_info['profiles']['js_path']);
+    }
+    // unset the js_path from profiles since that is a special case
+    // @todo Get rid of the special case...
+    unset($account_info['profiles']['js_path']);
 
-    }
-    // Whether or not to check the response value.
-    $account_info['validate_response'] = variable_get('acquia_lift_validate_response', TRUE);
   }
-  else {
-    // this is for version V1
-    $account_info = variable_get('acquia_lift_account_info', array('api_key' => '', 'admin_key' => '', 'owner_code' => ''));
-    if (!isset($account_info['profiles'])) {
-      $account_info['profiles'] = array(
-        'account_name' => '',
-        'hostname' => '',
-        'public_key' => '',
-        'secret_key' => ''
-      );
-    }
-  }
+  // Whether or not to check the response value.
+  $account_info['validate_response'] = variable_get('acquia_lift_validate_response', TRUE);
+
   return $account_info;
 }
 
@@ -636,17 +603,12 @@ function acquia_lift_get_agent_types() {
       'class' => 'AcquiaLiftTarget',
       'file' => 'AcquiaLiftTarget.inc',
     ),
-    ACQUIA_LIFT_TESTING_AGENT_V1 => array(
-      'class' => 'AcquiaLiftAgent',
-      'file' => 'AcquiaLiftAgent.inc'
+    ACQUIA_LIFT_TESTING_AGENT => array(
+      'class' => 'AcquiaLiftLearn',
+      'file' => 'AcquiaLiftLearn.inc',
     ),
   );
-  if (variable_get('acquia_lift_v2_enabled', FALSE)) {
-    $types[ACQUIA_LIFT_TESTING_AGENT_V2] = array(
-      'class' => 'AcquiaLiftLearn',
-      'file' => 'AcquiaLiftLearn.inc'
-    );
-  }
+
   return $types;
 }
 
@@ -663,19 +625,7 @@ function acquia_lift_is_testing_agent($agent) {
   if (empty($agent)) {
     return FALSE;
   }
-  return in_array($agent->plugin, array(ACQUIA_LIFT_TESTING_AGENT_V1, ACQUIA_LIFT_TESTING_AGENT_V2));
-}
-
-/**
- * Returns the agent plugin to use for test agents.
- *
- * @return string
- */
-function acquia_lift_get_test_agent_plugin() {
-  if (variable_get('acquia_lift_v2_enabled', FALSE)) {
-    return ACQUIA_LIFT_TESTING_AGENT_V2;
-  }
-  return ACQUIA_LIFT_TESTING_AGENT_V1;
+  return $agent->plugin == ACQUIA_LIFT_TESTING_AGENT;
 }
 
 /**
@@ -744,15 +694,6 @@ function acquia_lift_target_access($agent) {
 }
 
 /**
- * Access callback for the reset data path.
- *
- * @return bool
- */
-function acquia_lift_reset_data_access($agent) {
-  return acquia_lift_target_access($agent) && !variable_get('acquia_lift_v2_enabled', FALSE);
-}
-
-/**
  * Access callback for the Lift legacy campaign list.
  *
  * @return bool
@@ -809,15 +750,27 @@ function acquia_lift_agent_delete_access($agent) {
  * Implements hook_personalize_agent_presave().
  */
 function acquia_lift_personalize_agent_presave($agent) {
-  $plugin_name = acquia_lift_get_test_agent_plugin();
-  if ($agent->plugin !== $plugin_name) {
+  if ($agent->plugin !== ACQUIA_LIFT_TESTING_AGENT) {
     return;
   }
   $current = personalize_agent_load($agent->machine_name);
   if (empty($current)) {
-    $account = acquia_lift_get_account_info();
-    $lift_api = AcquiaLiftAPIClientFactory::create($account, $plugin_name);
-    $agent->machine_name = $lift_api->ensureUniqueAgentName($agent->machine_name, PERSONALIZE_MACHINE_NAME_MAXLENGTH);
+    $fail_msg = t('There is a problem with your Lift credentials. Personalizations will not work until this has been resolved.');
+    try {
+      $account_info = acquia_lift_get_account_info();
+      $lift_api = AcquiaLiftAPI::getInstance($account_info);
+      $agent->machine_name = $lift_api->ensureUniqueAgentName($agent->machine_name, PERSONALIZE_MACHINE_NAME_MAXLENGTH);
+    }
+    catch (AcquiaLiftCredsException $e) {
+      // The creds haven't been set up yet, so it's probably safe to go with the
+       // given machine name, but set an error message for the user.
+      drupal_set_message($fail_msg, 'error');
+    }
+    catch (AcquiaLiftForbiddenException $e) {
+      // Creds have been configured but not correctly, so again it is probably
+      // ok to go ahead, but set an error message for the user.
+      drupal_set_message($fail_msg, 'error');
+    }
   }
   // Make sure the required configurations are set.
   if (!isset($agent->data['decision_style'])) {
@@ -853,9 +806,8 @@ function acquia_lift_personalize_agent_delete($agent) {
     return;
   }
   $account_info = acquia_lift_get_account_info();
-  $version = acquia_lift_get_test_agent_plugin();
   try {
-    $lift_api = AcquiaLiftAPIClientFactory::create($account_info, $version);
+    $lift_api = AcquiaLiftAPI::getInstance($account_info);
     $lift_api->deleteAgent($agent->machine_name);
   }
   catch (Exception $e) {
@@ -880,9 +832,9 @@ function acquia_lift_personalize_goal_presave($goal) {
 function acquia_lift_personalize_option_set_presave($option_set) {
   // If the everyone-else audience is the only audience, name it "Everyone";
   // otherwise name it "Everyone else".
-  if (isset($option_set->targeting[ACQUIA_LIFT_TARGETING_EVERYONE_ELSE])) {
-    $everyone_else_name = count($option_set->targeting) > 1 ? t('Everyone else') : t("Everyone");
-    $option_set->targeting[ACQUIA_LIFT_TARGETING_EVERYONE_ELSE]['label'] = $everyone_else_name;
+  if (!empty($option_set->targeting) && $fallback_audience_id = acquia_lift_get_fallback_audience_name(array_keys($option_set->targeting))) {
+    $fallback_audience_name = count($option_set->targeting) > 1 ? t('Everyone else') : t("Everyone");
+    $option_set->targeting[$fallback_audience_id]['label'] = $fallback_audience_name;
   }
 
   // The rest only applies to saving of existing option sets.
@@ -952,7 +904,7 @@ function acquia_lift_personalize_option_set_render(&$element, $option_set) {
 function acquia_lift_target_default_js_settings($agent_name = NULL) {
   $settings = array(
     'default_target' => ACQUIA_LIFT_TARGETING_EVERYONE_ELSE,
-    'test_agent_plugin' => acquia_lift_get_test_agent_plugin(),
+    'test_agent_plugin' => ACQUIA_LIFT_TESTING_AGENT,
     'agent_map' => array(),
     'option_sets' => array(),
     'nested_tests' => array()
@@ -1136,10 +1088,9 @@ function acquia_lift_sync_item($item) {
   // function.
   // @todo This conditional is a bit gross, figure out a way to handle the different types
   //   of callables better.
-  $version = acquia_lift_get_test_agent_plugin();
   if (isset($item['method'])) {
     $account_info = acquia_lift_get_account_info();
-    $acquia_lift_api = AcquiaLiftAPIClientFactory::create($account_info, $version);
+    $acquia_lift_api = AcquiaLiftAPI::getInstance($account_info);
     call_user_func_array(array($acquia_lift_api, $item['method']), $item['args']);
   }
   else {
@@ -1221,6 +1172,8 @@ EOT;
     global $is_https;
     $url_scheme = ($is_https) ? 'https://' : 'http://';
     $tc_js = $url_scheme . $js_path;
+    $account_name = variable_get('acquia_lift_profiles_account_name', '');
+    $customer_site = variable_get('acquia_lift_profiles_site_name', 'Drupal');
     $libraries['acquia_lift.page'] = array(
       'title' => 'Adds Acquia Lift page processing necessary for all page views.',
       'version' => VERSION,
@@ -1238,7 +1191,14 @@ EOT;
         array(
           'data' => array(
             'acquia_lift' => array(
-              'api_class' => variable_get('acquia_lift_v2_enabled', FALSE) ? 'acquiaLiftV2API' : 'acquiaLiftAPI'
+              'api_class' => 'acquiaLiftAPI',
+              'account_name' => $account_name,
+              'customer_site' => $customer_site,
+            ),
+            'personalize' => array(
+              'cacheExpiration' => array(
+                'lift' => 'session'
+              )
             )
           ),
           'type' => 'setting'
@@ -1255,74 +1215,35 @@ EOT;
   }
 
   $account_info = acquia_lift_get_account_info();
-  if (variable_get('acquia_lift_v2_enabled', FALSE)) {
-    try {
-      $lift_api = AcquiaLiftAPIClientFactory::create($account_info, ACQUIA_LIFT_TESTING_AGENT_V2);
-      $libraries['acquia_lift.page']['dependencies'][] = array('acquia_lift', 'acquia_lift.v2_agent_api');
-      $site_name = variable_get('acquia_lift_profiles_site_name', '');
-      if (empty($site_name)) {
-        $site_name = 'drupal';
-      }
-      $libraries['acquia_lift.v2_agent_api'] = array(
-        'title' => 'Adds the Acquia Lift V2 API files.',
-        'version' => VERSION,
-        'js' => array(
-          $path . '/js/acquia_lift.v2.js' => $options,
-          array(
-            'data' => array(
-              'acquia_lift_learn' => array(
-                'baseUrl' => $lift_api->getApiUrl(),
-                'clientId' => $lift_api->getPublicKey(),
-                'applicationHash' => $site_name
-              )
-            ),
-            'type' => 'setting'
-          )
-        ),
-        'dependencies' => array(
-          array('system', 'jquery'),
-        ),
-      );
-    } catch (\Exception $e) {
-      // do nothing. This fails when there are no keys present.
+  try {
+    $lift_api = AcquiaLiftAPI::getInstance($account_info);
+    $libraries['acquia_lift.page']['dependencies'][] = array('acquia_lift', 'acquia_lift.agent_api');
+    $site_name = variable_get('acquia_lift_profiles_site_name', '');
+    if (empty($site_name)) {
+      $site_name = 'drupal';
     }
-  }
-  else {
-    try {
-      $lift_api = AcquiaLiftAPIClientFactory::create($account_info, ACQUIA_LIFT_TESTING_AGENT_V1);
-      $libraries['acquia_lift.page']['dependencies'][] = array(
-        'acquia_lift',
-        'acquia_lift.agent_api'
-      );
-      $libraries['acquia_lift.agent_api'] = array(
-        'title' => 'Adds the Acquia Lift API files.',
-        'version' => VERSION,
-        'js' => array(
-          $path . '/js/acquia-lift-js-wrapper-min.js' => array(
-            'type' => 'file',
-            'scope' => 'header'
+    $libraries['acquia_lift.agent_api'] = array(
+      'title' => 'Adds the Acquia Lift API files.',
+      'version' => VERSION,
+      'js' => array(
+        $path . '/js/acquia_lift.api.js' => $options,
+        array(
+          'data' => array(
+            'acquia_lift_learn' => array(
+              'baseUrl' => $lift_api->getApiUrl(),
+              'clientId' => $lift_api->getPublicKey(),
+              'applicationHash' => $site_name
+            )
           ),
-          $path . '/js/acquia_lift.api.js' => $options,
-          array(
-            'data' => array(
-              'acquia_lift' => array(
-                'apiKey' => $lift_api->getApiKey(),
-                'owner' => $lift_api->getOwnerCode(),
-                'baseUrl' => $lift_api->getApiUrl(),
-                'stringReplacePattern' => AcquiaLiftAPI::STRING_REPLACE_PATTERN,
-                'batchMode' => FALSE
-              )
-            ),
-            'type' => 'setting'
-          )
-        ),
-        'dependencies' => array(
-          array('system', 'jquery'),
-        ),
-      );
-    } catch (\Exception $e) {
-      // do nothing. This fails when there are no keys present.
-    }
+          'type' => 'setting'
+        )
+      ),
+      'dependencies' => array(
+        array('system', 'jquery'),
+      ),
+    );
+  } catch (\Exception $e) {
+    // do nothing. This fails when there are no keys present.
   }
 
   $libraries['acquia_lift.fields'] = array(
@@ -2707,19 +2628,6 @@ function acquia_lift_personalize_campaign_action_links_alter(&$links, $agent_dat
     if (empty($nested)) {
       return;
     }
-    if (!variable_get('acquia_lift_v2_enabled', FALSE)) {
-      $links[] = array(
-        'title' => t('Reset data'),
-        'href' => 'admin/structure/personalize/manage/' . $agent_data->machine_name . '/reset',
-        'query' => array(
-          'destination' => $destination,
-        ),
-        'attributes' => array(
-          'class' => array('acquia-lift-reset'),
-        ),
-      );
-    }
-
   }
   else {
     // If no changes are allowed, then don't provide any actions except an
@@ -2756,50 +2664,6 @@ function acquia_lift_personalize_campaign_action_links_alter(&$links, $agent_dat
       ),
     );
   }
-}
-
-/**
- * Reset the data for a particular agent and redirect to the agent details.
- *
- * @param stdClass $parent_agent
- *   The agent data for the parent agent to reset.
- */
-function acquia_lift_reset_nested_agents($parent_agent) {
-  $show_success = TRUE;
-  $nested_tests = acquia_lift_get_nested_tests($parent_agent);
-  foreach ($nested_tests as $name) {
-    if (!acquia_lift_reset_agent($name)) {
-      $show_success = FALSE;
-    };
-  }
-  if ($show_success) {
-    drupal_set_message(t('The data has been reset for all tests within %campaign.', array(
-        '%campaign' => $parent_agent->label,
-    )));
-  }
-  drupal_goto('admin/structure/personalize/manage/' . $parent_agent->machine_name . '/review');
-}
-
-/**
- * Resets the data for the specified agent.
- *
- * @param string $agent_name
- *   The name of the agent to reset
- * @return bool
- *   True if reset, false if exception thrown.
- */
-function acquia_lift_reset_agent($agent_name) {
-  $success = TRUE;
-  try {
-    $account_info = acquia_lift_get_account_info();
-    $api = AcquiaLiftAPI::getInstance($account_info);
-    $api->resetAgentData($agent_name);
-  }
-  catch (Exception $e) {
-    $success = FALSE;
-    drupal_set_message(t('The data for the specified agent could not be reset'), 'error');
-  }
-  return $success;
 }
 
 /**
@@ -3431,8 +3295,8 @@ function acquia_lift_debug_mode_enabled() {
  *   The option set to use for targeting rules or NULL if the agent has no option
  *   sets.
  */
-function acquia_lift_get_option_set_for_targeting($agent_name) {
-  $option_sets = personalize_option_set_load_by_agent($agent_name, TRUE);
+function acquia_lift_get_option_set_for_targeting($agent_name, $reset = TRUE) {
+  $option_sets = personalize_option_set_load_by_agent($agent_name, $reset);
   if (empty($option_sets)) {
     return NULL;
   }
@@ -3484,27 +3348,36 @@ function acquia_lift_get_nested_tests($agent) {
 }
 
 /**
+ * Identifies the fallback audience among the audiences provided.
+ *
+ * The machine name of the "everyone-else" audience may have changed, if tests
+ * tests for the audience have changed, so it may have a suffix, like '-2'.
+ *
+ * @param $audiences
+ *   An array of audience names.
+ * @return string|bool
+ */
+function acquia_lift_get_fallback_audience_name($audiences) {
+  foreach ($audiences as $audience) {
+    if (strpos($audience, ACQUIA_LIFT_TARGETING_EVERYONE_ELSE) === 0) {
+      return $audience;
+    }
+  }
+  return FALSE;
+}
+
+/**
  * Checks whether or not Acquia Lift has been properly configured.
  * @return bool
  */
 function acquia_lift_is_configured() {
-  $v2 = variable_get('acquia_lift_v2_enabled', false);
   $account_info = acquia_lift_get_account_info();
   $api_configured = TRUE;
-  if ($v2) {
-    $required_info = array(
-      'public_key',
-      'private_key',
-      'api_url'
-    );
-  }
-  else {
-    $required_info = array(
-      'owner_code',
-      'api_key',
-      'admin_key'
-    );
-  }
+  $required_info = array(
+    'public_key',
+    'private_key',
+    'api_url'
+  );
   foreach ($required_info as $api_config) {
     if (empty($account_info[$api_config])) {
       $api_configured = FALSE;

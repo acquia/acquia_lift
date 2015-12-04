@@ -912,7 +912,7 @@ class AcquiaLiftWebTestReports extends AcquiaLiftWebTestBase {
     personalize_agent_set_status($agent->machine_name, PERSONALIZE_STATUS_RUNNING);
     $this->resetAll();
     $this->drupalGet('admin/structure/personalize/manage/' . $agent->machine_name . '/results');
-    $this->assertText('Report for Everyone audience');
+    $this->assertText('Everyone audience');
     $this->assertNoFieldByName('audience_filter');
     $this->assertLinkByHref('admin/structure/personalize/manage/' . $agent->machine_name . '/audience/everyone-else/complete');
 

@@ -1829,11 +1829,11 @@ function acquia_lift_libraries_info() {
         'source' => array(
           'file' => 'modernizr.js',
           // @todo Document an actual example version string.
-          'pattern' => '#Modernizr\s+[Vv]?([0-9\.]+)#',
+          'pattern' => '#[Mm]odernizr\s+[Vv]?([0-9\.]+)#',
         ),
         'minified' => array(
           'file' => 'modernizr-min.js',
-          'pattern' => '#Modernizr\s+[Vv]?([0-9\.]+)#',
+          'pattern' => '#[Mm]odernizr\s+[Vv]?([0-9\.]+)#',
         ),
       ),
     ),

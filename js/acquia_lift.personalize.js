@@ -2481,7 +2481,7 @@
                   }));
                   if (collection.length == 0) {
                     // There are no campaigns.
-                    element = document.createElement('li');
+                    var element = document.createElement('li');
                     ui.views.noCampaignsView = new ui.MenuCampaignView({
                       el: element,
                       model: null

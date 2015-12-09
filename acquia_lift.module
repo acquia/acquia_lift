@@ -1163,17 +1163,22 @@ function acquia_lift_library() {
 
   $js_path = variable_get('acquia_lift_profiles_js_path', '');
   if (!empty($js_path)) {
+    $account_name = variable_get('acquia_lift_profiles_account_name', '');
+    $customer_site = variable_get('acquia_lift_profiles_site_name', 'Drupal');
     // Initialize the queues.
     $init = <<<EOT
 var _tcaq = _tcaq || [];
 var _tcwq = _tcwq || [];
 EOT;
+    if (!empty($account_name)) {
+      $init .= <<<EOT
+\n_tcaq.push(['setAccount', '$account_name', '$customer_site']);
+EOT;
+    }
     // Add the capture script.
     global $is_https;
     $url_scheme = ($is_https) ? 'https://' : 'http://';
     $tc_js = $url_scheme . $js_path;
-    $account_name = variable_get('acquia_lift_profiles_account_name', '');
-    $customer_site = variable_get('acquia_lift_profiles_site_name', 'Drupal');
     $libraries['acquia_lift.page'] = array(
       'title' => 'Adds Acquia Lift page processing necessary for all page views.',
       'version' => VERSION,

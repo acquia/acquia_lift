@@ -146,9 +146,6 @@ var _tcwq = _tcwq || [];
     pushCaptureIdentity(context['mail'], 'email');
   };
 
-  Drupal.acquia_lift = Drupal.acquia_lift || {
-    account_set: false
-  };
   /**
    * Centralized functionality for acquia_lift_profiles behavior.
    */
@@ -162,10 +159,6 @@ var _tcwq = _tcwq || [];
           return;
         }
         initializing = true;
-        if (!Drupal.acquia_lift.account_set) {
-          _tcaq.push(['setAccount', settings.acquia_lift.account_name, settings.acquia_lift.customer_site]);
-          Drupal.acquia_lift.account_set = true;
-        }
 
         var mappings = settings.acquia_lift_profiles.mappings, context_separator = settings.acquia_lift_profiles.mappingContextSeparator, plugins = {}, reverseMapping = {};
         for(var type in mappings) {

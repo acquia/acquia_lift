@@ -8,7 +8,9 @@
 namespace Drupal\acquia_lift\Form;
 
 use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\DependencyInjection\ContainerInterface;
 use Drupal\Core\Config\Config;
+use Drupal\Core\Entity\EntityManagerInterface;
 use Drupal\node\Entity\NodeType;
 use Drupal\Core\Form\ConfigFormBase;
 use Drupal\Core\Form\FormStateInterface;
@@ -20,6 +22,13 @@ use Drupal\acquia_lift\Entity\Credential;
  * Defines a form that configures settings.
  */
 class AdminSettingsForm extends ConfigFormBase {
+  /**
+   * The entity manager.
+   *
+   * @var \Drupal\Core\Entity\EntityManagerInterface
+   */
+  private $entityManager;
+
   /**
    * {@inheritdoc}
    */
@@ -34,6 +43,25 @@ class AdminSettingsForm extends ConfigFormBase {
     return [
       'acquia_lift.settings',
     ];
+  }
+
+  /**
+   * Constructs an AdminSettingsForm object.
+   *
+   * @param \Drupal\Core\Entity\EntityManagerInterface $entity_manager
+   *   The entity manager.
+   */
+  public function __construct(EntityManagerInterface $entity_manager) {
+    $this->entityManager = $entity_manager;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public static function create(ContainerInterface $container) {
+    return new static(
+      $container->get('entity.manager')
+    );
   }
 
   /**
@@ -165,12 +193,7 @@ class AdminSettingsForm extends ConfigFormBase {
    */
   private function buildFieldMappingsForm() {
     $field_mappings_settings = $this->config('acquia_lift.settings')->get('field_mappings');
-
-    $vocabularies = Vocabulary::loadMultiple();
-    $vocabulary_options = [];
-    foreach ($vocabularies as $vocabulary_vid => $vocabulary) {
-      $vocabulary_options[$vocabulary_vid] = $vocabulary->label();
-    }
+    $field_names = $this->getTaxonomyTermFieldNames();
 
     $form = [
       '#title' => t('Field Mappings'),
@@ -182,25 +205,44 @@ class AdminSettingsForm extends ConfigFormBase {
       '#type' => 'select',
       '#title' => t('Content Section'),
       '#empty_value' => '',
-      '#options' => $vocabulary_options,
+      '#options' => $field_names,
       '#default_value' => $field_mappings_settings['content_section'],
     ];
     $form['content_keywords'] = [
       '#type' => 'select',
       '#title' => t('Content Keywords'),
       '#empty_value' => '',
-      '#options' => $vocabulary_options,
+      '#options' => $field_names,
       '#default_value' => $field_mappings_settings['content_keywords'],
     ];
     $form['persona'] = [
       '#type' => 'select',
       '#title' => t('Persona'),
       '#empty_value' => '',
-      '#options' => $vocabulary_options,
+      '#options' => $field_names,
       '#default_value' => $field_mappings_settings['persona'],
     ];
 
     return $form;
+  }
+
+  /**
+   * Get a list of Field names that are targeting type Taxonomy Terms.
+   *
+   * @return array
+   *   An array of field names.
+   */
+  private function getTaxonomyTermFieldNames() {
+    $definitions = $this->entityManager->getFieldStorageDefinitions('node');
+    $fields = [];
+    foreach ($definitions as $field_name => $field_storage) {
+      if ($field_storage->getType() != 'entity_reference' || $field_storage->getSetting('target_type') !== 'taxonomy_term') {
+        continue;
+      }
+      $fields[$field_name] = $field_name;
+    }
+
+    return $fields;
   }
 
   /**

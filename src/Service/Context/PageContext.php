@@ -144,9 +144,18 @@ class PageContext {
    *   Node.
    */
   private function setFields(EntityInterface $node) {
+    // Find available Fields and their vocabulary names within the node.
+    $available_field_vocabulary_names = [];
+    foreach ($this->fieldMappings as $page_context_name => $field_name) {
+      if(!isset($node->{$field_name})) {
+        continue;
+      }
+      $vocabulary_names = $node->{$field_name}->getSetting('handler_settings')['target_bundles'];
+      $available_field_vocabulary_names[$page_context_name] = $vocabulary_names;
+    }
+
     // Find the node's terms.
-    $nids = [$node->id()];
-    $terms = $this->taxonomyTermStorage->getNodeTerms($nids, $this->fieldMappings);
+    $terms = $this->taxonomyTermStorage->getNodeTerms([$node->id()]);
     $node_terms = isset($terms[$node->id()]) ? $terms[$node->id()] : [];
 
     // Find the term names.
@@ -157,12 +166,17 @@ class PageContext {
       $vocabulary_term_names[$vocabulary_id][] = $term_name;
     }
 
-    // Set the page context.
-    foreach ($this->fieldMappings as $page_context_name => $vocabulary_id) {
-      if(!isset($vocabulary_term_names[$vocabulary_id])) {
-        continue;
+    // Find field term names.
+    foreach ($available_field_vocabulary_names as $page_context_name => $vocabulary_names) {
+      $field_term_names = [];
+      foreach ($vocabulary_names as $vocabulary_name) {
+        if (!isset($vocabulary_term_names[$vocabulary_name])) {
+          continue;
+        }
+        $field_term_names = array_merge($field_term_names, $vocabulary_term_names[$vocabulary_name]);
       }
-      $this->pageContext[$page_context_name] = implode(',', $vocabulary_term_names[$vocabulary_id]);
+      $unique_field_term_names = array_unique($field_term_names);
+      $this->pageContext[$page_context_name] = implode(',', $unique_field_term_names);
     }
   }
 

@@ -234,15 +234,15 @@ class AdminSettingsForm extends ConfigFormBase {
    */
   private function getTaxonomyTermFieldNames() {
     $definitions = $this->entityManager->getFieldStorageDefinitions('node');
-    $fields = [];
+    $field_names = [];
     foreach ($definitions as $field_name => $field_storage) {
       if ($field_storage->getType() != 'entity_reference' || $field_storage->getSetting('target_type') !== 'taxonomy_term') {
         continue;
       }
-      $fields[$field_name] = $field_name;
+      $field_names[$field_name] = $field_name;
     }
 
-    return $fields;
+    return $field_names;
   }
 
   /**

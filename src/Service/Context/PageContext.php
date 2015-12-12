@@ -153,6 +153,7 @@ class PageContext {
       $this->pageContext[$page_context_name] = implode(',', $field_term_names);
     }
   }
+
   /**
    * Get available Fields and their vocabulary names within the node.
    *
@@ -170,7 +171,6 @@ class PageContext {
       $vocabulary_names = $node->{$field_name}->getSetting('handler_settings')['target_bundles'];
       $available_field_vocabulary_names[$page_context_name] = $vocabulary_names;
     }
-
     return $available_field_vocabulary_names;
   }
 
@@ -194,7 +194,6 @@ class PageContext {
       $term_name = $term->getName();
       $vocabulary_term_names[$vocabulary_id][] = $term_name;
     }
-
     return $vocabulary_term_names;
   }
 
@@ -216,7 +215,6 @@ class PageContext {
       }
       $field_term_names = array_merge($field_term_names, $vocabulary_term_names[$vocabulary_name]);
     }
-
     return array_unique($field_term_names);
   }
 

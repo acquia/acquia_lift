@@ -144,7 +144,24 @@ class PageContext {
    *   Node.
    */
   private function setFields(EntityInterface $node) {
-    // Find available Fields and their vocabulary names within the node.
+    $available_field_vocabulary_names = $this->getAvailableFieldVocabularyNames($node);
+    $vocabulary_term_names = $this->getVocabularyTermNames($node);
+
+    // Find Field Term names.
+    foreach ($available_field_vocabulary_names as $page_context_name => $vocabulary_names) {
+      $field_term_names = $this->getFieldTermNames($vocabulary_names, $vocabulary_term_names);
+      $this->pageContext[$page_context_name] = implode(',', $field_term_names);
+    }
+  }
+  /**
+   * Get available Fields and their vocabulary names within the node.
+   *
+   * @param \Drupal\Core\Entity\EntityInterface $node
+   *   Node.
+   * @return array
+   *   Node's available Fields' Vocabularies names.
+   */
+  private function getAvailableFieldVocabularyNames(EntityInterface $node) {
     $available_field_vocabulary_names = [];
     foreach ($this->fieldMappings as $page_context_name => $field_name) {
       if(!isset($node->{$field_name})) {
@@ -154,6 +171,18 @@ class PageContext {
       $available_field_vocabulary_names[$page_context_name] = $vocabulary_names;
     }
 
+    return $available_field_vocabulary_names;
+  }
+
+  /**
+   * Get Vocabularies' Term names.
+   *
+   * @param \Drupal\Core\Entity\EntityInterface $node
+   *   Node.
+   * @return array
+   *   Vocabularies' Term names.
+   */
+  private function getVocabularyTermNames(EntityInterface $node) {
     // Find the node's terms.
     $terms = $this->taxonomyTermStorage->getNodeTerms([$node->id()]);
     $node_terms = isset($terms[$node->id()]) ? $terms[$node->id()] : [];
@@ -166,18 +195,29 @@ class PageContext {
       $vocabulary_term_names[$vocabulary_id][] = $term_name;
     }
 
-    // Find field term names.
-    foreach ($available_field_vocabulary_names as $page_context_name => $vocabulary_names) {
-      $field_term_names = [];
-      foreach ($vocabulary_names as $vocabulary_name) {
-        if (!isset($vocabulary_term_names[$vocabulary_name])) {
-          continue;
-        }
-        $field_term_names = array_merge($field_term_names, $vocabulary_term_names[$vocabulary_name]);
+    return $vocabulary_term_names;
+  }
+
+  /**
+   * Get Field's Term names.
+   *
+   * @param array $vocabulary_names
+   *   Vocabulary names.
+   * @param array $vocabulary_term_names
+   *   Vocabulary Term names.
+   * @return array
+   *   Field Term names.
+   */
+  private function getFieldTermNames($vocabulary_names, $vocabulary_term_names) {
+    $field_term_names = [];
+    foreach ($vocabulary_names as $vocabulary_name) {
+      if (!isset($vocabulary_term_names[$vocabulary_name])) {
+        continue;
       }
-      $unique_field_term_names = array_unique($field_term_names);
-      $this->pageContext[$page_context_name] = implode(',', $unique_field_term_names);
+      $field_term_names = array_merge($field_term_names, $vocabulary_term_names[$vocabulary_name]);
     }
+
+    return array_unique($field_term_names);
   }
 
   /**

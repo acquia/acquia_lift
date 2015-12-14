@@ -1769,6 +1769,9 @@ class AcquiaLiftWebTestTarget extends AcquiaLiftWebTestBase {
 
   function testImplementTargetingStructure() {
     module_load_include('inc', 'acquia_lift', 'acquia_lift.admin');
+    // Take stock of the current time so we can check the lift_retired property
+    // against it after retiring tests.
+    $now = time();
     // First, set up our agent, option set, audience and desired targeting
     // structure.
     $agent = $this->createTargetingAgent();
@@ -1881,7 +1884,7 @@ class AcquiaLiftWebTestTarget extends AcquiaLiftWebTestBase {
     $this->assertEqual(1, count($retired));
     // Load the original nested agent and confirm it has been retired.
     $retired_test = personalize_agent_load($nested_test_name, TRUE);
-    $this->assertEqual(1, $retired_test->data['lift_retired']);
+    $this->assertTrue($retired_test->data['lift_retired'] >= $now);
     $this->assertEqual($agent->machine_name, $retired_test->data['lift_parent']);
     $this->assertEqual($audience_name, $retired_test->data['lift_audience']);
     $status = personalize_agent_get_status($nested_test_name);
@@ -2013,6 +2016,9 @@ class AcquiaLiftWebTestTarget extends AcquiaLiftWebTestBase {
   }
 
   function testStopAndPickWinner() {
+    // Take stock of the current time so we can check the lift_retired property
+    // against it after retiring tests.
+    $now = time();
     $agent = $this->createTargetingAgentWithNestedTest(3);
     $this->resetAll();
     $option_sets = personalize_option_set_load_by_agent($agent->machine_name);
@@ -2050,7 +2056,7 @@ class AcquiaLiftWebTestTarget extends AcquiaLiftWebTestBase {
     );
     $this->assertEqual($expected_targeting, $option_set->targeting);
     $retired_test = personalize_agent_load($nested_agent_name, TRUE);
-    $this->assertEqual(1, $retired_test->data['lift_retired']);
+    $this->assertTrue($retired_test->data['lift_retired'] >= $now);
     $this->assertEqual($agent->machine_name, $retired_test->data['lift_parent']);
     $this->assertEqual(ACQUIA_LIFT_TARGETING_EVERYONE_ELSE, $retired_test->data['lift_audience']);
     $status = personalize_agent_get_status($nested_agent_name);

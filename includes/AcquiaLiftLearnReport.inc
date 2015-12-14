@@ -93,7 +93,7 @@ class AcquiaLiftLearnReport {
    *   An array of report data.
    */
   protected function getReportData() {
-    if (empty($this->reportData)) {
+    if ($this->reportData === NULL) {
       try {
         $this->reportData = $this->reportDataSrc->getReportForDateRange($this->agent->getMachineName(), date('Y-m-d', $this->start_time), date('Y-m-d', $this->end_time));
       }

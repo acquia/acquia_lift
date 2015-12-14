@@ -201,7 +201,7 @@ class AcquiaLiftAPI implements AcquiaLiftLearnReportDataSourceInterface {
    */
   public static function setTestInstance($broken_http_client = FALSE, $simulate_client_side_breakage = FALSE) {
     module_load_include('inc', 'acquia_lift', 'tests/acquia_lift.test_classes');
-    self::$instance = new self('http://api.example.com', 'test-api-key', 'test-private-key', '7.x', FALSE);
+    self::$instance = new self('http://api.example.com', 'test-api-key', 'test-private-key', '7.x', FALSE, 'my-lift-web-account');
     // This method is only ever called within the context of a simpletest web
     // test, so the call to variable_get() is ok here.
     $test_data = variable_get('acquia_lift_web_test_data', array());

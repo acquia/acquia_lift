@@ -1217,6 +1217,121 @@ class AcquiaLiftWebTestReports extends AcquiaLiftWebTestBase {
     $this->assertTrue(abs(0.935 - $report->getOverallConfidence()) < 0.001);
   }
 
+  public function testAudienceReportLogic() {
+    module_load_include('inc', 'acquia_lift', 'acquia_lift.admin');
+    // First, set up our agent, option set, audience and desired targeting
+    // structure.
+    $agent = $this->createTargetingAgent();
+    $this->resetAll();
+    $targeting_option_set = $this->createPersonalizedBlock(0, $agent, 3);
+    // Keep the option ids in an array.
+    $option_ids = array();
+    foreach ($targeting_option_set->options as $option) {
+      $option_ids[] = $option['option_id'];
+    }
+    $this->resetAll();
+    $audience_name = personalize_generate_machine_name($this->randomName(), NULL, '-');
+    $this->createTargetAudience($targeting_option_set, $audience_name);
+    $second_audience = personalize_generate_machine_name($this->randomName(), NULL, '-');
+    $this->createTargetAudience($targeting_option_set, $second_audience, array(
+      array(
+        'context' => implode(PERSONALIZE_TARGETING_ADMIN_SEPARATOR, array('some_plugin', 'some_context')),
+        'operator' => 'equals',
+        'match' => 'kthxbai'
+      )
+    ));
+    $targeting = array(
+      $audience_name => array($option_ids[2]),
+      $second_audience => array($option_ids[0], $option_ids[1])
+    );
+    acquia_lift_save_targeting_structure($agent, $targeting);
+    AcquiaLiftAPI::setTestInstance();
+    acquia_lift_implement_targeting($agent);
+    // Now change the structure so that we have a retired test.
+    $targeting = array(
+      $audience_name => array($option_ids[0], $option_ids[2]),
+      $second_audience => array($option_ids[1])
+    );
+    acquia_lift_save_targeting_structure($agent, $targeting);
+    acquia_lift_implement_targeting($agent);
+
+    $this->resetAll();
+    $targeting_option_set = personalize_option_set_load($targeting_option_set->osid, TRUE);
+    $retired = acquia_lift_get_retired_tests($agent->machine_name);
+
+    // So now there are 3 audiences we can view tests for: a targeting audience,
+    // a running test audience, and a retired test audience.
+    $retired_test = reset($retired);
+    $test_audience = $audience_name . '-2';
+    $targeting_audience = $second_audience . '-2';
+
+    // Confirm the correct requests are made when we get an audience report for
+    // each of these, using either old or new stats.
+    AcquiaLiftAPI::setTestInstance();
+    $form_state = array();
+    $lift_api = AcquiaLiftAPI::getInstance(array());
+    $from = $to = time();
+    $from_date = $to_date = date("Y-m-d", $from);
+
+    // Retired test - old stats.
+    DummyAcquiaLiftHttpClient::clearLoggedRequests();
+    acquia_lift_report_audience($form_state, $agent, $targeting_option_set, $retired_test->machine_name, $lift_api, $from, $to, TRUE, TRUE);
+    $requests = DummyAcquiaLiftHttpClient::getLoggedRequests();
+    $this->assertEqual(1, count($requests));
+    $request = reset($requests);
+
+    // Confirm that a request was made to the old reporting end point
+    $this->assertTrue(strpos($request['uri'], "http://api.example.com/report?campaign_id=" . $retired_test->machine_name) === 0);
+
+    // Retired test - new stats.
+    DummyAcquiaLiftHttpClient::clearLoggedRequests();
+    acquia_lift_report_audience($form_state, $agent, $targeting_option_set, $retired_test->machine_name, $lift_api, $from, $to, FALSE, TRUE);
+    $requests = DummyAcquiaLiftHttpClient::getLoggedRequests();
+    $this->assertEqual(1, count($requests));
+    $request = reset($requests);
+    // Confirm the correct request is made to the new endpoint.
+    $uri = "http://api.example.com/report/test?account=my-lift-web-account&site=Drupal&personalization={$agent->machine_name}&audience={$second_audience}&from=$from_date&to=$to_date&variation=option-1&variation=option-2&request_id=";
+    $this->assertTrue(strpos($request['uri'], $uri) === 0);
+
+    // Running test - old stats
+    DummyAcquiaLiftHttpClient::clearLoggedRequests();
+    acquia_lift_report_audience($form_state, $agent, $targeting_option_set, $test_audience, $lift_api, $from, $to, TRUE, FALSE);
+    $requests = DummyAcquiaLiftHttpClient::getLoggedRequests();
+    $this->assertEqual(1, count($requests));
+    $request = reset($requests);
+    $test_name = $agent->machine_name . "-test-2";
+    // Confirm the correct request is made to the new endpoint.
+    $uri = "http://api.example.com/report?campaign_id=$test_name&from={$from_date}T00:00:00Z&days=1";
+    $this->assertTrue(strpos($request['uri'], $uri) === 0);
+
+    // Running test - new stats
+    DummyAcquiaLiftHttpClient::clearLoggedRequests();
+    acquia_lift_report_audience($form_state, $agent, $targeting_option_set, $test_audience, $lift_api, $from, $to, FALSE, FALSE);
+    $requests = DummyAcquiaLiftHttpClient::getLoggedRequests();
+    $this->assertEqual(1, count($requests));
+    $request = reset($requests);
+    // Confirm the correct request is made to the new endpoint.
+    $uri = "http://api.example.com/report/test?account=my-lift-web-account&site=Drupal&personalization={$agent->machine_name}&audience=$test_audience&from=$from_date&to=$to_date&variation=option-1&variation=option-3&request_id=";
+    $this->assertTrue(strpos($request['uri'], $uri) === 0);
+
+    // Targeting - behavior should be the same regardless of the value of the
+    // $use_old_stats var
+    $uri = "http://api.example.com/report/target?account=my-lift-web-account&site=Drupal&personalization={$agent->machine_name}&audience=$targeting_audience&from=$from_date&to=$to_date&variation=option-2&request_id=";
+    DummyAcquiaLiftHttpClient::clearLoggedRequests();
+    acquia_lift_report_audience($form_state, $agent, $targeting_option_set, $targeting_audience, $lift_api, $from, $to, TRUE, FALSE);
+    $requests = DummyAcquiaLiftHttpClient::getLoggedRequests();
+    $this->assertEqual(1, count($requests));
+    $request = reset($requests);
+    $this->assertTrue(strpos($request['uri'], $uri) === 0);
+
+    DummyAcquiaLiftHttpClient::clearLoggedRequests();
+    acquia_lift_report_audience($form_state, $agent, $targeting_option_set, $targeting_audience, $lift_api, $from, $to, FALSE, FALSE);
+    $requests = DummyAcquiaLiftHttpClient::getLoggedRequests();
+    $this->assertEqual(1, count($requests));
+    $request = reset($requests);
+    $this->assertTrue(strpos($request['uri'], $uri) === 0);
+  }
+
 }
 
 class AcquiaLiftWebTestWorkflow extends AcquiaLiftWebTestBase {

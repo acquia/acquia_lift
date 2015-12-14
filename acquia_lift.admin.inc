@@ -694,9 +694,9 @@ function acquia_lift_report($form, &$form_state, $agent_data) {
     '#type' => 'hidden',
     '#value' => $path
   );
+  $use_old_stats = isset($_GET['use_old_stats']) || !empty($form_state['values']['use_old_stats']);
   $date_upgraded = variable_get('acquia_lift_report_upgrade_timestamp', 0);
-  if ($agent_data->started < $date_upgraded) {
-
+  if ($agent_data->started < $date_upgraded && !$use_old_stats) {
     drupal_set_message(t('Only displaying data starting from @date, which is the date Lift was upgraded to use the new reporting API. Click !here to show the old reports for any tests contained in this personalization', array('@date' => date('Y-m-d', $date_upgraded), '!here' => l('here', $path, array('query' => array('use_old_stats' => 1))))), 'warning');
   }
   $option_set = acquia_lift_get_option_set_for_targeting($agent_data->machine_name);
@@ -711,7 +711,6 @@ function acquia_lift_report($form, &$form_state, $agent_data) {
   catch (AcquiaLiftException $e) {
     $overview_stats = array();
   }
-
   list($start_time, $end_time) = acquia_lift_get_report_dates_for_agent($agent_data, FALSE);
   $from_datetime = date_create();
   date_timestamp_set($from_datetime, $start_time);
@@ -806,6 +805,9 @@ function acquia_lift_report($form, &$form_state, $agent_data) {
     $audience_type = 'test';
     $nested_agent = personalize_agent_load($name);
     $test_label = $nested_agent->label;
+    if ($nested_agent->data['lift_retired'] < $date_upgraded) {
+      $use_old_stats = TRUE;
+    }
   }
   else {
     if (isset($option_set->targeting[$name]['osid'])) {
@@ -813,7 +815,7 @@ function acquia_lift_report($form, &$form_state, $agent_data) {
     }
     $test_label = $option_set->targeting[$name]['label'];
   }
-  $use_old_stats = isset($_GET['use_old_stats']) || !empty($form_state['values']['use_old_stats']);
+
   $form['use_old_stats'] = array(
     '#type' => 'hidden',
     '#value' => $use_old_stats
@@ -1065,8 +1067,6 @@ function acquia_lift_report_audience($form_state, $personalization_data, $target
         'class' => array('acquia-lift-report-section'),
       ),
     );
-    $nested_os = personalize_option_set_load($targeting_option_set->targeting[$audience]['osid']);
-    $nested_agent = personalize_agent_load($nested_os->agent);
     // Show the test (explore)  percentage if in adaptive mode.
     if ($nested_agent->data['decision_style'] == 'adaptive') {
       $percentage = $nested_agent->data['explore_rate'];
@@ -1898,7 +1898,7 @@ function acquia_lift_remove_nested_test(&$option_set, $audience, $parent_agent) 
  * @param $audience_label
  */
 function acquia_lift_retire_test($test, $parent_name, $parent_label, $audience_name, $audience_label) {
-  $test->data['lift_retired'] = 1;
+  $test->data['lift_retired'] = time();
   $test->data['lift_parent'] = $parent_name;
   $test->data['lift_audience'] = $audience_name;
   personalize_agent_set_status($test->machine_name, PERSONALIZE_STATUS_COMPLETED);

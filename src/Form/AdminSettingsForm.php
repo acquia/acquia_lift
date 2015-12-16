@@ -16,7 +16,7 @@ use Drupal\Core\Form\ConfigFormBase;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Url;
 use Drupal\taxonomy\Entity\Vocabulary;
-use Drupal\acquia_lift\Entity\Credential;
+use Drupal\acquia_lift\Service\Helper\SettingsHelper;
 
 /**
  * Defines a form that configures settings.
@@ -91,50 +91,49 @@ class AdminSettingsForm extends ConfigFormBase {
    */
   private function buildCredentialForm() {
     $credential_settings = $this->config('acquia_lift.settings')->get('credential');
-    $credential = new Credential($credential_settings);
 
     $form = [
       '#title' => t('Credential'),
       '#type' => 'details',
       '#tree' => TRUE,
-      '#open' => !$credential->isValid(),
+      '#open' => SettingsHelper::isInvalidCredential($credential_settings),
     ];
     $form['account_name'] = [
       '#type' => 'textfield',
       '#title' => t('Account Name'),
-      '#default_value' => $credential->get('account_name'),
+      '#default_value' => $credential_settings['account_name'],
       '#required' => TRUE,
     ];
     $form['customer_site'] = [
       '#type' => 'textfield',
       '#title' => t('Customer Site'),
-      '#default_value' => $credential->get('customer_site'),
+      '#default_value' => $credential_settings['customer_site'],
     ];
     $form['api_url'] = [
       '#type' => 'textfield',
       '#title' => t('API URL'),
       '#field_prefix' => 'http(s)://',
-      '#default_value' => $credential->get('api_url'),
+      '#default_value' => $credential_settings['api_url'],
       '#required' => TRUE,
     ];
     $form['access_key'] = [
       '#type' => 'textfield',
       '#title' => t('API Access Key'),
-      '#default_value' => $credential->get('access_key'),
+      '#default_value' => $credential_settings['access_key'],
       '#required' => TRUE,
     ];
     $form['secret_key'] = [
       '#type' => 'password',
       '#title' => t('API Secret Key'),
-      '#default_value' => $credential->get('secret_key'),
-      '#required' => empty($credential->get('secret_key')),
-      '#description' => !empty($credential->get('secret_key')) ? t('Only necessary if updating') : '',
+      '#default_value' => $credential_settings['secret_key'],
+      '#required' => empty($credential_settings['secret_key']),
+      '#description' => !empty($credential_settings['secret_key']) ? t('Only necessary if updating') : '',
     ];
     $form['js_path'] = [
       '#type' => 'textfield',
       '#title' => t('JavaScript Path'),
       '#field_prefix' => 'http(s)://',
-      '#default_value' => $credential->get('js_path'),
+      '#default_value' => $credential_settings['js_path'],
       '#required' => TRUE,
     ];
 

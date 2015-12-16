@@ -13,8 +13,8 @@ use Drupal\Core\Path\CurrentPathStack;
 use Drupal\Component\Utility\UrlHelper;
 use Drupal\Component\Utility\Html;
 use Drupal\user\UserInterface;
-use Drupal\acquia_lift\Entity\Credential;
 use Drupal\acquia_lift\Service\Helper\PathMatcher;
+use Drupal\acquia_lift\Service\Helper\SettingsHelper;
 
 class PathContext {
   /**
@@ -23,11 +23,11 @@ class PathContext {
   const DEFAULT_IDENTITY_TYPE_DEFAULT = 'email';
 
   /**
-   * Acquia Lift credential.
+   * Acquia Lift credential settings.
    *
-   * @var \Drupal\acquia_lift\Entity\Credential
+   * @var array
    */
-  private $credential;
+  private $credentialSettings;
 
   /**
    * Identity settings.
@@ -82,7 +82,7 @@ class PathContext {
     $identity_settings = $settings->get('identity');
     $visibilitySettings = $settings->get('visibility');
 
-    $this->credential = new Credential($credential_settings);
+    $this->credentialSettings = $credential_settings;
     $this->identitySettings = $identity_settings;
     $this->requestPathPatterns = $visibilitySettings['path_patterns'];
     $this->currentPath = $current_path_stack->getPath();
@@ -99,7 +99,7 @@ class PathContext {
    */
   public function shouldAttach() {
     // Should not attach if credential is invalid.
-    if (!$this->credential->isValid()) {
+    if (SettingsHelper::isInvalidCredential($this->credentialSettings)) {
       return FALSE;
     }
 

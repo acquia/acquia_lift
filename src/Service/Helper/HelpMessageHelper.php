@@ -9,15 +9,14 @@ namespace Drupal\acquia_lift\Service\Helper;
 
 use Drupal\Core\Config\ConfigFactoryInterface;
 use Drupal\Core\Url;
-use Drupal\acquia_lift\Entity\Credential;
 
 class HelpMessageHelper {
   /**
-   * Acquia Lift credential.
+   * Acquia Lift credential settings.
    *
-   * @var \Drupal\acquia_lift\Entity\Credential
+   * @var array
    */
-  private $credential;
+  private $credentialSettings;
 
   /**
    * Constructor.
@@ -26,8 +25,7 @@ class HelpMessageHelper {
    *   The config factory service.
    */
   public function __construct(ConfigFactoryInterface $config_factory) {
-    $credential_settings = $config_factory->get('acquia_lift.settings')->get('credential');
-    $this->credential = new Credential($credential_settings);
+    $this->credentialSettings = $config_factory->get('acquia_lift.settings')->get('credential');
   }
 
   /**
@@ -51,7 +49,7 @@ class HelpMessageHelper {
         $help_message = t('You can find more info in ') . $documentation_external_link;
 
         // Generate Acquia Lift Web Admin link.
-        $api_url = $this->credential->get('api_url');
+        $api_url = $this->credentialSettings['api_url'];
         if (!empty($api_url)) {
           $lift_web_link_text = t('Acquia Lift Web Admin');
           $lift_web_link_url = Url::fromUri('https://' . $api_url, $link_attributes);

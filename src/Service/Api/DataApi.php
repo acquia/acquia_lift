@@ -12,9 +12,9 @@ use Drupal\acquia_lift\Exception\DataApiException;
 use Drupal\Component\Utility\SafeMarkup;
 use Drupal\Core\Config\ConfigFactoryInterface;
 use Drupal\Core\Routing\RequestContext;
+use Drupal\acquia_lift\Service\Helper\SettingsHelper;
 use GuzzleHttp\ClientInterface;
 use GuzzleHttp\Psr7\Request;
-use Drupal\acquia_lift\Entity\Credential;
 
 class DataApi implements DataApiInterface {
   /**
@@ -39,11 +39,11 @@ class DataApi implements DataApiInterface {
   private $logger;
 
   /**
-   * Acquia Lift credential.
+   * Acquia Lift credential settings.
    *
-   * @var \Drupal\acquia_lift\Entity\Credential
+   * @var array
    */
-  private $credential;
+  private $credentialSettings;
 
   /**
    * The list of headers that can be used in the canonical request.
@@ -73,9 +73,8 @@ class DataApi implements DataApiInterface {
     $this->context = $context;
     $this->logger = \Drupal::logger('acquia_lift');
 
-    $credential_settings = $config_factory->get('acquia_lift.settings')->get('credential');
-    $this->credential = new Credential($credential_settings);
-    if (!$this->credential->isValid()) {
+    $this->credentialSettings = $config_factory->get('acquia_lift.settings')->get('credential');
+    if (SettingsHelper::isInvalidCredential($this->credentialSettings)) {
       throw new DataApiCredentialException('Acquia Lift credential is invalid.');
     }
   }
@@ -103,7 +102,7 @@ class DataApi implements DataApiInterface {
    */
   private function generateEndpoint($path) {
     $url_scheme = ($this->context->getScheme() == 'https') ? 'https://' : 'http://';
-    return $url_scheme . $this->credential->get('api_url') . '/dashboard/rest/' . $this->credential->get('account_name') . '/' . $path;
+    return $url_scheme . $this->credentialSettings['api_url'] . '/dashboard/rest/' . $this->credentialSettings['account_name'] . '/' . $path;
   }
 
   /**
@@ -165,8 +164,8 @@ class DataApi implements DataApiInterface {
    */
   private function getAuthHeader($method, $path, $parameters = [], $headers = []) {
     $canonical = $this->canonicalizeRequest($method, $path, $parameters, $headers);
-    $hmac = base64_encode(hash_hmac('sha1', (string) $canonical, $this->credential->get('secret_key'), TRUE));
-    return 'HMAC ' . $this->credential->get('access_key') . ':' . $hmac;
+    $hmac = base64_encode(hash_hmac('sha1', (string) $canonical, $this->credentialSettings['secret_key'], TRUE));
+    return 'HMAC ' . $this->credentialSettings['access_key'] . ':' . $hmac;
   }
 
   /**

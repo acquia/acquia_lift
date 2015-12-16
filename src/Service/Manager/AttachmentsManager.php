@@ -8,17 +8,17 @@
 namespace Drupal\acquia_lift\Service\Manager;
 
 use Drupal\Core\Config\ConfigFactoryInterface;
-use Drupal\acquia_lift\Entity\Credential;
 use Drupal\acquia_lift\Service\Context\PageContext;
 use Drupal\acquia_lift\Service\Context\PathContext;
+use Drupal\acquia_lift\Service\Helper\SettingsHelper;
 
 class AttachmentsManager {
   /**
-   * Acquia Lift credential.
+   * Acquia Lift credential settings.
    *
-   * @var \Drupal\acquia_lift\Entity\Credential
+   * @var array
    */
-  private $credential;
+  private $credentialSettings;
 
   /**
    * Page context.
@@ -45,10 +45,7 @@ class AttachmentsManager {
    *   The path context.
    */
   public function __construct(ConfigFactoryInterface $config_factory, PageContext $pageContext, PathContext $pathContext) {
-    $settings = $config_factory->get('acquia_lift.settings');
-    $credential_settings = $settings->get('credential');
-
-    $this->credential = new Credential($credential_settings);
+    $this->credentialSettings = $config_factory->get('acquia_lift.settings')->get('credential');
     $this->pageContext = $pageContext;
     $this->pathContext = $pathContext;
   }
@@ -60,7 +57,7 @@ class AttachmentsManager {
    *   Settings.
    */
   public function getDrupalSettings() {
-    $settings['credential'] = $this->credential->getFrontEndConfig();
+    $settings['credential'] = SettingsHelper::getFrontEndConfig($this->credentialSettings);
     $settings['pageContext'] = $this->pageContext->getAll();
     return $settings;
   }

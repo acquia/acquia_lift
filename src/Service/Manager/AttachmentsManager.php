@@ -57,7 +57,7 @@ class AttachmentsManager {
    *   Settings.
    */
   public function getDrupalSettings() {
-    $settings['credential'] = SettingsHelper::getFrontEndConfig($this->credentialSettings);
+    $settings['credential'] = SettingsHelper::getFrontEndCredentialSettings($this->credentialSettings);
     $settings['pageContext'] = $this->pageContext->getAll();
     return $settings;
   }

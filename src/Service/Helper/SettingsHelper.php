@@ -8,6 +8,7 @@
 namespace Drupal\acquia_lift\Service\Helper;
 
 use Drupal\Component\Utility\UrlHelper;
+use Drupal\acquia_lift\Exception\MissingSettingsException;
 
 /**
  * Defines the Settings Helper class.
@@ -20,10 +21,14 @@ class SettingsHelper {
    *   Credential settings array.
    * @return array
    *   Get front end config array.
+   * @throws \Drupal\acquia_lift\Exception\MissingSettingsException
    */
-  static public function getFrontEndConfig($credential_settings) {
-    if (SELF::isInvalidCredential($credential_settings)) {
-      return [];
+  static public function getFrontEndCredentialSettings($credential_settings) {
+    if (empty($credential_settings['account_name']) ||
+      !isset($credential_settings['customer_site']) ||
+      empty($credential_settings['js_path'])
+    ) {
+      throw new MissingSettingsException('Cannot generate front-end credential settings because some settings are missing.');
     }
     return [
       'account_name' => $credential_settings['account_name'],

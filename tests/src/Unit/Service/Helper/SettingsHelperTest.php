@@ -9,6 +9,9 @@ namespace Drupal\acquia_lift\Tests\Service\Helper;
 
 use Drupal\Tests\UnitTestCase;
 use Drupal\acquia_lift\Service\Helper\SettingsHelper;
+use Drupal\acquia_lift\Tests\Traits\SettingsDataTrait;
+
+require_once(__DIR__.'/../../../Traits/SettingsDataTrait.php');
 
 /**
  * SettingsHelper Test.
@@ -17,6 +20,9 @@ use Drupal\acquia_lift\Service\Helper\SettingsHelper;
  * @group acquia_lift
  */
 class SettingsHelperTest extends UnitTestCase {
+
+  use SettingsDataTrait;
+
   /**
    * Tests the getFrontEndCredentialSettings() method.
    *
@@ -118,24 +124,5 @@ class SettingsHelperTest extends UnitTestCase {
     $data['invalid js_path URL'][0]['js_path'] = 'invalid js path';
 
     return $data;
-  }
-
-  private function getValidCredentialSettings() {
-    return [
-      'account_name' => 'account_name_1',
-      'customer_site' => 'customer_site_1',
-      'api_url' => 'api_url_1',
-      'access_key' => 'access_key_1',
-      'secret_key' => 'secret_key_1',
-      'js_path' => 'js_path_1',
-    ];
-  }
-
-  private function getValidFrontEndCredentialSettings() {
-    return [
-      'account_name' => 'account_name_1',
-      'customer_site' => 'customer_site_1',
-      'js_path' => 'js_path_1',
-    ];
   }
 }

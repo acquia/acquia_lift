@@ -20,15 +20,15 @@ class SettingsHelperTest extends UnitTestCase {
   /**
    * Tests the getFrontEndCredentialSettings() method.
    *
+   * @covers ::getFrontEndCredentialSettings
    * @param array $full_settings
    * @param array $expected_front_end_settings
    *
-   * @covers ::getFrontEndCredentialSettings
    * @dataProvider providerTestGetFrontEndCredentialSettings
    */
   public function testGetFrontEndCredentialSettings($full_settings, $expected_front_end_settings) {
     $result_front_end_settings = SettingsHelper::getFrontEndCredentialSettings($full_settings);
-    $this->assertSame($expected_front_end_settings, $result_front_end_settings);
+    $this->assertEquals($expected_front_end_settings, $result_front_end_settings);
   }
 
   /**
@@ -40,7 +40,6 @@ class SettingsHelperTest extends UnitTestCase {
     $valid_front_end_settings = $this->getValidFrontEndCredentialSettings();
 
     $data['valid data 1'] = [$valid_settings, $valid_front_end_settings];
-
     $data['valid data 2'] = [$valid_settings, $valid_front_end_settings];
     $data['valid data 2'][0]['account_name'] = 'account_name_2';
     $data['valid data 2'][1]['account_name'] = 'account_name_2';
@@ -48,6 +47,37 @@ class SettingsHelperTest extends UnitTestCase {
     $data['valid data 2'][1]['customer_site'] = '';
     $data['valid data 2'][0]['js_path'] = 'js_path_2';
     $data['valid data 2'][1]['js_path'] = 'js_path_2';
+
+    return $data;
+  }
+
+  /**
+   * Tests the getFrontEndCredentialSettings() method's Exception.
+   *
+   * @covers ::getFrontEndCredentialSettings
+   * @param array $incomplete_settings
+   *
+   * @dataProvider providerTestGetFrontEndCredentialSettingsException
+   * @expectedException \Drupal\acquia_lift\Exception\MissingSettingsException
+   * @expectedExceptionMessage Cannot generate front-end credential settings because some settings are missing.
+   */
+  public function testGetFrontEndCredentialSettingsException($incomplete_settings) {
+    SettingsHelper::getFrontEndCredentialSettings($incomplete_settings);
+  }
+
+  /**
+   * Data provider for testGetFrontEndCredentialSettingsException().
+   */
+  public function providerTestGetFrontEndCredentialSettingsException() {
+    $data = [];
+    $valid_settings = $this->getValidCredentialSettings();
+
+    $data['missing account_name'] = [$valid_settings];
+    $data['missing account_name'][0]['account_name'] = '';
+    $data['missing api_url'] = [$valid_settings];
+    $data['missing api_url'][0]['js_path'] = '';
+    $data['not set customer_site'] = [$valid_settings];
+    unset($data['not set customer_site'][0]['customer_site']);
 
     return $data;
   }

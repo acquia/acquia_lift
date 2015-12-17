@@ -29,6 +29,21 @@ trait SettingsDataTrait {
   }
 
   /**
+   * Get a valid thumbnail settings array.
+   *
+   * @return array
+   *   A valid thumbnail settings array.
+   */
+  private function getValidThumbnailSettings() {
+    return [
+      'article' => [
+        'field' => 'field_image',
+        'style' => 'medium',
+      ],
+    ];
+  }
+
+  /**
    * Get a valid front end credential settings.
    *
    * @return array

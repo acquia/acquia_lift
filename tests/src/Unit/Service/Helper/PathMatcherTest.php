@@ -52,7 +52,49 @@ class PathMatcherTest extends UnitTestCase {
       ->willReturn(FALSE);
 
     $pathMatcher = new PathMatcher($this->aliasManager, $this->basePathMatcher);
-    $is_matched = $pathMatcher->match('a_path', 'a_pattern');
+    $is_matched = $pathMatcher->match('A_PATH', 'A_PATTERN');
     $this->assertFalse($is_matched);
+  }
+
+  /**
+   * Tests the match() method - path is matched.
+   *
+   * @covers ::match
+   */
+  public function testMatchPathMatched() {
+    $this->basePathMatcher->expects($this->once())
+      ->method('matchPath')
+      ->with('a_path', 'a_pattern')
+      ->willReturn(TRUE);
+    $this->aliasManager->expects($this->never())
+      ->method('getAliasByPath');
+
+    $pathMatcher = new PathMatcher($this->aliasManager, $this->basePathMatcher);
+    $is_matched = $pathMatcher->match('A_PATH', 'A_PATTERN');
+    $this->assertTrue($is_matched);
+  }
+
+  /**
+   * Tests the match() method - path's alias is matched.
+   *
+   * @covers ::match
+   */
+  public function testMatchAliasMatched() {
+    $this->basePathMatcher->expects($this->at(0))
+      ->method('matchPath')
+      ->with('a_path', 'a_pattern')
+      ->willReturn(FALSE);
+    $this->aliasManager->expects($this->once())
+      ->method('getAliasByPath')
+      ->with('a_path')
+      ->willReturn('AN_ALIAS');
+    $this->basePathMatcher->expects($this->at(1))
+      ->method('matchPath')
+      ->with('an_alias', 'a_pattern')
+      ->willReturn(TRUE);
+
+    $pathMatcher = new PathMatcher($this->aliasManager, $this->basePathMatcher);
+    $is_matched = $pathMatcher->match('A_PATH', 'A_PATTERN');
+    $this->assertTrue($is_matched);
   }
 }

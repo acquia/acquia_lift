@@ -82,6 +82,44 @@ class SettingsHelperTest extends UnitTestCase {
     return $data;
   }
 
+  /**
+   * Tests the isInvalidCredential() method.
+   *
+   * @covers ::isInvalidCredential
+   * @param array $full_settings
+   * @param boolean $expected
+   *
+   * @dataProvider providerTestIsInvalidCredential
+   */
+  public function testIsInvalidCredential($full_settings, $expected) {
+    $result = SettingsHelper::isInvalidCredential($full_settings);
+    $this->assertEquals($expected, $result);
+  }
+
+  /**
+   * Data provider for testIsInvalidCredential().
+   */
+  public function providerTestIsInvalidCredential() {
+    $data = [];
+    $valid_settings = $this->getValidCredentialSettings();
+
+    $data['valid data 1'] = [$valid_settings, FALSE];
+    $data['valid data 2'] = [$valid_settings, FALSE];
+    $data['valid data 2'][0]['account_name'] = 'account_name_2';
+    $data['valid data 2'][0]['customer_site'] = '';
+    $data['valid data 2'][0]['js_path'] = 'js_path_2';
+    $data['missing account_name'] = [$valid_settings, TRUE];
+    $data['missing account_name'][0]['account_name'] = '';
+    $data['missing access_key'] = [$valid_settings, TRUE];
+    $data['missing access_key'][0]['access_key'] = NULL;
+    $data['invalid api_url URL'] = [$valid_settings, TRUE];
+    $data['invalid api_url URL'][0]['api_url'] = '\\\\////\\\\////';
+    $data['invalid js_path URL'] = [$valid_settings, TRUE];
+    $data['invalid js_path URL'][0]['js_path'] = 'invalid js path';
+
+    return $data;
+  }
+
   private function getValidCredentialSettings() {
     return [
       'account_name' => 'account_name_1',

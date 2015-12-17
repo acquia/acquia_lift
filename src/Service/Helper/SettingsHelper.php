@@ -15,12 +15,12 @@ use Drupal\acquia_lift\Exception\MissingSettingsException;
  */
 class SettingsHelper {
   /**
-   * Get front-end credential config.
+   * Get front-end credential settings.
    *
    * @param array $credential_settings
    *   Credential settings array.
    * @return array
-   *   Get front end config array.
+   *   Get front end settings array.
    * @throws \Drupal\acquia_lift\Exception\MissingSettingsException
    */
   static public function getFrontEndCredentialSettings($credential_settings) {

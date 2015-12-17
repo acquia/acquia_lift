@@ -36,7 +36,7 @@ class HelpMessageHelperTest extends UnitTestCase {
   /**
    * @var \Drupal\Core\Config\ImmutableConfig|\PHPUnit_Framework_MockObject_MockObject
    */
-  private $config;
+  private $settings;
 
   /**
    * {@inheritdoc}
@@ -46,14 +46,14 @@ class HelpMessageHelperTest extends UnitTestCase {
 
     $this->configFactory = $this->getMock('Drupal\Core\Config\ConfigFactoryInterface');
     $this->linkGenerator = $this->getMock('Drupal\Core\Utility\LinkGeneratorInterface');
-    $this->config = $this->getMockBuilder('Drupal\Core\Config\ImmutableConfig')
+    $this->settings = $this->getMockBuilder('Drupal\Core\Config\ImmutableConfig')
       ->disableOriginalConstructor()
       ->getMock();
 
     $this->configFactory->expects($this->once())
       ->method('get')
       ->with('acquia_lift.settings')
-      ->willReturn($this->config);
+      ->willReturn($this->settings);
 
     $this->linkGenerator->expects($this->at(0))
       ->method('generate')
@@ -69,7 +69,7 @@ class HelpMessageHelperTest extends UnitTestCase {
   public function testGetMessageAdminSettingsFormFullSettings() {
     $full_settings = $this->getValidCredentialSettings();
 
-    $this->config->expects($this->once())
+    $this->settings->expects($this->once())
       ->method('get')
       ->with('credential')
       ->willReturn($full_settings);
@@ -93,7 +93,7 @@ class HelpMessageHelperTest extends UnitTestCase {
     $missing_api_url_settings = $this->getValidCredentialSettings();
     unset($missing_api_url_settings['api_url']);
 
-    $this->config->expects($this->once())
+    $this->settings->expects($this->once())
       ->method('get')
       ->with('credential')
       ->willReturn($missing_api_url_settings);

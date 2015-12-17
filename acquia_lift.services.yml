@@ -16,7 +16,7 @@ services:
     arguments: ['@path.alias_manager', '@path.matcher']
   acquia_lift.service.helper.help_message_helper:
     class: Drupal\acquia_lift\Service\Helper\HelpMessageHelper
-    arguments: ['@config.factory']
+    arguments: ['@config.factory', '@link_generator']
   acquia_lift.service.helper.node_type_thumbnail_form_helper:
     class: Drupal\acquia_lift\Service\Helper\NodeTypeThumbnailFormHelper
     arguments: ['@config.factory', '@entity.manager']

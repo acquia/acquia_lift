@@ -1,0 +1,105 @@
+<?php
+
+/**
+ * @file
+ * Contains \Drupal\acquia_lift\Tests\Service\Helper\HelpMessageHelperTest.
+ */
+
+namespace Drupal\acquia_lift\Tests\Service\Helper;
+
+use Drupal\Tests\UnitTestCase;
+use Drupal\acquia_lift\Service\Helper\HelpMessageHelper;
+use Drupal\acquia_lift\Tests\Traits\SettingsDataTrait;
+
+require_once(__DIR__.'/../../../Traits/SettingsDataTrait.php');
+
+/**
+ * HelpMessageHelperTest Test.
+ *
+ * @coversDefaultClass Drupal\acquia_lift\Service\Helper\HelpMessageHelper
+ * @group acquia_lift
+ */
+class HelpMessageHelperTest extends UnitTestCase {
+
+  use SettingsDataTrait;
+
+  /**
+   * @var \Drupal\Core\Config\ConfigFactoryInterface|\PHPUnit_Framework_MockObject_MockObject
+   */
+  private $configFactory;
+
+  /**
+   * @var \Drupal\Core\Utility\LinkGeneratorInterface|\PHPUnit_Framework_MockObject_MockObject
+   */
+  private $linkGenerator;
+
+  /**
+   * @var \Drupal\Core\Config\ImmutableConfig|\PHPUnit_Framework_MockObject_MockObject
+   */
+  private $config;
+
+  /**
+   * {@inheritdoc}
+   */
+  public function setUp() {
+    parent::setUp();
+
+    $this->configFactory = $this->getMock('Drupal\Core\Config\ConfigFactoryInterface');
+    $this->linkGenerator = $this->getMock('Drupal\Core\Utility\LinkGeneratorInterface');
+    $this->config = $this->getMockBuilder('Drupal\Core\Config\ImmutableConfig')
+      ->disableOriginalConstructor()
+      ->getMock();
+
+    $this->configFactory->expects($this->once())
+      ->method('get')
+      ->with('acquia_lift.settings')
+      ->willReturn($this->config);
+
+    $this->linkGenerator->expects($this->at(0))
+      ->method('generate')
+      ->with(t('Documentation'))
+      ->willReturn('a_documentation_link');
+  }
+
+  /**
+   * Tests the getMessage() method - AdminSettingsForm, full settings.
+   *
+   * @covers ::getMessage
+   */
+  public function testGetMessageAdminSettingsFormFullSettings() {
+    $full_settings = $this->getValidCredentialSettings();
+
+    $this->config->expects($this->once())
+      ->method('get')
+      ->with('credential')
+      ->willReturn($full_settings);
+
+    $this->linkGenerator->expects($this->at(1))
+      ->method('generate')
+      ->with(t('Acquia Lift Web Admin'))
+      ->willReturn('a_web_admin_link');
+
+    $help_message_helper = new HelpMessageHelper($this->configFactory, $this->linkGenerator);
+    $message = $help_message_helper->getMessage('acquia_lift.admin_settings_form');
+    $this->assertEquals('You can find more info in a_documentation_link, and control your web services settings at a_web_admin_link.', $message);
+  }
+
+  /**
+   * Tests the getMessage() method - AdminSettingsForm, no API URL setting.
+   *
+   * @covers ::getMessage
+   */
+  public function testGetMessageAdminSettingsFormNoApiUrl() {
+    $missing_api_url_settings = $this->getValidCredentialSettings();
+    unset($missing_api_url_settings['api_url']);
+
+    $this->config->expects($this->once())
+      ->method('get')
+      ->with('credential')
+      ->willReturn($missing_api_url_settings);
+
+    $help_message_helper = new HelpMessageHelper($this->configFactory, $this->linkGenerator);
+    $message = $help_message_helper->getMessage('acquia_lift.admin_settings_form');
+    $this->assertEquals('You can find more info in a_documentation_link.', $message);
+  }
+}

@@ -54,19 +54,23 @@ class NodeTypeThumbnailFormHelperTest extends UnitTestCase {
       ->method('getEditable')
       ->with('acquia_lift.settings')
       ->willReturn($this->settings);
-    $this->settings->expects($this->at(0))
-      ->method('get')
-      ->with('thumbnail')
-      ->willReturn($this->getValidThumbnailSettings());
   }
 
   /**
-   * Tests the getForm() method.
+   * Tests the getForm() method, no field for this entity.
    *
    * @covers ::getForm
    */
-//  public function testGetForm() {
-//  }
+  public function testGetFormNoField() {
+    $form_helper = new NodeTypeThumbnailFormHelper($this->configFactory, $this->entityManager);
+    $this->entityManager->expects($this->once())
+      ->method('getFieldDefinitions')
+      ->with('node', 'article')
+      ->willReturn([]);
+
+    $form = $form_helper->getForm('article');
+    $this->assertRegexp('/no image field/', $form['no_image_field']['#markup']);
+  }
 
   /**
    * Tests the saveSettings() method.
@@ -75,6 +79,10 @@ class NodeTypeThumbnailFormHelperTest extends UnitTestCase {
    */
   public function testSaveSettings() {
     $set_settings = ['article' => ['some_settings']];
+    $this->settings->expects($this->at(0))
+      ->method('get')
+      ->with('thumbnail')
+      ->willReturn($this->getValidThumbnailSettings());
     $this->settings->expects($this->at(1))
       ->method('set')
       ->with('thumbnail', $set_settings)
@@ -83,8 +91,6 @@ class NodeTypeThumbnailFormHelperTest extends UnitTestCase {
       ->method('save');
 
     $form_helper = new NodeTypeThumbnailFormHelper($this->configFactory, $this->entityManager);
-
-    $settings = ['some_settings'];
-    $form_helper->saveSettings('article', $settings);
+    $form_helper->saveSettings('article', ['some_settings']);
   }
 }

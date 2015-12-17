@@ -7,34 +7,34 @@
 
 namespace Drupal\acquia_lift\Service\Helper;
 
-use Drupal\Core\Path\AliasManager;
-use Drupal\Core\Path\PathMatcher as BasePathMatcher;
+use Drupal\Core\Path\AliasManagerInterface;
+use Drupal\Core\Path\PathMatcherInterface;
 use Drupal\Component\Utility\Unicode;
 
 class PathMatcher {
   /**
    * Alias manager.
    *
-   * @var \Drupal\Core\Path\AliasManager
+   * @var \Drupal\Core\Path\AliasManagerInterface
    */
   private $aliasManager;
 
   /**
    * Path matcher.
    *
-   * @var \Drupal\Core\Path\PathMatcher
+   * @var \Drupal\Core\Path\PathMatcherInterface
    */
   private $pathMatcher;
 
   /**
    * Constructor.
    *
-   * @param \Drupal\Core\Path\AliasManager $alias_manager
+   * @param \Drupal\Core\Path\AliasManagerInterface $alias_manager
    *   The alias manager service.
-   * @param \Drupal\Core\Path\PathMatcher $path_matcher
+   * @param \Drupal\Core\Path\PathMatcherInterface $path_matcher
    *   The path matcher service.
    */
-  public function __construct(AliasManager $alias_manager, BasePathMatcher $path_matcher) {
+  public function __construct(AliasManagerInterface $alias_manager, PathMatcherInterface $path_matcher) {
     $this->aliasManager = $alias_manager;
     $this->pathMatcher = $path_matcher;
   }

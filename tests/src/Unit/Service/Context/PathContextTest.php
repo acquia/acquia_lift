@@ -215,14 +215,19 @@ class PathContextTest extends UnitTestCase {
   public function providerTestGetIdentity() {
     $no_query_parameter_string = '';
     $full_query_parameter_string = 'my_identity_parameter=query_identity&my_identity_type_parameter=query_identity_type&other=other';
+    $partial_query_parameter_string = 'my_identity_parameter=query_identity&other=other';
     $no_capture_identity = FALSE;
     $do_capture_identity = TRUE;
     $no_set_user = FALSE;
     $do_set_user = TRUE;
     $expect_identity_empty = NULL;
-    $expect_identity_of_query_string = [
+    $expect_identity_of_full_query_string = [
       'identity' => 'query_identity',
       'identityType' => 'query_identity_type',
+    ];
+    $expect_identity_of_partial_query_string = [
+      'identity' => 'query_identity',
+      'identityType' => 'my_default_identity_type',
     ];
     $expect_identity_of_user = [
       'identity' => 'a_user_email',
@@ -251,13 +256,19 @@ class PathContextTest extends UnitTestCase {
       $full_query_parameter_string,
       $no_capture_identity,
       $no_set_user,
-      $expect_identity_of_query_string,
+      $expect_identity_of_full_query_string,
+    ];
+    $data['yes query (but partial), no capture, no user'] = [
+      $partial_query_parameter_string,
+      $no_capture_identity,
+      $no_set_user,
+      $expect_identity_of_partial_query_string,
     ];
     $data['yes query, no capture, yes user'] = [
       $full_query_parameter_string,
       $no_capture_identity,
       $do_set_user,
-      $expect_identity_of_query_string,
+      $expect_identity_of_full_query_string,
     ];
     $data['yes query, do capture, yes user'] = [
       $full_query_parameter_string,

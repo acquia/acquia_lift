@@ -101,11 +101,19 @@ class NodeTypeThumbnailFormHelperTest extends UnitTestCase {
    */
   public function testGetFormWithFieldAndStyle() {
     $form_helper = new NodeTypeThumbnailFormHelper($this->configFactory, $this->entityManager);
+    $field_image_definition = $this->getFieldDefinition('image');
     $field_definitions = [
       'field_description' => $this->getFieldDefinition('description'),
-      'field_image' => $this->getFieldDefinition('image'),
+      'field_image' => $field_image_definition,
+      'field_entity_reference' => $this->getFieldDefinition('entity_reference'),
     ];
-    $this->entityManager->expects($this->once())
+    $entity_reference_field_definitions = [
+      'field_child_image' => $this->getFieldDefinition('image'),
+      'field_image' => $field_image_definition, // This line is testing circular reference handling. See $processedFieldHashes.
+    ];
+    $entity_type_definition = $this->getMock('Drupal\Core\Entity\EntityTypeInterface');
+
+    $this->entityManager->expects($this->at(0))
       ->method('getFieldDefinitions')
       ->with('node', 'article')
       ->willReturn($field_definitions);
@@ -113,12 +121,29 @@ class NodeTypeThumbnailFormHelperTest extends UnitTestCase {
       ->method('get')
       ->with('thumbnail')
       ->willReturn($this->getValidThumbnailSettings());
+    $this->entityManager->expects($this->at(1))
+      ->method('getDefinition')
+      ->with('entity_reference_setting')
+      ->willReturn($entity_type_definition);
+    $entity_type_definition->expects($this->once())
+      ->method('isSubclassOf')
+      ->with('\Drupal\Core\Entity\FieldableEntityInterface')
+      ->willReturn(TRUE);
+    $this->entityManager->expects($this->at(2))
+      ->method('getFieldDefinitions')
+      ->with('entity_reference_setting', 'entity_reference')
+      ->willReturn($entity_reference_field_definitions);
+
     ImageStyleOptions::$return = ['medium' => 'Medium'];
 
     $form = $form_helper->getForm('article');
 
+    $expected_field_options = [
+      'field_image' => 'Image Label (field_image)',
+      'field_entity_reference->field_child_image' => 'Entity_reference Label->Image Label (field_entity_reference->field_child_image)',
+    ];
     $this->assertEquals(t('Acquia Lift'), $form['#title']);
-    $this->assertEquals(['field_image' => 'Image Label (field_image)'], $form['field']['#options']);
+    $this->assertEquals($expected_field_options, $form['field']['#options']);
     $this->assertEquals('field_image', $form['field']['#default_value']);
     $this->assertEquals(['medium' => 'Medium'], $form['style']['#options']);
     $this->assertEquals('medium', $form['style']['#default_value']);

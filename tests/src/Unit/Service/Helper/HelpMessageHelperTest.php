@@ -14,7 +14,7 @@ use Drupal\acquia_lift\Tests\Traits\SettingsDataTrait;
 require_once(__DIR__ . '/../../../Traits/SettingsDataTrait.php');
 
 /**
- * HelpMessageHelperTest Test.
+ * HelpMessageHelper Test.
  *
  * @coversDefaultClass Drupal\acquia_lift\Service\Helper\HelpMessageHelper
  * @group acquia_lift

@@ -17,6 +17,7 @@ use Drupal\Core\Entity\Display\EntityViewDisplayInterface;
 use Drupal\Core\Routing\RouteMatchInterface;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\user\UserInterface;
+use Drupal\acquia_lift\Service\Helper\SettingsHelper;
 
 /**
  * Implements hook_help().
@@ -38,11 +39,14 @@ function acquia_lift_node_view_alter(array &$build, EntityInterface $node, Entit
     return;
   }
 
-  \Drupal::service('acquia_lift.service.context.page_context')->set($node);
+  $page_context = \Drupal::service('acquia_lift.service.context.page_context');
+  $page_context->set($node);
 
-  $attachments_manager = \Drupal::service('acquia_lift.service.manager.attachments_manager');
-  $build['#attached']['drupalSettings']['acquia_lift'] = $attachments_manager->getDrupalSettings();
-  $build['#attached']['library'][] = $attachments_manager->getLibrary();
+  $credential_settings = \Drupal::config('acquia_lift.settings')->get('credential');
+  $drupal_settings['credential'] = SettingsHelper::getFrontEndCredentialSettings($credential_settings);
+  $drupal_settings['pageContext'] = $page_context->getAll();
+  $build['#attached']['drupalSettings']['acquia_lift'] = $drupal_settings;
+  $build['#attached']['library'][] = 'acquia_lift/acquia_lift';
 }
 
 /**

@@ -29,6 +29,34 @@ trait SettingsDataTrait {
   }
 
   /**
+   * Get a valid identity settings array.
+   *
+   * @return array
+   *   A valid identity settings array.
+   */
+  private function getValidIdentitySettings() {
+    return [
+      'capture_identity' => TRUE,
+      'identity_parameter' => 'my_identity_parameter',
+      'identity_type_parameter' => 'my_identity_type_parameter',
+      'default_identity_type' => 'my_default_identity_type',
+    ];
+  }
+
+
+  /**
+   * Get a valid visibility settings array.
+   *
+   * @return array
+   *   A valid visibility settings array.
+   */
+  private function getValidVisibilitySettings() {
+    return [
+      'path_patterns' => 'my_path_pattern',
+    ];
+  }
+
+  /**
    * Get a valid thumbnail settings array.
    *
    * @return array

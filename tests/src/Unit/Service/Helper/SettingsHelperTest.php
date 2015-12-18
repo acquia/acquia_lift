@@ -47,6 +47,7 @@ class SettingsHelperTest extends UnitTestCase {
 
     $data['valid data 1'] = [$valid_settings, $valid_front_end_settings];
     $data['valid data 2'] = [$valid_settings, $valid_front_end_settings];
+
     $data['valid data 2'][0]['account_name'] = 'account_name_2';
     $data['valid data 2'][1]['account_name'] = 'account_name_2';
     $data['valid data 2'][0]['customer_site'] = '';
@@ -79,10 +80,11 @@ class SettingsHelperTest extends UnitTestCase {
     $valid_settings = $this->getValidCredentialSettings();
 
     $data['missing account_name'] = [$valid_settings];
-    $data['missing account_name'][0]['account_name'] = '';
     $data['missing api_url'] = [$valid_settings];
-    $data['missing api_url'][0]['js_path'] = '';
     $data['not set customer_site'] = [$valid_settings];
+
+    $data['missing account_name'][0]['account_name'] = '';
+    $data['missing api_url'][0]['js_path'] = '';
     unset($data['not set customer_site'][0]['customer_site']);
 
     return $data;
@@ -111,16 +113,17 @@ class SettingsHelperTest extends UnitTestCase {
 
     $data['valid data 1'] = [$valid_settings, FALSE];
     $data['valid data 2'] = [$valid_settings, FALSE];
+    $data['missing access_key'] = [$valid_settings, TRUE];
+    $data['missing account_name'] = [$valid_settings, TRUE];
+    $data['invalid api_url URL'] = [$valid_settings, TRUE];
+    $data['invalid js_path URL'] = [$valid_settings, TRUE];
+
     $data['valid data 2'][0]['account_name'] = 'account_name_2';
     $data['valid data 2'][0]['customer_site'] = '';
     $data['valid data 2'][0]['js_path'] = 'js_path_2';
-    $data['missing account_name'] = [$valid_settings, TRUE];
     $data['missing account_name'][0]['account_name'] = '';
-    $data['missing access_key'] = [$valid_settings, TRUE];
     $data['missing access_key'][0]['access_key'] = NULL;
-    $data['invalid api_url URL'] = [$valid_settings, TRUE];
     $data['invalid api_url URL'][0]['api_url'] = '\\\\////\\\\////';
-    $data['invalid js_path URL'] = [$valid_settings, TRUE];
     $data['invalid js_path URL'][0]['js_path'] = 'invalid js path';
 
     return $data;

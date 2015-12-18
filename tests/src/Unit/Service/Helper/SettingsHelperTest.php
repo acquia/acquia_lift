@@ -27,6 +27,7 @@ class SettingsHelperTest extends UnitTestCase {
    * Tests the getFrontEndCredentialSettings() method.
    *
    * @covers ::getFrontEndCredentialSettings
+   *
    * @param array $full_settings
    * @param array $expected_front_end_settings
    *
@@ -62,6 +63,7 @@ class SettingsHelperTest extends UnitTestCase {
    * Tests the getFrontEndCredentialSettings() method's Exception.
    *
    * @covers ::getFrontEndCredentialSettings
+   *
    * @param array $incomplete_settings
    *
    * @dataProvider providerTestGetFrontEndCredentialSettingsException
@@ -94,6 +96,7 @@ class SettingsHelperTest extends UnitTestCase {
    * Tests the isInvalidCredential() method.
    *
    * @covers ::isInvalidCredential
+   *
    * @param array $full_settings
    * @param boolean $expected
    *

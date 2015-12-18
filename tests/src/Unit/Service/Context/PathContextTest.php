@@ -109,6 +109,7 @@ class PathContextTest extends UnitTestCase {
    *
    * @covers ::setIdentityByUser
    * @covers ::getIdentity
+   *
    * @param string $query_parameter_string
    * @param boolean $capture_identity
    * @param boolean $do_set_user

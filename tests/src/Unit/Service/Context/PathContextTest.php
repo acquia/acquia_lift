@@ -85,13 +85,8 @@ class PathContextTest extends UnitTestCase {
       ->with('acquia_lift.settings')
       ->willReturn($this->settings);
 
-    $credential_settings = $this->getValidCredentialSettings();
     $visibility_settings = $this->getValidVisibilitySettings();
 
-    $this->settings->expects($this->at(0))
-      ->method('get')
-      ->with('credential')
-      ->willReturn($credential_settings);
     $this->settings->expects($this->at(2))
       ->method('get')
       ->with('visibility')
@@ -99,9 +94,70 @@ class PathContextTest extends UnitTestCase {
     $this->currentPathStack->expects($this->once())
       ->method('getPath')
       ->willReturn('my_current_path');
-    $this->requestStack->expects($this->once())
-      ->method('getCurrentRequest')
-      ->willReturn($this->request);
+  }
+
+  /**
+   * Tests the shouldAttach() method.
+   *
+   * @covers ::shouldAttach
+   *
+   * @param boolean $set_invalid_credential
+   * @param boolean $do_match_pattern
+   * @param array $expect_should_attach
+   *
+   * @dataProvider providerTestShouldAttach
+   */
+  public function testShouldAttach($set_invalid_credential, $do_match_pattern, $expect_should_attach) {
+    $credential_settings = $this->getValidCredentialSettings();
+
+    if ($set_invalid_credential) {
+      $credential_settings['api_url'] = '';
+    }
+
+    $this->settings->expects($this->at(0))
+      ->method('get')
+      ->with('credential')
+      ->willReturn($credential_settings);
+
+    $this->pathMatcher->expects($this->any())
+      ->method('match')
+      ->with('my_current_path', 'my_path_pattern')
+      ->willReturn($do_match_pattern);
+
+    $path_context = new PathContext($this->configFactory, $this->currentPathStack, $this->requestStack, $this->pathMatcher);
+    $should_attach = $path_context->shouldAttach();
+
+    $this->assertEquals($expect_should_attach, $should_attach);
+  }
+
+  /**
+   * Data provider for testShouldAttach().
+   */
+  public function providerTestShouldAttach() {
+    $set_invalid_credential = TRUE;
+    $set_valid_credential = FALSE;
+    $do_match_pattern = TRUE;
+    $no_match_pattern = FALSE;
+    $expect_should_attach = TRUE;
+    $expect_should_not_attach = FALSE;
+
+    $data['invalid credential'] = [
+      $set_invalid_credential,
+      $no_match_pattern,
+      $expect_should_not_attach,
+    ];
+    $data['valid credential, matched pattern'] = [
+      $set_valid_credential,
+      $do_match_pattern,
+      $expect_should_not_attach,
+    ];
+    $data['valid credential, no matched pattern'] = [
+      $set_valid_credential,
+      $no_match_pattern,
+      $expect_should_attach,
+    ];
+
+    return $data;
   }
 
   /**
@@ -113,17 +169,26 @@ class PathContextTest extends UnitTestCase {
    * @param string $query_parameter_string
    * @param boolean $capture_identity
    * @param boolean $do_set_user
-   * @param array $expected_identity
+   * @param array $expect_identity
    *
    * @dataProvider providerTestGetIdentity
    */
-  public function testGetIdentity($query_parameter_string, $capture_identity, $do_set_user, $expected_identity) {
+  public function testGetIdentity($query_parameter_string, $capture_identity, $do_set_user, $expect_identity) {
+    $this->requestStack->expects($this->once())
+      ->method('getCurrentRequest')
+      ->willReturn($this->request);
     $this->request->expects($this->once())
       ->method('getQueryString')
       ->willReturn($query_parameter_string);
 
+    $credential_settings = $this->getValidCredentialSettings();
     $identity_settings = $this->getValidIdentitySettings();
     $identity_settings['capture_identity'] = $capture_identity;
+
+    $this->settings->expects($this->at(0))
+      ->method('get')
+      ->with('credential')
+      ->willReturn($credential_settings);
     $this->settings->expects($this->at(1))
       ->method('get')
       ->with('identity')
@@ -141,7 +206,7 @@ class PathContextTest extends UnitTestCase {
 
     $identity = $path_context->getIdentity();
 
-    $this->assertEquals($expected_identity, $identity);
+    $this->assertEquals($expect_identity, $identity);
   }
 
   /**

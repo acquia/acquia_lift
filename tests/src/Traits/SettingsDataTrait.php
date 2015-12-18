@@ -36,7 +36,7 @@ trait SettingsDataTrait {
    */
   private function getValidIdentitySettings() {
     return [
-      'capture_identity' => TRUE,
+      'capture_identity' => FALSE,
       'identity_parameter' => 'my_identity_parameter',
       'identity_type_parameter' => 'my_identity_type_parameter',
       'default_identity_type' => 'my_default_identity_type',

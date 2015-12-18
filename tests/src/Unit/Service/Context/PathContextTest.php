@@ -55,6 +55,13 @@ class PathContextTest extends UnitTestCase {
   private $pathMatcher;
 
   /**
+   * Request.
+   *
+   * @var \Symfony\Component\HttpFoundation\Request|\PHPUnit_Framework_MockObject_MockObject
+   */
+  private $request;
+
+  /**
    * {@inheritdoc}
    */
   public function setUp() {
@@ -71,7 +78,7 @@ class PathContextTest extends UnitTestCase {
     $this->pathMatcher = $this->getMockBuilder('Drupal\acquia_lift\Service\Helper\PathMatcher')
       ->disableOriginalConstructor()
       ->getMock();
-    $request = $this->getMock('Symfony\Component\HttpFoundation\Request');
+    $this->request = $this->getMock('Symfony\Component\HttpFoundation\Request');
 
     $this->configFactory->expects($this->once())
       ->method('get')
@@ -94,10 +101,7 @@ class PathContextTest extends UnitTestCase {
       ->willReturn('my_current_path');
     $this->requestStack->expects($this->once())
       ->method('getCurrentRequest')
-      ->willReturn($request);
-    $request->expects($this->once())
-      ->method('getQueryString')
-      ->willReturn('a_query_string');
+      ->willReturn($this->request);
   }
 
   /**
@@ -105,13 +109,18 @@ class PathContextTest extends UnitTestCase {
    *
    * @covers ::setIdentityByUser
    * @covers ::getIdentity
+   * @param string $query_parameter_string
    * @param boolean $capture_identity
-   * @param integer $call_get_email_times
+   * @param boolean $do_set_user
    * @param array $expected_identity
    *
    * @dataProvider providerTestGetIdentity
    */
-  public function testGetIdentity($capture_identity, $call_get_email_times, $expected_identity) {
+  public function testGetIdentity($query_parameter_string, $capture_identity, $do_set_user, $expected_identity) {
+    $this->request->expects($this->once())
+      ->method('getQueryString')
+      ->willReturn($query_parameter_string);
+
     $identity_settings = $this->getValidIdentitySettings();
     $identity_settings['capture_identity'] = $capture_identity;
     $this->settings->expects($this->at(1))
@@ -119,13 +128,16 @@ class PathContextTest extends UnitTestCase {
       ->with('identity')
       ->willReturn($identity_settings);
 
-    $user = $this->getMock('Drupal\user\UserInterface');
-    $user->expects($this->exactly($call_get_email_times))
-      ->method('getEmail')
-      ->willReturn('a_user_email');
-
     $path_context = new PathContext($this->configFactory, $this->currentPathStack, $this->requestStack, $this->pathMatcher);
-    $path_context->setIdentityByUser($user);
+
+    if ($do_set_user) {
+      $user = $this->getMock('Drupal\user\UserInterface');
+      $user->expects($this->exactly((int) $capture_identity))
+        ->method('getEmail')
+        ->willReturn('a_user_email');
+      $path_context->setIdentityByUser($user);
+    }
+
     $identity = $path_context->getIdentity();
 
     $this->assertEquals($expected_identity, $identity);
@@ -135,19 +147,59 @@ class PathContextTest extends UnitTestCase {
    * Data provider for testGetIdentity().
    */
   public function providerTestGetIdentity() {
+    $no_query_parameter_string = '';
+    $full_query_parameter_string = 'my_identity_parameter=query_identity&my_identity_type_parameter=query_identity_type&other=other';
     $no_capture_identity = FALSE;
     $do_capture_identity = TRUE;
-    $call_get_email_zero_times = 0;
-    $call_get_email_one_time = 1;
-    $expect_empty_identity = NULL;
-    $expected_valid_identity = [
+    $no_set_user = FALSE;
+    $do_set_user = TRUE;
+    $expect_identity_empty = NULL;
+    $expect_identity_of_query_string = [
+      'identity' => 'query_identity',
+      'identityType' => 'query_identity_type',
+    ];
+    $expect_identity_of_user = [
       'identity' => 'a_user_email',
       'identityType' => 'email',
     ];
 
-    return [
-      'no collect' => [$no_capture_identity, $call_get_email_zero_times, $expect_empty_identity],
-      'collect' => [$do_capture_identity, $call_get_email_one_time, $expected_valid_identity],
+    $data['no query, no capture, no user'] = [
+      $no_query_parameter_string,
+      $no_capture_identity,
+      $no_set_user,
+      $expect_identity_empty,
     ];
+    $data['no query, no capture, yes user'] = [
+      $no_query_parameter_string,
+      $no_capture_identity,
+      $do_set_user,
+      $expect_identity_empty,
+    ];
+    $data['no query, do capture, yes user'] = [
+      $no_query_parameter_string,
+      $do_capture_identity,
+      $do_set_user,
+      $expect_identity_of_user,
+    ];
+    $data['yes query, no capture, no user'] = [
+      $full_query_parameter_string,
+      $no_capture_identity,
+      $no_set_user,
+      $expect_identity_of_query_string,
+    ];
+    $data['yes query, no capture, yes user'] = [
+      $full_query_parameter_string,
+      $no_capture_identity,
+      $do_set_user,
+      $expect_identity_of_query_string,
+    ];
+    $data['yes query, do capture, yes user'] = [
+      $full_query_parameter_string,
+      $do_capture_identity,
+      $do_set_user,
+      $expect_identity_of_user,
+    ];
+
+    return $data;
   }
 }

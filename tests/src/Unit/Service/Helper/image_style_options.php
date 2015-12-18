@@ -12,13 +12,16 @@ namespace Drupal\acquia_lift\Service\Helper {
    * @return array
    */
   function image_style_options($include_empty = TRUE) {
-    return ImageStyleOptions::$returnValue;
+    return ImageStyleOptions::$return;
   }
 
   /**
    * Class ImageStyleOptions to manage image_style_options.
    */
   class ImageStyleOptions {
-    public static $returnValue = [];
+    /**
+     * @var array image_style_options function's return value.
+     */
+    public static $return = [];
   }
 }

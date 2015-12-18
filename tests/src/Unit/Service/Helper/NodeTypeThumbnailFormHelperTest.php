@@ -9,6 +9,7 @@ namespace Drupal\acquia_lift\Tests\Service\Helper;
 
 use Drupal\Tests\UnitTestCase;
 use Drupal\acquia_lift\Service\Helper\NodeTypeThumbnailFormHelper;
+use Drupal\acquia_lift\Service\Helper\ImageStyleOptions;
 use Drupal\acquia_lift\Tests\Traits\SettingsDataTrait;
 
 require_once(__DIR__ . '/../../../Traits/SettingsDataTrait.php');
@@ -81,8 +82,8 @@ class NodeTypeThumbnailFormHelperTest extends UnitTestCase {
   public function testGetFormWithNoStyle() {
     $form_helper = new NodeTypeThumbnailFormHelper($this->configFactory, $this->entityManager);
     $field_definitions = [
-      'field_1' => $this->getFieldDefinition('field_1'),
-      'field_2' => $this->getFieldDefinition('field_2', 'image'),
+      'field_description' => $this->getFieldDefinition('description'),
+      'field_image' => $this->getFieldDefinition('image'),
     ];
     $this->entityManager->expects($this->once())
       ->method('getFieldDefinitions')
@@ -91,6 +92,36 @@ class NodeTypeThumbnailFormHelperTest extends UnitTestCase {
 
     $form = $form_helper->getForm('article');
     $this->assertRegexp('/no image style/', $form['no_image_styles']['#markup']);
+  }
+
+  /**
+   * Tests the getForm() method, with an image field and with style.
+   *
+   * @covers ::getForm
+   */
+  public function testGetFormWithFieldAndStyle() {
+    $form_helper = new NodeTypeThumbnailFormHelper($this->configFactory, $this->entityManager);
+    $field_definitions = [
+      'field_description' => $this->getFieldDefinition('description'),
+      'field_image' => $this->getFieldDefinition('image'),
+    ];
+    $this->entityManager->expects($this->once())
+      ->method('getFieldDefinitions')
+      ->with('node', 'article')
+      ->willReturn($field_definitions);
+    $this->settings->expects($this->once())
+      ->method('get')
+      ->with('thumbnail')
+      ->willReturn($this->getValidThumbnailSettings());
+    ImageStyleOptions::$return = ['medium' => 'Medium'];
+
+    $form = $form_helper->getForm('article');
+
+    $this->assertEquals(t('Acquia Lift'), $form['#title']);
+    $this->assertEquals(['field_image' => 'Image Label (field_image)'], $form['field']['#options']);
+    $this->assertEquals('field_image', $form['field']['#default_value']);
+    $this->assertEquals(['medium' => 'Medium'], $form['style']['#options']);
+    $this->assertEquals('medium', $form['style']['#default_value']);
   }
 
   /**
@@ -118,12 +149,10 @@ class NodeTypeThumbnailFormHelperTest extends UnitTestCase {
   /**
    * Get FieldDefinition mock.
    *
-   * @param string $name
-   *   FieldDefinition name.
    * @param string $type
    *   FieldDefinition type.
    */
-  private function getFieldDefinition($name = 'field_definition', $type = 'other_type') {
+  private function getFieldDefinition($type = 'other') {
     $field_definition = $this->getMock('Drupal\Core\Field\FieldDefinitionInterface');
     $field_definition->expects($this->at(0))
       ->method('getType')
@@ -131,10 +160,10 @@ class NodeTypeThumbnailFormHelperTest extends UnitTestCase {
     $field_definition->expects($this->at(1))
       ->method('getSetting')
       ->with('target_type')
-      ->willReturn($name . '_setting');
+      ->willReturn($type . '_setting');
     $field_definition->expects($this->at(2))
       ->method('getLabel')
-      ->willReturn($name . '_label');
+      ->willReturn(ucfirst($type) . ' Label');
     return $field_definition;
   }
 }

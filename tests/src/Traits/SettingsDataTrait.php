@@ -43,16 +43,17 @@ trait SettingsDataTrait {
     ];
   }
 
-
   /**
-   * Get a valid visibility settings array.
+   * Get a valid field mappings settings array.
    *
    * @return array
-   *   A valid visibility settings array.
+   *   A valid field mappings settings array.
    */
-  private function getValidVisibilitySettings() {
+  private function getValidFieldMappingsSettings() {
     return [
-      'path_patterns' => 'my_path_pattern',
+      'content_section' => 'my_content_section',
+      'content_keywords' => 'my_content_keywords',
+      'persona' => 'my_persona',
     ];
   }
 
@@ -68,6 +69,18 @@ trait SettingsDataTrait {
         'field' => 'field_image',
         'style' => 'medium',
       ],
+    ];
+  }
+
+  /**
+   * Get a valid visibility settings array.
+   *
+   * @return array
+   *   A valid visibility settings array.
+   */
+  private function getValidVisibilitySettings() {
+    return [
+      'path_patterns' => 'my_path_pattern',
     ];
   }
 

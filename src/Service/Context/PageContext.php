@@ -35,7 +35,7 @@ class PageContext {
   /**
    * Taxonomy term storage.
    *
-   * @var \Drupal\Core\Entity\EntityStorageInterface
+   * @var \Drupal\taxonomy\TermStorageInterface
    */
   private $taxonomyTermStorage;
 

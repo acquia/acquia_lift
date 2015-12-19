@@ -82,15 +82,24 @@ class PageContext {
    *   Node.
    */
   public function set(EntityInterface $node) {
+    $this->setNodeData($node);
+    $this->setThumbnailUrl($node);
+    $this->setFields($node);
+  }
+
+  /**
+   * Set Node data.
+   *
+   * @param \Drupal\Core\Entity\EntityInterface $node
+   *   Node.
+   */
+  private function setNodeData(EntityInterface $node) {
     $this->pageContext['content_type'] = $node->getType();
     $this->pageContext['content_title'] = $node->getTitle();
     $this->pageContext['published_date'] = $node->getCreatedTime();
     $this->pageContext['post_id'] = $node->id();
     $this->pageContext['author'] = $node->getOwner()->getUsername();
     $this->pageContext['page_type'] = 'node page';
-
-    $this->setThumbnailUrl($node);
-    $this->setFields($node);
   }
 
   /**

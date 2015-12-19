@@ -163,7 +163,7 @@ class PageContextTest extends UnitTestCase {
   /**
    * Get Node.
    *
-   * @param string $id
+   * @param integer $id
    *
    * @return Drupal\node\NodeInterface|\PHPUnit_Framework_MockObject_MockObject
    */
@@ -191,15 +191,15 @@ class PageContextTest extends UnitTestCase {
   /**
    * Get User.
    *
-   * @param string $id
+   * @param string $username
    *
    * @return Drupal\user\UserInterface|\PHPUnit_Framework_MockObject_MockObject
    */
-  private function getUser($id = 90210) {
+  private function getUser($username = 'a_username') {
     $user = $this->getMock('Drupal\user\UserInterface');
     $user->expects($this->once())
       ->method('getUsername')
-      ->willReturn('a_username');
+      ->willReturn($username);
     return $user;
   }
 }

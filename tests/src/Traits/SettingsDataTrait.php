@@ -51,9 +51,9 @@ trait SettingsDataTrait {
    */
   private function getValidFieldMappingsSettings() {
     return [
-      'content_section' => 'my_content_section',
-      'content_keywords' => 'my_content_keywords',
-      'persona' => 'my_persona',
+      'content_section' => 'field_country',
+      'content_keywords' => 'field_tags',
+      'persona' => 'field_people',
     ];
   }
 

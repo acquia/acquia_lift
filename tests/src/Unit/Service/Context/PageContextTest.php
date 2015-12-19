@@ -110,10 +110,18 @@ class PageContextTest extends UnitTestCase {
    */
   public function testGetAllWithSetNode() {
     $node = $this->getNode();
-    $term_1 = $this->getTerm('term_1');
-    $term_2 = $this->getTerm('term_2');
-    $term_3 = $this->getTerm('term_3', 'other_vocabulary_id');
-    $terms = [90210 => [$term_1, $term_2, $term_3]];
+    $tracked_content_term_1 = $this->getTerm('Tracked Content Term Name 1', 'tracked_content_vocabulary');
+    $tracked_keyword_term_1 = $this->getTerm('Tracked Keyword Term Name 1', 'tracked_keyword_vocabulary');
+    $tracked_keyword_term_2 = $this->getTerm('Tracked Keyword Term Name 2', 'tracked_keyword_vocabulary');
+    $discarded_term_1 = $this->getTerm('Untracked Term Name', 'untracked_vocabulary_id');
+    $terms = [
+      90210 => [
+        $tracked_content_term_1,
+        $tracked_keyword_term_1,
+        $tracked_keyword_term_2,
+        $discarded_term_1,
+      ]
+    ];
     $this->taxonomyTermStorage->expects($this->once())
       ->method('getNodeTerms')
       ->with([90210])
@@ -126,8 +134,8 @@ class PageContextTest extends UnitTestCase {
       'content_title' => 'My Title',
       'content_type' => 'article',
       'page_type' => 'node page',
-      'content_section' => '',
-      'content_keywords' => '',
+      'content_section' => 'Tracked Content Term Name 1',
+      'content_keywords' => 'Tracked Keyword Term Name 1,Tracked Keyword Term Name 2',
       'post_id' => 90210,
       'published_date' => 'a_published_time',
       'thumbnail_url' => '',
@@ -149,7 +157,7 @@ class PageContextTest extends UnitTestCase {
    *
    * @return Drupal\taxonomy\TermInterface|\PHPUnit_Framework_MockObject_MockObject
    */
-  private function getTerm($name = 'my_term', $vocabulary_id = 'my_vocabulary') {
+  private function getTerm($name = 'Term Name', $vocabulary_id = 'untracked_vocabulary_id') {
     $term = $this->getMock('Drupal\taxonomy\TermInterface');
     $term->expects($this->once())
       ->method('getVocabularyId')
@@ -169,7 +177,20 @@ class PageContextTest extends UnitTestCase {
    */
   private function getNode($id = 90210) {
     $user = $this->getUser();
+    $field_country = $this->getMock('Drupal\Core\Field\BaseFieldDefinition');
+    $field_tags = $this->getMock('Drupal\Core\Field\BaseFieldDefinition');
     $node = $this->getMock('Drupal\node\NodeInterface');
+    $field_country_handler_settings = [
+      'target_bundles' => [
+        'tracked_content_vocabulary',
+      ]
+    ];
+    $field_tags_handler_settings = [
+      'target_bundles' => [
+        'tracked_keyword_vocabulary',
+      ]
+    ];
+
     $node->expects($this->exactly(2))
       ->method('getType')
       ->willReturn('article');
@@ -185,6 +206,18 @@ class PageContextTest extends UnitTestCase {
     $node->expects($this->once())
       ->method('getOwner')
       ->willReturn($user);
+    $field_country->expects($this->once())
+      ->method('getSetting')
+      ->with('handler_settings')
+      ->willReturn($field_country_handler_settings);
+    $field_tags->expects($this->once())
+      ->method('getSetting')
+      ->with('handler_settings')
+      ->willReturn($field_tags_handler_settings);
+
+    $node->field_country = $field_country;
+    $node->field_tags = $field_tags;
+
     return $node;
   }
 

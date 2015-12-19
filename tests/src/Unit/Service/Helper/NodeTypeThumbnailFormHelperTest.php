@@ -144,7 +144,7 @@ class NodeTypeThumbnailFormHelperTest extends UnitTestCase {
     ];
     $this->assertEquals(t('Acquia Lift'), $form['#title']);
     $this->assertEquals($expected_field_options, $form['field']['#options']);
-    $this->assertEquals('field_image', $form['field']['#default_value']);
+    $this->assertEquals('field_medium->field_image', $form['field']['#default_value']);
     $this->assertEquals(['medium' => 'Medium'], $form['style']['#options']);
     $this->assertEquals('medium', $form['style']['#default_value']);
   }

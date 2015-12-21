@@ -66,7 +66,7 @@ trait SettingsDataTrait {
   private function getValidThumbnailSettings() {
     return [
       'article' => [
-        'field' => 'field_medium->field_image',
+        'field' => 'field_media->field_image',
         'style' => 'medium',
       ],
     ];

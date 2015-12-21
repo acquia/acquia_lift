@@ -122,7 +122,7 @@ class PageContext {
     foreach ($thumbnail_config_array as $field_key) {
       // Don't set, if node has no such field or field has no such entity.
       if (empty($entity->{$field_key}->entity) ||
-        $entity->{$field_key}->isEmpty()
+        method_exists($entity->{$field_key}, 'isEmpty') && $entity->{$field_key}->isEmpty()
       ) {
         return;
       }

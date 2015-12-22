@@ -106,11 +106,8 @@ class SettingsTest extends WebTestBase {
       $this->assertFieldByName($name, $value, format_string('"@name" setting was saved into DB.', array('@name' => $name)));
     }
     $this->assertEqual($expect_settings_count, $edit_settings_count, 'The exact numbers of settings that were asserted should be ' . $expect_settings_count . '.');
-  }
 
-//  public function testSettings() {
-//    $this->setValidSettings();
-//
-//    $this->drupalGet('admin/config/content/acquia_lift');
-//  }
+    // Assert the Thumbnail URL shortcut links exist on the page.
+    $this->assertRaw('admin/structure/types/manage/article#edit-acquia-lift', '[testAdminSettingsForm]: Thumbnail URL shortcut links exist on the page.');
+  }
 }

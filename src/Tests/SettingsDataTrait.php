@@ -2,15 +2,31 @@
 
 /**
  * @file
- * Contains \Drupal\acquia_lift\Tests\Traits\SettingsDataTrait.
+ * Contains \Drupal\acquia_lift\Tests\SettingsDataTrait.
  */
 
-namespace Drupal\acquia_lift\Tests\Traits;
+namespace Drupal\acquia_lift\Tests;
 
 /**
  * Settings Data Trait.
  */
 trait SettingsDataTrait {
+  /**
+   * Set valid settings.
+   *
+   * @return array
+   *   A valid settings array.
+   */
+  private function setValidSettings() {
+    $settings = $this->config('acquia_lift.settings');
+    $settings->set('credential', $this->getValidCredentialSettings());
+    $settings->set('identity', $this->getValidIdentitySettings());
+    $settings->set('field_mappings', $this->getValidFieldMappingsSettings());
+    $settings->set('thumbnail', $this->getValidThumbnailSettings());
+    $settings->set('visibility', $this->getValidVisibilitySettings());
+    $settings->save();
+  }
+
   /**
    * Get a valid credential settings array.
    *

@@ -8,9 +8,6 @@
 namespace Drupal\acquia_lift\Tests;
 
 use Drupal\simpletest\WebTestBase;
-use Drupal\acquia_lift\Tests\Traits\SettingsDataTrait;
-
-require_once(__DIR__ . '/SettingsDataTrait.php');
 
 /**
  * Test Settings.
@@ -20,13 +17,14 @@ require_once(__DIR__ . '/SettingsDataTrait.php');
 class SettingsTest extends WebTestBase {
 
   use SettingsDataTrait;
+  use FixturesDataTrait;
 
   /**
    * Modules to enable.
    *
    * @var array
    */
-  public static $modules = ['node', 'acquia_lift'];
+  public static $modules = ['node', 'taxonomy', 'acquia_lift'];
 
   /**
    * {@inheritdoc}
@@ -41,7 +39,23 @@ class SettingsTest extends WebTestBase {
       'administer site configuration',
     ];
 
-    // User to set up google_analytics.
+    $this->drupalCreateContentType(['type' => 'article', 'name' => 'Article']);
+
+    // Create two vocabularies.
+    $vocabulary1 = $this->createVocabulary();
+    $vocabulary2 = $this->createVocabulary();
+
+    $term_v1_t1 = $this->createTerm($vocabulary1);
+    $term_v1_t2 = $this->createTerm($vocabulary1);
+    $term_v2_t1 = $this->createTerm($vocabulary2);
+    $term_v2_t2 = $this->createTerm($vocabulary2);
+    $term_v2_t3 = $this->createTerm($vocabulary2);
+
+    $field_country = $this->createFieldWithStorage('field_country', 'node', 'article', [$vocabulary1->id() => $vocabulary1->id()], ['target_type' => 'taxonomy_term'], 'entity_reference');
+    $field_people = $this->createFieldWithStorage('field_people', 'node', 'article', [$vocabulary2->id() => $vocabulary2->id()], ['target_type' => 'taxonomy_term'], 'entity_reference');
+    $field_tags = $this->createFieldWithStorage('field_tags', 'node', 'article', [$vocabulary2->id() => $vocabulary2->id()], ['target_type' => 'taxonomy_term'], 'entity_reference');
+
+    // User to set up acquia_lift.
     $this->admin_user = $this->drupalCreateUser($permissions);
     $this->drupalLogin($this->admin_user);
   }
@@ -71,10 +85,10 @@ class SettingsTest extends WebTestBase {
     $edit =[];
     $edit += $this->convertToPostFormSettings($credential_settings, 'credential');
     $edit += $this->convertToPostFormSettings($identity_settings, 'identity');
-    //$edit += $this->convertToPostFormSettings($field_mappings_settings, 'field_mappings');
+    $edit += $this->convertToPostFormSettings($field_mappings_settings, 'field_mappings');
     $edit += $this->convertToPostFormSettings($visibility_settings, 'visibility');
     $edit_settings_count = count($edit);
-    $expect_settings_count = 10;
+    $expect_settings_count = 13;
 
     $this->drupalPostForm('admin/config/content/acquia_lift', $edit, t('Save configuration'));
 
@@ -92,4 +106,10 @@ class SettingsTest extends WebTestBase {
     }
     $this->assertEqual($expect_settings_count, $edit_settings_count, 'The exact numbers of settings that were asserted should be ' . $expect_settings_count . '.');
   }
+
+//  public function testSettings() {
+//    $this->setValidSettings();
+//
+//    $this->drupalGet('admin/config/content/acquia_lift');
+//  }
 }

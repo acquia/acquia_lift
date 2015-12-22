@@ -2,10 +2,10 @@
 
 /**
  * @file
- * Contains \Drupal\acquia_lift\Tests\Traits\SettingsDataTrait.
+ * Contains \Drupal\Tests\acquia_lift\Unit\Traits\SettingsDataTrait.
  */
 
-namespace Drupal\acquia_lift\Tests\Traits;
+namespace Drupal\Tests\acquia_lift\Unit\Traits;
 
 /**
  * Settings Data Trait.

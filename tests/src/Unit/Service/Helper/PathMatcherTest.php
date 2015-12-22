@@ -2,10 +2,10 @@
 
 /**
  * @file
- * Contains \Drupal\acquia_lift\Tests\Service\Helper\PathMatcherTest.
+ * Contains \Drupal\Tests\acquia_lift\Service\Helper\PathMatcherTest.
  */
 
-namespace Drupal\acquia_lift\Tests\Service\Helper;
+namespace Drupal\Tests\acquia_lift\Service\Helper;
 
 use Drupal\Tests\UnitTestCase;
 use Drupal\acquia_lift\Service\Helper\PathMatcher;

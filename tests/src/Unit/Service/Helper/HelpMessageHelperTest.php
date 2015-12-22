@@ -2,14 +2,14 @@
 
 /**
  * @file
- * Contains \Drupal\acquia_lift\Tests\Service\Helper\HelpMessageHelperTest.
+ * Contains \Drupal\Tests\acquia_lift\Service\Helper\HelpMessageHelperTest.
  */
 
-namespace Drupal\acquia_lift\Tests\Service\Helper;
+namespace Drupal\Tests\acquia_lift\Service\Helper;
 
 use Drupal\Tests\UnitTestCase;
 use Drupal\acquia_lift\Service\Helper\HelpMessageHelper;
-use Drupal\acquia_lift\Tests\Traits\SettingsDataTrait;
+use Drupal\Tests\acquia_lift\Unit\Traits\SettingsDataTrait;
 
 require_once(__DIR__ . '/../../Traits/SettingsDataTrait.php');
 

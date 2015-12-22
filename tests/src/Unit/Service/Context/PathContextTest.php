@@ -2,14 +2,14 @@
 
 /**
  * @file
- * Contains \Drupal\acquia_lift\Tests\Service\Context\PathContextTest.
+ * Contains \Drupal\Tests\acquia_lift\Service\Context\PathContextTest.
  */
 
-namespace Drupal\acquia_lift\Tests\Service\Context;
+namespace Drupal\Tests\acquia_lift\Service\Context;
 
 use Drupal\Tests\UnitTestCase;
 use Drupal\acquia_lift\Service\Context\PathContext;
-use Drupal\acquia_lift\Tests\Traits\SettingsDataTrait;
+use Drupal\Tests\acquia_lift\Unit\Traits\SettingsDataTrait;
 
 require_once(__DIR__ . '/../../Traits/SettingsDataTrait.php');
 

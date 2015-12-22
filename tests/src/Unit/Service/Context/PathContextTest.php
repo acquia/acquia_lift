@@ -121,7 +121,7 @@ class PathContextTest extends UnitTestCase {
 
     $this->pathMatcher->expects($this->any())
       ->method('match')
-      ->with('my_current_path', 'my_path_pattern')
+      ->with('my_current_path', '/admin\n/admin/*\n/batch\n/node/add*\n/node/*/*\n/user/*/*')
       ->willReturn($do_match_pattern);
 
     $path_context = new PathContext($this->configFactory, $this->currentPathStack, $this->requestStack, $this->pathMatcher);

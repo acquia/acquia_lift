@@ -96,7 +96,7 @@ trait SettingsDataTrait {
    */
   private function getValidVisibilitySettings() {
     return [
-      'path_patterns' => 'my_path_pattern',
+      'path_patterns' => '/admin\n/admin/*\n/batch\n/node/add*\n/node/*/*\n/user/*/*',
     ];
   }
 

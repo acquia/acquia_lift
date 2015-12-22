@@ -11,7 +11,7 @@ use Drupal\Tests\UnitTestCase;
 use Drupal\acquia_lift\Service\Context\PageContext;
 use Drupal\acquia_lift\Tests\Traits\SettingsDataTrait;
 
-require_once(__DIR__ . '/../../../Traits/SettingsDataTrait.php');
+require_once(__DIR__ . '/../../Traits/SettingsDataTrait.php');
 
 /**
  * PageContextTest Test.

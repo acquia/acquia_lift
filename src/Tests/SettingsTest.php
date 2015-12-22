@@ -77,6 +77,7 @@ class SettingsTest extends WebTestBase {
     $this->drupalGet('admin/config/content/acquia_lift');
     $this->assertRaw(t('Acquia Lift settings'), '[testAdminSettingsForm]: Settings page displayed.');
 
+    // Get all the valid settings, and massage them into form $edit array.
     $credential_settings = $this->getValidCredentialSettings();
     $identity_settings = $this->getValidIdentitySettings();
     $field_mappings_settings = $this->getValidFieldMappingsSettings();
@@ -90,8 +91,8 @@ class SettingsTest extends WebTestBase {
     $edit_settings_count = count($edit);
     $expect_settings_count = 13;
 
+    // Post the edits and assert that options are saved.
     $this->drupalPostForm('admin/config/content/acquia_lift', $edit, t('Save configuration'));
-
     $this->assertText(t('The configuration options have been saved.'));
 
     // The saved secret key should not be shown.

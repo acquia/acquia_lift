@@ -114,21 +114,4 @@ trait SettingsDataTrait {
     }
     return $post_form_settings;
   }
-
-  /**
-   * Convert strings with underscores into CamelCase
-   *
-   * @param    string    $string    The string to convert
-   * @param    bool    $first_char_caps    camelCase or CamelCase
-   *
-   * @return    string    The converted string
-   */
-//  function underscoreToCamelCase( $string, $first_char_caps = false) {
-//    if( $first_char_caps == true )
-//    {
-//        $string[0] = strtoupper($string[0]);
-//    }
-//    $func = create_function('$c', 'return strtoupper($c[1]);');
-//    return preg_replace_callback('/_([a-z])/', $func, $string);
-//  }
 }

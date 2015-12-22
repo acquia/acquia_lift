@@ -74,20 +74,22 @@ class SettingsTest extends WebTestBase {
     //$edit += $this->convertToPostFormSettings($field_mappings_settings, 'field_mappings');
     $edit += $this->convertToPostFormSettings($visibility_settings, 'visibility');
     $edit_settings_count = count($edit);
+    $expect_settings_count = 10;
 
     $this->drupalPostForm('admin/config/content/acquia_lift', $edit, t('Save configuration'));
 
     $this->assertText(t('The configuration options have been saved.'));
 
-    // All fields should be correctly shown, except the secret key, because it is not displayed back.
+    // The saved secret key should not be shown.
     $actual_secret_key = $this->config('acquia_lift.settings')->get('credential.secret_key');
     $this->assertEqual($edit['credential[secret_key]'], $actual_secret_key, 'Credential\'s secret key was saved into DB.');
     $edit['credential[secret_key]'] = '';
     $this->assertText('Only necessary if updating');
 
+    // Assert all other fields. Also count the asserted fields to make sure all are asserted.
     foreach ($edit as $name => $value) {
-      $this->assertFieldByName($name, $value, format_string('"@name" has correct value.', array('@name' => $name)));
+      $this->assertFieldByName($name, $value, format_string('"@name" setting was saved into DB.', array('@name' => $name)));
     }
-    $this->assertEqual(10, $edit_settings_count,  'Counting the exact numbers of form fields were all asserted.');
+    $this->assertEqual($expect_settings_count, $edit_settings_count, 'The exact numbers of settings that were asserted should be ' . $expect_settings_count . '.');
   }
 }

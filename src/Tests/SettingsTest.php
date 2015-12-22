@@ -8,6 +8,9 @@
 namespace Drupal\acquia_lift\Tests;
 
 use Drupal\simpletest\WebTestBase;
+use Drupal\acquia_lift\Tests\Traits\SettingsDataTrait;
+
+require_once(__DIR__ . '/SettingsDataTrait.php');
 
 /**
  * Test Settings.
@@ -15,6 +18,9 @@ use Drupal\simpletest\WebTestBase;
  * @group Acquia Lift
  */
 class SettingsTest extends WebTestBase {
+
+  use SettingsDataTrait;
+
   /**
    * Modules to enable.
    *
@@ -40,7 +46,7 @@ class SettingsTest extends WebTestBase {
     $this->drupalLogin($this->admin_user);
   }
 
-  function testConfigurationLinks() {
+  public function testConfigurationLinks() {
     // Check if Configure link is available on 'Extend' page.
     // Requires 'administer modules' permission.
     $this->drupalGet('admin/modules');
@@ -52,9 +58,22 @@ class SettingsTest extends WebTestBase {
     $this->assertRaw('admin/config/content/acquia_lift', '[testConfigurationLinks]: Configure link from Status Reports page to Acquia Lift Settings page exists.');
   }
 
-  function testAdminSettingsForm() {
+  public function testAdminSettingsForm() {
     // Check for setting page's presence.
     $this->drupalGet('admin/config/content/acquia_lift');
     $this->assertRaw(t('Acquia Lift settings'), '[testAdminSettingsForm]: Settings page displayed.');
+
+    $credential_settings = $this->getValidCredentialSettings();
+    $identity_settings = $this->getValidIdentitySettings();
+    $field_mappings_settings = $this->getValidFieldMappingsSettings();
+    $visibility_settings = $this->getValidVisibilitySettings();
+
+    $edit =[];
+    $edit += $this->convertToPostFormSettings($credential_settings, 'credential');
+    $edit += $this->convertToPostFormSettings($identity_settings, 'identity');
+    //$edit += $this->convertToPostFormSettings($field_mappings_settings, 'field_mappings');
+    $edit += $this->convertToPostFormSettings($visibility_settings, 'visibility');
+
+    $this->drupalPostForm('admin/config/content/acquia_lift', $edit, t('Save configuration'));
   }
 }

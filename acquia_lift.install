@@ -1,0 +1,41 @@
+<?php
+
+/**
+ * @file
+ * Installation file for Acquia Lift module.
+ */
+
+use Drupal\acquia_lift\Service\Helper\SettingsHelper;
+
+/**
+ * Implements hook_uninstall().
+ *
+ * Remove cache directory if module is uninstalled.
+ */
+function acquia_lift_uninstall() {
+  // Purging all Acquia Lift settings and js libraries.
+  drupal_flush_all_caches();
+}
+
+/**
+ * Implements hook_requirements().
+ */
+function acquia_lift_requirements($phase) {
+  if ($phase !== 'runtime') {
+    return;
+  }
+
+  $credentialSettings = \Drupal::config('acquia_lift.settings')->get('credential');
+  if (!SettingsHelper::isInvalidCredential($credentialSettings)) {
+    return;
+  }
+
+  $requirements['acquia_lift_credential'] = [
+    'title' => t('Acquia Lift module'),
+    'description' => t('Acquia Lift module has not been fully configured yet. Please configure its settings from the <a href=":url">Acquia Lift settings page</a>.', [':url' => \Drupal::url('acquia_lift.admin_settings_form')]),
+    'severity' => REQUIREMENT_WARNING,
+    'value' => t('Incomplete or Invalid Credential'),
+  ];
+
+  return $requirements;
+}

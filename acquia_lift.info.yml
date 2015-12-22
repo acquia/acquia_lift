@@ -4,3 +4,6 @@ package: Acquia
 core: 8.x
 type: module
 configure: acquia_lift.admin_settings_form
+
+dependencies:
+  - node

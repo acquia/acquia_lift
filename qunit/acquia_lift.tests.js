@@ -43,9 +43,9 @@ QUnit.test("Test populate _tcaq queue", function(assert) {
     'content_keywords': 'foo,bar',
     'trackingId': drupalSettings.acquia_lift.pageContext.trackingId,
   }
-  assert.deepEqual(['setAccount', 'an_account_name', 'a_customer_site'], _tcaq[0], 'Pushed "setAccount" to _tcaq.');
-  assert.deepEqual(['captureView', 'Content View', expected_config_object], _tcaq[1], 'Pushed "captureView" to _tcaq.');
-  assert.equal(2, _tcaq.length, 'There are only 2 events in the _tcaq.');
+  assert.deepEqual(_tcaq[0], ['setAccount', 'an_account_name', 'a_customer_site'], 'Pushed "setAccount" to _tcaq.');
+  assert.deepEqual(_tcaq[1], ['captureView', 'Content View', expected_config_object], 'Pushed "captureView" to _tcaq.');
+  assert.equal(_tcaq.length, 2, 'There are only 2 events in the _tcaq.');
 });
 
 QUnit.test("Test populate _tcaq queue, with identity", function(assert) {
@@ -62,8 +62,8 @@ QUnit.test("Test populate _tcaq queue, with identity", function(assert) {
     'content_keywords': 'foo,bar',
     'trackingId': drupalSettings.acquia_lift.pageContext.trackingId,
   }
-  assert.deepEqual(['setAccount', 'an_account_name', 'a_customer_site'], _tcaq[0], 'Pushed "setAccount" to _tcaq.');
-  assert.deepEqual(['captureView', 'Content View', expected_config_object], _tcaq[1], 'Pushed "captureView" to _tcaq.');
-  assert.deepEqual(['captureIdentity', 'my_identity', 'my_identity_type'], _tcaq[2], 'Pushed "captureIdentity" to _tcaq.');
-  assert.equal(3, _tcaq.length, 'There are only 3 events in the _tcaq.');
+  assert.deepEqual(_tcaq[0], ['setAccount', 'an_account_name', 'a_customer_site'], 'Pushed "setAccount" to _tcaq.');
+  assert.deepEqual(_tcaq[1], ['captureView', 'Content View', expected_config_object], 'Pushed "captureView" to _tcaq.');
+  assert.deepEqual(_tcaq[2], ['captureIdentity', 'my_identity', 'my_identity_type'], 'Pushed "captureIdentity" to _tcaq.');
+  assert.equal(_tcaq.length, 3, 'There are only 3 events in the _tcaq.');
 });

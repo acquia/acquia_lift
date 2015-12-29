@@ -15,6 +15,11 @@ use Drupal\acquia_lift\Exception\MissingSettingsException;
  */
 class SettingsHelper {
   /**
+   * Default identity type's default value.
+   */
+  const DEFAULT_IDENTITY_TYPE_DEFAULT = 'email';
+
+  /**
    * Get front-end credential settings.
    *
    * @param array $credential_settings

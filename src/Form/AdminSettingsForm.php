@@ -17,7 +17,6 @@ use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Url;
 use Drupal\taxonomy\Entity\Vocabulary;
 use Drupal\acquia_lift\Service\Helper\SettingsHelper;
-use Drupal\acquia_lift\Service\Context\PathContext;
 
 /**
  * Defines a form that configures settings.
@@ -180,7 +179,7 @@ class AdminSettingsForm extends ConfigFormBase {
       '#type' => 'textfield',
       '#title' => t('Default Identity Type'),
       '#default_value' => $identity_settings['default_identity_type'],
-      '#placeholder' => PathContext::DEFAULT_IDENTITY_TYPE_DEFAULT,
+      '#placeholder' => SettingsHelper::DEFAULT_IDENTITY_TYPE_DEFAULT,
     ];
 
     return $form;

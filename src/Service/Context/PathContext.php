@@ -18,11 +18,6 @@ use Drupal\acquia_lift\Service\Helper\SettingsHelper;
 
 class PathContext {
   /**
-   * Default identity type's default value.
-   */
-  const DEFAULT_IDENTITY_TYPE_DEFAULT = 'email';
-
-  /**
    * Acquia Lift credential settings.
    *
    * @var array
@@ -139,7 +134,7 @@ class PathContext {
     $identity_type_parameter = $this->identitySettings['identity_type_parameter'];
     $default_identity_type = $this->identitySettings['default_identity_type'];
     $identity = $queries[$identity_parameter];
-    $identityType = empty($default_identity_type) ? SELF::DEFAULT_IDENTITY_TYPE_DEFAULT : $default_identity_type;
+    $identityType = empty($default_identity_type) ? SettingsHelper::DEFAULT_IDENTITY_TYPE_DEFAULT : $default_identity_type;
     if (!empty($identity_type_parameter) && isset($queries[$identity_type_parameter])) {
       $identityType = $queries[$identity_type_parameter];
     }

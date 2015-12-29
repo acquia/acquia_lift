@@ -65,8 +65,12 @@ class HelpMessageHelperTest extends UnitTestCase {
    * Tests the getMessage() method - AdminSettingsForm, full settings.
    *
    * @covers ::getMessage
+   *
+   * @param string $route_name
+   *
+   * @dataProvider providerRouteNames
    */
-  public function testGetMessageAdminSettingsFormFullSettings() {
+  public function testGetMessageAdminSettingsFormFullSettings($route_name) {
     $full_settings = $this->getValidCredentialSettings();
 
     $this->settings->expects($this->once())
@@ -80,7 +84,7 @@ class HelpMessageHelperTest extends UnitTestCase {
       ->willReturn('a_web_admin_link');
 
     $help_message_helper = new HelpMessageHelper($this->configFactory, $this->linkGenerator);
-    $message = $help_message_helper->getMessage('acquia_lift.admin_settings_form');
+    $message = $help_message_helper->getMessage($route_name);
     $this->assertEquals('You can find more info in a_documentation_link, and control your web services settings at a_web_admin_link.', $message);
   }
 
@@ -88,8 +92,12 @@ class HelpMessageHelperTest extends UnitTestCase {
    * Tests the getMessage() method - AdminSettingsForm, no API URL setting.
    *
    * @covers ::getMessage
+   *
+   * @param string $route_name
+   *
+   * @dataProvider providerRouteNames
    */
-  public function testGetMessageAdminSettingsFormNoApiUrl() {
+  public function testGetMessageAdminSettingsFormNoApiUrl($route_name) {
     $missing_api_url_settings = $this->getValidCredentialSettings();
     unset($missing_api_url_settings['api_url']);
 
@@ -99,7 +107,18 @@ class HelpMessageHelperTest extends UnitTestCase {
       ->willReturn($missing_api_url_settings);
 
     $help_message_helper = new HelpMessageHelper($this->configFactory, $this->linkGenerator);
-    $message = $help_message_helper->getMessage('acquia_lift.admin_settings_form');
+    $message = $help_message_helper->getMessage($route_name);
     $this->assertEquals('You can find more info in a_documentation_link.', $message);
+  }
+
+  /**
+   * Data provider to produce route names.
+   */
+  public function providerRouteNames() {
+    $data = [];
+    $data['help page'] = ['help.page.acquia_lift'];
+    $data['admin settings form'] = ['acquia_lift.admin_settings_form'];
+
+    return $data;
   }
 }

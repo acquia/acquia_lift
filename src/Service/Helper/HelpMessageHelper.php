@@ -50,6 +50,7 @@ class HelpMessageHelper {
    */
   public function getMessage($route_name) {
     switch ($route_name) {
+      case 'help.page.acquia_lift':
       case 'acquia_lift.admin_settings_form':
         $link_attributes = ['attributes' => ['target' => '_blank']];
 

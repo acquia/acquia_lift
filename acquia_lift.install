@@ -8,16 +8,6 @@
 use Drupal\acquia_lift\Service\Helper\SettingsHelper;
 
 /**
- * Implements hook_uninstall().
- *
- * Remove cache directory if module is uninstalled.
- */
-function acquia_lift_uninstall() {
-  // Purging all Acquia Lift settings and js libraries.
-  drupal_flush_all_caches();
-}
-
-/**
  * Implements hook_requirements().
  */
 function acquia_lift_requirements($phase) {

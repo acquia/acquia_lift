@@ -91,6 +91,6 @@ function acquia_lift_form_node_type_form_submit(array $form, FormStateInterface 
  *
  * Implements hook_user_login().
  */
-function acquia_lift_user_login(UserInterface $user) {
-  \Drupal::service('acquia_lift.service.context.path_context')->setIdentityByUser($user);
-}
+//function acquia_lift_user_login(UserInterface $user) {
+//  \Drupal::service('acquia_lift.service.context.path_context')->setIdentityByUser($user);
+//}

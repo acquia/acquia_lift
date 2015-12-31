@@ -35,6 +35,7 @@ class SettingsTest extends WebTestBase {
     $permissions = [
       'access administration pages',
       'administer acquia lift',
+      'administer content types',
       'administer modules',
       'administer site configuration',
     ];
@@ -118,6 +119,10 @@ class SettingsTest extends WebTestBase {
 
     // Assert the Thumbnail URL shortcut links exist on the page.
     $this->assertRaw('admin/structure/types/manage/article#edit-acquia-lift', '[testAdminSettingsForm]: Thumbnail URL shortcut links exist on the page.');
+
+    // Assert the node type thumbnail form is actually loaded at the node type configuration page.
+    $this->drupalGet('admin/structure/types/manage/article');
+    $this->assertText(t('Acquia Lift'));
   }
 
   public function testJavaScriptAndDrupalSettings() {

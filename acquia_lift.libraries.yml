@@ -1,0 +1,8 @@
+acquia_lift:
+  version: VERSION
+  js:
+    js/acquia_lift.js: {}
+  dependencies:
+    - core/jquery
+    - core/drupal
+    - core/drupalSettings

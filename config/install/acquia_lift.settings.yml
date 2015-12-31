@@ -1,10 +1,21 @@
-access_key: ''
-secret_key: ''
-account_name: ''
-customer_site: ''
-api_url: ''
-js_path: ''
-capture_identity: null
-vocabulary_mappings: null
-udf_mappings: null
-tracked_actions: null
+credential:
+  account_name: ''
+  customer_site: ''
+  api_url: ''
+  access_key: ''
+  secret_key: ''
+  js_path: ''
+identity:
+  capture_identity: false
+  identity_parameter: ''
+  identity_type_parameter: ''
+  default_identity_type: ''
+field_mappings:
+  content_section: ''
+  content_keywords: ''
+  persona: ''
+thumbnail: []
+visibility:
+  # Track, only when the page URL falls OUTSIDE OF these path patterns.
+  path_patterns: "/admin\n/admin/*\n/batch\n/node/add*\n/node/*/*\n/user/*/*"
+langcode: en

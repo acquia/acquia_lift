@@ -1,15 +1,13 @@
 <?php
+
 /**
- * Created by PhpStorm.
- * User: lisa.backer
- * Date: 8/25/15
- * Time: 2:24 PM
+ * @file
+ * Contains \Drupal\acquia_lift\Service\Api\DataApiInterface.
  */
 
-namespace Drupal\acquia_lift;
+namespace Drupal\acquia_lift\Service\Api;
 
-
-interface AcquiaLiftDataInterface {
+interface DataApiInterface {
   /**
    * Gets a list of available segments for the current configuration.
    *
@@ -17,4 +15,4 @@ interface AcquiaLiftDataInterface {
    *   An array of segment names.
    */
   public function getSegments();
-} 
+}

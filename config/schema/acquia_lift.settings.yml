@@ -1,0 +1,78 @@
+acquia_lift.settings:
+  type: config_object
+  label: 'Acquia Lift settings'
+  mapping:
+    credential:
+      type: config_object
+      label: 'Credential'
+      mapping:
+        account_name:
+          type: string
+          label: 'Account name'
+        customer_site:
+          type: string
+          label: 'Customer site'
+        api_url:
+          type: uri
+          label: 'API URL'
+        access_key:
+          type: string
+          label: 'Access key'
+        secret_key:
+          type: string
+          label: 'Secret key'
+        js_path:
+          type: uri
+          label: 'JavaScript Path'
+    identity:
+      type: config_object
+      label: 'Identity'
+      mapping:
+        capture_identity:
+          type: boolean
+          label: 'Capture identity'
+        identity_parameter:
+          type: string
+          label: 'Identity parameter'
+        identity_type_parameter:
+          type: string
+          label: 'Identity type parameter'
+        default_identity_type:
+          type: string
+          label: 'Default identity type'
+    field_mappings:
+      type: config_object
+      label: 'Field mappings'
+      mapping:
+        content_section:
+          type: string
+          label: 'Content section'
+        content_keywords:
+          type: string
+          label: 'Content keywords'
+        persona:
+          type: string
+          label: 'Persona'
+    thumbnail:
+      type: sequence
+      label: 'Thumbnail'
+      sequence:
+        type: config_object
+        label: 'Content type'
+        mapping:
+          field:
+            type: string
+            label: 'Field'
+          style:
+            type: string
+            label: 'Style'
+    visibility:
+      type: config_object
+      label: 'Visibility'
+      mapping:
+        path_patterns:
+          type: string
+          label: 'Path patterns'
+    langcode:
+      type: string
+      label: 'Language code'

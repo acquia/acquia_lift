@@ -2,128 +2,80 @@
 
 /**
  * @file
- * Provides an agent type for Acquia Lift Profiles
+ * Contains \Drupal\acquia_lift\Service\Api\DataApi.
  */
-namespace Drupal\acquia_lift;
 
-use Drupal\acquia_lift\Exception\AcquiaLiftDataConnectorCredsException;
-use Drupal\acquia_lift\Exception\AcquiaLiftDataConnectorException;
+namespace Drupal\acquia_lift\Service\Api;
+
+use Drupal\acquia_lift\Exception\DataApiCredentialException;
+use Drupal\acquia_lift\Exception\DataApiException;
 use Drupal\Component\Utility\SafeMarkup;
-use Drupal\Component\Utility\UrlHelper;
-use Drupal\Core\Config\ConfigFactory;
+use Drupal\Core\Config\ConfigFactoryInterface;
 use Drupal\Core\Routing\RequestContext;
+use Drupal\acquia_lift\Service\Helper\SettingsHelper;
 use GuzzleHttp\ClientInterface;
 use GuzzleHttp\Psr7\Request;
 
-
-class AcquiaLiftDataAPI implements AcquiaLiftDataInterface {
-
+class DataApi implements DataApiInterface {
   /**
    * An http client for making calls to Acquia Lift web data collection service.
    *
    * @var \GuzzleHttp\ClientInterface
    */
-  protected $httpClient;
-
-  /**
-   * The API URL for Acquia Lift Data collection.
-   *
-   * @var string
-   */
-  protected $apiUrl;
-
-  /**
-   * The Acquia Lift account name to use.
-   *
-   * @var string
-   */
-  protected $accountName;
-
-  /**
-   * The customer site to use.
-   *
-   * @var string
-   */
-  protected $siteName;
-
-  /**
-   * The access key to use for authorization.
-   *
-   * @var string
-   */
-  protected $accessKey;
-
-  /**
-   * The secret key to use for authorization.
-   *
-   * @var string
-   */
-  protected $secretKey;
+  private $httpClient;
 
   /**
    * The current Drupal request.
    *
    * @var \Drupal\Core\Routing\RequestContext
    */
-  protected $context;
-
-  /**
-   * The list of headers that can be used in the canonical request.
-   *
-   * @var array
-   */
-  protected $headerWhitelist = array(
-    'Accept',
-    'Host',
-    'User-Agent'
-  );
+  private $context;
 
   /**
    * The logger to use for errors and notices.
    *
    * @var \Psr\Log\LoggerInterface;
    */
-  protected $logger = NULL;
+  private $logger;
+
+  /**
+   * Acquia Lift credential settings.
+   *
+   * @var array
+   */
+  private $credentialSettings;
+
+  /**
+   * The list of headers that can be used in the canonical request.
+   *
+   * @var array
+   */
+  private $headerWhitelist = [
+    'Accept',
+    'Host',
+    'User-Agent',
+  ];
 
   /**
    * Constructor.
-   * @param ConfigFactory $config_factory
-   *   The config factory service
-   * @param ClientInterface $http_client
-   *   A Guzzle client interface
-   * @param RequestContext $context
-   *   The current request
-   * @throws AcquiaLiftDataConnectorCredsException
+   *
+   * @param \Drupal\Core\Config\ConfigFactoryInterface $config_factory
+   *   The config factory service.
+   * @param \GuzzleHttp\ClientInterface $http_client
+   *   A Guzzle client interface.
+   * @param \Drupal\Core\Routing\RequestContext $context
+   *   The current request.
+   *
+   * @throws \Drupal\acquia_lift\Exception\DataApiCredentialException
    */
-  public function __construct(ConfigFactory $config_factory, ClientInterface $http_client, RequestContext $context) {
-    $config = $config_factory->get('acquia_lift.settings');
+  public function __construct(ConfigFactoryInterface $config_factory, ClientInterface $http_client, RequestContext $context) {
+    $this->httpClient = $http_client;
     $this->context = $context;
     $this->logger = \Drupal::logger('acquia_lift');
 
-    $this->accountName = $config->get('account_name');
-    $this->apiUrl = $config->get('api_url');
-    $this->accessKey = $config->get('access_key');
-    $this->secretKey = $config->get('secret_key');
-    $this->siteName = $config->get('customer_site');
-
-    // If either account name or API URL is still missing, bail.
-    if (empty($this->apiUrl) || empty($this->accountName) || empty($this->accessKey) || empty($this->secretKey)) {
-      throw new AcquiaLiftDataConnectorCredsException('Missing acquia_lift data account information.');
-    }
-    if (!UrlHelper::isValid($this->apiUrl)) {
-      throw new AcquiaLiftDataConnectorCredsException('Acquia Lift Data API URL is not a valid URL.');
-    }
-
-    $this->httpClient = $http_client;
-
-    $needs_scheme = strpos($this->apiUrl, '://') === FALSE;
-    if ($needs_scheme) {
-      // Use the same scheme for Acquia Lift Profiles as we are using here.
-      $url_scheme = ($this->context->getScheme() == 'https') ? 'https://' : 'http://';
-      $this->apiUrl = $url_scheme . $this->apiUrl;
-    }
-    if (substr($this->apiUrl, -1) === '/') {
-      $this->apiUrl = substr($this->apiUrl, 0, -1);
+    $this->credentialSettings = $config_factory->get('acquia_lift.settings')->get('credential');
+    if (SettingsHelper::isInvalidCredential($this->credentialSettings)) {
+      throw new DataApiCredentialException('Acquia Lift credential is invalid.');
     }
   }
 
@@ -141,33 +93,6 @@ class AcquiaLiftDataAPI implements AcquiaLiftDataInterface {
   }
 
   /**
-   * Accessor for the accountName property.
-   *
-   * @return string
-   */
-  public function getAccountName() {
-    return $this->accountName;
-  }
-
-  /**
-   * Accessor for the apiUrl property.
-   *
-   * @return string
-   */
-  public function getApiUrl() {
-    return $this->apiUrl;
-  }
-
-  /**
-   * Returns an http client to use for Acquia Lift Profiles calls.
-   *
-   * @return \GuzzleHttp\ClientInterface
-   */
-  protected function httpClient() {
-    return $this->httpClient;
-  }
-
-  /**
    * Generates an endpoint for a particular section of the Acquia Lift Data API.
    *
    * @param string $path
@@ -175,8 +100,9 @@ class AcquiaLiftDataAPI implements AcquiaLiftDataInterface {
    * @return string
    *   The endpoint to make calls to.
    */
-  protected function generateEndpoint($path) {
-    return $this->apiUrl . '/dashboard/rest/' . $this->accountName . '/' . $path;
+  private function generateEndpoint($path) {
+    $url_scheme = ($this->context->getScheme() == 'https') ? 'https://' : 'http://';
+    return $url_scheme . $this->credentialSettings['api_url'] . '/dashboard/rest/' . $this->credentialSettings['account_name'] . '/' . $path;
   }
 
   /**
@@ -194,13 +120,13 @@ class AcquiaLiftDataAPI implements AcquiaLiftDataInterface {
    * @return string
    *   The canonical representation of the request.
    */
-  public function canonicalizeRequest($method, $url, $parameters = array(), $headers = array()) {
+  private function canonicalizeRequest($method, $url, $parameters = [], $headers = []) {
     $parsed_url = parse_url($url);
     $str = strtoupper($method) . "\n";
     // Certain headers may get added to the actual request so we need to
     // add them here.
     if (!isset($headers['User-Agent'])) {
-      $client_config = $this->httpClient()->getConfig();
+      $client_config = $this->httpClient->getConfig();
       $headers['User-Agent'] = $client_config['headers']['User-Agent'];
     }
     if (!isset($headers['Host'])) {
@@ -236,10 +162,10 @@ class AcquiaLiftDataAPI implements AcquiaLiftDataInterface {
    *
    * @return string
    */
-  public function getAuthHeader($method, $path, $parameters = array(), $headers = array()) {
+  private function getAuthHeader($method, $path, $parameters = [], $headers = []) {
     $canonical = $this->canonicalizeRequest($method, $path, $parameters, $headers);
-    $hmac = base64_encode(hash_hmac('sha1', (string) $canonical, $this->secretKey, TRUE));
-    return 'HMAC ' . $this->accessKey . ':' . $hmac;
+    $hmac = base64_encode(hash_hmac('sha1', (string) $canonical, $this->credentialSettings['secret_key'], TRUE));
+    return 'HMAC ' . $this->credentialSettings['access_key'] . ':' . $hmac;
   }
 
   /**
@@ -250,23 +176,23 @@ class AcquiaLiftDataAPI implements AcquiaLiftDataInterface {
    */
   public function getSegments() {
     // First get our Authorization header.
-    $headers = array('Accept' => 'application/json');
+    $headers = ['Accept' => 'application/json'];
     $url = $this->generateEndpoint('segments');
-    $auth_header = $this->getAuthHeader('GET', $url, array(), $headers);
-    $headers += array('Authorization' => $auth_header);
+    $auth_header = $this->getAuthHeader('GET', $url, [], $headers);
+    $headers += ['Authorization' => $auth_header];
 
     $request = new Request('GET', $url, $headers);
-    $response = $this->httpClient()->send($request);
+    $response = $this->httpClient->send($request);
     $data = $response->getBody();
     if (empty($data)) {
-      return array();
+      return [];
     }
     $data = json_decode($data, TRUE);
     if (is_array($data)) {
       $segments = array_values(array_filter($data));
       return $segments;
     }
-    return array();
+    return [];
   }
 
   /**
@@ -278,27 +204,25 @@ class AcquiaLiftDataAPI implements AcquiaLiftDataInterface {
    *   The type of event, can be one of 'CAMPAIGN_ACTION', 'CAMPAIGN_CLICK_THROUGH',
    *   'CAMPAIGN_CONVERSION', or 'OTHER' (default).
    *
-   * @throws AcquiaLiftDataConnectorException
+   * @throws DataApiException
    */
   public function saveEvent($event_name, $event_type = 'OTHER') {
     // First get our Authorization header.
-    $headers = array('Accept' => 'application/json');
+    $headers = ['Accept' => 'application/json'];
     $url = $this->generateEndpoint('events/' . $event_name);
-    $auth_header = $this->getAuthHeader('PUT', $url, array('type' => $event_type), $headers);
-    $headers += array('Authorization' => $auth_header);
+    $auth_header = $this->getAuthHeader('PUT', $url, ['type' => $event_type], $headers);
+    $headers += ['Authorization' => $auth_header];
 
     $request = new Request('PUT', $url . '?type=' . $event_type, $headers);
-    $response = $this->httpClient()->send($request);
-    $vars = array('@eventname' => $event_name);
+    $response = $this->httpClient->send($request);
+    $vars = ['@eventname' => $event_name];
     $success_msg = SafeMarkup::format('The event @eventname has been saved to Acquia Lift', $vars);
     $fail_msg = SafeMarkup::format('Could not save event @eventname to Acquia Lift', $vars);
-    if ($response->getStatusCode() == 200) {
-      $this->logger->info($success_msg);
-    }
-    else {
+    if ($response->getStatusCode() != 200) {
       $this->logger->error($fail_msg);
-      throw new AcquiaLiftDataConnectorException($fail_msg);
+      throw new DataApiException($fail_msg);
     }
+    $this->logger->info($success_msg);
   }
 
   /**
@@ -307,25 +231,23 @@ class AcquiaLiftDataAPI implements AcquiaLiftDataInterface {
    * @param $event_name
    *   The name of the event.
    *
-   * @throws AcquiaLiftDataConnectorException
+   * @throws DataApiException
    */
   public function deleteEvent($event_name) {
     // First get our Authorization header.
     $url = $this->generateEndpoint('events/' . $event_name);
     $auth_header = $this->getAuthHeader('DELETE', $url);
 
-    $request = new Request('DELETE', $url, array('Authorization' => $auth_header));
-    $response = $this->httpClient()->send($request);
+    $request = new Request('DELETE', $url, ['Authorization' => $auth_header]);
+    $response = $this->httpClient->send($request);
 
-    $vars = array('@eventname' => $event_name);
+    $vars = ['@eventname' => $event_name];
     $success_msg = SafeMarkup::format('The event @eventname was deleted from Acquia Lift Profiles', $vars);
     $fail_msg = SafeMarkup::format('Could not delete event @eventname from Acquia Lift Profiles', $vars);
-    if ($response->getStatusCode() == 200) {
-      $this->logger->info($success_msg);
-    }
-    else {
+    if ($response->getStatusCode() != 200) {
       $this->logger->error($fail_msg);
-      throw new AcquiaLiftDataConnectorException($fail_msg);
+      throw new DataApiException($fail_msg);
     }
+    $this->logger->info($success_msg);
   }
 }

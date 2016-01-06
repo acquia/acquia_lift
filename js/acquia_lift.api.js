@@ -138,7 +138,7 @@
   // CORS support based on this post:
   // http://www.nczonline.net/blog/2010/05/25/cross-domain-ajax-with-cross-origin-resource-sharing/
   function microAjax(url, callbackFunction) {
-    this.getRequest = function(method, url) {
+    var getRequest = function(method, url) {
       var xhr = new XMLHttpRequest();
       if ("withCredentials" in xhr){
         xhr.open(method, url, true);
@@ -151,25 +151,24 @@
       return xhr;
     };
 
-    this.postBody = (arguments[2] || "");
-    var method = this.postBody !== "" ? 'POST' : 'GET';
-    this.request = this.getRequest(method, url);
+    var postBody = (arguments[2] || ""),
+        method = postBody !== "" ? 'POST' : 'GET',
+        request = getRequest(method, url);
 
-    if(this.request) {
-      var req = this.request;
-      req.timeout = 5000;
-      req.onload = function() {
-        return callbackFunction(req.responseText);
+    if(request) {
+      request.timeout = 5000;
+      request.onload = function() {
+        return callbackFunction(request.responseText);
       };
-      req.onerror = req.ontimeout = function() {
+      request.onerror = request.ontimeout = function() {
         return callbackFunction(null);
       };
 
       if (method=='POST') {
-        req.setRequestHeader('Content-Type', 'application/json');
+        request.setRequestHeader('Content-Type', 'application/json');
       }
 
-      req.send(this.postBody);
+      request.send(postBody);
     }
     else {
       return callbackFunction(null);

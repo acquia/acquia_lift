@@ -499,6 +499,12 @@ function acquia_lift_get_account_info() {
     $acquia_lift_data = array();
     if (isset($subscription_data['heartbeat_data']['acquia_lift'])) {
       $acquia_lift_data = $subscription_data['heartbeat_data']['acquia_lift'];
+
+      // NSPI Fix with the wrong key
+      if (!isset($acquia_lift_data['decision']['api_url']) && isset($acquia_lift_data['decision']['hostname'])) {
+        $acquia_lift_data['decision']['api_url'] = $acquia_lift_data['decision']['hostname'];
+      }
+
       $default_lift_data = array(
         'status' => false,
         'decision' => array(
@@ -519,9 +525,9 @@ function acquia_lift_get_account_info() {
       $acquia_lift_data = array_merge($default_lift_data, $acquia_lift_data);
     }
 
-    // Set default url
+    // Set default url if there was none set.
     $account_info['api_url'] = variable_get('acquia_lift_apiv2_url', '');
-    if (empty($account_info['api_url'])) {
+    if (empty($account_info['api_url']) && empty($acquia_lift_data['decision']['api_url'])) {
       $account_info['api_url'] = 'us-east-1-decision.lift.acquia.com';
     }
 
@@ -572,6 +578,7 @@ function acquia_lift_get_account_info() {
           $account_info['profiles'][$key] = empty($account_info['profiles'][$key]) ? $value : $account_info[$key];
         }
       }
+
       // unset the js_path from profiles since that is a special case
       // @todo Get rid of the special case...
       unset($account_info['profiles']['js_path']);

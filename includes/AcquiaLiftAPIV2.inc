@@ -470,7 +470,7 @@ class AcquiaLiftAPIV2 extends AcquiaLiftAPIBase implements AcquiaLiftLearnReport
     $message = $this->canonicalizeRequest($verb, $host, $path, $query_args, $authorization, $timestamp, $content_type, $payload_hash);
 
     // Always use binary output
-    $signature = base64_encode(hash_hmac('sha256', $this->api_private_key, (string) $message, TRUE));
+    $signature = base64_encode(hash_hmac('sha256', (string) $message, $this->api_private_key, TRUE));
     $authorization["signature"] = $signature;
     $auth_stringlist = array();
     foreach ($authorization as $id => $value) {

@@ -470,9 +470,9 @@ class AcquiaLiftAPIV2 extends AcquiaLiftAPIBase implements AcquiaLiftLearnReport
 
     // Canonicalize the request
     $message = $this->canonicalizeRequest($verb, $host, $path, $query_args, $authorization, $timestamp, $content_type, $payload_hash);
-
-    $api_private_key_decoded = base64_decode($this->api_private_key);
     
+    // Decode the private key. We transfer it as a base64 encoded key.
+    $api_private_key_decoded = base64_decode($this->api_private_key);
     // Validate if the secret key is a valid base64 encoded key.
     if ($secret_key_decoded === FALSE) {
       throw new AcquiaLiftCredsException(t('secret key could not be decoded as base64. Please validate your credentials or contact Acquia Support.'));

@@ -478,7 +478,7 @@ class AcquiaLiftAPIV2 extends AcquiaLiftAPIBase implements AcquiaLiftLearnReport
       throw new AcquiaLiftCredsException(t('secret key could not be decoded as base64. Please validate your credentials or contact Acquia Support.'));
     }
     // Do not continue if the decoded version is empty. Very unlikely that this will ever occur.
-    if (!empty($api_private_key_decoded)) {
+    if (empty($api_private_key_decoded)) {
       throw new AcquiaLiftCredsException(t('secret key cannot be empty. Please validate your credentials or contact Acquia Support.'));
     }
 

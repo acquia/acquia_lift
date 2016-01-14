@@ -474,15 +474,18 @@ class AcquiaLiftAPIV2 extends AcquiaLiftAPIBase implements AcquiaLiftLearnReport
     // Decode the private key. We transfer it as a base64 encoded key.
     $api_private_key_decoded = base64_decode($this->api_private_key);
     // Validate if the secret key is a valid base64 encoded key.
-    if ($secret_key_decoded === FALSE) {
+    if ($api_private_key_decoded === FALSE) {
       throw new AcquiaLiftCredsException(t('secret key could not be decoded as base64. Please validate your credentials or contact Acquia Support.'));
+    }
+    // Do not continue if the decoded version is empty. Very unlikely that this will ever occur.
+    if (!empty($api_private_key_decoded)) {
+      throw new AcquiaLiftCredsException(t('secret key cannot be empty. Please validate your credentials or contact Acquia Support.'));
     }
 
     // Create an HMAC hash with the base64 decoded secret key and make sure we always use binary output.
     // The message is converted into a string so that we do not encode a boolean or any other type than string
     // since the server side also expects the message to always be a string.
     $signature = base64_encode(hash_hmac('sha256', (string) $message, $api_private_key_decoded, TRUE));
-    
     $authorization["signature"] = $signature;
     $auth_stringlist = array();
     foreach ($authorization as $id => $value) {

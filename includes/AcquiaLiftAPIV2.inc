@@ -427,14 +427,16 @@ class AcquiaLiftAPIV2 extends AcquiaLiftAPIBase implements AcquiaLiftLearnReport
    * @param string $method
    *   The method used for the request such as PUT, POST, ...
    * @param string $path
-   *   The full path of the request
+   *   The full path of the request.
    * @param array $headers
    *   An array of headers that will be used to generate the authentication
    *   header.
    * @param null|array $payload
    *   The post body raw data, usually a json string but could also be XML.
    * @return string, boolean
-   *   The value of the Authorization header or false if generating the header failed.
+   *   The value of the Authorization header.
+   * @throws Exception
+   *   Throws an Exception if it was unable to decode the secret key.
    */
   public function getAuthHeader($verb, $url, $headers = array(), $payload_hash = "", $nonce = "") {
     // Generate Authorization array

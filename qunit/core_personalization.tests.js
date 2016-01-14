@@ -368,7 +368,6 @@ QUnit.test('Send goal', function(assert) {
   Drupal.acquiaLiftLearn.sendGoal('my-agent', 'some-goal', 2);
 
   assert.equal(sinon.requests.length, 1);
-  console.log(sinon.requests[0]);
   var parsedUrl = parseUri(sinon.requests[0].url);
   var parsedBody = JSON.parse(sinon.requests[0].requestBody);
   assert.equal(parsedUrl.host, 'api.example.com');
@@ -422,7 +421,6 @@ QUnit.test('Page load goals queue processing', function(assert) {
   assert.equal(parsedUrl.path, "/feedback");
   assert.equal(parsedUrl.queryKey.client_id, "ohai");
   var parsedBody = JSON.parse(sinon.requests[0].requestBody);
-  console.log(parsedBody);
   assert.equal(parsedBody.user_hash, "some-session-ID");
   assert.equal(parsedBody.application_hash, "drupal");
   assert.equal(parsedBody.campaign_id, "test-agent");
@@ -450,12 +448,10 @@ QUnit.module("Acquia Lift Targeting", {
     Drupal.personalize.agents.acquia_lift_learn.getDecisionsForPoint = function(agentName, evaluatedVisitorContexts, choices, decisionName, fallbacks, callback) {
       var selection = {};
       selection[decisionName] = choices[decisionName][0];
-      console.log("ohai");
       callback(selection);
     };
   },
   teardown: function() {
-    console.log('tearing down');
     Drupal.settings.personalize.agent_map = {};
     Drupal.settings.personalize.option_sets = {};
     Drupal.settings.acquia_lift_target.agent_map = {};
@@ -529,7 +525,6 @@ QUnit.test("test explicit targeting logic", function( assert ) {
   Drupal.personalize.agents.acquia_lift_target.getDecisionsForPoint(agentName, evaluatedVisitorContexts, choices, decisionName, fallbacks, function(decisions) {
     assert.ok(decisions.hasOwnProperty(decisionName));
     assert.equal(decisions[decisionName], 'first-option');
-    console.log(decisions);
   });
 
   // Now try with contexts that should satisfy the rules for the second option.
@@ -565,6 +560,65 @@ QUnit.test("test explicit targeting logic", function( assert ) {
     assert.ok(decisions.hasOwnProperty(decisionName));
     assert.equal(decisions[decisionName], 'third-option');
   });
+});
+
+QUnit.test("test audience names", function( assert ) {
+  expect(4);
+  // Add settings for a targeting agent with some fixed targeting rules on its single
+  // option set and use a number as one of the audience names
+  var agentName = 'my-test-agent',
+      decisionName = 'my-decision',
+      enabledContexts = {
+        'some_plugin': {
+          'some-context': 'some-context'
+        }
+      },
+      options = [
+        {
+          'option_id': 'first-option',
+          'option_label': 'First Option'
+        },
+        {
+          'option_id': 'second-option',
+          'option_label': 'Second Option'
+        }
+      ],
+      targeting = [
+        {
+          'name': 1,
+          'option_id': 'second-option',
+          // Add fixed targeting rules such that this option should be shown if two
+          // feature strings are present.
+          'targeting_features': [
+            "some-context::some-value"
+          ],
+          'targeting_strategy': 'AND'
+        }
+      ];
+  addLiftTargetToDrupalSettings(agentName, enabledContexts, decisionName, 'osid-1', options, targeting);
+
+  // Now test that the audience works as expected.
+  var evaluatedVisitorContexts = {},
+      choices = {},
+      fallbacks = {};
+  choices[decisionName] = ['first-option', 'second-option'];
+  fallbacks[decisionName] = 0;
+  Drupal.personalize.agents.acquia_lift_target.getDecisionsForPoint(agentName, evaluatedVisitorContexts, choices, decisionName, fallbacks, function(decisions) {
+    assert.ok(decisions.hasOwnProperty(decisionName));
+    assert.equal(decisions[decisionName], 'first-option');
+  });
+
+  evaluatedVisitorContexts = {
+    'some-context': [
+      'some-value',
+      'sc-some'
+    ]
+  };
+  Drupal.personalize.agents.acquia_lift_target.getDecisionsForPoint(agentName, evaluatedVisitorContexts, choices, decisionName, fallbacks, function(decisions) {
+    assert.ok(decisions.hasOwnProperty(decisionName));
+    assert.equal(decisions[decisionName], 'second-option');
+  });
+
 });
 
 

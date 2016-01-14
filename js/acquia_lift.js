@@ -195,6 +195,8 @@ Drupal.acquia_lift_target = (function() {
       for (i in agentRules[agent_name]) {
         if (agentRules[agent_name].hasOwnProperty(i)) {
           ruleId = i;
+          // Make sure the audience name is a string
+          agentRules[agent_name][ruleId].name = '' + agentRules[agent_name][ruleId].name;
           // If this is the "everyone else" target, then there are no features to be matched,
           // just execute the decision for this target.
           if (agentRules[agent_name][ruleId].name.indexOf(defaultTarget) == 0) {

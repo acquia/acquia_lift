@@ -1690,6 +1690,59 @@ class AcquiaLiftWebTestTarget extends AcquiaLiftWebTestBase {
     $this->assertEqual($expected_targeting, $option_set->targeting);
   }
 
+  function testAudienceName() {
+    module_load_include('inc', 'acquia_lift', 'acquia_lift.admin');
+    $agent = $this->createTargetingAgent();
+    $this->resetAll();
+
+    // Now create an option set for the agent.
+    $this->createOptionSet(0, array(
+      'plugin' => 'blocks',
+      'agent' => $agent->machine_name,
+      'option_ids' => array('first-choice', 'second-choice', 'third-choice')
+    ));
+    $this->resetAll();
+
+    // Give the audience a numeric label
+    $label = 1;
+    $contexts = array(
+      array(
+        'context' => implode(PERSONALIZE_TARGETING_ADMIN_SEPARATOR, array('some_plugin', 'some_context')),
+        'operator' => 'contains',
+        'match' => 'ohai'
+      ),
+    );
+    acquia_lift_target_audience_save($label, $agent->machine_name, $contexts, 'AND');
+    $this->resetAll();
+    $option_set = acquia_lift_get_option_set_for_targeting($agent->machine_name);
+    $this->assertTrue(isset($option_set->targeting["audience-1"]));
+
+    // Confirm that a pre-existing audience with a numeric name is unaffected.
+    $option_set->targeting[2] = array(
+      'label' => 2,
+      'weight' => 49,
+      'targeting_features' => array(
+        0 => 'some_context::sc-ohai',
+      ),
+      'targeting_rules' => array(
+          'some_context::sc-ohai' =>
+            array (
+              'context' => 'some_context',
+              'operator' => 'starts',
+              'match' => 'srsly',
+              'plugin' => 'some_plugin',
+            ),
+        ),
+      'option_id' => 'second-choice'
+    );
+    personalize_option_set_save($option_set);
+    acquia_lift_target_audience_save(2, $agent->machine_name, $contexts, 'AND', 49, 2);
+    $this->resetAll();
+    $option_set = acquia_lift_get_option_set_for_targeting($agent->machine_name);
+    $this->assertFalse(isset($option_set->targeting["audience-2"]));
+    $this->assertTrue(isset($option_set->targeting[2]));
+  }
+
   function testAssignVariations() {
     module_load_include('inc', 'acquia_lift', 'acquia_lift.admin');
     $agent = $this->createTargetingAgent();

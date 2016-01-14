@@ -1531,7 +1531,16 @@ function acquia_lift_target_audience_save($label, $agent_name, $contexts, $strat
   if (empty($option_set)) {
     return FALSE;
   }
-  $machine_name = empty($machine_name) ? personalize_generate_machine_name($label, NULL, '-') : $machine_name;
+  if (empty($machine_name)) {
+    if (is_numeric($label)) {
+      $label = "Audience " . $label;
+    }
+    $machine_name = personalize_generate_machine_name($label, NULL, '-');
+  }
+  elseif (is_numeric($machine_name) && !isset($option_set->targeting[$machine_name])) {
+    $machine_name = personalize_generate_machine_name("audience-" . $machine_name, NULL, '-');
+  }
+
   if (!isset($option_set->targeting[$machine_name])) {
     $option_set->targeting[$machine_name] = array();
   }

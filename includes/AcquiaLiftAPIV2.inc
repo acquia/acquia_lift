@@ -433,7 +433,7 @@ class AcquiaLiftAPIV2 extends AcquiaLiftAPIBase implements AcquiaLiftLearnReport
    *   header.
    * @param null|array $payload
    *   The post body raw data, usually a json string but could also be XML.
-   * @return string, boolean
+   * @return string
    *   The value of the Authorization header.
    * @throws Exception
    *   Throws an Exception if it was unable to decode the secret key.

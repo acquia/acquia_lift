@@ -433,8 +433,8 @@ class AcquiaLiftAPIV2 extends AcquiaLiftAPIBase implements AcquiaLiftLearnReport
    *   header.
    * @param null|array $payload
    *   The post body raw data, usually a json string but could also be XML.
-   * @return string
-   *   The value of the Authorization header.
+   * @return string, boolean
+   *   The value of the Authorization header or false if generating the header failed.
    */
   public function getAuthHeader($verb, $url, $headers = array(), $payload_hash = "", $nonce = "") {
     // Generate Authorization array
@@ -469,8 +469,18 @@ class AcquiaLiftAPIV2 extends AcquiaLiftAPIBase implements AcquiaLiftLearnReport
     // Canonicalize the request
     $message = $this->canonicalizeRequest($verb, $host, $path, $query_args, $authorization, $timestamp, $content_type, $payload_hash);
 
-    // Always use binary output
-    $signature = base64_encode(hash_hmac('sha256', (string) $message, $this->api_private_key, TRUE));
+    $api_private_key_decoded = base64_decode($this->api_private_key);
+    
+    // Validate if the secret key is a valid base64 encoded key.
+    if ($secret_key_decoded === FALSE) {
+      throw new AcquiaLiftCredsException(t('secret key could not be decoded as base64. Please validate your credentials or contact Acquia Support.'));
+    }
+
+    // Create an HMAC hash with the base64 decoded secret key and make sure we always use binary output.
+    // The message is converted into a string so that we do not encode a boolean or any other type than string
+    // since the server side also expects the message to always be a string.
+    $signature = base64_encode(hash_hmac('sha256', (string) $message, $api_private_key_decoded, TRUE));
+    
     $authorization["signature"] = $signature;
     $auth_stringlist = array();
     foreach ($authorization as $id => $value) {

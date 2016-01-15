@@ -409,7 +409,7 @@ class AcquiaLiftAPIV2 extends AcquiaLiftAPIBase implements AcquiaLiftLearnReport
     $list[] = $timestamp;
     // Some values such as Content Type and the BodyHash should be ommitted if
     // the Content-Length = 0
-    if (empty($payload_hash)) {
+    if (!empty($payload_hash)) {
       // Content Type.
       $list[] = strtolower($content_type);
       // SHA256 of the Request-Body.

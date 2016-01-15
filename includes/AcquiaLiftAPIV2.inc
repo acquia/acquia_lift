@@ -377,42 +377,44 @@ class AcquiaLiftAPIV2 extends AcquiaLiftAPIBase implements AcquiaLiftLearnReport
    */
   function canonicalizeRequest($verb, $host, $path, $query_args = "", $auth_options = array(), $timestamp, $content_type, $payload_hash) {
     // See https://github.com/acquia/http-hmac-spec (branch 2.0) for
-    //specification on Canonicalization of the request
+    // specification on Canonicalization of the request
     $list = array();
-
-    // HTTP-Verb + "\n" +
+    // The uppercase HTTP request method e.g. "GET", "POST"
     $list[] = strtoupper($verb);
-
-    // Host
+    // The (lowercase) hostname, matching the HTTP "Host" request header field
+  	// (including any port number)
     $list[] = $host;
-
-    // Path
+    // The HTTP request path with leading slash, e.g. /resource/11
     $list[] = $path;
-
-    // Query Params
+    // Any query parameters or empty string. This should be the exact string sent
+	  // by the client, including urlencoding.
     $list[] = $query_args;
-
-    // Authorization Params such as Nonce
-    ksort($auth_options);
+    // normalized parameters similar to section 9.1.1 of OAuth 1.0a. The
+	  // parameters are the id, nonce, realm, and version from the Authorization
+	  // header. Parameters are sorted by name and separated by '&' with name and
+	  // value separated by =, percent encoded (urlencoded).
+	  ksort($auth_options);
     $auth_options_list = array();
     foreach ($auth_options as $id => $value) {
       $auth_options_list[] = $id . "=" . $value;
     }
     $list[] = implode($auth_options_list, "&");
-
-    // Added Signed Headers.
+    // The normalized header names and values specified in the headers parameter
+	  // of the Authorization header. Names should be lower-cased, sorted by name,
+	  // separated from value by a colon and the value followed by a newline so
+	  // each extra header is on its own line.
     // @todo Implement this when needed.
     $list[] = "";
-
-    // Timestamp
+    // The value of the X-Authorization-Timestamp header
     $list[] = $timestamp;
-
-    // Content Type
-    $list[] = strtolower($content_type);
-
-    // Body Hash
-    $list[] = $payload_hash;
-
+    // Some values such as Content Type and the BodyHash should be ommitted if
+	  // the Content-Length = 0
+    if (empty($payload_hash)) {
+      // Content Type.
+      $list[] = strtolower($content_type);
+      // SHA256 of the Request-Body.
+      $list[] = $payload_hash;
+    }
     return implode("\n", $list);
   }
 

@@ -382,33 +382,33 @@ class AcquiaLiftAPIV2 extends AcquiaLiftAPIBase implements AcquiaLiftLearnReport
     // The uppercase HTTP request method e.g. "GET", "POST"
     $list[] = strtoupper($verb);
     // The (lowercase) hostname, matching the HTTP "Host" request header field
-  	// (including any port number)
+    // (including any port number)
     $list[] = $host;
     // The HTTP request path with leading slash, e.g. /resource/11
     $list[] = $path;
     // Any query parameters or empty string. This should be the exact string sent
-	  // by the client, including urlencoding.
+    // by the client, including urlencoding.
     $list[] = $query_args;
     // normalized parameters similar to section 9.1.1 of OAuth 1.0a. The
-	  // parameters are the id, nonce, realm, and version from the Authorization
-	  // header. Parameters are sorted by name and separated by '&' with name and
-	  // value separated by =, percent encoded (urlencoded).
-	  ksort($auth_options);
+    // parameters are the id, nonce, realm, and version from the Authorization
+    // header. Parameters are sorted by name and separated by '&' with name and
+    // value separated by =, percent encoded (urlencoded).
+    ksort($auth_options);
     $auth_options_list = array();
     foreach ($auth_options as $id => $value) {
       $auth_options_list[] = $id . "=" . $value;
     }
     $list[] = implode($auth_options_list, "&");
     // The normalized header names and values specified in the headers parameter
-	  // of the Authorization header. Names should be lower-cased, sorted by name,
-	  // separated from value by a colon and the value followed by a newline so
-	  // each extra header is on its own line.
+    // of the Authorization header. Names should be lower-cased, sorted by name,
+    // separated from value by a colon and the value followed by a newline so
+    // each extra header is on its own line.
     // @todo Implement this when needed.
     $list[] = "";
     // The value of the X-Authorization-Timestamp header
     $list[] = $timestamp;
     // Some values such as Content Type and the BodyHash should be ommitted if
-	  // the Content-Length = 0
+    // the Content-Length = 0
     if (empty($payload_hash)) {
       // Content Type.
       $list[] = strtolower($content_type);
@@ -417,11 +417,6 @@ class AcquiaLiftAPIV2 extends AcquiaLiftAPIBase implements AcquiaLiftLearnReport
     }
     return implode("\n", $list);
   }
-
-  /**
-   *
-   * @return string
-   */
 
   /**
    * Returns a string to use for the 'Authorization' header.

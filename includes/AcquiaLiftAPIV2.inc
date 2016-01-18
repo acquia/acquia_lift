@@ -94,13 +94,13 @@ class AcquiaLiftAPIV2 extends AcquiaLiftAPIBase implements AcquiaLiftLearnReport
         // Additionally, decode the private key. According to the HMAC Spec 2.0 it is
         // transferred as base64 decoded string but we need to make sure we decode it before
         // using it.
-        $private_key_decoded = base64_decode($private_key);
+        $private_key = base64_decode($private_key);
         // Validate if the secret key is a valid base64 encoded key.
-        if ($private_key_decoded === FALSE) {
+        if ($private_key === FALSE) {
           throw new AcquiaLiftCredsException(t('secret key could not be decoded as base64. Please validate your credentials or contact Acquia Support.'));
         }
         // Do not continue if the decoded version is empty. Very unlikely that this will ever occur.
-        if (empty($private_key_decoded)) {
+        if (empty($private_key)) {
           throw new AcquiaLiftCredsException(t('secret key cannot be empty. Please validate your credentials or contact Acquia Support.'));
         }
       }
@@ -117,7 +117,7 @@ class AcquiaLiftAPIV2 extends AcquiaLiftAPIBase implements AcquiaLiftLearnReport
       // we then can self-generate public and private keys per customer. They
       // will also be able to expire easily.
 
-      self::$instance = new self($api_url, $public_key, $private_key_decoded, $acquia_lift_version, $validate_response);
+      self::$instance = new self($api_url, $public_key, $private_key, $acquia_lift_version, $validate_response);
     }
     return self::$instance;
   }

@@ -91,6 +91,18 @@ class AcquiaLiftAPIV2 extends AcquiaLiftAPIBase implements AcquiaLiftLearnReport
       }
       if (!empty($account_info['private_key'])) {
         $private_key = $account_info['private_key'];
+        // Additionally, decode the private key. According to the HMAC Spec 2.0 it is
+        // transferred as base64 decoded string but we need to make sure we decode it before
+        // using it.
+        $private_key = base64_decode($private_key);
+        // Validate if the secret key is a valid base64 encoded key.
+        if ($private_key === FALSE) {
+          throw new AcquiaLiftCredsException(t('secret key could not be decoded as base64. Please validate your credentials or contact Acquia Support.'));
+        }
+        // Do not continue if the decoded version is empty. Very unlikely that this will ever occur.
+        if (empty($private_key)) {
+          throw new AcquiaLiftCredsException(t('secret key cannot be empty. Please validate your credentials or contact Acquia Support.'));
+        }
       }
       else {
         throw new AcquiaLiftCredsException('Acquia Lift Private Key was not found.');
@@ -104,6 +116,7 @@ class AcquiaLiftAPIV2 extends AcquiaLiftAPIBase implements AcquiaLiftLearnReport
       // customer auth has become public. This will add additional security as
       // we then can self-generate public and private keys per customer. They
       // will also be able to expire easily.
+
       self::$instance = new self($api_url, $public_key, $private_key, $acquia_lift_version, $validate_response);
     }
     return self::$instance;
@@ -403,8 +416,9 @@ class AcquiaLiftAPIV2 extends AcquiaLiftAPIBase implements AcquiaLiftLearnReport
     // of the Authorization header. Names should be lower-cased, sorted by name,
     // separated from value by a colon and the value followed by a newline so
     // each extra header is on its own line.
-    // @todo Implement this when needed.
-    $list[] = "";
+    
+    // @todo Additional headers are not supported for now.
+    
     // The value of the X-Authorization-Timestamp header
     $list[] = $timestamp;
     // Some values such as Content Type and the BodyHash should be ommitted if
@@ -468,21 +482,10 @@ class AcquiaLiftAPIV2 extends AcquiaLiftAPIBase implements AcquiaLiftLearnReport
     // Canonicalize the request
     $message = $this->canonicalizeRequest($verb, $host, $path, $query_args, $authorization, $timestamp, $content_type, $payload_hash);
     
-    // Decode the private key. We transfer it as a base64 encoded key.
-    $api_private_key_decoded = base64_decode($this->api_private_key);
-    // Validate if the secret key is a valid base64 encoded key.
-    if ($api_private_key_decoded === FALSE) {
-      throw new AcquiaLiftCredsException(t('secret key could not be decoded as base64. Please validate your credentials or contact Acquia Support.'));
-    }
-    // Do not continue if the decoded version is empty. Very unlikely that this will ever occur.
-    if (empty($api_private_key_decoded)) {
-      throw new AcquiaLiftCredsException(t('secret key cannot be empty. Please validate your credentials or contact Acquia Support.'));
-    }
-
     // Create an HMAC hash with the base64 decoded secret key and make sure we always use binary output.
     // The message is converted into a string so that we do not encode a boolean or any other type than string
     // since the server side also expects the message to always be a string.
-    $signature = base64_encode(hash_hmac('sha256', (string) $message, $api_private_key_decoded, TRUE));
+    $signature = base64_encode(hash_hmac('sha256', (string) $message, $this->api_private_key, TRUE));
     $authorization["signature"] = $signature;
     $auth_stringlist = array();
     foreach ($authorization as $id => $value) {
@@ -517,7 +520,7 @@ class AcquiaLiftAPIV2 extends AcquiaLiftAPIBase implements AcquiaLiftLearnReport
     $list[] = $body;
     $message =  implode("\n", $list);
     // Always use binary output
-    return base64_encode(hash_hmac('sha256', $this->api_private_key, (string) $message, TRUE));
+    return base64_encode(hash_hmac('sha256', (string) $message, $this->api_private_key, TRUE));
   }
 
   /**

@@ -175,6 +175,18 @@ class AcquiaLiftAPI implements AcquiaLiftLearnReportDataSourceInterface {
       }
       if (!empty($account_info['private_key'])) {
         $private_key = $account_info['private_key'];
+        // Additionally, decode the private key. According to the HMAC Spec 2.0 it is
+        // transferred as base64 decoded string but we need to make sure we decode it before
+        // using it.
+        $private_key = base64_decode($private_key);
+        // Validate if the secret key is a valid base64 encoded key.
+        if ($private_key === FALSE) {
+          throw new AcquiaLiftCredsException(t('secret key could not be decoded as base64. Please validate your credentials or contact Acquia Support.'));
+        }
+        // Do not continue if the decoded version is empty. Very unlikely that this will ever occur.
+        if (empty($private_key)) {
+          throw new AcquiaLiftCredsException(t('secret key cannot be empty. Please validate your credentials or contact Acquia Support.'));
+        }
       }
       else {
         throw new AcquiaLiftCredsException('Acquia Lift Private Key was not found.');
@@ -529,49 +541,47 @@ class AcquiaLiftAPI implements AcquiaLiftLearnReportDataSourceInterface {
    */
   function canonicalizeRequest($verb, $host, $path, $query_args = "", $auth_options = array(), $timestamp, $content_type, $payload_hash) {
     // See https://github.com/acquia/http-hmac-spec (branch 2.0) for
-    //specification on Canonicalization of the request
+    // specification on Canonicalization of the request
     $list = array();
-
-    // HTTP-Verb + "\n" +
+    // The uppercase HTTP request method e.g. "GET", "POST"
     $list[] = strtoupper($verb);
-
-    // Host
+    // The (lowercase) hostname, matching the HTTP "Host" request header field
+    // (including any port number)
     $list[] = $host;
-
-    // Path
+    // The HTTP request path with leading slash, e.g. /resource/11
     $list[] = $path;
-
-    // Query Params
+    // Any query parameters or empty string. This should be the exact string sent
+    // by the client, including urlencoding.
     $list[] = $query_args;
-
-    // Authorization Params such as Nonce
+    // normalized parameters similar to section 9.1.1 of OAuth 1.0a. The
+    // parameters are the id, nonce, realm, and version from the Authorization
+    // header. Parameters are sorted by name and separated by '&' with name and
+    // value separated by =, percent encoded (urlencoded).
     ksort($auth_options);
     $auth_options_list = array();
     foreach ($auth_options as $id => $value) {
       $auth_options_list[] = $id . "=" . $value;
     }
     $list[] = implode($auth_options_list, "&");
+    // The normalized header names and values specified in the headers parameter
+    // of the Authorization header. Names should be lower-cased, sorted by name,
+    // separated from value by a colon and the value followed by a newline so
+    // each extra header is on its own line.
 
-    // Added Signed Headers.
-    // @todo Implement this when needed.
-    $list[] = "";
+    // @todo Additional headers are not supported for now.
 
-    // Timestamp
+    // The value of the X-Authorization-Timestamp header
     $list[] = $timestamp;
-
-    // Content Type
-    $list[] = strtolower($content_type);
-
-    // Body Hash
-    $list[] = $payload_hash;
-
+    // Some values such as Content Type and the BodyHash should be ommitted if
+    // the Content-Length = 0
+    if (!empty($payload_hash)) {
+      // Content Type.
+      $list[] = strtolower($content_type);
+      // SHA256 of the Request-Body.
+      $list[] = $payload_hash;
+    }
     return implode("\n", $list);
   }
-
-  /**
-   *
-   * @return string
-   */
 
   /**
    * Returns a string to use for the 'Authorization' header.
@@ -579,7 +589,7 @@ class AcquiaLiftAPI implements AcquiaLiftLearnReportDataSourceInterface {
    * @param string $method
    *   The method used for the request such as PUT, POST, ...
    * @param string $path
-   *   The full path of the request
+   *   The full path of the request.
    * @param array $headers
    *   An array of headers that will be used to generate the authentication
    *   header.
@@ -587,6 +597,8 @@ class AcquiaLiftAPI implements AcquiaLiftLearnReportDataSourceInterface {
    *   The post body raw data, usually a json string but could also be XML.
    * @return string
    *   The value of the Authorization header.
+   * @throws Exception
+   *   Throws an Exception if it was unable to decode the secret key.
    */
   public function getAuthHeader($verb, $url, $headers = array(), $payload_hash = "", $nonce = "") {
     // Generate Authorization array
@@ -621,8 +633,10 @@ class AcquiaLiftAPI implements AcquiaLiftLearnReportDataSourceInterface {
     // Canonicalize the request
     $message = $this->canonicalizeRequest($verb, $host, $path, $query_args, $authorization, $timestamp, $content_type, $payload_hash);
 
-    // Always use binary output
-    $signature = base64_encode(hash_hmac('sha256', $this->api_private_key, (string) $message, TRUE));
+    // Create an HMAC hash with the base64 decoded secret key and make sure we always use binary output.
+    // The message is converted into a string so that we do not encode a boolean or any other type than string
+    // since the server side also expects the message to always be a string.
+    $signature = base64_encode(hash_hmac('sha256', (string) $message, $this->api_private_key, TRUE));
     $authorization["signature"] = $signature;
     $auth_stringlist = array();
     foreach ($authorization as $id => $value) {
@@ -657,7 +671,7 @@ class AcquiaLiftAPI implements AcquiaLiftLearnReportDataSourceInterface {
     $list[] = $body;
     $message =  implode("\n", $list);
     // Always use binary output
-    return base64_encode(hash_hmac('sha256', $this->api_private_key, (string) $message, TRUE));
+    return base64_encode(hash_hmac('sha256', (string) $message, $this->api_private_key, TRUE));
   }
 
   /**

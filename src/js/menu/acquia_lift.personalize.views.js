@@ -444,7 +444,7 @@
       this.build();
       this.render();
       // Re-run navbar handling to pick up new menu options.
-      _.debounce(Drupal.acquiaLiftUI.utilities.updateNavBar, 300);
+      _.debounce(Drupal.acquiaLiftUI.utilities.updateNavbar, 300);
     },
 
 
@@ -815,7 +815,7 @@
       this.build();
       this.render();
       // Re-run navbar handling to pick up new menu options.
-      _.debounce(Drupal.acquiaLiftUI.utilities.updateNavBar, 300);
+      _.debounce(Drupal.acquiaLiftUI.utilities.updateNavbar, 300);
     },
 
     /**

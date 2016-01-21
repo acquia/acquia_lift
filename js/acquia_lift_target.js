@@ -1,4 +1,6 @@
-(function ($) {
+var TC = TC || {};
+
+(function ($, TC) {
 
 Drupal.acquia_lift_target = (function() {
 
@@ -215,7 +217,7 @@ Drupal.acquiaLiftLearn = (function() {
   var settings, api, initialized = false, sessionID = null;
 
   function initializeSession() {
-    if (sessionID == null) {
+    if (sessionID == null && TC.hasOwnProperty('getSessionID')) {
       sessionID = TC.getSessionID();
       Drupal.personalize.saveSessionID(sessionID);
     }
@@ -277,4 +279,4 @@ Drupal.acquiaLiftLearn = (function() {
   }
 })();
 
-})(jQuery);
+})(jQuery, TC);

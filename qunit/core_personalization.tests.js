@@ -839,10 +839,8 @@ function initializeLiftSettings() {
   Drupal.settings.acquia_lift_learn.clientId = 'ohai';
   Drupal.settings.acquia_lift_learn.applicationHash = 'drupal';
 
-  TC = {
-    getSessionID : function() {
-      return 'some-session-ID';
-    }
+  TC.getSessionID = function() {
+    return 'some-session-ID';
   };
   Drupal.personalize.saveSessionID = function(sessionID) {
 

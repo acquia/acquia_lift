@@ -819,6 +819,10 @@ function acquia_lift_personalize_agent_presave($agent) {
     $lift_api = AcquiaLiftAPIClientFactory::create($account, $plugin_name);
     $agent->machine_name = $lift_api->ensureUniqueAgentName($agent->machine_name, PERSONALIZE_MACHINE_NAME_MAXLENGTH);
   }
+  // Save the Lift Web site name to the test agent as it will be used as a
+  // prefix to disambiguate goals and decision sets.
+  $site_name = variable_get('acquia_lift_profiles_site_name', 'drupal');
+  $agent->data['site_name'] = $site_name;
   // Make sure the required configurations are set.
   if (!isset($agent->data['decision_style'])) {
     $agent->data['decision_style'] = 'random';
@@ -930,7 +934,13 @@ function acquia_lift_personalize_option_set_render(&$element, $option_set) {
     }
     $child_os = personalize_option_set_load($rule['osid']);
     // Make sure the agent assets are available for the child OS.
-    $settings['agent_map'][$child_os->agent] = personalize_agent_get_map_settings($child_os->agent, $child_os, $assets);
+    $nested_agent = personalize_agent_load($child_os->agent);
+    // If the test agent has a site name property, then this is used as a prefix
+    // for decision and goal names.
+    $site_name_prefix = !empty($nested_agent->data['site_name']) ? $nested_agent->data['site_name'] . '-' : '';
+    $child_settings = personalize_agent_get_map_settings($child_os->agent, $child_os, $assets);
+    $child_settings['site_name_prefix'] = $site_name_prefix;
+    $settings['agent_map'][$child_os->agent] = $child_settings;
     $settings['option_sets'] += _personalize_convert_option_set_to_js_setting($child_os);
   }
   $settings_array = array(

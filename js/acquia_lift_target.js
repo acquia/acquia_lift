@@ -214,7 +214,7 @@ Drupal.personalize.agents.acquia_lift_learn = {
 };
 Drupal.acquiaLiftLearn = (function() {
 
-  var settings, api, initialized = false, sessionID = null;
+  var settings, api, initialized = false, sessionID = null, site_name_prefixes = {};
 
   function initializeSession() {
     if (sessionID == null && TC.hasOwnProperty('getSessionID')) {
@@ -226,6 +226,11 @@ Drupal.acquiaLiftLearn = (function() {
     initializeSession();
     settings = Drupal.settings.acquia_lift_learn;
     api = Drupal.acquiaLiftV2API.getInstance();
+    for (var agent_name in Drupal.settings.acquia_lift_target.agent_map) {
+      if (Drupal.settings.acquia_lift_target.agent_map.hasOwnProperty(agent_name)) {
+        site_name_prefixes[agent_name] = Drupal.settings.acquia_lift_target.agent_map[agent_name].site_name_prefix;
+      }
+    }
     initialized = true;
   }
 
@@ -252,7 +257,8 @@ Drupal.acquiaLiftLearn = (function() {
         for (var i in outcome) {
           if (outcome.hasOwnProperty(i) && outcome[i].hasOwnProperty('decision_set_id') &&
               outcome[i].hasOwnProperty('external_id')) {
-            decisions[outcome[i].decision_set_id] = outcome[i].external_id;
+            var decision_name = outcome[i].decision_set_id.replace(site_name_prefixes[agent_name], '');
+            decisions[decision_name] = outcome[i].external_id;
           }
         }
         callback(decisions);
@@ -264,7 +270,7 @@ Drupal.acquiaLiftLearn = (function() {
       }
       var options = {
         reward: value,
-        goal: goal_name
+        goal: site_name_prefixes[agent_name] + goal_name
       };
       Drupal.acquiaLiftUtility.GoalQueue.addGoal(agent_name, options);
     },

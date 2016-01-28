@@ -180,10 +180,10 @@ class AcquiaLiftAPIV2 extends AcquiaLiftAPIBase implements AcquiaLiftLearnReport
     $url = $this->generateEndpoint("campaigns");
     $fail_msg = 'Could not retrieve agents from Lift';
     $response = $this->makeGetRequest($url, array(), $fail_msg);
-    if (!empty($response)) {
-      return $response;
+    if (empty($response) || isset($response['error'])) {
+      return array();
     }
-    return array();
+    return $response;
   }
 
   /**

@@ -68,10 +68,14 @@ class DummyAcquiaLiftHttpClient implements AcquiaLiftDrupalHttpClientInterface {
   /**
    * Constructor
    *
+   * @param string $version
+   *   The version of the campaign agent.
    * @param bool $broken
    *   Whether or not this http client should just get 500 errors.
    * @param array $data
    *   An array of dummy data that can be returned in responses.
+   * @param bool $simulate_client_side_breakage
+   *   Do simulate client side breakage.
    */
   public function __construct($version, $broken = FALSE, $data = array(), $simulate_client_side_breakage = FALSE) {
     $this->version = $version;
@@ -136,7 +140,13 @@ class DummyAcquiaLiftHttpClient implements AcquiaLiftDrupalHttpClientInterface {
       case ACQUIA_LIFT_TESTING_AGENT_V2:
         switch($path_parts[0]) {
           case 'campaigns':
-            return isset($this->data['campaigns']) ? $this->data['campaigns'] : array();
+            if (isset($this->data['campaigns'])) {
+              return $this->data['campaigns'];
+            }
+            if (isset($this->data['error'])) {
+              return $this->data['error'];
+            }
+            return array();
           case 'report':
             $query_params = explode('&', $parsed['query']);
             $first_param = explode('=', reset($query_params));

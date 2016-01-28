@@ -80,20 +80,29 @@ class AcquiaLiftLearn extends PersonalizeAgentBase implements AcquiaLiftLearning
   public function getAgentSyncOperations($option_sets, $new_goals, $old_goals = array()) {
     // Currently only a single option set is supported.
     $option_set = reset($option_sets);
+    $max_length = AcquiaLiftAPIV2::NAME_MAX_LENGTH;
     // If the test agent has a site name, use this as a prefix for goals and
     // decision sets.
     $prefix = isset($this->data['site_name']) ? $this->data['site_name'] . '-' : '';
+    $decision_name = $option_set->decision_name;
+    while (strlen($prefix . $decision_name) > $max_length) {
+      $decision_name = substr($decision_name, 0, -1);
+    }
     // Decision set needs to be saved first.
     $items[] = array(
       'method' => 'saveDecisionSet',
       'args' => array(
-        $prefix . $option_set->decision_name,
+        $prefix . $decision_name,
         $this->title,
         $option_set->options
       ),
     );
     $goal_names = array();
+
     foreach ($new_goals as $goal_name => $goal_value) {
+      while (strlen($prefix . $goal_name) > $max_length) {
+        $goal_name = substr($goal_name, 0, -1);
+      }
       $goal_names[] = $prefix . $goal_name;
       $items[] = array(
         'method' => 'saveGoal',
@@ -122,7 +131,7 @@ class AcquiaLiftLearn extends PersonalizeAgentBase implements AcquiaLiftLearning
       'args' => array(
         $this->machineName,
         $this->title,
-        $prefix . $option_set->decision_name,
+        $prefix . $decision_name,
         $goal_names,
         $this->data['decision_style'] == 'adaptive',
         $acquia_lift_control_rate,

@@ -317,6 +317,34 @@ QUnit.test('Make decision', function(assert) {
   xhr.restore();
 });
 
+QUnit.test('Make decision with site prefix', function(assert) {
+  var xhr = sinon.useFakeXMLHttpRequest();
+  var requests = sinon.requests = [];
+
+  xhr.onCreate = function (request) {
+    requests.push(request);
+  };
+
+  var callback = sinon.spy();
+  Drupal.acquiaLiftLearn.getDecision('my-prefixed-agent', {'first-decision': ['option-1', 'option-2']}, 'my-decision-point', {'first-decision': 0}, callback);
+
+  equal(sinon.requests.length, 1);
+  var parsed = parseUri(sinon.requests[0].url);
+  equal(parsed.host, 'api.example.com');
+  equal(parsed.path, "/play");
+  equal(parsed.queryKey.client_id, "ohai");
+  equal(parsed.queryKey.user_hash, "some-session-ID");
+  equal(parsed.queryKey.campaign_id, "my-prefixed-agent");
+  equal(parsed.queryKey.application_hash, "drupal");
+
+  // Respond with a prefix on the decision set name so we can check that it resolves to the un-prefixed name.
+  requests[0].respond(200, { "Content-Type": "application/json" }, '{"outcome": [{"decision_set_id": "some-prefix-first-decision", "external_id":"option-2"}], "session": "some-session-ID"}');
+  ok(callback.called);
+  assert.deepEqual(callback.args[0][0], {"first-decision": "option-2"});
+
+  xhr.restore();
+});
+
 QUnit.test('Multiple decisions', function(assert) {
   var xhr = sinon.useFakeXMLHttpRequest();
   var requests = sinon.requests = [];
@@ -378,6 +406,33 @@ QUnit.test('Send goal', function(assert) {
   assert.equal(parsedBody.application_hash, "drupal");
   assert.equal(parsedBody.campaign_id, "my-agent");
   assert.equal(parsedBody.goal_id, "some-goal");
+  assert.equal(parsedBody.score, 2);
+
+  requests[0].respond(200, { "Content-Type": "application/json" }, '{"session": "some-session-ID", "feedback_id": "some-string", "submitted": "12345678"}');
+
+  xhr.restore();
+});
+
+QUnit.test('Send goal with site name prefix', function(assert) {
+  var xhr = sinon.useFakeXMLHttpRequest();
+  var requests = sinon.requests = [];
+  xhr.onCreate = function (request) {
+    requests.push(request);
+  };
+
+  Drupal.acquiaLiftLearn.sendGoal('my-prefixed-agent', 'some-goal', 2);
+
+  assert.equal(sinon.requests.length, 1);
+  console.log(sinon.requests[0]);
+  var parsedUrl = parseUri(sinon.requests[0].url);
+  var parsedBody = JSON.parse(sinon.requests[0].requestBody);
+  assert.equal(parsedUrl.host, 'api.example.com');
+  assert.equal(parsedUrl.path, "/feedback");
+  assert.equal(parsedUrl.queryKey.client_id, "ohai");
+  assert.equal(parsedBody.user_hash, "some-session-ID");
+  assert.equal(parsedBody.application_hash, "drupal");
+  assert.equal(parsedBody.campaign_id, "my-prefixed-agent");
+  assert.equal(parsedBody.goal_id, "some-prefix-some-goal");
   assert.equal(parsedBody.score, 2);
 
   requests[0].respond(200, { "Content-Type": "application/json" }, '{"session": "some-session-ID", "feedback_id": "some-string", "submitted": "12345678"}');
@@ -487,6 +542,9 @@ function initializeLiftSettings() {
   Drupal.settings.acquia_lift = Drupal.settings.acquia_lift || {};
   Drupal.settings.acquia_lift.api_class = 'acquiaLiftV2API';
   Drupal.settings.acquia_lift_learn = Drupal.settings.acquia_lift_learn || {};
+  Drupal.settings.acquia_lift_target = Drupal.settings.acquia_lift_target || {};
+  Drupal.settings.acquia_lift_target.agent_map = Drupal.settings.acquia_lift_target.agent_map || {};
+  Drupal.settings.acquia_lift_target.agent_map['my-prefixed-agent'] = {'site_name_prefix': 'some-prefix-'};
   Drupal.settings.acquia_lift_learn.baseUrl = 'http://api.example.com';
   Drupal.settings.acquia_lift_learn.clientId = 'ohai';
   Drupal.settings.acquia_lift_learn.applicationHash = 'drupal';

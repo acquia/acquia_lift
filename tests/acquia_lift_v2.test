@@ -358,6 +358,95 @@ class AcquiaLiftV2WebTestFundamentals extends AcquiaLiftV2WebTestBase {
     $this->assertTrue($agent instanceof AcquiaLiftLearningAgentInterface);
   }
 
+  public function testSiteNamePrefixOnSave() {
+    // We want to simulate an agent that existed before the site_name attribute
+    // was being added on presave of new agents, so we insert one directly into
+    // the db.
+    $options = array(
+      'decision_style' => 'adaptive',
+      'control_rate' => 10,
+      'explore_rate' => 20,
+    );
+    $label = $this->randomName();
+    $machine_name = personalize_generate_machine_name($label, 'personalize_agent_machine_name_exists');
+
+    db_insert('personalize_agent')
+      ->fields(array(
+        'machine_name' => $machine_name,
+        'plugin' => self::$agent_plugin,
+        'started' => 1407499650,
+        'label' => $label,
+        'data' => serialize($options)
+      ))
+      ->execute();
+
+    $agent = personalize_agent_load($machine_name, TRUE);
+    $this->assertFalse(isset($agent->data['site_name']));
+
+    // Now resave the agent - it still should not get a site_name added.
+    personalize_agent_save($agent);
+    $this->resetAll();
+    $agent = personalize_agent_load($machine_name, TRUE);
+    $this->assertFalse(isset($agent->data['site_name']));
+
+    // Now create a new agent via personalize_agent_save(). It should get the
+    // site name property.
+    $agent2 = new stdClass();
+    $label2 = $this->randomName();
+    $machine_name2 = personalize_generate_machine_name($label2, 'personalize_agent_machine_name_exists');
+    $agent2->label = $label2;
+    $agent2->plugin = self::$agent_plugin;
+    $agent2->data = $options;
+    $agent2->machine_name = $machine_name2;
+    AcquiaLiftAPIV2::setTestInstance();
+    personalize_agent_save($agent2);
+    $this->resetAll();
+    $agent2 = personalize_agent_load($machine_name2, TRUE);
+    $this->assertEqual('drupal', $agent2->data['site_name']);
+  }
+
+  function testSiteNamePrefixAttach() {
+    AcquiaLiftAPIV2::setTestInstance();
+    $agent = $this->createTargetingAgentWithNestedTest(2);
+    $this->resetAll();
+    module_load_include('inc', 'acquia_lift', 'acquia_lift.batch');
+    $operations = acquia_lift_get_sync_operations_for_agent($agent);
+    // The operations array will have 3 items - saveDecisionSets, saveGoal, and
+    // saveCampaign, in that order. Confir the site prefix was attached to the
+    // decision set and goal names.
+    $decision_set_op = $operations[0];
+    $goal_op = $operations[1];
+    $this->assertTrue(strpos($decision_set_op['args'][0], 'drupal-') === 0);
+    $this->assertTrue(strpos($goal_op['args'][0], 'drupal-') === 0);
+
+    // Now set the Lift Web customer site name.
+    variable_set('acquia_lift_profiles_site_name', 'My Test Site');
+    $this->resetAll();
+    $new_agent = $this->createTargetingAgentWithNestedTest(2, 1);
+    $this->resetAll();
+    $operations = acquia_lift_get_sync_operations_for_agent($new_agent);
+    // Check that the new site name is prepended to the componenents.
+    $decision_set_op = $operations[0];
+    $goal_op = $operations[1];
+    $this->assertTrue(strpos($decision_set_op['args'][0], 'my-test-site-') === 0);
+    $this->assertTrue(strpos($goal_op['args'][0], 'my-test-site-') === 0);
+
+    // Now output the personalization and check the js settings.
+    // Now let's place our personalized block and confirm that the settings are
+    // still as they should be.
+    $admin_user = $this->drupalCreateUser(array('access administration pages', 'manage personalized content', 'administer blocks'));
+    $this->drupalLogin($admin_user);
+    $option_set = acquia_lift_get_option_set_for_targeting($new_agent->machine_name);
+    $edit = array(
+      'blocks[personalize_blocks_' . $option_set->osid . '][region]' => 'content',
+    );
+    $this->drupalPost('admin/structure/block', $edit, t('Save blocks'));
+    $this->drupalLogout();
+    $this->drupalGet('');
+    $settings = $this->drupalGetSettings();
+    $this->assertEqual('my-test-site-', $settings['acquia_lift_target']['agent_map'][$new_agent->machine_name . '-test']['site_name_prefix']);
+  }
+
   /**
    * Tests the function that gathers operations for syncing of agents and their
    * components to Lift.
@@ -378,7 +467,7 @@ class AcquiaLiftV2WebTestFundamentals extends AcquiaLiftV2WebTestBase {
     // operations.
     $agent->tests_to_delete = array('first-test', 'second-test');
     $operations = acquia_lift_get_sync_operations_for_agent($agent);
-    $decision_name = 'osid-' . $sub_option_set->osid;
+    $decision_name = 'drupal-osid-' . $sub_option_set->osid;
     $expected_operations = array(
       array (
         'method' => 'deleteAgent',
@@ -411,14 +500,14 @@ class AcquiaLiftV2WebTestFundamentals extends AcquiaLiftV2WebTestBase {
       array (
         'method' => 'saveGoal',
         'args' => array (
-          'clicks_option_set_1',
+          'drupal-clicks_option_set_1',
         ),
       ),
       array (
         'method' => 'saveGoal',
         'args' =>
           array (
-            'user_login',
+            'drupal-user_login',
           )
       ),
       array (
@@ -429,8 +518,8 @@ class AcquiaLiftV2WebTestFundamentals extends AcquiaLiftV2WebTestBase {
             'Sub-test for ' . $agent->label,
             $decision_name,
             array(
-              'clicks_option_set_1',
-              'user_login'
+              'drupal-clicks_option_set_1',
+              'drupal-user_login'
             ),
             FALSE,
             0,
@@ -3643,7 +3732,9 @@ class AcquiaLiftV2WebTestCampaignWizardReview extends AcquiaLiftV2WebTestCampaig
     // Explore rate should be set to 1;
     $nested_settings['explore_rate'] = 100;
     $nested1 = personalize_agent_load($nested_tests[0]);
-    $this->assertEqual($nested1->data, $nested_settings);
+    foreach ($nested_settings as $setting => $value) {
+      $this->assertEqual($nested1->data[$setting], $value);
+    }
 
     $this->drupalGet('admin/structure/personalize/manage/' . $agent->machine_name . '/review');
     module_load_include('inc', 'acquia_lift', 'acquia_lift.admin');
@@ -3676,7 +3767,9 @@ class AcquiaLiftV2WebTestCampaignWizardReview extends AcquiaLiftV2WebTestCampaig
     $this->assertEqual($agent->data['explore_rate'], $parent_settings['explore_rate']);
 
     $nested1 = personalize_agent_load($nested1->machine_name, TRUE);
-    $this->assertEqual($nested1->data, $nested_settings);
+    foreach ($nested_settings as $setting => $value) {
+      $this->assertEqual($nested1->data[$setting], $value);
+    }
   }
 
   /**

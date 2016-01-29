@@ -1729,7 +1729,7 @@ function acquia_lift_save_nested_test_options($parent_agent) {
 
   foreach ($tests as $test) {
     $nested_agent = personalize_agent_load($test);
-    $nested_agent->data = $agent_data;
+    $nested_agent->data = array_merge($nested_agent->data, $agent_data);
     personalize_agent_save($nested_agent);
   }
 }

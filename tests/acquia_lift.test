@@ -4239,7 +4239,9 @@ class AcquiaLiftWebTestCampaignWizardReview extends AcquiaLiftWebTestCampaignWiz
     // Explore rate should be set to 1;
     $nested_settings['explore_rate'] = 100;
     $nested1 = personalize_agent_load($nested_tests[0]);
-    $this->assertEqual($nested1->data, $nested_settings);
+    foreach ($nested_settings as $setting => $value) {
+      $this->assertEqual($nested1->data[$setting], $value);
+    }
 
     $this->drupalGet('admin/structure/personalize/manage/' . $agent->machine_name . '/review');
     module_load_include('inc', 'acquia_lift', 'acquia_lift.admin');
@@ -4272,7 +4274,9 @@ class AcquiaLiftWebTestCampaignWizardReview extends AcquiaLiftWebTestCampaignWiz
     $this->assertEqual($agent->data['explore_rate'], $parent_settings['explore_rate']);
 
     $nested1 = personalize_agent_load($nested1->machine_name, TRUE);
-    $this->assertEqual($nested1->data, $nested_settings);
+    foreach ($nested_settings as $setting => $value) {
+      $this->assertEqual($nested1->data[$setting], $value);
+    }
   }
 
   /**

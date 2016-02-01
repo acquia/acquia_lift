@@ -423,6 +423,18 @@ class AcquiaLiftTest extends DrupalUnitTestCase {
     );
     $this->assertLogs($logs);
     DummyAcquiaLiftHttpClient::clearLoggedRequests();
+
+    $response = array(
+      'error' => 'Campaign does not contain any decision sets.',
+    );
+    $lift_api = $this->getAcquiaLiftAPI(TRUE, $response);
+    try {
+      $lift_api->getCampaigns();
+    }
+    catch (Exception $e) {
+      $this->assertTrue($e instanceof AcquiaLiftServerErrorException);
+    }
+    DummyAcquiaLiftHttpClient::clearLoggedRequests();
   }
 
   function testEnsureUniqueAgentName() {
@@ -567,15 +579,17 @@ class AcquiaLiftTest extends DrupalUnitTestCase {
    * @param bool $broken
    *   Whether the HTTP client used by the API class should be broken, simulating
    *   500 responses from Acquia Lift.
+   * @param array $data
+   *   An array of dummy data that can be returned in responses.
    * @return AcquiaLiftAPI
    *   A AcquiaLiftAPI instance.
    */
-  protected function getAcquiaLiftAPI($broken = FALSE) {
+  protected function getAcquiaLiftAPI($broken = FALSE, $data = array()) {
     $lift_api = AcquiaLiftAPI::getInstance(array('api_url' => 'https://test-api.example.com', 'private_key' => $this->privateKey, 'public_key' => $this->publicKey, 'validate_response' => FALSE));
 
     // Create a dummy http client for the Acquia Lift API to use. All
     // requests to it will be logged and retrievable for checking later.
-    $this->httpClient = new DummyAcquiaLiftHttpClient($broken);
+    $this->httpClient = new DummyAcquiaLiftHttpClient($broken, $data);
     $lift_api->setHttpClient($this->httpClient);
     if ($this->logger === NULL) {
       // Create a dummy logger instance which will maintain a log in memory

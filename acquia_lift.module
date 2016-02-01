@@ -771,11 +771,11 @@ function acquia_lift_personalize_agent_presave($agent) {
       // ok to go ahead, but set an error message for the user.
       drupal_set_message($fail_msg, 'error');
     }
+    // Save the Lift Web site name to the test agent as it will be used as a
+    // prefix to disambiguate goals and decision sets.
+    $site_name = variable_get('acquia_lift_profiles_site_name', 'drupal');
+    $agent->data['site_name'] = personalize_generate_machine_name($site_name);
   }
-  // Save the Lift Web site name to the test agent as it will be used as a
-  // prefix to disambiguate goals and decision sets.
-  $site_name = variable_get('acquia_lift_profiles_site_name', 'drupal');
-  $agent->data['site_name'] = personalize_generate_machine_name($site_name);
   // Make sure the required configurations are set.
   if (!isset($agent->data['decision_style'])) {
     $agent->data['decision_style'] = 'random';

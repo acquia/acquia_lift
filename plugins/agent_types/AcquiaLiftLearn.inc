@@ -81,7 +81,7 @@ class AcquiaLiftLearn extends PersonalizeAgentBase implements AcquiaLiftLearning
   public function getAgentSyncOperations($option_sets, $new_goals, $old_goals = array()) {
     // Currently only a single option set is supported.
     $option_set = reset($option_sets);
-    $max_length = AcquiaLiftAPIV2::NAME_MAX_LENGTH;
+    $max_length = AcquiaLiftAPI::NAME_MAX_LENGTH;
     // If the test agent has a site name, use this as a prefix for goals and
     // decision sets.
     $prefix = isset($this->data['site_name']) ? $this->data['site_name'] . '-' : '';

@@ -151,41 +151,15 @@ var _tcwq = _tcwq || [];
    */
   Drupal.acquia_lift_profiles = (function(){
 
-    var processedListeners = {}, processedDecisions = {}, initialized = false, initializing = false, pageFieldValues = {};
-    var agentNameToLabel = {};
-
-    /**
-     * Returns the agent label for the given agent name.
-     * If there is no label then the agent name is returned.
-     *
-     * @param agent_name
-     */
-    function getAgentLabel( agent_name ) {
-      var agent_label = agent_name;
-      if ( agentNameToLabel[agent_name] ) {
-        agent_label = agentNameToLabel[agent_name];
-      }
-      return agent_label;
-    }
+    var processedListeners = {}, initialized = false, initializing = false, pageFieldValues = {};
 
     return {
       'init': function(settings) {
-        if (initialized || initializing || !settings.acquia_lift_profiles.hasOwnProperty('account_name')) {
+        if (initialized || initializing || !settings.acquia_lift.hasOwnProperty('account_name')) {
           return;
         }
         initializing = true;
-        _tcaq.push(['setAccount', settings.acquia_lift_profiles.account_name, settings.acquia_lift_profiles.customer_site]);
 
-        if ( settings.personalize && settings.personalize.agent_map ) {
-          var agent_map = settings.personalize.agent_map;
-          for (var agent_name in agent_map) {
-            if (agent_map.hasOwnProperty(agent_name)) {
-              if (agent_map[agent_name].label) {
-                agentNameToLabel[agent_name] = agent_map[agent_name].label;
-              }
-            }
-          }
-        }
         var mappings = settings.acquia_lift_profiles.mappings, context_separator = settings.acquia_lift_profiles.mappingContextSeparator, plugins = {}, reverseMapping = {};
         for(var type in mappings) {
           if (mappings.hasOwnProperty(type)) {
@@ -264,8 +238,6 @@ var _tcwq = _tcwq || [];
           _tcwq.push(["setDebug", false]);
         }
 
-        $(document).bind('personalizeDecision', this["processPersonalizeDecision"]);
-        $(document).bind('sentGoalToAgent', this["processSentGoalToAgent"]);
         Drupal.personalize.getVisitorContexts(plugins, callback);
       },
       'getTrackingID': function () {
@@ -325,23 +297,6 @@ var _tcwq = _tcwq || [];
         }
       },
 
-      'processPersonalizeDecision':function(e, $option_set, decision, osid, agent_name) {
-        // Only send this if it has never been sent or the decision has changed due to
-        // new targeting conditions being met.
-        if (processedDecisions.hasOwnProperty(agent_name) && processedDecisions[agent_name] == decision) {
-          return;
-        }
-        if (decision == 'control-variation') {
-          decision = 'Control';
-        }
-        processedDecisions[agent_name] = decision;
-        _tcaq.push(['capture', 'Campaign Action', {'targetcampaignid':agent_name, 'targetcampaignname':getAgentLabel(agent_name), 'targetofferid': decision, 'targetactionname':decision } ]);
-
-      },
-
-      'processSentGoalToAgent':function(e, agent_name, goal_name, goal_value) {
-        _tcaq.push(['capture', goal_name, {'targetcampaignid':agent_name, 'targetcampaignname':getAgentLabel(agent_name), 'targetgoalvalue':goal_value}]);
-      },
       /**
        * Add an action listener for client-side goal events.
        */
@@ -404,11 +359,8 @@ var _tcwq = _tcwq || [];
         processedListeners = {};
         initialized = false;
         initializing = false;
-        agentNameToLabel = {};
         identityCaptured = false;
         pageFieldValues = {};
-        $(document).unbind('personalizeDecision', this["processPersonalizeDecision"]);
-        $(document).unbind('sentGoalToAgent', this["processSentGoalToAgent"]);
       }
     }
   })();

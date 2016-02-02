@@ -209,9 +209,6 @@ function acquia_lift_profiles_page_build(&$page) {
   if (!acquia_lift_profiles_is_configured()) {
     return;
   }
-
-  $account_name = variable_get('acquia_lift_profiles_account_name', '');
-  $customer_site = variable_get('acquia_lift_profiles_site_name', 'Drupal');
   $api_url = variable_get('acquia_lift_profiles_api_url', '');
   $capture_identity = variable_get('acquia_lift_profiles_capture_identity', FALSE);
   $mappings = variable_get('acquia_lift_profiles_udf_mappings', array());
@@ -223,8 +220,6 @@ function acquia_lift_profiles_page_build(&$page) {
   $settings = array(
     'request_url' => $base_root . request_uri(),
     'available_segments' => $segments,
-    'account_name' => $account_name,
-    'customer_site' => $customer_site,
     'apiUrl' => $api_url,
     'currentPath' => current_path(),
     'captureIdentity' => $capture_identity,
@@ -397,6 +392,25 @@ function acquia_lift_profiles_form_node_type_form_alter(&$form, &$form_state) {
   // Adjust the fieldset.
   $form['acquia_lift_profiles']['#title'] = t('Acquia Lift Profiles');
   $form['acquia_lift_profiles']['#group'] = 'additional_settings';
+}
+
+
+/**
+ * Implements hook_form_FORM_ID_alter().
+ */
+function acquia_lift_profiles_form_acquia_lift_admin_form_alter(&$form, &$form_state) {
+  $form['#submit'][] = 'acquia_lift_profiles_creds_submit';
+}
+
+/**
+ * Submit callback for the Acquia Lift admin form.
+ */
+function acquia_lift_profiles_creds_submit() {
+  // Refresh the segments from Acquia Lift Profiles.
+  acquia_lift_profiles_refresh_segments_cache();
+  // Batch sync all visitor actions to Lift Web.
+  module_load_include('inc', 'acquia_lift_profiles', 'acquia_lift_profiles.batch');
+  acquia_lift_batch_sync_actions();
 }
 
 /**

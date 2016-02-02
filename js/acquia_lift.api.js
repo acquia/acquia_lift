@@ -6,48 +6,25 @@
  */
 
 (function ($, Drupal) {
-
-  var AcquiaLiftAPI = (function () {
-
-    var instance, api = null, sessionID;
+  var instance;
+  Drupal.acquiaLiftAPI = (function () {
 
     /**
      * The Singleton API instance.  All callers will be accessing the functions
      * defined here.
      *
      */
-    function SingletonAPI()  {
-      this.initializingSession = false;
-
-      var settings = Drupal.settings.acquia_lift;
-
-      var options = {
-        'cookies': null, // we provide our own cookie support
-        'scodestore': false,
-        'server': settings.baseUrl
+    function SingletonAPI(session_id)  {
+      var settings = Drupal.settings.acquia_lift_learn;
+      this.options = {
+        'server': settings.baseUrl,
+        'user_hash': session_id,
+        'application_hash': settings.applicationHash,
+        'client_id': settings.clientId
       };
-      if (settings.batchMode) {
-        options.batching = 'manual';
-      }
 
-      // At this stage we still may not have a session ID.
-      if (readSessionID()) {
-        options.session = sessionID;
-      }
-
-      api = new AcquiaLiftJS(
-        settings.owner,
-        settings.apiKey,
-        options
-      );
     }
 
-    function readSessionID() {
-      if (!sessionID) {
-        sessionID = Drupal.personalize.initializeSessionID();
-      }
-      return sessionID;
-    }
 
     /**
      * Instance of the API that is handed out.
@@ -55,55 +32,146 @@
     SingletonAPI.prototype = {
       constructor: SingletonAPI,
 
-      // Wrapper functions for core API functionality.
-      batchSend: function () {
-        api.batchSend();
-      },
       decision: function (agent_name, options, callback) {
-        if (sessionID) {
-          options.session = sessionID;
+        var params = {
+          client_id: this.options.client_id,
+          user_hash: this.options.user_hash,
+          campaign_id: agent_name,
+          application_hash: this.options.application_hash
+        };
+        var fb, path = 'play';
+        fb = null;
+        if (options.fallback != null) {
+          fb = options.fallback;
         }
-        api.decision(agent_name, options, callback);
+        return this.send(path, params, null, (function() {
+          return function(res) {
+            var selection = fb, policy;
+            if (res) {
+              if (res.hasOwnProperty('outcome')) {
+                selection = res.outcome;
+              }
+              if (res.hasOwnProperty('policy')) {
+                policy = res.policy;
+              }
+              else if (res.outcome[0].hasOwnProperty('policy')) {
+                policy = res.outcome[0].policy;
+              }
+            }
+            return callback(selection, policy);
+          };
+        })(this));
       },
       goal: function(agent_name, options, callback) {
-        if (readSessionID()) {
-          options.session = sessionID;
-        }
-        api.goal(agent_name, options, callback);
-      },
-      isManualBatch: function () {
-        return (api.opts.batching && api.opts.batching === 'manual');
-      },
-      getSessionID: function () {
-        return sessionID;
-      },
-      initializeSessionID: function () {
-        // This variable ensures subsequent requests for decisions will get
-        // queued up until the first decision comes back from Acquia Lift
-        // and the session ID gets set.
-        this.initializingSession = !Boolean(readSessionID());
-      },
-      setSessionID: function (id) {
-        sessionID = id;
+        var path = 'feedback';
+        var params = {
+          client_id: this.options.client_id
+        };
+        var body = {
+          'user_hash': this.options.user_hash,
+          'application_hash': this.options.application_hash,
+          'campaign_id': agent_name,
+          'goal_id': options.goal,
+          'score': +options.reward
+        };
+        return this.send(path, params, body, (function(_this) {
+          return function(res) {
+            var success, nodecision, accepted, retryable;
+            if (callback == null) {
+              return;
+            }
+            success = res != null && res.hasOwnProperty('feedback_id');
+            nodecision = res != null && res.hasOwnProperty('error') && res.error.indexOf("The request has been accepted for processing") === 0;
+            accepted = success || nodecision;
+            retryable = (res != null ? res.submitted : void 0) == null;
+            return callback(accepted, _this.options.user_hash, retryable);
+          };
+        })(this));
       },
       reset: function () {
-        this.initializingSession = false;
-        sessionID = null;
-        api = instance = undefined;
+        instance = undefined;
+      },
+      send: function(path, data, body, cb) {
+        var postBody = body ? JSON.stringify(body) : "";
+        data._t = new Date().getTime();
+
+        // Encode querystring variables.
+        var querystring = '', key, value, i = 0;
+        for (key in data) {
+          value = data[key];
+          querystring += i == 0 ? "" : "&";
+          querystring += key + "=" + (encodeURI(value));
+          i++;
+        }
+        var url = this.options.server + "/" + path + "?" + querystring;
+        return microAjax(url, function(text) {
+          var response;
+          try {
+            response = JSON.parse(text);
+            return cb(response);
+          } catch (e) {
+            return cb(null);
+          }
+        }, postBody);
       }
-    }
+    };
 
     // Return the static instance initializer.
     return  {
       name:  "AcquiaLiftAPI",
       getInstance:  function() {
+        // @todo Remove this once we can just pass the session id in the
+        //   getInstance call (i.e. once V1's js has gone away.
+        var session_id = Drupal.acquiaLiftLearn.getSessionID();
         if (instance  ===  undefined) {
-          instance = new SingletonAPI();
+          instance = new SingletonAPI(session_id);
         }
         return instance;
       }
     };
 
   })();
-  Drupal.acquiaLiftAPI = AcquiaLiftAPI;
+
+  // Copyright (c) 2008 Stefan Lange-Hegermann
+  // Adapted from the MicroAjax library here:
+  // https://code.google.com/p/microajax and modified for
+  // CORS support based on this post:
+  // http://www.nczonline.net/blog/2010/05/25/cross-domain-ajax-with-cross-origin-resource-sharing/
+  function microAjax(url, callbackFunction) {
+    var getRequest = function(method, url) {
+      var xhr = new XMLHttpRequest();
+      if ("withCredentials" in xhr){
+        xhr.open(method, url, true);
+      } else if (typeof XDomainRequest != "undefined"){
+        xhr = new XDomainRequest();
+        xhr.open(method, url);
+      } else {
+        xhr = null;
+      }
+      return xhr;
+    };
+
+    var postBody = (arguments[2] || ""),
+        method = postBody !== "" ? 'POST' : 'GET',
+        request = getRequest(method, url);
+
+    if(request) {
+      request.timeout = 5000;
+      request.onload = function() {
+        return callbackFunction(request.responseText);
+      };
+      request.onerror = request.ontimeout = function() {
+        return callbackFunction(null);
+      };
+
+      if (method=='POST') {
+        request.setRequestHeader('Content-Type', 'application/json');
+      }
+
+      request.send(postBody);
+    }
+    else {
+      return callbackFunction(null);
+    }
+  }
 })(Drupal.jQuery, Drupal);

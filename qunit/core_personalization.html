@@ -25,10 +25,35 @@
     Drupal.theme = Drupal.theme || {};
     Drupal.personalize = Drupal.personalize || {};
     Drupal.personalize.debug = function(){};
+
+    Drupal.attachBehaviors = function(bread, circus){};
+    Drupal.settings.personalize = Drupal.settings.personalize || {};
+    Drupal.settings.acquia_lift = Drupal.settings.acquia_lift || {};
+    Drupal.settings.acquia_lift.api_class = 'acquiaLiftAPI';
+    Drupal.settings.acquia_lift_target = Drupal.settings.acquia_lift_target || {};
+    Drupal.settings.acquia_lift_target.nested_tests = Drupal.settings.acquia_lift_target.nested_tests || {};
+    Drupal.settings.acquia_lift_target.agent_map = Drupal.settings.acquia_lift_target.agent_map || {};
+    Drupal.settings.acquia_lift_target.default_target = 'everyone-else';
+    Drupal.settings.acquia_lift_target.test_agent_plugin = 'acquia_lift_learn';
+    // Mock the storage
+    window.personalizeMockBuckets = {};
+    Drupal.personalize.storage = Drupal.personalize.storage || {};
+    Drupal.personalize.storage.utilities = {
+        getBucket: function () {
+            return {
+                write: function (key, value) {
+                    window.personalizeMockBuckets[key] = value;
+                },
+                read: function (key) {
+                    return window.personalizeMockBuckets[key];
+                }
+            };
+        }
+    };
 </script>
-<script src="../js/acquia_lift.v2.js"></script>
+<script src="../js/acquia_lift.api.js"></script>
 <script src="../js/acquia_lift.goals_queue.js"></script>
-<script src="../js/acquia_lift_target.js"></script>
+<script src="../js/acquia_lift.js"></script>
 <script src="../js/acquia_lift.page.js"></script>
 <script src="core_personalization.tests.js"></script>
 </body>

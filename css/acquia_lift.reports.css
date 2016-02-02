@@ -416,3 +416,7 @@ html[dir="rtl"] .lift-graph-result .label {
   left: 50%;
   margin-left: -0.5em;
 }
+
+.lift-variation-breakdown table {
+  width: 50%;
+}

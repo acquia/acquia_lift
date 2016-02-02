@@ -19,8 +19,4 @@ interface AcquiaLiftLearningAgentInterface {
    */
   public function getAgentSyncOperations($option_sets, $new_goals, $old_goals = array());
 
-  public function getCampaignReports($options);
-
-  public function getExperimentReports($options);
-
 }

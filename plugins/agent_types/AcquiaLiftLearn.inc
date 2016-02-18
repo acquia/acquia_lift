@@ -84,7 +84,7 @@ class AcquiaLiftLearn extends PersonalizeAgentBase implements AcquiaLiftLearning
     $max_length = AcquiaLiftAPI::NAME_MAX_LENGTH;
     // If the test agent has a site name, use this as a prefix for goals and
     // decision sets.
-    $prefix = isset($this->data['site_name']) ? $this->data['site_name'] . '-' : '';
+    $prefix = empty($this->data['site_name']) ?  '' : $this->data['site_name'] . '-';
     $decision_name = $option_set->decision_name;
     while (strlen($prefix . $decision_name) > $max_length) {
       $decision_name = substr($decision_name, 0, -1);

@@ -867,6 +867,18 @@ class AcquiaLiftWebTestFundamentals extends AcquiaLiftWebTestBase {
     $this->drupalGet('');
     $settings = $this->drupalGetSettings();
     $this->assertEqual('my-test-site-', $settings['acquia_lift_target']['agent_map'][$new_agent->machine_name . '-test']['site_name_prefix']);
+
+    // Now set the Lift Web customer site name to empty string.
+    variable_set('acquia_lift_profiles_site_name', '');
+    $this->resetAll();
+    $new_agent = $this->createTargetingAgentWithNestedTest(2, 2);
+    $this->resetAll();
+    $operations = acquia_lift_get_sync_operations_for_agent($new_agent);
+    // Check that no dash is prepended to the componenents.
+    $decision_set_op = $operations[0];
+    $goal_op = $operations[1];
+    $this->assertTrue(substr($decision_set_op['args'][0], 0, 1) !== '-');
+    $this->assertTrue(substr($goal_op['args'][0], 0, 1) !== '-');
   }
 
   /**

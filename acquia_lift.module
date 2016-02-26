@@ -1199,7 +1199,8 @@ EOT;
           'weight' => JS_DEFAULT - 6
         ),
         $tc_js => array(
-          'weight' => JS_DEFAULT - 5
+          'weight' => JS_DEFAULT - 5,
+          'scope' => 'footer',
         ),
         $path . '/js/acquia_lift.page.js' => $options,
         $path . '/js/acquia_lift.goals_queue.js' => $options,

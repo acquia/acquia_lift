@@ -76,12 +76,12 @@ class PageContext {
   }
 
   /**
-   * Set page context.
+   * Set page context by node.
    *
    * @param \Drupal\Core\Entity\EntityInterface $node
    *   Node.
    */
-  public function set(EntityInterface $node) {
+  public function setByNode(EntityInterface $node) {
     $this->setNodeData($node);
     $this->setThumbnailUrl($node);
     $this->setFields($node);
@@ -235,5 +235,19 @@ class PageContext {
    */
   public function getAll() {
     return $this->pageContext;
+  }
+
+  /**
+   * Set page context title.
+   *
+   * @param string $title
+   *   Set page context title.
+   */
+  public function setPageContextTitle($title) {
+    if (empty($title)) {
+      $this->pageContext['content_title'] = '';
+      return;
+    }
+    $this->pageContext['content_title'] = $title;
   }
 }

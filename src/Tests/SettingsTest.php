@@ -10,7 +10,7 @@ namespace Drupal\acquia_lift\Tests;
 use Drupal\simpletest\WebTestBase;
 
 /**
- * Test Settings.
+ * Test Acquia Lift Settings.
  *
  * @group Acquia Lift
  */
@@ -128,10 +128,18 @@ class SettingsTest extends WebTestBase {
   public function testJavaScriptAndDrupalSettings() {
     $this->setValidSettings();
 
-    // Assert drupalSettings with identity query parameters.
+    // Assert drupalSettings with identity query parameters on a non-node page.
+    $this->drupalGet('page-not-found', ['query' => ['my_identity_parameter' => 'an_identity']]);
+    $drupalSettings = $this->getDrupalSettings();
+    $this->assertRaw('acquia_lift.js', '[testJavaScriptAndDrupalSettings]: With valid settings, acquia_lift.js is loaded on the home page.');
+    $this->assertEqual('account_name_1', $drupalSettings['acquia_lift']['credential']['account_name'], '[testJavaScriptAndDrupalSettings]: JavaScript settings contain credential.account_name.');
+    $this->assertEqual('Page not found', $drupalSettings['acquia_lift']['pageContext']['content_title'], '[testJavaScriptAndDrupalSettings]: JavaScript settings contain pageContext.content_page.content_title');
+    $this->assertEqual('an_identity', $drupalSettings['acquia_lift']['identity']['identity'], '[testJavaScriptAndDrupalSettings]: JavaScript settings contain identity.identity.');
+
+    // Assert drupalSettings with identity query parameters on a node page.
     $this->drupalGet('node/90210', ['query' => ['my_identity_parameter' => 'an_identity']]);
     $drupalSettings = $this->getDrupalSettings();
-    $this->assertRaw('acquia_lift.js', '[testJavaScriptAndDrupalSettings]: With valid settings, acquia_lift.js is loaded on the page.');
+    $this->assertRaw('acquia_lift.js', '[testJavaScriptAndDrupalSettings]: With valid settings, acquia_lift.js is loaded on the node page.');
     $this->assertEqual('account_name_1', $drupalSettings['acquia_lift']['credential']['account_name'], '[testJavaScriptAndDrupalSettings]: JavaScript settings contain credential.account_name.');
     $this->assertEqual(90210, $drupalSettings['acquia_lift']['pageContext']['post_id'], '[testJavaScriptAndDrupalSettings]: JavaScript settings contain pageContext.post_id.');
     $this->assertEqual('an_identity', $drupalSettings['acquia_lift']['identity']['identity'], '[testJavaScriptAndDrupalSettings]: JavaScript settings contain identity.identity.');

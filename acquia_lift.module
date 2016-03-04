@@ -39,14 +39,7 @@ function acquia_lift_node_view_alter(array &$build, EntityInterface $node, Entit
     return;
   }
 
-  $page_context = \Drupal::service('acquia_lift.service.context.page_context');
-  $page_context->set($node);
-
-  $credential_settings = \Drupal::config('acquia_lift.settings')->get('credential');
-  $drupal_settings['credential'] = SettingsHelper::getFrontEndCredentialSettings($credential_settings);
-  $drupal_settings['pageContext'] = $page_context->getAll();
-  $build['#attached']['drupalSettings']['acquia_lift'] = $drupal_settings;
-  $build['#attached']['library'][] = 'acquia_lift/acquia_lift';
+  \Drupal::service('acquia_lift.service.context.page_context')->setByNode($node);
 }
 
 /**
@@ -59,11 +52,29 @@ function acquia_lift_page_attachments(array &$page) {
     return;
   }
 
+  $drupal_settings = [];
+
+  // Attach credential settings.
+  $credential_settings = \Drupal::config('acquia_lift.settings')->get('credential');
+  $drupal_settings['credential'] = SettingsHelper::getFrontEndCredentialSettings($credential_settings);
+
+  // Attach page content settings.
+  $request = \Drupal::request();
+  $routeObject = \Drupal::routeMatch()->getRouteObject();
+  $title = \Drupal::service('title_resolver')->getTitle($request, $routeObject);
+  $pageContext = \Drupal::service('acquia_lift.service.context.page_context');
+  $pageContext->setPageContextTitle($title);
+  $drupal_settings['pageContext'] = $pageContext->getAll();
+
   // Attach identity settings.
   $identity = \Drupal::service('acquia_lift.service.context.path_context')->getIdentity();
   if ($identity) {
-    $page['#attached']['drupalSettings']['acquia_lift']['identity'] = $identity;
+    $drupal_settings['identity'] = $identity;
   }
+
+  // Attach JavaScript library and settings.
+  $page['#attached']['library'][] = 'acquia_lift/acquia_lift';
+  $page['#attached']['drupalSettings']['acquia_lift'] = $drupal_settings;
 }
 
 /**

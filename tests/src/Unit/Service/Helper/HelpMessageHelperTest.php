@@ -12,6 +12,7 @@ use Drupal\acquia_lift\Service\Helper\HelpMessageHelper;
 use Drupal\Tests\acquia_lift\Unit\Traits\SettingsDataTrait;
 
 require_once(__DIR__ . '/../../Traits/SettingsDataTrait.php');
+require_once(__DIR__ . '/../../Polyfill/Drupal.php');
 
 /**
  * HelpMessageHelper Test.
@@ -57,7 +58,7 @@ class HelpMessageHelperTest extends UnitTestCase {
 
     $this->linkGenerator->expects($this->at(0))
       ->method('generate')
-      ->with(t('Documentation'))
+      ->with('Documentation')
       ->willReturn('a_documentation_link');
   }
 
@@ -80,7 +81,7 @@ class HelpMessageHelperTest extends UnitTestCase {
 
     $this->linkGenerator->expects($this->at(1))
       ->method('generate')
-      ->with(t('Acquia Lift Web Admin'))
+      ->with('Acquia Lift Web Admin')
       ->willReturn('a_web_admin_link');
 
     $help_message_helper = new HelpMessageHelper($this->configFactory, $this->linkGenerator);

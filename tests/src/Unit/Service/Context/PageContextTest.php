@@ -77,11 +77,11 @@ class PageContextTest extends UnitTestCase {
   }
 
   /**
-   * Tests the getAll() method, without setNode().
+   * Tests the getAll() method().
    *
    * @covers ::getAll
    */
-  public function testGetAllWithoutSetNode() {
+  public function testGetAll() {
     $page_context = new PageContext($this->configFactory, $this->entityTypeManager);
     $all_page_context = $page_context->getAll();
     $expected_page_context = [
@@ -104,17 +104,18 @@ class PageContextTest extends UnitTestCase {
   }
 
   /**
-   * Tests the getAll() method, with setNode().
+   * Tests the getAll() method, with setByNode().
    *
    * @covers ::getAll
+   * @covers ::setByNode
    */
-  public function testGetAllWithSetNode() {
+  public function testGetAllWithSetByNode() {
     $node = $this->getNode();
-    $this->testGetAllWithSetNodeSetUpThumbnailUrl($node);
-    $this->testGetAllWithSetNodeSetUpFields();
+    $this->testGetAllWithSetByNodeSetUpThumbnailUrl($node);
+    $this->testGetAllWithSetByNodeSetUpFields();
 
     $page_context = new PageContext($this->configFactory, $this->entityTypeManager);
-    $page_context->set($node);
+    $page_context->setByNode($node);
     $all_page_context = $page_context->getAll();
     $expected_page_context = [
       'content_title' => 'My Title',
@@ -136,11 +137,63 @@ class PageContextTest extends UnitTestCase {
   }
 
   /**
-   * testGetAllWithSetNode(), sub routine "set up thumbnail url".
+   * Tests the getAll() method, with setPageContextTitle().
+   *
+   * @covers ::getAll
+   * @covers ::setPageContextTitle
+   */
+  public function testGetAllWithSetPageContextTitle() {
+    $page_context = new PageContext($this->configFactory, $this->entityTypeManager);
+
+    // Test set NULL title.
+    $page_context->setPageContextTitle('My Page Title');
+    $all_page_context = $page_context->getAll();
+    $expected_page_context = [
+      'content_title' => 'My Page Title',
+      'content_type' => 'page',
+      'page_type' => 'content page',
+      'content_section' => '',
+      'content_keywords' => '',
+      'post_id' => '',
+      'published_date' => '',
+      'thumbnail_url' => '',
+      'persona' => '',
+      'engagement_score' => 1,
+      'author' => '',
+      'evalSegments' => TRUE,
+      'trackingId' => '',
+    ];
+
+    $this->assertEquals($expected_page_context, $all_page_context);
+
+    // Test set NULL title.
+    $page_context->setPageContextTitle(NULL);
+    $all_page_context = $page_context->getAll();
+    $expected_page_context = [
+      'content_title' => '',
+      'content_type' => 'page',
+      'page_type' => 'content page',
+      'content_section' => '',
+      'content_keywords' => '',
+      'post_id' => '',
+      'published_date' => '',
+      'thumbnail_url' => '',
+      'persona' => '',
+      'engagement_score' => 1,
+      'author' => '',
+      'evalSegments' => TRUE,
+      'trackingId' => '',
+    ];
+
+    $this->assertEquals($expected_page_context, $all_page_context);
+  }
+
+  /**
+   * testGetAllWithSetByNode(), sub routine "set up thumbnail url".
    *
    * @param $node Node
    */
-  private function testGetAllWithSetNodeSetUpThumbnailUrl($node) {
+  private function testGetAllWithSetByNodeSetUpThumbnailUrl($node) {
     $field_media = $this->getMockBuilder('Drupal\Core\Entity\ContentEntityInterface')
       ->disableOriginalConstructor()
       ->getMock();
@@ -192,9 +245,9 @@ class PageContextTest extends UnitTestCase {
   }
 
   /**
-   * testGetAllWithSetNode(), sub routine "setup fields".
+   * testGetAllWithSetByNode(), sub routine "setup fields".
    */
-  private function testGetAllWithSetNodeSetUpFields() {
+  private function testGetAllWithSetByNodeSetUpFields() {
     $tracked_content_term_1 = $this->getTerm('Tracked Content Term Name 1', 'tracked_content_vocabulary');
     $tracked_keyword_term_1 = $this->getTerm('Tracked Keyword Term Name 1', 'tracked_keyword_vocabulary');
     $tracked_keyword_term_2 = $this->getTerm('Tracked Keyword Term Name 2', 'tracked_keyword_vocabulary');

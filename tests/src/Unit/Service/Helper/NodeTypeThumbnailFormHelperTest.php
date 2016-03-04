@@ -9,11 +9,11 @@ namespace Drupal\Tests\acquia_lift\Service\Helper;
 
 use Drupal\Tests\UnitTestCase;
 use Drupal\acquia_lift\Service\Helper\NodeTypeThumbnailFormHelper;
-use Drupal\acquia_lift\Service\Helper\ImageStyleOptions;
 use Drupal\Tests\acquia_lift\Unit\Traits\SettingsDataTrait;
+use Drupal\Tests\acquia_lift\Unit\Polyfill\Drupal\ImageStyleOptions;
 
 require_once(__DIR__ . '/../../Traits/SettingsDataTrait.php');
-require_once(__DIR__ . '/image_style_options.php');
+require_once(__DIR__ . '/../../Polyfill/Drupal.php');
 
 /**
  * NodeTypeThumbnailFormHelper Test.
@@ -142,7 +142,7 @@ class NodeTypeThumbnailFormHelperTest extends UnitTestCase {
       'field_image' => 'Image Label (field_image)',
       'field_entity_reference->field_child_image' => 'Entity_reference Label->Image Label (field_entity_reference->field_child_image)',
     ];
-    $this->assertEquals(t('Acquia Lift'), $form['#title']);
+    $this->assertEquals('Acquia Lift', $form['#title']);
     $this->assertEquals($expected_field_options, $form['field']['#options']);
     $this->assertEquals('field_media->field_image', $form['field']['#default_value']);
     $this->assertEquals(['medium' => 'Medium'], $form['style']['#options']);

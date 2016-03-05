@@ -60,11 +60,11 @@ function acquia_lift_page_attachments(array &$page) {
 
   // Attach page content settings.
   $request = \Drupal::request();
-  $routeObject = \Drupal::routeMatch()->getRouteObject();
-  $title = \Drupal::service('title_resolver')->getTitle($request, $routeObject);
-  $pageContext = \Drupal::service('acquia_lift.service.context.page_context');
-  $pageContext->setPageContextTitle($title);
-  $drupal_settings['pageContext'] = $pageContext->getAll();
+  $route_object = \Drupal::routeMatch()->getRouteObject();
+  $title = \Drupal::service('title_resolver')->getTitle($request, $route_object);
+  $page_context = \Drupal::service('acquia_lift.service.context.page_context');
+  $page_context->setPageContextTitle($title);
+  $drupal_settings['pageContext'] = $page_context->getAll();
 
   // Attach identity settings.
   $identity = \Drupal::service('acquia_lift.service.context.path_context')->getIdentity();

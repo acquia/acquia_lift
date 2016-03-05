@@ -145,8 +145,33 @@ class PageContextTest extends UnitTestCase {
   public function testGetAllWithSetPageContextTitle() {
     $page_context = new PageContext($this->configFactory, $this->entityTypeManager);
 
-    // Test set NULL title.
-    $page_context->setPageContextTitle('My Page Title');
+    // Test set markup title.
+    $title = [
+      '#markup' => '<div><a>My Page Title</a></div>',
+      '#allowed_tags' => ['a'],
+    ];
+    $page_context->setPageContextTitle($title);
+    $all_page_context = $page_context->getAll();
+    $expected_page_context = [
+      'content_title' => '<a>My Page Title</a>',
+      'content_type' => 'page',
+      'page_type' => 'content page',
+      'content_section' => '',
+      'content_keywords' => '',
+      'post_id' => '',
+      'published_date' => '',
+      'thumbnail_url' => '',
+      'persona' => '',
+      'engagement_score' => 1,
+      'author' => '',
+      'evalSegments' => TRUE,
+      'trackingId' => '',
+    ];
+    $this->assertEquals($expected_page_context, $all_page_context);
+
+    // Test set string title.
+    $title = 'My Page Title';
+    $page_context->setPageContextTitle($title);
     $all_page_context = $page_context->getAll();
     $expected_page_context = [
       'content_title' => 'My Page Title',
@@ -163,7 +188,6 @@ class PageContextTest extends UnitTestCase {
       'evalSegments' => TRUE,
       'trackingId' => '',
     ];
-
     $this->assertEquals($expected_page_context, $all_page_context);
 
     // Test set NULL title.
@@ -184,7 +208,6 @@ class PageContextTest extends UnitTestCase {
       'evalSegments' => TRUE,
       'trackingId' => '',
     ];
-
     $this->assertEquals($expected_page_context, $all_page_context);
   }
 

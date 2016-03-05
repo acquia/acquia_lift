@@ -240,14 +240,21 @@ class PageContext {
   /**
    * Set page context title.
    *
-   * @param string $title
+   * @param array|string $title
    *   Set page context title.
    */
   public function setPageContextTitle($title) {
-    if (empty($title)) {
+    // If markup, strip tags and convert to string.
+    if (is_array($title) && isset($title['#markup']) && isset($title['#allowed_tags'])) {
+      $allowed_tags = empty($title['#allowed_tags']) ? '' : '<' . implode('><', $title['#allowed_tags']) . '>';
+      $title = strip_tags($title['#markup'], $allowed_tags);
+    }
+    // If still an array or empty, set title to empty.
+    if (is_array($title) || empty($title)) {
       $this->pageContext['content_title'] = '';
       return;
     }
+    // Otherwise set title.
     $this->pageContext['content_title'] = $title;
   }
 }

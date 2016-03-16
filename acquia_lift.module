@@ -1199,6 +1199,7 @@ EOT;
           'weight' => JS_DEFAULT - 6
         ),
         $tc_js => array(
+          'preprocess' => FALSE,
           'weight' => JS_DEFAULT - 5
         ),
         $path . '/js/acquia_lift.page.js' => $options,

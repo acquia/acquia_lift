@@ -64,7 +64,6 @@ QUnit.module("Acquia Lift Profiles", {
         callbackCalled++;
         var values;
         setTimeout(function(){
-          QUnit.start();
           if (callbackCalled === 1) {
             // The first time we'll just send back one segment.
             values = ['segment1'];
@@ -154,7 +153,6 @@ QUnit.asyncTest("Get context values no cache", function( assert ) {
   expect(5);
   var contextResult = Drupal.personalize.visitor_context.acquia_lift_profiles_context.getContext({'segment1':'segment1', 'segment2':'segment2'});
   assert.ok(contextResult instanceof Promise);
-  QUnit.stop();
   Promise.all([contextResult]).then(function (loadedContexts) {
     QUnit.start();
     assert.ok(loadedContexts[0].hasOwnProperty('segment1'), 'segment1 returned');

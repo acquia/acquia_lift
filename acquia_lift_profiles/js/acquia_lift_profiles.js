@@ -12,8 +12,7 @@ var _tcwq = _tcwq || [];
       });
     return uuid;
   }
-  var trackingId = generateTrackingId(), plugin = 'acquia_lift_profiles_context', callbackRegistered = false;
-
+  var trackingId = generateTrackingId();
 
   Drupal.behaviors.acquia_lift_profiles = {
     'attach': function (context, settings) {
@@ -21,7 +20,6 @@ var _tcwq = _tcwq || [];
       Drupal.acquia_lift_profiles.init(settings);
       Drupal.acquia_lift_profiles.addActionListener(settings);
       Drupal.acquia_lift_profiles.processServerSideActions(settings);
-      Drupal.acquia_lift_profiles.registerSegmentsCallback();
     }
   };
 
@@ -80,31 +78,36 @@ var _tcwq = _tcwq || [];
         return context_values;
       }
 
+      // If not, use a Promise to wait for segments to be stored.
       return new Promise(function(resolve, reject){
-        // Define a callback function to receive information about the segments
-        // for the current visitor.
-        var segmentsCallback = function (segmentIds, captureInfo) {
-          if (captureInfo.x['trackingId'] == trackingId) {
-            var allSegments = segmentCache.store(segmentIds);
-            for (j in enabled) {
-              if (enabled.hasOwnProperty(j) && allSegments.hasOwnProperty(j)) {
-                context_values[j] = allSegments[j];
+        var milliseconds_limit = Drupal.personalize.contextTimeout || 5000,
+          milliseconds_step = 50,
+          milliseconds_count = 0,
+          // Create the interval callback function that's called periodically.
+          resolveWhenSegmentsAreCached = function() {
+            // Time out, if the time limit has been reached.
+            if (milliseconds_count > milliseconds_limit) {
+              clearInterval(segments_interval);
+              reject(new Error('Could not retrieve segments in time.'));
+            }
+            milliseconds_count += milliseconds_step;
+
+            cached = segmentCache.retrieve();
+            // If Segments are not stored yet, abort the current attempt.
+            if (!cached) {
+              return;
+            }
+            // Otherwise, segments are stored, now resolve using the segments.
+            for (i in enabled) {
+              if (enabled.hasOwnProperty(i) && cached.hasOwnProperty(i)) {
+                context_values[i] = cached[i];
               }
             }
+            clearInterval(segments_interval);
             resolve(context_values);
-          }
-        };
-
-        // Register our callback for receiving segments.
-        // TODO: "onLoad" should happen before "init" and "pushTrack". However,
-        // current JS executing sequence is incorrect, therefore we are patching
-        // _tcwq by slotting "onLoad" in between "init" and "pushTrack".
-        var pushTrack = _tcwq.length > 0 ? _tcwq.pop() : null;
-        _tcwq.push(["onLoad", segmentsCallback]);
-        if (pushTrack) {
-          _tcwq.push(pushTrack);
-        }
-        callbackRegistered = true;
+          },
+          // Kick off the interval callbacks.
+          segments_interval = setInterval(resolveWhenSegmentsAreCached, milliseconds_step);
       });
     }
   };
@@ -206,8 +209,14 @@ var _tcwq = _tcwq || [];
             }
           }
 
+          // Create a segment callback function.
+          var segmentCallback = function (segmentIds, captureInfo) {
+            if (captureInfo.x['trackingId'] == trackingId) {
+              segmentCache.store(segmentIds);
+            }
+          },
           // Ensure sensible defaults for our capture data.
-          var pageInfo = $.extend({
+          pageInfo = $.extend({
             'content_title': 'Untitled',
             'content_type': 'page',
             'page_type': 'content page',
@@ -222,7 +231,8 @@ var _tcwq = _tcwq || [];
             'evalSegments': true,
             'trackingId': trackingId
           }, settings.acquia_lift_profiles.pageContext, pageFieldValues);
-          _tcaq.push( [ 'captureView', 'Content View', pageInfo ] );
+          _tcwq.push(['onLoad', segmentCallback]);
+          _tcaq.push(['captureView', 'Content View', pageInfo]);
 
           if(settings.acquia_lift_profiles.hasOwnProperty('identity')) {
             pushCaptureIdentity(settings.acquia_lift_profiles.identity, settings.acquia_lift_profiles.identityType);
@@ -242,28 +252,6 @@ var _tcwq = _tcwq || [];
       },
       'getTrackingID': function () {
         return trackingId;
-      },
-      'registerSegmentsCallback': function() {
-        if (!callbackRegistered) {
-          // Define a callback function to receive information about the segments
-          // for the current visitor and add them to the visitorSegments object.
-          var segmentsCallback = function (segmentIds, captureInfo) {
-            if (captureInfo.x['trackingId'] == trackingId) {
-              segmentCache.store(segmentIds);
-            }
-          };
-
-          // Register our callback for receiving segments.
-          // TODO: "onLoad" should happen before "init" and "pushTrack". However,
-          // current JS executing sequence is incorrect, therefore we are patching
-          // _tcwq by slotting "onLoad" in between "init" and "pushTrack".
-          var pushTrack = _tcwq.length > 0 ? _tcwq.pop() : null;
-          _tcwq.push(["onLoad", segmentsCallback]);
-          if (pushTrack) {
-            _tcwq.push(pushTrack);
-          }
-          callbackRegistered = true;
-        }
       },
       'clearSegmentMemoryCache': function() {
         segmentCache.reset();

@@ -197,7 +197,7 @@
    */
   Drupal.behaviors.acquiaLiftVariations = {
     attach: function (context, settings) {
-      if (settings.acquia_lift.toolbarEditMode) {
+      if (settings.hasOwnProperty('acquia_lift') && settings.acquia_lift.hasOwnProperty('toolbarEditMode') && settings.acquia_lift.toolbarEditMode) {
         $('body').once('acquia-lift-variations', function () {
           response = {
             data: {

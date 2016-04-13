@@ -61,6 +61,13 @@ class PageContext {
   ];
 
   /**
+   * Metatags.
+   *
+   * @var array
+   */
+  private $metatags = [];
+
+  /**
    * Constructor.
    *
    * @param \Drupal\Core\Config\ConfigFactoryInterface $config_factory
@@ -159,6 +166,7 @@ class PageContext {
     // Find Field Term names.
     foreach ($available_field_vocabulary_names as $page_context_name => $vocabulary_names) {
       $field_term_names = $this->getFieldTermNames($vocabulary_names, $vocabulary_term_names);
+      $this->metatags[$page_context_name] = $field_term_names;
       $this->pageContext[$page_context_name] = implode(',', $field_term_names);
     }
   }
@@ -235,6 +243,28 @@ class PageContext {
    */
   public function getAll() {
     return $this->pageContext;
+  }
+
+  /**
+   * Get meta tags.
+   *
+   * @return array
+   *   Get meta tags.
+   */
+  public function getMetatags() {
+    $metatags = [];
+    foreach ($this->metatags as $metatagName => $metatagContent) {
+      $metatag = [
+        '#type' => 'html_tag',
+        '#tag' => 'meta',
+        '#attributes' => [
+          'name' => $metatagName,
+          'content' => implode(',', $metatagContent),
+        ],
+      ];
+      $metatags[] = [$metatag, $metatagName];
+    }
+    return $metatags;
   }
 
   /**

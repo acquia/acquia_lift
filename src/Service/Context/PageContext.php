@@ -258,7 +258,7 @@ class PageContext {
         '#type' => 'html_tag',
         '#tag' => 'meta',
         '#attributes' => [
-          'name' => $metatagName,
+          'itemprop' => 'acquia_lift:' . $metatagName,
           'content' => implode(',', $metatagContent),
         ],
       ];
@@ -266,6 +266,26 @@ class PageContext {
     }
     return $metatags;
   }
+
+  /**
+   * Get lift settings.
+   *
+   * @return array
+   *   Get meta tags.
+   */
+  public function getLiftSettings() {
+    $liftSettings =[
+    [
+      '#type' => 'html_tag',
+      '#tag' => 'script',
+      '#value' => 'alert(0);',
+      '#attributes' => array('type' => 'text/javascript'),
+    ]
+   
+  ];
+    return $liftSettings;
+  }
+
 
   /**
    * Set page context title.

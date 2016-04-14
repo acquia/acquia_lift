@@ -66,6 +66,7 @@ function acquia_lift_page_attachments(array &$page) {
   $page_context->setPageContextTitle($title);
   $drupal_settings['pageContext'] = $page_context->getAll();
   $metatags = $page_context->getMetatags();
+  $liftSettings = $page_context->getLiftSettings();
 
   // Attach identity settings.
   $identity = \Drupal::service('acquia_lift.service.context.path_context')->getIdentity();
@@ -79,6 +80,10 @@ function acquia_lift_page_attachments(array &$page) {
   foreach ($metatags as $metatag) {
     $page['#attached']['html_head'][] = $metatag;
   }
+
+  
+  $page['#attached']['html_head'][] = $liftSettings;
+
 }
 
 /**

@@ -280,13 +280,13 @@ class PageContext {
       'site_id' => $credential_settings['customer_site'],
     ];
     $liftSettings = [
-    [
-      '#type' => 'html_tag',
-      '#tag' => 'script',
-      '#value' => $scriptrootvar . json_encode($credential_values) .';',
-      '#attributes' => array('type' => 'text/javascript'),
-    ]
-  ];
+      [
+        '#type' => 'html_tag',
+        '#tag' => 'script',
+        '#value' => $scriptrootvar . json_encode($credential_values) .';',
+        '#attributes' => array('type' => 'text/javascript'),
+      ]
+    ];
     return $liftSettings;
   }
 

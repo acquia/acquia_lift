@@ -273,15 +273,19 @@ class PageContext {
    * @return array
    *   Get meta tags.
    */
-  public function getLiftSettings() {
-    $liftSettings =[
+  public function getLiftSettings($credential_settings) {
+    $scriptrootvar = 'window.AcquiaLift = ';
+    $credential_values = [
+      'account_id' => $credential_settings['account_name'],
+      'site_id' => $credential_settings['customer_site'],
+    ];
+    $liftSettings = [
     [
       '#type' => 'html_tag',
       '#tag' => 'script',
-      '#value' => 'alert(0);',
+      '#value' => $scriptrootvar . json_encode($credential_values) .';',
       '#attributes' => array('type' => 'text/javascript'),
     ]
-   
   ];
     return $liftSettings;
   }

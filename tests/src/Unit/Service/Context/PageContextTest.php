@@ -211,6 +211,42 @@ class PageContextTest extends UnitTestCase {
     $this->assertEquals($expected_page_context, $all_page_context);
   }
 
+   /**
+   * Tests the getAll() method, with getMetatags().
+   *
+   * @covers ::getAll
+   * @covers ::getMetatags
+   */
+  // public function testGetAllWithgetMetatags() {
+  //   $page_context = new PageContext($this->configFactory, $this->entityTypeManager);
+
+  //   // Test set markup title.
+  //   $metaTags = [
+  //     '#metatagName' => 'testsample',
+  //     '#allowed_tags' => ['meta'],
+  //   ];
+  //   $page_context->getMetatags($metaTags);
+  //   $all_page_context = $page_context->getAll();
+  //   $expected_page_context = [
+  //     'content_title' => '<a>My Page Title</a>',
+  //     'content_type' => 'page',
+  //     'page_type' => 'content page',
+  //     'content_section' => '',
+  //     'content_keywords' => '',
+  //     'post_id' => '',
+  //     'published_date' => '',
+  //     'thumbnail_url' => '',
+  //     'persona' => '',
+  //     'engagement_score' => 1,
+  //     'author' => '',
+  //     'evalSegments' => TRUE,
+  //     'trackingId' => '',
+  //   ];
+  //   $this->assertEquals($expected_page_context, $all_page_context);
+    
+  // }
+
+
   /**
    * testGetAllWithSetByNode(), sub routine "set up thumbnail url".
    *

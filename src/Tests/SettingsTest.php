@@ -148,8 +148,5 @@ class SettingsTest extends WebTestBase {
     $this->assertRaw('acquia_lift:account_id', '[testJavaScriptAndDrupalSettings]: acquia_lift account_id is loaded on the node page.');
     $this->assertRaw('acquia_lift:site_id', '[testJavaScriptAndDrupalSettings]: acquia_lift site_id is loaded on the node page.');
 
-
-    //$elements = $this->cssSelect("script[src*='acquia_lift_settings.js']");
-
   }
 }

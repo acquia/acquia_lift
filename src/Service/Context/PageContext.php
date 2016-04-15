@@ -267,6 +267,35 @@ class PageContext {
     return $metatags;
   }
 
+    /**
+   * Get Lift credential meta tags.
+   *
+   * @return array
+   *   Get meta tags.
+   */
+  public function getLiftMetatags($credential_settings) {
+    $metatags = [];
+    $metatagAcct = [
+    '#type' => 'html_tag',
+    '#tag' => 'meta',
+      '#attributes' => [
+        'itemprop' => 'acquia_lift:account_id',
+        'content' => $credential_settings['account_name'],
+      ],
+    ];
+    $metatags[] = [$metatagAcct, 'account_id'];
+    $metatagSite = [
+    '#type' => 'html_tag',
+    '#tag' => 'meta',
+      '#attributes' => [
+        'itemprop' => 'acquia_lift:site_id',
+        'content' => $credential_settings['customer_site'],
+      ],
+    ];
+    $metatags[] = [$metatagSite, 'site_id'];
+    return $metatags;
+  }
+
   /**
    * Set page context title.
    *

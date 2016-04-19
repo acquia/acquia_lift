@@ -136,6 +136,13 @@ class AdminSettingsForm extends ConfigFormBase {
       '#default_value' => $credential_settings['js_path'],
       '#required' => TRUE,
     ];
+    $form['assets_url'] = [
+      '#type' => 'textfield',
+      '#title' => t('Assets URL'),
+      '#field_prefix' => 'http(s)://',
+      '#default_value' => $credential_settings['assets_url'],
+      '#required' => TRUE,
+    ];
 
     return $form;
   }
@@ -341,6 +348,7 @@ class AdminSettingsForm extends ConfigFormBase {
       $settings->set('credential.secret_key', $values['secret_key']);
     }
     $settings->set('credential.js_path', $this->removeProtocal($values['js_path']));
+    $settings->set('credential.assets_url', $this->removeProtocal($values['assets_url']));
   }
 
   /**

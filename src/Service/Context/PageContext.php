@@ -251,8 +251,28 @@ class PageContext {
    * @return array
    *   Get meta tags.
    */
-  public function getMetatags() {
+  public function getMetatags($credential_settings) {
     $metatags = [];
+
+    // credential tags
+    $liftCreds = array();
+    $liftCreds[0] = array('account_id','account_name');
+    $liftCreds[1] = array('site_id','customer_site');
+    $liftCreds[2] = array('liftDecisionAPIURL','api_url');
+    $liftCreds[3] = array('liftAssetsURL','assets_url');
+    foreach ($liftCreds as $key => $value) {
+      $metatag = [
+        '#type' => 'html_tag',
+        '#tag' => 'meta',
+        '#attributes' => [
+          'itemprop' => 'acquia_lift:' . $value[0],
+          'content' => $credential_settings[$value[1]],
+        ],
+      ];  
+      $metatags[] = [$metatag, $key];
+    };
+ 
+    // content tags
     foreach ($this->metatags as $metatagName => $metatagContent) {
       $metatag = [
         '#type' => 'html_tag',

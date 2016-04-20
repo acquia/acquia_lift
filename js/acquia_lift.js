@@ -45,12 +45,16 @@ var _tcwq = _tcwq || [];
 
     // Capture view.
     Drupal.acquia_lift.generateTrackingId();
-    _tcaq.push(['captureView', 'Content View', $.extend({}, settings.pageContext)]);
+    var captureViewEvent = ['captureView', 'Content View', $.extend({}, settings.pageContext)];
 
-    // Capture identity.
+    // Capture identity in addition, if applicable.
     if(settings.hasOwnProperty('identity') && settings.identity.hasOwnProperty('identity') && settings.identity.hasOwnProperty('identityType')) {
-      _tcaq.push(['captureIdentity', settings.identity.identity, settings.identity.identityType]);
+      var identity = {};
+      identity[settings.identity.identity] = settings.identity.identityType;
+      captureViewEvent.push({'identity': identity});
     }
+
+    _tcaq.push(captureViewEvent);
   };
 
   /**

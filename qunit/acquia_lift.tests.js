@@ -10,6 +10,7 @@ QUnit.module("Acquia Lift Data Collection tests", {
     drupalSettings.acquia_lift.pageContext.content_keywords = 'foo,bar';
   },
   teardown: function() {
+    delete drupalSettings.acquia_lift.identity;
     _tcaq = [];
   }
 });
@@ -41,15 +42,15 @@ QUnit.test("Test populate _tcaq queue", function(assert) {
   var expected_config_object = {
     'post_id': 90210,
     'content_keywords': 'foo,bar',
-    'trackingId': drupalSettings.acquia_lift.pageContext.trackingId,
-  }
+    'trackingId': drupalSettings.acquia_lift.pageContext.trackingId
+  };
   assert.deepEqual(_tcaq[0], ['setAccount', 'an_account_name', 'a_customer_site'], 'Pushed "setAccount" to _tcaq.');
   assert.deepEqual(_tcaq[1], ['captureView', 'Content View', expected_config_object], 'Pushed "captureView" to _tcaq.');
   assert.equal(_tcaq.length, 2, 'There are only 2 events in the _tcaq.');
 });
 
 QUnit.test("Test populate _tcaq queue, with identity", function(assert) {
-  expect(4);
+  expect(3);
 
   // Populate the tcaq queue with identity.
   drupalSettings.acquia_lift.identity = {};
@@ -60,10 +61,14 @@ QUnit.test("Test populate _tcaq queue, with identity", function(assert) {
   var expected_config_object = {
     'post_id': 90210,
     'content_keywords': 'foo,bar',
-    'trackingId': drupalSettings.acquia_lift.pageContext.trackingId,
-  }
+    'trackingId': drupalSettings.acquia_lift.pageContext.trackingId
+  };
+  var expected_identity_object = {
+    'identity': {
+      my_identity: 'my_identity_type'
+    }
+  };
   assert.deepEqual(_tcaq[0], ['setAccount', 'an_account_name', 'a_customer_site'], 'Pushed "setAccount" to _tcaq.');
-  assert.deepEqual(_tcaq[1], ['captureView', 'Content View', expected_config_object], 'Pushed "captureView" to _tcaq.');
-  assert.deepEqual(_tcaq[2], ['captureIdentity', 'my_identity', 'my_identity_type'], 'Pushed "captureIdentity" to _tcaq.');
-  assert.equal(_tcaq.length, 3, 'There are only 3 events in the _tcaq.');
+  assert.deepEqual(_tcaq[1], ['captureView', 'Content View', expected_config_object, expected_identity_object], 'Pushed "captureView" to _tcaq.');
+  assert.equal(_tcaq.length, 2, 'There are only 2 events in the _tcaq.');
 });

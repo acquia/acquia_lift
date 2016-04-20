@@ -255,11 +255,12 @@ class PageContext {
     $metatags = [];
 
     // credential tags
-    $liftCreds = array();
-    $liftCreds[0] = array('account_id','account_name');
-    $liftCreds[1] = array('site_id','customer_site');
-    $liftCreds[2] = array('liftDecisionAPIURL','api_url');
-    $liftCreds[3] = array('liftAssetsURL','assets_url');
+    $liftCreds = [
+      ['account_id','account_name'],
+      ['site_id','customer_site'],
+      ['liftDecisionAPIURL','api_url'],
+      ['liftAssetsURL','assets_url'],
+    ];
     foreach ($liftCreds as $key => $value) {
       $metatag = [
         '#type' => 'html_tag',

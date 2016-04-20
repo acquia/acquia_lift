@@ -5,6 +5,7 @@ credential:
   access_key: ''
   secret_key: ''
   js_path: ''
+  assets_url: ''
 identity:
   capture_identity: false
   identity_parameter: ''

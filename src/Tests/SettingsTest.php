@@ -98,7 +98,7 @@ class SettingsTest extends WebTestBase {
     $edit += $this->convertToPostFormSettings($field_mappings_settings, 'field_mappings');
     $edit += $this->convertToPostFormSettings($visibility_settings, 'visibility');
     $edit_settings_count = count($edit);
-    $expect_settings_count = 13;
+    $expect_settings_count = 14;
 
     // Post the edits and assert that options are saved.
     $this->drupalPostForm('admin/config/content/acquia_lift', $edit, t('Save configuration'));
@@ -143,10 +143,15 @@ class SettingsTest extends WebTestBase {
     $this->assertEqual('account_name_1', $drupalSettings['acquia_lift']['credential']['account_name'], '[testJavaScriptAndDrupalSettings]: JavaScript settings contain credential.account_name.');
     $this->assertEqual(90210, $drupalSettings['acquia_lift']['pageContext']['post_id'], '[testJavaScriptAndDrupalSettings]: JavaScript settings contain pageContext.post_id.');
     $this->assertEqual('an_identity', $drupalSettings['acquia_lift']['identity']['identity'], '[testJavaScriptAndDrupalSettings]: JavaScript settings contain identity.identity.');
+    $drupalSettings = $this->getDrupalSettings();
+    $this->assertEqual('customer_site_1', $drupalSettings['acquia_lift']['credential']['customer_site'], '[testJavaScriptAndDrupalSettings]: JavaScript settings contain credential.customer_site.');
 
     // Assert lift3 settings are inserted on page.
     $this->assertRaw('acquia_lift:account_id', '[testJavaScriptAndDrupalSettings]: acquia_lift account_id is loaded on the node page.');
     $this->assertRaw('acquia_lift:site_id', '[testJavaScriptAndDrupalSettings]: acquia_lift site_id is loaded on the node page.');
+    $this->assertRaw('acquia_lift:liftDecisionAPIURL', '[testJavaScriptAndDrupalSettings]: acquia_lift decision api is loaded on the node page.');
+    $this->assertRaw('acquia_lift:liftAssetsURL', '[testJavaScriptAndDrupalSettings]: acquia_lift assets url is loaded on the node page.');
+
 
   }
 }

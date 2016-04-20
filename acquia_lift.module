@@ -75,7 +75,6 @@ function acquia_lift_page_attachments(array &$page) {
 
   // Attach JavaScript library and settings.
   $page['#attached']['library'][] = 'acquia_lift/acquia_lift';
-  //$page['#attached']['library'][] = 'acquia_lift/acquia_lift_settings';
   $page['#attached']['drupalSettings']['acquia_lift'] = $drupal_settings;
 
   foreach ($metatags as $metatag) {

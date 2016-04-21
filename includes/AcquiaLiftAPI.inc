@@ -52,6 +52,14 @@ class AcquiaLiftAPI implements AcquiaLiftLearnReportDataSourceInterface {
    */
   private static $instance;
 
+
+  /**
+   * Holds an array of existing test names.
+   *
+   * @var array
+   */
+  protected static $existing_tests;
+
   /**
    * An http client for making calls to Acquia Lift.
    *
@@ -275,11 +283,15 @@ class AcquiaLiftAPI implements AcquiaLiftLearnReportDataSourceInterface {
    * Retrieves a list of existing campaigns..
    */
   public function getExistingAgentNames() {
+    if (!empty(self::$existing_tests)) {
+      return self::$existing_tests;
+    }
     $campaigns = $this->getCampaigns();
     $names = array();
     foreach ($campaigns as $campaign) {
       $names[] = $campaign['id'];
     }
+    self::$existing_tests = $names;
     return $names;
   }
 
@@ -1032,6 +1044,8 @@ class AcquiaLiftAPI implements AcquiaLiftLearnReportDataSourceInterface {
       }
       $index++;
     }
-    return $agent_name . $suffix;
+    $new_name = $agent_name . $suffix;
+    self::$existing_tests[] = $new_name;
+    return $new_name;
   }
 }

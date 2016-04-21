@@ -477,6 +477,9 @@ class AcquiaLiftTest extends DrupalUnitTestCase {
     // Try to get a unique name based on 'first-agent'
     $new_name = $lift_api->ensureUniqueAgentName($agent_codes[0], 64);
     $this->assertEqual('first-agent-2', $new_name);
+
+    $second_new_name = $lift_api->ensureUniqueAgentName($agent_codes[0], 64);
+    $this->assertEqual('first-agent-3', $second_new_name);
     // Try to get a unique name based on a long string.
     $new_name = $lift_api->ensureUniqueAgentName('abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz', 50);
     $this->assertEqual('abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuv-1', $new_name);

@@ -116,40 +116,6 @@ var _tcwq = _tcwq || [];
   var identityCaptured = false;
 
   /**
-   * Send a captureIdentity event to ContextDB
-   *
-   * @param identifier
-   *   The identifier to be sent.
-   * @param identityType
-   *   The type of identity to pass.
-   */
-  var pushCaptureIdentity = function(identifier, identityType) {
-    if (identityCaptured) {
-      return;
-    }
-    _tcaq.push( [ 'captureIdentity', identifier, identityType ] );
-    identityCaptured = true;
-  };
-
-  /**
-   * Sends a captureIdentity event to TC using the email address from the
-   * passed in context.
-   *
-   * @param DrupalSettings
-   *   An object containing the Acquia Lift Profiles settings from the server side.
-   * @param context
-   *   An object that must at least have a 'mail' property.
-   */
-  var pushCaptureEmail = function(DrupalSettings, context) {
-    // Do nothing if identity has already been captured or should not be captured or
-    // if we don't have an email address in the context.
-    if (!(DrupalSettings.captureIdentity && context['mail'])) {
-      return;
-    }
-    pushCaptureIdentity(context['mail'], 'email');
-  };
-
-  /**
    * Centralized functionality for acquia_lift_profiles behavior.
    */
   Drupal.acquia_lift_profiles = (function(){
@@ -232,11 +198,19 @@ var _tcwq = _tcwq || [];
             'trackingId': trackingId
           }, settings.acquia_lift_profiles.pageContext, pageFieldValues);
           _tcwq.push(['onLoad', segmentCallback]);
-          _tcaq.push(['captureView', 'Content View', pageInfo]);
 
-          if(settings.acquia_lift_profiles.hasOwnProperty('identity')) {
-            pushCaptureIdentity(settings.acquia_lift_profiles.identity, settings.acquia_lift_profiles.identityType);
+          // Capture view.
+          var captureViewEvent = ['captureView', 'Content View', pageInfo];
+
+          // Capture identity in addition, if applicable.
+          if(!identityCaptured && settings.acquia_lift_profiles.hasOwnProperty('identity')) {
+            var identity = {};
+            identity[settings.acquia_lift_profiles.identity] = settings.acquia_lift_profiles.identityType;
+            captureViewEvent.push({'identity': identity});
+            identityCaptured = true;
           }
+
+          _tcaq.push(captureViewEvent);
 
           initialized = true;
         };
@@ -276,13 +250,22 @@ var _tcwq = _tcwq || [];
         // already retrieved all the visitor context values. Since this happens asynchronously
         // it is not guaranteed that this is the case.
         $.extend(extra, pageFieldValues);
-        // Send to acquia_lift_profiles.
-        _tcaq.push(['capture', eventName, extra]);
-        // If it's a special event with some other callback associated with it, call that
-        // callback as well.
-        if (typeof this.specialEvents[eventName] == 'function') {
-          this.specialEvents[eventName].call(this, settings.acquia_lift_profiles, context);
+
+        // Capture view.
+        var captureEvent = ['capture', eventName, extra];
+
+        // Capture identity in addition, if applicable.
+        if (settings.acquia_lift_profiles.captureIdentity &&
+          !identityCaptured &&
+          (eventName === 'user_login' || eventName === 'user_register') &&
+          context['mail']) {
+          var identity = {};
+          identity[context['mail']] = 'email';
+          captureEvent.push({'identity': identity});
+          identityCaptured = true;
         }
+
+        _tcaq.push(captureEvent);
       },
 
       /**
@@ -332,12 +315,6 @@ var _tcwq = _tcwq || [];
             }
           }
         }
-      },
-
-      // Holds the functions that should be called for particular events.
-      'specialEvents': {
-        'user_login': pushCaptureEmail,
-        'user_register': pushCaptureEmail
       },
 
       /**

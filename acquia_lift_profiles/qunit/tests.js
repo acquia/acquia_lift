@@ -82,12 +82,14 @@ QUnit.module("Acquia Lift Profiles", {
         }, 1000);
       }
     };
+  },
+  teardown: function() {
+    Drupal.acquia_lift_profiles.resetAll();
   }
 });
 
 QUnit.asyncTest("init test", function( assert ) {
   expect(7);
-  Drupal.acquia_lift_profiles.resetAll();
   QUnit.start();
   _tcaq = {
     'push':function(stf) {
@@ -165,7 +167,6 @@ QUnit.asyncTest("Get context values no cache", function( assert ) {
 
 QUnit.test( "Server-side events no email", function( assert ) {
   expect(4);
-  Drupal.acquia_lift_profiles.resetAll();
   // Add a couple of server-side actions to the settings. Don't include the 'mail'
   // property in the user_login action's context.
   var settings = jQuery.extend({}, Drupal.settings);
@@ -206,8 +207,7 @@ QUnit.test( "Server-side events no email", function( assert ) {
 
 
 QUnit.test( "Server-side events with email", function( assert ) {
-  expect(7);
-  Drupal.acquia_lift_profiles.resetAll();
+  expect(6);
 
   // Add a couple of server-side actions to the settings. This time we do include
   // the 'mail' property in the user_login action's context.
@@ -234,33 +234,28 @@ QUnit.test( "Server-side events with email", function( assert ) {
       else if (args[1] == 'user_login' ) {
         assert.equal( args[0], 'capture',  'capture received');
         assert.equal( args[1], 'user_login',  'custom event captured');
-      }
-      else if (args[0] == 'captureIdentity') {
-        assert.equal( args[0], 'captureIdentity',  'capture received');
-        assert.equal( args[1], 'test@example.com',  'identity captured');
-        assert.equal( args[2], 'email',  'identity type captured');
+        assert.deepEqual( args[2], {engagement_score: 1, evalSegments: true, targetgoalvalue: 1}, 'data is captured');
+        assert.deepEqual( args[3], {identity: {'test@example.com': 'email'}},  'identity is captured');
       }
     }
   };
   Drupal.acquia_lift_profiles.processServerSideActions(settings);
 });
 
-QUnit.test( "Capture identity test", function( assert ) {
-  expect(3);
-  Drupal.acquia_lift_profiles.resetAll();
+QUnit.test( "Capture identity within capture view test", function( assert ) {
+  expect(2);
 
   var settings = jQuery.extend({}, Drupal.settings);
   // Add an identity and identityType to the settings.
   settings.acquia_lift_profiles.identity = 'someTestUser';
   settings.acquia_lift_profiles.identityType = 'socialTastic';
-  // Our _tcaq.push should be called wiht a captureIdentity event
-  // when we call the init function with our settings.
+  // Our _tcaq.push should as always be called with a captureView event,
+  // but when identity is present, the identity is captured within the captureView event.
   _tcaq = {
     'push':function(args) {
-      if ( args[0] == 'captureIdentity' ) {
-        assert.equal( args[0], 'captureIdentity',  'capture received');
-        assert.equal( args[1], 'someTestUser',  'identity captured');
-        assert.equal( args[2], "socialTastic", 'identity type received' );
+      if ( args[0] == 'captureView' ) {
+        assert.equal( args[1], 'Content View',  'identity captured');
+        assert.deepEqual( args[3], {identity: {someTestUser: 'socialTastic'}}, 'identity is captured' );
       }
     }
   };
@@ -280,7 +275,6 @@ QUnit.test( "Capture identity test", function( assert ) {
 
 QUnit.asyncTest("Use UDF values in processEvent", function( assert ) {
   expect(2);
-  Drupal.acquia_lift_profiles.resetAll();
   // Mock the _tcaq object so we can assert on what gets passed to it.
   _tcaq = {
     'push':function(event) {

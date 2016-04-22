@@ -99,6 +99,20 @@ class ALProfilesWebTest extends DrupalWebTestCase {
     $settings = $this->drupalGetSettings();
     $this->assertTrue($settings['acquia_lift_profiles']['captureIdentity']);
     $this->assertEqual(array('form_submit', 'user_login', 'user_register'), array_keys($settings['acquia_lift_profiles']['serverSideActions']));
+    $this->drupalLogout();
+
+    // When registration process requires user email verification,
+    // identity should not be captured.
+    variable_set('user_email_verification', TRUE);
+    $user_name_3 = $this->randomName();
+    $new_user_fields = array(
+      'name' => $user_name_3,
+      'mail' => $user_name_3 . '@example.com',
+    );
+    $this->drupalPost('user/register', $new_user_fields, t('Create new account'));
+    $settings = $this->drupalGetSettings();
+    $this->assertTrue($settings['acquia_lift_profiles']['captureIdentity']);
+    $this->assertEqual(array('form_submit'), array_keys($settings['acquia_lift_profiles']['serverSideActions']));
   }
 
   function testThumbnailImage() {

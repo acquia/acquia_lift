@@ -79,14 +79,17 @@ function acquia_lift_profiles_admin_form($form, &$form_state) {
   $identity_type_parameter_display_value = variable_get('acquia_lift_profiles_identity_type_param') ?: 'identityType';
   $default_identity_type_display_value = variable_get('acquia_lift_profiles_default_identity_type') ?: 'account';
   $default_identity_type_default_value = variable_get('acquia_lift_profiles_default_identity_type') ?: ACQUIA_LIFT_PROFILES_DEFAULT_IDENTITY_TYPE_DEFAULT;
+  $user_email_verification_value = variable_get('user_email_verification', TRUE);
   $form['acquia_lift_profiles_identity'] = array(
     '#title' => t('Identity'),
     '#type' => 'fieldset',
     '#tree' => TRUE,
   );
+  $capture_identity_title = 'Capture identity on login';
+  $capture_identity_title .= $user_email_verification_value ? ' (note: register is not captured because the site requires user email verification)' : ' and register';
   $form['acquia_lift_profiles_identity']['acquia_lift_profiles_capture_identity'] = array(
     '#type' => 'checkbox',
-    '#title' => t('Capture identity on login / register'),
+    '#title' => t($capture_identity_title),
     '#description' => t('Check this if you want Acquia Lift Profiles to capture the identity of the user upon login or registration. This means sending their email address to the Acquia Lift Profile Manager.'),
     '#default_value' => variable_get('acquia_lift_profiles_capture_identity', FALSE),
   );

@@ -96,8 +96,6 @@ trait SettingsDataTrait {
       'account_name' => 'account_name_1',
       'customer_site' => 'customer_site_1',
       'js_path' => 'js_path_1',
-      'api_url' => 'api_url_1',
-      'assets_url' => 'assets_url_1',
     ];
   }
 }

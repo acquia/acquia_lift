@@ -26,7 +26,7 @@ acquia_lift.settings:
           label: 'JavaScript Path'
         assets_url:
           type: uri
-          label: 'Assets URL'  
+          label: 'Assets URL'
     identity:
       type: config_object
       label: 'Identity'

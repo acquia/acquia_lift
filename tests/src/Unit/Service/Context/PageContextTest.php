@@ -64,9 +64,13 @@ class PageContextTest extends UnitTestCase {
       ->willReturn($this->settings);
     $this->settings->expects($this->at(0))
       ->method('get')
+      ->with('credential')
+      ->willReturn($this->getValidCredentialSettings());
+    $this->settings->expects($this->at(1))
+      ->method('get')
       ->with('field_mappings')
       ->willReturn($this->getValidFieldMappingsSettings());
-    $this->settings->expects($this->at(1))
+    $this->settings->expects($this->at(2))
       ->method('get')
       ->with('thumbnail')
       ->willReturn($this->getValidThumbnailSettings());
@@ -77,7 +81,7 @@ class PageContextTest extends UnitTestCase {
   }
 
   /**
-   * Tests the getAll() method().
+   * Tests the getAll() method.
    *
    * @covers ::getAll
    */
@@ -287,6 +291,97 @@ class PageContextTest extends UnitTestCase {
       ->method('getNodeTerms')
       ->with([90210])
       ->willReturn($terms);
+  }
+
+  /**
+   * Tests the getMetatags() method.
+   *
+   * @covers ::getMetatags
+   */
+  public function testGetMetatags() {
+    $node = $this->getNode();
+    $this->testGetAllWithSetByNodeSetUpThumbnailUrl($node);
+    $this->testGetAllWithSetByNodeSetUpFields();
+
+    $page_context = new PageContext($this->configFactory, $this->entityTypeManager);
+    $page_context->setByNode($node);
+    $metatags = $page_context->getMetatags();
+    $expected_metatags = [
+      [
+        [
+          '#type' => 'html_tag',
+          '#tag' => 'meta',
+          '#attributes' =>
+          [
+            'itemprop' => 'acquia_lift:account_id',
+            'content' => 'account_name_1',
+          ],
+        ],
+        'account_id',
+      ],
+      [
+        [
+          '#type' => 'html_tag',
+          '#tag' => 'meta',
+          '#attributes' =>
+          [
+            'itemprop' => 'acquia_lift:site_id',
+            'content' => 'customer_site_1',
+          ],
+        ],
+        'site_id',
+      ],
+      [
+        [
+          '#type' => 'html_tag',
+          '#tag' => 'meta',
+          '#attributes' =>
+          [
+            'itemprop' => 'acquia_lift:liftDecisionAPIURL',
+            'content' => 'api_url_1',
+          ],
+        ],
+        'liftDecisionAPIURL',
+      ],
+      [
+        [
+          '#type' => 'html_tag',
+          '#tag' => 'meta',
+          '#attributes' =>
+          [
+            'itemprop' => 'acquia_lift:liftAssetsURL',
+            'content' => 'assets_url_1',
+          ],
+        ],
+        'liftAssetsURL',
+      ],
+      [
+        [
+          '#type' => 'html_tag',
+          '#tag' => 'meta',
+          '#attributes' =>
+          [
+            'itemprop' => 'acquia_lift:content_section',
+            'content' => 'Tracked Content Term Name 1',
+          ],
+        ],
+        'content_section',
+      ],
+      [
+        [
+          '#type' => 'html_tag',
+          '#tag' => 'meta',
+          '#attributes' =>
+          [
+            'itemprop' => 'acquia_lift:content_keywords',
+            'content' => 'Tracked Keyword Term Name 1,Tracked Keyword Term Name 2',
+          ],
+        ],
+        'content_keywords',
+      ],
+    ];
+
+    $this->assertEquals($expected_metatags, $metatags);
   }
 
   /**

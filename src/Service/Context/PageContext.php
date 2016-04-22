@@ -77,9 +77,28 @@ class PageContext {
    */
   public function __construct(ConfigFactoryInterface $config_factory, EntityTypeManagerInterface $entity_type_manager) {
     $settings = $config_factory->get('acquia_lift.settings');
+    $this->initializeMetatags($settings->get('credential'));
     $this->fieldMappings = $settings->get('field_mappings');
     $this->thumbnailConfig = $settings->get('thumbnail');
     $this->taxonomyTermStorage = $entity_type_manager->getStorage('taxonomy_term');
+  }
+
+  /**
+   * Initialize metatags.
+   *
+   * @param array $credential_settings
+   *   Credential settings array.
+   */
+  private function initializeMetatags($credential_settings) {
+    $credential_tag_mapping = [
+      'account_name' => 'account_id',
+      'customer_site' => 'site_id',
+      'api_url' => 'liftDecisionAPIURL',
+      'assets_url' => 'liftAssetsURL',
+    ];
+    foreach ($credential_tag_mapping as $credential_key => $tag_name) {
+      $this->metatags[$tag_name] = $credential_settings[$credential_key];
+    };
   }
 
   /**
@@ -166,7 +185,7 @@ class PageContext {
     // Find Field Term names.
     foreach ($available_field_vocabulary_names as $page_context_name => $vocabulary_names) {
       $field_term_names = $this->getFieldTermNames($vocabulary_names, $vocabulary_term_names);
-      $this->metatags[$page_context_name] = $field_term_names;
+      $this->metatags[$page_context_name] = implode(',', $field_term_names);
       $this->pageContext[$page_context_name] = implode(',', $field_term_names);
     }
   }
@@ -249,30 +268,11 @@ class PageContext {
    * Get meta tags.
    *
    * @return array
-   *   Get meta tags.
+   *   Meta tags.
    */
-  public function getMetatags($credential_settings) {
+  public function getMetatags() {
     $metatags = [];
 
-    // credential tags
-    $liftCreds = [
-      ['account_id','account_name'],
-      ['site_id','customer_site'],
-      ['liftDecisionAPIURL','api_url'],
-      ['liftAssetsURL','assets_url'],
-    ];
-    foreach ($liftCreds as $key => $value) {
-      $metatag = [
-        '#type' => 'html_tag',
-        '#tag' => 'meta',
-        '#attributes' => [
-          'itemprop' => 'acquia_lift:' . $value[0],
-          'content' => $credential_settings[$value[1]],
-        ],
-      ];  
-      $metatags[] = [$metatag, $key];
-    };
- 
     // content tags
     foreach ($this->metatags as $metatagName => $metatagContent) {
       $metatag = [
@@ -280,7 +280,7 @@ class PageContext {
         '#tag' => 'meta',
         '#attributes' => [
           'itemprop' => 'acquia_lift:' . $metatagName,
-          'content' => implode(',', $metatagContent),
+          'content' => $metatagContent,
         ],
       ];
       $metatags[] = [$metatag, $metatagName];

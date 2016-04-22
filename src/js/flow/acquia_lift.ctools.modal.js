@@ -70,6 +70,8 @@
 
     $(window).trigger('resize');
 
+    $('body').addClass('ctools-modal-open');
+
     // Position autocomplete results based on the scroll position of the modal.
     $('#modal-content').delegate('input.form-autocomplete', 'keyup', function() {
       $('#autocomplete').css('top', $(this).position().top + $(this).outerHeight() + $(this).offsetParent().filter('#modal-content').scrollTop());
@@ -86,7 +88,9 @@
     ctoolsModalDisplay(ajax, response, status);
     // Trigger a resize event to make sure modal is in the right place.
     $(window).trigger('resize');
-  }
+
+    $('body').addClass('ctools-modal-open');
+  };
 
   // CTools.Modal.modalContent inner-scoped functions.
   // Get a list of the tabbable elements in the modal content.
@@ -311,7 +315,7 @@
     }
 
     // Apply the changes
-    $('#modalBackdrop').css({'height': winHeight + 'px', 'width': winWidth + 'px', 'top': $(document).scrollTop()}).show();
+    $('#modalBackdrop').css({'height': winHeight + 'px', 'width': winWidth + 'px'}).show();
     modalContent.css('top', mdcTop + 'px').css('left', mdcLeft + 'px').show();
   };
 
@@ -338,6 +342,9 @@
 
     // Close the content
     $('#modalContent').hide()[animation](currentSpeed);
+
+    //remove body class to release scrolling in main body.
+    $('body').removeClass('ctools-modal-open');
 
     // Remove the content
     $('#modalContent').remove();
@@ -492,6 +499,7 @@
         } else {
           $('#modalContent').remove();
           $('#modalBackdrop').remove();
+          $('body').removeClass('ctools-modal-open');
         }
       }
     });

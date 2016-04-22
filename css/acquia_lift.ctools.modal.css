@@ -115,3 +115,7 @@ div.ctools-modal-content.acquia-lift-modal .modal-content .acquia-lift-form-type
 #acquia-lift-start-campaign-form .form-item-campaign-end-date .form-item {
   margin-right: 0;
 }
+
+body.ctools-modal-open {
+  overflow: hidden;
+}

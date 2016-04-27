@@ -112,7 +112,6 @@ class AdminSettingsForm extends ConfigFormBase {
     $form['api_url'] = [
       '#type' => 'textfield',
       '#title' => t('API URL'),
-      '#field_prefix' => 'http(s)://',
       '#default_value' => $credential_settings['api_url'],
       '#required' => TRUE,
     ];
@@ -342,7 +341,7 @@ class AdminSettingsForm extends ConfigFormBase {
   private function setCredentialValues(Config $settings, array $values) {
     $settings->set('credential.account_name', $values['account_name']);
     $settings->set('credential.customer_site', $values['customer_site']);
-    $settings->set('credential.api_url', $this->removeProtocal($values['api_url']));
+    $settings->set('credential.api_url', $values['api_url']);
     $settings->set('credential.access_key', $values['access_key']);
     if (!empty($values['secret_key'])) {
       $settings->set('credential.secret_key', $values['secret_key']);

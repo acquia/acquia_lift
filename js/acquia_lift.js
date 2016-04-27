@@ -73,7 +73,7 @@ var _tcwq = _tcwq || [];
       firstScript = document.getElementsByTagName('script')[0];
     script.type = 'text/javascript';
     script.async = true;
-    script.src = ('https:' == document.location.protocol ? 'https://' : 'http://') + settings.credential.js_path;
+    script.src = settings.credential.js_path;
     firstScript.parentNode.insertBefore(script, firstScript);
   };
 

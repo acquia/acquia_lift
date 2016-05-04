@@ -1,5 +1,6 @@
 acquia_lift:
   version: VERSION
+  header: true
   js:
     js/acquia_lift.js: {}
   dependencies:

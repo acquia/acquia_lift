@@ -921,7 +921,7 @@ function acquia_lift_update_7205() {
     // We can't rely on personalize module being enabled so we can't use any of
     // its API functions or constants. Just talk directly to the db and hard-code
     // variable names and status codes.
-    $result = db_query('SELECT machine_name, label FROM personalize_agent WHERE plugin IN ("acquia_lift", "acquia_lift_target", "acquia_lift_learn")');
+    $result = db_query("SELECT machine_name, label FROM personalize_agent WHERE plugin IN ('acquia_lift', 'acquia_lift_target', 'acquia_lift_learn')");
     $now = time();
     foreach ($result as $row) {
       // Set the stop time of the agent.

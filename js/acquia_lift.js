@@ -1,6 +1,3 @@
-var _tcaq = _tcaq || [];
-var _tcwq = _tcwq || [];
-
 (function ($, Drupal, settings) {
 
   "use strict";
@@ -24,9 +21,6 @@ var _tcwq = _tcwq || [];
     }
     initialized = true;
 
-    // Populates _tcaq queue.
-    Drupal.acquia_lift.populateTcaqQueue();
-
     // Load and run capture scripts.
     if (window.attachEvent) {
       window.attachEvent('onload', Drupal.acquia_lift.asyncLoad);
@@ -34,23 +28,6 @@ var _tcwq = _tcwq || [];
     }
 
     window.addEventListener('load', Drupal.acquia_lift.asyncLoad, false);
-  };
-
-  /**
-   * Populate _tcaq queue.
-   */
-  Drupal.acquia_lift.populateTcaqQueue = function () {
-    // Set account.
-    _tcaq.push(['setAccount', settings.credential.account_name, settings.credential.customer_site]);
-
-    // Capture view.
-    Drupal.acquia_lift.generateTrackingId();
-    _tcaq.push(['captureView', 'Content View', $.extend({}, settings.pageContext)]);
-
-    // Capture identity.
-    if(settings.hasOwnProperty('identity') && settings.identity.hasOwnProperty('identity') && settings.identity.hasOwnProperty('identityType')) {
-      _tcaq.push(['captureIdentity', settings.identity.identity, settings.identity.identityType]);
-    }
   };
 
   /**

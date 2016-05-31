@@ -14,6 +14,7 @@ use Drupal\Core\Entity\EntityManagerInterface;
 use Drupal\node\Entity\NodeType;
 use Drupal\Core\Form\ConfigFormBase;
 use Drupal\Core\Form\FormStateInterface;
+use Drupal\Core\Link;
 use Drupal\Core\Url;
 use Drupal\taxonomy\Entity\Vocabulary;
 use Drupal\acquia_lift\Service\Helper\SettingsHelper;
@@ -297,7 +298,7 @@ class AdminSettingsForm extends ConfigFormBase {
     $link_attributes = ['attributes' => ['target' => '_blank'], 'fragment' => 'edit-acquia-lift'];
     foreach ($node_types as $node_type) {
       $url = Url::fromRoute('entity.node_type.edit_form', ['node_type' => $node_type->id()], $link_attributes);
-      $links[] = '<p>' . \Drupal::l($node_type->label(), $url) . '</p>';
+      $links[] = '<p>' . Link::fromTextAndUrl($node_type->label(), $url)->toString() . '</p>';
     }
     $form['link_list']['#markup'] = t('Configure thumbnail URLs on each content type\'s edit page (in a new window):');
     $form['link_list']['#markup'] .= implode('', $links);

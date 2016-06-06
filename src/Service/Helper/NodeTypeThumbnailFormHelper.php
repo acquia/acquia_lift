@@ -146,16 +146,15 @@ class NodeTypeThumbnailFormHelper {
       $full_label = $label_prefix . $field_label;
       $full_key = $key_prefix . $field_key;
 
-      // Keep this field, if the field has already been processed.
-      $field_hash = spl_object_hash($field_definition);
-      if (isset($this->processedFieldHashes[$field_hash])) {
-        continue;
-      }
-      $this->processedFieldHashes[$field_hash] = TRUE;
-
       // 1) Image type.
       if ($field_type === 'image') {
         $this->imageFields[$full_key] = $full_label . ' (' . $full_key . ')';
+        continue;
+      }
+
+      // Check if the field has already been processed. If so, skip.
+      $field_hash = spl_object_hash($field_definition);
+      if (isset($this->processedFieldHashes[$field_hash])) {
         continue;
       }
 
@@ -163,6 +162,10 @@ class NodeTypeThumbnailFormHelper {
       if ($field_type === 'entity_reference' &&
         $this->entityManager->getDefinition($field_target_type)->isSubclassOf('\Drupal\Core\Entity\FieldableEntityInterface')
       ) {
+        // Track this field, since it is about to be processed.
+        $this->processedFieldHashes[$field_hash] = TRUE;
+
+        // Process this field.
         $this->collectImageFields($field_target_type, $field_type, $full_key . '->', $full_label . '->');
         continue;
       }

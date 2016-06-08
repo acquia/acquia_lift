@@ -108,7 +108,7 @@ function acquia_lift_profiles_admin_form($form, &$form_state) {
       '@identity_parameter_display_value' => $identity_parameter_display_value,
       '@identity_type_parameter_display_value' => $identity_type_parameter_display_value,
       '@default_identity_type_default_value' => $default_identity_type_default_value,
-      '!help_link' => l(t('Acquia Lift service'), 'https://docs.acquia.com/lift/recommend/admin/customer#custom-identifier', array('attributes' => array('target' => '_blank'))),
+      '!help_link' => l(t('Acquia Lift service'), 'https://docs.acquia.com/lift/offers/admin/customer#custom-identifier', array('attributes' => array('target' => '_blank'))),
     )),
     '#default_value' => variable_get('acquia_lift_profiles_identity_type_param', ''),
     '#states' => array(

@@ -82,19 +82,19 @@ class PageContext {
    */
   public function __construct(ConfigFactoryInterface $config_factory, EntityTypeManagerInterface $entity_type_manager) {
     $settings = $config_factory->get('acquia_lift.settings');
-    $this->populateCredentialContext($settings->get('credential'));
+    $this->setPageContextCredential($settings->get('credential'));
     $this->fieldMappings = $settings->get('field_mappings');
     $this->thumbnailConfig = $settings->get('thumbnail');
     $this->taxonomyTermStorage = $entity_type_manager->getStorage('taxonomy_term');
   }
 
   /**
-   * Populate credential context.
+   * Set page context - credential.
    *
    * @param array $credential_settings
    *   Credential settings array.
    */
-  private function populateCredentialContext($credential_settings) {
+  private function setPageContextCredential($credential_settings) {
     foreach (SELF::$CREDENTIAL_MAPPING as $credential_key => $tag_name) {
       $this->pageContext[$tag_name] = $credential_settings[$credential_key];
     };

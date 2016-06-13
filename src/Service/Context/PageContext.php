@@ -185,7 +185,6 @@ class PageContext {
     // Find Field Term names.
     foreach ($available_field_vocabulary_names as $page_context_name => $vocabulary_names) {
       $field_term_names = $this->getFieldTermNames($vocabulary_names, $vocabulary_term_names);
-      $this->metatags[$page_context_name] = implode(',', $field_term_names);
       $this->pageContext[$page_context_name] = implode(',', $field_term_names);
     }
   }
@@ -273,19 +272,35 @@ class PageContext {
   public function getMetatags() {
     $metatags = [];
 
-    // content tags
+    // credentials
     foreach ($this->metatags as $metatagName => $metatagContent) {
-      $metatag = [
-        '#type' => 'html_tag',
-        '#tag' => 'meta',
-        '#attributes' => [
-          'itemprop' => 'acquia_lift:' . $metatagName,
-          'content' => $metatagContent,
-        ],
-      ];
-      $metatags[] = [$metatag, $metatagName];
+      $metatags[] = [$this->generateMetaTag($metatagName, $metatagContent), $metatagName];
+    }
+    // page context
+    foreach ($this->pageContext as $contextName => $contextValue) {
+      $metatags[] = [$this->generateMetaTag($contextName, $contextValue), $contextName];
     }
     return $metatags;
+  }
+
+  /**
+   * Generates the render array code for a single meta tag.
+   * @param string $name
+   *   The name for the meta tag
+   * @param string $content
+   *   The content for the meta tag
+   * @return array
+   *   The render array
+   */
+  private function generateMetaTag($name, $content) {
+    return [
+      '#type' => 'html_tag',
+      '#tag' => 'meta',
+      '#attributes' => [
+        'itemprop' => 'acquia_lift:' . $name,
+        'content' => $content,
+      ],
+    ];
   }
 
   /**

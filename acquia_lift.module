@@ -17,6 +17,7 @@ use Drupal\Core\Entity\Display\EntityViewDisplayInterface;
 use Drupal\Core\Routing\RouteMatchInterface;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\user\UserInterface;
+use Drupal\node\NodeInterface;
 use Drupal\acquia_lift\Service\Helper\SettingsHelper;
 
 /**
@@ -27,25 +28,9 @@ function acquia_lift_help($route_name, RouteMatchInterface $route_match) {
 }
 
 /**
- * Implements hook_ENTITY_TYPE_view_alter().
- */
-function acquia_lift_node_view_alter(array &$build, EntityInterface $node, EntityViewDisplayInterface $display) {
-  // Create and attach settings and library only when:
-  //   1) viewing a node in "full" mode, and
-  //   2) path context agrees on attaching.
-  if ($display->getOriginalMode() !== 'full' ||
-    !\Drupal::service('acquia_lift.service.context.path_context')->shouldAttach()
-  ) {
-    return;
-  }
-
-  \Drupal::service('acquia_lift.service.context.page_context')->setByNode($node);
-}
-
-/**
  * Implements hook_page_attachments().
  */
-function acquia_lift_page_attachments(array &$page) {
+function acquia_lift_page_attachments(array &$attachments) {
   // Create and attach settings and library only when path context agrees on attaching.
   if (!\Drupal::service('acquia_lift.service.context.path_context')->shouldAttach()
   ) {
@@ -54,15 +39,26 @@ function acquia_lift_page_attachments(array &$page) {
 
   $drupal_settings = [];
 
-  // Attach credential settings.
+  // Prepare credential drupal settings.
   $credential_settings = \Drupal::config('acquia_lift.settings')->get('credential');
   $drupal_settings['credential'] = SettingsHelper::getFrontEndCredentialSettings($credential_settings);
 
-  // Attach page content settings.
-  $request = \Drupal::request();
-  $route_object = \Drupal::routeMatch()->getRouteObject();
-  $title = \Drupal::service('title_resolver')->getTitle($request, $route_object);
+  // Prepare page context.
   $page_context = \Drupal::service('acquia_lift.service.context.page_context');
+  $request = \Drupal::request();
+
+  // Set page context by node.
+  if ($request->attributes->has('node')) {
+    $node = $request->attributes->get('node');
+    if ($node instanceof NodeInterface) {
+      $page_context->setByNode($node);
+    }
+  }
+
+  // Set page context's title.
+  $route_object = \Drupal::routeMatch()->getRouteObject();
+  $title_resolver = \Drupal::service('title_resolver');
+  $title = $title_resolver->getTitle($request, $route_object);
   $page_context->setPageContextTitle($title);
   $drupal_settings['pageContext'] = $page_context->getAll();
 
@@ -73,8 +69,8 @@ function acquia_lift_page_attachments(array &$page) {
   }
 
   // Attach JavaScript library and settings.
-  $page['#attached']['library'][] = 'acquia_lift/acquia_lift';
-  $page['#attached']['drupalSettings']['acquia_lift'] = $drupal_settings;
+  $attachments['#attached']['library'][] = 'acquia_lift/acquia_lift';
+  $attachments['#attached']['drupalSettings']['acquia_lift'] = $drupal_settings;
 }
 
 /**

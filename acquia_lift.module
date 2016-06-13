@@ -64,7 +64,6 @@ function acquia_lift_page_attachments(array &$page) {
   $title = \Drupal::service('title_resolver')->getTitle($request, $route_object);
   $page_context = \Drupal::service('acquia_lift.service.context.page_context');
   $page_context->setPageContextTitle($title);
-  $drupal_settings['pageContext'] = $page_context->getAll();
   $metatags = $page_context->getMetatags();
 
   // Attach identity settings.

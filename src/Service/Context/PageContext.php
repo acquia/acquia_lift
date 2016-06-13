@@ -40,7 +40,7 @@ class PageContext {
   private $taxonomyTermStorage;
 
   /**
-   * Page context.
+   * Page context, with default value.
    *
    * @var array
    */
@@ -61,11 +61,16 @@ class PageContext {
   ];
 
   /**
-   * Metatags.
+   * Credential mapping.
    *
    * @var array
    */
-  private $metatags = [];
+  private static $CREDENTIAL_MAPPING = [
+    'account_name' => 'account_id',
+    'customer_site' => 'site_id',
+    'api_url' => 'liftDecisionAPIURL',
+    'assets_url' => 'liftAssetsURL',
+  ];
 
   /**
    * Constructor.
@@ -77,27 +82,21 @@ class PageContext {
    */
   public function __construct(ConfigFactoryInterface $config_factory, EntityTypeManagerInterface $entity_type_manager) {
     $settings = $config_factory->get('acquia_lift.settings');
-    $this->initializeMetatags($settings->get('credential'));
+    $this->populateCredentialContext($settings->get('credential'));
     $this->fieldMappings = $settings->get('field_mappings');
     $this->thumbnailConfig = $settings->get('thumbnail');
     $this->taxonomyTermStorage = $entity_type_manager->getStorage('taxonomy_term');
   }
 
   /**
-   * Initialize metatags.
+   * Populate credential context.
    *
    * @param array $credential_settings
    *   Credential settings array.
    */
-  private function initializeMetatags($credential_settings) {
-    $credential_tag_mapping = [
-      'account_name' => 'account_id',
-      'customer_site' => 'site_id',
-      'api_url' => 'liftDecisionAPIURL',
-      'assets_url' => 'liftAssetsURL',
-    ];
-    foreach ($credential_tag_mapping as $credential_key => $tag_name) {
-      $this->metatags[$tag_name] = $credential_settings[$credential_key];
+  private function populateCredentialContext($credential_settings) {
+    foreach (SELF::$CREDENTIAL_MAPPING as $credential_key => $tag_name) {
+      $this->pageContext[$tag_name] = $credential_settings[$credential_key];
     };
   }
 
@@ -254,16 +253,6 @@ class PageContext {
   }
 
   /**
-   * Get all.
-   *
-   * @return array
-   *   Get All.
-   */
-  public function getAll() {
-    return $this->pageContext;
-  }
-
-  /**
    * Get meta tags.
    *
    * @return array
@@ -272,19 +261,18 @@ class PageContext {
   public function getMetatags() {
     $metatags = [];
 
-    // credentials
-    foreach ($this->metatags as $metatagName => $metatagContent) {
-      $metatags[] = [$this->generateMetaTag($metatagName, $metatagContent), $metatagName];
+    // Generate meta tag render arrays.
+    foreach ($this->pageContext as $name => $content) {
+      $renderArray = $this->getMetaTagRenderArray($name, $content);
+      $metatags[] = [$renderArray, $name];
     }
-    // page context
-    foreach ($this->pageContext as $contextName => $contextValue) {
-      $metatags[] = [$this->generateMetaTag($contextName, $contextValue), $contextName];
-    }
+
     return $metatags;
   }
 
   /**
-   * Generates the render array code for a single meta tag.
+   * Get the render array for a single meta tag.
+   *
    * @param string $name
    *   The name for the meta tag
    * @param string $content
@@ -292,7 +280,7 @@ class PageContext {
    * @return array
    *   The render array
    */
-  private function generateMetaTag($name, $content) {
+  private function getMetaTagRenderArray($name, $content) {
     return [
       '#type' => 'html_tag',
       '#tag' => 'meta',

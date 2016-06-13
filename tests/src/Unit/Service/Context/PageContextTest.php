@@ -81,14 +81,14 @@ class PageContextTest extends UnitTestCase {
   }
 
   /**
-   * Tests the getAll() method.
+   * Tests the getMetatags() method.
    *
-   * @covers ::getAll
+   * @covers ::getMetatags
    */
-  public function testGetAll() {
+  public function testGetMetatags() {
     $page_context = new PageContext($this->configFactory, $this->entityTypeManager);
-    $all_page_context = $page_context->getAll();
-    $expected_page_context = [
+    $metatags = $page_context->getMetatags();
+    $expected_metatags = [
       'content_title' => 'Untitled',
       'content_type' => 'page',
       'page_type' => 'content page',
@@ -98,129 +98,25 @@ class PageContextTest extends UnitTestCase {
       'published_date' => '',
       'thumbnail_url' => '',
       'persona' => '',
-      'engagement_score' => 1,
+      'engagement_score' => PageContext::ENGAGEMENT_SCORE_DEFAULT,
       'author' => '',
       'evalSegments' => TRUE,
       'trackingId' => '',
+      'account_id' => 'account_name_1',
+      'site_id' => 'customer_site_1',
+      'liftDecisionAPIURL' => 'api_url_1',
+      'liftAssetsURL' => 'assets_url_1',
     ];
 
-    $this->assertEquals($expected_page_context, $all_page_context);
+    $this->assertMetatagsRenderArray($expected_metatags, $metatags);
   }
 
   /**
-   * Tests the getAll() method, with setByNode().
-   *
-   * @covers ::getAll
-   * @covers ::setByNode
-   */
-  public function testGetAllWithSetByNode() {
-    $node = $this->getNode();
-    $this->testGetAllWithSetByNodeSetUpThumbnailUrl($node);
-    $this->testGetAllWithSetByNodeSetUpFields();
-
-    $page_context = new PageContext($this->configFactory, $this->entityTypeManager);
-    $page_context->setByNode($node);
-    $all_page_context = $page_context->getAll();
-    $expected_page_context = [
-      'content_title' => 'My Title',
-      'content_type' => 'article',
-      'page_type' => 'node page',
-      'content_section' => 'Tracked Content Term Name 1',
-      'content_keywords' => 'Tracked Keyword Term Name 1,Tracked Keyword Term Name 2',
-      'post_id' => 90210,
-      'published_date' => 'a_published_time',
-      'thumbnail_url' => 'file_create_url:a_style_decorated_file_uri',
-      'persona' => '',
-      'engagement_score' => 1,
-      'author' => 'a_username',
-      'evalSegments' => TRUE,
-      'trackingId' => '',
-    ];
-
-    $this->assertEquals($expected_page_context, $all_page_context);
-  }
-
-  /**
-   * Tests the getAll() method, with setPageContextTitle().
-   *
-   * @covers ::getAll
-   * @covers ::setPageContextTitle
-   */
-  public function testGetAllWithSetPageContextTitle() {
-    $page_context = new PageContext($this->configFactory, $this->entityTypeManager);
-
-    // Test set markup title.
-    $title = [
-      '#markup' => '<div><a>My Page Title</a></div>',
-      '#allowed_tags' => ['a'],
-    ];
-    $page_context->setPageContextTitle($title);
-    $all_page_context = $page_context->getAll();
-    $expected_page_context = [
-      'content_title' => '<a>My Page Title</a>',
-      'content_type' => 'page',
-      'page_type' => 'content page',
-      'content_section' => '',
-      'content_keywords' => '',
-      'post_id' => '',
-      'published_date' => '',
-      'thumbnail_url' => '',
-      'persona' => '',
-      'engagement_score' => 1,
-      'author' => '',
-      'evalSegments' => TRUE,
-      'trackingId' => '',
-    ];
-    $this->assertEquals($expected_page_context, $all_page_context);
-
-    // Test set string title.
-    $title = 'My Page Title';
-    $page_context->setPageContextTitle($title);
-    $all_page_context = $page_context->getAll();
-    $expected_page_context = [
-      'content_title' => 'My Page Title',
-      'content_type' => 'page',
-      'page_type' => 'content page',
-      'content_section' => '',
-      'content_keywords' => '',
-      'post_id' => '',
-      'published_date' => '',
-      'thumbnail_url' => '',
-      'persona' => '',
-      'engagement_score' => 1,
-      'author' => '',
-      'evalSegments' => TRUE,
-      'trackingId' => '',
-    ];
-    $this->assertEquals($expected_page_context, $all_page_context);
-
-    // Test set NULL title.
-    $page_context->setPageContextTitle(NULL);
-    $all_page_context = $page_context->getAll();
-    $expected_page_context = [
-      'content_title' => '',
-      'content_type' => 'page',
-      'page_type' => 'content page',
-      'content_section' => '',
-      'content_keywords' => '',
-      'post_id' => '',
-      'published_date' => '',
-      'thumbnail_url' => '',
-      'persona' => '',
-      'engagement_score' => 1,
-      'author' => '',
-      'evalSegments' => TRUE,
-      'trackingId' => '',
-    ];
-    $this->assertEquals($expected_page_context, $all_page_context);
-  }
-
-  /**
-   * testGetAllWithSetByNode(), sub routine "set up thumbnail url".
+   * testGetMetatagsWithSetByNode(), sub routine "set up thumbnail url".
    *
    * @param $node Node
    */
-  private function testGetAllWithSetByNodeSetUpThumbnailUrl($node) {
+  private function testGetMetatagsWithSetByNodeSetUpThumbnailUrl($node) {
     $field_media = $this->getMockBuilder('Drupal\Core\Entity\ContentEntityInterface')
       ->disableOriginalConstructor()
       ->getMock();
@@ -272,9 +168,9 @@ class PageContextTest extends UnitTestCase {
   }
 
   /**
-   * testGetAllWithSetByNode(), sub routine "setup fields".
+   * testGetMetatagsWithSetByNode(), sub routine "setup fields".
    */
-  private function testGetAllWithSetByNodeSetUpFields() {
+  private function testGetMetatagsWithSetByNodeSetUpFields() {
     $tracked_content_term_1 = $this->getTerm('Tracked Content Term Name 1', 'tracked_content_vocabulary');
     $tracked_keyword_term_1 = $this->getTerm('Tracked Keyword Term Name 1', 'tracked_keyword_vocabulary');
     $tracked_keyword_term_2 = $this->getTerm('Tracked Keyword Term Name 2', 'tracked_keyword_vocabulary');
@@ -294,94 +190,127 @@ class PageContextTest extends UnitTestCase {
   }
 
   /**
-   * Tests the getMetatags() method.
+   * Tests the getMetatags() method, with setByNode().
    *
    * @covers ::getMetatags
+   * @covers ::setByNode
    */
-  public function testGetMetatags() {
+  public function testGetMetatagsWithSetByNode() {
     $node = $this->getNode();
-    $this->testGetAllWithSetByNodeSetUpThumbnailUrl($node);
-    $this->testGetAllWithSetByNodeSetUpFields();
+    $this->testGetMetatagsWithSetByNodeSetUpThumbnailUrl($node);
+    $this->testGetMetatagsWithSetByNodeSetUpFields();
 
     $page_context = new PageContext($this->configFactory, $this->entityTypeManager);
     $page_context->setByNode($node);
     $metatags = $page_context->getMetatags();
     $expected_metatags = [
-      [
-        [
-          '#type' => 'html_tag',
-          '#tag' => 'meta',
-          '#attributes' =>
-          [
-            'itemprop' => 'acquia_lift:account_id',
-            'content' => 'account_name_1',
-          ],
-        ],
-        'account_id',
-      ],
-      [
-        [
-          '#type' => 'html_tag',
-          '#tag' => 'meta',
-          '#attributes' =>
-          [
-            'itemprop' => 'acquia_lift:site_id',
-            'content' => 'customer_site_1',
-          ],
-        ],
-        'site_id',
-      ],
-      [
-        [
-          '#type' => 'html_tag',
-          '#tag' => 'meta',
-          '#attributes' =>
-          [
-            'itemprop' => 'acquia_lift:liftDecisionAPIURL',
-            'content' => 'api_url_1',
-          ],
-        ],
-        'liftDecisionAPIURL',
-      ],
-      [
-        [
-          '#type' => 'html_tag',
-          '#tag' => 'meta',
-          '#attributes' =>
-          [
-            'itemprop' => 'acquia_lift:liftAssetsURL',
-            'content' => 'assets_url_1',
-          ],
-        ],
-        'liftAssetsURL',
-      ],
-      [
-        [
-          '#type' => 'html_tag',
-          '#tag' => 'meta',
-          '#attributes' =>
-          [
-            'itemprop' => 'acquia_lift:content_section',
-            'content' => 'Tracked Content Term Name 1',
-          ],
-        ],
-        'content_section',
-      ],
-      [
-        [
-          '#type' => 'html_tag',
-          '#tag' => 'meta',
-          '#attributes' =>
-          [
-            'itemprop' => 'acquia_lift:content_keywords',
-            'content' => 'Tracked Keyword Term Name 1,Tracked Keyword Term Name 2',
-          ],
-        ],
-        'content_keywords',
-      ],
+      'content_title' => 'My Title',
+      'content_type' => 'article',
+      'page_type' => 'node page',
+      'content_section' => 'Tracked Content Term Name 1',
+      'content_keywords' => 'Tracked Keyword Term Name 1,Tracked Keyword Term Name 2',
+      'post_id' => 90210,
+      'published_date' => 'a_published_time',
+      'thumbnail_url' => 'file_create_url:a_style_decorated_file_uri',
+      'persona' => '',
+      'engagement_score' => PageContext::ENGAGEMENT_SCORE_DEFAULT,
+      'author' => 'a_username',
+      'evalSegments' => TRUE,
+      'trackingId' => '',
+      'account_id' => 'account_name_1',
+      'site_id' => 'customer_site_1',
+      'liftDecisionAPIURL' => 'api_url_1',
+      'liftAssetsURL' => 'assets_url_1',
     ];
 
-    $this->assertEquals($expected_metatags, $metatags);
+    $this->assertMetatagsRenderArray($expected_metatags, $metatags);
+  }
+
+  /**
+   * Tests the getMetatags() method, with setPageContextTitle().
+   *
+   * @covers ::getMetatags
+   * @covers ::setPageContextTitle
+   */
+  public function testGetAllWithSetPageContextTitle() {
+    $page_context = new PageContext($this->configFactory, $this->entityTypeManager);
+
+    // Test set markup title.
+    $title = [
+      '#markup' => '<div><a>My Page Title 1</a></div>',
+      '#allowed_tags' => ['a'],
+    ];
+    $page_context->setPageContextTitle($title);
+    $metatags = $page_context->getMetatags();
+    $expected_metatags = [
+      'content_title' => '<a>My Page Title 1</a>',
+      'content_type' => 'page',
+      'page_type' => 'content page',
+      'content_section' => '',
+      'content_keywords' => '',
+      'post_id' => '',
+      'published_date' => '',
+      'thumbnail_url' => '',
+      'persona' => '',
+      'engagement_score' => PageContext::ENGAGEMENT_SCORE_DEFAULT,
+      'author' => '',
+      'evalSegments' => TRUE,
+      'trackingId' => '',
+      'account_id' => 'account_name_1',
+      'site_id' => 'customer_site_1',
+      'liftDecisionAPIURL' => 'api_url_1',
+      'liftAssetsURL' => 'assets_url_1',
+    ];
+    $this->assertMetatagsRenderArray($expected_metatags, $metatags);
+
+    // Test set string title.
+    $title = 'My Page Title 2';
+    $page_context->setPageContextTitle($title);
+    $all_page_context = $page_context->getMetatags();
+    $expected_page_context = [
+      'content_title' => 'My Page Title 2',
+      'content_type' => 'page',
+      'page_type' => 'content page',
+      'content_section' => '',
+      'content_keywords' => '',
+      'post_id' => '',
+      'published_date' => '',
+      'thumbnail_url' => '',
+      'persona' => '',
+      'engagement_score' => PageContext::ENGAGEMENT_SCORE_DEFAULT,
+      'author' => '',
+      'evalSegments' => TRUE,
+      'trackingId' => '',
+      'account_id' => 'account_name_1',
+      'site_id' => 'customer_site_1',
+      'liftDecisionAPIURL' => 'api_url_1',
+      'liftAssetsURL' => 'assets_url_1',
+    ];
+    $this->assertMetatagsRenderArray($expected_page_context, $all_page_context);
+
+    // Test set NULL title.
+    $page_context->setPageContextTitle(NULL);
+    $all_page_context = $page_context->getMetatags();
+    $expected_page_context = [
+      'content_title' => '',
+      'content_type' => 'page',
+      'page_type' => 'content page',
+      'content_section' => '',
+      'content_keywords' => '',
+      'post_id' => '',
+      'published_date' => '',
+      'thumbnail_url' => '',
+      'persona' => '',
+      'engagement_score' => PageContext::ENGAGEMENT_SCORE_DEFAULT,
+      'author' => '',
+      'evalSegments' => TRUE,
+      'trackingId' => '',
+      'account_id' => 'account_name_1',
+      'site_id' => 'customer_site_1',
+      'liftDecisionAPIURL' => 'api_url_1',
+      'liftAssetsURL' => 'assets_url_1',
+    ];
+    $this->assertMetatagsRenderArray($expected_page_context, $all_page_context);
   }
 
   /**
@@ -469,5 +398,28 @@ class PageContextTest extends UnitTestCase {
       ->method('getUsername')
       ->willReturn($username);
     return $user;
+  }
+
+  /**
+   * Asserts metatags render array.
+   *
+   * @param $expected_metatags
+   * @param $metatags
+   */
+  private function assertMetatagsRenderArray($expected_metatags, $metatags) {
+    $populated_metatags = [];
+
+    foreach ($metatags as $metatag) {
+      $renderArray = $metatag[0];
+      $name = $metatag[1];
+
+      $this->assertEquals('html_tag', $renderArray['#type']);
+      $this->assertEquals('meta', $renderArray['#tag']);
+      $this->assertEquals('acquia_lift:' . $name, $renderArray['#attributes']['itemprop']);
+
+      $populated_metatags[$name] = $renderArray['#attributes']['content'];
+    }
+
+    $this->assertEquals($expected_metatags, $populated_metatags);
   }
 }

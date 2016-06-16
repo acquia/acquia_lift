@@ -56,8 +56,6 @@ class PageContext {
     'persona' => '',
     'engagement_score' => SELF::ENGAGEMENT_SCORE_DEFAULT,
     'author' => '',
-    'evalSegments' => TRUE,
-    'trackingId' => '',
   ];
 
   /**

@@ -141,6 +141,12 @@ class AdminSettingsForm extends ConfigFormBase {
       '#default_value' => $credential_settings['assets_url'],
       '#required' => TRUE,
     ];
+    $form['oauth_url'] = [
+      '#type' => 'textfield',
+      '#title' => t('Override authentication URL'),
+      '#default_value' => $credential_settings['oauth_url'],
+      '#required' => FALSE,
+    ];
 
     return $form;
   }
@@ -347,6 +353,10 @@ class AdminSettingsForm extends ConfigFormBase {
     }
     $settings->set('credential.js_path', $values['js_path']);
     $settings->set('credential.assets_url', $values['assets_url']);
+    $settings->clear('credential.oauth_url');
+    if (!empty($values['oauth_url'])) {
+      $settings->set('credential.oauth_url', $values['oauth_url']);
+    }
   }
 
   /**

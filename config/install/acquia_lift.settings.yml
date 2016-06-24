@@ -6,6 +6,7 @@ credential:
   secret_key: ''
   js_path: ''
   assets_url: ''
+  oauth_url: ''
 identity:
   capture_identity: false
   identity_parameter: ''

@@ -68,6 +68,7 @@ class PageContext {
     'customer_site' => 'site_id',
     'api_url' => 'liftDecisionAPIURL',
     'assets_url' => 'liftAssetsURL',
+    'oauth_url' => 'authEndpoint',
   ];
 
   /**
@@ -94,7 +95,9 @@ class PageContext {
    */
   private function setPageContextCredential($credential_settings) {
     foreach (SELF::$CREDENTIAL_MAPPING as $credential_key => $tag_name) {
-      $this->pageContext[$tag_name] = $credential_settings[$credential_key];
+      if (isset($credential_settings[$credential_key])) {
+        $this->pageContext[$tag_name] = $credential_settings[$credential_key];
+      }
     };
   }
 

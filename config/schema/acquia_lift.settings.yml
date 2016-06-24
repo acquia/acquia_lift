@@ -27,6 +27,9 @@ acquia_lift.settings:
         assets_url:
           type: uri
           label: 'Assets URL'
+        oauth_url:
+          type: uri
+          label: 'OAuth URL'
     identity:
       type: config_object
       label: 'Identity'

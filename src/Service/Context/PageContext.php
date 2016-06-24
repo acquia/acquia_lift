@@ -95,7 +95,7 @@ class PageContext {
    */
   private function setPageContextCredential($credential_settings) {
     foreach (SELF::$CREDENTIAL_MAPPING as $credential_key => $tag_name) {
-      if (isset($credential_settings[$credential_key]) {
+      if (isset($credential_settings[$credential_key])) {
         $this->pageContext[$tag_name] = $credential_settings[$credential_key];
       }
     };

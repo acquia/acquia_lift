@@ -2,7 +2,6 @@
 
 namespace Drupal\acquia_lift\Form;
 
-use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Drupal\Core\Config\Config;
 use Drupal\Core\Entity\EntityManagerInterface;
@@ -11,7 +10,6 @@ use Drupal\Core\Form\ConfigFormBase;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Link;
 use Drupal\Core\Url;
-use Drupal\taxonomy\Entity\Vocabulary;
 use Drupal\acquia_lift\Service\Helper\SettingsHelper;
 
 /**
@@ -63,7 +61,7 @@ class AdminSettingsForm extends ConfigFormBase {
   /**
    * {@inheritdoc}
    */
-  public function buildForm(array $form, FormStateInterface $form_state, Request $request = NULL) {
+  public function buildForm(array $form, FormStateInterface $form_state) {
     $form['credential'] = $this->buildCredentialForm();
 
     // Data collection settings.

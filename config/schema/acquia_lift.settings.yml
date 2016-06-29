@@ -12,15 +12,12 @@ acquia_lift.settings:
         customer_site:
           type: string
           label: 'Customer site'
-        api_url:
-          type: uri
-          label: 'API URL'
         js_path:
           type: uri
           label: 'JavaScript Path'
-        assets_url:
+        api_url:
           type: uri
-          label: 'Assets URL'
+          label: 'API URL'
         oauth_url:
           type: uri
           label: 'OAuth URL'

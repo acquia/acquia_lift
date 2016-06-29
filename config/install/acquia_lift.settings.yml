@@ -1,9 +1,8 @@
 credential:
   account_name: ''
   customer_site: ''
-  api_url: ''
   js_path: ''
-  assets_url: ''
+  api_url: ''
   oauth_url: ''
 identity:
   capture_identity: false

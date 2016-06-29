@@ -109,30 +109,30 @@ class AdminSettingsForm extends ConfigFormBase {
       '#type' => 'textfield',
       '#title' => t('Customer Site'),
       '#default_value' => $credential_settings['customer_site'],
-    ];
-    $form['api_url'] = [
-      '#type' => 'textfield',
-      '#title' => t('API URL'),
-      '#default_value' => $credential_settings['api_url'],
       '#required' => TRUE,
     ];
     $form['js_path'] = [
       '#type' => 'textfield',
       '#title' => t('JavaScript Path'),
-      '#default_value' => $credential_settings['js_path'],
+      '#field_prefix' => 'https://',
+      '#default_value' => $this->removeProtocal($credential_settings['js_path']),
       '#required' => TRUE,
     ];
-    $form['assets_url'] = [
+    $form['api_url'] = [
       '#type' => 'textfield',
-      '#title' => t('Assets URL'),
-      '#default_value' => $credential_settings['assets_url'],
-      '#required' => TRUE,
+      '#title' => t('API URL'),
+      '#field_prefix' => 'https://',
+      '#default_value' => $this->removeProtocal($credential_settings['api_url']),
+      '#required' => FALSE,
+      '#placeholder' => t('Leave empty to use default URL'),
     ];
     $form['oauth_url'] = [
       '#type' => 'textfield',
-      '#title' => t('Override authentication URL'),
-      '#default_value' => $credential_settings['oauth_url'],
+      '#title' => t('Authentication URL'),
+      '#field_prefix' => 'https://',
+      '#default_value' => $this->removeProtocal($credential_settings['oauth_url']),
       '#required' => FALSE,
+      '#placeholder' => t('Leave empty to use default URL'),
     ];
 
     return $form;
@@ -333,12 +333,14 @@ class AdminSettingsForm extends ConfigFormBase {
   private function setCredentialValues(Config $settings, array $values) {
     $settings->set('credential.account_name', $values['account_name']);
     $settings->set('credential.customer_site', $values['customer_site']);
-    $settings->set('credential.api_url', $values['api_url']);
-    $settings->set('credential.js_path', $values['js_path']);
-    $settings->set('credential.assets_url', $values['assets_url']);
+    $settings->set('credential.js_path', 'https://' . $this->removeProtocal($values['js_path']));
+    $settings->clear('credential.oauth_url');
+    if (!empty($values['api_url'])) {
+      $settings->set('credential.api_url', 'https://' . $this->removeProtocal($values['api_url']));
+    }
     $settings->clear('credential.oauth_url');
     if (!empty($values['oauth_url'])) {
-      $settings->set('credential.oauth_url', $values['oauth_url']);
+      $settings->set('credential.oauth_url', 'https://' . $this->removeProtocal($values['oauth_url']));
     }
   }
 

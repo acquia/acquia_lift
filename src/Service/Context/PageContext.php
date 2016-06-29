@@ -67,7 +67,6 @@ class PageContext {
     'account_name' => 'account_id',
     'customer_site' => 'site_id',
     'api_url' => 'liftDecisionAPIURL',
-    'assets_url' => 'liftAssetsURL',
     'oauth_url' => 'authEndpoint',
   ];
 

@@ -23,7 +23,6 @@ trait SettingsDataTrait {
       'customer_site' => 'customer_site_1',
       'api_url' => 'api_url_1',
       'js_path' => 'js_path_1',
-      'assets_url' => 'assets_url_1',
       'oauth_url' => 'oauth_url_1',
     ];
   }

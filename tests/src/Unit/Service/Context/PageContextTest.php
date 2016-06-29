@@ -103,7 +103,6 @@ class PageContextTest extends UnitTestCase {
       'account_id' => 'account_name_1',
       'site_id' => 'customer_site_1',
       'liftDecisionAPIURL' => 'api_url_1',
-      'liftAssetsURL' => 'assets_url_1',
       'authEndpoint' => 'oauth_url_1',
     ];
 
@@ -217,7 +216,6 @@ class PageContextTest extends UnitTestCase {
       'account_id' => 'account_name_1',
       'site_id' => 'customer_site_1',
       'liftDecisionAPIURL' => 'api_url_1',
-      'liftAssetsURL' => 'assets_url_1',
       'authEndpoint' => 'oauth_url_1',
     ];
 
@@ -255,7 +253,6 @@ class PageContextTest extends UnitTestCase {
       'account_id' => 'account_name_1',
       'site_id' => 'customer_site_1',
       'liftDecisionAPIURL' => 'api_url_1',
-      'liftAssetsURL' => 'assets_url_1',
       'authEndpoint' => 'oauth_url_1',
     ];
     $this->assertMetatagsRenderArray($expected_metatags, $metatags);
@@ -279,7 +276,6 @@ class PageContextTest extends UnitTestCase {
       'account_id' => 'account_name_1',
       'site_id' => 'customer_site_1',
       'liftDecisionAPIURL' => 'api_url_1',
-      'liftAssetsURL' => 'assets_url_1',
       'authEndpoint' => 'oauth_url_1',
     ];
     $this->assertMetatagsRenderArray($expected_page_context, $all_page_context);
@@ -302,7 +298,6 @@ class PageContextTest extends UnitTestCase {
       'account_id' => 'account_name_1',
       'site_id' => 'customer_site_1',
       'liftDecisionAPIURL' => 'api_url_1',
-      'liftAssetsURL' => 'assets_url_1',
       'authEndpoint' => 'oauth_url_1',
     ];
     $this->assertMetatagsRenderArray($expected_page_context, $all_page_context);

@@ -53,15 +53,17 @@ class SettingsHelper {
   static public function isInvalidCredential($credential_settings) {
     // Required credential need to be filled.
     if (empty($credential_settings['account_name']) ||
-      empty($credential_settings['api_url']) ||
+      empty($credential_settings['customer_site']) ||
       empty($credential_settings['js_path'])
     ) {
       return TRUE;
     }
 
     // URLs need to be valid.
-    if (!UrlHelper::isValid($credential_settings['api_url']) ||
-      !UrlHelper::isValid($credential_settings['js_path'])) {
+    if (!UrlHelper::isValid($credential_settings['js_path']) ||
+      !UrlHelper::isValid($credential_settings['api_url']) ||
+      !UrlHelper::isValid($credential_settings['oauth_url'])
+    ) {
       return TRUE;
     }
 

@@ -46,8 +46,8 @@ class SettingsHelperTest extends UnitTestCase {
 
     $data['valid data 2'][0]['account_name'] = 'account_name_2';
     $data['valid data 2'][1]['account_name'] = 'account_name_2';
-    $data['valid data 2'][0]['customer_site'] = '';
-    $data['valid data 2'][1]['customer_site'] = '';
+    $data['valid data 2'][0]['customer_site'] = 'customer_site_2';
+    $data['valid data 2'][1]['customer_site'] = 'customer_site_2';
     $data['valid data 2'][0]['js_path'] = 'js_path_2';
     $data['valid data 2'][1]['js_path'] = 'js_path_2';
 
@@ -116,7 +116,7 @@ class SettingsHelperTest extends UnitTestCase {
     $data['invalid js_path URL'] = [$valid_settings, TRUE];
 
     $data['valid data 2'][0]['account_name'] = 'account_name_2';
-    $data['valid data 2'][0]['customer_site'] = '';
+    $data['valid data 2'][0]['customer_site'] = 'customer_site_2';
     $data['valid data 2'][0]['js_path'] = 'js_path_2';
     $data['missing account_name'][0]['account_name'] = '';
     $data['invalid api_url URL'][0]['api_url'] = '\\\\////\\\\////';

@@ -34,12 +34,6 @@ function acquia_lift_page_attachments(array &$page) {
     return;
   }
 
-  $drupal_settings = [];
-
-  // Prepare credential drupal settings.
-  $credential_settings = \Drupal::config('acquia_lift.settings')->get('credential');
-  $drupal_settings['credential'] = SettingsHelper::getFrontEndCredentialSettings($credential_settings);
-
   // Prepare page context.
   $page_context = \Drupal::service('acquia_lift.service.context.page_context');
   $request = \Drupal::request();
@@ -61,15 +55,8 @@ function acquia_lift_page_attachments(array &$page) {
   // Get metatags.
   $metatags = $page_context->getMetatags();
 
-  // Attach identity settings.
-  $identity = \Drupal::service('acquia_lift.service.context.path_context')->getIdentity();
-  if ($identity) {
-    $drupal_settings['identity'] = $identity;
-  }
-
   // Attach JavaScript library and settings.
   $page['#attached']['library'][] = 'acquia_lift/acquia_lift';
-  $page['#attached']['drupalSettings']['acquia_lift'] = $drupal_settings;
 
   // Attach metatags.
   foreach ($metatags as $metatag) {

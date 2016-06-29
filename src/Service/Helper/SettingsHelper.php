@@ -25,7 +25,7 @@ class SettingsHelper {
    */
   static public function getFrontEndCredentialSettings($credential_settings) {
     if (empty($credential_settings['account_name']) ||
-      !isset($credential_settings['customer_site']) ||
+      empty($credential_settings['customer_site']) ||
       empty($credential_settings['js_path'])
     ) {
       throw new MissingSettingsException('Cannot generate front-end credential settings because some settings are missing.');

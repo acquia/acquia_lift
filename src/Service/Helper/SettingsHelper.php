@@ -33,8 +33,8 @@ class SettingsHelper {
 
     // URLs need to be valid.
     if (!UrlHelper::isValid($credential_settings['js_path']) ||
-      !UrlHelper::isValid($credential_settings['api_url']) ||
-      !UrlHelper::isValid($credential_settings['oauth_url'])
+      !empty($credential_settings['api_url']) && !UrlHelper::isValid($credential_settings['api_url']) ||
+      !empty($credential_settings['oauth_url']) && !UrlHelper::isValid($credential_settings['oauth_url'])
     ) {
       return TRUE;
     }

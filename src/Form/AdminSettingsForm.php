@@ -325,7 +325,8 @@ class AdminSettingsForm extends ConfigFormBase {
     $settings->set('credential.account_name', $values['account_name']);
     $settings->set('credential.customer_site', $values['customer_site']);
     $settings->set('credential.js_path', 'https://' . $this->removeProtocal($values['js_path']));
-    $settings->clear('credential.oauth_url');
+
+    $settings->clear('credential.api_url');
     if (!empty($values['api_url'])) {
       $settings->set('credential.api_url', 'https://' . $this->removeProtocal($values['api_url']));
     }

@@ -1,14 +1,7 @@
 acquia_lift.admin_settings_form:
-  path: 'admin/config/content/acquia_lift'
+  path: 'admin/config/content/acquia-lift'
   defaults:
     _form: '\Drupal\acquia_lift\Form\AdminSettingsForm'
     _title: 'Acquia Lift settings'
-  requirements:
-    _permission: 'administer acquia lift'
-acquia_lift.test:
-  path: 'admin/config/content/acquia_lift/test'
-  defaults:
-    _controller: '\Drupal\acquia_lift\Controller\TestController::test'
-    _title: 'Acquia Lift testing'
   requirements:
     _permission: 'administer acquia lift'

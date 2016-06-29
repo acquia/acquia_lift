@@ -54,8 +54,6 @@ class SettingsHelper {
     // Required credential need to be filled.
     if (empty($credential_settings['account_name']) ||
       empty($credential_settings['api_url']) ||
-      empty($credential_settings['access_key']) ||
-      empty($credential_settings['secret_key']) ||
       empty($credential_settings['js_path'])
     ) {
       return TRUE;

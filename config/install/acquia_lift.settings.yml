@@ -2,8 +2,6 @@ credential:
   account_name: ''
   customer_site: ''
   api_url: ''
-  access_key: ''
-  secret_key: ''
   js_path: ''
   assets_url: ''
   oauth_url: ''

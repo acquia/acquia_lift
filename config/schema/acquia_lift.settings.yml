@@ -15,12 +15,6 @@ acquia_lift.settings:
         api_url:
           type: uri
           label: 'API URL'
-        access_key:
-          type: string
-          label: 'Access key'
-        secret_key:
-          type: string
-          label: 'Secret key'
         js_path:
           type: uri
           label: 'JavaScript Path'

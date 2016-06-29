@@ -73,17 +73,17 @@ class SettingsTest extends WebTestBase {
     // Check if Configure link is available on 'Extend' page.
     // Requires 'administer modules' permission.
     $this->drupalGet('admin/modules');
-    $this->assertRaw('admin/config/content/acquia_lift', '[testConfigurationLinks]: Configure link from Extend page to Acquia Lift Settings page exists.');
+    $this->assertRaw('admin/config/content/acquia-lift', '[testConfigurationLinks]: Configure link from Extend page to Acquia Lift Settings page exists.');
 
     // Check if Configure link is available on 'Status Reports' page. NOTE: Link is only shown without a configured Acquia Lift credential.
     // Requires 'administer site configuration' permission.
     $this->drupalGet('admin/reports/status');
-    $this->assertRaw('admin/config/content/acquia_lift', '[testConfigurationLinks]: Configure link from Status Reports page to Acquia Lift Settings page exists.');
+    $this->assertRaw('admin/config/content/acquia-lift', '[testConfigurationLinks]: Configure link from Status Reports page to Acquia Lift Settings page exists.');
   }
 
   public function testAdminSettingsForm() {
     // Check for setting page's presence.
-    $this->drupalGet('admin/config/content/acquia_lift');
+    $this->drupalGet('admin/config/content/acquia-lift');
     $this->assertRaw(t('Acquia Lift settings'), '[testAdminSettingsForm]: Settings page displayed.');
 
     // Get all the valid settings, and massage them into form $edit array.
@@ -98,18 +98,12 @@ class SettingsTest extends WebTestBase {
     $edit += $this->convertToPostFormSettings($field_mappings_settings, 'field_mappings');
     $edit += $this->convertToPostFormSettings($visibility_settings, 'visibility');
     $edit_settings_count = count($edit);
-    $expect_settings_count = 15;
+    $expect_settings_count = 13;
 
     // Post the edits and assert that options are saved.
-    $this->drupalPostForm('admin/config/content/acquia_lift', $edit, t('Save configuration'));
+    $this->drupalPostForm('admin/config/content/acquia-lift', $edit, t('Save configuration'));
     $this->assertText(t('The configuration options have been saved.'));
     $this->assertNoRaw('acquia_lift.js', '[testJavaScriptAndDrupalSettings]: acquia_lift.js is not loaded on the page, as visibility.path_patterns says should not attach.');
-
-    // The saved secret key should not be shown.
-    $actual_secret_key = $this->config('acquia_lift.settings')->get('credential.secret_key');
-    $this->assertEqual($edit['credential[secret_key]'], $actual_secret_key, 'Credential\'s secret key was saved into DB.');
-    $edit['credential[secret_key]'] = '';
-    $this->assertText('Only necessary if updating');
 
     // Assert all other fields. Also count the asserted fields to make sure all are asserted.
     foreach ($edit as $name => $value) {

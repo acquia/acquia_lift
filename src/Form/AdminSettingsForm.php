@@ -116,19 +116,6 @@ class AdminSettingsForm extends ConfigFormBase {
       '#default_value' => $credential_settings['api_url'],
       '#required' => TRUE,
     ];
-    $form['access_key'] = [
-      '#type' => 'textfield',
-      '#title' => t('API Access Key'),
-      '#default_value' => $credential_settings['access_key'],
-      '#required' => TRUE,
-    ];
-    $form['secret_key'] = [
-      '#type' => 'password',
-      '#title' => t('API Secret Key'),
-      '#default_value' => $credential_settings['secret_key'],
-      '#required' => empty($credential_settings['secret_key']),
-      '#description' => !empty($credential_settings['secret_key']) ? t('Only necessary if updating') : '',
-    ];
     $form['js_path'] = [
       '#type' => 'textfield',
       '#title' => t('JavaScript Path'),
@@ -347,10 +334,6 @@ class AdminSettingsForm extends ConfigFormBase {
     $settings->set('credential.account_name', $values['account_name']);
     $settings->set('credential.customer_site', $values['customer_site']);
     $settings->set('credential.api_url', $values['api_url']);
-    $settings->set('credential.access_key', $values['access_key']);
-    if (!empty($values['secret_key'])) {
-      $settings->set('credential.secret_key', $values['secret_key']);
-    }
     $settings->set('credential.js_path', $values['js_path']);
     $settings->set('credential.assets_url', $values['assets_url']);
     $settings->clear('credential.oauth_url');

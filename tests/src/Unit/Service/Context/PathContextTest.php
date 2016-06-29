@@ -106,7 +106,7 @@ class PathContextTest extends UnitTestCase {
     $credential_settings = $this->getValidCredentialSettings();
 
     if ($set_invalid_credential) {
-      $credential_settings['api_url'] = '';
+      $credential_settings['js_path'] = '';
     }
 
     $this->settings->expects($this->at(0))

@@ -121,15 +121,11 @@ class SettingsTest extends WebTestBase {
     $this->drupalGet('page-not-found', ['query' => ['my_identity_parameter' => 'an_identity']]);
     $drupalSettings = $this->getDrupalSettings();
     $this->assertRaw('acquia_lift.js', '[testJavaScriptAndDrupalSettings]: With valid settings, acquia_lift.js is loaded on the home page.');
-    $this->assertEqual('account_name_1', $drupalSettings['acquia_lift']['credential']['account_name'], '[testJavaScriptAndDrupalSettings]: JavaScript settings contain credential.account_name.');
-    $this->assertEqual('an_identity', $drupalSettings['acquia_lift']['identity']['identity'], '[testJavaScriptAndDrupalSettings]: JavaScript settings contain identity.identity.');
 
     // Assert drupalSettings with identity query parameters on a node page.
     $this->drupalGet('node/90210', ['query' => ['my_identity_parameter' => 'an_identity']]);
     $drupalSettings = $this->getDrupalSettings();
     $this->assertRaw('acquia_lift.js', '[testJavaScriptAndDrupalSettings]: With valid settings, acquia_lift.js is loaded on the node page.');
-    $this->assertEqual('account_name_1', $drupalSettings['acquia_lift']['credential']['account_name'], '[testJavaScriptAndDrupalSettings]: JavaScript settings contain credential.account_name.');
-    $this->assertEqual('an_identity', $drupalSettings['acquia_lift']['identity']['identity'], '[testJavaScriptAndDrupalSettings]: JavaScript settings contain identity.identity.');
 
     // Assert metatags are loaded in the header.
     $this->assertRaw('acquia_lift:page_type', '[testJavaScriptAndDrupalSettings]: page_type metatag is loaded on the node page.');

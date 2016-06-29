@@ -1,10 +1,5 @@
 <?php
 
-/**
- * @file
- * Installation file for Acquia Lift module.
- */
-
 use Drupal\acquia_lift\Service\Helper\SettingsHelper;
 
 /**

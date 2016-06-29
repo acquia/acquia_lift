@@ -1,10 +1,5 @@
 <?php
 
-/**
- * @file
- * Contains \Drupal\acquia_lift\Tests\FixturesDataTrait.
- */
-
 namespace Drupal\acquia_lift\Tests;
 
 use Drupal\Component\Utility\Unicode;

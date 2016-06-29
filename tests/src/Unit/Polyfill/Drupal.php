@@ -1,7 +1,6 @@
 <?php
 
 /**
- * @file
  * This file polyfills all the functions that are defined in global namespace
  * in Drupal environment but not available in PHPUnit context.
  */

@@ -1,10 +1,5 @@
 <?php
 
-/**
- * @file
- * Contains \Drupal\acquia_lift\Tests\SettingsTest.
- */
-
 namespace Drupal\acquia_lift\Tests;
 
 use Drupal\simpletest\WebTestBase;

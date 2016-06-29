@@ -1,10 +1,5 @@
 <?php
 
-/**
- * @file
- * Contains \Drupal\Tests\acquia_lift\Service\Context\PageContextTest.
- */
-
 namespace Drupal\Tests\acquia_lift\Service\Context;
 
 use Drupal\Tests\UnitTestCase;

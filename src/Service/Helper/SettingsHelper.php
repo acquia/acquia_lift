@@ -1,10 +1,5 @@
 <?php
 
-/**
- * @file
- * Contains \Drupal\acquia_lift\Service\Helper\SettingsHelper.
- */
-
 namespace Drupal\acquia_lift\Service\Helper;
 
 use Drupal\Component\Utility\UrlHelper;

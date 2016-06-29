@@ -1,10 +1,5 @@
 <?php
 
-/**
- * @file
- * Contains \Drupal\acquia_lift\Form\AdminSettingsForm.
- */
-
 namespace Drupal\acquia_lift\Form;
 
 use Symfony\Component\HttpFoundation\Request;

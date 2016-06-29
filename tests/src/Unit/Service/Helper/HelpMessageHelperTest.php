@@ -1,10 +1,5 @@
 <?php
 
-/**
- * @file
- * Contains \Drupal\Tests\acquia_lift\Service\Helper\HelpMessageHelperTest.
- */
-
 namespace Drupal\Tests\acquia_lift\Service\Helper;
 
 use Drupal\Tests\UnitTestCase;

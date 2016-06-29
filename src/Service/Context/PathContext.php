@@ -1,10 +1,5 @@
 <?php
 
-/**
- * @file
- * Contains \Drupal\acquia_lift\Service\Context\PathContext.
- */
-
 namespace Drupal\acquia_lift\Service\Context;
 
 use Symfony\Component\HttpFoundation\RequestStack;

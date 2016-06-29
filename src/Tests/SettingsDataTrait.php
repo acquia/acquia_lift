@@ -1,10 +1,5 @@
 <?php
 
-/**
- * @file
- * Contains \Drupal\acquia_lift\Tests\SettingsDataTrait.
- */
-
 namespace Drupal\acquia_lift\Tests;
 
 /**

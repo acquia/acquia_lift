@@ -1,10 +1,5 @@
 <?php
 
-/**
- * @file
- * Contains \Drupal\acquia_lift\Service\Helper\NodeTypeThumbnailFormHelper.
- */
-
 namespace Drupal\acquia_lift\Service\Helper;
 
 use Drupal\Core\Entity\EntityManagerInterface;

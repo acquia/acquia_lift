@@ -1,10 +1,5 @@
 <?php
 
-/**
- * @file
- * Contains \Drupal\acquia_lift\Service\Helper\HelpMessageHelper.
- */
-
 namespace Drupal\acquia_lift\Service\Helper;
 
 use Drupal\Core\Config\ConfigFactoryInterface;

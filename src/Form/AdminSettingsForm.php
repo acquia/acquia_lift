@@ -116,7 +116,6 @@ class AdminSettingsForm extends ConfigFormBase {
       '#title' => t('API URL'),
       '#field_prefix' => 'https://',
       '#default_value' => $this->removeProtocal($credential_settings['api_url']),
-      '#required' => FALSE,
       '#placeholder' => t('Leave empty to use default URL'),
     ];
     $form['oauth_url'] = [
@@ -124,7 +123,6 @@ class AdminSettingsForm extends ConfigFormBase {
       '#title' => t('Authentication URL'),
       '#field_prefix' => 'https://',
       '#default_value' => $this->removeProtocal($credential_settings['oauth_url']),
-      '#required' => FALSE,
       '#placeholder' => t('Leave empty to use default URL'),
     ];
 

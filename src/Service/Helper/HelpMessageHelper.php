@@ -53,17 +53,8 @@ class HelpMessageHelper {
         $documentation_link_text = t('Documentation');
         $documentation_link_url = Url::fromUri('https://docs.acquia.com/lift/', $link_attributes);
         $documentation_external_link = $this->linkGenerator->generate($documentation_link_text, $documentation_link_url);
-        $help_message = t('You can find more info in ') . $documentation_external_link;
+        $help_message = t('You can find more info in ') . $documentation_external_link . t('.');
 
-        // Generate Acquia Lift Web Admin link.
-        if (!empty($this->credentialSettings['api_url'])) {
-          $lift_web_link_text = t('Acquia Lift Web Admin');
-          $lift_web_link_url = Url::fromUri('https://' . $this->credentialSettings['api_url'], $link_attributes);
-          $lift_web_external_link = $this->linkGenerator->generate($lift_web_link_text, $lift_web_link_url);
-          $help_message .= t(', and control your web services settings at ') . $lift_web_external_link;
-        }
-
-        $help_message .= t('.');
         return $help_message;
     }
     return;

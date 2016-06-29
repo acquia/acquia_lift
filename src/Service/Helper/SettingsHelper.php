@@ -15,29 +15,6 @@ class SettingsHelper {
   const DEFAULT_IDENTITY_TYPE_DEFAULT = 'email';
 
   /**
-   * Get front-end credential settings.
-   *
-   * @param array $credential_settings
-   *   Credential settings array.
-   * @return array
-   *   Get front end settings array.
-   * @throws \Drupal\acquia_lift\Exception\MissingSettingsException
-   */
-  static public function getFrontEndCredentialSettings($credential_settings) {
-    if (empty($credential_settings['account_name']) ||
-      empty($credential_settings['customer_site']) ||
-      empty($credential_settings['js_path'])
-    ) {
-      throw new MissingSettingsException('Cannot generate front-end credential settings because some settings are missing.');
-    }
-    return [
-      'account_name' => $credential_settings['account_name'],
-      'customer_site' => $credential_settings['customer_site'],
-      'js_path' => $credential_settings['js_path'],
-    ];
-  }
-
-  /**
    * Is an invalid credential.
    *
    * @param array

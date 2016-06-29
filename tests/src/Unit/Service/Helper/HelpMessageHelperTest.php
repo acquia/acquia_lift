@@ -74,14 +74,9 @@ class HelpMessageHelperTest extends UnitTestCase {
       ->with('credential')
       ->willReturn($full_settings);
 
-    $this->linkGenerator->expects($this->at(1))
-      ->method('generate')
-      ->with('Acquia Lift Web Admin')
-      ->willReturn('a_web_admin_link');
-
     $help_message_helper = new HelpMessageHelper($this->configFactory, $this->linkGenerator);
     $message = $help_message_helper->getMessage($route_name);
-    $this->assertEquals('You can find more info in a_documentation_link, and control your web services settings at a_web_admin_link.', $message);
+    $this->assertEquals('You can find more info in a_documentation_link.', $message);
   }
 
   /**

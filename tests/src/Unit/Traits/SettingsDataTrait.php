@@ -16,8 +16,8 @@ trait SettingsDataTrait {
     return [
       'account_name' => 'account_name_1',
       'customer_site' => 'customer_site_1',
-      'api_url' => 'api_url_1',
       'js_path' => 'js_path_1',
+      'api_url' => 'api_url_1',
       'oauth_url' => 'oauth_url_1',
     ];
   }

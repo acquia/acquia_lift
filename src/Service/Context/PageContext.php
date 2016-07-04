@@ -2,8 +2,12 @@
 
 namespace Drupal\acquia_lift\Service\Context;
 
+use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\RequestStack;
+use Symfony\Component\Routing\Route;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\Core\Config\ConfigFactoryInterface;
+use Drupal\Core\Routing\RouteMatchInterface;
 use Drupal\image\Entity\ImageStyle;
 use Drupal\node\NodeInterface;
 
@@ -79,44 +83,61 @@ class PageContext {
    *   The config factory service.
    * @param \Drupal\Core\Entity\EntityTypeManagerInterface $entity_type_manager
    *   Entity type manager.
+   * @param \Symfony\Component\HttpFoundation\RequestStack $request_stack
+   *   The request stack.
+   * @param \Drupal\Core\Routing\RouteMatchInterface $route_match
+   *   The current route match.
    */
-  public function __construct(ConfigFactoryInterface $config_factory, EntityTypeManagerInterface $entity_type_manager) {
+  public function __construct(ConfigFactoryInterface $config_factory, EntityTypeManagerInterface $entity_type_manager, RequestStack $request_stack, RouteMatchInterface $route_match) {
     $settings = $config_factory->get('acquia_lift.settings');
     $credential_settings = $settings->get('credential');
+    $request = $request_stack->getCurrentRequest();
+    $route = $route_match->getRouteObject();
+
     $this->fieldMappings = $settings->get('field_mappings');
     $this->thumbnailConfig = $settings->get('thumbnail');
     $this->taxonomyTermStorage = $entity_type_manager->getStorage('taxonomy_term');
 
-    $this->setPageContextByNode();
-    $this->setPageContextTitle();
     $this->setPageContextCredential($credential_settings);
     $this->setJavaScriptPath($credential_settings['js_path']);
+    $this->setPageContextByNode($request);
+    $this->setPageContextTitle($request, $route);
   }
 
   /**
    * Set page context by Node.
+   *
+   * @param \Symfony\Component\HttpFoundation\Request $request
+   *   The request object.
    */
-  private function setPageContextByNode() {
-    $request = \Drupal::request();
-
-    // Set page context by node.
+  private function setPageContextByNode(Request $request) {
     if ($request->attributes->has('node')) {
       $node = $request->attributes->get('node');
-      if ($node instanceof NodeInterface) {
-        $this->setByNode($node);
-      }
     }
+
+    // If not a request to node, do nothing.
+    if (empty($node) || ! $node instanceof NodeInterface) {
+      return;
+    }
+
+    // Otherwise, set page context by node.
+    $this->setNodeData($node);
+    $this->setThumbnailUrl($node);
+    $this->setFields($node);
   }
 
   /**
    * Set page context - title.
+   *
+   * @param \Symfony\Component\HttpFoundation\Request $request
+   *   The request object.
+   * @param \Symfony\Component\Routing\Route $route
+   *   The route object.
    */
-  private function setPageContextTitle() {
+  private function setPageContextTitle(Request $request, Route $route) {
     // Find title.
-    $request = \Drupal::request();
-    $route_object = \Drupal::routeMatch()->getRouteObject();
     $title_resolver = \Drupal::service('title_resolver');
-    $title = $title_resolver->getTitle($request, $route_object);
+    $title = $title_resolver->getTitle($request, $route);
 
     // Set title.
     // If markup, strip tags and convert to string.
@@ -155,18 +176,6 @@ class PageContext {
    */
   private function setJavaScriptPath($path) {
     $this->jsPath = $path;
-  }
-
-  /**
-   * Set page context by node.
-   *
-   * @param \Drupal\node\NodeInterface $node
-   *   Node.
-   */
-  private function setByNode(NodeInterface $node) {
-    $this->setNodeData($node);
-    $this->setThumbnailUrl($node);
-    $this->setFields($node);
   }
 
   /**

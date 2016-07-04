@@ -332,17 +332,15 @@ class PageContext {
   /**
    * Get the render array for a JavaScript tag.
    *
-   * @param string $path
-   *   The JavaScript's path
    * @return array
    *   The render array
    */
-  private function getJavaScriptTagRenderArray($path) {
+  private function getJavaScriptTagRenderArray() {
     return [
       [
         '#tag' => 'script',
         '#attributes' => [
-          'src' => $path,
+          'src' => $this->jsPath,
         ],
       ],
       'acquia_lift_javascript',
@@ -363,6 +361,6 @@ class PageContext {
     }
 
     // Attach Lift's JavaScript.
-    $htmlHead[] = $this->getJavaScriptTagRenderArray($this->jsPath);
+    $htmlHead[] = $this->getJavaScriptTagRenderArray();
   }
 }

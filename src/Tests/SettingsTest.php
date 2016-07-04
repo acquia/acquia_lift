@@ -113,14 +113,17 @@ class SettingsTest extends WebTestBase {
     $this->assertText(t('Acquia Lift'));
   }
 
-  public function testMetatags() {
+  public function testMetatagsAndScriptTag() {
     $this->setValidSettings();
 
     // Assert metatags are loaded in the header.
     $this->drupalGet('node/90210');
-    $this->assertRaw('acquia_lift:page_type', '[testMetatags]: page_type metatag is loaded on the node page.');
-    $this->assertRaw('node page', '[testMetatags]: page_type metatag value is loaded on the node page.');
-    $this->assertRaw('acquia_lift:account_id', '[testMetatags]: account_id metatag is loaded on the node page.');
-    $this->assertRaw('account_name_1', '[testMetatags]: account_id metatag value is loaded on the node page.');
+    $this->assertRaw('acquia_lift:page_type', '[testMetatagsAndScriptTag]: page_type metatag is loaded on the node page.');
+    $this->assertRaw('node page', '[testMetatagsAndScriptTag]: page_type metatag value is loaded on the node page.');
+    $this->assertRaw('acquia_lift:account_id', '[testMetatagsAndScriptTag]: account_id metatag is loaded on the node page.');
+    $this->assertRaw('account_name_1', '[testMetatagsAndScriptTag]: account_id metatag value is loaded on the node page.');
+
+    // Assert Lift JavaScript tag is loaded on the page.
+    $this->assertRaw('js_path_1', '[testMetatagsAndScriptTag]: With valid settings, Lift\'s JavaScript is loaded on the home page.');
   }
 }

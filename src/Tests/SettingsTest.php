@@ -98,7 +98,6 @@ class SettingsTest extends WebTestBase {
     // Post the edits and assert that options are saved.
     $this->drupalPostForm('admin/config/content/acquia-lift', $edit, t('Save configuration'));
     $this->assertText(t('The configuration options have been saved.'));
-    $this->assertNoRaw('acquia_lift.js', '[testJavaScriptAndDrupalSettings]: acquia_lift.js is not loaded on the page, as visibility.path_patterns says should not attach.');
 
     // Assert all other fields. Also count the asserted fields to make sure all are asserted.
     foreach ($edit as $name => $value) {
@@ -114,23 +113,14 @@ class SettingsTest extends WebTestBase {
     $this->assertText(t('Acquia Lift'));
   }
 
-  public function testJavaScriptAndDrupalSettings() {
+  public function testMetatags() {
     $this->setValidSettings();
 
-    // Assert drupalSettings with identity query parameters on a non-node page.
-    $this->drupalGet('page-not-found', ['query' => ['my_identity_parameter' => 'an_identity']]);
-    $drupalSettings = $this->getDrupalSettings();
-    $this->assertRaw('acquia_lift.js', '[testJavaScriptAndDrupalSettings]: With valid settings, acquia_lift.js is loaded on the home page.');
-
-    // Assert drupalSettings with identity query parameters on a node page.
-    $this->drupalGet('node/90210', ['query' => ['my_identity_parameter' => 'an_identity']]);
-    $drupalSettings = $this->getDrupalSettings();
-    $this->assertRaw('acquia_lift.js', '[testJavaScriptAndDrupalSettings]: With valid settings, acquia_lift.js is loaded on the node page.');
-
     // Assert metatags are loaded in the header.
-    $this->assertRaw('acquia_lift:page_type', '[testJavaScriptAndDrupalSettings]: page_type metatag is loaded on the node page.');
-    $this->assertRaw('node page', '[testJavaScriptAndDrupalSettings]: page_type metatag value is loaded on the node page.');
-    $this->assertRaw('acquia_lift:account_id', '[testJavaScriptAndDrupalSettings]: account_id metatag is loaded on the node page.');
-    $this->assertRaw('account_name_1', '[testJavaScriptAndDrupalSettings]: account_id metatag value is loaded on the node page.');
+    $this->drupalGet('node/90210');
+    $this->assertRaw('acquia_lift:page_type', '[testMetatags]: page_type metatag is loaded on the node page.');
+    $this->assertRaw('node page', '[testMetatags]: page_type metatag value is loaded on the node page.');
+    $this->assertRaw('acquia_lift:account_id', '[testMetatags]: account_id metatag is loaded on the node page.');
+    $this->assertRaw('account_name_1', '[testMetatags]: account_id metatag value is loaded on the node page.');
   }
 }

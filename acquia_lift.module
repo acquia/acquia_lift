@@ -11,16 +11,14 @@
  * content that furthers your website visitors' engagement with your brand.
  */
 
-use Drupal\Core\Routing\RouteMatchInterface;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\user\UserInterface;
 use Drupal\node\NodeInterface;
-use Drupal\acquia_lift\Service\Helper\SettingsHelper;
 
 /**
  * Implements hook_help().
  */
-function acquia_lift_help($route_name, RouteMatchInterface $route_match) {
+function acquia_lift_help($route_name) {
   return \Drupal::service('acquia_lift.service.helper.help_message_helper')->getMessage($route_name);
 }
 
@@ -29,8 +27,7 @@ function acquia_lift_help($route_name, RouteMatchInterface $route_match) {
  */
 function acquia_lift_page_attachments(array &$page) {
   // Create and attach settings and library only when path context agrees on attaching.
-  if (!\Drupal::service('acquia_lift.service.context.path_context')->shouldAttach()
-  ) {
+  if (!\Drupal::service('acquia_lift.service.context.path_context')->shouldAttach()) {
     return;
   }
 
@@ -55,13 +52,23 @@ function acquia_lift_page_attachments(array &$page) {
   // Get metatags.
   $metatags = $page_context->getMetatags();
 
-  // Attach JavaScript library and settings.
-  $page['#attached']['library'][] = 'acquia_lift/acquia_lift';
-
   // Attach metatags.
   foreach ($metatags as $metatag) {
     $page['#attached']['html_head'][] = $metatag;
   }
+
+  // Attach Lift's JavaScript.
+  $js_path_script_tag = [
+    [
+      '#tag' => 'script',
+      '#attributes' => [
+        'src' => \Drupal::config('acquia_lift.settings')->get('credential.js_path'),
+      ],
+    ],
+    'acquia_lift_javascript',
+  ];
+
+  $page['#attached']['html_head'][] = $js_path_script_tag;
 }
 
 /**

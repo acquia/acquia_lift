@@ -2,7 +2,6 @@
 
 namespace Drupal\acquia_lift\Service\Context;
 
-use Drupal\Core\Entity\EntityInterface;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\Core\Config\ConfigFactoryInterface;
 use Drupal\image\Entity\ImageStyle;
@@ -161,10 +160,10 @@ class PageContext {
   /**
    * Set page context by node.
    *
-   * @param \Drupal\Core\Entity\EntityInterface $node
+   * @param \Drupal\node\NodeInterface $node
    *   Node.
    */
-  public function setByNode(EntityInterface $node) {
+  private function setByNode(NodeInterface $node) {
     $this->setNodeData($node);
     $this->setThumbnailUrl($node);
     $this->setFields($node);
@@ -173,10 +172,10 @@ class PageContext {
   /**
    * Set Node data.
    *
-   * @param \Drupal\Core\Entity\EntityInterface $node
+   * @param \Drupal\node\NodeInterface $node
    *   Node.
    */
-  private function setNodeData(EntityInterface $node) {
+  private function setNodeData(NodeInterface $node) {
     $this->pageContext['content_type'] = $node->getType();
     $this->pageContext['content_title'] = $node->getTitle();
     $this->pageContext['published_date'] = $node->getCreatedTime();
@@ -188,10 +187,10 @@ class PageContext {
   /**
    * Set thumbnail URL.
    *
-   * @param \Drupal\Core\Entity\EntityInterface $node
+   * @param \Drupal\node\NodeInterface $node
    *   Node.
    */
-  private function setThumbnailUrl(EntityInterface $node) {
+  private function setThumbnailUrl(NodeInterface $node) {
     $node_type = $node->getType();
 
     // Don't set, if no thumbnail has been configured.
@@ -232,10 +231,10 @@ class PageContext {
   /**
    * Set fields.
    *
-   * @param \Drupal\Core\Entity\EntityInterface $node
+   * @param \Drupal\node\NodeInterface $node
    *   Node.
    */
-  private function setFields(EntityInterface $node) {
+  private function setFields(NodeInterface $node) {
     $available_field_vocabulary_names = $this->getAvailableFieldVocabularyNames($node);
     $vocabulary_term_names = $this->getVocabularyTermNames($node);
 
@@ -249,12 +248,12 @@ class PageContext {
   /**
    * Get available Fields and their vocabulary names within the node.
    *
-   * @param \Drupal\Core\Entity\EntityInterface $node
+   * @param \Drupal\node\NodeInterface $node
    *   Node.
    * @return array
    *   Node's available Fields' Vocabularies names.
    */
-  private function getAvailableFieldVocabularyNames(EntityInterface $node) {
+  private function getAvailableFieldVocabularyNames(NodeInterface $node) {
     $available_field_vocabulary_names = [];
     foreach ($this->fieldMappings as $page_context_name => $field_name) {
       if(!isset($node->{$field_name})) {
@@ -269,12 +268,12 @@ class PageContext {
   /**
    * Get Vocabularies' Term names.
    *
-   * @param \Drupal\Core\Entity\EntityInterface $node
+   * @param \Drupal\node\NodeInterface $node
    *   Node.
    * @return array
    *   Vocabularies' Term names.
    */
-  private function getVocabularyTermNames(EntityInterface $node) {
+  private function getVocabularyTermNames(NodeInterface $node) {
     // Find the node's terms.
     $terms = $this->taxonomyTermStorage->getNodeTerms([$node->id()]);
     $node_terms = isset($terms[$node->id()]) ? $terms[$node->id()] : [];

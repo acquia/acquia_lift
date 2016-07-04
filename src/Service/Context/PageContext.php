@@ -96,10 +96,10 @@ class PageContext {
 
     $this->fieldMappings = $settings->get('field_mappings');
     $this->thumbnailConfig = $settings->get('thumbnail');
+    $this->jsPath = $credential_settings['js_path'];
     $this->taxonomyTermStorage = $entity_type_manager->getStorage('taxonomy_term');
 
     $this->setPageContextCredential($credential_settings);
-    $this->setJavaScriptPath($credential_settings['js_path']);
     $this->setPageContextByNode($request);
     $this->setPageContextTitle($request, $route);
   }
@@ -166,16 +166,6 @@ class PageContext {
         $this->pageContext[$tag_name] = $credential_settings[$credential_key];
       }
     };
-  }
-
-  /**
-   * Set JavaScript path.
-   *
-   * @param string $path
-   *   Credential settings array.
-   */
-  private function setJavaScriptPath($path) {
-    $this->jsPath = $path;
   }
 
   /**

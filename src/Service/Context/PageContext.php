@@ -6,6 +6,7 @@ use Drupal\Core\Entity\EntityInterface;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\Core\Config\ConfigFactoryInterface;
 use Drupal\image\Entity\ImageStyle;
+use Drupal\node\NodeInterface;
 
 class PageContext {
   /**
@@ -83,11 +84,54 @@ class PageContext {
   public function __construct(ConfigFactoryInterface $config_factory, EntityTypeManagerInterface $entity_type_manager) {
     $settings = $config_factory->get('acquia_lift.settings');
     $credential_settings = $settings->get('credential');
-    $this->setPageContextCredential($credential_settings);
-    $this->setJavaScriptPath($credential_settings['js_path']);
     $this->fieldMappings = $settings->get('field_mappings');
     $this->thumbnailConfig = $settings->get('thumbnail');
     $this->taxonomyTermStorage = $entity_type_manager->getStorage('taxonomy_term');
+
+    $this->setPageContextByNode();
+    $this->setPageContextTitle();
+    $this->setPageContextCredential($credential_settings);
+    $this->setJavaScriptPath($credential_settings['js_path']);
+  }
+
+  /**
+   * Set page context by Node.
+   */
+  private function setPageContextByNode() {
+    $request = \Drupal::request();
+
+    // Set page context by node.
+    if ($request->attributes->has('node')) {
+      $node = $request->attributes->get('node');
+      if ($node instanceof NodeInterface) {
+        $this->setByNode($node);
+      }
+    }
+  }
+
+  /**
+   * Set page context - title.
+   */
+  private function setPageContextTitle() {
+    // Find title.
+    $request = \Drupal::request();
+    $route_object = \Drupal::routeMatch()->getRouteObject();
+    $title_resolver = \Drupal::service('title_resolver');
+    $title = $title_resolver->getTitle($request, $route_object);
+
+    // Set title.
+    // If markup, strip tags and convert to string.
+    if (is_array($title) && isset($title['#markup']) && isset($title['#allowed_tags'])) {
+      $allowed_tags = empty($title['#allowed_tags']) ? '' : '<' . implode('><', $title['#allowed_tags']) . '>';
+      $title = strip_tags($title['#markup'], $allowed_tags);
+    }
+    // If still an array or empty, set title to empty.
+    if (is_array($title) || empty($title)) {
+      $this->pageContext['content_title'] = '';
+      return;
+    }
+    // Otherwise set title.
+    $this->pageContext['content_title'] = $title;
   }
 
   /**
@@ -305,27 +349,6 @@ class PageContext {
       ],
       'acquia_lift_javascript',
     ];
-  }
-
-  /**
-   * Set page context title.
-   *
-   * @param array|string $title
-   *   Set page context title.
-   */
-  public function setPageContextTitle($title) {
-    // If markup, strip tags and convert to string.
-    if (is_array($title) && isset($title['#markup']) && isset($title['#allowed_tags'])) {
-      $allowed_tags = empty($title['#allowed_tags']) ? '' : '<' . implode('><', $title['#allowed_tags']) . '>';
-      $title = strip_tags($title['#markup'], $allowed_tags);
-    }
-    // If still an array or empty, set title to empty.
-    if (is_array($title) || empty($title)) {
-      $this->pageContext['content_title'] = '';
-      return;
-    }
-    // Otherwise set title.
-    $this->pageContext['content_title'] = $title;
   }
 
   /**

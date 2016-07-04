@@ -12,8 +12,6 @@
  */
 
 use Drupal\Core\Form\FormStateInterface;
-use Drupal\user\UserInterface;
-use Drupal\node\NodeInterface;
 
 /**
  * Implements hook_help().
@@ -31,26 +29,8 @@ function acquia_lift_page_attachments(array &$page) {
     return;
   }
 
-  // Prepare page context.
-  $page_context = \Drupal::service('acquia_lift.service.context.page_context');
-  $request = \Drupal::request();
-
-  // Set page context by node.
-  if ($request->attributes->has('node')) {
-    $node = $request->attributes->get('node');
-    if ($node instanceof NodeInterface) {
-      $page_context->setByNode($node);
-    }
-  }
-
-  // Set page context's title.
-  $route_object = \Drupal::routeMatch()->getRouteObject();
-  $title_resolver = \Drupal::service('title_resolver');
-  $title = $title_resolver->getTitle($request, $route_object);
-  $page_context->setPageContextTitle($title);
-
   // Populate Html head.
-  $page_context->populateHtmlHead($page['#attached']['html_head']);
+  \Drupal::service('acquia_lift.service.context.page_context')->populateHtmlHead($page['#attached']['html_head']);
 }
 
 /**
@@ -72,12 +52,3 @@ function acquia_lift_form_node_type_form_submit(array $form, FormStateInterface 
   $settings = $form_state->getValue('acquia_lift');
   \Drupal::service('acquia_lift.service.helper.node_type_thumbnail_form_helper')->saveSettings($node_type, $settings);
 }
-
-/**
- * On user login (and user register) event, capture identity.
- *
- * Implements hook_user_login().
- */
-//function acquia_lift_user_login(UserInterface $user) {
-//  \Drupal::service('acquia_lift.service.context.path_context')->setIdentityByUser($user);
-//}

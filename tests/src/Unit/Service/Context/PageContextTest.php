@@ -300,6 +300,108 @@ class PageContextTest extends UnitTestCase {
   }
 
   /**
+   * Tests the populateHtmlHead() method, with a Node and a thumbnail URL.
+   *
+   * @covers ::populateHtmlHead
+   */
+  public function testPopulateHtmlHeadWithNodeAndThumbnailUrl() {
+    $node = $this->getNode();
+    $this->requestParameterBag->expects($this->once())
+      ->method('has')
+      ->with('node')
+      ->willReturn(TRUE);
+    $this->requestParameterBag->expects($this->once())
+      ->method('get')
+      ->with('node')
+      ->willReturn($node);
+    $this->testPopulateHtmlHeadWithNodeAndThumbnailUrlSetUpThumbnailUrl($node);
+
+    $page_context = new PageContext($this->configFactory, $this->entityTypeManager, $this->requestStack, $this->routeMatch, $this->titleResolver);
+    $head = ['old_head'];
+    $page_context->populateHtmlHead($head);
+
+    $expected_head = $this->toRenderArray([
+      'content_title' => 'My Title',
+      'content_type' => 'article',
+      'page_type' => 'node page',
+      'content_section' => '',
+      'content_keywords' => '',
+      'post_id' => '90210',
+      'published_date' => 'a_published_time',
+      'thumbnail_url' => 'file_create_url:a_style_decorated_file_uri',
+      'persona' => '',
+      'engagement_score' => PageContext::ENGAGEMENT_SCORE_DEFAULT,
+      'author' => 'a_username',
+      'account_id' => 'account_name_1',
+      'site_id' => 'customer_site_1',
+      'liftDecisionAPIURL' => 'api_url_1',
+      'authEndpoint' => 'oauth_url_1',
+    ], 'js_path_1');
+
+    $this->assertEquals($expected_head, $head);
+  }
+
+  /**
+   * Tests the populateHtmlHead() method, with a Node and fields.
+   *
+   * @covers ::populateHtmlHead
+   */
+  public function testPopulateHtmlHeadWithNodeAndFields() {
+    $this->requestParameterBag->expects($this->once())
+      ->method('has')
+      ->with('node')
+      ->willReturn(TRUE);
+    $this->requestParameterBag->expects($this->once())
+      ->method('get')
+      ->with('node')
+      ->willReturn($this->getNode());
+    $this->testPopulateHtmlHeadWithNodeAndFieldsSetUpFields();
+
+    $page_context = new PageContext($this->configFactory, $this->entityTypeManager, $this->requestStack, $this->routeMatch, $this->titleResolver);
+    $head = ['old_head'];
+    $page_context->populateHtmlHead($head);
+
+    $expected_head = $this->toRenderArray([
+      'content_title' => 'My Title',
+      'content_type' => 'article',
+      'page_type' => 'node page',
+      'content_section' => 'Tracked Content Term Name 1',
+      'content_keywords' => 'Tracked Keyword Term Name 1,Tracked Keyword Term Name 2',
+      'post_id' => '90210',
+      'published_date' => 'a_published_time',
+      'thumbnail_url' => '',
+      'persona' => '',
+      'engagement_score' => PageContext::ENGAGEMENT_SCORE_DEFAULT,
+      'author' => 'a_username',
+      'account_id' => 'account_name_1',
+      'site_id' => 'customer_site_1',
+      'liftDecisionAPIURL' => 'api_url_1',
+      'authEndpoint' => 'oauth_url_1',
+    ], 'js_path_1');
+
+    $this->assertEquals($expected_head, $head);
+  }
+
+  /**
+   * Get Term.
+   *
+   * @param string $name
+   * @param string $vocabulary_id
+   *
+   * @return Drupal\taxonomy\TermInterface|\PHPUnit_Framework_MockObject_MockObject
+   */
+  private function getTerm($name = 'Term Name', $vocabulary_id = 'untracked_vocabulary_id') {
+    $term = $this->getMock('Drupal\taxonomy\TermInterface');
+    $term->expects($this->once())
+      ->method('getVocabularyId')
+      ->willReturn($vocabulary_id);
+    $term->expects($this->once())
+      ->method('getName')
+      ->willReturn($name);
+    return $term;
+  }
+
+  /**
    * Get Node.
    *
    * @param integer $id
@@ -365,6 +467,84 @@ class PageContextTest extends UnitTestCase {
       ->method('getUsername')
       ->willReturn($username);
     return $user;
+  }
+
+  /**
+   * testPopulateHtmlHeadWithNodeAndThumbnailUrl(), sub routine "set up thumbnail".
+   *
+   * @param $node Node
+   */
+  private function testPopulateHtmlHeadWithNodeAndThumbnailUrlSetUpThumbnailUrl($node) {
+    $field_media = $this->getMockBuilder('Drupal\Core\Entity\ContentEntityInterface')
+      ->disableOriginalConstructor()
+      ->getMock();
+    $field_image = $this->getMockBuilder('Drupal\Core\Entity\ContentEntityInterface')
+      ->disableOriginalConstructor()
+      ->getMock();
+    $media_entity = $this->getMock('Drupal\Core\Entity\EntityInterface');
+    $image_entity = $this->getMock('Drupal\file\FileInterface');
+
+    $node->field_media = $field_media;
+    $node->field_media->entity = $media_entity;
+    $node->field_media->entity->field_image = $field_image;
+    $node->field_media->entity->field_image->entity = $image_entity;
+
+    $entity_manager = $this->getMock('Drupal\Core\Entity\EntityManagerInterface');
+    $entity_storage = $this->getMock('Drupal\Core\Entity\EntityStorageInterface');
+    $container = $this->getMock('Drupal\Core\DependencyInjection\Container');
+    $image_style = $this->getMockBuilder('Drupal\image\Entity\ImageStyle')
+      ->disableOriginalConstructor()
+      ->getMock();
+
+    \Drupal::setContainer($container);
+    $container->expects($this->any())
+      ->method('get')
+      ->with('entity.manager')
+      ->willReturn($entity_manager);
+    $entity_manager->expects($this->once())
+      ->method('getEntityTypeFromClass')
+      ->with('Drupal\image\Entity\ImageStyle')
+      ->willReturn($image_entity);
+    $image_entity->expects($this->once())
+      ->method('bundle')
+      ->willReturn('file');
+    $image_entity->expects($this->once())
+      ->method('getFileUri')
+      ->willReturn('a_file_uri');
+    $entity_manager->expects($this->once())
+      ->method('getStorage')
+      ->with($image_entity)
+      ->willReturn($entity_storage);
+    $entity_storage->expects($this->once())
+      ->method('load')
+      ->with('medium')
+      ->willReturn($image_style);
+    $image_style->expects($this->once())
+      ->method('buildUrl')
+      ->with('a_file_uri')
+      ->willReturn('a_style_decorated_file_uri');
+  }
+
+  /**
+   * testPopulateHtmlHeadWithNodeAndFields(), sub routine "setup fields".
+   */
+  private function testPopulateHtmlHeadWithNodeAndFieldsSetUpFields() {
+    $tracked_content_term_1 = $this->getTerm('Tracked Content Term Name 1', 'tracked_content_vocabulary');
+    $tracked_keyword_term_1 = $this->getTerm('Tracked Keyword Term Name 1', 'tracked_keyword_vocabulary');
+    $tracked_keyword_term_2 = $this->getTerm('Tracked Keyword Term Name 2', 'tracked_keyword_vocabulary');
+    $discarded_term_1 = $this->getTerm('Untracked Term Name', 'untracked_vocabulary_id');
+    $terms = [
+      90210 => [
+        $tracked_content_term_1,
+        $tracked_keyword_term_1,
+        $tracked_keyword_term_2,
+        $discarded_term_1,
+      ],
+    ];
+    $this->taxonomyTermStorage->expects($this->once())
+      ->method('getNodeTerms')
+      ->with([90210])
+      ->willReturn($terms);
   }
 
   /**

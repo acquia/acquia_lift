@@ -127,10 +127,6 @@ class PageContextTest extends UnitTestCase {
       ->method('getCurrentRequest')
       ->willReturn($this->request);
     $this->request->attributes = $this->requestParameterBag;
-    $this->requestParameterBag->expects($this->once())
-      ->method('has')
-      ->with('node')
-      ->willReturn(TRUE);
     $this->routeMatch->expects($this->once())
       ->method('getRouteObject')
       ->willReturn($this->route);
@@ -142,6 +138,11 @@ class PageContextTest extends UnitTestCase {
    * @covers ::populateHtmlHead
    */
   public function testPopulateHtmlHeadMinimum() {
+    $this->requestParameterBag->expects($this->once())
+      ->method('has')
+      ->with('node')
+      ->willReturn(FALSE);
+
     $page_context = new PageContext($this->configFactory, $this->entityTypeManager, $this->requestStack, $this->routeMatch, $this->titleResolver);
     $head = ['old_head'];
     $page_context->populateHtmlHead($head);
@@ -168,11 +169,55 @@ class PageContextTest extends UnitTestCase {
   }
 
   /**
-   * Tests the populateHtmlHead() method, empty.
+   * Tests the populateHtmlHead() method, with a Node.
    *
    * @covers ::populateHtmlHead
    */
-  public function testPopulateHtmlHeadFull() {
+  public function testPopulateHtmlHeadWithNode() {
+    $this->requestParameterBag->expects($this->once())
+      ->method('has')
+      ->with('node')
+      ->willReturn(TRUE);
+    $this->requestParameterBag->expects($this->once())
+      ->method('get')
+      ->with('node')
+      ->willReturn($this->getNode());
+
+    $page_context = new PageContext($this->configFactory, $this->entityTypeManager, $this->requestStack, $this->routeMatch, $this->titleResolver);
+    $head = ['old_head'];
+    $page_context->populateHtmlHead($head);
+
+    $expected_head = $this->toRenderArray([
+      'content_title' => 'My Title',
+      'content_type' => 'article',
+      'page_type' => 'node page',
+      'content_section' => '',
+      'content_keywords' => '',
+      'post_id' => '90210',
+      'published_date' => 'a_published_time',
+      'thumbnail_url' => '',
+      'persona' => '',
+      'engagement_score' => PageContext::ENGAGEMENT_SCORE_DEFAULT,
+      'author' => 'a_username',
+      'account_id' => 'account_name_1',
+      'site_id' => 'customer_site_1',
+      'liftDecisionAPIURL' => 'api_url_1',
+      'authEndpoint' => 'oauth_url_1',
+    ], 'js_path_1');
+
+    $this->assertEquals($expected_head, $head);
+  }
+
+  /**
+   * Tests the populateHtmlHead() method, with A Node and Title.
+   *
+   * @covers ::populateHtmlHead
+   */
+  public function testPopulateHtmlHeadWithNodeAndTitle() {
+    $this->requestParameterBag->expects($this->once())
+      ->method('has')
+      ->with('node')
+      ->willReturn(TRUE);
     $this->requestParameterBag->expects($this->once())
       ->method('get')
       ->with('node')

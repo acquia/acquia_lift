@@ -91,12 +91,14 @@ class PageContext {
   public function __construct(ConfigFactoryInterface $config_factory, EntityTypeManagerInterface $entity_type_manager, RequestStack $request_stack, RouteMatchInterface $route_match) {
     $settings = $config_factory->get('acquia_lift.settings');
     $credential_settings = $settings->get('credential');
+    $field_mappings_settings = $settings->get('field_mappings');
+    $thumbnail_settings = $settings->get('thumbnail');
     $request = $request_stack->getCurrentRequest();
     $route = $route_match->getRouteObject();
 
-    $this->fieldMappings = $settings->get('field_mappings');
-    $this->thumbnailConfig = $settings->get('thumbnail');
     $this->jsPath = $credential_settings['js_path'];
+    $this->fieldMappings = $field_mappings_settings;
+    $this->thumbnailConfig = $thumbnail_settings;
     $this->taxonomyTermStorage = $entity_type_manager->getStorage('taxonomy_term');
 
     $this->setPageContextCredential($credential_settings);

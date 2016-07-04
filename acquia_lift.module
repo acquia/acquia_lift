@@ -58,17 +58,7 @@ function acquia_lift_page_attachments(array &$page) {
   }
 
   // Attach Lift's JavaScript.
-  $js_path_script_tag = [
-    [
-      '#tag' => 'script',
-      '#attributes' => [
-        'src' => \Drupal::config('acquia_lift.settings')->get('credential.js_path'),
-      ],
-    ],
-    'acquia_lift_javascript',
-  ];
-
-  $page['#attached']['html_head'][] = $js_path_script_tag;
+  $page['#attached']['html_head'][] = $page_context->getJavaScriptTag();
 }
 
 /**

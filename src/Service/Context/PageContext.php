@@ -54,6 +54,13 @@ class PageContext {
   ];
 
   /**
+   * JavaScript path.
+   *
+   * @var array
+   */
+  private $jsPath;
+
+  /**
    * Credential mapping.
    *
    * @var array
@@ -75,7 +82,9 @@ class PageContext {
    */
   public function __construct(ConfigFactoryInterface $config_factory, EntityTypeManagerInterface $entity_type_manager) {
     $settings = $config_factory->get('acquia_lift.settings');
-    $this->setPageContextCredential($settings->get('credential'));
+    $credential_settings = $settings->get('credential');
+    $this->setPageContextCredential($credential_settings);
+    $this->setJavaScriptPath($credential_settings['js_path']);
     $this->fieldMappings = $settings->get('field_mappings');
     $this->thumbnailConfig = $settings->get('thumbnail');
     $this->taxonomyTermStorage = $entity_type_manager->getStorage('taxonomy_term');
@@ -93,6 +102,16 @@ class PageContext {
         $this->pageContext[$tag_name] = $credential_settings[$credential_key];
       }
     };
+  }
+
+  /**
+   * Set JavaScript path.
+   *
+   * @param string $path
+   *   Credential settings array.
+   */
+  private function setJavaScriptPath($path) {
+    $this->jsPath = $path;
   }
 
   /**
@@ -283,6 +302,36 @@ class PageContext {
         'itemprop' => 'acquia_lift:' . $name,
         'content' => $content,
       ],
+    ];
+  }
+
+  /**
+   * Get JavaScript tag.
+   *
+   * @return array
+   *   JavaScript tag.
+   */
+  public function getJavaScriptTag() {
+    return $this->getJavaScriptTagRenderArray($this->jsPath);
+  }
+
+  /**
+   * Get the render array for a JavaScript tag.
+   *
+   * @param string $path
+   *   The JavaScript's path
+   * @return array
+   *   The render array
+   */
+  private function getJavaScriptTagRenderArray($path) {
+    return [
+      [
+        '#tag' => 'script',
+        '#attributes' => [
+          'src' => $path,
+        ],
+      ],
+      'acquia_lift_javascript',
     ];
   }
 

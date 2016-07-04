@@ -5,8 +5,9 @@ namespace Drupal\acquia_lift\Service\Context;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Component\Routing\Route;
-use Drupal\Core\Entity\EntityTypeManagerInterface;
+use Drupal\Core\Controller\TitleResolverInterface;
 use Drupal\Core\Config\ConfigFactoryInterface;
+use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\Core\Routing\RouteMatchInterface;
 use Drupal\image\Entity\ImageStyle;
 use Drupal\node\NodeInterface;
@@ -87,8 +88,10 @@ class PageContext {
    *   The request stack.
    * @param \Drupal\Core\Routing\RouteMatchInterface $route_match
    *   The current route match.
+   * @param \Drupal\Core\Controller\TitleResolverInterface $title_resolver
+   *   The title resolver.
    */
-  public function __construct(ConfigFactoryInterface $config_factory, EntityTypeManagerInterface $entity_type_manager, RequestStack $request_stack, RouteMatchInterface $route_match) {
+  public function __construct(ConfigFactoryInterface $config_factory, EntityTypeManagerInterface $entity_type_manager, RequestStack $request_stack, RouteMatchInterface $route_match, TitleResolverInterface $title_resolver) {
     $settings = $config_factory->get('acquia_lift.settings');
     $credential_settings = $settings->get('credential');
     $field_mappings_settings = $settings->get('field_mappings');
@@ -103,7 +106,7 @@ class PageContext {
 
     $this->setPageContextCredential($credential_settings);
     $this->setPageContextByNode($request);
-    $this->setPageContextTitle($request, $route);
+    $this->setPageContextTitle($request, $route, $title_resolver);
   }
 
   /**
@@ -135,11 +138,12 @@ class PageContext {
    *   The request object.
    * @param \Symfony\Component\Routing\Route $route
    *   The route object.
+   * @param \Drupal\Core\Controller\TitleResolverInterface $titleResolver
+   *   The title resolver.
    */
-  private function setPageContextTitle(Request $request, Route $route) {
+  private function setPageContextTitle(Request $request, Route $route, TitleResolverInterface $titleResolver) {
     // Find title.
-    $title_resolver = \Drupal::service('title_resolver');
-    $title = $title_resolver->getTitle($request, $route);
+    $title = $titleResolver->getTitle($request, $route);
 
     // Set title.
     // If markup, strip tags and convert to string.

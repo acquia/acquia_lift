@@ -41,6 +41,48 @@ class PageContextTest extends UnitTestCase {
   private $taxonomyTermStorage;
 
   /**
+   * Request stack.
+   *
+   * @var \Symfony\Component\HttpFoundation\RequestStack|\PHPUnit_Framework_MockObject_MockObject
+   */
+  private $requestStack;
+
+  /**
+   * Request.
+   *
+   * @var \Symfony\Component\HttpFoundation\Request|\PHPUnit_Framework_MockObject_MockObject
+   */
+  private $request;
+
+  /**
+   * Request's parameter bag.
+   *
+   * @var \Symfony\Component\HttpFoundation\ParameterBag|\PHPUnit_Framework_MockObject_MockObject
+   */
+  private $requestParameterBag;
+
+  /**
+   * Route match.
+   *
+   * @var \Drupal\Core\Routing\RouteMatchInterface|\PHPUnit_Framework_MockObject_MockObject
+   */
+  private $routeMatch;
+
+  /**
+   * Route.
+   *
+   * @var \Symfony\Component\Routing\Route|\PHPUnit_Framework_MockObject_MockObject
+   */
+  private $route;
+
+  /**
+   * Title resolver.
+   *
+   * @var \Drupal\Core\Controller\TitleResolverInterface|\PHPUnit_Framework_MockObject_MockObject
+   */
+  private $titleResolver;
+
+  /**
    * {@inheritdoc}
    */
   public function setUp() {
@@ -52,6 +94,14 @@ class PageContextTest extends UnitTestCase {
       ->getMock();
     $this->entityTypeManager = $this->getMock('Drupal\Core\Entity\EntityTypeManagerInterface');
     $this->taxonomyTermStorage = $this->getMock('Drupal\taxonomy\TermStorageInterface');
+    $this->requestStack = $this->getMock('Symfony\Component\HttpFoundation\RequestStack');
+    $this->request = $this->getMock('Symfony\Component\HttpFoundation\Request');
+    $this->requestParameterBag = $this->getMock('Symfony\Component\HttpFoundation\ParameterBag');
+    $this->routeMatch = $this->getMock('Drupal\Core\Routing\RouteMatchInterface');
+    $this->route = $this->getMockBuilder('Symfony\Component\Routing\Route')
+      ->disableOriginalConstructor()
+      ->getMock();
+    $this->titleResolver = $this->getMock('Drupal\Core\Controller\TitleResolverInterface');
 
     $this->configFactory->expects($this->once())
       ->method('get')
@@ -73,17 +123,30 @@ class PageContextTest extends UnitTestCase {
       ->method('getStorage')
       ->with('taxonomy_term')
       ->willReturn($this->taxonomyTermStorage);
+    $this->requestStack->expects($this->once())
+      ->method('getCurrentRequest')
+      ->willReturn($this->request);
+    $this->request->attributes = $this->requestParameterBag;
+    $this->requestParameterBag->expects($this->once())
+      ->method('has')
+      ->with('node')
+      ->willReturn(TRUE);
+    $this->routeMatch->expects($this->once())
+      ->method('getRouteObject')
+      ->willReturn($this->route);
   }
 
   /**
-   * Tests the getMetatags() method.
+   * Tests the populateHtmlHead() method, minimum.
    *
-   * @covers ::getMetatags
+   * @covers ::populateHtmlHead
    */
-  public function testGetMetatags() {
-    $page_context = new PageContext($this->configFactory, $this->entityTypeManager);
-    $metatags = $page_context->getMetatags();
-    $expected_metatags = [
+  public function testPopulateHtmlHeadMinimum() {
+    $page_context = new PageContext($this->configFactory, $this->entityTypeManager, $this->requestStack, $this->routeMatch, $this->titleResolver);
+    $head = ['old_head'];
+    $page_context->populateHtmlHead($head);
+
+    $expected_head = $this->toRenderArray([
       'content_title' => 'Untitled',
       'content_type' => 'page',
       'page_type' => 'content page',
@@ -99,112 +162,35 @@ class PageContextTest extends UnitTestCase {
       'site_id' => 'customer_site_1',
       'liftDecisionAPIURL' => 'api_url_1',
       'authEndpoint' => 'oauth_url_1',
-    ];
+    ], 'js_path_1');
 
-    $this->assertMetatagsRenderArray($expected_metatags, $metatags);
+    $this->assertEquals($expected_head, $head);
   }
 
   /**
-   * testGetMetatagsWithSetByNode(), sub routine "set up thumbnail url".
+   * Tests the populateHtmlHead() method, empty.
    *
-   * @param $node Node
+   * @covers ::populateHtmlHead
    */
-  private function testGetMetatagsWithSetByNodeSetUpThumbnailUrl($node) {
-    $field_media = $this->getMockBuilder('Drupal\Core\Entity\ContentEntityInterface')
-      ->disableOriginalConstructor()
-      ->getMock();
-    $field_image = $this->getMockBuilder('Drupal\Core\Entity\ContentEntityInterface')
-      ->disableOriginalConstructor()
-      ->getMock();
-    $media_entity = $this->getMock('Drupal\Core\Entity\EntityInterface');
-    $image_entity = $this->getMock('Drupal\file\FileInterface');
-
-    $node->field_media = $field_media;
-    $node->field_media->entity = $media_entity;
-    $node->field_media->entity->field_image = $field_image;
-    $node->field_media->entity->field_image->entity = $image_entity;
-
-    $entity_manager = $this->getMock('Drupal\Core\Entity\EntityManagerInterface');
-    $entity_storage = $this->getMock('Drupal\Core\Entity\EntityStorageInterface');
-    $container = $this->getMock('Drupal\Core\DependencyInjection\Container');
-    $image_style = $this->getMockBuilder('Drupal\image\Entity\ImageStyle')
-      ->disableOriginalConstructor()
-      ->getMock();
-
-    \Drupal::setContainer($container);
-    $container->expects($this->any())
+  public function testPopulateHtmlHeadFull() {
+    $this->requestParameterBag->expects($this->once())
       ->method('get')
-      ->with('entity.manager')
-      ->willReturn($entity_manager);
-    $entity_manager->expects($this->once())
-      ->method('getEntityTypeFromClass')
-      ->with('Drupal\image\Entity\ImageStyle')
-      ->willReturn($image_entity);
-    $image_entity->expects($this->once())
-      ->method('bundle')
-      ->willReturn('file');
-    $image_entity->expects($this->once())
-      ->method('getFileUri')
-      ->willReturn('a_file_uri');
-    $entity_manager->expects($this->once())
-      ->method('getStorage')
-      ->with($image_entity)
-      ->willReturn($entity_storage);
-    $entity_storage->expects($this->once())
-      ->method('load')
-      ->with('medium')
-      ->willReturn($image_style);
-    $image_style->expects($this->once())
-      ->method('buildUrl')
-      ->with('a_file_uri')
-      ->willReturn('a_style_decorated_file_uri');
-  }
+      ->with('node')
+      ->willReturn($this->getNode());
 
-  /**
-   * testGetMetatagsWithSetByNode(), sub routine "setup fields".
-   */
-  private function testGetMetatagsWithSetByNodeSetUpFields() {
-    $tracked_content_term_1 = $this->getTerm('Tracked Content Term Name 1', 'tracked_content_vocabulary');
-    $tracked_keyword_term_1 = $this->getTerm('Tracked Keyword Term Name 1', 'tracked_keyword_vocabulary');
-    $tracked_keyword_term_2 = $this->getTerm('Tracked Keyword Term Name 2', 'tracked_keyword_vocabulary');
-    $discarded_term_1 = $this->getTerm('Untracked Term Name', 'untracked_vocabulary_id');
-    $terms = [
-      90210 => [
-        $tracked_content_term_1,
-        $tracked_keyword_term_1,
-        $tracked_keyword_term_2,
-        $discarded_term_1,
-      ],
-    ];
-    $this->taxonomyTermStorage->expects($this->once())
-      ->method('getNodeTerms')
-      ->with([90210])
-      ->willReturn($terms);
-  }
+    $page_context = new PageContext($this->configFactory, $this->entityTypeManager, $this->requestStack, $this->routeMatch, $this->titleResolver);
+    $head = ['old_head'];
+    $page_context->populateHtmlHead($head);
 
-  /**
-   * Tests the getMetatags() method, with setByNode().
-   *
-   * @covers ::getMetatags
-   * @covers ::setByNode
-   */
-  public function testGetMetatagsWithSetByNode() {
-    $node = $this->getNode();
-    $this->testGetMetatagsWithSetByNodeSetUpThumbnailUrl($node);
-    $this->testGetMetatagsWithSetByNodeSetUpFields();
-
-    $page_context = new PageContext($this->configFactory, $this->entityTypeManager);
-    $page_context->setByNode($node);
-    $metatags = $page_context->getMetatags();
-    $expected_metatags = [
+    $expected_head = $this->toRenderArray([
       'content_title' => 'My Title',
       'content_type' => 'article',
       'page_type' => 'node page',
-      'content_section' => 'Tracked Content Term Name 1',
-      'content_keywords' => 'Tracked Keyword Term Name 1,Tracked Keyword Term Name 2',
-      'post_id' => 90210,
+      'content_section' => '',
+      'content_keywords' => '',
+      'post_id' => '90210',
       'published_date' => 'a_published_time',
-      'thumbnail_url' => 'file_create_url:a_style_decorated_file_uri',
+      'thumbnail_url' => '',
       'persona' => '',
       'engagement_score' => PageContext::ENGAGEMENT_SCORE_DEFAULT,
       'author' => 'a_username',
@@ -212,109 +198,9 @@ class PageContextTest extends UnitTestCase {
       'site_id' => 'customer_site_1',
       'liftDecisionAPIURL' => 'api_url_1',
       'authEndpoint' => 'oauth_url_1',
-    ];
+    ], 'js_path_1');
 
-    $this->assertMetatagsRenderArray($expected_metatags, $metatags);
-  }
-
-  /**
-   * Tests the getMetatags() method, with setPageContextTitle().
-   *
-   * @covers ::getMetatags
-   * @covers ::setPageContextTitle
-   */
-  public function testGetAllWithSetPageContextTitle() {
-    $page_context = new PageContext($this->configFactory, $this->entityTypeManager);
-
-    // Test set markup title.
-    $title = [
-      '#markup' => '<div><a>My Page Title 1</a></div>',
-      '#allowed_tags' => ['a'],
-    ];
-    $page_context->setPageContextTitle($title);
-    $metatags = $page_context->getMetatags();
-    $expected_metatags = [
-      'content_title' => '<a>My Page Title 1</a>',
-      'content_type' => 'page',
-      'page_type' => 'content page',
-      'content_section' => '',
-      'content_keywords' => '',
-      'post_id' => '',
-      'published_date' => '',
-      'thumbnail_url' => '',
-      'persona' => '',
-      'engagement_score' => PageContext::ENGAGEMENT_SCORE_DEFAULT,
-      'author' => '',
-      'account_id' => 'account_name_1',
-      'site_id' => 'customer_site_1',
-      'liftDecisionAPIURL' => 'api_url_1',
-      'authEndpoint' => 'oauth_url_1',
-    ];
-    $this->assertMetatagsRenderArray($expected_metatags, $metatags);
-
-    // Test set string title.
-    $title = 'My Page Title 2';
-    $page_context->setPageContextTitle($title);
-    $all_page_context = $page_context->getMetatags();
-    $expected_page_context = [
-      'content_title' => 'My Page Title 2',
-      'content_type' => 'page',
-      'page_type' => 'content page',
-      'content_section' => '',
-      'content_keywords' => '',
-      'post_id' => '',
-      'published_date' => '',
-      'thumbnail_url' => '',
-      'persona' => '',
-      'engagement_score' => PageContext::ENGAGEMENT_SCORE_DEFAULT,
-      'author' => '',
-      'account_id' => 'account_name_1',
-      'site_id' => 'customer_site_1',
-      'liftDecisionAPIURL' => 'api_url_1',
-      'authEndpoint' => 'oauth_url_1',
-    ];
-    $this->assertMetatagsRenderArray($expected_page_context, $all_page_context);
-
-    // Test set NULL title.
-    $page_context->setPageContextTitle(NULL);
-    $all_page_context = $page_context->getMetatags();
-    $expected_page_context = [
-      'content_title' => '',
-      'content_type' => 'page',
-      'page_type' => 'content page',
-      'content_section' => '',
-      'content_keywords' => '',
-      'post_id' => '',
-      'published_date' => '',
-      'thumbnail_url' => '',
-      'persona' => '',
-      'engagement_score' => PageContext::ENGAGEMENT_SCORE_DEFAULT,
-      'author' => '',
-      'account_id' => 'account_name_1',
-      'site_id' => 'customer_site_1',
-      'liftDecisionAPIURL' => 'api_url_1',
-      'authEndpoint' => 'oauth_url_1',
-    ];
-    $this->assertMetatagsRenderArray($expected_page_context, $all_page_context);
-  }
-
-  /**
-   * Get Term.
-   *
-   * @param string $name
-   * @param string $vocabulary_id
-   *
-   * @return Drupal\taxonomy\TermInterface|\PHPUnit_Framework_MockObject_MockObject
-   */
-  private function getTerm($name = 'Term Name', $vocabulary_id = 'untracked_vocabulary_id') {
-    $term = $this->getMock('Drupal\taxonomy\TermInterface');
-    $term->expects($this->once())
-      ->method('getVocabularyId')
-      ->willReturn($vocabulary_id);
-    $term->expects($this->once())
-      ->method('getName')
-      ->willReturn($name);
-    return $term;
+    $this->assertEquals($expected_head, $head);
   }
 
   /**
@@ -332,12 +218,12 @@ class PageContextTest extends UnitTestCase {
     $field_country_handler_settings = [
       'target_bundles' => [
         'tracked_content_vocabulary',
-      ]
+      ],
     ];
     $field_tags_handler_settings = [
       'target_bundles' => [
         'tracked_keyword_vocabulary',
-      ]
+      ],
     ];
 
     $node->expects($this->exactly(2))
@@ -386,25 +272,42 @@ class PageContextTest extends UnitTestCase {
   }
 
   /**
-   * Asserts metatags render array.
+   * To render array.
    *
-   * @param $expected_metatags
-   * @param $metatags
+   * @param array $pageContextConfig
+   *   The page context config
+   * @param string $jsPath
+   *   The JavaScript Path
+   * @return array
+   *   The render array
    */
-  private function assertMetatagsRenderArray($expected_metatags, $metatags) {
-    $populated_metatags = [];
+  private function toRenderArray($pageContextConfig, $jsPath) {
+    $renderArray = ['old_head'];
 
-    foreach ($metatags as $metatag) {
-      $renderArray = $metatag[0];
-      $name = $metatag[1];
-
-      $this->assertEquals('html_tag', $renderArray['#type']);
-      $this->assertEquals('meta', $renderArray['#tag']);
-      $this->assertEquals('acquia_lift:' . $name, $renderArray['#attributes']['itemprop']);
-
-      $populated_metatags[$name] = $renderArray['#attributes']['content'];
+    foreach ($pageContextConfig as $name => $content) {
+      $renderArray[] = [
+        [
+          '#type' => 'html_tag',
+          '#tag' => 'meta',
+          '#attributes' => [
+            'itemprop' => 'acquia_lift:' . $name,
+            'content' => $content,
+          ],
+        ],
+        $name,
+      ];
     }
 
-    $this->assertEquals($expected_metatags, $populated_metatags);
+    $renderArray[] = [
+      [
+        '#tag' => 'script',
+        '#attributes' => [
+          'src' => $jsPath,
+        ],
+      ],
+      'acquia_lift_javascript',
+    ];
+
+    return $renderArray;
   }
 }

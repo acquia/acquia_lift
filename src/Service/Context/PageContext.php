@@ -151,9 +151,8 @@ class PageContext {
       $allowed_tags = empty($title['#allowed_tags']) ? '' : '<' . implode('><', $title['#allowed_tags']) . '>';
       $title = strip_tags($title['#markup'], $allowed_tags);
     }
-    // If still an array or empty, set title to empty.
+    // If still an array or empty, leave title at "Untitled".
     if (is_array($title) || empty($title)) {
-      $this->pageContext['content_title'] = '';
       return;
     }
     // Otherwise set title.

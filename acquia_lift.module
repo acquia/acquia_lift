@@ -49,16 +49,8 @@ function acquia_lift_page_attachments(array &$page) {
   $title = $title_resolver->getTitle($request, $route_object);
   $page_context->setPageContextTitle($title);
 
-  // Get metatags.
-  $metatags = $page_context->getMetatags();
-
-  // Attach metatags.
-  foreach ($metatags as $metatag) {
-    $page['#attached']['html_head'][] = $metatag;
-  }
-
-  // Attach Lift's JavaScript.
-  $page['#attached']['html_head'][] = $page_context->getJavaScriptTag();
+  // Populate Html head.
+  $page_context->populateHtmlHead($page['#attached']['html_head']);
 }
 
 /**

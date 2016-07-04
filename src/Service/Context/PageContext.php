@@ -267,24 +267,6 @@ class PageContext {
   }
 
   /**
-   * Get meta tags.
-   *
-   * @return array
-   *   Meta tags.
-   */
-  public function getMetatags() {
-    $metatags = [];
-
-    // Generate meta tag render arrays.
-    foreach ($this->pageContext as $name => $content) {
-      $renderArray = $this->getMetaTagRenderArray($name, $content);
-      $metatags[] = [$renderArray, $name];
-    }
-
-    return $metatags;
-  }
-
-  /**
    * Get the render array for a single meta tag.
    *
    * @param string $name
@@ -303,16 +285,6 @@ class PageContext {
         'content' => $content,
       ],
     ];
-  }
-
-  /**
-   * Get JavaScript tag.
-   *
-   * @return array
-   *   JavaScript tag.
-   */
-  public function getJavaScriptTag() {
-    return $this->getJavaScriptTagRenderArray($this->jsPath);
   }
 
   /**
@@ -354,5 +326,22 @@ class PageContext {
     }
     // Otherwise set title.
     $this->pageContext['content_title'] = $title;
+  }
+
+  /**
+   * Populate page's HTML head.
+   *
+   * @param &$htmlHead
+   *   The HTML head that is to be populated.
+   */
+  public function populateHtmlHead(&$htmlHead) {
+    // Attach Lift's metatags.
+    foreach ($this->pageContext as $name => $content) {
+      $renderArray = $this->getMetaTagRenderArray($name, $content);
+      $htmlHead[] = [$renderArray, $name];
+    }
+
+    // Attach Lift's JavaScript.
+    $htmlHead[] = $this->getJavaScriptTagRenderArray($this->jsPath);
   }
 }

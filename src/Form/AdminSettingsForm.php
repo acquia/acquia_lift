@@ -108,21 +108,21 @@ class AdminSettingsForm extends ConfigFormBase {
       '#type' => 'textfield',
       '#title' => t('JavaScript Path'),
       '#field_prefix' => 'https://',
-      '#default_value' => $this->removeProtocal($credential_settings['js_path']),
+      '#default_value' => $this->removeProtocol($credential_settings['js_path']),
       '#required' => TRUE,
     ];
     $form['api_url'] = [
       '#type' => 'textfield',
       '#title' => t('API URL'),
       '#field_prefix' => 'https://',
-      '#default_value' => $this->removeProtocal($credential_settings['api_url']),
+      '#default_value' => $this->removeProtocol($credential_settings['api_url']),
       '#placeholder' => t('Leave empty to use default URL'),
     ];
     $form['oauth_url'] = [
       '#type' => 'textfield',
       '#title' => t('Authentication URL'),
       '#field_prefix' => 'https://',
-      '#default_value' => $this->removeProtocal($credential_settings['oauth_url']),
+      '#default_value' => $this->removeProtocol($credential_settings['oauth_url']),
       '#placeholder' => t('Leave empty to use default URL'),
     ];
 
@@ -324,20 +324,20 @@ class AdminSettingsForm extends ConfigFormBase {
   private function setCredentialValues(Config $settings, array $values) {
     $settings->set('credential.account_name', $values['account_name']);
     $settings->set('credential.customer_site', $values['customer_site']);
-    $settings->set('credential.js_path', 'https://' . $this->removeProtocal($values['js_path']));
+    $settings->set('credential.js_path', 'https://' . $this->removeProtocol($values['js_path']));
 
     $settings->clear('credential.api_url');
     if (!empty($values['api_url'])) {
-      $settings->set('credential.api_url', 'https://' . $this->removeProtocal($values['api_url']));
+      $settings->set('credential.api_url', 'https://' . $this->removeProtocol($values['api_url']));
     }
     $settings->clear('credential.oauth_url');
     if (!empty($values['oauth_url'])) {
-      $settings->set('credential.oauth_url', 'https://' . $this->removeProtocal($values['oauth_url']));
+      $settings->set('credential.oauth_url', 'https://' . $this->removeProtocol($values['oauth_url']));
     }
   }
 
   /**
-   * Remove the protocal from an URL string.
+   * Remove the protocol from an URL string.
    *
    * @param string $url
    *   URL.
@@ -345,7 +345,7 @@ class AdminSettingsForm extends ConfigFormBase {
    * @return string
    *   Same URL as input except with the 'http://' and 'https://' trimmed.
    */
-  private function removeProtocal($url) {
+  private function removeProtocol($url) {
     return preg_replace('~^https?://~', '', $url);
   }
 

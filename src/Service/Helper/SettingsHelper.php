@@ -22,7 +22,7 @@ class SettingsHelper {
    * @return boolean
    *   True if is an invalid credential.
    */
-  static public function isInvalidCredential($credential_settings) {
+  public static function isInvalidCredential($credential_settings) {
     // Required credential need to be filled.
     if (empty($credential_settings['account_name']) ||
       empty($credential_settings['customer_site']) ||

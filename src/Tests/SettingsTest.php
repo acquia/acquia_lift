@@ -101,7 +101,7 @@ class SettingsTest extends WebTestBase {
 
     // Assert all other fields. Also count the asserted fields to make sure all are asserted.
     foreach ($edit as $name => $value) {
-      $this->assertFieldByName($name, $value, format_string('"@name" setting was saved into DB.', array('@name' => $name)));
+      $this->assertFieldByName($name, $value, format_string('"@name" setting was saved into DB.', ['@name' => $name]));
     }
     $this->assertEqual($expect_settings_count, $edit_settings_count, 'The exact numbers of settings that were asserted should be ' . $expect_settings_count . '.');
 

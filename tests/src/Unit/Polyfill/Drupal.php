@@ -12,7 +12,7 @@ namespace {
    * Mock Drupal's t function.
    *
    * @param $string String to be translated.
-   * @param array $args An array in the form array('from' => 'to', ...).
+   * @param array $args An array in the form ['from' => 'to', ...].
    * @return string
    */
   if (!function_exists('t')) {

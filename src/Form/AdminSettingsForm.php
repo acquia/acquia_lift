@@ -95,12 +95,14 @@ class AdminSettingsForm extends ConfigFormBase {
     $form['account_name'] = [
       '#type' => 'textfield',
       '#title' => t('Account Name'),
+      '#description' => t('Your Lift subscription\'s account name.'),
       '#default_value' => $credential_settings['account_name'],
       '#required' => TRUE,
     ];
     $form['customer_site'] = [
       '#type' => 'textfield',
       '#title' => t('Customer Site'),
+      '#description' => t('Current site\'s site name. WARNING: different sites must use different value here, even between a staging and a production of the same site.'),
       '#default_value' => $credential_settings['customer_site'],
       '#required' => TRUE,
     ];
@@ -113,17 +115,17 @@ class AdminSettingsForm extends ConfigFormBase {
     ];
     $form['api_url'] = [
       '#type' => 'textfield',
-      '#title' => t('API URL'),
+      '#title' => t('Decision API URL'),
+      '#description' => t('Your Lift Decision API\'s URL. Unless explicitly instructed, leave empty to use default URL.'),
       '#field_prefix' => 'https://',
       '#default_value' => $this->removeProtocol($credential_settings['api_url']),
-      '#placeholder' => t('Leave empty to use default URL'),
     ];
     $form['oauth_url'] = [
       '#type' => 'textfield',
       '#title' => t('Authentication URL'),
+      '#description' => t('Your Lift Authentication API\'s URL. Unless explicitly instructed, leave empty to use default URL.'),
       '#field_prefix' => 'https://',
       '#default_value' => $this->removeProtocol($credential_settings['oauth_url']),
-      '#placeholder' => t('Leave empty to use default URL'),
     ];
 
     return $form;
@@ -137,6 +139,10 @@ class AdminSettingsForm extends ConfigFormBase {
    */
   private function buildIdentityForm() {
     $identity_settings = $this->config('acquia_lift.settings')->get('identity');
+    $identity_parameter_display_value = $identity_settings['identity_parameter'] ?: 'identity';
+    $identity_type_parameter_display_value = $identity_settings['identity_type_parameter'] ?: 'identityType';
+    $default_identity_type_display_value = $identity_settings['default_identity_type'] ?: 'account';
+    $default_identity_type_default_value = $identity_settings['default_identity_type'] ?: 'email';
 
     $form = [
       '#title' => t('Identity'),
@@ -152,11 +158,19 @@ class AdminSettingsForm extends ConfigFormBase {
     $form['identity_parameter'] = [
       '#type' => 'textfield',
       '#title' => t('Identity Parameter'),
+      '#description' => t('The query string parameter for specific visitor information, such as an email address or social media username, which is sent to the Acquia Lift service. Example: ?<ins>@identity_parameter_display_value</ins>=jdoe01', [
+        '@identity_parameter_display_value' => $identity_parameter_display_value,
+      ]),
       '#default_value' => $identity_settings['identity_parameter'],
     ];
     $form['identity_type_parameter'] = [
       '#type' => 'textfield',
       '#title' => t('Identity Type Parameter'),
+      '#description' => t('The query string parameter for the category (standard or custom) of the visitor\'s identity information. Example: ?@identity_parameter_display_value=jdoe01&<ins>@identity_type_parameter_display_value</ins>=@default_identity_type_default_value', [
+        '@identity_parameter_display_value' => $identity_parameter_display_value,
+        '@identity_type_parameter_display_value' => $identity_type_parameter_display_value,
+        '@default_identity_type_default_value' => $default_identity_type_default_value,
+      ]),
       '#default_value' => $identity_settings['identity_type_parameter'],
       '#states' => [
         'visible' => [
@@ -167,6 +181,12 @@ class AdminSettingsForm extends ConfigFormBase {
     $form['default_identity_type'] = [
       '#type' => 'textfield',
       '#title' => t('Default Identity Type'),
+      '#description' => t('The identity type category to use by default. Leave this field blank to default to <ins>@default</ins>. Example: <ins>@default_identity_type_display_value</ins> is "?@identity_parameter_display_value=jdoe01&@identity_type_parameter_display_value=<ins>@default_identity_type_display_value</ins>", while blank is the same as "?@identity_parameter_display_value=jdoe01&@identity_type_parameter_display_value=<ins>@default</ins>"', [
+        '@default' => 'email',
+        '@identity_parameter_display_value' => $identity_parameter_display_value,
+        '@identity_type_parameter_display_value' => $identity_type_parameter_display_value,
+        '@default_identity_type_display_value' => $default_identity_type_display_value,
+      ]),
       '#default_value' => $identity_settings['default_identity_type'],
       '#placeholder' => SettingsHelper::DEFAULT_IDENTITY_TYPE_DEFAULT,
     ];
@@ -186,6 +206,7 @@ class AdminSettingsForm extends ConfigFormBase {
 
     $form = [
       '#title' => t('Field Mappings'),
+      '#description' => t('Map Taxonomy vocabulary fields to "content section", "content keywords", and "persona" fields.'),
       '#type' => 'details',
       '#tree' => TRUE,
       '#group' => 'data_collection_settings',
@@ -245,6 +266,7 @@ class AdminSettingsForm extends ConfigFormBase {
 
     $form = [
       '#title' => t('Visibility'),
+      '#description' => t('Lift will skip data collection on those URLs and their aliases.'),
       '#type' => 'details',
       '#tree' => TRUE,
       '#group' => 'data_collection_settings',
@@ -252,7 +274,6 @@ class AdminSettingsForm extends ConfigFormBase {
     $form['path_patterns'] = [
       '#type' => 'textarea',
       '#title' => t('Path patterns'),
-      '#description' => t('Lift will skip data collection on those URLs and their aliases.'),
       '#default_value' => $visibility_settings['path_patterns'],
     ];
 
@@ -288,7 +309,7 @@ class AdminSettingsForm extends ConfigFormBase {
       $url = Url::fromRoute('entity.node_type.edit_form', ['node_type' => $node_type->id()], $link_attributes);
       $links[] = '<p>' . Link::fromTextAndUrl($node_type->label(), $url)->toString() . '</p>';
     }
-    $form['link_list']['#markup'] = t('Configure thumbnail URLs on each content type\'s edit page (in a new window):');
+    $form['link_list']['#markup'] = t('Configure thumbnail URLs on each content type\'s edit page (in a new window).');
     $form['link_list']['#markup'] .= implode('', $links);
 
     return $form;

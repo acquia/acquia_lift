@@ -124,6 +124,6 @@ class SettingsTest extends WebTestBase {
     $this->assertRaw('account_name_1', '[testMetatagsAndScriptTag]: account_id metatag value is loaded on the node page.');
 
     // Assert Lift JavaScript tag is loaded on the page.
-    $this->assertRaw('js_path_1', '[testMetatagsAndScriptTag]: With valid settings, Lift\'s JavaScript is loaded on the home page.');
+    $this->assertRaw('assets_url_1', '[testMetatagsAndScriptTag]: With valid settings, Lift\'s JavaScript is loaded on the home page.');
   }
 }

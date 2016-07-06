@@ -163,7 +163,7 @@ class PageContextTest extends UnitTestCase {
       'site_id' => 'customer_site_1',
       'liftDecisionAPIURL' => 'api_url_1',
       'authEndpoint' => 'oauth_url_1',
-    ], 'js_path_1');
+    ], 'assets_url_1');
 
     $this->assertEquals($expected_head, $head);
   }
@@ -203,7 +203,7 @@ class PageContextTest extends UnitTestCase {
       'site_id' => 'customer_site_1',
       'liftDecisionAPIURL' => 'api_url_1',
       'authEndpoint' => 'oauth_url_1',
-    ], 'js_path_1');
+    ], 'assets_url_1');
 
     $this->assertEquals($expected_head, $head);
   }
@@ -247,7 +247,7 @@ class PageContextTest extends UnitTestCase {
       'site_id' => 'customer_site_1',
       'liftDecisionAPIURL' => 'api_url_1',
       'authEndpoint' => 'oauth_url_1',
-    ], 'js_path_1');
+    ], 'assets_url_1');
 
     $this->assertEquals($expected_head, $head);
   }
@@ -294,7 +294,7 @@ class PageContextTest extends UnitTestCase {
       'site_id' => 'customer_site_1',
       'liftDecisionAPIURL' => 'api_url_1',
       'authEndpoint' => 'oauth_url_1',
-    ], 'js_path_1');
+    ], 'assets_url_1');
 
     $this->assertEquals($expected_head, $head);
   }
@@ -336,7 +336,7 @@ class PageContextTest extends UnitTestCase {
       'site_id' => 'customer_site_1',
       'liftDecisionAPIURL' => 'api_url_1',
       'authEndpoint' => 'oauth_url_1',
-    ], 'js_path_1');
+    ], 'assets_url_1');
 
     $this->assertEquals($expected_head, $head);
   }
@@ -377,7 +377,7 @@ class PageContextTest extends UnitTestCase {
       'site_id' => 'customer_site_1',
       'liftDecisionAPIURL' => 'api_url_1',
       'authEndpoint' => 'oauth_url_1',
-    ], 'js_path_1');
+    ], 'assets_url_1');
 
     $this->assertEquals($expected_head, $head);
   }
@@ -552,12 +552,12 @@ class PageContextTest extends UnitTestCase {
    *
    * @param array $pageContextConfig
    *   The page context config
-   * @param string $jsPath
-   *   The JavaScript Path
+   * @param string $assetsUrl
+   *   The assets URL
    * @return array
    *   The render array
    */
-  private function toRenderArray($pageContextConfig, $jsPath) {
+  private function toRenderArray($pageContextConfig, $assetsUrl) {
     $renderArray = ['old_head'];
 
     foreach ($pageContextConfig as $name => $content) {
@@ -578,7 +578,7 @@ class PageContextTest extends UnitTestCase {
       [
         '#tag' => 'script',
         '#attributes' => [
-          'src' => $jsPath,
+          'src' => $assetsUrl . '/lift.js',
         ],
       ],
       'acquia_lift_javascript',

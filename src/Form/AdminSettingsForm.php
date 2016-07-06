@@ -106,11 +106,11 @@ class AdminSettingsForm extends ConfigFormBase {
       '#default_value' => $credential_settings['customer_site'],
       '#required' => TRUE,
     ];
-    $form['js_path'] = [
+    $form['assets_url'] = [
       '#type' => 'textfield',
-      '#title' => t('JavaScript Path'),
+      '#title' => t('Assets URL'),
       '#field_prefix' => 'https://',
-      '#default_value' => $this->removeProtocol($credential_settings['js_path']),
+      '#default_value' => $this->removeProtocol($credential_settings['assets_url']),
       '#required' => TRUE,
     ];
     $form['api_url'] = [
@@ -345,7 +345,7 @@ class AdminSettingsForm extends ConfigFormBase {
   private function setCredentialValues(Config $settings, array $values) {
     $settings->set('credential.account_name', $values['account_name']);
     $settings->set('credential.customer_site', $values['customer_site']);
-    $settings->set('credential.js_path', 'https://' . $this->removeProtocol($values['js_path']));
+    $settings->set('credential.assets_url', 'https://' . $this->removeProtocol($values['assets_url']));
 
     $settings->clear('credential.api_url');
     if (!empty($values['api_url'])) {
@@ -358,16 +358,16 @@ class AdminSettingsForm extends ConfigFormBase {
   }
 
   /**
-   * Remove the protocol from an URL string.
+   * Remove the protocol and trailing slashes from an URL string.
    *
    * @param string $url
    *   URL.
    *
    * @return string
-   *   Same URL as input except with the 'http://' and 'https://' trimmed.
+   *   Same URL as input except with the 'http://' and 'https://' and trailing '/' trimmed.
    */
   private function removeProtocol($url) {
-    return preg_replace('~^https?://~', '', $url);
+    return rtrim(preg_replace('~^https?://~', '', $url), '/');
   }
 
   /**

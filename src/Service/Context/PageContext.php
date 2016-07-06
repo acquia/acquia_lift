@@ -19,6 +19,11 @@ class PageContext {
   const ENGAGEMENT_SCORE_DEFAULT = 1;
 
   /**
+   * Lift JavaScript file name.
+   */
+  const LIFT_JS_FILENAME = 'lift.js';
+
+  /**
    * Field mappings.
    *
    * @var array
@@ -59,11 +64,11 @@ class PageContext {
   ];
 
   /**
-   * JavaScript path.
+   * Assets URL.
    *
    * @var array
    */
-  private $jsPath;
+  private $assetsUrl;
 
   /**
    * Credential mapping.
@@ -99,7 +104,7 @@ class PageContext {
     $request = $request_stack->getCurrentRequest();
     $route = $route_match->getRouteObject();
 
-    $this->jsPath = $credential_settings['js_path'];
+    $this->assetsUrl = $credential_settings['assets_url'];
     $this->fieldMappings = $field_mappings_settings;
     $this->thumbnailConfig = $thumbnail_settings;
     $this->taxonomyTermStorage = $entity_type_manager->getStorage('taxonomy_term');
@@ -345,7 +350,7 @@ class PageContext {
       [
         '#tag' => 'script',
         '#attributes' => [
-          'src' => $this->jsPath,
+          'src' => $this->assetsUrl . '/' . SELF::LIFT_JS_FILENAME,
         ],
       ],
       'acquia_lift_javascript',

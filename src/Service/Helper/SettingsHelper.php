@@ -26,13 +26,13 @@ class SettingsHelper {
     // Required credential need to be filled.
     if (empty($credential_settings['account_name']) ||
       empty($credential_settings['customer_site']) ||
-      empty($credential_settings['js_path'])
+      empty($credential_settings['assets_url'])
     ) {
       return TRUE;
     }
 
     // URLs need to be valid.
-    if (!UrlHelper::isValid($credential_settings['js_path']) ||
+    if (!UrlHelper::isValid($credential_settings['assets_url']) ||
       !empty($credential_settings['api_url']) && !UrlHelper::isValid($credential_settings['api_url']) ||
       !empty($credential_settings['oauth_url']) && !UrlHelper::isValid($credential_settings['oauth_url'])
     ) {

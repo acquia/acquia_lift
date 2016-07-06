@@ -32,7 +32,7 @@ trait SettingsDataTrait {
     return [
       'account_name' => 'account_name_1',
       'customer_site' => 'customer_site_1',
-      'js_path' => 'js_path_1',
+      'assets_url' => 'assets_url_1',
       'api_url' => 'api_url_1',
       'oauth_url' => 'oauth_url_1',
     ];
@@ -91,20 +91,6 @@ trait SettingsDataTrait {
   private function getValidVisibilitySettings() {
     return [
       'path_patterns' => "/admin\n/admin/*\n/batch\n/node/add*\n/node/*/*\n/user/*/*",
-    ];
-  }
-
-  /**
-   * Get a valid front end credential settings.
-   *
-   * @return array
-   *   A valid front end credential settings array.
-   */
-  private function getValidFrontEndCredentialSettings() {
-    return [
-      'account_name' => 'account_name_1',
-      'customer_site' => 'customer_site_1',
-      'js_path' => 'js_path_1',
     ];
   }
 

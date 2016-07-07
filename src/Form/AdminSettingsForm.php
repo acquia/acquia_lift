@@ -87,7 +87,7 @@ class AdminSettingsForm extends ConfigFormBase {
     $credential_settings = $this->config('acquia_lift.settings')->get('credential');
 
     $form = [
-      '#title' => t('Credential'),
+      '#title' => t('Acquia Lift Credential'),
       '#type' => 'details',
       '#tree' => TRUE,
       '#open' => SettingsHelper::isInvalidCredential($credential_settings),
@@ -110,7 +110,7 @@ class AdminSettingsForm extends ConfigFormBase {
       '#type' => 'textfield',
       '#title' => t('Assets URL'),
       '#field_prefix' => 'https://',
-      '#default_value' => $this->removeProtocol($credential_settings['assets_url']),
+      '#default_value' => $this->cleanUrl($credential_settings['assets_url']),
       '#required' => TRUE,
     ];
     $form['api_url'] = [
@@ -118,14 +118,14 @@ class AdminSettingsForm extends ConfigFormBase {
       '#title' => t('Decision API URL'),
       '#description' => t('Your Lift Decision API\'s URL. Unless explicitly instructed, leave empty to use default URL.'),
       '#field_prefix' => 'https://',
-      '#default_value' => $this->removeProtocol($credential_settings['api_url']),
+      '#default_value' => $this->cleanUrl($credential_settings['api_url']),
     ];
     $form['oauth_url'] = [
       '#type' => 'textfield',
       '#title' => t('Authentication URL'),
       '#description' => t('Your Lift Authentication API\'s URL. Unless explicitly instructed, leave empty to use default URL.'),
       '#field_prefix' => 'https://',
-      '#default_value' => $this->removeProtocol($credential_settings['oauth_url']),
+      '#default_value' => $this->cleanUrl($credential_settings['oauth_url']),
     ];
 
     return $form;
@@ -345,29 +345,35 @@ class AdminSettingsForm extends ConfigFormBase {
   private function setCredentialValues(Config $settings, array $values) {
     $settings->set('credential.account_name', $values['account_name']);
     $settings->set('credential.customer_site', $values['customer_site']);
-    $settings->set('credential.assets_url', 'https://' . $this->removeProtocol($values['assets_url']));
+    $settings->set('credential.assets_url', 'https://' . $this->cleanUrl($values['assets_url']));
 
     $settings->clear('credential.api_url');
     if (!empty($values['api_url'])) {
-      $settings->set('credential.api_url', 'https://' . $this->removeProtocol($values['api_url']));
+      $settings->set('credential.api_url', 'https://' . $this->cleanUrl($values['api_url']));
     }
     $settings->clear('credential.oauth_url');
     if (!empty($values['oauth_url'])) {
-      $settings->set('credential.oauth_url', 'https://' . $this->removeProtocol($values['oauth_url']));
+      $settings->set('credential.oauth_url', 'https://' . $this->cleanUrl($values['oauth_url']));
     }
   }
 
   /**
-   * Remove the protocol and trailing slashes from an URL string.
+   * Clean up URL. Remove the:
+   *   1) Protocol "http://" and "http://".
+   *   2) Leading and trailing slashes and space characters.
    *
    * @param string $url
    *   URL.
-   *
    * @return string
-   *   Same URL as input except with the 'http://' and 'https://' and trailing '/' trimmed.
+   *   URL, but cleaned up.
    */
-  private function removeProtocol($url) {
-    return rtrim(preg_replace('~^https?://~', '', $url), '/');
+  private function cleanUrl($url) {
+    $searchFor = [
+      '~^[ \t\r\n\/]+~',
+      '~[ \t\r\n\/]+$~',
+      '~^https?://~',
+    ];
+    return preg_replace($searchFor, '', $url);
   }
 
   /**

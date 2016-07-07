@@ -78,6 +78,7 @@ class PageContext {
   private static $CREDENTIAL_MAPPING = [
     'account_id' => 'account_id',
     'site_id' => 'site_id',
+    'assets_url' => 'liftAssetsURL',
     'decision_api_url' => 'liftDecisionAPIURL',
     'oauth_url' => 'authEndpoint',
   ];

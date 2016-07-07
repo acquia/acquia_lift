@@ -121,7 +121,7 @@ class SettingsTest extends WebTestBase {
     $this->assertRaw('acquia_lift:page_type', '[testMetatagsAndScriptTag]: page_type metatag is loaded on the node page.');
     $this->assertRaw('node page', '[testMetatagsAndScriptTag]: page_type metatag value is loaded on the node page.');
     $this->assertRaw('acquia_lift:account_id', '[testMetatagsAndScriptTag]: account_id metatag is loaded on the node page.');
-    $this->assertRaw('account_name_1', '[testMetatagsAndScriptTag]: account_id metatag value is loaded on the node page.');
+    $this->assertRaw('account_id_1', '[testMetatagsAndScriptTag]: account_id metatag value is loaded on the node page.');
 
     // Assert Lift JavaScript tag is loaded on the page.
     $this->assertRaw('assets_url_1', '[testMetatagsAndScriptTag]: With valid settings, Lift\'s JavaScript is loaded on the home page.');

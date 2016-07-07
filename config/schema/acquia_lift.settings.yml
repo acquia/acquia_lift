@@ -6,18 +6,18 @@ acquia_lift.settings:
       type: config_object
       label: 'Credential'
       mapping:
-        account_name:
+        account_id:
           type: string
-          label: 'Account name'
-        customer_site:
+          label: 'Account ID'
+        site_id:
           type: string
-          label: 'Customer site'
+          label: 'Site ID'
         assets_url:
           type: uri
           label: 'Assets URL'
-        api_url:
+        decision_api_url:
           type: uri
-          label: 'API URL'
+          label: 'Decision API URL'
         oauth_url:
           type: uri
           label: 'OAuth URL'

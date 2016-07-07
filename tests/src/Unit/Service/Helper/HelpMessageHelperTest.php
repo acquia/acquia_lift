@@ -80,7 +80,7 @@ class HelpMessageHelperTest extends UnitTestCase {
   }
 
   /**
-   * Tests the getMessage() method - AdminSettingsForm, no API URL setting.
+   * Tests the getMessage() method - AdminSettingsForm, no Decision API URL setting.
    *
    * @covers ::getMessage
    *
@@ -89,13 +89,13 @@ class HelpMessageHelperTest extends UnitTestCase {
    * @dataProvider providerRouteNames
    */
   public function testGetMessageAdminSettingsFormNoApiUrl($route_name) {
-    $missing_api_url_settings = $this->getValidCredentialSettings();
-    unset($missing_api_url_settings['api_url']);
+    $missing_decision_api_url_settings = $this->getValidCredentialSettings();
+    unset($missing_decision_api_url_settings['decision_api_url']);
 
     $this->settings->expects($this->once())
       ->method('get')
       ->with('credential')
-      ->willReturn($missing_api_url_settings);
+      ->willReturn($missing_decision_api_url_settings);
 
     $help_message_helper = new HelpMessageHelper($this->configFactory, $this->linkGenerator);
     $message = $help_message_helper->getMessage($route_name);

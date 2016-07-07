@@ -92,18 +92,18 @@ class AdminSettingsForm extends ConfigFormBase {
       '#tree' => TRUE,
       '#open' => SettingsHelper::isInvalidCredential($credential_settings),
     ];
-    $form['account_name'] = [
+    $form['account_id'] = [
       '#type' => 'textfield',
-      '#title' => t('Account Name'),
-      '#description' => t('Your Lift subscription\'s account name.'),
-      '#default_value' => $credential_settings['account_name'],
+      '#title' => t('Account ID'),
+      '#description' => t('Your Lift subscription\'s account ID.'),
+      '#default_value' => $credential_settings['account_id'],
       '#required' => TRUE,
     ];
-    $form['customer_site'] = [
+    $form['site_id'] = [
       '#type' => 'textfield',
-      '#title' => t('Customer Site'),
-      '#description' => t('Current site\'s site name. WARNING: different sites must use different value here, even between a staging and a production of the same site.'),
-      '#default_value' => $credential_settings['customer_site'],
+      '#title' => t('Site ID'),
+      '#description' => t('Current site\'s site ID. WARNING: different sites must use different value here, even between a staging and a production of the same site.'),
+      '#default_value' => $credential_settings['site_id'],
       '#required' => TRUE,
     ];
     $form['assets_url'] = [
@@ -113,12 +113,12 @@ class AdminSettingsForm extends ConfigFormBase {
       '#default_value' => $this->cleanUrl($credential_settings['assets_url']),
       '#required' => TRUE,
     ];
-    $form['api_url'] = [
+    $form['decision_api_url'] = [
       '#type' => 'textfield',
       '#title' => t('Decision API URL'),
       '#description' => t('Your Lift Decision API\'s URL. Unless explicitly instructed, leave empty to use default URL.'),
       '#field_prefix' => 'https://',
-      '#default_value' => $this->cleanUrl($credential_settings['api_url']),
+      '#default_value' => $this->cleanUrl($credential_settings['decision_api_url']),
     ];
     $form['oauth_url'] = [
       '#type' => 'textfield',
@@ -343,13 +343,13 @@ class AdminSettingsForm extends ConfigFormBase {
    *   Credential values.
    */
   private function setCredentialValues(Config $settings, array $values) {
-    $settings->set('credential.account_name', trim($values['account_name']));
-    $settings->set('credential.customer_site', trim($values['customer_site']));
+    $settings->set('credential.account_id', trim($values['account_id']));
+    $settings->set('credential.site_id', trim($values['site_id']));
     $settings->set('credential.assets_url', 'https://' . $this->cleanUrl($values['assets_url']));
 
-    $settings->clear('credential.api_url');
-    if (!empty($values['api_url'])) {
-      $settings->set('credential.api_url', 'https://' . $this->cleanUrl($values['api_url']));
+    $settings->clear('credential.decision_api_url');
+    if (!empty($values['decision_api_url'])) {
+      $settings->set('credential.decision_api_url', 'https://' . $this->cleanUrl($values['decision_api_url']));
     }
     $settings->clear('credential.oauth_url');
     if (!empty($values['oauth_url'])) {

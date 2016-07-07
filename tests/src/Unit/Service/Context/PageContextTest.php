@@ -159,9 +159,9 @@ class PageContextTest extends UnitTestCase {
       'persona' => '',
       'engagement_score' => PageContext::ENGAGEMENT_SCORE_DEFAULT,
       'author' => '',
-      'account_id' => 'account_name_1',
-      'site_id' => 'customer_site_1',
-      'liftDecisionAPIURL' => 'api_url_1',
+      'account_id' => 'account_id_1',
+      'site_id' => 'site_id_1',
+      'liftDecisionAPIURL' => 'decision_api_url_1',
       'authEndpoint' => 'oauth_url_1',
     ], 'assets_url_1');
 
@@ -199,9 +199,9 @@ class PageContextTest extends UnitTestCase {
       'persona' => '',
       'engagement_score' => PageContext::ENGAGEMENT_SCORE_DEFAULT,
       'author' => 'a_username',
-      'account_id' => 'account_name_1',
-      'site_id' => 'customer_site_1',
-      'liftDecisionAPIURL' => 'api_url_1',
+      'account_id' => 'account_id_1',
+      'site_id' => 'site_id_1',
+      'liftDecisionAPIURL' => 'decision_api_url_1',
       'authEndpoint' => 'oauth_url_1',
     ], 'assets_url_1');
 
@@ -243,9 +243,9 @@ class PageContextTest extends UnitTestCase {
       'persona' => '',
       'engagement_score' => PageContext::ENGAGEMENT_SCORE_DEFAULT,
       'author' => 'a_username',
-      'account_id' => 'account_name_1',
-      'site_id' => 'customer_site_1',
-      'liftDecisionAPIURL' => 'api_url_1',
+      'account_id' => 'account_id_1',
+      'site_id' => 'site_id_1',
+      'liftDecisionAPIURL' => 'decision_api_url_1',
       'authEndpoint' => 'oauth_url_1',
     ], 'assets_url_1');
 
@@ -290,9 +290,9 @@ class PageContextTest extends UnitTestCase {
       'persona' => '',
       'engagement_score' => PageContext::ENGAGEMENT_SCORE_DEFAULT,
       'author' => 'a_username',
-      'account_id' => 'account_name_1',
-      'site_id' => 'customer_site_1',
-      'liftDecisionAPIURL' => 'api_url_1',
+      'account_id' => 'account_id_1',
+      'site_id' => 'site_id_1',
+      'liftDecisionAPIURL' => 'decision_api_url_1',
       'authEndpoint' => 'oauth_url_1',
     ], 'assets_url_1');
 
@@ -332,9 +332,9 @@ class PageContextTest extends UnitTestCase {
       'persona' => '',
       'engagement_score' => PageContext::ENGAGEMENT_SCORE_DEFAULT,
       'author' => 'a_username',
-      'account_id' => 'account_name_1',
-      'site_id' => 'customer_site_1',
-      'liftDecisionAPIURL' => 'api_url_1',
+      'account_id' => 'account_id_1',
+      'site_id' => 'site_id_1',
+      'liftDecisionAPIURL' => 'decision_api_url_1',
       'authEndpoint' => 'oauth_url_1',
     ], 'assets_url_1');
 
@@ -373,9 +373,9 @@ class PageContextTest extends UnitTestCase {
       'persona' => '',
       'engagement_score' => PageContext::ENGAGEMENT_SCORE_DEFAULT,
       'author' => 'a_username',
-      'account_id' => 'account_name_1',
-      'site_id' => 'customer_site_1',
-      'liftDecisionAPIURL' => 'api_url_1',
+      'account_id' => 'account_id_1',
+      'site_id' => 'site_id_1',
+      'liftDecisionAPIURL' => 'decision_api_url_1',
       'authEndpoint' => 'oauth_url_1',
     ], 'assets_url_1');
 

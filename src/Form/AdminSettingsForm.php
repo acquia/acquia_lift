@@ -343,8 +343,8 @@ class AdminSettingsForm extends ConfigFormBase {
    *   Credential values.
    */
   private function setCredentialValues(Config $settings, array $values) {
-    $settings->set('credential.account_name', $values['account_name']);
-    $settings->set('credential.customer_site', $values['customer_site']);
+    $settings->set('credential.account_name', trim($values['account_name']));
+    $settings->set('credential.customer_site', trim($values['customer_site']));
     $settings->set('credential.assets_url', 'https://' . $this->cleanUrl($values['assets_url']));
 
     $settings->clear('credential.api_url');
@@ -385,10 +385,10 @@ class AdminSettingsForm extends ConfigFormBase {
    *   Identity values.
    */
   private function setIdentityValues(Config $settings, array $values) {
-//    $settings->set('identity.capture_identity', $values['capture_identity']);
-    $settings->set('identity.identity_parameter', $values['identity_parameter']);
-    $settings->set('identity.identity_type_parameter', $values['identity_type_parameter']);
-    $settings->set('identity.default_identity_type', $values['default_identity_type']);
+//    $settings->set('identity.capture_identity', trim($values['capture_identity']));
+    $settings->set('identity.identity_parameter', trim($values['identity_parameter']));
+    $settings->set('identity.identity_type_parameter', trim($values['identity_type_parameter']));
+    $settings->set('identity.default_identity_type', trim($values['default_identity_type']));
   }
 
   /**

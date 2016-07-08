@@ -122,11 +122,12 @@ class PageContext {
    *   The request object.
    */
   private function setPageContextByNode(Request $request) {
-    if ($request->attributes->has('node')) {
-      $node = $request->attributes->get('node');
+    // If not a request to node, do nothing.
+    if (!$request->attributes->has('node')) {
+      return;
     }
 
-    // If not a request to node, do nothing.
+    $node = $request->attributes->get('node');
     if (empty($node) || ! $node instanceof NodeInterface) {
       return;
     }

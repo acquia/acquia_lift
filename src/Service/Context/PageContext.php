@@ -368,6 +368,8 @@ class PageContext {
     // Attach Lift's metatags.
     foreach ($this->pageContext as $name => $content) {
       $renderArray = $this->getMetaTagRenderArray($name, $content);
+      // To generate meta tags within HTML head, Drupal requires this precise
+      // format of render array.
       $htmlHead[] = [$renderArray, $name];
     }
 

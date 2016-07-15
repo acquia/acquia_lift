@@ -109,6 +109,7 @@ class AdminSettingsForm extends ConfigFormBase {
     $form['assets_url'] = [
       '#type' => 'textfield',
       '#title' => t('Assets URL'),
+      '#description' => t('Your Lift application\'s assets URL. It determines which version of the Lift application is being used.'),
       '#field_prefix' => 'https://',
       '#default_value' => $this->cleanUrl($credential_settings['assets_url']),
       '#required' => TRUE,

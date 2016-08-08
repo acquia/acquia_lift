@@ -133,11 +133,11 @@ class PageContextTest extends UnitTestCase {
   }
 
   /**
-   * Tests the populateHtmlHead() method, minimum.
+   * Tests the populateHtmlHead() method, credential configuration.
    *
    * @covers ::populateHtmlHead
    */
-  public function testPopulateHtmlHeadMinimum() {
+  public function testPopulateHtmlHeadCredentialConfiguration() {
     $this->requestParameterBag->expects($this->once())
       ->method('has')
       ->with('node')

@@ -16,6 +16,7 @@ trait SettingsDataTrait {
     return [
       'account_id' => 'account_id_1',
       'site_id' => 'site_id_1',
+      'origin' => 'origin_1',
       'assets_url' => 'assets_url_1',
       'decision_api_url' => 'decision_api_url_1',
       'oauth_url' => 'oauth_url_1',

@@ -133,11 +133,11 @@ class PageContextTest extends UnitTestCase {
   }
 
   /**
-   * Tests the populateHtmlHead() method, minimum.
+   * Tests the populateHtmlHead() method, credential configuration.
    *
    * @covers ::populateHtmlHead
    */
-  public function testPopulateHtmlHeadMinimum() {
+  public function testPopulateHtmlHeadCredentialConfiguration() {
     $this->requestParameterBag->expects($this->once())
       ->method('has')
       ->with('node')
@@ -161,6 +161,7 @@ class PageContextTest extends UnitTestCase {
       'author' => '',
       'account_id' => 'account_id_1',
       'site_id' => 'site_id_1',
+      'contentOrigin' => 'content_origin_1',
       'liftAssetsURL' => 'assets_url_1',
       'liftDecisionAPIURL' => 'decision_api_url_1',
       'authEndpoint' => 'oauth_url_1',
@@ -202,6 +203,7 @@ class PageContextTest extends UnitTestCase {
       'author' => 'a_username',
       'account_id' => 'account_id_1',
       'site_id' => 'site_id_1',
+      'contentOrigin' => 'content_origin_1',
       'liftAssetsURL' => 'assets_url_1',
       'liftDecisionAPIURL' => 'decision_api_url_1',
       'authEndpoint' => 'oauth_url_1',
@@ -247,6 +249,7 @@ class PageContextTest extends UnitTestCase {
       'author' => 'a_username',
       'account_id' => 'account_id_1',
       'site_id' => 'site_id_1',
+      'contentOrigin' => 'content_origin_1',
       'liftAssetsURL' => 'assets_url_1',
       'liftDecisionAPIURL' => 'decision_api_url_1',
       'authEndpoint' => 'oauth_url_1',
@@ -295,6 +298,7 @@ class PageContextTest extends UnitTestCase {
       'author' => 'a_username',
       'account_id' => 'account_id_1',
       'site_id' => 'site_id_1',
+      'contentOrigin' => 'content_origin_1',
       'liftAssetsURL' => 'assets_url_1',
       'liftDecisionAPIURL' => 'decision_api_url_1',
       'authEndpoint' => 'oauth_url_1',
@@ -338,6 +342,7 @@ class PageContextTest extends UnitTestCase {
       'author' => 'a_username',
       'account_id' => 'account_id_1',
       'site_id' => 'site_id_1',
+      'contentOrigin' => 'content_origin_1',
       'liftAssetsURL' => 'assets_url_1',
       'liftDecisionAPIURL' => 'decision_api_url_1',
       'authEndpoint' => 'oauth_url_1',
@@ -380,6 +385,7 @@ class PageContextTest extends UnitTestCase {
       'author' => 'a_username',
       'account_id' => 'account_id_1',
       'site_id' => 'site_id_1',
+      'contentOrigin' => 'content_origin_1',
       'liftAssetsURL' => 'assets_url_1',
       'liftDecisionAPIURL' => 'decision_api_url_1',
       'authEndpoint' => 'oauth_url_1',

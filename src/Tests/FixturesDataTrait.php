@@ -10,9 +10,9 @@ namespace Drupal\acquia_lift\Tests;
 use Drupal\Component\Utility\Unicode;
 use Drupal\Core\Language\LanguageInterface;
 use Drupal\taxonomy\Entity\Vocabulary;
+use Drupal\taxonomy\Entity\Term;
 use Drupal\field\Entity\FieldStorageConfig;
 use Drupal\field\Entity\FieldConfig;
-use Drupal\taxonomy\Entity\Term;
 
 /**
  * Fixtures Data Trait.

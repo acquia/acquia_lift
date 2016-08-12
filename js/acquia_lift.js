@@ -48,7 +48,7 @@ var _tcwq = _tcwq || [];
     var captureViewEvent = ['captureView', 'Content View', $.extend({}, settings.pageContext)];
 
     // Capture identity in addition, if applicable.
-    if(settings.hasOwnProperty('identity') && settings.identity.hasOwnProperty('identity') && settings.identity.hasOwnProperty('identityType')) {
+    if (settings.hasOwnProperty('identity') && settings.identity.hasOwnProperty('identity') && settings.identity.hasOwnProperty('identityType')) {
       var identity = {};
       identity[settings.identity.identity] = settings.identity.identityType;
       captureViewEvent.push({'identity': identity});
@@ -62,10 +62,10 @@ var _tcwq = _tcwq || [];
    */
   Drupal.acquia_lift.generateTrackingId = function () {
     var d = new Date().getTime();
-    settings.pageContext.trackingId = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+    settings.pageContext.trackingId = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
       var r = (d + Math.random()*16)%16 | 0;
       d = Math.floor(d/16);
-      return (c=='x' ? r : (r&0x7|0x8)).toString(16);
+      return (c==='x' ? r : (r&0x7|0x8)).toString(16);
     });
   };
 
@@ -73,11 +73,11 @@ var _tcwq = _tcwq || [];
    * Load and run capture scripts.
    */
   Drupal.acquia_lift.asyncLoad = function () {
-    var script = document.createElement('script'),
-      firstScript = document.getElementsByTagName('script')[0];
+    var script = document.createElement('script');
+    var firstScript = document.getElementsByTagName('script')[0];
     script.type = 'text/javascript';
     script.async = true;
-    script.src = ('https:' == document.location.protocol ? 'https://' : 'http://') + settings.credential.js_path;
+    script.src = ('https:' === document.location.protocol ? 'https://' : 'http://') + settings.credential.js_path;
     firstScript.parentNode.insertBefore(script, firstScript);
   };
 

@@ -5,6 +5,7 @@ namespace Drupal\acquia_lift\Tests;
 use Drupal\Component\Utility\Unicode;
 use Drupal\Core\Language\LanguageInterface;
 use Drupal\taxonomy\Entity\Vocabulary;
+use Drupal\taxonomy\Entity\Term;
 use Drupal\field\Entity\FieldStorageConfig;
 use Drupal\field\Entity\FieldConfig;
 
@@ -17,7 +18,7 @@ trait FixturesDataTrait {
    */
   private function createVocabulary() {
     // Create a vocabulary.
-    $vocabulary = entity_create('taxonomy_vocabulary', [
+    $vocabulary = Vocabulary::create([
       'name' => $this->randomMachineName(),
       'description' => $this->randomMachineName(),
       'vid' => Unicode::strtolower($this->randomMachineName()),
@@ -43,7 +44,7 @@ trait FixturesDataTrait {
   private function createTerm(Vocabulary $vocabulary, $values = []) {
     $filter_formats = filter_formats();
     $format = array_pop($filter_formats);
-    $term = entity_create('taxonomy_term', $values + [
+    $term = Term::create($values + [
       'name' => $this->randomMachineName(),
       'description' => [
         'value' => $this->randomMachineName(),

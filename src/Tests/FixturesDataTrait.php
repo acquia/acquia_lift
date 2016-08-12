@@ -46,7 +46,7 @@ trait FixturesDataTrait {
    * @return \Drupal\taxonomy\Entity\Term
    *   The new taxonomy term object.
    */
-  private function createTerm(Vocabulary $vocabulary, $values = array()) {
+  private function createTerm(Vocabulary $vocabulary, $values = []) {
     $filter_formats = filter_formats();
     $format = array_pop($filter_formats);
     $term = Term::create($values + [
@@ -80,14 +80,14 @@ trait FixturesDataTrait {
    *   The field storage's type.
    */
   private function createFieldWithStorage($field_name, $entity_type, $bundle, $target_bundles, $storage_settings, $storage_type) {
-    $field_storage = FieldStorageConfig::create(array(
+    $field_storage = FieldStorageConfig::create([
       'field_name' => $field_name,
       'entity_type' => $entity_type,
       'translatable' => FALSE,
       'settings' => $storage_settings,
       'type' => $storage_type,
       'cardinality' => 1,
-    ));
+    ]);
     $field_storage->save();
     $field = FieldConfig::create([
       'field_storage' => $field_storage,

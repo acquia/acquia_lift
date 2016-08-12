@@ -921,13 +921,13 @@ function acquia_lift_update_7205() {
     // We can't rely on personalize module being enabled so we can't use any of
     // its API functions or constants. Just talk directly to the db and hard-code
     // variable names and status codes.
-    $result = db_query("SELECT machine_name, label FROM personalize_agent WHERE plugin IN ('acquia_lift', 'acquia_lift_target', 'acquia_lift_learn')");
+    $result = db_query("SELECT machine_name, label FROM {personalize_agent} WHERE plugin IN ('acquia_lift', 'acquia_lift_target', 'acquia_lift_learn')");
     $now = time();
     foreach ($result as $row) {
       // Set the stop time of the agent.
       variable_set("personalize_campaign_{$row->machine_name}_stop", $now);
       // Set the status to 8, which is "completed"
-      variable_set("personalize_campaign_{$row->$machine_name}_status", 8);
+      variable_set("personalize_campaign_{$row->machine_name}_status", 8);
     }
     drupal_set_message(t('Acquia Lift module was disabled so v1 style tests could not be retired. All Lift personalizations have been set to completed.'), 'warning');
   }

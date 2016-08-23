@@ -29,7 +29,7 @@ class SettingsTest extends WebTestBase {
 
     $permissions = [
       'access administration pages',
-      'administer acquia lift',
+      'administer acquia_lift',
       'administer content types',
       'administer modules',
       'administer site configuration',

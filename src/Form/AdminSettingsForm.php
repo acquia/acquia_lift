@@ -106,6 +106,19 @@ class AdminSettingsForm extends ConfigFormBase {
       '#default_value' => $credential_settings['site_id'],
       '#required' => TRUE,
     ];
+    $form['public_key'] = array(
+      '#type' => 'textfield',
+      '#title' => t('Public Key'),
+      '#description' => 'Your Acquia Lift Public Key.',
+      '#default_value' => $credential_settings['public_key'],
+      '#required' => TRUE,
+    );
+    $form['secret_key'] = array(
+      '#type' => 'password',
+      '#description' => 'Your Acquia Lift Secret Key. Only required when setting it up for the first time or when you are changing the secret key.',
+      '#title' => t('Secret Key'),
+      '#default_value' => $credential_settings['secret_key'],
+    );
     $form['assets_url'] = [
       '#type' => 'textfield',
       '#title' => t('Assets URL'),
@@ -347,6 +360,8 @@ class AdminSettingsForm extends ConfigFormBase {
     $settings->set('credential.account_id', trim($values['account_id']));
     $settings->set('credential.site_id', trim($values['site_id']));
     $settings->set('credential.assets_url', 'https://' . $this->cleanUrl($values['assets_url']));
+    $settings->set('credential.public_key', $values['public_key']);
+    $settings->set('credential.secret_key', $values['secret_key']);
 
     $settings->clear('credential.decision_api_url');
     if (!empty($values['decision_api_url'])) {

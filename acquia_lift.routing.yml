@@ -21,13 +21,12 @@ entity.acquia_lift_slot.add_form:
   requirements:
     _entity_create_access: 'acquia_lift_slot'
 
-entity.acquia_lift_slot.canonical:
+entity.acquia_lift_slot.edit_form:
   path: '/admin/config/content/acquia-lift/slots/{acquia_lift_slot}'
   defaults:
-    _controller: '\Drupal\acquia_lift\Controller\SlotController::page'
-    _title_callback: '\Drupal\acquia_lift\Controller\SlotController::pageTitle'
+    _entity_form: 'acquia_lift_slot.edit'
   requirements:
-    _entity_access: 'acquia_lift_slot.view'
+    _entity_access: 'acquia_lift_slot.edit'
 
 entity.acquia_lift_slot.enable:
   path: '/admin/config/content/acquia-lift/slots/{acquia_lift_slot}/enable'
@@ -42,13 +41,6 @@ entity.acquia_lift_slot.disable:
     _entity_form: 'acquia_lift_slot.disable'
   requirements:
     _entity_access: 'acquia_lift_slot.disable'
-
-entity.acquia_lift_slot.edit_form:
-  path: '/admin/config/content/acquia-lift/slots/{acquia_lift_slot}/edit'
-  defaults:
-    _entity_form: 'acquia_lift_slot.edit'
-  requirements:
-    _entity_access: 'acquia_lift_slot.edit'
 
 entity.acquia_lift_slot.delete_form:
   path: '/admin/config/content/acquia-lift/slots/{acquia_lift_slot}/delete'

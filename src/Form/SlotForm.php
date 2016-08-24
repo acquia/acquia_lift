@@ -72,7 +72,9 @@ class SlotForm extends EntityForm {
     $form['label'] = [
       '#type' => 'textfield',
       '#title' => $this->t('Label'),
-      '#description' => $this->t('The administrative name used for this facet.'),
+      '#description' => $this->t(
+        'The administrative name used for this facet.'
+      ),
       '#default_value' => $slot->label(),
       '#required' => TRUE,
     ];
@@ -97,15 +99,6 @@ class SlotForm extends EntityForm {
       '#required' => TRUE,
     ];
 
-    $form['html'] = [
-      '#type' => 'textfield',
-      '#title' => $this->t('Html'),
-      '#description' => $this->t('The HTML used for this Slot.'),
-      '#default_value' => $slot->getHtml(),
-      '#maxlength' => 250,
-      '#required' => TRUE,
-    ];
-
     $form['visibility'] = array(
       '#type' => 'fieldset',
       '#title' => $this->t('Visibility settings'),
@@ -117,7 +110,9 @@ class SlotForm extends EntityForm {
     $form['visibility']['pages'] = [
       '#type' => 'textarea',
       '#title' => $this->t('Slot Pages'),
-      '#description' => $this->t('Enter the pages that you wish this slot is actived or deactivated on.'),
+      '#description' => $this->t(
+        'Enter the pages that you wish this slot is actived or deactivated on.'
+      ),
       '#default_value' => implode('\n', $visibility->getPages()),
       '#required' => TRUE,
     ];
@@ -129,8 +124,11 @@ class SlotForm extends EntityForm {
         'show' => $this->t('Show on given pages'),
         'hide' => $this->t('Hide on given pages'),
       ],
-      '#description' => $this->t('Do you want the listed pages to be shown or hidden on the given pages?'),
-      '#default_value' => !empty($visibility) ? $visibility->getCondition() : 'show',
+      '#description' => $this->t(
+        'Do you want the listed pages to be shown or hidden on the given pages?'
+      ),
+      '#default_value' => !empty($visibility) ? $visibility->getCondition(
+      ) : 'show',
       '#required' => TRUE,
     ];
 
@@ -153,15 +151,14 @@ class SlotForm extends EntityForm {
     /** @var \Drupal\acquia_lift\SlotInterface $slot */
     $slot = $this->getEntity();
 
-    $slot->setHtml($form_state->getValue('html'));
+    $slot->set('label', $form_state->getValue('label'));
+    $slot->setDescription($form_state->getValue('description'));
 
     $visibility = new Visibility();
     $visibility->setCondition($form_state->getValue('condition'));
     $visibility->setPages(explode('\n', $form_state->getValue('pages')));
     $slot->setVisibility($visibility);
 
-    $slot->setDescription($form_state->getValue('description'));
-    $slot->set('label', $form_state->getValue('label'));
   }
 
   public function save(array $form, FormStateInterface $form_state) {
@@ -178,7 +175,7 @@ class SlotForm extends EntityForm {
         $status = $slot->save();
 
         // Grab the slot in the format that the SDK expects it
-        $externalSlot = $slot->getExternalSlot();
+        //$externalSlot = $slot->getExternalSlot();
 
         // Grab the URL of the new entity. We'll use it in the message.
         $url = $slot->urlInfo();

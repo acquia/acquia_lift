@@ -22,7 +22,7 @@ class SlotDeleteConfirmForm extends EntityConfirmFormBase {
    * {@inheritdoc}
    */
   public function getCancelUrl() {
-    return new Url('entity.acquia_lift_slot.canonical', array('acquia_lift_slot' => $this->entity->id()));
+    return new Url('acquia_lift.slot.overview');
   }
 
   /**

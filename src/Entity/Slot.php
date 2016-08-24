@@ -44,6 +44,7 @@ use Drupal\Core\Entity\EntityStorageInterface;
  *     "label",
  *     "description",
  *     "visibility",
+ *     "css_url"
  *   },
  *   links = {
  *     "add-form" = "/admin/config/content/acquia-lift/slots/add-slot",
@@ -83,6 +84,13 @@ class Slot extends ConfigEntityBase implements SlotInterface {
    * @var string
    */
   protected $visibility;
+
+  /**
+   * The slot CSS Url
+   *
+   * @var string
+   */
+  protected $css_url;
 
   /**
    * The Lift API Helper.
@@ -125,8 +133,27 @@ class Slot extends ConfigEntityBase implements SlotInterface {
   /**
    * {@inheritdoc}
    */
+  public function getCssUrl() {
+    return $this->css_url;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function setCssUrl($cssUrl) {
+    $this->css_url = $cssUrl;
+    return $this;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
   public function getHtml() {
-    return "<div data-lift-slot=\"" . $this->uuid() . "\"/>";
+    $css_html = "";
+    if (!empty($this->css_url)) {
+      $css_html = " data-lift-css=\"" . $this->css_url . "\"";
+    }
+    return "<div data-lift-slot=\"" . $this->id() . "\"" . $css_html . "/>";
   }
 
   /**
@@ -152,7 +179,7 @@ class Slot extends ConfigEntityBase implements SlotInterface {
    */
   public function getExternalSlot() {
     $slot = new \Acquia\LiftClient\Entity\Slot();
-    $slot->setId($this->uuid());
+    $slot->setId($this->id());
     $slot->setLabel($this->label);
     $slot->setDescription($this->description);
     $slot->setStatus($this->status());
@@ -187,7 +214,7 @@ class Slot extends ConfigEntityBase implements SlotInterface {
         break;
       }
       try {
-        $entity->liftClient->getSlotManager()->delete($entity->uuid());
+        $entity->liftClient->getSlotManager()->delete($entity->id());
       } catch (\Exception $e) {
         drupal_set_message(t($e->getMessage()), 'error');
       }

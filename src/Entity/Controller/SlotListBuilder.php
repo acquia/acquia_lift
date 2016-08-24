@@ -106,7 +106,7 @@ class SlotListBuilder extends ConfigEntityListBuilder {
 
     // Verify if the slot is available in the Decision API.
     try {
-      $slot = $this->liftClient->getSlotManager()->get($entity->uuid());
+      $this->liftClient->getSlotManager()->get($entity->id());
     } catch (\Exception $e) {
       $status = FALSE;
       $status_label = $e->getMessage();

@@ -20,6 +20,9 @@ acquia_lift.slot.*:
     description:
       type: string
       label: 'Description'
+    css_url:
+      type: string
+      label: 'CSS URL'
     visibility:
       type: mapping
       label: 'Slot Visibility'

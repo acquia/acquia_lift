@@ -28,6 +28,25 @@ interface SlotInterface extends ConfigEntityInterface {
   public function setDescription($description);
 
   /**
+   * Get the Slot CSS Url Link.
+   *
+   * @return string
+   *   The Slot CSS Url.
+   */
+  public function getCssUrl();
+
+  /**
+   * Set the slot CSS Url link.
+   *
+   * @param string $cssUrl
+   *   The Slot CSS Url.
+   *
+   * @return $this
+   *   Returns self.
+   */
+  public function setCssUrl($cssUrl);
+
+  /**
    * Get the Slot's HTML.
    *
    * @return string

@@ -114,6 +114,14 @@ class SlotForm extends EntityForm {
       '#required' => TRUE,
     ];
 
+    $form['css_url'] = [
+      '#type' => 'textfield',
+      '#title' => $this->t('Slot CSS URL (Optional)'),
+      '#description' => $this->t('A slot can add 1 specific CSS file (full path) that it will read in and use while showing the content. Fill in the full path here.'),
+      '#default_value' => $slot->getCssUrl(),
+      '#required' => FALSE,
+    ];
+
     $form['visibility'] = array(
       '#type' => 'fieldset',
       '#title' => $this->t('Visibility settings'),
@@ -167,6 +175,7 @@ class SlotForm extends EntityForm {
 
     $slot->set('label', $form_state->getValue('label'));
     $slot->setDescription($form_state->getValue('description'));
+    $slot->setCssUrl($form_state->getValue('css_url'));
 
     $visibility = new Visibility();
     $visibility->setCondition($form_state->getValue('condition'));

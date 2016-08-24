@@ -1,4 +1,0 @@
-entity.acquia_lift_slot.edit_form:
-  title: 'Edit slot'
-  route_name: 'entity.acquia_lift_slot.edit_form'
-  group: acquia_lift_slot

@@ -54,7 +54,8 @@ class SlotForm extends EntityForm {
     $this->slotStorage = $entity_type_manager->getStorage('acquia_lift_slot');
     try {
       /** @var \Drupal\acquia_lift\Service\Helper\LiftAPIHelper $liftHelper */
-      $liftHelper =  \Drupal::getContainer()->get('acquia_lift.service.helper.lift_api_helper');
+      $liftHelper = \Drupal::getContainer()
+        ->get('acquia_lift.service.helper.lift_api_helper');
       $this->liftClient = $liftHelper->getLiftClient();
     } catch (AcquiaLiftException $e) {
       drupal_set_message($this->t($e->getMessage()), 'error');
@@ -141,8 +142,7 @@ class SlotForm extends EntityForm {
       '#description' => $this->t(
         'Do you want the listed pages to be shown or hidden on the given pages?'
       ),
-      '#default_value' => !empty($visibility) ? $visibility->getCondition(
-      ) : 'show',
+      '#default_value' => !empty($visibility) ? $visibility->getCondition() : 'show',
       '#required' => TRUE,
     ];
 
@@ -187,15 +187,6 @@ class SlotForm extends EntityForm {
         // allows Drupal to do this even if the method is not defined ahead of
         // time.
         $status = $slot->save();
-
-        // Grab the slot in the format that the SDK expects it
-        $externalSlot = $slot->getExternalSlot();
-
-        try {
-          $externalSlot = $this->liftClient->getSlotManager()->add($externalSlot);
-        } catch (\Exception $e) {
-          drupal_set_message($this->t($e->getMessage()), 'error');
-        }
 
         // Grab the URL of the new entity. We'll use it in the message.
         $url = $slot->urlInfo();

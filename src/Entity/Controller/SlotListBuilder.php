@@ -38,7 +38,8 @@ class SlotListBuilder extends ConfigEntityListBuilder {
     parent::__construct($entity_type, $storage);
     try {
       /** @var \Drupal\acquia_lift\Service\Helper\LiftAPIHelper $liftHelper */
-      $liftHelper =  \Drupal::getContainer()->get('acquia_lift.service.helper.lift_api_helper');
+      $liftHelper = \Drupal::getContainer()
+        ->get('acquia_lift.service.helper.lift_api_helper');
       $this->liftClient = $liftHelper->getLiftClient();
     } catch (AcquiaLiftException $e) {
       drupal_set_message($this->t($e->getMessage()), 'error');
@@ -72,7 +73,6 @@ class SlotListBuilder extends ConfigEntityListBuilder {
    */
   public function buildHeader() {
     return array(
-      'type' => $this->t('Type'),
       'label' => $this->t('Label'),
       'html' => $this->t('Html'),
       'status' => array(
@@ -106,7 +106,7 @@ class SlotListBuilder extends ConfigEntityListBuilder {
 
     // Verify if the slot is available in the Decision API.
     try {
-      $this->liftClient->getSlotManager()->get($entity->uuid());
+      $slot = $this->liftClient->getSlotManager()->get($entity->uuid());
     } catch (\Exception $e) {
       $status = FALSE;
       $status_label = $e->getMessage();
@@ -123,15 +123,11 @@ class SlotListBuilder extends ConfigEntityListBuilder {
 
     $row = array(
       'data' => array(
-        'type' => array(
-          'data' => $this->t('Slot for Drupal Block'),
-          'class' => array('acquia-lift-slot-type'),
-        ),
         'label' => array(
           'data' => array(
-              '#markup' => $entity->label(),
-              '#suffix' => '<div>' . $entity->getDescription() . '</div>',
-            ),
+            '#markup' => $entity->label(),
+            '#suffix' => '<div>' . $entity->getDescription() . '</div>',
+          ),
           'class' => array('acquia-lift-title'),
         ),
         'html' => array(
@@ -175,6 +171,23 @@ class SlotListBuilder extends ConfigEntityListBuilder {
         return strnatcasecmp($a->label(), $b->label());
       }
     );
+  }
+
+  /**
+   * Adds some descriptive text to our entity list.
+   *
+   * Typically, there's no need to override render(). You may wish to do so,
+   * however, if you want to add markup before or after the table.
+   *
+   * @return array
+   *   Renderable array.
+   */
+  public function render() {
+    $build['description'] = array(
+      '#markup' => $this->t("<p>This lists all the slots that were created by Drupal and synced up to the Acquia Lift Service. This does NOT list Slots created in the Acquia Lift Experience builder.</p>"),
+    );
+    $build[] = parent::render();
+    return $build;
   }
 
 }

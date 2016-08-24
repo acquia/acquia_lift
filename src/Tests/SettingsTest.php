@@ -42,7 +42,12 @@ class SettingsTest extends WebTestBase {
     $this->drupalCreateNode([
       'nid' => 90210,
       'type' => 'article',
-      'body' => [['value' => $this->randomMachineName(32), 'format' => 'full_html']],
+      'body' => [
+        [
+          'value' => $this->randomMachineName(32),
+          'format' => 'full_html'
+        ]
+      ],
     ]);
 
     // Create two vocabularies.
@@ -87,7 +92,7 @@ class SettingsTest extends WebTestBase {
     $field_mappings_settings = $this->getValidFieldMappingsSettings();
     $visibility_settings = $this->getValidVisibilitySettings();
 
-    $edit =[];
+    $edit = [];
     $edit += $this->convertToPostFormSettings($credential_settings, 'credential');
     $edit += $this->convertToPostFormSettings($identity_settings, 'identity');
     $edit += $this->convertToPostFormSettings($field_mappings_settings, 'field_mappings');

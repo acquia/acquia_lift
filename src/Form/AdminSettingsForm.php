@@ -84,7 +84,8 @@ class AdminSettingsForm extends ConfigFormBase {
    *   Credential form.
    */
   private function buildCredentialForm() {
-    $credential_settings = $this->config('acquia_lift.settings')->get('credential');
+    $credential_settings = $this->config('acquia_lift.settings')
+      ->get('credential');
 
     $form = [
       '#title' => t('Acquia Lift Credential'),
@@ -215,7 +216,8 @@ class AdminSettingsForm extends ConfigFormBase {
    *   Field mappings form.
    */
   private function buildFieldMappingsForm() {
-    $field_mappings_settings = $this->config('acquia_lift.settings')->get('field_mappings');
+    $field_mappings_settings = $this->config('acquia_lift.settings')
+      ->get('field_mappings');
     $field_names = $this->getTaxonomyTermFieldNames();
 
     $form = [
@@ -276,7 +278,8 @@ class AdminSettingsForm extends ConfigFormBase {
    *   Visibility form.
    */
   private function buildVisibilityForm() {
-    $visibility_settings = $this->config('acquia_lift.settings')->get('visibility');
+    $visibility_settings = $this->config('acquia_lift.settings')
+      ->get('visibility');
 
     $form = [
       '#title' => t('Visibility'),
@@ -318,10 +321,14 @@ class AdminSettingsForm extends ConfigFormBase {
     }
 
     $links = [];
-    $link_attributes = ['attributes' => ['target' => '_blank'], 'fragment' => 'edit-acquia-lift'];
+    $link_attributes = [
+      'attributes' => ['target' => '_blank'],
+      'fragment' => 'edit-acquia-lift'
+    ];
     foreach ($node_types as $node_type) {
       $url = Url::fromRoute('entity.node_type.edit_form', ['node_type' => $node_type->id()], $link_attributes);
-      $links[] = '<p>' . Link::fromTextAndUrl($node_type->label(), $url)->toString() . '</p>';
+      $links[] = '<p>' . Link::fromTextAndUrl($node_type->label(), $url)
+          ->toString() . '</p>';
     }
     $form['link_list']['#markup'] = t('Configure thumbnail URLs on each content type\'s edit page (in a new window).');
     $form['link_list']['#markup'] .= implode('', $links);

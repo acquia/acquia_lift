@@ -17,7 +17,8 @@ use Drupal\Core\Form\FormStateInterface;
  * Implements hook_help().
  */
 function acquia_lift_help($route_name) {
-  return \Drupal::service('acquia_lift.service.helper.help_message_helper')->getMessage($route_name);
+  return \Drupal::service('acquia_lift.service.helper.help_message_helper')
+    ->getMessage($route_name);
 }
 
 /**
@@ -25,12 +26,15 @@ function acquia_lift_help($route_name) {
  */
 function acquia_lift_page_attachments(array &$page) {
   // Create and attach settings and library only when path context agrees on attaching.
-  if (!\Drupal::service('acquia_lift.service.context.path_context')->shouldAttach()) {
+  if (!\Drupal::service('acquia_lift.service.context.path_context')
+    ->shouldAttach()
+  ) {
     return;
   }
 
   // Populate Html head.
-  \Drupal::service('acquia_lift.service.context.page_context')->populateHtmlHead($page['#attached']['html_head']);
+  \Drupal::service('acquia_lift.service.context.page_context')
+    ->populateHtmlHead($page['#attached']['html_head']);
 }
 
 /**
@@ -38,7 +42,8 @@ function acquia_lift_page_attachments(array &$page) {
  */
 function acquia_lift_form_node_type_form_alter(array &$form, FormStateInterface &$form_state) {
   $node_type = $form_state->getFormObject()->getEntity()->id();
-  $form['acquia_lift'] = \Drupal::service('acquia_lift.service.helper.node_type_thumbnail_form_helper')->getForm($node_type);
+  $form['acquia_lift'] = \Drupal::service('acquia_lift.service.helper.node_type_thumbnail_form_helper')
+    ->getForm($node_type);
   $form['actions']['submit']['#submit'][] = 'acquia_lift_form_node_type_form_submit';
 }
 
@@ -50,5 +55,6 @@ function acquia_lift_form_node_type_form_alter(array &$form, FormStateInterface 
 function acquia_lift_form_node_type_form_submit(array $form, FormStateInterface &$form_state) {
   $node_type = $form_state->getFormObject()->getEntity()->id();
   $settings = $form_state->getValue('acquia_lift');
-  \Drupal::service('acquia_lift.service.helper.node_type_thumbnail_form_helper')->saveSettings($node_type, $settings);
+  \Drupal::service('acquia_lift.service.helper.node_type_thumbnail_form_helper')
+    ->saveSettings($node_type, $settings);
 }

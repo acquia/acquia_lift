@@ -3,8 +3,10 @@
 namespace Drupal\acquia_lift\Entity;
 
 use Acquia\LiftClient\Entity\Visibility;
+use Drupal\acquia_lift\AcquiaLiftException;
 use Drupal\acquia_lift\SlotInterface;
 use Drupal\Core\Config\Entity\ConfigEntityBase;
+use Drupal\Core\Entity\EntityStorageInterface;
 
 /**
  * Defines the Drupal created slots.
@@ -83,6 +85,29 @@ class Slot extends ConfigEntityBase implements SlotInterface {
   protected $visibility;
 
   /**
+   * The Lift API Helper.
+   *
+   * @var \Acquia\LiftClient\Lift
+   */
+  protected $liftClient;
+
+  /**
+   * {@inheritdoc}
+   */
+  public function __construct(array $values, $entity_type) {
+    parent::__construct($values, $entity_type);
+
+    try {
+      /** @var \Drupal\acquia_lift\Service\Helper\LiftAPIHelper $liftHelper */
+      $liftHelper = \Drupal::getContainer()
+        ->get('acquia_lift.service.helper.lift_api_helper');
+      $this->liftClient = $liftHelper->getLiftClient();
+    } catch (AcquiaLiftException $e) {
+      drupal_set_message(t($e->getMessage()), 'error');
+    }
+  }
+
+  /**
    * {@inheritdoc}
    */
   public function getDescription() {
@@ -136,4 +161,36 @@ class Slot extends ConfigEntityBase implements SlotInterface {
     return $slot;
   }
 
+  /**
+   * {@inheritdoc}
+   */
+  public function save() {
+    $return = parent::save();
+    try {
+      $this->liftClient->getSlotManager()->add($this->getExternalSlot());
+    } catch (\Exception $e) {
+      drupal_set_message(t($e->getMessage()), 'error');
+    }
+    return $return;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public static function preDelete(EntityStorageInterface $storage, array $entities) {
+    parent::preDelete($storage, $entities);
+
+    foreach ($entities as $entity) {
+      if ($entity->isUninstalling() || $entity->isSyncing()) {
+        // During extension uninstall and configuration synchronization
+        // deletions are already managed.
+        break;
+      }
+      try {
+        $entity->liftClient->getSlotManager()->delete($entity->uuid());
+      } catch (\Exception $e) {
+        drupal_set_message(t($e->getMessage()), 'error');
+      }
+    }
+  }
 }

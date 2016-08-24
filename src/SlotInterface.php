@@ -2,8 +2,8 @@
 
 namespace Drupal\acquia_lift;
 
-use \Acquia\LiftClient\DataObject\Slot;
-use \Acquia\LiftClient\DataObject\Visibility;
+use \Acquia\LiftClient\Entity\Slot;
+use \Acquia\LiftClient\Entity\Visibility;
 use Drupal\Core\Config\Entity\ConfigEntityInterface;
 
 interface SlotInterface extends ConfigEntityInterface {
@@ -38,7 +38,7 @@ interface SlotInterface extends ConfigEntityInterface {
   /**
    * Get the Slot's visibility settings
    *
-   * @return \Acquia\LiftClient\DataObject\Visibility
+   * @return \Acquia\LiftClient\Entity\Visibility
    *   The slot's visibility.
    */
   public function getVisibility();
@@ -46,12 +46,20 @@ interface SlotInterface extends ConfigEntityInterface {
   /**
    * Set the Slot's visibility settings.
    *
-   * @param \Acquia\LiftClient\DataObject\Visibility $visibility
+   * @param \Acquia\LiftClient\Entity\Visibility $visibility
    *   The slot's visibility settings.
    *
    * @return $this
    *   Returns self.
    */
   public function setVisibility(Visibility $visibility);
+
+  /**
+   * Get the Config Entity as a Acquia Lift Slot object.
+   *
+   * @return \Acquia\LiftClient\Entity\Slot
+   *   The Acquia Lift Slot object.
+   */
+  public function getExternalSlot();
 
 }

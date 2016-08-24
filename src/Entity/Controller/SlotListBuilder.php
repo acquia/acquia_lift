@@ -2,14 +2,15 @@
 
 namespace Drupal\acquia_lift\Entity\Controller;
 
+use Drupal\acquia_lift\AcquiaLiftException;
 use Drupal\Component\Utility\Html;
-use Drupal\Core\Block\BlockManagerInterface;
 use Drupal\Core\Config\Entity\ConfigEntityInterface;
 use Drupal\Core\Config\Entity\ConfigEntityListBuilder;
 use Drupal\Core\Entity\EntityInterface;
 use Drupal\Core\Entity\EntityStorageInterface;
 use Drupal\Core\Entity\EntityTypeInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
+use GuzzleHttp\Exception\RequestException;
 
 /**
  * Builds a listing of slot entities.
@@ -17,11 +18,11 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
 class SlotListBuilder extends ConfigEntityListBuilder {
 
   /**
-   * The block manager.
+   * The Lift API Helper.
    *
-   * @var \Drupal\Core\Block\BlockManagerInterface
+   * @var \Acquia\LiftClient\Lift
    */
-  protected $blockManager;
+  protected $liftClient;
 
   /**
    * Constructs an IndexListBuilder object.
@@ -30,28 +31,30 @@ class SlotListBuilder extends ConfigEntityListBuilder {
    *   The entity type definition.
    * @param \Drupal\Core\Entity\EntityStorageInterface $storage
    *   The entity storage class.
-   * @param  \Drupal\Core\Block\BlockManagerInterface
-   *   The Block Manager.
+   * @param  \Drupal\acquia_lift\Service\Helper\LiftAPIHelper
+   *   The Lift API Helper.
    */
-  public function __construct(EntityTypeInterface $entity_type, EntityStorageInterface $storage, BlockManagerInterface $block_manager) {
+  public function __construct(EntityTypeInterface $entity_type, EntityStorageInterface $storage) {
     parent::__construct($entity_type, $storage);
-    $this->blockManager = $block_manager;
+    try {
+      /** @var \Drupal\acquia_lift\Service\Helper\LiftAPIHelper $liftHelper */
+      $liftHelper =  \Drupal::getContainer()->get('acquia_lift.service.helper.lift_api_helper');
+      $this->liftClient = $liftHelper->getLiftClient();
+    } catch (AcquiaLiftException $e) {
+      drupal_set_message($this->t($e->getMessage()), 'error');
+    }
   }
 
   /**
    * {@inheritdoc}
    */
   public static function createInstance(ContainerInterface $container, EntityTypeInterface $entity_type) {
-    /** @var \Drupal\Core\Block\BlockManagerInterface $block_manager */
-    $block_manager = $container->get('plugin.manager.block');
-
     $entity_storage = $container->get('entity_type.manager')
       ->getStorage($entity_type->id());
 
     return new static(
       $entity_type,
-      $entity_storage,
-      $block_manager
+      $entity_storage
     );
   }
 
@@ -71,11 +74,11 @@ class SlotListBuilder extends ConfigEntityListBuilder {
     return array(
       'type' => $this->t('Type'),
       'label' => $this->t('Label'),
+      'html' => $this->t('Html'),
       'status' => array(
         'data' => $this->t('Status'),
         'class' => array('checkbox'),
       ),
-      'html' => $this->t('Html'),
 
     ) + parent::buildHeader();
   }
@@ -88,15 +91,26 @@ class SlotListBuilder extends ConfigEntityListBuilder {
     $row = parent::buildRow($entity);
 
     $status = $entity->status();
-    $status_server = TRUE;
     $status_label = $status ? $this->t('Enabled') : $this->t('Disabled');
 
-    // Verify if entity is available in the decision API.
-    /*if ($entity->status() && !$entity->isAvailable()) {
+    try {
+      // Verify if we have a connection to the Decision API.
+      if (!isset($this->liftClient) || !$this->liftClient->ping()) {
         $status = FALSE;
-        $status_server = FALSE;
         $status_label = $this->t('Unavailable');
-    }*/
+      }
+    } catch (\Exception $e) {
+      $status = FALSE;
+      $status_label = $e->getMessage();
+    }
+
+    // Verify if the slot is available in the Decision API.
+    try {
+      $this->liftClient->getSlotManager()->get($entity->uuid());
+    } catch (\Exception $e) {
+      $status = FALSE;
+      $status_label = $e->getMessage();
+    }
 
     $status_icon = array(
       '#theme' => 'image',
@@ -120,13 +134,13 @@ class SlotListBuilder extends ConfigEntityListBuilder {
             ),
           'class' => array('acquia-lift-title'),
         ),
-        'status' => array(
-          'data' => $status_icon,
-          'class' => array('checkbox'),
-        ),
         'html' => array(
           'data' => $entity->getHtml(),
           'class' => array('acquia-lift-slot-html'),
+        ),
+        'status' => array(
+          'data' => $status_icon,
+          'class' => array('checkbox'),
         ),
         'operations' => $row['operations'],
       ),
@@ -139,7 +153,7 @@ class SlotListBuilder extends ConfigEntityListBuilder {
       )
     );
 
-    if (!$status_server) {
+    if (!$status) {
       $row['class'][] = 'color-error';
     }
 

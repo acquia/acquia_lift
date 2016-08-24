@@ -2,7 +2,7 @@
 
 namespace Drupal\acquia_lift\Entity;
 
-use Acquia\LiftClient\DataObject\Visibility;
+use Acquia\LiftClient\Entity\Visibility;
 use Drupal\acquia_lift\SlotInterface;
 use Drupal\Core\Config\Entity\ConfigEntityBase;
 
@@ -120,6 +120,20 @@ class Slot extends ConfigEntityBase implements SlotInterface {
   public function setVisibility(Visibility $visibility) {
     $this->visibility = $visibility->getArrayCopy();
     return $this;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function getExternalSlot() {
+    $slot = new \Acquia\LiftClient\Entity\Slot();
+    $slot->setId($this->uuid());
+    $slot->setLabel($this->label);
+    $slot->setDescription($this->description);
+    $slot->setStatus($this->status());
+    $slot->setHtml($this->getHtml());
+    $slot->setVisibility($this->getVisibility());
+    return $slot;
   }
 
 }

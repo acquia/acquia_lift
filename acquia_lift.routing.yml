@@ -15,14 +15,14 @@ acquia_lift.slot.overview:
     _entity_create_access: 'acquia_lift_slot'
 
 entity.acquia_lift_slot.add_form:
-  path: '/admin/config/content/acquia-lift/slots/add-facet'
+  path: '/admin/config/content/acquia-lift/slots/add'
   defaults:
     _entity_form: 'acquia_lift_slot.default'
   requirements:
     _entity_create_access: 'acquia_lift_slot'
 
 entity.acquia_lift_slot.edit_form:
-  path: '/admin/config/content/acquia-lift/slots/{acquia_lift_slot}'
+  path: '/admin/config/content/acquia-lift/slots/{acquia_lift_slot}/edit'
   defaults:
     _entity_form: 'acquia_lift_slot.edit'
   requirements:

@@ -4,6 +4,8 @@ namespace Drupal\acquia_lift\Form;
 
 use Acquia\LiftClient\Entity\Visibility;
 use Drupal\acquia_lift\AcquiaLiftException;
+use Drupal\acquia_lift\Exception\APILoaderException;
+use Drupal\acquia_lift\Lift\LiftAPI;
 use Drupal\Core\Entity\EntityForm;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\Core\Form\FormStateInterface;
@@ -37,13 +39,6 @@ class SlotForm extends EntityForm {
   protected $entityTypeManager;
 
   /**
-   * The Lift API Helper.
-   *
-   * @var \Acquia\LiftClient\Lift
-   */
-  protected $liftClient;
-
-  /**
    * Constructs an FacetDisplayForm object.
    *
    * @param \Drupal\Core\Entity\EntityTypeManagerInterface $entity_type_manager
@@ -52,14 +47,6 @@ class SlotForm extends EntityForm {
   public function __construct(EntityTypeManagerInterface $entity_type_manager) {
     $this->entityTypeManager = $entity_type_manager;
     $this->slotStorage = $entity_type_manager->getStorage('acquia_lift_slot');
-    try {
-      /** @var \Drupal\acquia_lift\Service\Helper\LiftAPIHelper $liftHelper */
-      $liftHelper = \Drupal::getContainer()
-        ->get('acquia_lift.service.helper.lift_api_helper');
-      $this->liftClient = $liftHelper->getLiftClient();
-    } catch (AcquiaLiftException $e) {
-      drupal_set_message($this->t($e->getMessage()), 'error');
-    }
   }
 
   /**
@@ -190,50 +177,52 @@ class SlotForm extends EntityForm {
 
     // Only save the index if the form doesn't need to be rebuilt.
     if (!$form_state->isRebuilding()) {
+      // Drupal already populated the form values in the entity object. Each
+      // form field was saved as a public variable in the entity class. PHP
+      // allows Drupal to do this even if the method is not defined ahead of
+      // time.
+      $status = FALSE;
       try {
-        // Drupal already populated the form values in the entity object. Each
-        // form field was saved as a public variable in the entity class. PHP
-        // allows Drupal to do this even if the method is not defined ahead of
-        // time.
         $status = $slot->save();
-
-        // Grab the URL of the new entity. We'll use it in the message.
-        $url = $slot->urlInfo();
-
-        // Create an edit link.
-        $edit_link = Link::fromTextAndUrl($this->t('Edit'), $url)->toString();
-
-        if ($status == SAVED_UPDATED) {
-          // If we edited an existing entity...
-          drupal_set_message(
-            t('Slot %label has been updated.', ['%label' => $slot->label()])
-          );
-          $this->logger('contact')->notice(
-            'Slot %label has been updated.',
-            ['%label' => $slot->label(), 'link' => $edit_link]
-          );
-        }
-        else {
-          // If we created a new entity...
-          drupal_set_message(
-            $this->t(
-              'Slot %label has been added.',
-              array('%label' => $slot->label())
-            )
-          );
-          $this->logger('contact')->notice(
-            'Slot %label has been added.',
-            ['%label' => $slot->label(), 'link' => $edit_link]
-          );
-        }
-
-        // Redirect the user back to the listing route after the save operation.
-        $form_state->setRedirect('acquia_lift.slot.overview');
-      } catch (AcquiaLiftException $e) {
+      } catch (\Exception $e) {
         $form_state->setRebuild();
         watchdog_exception('acquia_lift', $e);
         drupal_set_message($this->t('The slot could not be saved.'), 'error');
       }
+
+      // Grab the URL of the new entity. We'll use it in the message.
+      $url = $slot->urlInfo();
+
+      // Create an edit link.
+      $edit_link = Link::fromTextAndUrl($this->t('Edit'), $url)->toString();
+
+      if ($status == SAVED_UPDATED) {
+        // If we edited an existing entity...
+        drupal_set_message(
+          t('Slot %label has been updated.', ['%label' => $slot->label()])
+        );
+        $this->logger('contact')->notice(
+          'Slot %label has been updated.',
+          ['%label' => $slot->label(), 'link' => $edit_link]
+        );
+      }
+      else {
+        // If we created a new entity...
+        drupal_set_message(
+          $this->t(
+            'Slot %label has been added.',
+            array('%label' => $slot->label())
+          )
+        );
+        $this->logger('contact')->notice(
+          'Slot %label has been added.',
+          ['%label' => $slot->label(), 'link' => $edit_link]
+        );
+      }
+
+      // Redirect the user back to the listing route after the save operation.
+      $form_state->setRedirect('acquia_lift.slot.overview');
+
     }
   }
 }

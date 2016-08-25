@@ -14,7 +14,7 @@ acquia_lift.settings:
           label: 'Site ID'
         public_key:
           type: string
-          label: "Acquia Lift API Key."
+          label: "Acquia Lift API Public Key."
         secret_key:
           type: string
           label: "Acquia Lift API Secret Key."

@@ -1,6 +1,6 @@
 acquia_lift.slot.*:
   type: config_entity
-  label : 'Facet'
+  label : 'Slot'
   mapping:
     id:
       type: string
@@ -35,4 +35,4 @@ acquia_lift.slot.*:
             description: 'The page this slot applies to'
         condition:
           type: string
-          label: 'show or hide the slot on gives pages.'
+          label: 'Show or hide the slot on given pages'

@@ -2,7 +2,7 @@
 
 namespace Drupal\acquia_lift\Entity\Controller;
 
-use Drupal\acquia_lift\AcquiaLiftException;
+use Drupal\acquia_lift\Lift\APILoader;
 use Drupal\Component\Utility\Html;
 use Drupal\Core\Config\Entity\ConfigEntityInterface;
 use Drupal\Core\Config\Entity\ConfigEntityListBuilder;
@@ -10,7 +10,6 @@ use Drupal\Core\Entity\EntityInterface;
 use Drupal\Core\Entity\EntityStorageInterface;
 use Drupal\Core\Entity\EntityTypeInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
-use GuzzleHttp\Exception\RequestException;
 
 /**
  * Builds a listing of slot entities.
@@ -25,25 +24,25 @@ class SlotListBuilder extends ConfigEntityListBuilder {
   protected $liftClient;
 
   /**
+   * The Lift API Loader.
+   *
+   * @var \Drupal\acquia_lift\Lift\APILoader
+   */
+  protected $apiLoader;
+
+  /**
    * Constructs an IndexListBuilder object.
    *
    * @param \Drupal\Core\Entity\EntityTypeInterface $entity_type
    *   The entity type definition.
    * @param \Drupal\Core\Entity\EntityStorageInterface $storage
    *   The entity storage class.
-   * @param  \Drupal\acquia_lift\Service\Helper\LiftAPIHelper
-   *   The Lift API Helper.
+   * @param  \Drupal\acquia_lift\Lift\APILoader $api_loader
+   *   The Lift API Loader.
    */
-  public function __construct(EntityTypeInterface $entity_type, EntityStorageInterface $storage) {
+  public function __construct(EntityTypeInterface $entity_type, EntityStorageInterface $storage, APILoader $api_loader) {
     parent::__construct($entity_type, $storage);
-    try {
-      /** @var \Drupal\acquia_lift\Service\Helper\LiftAPIHelper $liftHelper */
-      $liftHelper = \Drupal::getContainer()
-        ->get('acquia_lift.service.helper.lift_api_helper');
-      $this->liftClient = $liftHelper->getLiftClient();
-    } catch (AcquiaLiftException $e) {
-      drupal_set_message($this->t($e->getMessage()), 'error');
-    }
+    $this->apiLoader = $api_loader;
   }
 
   /**
@@ -53,9 +52,13 @@ class SlotListBuilder extends ConfigEntityListBuilder {
     $entity_storage = $container->get('entity_type.manager')
       ->getStorage($entity_type->id());
 
+    /** @var \Drupal\acquia_lift\Lift\APILoader $api_loader */
+    $api_loader = $container->get('acquia_lift.lift.api_loader');
+
     return new static(
       $entity_type,
-      $entity_storage
+      $entity_storage,
+      $api_loader
     );
   }
 
@@ -93,9 +96,12 @@ class SlotListBuilder extends ConfigEntityListBuilder {
     $status = $entity->status();
     $status_label = $status ? $this->t('Enabled') : $this->t('Disabled');
 
+    // Get our liftClient
+    $liftClient = NULL;
     try {
+      $liftClient = $this->apiLoader->getLiftClient();
       // Verify if we have a connection to the Decision API.
-      if (!isset($this->liftClient) || !$this->liftClient->ping()) {
+      if (!isset($liftClient) || !$liftClient->ping()) {
         $status = FALSE;
         $status_label = $this->t('Unavailable');
       }
@@ -104,12 +110,14 @@ class SlotListBuilder extends ConfigEntityListBuilder {
       $status_label = $e->getMessage();
     }
 
-    // Verify if the slot is available in the Decision API.
-    try {
-      $this->liftClient->getSlotManager()->get($entity->id());
-    } catch (\Exception $e) {
-      $status = FALSE;
-      $status_label = $e->getMessage();
+    if ($liftClient instanceof \Acquia\LiftClient\Lift) {
+      // Verify if the slot is available in the Decision API.
+      try {
+        $liftClient->getSlotManager()->get($entity->id());
+      } catch (\Exception $e) {
+        $status = FALSE;
+        $status_label = $e->getMessage();
+      }
     }
 
     $status_icon = array(
@@ -184,7 +192,7 @@ class SlotListBuilder extends ConfigEntityListBuilder {
    */
   public function render() {
     $build['description'] = array(
-      '#markup' => $this->t("<p>This lists all the slots that were created by Drupal and synced up to the Acquia Lift Service. This does NOT list Slots created in the Acquia Lift Experience builder.</p>"),
+      '#markup' => "<p>" . $this->t("This lists all the slots that were created by Drupal and synced up to the Acquia Lift Service. This does NOT list Slots created in the Acquia Lift Experience builder.") . "</p>",
     );
     $build[] = parent::render();
     return $build;

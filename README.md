@@ -15,3 +15,6 @@ $liftAPILoader->getLiftClient()->ping();
 Make sure you wrap it in a try { ... } catch (\Exception $e) { } routine as it
 could throw errors if it is unable to make a connection. If you want to know
 what you can do with the API, see documentation at https://github.com/acquia/lift-sdk-php
+
+You can also use Drupal API's to create a new Slot Config Entity and then it
+will appear in the list. Please see the Drupal documentation on how to do this.

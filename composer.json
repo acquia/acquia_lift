@@ -6,7 +6,7 @@
   "repositories": [
     {
       "type": "vcs",
-      "url": "https://github.com/acquia/lift-sdk-php"
+      "url": "https://github.com/nickveenhof/lift-sdk-php"
     }
   ],
   "require": {

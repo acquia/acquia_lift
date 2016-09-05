@@ -12,6 +12,12 @@ acquia_lift.settings:
         site_id:
           type: string
           label: 'Site ID'
+        public_key:
+          type: string
+          label: "Acquia Lift API Public Key."
+        secret_key:
+          type: string
+          label: "Acquia Lift API Secret Key."
         assets_url:
           type: uri
           label: 'Assets URL'

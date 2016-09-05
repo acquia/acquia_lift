@@ -129,7 +129,7 @@ class PageContext {
     }
 
     $node = $request->attributes->get('node');
-    if (empty($node) || ! $node instanceof NodeInterface) {
+    if (empty($node) || !$node instanceof NodeInterface) {
       return;
     }
 
@@ -268,7 +268,7 @@ class PageContext {
   private function getAvailableFieldVocabularyNames(NodeInterface $node) {
     $available_field_vocabulary_names = [];
     foreach ($this->fieldMappings as $page_context_name => $field_name) {
-      if(!isset($node->{$field_name})) {
+      if (!isset($node->{$field_name})) {
         continue;
       }
       $vocabulary_names = $node->{$field_name}->getSetting('handler_settings')['target_bundles'];

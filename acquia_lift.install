@@ -12,7 +12,8 @@ function acquia_lift_requirements($phase) {
     return $requirements;
   }
 
-  $credentialSettings = \Drupal::config('acquia_lift.settings')->get('credential');
+  $credentialSettings = \Drupal::config('acquia_lift.settings')
+    ->get('credential');
   if (!SettingsHelper::isInvalidCredential($credentialSettings)) {
     return $requirements;
   }

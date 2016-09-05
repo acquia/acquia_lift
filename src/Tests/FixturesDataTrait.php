@@ -45,15 +45,15 @@ trait FixturesDataTrait {
     $filter_formats = filter_formats();
     $format = array_pop($filter_formats);
     $term = Term::create($values + [
-      'name' => $this->randomMachineName(),
-      'description' => [
-        'value' => $this->randomMachineName(),
-        // Use the first available text format.
-        'format' => $format->id(),
-      ],
-      'vid' => $vocabulary->id(),
-      'langcode' => LanguageInterface::LANGCODE_NOT_SPECIFIED,
-    ]);
+        'name' => $this->randomMachineName(),
+        'description' => [
+          'value' => $this->randomMachineName(),
+          // Use the first available text format.
+          'format' => $format->id(),
+        ],
+        'vid' => $vocabulary->id(),
+        'langcode' => LanguageInterface::LANGCODE_NOT_SPECIFIED,
+      ]);
     $term->save();
     return $term;
   }

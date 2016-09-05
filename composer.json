@@ -1,0 +1,15 @@
+{
+  "name": "acquia/lift",
+  "type": "drupal-module",
+  "description": "Module allowing Drupal sites to connect to Acquia Lift.",
+  "license": "proprietary",
+  "repositories": [
+    {
+      "type": "vcs",
+      "url": "https://github.com/nickveenhof/lift-sdk-php"
+    }
+  ],
+  "require": {
+    "acquia/lift-sdk-php": "dev-master"
+  }
+}

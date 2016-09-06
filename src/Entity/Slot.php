@@ -47,11 +47,11 @@ use Acquia\LiftClient\Entity\Slot as LiftClientSlot;
  *     "css_url"
  *   },
  *   links = {
- *     "add-form" = "/admin/config/content/acquia-lift/slots/add",
- *     "edit-form" = "/admin/config/content/acquia-lift/slots/{acquia_lift_slot}/edit",
- *     "delete-form" = "/admin/config/content/acquia-lift/slots/{acquia_lift_slot}/delete",
- *     "disable" = "/admin/config/content/acquia-lift/slots/{acquia_lift_slot}/disable",
- *     "enable" = "/admin/config/content/acquia-lift/slots/{acquia_lift_slot}/enable",
+ *     "add-form" = "/admin/config/content/acquia-lift/slot/add",
+ *     "edit-form" = "/admin/config/content/acquia-lift/slot/{acquia_lift_slot}/edit",
+ *     "delete-form" = "/admin/config/content/acquia-lift/slot/{acquia_lift_slot}/delete",
+ *     "disable" = "/admin/config/content/acquia-lift/slot/{acquia_lift_slot}/disable",
+ *     "enable" = "/admin/config/content/acquia-lift/slot/{acquia_lift_slot}/enable",
  *   }
  * )
  */

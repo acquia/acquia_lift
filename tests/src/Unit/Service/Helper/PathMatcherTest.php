@@ -1,6 +1,6 @@
 <?php
 
-namespace Drupal\Tests\acquia_lift\Service\Helper;
+namespace Drupal\Tests\acquia_lift\Unit\Service\Helper;
 
 use Drupal\Tests\UnitTestCase;
 use Drupal\acquia_lift\Service\Helper\PathMatcher;

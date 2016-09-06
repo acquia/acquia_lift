@@ -18,3 +18,22 @@ what you can do with the API, see documentation at https://github.com/acquia/lif
 
 You can also use Drupal API's to create a new Slot Config Entity and then it
 will appear in the list. Please see the Drupal documentation on how to do this.
+
+## How to run all the tests (Simpletests and PHPUnit tests)
+
+Replace the url with the url corresponding to the folder you are currently in or
+however you have defined your webserver. the verbose and browser options.
+Required for the web tests that exist in the module.
+
+```
+php core/scripts/run-tests.sh --url http://drupal8lift3.dev --class "Drupal\acquia_lift\Tests\SettingsTest"
+```
+
+## How to run only PHPUnit tests using the PHPunit binary
+
+Follow the guide here to get started: https://www.drupal.org/node/2116263
+
+```
+cd core
+../vendor/bin/phpunit --group acquia_lift
+```

@@ -2,6 +2,7 @@
 
 namespace Drupal\acquia_lift\Service\Context;
 
+use Serializable;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Component\Routing\Route;
@@ -378,4 +379,5 @@ class PageContext {
     // Attach Lift's JavaScript.
     $htmlHead[] = $this->getJavaScriptTagRenderArray();
   }
+
 }

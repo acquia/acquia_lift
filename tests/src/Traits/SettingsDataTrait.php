@@ -1,6 +1,6 @@
 <?php
 
-namespace Drupal\Tests\acquia_lift\Unit\Traits;
+namespace Drupal\Tests\acquia_lift\Traits;
 
 /**
  * Settings Data Trait.

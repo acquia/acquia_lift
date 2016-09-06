@@ -1,0 +1,3899 @@
+From 4c4c0522670c53e3ddff14043fc28528209461e6 Mon Sep 17 00:00:00 2001
+From: Nick Veenhof <nick.veenhof@gmail.com>
+Date: Tue, 23 Aug 2016 15:20:56 +0200
+Subject: [PATCH 01/11] Allowing slots for blocks creation in Drupal
+
+---
+ acquia_lift.contextual.yml             |   4 +
+ acquia_lift.links.action.yml           |   5 +
+ acquia_lift.links.task.yml             |  10 ++
+ acquia_lift.permissions.yml            |   2 +-
+ acquia_lift.routing.yml                |  53 +++++++-
+ composer.json                          |  15 +++
+ config/schema/acquia_lift.settings.yml |   6 +
+ config/schema/acquia_lift.slot.yml     |  38 ++++++
+ src/AcquiaLiftException.php            |   8 ++
+ src/Controller/SlotController.php      |  46 +++++++
+ src/Entity/Slot.php                    | 157 +++++++++++++++++++++++
+ src/Form/AdminSettingsForm.php         |  15 +++
+ src/Form/SlotDeleteConfirmForm.php     |  51 ++++++++
+ src/Form/SlotDisableConfirmForm.php    |  54 ++++++++
+ src/Form/SlotEnableConfirmForm.php     |  54 ++++++++
+ src/Form/SlotForm.php                  | 222 +++++++++++++++++++++++++++++++++
+ src/SlotInterface.php                  |  77 ++++++++++++
+ src/SlotListBuilder.php                | 104 +++++++++++++++
+ src/Tests/SettingsTest.php             |   2 +-
+ 19 files changed, 920 insertions(+), 3 deletions(-)
+ create mode 100644 acquia_lift.contextual.yml
+ create mode 100644 acquia_lift.links.action.yml
+ create mode 100644 acquia_lift.links.task.yml
+ create mode 100644 composer.json
+ create mode 100644 config/schema/acquia_lift.slot.yml
+ create mode 100644 src/AcquiaLiftException.php
+ create mode 100644 src/Controller/SlotController.php
+ create mode 100644 src/Entity/Slot.php
+ create mode 100644 src/Form/SlotDeleteConfirmForm.php
+ create mode 100644 src/Form/SlotDisableConfirmForm.php
+ create mode 100644 src/Form/SlotEnableConfirmForm.php
+ create mode 100644 src/Form/SlotForm.php
+ create mode 100644 src/SlotInterface.php
+ create mode 100644 src/SlotListBuilder.php
+
+diff --git a/acquia_lift.contextual.yml b/acquia_lift.contextual.yml
+new file mode 100644
+index 0000000..8cc4360
+--- /dev/null
++++ b/acquia_lift.contextual.yml
+@@ -0,0 +1,4 @@
++entity.acquia_lift_slot.edit_form:
++  title: 'Edit slot'
++  route_name: 'entity.acquia_lift_slot.edit_form'
++  group: acquia_lift_slot
+diff --git a/acquia_lift.links.action.yml b/acquia_lift.links.action.yml
+new file mode 100644
+index 0000000..2b46dc0
+--- /dev/null
++++ b/acquia_lift.links.action.yml
+@@ -0,0 +1,5 @@
++entity.acquia_lift_slot.add_form:
++  route_name: entity.acquia_lift_slot.add_form
++  title: 'Add slot'
++  appears_on:
++    - acquia_lift.slot.overview
+diff --git a/acquia_lift.links.task.yml b/acquia_lift.links.task.yml
+new file mode 100644
+index 0000000..4fa01d0
+--- /dev/null
++++ b/acquia_lift.links.task.yml
+@@ -0,0 +1,10 @@
++acquia_lift.admin_settings_form:
++  route_name: acquia_lift.admin_settings_form
++  title: 'Connection'
++  base_route: acquia_lift.admin_settings_form
++
++acquia_lift.slot.overview:
++  route_name: acquia_lift.slot.overview
++  title: 'Slots'
++  weight: 50
++  base_route: acquia_lift.admin_settings_form
+diff --git a/acquia_lift.permissions.yml b/acquia_lift.permissions.yml
+index fcb333d..cfcfd28 100644
+--- a/acquia_lift.permissions.yml
++++ b/acquia_lift.permissions.yml
+@@ -1,3 +1,3 @@
+-administer acquia lift:
++administer acquia_lift:
+   title: Administer Acquia Lift
+   description: Administer settings of Acquia Lift module.
+diff --git a/acquia_lift.routing.yml b/acquia_lift.routing.yml
+index 603a4c4..e87ded9 100644
+--- a/acquia_lift.routing.yml
++++ b/acquia_lift.routing.yml
+@@ -4,4 +4,55 @@ acquia_lift.admin_settings_form:
+     _form: '\Drupal\acquia_lift\Form\AdminSettingsForm'
+     _title: 'Acquia Lift settings'
+   requirements:
+-    _permission: 'administer acquia lift'
++    _permission: 'administer acquia_lift'
++
++acquia_lift.slot.overview:
++  path: '/admin/config/content/acquia-lift/slots'
++  defaults:
++    _title: 'Slots'
++    _entity_list: 'acquia_lift_slot'
++  requirements:
++    _entity_create_access: 'acquia_lift_slot'
++
++entity.acquia_lift_slot.add_form:
++  path: '/admin/config/content/acquia-lift/slots/add-facet'
++  defaults:
++    _entity_form: 'acquia_lift_slot.default'
++  requirements:
++    _entity_create_access: 'acquia_lift_slot'
++
++entity.acquia_lift_slot.canonical:
++  path: '/admin/config/content/acquia-lift/slots/{acquia_lift_slot}'
++  defaults:
++    _controller: '\Drupal\acquia_lift\Controller\SlotController::page'
++    _title_callback: '\Drupal\acquia_lift\Controller\SlotController::pageTitle'
++  requirements:
++    _entity_access: 'acquia_lift_slot.view'
++
++entity.acquia_lift_slot.enable:
++  path: '/admin/config/content/acquia-lift/slots/{acquia_lift_slot}/enable'
++  defaults:
++    _entity_form: 'acquia_lift_slot.enable'
++  requirements:
++    _entity_access: 'acquia_lift_slot.enable'
++
++entity.acquia_lift_slot.disable:
++  path: '/admin/config/content/acquia-lift/slots/{acquia_lift_slot}/disable'
++  defaults:
++    _entity_form: 'acquia_lift_slot.disable'
++  requirements:
++    _entity_access: 'acquia_lift_slot.disable'
++
++entity.acquia_lift_slot.edit_form:
++  path: '/admin/config/content/acquia-lift/slots/{acquia_lift_slot}/edit'
++  defaults:
++    _entity_form: 'acquia_lift_slot.edit'
++  requirements:
++    _entity_access: 'acquia_lift_slot.edit'
++
++entity.acquia_lift_slot.delete_form:
++  path: '/admin/config/content/acquia-lift/slots/{acquia_lift_slot}/delete'
++  defaults:
++    _entity_form: 'acquia_lift_slot.delete'
++  requirements:
++    _entity_access: 'acquia_lift_slot.delete'
+\ No newline at end of file
+diff --git a/composer.json b/composer.json
+new file mode 100644
+index 0000000..2f74fc2
+--- /dev/null
++++ b/composer.json
+@@ -0,0 +1,15 @@
++{
++  "name": "acquia/lift",
++  "type": "drupal-module",
++  "description": "Module allowing Drupal sites to connect to Acquia Lift.",
++  "license": "proprietary",
++  "repositories": [
++    {
++      "type": "vcs",
++      "url": "https://github.com/acquia/lift-sdk-php"
++    }
++  ],
++  "require": {
++    "acquia/lift-sdk-php": "dev-master"
++  }
++}
+diff --git a/config/schema/acquia_lift.settings.yml b/config/schema/acquia_lift.settings.yml
+index 134dfb6..2917d7b 100644
+--- a/config/schema/acquia_lift.settings.yml
++++ b/config/schema/acquia_lift.settings.yml
+@@ -12,6 +12,12 @@ acquia_lift.settings:
+         site_id:
+           type: string
+           label: 'Site ID'
++        public_key:
++          type: string
++          label: "Acquia Lift API Key."
++        secret_key:
++          type: string
++          label: "Acquia Lift API Secret Key."
+         assets_url:
+           type: uri
+           label: 'Assets URL'
+diff --git a/config/schema/acquia_lift.slot.yml b/config/schema/acquia_lift.slot.yml
+new file mode 100644
+index 0000000..bdf4aba
+--- /dev/null
++++ b/config/schema/acquia_lift.slot.yml
+@@ -0,0 +1,38 @@
++acquia_lift.slot.*:
++  type: config_entity
++  label : 'Facet'
++  mapping:
++    id:
++      type: string
++      label: 'ID'
++    uuid:
++      type: string
++      label: 'UUID'
++    langcode:
++      type: string
++      label: 'Language code'
++    status:
++      type: boolean
++      label: 'Status'
++    label:
++      type: label
++      label: 'Name'
++    description:
++      type: string
++      label: 'Description'
++    html:
++      type: string
++      label: 'Html'
++    visibility:
++      type: mapping
++      label: 'Slot Visibility'
++      mapping:
++        pages:
++          type: sequence
++          label: 'The pages this slot applies to'
++          sequence:
++            type: string
++            description: 'The page this slot applies to'
++        condition:
++          type: string
++          label: 'show or hide the slot on gives pages.'
+\ No newline at end of file
+diff --git a/src/AcquiaLiftException.php b/src/AcquiaLiftException.php
+new file mode 100644
+index 0000000..e2f6aa0
+--- /dev/null
++++ b/src/AcquiaLiftException.php
+@@ -0,0 +1,8 @@
++<?php
++
++namespace Drupal\acquia_lift;
++
++/**
++ * Represents an exception that occurred in some part of the Acquia Lift Module.
++ */
++class AcquiaLiftException extends \Exception {}
+diff --git a/src/Controller/SlotController.php b/src/Controller/SlotController.php
+new file mode 100644
+index 0000000..0356254
+--- /dev/null
++++ b/src/Controller/SlotController.php
+@@ -0,0 +1,46 @@
++<?php
++
++namespace Drupal\acquia_lift\Controller;
++
++use Drupal\Component\Render\FormattableMarkup;
++use Drupal\Core\Controller\ControllerBase;
++use Drupal\acquia_lift\SlotInterface;
++
++/**
++ * Provides route responses for facets.
++ */
++class SlotController extends ControllerBase {
++
++    /**
++     * Displays information about an Acquia Lift Slot.
++     *
++     * @param \Drupal\acquia_lift\SlotInterface $slot
++     *   The slot to display.
++     *
++     * @return array
++     *   An array suitable for drupal_render().
++     */
++    public function page(SlotInterface $slot) {
++        // Build the search index information.
++        $render = array(
++          'view' => array(
++            '#theme' => 'acquia_lift_slot',
++            '#slot' => $slot,
++          ),
++        );
++        return $render;
++    }
++
++    /**
++     * Returns the page title for an slot's "View" tab.
++     *
++     * @param \Drupal\acquia_lift\SlotInterface $slot
++     *   The facet that is displayed.
++     *
++     * @return string
++     *   The page title.
++     */
++    public function pageTitle(SlotInterface $slot) {
++        return new FormattableMarkup('@title', array('@title' => $slot->label()));
++    }
++}
+diff --git a/src/Entity/Slot.php b/src/Entity/Slot.php
+new file mode 100644
+index 0000000..2928aa7
+--- /dev/null
++++ b/src/Entity/Slot.php
+@@ -0,0 +1,157 @@
++<?php
++
++namespace Drupal\acquia_lift\Entity;
++
++use Acquia\LiftClient\DataObject\Visibility;
++use Drupal\acquia_lift\SlotInterface;
++use Drupal\Core\Config\Entity\ConfigEntityBase;
++
++/**
++ * Defines the Drupal created slots.
++ *
++ * @ConfigEntityType(
++ *   id = "acquia_lift_slot",
++ *   label = @Translation("Slot"),
++ *   label_singular = @Translation("slot"),
++ *   label_plural = @Translation("slots"),
++ *   label_count = @PluralTranslation(
++ *     singular = "@count slot",
++ *     plural = "@count slots",
++ *   ),
++ *   handlers = {
++ *     "storage" = "Drupal\Core\Config\Entity\ConfigEntityStorage",
++ *     "list_builder" = "Drupal\acquia_lift\SlotListBuilder",
++ *     "form" = {
++ *       "default" = "Drupal\acquia_lift\Form\SlotForm",
++ *       "edit" = "Drupal\acquia_lift\Form\SlotForm",
++ *       "delete" = "Drupal\acquia_lift\Form\SlotDeleteConfirmForm",
++ *       "disable" = "Drupal\acquia_lift\Form\SlotDisableConfirmForm",
++ *       "enable" = "Drupal\acquia_lift\Form\SlotEnableConfirmForm",
++ *     },
++ *   },
++ *   admin_permission = "administer acquia_lift",
++ *   config_prefix = "slot",
++ *   entity_keys = {
++ *     "id" = "id",
++ *     "label" = "label",
++ *     "uuid" = "uuid",
++ *     "status" = "status",
++ *   },
++ *   config_export = {
++ *     "id",
++ *     "label",
++ *     "description",
++ *     "html",
++ *     "visibility",
++ *   },
++ *   links = {
++ *     "canonical" = "/admin/config/content/acquia-lift/slots",
++ *     "add-form" = "/admin/config/content/acquia-lift/slots/add-slot",
++ *     "edit-form" = "/admin/config/content/acquia-lift/slots/{acquia_lift_slot}/edit",
++ *     "delete-form" = "/admin/config/content/acquia-lift/slots/{acquia_lift_slot}/delete",
++ *     "disable" = "/admin/config/content/acquia-lift/slots/{acquia_lift_slot}/disable",
++ *     "enable" = "/admin/config/content/acquia-lift/slots/{acquia_lift_slot}/enable",
++ *   }
++ * )
++ */
++class Slot extends ConfigEntityBase implements SlotInterface {
++
++    /**
++     * The ID of the slot.
++     *
++     * @var string
++     */
++    protected $id;
++
++    /**
++     * The slot label.
++     *
++     * @var string
++     */
++    protected $label;
++
++    /**
++     * A string describing the slot.
++     *
++     * @var string
++     */
++    protected $description;
++
++    /**
++     * The HTML of the slot identifier.
++     *
++     * @var string
++     */
++    protected $html;
++
++    /**
++     * Slot Visibility Settings.
++     *
++     * @var array
++     */
++    protected $visibility;
++
++    /**
++     * {@inheritdoc}
++     */
++    public function getDescription() {
++        return $this->description;
++    }
++
++    /**
++     * {@inheritdoc}
++     */
++    public function setDescription($description) {
++        $this->description = $description;
++        return $this;
++    }
++
++    /**
++     * {@inheritdoc}
++     */
++    public function getHtml() {
++        return $this->html;
++    }
++
++    /**
++     * {@inheritdoc}
++     */
++    public function setHtml($html) {
++        $this->html = $html;
++        return $this;
++    }
++
++    /**
++     * {@inheritdoc}
++     */
++    public function getVisibility() {
++        if (!empty($this->visibility) && is_array($this->visibility)) {
++            return new Visibility($this->visibility);
++        }
++        return [];
++
++    }
++
++    /**
++     * {@inheritdoc}
++     */
++    public function setVisibility(Visibility $visibility) {
++        $this->visibility = $visibility->getArrayCopy();
++        return $this;
++    }
++
++    /**
++     * {@inheritdoc}
++     */
++    public function getExternalSlot() {
++      $slot = new \Acquia\LiftClient\DataObject\Slot();
++      $slot->setId($this->id);
++      $slot->setLabel($this->label);
++      $slot->setDescription($this->description);
++      $slot->setStatus($this->status());
++      $slot->setHtml($this->html);
++      $slot->setVisibility($this->getVisibility());
++      return $slot;
++    }
++
++}
+diff --git a/src/Form/AdminSettingsForm.php b/src/Form/AdminSettingsForm.php
+index e5ea1ac..42f3d07 100644
+--- a/src/Form/AdminSettingsForm.php
++++ b/src/Form/AdminSettingsForm.php
+@@ -106,6 +106,19 @@ private function buildCredentialForm() {
+       '#default_value' => $credential_settings['site_id'],
+       '#required' => TRUE,
+     ];
++    $form['public_key'] = array(
++      '#type' => 'textfield',
++      '#title' => t('Public Key'),
++      '#description' => 'Your Acquia Lift Public Key.',
++      '#default_value' => $credential_settings['public_key'],
++      '#required' => TRUE,
++    );
++    $form['secret_key'] = array(
++      '#type' => 'password',
++      '#description' => 'Your Acquia Lift Secret Key. Only required when setting it up for the first time or when you are changing the secret key.',
++      '#title' => t('Secret Key'),
++      '#default_value' => $credential_settings['secret_key'],
++    );
+     $form['assets_url'] = [
+       '#type' => 'textfield',
+       '#title' => t('Assets URL'),
+@@ -347,6 +360,8 @@ private function setCredentialValues(Config $settings, array $values) {
+     $settings->set('credential.account_id', trim($values['account_id']));
+     $settings->set('credential.site_id', trim($values['site_id']));
+     $settings->set('credential.assets_url', 'https://' . $this->cleanUrl($values['assets_url']));
++    $settings->set('credential.public_key', $values['public_key']);
++    $settings->set('credential.secret_key', $values['secret_key']);
+ 
+     $settings->clear('credential.decision_api_url');
+     if (!empty($values['decision_api_url'])) {
+diff --git a/src/Form/SlotDeleteConfirmForm.php b/src/Form/SlotDeleteConfirmForm.php
+new file mode 100644
+index 0000000..245d711
+--- /dev/null
++++ b/src/Form/SlotDeleteConfirmForm.php
+@@ -0,0 +1,51 @@
++<?php
++
++namespace Drupal\acquia_lift\Form;
++
++use Drupal\Core\Entity\EntityConfirmFormBase;
++use Drupal\Core\Form\FormStateInterface;
++use Drupal\Core\Url;
++
++/**
++ * Defines a confirm form for deleting a facet.
++ */
++class SlotDeleteConfirmForm extends EntityConfirmFormBase {
++
++  /**
++   * {@inheritdoc}
++   */
++  public function getQuestion() {
++    return $this->t('Are you sure you want to delete the slot %name?', array('%name' => $this->entity->label()));
++  }
++
++  /**
++   * {@inheritdoc}
++   */
++  public function getCancelUrl() {
++    return new Url('entity.acquia_lift_slot.canonical', array('acquia_lift_slot' => $this->entity->id()));
++  }
++
++  /**
++   * {@inheritdoc}
++   */
++  public function getConfirmText() {
++    return $this->t('Delete');
++  }
++
++  /**
++   * {@inheritdoc}
++   */
++  public function buildForm(array $form, FormStateInterface $form_state) {
++    return parent::buildForm($form, $form_state);
++  }
++
++  /**
++   * {@inheritdoc}
++   */
++  public function submitForm(array &$form, FormStateInterface $form_state) {
++    $this->entity->delete();
++    drupal_set_message($this->t('The slot %name has been deleted.', array('%name' => $this->entity->label())));
++    $form_state->setRedirect('acquia_lift.slot.overview');
++  }
++
++}
+diff --git a/src/Form/SlotDisableConfirmForm.php b/src/Form/SlotDisableConfirmForm.php
+new file mode 100644
+index 0000000..a3e1687
+--- /dev/null
++++ b/src/Form/SlotDisableConfirmForm.php
+@@ -0,0 +1,54 @@
++<?php
++
++namespace Drupal\acquia_lift\Form;
++
++use Drupal\Core\Entity\EntityConfirmFormBase;
++use Drupal\Core\Form\FormStateInterface;
++use Drupal\Core\Url;
++
++/**
++ * Defines a confirm form for deleting a facet.
++ */
++class SlotDisableConfirmForm extends EntityConfirmFormBase {
++
++  /**
++   * {@inheritdoc}
++   */
++  public function getQuestion() {
++    return $this->t('Are you sure you want to disable the slot %name?', array('%name' => $this->entity->label()));
++  }
++
++  /**
++   * {@inheritdoc}
++   */
++  public function getCancelUrl() {
++    return new Url('entity.acquia_lift_slot.canonical', array('acquia_lift_slot' => $this->entity->id()));
++  }
++
++  /**
++   * {@inheritdoc}
++   */
++  public function getConfirmText() {
++    return $this->t('Disable');
++  }
++
++  /**
++   * {@inheritdoc}
++   */
++  public function buildForm(array $form, FormStateInterface $form_state) {
++    return parent::buildForm($form, $form_state);
++  }
++
++  /**
++   * {@inheritdoc}
++   */
++  public function submitForm(array &$form, FormStateInterface $form_state) {
++    /** @var \Drupal\acquia_lift\SlotInterface $entity */
++    $entity = $this->entity;
++
++    $entity->setStatus(FALSE)->save();
++    drupal_set_message($this->t('The slot %name has been disabled.', array('%name' => $this->entity->label())));
++    $form_state->setRedirect('acquia_lift.slot.overview');
++  }
++
++}
+diff --git a/src/Form/SlotEnableConfirmForm.php b/src/Form/SlotEnableConfirmForm.php
+new file mode 100644
+index 0000000..2255368
+--- /dev/null
++++ b/src/Form/SlotEnableConfirmForm.php
+@@ -0,0 +1,54 @@
++<?php
++
++namespace Drupal\acquia_lift\Form;
++
++use Drupal\Core\Entity\EntityConfirmFormBase;
++use Drupal\Core\Form\FormStateInterface;
++use Drupal\Core\Url;
++
++/**
++ * Defines a confirm form for deleting a facet.
++ */
++class SlotEnableConfirmForm extends EntityConfirmFormBase {
++
++  /**
++   * {@inheritdoc}
++   */
++  public function getQuestion() {
++    return $this->t('Are you sure you want to enable the slot %name?', array('%name' => $this->entity->label()));
++  }
++
++  /**
++   * {@inheritdoc}
++   */
++  public function getCancelUrl() {
++    return new Url('entity.acquia_lift_slot.canonical', array('acquia_lift_slot' => $this->entity->id()));
++  }
++
++  /**
++   * {@inheritdoc}
++   */
++  public function getConfirmText() {
++    return $this->t('Enable');
++  }
++
++  /**
++   * {@inheritdoc}
++   */
++  public function buildForm(array $form, FormStateInterface $form_state) {
++    return parent::buildForm($form, $form_state);
++  }
++
++  /**
++   * {@inheritdoc}
++   */
++  public function submitForm(array &$form, FormStateInterface $form_state) {
++    /** @var \Drupal\acquia_lift\SlotInterface $entity */
++    $entity = $this->entity;
++
++    $entity->setStatus(TRUE)->save();
++    drupal_set_message($this->t('The slot %name has been enabled.', array('%name' => $this->entity->label())));
++    $form_state->setRedirect('acquia_lift.slot.overview');
++  }
++
++}
+diff --git a/src/Form/SlotForm.php b/src/Form/SlotForm.php
+new file mode 100644
+index 0000000..e32fc9c
+--- /dev/null
++++ b/src/Form/SlotForm.php
+@@ -0,0 +1,222 @@
++<?php
++
++namespace Drupal\acquia_lift\Form;
++
++use Acquia\LiftClient\DataObject\Visibility;
++use Drupal\acquia_lift\AcquiaLiftException;
++use Drupal\Core\Entity\EntityForm;
++use Drupal\Core\Entity\EntityTypeManagerInterface;
++use Drupal\Core\Form\FormStateInterface;
++use Drupal\Core\Link;
++use Symfony\Component\DependencyInjection\ContainerInterface;
++
++/**
++ * Provides a form for configuring the processors of a facet.
++ */
++class SlotForm extends EntityForm {
++
++  /**
++   * The facet being configured.
++   *
++   * @var \Drupal\acquia_lift\SlotInterface
++   */
++  protected $slot;
++
++  /**
++   * The slot storage.
++   *
++   * @var \Drupal\Core\Entity\EntityStorageInterface
++   */
++  protected $slotStorage;
++
++  /**
++   * The entity manager.
++   *
++   * @var \Drupal\Core\Entity\EntityTypeManagerInterface
++   */
++  protected $entityTypeManager;
++
++  /**
++   * Constructs an FacetDisplayForm object.
++   *
++   * @param \Drupal\Core\Entity\EntityTypeManagerInterface $entity_type_manager
++   *   The entity manager.
++   */
++  public function __construct(EntityTypeManagerInterface $entity_type_manager) {
++    $this->entityTypeManager = $entity_type_manager;
++    $this->slotStorage = $entity_type_manager->getStorage('acquia_lift_slot');
++  }
++
++  /**
++   * {@inheritdoc}
++   */
++  public static function create(ContainerInterface $container) {
++    /** @var \Drupal\Core\Entity\EntityTypeManager $entity_type_manager */
++    $entity_type_manager = $container->get('entity_type.manager');
++
++    return new static($entity_type_manager);
++  }
++
++  /**
++   * {@inheritdoc}
++   */
++  public function form(array $form, FormStateInterface $form_state) {
++    /** @var \Drupal\acquia_lift\SlotInterface $slot */
++    // Drupal provides the entity to us as a class variable. If this is an
++    // existing entity, it will be populated with existing values as class
++    // variables. If this is a new entity, it will be a new object with the
++    // class of our entity. Drupal knows which class to call from the
++    // annotation on our Slot class.
++    $slot = $this->entity;
++
++    $form['label'] = [
++      '#type' => 'textfield',
++      '#title' => $this->t('Label'),
++      '#description' => $this->t('The administrative name used for this facet.'),
++      '#default_value' => $slot->label(),
++      '#required' => TRUE,
++    ];
++
++    $form['id'] = [
++      '#type' => 'machine_name',
++      '#default_value' => $slot->id(),
++      '#maxlength' => 50,
++      '#required' => TRUE,
++      '#disabled' => !$slot->isNew(),
++      '#machine_name' => [
++        'exists' => [$this->slotStorage, 'load'],
++        'source' => ['label'],
++      ],
++    ];
++
++    $form['description'] = [
++      '#type' => 'textfield',
++      '#title' => $this->t('Description'),
++      '#description' => $this->t('Describe the use of this slot.'),
++      '#default_value' => $slot->getDescription(),
++      '#required' => TRUE,
++    ];
++
++    $form['html'] = [
++      '#type' => 'textfield',
++      '#title' => $this->t('Html'),
++      '#description' => $this->t('The HTML used for this Slot.'),
++      '#default_value' => $slot->getHtml(),
++      '#maxlength' => 250,
++      '#required' => TRUE,
++    ];
++
++    $form['visibility'] = array(
++      '#type' => 'fieldset',
++      '#title' => $this->t('Visibility settings'),
++    );
++
++    // Get the Slot's visibility options
++    $visibility = $slot->getVisibility();
++
++    $form['visibility']['pages'] = [
++      '#type' => 'textarea',
++      '#title' => $this->t('Slot Pages'),
++      '#description' => $this->t('Enter the pages that you wish this slot is actived or deactivated on.'),
++      '#default_value' => implode('\n', $visibility->getPages()),
++      '#required' => TRUE,
++    ];
++
++    $form['visibility']['condition'] = [
++      '#type' => 'select',
++      '#title' => $this->t('Condition'),
++      '#options' => [
++        'show' => $this->t('Show on given pages'),
++        'hide' => $this->t('Hide on given pages'),
++      ],
++      '#description' => $this->t('Do you want the listed pages to be shown or hidden on the given pages?'),
++      '#default_value' => !empty($visibility) ? $visibility->getCondition() : 'show',
++      '#required' => TRUE,
++    ];
++
++    return $form;
++  }
++
++  /**
++   * {@inheritdoc}
++   */
++  public function validateForm(array &$form, FormStateInterface $form_state) {
++    parent::validateForm($form, $form_state);
++  }
++
++  /**
++   * {@inheritdoc}
++   */
++  public function submitForm(array &$form, FormStateInterface $form_state) {
++    parent::submitForm($form, $form_state);
++
++    /** @var \Drupal\acquia_lift\SlotInterface $slot */
++    $slot = $this->getEntity();
++
++    $slot->setHtml($form_state->getValue('html'));
++
++    $visibility = new Visibility();
++    $visibility->setCondition($form_state->getValue('condition'));
++    $visibility->setPages(explode('\n', $form_state->getValue('pages')));
++    $slot->setVisibility($visibility);
++
++    $slot->setDescription($form_state->getValue('description'));
++    $slot->set('label', $form_state->getValue('label'));
++  }
++
++  public function save(array $form, FormStateInterface $form_state) {
++    /** @var \Drupal\acquia_lift\SlotInterface $slot */
++    $slot = $this->getEntity();
++
++    // Only save the index if the form doesn't need to be rebuilt.
++    if (!$form_state->isRebuilding()) {
++      try {
++        // Drupal already populated the form values in the entity object. Each
++        // form field was saved as a public variable in the entity class. PHP
++        // allows Drupal to do this even if the method is not defined ahead of
++        // time.
++        $status = $slot->save();
++
++        // Grab the slot in the format that the SDK expects it
++        $externalSlot = $slot->getExternalSlot();
++
++        // Grab the URL of the new entity. We'll use it in the message.
++        $url = $slot->urlInfo();
++
++        // Create an edit link.
++        $edit_link = Link::fromTextAndUrl($this->t('Edit'), $url)->toString();
++
++        if ($status == SAVED_UPDATED) {
++          // If we edited an existing entity...
++          drupal_set_message(
++            t('Slot %label has been updated.', ['%label' => $slot->label()])
++          );
++          $this->logger('contact')->notice(
++            'Slot %label has been updated.',
++            ['%label' => $slot->label(), 'link' => $edit_link]
++          );
++        }
++        else {
++          // If we created a new entity...
++          drupal_set_message(
++            $this->t(
++              'Slot %label has been added.',
++              array('%label' => $slot->label())
++            )
++          );
++          $this->logger('contact')->notice(
++            'Slot %label has been added.',
++            ['%label' => $slot->label(), 'link' => $edit_link]
++          );
++        }
++
++        // Redirect the user back to the listing route after the save operation.
++        $form_state->setRedirect('acquia_lift.slot.overview');
++      } catch (AcquiaLiftException $e) {
++        $form_state->setRebuild();
++        watchdog_exception('acquia_lift', $e);
++        drupal_set_message($this->t('The slot could not be saved.'), 'error');
++      }
++    }
++  }
++}
+diff --git a/src/SlotInterface.php b/src/SlotInterface.php
+new file mode 100644
+index 0000000..c0230e4
+--- /dev/null
++++ b/src/SlotInterface.php
+@@ -0,0 +1,77 @@
++<?php
++
++namespace Drupal\acquia_lift;
++
++use \Acquia\LiftClient\DataObject\Slot;
++use \Acquia\LiftClient\DataObject\Visibility;
++use Drupal\Core\Config\Entity\ConfigEntityInterface;
++
++interface SlotInterface extends ConfigEntityInterface
++{
++
++    /**
++     * Get the Slot Description.
++     *
++     * @return string
++     *   The Slot description.
++     */
++    public function getDescription();
++
++    /**
++     * Set the slot description.
++     *
++     * @param string $description
++     *   The Slot Description.
++     *
++     * @return $this
++     *   Returns self.
++     */
++    public function setDescription($description);
++
++    /**
++     * Get the Slot's HTML.
++     *
++     * @return string
++     *   The slot's html.
++     */
++    public function getHtml();
++
++    /**
++     * Set the slot's HTMl.
++     *
++     * @param string $html
++     *   The Slot's HTML
++     *
++     * @return $this
++     *   Returns self.
++     */
++    public function setHtml($html);
++
++    /**
++     * Get the Slot's visibility settings
++     *
++     * @return \Acquia\LiftClient\DataObject\Visibility
++     *   The slot's visibility.
++     */
++    public function getVisibility();
++
++    /**
++     * Set the Slot's visibility settings.
++     *
++     * @param \Acquia\LiftClient\DataObject\Visibility $visibility
++     *   The slot's visibility settings.
++     *
++     * @return $this
++     *   Returns self.
++     */
++    public function setVisibility(Visibility $visibility);
++
++    /**
++     * Get the Config Entity as a Acquia Lift Slot object.
++     *
++     * @return \Acquia\LiftClient\DataObject\Slot
++     *   The Acquia Lift Slot object.
++     */
++    public function getExternalSlot();
++
++}
+\ No newline at end of file
+diff --git a/src/SlotListBuilder.php b/src/SlotListBuilder.php
+new file mode 100644
+index 0000000..03cd7a8
+--- /dev/null
++++ b/src/SlotListBuilder.php
+@@ -0,0 +1,104 @@
++<?php
++
++namespace Drupal\acquia_lift;
++
++use Drupal\Core\Config\Entity\ConfigEntityInterface;
++use Drupal\Core\Config\Entity\ConfigEntityListBuilder;
++use Drupal\Core\Entity\EntityInterface;
++use Drupal\Core\Link;
++use Drupal\acquia_lift\Entity\Slot;
++use Drupal\acquia_lift\SlotInterface;
++
++/**
++ * Builds a listing of slot entities.
++ */
++class SlotListBuilder extends ConfigEntityListBuilder {
++
++    /**
++     * {@inheritdoc}
++     */
++    public function load() {
++        $entities = parent::load();
++        $this->sortAlphabetically($entities);
++        return $entities;
++    }
++
++    /**
++     * {@inheritdoc}
++     */
++    public function getDefaultOperations(EntityInterface $entity) {
++        $operations = parent::getDefaultOperations($entity);
++
++        if ($entity->access('update') && $entity->hasLinkTemplate('edit-form')) {
++            $operations['edit'] = array(
++              'title' => $this->t('Edit'),
++              'weight' => 10,
++              'url' => $entity->toUrl('edit-form'),
++            );
++        }
++        if ($entity->access('delete') && $entity->hasLinkTemplate('delete-form')) {
++            $operations['delete'] = array(
++              'title' => $this->t('Delete'),
++              'weight' => 100,
++              'url' => $entity->toUrl('delete-form'),
++            );
++        }
++
++        return $operations;
++    }
++
++    /**
++     * {@inheritdoc}
++     */
++    public function buildHeader() {
++        $header = [
++          'type' => $this->t('Type'),
++          'title' => [
++            'data' => $this->t('Title'),
++          ],
++        ];
++        return $header + parent::buildHeader();
++    }
++
++    /**
++     * {@inheritdoc}
++     */
++    public function buildRow(EntityInterface $entity) {
++        /** @var \Drupal\acquia_lift\SlotInterface $entity */
++        $row = parent::buildRow($entity);
++
++        return array(
++          'data' => array(
++            'type' => array(
++              'data' => 'Slot',
++              'class' => array('slot-type'),
++            ),
++            'title' => array(
++              'data' => array(
++                  '#type' => 'link',
++                  '#title' => $entity->label(),
++                ) + $entity->toUrl('edit-form')->toRenderArray(),
++              'class' => array('acquia-lift-title'),
++            ),
++            'operations' => $row['operations'],
++          ),
++          'title' => $this->t('ID: @name', array('@name' => $entity->id())),
++          'class' => array('slot'),
++        );
++    }
++
++    /**
++     * Sorts an array of entities alphabetically.
++     *
++     * Will preserve the key/value association of the array.
++     *
++     * @param \Drupal\Core\Config\Entity\ConfigEntityInterface[] $entities
++     *   An array of config entities.
++     */
++    protected function sortAlphabetically(array &$entities) {
++        uasort($entities, function (ConfigEntityInterface $a, ConfigEntityInterface $b) {
++            return strnatcasecmp($a->label(), $b->label());
++        });
++    }
++
++}
+diff --git a/src/Tests/SettingsTest.php b/src/Tests/SettingsTest.php
+index c6548ec..bca5ef0 100644
+--- a/src/Tests/SettingsTest.php
++++ b/src/Tests/SettingsTest.php
+@@ -29,7 +29,7 @@ protected function setUp() {
+ 
+     $permissions = [
+       'access administration pages',
+-      'administer acquia lift',
++      'administer acquia_lift',
+       'administer content types',
+       'administer modules',
+       'administer site configuration',
+
+From eca21b859e67809a9fb7cad8b5f7cb842d422eb9 Mon Sep 17 00:00:00 2001
+From: Nick Veenhof <nick.veenhof@gmail.com>
+Date: Wed, 24 Aug 2016 10:46:09 +0200
+Subject: [PATCH 02/11] Reducing UI to just an overview. Next up - decision API
+ communication
+
+---
+ acquia_lift.links.task.yml                |   2 +-
+ acquia_lift.routing.yml                   |  14 +--
+ config/schema/acquia_lift.slot.yml        |   3 -
+ src/Controller/SlotController.php         |  46 --------
+ src/Entity/Controller/SlotListBuilder.php | 166 +++++++++++++++++++++++++++++
+ src/Entity/Slot.php                       | 168 ++++++++++++------------------
+ src/Form/SlotDeleteConfirmForm.php        |   2 +-
+ src/Form/SlotDisableConfirmForm.php       |   2 +-
+ src/Form/SlotEnableConfirmForm.php        |   2 +-
+ src/Form/SlotForm.php                     |  31 +++---
+ src/SlotInterface.php                     | 114 +++++++++-----------
+ src/SlotListBuilder.php                   | 104 ------------------
+ 12 files changed, 302 insertions(+), 352 deletions(-)
+ delete mode 100644 src/Controller/SlotController.php
+ create mode 100644 src/Entity/Controller/SlotListBuilder.php
+ delete mode 100644 src/SlotListBuilder.php
+
+diff --git a/acquia_lift.links.task.yml b/acquia_lift.links.task.yml
+index 4fa01d0..9ab8118 100644
+--- a/acquia_lift.links.task.yml
++++ b/acquia_lift.links.task.yml
+@@ -7,4 +7,4 @@ acquia_lift.slot.overview:
+   route_name: acquia_lift.slot.overview
+   title: 'Slots'
+   weight: 50
+-  base_route: acquia_lift.admin_settings_form
++  base_route: acquia_lift.admin_settings_form
+\ No newline at end of file
+diff --git a/acquia_lift.routing.yml b/acquia_lift.routing.yml
+index e87ded9..58b3427 100644
+--- a/acquia_lift.routing.yml
++++ b/acquia_lift.routing.yml
+@@ -21,13 +21,12 @@ entity.acquia_lift_slot.add_form:
+   requirements:
+     _entity_create_access: 'acquia_lift_slot'
+ 
+-entity.acquia_lift_slot.canonical:
++entity.acquia_lift_slot.edit_form:
+   path: '/admin/config/content/acquia-lift/slots/{acquia_lift_slot}'
+   defaults:
+-    _controller: '\Drupal\acquia_lift\Controller\SlotController::page'
+-    _title_callback: '\Drupal\acquia_lift\Controller\SlotController::pageTitle'
++    _entity_form: 'acquia_lift_slot.edit'
+   requirements:
+-    _entity_access: 'acquia_lift_slot.view'
++    _entity_access: 'acquia_lift_slot.edit'
+ 
+ entity.acquia_lift_slot.enable:
+   path: '/admin/config/content/acquia-lift/slots/{acquia_lift_slot}/enable'
+@@ -43,13 +42,6 @@ entity.acquia_lift_slot.disable:
+   requirements:
+     _entity_access: 'acquia_lift_slot.disable'
+ 
+-entity.acquia_lift_slot.edit_form:
+-  path: '/admin/config/content/acquia-lift/slots/{acquia_lift_slot}/edit'
+-  defaults:
+-    _entity_form: 'acquia_lift_slot.edit'
+-  requirements:
+-    _entity_access: 'acquia_lift_slot.edit'
+-
+ entity.acquia_lift_slot.delete_form:
+   path: '/admin/config/content/acquia-lift/slots/{acquia_lift_slot}/delete'
+   defaults:
+diff --git a/config/schema/acquia_lift.slot.yml b/config/schema/acquia_lift.slot.yml
+index bdf4aba..171612a 100644
+--- a/config/schema/acquia_lift.slot.yml
++++ b/config/schema/acquia_lift.slot.yml
+@@ -20,9 +20,6 @@ acquia_lift.slot.*:
+     description:
+       type: string
+       label: 'Description'
+-    html:
+-      type: string
+-      label: 'Html'
+     visibility:
+       type: mapping
+       label: 'Slot Visibility'
+diff --git a/src/Controller/SlotController.php b/src/Controller/SlotController.php
+deleted file mode 100644
+index 0356254..0000000
+--- a/src/Controller/SlotController.php
++++ /dev/null
+@@ -1,46 +0,0 @@
+-<?php
+-
+-namespace Drupal\acquia_lift\Controller;
+-
+-use Drupal\Component\Render\FormattableMarkup;
+-use Drupal\Core\Controller\ControllerBase;
+-use Drupal\acquia_lift\SlotInterface;
+-
+-/**
+- * Provides route responses for facets.
+- */
+-class SlotController extends ControllerBase {
+-
+-    /**
+-     * Displays information about an Acquia Lift Slot.
+-     *
+-     * @param \Drupal\acquia_lift\SlotInterface $slot
+-     *   The slot to display.
+-     *
+-     * @return array
+-     *   An array suitable for drupal_render().
+-     */
+-    public function page(SlotInterface $slot) {
+-        // Build the search index information.
+-        $render = array(
+-          'view' => array(
+-            '#theme' => 'acquia_lift_slot',
+-            '#slot' => $slot,
+-          ),
+-        );
+-        return $render;
+-    }
+-
+-    /**
+-     * Returns the page title for an slot's "View" tab.
+-     *
+-     * @param \Drupal\acquia_lift\SlotInterface $slot
+-     *   The facet that is displayed.
+-     *
+-     * @return string
+-     *   The page title.
+-     */
+-    public function pageTitle(SlotInterface $slot) {
+-        return new FormattableMarkup('@title', array('@title' => $slot->label()));
+-    }
+-}
+diff --git a/src/Entity/Controller/SlotListBuilder.php b/src/Entity/Controller/SlotListBuilder.php
+new file mode 100644
+index 0000000..6bf9cef
+--- /dev/null
++++ b/src/Entity/Controller/SlotListBuilder.php
+@@ -0,0 +1,166 @@
++<?php
++
++namespace Drupal\acquia_lift\Entity\Controller;
++
++use Drupal\Component\Utility\Html;
++use Drupal\Core\Block\BlockManagerInterface;
++use Drupal\Core\Config\Entity\ConfigEntityInterface;
++use Drupal\Core\Config\Entity\ConfigEntityListBuilder;
++use Drupal\Core\Entity\EntityInterface;
++use Drupal\Core\Entity\EntityStorageInterface;
++use Drupal\Core\Entity\EntityTypeInterface;
++use Symfony\Component\DependencyInjection\ContainerInterface;
++
++/**
++ * Builds a listing of slot entities.
++ */
++class SlotListBuilder extends ConfigEntityListBuilder {
++
++  /**
++   * The block manager.
++   *
++   * @var \Drupal\Core\Block\BlockManagerInterface
++   */
++  protected $blockManager;
++
++  /**
++   * Constructs an IndexListBuilder object.
++   *
++   * @param \Drupal\Core\Entity\EntityTypeInterface $entity_type
++   *   The entity type definition.
++   * @param \Drupal\Core\Entity\EntityStorageInterface $storage
++   *   The entity storage class.
++   * @param  \Drupal\Core\Block\BlockManagerInterface
++   *   The Block Manager.
++   */
++  public function __construct(EntityTypeInterface $entity_type, EntityStorageInterface $storage, BlockManagerInterface $block_manager) {
++    parent::__construct($entity_type, $storage);
++    $this->blockManager = $block_manager;
++  }
++
++  /**
++   * {@inheritdoc}
++   */
++  public static function createInstance(ContainerInterface $container, EntityTypeInterface $entity_type) {
++    /** @var \Drupal\Core\Block\BlockManagerInterface $block_manager */
++    $block_manager = $container->get('plugin.manager.block');
++
++    $entity_storage = $container->get('entity_type.manager')
++      ->getStorage($entity_type->id());
++
++    return new static(
++      $entity_type,
++      $entity_storage,
++      $block_manager
++    );
++  }
++
++  /**
++   * {@inheritdoc}
++   */
++  public function load() {
++    $entities = parent::load();
++    $this->sortAlphabetically($entities);
++    return $entities;
++  }
++
++  /**
++   * {@inheritdoc}
++   */
++  public function buildHeader() {
++    return array(
++      'type' => $this->t('Type'),
++      'label' => $this->t('Label'),
++      'status' => array(
++        'data' => $this->t('Status'),
++        'class' => array('checkbox'),
++      ),
++      'html' => $this->t('Html'),
++
++    ) + parent::buildHeader();
++  }
++
++  /**
++   * {@inheritdoc}
++   */
++  public function buildRow(EntityInterface $entity) {
++    /** @var \Drupal\acquia_lift\SlotInterface $entity */
++    $row = parent::buildRow($entity);
++
++    $status = $entity->status();
++    $status_server = TRUE;
++    $status_label = $status ? $this->t('Enabled') : $this->t('Disabled');
++
++    // Verify if entity is available in the decision API.
++    /*if ($entity->status() && !$entity->isAvailable()) {
++        $status = FALSE;
++        $status_server = FALSE;
++        $status_label = $this->t('Unavailable');
++    }*/
++
++    $status_icon = array(
++      '#theme' => 'image',
++      '#uri' => $status ? 'core/misc/icons/73b355/check.svg' : 'core/misc/icons/e32700/error.svg',
++      '#width' => 18,
++      '#height' => 18,
++      '#alt' => $status_label,
++      '#title' => $status_label,
++    );
++
++    $row = array(
++      'data' => array(
++        'type' => array(
++          'data' => $this->t('Slot for Drupal Block'),
++          'class' => array('acquia-lift-slot-type'),
++        ),
++        'label' => array(
++          'data' => array(
++              '#markup' => $entity->label(),
++              '#suffix' => '<div>' . $entity->getDescription() . '</div>',
++            ),
++          'class' => array('acquia-lift-title'),
++        ),
++        'status' => array(
++          'data' => $status_icon,
++          'class' => array('checkbox'),
++        ),
++        'html' => array(
++          'data' => $entity->getHtml(),
++          'class' => array('acquia-lift-slot-html'),
++        ),
++        'operations' => $row['operations'],
++      ),
++      'title' => $this->t('ID: @name', array('@name' => $entity->id())),
++      'class' => array(
++        Html::cleanCssIdentifier(
++          $entity->getEntityTypeId() . '-' . $entity->id()
++        ),
++        $status ? 'acquia-lift-slot-enabled' : 'acquia-lift-slot-enabled'
++      )
++    );
++
++    if (!$status_server) {
++      $row['class'][] = 'color-error';
++    }
++
++    return $row;
++  }
++
++  /**
++   * Sorts an array of entities alphabetically.
++   *
++   * Will preserve the key/value association of the array.
++   *
++   * @param \Drupal\Core\Config\Entity\ConfigEntityInterface[] $entities
++   *   An array of config entities.
++   */
++  protected function sortAlphabetically(array &$entities) {
++    uasort(
++      $entities,
++      function (ConfigEntityInterface $a, ConfigEntityInterface $b) {
++        return strnatcasecmp($a->label(), $b->label());
++      }
++    );
++  }
++
++}
+diff --git a/src/Entity/Slot.php b/src/Entity/Slot.php
+index 2928aa7..3d0ef10 100644
+--- a/src/Entity/Slot.php
++++ b/src/Entity/Slot.php
+@@ -20,7 +20,7 @@
+  *   ),
+  *   handlers = {
+  *     "storage" = "Drupal\Core\Config\Entity\ConfigEntityStorage",
+- *     "list_builder" = "Drupal\acquia_lift\SlotListBuilder",
++ *     "list_builder" = "Drupal\acquia_lift\Entity\Controller\SlotListBuilder",
+  *     "form" = {
+  *       "default" = "Drupal\acquia_lift\Form\SlotForm",
+  *       "edit" = "Drupal\acquia_lift\Form\SlotForm",
+@@ -41,13 +41,11 @@
+  *     "id",
+  *     "label",
+  *     "description",
+- *     "html",
+  *     "visibility",
+  *   },
+  *   links = {
+- *     "canonical" = "/admin/config/content/acquia-lift/slots",
+  *     "add-form" = "/admin/config/content/acquia-lift/slots/add-slot",
+- *     "edit-form" = "/admin/config/content/acquia-lift/slots/{acquia_lift_slot}/edit",
++ *     "edit-form" = "/admin/config/content/acquia-lift/slots/{acquia_lift_slot}",
+  *     "delete-form" = "/admin/config/content/acquia-lift/slots/{acquia_lift_slot}/delete",
+  *     "disable" = "/admin/config/content/acquia-lift/slots/{acquia_lift_slot}/disable",
+  *     "enable" = "/admin/config/content/acquia-lift/slots/{acquia_lift_slot}/enable",
+@@ -56,102 +54,72 @@
+  */
+ class Slot extends ConfigEntityBase implements SlotInterface {
+ 
+-    /**
+-     * The ID of the slot.
+-     *
+-     * @var string
+-     */
+-    protected $id;
+-
+-    /**
+-     * The slot label.
+-     *
+-     * @var string
+-     */
+-    protected $label;
+-
+-    /**
+-     * A string describing the slot.
+-     *
+-     * @var string
+-     */
+-    protected $description;
+-
+-    /**
+-     * The HTML of the slot identifier.
+-     *
+-     * @var string
+-     */
+-    protected $html;
+-
+-    /**
+-     * Slot Visibility Settings.
+-     *
+-     * @var array
+-     */
+-    protected $visibility;
+-
+-    /**
+-     * {@inheritdoc}
+-     */
+-    public function getDescription() {
+-        return $this->description;
+-    }
+-
+-    /**
+-     * {@inheritdoc}
+-     */
+-    public function setDescription($description) {
+-        $this->description = $description;
+-        return $this;
+-    }
+-
+-    /**
+-     * {@inheritdoc}
+-     */
+-    public function getHtml() {
+-        return $this->html;
+-    }
+-
+-    /**
+-     * {@inheritdoc}
+-     */
+-    public function setHtml($html) {
+-        $this->html = $html;
+-        return $this;
+-    }
+-
+-    /**
+-     * {@inheritdoc}
+-     */
+-    public function getVisibility() {
+-        if (!empty($this->visibility) && is_array($this->visibility)) {
+-            return new Visibility($this->visibility);
+-        }
+-        return [];
+-
+-    }
+-
+-    /**
+-     * {@inheritdoc}
+-     */
+-    public function setVisibility(Visibility $visibility) {
+-        $this->visibility = $visibility->getArrayCopy();
+-        return $this;
+-    }
+-
+-    /**
+-     * {@inheritdoc}
+-     */
+-    public function getExternalSlot() {
+-      $slot = new \Acquia\LiftClient\DataObject\Slot();
+-      $slot->setId($this->id);
+-      $slot->setLabel($this->label);
+-      $slot->setDescription($this->description);
+-      $slot->setStatus($this->status());
+-      $slot->setHtml($this->html);
+-      $slot->setVisibility($this->getVisibility());
+-      return $slot;
++  /**
++   * The ID of the slot.
++   *
++   * @var string
++   */
++  protected $id;
++
++  /**
++   * The slot label.
++   *
++   * @var string
++   */
++  protected $label;
++
++  /**
++   * A string describing the slot.
++   *
++   * @var string
++   */
++  protected $description;
++
++  /**
++   * The slot visibility settings
++   *
++   * @var string
++   */
++  protected $visibility;
++
++  /**
++   * {@inheritdoc}
++   */
++  public function getDescription() {
++    return $this->description;
++  }
++
++  /**
++   * {@inheritdoc}
++   */
++  public function setDescription($description) {
++    $this->description = $description;
++    return $this;
++  }
++
++  /**
++   * {@inheritdoc}
++   */
++  public function getHtml() {
++    return "<div data-lift-slot=\"" . $this->uuid() . "\"/>";
++  }
++
++  /**
++   * {@inheritdoc}
++   */
++  public function getVisibility() {
++    if (!empty($this->visibility) && is_array($this->visibility)) {
++      return new Visibility($this->visibility);
+     }
++    return new Visibility([]);
++  }
++
++  /**
++   * {@inheritdoc}
++   */
++  public function setVisibility(Visibility $visibility) {
++    $this->visibility = $visibility->getArrayCopy();
++    return $this;
++  }
+ 
+ }
+diff --git a/src/Form/SlotDeleteConfirmForm.php b/src/Form/SlotDeleteConfirmForm.php
+index 245d711..27561f7 100644
+--- a/src/Form/SlotDeleteConfirmForm.php
++++ b/src/Form/SlotDeleteConfirmForm.php
+@@ -22,7 +22,7 @@ public function getQuestion() {
+    * {@inheritdoc}
+    */
+   public function getCancelUrl() {
+-    return new Url('entity.acquia_lift_slot.canonical', array('acquia_lift_slot' => $this->entity->id()));
++    return new Url('acquia_lift.slot.overview');
+   }
+ 
+   /**
+diff --git a/src/Form/SlotDisableConfirmForm.php b/src/Form/SlotDisableConfirmForm.php
+index a3e1687..e5deba0 100644
+--- a/src/Form/SlotDisableConfirmForm.php
++++ b/src/Form/SlotDisableConfirmForm.php
+@@ -22,7 +22,7 @@ public function getQuestion() {
+    * {@inheritdoc}
+    */
+   public function getCancelUrl() {
+-    return new Url('entity.acquia_lift_slot.canonical', array('acquia_lift_slot' => $this->entity->id()));
++    return new Url('acquia_lift.slot.overview');
+   }
+ 
+   /**
+diff --git a/src/Form/SlotEnableConfirmForm.php b/src/Form/SlotEnableConfirmForm.php
+index 2255368..982bb18 100644
+--- a/src/Form/SlotEnableConfirmForm.php
++++ b/src/Form/SlotEnableConfirmForm.php
+@@ -22,7 +22,7 @@ public function getQuestion() {
+    * {@inheritdoc}
+    */
+   public function getCancelUrl() {
+-    return new Url('entity.acquia_lift_slot.canonical', array('acquia_lift_slot' => $this->entity->id()));
++    return new Url('acquia_lift.slot.overview');
+   }
+ 
+   /**
+diff --git a/src/Form/SlotForm.php b/src/Form/SlotForm.php
+index e32fc9c..19d196a 100644
+--- a/src/Form/SlotForm.php
++++ b/src/Form/SlotForm.php
+@@ -72,7 +72,9 @@ public function form(array $form, FormStateInterface $form_state) {
+     $form['label'] = [
+       '#type' => 'textfield',
+       '#title' => $this->t('Label'),
+-      '#description' => $this->t('The administrative name used for this facet.'),
++      '#description' => $this->t(
++        'The administrative name used for this facet.'
++      ),
+       '#default_value' => $slot->label(),
+       '#required' => TRUE,
+     ];
+@@ -97,15 +99,6 @@ public function form(array $form, FormStateInterface $form_state) {
+       '#required' => TRUE,
+     ];
+ 
+-    $form['html'] = [
+-      '#type' => 'textfield',
+-      '#title' => $this->t('Html'),
+-      '#description' => $this->t('The HTML used for this Slot.'),
+-      '#default_value' => $slot->getHtml(),
+-      '#maxlength' => 250,
+-      '#required' => TRUE,
+-    ];
+-
+     $form['visibility'] = array(
+       '#type' => 'fieldset',
+       '#title' => $this->t('Visibility settings'),
+@@ -117,7 +110,9 @@ public function form(array $form, FormStateInterface $form_state) {
+     $form['visibility']['pages'] = [
+       '#type' => 'textarea',
+       '#title' => $this->t('Slot Pages'),
+-      '#description' => $this->t('Enter the pages that you wish this slot is actived or deactivated on.'),
++      '#description' => $this->t(
++        'Enter the pages that you wish this slot is actived or deactivated on.'
++      ),
+       '#default_value' => implode('\n', $visibility->getPages()),
+       '#required' => TRUE,
+     ];
+@@ -129,8 +124,11 @@ public function form(array $form, FormStateInterface $form_state) {
+         'show' => $this->t('Show on given pages'),
+         'hide' => $this->t('Hide on given pages'),
+       ],
+-      '#description' => $this->t('Do you want the listed pages to be shown or hidden on the given pages?'),
+-      '#default_value' => !empty($visibility) ? $visibility->getCondition() : 'show',
++      '#description' => $this->t(
++        'Do you want the listed pages to be shown or hidden on the given pages?'
++      ),
++      '#default_value' => !empty($visibility) ? $visibility->getCondition(
++      ) : 'show',
+       '#required' => TRUE,
+     ];
+ 
+@@ -153,15 +151,14 @@ public function submitForm(array &$form, FormStateInterface $form_state) {
+     /** @var \Drupal\acquia_lift\SlotInterface $slot */
+     $slot = $this->getEntity();
+ 
+-    $slot->setHtml($form_state->getValue('html'));
++    $slot->set('label', $form_state->getValue('label'));
++    $slot->setDescription($form_state->getValue('description'));
+ 
+     $visibility = new Visibility();
+     $visibility->setCondition($form_state->getValue('condition'));
+     $visibility->setPages(explode('\n', $form_state->getValue('pages')));
+     $slot->setVisibility($visibility);
+ 
+-    $slot->setDescription($form_state->getValue('description'));
+-    $slot->set('label', $form_state->getValue('label'));
+   }
+ 
+   public function save(array $form, FormStateInterface $form_state) {
+@@ -178,7 +175,7 @@ public function save(array $form, FormStateInterface $form_state) {
+         $status = $slot->save();
+ 
+         // Grab the slot in the format that the SDK expects it
+-        $externalSlot = $slot->getExternalSlot();
++        //$externalSlot = $slot->getExternalSlot();
+ 
+         // Grab the URL of the new entity. We'll use it in the message.
+         $url = $slot->urlInfo();
+diff --git a/src/SlotInterface.php b/src/SlotInterface.php
+index c0230e4..5ea1bba 100644
+--- a/src/SlotInterface.php
++++ b/src/SlotInterface.php
+@@ -6,72 +6,52 @@
+ use \Acquia\LiftClient\DataObject\Visibility;
+ use Drupal\Core\Config\Entity\ConfigEntityInterface;
+ 
+-interface SlotInterface extends ConfigEntityInterface
+-{
+-
+-    /**
+-     * Get the Slot Description.
+-     *
+-     * @return string
+-     *   The Slot description.
+-     */
+-    public function getDescription();
+-
+-    /**
+-     * Set the slot description.
+-     *
+-     * @param string $description
+-     *   The Slot Description.
+-     *
+-     * @return $this
+-     *   Returns self.
+-     */
+-    public function setDescription($description);
+-
+-    /**
+-     * Get the Slot's HTML.
+-     *
+-     * @return string
+-     *   The slot's html.
+-     */
+-    public function getHtml();
+-
+-    /**
+-     * Set the slot's HTMl.
+-     *
+-     * @param string $html
+-     *   The Slot's HTML
+-     *
+-     * @return $this
+-     *   Returns self.
+-     */
+-    public function setHtml($html);
+-
+-    /**
+-     * Get the Slot's visibility settings
+-     *
+-     * @return \Acquia\LiftClient\DataObject\Visibility
+-     *   The slot's visibility.
+-     */
+-    public function getVisibility();
+-
+-    /**
+-     * Set the Slot's visibility settings.
+-     *
+-     * @param \Acquia\LiftClient\DataObject\Visibility $visibility
+-     *   The slot's visibility settings.
+-     *
+-     * @return $this
+-     *   Returns self.
+-     */
+-    public function setVisibility(Visibility $visibility);
+-
+-    /**
+-     * Get the Config Entity as a Acquia Lift Slot object.
+-     *
+-     * @return \Acquia\LiftClient\DataObject\Slot
+-     *   The Acquia Lift Slot object.
+-     */
+-    public function getExternalSlot();
++interface SlotInterface extends ConfigEntityInterface {
++
++  /**
++   * Get the Slot Description.
++   *
++   * @return string
++   *   The Slot description.
++   */
++  public function getDescription();
++
++  /**
++   * Set the slot description.
++   *
++   * @param string $description
++   *   The Slot Description.
++   *
++   * @return $this
++   *   Returns self.
++   */
++  public function setDescription($description);
++
++  /**
++   * Get the Slot's HTML.
++   *
++   * @return string
++   *   The slot's html.
++   */
++  public function getHtml();
++
++  /**
++   * Get the Slot's visibility settings
++   *
++   * @return \Acquia\LiftClient\DataObject\Visibility
++   *   The slot's visibility.
++   */
++  public function getVisibility();
++
++  /**
++   * Set the Slot's visibility settings.
++   *
++   * @param \Acquia\LiftClient\DataObject\Visibility $visibility
++   *   The slot's visibility settings.
++   *
++   * @return $this
++   *   Returns self.
++   */
++  public function setVisibility(Visibility $visibility);
+ 
+ }
+\ No newline at end of file
+diff --git a/src/SlotListBuilder.php b/src/SlotListBuilder.php
+deleted file mode 100644
+index 03cd7a8..0000000
+--- a/src/SlotListBuilder.php
++++ /dev/null
+@@ -1,104 +0,0 @@
+-<?php
+-
+-namespace Drupal\acquia_lift;
+-
+-use Drupal\Core\Config\Entity\ConfigEntityInterface;
+-use Drupal\Core\Config\Entity\ConfigEntityListBuilder;
+-use Drupal\Core\Entity\EntityInterface;
+-use Drupal\Core\Link;
+-use Drupal\acquia_lift\Entity\Slot;
+-use Drupal\acquia_lift\SlotInterface;
+-
+-/**
+- * Builds a listing of slot entities.
+- */
+-class SlotListBuilder extends ConfigEntityListBuilder {
+-
+-    /**
+-     * {@inheritdoc}
+-     */
+-    public function load() {
+-        $entities = parent::load();
+-        $this->sortAlphabetically($entities);
+-        return $entities;
+-    }
+-
+-    /**
+-     * {@inheritdoc}
+-     */
+-    public function getDefaultOperations(EntityInterface $entity) {
+-        $operations = parent::getDefaultOperations($entity);
+-
+-        if ($entity->access('update') && $entity->hasLinkTemplate('edit-form')) {
+-            $operations['edit'] = array(
+-              'title' => $this->t('Edit'),
+-              'weight' => 10,
+-              'url' => $entity->toUrl('edit-form'),
+-            );
+-        }
+-        if ($entity->access('delete') && $entity->hasLinkTemplate('delete-form')) {
+-            $operations['delete'] = array(
+-              'title' => $this->t('Delete'),
+-              'weight' => 100,
+-              'url' => $entity->toUrl('delete-form'),
+-            );
+-        }
+-
+-        return $operations;
+-    }
+-
+-    /**
+-     * {@inheritdoc}
+-     */
+-    public function buildHeader() {
+-        $header = [
+-          'type' => $this->t('Type'),
+-          'title' => [
+-            'data' => $this->t('Title'),
+-          ],
+-        ];
+-        return $header + parent::buildHeader();
+-    }
+-
+-    /**
+-     * {@inheritdoc}
+-     */
+-    public function buildRow(EntityInterface $entity) {
+-        /** @var \Drupal\acquia_lift\SlotInterface $entity */
+-        $row = parent::buildRow($entity);
+-
+-        return array(
+-          'data' => array(
+-            'type' => array(
+-              'data' => 'Slot',
+-              'class' => array('slot-type'),
+-            ),
+-            'title' => array(
+-              'data' => array(
+-                  '#type' => 'link',
+-                  '#title' => $entity->label(),
+-                ) + $entity->toUrl('edit-form')->toRenderArray(),
+-              'class' => array('acquia-lift-title'),
+-            ),
+-            'operations' => $row['operations'],
+-          ),
+-          'title' => $this->t('ID: @name', array('@name' => $entity->id())),
+-          'class' => array('slot'),
+-        );
+-    }
+-
+-    /**
+-     * Sorts an array of entities alphabetically.
+-     *
+-     * Will preserve the key/value association of the array.
+-     *
+-     * @param \Drupal\Core\Config\Entity\ConfigEntityInterface[] $entities
+-     *   An array of config entities.
+-     */
+-    protected function sortAlphabetically(array &$entities) {
+-        uasort($entities, function (ConfigEntityInterface $a, ConfigEntityInterface $b) {
+-            return strnatcasecmp($a->label(), $b->label());
+-        });
+-    }
+-
+-}
+
+From 34ab9992ac3b8c35fb5e9692744abfa47df0a528 Mon Sep 17 00:00:00 2001
+From: Nick Veenhof <nick.veenhof@gmail.com>
+Date: Wed, 24 Aug 2016 14:11:56 +0200
+Subject: [PATCH 03/11] Adding a slot is working
+
+---
+ acquia_lift.services.yml                  |  3 ++
+ src/Entity/Controller/SlotListBuilder.php | 62 +++++++++++++---------
+ src/Entity/Slot.php                       | 16 +++++-
+ src/Form/SlotForm.php                     | 24 ++++++++-
+ src/Service/Helper/LiftAPIHelper.php      | 88 +++++++++++++++++++++++++++++++
+ src/SlotInterface.php                     | 16 ++++--
+ 6 files changed, 178 insertions(+), 31 deletions(-)
+ create mode 100644 src/Service/Helper/LiftAPIHelper.php
+
+diff --git a/acquia_lift.services.yml b/acquia_lift.services.yml
+index 04229bd..dccc85a 100644
+--- a/acquia_lift.services.yml
++++ b/acquia_lift.services.yml
+@@ -11,6 +11,9 @@ services:
+   acquia_lift.service.helper.help_message_helper:
+     class: Drupal\acquia_lift\Service\Helper\HelpMessageHelper
+     arguments: ['@config.factory', '@link_generator']
++  acquia_lift.service.helper.lift_api_helper:
++    class: Drupal\acquia_lift\Service\Helper\LiftAPIHelper
++    arguments: ['@config.factory']
+   acquia_lift.service.helper.node_type_thumbnail_form_helper:
+     class: Drupal\acquia_lift\Service\Helper\NodeTypeThumbnailFormHelper
+     arguments: ['@config.factory', '@entity.manager']
+diff --git a/src/Entity/Controller/SlotListBuilder.php b/src/Entity/Controller/SlotListBuilder.php
+index 6bf9cef..705e316 100644
+--- a/src/Entity/Controller/SlotListBuilder.php
++++ b/src/Entity/Controller/SlotListBuilder.php
+@@ -2,14 +2,15 @@
+ 
+ namespace Drupal\acquia_lift\Entity\Controller;
+ 
++use Drupal\acquia_lift\AcquiaLiftException;
+ use Drupal\Component\Utility\Html;
+-use Drupal\Core\Block\BlockManagerInterface;
+ use Drupal\Core\Config\Entity\ConfigEntityInterface;
+ use Drupal\Core\Config\Entity\ConfigEntityListBuilder;
+ use Drupal\Core\Entity\EntityInterface;
+ use Drupal\Core\Entity\EntityStorageInterface;
+ use Drupal\Core\Entity\EntityTypeInterface;
+ use Symfony\Component\DependencyInjection\ContainerInterface;
++use GuzzleHttp\Exception\RequestException;
+ 
+ /**
+  * Builds a listing of slot entities.
+@@ -17,11 +18,11 @@
+ class SlotListBuilder extends ConfigEntityListBuilder {
+ 
+   /**
+-   * The block manager.
++   * The Lift API Helper.
+    *
+-   * @var \Drupal\Core\Block\BlockManagerInterface
++   * @var \Acquia\LiftClient\Lift
+    */
+-  protected $blockManager;
++  protected $liftClient;
+ 
+   /**
+    * Constructs an IndexListBuilder object.
+@@ -30,28 +31,30 @@ class SlotListBuilder extends ConfigEntityListBuilder {
+    *   The entity type definition.
+    * @param \Drupal\Core\Entity\EntityStorageInterface $storage
+    *   The entity storage class.
+-   * @param  \Drupal\Core\Block\BlockManagerInterface
+-   *   The Block Manager.
++   * @param  \Drupal\acquia_lift\Service\Helper\LiftAPIHelper
++   *   The Lift API Helper.
+    */
+-  public function __construct(EntityTypeInterface $entity_type, EntityStorageInterface $storage, BlockManagerInterface $block_manager) {
++  public function __construct(EntityTypeInterface $entity_type, EntityStorageInterface $storage) {
+     parent::__construct($entity_type, $storage);
+-    $this->blockManager = $block_manager;
++    try {
++      /** @var \Drupal\acquia_lift\Service\Helper\LiftAPIHelper $liftHelper */
++      $liftHelper =  \Drupal::getContainer()->get('acquia_lift.service.helper.lift_api_helper');
++      $this->liftClient = $liftHelper->getLiftClient();
++    } catch (AcquiaLiftException $e) {
++      drupal_set_message($this->t($e->getMessage()), 'error');
++    }
+   }
+ 
+   /**
+    * {@inheritdoc}
+    */
+   public static function createInstance(ContainerInterface $container, EntityTypeInterface $entity_type) {
+-    /** @var \Drupal\Core\Block\BlockManagerInterface $block_manager */
+-    $block_manager = $container->get('plugin.manager.block');
+-
+     $entity_storage = $container->get('entity_type.manager')
+       ->getStorage($entity_type->id());
+ 
+     return new static(
+       $entity_type,
+-      $entity_storage,
+-      $block_manager
++      $entity_storage
+     );
+   }
+ 
+@@ -71,11 +74,11 @@ public function buildHeader() {
+     return array(
+       'type' => $this->t('Type'),
+       'label' => $this->t('Label'),
++      'html' => $this->t('Html'),
+       'status' => array(
+         'data' => $this->t('Status'),
+         'class' => array('checkbox'),
+       ),
+-      'html' => $this->t('Html'),
+ 
+     ) + parent::buildHeader();
+   }
+@@ -88,15 +91,26 @@ public function buildRow(EntityInterface $entity) {
+     $row = parent::buildRow($entity);
+ 
+     $status = $entity->status();
+-    $status_server = TRUE;
+     $status_label = $status ? $this->t('Enabled') : $this->t('Disabled');
+ 
+-    // Verify if entity is available in the decision API.
+-    /*if ($entity->status() && !$entity->isAvailable()) {
++    try {
++      // Verify if we have a connection to the Decision API.
++      if (!isset($this->liftClient) || !$this->liftClient->ping()) {
+         $status = FALSE;
+-        $status_server = FALSE;
+         $status_label = $this->t('Unavailable');
+-    }*/
++      }
++    } catch (\Exception $e) {
++      $status = FALSE;
++      $status_label = $e->getMessage();
++    }
++
++    // Verify if the slot is available in the Decision API.
++    try {
++      $this->liftClient->getSlotManager()->get($entity->uuid());
++    } catch (\Exception $e) {
++      $status = FALSE;
++      $status_label = $e->getMessage();
++    }
+ 
+     $status_icon = array(
+       '#theme' => 'image',
+@@ -120,14 +134,14 @@ public function buildRow(EntityInterface $entity) {
+             ),
+           'class' => array('acquia-lift-title'),
+         ),
+-        'status' => array(
+-          'data' => $status_icon,
+-          'class' => array('checkbox'),
+-        ),
+         'html' => array(
+           'data' => $entity->getHtml(),
+           'class' => array('acquia-lift-slot-html'),
+         ),
++        'status' => array(
++          'data' => $status_icon,
++          'class' => array('checkbox'),
++        ),
+         'operations' => $row['operations'],
+       ),
+       'title' => $this->t('ID: @name', array('@name' => $entity->id())),
+@@ -139,7 +153,7 @@ public function buildRow(EntityInterface $entity) {
+       )
+     );
+ 
+-    if (!$status_server) {
++    if (!$status) {
+       $row['class'][] = 'color-error';
+     }
+ 
+diff --git a/src/Entity/Slot.php b/src/Entity/Slot.php
+index 3d0ef10..152eecd 100644
+--- a/src/Entity/Slot.php
++++ b/src/Entity/Slot.php
+@@ -2,7 +2,7 @@
+ 
+ namespace Drupal\acquia_lift\Entity;
+ 
+-use Acquia\LiftClient\DataObject\Visibility;
++use Acquia\LiftClient\Entity\Visibility;
+ use Drupal\acquia_lift\SlotInterface;
+ use Drupal\Core\Config\Entity\ConfigEntityBase;
+ 
+@@ -122,4 +122,18 @@ public function setVisibility(Visibility $visibility) {
+     return $this;
+   }
+ 
++  /**
++   * {@inheritdoc}
++   */
++  public function getExternalSlot() {
++    $slot = new \Acquia\LiftClient\Entity\Slot();
++    $slot->setId($this->uuid());
++    $slot->setLabel($this->label);
++    $slot->setDescription($this->description);
++    $slot->setStatus($this->status());
++    $slot->setHtml($this->getHtml());
++    $slot->setVisibility($this->getVisibility());
++    return $slot;
++  }
++
+ }
+diff --git a/src/Form/SlotForm.php b/src/Form/SlotForm.php
+index 19d196a..a7a5194 100644
+--- a/src/Form/SlotForm.php
++++ b/src/Form/SlotForm.php
+@@ -2,7 +2,7 @@
+ 
+ namespace Drupal\acquia_lift\Form;
+ 
+-use Acquia\LiftClient\DataObject\Visibility;
++use Acquia\LiftClient\Entity\Visibility;
+ use Drupal\acquia_lift\AcquiaLiftException;
+ use Drupal\Core\Entity\EntityForm;
+ use Drupal\Core\Entity\EntityTypeManagerInterface;
+@@ -37,6 +37,13 @@ class SlotForm extends EntityForm {
+   protected $entityTypeManager;
+ 
+   /**
++   * The Lift API Helper.
++   *
++   * @var \Acquia\LiftClient\Lift
++   */
++  protected $liftClient;
++
++  /**
+    * Constructs an FacetDisplayForm object.
+    *
+    * @param \Drupal\Core\Entity\EntityTypeManagerInterface $entity_type_manager
+@@ -45,6 +52,13 @@ class SlotForm extends EntityForm {
+   public function __construct(EntityTypeManagerInterface $entity_type_manager) {
+     $this->entityTypeManager = $entity_type_manager;
+     $this->slotStorage = $entity_type_manager->getStorage('acquia_lift_slot');
++    try {
++      /** @var \Drupal\acquia_lift\Service\Helper\LiftAPIHelper $liftHelper */
++      $liftHelper =  \Drupal::getContainer()->get('acquia_lift.service.helper.lift_api_helper');
++      $this->liftClient = $liftHelper->getLiftClient();
++    } catch (AcquiaLiftException $e) {
++      drupal_set_message($this->t($e->getMessage()), 'error');
++    }
+   }
+ 
+   /**
+@@ -175,7 +189,13 @@ public function save(array $form, FormStateInterface $form_state) {
+         $status = $slot->save();
+ 
+         // Grab the slot in the format that the SDK expects it
+-        //$externalSlot = $slot->getExternalSlot();
++        $externalSlot = $slot->getExternalSlot();
++
++        try {
++          $externalSlot = $this->liftClient->getSlotManager()->add($externalSlot);
++        } catch (\Exception $e) {
++          drupal_set_message($this->t($e->getMessage()), 'error');
++        }
+ 
+         // Grab the URL of the new entity. We'll use it in the message.
+         $url = $slot->urlInfo();
+diff --git a/src/Service/Helper/LiftAPIHelper.php b/src/Service/Helper/LiftAPIHelper.php
+new file mode 100644
+index 0000000..d9ddae9
+--- /dev/null
++++ b/src/Service/Helper/LiftAPIHelper.php
+@@ -0,0 +1,88 @@
++<?php
++
++namespace Drupal\acquia_lift\Service\Helper;
++
++use Drupal\acquia_lift\AcquiaLiftException;
++use Drupal\Core\Config\ConfigFactoryInterface;
++use Acquia\LiftClient\Lift;
++
++/**
++ * Contains helper methods for working with Solr.
++ */
++class LiftAPIHelper {
++
++  /**
++   * The Lift API SDK Client.
++   *
++   * @var \Acquia\LiftClient\Lift
++   */
++  protected $lift;
++
++  /**
++   * Constructor.
++   *
++   * @param \Drupal\Core\Config\ConfigFactoryInterface $config_factory
++   *   The config factory service.
++   *
++   * @throws \Drupal\acquia_lift\AcquiaLiftException
++   *   The reason why it couldn't create the helper.
++   */
++  public function __construct(ConfigFactoryInterface $config_factory) {
++    $settings = $config_factory->get('acquia_lift.settings');
++    $credential_settings = $settings->get('credential');
++
++    if (!isset($credential_settings['account_id'])) {
++      throw new AcquiaLiftException(
++        'Account ID not found. Please verify your settings.'
++      );
++    }
++    if (!isset($credential_settings['site_id'])) {
++      throw new AcquiaLiftException(
++        'Site ID not found. Please verify your settings.'
++      );
++    }
++    if (!isset($credential_settings['public_key'])) {
++      throw new AcquiaLiftException(
++        'Public Key not found. Please verify your settings.'
++      );
++    }
++    if (!isset($credential_settings['secret_key'])) {
++      throw new AcquiaLiftException(
++        'Secret Key not found. Please verify your settings.'
++      );
++    }
++    if (!isset($credential_settings['decision_api_url'])) {
++      throw new AcquiaLiftException(
++        'Decision API URL not found. Please verify your settings.'
++      );
++    }
++    $this->lift = new Lift(
++      $credential_settings['account_id'],
++      $credential_settings['site_id'],
++      $credential_settings['public_key'],
++      $credential_settings['secret_key'],
++      array('base_url' => $credential_settings['decision_api_url'])
++    );
++  }
++
++  /**
++   * Sets the solr connection.
++   *
++   * @param \Acquia\LiftClient\Lift $lift
++   *   The lift connection object.
++   */
++  public function setLiftClient(Lift $lift) {
++    $this->lift = $lift;
++  }
++
++  /**
++   * Gets the lift client.
++   *
++   * @return \Acquia\LiftClient\Lift $lift
++   *   The lift connection object.
++   */
++  public function getLiftClient() {
++    return $this->lift;
++  }
++
++}
+diff --git a/src/SlotInterface.php b/src/SlotInterface.php
+index 5ea1bba..a1d0b83 100644
+--- a/src/SlotInterface.php
++++ b/src/SlotInterface.php
+@@ -2,8 +2,8 @@
+ 
+ namespace Drupal\acquia_lift;
+ 
+-use \Acquia\LiftClient\DataObject\Slot;
+-use \Acquia\LiftClient\DataObject\Visibility;
++use \Acquia\LiftClient\Entity\Slot;
++use \Acquia\LiftClient\Entity\Visibility;
+ use Drupal\Core\Config\Entity\ConfigEntityInterface;
+ 
+ interface SlotInterface extends ConfigEntityInterface {
+@@ -38,7 +38,7 @@ public function getHtml();
+   /**
+    * Get the Slot's visibility settings
+    *
+-   * @return \Acquia\LiftClient\DataObject\Visibility
++   * @return \Acquia\LiftClient\Entity\Visibility
+    *   The slot's visibility.
+    */
+   public function getVisibility();
+@@ -46,7 +46,7 @@ public function getVisibility();
+   /**
+    * Set the Slot's visibility settings.
+    *
+-   * @param \Acquia\LiftClient\DataObject\Visibility $visibility
++   * @param \Acquia\LiftClient\Entity\Visibility $visibility
+    *   The slot's visibility settings.
+    *
+    * @return $this
+@@ -54,4 +54,12 @@ public function getVisibility();
+    */
+   public function setVisibility(Visibility $visibility);
+ 
++  /**
++   * Get the Config Entity as a Acquia Lift Slot object.
++   *
++   * @return \Acquia\LiftClient\Entity\Slot
++   *   The Acquia Lift Slot object.
++   */
++  public function getExternalSlot();
++
+ }
+\ No newline at end of file
+
+From 8850b899d0b22450e9811a8eab1072f07180fcf2 Mon Sep 17 00:00:00 2001
+From: Nick Veenhof <nick.veenhof@gmail.com>
+Date: Wed, 24 Aug 2016 15:01:00 +0200
+Subject: [PATCH 04/11] CodeStyle fixes
+
+---
+ acquia_lift.install                                |  3 +-
+ acquia_lift.module                                 | 16 ++++--
+ src/AcquiaLiftException.php                        |  3 +-
+ src/Entity/Controller/SlotListBuilder.php          | 33 +++++++++----
+ src/Entity/Slot.php                                | 57 ++++++++++++++++++++++
+ src/Exception/MissingSettingsException.php         |  3 +-
+ src/Form/AdminSettingsForm.php                     | 17 +++++--
+ src/Form/SlotForm.php                              | 15 ++----
+ src/Service/Context/PageContext.php                |  4 +-
+ src/Service/Helper/HelpMessageHelper.php           |  3 +-
+ src/Service/Helper/NodeTypeThumbnailFormHelper.php |  3 +-
+ src/Tests/FixturesDataTrait.php                    | 18 +++----
+ src/Tests/SettingsTest.php                         |  9 +++-
+ 13 files changed, 134 insertions(+), 50 deletions(-)
+
+diff --git a/acquia_lift.install b/acquia_lift.install
+index 6260e21..3e88e8e 100644
+--- a/acquia_lift.install
++++ b/acquia_lift.install
+@@ -12,7 +12,8 @@ function acquia_lift_requirements($phase) {
+     return $requirements;
+   }
+ 
+-  $credentialSettings = \Drupal::config('acquia_lift.settings')->get('credential');
++  $credentialSettings = \Drupal::config('acquia_lift.settings')
++    ->get('credential');
+   if (!SettingsHelper::isInvalidCredential($credentialSettings)) {
+     return $requirements;
+   }
+diff --git a/acquia_lift.module b/acquia_lift.module
+index 6871493..9cc2393 100644
+--- a/acquia_lift.module
++++ b/acquia_lift.module
+@@ -17,7 +17,8 @@ use Drupal\Core\Form\FormStateInterface;
+  * Implements hook_help().
+  */
+ function acquia_lift_help($route_name) {
+-  return \Drupal::service('acquia_lift.service.helper.help_message_helper')->getMessage($route_name);
++  return \Drupal::service('acquia_lift.service.helper.help_message_helper')
++    ->getMessage($route_name);
+ }
+ 
+ /**
+@@ -25,12 +26,15 @@ function acquia_lift_help($route_name) {
+  */
+ function acquia_lift_page_attachments(array &$page) {
+   // Create and attach settings and library only when path context agrees on attaching.
+-  if (!\Drupal::service('acquia_lift.service.context.path_context')->shouldAttach()) {
++  if (!\Drupal::service('acquia_lift.service.context.path_context')
++    ->shouldAttach()
++  ) {
+     return;
+   }
+ 
+   // Populate Html head.
+-  \Drupal::service('acquia_lift.service.context.page_context')->populateHtmlHead($page['#attached']['html_head']);
++  \Drupal::service('acquia_lift.service.context.page_context')
++    ->populateHtmlHead($page['#attached']['html_head']);
+ }
+ 
+ /**
+@@ -38,7 +42,8 @@ function acquia_lift_page_attachments(array &$page) {
+  */
+ function acquia_lift_form_node_type_form_alter(array &$form, FormStateInterface &$form_state) {
+   $node_type = $form_state->getFormObject()->getEntity()->id();
+-  $form['acquia_lift'] = \Drupal::service('acquia_lift.service.helper.node_type_thumbnail_form_helper')->getForm($node_type);
++  $form['acquia_lift'] = \Drupal::service('acquia_lift.service.helper.node_type_thumbnail_form_helper')
++    ->getForm($node_type);
+   $form['actions']['submit']['#submit'][] = 'acquia_lift_form_node_type_form_submit';
+ }
+ 
+@@ -50,5 +55,6 @@ function acquia_lift_form_node_type_form_alter(array &$form, FormStateInterface
+ function acquia_lift_form_node_type_form_submit(array $form, FormStateInterface &$form_state) {
+   $node_type = $form_state->getFormObject()->getEntity()->id();
+   $settings = $form_state->getValue('acquia_lift');
+-  \Drupal::service('acquia_lift.service.helper.node_type_thumbnail_form_helper')->saveSettings($node_type, $settings);
++  \Drupal::service('acquia_lift.service.helper.node_type_thumbnail_form_helper')
++    ->saveSettings($node_type, $settings);
+ }
+diff --git a/src/AcquiaLiftException.php b/src/AcquiaLiftException.php
+index e2f6aa0..ae4d58e 100644
+--- a/src/AcquiaLiftException.php
++++ b/src/AcquiaLiftException.php
+@@ -5,4 +5,5 @@
+ /**
+  * Represents an exception that occurred in some part of the Acquia Lift Module.
+  */
+-class AcquiaLiftException extends \Exception {}
++class AcquiaLiftException extends \Exception {
++}
+diff --git a/src/Entity/Controller/SlotListBuilder.php b/src/Entity/Controller/SlotListBuilder.php
+index 705e316..3d1b8b9 100644
+--- a/src/Entity/Controller/SlotListBuilder.php
++++ b/src/Entity/Controller/SlotListBuilder.php
+@@ -38,7 +38,8 @@ public function __construct(EntityTypeInterface $entity_type, EntityStorageInter
+     parent::__construct($entity_type, $storage);
+     try {
+       /** @var \Drupal\acquia_lift\Service\Helper\LiftAPIHelper $liftHelper */
+-      $liftHelper =  \Drupal::getContainer()->get('acquia_lift.service.helper.lift_api_helper');
++      $liftHelper = \Drupal::getContainer()
++        ->get('acquia_lift.service.helper.lift_api_helper');
+       $this->liftClient = $liftHelper->getLiftClient();
+     } catch (AcquiaLiftException $e) {
+       drupal_set_message($this->t($e->getMessage()), 'error');
+@@ -72,7 +73,6 @@ public function load() {
+    */
+   public function buildHeader() {
+     return array(
+-      'type' => $this->t('Type'),
+       'label' => $this->t('Label'),
+       'html' => $this->t('Html'),
+       'status' => array(
+@@ -106,7 +106,7 @@ public function buildRow(EntityInterface $entity) {
+ 
+     // Verify if the slot is available in the Decision API.
+     try {
+-      $this->liftClient->getSlotManager()->get($entity->uuid());
++      $slot = $this->liftClient->getSlotManager()->get($entity->uuid());
+     } catch (\Exception $e) {
+       $status = FALSE;
+       $status_label = $e->getMessage();
+@@ -123,15 +123,11 @@ public function buildRow(EntityInterface $entity) {
+ 
+     $row = array(
+       'data' => array(
+-        'type' => array(
+-          'data' => $this->t('Slot for Drupal Block'),
+-          'class' => array('acquia-lift-slot-type'),
+-        ),
+         'label' => array(
+           'data' => array(
+-              '#markup' => $entity->label(),
+-              '#suffix' => '<div>' . $entity->getDescription() . '</div>',
+-            ),
++            '#markup' => $entity->label(),
++            '#suffix' => '<div>' . $entity->getDescription() . '</div>',
++          ),
+           'class' => array('acquia-lift-title'),
+         ),
+         'html' => array(
+@@ -177,4 +173,21 @@ function (ConfigEntityInterface $a, ConfigEntityInterface $b) {
+     );
+   }
+ 
++  /**
++   * Adds some descriptive text to our entity list.
++   *
++   * Typically, there's no need to override render(). You may wish to do so,
++   * however, if you want to add markup before or after the table.
++   *
++   * @return array
++   *   Renderable array.
++   */
++  public function render() {
++    $build['description'] = array(
++      '#markup' => $this->t("<p>This lists all the slots that were created by Drupal and synced up to the Acquia Lift Service. This does NOT list Slots created in the Acquia Lift Experience builder.</p>"),
++    );
++    $build[] = parent::render();
++    return $build;
++  }
++
+ }
+diff --git a/src/Entity/Slot.php b/src/Entity/Slot.php
+index 152eecd..fe48632 100644
+--- a/src/Entity/Slot.php
++++ b/src/Entity/Slot.php
+@@ -3,8 +3,10 @@
+ namespace Drupal\acquia_lift\Entity;
+ 
+ use Acquia\LiftClient\Entity\Visibility;
++use Drupal\acquia_lift\AcquiaLiftException;
+ use Drupal\acquia_lift\SlotInterface;
+ use Drupal\Core\Config\Entity\ConfigEntityBase;
++use Drupal\Core\Entity\EntityStorageInterface;
+ 
+ /**
+  * Defines the Drupal created slots.
+@@ -83,6 +85,29 @@ class Slot extends ConfigEntityBase implements SlotInterface {
+   protected $visibility;
+ 
+   /**
++   * The Lift API Helper.
++   *
++   * @var \Acquia\LiftClient\Lift
++   */
++  protected $liftClient;
++
++  /**
++   * {@inheritdoc}
++   */
++  public function __construct(array $values, $entity_type) {
++    parent::__construct($values, $entity_type);
++
++    try {
++      /** @var \Drupal\acquia_lift\Service\Helper\LiftAPIHelper $liftHelper */
++      $liftHelper = \Drupal::getContainer()
++        ->get('acquia_lift.service.helper.lift_api_helper');
++      $this->liftClient = $liftHelper->getLiftClient();
++    } catch (AcquiaLiftException $e) {
++      drupal_set_message(t($e->getMessage()), 'error');
++    }
++  }
++
++  /**
+    * {@inheritdoc}
+    */
+   public function getDescription() {
+@@ -136,4 +161,36 @@ public function getExternalSlot() {
+     return $slot;
+   }
+ 
++  /**
++   * {@inheritdoc}
++   */
++  public function save() {
++    $return = parent::save();
++    try {
++      $this->liftClient->getSlotManager()->add($this->getExternalSlot());
++    } catch (\Exception $e) {
++      drupal_set_message(t($e->getMessage()), 'error');
++    }
++    return $return;
++  }
++
++  /**
++   * {@inheritdoc}
++   */
++  public static function preDelete(EntityStorageInterface $storage, array $entities) {
++    parent::preDelete($storage, $entities);
++
++    foreach ($entities as $entity) {
++      if ($entity->isUninstalling() || $entity->isSyncing()) {
++        // During extension uninstall and configuration synchronization
++        // deletions are already managed.
++        break;
++      }
++      try {
++        $entity->liftClient->getSlotManager()->delete($entity->uuid());
++      } catch (\Exception $e) {
++        drupal_set_message(t($e->getMessage()), 'error');
++      }
++    }
++  }
+ }
+diff --git a/src/Exception/MissingSettingsException.php b/src/Exception/MissingSettingsException.php
+index d2e3860..01ecd85 100644
+--- a/src/Exception/MissingSettingsException.php
++++ b/src/Exception/MissingSettingsException.php
+@@ -2,4 +2,5 @@
+ 
+ namespace Drupal\acquia_lift\Exception;
+ 
+-class MissingSettingsException extends \Exception {}
++class MissingSettingsException extends \Exception {
++}
+diff --git a/src/Form/AdminSettingsForm.php b/src/Form/AdminSettingsForm.php
+index 42f3d07..1eb0b08 100644
+--- a/src/Form/AdminSettingsForm.php
++++ b/src/Form/AdminSettingsForm.php
+@@ -84,7 +84,8 @@ public function buildForm(array $form, FormStateInterface $form_state) {
+    *   Credential form.
+    */
+   private function buildCredentialForm() {
+-    $credential_settings = $this->config('acquia_lift.settings')->get('credential');
++    $credential_settings = $this->config('acquia_lift.settings')
++      ->get('credential');
+ 
+     $form = [
+       '#title' => t('Acquia Lift Credential'),
+@@ -215,7 +216,8 @@ private function buildIdentityForm() {
+    *   Field mappings form.
+    */
+   private function buildFieldMappingsForm() {
+-    $field_mappings_settings = $this->config('acquia_lift.settings')->get('field_mappings');
++    $field_mappings_settings = $this->config('acquia_lift.settings')
++      ->get('field_mappings');
+     $field_names = $this->getTaxonomyTermFieldNames();
+ 
+     $form = [
+@@ -276,7 +278,8 @@ private function getTaxonomyTermFieldNames() {
+    *   Visibility form.
+    */
+   private function buildVisibilityForm() {
+-    $visibility_settings = $this->config('acquia_lift.settings')->get('visibility');
++    $visibility_settings = $this->config('acquia_lift.settings')
++      ->get('visibility');
+ 
+     $form = [
+       '#title' => t('Visibility'),
+@@ -318,10 +321,14 @@ private function buildThumbnailUrlForm() {
+     }
+ 
+     $links = [];
+-    $link_attributes = ['attributes' => ['target' => '_blank'], 'fragment' => 'edit-acquia-lift'];
++    $link_attributes = [
++      'attributes' => ['target' => '_blank'],
++      'fragment' => 'edit-acquia-lift'
++    ];
+     foreach ($node_types as $node_type) {
+       $url = Url::fromRoute('entity.node_type.edit_form', ['node_type' => $node_type->id()], $link_attributes);
+-      $links[] = '<p>' . Link::fromTextAndUrl($node_type->label(), $url)->toString() . '</p>';
++      $links[] = '<p>' . Link::fromTextAndUrl($node_type->label(), $url)
++          ->toString() . '</p>';
+     }
+     $form['link_list']['#markup'] = t('Configure thumbnail URLs on each content type\'s edit page (in a new window).');
+     $form['link_list']['#markup'] .= implode('', $links);
+diff --git a/src/Form/SlotForm.php b/src/Form/SlotForm.php
+index a7a5194..e16eeeb 100644
+--- a/src/Form/SlotForm.php
++++ b/src/Form/SlotForm.php
+@@ -54,7 +54,8 @@ public function __construct(EntityTypeManagerInterface $entity_type_manager) {
+     $this->slotStorage = $entity_type_manager->getStorage('acquia_lift_slot');
+     try {
+       /** @var \Drupal\acquia_lift\Service\Helper\LiftAPIHelper $liftHelper */
+-      $liftHelper =  \Drupal::getContainer()->get('acquia_lift.service.helper.lift_api_helper');
++      $liftHelper = \Drupal::getContainer()
++        ->get('acquia_lift.service.helper.lift_api_helper');
+       $this->liftClient = $liftHelper->getLiftClient();
+     } catch (AcquiaLiftException $e) {
+       drupal_set_message($this->t($e->getMessage()), 'error');
+@@ -141,8 +142,7 @@ public function form(array $form, FormStateInterface $form_state) {
+       '#description' => $this->t(
+         'Do you want the listed pages to be shown or hidden on the given pages?'
+       ),
+-      '#default_value' => !empty($visibility) ? $visibility->getCondition(
+-      ) : 'show',
++      '#default_value' => !empty($visibility) ? $visibility->getCondition() : 'show',
+       '#required' => TRUE,
+     ];
+ 
+@@ -188,15 +188,6 @@ public function save(array $form, FormStateInterface $form_state) {
+         // time.
+         $status = $slot->save();
+ 
+-        // Grab the slot in the format that the SDK expects it
+-        $externalSlot = $slot->getExternalSlot();
+-
+-        try {
+-          $externalSlot = $this->liftClient->getSlotManager()->add($externalSlot);
+-        } catch (\Exception $e) {
+-          drupal_set_message($this->t($e->getMessage()), 'error');
+-        }
+-
+         // Grab the URL of the new entity. We'll use it in the message.
+         $url = $slot->urlInfo();
+ 
+diff --git a/src/Service/Context/PageContext.php b/src/Service/Context/PageContext.php
+index 045a9e6..6e2e7b0 100644
+--- a/src/Service/Context/PageContext.php
++++ b/src/Service/Context/PageContext.php
+@@ -129,7 +129,7 @@ private function setPageContextByNode(Request $request) {
+     }
+ 
+     $node = $request->attributes->get('node');
+-    if (empty($node) || ! $node instanceof NodeInterface) {
++    if (empty($node) || !$node instanceof NodeInterface) {
+       return;
+     }
+ 
+@@ -268,7 +268,7 @@ private function setFields(NodeInterface $node) {
+   private function getAvailableFieldVocabularyNames(NodeInterface $node) {
+     $available_field_vocabulary_names = [];
+     foreach ($this->fieldMappings as $page_context_name => $field_name) {
+-      if(!isset($node->{$field_name})) {
++      if (!isset($node->{$field_name})) {
+         continue;
+       }
+       $vocabulary_names = $node->{$field_name}->getSetting('handler_settings')['target_bundles'];
+diff --git a/src/Service/Helper/HelpMessageHelper.php b/src/Service/Helper/HelpMessageHelper.php
+index 2cfb487..379124c 100644
+--- a/src/Service/Helper/HelpMessageHelper.php
++++ b/src/Service/Helper/HelpMessageHelper.php
+@@ -30,7 +30,8 @@ class HelpMessageHelper {
+    *   The link generator.
+    */
+   public function __construct(ConfigFactoryInterface $config_factory, LinkGeneratorInterface $link_generator) {
+-    $this->credentialSettings = $config_factory->get('acquia_lift.settings')->get('credential');
++    $this->credentialSettings = $config_factory->get('acquia_lift.settings')
++      ->get('credential');
+     $this->linkGenerator = $link_generator;
+   }
+ 
+diff --git a/src/Service/Helper/NodeTypeThumbnailFormHelper.php b/src/Service/Helper/NodeTypeThumbnailFormHelper.php
+index 577a32e..3166e24 100644
+--- a/src/Service/Helper/NodeTypeThumbnailFormHelper.php
++++ b/src/Service/Helper/NodeTypeThumbnailFormHelper.php
+@@ -160,7 +160,8 @@ private function collectImageFields($target_type, $type, $key_prefix = '', $labe
+ 
+       // 2) Entity Reference type whose entity is Fieldable.
+       if ($field_type === 'entity_reference' &&
+-        $this->entityManager->getDefinition($field_target_type)->isSubclassOf('\Drupal\Core\Entity\FieldableEntityInterface')
++        $this->entityManager->getDefinition($field_target_type)
++          ->isSubclassOf('\Drupal\Core\Entity\FieldableEntityInterface')
+       ) {
+         // Track this field, since it is about to be processed.
+         $this->processedFieldHashes[$field_hash] = TRUE;
+diff --git a/src/Tests/FixturesDataTrait.php b/src/Tests/FixturesDataTrait.php
+index 91286b1..3eca716 100644
+--- a/src/Tests/FixturesDataTrait.php
++++ b/src/Tests/FixturesDataTrait.php
+@@ -45,15 +45,15 @@ private function createTerm(Vocabulary $vocabulary, $values = []) {
+     $filter_formats = filter_formats();
+     $format = array_pop($filter_formats);
+     $term = Term::create($values + [
+-      'name' => $this->randomMachineName(),
+-      'description' => [
+-        'value' => $this->randomMachineName(),
+-        // Use the first available text format.
+-        'format' => $format->id(),
+-      ],
+-      'vid' => $vocabulary->id(),
+-      'langcode' => LanguageInterface::LANGCODE_NOT_SPECIFIED,
+-    ]);
++        'name' => $this->randomMachineName(),
++        'description' => [
++          'value' => $this->randomMachineName(),
++          // Use the first available text format.
++          'format' => $format->id(),
++        ],
++        'vid' => $vocabulary->id(),
++        'langcode' => LanguageInterface::LANGCODE_NOT_SPECIFIED,
++      ]);
+     $term->save();
+     return $term;
+   }
+diff --git a/src/Tests/SettingsTest.php b/src/Tests/SettingsTest.php
+index bca5ef0..43238c0 100644
+--- a/src/Tests/SettingsTest.php
++++ b/src/Tests/SettingsTest.php
+@@ -42,7 +42,12 @@ protected function setUp() {
+     $this->drupalCreateNode([
+       'nid' => 90210,
+       'type' => 'article',
+-      'body' => [['value' => $this->randomMachineName(32), 'format' => 'full_html']],
++      'body' => [
++        [
++          'value' => $this->randomMachineName(32),
++          'format' => 'full_html'
++        ]
++      ],
+     ]);
+ 
+     // Create two vocabularies.
+@@ -87,7 +92,7 @@ public function testAdminSettingsForm() {
+     $field_mappings_settings = $this->getValidFieldMappingsSettings();
+     $visibility_settings = $this->getValidVisibilitySettings();
+ 
+-    $edit =[];
++    $edit = [];
+     $edit += $this->convertToPostFormSettings($credential_settings, 'credential');
+     $edit += $this->convertToPostFormSettings($identity_settings, 'identity');
+     $edit += $this->convertToPostFormSettings($field_mappings_settings, 'field_mappings');
+
+From 75055dce40518915e3f1c89cbbb9953d6014ae72 Mon Sep 17 00:00:00 2001
+From: Nick Veenhof <nick.veenhof@gmail.com>
+Date: Wed, 24 Aug 2016 15:11:33 +0200
+Subject: [PATCH 05/11] Remove contextual link
+
+---
+ acquia_lift.contextual.yml | 4 ----
+ 1 file changed, 4 deletions(-)
+ delete mode 100644 acquia_lift.contextual.yml
+
+diff --git a/acquia_lift.contextual.yml b/acquia_lift.contextual.yml
+deleted file mode 100644
+index 8cc4360..0000000
+--- a/acquia_lift.contextual.yml
++++ /dev/null
+@@ -1,4 +0,0 @@
+-entity.acquia_lift_slot.edit_form:
+-  title: 'Edit slot'
+-  route_name: 'entity.acquia_lift_slot.edit_form'
+-  group: acquia_lift_slot
+
+From e185dd2bc02b6f3a4ddf43eb6efe0fb1a55b8d0f Mon Sep 17 00:00:00 2001
+From: Nick Veenhof <nick.veenhof@gmail.com>
+Date: Wed, 24 Aug 2016 17:17:44 +0200
+Subject: [PATCH 06/11] Adding CSS URL + Custom identifier
+
+---
+ config/schema/acquia_lift.slot.yml        |  3 +++
+ src/Entity/Controller/SlotListBuilder.php |  2 +-
+ src/Entity/Slot.php                       | 33 ++++++++++++++++++++++++++++---
+ src/Form/SlotForm.php                     |  9 +++++++++
+ src/SlotInterface.php                     | 19 ++++++++++++++++++
+ 5 files changed, 62 insertions(+), 4 deletions(-)
+
+diff --git a/config/schema/acquia_lift.slot.yml b/config/schema/acquia_lift.slot.yml
+index 171612a..e8fda53 100644
+--- a/config/schema/acquia_lift.slot.yml
++++ b/config/schema/acquia_lift.slot.yml
+@@ -20,6 +20,9 @@ acquia_lift.slot.*:
+     description:
+       type: string
+       label: 'Description'
++    css_url:
++      type: string
++      label: 'CSS URL'
+     visibility:
+       type: mapping
+       label: 'Slot Visibility'
+diff --git a/src/Entity/Controller/SlotListBuilder.php b/src/Entity/Controller/SlotListBuilder.php
+index 3d1b8b9..2f16dde 100644
+--- a/src/Entity/Controller/SlotListBuilder.php
++++ b/src/Entity/Controller/SlotListBuilder.php
+@@ -106,7 +106,7 @@ public function buildRow(EntityInterface $entity) {
+ 
+     // Verify if the slot is available in the Decision API.
+     try {
+-      $slot = $this->liftClient->getSlotManager()->get($entity->uuid());
++      $this->liftClient->getSlotManager()->get($entity->id());
+     } catch (\Exception $e) {
+       $status = FALSE;
+       $status_label = $e->getMessage();
+diff --git a/src/Entity/Slot.php b/src/Entity/Slot.php
+index fe48632..8de3020 100644
+--- a/src/Entity/Slot.php
++++ b/src/Entity/Slot.php
+@@ -44,6 +44,7 @@
+  *     "label",
+  *     "description",
+  *     "visibility",
++ *     "css_url"
+  *   },
+  *   links = {
+  *     "add-form" = "/admin/config/content/acquia-lift/slots/add-slot",
+@@ -85,6 +86,13 @@ class Slot extends ConfigEntityBase implements SlotInterface {
+   protected $visibility;
+ 
+   /**
++   * The slot CSS Url
++   *
++   * @var string
++   */
++  protected $css_url;
++
++  /**
+    * The Lift API Helper.
+    *
+    * @var \Acquia\LiftClient\Lift
+@@ -125,8 +133,27 @@ public function setDescription($description) {
+   /**
+    * {@inheritdoc}
+    */
++  public function getCssUrl() {
++    return $this->css_url;
++  }
++
++  /**
++   * {@inheritdoc}
++   */
++  public function setCssUrl($cssUrl) {
++    $this->css_url = $cssUrl;
++    return $this;
++  }
++
++  /**
++   * {@inheritdoc}
++   */
+   public function getHtml() {
+-    return "<div data-lift-slot=\"" . $this->uuid() . "\"/>";
++    $css_html = "";
++    if (!empty($this->css_url)) {
++      $css_html = " data-lift-css=\"" . $this->css_url . "\"";
++    }
++    return "<div data-lift-slot=\"" . $this->id() . "\"" . $css_html . "/>";
+   }
+ 
+   /**
+@@ -152,7 +179,7 @@ public function setVisibility(Visibility $visibility) {
+    */
+   public function getExternalSlot() {
+     $slot = new \Acquia\LiftClient\Entity\Slot();
+-    $slot->setId($this->uuid());
++    $slot->setId($this->id());
+     $slot->setLabel($this->label);
+     $slot->setDescription($this->description);
+     $slot->setStatus($this->status());
+@@ -187,7 +214,7 @@ public static function preDelete(EntityStorageInterface $storage, array $entitie
+         break;
+       }
+       try {
+-        $entity->liftClient->getSlotManager()->delete($entity->uuid());
++        $entity->liftClient->getSlotManager()->delete($entity->id());
+       } catch (\Exception $e) {
+         drupal_set_message(t($e->getMessage()), 'error');
+       }
+diff --git a/src/Form/SlotForm.php b/src/Form/SlotForm.php
+index e16eeeb..0329995 100644
+--- a/src/Form/SlotForm.php
++++ b/src/Form/SlotForm.php
+@@ -114,6 +114,14 @@ public function form(array $form, FormStateInterface $form_state) {
+       '#required' => TRUE,
+     ];
+ 
++    $form['css_url'] = [
++      '#type' => 'textfield',
++      '#title' => $this->t('Slot CSS URL (Optional)'),
++      '#description' => $this->t('A slot can add 1 specific CSS file (full path) that it will read in and use while showing the content. Fill in the full path here.'),
++      '#default_value' => $slot->getCssUrl(),
++      '#required' => FALSE,
++    ];
++
+     $form['visibility'] = array(
+       '#type' => 'fieldset',
+       '#title' => $this->t('Visibility settings'),
+@@ -167,6 +175,7 @@ public function submitForm(array &$form, FormStateInterface $form_state) {
+ 
+     $slot->set('label', $form_state->getValue('label'));
+     $slot->setDescription($form_state->getValue('description'));
++    $slot->setCssUrl($form_state->getValue('css_url'));
+ 
+     $visibility = new Visibility();
+     $visibility->setCondition($form_state->getValue('condition'));
+diff --git a/src/SlotInterface.php b/src/SlotInterface.php
+index a1d0b83..0112abb 100644
+--- a/src/SlotInterface.php
++++ b/src/SlotInterface.php
+@@ -28,6 +28,25 @@ public function getDescription();
+   public function setDescription($description);
+ 
+   /**
++   * Get the Slot CSS Url Link.
++   *
++   * @return string
++   *   The Slot CSS Url.
++   */
++  public function getCssUrl();
++
++  /**
++   * Set the slot CSS Url link.
++   *
++   * @param string $cssUrl
++   *   The Slot CSS Url.
++   *
++   * @return $this
++   *   Returns self.
++   */
++  public function setCssUrl($cssUrl);
++
++  /**
+    * Get the Slot's HTML.
+    *
+    * @return string
+
+From b693ca4006fabddb7756a95fcaa5aaf480b6f0fd Mon Sep 17 00:00:00 2001
+From: Nick Veenhof <nick.veenhof@gmail.com>
+Date: Thu, 25 Aug 2016 12:48:35 +0200
+Subject: [PATCH 07/11] Implementing comments from shay
+
+---
+ acquia_lift.routing.yml                   |   6 +-
+ acquia_lift.services.yml                  |   4 +-
+ config/schema/acquia_lift.settings.yml    |   2 +-
+ config/schema/acquia_lift.slot.yml        |   4 +-
+ src/AcquiaLiftException.php               |   9 ---
+ src/Entity/Controller/SlotListBuilder.php |  52 ++++++++------
+ src/Entity/Slot.php                       |  70 +++++++++++--------
+ src/Exception/APILoaderException.php      |   9 +++
+ src/Form/SlotForm.php                     |  95 ++++++++++++--------------
+ src/Lift/APILoader.php                    | 108 ++++++++++++++++++++++++++++++
+ src/Service/Helper/LiftAPIHelper.php      |  88 ------------------------
+ src/SlotInterface.php                     |   2 +-
+ 12 files changed, 239 insertions(+), 210 deletions(-)
+ delete mode 100644 src/AcquiaLiftException.php
+ create mode 100644 src/Exception/APILoaderException.php
+ create mode 100644 src/Lift/APILoader.php
+ delete mode 100644 src/Service/Helper/LiftAPIHelper.php
+
+diff --git a/acquia_lift.routing.yml b/acquia_lift.routing.yml
+index 58b3427..f4713e7 100644
+--- a/acquia_lift.routing.yml
++++ b/acquia_lift.routing.yml
+@@ -15,14 +15,14 @@ acquia_lift.slot.overview:
+     _entity_create_access: 'acquia_lift_slot'
+ 
+ entity.acquia_lift_slot.add_form:
+-  path: '/admin/config/content/acquia-lift/slots/add-facet'
++  path: '/admin/config/content/acquia-lift/slots/add'
+   defaults:
+     _entity_form: 'acquia_lift_slot.default'
+   requirements:
+     _entity_create_access: 'acquia_lift_slot'
+ 
+ entity.acquia_lift_slot.edit_form:
+-  path: '/admin/config/content/acquia-lift/slots/{acquia_lift_slot}'
++  path: '/admin/config/content/acquia-lift/slots/{acquia_lift_slot}/edit'
+   defaults:
+     _entity_form: 'acquia_lift_slot.edit'
+   requirements:
+@@ -47,4 +47,4 @@ entity.acquia_lift_slot.delete_form:
+   defaults:
+     _entity_form: 'acquia_lift_slot.delete'
+   requirements:
+-    _entity_access: 'acquia_lift_slot.delete'
+\ No newline at end of file
++    _entity_access: 'acquia_lift_slot.delete'
+diff --git a/acquia_lift.services.yml b/acquia_lift.services.yml
+index dccc85a..51750aa 100644
+--- a/acquia_lift.services.yml
++++ b/acquia_lift.services.yml
+@@ -11,8 +11,8 @@ services:
+   acquia_lift.service.helper.help_message_helper:
+     class: Drupal\acquia_lift\Service\Helper\HelpMessageHelper
+     arguments: ['@config.factory', '@link_generator']
+-  acquia_lift.service.helper.lift_api_helper:
+-    class: Drupal\acquia_lift\Service\Helper\LiftAPIHelper
++  acquia_lift.lift.api_loader:
++    class: Drupal\acquia_lift\Lift\APILoader
+     arguments: ['@config.factory']
+   acquia_lift.service.helper.node_type_thumbnail_form_helper:
+     class: Drupal\acquia_lift\Service\Helper\NodeTypeThumbnailFormHelper
+diff --git a/config/schema/acquia_lift.settings.yml b/config/schema/acquia_lift.settings.yml
+index 2917d7b..3a44e7b 100644
+--- a/config/schema/acquia_lift.settings.yml
++++ b/config/schema/acquia_lift.settings.yml
+@@ -14,7 +14,7 @@ acquia_lift.settings:
+           label: 'Site ID'
+         public_key:
+           type: string
+-          label: "Acquia Lift API Key."
++          label: "Acquia Lift API Public Key."
+         secret_key:
+           type: string
+           label: "Acquia Lift API Secret Key."
+diff --git a/config/schema/acquia_lift.slot.yml b/config/schema/acquia_lift.slot.yml
+index e8fda53..c18a405 100644
+--- a/config/schema/acquia_lift.slot.yml
++++ b/config/schema/acquia_lift.slot.yml
+@@ -1,6 +1,6 @@
+ acquia_lift.slot.*:
+   type: config_entity
+-  label : 'Facet'
++  label : 'Slot'
+   mapping:
+     id:
+       type: string
+@@ -35,4 +35,4 @@ acquia_lift.slot.*:
+             description: 'The page this slot applies to'
+         condition:
+           type: string
+-          label: 'show or hide the slot on gives pages.'
+\ No newline at end of file
++          label: 'Show or hide the slot on given pages'
+\ No newline at end of file
+diff --git a/src/AcquiaLiftException.php b/src/AcquiaLiftException.php
+deleted file mode 100644
+index ae4d58e..0000000
+--- a/src/AcquiaLiftException.php
++++ /dev/null
+@@ -1,9 +0,0 @@
+-<?php
+-
+-namespace Drupal\acquia_lift;
+-
+-/**
+- * Represents an exception that occurred in some part of the Acquia Lift Module.
+- */
+-class AcquiaLiftException extends \Exception {
+-}
+diff --git a/src/Entity/Controller/SlotListBuilder.php b/src/Entity/Controller/SlotListBuilder.php
+index 2f16dde..b927824 100644
+--- a/src/Entity/Controller/SlotListBuilder.php
++++ b/src/Entity/Controller/SlotListBuilder.php
+@@ -2,7 +2,7 @@
+ 
+ namespace Drupal\acquia_lift\Entity\Controller;
+ 
+-use Drupal\acquia_lift\AcquiaLiftException;
++use Drupal\acquia_lift\Lift\APILoader;
+ use Drupal\Component\Utility\Html;
+ use Drupal\Core\Config\Entity\ConfigEntityInterface;
+ use Drupal\Core\Config\Entity\ConfigEntityListBuilder;
+@@ -10,7 +10,6 @@
+ use Drupal\Core\Entity\EntityStorageInterface;
+ use Drupal\Core\Entity\EntityTypeInterface;
+ use Symfony\Component\DependencyInjection\ContainerInterface;
+-use GuzzleHttp\Exception\RequestException;
+ 
+ /**
+  * Builds a listing of slot entities.
+@@ -25,25 +24,25 @@ class SlotListBuilder extends ConfigEntityListBuilder {
+   protected $liftClient;
+ 
+   /**
++   * The Lift API Loader.
++   *
++   * @var \Drupal\acquia_lift\Lift\APILoader
++   */
++  protected $apiLoader;
++
++  /**
+    * Constructs an IndexListBuilder object.
+    *
+    * @param \Drupal\Core\Entity\EntityTypeInterface $entity_type
+    *   The entity type definition.
+    * @param \Drupal\Core\Entity\EntityStorageInterface $storage
+    *   The entity storage class.
+-   * @param  \Drupal\acquia_lift\Service\Helper\LiftAPIHelper
+-   *   The Lift API Helper.
++   * @param  \Drupal\acquia_lift\Lift\APILoader $api_loader
++   *   The Lift API Loader.
+    */
+-  public function __construct(EntityTypeInterface $entity_type, EntityStorageInterface $storage) {
++  public function __construct(EntityTypeInterface $entity_type, EntityStorageInterface $storage, APILoader $api_loader) {
+     parent::__construct($entity_type, $storage);
+-    try {
+-      /** @var \Drupal\acquia_lift\Service\Helper\LiftAPIHelper $liftHelper */
+-      $liftHelper = \Drupal::getContainer()
+-        ->get('acquia_lift.service.helper.lift_api_helper');
+-      $this->liftClient = $liftHelper->getLiftClient();
+-    } catch (AcquiaLiftException $e) {
+-      drupal_set_message($this->t($e->getMessage()), 'error');
+-    }
++    $this->apiLoader = $api_loader;
+   }
+ 
+   /**
+@@ -53,9 +52,13 @@ public static function createInstance(ContainerInterface $container, EntityTypeI
+     $entity_storage = $container->get('entity_type.manager')
+       ->getStorage($entity_type->id());
+ 
++    /** @var \Drupal\acquia_lift\Lift\APILoader $api_loader */
++    $api_loader = $container->get('acquia_lift.lift.api_loader');
++
+     return new static(
+       $entity_type,
+-      $entity_storage
++      $entity_storage,
++      $api_loader
+     );
+   }
+ 
+@@ -93,9 +96,12 @@ public function buildRow(EntityInterface $entity) {
+     $status = $entity->status();
+     $status_label = $status ? $this->t('Enabled') : $this->t('Disabled');
+ 
++    // Get our liftClient
++    $liftClient = NULL;
+     try {
++      $liftClient = $this->apiLoader->getLiftClient();
+       // Verify if we have a connection to the Decision API.
+-      if (!isset($this->liftClient) || !$this->liftClient->ping()) {
++      if (!isset($liftClient) || !$liftClient->ping()) {
+         $status = FALSE;
+         $status_label = $this->t('Unavailable');
+       }
+@@ -104,12 +110,14 @@ public function buildRow(EntityInterface $entity) {
+       $status_label = $e->getMessage();
+     }
+ 
+-    // Verify if the slot is available in the Decision API.
+-    try {
+-      $this->liftClient->getSlotManager()->get($entity->id());
+-    } catch (\Exception $e) {
+-      $status = FALSE;
+-      $status_label = $e->getMessage();
++    if ($liftClient instanceof \Acquia\LiftClient\Lift) {
++      // Verify if the slot is available in the Decision API.
++      try {
++        $liftClient->getSlotManager()->get($entity->id());
++      } catch (\Exception $e) {
++        $status = FALSE;
++        $status_label = $e->getMessage();
++      }
+     }
+ 
+     $status_icon = array(
+@@ -184,7 +192,7 @@ function (ConfigEntityInterface $a, ConfigEntityInterface $b) {
+    */
+   public function render() {
+     $build['description'] = array(
+-      '#markup' => $this->t("<p>This lists all the slots that were created by Drupal and synced up to the Acquia Lift Service. This does NOT list Slots created in the Acquia Lift Experience builder.</p>"),
++      '#markup' => "<p>" . $this->t("This lists all the slots that were created by Drupal and synced up to the Acquia Lift Service. This does NOT list Slots created in the Acquia Lift Experience builder.") . "</p>",
+     );
+     $build[] = parent::render();
+     return $build;
+diff --git a/src/Entity/Slot.php b/src/Entity/Slot.php
+index 8de3020..a510b99 100644
+--- a/src/Entity/Slot.php
++++ b/src/Entity/Slot.php
+@@ -3,10 +3,10 @@
+ namespace Drupal\acquia_lift\Entity;
+ 
+ use Acquia\LiftClient\Entity\Visibility;
+-use Drupal\acquia_lift\AcquiaLiftException;
+ use Drupal\acquia_lift\SlotInterface;
+ use Drupal\Core\Config\Entity\ConfigEntityBase;
+ use Drupal\Core\Entity\EntityStorageInterface;
++use Acquia\LiftClient\Entity\Slot as LiftClientSlot;
+ 
+ /**
+  * Defines the Drupal created slots.
+@@ -14,11 +14,11 @@
+  * @ConfigEntityType(
+  *   id = "acquia_lift_slot",
+  *   label = @Translation("Slot"),
+- *   label_singular = @Translation("slot"),
+- *   label_plural = @Translation("slots"),
++ *   label_singular = @Translation("Slot"),
++ *   label_plural = @Translation("Slots"),
+  *   label_count = @PluralTranslation(
+- *     singular = "@count slot",
+- *     plural = "@count slots",
++ *     singular = "@count Slot",
++ *     plural = "@count Slots",
+  *   ),
+  *   handlers = {
+  *     "storage" = "Drupal\Core\Config\Entity\ConfigEntityStorage",
+@@ -47,8 +47,8 @@
+  *     "css_url"
+  *   },
+  *   links = {
+- *     "add-form" = "/admin/config/content/acquia-lift/slots/add-slot",
+- *     "edit-form" = "/admin/config/content/acquia-lift/slots/{acquia_lift_slot}",
++ *     "add-form" = "/admin/config/content/acquia-lift/slots/add",
++ *     "edit-form" = "/admin/config/content/acquia-lift/slots/{acquia_lift_slot}/edit",
+  *     "delete-form" = "/admin/config/content/acquia-lift/slots/{acquia_lift_slot}/delete",
+  *     "disable" = "/admin/config/content/acquia-lift/slots/{acquia_lift_slot}/disable",
+  *     "enable" = "/admin/config/content/acquia-lift/slots/{acquia_lift_slot}/enable",
+@@ -88,31 +88,19 @@ class Slot extends ConfigEntityBase implements SlotInterface {
+   /**
+    * The slot CSS Url
+    *
++   * It has the underscore as Drupal does this auto-mapping of properties to
++   * config schema. If anyone knows how we can use camelCase here, it's be great
++   * but it's not a huge deal.
++   *
+    * @var string
+    */
+   protected $css_url;
+ 
+   /**
+-   * The Lift API Helper.
+-   *
+-   * @var \Acquia\LiftClient\Lift
+-   */
+-  protected $liftClient;
+-
+-  /**
+    * {@inheritdoc}
+    */
+   public function __construct(array $values, $entity_type) {
+     parent::__construct($values, $entity_type);
+-
+-    try {
+-      /** @var \Drupal\acquia_lift\Service\Helper\LiftAPIHelper $liftHelper */
+-      $liftHelper = \Drupal::getContainer()
+-        ->get('acquia_lift.service.helper.lift_api_helper');
+-      $this->liftClient = $liftHelper->getLiftClient();
+-    } catch (AcquiaLiftException $e) {
+-      drupal_set_message(t($e->getMessage()), 'error');
+-    }
+   }
+ 
+   /**
+@@ -149,11 +137,11 @@ public function setCssUrl($cssUrl) {
+    * {@inheritdoc}
+    */
+   public function getHtml() {
+-    $css_html = "";
++    $cssHtml = "";
+     if (!empty($this->css_url)) {
+-      $css_html = " data-lift-css=\"" . $this->css_url . "\"";
++      $cssHtml = " data-lift-css=\"" . $this->css_url . "\"";
+     }
+-    return "<div data-lift-slot=\"" . $this->id() . "\"" . $css_html . "/>";
++    return "<div data-lift-slot=\"" . $this->id() . "\"" . $cssHtml . "/>";
+   }
+ 
+   /**
+@@ -178,7 +166,7 @@ public function setVisibility(Visibility $visibility) {
+    * {@inheritdoc}
+    */
+   public function getExternalSlot() {
+-    $slot = new \Acquia\LiftClient\Entity\Slot();
++    $slot = new LiftClientSlot();
+     $slot->setId($this->id());
+     $slot->setLabel($this->label);
+     $slot->setDescription($this->description);
+@@ -189,12 +177,32 @@ public function getExternalSlot() {
+   }
+ 
+   /**
++   * Returns the APILoader class.
++   *
++   * Drupal 8 does not support dependency injection in Config Entities, it does
++   * support dependency injection in the Events using the EventSubscriber but
++   * there are no events available for entity save and entity delete. We could
++   * use hooks but that leaves us with the same problem and is not any better
++   * than loading the service here as a static function where it is being used.
++   *
++   * @return \Drupal\acquia_lift\Lift\APILoader
++   */
++  public static function getLiftAPILoader() {
++    return \Drupal::service('acquia_lift.lift.api_loader');
++  }
++
++  /**
+    * {@inheritdoc}
+    */
+   public function save() {
+     $return = parent::save();
++    // Try saving it in the decision api and show any error in the UI if it
++    // would fail.
+     try {
+-      $this->liftClient->getSlotManager()->add($this->getExternalSlot());
++      Slot::getLiftAPILoader()
++        ->getLiftClient()
++        ->getSlotManager()
++        ->add($this->getExternalSlot());
+     } catch (\Exception $e) {
+       drupal_set_message(t($e->getMessage()), 'error');
+     }
+@@ -207,14 +215,18 @@ public function save() {
+   public static function preDelete(EntityStorageInterface $storage, array $entities) {
+     parent::preDelete($storage, $entities);
+ 
++    /** @var \Drupal\acquia_lift\Entity\Slot $entity */
+     foreach ($entities as $entity) {
+       if ($entity->isUninstalling() || $entity->isSyncing()) {
+         // During extension uninstall and configuration synchronization
+         // deletions are already managed.
+         break;
+       }
++      // Try deleting it in the decision api and show any error in the UI if it
++      // would fail.
+       try {
+-        $entity->liftClient->getSlotManager()->delete($entity->id());
++        Slot::getLiftAPILoader()
++          ->getLiftClient()->getSlotManager()->delete($entity->id());
+       } catch (\Exception $e) {
+         drupal_set_message(t($e->getMessage()), 'error');
+       }
+diff --git a/src/Exception/APILoaderException.php b/src/Exception/APILoaderException.php
+new file mode 100644
+index 0000000..69357a9
+--- /dev/null
++++ b/src/Exception/APILoaderException.php
+@@ -0,0 +1,9 @@
++<?php
++
++namespace Drupal\acquia_lift\Exception;
++
++/**
++ * Represents an exception that occurred in in the APILoader class.
++ */
++class APILoaderException extends \Exception {
++}
+diff --git a/src/Form/SlotForm.php b/src/Form/SlotForm.php
+index 0329995..bb98a26 100644
+--- a/src/Form/SlotForm.php
++++ b/src/Form/SlotForm.php
+@@ -4,6 +4,8 @@
+ 
+ use Acquia\LiftClient\Entity\Visibility;
+ use Drupal\acquia_lift\AcquiaLiftException;
++use Drupal\acquia_lift\Exception\APILoaderException;
++use Drupal\acquia_lift\Lift\LiftAPI;
+ use Drupal\Core\Entity\EntityForm;
+ use Drupal\Core\Entity\EntityTypeManagerInterface;
+ use Drupal\Core\Form\FormStateInterface;
+@@ -37,13 +39,6 @@ class SlotForm extends EntityForm {
+   protected $entityTypeManager;
+ 
+   /**
+-   * The Lift API Helper.
+-   *
+-   * @var \Acquia\LiftClient\Lift
+-   */
+-  protected $liftClient;
+-
+-  /**
+    * Constructs an FacetDisplayForm object.
+    *
+    * @param \Drupal\Core\Entity\EntityTypeManagerInterface $entity_type_manager
+@@ -52,14 +47,6 @@ class SlotForm extends EntityForm {
+   public function __construct(EntityTypeManagerInterface $entity_type_manager) {
+     $this->entityTypeManager = $entity_type_manager;
+     $this->slotStorage = $entity_type_manager->getStorage('acquia_lift_slot');
+-    try {
+-      /** @var \Drupal\acquia_lift\Service\Helper\LiftAPIHelper $liftHelper */
+-      $liftHelper = \Drupal::getContainer()
+-        ->get('acquia_lift.service.helper.lift_api_helper');
+-      $this->liftClient = $liftHelper->getLiftClient();
+-    } catch (AcquiaLiftException $e) {
+-      drupal_set_message($this->t($e->getMessage()), 'error');
+-    }
+   }
+ 
+   /**
+@@ -190,50 +177,52 @@ public function save(array $form, FormStateInterface $form_state) {
+ 
+     // Only save the index if the form doesn't need to be rebuilt.
+     if (!$form_state->isRebuilding()) {
++      // Drupal already populated the form values in the entity object. Each
++      // form field was saved as a public variable in the entity class. PHP
++      // allows Drupal to do this even if the method is not defined ahead of
++      // time.
++      $status = FALSE;
+       try {
+-        // Drupal already populated the form values in the entity object. Each
+-        // form field was saved as a public variable in the entity class. PHP
+-        // allows Drupal to do this even if the method is not defined ahead of
+-        // time.
+         $status = $slot->save();
+-
+-        // Grab the URL of the new entity. We'll use it in the message.
+-        $url = $slot->urlInfo();
+-
+-        // Create an edit link.
+-        $edit_link = Link::fromTextAndUrl($this->t('Edit'), $url)->toString();
+-
+-        if ($status == SAVED_UPDATED) {
+-          // If we edited an existing entity...
+-          drupal_set_message(
+-            t('Slot %label has been updated.', ['%label' => $slot->label()])
+-          );
+-          $this->logger('contact')->notice(
+-            'Slot %label has been updated.',
+-            ['%label' => $slot->label(), 'link' => $edit_link]
+-          );
+-        }
+-        else {
+-          // If we created a new entity...
+-          drupal_set_message(
+-            $this->t(
+-              'Slot %label has been added.',
+-              array('%label' => $slot->label())
+-            )
+-          );
+-          $this->logger('contact')->notice(
+-            'Slot %label has been added.',
+-            ['%label' => $slot->label(), 'link' => $edit_link]
+-          );
+-        }
+-
+-        // Redirect the user back to the listing route after the save operation.
+-        $form_state->setRedirect('acquia_lift.slot.overview');
+-      } catch (AcquiaLiftException $e) {
++      } catch (\Exception $e) {
+         $form_state->setRebuild();
+         watchdog_exception('acquia_lift', $e);
+         drupal_set_message($this->t('The slot could not be saved.'), 'error');
+       }
++
++      // Grab the URL of the new entity. We'll use it in the message.
++      $url = $slot->urlInfo();
++
++      // Create an edit link.
++      $edit_link = Link::fromTextAndUrl($this->t('Edit'), $url)->toString();
++
++      if ($status == SAVED_UPDATED) {
++        // If we edited an existing entity...
++        drupal_set_message(
++          t('Slot %label has been updated.', ['%label' => $slot->label()])
++        );
++        $this->logger('contact')->notice(
++          'Slot %label has been updated.',
++          ['%label' => $slot->label(), 'link' => $edit_link]
++        );
++      }
++      else {
++        // If we created a new entity...
++        drupal_set_message(
++          $this->t(
++            'Slot %label has been added.',
++            array('%label' => $slot->label())
++          )
++        );
++        $this->logger('contact')->notice(
++          'Slot %label has been added.',
++          ['%label' => $slot->label(), 'link' => $edit_link]
++        );
++      }
++
++      // Redirect the user back to the listing route after the save operation.
++      $form_state->setRedirect('acquia_lift.slot.overview');
++
+     }
+   }
+ }
+diff --git a/src/Lift/APILoader.php b/src/Lift/APILoader.php
+new file mode 100644
+index 0000000..c00db82
+--- /dev/null
++++ b/src/Lift/APILoader.php
+@@ -0,0 +1,108 @@
++<?php
++
++namespace Drupal\acquia_lift\Lift;
++
++use Drupal\acquia_lift\Exception\APILoaderException;
++use Drupal\Core\Config\ConfigFactoryInterface;
++use Acquia\LiftClient\Lift;
++
++/**
++ * Contains the wrapper around loading the Lift API Client.
++ */
++class APILoader {
++
++  /**
++   * The Lift API SDK Client.
++   *
++   * @var \Acquia\LiftClient\Lift
++   */
++  protected $lift;
++
++  /**
++   * The config factory
++   *
++   * @var \Drupal\Core\Config\ConfigFactoryInterface
++   */
++  protected $configFactory;
++
++  /**
++   * Constructor.
++   *
++   * @param \Drupal\Core\Config\ConfigFactoryInterface $config_factory
++   *   The config factory service.
++   */
++  public function __construct(ConfigFactoryInterface $config_factory) {
++    $this->configFactory = $config_factory;
++  }
++
++  /**
++   * Initializes the connection by setting the credentials and the API URL.
++   *
++   *  @throws \Drupal\acquia_lift\AcquiaLiftException
++   *   The reason why it couldn't initialize.
++   */
++  public function initialize() {
++    $settings = $this->configFactory->get('acquia_lift.settings');
++    $credential_settings = $settings->get('credential');
++
++    if (!isset($credential_settings['account_id'])) {
++      throw new APILoaderException(
++        'Account ID not found. Please verify your settings.'
++      );
++    }
++    if (!isset($credential_settings['site_id'])) {
++      throw new APILoaderException(
++        'Site ID not found. Please verify your settings.'
++      );
++    }
++    if (!isset($credential_settings['public_key'])) {
++      throw new APILoaderException(
++        'Public Key not found. Please verify your settings.'
++      );
++    }
++    if (!isset($credential_settings['secret_key'])) {
++      throw new APILoaderException(
++        'Secret Key not found. Please verify your settings.'
++      );
++    }
++    if (!isset($credential_settings['decision_api_url'])) {
++      throw new APILoaderException(
++        'Decision API URL not found. Please verify your settings.'
++      );
++    }
++    $this->lift = new Lift(
++      $credential_settings['account_id'],
++      $credential_settings['site_id'],
++      $credential_settings['public_key'],
++      $credential_settings['secret_key'],
++      array('base_url' => $credential_settings['decision_api_url'])
++    );
++  }
++
++  /**
++   * Sets the solr connection.
++   *
++   * @param \Acquia\LiftClient\Lift $lift
++   *   The lift connection object.
++   */
++  public function setLiftClient(Lift $lift) {
++    $this->lift = $lift;
++  }
++
++  /**
++   * Gets the lift client.
++   *
++   * @return \Acquia\LiftClient\Lift $lift
++   *   The lift connection object.
++   *
++   *  @throws \Drupal\acquia_lift\AcquiaLiftException
++   *   The reason why it could not initialize.
++   */
++  public function getLiftClient() {
++    if (empty($this->lift)) {
++      $this->initialize();
++    }
++    return $this->lift;
++  }
++
++}
+diff --git a/src/Service/Helper/LiftAPIHelper.php b/src/Service/Helper/LiftAPIHelper.php
+deleted file mode 100644
+index d9ddae9..0000000
+--- a/src/Service/Helper/LiftAPIHelper.php
++++ /dev/null
+@@ -1,88 +0,0 @@
+-<?php
+-
+-namespace Drupal\acquia_lift\Service\Helper;
+-
+-use Drupal\acquia_lift\AcquiaLiftException;
+-use Drupal\Core\Config\ConfigFactoryInterface;
+-use Acquia\LiftClient\Lift;
+-
+-/**
+- * Contains helper methods for working with Solr.
+- */
+-class LiftAPIHelper {
+-
+-  /**
+-   * The Lift API SDK Client.
+-   *
+-   * @var \Acquia\LiftClient\Lift
+-   */
+-  protected $lift;
+-
+-  /**
+-   * Constructor.
+-   *
+-   * @param \Drupal\Core\Config\ConfigFactoryInterface $config_factory
+-   *   The config factory service.
+-   *
+-   * @throws \Drupal\acquia_lift\AcquiaLiftException
+-   *   The reason why it couldn't create the helper.
+-   */
+-  public function __construct(ConfigFactoryInterface $config_factory) {
+-    $settings = $config_factory->get('acquia_lift.settings');
+-    $credential_settings = $settings->get('credential');
+-
+-    if (!isset($credential_settings['account_id'])) {
+-      throw new AcquiaLiftException(
+-        'Account ID not found. Please verify your settings.'
+-      );
+-    }
+-    if (!isset($credential_settings['site_id'])) {
+-      throw new AcquiaLiftException(
+-        'Site ID not found. Please verify your settings.'
+-      );
+-    }
+-    if (!isset($credential_settings['public_key'])) {
+-      throw new AcquiaLiftException(
+-        'Public Key not found. Please verify your settings.'
+-      );
+-    }
+-    if (!isset($credential_settings['secret_key'])) {
+-      throw new AcquiaLiftException(
+-        'Secret Key not found. Please verify your settings.'
+-      );
+-    }
+-    if (!isset($credential_settings['decision_api_url'])) {
+-      throw new AcquiaLiftException(
+-        'Decision API URL not found. Please verify your settings.'
+-      );
+-    }
+-    $this->lift = new Lift(
+-      $credential_settings['account_id'],
+-      $credential_settings['site_id'],
+-      $credential_settings['public_key'],
+-      $credential_settings['secret_key'],
+-      array('base_url' => $credential_settings['decision_api_url'])
+-    );
+-  }
+-
+-  /**
+-   * Sets the solr connection.
+-   *
+-   * @param \Acquia\LiftClient\Lift $lift
+-   *   The lift connection object.
+-   */
+-  public function setLiftClient(Lift $lift) {
+-    $this->lift = $lift;
+-  }
+-
+-  /**
+-   * Gets the lift client.
+-   *
+-   * @return \Acquia\LiftClient\Lift $lift
+-   *   The lift connection object.
+-   */
+-  public function getLiftClient() {
+-    return $this->lift;
+-  }
+-
+-}
+diff --git a/src/SlotInterface.php b/src/SlotInterface.php
+index 0112abb..b5b7122 100644
+--- a/src/SlotInterface.php
++++ b/src/SlotInterface.php
+@@ -81,4 +81,4 @@ public function setVisibility(Visibility $visibility);
+    */
+   public function getExternalSlot();
+ 
+-}
+\ No newline at end of file
++}
+
+From 68b6c8d2ac6f257e277c1b0100eb13af20924828 Mon Sep 17 00:00:00 2001
+From: Nick Veenhof <nick.veenhof@gmail.com>
+Date: Thu, 25 Aug 2016 12:49:17 +0200
+Subject: [PATCH 08/11] Implementing comments from shay
+
+---
+ acquia_lift.links.task.yml | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/acquia_lift.links.task.yml b/acquia_lift.links.task.yml
+index 9ab8118..4fa01d0 100644
+--- a/acquia_lift.links.task.yml
++++ b/acquia_lift.links.task.yml
+@@ -7,4 +7,4 @@ acquia_lift.slot.overview:
+   route_name: acquia_lift.slot.overview
+   title: 'Slots'
+   weight: 50
+-  base_route: acquia_lift.admin_settings_form
+\ No newline at end of file
++  base_route: acquia_lift.admin_settings_form
+
+From 03d2eddd18d7a2f3a074d390427c2283d5c79092 Mon Sep 17 00:00:00 2001
+From: Nick Veenhof <nick.veenhof@gmail.com>
+Date: Thu, 25 Aug 2016 12:54:29 +0200
+Subject: [PATCH 09/11] Implementing some documentation
+
+---
+ README.md          | 12 ++++++++++++
+ acquia_lift.module |  1 +
+ 2 files changed, 13 insertions(+)
+
+diff --git a/README.md b/README.md
+index 6fbd960..6a6c015 100644
+--- a/README.md
++++ b/README.md
+@@ -3,3 +3,15 @@
+ This is an early and development-only branch of the Acquia Lift module for Drupal 8. There is no release yet; please do NOT use this branch unless you are explicitly instructed to.
+ 
+ If you are looking for using Acquia Lift for Drupal 8, please contact your Solution Architect or Customer Success Engineer for help. Thank you!
++
++## How to use the Lift API
++
++```
++/** @var \Drupal\acquia_lift\Lift\APILoader $liftAPILoader */
++$liftAPILoader = \Drupal::service('acquia_lift.lift.api_loader');
++$liftAPILoader->getLiftClient()->ping();
++```
++
++Make sure you wrap it in a try { ... } catch (\Exception $e) { } routine as it
++could throw errors if it is unable to make a connection. If you want to know
++what you can do with the API, see documentation at https://github.com/acquia/lift-sdk-php
+\ No newline at end of file
+diff --git a/acquia_lift.module b/acquia_lift.module
+index 9cc2393..8aa343e 100644
+--- a/acquia_lift.module
++++ b/acquia_lift.module
+@@ -35,6 +35,7 @@ function acquia_lift_page_attachments(array &$page) {
+   // Populate Html head.
+   \Drupal::service('acquia_lift.service.context.page_context')
+     ->populateHtmlHead($page['#attached']['html_head']);
++
+ }
+ 
+ /**
+
+From 419c1b24da7051127fa46c9ff10f8d27c47a8331 Mon Sep 17 00:00:00 2001
+From: Nick Veenhof <nick.veenhof@gmail.com>
+Date: Thu, 25 Aug 2016 12:55:16 +0200
+Subject: [PATCH 10/11] Implementing some documentation
+
+---
+ README.md | 5 ++++-
+ 1 file changed, 4 insertions(+), 1 deletion(-)
+
+diff --git a/README.md b/README.md
+index 6a6c015..fe96479 100644
+--- a/README.md
++++ b/README.md
+@@ -14,4 +14,7 @@ $liftAPILoader->getLiftClient()->ping();
+ 
+ Make sure you wrap it in a try { ... } catch (\Exception $e) { } routine as it
+ could throw errors if it is unable to make a connection. If you want to know
+-what you can do with the API, see documentation at https://github.com/acquia/lift-sdk-php
+\ No newline at end of file
++what you can do with the API, see documentation at https://github.com/acquia/lift-sdk-php
++
++You can also use Drupal API's to create a new Slot Config Entity and then it
++will appear in the list. Please see the Drupal documentation on how to do this.
+\ No newline at end of file
+
+From b0521d625cc84f6b4c1f4258f88b4976dc5568f0 Mon Sep 17 00:00:00 2001
+From: Nick Veenhof <nick.veenhof@gmail.com>
+Date: Mon, 5 Sep 2016 15:25:40 +0200
+Subject: [PATCH 11/11] changing dependency to become decoupled from content
+ hub until they resolve the hmac v3 requirement
+
+---
+ composer.json | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/composer.json b/composer.json
+index 2f74fc2..8d686c2 100644
+--- a/composer.json
++++ b/composer.json
+@@ -6,7 +6,7 @@
+   "repositories": [
+     {
+       "type": "vcs",
+-      "url": "https://github.com/acquia/lift-sdk-php"
++      "url": "https://github.com/nickveenhof/lift-sdk-php"
+     }
+   ],
+   "require": {

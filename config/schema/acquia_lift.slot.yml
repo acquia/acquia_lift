@@ -1,0 +1,38 @@
+acquia_lift.slot.*:
+  type: config_entity
+  label : 'Slot'
+  mapping:
+    id:
+      type: string
+      label: 'ID'
+    uuid:
+      type: string
+      label: 'UUID'
+    langcode:
+      type: string
+      label: 'Language code'
+    status:
+      type: boolean
+      label: 'Status'
+    label:
+      type: label
+      label: 'Name'
+    description:
+      type: string
+      label: 'Description'
+    css_url:
+      type: string
+      label: 'CSS URL'
+    visibility:
+      type: mapping
+      label: 'Slot Visibility'
+      mapping:
+        pages:
+          type: sequence
+          label: 'The pages this slot applies to'
+          sequence:
+            type: string
+            description: 'The page this slot applies to'
+        condition:
+          type: string
+          label: 'Show or hide the slot on given pages'

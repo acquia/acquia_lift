@@ -1,3 +1,3 @@
-administer acquia lift:
+administer acquia_lift:
   title: Administer Acquia Lift
   description: Administer settings of Acquia Lift module.

@@ -1,0 +1,5 @@
+entity.acquia_lift_slot.add_form:
+  route_name: entity.acquia_lift_slot.add_form
+  title: 'Add slot'
+  appears_on:
+    - acquia_lift.slot.overview

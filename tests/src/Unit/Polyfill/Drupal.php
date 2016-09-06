@@ -35,7 +35,7 @@ namespace {
 
   /**
    * PageContextTest uses file_create_url(),
-   * which *are* available when using the Simpletest test runner, but not when
+   * which *is* available when using the Simpletest test runner, but not when
    * using the PHPUnit test runner; hence this hack.
    */
   if (!function_exists('file_create_url')) {

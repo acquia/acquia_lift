@@ -98,11 +98,16 @@ class SettingsTest extends WebTestBase {
     $edit += $this->convertToPostFormSettings($field_mappings_settings, 'field_mappings');
     $edit += $this->convertToPostFormSettings($visibility_settings, 'visibility');
     $edit_settings_count = count($edit);
-    $expect_settings_count = 12;
+    $expect_settings_count = 14;
 
     // Post the edits and assert that options are saved.
     $this->drupalPostForm('admin/config/content/acquia-lift', $edit, t('Save configuration'));
     $this->assertText(t('The configuration options have been saved.'));
+
+    // The saved secret key should not be shown.
+    $actual_secret_key = $this->config('acquia_lift.settings')->get('credential.secret_key');
+    $this->assertEqual($edit['credential[secret_key]'], $actual_secret_key, 'Credential\'s secret key was saved into DB.');
+    $edit['credential[secret_key]'] = '';
 
     // Assert all other fields. Also count the asserted fields to make sure all are asserted.
     foreach ($edit as $name => $value) {

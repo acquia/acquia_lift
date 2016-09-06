@@ -3,6 +3,8 @@ credential:
   site_id: ''
   assets_url: ''
   decision_api_url: ''
+  public_key: ''
+  secret_key: ''
   oauth_url: ''
 identity:
   capture_identity: false

@@ -33,6 +33,8 @@ trait SettingsDataTrait {
       'account_id' => 'account_id_1',
       'site_id' => 'site_id_1',
       'assets_url' => 'assets_url_1',
+      'public_key' => 'public_key_1',
+      'secret_key' => 'secret_key_1',
       'decision_api_url' => 'decision_api_url_1',
       'oauth_url' => 'oauth_url_1',
     ];

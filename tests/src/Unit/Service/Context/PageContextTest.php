@@ -1,12 +1,13 @@
 <?php
 
-namespace Drupal\Tests\acquia_lift\Kernel\Service\Context;
+namespace Drupal\Tests\acquia_lift\Unit\Service\Context;
 
-use Drupal\KernelTests\KernelTestBase;
 use Drupal\acquia_lift\Service\Context\PageContext;
 use Drupal\Tests\acquia_lift\Traits\SettingsDataTrait;
+use Drupal\Tests\UnitTestCase;
 
 require_once(__DIR__ . '/../../../Traits/SettingsDataTrait.php');
+require_once(__DIR__ . '/../../Polyfill/Drupal.php');
 
 /**
  * PageContextTest Test.
@@ -14,14 +15,7 @@ require_once(__DIR__ . '/../../../Traits/SettingsDataTrait.php');
  * @coversDefaultClass Drupal\acquia_lift\Service\Context\PageContext
  * @group acquia_lift
  */
-class PageContextTest extends KernelTestBase {
-
-  /**
-   * {@inheritdoc}
-   */
-  public static $modules = array(
-    'acquia_lift',
-  );
+class PageContextTest extends UnitTestCase {
 
   use SettingsDataTrait;
 
@@ -360,7 +354,7 @@ class PageContextTest extends KernelTestBase {
       ->with('entity.manager')
       ->willReturn($entity_manager);
 
-    /*
+
     $entity_manager->expects($this->once())
       ->method('getEntityTypeFromClass')
       ->with('Drupal\image\Entity\ImageStyle')
@@ -373,10 +367,11 @@ class PageContextTest extends KernelTestBase {
       ->method('load')
       ->with('medium')
       ->willReturn($image_style);
-    // This breaks the whole thing.
+
     $image_entity->expects($this->once())
       ->method('bundle')
       ->willReturn('file');
+
     $image_entity->expects($this->once())
       ->method('getFileUri')
       ->willReturn('a_file_uri');
@@ -385,7 +380,6 @@ class PageContextTest extends KernelTestBase {
       ->method('buildUrl')
       ->with('a_file_uri')
       ->willReturn('a_style_decorated_file_uri');
-    */
 
     $page_context = new PageContext($this->configFactory, $this->entityTypeManager, $this->requestStack, $this->routeMatch, $this->titleResolver);
     $head = ['old_head'];
@@ -399,9 +393,8 @@ class PageContextTest extends KernelTestBase {
       'content_keywords' => '',
       'post_id' => '90210',
       'published_date' => 'a_published_time',
-      // This has broken and I don't understand what this even does.
-      //'thumbnail_url' => 'file_create_url:a_style_decorated_file_uri',
-      'thumbnail_url' => '',
+      // This is broken. Help!
+      'thumbnail_url' => 'file_create_url:a_style_decorated_file_uri',
       'persona' => '',
       'engagement_score' => PageContext::ENGAGEMENT_SCORE_DEFAULT,
       'author' => 'a_username',

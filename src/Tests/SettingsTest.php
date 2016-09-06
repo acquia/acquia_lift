@@ -54,15 +54,15 @@ class SettingsTest extends WebTestBase {
     $vocabulary1 = $this->createVocabulary();
     $vocabulary2 = $this->createVocabulary();
 
-    $term_v1_t1 = $this->createTerm($vocabulary1);
-    $term_v1_t2 = $this->createTerm($vocabulary1);
-    $term_v2_t1 = $this->createTerm($vocabulary2);
-    $term_v2_t2 = $this->createTerm($vocabulary2);
-    $term_v2_t3 = $this->createTerm($vocabulary2);
+    $this->createTerm($vocabulary1);
+    $this->createTerm($vocabulary1);
+    $this->createTerm($vocabulary2);
+    $this->createTerm($vocabulary2);
+    $this->createTerm($vocabulary2);
 
-    $field_country = $this->createFieldWithStorage('field_country', 'node', 'article', [$vocabulary1->id() => $vocabulary1->id()], ['target_type' => 'taxonomy_term'], 'entity_reference');
-    $field_people = $this->createFieldWithStorage('field_people', 'node', 'article', [$vocabulary2->id() => $vocabulary2->id()], ['target_type' => 'taxonomy_term'], 'entity_reference');
-    $field_tags = $this->createFieldWithStorage('field_tags', 'node', 'article', [$vocabulary2->id() => $vocabulary2->id()], ['target_type' => 'taxonomy_term'], 'entity_reference');
+    $this->createFieldWithStorage('field_country', 'node', 'article', [$vocabulary1->id() => $vocabulary1->id()], ['target_type' => 'taxonomy_term'], 'entity_reference');
+    $this->createFieldWithStorage('field_people', 'node', 'article', [$vocabulary2->id() => $vocabulary2->id()], ['target_type' => 'taxonomy_term'], 'entity_reference');
+    $this->createFieldWithStorage('field_tags', 'node', 'article', [$vocabulary2->id() => $vocabulary2->id()], ['target_type' => 'taxonomy_term'], 'entity_reference');
 
     // User to set up acquia_lift.
     $this->admin_user = $this->drupalCreateUser($permissions);

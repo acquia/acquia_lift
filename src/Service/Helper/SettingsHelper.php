@@ -41,4 +41,17 @@ class SettingsHelper {
 
     return FALSE;
   }
+
+  /**
+   * Is a valid content replacement mode.
+   *
+   * @param string
+   *   Mode to compare
+   * @return boolean
+   *   True if valid, false otherwise.
+   */
+  public static function isValidContentReplacementMode($test_mode) {
+    $valid_modes = ['trusted', 'untrusted'];
+    return in_array($test_mode, $valid_modes);
+  }
 }

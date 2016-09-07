@@ -70,6 +70,9 @@ acquia_lift.settings:
         path_patterns:
           type: string
           label: 'Path patterns'
+    content_replacement_mode:
+      type: string
+      label: 'Content replacement mode'
     langcode:
       type: string
       label: 'Language code'

@@ -119,6 +119,10 @@ class PageContextTest extends UnitTestCase {
       ->method('get')
       ->with('thumbnail')
       ->willReturn($this->getValidThumbnailSettings());
+    $this->settings->expects($this->at(3))
+      ->method('get')
+      ->with('content_replacement_mode')
+      ->willReturn($this->getValidContentReplacementMode());
     $this->entityTypeManager->expects($this->once())
       ->method('getStorage')
       ->with('taxonomy_term')
@@ -165,6 +169,7 @@ class PageContextTest extends UnitTestCase {
       'liftAssetsURL' => 'assets_url_1',
       'liftDecisionAPIURL' => 'decision_api_url_1',
       'authEndpoint' => 'oauth_url_1',
+      'contentReplacementMode' => 'trusted',
     ], 'assets_url_1');
 
     $this->assertEquals($expected_head, $head);
@@ -207,6 +212,7 @@ class PageContextTest extends UnitTestCase {
       'liftAssetsURL' => 'assets_url_1',
       'liftDecisionAPIURL' => 'decision_api_url_1',
       'authEndpoint' => 'oauth_url_1',
+      'contentReplacementMode' => 'trusted',
     ], 'assets_url_1');
 
     $this->assertEquals($expected_head, $head);
@@ -253,6 +259,7 @@ class PageContextTest extends UnitTestCase {
       'liftAssetsURL' => 'assets_url_1',
       'liftDecisionAPIURL' => 'decision_api_url_1',
       'authEndpoint' => 'oauth_url_1',
+      'contentReplacementMode' => 'trusted',
     ], 'assets_url_1');
 
     $this->assertEquals($expected_head, $head);
@@ -302,6 +309,7 @@ class PageContextTest extends UnitTestCase {
       'liftAssetsURL' => 'assets_url_1',
       'liftDecisionAPIURL' => 'decision_api_url_1',
       'authEndpoint' => 'oauth_url_1',
+      'contentReplacementMode' => 'trusted',
     ], 'assets_url_1');
 
     $this->assertEquals($expected_head, $head);
@@ -346,6 +354,7 @@ class PageContextTest extends UnitTestCase {
       'liftAssetsURL' => 'assets_url_1',
       'liftDecisionAPIURL' => 'decision_api_url_1',
       'authEndpoint' => 'oauth_url_1',
+      'contentReplacementMode' => 'trusted',
     ], 'assets_url_1');
 
     $this->assertEquals($expected_head, $head);
@@ -389,6 +398,7 @@ class PageContextTest extends UnitTestCase {
       'liftAssetsURL' => 'assets_url_1',
       'liftDecisionAPIURL' => 'decision_api_url_1',
       'authEndpoint' => 'oauth_url_1',
+      'contentReplacementMode' => 'trusted',
     ], 'assets_url_1');
 
     $this->assertEquals($expected_head, $head);

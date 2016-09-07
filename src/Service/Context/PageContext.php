@@ -11,6 +11,7 @@ use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\Core\Routing\RouteMatchInterface;
 use Drupal\image\Entity\ImageStyle;
 use Drupal\node\NodeInterface;
+use Drupal\acquia_lift\Service\Helper\SettingsHelper;
 
 class PageContext {
   /**
@@ -114,6 +115,7 @@ class PageContext {
     $this->setPageContextCredential($credential_settings);
     $this->setPageContextByNode($request);
     $this->setPageContextTitle($request, $route, $title_resolver);
+    $this->setPageContextConfig($settings);
   }
 
   /**
@@ -179,6 +181,19 @@ class PageContext {
         $this->pageContext[$tag_name] = $credential_settings[$credential_key];
       }
     };
+  }
+
+  /**
+   * Set any Lift configuration values to the page context.
+   *
+   * @param $settings \Drupal\Core\Config\ImmutableConfig
+   *   The lift settings values.
+   */
+  private function setPageContextConfig($settings) {
+    $replacement_mode_setting = $settings->get('content_replacement_mode');
+    if (SettingsHelper::isValidContentReplacementMode($replacement_mode_setting)) {
+      $this->pageContext['contentReplacementMode'] = $replacement_mode_setting;
+    }
   }
 
   /**

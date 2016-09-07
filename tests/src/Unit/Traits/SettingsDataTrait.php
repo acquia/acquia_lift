@@ -78,4 +78,14 @@ trait SettingsDataTrait {
       'path_patterns' => "/admin\n/admin/*\n/batch\n/node/add*\n/node/*/*\n/user/*/*\n/block/*",
     ];
   }
+
+  /**
+   * Get a valid content replacement mode
+   *
+   * @return string
+   *   A valid mode for content replacement.
+   */
+  private function getValidContentReplacementMode() {
+    return 'trusted';
+  }
 }

@@ -29,7 +29,7 @@ class SettingsTest extends WebTestBase {
 
     $permissions = [
       'access administration pages',
-      'administer acquia lift',
+      'administer acquia_lift',
       'administer content types',
       'administer modules',
       'administer site configuration',
@@ -42,22 +42,27 @@ class SettingsTest extends WebTestBase {
     $this->drupalCreateNode([
       'nid' => 90210,
       'type' => 'article',
-      'body' => [['value' => $this->randomMachineName(32), 'format' => 'full_html']],
+      'body' => [
+        [
+          'value' => $this->randomMachineName(32),
+          'format' => 'full_html'
+        ]
+      ],
     ]);
 
     // Create two vocabularies.
     $vocabulary1 = $this->createVocabulary();
     $vocabulary2 = $this->createVocabulary();
 
-    $term_v1_t1 = $this->createTerm($vocabulary1);
-    $term_v1_t2 = $this->createTerm($vocabulary1);
-    $term_v2_t1 = $this->createTerm($vocabulary2);
-    $term_v2_t2 = $this->createTerm($vocabulary2);
-    $term_v2_t3 = $this->createTerm($vocabulary2);
+    $this->createTerm($vocabulary1);
+    $this->createTerm($vocabulary1);
+    $this->createTerm($vocabulary2);
+    $this->createTerm($vocabulary2);
+    $this->createTerm($vocabulary2);
 
-    $field_country = $this->createFieldWithStorage('field_country', 'node', 'article', [$vocabulary1->id() => $vocabulary1->id()], ['target_type' => 'taxonomy_term'], 'entity_reference');
-    $field_people = $this->createFieldWithStorage('field_people', 'node', 'article', [$vocabulary2->id() => $vocabulary2->id()], ['target_type' => 'taxonomy_term'], 'entity_reference');
-    $field_tags = $this->createFieldWithStorage('field_tags', 'node', 'article', [$vocabulary2->id() => $vocabulary2->id()], ['target_type' => 'taxonomy_term'], 'entity_reference');
+    $this->createFieldWithStorage('field_country', 'node', 'article', [$vocabulary1->id() => $vocabulary1->id()], ['target_type' => 'taxonomy_term'], 'entity_reference');
+    $this->createFieldWithStorage('field_people', 'node', 'article', [$vocabulary2->id() => $vocabulary2->id()], ['target_type' => 'taxonomy_term'], 'entity_reference');
+    $this->createFieldWithStorage('field_tags', 'node', 'article', [$vocabulary2->id() => $vocabulary2->id()], ['target_type' => 'taxonomy_term'], 'entity_reference');
 
     // User to set up acquia_lift.
     $this->admin_user = $this->drupalCreateUser($permissions);
@@ -87,17 +92,22 @@ class SettingsTest extends WebTestBase {
     $field_mappings_settings = $this->getValidFieldMappingsSettings();
     $visibility_settings = $this->getValidVisibilitySettings();
 
-    $edit =[];
+    $edit = [];
     $edit += $this->convertToPostFormSettings($credential_settings, 'credential');
     $edit += $this->convertToPostFormSettings($identity_settings, 'identity');
     $edit += $this->convertToPostFormSettings($field_mappings_settings, 'field_mappings');
     $edit += $this->convertToPostFormSettings($visibility_settings, 'visibility');
     $edit_settings_count = count($edit);
-    $expect_settings_count = 12;
+    $expect_settings_count = 14;
 
     // Post the edits and assert that options are saved.
     $this->drupalPostForm('admin/config/content/acquia-lift', $edit, t('Save configuration'));
     $this->assertText(t('The configuration options have been saved.'));
+
+    // The saved secret key should not be shown.
+    $actual_secret_key = $this->config('acquia_lift.settings')->get('credential.secret_key');
+    $this->assertEqual($edit['credential[secret_key]'], $actual_secret_key, 'Credential\'s secret key was saved into DB.');
+    $edit['credential[secret_key]'] = '';
 
     // Assert all other fields. Also count the asserted fields to make sure all are asserted.
     foreach ($edit as $name => $value) {

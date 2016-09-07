@@ -4,4 +4,47 @@ acquia_lift.admin_settings_form:
     _form: '\Drupal\acquia_lift\Form\AdminSettingsForm'
     _title: 'Acquia Lift settings'
   requirements:
-    _permission: 'administer acquia lift'
+    _permission: 'administer acquia_lift'
+
+acquia_lift.slot.overview:
+  path: '/admin/config/content/acquia-lift/slot'
+  defaults:
+    _title: 'Slots'
+    _entity_list: 'acquia_lift_slot'
+  requirements:
+    _entity_create_access: 'acquia_lift_slot'
+
+entity.acquia_lift_slot.add_form:
+  path: '/admin/config/content/acquia-lift/slot/add'
+  defaults:
+    _entity_form: 'acquia_lift_slot.default'
+  requirements:
+    _entity_create_access: 'acquia_lift_slot'
+
+entity.acquia_lift_slot.edit_form:
+  path: '/admin/config/content/acquia-lift/slot/{acquia_lift_slot}/edit'
+  defaults:
+    _entity_form: 'acquia_lift_slot.edit'
+  requirements:
+    _entity_access: 'acquia_lift_slot.edit'
+
+entity.acquia_lift_slot.enable:
+  path: '/admin/config/content/acquia-lift/slot/{acquia_lift_slot}/enable'
+  defaults:
+    _entity_form: 'acquia_lift_slot.enable'
+  requirements:
+    _entity_access: 'acquia_lift_slot.enable'
+
+entity.acquia_lift_slot.disable:
+  path: '/admin/config/content/acquia-lift/slot/{acquia_lift_slot}/disable'
+  defaults:
+    _entity_form: 'acquia_lift_slot.disable'
+  requirements:
+    _entity_access: 'acquia_lift_slot.disable'
+
+entity.acquia_lift_slot.delete_form:
+  path: '/admin/config/content/acquia-lift/slot/{acquia_lift_slot}/delete'
+  defaults:
+    _entity_form: 'acquia_lift_slot.delete'
+  requirements:
+    _entity_access: 'acquia_lift_slot.delete'

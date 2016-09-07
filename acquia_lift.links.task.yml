@@ -1,0 +1,10 @@
+acquia_lift.admin_settings_form:
+  route_name: acquia_lift.admin_settings_form
+  title: 'Connection'
+  base_route: acquia_lift.admin_settings_form
+
+acquia_lift.slot.overview:
+  route_name: acquia_lift.slot.overview
+  title: 'Slots'
+  weight: 50
+  base_route: acquia_lift.admin_settings_form

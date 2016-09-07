@@ -84,7 +84,8 @@ class AdminSettingsForm extends ConfigFormBase {
    *   Credential form.
    */
   private function buildCredentialForm() {
-    $credential_settings = $this->config('acquia_lift.settings')->get('credential');
+    $credential_settings = $this->config('acquia_lift.settings')
+      ->get('credential');
 
     $form = [
       '#title' => t('Acquia Lift Credential'),
@@ -106,6 +107,20 @@ class AdminSettingsForm extends ConfigFormBase {
       '#default_value' => $credential_settings['site_id'],
       '#required' => TRUE,
     ];
+    $form['public_key'] = array(
+      '#type' => 'textfield',
+      '#title' => t('Public Key'),
+      '#description' => 'Your Acquia Lift Public Key.',
+      '#default_value' => $credential_settings['public_key'],
+      '#required' => TRUE,
+    );
+    $form['secret_key'] = array(
+      '#type' => 'password',
+      '#description' => 'Your Acquia Lift Secret Key. Only required when setting it up for the first time or when you are changing the secret key.',
+      '#title' => t('Secret Key'),
+      '#default_value' => $credential_settings['secret_key'],
+      '#required' => empty($credential_settings['secret_key']),
+    );
     $form['assets_url'] = [
       '#type' => 'textfield',
       '#title' => t('Assets URL'),
@@ -202,7 +217,8 @@ class AdminSettingsForm extends ConfigFormBase {
    *   Field mappings form.
    */
   private function buildFieldMappingsForm() {
-    $field_mappings_settings = $this->config('acquia_lift.settings')->get('field_mappings');
+    $field_mappings_settings = $this->config('acquia_lift.settings')
+      ->get('field_mappings');
     $field_names = $this->getTaxonomyTermFieldNames();
 
     $form = [
@@ -263,7 +279,8 @@ class AdminSettingsForm extends ConfigFormBase {
    *   Visibility form.
    */
   private function buildVisibilityForm() {
-    $visibility_settings = $this->config('acquia_lift.settings')->get('visibility');
+    $visibility_settings = $this->config('acquia_lift.settings')
+      ->get('visibility');
 
     $form = [
       '#title' => t('Visibility'),
@@ -305,10 +322,14 @@ class AdminSettingsForm extends ConfigFormBase {
     }
 
     $links = [];
-    $link_attributes = ['attributes' => ['target' => '_blank'], 'fragment' => 'edit-acquia-lift'];
+    $link_attributes = [
+      'attributes' => ['target' => '_blank'],
+      'fragment' => 'edit-acquia-lift'
+    ];
     foreach ($node_types as $node_type) {
       $url = Url::fromRoute('entity.node_type.edit_form', ['node_type' => $node_type->id()], $link_attributes);
-      $links[] = '<p>' . Link::fromTextAndUrl($node_type->label(), $url)->toString() . '</p>';
+      $links[] = '<p>' . Link::fromTextAndUrl($node_type->label(), $url)
+          ->toString() . '</p>';
     }
     $form['link_list']['#markup'] = t('Configure thumbnail URLs on each content type\'s edit page (in a new window).');
     $form['link_list']['#markup'] .= implode('', $links);
@@ -347,6 +368,11 @@ class AdminSettingsForm extends ConfigFormBase {
     $settings->set('credential.account_id', trim($values['account_id']));
     $settings->set('credential.site_id', trim($values['site_id']));
     $settings->set('credential.assets_url', 'https://' . $this->cleanUrl($values['assets_url']));
+
+    $settings->set('credential.public_key', $values['public_key']);
+    if (!empty($values['secret_key'])) {
+      $settings->set('credential.secret_key', $values['secret_key']);
+    }
 
     $settings->clear('credential.decision_api_url');
     if (!empty($values['decision_api_url'])) {

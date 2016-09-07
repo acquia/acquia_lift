@@ -1,12 +1,12 @@
 <?php
 
-namespace Drupal\Tests\acquia_lift\Service\Helper;
+namespace Drupal\Tests\acquia_lift\Unit\Service\Helper;
 
 use Drupal\Tests\UnitTestCase;
 use Drupal\acquia_lift\Service\Helper\HelpMessageHelper;
-use Drupal\Tests\acquia_lift\Unit\Traits\SettingsDataTrait;
+use Drupal\Tests\acquia_lift\Traits\SettingsDataTrait;
 
-require_once(__DIR__ . '/../../Traits/SettingsDataTrait.php');
+require_once(__DIR__ . '/../../../Traits/SettingsDataTrait.php');
 require_once(__DIR__ . '/../../Polyfill/Drupal.php');
 
 /**

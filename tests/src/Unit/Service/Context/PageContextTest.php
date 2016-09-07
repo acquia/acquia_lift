@@ -1,12 +1,13 @@
 <?php
 
-namespace Drupal\Tests\acquia_lift\Service\Context;
+namespace Drupal\Tests\acquia_lift\Unit\Service\Context;
 
-use Drupal\Tests\UnitTestCase;
 use Drupal\acquia_lift\Service\Context\PageContext;
-use Drupal\Tests\acquia_lift\Unit\Traits\SettingsDataTrait;
+use Drupal\Tests\acquia_lift\Traits\SettingsDataTrait;
+use Drupal\Tests\UnitTestCase;
 
-require_once(__DIR__ . '/../../Traits/SettingsDataTrait.php');
+require_once(__DIR__ . '/../../../Traits/SettingsDataTrait.php');
+require_once(__DIR__ . '/../../Polyfill/Drupal.php');
 
 /**
  * PageContextTest Test.
@@ -163,8 +164,8 @@ class PageContextTest extends UnitTestCase {
       'site_id' => 'site_id_1',
       'contentOrigin' => 'content_origin_1',
       'liftAssetsURL' => 'assets_url_1',
-      'liftDecisionAPIURL' => 'decision_api_url_1',
-      'authEndpoint' => 'oauth_url_1',
+      'liftDecisionAPIURL' => 'https://example.com',
+      'authEndpoint' => 'https://example.com',
     ], 'assets_url_1');
 
     $this->assertEquals($expected_head, $head);
@@ -205,8 +206,8 @@ class PageContextTest extends UnitTestCase {
       'site_id' => 'site_id_1',
       'contentOrigin' => 'content_origin_1',
       'liftAssetsURL' => 'assets_url_1',
-      'liftDecisionAPIURL' => 'decision_api_url_1',
-      'authEndpoint' => 'oauth_url_1',
+      'liftDecisionAPIURL' => 'https://example.com',
+      'authEndpoint' => 'https://example.com',
     ], 'assets_url_1');
 
     $this->assertEquals($expected_head, $head);
@@ -251,8 +252,8 @@ class PageContextTest extends UnitTestCase {
       'site_id' => 'site_id_1',
       'contentOrigin' => 'content_origin_1',
       'liftAssetsURL' => 'assets_url_1',
-      'liftDecisionAPIURL' => 'decision_api_url_1',
-      'authEndpoint' => 'oauth_url_1',
+      'liftDecisionAPIURL' => 'https://example.com',
+      'authEndpoint' => 'https://example.com',
     ], 'assets_url_1');
 
     $this->assertEquals($expected_head, $head);
@@ -300,8 +301,8 @@ class PageContextTest extends UnitTestCase {
       'site_id' => 'site_id_1',
       'contentOrigin' => 'content_origin_1',
       'liftAssetsURL' => 'assets_url_1',
-      'liftDecisionAPIURL' => 'decision_api_url_1',
-      'authEndpoint' => 'oauth_url_1',
+      'liftDecisionAPIURL' => 'https://example.com',
+      'authEndpoint' => 'https://example.com',
     ], 'assets_url_1');
 
     $this->assertEquals($expected_head, $head);
@@ -314,15 +315,71 @@ class PageContextTest extends UnitTestCase {
    */
   public function testPopulateHtmlHeadWithNodeAndThumbnailUrl() {
     $node = $this->getNode();
+
     $this->requestParameterBag->expects($this->once())
       ->method('has')
       ->with('node')
       ->willReturn(TRUE);
+
     $this->requestParameterBag->expects($this->once())
       ->method('get')
       ->with('node')
       ->willReturn($node);
-    $this->testPopulateHtmlHeadWithNodeAndThumbnailUrlSetUpThumbnailUrl($node);
+
+    $field_media = $this->getMockBuilder('Drupal\Core\Entity\ContentEntityInterface')
+      ->disableOriginalConstructor()
+      ->getMock();
+    $field_image = $this->getMockBuilder('Drupal\Core\Entity\ContentEntityInterface')
+      ->disableOriginalConstructor()
+      ->getMock();
+    $media_entity = $this->getMock('Drupal\Core\Entity\EntityInterface');
+    $image_entity = $this->getMock('Drupal\file\FileInterface');
+
+    $node->field_media = $field_media;
+    $node->field_media->entity = $media_entity;
+    $node->field_media->entity->field_image = $field_image;
+    $node->field_media->entity->field_image->entity = $image_entity;
+
+    $entity_manager = $this->getMock('Drupal\Core\Entity\EntityManagerInterface');
+    $entity_storage = $this->getMock('Drupal\Core\Entity\EntityStorageInterface');
+    $container = $this->getMock('Drupal\Core\DependencyInjection\Container');
+    $image_style = $this->getMockBuilder('Drupal\image\Entity\ImageStyle')
+      ->disableOriginalConstructor()
+      ->getMock();
+
+    \Drupal::setContainer($container);
+
+    $container->expects($this->any())
+      ->method('get')
+      ->with('entity.manager')
+      ->willReturn($entity_manager);
+
+
+    $entity_manager->expects($this->once())
+      ->method('getEntityTypeFromClass')
+      ->with('Drupal\image\Entity\ImageStyle')
+      ->willReturn($image_entity);
+    $entity_manager->expects($this->once())
+      ->method('getStorage')
+      ->with($image_entity)
+      ->willReturn($entity_storage);
+    $entity_storage->expects($this->once())
+      ->method('load')
+      ->with('medium')
+      ->willReturn($image_style);
+
+    $image_entity->expects($this->once())
+      ->method('bundle')
+      ->willReturn('file');
+
+    $image_entity->expects($this->once())
+      ->method('getFileUri')
+      ->willReturn('a_file_uri');
+
+    $image_style->expects($this->once())
+      ->method('buildUrl')
+      ->with('a_file_uri')
+      ->willReturn('a_style_decorated_file_uri');
 
     $page_context = new PageContext($this->configFactory, $this->entityTypeManager, $this->requestStack, $this->routeMatch, $this->titleResolver);
     $head = ['old_head'];
@@ -336,6 +393,7 @@ class PageContextTest extends UnitTestCase {
       'content_keywords' => '',
       'post_id' => '90210',
       'published_date' => 'a_published_time',
+      // This is broken. Help!
       'thumbnail_url' => 'file_create_url:a_style_decorated_file_uri',
       'persona' => '',
       'engagement_score' => PageContext::ENGAGEMENT_SCORE_DEFAULT,
@@ -344,8 +402,8 @@ class PageContextTest extends UnitTestCase {
       'site_id' => 'site_id_1',
       'contentOrigin' => 'content_origin_1',
       'liftAssetsURL' => 'assets_url_1',
-      'liftDecisionAPIURL' => 'decision_api_url_1',
-      'authEndpoint' => 'oauth_url_1',
+      'liftDecisionAPIURL' => 'https://example.com',
+      'authEndpoint' => 'https://example.com',
     ], 'assets_url_1');
 
     $this->assertEquals($expected_head, $head);
@@ -365,7 +423,7 @@ class PageContextTest extends UnitTestCase {
       ->method('get')
       ->with('node')
       ->willReturn($this->getNode());
-    $this->testPopulateHtmlHeadWithNodeAndFieldsSetUpFields();
+    $this->populateHtmlHeadWithNodeAndFieldsSetUpFields();
 
     $page_context = new PageContext($this->configFactory, $this->entityTypeManager, $this->requestStack, $this->routeMatch, $this->titleResolver);
     $head = ['old_head'];
@@ -387,8 +445,8 @@ class PageContextTest extends UnitTestCase {
       'site_id' => 'site_id_1',
       'contentOrigin' => 'content_origin_1',
       'liftAssetsURL' => 'assets_url_1',
-      'liftDecisionAPIURL' => 'decision_api_url_1',
-      'authEndpoint' => 'oauth_url_1',
+      'liftDecisionAPIURL' => 'https://example.com',
+      'authEndpoint' => 'https://example.com',
     ], 'assets_url_1');
 
     $this->assertEquals($expected_head, $head);
@@ -400,7 +458,7 @@ class PageContextTest extends UnitTestCase {
    * @param string $name
    * @param string $vocabulary_id
    *
-   * @return Drupal\taxonomy\TermInterface|\PHPUnit_Framework_MockObject_MockObject
+   * @return \Drupal\taxonomy\TermInterface|\PHPUnit_Framework_MockObject_MockObject
    */
   private function getTerm($name = 'Term Name', $vocabulary_id = 'untracked_vocabulary_id') {
     $term = $this->getMock('Drupal\taxonomy\TermInterface');
@@ -418,7 +476,7 @@ class PageContextTest extends UnitTestCase {
    *
    * @param integer $id
    *
-   * @return Drupal\node\NodeInterface|\PHPUnit_Framework_MockObject_MockObject
+   * @return \Drupal\node\NodeInterface|\PHPUnit_Framework_MockObject_MockObject
    */
   private function getNode($id = 90210) {
     $user = $this->getUser();
@@ -471,7 +529,7 @@ class PageContextTest extends UnitTestCase {
    *
    * @param string $username
    *
-   * @return Drupal\user\UserInterface|\PHPUnit_Framework_MockObject_MockObject
+   * @return \Drupal\user\UserInterface|\PHPUnit_Framework_MockObject_MockObject
    */
   private function getUser($username = 'a_username') {
     $user = $this->getMock('Drupal\user\UserInterface');
@@ -480,67 +538,10 @@ class PageContextTest extends UnitTestCase {
       ->willReturn($username);
     return $user;
   }
-
-  /**
-   * testPopulateHtmlHeadWithNodeAndThumbnailUrl(), sub routine "set up thumbnail".
-   *
-   * @param $node Node
-   */
-  private function testPopulateHtmlHeadWithNodeAndThumbnailUrlSetUpThumbnailUrl($node) {
-    $field_media = $this->getMockBuilder('Drupal\Core\Entity\ContentEntityInterface')
-      ->disableOriginalConstructor()
-      ->getMock();
-    $field_image = $this->getMockBuilder('Drupal\Core\Entity\ContentEntityInterface')
-      ->disableOriginalConstructor()
-      ->getMock();
-    $media_entity = $this->getMock('Drupal\Core\Entity\EntityInterface');
-    $image_entity = $this->getMock('Drupal\file\FileInterface');
-
-    $node->field_media = $field_media;
-    $node->field_media->entity = $media_entity;
-    $node->field_media->entity->field_image = $field_image;
-    $node->field_media->entity->field_image->entity = $image_entity;
-
-    $entity_manager = $this->getMock('Drupal\Core\Entity\EntityManagerInterface');
-    $entity_storage = $this->getMock('Drupal\Core\Entity\EntityStorageInterface');
-    $container = $this->getMock('Drupal\Core\DependencyInjection\Container');
-    $image_style = $this->getMockBuilder('Drupal\image\Entity\ImageStyle')
-      ->disableOriginalConstructor()
-      ->getMock();
-
-    \Drupal::setContainer($container);
-    $container->expects($this->any())
-      ->method('get')
-      ->with('entity.manager')
-      ->willReturn($entity_manager);
-    $entity_manager->expects($this->once())
-      ->method('getEntityTypeFromClass')
-      ->with('Drupal\image\Entity\ImageStyle')
-      ->willReturn($image_entity);
-    $image_entity->expects($this->once())
-      ->method('bundle')
-      ->willReturn('file');
-    $image_entity->expects($this->once())
-      ->method('getFileUri')
-      ->willReturn('a_file_uri');
-    $entity_manager->expects($this->once())
-      ->method('getStorage')
-      ->with($image_entity)
-      ->willReturn($entity_storage);
-    $entity_storage->expects($this->once())
-      ->method('load')
-      ->with('medium')
-      ->willReturn($image_style);
-    $image_style->expects($this->once())
-      ->method('buildUrl')
-      ->with('a_file_uri')
-      ->willReturn('a_style_decorated_file_uri');
-  }
-
   /**
    * testPopulateHtmlHeadWithNodeAndFields(), sub routine "setup fields".
    */
-  private function testPopulateHtmlHeadWithNodeAndFieldsSetUpFields() {
+  private function populateHtmlHeadWithNodeAndFieldsSetUpFields() {
     $tracked_content_term_1 = $this->getTerm('Tracked Content Term Name 1', 'tracked_content_vocabulary');
     $tracked_keyword_term_1 = $this->getTerm('Tracked Keyword Term Name 1', 'tracked_keyword_vocabulary');
     $tracked_keyword_term_2 = $this->getTerm('Tracked Keyword Term Name 2', 'tracked_keyword_vocabulary');

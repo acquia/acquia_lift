@@ -30,7 +30,8 @@ class HelpMessageHelper {
    *   The link generator.
    */
   public function __construct(ConfigFactoryInterface $config_factory, LinkGeneratorInterface $link_generator) {
-    $this->credentialSettings = $config_factory->get('acquia_lift.settings')->get('credential');
+    $this->credentialSettings = $config_factory->get('acquia_lift.settings')
+      ->get('credential');
     $this->linkGenerator = $link_generator;
   }
 

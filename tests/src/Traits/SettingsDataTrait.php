@@ -1,6 +1,6 @@
 <?php
 
-namespace Drupal\Tests\acquia_lift\Unit\Traits;
+namespace Drupal\Tests\acquia_lift\Traits;
 
 /**
  * Settings Data Trait.
@@ -17,9 +17,11 @@ trait SettingsDataTrait {
       'account_id' => 'account_id_1',
       'site_id' => 'site_id_1',
       'content_origin' => 'content_origin_1',
+      'public_key' => 'public_key_1',
+      'secret_key' => 'secret_key_1',
       'assets_url' => 'assets_url_1',
-      'decision_api_url' => 'decision_api_url_1',
-      'oauth_url' => 'oauth_url_1',
+      'decision_api_url' => 'https://example.com',
+      'oauth_url' => 'https://example.com',
     ];
   }
 

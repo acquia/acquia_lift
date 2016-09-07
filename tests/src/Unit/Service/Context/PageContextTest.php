@@ -164,8 +164,8 @@ class PageContextTest extends UnitTestCase {
       'site_id' => 'site_id_1',
       'contentOrigin' => 'content_origin_1',
       'liftAssetsURL' => 'assets_url_1',
-      'liftDecisionAPIURL' => 'decision_api_url_1',
-      'authEndpoint' => 'oauth_url_1',
+      'liftDecisionAPIURL' => 'https://example.com',
+      'authEndpoint' => 'https://example.com',
     ], 'assets_url_1');
 
     $this->assertEquals($expected_head, $head);
@@ -206,8 +206,8 @@ class PageContextTest extends UnitTestCase {
       'site_id' => 'site_id_1',
       'contentOrigin' => 'content_origin_1',
       'liftAssetsURL' => 'assets_url_1',
-      'liftDecisionAPIURL' => 'decision_api_url_1',
-      'authEndpoint' => 'oauth_url_1',
+      'liftDecisionAPIURL' => 'https://example.com',
+      'authEndpoint' => 'https://example.com',
     ], 'assets_url_1');
 
     $this->assertEquals($expected_head, $head);
@@ -252,8 +252,8 @@ class PageContextTest extends UnitTestCase {
       'site_id' => 'site_id_1',
       'contentOrigin' => 'content_origin_1',
       'liftAssetsURL' => 'assets_url_1',
-      'liftDecisionAPIURL' => 'decision_api_url_1',
-      'authEndpoint' => 'oauth_url_1',
+      'liftDecisionAPIURL' => 'https://example.com',
+      'authEndpoint' => 'https://example.com',
     ], 'assets_url_1');
 
     $this->assertEquals($expected_head, $head);
@@ -301,8 +301,8 @@ class PageContextTest extends UnitTestCase {
       'site_id' => 'site_id_1',
       'contentOrigin' => 'content_origin_1',
       'liftAssetsURL' => 'assets_url_1',
-      'liftDecisionAPIURL' => 'decision_api_url_1',
-      'authEndpoint' => 'oauth_url_1',
+      'liftDecisionAPIURL' => 'https://example.com',
+      'authEndpoint' => 'https://example.com',
     ], 'assets_url_1');
 
     $this->assertEquals($expected_head, $head);
@@ -402,8 +402,8 @@ class PageContextTest extends UnitTestCase {
       'site_id' => 'site_id_1',
       'contentOrigin' => 'content_origin_1',
       'liftAssetsURL' => 'assets_url_1',
-      'liftDecisionAPIURL' => 'decision_api_url_1',
-      'authEndpoint' => 'oauth_url_1',
+      'liftDecisionAPIURL' => 'https://example.com',
+      'authEndpoint' => 'https://example.com',
     ], 'assets_url_1');
 
     $this->assertEquals($expected_head, $head);
@@ -445,8 +445,8 @@ class PageContextTest extends UnitTestCase {
       'site_id' => 'site_id_1',
       'contentOrigin' => 'content_origin_1',
       'liftAssetsURL' => 'assets_url_1',
-      'liftDecisionAPIURL' => 'decision_api_url_1',
-      'authEndpoint' => 'oauth_url_1',
+      'liftDecisionAPIURL' => 'https://example.com',
+      'authEndpoint' => 'https://example.com',
     ], 'assets_url_1');
 
     $this->assertEquals($expected_head, $head);

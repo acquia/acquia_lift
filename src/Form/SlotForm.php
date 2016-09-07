@@ -123,7 +123,7 @@ class SlotForm extends EntityForm {
       '#description' => $this->t(
         'Enter the pages that you wish this slot is actived or deactivated on.'
       ),
-      '#default_value' => implode('\n', $visibility->getPages()),
+      '#default_value' => !empty($visibility->getPages()) ? implode('\n', $visibility->getPages()) : "",
       '#required' => TRUE,
     ];
 

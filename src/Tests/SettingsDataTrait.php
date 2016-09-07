@@ -35,8 +35,10 @@ trait SettingsDataTrait {
       'assets_url' => 'assets_url_1',
       'public_key' => 'public_key_1',
       'secret_key' => 'secret_key_1',
-      'decision_api_url' => 'decision_api_url_1',
-      'oauth_url' => 'oauth_url_1',
+      // We need a valid https domain for testing the UI enabled/disabled
+      // functionality
+      'decision_api_url' => 'https://example.com',
+      'oauth_url' => 'https://example.com',
     ];
   }
 

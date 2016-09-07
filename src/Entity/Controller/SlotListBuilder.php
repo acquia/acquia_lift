@@ -153,7 +153,7 @@ class SlotListBuilder extends ConfigEntityListBuilder {
         Html::cleanCssIdentifier(
           $entity->getEntityTypeId() . '-' . $entity->id()
         ),
-        $status ? 'acquia-lift-slot-enabled' : 'acquia-lift-slot-enabled'
+        $status ? 'acquia-lift-slot-enabled' : 'acquia-lift-slot-disabled'
       )
     );
 

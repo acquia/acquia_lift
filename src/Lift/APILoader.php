@@ -95,7 +95,7 @@ class APILoader {
    * @return \Acquia\LiftClient\Lift $lift
    *   The lift connection object.
    *
-   *  @throws \Drupal\acquia_lift\AcquiaLiftException
+   *  @throws \Drupal\acquia_lift\Exception\APILoaderException
    *   The reason why it could not initialize.
    */
   public function getLiftClient() {

@@ -26,7 +26,7 @@ however you have defined your webserver. the verbose and browser options.
 Required for the web tests that exist in the module.
 
 ```
-php core/scripts/run-tests.sh --url http://drupal8lift3.dev --class "Drupal\acquia_lift\Tests\SettingsTest"
+php core/scripts/run-tests.sh --url http://drupal8lift3.dev --module acquia_lift
 ```
 
 ## How to run only PHPUnit tests using the PHPunit binary

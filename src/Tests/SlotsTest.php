@@ -86,6 +86,7 @@ class SlotsTest extends WebTestBase {
   public function testSlotCrudWithoutServiceCreds() {
     // Create the slot  and verify if it succeeded
     $this->slotCreate();
+
     // Check if it appears in the list and is unable to authenticate.
     $this->checkIfSlotIsDisabledDueToMissingCredentials();
 

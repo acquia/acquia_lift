@@ -37,8 +37,8 @@ trait SettingsDataTrait {
       'secret_key' => 'secret_key_1',
       // We need a valid https domain for testing the UI enabled/disabled
       // functionality
-      'decision_api_url' => 'https://example.com',
-      'oauth_url' => 'https://example.com',
+      'decision_api_url' => 'example.com',
+      'oauth_url' => 'example.com',
     ];
   }
 

@@ -80,12 +80,14 @@ trait SettingsDataTrait {
   }
 
   /**
-   * Get a valid content replacement mode
+   * Get valid advanced configuration mode settings
    *
-   * @return string
-   *   A valid mode for content replacement.
+   * @return array
+   *   A valid advanced configuration settings array.
    */
-  private function getValidContentReplacementMode() {
-    return 'trusted';
+  private function getValidAdvancedConfigurationSettings() {
+    return [
+      'content_replacement_mode' => 'trusted',
+    ];
   }
 }

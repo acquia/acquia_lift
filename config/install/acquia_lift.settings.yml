@@ -17,5 +17,6 @@ thumbnail: []
 visibility:
   # Track, only when the page URL falls OUTSIDE OF these path patterns.
   path_patterns: "/admin\n/admin/*\n/batch\n/node/add*\n/node/*/*\n/user/*/*\n/block/*"
-content_replacement_mode: 'untrusted'
+advanced:
+  content_replacement_mode: 'untrusted'
 langcode: en

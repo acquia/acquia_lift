@@ -121,8 +121,8 @@ class PageContextTest extends UnitTestCase {
       ->willReturn($this->getValidThumbnailSettings());
     $this->settings->expects($this->at(3))
       ->method('get')
-      ->with('content_replacement_mode')
-      ->willReturn($this->getValidContentReplacementMode());
+      ->with('advanced')
+      ->willReturn($this->getValidAdvancedConfigurationSettings());
     $this->entityTypeManager->expects($this->once())
       ->method('getStorage')
       ->with('taxonomy_term')

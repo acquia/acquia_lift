@@ -324,7 +324,7 @@ class AdminSettingsForm extends ConfigFormBase {
    *   The render array for the advanced configuration form.
    */
   private function buildAdvancedConfigurationForm() {
-    $settings = $this->config('acquia_lift.settings');
+    $settings = $this->config('acquia_lift.settings')->get('advanced');
 
     $form = [
       '#title' => t('Advanced configuration'),
@@ -335,7 +335,7 @@ class AdminSettingsForm extends ConfigFormBase {
     $form['content_replacement_mode'] = [
       '#type' => 'radios',
       '#title' => t('Content replacement mode'),
-      '#default_value' => $settings->get('content_replacement_mode'),
+      '#default_value' => $settings['content_replacement_mode'],
       '#options' => ['trusted' => t('Trusted'), 'untrusted' => t('Untrusted')],
     ];
 
@@ -454,6 +454,6 @@ class AdminSettingsForm extends ConfigFormBase {
    *   Advanced configuration values
    */
   private function setAdvancedConfigurationValues(Config $settings, array $values) {
-    $settings->set('content_replacement_mode', $values['content_replacement_mode']);
+    $settings->set('advanced.content_replacement_mode', $values['content_replacement_mode']);
   }
 }

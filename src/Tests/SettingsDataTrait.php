@@ -95,6 +95,18 @@ trait SettingsDataTrait {
   }
 
   /**
+   * Get valid advanced configuration mode settings
+   *
+   * @return array
+   *   A valid advanced configuration settings array.
+   */
+  private function getValidAdvancedConfigurationSettings() {
+    return [
+      'content_replacement_mode' => 'trusted',
+    ];
+  }
+
+  /**
    * Convert to post form settings.
    *
    * @param array $settings

@@ -86,14 +86,16 @@ class SettingsTest extends WebTestBase {
     $identity_settings = $this->getValidIdentitySettings();
     $field_mappings_settings = $this->getValidFieldMappingsSettings();
     $visibility_settings = $this->getValidVisibilitySettings();
+    $advanced_config_settings = $this->getValidAdvancedConfigurationSettings();
 
     $edit =[];
     $edit += $this->convertToPostFormSettings($credential_settings, 'credential');
     $edit += $this->convertToPostFormSettings($identity_settings, 'identity');
     $edit += $this->convertToPostFormSettings($field_mappings_settings, 'field_mappings');
     $edit += $this->convertToPostFormSettings($visibility_settings, 'visibility');
+    $edit += $this->convertToPostFormSettings($advanced_config_settings, 'advanced_configuration');
     $edit_settings_count = count($edit);
-    $expect_settings_count = 12;
+    $expect_settings_count = 13;
 
     // Post the edits and assert that options are saved.
     $this->drupalPostForm('admin/config/content/acquia-lift', $edit, t('Save configuration'));
@@ -122,6 +124,7 @@ class SettingsTest extends WebTestBase {
     $this->assertRaw('node page', '[testMetatagsAndScriptTag]: page_type metatag value is loaded on the node page.');
     $this->assertRaw('acquia_lift:account_id', '[testMetatagsAndScriptTag]: account_id metatag is loaded on the node page.');
     $this->assertRaw('account_id_1', '[testMetatagsAndScriptTag]: account_id metatag value is loaded on the node page.');
+    $this->assertRaw('acquia_lift:contentReplacementMode', '[testMetatagsAndScriptTag]: content replacement mode metatag value is loaded on the node page.');
 
     // Assert Lift JavaScript tag is loaded on the page.
     $this->assertRaw('assets_url_1', '[testMetatagsAndScriptTag]: With valid settings, Lift\'s JavaScript is loaded on the home page.');

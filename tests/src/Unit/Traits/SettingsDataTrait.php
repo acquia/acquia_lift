@@ -78,4 +78,16 @@ trait SettingsDataTrait {
       'path_patterns' => "/admin\n/admin/*\n/batch\n/node/add*\n/node/*/*\n/user/*/*\n/block/*",
     ];
   }
+
+  /**
+   * Get valid advanced configuration mode settings
+   *
+   * @return array
+   *   A valid advanced configuration settings array.
+   */
+  private function getValidAdvancedConfigurationSettings() {
+    return [
+      'content_replacement_mode' => 'trusted',
+    ];
+  }
 }

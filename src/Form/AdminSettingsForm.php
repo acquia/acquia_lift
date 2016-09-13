@@ -73,6 +73,7 @@ class AdminSettingsForm extends ConfigFormBase {
     $form['field_mappings'] = $this->buildFieldMappingsForm();
     $form['visibility'] = $this->buildVisibilityForm();
     $form['thumbnail_url'] = $this->buildThumbnailUrlForm();
+    $form['advanced_configuration'] = $this->buildAdvancedConfigurationForm();
 
     return parent::buildForm($form, $form_state);
   }
@@ -317,6 +318,31 @@ class AdminSettingsForm extends ConfigFormBase {
   }
 
   /**
+   * Display advanced configurations forms.
+   *
+   * @return array
+   *   The render array for the advanced configuration form.
+   */
+  private function buildAdvancedConfigurationForm() {
+    $settings = $this->config('acquia_lift.settings')->get('advanced');
+
+    $form = [
+      '#title' => t('Advanced configuration'),
+      '#type' => 'details',
+      '#tree' => TRUE,
+      '#open' => FALSE,
+    ];
+    $form['content_replacement_mode'] = [
+      '#type' => 'radios',
+      '#title' => t('Content replacement mode'),
+      '#default_value' => $settings['content_replacement_mode'],
+      '#options' => ['trusted' => t('Trusted'), 'untrusted' => t('Untrusted')],
+    ];
+
+    return $form;
+  }
+
+  /**
    * {@inheritdoc}
    */
   public function submitForm(array &$form, FormStateInterface $form_state) {
@@ -327,6 +353,7 @@ class AdminSettingsForm extends ConfigFormBase {
     $this->setIdentityValues($settings, $values['identity']);
     $this->setFieldMappingsValues($settings, $values['field_mappings']);
     $this->setVisibilityValues($settings, $values['visibility']);
+    $this->setAdvancedConfigurationValues($settings, $values['advanced_configuration']);
 
     $settings->save();
 
@@ -416,5 +443,17 @@ class AdminSettingsForm extends ConfigFormBase {
    */
   private function setVisibilityValues(Config $settings, array $values) {
     $settings->set('visibility.path_patterns', $values['path_patterns']);
+  }
+
+  /**
+   * Sets the advanced configuration values.
+   *
+   * @param \Drupal\Core\Config\Config $settings
+   *   Acquia Lift config settings
+   * @param array $values
+   *   Advanced configuration values
+   */
+  private function setAdvancedConfigurationValues(Config $settings, array $values) {
+    $settings->set('advanced.content_replacement_mode', $values['content_replacement_mode']);
   }
 }

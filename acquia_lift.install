@@ -19,7 +19,7 @@ function acquia_lift_requirements($phase) {
 
   $requirements['acquia_lift_credential'] = [
     'title' => t('Acquia Lift module'),
-    'description' => t('Acquia Lift module has not been fully configured yet. Please configure its settings from the <a href=":url">Acquia Lift settings page</a>.', [':url' => \Drupal::url('acquia_lift.admin_settings_form')]),
+    'description' => t('Acquia Lift module has not been fully configured yet. Please configure its settings from the <a href=":url">Acquia Lift settings page</a>.', [':url' => Url::fromRoute('acquia_lift.admin_settings_form')])->toString(),
     'severity' => REQUIREMENT_WARNING,
     'value' => t('Incomplete or invalid credential'),
   ];

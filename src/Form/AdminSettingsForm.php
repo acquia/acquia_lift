@@ -2,6 +2,7 @@
 
 namespace Drupal\acquia_lift\Form;
 
+use Drupal\Component\Utility\UrlHelper;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Drupal\Core\Config\Config;
 use Drupal\Core\Entity\EntityManagerInterface;
@@ -307,6 +308,7 @@ class AdminSettingsForm extends ConfigFormBase {
 
     $links = [];
     $link_attributes = ['attributes' => ['target' => '_blank'], 'fragment' => 'edit-acquia-lift'];
+    /** @var \Drupal\Core\Entity\EntityInterface[] $node_types */
     foreach ($node_types as $node_type) {
       $url = Url::fromRoute('entity.node_type.edit_form', ['node_type' => $node_type->id()], $link_attributes);
       $links[] = '<p>' . Link::fromTextAndUrl($node_type->label(), $url)->toString() . '</p>';
@@ -345,6 +347,14 @@ class AdminSettingsForm extends ConfigFormBase {
   /**
    * {@inheritdoc}
    */
+  public function validateForm(array &$form, FormStateInterface $form_state) {
+    parent::validateForm($form, $form_state);
+    $this->validateCredentialvalues($form, $form_state);
+  }
+
+  /**
+   * {@inheritdoc}
+   */
   public function submitForm(array &$form, FormStateInterface $form_state) {
     $settings = $this->config('acquia_lift.settings');
     $values = $form_state->getValues();
@@ -360,6 +370,30 @@ class AdminSettingsForm extends ConfigFormBase {
     drupal_flush_all_caches();
 
     parent::submitForm($form, $form_state);
+  }
+
+  private function validateCredentialValues(array &$form, FormStateInterface $form_state) {
+    $values = $form_state->getValues();
+
+    // Validate Account ID.
+    $accountId = $values['credential']['account_id'];
+    if (!preg_match('/^[a-zA-Z_][a-zA-Z\\d_]*$/', $accountId)) {
+      $form_state->setError($form['credential']['account_id'], $this->t('Account ID contains invalid characters. It has to start with a letter and can further only contain alphanumerical characters.'));
+    }
+
+    // Validate Site ID.
+    $siteId = $values['credential']['site_id'];
+    if (!preg_match('/^[a-zA-Z0-9]*$/', $siteId)) {
+      $form_state->setError($form['credential']['site_id'], $this->t('Site ID contains invalid characters. Can only contain alphanumerical characters.'));
+    }
+
+    // Validate Assets Url.
+    $assetsUrl = 'https://' . $this->cleanUrl($values['credential']['assets_url']);
+    var_dump($assetsUrl);
+    if (!UrlHelper::isValid($assetsUrl, true)) {
+      $form_state->setError($form['credential']['assets_url'], $this->t('Assets URL is not a valid URL.'));
+    }
+
   }
 
   /**

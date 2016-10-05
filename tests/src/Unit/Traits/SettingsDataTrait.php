@@ -14,10 +14,10 @@ trait SettingsDataTrait {
    */
   private function getValidCredentialSettings() {
     return [
-      'account_id' => 'account_id_1',
-      'site_id' => 'site_id_1',
+      'account_id' => 'AccountId1',
+      'site_id' => 'SiteId1',
       'content_origin' => 'content_origin_1',
-      'assets_url' => 'assets_url_1',
+      'assets_url' => 'AssetsUrl1',
       'decision_api_url' => 'decision_api_url_1',
       'oauth_url' => 'oauth_url_1',
     ];

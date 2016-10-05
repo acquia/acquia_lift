@@ -101,6 +101,9 @@ class SettingsTest extends WebTestBase {
     $this->drupalPostForm('admin/config/content/acquia-lift', $edit, t('Save configuration'));
     $this->assertText(t('The configuration options have been saved.'));
 
+    // Test removeAuthorizeSuffix() and cleanUrl().
+    $edit['credential[oauth_url]'] = 'oauth_url_1';
+
     // Assert all other fields. Also count the asserted fields to make sure all are asserted.
     foreach ($edit as $name => $value) {
       $this->assertFieldByName($name, $value, format_string('"@name" setting was saved into DB.', ['@name' => $name]));
@@ -113,6 +116,10 @@ class SettingsTest extends WebTestBase {
     // Assert the node type thumbnail form is actually loaded at the node type configuration page.
     $this->drupalGet('admin/structure/types/manage/article');
     $this->assertText(t('Acquia Lift'));
+
+    // Assert metatags are loaded in the header.
+    $this->drupalGet('node/90210');
+    $this->assertRaw('oauth_url_1/authorize', '[testMetatagsAndScriptTag]: oauth_url metatag value is loaded on the node page with cleaned-up value.');
   }
 
   public function testMetatagsAndScriptTag() {
@@ -123,10 +130,10 @@ class SettingsTest extends WebTestBase {
     $this->assertRaw('acquia_lift:page_type', '[testMetatagsAndScriptTag]: page_type metatag is loaded on the node page.');
     $this->assertRaw('node page', '[testMetatagsAndScriptTag]: page_type metatag value is loaded on the node page.');
     $this->assertRaw('acquia_lift:account_id', '[testMetatagsAndScriptTag]: account_id metatag is loaded on the node page.');
-    $this->assertRaw('account_id_1', '[testMetatagsAndScriptTag]: account_id metatag value is loaded on the node page.');
+    $this->assertRaw('AccountId1', '[testMetatagsAndScriptTag]: account_id metatag value is loaded on the node page.');
     $this->assertRaw('acquia_lift:contentReplacementMode', '[testMetatagsAndScriptTag]: content replacement mode metatag value is loaded on the node page.');
 
     // Assert Lift JavaScript tag is loaded on the page.
-    $this->assertRaw('assets_url_1', '[testMetatagsAndScriptTag]: With valid settings, Lift\'s JavaScript is loaded on the home page.');
+    $this->assertRaw('AssetsUrl1', '[testMetatagsAndScriptTag]: With valid settings, Lift\'s JavaScript is loaded on the home page.');
   }
 }

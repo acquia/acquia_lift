@@ -32,6 +32,18 @@ namespace {
       return ImageStyleOptions::$return;
     }
   }
+
+  /**
+   * Mock Drupal's file_create_url function.
+   *
+   * @param string $uri
+   * @return string
+   */
+  if (!function_exists('file_create_url')) {
+    function file_create_url($uri) {
+      return 'file_create_url:' . $uri;
+    }
+  }
 }
 
 namespace Drupal\Tests\acquia_lift\Unit\Polyfill\Drupal {

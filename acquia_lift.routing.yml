@@ -2,6 +2,6 @@ acquia_lift.admin_settings_form:
   path: 'admin/config/content/acquia-lift'
   defaults:
     _form: '\Drupal\acquia_lift\Form\AdminSettingsForm'
-    _title: 'Acquia Lift settings'
+    _title: 'Acquia Lift Settings'
   requirements:
     _permission: 'administer acquia lift'

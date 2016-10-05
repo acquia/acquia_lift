@@ -163,14 +163,14 @@ class PageContextTest extends UnitTestCase {
       'persona' => '',
       'engagement_score' => PageContext::ENGAGEMENT_SCORE_DEFAULT,
       'author' => '',
-      'account_id' => 'account_id_1',
-      'site_id' => 'site_id_1',
+      'account_id' => 'AccountId1',
+      'site_id' => 'SiteId1',
       'contentOrigin' => 'content_origin_1',
-      'liftAssetsURL' => 'assets_url_1',
+      'liftAssetsURL' => 'AssetsUrl1',
       'liftDecisionAPIURL' => 'decision_api_url_1',
       'authEndpoint' => 'oauth_url_1',
       'contentReplacementMode' => 'trusted',
-    ], 'assets_url_1');
+    ], 'AssetsUrl1');
 
     $this->assertEquals($expected_head, $head);
   }
@@ -206,14 +206,14 @@ class PageContextTest extends UnitTestCase {
       'persona' => '',
       'engagement_score' => PageContext::ENGAGEMENT_SCORE_DEFAULT,
       'author' => 'a_username',
-      'account_id' => 'account_id_1',
-      'site_id' => 'site_id_1',
+      'account_id' => 'AccountId1',
+      'site_id' => 'SiteId1',
       'contentOrigin' => 'content_origin_1',
-      'liftAssetsURL' => 'assets_url_1',
+      'liftAssetsURL' => 'AssetsUrl1',
       'liftDecisionAPIURL' => 'decision_api_url_1',
       'authEndpoint' => 'oauth_url_1',
       'contentReplacementMode' => 'trusted',
-    ], 'assets_url_1');
+    ], 'AssetsUrl1');
 
     $this->assertEquals($expected_head, $head);
   }
@@ -253,14 +253,14 @@ class PageContextTest extends UnitTestCase {
       'persona' => '',
       'engagement_score' => PageContext::ENGAGEMENT_SCORE_DEFAULT,
       'author' => 'a_username',
-      'account_id' => 'account_id_1',
-      'site_id' => 'site_id_1',
+      'account_id' => 'AccountId1',
+      'site_id' => 'SiteId1',
       'contentOrigin' => 'content_origin_1',
-      'liftAssetsURL' => 'assets_url_1',
+      'liftAssetsURL' => 'AssetsUrl1',
       'liftDecisionAPIURL' => 'decision_api_url_1',
       'authEndpoint' => 'oauth_url_1',
       'contentReplacementMode' => 'trusted',
-    ], 'assets_url_1');
+    ], 'AssetsUrl1');
 
     $this->assertEquals($expected_head, $head);
   }
@@ -303,14 +303,14 @@ class PageContextTest extends UnitTestCase {
       'persona' => '',
       'engagement_score' => PageContext::ENGAGEMENT_SCORE_DEFAULT,
       'author' => 'a_username',
-      'account_id' => 'account_id_1',
-      'site_id' => 'site_id_1',
+      'account_id' => 'AccountId1',
+      'site_id' => 'SiteId1',
       'contentOrigin' => 'content_origin_1',
-      'liftAssetsURL' => 'assets_url_1',
+      'liftAssetsURL' => 'AssetsUrl1',
       'liftDecisionAPIURL' => 'decision_api_url_1',
       'authEndpoint' => 'oauth_url_1',
       'contentReplacementMode' => 'trusted',
-    ], 'assets_url_1');
+    ], 'AssetsUrl1');
 
     $this->assertEquals($expected_head, $head);
   }
@@ -348,14 +348,14 @@ class PageContextTest extends UnitTestCase {
       'persona' => '',
       'engagement_score' => PageContext::ENGAGEMENT_SCORE_DEFAULT,
       'author' => 'a_username',
-      'account_id' => 'account_id_1',
-      'site_id' => 'site_id_1',
+      'account_id' => 'AccountId1',
+      'site_id' => 'SiteId1',
       'contentOrigin' => 'content_origin_1',
-      'liftAssetsURL' => 'assets_url_1',
+      'liftAssetsURL' => 'AssetsUrl1',
       'liftDecisionAPIURL' => 'decision_api_url_1',
       'authEndpoint' => 'oauth_url_1',
       'contentReplacementMode' => 'trusted',
-    ], 'assets_url_1');
+    ], 'AssetsUrl1');
 
     $this->assertEquals($expected_head, $head);
   }
@@ -392,14 +392,14 @@ class PageContextTest extends UnitTestCase {
       'persona' => '',
       'engagement_score' => PageContext::ENGAGEMENT_SCORE_DEFAULT,
       'author' => 'a_username',
-      'account_id' => 'account_id_1',
-      'site_id' => 'site_id_1',
+      'account_id' => 'AccountId1',
+      'site_id' => 'SiteId1',
       'contentOrigin' => 'content_origin_1',
-      'liftAssetsURL' => 'assets_url_1',
+      'liftAssetsURL' => 'AssetsUrl1',
       'liftDecisionAPIURL' => 'decision_api_url_1',
       'authEndpoint' => 'oauth_url_1',
       'contentReplacementMode' => 'trusted',
-    ], 'assets_url_1');
+    ], 'AssetsUrl1');
 
     $this->assertEquals($expected_head, $head);
   }

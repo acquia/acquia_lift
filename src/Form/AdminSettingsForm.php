@@ -128,7 +128,8 @@ class AdminSettingsForm extends ConfigFormBase {
       '#title' => t('Authentication URL'),
       '#description' => t('Your Lift Authentication API\'s URL. Unless explicitly instructed, leave empty to use default URL.'),
       '#field_prefix' => 'https://',
-      '#default_value' => $this->cleanUrl($credential_settings['oauth_url']),
+      '#field_suffix' => '/authorize',
+      '#default_value' => $this->cleanUrl($this->removeAuthorizeSuffix($credential_settings['oauth_url'])),
     ];
 
     return $form;
@@ -415,7 +416,7 @@ class AdminSettingsForm extends ConfigFormBase {
     }
     $settings->clear('credential.oauth_url');
     if (!empty($values['oauth_url'])) {
-      $settings->set('credential.oauth_url', 'https://' . $this->cleanUrl($values['oauth_url']));
+      $settings->set('credential.oauth_url', 'https://' . $this->cleanUrl($this->removeAuthorizeSuffix($values['oauth_url'])) . '/authorize');
     }
   }
 
@@ -436,6 +437,18 @@ class AdminSettingsForm extends ConfigFormBase {
       '~^https?://~',
     ];
     return preg_replace($searchFor, '', $url);
+  }
+
+  /**
+   * Remove the "/authorize" suffix, if any.
+   *
+   * @param string $url
+   *   URL.
+   * @return string
+   *   URL, but with "/authorize" removed.
+   */
+  private function removeAuthorizeSuffix($url) {
+    return preg_replace('~/authorize$~', '', $url);
   }
 
   /**

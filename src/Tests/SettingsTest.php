@@ -79,7 +79,7 @@ class SettingsTest extends WebTestBase {
   public function testAdminSettingsForm() {
     // Check for setting page's presence.
     $this->drupalGet('admin/config/content/acquia-lift');
-    $this->assertRaw(t('Acquia Lift settings'), '[testAdminSettingsForm]: Settings page displayed.');
+    $this->assertRaw(t('Acquia Lift Settings'), '[testAdminSettingsForm]: Settings page displayed.');
 
     // Get all the valid settings, and massage them into form $edit array.
     $credential_settings = $this->getValidCredentialSettings();

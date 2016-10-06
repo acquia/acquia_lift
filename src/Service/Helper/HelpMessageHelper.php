@@ -51,7 +51,7 @@ class HelpMessageHelper {
 
         // Generate Documentation link.
         $documentation_link_text = t('Documentation');
-        $documentation_link_url = Url::fromUri('https://docs.acquia.com/lift/', $link_attributes);
+        $documentation_link_url = Url::fromUri('https://docs.acquia.com/lift', $link_attributes);
         $documentation_external_link = $this->linkGenerator->generate($documentation_link_text, $documentation_link_url);
         $help_message = t('You can find more info in ') . $documentation_external_link . t('.');
 

@@ -43,7 +43,4 @@ install:
   - drush en -y acquia_lift
 
 script:
-  # Run server.
-  drush runserver http://127.0.0.1:8080 &
-  # Run tests.
-  php ./core/scripts/run-tests.sh --verbose --php $(which php) --url 'http://127.0.0.1:8080' --dburl 'mysql://root:@127.0.0.1/drupal' --module 'acquia_lift'
+  ./modules/acquia_lift/.travis/run-tests.sh

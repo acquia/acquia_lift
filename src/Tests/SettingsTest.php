@@ -68,17 +68,17 @@ class SettingsTest extends WebTestBase {
     // Check if Configure link is available on 'Extend' page.
     // Requires 'administer modules' permission.
     $this->drupalGet('admin/modules');
-    $this->assertRaw('admin/config/content/acquia-lift', '[testConfigurationLinks]: Configure link from Extend page to Acquia Lift Settings page exists.');
+    $this->assertRaw('admin/config/services/acquia-lift', '[testConfigurationLinks]: Configure link from Extend page to Acquia Lift Settings page exists.');
 
     // Check if Configure link is available on 'Status Reports' page. NOTE: Link is only shown without a configured Acquia Lift credential.
     // Requires 'administer site configuration' permission.
     $this->drupalGet('admin/reports/status');
-    $this->assertRaw('admin/config/content/acquia-lift', '[testConfigurationLinks]: Configure link from Status Reports page to Acquia Lift Settings page exists.');
+    $this->assertRaw('admin/config/services/acquia-lift', '[testConfigurationLinks]: Configure link from Status Reports page to Acquia Lift Settings page exists.');
   }
 
   public function testAdminSettingsForm() {
     // Check for setting page's presence.
-    $this->drupalGet('admin/config/content/acquia-lift');
+    $this->drupalGet('admin/config/services/acquia-lift');
     $this->assertRaw(t('Acquia Lift Settings'), '[testAdminSettingsForm]: Settings page displayed.');
 
     // Get all the valid settings, and massage them into form $edit array.
@@ -98,7 +98,7 @@ class SettingsTest extends WebTestBase {
     $expect_settings_count = 13;
 
     // Post the edits and assert that options are saved.
-    $this->drupalPostForm('admin/config/content/acquia-lift', $edit, t('Save configuration'));
+    $this->drupalPostForm('admin/config/services/acquia-lift', $edit, t('Save configuration'));
     $this->assertText(t('The configuration options have been saved.'));
 
     // Test removeAuthorizeSuffix() and cleanUrl().

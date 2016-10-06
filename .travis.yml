@@ -1,0 +1,39 @@
+language: php
+
+php:
+  - 5.6
+  - 7
+
+mysql:
+  database: drupal
+  username: root
+  encoding: utf8
+
+before_install:
+  - sudo apt-get update & /dev/null
+  - composer self-update
+
+install:
+  # Add composer's global bin directory to the path
+  # See: https://github.com/drush-ops/drush#install---composer
+  - export PATH="$HOME/.composer/vendor/bin:$PATH"
+
+  # Install Drush
+  - composer global require drush/drush:dev-master
+  - phpenv rehash
+
+  # Create MySQL Database
+  - mysql -e 'create database drupal;'
+
+  # Download Drupal
+  - cd ..
+  - drush dl drupal-8 --drupal-project-rename=drupal
+  - mv acquia_lift drupal/modules
+  - cd drupal
+
+  # Install drupal default profile
+  - drush --verbose site-install --db-url=mysql://root:@127.0.0.1/drupal --yes
+  - drush en -y acquia_lift
+
+script:
+  php core/scripts/run-tests.sh --module 'acquia_lift'

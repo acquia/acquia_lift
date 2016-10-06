@@ -10,8 +10,8 @@ mysql:
   username: root
   encoding: utf8
 
-# Cache Composer & Drush directories.
 cache:
+  # Cache Composer & Drush directories.
   directories:
     - $HOME/.composer/cache
     - $HOME/.drush/cache
@@ -45,5 +45,5 @@ install:
 script:
   # Run server.
   drush runserver http://127.0.0.1:8080 &
-  # Run-tests.
+  # Run tests.
   php ./core/scripts/run-tests.sh --verbose --php $(which php) --url 'http://127.0.0.1:8080' --dburl 'mysql://root:@127.0.0.1/drupal' --module 'acquia_lift'

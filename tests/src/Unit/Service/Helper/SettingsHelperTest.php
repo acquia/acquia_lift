@@ -65,21 +65,6 @@ class SettingsHelperTest extends UnitTestCase {
   }
 
   /**
-   * Tests the isValidContentReplacementMode() method.
-   *
-   * @covers ::isValidContentReplacementMode
-   *
-   * @param string $test_value
-   * @param boolean $expected
-   *
-   * @dataProvider providerTestIsValidContentReplacementMode
-   */
-  public function testIsValidContentReplacementMode($test_value, $expected) {
-    $result = SettingsHelper::isValidContentReplacementMode($test_value);
-    $this->assertEquals($expected, $result);
-  }
-
-  /**
    * Data provider for testIsInvalidCredential().
    */
   public function providerTestIsInvalidCredential() {
@@ -100,6 +85,21 @@ class SettingsHelperTest extends UnitTestCase {
     $data['invalid decision_api_url URL'][0]['decision_api_url'] = '\\\\////\\\\////';
 
     return $data;
+  }
+
+  /**
+   * Tests the isValidContentReplacementMode() method.
+   *
+   * @covers ::isValidContentReplacementMode
+   *
+   * @param string $test_value
+   * @param boolean $expected
+   *
+   * @dataProvider providerTestIsValidContentReplacementMode
+   */
+  public function testIsValidContentReplacementMode($test_value, $expected) {
+    $result = SettingsHelper::isValidContentReplacementMode($test_value);
+    $this->assertEquals($expected, $result);
   }
 
   /**

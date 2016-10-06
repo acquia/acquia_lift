@@ -208,12 +208,13 @@ class AdminSettingsForm extends ConfigFormBase {
     $field_mappings_settings = $this->config('acquia_lift.settings')->get('field_mappings');
     $field_names = $this->getTaxonomyTermFieldNames();
 
-    $taxonomyVocabularyCollectionUrl = Url::fromRoute('entity.taxonomy_vocabulary.collection', [], ['attributes' => ['target' => '_blank']]);
-    $taxonomyVocabularyCollectionLink = Link::fromTextAndUrl('Taxonomy Vocabulary', $taxonomyVocabularyCollectionUrl)->toString();
+    $taxonomy_vocabulary_url_text = t('Taxonomy Vocabulary');
+    $taxonomy_vocabulary_url = Url::fromRoute('entity.taxonomy_vocabulary.collection', [], ['attributes' => ['target' => '_blank']]);
+    $taxonomy_vocabulary_link = Link::fromTextAndUrl($taxonomy_vocabulary_url_text, $taxonomy_vocabulary_url)->toString();
 
     $form = [
       '#title' => t('Field Mappings'),
-      '#description' => t('Create ') . $taxonomyVocabularyCollectionLink . t(' and map to "content section", "content keywords", and "persona" fields.'),
+      '#description' => t('Create ') . $taxonomy_vocabulary_link . t(' and map to "content section", "content keywords", and "persona" fields.'),
       '#type' => 'details',
       '#tree' => TRUE,
       '#group' => 'data_collection_settings',
@@ -331,6 +332,8 @@ class AdminSettingsForm extends ConfigFormBase {
    */
   private function buildAdvancedConfigurationForm() {
     $settings = $this->config('acquia_lift.settings')->get('advanced');
+    $documentation_link_url = Url::fromUri('https://docs.acquia.com/lift/drupal/3/config/trusted', ['attributes' => ['target' => '_blank']]);
+    $documentation_external_link = Link::fromTextAndUrl(t('content replacement mode'), $documentation_link_url)->toString();
 
     $form = [
       '#title' => t('Advanced configuration'),
@@ -341,6 +344,7 @@ class AdminSettingsForm extends ConfigFormBase {
     $form['content_replacement_mode'] = [
       '#type' => 'radios',
       '#title' => t('Content replacement mode'),
+      '#description' => t('The default, site-wide setting for ') . $documentation_external_link . t('.'),
       '#default_value' => $settings['content_replacement_mode'],
       '#options' => ['trusted' => t('Trusted'), 'untrusted' => t('Untrusted')],
     ];

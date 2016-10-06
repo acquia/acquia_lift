@@ -63,6 +63,8 @@ class AdminSettingsForm extends ConfigFormBase {
    * {@inheritdoc}
    */
   public function buildForm(array $form, FormStateInterface $form_state) {
+    $this->preValidateData();
+
     $form['credential'] = $this->buildCredentialForm();
 
     // Data collection settings.
@@ -77,6 +79,16 @@ class AdminSettingsForm extends ConfigFormBase {
     $form['advanced_configuration'] = $this->buildAdvancedConfigurationForm();
 
     return parent::buildForm($form, $form_state);
+  }
+
+  /**
+   * Pre-validate data.
+   */
+  private function preValidateData() {
+    $credential_settings = $this->config('acquia_lift.settings')->get('credential');
+    if (SettingsHelper::isInvalidCredential($credential_settings)) {
+      drupal_set_message(t('Acquia Lift module requires Account ID, Site ID, and Assets URL to activate.'), 'warning');
+    }
   }
 
   /**
@@ -384,24 +396,22 @@ class AdminSettingsForm extends ConfigFormBase {
     $values = $form_state->getValues();
 
     // Validate Account ID.
-    $accountId = $values['credential']['account_id'];
-    if (!preg_match('/^[a-zA-Z_][a-zA-Z\\d_]*$/', $accountId)) {
+    $account_id = $values['credential']['account_id'];
+    if (!preg_match('/^[a-zA-Z_][a-zA-Z\\d_]*$/', $account_id)) {
       $form_state->setError($form['credential']['account_id'], $this->t('Account ID contains invalid characters. It has to start with a letter and can further only contain alphanumerical characters.'));
     }
 
     // Validate Site ID.
-    $siteId = $values['credential']['site_id'];
-    if (!preg_match('/^[a-zA-Z0-9]*$/', $siteId)) {
-      $form_state->setError($form['credential']['site_id'], $this->t('Site ID contains invalid characters. Can only contain alphanumerical characters.'));
+    $site_id = $values['credential']['site_id'];
+    if (!preg_match('/^[a-zA-Z0-9]*$/', $site_id)) {
+      $form_state->setError($form['credential']['site_id'], $this->t('A Site ID contains invalid characters. Can only contain alphanumerical characters.'));
     }
 
     // Validate Assets Url.
-    $assetsUrl = 'https://' . $this->cleanUrl($values['credential']['assets_url']);
-    var_dump($assetsUrl);
-    if (!UrlHelper::isValid($assetsUrl, true)) {
+    $assets_url = 'https://' . $this->cleanUrl($values['credential']['assets_url']);
+    if (!UrlHelper::isValid($assets_url, true)) {
       $form_state->setError($form['credential']['assets_url'], $this->t('Assets URL is not a valid URL.'));
     }
-
   }
 
   /**

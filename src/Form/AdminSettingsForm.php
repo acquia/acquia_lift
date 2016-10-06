@@ -208,9 +208,12 @@ class AdminSettingsForm extends ConfigFormBase {
     $field_mappings_settings = $this->config('acquia_lift.settings')->get('field_mappings');
     $field_names = $this->getTaxonomyTermFieldNames();
 
+    $taxonomyVocabularyCollectionUrl = Url::fromRoute('entity.taxonomy_vocabulary.collection', [], ['attributes' => ['target' => '_blank']]);
+    $taxonomyVocabularyCollectionLink = Link::fromTextAndUrl('Taxonomy Vocabulary', $taxonomyVocabularyCollectionUrl)->toString();
+
     $form = [
       '#title' => t('Field Mappings'),
-      '#description' => t('Map Taxonomy vocabulary fields to "content section", "content keywords", and "persona" fields.'),
+      '#description' => t('Create ') . $taxonomyVocabularyCollectionLink . t(' and map to "content section", "content keywords", and "persona" fields.'),
       '#type' => 'details',
       '#tree' => TRUE,
       '#group' => 'data_collection_settings',

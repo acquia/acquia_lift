@@ -3,7 +3,6 @@
 namespace Drupal\acquia_lift\Service\Helper;
 
 use Drupal\Component\Utility\UrlHelper;
-use Drupal\acquia_lift\Exception\MissingSettingsException;
 
 /**
  * Defines the Settings Helper class.

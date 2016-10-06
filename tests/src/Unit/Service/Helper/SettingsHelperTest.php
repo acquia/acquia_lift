@@ -61,8 +61,8 @@ class SettingsHelperTest extends UnitTestCase {
     $data['invalid assets_url URL'] = [$valid_settings, TRUE];
     $data['invalid decision_api_url URL'] = [$valid_settings, TRUE];
 
-    $data['valid data 2'][0]['account_id'] = 'account_id_2';
-    $data['valid data 2'][0]['site_id'] = 'site_id_2';
+    $data['valid data 2'][0]['account_id'] = 'accountId2';
+    $data['valid data 2'][0]['site_id'] = '2222';
     $data['valid data 2'][0]['assets_url'] = 'assets_url_2';
     $data['missing account_id'][0]['account_id'] = '';
     $data['invalid assets_url URL'][0]['assets_url'] = 'invalid assets URL';

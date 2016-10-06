@@ -38,7 +38,7 @@ class SettingsHelper {
   /**
    * Is an invalid credential Account ID. Invalid if:
    *   1) Missing, or
-   *   2) Not start with a letter and can further only contain alphanumerical characters.
+   *   2) Not start with a letter and contain only alphanumerical characters.
    *
    * @param string
    *   Credential Account ID.

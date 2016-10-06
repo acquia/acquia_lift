@@ -1,6 +1,6 @@
 <?php
 
-namespace Drupal\Tests\acquia_lift\Service\Context;
+namespace Drupal\Tests\acquia_lift\Unit\Service\Context;
 
 use Drupal\Tests\UnitTestCase;
 use Drupal\acquia_lift\Service\Context\PathContext;

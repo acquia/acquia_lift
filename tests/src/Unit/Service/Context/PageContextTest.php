@@ -1,12 +1,13 @@
 <?php
 
-namespace Drupal\Tests\acquia_lift\Service\Context;
+namespace Drupal\Tests\acquia_lift\Unit\Service\Context;
 
 use Drupal\Tests\UnitTestCase;
 use Drupal\acquia_lift\Service\Context\PageContext;
 use Drupal\Tests\acquia_lift\Unit\Traits\SettingsDataTrait;
 
 require_once(__DIR__ . '/../../Traits/SettingsDataTrait.php');
+require_once(__DIR__ . '/../../Polyfill/Drupal.php');
 
 /**
  * PageContextTest Test.
@@ -330,7 +331,7 @@ class PageContextTest extends UnitTestCase {
       ->method('get')
       ->with('node')
       ->willReturn($node);
-    $this->testPopulateHtmlHeadWithNodeAndThumbnailUrlSetUpThumbnailUrl($node);
+    $this->populateHtmlHeadWithNodeAndThumbnailUrlSetUpThumbnailUrl($node);
 
     $page_context = new PageContext($this->configFactory, $this->entityTypeManager, $this->requestStack, $this->routeMatch, $this->titleResolver);
     $head = ['old_head'];
@@ -374,7 +375,7 @@ class PageContextTest extends UnitTestCase {
       ->method('get')
       ->with('node')
       ->willReturn($this->getNode());
-    $this->testPopulateHtmlHeadWithNodeAndFieldsSetUpFields();
+    $this->populateHtmlHeadWithNodeAndFieldsSetUpFields();
 
     $page_context = new PageContext($this->configFactory, $this->entityTypeManager, $this->requestStack, $this->routeMatch, $this->titleResolver);
     $head = ['old_head'];
@@ -496,7 +497,7 @@ class PageContextTest extends UnitTestCase {
    *
    * @param $node Node
    */
-  private function testPopulateHtmlHeadWithNodeAndThumbnailUrlSetUpThumbnailUrl($node) {
+  private function populateHtmlHeadWithNodeAndThumbnailUrlSetUpThumbnailUrl($node) {
     $field_media = $this->getMockBuilder('Drupal\Core\Entity\ContentEntityInterface')
       ->disableOriginalConstructor()
       ->getMock();
@@ -550,7 +551,7 @@ class PageContextTest extends UnitTestCase {
   /**
    * testPopulateHtmlHeadWithNodeAndFields(), sub routine "setup fields".
    */
-  private function testPopulateHtmlHeadWithNodeAndFieldsSetUpFields() {
+  private function populateHtmlHeadWithNodeAndFieldsSetUpFields() {
     $tracked_content_term_1 = $this->getTerm('Tracked Content Term Name 1', 'tracked_content_vocabulary');
     $tracked_keyword_term_1 = $this->getTerm('Tracked Keyword Term Name 1', 'tracked_keyword_vocabulary');
     $tracked_keyword_term_2 = $this->getTerm('Tracked Keyword Term Name 2', 'tracked_keyword_vocabulary');

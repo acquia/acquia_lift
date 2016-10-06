@@ -38,11 +38,10 @@ install:
   - cd drupal
 
   # Install drupal default profile
-  - drush --verbose site-install --db-url=mysql://root:@127.0.0.1/drupal --yes
+  - drush --verbose site-install --db-url=mysql://root:@localhost/drupal --yes
   - drush en -y simpletest
   - drush en -y acquia_lift
 
 script:
-  # Notice this is temporarily running unit tests only.
-  # To enable functional / Simpletest, remove the "--directory 'modules/acquia_lift/tests/src/Unit/'" parameter.
-  php core/scripts/run-tests.sh --php '/usr/bin/php' --dburl 'mysql://root:@127.0.0.1/drupal' --module 'acquia_lift' --directory 'modules/acquia_lift/tests/src/Unit/'
+  # Run-tests.
+  php ./core/scripts/run-tests.sh --php $(which php) --dburl 'mysql://root:@localhost/drupal' --module 'acquia_lift'

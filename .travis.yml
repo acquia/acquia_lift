@@ -32,7 +32,7 @@ install:
   - cd drupal
 
   # Install drupal default profile
-  - drush --verbose site-install --db-url 'mysql://root:@127.0.0.1/drupal' --yes
+  - drush --verbose site-install --db-url=mysql://root:@127.0.0.1/drupal --yes
   - drush en -y simpletest
   - drush en -y acquia_lift
 

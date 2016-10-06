@@ -20,33 +20,30 @@ before_install:
   - phpenv config-rm xdebug.ini
 
 install:
-  # Add composer's global bin directory to the path
+  # Add composer's global bin directory to the path.
   # See: https://github.com/drush-ops/drush#install---composer
   - export PATH="$HOME/.composer/vendor/bin:$PATH"
 
-  # Install Drush
+  # Install Drush.
   - composer global require drush/drush
   - phpenv rehash
 
-  # Create MySQL Database
+  # Create MySQL Database.
   - mysql -e 'create database drupal;'
 
-  # Download Drupal
-  - ls -als
+  # Download Drupal.
   - cd ..
-  - ls -als
   - drush dl drupal-8 -y --drupal-project-rename 'drupal'
-  - ls -als
   - mv acquia_lift drupal/modules
-  - ls -als
   - cd drupal
-  - ls -als
 
-  # Install drupal default profile
+  # Install drupal default profile and enable required modules.
   - drush --verbose site-install --db-url=mysql://root:@127.0.0.1/drupal --yes
   - drush en -y simpletest
   - drush en -y acquia_lift
 
 script:
+  # Run server.
+  drush runserver http://127.0.0.1:8080 &
   # Run-tests.
-  php ./core/scripts/run-tests.sh --verbose --php $(which php) --dburl 'mysql://root:@127.0.0.1/drupal' --module 'acquia_lift'
+  php ./core/scripts/run-tests.sh --verbose --php $(which php) --url 'http://127.0.0.1:8080' --dburl 'mysql://root:@127.0.0.1/drupal' --module 'acquia_lift'

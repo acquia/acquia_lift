@@ -10,16 +10,13 @@ mysql:
   username: root
   encoding: utf8
 
-before_install:
-  - composer self-update
-
 install:
   # Add composer's global bin directory to the path
   # See: https://github.com/drush-ops/drush#install---composer
   - export PATH="$HOME/.composer/vendor/bin:$PATH"
 
   # Install Drush
-  - composer global require drush/drush:dev-master
+  - composer global require drush/drush
   - phpenv rehash
 
   # Create MySQL Database

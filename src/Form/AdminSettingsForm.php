@@ -86,8 +86,16 @@ class AdminSettingsForm extends ConfigFormBase {
    */
   private function preValidateData() {
     $credential_settings = $this->config('acquia_lift.settings')->get('credential');
-    if (SettingsHelper::isInvalidCredential($credential_settings)) {
-      drupal_set_message(t('Acquia Lift module requires Account ID, Site ID, and Assets URL to activate.'), 'warning');
+    if (SettingsHelper::isInvalidCredentialAccountId($credential_settings['account_id']) ||
+      SettingsHelper::isInvalidCredentialSiteId($credential_settings['site_id']) ||
+      SettingsHelper::isInvalidCredentialAssetsUrl($credential_settings['assets_url'])
+    ) {
+      drupal_set_message(t('Acquia Lift module requires valid Account ID, Site ID, and Assets URL to be activate.'), 'warning');
+    }
+    if (SettingsHelper::isInvalidCredentialDecisionApiUrl($credential_settings['decision_api_url']) ||
+      SettingsHelper::isInvalidCredentialOauthUrl($credential_settings['oauth_url'])
+    ) {
+      drupal_set_message(t('Acquia Lift module requires valid Decision API URL and Authentication URL to be activate.'), 'warning');
     }
   }
 
@@ -396,21 +404,28 @@ class AdminSettingsForm extends ConfigFormBase {
     $values = $form_state->getValues();
 
     // Validate Account ID.
-    $account_id = $values['credential']['account_id'];
-    if (!preg_match('/^[a-zA-Z_][a-zA-Z\\d_]*$/', $account_id)) {
-      $form_state->setError($form['credential']['account_id'], $this->t('Account ID contains invalid characters. It has to start with a letter and can further only contain alphanumerical characters.'));
+    if (SettingsHelper::isInvalidCredentialAccountId($values['credential']['account_id'])) {
+      $form_state->setError($form['credential']['account_id'], $this->t('Account ID is empty or contains invalid characters. It has to start with a letter and can further only contain alphanumerical characters.'));
     }
 
     // Validate Site ID.
-    $site_id = $values['credential']['site_id'];
-    if (!preg_match('/^[a-zA-Z0-9]*$/', $site_id)) {
-      $form_state->setError($form['credential']['site_id'], $this->t('A Site ID contains invalid characters. Can only contain alphanumerical characters.'));
+    if (SettingsHelper::isInvalidCredentialSiteId($values['credential']['site_id'])) {
+      $form_state->setError($form['credential']['site_id'], $this->t('Site ID is empty or contains invalid characters. Can only contain alphanumerical characters.'));
     }
 
-    // Validate Assets Url.
-    $assets_url = 'https://' . $this->cleanUrl($values['credential']['assets_url']);
-    if (!UrlHelper::isValid($assets_url, true)) {
-      $form_state->setError($form['credential']['assets_url'], $this->t('Assets URL is not a valid URL.'));
+    // Validate Assets URL.
+    if (SettingsHelper::isInvalidCredentialAssetsUrl($values['credential']['assets_url'])) {
+      $form_state->setError($form['credential']['assets_url'], $this->t('Assets URL is empty or an invalid URL.'));
+    }
+
+    // Validate Decision API URL.
+    if (SettingsHelper::isInvalidCredentialDecisionApiUrl($values['credential']['decision_api_url'])) {
+      $form_state->setError($form['credential']['decision_api_url'], $this->t('Decision API URL is an invalid URL.'));
+    }
+
+    // Validate Auth URL.
+    if (SettingsHelper::isInvalidCredentialOauthUrl($values['credential']['oauth_url'])) {
+      $form_state->setError($form['credential']['oauth_url'], $this->t('Authentication URL is an invalid URL.'));
     }
   }
 

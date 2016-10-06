@@ -27,7 +27,7 @@ install:
 
   # Download Drupal
   - cd ..
-  - drush dl drupal-8 --drupal-project-rename 'drupal'
+  - drush dl drupal-8 -y --drupal-project-rename 'drupal'
   - mv acquia_lift drupal/modules
   - cd drupal
 

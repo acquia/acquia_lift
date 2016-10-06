@@ -44,4 +44,4 @@ install:
 
 script:
   # Run-tests.
-  php ./core/scripts/run-tests.sh --php $(which php) --dburl 'mysql://root:@localhost/drupal' --module 'acquia_lift'
+  php ./core/scripts/run-tests.sh --php $(which php) --dburl 'mysql://root:@localhost/drupal' --module 'acquia_lift' --verbose

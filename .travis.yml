@@ -10,6 +10,9 @@ mysql:
   username: root
   encoding: utf8
 
+before_install:
+  - phpenv config-rm xdebug.ini
+
 install:
   # Add composer's global bin directory to the path
   # See: https://github.com/drush-ops/drush#install---composer
@@ -33,4 +36,4 @@ install:
   - drush en -y acquia_lift
 
 script:
-  php core/scripts/run-tests.sh --php '/usr/bin/php' --module 'acquia_lift'
+  php core/scripts/run-tests.sh --php '/usr/bin/php' --module 'acquia_lift' --dburl=mysql://root:@127.0.0.1/drupal

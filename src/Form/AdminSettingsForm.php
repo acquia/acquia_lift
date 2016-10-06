@@ -2,7 +2,6 @@
 
 namespace Drupal\acquia_lift\Form;
 
-use Drupal\Component\Utility\UrlHelper;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Drupal\Core\Config\Config;
 use Drupal\Core\Entity\EntityManagerInterface;

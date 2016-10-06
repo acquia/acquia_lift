@@ -19,6 +19,37 @@ class SettingsHelperTest extends UnitTestCase {
   use SettingsDataTrait;
 
   /**
+   * Tests the isInvalidCredentialAccountId() method.
+   *
+   * @covers ::isInvalidCredentialAccountId
+   *
+   * @param string $setting
+   * @param boolean $expected
+   *
+   * @dataProvider providerTestIsInvalidCredentialAccountId
+   */
+  public function testIsInvalidCredentialAccountId($setting, $expected) {
+    $result = SettingsHelper::isInvalidCredentialAccountId($setting);
+    $this->assertEquals($expected, $result);
+  }
+
+  /**
+   * Data provider for testIsInvalidCredentialAccountId().
+   */
+  public function providerTestIsInvalidCredentialAccountId() {
+    $data = [];
+
+    $data['invalid null'] = [NULL, TRUE];
+    $data['invalid empty'] = ['', TRUE];
+    $data['invalid start with number'] = ['1', TRUE];
+    $data['invalid has "~" sign'] = ['a~', TRUE];
+    $data['valid has "_" sign'] = ['a_', FALSE];
+    $data['valid start with alphabetic then alphanumeric'] = ['a123', FALSE];
+
+    return $data;
+  }
+
+  /**
    * Tests the isInvalidCredential() method.
    *
    * @covers ::isInvalidCredential

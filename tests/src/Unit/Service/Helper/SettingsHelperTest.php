@@ -41,10 +41,70 @@ class SettingsHelperTest extends UnitTestCase {
 
     $data['invalid null'] = [NULL, TRUE];
     $data['invalid empty'] = ['', TRUE];
-    $data['invalid start with number'] = ['1', TRUE];
+    $data['invalid start with number'] = ['1a', TRUE];
     $data['invalid has "~" sign'] = ['a~', TRUE];
     $data['valid has "_" sign'] = ['a_', FALSE];
     $data['valid start with alphabetic then alphanumeric'] = ['a123', FALSE];
+
+    return $data;
+  }
+
+  /**
+   * Tests the isInvalidCredentialSiteId() method.
+   *
+   * @covers ::isInvalidCredentialSiteId
+   *
+   * @param string $setting
+   * @param boolean $expected
+   *
+   * @dataProvider providerTestIsInvalidCredentialSiteId
+   */
+  public function testIsInvalidCredentialSiteId($setting, $expected) {
+    $result = SettingsHelper::isInvalidCredentialSiteId($setting);
+    $this->assertEquals($expected, $result);
+  }
+
+  /**
+   * Data provider for testIsInvalidCredentialSiteId().
+   */
+  public function providerTestIsInvalidCredentialSiteId() {
+    $data = [];
+
+    $data['invalid null'] = [NULL, TRUE];
+    $data['invalid empty'] = ['', TRUE];
+    $data['invalid has "~" sign'] = ['a~', TRUE];
+    $data['valid alphanumeric 1'] = ['a123', FALSE];
+    $data['valid alphanumeric 2'] = ['3Ab', FALSE];
+
+    return $data;
+  }
+
+  /**
+   * Tests the isInvalidCredentialAssetsUrl() method.
+   *
+   * @covers ::isInvalidCredentialAssetsUrl
+   *
+   * @param string $setting
+   * @param boolean $expected
+   *
+   * @dataProvider providerTestIsInvalidCredentialAssetsUrl
+   */
+  public function testIsInvalidCredentialAssetsUrl($setting, $expected) {
+    $result = SettingsHelper::isInvalidCredentialAssetsUrl($setting);
+    $this->assertEquals($expected, $result);
+  }
+
+  /**
+   * Data provider for testIsInvalidCredentialAssetsUrl().
+   */
+  public function providerTestIsInvalidCredentialAssetsUrl() {
+    $data = [];
+
+    $data['invalid null'] = [NULL, TRUE];
+    $data['invalid empty'] = ['', TRUE];
+    $data['invalid has non-ascii characters'] = ['不合法', TRUE];
+    $data['valid url 1'] = ['acquia', FALSE];
+    $data['valid url 2'] = ['acquia.com', FALSE];
 
     return $data;
   }

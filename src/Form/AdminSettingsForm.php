@@ -405,17 +405,17 @@ class AdminSettingsForm extends ConfigFormBase {
 
     // Validate Account ID.
     if (SettingsHelper::isInvalidCredentialAccountId($values['credential']['account_id'])) {
-      $form_state->setError($form['credential']['account_id'], $this->t('Account ID is empty or contains invalid characters. It has to start with a letter and can further only contain alphanumerical characters.'));
+      $form_state->setError($form['credential']['account_id'], $this->t('Account ID contains invalid characters. It has to start with a letter and contain only alphanumerical characters.'));
     }
 
     // Validate Site ID.
     if (SettingsHelper::isInvalidCredentialSiteId($values['credential']['site_id'])) {
-      $form_state->setError($form['credential']['site_id'], $this->t('Site ID is empty or contains invalid characters. Can only contain alphanumerical characters.'));
+      $form_state->setError($form['credential']['site_id'], $this->t('Site ID contains invalid characters. Can only contain alphanumerical characters.'));
     }
 
     // Validate Assets URL.
     if (SettingsHelper::isInvalidCredentialAssetsUrl($values['credential']['assets_url'])) {
-      $form_state->setError($form['credential']['assets_url'], $this->t('Assets URL is empty or an invalid URL.'));
+      $form_state->setError($form['credential']['assets_url'], $this->t('Assets URL is an invalid URL.'));
     }
 
     // Validate Decision API URL.

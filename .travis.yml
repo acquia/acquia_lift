@@ -11,7 +11,6 @@ mysql:
   encoding: utf8
 
 before_install:
-  - apt-get update & /dev/null
   - composer self-update
 
 install:

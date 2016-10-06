@@ -32,7 +32,9 @@ install:
   - mysql -e 'create database drupal;'
 
   # Download Drupal
+  - ls -als
   - cd ..
+  - ls -als
   - drush dl drupal-8 -y --drupal-project-rename 'drupal'
   - mv acquia_lift drupal/modules
   - cd drupal

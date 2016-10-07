@@ -351,8 +351,6 @@ class AdminSettingsForm extends ConfigFormBase {
    */
   private function buildAdvancedConfigurationForm() {
     $settings = $this->config('acquia_lift.settings')->get('advanced');
-    $documentation_link_url = Url::fromUri('https://docs.acquia.com/lift/drupal/3/config/trusted', ['attributes' => ['target' => '_blank']]);
-    $documentation_external_link = Link::fromTextAndUrl(t('content replacement mode'), $documentation_link_url)->toString();
 
     $form = [
       '#title' => t('Advanced configuration'),
@@ -363,7 +361,7 @@ class AdminSettingsForm extends ConfigFormBase {
     $form['content_replacement_mode'] = [
       '#type' => 'radios',
       '#title' => t('Content replacement mode'),
-      '#description' => t('The default, site-wide setting for ') . $documentation_external_link . t('.'),
+      '#description' => t('The default, site-wide setting for <a href="https://docs.acquia.com/lift/drupal/3/config/trusted" target="_blank">content replacement mode</a>.'),
       '#default_value' => $settings['content_replacement_mode'],
       '#options' => ['trusted' => t('Trusted'), 'untrusted' => t('Untrusted')],
     ];

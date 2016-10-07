@@ -4,9 +4,7 @@ namespace Drupal\Tests\acquia_lift\Unit\Service\Helper;
 
 use Drupal\Tests\UnitTestCase;
 use Drupal\acquia_lift\Service\Helper\HelpMessageHelper;
-use Drupal\Tests\acquia_lift\Unit\Traits\SettingsDataTrait;
 
-require_once(__DIR__ . '/../../Traits/SettingsDataTrait.php');
 require_once(__DIR__ . '/../../Polyfill/Drupal.php');
 
 /**
@@ -16,90 +14,20 @@ require_once(__DIR__ . '/../../Polyfill/Drupal.php');
  * @group acquia_lift
  */
 class HelpMessageHelperTest extends UnitTestCase {
-
-  use SettingsDataTrait;
-
   /**
-   * @var \Drupal\Core\Config\ConfigFactoryInterface|\PHPUnit_Framework_MockObject_MockObject
-   */
-  private $configFactory;
-
-  /**
-   * @var \Drupal\Core\Utility\LinkGeneratorInterface|\PHPUnit_Framework_MockObject_MockObject
-   */
-  private $linkGenerator;
-
-  /**
-   * @var \Drupal\Core\Config\ImmutableConfig|\PHPUnit_Framework_MockObject_MockObject
-   */
-  private $settings;
-
-  /**
-   * {@inheritdoc}
-   */
-  public function setUp() {
-    parent::setUp();
-
-    $this->configFactory = $this->getMock('Drupal\Core\Config\ConfigFactoryInterface');
-    $this->linkGenerator = $this->getMock('Drupal\Core\Utility\LinkGeneratorInterface');
-    $this->settings = $this->getMockBuilder('Drupal\Core\Config\ImmutableConfig')
-      ->disableOriginalConstructor()
-      ->getMock();
-
-    $this->configFactory->expects($this->once())
-      ->method('get')
-      ->with('acquia_lift.settings')
-      ->willReturn($this->settings);
-
-    $this->linkGenerator->expects($this->at(0))
-      ->method('generate')
-      ->with('Documentation')
-      ->willReturn('a_documentation_link');
-  }
-
-  /**
-   * Tests the getMessage() method - AdminSettingsForm, full settings.
+   * Tests the getMessage() method - AdminSettingsForm.
    *
    * @covers ::getMessage
    *
    * @param string $route_name
+   * @param string $has_message
    *
    * @dataProvider providerRouteNames
    */
-  public function testGetMessageAdminSettingsFormFullSettings($route_name) {
-    $full_settings = $this->getValidCredentialSettings();
-
-    $this->settings->expects($this->once())
-      ->method('get')
-      ->with('credential')
-      ->willReturn($full_settings);
-
-    $help_message_helper = new HelpMessageHelper($this->configFactory, $this->linkGenerator);
+  public function testGetMessageAdminSettingsFormNoApiUrl($route_name, $has_message) {
+    $help_message_helper = new HelpMessageHelper();
     $message = $help_message_helper->getMessage($route_name);
-    $this->assertEquals('You can find more info in a_documentation_link.', $message);
-  }
-
-  /**
-   * Tests the getMessage() method - AdminSettingsForm, no Decision API URL setting.
-   *
-   * @covers ::getMessage
-   *
-   * @param string $route_name
-   *
-   * @dataProvider providerRouteNames
-   */
-  public function testGetMessageAdminSettingsFormNoApiUrl($route_name) {
-    $missing_decision_api_url_settings = $this->getValidCredentialSettings();
-    unset($missing_decision_api_url_settings['decision_api_url']);
-
-    $this->settings->expects($this->once())
-      ->method('get')
-      ->with('credential')
-      ->willReturn($missing_decision_api_url_settings);
-
-    $help_message_helper = new HelpMessageHelper($this->configFactory, $this->linkGenerator);
-    $message = $help_message_helper->getMessage($route_name);
-    $this->assertEquals('You can find more info in a_documentation_link.', $message);
+    $this->assertEquals('You can find more info in <a href="https://docs.acquia.com/lift" target="_blank">Documentation</a>.' === $message, $has_message);
   }
 
   /**
@@ -107,8 +35,10 @@ class HelpMessageHelperTest extends UnitTestCase {
    */
   public function providerRouteNames() {
     $data = [];
-    $data['help page'] = ['help.page.acquia_lift'];
-    $data['admin settings form'] = ['acquia_lift.admin_settings_form'];
+
+    $data['help page, has message'] = ['help.page.acquia_lift', TRUE];
+    $data['admin settings form, has message'] = ['acquia_lift.admin_settings_form', TRUE];
+    $data['admin settings form, has no message'] = ['acquia_contenthub.admin_settings_form', FALSE];
 
     return $data;
   }

@@ -2,38 +2,7 @@
 
 namespace Drupal\acquia_lift\Service\Helper;
 
-use Drupal\Core\Config\ConfigFactoryInterface;
-use Drupal\Core\Utility\LinkGeneratorInterface;
-use Drupal\Core\Url;
-
 class HelpMessageHelper {
-  /**
-   * Acquia Lift credential settings.
-   *
-   * @var array
-   */
-  private $credentialSettings;
-
-  /**
-   * Link generator.
-   *
-   * @var \Drupal\Core\Utility\LinkGeneratorInterface
-   */
-  private $linkGenerator;
-
-  /**
-   * Constructor.
-   *
-   * @param \Drupal\Core\Config\ConfigFactoryInterface $config_factory
-   *   The config factory service.
-   * @param \Drupal\Core\Utility\LinkGeneratorInterface $link_generator
-   *   The link generator.
-   */
-  public function __construct(ConfigFactoryInterface $config_factory, LinkGeneratorInterface $link_generator) {
-    $this->credentialSettings = $config_factory->get('acquia_lift.settings')->get('credential');
-    $this->linkGenerator = $link_generator;
-  }
-
   /**
    * Get help message (by route name).
    *
@@ -47,15 +16,7 @@ class HelpMessageHelper {
     switch ($route_name) {
       case 'help.page.acquia_lift':
       case 'acquia_lift.admin_settings_form':
-        $link_attributes = ['attributes' => ['target' => '_blank']];
-
-        // Generate Documentation link.
-        $documentation_link_text = t('Documentation');
-        $documentation_link_url = Url::fromUri('https://docs.acquia.com/lift', $link_attributes);
-        $documentation_external_link = $this->linkGenerator->generate($documentation_link_text, $documentation_link_url);
-        $help_message = t('You can find more info in ') . $documentation_external_link . t('.');
-
-        return $help_message;
+        return t('You can find more info in <a href="https://docs.acquia.com/lift" target="_blank">Documentation</a>.');
     }
     return;
   }

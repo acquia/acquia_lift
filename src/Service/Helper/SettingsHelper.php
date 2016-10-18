@@ -3,6 +3,7 @@
 namespace Drupal\acquia_lift\Service\Helper;
 
 use Drupal\Component\Utility\UrlHelper;
+use Exception;
 
 /**
  * Defines the Settings Helper class.
@@ -136,4 +137,28 @@ class SettingsHelper {
     $valid_modes = ['trusted', 'untrusted'];
     return in_array($test_mode, $valid_modes);
   }
+
+  /**
+   * Returns the list of UDFs that can be mapped to.
+   *
+   * @param string $type
+   *   The type of UDF field. Can be person, touch or event.
+   *
+   * @return array
+   *   An array of possible UDF metatag values for the given type.
+   * @throws Exception
+   *   An exception if the type given is not supported.
+   */
+  public static function getUdfLimitsForType($type = "person") {
+    if ($type !== 'person' && $type !== 'touch' && $type !== 'event') {
+      throw new Exception('This Udf Field type is not supported');
+    }
+    $counts = array(
+      'person' => 50,
+      'touch' => 20,
+      'event' => 50,
+    );
+    return $counts[$type];
+  }
+
 }

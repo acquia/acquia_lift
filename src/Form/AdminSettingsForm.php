@@ -2,6 +2,7 @@
 
 namespace Drupal\acquia_lift\Form;
 
+use Exception;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Drupal\Core\Config\Config;
 use Drupal\Core\Entity\EntityManagerInterface;
@@ -73,6 +74,9 @@ class AdminSettingsForm extends ConfigFormBase {
     ];
     $form['identity'] = $this->buildIdentityForm();
     $form['field_mappings'] = $this->buildFieldMappingsForm();
+    $form['udf_person_mappings'] = $this->buildUdfMappingsForm('person');
+    $form['udf_touch_mappings'] = $this->buildUdfMappingsForm('touch');
+    $form['udf_event_mappings'] = $this->buildUdfMappingsForm('event');
     $form['visibility'] = $this->buildVisibilityForm();
     $form['thumbnail_url'] = $this->buildThumbnailUrlForm();
     $form['advanced_configuration'] = $this->buildAdvancedConfigurationForm();
@@ -264,6 +268,60 @@ class AdminSettingsForm extends ConfigFormBase {
   }
 
   /**
+   * Build UDF mappings form.
+   *
+   * @param string $type
+   *   The type of UDF field. Can be person, touch or event.
+   *
+   * @return array
+   *   UDF mappings form.
+   * @throws Exception
+   *   An exception if the type given is not supported.
+   */
+  private function buildUdfMappingsForm($type = 'person') {
+    if ($type !== 'person' && $type !== 'touch' && $type !== 'event') {
+      throw new Exception('This Udf Field type is not supported');
+    }
+
+    $field_mappings_settings = $this->config('acquia_lift.settings')->get('udf_' . $type . '_mappings');
+    $field_names = $this->getTaxonomyTermFieldNames();
+    $taxonomy_vocabulary_url_text = t('Taxonomy Vocabulary');
+    $taxonomy_vocabulary_url = Url::fromRoute('entity.taxonomy_vocabulary.collection', [], ['attributes' => ['target' => '_blank']]);
+    $taxonomy_vocabulary_link = Link::fromTextAndUrl($taxonomy_vocabulary_url_text, $taxonomy_vocabulary_url)->toString();
+    $udf_limit = SettingsHelper::getUdfLimitsForType($type);
+
+    $form = [
+      '#title' => t('User @type Mappings', array('@type' => ucfirst($type))),
+      '#description' => t('Map taxonomy terms to Visitor Profile @type fields in Acquia
+      Lift. Select a Taxonomy Reference Field that, if present, will map the
+      value of the specified field to the Acquia Lift Profile for that specific
+      visitor. No options available? Create :taxonomy_vocabulary_link and map
+      the corresponding value.',
+        array(
+          '@type' => $type,
+          ':taxonomy_vocabulary_link' => $taxonomy_vocabulary_link,
+        )
+      ),
+      '#type' => 'details',
+      '#tree' => TRUE,
+      '#group' => 'data_collection_settings',
+    ];
+
+    // Go over the amount of fields that we can map.
+    for ($i = 1; $i < $udf_limit + 1; $i++) {
+      $form[$type . '_udf' . $i] = [
+        '#type' => 'select',
+        '#title' => t('User Profile @type Field @number', array('@number' => $i, '@type' => ucfirst($type))),
+        '#empty_value' => '',
+        '#options' => $field_names,
+        '#default_value' => isset($field_mappings_settings[$type . '_udf' . $i]['value']) ? $field_mappings_settings[$type . '_udf' . $i]['value'] : '',
+      ];
+    }
+
+    return $form;
+  }
+
+  /**
    * Get a list of Field names that are targeting type Taxonomy Terms.
    *
    * @return array
@@ -387,6 +445,9 @@ class AdminSettingsForm extends ConfigFormBase {
     $this->setCredentialValues($settings, $values['credential']);
     $this->setIdentityValues($settings, $values['identity']);
     $this->setFieldMappingsValues($settings, $values['field_mappings']);
+    $this->setUdfMappingsValues($settings, $values['udf_person_mappings'], 'person');
+    $this->setUdfMappingsValues($settings, $values['udf_event_mappings'], 'event');
+    $this->setUdfMappingsValues($settings, $values['udf_touch_mappings'], 'touch');
     $this->setVisibilityValues($settings, $values['visibility']);
     $this->setAdvancedConfigurationValues($settings, $values['advanced_configuration']);
 
@@ -489,7 +550,7 @@ class AdminSettingsForm extends ConfigFormBase {
    *   Identity values.
    */
   private function setIdentityValues(Config $settings, array $values) {
-//    $settings->set('identity.capture_identity', trim($values['capture_identity']));
+    //$settings->set('identity.capture_identity', trim($values['capture_identity']));
     $settings->set('identity.identity_parameter', trim($values['identity_parameter']));
     $settings->set('identity.identity_type_parameter', trim($values['identity_type_parameter']));
     $settings->set('identity.default_identity_type', trim($values['default_identity_type']));
@@ -507,6 +568,37 @@ class AdminSettingsForm extends ConfigFormBase {
     $settings->set('field_mappings.content_section', $values['content_section']);
     $settings->set('field_mappings.content_keywords', $values['content_keywords']);
     $settings->set('field_mappings.persona', $values['persona']);
+  }
+
+  /**
+   * Set Udf Mapping mapping values to our config object.
+   *
+   * @param \Drupal\Core\Config\Config $settings
+   *   Acquia Lift config settings.
+   * @param array $values
+   *   Field mappings values.
+   * @param string $type
+   *   The type of UDF field. Can be person, touch or event.
+   *
+   * @throws Exception
+   *   An exception if the type given is not supported.
+   */
+  private function setUdfMappingsValues(Config $settings, array $values, $type = 'person') {
+    if ($type !== 'person' && $type !== 'touch' && $type !== 'event') {
+      throw new Exception('This Udf Field type is not supported');
+    }
+    $mappings = [];
+    foreach ($values as $value_id => $value) {
+      if (empty($value)) {
+        continue;
+      }
+      $mappings[$value_id] = array(
+        'id' => $value_id,
+        'value' => $value,
+        'type' => 'taxonomy'
+      );
+    }
+    $settings->set('udf_' . $type . '_mappings', $mappings);
   }
 
   /**

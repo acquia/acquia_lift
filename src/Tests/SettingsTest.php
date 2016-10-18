@@ -85,6 +85,9 @@ class SettingsTest extends WebTestBase {
     $credential_settings = $this->getValidCredentialSettings();
     $identity_settings = $this->getValidIdentitySettings();
     $field_mappings_settings = $this->getValidFieldMappingsSettings();
+    $udf_person_settings = $this->getValidUdfPersonMappingsFormData();
+    $udf_touch_settings = $this->getValidUdfTouchMappingsFormData();
+    $udf_event_settings = $this->getValidUdfEventMappingsFormData();
     $visibility_settings = $this->getValidVisibilitySettings();
     $advanced_config_settings = $this->getValidAdvancedConfigurationSettings();
 
@@ -92,10 +95,13 @@ class SettingsTest extends WebTestBase {
     $edit += $this->convertToPostFormSettings($credential_settings, 'credential');
     $edit += $this->convertToPostFormSettings($identity_settings, 'identity');
     $edit += $this->convertToPostFormSettings($field_mappings_settings, 'field_mappings');
+    $edit += $this->convertToPostFormSettings($udf_person_settings, 'udf_person_mappings');
+    $edit += $this->convertToPostFormSettings($udf_touch_settings, 'udf_touch_mappings');
+    $edit += $this->convertToPostFormSettings($udf_event_settings, 'udf_event_mappings');
     $edit += $this->convertToPostFormSettings($visibility_settings, 'visibility');
     $edit += $this->convertToPostFormSettings($advanced_config_settings, 'advanced_configuration');
     $edit_settings_count = count($edit);
-    $expect_settings_count = 13;
+    $expect_settings_count = 19;
 
     // Post the edits and assert that options are saved.
     $this->drupalPostForm('admin/config/services/acquia-lift', $edit, t('Save configuration'));

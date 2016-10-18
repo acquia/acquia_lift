@@ -116,11 +116,27 @@ class PageContextTest extends UnitTestCase {
       ->method('get')
       ->with('field_mappings')
       ->willReturn($this->getValidFieldMappingsSettings());
+
     $this->settings->expects($this->at(2))
+      ->method('get')
+      ->with('udf_person_mappings')
+      ->willReturn($this->getValidUdfPersonMappingsSettings());
+
+    $this->settings->expects($this->at(3))
+      ->method('get')
+      ->with('udf_touch_mappings')
+      ->willReturn($this->getValidUdfTouchMappingsSettings());
+
+    $this->settings->expects($this->at(4))
+      ->method('get')
+      ->with('udf_event_mappings')
+      ->willReturn($this->getValidUdfEventMappingsSettings());
+
+    $this->settings->expects($this->at(5))
       ->method('get')
       ->with('thumbnail')
       ->willReturn($this->getValidThumbnailSettings());
-    $this->settings->expects($this->at(3))
+    $this->settings->expects($this->at(6))
       ->method('get')
       ->with('advanced')
       ->willReturn($this->getValidAdvancedConfigurationSettings());
@@ -400,6 +416,10 @@ class PageContextTest extends UnitTestCase {
       'liftDecisionAPIURL' => 'decision_api_url_1',
       'authEndpoint' => 'oauth_url_1',
       'contentReplacementMode' => 'trusted',
+      'event_udf1' => 'Tracked Content Term Name 1',
+      'touch_udf1' => 'Tracked Content Term Name 1',
+      'person_udf1' => 'Tracked Keyword Term Name 1,Tracked Keyword Term Name 2',
+      'event_udf2' => 'Tracked Keyword Term Name 1,Tracked Keyword Term Name 2',
     ], 'AssetsUrl1');
 
     $this->assertEquals($expected_head, $head);
@@ -462,6 +482,7 @@ class PageContextTest extends UnitTestCase {
     $node->expects($this->once())
       ->method('getOwner')
       ->willReturn($user);
+
     $field_country->expects($this->once())
       ->method('getSetting')
       ->with('handler_settings')

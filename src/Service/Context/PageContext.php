@@ -32,6 +32,27 @@ class PageContext {
   private $fieldMappings;
 
   /**
+   * Udf Person mappings.
+   *
+   * @var array
+   */
+  private $udfPersonMappings;
+
+  /**
+   * Udf Event mappings.
+   *
+   * @var array
+   */
+  private $udfEventMappings;
+
+  /**
+   * Udf Touch mappings.
+   *
+   * @var array
+   */
+  private $udfTouchMappings;
+
+  /**
    * Thumbnail config.
    *
    * @var array
@@ -100,22 +121,34 @@ class PageContext {
    *   The title resolver.
    */
   public function __construct(ConfigFactoryInterface $config_factory, EntityTypeManagerInterface $entity_type_manager, RequestStack $request_stack, RouteMatchInterface $route_match, TitleResolverInterface $title_resolver) {
+    // Get all our settings.
     $settings = $config_factory->get('acquia_lift.settings');
-    $credential_settings = $settings->get('credential');
-    $field_mappings_settings = $settings->get('field_mappings');
-    $thumbnail_settings = $settings->get('thumbnail');
-    $request = $request_stack->getCurrentRequest();
-    $route = $route_match->getRouteObject();
 
+    // Set Credential information.
+    $credential_settings = $settings->get('credential');
     $this->assetsUrl = $credential_settings['assets_url'];
-    $this->fieldMappings = $field_mappings_settings;
-    $this->thumbnailConfig = $thumbnail_settings;
+    $this->setPageContextCredential($credential_settings);
+
+    // Set mapping information.
+    $this->fieldMappings = $settings->get('field_mappings');
+    $this->udfPersonMappings = $settings->get('udf_person_mappings');
+    $this->udfEventMappings = $settings->get('udf_touch_mappings');
+    $this->udfTouchMappings = $settings->get('udf_event_mappings');
+
+    // Set thumbnail configuration.
+    $this->thumbnailConfig = $settings->get('thumbnail');
+
+    // Set advanced configuration.
+    $this->setPageContextAdvancedConfiguration($settings->get('advanced'));
+
+    // Set taxonomyTermStorage.
     $this->taxonomyTermStorage = $entity_type_manager->getStorage('taxonomy_term');
 
-    $this->setPageContextCredential($credential_settings);
+    // Set page context
+    $request = $request_stack->getCurrentRequest();
+    $route = $route_match->getRouteObject();
     $this->setPageContextByNode($request);
     $this->setPageContextTitle($request, $route, $title_resolver);
-    $this->setPageContextAdvancedConfiguration($settings->get('advanced'));
   }
 
   /**
@@ -268,7 +301,11 @@ class PageContext {
     // Find Field Term names.
     foreach ($available_field_vocabulary_names as $page_context_name => $vocabulary_names) {
       $field_term_names = $this->getFieldTermNames($vocabulary_names, $vocabulary_term_names);
-      $this->pageContext[$page_context_name] = implode(',', $field_term_names);
+      // Only set when the value is a populated array
+      // Empty arrays return as false in PHP.
+      if (!empty($field_term_names)) {
+        $this->pageContext[$page_context_name] = implode(',', $field_term_names);
+      }
     }
   }
 
@@ -282,13 +319,42 @@ class PageContext {
    */
   private function getAvailableFieldVocabularyNames(NodeInterface $node) {
     $available_field_vocabulary_names = [];
+    $available_field_vocabulary_fields = [];
+
+    // Regular field mapping
     foreach ($this->fieldMappings as $page_context_name => $field_name) {
       if(!isset($node->{$field_name})) {
         continue;
       }
-      $vocabulary_names = $node->{$field_name}->getSetting('handler_settings')['target_bundles'];
-      $available_field_vocabulary_names[$page_context_name] = $vocabulary_names;
+      // Add this field to the list of fields to parse with their corresponding
+      // page context name;
+      if (!isset($available_field_vocabulary_fields[$field_name])) {
+        $available_field_vocabulary_fields[$field_name] = [];
+      }
+      $available_field_vocabulary_fields[$field_name][] = $page_context_name;
     }
+    // The following 3 mappings have all the same structure with different array
+    // id's so we can merge them without conflict.
+    $udf_mappings = array_merge($this->udfPersonMappings, $this->udfTouchMappings, $this->udfEventMappings);
+    foreach ($udf_mappings as $page_context_name => $properties) {
+      if(!isset($node->{$properties['value']})) {
+        continue;
+      }
+      // Add this field to the list of fields to parse with their corresponding
+      // page context name;
+      if (!isset($available_field_vocabulary_fields[$properties['value']])) {
+        $available_field_vocabulary_fields[$properties['value']] = [];
+      }
+      $available_field_vocabulary_fields[$properties['value']][] = $page_context_name;
+    }
+
+    foreach($available_field_vocabulary_fields as $field_name => $page_contexts) {
+      $vocabulary_names = $node->{$field_name}->getSetting('handler_settings')['target_bundles'];
+      foreach ($page_contexts as $page_context_name) {
+        $available_field_vocabulary_names[$page_context_name] = $vocabulary_names;
+      }
+    }
+
     return $available_field_vocabulary_names;
   }
 

@@ -50,6 +50,54 @@ acquia_lift.settings:
         persona:
           type: string
           label: 'Persona'
+    udf_person_mappings:
+      type: sequence
+      label: 'UDF Person mappings'
+      sequence:
+        type: config_object
+        label: 'UDF Person mappings'
+        mapping:
+          id:
+            type: string
+            label: 'UDF Person field identifier.'
+          value:
+            type: string
+            label: 'Item Value this is mapped to.'
+          type:
+            type: string
+            label: 'Item Type this is mapped to.'
+    udf_touch_mappings:
+          type: sequence
+          label: 'UDF Touch mappings'
+          sequence:
+            type: config_object
+            label: 'UDF Touch mapping'
+            mapping:
+              id:
+                type: string
+                label: 'UDF Touch field identifier.'
+              value:
+                type: string
+                label: 'Item Value this is mapped to.'
+              type:
+                type: string
+                label: 'Item Type this is mapped to.'
+    udf_event_mappings:
+          type: sequence
+          label: 'UDF Event mappings'
+          sequence:
+            type: config_object
+            label: 'UDF Event mapping'
+            mapping:
+              id:
+                type: string
+                label: 'UDF Event field identifier.'
+              value:
+                type: string
+                label: 'Item Value this is mapped to.'
+              type:
+                type: string
+                label: 'Item Type this is mapped to.'
     thumbnail:
       type: sequence
       label: 'Thumbnail'

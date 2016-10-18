@@ -156,7 +156,7 @@ class SettingsHelper {
     $counts = array(
       'person' => 50,
       'touch' => 20,
-      'event' => 20,
+      'event' => 50,
     );
     return $counts[$type];
   }

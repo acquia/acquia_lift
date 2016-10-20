@@ -1,0 +1,4 @@
+acquia-lift:
+  css:
+    state:
+      assets/acquia_lift.css: {}

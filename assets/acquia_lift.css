@@ -1,0 +1,18 @@
+/**
+ * Support showing the entire adminstrative menu when lift tools are enabled
+ */
+body.toolbar-fixed.lift .toolbar-oriented,
+body.lift .toolbar-oriented .toolbar-bar,
+body.lift .toolbar-oriented .toolbar-tray {
+  right: 20px; /* collapsed width of lift tools */
+  -webkit-transition: right 0.5s ease;
+  -moz-transition: right 0.5s ease;
+  -o-transition: right 0.5s ease;
+  transition: right 0.5s ease;
+}
+
+body.toolbar-fixed.lift.lift-tools-active .toolbar-oriented,
+body.lift.lift-tools-active .toolbar-oriented .toolbar-bar,
+body.lift.lift-tools-active .toolbar-oriented .toolbar-tray {
+  right: 420px; /* expanded width of lift tools */
+}

@@ -4,6 +4,8 @@ namespace Drupal\acquia_lift\Service\Helper;
 
 use Drupal\Component\Utility\UrlHelper;
 use Exception;
+use GuzzleHttp\Client;
+use GuzzleHttp\Exception\RequestException;
 
 /**
  * Defines the Settings Helper class.
@@ -143,7 +145,6 @@ class SettingsHelper {
    *
    * @param string $type
    *   The type of UDF field. Can be person, touch or event.
-   *
    * @return array
    *   An array of possible UDF metatag values for the given type.
    * @throws Exception
@@ -161,4 +162,25 @@ class SettingsHelper {
     return $counts[$type];
   }
 
+  /**
+   * Ping URI.
+   *
+   * @param string
+   *   URL.
+   * @return array
+   *   Returns 'statusCode' and 'reasonPhrase' of the response.
+   */
+  public static function pingUri($base_uri) {
+    $client = new Client(['base_uri' => $base_uri]);
+    try {
+      $response = $client->get('/ping', ['http_errors' => false]);
+    } catch (RequestException $e) {
+      return [];
+    }
+
+    return [
+      'statusCode' => $response->getStatusCode(),
+      'reasonPhrase' => $response->getReasonPhrase(),
+    ];
+  }
 }

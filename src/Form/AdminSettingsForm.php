@@ -89,16 +89,46 @@ class AdminSettingsForm extends ConfigFormBase {
    */
   private function preValidateData() {
     $credential_settings = $this->config('acquia_lift.settings')->get('credential');
+
+    // Validate the essential fields.
     if (SettingsHelper::isInvalidCredentialAccountId($credential_settings['account_id']) ||
       SettingsHelper::isInvalidCredentialSiteId($credential_settings['site_id']) ||
       SettingsHelper::isInvalidCredentialAssetsUrl($credential_settings['assets_url'])
     ) {
       drupal_set_message(t('Acquia Lift module requires valid Account ID, Site ID, and Assets URL to be activate.'), 'warning');
     }
+
+    // Validate URLs and check connections.
     if (SettingsHelper::isInvalidCredentialDecisionApiUrl($credential_settings['decision_api_url']) ||
       SettingsHelper::isInvalidCredentialOauthUrl($credential_settings['oauth_url'])
     ) {
       drupal_set_message(t('Acquia Lift module requires valid Decision API URL and Authentication URL to be activate.'), 'warning');
+    } else {
+      $this->checkConnection($credential_settings['decision_api_url'], 'Decision API');
+      $this->checkConnection($this->removeAuthorizeSuffix($credential_settings['oauth_url']), 'OAuth');
+    }
+  }
+
+  /**
+   * Check connection by URL.
+   *
+   * @param string $url
+   *   URL.
+   * @param string $name
+   *   Name of the service.
+   */
+  private function checkConnection($url, $name) {
+    $responseInfo = SettingsHelper::pingUri($url);
+    if (empty($responseInfo)) {
+      drupal_set_message(t('Acquia Lift module could not reach the specified :name URL.', [':name' => $name]), 'error');
+      return;
+    }
+    if ($responseInfo['statusCode'] !== 200) {
+      drupal_set_message(t('Acquia Lift module has successfully connected to :name URL, but received status code ":statusCode" with the reason ":reasonPhrase".', [
+        ':name' => $name,
+        ':statusCode' => $responseInfo['statusCode'],
+        ':reasonPhrase' => $responseInfo['reasonPhrase'],
+      ]), 'error');
     }
   }
 

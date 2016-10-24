@@ -153,11 +153,11 @@ class SettingsHelper {
     if ($type !== 'person' && $type !== 'touch' && $type !== 'event') {
       throw new Exception('This Udf Field type is not supported');
     }
-    $counts = array(
+    $counts = [
       'person' => 50,
       'touch' => 20,
       'event' => 50,
-    );
+    ];
     return $counts[$type];
   }
 

@@ -291,17 +291,8 @@ class AdminSettingsForm extends ConfigFormBase {
     $udf_limit = SettingsHelper::getUdfLimitsForType($type);
 
     $form = [
-      '#title' => t('User @type Mappings', array('@type' => ucfirst($type))),
-      '#description' => t('Map taxonomy terms to Visitor Profile @type fields in Acquia
-      Lift. Select a Taxonomy Reference Field that, if present, will map the
-      value of the specified field to the Acquia Lift Profile for that specific
-      visitor. No options available? Create :taxonomy_vocabulary_link and map
-      the corresponding value.',
-        array(
-          '@type' => $type,
-          ':taxonomy_vocabulary_link' => $taxonomy_vocabulary_link,
-        )
-      ),
+      '#title' => t('User @type Mappings', ['@type' => ucfirst($type)]),
+      '#description' => t('Map taxonomy terms to Visitor Profile @type fields in Acquia Lift. Select a Taxonomy Reference Field that, if present, will map the value of the specified field to the Acquia Lift Profile for that specific visitor. No options available? Create ',  ['@type' => $type]) . $taxonomy_vocabulary_link . t(' and map the corresponding value.'),
       '#type' => 'details',
       '#tree' => TRUE,
       '#group' => 'data_collection_settings',
@@ -311,7 +302,7 @@ class AdminSettingsForm extends ConfigFormBase {
     for ($i = 1; $i < $udf_limit + 1; $i++) {
       $form[$type . '_udf' . $i] = [
         '#type' => 'select',
-        '#title' => t('User Profile @type Field @number', array('@number' => $i, '@type' => ucfirst($type))),
+        '#title' => t('User Profile @type Field @number', ['@number' => $i, '@type' => ucfirst($type)]),
         '#empty_value' => '',
         '#options' => $field_names,
         '#default_value' => isset($field_mappings_settings[$type . '_udf' . $i]['value']) ? $field_mappings_settings[$type . '_udf' . $i]['value'] : '',
@@ -592,11 +583,11 @@ class AdminSettingsForm extends ConfigFormBase {
       if (empty($value)) {
         continue;
       }
-      $mappings[$value_id] = array(
+      $mappings[$value_id] = [
         'id' => $value_id,
         'value' => $value,
         'type' => 'taxonomy'
-      );
+      ];
     }
     $settings->set('udf_' . $type . '_mappings', $mappings);
   }

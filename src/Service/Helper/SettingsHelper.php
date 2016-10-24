@@ -167,13 +167,15 @@ class SettingsHelper {
    *
    * @param string
    *   URL.
+   * @param string $path
+   *   Path to "ping" end point.
    * @return array
    *   Returns 'statusCode' and 'reasonPhrase' of the response.
    */
-  public static function pingUri($base_uri) {
+  public static function pingUri($base_uri, $path) {
     $client = new Client(['base_uri' => $base_uri]);
     try {
-      $response = $client->get('/ping', ['http_errors' => false]);
+      $response = $client->get($path, ['http_errors' => false]);
     } catch (RequestException $e) {
       return [];
     }

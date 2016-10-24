@@ -104,21 +104,23 @@ class AdminSettingsForm extends ConfigFormBase {
     ) {
       drupal_set_message(t('Acquia Lift module requires valid Decision API URL and Authentication URL to be activate.'), 'warning');
     } else {
-      $this->checkConnection($credential_settings['decision_api_url'], 'Decision API');
-      $this->checkConnection($this->removeAuthorizeSuffix($credential_settings['oauth_url']), 'OAuth');
+      $this->checkConnection('Decision API', $credential_settings['decision_api_url'], '/admin/ping');
+      $this->checkConnection('OAuth', $this->removeAuthorizeSuffix($credential_settings['oauth_url']), '/ping');
     }
   }
 
   /**
    * Check connection by URL.
    *
-   * @param string $url
-   *   URL.
    * @param string $name
    *   Name of the service.
+   * @param string $base_uri
+   *   Base URI.
+   * @param string $path
+   *   Path to "ping" end point.
    */
-  private function checkConnection($url, $name) {
-    $responseInfo = SettingsHelper::pingUri($url);
+  private function checkConnection($name, $base_uri, $path) {
+    $responseInfo = SettingsHelper::pingUri($base_uri, $path);
     if (empty($responseInfo)) {
       drupal_set_message(t('Acquia Lift module could not reach the specified :name URL.', [':name' => $name]), 'error');
       return;

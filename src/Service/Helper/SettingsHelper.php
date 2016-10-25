@@ -28,8 +28,8 @@ class SettingsHelper {
     if (SELF::isInvalidCredentialAccountId($credential_settings['account_id']) ||
       SELF::isInvalidCredentialSiteId($credential_settings['site_id']) ||
       SELF::isInvalidCredentialAssetsUrl($credential_settings['assets_url']) ||
-      SELF::isInvalidCredentialDecisionAPIUrl($credential_settings['decision_api_url']) ||
-      SELF::isInvalidCredentialOauthUrl($credential_settings['oauth_url'])
+      isset($credential_settings['decision_api_url']) && SELF::isInvalidCredentialDecisionAPIUrl($credential_settings['decision_api_url']) ||
+      isset($credential_settings['oauth_url']) && SELF::isInvalidCredentialOauthUrl($credential_settings['oauth_url'])
     ) {
       return TRUE;
     }

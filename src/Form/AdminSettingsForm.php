@@ -99,8 +99,8 @@ class AdminSettingsForm extends ConfigFormBase {
     }
 
     // Validate URLs and check connections.
-    if (SettingsHelper::isInvalidCredentialDecisionApiUrl($credential_settings['decision_api_url']) ||
-      SettingsHelper::isInvalidCredentialOauthUrl($credential_settings['oauth_url'])
+    if (isset($credential_settings['decision_api_url']) && SettingsHelper::isInvalidCredentialDecisionApiUrl($credential_settings['decision_api_url']) ||
+      isset($credential_settings['oauth_url']) && SettingsHelper::isInvalidCredentialOauthUrl($credential_settings['oauth_url'])
     ) {
       drupal_set_message(t('Acquia Lift module requires valid Decision API URL and Authentication URL to be activate.'), 'warning');
     }
@@ -148,7 +148,7 @@ class AdminSettingsForm extends ConfigFormBase {
       '#title' => t('Decision API URL'),
       '#description' => t('Your Lift Decision API\'s URL. Unless explicitly instructed, leave empty to use default URL.'),
       '#field_prefix' => 'https://',
-      '#default_value' => $this->cleanUrl($credential_settings['decision_api_url']),
+      '#default_value' => isset($credential_settings['decision_api_url']) ? $this->cleanUrl($credential_settings['decision_api_url']) : '',
     ];
     $form['oauth_url'] = [
       '#type' => 'textfield',
@@ -156,7 +156,7 @@ class AdminSettingsForm extends ConfigFormBase {
       '#description' => t('Your Lift Authentication API\'s URL. Unless explicitly instructed, leave empty to use default URL.'),
       '#field_prefix' => 'https://',
       '#field_suffix' => '/authorize',
-      '#default_value' => $this->cleanUrl($this->removeAuthorizeSuffix($credential_settings['oauth_url'])),
+      '#default_value' => isset($credential_settings['oauth_url']) ? $this->cleanUrl($this->removeAuthorizeSuffix($credential_settings['oauth_url'])) : '',
     ];
 
     return $form;

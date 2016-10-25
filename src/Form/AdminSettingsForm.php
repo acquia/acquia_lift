@@ -103,36 +103,6 @@ class AdminSettingsForm extends ConfigFormBase {
       SettingsHelper::isInvalidCredentialOauthUrl($credential_settings['oauth_url'])
     ) {
       drupal_set_message(t('Acquia Lift module requires valid Decision API URL and Authentication URL to be activate.'), 'warning');
-    } else {
-      $this->checkConnection('Decision API', $credential_settings['decision_api_url'], '/admin/ping', 403);
-      $this->checkConnection('OAuth', $this->removeAuthorizeSuffix($credential_settings['oauth_url']), '/ping');
-    }
-  }
-
-  /**
-   * Check URL's connection.
-   *
-   * @param string $name
-   *   Name of the service.
-   * @param string $base_uri
-   *   Base URI.
-   * @param string $path
-   *   Path to "ping" end point.
-   * @param integer $expected_status_code
-   *   Expected status code.
-   */
-  private function checkConnection($name, $base_uri, $path, $expected_status_code = 200) {
-    $responseInfo = SettingsHelper::pingUri($base_uri, $path);
-    if (empty($responseInfo)) {
-      drupal_set_message(t('Acquia Lift module could not reach the specified :name URL.', [':name' => $name]), 'error');
-      return;
-    }
-    if ($responseInfo['statusCode'] !== $expected_status_code) {
-      drupal_set_message(t('Acquia Lift module has successfully connected to :name URL, but received status code ":statusCode" with the reason ":reasonPhrase".', [
-        ':name' => $name,
-        ':statusCode' => $responseInfo['statusCode'],
-        ':reasonPhrase' => $responseInfo['reasonPhrase'],
-      ]), 'error');
     }
   }
 
@@ -527,11 +497,15 @@ class AdminSettingsForm extends ConfigFormBase {
 
     $settings->clear('credential.decision_api_url');
     if (!empty($values['decision_api_url'])) {
-      $settings->set('credential.decision_api_url', 'https://' . $this->cleanUrl($values['decision_api_url']));
+      $standardized_decision_api_url = 'https://' . $this->cleanUrl($values['decision_api_url']);
+      $settings->set('credential.decision_api_url', $standardized_decision_api_url);
+      $this->checkConnection('Decision API', $standardized_decision_api_url, '/admin/ping', 403);
     }
     $settings->clear('credential.oauth_url');
     if (!empty($values['oauth_url'])) {
-      $settings->set('credential.oauth_url', 'https://' . $this->cleanUrl($this->removeAuthorizeSuffix($values['oauth_url'])) . '/authorize');
+      $standardized_oauth_url = 'https://' . $this->cleanUrl($this->removeAuthorizeSuffix($values['oauth_url']));
+      $settings->set('credential.oauth_url', $standardized_oauth_url . '/authorize');
+      $this->checkConnection('OAuth', $standardized_oauth_url, '/ping');
     }
   }
 
@@ -564,6 +538,33 @@ class AdminSettingsForm extends ConfigFormBase {
    */
   private function removeAuthorizeSuffix($url) {
     return preg_replace('~/authorize$~', '', $url);
+  }
+
+  /**
+   * Check URL's connection.
+   *
+   * @param string $name
+   *   Name of the service.
+   * @param string $base_uri
+   *   Base URI.
+   * @param string $path
+   *   Path to "ping" end point.
+   * @param integer $expected_status_code
+   *   Expected status code.
+   */
+  private function checkConnection($name, $base_uri, $path, $expected_status_code = 200) {
+    $responseInfo = SettingsHelper::pingUri($base_uri, $path);
+    if (empty($responseInfo)) {
+      drupal_set_message(t('Acquia Lift module could not reach the specified :name URL.', [':name' => $name]), 'error');
+      return;
+    }
+    if ($responseInfo['statusCode'] !== $expected_status_code) {
+      drupal_set_message(t('Acquia Lift module has successfully connected to :name URL, but received status code ":statusCode" with the reason ":reasonPhrase".', [
+        ':name' => $name,
+        ':statusCode' => $responseInfo['statusCode'],
+        ':reasonPhrase' => $responseInfo['reasonPhrase'],
+      ]), 'error');
+    }
   }
 
   /**

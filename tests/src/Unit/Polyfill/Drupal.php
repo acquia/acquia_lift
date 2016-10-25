@@ -65,10 +65,15 @@ namespace GuzzleHttp\Exception {
 namespace GuzzleHttp {
   use GuzzleHttp\Exception\RequestException;
 
+  interface ClientInterface {
+    const VERSION = '6.2.1';
+  }
+
   /**
    * Class Client.
    */
-  class Client {
+  class Client implements ClientInterface {
+
     /**
      * @var array Data.
      */

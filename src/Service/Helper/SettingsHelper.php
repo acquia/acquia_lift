@@ -152,7 +152,7 @@ class SettingsHelper {
    */
   public static function getUdfLimitsForType($type = "person") {
     if ($type !== 'person' && $type !== 'touch' && $type !== 'event') {
-      throw new Exception('This Udf Field type is not supported');
+      throw new Exception('This UDF Field type is not supported.');
     }
     $counts = [
       'person' => 50,

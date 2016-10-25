@@ -235,4 +235,45 @@ class SettingsHelperTest extends UnitTestCase {
 
     return $data;
   }
+
+  /**
+   * Tests the getUdfLimitsForType() method.
+   *
+   * @covers ::getUdfLimitsForType
+   *
+   * @param string $test_value
+   * @param boolean $expected
+   *
+   * @dataProvider providerTestGetUdfLimitsForType
+   */
+  public function testGetUdfLimitsForType($test_value, $expected) {
+    $result = SettingsHelper::getUdfLimitsForType($test_value);
+    $this->assertEquals($expected, $result);
+  }
+
+  /**
+   * Data provider for testGetUdfLimitsForType().
+   */
+  public function providerTestGetUdfLimitsForType() {
+    $data = [];
+
+    $data['person'] = ['person', 50];
+    $data['touch'] = ['touch', 20];
+    $data['event'] = ['event', 50];
+
+    return $data;
+  }
+
+  /**
+   * Tests the getUdfLimitsForType() method, expected exception.
+   *
+   * @covers ::getUdfLimitsForType
+   *
+   * @expectedException \Exception
+   * @expectedExceptionCode 0
+   * @expectedExceptionMessage This UDF Field type is not supported.
+   */
+  public function testGetUdfLimitsForTypeExpectedException() {
+    SettingsHelper::getUdfLimitsForType('non_exist');
+  }
 }

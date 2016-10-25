@@ -516,7 +516,7 @@ class AdminSettingsForm extends ConfigFormBase {
     if (!empty($values['oauth_url'])) {
       $standardized_oauth_url = 'https://' . $this->cleanUrl($this->removeAuthorizeSuffix($values['oauth_url']));
       $settings->set('credential.oauth_url', $standardized_oauth_url . '/authorize');
-      $this->checkConnection('OAuth', $standardized_oauth_url, '/ping');
+      $this->checkConnection('Authentication', $standardized_oauth_url, '/ping');
     }
   }
 

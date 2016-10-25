@@ -111,7 +111,7 @@ class SettingsTest extends WebTestBase {
     $this->assertText(t('Acquia Lift module requires valid Account ID, Site ID, and Assets URL to be activate.'));
     $this->assertText(t('Acquia Lift module could not reach the specified Assets URL.'));
     $this->assertText(t('Acquia Lift module could not reach the specified Decision API URL.'));
-    $this->assertText(t('Acquia Lift module could not reach the specified OAuth URL.'));
+    $this->assertText(t('Acquia Lift module could not reach the specified Authentication URL.'));
 
     // Test removeAuthorizeSuffix() and cleanUrl().
     $edit['credential[oauth_url]'] = 'oauth_url_1';

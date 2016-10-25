@@ -20,7 +20,7 @@ acquia_lift.settings:
           label: 'Decision API URL'
         oauth_url:
           type: uri
-          label: 'OAuth URL'
+          label: 'Authentication URL'
     identity:
       type: config_object
       label: 'Identity'

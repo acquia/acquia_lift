@@ -493,7 +493,14 @@ class AdminSettingsForm extends ConfigFormBase {
   private function setCredentialValues(Config $settings, array $values) {
     $settings->set('credential.account_id', trim($values['account_id']));
     $settings->set('credential.site_id', trim($values['site_id']));
-    $settings->set('credential.assets_url', 'https://' . $this->cleanUrl($values['assets_url']));
+
+    $standardized_assets_url = 'https://' . $this->cleanUrl($values['assets_url']);
+    $settings->set('credential.assets_url', $standardized_assets_url);
+    $standardized_assets_url_parts = parse_url($standardized_assets_url);
+    $standardized_assets_url_scheme = isset($standardized_assets_url_parts['scheme']) ? $standardized_assets_url_parts['scheme'] : '';
+    $standardized_assets_url_host = isset($standardized_assets_url_parts['host']) ? $standardized_assets_url_parts['host'] : '';
+    $standardized_assets_url_path = isset($standardized_assets_url_parts['path']) ? $standardized_assets_url_parts['path'] : '';
+    $this->checkConnection('Assets', $standardized_assets_url_scheme . '://' . $standardized_assets_url_host, $standardized_assets_url_path . '/lift.js');
 
     $settings->clear('credential.decision_api_url');
     if (!empty($values['decision_api_url'])) {

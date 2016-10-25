@@ -165,8 +165,8 @@ class SettingsHelper {
   /**
    * Ping URI.
    *
-   * @param string
-   *   URL.
+   * @param string $base_uri
+   *   Base URI.
    * @param string $path
    *   Path to "ping" end point.
    * @return array

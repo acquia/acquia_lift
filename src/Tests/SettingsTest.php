@@ -107,6 +107,10 @@ class SettingsTest extends WebTestBase {
     $this->drupalPostForm('admin/config/services/acquia-lift', $edit, t('Save configuration'));
     $this->assertText(t('The configuration options have been saved.'));
 
+    // Assert error messages are set for unreachable Decision API URL and OAuth URL.
+    $this->assertText(t('Acquia Lift module could not reach the specified Decision API URL.'));
+    $this->assertText(t('Acquia Lift module could not reach the specified OAuth URL.'));
+
     // Test removeAuthorizeSuffix() and cleanUrl().
     $edit['credential[oauth_url]'] = 'oauth_url_1';
 

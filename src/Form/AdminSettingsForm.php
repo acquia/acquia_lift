@@ -494,6 +494,7 @@ class AdminSettingsForm extends ConfigFormBase {
     $settings->set('credential.account_id', trim($values['account_id']));
     $settings->set('credential.site_id', trim($values['site_id']));
 
+    // Set Assets URL, also check its connection.
     $standardized_assets_url = 'https://' . $this->cleanUrl($values['assets_url']);
     $settings->set('credential.assets_url', $standardized_assets_url);
     $standardized_assets_url_parts = parse_url($standardized_assets_url);
@@ -502,12 +503,15 @@ class AdminSettingsForm extends ConfigFormBase {
     $standardized_assets_url_path = isset($standardized_assets_url_parts['path']) ? $standardized_assets_url_parts['path'] : '';
     $this->checkConnection('Assets', $standardized_assets_url_scheme . '://' . $standardized_assets_url_host, $standardized_assets_url_path . '/lift.js');
 
+    // If present, set Decision API URL, also check its connection.
     $settings->clear('credential.decision_api_url');
     if (!empty($values['decision_api_url'])) {
       $standardized_decision_api_url = 'https://' . $this->cleanUrl($values['decision_api_url']);
       $settings->set('credential.decision_api_url', $standardized_decision_api_url);
       $this->checkConnection('Decision API', $standardized_decision_api_url, '/admin/ping', 403);
     }
+
+    // If present, set OAuth URL, also check its connection.
     $settings->clear('credential.oauth_url');
     if (!empty($values['oauth_url'])) {
       $standardized_oauth_url = 'https://' . $this->cleanUrl($this->removeAuthorizeSuffix($values['oauth_url']));

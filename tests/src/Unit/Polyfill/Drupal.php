@@ -57,3 +57,89 @@ namespace Drupal\Tests\acquia_lift\Unit\Polyfill\Drupal {
     public static $return = [];
   }
 }
+
+namespace GuzzleHttp\Exception {
+  class RequestException extends \Exception {};
+}
+
+namespace GuzzleHttp {
+  use GuzzleHttp\Exception\RequestException;
+
+  /**
+   * Class Client.
+   */
+  class Client {
+    /**
+     * @var array Data.
+     */
+    private $data;
+
+    /**
+     * Constructs an Client object.
+     *
+     * @param array
+     *   Data.
+     */
+    public function __construct($data) {
+      $this->data = $data;
+    }
+
+    /**
+     * GET an end point.
+     *
+     * @param string $path
+     *   Path to the end point.
+     * @param array $config
+     *   Config of the GET call.
+     * @return Response
+     *   Response.
+     */
+    public function get($path, $config) {
+      if (empty($path)) {
+        throw new RequestException();
+      }
+
+      return new Response(serialize($this->data) . ' ' . $path . ' ' . serialize($config));
+    }
+  }
+
+  /**
+   * Class Response.
+   */
+  class Response {
+    /**
+     * @var string Reason phrase.
+     */
+    private $reasonPhrase;
+
+    /**
+     * Constructs an Response object.
+     *
+     * @param string
+     *   Reason phrase.
+     */
+    public function __construct($reasonPhrase) {
+      $this->reasonPhrase = $reasonPhrase;
+    }
+
+    /**
+     * Get status code.
+     *
+     * @return string
+     *   Status code.
+     */
+    public function getStatusCode() {
+      return 123;
+    }
+
+    /**
+     * Get reason phrase.
+     *
+     * @return string
+     *   Reason phrase.
+     */
+    public function getReasonPhrase() {
+      return $this->reasonPhrase;
+    }
+  }
+}

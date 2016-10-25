@@ -7,6 +7,7 @@ use Drupal\acquia_lift\Service\Helper\SettingsHelper;
 use Drupal\Tests\acquia_lift\Unit\Traits\SettingsDataTrait;
 
 require_once(__DIR__ . '/../../Traits/SettingsDataTrait.php');
+require_once(__DIR__ . '/../../Polyfill/Drupal.php');
 
 /**
  * SettingsHelper Test.
@@ -275,5 +276,42 @@ class SettingsHelperTest extends UnitTestCase {
    */
   public function testGetUdfLimitsForTypeExpectedException() {
     SettingsHelper::getUdfLimitsForType('non_exist');
+  }
+
+  /**
+   * Tests the pingUri() method.
+   *
+   * @covers ::pingUri
+   *
+   * @param string $test_value
+   * @param boolean $expected
+   *
+   * @dataProvider providerTestPingUri
+   */
+  public function testPingUri($test_value, $expected) {
+    $result = SettingsHelper::pingUri($test_value[0], $test_value[1]);
+    $this->assertEquals($expected, $result);
+  }
+
+  /**
+   * Data provider for testPingUri().
+   */
+  public function providerTestPingUri() {
+    $data = [];
+
+    $data['invalid uri'] = [
+      ['uri_1', ''],
+      [],
+    ];
+    $data['valid uri 1'] = [
+      ['uri_1', 'path_1'],
+      ['statusCode' => 123, 'reasonPhrase' => 'a:1:{s:8:"base_uri";s:5:"uri_1";} path_1 a:1:{s:11:"http_errors";b:0;}'],
+    ];
+    $data['valid uri 2'] = [
+      ['uri_2', 'path_2'],
+      ['statusCode' => 123, 'reasonPhrase' => 'a:1:{s:8:"base_uri";s:5:"uri_2";} path_2 a:1:{s:11:"http_errors";b:0;}'],
+    ];
+
+    return $data;
   }
 }

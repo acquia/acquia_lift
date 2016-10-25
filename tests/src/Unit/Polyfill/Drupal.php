@@ -59,7 +59,7 @@ namespace Drupal\Tests\acquia_lift\Unit\Polyfill\Drupal {
 }
 
 namespace GuzzleHttp\Exception {
-  class RequestException extends \Exception {};
+  class RequestException extends \Exception {}
 }
 
 namespace GuzzleHttp {

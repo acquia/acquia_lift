@@ -24,8 +24,10 @@ class NodeTypeThumbnailFormHelper {
   private $entityManager;
 
   /**
+   * Processed field hashes.
+   *
    * A list of spl_object_hash codes of objects that this service has already
-   * iterated through. This design is for handling circular referencing entities.
+   * iterated through. This is for handling circular referencing entities.
    *
    * Example: ['000000005e937119000000007b808ade' => TRUE]
    *
@@ -34,7 +36,7 @@ class NodeTypeThumbnailFormHelper {
   private $processedFieldHashes = [];
 
   /**
-   * Available image fields, keyed by field key "roadmap" and valued at field labels.
+   * Available image fields, keyed by field key "roadmap" and valued at labels.
    *
    * Example: [
    *  'field_image' => 'Image',
@@ -125,8 +127,10 @@ class NodeTypeThumbnailFormHelper {
   }
 
   /**
+   * Collect image fields.
+   *
    * Traverse the FieldableEntity and its fields, collect a field "roadmap" that
-   * can lead to a image file.
+   * can lead to an image file.
    *
    * @param string $target_type
    *   Fieldable entity's identifier.

@@ -48,7 +48,7 @@ function acquia_lift_form_node_type_form_alter(array &$form, FormStateInterface 
 /**
  * Submit handler for the node type form with acquia lift options.
  *
- * @see acquia_lift_form_node_type_form_alter().
+ * @see acquia_lift_form_node_type_form_alter()
  */
 function acquia_lift_form_node_type_form_submit(array $form, FormStateInterface &$form_state) {
   $node_type = $form_state->getFormObject()->getEntity()->id();

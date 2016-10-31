@@ -6,8 +6,8 @@ use Drupal\Tests\UnitTestCase;
 use Drupal\acquia_lift\Service\Context\PageContext;
 use Drupal\Tests\acquia_lift\Unit\Traits\SettingsDataTrait;
 
-require_once(__DIR__ . '/../../Traits/SettingsDataTrait.php');
-require_once(__DIR__ . '/../../Polyfill/Drupal.php');
+require_once __DIR__ . '/../../Traits/SettingsDataTrait.php';
+require_once __DIR__ . '/../../Polyfill/Drupal.php';
 
 /**
  * PageContextTest Test.

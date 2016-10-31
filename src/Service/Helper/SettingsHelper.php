@@ -66,7 +66,7 @@ class SettingsHelper {
    *   True if is an invalid credential Site ID.
    */
   public static function isInvalidCredentialSiteId($site_id) {
-    if (empty($site_id) || !preg_match('/^[a-zA-Z0-9]*$/', $site_id)) {
+    if (empty($site_id)) {
       return TRUE;
     }
 

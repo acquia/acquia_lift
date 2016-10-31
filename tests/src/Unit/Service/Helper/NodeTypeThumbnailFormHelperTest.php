@@ -7,8 +7,8 @@ use Drupal\acquia_lift\Service\Helper\NodeTypeThumbnailFormHelper;
 use Drupal\Tests\acquia_lift\Unit\Traits\SettingsDataTrait;
 use Drupal\Tests\acquia_lift\Unit\Polyfill\Drupal\ImageStyleOptions;
 
-require_once(__DIR__ . '/../../Traits/SettingsDataTrait.php');
-require_once(__DIR__ . '/../../Polyfill/Drupal.php');
+require_once __DIR__ . '/../../Traits/SettingsDataTrait.php';
+require_once __DIR__ . '/../../Polyfill/Drupal.php';
 
 /**
  * NodeTypeThumbnailFormHelper Test.

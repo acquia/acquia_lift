@@ -6,8 +6,8 @@ use Drupal\Tests\UnitTestCase;
 use Drupal\acquia_lift\Service\Helper\SettingsHelper;
 use Drupal\Tests\acquia_lift\Unit\Traits\SettingsDataTrait;
 
-require_once(__DIR__ . '/../../Traits/SettingsDataTrait.php');
-require_once(__DIR__ . '/../../Polyfill/Drupal.php');
+require_once __DIR__ . '/../../Traits/SettingsDataTrait.php';
+require_once __DIR__ . '/../../Polyfill/Drupal.php';
 
 /**
  * SettingsHelper Test.
@@ -73,7 +73,7 @@ class SettingsHelperTest extends UnitTestCase {
 
     $data['invalid null'] = [NULL, TRUE];
     $data['invalid empty'] = ['', TRUE];
-    $data['invalid has "~" sign'] = ['a~', TRUE];
+    $data['valid has "~" sign'] = ['a~', FALSE];
     $data['valid alphanumeric 1'] = ['a123', FALSE];
     $data['valid alphanumeric 2'] = ['3Ab', FALSE];
 

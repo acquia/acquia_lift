@@ -5,7 +5,6 @@ namespace Drupal\Tests\acquia_lift\Unit\Service\Helper;
 use Drupal\Tests\UnitTestCase;
 use Drupal\acquia_lift\Service\Helper\NodeTypeThumbnailFormHelper;
 use Drupal\Tests\acquia_lift\Unit\Traits\SettingsDataTrait;
-use Drupal\Tests\acquia_lift\Unit\Polyfill\Drupal\ImageStyleOptions;
 
 require_once __DIR__ . '/../../Traits/SettingsDataTrait.php';
 require_once __DIR__ . '/../../Polyfill/Drupal.php';
@@ -85,6 +84,8 @@ class NodeTypeThumbnailFormHelperTest extends UnitTestCase {
       ->with('node', 'article')
       ->willReturn($field_definitions);
 
+    acquia_polyfill_controller_set_return('image_style_options', []);
+
     $form = $form_helper->getForm('article');
     $this->assertRegexp('/no image style/', $form['no_image_styles']['#markup']);
   }
@@ -129,7 +130,7 @@ class NodeTypeThumbnailFormHelperTest extends UnitTestCase {
       ->with('entity_reference_setting', 'entity_reference')
       ->willReturn($entity_reference_field_definitions);
 
-    ImageStyleOptions::$return = ['medium' => 'Medium'];
+    acquia_polyfill_controller_set_return('image_style_options', ['medium' => 'Medium']);
 
     $form = $form_helper->getForm('article');
 

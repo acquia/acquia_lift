@@ -349,6 +349,8 @@ class ALProfilesWebTest extends DrupalWebTestCase {
       )
     );
     $this->assertEqual($expected, $settings['acquia_lift_profiles']['mappings']);
+    $this->assertEqual('session', $settings['personalize']['cacheExpiration']['visitor_context:user_profile_context:test_user_field_1']);
+    $this->assertEqual('session', $settings['personalize']['cacheExpiration']['visitor_context:user_profile_context:test_user_field_2']);
 
     // Confirm that the context value is available in the settings
     $this->drupalLogout();
@@ -398,6 +400,8 @@ class ALProfilesWebTest extends DrupalWebTestCase {
       )
     );
     $this->assertEqual($expected, $settings['acquia_lift_profiles']['mappings']);
+    $this->assertEqual('session', $settings['personalize']['cacheExpiration']['visitor_context:user_profile_context:test_user_field_1']);
+    $this->assertEqual('session', $settings['personalize']['cacheExpiration']['visitor_context:user_profile_context:test_user_field_2']);
 
     // Confirm that the context value is available in the settings
     $this->drupalLogout();

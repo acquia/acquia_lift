@@ -216,6 +216,13 @@ function acquia_lift_profiles_page_build(&$page) {
   if (!empty($acquia_lift_profiles_field_mappings)) {
     $mappings['field'] = $acquia_lift_profiles_field_mappings;
   }
+  $cache_expiration = array();
+  foreach ($mappings as $mapping) {
+    foreach ($mapping as $mapped_context) {
+      $cache_expiration_key = 'visitor_context:' . str_replace('__', ':', $mapped_context);
+      $cache_expiration[$cache_expiration_key] = 'session';
+    }
+  }
   $segments = acquia_lift_profiles_get_segments();
   $settings = array(
     'request_url' => $base_root . request_uri(),
@@ -294,7 +301,12 @@ function acquia_lift_profiles_page_build(&$page) {
     $assets['js'] = array();
   }
   $js_settings = array(
-    'data' => array('acquia_lift_profiles' => $settings),
+    'data' => array(
+      'acquia_lift_profiles' => $settings,
+      'personalize' => array(
+        'cacheExpiration' => $cache_expiration,
+      ),
+    ),
     'type' => 'setting'
   );
 

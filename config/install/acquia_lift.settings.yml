@@ -13,6 +13,9 @@ field_mappings:
   content_section: ''
   content_keywords: ''
   persona: ''
+udf_person_mappings: []
+udf_touch_mappings: []
+udf_event_mappings: []
 thumbnail: []
 visibility:
   # Track, only when the page URL falls OUTSIDE OF these path patterns.

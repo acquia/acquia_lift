@@ -131,9 +131,9 @@ class PageContext {
 
     // Set mapping information.
     $this->fieldMappings = $settings->get('field_mappings');
-    $this->udfPersonMappings = $settings->get('udf_person_mappings');
-    $this->udfEventMappings = $settings->get('udf_touch_mappings');
-    $this->udfTouchMappings = $settings->get('udf_event_mappings');
+    $this->udfPersonMappings = $settings->get('udf_person_mappings') ?: [];
+    $this->udfEventMappings = $settings->get('udf_touch_mappings') ?: [];
+    $this->udfTouchMappings = $settings->get('udf_event_mappings') ?: [];
 
     // Set thumbnail configuration.
     $this->thumbnailConfig = $settings->get('thumbnail');

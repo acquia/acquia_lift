@@ -233,12 +233,17 @@ function acquia_lift_profiles_page_build(&$page) {
   // mappings are avaiable so that we can get the actual context values.
   $assets = $attached = $contexts = array();
   ctools_include('plugins');
-  // Group the mappings by context plugins so we can load each plugin only once.
+  $cache_expiration = array();
   foreach ($mappings as $field_mappings) {
     foreach ($field_mappings as $mapping) {
       if (empty($mapping)) {
         continue;
       }
+      // Set the cache expiration strategy for any mapped visitor context keys,
+      // so the values are stored and retrievable.
+      $cache_expiration_key = 'visitor_context:' . str_replace('__', ':', $mapping);
+      $cache_expiration[$cache_expiration_key] = 'session';
+      // Group the mappings by context plugins so we can load each plugin only once.
       list($plugin, $context) = explode(PERSONALIZE_TARGETING_ADMIN_SEPARATOR, $mapping);
       if (!isset($contexts[$plugin])) {
         $contexts[$plugin] = array();
@@ -294,7 +299,12 @@ function acquia_lift_profiles_page_build(&$page) {
     $assets['js'] = array();
   }
   $js_settings = array(
-    'data' => array('acquia_lift_profiles' => $settings),
+    'data' => array(
+      'acquia_lift_profiles' => $settings,
+      'personalize' => array(
+        'cacheExpiration' => $cache_expiration,
+      ),
+    ),
     'type' => 'setting'
   );
 

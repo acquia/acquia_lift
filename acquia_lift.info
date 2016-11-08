@@ -1,26 +1,8 @@
 name = Acquia Lift
-description = Extension to Personalize module that provides integration to the Acquia Lift service for machine-learning-based personalization.
-configure = admin/config/content/personalize/acquia_lift
+description = Provides integration to the Acquia Lift service for personalization and visitor data collection.
+configure = admin/config/services/acquia_lift
 
-dependencies[] = acquia_connector:acquia_agent
-dependencies[] = contextual
-dependencies[] = libraries
-dependencies[] = personalize
-dependencies[] = personalize_blocks
-dependencies[] = personalize_elements
-dependencies[] = personalize_fields
-dependencies[] = visitor_actions
-dependencies[] = visitor_actions_ui
-
-package = Personalization
+package = Acquia
 core = 7.x
 
-files[] = includes/acquia_lift.classes.inc
-files[] = includes/AcquiaLiftLearningAgentInterface.inc
-files[] = includes/AcquiaLiftAPI.inc
-files[] = includes/AcquiaLiftLearnReportDataSourceInterface.inc
-files[] = includes/AcquiaLiftReportFactory.inc
-files[] = includes/AcquiaLiftDrupalHttpClientInterface.inc
-files[] = includes/AcquiaLiftDrupalHttpClient.inc
 files[] = tests/acquia_lift.test
-files[] = tests/AcquiaLiftAPI.test

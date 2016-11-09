@@ -286,6 +286,21 @@ function acquia_lift_get_page_context() {
 }
 
 /**
+ * Helper function to return a list of udf types.
+ *
+ * @return array
+ *   An array of UDF types defined in Acquia Lift Profile Manager with keys
+ *   as the type name and values as the number allowed.
+ */
+function acquia_lift_get_udf_types() {
+  return array(
+    'person' => 50,
+    'touch' => 20,
+    'event' => 20,
+  );
+}
+
+/**
  * Returns the list of UDFs that can be mapped to.
  *
  * @param string $type
@@ -295,11 +310,7 @@ function acquia_lift_get_page_context() {
  *   An array of UDFs defined in Acquia Lift Profile Manager.
  */
 function acquia_lift_get_udfs($type) {
-  $counts = array(
-    'person' => 50,
-    'touch' => 20,
-    'event' => 20,
-  );
+  $counts = acquia_lift_get_udf_types();
   if (!array_key_exists($type, $counts)) {
     return array();
   }

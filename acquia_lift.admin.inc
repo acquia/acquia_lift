@@ -104,8 +104,12 @@ function acquia_lift_admin_form($form, &$form_state) {
     '#weight' => 70,
   );
   _acquia_lift_admin_build_advanced_confirmation_form($form['advanced'], $form_state);
-
-  return system_settings_form($form);
+  $form['submit'] = array(
+    '#type' => 'submit',
+    '#value' => t('Save configuration'),
+    '#weight' => 80,
+  );
+  return $form;
 }
 
 function _acquia_lift_admin_build_credential_form(&$form, &$form_state) {
@@ -157,15 +161,6 @@ function _acquia_lift_admin_build_identity_form(&$form, &$form_state) {
   $identity_type_parameter_display_value = variable_get('acquia_lift_identity_type_param') ?: 'identityType';
   $default_identity_type_display_value = variable_get('acquia_lift_default_identity_type') ?: 'account';
   $default_identity_type_default_value = variable_get('acquia_lift_default_identity_type') ?: ACQUIA_LIFT_DEFAULT_IDENTITY_TYPE_DEFAULT;
-  $user_email_verification_value = variable_get('user_email_verification', TRUE);
-  $capture_identity_title = 'Capture identity on login';
-  $capture_identity_title .= $user_email_verification_value ? ' (note: register is not captured because the site requires user email verification)' : ' and register';
-  $form['acquia_lift_capture_identity'] = array(
-    '#type' => 'checkbox',
-    '#title' => t($capture_identity_title),
-    '#description' => t('Check this if you want Acquia Lift to capture the identity of the user upon login or registration. This means sending their email address to the Acquia Lift Profile Manager.'),
-    '#default_value' => variable_get('acquia_lift_capture_identity', FALSE),
-  );
   $form['acquia_lift_identity_param'] = array(
     '#type' => 'textfield',
     '#title' => t('Identity parameter'),
@@ -278,18 +273,17 @@ function _acquia_lift_admin_build_visitor_context_select($groups, $default_value
 }
 
 function acquia_lift_admin_form_validate($form, &$form_state) {
-  $account_id = $form_state['values']['credentials']['account_id'];
-  if (!preg_match('/^[a-zA-Z_][a-zA-Z\\d_]*$/', $account_id)) {
-    form_set_error('credentials][account_id', t('Account ID contains invalid characters.  It has to start with a letter and contain only alphanumerical characters.'));
+  if (!preg_match('/^[a-zA-Z_][a-zA-Z\\d_]*$/', $form_state['values']['acquia_lift_account_id'])) {
+    form_set_error('acquia_lift_account_id', t('Account ID contains invalid characters.  It has to start with a letter and contain only alphanumerical characters.'));
   }
-  if (!valid_url($form_state['values']['credentials']['assets_url'])) {
-    form_set_error('credentials][assets_url', t('Assets URL is an invalid URL.'));
+  if (!valid_url($form_state['values']['acquia_lift_assets_url'])) {
+    form_set_error('acquia_lift_assets_url', t('Assets URL is an invalid URL.'));
   }
-  if (!valid_url($form_state['values']['credentials']['decision_api_url'])) {
-    form_set_error('credentials][decision_api_url', t('Decision API URL is an invalid URL.'));
+  if (!valid_url($form_state['values']['acquia_lift_decision_api_url'])) {
+    form_set_error('acquia_lift_decision_api_url', t('Decision API URL is an invalid URL.'));
   }
-  if (!valid_url($form_state['values']['credentials']['oauth_url'])) {
-    form_set_error('credentials][oauth_url', t('Authentication URL is an invalid URL.'));
+  if (!valid_url($form_state['values']['acquia_lift_oauth_url'])) {
+    form_set_error('acquia_lift_oauth_url', t('Authentication URL is an invalid URL.'));
   }
 }
 
@@ -297,47 +291,42 @@ function acquia_lift_admin_form_validate($form, &$form_state) {
  * Submit handler for the acquia_lift configuration form.
  */
 function acquia_lift_admin_form_submit($form, &$form_state) {
-  // If the "capture identity" setting has changed we need to make sure the visitor
-  // actions subscribers are cleared for the login and register actions.
-  $capture_identity = variable_get('acquia_lift_capture_identity', FALSE);
-  if ($capture_identity != $form_state['values']['acquia_lift_identity']['acquia_lift_capture_identity']) {
-    visitor_actions_clear_subscribers('user_login');
-    visitor_actions_clear_subscribers('user_register');
-  }
-
   // Field mappings.
   if (isset($form_state['values']['acquia_lift_field_mappings'])) {
     // Don't save empty entries.
     $acquia_lift_field_mappings = array_filter($form_state['values']['acquia_lift_field_mappings']);
     variable_set('acquia_lift_field_mappings', $acquia_lift_field_mappings);
   }
+
+  if (isset($form_state['values']['acquia_lift_udf_mappings'])) {
+    $udf_types = acquia_lift_get_udf_types();
+    $acquia_lift_udf_mappings = array();
+    foreach($udf_types as $type => $count) {
+      if (isset($form_state['values']['acquia_lift_udf_mappings'][$type])) {
+        $acquia_lift_udf_mappings[$type] = array_filter($form_state['values']['acquia_lift_udf_mappings'][$type]);
+      }
+    }
+    $acquia_lift_udf_mappings = array_filter($acquia_lift_udf_mappings);
+    variable_set('acquia_lift_udf_mappings', $acquia_lift_udf_mappings);
+  }
+
   // Identity parameters.
-  $identity_variables = array(
-    'acquia_lift_capture_identity',
+  $standard_variables = array(
     'acquia_lift_identity_param',
     'acquia_lift_identity_type_param',
     'acquia_lift_default_identity_type',
+    'acquia_lift_identity_param',
+    'acquia_lift_identity_type_param',
+    'acquia_lift_account_id',
+    'acquia_lift_site_id',
+    'acquia_lift_assets_url',
+    'acquia_lift_decision_api_url',
+    'acquia_lift_oauth_url',
+    'acquia_lift_visibility_path_patterns',
+    'acquia_lift_content_replacement_mode',
   );
-  foreach ($identity_variables as $key) {
-    variable_set($key, $form_state['values']['acquia_lift_identity'][$key]);
-  }
-
-  // Refresh the segments from Acquia Lift Profiles.
-  acquia_lift_refresh_segments_cache();
-
-  if (isset($form_state['values']['acquia_lift_udf_mappings'])) {
-    $mapped_contexts = array();
-    foreach ($form_state['values']['acquia_lift_udf_mappings'] as $type => $mappings) {
-      foreach ($mappings as $udf => $mapped_context) {
-        if ($udf == 'button__show_all') {
-          continue;
-        }
-        if (!empty($mapped_context)) {
-          $mapped_contexts[$type][$udf] = $mapped_context;
-        }
-      }
-    }
-    variable_set('acquia_lift_udf_mappings', $mapped_contexts);
+  foreach ($standard_variables as $key) {
+    variable_set($key, $form_state['values'][$key]);
   }
 
   drupal_set_message(t('The configuration settings have been saved.'), 'status');

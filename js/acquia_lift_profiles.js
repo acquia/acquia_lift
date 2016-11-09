@@ -14,12 +14,12 @@ var _tcwq = _tcwq || [];
   }
   var trackingId = generateTrackingId();
 
-  Drupal.behaviors.acquia_lift_profiles = {
+  Drupal.behaviors.acquia_lift = {
     'attach': function (context, settings) {
-      settings.acquia_lift_profiles = settings.acquia_lift_profiles || {};
-      Drupal.acquia_lift_profiles.init(settings);
-      Drupal.acquia_lift_profiles.addActionListener(settings);
-      Drupal.acquia_lift_profiles.processServerSideActions(settings);
+      settings.acquia_lift = settings.acquia_lift || {};
+      Drupal.acquia_lift.init(settings);
+      Drupal.acquia_lift.addActionListener(settings);
+      Drupal.acquia_lift.processServerSideActions(settings);
     }
   };
 
@@ -36,10 +36,10 @@ var _tcwq = _tcwq || [];
         }
         // Go through all available segments and add an entry in visitorSegments for
         // each one that the visitor does *not* have.
-        if (Drupal.settings.acquia_lift_profiles.available_segments) {
-          for (var j in Drupal.settings.acquia_lift_profiles.available_segments) {
-            if (Drupal.settings.acquia_lift_profiles.available_segments.hasOwnProperty(j)) {
-              var segmentName = Drupal.settings.acquia_lift_profiles.available_segments[j];
+        if (Drupal.settings.acquia_lift.available_segments) {
+          for (var j in Drupal.settings.acquia_lift.available_segments) {
+            if (Drupal.settings.acquia_lift.available_segments.hasOwnProperty(j)) {
+              var segmentName = Drupal.settings.acquia_lift.available_segments[j];
               if (!visitorSegments.hasOwnProperty(segmentName)) {
                 visitorSegments[segmentName] = 0;
               }
@@ -66,7 +66,7 @@ var _tcwq = _tcwq || [];
       }
 
       var i, j, context_values = {};
-      // First check to see if we have the acquia_lift_profiles segments stored
+      // First check to see if we have the acquia_lift segments stored
       // already.
       var cached = segmentCache.retrieve();
       if (cached) {
@@ -116,9 +116,9 @@ var _tcwq = _tcwq || [];
   var identityCaptured = false;
 
   /**
-   * Centralized functionality for acquia_lift_profiles behavior.
+   * Centralized functionality for acquia_lift behavior.
    */
-  Drupal.acquia_lift_profiles = (function(){
+  Drupal.acquia_lift = (function(){
 
     var processedListeners = {}, initialized = false, initializing = false, pageFieldValues = {};
 
@@ -129,7 +129,7 @@ var _tcwq = _tcwq || [];
         }
         initializing = true;
 
-        var mappings = settings.acquia_lift_profiles.mappings, context_separator = settings.acquia_lift_profiles.mappingContextSeparator, plugins = {}, reverseMapping = {};
+        var mappings = settings.acquia_lift.mappings, context_separator = settings.acquia_lift.mappingContextSeparator, plugins = {}, reverseMapping = {};
         for(var type in mappings) {
           if (mappings.hasOwnProperty(type)) {
             for (var udf in mappings[type]) {
@@ -196,16 +196,16 @@ var _tcwq = _tcwq || [];
             'author':'',
             'evalSegments': true,
             'trackingId': trackingId
-          }, settings.acquia_lift_profiles.pageContext, pageFieldValues);
+          }, settings.acquia_lift.pageContext, pageFieldValues);
           _tcwq.push(['onLoad', segmentCallback]);
 
           // Capture view.
           var captureViewEvent = ['captureView', 'Content View', pageInfo];
 
           // Capture identity in addition, if applicable.
-          if(!identityCaptured && settings.acquia_lift_profiles.hasOwnProperty('identity')) {
+          if(!identityCaptured && settings.acquia_lift.hasOwnProperty('identity')) {
             var identity = {};
-            identity[settings.acquia_lift_profiles.identity] = settings.acquia_lift_profiles.identityType;
+            identity[settings.acquia_lift.identity] = settings.acquia_lift.identityType;
             captureViewEvent.push({'identity': identity});
             identityCaptured = true;
           }
@@ -236,8 +236,8 @@ var _tcwq = _tcwq || [];
        * @param eventName
        */
       'processEvent': function(eventName, settings, context) {
-        var engagement_scores = settings.acquia_lift_profiles.engagement_scores,
-          global_values = settings.acquia_lift_profiles.global_values,
+        var engagement_scores = settings.acquia_lift.engagement_scores,
+          global_values = settings.acquia_lift.global_values,
           engagement_score = engagement_scores.hasOwnProperty(eventName) ? engagement_scores[eventName] : 1,
           global_value = global_values.hasOwnProperty(eventName) ? global_values[eventName] : 1,
           extra = {
@@ -255,7 +255,7 @@ var _tcwq = _tcwq || [];
         var captureEvent = ['capture', eventName, extra];
 
         // Capture identity in addition, if applicable.
-        if (settings.acquia_lift_profiles.captureIdentity &&
+        if (settings.acquia_lift.captureIdentity &&
           !identityCaptured &&
           (eventName === 'user_login' || eventName === 'user_register') &&
           context['mail']) {
@@ -274,9 +274,9 @@ var _tcwq = _tcwq || [];
       'addActionListener': function (settings) {
         if (Drupal.hasOwnProperty('visitorActions')) {
           var events = {}, new_events = 0;
-          for (var i in settings.acquia_lift_profiles.tracked_actions) {
-            if (settings.acquia_lift_profiles.tracked_actions.hasOwnProperty(i) && !processedListeners.hasOwnProperty(settings.acquia_lift_profiles.tracked_actions[i])) {
-              var eventName = settings.acquia_lift_profiles.tracked_actions[i];
+          for (var i in settings.acquia_lift.tracked_actions) {
+            if (settings.acquia_lift.tracked_actions.hasOwnProperty(i) && !processedListeners.hasOwnProperty(settings.acquia_lift.tracked_actions[i])) {
+              var eventName = settings.acquia_lift.tracked_actions[i];
               processedListeners[eventName] = 1;
               events[eventName] = 1;
               new_events++;
@@ -301,15 +301,15 @@ var _tcwq = _tcwq || [];
        * @param settings
        */
       'processServerSideActions': function (settings) {
-        if (settings.acquia_lift_profiles.serverSideActions) {
-          for (var actionName in settings.acquia_lift_profiles.serverSideActions) {
-            if (settings.acquia_lift_profiles.serverSideActions.hasOwnProperty(actionName)) {
-              for (var i in settings.acquia_lift_profiles.serverSideActions[actionName]) {
-                if (settings.acquia_lift_profiles.serverSideActions[actionName].hasOwnProperty(i) && !settings.acquia_lift_profiles.serverSideActions[actionName][i].processed) {
+        if (settings.acquia_lift.serverSideActions) {
+          for (var actionName in settings.acquia_lift.serverSideActions) {
+            if (settings.acquia_lift.serverSideActions.hasOwnProperty(actionName)) {
+              for (var i in settings.acquia_lift.serverSideActions[actionName]) {
+                if (settings.acquia_lift.serverSideActions[actionName].hasOwnProperty(i) && !settings.acquia_lift.serverSideActions[actionName][i].processed) {
                   // Process the event.
-                  this.processEvent(actionName, settings, settings.acquia_lift_profiles.serverSideActions[actionName][i]);
+                  this.processEvent(actionName, settings, settings.acquia_lift.serverSideActions[actionName][i]);
                   // Mark this event has having been processed so that it doesn't get sent again.
-                  settings.acquia_lift_profiles.serverSideActions[actionName][i].processed = 1;
+                  settings.acquia_lift.serverSideActions[actionName][i].processed = 1;
                 }
               }
             }

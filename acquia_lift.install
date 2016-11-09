@@ -1,0 +1,29 @@
+<?php
+
+/**
+ * @file Acquia Lift - Installation file.
+ */
+
+/**
+ * Implements hook_uninstall().
+ */
+function acquia_lift_uninstall() {
+  $vars = array(
+    'acquia_lift_capture_identity',
+    'acquia_lift_default_identity_type',
+    'acquia_lift_field_mappings',
+    'acquia_lift_udf_mappings',
+    'acquia_lift_identity_param',
+    'acquia_lift_identity_type_param',
+    'acquia_lift_account_id',
+    'acquia_lift_site_id',
+    'acquia_lift_assets_url',
+    'acquia_lift_decision_api_url',
+    'acquia_lift_oauth_url',
+    'acquia_lift_visibility_path_patterns',
+    'acquia_lift_content_replacement_mode',
+  );
+  foreach ($vars as $var) {
+    variable_del($var);
+  }
+}

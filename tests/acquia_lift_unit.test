@@ -16,8 +16,8 @@ class ALProfilesAPITest extends DrupalUnitTestCase {
   }
 
   protected function setUp() {
-    require_once(dirname(__FILE__) . '/../includes/acquia_lift_profiles.classes.inc');
-    require_once(dirname(__FILE__) . '/acquia_lift_profiles.test_classes.inc');
+    require_once(dirname(__FILE__) . '/../includes/acquia_lift.classes.inc');
+    require_once(dirname(__FILE__) . '/acquia_lift.test_classes.inc');
     parent::setUp();
   }
 
@@ -70,7 +70,7 @@ class ALProfilesAPITest extends DrupalUnitTestCase {
    *
    * @var string
    */
-  protected $apiUrl = 'http://api.acquia_lift_profiles.example.com';
+  protected $apiUrl = 'http://api.acquia_lift.example.com';
 
   /**
    * Tests getting ALProfilesAPI instance with invalid and valid credentials.
@@ -90,7 +90,7 @@ class ALProfilesAPITest extends DrupalUnitTestCase {
     }
     catch (Exception $e) {
       $this->assertTrue($e instanceof ALProfilesCredsException);
-      $this->assertEqual('Missing acquia_lift_profiles account information.', $e->getMessage());
+      $this->assertEqual('Missing acquia_lift account information.', $e->getMessage());
       try {
         $acquia_lift_profiles_api = ALProfilesAPI::getInstance($this->accountName, $this->customerSite, 'some\\invalid\\url', $this->accessKey, $this->secretKey);
         $this->fail('Should never reach here.');

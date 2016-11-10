@@ -85,7 +85,8 @@ function acquia_lift_page_build(&$page) {
   }
 
   // Bail if the path is a path to ignore
-  if (drupal_match_path(current_path(), variable_get('acquia_lift_ignore_path_patterns', ''))) {
+  $current_path = '/' . current_path();
+  if (drupal_match_path($current_path, variable_get('acquia_lift_ignore_path_patterns', ''))) {
     return;
   }
 

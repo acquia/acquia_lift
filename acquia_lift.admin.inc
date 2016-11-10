@@ -237,10 +237,10 @@ function _acquia_lift_admin_build_udf_mappings_form(&$form, &$form_state, $udf_t
 }
 
 function _acquia_lift_admin_build_visibility_form(&$form, &$form_state) {
-  $form['acquia_lift_visibility_path_patterns'] = array(
+  $form['acquia_lift_ignore_path_patterns'] = array(
     '#type' => 'textarea',
     '#title' => t('Path patterns'),
-    '#default_value' => variable_get('acquia_lift_visibility_path_patterns', "/admin\n/admin/*\n/batch\n/node/add*\n/node/*/*\n/user/*/*\n/block/*"),
+    '#default_value' => variable_get('acquia_lift_ignore_path_patterns', "/admin\n/admin/*\n/batch\n/node/add*\n/node/*/*\n/user/*/*\n/block/*"),
   );
 }
 
@@ -322,7 +322,7 @@ function acquia_lift_admin_form_submit($form, &$form_state) {
     'acquia_lift_assets_url',
     'acquia_lift_decision_api_url',
     'acquia_lift_oauth_url',
-    'acquia_lift_visibility_path_patterns',
+    'acquia_lift_ignore_path_patterns',
     'acquia_lift_content_replacement_mode',
   );
   foreach ($standard_variables as $key) {

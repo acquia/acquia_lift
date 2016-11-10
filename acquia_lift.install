@@ -21,7 +21,7 @@ function acquia_lift_uninstall() {
     'acquia_lift_assets_url',
     'acquia_lift_decision_api_url',
     'acquia_lift_oauth_url',
-    'acquia_lift_visibility_path_patterns',
+    'acquia_lift_ignore_path_patterns',
     'acquia_lift_content_replacement_mode',
   );
   foreach ($vars as $var) {

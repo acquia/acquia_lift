@@ -79,11 +79,13 @@ function acquia_lift_is_configured() {
  * Implements hook_page_build().
  */
 function acquia_lift_page_build(&$page) {
-  if (path_is_admin(current_path())) {
-    return;
-  }
   // Bail if Acquia Lift has not yet been configured.
   if (!acquia_lift_is_configured()) {
+    return;
+  }
+
+  // Bail if the path is a path to ignore
+  if (drupal_match_path(current_path(), variable_get('acquia_lift_ignore_path_patterns', ''))) {
     return;
   }
 

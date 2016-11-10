@@ -310,7 +310,24 @@ function acquia_lift_admin_form_submit($form, &$form_state) {
     variable_set('acquia_lift_udf_mappings', $acquia_lift_udf_mappings);
   }
 
-  // Identity parameters.
+  // Enforce https and clean up the urls
+  $assets_url = $form_state['values']['acquia_lift_assets_url'];
+  $decision_api_url = $form_state['values']['acquia_lift_decision_api_url'];
+  $oauth_url = $form_state['values']['acquia_lift_oauth_url'];
+  if (!empty($assets_url)) {
+    $assets_url = 'https://' . $assets_url;
+  }
+  if (!empty($decision_api_url)) {
+    $decision_api_url = 'https://' . $decision_api_url;
+  }
+  if (!empty($oauth_url)) {
+    $oauth_url = 'https://' . _acquia_lift_admin_remove_authorize_suffix($oauth_url);
+  }
+  variable_set('acquia_lift_assets_url', $assets_url);
+  variable_set('acquia_lift_decision_api_url', $decision_api_url);
+  variable_set('acquia_lift_oauth_url', $oauth_url);
+
+  // The rest of the variables are set as is.
   $standard_variables = array(
     'acquia_lift_identity_param',
     'acquia_lift_identity_type_param',
@@ -319,9 +336,6 @@ function acquia_lift_admin_form_submit($form, &$form_state) {
     'acquia_lift_identity_type_param',
     'acquia_lift_account_id',
     'acquia_lift_site_id',
-    'acquia_lift_assets_url',
-    'acquia_lift_decision_api_url',
-    'acquia_lift_oauth_url',
     'acquia_lift_ignore_path_patterns',
     'acquia_lift_content_replacement_mode',
   );

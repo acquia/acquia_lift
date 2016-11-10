@@ -145,7 +145,7 @@ function acquia_lift_ctools_render_alter(&$info, &$page, &$context) {
 function acquia_lift_get_page_context($node = NULL, $primary = FALSE) {
   // Add any page context
   module_load_include('inc', 'acquia_lift', 'acquia_lift.context');
-  _acquia_lift_get_page_context($node, $primary);
+  $page_context = _acquia_lift_get_page_context($node, $primary);
 
   if (!isset($page_context['content_title'])) {
     $page_context['content_title'] = drupal_get_title();

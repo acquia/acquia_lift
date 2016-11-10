@@ -83,15 +83,6 @@ function _acquia_lift_get_page_context($node = NULL, $primary = FALSE) {
     $page_context['author'] = $account->name;
     $page_context['page_type'] = 'node page';
     $page_context['type'] = $node->type;
-
-    // Add the taxonomy set for the node into the page context
-    if (module_exists('taxonomy') && isset($node)) {
-      $results = db_query('SELECT tid FROM {taxonomy_index} WHERE nid = :nid', array(':nid' => $node->nid));
-      $terms = taxonomy_term_load_multiple($results->fetchCol());
-      foreach($terms as $term) {
-        $page_context['vocabularies'][$term->vid]['terms'][$term->tid] = $term->name;
-      }
-    }
   }
 
   return $page_context;

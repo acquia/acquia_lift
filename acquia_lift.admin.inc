@@ -316,12 +316,15 @@ function acquia_lift_admin_form_submit($form, &$form_state) {
   $oauth_url = $form_state['values']['acquia_lift_oauth_url'];
   if (!empty($assets_url)) {
     $assets_url = 'https://' . $assets_url;
+    _acquia_lift_ping('Assets', $assets_url);
   }
   if (!empty($decision_api_url)) {
     $decision_api_url = 'https://' . $decision_api_url;
+    _acquia_lift_ping('Decision API', $decision_api_url);
   }
   if (!empty($oauth_url)) {
-    $oauth_url = 'https://' . _acquia_lift_admin_remove_authorize_suffix($oauth_url);
+    $oauth_url = 'https://' . _acquia_lift_admin_remove_authorize_suffix($oauth_url) . '/authorize';
+    _acquia_lift_ping('Authentication', $oauth_url);
   }
   variable_set('acquia_lift_assets_url', $assets_url);
   variable_set('acquia_lift_decision_api_url', $decision_api_url);
@@ -375,4 +378,36 @@ function _acquia_lift_admin_clean_url($url) {
  */
 function _acquia_lift_admin_remove_authorize_suffix($url) {
   return preg_replace('~/authorize$~', '', $url);
+}
+
+/**
+ * Pings a url and validates that the URL can be reached and shows messaging
+ * if it cannot..
+ * NOTE: the drupal 8 version of this functionality also checks the response
+ * code (expecting 200) but this does not seem possible as responses here
+ * are correctly 403, 400, etc.
+ *
+ * @param string $type
+ *   The type of the URL to check
+ * @param string $url
+ *   The URL to check
+ * @return bool
+ *   True if reachable, false otherwise.
+ */
+function _acquia_lift_ping($type, $url) {
+  $ch = curl_init($url);
+  curl_setopt($ch, CURLOPT_TIMEOUT, 5);
+  curl_setopt($ch, CURLOPT_NOBODY, TRUE);
+  curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 5);
+  curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+  curl_exec($ch);
+  $status_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+  curl_close($ch);
+  if ($status_code == 0) {
+    drupal_set_message(t('Acquia Lift module could not reach the specified @type URL.', array(
+      '@type' => $type,
+    )), 'error');
+    return FALSE;
+  }
+  return TRUE;
 }

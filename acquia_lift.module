@@ -66,7 +66,7 @@ function acquia_lift_help($path, $arg) {
  *   otherwise.
  */
 function acquia_lift_is_configured() {
-  foreach (array('acquia_lift_account_id','acquia_lift_site_id', 'acquia_lift_assets_url', 'acquia_lift_decision_api_url', 'acquia_lift_oauth_url') as $api_config) {
+  foreach (array('acquia_lift_account_id','acquia_lift_site_id') as $api_config) {
     $val = variable_get($api_config, '');
     if (empty($val)) {
       return FALSE;

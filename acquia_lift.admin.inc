@@ -133,6 +133,7 @@ function _acquia_lift_admin_build_credential_form(&$form, &$form_state) {
     '#description' => t('Your Lift application\'s assets URL.  It determines which version of the Lift application is being used.'),
     '#field_prefix' => 'https://',
     '#default_value' => _acquia_lift_admin_clean_url(variable_get('acquia_lift_assets_url', '')),
+    '#required' => TRUE,
   );
   $form['acquia_lift_decision_api_url'] = array(
     '#type' => 'textfield',
@@ -276,13 +277,13 @@ function acquia_lift_admin_form_validate($form, &$form_state) {
   if (!preg_match('/^[a-zA-Z_][a-zA-Z\\d_]*$/', $form_state['values']['acquia_lift_account_id'])) {
     form_set_error('acquia_lift_account_id', t('Account ID contains invalid characters.  It has to start with a letter and contain only alphanumerical characters.'));
   }
-  if (!valid_url($form_state['values']['acquia_lift_assets_url'])) {
+  if (!empty($form_state['values']['acquia_lift_assets_url']) && !valid_url($form_state['values']['acquia_lift_assets_url'])) {
     form_set_error('acquia_lift_assets_url', t('Assets URL is an invalid URL.'));
   }
-  if (!valid_url($form_state['values']['acquia_lift_decision_api_url'])) {
+  if (!empty($form_state['values']['acquia_lift_decision_api_url']) && !valid_url($form_state['values']['acquia_lift_decision_api_url'])) {
     form_set_error('acquia_lift_decision_api_url', t('Decision API URL is an invalid URL.'));
   }
-  if (!valid_url($form_state['values']['acquia_lift_oauth_url'])) {
+  if (!empty($form_state['values']['acquia_lift_oauth_url']) && !valid_url($form_state['values']['acquia_lift_oauth_url'])) {
     form_set_error('acquia_lift_oauth_url', t('Authentication URL is an invalid URL.'));
   }
 }
@@ -315,15 +316,15 @@ function acquia_lift_admin_form_submit($form, &$form_state) {
   $decision_api_url = $form_state['values']['acquia_lift_decision_api_url'];
   $oauth_url = $form_state['values']['acquia_lift_oauth_url'];
   if (!empty($assets_url)) {
-    $assets_url = 'https://' . $assets_url;
+    $assets_url = 'https://' . _acquia_lift_admin_clean_url($assets_url);
     _acquia_lift_ping('Assets', $assets_url);
   }
   if (!empty($decision_api_url)) {
-    $decision_api_url = 'https://' . $decision_api_url;
+    $decision_api_url = 'https://' . _acquia_lift_admin_clean_url($decision_api_url);
     _acquia_lift_ping('Decision API', $decision_api_url);
   }
   if (!empty($oauth_url)) {
-    $oauth_url = 'https://' . _acquia_lift_admin_remove_authorize_suffix($oauth_url) . '/authorize';
+    $oauth_url = 'https://' . _acquia_lift_admin_remove_authorize_suffix(_acquia_lift_admin_clean_url($oauth_url)) . '/authorize';
     _acquia_lift_ping('Authentication', $oauth_url);
   }
   variable_set('acquia_lift_assets_url', $assets_url);

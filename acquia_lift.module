@@ -94,13 +94,20 @@ function acquia_lift_page_build(&$page) {
   }
 
   $assets_url = variable_get('acquia_lift_assets_url');
+  $decision_api_url = variable_get('acquia_lift_decision_api_url', '');
+  $oauth_url = variable_get('acquia_lift_oauth_url', '');
+
   // Add the credentials and configuration for the Lift Experience Builder.
   _acquia_lift_add_meta_tag('account_id', variable_get('acquia_lift_account_id'));
   _acquia_lift_add_meta_tag('site_id', variable_get('acquia_lift_site_id'));
   _acquia_lift_add_meta_tag('liftAssetsUrl', $assets_url);
-  _acquia_lift_add_meta_tag('liftDecisionAPIURL', variable_get('acquia_lift_decision_api_url'));
-  _acquia_lift_add_meta_tag('authEndpoint', variable_get('acquia_lift_oauth_url'));
-  _acquia_lift_add_meta_tag('contentReplacementMode', variable_get('acquia_lift_content_replacement_mode'));
+  if (!empty($decision_api_url)) {
+    _acquia_lift_add_meta_tag('liftDecisionAPIURL', variable_get('acquia_lift_decision_api_url'));
+  }
+  if (!empty($oauth_url)) {
+    _acquia_lift_add_meta_tag('authEndpoint', variable_get('acquia_lift_oauth_url'));
+  }
+  _acquia_lift_add_meta_tag('contentReplacementMode', variable_get('acquia_lift_content_replacement_mode', 'untrusted'));
 
   $page_context = acquia_lift_get_page_context();
   foreach ($page_context as $name => $value) {

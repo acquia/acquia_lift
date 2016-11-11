@@ -262,6 +262,45 @@ class AcquiaLiftsWebTest extends DrupalWebTestCase {
   /**
    * Test credentials are output for Lift.
    */
+  function testLiftCredentials() {
+    // Lift not configured then no credentials
+    $this->drupalGet('/');
+    $this->assertNoLift();
+    $this->assertNoLiftMetaTag('account_id');
+    $this->assertNoLiftMetaTag('site_id');
+    $this->assertNoLiftMetaTag('liftAssetsUrl');
+    $this->assertNoLiftMetaTag('liftDecisionAPIURL');
+    $this->assertNoLiftMetaTag('authEndpoint');
+    $this->assertNoLiftMetaTag('contentReplacementMode');
+
+    $this->configureLift();
+    // Sets up the account id, site id, and assets url.
+    $this->drupalGet('/');
+    $this->assertLift();
+    $this->assertLiftMetaTag('account_id');
+    $this->assertLiftMetaTag('site_id');
+    $this->assertLiftMetaTag('liftAssetsUrl');
+    $this->assertNoLiftMetaTag('liftDecisionAPIURL');
+    $this->assertNoLiftMetaTag('authEndpoint');
+    $this->assertLiftMetaTag('contentReplacementMode', 'untrusted');
+
+    // Manually set all the configuration variables and confirm meta tags.
+    variable_set('acquia_lift_account_id', 'MY_ACCOUNT');
+    variable_set('acquia_lift_site_id', 'MY_SITE');
+    variable_set('acquia_lift_assets_url', 'https://example.com/assets/stable');
+    variable_set('acquia_lift_decision_api_url', 'https://example.com/decisionapi');
+    variable_set('acquia_lift_oauth_url', 'https://example.com/authorize');
+    variable_set('acquia_lift_content_replacement_mode', 'trusted');
+
+    $this->drupalGet('/');
+    $this->assertLift();
+    $this->assertLiftMetaTag('account_id', 'MY_ACCOUNT');
+    $this->assertLiftMetaTag('site_id', 'MY_SITE');
+    $this->assertLiftMetaTag('liftAssetsUrl', 'https://example.com/assets/stable');
+    $this->assertLiftMetaTag('liftDecisionAPIURL', 'https://example.com/decisionapi');
+    $this->assertLiftMetaTag('authEndpoint', 'https://example.com/authorize');
+    $this->assertLiftMetaTag('contentReplacementMode', 'trusted');
+  }
 
   /**
    * Tests identity param configuration and js settings.
@@ -479,6 +518,26 @@ class AcquiaLiftsWebTest extends DrupalWebTestCase {
    */
   protected function assertNoLift() {
     $this->assertNoRaw($this->getLiftBootstrapUrl(), 'Lift bootstrap is not included on the page.');
+  }
+
+  /**
+   * Helper function to assert that a meta tag is found in the page
+   */
+  protected function assertLiftMetaTag($name, $value = NULL) {
+    $pattern = '/<meta (?=[^>]*itemprop="acquia_lift:' . preg_quote($name, '/') . '")';
+    if (!empty($value)) {
+      $pattern .= '(?=[^>]*content="' . preg_quote($value, '/') . '")';
+    }
+    $pattern .= '/';
+    $this->assertPattern($pattern, 'Found meta tag for ' . $name);
+  }
+
+  /**
+   * Helper function to assert that a meta tag is not found in the page
+   */
+  protected function assertNoLiftMetaTag($name) {
+    $pattern = '/<meta (?=[^>]*itemprop="acquia_lift:' . preg_quote($name, '/') . '")/';
+    $this->assertNoPattern($pattern, 'Did not find meta tag for ' . $name);
   }
 
   /**

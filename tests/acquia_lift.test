@@ -230,6 +230,34 @@ class AcquiaLiftsWebTest extends DrupalWebTestCase {
   /**
    * Test the visibility path filtering.
    */
+  function testVisibilityFiltering() {
+    $node = $this->drupalCreateNode();
+    $node_url = '/node/' . $node->nid;
+
+    // No lift when not configured.
+    $this->drupalGet($node_url);
+    $this->assertNoLift();
+
+    // Configured without limitations
+    $this->configureLift();
+    $this->drupalGet($node_url);
+    $this->assertLift();
+
+    // No node pages should have Lift
+    variable_set('acquia_lift_ignore_path_patterns', '/node/*');
+    $this->drupalGet($node_url);
+    $this->assertNoLift();
+
+    // Only the root node page should be restricted
+    variable_set('acquia_lift_ignore_path_patterns', '/node');
+    $this->drupalGet($node_url);
+    $this->assertLift();
+
+    // Multiple paths are restricted
+    variable_set('acquia_lift_ignore_path_patterns', "/node\n/node/*");
+    $this->drupalGet($node_url);
+    $this->assertNoLift();
+  }
 
   /**
    * Test credentials are output for Lift.
@@ -419,6 +447,7 @@ class AcquiaLiftsWebTest extends DrupalWebTestCase {
     $settings = array(
       'acquia_lift_account_id' => 'MY_ACCOUNT_ID',
       'acquia_lift_site_id' => 'MY_SITE_ID',
+      'acquia_lift_assets_url' => 'https://example.com/latest',
     );
     foreach ($settings as $setting => $value) {
       variable_set($setting, $value);
@@ -442,21 +471,21 @@ class AcquiaLiftsWebTest extends DrupalWebTestCase {
    * Helper function to assert that Lift is available on the page
    */
   protected function assertLift() {
-    $this->assertRaw('src="' . $this->getLiftBootstrapUrl(), 'Lift bootstrap is included on the page.');
+    $this->assertRaw($this->getLiftBootstrapUrl(), 'Lift bootstrap is included on the page.');
   }
 
   /**
    * Helper function to assert that Lift is not available on the page
    */
   protected function assertNoLift() {
-    $this->assertNoRaw('src="' . $this->getLiftBootstrapUrl(), 'Lift bootstrap is included on the page.');
+    $this->assertNoRaw($this->getLiftBootstrapUrl(), 'Lift bootstrap is not included on the page.');
   }
 
   /**
    * Helper function to generate the lift bootstrap URL.
    */
   protected function getLiftBootstrapUrl() {
-    $assets_url = variable_get('acquia_lift_assets_url');
+    $assets_url = variable_get('acquia_lift_assets_url', '');
     return $assets_url . '/lift.js';
   }
 }

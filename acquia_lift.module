@@ -66,7 +66,7 @@ function acquia_lift_help($path, $arg) {
  *   otherwise.
  */
 function acquia_lift_is_configured() {
-  foreach (array('acquia_lift_account_id','acquia_lift_site_id') as $api_config) {
+  foreach (array('acquia_lift_account_id','acquia_lift_site_id', 'acquia_lift_assets_url') as $api_config) {
     $val = variable_get($api_config, '');
     if (empty($val)) {
       return FALSE;
@@ -86,7 +86,10 @@ function acquia_lift_page_build(&$page) {
 
   // Bail if the path is a path to ignore
   $current_path = '/' . current_path();
-  if (drupal_match_path($current_path, variable_get('acquia_lift_ignore_path_patterns', ''))) {
+  $alias_path = drupal_lookup_path('alias', current_path());
+  $alias_path = $alias_path == FALSE ? $current_path : '/' . $alias_path;
+  $patterns = variable_get('acquia_lift_ignore_path_patterns', '');
+  if (drupal_match_path($current_path, $patterns) || drupal_match_path($alias_path, $patterns)) {
     return;
   }
 

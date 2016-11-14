@@ -7,6 +7,7 @@
 
 define('ACQUIA_LIFT_THUMBNAIL_WIDGET_SEPARATOR', '|');
 define('ACQUIA_LIFT_DEFAULT_IDENTITY_TYPE_DEFAULT', 'email');
+define('ACQUIA_LIFT_DEFAULT_IDENTITY_TYPE_IDENTIFIER', 'account');
 define('ACQUIA_LIFT_ENGAGEMENT_SCORE_DEFAULT', 1);
 define('ACQUIA_LIFT_GLOBAL_VALUE_DEFAULT', 1);
 define('ACQUIA_LIFT_ADMIN_SEPARATOR', '__');
@@ -109,12 +110,32 @@ function acquia_lift_page_build(&$page) {
   }
   _acquia_lift_add_meta_tag('contentReplacementMode', variable_get('acquia_lift_content_replacement_mode', 'untrusted'));
 
+  // If there are querystring parameters present corresponding to the configured
+  // identity params, we add the identity and identity type to the meta tags.
+  $identity_param = variable_get('acquia_lift_identity_param', '');
+  $identity_type_param = variable_get('acquia_lift_identity_type_param', '');
+  if (!empty($identity_param)) {
+    $all_params = drupal_get_query_parameters();
+    if (isset($all_params[$identity_param])) {
+      // Set the identity type to the default either as specified by the user or
+      // as the application default.
+      $identity_type = variable_get('acquia_lift_default_identity_type') ?: ACQUIA_LIFT_DEFAULT_IDENTITY_TYPE_DEFAULT;
+      if (!empty($identity_type_param) && isset($all_params[$identity_type_param])) {
+        // If an explicit identity type was passed in the query parameters then
+        //use that instead.
+        $identity_type = check_plain($all_params[$identity_type_param]);
+      }
+      $identity_value = check_plain($all_params[$identity_param]);
+      _acquia_lift_add_meta_tag('identity:' . $identity_type, $identity_value);
+    }
+  }
+
   $page_context = acquia_lift_get_page_context();
   foreach ($page_context as $name => $value) {
     _acquia_lift_add_meta_tag($name, is_array($value) ? implode(',', $value) : $value);
   }
 
-  // Add the lift js bootstrap laoder
+  // Add the lift js bootstrap loader
   $js_file = $assets_url . '/lift.js';
   $attached['js'] = array(
     'type' => 'file',
@@ -160,7 +181,7 @@ function acquia_lift_get_page_context($node = NULL, $primary = FALSE) {
   module_load_include('inc', 'acquia_lift', 'acquia_lift.context');
   $page_context = _acquia_lift_get_page_context($node, $primary);
 
-  if (!isset($page_context['content_title'])) {
+  if (!isset($page_context['content_title']) && is_null($node)) {
     $page_context['content_title'] = drupal_get_title();
   }
 

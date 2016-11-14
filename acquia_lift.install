@@ -10,6 +10,7 @@
 function acquia_lift_uninstall() {
   $vars = array(
     'acquia_lift_identity_param',
+    'acquia_lift_identity_type_param',
     'acquia_lift_default_identity_type',
     'acquia_lift_field_mappings',
     'acquia_lift_udf_mappings',

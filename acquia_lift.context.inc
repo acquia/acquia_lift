@@ -83,19 +83,20 @@ function _acquia_lift_get_page_context($node = NULL, $primary = FALSE) {
     $page_context['author'] = $account->name;
     $page_context['page_type'] = 'node page';
     $page_context['type'] = $node->type;
+    $page_context = array_merge_recursive($page_context, _acquia_lift_get_mapped_context($node));
   }
 
   return $page_context;
-  // Add configured context options.
-  // return array_merge_recursive($page_context, _acquia_lift_get_mapped_context($node));
 }
 
 /**
- * Gets the mapped context for the current node.
+ * Gets the mapped context for the current node including field mappings and
+ * udf mappings.
  *
  * @param $node
- *   The
+ *   The node currently be displayed
  * @return array
+ *   An array of contexts to be included with the page context.
  */
 function _acquia_lift_get_mapped_context($node) {
   $mapped_context = array();
@@ -107,24 +108,49 @@ function _acquia_lift_get_mapped_context($node) {
     if (!array_key_exists($context_type, $mapping_callbacks)) {
       continue;
     }
-    $mapped_context[$type] = 'test'; // call_user_func($mapping_callbacks[$context_type], $node, $context);
+    $mapped_value = call_user_func($mapping_callbacks[$context_type], $node, $context);
+    if (!is_null($mapped_value)) {
+      $mapped_context[$type] = $mapped_value;
+    }
   }
   // UDF Mappings include keys for person, touch, event, etc.
   $udf_mappings = variable_get('acquia_lift_udf_mappings', array());
-  var_dump($udf_mappings);
   foreach($udf_mappings as $type => $mapping) {
-    foreach($mapping as $udf => $mapped_context) {
-      list ($context_type, $context) = explode(ACQUIA_LIFT_ADMIN_SEPARATOR, $mapped_context);
+    foreach($mapping as $udf => $mapping_context) {
+      list ($context_type, $context) = explode(ACQUIA_LIFT_ADMIN_SEPARATOR, $mapping_context);
       if (!array_key_exists($context_type, $mapping_callbacks)) {
         continue;
       }
-      $mapped_context[$udf] = 'test'; //call_user_func($mapping_callbacks[$context_type], $node, $context);
+      $mapped_value = call_user_func($mapping_callbacks[$context_type], $node, $context);
+      if (!is_null($mapped_value)) {
+        $mapped_context[$udf] = $mapped_value;
+      }
     }
   }
   return $mapped_context;
 }
 
-function _acquia_lift_get_mapped_taxonomy_context($node, $taxonomy_field) {
-  $taxonomy_items = field_get_items('node', $node, $taxonomy_field);
-  return field_view_value('node', $node, $taxonomy_field, $taxonomy_items[0]);
+/**
+ * Gets the list of taxonomy terms applied for a particular node and a
+ * particular taxonomy vocabulary.
+ * @param $node
+ *   The node that is being displayed
+ * @param string $vocabulary_machine_name
+ *   The machine name of the vocabulary
+ * @return null if no mapping, a string of terms if mapping exists.
+ */
+function _acquia_lift_get_mapped_taxonomy_context($node, $vocabulary_machine_name) {
+  if (empty($node) || empty($vocabulary_machine_name)) {
+    return null;
+  }
+  $mapped = array();
+  $results = db_query('SELECT tid FROM {taxonomy_index} WHERE nid = :nid', array(':nid' => $node->nid));
+  $terms = taxonomy_term_load_multiple($results->fetchCol());
+  foreach($terms as $term) {
+    if ($term->vocabulary_machine_name !== $vocabulary_machine_name) {
+      continue;
+    }
+    $mapped[] = $term->name;
+  }
+  return implode(',', $mapped);
 }

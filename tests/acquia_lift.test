@@ -11,6 +11,7 @@
 class AcquiaLiftsWebTest extends DrupalWebTestCase {
 
   protected $admin_user;
+  protected $admin_button_text;
 
   public static function getInfo() {
     return array(
@@ -22,6 +23,7 @@ class AcquiaLiftsWebTest extends DrupalWebTestCase {
 
   function setUp() {
     parent::setUp(array('acquia_lift'));
+    $this->admin_button_text = t('Save configuration');
     $this->admin_user = $this->drupalCreateUser(array('access administration pages', 'administer acquia_lift configuration', 'administer content types', 'administer nodes', 'bypass node access'));
   }
 
@@ -56,7 +58,7 @@ class AcquiaLiftsWebTest extends DrupalWebTestCase {
     $this->drupalGet('/admin/config/services/acquia_lift');
 
     $submit_confirm_text = t('The configuration settings have been saved.');
-    $submit_button_text = t('Save configuration');
+    $submit_button_text = $this->admin_button_text;
 
     // Confirm expected fields
     $fields = array(
@@ -305,75 +307,57 @@ class AcquiaLiftsWebTest extends DrupalWebTestCase {
   /**
    * Tests identity param configuration and js settings.
    */
-  /*
   function testIdentityParams() {
+    $submit_button_text = $this->admin_button_text;
     $this->configureLift();
     $this->drupalLogin($this->admin_user);
     // Test specifying a querystring param to use for capturing identity.
-    $this->drupalPost('admin/config/content/personalize/acquia_lift', array(
-      'acquia_lift_profiles_identity[acquia_lift_profiles_identity_param]' => 'ali',
-    ), t('Save'));
+    $this->drupalPost('/admin/config/services/acquia_lift', array(
+      'acquia_lift_identity_param' => 'ali',
+    ), $submit_button_text);
     $this->drupalLogout();
 
     // Now visit the site as anon without passing any querystring params.
     $this->drupalGet('');
-    $settings = $this->drupalGetSettings();
-    $alp_settings = $settings['acquia_lift'];
-    $this->assertFalse(isset($alp_settings['identity']));
+    $this->assertNoLiftIdentityMetaTag();
 
     // Now pass the configured identity param
     $my_id = 'ohai';
     $this->drupalGet('', array('query' => array('ali' => $my_id)));
-    $settings = $this->drupalGetSettings();
-    $alp_settings = $settings['acquia_lift'];
-    $this->assertEqual($alp_settings['identity'], $my_id);
-    $this->assertEqual($alp_settings['identityType'], ACQUIA_LIFT_PROFILES_DEFAULT_IDENTITY_TYPE_DEFAULT);
+    $this->assertLiftIdentityMetaTag(ACQUIA_LIFT_DEFAULT_IDENTITY_TYPE_DEFAULT, $my_id);
 
     // Set the identity type param
     $this->drupalLogin($this->admin_user);
-    $this->drupalPost('admin/config/content/personalize/acquia_lift', array(
-      'acquia_lift_profiles_identity[acquia_lift_profiles_identity_type_param]' => 'alit',
-    ), t('Save'));
+    $this->drupalPost('admin/config/services/acquia_lift', array(
+      'acquia_lift_identity_type_param' => 'alit',
+    ), $submit_button_text);
     $this->drupalLogout();
 
     // Pass the configured identity param and the identity_type param
     $my_type = 'socialtastic';
     $this->drupalGet('', array('query' => array('ali' => $my_id, 'alit' => $my_type)));
-    $settings = $this->drupalGetSettings();
-    $alp_settings = $settings['acquia_lift'];
-    $this->assertEqual($alp_settings['identity'], $my_id);
-    $this->assertEqual($alp_settings['identityType'], $my_type);
+    $this->assertLiftIdentityMetaTag($my_type, $my_id);
 
     // Pass the configured identity type param without the identity param
     $this->drupalGet('', array('query' => array('alit' => $my_type)));
-    $settings = $this->drupalGetSettings();
-    $alp_settings = $settings['acquia_lift'];
-    $this->assertFalse(isset($alp_settings['identity']));
-    $this->assertFalse(isset($alp_settings['identityType']));
+    $this->assertNoLiftIdentityMetaTag();
 
     // Set the default identity type
     $default_type = 'tknr';
     $this->drupalLogin($this->admin_user);
-    $this->drupalPost('admin/config/content/personalize/acquia_lift', array(
-      'acquia_lift_profiles_identity[acquia_lift_profiles_default_identity_type]' => $default_type,
-    ), t('Save'));
+    $this->drupalPost('admin/config/services/acquia_lift', array(
+      'acquia_lift_default_identity_type' => $default_type,
+    ), $submit_button_text);
     $this->drupalLogout();
 
     // Pass the configured identity param but without the identity_type param
     $this->drupalGet('', array('query' => array('ali' => $my_id)));
-    $settings = $this->drupalGetSettings();
-    $alp_settings = $settings['acquia_lift'];
-    $this->assertEqual($alp_settings['identity'], $my_id);
-    $this->assertEqual($alp_settings['identityType'], $default_type);
+    $this->assertLiftIdentityMetaTag($default_type, $my_id);
 
     // Pass the configured identity param and with the identity_type param
     $this->drupalGet('', array('query' => array('ali' => $my_id, 'alit' => $my_type)));
-    $settings = $this->drupalGetSettings();
-    $alp_settings = $settings['acquia_lift'];
-    $this->assertEqual($alp_settings['identity'], $my_id);
-    $this->assertEqual($alp_settings['identityType'], $my_type);
+    $this->assertLiftIdentityMetaTag($my_type, $my_id);
   }
-  */
 
   /*
   function testFieldMappings() {
@@ -537,6 +521,34 @@ class AcquiaLiftsWebTest extends DrupalWebTestCase {
    */
   protected function assertNoLiftMetaTag($name) {
     $pattern = '/<meta (?=[^>]*itemprop="acquia_lift:' . preg_quote($name, '/') . '")/';
+    $this->assertNoPattern($pattern, 'Did not find meta tag for ' . $name);
+  }
+
+  /**
+   * Helper function to assert that an identifier  meta tag is found in the page
+   */
+  protected function assertLiftIdentityMetaTag($type = NULL, $value = NULL) {
+    if ($type) {
+      $pattern = '/<meta (?=[^>]*itemprop="acquia_lift:identity:' . preg_quote($type, '/') . '")';
+      if (!empty($value)) {
+        $pattern .= '(?=[^>]*content="' . preg_quote($value, '/') . '")';
+      }
+      $pattern .= '/';
+    } else {
+      $pattern = '/<meta (?=[^>]*itemprop="acquia_lift:identity:)/';
+    }
+    $this->assertPattern($pattern, 'Found identity meta tag' . $type ? ' for ' . $type : '');
+  }
+
+  /**
+   * Helper function to assert that a meta tag is not found in the page
+   */
+  protected function assertNoLiftIdentityMetaTag($name = NULL) {
+    $pattern = '/<meta (?=[^>]*itemprop="acquia_lift:identity';
+    if ($name) {
+      $pattern .= preg_quote($name, '/');
+    }
+    $pattern .= ')/';
     $this->assertNoPattern($pattern, 'Did not find meta tag for ' . $name);
   }
 

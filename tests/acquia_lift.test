@@ -24,7 +24,21 @@ class AcquiaLiftsWebTest extends DrupalWebTestCase {
   function setUp() {
     parent::setUp(array('acquia_lift'));
     $this->admin_button_text = t('Save configuration');
-    $this->admin_user = $this->drupalCreateUser(array('access administration pages', 'administer acquia_lift configuration', 'administer content types', 'administer nodes', 'bypass node access'));
+    $this->admin_user = $this->drupalCreateUser(array(
+      'access administration pages',
+      'administer acquia_lift configuration',
+      'administer content types',
+      'administer nodes',
+      'bypass node access'
+    ));
+
+    // Set up a variety of nodes with different term combinations.
+    $this->tags['one_tag'] = array($this->randomName());
+    $this->tags['two_tags'] = array($this->randomName(), $this->randomName());
+    $this->articles['one_tag'] =
+      $this->createArticleWithTerms($this->tags['one_tag']);
+    $this->articles['two_tags'] =
+      $this->createArticleWithTerms($this->tags['two_tags']);
   }
 
   function tearDown() {
@@ -44,7 +58,7 @@ class AcquiaLiftsWebTest extends DrupalWebTestCase {
       'acquia_lift_ignore_path_patterns',
       'acquia_lift_content_replacement_mode',
     );
-    foreach($vars as $index => $name) {
+    foreach ($vars as $index => $name) {
       variable_del($name);
     }
     parent::tearDown();
@@ -359,19 +373,44 @@ class AcquiaLiftsWebTest extends DrupalWebTestCase {
     $this->assertLiftIdentityMetaTag($my_type, $my_id);
   }
 
-  /*
   function testFieldMappings() {
+    $submit_button_text = $this->admin_button_text;
     $this->configureLift();
     $this->drupalLogin($this->admin_user);
-    $this->createUserProfileField('test_user_field_1');
-    $this->createUserProfileField('test_user_field_2');
+
     $this->resetAll();
     $edit = array(
-      'acquia_lift_profiles_field_mappings[content_section]' => 'user_profile_context__test_user_field_1',
-      'acquia_lift_profiles_field_mappings[content_keywords]' => 'user_profile_context__test_user_field_2'
+      'acquia_lift_field_mappings[content_section]' => 'taxonomy_context__tags',
+      'acquia_lift_field_mappings[content_keywords]' => 'taxonomy_context__tags',
+      'acquia_lift_field_mappings[persona]' => 'taxonomy_context__tags',
     );
-    $this->drupalPost('admin/config/content/personalize/acquia_lift', $edit, t('Save'));
-    $this->drupalGet('');
+    $this->drupalPost('admin/config/services/acquia_lift', $edit, $submit_button_text);
+    $this->drupalGet('node/' . $this->articles['one_tag']->nid);
+    $expected_tag = $this->tags['one_tag'][0];
+    $this->assertLiftMetaTag('content_section', $expected_tag);
+    $this->assertLiftMetaTag('content_keywords', $expected_tag);
+    $this->assertLiftMetaTag('persona', $expected_tag);
+
+    $this->drupalGet('node/' . $this->articles['two_tags']->nid);
+    $expected_tags = implode(',', $this->tags['two_tags']);
+    $this->assertLiftMetaTag('content_section', $expected_tags);
+    $this->assertLiftMetaTag('content_keywords', $expected_tags);
+    $this->assertLiftMetaTag('persona', $expected_tags);
+
+    $edit = array(
+      'acquia_lift_field_mappings[content_section]' => 'taxonomy_context__tags',
+      'acquia_lift_field_mappings[content_keywords]' => '',
+      'acquia_lift_field_mappings[persona]' => 'taxonomy_context__tags',
+    );
+    $this->drupalPost('admin/config/services/acquia_lift', $edit, $submit_button_text);
+    $this->drupalGet('node/' . $this->articles['one_tag']->nid);
+    $expected_tag = $this->tags['one_tag'][0];
+    $this->assertLiftMetaTag('content_section', $expected_tag);
+    $this->assertNoLiftMetaTag('content_keywords');
+    $this->assertLiftMetaTag('persona', $expected_tag);
+
+    /*
+    $this->assertLiftMetaTag('content_section', )
     $settings = $this->drupalGetSettings();
     $expected = array(
       'field' => array(
@@ -407,8 +446,8 @@ class AcquiaLiftsWebTest extends DrupalWebTestCase {
       'test_user_field_1' => 'ohai'
     );
     $this->assertEqual($expected, $settings['personalize_user_profile_context']);
+    */
   }
-  */
 
   /*
   function testUDFMappings() {
@@ -478,19 +517,6 @@ class AcquiaLiftsWebTest extends DrupalWebTestCase {
   }
 
   /**
-   * Helper to grab the nid from the url so that we don't have to make assumptions
-   * about the nid of the node we just created.
-   */
-  protected function getNidFromCurrentUrl() {
-    $url = $this->getUrl();
-    $matches = array();
-    if (preg_match('/node\/(\d+)/', $url, $matches)) {
-      return $matches[1];
-    }
-    return NULL;
-  }
-
-  /**
    * Helper function to assert that Lift is available on the page
    */
   protected function assertLift() {
@@ -534,7 +560,8 @@ class AcquiaLiftsWebTest extends DrupalWebTestCase {
         $pattern .= '(?=[^>]*content="' . preg_quote($value, '/') . '")';
       }
       $pattern .= '/';
-    } else {
+    }
+    else {
       $pattern = '/<meta (?=[^>]*itemprop="acquia_lift:identity:)/';
     }
     $this->assertPattern($pattern, 'Found identity meta tag' . $type ? ' for ' . $type : '');
@@ -558,5 +585,44 @@ class AcquiaLiftsWebTest extends DrupalWebTestCase {
   protected function getLiftBootstrapUrl() {
     $assets_url = variable_get('acquia_lift_assets_url', '');
     return $assets_url . '/lift.js';
+  }
+
+  /**
+   * Creates an article with the specified terms.
+   *
+   * @param array $autocreate
+   *   (optional) An array of term names to autocreate. Defaults to array().
+   * @param array $existing
+   *   (optional) An array of existing term IDs to add.
+   *
+   * @return object
+   *   The node object.
+   */
+  function createArticleWithTerms($autocreate = array(), $existing = array()) {
+    $values = array();
+    foreach ($autocreate as $name) {
+      $values[] = array(
+        'tid' => 'autocreate',
+        'vid' => 1,
+        'name' => $name,
+        'vocabulary_machine_name' => 'tags'
+      );
+    }
+    foreach ($existing as $tid) {
+      $values[] = array(
+        'tid' => $tid,
+        'vid' => 1,
+        'vocabulary_machine_name' => 'tags'
+      );
+    }
+
+    $values = array(LANGUAGE_NONE => $values);
+
+    $settings = array(
+      'type' => 'article',
+      'field_tags' => $values,
+    );
+
+    return $this->drupalCreateNode($settings);
   }
 }

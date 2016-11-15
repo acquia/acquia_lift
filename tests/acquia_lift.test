@@ -378,7 +378,6 @@ class AcquiaLiftsWebTest extends DrupalWebTestCase {
     $this->configureLift();
     $this->drupalLogin($this->admin_user);
 
-    $this->resetAll();
     $edit = array(
       'acquia_lift_field_mappings[content_section]' => 'taxonomy_context__tags',
       'acquia_lift_field_mappings[content_keywords]' => 'taxonomy_context__tags',
@@ -408,99 +407,33 @@ class AcquiaLiftsWebTest extends DrupalWebTestCase {
     $this->assertLiftMetaTag('content_section', $expected_tag);
     $this->assertNoLiftMetaTag('content_keywords');
     $this->assertLiftMetaTag('persona', $expected_tag);
-
-    /*
-    $this->assertLiftMetaTag('content_section', )
-    $settings = $this->drupalGetSettings();
-    $expected = array(
-      'field' => array(
-        'content_section' => 'user_profile_context__test_user_field_1',
-        'content_keywords' => 'user_profile_context__test_user_field_2',
-      )
-    );
-    $this->assertEqual($expected, $settings['acquia_lift']['mappings']);
-    $this->assertEqual('session', $settings['personalize']['cacheExpiration']['visitor_context:user_profile_context:test_user_field_1']);
-    $this->assertEqual('session', $settings['personalize']['cacheExpiration']['visitor_context:user_profile_context:test_user_field_2']);
-
-    // Confirm that the context value is available in the settings
-    $this->drupalLogout();
-    $regular_user = $this->drupalCreateUser(array('access content'));
-    $pass_raw = $regular_user->pass_raw;
-    unset($regular_user->pass_raw);
-
-    $edit = array(
-      'field_test_user_field_1' => array(
-        'und' => array(
-          array('value' => 'ohai')
-        )
-      )
-    );
-    user_save($regular_user, $edit);
-    $this->resetAll();
-
-    $regular_user->pass_raw = $pass_raw;
-    $this->drupalLogin($regular_user);
-    $this->drupalGet('');
-    $settings = $this->drupalGetSettings();
-    $expected = array(
-      'test_user_field_1' => 'ohai'
-    );
-    $this->assertEqual($expected, $settings['personalize_user_profile_context']);
-    */
   }
 
-  /*
   function testUDFMappings() {
     $this->configureLift();
     $this->drupalLogin($this->admin_user);
-    $this->createUserProfileField('test_user_field_1');
-    $this->createUserProfileField('test_user_field_2');
-    $this->resetAll();
     $edit = array(
-      'acquia_lift_profiles_udf_mappings[person][person_udf1]' => 'user_profile_context__test_user_field_1',
-      'acquia_lift_profiles_udf_mappings[touch][touch_udf20]' => 'user_profile_context__test_user_field_2'
+      'acquia_lift_udf_mappings[person][person_udf1]' => 'taxonomy_context__tags',
+      'acquia_lift_udf_mappings[touch][touch_udf20]' => 'taxonomy_context__tags'
     );
-    $this->drupalPost('admin/config/content/personalize/acquia_lift', $edit, t('Save'));
-    $this->drupalGet('');
-    $settings = $this->drupalGetSettings();
-    $expected = array(
-      'person' => array(
-        'person_udf1' => 'user_profile_context__test_user_field_1',
-      ),
-      'touch' => array(
-        'touch_udf20' => 'user_profile_context__test_user_field_2',
-      )
-    );
-    $this->assertEqual($expected, $settings['acquia_lift']['mappings']);
-    $this->assertEqual('session', $settings['personalize']['cacheExpiration']['visitor_context:user_profile_context:test_user_field_1']);
-    $this->assertEqual('session', $settings['personalize']['cacheExpiration']['visitor_context:user_profile_context:test_user_field_2']);
-
-    // Confirm that the context value is available in the settings
-    $this->drupalLogout();
-    $regular_user = $this->drupalCreateUser(array('access content'));
-    $pass_raw = $regular_user->pass_raw;
-    unset($regular_user->pass_raw);
+    $this->drupalPost('admin/config/services/acquia_lift', $edit, $this->admin_button_text);
+    $this->drupalGet('node/' . $this->articles['one_tag']->nid);
+    $expected_tag = $this->tags['one_tag'][0];
+    $this->assertLiftMetaTag('person_udf1', $expected_tag);
+    $this->assertLiftMetaTag('touch_udf20', $expected_tag);
 
     $edit = array(
-      'field_test_user_field_1' => array(
-        'und' => array(
-          array('value' => 'ohai')
-        )
-      )
+      'acquia_lift_udf_mappings[person][person_udf1]' => 'taxonomy_context__tags',
+      'acquia_lift_udf_mappings[touch][touch_udf20]' => '',
+      'acquia_lift_udf_mappings[event][event_udf5]' => 'taxonomy_context__tags',
     );
-    user_save($regular_user, $edit);
-    $this->resetAll();
-
-    $regular_user->pass_raw = $pass_raw;
-    $this->drupalLogin($regular_user);
-    $this->drupalGet('');
-    $settings = $this->drupalGetSettings();
-    $expected = array(
-      'test_user_field_1' => 'ohai'
-    );
-    $this->assertEqual($expected, $settings['personalize_user_profile_context']);
+    $this->drupalPost('admin/config/services/acquia_lift', $edit, $this->admin_button_text);
+    $this->drupalGet('node/' . $this->articles['two_tags']->nid);
+    $expected_tags = implode(',', $this->tags['two_tags']);
+    $this->assertLiftMetaTag('person_udf1', $expected_tags);
+    $this->assertNoLiftMetaTag('touch_udf20');
+    $this->assertLiftMetaTag('event_udf5', $expected_tags);
   }
-  */
 
   /**
    * Helper function to configure acquia_lift settings.

@@ -1,0 +1,262 @@
+<?php
+
+/**
+ * @file acquia_lift.module
+ * Provides Acquia Lift Profiles integration.
+ */
+
+define('ACQUIA_LIFT_THUMBNAIL_WIDGET_SEPARATOR', '|');
+define('ACQUIA_LIFT_DEFAULT_IDENTITY_TYPE_DEFAULT', 'email');
+define('ACQUIA_LIFT_DEFAULT_IDENTITY_TYPE_IDENTIFIER', 'account');
+define('ACQUIA_LIFT_ENGAGEMENT_SCORE_DEFAULT', 1);
+define('ACQUIA_LIFT_GLOBAL_VALUE_DEFAULT', 1);
+define('ACQUIA_LIFT_ADMIN_SEPARATOR', '__');
+
+/**
+ * Implements hook_menu().
+ */
+function acquia_lift_menu() {
+  $items = array();
+  $items['admin/config/services/acquia_lift'] = array(
+    'type' => MENU_NORMAL_ITEM,
+    'title' => 'Acquia Lift',
+    'description' => 'Configuration settings for the Acquia Lift integration module.',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('acquia_lift_admin_form'),
+    'access arguments' => array('administer acquia_lift configuration'),
+    'file' => 'acquia_lift.admin.inc'
+  );
+  return $items;
+}
+
+/**
+ * Implements hook_permission().
+ */
+function acquia_lift_permission() {
+  $permissions = array(
+    'administer acquia_lift configuration' => array(
+      'title' => t('Administer acquia_lift settings'),
+      'description' => t('Administer configuration settings for Acquia Lift.'),
+    ),
+  );
+  return $permissions;
+}
+
+/**
+ * Implements hook_help().
+ */
+function acquia_lift_help($path, $arg) {
+  switch ($path) {
+    case 'admin/help#acquia_lift':
+      $output = '<h3>' . t('About') . '</h3>';
+      $output .= '<p>' . t('The Acquia Lift module provides machine-learning-based personalization for Drupal sites.') . '</p>';
+      $output .= '<h3>' . t('Configuration') . '</h3>';
+      $output .= '<p>' . t('Go to the !configlink to configure your Acquia Lift credentials.', array('!configlink' => l(t('configuration settings page'), 'admin/config/services/acquia_lift'))) . '</p>';
+      $output .= '<p>' . t('You can find more info in <a href="@lift-documentation" target="_blank">Documentation</a>.', array(
+          '@lift-documentation' => 'https://docs.acquia.com/lift'
+        ));
+      return $output;
+  }
+}
+
+/**
+ * Returns whether or not Acquia Lift has been configured.
+ *
+ * @return bool
+ *   TRUE if all relevant configuration settings have been set, FALSE
+ *   otherwise.
+ */
+function acquia_lift_is_configured() {
+  foreach (array('acquia_lift_account_id','acquia_lift_site_id', 'acquia_lift_assets_url') as $api_config) {
+    $val = variable_get($api_config, '');
+    if (empty($val)) {
+      return FALSE;
+    }
+  }
+  return TRUE;
+}
+
+/**
+ * Implements hook_page_build().
+ */
+function acquia_lift_page_build(&$page) {
+  // Bail if Acquia Lift has not yet been configured.
+  if (!acquia_lift_is_configured()) {
+    return;
+  }
+
+  // Bail if the path is a path to ignore
+  $current_path = '/' . current_path();
+  $alias_path = drupal_lookup_path('alias', current_path());
+  $alias_path = $alias_path == FALSE ? $current_path : '/' . $alias_path;
+  $patterns = variable_get('acquia_lift_ignore_path_patterns', '');
+  if (drupal_match_path($current_path, $patterns) || drupal_match_path($alias_path, $patterns)) {
+    return;
+  }
+
+  $assets_url = variable_get('acquia_lift_assets_url');
+  $decision_api_url = variable_get('acquia_lift_decision_api_url', '');
+  $oauth_url = variable_get('acquia_lift_oauth_url', '');
+
+  // Add the credentials and configuration for the Lift Experience Builder.
+  _acquia_lift_add_meta_tag('account_id', variable_get('acquia_lift_account_id'));
+  _acquia_lift_add_meta_tag('site_id', variable_get('acquia_lift_site_id'));
+  _acquia_lift_add_meta_tag('liftAssetsUrl', $assets_url);
+  if (!empty($decision_api_url)) {
+    _acquia_lift_add_meta_tag('liftDecisionAPIURL', variable_get('acquia_lift_decision_api_url'));
+  }
+  if (!empty($oauth_url)) {
+    _acquia_lift_add_meta_tag('authEndpoint', variable_get('acquia_lift_oauth_url'));
+  }
+  _acquia_lift_add_meta_tag('contentReplacementMode', variable_get('acquia_lift_content_replacement_mode', 'untrusted'));
+
+  // If there are querystring parameters present corresponding to the configured
+  // identity params, we add the identity and identity type to the meta tags.
+  $identity_param = variable_get('acquia_lift_identity_param', '');
+  $identity_type_param = variable_get('acquia_lift_identity_type_param', '');
+  if (!empty($identity_param)) {
+    $all_params = drupal_get_query_parameters();
+    if (isset($all_params[$identity_param])) {
+      // Set the identity type to the default either as specified by the user or
+      // as the application default.
+      $identity_type = variable_get('acquia_lift_default_identity_type') ?: ACQUIA_LIFT_DEFAULT_IDENTITY_TYPE_DEFAULT;
+      if (!empty($identity_type_param) && isset($all_params[$identity_type_param])) {
+        // If an explicit identity type was passed in the query parameters then
+        //use that instead.
+        $identity_type = check_plain($all_params[$identity_type_param]);
+      }
+      $identity_value = check_plain($all_params[$identity_param]);
+      _acquia_lift_add_meta_tag('identity:' . $identity_type, $identity_value);
+    }
+  }
+
+  $page_context = acquia_lift_get_page_context();
+  foreach ($page_context as $name => $value) {
+    _acquia_lift_add_meta_tag($name, is_array($value) ? implode(',', $value) : $value);
+  }
+
+  // Add the lift js bootstrap loader
+  $js_file = $assets_url . '/lift.js';
+  $attached['js'] = array(
+    'type' => 'file',
+    'file' => $js_file,
+    'weight' => JS_DEFAULT - 10,
+  );
+  $page['page_top']['acquia_lift'] = array(
+    '#attached' => $attached
+  );
+}
+
+/**
+ * Implements hook_node_view().
+ */
+function acquia_lift_node_view($node, $view_mode, $langcode) {
+  acquia_lift_get_page_context($node, $view_mode == 'full');
+}
+
+/**
+ * Implements hook_ctools_render_alter().
+ *
+ * This provides support for panelizer nodes, which don't fire hook_view_alter.
+ */
+function acquia_lift_ctools_render_alter(&$info, &$page, &$context) {
+  $task = $context['task'];
+  if ($page && $task['module'] == 'page_manager' && $task['name'] == 'node_view' && !empty($context['args'])) {
+    $nid = $context['args'][0];
+    if (isset($context['contexts']['argument_entity_id:node_1']) && $context['contexts']['argument_entity_id:node_1']->argument == $nid) {
+      $node = $context['contexts']['argument_entity_id:node_1']->data;
+      acquia_lift_get_page_context($node, TRUE);
+    }
+  }
+}
+
+/**
+ * Gets the page context data.
+ *
+ * @return
+ *   An array of page context data.
+ */
+function acquia_lift_get_page_context($node = NULL, $primary = FALSE) {
+  // Add any page context
+  module_load_include('inc', 'acquia_lift', 'acquia_lift.context');
+  $page_context = _acquia_lift_get_page_context($node, $primary);
+
+  if (!isset($page_context['content_title']) && is_null($node)) {
+    $page_context['content_title'] = drupal_get_title();
+  }
+
+  // Allow other modules to alter the page context to include additional data.
+  drupal_alter('acquia_lift_page_context', $page_context);
+  return $page_context;
+}
+
+/**
+ * Helper function to return a list of udf types.
+ *
+ * @return array
+ *   An array of UDF types defined in Acquia Lift Profile Manager with keys
+ *   as the type name and values as the number allowed.
+ */
+function acquia_lift_get_udf_types() {
+  return array(
+    'person' => 50,
+    'touch' => 20,
+    'event' => 20,
+  );
+}
+
+/**
+ * Returns the list of UDFs that can be mapped to.
+ *
+ * @param string $type
+ *   The type of udf to generate, one of: touch, person, event
+ *
+ * @return array
+ *   An array of UDFs defined in Acquia Lift Profile Manager.
+ */
+function acquia_lift_get_udfs($type) {
+  $counts = acquia_lift_get_udf_types();
+  if (!array_key_exists($type, $counts)) {
+    return array();
+  }
+  $count = $counts[$type];
+
+  for ($i = 1; $i <= $count; $i++) {
+    $udfs[] = $type . '_udf' . $i;
+  }
+  return $udfs;
+}
+
+function acquia_lift_get_grouped_context_options() {
+  module_load_include('inc', 'acquia_lift', 'acquia_lift.context');
+  $context_options = _acquia_lift_get_context_options();
+  foreach ($context_options as $context_type => $options) {
+    foreach ($options as $code => $info) {
+      $option_name = $context_type . ACQUIA_LIFT_ADMIN_SEPARATOR . $code;
+      if (isset($info['group'])) {
+        $group = $info['group'];
+        if (!isset($groups[$group])) {
+          $groups[$group] = array();
+        }
+        $groups[$group][$option_name] = $info['name'];
+      }
+      else {
+        $groups['Miscellaneous'][$option_name] = $info['name'];
+      }
+    }
+  }
+  return $groups;
+}
+
+function _acquia_lift_add_meta_tag($name, $value) {
+  $tag = array(
+    '#type' => 'html_tag',
+    '#tag' => 'meta',
+    '#attributes' => array(
+      'content' =>  $value,
+      'itemprop' => 'acquia_lift:' . $name,
+    )
+  );
+  drupal_add_html_head($tag, 'acquia_lift_' . $name);
+}
+

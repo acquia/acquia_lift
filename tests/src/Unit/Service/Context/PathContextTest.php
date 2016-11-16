@@ -156,19 +156,19 @@ class PathContextTest extends UnitTestCase {
   }
 
   /**
-   * Tests the getIdentity() method.
+   * Tests the populateHtmlHead() method.
    *
-   * @covers ::setIdentityByUser
-   * @covers ::getIdentity
+   * @covers ::setContextIdentityByUser
+   * @covers ::populateHtmlHead
    *
    * @param string $query_parameter_string
    * @param boolean $capture_identity
    * @param boolean $do_set_user
-   * @param array $expect_identity
+   * @param array $expect_html_head
    *
-   * @dataProvider providerTestGetIdentity
+   * @dataProvider providerTestPopulateHtmlHead
    */
-  public function testGetIdentity($query_parameter_string, $capture_identity, $do_set_user, $expect_identity) {
+  public function testPopulateHtmlHead($query_parameter_string, $capture_identity, $do_set_user, $expect_html_head) {
     $this->requestStack->expects($this->once())
       ->method('getCurrentRequest')
       ->willReturn($this->request);
@@ -196,18 +196,19 @@ class PathContextTest extends UnitTestCase {
       $user->expects($this->exactly((int) $capture_identity))
         ->method('getEmail')
         ->willReturn('a_user_email');
-      $path_context->setIdentityByUser($user);
+      $path_context->setContextIdentityByUser($user);
     }
 
-    $identity = $path_context->getIdentity();
+    $html_head = [];
+    $path_context->populateHtmlHead($html_head);
 
-    $this->assertEquals($expect_identity, $identity);
+    $this->assertEquals($expect_html_head, $html_head);
   }
 
   /**
-   * Data provider for testGetIdentity().
+   * Data provider for testPopulateHtmlHead().
    */
-  public function providerTestGetIdentity() {
+  public function providerTestPopulateHtmlHead() {
     $no_query_parameter_string = '';
     $full_query_parameter_string = 'my_identity_parameter=query_identity&my_identity_type_parameter=query_identity_type&other=other';
     $partial_query_parameter_string = 'my_identity_parameter=query_identity&other=other';
@@ -215,31 +216,54 @@ class PathContextTest extends UnitTestCase {
     $do_capture_identity = TRUE;
     $no_set_user = FALSE;
     $do_set_user = TRUE;
-    $expect_identity_empty = NULL;
-    $expect_identity_of_full_query_string = [
-      'identity' => 'query_identity',
-      'identityType' => 'query_identity_type',
-    ];
-    $expect_identity_of_partial_query_string = [
-      'identity' => 'query_identity',
-      'identityType' => 'my_default_identity_type',
-    ];
-    $expect_identity_of_user = [
-      'identity' => 'a_user_email',
-      'identityType' => 'email',
-    ];
+    $expect_html_head_empty = [];
+    $expect_identity_of_full_query_string = [[
+      [
+        '#type' => 'html_tag',
+        '#tag' => 'meta',
+        '#attributes' => [
+          'itemprop' => 'acquia_lift:identity:query_identity_type',
+          'content' => 'query_identity',
+        ],
+      ],
+      'identity:query_identity_type',
+    ]];
+    $expect_identity_of_partial_query_string = [[
+      [
+        '#type' => 'html_tag',
+        '#tag' => 'meta',
+        '#attributes' => [
+          'itemprop' => 'acquia_lift:identity:my_default_identity_type',
+          'content' => 'query_identity',
+        ],
+      ],
+      'identity:my_default_identity_type',
+    ]];
+    $expect_identity_of_user = [[
+      [
+        '#type' => 'html_tag',
+        '#tag' => 'meta',
+        '#attributes' => [
+          'itemprop' => 'acquia_lift:identity:email',
+          'content' => 'a_user_email',
+        ],
+      ],
+      'identity:email',
+    ]];
+
+    $expect_identity_of_full_query_string_and_user = array_merge($expect_identity_of_full_query_string, $expect_identity_of_user);
 
     $data['no query, no capture, no user'] = [
       $no_query_parameter_string,
       $no_capture_identity,
       $no_set_user,
-      $expect_identity_empty,
+      $expect_html_head_empty,
     ];
     $data['no query, no capture, yes user'] = [
       $no_query_parameter_string,
       $no_capture_identity,
       $do_set_user,
-      $expect_identity_empty,
+      $expect_html_head_empty,
     ];
     $data['no query, do capture, yes user'] = [
       $no_query_parameter_string,
@@ -269,7 +293,7 @@ class PathContextTest extends UnitTestCase {
       $full_query_parameter_string,
       $do_capture_identity,
       $do_set_user,
-      $expect_identity_of_user,
+      $expect_identity_of_full_query_string_and_user,
     ];
 
     return $data;

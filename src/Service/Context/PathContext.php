@@ -11,7 +11,8 @@ use Drupal\user\UserInterface;
 use Drupal\acquia_lift\Service\Helper\PathMatcher;
 use Drupal\acquia_lift\Service\Helper\SettingsHelper;
 
-class PathContext {
+class PathContext extends BaseContext {
+
   /**
    * Acquia Lift credential settings.
    *
@@ -48,13 +49,6 @@ class PathContext {
   private $pathMatcher;
 
   /**
-   * Identity.
-   *
-   * @var array
-   */
-  private $identity;
-
-  /**
    * Constructor.
    *
    * @param \Drupal\Core\Config\ConfigFactoryInterface $config_factory
@@ -78,7 +72,7 @@ class PathContext {
     $this->currentPath = $current_path_stack->getPath();
     $this->pathMatcher = $pathMatcher;
 
-    $this->setIdentityByRequest($request_stack);
+    $this->setContextIdentityByRequest($request_stack);
   }
 
   /**
@@ -103,12 +97,12 @@ class PathContext {
   }
 
   /**
-   * Set Identity by request stack's query parameters.
+   * Set Path Context Identity by request stack's query parameters.
    *
    * @param \Symfony\Component\HttpFoundation\RequestStack $request_stack
    *   The request stack.
    */
-  private function setIdentityByRequest($request_stack) {
+  private function setContextIdentityByRequest($request_stack) {
     // Stop, if there is no "identity parameter".
     if (empty($this->identitySettings['identity_parameter'])) {
       return;
@@ -134,44 +128,36 @@ class PathContext {
       $identityType = $queries[$identity_type_parameter];
     }
 
-    $this->setIdentity($identity, $identityType);
+    $this->setContextIdentity($identity, $identityType);
   }
 
   /**
-   * Set Identity by User.
+   * Set Context Identity by User.
    *
    * @param \Drupal\user\UserInterface $user
    *   User.
    */
-  public function setIdentityByUser(UserInterface $user) {
+  public function setContextIdentityByUser(UserInterface $user) {
     if (empty($this->identitySettings['capture_identity'])) {
       return;
     }
 
-    $this->setIdentity($user->getEmail(), 'email');
+    $this->setContextIdentity($user->getEmail(), 'email');
   }
 
   /**
-   * Set Identity.
+   * Set Context Identity.
    *
    * @param string $identity
    *   Identity.
    * @param string $identityType
    *   Identity type.
    */
-  private function setIdentity($identity, $identityType) {
+  private function setContextIdentity($identity, $identityType) {
     // Sanitize string and output.
-    $this->identity['identity'] = Html::escape($identity);
-    $this->identity['identityType'] = Html::escape($identityType);
+    $sanitized_identity = Html::escape($identity);
+    $sanitized_identity_type = Html::escape($identityType);
+    $this->context['identity:' . $sanitized_identity_type] = $sanitized_identity;
   }
 
-  /**
-   * Get identity.
-   *
-   * @return array|NULL
-   *   Identity.
-   */
-  public function getIdentity() {
-    return $this->identity;
-  }
 }

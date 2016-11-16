@@ -13,7 +13,8 @@ use Drupal\image\Entity\ImageStyle;
 use Drupal\node\NodeInterface;
 use Drupal\acquia_lift\Service\Helper\SettingsHelper;
 
-class PageContext {
+class PageContext extends BaseContext {
+
   /**
    * Engagement score's default value.
    */
@@ -64,7 +65,7 @@ class PageContext {
    *
    * @var array
    */
-  private $pageContext = [
+  protected $context = [
     'content_title' => 'Untitled',
     'content_type' => 'page',
     'page_type' => 'content page',
@@ -119,7 +120,7 @@ class PageContext {
     // Set Credential information.
     $credential_settings = $settings->get('credential');
     $this->assetsUrl = $credential_settings['assets_url'];
-    $this->setPageContextCredential($credential_settings);
+    $this->setContextCredential($credential_settings);
 
     // Set mapping information.
     $this->fieldMappings = $settings->get('field_mappings');
@@ -128,7 +129,7 @@ class PageContext {
     $this->udfTouchMappings = $settings->get('udf_event_mappings') ?: [];
 
     // Set advanced configuration.
-    $this->setPageContextAdvancedConfiguration($settings->get('advanced'));
+    $this->setContextAdvancedConfiguration($settings->get('advanced'));
 
     // Set taxonomyTermStorage.
     $this->taxonomyTermStorage = $entity_type_manager->getStorage('taxonomy_term');
@@ -136,8 +137,8 @@ class PageContext {
     // Set page context
     $request = $request_stack->getCurrentRequest();
     $route = $route_match->getRouteObject();
-    $this->setPageContextByNode($request);
-    $this->setPageContextTitle($request, $route, $title_resolver);
+    $this->setContextByNode($request);
+    $this->setContextTitle($request, $route, $title_resolver);
   }
 
   /**
@@ -146,7 +147,7 @@ class PageContext {
    * @param \Symfony\Component\HttpFoundation\Request $request
    *   The request object.
    */
-  private function setPageContextByNode(Request $request) {
+  private function setContextByNode(Request $request) {
     // If not a request to node, do nothing.
     if (!$request->attributes->has('node')) {
       return;
@@ -172,7 +173,7 @@ class PageContext {
    * @param \Drupal\Core\Controller\TitleResolverInterface $titleResolver
    *   The title resolver.
    */
-  private function setPageContextTitle(Request $request, Route $route, TitleResolverInterface $titleResolver) {
+  private function setContextTitle(Request $request, Route $route, TitleResolverInterface $titleResolver) {
     // Find title.
     $title = $titleResolver->getTitle($request, $route);
 
@@ -187,7 +188,7 @@ class PageContext {
       return;
     }
     // Otherwise set title.
-    $this->pageContext['content_title'] = $title;
+    $this->context['content_title'] = $title;
   }
 
   /**
@@ -196,10 +197,10 @@ class PageContext {
    * @param array $credential_settings
    *   Credential settings array.
    */
-  private function setPageContextCredential($credential_settings) {
+  private function setContextCredential($credential_settings) {
     foreach (SELF::$CREDENTIAL_MAPPING as $credential_key => $tag_name) {
       if (isset($credential_settings[$credential_key])) {
-        $this->pageContext[$tag_name] = $credential_settings[$credential_key];
+        $this->context[$tag_name] = $credential_settings[$credential_key];
       }
     };
   }
@@ -210,10 +211,10 @@ class PageContext {
    * @param $settings \Drupal\Core\Config\ImmutableConfig
    *   The lift settings values.
    */
-  private function setPageContextAdvancedConfiguration($advanced_settings) {
+  private function setContextAdvancedConfiguration($advanced_settings) {
     $replacement_mode = $advanced_settings['content_replacement_mode'];
     if (SettingsHelper::isValidContentReplacementMode($replacement_mode)) {
-      $this->pageContext['contentReplacementMode'] = $replacement_mode;
+      $this->context['contentReplacementMode'] = $replacement_mode;
     }
   }
 
@@ -224,12 +225,12 @@ class PageContext {
    *   Node.
    */
   private function setNodeData(NodeInterface $node) {
-    $this->pageContext['content_type'] = $node->getType();
-    $this->pageContext['content_title'] = $node->getTitle();
-    $this->pageContext['published_date'] = $node->getCreatedTime();
-    $this->pageContext['post_id'] = $node->id();
-    $this->pageContext['author'] = $node->getOwner()->getUsername();
-    $this->pageContext['page_type'] = 'node page';
+    $this->context['content_type'] = $node->getType();
+    $this->context['content_title'] = $node->getTitle();
+    $this->context['published_date'] = $node->getCreatedTime();
+    $this->context['post_id'] = $node->id();
+    $this->context['author'] = $node->getOwner()->getUsername();
+    $this->context['page_type'] = 'node page';
   }
 
   /**
@@ -248,7 +249,7 @@ class PageContext {
       // Only set when the value is a populated array
       // Empty arrays return as false in PHP.
       if (!empty($field_term_names)) {
-        $this->pageContext[$page_context_name] = implode(',', $field_term_names);
+        $this->context[$page_context_name] = implode(',', $field_term_names);
       }
     }
   }
@@ -347,27 +348,6 @@ class PageContext {
   }
 
   /**
-   * Get the render array for a single meta tag.
-   *
-   * @param string $name
-   *   The name for the meta tag
-   * @param string $content
-   *   The content for the meta tag
-   * @return array
-   *   The render array
-   */
-  private function getMetaTagRenderArray($name, $content) {
-    return [
-      '#type' => 'html_tag',
-      '#tag' => 'meta',
-      '#attributes' => [
-        'itemprop' => 'acquia_lift:' . $name,
-        'content' => $content,
-      ],
-    ];
-  }
-
-  /**
    * Get the render array for a JavaScript tag.
    *
    * @return array
@@ -386,21 +366,13 @@ class PageContext {
   }
 
   /**
-   * Populate page's HTML head.
-   *
-   * @param &$htmlHead
-   *   The HTML head that is to be populated.
+   * {@inheritdoc}
    */
   public function populateHtmlHead(&$htmlHead) {
-    // Attach Lift's metatags.
-    foreach ($this->pageContext as $name => $content) {
-      $renderArray = $this->getMetaTagRenderArray($name, $content);
-      // To generate meta tags within HTML head, Drupal requires this precise
-      // format of render array.
-      $htmlHead[] = [$renderArray, $name];
-    }
+    parent::populateHtmlHead($htmlHead);
 
     // Attach Lift's JavaScript.
     $htmlHead[] = $this->getJavaScriptTagRenderArray();
   }
+
 }

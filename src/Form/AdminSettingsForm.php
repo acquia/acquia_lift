@@ -219,6 +219,11 @@ class AdminSettingsForm extends ConfigFormBase {
       ]),
       '#default_value' => $identity_settings['default_identity_type'],
       '#placeholder' => SettingsHelper::DEFAULT_IDENTITY_TYPE_DEFAULT,
+      '#states' => [
+        'visible' => [
+          ':input[name="identity[identity_parameter]"]' => ['!value' => ''],
+        ],
+      ],
     ];
 
     return $form;

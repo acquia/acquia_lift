@@ -78,7 +78,6 @@ class AdminSettingsForm extends ConfigFormBase {
     $form['udf_touch_mappings'] = $this->buildUdfMappingsForm('touch');
     $form['udf_event_mappings'] = $this->buildUdfMappingsForm('event');
     $form['visibility'] = $this->buildVisibilityForm();
-    $form['thumbnail_url'] = $this->buildThumbnailUrlForm();
     $form['advanced_configuration'] = $this->buildAdvancedConfigurationForm();
 
     return parent::buildForm($form, $form_state);
@@ -356,42 +355,6 @@ class AdminSettingsForm extends ConfigFormBase {
       '#title' => t('Path patterns'),
       '#default_value' => $visibility_settings['path_patterns'],
     ];
-
-    return $form;
-  }
-
-  /**
-   * Display thumbnail URL form.
-   *
-   * @return array
-   *   Thumbnail URL form.
-   */
-  private function buildThumbnailUrlForm() {
-    $form = [
-      '#title' => t('Thumbnail URL'),
-      '#type' => 'details',
-      '#tree' => TRUE,
-      '#group' => 'data_collection_settings',
-    ];
-    $form['link_list'] = [
-      '#type' => 'markup',
-      '#markup' => '<div>' . t('There are no content types. Please create a content type first.') . '</div>',
-    ];
-
-    $node_types = NodeType::loadMultiple();
-    if (empty($node_types)) {
-      return $form;
-    }
-
-    $links = [];
-    $link_attributes = ['attributes' => ['target' => '_blank'], 'fragment' => 'edit-acquia-lift'];
-    /** @var \Drupal\Core\Entity\EntityInterface[] $node_types */
-    foreach ($node_types as $node_type) {
-      $url = Url::fromRoute('entity.node_type.edit_form', ['node_type' => $node_type->id()], $link_attributes);
-      $links[] = '<p>' . Link::fromTextAndUrl($node_type->label(), $url)->toString() . '</p>';
-    }
-    $form['link_list']['#markup'] = t('Configure thumbnail URLs on each content type\'s edit page (in a new window).');
-    $form['link_list']['#markup'] .= implode('', $links);
 
     return $form;
   }

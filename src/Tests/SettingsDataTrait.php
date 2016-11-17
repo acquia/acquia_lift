@@ -20,7 +20,6 @@ trait SettingsDataTrait {
     $settings->set('udf_person_mappings', $this->getValidUdfPersonMappingsSettings());
     $settings->set('udf_event_mappings', $this->getValidUdfEventMappingsSettings());
     $settings->set('udf_touch_mappings', $this->getValidUdfTouchMappingsSettings());
-    $settings->set('thumbnail', $this->getValidThumbnailSettings());
     $settings->set('visibility', $this->getValidVisibilitySettings());
     $settings->save();
   }
@@ -171,21 +170,6 @@ trait SettingsDataTrait {
     return [
       'event_udf1' => 'field_country',
       'event_udf2' => 'field_tags'
-    ];
-  }
-
-  /**
-   * Get a valid thumbnail settings array.
-   *
-   * @return array
-   *   A valid thumbnail settings array.
-   */
-  private function getValidThumbnailSettings() {
-    return [
-      'article' => [
-        'field' => 'field_media->field_image',
-        'style' => 'medium',
-      ],
     ];
   }
 

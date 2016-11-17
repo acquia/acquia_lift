@@ -35,23 +35,3 @@ function acquia_lift_page_attachments(array &$page) {
   // Attach lift CSS to all pages.
   $page['#attached']['library'][] = 'acquia_lift/acquia-lift';
 }
-
-/**
- * Implements hook_form_FORM_ID_alter().
- */
-function acquia_lift_form_node_type_form_alter(array &$form, FormStateInterface &$form_state) {
-  $node_type = $form_state->getFormObject()->getEntity()->id();
-  $form['acquia_lift'] = \Drupal::service('acquia_lift.service.helper.node_type_thumbnail_form_helper')->getForm($node_type);
-  $form['actions']['submit']['#submit'][] = 'acquia_lift_form_node_type_form_submit';
-}
-
-/**
- * Submit handler for the node type form with acquia lift options.
- *
- * @see acquia_lift_form_node_type_form_alter()
- */
-function acquia_lift_form_node_type_form_submit(array $form, FormStateInterface &$form_state) {
-  $node_type = $form_state->getFormObject()->getEntity()->id();
-  $settings = $form_state->getValue('acquia_lift');
-  \Drupal::service('acquia_lift.service.helper.node_type_thumbnail_form_helper')->saveSettings($node_type, $settings);
-}

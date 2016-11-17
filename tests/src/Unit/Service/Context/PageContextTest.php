@@ -134,10 +134,6 @@ class PageContextTest extends UnitTestCase {
 
     $this->settings->expects($this->at(5))
       ->method('get')
-      ->with('thumbnail')
-      ->willReturn($this->getValidThumbnailSettings());
-    $this->settings->expects($this->at(6))
-      ->method('get')
       ->with('advanced')
       ->willReturn($this->getValidAdvancedConfigurationSettings());
     $this->entityTypeManager->expects($this->once())
@@ -176,7 +172,6 @@ class PageContextTest extends UnitTestCase {
       'content_keywords' => '',
       'post_id' => '',
       'published_date' => '',
-      'thumbnail_url' => '',
       'persona' => '',
       'engagement_score' => PageContext::ENGAGEMENT_SCORE_DEFAULT,
       'author' => '',
@@ -219,7 +214,6 @@ class PageContextTest extends UnitTestCase {
       'content_keywords' => '',
       'post_id' => '90210',
       'published_date' => 'a_published_time',
-      'thumbnail_url' => '',
       'persona' => '',
       'engagement_score' => PageContext::ENGAGEMENT_SCORE_DEFAULT,
       'author' => 'a_username',
@@ -266,7 +260,6 @@ class PageContextTest extends UnitTestCase {
       'content_keywords' => '',
       'post_id' => '90210',
       'published_date' => 'a_published_time',
-      'thumbnail_url' => '',
       'persona' => '',
       'engagement_score' => PageContext::ENGAGEMENT_SCORE_DEFAULT,
       'author' => 'a_username',
@@ -316,52 +309,6 @@ class PageContextTest extends UnitTestCase {
       'content_keywords' => '',
       'post_id' => '90210',
       'published_date' => 'a_published_time',
-      'thumbnail_url' => '',
-      'persona' => '',
-      'engagement_score' => PageContext::ENGAGEMENT_SCORE_DEFAULT,
-      'author' => 'a_username',
-      'account_id' => 'AccountId1',
-      'site_id' => 'SiteId1',
-      'contentOrigin' => 'content_origin_1',
-      'liftAssetsURL' => 'AssetsUrl1',
-      'liftDecisionAPIURL' => 'decision_api_url_1',
-      'authEndpoint' => 'oauth_url_1',
-      'contentReplacementMode' => 'trusted',
-    ], 'AssetsUrl1');
-
-    $this->assertEquals($expected_head, $head);
-  }
-
-  /**
-   * Tests the populateHtmlHead() method, with a Node and a thumbnail URL.
-   *
-   * @covers ::populateHtmlHead
-   */
-  public function testPopulateHtmlHeadWithNodeAndThumbnailUrl() {
-    $node = $this->getNode();
-    $this->requestParameterBag->expects($this->once())
-      ->method('has')
-      ->with('node')
-      ->willReturn(TRUE);
-    $this->requestParameterBag->expects($this->once())
-      ->method('get')
-      ->with('node')
-      ->willReturn($node);
-    $this->populateHtmlHeadWithNodeAndThumbnailUrlSetUpThumbnailUrl($node);
-
-    $page_context = new PageContext($this->configFactory, $this->entityTypeManager, $this->requestStack, $this->routeMatch, $this->titleResolver);
-    $head = ['old_head'];
-    $page_context->populateHtmlHead($head);
-
-    $expected_head = $this->toRenderArray([
-      'content_title' => 'My Title',
-      'content_type' => 'article',
-      'page_type' => 'node page',
-      'content_section' => '',
-      'content_keywords' => '',
-      'post_id' => '90210',
-      'published_date' => 'a_published_time',
-      'thumbnail_url' => 'file_create_url:a_style_decorated_file_uri',
       'persona' => '',
       'engagement_score' => PageContext::ENGAGEMENT_SCORE_DEFAULT,
       'author' => 'a_username',
@@ -405,7 +352,6 @@ class PageContextTest extends UnitTestCase {
       'content_keywords' => 'Tracked Keyword Term Name 1,Tracked Keyword Term Name 2',
       'post_id' => '90210',
       'published_date' => 'a_published_time',
-      'thumbnail_url' => '',
       'persona' => '',
       'engagement_score' => PageContext::ENGAGEMENT_SCORE_DEFAULT,
       'author' => 'a_username',
@@ -467,7 +413,7 @@ class PageContextTest extends UnitTestCase {
       ],
     ];
 
-    $node->expects($this->exactly(2))
+    $node->expects($this->once())
       ->method('getType')
       ->willReturn('article');
     $node->expects($this->once())
@@ -511,62 +457,6 @@ class PageContextTest extends UnitTestCase {
       ->method('getUsername')
       ->willReturn($username);
     return $user;
-  }
-
-  /**
-   * testPopulateHtmlHeadWithNodeAndThumbnailUrl(), sub routine "set up thumbnail".
-   *
-   * @param $node Node
-   */
-  private function populateHtmlHeadWithNodeAndThumbnailUrlSetUpThumbnailUrl($node) {
-    $field_media = $this->getMockBuilder('Drupal\Core\Entity\ContentEntityInterface')
-      ->disableOriginalConstructor()
-      ->getMock();
-    $field_image = $this->getMockBuilder('Drupal\Core\Entity\ContentEntityInterface')
-      ->disableOriginalConstructor()
-      ->getMock();
-    $media_entity = $this->getMock('Drupal\Core\Entity\EntityInterface');
-    $image_entity = $this->getMock('Drupal\file\FileInterface');
-
-    $node->field_media = $field_media;
-    $node->field_media->entity = $media_entity;
-    $node->field_media->entity->field_image = $field_image;
-    $node->field_media->entity->field_image->entity = $image_entity;
-
-    $entity_manager = $this->getMock('Drupal\Core\Entity\EntityManagerInterface');
-    $entity_storage = $this->getMock('Drupal\Core\Entity\EntityStorageInterface');
-    $container = $this->getMock('Drupal\Core\DependencyInjection\Container');
-    $image_style = $this->getMockBuilder('Drupal\image\Entity\ImageStyle')
-      ->disableOriginalConstructor()
-      ->getMock();
-
-    \Drupal::setContainer($container);
-    $container->expects($this->any())
-      ->method('get')
-      ->with('entity.manager')
-      ->willReturn($entity_manager);
-    $entity_manager->expects($this->once())
-      ->method('getEntityTypeFromClass')
-      ->with('Drupal\image\Entity\ImageStyle')
-      ->willReturn($image_entity);
-    $image_entity->expects($this->once())
-      ->method('bundle')
-      ->willReturn('file');
-    $image_entity->expects($this->once())
-      ->method('getFileUri')
-      ->willReturn('a_file_uri');
-    $entity_manager->expects($this->once())
-      ->method('getStorage')
-      ->with($image_entity)
-      ->willReturn($entity_storage);
-    $entity_storage->expects($this->once())
-      ->method('load')
-      ->with('medium')
-      ->willReturn($image_style);
-    $image_style->expects($this->once())
-      ->method('buildUrl')
-      ->with('a_file_uri')
-      ->willReturn('a_style_decorated_file_uri');
   }
 
   /**

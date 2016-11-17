@@ -53,13 +53,6 @@ class PageContext {
   private $udfTouchMappings;
 
   /**
-   * Thumbnail config.
-   *
-   * @var array
-   */
-  private $thumbnailConfig;
-
-  /**
    * Taxonomy term storage.
    *
    * @var \Drupal\taxonomy\TermStorageInterface
@@ -79,7 +72,6 @@ class PageContext {
     'content_keywords' => '',
     'post_id' => '',
     'published_date' => '',
-    'thumbnail_url' => '',
     'persona' => '',
     'engagement_score' => SELF::ENGAGEMENT_SCORE_DEFAULT,
     'author' => '',
@@ -135,9 +127,6 @@ class PageContext {
     $this->udfEventMappings = $settings->get('udf_touch_mappings') ?: [];
     $this->udfTouchMappings = $settings->get('udf_event_mappings') ?: [];
 
-    // Set thumbnail configuration.
-    $this->thumbnailConfig = $settings->get('thumbnail');
-
     // Set advanced configuration.
     $this->setPageContextAdvancedConfiguration($settings->get('advanced'));
 
@@ -170,7 +159,6 @@ class PageContext {
 
     // Otherwise, set page context by node.
     $this->setNodeData($node);
-    $this->setThumbnailUrl($node);
     $this->setFields($node);
   }
 
@@ -242,50 +230,6 @@ class PageContext {
     $this->pageContext['post_id'] = $node->id();
     $this->pageContext['author'] = $node->getOwner()->getUsername();
     $this->pageContext['page_type'] = 'node page';
-  }
-
-  /**
-   * Set thumbnail URL.
-   *
-   * @param \Drupal\node\NodeInterface $node
-   *   Node.
-   */
-  private function setThumbnailUrl(NodeInterface $node) {
-    $node_type = $node->getType();
-
-    // Don't set, if no thumbnail has been configured.
-    if (!isset($this->thumbnailConfig[$node_type])) {
-      return;
-    }
-    $node_type_thumbnail_config = $this->thumbnailConfig[$node_type];
-    $thumbnail_config_array = explode('->', $node_type_thumbnail_config['field']);
-
-    $entity = $node;
-    foreach ($thumbnail_config_array as $field_key) {
-      // Don't set, if node has no such field or field has no such entity.
-      if (empty($entity->{$field_key}->entity) ||
-        method_exists($entity->{$field_key}, 'isEmpty') && $entity->{$field_key}->isEmpty()
-      ) {
-        return;
-      }
-      $entity = $entity->{$field_key}->entity;
-    }
-
-    if ($entity->bundle() !== 'file') {
-      return;
-    }
-    $fileUri = $entity->getFileUri();
-
-    // Process Image style.
-    $image_style = ImageStyle::load($node_type_thumbnail_config['style']);
-    // Return empty if no such image style.
-    if (empty($image_style)) {
-      return;
-    }
-
-    // Generate image URL.
-    $thumbnail_uri = $image_style->buildUrl($fileUri);
-    $this->pageContext['thumbnail_url'] = file_create_url($thumbnail_uri);
   }
 
   /**

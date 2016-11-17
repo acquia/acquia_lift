@@ -62,10 +62,15 @@ abstract class BaseContext implements ContextInterface {
    *   The page that is to be populated.
    */
   protected function populateCache(&$page) {
+    // Set cache contexts.
     foreach ($this->cacheContexts as $context) {
       $page['#cache']['contexts'][] = $context;
     }
-    $page['#cache']['contexts'] = array_unique($page['#cache']['contexts']);
+
+    // Guard from a possible case that cache contexts contain duplicate items.
+    if (isset($page['#cache']['contexts'])) {
+      $page['#cache']['contexts'] = array_unique($page['#cache']['contexts']);
+    }
   }
 
   /**

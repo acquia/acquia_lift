@@ -65,6 +65,7 @@ abstract class BaseContext implements ContextInterface {
     foreach ($this->cacheContexts as $context) {
       $page['#cache']['contexts'][] = $context;
     }
+    $page['#cache']['contexts'] = array_unique($page['#cache']['contexts']);
   }
 
   /**

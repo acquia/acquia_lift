@@ -65,7 +65,7 @@ class PageContext extends BaseContext {
    *
    * @var array
    */
-  protected $context = [
+  protected $htmlHeadContexts = [
     'content_title' => 'Untitled',
     'content_type' => 'page',
     'page_type' => 'content page',
@@ -188,7 +188,7 @@ class PageContext extends BaseContext {
       return;
     }
     // Otherwise set title.
-    $this->context['content_title'] = $title;
+    $this->htmlHeadContexts['content_title'] = $title;
   }
 
   /**
@@ -200,7 +200,7 @@ class PageContext extends BaseContext {
   private function setContextCredential($credential_settings) {
     foreach (SELF::$CREDENTIAL_MAPPING as $credential_key => $tag_name) {
       if (isset($credential_settings[$credential_key])) {
-        $this->context[$tag_name] = $credential_settings[$credential_key];
+        $this->htmlHeadContexts[$tag_name] = $credential_settings[$credential_key];
       }
     };
   }
@@ -214,7 +214,7 @@ class PageContext extends BaseContext {
   private function setContextAdvancedConfiguration($advanced_settings) {
     $replacement_mode = $advanced_settings['content_replacement_mode'];
     if (SettingsHelper::isValidContentReplacementMode($replacement_mode)) {
-      $this->context['contentReplacementMode'] = $replacement_mode;
+      $this->htmlHeadContexts['contentReplacementMode'] = $replacement_mode;
     }
   }
 
@@ -225,12 +225,12 @@ class PageContext extends BaseContext {
    *   Node.
    */
   private function setNodeData(NodeInterface $node) {
-    $this->context['content_type'] = $node->getType();
-    $this->context['content_title'] = $node->getTitle();
-    $this->context['published_date'] = $node->getCreatedTime();
-    $this->context['post_id'] = $node->id();
-    $this->context['author'] = $node->getOwner()->getUsername();
-    $this->context['page_type'] = 'node page';
+    $this->htmlHeadContexts['content_type'] = $node->getType();
+    $this->htmlHeadContexts['content_title'] = $node->getTitle();
+    $this->htmlHeadContexts['published_date'] = $node->getCreatedTime();
+    $this->htmlHeadContexts['post_id'] = $node->id();
+    $this->htmlHeadContexts['author'] = $node->getOwner()->getUsername();
+    $this->htmlHeadContexts['page_type'] = 'node page';
   }
 
   /**
@@ -249,7 +249,7 @@ class PageContext extends BaseContext {
       // Only set when the value is a populated array
       // Empty arrays return as false in PHP.
       if (!empty($field_term_names)) {
-        $this->context[$page_context_name] = implode(',', $field_term_names);
+        $this->htmlHeadContexts[$page_context_name] = implode(',', $field_term_names);
       }
     }
   }
@@ -368,7 +368,7 @@ class PageContext extends BaseContext {
   /**
    * {@inheritdoc}
    */
-  public function populateHtmlHead(&$htmlHead) {
+  protected function populateHtmlHead(&$htmlHead) {
     parent::populateHtmlHead($htmlHead);
 
     // Attach Lift's JavaScript.

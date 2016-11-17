@@ -156,10 +156,10 @@ class PathContextTest extends UnitTestCase {
   }
 
   /**
-   * Tests the populateHtmlHead() method.
+   * Tests the populate() method, populateHtmlHead() sub method.
    *
    * @covers ::setContextIdentityByUser
-   * @covers ::populateHtmlHead
+   * @covers ::populate
    *
    * @param string $query_parameter_string
    * @param boolean $capture_identity
@@ -199,10 +199,10 @@ class PathContextTest extends UnitTestCase {
       $path_context->setContextIdentityByUser($user);
     }
 
-    $html_head = [];
-    $path_context->populateHtmlHead($html_head);
+    $page = [];
+    $path_context->populate($page);
 
-    $this->assertEquals($expect_html_head, $html_head);
+    $this->assertEquals($expect_html_head, $page['#attached']['html_head']);
   }
 
   /**
@@ -216,7 +216,7 @@ class PathContextTest extends UnitTestCase {
     $do_capture_identity = TRUE;
     $no_set_user = FALSE;
     $do_set_user = TRUE;
-    $expect_html_head_empty = [];
+    $expect_html_head_empty = NULL;
     $expect_identity_of_full_query_string = [[
       [
         '#type' => 'html_tag',

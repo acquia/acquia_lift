@@ -5,11 +5,18 @@ namespace Drupal\acquia_lift\Service\Context;
 abstract class BaseContext implements ContextInterface {
 
   /**
-   * Page context, with default value.
+   * HTML head contexts.
    *
    * @var array
    */
-  protected $context = [];
+  protected $htmlHeadContexts = [];
+
+  /**
+   * Cache contexts.
+   *
+   * @var array
+   */
+  protected $cacheContexts = [];
 
   /**
    * Get the render array for a single meta tag.
@@ -33,16 +40,39 @@ abstract class BaseContext implements ContextInterface {
   }
 
   /**
-   * {@inheritdoc}
+   * Populate page's HTML head.
+   *
+   * @param &$html_head
+   *   The page's HTML head that is to be populated.
    */
-  public function populateHtmlHead(&$htmlHead) {
+  protected function populateHtmlHead(&$html_head) {
     // Attach Lift's metatags.
-    foreach ($this->context as $name => $content) {
-      $renderArray = $this->getMetaTagRenderArray($name, $content);
+    foreach ($this->htmlHeadContexts as $name => $context) {
+      $renderArray = $this->getMetaTagRenderArray($name, $context);
       // To generate meta tags within HTML head, Drupal requires this precise
       // format of render array.
-      $htmlHead[] = [$renderArray, $name];
+      $html_head[] = [$renderArray, $name];
     }
+  }
+
+  /**
+   * Populate page's cache context.
+   *
+   * @param &$page
+   *   The page that is to be populated.
+   */
+  protected function populateCache(&$page) {
+    foreach ($this->cacheContexts as $context) {
+      $page['#cache']['contexts'][] = $context;
+    }
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function populate(&$page) {
+    $this->populateHtmlHead($page['#attached']['html_head']);
+    $this->populateCache($page);
   }
 
 }

@@ -103,8 +103,15 @@ class PathContext extends BaseContext {
    *   The request stack.
    */
   private function setContextIdentityByRequest($request_stack) {
+    $identity_parameter = $this->identitySettings['identity_parameter'];
+    $identity_type_parameter = $this->identitySettings['identity_type_parameter'];
+
+    // Set cache contexts. This is done at all times.
+    $query_names = [$identity_parameter, $identity_type_parameter];
+    $this->setContextCacheByQueryNames($query_names);
+
     // Stop, if there is no "identity parameter".
-    if (empty($this->identitySettings['identity_parameter'])) {
+    if (empty($identity_parameter)) {
       return;
     }
 
@@ -112,7 +119,6 @@ class PathContext extends BaseContext {
     $query_string = $request_stack->getCurrentRequest()->getQueryString();
     $parsed_query_string = UrlHelper::parse('?' . $query_string);
     $queries = $parsed_query_string['query'];
-    $identity_parameter = $this->identitySettings['identity_parameter'];
 
     // Stop, if there is no or empty identity parameter in the query string.
     if (empty($queries[$identity_parameter])) {
@@ -120,15 +126,28 @@ class PathContext extends BaseContext {
     }
 
     // Gather the identity and identity type by configuration.
-    $identity_type_parameter = $this->identitySettings['identity_type_parameter'];
     $default_identity_type = $this->identitySettings['default_identity_type'];
     $identity = $queries[$identity_parameter];
     $identityType = empty($default_identity_type) ? SettingsHelper::DEFAULT_IDENTITY_TYPE_DEFAULT : $default_identity_type;
     if (!empty($identity_type_parameter) && isset($queries[$identity_type_parameter])) {
       $identityType = $queries[$identity_type_parameter];
     }
-
     $this->setContextIdentity($identity, $identityType);
+  }
+
+  /**
+   * Set Cache Context by query names.
+   *
+   * @param array $query_names
+   *   The query names.
+   */
+  private function setContextCacheByQueryNames($query_names) {
+    foreach ($query_names as $query_name) {
+      if (empty($query_name)) {
+        continue;
+      }
+      $this->cacheContexts[] = 'url.query_args:' . $query_name;
+    }
   }
 
   /**
@@ -157,7 +176,7 @@ class PathContext extends BaseContext {
     // Sanitize string and output.
     $sanitized_identity = Html::escape($identity);
     $sanitized_identity_type = Html::escape($identityType);
-    $this->context['identity:' . $sanitized_identity_type] = $sanitized_identity;
+    $this->htmlHeadContexts['identity:' . $sanitized_identity_type] = $sanitized_identity;
   }
 
 }

@@ -5,11 +5,11 @@ namespace Drupal\acquia_lift\Service\Context;
 interface ContextInterface {
 
   /**
-   * Populate page's HTML head.
+   * Populate page by context.
    *
-   * @param &$htmlHead
-   *   The HTML head that is to be populated.
+   * @param &$page
+   *   The page that is to be populated.
    */
-  public function populateHtmlHead(&$htmlHead);
+  public function populate(&$page);
 
 }

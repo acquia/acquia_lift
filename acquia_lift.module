@@ -30,13 +30,12 @@ function acquia_lift_page_attachments(array &$page) {
     return;
   }
 
+  $page_context = \Drupal::service('acquia_lift.service.context.page_context');
+
+  // Populate contexts.
+  $path_context->populate($page);
+  $page_context->populate($page);
+
   // Attach lift CSS to all pages.
   $page['#attached']['library'][] = 'acquia_lift/acquia-lift';
-
-  // Populate page context's HTML head.
-  $page_context = \Drupal::service('acquia_lift.service.context.page_context');
-  $page_context->populateHtmlHead($page['#attached']['html_head']);
-
-  // Populate path context's HTML head.
-  $path_context->populateHtmlHead($page['#attached']['html_head']);
 }

@@ -98,19 +98,6 @@ acquia_lift.settings:
               type:
                 type: string
                 label: 'Item Type this is mapped to.'
-    thumbnail:
-      type: sequence
-      label: 'Thumbnail'
-      sequence:
-        type: config_object
-        label: 'Content type'
-        mapping:
-          field:
-            type: string
-            label: 'Field'
-          style:
-            type: string
-            label: 'Style'
     visibility:
       type: config_object
       label: 'Visibility'

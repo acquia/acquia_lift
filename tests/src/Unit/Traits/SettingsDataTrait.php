@@ -116,21 +116,6 @@ trait SettingsDataTrait {
   }
 
   /**
-   * Get a valid thumbnail settings array.
-   *
-   * @return array
-   *   A valid thumbnail settings array.
-   */
-  private function getValidThumbnailSettings() {
-    return [
-      'article' => [
-        'field' => 'field_media->field_image',
-        'style' => 'medium',
-      ],
-    ];
-  }
-
-  /**
    * Get a valid visibility settings array.
    *
    * @return array

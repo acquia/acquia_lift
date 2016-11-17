@@ -122,13 +122,6 @@ class SettingsTest extends WebTestBase {
     }
     $this->assertEqual($expect_settings_count, $edit_settings_count, 'The exact numbers of settings that were asserted should be ' . $expect_settings_count . '.');
 
-    // Assert the Thumbnail URL shortcut links exist on the page.
-    $this->assertRaw('admin/structure/types/manage/article#edit-acquia-lift', '[testAdminSettingsForm]: Thumbnail URL shortcut links exist on the page.');
-
-    // Assert the node type thumbnail form is actually loaded at the node type configuration page.
-    $this->drupalGet('admin/structure/types/manage/article');
-    $this->assertText(t('Acquia Lift'));
-
     // Assert metatags are loaded in the header.
     $this->drupalGet('node/90210');
     $this->assertRaw('oauth_url_1/authorize', '[testMetatagsAndScriptTag]: oauth_url metatag value is loaded on the node page with cleaned-up value.');

@@ -131,7 +131,8 @@ class SettingsTest extends WebTestBase {
     $this->setValidSettings();
 
     // Assert metatags are loaded in the header.
-    $this->drupalGet('node/90210');
+    $this->drupalGet('node/90210', ['query' => ['my_identity_parameter' => 'an_identity']]);
+    $this->assertRaw('an_identity', '[testMetatagsAndScriptTag]: identity metatag value is loaded on the node page.');
     $this->assertRaw('acquia_lift:page_type', '[testMetatagsAndScriptTag]: page_type metatag is loaded on the node page.');
     $this->assertRaw('node page', '[testMetatagsAndScriptTag]: page_type metatag value is loaded on the node page.');
     $this->assertRaw('acquia_lift:account_id', '[testMetatagsAndScriptTag]: account_id metatag is loaded on the node page.');

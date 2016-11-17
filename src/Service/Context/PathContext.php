@@ -128,7 +128,7 @@ class PathContext extends BaseContext {
     $default_identity_type = $this->identitySettings['default_identity_type'];
     $identity = $queries[$identity_parameter];
     $identityType = empty($default_identity_type) ? SettingsHelper::DEFAULT_IDENTITY_TYPE_DEFAULT : $default_identity_type;
-    if (!empty($identity_type_parameter) && isset($queries[$identity_type_parameter])) {
+    if (!empty($identity_type_parameter) && !empty($queries[$identity_type_parameter])) {
       $identityType = $queries[$identity_type_parameter];
     }
     $this->setContextIdentity($identity, $identityType);

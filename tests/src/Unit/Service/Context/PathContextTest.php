@@ -156,7 +156,7 @@ class PathContextTest extends UnitTestCase {
   }
 
   /**
-   * Tests the populate() method, populateHtmlHead() sub method.
+   * Tests the populate() method, populateHtmlHead() sub method, sub routine "set identity and identity type".
    *
    * @covers ::setContextIdentityByUser
    * @covers ::populate
@@ -164,11 +164,12 @@ class PathContextTest extends UnitTestCase {
    * @param string $query_parameter_string
    * @param boolean $capture_identity
    * @param boolean $do_set_user
+   * @param array $expect_cache
    * @param array $expect_html_head
    *
-   * @dataProvider providerTestPopulateHtmlHead
+   * @dataProvider providerTestPopulateHtmlHeadIdentities
    */
-  public function testPopulateHtmlHead($query_parameter_string, $capture_identity, $do_set_user, $expect_html_head) {
+  public function testPopulateHtmlHeadIdentities($query_parameter_string, $capture_identity, $do_set_user, $expect_cache, $expect_html_head) {
     $this->requestStack->expects($this->once())
       ->method('getCurrentRequest')
       ->willReturn($this->request);
@@ -202,13 +203,14 @@ class PathContextTest extends UnitTestCase {
     $page = [];
     $path_context->populate($page);
 
+    $this->assertEquals($expect_cache, $page['#cache']['contexts']);
     $this->assertEquals($expect_html_head, $page['#attached']['html_head']);
   }
 
   /**
-   * Data provider for testPopulateHtmlHead().
+   * Data provider for testPopulateHtmlHeadIdentities().
    */
-  public function providerTestPopulateHtmlHead() {
+  public function providerTestPopulateHtmlHeadIdentities() {
     $no_query_parameter_string = '';
     $full_query_parameter_string = 'my_identity_parameter=query_identity&my_identity_type_parameter=query_identity_type&other=other';
     $partial_query_parameter_string = 'my_identity_parameter=query_identity&other=other';
@@ -216,6 +218,10 @@ class PathContextTest extends UnitTestCase {
     $do_capture_identity = TRUE;
     $no_set_user = FALSE;
     $do_set_user = TRUE;
+    $expect_cache_identity_and_identity_type = [
+      'url.query_args:my_identity_parameter',
+      'url.query_args:my_identity_type_parameter',
+    ];
     $expect_html_head_empty = NULL;
     $expect_identity_of_full_query_string = [[
       [
@@ -257,42 +263,49 @@ class PathContextTest extends UnitTestCase {
       $no_query_parameter_string,
       $no_capture_identity,
       $no_set_user,
+      $expect_cache_identity_and_identity_type,
       $expect_html_head_empty,
     ];
     $data['no query, no capture, yes user'] = [
       $no_query_parameter_string,
       $no_capture_identity,
       $do_set_user,
+      $expect_cache_identity_and_identity_type,
       $expect_html_head_empty,
     ];
     $data['no query, do capture, yes user'] = [
       $no_query_parameter_string,
       $do_capture_identity,
       $do_set_user,
+      $expect_cache_identity_and_identity_type,
       $expect_identity_of_user,
     ];
     $data['yes query, no capture, no user'] = [
       $full_query_parameter_string,
       $no_capture_identity,
       $no_set_user,
+      $expect_cache_identity_and_identity_type,
       $expect_identity_of_full_query_string,
     ];
     $data['yes query (but partial), no capture, no user'] = [
       $partial_query_parameter_string,
       $no_capture_identity,
       $no_set_user,
+      $expect_cache_identity_and_identity_type,
       $expect_identity_of_partial_query_string,
     ];
     $data['yes query, no capture, yes user'] = [
       $full_query_parameter_string,
       $no_capture_identity,
       $do_set_user,
+      $expect_cache_identity_and_identity_type,
       $expect_identity_of_full_query_string,
     ];
     $data['yes query, do capture, yes user'] = [
       $full_query_parameter_string,
       $do_capture_identity,
       $do_set_user,
+      $expect_cache_identity_and_identity_type,
       $expect_identity_of_full_query_string_and_user,
     ];
 

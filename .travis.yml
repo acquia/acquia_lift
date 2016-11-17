@@ -39,6 +39,7 @@ install:
 
   # Install drupal default profile and enable required modules.
   - /usr/bin/env PHP_OPTIONS="-d sendmail_path=`which true`" drush --verbose site-install --db-url=mysql://root:@127.0.0.1/drupal --yes
+  - composer install --dev
   - drush en -y simpletest
   - drush en -y acquia_lift
 

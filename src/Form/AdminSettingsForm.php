@@ -417,7 +417,7 @@ class AdminSettingsForm extends ConfigFormBase {
     $settings->save();
 
     // It is required to flush all caches on save. This is because many settings
-    // here impact caches and their invalidation strategies.
+    // here impact page caches and their invalidation strategies.
     drupal_flush_all_caches();
 
     parent::submitForm($form, $form_state);

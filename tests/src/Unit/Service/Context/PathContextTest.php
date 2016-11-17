@@ -156,7 +156,7 @@ class PathContextTest extends UnitTestCase {
   }
 
   /**
-   * Tests the populate() method, populateHtmlHead() sub method, sub routine "set identity and identity type".
+   * Tests the populate() method, populateHtmlHead() sub method, "set identity and identity type" sub routine.
    *
    * @covers ::setContextIdentityByUser
    * @covers ::populate
@@ -311,4 +311,144 @@ class PathContextTest extends UnitTestCase {
 
     return $data;
   }
+
+  /**
+   * Tests the populate() method, "set identity and identity type" sub routine.
+   *
+   * @covers ::populate
+   *
+   * @param integer $expect_set_cache
+   * @param array $identity_settings
+   * @param array $expect_cache_context
+   *
+   * @dataProvider providerTestPopulateCache
+   */
+  public function testPopulateCache($identity_settings, $expect_set_cache, $expect_cache_context) {
+    $this->requestStack->expects($this->exactly($expect_set_cache))
+      ->method('getCurrentRequest')
+      ->willReturn($this->request);
+    $this->request->expects($this->exactly($expect_set_cache))
+      ->method('getQueryString')
+      ->willReturn('querystring');
+    $this->settings->expects($this->at(0))
+      ->method('get')
+      ->with('credential')
+      ->willReturn([]);
+    $this->settings->expects($this->at(1))
+      ->method('get')
+      ->with('identity')
+      ->willReturn($identity_settings);
+
+    $path_context = new PathContext($this->configFactory, $this->currentPathStack, $this->requestStack, $this->pathMatcher);
+
+    $page = [];
+    $path_context->populate($page);
+
+    $cache_context = [];
+    if (isset($page['#cache']['contexts'])) {
+      $cache_context = $page['#cache']['contexts'];
+    }
+
+    $this->assertEquals($expect_cache_context, $cache_context);
+  }
+
+  /**
+   * Data provider for testPopulateCache().
+   */
+  public function providerTestPopulateCache() {
+    $identity_setting_empty = [
+      'identity_parameter' => '',
+      'identity_type_parameter' => '',
+      'default_identity_type' => '',
+    ];
+    $identity_setting_identity = [
+      'identity_parameter' => 'my_identity_parameter',
+      'identity_type_parameter' => '',
+      'default_identity_type' => '',
+    ];
+    $identity_setting_identity_type = [
+      'identity_parameter' => '',
+      'identity_type_parameter' => 'my_identity_type_parameter',
+      'default_identity_type' => '',
+    ];
+    $identity_setting_default_identity = [
+      'identity_parameter' => '',
+      'identity_type_parameter' => '',
+      'default_identity_type' => 'my_default_identity_type',
+    ];
+    $identity_setting_identity_and_identity_type = [
+      'identity_parameter' => 'my_identity_parameter',
+      'identity_type_parameter' => 'my_identity_type_parameter',
+      'default_identity_type' => '',
+    ];
+    $identity_setting_identity_and_default_identity = [
+      'identity_parameter' => 'my_identity_parameter',
+      'identity_type_parameter' => '',
+      'default_identity_type' => 'my_default_identity_type',
+    ];
+    $identity_setting_identity_type_and_default_identity = [
+      'identity_parameter' => '',
+      'identity_type_parameter' => 'my_identity_type_parameter',
+      'default_identity_type' => 'my_default_identity_type',
+    ];
+    $identity_setting_full = [
+      'identity_parameter' => 'my_identity_parameter',
+      'identity_type_parameter' => 'my_identity_type_parameter',
+      'default_identity_type' => 'my_default_identity_type',
+    ];
+    $expect_set_cache_no = 0;
+    $expect_set_cache_yes = 1;
+    $expect_cache_context_empty = [];
+    $expect_cache_context_identity = [
+      'url.query_args:my_identity_parameter',
+    ];
+    $expect_cache_context_identity_and_identity_type = [
+      'url.query_args:my_identity_parameter',
+      'url.query_args:my_identity_type_parameter',
+    ];
+
+    $data['no identity, no identity type, no default identity'] = [
+      $identity_setting_empty,
+      $expect_set_cache_no,
+      $expect_cache_context_empty,
+    ];
+    $data['yes identity, no identity type, no default identity'] = [
+      $identity_setting_identity,
+      $expect_set_cache_yes,
+      $expect_cache_context_identity,
+    ];
+    $data['no identity, yes identity type, no default identity'] = [
+      $identity_setting_identity_type,
+      $expect_set_cache_no,
+      $expect_cache_context_empty,
+    ];
+    $data['no identity, no identity type, yes default identity'] = [
+      $identity_setting_default_identity,
+      $expect_set_cache_no,
+      $expect_cache_context_empty,
+    ];
+    $data['yes identity, yes identity type, no default identity'] = [
+      $identity_setting_identity_and_identity_type,
+      $expect_set_cache_yes,
+      $expect_cache_context_identity_and_identity_type,
+    ];
+    $data['yes identity, no identity type, yes default identity'] = [
+      $identity_setting_identity_and_default_identity,
+      $expect_set_cache_yes,
+      $expect_cache_context_identity,
+    ];
+    $data['no identity, yes identity type, yes default identity'] = [
+      $identity_setting_identity_type_and_default_identity,
+      $expect_set_cache_no,
+      $expect_cache_context_empty,
+    ];
+    $data['yes identity, yes identity type, yes default identity'] = [
+      $identity_setting_full,
+      $expect_set_cache_yes,
+      $expect_cache_context_identity_and_identity_type,
+    ];
+
+    return $data;
+  }
+
 }

@@ -103,17 +103,16 @@ class PathContext extends BaseContext {
    *   The request stack.
    */
   private function setContextIdentityByRequest($request_stack) {
-    $identity_parameter = $this->identitySettings['identity_parameter'];
-    $identity_type_parameter = $this->identitySettings['identity_type_parameter'];
-
-    // Set cache contexts. This is done at all times.
-    $query_names = [$identity_parameter, $identity_type_parameter];
-    $this->setContextCacheByQueryNames($query_names);
-
     // Stop, if there is no "identity parameter".
+    $identity_parameter = $this->identitySettings['identity_parameter'];
     if (empty($identity_parameter)) {
       return;
     }
+
+    // Set cache contexts. This is done as long as the identity parameter is set.
+    $identity_type_parameter = $this->identitySettings['identity_type_parameter'];
+    $query_names = [$identity_parameter, $identity_type_parameter];
+    $this->setContextCacheByQueryNames($query_names);
 
     // Find the current URL queries.
     $query_string = $request_stack->getCurrentRequest()->getQueryString();

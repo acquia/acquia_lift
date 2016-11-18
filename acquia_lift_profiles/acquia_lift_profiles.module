@@ -595,6 +595,7 @@ function acquia_lift_profiles_visitor_action_subscribe($name) {
  * Server-side action subscriber.
  */
 function acquia_lift_profiles_action_subscriber($name, $context) {
+  drupal_alter('acquia_lift_profiles_action_context', $context, $name);
   acquia_lift_profiles_set_server_side_action($name, $context);
 }
 

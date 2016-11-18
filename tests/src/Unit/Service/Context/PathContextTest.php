@@ -116,7 +116,7 @@ class PathContextTest extends UnitTestCase {
 
     $this->pathMatcher->expects($this->any())
       ->method('match')
-      ->with('my_current_path', "/admin\n/admin/*\n/batch\n/node/add*\n/node/*/*\n/user/*/*\n/block/*")
+      ->with('my_current_path', "/admin\n/admin/*\n/batch\n/node/add*\n/node/*/*\n/user/*\n/block/*")
       ->willReturn($do_match_pattern);
 
     $path_context = new PathContext($this->configFactory, $this->currentPathStack, $this->requestStack, $this->pathMatcher);
@@ -156,19 +156,20 @@ class PathContextTest extends UnitTestCase {
   }
 
   /**
-   * Tests the getIdentity() method.
+   * Tests the populate() method, populateHtmlHead() sub method, "set identity and identity type" sub routine.
    *
-   * @covers ::setIdentityByUser
-   * @covers ::getIdentity
+   * @covers ::setContextIdentityByUser
+   * @covers ::populate
    *
    * @param string $query_parameter_string
    * @param boolean $capture_identity
    * @param boolean $do_set_user
-   * @param array $expect_identity
+   * @param array $expect_cache
+   * @param array $expect_html_head
    *
-   * @dataProvider providerTestGetIdentity
+   * @dataProvider providerTestPopulateHtmlHeadIdentities
    */
-  public function testGetIdentity($query_parameter_string, $capture_identity, $do_set_user, $expect_identity) {
+  public function testPopulateHtmlHeadIdentities($query_parameter_string, $capture_identity, $do_set_user, $expect_cache, $expect_html_head) {
     $this->requestStack->expects($this->once())
       ->method('getCurrentRequest')
       ->willReturn($this->request);
@@ -196,18 +197,20 @@ class PathContextTest extends UnitTestCase {
       $user->expects($this->exactly((int) $capture_identity))
         ->method('getEmail')
         ->willReturn('a_user_email');
-      $path_context->setIdentityByUser($user);
+      $path_context->setContextIdentityByUser($user);
     }
 
-    $identity = $path_context->getIdentity();
+    $page = [];
+    $path_context->populate($page);
 
-    $this->assertEquals($expect_identity, $identity);
+    $this->assertEquals($expect_cache, $page['#cache']['contexts']);
+    $this->assertEquals($expect_html_head, $page['#attached']['html_head']);
   }
 
   /**
-   * Data provider for testGetIdentity().
+   * Data provider for testPopulateHtmlHeadIdentities().
    */
-  public function providerTestGetIdentity() {
+  public function providerTestPopulateHtmlHeadIdentities() {
     $no_query_parameter_string = '';
     $full_query_parameter_string = 'my_identity_parameter=query_identity&my_identity_type_parameter=query_identity_type&other=other';
     $partial_query_parameter_string = 'my_identity_parameter=query_identity&other=other';
@@ -215,63 +218,237 @@ class PathContextTest extends UnitTestCase {
     $do_capture_identity = TRUE;
     $no_set_user = FALSE;
     $do_set_user = TRUE;
-    $expect_identity_empty = NULL;
-    $expect_identity_of_full_query_string = [
-      'identity' => 'query_identity',
-      'identityType' => 'query_identity_type',
+    $expect_cache_identity_and_identity_type = [
+      'url.query_args:my_identity_parameter',
+      'url.query_args:my_identity_type_parameter',
     ];
-    $expect_identity_of_partial_query_string = [
-      'identity' => 'query_identity',
-      'identityType' => 'my_default_identity_type',
-    ];
-    $expect_identity_of_user = [
-      'identity' => 'a_user_email',
-      'identityType' => 'email',
-    ];
+    $expect_html_head_empty = NULL;
+    $expect_identity_of_full_query_string = [[
+      [
+        '#type' => 'html_tag',
+        '#tag' => 'meta',
+        '#attributes' => [
+          'itemprop' => 'acquia_lift:identity:query_identity_type',
+          'content' => 'query_identity',
+        ],
+      ],
+      'identity:query_identity_type',
+    ]];
+    $expect_identity_of_partial_query_string = [[
+      [
+        '#type' => 'html_tag',
+        '#tag' => 'meta',
+        '#attributes' => [
+          'itemprop' => 'acquia_lift:identity:my_default_identity_type',
+          'content' => 'query_identity',
+        ],
+      ],
+      'identity:my_default_identity_type',
+    ]];
+    $expect_identity_of_user = [[
+      [
+        '#type' => 'html_tag',
+        '#tag' => 'meta',
+        '#attributes' => [
+          'itemprop' => 'acquia_lift:identity:email',
+          'content' => 'a_user_email',
+        ],
+      ],
+      'identity:email',
+    ]];
+
+    $expect_identity_of_full_query_string_and_user = array_merge($expect_identity_of_full_query_string, $expect_identity_of_user);
 
     $data['no query, no capture, no user'] = [
       $no_query_parameter_string,
       $no_capture_identity,
       $no_set_user,
-      $expect_identity_empty,
+      $expect_cache_identity_and_identity_type,
+      $expect_html_head_empty,
     ];
     $data['no query, no capture, yes user'] = [
       $no_query_parameter_string,
       $no_capture_identity,
       $do_set_user,
-      $expect_identity_empty,
+      $expect_cache_identity_and_identity_type,
+      $expect_html_head_empty,
     ];
     $data['no query, do capture, yes user'] = [
       $no_query_parameter_string,
       $do_capture_identity,
       $do_set_user,
+      $expect_cache_identity_and_identity_type,
       $expect_identity_of_user,
     ];
     $data['yes query, no capture, no user'] = [
       $full_query_parameter_string,
       $no_capture_identity,
       $no_set_user,
+      $expect_cache_identity_and_identity_type,
       $expect_identity_of_full_query_string,
     ];
     $data['yes query (but partial), no capture, no user'] = [
       $partial_query_parameter_string,
       $no_capture_identity,
       $no_set_user,
+      $expect_cache_identity_and_identity_type,
       $expect_identity_of_partial_query_string,
     ];
     $data['yes query, no capture, yes user'] = [
       $full_query_parameter_string,
       $no_capture_identity,
       $do_set_user,
+      $expect_cache_identity_and_identity_type,
       $expect_identity_of_full_query_string,
     ];
     $data['yes query, do capture, yes user'] = [
       $full_query_parameter_string,
       $do_capture_identity,
       $do_set_user,
-      $expect_identity_of_user,
+      $expect_cache_identity_and_identity_type,
+      $expect_identity_of_full_query_string_and_user,
     ];
 
     return $data;
   }
+
+  /**
+   * Tests the populate() method, "set identity and identity type" sub routine.
+   *
+   * @covers ::populate
+   *
+   * @param integer $expect_set_cache
+   * @param array $identity_settings
+   * @param array $expect_cache_context
+   *
+   * @dataProvider providerTestPopulateCache
+   */
+  public function testPopulateCache($identity_settings, $expect_set_cache, $expect_cache_context) {
+    $this->requestStack->expects($this->exactly($expect_set_cache))
+      ->method('getCurrentRequest')
+      ->willReturn($this->request);
+    $this->request->expects($this->exactly($expect_set_cache))
+      ->method('getQueryString')
+      ->willReturn('querystring');
+    $this->settings->expects($this->at(0))
+      ->method('get')
+      ->with('credential')
+      ->willReturn([]);
+    $this->settings->expects($this->at(1))
+      ->method('get')
+      ->with('identity')
+      ->willReturn($identity_settings);
+
+    $path_context = new PathContext($this->configFactory, $this->currentPathStack, $this->requestStack, $this->pathMatcher);
+
+    $page = [];
+    $path_context->populate($page);
+
+    $cache_context = [];
+    if (isset($page['#cache']['contexts'])) {
+      $cache_context = $page['#cache']['contexts'];
+    }
+
+    $this->assertEquals($expect_cache_context, $cache_context);
+  }
+
+  /**
+   * Data provider for testPopulateCache().
+   */
+  public function providerTestPopulateCache() {
+    $identity_setting_empty = [
+      'identity_parameter' => '',
+      'identity_type_parameter' => '',
+      'default_identity_type' => '',
+    ];
+    $identity_setting_identity = [
+      'identity_parameter' => 'my_identity_parameter',
+      'identity_type_parameter' => '',
+      'default_identity_type' => '',
+    ];
+    $identity_setting_identity_type = [
+      'identity_parameter' => '',
+      'identity_type_parameter' => 'my_identity_type_parameter',
+      'default_identity_type' => '',
+    ];
+    $identity_setting_default_identity = [
+      'identity_parameter' => '',
+      'identity_type_parameter' => '',
+      'default_identity_type' => 'my_default_identity_type',
+    ];
+    $identity_setting_identity_and_identity_type = [
+      'identity_parameter' => 'my_identity_parameter',
+      'identity_type_parameter' => 'my_identity_type_parameter',
+      'default_identity_type' => '',
+    ];
+    $identity_setting_identity_and_default_identity = [
+      'identity_parameter' => 'my_identity_parameter',
+      'identity_type_parameter' => '',
+      'default_identity_type' => 'my_default_identity_type',
+    ];
+    $identity_setting_identity_type_and_default_identity = [
+      'identity_parameter' => '',
+      'identity_type_parameter' => 'my_identity_type_parameter',
+      'default_identity_type' => 'my_default_identity_type',
+    ];
+    $identity_setting_full = [
+      'identity_parameter' => 'my_identity_parameter',
+      'identity_type_parameter' => 'my_identity_type_parameter',
+      'default_identity_type' => 'my_default_identity_type',
+    ];
+    $expect_set_cache_no = 0;
+    $expect_set_cache_yes = 1;
+    $expect_cache_context_empty = [];
+    $expect_cache_context_identity = [
+      'url.query_args:my_identity_parameter',
+    ];
+    $expect_cache_context_identity_and_identity_type = [
+      'url.query_args:my_identity_parameter',
+      'url.query_args:my_identity_type_parameter',
+    ];
+
+    $data['no identity, no identity type, no default identity'] = [
+      $identity_setting_empty,
+      $expect_set_cache_no,
+      $expect_cache_context_empty,
+    ];
+    $data['yes identity, no identity type, no default identity'] = [
+      $identity_setting_identity,
+      $expect_set_cache_yes,
+      $expect_cache_context_identity,
+    ];
+    $data['no identity, yes identity type, no default identity'] = [
+      $identity_setting_identity_type,
+      $expect_set_cache_no,
+      $expect_cache_context_empty,
+    ];
+    $data['no identity, no identity type, yes default identity'] = [
+      $identity_setting_default_identity,
+      $expect_set_cache_no,
+      $expect_cache_context_empty,
+    ];
+    $data['yes identity, yes identity type, no default identity'] = [
+      $identity_setting_identity_and_identity_type,
+      $expect_set_cache_yes,
+      $expect_cache_context_identity_and_identity_type,
+    ];
+    $data['yes identity, no identity type, yes default identity'] = [
+      $identity_setting_identity_and_default_identity,
+      $expect_set_cache_yes,
+      $expect_cache_context_identity,
+    ];
+    $data['no identity, yes identity type, yes default identity'] = [
+      $identity_setting_identity_type_and_default_identity,
+      $expect_set_cache_no,
+      $expect_cache_context_empty,
+    ];
+    $data['yes identity, yes identity type, yes default identity'] = [
+      $identity_setting_full,
+      $expect_set_cache_yes,
+      $expect_cache_context_identity_and_identity_type,
+    ];
+
+    return $data;
+  }
+
 }

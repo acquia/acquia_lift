@@ -150,9 +150,9 @@ class PageContextTest extends UnitTestCase {
   }
 
   /**
-   * Tests the populateHtmlHead() method, credential configuration.
+   * Tests the populate() method, populateHtmlHead() sub method, credential configuration.
    *
-   * @covers ::populateHtmlHead
+   * @covers ::populate
    */
   public function testPopulateHtmlHeadCredentialConfiguration() {
     $this->requestParameterBag->expects($this->once())
@@ -161,8 +161,8 @@ class PageContextTest extends UnitTestCase {
       ->willReturn(FALSE);
 
     $page_context = new PageContext($this->configFactory, $this->entityTypeManager, $this->requestStack, $this->routeMatch, $this->titleResolver);
-    $head = ['old_head'];
-    $page_context->populateHtmlHead($head);
+    $page = [];
+    $page_context->populate($page);
 
     $expected_head = $this->toRenderArray([
       'content_title' => 'Untitled',
@@ -184,13 +184,13 @@ class PageContextTest extends UnitTestCase {
       'contentReplacementMode' => 'trusted',
     ], 'AssetsUrl1');
 
-    $this->assertEquals($expected_head, $head);
+    $this->assertEquals($expected_head, $page['#attached']['html_head']);
   }
 
   /**
-   * Tests the populateHtmlHead() method, with a Node.
+   * Tests the populate method, populateHtmlHead() sub method, with a Node.
    *
-   * @covers ::populateHtmlHead
+   * @covers ::populate
    */
   public function testPopulateHtmlHeadWithNode() {
     $this->requestParameterBag->expects($this->once())
@@ -203,8 +203,8 @@ class PageContextTest extends UnitTestCase {
       ->willReturn($this->getNode());
 
     $page_context = new PageContext($this->configFactory, $this->entityTypeManager, $this->requestStack, $this->routeMatch, $this->titleResolver);
-    $head = ['old_head'];
-    $page_context->populateHtmlHead($head);
+    $page = [];
+    $page_context->populate($page);
 
     $expected_head = $this->toRenderArray([
       'content_title' => 'My Title',
@@ -226,13 +226,13 @@ class PageContextTest extends UnitTestCase {
       'contentReplacementMode' => 'trusted',
     ], 'AssetsUrl1');
 
-    $this->assertEquals($expected_head, $head);
+    $this->assertEquals($expected_head, $page['#attached']['html_head']);
   }
 
   /**
-   * Tests the populateHtmlHead() method, with A Node and simple title.
+   * Tests the populate() method, populateHtmlHead() sub method, with a Node and simple title.
    *
-   * @covers ::populateHtmlHead
+   * @covers ::populate
    */
   public function testPopulateHtmlHeadWithNodeAndSimpleTitle() {
     $this->requestParameterBag->expects($this->once())
@@ -249,8 +249,8 @@ class PageContextTest extends UnitTestCase {
       ->willReturn('My Title from Title Resolver');
 
     $page_context = new PageContext($this->configFactory, $this->entityTypeManager, $this->requestStack, $this->routeMatch, $this->titleResolver);
-    $head = ['old_head'];
-    $page_context->populateHtmlHead($head);
+    $page = [];
+    $page_context->populate($page);
 
     $expected_head = $this->toRenderArray([
       'content_title' => 'My Title from Title Resolver',
@@ -272,13 +272,13 @@ class PageContextTest extends UnitTestCase {
       'contentReplacementMode' => 'trusted',
     ], 'AssetsUrl1');
 
-    $this->assertEquals($expected_head, $head);
+    $this->assertEquals($expected_head, $page['#attached']['html_head']);
   }
 
   /**
-   * Tests the populateHtmlHead() method, with A Node and array title.
+   * Tests the populate() method, populateHtmlHead() sub method, with a Node and array title.
    *
-   * @covers ::populateHtmlHead
+   * @covers ::populate
    */
   public function testPopulateHtmlHeadWithNodeAndArrayTitle() {
     $this->requestParameterBag->expects($this->once())
@@ -298,8 +298,8 @@ class PageContextTest extends UnitTestCase {
       ]);
 
     $page_context = new PageContext($this->configFactory, $this->entityTypeManager, $this->requestStack, $this->routeMatch, $this->titleResolver);
-    $head = ['old_head'];
-    $page_context->populateHtmlHead($head);
+    $page = [];
+    $page_context->populate($page);
 
     $expected_head = $this->toRenderArray([
       'content_title' => 'My Title from Title Resolver <br />',
@@ -321,13 +321,13 @@ class PageContextTest extends UnitTestCase {
       'contentReplacementMode' => 'trusted',
     ], 'AssetsUrl1');
 
-    $this->assertEquals($expected_head, $head);
+    $this->assertEquals($expected_head, $page['#attached']['html_head']);
   }
 
   /**
-   * Tests the populateHtmlHead() method, with a Node and fields.
+   * Tests the populate() method, populateHtmlHead() sub method, with a Node and fields.
    *
-   * @covers ::populateHtmlHead
+   * @covers ::populate
    */
   public function testPopulateHtmlHeadWithNodeAndFields() {
     $this->requestParameterBag->expects($this->once())
@@ -341,8 +341,8 @@ class PageContextTest extends UnitTestCase {
     $this->populateHtmlHeadWithNodeAndFieldsSetUpFields();
 
     $page_context = new PageContext($this->configFactory, $this->entityTypeManager, $this->requestStack, $this->routeMatch, $this->titleResolver);
-    $head = ['old_head'];
-    $page_context->populateHtmlHead($head);
+    $page = [];
+    $page_context->populate($page);
 
     $expected_head = $this->toRenderArray([
       'content_title' => 'My Title',
@@ -368,7 +368,7 @@ class PageContextTest extends UnitTestCase {
       'event_udf2' => 'Tracked Keyword Term Name 1,Tracked Keyword Term Name 2',
     ], 'AssetsUrl1');
 
-    $this->assertEquals($expected_head, $head);
+    $this->assertEquals($expected_head, $page['#attached']['html_head']);
   }
 
   /**
@@ -492,7 +492,7 @@ class PageContextTest extends UnitTestCase {
    *   The render array
    */
   private function toRenderArray($pageContextConfig, $assetsUrl) {
-    $renderArray = ['old_head'];
+    $renderArray = [];
 
     foreach ($pageContextConfig as $name => $content) {
       $renderArray[] = [

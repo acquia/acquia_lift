@@ -11,7 +11,8 @@ use Drupal\user\UserInterface;
 use Drupal\acquia_lift\Service\Helper\PathMatcher;
 use Drupal\acquia_lift\Service\Helper\SettingsHelper;
 
-class PathContext {
+class PathContext extends BaseContext {
+
   /**
    * Acquia Lift credential settings.
    *
@@ -48,13 +49,6 @@ class PathContext {
   private $pathMatcher;
 
   /**
-   * Identity.
-   *
-   * @var array
-   */
-  private $identity;
-
-  /**
    * Constructor.
    *
    * @param \Drupal\Core\Config\ConfigFactoryInterface $config_factory
@@ -78,7 +72,7 @@ class PathContext {
     $this->currentPath = $current_path_stack->getPath();
     $this->pathMatcher = $pathMatcher;
 
-    $this->setIdentityByRequest($request_stack);
+    $this->setContextIdentityByRequest($request_stack);
   }
 
   /**
@@ -103,22 +97,27 @@ class PathContext {
   }
 
   /**
-   * Set Identity by request stack's query parameters.
+   * Set Path Context Identity by request stack's query parameters.
    *
    * @param \Symfony\Component\HttpFoundation\RequestStack $request_stack
    *   The request stack.
    */
-  private function setIdentityByRequest($request_stack) {
+  private function setContextIdentityByRequest($request_stack) {
     // Stop, if there is no "identity parameter".
-    if (empty($this->identitySettings['identity_parameter'])) {
+    $identity_parameter = $this->identitySettings['identity_parameter'];
+    if (empty($identity_parameter)) {
       return;
     }
+
+    // Set cache contexts. This is done as long as the identity parameter is set.
+    $identity_type_parameter = $this->identitySettings['identity_type_parameter'];
+    $query_names = [$identity_parameter, $identity_type_parameter];
+    $this->setContextCacheByQueryNames($query_names);
 
     // Find the current URL queries.
     $query_string = $request_stack->getCurrentRequest()->getQueryString();
     $parsed_query_string = UrlHelper::parse('?' . $query_string);
     $queries = $parsed_query_string['query'];
-    $identity_parameter = $this->identitySettings['identity_parameter'];
 
     // Stop, if there is no or empty identity parameter in the query string.
     if (empty($queries[$identity_parameter])) {
@@ -126,52 +125,57 @@ class PathContext {
     }
 
     // Gather the identity and identity type by configuration.
-    $identity_type_parameter = $this->identitySettings['identity_type_parameter'];
     $default_identity_type = $this->identitySettings['default_identity_type'];
     $identity = $queries[$identity_parameter];
     $identityType = empty($default_identity_type) ? SettingsHelper::DEFAULT_IDENTITY_TYPE_DEFAULT : $default_identity_type;
-    if (!empty($identity_type_parameter) && isset($queries[$identity_type_parameter])) {
+    if (!empty($identity_type_parameter) && !empty($queries[$identity_type_parameter])) {
       $identityType = $queries[$identity_type_parameter];
     }
-
-    $this->setIdentity($identity, $identityType);
+    $this->setContextIdentity($identity, $identityType);
   }
 
   /**
-   * Set Identity by User.
+   * Set Cache Context by query names.
+   *
+   * @param array $query_names
+   *   The query names.
+   */
+  private function setContextCacheByQueryNames($query_names) {
+    foreach ($query_names as $query_name) {
+      if (empty($query_name)) {
+        continue;
+      }
+      $this->cacheContexts[] = 'url.query_args:' . $query_name;
+    }
+  }
+
+  /**
+   * Set Context Identity by User.
    *
    * @param \Drupal\user\UserInterface $user
    *   User.
    */
-  public function setIdentityByUser(UserInterface $user) {
+  public function setContextIdentityByUser(UserInterface $user) {
     if (empty($this->identitySettings['capture_identity'])) {
       return;
     }
 
-    $this->setIdentity($user->getEmail(), 'email');
+    $this->setContextIdentity($user->getEmail(), 'email');
   }
 
   /**
-   * Set Identity.
+   * Set Context Identity.
    *
    * @param string $identity
    *   Identity.
    * @param string $identityType
    *   Identity type.
    */
-  private function setIdentity($identity, $identityType) {
+  private function setContextIdentity($identity, $identityType) {
     // Sanitize string and output.
-    $this->identity['identity'] = Html::escape($identity);
-    $this->identity['identityType'] = Html::escape($identityType);
+    $sanitized_identity = Html::escape($identity);
+    $sanitized_identity_type = Html::escape($identityType);
+    $this->htmlHeadContexts['identity:' . $sanitized_identity_type] = $sanitized_identity;
   }
 
-  /**
-   * Get identity.
-   *
-   * @return array|NULL
-   *   Identity.
-   */
-  public function getIdentity() {
-    return $this->identity;
-  }
 }

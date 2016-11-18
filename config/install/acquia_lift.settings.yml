@@ -18,7 +18,7 @@ udf_touch_mappings: []
 udf_event_mappings: []
 visibility:
   # Track, only when the page URL falls OUTSIDE OF these path patterns.
-  path_patterns: "/admin\n/admin/*\n/batch\n/node/add*\n/node/*/*\n/user/*/*\n/block/*"
+  path_patterns: "/admin\n/admin/*\n/batch\n/node/add*\n/node/*/*\n/user/*\n/block/*"
 advanced:
   content_replacement_mode: 'untrusted'
 langcode: en

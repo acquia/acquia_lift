@@ -201,7 +201,7 @@ function acquia_lift_get_udf_types() {
   return array(
     'person' => 50,
     'touch' => 20,
-    'event' => 20,
+    'event' => 50,
   );
 }
 

@@ -92,9 +92,9 @@ class AcquiaLiftsWebTest extends DrupalWebTestCase {
     );
     for ($i = 1; $i <= 50; $i++) {
       $fields[] = 'acquia_lift_udf_mappings[person][person_udf' . $i . ']';
+      $fields[] = 'acquia_lift_udf_mappings[event][event_udf' . $i . ']';
     }
     for ($i = 1; $i <= 20; $i++) {
-      $fields[] = 'acquia_lift_udf_mappings[event][event_udf' . $i . ']';
       $fields[] = 'acquia_lift_udf_mappings[touch][touch_udf' . $i . ']';
     }
 

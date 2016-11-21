@@ -20,7 +20,7 @@ function acquia_lift_menu() {
   $items['admin/config/services/acquia_lift'] = array(
     'type' => MENU_NORMAL_ITEM,
     'title' => 'Acquia Lift',
-    'description' => 'Configuration settings for the Acquia Lift integration module.',
+    'description' => 'Configure Acquia Lift settings',
     'page callback' => 'drupal_get_form',
     'page arguments' => array('acquia_lift_admin_form'),
     'access arguments' => array('administer acquia_lift configuration'),

@@ -196,6 +196,11 @@ function _acquia_lift_admin_build_identity_form(&$form, &$form_state) {
       '@default_identity_type_display_value' => $default_identity_type_display_value,
     ]),
     '#default_value' => variable_get('acquia_lift_default_identity_type'),
+    '#states' => array(
+      'visible' => array(
+        ':input[name="acquia_lift_identity_param"]' => ['!value' => ''],
+      ),
+    ),
     '#placeholder' => ACQUIA_LIFT_DEFAULT_IDENTITY_TYPE_DEFAULT,
   );
 }

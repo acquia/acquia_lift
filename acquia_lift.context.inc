@@ -82,7 +82,6 @@ function _acquia_lift_get_page_context($node = NULL, $primary = FALSE) {
     $account = user_load($node->uid);
     $page_context['author'] = $account->name;
     $page_context['page_type'] = 'node page';
-    $page_context['type'] = $node->type;
     $page_context = array_merge_recursive($page_context, _acquia_lift_get_mapped_context($node));
   }
 

@@ -10,8 +10,8 @@
  */
 class AcquiaLiftsWebTest extends DrupalWebTestCase {
 
-  protected $admin_user;
-  protected $admin_button_text;
+  private $admin_user;
+  private $admin_button_text;
 
   public static function getInfo() {
     return array(
@@ -438,7 +438,7 @@ class AcquiaLiftsWebTest extends DrupalWebTestCase {
   /**
    * Helper function to configure acquia_lift settings.
    */
-  protected function configureLift() {
+  private function configureLift() {
     $settings = array(
       'acquia_lift_account_id' => 'MY_ACCOUNT_ID',
       'acquia_lift_site_id' => 'MY_SITE_ID',
@@ -452,21 +452,21 @@ class AcquiaLiftsWebTest extends DrupalWebTestCase {
   /**
    * Helper function to assert that Lift is available on the page
    */
-  protected function assertLift() {
+  private function assertLift() {
     $this->assertRaw($this->getLiftBootstrapUrl(), 'Lift bootstrap is included on the page.');
   }
 
   /**
    * Helper function to assert that Lift is not available on the page
    */
-  protected function assertNoLift() {
+  private function assertNoLift() {
     $this->assertNoRaw($this->getLiftBootstrapUrl(), 'Lift bootstrap is not included on the page.');
   }
 
   /**
    * Helper function to assert that a meta tag is found in the page
    */
-  protected function assertLiftMetaTag($name, $value = NULL) {
+  private function assertLiftMetaTag($name, $value = NULL) {
     $pattern = '/<meta (?=[^>]*itemprop="acquia_lift:' . preg_quote($name, '/') . '")';
     if (!empty($value)) {
       $pattern .= '(?=[^>]*content="' . preg_quote($value, '/') . '")';
@@ -478,7 +478,7 @@ class AcquiaLiftsWebTest extends DrupalWebTestCase {
   /**
    * Helper function to assert that a meta tag is not found in the page
    */
-  protected function assertNoLiftMetaTag($name) {
+  private function assertNoLiftMetaTag($name) {
     $pattern = '/<meta (?=[^>]*itemprop="acquia_lift:' . preg_quote($name, '/') . '")/';
     $this->assertNoPattern($pattern, 'Did not find meta tag for ' . $name);
   }
@@ -486,7 +486,7 @@ class AcquiaLiftsWebTest extends DrupalWebTestCase {
   /**
    * Helper function to assert that an identifier  meta tag is found in the page
    */
-  protected function assertLiftIdentityMetaTag($type = NULL, $value = NULL) {
+  private function assertLiftIdentityMetaTag($type = NULL, $value = NULL) {
     if ($type) {
       $pattern = '/<meta (?=[^>]*itemprop="acquia_lift:identity:' . preg_quote($type, '/') . '")';
       if (!empty($value)) {
@@ -503,7 +503,7 @@ class AcquiaLiftsWebTest extends DrupalWebTestCase {
   /**
    * Helper function to assert that a meta tag is not found in the page
    */
-  protected function assertNoLiftIdentityMetaTag($name = NULL) {
+  private function assertNoLiftIdentityMetaTag($name = NULL) {
     $pattern = '/<meta (?=[^>]*itemprop="acquia_lift:identity';
     if ($name) {
       $pattern .= preg_quote($name, '/');
@@ -515,7 +515,7 @@ class AcquiaLiftsWebTest extends DrupalWebTestCase {
   /**
    * Helper function to generate the lift bootstrap URL.
    */
-  protected function getLiftBootstrapUrl() {
+  private function getLiftBootstrapUrl() {
     $assets_url = variable_get('acquia_lift_assets_url', '');
     return $assets_url . '/lift.js';
   }
@@ -531,7 +531,7 @@ class AcquiaLiftsWebTest extends DrupalWebTestCase {
    * @return object
    *   The node object.
    */
-  function createArticleWithTerms($autocreate = array(), $existing = array()) {
+  private function createArticleWithTerms($autocreate = array(), $existing = array()) {
     $values = array();
     foreach ($autocreate as $name) {
       $values[] = array(

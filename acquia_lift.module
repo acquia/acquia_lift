@@ -120,7 +120,7 @@ function acquia_lift_page_build(&$page) {
       // Set the identity type to the default either as specified by the user or
       // as the application default.
       $identity_type = variable_get('acquia_lift_default_identity_type') ?: ACQUIA_LIFT_DEFAULT_IDENTITY_TYPE_DEFAULT;
-      if (!empty($identity_type_param) && isset($all_params[$identity_type_param])) {
+      if (!empty($identity_type_param) && !empty($all_params[$identity_type_param])) {
         // If an explicit identity type was passed in the query parameters then
         //use that instead.
         $identity_type = check_plain($all_params[$identity_type_param]);

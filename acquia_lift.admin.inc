@@ -246,7 +246,7 @@ function _acquia_lift_admin_build_visibility_form(&$form, &$form_state) {
   $form['acquia_lift_ignore_path_patterns'] = array(
     '#type' => 'textarea',
     '#title' => t('Path patterns'),
-    '#default_value' => variable_get('acquia_lift_ignore_path_patterns', "/admin\n/admin/*\n/batch\n/node/add*\n/node/*/*\n/user/*/*\n/block/*"),
+    '#default_value' => variable_get('acquia_lift_ignore_path_patterns', "/admin\n/admin/*\n/batch\n/node/add*\n/node/*/*\n/user/*\n/block/*"),
   );
 }
 

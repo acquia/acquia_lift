@@ -159,14 +159,14 @@ function _acquia_lift_admin_build_credential_form(&$form, &$form_state) {
  */
 function _acquia_lift_admin_build_identity_form(&$form, &$form_state) {
   $identity_parameter_display_value = variable_get('acquia_lift_identity_param', 'identity');
-  $identity_type_parameter_display_value = variable_get('acquia_lift_identity_type_param', 'identityType');
-  $default_identity_type_display_value = variable_get('acquia_lift_default_identity_type', ACQUIA_LIFT_DEFAULT_IDENTITY_TYPE_IDENTIFIER);
-  $default_identity_type_default_value = variable_get('acquia_lift_default_identity_type', ACQUIA_LIFT_DEFAULT_IDENTITY_TYPE_DEFAULT);
+  $identity_type_parameter_display_value = variable_get('acquia_lift_identity_type_param') ?: 'identityType';
+  $default_identity_type_display_value = variable_get('acquia_lift_default_identity_type') ?: ACQUIA_LIFT_DEFAULT_IDENTITY_TYPE_IDENTIFIER;
+  $default_identity_type_default_value = variable_get('acquia_lift_default_identity_type') ?: ACQUIA_LIFT_DEFAULT_IDENTITY_TYPE_DEFAULT;
 
   $form['acquia_lift_identity_param'] = array(
     '#type' => 'textfield',
     '#title' => t('Identity Parameter'),
-    '#description' => t('The query string parameter for specific visitor information, such as an email address or social media username, which is sent to the Acquia Lift service. Example: ?<ins>@identity_parameter_display_value</ins>=jdoe01', [
+    '#description' => t('The URL link parameter for specific visitor information, such as an email address or social media username, which is sent to the Lift Profile Manager. Example using <strong>@identity_parameter_display_value</strong>: ?<strong><ins>@identity_parameter_display_value</ins></strong>=jdoe01', [
       '@identity_parameter_display_value' => $identity_parameter_display_value,
     ]),
     '#default_value' => variable_get('acquia_lift_identity_param'),
@@ -174,7 +174,7 @@ function _acquia_lift_admin_build_identity_form(&$form, &$form_state) {
   $form['acquia_lift_identity_type_param'] = array(
     '#type' => 'textfield',
     '#title' => t('Identity Type Parameter'),
-    '#description' => t('The query string parameter for the category (standard or custom) of the visitor\'s identity information. Example: ?@identity_parameter_display_value=jdoe01&<ins>@identity_type_parameter_display_value</ins>=@default_identity_type_default_value', [
+    '#description' => t('The URL link parameter that corresponds to a Lift Profile Manager identifier type (one of the pre-defined ones or a new one you\'ve created). Example using <strong>@identity_type_parameter_display_value</strong>: ?@identity_parameter_display_value=jdoe01&<strong><ins>@identity_type_parameter_display_value</ins></strong>=@default_identity_type_default_value', [
       '@identity_parameter_display_value' => $identity_parameter_display_value,
       '@identity_type_parameter_display_value' => $identity_type_parameter_display_value,
       '@default_identity_type_default_value' => $default_identity_type_default_value,
@@ -189,7 +189,7 @@ function _acquia_lift_admin_build_identity_form(&$form, &$form_state) {
   $form['acquia_lift_default_identity_type'] = array(
     '#type' => 'textfield',
     '#title' => t('Default Identity Type'),
-    '#description' => t('The identity type category to use by default. Leave this field blank to default to <ins>@default</ins>. Example: <ins>@default_identity_type_display_value</ins> is "?@identity_parameter_display_value=jdoe01&@identity_type_parameter_display_value=<ins>@default_identity_type_display_value</ins>", while blank is the same as "?@identity_parameter_display_value=jdoe01&@identity_type_parameter_display_value=<ins>@default</ins>"', [
+    '#description' => t('The Lift Profile Manager identity type to be used by default. Example using <strong>@default_identity_type_display_value</strong>: a visitor may visit the site through ?@identity_parameter_display_value=jdoe01 and omit the "@identity_type_parameter_display_value" query, and Lift will automatically identify this visitor as "jdoe01" of <strong><ins>@default_identity_type_display_value</ins></strong> type. Leave this field blank to default to <strong>@default</strong> identity type."', [
       '@default' => 'email',
       '@identity_parameter_display_value' => $identity_parameter_display_value,
       '@identity_type_parameter_display_value' => $identity_type_parameter_display_value,

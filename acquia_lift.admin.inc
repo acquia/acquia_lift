@@ -201,7 +201,9 @@ function _acquia_lift_admin_build_identity_form(&$form, &$form_state) {
         ':input[name="acquia_lift_identity_param"]' => ['!value' => ''],
       ),
     ),
-    '#placeholder' => ACQUIA_LIFT_DEFAULT_IDENTITY_TYPE_DEFAULT,
+    '#attributes' => array(
+      'placeholder' => ACQUIA_LIFT_DEFAULT_IDENTITY_TYPE_DEFAULT,
+    ),
   );
 }
 

@@ -6,4 +6,3 @@ package = Acquia
 core = 7.x
 
 files[] = tests/acquia_lift.test
-files[] = tests/acquia_lift_unit.test

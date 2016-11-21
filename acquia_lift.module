@@ -253,8 +253,8 @@ function _acquia_lift_add_meta_tag($name, $value) {
     '#type' => 'html_tag',
     '#tag' => 'meta',
     '#attributes' => array(
-      'content' =>  $value,
       'itemprop' => 'acquia_lift:' . $name,
+      'content' =>  $value,
     )
   );
   drupal_add_html_head($tag, 'acquia_lift_' . $name);

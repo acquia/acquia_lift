@@ -1,0 +1,561 @@
+<?php
+
+/**
+ * @file
+ * Tests for Acquia Lift Profiles module.
+ */
+
+/**
+ * Tests Acquia Lift functionality.
+ */
+class AcquiaLiftsWebTest extends DrupalWebTestCase {
+
+  private $admin_user;
+  private $admin_button_text;
+
+  public static function getInfo() {
+    return array(
+      'name' => t('Acquia Lift Tests'),
+      'description' => t('Tests basic functionality of Acquia Lift module.'),
+      'group' => t('Acquia'),
+    );
+  }
+
+  function setUp() {
+    parent::setUp(array('acquia_lift'));
+    $this->admin_button_text = t('Save configuration');
+    $this->admin_user = $this->drupalCreateUser(array(
+      'access administration pages',
+      'administer acquia_lift configuration',
+      'administer content types',
+      'administer nodes',
+      'bypass node access'
+    ));
+
+    // Set up a variety of nodes with different term combinations.
+    $this->tags['one_tag'] = array($this->randomName());
+    $this->tags['two_tags'] = array($this->randomName(), $this->randomName());
+    $this->articles['one_tag'] =
+      $this->createArticleWithTerms($this->tags['one_tag']);
+    $this->articles['two_tags'] =
+      $this->createArticleWithTerms($this->tags['two_tags']);
+  }
+
+  function tearDown() {
+    $vars = array(
+      'acquia_lift_identity_param',
+      'acquia_lift_identity_type_param',
+      'acquia_lift_default_identity_type',
+      'acquia_lift_field_mappings',
+      'acquia_lift_udf_mappings',
+      'acquia_lift_identity_param',
+      'acquia_lift_identity_type_param',
+      'acquia_lift_account_id',
+      'acquia_lift_site_id',
+      'acquia_lift_assets_url',
+      'acquia_lift_decision_api_url',
+      'acquia_lift_oauth_url',
+      'acquia_lift_ignore_path_patterns',
+      'acquia_lift_content_replacement_mode',
+    );
+    foreach ($vars as $index => $name) {
+      variable_del($name);
+    }
+    parent::tearDown();
+  }
+
+  /**
+   * Tests the configuration form for Acquia Lift.
+   */
+  function testAdminSettingsForm() {
+    $this->drupalLogin($this->admin_user);
+    $this->drupalGet('/admin/config/services/acquia_lift');
+
+    $submit_confirm_text = t('The configuration settings have been saved.');
+    $submit_button_text = $this->admin_button_text;
+
+    // Confirm expected fields
+    $fields = array(
+      'acquia_lift_account_id',
+      'acquia_lift_site_id',
+      'acquia_lift_assets_url',
+      'acquia_lift_decision_api_url',
+      'acquia_lift_oauth_url',
+      'acquia_lift_identity_param',
+      'acquia_lift_identity_type_param',
+      'acquia_lift_default_identity_type',
+      'acquia_lift_ignore_path_patterns',
+      'acquia_lift_content_replacement_mode',
+      'acquia_lift_field_mappings[content_section]',
+      'acquia_lift_field_mappings[content_keywords]',
+      'acquia_lift_field_mappings[persona]',
+    );
+    for ($i = 1; $i <= 50; $i++) {
+      $fields[] = 'acquia_lift_udf_mappings[person][person_udf' . $i . ']';
+      $fields[] = 'acquia_lift_udf_mappings[event][event_udf' . $i . ']';
+    }
+    for ($i = 1; $i <= 20; $i++) {
+      $fields[] = 'acquia_lift_udf_mappings[touch][touch_udf' . $i . ']';
+    }
+
+    foreach($fields as $fieldname) {
+      $this->assertField($fieldname, 'Found field name: ' . $fieldname);
+    }
+
+    // Confirm required fields
+    $this->drupalPost(NULL, array(), $submit_button_text);
+    $this->assertText(t('Account ID field is required.'), 'Found error for required account id');
+    $this->assertText(t('Site ID field is required.'), 'Found error for required site id');
+    $this->assertText(t('Assets URL field is required.'), 'Found error for required assets url');
+    $this->assertNoText($submit_confirm_text, 'Confirmation text is not shown');
+
+    // Update minimum and confirm values set as variables
+    $edit = array(
+      'acquia_lift_account_id' => 'MY_ACCOUNT',
+      'acquia_lift_site_id' => 'MY_SITE',
+      'acquia_lift_assets_url' => 'example.com/latest',
+    );
+    $this->drupalPost(NULL, $edit, $submit_button_text);
+    $this->assertText($submit_confirm_text);
+    $this->assertEqual(variable_get('acquia_lift_account_id'), 'MY_ACCOUNT', 'Account ID was persisted.');
+    $this->assertEqual(variable_get('acquia_lift_site_id'), 'MY_SITE', 'Site ID was persisted.');
+    $this->assertEqual(variable_get('acquia_lift_assets_url'), 'https://example.com/latest', 'Assets URL was persisted.');
+
+    // Test visibility settings
+    $test_path_patterns = "/testing\n/testing/*";
+    $this->assertNotEqual(variable_get('acquia_lift_ignore_path_patterns'), $test_path_patterns, 'Path patterns are in initial state.');
+    $edit['acquia_lift_ignore_path_patterns'] = $test_path_patterns;
+    $this->drupalPost(NULL, $edit, $submit_button_text);
+    $this->assertText($submit_confirm_text);
+    $this->assertEqual(variable_get('acquia_lift_ignore_path_patterns'), $test_path_patterns, 'Visibility path patterns were updated.');
+
+    // Test content replacement mode settings
+    $this->assertEqual(variable_get('acquia_lift_content_replacement_mode'), 'untrusted', 'Content replacement initially saved in default untrusted mode.');
+    $edit['acquia_lift_content_replacement_mode'] = 'trusted';
+    $this->drupalPost(NULL, $edit, $submit_button_text);
+    $this->assertText($submit_confirm_text);
+    $this->assertEqual(variable_get('acquia_lift_content_replacement_mode'), 'trusted', 'Content replacement mode was updated to trusted.');
+
+    // Only UDF mappings will values should be stored.
+    $this->assertTrue(empty(variable_get('acquia_lift_udf_mappings')), 'UDF Mappings are initially empty.');
+    $edit['acquia_lift_udf_mappings[person][person_udf1]'] = 'taxonomy_context__tags';
+    $edit['acquia_lift_udf_mappings[event][event_udf3]'] = 'taxonomy_context__tags';
+    $edit['acquia_lift_udf_mappings[touch][touch_udf2]'] = 'taxonomy_context__tags';
+    $edit['acquia_lift_udf_mappings[touch][touch_udf10]'] = 'taxonomy_context__tags';
+    $this->drupalPost(NULL, $edit, $submit_button_text);
+    $this->assertText($submit_confirm_text);
+    $expected = array(
+      'person' => array(
+        'person_udf1' => 'taxonomy_context__tags',
+      ),
+      'event' => array(
+        'event_udf3' => 'taxonomy_context__tags',
+      ),
+      'touch' => array(
+        'touch_udf2' => 'taxonomy_context__tags',
+        'touch_udf10' => 'taxonomy_context__tags',
+      ),
+    );
+    $this->assertEqual(variable_get('acquia_lift_udf_mappings'), $expected, 'Only udfs set to values are saved.');
+
+    $edit['acquia_lift_udf_mappings[event][event_udf3]'] = '';
+    unset($expected['event']);
+    $this->drupalPost(NULL, $edit, $submit_button_text);
+    $this->assertText($submit_confirm_text);
+    $this->assertEqual(variable_get('acquia_lift_udf_mappings'), $expected, 'Only udfs types with values set are saved.');
+
+    // Confirm field mappings only store those with values.
+    $this->assertTrue(empty(variable_get('acquia_lift_field_mappings')), 'Field Mappings are initially empty.');
+    $edit['acquia_lift_field_mappings[content_section]'] = 'taxonomy_context__tags';
+    $edit['acquia_lift_field_mappings[content_keywords]'] = 'taxonomy_context__tags';
+    $edit['acquia_lift_field_mappings[persona]'] = 'taxonomy_context__tags';
+
+    $expected = array(
+      'content_section' => 'taxonomy_context__tags',
+      'content_keywords' => 'taxonomy_context__tags',
+      'persona' => 'taxonomy_context__tags',
+    );
+    $this->drupalPost(NULL, $edit, $submit_button_text);
+    $this->assertText($submit_confirm_text);
+    $this->assertEqual(variable_get('acquia_lift_field_mappings'), $expected, 'All field mappings fields are updateable as expected.');
+
+    $edit['acquia_lift_field_mappings[persona]'] = '';
+    unset($expected['persona']);
+    $this->drupalPost(NULL, $edit, $submit_button_text);
+    $this->assertText($submit_confirm_text);
+    $this->assertEqual(variable_get('acquia_lift_field_mappings'), $expected, 'Only field mappings that have values are stored.');
+
+    // Confirm account id validation
+    $invalid = array(
+      '1myid',
+      'account-id',
+      'Accoun#',
+    );
+    $valid = array(
+      'my_account',
+      'MYID',
+    );
+    foreach($invalid as $test_id) {
+      $edit['acquia_lift_account_id'] = $test_id;
+      $this->drupalPost(NULL, $edit, $submit_button_text);
+      $this->assertNoText($submit_confirm_text);
+      $this->assertText(t('Account ID contains invalid characters'));
+    }
+    foreach($valid as $test_id) {
+      $edit['acquia_lift_account_id'] = $test_id;
+      $this->drupalPost(NULL, $edit, $submit_button_text);
+      $this->assertText($submit_confirm_text);
+      $this->assertNoText(t('Account ID contains invalid characters'));
+    }
+
+    // Confirm url validation
+    $url_fields = array('acquia_lift_assets_url', 'acquia_lift_decision_api_url', 'acquia_lift_oauth_url');
+    $invalid_urls = array('test@%', '2^');
+    $valid_urls = array(
+      array(
+        'test' => 'http://www.example.com/',
+        'result' => 'https://www.example.com',
+      ),
+      array(
+        'test' => 'localhost',
+        'result' => 'https://localhost',
+      ),
+      array(
+        'test' => '/myurl',
+        'result' => 'https://myurl',
+      ),
+    );
+    foreach($url_fields as $test_field) {
+      foreach ($invalid_urls as $test) {
+        $edit[$test_field] = $test;
+        $this->drupalPost(NULL, $edit, $submit_button_text);
+        $this->assertNoText($submit_confirm_text);
+        $this->assertText(t('is an invalid URL'), $test . ' is an invalid url.');
+      }
+      foreach($valid_urls as $case) {
+        $expected_variable = $test_field == 'acquia_lift_oauth_url' ? $case['result'] . '/authorize' : $case['result'];
+        $edit[$test_field] = $case['test'];
+        $this->drupalPost(NULL, $edit, $submit_button_text);
+        $this->assertText($submit_confirm_text);
+        $this->assertNoText(t('is an invalid URL'), $case['test'] . ' is a valid url');
+        $this->assertEqual(variable_get($test_field), $expected_variable, $test_field . ' set to ' . $expected_variable);
+      }
+    }
+  }
+
+  /**
+   * Test the visibility path filtering.
+   */
+  function testVisibilityFiltering() {
+    $node = $this->drupalCreateNode();
+    $node_url = '/node/' . $node->nid;
+
+    // No lift when not configured.
+    $this->drupalGet($node_url);
+    $this->assertNoLift();
+
+    // Configured without limitations
+    $this->configureLift();
+    $this->drupalGet($node_url);
+    $this->assertLift();
+
+    // No node pages should have Lift
+    variable_set('acquia_lift_ignore_path_patterns', '/node/*');
+    $this->drupalGet($node_url);
+    $this->assertNoLift();
+
+    // Only the root node page should be restricted
+    variable_set('acquia_lift_ignore_path_patterns', '/node');
+    $this->drupalGet($node_url);
+    $this->assertLift();
+
+    // Multiple paths are restricted
+    variable_set('acquia_lift_ignore_path_patterns', "/node\n/node/*");
+    $this->drupalGet($node_url);
+    $this->assertNoLift();
+  }
+
+  /**
+   * Test credentials are output for Lift.
+   */
+  function testLiftCredentials() {
+    // Lift not configured then no credentials
+    $this->drupalGet('/');
+    $this->assertNoLift();
+    $this->assertNoLiftMetaTag('account_id');
+    $this->assertNoLiftMetaTag('site_id');
+    $this->assertNoLiftMetaTag('liftAssetsUrl');
+    $this->assertNoLiftMetaTag('liftDecisionAPIURL');
+    $this->assertNoLiftMetaTag('authEndpoint');
+    $this->assertNoLiftMetaTag('contentReplacementMode');
+
+    $this->configureLift();
+    // Sets up the account id, site id, and assets url.
+    $this->drupalGet('/');
+    $this->assertLift();
+    $this->assertLiftMetaTag('account_id');
+    $this->assertLiftMetaTag('site_id');
+    $this->assertLiftMetaTag('liftAssetsUrl');
+    $this->assertNoLiftMetaTag('liftDecisionAPIURL');
+    $this->assertNoLiftMetaTag('authEndpoint');
+    $this->assertLiftMetaTag('contentReplacementMode', 'untrusted');
+
+    // Manually set all the configuration variables and confirm meta tags.
+    variable_set('acquia_lift_account_id', 'MY_ACCOUNT');
+    variable_set('acquia_lift_site_id', 'MY_SITE');
+    variable_set('acquia_lift_assets_url', 'https://example.com/assets/stable');
+    variable_set('acquia_lift_decision_api_url', 'https://example.com/decisionapi');
+    variable_set('acquia_lift_oauth_url', 'https://example.com/authorize');
+    variable_set('acquia_lift_content_replacement_mode', 'trusted');
+
+    $this->drupalGet('/');
+    $this->assertLift();
+    $this->assertLiftMetaTag('account_id', 'MY_ACCOUNT');
+    $this->assertLiftMetaTag('site_id', 'MY_SITE');
+    $this->assertLiftMetaTag('liftAssetsUrl', 'https://example.com/assets/stable');
+    $this->assertLiftMetaTag('liftDecisionAPIURL', 'https://example.com/decisionapi');
+    $this->assertLiftMetaTag('authEndpoint', 'https://example.com/authorize');
+    $this->assertLiftMetaTag('contentReplacementMode', 'trusted');
+  }
+
+  /**
+   * Tests identity param configuration and js settings.
+   */
+  function testIdentityParams() {
+    $submit_button_text = $this->admin_button_text;
+    $this->configureLift();
+    $this->drupalLogin($this->admin_user);
+    // Test specifying a querystring param to use for capturing identity.
+    $this->drupalPost('/admin/config/services/acquia_lift', array(
+      'acquia_lift_identity_param' => 'ali',
+    ), $submit_button_text);
+    $this->drupalLogout();
+
+    // Now visit the site as anon without passing any querystring params.
+    $this->drupalGet('');
+    $this->assertNoLiftIdentityMetaTag();
+
+    // Now pass the configured identity param
+    $my_id = 'ohai';
+    $this->drupalGet('', array('query' => array('ali' => $my_id)));
+    $this->assertLiftIdentityMetaTag(ACQUIA_LIFT_DEFAULT_IDENTITY_TYPE_DEFAULT, $my_id);
+
+    // Set the identity type param
+    $this->drupalLogin($this->admin_user);
+    $this->drupalPost('admin/config/services/acquia_lift', array(
+      'acquia_lift_identity_type_param' => 'alit',
+    ), $submit_button_text);
+    $this->drupalLogout();
+
+    // Pass the configured identity param and the identity_type param
+    $my_type = 'socialtastic';
+    $this->drupalGet('', array('query' => array('ali' => $my_id, 'alit' => $my_type)));
+    $this->assertLiftIdentityMetaTag($my_type, $my_id);
+
+    // Pass the configured identity type param without the identity param
+    $this->drupalGet('', array('query' => array('alit' => $my_type)));
+    $this->assertNoLiftIdentityMetaTag();
+
+    // Set the default identity type
+    $default_type = 'tknr';
+    $this->drupalLogin($this->admin_user);
+    $this->drupalPost('admin/config/services/acquia_lift', array(
+      'acquia_lift_default_identity_type' => $default_type,
+    ), $submit_button_text);
+    $this->drupalLogout();
+
+    // Pass the configured identity param but without the identity_type param
+    $this->drupalGet('', array('query' => array('ali' => $my_id)));
+    $this->assertLiftIdentityMetaTag($default_type, $my_id);
+
+    // Pass the configured identity param and with the identity_type param
+    $this->drupalGet('', array('query' => array('ali' => $my_id, 'alit' => $my_type)));
+    $this->assertLiftIdentityMetaTag($my_type, $my_id);
+  }
+
+  function testFieldMappings() {
+    $submit_button_text = $this->admin_button_text;
+    $this->configureLift();
+    $this->drupalLogin($this->admin_user);
+
+    $edit = array(
+      'acquia_lift_field_mappings[content_section]' => 'taxonomy_context__tags',
+      'acquia_lift_field_mappings[content_keywords]' => 'taxonomy_context__tags',
+      'acquia_lift_field_mappings[persona]' => 'taxonomy_context__tags',
+    );
+    $this->drupalPost('admin/config/services/acquia_lift', $edit, $submit_button_text);
+    $this->drupalGet('node/' . $this->articles['one_tag']->nid);
+    $expected_tag = $this->tags['one_tag'][0];
+    $this->assertLiftMetaTag('content_section', $expected_tag);
+    $this->assertLiftMetaTag('content_keywords', $expected_tag);
+    $this->assertLiftMetaTag('persona', $expected_tag);
+
+    $this->drupalGet('node/' . $this->articles['two_tags']->nid);
+    $expected_tags = implode(',', $this->tags['two_tags']);
+    $this->assertLiftMetaTag('content_section', $expected_tags);
+    $this->assertLiftMetaTag('content_keywords', $expected_tags);
+    $this->assertLiftMetaTag('persona', $expected_tags);
+
+    $edit = array(
+      'acquia_lift_field_mappings[content_section]' => 'taxonomy_context__tags',
+      'acquia_lift_field_mappings[content_keywords]' => '',
+      'acquia_lift_field_mappings[persona]' => 'taxonomy_context__tags',
+    );
+    $this->drupalPost('admin/config/services/acquia_lift', $edit, $submit_button_text);
+    $this->drupalGet('node/' . $this->articles['one_tag']->nid);
+    $expected_tag = $this->tags['one_tag'][0];
+    $this->assertLiftMetaTag('content_section', $expected_tag);
+    $this->assertNoLiftMetaTag('content_keywords');
+    $this->assertLiftMetaTag('persona', $expected_tag);
+  }
+
+  function testUDFMappings() {
+    $this->configureLift();
+    $this->drupalLogin($this->admin_user);
+    $edit = array(
+      'acquia_lift_udf_mappings[person][person_udf1]' => 'taxonomy_context__tags',
+      'acquia_lift_udf_mappings[touch][touch_udf20]' => 'taxonomy_context__tags'
+    );
+    $this->drupalPost('admin/config/services/acquia_lift', $edit, $this->admin_button_text);
+    $this->drupalGet('node/' . $this->articles['one_tag']->nid);
+    $expected_tag = $this->tags['one_tag'][0];
+    $this->assertLiftMetaTag('person_udf1', $expected_tag);
+    $this->assertLiftMetaTag('touch_udf20', $expected_tag);
+
+    $edit = array(
+      'acquia_lift_udf_mappings[person][person_udf1]' => 'taxonomy_context__tags',
+      'acquia_lift_udf_mappings[touch][touch_udf20]' => '',
+      'acquia_lift_udf_mappings[event][event_udf5]' => 'taxonomy_context__tags',
+    );
+    $this->drupalPost('admin/config/services/acquia_lift', $edit, $this->admin_button_text);
+    $this->drupalGet('node/' . $this->articles['two_tags']->nid);
+    $expected_tags = implode(',', $this->tags['two_tags']);
+    $this->assertLiftMetaTag('person_udf1', $expected_tags);
+    $this->assertNoLiftMetaTag('touch_udf20');
+    $this->assertLiftMetaTag('event_udf5', $expected_tags);
+  }
+
+  /**
+   * Helper function to configure acquia_lift settings.
+   */
+  private function configureLift() {
+    $settings = array(
+      'acquia_lift_account_id' => 'MY_ACCOUNT_ID',
+      'acquia_lift_site_id' => 'MY_SITE_ID',
+      'acquia_lift_assets_url' => 'https://example.com/latest',
+    );
+    foreach ($settings as $setting => $value) {
+      variable_set($setting, $value);
+    }
+  }
+
+  /**
+   * Helper function to assert that Lift is available on the page
+   */
+  private function assertLift() {
+    $this->assertRaw($this->getLiftBootstrapUrl(), 'Lift bootstrap is included on the page.');
+  }
+
+  /**
+   * Helper function to assert that Lift is not available on the page
+   */
+  private function assertNoLift() {
+    $this->assertNoRaw($this->getLiftBootstrapUrl(), 'Lift bootstrap is not included on the page.');
+  }
+
+  /**
+   * Helper function to assert that a meta tag is found in the page
+   */
+  private function assertLiftMetaTag($name, $value = NULL) {
+    $pattern = '/<meta (?=[^>]*itemprop="acquia_lift:' . preg_quote($name, '/') . '")';
+    if (!empty($value)) {
+      $pattern .= '(?=[^>]*content="' . preg_quote($value, '/') . '")';
+    }
+    $pattern .= '/';
+    $this->assertPattern($pattern, 'Found meta tag for ' . $name);
+  }
+
+  /**
+   * Helper function to assert that a meta tag is not found in the page
+   */
+  private function assertNoLiftMetaTag($name) {
+    $pattern = '/<meta (?=[^>]*itemprop="acquia_lift:' . preg_quote($name, '/') . '")/';
+    $this->assertNoPattern($pattern, 'Did not find meta tag for ' . $name);
+  }
+
+  /**
+   * Helper function to assert that an identifier  meta tag is found in the page
+   */
+  private function assertLiftIdentityMetaTag($type = NULL, $value = NULL) {
+    if ($type) {
+      $pattern = '/<meta (?=[^>]*itemprop="acquia_lift:identity:' . preg_quote($type, '/') . '")';
+      if (!empty($value)) {
+        $pattern .= '(?=[^>]*content="' . preg_quote($value, '/') . '")';
+      }
+      $pattern .= '/';
+    }
+    else {
+      $pattern = '/<meta (?=[^>]*itemprop="acquia_lift:identity:)/';
+    }
+    $this->assertPattern($pattern, 'Found identity meta tag' . $type ? ' for ' . $type : '');
+  }
+
+  /**
+   * Helper function to assert that a meta tag is not found in the page
+   */
+  private function assertNoLiftIdentityMetaTag($name = NULL) {
+    $pattern = '/<meta (?=[^>]*itemprop="acquia_lift:identity';
+    if ($name) {
+      $pattern .= preg_quote($name, '/');
+    }
+    $pattern .= ')/';
+    $this->assertNoPattern($pattern, 'Did not find meta tag for ' . $name);
+  }
+
+  /**
+   * Helper function to generate the lift bootstrap URL.
+   */
+  private function getLiftBootstrapUrl() {
+    $assets_url = variable_get('acquia_lift_assets_url', '');
+    return $assets_url . '/lift.js';
+  }
+
+  /**
+   * Creates an article with the specified terms.
+   *
+   * @param array $autocreate
+   *   (optional) An array of term names to autocreate. Defaults to array().
+   * @param array $existing
+   *   (optional) An array of existing term IDs to add.
+   *
+   * @return object
+   *   The node object.
+   */
+  private function createArticleWithTerms($autocreate = array(), $existing = array()) {
+    $values = array();
+    foreach ($autocreate as $name) {
+      $values[] = array(
+        'tid' => 'autocreate',
+        'vid' => 1,
+        'name' => $name,
+        'vocabulary_machine_name' => 'tags'
+      );
+    }
+    foreach ($existing as $tid) {
+      $values[] = array(
+        'tid' => $tid,
+        'vid' => 1,
+        'vocabulary_machine_name' => 'tags'
+      );
+    }
+
+    $values = array(LANGUAGE_NONE => $values);
+
+    $settings = array(
+      'type' => 'article',
+      'field_tags' => $values,
+    );
+
+    return $this->drupalCreateNode($settings);
+  }
+}

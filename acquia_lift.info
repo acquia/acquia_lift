@@ -1,0 +1,8 @@
+name = Acquia Lift
+description = Provides integration to the Acquia Lift service for personalization and visitor data collection.
+configure = admin/config/services/acquia_lift
+
+package = Acquia
+core = 7.x
+
+files[] = tests/acquia_lift.test

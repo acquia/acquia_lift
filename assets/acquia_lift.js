@@ -1,6 +1,6 @@
 /**
  * @file
- * Contains the definition of the behaviour openAcquiaLiftExperienceBuilder.
+ * Contains the definition of the behavior openAcquiaLiftExperienceBuilder.
  */
 
 (function ($, Drupal) {

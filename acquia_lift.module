@@ -45,51 +45,43 @@ function acquia_lift_page_attachments(array &$page) {
  * Implements hook_toolbar().
  */
 function acquia_lift_toolbar() {
-  $links = array();
-  // Add a link to enable Lift 3.
-  $links['login_to_acquia_lift'] = array(
-    'title' => t('Login'),
-    // This will make the href attribute empty.
-    'url' => Url::fromUserInput('#'),
-    'attributes' => array(
-      // This particular id will make sure the JS behavior is attached to the
-      // link.
-      'class' => array('openLiftLink'),
-    ),
-    'options' => array(
-      'title' => t('Open the Login prompt to access the Lift 3 Experience Builder.'),
-    )
-  );
+  $items = [];
+  $items['acquia_lift'] = [
+    '#cache' => [
+      'contexts' => [
+        'user.permissions',
+      ],
+    ],
+  ];
 
-  // Create the acquia_lift toolbar render array.
-  $items['acquia_lift'] = array(
+  if (!\Drupal::currentUser()->hasPermission('access acquia lift links')) {
+    return $items;
+  }
+
+  $items['acquia_lift'] += [
     '#type' => 'toolbar_item',
-    'tab' => array(
-      '#type' => 'link',
-      '#title' => t('Acquia Lift'),
-      '#url' => Url::fromRoute('<front>'),
-      '#attributes' => array(
+    'tab' => [
+      '#type' => 'html_tag',
+      '#tag' => 'button',
+      '#value' => t('Acquia Lift'),
+      '#attributes' => [
         'title' => t('Acquia Lift'),
-        'class' => array('toolbar-icon', 'toolbar-icon-acquia-lift'),
-      ),
-    ),
-    'tray' => array(
-      '#heading' => t('Acquia Lift'),
-      'shortcuts' => array(
-        '#theme' => 'links__toolbar_acquia_lift',
-        '#links' => $links,
-        '#attributes' => array(
-          'class' => array('toolbar-menu'),
-        ),
-      ),
-    ),
-    '#weight' => 99,
-    '#attached' => array(
-      'library' => array(
+        'class' => ['toolbar-icon', 'toolbar-icon-acquia-lift'],
+        // This particular id will make sure the JS behavior is attached to the
+        // link.
+        'id' => ['openLiftLink'],
+        'aria-pressed' => 'false',
+      ],
+    ],
+    '#wrapper_attributes' => [
+      'class' => ['acquia-lift-toolbar-tab'],
+    ],
+    '#attached' => [
+      'library' => [
         'acquia_lift/acquia-lift',
-      ),
-    ),
-  );
+      ],
+    ],
+  ];
 
   return $items;
 }

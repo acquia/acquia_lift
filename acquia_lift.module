@@ -12,6 +12,7 @@
  */
 
 use Drupal\Core\Form\FormStateInterface;
+use Drupal\Core\Url;
 
 /**
  * Implements hook_help().
@@ -38,4 +39,60 @@ function acquia_lift_page_attachments(array &$page) {
 
   // Attach lift CSS to all pages.
   $page['#attached']['library'][] = 'acquia_lift/acquia-lift';
+}
+
+/**
+ * Implements hook_toolbar().
+ */
+function acquia_lift_toolbar() {
+  // Build a list of links for the menu.
+  $links = array();
+
+  // Add a link to enable Lift 3.
+  $links['login_to_acquia_lift'] = array(
+    'title' => t('Login'),
+    // Just using Url::fromUserInput('#') does not render properly.
+    'url' => Url::fromUserInput('#nolink'),
+    'attributes' => array(
+      // This particular id will make sure the JS behavior is attached to the
+      // link.
+      'class' => array('openLiftLink'),
+    ),
+    'options' => array(
+      'title' => t('Open the Login prompt to access the Lift 3 Experience Builder.'),
+    )
+  );
+
+  // Create the examples toolbar render array.
+  $items['acquia_lift'] = array(
+    '#type' => 'toolbar_item',
+    'tab' => array(
+      '#type' => 'link',
+      '#title' => t('Acquia Lift'),
+      // @todo: Once it is created, use the example index page.
+      '#url' => Url::fromRoute('<front>'),
+      '#attributes' => array(
+        'title' => t('Acquia Lift'),
+        'class' => array('toolbar-icon', 'toolbar-icon-acquia-lift'),
+      ),
+    ),
+    'tray' => array(
+      '#heading' => t('Acquia Lift'),
+      'shortcuts' => array(
+        '#theme' => 'links__toolbar_acquia_lift',
+        '#links' => $links,
+        '#attributes' => array(
+          'class' => array('toolbar-menu'),
+        ),
+      ),
+    ),
+    '#weight' => 99,
+    '#attached' => array(
+      'library' => array(
+        'acquia-lift',
+      ),
+    ),
+  );
+
+  return $items;
 }

@@ -1,4 +1,8 @@
 acquia-lift:
   css:
-    state:
+    component:
       assets/acquia_lift.css: {}
+  js:
+    assets/acquia_lift.js: {}
+  dependencies:
+    - core/jquery

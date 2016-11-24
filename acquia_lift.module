@@ -45,14 +45,12 @@ function acquia_lift_page_attachments(array &$page) {
  * Implements hook_toolbar().
  */
 function acquia_lift_toolbar() {
-  // Build a list of links for the menu.
   $links = array();
-
   // Add a link to enable Lift 3.
   $links['login_to_acquia_lift'] = array(
     'title' => t('Login'),
-    // Just using Url::fromUserInput('#') does not render properly.
-    'url' => Url::fromUserInput('#nolink'),
+    // This will make the href attribute empty.
+    'url' => Url::fromUserInput('#'),
     'attributes' => array(
       // This particular id will make sure the JS behavior is attached to the
       // link.
@@ -63,13 +61,12 @@ function acquia_lift_toolbar() {
     )
   );
 
-  // Create the examples toolbar render array.
+  // Create the acquia_lift toolbar render array.
   $items['acquia_lift'] = array(
     '#type' => 'toolbar_item',
     'tab' => array(
       '#type' => 'link',
       '#title' => t('Acquia Lift'),
-      // @todo: Once it is created, use the example index page.
       '#url' => Url::fromRoute('<front>'),
       '#attributes' => array(
         'title' => t('Acquia Lift'),
@@ -89,7 +86,7 @@ function acquia_lift_toolbar() {
     '#weight' => 99,
     '#attached' => array(
       'library' => array(
-        'acquia-lift',
+        'acquia_lift/acquia-lift',
       ),
     ),
   );

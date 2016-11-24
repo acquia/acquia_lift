@@ -1,6 +1,6 @@
 acquia-lift:
   css:
-    component:
+    state:
       assets/acquia_lift.css: {}
   js:
     assets/acquia_lift.js: {}

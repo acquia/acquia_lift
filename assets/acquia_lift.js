@@ -18,6 +18,8 @@
                 } else {
                     alert('Sorry, Acquia Lift could not be found');
                 }
+                // Do not act on the href link.
+                return false;
             });
         }
     };

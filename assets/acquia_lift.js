@@ -22,7 +22,7 @@
   }
 
   /**
-   * Attaches the JS test behavior to to weight div.
+   * Attaches the JS behavior to the openLiftLink id in the toolbar.
    */
   Drupal.behaviors.acquiaLiftOpenExperienceBuilder = {
     attach: function (context, settings) {

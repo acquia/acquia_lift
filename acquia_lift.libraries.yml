@@ -5,4 +5,4 @@ acquia-lift:
   js:
     assets/acquia_lift.js: {}
   dependencies:
-    - core/jquery
+    - core/jquery.once

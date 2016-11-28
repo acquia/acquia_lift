@@ -10,8 +10,7 @@
  * adaptively segments customers in real-time, letting you deliver personalized
  * content that furthers your website visitors' engagement with your brand.
  */
-
-use Drupal\Core\Form\FormStateInterface;
+use Drupal\Core\Access\AccessResult;
 
 /**
  * Implements hook_help().
@@ -38,4 +37,39 @@ function acquia_lift_page_attachments(array &$page) {
 
   // Attach lift CSS to all pages.
   $page['#attached']['library'][] = 'acquia_lift/acquia-lift';
+}
+
+/**
+ * Implements hook_toolbar().
+ */
+function acquia_lift_toolbar() {
+  $items = [];
+
+  $items['acquia_lift'] = [
+    '#type' => 'toolbar_item',
+    'tab' => [
+      '#type' => 'html_tag',
+      '#tag' => 'button',
+      '#value' => t('Acquia Lift'),
+      '#attributes' => [
+        'title' => t('Acquia Lift'),
+        'class' => ['toolbar-icon', 'toolbar-icon-acquia-lift'],
+        // This particular id will make sure the JS behavior is attached to the
+        // link.
+        'id' => ['openLiftLink'],
+        'aria-pressed' => 'false',
+      ],
+    ],
+    '#access' => AccessResult::allowedIfHasPermission(\Drupal::currentUser(), 'access acquia lift links'),
+    '#wrapper_attributes' => [
+      'class' => ['acquia-lift-toolbar-tab'],
+    ],
+    '#attached' => [
+      'library' => [
+        'acquia_lift/acquia-lift',
+      ],
+    ],
+  ];
+
+  return $items;
 }

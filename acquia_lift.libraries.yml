@@ -2,3 +2,7 @@ acquia-lift:
   css:
     state:
       assets/acquia_lift.css: {}
+  js:
+    assets/acquia_lift.js: {}
+  dependencies:
+    - core/jquery.once

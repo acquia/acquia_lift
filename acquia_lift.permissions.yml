@@ -1,3 +1,5 @@
 administer acquia lift:
   title: Administer Acquia Lift
   description: Administer settings of Acquia Lift module.
+access acquia lift links:
+  title: 'See the Acquia Lift links in the toolbar or elsewhere.'

@@ -15,7 +15,7 @@
       window.AcquiaLiftPublicApi.activate();
     }
     else {
-      alert('Sorry, Acquia Lift could not be found');
+      alert('Acquia Lift Experience Builder could not be loaded. Please check Lift admin page and make sure your account credentials are already set. If this problem persists, please contact the Acquia Lift Team for support.');
     }
     // Do not act on the href link.
     return false;

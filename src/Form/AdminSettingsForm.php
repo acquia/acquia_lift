@@ -94,7 +94,7 @@ class AdminSettingsForm extends ConfigFormBase {
       SettingsHelper::isInvalidCredentialSiteId($credential_settings['site_id']) ||
       SettingsHelper::isInvalidCredentialAssetsUrl($credential_settings['assets_url'])
     ) {
-      drupal_set_message(t('Acquia Lift module requires valid Account ID, Site ID, and Assets URL to be activate.'), 'warning');
+      drupal_set_message(t('The Acquia Lift module requires a valid Account ID, Site ID, and Assets URL to complete activation.'), 'warning');
     }
 
     // Validate URLs and check connections.

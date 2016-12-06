@@ -35,14 +35,17 @@ function acquia_lift_page_attachments(array &$page) {
   $path_context->populate($page);
   $page_context->populate($page);
 
-  // Attach lift CSS to all pages.
-  $page['#attached']['library'][] = 'acquia_lift/acquia-lift';
+  // Attach lift CSS to all pages if the toolbar is present.
+  if (\Drupal::currentUser()->hasPermission('access toolbar')) {
+    $page['#attached']['library'][] = 'acquia_lift/acquia-lift';
+  }
 }
 
 /**
  * Implements hook_toolbar().
  */
 function acquia_lift_toolbar() {
+  $path_context = \Drupal::service('acquia_lift.service.context.path_context');
   $items = [];
 
   $items['acquia_lift'] = [
@@ -60,7 +63,7 @@ function acquia_lift_toolbar() {
         'aria-pressed' => 'false',
       ],
     ],
-    '#access' => AccessResult::allowedIfHasPermission(\Drupal::currentUser(), 'access acquia lift links'),
+    '#access' => \Drupal::currentUser()->hasPermission('access acquia lift links') && $path_context->shouldAttach(),
     '#wrapper_attributes' => [
       'class' => ['acquia-lift-toolbar-tab'],
     ],

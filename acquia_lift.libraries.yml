@@ -6,3 +6,4 @@ acquia-lift:
     assets/acquia_lift.js: {}
   dependencies:
     - core/jquery.once
+    - core/drupal

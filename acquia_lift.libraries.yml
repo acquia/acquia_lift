@@ -1,9 +1,14 @@
-acquia-lift:
+acquia-lift-toolbar-button:
   css:
     state:
-      assets/acquia_lift.css: {}
+      assets/acquia_lift_toolbar_button.css: {}
   js:
-    assets/acquia_lift.js: {}
+    assets/acquia_lift_toolbar_button.js: {}
   dependencies:
     - core/jquery.once
     - core/drupal
+
+acquia-lift-toolbar:
+  css:
+    state:
+      assets/acquia_lift_toolbar.css: {}

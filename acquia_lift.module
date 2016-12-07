@@ -35,9 +35,11 @@ function acquia_lift_page_attachments(array &$page) {
   $path_context->populate($page);
   $page_context->populate($page);
 
-  // Attach lift CSS to all pages if the toolbar is present.
+  // Attach Toolbar CSS Adjustment to all pages if the toolbar is present. This
+  // is because we want the toolbar to shrink along with the lift experience
+  // tools.
   if (\Drupal::currentUser()->hasPermission('access toolbar')) {
-    $page['#attached']['library'][] = 'acquia_lift/acquia-lift';
+    $page['#attached']['library'][] = 'acquia_lift/acquia-lift-toolbar';
   }
 }
 
@@ -45,8 +47,13 @@ function acquia_lift_page_attachments(array &$page) {
  * Implements hook_toolbar().
  */
 function acquia_lift_toolbar() {
+  // Create and attach settings and library only when path context agrees on attaching.
   $path_context = \Drupal::service('acquia_lift.service.context.path_context');
   $items = [];
+  // If this link should not be supported
+  if (!$path_context->shouldAttach()) {
+    return $items;
+  }
 
   $items['acquia_lift'] = [
     '#type' => 'toolbar_item',
@@ -63,13 +70,17 @@ function acquia_lift_toolbar() {
         'aria-pressed' => 'false',
       ],
     ],
-    '#access' => \Drupal::currentUser()->hasPermission('access acquia lift links') && $path_context->shouldAttach(),
+    '#access' => \Drupal::currentUser()->hasPermission('access acquia lift links'),
+    '#cache' => [
+      'keys' => ['toolbar'],
+      'contexts' => ['user.permissions'],
+    ],
     '#wrapper_attributes' => [
       'class' => ['acquia-lift-toolbar-tab'],
     ],
     '#attached' => [
       'library' => [
-        'acquia_lift/acquia-lift',
+        'acquia_lift/acquia-lift-toolbar-button',
       ],
     ],
   ];

@@ -82,13 +82,16 @@ class PathContext extends BaseContext {
    *   True if should attach.
    */
   public function shouldAttach() {
+    debug('checking ShouldAttach');
     // Should not attach if credential is invalid.
     if (SettingsHelper::isInvalidCredential($this->credentialSettings)) {
+      debug("invalid creds");
       return FALSE;
     }
 
     // Should not attach if current path match the path patterns.
     if ($this->pathMatcher->match($this->currentPath, $this->requestPathPatterns)) {
+      debug("invalid path");
       return FALSE;
     }
 

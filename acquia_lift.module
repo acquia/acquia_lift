@@ -62,7 +62,6 @@ function acquia_lift_toolbar() {
   ];
 
   // Clear the cache of this render array if the credential config changes.
-  // In theory this should work..
   $config = \Drupal::config('acquia_lift.settings.credential');
   \Drupal::service('renderer')->addCacheableDependency($items['acquia_lift'], $config);
 

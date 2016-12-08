@@ -16,15 +16,3 @@ body.lift.lift-tools-active .toolbar-oriented .toolbar-bar,
 body.lift.lift-tools-active .toolbar-oriented .toolbar-tray {
   right: 420px; /* expanded width of lift tools */
 }
-
-/**
- * Toolbar tab icon.
- */
-.toolbar-bar .toolbar-icon-acquia-lift:before {
-  background-image: url(../images/rocket.svg);
-}
-.toolbar-bar .toolbar-icon-acquia-lift:active:before,
-.toolbar-bar .toolbar-icon-acquia-lift.active:before {
-  background-image: url(../images/rocket.svg);
-}
-

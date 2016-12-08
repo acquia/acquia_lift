@@ -35,22 +35,33 @@ function acquia_lift_page_attachments(array &$page) {
   $path_context->populate($page);
   $page_context->populate($page);
 
-  // Attach lift CSS to all pages.
-  $page['#attached']['library'][] = 'acquia_lift/acquia-lift';
+  // Attach Toolbar CSS Adjustment to all pages if the toolbar is present. This
+  // is because we want the toolbar to shrink along with the lift experience
+  // tools.
+  if (\Drupal::currentUser()->hasPermission('access toolbar')) {
+    $page['#attached']['library'][] = 'acquia_lift/acquia-lift-toolbar';
+  }
 }
 
 /**
  * Implements hook_toolbar().
  */
 function acquia_lift_toolbar() {
-  $items = [];
+  // show link only when path context agrees on attaching.
+  $path_context = \Drupal::service('acquia_lift.service.context.path_context');
 
+  $items = [];
   $items['acquia_lift'] = [
     '#type' => 'toolbar_item',
     'tab' => [
       '#type' => 'html_tag',
       '#tag' => 'button',
       '#value' => t('Acquia Lift'),
+      '#access' => \Drupal::currentUser()->hasPermission('access acquia lift links') && $path_context->shouldAttach(),
+      '#cache' => [
+        'keys' => ['toolbar'],
+        'contexts' => ['user.permissions'],
+      ],
       '#attributes' => [
         'title' => t('Acquia Lift'),
         'class' => ['toolbar-icon', 'toolbar-icon-acquia-lift'],
@@ -60,16 +71,25 @@ function acquia_lift_toolbar() {
         'aria-pressed' => 'false',
       ],
     ],
-    '#access' => AccessResult::allowedIfHasPermission(\Drupal::currentUser(), 'access acquia lift links'),
+    '#access' => \Drupal::currentUser()->hasPermission('access acquia lift links') && $path_context->shouldAttach(),
+    '#cache' => [
+      'keys' => ['toolbar'],
+      'contexts' => ['user.permissions'],
+    ],
     '#wrapper_attributes' => [
       'class' => ['acquia-lift-toolbar-tab'],
     ],
     '#attached' => [
       'library' => [
-        'acquia_lift/acquia-lift',
+        'acquia_lift/acquia-lift-toolbar-button',
       ],
     ],
   ];
+
+  // Clear the cache of this render array if the credential config changes.
+  $config = \Drupal::config('acquia_lift.settings.credential');
+  $renderer = \Drupal::service('renderer');
+  $renderer->addCacheableDependency($items, $config);
 
   return $items;
 }

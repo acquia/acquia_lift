@@ -63,7 +63,7 @@ function acquia_lift_toolbar() {
 
   // Clear the cache of this render array if the output of the $path_context
   // cache properties change.
-  \Drupal::service('renderer')->addCacheableDependency($items['acquia_lift'], $path_context->shouldAttach());
+  \Drupal::service('renderer')->addCacheableDependency($items['acquia_lift'], $path_context);
 
   if ($user->hasPermission('access acquia lift links') && $path_context->shouldAttach()) {
     $items['acquia_lift'] += [

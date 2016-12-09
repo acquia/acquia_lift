@@ -2,6 +2,7 @@
 
 namespace Drupal\acquia_lift\Service\Context;
 
+use Drupal\Core\Cache\CacheableDependencyInterface;
 use Symfony\Component\HttpFoundation\RequestStack;
 use Drupal\Core\Config\ConfigFactoryInterface;
 use Drupal\Core\Path\CurrentPathStack;
@@ -11,7 +12,15 @@ use Drupal\user\UserInterface;
 use Drupal\acquia_lift\Service\Helper\PathMatcher;
 use Drupal\acquia_lift\Service\Helper\SettingsHelper;
 
-class PathContext extends BaseContext {
+
+class PathContext extends BaseContext implements CacheableDependencyInterface {
+
+  /**
+   * Acquia Lift settings.
+   *
+   * @var \Drupal\Core\Config\ImmutableConfig
+   */
+  private $settings;
 
   /**
    * Acquia Lift credential settings.
@@ -61,13 +70,10 @@ class PathContext extends BaseContext {
    *   The path matcher.
    */
   public function __construct(ConfigFactoryInterface $config_factory, CurrentPathStack $current_path_stack, RequestStack $request_stack, PathMatcher $pathMatcher) {
-    $settings = $config_factory->get('acquia_lift.settings');
-    $credential_settings = $settings->get('credential');
-    $identity_settings = $settings->get('identity');
-    $visibilitySettings = $settings->get('visibility');
-
-    $this->credentialSettings = $credential_settings;
-    $this->identitySettings = $identity_settings;
+    $this->settings = $config_factory->get('acquia_lift.settings');
+    $this->credentialSettings = $this->settings->get('credential');
+    $this->identitySettings = $this->settings->get('identity');
+    $visibilitySettings = $this->settings->get('visibility');
     $this->requestPathPatterns = $visibilitySettings['path_patterns'];
     $this->currentPath = $current_path_stack->getPath();
     $this->pathMatcher = $pathMatcher;
@@ -137,6 +143,8 @@ class PathContext extends BaseContext {
   /**
    * Set Cache Context by query names.
    *
+   * @todo Add implements CacheContextInterface instead of brewing our own.
+   *
    * @param array $query_names
    *   The query names.
    */
@@ -176,6 +184,27 @@ class PathContext extends BaseContext {
     $sanitized_identity = Html::escape($identity);
     $sanitized_identity_type = Html::escape($identityType);
     $this->htmlHeadContexts['identity:' . $sanitized_identity_type] = $sanitized_identity;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function getCacheMaxAge() {
+    return $this->settings->getCacheMaxAge();
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function getCacheContexts() {
+    return $this->settings->getCacheContexts();
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function getCacheTags() {
+    return $this->settings->getCacheTags();
   }
 
 }

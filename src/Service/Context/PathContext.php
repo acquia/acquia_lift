@@ -14,6 +14,7 @@ use Drupal\user\UserInterface;
 use Drupal\acquia_lift\Service\Helper\PathMatcher;
 use Drupal\acquia_lift\Service\Helper\SettingsHelper;
 
+
 class PathContext extends BaseContext implements CacheableDependencyInterface {
 
   /**
@@ -144,6 +145,8 @@ class PathContext extends BaseContext implements CacheableDependencyInterface {
   /**
    * Set Cache Context by query names.
    *
+   * @todo Add implements CacheContextInterface instead of brewing our own.
+   *
    * @param array $query_names
    *   The query names.
    */
@@ -189,14 +192,14 @@ class PathContext extends BaseContext implements CacheableDependencyInterface {
    * {@inheritdoc}
    */
   public function getCacheMaxAge() {
-    return Cache::PERMANENT;
+    return $this->settings->getCacheMaxAge();
   }
 
   /**
    * {@inheritdoc}
    */
   public function getCacheContexts() {
-    return [];
+    return $this->settings->getCacheContexts();
   }
 
   /**

@@ -2,9 +2,7 @@
 
 namespace Drupal\acquia_lift\Service\Context;
 
-use Drupal\Core\Cache\Cache;
 use Drupal\Core\Cache\CacheableDependencyInterface;
-use Drupal\Core\Config\ImmutableConfig;
 use Symfony\Component\HttpFoundation\RequestStack;
 use Drupal\Core\Config\ConfigFactoryInterface;
 use Drupal\Core\Path\CurrentPathStack;
@@ -20,7 +18,7 @@ class PathContext extends BaseContext implements CacheableDependencyInterface {
   /**
    * Acquia Lift settings.
    *
-   * @var ImmutableConfig
+   * @var \Drupal\Core\Config\ImmutableConfig
    */
   private $settings;
 

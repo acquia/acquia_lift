@@ -64,7 +64,7 @@ class LiftLinkTest extends WebTestBase {
   // @todo Figure out why the cache does not clear after changing the config.
   // Given that we (forcefully) clear the cache in the settings page, we can
   // skip this test for now.
-  /*public function testLinkInToolbarAfterConfigChange() {
+  public function testLinkInToolbarAfterConfigChange() {
     $permissions = [
       'access toolbar',
       'access acquia lift links',
@@ -80,6 +80,11 @@ class LiftLinkTest extends WebTestBase {
     // Assert that the Acquia Lift link ID is not present in the HTML.
     $this->drupalGet($node->toUrl());
     $this->assertNoRaw('id="openLiftLink"');
+    debug($this->drupalGetHeaders());
+    $actual_contexts = $this->getCacheHeaderValues('X-Drupal-Cache-Contexts');
+    debug($actual_contexts);
+    $actual_tags = $this->getCacheHeaderValues('X-Drupal-Cache-Tags');
+    debug($actual_tags);
 
     // Set valid settings
     $this->setValidSettings();
@@ -88,7 +93,11 @@ class LiftLinkTest extends WebTestBase {
     // This also verifies if the specific render cache is cleared.
     $this->drupalGet($node->toUrl());
     $this->assertRaw('id="openLiftLink"');
-  }*/
+    $actual_contexts = $this->getCacheHeaderValues('X-Drupal-Cache-Contexts');
+    debug($actual_contexts);
+    $actual_tags = $this->getCacheHeaderValues('X-Drupal-Cache-Tags');
+    debug($actual_tags);
+  }
 
   public function testLinkNotInToolbar() {
     $permissions = [

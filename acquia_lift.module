@@ -143,6 +143,10 @@ function acquia_lift_page_build(&$page) {
     'file' => $js_file,
     'weight' => JS_DEFAULT - 10,
   );
+  $module_path = drupal_get_path('module', 'acquia_lift');
+  $attached['css'] = array(
+    $module_path . '/css/acquia_lift.css' => array(),
+  );
   $page['page_top']['acquia_lift'] = array(
     '#attached' => $attached
   );

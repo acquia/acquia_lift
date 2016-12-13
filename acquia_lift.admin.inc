@@ -8,6 +8,11 @@
 
 function acquia_lift_admin_form($form, &$form_state) {
   $is_configured = acquia_lift_is_configured();
+  $form['intro'] = array(
+    '#markup' => t('You can find more info in the <a href="@docs-link" target="_blank">Documentation</a>.', array(
+      '@docs-link' => 'https://docs.acquia.com/lift',
+    )),
+  );
   $form['credentials'] = array(
     '#type' => 'fieldset',
     '#title' => t('Acquia Lift credential'),

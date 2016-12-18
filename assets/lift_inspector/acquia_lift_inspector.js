@@ -90,16 +90,18 @@
           $modal_element = $(modal_template(window.AcquiaLift));
         }
 
+        var dialogActiveClassName="dialog-active";
+        var dialogContainerSelector="body";
         Drupal.dialog($modal_element, {
           title: Drupal.t('Lift Inspector'),
           show: { effect: 'fadeIn', duration: 200 },
           hide: { effect: 'fadeOut', duration: 200 },
-          minWidth: 900
+          minWidth: 900,
+          create: function(event, ui) {$(dialogContainerSelector).addClass(dialogActiveClassName);},
+          beforeClose: function(event, ui) {$(dialogContainerSelector).removeClass(dialogActiveClassName);}
         }).showModal();
       }
 
-      // webkit turns ctrl + i into keycode 9.
-      // gecko does not recognize that as a unique keycode, so add control modifier boolean + i (105)
 
       $(document).keypress(function (e) {
         if (e.ctrlKey && e.which == '105' || e.which == '9') {

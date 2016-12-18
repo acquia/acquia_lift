@@ -2,6 +2,10 @@
  * @file lift_inspector.css
  */
 
+.dialog-active {
+    overflow:hidden;
+}
+
 #lift-inspector p,
 #lift-inspector label,
 #lift-inspector h3 {

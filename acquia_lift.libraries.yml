@@ -12,3 +12,16 @@ acquia-lift-toolbar:
   css:
     state:
       assets/acquia_lift_toolbar.css: {}
+
+acquia_lift_inspector:
+  version: VERSION
+  css:
+    theme:
+      assets/lift_inspector/acquia_lift_inspector.css: {}
+  js:
+    assets/lift_inspector/acquia_lift_inspector.js: {}
+  dependencies:
+    - core/drupal
+    - core/drupal.dialog
+    - core/jquery.cookie
+    - core/underscore

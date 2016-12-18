@@ -387,6 +387,21 @@ class AdminSettingsForm extends ConfigFormBase {
       '#options' => ['trusted' => t('Trusted'), 'untrusted' => t('Untrusted')],
     ];
 
+    $form['inspector_status'] = [
+      '#type' => 'checkbox',
+      '#title' => t('Enable Lift Inspector'),
+      '#default_value' => $settings['inspector_status'],
+      '#description' => t('Enabling this feature will allow you to use type "cntl + i" to get lift information about the session'),
+    ];
+    $form['profile_manager_url'] = [
+      '#type' => 'textfield',
+      '#title' => t('Profile Manager URL'),
+      '#description' => t('If using the Lift Inspector, you will need to set the subdomain URL for the profile manager'),
+      '#default_value' => $settings['profile_manager_url'],
+      '#field_prefix' => 'https://',
+      '#field_suffix' => '.lift.acquia.com',
+    ];
+
     return $form;
   }
 
@@ -630,5 +645,7 @@ class AdminSettingsForm extends ConfigFormBase {
    */
   private function setAdvancedConfigurationValues(Config $settings, array $values) {
     $settings->set('advanced.content_replacement_mode', $values['content_replacement_mode']);
+    $settings->set('advanced.inspector_status', $values['inspector_status']);
+    $settings->set('advanced.profile_manager_url', $values['profile_manager_url']);
   }
 }

@@ -1,0 +1,135 @@
+/**
+ * @file lift_inspector.css
+ */
+
+#lift-inspector p,
+#lift-inspector label,
+#lift-inspector h3 {
+    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+    font-size: 100%;
+}
+
+#lift-inspector p,
+#lift-inspector label {
+    color: #666;
+    display: inline;
+    font-size: 13px;
+    margin-bottom: 5px;
+}
+
+#lift-inspector h3 {
+    color: #000;
+    font-size: 16px;
+    border-bottom: 1px solid #666;
+}
+
+#lift-inspector label {
+    text-transform: uppercase;
+    padding: 5px;
+}
+
+#lift-inspector .lift-inspector-wrapper label:after {
+    content: ':';
+}
+
+#lift-inspector .container div {
+    margin-bottom: 10px;
+}
+
+#lift-inspector .container .item-wrapper div {
+    margin-bottom: 10px;
+    overflow: hidden;
+}
+
+#lift-inspector pre {
+    font-weight: normal;
+    color: #0a0a0a;
+    background-color: #f3f3f3;
+    border: 1px solid #cacaca;
+    font-family: "Courier New", Courier, "Lucida Sans Typewriter", "Lucida Typewriter", monospace;
+    font-size: 12px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    overflow: scroll;
+    padding: 5px;
+    vertical-align: top;
+    display: inline-block;
+}
+
+#lift-inspector pre a, #lift-inspector h3 a{ 
+    color:#2b2be4;
+}
+
+#lift-inspector label.inline-pre {
+    padding: 5px;
+    margin: 0;
+    display: inline;
+    width: 10%;
+}
+
+#lift-inspector .inline-wrap {
+    display: inline-block;
+    max-width: 100%;
+    margin-bottom: 0px!important;
+    height: 35px;
+    width:100%;
+}
+
+#lift-inspector .inline-wrap pre {
+    max-width: 85%;
+}
+
+#lift-inspector .inline-wrap pre:hover {
+    overflow-x: visible;
+    display: inline;
+    position: absolute;
+    z-index: 10;
+    padding: 5px;
+}
+
+#lift-inspector .lift-inspector-wrapper {
+    display: inline-block;
+    vertical-align: top;
+    width: 48%;
+    margin: 15px 5px;
+}
+
+#lift-inspector .lift-inspector-wrapper .account-details div {
+    padding: 5px 15px;
+    vertical-align: top;
+}
+
+#lift-inspector .lift-inspector-wrapper .item-wrapper {
+    padding-bottom: 10px;
+    margin-bottom: 10px;
+    border-bottom: 1px solid #ccc;
+}
+
+#lift-inspector .lift-inspector-wrapper .item-wrapper:last-child {
+    border-bottom: none;
+}
+
+#lift-inspector .lift-inspector-wrapper .account-details label {
+    display: block;
+    padding-left: 0px;
+}
+
+#lift-inspector .lift-inspector-wrapper-fullwidth {
+    width: 98%;
+}
+
+#lift-inspector .lift-inspector-wrapper-fullwidth .container div {
+    display: inline-block;
+}
+
+#lift-inspector .lift-inspector-wrapper .container {
+    border: 1px solid lightgray;
+    padding: 10px;
+}
+
+#lift-inspector .lift-inspector-wrapper label {
+    margin-right: 5px;
+    background: transparent;
+    font-weight: bold;
+    color: #000;
+}

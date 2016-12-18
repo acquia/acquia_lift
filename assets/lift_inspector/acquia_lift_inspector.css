@@ -1,9 +1,32 @@
 /**
- * @file lift_inspector.css
+ * @file acquia_lift_inspector.css
  */
 
 .dialog-active {
     overflow:hidden;
+}
+
+.lift-inspector-dialog.ui-dialog {
+    margin-top:30px;
+    padding:0;
+}
+
+.toolbar-horizontal.toolbar-tray-open .lift-inspector-dialog.ui-dialog{
+    margin-top:85px;
+}
+
+.lift-inspector-dialog.ui-dialog .ui-dialog-titlebar{
+    background:#fff;
+    color:#666;
+    border-radius: 0;
+}
+
+#lift-inspector {
+    background:#018dc7;
+}
+
+#lift-inspector h4 {
+    color:#fff;
 }
 
 #lift-inspector p,
@@ -15,16 +38,17 @@
 
 #lift-inspector p,
 #lift-inspector label {
-    color: #666;
+    color: #fff;
     display: inline;
     font-size: 13px;
     margin-bottom: 5px;
+    padding:5px;
 }
 
+
 #lift-inspector h3 {
-    color: #000;
+    color: #333;
     font-size: 16px;
-    border-bottom: 1px solid #666;
 }
 
 #lift-inspector label {
@@ -46,22 +70,29 @@
 }
 
 #lift-inspector pre {
-    font-weight: normal;
-    color: #0a0a0a;
-    background-color: #f3f3f3;
-    border: 1px solid #cacaca;
+    font-weight: bold;
+    color: #fff;
     font-family: "Courier New", Courier, "Lucida Sans Typewriter", "Lucida Typewriter", monospace;
-    font-size: 12px;
+    font-size: 13px;
     text-overflow: ellipsis;
     white-space: nowrap;
     overflow: scroll;
     padding: 5px;
-    vertical-align: top;
-    display: inline-block;
+    display: inline;
+    background:#333;
+}
+
+#lift-inspector .account-details pre {
+    display:inline-block;
 }
 
 #lift-inspector pre a, #lift-inspector h3 a{ 
-    color:#2b2be4;
+    display:block;
+    width:100%;
+}
+
+#lift-inspector a {
+        color:#018dc7;
 }
 
 #lift-inspector label.inline-pre {
@@ -98,15 +129,30 @@
     margin: 15px 5px;
 }
 
+#lift-inspector .lift-inspector-wrapper div {
+}
+
+#lift-inspector .lift-inspector-wrapper .item-title {
+    background:#fff;
+    padding:10px;
+}
+
+#lift-inspector .lift-inspector-wrapper .account-details {
+    background:transparent;
+}
+
 #lift-inspector .lift-inspector-wrapper .account-details div {
     padding: 5px 15px;
     vertical-align: top;
 }
 
 #lift-inspector .lift-inspector-wrapper .item-wrapper {
-    padding-bottom: 10px;
     margin-bottom: 10px;
-    border-bottom: 1px solid #ccc;
+    background:#333;
+}
+
+#lift-inspector .lift-inspector-wrapper .item-wrapper .item-details {
+    padding:0px 10px;
 }
 
 #lift-inspector .lift-inspector-wrapper .item-wrapper:last-child {
@@ -126,14 +172,11 @@
     display: inline-block;
 }
 
-#lift-inspector .lift-inspector-wrapper .container {
-    border: 1px solid lightgray;
-    padding: 10px;
-}
+
 
 #lift-inspector .lift-inspector-wrapper label {
     margin-right: 5px;
     background: transparent;
     font-weight: bold;
-    color: #000;
+    color: #fff;
 }

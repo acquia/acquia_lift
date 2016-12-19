@@ -18,7 +18,7 @@
         if (accountSubDomain) {
           var accountURL = 'https://' + accountSubDomain + '.lift.acquia.com';
         } else {
-          var accountURL = 'http://lift.acquia.com';
+          var accountURL = 'https://lift.acquia.com';
         };
 
         modal_template = _.template(

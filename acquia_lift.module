@@ -48,7 +48,7 @@ function acquia_lift_page_attachments(array &$page) {
   $profile_manager_url = $config->get('advanced.profile_manager_url');
 
   // If the lift inspector is enabled, attach the library and pass the profile manager URL to drupalSettings
-  if ($lift_inspector === 1) {
+  if ($lift_inspector) {
     $page['#attached']['library'][] = 'acquia_lift/acquia_lift_inspector';
     $page['#attached']['drupalSettings']['acquia_lift']['acquia_lift_inspector']['profile_manager_url'] =  $profile_manager_url;
   }

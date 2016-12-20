@@ -112,6 +112,12 @@ acquia_lift.settings:
         content_replacement_mode:
           type: string
           label: 'Content replacement mode'
+        inspector_status:
+          type: boolean
+          label: 'Enable Lift Inspector'
+        profile_manager_url:
+          type: string
+          label: 'Profile Manager URL'
     langcode:
       type: string
       label: 'Language code'

@@ -7,7 +7,7 @@
   Drupal.behaviors.acquia_lift = {
     attach: function (context, settings) {
 
-      function show_inspector_modal() {
+      function showInspectorModal() {
         var $modal_element, modal_template;
 
         $('#lift-inspector').remove();
@@ -116,7 +116,7 @@
 
       $(document).keypress(function (e) {
         if (e.ctrlKey && e.which == '105' || e.which == '9') {
-          show_inspector_modal();
+          showInspectorModal();
         }
       });
     }

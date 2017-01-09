@@ -45,12 +45,27 @@ function acquia_lift_page_attachments(array &$page) {
   // Get the config settings to see if the lift inspector is enabled
   $config = \Drupal::config('acquia_lift.settings');
   $lift_inspector = $config->get('advanced.inspector_status');
-  $profile_manager_url = $config->get('advanced.profile_manager_url');
+  $profile_manager_url = "https://us-east-1.lift.acquia.com";
+  $decision_api_url = $config->get('credential.decision_api_url');
+
+  # Todo, find out how we can utilize an API method from the decision API to
+  # get this information.
+  switch ($decision_api_url) {
+    case "https://eu-central-1-decisionapi.lift.acquia.com":
+      $profile_manager_url = "https://eu-central-1.lift.acquia.com";
+      break;
+    case "https://us-east-1-demo-decisionapi.lift.acquia.com":
+      $profile_manager_url = "https://demo.lift.acquia.com";
+      break;
+    case "https://eu-central-1-rc-decisionapi.dev.lift.acquia.com":
+      $profile_manager_url = "https://eu-central-1-rc-web-my.dev.lift.acquia.com";
+      break;
+  }
 
   // If the lift inspector is enabled, attach the library and pass the profile manager URL to drupalSettings
-  if ($lift_inspector === TRUE) {
+  if ($lift_inspector === TRUE && $profile_manager_url) {
     $page['#attached']['library'][] = 'acquia_lift/acquia_lift_inspector';
-    $page['#attached']['drupalSettings']['acquia_lift']['acquia_lift_inspector']['profile_manager_url'] =  $profile_manager_url;
+    $page['#attached']['drupalSettings']['acquia_lift']['profile_manager_url'] =  $profile_manager_url;
   }
 }
 

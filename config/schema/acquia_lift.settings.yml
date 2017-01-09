@@ -115,9 +115,6 @@ acquia_lift.settings:
         inspector_status:
           type: boolean
           label: 'Enable Lift Inspector'
-        profile_manager_url:
-          type: string
-          label: 'Profile Manager URL'
     langcode:
       type: string
       label: 'Language code'

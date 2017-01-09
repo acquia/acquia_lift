@@ -22,5 +22,4 @@ visibility:
 advanced:
   content_replacement_mode: 'untrusted'
   inspector_status: false
-  profile_manager_url: ''
 langcode: en

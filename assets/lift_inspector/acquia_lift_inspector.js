@@ -13,13 +13,7 @@
         $('#lift-inspector').remove();
 
         //Get the Profile Manager URL from the config settings
-        var accountSubDomain = drupalSettings.acquia_lift.acquia_lift_inspector.profile_manager_url;
-
-        if (accountSubDomain) {
-          var accountURL = 'https://' + accountSubDomain + '.lift.acquia.com';
-        } else {
-          var accountURL = 'https://lift.acquia.com';
-        };
+        var accountURL = drupalSettings.acquia_lift.profile_manager_url;
 
         modal_template = _.template(
           '<div id="lift-inspector">' +

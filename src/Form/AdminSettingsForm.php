@@ -387,13 +387,6 @@ class AdminSettingsForm extends ConfigFormBase {
       '#options' => ['trusted' => t('Trusted'), 'untrusted' => t('Untrusted')],
     ];
 
-    $form['inspector_status'] = [
-      '#type' => 'checkbox',
-      '#title' => t('Enable Lift Inspector'),
-      '#default_value' => $settings['inspector_status'],
-      '#description' => t('Enabling this feature will allow you to use type "ctrl + i" to get lift information about the session'),
-    ];
-
     return $form;
   }
 
@@ -637,6 +630,5 @@ class AdminSettingsForm extends ConfigFormBase {
    */
   private function setAdvancedConfigurationValues(Config $settings, array $values) {
     $settings->set('advanced.content_replacement_mode', $values['content_replacement_mode']);
-    $settings->set('advanced.inspector_status', $values['inspector_status']);
   }
 }

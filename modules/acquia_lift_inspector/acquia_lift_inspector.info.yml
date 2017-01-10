@@ -1,0 +1,7 @@
+name: 'Acquia Lift Inspector (Development only)'
+description: 'Show information about the active visitor by using a convenient shortcut'
+package: Acquia
+core: 8.x
+type: module
+dependencies:
+  - acquia_lift

@@ -112,9 +112,6 @@ acquia_lift.settings:
         content_replacement_mode:
           type: string
           label: 'Content replacement mode'
-        inspector_status:
-          type: boolean
-          label: 'Enable Lift Inspector'
     langcode:
       type: string
       label: 'Language code'

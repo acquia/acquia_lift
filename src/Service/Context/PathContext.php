@@ -88,6 +88,9 @@ class PathContext extends BaseContext implements CacheableDependencyInterface {
    *   True if should attach.
    */
   public function shouldAttach() {
+    print_r("test");
+
+
     // Should not attach if credential is invalid.
     if (SettingsHelper::isInvalidCredential($this->credentialSettings)) {
       return FALSE;

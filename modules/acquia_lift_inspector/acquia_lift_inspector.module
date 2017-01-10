@@ -11,7 +11,7 @@
 /**
 * Implements hook_help().
 */
-function acquia_lift_help($route_name) {
+function acquia_lift_inspector_help($route_name) {
   switch ($route_name) {
     case 'help.page.acquia_lift':
     case 'acquia_lift.admin_settings_form':
@@ -22,7 +22,7 @@ function acquia_lift_help($route_name) {
 /**
  * Implements hook_page_attachments().
  */
-function acquia_lift_page_attachments(array &$page) {
+function acquia_lift_inspector_page_attachments(array &$page) {
   // Create and attach settings and library only when path context agrees on attaching.
   $path_context = \Drupal::service('acquia_lift.service.context.path_context');
   if (!$path_context->shouldAttach()) {
@@ -52,7 +52,7 @@ function acquia_lift_page_attachments(array &$page) {
 
   // Attach the library and pass the profile manager URL to drupalSettings
   if ($profile_manager_url) {
-    $page['#attached']['library'][] = 'acquia_lift/acquia_lift_inspector';
-    $page['#attached']['drupalSettings']['acquia_lift']['profile_manager_url'] =  $profile_manager_url;
+    $page['#attached']['library'][] = 'acquia_lift_inspector/acquia-lift-inspector';
+    $page['#attached']['drupalSettings']['acquia_lift_inspector']['profile_manager_url'] =  $profile_manager_url;
   }
 }

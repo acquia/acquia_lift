@@ -1,5 +1,9 @@
 <?php
 
+/**
+ * @file
+ */
+
 namespace Drupal\Tests\acquia_lift_inspector\FunctionalJavascript;
 
 use Drupal\acquia_lift\Tests\SettingsDataTrait;
@@ -23,7 +27,7 @@ class InspectorJsTest extends JavascriptTestBase {
    */
   public static $modules = [
     'acquia_lift',
-    'acquia_lift_inspector'
+    'acquia_lift_inspector',
   ];
 
   /**
@@ -64,16 +68,16 @@ class InspectorJsTest extends JavascriptTestBase {
     ]);
     $this->drupalLogin($admin_user);
 
-    // Set valid settings
+    // Set valid settings.
     $this->setValidSettings();
     // Set an actual JS lift.js file in the settings for the inspector to work.
     $settings = $this->config('acquia_lift.settings');
     $settings->set('credential', $this->getActualJSCredentialSettings());
     $settings->save();
 
-    // Check if Acquia Lift Link is available on the node that we created
+    // Check if Acquia Lift Link is available on the node that we created.
     $node = $this->createNode([
-      'type' => 'article'
+      'type' => 'article',
     ]);
 
     // Assert that the Acquia Lift link ID is present in the HTML.
@@ -89,16 +93,16 @@ JS;
 
     $this->assertJsCondition($javascript);
 
-    // Should not show the inspector
+    // Should not show the inspector.
     $page = $this->getSession()->getPage();
     $inspector = $page->findById('lift-inspector');
     $this->assertEmpty($inspector);
 
-    // Open the inspector
+    // Open the inspector.
     $this->getSession()->wait(6000, "Drupal.acquiaLiftInspector.showModal();");
     $page = $this->getSession()->getPage();
 
-    // Should show the inspector
+    // Should show the inspector.
     $inspector = $page->findById('lift-inspector');
     $this->assertNotEmpty($inspector);
 
@@ -124,4 +128,5 @@ JS;
     $this->assertEquals($identity, 'No recent captures.');
 
   }
+
 }

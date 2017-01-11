@@ -32,8 +32,4 @@
         .on('click', openExperienceBuilder);
     }
   };
-
-
 })(jQuery, Drupal);
-
-

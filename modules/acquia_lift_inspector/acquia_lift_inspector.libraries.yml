@@ -7,7 +7,6 @@ acquia-lift-inspector:
     assets/acquia_lift_inspector.js: {}
   dependencies:
     - core/drupal
-    - core/jquery
     - core/drupal.dialog
     - core/jquery.cookie
     - core/underscore

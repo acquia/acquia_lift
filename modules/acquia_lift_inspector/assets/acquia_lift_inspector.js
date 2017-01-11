@@ -1,6 +1,6 @@
 /**
  * @file
- * Contains the definition of the behavior openAcquiaLiftExperienceBuilder.
+ * Contains the Lift Inspector Interface and behaviors.
  */
 
 (function ($, Drupal) {
@@ -29,22 +29,47 @@
         '<div id="lift-inspector">' +
         '  <div class="lift-inspector-wrapper lift-inspector-wrapper-fullwidth">' +
         '    <h4>Account details</h4>' +
-        '    <div class="account-details container">' +
-        '     <div class="item-wrapper"><label>' + Drupal.t('Customer') + '</label><pre class="liftValue"><a href="' + accountURL + '#person:accountId=<%- account_id %>" target="_blank" rel="noopener noreferrer"><%- account_id %></a></pre></div>' +
-        '     <div class="item-wrapper"><label>' + Drupal.t('Customer Site') + '</label><pre class="liftValue"><%- site_id %></a></pre></div>' +
-        '     <div class="item-wrapper"><label>' + Drupal.t('Tracking ID') + '</label><pre class="liftValue"><a href="' + accountURL + '#person:accountId=<%- account_id %>;tracking=<%- lastDecisionRequest.identity %>" target="_blank" rel="noopener noreferrer"><%- lastDecisionRequest.identity %></a></pre></div>' +
+        '    <div id="account-details" class="container">' +
+        '      <div class="item-wrapper">' +
+        '        <label>' + Drupal.t('Customer') + '</label>' +
+        '        <pre id="account-id" class="lift-value">' +
+        '          <a href="' + accountURL + '#person:accountId=<%- account_id %>" target="_blank" rel="noopener noreferrer"><%- account_id %></a>' +
+        '        </pre>' +
+        '      </div>' +
+        '      <div class="item-wrapper">' +
+        '        <label>' + Drupal.t('Customer Site') + '</label>' +
+        '        <pre id="site-id" class="lift-value"><%- site_id %></pre>' +
+        '      </div>' +
+        '      <div class="item-wrapper">' +
+        '        <label>' + Drupal.t('Tracking ID') + '</label>' +
+        '        <pre id="identity" class="lift-value">' +
+        '        <% if (typeof lastDecisionRequest !== "undefined" && !_.isEmpty(lastDecisionRequest.identity)) { %>' +
+        '            <a href="' + accountURL + '#person:accountId=<%- account_id %>;tracking=<%- lastDecisionRequest.identity %>" target="_blank" rel="noopener noreferrer"><%- lastDecisionRequest.identity %></a>' +
+        '        <% } else { %>' + Drupal.t('No tracking id available.') + '<% } %>' +
+        '        </pre>' +
+        '      </div>' +
         '    </div>' +
         '  </div>' +
         '  <div class="lift-inspector-wrapper">' +
         '    <h4>' + Drupal.t('Current user segment(s)') + '</h4>' +
-        '    <div class="user-segments container ">' +
-        '      <% if (!_.isEmpty(currentSegments)) { %>' +
+        '    <div id="user-segments" class="container ">' +
+        '      <% if (typeof currentSegments !== "undefined" && !_.isEmpty(currentSegments)) { %>' +
         '        <% _.each(currentSegments, function (segment) {%>' +
         '          <div class="segment-item-wrapper item-wrapper">' +
-        '           <div class="item-title"><h3 ><a href="' + accountURL + '#segment:accountId=<%- account_id %>;<%- encodeURIComponent(segment.name) %>,false" target="_blank" rel="noopener noreferrer"><%- segment.name %></a></h3></div>' +
+        '           <div class="item-title">' +
+        '             <h3 >' +
+        '               <a href="' + accountURL + '#segment:accountId=<%- account_id %>;<%- encodeURIComponent(segment.name) %>,false" target="_blank" rel="noopener noreferrer"><%- segment.name %></a>' +
+        '             </h3>' +
+        '           </div>' +
         '           <div class="item-details">' +
-        '             <div class="inline-wrap"><label class="inline-pre">' + Drupal.t('ID') + '</label><pre><%- segment.id %></pre></div>' +
-        '             <div><label>' + Drupal.t('Description') + '</label><p class="liftValue"><%- segment.description %></p></div>' +
+        '             <div class="inline-wrap">' +
+        '               <label class="inline-pre">' + Drupal.t('ID') + '</label>' +
+        '               <pre><%- segment.id %></pre>' +
+        '             </div>' +
+        '             <div>' +
+        '               <label>' + Drupal.t('Description') + '</label>' +
+        '               <p class="lift-value"><%- segment.description %></p>' +
+        '             </div>' +
         '           </div>' +
         '         </div>' +
         '        <% }); %>' +
@@ -55,39 +80,63 @@
         '  </div>' +
         '  <div class="lift-inspector-wrapper">' +
         '    <h4>' + Drupal.t('Decisions on this page') + '</h4>' +
-        '    <div class="decisions container">' +
-        '      <% if (!_.isEmpty(decisions)) { %>' +
+        '    <div id="decisions" class="container">' +
+        '      <% if (typeof decisions !== "undefined" && !_.isEmpty(decisions)) { %>' +
         '        <% _.each(decisions, function (decision) {%>' +
         '          <div class="decision-item-wrapper item-wrapper">' +
-        '            <div class="item-title"><h3>' + Drupal.t('Slot Name') + ': <%- decision.slot_name %></p></div>' +
-        '           <div class="item-details">' +
-        '             <div><label>' + Drupal.t('Slot View Mode') + '</label><p class="liftValue"><%- decision.view_mode_id %></p></div>' +
-        '             <div><label>' + Drupal.t('Rule Name') + '</label><p class="liftValue"><%- decision.rule_name %></p></div>' +
-        '             <div><label>' + Drupal.t('Content Displayed') + '</label><p class="liftValue"><%- decision.content_name %></p></div>' +
+        '            <div class="item-title">' +
+        '              <h3>' + Drupal.t('Slot Name') + ': <%- decision.slot_name %>' +
+        '              </h3>' +
+        '            </div>' +
+        '            <div class="item-details">' +
+        '              <div>' +
+        '                <label>' + Drupal.t('Slot View Mode') + '</label>' +
+        '                <p class="lift-value"><%- decision.view_mode_id %></p>' +
+        '              </div>' +
+        '              <div>' +
+        '                <label>' + Drupal.t('Rule Name') + '</label>' +
+        '                <p class="lift-value"><%- decision.rule_name %></p>' +
+        '              </div>' +
+        '              <div>' +
+        '                <label>' + Drupal.t('Content Displayed') + '</label>' +
+        '                <p class="lift-value"><%- decision.content_name %></p>' +
+        '              </div>' +
         '           </div>' +
         '          </div>' +
         '        <% }); %>' +
         '      <% } else { %>' +
-        '        <div class="item-wrapper"><p>' + Drupal.t('No decisions made.') + '</p></div>' +
+        '        <p>' + Drupal.t('No decisions made.') + '</p>' +
         '      <% } %>' +
         '    </div>' +
         '  </div>' +
         '  <div class="lift-inspector-wrapper">' +
         '    <h4>' + Drupal.t('Recent captures') + '</h4>' +
-        '    <div class="captures container">' +
-        '      <% if (!_.isEmpty(lastDecisionRequest.captures)) { %>' +
-        '        <% _.each(lastDecisionRequest.captures, function (capture) {%>' +
+        '    <div id="captures" class="container">' +
+        '      <% if (typeof lastDecisionRequest !== "undefined" && !_.isEmpty(lastDecisionRequest.captures)) { %>' +
+         '        <% _.each(lastDecisionRequest.captures, function (capture) {%>' +
         '          <div class="lastdecision-item-wrapper item-wrapper">' +
-        '          <div class="item-title"><h3><%- capture.event_name %></h3></div>' +
-        '           <div class="item-details">' +
-        '          <div><label>' + Drupal.t('Source') + '</label><p class="liftValue"><%- capture.event_source %></p></div>' +
-        '          <div class="inline-wrap"><label class="inline-pre">' + Drupal.t('URL') + '</label><pre class="liftValue"><%- capture.url %></pre></div>' +
-        '          <div> <label>' + Drupal.t('Date') + '</label><p class="liftValue"><%- capture.event_date %></p></div>' +
-        '           </div>' +
+        '            <div class="item-title">' +
+        '              <h3><%- capture.event_name %></h3>' +
+        '            </div>' +
+        '            <div class="item-details">' +
+        '              <div>' +
+        '                <label>' + Drupal.t('Source') + '</label>' +
+        '                <p class="lift-value"><%- capture.event_source %></p>' +
+        '              </div>' +
+        '              <div class="inline-wrap">' +
+        '                <label class="inline-pre">' + Drupal.t('URL') + '</label>' +
+        '                <pre class="lift-value"><%- capture.url %></pre>' +
+        '              </div>' +
+        '              <div>' +
+        '                <label>' + Drupal.t('Date') + '</label>' +
+        '                <p class="lift-value"><%- capture.event_date %></p>' +
+        '              </div>' +
+        '            </div>' +
         '          </div>' +
         '        <% }); %>' +
         '      <% } else { %>' +
-        '        <div class="item-details"><p class="liftValue">' + Drupal.t('No recent captures.') + '</p></div>' +
+        '          <p>' + Drupal.t('No recent captures.') + '</p>' +
+        '        </div>' +
         '      <% } %>' +
         '    </div>' +
         '  </div>' +

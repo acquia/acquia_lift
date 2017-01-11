@@ -48,7 +48,7 @@ class InspectorJsTest extends JavascriptTestBase {
       'account_id' => 'AccountId1',
       'site_id' => 'SiteId1',
       // Only the JS needs to be valid. Otherwise the JS test won't work.
-      'assets_url' => 'https://lift3assets.dev.lift.acquia.com/LEX-1647-dev',
+      'assets_url' => 'https://lift3assets.dev.lift.acquia.com/latest',
       'decision_api_url' => 'decision_api_url_1',
       'oauth_url' => 'oauth_url_1//////authorize',
     ];
@@ -82,25 +82,46 @@ class InspectorJsTest extends JavascriptTestBase {
 
     // Confirm that AcquiaLift loaded.
     $javascript = <<<JS
-    (function(){
-      return Object.keys(window.AcquiaLift).length > 0;
-    }());
+  (function(){
+    return Object.keys(window.AcquiaLift).length > 0;
+  }());
 JS;
 
     $this->assertJsCondition($javascript);
 
     // Should not show the inspector
     $page = $this->getSession()->getPage();
-    $subNav = $page->findById('lift-inspector');
-    var_dump($subNav);
+    $inspector = $page->findById('lift-inspector');
+    $this->assertEmpty($inspector);
 
+    // Open the inspector
     $this->getSession()->wait(6000, "Drupal.acquiaLiftInspector.showModal();");
     $page = $this->getSession()->getPage();
 
     // Should show the inspector
-    $subNav = $page->findById('lift-inspector');
-    $this->assertNotEmpty($subNav);
-    var_dump($subNav->getHtml());
+    $inspector = $page->findById('lift-inspector');
+    $this->assertNotEmpty($inspector);
+
+    $accountId = $inspector->find('css', '#account-id a')->getText();
+    $this->assertEquals($accountId, 'AccountId1');
+
+    $accountLink = $inspector->find('css', '#account-id a')->getAttribute('href');
+    $this->assertEquals($accountLink, 'https://us-east-1.lift.acquia.com#person:accountId=AccountId1');
+
+    $siteId = $inspector->find('css', '#site-id')->getText();
+    $this->assertEquals($siteId, 'SiteId1');
+
+    $identity = $inspector->find('css', '#identity')->getText();
+    $this->assertEquals($identity, 'No tracking id available.');
+
+    $identity = $inspector->find('css', '#user-segments p')->getText();
+    $this->assertEquals($identity, 'No segment(s) available.');
+
+    $identity = $inspector->find('css', '#decisions p')->getText();
+    $this->assertEquals($identity, 'No decisions made.');
+
+    $identity = $inspector->find('css', '#captures p')->getText();
+    $this->assertEquals($identity, 'No recent captures.');
 
   }
 }

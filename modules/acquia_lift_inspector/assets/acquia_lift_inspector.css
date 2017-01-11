@@ -81,7 +81,7 @@
     background:#333;
 }
 
-#lift-inspector .account-details pre {
+#lift-inspector #account-details pre {
     display:inline-block;
 }
 
@@ -135,11 +135,11 @@
     padding:10px;
 }
 
-#lift-inspector .lift-inspector-wrapper .account-details {
+#lift-inspector .lift-inspector-wrapper #account-details {
     background:transparent;
 }
 
-#lift-inspector .lift-inspector-wrapper .account-details div {
+#lift-inspector .lift-inspector-wrapper #account-details div {
     padding: 5px 15px;
     vertical-align: top;
 }
@@ -157,7 +157,7 @@
     border-bottom: none;
 }
 
-#lift-inspector .lift-inspector-wrapper .account-details label {
+#lift-inspector .lift-inspector-wrapper #account-details label {
     display: block;
     padding-left: 0;
 }

@@ -1,0 +1,62 @@
+<?php
+
+/**
+ * @file
+ * Drupal Module: Acquia Lift Inspector.
+ *
+ * Acquia Lift Inspector aims to provide you with enough information about the
+ * current page visitor by showing you this in a nice digestable format. The
+ * shortcut to active the information screen is CTRL+i.
+ */
+
+/**
+ * Implements hook_help().
+ */
+function acquia_lift_inspector_help($route_name) {
+  switch ($route_name) {
+    case 'help.page.acquia_lift':
+    case 'acquia_lift.admin_settings_form':
+      return t('On every page that is enabled for capturing profile information press CTRL+i to get the Acquia Lift Analytics information screen.');
+  }
+}
+
+/**
+ * Implements hook_page_attachments().
+ */
+function acquia_lift_inspector_page_attachments(array &$page) {
+  // Create and attach settings and library only when path context agrees on attaching.
+  $path_context = \Drupal::service('acquia_lift.service.context.path_context');
+  if (!$path_context->shouldAttach()) {
+    return;
+  }
+
+  // Get the config settings to see if the lift inspector is enabled.
+  $config = \Drupal::config('acquia_lift.settings');
+  $decision_api_url = $config->get('credential.decision_api_url');
+
+  // @TODO: find out how we can utilize an API method from the decision API to
+  // get this information.
+  switch ($decision_api_url) {
+    case "https://eu-central-1-decisionapi.lift.acquia.com":
+      $profile_manager_url = "https://eu-central-1.lift.acquia.com";
+      break;
+
+    case "https://us-east-1-demo-decisionapi.lift.acquia.com":
+      $profile_manager_url = "https://demo.lift.acquia.com";
+      break;
+
+    case "https://eu-central-1-rc-decisionapi.dev.lift.acquia.com":
+      $profile_manager_url = "https://eu-central-1-rc-web-my.dev.lift.acquia.com";
+      break;
+
+    default:
+      $profile_manager_url = "https://us-east-1.lift.acquia.com";
+      break;
+  }
+
+  // Attach the library and pass the profile manager URL to drupalSettings.
+  if ($profile_manager_url) {
+    $page['#attached']['library'][] = 'acquia_lift_inspector/acquia-lift-inspector';
+    $page['#attached']['drupalSettings']['acquia_lift_inspector']['profile_manager_url'] = $profile_manager_url;
+  }
+}

@@ -1,0 +1,179 @@
+/**
+ * @file acquia_lift_inspector.css
+ */
+
+.dialog-active {
+  overflow: hidden;
+}
+
+.lift-inspector-dialog.ui-dialog {
+  margin-top: 30px;
+  padding: 0;
+}
+
+.toolbar-horizontal.toolbar-tray-open .lift-inspector-dialog.ui-dialog {
+  margin-top: 85px;
+}
+
+.lift-inspector-dialog.ui-dialog .ui-dialog-titlebar {
+  background: #fff;
+  color: #666;
+  border-radius: 0;
+}
+
+#lift-inspector {
+  background: #018dc7;
+}
+
+#lift-inspector h4 {
+  color: #fff;
+}
+
+#lift-inspector p,
+#lift-inspector label,
+#lift-inspector h3 {
+  font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+  font-size: 100%;
+}
+
+#lift-inspector p,
+#lift-inspector label {
+  color: #fff;
+  display: inline;
+  font-size: 13px;
+  margin-bottom: 5px;
+  padding: 5px;
+}
+
+#lift-inspector h3 {
+  color: #333;
+  font-size: 16px;
+}
+
+#lift-inspector label {
+  text-transform: uppercase;
+  padding: 5px;
+}
+
+#lift-inspector .lift-inspector-wrapper label:after {
+  content: ':';
+}
+
+#lift-inspector .container div {
+  margin-bottom: 10px;
+}
+
+#lift-inspector .container .item-wrapper div {
+  margin-bottom: 10px;
+  overflow: hidden;
+}
+
+#lift-inspector pre {
+  font-weight: bold;
+  color: #fff;
+  font-family: "Courier New", Courier, "Lucida Sans Typewriter", "Lucida Typewriter", monospace;
+  font-size: 13px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  overflow: auto;
+  padding: 5px;
+  display: inline;
+  background: #333;
+}
+
+#lift-inspector #account-details pre {
+  display: inline-block;
+}
+
+#lift-inspector pre a,
+#lift-inspector h3 a {
+  display: block;
+  width: 100%;
+}
+
+#lift-inspector a {
+  color: #018dc7;
+}
+
+#lift-inspector label.inline-pre {
+  padding: 5px;
+  margin: 0;
+  display: inline;
+  width: 10%;
+}
+
+#lift-inspector .inline-wrap {
+  display: inline-block;
+  max-width: 100%;
+  margin-bottom: 0!important;
+  height: 35px;
+  width: 100%;
+}
+
+#lift-inspector .inline-wrap pre {
+  max-width: 85%;
+}
+
+#lift-inspector .inline-wrap pre:hover {
+  overflow-x: visible;
+  display: inline;
+  z-index: 10;
+  padding: 5px;
+}
+
+#lift-inspector .lift-inspector-wrapper {
+  display: inline-block;
+  vertical-align: top;
+  width: 48%;
+  margin: 15px 5px;
+}
+
+#lift-inspector .lift-inspector-wrapper div {
+}
+
+#lift-inspector .lift-inspector-wrapper .item-title {
+  background: #fff;
+  padding: 10px;
+}
+
+#lift-inspector .lift-inspector-wrapper #account-details {
+  background: transparent;
+}
+
+#lift-inspector .lift-inspector-wrapper #account-details div {
+  padding: 5px 15px;
+  vertical-align: top;
+}
+
+#lift-inspector .lift-inspector-wrapper .item-wrapper {
+  margin-bottom: 10px;
+  background: #333;
+}
+
+#lift-inspector .lift-inspector-wrapper .item-wrapper .item-details {
+  padding: 0 10px;
+}
+
+#lift-inspector .lift-inspector-wrapper .item-wrapper:last-child {
+  border-bottom: none;
+}
+
+#lift-inspector .lift-inspector-wrapper #account-details label {
+  display: block;
+  padding-left: 0;
+}
+
+#lift-inspector .lift-inspector-wrapper-fullwidth {
+  width: 98%;
+}
+
+#lift-inspector .lift-inspector-wrapper-fullwidth .container div {
+  display: inline-block;
+}
+
+#lift-inspector .lift-inspector-wrapper label {
+  margin-right: 5px;
+  background: transparent;
+  font-weight: bold;
+  color: #fff;
+}

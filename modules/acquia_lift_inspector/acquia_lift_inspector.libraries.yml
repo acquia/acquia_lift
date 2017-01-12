@@ -1,0 +1,12 @@
+acquia-lift-inspector:
+  version: VERSION
+  css:
+    theme:
+      assets/acquia_lift_inspector.css: {}
+  js:
+    assets/acquia_lift_inspector.js: {}
+  dependencies:
+    - core/drupal
+    - core/drupal.dialog
+    - core/jquery.cookie
+    - core/underscore

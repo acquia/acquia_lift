@@ -28,7 +28,7 @@
       modal_template = _.template(
         '<div id="lift-inspector">' +
         '  <div class="lift-inspector-wrapper lift-inspector-wrapper-fullwidth">' +
-        '    <h4>Account details</h4>' +
+        '    <h2>Account details</h2>' +
         '    <div id="account-details" class="container">' +
         '      <div class="item-wrapper">' +
         '        <label>' + Drupal.t('Customer') + '</label>' +
@@ -51,7 +51,7 @@
         '    </div>' +
         '  </div>' +
         '  <div class="lift-inspector-wrapper">' +
-        '    <h4>' + Drupal.t('Current user segment(s)') + '</h4>' +
+        '    <h2>' + Drupal.t('Current user segment(s)') + '</h2>' +
         '    <div id="user-segments" class="container ">' +
         '      <% if (typeof currentSegments !== "undefined" && !_.isEmpty(currentSegments)) { %>' +
         '        <% _.each(currentSegments, function (segment) {%>' +
@@ -79,7 +79,7 @@
         '    </div>' +
         '  </div>' +
         '  <div class="lift-inspector-wrapper">' +
-        '    <h4>' + Drupal.t('Decisions on this page') + '</h4>' +
+        '    <h2>' + Drupal.t('Decision(s) on this page') + '</h2>' +
         '    <div id="decisions" class="container">' +
         '      <% if (typeof decisions !== "undefined" && !_.isEmpty(decisions)) { %>' +
         '        <% _.each(decisions, function (decision) {%>' +
@@ -105,12 +105,12 @@
         '          </div>' +
         '        <% }); %>' +
         '      <% } else { %>' +
-        '        <p>' + Drupal.t('No decisions made.') + '</p>' +
+        '        <p>' + Drupal.t('No decision(s) made.') + '</p>' +
         '      <% } %>' +
         '    </div>' +
         '  </div>' +
         '  <div class="lift-inspector-wrapper">' +
-        '    <h4>' + Drupal.t('Recent captures') + '</h4>' +
+        '    <h2>' + Drupal.t('Recent captures') + '</h2>' +
         '    <div id="captures" class="container">' +
         '      <% if (typeof lastDecisionRequest !== "undefined" && !_.isEmpty(lastDecisionRequest.captures)) { %>' +
          '        <% _.each(lastDecisionRequest.captures, function (capture) {%>' +
@@ -126,10 +126,6 @@
         '              <div class="inline-wrap">' +
         '                <label class="inline-pre">' + Drupal.t('URL') + '</label>' +
         '                <pre class="lift-value"><%- capture.url %></pre>' +
-        '              </div>' +
-        '              <div>' +
-        '                <label>' + Drupal.t('Date') + '</label>' +
-        '                <p class="lift-value"><%- capture.event_date %></p>' +
         '              </div>' +
         '            </div>' +
         '          </div>' +

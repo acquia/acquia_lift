@@ -21,28 +21,59 @@
   border-radius: 0;
 }
 
+#lift-inspector, #lift-inspector div{
+  position: relative;
+  display:block;
+  float:none;
+  margin:0;
+  padding:0;
+}
+
 #lift-inspector {
   background: #018dc7;
-}
-
-#lift-inspector h4 {
-  color: #fff;
+  font-size:100%;
+  padding:15px;
 }
 
 #lift-inspector p,
+#lift-inspector a,
 #lift-inspector label,
-#lift-inspector h3 {
+#lift-inspector h1,
+#lift-inspector h2,
+#lift-inspector h3,
+#lift-inspector pre
+{
+  float:none;
+  display:block;
+  position: relative;
   font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
-  font-size: 100%;
+  font-size: inherit;
+  font-style:normal;
+  line-height: 1.5;
+  vertical-align: baseline;
+  font-weight:normal;
+  border:0;
+  text-decoration: none;
+  text-transform: none;
+  text-rendering: optimizeLegibility;
+  margin:0;
+  padding:0;
+  width:auto;
+  height:auto;
+  background:transparent;
 }
 
-#lift-inspector p,
-#lift-inspector label {
+#lift-inspector h1 {
+  font-size:26px;
+}
+
+#lift-inspector h1, #lift-inspector h2, #lift-inspector h3 {
+  margin:0.5em;
+}
+
+#lift-inspector h2 {
   color: #fff;
-  display: inline;
-  font-size: 13px;
-  margin-bottom: 5px;
-  padding: 5px;
+  font-size:22px;
 }
 
 #lift-inspector h3 {
@@ -50,34 +81,35 @@
   font-size: 16px;
 }
 
+#lift-inspector p,
+#lift-inspector label,
+#lift-inspector pre {
+  color: #fff;
+  display: inline-block;
+  font-size: 14px;
+  margin: 5px;
+  padding: 5px;
+}
+
+#lift-inspector a {
+  color: #018dc7;
+}
+
 #lift-inspector label {
   text-transform: uppercase;
-  padding: 5px;
+  font-weight:bold;
 }
 
 #lift-inspector .lift-inspector-wrapper label:after {
   content: ':';
 }
 
-#lift-inspector .container div {
-  margin-bottom: 10px;
-}
-
-#lift-inspector .container .item-wrapper div {
-  margin-bottom: 10px;
-  overflow: hidden;
-}
-
 #lift-inspector pre {
   font-weight: bold;
-  color: #fff;
   font-family: "Courier New", Courier, "Lucida Sans Typewriter", "Lucida Typewriter", monospace;
-  font-size: 13px;
   text-overflow: ellipsis;
   white-space: nowrap;
   overflow: auto;
-  padding: 5px;
-  display: inline;
   background: #333;
 }
 
@@ -85,40 +117,46 @@
   display: inline-block;
 }
 
-#lift-inspector pre a,
-#lift-inspector h3 a {
-  display: block;
-  width: 100%;
+#lift-inspector .container div {
+  margin-bottom: 5px;
 }
 
-#lift-inspector a {
-  color: #018dc7;
+#lift-inspector .container .item-wrapper div {
+  overflow: hidden;
 }
-
-#lift-inspector label.inline-pre {
-  padding: 5px;
-  margin: 0;
-  display: inline;
-  width: 10%;
-}
-
-#lift-inspector .inline-wrap {
+#lift-inspector .lift-inspector-wrapper .item-wrapper .inline-wrap {
   display: inline-block;
   max-width: 100%;
-  margin-bottom: 0!important;
-  height: 35px;
   width: 100%;
+  white-space: nowrap;
+  vertical-align: middle;
+  overflow:scroll;
 }
 
-#lift-inspector .inline-wrap pre {
-  max-width: 85%;
+#lift-inspector .lastdecision-item-wrapper .item-details:after {
+     display: block;
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: 3rem;
+    background: linear-gradient(to right,rgba(255,255,255,0),#333333);
+    content: '';
 }
 
-#lift-inspector .inline-wrap pre:hover {
-  overflow-x: visible;
-  display: inline;
-  z-index: 10;
-  padding: 5px;
+#lift-inspector .lift-inspector-wrapper .item-wrapper .inline-wrap:hover:after {
+  display:none;
+}
+
+#lift-inspector .lift-inspector-wrapper .inline-wrap pre {
+  vertical-align: middle;
+  display:inline;
+  width:100%;
+}
+
+#lift-inspector .lift-inspector-wrapper .inline-wrap label.inline-pre {
+  display: inline-block;
+  vertical-align: middle;
 }
 
 #lift-inspector .lift-inspector-wrapper {
@@ -128,9 +166,6 @@
   margin: 15px 5px;
 }
 
-#lift-inspector .lift-inspector-wrapper div {
-}
-
 #lift-inspector .lift-inspector-wrapper .item-title {
   background: #fff;
   padding: 10px;
@@ -138,11 +173,25 @@
 
 #lift-inspector .lift-inspector-wrapper #account-details {
   background: transparent;
+  display: flex;
+  justify-content: space-between;
 }
 
 #lift-inspector .lift-inspector-wrapper #account-details div {
   padding: 5px 15px;
   vertical-align: top;
+  width:32%;
+}
+@media (max-width: 760px) {
+  #lift-inspector .lift-inspector-wrapper #account-details div,
+  #lift-inspector .lift-inspector-wrapper {
+    display:block;
+    width:95%;
+  }
+  #lift-inspector .lift-inspector-wrapper #account-details{
+    width:100%;
+    display: block;
+  }
 }
 
 #lift-inspector .lift-inspector-wrapper .item-wrapper {
@@ -160,7 +209,6 @@
 
 #lift-inspector .lift-inspector-wrapper #account-details label {
   display: block;
-  padding-left: 0;
 }
 
 #lift-inspector .lift-inspector-wrapper-fullwidth {
@@ -169,11 +217,4 @@
 
 #lift-inspector .lift-inspector-wrapper-fullwidth .container div {
   display: inline-block;
-}
-
-#lift-inspector .lift-inspector-wrapper label {
-  margin-right: 5px;
-  background: transparent;
-  font-weight: bold;
-  color: #fff;
 }

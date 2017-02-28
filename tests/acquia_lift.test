@@ -284,7 +284,7 @@ class AcquiaLiftsWebTest extends DrupalWebTestCase {
     $this->assertNoLift();
     $this->assertNoLiftMetaTag('account_id');
     $this->assertNoLiftMetaTag('site_id');
-    $this->assertNoLiftMetaTag('liftAssetsUrl');
+    $this->assertNoLiftMetaTag('liftAssetsURL');
     $this->assertNoLiftMetaTag('liftDecisionAPIURL');
     $this->assertNoLiftMetaTag('authEndpoint');
     $this->assertNoLiftMetaTag('contentReplacementMode');
@@ -296,7 +296,7 @@ class AcquiaLiftsWebTest extends DrupalWebTestCase {
     $this->assertLift();
     $this->assertLiftMetaTag('account_id');
     $this->assertLiftMetaTag('site_id');
-    $this->assertLiftMetaTag('liftAssetsUrl');
+    $this->assertLiftMetaTag('liftAssetsURL');
     $this->assertNoLiftMetaTag('liftDecisionAPIURL');
     $this->assertNoLiftMetaTag('authEndpoint');
     $this->assertLiftMetaTag('contentReplacementMode', 'untrusted');
@@ -315,7 +315,7 @@ class AcquiaLiftsWebTest extends DrupalWebTestCase {
     $this->assertLift();
     $this->assertLiftMetaTag('account_id', 'MY_ACCOUNT');
     $this->assertLiftMetaTag('site_id', 'MY_SITE');
-    $this->assertLiftMetaTag('liftAssetsUrl', 'https://example.com/assets/stable');
+    $this->assertLiftMetaTag('liftAssetsURL', 'https://example.com/assets/stable');
     $this->assertLiftMetaTag('liftDecisionAPIURL', 'https://example.com/decisionapi');
     $this->assertLiftMetaTag('authEndpoint', 'https://example.com/authorize');
     $this->assertLiftMetaTag('contentReplacementMode', 'trusted');

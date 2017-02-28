@@ -101,7 +101,7 @@ function acquia_lift_page_build(&$page) {
   // Add the credentials and configuration for the Lift Experience Builder.
   _acquia_lift_add_meta_tag('account_id', variable_get('acquia_lift_account_id'));
   _acquia_lift_add_meta_tag('site_id', variable_get('acquia_lift_site_id'));
-  _acquia_lift_add_meta_tag('liftAssetsUrl', $assets_url);
+  _acquia_lift_add_meta_tag('liftAssetsURL', $assets_url);
   if (!empty($decision_api_url)) {
     _acquia_lift_add_meta_tag('liftDecisionAPIURL', variable_get('acquia_lift_decision_api_url'));
   }

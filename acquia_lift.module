@@ -41,6 +41,17 @@ function acquia_lift_page_attachments(array &$page) {
   if (\Drupal::currentUser()->hasPermission('access toolbar')) {
     $page['#attached']['library'][] = 'acquia_lift/acquia-lift-toolbar';
   }
+
+  // Get the config settings to see if the lift inspector is enabled
+  $config = \Drupal::config('acquia_lift.settings');
+  $lift_inspector = $config->get('advanced.inspector_status');
+  $profile_manager_url = $config->get('advanced.profile_manager_url');
+
+  // If the lift inspector is enabled, attach the library and pass the profile manager URL to drupalSettings
+  if ($lift_inspector === TRUE) {
+    $page['#attached']['library'][] = 'acquia_lift/acquia_lift_inspector';
+    $page['#attached']['drupalSettings']['acquia_lift']['acquia_lift_inspector']['profile_manager_url'] =  $profile_manager_url;
+  }
 }
 
 /**

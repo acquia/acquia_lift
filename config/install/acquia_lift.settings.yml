@@ -21,4 +21,6 @@ visibility:
   path_patterns: "/admin\n/admin/*\n/batch\n/node/add*\n/node/*/*\n/user/*\n/block/*"
 advanced:
   content_replacement_mode: 'untrusted'
+  inspector_status: false
+  profile_manager_url: ''
 langcode: en

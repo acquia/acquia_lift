@@ -1404,7 +1404,7 @@ function acquia_lift_report_ajax_callback($form, &$form_state) {
  * @param $agent_data
  *   The agent to get report dates for
  * @param $as_date_strings
- *   If true date will return as string, otherwise timestamp
+ *   If TRUE, the date will be return as string, otherwise timestamp
  * @param $skip_report_max_days
  *   Skip the report_max_days variable
  *

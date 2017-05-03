@@ -711,7 +711,7 @@ function acquia_lift_report($form, &$form_state, $agent_data) {
   catch (AcquiaLiftException $e) {
     $overview_stats = array();
   }
-  list($start_time, $end_time) = acquia_lift_get_report_dates_for_agent($agent_data, FALSE);
+  list($start_time, $end_time) = acquia_lift_get_report_dates_for_agent($agent_data, FALSE, TRUE);
   $from_datetime = date_create();
   date_timestamp_set($from_datetime, $start_time);
   $to_datetime = date_create();
@@ -1403,11 +1403,16 @@ function acquia_lift_report_ajax_callback($form, &$form_state) {
  *
  * @param $agent_data
  *   The agent to get report dates for
+ * @param $as_date_strings
+ *   If TRUE, the date will be returned as string, otherwise timestamp
+ * @param $skip_report_max_days
+ *   Skip the report_max_days variable
+ *
  * @return array
  *   A two-element array, the first element of which is the start date in Y-m-d
  *   format, the second of which is the end date in Y-m-d format.
  */
-function acquia_lift_get_report_dates_for_agent($agent_data, $as_date_strings = TRUE) {
+function acquia_lift_get_report_dates_for_agent($agent_data, $as_date_strings = TRUE, $skip_report_max_days = FALSE) {
   // Default to showing the complete history of the campaign.
   $start = $agent_data->started;
   $end = time();
@@ -1416,8 +1421,12 @@ function acquia_lift_get_report_dates_for_agent($agent_data, $as_date_strings = 
   if ($status == PERSONALIZE_STATUS_COMPLETED && $end_time = variable_get(_personalize_agent_get_stoptime_variable($agent_data->machine_name), 0)) {
     $end = $end_time;
   }
-  // Ensure our time span is within the max number of days.
-  $start = acquia_lift_adjust_report_start_date($start, $end);
+
+  if (!$skip_report_max_days) {
+    // Ensure our time span is within the max number of days.
+    $start = acquia_lift_adjust_report_start_date($start, $end);
+  }
+
   if (!$as_date_strings) {
     return array($start, $end);
   }

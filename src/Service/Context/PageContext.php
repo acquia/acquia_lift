@@ -359,6 +359,7 @@ class PageContext extends BaseContext {
         '#tag' => 'script',
         '#attributes' => [
           'src' => $this->assetsUrl . '/' . SELF::LIFT_JS_FILENAME,
+          'async',
         ],
       ],
       'acquia_lift_javascript',

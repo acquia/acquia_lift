@@ -513,6 +513,7 @@ class PageContextTest extends UnitTestCase {
         '#tag' => 'script',
         '#attributes' => [
           'src' => $assetsUrl . '/lift.js',
+          'async',
         ],
       ],
       'acquia_lift_javascript',

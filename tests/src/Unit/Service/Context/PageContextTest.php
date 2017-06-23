@@ -171,6 +171,7 @@ class PageContextTest extends UnitTestCase {
       'content_section' => '',
       'content_keywords' => '',
       'post_id' => '',
+      'content_uuid' => '',
       'published_date' => '',
       'persona' => '',
       'engagement_score' => PageContext::ENGAGEMENT_SCORE_DEFAULT,
@@ -213,6 +214,7 @@ class PageContextTest extends UnitTestCase {
       'content_section' => '',
       'content_keywords' => '',
       'post_id' => '90210',
+      'content_uuid' => 'ecf826eb-3ef0-4aa6-aae2-9f6e5886bbb6',
       'published_date' => 'a_published_time',
       'persona' => '',
       'engagement_score' => PageContext::ENGAGEMENT_SCORE_DEFAULT,
@@ -259,6 +261,7 @@ class PageContextTest extends UnitTestCase {
       'content_section' => '',
       'content_keywords' => '',
       'post_id' => '90210',
+      'content_uuid' => 'ecf826eb-3ef0-4aa6-aae2-9f6e5886bbb6',
       'published_date' => 'a_published_time',
       'persona' => '',
       'engagement_score' => PageContext::ENGAGEMENT_SCORE_DEFAULT,
@@ -308,6 +311,7 @@ class PageContextTest extends UnitTestCase {
       'content_section' => '',
       'content_keywords' => '',
       'post_id' => '90210',
+      'content_uuid' => 'ecf826eb-3ef0-4aa6-aae2-9f6e5886bbb6',
       'published_date' => 'a_published_time',
       'persona' => '',
       'engagement_score' => PageContext::ENGAGEMENT_SCORE_DEFAULT,
@@ -351,6 +355,7 @@ class PageContextTest extends UnitTestCase {
       'content_section' => 'Tracked Content Term Name 1',
       'content_keywords' => 'Tracked Keyword Term Name 1,Tracked Keyword Term Name 2',
       'post_id' => '90210',
+      'content_uuid' => 'ecf826eb-3ef0-4aa6-aae2-9f6e5886bbb6',
       'published_date' => 'a_published_time',
       'persona' => '',
       'engagement_score' => PageContext::ENGAGEMENT_SCORE_DEFAULT,
@@ -425,6 +430,9 @@ class PageContextTest extends UnitTestCase {
     $node->expects($this->any())
       ->method('id')
       ->willReturn($id);
+    $node->expects($this->once())
+      ->method('uuid')
+      ->willReturn('ecf826eb-3ef0-4aa6-aae2-9f6e5886bbb6');
     $node->expects($this->once())
       ->method('getOwner')
       ->willReturn($user);

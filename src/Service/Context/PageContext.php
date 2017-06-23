@@ -72,6 +72,7 @@ class PageContext extends BaseContext {
     'content_section' => '',
     'content_keywords' => '',
     'post_id' => '',
+    'content_uuid' => '',
     'published_date' => '',
     'persona' => '',
     'engagement_score' => SELF::ENGAGEMENT_SCORE_DEFAULT,
@@ -229,6 +230,7 @@ class PageContext extends BaseContext {
     $this->htmlHeadContexts['content_title'] = $node->getTitle();
     $this->htmlHeadContexts['published_date'] = $node->getCreatedTime();
     $this->htmlHeadContexts['post_id'] = $node->id();
+    $this->htmlHeadContexts['content_uuid'] = $node->uuid();
     $this->htmlHeadContexts['author'] = $node->getOwner()->getUsername();
     $this->htmlHeadContexts['page_type'] = 'node page';
   }

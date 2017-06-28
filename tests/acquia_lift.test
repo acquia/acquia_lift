@@ -439,6 +439,35 @@ class AcquiaLiftsWebTest extends DrupalWebTestCase {
     $this->assertLiftMetaTag('event_udf5', $expected_tags);
   }
 
+  function testNonNodePage() {
+    $this->configureLift();
+
+    $this->drupalGet('/');
+    $this->assertNoLiftMetaTag('content_type');
+    $this->assertLiftMetaTag('content_title');
+    $this->assertNoLiftMetaTag('published_date');
+    $this->assertNoLiftMetaTag('post_id', '');
+    $this->assertNoLiftMetaTag('content_uuid', '');
+    $this->assertNoLiftMetaTag('author');
+    $this->assertNoLiftMetaTag('page_type', '');
+  }
+
+  function testNodePage() {
+    $this->configureLift();
+    $post_id = $this->articles['one_tag']->nid;
+
+    $this->drupalGet('node/' . $post_id);
+    $this->assertLiftMetaTag('content_type', 'article');
+    $this->assertLiftMetaTag('content_title');
+    $this->assertLiftMetaTag('published_date');
+    $this->assertLiftMetaTag('post_id', $post_id);
+    // We should be asserting the actual UUID value too, but that will introduce
+    // dependency to uuid module, therefore we are only asserting negative case.
+    $this->assertLiftMetaTag('content_uuid');
+    $this->assertLiftMetaTag('author');
+    $this->assertLiftMetaTag('page_type', 'node page');
+  }
+
   /**
    * Helper function to configure acquia_lift settings.
    */
@@ -542,14 +571,14 @@ class AcquiaLiftsWebTest extends DrupalWebTestCase {
         'tid' => 'autocreate',
         'vid' => 1,
         'name' => $name,
-        'vocabulary_machine_name' => 'tags'
+        'vocabulary_machine_name' => 'tags',
       );
     }
     foreach ($existing as $tid) {
       $values[] = array(
         'tid' => $tid,
         'vid' => 1,
-        'vocabulary_machine_name' => 'tags'
+        'vocabulary_machine_name' => 'tags',
       );
     }
 

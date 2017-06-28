@@ -79,6 +79,7 @@ function _acquia_lift_get_page_context($node = NULL, $primary = FALSE) {
     $page_context['content_title'] = $node->title;
     $page_context['published_date'] = $node->created;
     $page_context['post_id'] = $node->nid;
+    $page_context['content_uuid'] = isset($node->uuid) ? $node->uuid : '';
     $account = user_load($node->uid);
     $page_context['author'] = $account->name;
     $page_context['page_type'] = 'node page';

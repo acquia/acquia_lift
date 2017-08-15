@@ -22,7 +22,7 @@ function acquia_lift_uninstall() {
     'acquia_lift_ignore_path_patterns',
     'acquia_lift_content_replacement_mode',
     'acquia_lift_content_origin',
-    'acquia_lift_feature_flags',
+    'acquia_lift_user_permissions',
   );
   foreach ($vars as $var) {
     variable_del($var);

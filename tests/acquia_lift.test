@@ -289,7 +289,7 @@ class AcquiaLiftsWebTest extends DrupalWebTestCase {
     $this->assertNoLiftMetaTag('authEndpoint');
     $this->assertNoLiftMetaTag('contentReplacementMode');
     $this->assertNoLiftMetaTag('contentOrigin');
-    $this->assertNoLiftMetaTag('userPermissions');
+    $this->assertNoLiftMetaTag('userAccess');
 
     $this->configureLift();
     // Sets up the account id, site id, and assets url.
@@ -302,7 +302,7 @@ class AcquiaLiftsWebTest extends DrupalWebTestCase {
     $this->assertNoLiftMetaTag('authEndpoint');
     $this->assertLiftMetaTag('contentReplacementMode', 'untrusted');
     $this->assertLiftMetaTag('contentOrigin', '');
-    $this->assertLiftMetaTag('userPermissions', '');
+    $this->assertLiftMetaTag('userAccess', '');
 
     // Manually set all the configuration variables and confirm meta tags.
     variable_set('acquia_lift_account_id', 'MY_ACCOUNT');
@@ -312,7 +312,7 @@ class AcquiaLiftsWebTest extends DrupalWebTestCase {
     variable_set('acquia_lift_oauth_url', 'https://example.com/authorize');
     variable_set('acquia_lift_content_replacement_mode', 'trusted');
     variable_set('acquia_lift_content_origin', 'test-content-origin-id');
-    variable_set('acquia_lift_user_permissions', 'test-user-permissions');
+    variable_set('acquia_lift_user_access', 'test-user-access');
 
     $this->drupalGet('/');
     $this->assertLift();
@@ -323,7 +323,7 @@ class AcquiaLiftsWebTest extends DrupalWebTestCase {
     $this->assertLiftMetaTag('authEndpoint', 'https://example.com/authorize');
     $this->assertLiftMetaTag('contentReplacementMode', 'trusted');
     $this->assertLiftMetaTag('contentOrigin', 'test-content-origin-id');
-    $this->assertLiftMetaTag('userPermissions', 'test-user-permissions');
+    $this->assertLiftMetaTag('userAccess', 'test-user-access');
   }
 
   /**

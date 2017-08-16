@@ -110,6 +110,7 @@ function acquia_lift_page_build(&$page) {
   }
   _acquia_lift_add_meta_tag('contentReplacementMode', variable_get('acquia_lift_content_replacement_mode', 'untrusted'));
   _acquia_lift_add_meta_tag('contentOrigin', variable_get('acquia_lift_content_origin', ''));
+  _acquia_lift_add_meta_tag('userAccess', variable_get('acquia_lift_user_access', ''));
 
   // If there are querystring parameters present corresponding to the configured
   // identity params, we add the identity and identity type to the meta tags.

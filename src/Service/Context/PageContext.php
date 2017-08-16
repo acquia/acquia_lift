@@ -95,6 +95,7 @@ class PageContext extends BaseContext {
     'account_id' => 'account_id',
     'site_id' => 'site_id',
     'content_origin' => 'contentOrigin',
+    'user_access' => 'userAccess',
     'assets_url' => 'liftAssetsURL',
     'decision_api_url' => 'liftDecisionAPIURL',
     'oauth_url' => 'authEndpoint',

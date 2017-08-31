@@ -140,9 +140,10 @@ function acquia_lift_page_build(&$page) {
   // Add the lift js bootstrap loader
   $js_file = $assets_url . '/lift.js';
   $attached['js'] = array(
-    'type' => 'file',
-    'file' => $js_file,
-    'weight' => JS_DEFAULT - 10,
+    $js_file => array(
+      'type' => 'external',
+      'weight' => JS_DEFAULT - 10,
+    ),
   );
   $module_path = drupal_get_path('module', 'acquia_lift');
   $attached['css'] = array(

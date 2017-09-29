@@ -154,6 +154,10 @@ function acquia_lift_page_build(&$page) {
  * Implements hook_node_view().
  */
 function acquia_lift_node_view($node, $view_mode, $langcode) {
+  $page = menu_get_object();
+  if (!$page || $page->vid !== $node->nid) {
+    return;
+  }
   acquia_lift_get_page_context($node, $view_mode == 'full');
 }
 

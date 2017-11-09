@@ -384,7 +384,11 @@ class AdminSettingsForm extends ConfigFormBase {
       '#title' => t('Content replacement mode'),
       '#description' => t('The default, site-wide setting for <a href="https://docs.acquia.com/lift/drupal/3/config/trusted" target="_blank">content replacement mode</a>.'),
       '#default_value' => $settings['content_replacement_mode'],
-      '#options' => ['trusted' => t('Trusted'), 'untrusted' => t('Untrusted')],
+      '#options' => [
+        'trusted' => t('Trusted'),
+        'untrusted' => t('Untrusted'),
+        'customized' => t('Customized')
+      ],
     ];
 
     return $form;

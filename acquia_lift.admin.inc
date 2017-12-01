@@ -263,7 +263,11 @@ function _acquia_lift_admin_build_advanced_confirmation_form(&$form, &$form_stat
       '@docs-link' => 'https://docs.acquia.com/lift/drupal/3/config/trusted',
     )),
     '#default_value' => variable_get('acquia_lift_content_replacement_mode', 'untrusted'),
-    '#options' => ['trusted' => t('Trusted'), 'untrusted' => t('Untrusted')],
+    '#options' => [
+      'trusted' => t('Trusted'),
+      'untrusted' => t('Untrusted'),
+      'customized' => t('Customized')
+    ],
   ];
 }
 

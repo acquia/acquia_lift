@@ -175,7 +175,6 @@ class PageContextTest extends UnitTestCase {
       'published_date' => '',
       'persona' => '',
       'engagement_score' => PageContext::ENGAGEMENT_SCORE_DEFAULT,
-      'author' => '',
       'account_id' => 'AccountId1',
       'site_id' => 'SiteId1',
       'contentOrigin' => 'content_origin_1',
@@ -219,7 +218,6 @@ class PageContextTest extends UnitTestCase {
       'published_date' => 'a_published_time',
       'persona' => '',
       'engagement_score' => PageContext::ENGAGEMENT_SCORE_DEFAULT,
-      'author' => 'a_username',
       'account_id' => 'AccountId1',
       'site_id' => 'SiteId1',
       'contentOrigin' => 'content_origin_1',
@@ -267,7 +265,6 @@ class PageContextTest extends UnitTestCase {
       'published_date' => 'a_published_time',
       'persona' => '',
       'engagement_score' => PageContext::ENGAGEMENT_SCORE_DEFAULT,
-      'author' => 'a_username',
       'account_id' => 'AccountId1',
       'site_id' => 'SiteId1',
       'contentOrigin' => 'content_origin_1',
@@ -318,7 +315,6 @@ class PageContextTest extends UnitTestCase {
       'published_date' => 'a_published_time',
       'persona' => '',
       'engagement_score' => PageContext::ENGAGEMENT_SCORE_DEFAULT,
-      'author' => 'a_username',
       'account_id' => 'AccountId1',
       'site_id' => 'SiteId1',
       'contentOrigin' => 'content_origin_1',
@@ -363,7 +359,6 @@ class PageContextTest extends UnitTestCase {
       'published_date' => 'a_published_time',
       'persona' => '',
       'engagement_score' => PageContext::ENGAGEMENT_SCORE_DEFAULT,
-      'author' => 'a_username',
       'account_id' => 'AccountId1',
       'site_id' => 'SiteId1',
       'contentOrigin' => 'content_origin_1',
@@ -408,7 +403,6 @@ class PageContextTest extends UnitTestCase {
    * @return Drupal\node\NodeInterface|\PHPUnit_Framework_MockObject_MockObject
    */
   private function getNode($id = 90210) {
-    $user = $this->getUser();
     $field_country = $this->getMock('Drupal\Core\Field\BaseFieldDefinition');
     $field_tags = $this->getMock('Drupal\Core\Field\BaseFieldDefinition');
     $node = $this->getMock('Drupal\node\NodeInterface');
@@ -438,9 +432,6 @@ class PageContextTest extends UnitTestCase {
     $node->expects($this->once())
       ->method('uuid')
       ->willReturn('ecf826eb-3ef0-4aa6-aae2-9f6e5886bbb6');
-    $node->expects($this->once())
-      ->method('getOwner')
-      ->willReturn($user);
 
     $field_country->expects($this->once())
       ->method('getSetting')
@@ -455,21 +446,6 @@ class PageContextTest extends UnitTestCase {
     $node->field_tags = $field_tags;
 
     return $node;
-  }
-
-  /**
-   * Get User.
-   *
-   * @param string $username
-   *
-   * @return Drupal\user\UserInterface|\PHPUnit_Framework_MockObject_MockObject
-   */
-  private function getUser($username = 'a_username') {
-    $user = $this->getMock('Drupal\user\UserInterface');
-    $user->expects($this->once())
-      ->method('getUsername')
-      ->willReturn($username);
-    return $user;
   }
 
   /**

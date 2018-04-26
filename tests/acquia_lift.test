@@ -452,7 +452,6 @@ class AcquiaLiftsWebTest extends DrupalWebTestCase {
     $this->assertNoLiftMetaTag('published_date');
     $this->assertNoLiftMetaTag('post_id', '');
     $this->assertNoLiftMetaTag('content_uuid', '');
-    $this->assertNoLiftMetaTag('author');
     $this->assertNoLiftMetaTag('page_type', '');
   }
 
@@ -468,7 +467,6 @@ class AcquiaLiftsWebTest extends DrupalWebTestCase {
     // We should be asserting the actual UUID value too, but that will introduce
     // dependency to uuid module, therefore we are only asserting negative case.
     $this->assertLiftMetaTag('content_uuid');
-    $this->assertLiftMetaTag('author');
     $this->assertLiftMetaTag('page_type', 'node page');
   }
 

@@ -80,8 +80,6 @@ function _acquia_lift_get_page_context($node = NULL, $primary = FALSE) {
     $page_context['published_date'] = $node->created;
     $page_context['post_id'] = $node->nid;
     $page_context['content_uuid'] = isset($node->uuid) ? $node->uuid : '';
-    $account = user_load($node->uid);
-    $page_context['author'] = $account->name;
     $page_context['page_type'] = 'node page';
     $page_context = array_merge_recursive($page_context, _acquia_lift_get_mapped_context($node));
   }

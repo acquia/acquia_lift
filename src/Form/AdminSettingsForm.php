@@ -239,13 +239,11 @@ class AdminSettingsForm extends ConfigFormBase {
     $field_mappings_settings = $this->config('acquia_lift.settings')->get('field_mappings');
     $field_names = $this->getTaxonomyTermFieldNames();
 
-    $taxonomy_vocabulary_url_text = t('Taxonomy Vocabulary');
-    $taxonomy_vocabulary_url = Url::fromRoute('entity.taxonomy_vocabulary.collection', [], ['attributes' => ['target' => '_blank']]);
-    $taxonomy_vocabulary_link = Link::fromTextAndUrl($taxonomy_vocabulary_url_text, $taxonomy_vocabulary_url)->toString();
-
     $form = [
       '#title' => t('Field Mappings'),
-      '#description' => t('Create ') . $taxonomy_vocabulary_link . t(' and map to "content section", "content keywords", and "persona" fields.'),
+      '#description' => $this->t('Create <a href="@url" target="_blank">Taxonomy vocabularies</a> and map to "content section", "content keywords", and "persona" fields.', [
+        '@url' => Url::fromRoute('entity.taxonomy_vocabulary.collection')->toString(),
+      ]),
       '#type' => 'details',
       '#tree' => TRUE,
       '#group' => 'data_collection_settings',
@@ -293,14 +291,14 @@ class AdminSettingsForm extends ConfigFormBase {
 
     $field_mappings_settings = $this->config('acquia_lift.settings')->get('udf_' . $type . '_mappings');
     $field_names = $this->getTaxonomyTermFieldNames();
-    $taxonomy_vocabulary_url_text = t('Taxonomy Vocabulary');
-    $taxonomy_vocabulary_url = Url::fromRoute('entity.taxonomy_vocabulary.collection', [], ['attributes' => ['target' => '_blank']]);
-    $taxonomy_vocabulary_link = Link::fromTextAndUrl($taxonomy_vocabulary_url_text, $taxonomy_vocabulary_url)->toString();
     $udf_limit = SettingsHelper::getUdfLimitsForType($type);
 
     $form = [
       '#title' => t('User @type Mappings', ['@type' => ucfirst($type)]),
-      '#description' => t('Map taxonomy terms to Visitor Profile @type fields in Acquia Lift. Select a Taxonomy Reference Field that, if present, will map the value of the specified field to the Acquia Lift Profile for that specific visitor. No options available? Create ',  ['@type' => $type]) . $taxonomy_vocabulary_link . t(' and map the corresponding value.'),
+      '#description' => $this->t('Map taxonomy terms to Visitor Profile @type fields in Acquia Lift. Select a Taxonomy Reference Field that, if present, will map the value of the specified field to the Acquia Lift Profile for that specific visitor. No options available? Create <a href="@url" target="_blank">Taxonomy vocabularies</a> and map the corresponding value.', [
+        '@url' => Url::fromRoute('entity.taxonomy_vocabulary.collection')->toString(),
+        '@type' => $type,
+      ]),
       '#type' => 'details',
       '#tree' => TRUE,
       '#group' => 'data_collection_settings',

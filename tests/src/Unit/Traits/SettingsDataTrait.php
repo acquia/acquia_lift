@@ -16,11 +16,11 @@ trait SettingsDataTrait {
     return [
       'account_id' => 'AccountId1',
       'site_id' => 'SiteId1',
-      'content_origin' => 'content_origin_1',
       'user_access' => 'user_access_1',
       'assets_url' => 'AssetsUrl1',
       'decision_api_url' => 'decision_api_url_1',
       'oauth_url' => 'oauth_url_1',
+      'content_origin' => '08c93130-2e45-45f6-af6d-7c02de8cd90c',
     ];
   }
 
@@ -129,14 +129,15 @@ trait SettingsDataTrait {
   }
 
   /**
-   * Get valid advanced configuration mode settings
+   * Get a valid advanced settings array.
    *
    * @return array
-   *   A valid advanced configuration settings array.
+   *   A valid advanced settings array.
    */
-  private function getValidAdvancedConfigurationSettings() {
+  private function getValidAdvancedSettings() {
     return [
-      'content_replacement_mode' => 'trusted',
+      'content_replacement_mode' => 'customized',
+      'content_origin' => '08c93130-2e45-45f6-af6d-7c02de8cd90c',
     ];
   }
 }

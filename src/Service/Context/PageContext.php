@@ -130,7 +130,7 @@ class PageContext extends BaseContext {
     $this->udfTouchMappings = $settings->get('udf_event_mappings') ?: [];
 
     // Set advanced configuration.
-    $this->setContextAdvancedConfiguration($settings->get('advanced'));
+    $this->setContextAdvanced($settings->get('advanced'));
 
     // Set taxonomyTermStorage.
     $this->taxonomyTermStorage = $entity_type_manager->getStorage('taxonomy_term');
@@ -207,12 +207,12 @@ class PageContext extends BaseContext {
   }
 
   /**
-   * Set any Lift configuration values to the page context.
+   * Set page context - advanced.
    *
-   * @param $settings \Drupal\Core\Config\ImmutableConfig
-   *   The lift settings values.
+   * @param array $advanced_settings
+   *   Advanced settings array.
    */
-  private function setContextAdvancedConfiguration($advanced_settings) {
+  private function setContextAdvanced($advanced_settings) {
     $replacement_mode = $advanced_settings['content_replacement_mode'];
     if (SettingsHelper::isValidContentReplacementMode($replacement_mode)) {
       $this->htmlHeadContexts['contentReplacementMode'] = $replacement_mode;

@@ -6,11 +6,10 @@ use Exception;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Drupal\Core\Config\Config;
 use Drupal\Core\Entity\EntityManagerInterface;
-use Drupal\node\Entity\NodeType;
 use Drupal\Core\Form\ConfigFormBase;
 use Drupal\Core\Form\FormStateInterface;
-use Drupal\Core\Link;
 use Drupal\Core\Url;
+use Drupal\Component\Uuid\Uuid;
 use Drupal\acquia_lift\Service\Helper\SettingsHelper;
 
 /**
@@ -78,7 +77,7 @@ class AdminSettingsForm extends ConfigFormBase {
     $form['udf_touch_mappings'] = $this->buildUdfMappingsForm('touch');
     $form['udf_event_mappings'] = $this->buildUdfMappingsForm('event');
     $form['visibility'] = $this->buildVisibilityForm();
-    $form['advanced_configuration'] = $this->buildAdvancedConfigurationForm();
+    $form['advanced'] = $this->buildAdvancedForm();
 
     return parent::buildForm($form, $form_state);
   }
@@ -363,13 +362,14 @@ class AdminSettingsForm extends ConfigFormBase {
   }
 
   /**
-   * Display advanced configurations forms.
+   * Display advanced form.
    *
    * @return array
-   *   The render array for the advanced configuration form.
+   *   The render array for the advanced form.
    */
-  private function buildAdvancedConfigurationForm() {
-    $settings = $this->config('acquia_lift.settings')->get('advanced');
+  private function buildAdvancedForm() {
+    $credential_settings = $this->config('acquia_lift.settings')->get('credential');
+    $advanced_settings = $this->config('acquia_lift.settings')->get('advanced');
 
     $form = [
       '#title' => t('Advanced configuration'),
@@ -381,12 +381,19 @@ class AdminSettingsForm extends ConfigFormBase {
       '#type' => 'radios',
       '#title' => t('Content replacement mode'),
       '#description' => t('The default, site-wide setting for <a href="https://docs.acquia.com/lift/drupal/3/config/trusted" target="_blank">content replacement mode</a>.'),
-      '#default_value' => $settings['content_replacement_mode'],
+      '#default_value' => $advanced_settings['content_replacement_mode'],
       '#options' => [
         'trusted' => t('Trusted'),
         'untrusted' => t('Untrusted'),
         'customized' => t('Customized')
       ],
+    ];
+    $form['content_origin'] = [
+      '#type' => 'textfield',
+      '#title' => t('Content Hub Origin Site UUID'),
+      '#description' => t('Show content in Experience Builder content list from only one origin site, specified by its Content Hub Site UUID. Leave empty to show content from all sites.'),
+      '#default_value' => $credential_settings['content_origin'],
+      '#required' => FALSE,
     ];
 
     return $form;
@@ -397,7 +404,7 @@ class AdminSettingsForm extends ConfigFormBase {
    */
   public function validateForm(array &$form, FormStateInterface $form_state) {
     parent::validateForm($form, $form_state);
-    $this->validateCredentialvalues($form, $form_state);
+    $this->validateCredentialValues($form, $form_state);
   }
 
   /**
@@ -414,7 +421,7 @@ class AdminSettingsForm extends ConfigFormBase {
     $this->setUdfMappingsValues($settings, $values['udf_event_mappings'], 'event');
     $this->setUdfMappingsValues($settings, $values['udf_touch_mappings'], 'touch');
     $this->setVisibilityValues($settings, $values['visibility']);
-    $this->setAdvancedConfigurationValues($settings, $values['advanced_configuration']);
+    $this->setAdvancedValues($settings, $values['advanced']);
 
     $settings->save();
 
@@ -451,6 +458,11 @@ class AdminSettingsForm extends ConfigFormBase {
     // Validate Auth URL.
     if (SettingsHelper::isInvalidCredentialOauthUrl($values['credential']['oauth_url'])) {
       $form_state->setError($form['credential']['oauth_url'], $this->t('Authentication URL is an invalid URL.'));
+    }
+
+    // Validate Content Hub Origin Site UUID.
+    if (!empty($values['advanced']['content_origin']) && !Uuid::isValid($values['advanced']['content_origin'])) {
+      $form_state->setError($form['advanced']['content_origin'], $this->t('Content Hub Origin Site UUID is not a valid UUID.'));
     }
   }
 
@@ -623,14 +635,15 @@ class AdminSettingsForm extends ConfigFormBase {
   }
 
   /**
-   * Sets the advanced configuration values.
+   * Sets the advanced values.
    *
    * @param \Drupal\Core\Config\Config $settings
    *   Acquia Lift config settings
    * @param array $values
-   *   Advanced configuration values
+   *   Advanced values
    */
-  private function setAdvancedConfigurationValues(Config $settings, array $values) {
+  private function setAdvancedValues(Config $settings, array $values) {
     $settings->set('advanced.content_replacement_mode', $values['content_replacement_mode']);
+    $settings->set('credential.content_origin', trim($values['content_origin']));
   }
 }

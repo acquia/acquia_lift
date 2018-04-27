@@ -142,6 +142,9 @@ function acquia_lift_page_build(&$page) {
   $attached['js'][$js_file] = array(
     'type' => 'external',
     'weight' => JS_DEFAULT - 10,
+    // Drupal 7 does not support rendering of 'async' in any non-hacky way,
+    // I am still adding 'async' here in case Drupal 7 supports it in future.
+    'async' => TRUE,
   );
   $css_path = drupal_get_path('module', 'acquia_lift') . '/css/acquia_lift.css';
   $attached['css'][$css_path] = array();
@@ -153,7 +156,7 @@ function acquia_lift_page_build(&$page) {
 /**
  * Implements hook_node_view().
  */
-function acquia_lift_node_view($node, $view_mode, $langcode) {
+function acquia_lift_node_view($node, $view_mode) {
   $page = menu_get_object();
   if (!$page || $page->vid !== $node->nid) {
     return;

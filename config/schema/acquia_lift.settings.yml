@@ -21,6 +21,9 @@ acquia_lift.settings:
         oauth_url:
           type: uri
           label: 'Authentication URL'
+        content_origin:
+          type: string
+          label: 'Content Hub Site UUID'
     identity:
       type: config_object
       label: 'Identity'

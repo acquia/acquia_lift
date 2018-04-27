@@ -135,7 +135,7 @@ class PageContextTest extends UnitTestCase {
     $this->settings->expects($this->at(5))
       ->method('get')
       ->with('advanced')
-      ->willReturn($this->getValidAdvancedConfigurationSettings());
+      ->willReturn($this->getValidAdvancedSettings());
     $this->entityTypeManager->expects($this->once())
       ->method('getStorage')
       ->with('taxonomy_term')
@@ -177,12 +177,12 @@ class PageContextTest extends UnitTestCase {
       'engagement_score' => PageContext::ENGAGEMENT_SCORE_DEFAULT,
       'account_id' => 'AccountId1',
       'site_id' => 'SiteId1',
-      'contentOrigin' => 'content_origin_1',
+      'contentOrigin' => '08c93130-2e45-45f6-af6d-7c02de8cd90c',
       'userAccess' => 'user_access_1',
       'liftAssetsURL' => 'AssetsUrl1',
       'liftDecisionAPIURL' => 'decision_api_url_1',
       'authEndpoint' => 'oauth_url_1',
-      'contentReplacementMode' => 'trusted',
+      'contentReplacementMode' => 'customized',
     ], 'AssetsUrl1');
 
     $this->assertEquals($expected_head, $page['#attached']['html_head']);
@@ -220,12 +220,12 @@ class PageContextTest extends UnitTestCase {
       'engagement_score' => PageContext::ENGAGEMENT_SCORE_DEFAULT,
       'account_id' => 'AccountId1',
       'site_id' => 'SiteId1',
-      'contentOrigin' => 'content_origin_1',
+      'contentOrigin' => '08c93130-2e45-45f6-af6d-7c02de8cd90c',
       'userAccess' => 'user_access_1',
       'liftAssetsURL' => 'AssetsUrl1',
       'liftDecisionAPIURL' => 'decision_api_url_1',
       'authEndpoint' => 'oauth_url_1',
-      'contentReplacementMode' => 'trusted',
+      'contentReplacementMode' => 'customized',
     ], 'AssetsUrl1');
 
     $this->assertEquals($expected_head, $page['#attached']['html_head']);
@@ -267,12 +267,12 @@ class PageContextTest extends UnitTestCase {
       'engagement_score' => PageContext::ENGAGEMENT_SCORE_DEFAULT,
       'account_id' => 'AccountId1',
       'site_id' => 'SiteId1',
-      'contentOrigin' => 'content_origin_1',
+      'contentOrigin' => '08c93130-2e45-45f6-af6d-7c02de8cd90c',
       'userAccess' => 'user_access_1',
       'liftAssetsURL' => 'AssetsUrl1',
       'liftDecisionAPIURL' => 'decision_api_url_1',
       'authEndpoint' => 'oauth_url_1',
-      'contentReplacementMode' => 'trusted',
+      'contentReplacementMode' => 'customized',
     ], 'AssetsUrl1');
 
     $this->assertEquals($expected_head, $page['#attached']['html_head']);
@@ -317,12 +317,12 @@ class PageContextTest extends UnitTestCase {
       'engagement_score' => PageContext::ENGAGEMENT_SCORE_DEFAULT,
       'account_id' => 'AccountId1',
       'site_id' => 'SiteId1',
-      'contentOrigin' => 'content_origin_1',
+      'contentOrigin' => '08c93130-2e45-45f6-af6d-7c02de8cd90c',
       'userAccess' => 'user_access_1',
       'liftAssetsURL' => 'AssetsUrl1',
       'liftDecisionAPIURL' => 'decision_api_url_1',
       'authEndpoint' => 'oauth_url_1',
-      'contentReplacementMode' => 'trusted',
+      'contentReplacementMode' => 'customized',
     ], 'AssetsUrl1');
 
     $this->assertEquals($expected_head, $page['#attached']['html_head']);
@@ -361,12 +361,12 @@ class PageContextTest extends UnitTestCase {
       'engagement_score' => PageContext::ENGAGEMENT_SCORE_DEFAULT,
       'account_id' => 'AccountId1',
       'site_id' => 'SiteId1',
-      'contentOrigin' => 'content_origin_1',
+      'contentOrigin' => '08c93130-2e45-45f6-af6d-7c02de8cd90c',
       'userAccess' => 'user_access_1',
       'liftAssetsURL' => 'AssetsUrl1',
       'liftDecisionAPIURL' => 'decision_api_url_1',
       'authEndpoint' => 'oauth_url_1',
-      'contentReplacementMode' => 'trusted',
+      'contentReplacementMode' => 'customized',
       'event_udf1' => 'Tracked Content Term Name 1',
       'touch_udf1' => 'Tracked Content Term Name 1',
       'person_udf1' => 'Tracked Keyword Term Name 1,Tracked Keyword Term Name 2',

@@ -57,6 +57,7 @@ class AcquiaLiftsWebTest extends DrupalWebTestCase {
       'acquia_lift_oauth_url',
       'acquia_lift_ignore_path_patterns',
       'acquia_lift_content_replacement_mode',
+      'acquia_lift_content_origin',
     );
     foreach ($vars as $index => $name) {
       variable_del($name);
@@ -86,6 +87,7 @@ class AcquiaLiftsWebTest extends DrupalWebTestCase {
       'acquia_lift_default_identity_type',
       'acquia_lift_ignore_path_patterns',
       'acquia_lift_content_replacement_mode',
+      'acquia_lift_content_origin',
       'acquia_lift_field_mappings[content_section]',
       'acquia_lift_field_mappings[content_keywords]',
       'acquia_lift_field_mappings[persona]',
@@ -135,6 +137,13 @@ class AcquiaLiftsWebTest extends DrupalWebTestCase {
     $this->drupalPost(NULL, $edit, $submit_button_text);
     $this->assertText($submit_confirm_text);
     $this->assertEqual(variable_get('acquia_lift_content_replacement_mode'), 'trusted', 'Content replacement mode was updated to trusted.');
+
+    // Test content origin settings
+    $this->assertEqual(variable_get('acquia_lift_content_origin'), '', 'Content origin data is default to empty.');
+    $edit['acquia_lift_content_origin'] = '08c93130-2e45-45f6-af6d-7c02de8cd90c';
+    $this->drupalPost(NULL, $edit, $submit_button_text);
+    $this->assertText($submit_confirm_text);
+    $this->assertEqual(variable_get('acquia_lift_content_origin'), '08c93130-2e45-45f6-af6d-7c02de8cd90c', 'Content origin was updated.');
 
     // Only UDF mappings will values should be stored.
     $this->assertTrue(empty(variable_get('acquia_lift_udf_mappings')), 'UDF Mappings are initially empty.');
@@ -311,7 +320,7 @@ class AcquiaLiftsWebTest extends DrupalWebTestCase {
     variable_set('acquia_lift_decision_api_url', 'https://example.com/decisionapi');
     variable_set('acquia_lift_oauth_url', 'https://example.com/authorize');
     variable_set('acquia_lift_content_replacement_mode', 'trusted');
-    variable_set('acquia_lift_content_origin', 'test-content-origin-id');
+    variable_set('acquia_lift_content_origin', '08c93130-2e45-45f6-af6d-7c02de8cd90c');
     variable_set('acquia_lift_user_access', 'test-user-access');
 
     $this->drupalGet('/');
@@ -322,7 +331,7 @@ class AcquiaLiftsWebTest extends DrupalWebTestCase {
     $this->assertLiftMetaTag('liftDecisionAPIURL', 'https://example.com/decisionapi');
     $this->assertLiftMetaTag('authEndpoint', 'https://example.com/authorize');
     $this->assertLiftMetaTag('contentReplacementMode', 'trusted');
-    $this->assertLiftMetaTag('contentOrigin', 'test-content-origin-id');
+    $this->assertLiftMetaTag('contentOrigin', '08c93130-2e45-45f6-af6d-7c02de8cd90c');
     $this->assertLiftMetaTag('userAccess', 'test-user-access');
   }
 

@@ -269,6 +269,12 @@ function _acquia_lift_admin_build_advanced_confirmation_form(&$form, &$form_stat
       'customized' => t('Customized')
     ],
   ];
+  $form['acquia_lift_content_origin'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Content Hub Origin Site UUID'),
+    '#description' => t('Show content in Experience Builder content list from only one origin site, specified by its Content Hub Site UUID. Leave empty to show content from all sites.'),
+    '#default_value' => variable_get('acquia_lift_content_origin'),
+  );
 }
 
 /**
@@ -299,6 +305,9 @@ function acquia_lift_admin_form_validate($form, &$form_state) {
   }
   if (!empty($form_state['values']['acquia_lift_oauth_url']) && !valid_url($form_state['values']['acquia_lift_oauth_url'])) {
     form_set_error('acquia_lift_oauth_url', t('Authentication URL is an invalid URL.'));
+  }
+  if (!empty($form_state['values']['acquia_lift_content_origin']) && !(bool) preg_match('/^[0-9a-f]{8}-([0-9a-f]{4}-){3}[0-9a-f]{12}$/', $form_state['values']['acquia_lift_content_origin'])) {
+    form_set_error('acquia_lift_content_origin', t('Content Hub Origin Site UUID is not a valid UUID.'));
   }
 }
 
@@ -354,6 +363,7 @@ function acquia_lift_admin_form_submit($form, &$form_state) {
     'acquia_lift_site_id',
     'acquia_lift_ignore_path_patterns',
     'acquia_lift_content_replacement_mode',
+    'acquia_lift_content_origin',
   );
   foreach ($standard_variables as $key) {
     variable_set($key, $form_state['values'][$key]);

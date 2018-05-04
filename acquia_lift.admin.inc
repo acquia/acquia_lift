@@ -41,7 +41,7 @@ function acquia_lift_admin_form($form, &$form_state) {
     '#type' => 'fieldset',
     '#title' => t('Field mappings'),
     '#description' => t('Create !taxonomy_link and map to "content section", "content keywords", and "persona" fields.', array(
-        '!taxonomy_link' => l(t('Taxonomy Vocabulary'), 'admin/structure/taxonomy'))
+        '!taxonomy_link' => l(t('Taxonomy vocabularies'), 'admin/structure/taxonomy'))
     ),
     '#group' => 'data_collection',
     '#collapsible' => TRUE,
@@ -57,7 +57,7 @@ function acquia_lift_admin_form($form, &$form_state) {
     '#type' => 'fieldset',
     '#title' => t('User person mappings'),
     '#description' => t('Map taxonomy terms to Visitor Profile person fields in Acquia Lift. Select a Taxonomy Reference Field that, if present, will map the value of the specified field to the Acquia Lift Profile for that specific visitor. No options available? Create !taxonomy_vocabulary_link and map the corresponding value.', array(
-        '!taxonomy_vocabulary_link' => l(t('Taxonomy Vocabulary'), 'admin/structure/taxonomy'))
+        '!taxonomy_vocabulary_link' => l(t('Taxonomy vocabularies'), 'admin/structure/taxonomy'))
     ),
     '#group' => 'data_collection',
     '#collapsible' => TRUE,
@@ -69,7 +69,7 @@ function acquia_lift_admin_form($form, &$form_state) {
     '#type' => 'fieldset',
     '#title' => t('User touch mappings'),
     '#description' => t('Map taxonomy terms to Visitor Profile touch fields in Acquia Lift. Select a Taxonomy Reference Field that, if present, will map the value of the specified field to the Acquia Lift Profile for that specific visitor. No options available? Create !taxonomy_vocabulary_link and map the corresponding value.', array(
-      '!taxonomy_vocabulary_link' => l(t('Taxonomy Vocabulary'), 'admin/structure/taxonomy'))
+      '!taxonomy_vocabulary_link' => l(t('Taxonomy vocabularies'), 'admin/structure/taxonomy'))
     ),
     '#group' => 'data_collection',
     '#collapsible' => TRUE,
@@ -81,7 +81,7 @@ function acquia_lift_admin_form($form, &$form_state) {
     '#type' => 'fieldset',
     '#title' => t('User event mappings'),
     '#description' => t('Map taxonomy terms to Visitor Profile event fields in Acquia Lift. Select a Taxonomy Reference Field that, if present, will map the value of the specified field to the Acquia Lift Profile for that specific visitor. No options available? Create !taxonomy_vocabulary_link and map the corresponding value.', array(
-        '!taxonomy_vocabulary_link' => l(t('Taxonomy Vocabulary'), 'admin/structure/taxonomy'))
+        '!taxonomy_vocabulary_link' => l(t('Taxonomy vocabularies'), 'admin/structure/taxonomy'))
     ),
     '#group' => 'data_collection',
     '#collapsible' => TRUE,

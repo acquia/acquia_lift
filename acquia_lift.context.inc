@@ -129,8 +129,8 @@ function _acquia_lift_get_mapped_context($node) {
 }
 
 /**
- * Gets the list of taxonomy terms applied for a particular node and a
- * particular taxonomy vocabulary.
+ * Gets the list of taxonomy terms applied for a particular node and particular
+ * taxonomy vocabularies.
  * @param $node
  *   The node that is being displayed
  * @param string $vocabulary_machine_name

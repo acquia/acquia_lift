@@ -295,7 +295,8 @@ class PageContext extends BaseContext {
     }
 
     foreach($available_field_vocabulary_fields as $field_name => $page_contexts) {
-      $vocabulary_names = $node->{$field_name}->getSetting('handler_settings')['target_bundles'];
+      $field_handler_settings = $node->{$field_name}->getSetting('handler_settings');
+      $vocabulary_names = array_key_exists('target_bundles', $field_handler_settings) ? $field_handler_settings['target_bundles'] : [];
       foreach ($page_contexts as $page_context_name) {
         $available_field_vocabulary_names[$page_context_name] = $vocabulary_names;
       }

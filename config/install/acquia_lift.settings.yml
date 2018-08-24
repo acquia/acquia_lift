@@ -22,5 +22,4 @@ visibility:
   path_patterns: "/admin\n/admin/*\n/batch\n/node/add*\n/node/*/*\n/user/*\n/block/*"
 advanced:
   content_replacement_mode: 'untrusted'
-  bootstrap_mode: 'auto'
 langcode: en

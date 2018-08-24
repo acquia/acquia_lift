@@ -377,16 +377,6 @@ class AdminSettingsForm extends ConfigFormBase {
       '#tree' => TRUE,
       '#open' => FALSE,
     ];
-    $form['bootstrap_mode'] = [
-      '#type' => 'radios',
-      '#title' => t('Bootstrap Mode'),
-      '#description' => t('How would you like to bootstrap Lift? Setting manul allows you to run additional scripts (useful if collecting and sending additional data or forcing an opt-in for users) but you must <a href="https://docs.acquia.com/lift/api/javascript/personalize/" target="_blank">run the personalize() method in code</a> or Lift will not bootstrap.'),
-      '#default_value' => $advanced_settings['bootstrap_mode'],
-      '#options' => [
-        'auto' => t('Automatic'),
-        'manual' => t('Manual')
-      ],
-    ];
     $form['content_replacement_mode'] = [
       '#type' => 'radios',
       '#title' => t('Content replacement mode'),
@@ -654,7 +644,6 @@ class AdminSettingsForm extends ConfigFormBase {
    */
   private function setAdvancedValues(Config $settings, array $values) {
     $settings->set('advanced.content_replacement_mode', $values['content_replacement_mode']);
-    $settings->set('advanced.bootstrap_mode', $values['bootstrap_mode']);
     $settings->set('credential.content_origin', trim($values['content_origin']));
   }
 }

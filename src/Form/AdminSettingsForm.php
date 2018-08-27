@@ -380,10 +380,10 @@ class AdminSettingsForm extends ConfigFormBase {
     $form['bootstrap_mode'] = [
       '#type' => 'radios',
       '#title' => t('Bootstrap Mode'),
-      '#description' => t('How would you like to bootstrap Lift? Setting manul allows you to run additional scripts (useful if collecting and sending additional data or forcing an opt-in for users) but you must <a href="https://docs.acquia.com/lift/api/javascript/personalize/" target="_blank">run the personalize() method in code</a> or Lift will not bootstrap.'),
+      '#description' => t('"Auto" means Lift scripts will automatically bootstrap and act as quickly as possible. "Manual" means Lift scripts will load but withhold itself from collecting data, delivering content, and allowing admins to login; this option is useful when you want to do things on your site (e.g. check a cookie, set field value) before you want Lift to start bootstrapping; to resume Lift\'s bootstrapping process, call AcquiaLiftPublicApi.personalize().'),
       '#default_value' => $advanced_settings['bootstrap_mode'],
       '#options' => [
-        'auto' => t('Automatic'),
+        'auto' => t('Auto'),
         'manual' => t('Manual')
       ],
     ];

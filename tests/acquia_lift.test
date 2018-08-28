@@ -138,7 +138,7 @@ class AcquiaLiftsWebTest extends DrupalWebTestCase {
     $edit['acquia_lift_bootstrap_mode'] = 'manual';
     $this->drupalPost(NULL, $edit, $submit_button_text);
     $this->assertText($submit_confirm_text);
-    $this->assertEqual(variable_get('acquia_lift_bootstrap_mode'), 'manual', 'Content replacement mode was updated to manual.');
+    $this->assertEqual(variable_get('acquia_lift_bootstrap_mode'), 'manual', 'Bootstrap mode was updated to manual.');
 
     // Test content replacement mode settings
     $this->assertEqual(variable_get('acquia_lift_content_replacement_mode'), 'untrusted', 'Content replacement initially saved in default untrusted mode.');
@@ -305,6 +305,7 @@ class AcquiaLiftsWebTest extends DrupalWebTestCase {
     $this->assertNoLiftMetaTag('liftAssetsURL');
     $this->assertNoLiftMetaTag('liftDecisionAPIURL');
     $this->assertNoLiftMetaTag('authEndpoint');
+    $this->assertNoLiftMetaTag('bootstrapMode');
     $this->assertNoLiftMetaTag('contentReplacementMode');
     $this->assertNoLiftMetaTag('contentOrigin');
     $this->assertNoLiftMetaTag('userAccess');
@@ -318,6 +319,7 @@ class AcquiaLiftsWebTest extends DrupalWebTestCase {
     $this->assertLiftMetaTag('liftAssetsURL');
     $this->assertNoLiftMetaTag('liftDecisionAPIURL');
     $this->assertNoLiftMetaTag('authEndpoint');
+    $this->assertLiftMetaTag('bootstrapMode', 'auto');
     $this->assertLiftMetaTag('contentReplacementMode', 'untrusted');
     $this->assertLiftMetaTag('contentOrigin', '');
     $this->assertLiftMetaTag('userAccess', '');

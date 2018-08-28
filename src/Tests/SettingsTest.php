@@ -104,7 +104,7 @@ class SettingsTest extends WebTestBase {
     $edit += $this->convertToPostFormSettings($visibility_settings, 'visibility');
     $edit += $this->convertToPostFormSettings($advanced_settings, 'advanced');
     $edit_settings_count = count($edit);
-    $expect_settings_count = 20;
+    $expect_settings_count = 21;
 
     // Post the edits and assert that options are saved.
     $this->drupalPostForm('admin/config/services/acquia-lift', $edit, t('Save configuration'));

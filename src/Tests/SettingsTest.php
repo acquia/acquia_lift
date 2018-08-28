@@ -141,7 +141,7 @@ class SettingsTest extends WebTestBase {
     $this->assertRaw('acquia_lift:account_id', '[testMetatagsAndScriptTag]: account_id metatag is loaded on the node page.');
     $this->assertRaw('AccountId1', '[testMetatagsAndScriptTag]: account_id metatag value is loaded on the node page.');
     $this->assertRaw('acquia_lift:bootstrapMode', '[testMetatagsAndScriptTag]: bootstrap mode metatag is loaded on the node page.');
-    $this->assertRaw('auto', '[testMetatagsAndScriptTag]: bootstrap mode metatag value is loaded on the node page.');
+    $this->assertRaw('manual', '[testMetatagsAndScriptTag]: bootstrap mode metatag value is loaded on the node page.');
     $this->assertRaw('acquia_lift:contentReplacementMode', '[testMetatagsAndScriptTag]: content replacement mode metatag is loaded on the node page.');
     $this->assertRaw('customized', '[testMetatagsAndScriptTag]: content replacement mode metatag value is loaded on the node page.');
     $this->assertRaw('acquia_lift:contentOrigin', '[testMetatagsAndScriptTag]: content origin metatag is loaded on the node page.');

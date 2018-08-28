@@ -213,8 +213,8 @@ class PageContext extends BaseContext {
    *   Advanced settings array.
    */
   private function setContextAdvanced($advanced_settings) {
+    $bootstrap_mode = $advanced_settings['bootstrap_mode'];
     $replacement_mode = $advanced_settings['content_replacement_mode'];
-    $bootstrap_mode = $advanced_settings['bootstrapMode'];
     if (SettingsHelper::isValidBootstrapMode($bootstrap_mode)) {
       $this->htmlHeadContexts['bootstrapMode'] = $bootstrap_mode;
     }

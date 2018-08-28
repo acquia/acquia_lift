@@ -182,6 +182,7 @@ class PageContextTest extends UnitTestCase {
       'liftAssetsURL' => 'AssetsUrl1',
       'liftDecisionAPIURL' => 'decision_api_url_1',
       'authEndpoint' => 'oauth_url_1',
+      'bootstrapMode' => 'manual',
       'contentReplacementMode' => 'customized',
     ], 'AssetsUrl1');
 
@@ -225,6 +226,7 @@ class PageContextTest extends UnitTestCase {
       'liftAssetsURL' => 'AssetsUrl1',
       'liftDecisionAPIURL' => 'decision_api_url_1',
       'authEndpoint' => 'oauth_url_1',
+      'bootstrapMode' => 'manual',
       'contentReplacementMode' => 'customized',
     ], 'AssetsUrl1');
 
@@ -272,6 +274,7 @@ class PageContextTest extends UnitTestCase {
       'liftAssetsURL' => 'AssetsUrl1',
       'liftDecisionAPIURL' => 'decision_api_url_1',
       'authEndpoint' => 'oauth_url_1',
+      'bootstrapMode' => 'manual',
       'contentReplacementMode' => 'customized',
     ], 'AssetsUrl1');
 
@@ -322,6 +325,7 @@ class PageContextTest extends UnitTestCase {
       'liftAssetsURL' => 'AssetsUrl1',
       'liftDecisionAPIURL' => 'decision_api_url_1',
       'authEndpoint' => 'oauth_url_1',
+      'bootstrapMode' => 'manual',
       'contentReplacementMode' => 'customized',
     ], 'AssetsUrl1');
 
@@ -366,6 +370,7 @@ class PageContextTest extends UnitTestCase {
       'liftAssetsURL' => 'AssetsUrl1',
       'liftDecisionAPIURL' => 'decision_api_url_1',
       'authEndpoint' => 'oauth_url_1',
+      'bootstrapMode' => 'manual',
       'contentReplacementMode' => 'customized',
       'event_udf1' => 'Tracked Content Term Name 1',
       'touch_udf1' => 'Tracked Content Term Name 1',

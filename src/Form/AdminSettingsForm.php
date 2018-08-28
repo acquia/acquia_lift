@@ -653,8 +653,8 @@ class AdminSettingsForm extends ConfigFormBase {
    *   Advanced values
    */
   private function setAdvancedValues(Config $settings, array $values) {
-    $settings->set('advanced.content_replacement_mode', $values['content_replacement_mode']);
     $settings->set('advanced.bootstrap_mode', $values['bootstrap_mode']);
+    $settings->set('advanced.content_replacement_mode', $values['content_replacement_mode']);
     $settings->set('credential.content_origin', trim($values['content_origin']));
   }
 }

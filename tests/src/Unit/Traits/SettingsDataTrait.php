@@ -136,7 +136,7 @@ trait SettingsDataTrait {
    */
   private function getValidAdvancedSettings() {
     return [
-      'bootstrap_mode' => 'auto',
+      'bootstrap_mode' => 'manual',
       'content_replacement_mode' => 'customized',
       'content_origin' => '08c93130-2e45-45f6-af6d-7c02de8cd90c',
     ];

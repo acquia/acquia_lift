@@ -108,6 +108,7 @@ function acquia_lift_page_build(&$page) {
   if (!empty($oauth_url)) {
     _acquia_lift_add_meta_tag('authEndpoint', variable_get('acquia_lift_oauth_url'));
   }
+  _acquia_lift_add_meta_tag('bootstrapMode', variable_get('acquia_lift_bootstrap_mode', 'auto'));
   _acquia_lift_add_meta_tag('contentReplacementMode', variable_get('acquia_lift_content_replacement_mode', 'untrusted'));
   _acquia_lift_add_meta_tag('contentOrigin', variable_get('acquia_lift_content_origin', ''));
   _acquia_lift_add_meta_tag('userAccess', variable_get('acquia_lift_user_access', ''));

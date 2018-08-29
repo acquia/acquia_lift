@@ -256,6 +256,16 @@ function _acquia_lift_admin_build_visibility_form(&$form, &$form_state) {
 }
 
 function _acquia_lift_admin_build_advanced_confirmation_form(&$form, &$form_state) {
+  $form['acquia_lift_bootstrap_mode'] = [
+    '#type' => 'radios',
+    '#title' => t('Bootstrap mode'),
+    '#description' => t('"Auto" means Lift scripts will automatically bootstrap and act as quickly as possible. "Manual" means Lift scripts will load but withhold itself from collecting data, delivering content, and allowing admins to login; this option is useful when you want to do things on your site (e.g. check a cookie, set field value) before you want Lift to start bootstrapping; to resume Lift\'s bootstrapping process, call AcquiaLiftPublicApi.personalize().'),
+    '#default_value' => variable_get('acquia_lift_bootstrap_mode', 'auto'),
+    '#options' => [
+      'auto' => t('Auto'),
+      'manual' => t('Manual')
+    ],
+  ];
   $form['acquia_lift_content_replacement_mode'] = [
     '#type' => 'radios',
     '#title' => t('Content replacement mode'),
@@ -362,6 +372,7 @@ function acquia_lift_admin_form_submit($form, &$form_state) {
     'acquia_lift_account_id',
     'acquia_lift_site_id',
     'acquia_lift_ignore_path_patterns',
+    'acquia_lift_bootstrap_mode',
     'acquia_lift_content_replacement_mode',
     'acquia_lift_content_origin',
   );

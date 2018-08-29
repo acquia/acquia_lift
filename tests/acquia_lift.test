@@ -56,6 +56,7 @@ class AcquiaLiftsWebTest extends DrupalWebTestCase {
       'acquia_lift_decision_api_url',
       'acquia_lift_oauth_url',
       'acquia_lift_ignore_path_patterns',
+      'acquia_lift_bootstrap_mode',
       'acquia_lift_content_replacement_mode',
       'acquia_lift_content_origin',
     );
@@ -86,6 +87,7 @@ class AcquiaLiftsWebTest extends DrupalWebTestCase {
       'acquia_lift_identity_type_param',
       'acquia_lift_default_identity_type',
       'acquia_lift_ignore_path_patterns',
+      'acquia_lift_bootstrap_mode',
       'acquia_lift_content_replacement_mode',
       'acquia_lift_content_origin',
       'acquia_lift_field_mappings[content_section]',
@@ -130,6 +132,13 @@ class AcquiaLiftsWebTest extends DrupalWebTestCase {
     $this->drupalPost(NULL, $edit, $submit_button_text);
     $this->assertText($submit_confirm_text);
     $this->assertEqual(variable_get('acquia_lift_ignore_path_patterns'), $test_path_patterns, 'Visibility path patterns were updated.');
+
+    // Test bootstrap mode settings
+    $this->assertEqual(variable_get('acquia_lift_bootstrap_mode'), 'auto', 'Bootstrap mode initially saved as auto mode.');
+    $edit['acquia_lift_bootstrap_mode'] = 'manual';
+    $this->drupalPost(NULL, $edit, $submit_button_text);
+    $this->assertText($submit_confirm_text);
+    $this->assertEqual(variable_get('acquia_lift_bootstrap_mode'), 'manual', 'Bootstrap mode was updated to manual.');
 
     // Test content replacement mode settings
     $this->assertEqual(variable_get('acquia_lift_content_replacement_mode'), 'untrusted', 'Content replacement initially saved in default untrusted mode.');
@@ -296,6 +305,7 @@ class AcquiaLiftsWebTest extends DrupalWebTestCase {
     $this->assertNoLiftMetaTag('liftAssetsURL');
     $this->assertNoLiftMetaTag('liftDecisionAPIURL');
     $this->assertNoLiftMetaTag('authEndpoint');
+    $this->assertNoLiftMetaTag('bootstrapMode');
     $this->assertNoLiftMetaTag('contentReplacementMode');
     $this->assertNoLiftMetaTag('contentOrigin');
     $this->assertNoLiftMetaTag('userAccess');
@@ -309,6 +319,7 @@ class AcquiaLiftsWebTest extends DrupalWebTestCase {
     $this->assertLiftMetaTag('liftAssetsURL');
     $this->assertNoLiftMetaTag('liftDecisionAPIURL');
     $this->assertNoLiftMetaTag('authEndpoint');
+    $this->assertLiftMetaTag('bootstrapMode', 'auto');
     $this->assertLiftMetaTag('contentReplacementMode', 'untrusted');
     $this->assertLiftMetaTag('contentOrigin', '');
     $this->assertLiftMetaTag('userAccess', '');
@@ -319,6 +330,7 @@ class AcquiaLiftsWebTest extends DrupalWebTestCase {
     variable_set('acquia_lift_assets_url', 'https://example.com/assets/stable');
     variable_set('acquia_lift_decision_api_url', 'https://example.com/decisionapi');
     variable_set('acquia_lift_oauth_url', 'https://example.com/authorize');
+    variable_set('acquia_lift_bootstrap_mode', 'manual');
     variable_set('acquia_lift_content_replacement_mode', 'trusted');
     variable_set('acquia_lift_content_origin', '08c93130-2e45-45f6-af6d-7c02de8cd90c');
     variable_set('acquia_lift_user_access', 'test-user-access');
@@ -330,6 +342,7 @@ class AcquiaLiftsWebTest extends DrupalWebTestCase {
     $this->assertLiftMetaTag('liftAssetsURL', 'https://example.com/assets/stable');
     $this->assertLiftMetaTag('liftDecisionAPIURL', 'https://example.com/decisionapi');
     $this->assertLiftMetaTag('authEndpoint', 'https://example.com/authorize');
+    $this->assertLiftMetaTag('bootstrapMode', 'manual');
     $this->assertLiftMetaTag('contentReplacementMode', 'trusted');
     $this->assertLiftMetaTag('contentOrigin', '08c93130-2e45-45f6-af6d-7c02de8cd90c');
     $this->assertLiftMetaTag('userAccess', 'test-user-access');

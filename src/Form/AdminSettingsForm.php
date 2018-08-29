@@ -377,6 +377,16 @@ class AdminSettingsForm extends ConfigFormBase {
       '#tree' => TRUE,
       '#open' => FALSE,
     ];
+    $form['bootstrap_mode'] = [
+      '#type' => 'radios',
+      '#title' => t('Bootstrap Mode'),
+      '#description' => t('"Auto" means Lift scripts will automatically bootstrap and act as quickly as possible. "Manual" means Lift scripts will load but withhold itself from collecting data, delivering content, and allowing admins to login; this option is useful when you want to do things on your site (e.g. check a cookie, set field value) before you want Lift to start bootstrapping; to resume Lift\'s bootstrapping process, call AcquiaLiftPublicApi.personalize().'),
+      '#default_value' => $advanced_settings['bootstrap_mode'],
+      '#options' => [
+        'auto' => t('Auto'),
+        'manual' => t('Manual')
+      ],
+    ];
     $form['content_replacement_mode'] = [
       '#type' => 'radios',
       '#title' => t('Content replacement mode'),
@@ -643,6 +653,7 @@ class AdminSettingsForm extends ConfigFormBase {
    *   Advanced values
    */
   private function setAdvancedValues(Config $settings, array $values) {
+    $settings->set('advanced.bootstrap_mode', $values['bootstrap_mode']);
     $settings->set('advanced.content_replacement_mode', $values['content_replacement_mode']);
     $settings->set('credential.content_origin', trim($values['content_origin']));
   }

@@ -8,6 +8,7 @@ use Drupal\Core\Config\Config;
 use Drupal\Core\Entity\EntityManagerInterface;
 use Drupal\Core\Form\ConfigFormBase;
 use Drupal\Core\Form\FormStateInterface;
+use Drupal\Core\Messenger\MessengerInterface;
 use Drupal\Core\Url;
 use Drupal\Component\Uuid\Uuid;
 use Drupal\acquia_lift\Service\Helper\SettingsHelper;
@@ -22,6 +23,13 @@ class AdminSettingsForm extends ConfigFormBase {
    * @var \Drupal\Core\Entity\EntityManagerInterface
    */
   private $entityManager;
+
+  /**
+   * The Messenger service.
+   *
+   * @var \Drupal\Core\Messenger\MessengerInterface
+   */
+  protected $messenger;
 
   /**
    * {@inheritdoc}
@@ -44,9 +52,12 @@ class AdminSettingsForm extends ConfigFormBase {
    *
    * @param \Drupal\Core\Entity\EntityManagerInterface $entity_manager
    *   The entity manager.
+   * @param \Drupal\Core\Messenger\MessengerInterface $messenger
+   *   The messenger service.
    */
-  public function __construct(EntityManagerInterface $entity_manager) {
+  public function __construct(EntityManagerInterface $entity_manager, MessengerInterface $messenger) {
     $this->entityManager = $entity_manager;
+    $this->messenger = $messenger;
   }
 
   /**
@@ -54,7 +65,8 @@ class AdminSettingsForm extends ConfigFormBase {
    */
   public static function create(ContainerInterface $container) {
     return new static(
-      $container->get('entity.manager')
+      $container->get('entity.manager'),
+      $container->get('messenger')
     );
   }
 
@@ -93,14 +105,14 @@ class AdminSettingsForm extends ConfigFormBase {
       SettingsHelper::isInvalidCredentialSiteId($credential_settings['site_id']) ||
       SettingsHelper::isInvalidCredentialAssetsUrl($credential_settings['assets_url'])
     ) {
-      drupal_set_message(t('The Acquia Lift module requires a valid Account ID, Site ID, and Assets URL to complete activation.'), 'warning');
+      $this->messenger->addWarning(t('The Acquia Lift module requires a valid Account ID, Site ID, and Assets URL to complete activation.'));
     }
 
     // Validate URLs and check connections.
     if (isset($credential_settings['decision_api_url']) && SettingsHelper::isInvalidCredentialDecisionApiUrl($credential_settings['decision_api_url']) ||
       isset($credential_settings['oauth_url']) && SettingsHelper::isInvalidCredentialOauthUrl($credential_settings['oauth_url'])
     ) {
-      drupal_set_message(t('Acquia Lift module requires valid Decision API URL and Authentication URL to be activate.'), 'warning');
+      $this->messenger->addWarning(t('Acquia Lift module requires valid Decision API URL and Authentication URL to be activate.'));
     }
   }
 
@@ -560,15 +572,15 @@ class AdminSettingsForm extends ConfigFormBase {
   private function checkConnection($name, $base_uri, $path, $expected_status_code = 200) {
     $responseInfo = SettingsHelper::pingUri($base_uri, $path);
     if (empty($responseInfo)) {
-      drupal_set_message(t('Acquia Lift module could not reach the specified :name URL.', [':name' => $name]), 'error');
+      $this->messenger->addError(t('Acquia Lift module could not reach the specified :name URL.', [':name' => $name]));
       return;
     }
     if ($responseInfo['statusCode'] !== $expected_status_code) {
-      drupal_set_message(t('Acquia Lift module has successfully connected to :name URL, but received status code ":statusCode" with the reason ":reasonPhrase".', [
+      $this->messenger->addError(t('Acquia Lift module has successfully connected to :name URL, but received status code ":statusCode" with the reason ":reasonPhrase".', [
         ':name' => $name,
         ':statusCode' => $responseInfo['statusCode'],
         ':reasonPhrase' => $responseInfo['reasonPhrase'],
-      ]), 'error');
+      ]));
     }
   }
 

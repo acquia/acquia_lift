@@ -325,7 +325,7 @@ class PageContext extends BaseContext {
     // Find the term names.
     $vocabulary_term_names = [];
     foreach ($node_terms as $term) {
-      $vocabulary_id = $term->getVocabularyId();
+      $vocabulary_id = $term->bundle();
       $term_name = $term->getName();
       $vocabulary_term_names[$vocabulary_id][] = $term_name;
     }

@@ -4,7 +4,6 @@ namespace Drupal\acquia_lift\Service\Helper;
 
 use Drupal\Core\Path\AliasManagerInterface;
 use Drupal\Core\Path\PathMatcherInterface;
-use Drupal\Component\Utility\Unicode;
 
 class PathMatcher {
   /**
@@ -47,14 +46,14 @@ class PathMatcher {
    */
   public function match($path, $path_patterns) {
     // Convert path to lowercase and match.
-    $converted_path = Unicode::strtolower($path);
-    $converted_path_patterns = Unicode::strtolower($path_patterns);
+    $converted_path = mb_strtolower($path);
+    $converted_path_patterns = mb_strtolower($path_patterns);
     if ($this->pathMatcher->matchPath($converted_path, $converted_path_patterns)) {
       return TRUE;
     }
 
     // Compare the lowercase path alias (if any) and internal path.
-    $converted_path_alias = Unicode::strtolower($this->aliasManager->getAliasByPath($converted_path));
+    $converted_path_alias = mb_strtolower($this->aliasManager->getAliasByPath($converted_path));
     if (($converted_path != $converted_path_alias) && $this->pathMatcher->matchPath($converted_path_alias, $converted_path_patterns)) {
       return TRUE;
     }

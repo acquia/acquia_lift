@@ -392,7 +392,7 @@ class PageContextTest extends UnitTestCase {
   private function getTerm($name = 'Term Name', $vocabulary_id = 'untracked_vocabulary_id') {
     $term = $this->getMock('Drupal\taxonomy\TermInterface');
     $term->expects($this->once())
-      ->method('getVocabularyId')
+      ->method('bundle')
       ->willReturn($vocabulary_id);
     $term->expects($this->once())
       ->method('getName')

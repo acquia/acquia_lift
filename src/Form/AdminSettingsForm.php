@@ -52,10 +52,10 @@ class AdminSettingsForm extends ConfigFormBase {
    *
    * @param \Drupal\Core\Entity\EntityManagerInterface $entity_manager
    *   The entity manager.
-   * @param \Drupal\Core\Messenger\MessengerInterface $messenger
-   *   The messenger service.
+   * @param \Drupal\Core\Messenger\MessengerInterface|null $messenger
+   *   The messenger service (or null).
    */
-  public function __construct(EntityManagerInterface $entity_manager, MessengerInterface $messenger) {
+  public function __construct(EntityManagerInterface $entity_manager, $messenger) {
     $this->entityManager = $entity_manager;
     $this->messenger = $messenger;
   }
@@ -64,9 +64,13 @@ class AdminSettingsForm extends ConfigFormBase {
    * {@inheritdoc}
    */
   public static function create(ContainerInterface $container) {
+    // MessengerInterface was introduced by Drupal 8.5.
+    // This code is for backwards-compatibility to 8.4 and below.
+    $messenger = $container->has('messenger') ? $container->get('messenger') : null;
+
     return new static(
       $container->get('entity.manager'),
-      $container->get('messenger')
+      $messenger
     );
   }
 
@@ -105,14 +109,14 @@ class AdminSettingsForm extends ConfigFormBase {
       SettingsHelper::isInvalidCredentialSiteId($credential_settings['site_id']) ||
       SettingsHelper::isInvalidCredentialAssetsUrl($credential_settings['assets_url'])
     ) {
-      $this->messenger->addWarning(t('The Acquia Lift module requires a valid Account ID, Site ID, and Assets URL to complete activation.'));
+      $this->setFormMessage(t('The Acquia Lift module requires a valid Account ID, Site ID, and Assets URL to complete activation.'), 'warning');
     }
 
     // Validate URLs and check connections.
     if (isset($credential_settings['decision_api_url']) && SettingsHelper::isInvalidCredentialDecisionApiUrl($credential_settings['decision_api_url']) ||
       isset($credential_settings['oauth_url']) && SettingsHelper::isInvalidCredentialOauthUrl($credential_settings['oauth_url'])
     ) {
-      $this->messenger->addWarning(t('Acquia Lift module requires valid Decision API URL and Authentication URL to be activate.'));
+      $this->setFormMessage(t('Acquia Lift module requires valid Decision API URL and Authentication URL to be activate.'), 'warning');
     }
   }
 
@@ -572,15 +576,15 @@ class AdminSettingsForm extends ConfigFormBase {
   private function checkConnection($name, $base_uri, $path, $expected_status_code = 200) {
     $responseInfo = SettingsHelper::pingUri($base_uri, $path);
     if (empty($responseInfo)) {
-      $this->messenger->addError(t('Acquia Lift module could not reach the specified :name URL.', [':name' => $name]));
+      $this->setFormMessage(t('Acquia Lift module could not reach the specified :name URL.', [':name' => $name]), 'error');
       return;
     }
     if ($responseInfo['statusCode'] !== $expected_status_code) {
-      $this->messenger->addError(t('Acquia Lift module has successfully connected to :name URL, but received status code ":statusCode" with the reason ":reasonPhrase".', [
+      $this->setFormMessage(t('Acquia Lift module has successfully connected to :name URL, but received status code ":statusCode" with the reason ":reasonPhrase".', [
         ':name' => $name,
         ':statusCode' => $responseInfo['statusCode'],
         ':reasonPhrase' => $responseInfo['reasonPhrase'],
-      ]));
+      ]), 'error');
     }
   }
 
@@ -668,5 +672,25 @@ class AdminSettingsForm extends ConfigFormBase {
     $settings->set('advanced.bootstrap_mode', $values['bootstrap_mode']);
     $settings->set('advanced.content_replacement_mode', $values['content_replacement_mode']);
     $settings->set('credential.content_origin', trim($values['content_origin']));
+  }
+
+  /**
+   * Sets form message.
+   *
+   * MessengerInterface was introduced by Drupal 8.5.
+   * This code is for backwards-compatibility to 8.4 and below.
+   *
+   * @param string $message
+   *   Message to show on form.
+   * @param string $type
+   *   Type of the message to show on form.
+   */
+  private function setFormMessage($message, $type) {
+    if (!$this->messenger) {
+      drupal_set_message($message, $type);
+      return;
+    }
+    $messengerFunctionName = 'add' . ucwords($type);
+    $this->messenger->$messengerFunctionName($message);
   }
 }

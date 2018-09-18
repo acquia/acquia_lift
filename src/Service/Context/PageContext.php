@@ -6,6 +6,7 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Component\Routing\Route;
 use Drupal\Core\Controller\TitleResolverInterface;
+use Drupal\Core\Language\LanguageManagerInterface;
 use Drupal\Core\Config\ConfigFactoryInterface;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\Core\Routing\RouteMatchInterface;
@@ -69,6 +70,7 @@ class PageContext extends BaseContext {
     'content_title' => 'Untitled',
     'content_type' => 'page',
     'page_type' => 'content page',
+    'context_language' => '',
     'content_section' => '',
     'content_keywords' => '',
     'post_id' => '',
@@ -113,8 +115,10 @@ class PageContext extends BaseContext {
    *   The current route match.
    * @param \Drupal\Core\Controller\TitleResolverInterface $title_resolver
    *   The title resolver.
+   * @param Drupal\Core\Language\LanguageManagerInterface $language_manager
+   *   The language manager.
    */
-  public function __construct(ConfigFactoryInterface $config_factory, EntityTypeManagerInterface $entity_type_manager, RequestStack $request_stack, RouteMatchInterface $route_match, TitleResolverInterface $title_resolver) {
+  public function __construct(ConfigFactoryInterface $config_factory, EntityTypeManagerInterface $entity_type_manager, RequestStack $request_stack, RouteMatchInterface $route_match, TitleResolverInterface $title_resolver, LanguageManagerInterface $language_manager) {
     // Get all our settings.
     $settings = $config_factory->get('acquia_lift.settings');
 
@@ -139,7 +143,7 @@ class PageContext extends BaseContext {
     $request = $request_stack->getCurrentRequest();
     $route = $route_match->getRouteObject();
     $this->setContextByNode($request);
-    $this->setContextTitle($request, $route, $title_resolver);
+    $this->setContextTitle($request, $route, $title_resolver, $language_manager);
   }
 
   /**
@@ -173,9 +177,20 @@ class PageContext extends BaseContext {
    *   The route object.
    * @param \Drupal\Core\Controller\TitleResolverInterface $titleResolver
    *   The title resolver.
+   * @param Drupal\Core\Language\LanguageManagerInterface $languageManager
+   *   The language manager.
    */
-  private function setContextTitle(Request $request, Route $route, TitleResolverInterface $titleResolver) {
-    // Find title.
+  private function setContextTitle(Request $request, Route $route, TitleResolverInterface $titleResolver, LanguageManagerInterface $languageManager) {
+    // Set language code
+    // After investigation, there is no use case where the methods
+    // 'getCurrentLanguage' and 'getId' would not exist within 
+    // LanguageManager. Drupal 8 will ALWAYS set a language code
+    // and would not be null, therefore no checks are required
+    // @link https://api.drupal.org/api/drupal/core%21lib%21Drupal%21Core%21Language%21LanguageManager.php/class/LanguageManager/8.6.x
+    // @link https://api.drupal.org/api/drupal/core%21lib%21Drupal%21Core%21Language%21Language.php/class/Language/8.2.x
+    $this->htmlHeadContexts['context_language'] = $languageManager->getCurrentLanguage()->getId();
+
+    // Get title
     $title = $titleResolver->getTitle($request, $route);
 
     // Set title.

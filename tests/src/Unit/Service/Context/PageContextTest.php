@@ -84,66 +84,125 @@ class PageContextTest extends UnitTestCase {
   private $titleResolver;
 
   /**
+   * Language Manager.
+   *
+   * @var Drupal\Core\Language\LanguageManagerInterface|\PHPUnit_Framework_MockObject_MockObject
+   */
+  private $languageManager;
+
+  /**
+   * Language Object.
+   * 
+   * @var Drupal\Core\Language\Language|\PHPUnit_Framework_MockObject_MockObject
+   */
+  private $languageObject;
+
+  /**
    * {@inheritdoc}
    */
   public function setUp() {
     parent::setUp();
 
+    // Get config factory mock
     $this->configFactory = $this->getMock('Drupal\Core\Config\ConfigFactoryInterface');
+
+    // Get settings mock
     $this->settings = $this->getMockBuilder('Drupal\Core\Config\ImmutableConfig')
       ->disableOriginalConstructor()
       ->getMock();
+
+    // Get entity manager mock
     $this->entityTypeManager = $this->getMock('Drupal\Core\Entity\EntityTypeManagerInterface');
+
+    // Get taxonomy term mock
     $this->taxonomyTermStorage = $this->getMock('Drupal\taxonomy\TermStorageInterface');
+
+    // Get request class mocks
     $this->requestStack = $this->getMock('Symfony\Component\HttpFoundation\RequestStack');
     $this->request = $this->getMock('Symfony\Component\HttpFoundation\Request');
     $this->requestParameterBag = $this->getMock('Symfony\Component\HttpFoundation\ParameterBag');
+
+    // Get route mocks
     $this->routeMatch = $this->getMock('Drupal\Core\Routing\RouteMatchInterface');
     $this->route = $this->getMockBuilder('Symfony\Component\Routing\Route')
       ->disableOriginalConstructor()
       ->getMock();
+
+    // Get title resolver mock
     $this->titleResolver = $this->getMock('Drupal\Core\Controller\TitleResolverInterface');
 
+    // Get language manager mock
+    $this->languageManager = $this->getMock('Drupal\Core\Language\LanguageManagerInterface');
+
+    // Get language object mock
+    $this->languageObject = $this->getMockBuilder('Drupal\Core\Language\Language')
+      ->disableOriginalConstructor()
+      ->setMethods(['getId'])
+      ->getMock();
+
+    // Mock method and return val
+    $this->languageObject
+      ->expects($this->any())
+      ->method('getId')
+      ->willReturn('en');
+    
+    // Mock config factory
     $this->configFactory->expects($this->once())
       ->method('get')
       ->with('acquia_lift.settings')
       ->willReturn($this->settings);
+
+    // Mock settings credential method and return val
     $this->settings->expects($this->at(0))
       ->method('get')
       ->with('credential')
       ->willReturn($this->getValidCredentialSettings());
+
+    // Mock settings field_mapping method and return val
     $this->settings->expects($this->at(1))
       ->method('get')
       ->with('field_mappings')
       ->willReturn($this->getValidFieldMappingsSettings());
 
+    // Mock settings udf_person_mappings method and return val
     $this->settings->expects($this->at(2))
       ->method('get')
       ->with('udf_person_mappings')
       ->willReturn($this->getValidUdfPersonMappingsSettings());
 
+    // Mock settings udf_touch_mappings method and return val
     $this->settings->expects($this->at(3))
       ->method('get')
       ->with('udf_touch_mappings')
       ->willReturn($this->getValidUdfTouchMappingsSettings());
 
+    // Mock settings udf_event_mappings method and return val
     $this->settings->expects($this->at(4))
       ->method('get')
       ->with('udf_event_mappings')
       ->willReturn($this->getValidUdfEventMappingsSettings());
 
+    // Mock settings advanced method and return val
     $this->settings->expects($this->at(5))
       ->method('get')
       ->with('advanced')
       ->willReturn($this->getValidAdvancedSettings());
+
+    // Mock entity type manager getStorage method and return val
     $this->entityTypeManager->expects($this->once())
       ->method('getStorage')
       ->with('taxonomy_term')
       ->willReturn($this->taxonomyTermStorage);
+
+    // Mock request stack's getCurrentRequest method and return val
     $this->requestStack->expects($this->once())
       ->method('getCurrentRequest')
       ->willReturn($this->request);
+
+    // Set param bag
     $this->request->attributes = $this->requestParameterBag;
+
+    // Mock routeMatch getRouteObject method and return val
     $this->routeMatch->expects($this->once())
       ->method('getRouteObject')
       ->willReturn($this->route);
@@ -160,7 +219,13 @@ class PageContextTest extends UnitTestCase {
       ->with('node')
       ->willReturn(FALSE);
 
-    $page_context = new PageContext($this->configFactory, $this->entityTypeManager, $this->requestStack, $this->routeMatch, $this->titleResolver);
+    // Language mock
+    $this->languageManager
+      ->expects($this->any())
+      ->method('getCurrentLanguage')
+      ->willReturn($this->languageObject);
+
+    $page_context = new PageContext($this->configFactory, $this->entityTypeManager, $this->requestStack, $this->routeMatch, $this->titleResolver, $this->languageManager);
     $page = [];
     $page_context->populate($page);
 
@@ -168,6 +233,7 @@ class PageContextTest extends UnitTestCase {
       'content_title' => 'Untitled',
       'content_type' => 'page',
       'page_type' => 'content page',
+      'context_language' => 'en',
       'content_section' => '',
       'content_keywords' => '',
       'post_id' => '',
@@ -204,7 +270,13 @@ class PageContextTest extends UnitTestCase {
       ->with('node')
       ->willReturn($this->getNode());
 
-    $page_context = new PageContext($this->configFactory, $this->entityTypeManager, $this->requestStack, $this->routeMatch, $this->titleResolver);
+    // Language mock
+    $this->languageManager
+      ->expects($this->any())
+      ->method('getCurrentLanguage')
+      ->willReturn($this->languageObject);
+
+    $page_context = new PageContext($this->configFactory, $this->entityTypeManager, $this->requestStack, $this->routeMatch, $this->titleResolver, $this->languageManager);
     $page = [];
     $page_context->populate($page);
 
@@ -212,6 +284,7 @@ class PageContextTest extends UnitTestCase {
       'content_title' => 'My Title',
       'content_type' => 'article',
       'page_type' => 'node page',
+      'context_language' => 'en',
       'content_section' => '',
       'content_keywords' => '',
       'post_id' => '90210',
@@ -252,7 +325,13 @@ class PageContextTest extends UnitTestCase {
       ->with($this->request, $this->route)
       ->willReturn('My Title from Title Resolver');
 
-    $page_context = new PageContext($this->configFactory, $this->entityTypeManager, $this->requestStack, $this->routeMatch, $this->titleResolver);
+    // Language mock
+    $this->languageManager
+      ->expects($this->any())
+      ->method('getCurrentLanguage')
+      ->willReturn($this->languageObject);
+
+    $page_context = new PageContext($this->configFactory, $this->entityTypeManager, $this->requestStack, $this->routeMatch, $this->titleResolver, $this->languageManager);
     $page = [];
     $page_context->populate($page);
 
@@ -260,6 +339,7 @@ class PageContextTest extends UnitTestCase {
       'content_title' => 'My Title from Title Resolver',
       'content_type' => 'article',
       'page_type' => 'node page',
+      'context_language' => 'en',
       'content_section' => '',
       'content_keywords' => '',
       'post_id' => '90210',
@@ -303,7 +383,14 @@ class PageContextTest extends UnitTestCase {
         '#allowed_tags' => ['br'],
       ]);
 
-    $page_context = new PageContext($this->configFactory, $this->entityTypeManager, $this->requestStack, $this->routeMatch, $this->titleResolver);
+
+    // Language mock
+    $this->languageManager
+      ->expects($this->any())
+      ->method('getCurrentLanguage')
+      ->willReturn($this->languageObject);
+
+    $page_context = new PageContext($this->configFactory, $this->entityTypeManager, $this->requestStack, $this->routeMatch, $this->titleResolver, $this->languageManager);
     $page = [];
     $page_context->populate($page);
 
@@ -311,6 +398,7 @@ class PageContextTest extends UnitTestCase {
       'content_title' => 'My Title from Title Resolver <br />',
       'content_type' => 'article',
       'page_type' => 'node page',
+      'context_language' => 'en',
       'content_section' => '',
       'content_keywords' => '',
       'post_id' => '90210',
@@ -348,7 +436,13 @@ class PageContextTest extends UnitTestCase {
       ->willReturn($this->getNode());
     $this->populateHtmlHeadWithNodeAndFieldsSetUpFields();
 
-    $page_context = new PageContext($this->configFactory, $this->entityTypeManager, $this->requestStack, $this->routeMatch, $this->titleResolver);
+    // Language mock
+    $this->languageManager
+      ->expects($this->any())
+      ->method('getCurrentLanguage')
+      ->willReturn($this->languageObject);
+
+    $page_context = new PageContext($this->configFactory, $this->entityTypeManager, $this->requestStack, $this->routeMatch, $this->titleResolver, $this->languageManager);
     $page = [];
     $page_context->populate($page);
 
@@ -356,6 +450,7 @@ class PageContextTest extends UnitTestCase {
       'content_title' => 'My Title',
       'content_type' => 'article',
       'page_type' => 'node page',
+      'context_language' => 'en',
       'content_section' => 'Tracked Content Term Name 1',
       'content_keywords' => 'Tracked Keyword Term Name 1,Tracked Keyword Term Name 2',
       'post_id' => '90210',

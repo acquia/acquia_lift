@@ -4,4 +4,4 @@ package: Acquia
 core: 8.x
 type: module
 dependencies:
-  - acquia_lift
+  - acquia_lift:acquia_lift

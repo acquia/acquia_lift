@@ -483,6 +483,7 @@ class AcquiaLiftsWebTest extends DrupalWebTestCase {
 
     $this->drupalGet('node/' . $post_id);
     $this->assertLiftMetaTag('content_type', 'article');
+    $this->assertLiftMetaTag('context_language', 'en');
     $this->assertLiftMetaTag('content_title');
     $this->assertLiftMetaTag('published_date');
     $this->assertLiftMetaTag('post_id', $post_id);

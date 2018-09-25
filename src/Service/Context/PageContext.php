@@ -10,7 +10,6 @@ use Drupal\Core\Language\LanguageManagerInterface;
 use Drupal\Core\Config\ConfigFactoryInterface;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\Core\Routing\RouteMatchInterface;
-use Drupal\image\Entity\ImageStyle;
 use Drupal\node\NodeInterface;
 use Drupal\acquia_lift\Service\Helper\SettingsHelper;
 
@@ -142,8 +141,12 @@ class PageContext extends BaseContext {
     // Set page context
     $request = $request_stack->getCurrentRequest();
     $route = $route_match->getRouteObject();
+
+    // Set node context
     $this->setContextByNode($request);
-    $this->setContextTitle($request, $route, $title_resolver, $language_manager);
+
+    // Set base data (title + language)
+    $this->setBaseData($request, $route, $title_resolver, $language_manager);
   }
 
   /**
@@ -180,7 +183,7 @@ class PageContext extends BaseContext {
    * @param Drupal\Core\Language\LanguageManagerInterface $languageManager
    *   The language manager.
    */
-  private function setContextTitle(Request $request, Route $route, TitleResolverInterface $titleResolver, LanguageManagerInterface $languageManager) {
+  private function setBaseData(Request $request, Route $route, TitleResolverInterface $titleResolver, LanguageManagerInterface $languageManager) {
     // Set language code
     // After investigation, there is no use case where the methods
     // 'getCurrentLanguage' and 'getId' would not exist within 

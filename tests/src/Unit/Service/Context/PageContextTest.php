@@ -91,11 +91,11 @@ class PageContextTest extends UnitTestCase {
   private $languageManager;
 
   /**
-   * Language Object.
+   * Language Interface.
    * 
-   * @var Drupal\Core\Language\Language|\PHPUnit_Framework_MockObject_MockObject
+   * @var Drupal\Core\Language\LanguageInterface|\PHPUnit_Framework_MockObject_MockObject
    */
-  private $languageObject;
+  private $languageInterface;
 
   /**
    * {@inheritdoc}
@@ -135,16 +135,13 @@ class PageContextTest extends UnitTestCase {
     $this->languageManager = $this->getMock('Drupal\Core\Language\LanguageManagerInterface');
 
     // Get language object mock
-    $this->languageObject = $this->getMockBuilder('Drupal\Core\Language\Language')
-      ->disableOriginalConstructor()
-      ->setMethods(['getId'])
-      ->getMock();
+    $this->languageInterface = $this->getMock('Drupal\Core\Language\LanguageInterface');
 
     // Mock method and return val
-    $this->languageObject
+    $this->languageInterface
       ->expects($this->any())
       ->method('getId')
-      ->willReturn('en');
+      ->willReturn('fr');
     
     // Mock config factory
     $this->configFactory->expects($this->once())
@@ -223,7 +220,7 @@ class PageContextTest extends UnitTestCase {
     $this->languageManager
       ->expects($this->any())
       ->method('getCurrentLanguage')
-      ->willReturn($this->languageObject);
+      ->willReturn($this->languageInterface);
 
     $page_context = new PageContext($this->configFactory, $this->entityTypeManager, $this->requestStack, $this->routeMatch, $this->titleResolver, $this->languageManager);
     $page = [];
@@ -233,7 +230,7 @@ class PageContextTest extends UnitTestCase {
       'content_title' => 'Untitled',
       'content_type' => 'page',
       'page_type' => 'content page',
-      'context_language' => 'en',
+      'context_language' => 'fr',
       'content_section' => '',
       'content_keywords' => '',
       'post_id' => '',
@@ -274,7 +271,7 @@ class PageContextTest extends UnitTestCase {
     $this->languageManager
       ->expects($this->any())
       ->method('getCurrentLanguage')
-      ->willReturn($this->languageObject);
+      ->willReturn($this->languageInterface);
 
     $page_context = new PageContext($this->configFactory, $this->entityTypeManager, $this->requestStack, $this->routeMatch, $this->titleResolver, $this->languageManager);
     $page = [];
@@ -284,7 +281,7 @@ class PageContextTest extends UnitTestCase {
       'content_title' => 'My Title',
       'content_type' => 'article',
       'page_type' => 'node page',
-      'context_language' => 'en',
+      'context_language' => 'fr',
       'content_section' => '',
       'content_keywords' => '',
       'post_id' => '90210',
@@ -329,7 +326,7 @@ class PageContextTest extends UnitTestCase {
     $this->languageManager
       ->expects($this->any())
       ->method('getCurrentLanguage')
-      ->willReturn($this->languageObject);
+      ->willReturn($this->languageInterface);
 
     $page_context = new PageContext($this->configFactory, $this->entityTypeManager, $this->requestStack, $this->routeMatch, $this->titleResolver, $this->languageManager);
     $page = [];
@@ -339,7 +336,7 @@ class PageContextTest extends UnitTestCase {
       'content_title' => 'My Title from Title Resolver',
       'content_type' => 'article',
       'page_type' => 'node page',
-      'context_language' => 'en',
+      'context_language' => 'fr',
       'content_section' => '',
       'content_keywords' => '',
       'post_id' => '90210',
@@ -388,7 +385,7 @@ class PageContextTest extends UnitTestCase {
     $this->languageManager
       ->expects($this->any())
       ->method('getCurrentLanguage')
-      ->willReturn($this->languageObject);
+      ->willReturn($this->languageInterface);
 
     $page_context = new PageContext($this->configFactory, $this->entityTypeManager, $this->requestStack, $this->routeMatch, $this->titleResolver, $this->languageManager);
     $page = [];
@@ -398,7 +395,7 @@ class PageContextTest extends UnitTestCase {
       'content_title' => 'My Title from Title Resolver <br />',
       'content_type' => 'article',
       'page_type' => 'node page',
-      'context_language' => 'en',
+      'context_language' => 'fr',
       'content_section' => '',
       'content_keywords' => '',
       'post_id' => '90210',
@@ -440,7 +437,7 @@ class PageContextTest extends UnitTestCase {
     $this->languageManager
       ->expects($this->any())
       ->method('getCurrentLanguage')
-      ->willReturn($this->languageObject);
+      ->willReturn($this->languageInterface);
 
     $page_context = new PageContext($this->configFactory, $this->entityTypeManager, $this->requestStack, $this->routeMatch, $this->titleResolver, $this->languageManager);
     $page = [];
@@ -450,7 +447,7 @@ class PageContextTest extends UnitTestCase {
       'content_title' => 'My Title',
       'content_type' => 'article',
       'page_type' => 'node page',
-      'context_language' => 'en',
+      'context_language' => 'fr',
       'content_section' => 'Tracked Content Term Name 1',
       'content_keywords' => 'Tracked Keyword Term Name 1,Tracked Keyword Term Name 2',
       'post_id' => '90210',

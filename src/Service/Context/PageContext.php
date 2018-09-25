@@ -186,11 +186,9 @@ class PageContext extends BaseContext {
   private function setBaseData(Request $request, Route $route, TitleResolverInterface $titleResolver, LanguageManagerInterface $languageManager) {
     // Set language code
     // After investigation, there is no use case where the methods
-    // 'getCurrentLanguage' and 'getId' would not exist within 
-    // LanguageManager. Drupal 8 will ALWAYS set a language code
-    // and would not be null, therefore no checks are required
-    // @link https://api.drupal.org/api/drupal/core%21lib%21Drupal%21Core%21Language%21LanguageManager.php/class/LanguageManager/8.6.x
-    // @link https://api.drupal.org/api/drupal/core%21lib%21Drupal%21Core%21Language%21Language.php/class/Language/8.2.x
+    // 'getCurrentLanguage' and 'getId' would not exist within LanguageManager. 
+    // Drupal 8 will ALWAYS set a language code and would not be null,  
+    // therefore no checks are required.
     $this->htmlHeadContexts['context_language'] = $languageManager->getCurrentLanguage()->getId();
 
     // Get title

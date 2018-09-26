@@ -387,6 +387,12 @@ class AdminSettingsForm extends ConfigFormBase {
     $credential_settings = $this->config('acquia_lift.settings')->get('credential');
     $advanced_settings = $this->config('acquia_lift.settings')->get('advanced');
 
+    // Bootstrap mode was introduced in a update. Instead of providing a update
+    // hook, we just handle the "missing default value" case in code.
+    if (!isset($advanced_settings['bootstrap_mode'])) {
+      $advanced_settings['bootstrap_mode'] = 'auto';
+    }
+
     $form = [
       '#title' => t('Advanced configuration'),
       '#type' => 'details',

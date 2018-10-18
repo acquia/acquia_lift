@@ -73,16 +73,18 @@ function _acquia_lift_get_page_context($node = NULL, $primary = FALSE) {
     $page_context = array();
   }
 
+  // Get global language to set as 'context_language'
+  // Note: Language will always be set as there is a default fallback
+  global $language;
+
+  // Add context language
+  $page_context['context_language'] = $language->language;
+
   // Add the content type of the page if this is the primary node displayed.
   if ($primary && empty($page_context['post_id'])) {
-    // Get global language to set as 'context_langauge'
-    // Note: Language will always be set as there is a default fallback
-    global $language;
-
     $page_context['content_type'] = $node->type;
     $page_context['content_title'] = $node->title;
     $page_context['published_date'] = $node->created;
-    $page_context['context_language'] = $language->language;
     $page_context['post_id'] = $node->nid;
     $page_context['content_uuid'] = isset($node->uuid) ? $node->uuid : '';
     $page_context['page_type'] = 'node page';

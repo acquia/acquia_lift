@@ -59,6 +59,7 @@ class AcquiaLiftsWebTest extends DrupalWebTestCase {
       'acquia_lift_bootstrap_mode',
       'acquia_lift_content_replacement_mode',
       'acquia_lift_content_origin',
+      'acquia_lift_context_language'
     );
     foreach ($vars as $index => $name) {
       variable_del($name);
@@ -304,6 +305,7 @@ class AcquiaLiftsWebTest extends DrupalWebTestCase {
     $this->assertNoLiftMetaTag('site_id');
     $this->assertNoLiftMetaTag('liftAssetsURL');
     $this->assertNoLiftMetaTag('liftDecisionAPIURL');
+    $this->assertNoLiftMetaTag('context_language');
     $this->assertNoLiftMetaTag('authEndpoint');
     $this->assertNoLiftMetaTag('bootstrapMode');
     $this->assertNoLiftMetaTag('contentReplacementMode');
@@ -316,6 +318,7 @@ class AcquiaLiftsWebTest extends DrupalWebTestCase {
     $this->assertLift();
     $this->assertLiftMetaTag('account_id');
     $this->assertLiftMetaTag('site_id');
+    $this->assertLiftMetaTag('context_language', 'en');
     $this->assertLiftMetaTag('liftAssetsURL');
     $this->assertNoLiftMetaTag('liftDecisionAPIURL');
     $this->assertNoLiftMetaTag('authEndpoint');
@@ -327,6 +330,7 @@ class AcquiaLiftsWebTest extends DrupalWebTestCase {
     // Manually set all the configuration variables and confirm meta tags.
     variable_set('acquia_lift_account_id', 'MY_ACCOUNT');
     variable_set('acquia_lift_site_id', 'MY_SITE');
+    variable_set('acquia_lift_context_language', 'en');
     variable_set('acquia_lift_assets_url', 'https://example.com/assets/stable');
     variable_set('acquia_lift_decision_api_url', 'https://example.com/decisionapi');
     variable_set('acquia_lift_oauth_url', 'https://example.com/authorize');
@@ -339,6 +343,7 @@ class AcquiaLiftsWebTest extends DrupalWebTestCase {
     $this->assertLift();
     $this->assertLiftMetaTag('account_id', 'MY_ACCOUNT');
     $this->assertLiftMetaTag('site_id', 'MY_SITE');
+    $this->assertLiftMetaTag('context_language', 'en');
     $this->assertLiftMetaTag('liftAssetsURL', 'https://example.com/assets/stable');
     $this->assertLiftMetaTag('liftDecisionAPIURL', 'https://example.com/decisionapi');
     $this->assertLiftMetaTag('authEndpoint', 'https://example.com/authorize');
@@ -469,8 +474,9 @@ class AcquiaLiftsWebTest extends DrupalWebTestCase {
     $this->configureLift();
 
     $this->drupalGet('/');
-    $this->assertNoLiftMetaTag('content_type');
     $this->assertLiftMetaTag('content_title');
+    $this->assertLiftMetaTag('context_language', 'en');
+    $this->assertNoLiftMetaTag('content_type');
     $this->assertNoLiftMetaTag('published_date');
     $this->assertNoLiftMetaTag('post_id', '');
     $this->assertNoLiftMetaTag('content_uuid', '');

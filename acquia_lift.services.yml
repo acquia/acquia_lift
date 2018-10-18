@@ -1,7 +1,7 @@
 services:
   acquia_lift.service.context.page_context:
     class: Drupal\acquia_lift\Service\Context\PageContext
-    arguments: ['@config.factory', '@entity_type.manager', '@request_stack', '@current_route_match', '@title_resolver']
+    arguments: ['@config.factory', '@entity_type.manager', '@request_stack', '@current_route_match', '@title_resolver', '@language_manager']
   acquia_lift.service.context.path_context:
     class: Drupal\acquia_lift\Service\Context\PathContext
     arguments: ['@config.factory', '@path.current', '@request_stack', '@acquia_lift.service.helper.path_matcher']

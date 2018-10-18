@@ -73,6 +73,13 @@ function _acquia_lift_get_page_context($node = NULL, $primary = FALSE) {
     $page_context = array();
   }
 
+  // Get global language to set as 'context_language'
+  // Note: Language will always be set as there is a default fallback
+  global $language;
+
+  // Add context language
+  $page_context['context_language'] = $language->language;
+
   // Add the content type of the page if this is the primary node displayed.
   if ($primary && empty($page_context['post_id'])) {
     $page_context['content_type'] = $node->type;

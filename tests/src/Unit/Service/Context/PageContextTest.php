@@ -84,11 +84,11 @@ class PageContextTest extends UnitTestCase {
   private $titleResolver;
 
   /**
-   * Language Manager.
+   * Language manager interface.
    *
    * @var Drupal\Core\Language\LanguageManagerInterface|\PHPUnit_Framework_MockObject_MockObject
    */
-  private $languageManager;
+  private $language;
 
   /**
    * Language Interface.
@@ -131,8 +131,8 @@ class PageContextTest extends UnitTestCase {
     // Get title resolver mock
     $this->titleResolver = $this->getMock('Drupal\Core\Controller\TitleResolverInterface');
 
-    // Get language manager mock
-    $this->languageManager = $this->getMock('Drupal\Core\Language\LanguageManagerInterface');
+    // Get language mock
+    $this->language = $this->getMock('Drupal\Core\Language\LanguageManagerInterface');
 
     // Get language object mock
     $this->languageInterface = $this->getMock('Drupal\Core\Language\LanguageInterface');
@@ -217,12 +217,12 @@ class PageContextTest extends UnitTestCase {
       ->willReturn(FALSE);
 
     // Language mock
-    $this->languageManager
+    $this->language
       ->expects($this->any())
       ->method('getCurrentLanguage')
       ->willReturn($this->languageInterface);
 
-    $page_context = new PageContext($this->configFactory, $this->entityTypeManager, $this->requestStack, $this->routeMatch, $this->titleResolver, $this->languageManager);
+    $page_context = new PageContext($this->configFactory, $this->entityTypeManager, $this->requestStack, $this->routeMatch, $this->titleResolver, $this->language);
     $page = [];
     $page_context->populate($page);
 
@@ -268,12 +268,12 @@ class PageContextTest extends UnitTestCase {
       ->willReturn($this->getNode());
 
     // Language mock
-    $this->languageManager
+    $this->language
       ->expects($this->any())
       ->method('getCurrentLanguage')
       ->willReturn($this->languageInterface);
 
-    $page_context = new PageContext($this->configFactory, $this->entityTypeManager, $this->requestStack, $this->routeMatch, $this->titleResolver, $this->languageManager);
+    $page_context = new PageContext($this->configFactory, $this->entityTypeManager, $this->requestStack, $this->routeMatch, $this->titleResolver, $this->language);
     $page = [];
     $page_context->populate($page);
 
@@ -323,12 +323,12 @@ class PageContextTest extends UnitTestCase {
       ->willReturn('My Title from Title Resolver');
 
     // Language mock
-    $this->languageManager
+    $this->language
       ->expects($this->any())
       ->method('getCurrentLanguage')
       ->willReturn($this->languageInterface);
 
-    $page_context = new PageContext($this->configFactory, $this->entityTypeManager, $this->requestStack, $this->routeMatch, $this->titleResolver, $this->languageManager);
+    $page_context = new PageContext($this->configFactory, $this->entityTypeManager, $this->requestStack, $this->routeMatch, $this->titleResolver, $this->language);
     $page = [];
     $page_context->populate($page);
 
@@ -382,12 +382,12 @@ class PageContextTest extends UnitTestCase {
 
 
     // Language mock
-    $this->languageManager
+    $this->language
       ->expects($this->any())
       ->method('getCurrentLanguage')
       ->willReturn($this->languageInterface);
 
-    $page_context = new PageContext($this->configFactory, $this->entityTypeManager, $this->requestStack, $this->routeMatch, $this->titleResolver, $this->languageManager);
+    $page_context = new PageContext($this->configFactory, $this->entityTypeManager, $this->requestStack, $this->routeMatch, $this->titleResolver, $this->language);
     $page = [];
     $page_context->populate($page);
 
@@ -434,12 +434,12 @@ class PageContextTest extends UnitTestCase {
     $this->populateHtmlHeadWithNodeAndFieldsSetUpFields();
 
     // Language mock
-    $this->languageManager
+    $this->language
       ->expects($this->any())
       ->method('getCurrentLanguage')
       ->willReturn($this->languageInterface);
 
-    $page_context = new PageContext($this->configFactory, $this->entityTypeManager, $this->requestStack, $this->routeMatch, $this->titleResolver, $this->languageManager);
+    $page_context = new PageContext($this->configFactory, $this->entityTypeManager, $this->requestStack, $this->routeMatch, $this->titleResolver, $this->language);
     $page = [];
     $page_context->populate($page);
 

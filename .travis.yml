@@ -21,7 +21,7 @@ matrix:
       env: ORCA_FIXTURE=standard
 
 install:
-  - git clone --depth 1 git@github.com:acquia/orca.git ../orca
+  - git clone --depth 1 https://github.com/acquia/orca.git ../orca
   - BUILD=`pwd`
   - cd ../orca
   - git apply $BUILD/orca-lift.patch

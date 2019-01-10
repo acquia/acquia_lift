@@ -1,0 +1,13 @@
+{
+  "name": "drupal/acquia_lift",
+  "type": "drupal-module",
+  "description": "Module allowing Drupal sites to connect to Acquia Lift.",
+  "license": "GPL-2.0+",
+  "repositories": {
+    "drupal": {
+      "type": "composer",
+      "url": "https://packages.drupal.org/8"
+    }
+  }
+}
+

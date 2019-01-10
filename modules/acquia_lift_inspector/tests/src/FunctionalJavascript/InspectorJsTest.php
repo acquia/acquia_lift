@@ -8,8 +8,8 @@ namespace Drupal\Tests\acquia_lift_inspector\FunctionalJavascript;
 
 use Drupal\acquia_lift\Tests\SettingsDataTrait;
 use Drupal\FunctionalJavascriptTests\JavascriptTestBase;
-use Drupal\simpletest\ContentTypeCreationTrait;
-use Drupal\simpletest\NodeCreationTrait;
+use Drupal\Tests\node\Traits\ContentTypeCreationTrait;
+use Drupal\Tests\node\Traits\NodeCreationTrait;
 
 /**
  * Tests for the JS that transforms widgets into form elements.

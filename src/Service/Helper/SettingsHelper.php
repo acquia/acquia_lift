@@ -186,7 +186,10 @@ class SettingsHelper {
    *   Returns 'statusCode' and 'reasonPhrase' of the response.
    */
   public static function pingUri($base_uri, $path) {
-    $client = new Client(['base_uri' => $base_uri]);
+    /** @var \Drupal\Core\Http\ClientFactory $clientFactory */
+    $clientFactory = \Drupal::service('http_client_factory');
+    $client = $clientFactory->fromOptions(['base_uri' => $base_uri]);
+
     try {
       $response = $client->get($path, ['http_errors' => false]);
     } catch (RequestException $e) {

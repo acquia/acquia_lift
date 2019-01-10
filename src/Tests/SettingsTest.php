@@ -2,6 +2,7 @@
 
 namespace Drupal\acquia_lift\Tests;
 
+use Drupal\Core\StringTranslation\TranslatableMarkup;
 use Drupal\simpletest\WebTestBase;
 
 /**
@@ -107,13 +108,13 @@ class SettingsTest extends WebTestBase {
     $expect_settings_count = 21;
 
     // Post the edits.
-    $this->drupalPostForm('admin/config/services/acquia-lift', $edit, t('Save configuration'));
+    $this->drupalPostForm('admin/config/services/acquia-lift', $edit, new TranslatableMarkup('Save configuration'));
 
     // Assert error messages are set for required fields and unreachable URLs.
-    $this->assertText(t('The Acquia Lift module requires a valid Account ID, Site ID, and Assets URL to complete activation.'));
-    $this->assertText(t('Acquia Lift module could not reach the specified Assets URL.'));
-    $this->assertText(t('Acquia Lift module could not reach the specified Decision API URL.'));
-    $this->assertText(t('Acquia Lift module could not reach the specified Authentication URL.'));
+    $this->assertText(new TranslatableMarkup('The Acquia Lift module requires a valid Account ID, Site ID, and Assets URL to complete activation.'));
+    $this->assertText(new TranslatableMarkup('Acquia Lift module could not reach the specified Assets URL.'));
+    $this->assertText(new TranslatableMarkup('Acquia Lift module could not reach the specified Decision API URL.'));
+    $this->assertText(new TranslatableMarkup('Acquia Lift module could not reach the specified Authentication URL.'));
 
     // Test removeAuthorizeSuffix() and cleanUrl().
     $edit['credential[oauth_url]'] = 'oauth_url_1';

@@ -302,7 +302,6 @@ class SettingsHelperTest extends UnitTestCase {
     $container->get('http_client_factory')->willReturn($clientFactory->reveal());
     \Drupal::setContainer($container->reveal());
 
-
     $result = SettingsHelper::pingUri($test_value[0], $test_value[1]);
     $this->assertEquals($expected, $result);
   }

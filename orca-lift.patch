@@ -1,27 +1,17 @@
-From 6d342b54b20dc346ff539b087614c2e067b4b1df Mon Sep 17 00:00:00 2001
-From: Jakob Perry <japerry007@gmail.com>
-Date: Wed, 9 Jan 2019 15:59:42 -0800
-Subject: [PATCH] orca-lift
-
----
- config/packages.yml | 4 ++--
- 1 file changed, 2 insertions(+), 2 deletions(-)
-
 diff --git a/config/packages.yml b/config/packages.yml
-index 9f652bb..d5d0f4c 100644
+index fbf821b..af5041c 100644
 --- a/config/packages.yml
 +++ b/config/packages.yml
-@@ -38,8 +38,8 @@
- #  name: drupal/acquia_contenthub
+@@ -46,9 +46,9 @@
  #  url: ../content-hub-d8
  #  version: ~1.0
+ #  version_dev: 2.x-dev
 -#-
 -#  name: drupal/acquia_lift
+-#  version_dev: 3.x-dev
 +-
 +  name: drupal/acquia_lift
++  version_dev: 3.x-dev
  -
    name: drupal/acquia_purge
- #-
--- 
-2.17.1
-
+   version_dev: 1.x-dev

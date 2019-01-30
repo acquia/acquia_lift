@@ -19,6 +19,8 @@ matrix:
       env: ORCA_FIXTURE=sut-only
     - name: "Integrated test"
       env: ORCA_FIXTURE=standard
+  allow_failures:
+    - env: ORCA_FIXTURE=standard
 
 install:
   - git clone --depth 1 https://github.com/acquia/orca.git ../orca

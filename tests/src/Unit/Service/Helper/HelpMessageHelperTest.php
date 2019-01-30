@@ -5,8 +5,6 @@ namespace Drupal\Tests\acquia_lift\Unit\Service\Helper;
 use Drupal\Tests\UnitTestCase;
 use Drupal\acquia_lift\Service\Helper\HelpMessageHelper;
 
-require_once __DIR__ . '/../../Polyfill/Drupal.php';
-
 /**
  * HelpMessageHelper Test.
  *
@@ -26,8 +24,14 @@ class HelpMessageHelperTest extends UnitTestCase {
    */
   public function testGetMessageAdminSettingsFormNoApiUrl($route_name, $has_message) {
     $help_message_helper = new HelpMessageHelper();
+    $help_message_helper->setStringTranslation($this->getStringTranslationStub());
     $message = $help_message_helper->getMessage($route_name);
-    $this->assertEquals('You can find more info in <a href="https://docs.acquia.com/lift" target="_blank">Documentation</a>.' === $message, $has_message);
+    if ($has_message) {
+      $this->assertEquals('You can find more info in <a href="https://docs.acquia.com/lift" target="_blank">Documentation</a>.', $message->render());
+    }
+    else {
+      $this->assertNull($message);
+    }
   }
 
   /**

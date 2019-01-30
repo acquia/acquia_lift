@@ -6,9 +6,6 @@ use Drupal\Tests\UnitTestCase;
 use Drupal\acquia_lift\Service\Helper\SettingsHelper;
 use Drupal\Tests\acquia_lift\Unit\Traits\SettingsDataTrait;
 
-require_once __DIR__ . '/../../Traits/SettingsDataTrait.php';
-require_once __DIR__ . '/../../Polyfill/Drupal.php';
-
 /**
  * SettingsHelper Test.
  *
@@ -18,6 +15,10 @@ require_once __DIR__ . '/../../Polyfill/Drupal.php';
 class SettingsHelperTest extends UnitTestCase {
 
   use SettingsDataTrait;
+
+  protected function setUp() {
+    parent::setUp();
+  }
 
   /**
    * Tests the isInvalidCredentialAccountId() method.
@@ -290,6 +291,17 @@ class SettingsHelperTest extends UnitTestCase {
    * @dataProvider providerTestPingUri
    */
   public function testPingUri($test_value, $expected) {
+    $response = $this->prophesize(\Psr\Http\Message\ResponseInterface::class);
+    $response->getStatusCode()->willReturn($expected['statusCode']);
+    $response->getReasonPhrase()->willReturn($expected['reasonPhrase']);
+    $client = $this->prophesize(\GuzzleHttp\Client::class);
+    $client->get($test_value[1], ['http_errors' => false])->willReturn($response->reveal());
+    $clientFactory = $this->prophesize(\Drupal\Core\Http\ClientFactory::class);
+    $clientFactory->fromOptions(\Prophecy\Argument::any())->willReturn($client->reveal());
+    $container = $this->prophesize(\Drupal\Core\DependencyInjection\ContainerBuilder::class);
+    $container->get('http_client_factory')->willReturn($clientFactory->reveal());
+    \Drupal::setContainer($container->reveal());
+
     $result = SettingsHelper::pingUri($test_value[0], $test_value[1]);
     $this->assertEquals($expected, $result);
   }
@@ -302,7 +314,7 @@ class SettingsHelperTest extends UnitTestCase {
 
     $data['invalid uri'] = [
       ['uri_1', ''],
-      [],
+      ['statusCode' => '', 'reasonPhrase' => ''],
     ];
     $data['valid uri 1'] = [
       ['uri_1', 'path_1'],

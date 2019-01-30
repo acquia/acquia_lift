@@ -1,0 +1,17 @@
+diff --git a/config/packages.yml b/config/packages.yml
+index fbf821b..af5041c 100644
+--- a/config/packages.yml
++++ b/config/packages.yml
+@@ -46,9 +46,9 @@
+ #  url: ../content-hub-d8
+ #  version: ~1.0
+ #  version_dev: 2.x-dev
+-#-
+-#  name: drupal/acquia_lift
+-#  version_dev: 3.x-dev
++-
++  name: drupal/acquia_lift
++  version_dev: 3.x-dev
+ -
+   name: drupal/acquia_purge
+   version_dev: 1.x-dev

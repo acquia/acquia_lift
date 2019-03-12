@@ -23,11 +23,7 @@ matrix:
     - env: ORCA_FIXTURE=standard
 
 install:
-  - git clone --depth 1 https://github.com/acquia/orca.git ../orca
-  - BUILD=`pwd`
-  - cd ../orca
-  - git apply $BUILD/orca-lift.patch
-  - cd $BUILD
+  - git clone --branch v1.0.0-alpha4 --depth 1 https://github.com/acquia/orca.git ../orca
   - "../orca/bin/travis/install 8.x-3.x"
 
 script: "../orca/bin/travis/script drupal/acquia_lift"

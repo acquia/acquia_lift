@@ -1,0 +1,6 @@
+{
+  "name": "drupal/acquia_lift",
+  "type": "drupal-module",
+  "description": "Show information about the active visitor by using a convenient shortcut (CTRL+i)",
+  "license": "GPL-2.0-or-later"
+}

@@ -136,8 +136,6 @@ class SettingsTest extends WebTestBase {
     $this->assertRaw('manual', '[testMetatagsAndScriptTag]: bootstrap mode metatag value is loaded on the node page.');
     $this->assertRaw('acquia_lift:contentReplacementMode', '[testMetatagsAndScriptTag]: content replacement mode metatag is loaded on the node page.');
     $this->assertRaw('customized', '[testMetatagsAndScriptTag]: content replacement mode metatag value is loaded on the node page.');
-    $this->assertRaw('acquia_lift:contentOrigin', '[testMetatagsAndScriptTag]: content origin metatag is loaded on the node page.');
-    $this->assertRaw('08c93130-2e45-45f6-af6d-7c02de8cd90c', '[testMetatagsAndScriptTag]: content origin metatag value is loaded on the node page.');
 
     // Assert Lift JavaScript tag is async-loaded on the page.
     $this->assertRaw('AssetsUrl1', '[testMetatagsAndScriptTag]: With valid settings, Lift\'s JavaScript is loaded on the home page.');

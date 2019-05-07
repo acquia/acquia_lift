@@ -142,36 +142,6 @@ class SettingsHelperTest extends UnitTestCase {
   }
 
   /**
-   * Tests the isInvalidCredentialOauthUrl() method.
-   *
-   * @covers ::isInvalidCredentialOauthUrl
-   *
-   * @param string $setting
-   * @param boolean $expected
-   *
-   * @dataProvider providerTestIsInvalidCredentialOauthUrl
-   */
-  public function testIsInvalidCredentialOauthUrl($setting, $expected) {
-    $result = SettingsHelper::isInvalidCredentialOauthUrl($setting);
-    $this->assertEquals($expected, $result);
-  }
-
-  /**
-   * Data provider for testIsInvalidCredentialOauthUrl().
-   */
-  public function providerTestIsInvalidCredentialOauthUrl() {
-    $data = [];
-
-    $data['invalid has non-ascii characters'] = ['不合法', TRUE];
-    $data['valid null'] = [NULL, FALSE];
-    $data['valid empty'] = ['', FALSE];
-    $data['valid url 1'] = ['acquia', FALSE];
-    $data['valid url 2'] = ['acquia.com', FALSE];
-
-    return $data;
-  }
-
-  /**
    * Tests the isInvalidCredential() method.
    *
    * @covers ::isInvalidCredential

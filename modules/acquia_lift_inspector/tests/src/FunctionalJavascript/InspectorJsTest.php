@@ -54,7 +54,6 @@ class InspectorJsTest extends JavascriptTestBase {
       // Only the JS needs to be valid. Otherwise the JS test won't work.
       'assets_url' => 'https://lift3assets.dev.lift.acquia.com/latest',
       'decision_api_url' => 'decision_api_url_1',
-      'oauth_url' => 'oauth_url_1//////authorize',
     ];
   }
 

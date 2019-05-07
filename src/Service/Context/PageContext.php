@@ -97,7 +97,6 @@ class PageContext extends BaseContext {
     'user_access' => 'userAccess',
     'assets_url' => 'liftAssetsURL',
     'decision_api_url' => 'liftDecisionAPIURL',
-    'oauth_url' => 'authEndpoint',
   ];
 
   /**

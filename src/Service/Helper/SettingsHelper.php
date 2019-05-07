@@ -29,7 +29,6 @@ class SettingsHelper {
       SELF::isInvalidCredentialSiteId($credential_settings['site_id']) ||
       SELF::isInvalidCredentialAssetsUrl($credential_settings['assets_url']) ||
       isset($credential_settings['decision_api_url']) && SELF::isInvalidCredentialDecisionAPIUrl($credential_settings['decision_api_url']) ||
-      isset($credential_settings['oauth_url']) && SELF::isInvalidCredentialOauthUrl($credential_settings['oauth_url'])
     ) {
       return TRUE;
     }
@@ -103,24 +102,6 @@ class SettingsHelper {
    */
   public static function isInvalidCredentialDecisionAPIUrl($decision_api_url) {
     if (!empty($decision_api_url) && !UrlHelper::isValid($decision_api_url)) {
-      return TRUE;
-    }
-
-    return FALSE;
-  }
-
-  /**
-   * Is an invalid credential OAuth URL. Invalid if:
-   *   1) Exist, and
-   *   2) Not a valid URL.
-   *
-   * @param string
-   *   Credential OAuth URL.
-   * @return boolean
-   *   True if is an invalid credential OAuth URL.
-   */
-  public static function isInvalidCredentialOauthUrl($oauth_url) {
-    if (!empty($oauth_url) && !UrlHelper::isValid($oauth_url)) {
       return TRUE;
     }
 

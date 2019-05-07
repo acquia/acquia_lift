@@ -19,7 +19,6 @@ trait SettingsDataTrait {
       'user_access' => 'user_access_1',
       'assets_url' => 'AssetsUrl1',
       'decision_api_url' => 'decision_api_url_1',
-      'oauth_url' => 'oauth_url_1',
     ];
   }
 

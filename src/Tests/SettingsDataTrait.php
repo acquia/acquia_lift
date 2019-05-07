@@ -21,7 +21,7 @@ trait SettingsDataTrait {
     $settings->set('udf_event_mappings', $this->getValidUdfEventMappingsSettings());
     $settings->set('udf_touch_mappings', $this->getValidUdfTouchMappingsSettings());
     $settings->set('visibility', $this->getValidVisibilitySettings());
-    $settings->set('advanced', $advanced_settings);
+    $settings->set('advanced', $this->getValidAdvancedSettings());
     $settings->save();
   }
 

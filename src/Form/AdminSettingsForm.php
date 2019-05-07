@@ -113,10 +113,8 @@ class AdminSettingsForm extends ConfigFormBase {
     }
 
     // Validate URLs and check connections.
-    if (isset($credential_settings['decision_api_url']) && SettingsHelper::isInvalidCredentialDecisionApiUrl($credential_settings['decision_api_url']) ||
-      isset($credential_settings['oauth_url']) && SettingsHelper::isInvalidCredentialOauthUrl($credential_settings['oauth_url'])
-    ) {
-      $this->setFormMessage($this->t('Acquia Lift module requires valid Decision API URL and Authentication URL to be activate.'), 'warning');
+    if (isset($credential_settings['decision_api_url']) && SettingsHelper::isInvalidCredentialDecisionApiUrl($credential_settings['decision_api_url'])) {
+      $this->setFormMessage(t('Acquia Lift module requires valid Decision API URL and Authentication URL to be activate.'), 'warning');
     }
   }
 
@@ -163,14 +161,6 @@ class AdminSettingsForm extends ConfigFormBase {
       '#description' => $this->t('Your Lift Decision API\'s URL. Unless explicitly instructed, leave empty to use default URL.'),
       '#field_prefix' => 'https://',
       '#default_value' => isset($credential_settings['decision_api_url']) ? $this->cleanUrl($credential_settings['decision_api_url']) : '',
-    ];
-    $form['oauth_url'] = [
-      '#type' => 'textfield',
-      '#title' => $this->t('Authentication URL'),
-      '#description' => $this->t('Your Lift Authentication API\'s URL. Unless explicitly instructed, leave empty to use default URL.'),
-      '#field_prefix' => 'https://',
-      '#field_suffix' => '/authorize',
-      '#default_value' => isset($credential_settings['oauth_url']) ? $this->cleanUrl($this->removeAuthorizeSuffix($credential_settings['oauth_url'])) : '',
     ];
 
     return $form;
@@ -477,11 +467,6 @@ class AdminSettingsForm extends ConfigFormBase {
     // Validate Decision API URL.
     if (SettingsHelper::isInvalidCredentialDecisionApiUrl($values['credential']['decision_api_url'])) {
       $form_state->setError($form['credential']['decision_api_url'], $this->t('Decision API URL is an invalid URL.'));
-    }
-
-    // Validate Auth URL.
-    if (SettingsHelper::isInvalidCredentialOauthUrl($values['credential']['oauth_url'])) {
-      $form_state->setError($form['credential']['oauth_url'], $this->t('Authentication URL is an invalid URL.'));
     }
   }
 

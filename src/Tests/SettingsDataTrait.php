@@ -194,7 +194,7 @@ trait SettingsDataTrait {
   private function getValidAdvancedSettings() {
     return [
       'bootstrap_mode' => 'manual',
-      'content_replacement_mode' => 'customized'
+      'content_replacement_mode' => 'customized',
     ];
   }
 

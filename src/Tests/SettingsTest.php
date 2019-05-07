@@ -92,9 +92,6 @@ class SettingsTest extends WebTestBase {
     $visibility_settings = $this->getValidVisibilitySettings();
     $advanced_settings = $this->getValidAdvancedSettings();
 
-    // Remove 'content_origin' from credential settings, because it is defined in advanced form.
-    unset($credential_settings['content_origin']);
-
     $edit =[];
     $edit += $this->convertToPostFormSettings($credential_settings, 'credential');
     $edit += $this->convertToPostFormSettings($identity_settings, 'identity');

@@ -149,7 +149,7 @@ class SettingsHelper {
    *   True if valid, false otherwise.
    */
   public static function isValidContentReplacementMode($test_mode) {
-    $valid_modes = ['trusted', 'untrusted', 'customized'];
+    $valid_modes = ['trusted', 'customized'];
     return in_array($test_mode, $valid_modes);
   }
 

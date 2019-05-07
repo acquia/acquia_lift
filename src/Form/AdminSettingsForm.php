@@ -415,17 +415,9 @@ class AdminSettingsForm extends ConfigFormBase {
       '#description' => $this->t('The default, site-wide setting for <a href="https://docs.acquia.com/lift/drupal/3/config/trusted" target="_blank">content replacement mode</a>.'),
       '#default_value' => $advanced_settings['content_replacement_mode'],
       '#options' => [
-        'trusted' => $this->t('Trusted'),
-        'untrusted' => $this->t('Untrusted'),
-        'customized' => $this->t('Customized')
+        'trusted' => t('Trusted'),
+        'customized' => t('Customized')
       ],
-    ];
-    $form['content_origin'] = [
-      '#type' => 'textfield',
-      '#title' => $this->t('Content Hub Origin Site UUID'),
-      '#description' => $this->t('Show content in Experience Builder content list from only one origin site, specified by its Content Hub Site UUID. Leave empty to show content from all sites.'),
-      '#default_value' => $credential_settings['content_origin'],
-      '#required' => FALSE,
     ];
 
     return $form;
@@ -491,11 +483,6 @@ class AdminSettingsForm extends ConfigFormBase {
     if (SettingsHelper::isInvalidCredentialOauthUrl($values['credential']['oauth_url'])) {
       $form_state->setError($form['credential']['oauth_url'], $this->t('Authentication URL is an invalid URL.'));
     }
-
-    // Validate Content Hub Origin Site UUID.
-    if (!empty($values['advanced']['content_origin']) && !Uuid::isValid($values['advanced']['content_origin'])) {
-      $form_state->setError($form['advanced']['content_origin'], $this->t('Content Hub Origin Site UUID is not a valid UUID.'));
-    }
   }
 
   /**
@@ -525,14 +512,6 @@ class AdminSettingsForm extends ConfigFormBase {
       $standardized_decision_api_url = 'https://' . $this->cleanUrl($values['decision_api_url']);
       $settings->set('credential.decision_api_url', $standardized_decision_api_url);
       $this->checkConnection('Decision API', $standardized_decision_api_url, '/admin/ping', 403);
-    }
-
-    // If present, set OAuth URL, also check its connection.
-    $settings->clear('credential.oauth_url');
-    if (!empty($values['oauth_url'])) {
-      $standardized_oauth_url = 'https://' . $this->cleanUrl($this->removeAuthorizeSuffix($values['oauth_url']));
-      $settings->set('credential.oauth_url', $standardized_oauth_url . '/authorize');
-      $this->checkConnection('Authentication', $standardized_oauth_url, '/ping');
     }
   }
 
@@ -677,7 +656,6 @@ class AdminSettingsForm extends ConfigFormBase {
   private function setAdvancedValues(Config $settings, array $values) {
     $settings->set('advanced.bootstrap_mode', $values['bootstrap_mode']);
     $settings->set('advanced.content_replacement_mode', $values['content_replacement_mode']);
-    $settings->set('credential.content_origin', trim($values['content_origin']));
   }
 
   /**

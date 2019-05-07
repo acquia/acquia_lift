@@ -231,7 +231,6 @@ class SettingsHelperTest extends UnitTestCase {
     $data = [];
 
     $data['valid trusted'] = ['trusted', TRUE];
-    $data['valid untrusted'] = ['untrusted', TRUE];
     $data['valid customized'] = ['customized', TRUE];
     $data['invalid null'] = [NULL, FALSE];
     $data['invalid value'] = ['another', FALSE];

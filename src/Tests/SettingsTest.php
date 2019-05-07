@@ -102,19 +102,15 @@ class SettingsTest extends WebTestBase {
     $edit += $this->convertToPostFormSettings($visibility_settings, 'visibility');
     $edit += $this->convertToPostFormSettings($advanced_settings, 'advanced');
     $edit_settings_count = count($edit);
-    $expect_settings_count = 21;
+    $expect_settings_count = 19;
 
     // Post the edits.
     $this->drupalPostForm('admin/config/services/acquia-lift', $edit, new TranslatableMarkup('Save configuration'));
 
     // Assert error messages are set for required fields and unreachable URLs.
-    $this->assertText(new TranslatableMarkup('The Acquia Lift module requires a valid Account ID, Site ID, and Assets URL to complete activation.'));
-    $this->assertText(new TranslatableMarkup('Acquia Lift module could not reach the specified Assets URL.'));
-    $this->assertText(new TranslatableMarkup('Acquia Lift module could not reach the specified Decision API URL.'));
-    $this->assertText(new TranslatableMarkup('Acquia Lift module could not reach the specified Authentication URL.'));
-
-    // Test removeAuthorizeSuffix() and cleanUrl().
-    $edit['credential[oauth_url]'] = 'oauth_url_1';
+    $this->assertText(t('The Acquia Lift module requires a valid Account ID, Site ID, and Assets URL to complete activation.'));
+    $this->assertText(t('Acquia Lift module could not reach the specified Assets URL.'));
+    $this->assertText(t('Acquia Lift module could not reach the specified Decision API URL.'));
 
     // Assert all other fields. Also count the asserted fields to make sure all are asserted.
     foreach ($edit as $name => $value) {
@@ -124,7 +120,6 @@ class SettingsTest extends WebTestBase {
 
     // Assert metatags are loaded in the header.
     $this->drupalGet('node/90210');
-    $this->assertRaw('oauth_url_1/authorize', '[testMetatagsAndScriptTag]: oauth_url metatag value is loaded on the node page with cleaned-up value.');
   }
 
   public function testMetatagsAndScriptTag() {

@@ -32,7 +32,7 @@ function acquia_lift_requirements($phase) {
  * Remove deprecated configuration and update content replacement mode.
  */
 function acquia_lift_update_8400() {
-  $advanced_settings := Drupal::configFactory()->getEditable('acquia_lift.settings')->get('advanced');
+  $advanced_settings = Drupal::configFactory()->getEditable('acquia_lift.settings')->get('advanced');
   
   // Remove stored values of authentication url and content origin.
   $advanced_settings->clear('oauth_url');

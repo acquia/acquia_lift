@@ -27,3 +27,20 @@ function acquia_lift_requirements($phase) {
 
   return $requirements;
 }
+
+/**
+ * Remove Authentication URL from configuration and update content replacement mode.
+ */
+function acquia_lift_update_8400() {
+  $advanced_settings := Drupal::configFactory()->getEditable("acquia_lift.settings")->get("advanced");
+  
+  // Remove depricated Authentication URL value.
+  $advanced_settings->clear("oauth_url");
+
+  // Save trusted mode for sites having the depricated untrusted mode set.
+  if $advanced_settings->get("content_replacement_mode") == "untrusted" {
+    $advanced_settings->set("content_replacement_mode", "trusted")
+  }
+
+  $advanced_settings->save()
+}

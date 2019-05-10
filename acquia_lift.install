@@ -40,6 +40,8 @@ function acquia_lift_update_8400() {
 
   // Save trusted mode for sites having the deprecated untrusted mode set.
   if ($config->get('advanced.content_replacement_mode') == 'untrusted') {
-    $config->set('advanced.content_replacement_mode', 'trusted')->save();
+    $config->set('advanced.content_replacement_mode', 'trusted');
   }
+
+  $config->save();
 }

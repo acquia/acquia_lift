@@ -13,10 +13,6 @@ trait SettingsDataTrait {
    *   A valid settings array.
    */
   private function setValidSettings() {
-    // Remove 'content_origin' from advanced settings, because it is defined in credential schema.
-    $advanced_settings = $this->getValidAdvancedSettings();
-    unset($advanced_settings['content_origin']);
-
     $settings = $this->config('acquia_lift.settings');
     $settings->set('credential', $this->getValidCredentialSettings());
     $settings->set('identity', $this->getValidIdentitySettings());
@@ -25,7 +21,7 @@ trait SettingsDataTrait {
     $settings->set('udf_event_mappings', $this->getValidUdfEventMappingsSettings());
     $settings->set('udf_touch_mappings', $this->getValidUdfTouchMappingsSettings());
     $settings->set('visibility', $this->getValidVisibilitySettings());
-    $settings->set('advanced', $advanced_settings);
+    $settings->set('advanced', $this->getValidAdvancedSettings());
     $settings->save();
   }
 
@@ -41,8 +37,6 @@ trait SettingsDataTrait {
       'site_id' => 'SiteId1',
       'assets_url' => 'AssetsUrl1',
       'decision_api_url' => 'decision_api_url_1',
-      'oauth_url' => 'oauth_url_1//////authorize',
-      'content_origin' => '08c93130-2e45-45f6-af6d-7c02de8cd90c',
     ];
   }
 
@@ -201,7 +195,6 @@ trait SettingsDataTrait {
     return [
       'bootstrap_mode' => 'manual',
       'content_replacement_mode' => 'customized',
-      'content_origin' => '08c93130-2e45-45f6-af6d-7c02de8cd90c',
     ];
   }
 

@@ -16,7 +16,7 @@ cache:
 env:
   global:
     - ORCA_SUT_NAME=drupal/acquia_lift
-    - ORCA_SUT_BRANCH=8.x-3.x
+    - ORCA_SUT_BRANCH=8.x-4.x
     - ORCA_VERSION=v1.0.0-alpha11
 
 matrix:

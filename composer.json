@@ -5,7 +5,7 @@
   "license": "GPL-2.0-or-later",
   "extra": {
     "branch-alias": {
-      "dev-8.x-3.x": "3.x-dev"
+      "dev-8.x-4.x": "4.x-dev"
     }
   }
 }

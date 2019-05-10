@@ -18,12 +18,6 @@ acquia_lift.settings:
         decision_api_url:
           type: uri
           label: 'Decision API URL'
-        oauth_url:
-          type: uri
-          label: 'Authentication URL'
-        content_origin:
-          type: string
-          label: 'Content Hub Site UUID'
     identity:
       type: config_object
       label: 'Identity'

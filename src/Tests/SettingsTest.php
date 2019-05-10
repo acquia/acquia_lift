@@ -92,9 +92,6 @@ class SettingsTest extends WebTestBase {
     $visibility_settings = $this->getValidVisibilitySettings();
     $advanced_settings = $this->getValidAdvancedSettings();
 
-    // Remove 'content_origin' from credential settings, because it is defined in advanced form.
-    unset($credential_settings['content_origin']);
-
     $edit =[];
     $edit += $this->convertToPostFormSettings($credential_settings, 'credential');
     $edit += $this->convertToPostFormSettings($identity_settings, 'identity');
@@ -105,19 +102,15 @@ class SettingsTest extends WebTestBase {
     $edit += $this->convertToPostFormSettings($visibility_settings, 'visibility');
     $edit += $this->convertToPostFormSettings($advanced_settings, 'advanced');
     $edit_settings_count = count($edit);
-    $expect_settings_count = 21;
+    $expect_settings_count = 19;
 
     // Post the edits.
     $this->drupalPostForm('admin/config/services/acquia-lift', $edit, new TranslatableMarkup('Save configuration'));
 
     // Assert error messages are set for required fields and unreachable URLs.
-    $this->assertText(new TranslatableMarkup('The Acquia Lift module requires a valid Account ID, Site ID, and Assets URL to complete activation.'));
-    $this->assertText(new TranslatableMarkup('Acquia Lift module could not reach the specified Assets URL.'));
-    $this->assertText(new TranslatableMarkup('Acquia Lift module could not reach the specified Decision API URL.'));
-    $this->assertText(new TranslatableMarkup('Acquia Lift module could not reach the specified Authentication URL.'));
-
-    // Test removeAuthorizeSuffix() and cleanUrl().
-    $edit['credential[oauth_url]'] = 'oauth_url_1';
+    $this->assertText(t('The Acquia Lift module requires a valid Account ID, Site ID, and Assets URL to complete activation.'));
+    $this->assertText(t('Acquia Lift module could not reach the specified Assets URL.'));
+    $this->assertText(t('Acquia Lift module could not reach the specified Decision API URL.'));
 
     // Assert all other fields. Also count the asserted fields to make sure all are asserted.
     foreach ($edit as $name => $value) {
@@ -127,7 +120,6 @@ class SettingsTest extends WebTestBase {
 
     // Assert metatags are loaded in the header.
     $this->drupalGet('node/90210');
-    $this->assertRaw('oauth_url_1/authorize', '[testMetatagsAndScriptTag]: oauth_url metatag value is loaded on the node page with cleaned-up value.');
   }
 
   public function testMetatagsAndScriptTag() {
@@ -144,8 +136,6 @@ class SettingsTest extends WebTestBase {
     $this->assertRaw('manual', '[testMetatagsAndScriptTag]: bootstrap mode metatag value is loaded on the node page.');
     $this->assertRaw('acquia_lift:contentReplacementMode', '[testMetatagsAndScriptTag]: content replacement mode metatag is loaded on the node page.');
     $this->assertRaw('customized', '[testMetatagsAndScriptTag]: content replacement mode metatag value is loaded on the node page.');
-    $this->assertRaw('acquia_lift:contentOrigin', '[testMetatagsAndScriptTag]: content origin metatag is loaded on the node page.');
-    $this->assertRaw('08c93130-2e45-45f6-af6d-7c02de8cd90c', '[testMetatagsAndScriptTag]: content origin metatag value is loaded on the node page.');
 
     // Assert Lift JavaScript tag is async-loaded on the page.
     $this->assertRaw('AssetsUrl1', '[testMetatagsAndScriptTag]: With valid settings, Lift\'s JavaScript is loaded on the home page.');

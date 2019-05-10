@@ -1,12 +1,11 @@
 {
   "name": "drupal/acquia_lift",
   "type": "drupal-module",
-  "description": "Module allowing Drupal sites to connect to Acquia Lift.",
-  "license": "GPL-2.0+",
-  "repositories": {
-    "drupal": {
-      "type": "composer",
-      "url": "https://packages.drupal.org/8"
+  "description": "Provides integration to the Acquia Lift service for personalization and visitor data collection.",
+  "license": "GPL-2.0-or-later",
+  "extra": {
+    "branch-alias": {
+      "dev-8.x-3.x": "3.x-dev"
     }
   }
 }

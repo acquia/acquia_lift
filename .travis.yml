@@ -1,5 +1,5 @@
+---
 language: php
-dist: trusty
 
 php: 7.1
 
@@ -10,24 +10,42 @@ cache:
   directories:
     - "$HOME/.composer/cache"
     - "$HOME/.drush/cache"
+    - "$TMPDIR/phpstan/cache"
+
+env:
+  global:
+    - ORCA_SUT_NAME=drupal/acquia_lift
+    - ORCA_SUT_BRANCH=8.x-3.x
+    - ORCA_VERSION=v1.0.0-alpha11
 
 matrix:
+  fast_finish: true
   include:
-    - name: "Static analysis"
-      env: ORCA_FIXTURE=none
-    - name: "Isolated test"
-      env: ORCA_FIXTURE=sut-only
-    - name: "Integrated test"
-      env: ORCA_FIXTURE=standard
+    - { name: "Static code analysis", env: ORCA_JOB=STATIC_CODE_ANALYSIS }
+    - { name: "Deprecated code scan of SUT only", env: ORCA_JOB=DEPRECATED_CODE_SCAN_SUT }
+    - { name: "Deprecated code scan of SUT plus contrib", env: ORCA_JOB=DEPRECATED_CODE_SCAN_CONTRIB }
+    - { name: "Isolated test w/ recommended package versions", env: ORCA_JOB=ISOLATED_RECOMMENDED }
+    - { name: "Integrated test w/ recommended package versions", env: ORCA_JOB=INTEGRATED_RECOMMENDED }
+    - { name: "Integrated test w/ recommended package versions & previous minor release of Drupal core", env: ORCA_JOB=CORE_PREVIOUS }
+    - { name: "Isolated test w/ dev package versions", env: ORCA_JOB=ISOLATED_DEV }
+    - { name: "Integrated test w/ dev package versions", env: ORCA_JOB=INTEGRATED_DEV }
+    - { name: "Integrated test w/ dev package versions & next minor dev version of Drupal core", env: ORCA_JOB=CORE_NEXT }
   allow_failures:
-    - env: ORCA_FIXTURE=standard
+    - env: ORCA_JOB=DEPRECATED_CODE_SCAN_CONTRIB
+    - env: ORCA_JOB=ISOLATED_DEV
+    - env: ORCA_JOB=INTEGRATED_DEV
+    - env: ORCA_JOB=CORE_NEXT
+    # Temporary allowances.
+    - env: ORCA_JOB=DEPRECATED_CODE_SCAN_SUT
 
-install:
-  - git clone --depth 1 https://github.com/acquia/orca.git ../orca
-  - BUILD=`pwd`
-  - cd ../orca
-  - git apply $BUILD/orca-lift.patch
-  - cd $BUILD
-  - "../orca/bin/travis/install 8.x-3.x"
+before_install:
+  - git clone --branch ${ORCA_VERSION} --depth 1 https://github.com/acquia/orca.git ../orca
+  - ../orca/bin/travis/before_install.sh
 
-script: "../orca/bin/travis/script drupal/acquia_lift"
+install: ../orca/bin/travis/install.sh
+
+before_script: ../orca/bin/travis/before_script.sh
+
+script: ../orca/bin/travis/script.sh
+
+after_failure: ../orca/bin/travis/after_failure.sh

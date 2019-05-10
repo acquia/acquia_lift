@@ -32,16 +32,14 @@ function acquia_lift_requirements($phase) {
  * Remove deprecated configuration and update content replacement mode.
  */
 function acquia_lift_update_8400() {
-  $advanced_settings = Drupal::configFactory()->getEditable('acquia_lift.settings')->get('advanced');
-  
+  $config = Drupal::configFactory()->getEditable('acquia_lift.settings');
+
   // Remove stored values of authentication url and content origin.
-  $advanced_settings->clear('oauth_url');
-  $advanced_settings->clear('content_origin');
+  $config->clear('credential.oauth_url');
+  $config->clear('credential.content_origin');
 
   // Save trusted mode for sites having the deprecated untrusted mode set.
-  if $advanced_settings->get('content_replacement_mode') == 'untrusted' {
-    $advanced_settings->set('content_replacement_mode', 'trusted')
+  if ($config->get('advanced.content_replacement_mode') == 'untrusted') {
+    $config->set('advanced.content_replacement_mode', 'trusted')->save();
   }
-
-  $advanced_settings->save()
 }

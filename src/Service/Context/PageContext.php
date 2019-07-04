@@ -12,6 +12,7 @@ use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\Core\Routing\RouteMatchInterface;
 use Drupal\node\NodeInterface;
 use Drupal\acquia_lift\Service\Helper\SettingsHelper;
+use Drupal\Core\Extension\ModuleExtensionList;
 
 class PageContext extends BaseContext {
 
@@ -117,7 +118,7 @@ class PageContext extends BaseContext {
    * @param Drupal\Core\Language\LanguageManagerInterface $language_manager
    *   The language manager.
    */
-  public function __construct(ConfigFactoryInterface $config_factory, EntityTypeManagerInterface $entity_type_manager, RequestStack $request_stack, RouteMatchInterface $route_match, TitleResolverInterface $title_resolver, LanguageManagerInterface $language_manager) {
+  public function __construct(ConfigFactoryInterface $config_factory, EntityTypeManagerInterface $entity_type_manager, RequestStack $request_stack, RouteMatchInterface $route_match, TitleResolverInterface $title_resolver, LanguageManagerInterface $language_manager, ModuleExtensionList $module_extension_list) {
     // Get all our settings.
     $settings = $config_factory->get('acquia_lift.settings');
 
@@ -146,7 +147,7 @@ class PageContext extends BaseContext {
     $this->setContextByNode($request);
 
     // Set base data (title + language)
-    $this->setBaseData($request, $route, $title_resolver, $language_manager);
+    $this->setBaseData($request, $route, $title_resolver, $language_manager, $module_extension_list);
   }
 
   /**
@@ -182,8 +183,10 @@ class PageContext extends BaseContext {
    *   The title resolver.
    * @param Drupal\Core\Language\LanguageManagerInterface $languageManager
    *   The language manager.
+   * @param Drupal\Core\Extension\ModuleExtensionList $moduleExtensionList
+   *   The module extension list manager.
    */
-  private function setBaseData(Request $request, Route $route, TitleResolverInterface $titleResolver, LanguageManagerInterface $languageManager) {
+  private function setBaseData(Request $request, Route $route, TitleResolverInterface $titleResolver, LanguageManagerInterface $languageManager, ModuleExtensionList $moduleExtensionList) {
     // Set language code
     // After investigation, there is no use case where the methods
     // 'getCurrentLanguage' and 'getId' would not exist within LanguageManager. 
@@ -191,9 +194,9 @@ class PageContext extends BaseContext {
     // therefore no checks are required.
     $this->htmlHeadContexts['context_language'] = $languageManager->getCurrentLanguage()->getId();
 
-    // Set cdf version if contenthub module is installed.
-    $info = system_get_info('module', 'acquia_contenthub');
-    if (!empty($info)) {
+    // Set cdf version if contenthub module is available.
+    if ($moduleExtensionList->exists('acquia_contenthub')) {
+      $info = $moduleExtensionList->getExtensionInfo('acquia_contenthub');
       $this->htmlHeadContexts['cdf_version'] = $this->getCdfVersionFromModule($info['version']);
     }
 

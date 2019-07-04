@@ -19,6 +19,7 @@ class PageContext extends BaseContext {
    * Engagement score's default value.
    */
   const ENGAGEMENT_SCORE_DEFAULT = 1;
+  const CDF_VERSION_DEFAULT = 1;
 
   /**
    * Lift JavaScript file name.
@@ -77,6 +78,7 @@ class PageContext extends BaseContext {
     'published_date' => '',
     'persona' => '',
     'engagement_score' => SELF::ENGAGEMENT_SCORE_DEFAULT,
+    'cdf_version' => SELF::CDF_VERSION_DEFAULT,
   ];
 
   /**
@@ -188,6 +190,12 @@ class PageContext extends BaseContext {
     // Drupal 8 will ALWAYS set a language code and would not be null,  
     // therefore no checks are required.
     $this->htmlHeadContexts['context_language'] = $languageManager->getCurrentLanguage()->getId();
+
+    // Set cdf version if contenthub module is installed.
+    $info = system_get_info('module', 'acquia_contenthub');
+    if (!empty($info)) {
+      $this->htmlHeadContexts['cdf_version'] = $this->getCdfVersionFromModule($info['version']);
+    }
 
     // Get title
     $title = $titleResolver->getTitle($request, $route);
@@ -386,6 +394,26 @@ class PageContext extends BaseContext {
     ];
   }
 
+  /**
+   * Get the version of the common data format based on the version of
+   * acquia_contenthub module.
+   *
+   * @param string $module_version
+   *   Version of acquia_contenthub module (e.g. 8.x-1.40).
+   *
+   * @return int
+   *   The version of the cdf.
+   */
+  private function getCdfVersionFromModule($module_version) {
+    $mv_array = explode("-", $module_version);   
+    if (isset($mv_array[1])) {
+      $version_array = explode(".", $mv_array[1]);
+      return $version_array[0];
+    }
+    
+    return 1;
+  }
+  
   /**
    * {@inheritdoc}
    */

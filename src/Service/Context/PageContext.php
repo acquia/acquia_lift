@@ -408,10 +408,9 @@ class PageContext extends BaseContext {
    *   The version of the cdf.
    */
   private function getCdfVersionFromModule($module_version) {
-    $mv_array = explode("-", $module_version);   
-    if (isset($mv_array[1])) {
-      $version_array = explode(".", $mv_array[1]);
-      return $version_array[0];
+    $match = preg_match("/[1-9]\.x-([1-9])\.[1-9].+/", $module_version);
+    if (isset($match)) {
+      return $match;
     }
     
     return 1;

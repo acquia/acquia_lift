@@ -95,13 +95,6 @@ class PageContextTest extends UnitTestCase {
   private $languageInterface;
 
   /**
-   * Module extension list manager.
-   * 
-   * @var Drupal\Core\Extension\ModuleExtensionList|\PHPUnit_Framework_MockObject_MockObject
-   */
-  private $moduleExtensionList;
-
-  /**
    * {@inheritdoc}
    */
   public function setUp() {
@@ -207,16 +200,6 @@ class PageContextTest extends UnitTestCase {
     $this->routeMatch->expects($this->once())
       ->method('getRouteObject')
       ->willReturn($this->route);
-
-    // Mock moduleExtensionList exists method and return true
-    $this->moduleExtensionList->expects($this->once())
-      ->method('exists')
-      ->willReturn(true);
- 
-      // Mock moduleExtensionList getExtensionList method and return an array
-    $this->moduleExtensionList->expects($this->once())
-      ->method('getExtensionList')
-      ->willReturn($this->getModuleExtensionList("8.x-2.0"));
     }
 
   /**
@@ -259,7 +242,7 @@ class PageContextTest extends UnitTestCase {
       'liftDecisionAPIURL' => 'decision_api_url_1',
       'bootstrapMode' => 'manual',
       'contentReplacementMode' => 'customized',
-      'cdf_version' => 2,
+      'cdf_version' => 1,
     ], 'AssetsUrl1');
 
     $this->assertEquals($expected_head, $page['#attached']['html_head']);
@@ -309,7 +292,7 @@ class PageContextTest extends UnitTestCase {
       'liftDecisionAPIURL' => 'decision_api_url_1',
       'bootstrapMode' => 'manual',
       'contentReplacementMode' => 'customized',
-      'cdf_version' => 2,
+      'cdf_version' => 1,
     ], 'AssetsUrl1');
 
     $this->assertEquals($expected_head, $page['#attached']['html_head']);
@@ -363,7 +346,7 @@ class PageContextTest extends UnitTestCase {
       'liftDecisionAPIURL' => 'decision_api_url_1',
       'bootstrapMode' => 'manual',
       'contentReplacementMode' => 'customized',
-      'cdf_version' => 2,
+      'cdf_version' => 1,
     ], 'AssetsUrl1');
 
     $this->assertEquals($expected_head, $page['#attached']['html_head']);
@@ -421,7 +404,7 @@ class PageContextTest extends UnitTestCase {
       'liftDecisionAPIURL' => 'decision_api_url_1',
       'bootstrapMode' => 'manual',
       'contentReplacementMode' => 'customized',
-      'cdf_version' => 2,
+      'cdf_version' => 1,
     ], 'AssetsUrl1');
 
     $this->assertEquals($expected_head, $page['#attached']['html_head']);
@@ -476,7 +459,7 @@ class PageContextTest extends UnitTestCase {
       'touch_udf1' => 'Tracked Content Term Name 1',
       'person_udf1' => 'Tracked Keyword Term Name 1,Tracked Keyword Term Name 2',
       'event_udf2' => 'Tracked Keyword Term Name 1,Tracked Keyword Term Name 2',
-      'cdf_version' => 2,
+      'cdf_version' => 1,
     ], 'AssetsUrl1');
 
     $this->assertEquals($expected_head, $page['#attached']['html_head']);
@@ -499,23 +482,6 @@ class PageContextTest extends UnitTestCase {
       ->method('getName')
       ->willReturn($name);
     return $term;
-  }
-
-  /**
-   * Get module extension list.
-   *
-   * @param string $version
-   *
-   * @return array
-   */
-  private function getModuleExtensionList($version = "8.x-1.40") {
-    return array('acquia_contenthub' => [
-      'dependencies' => [],
-      'description' => '',
-      'package' => 'Other',
-      'version' => $version,
-      'php' => DRUPAL_MINIMUM_PHP,
-    ]);
   }
 
   /**

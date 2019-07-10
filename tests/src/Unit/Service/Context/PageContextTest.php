@@ -200,7 +200,7 @@ class PageContextTest extends UnitTestCase {
     $this->routeMatch->expects($this->once())
       ->method('getRouteObject')
       ->willReturn($this->route);
-    }
+  }
 
   /**
    * Tests the populate() method, populateHtmlHead() sub method, credential configuration.

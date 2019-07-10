@@ -19,7 +19,7 @@ class PageContext extends BaseContext {
    * Engagement score's default value.
    */
   const ENGAGEMENT_SCORE_DEFAULT = 1;
-  
+
   /**
    * Lift JavaScript file name.
    */
@@ -390,8 +390,6 @@ class PageContext extends BaseContext {
     ];
   }
 
-
-  
   /**
    * {@inheritdoc}
    */

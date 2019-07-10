@@ -77,7 +77,6 @@ class PageContext extends BaseContext {
     'published_date' => '',
     'persona' => '',
     'engagement_score' => SELF::ENGAGEMENT_SCORE_DEFAULT,
-    'cdf_version' => SettingsHelper::CDF_DEFAULT_VERSION,
   ];
 
   /**

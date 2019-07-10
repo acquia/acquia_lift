@@ -12,7 +12,6 @@ use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\Core\Routing\RouteMatchInterface;
 use Drupal\node\NodeInterface;
 use Drupal\acquia_lift\Service\Helper\SettingsHelper;
-use Drupal\Core\Extension\ModuleExtensionList;
 
 class PageContext extends BaseContext {
 
@@ -20,8 +19,7 @@ class PageContext extends BaseContext {
    * Engagement score's default value.
    */
   const ENGAGEMENT_SCORE_DEFAULT = 1;
-  const CDF_VERSION_DEFAULT = 1;
-
+  
   /**
    * Lift JavaScript file name.
    */
@@ -79,7 +77,7 @@ class PageContext extends BaseContext {
     'published_date' => '',
     'persona' => '',
     'engagement_score' => SELF::ENGAGEMENT_SCORE_DEFAULT,
-    'cdf_version' => SELF::CDF_VERSION_DEFAULT,
+    'cdf_version' => SettingsHelper::CDF_DEFAULT_VERSION,
   ];
 
   /**
@@ -118,7 +116,7 @@ class PageContext extends BaseContext {
    * @param Drupal\Core\Language\LanguageManagerInterface $language_manager
    *   The language manager.
    */
-  public function __construct(ConfigFactoryInterface $config_factory, EntityTypeManagerInterface $entity_type_manager, RequestStack $request_stack, RouteMatchInterface $route_match, TitleResolverInterface $title_resolver, LanguageManagerInterface $language_manager, ModuleExtensionList $module_extension_list) {
+  public function __construct(ConfigFactoryInterface $config_factory, EntityTypeManagerInterface $entity_type_manager, RequestStack $request_stack, RouteMatchInterface $route_match, TitleResolverInterface $title_resolver, LanguageManagerInterface $language_manager) {
     // Get all our settings.
     $settings = $config_factory->get('acquia_lift.settings');
 
@@ -147,7 +145,7 @@ class PageContext extends BaseContext {
     $this->setContextByNode($request);
 
     // Set base data (title + language)
-    $this->setBaseData($request, $route, $title_resolver, $language_manager, $module_extension_list);
+    $this->setBaseData($request, $route, $title_resolver, $language_manager);
   }
 
   /**
@@ -183,10 +181,8 @@ class PageContext extends BaseContext {
    *   The title resolver.
    * @param Drupal\Core\Language\LanguageManagerInterface $languageManager
    *   The language manager.
-   * @param Drupal\Core\Extension\ModuleExtensionList $moduleExtensionList
-   *   The module extension list manager.
    */
-  private function setBaseData(Request $request, Route $route, TitleResolverInterface $titleResolver, LanguageManagerInterface $languageManager, ModuleExtensionList $moduleExtensionList) {
+  private function setBaseData(Request $request, Route $route, TitleResolverInterface $titleResolver, LanguageManagerInterface $languageManager) {
     // Set language code
     // After investigation, there is no use case where the methods
     // 'getCurrentLanguage' and 'getId' would not exist within LanguageManager. 
@@ -194,13 +190,7 @@ class PageContext extends BaseContext {
     // therefore no checks are required.
     $this->htmlHeadContexts['context_language'] = $languageManager->getCurrentLanguage()->getId();
 
-    // Set cdf version if contenthub module is available.
-    if ($moduleExtensionList->exists('acquia_contenthub')) {
-      $info = $moduleExtensionList->getExtensionInfo('acquia_contenthub');
-      $this->htmlHeadContexts['cdf_version'] = $this->getCdfVersionFromModule($info['version']);
-    }
-
-    // Get title
+    // Get title.
     $title = $titleResolver->getTitle($request, $route);
 
     // Set title.
@@ -240,11 +230,15 @@ class PageContext extends BaseContext {
   private function setContextAdvanced($advanced_settings) {
     $bootstrap_mode = isset($advanced_settings['bootstrap_mode']) ? $advanced_settings['bootstrap_mode'] : 'auto';
     $replacement_mode = $advanced_settings['content_replacement_mode'];
+    $cdf_version = isset($advanced_settings['cdf_version']) ? $advanced_settings['cdf_version'] : SettingsHelper::CDF_VERSION_DEFAULT;
     if (SettingsHelper::isValidBootstrapMode($bootstrap_mode)) {
       $this->htmlHeadContexts['bootstrapMode'] = $bootstrap_mode;
     }
     if (SettingsHelper::isValidContentReplacementMode($replacement_mode)) {
       $this->htmlHeadContexts['contentReplacementMode'] = $replacement_mode;
+    }
+    if (SettingsHelper::isValidCdfVersion($cdf_version)) {
+      $this->htmlHeadContexts['cdfVersion'] = $cdf_version;
     }
   }
 
@@ -397,24 +391,7 @@ class PageContext extends BaseContext {
     ];
   }
 
-  /**
-   * Get the version of the common data format based on the version of
-   * acquia_contenthub module.
-   *
-   * @param string $module_version
-   *   Version of acquia_contenthub module (e.g. 8.x-1.40).
-   *
-   * @return int
-   *   The version of the cdf.
-   */
-  private function getCdfVersionFromModule($module_version) {
-    $match = preg_match("/[1-9]\.x-([1-9])\.[1-9].+/", $module_version);
-    if (isset($match)) {
-      return $match;
-    }
-    
-    return 1;
-  }
+
   
   /**
    * {@inheritdoc}

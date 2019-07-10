@@ -112,6 +112,9 @@ acquia_lift.settings:
         content_replacement_mode:
           type: string
           label: 'Content replacement mode'
+        cdf_version:
+          type: int
+          label: 'Version of the CDF that is being used.'
     langcode:
       type: string
       label: 'Language code'

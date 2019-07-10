@@ -409,6 +409,16 @@ class AdminSettingsForm extends ConfigFormBase {
         'customized' => t('Customized')
       ],
     ];
+    $form['cdf_version'] = [
+      '#type' => 'radios',
+      '#title' => $this->t('CDF version'),
+      '#description' =>  $this->t('The default, site-wide setting for CDF version.'),
+      '#default_value' => isset($advanced_settings['cdf_version']) ? $advanced_settings['cdf_version'] : SettingsHelper::CDF_VERSION_DEFAULT,
+      '#options' => [
+        1 => $this->t('Version 1'),
+        2 => $this->t('Version 2')
+      ],
+    ];
 
     return $form;
   }
@@ -641,6 +651,7 @@ class AdminSettingsForm extends ConfigFormBase {
   private function setAdvancedValues(Config $settings, array $values) {
     $settings->set('advanced.bootstrap_mode', $values['bootstrap_mode']);
     $settings->set('advanced.content_replacement_mode', $values['content_replacement_mode']);
+    $settings->set('advanced.cdf_version', $values['cdf_version']);
   }
 
   /**

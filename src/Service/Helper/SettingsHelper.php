@@ -17,6 +17,11 @@ class SettingsHelper {
   const DEFAULT_IDENTITY_TYPE_DEFAULT = 'email';
 
   /**
+   * Cdf version's default value.
+   */
+  const CDF_VERSION_DEFAULT = 1;
+
+  /**
    * Is an invalid credential.
    *
    * @param array
@@ -132,6 +137,19 @@ class SettingsHelper {
   public static function isValidContentReplacementMode($test_mode) {
     $valid_modes = ['trusted', 'customized'];
     return in_array($test_mode, $valid_modes);
+  }
+
+  /**
+   * Is a valid cdf version.
+   *
+   * @param string
+   *   version to compare
+   * @return boolean
+   *   True if valid, false otherwise.
+   */
+  public static function isValidCdfVersion($version) {
+    $valid_versions = [1, 2];
+    return in_array($version, $valid_versions);
   }
 
   /**

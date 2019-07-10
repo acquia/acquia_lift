@@ -235,7 +235,6 @@ class PageContextTest extends UnitTestCase {
       'published_date' => '',
       'persona' => '',
       'engagement_score' => PageContext::ENGAGEMENT_SCORE_DEFAULT,
-      'cdfVersion' => 2,
       'account_id' => 'AccountId1',
       'site_id' => 'SiteId1',
       'userAccess' => 'user_access_1',
@@ -243,6 +242,7 @@ class PageContextTest extends UnitTestCase {
       'liftDecisionAPIURL' => 'decision_api_url_1',
       'bootstrapMode' => 'manual',
       'contentReplacementMode' => 'customized',
+      'cdfVersion' => 2,
     ], 'AssetsUrl1');
 
     $this->assertEquals($expected_head, $page['#attached']['html_head']);
@@ -285,7 +285,6 @@ class PageContextTest extends UnitTestCase {
       'published_date' => 'a_published_time',
       'persona' => '',
       'engagement_score' => PageContext::ENGAGEMENT_SCORE_DEFAULT,
-      'cdfVersion' => 2,
       'account_id' => 'AccountId1',
       'site_id' => 'SiteId1',
       'userAccess' => 'user_access_1',
@@ -293,6 +292,7 @@ class PageContextTest extends UnitTestCase {
       'liftDecisionAPIURL' => 'decision_api_url_1',
       'bootstrapMode' => 'manual',
       'contentReplacementMode' => 'customized',
+      'cdfVersion' => 2,
     ], 'AssetsUrl1');
 
     $this->assertEquals($expected_head, $page['#attached']['html_head']);
@@ -339,7 +339,6 @@ class PageContextTest extends UnitTestCase {
       'published_date' => 'a_published_time',
       'persona' => '',
       'engagement_score' => PageContext::ENGAGEMENT_SCORE_DEFAULT,
-      'cdfVersion' => 2,
       'account_id' => 'AccountId1',
       'site_id' => 'SiteId1',
       'userAccess' => 'user_access_1',
@@ -347,6 +346,7 @@ class PageContextTest extends UnitTestCase {
       'liftDecisionAPIURL' => 'decision_api_url_1',
       'bootstrapMode' => 'manual',
       'contentReplacementMode' => 'customized',
+      'cdfVersion' => 2,
     ], 'AssetsUrl1');
 
     $this->assertEquals($expected_head, $page['#attached']['html_head']);
@@ -397,7 +397,6 @@ class PageContextTest extends UnitTestCase {
       'published_date' => 'a_published_time',
       'persona' => '',
       'engagement_score' => PageContext::ENGAGEMENT_SCORE_DEFAULT,
-      'cdfVersion' => 2,
       'account_id' => 'AccountId1',
       'site_id' => 'SiteId1',
       'userAccess' => 'user_access_1',
@@ -405,6 +404,7 @@ class PageContextTest extends UnitTestCase {
       'liftDecisionAPIURL' => 'decision_api_url_1',
       'bootstrapMode' => 'manual',
       'contentReplacementMode' => 'customized',
+      'cdfVersion' => 2,
     ], 'AssetsUrl1');
 
     $this->assertEquals($expected_head, $page['#attached']['html_head']);
@@ -448,7 +448,6 @@ class PageContextTest extends UnitTestCase {
       'published_date' => 'a_published_time',
       'persona' => '',
       'engagement_score' => PageContext::ENGAGEMENT_SCORE_DEFAULT,
-      'cdfVersion' => 2,
       'account_id' => 'AccountId1',
       'site_id' => 'SiteId1',
       'userAccess' => 'user_access_1',
@@ -460,6 +459,7 @@ class PageContextTest extends UnitTestCase {
       'touch_udf1' => 'Tracked Content Term Name 1',
       'person_udf1' => 'Tracked Keyword Term Name 1,Tracked Keyword Term Name 2',
       'event_udf2' => 'Tracked Keyword Term Name 1,Tracked Keyword Term Name 2',
+      'cdfVersion' => 2,
     ], 'AssetsUrl1');
 
     $this->assertEquals($expected_head, $page['#attached']['html_head']);

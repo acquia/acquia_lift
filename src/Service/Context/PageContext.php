@@ -189,7 +189,7 @@ class PageContext extends BaseContext {
     // therefore no checks are required.
     $this->htmlHeadContexts['context_language'] = $languageManager->getCurrentLanguage()->getId();
 
-    // Get title
+    // Get title.
     $title = $titleResolver->getTitle($request, $route);
 
     // Set title.
@@ -229,11 +229,15 @@ class PageContext extends BaseContext {
   private function setContextAdvanced($advanced_settings) {
     $bootstrap_mode = isset($advanced_settings['bootstrap_mode']) ? $advanced_settings['bootstrap_mode'] : 'auto';
     $replacement_mode = $advanced_settings['content_replacement_mode'];
+    $cdf_version = isset($advanced_settings['cdf_version']) ? $advanced_settings['cdf_version'] : SettingsHelper::CDF_VERSION_DEFAULT;
     if (SettingsHelper::isValidBootstrapMode($bootstrap_mode)) {
       $this->htmlHeadContexts['bootstrapMode'] = $bootstrap_mode;
     }
     if (SettingsHelper::isValidContentReplacementMode($replacement_mode)) {
       $this->htmlHeadContexts['contentReplacementMode'] = $replacement_mode;
+    }
+    if (SettingsHelper::isValidCdfVersion($cdf_version)) {
+      $this->htmlHeadContexts['cdfVersion'] = $cdf_version;
     }
   }
 

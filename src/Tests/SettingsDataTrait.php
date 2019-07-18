@@ -195,6 +195,7 @@ trait SettingsDataTrait {
     return [
       'bootstrap_mode' => 'manual',
       'content_replacement_mode' => 'customized',
+      'cdf_version' => 2,
     ];
   }
 

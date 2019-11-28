@@ -1,0 +1,4 @@
+acquia_lift.admin_settings_form:
+  route_name: acquia_lift.admin_settings_form
+  title: 'Setup'
+  base_route: acquia_lift.admin_settings_form

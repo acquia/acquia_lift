@@ -17,6 +17,8 @@ use Drupal\Tests\taxonomy\Functional\TaxonomyTestTrait;
  * @package Drupal\Tests\acquia_lift_publisher\Kernel\EventSubscriber\EnqueueEligibility
  *
  * @covers \Drupal\acquia_lift_publisher\EventSubscriber\EnqueueEligibility\IsExcludedImageStyle
+ *
+ * @requires module depcalc
  */
 class IsExcludedImageStyleTest extends KernelTestBase {
 

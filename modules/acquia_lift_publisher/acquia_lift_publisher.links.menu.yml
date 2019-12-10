@@ -1,0 +1,5 @@
+acquia_lift_publisher.settings:
+  title: 'Acquia Lift Publisher'
+  description: 'Publishes personalized content for use with Acquia Lift.'
+  route_name: acquia_lift_publisher.entity_config_form
+  parent: 'system.admin_config_services'

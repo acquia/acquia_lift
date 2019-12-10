@@ -1,0 +1,14 @@
+{
+    "name": "drupal/acquia_lift_publisher",
+    "type": "drupal-module",
+    "description": "Publishes personalized content for use with Acquia Lift.",
+    "license": "GPL-2.0-or-later",
+    "require": {
+        "drupal/acquia_contenthub": "~2"
+    },
+    "extra": {
+        "branch-alias": {
+            "dev-8.x-4.x": "4.x-dev"
+        }
+    }
+}

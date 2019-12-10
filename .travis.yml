@@ -18,6 +18,7 @@ env:
     - ORCA_SUT_BRANCH=8.x-4.x
     - ORCA_VERSION=master
     - ORCA_TELEMETRY_ENABLE=TRUE
+    - ORCA_PACKAGES_CONFIG_ALTER=../acquia_lift/tests/orca/packages_alter.yml
 
 matrix:
   fast_finish: true

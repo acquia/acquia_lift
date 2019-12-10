@@ -1,5 +1,5 @@
 acquia_lift.settings:
   title: 'Acquia Lift'
-  description: 'Configure Acquia Lift settings.'
+  description: 'Provides integration to the Acquia Lift service for personalization and visitor data collection.'
   route_name: acquia_lift.admin_settings_form
   parent: 'system.admin_config_services'

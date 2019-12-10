@@ -1,10 +1,11 @@
-name: 'Acquia Lift'
-description: 'Provides integration to the Acquia Lift service for personalization and visitor data collection.'
-package: Acquia
-core: 8.x
+name: Acquia Lift
+description: Provides integration to the Acquia Lift service for personalization and visitor data collection.
+package: Acquia Lift
 type: module
-configure: acquia_lift.admin_settings_form
+core: 8.x
 php: 7.0
+
+configure: acquia_lift.admin_settings_form
 
 dependencies:
   - drupal:node

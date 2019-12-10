@@ -1,10 +1,11 @@
 name: Acquia Lift Publisher
-description: Publishes personalized content for use with Acquia Lift
+description: Publishes personalized content for use with Acquia Lift.
 package: Acquia Lift
 type: module
 core: 8.x
 
-configure: acquia_lift_publisher.entity_config
+configure: acquia_lift_publisher.entity_config_form
 
 dependencies:
+  - drupal:image
   - acquia_contenthub_publisher

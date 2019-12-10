@@ -1,0 +1,8 @@
+acquia_lift_publisher.entity_config:
+  path: 'admin/config/services/acquia-lift/acquia-lift-publisher'
+  defaults:
+    _form: '\Drupal\acquia_lift_publisher\Form\EntityViewModeConfigurationForm'
+    _title: 'Acquia Lift Publisher Settings'
+  requirements:
+    _permission: 'administer acquia lift'
+    _contenthub_ui_access: 'TRUE'

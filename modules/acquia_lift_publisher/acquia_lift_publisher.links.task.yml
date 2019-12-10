@@ -1,0 +1,5 @@
+acquia_lift_publisher.entity_config:
+  route_name: acquia_lift_publisher.entity_config
+  title: 'Publish'
+  weight: 50
+  base_route: acquia_lift.admin_settings_form

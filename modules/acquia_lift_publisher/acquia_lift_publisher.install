@@ -1,0 +1,49 @@
+<?php
+
+/**
+ * @defgroup updates-8.6.x-acquia-lift-publisher rendering view modes.
+ * @{
+ * Update functions for configured view modules on rendered entities.
+ */
+
+/**
+ * Updates Acquia Content Hub legacy settings to 2.x version.
+ */
+function acquia_lift_publisher_install() {
+  $state = \Drupal::state();
+  $entity_config_state = $state->get('acquia_contenthub_update_8201_entity_type_config', []);
+  if (empty($entity_config_state)) {
+    return;
+  }
+  $config_factory = \Drupal::configFactory();
+  $view_modes = [];
+  $render_role = NULL;
+  foreach ($entity_config_state as $type => $data) {
+    if ($type === 'acquia_contenthub.entity_config') {
+      $render_role = $data['user_role'];
+      continue;
+    }
+    $entity_type = str_replace('acquia_contenthub.entity.', '', $type);
+    foreach ($data['bundles'] as $bundle => $rendering) {
+      if (!$rendering['enable_index']) {
+        continue;
+      }
+      foreach ($rendering['rendering'] as $view_mode) {
+        $view_mode = $view_mode == 'default' ? 'full' : $view_mode;
+        $view_modes[$entity_type][$bundle][$view_mode] = 1;
+      }
+    }
+  }
+  $entity_config = $config_factory->getEditable('acquia_lift_publisher.entity_config');
+  $entity_config->set('view_modes', $view_modes);
+  if ($render_role) {
+    $entity_config->set('render_role', $render_role);
+  }
+  $entity_config->save();
+  $state->delete('acquia_contenthub_update_8201_entity_type_config');
+}
+
+/**
+ * @} End of "addtogroup updates-8.6.x-acquia-lift-publisher rendering view modes.
+ */
+

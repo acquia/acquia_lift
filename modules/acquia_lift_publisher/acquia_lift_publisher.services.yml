@@ -1,0 +1,11 @@
+services:
+  acquia_lift.service.entity_render.cdf.handler:
+    class: Drupal\acquia_lift_publisher\EventSubscriber\Cdf\EntityRenderHandler
+    arguments: ['@account_switcher', '@config.factory', '@renderer', '@entity_type.manager', '@plugin.manager.block', '@uuid', '@acquia_contenthub.client.factory']
+    tags:
+      - { name: event_subscriber }
+
+  excluded_image_style.enqueue:
+    class: Drupal\acquia_lift_publisher\EventSubscriber\EnqueueEligibility\IsExcludedImageStyle
+    tags:
+      - { name: event_subscriber }

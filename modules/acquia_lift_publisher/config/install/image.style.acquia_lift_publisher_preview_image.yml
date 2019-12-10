@@ -1,0 +1,16 @@
+langcode: en
+status: true
+name: acquia_lift_publisher_preview_image
+label: 'Acquia Lift Preview Image (150×150)'
+effects:
+  25df256f-79bd-438a-b735-52cb896a9269:
+    uuid: 25df256f-79bd-438a-b735-52cb896a9269
+    id: image_scale_and_crop
+    weight: 1
+    data:
+      width: 150
+      height: 150
+dependencies:
+  enforced:
+    module:
+      - acquia_lift_publisher

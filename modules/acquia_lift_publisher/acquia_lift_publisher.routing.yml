@@ -5,3 +5,11 @@ acquia_lift_publisher.entity_config_form:
     _title: 'Acquia Lift Publisher Settings'
   requirements:
     _permission: 'administer acquia lift'
+
+acquia_lift_publisher.general_settings:
+  path: 'admin/config/services/acquia-lift-publisher/settings'
+  defaults:
+    _form: '\Drupal\acquia_lift_publisher\Form\AcquiaLiftPublisherSettingsForm'
+    _title: 'Acquia Lift Publisher Settings'
+  requirements:
+    _permission: 'administer acquia lift'

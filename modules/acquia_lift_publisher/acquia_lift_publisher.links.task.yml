@@ -2,3 +2,8 @@ acquia_lift_publisher.entity_config_form:
   route_name: acquia_lift_publisher.entity_config_form
   title: 'Setup'
   base_route: acquia_lift_publisher.entity_config_form
+acquia_lift_publisher.settings_form:
+  route_name: acquia_lift_publisher.general_settings
+  title: 'Settings'
+  weight: 50
+  base_route: acquia_lift_publisher.entity_config_form

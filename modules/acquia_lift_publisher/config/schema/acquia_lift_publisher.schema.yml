@@ -1,0 +1,7 @@
+acquia_lift_publisher.settings:
+  type: config_object
+  label: 'Acquia Lift Publisher Settings'
+  mapping:
+    personalized_content_only:
+      type: boolean
+      label: 'Push personalizing content only'

@@ -1,0 +1,40 @@
+<?php
+
+use Drupal\acquia_lift_publisher\Form\AcquiaLiftPublisherSettingsForm;
+use Drupal\Core\Entity\ContentEntityInterface;
+use Drupal\Core\Entity\EntityInterface;
+
+/**
+ * @file
+ * Contains functions for acquia_lift_publisher module.
+ */
+
+/**
+ * Implements hook_entity_insert().
+ */
+function acquia_lift_publisher_entity_insert(EntityInterface $entity) {
+  _acquia_lift_publisher_trigger_queue($entity);
+}
+
+/**
+ * Implements hook_entity_update().
+ */
+function acquia_lift_publisher_entity_update(EntityInterface $entity) {
+  _acquia_lift_publisher_trigger_queue($entity);
+}
+
+function _acquia_lift_publisher_trigger_queue(EntityInterface $entity) {
+  // Skip unnecessary actions if the entity is not a content entity.
+  if (!$entity instanceof ContentEntityInterface) {
+    return;
+  }
+
+  $publish_config = \Drupal::getContainer()->get('acquia_lift_publisher.settings');
+  $export_queue = \Drupal::getContainer()->get('acquia_contenthub_publisher.acquia_contenthub_export_queue');
+  if (!$publish_config->get(AcquiaLiftPublisherSettingsForm::$pushSettingField) ||
+    $export_queue->getQueueCount() < 0) {
+    return;
+  }
+
+  $export_queue->processQueueItems();
+}

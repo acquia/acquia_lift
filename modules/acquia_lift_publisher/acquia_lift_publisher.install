@@ -10,6 +10,10 @@
  * Updates Acquia Content Hub legacy settings to 2.x version.
  */
 function acquia_lift_publisher_install() {
+  // Set weight higher than acquia_contenthub_publisher module so entity hooks
+  // run after the entity has been queued.
+  module_set_weight('acquia_lift_publisher', 50);
+
   $state = \Drupal::state();
   $entity_config_state = $state->get('acquia_contenthub_update_8201_entity_type_config', []);
   if (empty($entity_config_state)) {
@@ -41,6 +45,13 @@ function acquia_lift_publisher_install() {
   }
   $entity_config->save();
   $state->delete('acquia_contenthub_update_8201_entity_type_config');
+}
+
+/**
+ * Set module weight.
+ */
+function acquia_lift_publisher_update_8401() {
+  module_set_weight('acquia_lift_publisher', 50);
 }
 
 /**

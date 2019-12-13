@@ -131,7 +131,7 @@ class PublishOnlyRendered implements EventSubscriberInterface {
   }
 
   /**
-   * Returns and arbitrary attribute's value in safer way.
+   * Returns an arbitrary attribute's value.
    *
    * @param \Acquia\ContentHubClient\CDF\CDFObject $cdf
    *   The cdf object in hand.

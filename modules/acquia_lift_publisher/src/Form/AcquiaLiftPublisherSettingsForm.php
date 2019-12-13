@@ -6,7 +6,7 @@ use Drupal\Core\Form\ConfigFormBase;
 use Drupal\Core\Form\FormStateInterface;
 
 /**
- * Class AcquiaLiftPubliserSettingsForm.
+ * Class AcquiaLiftPublisherSettingsForm.
  *
  * @package Drupal\acquia_lift_publisher\Form
  */
@@ -22,17 +22,17 @@ class AcquiaLiftPublisherSettingsForm extends ConfigFormBase {
    *
    * @var string
    */
-  protected static $pushSettingField = 'personalized_content_only';
+  public static $pushSettingField = 'personalized_content_only';
 
   /**
-   * @inheritDoc
+   * {@inheritDoc}
    */
   protected function getEditableConfigNames() {
     return ['acquia_lift_publisher.settings'];
   }
 
   /**
-   * @inheritDoc
+   * {@inheritDoc}
    */
   public function getFormId() {
     return 'acquia_lift_publisher_settings';

@@ -28,7 +28,7 @@ class AcquiaLiftPublisherSettingsForm extends ConfigFormBase {
    * {@inheritDoc}
    */
   protected function getEditableConfigNames() {
-    return ['acquia_lift_publisher.settings'];
+    return [self::CONFIG_NAME];
   }
 
   /**
@@ -43,7 +43,7 @@ class AcquiaLiftPublisherSettingsForm extends ConfigFormBase {
    */
   public function buildForm(array $form, FormStateInterface $form_state) {
     $form = parent::buildForm($form, $form_state);
-    $config = $this->config('acquia_lift_publisher.settings');
+    $config = $this->config(self::CONFIG_NAME);
 
     $form['sync_settings'] = [
       '#type' => 'fieldset',
@@ -64,7 +64,7 @@ class AcquiaLiftPublisherSettingsForm extends ConfigFormBase {
    * {@inheritdoc}
    */
   public function submitForm(array &$form, FormStateInterface $form_state) {
-    $config = $this->configFactory->getEditable('acquia_lift_publisher.settings');
+    $config = $this->configFactory->getEditable(self::CONFIG_NAME);
     $config->set(static::$pushSettingField, $form_state->getValue(static::$pushSettingField));
     $config->save();
 

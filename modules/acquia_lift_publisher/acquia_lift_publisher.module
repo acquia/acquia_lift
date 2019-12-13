@@ -1,13 +1,17 @@
 <?php
 
+/**
+ * @file
+ * Drupal Module: Acquia Lift - Publisher.
+ *
+ * Acquia Content Hub Publisher exports content from your Drupal site to
+ * Content Hub services. This module alters the behavior of the default
+ * functionality.
+ */
+
 use Drupal\acquia_lift_publisher\Form\AcquiaLiftPublisherSettingsForm;
 use Drupal\Core\Entity\ContentEntityInterface;
 use Drupal\Core\Entity\EntityInterface;
-
-/**
- * @file
- * Contains functions for acquia_lift_publisher module.
- */
 
 /**
  * Implements hook_entity_insert().

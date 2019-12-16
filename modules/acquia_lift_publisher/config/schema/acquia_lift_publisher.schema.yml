@@ -2,9 +2,18 @@ acquia_lift_publisher.entity_config:
   type: config_object
   label: 'Acquia Lift Publisher Settings'
   mapping:
-    view_mode:
+    view_modes:
       type: sequence
       label: 'Entity view modes'
+      sequence:
+        type: sequence
+        label: 'Entity'
+        sequence:
+          type: sequence
+          label: 'Bundle'
+          sequence:
+            type: boolean
+            label: 'View mode'
     render_role:
       type: string
       label: 'Render role'

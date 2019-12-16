@@ -1,7 +1,13 @@
-acquia_lift_publisher.settings:
+acquia_lift_publisher.entity_config:
   type: config_object
   label: 'Acquia Lift Publisher Settings'
   mapping:
+    view_mode:
+      type: mapping
+      label: 'Entity view modes'
+    render_role:
+      type: string
+      label: 'Render role'
     personalized_content_only:
       type: boolean
       label: 'Push personalizing content only'

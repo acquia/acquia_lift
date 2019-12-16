@@ -8,15 +8,20 @@ services:
     class: Drupal\acquia_lift_publisher\EventSubscriber\EnqueueEligibility\IsExcludedImageStyle
     tags:
       - { name: event_subscriber }
-  acquia_lift_publisher.settings:
+  acquia_lift_publisher.publishing_settings:
     class: Drupal\Core\Config\ImmutableConfig
     factory: config.factory:get
     arguments:
-      - 'acquia_lift_publisher.settings'
+      - 'acquia_lift_publisher.entity_config'
   acquia_lift_publisher.only_rendered:
     class: Drupal\acquia_lift_publisher\EventSubscriber\Publish\PublishOnlyRendered
     arguments:
       - '@acquia_contenthub_common_actions'
-      - '@acquia_lift_publisher.settings'
+      - '@acquia_lift_publisher.publishing_settings'
     tags:
       - { name: event_subscriber }
+  acquia_lift_publisher.publishing_actions:
+    class: Drupal\acquia_lift_publisher\ContentPublishingActions
+    arguments:
+      - '@acquia_contenthub_publisher.acquia_contenthub_export_queue'
+      - '@acquia_lift_publisher.publishing_settings'

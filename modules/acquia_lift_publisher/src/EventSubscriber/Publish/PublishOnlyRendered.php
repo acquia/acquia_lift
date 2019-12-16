@@ -8,15 +8,15 @@ use Drupal\acquia_contenthub\ContentHubCommonActions;
 use Drupal\acquia_contenthub\Event\PrunePublishCdfEntitiesEvent;
 use Drupal\acquia_contenthub_publisher\ContentHubPublisherEvents;
 use Drupal\acquia_contenthub_publisher\Event\ContentHubEntityEligibilityEvent;
-use Drupal\acquia_lift_publisher\Form\AcquiaLiftPublisherSettingsForm;
+use Drupal\acquia_lift_publisher\Form\ContentPublishingForm;
 use Drupal\Core\Config\ImmutableConfig;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 
 /**
  * Responsible for filtering contents based on publishing configurations.
  *
- * @see \Drupal\acquia_lift_publisher\Form\AcquiaLiftPublisherSettingsForm::$pushSettingField
- * @package Drupal\acquia_lift_publisher\PruneCdf
+ * @see \Drupal\acquia_lift_publisher\Form\ContentPublishingForm::$pushSettingField
+ * @package Drupal\acquia_lift_publisher\EventSubscriber\Publish
  */
 class PublishOnlyRendered implements EventSubscriberInterface {
 
@@ -25,15 +25,15 @@ class PublishOnlyRendered implements EventSubscriberInterface {
    *
    * @var \Drupal\acquia_contenthub\ContentHubCommonActions
    */
-  protected $commonActions;
+  private $commonActions;
 
   /**
    * Acquia lift publisher configuration object.
    *
    * @var \Drupal\Core\Config\ImmutableConfig
-   * @see \Drupal\acquia_lift_publisher\Form\AcquiaLiftPublisherSettingsForm
+   * @see \Drupal\acquia_lift_publisher\Form\ContentPublishingForm
    */
-  protected $publisherSettings;
+  private $publisherSettings;
 
   /**
    * PublishOnlyRendered constructor.
@@ -80,8 +80,8 @@ class PublishOnlyRendered implements EventSubscriberInterface {
         continue;
       }
 
-      $se_uuid = $this->getCdfEntityAttributeValue($cdf, 'source_entity');
-      if ($se_uuid === $entity->uuid()) {
+      $source_uuid = $this->getCdfEntityAttributeValue($cdf, 'source_entity');
+      if ($source_uuid === $entity->uuid()) {
         $event->setEligibility(TRUE);
         return;
       }
@@ -142,7 +142,7 @@ class PublishOnlyRendered implements EventSubscriberInterface {
    *   The attribute value could be several type. If the there's no value, or
    *   the attribute doesn't exist for some reason, return NULL.
    */
-  protected function getCdfEntityAttributeValue(CDFObject $cdf, string $attribute) {
+  private function getCdfEntityAttributeValue(CDFObject $cdf, string $attribute) {
     $attribute_obj = $cdf->getAttribute($attribute);
     if (!$attribute_obj) {
       return NULL;
@@ -158,8 +158,8 @@ class PublishOnlyRendered implements EventSubscriberInterface {
    * @return bool
    *   TRUE if active.
    */
-  protected function personalizedContentPushIsActive(): bool {
-    return $this->publisherSettings->get(AcquiaLiftPublisherSettingsForm::$pushSettingField);
+  private function personalizedContentPushIsActive(): bool {
+    return $this->publisherSettings->get(ContentPublishingForm::$pushSettingField);
   }
 
 }

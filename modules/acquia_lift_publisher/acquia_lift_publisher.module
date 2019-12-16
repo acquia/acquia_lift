@@ -9,8 +9,6 @@
  * functionality.
  */
 
-use Drupal\acquia_lift_publisher\Form\AcquiaLiftPublisherSettingsForm;
-use Drupal\Core\Entity\ContentEntityInterface;
 use Drupal\Core\Entity\EntityInterface;
 
 /**
@@ -34,18 +32,7 @@ function acquia_lift_publisher_entity_update(EntityInterface $entity) {
  *   The current entity.
  */
 function _acquia_lift_publisher_trigger_queue(EntityInterface $entity): void {
-  // Skip unnecessary actions if the entity is not a content entity.
-  if (!$entity instanceof ContentEntityInterface) {
-    return;
-  }
-
-  $container = \Drupal::getContainer();
-  $publish_config = $container->get('acquia_lift_publisher.settings');
-  $export_queue = $container->get('acquia_contenthub_publisher.acquia_contenthub_export_queue');
-  if (!$publish_config->get(AcquiaLiftPublisherSettingsForm::$pushSettingField) ||
-    $export_queue->getQueueCount() < 0) {
-    return;
-  }
-
-  $export_queue->processQueueItems();
+  \Drupal::getContainer()
+    ->get('acquia_lift_publisher.publishing_actions')
+    ->triggerQueue($entity);
 }

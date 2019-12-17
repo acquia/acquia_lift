@@ -193,9 +193,9 @@ class PublishOnlyRenderedTest extends KernelTestBase {
     $this->eventDispatcher->dispatch(AcquiaContentHubEvents::PRUNE_PUBLISH_CDF_ENTITIES, $event);
     $pruned = $event->getDocument()->getEntities();
 
-    $this->assertGreaterThan($pruned, $unfiltered, 'Unnecessary content was removed from the cdf document');
+    $this->assertGreaterThan($pruned, $unfiltered, 'Unnecessary content was removed from the CDF document');
 
-    // Add the pruned cdf to the cdf test object, carry out assertions.
+    // Add the pruned CDF to the CDF test object, carry out assertions.
     $cdf_mock->pruned = $pruned;
     $this->assertContainsOnlyRequiredCdfs($cdf_mock);
   }
@@ -214,7 +214,7 @@ class PublishOnlyRenderedTest extends KernelTestBase {
   /**
    * Asserts that the pruned CDF document only contains the required entities.
    *
-   * @param \stdClass $cdf_mock
+   * @param object $cdf_mock
    *   The CDF test object to run the assertions against.
    */
   private function assertContainsOnlyRequiredCdfs(\stdClass $cdf_mock) {
@@ -226,13 +226,14 @@ class PublishOnlyRenderedTest extends KernelTestBase {
       throw new AssertionFailedError('CDF document contains the rendered entity');
     }
 
-    $pruned_uuids = array_keys($pruned);
-    $diff = array_diff($pruned_uuids, [
-      $orig_rendered_entity_uuid,
-      $cdf_mock->source_entity->getUuid(),
-    ]);
+    $expected = $cdf_mock->expected;
+    $sorter = function (CDFObject $cdf1, CDFObject $cdf2) {
+      return $cdf1->getUuid() <=> $cdf2->getUuid();
+    };
+    usort($expected, $sorter);
+    usort($pruned, $sorter);
 
-    $this->assertEmpty($diff, 'The CDF document contains only the rendered entity and its source entity');
+    $this->assertEquals($expected, array_values($pruned), 'The CDF document contains only the rendered entity, its source entity and the source entity tags.');
   }
 
   /**
@@ -249,25 +250,40 @@ class PublishOnlyRenderedTest extends KernelTestBase {
     $time = time();
     $cdfs = [];
 
-    // Add random cdfs.
-    $no_cdfs = 5;
+    // Add random CDFs.
+    $no_cdfs = 11;
+    $origin = $uuid->generate();
     for ($i = 0; $i < $no_cdfs; $i++) {
-      $cdfs[] = new CDFObject('drupal8_content_entity', $uuid->generate(), $time, $time, $uuid->generate());
+      $cdfs[] = new CDFObject('drupal8_content_entity', $uuid->generate(), $time, $time, $origin);
     }
 
-    $source_cdf = new CDFObject('drupal8_content_entity', $uuid->generate(), $time, $time, $uuid->generate());
-    $cdfs[] = $source_cdf;
+    $source_entity = new CDFObject('drupal8_content_entity', $uuid->generate(), $time, $time, $origin);
+    $cdfs[] = $source_entity;
 
-    $rendered = new CDFObject('rendered_entity', $uuid->generate(), $time, $time, $uuid->generate());
-    $rendered->addAttribute('source_entity', CDFAttribute::TYPE_STRING, $source_cdf->getUuid());
+    // Add a few tags to source entity.
+    $tags = array_slice($cdfs, 0, 3);
+    $tag_uuids = [];
+    /** @var \Acquia\ContentHubClient\CDF\CDFObject $tag */
+    foreach ($tags as $tag) {
+      $tag_uuids[] = $tag->getUuid();
+    }
+
+    $source_entity->addAttribute('tags', CDFAttribute::TYPE_ARRAY_REFERENCE, $tag_uuids);
+
+    $rendered = new CDFObject('rendered_entity', $uuid->generate(), $time, $time, $origin);
+    $rendered->addAttribute('source_entity', CDFAttribute::TYPE_STRING, $source_entity->getUuid());
     $cdfs[] = $rendered;
 
-    // Construct an easily testable object containing the original cdf array,
+    // Construct an easily testable object containing the original CDF array,
     // the rendered entity, and its source entity.
     $cdf_mock = new \stdClass();
     $cdf_mock->original = $cdfs;
     $cdf_mock->rendered_entity = $rendered;
-    $cdf_mock->source_entity = $source_cdf;
+    $expected = [
+      $rendered,
+      $source_entity,
+    ];
+    $cdf_mock->expected = array_merge($expected, $tags);
 
     return $cdf_mock;
   }

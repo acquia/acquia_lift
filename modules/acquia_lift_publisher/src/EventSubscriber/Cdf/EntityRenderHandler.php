@@ -10,7 +10,7 @@ use Drupal\acquia_contenthub\Event\CreateCdfEntityEvent;
 use Drupal\acquia_contenthub\Session\ContentHubUserSession;
 use Drupal\Component\Uuid\UuidInterface;
 use Drupal\Core\Block\BlockManagerInterface;
-use Drupal\Core\Config\ConfigFactoryInterface;
+use Drupal\Core\Config\ImmutableConfig;
 use Drupal\Core\Entity\ContentEntityInterface;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\Core\Render\Element;
@@ -101,8 +101,8 @@ class EntityRenderHandler implements EventSubscriberInterface {
    *
    * @param \Drupal\Core\Session\AccountSwitcherInterface $account_switcher
    *   The account switcher.
-   * @param \Drupal\Core\Config\ConfigFactoryInterface $config_factory
-   *   The config factory.
+   * @param \Drupal\Core\Config\ImmutableConfig $config
+   *   The Acquia Lift publishing configuration object.
    * @param \Drupal\Core\Render\RendererInterface $renderer
    *   The renderer.
    * @param \Drupal\Core\Entity\EntityTypeManagerInterface $entity_type_manager
@@ -114,9 +114,9 @@ class EntityRenderHandler implements EventSubscriberInterface {
    * @param \Drupal\acquia_contenthub\Client\ClientFactory $client_factory
    *   The client factory.
    */
-  public function __construct(AccountSwitcherInterface $account_switcher, ConfigFactoryInterface $config_factory, RendererInterface $renderer, EntityTypeManagerInterface $entity_type_manager, BlockManagerInterface $block_manager, UuidInterface $uuid_generator, ClientFactory $client_factory) {
+  public function __construct(AccountSwitcherInterface $account_switcher, ImmutableConfig $config, RendererInterface $renderer, EntityTypeManagerInterface $entity_type_manager, BlockManagerInterface $block_manager, UuidInterface $uuid_generator, ClientFactory $client_factory) {
     $this->accountSwitcher = $account_switcher;
-    $this->config = $config_factory->get('acquia_lift_publisher.entity_config');
+    $this->config = $config;
     $this->clientFactory = $client_factory;
     $this->origin = $client_factory->getSettings()->getUuid();
     $this->renderer = $renderer;

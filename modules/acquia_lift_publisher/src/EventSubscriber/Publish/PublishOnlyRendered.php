@@ -112,6 +112,13 @@ class PublishOnlyRendered implements EventSubscriberInterface {
       }
     }
 
+    // Extra sanity check. The personalized content push was set to true,
+    // therefore, if for some reason the rendered entity is missing, stop the
+    // execution.
+    if (!$rendered_entity) {
+      return;
+    }
+
     $se_uuid = $this->getCdfEntityAttributeValue($rendered_entity, 'source_entity');
     if (!$se_uuid) {
       return;

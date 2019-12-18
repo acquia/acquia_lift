@@ -40,7 +40,7 @@ class PublishOnlyRenderedTest extends KernelTestBase {
   /**
    * Acquia Lift publisher settings.
    *
-   * @var \Drupal\Core\Config\ImmutableConfig
+   * @var \Drupal\Core\Config\Config
    */
   private $publisherSettings;
 
@@ -59,15 +59,15 @@ class PublishOnlyRenderedTest extends KernelTestBase {
     'acquia_contenthub_publisher',
     'acquia_lift',
     'acquia_lift_publisher',
-    'filter',
     'depcalc',
+    'field',
+    'filter',
+    'image',
     'node',
-    'user',
     'system',
     'taxonomy',
     'text',
-    'image',
-    'field',
+    'user',
   ];
 
   /**
@@ -267,7 +267,6 @@ class PublishOnlyRenderedTest extends KernelTestBase {
     foreach ($tags as $tag) {
       $tag_uuids[] = $tag->getUuid();
     }
-
     $source_entity->addAttribute('tags', CDFAttribute::TYPE_ARRAY_REFERENCE, $tag_uuids);
 
     $rendered = new CDFObject('rendered_entity', $uuid->generate(), $time, $time, $origin);

@@ -108,7 +108,6 @@ class PublishOnlyRendered implements EventSubscriberInterface {
       if ($cdf_entity->getType() === 'rendered_entity') {
         $rendered_entity = $cdf_entity;
         unset($cdfs_to_remove[$uuid]);
-        break;
       }
     }
 

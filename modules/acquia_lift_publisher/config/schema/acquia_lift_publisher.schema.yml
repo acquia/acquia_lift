@@ -12,7 +12,7 @@ acquia_lift_publisher.entity_config:
           type: sequence
           label: 'Bundle'
           sequence:
-            type: boolean
+            type: string
             label: 'View mode'
     render_role:
       type: string

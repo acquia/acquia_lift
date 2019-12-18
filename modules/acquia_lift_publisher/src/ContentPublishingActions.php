@@ -55,7 +55,7 @@ class ContentPublishingActions {
       return;
     }
 
-    if ($this->exportQueue->getQueueCount() < 0) {
+    if ($this->exportQueue->getQueueCount() < 1) {
       return;
     }
 

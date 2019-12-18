@@ -218,12 +218,13 @@ class PublishOnlyRenderedTest extends KernelTestBase {
    *   The CDF test object to run the assertions against.
    */
   private function assertContainsOnlyRequiredCdfs(\stdClass $cdf_mock) {
-    $orig_rendered_entity_uuid = $cdf_mock->rendered_entity->getUuid();
+    $orig_rendered_entity1 = $cdf_mock->rendered_entities[0]->getUuid();
+    $orig_rendered_entity2 = $cdf_mock->rendered_entities[1]->getUuid();
     $pruned = $cdf_mock->pruned;
 
     $this->addToAssertionCount(1);
-    if (!isset($pruned[$orig_rendered_entity_uuid])) {
-      throw new AssertionFailedError('CDF document contains the rendered entity');
+    if (!isset($pruned[$orig_rendered_entity1], $pruned[$orig_rendered_entity2])) {
+      throw new AssertionFailedError('CDF document contains the rendered entities');
     }
 
     $expected = $cdf_mock->expected;
@@ -233,7 +234,7 @@ class PublishOnlyRenderedTest extends KernelTestBase {
     usort($expected, $sorter);
     usort($pruned, $sorter);
 
-    $this->assertEquals($expected, array_values($pruned), 'The CDF document contains only the rendered entity, its source entity and the source entity tags.');
+    $this->assertEquals($expected, array_values($pruned), 'The CDF document contains only the rendered entities, its source entity and the source entity tags.');
   }
 
   /**
@@ -269,20 +270,19 @@ class PublishOnlyRenderedTest extends KernelTestBase {
     }
     $source_entity->addAttribute('tags', CDFAttribute::TYPE_ARRAY_REFERENCE, $tag_uuids);
 
-    $rendered = new CDFObject('rendered_entity', $uuid->generate(), $time, $time, $origin);
-    $rendered->addAttribute('source_entity', CDFAttribute::TYPE_STRING, $source_entity->getUuid());
-    $cdfs[] = $rendered;
+    $rendered1 = new CDFObject('rendered_entity', $uuid->generate(), $time, $time, $origin);
+    $rendered1->addAttribute('source_entity', CDFAttribute::TYPE_STRING, $source_entity->getUuid());
+    $rendered2 = new CDFObject('rendered_entity', $uuid->generate(), $time, $time, $origin);
+    $rendered2->addAttribute('source_entity', CDFAttribute::TYPE_STRING, $source_entity->getUuid());
+    $cdfs[] = $rendered1;
+    $cdfs[] = $rendered2;
 
     // Construct an easily testable object containing the original CDF array,
     // the rendered entity, and its source entity.
     $cdf_mock = new \stdClass();
     $cdf_mock->original = $cdfs;
-    $cdf_mock->rendered_entity = $rendered;
-    $expected = [
-      $rendered,
-      $source_entity,
-    ];
-    $cdf_mock->expected = array_merge($expected, $tags);
+    $cdf_mock->rendered_entities = [$rendered1, $rendered2];
+    $cdf_mock->expected = array_merge([$source_entity], $tags, $cdf_mock->rendered_entities);
 
     return $cdf_mock;
   }

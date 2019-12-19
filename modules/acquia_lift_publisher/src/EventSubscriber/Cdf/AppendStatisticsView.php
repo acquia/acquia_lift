@@ -40,17 +40,14 @@ class AppendStatisticsView implements EventSubscriberInterface {
       return;
     }
 
-    $append_val = [
-      'statistics' => [
-        'views' => '0',
-      ],
-    ];
-
     $data = json_decode(base64_decode($metadata['data']), TRUE);
     if (isset($data['statistics'])) {
       return;
     }
-    $data = array_merge($data, $append_val);
+
+    $data['statistics'] = [
+      'views' => '0',
+    ];
     $metadata['data'] = base64_encode(json_encode($data));
     $cdf->setMetadata($metadata);
   }

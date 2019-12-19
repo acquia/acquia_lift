@@ -4,12 +4,11 @@ namespace Drupal\acquia_lift_publisher\EventSubscriber\Cdf;
 
 use Drupal\acquia_contenthub\AcquiaContentHubEvents;
 use Drupal\acquia_contenthub\Event\CdfAttributesEvent;
-use Drupal\Core\Config\Entity\ConfigEntityInterface;
-use Drupal\Core\Entity\ContentEntityInterface;
+use Drupal\node\NodeInterface;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 
 /**
- * Class AppendStatisticsView
+ * Responsible for appending statistics field to the cdf if it doesn't exist.
  *
  * @package Drupal\acquia_lift_publisher\EventSubscriber\Cdf
  */
@@ -24,11 +23,14 @@ class AppendStatisticsView implements EventSubscriberInterface {
   }
 
   /**
-   * Appends statistics.views field with a default value.
+   * Appends statistics.views field with a default value to the content's cdf.
+   *
+   * @param \Drupal\acquia_contenthub\Event\CdfAttributesEvent $event
+   *   The corresponding event.
    */
   public function onPopulateAttributes(CdfAttributesEvent $event) {
     $entity = $event->getEntity();
-    if (!$entity instanceof ContentEntityInterface) {
+    if (!$entity instanceof NodeInterface) {
       return;
     }
 

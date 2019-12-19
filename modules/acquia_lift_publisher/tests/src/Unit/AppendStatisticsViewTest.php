@@ -66,7 +66,7 @@ class AppendStatisticsViewTest extends UnitTestCase {
    */
   public function cdfDataProvider(): array {
     $time = time();
-    // Default data used in test cases.
+    // Default minimalistic data used in test cases.
     $common_data = [
       'type' => 'drupal8_content_entity',
       'uuid' => 'dbd533f6-1cb5-4b23-b4bb-0ee75408bcc7',

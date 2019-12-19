@@ -9,3 +9,7 @@ services:
     class: Drupal\acquia_lift_publisher\EventSubscriber\EnqueueEligibility\IsExcludedImageStyle
     tags:
       - { name: event_subscriber }
+  acquia_lift_publisher.append_statistics_view:
+    class: Drupal\acquia_lift_publisher\EventSubscriber\Cdf\AppendStatisticsView
+    tags:
+      - { name: event_subscriber }

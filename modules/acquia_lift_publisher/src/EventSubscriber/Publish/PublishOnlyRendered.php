@@ -64,10 +64,15 @@ class PublishOnlyRendered implements EventSubscriberInterface {
    * @throws \Exception
    */
   public function onEnqueueCandidateEntity(ContentHubEntityEligibilityEvent $event): void {
+    if (!$this->personalizedContentPushIsActive()) {
+      return;
+    }
+
     $entity = $event->getEntity();
     // If the entity view configuration on Acquia Lift Publisher settings page is
     // set for the entity in question, the entity is qualified to be processed.
-    if (!$this->personalizedContentPushIsActive() || empty($this->getEntityViewModesSettingValue($entity))) {
+    if (empty($this->getEntityViewModesSettingValue($entity))) {
+      $event->setEligibility(FALSE);
       return;
     }
 

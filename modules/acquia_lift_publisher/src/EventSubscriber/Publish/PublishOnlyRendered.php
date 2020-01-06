@@ -9,6 +9,7 @@ use Drupal\acquia_contenthub\Event\PrunePublishCdfEntitiesEvent;
 use Drupal\acquia_contenthub_publisher\ContentHubPublisherEvents;
 use Drupal\acquia_contenthub_publisher\Event\ContentHubEntityEligibilityEvent;
 use Drupal\acquia_lift_publisher\Form\ContentPublishingForm;
+use Drupal\acquia_lift_publisher\Form\ContentPublishingSettingsTrait;
 use Drupal\Core\Config\ImmutableConfig;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 
@@ -20,20 +21,14 @@ use Symfony\Component\EventDispatcher\EventSubscriberInterface;
  */
 class PublishOnlyRendered implements EventSubscriberInterface {
 
+  use ContentPublishingSettingsTrait;
+
   /**
    * Content Hub common actions.
    *
    * @var \Drupal\acquia_contenthub\ContentHubCommonActions
    */
   private $commonActions;
-
-  /**
-   * Acquia lift publisher configuration object.
-   *
-   * @var \Drupal\Core\Config\ImmutableConfig
-   * @see \Drupal\acquia_lift_publisher\Form\ContentPublishingForm
-   */
-  private $publisherSettings;
 
   /**
    * PublishOnlyRendered constructor.
@@ -69,11 +64,13 @@ class PublishOnlyRendered implements EventSubscriberInterface {
    * @throws \Exception
    */
   public function onEnqueueCandidateEntity(ContentHubEntityEligibilityEvent $event): void {
-    if (!$this->personalizedContentPushIsActive()) {
+    $entity = $event->getEntity();
+    // If the entity view configuration on Acquia Lift Publisher settings page is
+    // set for the entity in question, the entity is qualified to be processed.
+    if (!$this->personalizedContentPushIsActive() || empty($this->getEntityViewModesSettingValue($entity))) {
       return;
     }
 
-    $entity = $event->getEntity();
     $cdfs = $this->commonActions->getEntityCdf($entity);
     foreach ($cdfs as $cdf) {
       if ($cdf->getType() !== 'rendered_entity') {

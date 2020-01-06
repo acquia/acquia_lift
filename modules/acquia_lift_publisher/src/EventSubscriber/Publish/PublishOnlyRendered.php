@@ -165,7 +165,7 @@ class PublishOnlyRendered implements EventSubscriberInterface {
    *   TRUE if active.
    */
   private function personalizedContentPushIsActive(): bool {
-    return $this->publisherSettings->get(ContentPublishingForm::$pushSettingField);
+    return (bool) $this->publisherSettings->get(ContentPublishingForm::$pushSettingField);
   }
 
 }

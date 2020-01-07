@@ -36,3 +36,23 @@ function _acquia_lift_publisher_trigger_queue(EntityInterface $entity): void {
     ->get('acquia_lift_publisher.publishing_actions')
     ->triggerQueue($entity);
 }
+
+/**
+ * Implements hook_module_implements_alter().
+ */
+function acquia_lift_publisher_module_implements_alter(&$implementations, $hook) {
+  // Make sure that acquia_contenthub_publisher module hooks run before
+  // acquia_lift_publisher hooks.
+  $hooks = [
+    'entity_insert',
+    'entity_update',
+  ];
+  if (!in_array($hook, $hooks, TRUE)) {
+    return;
+  }
+
+  $module = 'acquia_lift_publisher';
+  $group = $implementations[$module];
+  unset($implementations[$module]);
+  $implementations[$module] = $group;
+}

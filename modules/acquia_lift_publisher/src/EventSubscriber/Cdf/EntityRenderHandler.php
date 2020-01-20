@@ -8,11 +8,14 @@ use Drupal\acquia_contenthub\AcquiaContentHubEvents;
 use Drupal\acquia_contenthub\Client\ClientFactory;
 use Drupal\acquia_contenthub\Event\CreateCdfEntityEvent;
 use Drupal\acquia_contenthub\Session\ContentHubUserSession;
+use Drupal\block_content\BlockContentInterface;
+use Drupal\block_content\Plugin\Block\BlockContentBlock;
 use Drupal\Component\Uuid\UuidInterface;
 use Drupal\Core\Block\BlockManagerInterface;
 use Drupal\Core\Config\ConfigFactoryInterface;
 use Drupal\Core\Entity\ContentEntityInterface;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
+use Drupal\Core\Entity\EntityViewBuilderInterface;
 use Drupal\Core\Render\Element;
 use Drupal\Core\Render\RendererInterface;
 use Drupal\Core\Session\AccountSwitcherInterface;
@@ -160,7 +163,7 @@ class EntityRenderHandler implements EventSubscriberInterface {
         }
         $display = \Drupal::entityTypeManager()->getStorage('entity_view_mode')->load("{$entity->getEntityTypeId()}.$view_mode");
         foreach ($entity->getTranslationLanguages() as $language) {
-          $entity = $entity->getTranslation($language->getId());
+          $translation = $entity->getTranslation($language->getId());
 
           if ($remote_entity instanceof CDFObject) {
             $uuid = $this->getUuid($remote_entity, $view_mode, $language->getId());
@@ -169,19 +172,19 @@ class EntityRenderHandler implements EventSubscriberInterface {
             $uuid = $this->uuidGenerator->generate();
           }
           $cdf = new CDFObject('rendered_entity', $uuid, date('c'), date('c'), $this->origin);
-          $elements = $this->getViewModeMinimalHtml($entity, $view_mode);
+          $elements = $this->getViewModeMinimalHtml($translation, $view_mode);
           $html = $this->renderer->renderPlain($elements);
           $metadata['data'] = base64_encode($html);
           $cdf->addAttribute('content', CDFAttribute::TYPE_STRING, trim(preg_replace('/\s+/', ' ', str_replace("\n", ' ', strip_tags($html)))));
-          $cdf->addAttribute('source_entity', CDFAttribute::TYPE_STRING, $entity->uuid());
-          $cdf->addAttribute('label', CDFAttribute::TYPE_ARRAY_STRING, $entity->label(), $entity->language()->getId());
+          $cdf->addAttribute('source_entity', CDFAttribute::TYPE_STRING, $translation->uuid());
+          $cdf->addAttribute('label', CDFAttribute::TYPE_ARRAY_STRING, $translation->label(), $translation->language()->getId());
           $cdf->addAttribute('language', CDFAttribute::TYPE_STRING, $language->getId());
           $cdf->addAttribute('language_label', CDFAttribute::TYPE_STRING, $language->getName());
           $cdf->addAttribute('view_mode', CDFAttribute::TYPE_STRING, $view_mode);
           $cdf->addAttribute('view_mode_label', CDFAttribute::TYPE_STRING, $display->label());
 
           if (isset($view_modes['acquia_lift_preview_image'])) {
-            $preview_image = $entity->{$view_modes['acquia_lift_preview_image']}->first();
+            $preview_image = $translation->{$view_modes['acquia_lift_preview_image']}->first();
 
             if (!$preview_image) {
               continue;
@@ -238,8 +241,7 @@ class EntityRenderHandler implements EventSubscriberInterface {
       $build = $this->getBlockMinimalBuildArray($object, $view_mode);
     }
     else {
-      $build = $this->entityTypeManager->getViewBuilder($entity_type_id)
-        ->view($object, $view_mode, $object->language()->getId());
+      $build = $this->getViewMode($object, $view_mode);
     }
     // Restore user account.
     $this->accountSwitcher->switchBack();
@@ -280,7 +282,7 @@ class EntityRenderHandler implements EventSubscriberInterface {
     $block->setConfigurationValue('view_mode', $view_mode);
     $build['#configuration']['view_mode'] = $view_mode;
     // See \Drupal\block\BlockViewBuilder::preRender() for reference.
-    $content = $block->build();
+    $content = $this->getViewMode($object, $view_mode);
     if ($content !== NULL && !Element::isEmpty($content)) {
       foreach (['#attributes', '#contextual_links'] as $property) {
         if (isset($content[$property])) {
@@ -291,6 +293,23 @@ class EntityRenderHandler implements EventSubscriberInterface {
     }
     $build['content'] = $content;
     return $build;
+  }
+
+  /**
+   * Returns the applicable render array.
+   *
+   * @param \Drupal\Core\Entity\ContentEntityInterface $entity
+   *   The renderable entity.
+   * @param string $view_mode
+   *   The view mode to render in.
+   *
+   * @return array
+   *   The render array.
+   */
+  protected function getViewMode(ContentEntityInterface $entity, string $view_mode): array {
+    return $this->entityTypeManager
+      ->getViewBuilder($entity->getEntityTypeId())
+      ->view($entity, $view_mode, $entity->language()->getId());
   }
 
   /**

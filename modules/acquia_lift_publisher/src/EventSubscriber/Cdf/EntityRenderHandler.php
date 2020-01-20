@@ -272,7 +272,7 @@ class EntityRenderHandler implements EventSubscriberInterface {
     // (hidden by default). Override the template in your theme to render a
     // block label.
     if ($build['#configuration']['label'] === '') {
-      $build['#configuration']['label'] = $block->label();
+      $build['#configuration']['label'] = $object->label();
     }
     // Block entity itself doesn't have configuration.
     $block->setConfigurationValue('view_mode', $view_mode);

@@ -9,14 +9,12 @@ use Drupal\acquia_contenthub\Client\ClientFactory;
 use Drupal\acquia_contenthub\Event\CreateCdfEntityEvent;
 use Drupal\acquia_contenthub\Session\ContentHubUserSession;
 use Drupal\acquia_lift_publisher\Form\ContentPublishingSettingsTrait;
-use Drupal\block_content\BlockContentInterface;
-use Drupal\block_content\Plugin\Block\BlockContentBlock;
 use Drupal\Component\Uuid\UuidInterface;
 use Drupal\Core\Block\BlockManagerInterface;
 use Drupal\Core\Config\ImmutableConfig;
 use Drupal\Core\Entity\ContentEntityInterface;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
-use Drupal\Core\Entity\EntityViewBuilderInterface;
+use Drupal\Core\Language\LanguageInterface;
 use Drupal\Core\Render\Element;
 use Drupal\Core\Render\RendererInterface;
 use Drupal\Core\Session\AccountSwitcherInterface;
@@ -151,13 +149,14 @@ class EntityRenderHandler implements EventSubscriberInterface {
       $document = $this->clientFactory->getClient()
         ->getEntities([$entity->uuid()]);
       $remote_entity = $document->hasEntity($entity->uuid()) ? $document->getCDFEntity($entity->uuid()) : FALSE;
+      $entity_view_mode_storage = $this->entityTypeManager->getStorage('entity_view_mode');
       foreach (array_keys($view_modes) as $view_mode) {
         // The preview image field setting is saved along side the view modes.
         // Don't process it as one.
         if ($view_mode == 'acquia_lift_preview_image') {
           continue;
         }
-        $display = \Drupal::entityTypeManager()->getStorage('entity_view_mode')->load("{$entity->getEntityTypeId()}.$view_mode");
+        $display = $entity_view_mode_storage->load("{$entity->getEntityTypeId()}.$view_mode");
         foreach ($entity->getTranslationLanguages() as $language) {
           $translation = $entity->getTranslation($language->getId());
 
@@ -365,8 +364,8 @@ class EntityRenderHandler implements EventSubscriberInterface {
    * @return mixed|null
    *   The und value or the default value.
    */
-  protected function getAttributeValue($attribute, $key, $default = NULL) {
-    return $attribute[$key]['und'] ?? $default;
+  protected function getAttributeValue(array $attribute, string $key, ?string $default = NULL) {
+    return $attribute[$key][LanguageInterface::LANGCODE_NOT_SPECIFIED] ?? $default;
   }
 
   /**

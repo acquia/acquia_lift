@@ -2,6 +2,7 @@
 
 namespace Drupal\Tests\acquia_lift_publisher\Kernel\EventSubscriber;
 
+use Acquia\ContentHubClient\CDF\CDFObjectInterface;
 use Acquia\ContentHubClient\CDFDocument;
 use Acquia\ContentHubClient\ContentHubClient;
 use Acquia\ContentHubClient\Settings;
@@ -11,12 +12,16 @@ use Drupal\acquia_contenthub\Event\CreateCdfEntityEvent;
 use Drupal\block_content\BlockContentInterface;
 use Drupal\block_content\Entity\BlockContent;
 use Drupal\block_content\Entity\BlockContentType;
+use Drupal\Core\Entity\ContentEntityInterface;
 use Drupal\Core\Entity\EntityInterface;
+use Drupal\Core\Language\Language;
+use Drupal\Core\Language\LanguageInterface;
 use Drupal\KernelTests\KernelTestBase;
 use Drupal\language\Entity\ConfigurableLanguage;
 use Drupal\Tests\node\Traits\ContentTypeCreationTrait;
 use Drupal\Tests\RandomGeneratorTrait;
 use Drupal\Tests\user\Traits\UserCreationTrait;
+use PHPUnit\Framework\Assert;
 use Prophecy\Argument;
 
 /**
@@ -78,7 +83,7 @@ class EntityRenderHandlerTest extends KernelTestBase {
     $this->installEntitySchema('node');
     $this->installEntitySchema('user');
     $this->installSchema('system', 'sequences');
-    $this->installConfig(['node', 'block_content']);
+    $this->installConfig(['node', 'block_content', 'user']);
 
     $this->blockType = BlockContentType::create([
       'id' => $this->randomMachineName(),
@@ -140,10 +145,9 @@ class EntityRenderHandlerTest extends KernelTestBase {
     $this->enableViewModeExportFor($block);
 
     $event = $this->dispatchWith($block, []);
-    $cdfs = $event->getCdfList();
-    $this->assertCdfHasRenderedEntity($cdfs);
-    // Assert 2 after the translation and the default language.
-    $this->assertRenderedEntityCount($cdfs, 2);
+    $cdfs = $this->getRenderedEntities($event->getCdfList());
+    $this->assertCount(2, $cdfs, 'All entities were rendered.');
+    $this->assertCdfAttributes($block, $cdfs);
   }
 
   /**
@@ -171,52 +175,70 @@ class EntityRenderHandlerTest extends KernelTestBase {
    * @param \Acquia\ContentHubClient\CDF\CDFObject[] $cdfs
    */
   protected function assertCdfNotHasRenderedEntity(array $cdfs): void {
-    $entities = $this->getRenderedEntityCount($cdfs);
-    $this->assertEqual($entities, 0, 'Cdf list does not contain rendered entit');
+    $entities = $this->getRenderedEntities($cdfs);
+    $this->assertEqual(count($entities), 0, 'Cdf list does not contain rendered entity.');
   }
 
   /**
-   * Asserts that cdf list does not have a rendered entity.
+   * Asserts that cdf list has the correct values and attributes.
    *
+   * @param \Drupal\Core\Entity\ContentEntityInterface $entity
+   *   The entity to test.
    * @param \Acquia\ContentHubClient\CDF\CDFObject[] $cdfs
+   *   The cdf list to compare.
    */
-  protected function assertCdfHasRenderedEntity(array $cdfs): void {
-    $entities = $this->getRenderedEntityCount($cdfs);
-    $this->assertLessThan($entities, 0, 'Cdf list does contain rendered entities.');
+  protected function assertCdfAttributes(ContentEntityInterface $entity, array $cdfs): void {
+    $original_languages = [];
+    foreach ($entity->getTranslationLanguages() as $translation_language) {
+      $original_languages[] = $translation_language->getId();
+    }
+
+    $cdf_languages = [];
+    $source_entities = [];
+    $contents = [];
+    foreach ($cdfs as $cdf) {
+      $language = $cdf->getAttribute('language');
+      $this->assertNotNull($language, 'Entity translation has a corresponding cdf.');
+      $language = $language->getValue()[LanguageInterface::LANGCODE_NOT_SPECIFIED];
+      $cdf_languages[] = $language;
+
+      $source_entities[] = $cdf->getAttribute('source_entity')
+        ->getValue()[LanguageInterface::LANGCODE_NOT_SPECIFIED];
+
+      $contents[$language] = $cdf->getAttribute('content')
+        ->getValue()[LanguageInterface::LANGCODE_NOT_SPECIFIED];
+    }
+
+    $entity_uuid = $entity->uuid();
+    $this->assertTrue($source_entities[0] === $entity_uuid, 'Source uuid and original uuid match.');
+    $this->assertTrue($source_entities[1] === $entity_uuid, 'Source uuid and original uuid match.');
+    $this->assertEqual($cdf_languages, $original_languages, 'All the translations have been rendered.');
+
+    foreach ($original_languages as $original_language) {
+      $translation = $entity->getTranslation($original_language);
+      $orig_label = $translation->label();
+      $this->assertNotFalse(strpos(htmlspecialchars($orig_label), $contents[$original_language]), 'Cdf contains the translated content.');
+    }
   }
 
   /**
-   * Asserts that cdf list has the desired number of rendered entities.
-   *
-   * @param \Acquia\ContentHubClient\CDF\CDFObject[] $cdfs
-   *   The cdf list to test.
-   * @param int $count
-   *   The desired number of rendered entities.
-   */
-  public function assertRenderedEntityCount(array $cdfs, int $count): void {
-    $entities = $this->getRenderedEntityCount($cdfs);
-    $this->assertEqual($entities, $count, 'All entities were rendered.');
-  }
-
-  /**
-   * Returns the number of rendered entities from the cdf list.
+   * Returns the rendered entities from the cdf list.
    *
    * @param \Acquia\ContentHubClient\CDF\CDFObject[] $cdfs
    *   The cdf list.
    *
-   * @return int
-   *   The number of rendered entities.
+   * @return \Acquia\ContentHubClient\CDF\CDFObject[]
+   *   A set of rendered entities.
    */
-  protected function getRenderedEntityCount(array $cdfs): int {
-    $this->addToAssertionCount(1);
-    $rendered_count = 0;
+  protected function getRenderedEntities(array $cdfs): array {
+    $rendered_entities = [];
     foreach ($cdfs as $cdf) {
       if ($cdf->getType() === 'rendered_entity') {
-        $rendered_count++;
+        $rendered_entities[] = $cdf;
       }
     }
 
-    return $rendered_count;
+    return $rendered_entities;
   }
 
   /**
@@ -229,7 +251,7 @@ class EntityRenderHandlerTest extends KernelTestBase {
    *
    * @throws \Exception
    */
-  protected function enableViewModeExportFor(EntityInterface $entity, string $render_role = 'anonymous'): void {
+  protected function enableViewModeExportFor(EntityInterface $entity, string $render_role = 'administrator'): void {
     $this->container->get('config.factory')
       ->getEditable('acquia_lift_publisher.entity_config')
       ->set("view_modes.{$entity->getEntityTypeId()}.{$entity->bundle()}", ['full' => 1])
@@ -250,7 +272,7 @@ class EntityRenderHandlerTest extends KernelTestBase {
     $block_content = BlockContent::create([
       'info' => $this->randomString(),
       'type' => $this->blockType->id(),
-      'reusable' => FALSE,
+      'reusable' => TRUE,
     ]);
     $block_content->save();
 

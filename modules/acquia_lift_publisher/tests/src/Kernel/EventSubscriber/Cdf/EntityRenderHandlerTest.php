@@ -2,7 +2,6 @@
 
 namespace Drupal\Tests\acquia_lift_publisher\Kernel\EventSubscriber;
 
-use Acquia\ContentHubClient\CDF\CDFObjectInterface;
 use Acquia\ContentHubClient\CDFDocument;
 use Acquia\ContentHubClient\ContentHubClient;
 use Acquia\ContentHubClient\Settings;
@@ -14,14 +13,12 @@ use Drupal\block_content\Entity\BlockContent;
 use Drupal\block_content\Entity\BlockContentType;
 use Drupal\Core\Entity\ContentEntityInterface;
 use Drupal\Core\Entity\EntityInterface;
-use Drupal\Core\Language\Language;
 use Drupal\Core\Language\LanguageInterface;
 use Drupal\KernelTests\KernelTestBase;
 use Drupal\language\Entity\ConfigurableLanguage;
 use Drupal\Tests\node\Traits\ContentTypeCreationTrait;
 use Drupal\Tests\RandomGeneratorTrait;
 use Drupal\Tests\user\Traits\UserCreationTrait;
-use PHPUnit\Framework\Assert;
 use Prophecy\Argument;
 
 /**
@@ -139,7 +136,7 @@ class EntityRenderHandlerTest extends KernelTestBase {
 
     $block = $this->createBlockContent();
     $block->addTranslation('hu', [
-      'info' => $this->randomString() . '- HU',
+      'info' => $this->randomString(),
     ]);
 
     $this->enableViewModeExportFor($block);
@@ -170,7 +167,7 @@ class EntityRenderHandlerTest extends KernelTestBase {
   }
 
   /**
-   * Asserts that cdf list has a rendered entity.
+   * Asserts that cdf list doesn't have a rendered entity.
    *
    * @param \Acquia\ContentHubClient\CDF\CDFObject[] $cdfs
    */
@@ -180,7 +177,7 @@ class EntityRenderHandlerTest extends KernelTestBase {
   }
 
   /**
-   * Asserts that cdf list has the correct values and attributes.
+   * Asserts that entity related cdf list has the correct values and attributes.
    *
    * @param \Drupal\Core\Entity\ContentEntityInterface $entity
    *   The entity to test.
@@ -193,9 +190,11 @@ class EntityRenderHandlerTest extends KernelTestBase {
       $original_languages[] = $translation_language->getId();
     }
 
+    // The attributes to check in rendered entities.
     $cdf_languages = [];
     $source_entities = [];
     $contents = [];
+
     foreach ($cdfs as $cdf) {
       $language = $cdf->getAttribute('language');
       $this->assertNotNull($language, 'Entity translation has a corresponding cdf.');
@@ -209,11 +208,14 @@ class EntityRenderHandlerTest extends KernelTestBase {
         ->getValue()[LanguageInterface::LANGCODE_NOT_SPECIFIED];
     }
 
+    // These entities must come from the same source.
     $entity_uuid = $entity->uuid();
     $this->assertTrue($source_entities[0] === $entity_uuid, 'Source uuid and original uuid match.');
     $this->assertTrue($source_entities[1] === $entity_uuid, 'Source uuid and original uuid match.');
+
     $this->assertEqual($cdf_languages, $original_languages, 'All the translations have been rendered.');
 
+    // Check if the content are translation specific.
     foreach ($original_languages as $original_language) {
       $translation = $entity->getTranslation($original_language);
       $orig_label = $translation->label();

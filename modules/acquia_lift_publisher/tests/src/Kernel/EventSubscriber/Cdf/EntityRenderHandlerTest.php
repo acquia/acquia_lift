@@ -128,6 +128,29 @@ class EntityRenderHandlerTest extends KernelTestBase {
    * @throws \Drupal\Core\Entity\EntityStorageException
    * @throws \Exception
    */
+  public function testOnCreateCdfMetadataSetCorrectly() {
+    ConfigurableLanguage::create([
+      'id' => 'hu',
+      'label' => 'Hungarian',
+    ])->save();
+
+    $block = $this->createBlockContent();
+    $block->addTranslation('hu', [
+      'info' => $this->randomString(),
+    ]);
+
+    $this->enableViewModeExportFor($block);
+    $event = $this->dispatchWith($block, []);
+    $rendered_entities = $this->getRenderedEntities($event->getCdfList());
+    $this->assertCdfListHasMetadata($rendered_entities);
+  }
+
+  /**
+   * @covers ::onCreateCdf
+   *
+   * @throws \Drupal\Core\Entity\EntityStorageException
+   * @throws \Exception
+   */
   public function testOnCreateCdfBlockContent() {
     ConfigurableLanguage::create([
       'id' => 'hu',
@@ -174,6 +197,18 @@ class EntityRenderHandlerTest extends KernelTestBase {
   protected function assertCdfNotHasRenderedEntity(array $cdfs): void {
     $entities = $this->getRenderedEntities($cdfs);
     $this->assertEqual(count($entities), 0, 'Cdf list does not contain rendered entity.');
+  }
+
+  /**
+   * Asserts that each cdf o a given list has metadata being set.
+   *
+   * @param array $cdf_list
+   *   The cdf list.
+   */
+  protected function assertCdfListHasMetadata(array $cdf_list) {
+    foreach ($cdf_list as $cdf) {
+      $this->assertNotEmpty($cdf->getMetadata(), 'Metadata is not set');
+    }
   }
 
   /**

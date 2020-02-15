@@ -222,7 +222,7 @@ class EntityViewModeConfigurationForm extends ConfigFormBase {
     $image_fields = [];
     $field_definitions = $this->entityFieldManager->getFieldDefinitions($entity_type_id, $bundle);
     foreach ($field_definitions as $field_key => $field_definition) {
-      if ($field_definition->getType() === 'image') {
+      if ($field_definition->getType() === 'image' || $field_definition->getLabel() === 'Media Image') {
         $image_fields[$field_key] = $field_definition->getLabel();
       }
     }

@@ -16,7 +16,9 @@ use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\Core\Render\Element;
 use Drupal\Core\Render\RendererInterface;
 use Drupal\Core\Session\AccountSwitcherInterface;
+use Drupal\file\Entity\File;
 use Drupal\image\Entity\ImageStyle;
+use Drupal\media\Entity\media;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 
 /**
@@ -182,12 +184,25 @@ class EntityRenderHandler implements EventSubscriberInterface {
 
           if (isset($view_modes['acquia_lift_preview_image'])) {
             $preview_image = $entity->{$view_modes['acquia_lift_preview_image']}->first();
+            $file_url = '';
 
             if (!$preview_image) {
               continue;
             }
 
-            $src = ImageStyle::load('acquia_lift_publisher_preview_image')->buildUrl($preview_image->entity->getFileUri());
+            if (!$preview_image->getPluginDefinition() == 'entity_reference') {
+              $file_url = $preview_image->entity->getFileUri();
+            }
+
+            $media = media::load($preview_image->getValue()['target_id']);
+            if (!empty($media)) {
+              $fid = $media->field_media_image->target_id;
+              $file = File::load($fid);
+
+              $file_url = $file->getFileUri();
+            }
+
+            $src = ImageStyle::load('acquia_lift_publisher_preview_image')->buildUrl($file_url);
             $cdf->addAttribute('preview_image', CDFAttribute::TYPE_STRING, $src);
           }
 

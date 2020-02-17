@@ -15,7 +15,6 @@ acquia_lift_publisher.entity_config:
           sequence:
             type: integer
             label: 'View mode'
-
     render_role:
       type: string
       label: 'Render role'

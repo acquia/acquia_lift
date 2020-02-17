@@ -14,12 +14,18 @@ use Drupal\block_content\Entity\BlockContentType;
 use Drupal\Core\Entity\ContentEntityInterface;
 use Drupal\Core\Entity\EntityInterface;
 use Drupal\Core\Language\LanguageInterface;
+use Drupal\image\Entity\ImageStyle;
 use Drupal\KernelTests\KernelTestBase;
 use Drupal\language\Entity\ConfigurableLanguage;
+use Drupal\Tests\file\Kernel\FileManagedUnitTestBase;
+use Drupal\Tests\image\Kernel\ImageFieldCreationTrait;
 use Drupal\Tests\node\Traits\ContentTypeCreationTrait;
+use Drupal\Tests\node\Traits\NodeCreationTrait;
 use Drupal\Tests\RandomGeneratorTrait;
+use Drupal\Tests\TestFileCreationTrait;
 use Drupal\Tests\user\Traits\UserCreationTrait;
 use Prophecy\Argument;
+use Drupal\file\Entity\File;
 
 /**
  * Class EntityRenderHandlerTest.
@@ -33,6 +39,9 @@ class EntityRenderHandlerTest extends KernelTestBase {
   use ContentTypeCreationTrait;
   use RandomGeneratorTrait;
   use UserCreationTrait;
+  use ImageFieldCreationTrait;
+  use NodeCreationTrait;
+  use TestFileCreationTrait;
 
   /**
    * The block type used in tests.
@@ -40,6 +49,11 @@ class EntityRenderHandlerTest extends KernelTestBase {
    * @var \Drupal\Core\Entity\EntityInterface
    */
   protected $blockType;
+
+  protected $image;
+  protected $adminUser;
+  protected $userWithPermission;
+  protected $user;
 
   /**
    * {@inheritdoc}
@@ -52,6 +66,7 @@ class EntityRenderHandlerTest extends KernelTestBase {
   protected static $modules = [
     'acquia_contenthub',
     'acquia_lift_publisher',
+    'acquia_lift',
     'block',
     'block_content',
     'depcalc',
@@ -63,6 +78,8 @@ class EntityRenderHandlerTest extends KernelTestBase {
     'system',
     'text',
     'user',
+    'file',
+    'image',
   ];
 
   /**
@@ -79,8 +96,10 @@ class EntityRenderHandlerTest extends KernelTestBase {
     $this->installEntitySchema('filter_format');
     $this->installEntitySchema('node');
     $this->installEntitySchema('user');
+    $this->installEntitySchema('file');
     $this->installSchema('system', 'sequences');
-    $this->installConfig(['node', 'block_content', 'user']);
+    $this->installSchema('file', 'file_usage');
+    $this->installConfig([ 'node', 'block_content', 'user', 'file', 'image', 'filter', 'acquia_lift_publisher']);
 
     $this->blockType = BlockContentType::create([
       'id' => $this->randomMachineName(),
@@ -143,6 +162,51 @@ class EntityRenderHandlerTest extends KernelTestBase {
     $event = $this->dispatchWith($block, []);
     $rendered_entities = $this->getRenderedEntities($event->getCdfList());
     $this->assertCdfListHasMetadata($rendered_entities);
+  }
+
+  /**
+   * @covers ::onCreateCdf
+   *
+   * @throws \Exception
+   */
+  public function testImageAttributeIsSet() {
+    $this->userWithPermission = $this->createUser(['administer acquia lift'], 'user2');
+    $this->setCurrentUser($this->userWithPermission);
+
+    $this->createContentType([
+      'id' => 'article',
+      'name' => 'Image article content type',
+      'type' => 'article',
+    ]);
+
+    $this->createImageField('field_image_test', 'article', [], [], [], [], 'Image test on [site:name]');
+    $image_files = $this->getTestFiles('image');
+    $this->image = File::create((array) current($image_files));
+    $this->image->save();
+
+    $entity = $this->createNode([
+      'type' => 'article',
+      'title' => 'Title Test',
+      'field_image_test' => [
+        [
+          'target_id' => $this->image->id(),
+        ],
+      ],
+    ]);
+
+    $this->enableViewModeExportFor($entity);
+    $event = $this->dispatchWith($entity, []);
+    $cdfs = $this->getRenderedEntities($event->getCdfList());
+
+    $cdf = current($cdfs);
+    $this->assertNotNull($cdf);
+
+    // Assert that image url is correct
+    $this->assertEqual(
+      $cdf->getAttribute('preview_image')->getValue()['und'],
+      ImageStyle::load('acquia_lift_publisher_preview_image')->buildUrl($this->image->getFileUri()),
+      ''
+    );
   }
 
   /**
@@ -292,6 +356,7 @@ class EntityRenderHandlerTest extends KernelTestBase {
     $this->container->get('config.factory')
       ->getEditable('acquia_lift_publisher.entity_config')
       ->set("view_modes.{$entity->getEntityTypeId()}.{$entity->bundle()}", ['full' => 1])
+      ->set("view_modes.node.article.acquia_lift_preview_image", 'field_image_test')
       ->set('render_role', $render_role)
       ->save();
   }

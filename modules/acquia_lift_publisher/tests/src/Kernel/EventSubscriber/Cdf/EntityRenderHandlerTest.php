@@ -50,11 +50,6 @@ class EntityRenderHandlerTest extends KernelTestBase {
    */
   protected $blockType;
 
-  protected $image;
-  protected $adminUser;
-  protected $userWithPermission;
-  protected $user;
-
   /**
    * {@inheritdoc}
    */
@@ -170,8 +165,7 @@ class EntityRenderHandlerTest extends KernelTestBase {
    * @throws \Exception
    */
   public function testImageAttributeIsSet() {
-    $this->userWithPermission = $this->createUser(['administer acquia lift'], 'user2');
-    $this->setCurrentUser($this->userWithPermission);
+    $this->setCurrentUser($this->createUser(['administer acquia lift'], 'user2'));
 
     $this->createContentType([
       'id' => 'article',
@@ -181,15 +175,15 @@ class EntityRenderHandlerTest extends KernelTestBase {
 
     $this->createImageField('field_image_test', 'article', [], [], [], [], 'Image test on [site:name]');
     $image_files = $this->getTestFiles('image');
-    $this->image = File::create((array) current($image_files));
-    $this->image->save();
+    $image = File::create((array) current($image_files));
+    $image->save();
 
     $entity = $this->createNode([
       'type' => 'article',
       'title' => 'Title Test',
       'field_image_test' => [
         [
-          'target_id' => $this->image->id(),
+          'target_id' => $image->id(),
         ],
       ],
     ]);
@@ -204,7 +198,7 @@ class EntityRenderHandlerTest extends KernelTestBase {
     // Assert that image url is correct
     $this->assertEqual(
       $cdf->getAttribute('preview_image')->getValue()['und'],
-      ImageStyle::load('acquia_lift_publisher_preview_image')->buildUrl($this->image->getFileUri()),
+      ImageStyle::load('acquia_lift_publisher_preview_image')->buildUrl($image->getFileUri()),
       ''
     );
   }

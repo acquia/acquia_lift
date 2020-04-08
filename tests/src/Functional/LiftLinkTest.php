@@ -1,17 +1,20 @@
 <?php
 
-namespace Drupal\acquia_lift\Tests;
+namespace Drupal\Tests\acquia_lift\Functional;
 
-use Drupal\simpletest\WebTestBase;
+use Drupal\Tests\acquia_lift\Unit\Traits\SettingsDataTrait;
+use Drupal\Tests\BrowserTestBase;
+use Drupal\Tests\system\Functional\Cache\AssertPageCacheContextsAndTagsTrait;
 
 /**
  * Test Acquia Lift Toolbar Link.
  *
- * @group Acquia Lift
+ * @group acquia_lift
  */
-class LiftLinkTest extends WebTestBase {
+class LiftLinkTest extends BrowserTestBase {
 
   use SettingsDataTrait;
+  use AssertPageCacheContextsAndTagsTrait;
 
   /**
    * Modules to enable.

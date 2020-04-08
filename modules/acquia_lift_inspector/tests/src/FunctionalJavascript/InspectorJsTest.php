@@ -6,8 +6,8 @@
 
 namespace Drupal\Tests\acquia_lift_inspector\FunctionalJavascript;
 
-use Drupal\acquia_lift\Tests\SettingsDataTrait;
-use Drupal\FunctionalJavascriptTests\JavascriptTestBase;
+use Drupal\Tests\acquia_lift\Unit\Traits\SettingsDataTrait;
+use Drupal\FunctionalJavascriptTests\WebDriverTestBase;
 use Drupal\Tests\node\Traits\ContentTypeCreationTrait;
 use Drupal\Tests\node\Traits\NodeCreationTrait;
 
@@ -16,7 +16,7 @@ use Drupal\Tests\node\Traits\NodeCreationTrait;
  *
  * @group facets
  */
-class InspectorJsTest extends JavascriptTestBase {
+class InspectorJsTest extends WebDriverTestBase {
 
   use SettingsDataTrait;
   use ContentTypeCreationTrait;
@@ -121,7 +121,7 @@ JS;
     $this->assertEquals($identity, 'No segment(s) available.');
 
     $identity = $inspector->find('css', '#decisions p')->getText();
-    $this->assertEquals($identity, 'No decisions made.');
+    $this->assertEquals($identity, 'No decision(s) made.');
 
     $identity = $inspector->find('css', '#captures p')->getText();
     $this->assertEquals($identity, 'No recent captures.');

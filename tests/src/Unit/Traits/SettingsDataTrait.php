@@ -7,6 +7,25 @@ namespace Drupal\Tests\acquia_lift\Unit\Traits;
  */
 trait SettingsDataTrait {
   /**
+   * Set valid settings.
+   *
+   * @return array
+   *   A valid settings array.
+   */
+  private function setValidSettings() {
+    $settings = $this->config('acquia_lift.settings');
+    $settings->set('credential', $this->getValidCredentialSettings());
+    $settings->set('identity', $this->getValidIdentitySettings());
+    $settings->set('field_mappings', $this->getValidFieldMappingsSettings());
+    $settings->set('udf_person_mappings', $this->getValidUdfPersonMappingsSettings());
+    $settings->set('udf_event_mappings', $this->getValidUdfEventMappingsSettings());
+    $settings->set('udf_touch_mappings', $this->getValidUdfTouchMappingsSettings());
+    $settings->set('visibility', $this->getValidVisibilitySettings());
+    $settings->set('advanced', $this->getValidAdvancedSettings());
+    $settings->save();
+  }
+
+  /**
    * Get a valid credential settings array.
    *
    * @return array
@@ -16,7 +35,6 @@ trait SettingsDataTrait {
     return [
       'account_id' => 'AccountId1',
       'site_id' => 'SiteId1',
-      'user_access' => 'user_access_1',
       'assets_url' => 'AssetsUrl1',
       'decision_api_url' => 'decision_api_url_1',
     ];
@@ -30,7 +48,7 @@ trait SettingsDataTrait {
    */
   private function getValidIdentitySettings() {
     return [
-      'capture_identity' => FALSE,
+      //'capture_identity' => FALSE,
       'identity_parameter' => 'my_identity_parameter',
       'identity_type_parameter' => 'my_identity_type_parameter',
       'default_identity_type' => 'my_default_identity_type',
@@ -73,6 +91,20 @@ trait SettingsDataTrait {
   }
 
   /**
+   * Get a valid udf person mappings settings array.
+   *
+   * @return array
+   *   A valid UDF Person mappings settings array.
+   */
+  private function getValidUdfPersonMappingsFormData() {
+    return [
+      'person_udf1' => 'field_tags',
+      'person_udf2' => 'field_people'
+    ];
+  }
+
+
+  /**
    * Get a valid udf touch mappings settings array.
    *
    * @return array
@@ -89,9 +121,23 @@ trait SettingsDataTrait {
         'id' => 'touch_udf2',
         'value' => 'field_people',
         'type' => 'taxonomy'
-      ]
+      ],
     ];
   }
+
+  /**
+   * Get a valid udf touch mappings settings array.
+   *
+   * @return array
+   *   A valid UDF Touch mappings settings array.
+   */
+  private function getValidUdfTouchMappingsFormData() {
+    return [
+      'touch_udf1' => 'field_country',
+      'touch_udf2' => 'field_people'
+    ];
+  }
+
 
   /**
    * Get a valid udf event mappings settings array.
@@ -110,7 +156,20 @@ trait SettingsDataTrait {
         'id' => 'event_udf2',
         'value' => 'field_tags',
         'type' => 'taxonomy'
-      ]
+      ],
+    ];
+  }
+
+  /**
+   * Get a valid udf event mappings settings array.
+   *
+   * @return array
+   *   A valid UDF Event mappings settings array.
+   */
+  private function getValidUdfEventMappingsFormData() {
+    return [
+      'event_udf1' => 'field_country',
+      'event_udf2' => 'field_tags'
     ];
   }
 
@@ -130,7 +189,7 @@ trait SettingsDataTrait {
    * Get a valid advanced settings array.
    *
    * @return array
-   *   A valid advanced settings array.
+   *   A valid advanced configuration settings array.
    */
   private function getValidAdvancedSettings() {
     return [
@@ -138,5 +197,22 @@ trait SettingsDataTrait {
       'content_replacement_mode' => 'customized',
       'cdf_version' => 2,
     ];
+  }
+
+  /**
+   * Convert to post form settings.
+   *
+   * @param array $settings
+   * @param string $prefix
+   *
+   * @return array
+   *   A valid front end credential settings array.
+   */
+  private function convertToPostFormSettings($settings, $prefix) {
+    $post_form_settings = [];
+    foreach ($settings as $setting_name => $setting_value) {
+      $post_form_settings[$prefix . '[' . $setting_name . ']'] = $setting_value;
+    }
+    return $post_form_settings;
   }
 }

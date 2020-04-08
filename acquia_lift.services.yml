@@ -7,6 +7,6 @@ services:
     arguments: ['@config.factory', '@path.current', '@request_stack', '@acquia_lift.service.helper.path_matcher']
   acquia_lift.service.helper.path_matcher:
     class: Drupal\acquia_lift\Service\Helper\PathMatcher
-    arguments: ['@path.alias_manager', '@path.matcher']
+    arguments: ['@path_alias.manager', '@path.matcher']
   acquia_lift.service.helper.help_message_helper:
     class: Drupal\acquia_lift\Service\Helper\HelpMessageHelper

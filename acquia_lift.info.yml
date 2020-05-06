@@ -3,7 +3,7 @@ description: Provides integration to the Acquia Lift service for personalization
 package: Acquia Lift
 type: module
 core_version_requirement: ^8.7.7 || ^9
-php: 7.0
+php: 7.3
 
 configure: acquia_lift.admin_settings_form
 

@@ -242,7 +242,7 @@ class SettingsHelperTest extends UnitTestCase {
    * @covers ::getUdfLimitsForType
    */
   public function testGetUdfLimitsForTypeExpectedException() {
-    $this->expectException(Exception::class);
+    $this->expectException(\Exception::class);
     $this->expectExceptionCode(0);
     $this->expectExceptionMessage('This UDF Field type is not supported.');
     SettingsHelper::getUdfLimitsForType('non_exist');

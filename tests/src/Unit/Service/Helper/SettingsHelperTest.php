@@ -240,10 +240,6 @@ class SettingsHelperTest extends UnitTestCase {
    * Tests the getUdfLimitsForType() method, expected exception.
    *
    * @covers ::getUdfLimitsForType
-   *
-   * @expectedException \Exception
-   * @expectedExceptionCode 0
-   * @expectedExceptionMessage This UDF Field type is not supported.
    */
   public function testGetUdfLimitsForTypeExpectedException() {
     SettingsHelper::getUdfLimitsForType('non_exist');

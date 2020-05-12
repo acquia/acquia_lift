@@ -5,7 +5,7 @@
     "license": "GPL-2.0-or-later",
     "require": {
         "drupal/acquia_contenthub": "~2",
-        "drupal/depcalc": "dev-8.x-1.x"
+        "drupal/depcalc": "1.x-dev"
     },
     "extra": {
         "branch-alias": {

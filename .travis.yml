@@ -16,7 +16,7 @@ env:
   global:
     - ORCA_SUT_NAME=drupal/acquia_lift
     - ORCA_SUT_BRANCH=8.x-4.x
-    - ORCA_VERSION=dev-master
+    - ORCA_VERSION=master
     - ORCA_TELEMETRY_ENABLE=TRUE
     - ORCA_PACKAGES_CONFIG_ALTER=../acquia_lift/tests/orca/packages_alter.yml
 
@@ -31,7 +31,6 @@ matrix:
     - { name: "Isolated test w/ dev package versions", env: ORCA_JOB=ISOLATED_DEV }
     - { name: "Integrated test w/ dev package versions", env: ORCA_JOB=INTEGRATED_DEV }
     - { name: "Integrated test w/ dev package versions & next minor dev version of Drupal core", env: ORCA_JOB=CORE_NEXT }
-    - { name: "D9 readiness test", php: "7.3", env: ORCA_JOB=D9_READINESS}
   allow_failures:
     - env: ORCA_JOB=DEPRECATED_CODE_SCAN_CONTRIB
     - env: ORCA_JOB=ISOLATED_DEV
@@ -40,10 +39,9 @@ matrix:
     # Temporary allowances.
     - env: ORCA_JOB=STATIC_CODE_ANALYSIS
     - env: ORCA_JOB=DEPRECATED_CODE_SCAN
-    - { php: "7.3", env: ORCA_JOB=D9_READINESS }
 
 before_install:
-  - composer create-project --no-dev acquia/orca ../orca "$ORCA_VERSION"
+  - git clone --branch ${ORCA_VERSION} --depth 1 https://github.com/acquia/orca.git ../orca
   - ../orca/bin/travis/before_install.sh
 
 install: ../orca/bin/travis/install.sh

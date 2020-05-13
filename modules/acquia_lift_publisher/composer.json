@@ -10,11 +10,6 @@
     "extra": {
         "branch-alias": {
             "dev-8.x-4.x": "4.x-dev"
-        },
-        "patches": {
-            "drupal/depcalc": {
-                "Updating the core version requirement for the depcalc_test module.": "https://git.drupalcode.org/project/depcalc/-/commit/a9b5132eb95358518fbbde774af35f46ce613daa.diff"
-            }
         }
     }
 }

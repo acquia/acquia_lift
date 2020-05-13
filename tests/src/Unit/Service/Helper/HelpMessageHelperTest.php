@@ -2,8 +2,8 @@
 
 namespace Drupal\Tests\acquia_lift\Unit\Service\Helper;
 
-use Drupal\Tests\UnitTestCase;
 use Drupal\acquia_lift\Service\Helper\HelpMessageHelper;
+use Drupal\Tests\UnitTestCase;
 
 /**
  * HelpMessageHelper Test.
@@ -12,6 +12,7 @@ use Drupal\acquia_lift\Service\Helper\HelpMessageHelper;
  * @group acquia_lift
  */
 class HelpMessageHelperTest extends UnitTestCase {
+
   /**
    * Tests the getMessage() method - AdminSettingsForm.
    *
@@ -46,4 +47,5 @@ class HelpMessageHelperTest extends UnitTestCase {
 
     return $data;
   }
+
 }

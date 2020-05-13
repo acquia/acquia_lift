@@ -2,17 +2,20 @@
 
 namespace Drupal\acquia_lift\Service\Context;
 
+use Drupal\acquia_lift\Service\Helper\SettingsHelper;
+use Drupal\Core\Config\ConfigFactoryInterface;
+use Drupal\Core\Controller\TitleResolverInterface;
+use Drupal\Core\Entity\EntityTypeManagerInterface;
+use Drupal\Core\Language\LanguageManagerInterface;
+use Drupal\Core\Routing\RouteMatchInterface;
+use Drupal\node\NodeInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Component\Routing\Route;
-use Drupal\Core\Controller\TitleResolverInterface;
-use Drupal\Core\Language\LanguageManagerInterface;
-use Drupal\Core\Config\ConfigFactoryInterface;
-use Drupal\Core\Entity\EntityTypeManagerInterface;
-use Drupal\Core\Routing\RouteMatchInterface;
-use Drupal\node\NodeInterface;
-use Drupal\acquia_lift\Service\Helper\SettingsHelper;
 
+/**
+ *
+ */
 class PageContext extends BaseContext {
 
   /**
@@ -76,7 +79,7 @@ class PageContext extends BaseContext {
     'content_uuid' => '',
     'published_date' => '',
     'persona' => '',
-    'engagement_score' => SELF::ENGAGEMENT_SCORE_DEFAULT,
+    'engagement_score' => self::ENGAGEMENT_SCORE_DEFAULT,
   ];
 
   /**
@@ -135,11 +138,11 @@ class PageContext extends BaseContext {
     // Set taxonomyTermStorage.
     $this->taxonomyTermStorage = $entity_type_manager->getStorage('taxonomy_term');
 
-    // Set page context
+    // Set page context.
     $request = $request_stack->getCurrentRequest();
     $route = $route_match->getRouteObject();
 
-    // Set node context
+    // Set node context.
     $this->setContextByNode($request);
 
     // Set base data (title + language)
@@ -159,7 +162,7 @@ class PageContext extends BaseContext {
     }
 
     $node = $request->attributes->get('node');
-    if (empty($node) || ! $node instanceof NodeInterface) {
+    if (empty($node) || !$node instanceof NodeInterface) {
       return;
     }
 
@@ -183,8 +186,8 @@ class PageContext extends BaseContext {
   private function setBaseData(Request $request, Route $route, TitleResolverInterface $titleResolver, LanguageManagerInterface $languageManager) {
     // Set language code
     // After investigation, there is no use case where the methods
-    // 'getCurrentLanguage' and 'getId' would not exist within LanguageManager. 
-    // Drupal 8 will ALWAYS set a language code and would not be null,  
+    // 'getCurrentLanguage' and 'getId' would not exist within LanguageManager.
+    // Drupal 8 will ALWAYS set a language code and would not be null,
     // therefore no checks are required.
     $this->htmlHeadContexts['context_language'] = $languageManager->getCurrentLanguage()->getId();
 
@@ -212,7 +215,7 @@ class PageContext extends BaseContext {
    *   Credential settings array.
    */
   private function setContextCredential($credential_settings) {
-    foreach (SELF::$CREDENTIAL_MAPPING as $credential_key => $tag_name) {
+    foreach (self::$CREDENTIAL_MAPPING as $credential_key => $tag_name) {
       if (isset($credential_settings[$credential_key])) {
         $this->htmlHeadContexts[$tag_name] = $credential_settings[$credential_key];
       }
@@ -281,6 +284,7 @@ class PageContext extends BaseContext {
    *
    * @param \Drupal\node\NodeInterface $node
    *   Node.
+   *
    * @return array
    *   Node's available Fields' Vocabularies names.
    */
@@ -288,13 +292,13 @@ class PageContext extends BaseContext {
     $available_field_vocabulary_names = [];
     $available_field_vocabulary_fields = [];
 
-    // Regular field mapping
+    // Regular field mapping.
     foreach ($this->fieldMappings as $page_context_name => $field_name) {
-      if(!isset($node->{$field_name})) {
+      if (!isset($node->{$field_name})) {
         continue;
       }
       // Add this field to the list of fields to parse with their corresponding
-      // page context name;
+      // page context name;.
       if (!isset($available_field_vocabulary_fields[$field_name])) {
         $available_field_vocabulary_fields[$field_name] = [];
       }
@@ -304,18 +308,18 @@ class PageContext extends BaseContext {
     // id's so we can merge them without conflict.
     $udf_mappings = array_merge($this->udfPersonMappings, $this->udfTouchMappings, $this->udfEventMappings);
     foreach ($udf_mappings as $page_context_name => $properties) {
-      if(!isset($node->{$properties['value']})) {
+      if (!isset($node->{$properties['value']})) {
         continue;
       }
       // Add this field to the list of fields to parse with their corresponding
-      // page context name;
+      // page context name;.
       if (!isset($available_field_vocabulary_fields[$properties['value']])) {
         $available_field_vocabulary_fields[$properties['value']] = [];
       }
       $available_field_vocabulary_fields[$properties['value']][] = $page_context_name;
     }
 
-    foreach($available_field_vocabulary_fields as $field_name => $page_contexts) {
+    foreach ($available_field_vocabulary_fields as $field_name => $page_contexts) {
       $field_handler_settings = $node->{$field_name}->getSetting('handler_settings');
       $vocabulary_names = array_key_exists('target_bundles', $field_handler_settings) ? $field_handler_settings['target_bundles'] : [];
       foreach ($page_contexts as $page_context_name) {
@@ -331,6 +335,7 @@ class PageContext extends BaseContext {
    *
    * @param \Drupal\node\NodeInterface $node
    *   Node.
+   *
    * @return array
    *   Vocabularies' Term names.
    */
@@ -356,6 +361,7 @@ class PageContext extends BaseContext {
    *   Vocabulary names.
    * @param array $vocabulary_term_names
    *   Vocabulary Term names.
+   *
    * @return array
    *   Field Term names.
    */
@@ -381,8 +387,8 @@ class PageContext extends BaseContext {
       [
         '#tag' => 'script',
         '#attributes' => [
-          'src' => $this->assetsUrl . '/' . SELF::LIFT_JS_FILENAME,
-          'async' => true,
+          'src' => $this->assetsUrl . '/' . self::LIFT_JS_FILENAME,
+          'async' => TRUE,
         ],
       ],
       'acquia_lift_javascript',

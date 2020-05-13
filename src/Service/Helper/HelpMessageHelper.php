@@ -4,9 +4,13 @@ namespace Drupal\acquia_lift\Service\Helper;
 
 use Drupal\Core\StringTranslation\StringTranslationTrait;
 
+/**
+ *
+ */
 class HelpMessageHelper {
 
   use StringTranslationTrait;
+
   /**
    * Get help message (by route name).
    *
@@ -24,4 +28,5 @@ class HelpMessageHelper {
     }
     return;
   }
+
 }

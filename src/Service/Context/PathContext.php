@@ -2,17 +2,19 @@
 
 namespace Drupal\acquia_lift\Service\Context;
 
-use Drupal\Core\Cache\CacheableDependencyInterface;
-use Symfony\Component\HttpFoundation\RequestStack;
-use Drupal\Core\Config\ConfigFactoryInterface;
-use Drupal\Core\Path\CurrentPathStack;
-use Drupal\Component\Utility\UrlHelper;
-use Drupal\Component\Utility\Html;
-use Drupal\user\UserInterface;
 use Drupal\acquia_lift\Service\Helper\PathMatcher;
 use Drupal\acquia_lift\Service\Helper\SettingsHelper;
+use Drupal\Component\Utility\Html;
+use Drupal\Component\Utility\UrlHelper;
+use Drupal\Core\Cache\CacheableDependencyInterface;
+use Drupal\Core\Config\ConfigFactoryInterface;
+use Drupal\Core\Path\CurrentPathStack;
+use Drupal\user\UserInterface;
+use Symfony\Component\HttpFoundation\RequestStack;
 
-
+/**
+ *
+ */
 class PathContext extends BaseContext implements CacheableDependencyInterface {
 
   /**
@@ -84,7 +86,7 @@ class PathContext extends BaseContext implements CacheableDependencyInterface {
   /**
    * Should attach.
    *
-   * @return boolean
+   * @return bool
    *   True if should attach.
    */
   public function shouldAttach() {

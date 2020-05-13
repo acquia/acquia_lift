@@ -1,13 +1,9 @@
 <?php
 
-/**
- * @file
- */
-
 namespace Drupal\Tests\acquia_lift_inspector\FunctionalJavascript;
 
-use Drupal\Tests\acquia_lift\Unit\Traits\SettingsDataTrait;
 use Drupal\FunctionalJavascriptTests\WebDriverTestBase;
+use Drupal\Tests\acquia_lift\Unit\Traits\SettingsDataTrait;
 use Drupal\Tests\node\Traits\ContentTypeCreationTrait;
 use Drupal\Tests\node\Traits\NodeCreationTrait;
 

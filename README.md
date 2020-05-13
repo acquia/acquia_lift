@@ -19,4 +19,3 @@ Running Tests
 You can run Acquia Lift tests by either through:
 - Drupal 8's simpletest UI, or
 - Commandline. (which you can reference the [run-tests.sh](./.travis/run-tests.sh) script)
-

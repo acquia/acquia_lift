@@ -2,14 +2,14 @@
 
 namespace Drupal\acquia_lift\Form;
 
-use Exception;
-use Symfony\Component\DependencyInjection\ContainerInterface;
+use Drupal\acquia_lift\Service\Helper\SettingsHelper;
 use Drupal\Core\Config\Config;
 use Drupal\Core\Entity\EntityFieldManagerInterface;
 use Drupal\Core\Form\ConfigFormBase;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Url;
-use Drupal\acquia_lift\Service\Helper\SettingsHelper;
+use Exception;
+use Symfony\Component\DependencyInjection\ContainerInterface;
 
 /**
  * Defines a form that configures settings.
@@ -64,7 +64,7 @@ class AdminSettingsForm extends ConfigFormBase {
   public static function create(ContainerInterface $container) {
     // MessengerInterface was introduced by Drupal 8.5.
     // This code is for backwards-compatibility to 8.4 and below.
-    $messenger = $container->has('messenger') ? $container->get('messenger') : null;
+    $messenger = $container->has('messenger') ? $container->get('messenger') : NULL;
 
     return new static(
       $container->get('entity_field.manager'),
@@ -183,11 +183,11 @@ class AdminSettingsForm extends ConfigFormBase {
       '#tree' => TRUE,
       '#group' => 'data_collection_settings',
     ];
-//    $form['capture_identity'] = [
-//      '#type' => 'checkbox',
-//      '#title' => $this->t('Capture identity on login / register'),
-//      '#default_value' => $identity_settings['capture_identity'],
-//    ];
+    // $form['capture_identity'] = [
+    //      '#type' => 'checkbox',
+    //      '#title' => $this->t('Capture identity on login / register'),
+    //      '#default_value' => $identity_settings['capture_identity'],
+    //    ];
     $form['identity_parameter'] = [
       '#type' => 'textfield',
       '#title' => $this->t('Identity Parameter'),
@@ -284,7 +284,8 @@ class AdminSettingsForm extends ConfigFormBase {
    *
    * @return array
    *   UDF mappings form.
-   * @throws Exception
+   *
+   * @throws \Exception
    *   An exception if the type given is not supported.
    */
   private function buildUdfMappingsForm($type = 'person') {
@@ -394,7 +395,7 @@ class AdminSettingsForm extends ConfigFormBase {
       '#default_value' => $advanced_settings['bootstrap_mode'],
       '#options' => [
         'auto' => $this->t('Auto'),
-        'manual' => $this->t('Manual')
+        'manual' => $this->t('Manual'),
       ],
     ];
     $form['content_replacement_mode'] = [
@@ -404,17 +405,17 @@ class AdminSettingsForm extends ConfigFormBase {
       '#default_value' => $advanced_settings['content_replacement_mode'],
       '#options' => [
         'trusted' => t('Trusted'),
-        'customized' => t('Customized')
+        'customized' => t('Customized'),
       ],
     ];
     $form['cdf_version'] = [
       '#type' => 'radios',
       '#title' => $this->t('CDF version'),
-      '#description' =>  $this->t('The default, site-wide setting for CDF version.'),
+      '#description' => $this->t('The default, site-wide setting for CDF version.'),
       '#default_value' => isset($advanced_settings['cdf_version']) ? $advanced_settings['cdf_version'] : SettingsHelper::CDF_VERSION_DEFAULT,
       '#options' => [
         1 => $this->t('Version 1'),
-        2 => $this->t('Version 2')
+        2 => $this->t('Version 2'),
       ],
     ];
 
@@ -454,6 +455,9 @@ class AdminSettingsForm extends ConfigFormBase {
     parent::submitForm($form, $form_state);
   }
 
+  /**
+   *
+   */
   private function validateCredentialValues(array &$form, FormStateInterface $form_state) {
     $values = $form_state->getValues();
 
@@ -515,6 +519,7 @@ class AdminSettingsForm extends ConfigFormBase {
    *
    * @param string $url
    *   URL.
+   *
    * @return string
    *   URL, but cleaned up.
    */
@@ -532,6 +537,7 @@ class AdminSettingsForm extends ConfigFormBase {
    *
    * @param string $url
    *   URL.
+   *
    * @return string
    *   URL, but with "/authorize" removed.
    */
@@ -548,7 +554,7 @@ class AdminSettingsForm extends ConfigFormBase {
    *   Base URI.
    * @param string $path
    *   Path to "ping" end point.
-   * @param integer $expected_status_code
+   * @param int $expected_status_code
    *   Expected status code.
    */
   private function checkConnection($name, $base_uri, $path, $expected_status_code = 200) {
@@ -575,7 +581,7 @@ class AdminSettingsForm extends ConfigFormBase {
    *   Identity values.
    */
   private function setIdentityValues(Config $settings, array $values) {
-    //$settings->set('identity.capture_identity', trim($values['capture_identity']));
+    // $settings->set('identity.capture_identity', trim($values['capture_identity']));
     $settings->set('identity.identity_parameter', trim($values['identity_parameter']));
     $settings->set('identity.identity_type_parameter', trim($values['identity_type_parameter']));
     $settings->set('identity.default_identity_type', trim($values['default_identity_type']));
@@ -605,7 +611,7 @@ class AdminSettingsForm extends ConfigFormBase {
    * @param string $type
    *   The type of UDF field. Can be person, touch or event.
    *
-   * @throws Exception
+   * @throws \Exception
    *   An exception if the type given is not supported.
    */
   private function setUdfMappingsValues(Config $settings, array $values, $type = 'person') {
@@ -620,7 +626,7 @@ class AdminSettingsForm extends ConfigFormBase {
       $mappings[$value_id] = [
         'id' => $value_id,
         'value' => $value,
-        'type' => 'taxonomy'
+        'type' => 'taxonomy',
       ];
     }
     $settings->set('udf_' . $type . '_mappings', $mappings);
@@ -642,9 +648,9 @@ class AdminSettingsForm extends ConfigFormBase {
    * Sets the advanced values.
    *
    * @param \Drupal\Core\Config\Config $settings
-   *   Acquia Lift config settings
+   *   Acquia Lift config settings.
    * @param array $values
-   *   Advanced values
+   *   Advanced values.
    */
   private function setAdvancedValues(Config $settings, array $values) {
     $settings->set('advanced.bootstrap_mode', $values['bootstrap_mode']);
@@ -664,4 +670,5 @@ class AdminSettingsForm extends ConfigFormBase {
     $messengerFunctionName = 'add' . ucwords($type);
     $this->messenger->$messengerFunctionName($message);
   }
+
 }

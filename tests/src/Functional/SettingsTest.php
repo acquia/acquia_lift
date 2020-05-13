@@ -4,8 +4,8 @@ namespace Drupal\Tests\acquia_lift\Functional;
 
 use Drupal\Component\Render\FormattableMarkup;
 use Drupal\Core\StringTranslation\TranslatableMarkup;
-use Drupal\Tests\acquia_lift\Unit\Traits\SettingsDataTrait;
 use Drupal\Tests\acquia_lift\Unit\Traits\FixturesDataTrait;
+use Drupal\Tests\acquia_lift\Unit\Traits\SettingsDataTrait;
 use Drupal\Tests\BrowserTestBase;
 
 /**
@@ -100,7 +100,7 @@ class SettingsTest extends BrowserTestBase {
     $visibility_settings = $this->getValidVisibilitySettings();
     $advanced_settings = $this->getValidAdvancedSettings();
 
-    $edit =[];
+    $edit = [];
     $edit += $this->convertToPostFormSettings($credential_settings, 'credential');
     $edit += $this->convertToPostFormSettings($identity_settings, 'identity');
     $edit += $this->convertToPostFormSettings($field_mappings_settings, 'field_mappings');
@@ -149,4 +149,5 @@ class SettingsTest extends BrowserTestBase {
     $this->assertRaw('AssetsUrl1', '[testMetatagsAndScriptTag]: With valid settings, Lift\'s JavaScript is loaded on the home page.');
     $this->assertRaw('async', '[testMetatagsAndScriptTag]: With valid settings, Lift\'s JavaScript is async-loaded on the home page.');
   }
+
 }

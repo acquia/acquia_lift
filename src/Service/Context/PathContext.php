@@ -13,7 +13,7 @@ use Drupal\user\UserInterface;
 use Symfony\Component\HttpFoundation\RequestStack;
 
 /**
- *
+ * Defines the PathContext class.
  */
 class PathContext extends BaseContext implements CacheableDependencyInterface {
 
@@ -110,14 +110,15 @@ class PathContext extends BaseContext implements CacheableDependencyInterface {
    * @param \Symfony\Component\HttpFoundation\RequestStack $request_stack
    *   The request stack.
    */
-  private function setContextIdentityByRequest($request_stack) {
+  private function setContextIdentityByRequest(RequestStack $request_stack) {
     // Stop, if there is no "identity parameter".
     $identity_parameter = $this->identitySettings['identity_parameter'];
     if (empty($identity_parameter)) {
       return;
     }
 
-    // Set cache contexts. This is done as long as the identity parameter is set.
+    // Set cache contexts. This is done as long as the identity parameter is
+    // set.
     $identity_type_parameter = $this->identitySettings['identity_type_parameter'];
     $query_names = [$identity_parameter, $identity_type_parameter];
     $this->setContextCacheByQueryNames($query_names);
@@ -150,7 +151,7 @@ class PathContext extends BaseContext implements CacheableDependencyInterface {
    * @param array $query_names
    *   The query names.
    */
-  private function setContextCacheByQueryNames($query_names) {
+  private function setContextCacheByQueryNames(array $query_names) {
     foreach ($query_names as $query_name) {
       if (empty($query_name)) {
         continue;

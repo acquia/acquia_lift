@@ -23,17 +23,17 @@ class SettingsHelper {
   /**
    * Is an invalid credential.
    *
-   * @param array
+   * @param array $credential_settings
    *   Credential settings array.
    *
    * @return bool
    *   True if is an invalid credential.
    */
-  public static function isInvalidCredential($credential_settings) {
+  public static function isInvalidCredential(array $credential_settings) {
     if (self::isInvalidCredentialAccountId($credential_settings['account_id']) ||
       self::isInvalidCredentialSiteId($credential_settings['site_id']) ||
       self::isInvalidCredentialAssetsUrl($credential_settings['assets_url']) ||
-      isset($credential_settings['decision_api_url']) && self::isInvalidCredentialDecisionAPIUrl($credential_settings['decision_api_url'])
+      isset($credential_settings['decision_api_url']) && self::isInvalidCredentialDecisionApiUrl($credential_settings['decision_api_url'])
     ) {
       return TRUE;
     }
@@ -42,11 +42,13 @@ class SettingsHelper {
   }
 
   /**
-   * Is an invalid credential Account ID. Invalid if:
+   * Is an invalid credential Account ID.
+   *
+   * Invalid if:
    *   1) Missing, or
    *   2) Not start with a letter and contain only alphanumerical characters.
    *
-   * @param string
+   * @param string $account_id
    *   Credential Account ID.
    *
    * @return bool
@@ -61,11 +63,13 @@ class SettingsHelper {
   }
 
   /**
-   * Is an invalid credential Site ID. Invalid if:
+   * Is an invalid credential Site ID.
+   *
+   * Invalid if:
    *   1) Missing, or
    *   2) Not alphanumerical.
    *
-   * @param string
+   * @param string $site_id
    *   Credential Site ID.
    *
    * @return bool
@@ -80,11 +84,13 @@ class SettingsHelper {
   }
 
   /**
-   * Is an invalid credential Assets URL. Invalid if:
+   * Is an invalid credential Assets URL.
+   *
+   * Invalid if:
    *   1) Missing, or
    *   2) Not a valid URL.
    *
-   * @param string
+   * @param string $assets_url
    *   Credential Assets URL.
    *
    * @return bool
@@ -99,17 +105,19 @@ class SettingsHelper {
   }
 
   /**
-   * Is an invalid credential Decision API URL. Invalid if:
+   * Is an invalid credential Decision API URL.
+   *
+   * Invalid if:
    *   1) Exist, and
    *   2) Not a valid URL.
    *
-   * @param string
+   * @param string $decision_api_url
    *   Credential Decision API URL.
    *
    * @return bool
    *   True if is an invalid credential Decision API URL.
    */
-  public static function isInvalidCredentialDecisionAPIUrl($decision_api_url) {
+  public static function isInvalidCredentialDecisionApiUrl($decision_api_url) {
     if (!empty($decision_api_url) && !UrlHelper::isValid($decision_api_url)) {
       return TRUE;
     }
@@ -120,8 +128,8 @@ class SettingsHelper {
   /**
    * Is a valid bootstrap mode.
    *
-   * @param string
-   *   Mode to compare
+   * @param string $test_mode
+   *   Mode to compare.
    *
    * @return bool
    *   True if valid, false otherwise.
@@ -134,8 +142,8 @@ class SettingsHelper {
   /**
    * Is a valid content replacement mode.
    *
-   * @param string
-   *   Mode to compare
+   * @param string $test_mode
+   *   Mode to compare.
    *
    * @return bool
    *   True if valid, false otherwise.
@@ -148,8 +156,8 @@ class SettingsHelper {
   /**
    * Is a valid cdf version.
    *
-   * @param string
-   *   version to compare
+   * @param string $version
+   *   Version to compare.
    *
    * @return bool
    *   True if valid, false otherwise.

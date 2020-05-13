@@ -9,9 +9,6 @@ trait SettingsDataTrait {
 
   /**
    * Set valid settings.
-   *
-   * @return array
-   *   A valid settings array.
    */
   private function setValidSettings() {
     $settings = $this->config('acquia_lift.settings');
@@ -202,12 +199,14 @@ trait SettingsDataTrait {
    * Convert to post form settings.
    *
    * @param array $settings
+   *   An array settings.
    * @param string $prefix
+   *   Prefix to use.
    *
    * @return array
    *   A valid front end credential settings array.
    */
-  private function convertToPostFormSettings($settings, $prefix) {
+  private function convertToPostFormSettings(array $settings, $prefix) {
     $post_form_settings = [];
     foreach ($settings as $setting_name => $setting_value) {
       $post_form_settings[$prefix . '[' . $setting_name . ']'] = $setting_value;

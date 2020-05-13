@@ -6,7 +6,7 @@ use Drupal\Core\Path\PathMatcherInterface;
 use Drupal\path_alias\AliasManagerInterface;
 
 /**
- *
+ * Defines the path matcher class.
  */
 class PathMatcher {
   /**
@@ -37,7 +37,7 @@ class PathMatcher {
   }
 
   /**
-   * Determine if the path falls into one of the allowed paths (in terms of path patterns).
+   * Determine if the path falls into one of the allowed paths.
    *
    * @param string $path
    *   The actual path that's being matched by.

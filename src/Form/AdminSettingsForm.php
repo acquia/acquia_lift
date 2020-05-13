@@ -134,21 +134,21 @@ class AdminSettingsForm extends ConfigFormBase {
     $form['account_id'] = [
       '#type' => 'textfield',
       '#title' => $this->t('Account ID'),
-      '#description' => $this->t('Your Lift subscription\'s account ID.'),
+      '#description' => $this->t("Your Lift subscription's account ID."),
       '#default_value' => $credential_settings['account_id'],
       '#required' => TRUE,
     ];
     $form['site_id'] = [
       '#type' => 'textfield',
       '#title' => $this->t('Site ID'),
-      '#description' => $this->t('Current site\'s site ID. WARNING: different sites must use different value here, even between a staging and a production of the same site.'),
+      '#description' => $this->t("Current site's site ID. WARNING: different sites must use different value here, even between a staging and a production of the same site."),
       '#default_value' => $credential_settings['site_id'],
       '#required' => TRUE,
     ];
     $form['assets_url'] = [
       '#type' => 'textfield',
       '#title' => $this->t('Assets URL'),
-      '#description' => $this->t('Your Lift application\'s assets URL. It determines which version of the Lift application is being used.'),
+      '#description' => $this->t("Your Lift application's assets URL. It determines which version of the Lift application is being used."),
       '#field_prefix' => 'https://',
       '#default_value' => $this->cleanUrl($credential_settings['assets_url']),
       '#required' => TRUE,
@@ -156,7 +156,7 @@ class AdminSettingsForm extends ConfigFormBase {
     $form['decision_api_url'] = [
       '#type' => 'textfield',
       '#title' => $this->t('Decision API URL'),
-      '#description' => $this->t('Your Lift Decision API\'s URL. Unless explicitly instructed, leave empty to use default URL.'),
+      '#description' => $this->t("Your Lift Decision API's URL. Unless explicitly instructed, leave empty to use default URL."),
       '#field_prefix' => 'https://',
       '#default_value' => isset($credential_settings['decision_api_url']) ? $this->cleanUrl($credential_settings['decision_api_url']) : '',
     ];
@@ -183,11 +183,6 @@ class AdminSettingsForm extends ConfigFormBase {
       '#tree' => TRUE,
       '#group' => 'data_collection_settings',
     ];
-    // $form['capture_identity'] = [
-    //      '#type' => 'checkbox',
-    //      '#title' => $this->t('Capture identity on login / register'),
-    //      '#default_value' => $identity_settings['capture_identity'],
-    //    ];
     $form['identity_parameter'] = [
       '#type' => 'textfield',
       '#title' => $this->t('Identity Parameter'),
@@ -199,7 +194,7 @@ class AdminSettingsForm extends ConfigFormBase {
     $form['identity_type_parameter'] = [
       '#type' => 'textfield',
       '#title' => $this->t('Identity Type Parameter'),
-      '#description' => $this->t('The URL link parameter that corresponds to a Lift Profile Manager identifier type (one of the pre-defined ones or a new one you\'ve created). Example using <strong>@identity_type_parameter_display_value</strong>: ?@identity_parameter_display_value=jdoe01&<strong><ins>@identity_type_parameter_display_value</ins></strong>=@default_identity_type_default_value', [
+      '#description' => $this->t("The URL link parameter that corresponds to a Lift Profile Manager identifier type (one of the pre-defined ones or a new one you've created). Example using <strong>@identity_type_parameter_display_value</strong>: ?@identity_parameter_display_value=jdoe01&<strong><ins>@identity_type_parameter_display_value</ins></strong>=@default_identity_type_default_value", [
         '@identity_parameter_display_value' => $identity_parameter_display_value,
         '@identity_type_parameter_display_value' => $identity_type_parameter_display_value,
         '@default_identity_type_default_value' => $default_identity_type_default_value,
@@ -373,7 +368,6 @@ class AdminSettingsForm extends ConfigFormBase {
    *   The render array for the advanced form.
    */
   private function buildAdvancedForm() {
-    $credential_settings = $this->config('acquia_lift.settings')->get('credential');
     $advanced_settings = $this->config('acquia_lift.settings')->get('advanced');
 
     // Bootstrap mode was introduced in a update. Instead of providing a update
@@ -456,7 +450,7 @@ class AdminSettingsForm extends ConfigFormBase {
   }
 
   /**
-   *
+   * Validate credential values.
    */
   private function validateCredentialValues(array &$form, FormStateInterface $form_state) {
     $values = $form_state->getValues();
@@ -513,7 +507,9 @@ class AdminSettingsForm extends ConfigFormBase {
   }
 
   /**
-   * Clean up URL. Remove the:
+   * Clean up URL.
+   *
+   * Remove the:
    *   1) Protocol "http://" and "http://".
    *   2) Leading and trailing slashes and space characters.
    *
@@ -530,19 +526,6 @@ class AdminSettingsForm extends ConfigFormBase {
       '~^https?://~',
     ];
     return preg_replace($searchFor, '', $url);
-  }
-
-  /**
-   * Remove the "/authorize" suffix, if any.
-   *
-   * @param string $url
-   *   URL.
-   *
-   * @return string
-   *   URL, but with "/authorize" removed.
-   */
-  private function removeAuthorizeSuffix($url) {
-    return preg_replace('~/authorize$~', '', $url);
   }
 
   /**
@@ -581,7 +564,6 @@ class AdminSettingsForm extends ConfigFormBase {
    *   Identity values.
    */
   private function setIdentityValues(Config $settings, array $values) {
-    // $settings->set('identity.capture_identity', trim($values['capture_identity']));
     $settings->set('identity.identity_parameter', trim($values['identity_parameter']));
     $settings->set('identity.identity_type_parameter', trim($values['identity_type_parameter']));
     $settings->set('identity.default_identity_type', trim($values['default_identity_type']));

@@ -79,7 +79,8 @@ class SettingsTest extends BrowserTestBase {
     $this->drupalGet('admin/modules');
     $this->assertRaw('admin/config/services/acquia-lift', '[testConfigurationLinks]: Configure link from Extend page to Acquia Lift Settings page exists.');
 
-    // Check if Configure link is available on 'Status Reports' page. NOTE: Link is only shown without a configured Acquia Lift credential.
+    // Check if Configure link is available on 'Status Reports' page.
+    // NOTE: Link is only shown without a configured Acquia Lift credential.
     // Requires 'administer site configuration' permission.
     $this->drupalGet('admin/reports/status');
     $this->assertRaw('admin/config/services/acquia-lift', '[testConfigurationLinks]: Configure link from Status Reports page to Acquia Lift Settings page exists.');
@@ -120,7 +121,8 @@ class SettingsTest extends BrowserTestBase {
     $this->assertText(t('Acquia Lift module could not reach the specified Assets URL.'));
     $this->assertText(t('Acquia Lift module could not reach the specified Decision API URL.'));
 
-    // Assert all other fields. Also count the asserted fields to make sure all are asserted.
+    // Assert all other fields. Also count the asserted fields to make sure all
+    // are asserted.
     foreach ($edit as $name => $value) {
       $this->assertFieldByName($name, $value, new FormattableMarkup('"@name" setting was saved into DB.', ['@name' => $name]));
     }

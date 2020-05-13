@@ -5,7 +5,7 @@ namespace Drupal\acquia_lift\Service\Helper;
 use Drupal\Core\StringTranslation\StringTranslationTrait;
 
 /**
- *
+ * Defines the HelpMessageHelper class.
  */
 class HelpMessageHelper {
 
@@ -26,7 +26,6 @@ class HelpMessageHelper {
       case 'acquia_lift.admin_settings_form':
         return $this->t('You can find more info in <a href="https://docs.acquia.com/lift" target="_blank">Documentation</a>.');
     }
-    return;
   }
 
 }

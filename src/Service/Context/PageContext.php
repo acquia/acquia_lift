@@ -14,7 +14,7 @@ use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Component\Routing\Route;
 
 /**
- *
+ * Defines the PageContext class.
  */
 class PageContext extends BaseContext {
 
@@ -94,7 +94,7 @@ class PageContext extends BaseContext {
    *
    * @var array
    */
-  private static $CREDENTIAL_MAPPING = [
+  private static $credentialMapping = [
     'account_id' => 'account_id',
     'site_id' => 'site_id',
     'assets_url' => 'liftAssetsURL',
@@ -214,8 +214,8 @@ class PageContext extends BaseContext {
    * @param array $credential_settings
    *   Credential settings array.
    */
-  private function setContextCredential($credential_settings) {
-    foreach (self::$CREDENTIAL_MAPPING as $credential_key => $tag_name) {
+  private function setContextCredential(array $credential_settings) {
+    foreach (self::$credentialMapping as $credential_key => $tag_name) {
       if (isset($credential_settings[$credential_key])) {
         $this->htmlHeadContexts[$tag_name] = $credential_settings[$credential_key];
       }
@@ -228,7 +228,7 @@ class PageContext extends BaseContext {
    * @param array $advanced_settings
    *   Advanced settings array.
    */
-  private function setContextAdvanced($advanced_settings) {
+  private function setContextAdvanced(array $advanced_settings) {
     $bootstrap_mode = isset($advanced_settings['bootstrap_mode']) ? $advanced_settings['bootstrap_mode'] : 'auto';
     $replacement_mode = $advanced_settings['content_replacement_mode'];
     $cdf_version = isset($advanced_settings['cdf_version']) ? $advanced_settings['cdf_version'] : SettingsHelper::CDF_VERSION_DEFAULT;
@@ -365,7 +365,7 @@ class PageContext extends BaseContext {
    * @return array
    *   Field Term names.
    */
-  private function getFieldTermNames($vocabulary_names, $vocabulary_term_names) {
+  private function getFieldTermNames(array $vocabulary_names, array $vocabulary_term_names) {
     $field_term_names = [];
     foreach ($vocabulary_names as $vocabulary_name) {
       if (!isset($vocabulary_term_names[$vocabulary_name])) {

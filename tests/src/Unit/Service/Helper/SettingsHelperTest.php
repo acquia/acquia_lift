@@ -22,18 +22,15 @@ class SettingsHelperTest extends UnitTestCase {
 
   use SettingsDataTrait;
 
-  protected function setUp() {
-    parent::setUp();
-  }
-
   /**
    * Tests the isInvalidCredentialAccountId() method.
    *
-   * @covers ::isInvalidCredentialAccountId
-   *
    * @param string $setting
+   *   The setting to test.
    * @param bool $expected
+   *   The expected result.
    *
+   * @covers ::isInvalidCredentialAccountId
    * @dataProvider providerTestIsInvalidCredentialAccountId
    */
   public function testIsInvalidCredentialAccountId($setting, $expected) {
@@ -60,11 +57,12 @@ class SettingsHelperTest extends UnitTestCase {
   /**
    * Tests the isInvalidCredentialSiteId() method.
    *
-   * @covers ::isInvalidCredentialSiteId
-   *
    * @param string $setting
+   *   The setting to test.
    * @param bool $expected
+   *   The expected result.
    *
+   * @covers ::isInvalidCredentialSiteId
    * @dataProvider providerTestIsInvalidCredentialSiteId
    */
   public function testIsInvalidCredentialSiteId($setting, $expected) {
@@ -90,11 +88,12 @@ class SettingsHelperTest extends UnitTestCase {
   /**
    * Tests the isInvalidCredentialAssetsUrl() method.
    *
-   * @covers ::isInvalidCredentialAssetsUrl
-   *
    * @param string $setting
+   *   The setting to test.
    * @param bool $expected
+   *   The expected result.
    *
+   * @covers ::isInvalidCredentialAssetsUrl
    * @dataProvider providerTestIsInvalidCredentialAssetsUrl
    */
   public function testIsInvalidCredentialAssetsUrl($setting, $expected) {
@@ -120,11 +119,12 @@ class SettingsHelperTest extends UnitTestCase {
   /**
    * Tests the isInvalidCredentialDecisionApiUrl() method.
    *
-   * @covers ::isInvalidCredentialDecisionApiUrl
-   *
    * @param string $setting
+   *   The setting to test.
    * @param bool $expected
+   *   The expected result.
    *
+   * @covers ::isInvalidCredentialDecisionApiUrl
    * @dataProvider providerTestIsInvalidCredentialDecisionApiUrl
    */
   public function testIsInvalidCredentialDecisionApiUrl($setting, $expected) {
@@ -150,11 +150,12 @@ class SettingsHelperTest extends UnitTestCase {
   /**
    * Tests the isInvalidCredential() method.
    *
-   * @covers ::isInvalidCredential
-   *
-   * @param array $full_settings
+   * @param string $full_settings
+   *   The full setting to test.
    * @param bool $expected
+   *   The expected result.
    *
+   * @covers ::isInvalidCredential
    * @dataProvider providerTestIsInvalidCredential
    */
   public function testIsInvalidCredential($full_settings, $expected) {
@@ -188,11 +189,12 @@ class SettingsHelperTest extends UnitTestCase {
   /**
    * Tests the isValidContentReplacementMode() method.
    *
-   * @covers ::isValidContentReplacementMode
-   *
    * @param string $test_value
+   *   The value to test.
    * @param bool $expected
+   *   The expected result.
    *
+   * @covers ::isValidContentReplacementMode
    * @dataProvider providerTestIsValidContentReplacementMode
    */
   public function testIsValidContentReplacementMode($test_value, $expected) {
@@ -217,11 +219,12 @@ class SettingsHelperTest extends UnitTestCase {
   /**
    * Tests the getUdfLimitsForType() method.
    *
-   * @covers ::getUdfLimitsForType
-   *
    * @param string $test_value
+   *   The value to test.
    * @param bool $expected
+   *   The expected result.
    *
+   * @covers ::getUdfLimitsForType
    * @dataProvider providerTestGetUdfLimitsForType
    */
   public function testGetUdfLimitsForType($test_value, $expected) {
@@ -257,11 +260,12 @@ class SettingsHelperTest extends UnitTestCase {
   /**
    * Tests the pingUri() method.
    *
-   * @covers ::pingUri
-   *
    * @param string $test_value
+   *   The value to test.
    * @param bool $expected
+   *   The expected result.
    *
+   * @covers ::pingUri
    * @dataProvider providerTestPingUri
    */
   public function testPingUri($test_value, $expected) {

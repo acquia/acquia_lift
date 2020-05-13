@@ -16,11 +16,12 @@ class HelpMessageHelperTest extends UnitTestCase {
   /**
    * Tests the getMessage() method - AdminSettingsForm.
    *
-   * @covers ::getMessage
-   *
    * @param string $route_name
+   *   The name of the route.
    * @param string $has_message
+   *   Whether the form has a message.
    *
+   * @covers ::getMessage
    * @dataProvider providerRouteNames
    */
   public function testGetMessageAdminSettingsFormNoApiUrl($route_name, $has_message) {

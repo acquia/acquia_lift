@@ -48,7 +48,7 @@ class InspectorJsTest extends WebDriverTestBase {
    * @return array
    *   A valid credential settings array.
    */
-  private function getActualJSCredentialSettings() {
+  private function getActualJsCredentialSettings() {
     return [
       'account_id' => 'AccountId1',
       'site_id' => 'SiteId1',

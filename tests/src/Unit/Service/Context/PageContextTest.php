@@ -203,7 +203,7 @@ class PageContextTest extends UnitTestCase {
   }
 
   /**
-   * Tests the populate() method, populateHtmlHead() sub method, credential configuration.
+   * Tests populate() and populateHtmlHead() methods, credential configuration.
    *
    * @covers ::populate
    */
@@ -297,7 +297,7 @@ class PageContextTest extends UnitTestCase {
   }
 
   /**
-   * Tests the populate() method, populateHtmlHead() sub method, with a Node and simple title.
+   * Tests the populate() and populateHtmlHead() methods, with Node and title.
    *
    * @covers ::populate
    */
@@ -350,7 +350,7 @@ class PageContextTest extends UnitTestCase {
   }
 
   /**
-   * Tests the populate() method, populateHtmlHead() sub method, with a Node and array title.
+   * Tests the populate() and populateHtmlHead() with Node and array title.
    *
    * @covers ::populate
    */
@@ -406,7 +406,7 @@ class PageContextTest extends UnitTestCase {
   }
 
   /**
-   * Tests the populate() method, populateHtmlHead() sub method, with a Node and fields.
+   * Tests the populate() and populateHtmlHead() with a Node and fields.
    *
    * @covers ::populate
    */
@@ -463,9 +463,12 @@ class PageContextTest extends UnitTestCase {
    * Get Term.
    *
    * @param string $name
+   *   The term name.
    * @param string $vocabulary_id
+   *   The term vocabulary.
    *
    * @return Drupal\taxonomy\TermInterface|\PHPUnit\Framework\MockObject\MockObject
+   *   Matching term.
    */
   private function getTerm($name = 'Term Name', $vocabulary_id = 'untracked_vocabulary_id') {
     $term = $this->createMock('Drupal\taxonomy\TermInterface');
@@ -482,8 +485,10 @@ class PageContextTest extends UnitTestCase {
    * Get Node.
    *
    * @param int $id
+   *   The node ID.
    *
    * @return Drupal\node\NodeInterface|\PHPUnit\Framework\MockObject\MockObject
+   *   The matching node.
    */
   private function getNode($id = 90210) {
     $field_country = $this->createMock('Drupal\Core\Field\BaseFieldDefinition');
@@ -564,7 +569,7 @@ class PageContextTest extends UnitTestCase {
    * @return array
    *   The render array
    */
-  private function toRenderArray($pageContextConfig, $assetsUrl) {
+  private function toRenderArray(array $pageContextConfig, $assetsUrl) {
     $renderArray = [];
 
     foreach ($pageContextConfig as $name => $content) {

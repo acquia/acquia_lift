@@ -3,7 +3,7 @@
 namespace Drupal\acquia_lift\Service\Context;
 
 /**
- *
+ * Defines the BaseContext class.
  */
 abstract class BaseContext implements ContextInterface {
 
@@ -46,10 +46,10 @@ abstract class BaseContext implements ContextInterface {
   /**
    * Populate page's HTML head.
    *
-   * @param &$html_head
+   * @param array $html_head
    *   The page's HTML head that is to be populated.
    */
-  protected function populateHtmlHead(&$html_head) {
+  protected function populateHtmlHead(array &$html_head) {
     // Attach Lift's metatags.
     foreach ($this->htmlHeadContexts as $name => $context) {
       $renderArray = $this->getMetaTagRenderArray($name, $context);
@@ -62,10 +62,10 @@ abstract class BaseContext implements ContextInterface {
   /**
    * Populate page's cache context.
    *
-   * @param &$page
+   * @param array $page
    *   The page that is to be populated.
    */
-  protected function populateCache(&$page) {
+  protected function populateCache(array &$page) {
     // Set cache contexts.
     foreach ($this->cacheContexts as $context) {
       $page['#cache']['contexts'][] = $context;

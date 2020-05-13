@@ -350,7 +350,7 @@ class EntityRenderHandler implements EventSubscriberInterface {
    * @return mixed|null
    *   The und value or the default value.
    */
-  protected function getAttributeValue($attribute, $key, $default = NULL) {
+  protected function getAttributeValue(array $attribute, $key, $default = NULL) {
     return $attribute[$key]['und'] ?? $default;
   }
 

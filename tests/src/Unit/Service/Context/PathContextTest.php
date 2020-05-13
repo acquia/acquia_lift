@@ -92,15 +92,17 @@ class PathContextTest extends UnitTestCase {
   /**
    * Tests the shouldAttach() method.
    *
-   * @covers ::shouldAttach
-   *
    * @param bool $set_invalid_credential
+   *   Whether invalid credential should be set.
    * @param bool $do_match_pattern
+   *   Whether match pattern should be active.
    * @param array $expect_should_attach
+   *   The expected should attach value.
    *
+   * @covers ::shouldAttach
    * @dataProvider providerTestShouldAttach
    */
-  public function testShouldAttach($set_invalid_credential, $do_match_pattern, $expect_should_attach) {
+  public function testShouldAttach($set_invalid_credential, $do_match_pattern, array $expect_should_attach) {
     $credential_settings = $this->getValidCredentialSettings();
 
     if ($set_invalid_credential) {
@@ -154,20 +156,24 @@ class PathContextTest extends UnitTestCase {
   }
 
   /**
-   * Tests the populate() method, populateHtmlHead() sub method, "set identity and identity type" sub routine.
+   * Tests the populate() method, populateHtmlHead() sub method.
+   *
+   * @param string $query_parameter_string
+   *   The query parameter string.
+   * @param bool $capture_identity
+   *   Whether capture identity is enabled.
+   * @param bool $do_set_user
+   *   Whether set user is enabled.
+   * @param array $expect_cache
+   *   The expected cache value.
+   * @param array $expect_html_head
+   *   the expected HTML head elements.
    *
    * @covers ::setContextIdentityByUser
    * @covers ::populate
-   *
-   * @param string $query_parameter_string
-   * @param bool $capture_identity
-   * @param bool $do_set_user
-   * @param array $expect_cache
-   * @param array $expect_html_head
-   *
    * @dataProvider providerTestPopulateHtmlHeadIdentities
    */
-  public function testPopulateHtmlHeadIdentities($query_parameter_string, $capture_identity, $do_set_user, $expect_cache, $expect_html_head) {
+  public function testPopulateHtmlHeadIdentities($query_parameter_string, $capture_identity, $do_set_user, array $expect_cache, array $expect_html_head) {
     $this->requestStack->expects($this->once())
       ->method('getCurrentRequest')
       ->willReturn($this->request);
@@ -316,15 +322,17 @@ class PathContextTest extends UnitTestCase {
   /**
    * Tests the populate() method, "set identity and identity type" sub routine.
    *
-   * @covers ::populate
-   *
-   * @param int $expect_set_cache
    * @param array $identity_settings
+   *   The identity settings.
+   * @param int $expect_set_cache
+   *   The expected set_cache value.
    * @param array $expect_cache_context
+   *   The expected cache context.
    *
+   * @covers ::populate
    * @dataProvider providerTestPopulateCache
    */
-  public function testPopulateCache($identity_settings, $expect_set_cache, $expect_cache_context) {
+  public function testPopulateCache(array $identity_settings, $expect_set_cache, array $expect_cache_context) {
     $this->requestStack->expects($this->exactly($expect_set_cache))
       ->method('getCurrentRequest')
       ->willReturn($this->request);

@@ -18,6 +18,7 @@ env:
     - ORCA_SUT_BRANCH=8.x-4.x
     - ORCA_VERSION=dev-master
     - ORCA_TELEMETRY_ENABLE=TRUE
+    - ORCA_CUSTOM_FIXTURE_INIT_ARGS="--ignore-patch-failure"
 
 matrix:
   fast_finish: true

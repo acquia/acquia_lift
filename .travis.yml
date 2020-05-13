@@ -35,11 +35,9 @@ matrix:
     - env: ORCA_JOB=DEPRECATED_CODE_SCAN_CONTRIB
     - env: ORCA_JOB=ISOLATED_DEV
     - env: ORCA_JOB=INTEGRATED_DEV
-    - env: ORCA_JOB=CORE_NEXT
     # Temporary allowances.
     - env: ORCA_JOB=STATIC_CODE_ANALYSIS
-    - env: ORCA_JOB=DEPRECATED_CODE_SCAN
-    - { php: "7.3", env: ORCA_JOB=D9_READINESS }
+    - env: ORCA_JOB=CORE_PREVIOUS
 
 before_install:
   - composer create-project --no-dev acquia/orca ../orca "$ORCA_VERSION"

@@ -4,12 +4,16 @@
     "description": "Publishes personalized content for use with Acquia Lift.",
     "license": "GPL-2.0-or-later",
     "require": {
-        "drupal/acquia_contenthub": "~2",
-        "drupal/depcalc": "1.x-dev"
+        "drupal/acquia_contenthub": "~2"
     },
     "extra": {
         "branch-alias": {
             "dev-8.x-4.x": "4.x-dev"
+        },
+        "patches": {
+            "drupal/depcalc": {
+                "Fix undefined index error": "https://git.drupalcode.org/project/depcalc/-/commit/a9b5132eb95358518fbbde774af35f46ce613daa.diff"
+            }
         }
     }
 }

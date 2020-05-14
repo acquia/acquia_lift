@@ -351,6 +351,7 @@ class PathContextTest extends UnitTestCase {
     $path_context = new PathContext($this->configFactory, $this->currentPathStack, $this->requestStack, $this->pathMatcher);
 
     $page = [];
+    $page['#attached']['html_head'] = [];
     $path_context->populate($page);
 
     $cache_context = [];

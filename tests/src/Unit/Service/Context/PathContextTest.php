@@ -96,13 +96,13 @@ class PathContextTest extends UnitTestCase {
    *   Whether invalid credential should be set.
    * @param bool $do_match_pattern
    *   Whether match pattern should be active.
-   * @param array $expect_should_attach
+   * @param bool $expect_should_attach
    *   The expected should attach value.
    *
    * @covers ::shouldAttach
    * @dataProvider providerTestShouldAttach
    */
-  public function testShouldAttach($set_invalid_credential, $do_match_pattern, array $expect_should_attach) {
+  public function testShouldAttach($set_invalid_credential, $do_match_pattern, $expect_should_attach) {
     $credential_settings = $this->getValidCredentialSettings();
 
     if ($set_invalid_credential) {

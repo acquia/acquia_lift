@@ -80,7 +80,7 @@ abstract class BaseContext implements ContextInterface {
   /**
    * {@inheritdoc}
    */
-  public function populate(&$page) {
+  public function populate(array &$page) {
     $this->populateHtmlHead($page['#attached']['html_head']);
     $this->populateCache($page);
   }

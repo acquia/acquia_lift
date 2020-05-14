@@ -221,6 +221,7 @@ class PageContextTest extends UnitTestCase {
 
     $page_context = new PageContext($this->configFactory, $this->entityTypeManager, $this->requestStack, $this->routeMatch, $this->titleResolver, $this->language);
     $page = [];
+    $page['#attached']['html_head'] = [];
     $page_context->populate($page);
 
     $expected_head = $this->toRenderArray([
@@ -270,6 +271,7 @@ class PageContextTest extends UnitTestCase {
 
     $page_context = new PageContext($this->configFactory, $this->entityTypeManager, $this->requestStack, $this->routeMatch, $this->titleResolver, $this->language);
     $page = [];
+    $page['#attached']['html_head'] = [];
     $page_context->populate($page);
 
     $expected_head = $this->toRenderArray([
@@ -323,6 +325,7 @@ class PageContextTest extends UnitTestCase {
 
     $page_context = new PageContext($this->configFactory, $this->entityTypeManager, $this->requestStack, $this->routeMatch, $this->titleResolver, $this->language);
     $page = [];
+    $page['#attached']['html_head'] = [];
     $page_context->populate($page);
 
     $expected_head = $this->toRenderArray([
@@ -379,6 +382,7 @@ class PageContextTest extends UnitTestCase {
 
     $page_context = new PageContext($this->configFactory, $this->entityTypeManager, $this->requestStack, $this->routeMatch, $this->titleResolver, $this->language);
     $page = [];
+    $page['#attached']['html_head'] = [];
     $page_context->populate($page);
 
     $expected_head = $this->toRenderArray([
@@ -429,6 +433,7 @@ class PageContextTest extends UnitTestCase {
 
     $page_context = new PageContext($this->configFactory, $this->entityTypeManager, $this->requestStack, $this->routeMatch, $this->titleResolver, $this->language);
     $page = [];
+    $page['#attached']['html_head'] = [];
     $page_context->populate($page);
 
     $expected_head = $this->toRenderArray([

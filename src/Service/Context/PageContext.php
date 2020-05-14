@@ -398,7 +398,7 @@ class PageContext extends BaseContext {
   /**
    * {@inheritdoc}
    */
-  protected function populateHtmlHead(&$htmlHead) {
+  protected function populateHtmlHead(array &$html_head) {
     parent::populateHtmlHead($htmlHead);
 
     // Attach Lift's JavaScript.

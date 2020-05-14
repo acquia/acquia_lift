@@ -226,7 +226,7 @@ class PathContextTest extends UnitTestCase {
       'url.query_args:my_identity_parameter',
       'url.query_args:my_identity_type_parameter',
     ];
-    $expect_html_head_empty = NULL;
+    $expect_html_head_empty = [];
     $expect_identity_of_full_query_string = [[
       [
         '#type' => 'html_tag',

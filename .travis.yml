@@ -18,7 +18,6 @@ env:
     - ORCA_SUT_BRANCH=8.x-4.x
     - ORCA_VERSION=dev-master
     - ORCA_TELEMETRY_ENABLE=TRUE
-    - ORCA_PACKAGES_CONFIG_ALTER=../acquia_lift/tests/orca/packages_alter.yml
 
 matrix:
   fast_finish: true
@@ -31,14 +30,10 @@ matrix:
     - { name: "Isolated test w/ dev package versions", env: ORCA_JOB=ISOLATED_DEV }
     - { name: "Integrated test w/ dev package versions", env: ORCA_JOB=INTEGRATED_DEV }
     - { name: "Integrated test w/ dev package versions & next minor dev version of Drupal core", env: ORCA_JOB=CORE_NEXT }
-    - { name: "D9 readiness test", php: "7.3", env: ORCA_JOB=D9_READINESS}
+    - { name: "D9 readiness test", php: "7.3", env: ORCA_JOB=D9_READINESS }
   allow_failures:
-    - env: ORCA_JOB=DEPRECATED_CODE_SCAN_CONTRIB
-    - env: ORCA_JOB=ISOLATED_DEV
-    - env: ORCA_JOB=INTEGRATED_DEV
-    - env: ORCA_JOB=CORE_NEXT
-    # Temporary allowances.
     - env: ORCA_JOB=STATIC_CODE_ANALYSIS
+    # Temporary allowances.
     - env: ORCA_JOB=DEPRECATED_CODE_SCAN
     - { php: "7.3", env: ORCA_JOB=D9_READINESS }
 

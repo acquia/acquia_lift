@@ -183,12 +183,10 @@ class EntityRenderHandler implements EventSubscriberInterface {
           if (isset($view_modes['acquia_lift_preview_image'])) {
             $preview_image = $entity->{$view_modes['acquia_lift_preview_image']}->first();
 
-            if (!$preview_image) {
-              continue;
+            if ($preview_image) {
+              $src = ImageStyle::load('acquia_lift_publisher_preview_image')->buildUrl($preview_image->entity->getFileUri());
+              $cdf->addAttribute('preview_image', CDFAttribute::TYPE_STRING, $src);
             }
-
-            $src = ImageStyle::load('acquia_lift_publisher_preview_image')->buildUrl($preview_image->entity->getFileUri());
-            $cdf->addAttribute('preview_image', CDFAttribute::TYPE_STRING, $src);
           }
 
           $cdf->setMetadata($metadata);

@@ -180,13 +180,10 @@ class EntityRenderHandler implements EventSubscriberInterface {
           $cdf->addAttribute('view_mode', CDFAttribute::TYPE_STRING, $view_mode);
           $cdf->addAttribute('view_mode_label', CDFAttribute::TYPE_STRING, $display->label());
 
-          if (isset($view_modes['acquia_lift_preview_image'])) {
-            $preview_image = $entity->{$view_modes['acquia_lift_preview_image']}->first();
+          $preview_src = $this->buildPreviewImageAttributeSource($view_modes, 'acquia_lift_preview_image', 'acquia_lift_publisher_preview_image', $entity);
 
-            if ($preview_image) {
-              $src = ImageStyle::load('acquia_lift_publisher_preview_image')->buildUrl($preview_image->entity->getFileUri());
-              $cdf->addAttribute('preview_image', CDFAttribute::TYPE_STRING, $src);
-            }
+          if (!empty($preview_src)) {
+            $cdf->addAttribute('preview_image', CDFAttribute::TYPE_STRING, $preview_src);
           }
 
           $cdf->setMetadata($metadata);
@@ -194,6 +191,44 @@ class EntityRenderHandler implements EventSubscriberInterface {
         }
       }
     }
+  }
+
+  /**
+   * Build a preview image attribute source.
+   *
+   * @param $view_modes
+   *   View modes available to check.
+   * @param $preview_view_mode
+   *   View mode that represents the preview image.
+   * @param $style
+   *   Image style for the preview image.
+   * @param $entity
+   *   Entity to use to build the source.
+   *
+   * @return string|null
+   *   The source string returned or nothing.
+   */
+  protected function buildPreviewImageAttributeSource($view_modes, $preview_view_mode, $style, $entity) {
+
+    // Does the view mode exist?
+    if (empty($view_modes[$preview_view_mode])) {
+      return NULL;
+    }
+
+    // Can we load this view mode?
+    $preview_image = $entity->{$view_modes[$preview_view_mode]}->first();
+    if (empty($preview_image)) {
+      return NULL;
+    }
+
+    // Can we get a source url for the image style using the view mode?
+    $src = ImageStyle::load($style)->buildUrl($preview_image->entity->getFileUri());
+    if (empty($src)) {
+      return NULL;
+    }
+
+    return $src;
+
   }
 
   /**

@@ -7,7 +7,7 @@ use Drupal\acquia_contenthub_publisher\Event\ContentHubEntityEligibilityEvent;
 use Drupal\KernelTests\KernelTestBase;
 use Drupal\Tests\node\Traits\ContentTypeCreationTrait;
 use Drupal\Tests\node\Traits\NodeCreationTrait;
-use Drupal\Tests\taxonomy\Functional\TaxonomyTestTrait;
+use Drupal\Tests\taxonomy\Traits\TaxonomyTestTrait;
 
 /**
  * Class IsExcludedImageStyleTest.

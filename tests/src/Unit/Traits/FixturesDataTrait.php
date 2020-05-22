@@ -1,6 +1,6 @@
 <?php
 
-namespace Drupal\acquia_lift\Tests;
+namespace Drupal\Tests\acquia_lift\Unit\Traits;
 
 use Drupal\Core\Language\LanguageInterface;
 use Drupal\taxonomy\Entity\Vocabulary;

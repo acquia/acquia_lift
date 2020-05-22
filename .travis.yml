@@ -34,8 +34,7 @@ matrix:
   allow_failures:
     - env: ORCA_JOB=STATIC_CODE_ANALYSIS
     # Temporary allowances.
-    - env: ORCA_JOB=DEPRECATED_CODE_SCAN
-    - { php: "7.3", env: ORCA_JOB=D9_READINESS }
+    - env: ORCA_JOB=CORE_PREVIOUS
 
 before_install:
   - composer create-project --no-dev acquia/orca ../orca "$ORCA_VERSION"

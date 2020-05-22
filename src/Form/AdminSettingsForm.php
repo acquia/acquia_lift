@@ -5,7 +5,7 @@ namespace Drupal\acquia_lift\Form;
 use Exception;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Drupal\Core\Config\Config;
-use Drupal\Core\Entity\EntityManagerInterface;
+use Drupal\Core\Entity\EntityFieldManagerInterface;
 use Drupal\Core\Form\ConfigFormBase;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Url;
@@ -18,9 +18,9 @@ class AdminSettingsForm extends ConfigFormBase {
   /**
    * The entity manager.
    *
-   * @var \Drupal\Core\Entity\EntityManagerInterface
+   * @var \Drupal\Core\Entity\EntityFieldManagerInterface
    */
-  private $entityManager;
+  private $entityFieldManager;
 
   /**
    * The Messenger service.
@@ -48,13 +48,13 @@ class AdminSettingsForm extends ConfigFormBase {
   /**
    * Constructs an AdminSettingsForm object.
    *
-   * @param \Drupal\Core\Entity\EntityManagerInterface $entity_manager
+   * @param \Drupal\Core\Entity\EntityFieldManagerInterface $entity_field_manager
    *   The entity manager.
    * @param \Drupal\Core\Messenger\MessengerInterface|null $messenger
    *   The messenger service (or null).
    */
-  public function __construct(EntityManagerInterface $entity_manager, $messenger) {
-    $this->entityManager = $entity_manager;
+  public function __construct(EntityFieldManagerInterface $entity_field_manager, $messenger) {
+    $this->entityFieldManager = $entity_field_manager;
     $this->messenger = $messenger;
   }
 
@@ -67,7 +67,7 @@ class AdminSettingsForm extends ConfigFormBase {
     $messenger = $container->has('messenger') ? $container->get('messenger') : null;
 
     return new static(
-      $container->get('entity.manager'),
+      $container->get('entity_field.manager'),
       $messenger
     );
   }
@@ -328,7 +328,7 @@ class AdminSettingsForm extends ConfigFormBase {
    *   An array of field names.
    */
   private function getTaxonomyTermFieldNames() {
-    $definitions = $this->entityManager->getFieldStorageDefinitions('node');
+    $definitions = $this->entityFieldManager->getFieldStorageDefinitions('node');
     $field_names = [];
     foreach ($definitions as $field_name => $field_storage) {
       if ($field_storage->getType() != 'entity_reference' || $field_storage->getSetting('target_type') !== 'taxonomy_term') {
@@ -655,19 +655,12 @@ class AdminSettingsForm extends ConfigFormBase {
   /**
    * Sets form message.
    *
-   * MessengerInterface was introduced by Drupal 8.5.
-   * This code is for backwards-compatibility to 8.4 and below.
-   *
    * @param string $message
    *   Message to show on form.
    * @param string $type
    *   Type of the message to show on form.
    */
   private function setFormMessage($message, $type) {
-    if (!$this->messenger) {
-      drupal_set_message($message, $type);
-      return;
-    }
     $messengerFunctionName = 'add' . ucwords($type);
     $this->messenger->$messengerFunctionName($message);
   }

@@ -1,16 +1,19 @@
 <?php
 
-namespace Drupal\acquia_lift\Tests;
+namespace Drupal\Tests\acquia_lift\Functional;
 
+use Drupal\Component\Render\FormattableMarkup;
 use Drupal\Core\StringTranslation\TranslatableMarkup;
-use Drupal\simpletest\WebTestBase;
+use Drupal\Tests\acquia_lift\Unit\Traits\SettingsDataTrait;
+use Drupal\Tests\acquia_lift\Unit\Traits\FixturesDataTrait;
+use Drupal\Tests\BrowserTestBase;
 
 /**
  * Test Acquia Lift Settings.
  *
- * @group Acquia Lift
+ * @group acquia_lift
  */
-class SettingsTest extends WebTestBase {
+class SettingsTest extends BrowserTestBase {
 
   use SettingsDataTrait;
   use FixturesDataTrait;
@@ -102,7 +105,7 @@ class SettingsTest extends WebTestBase {
     $edit += $this->convertToPostFormSettings($visibility_settings, 'visibility');
     $edit += $this->convertToPostFormSettings($advanced_settings, 'advanced');
     $edit_settings_count = count($edit);
-    $expect_settings_count = 19;
+    $expect_settings_count = 20;
 
     // Post the edits.
     $this->drupalPostForm('admin/config/services/acquia-lift', $edit, new TranslatableMarkup('Save configuration'));
@@ -114,7 +117,7 @@ class SettingsTest extends WebTestBase {
 
     // Assert all other fields. Also count the asserted fields to make sure all are asserted.
     foreach ($edit as $name => $value) {
-      $this->assertFieldByName($name, $value, format_string('"@name" setting was saved into DB.', ['@name' => $name]));
+      $this->assertFieldByName($name, $value, new FormattableMarkup('"@name" setting was saved into DB.', ['@name' => $name]));
     }
     $this->assertEqual($expect_settings_count, $edit_settings_count, 'The exact numbers of settings that were asserted should be ' . $expect_settings_count . '.');
 

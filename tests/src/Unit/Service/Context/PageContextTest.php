@@ -17,80 +17,80 @@ class PageContextTest extends UnitTestCase {
   use SettingsDataTrait;
 
   /**
-   * @var \Drupal\Core\Config\ConfigFactoryInterface|\PHPUnit_Framework_MockObject_MockObject
+   * @var \Drupal\Core\Config\ConfigFactoryInterface|\PHPUnit\Framework\MockObject\MockObject
    */
   private $configFactory;
 
   /**
-   * @var \Drupal\Core\Config\ImmutableConfig|\PHPUnit_Framework_MockObject_MockObject
+   * @var \Drupal\Core\Config\ImmutableConfig|\PHPUnit\Framework\MockObject\MockObject
    */
   private $settings;
 
   /**
-   * @var \Drupal\Core\Entity\EntityTypeManagerInterface|\PHPUnit_Framework_MockObject_MockObject
+   * @var \Drupal\Core\Entity\EntityTypeManagerInterface|\PHPUnit\Framework\MockObject\MockObject
    */
   private $entityTypeManager;
 
   /**
    * Taxonomy term storage.
    *
-   * @var \Drupal\taxonomy\TermStorageInterface|\PHPUnit_Framework_MockObject_MockObject
+   * @var \Drupal\taxonomy\TermStorageInterface|\PHPUnit\Framework\MockObject\MockObject
    */
   private $taxonomyTermStorage;
 
   /**
    * Request stack.
    *
-   * @var \Symfony\Component\HttpFoundation\RequestStack|\PHPUnit_Framework_MockObject_MockObject
+   * @var \Symfony\Component\HttpFoundation\RequestStack|\PHPUnit\Framework\MockObject\MockObject
    */
   private $requestStack;
 
   /**
    * Request.
    *
-   * @var \Symfony\Component\HttpFoundation\Request|\PHPUnit_Framework_MockObject_MockObject
+   * @var \Symfony\Component\HttpFoundation\Request|\PHPUnit\Framework\MockObject\MockObject
    */
   private $request;
 
   /**
    * Request's parameter bag.
    *
-   * @var \Symfony\Component\HttpFoundation\ParameterBag|\PHPUnit_Framework_MockObject_MockObject
+   * @var \Symfony\Component\HttpFoundation\ParameterBag|\PHPUnit\Framework\MockObject\MockObject
    */
   private $requestParameterBag;
 
   /**
    * Route match.
    *
-   * @var \Drupal\Core\Routing\RouteMatchInterface|\PHPUnit_Framework_MockObject_MockObject
+   * @var \Drupal\Core\Routing\RouteMatchInterface|\PHPUnit\Framework\MockObject\MockObject
    */
   private $routeMatch;
 
   /**
    * Route.
    *
-   * @var \Symfony\Component\Routing\Route|\PHPUnit_Framework_MockObject_MockObject
+   * @var \Symfony\Component\Routing\Route|\PHPUnit\Framework\MockObject\MockObject
    */
   private $route;
 
   /**
    * Title resolver.
    *
-   * @var \Drupal\Core\Controller\TitleResolverInterface|\PHPUnit_Framework_MockObject_MockObject
+   * @var \Drupal\Core\Controller\TitleResolverInterface|\PHPUnit\Framework\MockObject\MockObject
    */
   private $titleResolver;
 
   /**
    * Language manager interface.
    *
-   * @var Drupal\Core\Language\LanguageManagerInterface|\PHPUnit_Framework_MockObject_MockObject
+   * @var Drupal\Core\Language\LanguageManagerInterface|\PHPUnit\Framework\MockObject\MockObject
    */
   private $language;
 
   /**
    * Language Interface.
-   * 
-   * @var Drupal\Core\Language\LanguageInterface|\PHPUnit_Framework_MockObject_MockObject
+   *
+   * @var Drupal\Core\Language\LanguageInterface|\PHPUnit\Framework\MockObject\MockObject
    */
   private $languageInterface;
 
@@ -101,7 +101,7 @@ class PageContextTest extends UnitTestCase {
     parent::setUp();
 
     // Get config factory mock
-    $this->configFactory = $this->getMock('Drupal\Core\Config\ConfigFactoryInterface');
+    $this->configFactory = $this->createMock('Drupal\Core\Config\ConfigFactoryInterface');
 
     // Get settings mock
     $this->settings = $this->getMockBuilder('Drupal\Core\Config\ImmutableConfig')
@@ -109,37 +109,37 @@ class PageContextTest extends UnitTestCase {
       ->getMock();
 
     // Get entity manager mock
-    $this->entityTypeManager = $this->getMock('Drupal\Core\Entity\EntityTypeManagerInterface');
+    $this->entityTypeManager = $this->createMock('Drupal\Core\Entity\EntityTypeManagerInterface');
 
     // Get taxonomy term mock
-    $this->taxonomyTermStorage = $this->getMock('Drupal\taxonomy\TermStorageInterface');
+    $this->taxonomyTermStorage = $this->createMock('Drupal\taxonomy\TermStorageInterface');
 
     // Get request class mocks
-    $this->requestStack = $this->getMock('Symfony\Component\HttpFoundation\RequestStack');
-    $this->request = $this->getMock('Symfony\Component\HttpFoundation\Request');
-    $this->requestParameterBag = $this->getMock('Symfony\Component\HttpFoundation\ParameterBag');
+    $this->requestStack = $this->createMock('Symfony\Component\HttpFoundation\RequestStack');
+    $this->request = $this->createMock('Symfony\Component\HttpFoundation\Request');
+    $this->requestParameterBag = $this->createMock('Symfony\Component\HttpFoundation\ParameterBag');
 
     // Get route mocks
-    $this->routeMatch = $this->getMock('Drupal\Core\Routing\RouteMatchInterface');
+    $this->routeMatch = $this->createMock('Drupal\Core\Routing\RouteMatchInterface');
     $this->route = $this->getMockBuilder('Symfony\Component\Routing\Route')
       ->disableOriginalConstructor()
       ->getMock();
 
     // Get title resolver mock
-    $this->titleResolver = $this->getMock('Drupal\Core\Controller\TitleResolverInterface');
+    $this->titleResolver = $this->createMock('Drupal\Core\Controller\TitleResolverInterface');
 
     // Get language mock
-    $this->language = $this->getMock('Drupal\Core\Language\LanguageManagerInterface');
+    $this->language = $this->createMock('Drupal\Core\Language\LanguageManagerInterface');
 
     // Get language object mock
-    $this->languageInterface = $this->getMock('Drupal\Core\Language\LanguageInterface');
+    $this->languageInterface = $this->createMock('Drupal\Core\Language\LanguageInterface');
 
     // Mock method and return val
     $this->languageInterface
       ->expects($this->any())
       ->method('getId')
       ->willReturn('fr');
-    
+
     // Mock config factory
     $this->configFactory->expects($this->once())
       ->method('get')
@@ -237,7 +237,6 @@ class PageContextTest extends UnitTestCase {
       'engagement_score' => PageContext::ENGAGEMENT_SCORE_DEFAULT,
       'account_id' => 'AccountId1',
       'site_id' => 'SiteId1',
-      'userAccess' => 'user_access_1',
       'liftAssetsURL' => 'AssetsUrl1',
       'liftDecisionAPIURL' => 'decision_api_url_1',
       'bootstrapMode' => 'manual',
@@ -287,7 +286,6 @@ class PageContextTest extends UnitTestCase {
       'engagement_score' => PageContext::ENGAGEMENT_SCORE_DEFAULT,
       'account_id' => 'AccountId1',
       'site_id' => 'SiteId1',
-      'userAccess' => 'user_access_1',
       'liftAssetsURL' => 'AssetsUrl1',
       'liftDecisionAPIURL' => 'decision_api_url_1',
       'bootstrapMode' => 'manual',
@@ -341,7 +339,6 @@ class PageContextTest extends UnitTestCase {
       'engagement_score' => PageContext::ENGAGEMENT_SCORE_DEFAULT,
       'account_id' => 'AccountId1',
       'site_id' => 'SiteId1',
-      'userAccess' => 'user_access_1',
       'liftAssetsURL' => 'AssetsUrl1',
       'liftDecisionAPIURL' => 'decision_api_url_1',
       'bootstrapMode' => 'manual',
@@ -399,7 +396,6 @@ class PageContextTest extends UnitTestCase {
       'engagement_score' => PageContext::ENGAGEMENT_SCORE_DEFAULT,
       'account_id' => 'AccountId1',
       'site_id' => 'SiteId1',
-      'userAccess' => 'user_access_1',
       'liftAssetsURL' => 'AssetsUrl1',
       'liftDecisionAPIURL' => 'decision_api_url_1',
       'bootstrapMode' => 'manual',
@@ -450,7 +446,6 @@ class PageContextTest extends UnitTestCase {
       'engagement_score' => PageContext::ENGAGEMENT_SCORE_DEFAULT,
       'account_id' => 'AccountId1',
       'site_id' => 'SiteId1',
-      'userAccess' => 'user_access_1',
       'liftAssetsURL' => 'AssetsUrl1',
       'liftDecisionAPIURL' => 'decision_api_url_1',
       'bootstrapMode' => 'manual',
@@ -471,10 +466,10 @@ class PageContextTest extends UnitTestCase {
    * @param string $name
    * @param string $vocabulary_id
    *
-   * @return Drupal\taxonomy\TermInterface|\PHPUnit_Framework_MockObject_MockObject
+   * @return Drupal\taxonomy\TermInterface|\PHPUnit\Framework\MockObject\MockObject
    */
   private function getTerm($name = 'Term Name', $vocabulary_id = 'untracked_vocabulary_id') {
-    $term = $this->getMock('Drupal\taxonomy\TermInterface');
+    $term = $this->createMock('Drupal\taxonomy\TermInterface');
     $term->expects($this->once())
       ->method('bundle')
       ->willReturn($vocabulary_id);
@@ -489,12 +484,12 @@ class PageContextTest extends UnitTestCase {
    *
    * @param integer $id
    *
-   * @return Drupal\node\NodeInterface|\PHPUnit_Framework_MockObject_MockObject
+   * @return Drupal\node\NodeInterface|\PHPUnit\Framework\MockObject\MockObject
    */
   private function getNode($id = 90210) {
-    $field_country = $this->getMock('Drupal\Core\Field\BaseFieldDefinition');
-    $field_tags = $this->getMock('Drupal\Core\Field\BaseFieldDefinition');
-    $node = $this->getMock('Drupal\node\NodeInterface');
+    $field_country = $this->createMock('Drupal\Core\Field\BaseFieldDefinition');
+    $field_tags = $this->createMock('Drupal\Core\Field\BaseFieldDefinition');
+    $node = $this->createMock('Drupal\node\NodeInterface');
     $field_country_handler_settings = [
       'target_bundles' => [
         'tracked_content_vocabulary',

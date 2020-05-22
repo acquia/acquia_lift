@@ -15,14 +15,14 @@ class PathMatcherTest extends UnitTestCase {
   /**
    * Alias manager.
    *
-   * @var \Drupal\Core\Path\AliasManagerInterface|\PHPUnit_Framework_MockObject_MockObject
+   * @var \Drupal\path_alias\AliasManagerInterface|\PHPUnit\Framework\MockObject\MockObject
    */
   private $aliasManager;
 
   /**
    * Path matcher.
    *
-   * @var \Drupal\Core\Path\PathMatcherInterface|\PHPUnit_Framework_MockObject_MockObject
+   * @var \Drupal\Core\Path\PathMatcherInterface|\PHPUnit\Framework\MockObject\MockObject
    */
   private $basePathMatcher;
 
@@ -32,8 +32,8 @@ class PathMatcherTest extends UnitTestCase {
   public function setUp() {
     parent::setUp();
 
-    $this->aliasManager = $this->getMock('Drupal\Core\Path\AliasManagerInterface');
-    $this->basePathMatcher = $this->getMock('Drupal\Core\Path\PathMatcherInterface');
+    $this->aliasManager = $this->createMock('Drupal\path_alias\AliasManagerInterface');
+    $this->basePathMatcher = $this->createMock('Drupal\Core\Path\PathMatcherInterface');
   }
 
   /**

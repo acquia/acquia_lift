@@ -17,40 +17,40 @@ class PathContextTest extends UnitTestCase {
   use SettingsDataTrait;
 
   /**
-   * @var \Drupal\Core\Config\ConfigFactoryInterface|\PHPUnit_Framework_MockObject_MockObject
+   * @var \Drupal\Core\Config\ConfigFactoryInterface|\PHPUnit\Framework\MockObject\MockObject
    */
   private $configFactory;
 
   /**
-   * @var \Drupal\Core\Config\ImmutableConfig|\PHPUnit_Framework_MockObject_MockObject
+   * @var \Drupal\Core\Config\ImmutableConfig|\PHPUnit\Framework\MockObject\MockObject
    */
   private $settings;
 
   /**
    * Current path stack.
    *
-   * @var \Drupal\Core\Path\CurrentPathStack|\PHPUnit_Framework_MockObject_MockObject
+   * @var \Drupal\Core\Path\CurrentPathStack|\PHPUnit\Framework\MockObject\MockObject
    */
   private $currentPathStack;
 
   /**
    * Request stack.
    *
-   * @var \Symfony\Component\HttpFoundation\RequestStack|\PHPUnit_Framework_MockObject_MockObject
+   * @var \Symfony\Component\HttpFoundation\RequestStack|\PHPUnit\Framework\MockObject\MockObject
    */
   private $requestStack;
 
   /**
    * Path matcher.
    *
-   * @var \Drupal\acquia_lift\Service\Helper\PathMatcher|\PHPUnit_Framework_MockObject_MockObject
+   * @var \Drupal\acquia_lift\Service\Helper\PathMatcher|\PHPUnit\Framework\MockObject\MockObject
    */
   private $pathMatcher;
 
   /**
    * Request.
    *
-   * @var \Symfony\Component\HttpFoundation\Request|\PHPUnit_Framework_MockObject_MockObject
+   * @var \Symfony\Component\HttpFoundation\Request|\PHPUnit\Framework\MockObject\MockObject
    */
   private $request;
 
@@ -60,18 +60,18 @@ class PathContextTest extends UnitTestCase {
   public function setUp() {
     parent::setUp();
 
-    $this->configFactory = $this->getMock('Drupal\Core\Config\ConfigFactoryInterface');
+    $this->configFactory = $this->createMock('Drupal\Core\Config\ConfigFactoryInterface');
     $this->settings = $this->getMockBuilder('Drupal\Core\Config\ImmutableConfig')
       ->disableOriginalConstructor()
       ->getMock();
     $this->currentPathStack = $this->getMockBuilder('Drupal\Core\Path\CurrentPathStack')
       ->disableOriginalConstructor()
       ->getMock();
-    $this->requestStack = $this->getMock('Symfony\Component\HttpFoundation\RequestStack');
+    $this->requestStack = $this->createMock('Symfony\Component\HttpFoundation\RequestStack');
     $this->pathMatcher = $this->getMockBuilder('Drupal\acquia_lift\Service\Helper\PathMatcher')
       ->disableOriginalConstructor()
       ->getMock();
-    $this->request = $this->getMock('Symfony\Component\HttpFoundation\Request');
+    $this->request = $this->createMock('Symfony\Component\HttpFoundation\Request');
 
     $this->configFactory->expects($this->once())
       ->method('get')
@@ -191,7 +191,7 @@ class PathContextTest extends UnitTestCase {
     $path_context = new PathContext($this->configFactory, $this->currentPathStack, $this->requestStack, $this->pathMatcher);
 
     if ($do_set_user) {
-      $user = $this->getMock('Drupal\user\UserInterface');
+      $user = $this->createMock('Drupal\user\UserInterface');
       $user->expects($this->exactly((int) $capture_identity))
         ->method('getEmail')
         ->willReturn('a_user_email');

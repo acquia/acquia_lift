@@ -2,6 +2,7 @@
 
 namespace Drupal\Tests\acquia_lift\Unit\Service\Helper;
 
+use Exception;
 use Drupal\Tests\UnitTestCase;
 use Drupal\acquia_lift\Service\Helper\SettingsHelper;
 use Drupal\Tests\acquia_lift\Unit\Traits\SettingsDataTrait;
@@ -240,12 +241,11 @@ class SettingsHelperTest extends UnitTestCase {
    * Tests the getUdfLimitsForType() method, expected exception.
    *
    * @covers ::getUdfLimitsForType
-   *
-   * @expectedException \Exception
-   * @expectedExceptionCode 0
-   * @expectedExceptionMessage This UDF Field type is not supported.
    */
   public function testGetUdfLimitsForTypeExpectedException() {
+    $this->expectException(Exception::class);
+    $this->expectExceptionCode(0);
+    $this->expectExceptionMessage('This UDF Field type is not supported.');
     SettingsHelper::getUdfLimitsForType('non_exist');
   }
 

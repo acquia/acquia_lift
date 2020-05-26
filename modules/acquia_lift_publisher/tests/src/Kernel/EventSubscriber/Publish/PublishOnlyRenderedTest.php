@@ -30,6 +30,7 @@ use Prophecy\Argument;
  * @coversDefaultClass \Drupal\acquia_lift_publisher\EventSubscriber\Publish\PublishOnlyRendered
  *
  * @requires module depcalc
+ * @requires module path_alias
  */
 class PublishOnlyRenderedTest extends KernelTestBase {
 
@@ -64,6 +65,7 @@ class PublishOnlyRenderedTest extends KernelTestBase {
     'filter',
     'image',
     'node',
+    'path_alias',
     'system',
     'taxonomy',
     'text',
@@ -101,6 +103,7 @@ class PublishOnlyRenderedTest extends KernelTestBase {
 
     $this->installSchema('acquia_contenthub_publisher', ['acquia_contenthub_publisher_export_tracking']);
 
+    $this->installEntitySchema('path_alias');
     $this->installEntitySchema('node');
     $this->installEntitySchema('entity_view_mode');
     $this->installEntitySchema('entity_view_display');

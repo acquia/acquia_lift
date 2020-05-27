@@ -30,7 +30,6 @@ use Prophecy\Argument;
  * @coversDefaultClass \Drupal\acquia_lift_publisher\EventSubscriber\Publish\PublishOnlyRendered
  *
  * @requires module depcalc
- * @requires module path_alias
  */
 class PublishOnlyRenderedTest extends KernelTestBase {
 

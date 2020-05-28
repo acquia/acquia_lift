@@ -3,6 +3,7 @@
 namespace Drupal\acquia_lift_publisher\Form;
 
 use Drupal\acquia_contenthub\Client\ClientFactory;
+use Drupal\Core\Config\ConfigFactoryInterface;
 use Drupal\Core\Entity\EntityFieldManagerInterface;
 use Drupal\Core\Entity\EntityInterface;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
@@ -13,11 +14,23 @@ use Drupal\Core\Url;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 
 /**
- * Class EntityViewModeConfigurationForm.
+ * Class ContentPublishingForm.
  *
  * @package Drupal\acquia_lift_publisher\Form
  */
-class EntityViewModeConfigurationForm extends ConfigFormBase {
+class ContentPublishingForm extends ConfigFormBase {
+
+  /**
+   * Holds the setting configuration ID.
+   */
+  public const CONFIG_NAME = 'acquia_lift_publisher.entity_config';
+
+  /**
+   * Holds form field name of push setting.
+   *
+   * @var string
+   */
+  public static $pushSettingField = 'personalized_content_only';
 
   /**
    * The entity type manager.
@@ -41,7 +54,7 @@ class EntityViewModeConfigurationForm extends ConfigFormBase {
   protected $clientFactory;
 
   /**
-   * Contenthub Client.
+   * Content Hub Client.
    *
    * @var \Acquia\ContentHubClient\ContentHubClient|bool
    */
@@ -52,6 +65,7 @@ class EntityViewModeConfigurationForm extends ConfigFormBase {
    */
   public static function create(ContainerInterface $container) {
     return new static(
+      $container->get('config.factory'),
       $container->get('entity_type.manager'),
       $container->get('entity_field.manager'),
       $container->get('acquia_contenthub.client.factory')
@@ -59,8 +73,10 @@ class EntityViewModeConfigurationForm extends ConfigFormBase {
   }
 
   /**
-   * EntityViewModeConfigurationForm constructor.
+   * ContentPublishingForm constructor.
    *
+   * @param \Drupal\Core\Config\ConfigFactoryInterface $config_factory
+   *   The config factory service.
    * @param \Drupal\Core\Entity\EntityTypeManagerInterface $entity_type_manager
    *   The entity type manager.
    * @param \Drupal\Core\Entity\EntityFieldManagerInterface $entity_field_manager
@@ -68,7 +84,13 @@ class EntityViewModeConfigurationForm extends ConfigFormBase {
    * @param \Drupal\acquia_contenthub\Client\ClientFactory $client_factory
    *   The client factory.
    */
-  public function __construct(EntityTypeManagerInterface $entity_type_manager, EntityFieldManagerInterface $entity_field_manager, ClientFactory $client_factory) {
+  public function __construct(
+    ConfigFactoryInterface $config_factory,
+    EntityTypeManagerInterface $entity_type_manager,
+    EntityFieldManagerInterface $entity_field_manager,
+    ClientFactory $client_factory
+  ) {
+    parent::__construct($config_factory);
     $this->entityTypeManager = $entity_type_manager;
     $this->entityFieldManager = $entity_field_manager;
     $this->clientFactory = $client_factory;
@@ -78,7 +100,7 @@ class EntityViewModeConfigurationForm extends ConfigFormBase {
    * {@inheritdoc}
    */
   protected function getEditableConfigNames() {
-    return ['acquia_lift_publisher.entity_config'];
+    return [self::CONFIG_NAME];
   }
 
   /**
@@ -90,20 +112,23 @@ class EntityViewModeConfigurationForm extends ConfigFormBase {
 
   /**
    * {@inheritdoc}
+   *
+   * @throws \Drupal\Component\Plugin\Exception\InvalidPluginDefinitionException
+   * @throws \Drupal\Component\Plugin\Exception\PluginNotFoundException
    */
   public function buildForm(array $form, FormStateInterface $form_state) {
     // Check to see that we have a valid content hub client.
     $this->client = $this->clientFactory->getClient();
     if (empty($this->client)) {
-      \Drupal::messenger()->addWarning(
-        $this->t(
-          'Please configure the <a href="@ch">Acquia Content Hub Module</a> to start publishing personalized content.',
-          ['@ch' => Url::fromRoute('acquia_contenthub.admin_settings')->toString()]
+      $this->messenger()->addWarning(
+          $this->t(
+          'Please configure the <a href=":ch">Acquia Content Hub Module</a> to start publishing personalized content.',
+          [':ch' => Url::fromRoute('acquia_contenthub.admin_settings')->toString()]
         )
       );
     }
 
-    $config = $this->config('acquia_lift_publisher.entity_config');
+    $config = $this->config(self::CONFIG_NAME);
     /** @var \Drupal\Core\Entity\Entity\EntityViewMode[] $view_modes */
     $view_modes = $this->entityTypeManager->getStorage('entity_view_mode')->loadMultiple();
     $form['options'] = [
@@ -117,7 +142,9 @@ class EntityViewModeConfigurationForm extends ConfigFormBase {
       if (!$entity_type->entityClassImplements(FieldableEntityInterface::class)) {
         continue;
       }
-      $bundles = $entity_type->getBundleEntityType() ? $this->entityTypeManager->getStorage($entity_type->getBundleEntityType())->loadMultiple() : [$entity_type];
+
+      $bundle_type = $entity_type->getBundleEntityType();
+      $bundles = $bundle_type ? $this->entityTypeManager->getStorage($bundle_type)->loadMultiple() : [$entity_type];
       foreach ($bundles as $bundle) {
         if (empty($form['options'][$entity_type_id][$bundle->id()])) {
           if ($bundle instanceof EntityInterface) {
@@ -155,6 +182,8 @@ class EntityViewModeConfigurationForm extends ConfigFormBase {
       '#options' => $options,
       '#default_value' => $config->get("render_role"),
     ];
+    $this->setSyncSettingsFormElements($form);
+
     return parent::buildForm($form, $form_state);
   }
 
@@ -175,10 +204,12 @@ class EntityViewModeConfigurationForm extends ConfigFormBase {
         unset($options[$entity_type_id]);
       }
     }
-    $config = $this->config('acquia_lift_publisher.entity_config');
+    $config = $this->config(self::CONFIG_NAME);
     $config->set('view_modes', $options);
     $config->set('render_role', $form_state->getValue('render_role'));
+    $config->set(static::$pushSettingField, $form_state->getValue(static::$pushSettingField));
     $config->save();
+
     parent::submitForm($form, $form_state);
   }
 
@@ -198,9 +229,9 @@ class EntityViewModeConfigurationForm extends ConfigFormBase {
     if (!empty($image_fields)) {
       $form['acquia_lift_preview_image'] = [
         '#type' => 'select',
-        '#title' => t("Select bundle's preview image field."),
+        '#title' => $this->t("Select bundle's preview image field."),
         '#options' => $image_fields,
-        '#empty_option' => t('None'),
+        '#empty_option' => $this->t('None'),
         '#empty_value' => '',
         '#weight' => 100,
       ];
@@ -227,6 +258,27 @@ class EntityViewModeConfigurationForm extends ConfigFormBase {
       }
     }
     return $image_fields;
+  }
+
+  /**
+   * Sets publishing settings form element.
+   *
+   * @param array $form
+   *   The current form.
+   */
+  private function setSyncSettingsFormElements(array &$form): void {
+    $config = $this->config(self::CONFIG_NAME);
+    $form['sync_settings'] = [
+      '#type' => 'fieldset',
+      '#title' => $this->t('Synchronization'),
+    ];
+
+    $form['sync_settings'][static::$pushSettingField] = [
+      '#type' => 'checkbox',
+      '#title' => $this->t('Push personalizing content only'),
+      '#description' => $this->t('Check this option if this site is used for pushing content to Acquia Lift; uncheck this option if this site is used for pushing content to both Acquia Lift and Content Hub. (default on)'),
+      '#default_value' => $config->get(static::$pushSettingField) ?? TRUE,
+    ];
   }
 
 }

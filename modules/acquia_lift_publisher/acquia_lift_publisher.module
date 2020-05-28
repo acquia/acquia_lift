@@ -1,0 +1,58 @@
+<?php
+
+/**
+ * @file
+ * Drupal Module: Acquia Lift - Publisher.
+ *
+ * Acquia Content Hub Publisher exports content from your Drupal site to
+ * Content Hub services. This module alters the behavior of the default
+ * functionality.
+ */
+
+use Drupal\Core\Entity\EntityInterface;
+
+/**
+ * Implements hook_entity_insert().
+ */
+function acquia_lift_publisher_entity_insert(EntityInterface $entity) {
+  _acquia_lift_publisher_trigger_queue($entity);
+}
+
+/**
+ * Implements hook_entity_update().
+ */
+function acquia_lift_publisher_entity_update(EntityInterface $entity) {
+  _acquia_lift_publisher_trigger_queue($entity);
+}
+
+/**
+ * Triggers the Content Hub export process.
+ *
+ * @param \Drupal\Core\Entity\EntityInterface $entity
+ *   The current entity.
+ */
+function _acquia_lift_publisher_trigger_queue(EntityInterface $entity): void {
+  \Drupal::getContainer()
+    ->get('acquia_lift_publisher.publishing_actions')
+    ->triggerQueue($entity);
+}
+
+/**
+ * Implements hook_module_implements_alter().
+ */
+function acquia_lift_publisher_module_implements_alter(&$implementations, $hook) {
+  // Make sure that acquia_contenthub_publisher module hooks run before
+  // acquia_lift_publisher hooks.
+  $hooks = [
+    'entity_insert',
+    'entity_update',
+  ];
+  if (!in_array($hook, $hooks, TRUE)) {
+    return;
+  }
+
+  $module = 'acquia_lift_publisher';
+  $group = $implementations[$module];
+  unset($implementations[$module]);
+  $implementations[$module] = $group;
+}

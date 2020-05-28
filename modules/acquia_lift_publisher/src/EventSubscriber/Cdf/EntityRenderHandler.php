@@ -8,9 +8,10 @@ use Drupal\acquia_contenthub\AcquiaContentHubEvents;
 use Drupal\acquia_contenthub\Client\ClientFactory;
 use Drupal\acquia_contenthub\Event\CreateCdfEntityEvent;
 use Drupal\acquia_contenthub\Session\ContentHubUserSession;
+use Drupal\acquia_lift_publisher\Form\ContentPublishingSettingsTrait;
 use Drupal\Component\Uuid\UuidInterface;
 use Drupal\Core\Block\BlockManagerInterface;
-use Drupal\Core\Config\ConfigFactoryInterface;
+use Drupal\Core\Config\ImmutableConfig;
 use Drupal\Core\Entity\ContentEntityInterface;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\Core\Render\Element;
@@ -26,19 +27,14 @@ use Symfony\Component\EventDispatcher\EventSubscriberInterface;
  */
 class EntityRenderHandler implements EventSubscriberInterface {
 
+  use ContentPublishingSettingsTrait;
+
   /**
    * The account switcher.
    *
    * @var \Drupal\Core\Session\AccountSwitcherInterface
    */
   protected $accountSwitcher;
-
-  /**
-   * The Acquia Lift entity configuration.
-   *
-   * @var \Drupal\Core\Config\ImmutableConfig
-   */
-  protected $config;
 
   /**
    * The origin uuid.
@@ -101,8 +97,8 @@ class EntityRenderHandler implements EventSubscriberInterface {
    *
    * @param \Drupal\Core\Session\AccountSwitcherInterface $account_switcher
    *   The account switcher.
-   * @param \Drupal\Core\Config\ConfigFactoryInterface $config_factory
-   *   The config factory.
+   * @param \Drupal\Core\Config\ImmutableConfig $config
+   *   The Acquia Lift publishing configuration object.
    * @param \Drupal\Core\Render\RendererInterface $renderer
    *   The renderer.
    * @param \Drupal\Core\Entity\EntityTypeManagerInterface $entity_type_manager
@@ -114,9 +110,9 @@ class EntityRenderHandler implements EventSubscriberInterface {
    * @param \Drupal\acquia_contenthub\Client\ClientFactory $client_factory
    *   The client factory.
    */
-  public function __construct(AccountSwitcherInterface $account_switcher, ConfigFactoryInterface $config_factory, RendererInterface $renderer, EntityTypeManagerInterface $entity_type_manager, BlockManagerInterface $block_manager, UuidInterface $uuid_generator, ClientFactory $client_factory) {
+  public function __construct(AccountSwitcherInterface $account_switcher, ImmutableConfig $config, RendererInterface $renderer, EntityTypeManagerInterface $entity_type_manager, BlockManagerInterface $block_manager, UuidInterface $uuid_generator, ClientFactory $client_factory) {
     $this->accountSwitcher = $account_switcher;
-    $this->config = $config_factory->get('acquia_lift_publisher.entity_config');
+    $this->publisherSettings = $config;
     $this->clientFactory = $client_factory;
     $this->origin = $client_factory->getSettings()->getUuid();
     $this->renderer = $renderer;
@@ -148,7 +144,7 @@ class EntityRenderHandler implements EventSubscriberInterface {
       // @todo we should support config entity rendering too.
       return;
     }
-    if ($view_modes = $this->config->get("view_modes.{$entity->getEntityTypeId()}.{$entity->bundle()}")) {
+    if ($view_modes = $this->getEntityViewModesSettingValue($entity)) {
       $document = $this->clientFactory->getClient()
         ->getEntities([$entity->uuid()]);
       $remote_entity = $document->hasEntity($entity->uuid()) ? $document->getCDFEntity($entity->uuid()) : FALSE;
@@ -206,7 +202,7 @@ class EntityRenderHandler implements EventSubscriberInterface {
    */
   protected function getRenderUser() {
     if (!$this->renderUser) {
-      $this->renderUser = new ContentHubUserSession($this->config->get('render_role'));
+      $this->renderUser = new ContentHubUserSession($this->publisherSettings->get('render_role'));
     }
     return $this->renderUser;
   }

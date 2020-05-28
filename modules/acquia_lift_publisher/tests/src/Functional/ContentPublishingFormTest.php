@@ -46,6 +46,14 @@ class ContentPublishingFormTest extends BrowserTestBase {
     'node',
   ];
 
+  /**
+   * {@inheritdoc}
+   */
+  protected $defaultTheme = 'stark';
+
+  /**
+   * {@inheritdoc}
+   */
   protected function setUp() {
     parent::setUp();
 

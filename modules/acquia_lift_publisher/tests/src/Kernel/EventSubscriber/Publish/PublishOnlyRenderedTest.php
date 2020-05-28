@@ -64,6 +64,7 @@ class PublishOnlyRenderedTest extends KernelTestBase {
     'filter',
     'image',
     'node',
+    'path_alias',
     'system',
     'taxonomy',
     'text',
@@ -101,6 +102,7 @@ class PublishOnlyRenderedTest extends KernelTestBase {
 
     $this->installSchema('acquia_contenthub_publisher', ['acquia_contenthub_publisher_export_tracking']);
 
+    $this->installEntitySchema('path_alias');
     $this->installEntitySchema('node');
     $this->installEntitySchema('entity_view_mode');
     $this->installEntitySchema('entity_view_display');

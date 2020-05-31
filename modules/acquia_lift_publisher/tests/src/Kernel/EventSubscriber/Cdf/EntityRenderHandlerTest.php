@@ -60,8 +60,9 @@ class EntityRenderHandlerTest extends KernelTestBase {
    */
   protected static $modules = [
     'acquia_contenthub',
-    'acquia_lift_publisher',
+    'acquia_contenthub_publisher',
     'acquia_lift',
+    'acquia_lift_publisher',
     'block',
     'block_content',
     'depcalc',
@@ -86,6 +87,7 @@ class EntityRenderHandlerTest extends KernelTestBase {
   protected function setUp() {
     parent::setUp();
 
+    $this->installSchema('acquia_contenthub_publisher', ['acquia_contenthub_publisher_export_tracking']);
     $this->installEntitySchema('block_content');
     $this->installEntitySchema('block');
     $this->installEntitySchema('filter_format');

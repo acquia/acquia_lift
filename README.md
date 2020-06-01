@@ -23,7 +23,7 @@ The latest stable releases can be found on [drupal.org](https://www.drupal.org/p
 Please contact your Acquia Solution Architect or Account Manager, and they will
 be happy to help you with on-boarding.
 
-![Build Status](https://travis-ci.org/acquia/acquia_lift.svg?branch=8.x-3.x)](https://travis-ci.org/acquia/acquia_lift)
+![Build Status](https://travis-ci.org/acquia/acquia_lift.svg?branch=8.x-4.x)](https://travis-ci.org/acquia/acquia_lift)
 
 
 REQUIREMENTS

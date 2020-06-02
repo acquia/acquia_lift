@@ -14,6 +14,8 @@ use Drupal\Tests\node\Traits\NodeCreationTrait;
 /**
  * Tests for the JS that transforms widgets into form elements.
  *
+ * @group acquia_lift
+ *
  * @group facets
  */
 class InspectorJsTest extends WebDriverTestBase {

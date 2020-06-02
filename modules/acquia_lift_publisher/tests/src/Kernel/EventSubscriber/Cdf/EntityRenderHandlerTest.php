@@ -1,6 +1,6 @@
 <?php
 
-namespace Drupal\Tests\acquia_lift_publisher\Kernel\EventSubscriber;
+namespace Drupal\Tests\acquia_lift_publisher\Kernel\EventSubscriber\Cdf;
 
 use Acquia\ContentHubClient\CDFDocument;
 use Acquia\ContentHubClient\ContentHubClient;
@@ -30,9 +30,13 @@ use Drupal\file\Entity\File;
 /**
  * Class EntityRenderHandlerTest.
  *
+ * @group acquia_lift
+ *
  * @coversDefaultClass \Drupal\acquia_lift_publisher\EventSubscriber\Cdf\EntityRenderHandler
  *
  * @package Drupal\acquia_lift_publisher\EventSubscriber\Cdf
+ *
+ * @requires module depcalc
  */
 class EntityRenderHandlerTest extends KernelTestBase {
 

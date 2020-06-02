@@ -10,10 +10,11 @@ use Drupal\user\UserInterface;
 /**
  * Tests basic form elements of ContentPublishingForm.
  *
+ * @group acquia_lift
+ *
  * @package Drupal\Tests\acquia_lift_publisher\Functional
  *
  * @coversDefaultClass \Drupal\acquia_lift_publisher\Form\ContentPublishingForm
- * @group acquia_lift_publisher
  */
 class ContentPublishingFormTest extends BrowserTestBase {
 

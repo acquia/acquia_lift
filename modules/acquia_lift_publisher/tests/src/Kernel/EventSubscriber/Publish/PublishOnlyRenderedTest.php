@@ -25,7 +25,7 @@ use Prophecy\Argument;
 /**
  * Class PublishOnlyRenderedTest.
  *
- * @group acquia_lift
+ * @group acquia_lift_publisher
  *
  * @coversDefaultClass \Drupal\acquia_lift_publisher\EventSubscriber\Publish\PublishOnlyRendered
  *

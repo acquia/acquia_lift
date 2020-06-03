@@ -73,6 +73,7 @@ class EntityRenderHandlerTest extends KernelTestBase {
     'language',
     'content_translation',
     'node',
+    'path_alias',
     'system',
     'text',
     'user',
@@ -93,9 +94,10 @@ class EntityRenderHandlerTest extends KernelTestBase {
     $this->installEntitySchema('block_content');
     $this->installEntitySchema('block');
     $this->installEntitySchema('filter_format');
-    $this->installEntitySchema('node');
-    $this->installEntitySchema('user');
     $this->installEntitySchema('file');
+    $this->installEntitySchema('node');
+    $this->installEntitySchema('path_alias');
+    $this->installEntitySchema('user');
     $this->installSchema('system', 'sequences');
     $this->installSchema('file', 'file_usage');
     $this->installConfig([ 'node', 'block_content', 'user', 'file', 'image', 'filter', 'acquia_lift_publisher']);

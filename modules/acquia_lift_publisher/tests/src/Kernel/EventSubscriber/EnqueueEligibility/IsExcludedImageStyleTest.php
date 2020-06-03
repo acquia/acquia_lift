@@ -12,7 +12,7 @@ use Drupal\Tests\taxonomy\Traits\TaxonomyTestTrait;
 /**
  * Class IsExcludedImageStyleTest.
  *
- * @group acquia_lift
+ * @group acquia_lift_publisher
  *
  * @package Drupal\Tests\acquia_lift_publisher\Kernel\EventSubscriber\EnqueueEligibility
  *

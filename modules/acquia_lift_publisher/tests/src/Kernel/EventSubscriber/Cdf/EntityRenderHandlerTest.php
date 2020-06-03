@@ -15,6 +15,7 @@ use Drupal\block_content\Entity\BlockContentType;
 use Drupal\Core\Entity\ContentEntityInterface;
 use Drupal\Core\Entity\EntityInterface;
 use Drupal\Core\Language\LanguageInterface;
+use Drupal\file\Entity\File;
 use Drupal\image\Entity\ImageStyle;
 use Drupal\KernelTests\KernelTestBase;
 use Drupal\language\Entity\ConfigurableLanguage;
@@ -25,7 +26,6 @@ use Drupal\Tests\RandomGeneratorTrait;
 use Drupal\Tests\TestFileCreationTrait;
 use Drupal\Tests\user\Traits\UserCreationTrait;
 use Prophecy\Argument;
-use Drupal\file\Entity\File;
 
 /**
  * Class EntityRenderHandlerTest.

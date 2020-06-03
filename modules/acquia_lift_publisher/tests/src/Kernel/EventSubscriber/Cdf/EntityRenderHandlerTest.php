@@ -1,6 +1,6 @@
 <?php
 
-namespace Drupal\Tests\acquia_lift_publisher\Kernel\EventSubscriber;
+namespace Drupal\Tests\acquia_lift_publisher\Kernel\EventSubscriber\Cdf;
 
 use Acquia\ContentHubClient\CDFDocument;
 use Acquia\ContentHubClient\ContentHubClient;
@@ -8,6 +8,7 @@ use Acquia\ContentHubClient\Settings;
 use Drupal\acquia_contenthub\AcquiaContentHubEvents;
 use Drupal\acquia_contenthub\Client\ClientFactory;
 use Drupal\acquia_contenthub\Event\CreateCdfEntityEvent;
+use Drupal\acquia_lift_publisher\EventSubscriber\Cdf\EntityRenderHandler;
 use Drupal\block_content\BlockContentInterface;
 use Drupal\block_content\Entity\BlockContent;
 use Drupal\block_content\Entity\BlockContentType;
@@ -17,7 +18,6 @@ use Drupal\Core\Language\LanguageInterface;
 use Drupal\image\Entity\ImageStyle;
 use Drupal\KernelTests\KernelTestBase;
 use Drupal\language\Entity\ConfigurableLanguage;
-use Drupal\Tests\file\Kernel\FileManagedUnitTestBase;
 use Drupal\Tests\image\Kernel\ImageFieldCreationTrait;
 use Drupal\Tests\node\Traits\ContentTypeCreationTrait;
 use Drupal\Tests\node\Traits\NodeCreationTrait;
@@ -31,6 +31,8 @@ use Drupal\file\Entity\File;
  * Class EntityRenderHandlerTest.
  *
  * @coversDefaultClass \Drupal\acquia_lift_publisher\EventSubscriber\Cdf\EntityRenderHandler
+ *
+ * @group acquia_lift_publisher
  *
  * @package Drupal\acquia_lift_publisher\EventSubscriber\Cdf
  */
@@ -244,6 +246,19 @@ class EntityRenderHandlerTest extends KernelTestBase {
    * @throws \Exception
    */
   protected function dispatchWith(EntityInterface $entity, array $dependencies): CreateCdfEntityEvent {
+    // Start with a clean sheet. It is possible that the container's
+    // content has been modified.
+    $handler = new EntityRenderHandler(
+      $this->container->get('account_switcher'),
+      $this->container->get('acquia_lift_publisher.publishing_settings'),
+      $this->container->get('renderer'),
+      $this->container->get('entity_type.manager'),
+      $this->container->get('plugin.manager.block'),
+      $this->container->get('uuid'),
+      $this->container->get('acquia_contenthub.client.factory')
+    );
+    $this->container->set('acquia_lift.service.entity_render.cdf.handler', $handler);
+
     $event = new CreateCdfEntityEvent($entity, $dependencies);
     $this->container->get('event_dispatcher')->dispatch(AcquiaContentHubEvents::CREATE_CDF_OBJECT, $event);
     return $event;
@@ -349,12 +364,16 @@ class EntityRenderHandlerTest extends KernelTestBase {
    * @throws \Exception
    */
   protected function enableViewModeExportFor(EntityInterface $entity, string $render_role = 'administrator'): void {
-    $this->container->get('config.factory')
-      ->getEditable('acquia_lift_publisher.entity_config')
-      ->set("view_modes.{$entity->getEntityTypeId()}.{$entity->bundle()}", ['full' => 1])
+    $config = $this->container->get('config.factory')
+      ->getEditable('acquia_lift_publisher.entity_config');
+    $config->set("view_modes.{$entity->getEntityTypeId()}.{$entity->bundle()}", ['full' => 1])
       ->set("view_modes.node.article.acquia_lift_preview_image", 'field_image_test')
       ->set('render_role', $render_role)
       ->save();
+
+    $config = $this->container->get('config.factory')
+      ->get('acquia_lift_publisher.entity_config');
+    $this->container->set('acquia_lift_publisher.publishing_settings', $config);
   }
 
   /**

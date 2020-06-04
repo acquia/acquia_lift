@@ -205,31 +205,14 @@ class EntityRenderHandlerTest extends KernelTestBase {
       ImageStyle::load('acquia_lift_publisher_preview_image')->buildUrl($image->getFileUri()),
       ''
     );
-  }
 
-  /**
-   * Tests that a node with an empty image field can get rendered (LEB-4401).
-   *
-   * @covers ::onCreateCdf
-   *
-   * @throws \Exception
-   */
-  public function testOnCreateCdfEmptyImage() {
-    $this->createContentType([
-      'id' => 'article',
-      'name' => 'Image article content type',
-      'type' => 'article',
-    ]);
-
-    $this->createImageField('field_image_test', 'article', [], [], [], [], 'Image test on [site:name]');
-
-    // Create node with no image.
+    // Ensure that a node with an empty image field can get rendered (LEB-4401).
+    // Create another node with no image.
     $entity = $this->createNode([
       'type' => 'article',
-      'title' => 'Title test no image',
+      'title' => 'Title test with no image',
     ]);
 
-    $this->enableViewModeExportFor($entity);
     $event = $this->dispatchWith($entity, []);
     $rendered_cdfs = $this->getRenderedEntities($event->getCdfList());
     $this->assertCount(1, $rendered_cdfs, 'Entity rendered.');
@@ -238,7 +221,7 @@ class EntityRenderHandlerTest extends KernelTestBase {
     // Check that title matches.
     $this->assertEqual(
       $cdf->getAttribute('label')->getValue()['en'],
-      'Title test no image'
+      'Title test with no image'
     );
     // Check that no image preview is present in CDF.
     $this->assertNull(

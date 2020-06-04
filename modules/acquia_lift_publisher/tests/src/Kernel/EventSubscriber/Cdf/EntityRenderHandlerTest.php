@@ -171,8 +171,6 @@ class EntityRenderHandlerTest extends KernelTestBase {
    * @throws \Exception
    */
   public function testImageAttributeIsSet() {
-    $this->setCurrentUser($this->createUser(['administer acquia lift'], 'user2'));
-
     $this->createContentType([
       'id' => 'article',
       'name' => 'Image article content type',
@@ -206,6 +204,46 @@ class EntityRenderHandlerTest extends KernelTestBase {
       $cdf->getAttribute('preview_image')->getValue()['und'],
       ImageStyle::load('acquia_lift_publisher_preview_image')->buildUrl($image->getFileUri()),
       ''
+    );
+  }
+
+  /**
+   * Tests that a node with an empty image field can get rendered (LEB-4401).
+   *
+   * @covers ::onCreateCdf
+   *
+   * @throws \Exception
+   */
+  public function testOnCreateCdfEmptyImage() {
+    $this->createContentType([
+      'id' => 'article',
+      'name' => 'Image article content type',
+      'type' => 'article',
+    ]);
+
+    $this->createImageField('field_image_test', 'article', [], [], [], [], 'Image test on [site:name]');
+
+    // Create node with no image.
+    $entity = $this->createNode([
+      'type' => 'article',
+      'title' => 'Title test no image',
+    ]);
+
+    $this->enableViewModeExportFor($entity);
+    $event = $this->dispatchWith($entity, []);
+    $rendered_cdfs = $this->getRenderedEntities($event->getCdfList());
+    $this->assertCount(1, $rendered_cdfs, 'Entity rendered.');
+
+    $cdf = current($rendered_cdfs);
+    // Check that title matches.
+    $this->assertEqual(
+      $cdf->getAttribute('label')->getValue()['en'],
+      'Title test no image'
+    );
+    // Check that no image preview is present in CDF.
+    $this->assertNull(
+      $cdf->getAttribute('preview_image'),
+      'No preview image in CDF'
     );
   }
 
@@ -365,7 +403,7 @@ class EntityRenderHandlerTest extends KernelTestBase {
    *
    * @throws \Exception
    */
-  protected function enableViewModeExportFor(EntityInterface $entity, string $render_role = 'administrator'): void {
+  protected function enableViewModeExportFor(EntityInterface $entity, string $render_role = 'anonymous'): void {
     $config = $this->container->get('config.factory')
       ->getEditable('acquia_lift_publisher.entity_config');
     $config->set("view_modes.{$entity->getEntityTypeId()}.{$entity->bundle()}", ['full' => 1])

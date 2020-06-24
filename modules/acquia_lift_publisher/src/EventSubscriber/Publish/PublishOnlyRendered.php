@@ -82,7 +82,7 @@ class PublishOnlyRendered implements EventSubscriberInterface {
         continue;
       }
 
-      $source_uuid = $this->getCdfEntityAttributeValue($cdf, 'source_entity');
+      $source_uuid = $this->getCdfEntityAttributeValue($cdf, 'source_entity_id');
       if ($source_uuid === $entity->uuid()) {
         $event->setEligibility(TRUE);
         return;
@@ -120,7 +120,7 @@ class PublishOnlyRendered implements EventSubscriberInterface {
       return;
     }
 
-    $se_uuid = $this->getCdfEntityAttributeValue($rendered_entity, 'source_entity');
+    $se_uuid = $this->getCdfEntityAttributeValue($rendered_entity, 'source_entity_id');
     if (!$se_uuid) {
       return;
     }

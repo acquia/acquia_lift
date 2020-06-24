@@ -273,9 +273,9 @@ class PublishOnlyRenderedTest extends KernelTestBase {
     $source_entity->addAttribute('tags', CDFAttribute::TYPE_ARRAY_REFERENCE, $tag_uuids);
 
     $rendered1 = new CDFObject('rendered_entity', $uuid->generate(), $time, $time, $origin);
-    $rendered1->addAttribute('source_entity', CDFAttribute::TYPE_STRING, $source_entity->getUuid());
+    $rendered1->addAttribute('source_entity_id', CDFAttribute::TYPE_KEYWORD, $source_entity->getUuid());
     $rendered2 = new CDFObject('rendered_entity', $uuid->generate(), $time, $time, $origin);
-    $rendered2->addAttribute('source_entity', CDFAttribute::TYPE_STRING, $source_entity->getUuid());
+    $rendered2->addAttribute('source_entity_id', CDFAttribute::TYPE_KEYWORD, $source_entity->getUuid());
     $cdfs[] = $rendered1;
     $cdfs[] = $rendered2;
 

@@ -329,12 +329,12 @@ class EntityRenderHandlerTest extends KernelTestBase {
     $contents = [];
 
     foreach ($cdfs as $cdf) {
-      $language = $cdf->getAttribute('language');
+      $language = $cdf->getAttribute('langcode');
       $this->assertNotNull($language, 'Entity translation has a corresponding cdf.');
       $language = $language->getValue()[LanguageInterface::LANGCODE_NOT_SPECIFIED];
       $cdf_languages[] = $language;
 
-      $source_entities[] = $cdf->getAttribute('source_entity')
+      $source_entities[] = $cdf->getAttribute('source_entity_id')
         ->getValue()[LanguageInterface::LANGCODE_NOT_SPECIFIED];
 
       $contents[$language] = $cdf->getAttribute('content')

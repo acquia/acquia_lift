@@ -171,11 +171,11 @@ class EntityRenderHandler implements EventSubscriberInterface {
           $html = $this->renderer->renderPlain($elements);
           $metadata['data'] = base64_encode($html);
           $cdf->addAttribute('content', CDFAttribute::TYPE_STRING, trim(preg_replace('/\s+/', ' ', str_replace("\n", ' ', strip_tags($html)))));
-          $cdf->addAttribute('source_entity', CDFAttribute::TYPE_STRING, $translation->uuid());
+          $cdf->addAttribute('source_entity_id', CDFAttribute::TYPE_KEYWORD, $translation->uuid());
           $cdf->addAttribute('label', CDFAttribute::TYPE_ARRAY_STRING, $translation->label(), $translation->language()->getId());
-          $cdf->addAttribute('language', CDFAttribute::TYPE_STRING, $language->getId());
+          $cdf->addAttribute('langcode', CDFAttribute::TYPE_KEYWORD, $language->getId());
           $cdf->addAttribute('language_label', CDFAttribute::TYPE_STRING, $language->getName());
-          $cdf->addAttribute('view_mode', CDFAttribute::TYPE_STRING, $view_mode);
+          $cdf->addAttribute('view_mode_id', CDFAttribute::TYPE_KEYWORD, $view_mode);
           $cdf->addAttribute('view_mode_label', CDFAttribute::TYPE_STRING, $display->label());
 
           $preview_src = $this->buildPreviewImageAttributeSource($view_modes, 'acquia_lift_preview_image', 'acquia_lift_publisher_preview_image', $translation);
@@ -365,9 +365,9 @@ class EntityRenderHandler implements EventSubscriberInterface {
         ->listEntities([
           'type' => 'rendered_entity',
           'origin' => $this->origin,
-          'fields' => 'language,view_mode',
+          'fields' => 'langcode,view_mode_id',
           'filters' => [
-            'source_entity' => $source_uuid,
+            'source_entity_id' => $source_uuid,
           ],
         ]);
 
@@ -475,8 +475,8 @@ class EntityRenderHandler implements EventSubscriberInterface {
     foreach ($data as $entity_info) {
       $this->setStorageItem(
         $source_uuid,
-        $this->getAttributeValue($entity_info['attributes'], 'language'),
-        $this->getAttributeValue($entity_info['attributes'], 'view_mode'),
+        $this->getAttributeValue($entity_info['attributes'], 'langcode'),
+        $this->getAttributeValue($entity_info['attributes'], 'view_mode_id'),
         $entity_info['uuid']
       );
     }

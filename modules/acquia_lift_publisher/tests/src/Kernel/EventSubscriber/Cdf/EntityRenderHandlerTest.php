@@ -256,6 +256,87 @@ class EntityRenderHandlerTest extends KernelTestBase {
   }
 
   /**
+   * @covers ::onCreateCdf
+   *
+   * @throws \Drupal\Core\Entity\EntityStorageException
+   * @throws \Exception
+   */
+  public function testOnCreateCdfTranslationDeletion() {
+    $this->createContentType([
+      'id' => 'article',
+      'name' => 'Image article content type',
+      'type' => 'article',
+    ]);
+
+    $this->createImageField('field_image_test', 'article', [], [], [], [], 'Image test on [site:name]');
+    $image_files = $this->getTestFiles('image');
+    $image = File::create((array) current($image_files));
+    $image->save();
+
+    $entity = $this->createNode([
+      'type' => 'article',
+      'title' => 'Title Test',
+      'field_image_test' => [
+        [
+          'target_id' => $image->id(),
+        ],
+      ],
+    ]);
+
+    $this->enableViewModeExportFor($entity);
+    $event = $this->dispatchWith($entity, []);
+    $cdfs = $this->getRenderedEntities($event->getCdfList());
+
+    $cdf = current($cdfs);
+    $this->assertNotNull($cdf);
+
+    // Assert that image url is correct
+    $this->assertEqual(
+      $cdf->getAttribute('preview_image')->getValue()['und'],
+      ImageStyle::load('acquia_lift_publisher_preview_image')->buildUrl($image->getFileUri()),
+      ''
+    );
+
+    // Ensure that a node with an empty image field can get rendered (LEB-4401).
+    // Create another node with no image.
+    $entity = $this->createNode([
+      'type' => 'article',
+      'title' => 'Title test with no image',
+    ]);
+
+    $event = $this->dispatchWith($entity, []);
+    $rendered_cdfs = $this->getRenderedEntities($event->getCdfList());
+    $this->assertCount(1, $rendered_cdfs, 'Entity rendered.');
+
+    $cdf = current($rendered_cdfs);
+    // Check that title matches.
+    $this->assertEqual(
+      $cdf->getAttribute('label')->getValue()['en'],
+      'Title test with no image'
+    );
+    // Check that no image preview is present in CDF.
+    $this->assertNull(
+      $cdf->getAttribute('preview_image'),
+      'No preview image in CDF'
+    );
+
+    $node = $this->createNode();
+    $node->addTranslation('hu', [
+      'info' => $this->randomString(),
+    ]);
+    $node->addTranslation('fr', [
+      'info' => $this->randomString(),
+    ]);
+
+    $this->enableViewModeExportFor($node);
+
+    $event = $this->dispatchWith($node, []);
+    $cdfs = $this->getRenderedEntities($event->getCdfList());
+    $this->assertCount(2, $cdfs, 'All entities were rendered.');
+    $this->assertCdfAttributes($node, $cdfs);
+  }
+
+  /**
    * Dispatches the event in hand with an arbitrary input parameters.
    *
    * @param \Drupal\Core\Entity\EntityInterface $entity

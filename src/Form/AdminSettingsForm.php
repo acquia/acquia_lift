@@ -156,9 +156,10 @@ class AdminSettingsForm extends ConfigFormBase {
     $form['decision_api_url'] = [
       '#type' => 'textfield',
       '#title' => $this->t('Decision API URL'),
-      '#description' => $this->t('Your Lift Decision API\'s URL. Unless explicitly instructed, leave empty to use default URL.'),
+      '#description' => $this->t('Your Lift Decision API\'s URL.'),
       '#field_prefix' => 'https://',
-      '#default_value' => isset($credential_settings['decision_api_url']) ? $this->cleanUrl($credential_settings['decision_api_url']) : '',
+      '#default_value' => !empty($credential_settings['decision_api_url']) ? $this->cleanUrl($credential_settings['decision_api_url']) : 'us-east-1-decisionapi.lift.acquia.com',
+      '#required' => TRUE,
     ];
 
     return $form;

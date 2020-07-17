@@ -188,6 +188,18 @@ class EntityRenderHandler implements EventSubscriberInterface {
           $event->addCdf($cdf);
         }
       }
+
+      // Prune obsolete rendered entities that remained in Content Hub for
+      // languages that are no longer applicable for this entity. A typical
+      // example is when a translation is deleted from an entity.
+      foreach ($this->getStorageAllItems($entity->uuid()) as $langcode => $view_mode_uuids) {
+        $entity_translation_langcodes = array_keys($entity->getTranslationLanguages());
+        if (!in_array($langcode, $entity_translation_langcodes)) {
+          foreach ($view_mode_uuids as $remote_rendered_entity_uuid) {
+            $this->clientFactory->getClient()->deleteEntity($remote_rendered_entity_uuid);
+          }
+        }
+      }
     }
   }
 
@@ -432,6 +444,19 @@ class EntityRenderHandler implements EventSubscriberInterface {
    */
   protected function getStorageItem($uuid, $langcode, $view_mode) {
     return $this->storage[$uuid][$langcode][$view_mode];
+  }
+
+  /**
+   * Get all items from storage regardless of langcodes and view modes.
+   *
+   * @param string $uuid
+   *   The UUID.
+   *
+   * @return mixed
+   *   The value.
+   */
+  protected function getStorageAllItems($uuid) {
+    return $this->storage[$uuid] ?? [];
   }
 
   /**

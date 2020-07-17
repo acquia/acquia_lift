@@ -192,7 +192,7 @@ class EntityRenderHandlerTest extends KernelTestBase {
       ],
     ]);
 
-    $this->enableViewModeExportFor($entity);
+    $this->enableViewModeExportFor($entity, TRUE);
     $event = $this->dispatchWith($entity, []);
     $cdfs = $this->getRenderedEntities($event->getCdfList());
 
@@ -433,7 +433,7 @@ class EntityRenderHandlerTest extends KernelTestBase {
     foreach ($original_languages as $original_language) {
       $translation = $entity->getTranslation($original_language);
       $orig_label = $translation->label();
-      $this->assertNotFalse(strpos(htmlspecialchars($orig_label), $contents[$original_language]), 'Cdf contains the translated content.');
+      $this->assertNotFalse(strpos($contents[$original_language], htmlspecialchars($orig_label)), 'Cdf contains the translated content.');
     }
   }
 
@@ -462,18 +462,22 @@ class EntityRenderHandlerTest extends KernelTestBase {
    *
    * @param \Drupal\Core\Entity\EntityInterface $entity
    *   The entity to enable export for.
+   * @param bool $field_image_test
+   *   Whether the field_image_test should also be configured to be exported.
    * @param string $render_role
    *   The user role to render the entity with.
    *
    * @throws \Exception
    */
-  protected function enableViewModeExportFor(EntityInterface $entity, string $render_role = 'anonymous'): void {
+  protected function enableViewModeExportFor(EntityInterface $entity, $field_image_test = FALSE, string $render_role = 'anonymous'): void {
     $config = $this->container->get('config.factory')
       ->getEditable('acquia_lift_publisher.entity_config');
     $config->set("view_modes.{$entity->getEntityTypeId()}.{$entity->bundle()}", ['full' => 1])
-      ->set("view_modes.node.article.acquia_lift_preview_image", 'field_image_test')
       ->set('render_role', $render_role)
       ->save();
+    if ($field_image_test) {
+      $config->set("view_modes.{$entity->getEntityTypeId()}.{$entity->bundle()}.acquia_lift_preview_image", 'field_image_test')->save();
+    }
 
     $config = $this->container->get('config.factory')
       ->get('acquia_lift_publisher.entity_config');

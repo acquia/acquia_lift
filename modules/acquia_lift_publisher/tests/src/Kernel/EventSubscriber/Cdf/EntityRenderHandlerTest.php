@@ -15,16 +15,21 @@ use Drupal\block_content\Entity\BlockContentType;
 use Drupal\Core\Entity\ContentEntityInterface;
 use Drupal\Core\Entity\EntityInterface;
 use Drupal\Core\Language\LanguageInterface;
+use Drupal\field\Entity\FieldStorageConfig;
 use Drupal\file\Entity\File;
 use Drupal\image\Entity\ImageStyle;
 use Drupal\KernelTests\KernelTestBase;
 use Drupal\language\Entity\ConfigurableLanguage;
+use Drupal\language\Entity\ContentLanguageSettings;
+use Drupal\node\Entity\Node;
+use Drupal\node\Entity\NodeType;
 use Drupal\Tests\image\Kernel\ImageFieldCreationTrait;
 use Drupal\Tests\node\Traits\ContentTypeCreationTrait;
 use Drupal\Tests\node\Traits\NodeCreationTrait;
 use Drupal\Tests\RandomGeneratorTrait;
 use Drupal\Tests\TestFileCreationTrait;
 use Drupal\Tests\user\Traits\UserCreationTrait;
+use Drupal\user\Entity\Role;
 use Prophecy\Argument;
 
 /**
@@ -100,7 +105,7 @@ class EntityRenderHandlerTest extends KernelTestBase {
     $this->installEntitySchema('user');
     $this->installSchema('system', 'sequences');
     $this->installSchema('file', 'file_usage');
-    $this->installConfig([ 'node', 'block_content', 'user', 'file', 'image', 'filter', 'acquia_lift_publisher']);
+    $this->installConfig([ 'node', 'field', 'block_content', 'user', 'file', 'image', 'filter', 'system', 'acquia_lift_publisher']);
 
     $this->blockType = BlockContentType::create([
       'id' => $this->randomMachineName(),
@@ -262,78 +267,54 @@ class EntityRenderHandlerTest extends KernelTestBase {
    * @throws \Exception
    */
   public function testOnCreateCdfTranslationDeletion() {
-    $this->createContentType([
-      'id' => 'article',
-      'name' => 'Image article content type',
+    $this->installSchema('node', ['node_access']);
+
+    // Give anonymous users permission to access content.
+    $anonymous_role = Role::load(Role::ANONYMOUS_ID);
+    $anonymous_role->grantPermission('access content');
+    $anonymous_role->save();
+
+    $type = NodeType::create(['type' => 'article', 'display_submitted' => FALSE]);
+    $type->save();
+    node_add_body_field($type);
+    $field_storage = FieldStorageConfig::loadByName('node', 'body');
+    $this->assertCount(1, $field_storage->getBundles(), 'Node body field storage is being used on the new node type.');
+
+    ConfigurableLanguage::create(['id' => 'es'])->save();
+    ConfigurableLanguage::create(['id' => 'fr'])->save();
+    ContentLanguageSettings::loadByEntityTypeBundle('node', 'article')
+      ->setDefaultLangcode('es')
+      ->setLanguageAlterable(TRUE)
+      ->save();
+
+    $node1 = Node::create([
+      'title' => 'Test title article es',
       'type' => 'article',
+      'status' => 1,
+      'uid' => 1,
+      'langcode' => 'es',
+      'body' => [['value' => 'Regular NODE body for the test.', 'summary' => 'Fancy NODE summary.', 'format' => 'plain_text']],
     ]);
+    $node1->save();
+    /** @var \Drupal\node\NodeInterface $translation */
+    $node1->addTranslation('fr', [
+      'title' => 'FR Test title article',
+      'status' => 1,
+      'uid' => 1,
+      'body' => [['value' => 'FRENCH NODE body for the test.', 'summary' => 'FRENCH Fancy NODE summary.', 'format' => 'plain_text']],
+    ])->save();
 
-    $this->createImageField('field_image_test', 'article', [], [], [], [], 'Image test on [site:name]');
-    $image_files = $this->getTestFiles('image');
-    $image = File::create((array) current($image_files));
-    $image->save();
+    $this->enableViewModeExportFor($node1);
 
-    $entity = $this->createNode([
-      'type' => 'article',
-      'title' => 'Title Test',
-      'field_image_test' => [
-        [
-          'target_id' => $image->id(),
-        ],
-      ],
-    ]);
-
-    $this->enableViewModeExportFor($entity);
-    $event = $this->dispatchWith($entity, []);
-    $cdfs = $this->getRenderedEntities($event->getCdfList());
-
-    $cdf = current($cdfs);
-    $this->assertNotNull($cdf);
-
-    // Assert that image url is correct
-    $this->assertEqual(
-      $cdf->getAttribute('preview_image')->getValue()['und'],
-      ImageStyle::load('acquia_lift_publisher_preview_image')->buildUrl($image->getFileUri()),
-      ''
-    );
-
-    // Ensure that a node with an empty image field can get rendered (LEB-4401).
-    // Create another node with no image.
-    $entity = $this->createNode([
-      'type' => 'article',
-      'title' => 'Title test with no image',
-    ]);
-
-    $event = $this->dispatchWith($entity, []);
-    $rendered_cdfs = $this->getRenderedEntities($event->getCdfList());
-    $this->assertCount(1, $rendered_cdfs, 'Entity rendered.');
-
-    $cdf = current($rendered_cdfs);
-    // Check that title matches.
-    $this->assertEqual(
-      $cdf->getAttribute('label')->getValue()['en'],
-      'Title test with no image'
-    );
-    // Check that no image preview is present in CDF.
-    $this->assertNull(
-      $cdf->getAttribute('preview_image'),
-      'No preview image in CDF'
-    );
-
-    $node = $this->createNode();
-    $node->addTranslation('hu', [
-      'info' => $this->randomString(),
-    ]);
-    $node->addTranslation('fr', [
-      'info' => $this->randomString(),
-    ]);
-
-    $this->enableViewModeExportFor($node);
-
-    $event = $this->dispatchWith($node, []);
+    $event = $this->dispatchWith($node1, []);
     $cdfs = $this->getRenderedEntities($event->getCdfList());
     $this->assertCount(2, $cdfs, 'All entities were rendered.');
-    $this->assertCdfAttributes($node, $cdfs);
+    $this->assertCdfAttributes($node1, $cdfs);
+
+    // Delete a translation.
+    $node1->removeTranslation('fr');
+    $node1->save();
+    $event = $this->dispatchWith($node1, []);
   }
 
   /**

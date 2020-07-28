@@ -7,6 +7,7 @@ use Acquia\ContentHubClient\CDF\CDFObject;
 use Drupal\acquia_contenthub\AcquiaContentHubEvents;
 use Drupal\acquia_contenthub\Client\ClientFactory;
 use Drupal\acquia_contenthub\Event\CreateCdfEntityEvent;
+use Drupal\acquia_contenthub\Event\DeleteRemoteEntityEvent;
 use Drupal\acquia_contenthub\Session\ContentHubUserSession;
 use Drupal\acquia_lift_publisher\Form\ContentPublishingSettingsTrait;
 use Drupal\Component\Uuid\UuidInterface;
@@ -127,6 +128,7 @@ class EntityRenderHandler implements EventSubscriberInterface {
    */
   public static function getSubscribedEvents() {
     $events[AcquiaContentHubEvents::CREATE_CDF_OBJECT][] = ['onCreateCdf', 100];
+    $events[AcquiaContentHubEvents::DELETE_REMOTE_ENTITY][] = ['onDeleteRemoteEntity'];
     return $events;
   }
 
@@ -150,6 +152,9 @@ class EntityRenderHandler implements EventSubscriberInterface {
         ->getEntities([$entity->uuid()]);
       $remote_entity = $document->hasEntity($entity->uuid()) ? $document->getCDFEntity($entity->uuid()) : FALSE;
       $entity_view_mode_storage = $this->entityTypeManager->getStorage('entity_view_mode');
+      // Keep track of all the rendered_content UUIDs we are updating to purge
+      // any obsolete rendered_content from Content Hub later on.
+      $updated_render_uuids = [];
       foreach (array_keys($view_modes) as $view_mode) {
         // The preview image field setting is saved along side the view modes.
         // Don't process it as one.
@@ -161,12 +166,12 @@ class EntityRenderHandler implements EventSubscriberInterface {
           $translation = $entity->getTranslation($language->getId());
 
           if ($remote_entity instanceof CDFObject) {
-            $uuid = $this->getUuid($remote_entity, $view_mode, $language->getId());
+            $render_uuid = $this->getRenderUuid($remote_entity, $view_mode, $language->getId());
           }
           else {
-            $uuid = $this->uuidGenerator->generate();
+            $render_uuid = $this->uuidGenerator->generate();
           }
-          $cdf = new CDFObject('rendered_entity', $uuid, date('c'), date('c'), $this->origin);
+          $cdf = new CDFObject('rendered_entity', $render_uuid, date('c'), date('c'), $this->origin);
           $elements = $this->getViewModeMinimalHtml($translation, $view_mode);
           $html = $this->renderer->renderPlain($elements);
           $metadata['data'] = base64_encode($html);
@@ -186,23 +191,37 @@ class EntityRenderHandler implements EventSubscriberInterface {
 
           $cdf->setMetadata($metadata);
           $event->addCdf($cdf);
+          $updated_render_uuids[] = $render_uuid;
         }
       }
 
       // Prune obsolete rendered entities that remained in Content Hub for
-      // languages that are no longer applicable for this entity. A typical
-      // example is when a translation is deleted from an entity.
-      foreach ($this->getStorageAllItems($entity->uuid()) as $langcode => $view_mode_uuids) {
-        $entity_translation_langcodes = array_keys($entity->getTranslationLanguages());
-        if (!in_array($langcode, $entity_translation_langcodes)) {
-          foreach ($view_mode_uuids as $remote_rendered_entity_uuid) {
-            $this->clientFactory->getClient()->deleteEntity($remote_rendered_entity_uuid);
+      // languages or view modes that are no longer applicable for this entity.
+      foreach ($this->getAllRenderUuids($remote_entity) as $langcode => $view_mode_uuids) {
+        foreach($view_mode_uuids as $view_mode_uuid) {
+          if (!in_array($view_mode_uuid, $updated_render_uuids)) {
+            $this->clientFactory->getClient()->deleteEntity($view_mode_uuid);
           }
         }
       }
     }
   }
 
+  /**
+   * Removes deleted remote entities from the publisher tracking table.
+   *
+   * @param \Drupal\acquia_contenthub\Event\DeleteRemoteEntityEvent $event
+   *   The DeleteRemoteEntityEvent object.
+   *
+   * @throws \Exception
+   */
+  public function onDeleteRemoteEntity(DeleteRemoteEntityEvent $event) {
+    $deleted_uuid = $event->getUuid();
+    if (!$entity instanceof ContentEntityInterface) {
+      // @todo we should support config entity rendering too.
+      return;
+    }
+  }
   /**
    * Build a preview image attribute source.
    *
@@ -352,7 +371,10 @@ class EntityRenderHandler implements EventSubscriberInterface {
   }
 
   /**
-   * Get UUID.
+   * Get rendered content UUID for given source entity view mode and language.
+   *
+   * A render UUID will be created if one does not already exist in Content Hub
+   * for the provided view mode and language.
    *
    * @param \Acquia\ContentHubClient\CDF\CDFObject $source_entity_cdf
    *   The source entity CDF.
@@ -364,13 +386,34 @@ class EntityRenderHandler implements EventSubscriberInterface {
    * @return mixed
    *   The UUID.
    */
-  protected function getUuid(CDFObject $source_entity_cdf, $view_mode, $langcode) {
+  protected function getRenderUuid(CDFObject $source_entity_cdf, $view_mode, $langcode) {
     $source_uuid = $source_entity_cdf->getUuid();
 
     if ($this->isStorageHit($source_uuid, $langcode, $view_mode)) {
       return $this->getStorageItem($source_uuid, $langcode, $view_mode);
     }
 
+    // Warm up storage.
+    $this->getAllRenderUuids($source_entity_cdf);
+
+    if (!$this->isStorageHit($source_uuid, $langcode, $view_mode)) {
+      $this->setStorageItem($source_uuid, $langcode, $view_mode, $this->uuidGenerator->generate());
+    }
+
+    return $this->getStorageItem($source_uuid, $langcode, $view_mode);
+  }
+
+  /**
+   * Get all rendered content UUIDs for a given source entity.
+   *
+   * @param \Acquia\ContentHubClient\CDF\CDFObject $source_entity_cdf
+   *   The source entity CDF.
+   *
+   * @return mixed
+   *   The UUIDs.
+   */
+  protected function getAllRenderUuids(CDFObject $source_entity_cdf) {
+    $source_uuid = $source_entity_cdf->getUuid();
     if (!$this->storageIsAlreadyWarmedUp($source_uuid)) {
       $response = $this->clientFactory
         ->getClient()
@@ -388,11 +431,7 @@ class EntityRenderHandler implements EventSubscriberInterface {
       }
     }
 
-    if (!$this->isStorageHit($source_uuid, $langcode, $view_mode)) {
-      $this->setStorageItem($source_uuid, $langcode, $view_mode, $this->uuidGenerator->generate());
-    }
-
-    return $this->getStorageItem($source_uuid, $langcode, $view_mode);
+    return $this->getStorageAllItems($source_uuid);
   }
 
   /**

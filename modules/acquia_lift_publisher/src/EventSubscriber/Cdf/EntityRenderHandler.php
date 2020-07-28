@@ -166,7 +166,7 @@ class EntityRenderHandler implements EventSubscriberInterface {
           $translation = $entity->getTranslation($language->getId());
 
           if ($remote_entity instanceof CDFObject) {
-            $render_uuid = $this->getRenderUuid($remote_entity, $view_mode, $language->getId());
+            $render_uuid = $this->getRenderUuid($remote_entity->getUuid(), $view_mode, $language->getId());
           }
           else {
             $render_uuid = $this->uuidGenerator->generate();
@@ -197,7 +197,7 @@ class EntityRenderHandler implements EventSubscriberInterface {
 
       // Prune obsolete rendered entities that remained in Content Hub for
       // languages or view modes that are no longer applicable for this entity.
-      foreach ($this->getAllRenderUuids($remote_entity) as $langcode => $view_mode_uuids) {
+      foreach ($this->getAllRenderUuids($remote_entity->getUuid()) as $langcode => $view_mode_uuids) {
         foreach($view_mode_uuids as $view_mode_uuid) {
           if (!in_array($view_mode_uuid, $updated_render_uuids)) {
             $this->clientFactory->getClient()->deleteEntity($view_mode_uuid);
@@ -376,7 +376,7 @@ class EntityRenderHandler implements EventSubscriberInterface {
    * A render UUID will be created if one does not already exist in Content Hub
    * for the provided view mode and language.
    *
-   * @param \Acquia\ContentHubClient\CDF\CDFObject $source_entity_cdf
+   * @param string $source_entity_uuid
    *   The source entity CDF.
    * @param string $view_mode
    *   The view mode identifier.
@@ -386,35 +386,32 @@ class EntityRenderHandler implements EventSubscriberInterface {
    * @return mixed
    *   The UUID.
    */
-  protected function getRenderUuid(CDFObject $source_entity_cdf, $view_mode, $langcode) {
-    $source_uuid = $source_entity_cdf->getUuid();
-
-    if ($this->isStorageHit($source_uuid, $langcode, $view_mode)) {
-      return $this->getStorageItem($source_uuid, $langcode, $view_mode);
+  protected function getRenderUuid($source_entity_uuid, $view_mode, $langcode) {
+    if ($this->isStorageHit($source_entity_uuid, $langcode, $view_mode)) {
+      return $this->getStorageItem($source_entity_uuid, $langcode, $view_mode);
     }
 
     // Warm up storage.
-    $this->getAllRenderUuids($source_entity_cdf);
+    $this->getAllRenderUuids($source_entity_uuid);
 
-    if (!$this->isStorageHit($source_uuid, $langcode, $view_mode)) {
-      $this->setStorageItem($source_uuid, $langcode, $view_mode, $this->uuidGenerator->generate());
+    if (!$this->isStorageHit($source_entity_uuid, $langcode, $view_mode)) {
+      $this->setStorageItem($source_entity_uuid, $langcode, $view_mode, $this->uuidGenerator->generate());
     }
 
-    return $this->getStorageItem($source_uuid, $langcode, $view_mode);
+    return $this->getStorageItem($source_entity_uuid, $langcode, $view_mode);
   }
 
   /**
    * Get all rendered content UUIDs for a given source entity.
    *
-   * @param \Acquia\ContentHubClient\CDF\CDFObject $source_entity_cdf
+   * @param string $source_entity_uuid
    *   The source entity CDF.
    *
    * @return mixed
    *   The UUIDs.
    */
-  protected function getAllRenderUuids(CDFObject $source_entity_cdf) {
-    $source_uuid = $source_entity_cdf->getUuid();
-    if (!$this->storageIsAlreadyWarmedUp($source_uuid)) {
+  protected function getAllRenderUuids($source_entity_uuid) {
+    if (!$this->storageIsAlreadyWarmedUp($source_entity_uuid)) {
       $response = $this->clientFactory
         ->getClient()
         ->listEntities([
@@ -422,16 +419,16 @@ class EntityRenderHandler implements EventSubscriberInterface {
           'origin' => $this->origin,
           'fields' => 'language,view_mode',
           'filters' => [
-            'source_entity' => $source_uuid,
+            'source_entity' => $source_entity_uuid,
           ],
         ]);
 
       if (TRUE === $response['success'] && !empty($response['data'])) {
-        $this->storageWarmUp($response['data'], $source_uuid);
+        $this->storageWarmUp($response['data'], $source_entity_uuid);
       }
     }
 
-    return $this->getStorageAllItems($source_uuid);
+    return $this->getStorageAllItems($source_entity_uuid);
   }
 
   /**

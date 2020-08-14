@@ -278,7 +278,9 @@ class EntityRenderHandlerTest extends KernelTestBase {
       $this->container->get('entity_type.manager'),
       $this->container->get('plugin.manager.block'),
       $this->container->get('uuid'),
-      $this->container->get('acquia_contenthub.client.factory')
+      $this->container->get('acquia_contenthub.client.factory'),
+      $this->container->get('language.default'),
+      $this->container->get('string_translation')
     );
     $this->container->set('acquia_lift.service.entity_render.cdf.handler', $handler);
 

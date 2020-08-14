@@ -14,10 +14,12 @@ use Drupal\Core\Block\BlockManagerInterface;
 use Drupal\Core\Config\ImmutableConfig;
 use Drupal\Core\Entity\ContentEntityInterface;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
+use Drupal\Core\Language\LanguageDefault;
 use Drupal\Core\Language\LanguageInterface;
 use Drupal\Core\Render\Element;
 use Drupal\Core\Render\RendererInterface;
 use Drupal\Core\Session\AccountSwitcherInterface;
+use Drupal\Core\StringTranslation\TranslationManager;
 use Drupal\image\Entity\ImageStyle;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 
@@ -94,6 +96,20 @@ class EntityRenderHandler implements EventSubscriberInterface {
   protected $clientFactory;
 
   /**
+   * The language default service.
+   *
+   * @var \Drupal\Core\Language\LanguageDefault
+   */
+  protected $languageDefault;
+
+  /**
+   * Translation manager.
+   *
+   * @var \Drupal\Core\StringTranslation\TranslationManager
+   */
+  protected $translationManager;
+
+  /**
    * EntityRenderHandler constructor.
    *
    * @param \Drupal\Core\Session\AccountSwitcherInterface $account_switcher
@@ -111,7 +127,7 @@ class EntityRenderHandler implements EventSubscriberInterface {
    * @param \Drupal\acquia_contenthub\Client\ClientFactory $client_factory
    *   The client factory.
    */
-  public function __construct(AccountSwitcherInterface $account_switcher, ImmutableConfig $config, RendererInterface $renderer, EntityTypeManagerInterface $entity_type_manager, BlockManagerInterface $block_manager, UuidInterface $uuid_generator, ClientFactory $client_factory) {
+  public function __construct(AccountSwitcherInterface $account_switcher, ImmutableConfig $config, RendererInterface $renderer, EntityTypeManagerInterface $entity_type_manager, BlockManagerInterface $block_manager, UuidInterface $uuid_generator, ClientFactory $client_factory, LanguageDefault $language_default, TranslationManager $translation_manager) {
     $this->accountSwitcher = $account_switcher;
     $this->publisherSettings = $config;
     $this->clientFactory = $client_factory;
@@ -120,6 +136,8 @@ class EntityRenderHandler implements EventSubscriberInterface {
     $this->entityTypeManager = $entity_type_manager;
     $this->blockManager = $block_manager;
     $this->uuidGenerator = $uuid_generator;
+    $this->languageDefault = $language_default;
+    $this->translationManager = $translation_manager;
   }
 
   /**
@@ -150,6 +168,8 @@ class EntityRenderHandler implements EventSubscriberInterface {
         ->getEntities([$entity->uuid()]);
       $remote_entity = $document->hasEntity($entity->uuid()) ? $document->getCDFEntity($entity->uuid()) : FALSE;
       $entity_view_mode_storage = $this->entityTypeManager->getStorage('entity_view_mode');
+
+      $default_lang = $this->languageDefault->get();
       foreach (array_keys($view_modes) as $view_mode) {
         // The preview image field setting is saved along side the view modes.
         // Don't process it as one.
@@ -167,6 +187,10 @@ class EntityRenderHandler implements EventSubscriberInterface {
             $uuid = $this->uuidGenerator->generate();
           }
           $cdf = new CDFObject('rendered_entity', $uuid, date('c'), date('c'), $this->origin);
+
+          $this->languageDefault->set($language);
+          $this->translationManager->setDefaultLangcode($language->getId());
+
           $elements = $this->getViewModeMinimalHtml($translation, $view_mode);
           $html = $this->renderer->renderPlain($elements);
           $metadata['data'] = base64_encode($html);
@@ -188,7 +212,11 @@ class EntityRenderHandler implements EventSubscriberInterface {
           $event->addCdf($cdf);
         }
       }
+
+      $this->languageDefault->set($default_lang);
+      $this->translationManager->setDefaultLangcode($default_lang->getId());
     }
+
   }
 
   /**

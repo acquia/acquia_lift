@@ -354,7 +354,7 @@ class EntityRenderHandlerTest extends KernelTestBase {
     foreach ($original_languages as $original_language) {
       $translation = $entity->getTranslation($original_language);
       $orig_label = $translation->label();
-      $this->assertNotFalse(strpos(htmlspecialchars($orig_label), $contents[$original_language]), 'Cdf contains the translated content.');
+      $this->assertNotFalse(strpos(htmlspecialchars($orig_label, ENT_QUOTES), $contents[$original_language]), 'Cdf contains the translated content.');
     }
   }
 

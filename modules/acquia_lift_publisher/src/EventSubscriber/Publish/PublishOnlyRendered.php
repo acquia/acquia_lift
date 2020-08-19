@@ -5,6 +5,7 @@ namespace Drupal\acquia_lift_publisher\EventSubscriber\Publish;
 use Acquia\ContentHubClient\CDF\CDFObject;
 use Drupal\acquia_contenthub\AcquiaContentHubEvents;
 use Drupal\acquia_contenthub\ContentHubCommonActions;
+use Drupal\acquia_contenthub\Event\ContentHubPublishEntitiesEvent;
 use Drupal\acquia_contenthub\Event\PrunePublishCdfEntitiesEvent;
 use Drupal\acquia_contenthub_publisher\ContentHubPublisherEvents;
 use Drupal\acquia_contenthub_publisher\Event\ContentHubEntityEligibilityEvent;
@@ -49,7 +50,9 @@ class PublishOnlyRendered implements EventSubscriberInterface {
   public static function getSubscribedEvents() {
     return [
       ContentHubPublisherEvents::ENQUEUE_CANDIDATE_ENTITY => ['onEnqueueCandidateEntity', 99],
+      AcquiaContentHubEvents::PUBLISH_ENTITIES => ['onPublishEntities', 99],
       AcquiaContentHubEvents::PRUNE_PUBLISH_CDF_ENTITIES => ['onPrunePublishCdfEntities', 1000],
+
     ];
   }
 
@@ -90,6 +93,31 @@ class PublishOnlyRendered implements EventSubscriberInterface {
     }
 
     $event->setEligibility(FALSE);
+  }
+
+  /**
+   * Remove any dependencies which don't qualify for rendering.
+   *
+   * Only enqueue the entity if it is renderable.
+   *
+   * @param \Drupal\acquia_contenthub\Event\ContentHubPublishEntitiesEvent $event
+   *   The current enqueue eligibility event.
+   *
+   * @throws \Exception
+   */
+  public function onPublishEntities(ContentHubPublishEntitiesEvent $event): void {
+    if (!$this->personalizedContentPushIsActive()) {
+      return;
+    }
+
+    foreach ($event->getDependencies() as $wrapper) {
+      $entity = $wrapper->getEntity();
+      // If the entity view configuration on Acquia Lift Publisher settings page is
+      // set for the entity in question, the entity is qualified to be processed.
+      if (empty($this->getEntityViewModesSettingValue($entity))) {
+        $event->removeDependency($entity->uuid());
+      }
+    }
   }
 
   /**

@@ -163,13 +163,16 @@ class EntityRenderHandler implements EventSubscriberInterface {
         }
         $display = $entity_view_mode_storage->load("{$entity->getEntityTypeId()}.$view_mode");
         foreach ($entity->getTranslationLanguages() as $language) {
+          \Drupal::logger('acquia_lift_publisher')->debug('Starting render export for @source @lang @view_mode', ['@source' => $entity->uuid(), '@lang' => $language->getId(), '@view_mode' => $view_mode]);
           $translation = $entity->getTranslation($language->getId());
 
           if ($remote_entity instanceof CDFObject) {
             $render_uuid = $this->getRenderUuid($remote_entity->getUuid(), $view_mode, $language->getId());
+            \Drupal::logger('acquia_lift_publisher')->debug('[UUID] UUID for CDF set to @render', ['@render' => $render_uuid]);
           }
           else {
             $render_uuid = $this->uuidGenerator->generate();
+            \Drupal::logger('acquia_lift_publisher')->debug('UUID no-CDF found for parent: generated UUID to @render', ['@render' => $render_uuid]);
           }
           $cdf = new CDFObject('rendered_entity', $render_uuid, date('c'), date('c'), $this->origin);
           $elements = $this->getViewModeMinimalHtml($translation, $view_mode);
@@ -191,6 +194,7 @@ class EntityRenderHandler implements EventSubscriberInterface {
 
           $cdf->setMetadata($metadata);
           $event->addCdf($cdf);
+          \Drupal::logger('acquia_lift_publisher')->debug('Update of source entity @source triggered the update of rendered_content @rendered', ['@source' => $entity->uuid(), '@rendered' => $render_uuid]);
           $updated_render_uuids[] = $render_uuid;
         }
       }
@@ -396,6 +400,8 @@ class EntityRenderHandler implements EventSubscriberInterface {
 
     if (!$this->isStorageHit($source_entity_uuid, $langcode, $view_mode)) {
       $this->setStorageItem($source_entity_uuid, $langcode, $view_mode, $this->uuidGenerator->generate());
+      \Drupal::logger('acquia_lift_publisher')->debug('UUID generated for CDF: @uuid', ['@uuid' => $this->getStorageItem($source_entity_uuid, $langcode, $view_mode)]);
+
     }
 
     return $this->getStorageItem($source_entity_uuid, $langcode, $view_mode);

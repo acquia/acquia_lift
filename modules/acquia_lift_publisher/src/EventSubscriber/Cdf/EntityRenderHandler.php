@@ -128,7 +128,7 @@ class EntityRenderHandler implements EventSubscriberInterface {
    */
   public static function getSubscribedEvents() {
     $events[AcquiaContentHubEvents::CREATE_CDF_OBJECT][] = ['onCreateCdf', 100];
-    $events[AcquiaContentHubEvents::DELETE_REMOTE_ENTITY][] = ['onDeleteRemoteEntity'];
+    $events[AcquiaContentHubEvents::DELETE_REMOTE_ENTITY][] = ['onDeleteRemoteEntity', 100];
     return $events;
   }
 
@@ -201,10 +201,13 @@ class EntityRenderHandler implements EventSubscriberInterface {
 
       // Prune obsolete rendered entities that remained in Content Hub for
       // languages or view modes that are no longer applicable for this entity.
-      foreach ($this->getAllRenderUuids($remote_entity->getUuid()) as $langcode => $view_mode_uuids) {
-        foreach($view_mode_uuids as $view_mode_uuid) {
-          if (!in_array($view_mode_uuid, $updated_render_uuids)) {
-            $this->clientFactory->getClient()->deleteEntity($view_mode_uuid);
+      if ($remote_entity instanceof CDFObject) {
+        foreach ($this->getAllRenderUuids($remote_entity->getUuid()) as $langcode => $view_mode_uuids) {
+          foreach ($view_mode_uuids as $view_mode_uuid) {
+            if (!in_array($view_mode_uuid, $updated_render_uuids)) {
+              $this->clientFactory->getClient()->deleteEntity($view_mode_uuid);
+              \Drupal::logger('acquia_lift_publisher')->info('Update of source entity @source triggered the deletion of rendered_content @rendered', ['@source' => $remote_entity->getUuid(), '@rendered' => $view_mode_uuid]);
+            }
           }
         }
       }
@@ -212,7 +215,7 @@ class EntityRenderHandler implements EventSubscriberInterface {
   }
 
   /**
-   * Removes deleted remote entities from the publisher tracking table.
+   * Removes rendered_content entities when their source entity gets deleted.
    *
    * @param \Drupal\acquia_contenthub\Event\DeleteRemoteEntityEvent $event
    *   The DeleteRemoteEntityEvent object.
@@ -221,9 +224,12 @@ class EntityRenderHandler implements EventSubscriberInterface {
    */
   public function onDeleteRemoteEntity(DeleteRemoteEntityEvent $event) {
     $deleted_uuid = $event->getUuid();
-    if (!$entity instanceof ContentEntityInterface) {
-      // @todo we should support config entity rendering too.
-      return;
+    $render_uuids = $this->getAllRenderUuids($deleted_uuid);
+    foreach ($render_uuids as $langcode => $view_mode_uuids) {
+      foreach($view_mode_uuids as $view_mode_uuid) {
+        $this->clientFactory->getClient()->deleteEntity($view_mode_uuid);
+        \Drupal::logger('acquia_lift_publisher')->info('Deletion of source entity @source triggered the deletion of rendered_content @rendered', ['@source' => $deleted_uuid, '@rendered' => $view_mode_uuid]);
+      }
     }
   }
   /**

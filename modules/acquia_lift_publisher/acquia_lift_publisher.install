@@ -29,7 +29,6 @@ function acquia_lift_publisher_install() {
         continue;
       }
       foreach ($rendering['rendering'] as $view_mode) {
-        $view_mode = $view_mode == 'default' ? 'full' : $view_mode;
         $view_modes[$entity_type][$bundle][$view_mode] = 1;
       }
     }

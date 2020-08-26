@@ -158,6 +158,15 @@ class ContentPublishingForm extends ConfigFormBase {
             '#title' => $title,
           ];
         }
+        // Add default view mode.
+        if (!isset($form['options'][$entity_type_id][$bundle->id()]['default'])) {
+          $config_name = sprintf('view_modes.%s.%s.default', $entity_type_id, $bundle->id());
+          $form['options'][$entity_type_id][$bundle->id()]['default'] = [
+            '#type' => 'checkbox',
+            '#title' => $this->t('Default'),
+            '#default_value' => $config->get($config_name),
+          ];
+        }
         $short_name = explode('.', $view_mode->id())[1];
         $form['options'][$entity_type_id][$bundle->id()][$short_name] = [
           '#type' => 'checkbox',

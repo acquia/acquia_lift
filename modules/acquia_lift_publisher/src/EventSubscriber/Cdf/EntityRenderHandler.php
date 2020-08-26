@@ -14,6 +14,7 @@ use Drupal\Core\Block\BlockManagerInterface;
 use Drupal\Core\Config\ImmutableConfig;
 use Drupal\Core\Entity\ContentEntityInterface;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
+use Drupal\Core\Language\LanguageManager;
 use Drupal\Core\Language\LanguageDefault;
 use Drupal\Core\Language\LanguageInterface;
 use Drupal\Core\Render\Element;
@@ -190,6 +191,13 @@ class EntityRenderHandler implements EventSubscriberInterface {
 
           $this->languageDefault->set($language);
           $this->translationManager->setDefaultLangcode($language->getId());
+          $standard_languages = LanguageManager::getStandardLanguageList();
+          if (isset($standard_languages[$language->getId()][1])) {
+            $language_native_label = $standard_languages[$language->getId()][1];
+          }
+          else {
+            $language_native_label = $language->getName();
+          }
 
           $elements = $this->getViewModeMinimalHtml($translation, $view_mode);
           $html = $this->renderer->renderPlain($elements);
@@ -198,7 +206,7 @@ class EntityRenderHandler implements EventSubscriberInterface {
           $cdf->addAttribute('source_entity', CDFAttribute::TYPE_STRING, $translation->uuid());
           $cdf->addAttribute('label', CDFAttribute::TYPE_ARRAY_STRING, $translation->label(), $translation->language()->getId());
           $cdf->addAttribute('language', CDFAttribute::TYPE_STRING, $language->getId());
-          $cdf->addAttribute('language_label', CDFAttribute::TYPE_STRING, $language->getName());
+          $cdf->addAttribute('language_label', CDFAttribute::TYPE_STRING, $language_native_label);
           $cdf->addAttribute('view_mode', CDFAttribute::TYPE_STRING, $view_mode);
           $cdf->addAttribute('view_mode_label', CDFAttribute::TYPE_STRING, $display->label());
 

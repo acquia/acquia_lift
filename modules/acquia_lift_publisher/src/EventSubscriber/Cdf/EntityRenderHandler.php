@@ -168,7 +168,6 @@ class EntityRenderHandler implements EventSubscriberInterface {
       $document = $this->clientFactory->getClient()
         ->getEntities([$entity->uuid()]);
       $remote_entity = $document->hasEntity($entity->uuid()) ? $document->getCDFEntity($entity->uuid()) : FALSE;
-      $entity_view_mode_storage = $this->entityTypeManager->getStorage('entity_view_mode');
 
       $default_lang = $this->languageDefault->get();
       foreach (array_keys($view_modes) as $view_mode) {
@@ -177,7 +176,6 @@ class EntityRenderHandler implements EventSubscriberInterface {
         if ($view_mode == 'acquia_lift_preview_image') {
           continue;
         }
-        $display = $entity_view_mode_storage->load("{$entity->getEntityTypeId()}.$view_mode");
         foreach ($entity->getTranslationLanguages() as $language) {
           $translation = $entity->getTranslation($language->getId());
 
@@ -208,7 +206,7 @@ class EntityRenderHandler implements EventSubscriberInterface {
           $cdf->addAttribute('language', CDFAttribute::TYPE_STRING, $language->getId());
           $cdf->addAttribute('language_label', CDFAttribute::TYPE_STRING, $language_native_label);
           $cdf->addAttribute('view_mode', CDFAttribute::TYPE_STRING, $view_mode);
-          $cdf->addAttribute('view_mode_label', CDFAttribute::TYPE_STRING, $display->label());
+          $cdf->addAttribute('view_mode_label', CDFAttribute::TYPE_STRING, $view_mode);
 
           $preview_src = $this->buildPreviewImageAttributeSource($view_modes, 'acquia_lift_preview_image', 'acquia_lift_publisher_preview_image', $translation);
 

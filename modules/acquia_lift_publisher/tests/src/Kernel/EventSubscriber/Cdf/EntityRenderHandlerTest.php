@@ -278,7 +278,9 @@ class EntityRenderHandlerTest extends KernelTestBase {
       $this->container->get('entity_type.manager'),
       $this->container->get('plugin.manager.block'),
       $this->container->get('uuid'),
-      $this->container->get('acquia_contenthub.client.factory')
+      $this->container->get('acquia_contenthub.client.factory'),
+      $this->container->get('language.default'),
+      $this->container->get('string_translation')
     );
     $this->container->set('acquia_lift.service.entity_render.cdf.handler', $handler);
 
@@ -352,7 +354,7 @@ class EntityRenderHandlerTest extends KernelTestBase {
     foreach ($original_languages as $original_language) {
       $translation = $entity->getTranslation($original_language);
       $orig_label = $translation->label();
-      $this->assertNotFalse(strpos(htmlspecialchars($orig_label), $contents[$original_language]), 'Cdf contains the translated content.');
+      $this->assertNotFalse(strpos($contents[$original_language], htmlspecialchars($orig_label, ENT_QUOTES)), 'Cdf contains the translated content.');
     }
   }
 

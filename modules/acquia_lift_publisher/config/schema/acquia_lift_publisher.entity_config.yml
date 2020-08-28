@@ -1,0 +1,20 @@
+# Schema for the configuration files of the Acquia Lift Publisher module.
+acquia_lift_publisher.entity_config:
+  type: config_object
+  label: 'Acquia Lift Publisher entity config'
+  mapping:
+    view_modes:
+      type: sequence
+      label: 'View modes'
+      sequence:
+        type: sequence
+        label: 'Entity type'
+        sequence:
+          type: sequence
+          label: 'Bundle'
+          sequence:
+            type: integer
+            label: 'View mode'
+    render_role:
+      type: string
+      label: 'Render role'

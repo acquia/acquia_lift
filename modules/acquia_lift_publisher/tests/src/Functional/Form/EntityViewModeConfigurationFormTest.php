@@ -10,6 +10,8 @@ use Drupal\Tests\BrowserTestBase;
  *
  * @covers \Drupal\acquia_lift_publisher\Form\EntityViewModeConfigurationForm
  *
+ * @group acquia_lift
+ *
  * @package Drupal\Tests\acquia_lift_publisher\Functional
  */
 class EntityViewModeConfigurationFormTest extends BrowserTestBase {

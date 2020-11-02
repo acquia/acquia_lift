@@ -197,8 +197,23 @@ class EntityRenderHandler implements EventSubscriberInterface {
             $language_native_label = $language->getName();
           }
 
-          $elements = $this->getViewModeMinimalHtml($translation, $view_mode);
+          // Getting fake user account to give as context to the normalization.
+          $account = $this->getRenderUser();
+
+          // Checking for entity access permission to this particular account.
+          $entity_access = $translation->access('view', $account, TRUE);
+
+          // Switch to render account.
+          $this->accountSwitcher->switchTo($account);
+          $elements = [];
+          if ($entity_access->isAllowed()) {
+            $elements = $this->getViewModeMinimalHtml($translation, $view_mode);
+          }
           $html = $this->renderer->renderPlain($elements);
+
+          // Restore user account.
+          $this->accountSwitcher->switchBack();
+
           $metadata['data'] = base64_encode($html);
           $cdf->addAttribute('content', CDFAttribute::TYPE_STRING, trim(preg_replace('/\s+/', ' ', str_replace("\n", ' ', strip_tags($html)))));
           $cdf->addAttribute('source_entity', CDFAttribute::TYPE_STRING, $translation->uuid());
@@ -287,14 +302,6 @@ class EntityRenderHandler implements EventSubscriberInterface {
    *   The view mode minimal HTML.
    */
   protected function getViewModeMinimalHtml(ContentEntityInterface $object, $view_mode) {
-    // Creating a fake user account to give as context to the normalization.
-    $account = $this->getRenderUser();
-    // Checking for entity access permission to this particular account.
-    $entity_access = $object->access('view', $account, TRUE);
-    if (!$entity_access->isAllowed()) {
-      return [];
-    }
-    $this->accountSwitcher->switchTo($account);
     // Render View Mode.
     $entity_type_id = $object->getEntityTypeId();
     // @todo allow different entity types to specify how to do this.
@@ -304,8 +311,6 @@ class EntityRenderHandler implements EventSubscriberInterface {
     else {
       $build = $this->getViewMode($object, $view_mode);
     }
-    // Restore user account.
-    $this->accountSwitcher->switchBack();
     return $build;
   }
 

@@ -183,8 +183,8 @@ class PageContext extends BaseContext {
   private function setBaseData(Request $request, Route $route, TitleResolverInterface $titleResolver, LanguageManagerInterface $languageManager) {
     // Set language code
     // After investigation, there is no use case where the methods
-    // 'getCurrentLanguage' and 'getId' would not exist within LanguageManager. 
-    // Drupal 8 will ALWAYS set a language code and would not be null,  
+    // 'getCurrentLanguage' and 'getId' would not exist within LanguageManager.
+    // Drupal 8 will ALWAYS set a language code and would not be null,
     // therefore no checks are required.
     $this->htmlHeadContexts['context_language'] = $languageManager->getCurrentLanguage()->getId();
 
@@ -237,6 +237,13 @@ class PageContext extends BaseContext {
     }
     if (SettingsHelper::isValidCdfVersion($cdf_version)) {
       $this->htmlHeadContexts['cdfVersion'] = $cdf_version;
+    }
+    if (!empty($advanced_settings['content_origins'])) {
+      $content_origins = array_map('trim', explode("\n", trim($advanced_settings['content_origins'])));
+      $content_origins = implode(',', $content_origins);
+      if (!empty($content_origins)) {
+        $this->htmlHeadContexts['content_origins'] = $content_origins;
+      }
     }
   }
 

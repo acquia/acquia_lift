@@ -188,14 +188,17 @@ trait SettingsDataTrait {
   /**
    * Get a valid advanced settings array.
    *
+   * @param string $content_origins
+   *
    * @return array
    *   A valid advanced configuration settings array.
    */
-  private function getValidAdvancedSettings() {
+  private function getValidAdvancedSettings($content_origins = '') {
     return [
       'bootstrap_mode' => 'manual',
       'content_replacement_mode' => 'customized',
       'cdf_version' => 2,
+      'content_origins' => $content_origins,
     ];
   }
 

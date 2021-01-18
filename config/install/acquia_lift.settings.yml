@@ -22,4 +22,5 @@ advanced:
   bootstrap_mode: 'auto'
   content_replacement_mode: 'trusted'
   cdf_version: 1
+  content_origins: ''
 langcode: en

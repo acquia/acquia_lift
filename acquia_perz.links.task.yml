@@ -1,0 +1,10 @@
+acquia_perz.content_publishing:
+  title: Content Publishing
+  route_name: acquia_perz.admin_settings_form
+  base_route: acquia_perz.admin_settings_form
+
+acquia_perz.cis:
+  title: Content Index Service
+  route_name: acquia_perz.cis_settings_form
+  base_route: acquia_perz.admin_settings_form
+  weight: 1

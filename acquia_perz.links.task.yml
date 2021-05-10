@@ -8,3 +8,9 @@ acquia_perz.cis:
   route_name: acquia_perz.cis_settings_form
   base_route: acquia_perz.admin_settings_form
   weight: 1
+
+acquia_perz.export:
+  title: Export
+  route_name: acquia_perz.export_form
+  base_route: acquia_perz.admin_settings_form
+  weight: 2

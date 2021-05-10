@@ -161,7 +161,6 @@ class ContentPublishingForm extends ConfigFormBase {
    */
   public function submitForm(array &$form, FormStateInterface $form_state) {
     $options = $form_state->getValue('options');
-    \Drupal::logger('o1')->notice('<pre>'.print_r($options, TRUE).'</pre>');
     foreach ($options as $entity_type_id => $bundles) {
       foreach ($bundles as $bundle => $values) {
         unset($values['label']);
@@ -174,7 +173,6 @@ class ContentPublishingForm extends ConfigFormBase {
         unset($options[$entity_type_id]);
       }
     }
-    \Drupal::logger('o2')->notice('<pre>'.print_r($options, TRUE).'</pre>');
     $config = $this->config(self::CONFIG_NAME);
     $config->set('view_modes', $options);
     $config->set('render_role', $form_state->getValue('render_role'));

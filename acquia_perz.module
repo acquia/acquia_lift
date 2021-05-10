@@ -1,1 +1,23 @@
 <?php
+
+use Drupal\Core\Entity\EntityInterface;
+
+/**
+ * Implements hook_entity_insert().
+ */
+function acquia_perz_entity_insert(EntityInterface $entity) {
+  \Drupal::logger('ins:'.$entity->getEntityTypeId().':'.$entity->bundle())->notice('<pre>'.print_r('yes', TRUE).'</pre>');
+  \Drupal::getContainer()
+    ->get('acquia_perz.publishing_actions')
+    ->publishEntity($entity);
+}
+
+/**
+ * Implements hook_entity_update().
+ */
+function acquia_perz_entity_update(EntityInterface $entity) {
+  \Drupal::logger('upd:'.$entity->getEntityTypeId().':'.$entity->bundle())->notice('<pre>'.print_r('yes', TRUE).'</pre>');
+  \Drupal::getContainer()
+    ->get('acquia_perz.publishing_actions')
+    ->publishEntity($entity);
+}

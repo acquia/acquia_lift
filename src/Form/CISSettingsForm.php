@@ -33,9 +33,7 @@ class CISSettingsForm extends ConfigFormBase {
     $cis_settings = $settings->get('cis');
 
     $form['cis'] = [
-      '#type' => 'details',
       '#tree' => TRUE,
-      '#open' => TRUE,
     ];
     $form['cis']['account_id'] = [
       '#type' => 'textfield',

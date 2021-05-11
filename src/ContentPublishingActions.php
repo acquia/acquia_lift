@@ -141,7 +141,6 @@ class ContentPublishingActions {
       if ($langcode === 'all') {
         foreach ($entity->getTranslationLanguages() as $language) {
           $langcode = $language->getId();
-          //$translation = $entity->getTranslation($language->getId());
           $this->publishEntityByViewMode($entity, $view_mode, $langcode);
         }
       }

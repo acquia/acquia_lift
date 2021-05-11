@@ -10,7 +10,7 @@ use Drupal\Core\Queue\SuspendQueueException;
 use Drupal\Core\StringTranslation\StringTranslationTrait;
 use Drupal\Core\Config\ImmutableConfig;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
-use Drupal\acquia_perz\ContentPublishingActions;
+use Drupal\Core\Render\RendererInterface;
 
 /**
  * Implements an Export Queue for CIS.
@@ -34,6 +34,13 @@ class ExportQueue {
    * @see \Drupal\acquia_perz\Form\ContentPublishingForm
    */
   protected $publisherSettings;
+
+  /**
+   * Renderer.
+   *
+   * @var \Drupal\Core\Render\RendererInterface
+   */
+  protected $renderer;
 
   /**
    * The entity type manager.
@@ -66,9 +73,16 @@ class ExportQueue {
   /**
    * {@inheritdoc}
    */
-  public function __construct(ContentPublishingActions $publishing_actions, ImmutableConfig $publisher_settings, EntityTypeManagerInterface $entity_type_manager, QueueFactory $queue_factory, QueueWorkerManager $queue_manager, MessengerInterface $messenger) {
+  public function __construct(ContentPublishingActions $publishing_actions,
+                              ImmutableConfig $publisher_settings,
+                              RendererInterface $renderer,
+                              EntityTypeManagerInterface $entity_type_manager,
+                              QueueFactory $queue_factory,
+                              QueueWorkerManager $queue_manager,
+                              MessengerInterface $messenger) {
     $this->publishingActions = $publishing_actions;
     $this->publisherSettings = $publisher_settings;
+    $this->renderer = $renderer;
     $this->entityTypeManager = $entity_type_manager;
     $this->queue = $queue_factory->get('acquia_perz_publish_export');
     $this->queueManager = $queue_manager;
@@ -112,19 +126,6 @@ class ExportQueue {
   }
 
   /**
-   * Export content from the queue.
-   */
-  public function exportContent() {
-    while ($item = $this->queue->claimItem()) {
-      $this->publishingActions->publishEntityById(
-        $item->data['entityType'],
-        $item->data['entityId']
-      );
-      $this->queue->deleteItem($item);
-    }
-  }
-
-  /**
    * Rescan content and add it to the queue.
    */
   public function rescanContent() {
@@ -135,7 +136,21 @@ class ExportQueue {
     ];
     $entity_types = $this->publisherSettings->get('view_modes');
     foreach ($entity_types as $entity_type => $bundles) {
-      $bundles = array_keys($bundles);
+      // Check only bundles with at least one view mode activated
+      // besides 'acquia_perz_preview_image' view mode.
+      $available_bundles = [];
+      foreach ($bundles as $bundle => $view_modes) {
+        $view_modes = array_keys($view_modes);
+        if (count($view_modes) === 1
+          && in_array('acquia_perz_preview_image', $view_modes)) {
+          continue;
+        }
+        $available_bundles[] = $bundle;
+      }
+      // Skip entity type without activated bundles.
+      if (empty($available_bundles)) {
+        continue;
+      }
       $bundle_property_name = $this
         ->entityTypeManager
         ->getStorage($entity_type)
@@ -145,7 +160,12 @@ class ExportQueue {
         ->entityTypeManager
         ->getStorage($entity_type)
         ->getQuery();
-      $entity_ids = $query->condition($bundle_property_name, $bundles, 'IN')->execute();
+      // Single-bundle entity types like 'user' don't use
+      // bundle related property.
+      if (!empty($bundle_property_name)) {
+        $query = $query->condition($bundle_property_name, $available_bundles, 'IN');
+      }
+      $entity_ids = $query->execute();
       foreach ($entity_ids as $entity_id) {
         $batch['operations'][] = [[$this, 'rescanBatchProcess'], [$entity_type, $entity_id]];
       }
@@ -157,8 +177,12 @@ class ExportQueue {
   /**
    * Rescan content batch processing callback.
    *
+   * @param string $entity_type
+   *  The entity type.
+   * @param string $entity_id
+   *  The entity id.
    * @param mixed $context
-   *   The context array.
+   *  The context array.
    */
   public function rescanBatchProcess($entity_type, $entity_id, &$context) {
     $this->addQueueItem($entity_type, $entity_id);
@@ -192,7 +216,7 @@ class ExportQueue {
       '#type' => 'ul',
       '#items' => $results,
     ];
-    $queue_report = \Drupal::service('renderer')->render($elements);
+    $queue_report = $this->renderer->render($elements);
     $this->messenger->addMessage($queue_report);
   }
 
@@ -232,8 +256,8 @@ class ExportQueue {
       try {
         // Generating a list of entities.
         $msg_label = $this->t('(@entity_type, @entity_id)', [
-          '@entity_type' => $item->data->type,
-          '@entity_id' => $item->data->uuid,
+          '@entity_type' => $item->data['entityType'],
+          '@entity_id' => $item->data['entityId'],
         ]);
 
         // Process item.
@@ -306,7 +330,7 @@ class ExportQueue {
       '#type' => 'ul',
       '#items' => $results,
     ];
-    $queue_report = \Drupal::service('renderer')->render($elements);
+    $queue_report = $this->renderer->render($elements);
     $this->messenger->addMessage($queue_report);
   }
 

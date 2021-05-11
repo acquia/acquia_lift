@@ -2,14 +2,12 @@
 
 namespace Drupal\acquia_perz\Plugin\QueueWorker;
 
-use Drupal\Component\Uuid\Uuid;
 use Drupal\Core\Config\ConfigFactoryInterface;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
-use Drupal\Core\Logger\LoggerChannelFactoryInterface;
 use Drupal\Core\Plugin\ContainerFactoryPluginInterface;
 use Drupal\Core\Queue\QueueWorkerBase;
 use Symfony\Component\DependencyInjection\ContainerInterface;
-use Symfony\Component\EventDispatcher\EventDispatcherInterface;
+use Drupal\acquia_perz\ContentPublishingActions;
 
 /**
  * Content export queue worker.
@@ -20,6 +18,13 @@ use Symfony\Component\EventDispatcher\EventDispatcherInterface;
  * )
  */
 class ContentExportQueueWorker extends QueueWorkerBase implements ContainerFactoryPluginInterface {
+
+  /**
+   * Publishing actions.
+   *
+   * @var \Drupal\acquia_perz\ContentPublishingActions
+   */
+  protected $publishingActions;
 
   /**
    * The entity type manager.
@@ -38,6 +43,8 @@ class ContentExportQueueWorker extends QueueWorkerBase implements ContainerFacto
   /**
    * ContentExportQueueWorker constructor.
    *
+   * @param \Drupal\acquia_perz\ContentPublishingActions $publishing_actions
+   *   The publishing actions service.
    * @param \Drupal\Core\Entity\EntityTypeManagerInterface $entity_type_manager
    *   The entity type manager.
    * @param \Drupal\Core\Config\ConfigFactoryInterface $config_factory
@@ -51,7 +58,9 @@ class ContentExportQueueWorker extends QueueWorkerBase implements ContainerFacto
    *
    * @throws \Exception
    */
-  public function __construct(EventDispatcherInterface $dispatcher, EntityTypeManagerInterface $entity_type_manager, ConfigFactoryInterface $config_factory, array $configuration, $plugin_id, $plugin_definition) {
+  //
+  public function __construct(ContentPublishingActions $publishing_actions, EntityTypeManagerInterface $entity_type_manager, ConfigFactoryInterface $config_factory, array $configuration, $plugin_id, $plugin_definition) {
+    $this->publishingActions = $publishing_actions;
     $this->entityTypeManager = $entity_type_manager;
     $this->configFactory = $config_factory;
     parent::__construct($configuration, $plugin_id, $plugin_definition);
@@ -62,6 +71,7 @@ class ContentExportQueueWorker extends QueueWorkerBase implements ContainerFacto
    */
   public static function create(ContainerInterface $container, array $configuration, $plugin_id, $plugin_definition) {
     return new static(
+      $container->get('acquia_perz.publishing_actions'),
       $container->get('entity_type.manager'),
       $container->get('config.factory'),
       $configuration,
@@ -82,15 +92,23 @@ class ContentExportQueueWorker extends QueueWorkerBase implements ContainerFacto
    *      Entities processed and queue item will be deleted.
    */
   public function processItem($data) {
-    $storage = $this->entityTypeManager->getStorage($data->type);
-    $entity = $storage->loadByProperties(['uuid' => $data->uuid]);
+    $entity = $this->entityTypeManager
+      ->getStorage($data['entityType'])->load($data['entityId']);
+    // Entity missing so remove it from the tracker and stop processing.
+    if (!$entity) {
+      \Drupal::logger('error')->notice('<pre>'.sprintf(
+          'Entity ("%s", "%s") being exported no longer exists on the publisher. Deleting item from the publisher queue.',
+          $data['entityType'],
+          $data['entityId']
+        ).'</pre>');
 
-    $entity = reset($entity);
-    $entities = [];
-    $entity_uuids = [];
-
-
-
+      return TRUE;
+    }
+    $this->publishingActions->publishEntityById(
+      $data['entityType'],
+      $data['entityId']
+    );
+    return TRUE;
   }
 
 }

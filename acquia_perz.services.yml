@@ -24,4 +24,4 @@ services:
 
   acquia_perz.export_queue:
     class: Drupal\acquia_perz\ExportQueue
-    arguments: [ '@acquia_perz.publishing_actions', '@acquia_perz.publishing_settings', '@entity_type.manager', '@queue', '@plugin.manager.queue_worker', '@messenger' ]
+    arguments: [ '@acquia_perz.publishing_actions', '@acquia_perz.publishing_settings', '@renderer', '@entity_type.manager', '@queue', '@plugin.manager.queue_worker', '@messenger' ]

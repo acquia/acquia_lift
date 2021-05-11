@@ -133,7 +133,7 @@ class ExportForm extends FormBase {
       \Drupal::messenger()->addMessage('All content has been rescanned and added to the Queue.');
     }
     elseif ($triggered_button === 'export_content') {
-      $this->exportQueue->exportContent();
+      $this->exportQueue->exportQueueItems();
       \Drupal::messenger()->addMessage('All content has been exported from the Queue.');
     }
     elseif ($triggered_button === 'purge_content') {

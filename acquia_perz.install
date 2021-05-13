@@ -1,0 +1,62 @@
+<?php
+
+/**
+ * @file
+ * Acquia Perz - module install file.
+ */
+
+/**
+ * Implements hook_schema().
+ */
+function acquia_perz_schema() {
+  $schema = [];
+  $schema['acquia_perz_export_tracking'] = [
+    'description' => 'Table for tracking which entities have been exported to CIS.',
+    'fields' => [
+      'entity_type' => [
+        'type' => 'varchar',
+        'length' => 32,
+        'not null' => TRUE,
+        'default' => '',
+      ],
+      'entity_id' => [
+        'type' => 'varchar_ascii',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+      ],
+      'entity_uuid' => [
+        'type' => 'char',
+        'length' => 36,
+        'not null' => TRUE,
+        'default' => '',
+      ],
+      'langcode' => [
+        'description' => 'The {language}.langcode of the exported entity.',
+        'type' => 'varchar_ascii',
+        'length' => 12,
+        'not null' => TRUE,
+        'default' => '',
+      ],
+      'status' => [
+        'description' => 'The status of an exported entity.',
+        'type' => 'varchar',
+        'default' => '',
+        'not null' => TRUE,
+        'length' => 36,
+      ],
+      'modified' => [
+        'description' => "The entity's modified value.",
+        'type' => 'varchar',
+        'default' => '',
+        'not null' => TRUE,
+        'length' => 36,
+      ],
+    ],
+    'unique keys' => [
+      'entity' => ['entity_type', 'entity_id', 'langcode'],
+      'entity_uuid' => ['entity_uuid', 'langcode'],
+    ],
+  ];
+  return $schema;
+}

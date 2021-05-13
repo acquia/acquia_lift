@@ -7,7 +7,7 @@ use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\Core\Plugin\ContainerFactoryPluginInterface;
 use Drupal\Core\Queue\QueueWorkerBase;
 use Symfony\Component\DependencyInjection\ContainerInterface;
-use Drupal\acquia_perz\ContentPublishingActions;
+use Drupal\acquia_perz\ExportContent;
 
 /**
  * Content export queue worker.
@@ -22,9 +22,9 @@ class ContentExportQueueWorker extends QueueWorkerBase implements ContainerFacto
   /**
    * Publishing actions.
    *
-   * @var \Drupal\acquia_perz\ContentPublishingActions
+   * @var \Drupal\acquia_perz\ExportContent
    */
-  protected $publishingActions;
+  protected $exportContent;
 
   /**
    * The entity type manager.
@@ -43,7 +43,7 @@ class ContentExportQueueWorker extends QueueWorkerBase implements ContainerFacto
   /**
    * ContentExportQueueWorker constructor.
    *
-   * @param \Drupal\acquia_perz\ContentPublishingActions $publishing_actions
+   * @param \Drupal\acquia_perz\ExportContent $export_content
    *   The publishing actions service.
    * @param \Drupal\Core\Entity\EntityTypeManagerInterface $entity_type_manager
    *   The entity type manager.
@@ -59,8 +59,8 @@ class ContentExportQueueWorker extends QueueWorkerBase implements ContainerFacto
    * @throws \Exception
    */
   //
-  public function __construct(ContentPublishingActions $publishing_actions, EntityTypeManagerInterface $entity_type_manager, ConfigFactoryInterface $config_factory, array $configuration, $plugin_id, $plugin_definition) {
-    $this->publishingActions = $publishing_actions;
+  public function __construct(ExportContent $export_content, EntityTypeManagerInterface $entity_type_manager, ConfigFactoryInterface $config_factory, array $configuration, $plugin_id, $plugin_definition) {
+    $this->exportContent = $export_content;
     $this->entityTypeManager = $entity_type_manager;
     $this->configFactory = $config_factory;
     parent::__construct($configuration, $plugin_id, $plugin_definition);
@@ -71,7 +71,7 @@ class ContentExportQueueWorker extends QueueWorkerBase implements ContainerFacto
    */
   public static function create(ContainerInterface $container, array $configuration, $plugin_id, $plugin_definition) {
     return new static(
-      $container->get('acquia_perz.publishing_actions'),
+      $container->get('acquia_perz.export_content'),
       $container->get('entity_type.manager'),
       $container->get('config.factory'),
       $configuration,
@@ -104,7 +104,7 @@ class ContentExportQueueWorker extends QueueWorkerBase implements ContainerFacto
 
       return TRUE;
     }
-    $this->publishingActions->publishEntityById(
+    $this->exportContent->exportEntityById(
       $data['entityType'],
       $data['entityId']
     );

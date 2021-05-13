@@ -21,19 +21,19 @@ class ExportQueue {
   use DependencySerializationTrait;
 
   /**
-   * Publishing actions.
+   * Export content service.
    *
-   * @var \Drupal\acquia_perz\ContentPublishingActions
+   * @var \Drupal\acquia_perz\ExportContent
    */
-  protected $publishingActions;
+  protected $exportContent;
 
   /**
-   * The acquia perz publishing settings.
+   * The acquia perz entity settings.
    *
    * @var \Drupal\Core\Config\ImmutableConfig
    * @see \Drupal\acquia_perz\Form\ContentPublishingForm
    */
-  protected $publisherSettings;
+  protected $entitySettings;
 
   /**
    * Renderer.
@@ -50,7 +50,7 @@ class ExportQueue {
   protected $entityTypeManager;
 
   /**
-   * The Publisher Exporting Queue.
+   * The Export Content Queue.
    *
    * @var \Drupal\Core\Queue\QueueInterface
    */
@@ -73,15 +73,15 @@ class ExportQueue {
   /**
    * {@inheritdoc}
    */
-  public function __construct(ContentPublishingActions $publishing_actions,
-                              ImmutableConfig $publisher_settings,
+  public function __construct(ExportContent $export_content,
+                              ImmutableConfig $entity_settings,
                               RendererInterface $renderer,
                               EntityTypeManagerInterface $entity_type_manager,
                               QueueFactory $queue_factory,
                               QueueWorkerManager $queue_manager,
                               MessengerInterface $messenger) {
-    $this->publishingActions = $publishing_actions;
-    $this->publisherSettings = $publisher_settings;
+    $this->exportContent = $export_content;
+    $this->entitySettings = $entity_settings;
     $this->renderer = $renderer;
     $this->entityTypeManager = $entity_type_manager;
     $this->queue = $queue_factory->get('acquia_perz_publish_export');
@@ -111,15 +111,19 @@ class ExportQueue {
    * 'all' value means that all entity translations should be exported.
    */
   public function addQueueItem($entity_type, $entity_id, $langcode = 'all') {
+    $entity = $this->entityTypeManager
+      ->getStorage($entity_type)
+      ->load($entity_id);
     $this->queue->createItem([
       'entityType' => $entity_type,
       'entityId' => $entity_id,
+      'uuid' => $entity->uuid(),
       'langcode' => $langcode,
     ]);
   }
 
   /**
-   * Remove all the publish export queues.
+   * Remove all the export queue items.
    */
   public function purgeQueues() {
     $this->queue->deleteQueue();
@@ -134,7 +138,7 @@ class ExportQueue {
       'operations' => [],
       'finished' => [[$this, 'rescanBatchFinished'], []],
     ];
-    $entity_types = $this->publisherSettings->get('view_modes');
+    $entity_types = $this->entitySettings->get('view_modes');
     foreach ($entity_types as $entity_type => $bundles) {
       // Check only bundles with at least one view mode activated
       // besides 'acquia_perz_preview_image' view mode.

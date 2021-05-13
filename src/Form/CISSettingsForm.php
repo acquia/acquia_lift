@@ -35,6 +35,12 @@ class CISSettingsForm extends ConfigFormBase {
     $form['cis'] = [
       '#tree' => TRUE,
     ];
+    $form['cis']['endpoint'] = [
+      '#type' => 'textfield',
+      '#title' => $this->t('Endpoint'),
+      '#default_value' => $cis_settings['endpoint'],
+      '#required' => TRUE,
+    ];
     $form['cis']['account_id'] = [
       '#type' => 'textfield',
       '#title' => $this->t('Account ID'),
@@ -62,6 +68,7 @@ class CISSettingsForm extends ConfigFormBase {
   public function submitForm(array &$form, FormStateInterface $form_state) {
     $settings = $this->config('acquia_perz.settings');
     $values = $form_state->getValues()['cis'];
+    $settings->set('cis.endpoint', trim($values['endpoint']));
     $settings->set('cis.account_id', trim($values['account_id']));
     $settings->set('cis.environment', trim($values['environment']));
     $settings->set('cis.api_key', trim($values['api_key']));

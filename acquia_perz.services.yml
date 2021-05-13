@@ -1,5 +1,5 @@
 services:
-  acquia_perz.publishing_settings:
+  acquia_perz.entity_settings:
     class: Drupal\Core\Config\ImmutableConfig
     factory: config.factory:get
     arguments:
@@ -11,10 +11,11 @@ services:
     arguments:
       - 'acquia_perz.settings'
 
-  acquia_perz.publishing_actions:
-    class: Drupal\acquia_perz\ContentPublishingActions
+  acquia_perz.export_content:
+    class: Drupal\acquia_perz\ExportContent
     arguments:
-      - '@acquia_perz.publishing_settings'
+      - '@acquia_perz.tracker'
+      - '@acquia_perz.entity_settings'
       - '@acquia_perz.cis_settings'
       - '@entity_type.manager'
       - '@renderer'
@@ -24,4 +25,16 @@ services:
 
   acquia_perz.export_queue:
     class: Drupal\acquia_perz\ExportQueue
-    arguments: [ '@acquia_perz.publishing_actions', '@acquia_perz.publishing_settings', '@renderer', '@entity_type.manager', '@queue', '@plugin.manager.queue_worker', '@messenger' ]
+    arguments: [
+      '@acquia_perz.export_content',
+      '@acquia_perz.entity_settings',
+      '@renderer',
+      '@entity_type.manager',
+      '@queue',
+      '@plugin.manager.queue_worker',
+      '@messenger'
+    ]
+
+  acquia_perz.tracker:
+    class: Drupal\acquia_perz\ExportTracker
+    arguments: [ '@database' ]

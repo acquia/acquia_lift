@@ -1,5 +1,6 @@
 cis:
   api_key: ''
   account_id: ''
+  endpoint: ''
   environment: ''
   use_queue: false

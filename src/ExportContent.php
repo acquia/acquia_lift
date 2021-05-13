@@ -10,24 +10,32 @@ use Drupal\Component\Uuid\UuidInterface;
 use Drupal\Core\Render\RendererInterface;
 use Drupal\Core\Entity\EntityInterface;
 use Drupal\Component\Datetime\TimeInterface;
+use Drupal\acquia_perz\ExportTracker;
 
 /**
  * Contains helper methods for managing Content Index Service exports.
  *
  * @package Drupal\acquia_perz
  */
-class ContentPublishingActions {
+class ExportContent {
 
   /**
-   * The acquia perz publishing settings.
+   * The export tracker service.
+   *
+   * @var \Drupal\acquia_perz\ExportTracker
+   */
+  private $exportTracker;
+
+  /**
+   * The acquia perz entity settings.
    *
    * @var \Drupal\Core\Config\ImmutableConfig
    * @see \Drupal\acquia_perz\Form\ContentPublishingForm
    */
-  private $publisherSettings;
+  private $entitySettings;
 
   /**
-   * The acquia perz publishing settings.
+   * The acquia perz cis settings.
    *
    * @var \Drupal\Core\Config\ImmutableConfig
    * @see \Drupal\acquia_perz\Form\CISSettingsForm
@@ -70,10 +78,12 @@ class ContentPublishingActions {
   protected $time;
 
   /**
-   * ContentPublishingActions constructor.
+   * ExportContent constructor.
    *
-   * @param \Drupal\Core\Config\ImmutableConfig $publisher_settings
-   *   The acquia perz publishing settings.
+   * @param \Drupal\acquia_perz\ExportTracker $export_tracker
+   *   The Export Tracker service.
+   * @param \Drupal\Core\Config\ImmutableConfig $entity_settings
+   *   The acquia perz entity settings.
    * @param \Drupal\Core\Config\ImmutableConfig $cis_settings
    *   The acquia perz cis settings.
    * @param \Drupal\Core\Entity\EntityTypeManagerInterface $entity_type_manager
@@ -87,8 +97,9 @@ class ContentPublishingActions {
    * @param \Drupal\Component\Datetime\TimeInterface $time
    *   The time service.
    */
-  public function __construct(ImmutableConfig $publisher_settings, ImmutableConfig $cis_settings, EntityTypeManagerInterface $entity_type_manager, RendererInterface $renderer, UuidInterface $uuid_generator, DateFormatterInterface $date_formatter, TimeInterface $time) {
-    $this->publisherSettings = $publisher_settings;
+  public function __construct(ExportTracker $export_tracker, ImmutableConfig $entity_settings, ImmutableConfig $cis_settings, EntityTypeManagerInterface $entity_type_manager, RendererInterface $renderer, UuidInterface $uuid_generator, DateFormatterInterface $date_formatter, TimeInterface $time) {
+    $this->exportTracker = $export_tracker;
+    $this->entitySettings = $entity_settings;
     $this->cisSettings = $cis_settings;
     $this->entityTypeManager = $entity_type_manager;
     $this->renderer = $renderer;
@@ -107,11 +118,11 @@ class ContentPublishingActions {
    *   The setting value.
    */
   protected function getEntityViewModesSettingValue(EntityInterface $entity): array {
-    return $this->publisherSettings->get("view_modes.{$entity->getEntityTypeId()}.{$entity->bundle()}") ?? [];
+    return $this->entitySettings->get("view_modes.{$entity->getEntityTypeId()}.{$entity->bundle()}") ?? [];
   }
 
   /**
-   * Get and publish entity by its entity type and id.
+   * Get and export entity by its entity type and id.
    *
    * @param string $entity_type
    *  Entity type of the entity that should be exported.
@@ -121,7 +132,7 @@ class ContentPublishingActions {
    *  Language code of the entity translation that should be exported.
    * 'all' value means that all entity translations should be exported.
    */
-  public function publishEntityById($entity_type, $entity_id, $langcode = 'all') {
+  public function exportEntityById($entity_type, $entity_id, $langcode = 'all') {
     $entity = $this
       ->entityTypeManager
       ->getStorage($entity_type)
@@ -141,22 +152,24 @@ class ContentPublishingActions {
       if ($langcode === 'all') {
         foreach ($entity->getTranslationLanguages() as $language) {
           $langcode = $language->getId();
-          $this->publishEntityByViewMode($entity, $view_mode, $langcode);
+          $this->exportEntityByViewMode($entity, $view_mode, $langcode);
+          $this->exportTracker->track($entity, $langcode);
         }
       }
       else {
-        $this->publishEntityByViewMode($entity, $view_mode, $langcode);
+        $this->exportEntityByViewMode($entity, $view_mode, $langcode);
+        $this->exportTracker->track($entity, $langcode);
       }
     }
   }
 
   /**
-   * Publish all entity view modes.
+   * Export all entity view modes.
    *
    * @param \Drupal\Core\Entity\EntityInterface $entity
    *   The current entity.
    */
-  public function publishEntity(EntityInterface $entity) {
+  public function exportEntity(EntityInterface $entity) {
     if (!$entity instanceof ContentEntityInterface) {
       return;
     }
@@ -170,12 +183,51 @@ class ContentPublishingActions {
       if ($view_mode == 'acquia_perz_preview_image') {
         continue;
       }
-      $this->publishEntityByViewMode($entity, $view_mode, $langcode);
+      $this->exportEntityByViewMode($entity, $view_mode, $langcode);
     }
+    $this->exportTracker->track($entity, $langcode);
   }
 
   /**
-   * Publish entity by view mode.
+   * Delete entity.
+   *
+   * @param \Drupal\Core\Entity\EntityInterface $entity
+   *   The current entity.
+   */
+  public function deleteEntity(EntityInterface $entity) {
+    $data = [
+      'account_id' => $this->cisSettings->get('cis.account_id'),
+      'environment' => $this->cisSettings->get('cis.environment'),
+      'content_uuid' => $entity->uuid(),
+      'updated' => $this->dateFormatter->format($this->time->getCurrentTime(), 'custom', 'Y-m-d\TH:i:s'),
+      'content_type' => $entity->getEntityTypeId(),
+    ];
+    \Drupal::logger('delete-entity-data')->notice('<pre>'.print_r($data, TRUE).'</pre>');
+    $this->exportTracker->delete($entity);
+  }
+
+  /**
+   * Delete translation.
+   *
+   * @param \Drupal\Core\Entity\EntityInterface $translation
+   *   The current entity.
+   */
+  public function deleteTranslation(EntityInterface $translation) {
+    $langcode = $translation->language()->getId();
+    $data = [
+      'account_id' => $this->cisSettings->get('cis.account_id'),
+      'environment' => $this->cisSettings->get('cis.environment'),
+      'content_uuid' => $translation->uuid(),
+      'updated' => $this->dateFormatter->format($this->time->getCurrentTime(), 'custom', 'Y-m-d\TH:i:s'),
+      'content_type' => $translation->getEntityTypeId(),
+      'language' => $langcode,
+    ];
+    \Drupal::logger('delete-translation-data')->notice('<pre>'.print_r($data, TRUE).'</pre>');
+    $this->exportTracker->delete($translation, $langcode);
+  }
+
+  /**
+   * Export entity by view mode.
    *
    * @param \Drupal\Core\Entity\EntityInterface $entity
    *   The current entity.
@@ -184,7 +236,7 @@ class ContentPublishingActions {
    * @param string $langcode
    *   The language code.
    */
-  protected function publishEntityByViewMode(EntityInterface $entity, $view_mode, $langcode) {
+  protected function exportEntityByViewMode(EntityInterface $entity, $view_mode, $langcode) {
     $elements = $this->entityTypeManager
       ->getViewBuilder($entity->getEntityTypeId())
       ->view($entity, $view_mode, $langcode);

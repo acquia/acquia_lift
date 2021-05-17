@@ -3,8 +3,6 @@
 namespace Drupal\acquia_perz;
 
 use Drupal\Core\Database\Connection;
-use Drupal\Core\Entity\EntityChangedInterface;
-use Drupal\Core\Entity\EntityInterface;
 
 /**
  * The publisher tracker table class.
@@ -13,7 +11,11 @@ class ExportTracker {
 
   const DELETED = 'deleted';
 
+  const DELETE_TIMEOUT = 'delete_timeout';
+
   const EXPORTED = 'exported';
+
+  const EXPORT_TIMEOUT = 'export_timeout';
 
   const FAILED = 'failed';
 
@@ -57,22 +59,48 @@ class ExportTracker {
   /**
    * Add tracking for an entity in a self::EXPORTED state.
    *
-   * @param \Drupal\Core\Entity\EntityInterface $entity
-   *   The entity for which to add tracking.
+   * @param string $entity_type
+   *   The entity type of the entity.
+   * @param integer $entity_id
+   *   The entity id of the entity.
+   * @param string $entity_uuid
+   *   The entity uuid of the entity.
    * @param string $langcode
    *   The langcode of the tracking entity.
    *
    * @throws \Exception
    */
-  public function track(EntityInterface $entity, $langcode) {
-    $this->insertOrUpdate($entity, self::EXPORTED, $langcode);
+  public function export($entity_type, $entity_id, $entity_uuid, $langcode) {
+    $this->insertOrUpdate($entity_type, $entity_id, $entity_uuid, self::EXPORTED, $langcode);
   }
 
   /**
-   * Remove tracking for an entity.
+   * Add tracking for an entity in a self::EXPORT_TIMEOUT state.
    *
-   * @param string $entity
-   *   *   The entity that is deleted.
+   * @param string $entity_type
+   *   The entity type of the entity.
+   * @param integer $entity_id
+   *   The entity id of the entity.
+   * @param string $entity_uuid
+   *   The entity uuid of the entity.
+   * @param string $langcode
+   *   The langcode of the tracking entity.
+   *
+   * @throws \Exception
+   */
+  public function exportTimeout($entity_type, $entity_id, $entity_uuid, $langcode) {
+    $this->insertOrUpdate($entity_type, $entity_id, $entity_uuid, self::EXPORT_TIMEOUT, $langcode);
+  }
+
+  /**
+   * Delete tracking for an entity.
+   *
+   * @param string $entity_type
+   *   The entity type of the entity.
+   * @param integer $entity_id
+   *   The entity id of the entity.
+   * @param string $entity_uuid
+   *   The entity uuid of the entity.
    * @param string $langcode
    *   The langcode of the tracking entity.
    *
@@ -81,15 +109,40 @@ class ExportTracker {
    *
    * @throws \Exception
    */
-  public function delete($entity, $langcode = '') {
-    $this->insertOrUpdate($entity, self::DELETED, $langcode);
+  public function delete($entity_type, $entity_id, $entity_uuid, $langcode = '') {
+    return $this->insertOrUpdate($entity_type, $entity_id, $entity_uuid, self::DELETED, $langcode);
+  }
+
+  /**
+   * Delete timeout tracking for an entity.
+   *
+   * @param string $entity_type
+   *   The entity type of the entity.
+   * @param integer $entity_id
+   *   The entity id of the entity.
+   * @param string $entity_uuid
+   *   The entity uuid of the entity.
+   * @param string $langcode
+   *   The langcode of the tracking entity.
+   *
+   * @return \Drupal\Core\Database\StatementInterface|int|null
+   *   Database statement
+   *
+   * @throws \Exception
+   */
+  public function deleteTimeout($entity_type, $entity_id, $entity_uuid, $langcode = '') {
+    return $this->insertOrUpdate($entity_type, $entity_id, $entity_uuid, self::DELETE_TIMEOUT, $langcode);
   }
 
   /**
    * Determines if an entity will be inserted or updated with a status.
    *
-   * @param \Drupal\Core\Entity\EntityInterface $entity
-   *   The entity to add tracking to.
+   * @param string $entity_type
+   *   The entity type of the entity.
+   * @param integer $entity_id
+   *   The entity id of the entity.
+   * @param string $entity_uuid
+   *   The entity uuid of the entity.
    * @param string $status
    *   The status of the tracking.
    * @param string $langcode
@@ -100,28 +153,23 @@ class ExportTracker {
    *
    * @throws \Exception
    */
-  protected function insertOrUpdate(EntityInterface $entity, $status, $langcode = '') {
-    if ($entity instanceof EntityChangedInterface) {
-      $modified = date('c', $entity->getChangedTime());
-    }
-    else {
-      $modified = date('c');
-    }
-    $results = $this->get($entity->uuid(), $langcode);
+  protected function insertOrUpdate($entity_type, $entity_id, $entity_uuid, $status, $langcode = '') {
+    $modified = date('c');
+    $results = $this->get($entity_uuid, $langcode);
     if ($results) {
       $values = ['modified' => $modified, 'status' => $status];
       $query = $this->database->update(self::EXPORT_TRACKING_TABLE)
         ->fields($values);
-      $query->condition('entity_uuid', $entity->uuid());
+      $query->condition('entity_uuid', $entity_uuid);
       if (!empty($langcode)) {
         $query->condition('langcode', $langcode);
       }
       return $query->execute();
     }
     $values = [
-      'entity_type' => $entity->getEntityTypeId(),
-      'entity_id' => $entity->id(),
-      'entity_uuid' => $entity->uuid(),
+      'entity_type' => $entity_type,
+      'entity_id' => $entity_id,
+      'entity_uuid' => $entity_uuid,
       'status' => $status,
       'langcode' => $langcode,
       'modified' => $modified,

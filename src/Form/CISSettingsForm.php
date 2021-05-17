@@ -59,6 +59,21 @@ class CISSettingsForm extends ConfigFormBase {
       '#default_value' => $cis_settings['api_key'],
       '#required' => TRUE,
     ];
+    $form['cis']['ins_upd_slow_endpoint'] = [
+      '#type' => 'checkbox',
+      '#title' => $this->t('Insert/Update entity: slow endpoint'),
+      '#default_value' => isset($cis_settings['ins_upd_slow_endpoint']) ? $cis_settings['ins_upd_slow_endpoint'] : FALSE,
+    ];
+    $form['cis']['delete_entity_slow_endpoint'] = [
+      '#type' => 'checkbox',
+      '#title' => $this->t('Delete entity: slow endpoint'),
+      '#default_value' => isset($cis_settings['delete_entity_slow_endpoint']) ? $cis_settings['delete_entity_slow_endpoint'] : FALSE,
+    ];
+    $form['cis']['delete_translation_slow_endpoint'] = [
+      '#type' => 'checkbox',
+      '#title' => $this->t('Delete translation: slow endpoint'),
+      '#default_value' => isset($cis_settings['delete_translation_slow_endpoint']) ? $cis_settings['delete_translation_slow_endpoint'] : FALSE,
+    ];
     return parent::buildForm($form, $form_state);
   }
 
@@ -72,6 +87,9 @@ class CISSettingsForm extends ConfigFormBase {
     $settings->set('cis.account_id', trim($values['account_id']));
     $settings->set('cis.environment', trim($values['environment']));
     $settings->set('cis.api_key', trim($values['api_key']));
+    $settings->set('cis.ins_upd_slow_endpoint', $values['ins_upd_slow_endpoint']);
+    $settings->set('cis.delete_entity_slow_endpoint', $values['delete_entity_slow_endpoint']);
+    $settings->set('cis.delete_translation_slow_endpoint', $values['delete_translation_slow_endpoint']);
     $settings->save();
     parent::submitForm($form, $form_state);
   }

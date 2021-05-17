@@ -11,6 +11,8 @@ use Drupal\Core\StringTranslation\StringTranslationTrait;
 use Drupal\Core\Config\ImmutableConfig;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\Core\Render\RendererInterface;
+use GuzzleHttp\Exception\TransferException;
+use Drupal\acquia_perz\ExportTracker;
 
 /**
  * Implements an Export Queue for CIS.
@@ -20,12 +22,18 @@ class ExportQueue {
   use StringTranslationTrait;
   use DependencySerializationTrait;
 
+  const DELETED = 'deleted';
+
+  const EXPORTED = 'exported';
+
+  const FAILED = 'failed';
+
   /**
-   * Export content service.
+   * The export tracker service.
    *
-   * @var \Drupal\acquia_perz\ExportContent
+   * @var \Drupal\acquia_perz\ExportTracker
    */
-  protected $exportContent;
+  private $exportTracker;
 
   /**
    * The acquia perz entity settings.
@@ -73,14 +81,14 @@ class ExportQueue {
   /**
    * {@inheritdoc}
    */
-  public function __construct(ExportContent $export_content,
+  public function __construct(ExportTracker $export_tracker,
                               ImmutableConfig $entity_settings,
                               RendererInterface $renderer,
                               EntityTypeManagerInterface $entity_type_manager,
                               QueueFactory $queue_factory,
                               QueueWorkerManager $queue_manager,
                               MessengerInterface $messenger) {
-    $this->exportContent = $export_content;
+    $this->exportTracker = $export_tracker;
     $this->entitySettings = $entity_settings;
     $this->renderer = $renderer;
     $this->entityTypeManager = $entity_type_manager;
@@ -101,7 +109,11 @@ class ExportQueue {
 
   /**
    * Add entity to the Export Queue.
-   *
+   * @param string $action
+   *  The action, possible values:
+   *  - 'insert_or_update'
+   *  - 'delete_entity'
+   *  - 'delete_translation'
    * @param string $entity_type
    *  Entity type of the entity that should be exported.
    * @param integer $entity_id
@@ -110,11 +122,12 @@ class ExportQueue {
    *  Language code of the entity translation that should be exported.
    * 'all' value means that all entity translations should be exported.
    */
-  public function addQueueItem($entity_type, $entity_id, $langcode = 'all') {
+  public function addQueueItem($action, $entity_type, $entity_id, $langcode = 'all') {
     $entity = $this->entityTypeManager
       ->getStorage($entity_type)
       ->load($entity_id);
     $this->queue->createItem([
+      'action' => $action,
       'entityType' => $entity_type,
       'entityId' => $entity_id,
       'uuid' => $entity->uuid(),
@@ -189,7 +202,7 @@ class ExportQueue {
    *  The context array.
    */
   public function rescanBatchProcess($entity_type, $entity_id, &$context) {
-    $this->addQueueItem($entity_type, $entity_id);
+    $this->addQueueItem('insert_or_update', $entity_type, $entity_id);
   }
 
   /**
@@ -296,11 +309,35 @@ class ExportQueue {
         }
 
       }
-      catch (SuspendQueueException $e) {
-        // If there was an Exception thrown because of an error
-        // Releases the item that the worker could not process.
-        // Another worker can come and process it.
-        $this->queue->releaseItem($item);
+      catch (\RuntimeException $e) {
+        if ($e instanceof SuspendQueueException
+          || $e instanceof TransferException) {
+          // If there was an Exception thrown because of an error
+          // Releases the item that the worker could not process.
+          // Another worker can come and process it.
+          \Drupal::logger('released')->notice('<pre>'.print_r($item, TRUE).'</pre>');
+          switch ($item->data['action']) {
+            case 'insert_or_update':
+              $this->exportTracker->exportTimeout(
+                $item->data['entityType'],
+                $item->data['entityId'],
+                $item->data['uuid'],
+                $item->data['langcode']
+              );
+              break;
+
+            case 'entity_delete':
+            case 'translation_delete':
+              $this->exportTracker->deleteTimeout(
+                $item->data['entityType'],
+                $item->data['entityId'],
+                $item->data['uuid'],
+                $item->data['langcode']
+              );
+              break;
+          }
+          $this->queue->releaseItem($item);
+        }
       }
     }
   }

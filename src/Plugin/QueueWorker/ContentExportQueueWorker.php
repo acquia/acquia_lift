@@ -8,6 +8,7 @@ use Drupal\Core\Plugin\ContainerFactoryPluginInterface;
 use Drupal\Core\Queue\QueueWorkerBase;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Drupal\acquia_perz\ExportContent;
+use Drupal\Core\Queue\SuspendQueueException;
 
 /**
  * Content export queue worker.
@@ -18,6 +19,12 @@ use Drupal\acquia_perz\ExportContent;
  * )
  */
 class ContentExportQueueWorker extends QueueWorkerBase implements ContainerFactoryPluginInterface {
+
+  const DELETED = 'deleted';
+
+  const EXPORTED = 'exported';
+
+  const FAILED = 'failed';
 
   /**
    * Publishing actions.
@@ -104,10 +111,21 @@ class ContentExportQueueWorker extends QueueWorkerBase implements ContainerFacto
 
       return TRUE;
     }
-    $this->exportContent->exportEntityById(
-      $data['entityType'],
-      $data['entityId']
-    );
+    switch ($data['action']) {
+      case 'insert_or_update':
+        $this->exportContent->exportEntityById(
+          $data['entityType'],
+          $data['entityId']
+        );
+        break;
+      case 'delete_entity':
+        $this->exportContent->deleteEntityById($data['entityType'], $data['entityId'], $data['uuid']);
+        break;
+
+      case 'delete_translation':
+        $this->exportContent->deleteTranslationById($data['entityType'], $data['entityId'], $data['uuid'], $data['langcode']);
+        break;
+    }
     return TRUE;
   }
 

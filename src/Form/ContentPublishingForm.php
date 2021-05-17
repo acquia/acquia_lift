@@ -9,6 +9,8 @@ use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\Core\Form\ConfigFormBase;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Entity\FieldableEntityInterface;
+use Drupal\Core\Extension\ModuleHandler;
+use PhpParser\Node\Expr\AssignOp\Mod;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 
 /**
@@ -22,6 +24,13 @@ class ContentPublishingForm extends ConfigFormBase {
    * Holds the setting configuration ID.
    */
   public const CONFIG_NAME = 'acquia_perz.entity_config';
+
+  /**
+   * The module handler service.
+   *
+   * @var \Drupal\Core\Extension\ModuleHandler
+   */
+  protected $moduleHandler;
 
   /**
    * The entity type manager.
@@ -43,6 +52,7 @@ class ContentPublishingForm extends ConfigFormBase {
   public static function create(ContainerInterface $container) {
     return new static(
       $container->get('config.factory'),
+      $container->get('module_handler'),
       $container->get('entity_type.manager'),
       $container->get('entity_field.manager')
     );
@@ -53,6 +63,8 @@ class ContentPublishingForm extends ConfigFormBase {
    *
    * @param \Drupal\Core\Config\ConfigFactoryInterface $config_factory
    *   The config factory service.
+   * @param \Drupal\Core\Extension\ModuleHandler $module_handler
+   *   The module handler.
    * @param \Drupal\Core\Entity\EntityTypeManagerInterface $entity_type_manager
    *   The entity type manager.
    * @param \Drupal\Core\Entity\EntityFieldManagerInterface $entity_field_manager
@@ -60,10 +72,12 @@ class ContentPublishingForm extends ConfigFormBase {
    */
   public function __construct(
     ConfigFactoryInterface $config_factory,
+    ModuleHandler $module_handler,
     EntityTypeManagerInterface $entity_type_manager,
     EntityFieldManagerInterface $entity_field_manager
   ) {
     parent::__construct($config_factory);
+    $this->moduleHandler = $module_handler;
     $this->entityTypeManager = $entity_type_manager;
     $this->entityFieldManager = $entity_field_manager;
   }
@@ -90,6 +104,21 @@ class ContentPublishingForm extends ConfigFormBase {
    */
   public function buildForm(array $form, FormStateInterface $form_state) {
     $config = $this->config(self::CONFIG_NAME);
+
+    if ($this->moduleHandler->moduleExists('acquia_lift_publisher')) {
+      $acquia_publisher_view_modes = $this
+        ->config('acquia_lift_publisher.entity_config')
+        ->get('view_modes');
+      $acquia_perz_view_modes = $config->get('view_modes');
+      if (!empty($acquia_publisher_view_modes)
+        && $acquia_publisher_view_modes !== $acquia_perz_view_modes) {
+        $form['migrate_configuration'] = [
+          '#type' => 'submit',
+          '#value' => $this->t('Migrate configuration'),
+        ];
+      }
+    }
+
     /** @var \Drupal\Core\Entity\Entity\EntityViewMode[] $view_modes */
     $view_modes = $this->entityTypeManager->getStorage('entity_view_mode')->loadMultiple();
     $form['options'] = [
@@ -160,25 +189,34 @@ class ContentPublishingForm extends ConfigFormBase {
    * {@inheritdoc}
    */
   public function submitForm(array &$form, FormStateInterface $form_state) {
-    $options = $form_state->getValue('options');
-    foreach ($options as $entity_type_id => $bundles) {
-      foreach ($bundles as $bundle => $values) {
-        unset($values['label']);
-        $options[$entity_type_id][$bundle] = array_filter($values);
-        if (empty($options[$entity_type_id][$bundle])) {
-          unset($options[$entity_type_id][$bundle]);
+    $triggered_button = $form_state->getTriggeringElement()['#parents'][0];
+    if ($triggered_button === 'migrate_configuration') {
+      $acquia_publisher_view_modes = $this->config('acquia_lift_publisher.entity_config')->get('view_modes');
+      $config = $this->config(self::CONFIG_NAME);
+      $config->set('view_modes', $acquia_publisher_view_modes);
+      $config->save();
+      \Drupal::messenger()->addMessage('The configuration migration was successful, you can now safely uninstall the Acquia Lift Publisher module. Additionally, if you do not use the syndication service of Acquia Content Hub, you can also uninstall all the Acquia Content Hub modules.');
+    }
+    else {
+      $options = $form_state->getValue('options');
+      foreach ($options as $entity_type_id => $bundles) {
+        foreach ($bundles as $bundle => $values) {
+          unset($values['label']);
+          $options[$entity_type_id][$bundle] = array_filter($values);
+          if (empty($options[$entity_type_id][$bundle])) {
+            unset($options[$entity_type_id][$bundle]);
+          }
+        }
+        if (empty($options[$entity_type_id])) {
+          unset($options[$entity_type_id]);
         }
       }
-      if (empty($options[$entity_type_id])) {
-        unset($options[$entity_type_id]);
-      }
+      $config = $this->config(self::CONFIG_NAME);
+      $config->set('view_modes', $options);
+      $config->set('render_role', $form_state->getValue('render_role'));
+      $config->save();
+      parent::submitForm($form, $form_state);
     }
-    $config = $this->config(self::CONFIG_NAME);
-    $config->set('view_modes', $options);
-    $config->set('render_role', $form_state->getValue('render_role'));
-    $config->save();
-
-    parent::submitForm($form, $form_state);
   }
 
   /**

@@ -14,6 +14,8 @@ services:
   acquia_perz.export_content:
     class: Drupal\acquia_perz\ExportContent
     arguments:
+      - '@http_client'
+      - '@acquia_perz.export_queue'
       - '@acquia_perz.tracker'
       - '@acquia_perz.entity_settings'
       - '@acquia_perz.cis_settings'
@@ -26,7 +28,7 @@ services:
   acquia_perz.export_queue:
     class: Drupal\acquia_perz\ExportQueue
     arguments: [
-      '@acquia_perz.export_content',
+      '@acquia_perz.tracker',
       '@acquia_perz.entity_settings',
       '@renderer',
       '@entity_type.manager',

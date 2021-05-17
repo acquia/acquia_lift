@@ -1,5 +1,5 @@
-acquia_perz.content_publishing:
-  title: Content Publishing
+acquia_perz.entity_configuration:
+  title: Entity configuration
   route_name: acquia_perz.admin_settings_form
   base_route: acquia_perz.admin_settings_form
 

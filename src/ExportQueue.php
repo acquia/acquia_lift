@@ -122,15 +122,18 @@ class ExportQueue {
    *  Language code of the entity translation that should be exported.
    * 'all' value means that all entity translations should be exported.
    */
-  public function addQueueItem($action, $entity_type, $entity_id, $langcode = 'all') {
-    $entity = $this->entityTypeManager
-      ->getStorage($entity_type)
-      ->load($entity_id);
+  public function addQueueItem($action, $entity_type, $entity_id, $entity_uuid = '', $langcode = 'all') {
+    if (empty($entity_uuid)) {
+      $entity = $this->entityTypeManager
+        ->getStorage($entity_type)
+        ->load($entity_id);
+      $entity_uuid = $entity->uuid();
+    }
     $this->queue->createItem([
       'action' => $action,
       'entityType' => $entity_type,
       'entityId' => $entity_id,
-      'uuid' => $entity->uuid(),
+      'uuid' => $entity_uuid,
       'langcode' => $langcode,
     ]);
   }
@@ -312,10 +315,6 @@ class ExportQueue {
       catch (\RuntimeException $e) {
         if ($e instanceof SuspendQueueException
           || $e instanceof TransferException) {
-          // If there was an Exception thrown because of an error
-          // Releases the item that the worker could not process.
-          // Another worker can come and process it.
-          \Drupal::logger('released')->notice('<pre>'.print_r($item, TRUE).'</pre>');
           switch ($item->data['action']) {
             case 'insert_or_update':
               $this->exportTracker->exportTimeout(
@@ -336,7 +335,14 @@ class ExportQueue {
               );
               break;
           }
-          $this->queue->releaseItem($item);
+          $this->addQueueItem(
+            $item->data['action'],
+            $item->data['entityType'],
+            $item->data['entityId'],
+            $item->data['uuid'],
+            $item->data['langcode']
+          );
+          $this->queue->deleteItem($item);
         }
       }
     }

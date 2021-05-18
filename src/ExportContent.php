@@ -221,6 +221,7 @@ class ExportContent {
     if (!$view_modes = $this->getEntityViewModesSettingValue($entity)) {
       return;
     }
+    $this->exportTracker->clear($entity_id);
     foreach (array_keys($view_modes) as $view_mode) {
       // The preview image field setting is saved along side the view modes.
       // Don't process it as one.
@@ -248,6 +249,13 @@ class ExportContent {
    *   The current entity.
    */
   public function deleteEntity(EntityInterface $entity) {
+    if (!$entity instanceof ContentEntityInterface) {
+      return;
+    }
+    if (!$this->getEntityViewModesSettingValue($entity)) {
+      return;
+    }
+
     $entity_type = $entity->getEntityTypeId();
     $entity_id = $entity->id();
     $entity_uuid = $entity->uuid();
@@ -316,6 +324,12 @@ class ExportContent {
    *  Language code of the entity translation that should be deleted.
    */
   public function deleteTranslation(EntityInterface $translation, $langcode = '') {
+    if (!$translation instanceof ContentEntityInterface) {
+      return;
+    }
+    if (!$this->getEntityViewModesSettingValue($translation)) {
+      return;
+    }
     $entity_type = $translation->getEntityTypeId();
     $entity_id = $translation->id();
     $entity_uuid = $translation->uuid();
@@ -435,7 +449,7 @@ class ExportContent {
       );
       return self::FAILED;
     }
-    else {
+    elseif ($method !== 'DELETE') {
       $client_headers = [
         'Content-Type' => 'application/json',
         'Accept' => 'application/json',

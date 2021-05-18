@@ -55,16 +55,29 @@ class ExportTracker {
     return $query->execute()->fetchObject();
   }
 
+  /**
+   * Clear tracking for an entity.
+   *
+   * @param integer $entity_id
+   *   The entity id.
+   *
+   * @throws \Exception
+   */
+  public function clear($entity_id) {
+    $query = $this->database->delete(self::EXPORT_TRACKING_TABLE);
+    $query->condition('entity_id', $entity_id);
+    $query->execute();
+  }
 
   /**
    * Add tracking for an entity in a self::EXPORTED state.
    *
    * @param string $entity_type
-   *   The entity type of the entity.
+   *   The entity type.
    * @param integer $entity_id
-   *   The entity id of the entity.
+   *   The entity id.
    * @param string $entity_uuid
-   *   The entity uuid of the entity.
+   *   The entity uuid.
    * @param string $langcode
    *   The langcode of the tracking entity.
    *

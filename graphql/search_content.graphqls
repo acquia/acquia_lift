@@ -1,0 +1,35 @@
+schema {
+  query: Query
+}
+
+type Query {
+  entity_single_mode(
+    entityType: String!
+    id: Int!
+    viewMode: String! = "default"
+    langcode: String = "en"
+  ): Entity!
+  search_content(
+    start: Int = 0
+    rows: Int = 10
+    view_mode: String! = "default"
+    context_language: String! = "en"
+  ): [Entity!]!
+}
+
+type Entity {
+  id: String!
+  title: String!
+  created: String!
+  updated: String!
+  base_url: String!
+  view_mode(view_mode: String! = "default", context_language: String! = "en"): ViewMode!
+}
+
+type ViewMode {
+  id: String!
+  label: String!
+  language: String!
+  html: String
+  #preview_image: String
+}

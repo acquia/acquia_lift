@@ -1,0 +1,11 @@
+name: Acquia Personalization (Perz) (option2)
+description: Provides integration with Decision API via GraphQL endpoints (option 2).
+package: Acquia Lift
+type: module
+core_version_requirement: ^8.8 || ^9
+php: 7.0
+dependencies:
+  - drupal:node
+  - drupal:taxonomy
+  - drupal:typed_data
+  - drupal:graphql

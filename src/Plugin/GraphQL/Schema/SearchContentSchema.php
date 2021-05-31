@@ -24,7 +24,6 @@ class SearchContentSchema extends SdlSchemaPluginBase {
 
     $this->addQueryFields($registry, $builder);
     $this->addEntityFields($registry, $builder);
-    $this->addViewModeFields($registry, $builder);
 
     return $registry;
   }
@@ -64,12 +63,6 @@ class SearchContentSchema extends SdlSchemaPluginBase {
         ->map('view_mode', $builder->fromArgument('view_mode'))
         ->map('context_language', $builder->fromArgument('context_language'))
     );
-
-    /*$registry->addFieldResolver('Entity', 'rendered_content',
-      $builder->produce('entity_rendered')
-        ->map('entity', $builder->fromParent())
-        ->map('mode', $builder->fromArgument('view_mode'))
-    );*/
   }
 
   /**
@@ -82,30 +75,28 @@ class SearchContentSchema extends SdlSchemaPluginBase {
       $builder->produce('entity_load')
         ->map('type', $builder->fromArgument('entityType'))
         ->map('id', $builder->fromArgument('id'))
-        ->map('language', $builder->fromArgument('langcode'))
+        ->map('language', $builder->fromArgument('context_language'))
     );
     $registry->addFieldResolver('Query', 'search_content',
       $builder->compose(
         $builder->produce('query_entities')
+          ->map('entity_type_id', $builder->fromArgument('content_type'))
           ->map('start', $builder->fromArgument('start'))
-          ->map('rows', $builder->fromArgument('rows')),
+          ->map('rows', $builder->fromArgument('rows'))
+          ->map('langcode', $builder->fromArgument('context_language'))
+          ->map('date_start', $builder->fromArgument('date_start'))
+          ->map('date_end', $builder->fromArgument('date_end'))
+          ->map('q', $builder->fromArgument('q'))
+          ->map('tags', $builder->fromArgument('tags'))
+          ->map('all_tags', $builder->fromArgument('all_tags'))
+          ->map('sort', $builder->fromArgument('sort'))
+          ->map('sort_order', $builder->fromArgument('sort_order')),
         $builder->produce('entity_load_multiple')
           ->map('type', $builder->fromValue('node'))
           ->map('ids', $builder->fromParent())
+          ->map('language', $builder->fromArgument('context_language'))
       )
     );
-  }
-
-  /**
-   * @param \Drupal\graphql\GraphQL\ResolverRegistry $registry
-   * @param \Drupal\graphql\GraphQL\ResolverBuilder $builder
-   */
-  protected function addViewModeFields(ResolverRegistry $registry, ResolverBuilder $builder) {
-    ////////
-    /*$registry->addFieldResolver('ViewMode', 'id',
-      $builder->produce('return_self_parameter')
-        ->map('value', $builder->fromValue('test'))
-    );*/
   }
 
 }

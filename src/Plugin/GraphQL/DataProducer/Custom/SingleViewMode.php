@@ -10,6 +10,7 @@ use Drupal\Core\Plugin\ContainerFactoryPluginInterface;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\Core\Entity\EntityInterface;
 use Drupal\Core\Render\RendererInterface;
+use Drupal\image\Entity\ImageStyle;
 
 /**
  * @DataProducer(
@@ -111,15 +112,30 @@ class SingleViewMode extends DataProducerPluginBase implements ContainerFactoryP
       $view_mode_label = $this->t('Default');
     }
 
-    $elements = \Drupal::service('entity_type.manager')
+    $elements = $this->entityTypeManager
       ->getViewBuilder($entity_type)
       ->view($entity, $view_mode, $context_language);
 
+    $preview_image_style_id = 'acquia_perz_preview_image';
+    $uri = '';
+    $preview_image_url = NULL;
+    if ($entity->hasField('field_image')) {
+      $file_entity = $entity->get('field_image')->entity;
+      if (!empty($file_entity->uri)
+        && !empty($file_entity->uri->value)) {
+        $uri = $entity->get('field_image')->entity->uri->value;
+      }
+    }
+    if (!empty($uri)) {
+      $preview_image_style = ImageStyle::load($preview_image_style_id);
+      $preview_image_url = $preview_image_style->buildUrl($uri);
+    }
     return [
       'id' => $view_mode,
       'label' => $view_mode_label,
       'language' => $context_language,
       'html' => $this->renderer->renderPlain($elements),
+      'preview_image' => $preview_image_url,
     ];
   }
 

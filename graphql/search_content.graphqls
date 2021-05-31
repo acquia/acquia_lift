@@ -10,10 +10,19 @@ type Query {
     langcode: String = "en"
   ): Entity!
   search_content(
+    content_type: String! = "node"
     start: Int = 0
     rows: Int = 10
     view_mode: String! = "default"
     context_language: String! = "en"
+    date_start: String
+    date_end: String
+    q: String
+    tags: [String]
+    all_tags: Boolean
+    sort: String
+    sort_order: String
+
   ): [Entity!]!
 }
 
@@ -30,6 +39,6 @@ type ViewMode {
   id: String!
   label: String!
   language: String!
-  html: String
-  #preview_image: String
+  preview_image: String
+  html: String!
 }

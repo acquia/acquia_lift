@@ -1,0 +1,64 @@
+<?php
+
+use Drupal\Component\Serialization\Json;
+use GuzzleHttp\Exception\TransferException;
+use Drupal\Core\Database\Query\AlterableInterface;
+
+/**
+ * Implements hook_page_attachments().
+ */
+function acquia_perz_page_attachments(array &$attachments) {
+  if (\Drupal::service('router.admin_context')->isAdminRoute()) {
+    return;
+  }
+  \Drupal::logger('ttt')->notice('<pre>'.print_r('yes', TRUE).'</pre>');
+  $entity_type_id = 'node';
+  $url = 'http://acquia-pers-site.ddev.site/api/acquia-perz/all-uuids/'. $entity_type_id;
+  $username = 'admin';
+  $password = 'admin';
+  $client_headers = [
+    'Accept' => 'application/haljson',
+    'Content-Type' => 'application/haljson',
+    'Authorization' => 'Basic ' . base64_encode("$username:$password"),
+  ];
+
+  try {
+    $response = \Drupal::service('http_client')->request('GET',
+      $url, [
+        'headers' => $client_headers,
+        //'timeout' => 3,
+      ]
+    );
+  }
+  catch (TransferException $e) {
+    if ($e->getCode() === 0) {
+
+    }
+    //dump('transfer-ex:' . $e->getCode());
+    //dump($e);
+    //exit;
+  }
+  $uuids = Json::decode($response->getBody()->getContents());
+  $entity_repository = \Drupal::service('entity.repository');
+  $uuid_content_items = [];
+  foreach ($uuids as $uuid) {
+    $entity = $entity_repository->loadEntityByUuid($entity_type_id, $uuid);
+    $elements = \Drupal::service('entity_type.manager')
+      ->getViewBuilder($entity_type_id)
+      ->view($entity);
+    $uuid_content_items[$uuid] = \Drupal::service('renderer')
+      ->renderPlain($elements);
+  }
+  $attachments['#attached']['library'][] = 'acquia_perz/drupal.acquia_perz.preload_data';
+  $attachments['#attached']['drupalSettings']['decisionContent'] = [
+    $entity_type_id => $uuid_content_items,
+  ];
+}
+
+/**
+ * Implements hook_query_TAG_alter().
+ */
+function acquia_perz_query_random_alter(AlterableInterface $query) {
+  $query->orderRandom();
+}
+

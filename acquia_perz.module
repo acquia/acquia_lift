@@ -11,9 +11,10 @@ function acquia_perz_page_attachments(array &$attachments) {
   if (\Drupal::service('router.admin_context')->isAdminRoute()) {
     return;
   }
-  \Drupal::logger('ttt')->notice('<pre>'.print_r('yes', TRUE).'</pre>');
+  \Drupal::logger('page_load')->notice('<pre>'.print_r('yes', TRUE).'</pre>');
   $entity_type_id = 'node';
-  $url = 'http://acquia-pers-site.ddev.site/api/acquia-perz/all-uuids/'. $entity_type_id;
+  $all_uuids_url = \Drupal::config('acquia_perz.settings')->get('all_uuids_decision_endpoint');
+  $uuids_slots_url = \Drupal::config('acquia_perz.settings')->get('uuids_slots_decision_endpoint');
   $username = 'admin';
   $password = 'admin';
   $client_headers = [
@@ -22,22 +23,12 @@ function acquia_perz_page_attachments(array &$attachments) {
     'Authorization' => 'Basic ' . base64_encode("$username:$password"),
   ];
 
-  try {
-    $response = \Drupal::service('http_client')->request('GET',
-      $url, [
-        'headers' => $client_headers,
-        //'timeout' => 3,
-      ]
-    );
-  }
-  catch (TransferException $e) {
-    if ($e->getCode() === 0) {
+  $response = \Drupal::service('http_client')->request('GET',
+    $all_uuids_url, [
+      'headers' => $client_headers,
+    ]
+  );
 
-    }
-    //dump('transfer-ex:' . $e->getCode());
-    //dump($e);
-    //exit;
-  }
   $uuids = Json::decode($response->getBody()->getContents());
   $entity_repository = \Drupal::service('entity.repository');
   $uuid_content_items = [];
@@ -50,6 +41,7 @@ function acquia_perz_page_attachments(array &$attachments) {
       ->renderPlain($elements);
   }
   $attachments['#attached']['library'][] = 'acquia_perz/drupal.acquia_perz.preload_data';
+  $attachments['#attached']['drupalSettings']['uuidsSlotsUrl'] = $uuids_slots_url;
   $attachments['#attached']['drupalSettings']['decisionContent'] = [
     $entity_type_id => $uuid_content_items,
   ];

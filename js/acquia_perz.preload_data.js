@@ -1,10 +1,13 @@
 (function ($, Drupal, drupalSettings) {
   'use strict';
-
-  var entityTypeId = 'node',
+  if (drupalSettings['uuidsSlotsUrl'] === undefined) {
+    return;
+  }
+  var url = drupalSettings['uuidsSlotsUrl'],
+    entityTypeId = 'node',
     username = 'admin',
     password = 'admin';
-  fetch('/api/acquia-perz/uuids-slots/' + entityTypeId, {
+  fetch(url, {
       method: 'GET',
       headers: {
         "Content-Type": "application/hal+json",
@@ -16,8 +19,7 @@
   .then(r => r.json())
   .then(uuidsSlots => {
     for (const uuid in uuidsSlots) {
-      var slotId = uuidsSlots[uuid];
-      $('#' + slotId + ' .content').html(drupalSettings['decisionContent'][entityTypeId][uuid]);
+      $('#' + uuidsSlots[uuid] + ' .content').html(drupalSettings['decisionContent'][entityTypeId][uuid]);
     }
   });
 })(jQuery, Drupal, drupalSettings);

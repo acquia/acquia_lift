@@ -1,0 +1,5 @@
+acquia_perz.settings:
+  title: 'Acquia Personalization (Perz) (option2)'
+  description: ''
+  route_name: acquia_perz.admin_settings_form
+  parent: 'system.admin_config_services'

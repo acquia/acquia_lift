@@ -183,7 +183,7 @@ class QueryEntities extends DataProducerPluginBase implements ContainerFactoryPl
 
     $storage = $this->entityTypeManager
       ->getStorage($entity_type_id);
-    $entity_type_data = $storage->getEntityType();
+    $entity_type = $storage->getEntityType();
     $query = $storage->getQuery()
       ->currentRevision()
       ->accessCheck();
@@ -204,7 +204,7 @@ class QueryEntities extends DataProducerPluginBase implements ContainerFactoryPl
 
     // q filter.
     if (!empty($q)) {
-      $label_property = $entity_type_data->getKey('label');
+      $label_property = $entity_type->getKey('label');
       $text_fields = $this->getTextFields($entity_type_id);
       $or_group = $query->orConditionGroup();
       // Filter by entity label.
@@ -236,20 +236,26 @@ class QueryEntities extends DataProducerPluginBase implements ContainerFactoryPl
     }
 
     // Sorting.
-    if (!empty($sort)
-      && isset($entity_type_definition[$sort])
-      && !empty($sort_order)) {
-      $sort_order = strtolower($sort_order);
-      if ($sort_order === 'asc'
-        || $sort_order === 'desc') {
+    if (!empty($sort)) {
+      $sort_order = empty($sort_order)
+      || ($sort_order !== 'asc'
+          && $sort_order !== 'desc')
+        ? 'desc' : $sort_order;
+      if ($sort === 'number_of_views') {
+        $query->addMetaData('entity_id_column', $entity_type->getKey('id'));
+        $query->addMetaData('sort_order', $sort_order);
+        $query->addTag('perz_metric_order');
+      }
+      elseif (isset($entity_type_definition[$sort])) {
+        $sort_order = strtolower($sort_order);
         $query->sort($sort, $sort_order);
       }
     }
 
     $query->range($start, $rows);
 
-    $metadata->addCacheTags($entity_type_data->getListCacheTags());
-    $metadata->addCacheContexts($entity_type_data->getListCacheContexts());
+    $metadata->addCacheTags($entity_type->getListCacheTags());
+    $metadata->addCacheContexts($entity_type->getListCacheContexts());
 
     return $query->execute();
   }

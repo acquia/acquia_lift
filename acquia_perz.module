@@ -23,11 +23,13 @@ function acquia_perz_page_attachments(array &$attachments) {
     'Authorization' => 'Basic ' . base64_encode("$username:$password"),
   ];
 
-  $response = \Drupal::service('http_client')->request('GET',
-    $all_uuids_url, [
-      'headers' => $client_headers,
-    ]
-  );
+
+    $response = \Drupal::service('http_client')->request('GET',
+      $all_uuids_url, [
+        'headers' => $client_headers,
+      ]
+    );
+
 
   $uuids = Json::decode($response->getBody()->getContents());
   $entity_repository = \Drupal::service('entity.repository');
@@ -48,9 +50,22 @@ function acquia_perz_page_attachments(array &$attachments) {
 }
 
 /**
- * Implements hook_query_TAG_alter().
+ * Implements hook_query_random_alter().
  */
 function acquia_perz_query_random_alter(AlterableInterface $query) {
   $query->orderRandom();
+}
+
+/**
+ * Implements hook_query_perz_metric_order_alter().
+ */
+function acquia_perz_query_perz_metric_order_alter(AlterableInterface $query) {
+  $entity_id_column = $query->getMetaData('entity_id_column');
+  $sort_order = $query->getMetaData('sort_order');
+  $tables = $query->getTables();
+  if (!empty($tables['base_table'])) {
+    $query->join('acquia_perz_entity_counter', 'm', "base_table.{$entity_id_column} = m.entity_id");
+    $query->orderBy('m.count', $sort_order);
+  }
 }
 

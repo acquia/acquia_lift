@@ -1,0 +1,51 @@
+<?php
+
+/**
+ * @file
+ */
+
+/**
+ * Implements hook_schema().
+ */
+function acquia_perz_schema() {
+  $schema['acquia_perz_entity_counter'] = [
+    'description' => 'Access statistics for entities.',
+    'fields' => [
+      'entity_id' => [
+        'description' => 'The entity id for these statistics.',
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0,
+      ],
+      'entity_uuid' => [
+        'description' => 'The entity uuid for these statistics.',
+        'type' => 'char',
+        'length' => 36,
+        'not null' => TRUE,
+        'default' => '',
+      ],
+      'count' => [
+        'description' => 'The total number of times the entity has been viewed.',
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0,
+        'size' => 'big',
+      ],
+      'timestamp' => [
+        'description' => 'The time when entity count has been updated.',
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0,
+      ],
+    ],
+    'primary key' => ['entity_id', 'entity_uuid'],
+    'indexes' => [
+      'entity_id' => ['entity_id'],
+    ],
+  ];
+
+  return $schema;
+}

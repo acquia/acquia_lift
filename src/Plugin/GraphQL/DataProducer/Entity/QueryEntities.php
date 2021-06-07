@@ -11,6 +11,7 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
 use Drupal\Core\Entity\EntityTypeBundleInfoInterface;
 use Drupal\field\Entity\FieldConfig;
 use Drupal\Core\Database\Connection;
+use Drupal\Core\Entity\EntityRepositoryInterface;
 
 /**
  * @DataProducer(
@@ -89,6 +90,13 @@ class QueryEntities extends DataProducerPluginBase implements ContainerFactoryPl
   protected $entityTypeBundleInfo;
 
   /**
+   * The entity repository.
+   *
+   * @var \Drupal\Core\Entity\EntityRepositoryInterface
+   */
+  protected $repository;
+
+  /**
    * Database Service Object.
    *
    * @var \Drupal\Core\Database\Connection
@@ -108,6 +116,7 @@ class QueryEntities extends DataProducerPluginBase implements ContainerFactoryPl
       $container->get('entity_type.manager'),
       $container->get('entity_field.manager'),
       $container->get('entity_type.bundle.info'),
+      $container->get('entity.repository'),
       $container->get('database')
     );
   }
@@ -127,6 +136,8 @@ class QueryEntities extends DataProducerPluginBase implements ContainerFactoryPl
    *   The entity field manager.
    * @param \Drupal\Core\Entity\EntityTypeBundleInfoInterface $entity_type_bundle_info
    *   The entity type bundle info service.
+   * @param \Drupal\Core\Entity\EntityRepositoryInterface $repository
+   *   The entity repository service.
    * @param \Drupal\Core\Database\Connection $database
    *   The database service.
    * @codeCoverageIgnore
@@ -138,12 +149,14 @@ class QueryEntities extends DataProducerPluginBase implements ContainerFactoryPl
     EntityTypeManagerInterface $entity_type_manager,
     EntityFieldManagerInterface $entity_field_manager,
     EntityTypeBundleInfoInterface $entity_type_bundle_info,
+    EntityRepositoryInterface $repository,
     Connection $database
   ) {
     parent::__construct($configuration, $pluginId, $pluginDefinition);
     $this->entityTypeManager = $entity_type_manager;
     $this->entityFieldManager = $entity_field_manager;
     $this->entityTypeBundleInfo = $entity_type_bundle_info;
+    $this->repository = $repository;
     $this->database = $database;
   }
 
@@ -205,7 +218,7 @@ class QueryEntities extends DataProducerPluginBase implements ContainerFactoryPl
     // q filter.
     if (!empty($q)) {
       $label_property = $entity_type->getKey('label');
-      $text_fields = $this->getTextFields($entity_type_id);
+      $text_fields = $this->getTextConditions($entity_type_id);
       $or_group = $query->orConditionGroup();
       // Filter by entity label.
       if (!empty($label_property)) {
@@ -220,17 +233,22 @@ class QueryEntities extends DataProducerPluginBase implements ContainerFactoryPl
 
     // Taxonomy term filter.
     if (!empty($tags)) {
+      $grouped_terms_uuids = $this->categorizeTerms($tags);
       $taxonomy_term_fields = $this->getTaxonomyTermFields($entity_type_id);
       foreach ($taxonomy_term_fields as $taxonomy_term_field) {
-        if ($all_tags) {
-          foreach ($tags as $term_uuid) {
-            $query->condition($query->andConditionGroup()
-              ->condition("$taxonomy_term_field.entity.uuid", $term_uuid)
-            );
+        $taxonomy_term_field_name = $taxonomy_term_field->getName();
+        $settings = $taxonomy_term_field->getSetting('handler_settings');
+        foreach ($settings['target_bundles'] as $taxonomy) {
+          if ($all_tags) {
+            foreach ($grouped_terms_uuids[$taxonomy] as $term_uuid) {
+              $query->condition($query->andConditionGroup()
+                ->condition("$taxonomy_term_field_name.entity.uuid", $term_uuid)
+              );
+            }
           }
-        }
-        else {
-          $query->condition("$taxonomy_term_field.entity.uuid", $tags, 'IN');
+          else {
+            $query->condition("$taxonomy_term_field_name.entity.uuid", $grouped_terms_uuids[$taxonomy], 'IN');
+          }
         }
       }
     }
@@ -261,6 +279,29 @@ class QueryEntities extends DataProducerPluginBase implements ContainerFactoryPl
   }
 
   /**
+   * Categorize term uuids by its taxonomy.
+   *
+   * @param array $term_uuids
+   *
+   * @return array
+   *   Format: [taxonomy_name => [term_uuid1,...]]
+   */
+  protected function categorizeTerms($term_uuids) {
+    $result = [];
+    foreach ($term_uuids as $term_uuid) {
+      $term = $this->repository->loadEntityByUuid('taxonomy_term', $term_uuid);
+      $taxonomy_name = $term->bundle();
+      if (isset($result[$taxonomy_name])) {
+        $result[$taxonomy_name][] = $term_uuid;
+      }
+      else {
+        $result[$taxonomy_name] = [$term_uuid];
+      }
+    }
+    return $result;
+  }
+
+  /**
    * Get a list of taxonomy term fields by entity type id.
    *
    * @param integer $entity_type_id
@@ -273,14 +314,14 @@ class QueryEntities extends DataProducerPluginBase implements ContainerFactoryPl
       ->getBundleInfo($entity_type_id);
     $taxonomy_term_fields = [];
     foreach (array_keys($bundles) as $bundle) {
-      $fields = \Drupal::service('entity_field.manager')
+      $fields = $this->entityFieldManager
         ->getFieldDefinitions($entity_type_id, $bundle);
       foreach ($fields as $field) {
         if ($field instanceof FieldConfig
           && $field->getType() === 'entity_reference'
           && $field->getSetting('handler') === 'default:taxonomy_term'
           && !in_array($field->getName(), $taxonomy_term_fields)) {
-          $taxonomy_term_fields[] = $field->getName();
+          $taxonomy_term_fields[] = $field;
         }
       }
     }
@@ -288,30 +329,72 @@ class QueryEntities extends DataProducerPluginBase implements ContainerFactoryPl
   }
 
   /**
-   * Get a list of all text fields by entity type id.
+   * Go through each bundle of entity type and return
+   * a list of all text fields condition lines including
+   * nested paragraphs.
    *
    * @param integer $entity_type_id
    *   The entity type id.
    *
    * @return array
    */
-  protected function getTextFields($entity_type_id) {
-    $text_types = $this->getFieldTextTypes();
+  protected function getTextConditions($entity_type_id) {
     $bundles = $this->entityTypeBundleInfo
       ->getBundleInfo($entity_type_id);
     $text_fields = [];
     foreach (array_keys($bundles) as $bundle) {
-      $fields = $this->entityFieldManager
-        ->getFieldDefinitions($entity_type_id, $bundle);
-      foreach ($fields as $field) {
-        if ($field instanceof FieldConfig
-          && in_array($field->getType(), $text_types)
-          && !in_array($field->getName(), $text_fields)) {
-          $text_fields[] = $field->getName();
+      $text_fields = array_merge(
+        $text_fields,
+        $this->buildNestedConditions($entity_type_id, $bundle)
+      );
+    }
+    $text_fields = array_unique($text_fields);
+    return $text_fields;
+  }
+
+  /**
+   * Go through all fields of the bundle and build condition lines
+   * for text fields.
+   * For paragraph reference fields it runs recursively and builds
+   * the same.
+   *
+   * @param string $entity_type_id
+   *   The entity type id.
+   * @param string $bundle
+   *   Bundle name.
+   *
+   * @return array
+   */
+  protected function buildNestedConditions($entity_type_id, $bundle) {
+    $result = [];
+    $fields = $this->entityFieldManager
+      ->getFieldDefinitions($entity_type_id, $bundle);
+    foreach ($fields as $field) {
+      if ($field instanceof FieldConfig) {
+        $field_name = $field->getName();
+        $field_type = $field->getType();
+        // Check that field is a paragraph reference.
+        if ($field_type === 'entity_reference_revisions'
+          && $field->getSetting('handler') === 'default:paragraph') {
+          $handler_settings = $field->getSetting('handler_settings');
+          $paragraph_types = $handler_settings['target_bundles'];
+          foreach ($paragraph_types as $paragraph_type) {
+            $paragraph_result = $this->buildNestedConditions('paragraph', $paragraph_type);
+            $condition_line = "$field_name.entity.";
+            $result = array_merge(
+              $result,
+              // Add condition line as prefix to each element of the array.
+              preg_filter('/^/', $condition_line, $paragraph_result)
+            );
+          }
+        }
+        // Check that field has one of Text related types.
+        elseif (in_array($field_type, $this->getFieldTextTypes())) {
+          $result[] = $field_name;
         }
       }
     }
-    return $text_fields;
+    return $result;
   }
 
   /**

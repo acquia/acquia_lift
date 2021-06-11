@@ -10,7 +10,7 @@ use Drupal\rest\ResourceResponse;
  *
  * @RestResource(
  *   id = "acquia_perz_all_uuids_endpoint",
- *   label = @Translation("Ac Perz - All uuids by entity type"),
+ *   label = @Translation("Acquia Perz: All uuids by entity type"),
  *   uri_paths = {
  *     "canonical" = "/api/acquia-perz/all-uuids/{entity_type_id}"
  *   }

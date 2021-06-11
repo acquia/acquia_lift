@@ -8,13 +8,16 @@ use Drupal\Core\Database\Query\AlterableInterface;
  * Implements hook_page_attachments().
  */
 function acquia_perz_page_attachments(array &$attachments) {
+  // Check that rest endpoints exist.
   if (\Drupal::service('router.admin_context')->isAdminRoute()) {
     return;
   }
-  \Drupal::logger('page_load')->notice('<pre>'.print_r('yes', TRUE).'</pre>');
-  $entity_type_id = 'node';
   $all_uuids_url = \Drupal::config('acquia_perz.settings')->get('all_uuids_decision_endpoint');
   $uuids_slots_url = \Drupal::config('acquia_perz.settings')->get('uuids_slots_decision_endpoint');
+  if (empty($all_uuids_url) || empty($uuids_slots_url)) {
+    return;
+  }
+  $entity_type_id = 'node';
   $username = 'admin';
   $password = 'admin';
   $client_headers = [
@@ -22,14 +25,11 @@ function acquia_perz_page_attachments(array &$attachments) {
     'Content-Type' => 'application/haljson',
     'Authorization' => 'Basic ' . base64_encode("$username:$password"),
   ];
-
-
-    $response = \Drupal::service('http_client')->request('GET',
-      $all_uuids_url, [
-        'headers' => $client_headers,
-      ]
-    );
-
+  $response = \Drupal::service('http_client')->request('GET',
+    $all_uuids_url, [
+      'headers' => $client_headers,
+    ]
+  );
 
   $uuids = Json::decode($response->getBody()->getContents());
   $entity_repository = \Drupal::service('entity.repository');

@@ -11,7 +11,7 @@ use Drupal\Component\Uuid\Uuid;
  *
  * @RestResource(
  *   id = "acquia_perz_views_count_endpoint",
- *   label = @Translation("Ac Perz - Views Count"),
+ *   label = @Translation("Acquia Perz: Views Count"),
  *   uri_paths = {
  *     "canonical" = "/api/acquia-perz/views-count/{entity_type_id}/{arg}"
  *   }

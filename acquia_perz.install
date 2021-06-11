@@ -4,6 +4,219 @@
  * @file
  */
 
+use Drupal\graphql\Entity\Server;
+use Drupal\rest\Entity\RestResourceConfig;
+use Drupal\rest\RestResourceConfigInterface;
+use Drupal\block_content\Entity\BlockContent;
+use Drupal\block\Entity\Block;
+
+/**
+ * Implements hook_install().
+ */
+function acquia_perz_install() {
+  // Create Perz graphQL server.
+  if (empty(Server::load('acquia_perz_search_content'))) {
+    $graphql_server = Server::create();
+    $graphql_server->set('label', 'Acquia Perz - Search Content');
+    $graphql_server->set('name', 'acquia_perz_search_content');
+    $graphql_server->set('schema', 'search_content');
+    $graphql_server->set('endpoint', '/ap/search-content');
+    $graphql_server->save();
+  }
+  // Create "Ac Perz - All uuids by entity type" rest endpoint
+  // (for testing purposes).
+  $all_uuids_rest_id = 'acquia_perz_all_uuids_endpoint';
+  $all_uuids_rest = RestResourceConfig::load($all_uuids_rest_id);
+  if (empty($all_uuids_rest)) {
+    RestResourceConfig::create([
+      'id' => $all_uuids_rest_id,
+      'granularity' => RestResourceConfigInterface::RESOURCE_GRANULARITY,
+      'configuration' => [
+        'methods' => ['GET'],
+        'formats' => ['json'],
+        'authentication' => ['basic_auth'],
+      ],
+    ])->save();
+  }
+  // Create "Acquia Perz: Uuids - Slots" rest endpoint
+  // (for testing purposes).
+  $slots_uuids_rest_id = 'acquia_perz_uuids_slots_endpoint';
+  $slots_uuids_rest = RestResourceConfig::load($slots_uuids_rest_id);
+  if (empty($slots_uuids_rest)) {
+    RestResourceConfig::create([
+      'id' => $slots_uuids_rest_id,
+      'granularity' => RestResourceConfigInterface::RESOURCE_GRANULARITY,
+      'configuration' => [
+        'methods' => ['GET'],
+        'formats' => ['json'],
+        'authentication' => ['basic_auth'],
+      ],
+    ])->save();
+  }
+  // Create "Acquia Perz: Views Count" rest endpoint
+  // (for testing purposes).
+  $views_count_rest_id = 'acquia_perz_views_count_endpoint';
+  $views_count_rest = RestResourceConfig::load($views_count_rest_id);
+  if (empty($views_count_rest)) {
+    RestResourceConfig::create([
+      'id' => $views_count_rest_id,
+      'granularity' => RestResourceConfigInterface::RESOURCE_GRANULARITY,
+      'configuration' => [
+        'methods' => ['GET'],
+        'formats' => ['json'],
+        'authentication' => ['basic_auth'],
+      ],
+    ])->save();
+  }
+
+  // Slot 1 - create custom block.
+  $slot1_id = 'slot1';
+  $slot1_title = 'Slot 1';
+  $slot1 = BlockContent::create([
+    'type' => 'basic',
+    'info' => $slot1_title,
+    'body' => [
+      'value' => 'Default content 1',
+      'format' => 'full_html',
+    ],
+  ]);
+  $slot1->save();
+  // Create placed block for Slot 1 block.
+  $placed_slot1 = Block::create([
+    'id' => $slot1_id,
+    'label' => $slot1_title,
+    'theme' => 'bartik',
+    'weight' => 0,
+    'status' => TRUE,
+    'region' => 'sidebar_first',
+    'plugin' => 'block_content:' . $slot1->uuid(),
+    'settings' => [
+      'label' => $slot1_title,
+    ],
+  ]);
+  $placed_slot1->save();
+
+  // Slot 2 - create custom block.
+  $slot2_id = 'slot2';
+  $slot2_title = 'Slot 2';
+  $slot2 = BlockContent::create([
+    'type' => 'basic',
+    'info' => $slot2_title,
+    'body' => [
+      'value' => 'Default content 2',
+      'format' => 'full_html',
+    ],
+  ]);
+  $slot2->save();
+  // Create placed block for Slot 2 block.
+  $placed_slot2 = Block::create([
+    'id' => $slot2_id,
+    'label' => $slot2_title,
+    'theme' => 'bartik',
+    'weight' => 0,
+    'status' => TRUE,
+    'region' => 'sidebar_first',
+    'plugin' => 'block_content:' . $slot2->uuid(),
+    'settings' => [
+      'label' => $slot2_title,
+    ],
+  ]);
+  $placed_slot2->save();
+
+  // Slot 3 - create custom block.
+  $slot3_id = 'slot3';
+  $slot3_title = 'Slot 3';
+  $slot3 = BlockContent::create([
+    'type' => 'basic',
+    'info' => $slot3_title,
+    'body' => [
+      'value' => 'Default content 3',
+      'format' => 'full_html',
+    ],
+  ]);
+  $slot3->save();
+  // Create placed block for Slot 3 block.
+  $placed_slot3 = Block::create([
+    'id' => $slot3_id,
+    'label' => $slot3_title,
+    'theme' => 'bartik',
+    'weight' => 0,
+    'status' => TRUE,
+    'region' => 'sidebar_first',
+    'plugin' => 'block_content:' . $slot3->uuid(),
+    'settings' => [
+      'label' => $slot3_title,
+    ],
+  ]);
+  $placed_slot3->save();
+
+  // Set config settings.
+  $host = \Drupal::request()->getSchemeAndHttpHost();
+  $perz_settings = \Drupal::configFactory()->getEditable('acquia_perz.settings');
+  $perz_settings->set('all_uuids_decision_endpoint', $host . '/api/acquia-perz/all-uuids/node');
+  $perz_settings->set('uuids_slots_decision_endpoint', $host . '/api/acquia-perz/uuids-slots/node');
+  $perz_settings->set('slot1_id', 'block-' . $slot1_id);
+  $perz_settings->set('slot2_id', 'block-' . $slot2_id);
+  $perz_settings->set('slot3_id', 'block-' . $slot3_id);
+  $perz_settings->save();
+}
+
+/**
+ * Implements hook_uninstall().
+ */
+function acquia_perz_uninstall() {
+  // Delete Perz graphQL server.
+  $graphql_server = Server::load('acquia_perz_search_content');
+  if ($graphql_server) {
+    $graphql_server->delete();
+  }
+  // Delete "Ac Perz - All uuids by entity type" rest endpoint.
+  $all_uuids_rest = RestResourceConfig::load('acquia_perz_all_uuids_endpoint');
+  if ($all_uuids_rest) {
+    $all_uuids_rest->delete();
+  }
+  // Delete "Acquia Perz: Uuids - Slots" rest endpoint.
+  $slots_uuids_rest = RestResourceConfig::load('acquia_perz_uuids_slots_endpoint');
+  if ($slots_uuids_rest) {
+    $slots_uuids_rest->delete();
+  }
+  // Delete "Acquia Perz: Views Count" rest endpoint.
+  $views_count_rest = RestResourceConfig::load('acquia_perz_views_count_endpoint');
+  if ($views_count_rest) {
+    $views_count_rest->delete();
+  }
+
+  $entity_repository = \Drupal::service('entity.repository');
+  // Slot 1: delete custom block and corresponding placed block.
+  $placed_slot1 = Block::load('slot1');
+  $plugin = $placed_slot1->get('plugin');
+  list($block_entity_type_id, $block_uuid) = explode(':', $plugin);
+  $slot1_block = $entity_repository->loadEntityByUuid($block_entity_type_id, $block_uuid);
+  $placed_slot1->delete();
+  $slot1_block->delete();
+
+  // Slot 2: delete custom block and corresponding placed block.
+  $placed_slot2 = Block::load('slot2');
+  $plugin = $placed_slot2->get('plugin');
+  list($block_entity_type_id, $block_uuid) = explode(':', $plugin);
+  $slot2_block = $entity_repository->loadEntityByUuid($block_entity_type_id, $block_uuid);
+  $placed_slot2->delete();
+  $slot2_block->delete();
+
+  // Slot 3: delete custom block and corresponding placed block.
+  $placed_slot3 = Block::load('slot3');
+  $plugin = $placed_slot3->get('plugin');
+  list($block_entity_type_id, $block_uuid) = explode(':', $plugin);
+  $slot3_block = $entity_repository->loadEntityByUuid($block_entity_type_id, $block_uuid);
+  $placed_slot3->delete();
+  $slot3_block->delete();
+
+  // Delete settings.
+  $perz_settings = \Drupal::configFactory()->getEditable('acquia_perz.settings');
+  $perz_settings->delete();
+
+}
+
 /**
  * Implements hook_schema().
  */

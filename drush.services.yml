@@ -1,0 +1,6 @@
+services:
+
+  acquia_perz.commands.metric:
+    class: Drupal\acquia_perz\Commands\AcquiaPerzMetricCommands
+    tags:
+      - { name: drush.command }

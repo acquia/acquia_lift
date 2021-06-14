@@ -81,6 +81,7 @@ function acquia_perz_install() {
     ],
   ]);
   $slot1->save();
+
   // Create placed block for Slot 1 block.
   $placed_slot1 = Block::create([
     'id' => $slot1_id,
@@ -108,6 +109,7 @@ function acquia_perz_install() {
     ],
   ]);
   $slot2->save();
+
   // Create placed block for Slot 2 block.
   $placed_slot2 = Block::create([
     'id' => $slot2_id,
@@ -135,6 +137,7 @@ function acquia_perz_install() {
     ],
   ]);
   $slot3->save();
+
   // Create placed block for Slot 3 block.
   $placed_slot3 = Block::create([
     'id' => $slot3_id,
@@ -224,6 +227,13 @@ function acquia_perz_schema() {
   $schema['acquia_perz_entity_counter'] = [
     'description' => 'Access statistics for entities.',
     'fields' => [
+      'entity_type_id' => [
+        'description' => 'The entity type id for these statistics.',
+        'type' => 'varchar',
+        'length' => 32,
+        'not null' => TRUE,
+        'default' => '',
+      ],
       'entity_id' => [
         'description' => 'The entity id for these statistics.',
         'type' => 'int',

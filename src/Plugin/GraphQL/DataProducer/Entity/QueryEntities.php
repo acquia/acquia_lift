@@ -233,24 +233,21 @@ class QueryEntities extends DataProducerPluginBase implements ContainerFactoryPl
 
     // Taxonomy term filter.
     if (!empty($tags)) {
-      $grouped_terms_uuids = $this->categorizeTerms($tags);
-      $taxonomy_term_fields = $this->getTaxonomyTermFields($entity_type_id);
-      foreach ($taxonomy_term_fields as $taxonomy_term_field) {
-        $taxonomy_term_field_name = $taxonomy_term_field->getName();
-        $settings = $taxonomy_term_field->getSetting('handler_settings');
-        foreach ($settings['target_bundles'] as $taxonomy) {
-          if ($all_tags) {
-            foreach ($grouped_terms_uuids[$taxonomy] as $term_uuid) {
-              $query->condition($query->andConditionGroup()
-                ->condition("$taxonomy_term_field_name.entity.uuid", $term_uuid)
-              );
-            }
-          }
-          else {
-            $query->condition("$taxonomy_term_field_name.entity.uuid", $grouped_terms_uuids[$taxonomy], 'IN');
-          }
+      $terms_fields = $this->getTermsFields($tags, $entity_type_id);
+      $main_group = $all_tags ?
+        $query->andConditionGroup() :
+        $query->orConditionGroup();
+      foreach ($terms_fields as $term_uuid => $term_fields) {
+        $terms_group = $query->orConditionGroup();
+        foreach ($term_fields as $term_field_name) {
+          $terms_group->condition(
+            $query->orConditionGroup()
+              ->condition("$term_field_name.entity.uuid", $term_uuid)
+          );
         }
+        $main_group->condition($terms_group);
       }
+      $query->condition($main_group);
     }
 
     // Sorting.
@@ -262,6 +259,7 @@ class QueryEntities extends DataProducerPluginBase implements ContainerFactoryPl
       if ($sort === 'number_of_views') {
         $query->addMetaData('entity_id_column', $entity_type->getKey('id'));
         $query->addMetaData('sort_order', $sort_order);
+        $query->addMetaData('entity_type_id', $entity_type_id);
         $query->addTag('perz_metric_order');
       }
       elseif (isset($entity_type_definition[$sort])) {
@@ -279,40 +277,34 @@ class QueryEntities extends DataProducerPluginBase implements ContainerFactoryPl
   }
 
   /**
-   * Categorize term uuids by its taxonomy.
-   *
-   * @param array $term_uuids
-   *
+   * Get list of term uuids and corresponding taxonomy name per each term.
+   * @param $term_uuids array
+   *   The array of term uuids.
    * @return array
-   *   Format: [taxonomy_name => [term_uuid1,...]]
+   *   Format: [term_uuid => taxonomy_name]
    */
-  protected function categorizeTerms($term_uuids) {
+  protected function getTermsTaxonomy($term_uuids) {
     $result = [];
+    $entity_repository = \Drupal::service('entity.repository');
     foreach ($term_uuids as $term_uuid) {
-      $term = $this->repository->loadEntityByUuid('taxonomy_term', $term_uuid);
+      $term = $entity_repository->loadEntityByUuid('taxonomy_term', $term_uuid);
       $taxonomy_name = $term->bundle();
-      if (isset($result[$taxonomy_name])) {
-        $result[$taxonomy_name][] = $term_uuid;
-      }
-      else {
-        $result[$taxonomy_name] = [$term_uuid];
-      }
+      $result[$term_uuid] = $taxonomy_name;
     }
     return $result;
   }
 
   /**
-   * Get a list of taxonomy term fields by entity type id.
-   *
+   * Get list of taxonomies and corresponding fields per each taxonomy.
    * @param integer $entity_type_id
    *   The entity type id.
-   *
    * @return array
+   *   Format: [taxonomy => [fields]]
    */
-  protected function getTaxonomyTermFields($entity_type_id) {
+  protected function getTaxonomyFields($entity_type_id) {
+    $taxonomy_fields = [];
     $bundles = $this->entityTypeBundleInfo
       ->getBundleInfo($entity_type_id);
-    $taxonomy_term_fields = [];
     foreach (array_keys($bundles) as $bundle) {
       $fields = $this->entityFieldManager
         ->getFieldDefinitions($entity_type_id, $bundle);
@@ -320,12 +312,49 @@ class QueryEntities extends DataProducerPluginBase implements ContainerFactoryPl
         if ($field instanceof FieldConfig
           && $field->getType() === 'entity_reference'
           && $field->getSetting('handler') === 'default:taxonomy_term'
-          && !in_array($field->getName(), $taxonomy_term_fields)) {
-          $taxonomy_term_fields[] = $field;
+        ) {
+          $settings = $field->getSetting('handler_settings');
+          $taxonomies = $settings['target_bundles'];
+          $field_name = $field->getName();
+          foreach ($taxonomies as $taxonomy) {
+            if (isset($taxonomy_fields[$taxonomy])) {
+              if (in_array($field_name, $taxonomy_fields[$taxonomy])) {
+                continue;
+              }
+              $taxonomy_fields[$taxonomy][] = $field_name;
+            }
+            else {
+              $taxonomy_fields[$taxonomy] = [$field_name];
+            }
+          }
+
+
         }
       }
     }
-    return $taxonomy_term_fields;
+    return $taxonomy_fields;
+  }
+
+  /**
+   * Get list of term uuids and corresponding list of fields per each term.
+   *
+   * @param $term_uuids array
+   *   The array of term uuids.
+   * @param integer $entity_type_id
+   *   The entity type id.
+   * @return array
+   *   Format: [term_uuid => [fields]]
+   */
+  protected function getTermsFields($term_uuids, $entity_type_id) {
+    $terms_taxonomy = $this->getTermsTaxonomy($term_uuids);
+    $taxonomy_fields = $this->getTaxonomyFields($entity_type_id);
+    $result = [];
+    foreach ($terms_taxonomy as $term_uuid => $taxonomy_name) {
+      if (!empty($taxonomy_fields[$taxonomy_name])) {
+        $result[$term_uuid] = $taxonomy_fields[$taxonomy_name];
+      }
+    }
+    return $result;
   }
 
   /**

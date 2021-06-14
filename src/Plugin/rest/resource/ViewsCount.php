@@ -57,7 +57,7 @@ class ViewsCount extends ResourceBase {
       }
     }
     foreach ($values as $uuid => $value) {
-      $this->insertOrUpdate($value['entity_id'], $uuid, $value['views_count']);
+      $this->insertOrUpdate($entity_type_id, $value['entity_id'], $uuid, $value['views_count']);
     }
     $result = ['status' => TRUE];
     $response = new ResourceResponse($result);
@@ -73,6 +73,7 @@ class ViewsCount extends ResourceBase {
    * Determines if an entity will be inserted or
    * updated with passed views count.
    *
+   * @param string $entity_type_id
    * @param integer $entity_id
    * @param string $uuid
    * @param integer $views_count
@@ -80,10 +81,11 @@ class ViewsCount extends ResourceBase {
    * @return \Drupal\Core\Database\StatementInterface|int|string|null
    * @throws \Exception
    */
-  protected function insertOrUpdate($entity_id, $uuid, $views_count) {
+  protected function insertOrUpdate($entity_type_id, $entity_id, $uuid, $views_count) {
     $database = \Drupal::database();
     $timestamp = \Drupal::time()->getCurrentTime();
     $values = [
+      'entity_type_id' => $entity_type_id,
       'entity_id' => $entity_id,
       'count' => $views_count,
       'timestamp' => $timestamp

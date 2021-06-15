@@ -90,7 +90,8 @@ class SearchContentSchema extends SdlSchemaPluginBase {
           ->map('tags', $builder->fromArgument('tags'))
           ->map('all_tags', $builder->fromArgument('all_tags'))
           ->map('sort', $builder->fromArgument('sort'))
-          ->map('sort_order', $builder->fromArgument('sort_order')),
+          ->map('sort_order', $builder->fromArgument('sort_order'))
+          ->map('exclude', $builder->fromArgument('exclude')),
         $builder->produce('entity_load_multiple')
           ->map('type', $builder->fromValue('node'))
           ->map('ids', $builder->fromParent())

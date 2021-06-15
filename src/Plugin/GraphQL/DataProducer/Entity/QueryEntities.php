@@ -50,7 +50,7 @@ use Drupal\Core\Entity\EntityRepositoryInterface;
  *       required = FALSE
  *     ),
  *     "tags" = @ContextDefinition("any",
- *       label = @Translation("Tags (array of uuids)"),
+ *       label = @Translation("Tags (array of term uuids)"),
  *       required = FALSE
  *     ),
  *     "all_tags" = @ContextDefinition("boolean",
@@ -63,6 +63,10 @@ use Drupal\Core\Entity\EntityRepositoryInterface;
  *     ),
  *     "sort_order" = @ContextDefinition("string",
  *       label = @Translation("Sort Order"),
+ *       required = FALSE
+ *     ),
+ *     "exclude" = @ContextDefinition("any",
+ *       label = @Translation("Exclude (array of content uuids)"),
  *       required = FALSE
  *     )
  *   }
@@ -172,6 +176,7 @@ class QueryEntities extends DataProducerPluginBase implements ContainerFactoryPl
    * @param boolean $all_tags
    * @param string $sort
    * @param string $sort_order
+   * @param array $exclude
    * @param \Drupal\Core\Cache\RefinableCacheableDependencyInterface $metadata
    *
    * @return array|int
@@ -190,6 +195,7 @@ class QueryEntities extends DataProducerPluginBase implements ContainerFactoryPl
     $all_tags,
     $sort,
     $sort_order,
+    $exclude,
     RefinableCacheableDependencyInterface $metadata) {
     $entity_type_definition = $this->entityFieldManager
       ->getFieldStorageDefinitions($entity_type_id);
@@ -248,6 +254,11 @@ class QueryEntities extends DataProducerPluginBase implements ContainerFactoryPl
         $main_group->condition($terms_group);
       }
       $query->condition($main_group);
+    }
+
+    // Exclude content UUIDs filter.
+    if (!empty($exclude)) {
+      $query->condition('uuid', $exclude, 'NOT IN');
     }
 
     // Sorting.
@@ -314,6 +325,7 @@ class QueryEntities extends DataProducerPluginBase implements ContainerFactoryPl
           && $field->getSetting('handler') === 'default:taxonomy_term'
         ) {
           $settings = $field->getSetting('handler_settings');
+          // Group fields per corresponding taxonomy.
           $taxonomies = $settings['target_bundles'];
           $field_name = $field->getName();
           foreach ($taxonomies as $taxonomy) {
@@ -327,8 +339,6 @@ class QueryEntities extends DataProducerPluginBase implements ContainerFactoryPl
               $taxonomy_fields[$taxonomy] = [$field_name];
             }
           }
-
-
         }
       }
     }

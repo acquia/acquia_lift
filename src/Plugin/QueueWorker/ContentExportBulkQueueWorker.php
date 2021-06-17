@@ -11,14 +11,14 @@ use Drupal\acquia_perz\ExportContent;
 use Drupal\Core\Queue\SuspendQueueException;
 
 /**
- * Content export queue worker.
+ * Content export bulk queue worker.
  *
  * @QueueWorker(
- *   id = "acquia_perz_content_export",
- *   title = "Queue Worker to export entities to CIS."
+ *   id = "acquia_perz_content_export_bulk",
+ *   title = "Queue Worker to export bulk entities to CIS."
  * )
  */
-class ContentExportQueueWorker extends QueueWorkerBase implements ContainerFactoryPluginInterface {
+class ContentExportBulkQueueWorker extends QueueWorkerBase implements ContainerFactoryPluginInterface {
 
   const DELETED = 'deleted';
 
@@ -91,33 +91,7 @@ class ContentExportQueueWorker extends QueueWorkerBase implements ContainerFacto
    * {@inheritdoc}
    */
   public function processItem($data) {
-    $entity = $this->entityTypeManager
-      ->getStorage($data['entityType'])->load($data['entityId']);
-    // Entity missing so remove it from the tracker and stop processing.
-    if (!$entity) {
-      \Drupal::logger('error')->notice('<pre>'.sprintf(
-          'Entity ("%s", "%s") being exported no longer exists on the publisher. Deleting item from the publisher queue.',
-          $data['entityType'],
-          $data['entityId']
-        ).'</pre>');
-
-      return TRUE;
-    }
-    switch ($data['action']) {
-      case 'insert_or_update':
-        $this->exportContent->exportEntityById(
-          $data['entityType'],
-          $data['entityId']
-        );
-        break;
-      case 'delete_entity':
-        $this->exportContent->deleteEntityById($data['entityType'], $data['entityId'], $data['uuid']);
-        break;
-
-      case 'delete_translation':
-        $this->exportContent->deleteTranslationById($data['entityType'], $data['entityId'], $data['uuid'], $data['langcode']);
-        break;
-    }
+    $this->exportContent->exportEntities($data['entities']);
     return TRUE;
   }
 

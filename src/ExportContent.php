@@ -156,38 +156,25 @@ class ExportContent {
    *   The current entity.
    */
   public function exportEntity(EntityInterface $entity) {
-    if (!$entity instanceof ContentEntityInterface) {
-      return;
-    }
-    if (!$view_modes = $this->getEntityViewModesSettingValue($entity)) {
-      return;
-    }
-    $entity_type = $entity->getEntityTypeId();
+    $entity_type_id = $entity->getEntityTypeId();
     $entity_id = $entity->id();
-    $entity_uuid = $entity->uuid();
     $langcode = $entity->language()->getId();
+    $entity_payload = $this->getEntityPayload($entity_type_id, $entity_id, $langcode);
     try {
-      foreach (array_keys($view_modes) as $view_mode) {
-        // The preview image field setting is saved along side the view modes.
-        // Don't process it as one.
-        if ($view_mode == 'acquia_perz_preview_image') {
-          continue;
-        }
-        $this->exportEntityByViewMode($entity, $view_mode, $langcode);
-      }
-      $this->exportTracker->export($entity_type, $entity_id, $entity_uuid, $langcode);
+      $slow_mode = \Drupal::config('acquia_perz.settings')->get('cis.ins_upd_slow_endpoint');
+      $this->sendBulk($entity_payload, $slow_mode);
     }
     catch (TransferException $e) {
       if ($e->getCode() === 0) {
-        $this->exportTracker->exportTimeout(
+        /*$this->exportTracker->exportTimeout(
           $entity_type,
           $entity_id,
           $entity_uuid,
           $langcode
-        );
+        );*/
         $this->exportQueue->addQueueItem(
           'insert_or_update',
-          $entity_type,
+          $entity_type_id,
           $entity_id,
           $langcode,
         );
@@ -197,10 +184,38 @@ class ExportContent {
   }
 
   /**
+   * Export entity by view mode.
+   *
+   * @param \Drupal\Core\Entity\EntityInterface $entity
+   *   The current entity.
+   * @param string $view_mode
+   *   The view mode.
+   * @param string $langcode
+   *   The language code.
+   */
+  protected function getEntityVariation(EntityInterface $entity, $view_mode, $langcode) {
+    $elements = $this->entityTypeManager
+      ->getViewBuilder($entity->getEntityTypeId())
+      ->view($entity, $view_mode, $langcode);
+    $rendered_data = $this->renderer->renderPlain($elements);
+    return [
+      'content_uuid' => $entity->uuid(),
+      'account_id' => $this->cisSettings->get('cis.account_id'),
+      'content_type' => $entity->getEntityTypeId(),
+      'view_mode' => $view_mode,
+      'language' => $langcode,
+      'number_view' => 0,
+      'label' => $entity->label(),
+      'updated' => $this->dateFormatter->format($this->time->getCurrentTime(), 'custom', 'Y-m-d\TH:i:s'),
+      'rendered_data' => $rendered_data,
+    ];
+  }
+
+  /**
    * Get and export entity by its entity type and id.
    *
-   * @param string $entity_type
-   *  Entity type of the entity that should be exported.
+   * @param string $entity_type_id
+   *  Entity type id of the entity that should be exported.
    * @param integer $entity_id
    *  Id of the entity that should be exported.
    * @param string $entity_uuid
@@ -209,19 +224,61 @@ class ExportContent {
    *  Language code of the entity translation that should be exported.
    * 'all' value means that all entity translations should be exported.
    */
-  public function exportEntityById($entity_type, $entity_id, $langcode = 'all') {
+  public function exportEntityById($entity_type_id, $entity_id, $langcode = 'all') {
+    $entity_payload = $this->getEntityPayload($entity_type_id, $entity_id, $langcode);
+    $slow_mode = \Drupal::config('acquia_perz.settings')->get('cis.ins_upd_slow_endpoint');
+    $this->sendBulk($entity_payload, $slow_mode);
+    // @TODO tracking.
+    return self::EXPORTED;
+  }
+
+  /**
+   * Get and export entities from the list.
+   *
+   * @param array $entities
+   *  List of the entities that should be exported.
+   * @param string $langcode
+   *  Language code of the entity translation that should be exported.
+   * 'all' value means that all entity translations should be exported.
+   */
+  public function exportEntities($entities, $langcode = 'all') {
+    $entities_payload = [];
+    foreach ($entities as $entity_item) {
+      $entity_type_id = $entity_item['entity_type_id'];
+      $entity_id = $entity_item['entity_id'];
+
+      $entities_payload = array_merge(
+        $entities_payload,
+        $this->getEntityPayload($entity_type_id, $entity_id, $langcode)
+      );
+    }
+    $slow_mode = \Drupal::config('acquia_perz.settings')->get('cis.ins_upd_slow_endpoint');
+    $this->sendBulk($entities_payload, $slow_mode);
+    // @TODO tracking.
+    return self::EXPORTED;
+  }
+
+  /**
+   * @param $entity_type_id
+   * @param $entity_id
+   * @param $langcode
+   *
+   * @return array|void
+   * @throws \Drupal\Component\Plugin\Exception\InvalidPluginDefinitionException
+   * @throws \Drupal\Component\Plugin\Exception\PluginNotFoundException
+   */
+  public function getEntityPayload($entity_type_id, $entity_id, $langcode) {
+    $payload = [];
     $entity = $this
       ->entityTypeManager
-      ->getStorage($entity_type)
+      ->getStorage($entity_type_id)
       ->load($entity_id);
-    $entity_uuid = $entity->uuid();
     if (!$entity instanceof ContentEntityInterface) {
-      return;
+      return [];
     }
     if (!$view_modes = $this->getEntityViewModesSettingValue($entity)) {
-      return;
+      return [];
     }
-    $this->exportTracker->clear($entity_id);
     foreach (array_keys($view_modes) as $view_mode) {
       // The preview image field setting is saved along side the view modes.
       // Don't process it as one.
@@ -230,16 +287,16 @@ class ExportContent {
       }
       if ($langcode === 'all') {
         foreach ($entity->getTranslationLanguages() as $language) {
-          $langcode = $language->getId();
-          $this->exportEntityByViewMode($entity, $view_mode, $langcode);
+          $language_id = $language->getId();
+          $translation = $entity->getTranslation($language_id);
+          $payload[] = $this->getEntityVariation($translation, $view_mode, $language_id);
         }
       }
       else {
-        $this->exportEntityByViewMode($entity, $view_mode, $langcode);
+        $payload[] = $this->getEntityVariation($entity, $view_mode, $langcode);
       }
     }
-    $this->exportTracker->export($entity_type, $entity_id, $entity_uuid, $langcode);
-    return self::EXPORTED;
+    return $payload;
   }
 
   /**
@@ -408,18 +465,72 @@ class ExportContent {
       ->getViewBuilder($entity->getEntityTypeId())
       ->view($entity, $view_mode, $langcode);
     $rendered_data = $this->renderer->renderPlain($elements);
+    $uuid = $entity->uuid();
     $data = [
-      'account_id' => intval($this->cisSettings->get('cis.account_id')),
-      'environment' => $this->cisSettings->get('cis.environment'),
-      'content_uuid' => $entity->uuid(),
-      'updated' => $this->dateFormatter->format($this->time->getCurrentTime(), 'custom', 'Y-m-d\TH:i:s'),
+      'account_id' => $this->cisSettings->get('cis.account_id'),
       'content_type' => $entity->getEntityTypeId(),
       'view_mode' => $view_mode,
       'language' => $langcode,
+      'number_view' => 0,
+      'label' => $entity->label(),
+      'updated' => $this->dateFormatter->format($this->time->getCurrentTime(), 'custom', 'Y-m-d\TH:i:s'),
       'rendered_data' => $rendered_data,
     ];
     $slow_mode = \Drupal::config('acquia_perz.settings')->get('cis.ins_upd_slow_endpoint');
-    return $this->send('POST', $data, $slow_mode);
+    return $this->send('PUT', $uuid, $data, $slow_mode);
+  }
+
+  /**
+   * Send bulk request to CIS.
+   * @param string $method
+   *  The sending method.
+   * @param array $data
+   *  The data that should be sent to CIS.
+   * @param false $slow_request_test
+   */
+  protected function sendBulk($json, $slow_request_test = FALSE) {
+    if ($slow_request_test) {
+      $username = 'admin';
+      $password = 'admin';
+      $client_headers = [
+        'Accept' => 'application/haljson',
+        'Content-Type' => 'application/haljson',
+        'Authorization' => 'Basic ' . base64_encode("$username:$password"),
+      ];
+      $host = \Drupal::request()->getSchemeAndHttpHost();
+      $url = $host . '/api/slow_endpoint';
+      \Drupal::logger('slow-send')->notice('<pre>'.print_r($url, TRUE).'</pre>');
+      $response = \Drupal::service('http_client')->request('GET',
+        $url, [
+          'headers' => $client_headers,
+          'timeout' => 2,
+        ]
+      );
+      return self::FAILED;
+    }
+    else {
+      $client_headers = [
+        'Content-Type' => 'application/json',
+        'Accept' => 'application/json',
+      ];
+      $url = $this->cisSettings->get('cis.endpoint');
+      $query_string = http_build_query([
+        'environment' => $this->cisSettings->get('cis.environment'),
+        'origin' => 'abcd',
+      ]);
+      $url .= "?{$query_string}";
+      \Drupal::logger('url')->notice('<pre>'.print_r($url, TRUE).'</pre>');
+      \Drupal::logger('jj')->notice('<pre>'.print_r($json, TRUE).'</pre>');
+      $response = $this->httpClient->request('PUT',
+        $url, [
+          'headers' => $client_headers,
+          'timeout' => 2,
+          'body' => json_encode($json),
+        ]
+      );
+      \Drupal::logger('sended')->notice('<pre>'.print_r(Json::decode($response->getBody()->getContents()), TRUE).'</pre>');
+      return self::EXPORTED;
+    }
   }
 
   /**
@@ -430,7 +541,7 @@ class ExportContent {
    *  The data that should be sent to CIS.
    * @param false $slow_request_test
    */
-  protected function send($method, $json, $slow_request_test = FALSE) {
+  protected function send($method, $entity_uuid, $json, $slow_request_test = FALSE) {
     if ($slow_request_test) {
       $username = 'admin';
       $password = 'admin';
@@ -439,7 +550,8 @@ class ExportContent {
         'Content-Type' => 'application/haljson',
         'Authorization' => 'Basic ' . base64_encode("$username:$password"),
       ];
-      $url = 'http://acquia-pers-site.ddev.site/api/slow_endpoint';
+      $host = \Drupal::request()->getSchemeAndHttpHost();
+      $url = $host . '/api/slow_endpoint';
       \Drupal::logger('slow-send')->notice('<pre>'.print_r($slow_request_test, TRUE).'</pre>');
       $response = \Drupal::service('http_client')->request('GET',
         $url, [
@@ -450,11 +562,17 @@ class ExportContent {
       return self::FAILED;
     }
     elseif ($method !== 'DELETE') {
+
       $client_headers = [
         'Content-Type' => 'application/json',
         'Accept' => 'application/json',
       ];
       $url = $this->cisSettings->get('cis.endpoint');
+      $query_string = http_build_query([
+        'environment' => $this->cisSettings->get('cis.environment'),
+        'origin' => 'abcd',
+      ]);
+      $url .= "/{$entity_uuid}?{$query_string}";
       $response = $this->httpClient->request($method,
         $url, [
           'headers' => $client_headers,

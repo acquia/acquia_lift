@@ -28,6 +28,8 @@ class ExportQueue {
 
   const FAILED = 'failed';
 
+  const BULK_MAX_SIZE = 3;
+
   /**
    * The export tracker service.
    *
@@ -92,7 +94,7 @@ class ExportQueue {
     $this->entitySettings = $entity_settings;
     $this->renderer = $renderer;
     $this->entityTypeManager = $entity_type_manager;
-    $this->queue = $queue_factory->get('acquia_perz_publish_export');
+    $this->queue = $queue_factory->get('acquia_perz_content_export');
     $this->queueManager = $queue_manager;
     $this->messenger = $messenger;
   }
@@ -139,6 +141,28 @@ class ExportQueue {
   }
 
   /**
+   * Add entities to the Export Queue.
+   * @param array $entities
+   *  Entities that should be exported.
+   *  Format:
+   *  [
+   *    entity_type: '',
+   *    entity_id: '',
+   *    entity_uuid: ''
+   *  ]
+   * @param string $langcode
+   *  Language code of the entity translation that should be exported.
+   * 'all' value means that all entity translations should be exported.
+   */
+  public function addBulkQueueItem($entities, $langcode = 'all') {
+    $this->queue->createItem([
+      'action' => 'insert_or_update',
+      'entities' => $entities,
+      'langcode' => $langcode,
+    ]);
+  }
+
+  /**
    * Remove all the export queue items.
    */
   public function purgeQueues() {
@@ -155,39 +179,10 @@ class ExportQueue {
       'finished' => [[$this, 'rescanBatchFinished'], []],
     ];
     $entity_types = $this->entitySettings->get('view_modes');
-    foreach ($entity_types as $entity_type => $bundles) {
-      // Check only bundles with at least one view mode activated
-      // besides 'acquia_perz_preview_image' view mode.
-      $available_bundles = [];
-      foreach ($bundles as $bundle => $view_modes) {
-        $view_modes = array_keys($view_modes);
-        if (count($view_modes) === 1
-          && in_array('acquia_perz_preview_image', $view_modes)) {
-          continue;
-        }
-        $available_bundles[] = $bundle;
-      }
-      // Skip entity type without activated bundles.
-      if (empty($available_bundles)) {
-        continue;
-      }
-      $bundle_property_name = $this
-        ->entityTypeManager
-        ->getStorage($entity_type)
-        ->getEntityType()
-        ->getKey('bundle');
-      $query = $this
-        ->entityTypeManager
-        ->getStorage($entity_type)
-        ->getQuery();
-      // Single-bundle entity types like 'user' don't use
-      // bundle related property.
-      if (!empty($bundle_property_name)) {
-        $query = $query->condition($bundle_property_name, $available_bundles, 'IN');
-      }
-      $entity_ids = $query->execute();
+    foreach ($entity_types as $entity_type_id => $bundles) {
+      $entity_ids = $this->getRescannedEntities($entity_type_id, $bundles);
       foreach ($entity_ids as $entity_id) {
-        $batch['operations'][] = [[$this, 'rescanBatchProcess'], [$entity_type, $entity_id]];
+        $batch['operations'][] = [[$this, 'rescanBatchProcess'], [$entity_type_id, $entity_id]];
       }
     }
     // Adds the batch sets.
@@ -195,17 +190,124 @@ class ExportQueue {
   }
 
   /**
+   * Rescan content and add it to the queue (bulk).
+   */
+  public function rescanContentBulk() {
+    $batch = [
+      'title' => $this->t("Rescan Content Bulk Process"),
+      'operations' => [],
+      'finished' => [[$this, 'rescanBatchFinished'], []],
+    ];
+    $entity_types = $this->entitySettings->get('view_modes');
+    $bulk = [];
+    foreach ($entity_types as $entity_type_id => $bundles) {
+      $entity_ids = $this->getRescannedEntities($entity_type_id, $bundles);
+      foreach ($entity_ids as $entity_id) {
+        $entity = $this->entityTypeManager
+          ->getStorage($entity_type_id)
+          ->load($entity_id);
+        $entity_uuid = $entity->uuid();
+        $bulk[] = [
+          'entity_type_id' => $entity_type_id,
+          'entity_id' => $entity_id,
+          'entity_uuid' => $entity->uuid(),
+        ];
+        if (count($bulk) === self::BULK_MAX_SIZE) {
+          $batch['operations'][] = [
+            [$this, 'rescanBatchBulkProcess'],
+            [$bulk]
+          ];
+          $bulk = [];
+        }
+      }
+    }
+    // Send the rest if it's present.
+    if (!empty($bulk)) {
+      $batch['operations'][] = [
+        [$this, 'rescanBatchBulkProcess'],
+        [$bulk]
+      ];
+    }
+    // Adds the batch sets.
+    batch_set($batch);
+  }
+
+  /**
+   * Returns entity ids by entity type id and passed bundles.
+   *
+   * @param string $entity_type_id
+   *  The entity type id.
+   * @param array $bundles
+   *  List of bundles of entity type.
+   */
+  protected function getRescannedEntities($entity_type_id, $bundles) {
+    // Check only bundles with at least one view mode activated
+    // besides 'acquia_perz_preview_image' view mode.
+    $available_bundles = [];
+    foreach ($bundles as $bundle => $view_modes) {
+      $view_modes = array_keys($view_modes);
+      if (count($view_modes) === 1
+        && in_array('acquia_perz_preview_image', $view_modes)) {
+        continue;
+      }
+      $available_bundles[] = $bundle;
+    }
+    // Skip entity type without activated bundles.
+    if (empty($available_bundles)) {
+      return [];
+    }
+    $bundle_property_name = $this
+      ->entityTypeManager
+      ->getStorage($entity_type_id)
+      ->getEntityType()
+      ->getKey('bundle');
+    $query = $this
+      ->entityTypeManager
+      ->getStorage($entity_type_id)
+      ->getQuery();
+    // Single-bundle entity types like 'user' don't use
+    // bundle related property.
+    if (!empty($bundle_property_name)) {
+      $query = $query->condition($bundle_property_name, $available_bundles, 'IN');
+    }
+    return $query->execute();
+  }
+
+  /**
    * Rescan content batch processing callback.
    *
-   * @param string $entity_type
-   *  The entity type.
+   * @param string $entity_type_id
+   *  The entity type id.
    * @param string $entity_id
    *  The entity id.
    * @param mixed $context
    *  The context array.
    */
-  public function rescanBatchProcess($entity_type, $entity_id, &$context) {
-    $this->addQueueItem('insert_or_update', $entity_type, $entity_id);
+  public function rescanBatchProcess($entity_type_id, $entity_id, &$context) {
+    $this->addQueueItem('insert_or_update', $entity_type_id, $entity_id);
+  }
+
+  /**
+   * Rescan content batch bulk processing callback.
+   *
+   * @param array $entities
+   *  The list of entities.
+   *  Format:
+   *  [
+   *    [
+   *      entity_type_id: 'node'
+   *      entity_id: 5
+   *      entity_uuid: '...'
+   *    ],
+   *    ...
+   *  ]
+   * @param string $entity_id
+   *  The entity id.
+   * @param mixed $context
+   *  The context array.
+   */
+  public function rescanBatchBulkProcess($entities, &$context) {
+    $this->addBulkQueueItem($entities);
   }
 
   /**
@@ -263,13 +365,35 @@ class ExportQueue {
   }
 
   /**
-   * Common batch processing callback for all operations.
+   * Process all queue items with batch API (bulk).
+   */
+  public function exportBulkQueueItems() {
+    // Create batch which collects all the specified queue items and process
+    // them one after another.
+    $batch = [
+      'title' => $this->t("Process Export Queue (bulk)"),
+      'operations' => [],
+      'finished' => [[$this, 'exportBatchFinished'], []],
+    ];
+
+    // Count number of the items in this queue, create enough batch operations.
+    for ($i = 0; $i < $this->getQueueCount(); $i++) {
+      // Create batch operations.
+      $batch['operations'][] = [[$this, 'exportBulkBatchProcess'], []];
+    }
+
+    // Adds the batch sets.
+    batch_set($batch);
+  }
+
+  /**
+   * Export batch processing callback for all operations.
    *
    * @param mixed $context
    *   The context array.
    */
   public function exportBatchProcess(&$context) {
-    $queueWorker = $this->queueManager->createInstance('acquia_perz_publish_export');
+    $queue_worker = $this->queueManager->createInstance('acquia_perz_content_export');
 
     // Get a queued item.
     if ($item = $this->queue->claimItem()) {
@@ -281,7 +405,7 @@ class ExportQueue {
         ]);
 
         // Process item.
-        $entities_processed = $queueWorker->processItem($item->data);
+        $entities_processed = $queue_worker->processItem($item->data);
         if ($entities_processed == FALSE) {
           // Indicate that the item could not be processed.
           if ($entities_processed === FALSE) {
@@ -310,7 +434,6 @@ class ExportQueue {
           $context['message'] = $message->jsonSerialize();
           $context['results'][] = $message->jsonSerialize();
         }
-
       }
       catch (\RuntimeException $e) {
         if ($e instanceof SuspendQueueException
@@ -340,6 +463,67 @@ class ExportQueue {
             $item->data['entityType'],
             $item->data['entityId'],
             $item->data['uuid'],
+            $item->data['langcode']
+          );
+          $this->queue->deleteItem($item);
+        }
+      }
+    }
+  }
+
+  /**
+   * Export bulk batch processing callback for all operations.
+   *
+   * @param mixed $context
+   *   The context array.
+   */
+  public function exportBulkBatchProcess(&$context) {
+    $queue_worker = $this->queueManager->createInstance('acquia_perz_content_export_bulk');
+
+    // Get a queued item.
+    if ($item = $this->queue->claimItem()) {
+      try {
+        \Drupal::logger('ttt')->notice('<pre>'.print_r('yes', TRUE).'</pre>');
+        // Generating a list of entities.
+        $msg_label = $this->t('(@entities)', [
+          '@entities' => serialize($item->data['entities']),
+        ]);
+
+        // Process item.
+        $bulks_processed = $queue_worker->processItem($item->data);
+        if ($bulks_processed == FALSE) {
+          // Indicate that the item could not be processed.
+          if ($bulks_processed === FALSE) {
+            $message = $this->t('There was an error processing bulks: @bulk and their dependencies. The item has been sent back to the queue to be processed again later. Check your logs for more info.', [
+              '@entities' => $msg_label,
+            ]);
+          }
+          else {
+            $message = $this->t('No processing was done for bulks: @bulk and their dependencies. The item has been sent back to the queue to be processed again later. Check your logs for more info.', [
+              '@entities' => $msg_label,
+            ]);
+          }
+          $context['message'] = $message->jsonSerialize();
+          $context['results'][] = $message->jsonSerialize();
+        }
+        else {
+          // If everything was correct, delete processed item from the queue.
+          $this->queue->deleteItem($item);
+
+          // Creating a text message to present to the user.
+          $message = $this->t('Processed items: (@count @label sent).', [
+            '@count' => $bulks_processed,
+            '@label' => $bulks_processed == 1 ? $this->t('bulk') : $this->t('bulks'),
+          ]);
+          $context['message'] = $message->jsonSerialize();
+          $context['results'][] = $message->jsonSerialize();
+        }
+      }
+      catch (\RuntimeException $e) {
+        if ($e instanceof SuspendQueueException
+          || $e instanceof TransferException) {
+          $this->addBulkQueueItem(
+            $item->data['entities'],
             $item->data['langcode']
           );
           $this->queue->deleteItem($item);

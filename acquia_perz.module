@@ -6,6 +6,7 @@ use Drupal\Core\Entity\EntityInterface;
  * Implements hook_entity_insert().
  */
 function acquia_perz_entity_insert(EntityInterface $entity) {
+  \Drupal::logger('en-ins')->notice('<pre>'.print_r('yes0', TRUE).'</pre>');
   \Drupal::getContainer()
     ->get('acquia_perz.export_content')
     ->exportEntity($entity);
@@ -23,7 +24,7 @@ function acquia_perz_entity_update(EntityInterface $entity) {
 /**
  * Implements hook_entity_predelete().
  */
-function acquia_perz_entity_predelete(EntityInterface $entity) {
+function acquia_perz_entity_delete(EntityInterface $entity) {
   \Drupal::getContainer()
     ->get('acquia_perz.export_content')
     ->deleteEntity($entity);
@@ -32,7 +33,7 @@ function acquia_perz_entity_predelete(EntityInterface $entity) {
 /**
  * Implements hook_entity_translation_predelete().
  */
-function acquia_perz_entity_translation_predelete(EntityInterface $translation) {
+function acquia_perz_entity_translation_delete(EntityInterface $translation) {
   \Drupal::getContainer()
     ->get('acquia_perz.export_content')
     ->deleteTranslation($translation);

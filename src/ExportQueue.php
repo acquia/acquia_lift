@@ -110,38 +110,9 @@ class ExportQueue {
   }
 
   /**
-   * Add entity to the Export Queue.
-   * @param string $action
-   *  The action, possible values:
-   *  - 'insert_or_update'
-   *  - 'delete_entity'
-   *  - 'delete_translation'
-   * @param string $entity_type
-   *  Entity type of the entity that should be exported.
-   * @param integer $entity_id
-   *  Id of the entity that should be exported.
-   * @param string $langcode
-   *  Language code of the entity translation that should be exported.
-   * 'all' value means that all entity translations should be exported.
-   */
-  public function addQueueItem($action, $entity_type, $entity_id, $entity_uuid = '', $langcode = 'all') {
-    if (empty($entity_uuid)) {
-      $entity = $this->entityTypeManager
-        ->getStorage($entity_type)
-        ->load($entity_id);
-      $entity_uuid = $entity->uuid();
-    }
-    $this->queue->createItem([
-      'action' => $action,
-      'entityType' => $entity_type,
-      'entityId' => $entity_id,
-      'uuid' => $entity_uuid,
-      'langcode' => $langcode,
-    ]);
-  }
-
-  /**
    * Add entities to the Export Queue.
+   * @param string $action
+   *  The action.
    * @param array $entities
    *  Entities that should be exported.
    *  Format:
@@ -154,9 +125,9 @@ class ExportQueue {
    *  Language code of the entity translation that should be exported.
    * 'all' value means that all entity translations should be exported.
    */
-  public function addBulkQueueItem($entities, $langcode = 'all') {
+  public function addBulkQueueItem($action, $entities, $langcode = 'all') {
     $this->queue->createItem([
-      'action' => 'insert_or_update',
+      'action' => $action,
       'entities' => $entities,
       'langcode' => $langcode,
     ]);
@@ -167,26 +138,6 @@ class ExportQueue {
    */
   public function purgeQueues() {
     $this->queue->deleteQueue();
-  }
-
-  /**
-   * Rescan content and add it to the queue.
-   */
-  public function rescanContent() {
-    $batch = [
-      'title' => $this->t("Rescan Content Process"),
-      'operations' => [],
-      'finished' => [[$this, 'rescanBatchFinished'], []],
-    ];
-    $entity_types = $this->entitySettings->get('view_modes');
-    foreach ($entity_types as $entity_type_id => $bundles) {
-      $entity_ids = $this->getRescannedEntities($entity_type_id, $bundles);
-      foreach ($entity_ids as $entity_id) {
-        $batch['operations'][] = [[$this, 'rescanBatchProcess'], [$entity_type_id, $entity_id]];
-      }
-    }
-    // Adds the batch sets.
-    batch_set($batch);
   }
 
   /**
@@ -274,20 +225,6 @@ class ExportQueue {
   }
 
   /**
-   * Rescan content batch processing callback.
-   *
-   * @param string $entity_type_id
-   *  The entity type id.
-   * @param string $entity_id
-   *  The entity id.
-   * @param mixed $context
-   *  The context array.
-   */
-  public function rescanBatchProcess($entity_type_id, $entity_id, &$context) {
-    $this->addQueueItem('insert_or_update', $entity_type_id, $entity_id);
-  }
-
-  /**
    * Rescan content batch bulk processing callback.
    *
    * @param array $entities
@@ -307,7 +244,7 @@ class ExportQueue {
    *  The context array.
    */
   public function rescanBatchBulkProcess($entities, &$context) {
-    $this->addBulkQueueItem($entities);
+    $this->addBulkQueueItem('insert_or_update', $entities);
   }
 
   /**
@@ -343,35 +280,13 @@ class ExportQueue {
   }
 
   /**
-   * Process all queue items with batch API.
-   */
-  public function exportQueueItems() {
-    // Create batch which collects all the specified queue items and process
-    // them one after another.
-    $batch = [
-      'title' => $this->t("Process Export Queue"),
-      'operations' => [],
-      'finished' => [[$this, 'exportBatchFinished'], []],
-    ];
-
-    // Count number of the items in this queue, create enough batch operations.
-    for ($i = 0; $i < $this->getQueueCount(); $i++) {
-      // Create batch operations.
-      $batch['operations'][] = [[$this, 'exportBatchProcess'], []];
-    }
-
-    // Adds the batch sets.
-    batch_set($batch);
-  }
-
-  /**
    * Process all queue items with batch API (bulk).
    */
   public function exportBulkQueueItems() {
     // Create batch which collects all the specified queue items and process
     // them one after another.
     $batch = [
-      'title' => $this->t("Process Export Queue (bulk)"),
+      'title' => $this->t("Process Export Queue"),
       'operations' => [],
       'finished' => [[$this, 'exportBatchFinished'], []],
     ];
@@ -387,91 +302,6 @@ class ExportQueue {
   }
 
   /**
-   * Export batch processing callback for all operations.
-   *
-   * @param mixed $context
-   *   The context array.
-   */
-  public function exportBatchProcess(&$context) {
-    $queue_worker = $this->queueManager->createInstance('acquia_perz_content_export');
-
-    // Get a queued item.
-    if ($item = $this->queue->claimItem()) {
-      try {
-        // Generating a list of entities.
-        $msg_label = $this->t('(@entity_type, @entity_id)', [
-          '@entity_type' => $item->data['entityType'],
-          '@entity_id' => $item->data['entityId'],
-        ]);
-
-        // Process item.
-        $entities_processed = $queue_worker->processItem($item->data);
-        if ($entities_processed == FALSE) {
-          // Indicate that the item could not be processed.
-          if ($entities_processed === FALSE) {
-            $message = $this->t('There was an error processing entities: @entities and their dependencies. The item has been sent back to the queue to be processed again later. Check your logs for more info.', [
-              '@entities' => $msg_label,
-            ]);
-          }
-          else {
-            $message = $this->t('No processing was done for entities: @entities and their dependencies. The item has been sent back to the queue to be processed again later. Check your logs for more info.', [
-              '@entities' => $msg_label,
-            ]);
-          }
-          $context['message'] = $message->jsonSerialize();
-          $context['results'][] = $message->jsonSerialize();
-        }
-        else {
-          // If everything was correct, delete processed item from the queue.
-          $this->queue->deleteItem($item);
-
-          // Creating a text message to present to the user.
-          $message = $this->t('Processed entities: @entities and their dependencies (@count @label sent).', [
-            '@entities' => $msg_label,
-            '@count' => $entities_processed,
-            '@label' => $entities_processed == 1 ? $this->t('entity') : $this->t('entities'),
-          ]);
-          $context['message'] = $message->jsonSerialize();
-          $context['results'][] = $message->jsonSerialize();
-        }
-      }
-      catch (\RuntimeException $e) {
-        if ($e instanceof SuspendQueueException
-          || $e instanceof TransferException) {
-          switch ($item->data['action']) {
-            case 'insert_or_update':
-              $this->exportTracker->exportTimeout(
-                $item->data['entityType'],
-                $item->data['entityId'],
-                $item->data['uuid'],
-                $item->data['langcode']
-              );
-              break;
-
-            case 'entity_delete':
-            case 'translation_delete':
-              $this->exportTracker->deleteTimeout(
-                $item->data['entityType'],
-                $item->data['entityId'],
-                $item->data['uuid'],
-                $item->data['langcode']
-              );
-              break;
-          }
-          $this->addQueueItem(
-            $item->data['action'],
-            $item->data['entityType'],
-            $item->data['entityId'],
-            $item->data['uuid'],
-            $item->data['langcode']
-          );
-          $this->queue->deleteItem($item);
-        }
-      }
-    }
-  }
-
-  /**
    * Export bulk batch processing callback for all operations.
    *
    * @param mixed $context
@@ -483,7 +313,6 @@ class ExportQueue {
     // Get a queued item.
     if ($item = $this->queue->claimItem()) {
       try {
-        \Drupal::logger('ttt')->notice('<pre>'.print_r('yes', TRUE).'</pre>');
         // Generating a list of entities.
         $msg_label = $this->t('(@entities)', [
           '@entities' => serialize($item->data['entities']),
@@ -522,7 +351,21 @@ class ExportQueue {
       catch (\RuntimeException $e) {
         if ($e instanceof SuspendQueueException
           || $e instanceof TransferException) {
+          switch ($item->data['action']) {
+            case 'insert_or_update':
+              foreach ($item->data['entities'] as $entity_item) {
+                $this->exportTracker->trackEntity(
+                  $entity_item['entity_type_id'],
+                  $entity_item['entity_id'],
+                  $item->data['langcode'],
+                  'exportTimeout'
+                );
+              }
+              break;
+          }
+
           $this->addBulkQueueItem(
+            $item->data['action'],
             $item->data['entities'],
             $item->data['langcode']
           );

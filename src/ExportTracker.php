@@ -2,6 +2,7 @@
 
 namespace Drupal\acquia_perz;
 
+use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\Core\Database\Connection;
 
 /**
@@ -25,13 +26,23 @@ class ExportTracker {
   const EXPORT_TRACKING_TABLE = 'acquia_perz_export_tracking';
 
   /**
+   * The entity type manager.
+   *
+   * @var \Drupal\Core\Entity\EntityTypeManagerInterface
+   */
+  protected $entityTypeManager;
+
+  /**
    * PublisherTracker constructor.
    *
    * @param \Drupal\Core\Database\Connection $database
    *   The database connection.
+   * @param \Drupal\Core\Entity\EntityTypeManagerInterface $entity_type_manager
+   *   The entity type manager.
    */
-  public function __construct(Connection $database) {
+  public function __construct(Connection $database, EntityTypeManagerInterface $entity_type_manager) {
     $this->database = $database;
+    $this->entityTypeManager = $entity_type_manager;
   }
 
   /**
@@ -53,6 +64,52 @@ class ExportTracker {
       $query->condition('langcode', $langcode);
     }
     return $query->execute()->fetchObject();
+  }
+
+  /**
+   * Track entity and its languages.
+   *
+   * @param string $entity_type_id
+   *   The entity type id.
+   * @param integer $entity_id
+   *   The entity id.
+   * @param string $entity_uuid
+   *   The entity uuid.
+   * @param string $langcode
+   *   The langcode of the tracking entity.
+   * @param string $action
+   *   The tracking action.
+   *
+   * @throws \Exception
+   */
+  public function trackEntity($entity_type_id, $entity_id, $langcode = 'all', $action = 'export') {
+    $this->clear(
+      $entity_type_id,
+      $entity_id
+    );
+    $entity = $this
+      ->entityTypeManager
+      ->getStorage($entity_type_id)
+      ->load($entity_id);
+    $entity_uuid = $entity->uuid();
+    if ($langcode === 'all') {
+      foreach ($entity->getTranslationLanguages() as $language) {
+        $this->{$action}(
+          $entity_type_id,
+          $entity_id,
+          $entity_uuid,
+          $language->getId()
+        );
+      }
+    }
+    else {
+      $this->{$action}(
+        $entity_type_id,
+        $entity_id,
+        $entity_uuid,
+        $langcode
+      );
+    }
   }
 
   /**

@@ -159,28 +159,73 @@ class ExportContent {
     $entity_type_id = $entity->getEntityTypeId();
     $entity_id = $entity->id();
     $langcode = $entity->language()->getId();
+    $entity_uuid = $entity->uuid();
     $entity_payload = $this->getEntityPayload($entity_type_id, $entity_id, $langcode);
     try {
       $slow_mode = \Drupal::config('acquia_perz.settings')->get('cis.ins_upd_slow_endpoint');
       $this->sendBulk($entity_payload, $slow_mode);
+      $this->exportTracker->export(
+        $entity_type_id,
+        $entity_id,
+        $entity_uuid,
+        $langcode
+      );
     }
     catch (TransferException $e) {
       if ($e->getCode() === 0) {
-        /*$this->exportTracker->exportTimeout(
-          $entity_type,
+        $this->exportTracker->exportTimeout(
+          $entity_type_id,
           $entity_id,
           $entity_uuid,
           $langcode
-        );*/
-        $this->exportQueue->addQueueItem(
+        );
+        $this->exportQueue->addBulkQueueItem(
           'insert_or_update',
-          $entity_type_id,
-          $entity_id,
-          $langcode,
+          [
+            [
+              'entity_type_id' => $entity_type_id,
+              'entity_id' => $entity_id,
+              'entity_uuid' => $entity_uuid,
+            ]
+          ],
+          $langcode
         );
         return self::FAILED;
       }
     }
+  }
+
+  /**
+   * Get and export entities from the list.
+   *
+   * @param array $entities
+   *  List of the entities that should be exported.
+   * @param string $langcode
+   *  Language code of the entity translation that should be exported.
+   * 'all' value means that all entity translations should be exported.
+   */
+  public function exportEntities($entities, $langcode = 'all') {
+    $entities_payload = [];
+    foreach ($entities as $entity_item) {
+      $entity_type_id = $entity_item['entity_type_id'];
+      $entity_id = $entity_item['entity_id'];
+
+      $entities_payload = array_merge(
+        $entities_payload,
+        $this->getEntityPayload($entity_type_id, $entity_id, $langcode)
+      );
+    }
+    $slow_mode = \Drupal::config('acquia_perz.settings')->get('cis.ins_upd_slow_endpoint');
+    $this->sendBulk($entities_payload, $slow_mode);
+    // Track export for each entity and its languages.
+    foreach ($entities as $entity_item) {
+      $this->exportTracker->trackEntity(
+        $entity_item['entity_type_id'],
+        $entity_item['entity_id'],
+        $langcode
+      );
+    }
+    return self::EXPORTED;
   }
 
   /**
@@ -233,32 +278,6 @@ class ExportContent {
   }
 
   /**
-   * Get and export entities from the list.
-   *
-   * @param array $entities
-   *  List of the entities that should be exported.
-   * @param string $langcode
-   *  Language code of the entity translation that should be exported.
-   * 'all' value means that all entity translations should be exported.
-   */
-  public function exportEntities($entities, $langcode = 'all') {
-    $entities_payload = [];
-    foreach ($entities as $entity_item) {
-      $entity_type_id = $entity_item['entity_type_id'];
-      $entity_id = $entity_item['entity_id'];
-
-      $entities_payload = array_merge(
-        $entities_payload,
-        $this->getEntityPayload($entity_type_id, $entity_id, $langcode)
-      );
-    }
-    $slow_mode = \Drupal::config('acquia_perz.settings')->get('cis.ins_upd_slow_endpoint');
-    $this->sendBulk($entities_payload, $slow_mode);
-    // @TODO tracking.
-    return self::EXPORTED;
-  }
-
-  /**
    * @param $entity_type_id
    * @param $entity_id
    * @param $langcode
@@ -267,7 +286,7 @@ class ExportContent {
    * @throws \Drupal\Component\Plugin\Exception\InvalidPluginDefinitionException
    * @throws \Drupal\Component\Plugin\Exception\PluginNotFoundException
    */
-  public function getEntityPayload($entity_type_id, $entity_id, $langcode) {
+  public function getEntityPayload($entity_type_id, $entity_id, $langcode = 'all') {
     $payload = [];
     $entity = $this
       ->entityTypeManager
@@ -306,39 +325,31 @@ class ExportContent {
    *   The current entity.
    */
   public function deleteEntity(EntityInterface $entity) {
-    if (!$entity instanceof ContentEntityInterface) {
-      return;
-    }
-    if (!$this->getEntityViewModesSettingValue($entity)) {
-      return;
-    }
-
-    $entity_type = $entity->getEntityTypeId();
+    $entity_type_id = $entity->getEntityTypeId();
     $entity_id = $entity->id();
-    $entity_uuid = $entity->uuid();
-    $data = [
-      'account_id' => $this->cisSettings->get('cis.account_id'),
-      'environment' => $this->cisSettings->get('cis.environment'),
-      'content_uuid' => $entity_uuid,
-      'updated' => $this->dateFormatter->format($this->time->getCurrentTime(), 'custom', 'Y-m-d\TH:i:s'),
-      'content_type' => $entity_type,
-    ];
+    $langcode = $entity->language()->getId();
+    $entity_payload = $this->getEntityPayload($entity_type_id, $entity_id, $langcode);
     try {
       $slow_mode = \Drupal::config('acquia_perz.settings')->get('cis.delete_entity_slow_endpoint');
-      $this->send('DELETE', $data, $slow_mode);
-      $this->exportTracker->delete($entity_type, $entity_id, $entity_uuid);
+      $this->send('DELETE', $entity_payload, $slow_mode);
+      //$this->exportTracker->delete($entity_type_id, $entity_id, $entity_uuid);
     }
     catch (TransferException $e) {
       if ($e->getCode() === 0) {
-        $this->exportTracker->deleteTimeout(
+        /*$this->exportTracker->deleteTimeout(
           $entity_type,
           $entity_id,
           $entity_uuid
-        );
-        $this->exportQueue->addQueueItem(
+        );*/
+        $this->exportQueue->addBulkQueueItem(
           'delete_entity',
-          $entity_type,
-          $entity_id
+          [
+            [
+              'entity_type_id' => $entity_type_id,
+              'entity_id' => $entity_id,
+              'entity_uuid' => $entity->uuid(),
+            ]
+          ]
         );
         return self::FAILED;
       }
@@ -348,28 +359,22 @@ class ExportContent {
   /**
    * Delete entity by its entity type and id.
    *
-   * @param string $entity_type
-   *  Entity type of the entity that should be deleted.
+   * @param string $entity_type_id
+   *  Entity type id of the entity that should be deleted.
    * @param integer $entity_id
    *  Id of the entity that should be deleted.
    * @param string $entity_uuid
    *  Uuid of the entity that should be deleted.
    */
-  public function deleteEntityById($entity_type, $entity_id, $entity_uuid) {
-    $data = [
-      'account_id' => $this->cisSettings->get('cis.account_id'),
-      'environment' => $this->cisSettings->get('cis.environment'),
-      'content_uuid' => $entity_uuid,
-      'updated' => $this->dateFormatter->format($this->time->getCurrentTime(), 'custom', 'Y-m-d\TH:i:s'),
-      'content_type' => $entity_type,
-    ];
+  public function deleteEntityById($entity_type_id, $entity_id, $entity_uuid) {
+    $entity_payload = $this->getEntityPayload($entity_type_id, $entity_id);
     $slow_mode = \Drupal::config('acquia_perz.settings')->get('cis.delete_entity_slow_endpoint');
-    $this->send('DELETE', $data, $slow_mode);
-    $this->exportTracker->delete(
+    $this->send('DELETE', $entity_payload, $slow_mode);
+    /*$this->exportTracker->delete(
       $entity_type,
       $entity_id,
       $entity_uuid
-    );
+    );*/
   }
 
   /**
@@ -381,43 +386,31 @@ class ExportContent {
    *  Language code of the entity translation that should be deleted.
    */
   public function deleteTranslation(EntityInterface $translation, $langcode = '') {
-    if (!$translation instanceof ContentEntityInterface) {
-      return;
-    }
-    if (!$this->getEntityViewModesSettingValue($translation)) {
-      return;
-    }
-    $entity_type = $translation->getEntityTypeId();
+    $entity_type_id = $translation->getEntityTypeId();
     $entity_id = $translation->id();
-    $entity_uuid = $translation->uuid();
-    if (empty($langcode)) {
-      $langcode = $translation->language()->getId();
-    }
-    $data = [
-      'account_id' => $this->cisSettings->get('cis.account_id'),
-      'environment' => $this->cisSettings->get('cis.environment'),
-      'content_uuid' => $entity_uuid,
-      'updated' => $this->dateFormatter->format($this->time->getCurrentTime(), 'custom', 'Y-m-d\TH:i:s'),
-      'content_type' => $entity_type,
-      'language' => $langcode,
-    ];
+    $entity_payload = $this->getEntityPayload($entity_type_id, $entity_id, $langcode);
     try {
       $slow_mode = \Drupal::config('acquia_perz.settings')->get('cis.delete_translation_slow_endpoint');
-      $this->send('DELETE', $data, $slow_mode);
-      $this->exportTracker->delete($entity_type, $entity_id, $entity_uuid, $langcode);
+      $this->send('DELETE', $entity_payload, $slow_mode);
+      //$this->exportTracker->delete($entity_type, $entity_id, $entity_uuid, $langcode);
     }
     catch (TransferException $e) {
       if ($e->getCode() === 0) {
-        $this->exportTracker->deleteTimeout(
+        /*$this->exportTracker->deleteTimeout(
           $entity_type,
           $entity_id,
           $entity_uuid,
           $langcode
-        );
-        $this->exportQueue->addQueueItem(
+        );*/
+        $this->exportQueue->addBulkQueueItem(
           'delete_translation',
-          $translation->getEntityTypeId(),
-          $translation->id()
+          [
+            [
+              'entity_type_id' => $entity_type_id,
+              'entity_id' => $entity_id,
+              'entity_uuid' => $translation->uuid(),
+            ]
+          ]
         );
         return self::FAILED;
       }
@@ -427,8 +420,8 @@ class ExportContent {
   /**
    * Delete translation by its entity type, entity id and langcode.
    *
-   * @param string $entity_type
-   *  Entity type of the entity that should be deleted.
+   * @param string $entity_type_id
+   *  Entity type id of the entity that should be deleted.
    * @param integer $entity_id
    *  Id of the entity that should be deleted.
    * @param string $entity_uuid
@@ -436,18 +429,11 @@ class ExportContent {
    * @param string $langcode
    *  Language code of the entity translation that should be deleted.
    */
-  public function deleteTranslationById($entity_type, $entity_id, $entity_uuid, $langcode) {
-    $data = [
-      'account_id' => $this->cisSettings->get('cis.account_id'),
-      'environment' => $this->cisSettings->get('cis.environment'),
-      'content_uuid' => $entity_uuid,
-      'updated' => $this->dateFormatter->format($this->time->getCurrentTime(), 'custom', 'Y-m-d\TH:i:s'),
-      'content_type' => $entity_type,
-      'language' => $langcode,
-    ];
+  public function deleteTranslationById($entity_type_id, $entity_id, $entity_uuid, $langcode) {
+    $entity_payload = $this->getEntityPayload($entity_type_id, $entity_id, $langcode);
     $slow_mode = \Drupal::config('acquia_perz.settings')->get('cis.delete_translation_slow_endpoint');
-    $this->send('DELETE', $data, $slow_mode);
-    $this->exportTracker->delete($entity_type, $entity_id, $entity_uuid);
+    $this->send('DELETE', $entity_payload, $slow_mode);
+    //$this->exportTracker->delete($entity_type, $entity_id, $entity_uuid);
   }
 
   /**
@@ -499,7 +485,6 @@ class ExportContent {
       ];
       $host = \Drupal::request()->getSchemeAndHttpHost();
       $url = $host . '/api/slow_endpoint';
-      \Drupal::logger('slow-send')->notice('<pre>'.print_r($url, TRUE).'</pre>');
       $response = \Drupal::service('http_client')->request('GET',
         $url, [
           'headers' => $client_headers,
@@ -519,8 +504,6 @@ class ExportContent {
         'origin' => 'abcd',
       ]);
       $url .= "?{$query_string}";
-      \Drupal::logger('url')->notice('<pre>'.print_r($url, TRUE).'</pre>');
-      \Drupal::logger('jj')->notice('<pre>'.print_r($json, TRUE).'</pre>');
       $response = $this->httpClient->request('PUT',
         $url, [
           'headers' => $client_headers,
@@ -528,7 +511,6 @@ class ExportContent {
           'body' => json_encode($json),
         ]
       );
-      \Drupal::logger('sended')->notice('<pre>'.print_r(Json::decode($response->getBody()->getContents()), TRUE).'</pre>');
       return self::EXPORTED;
     }
   }
@@ -552,7 +534,6 @@ class ExportContent {
       ];
       $host = \Drupal::request()->getSchemeAndHttpHost();
       $url = $host . '/api/slow_endpoint';
-      \Drupal::logger('slow-send')->notice('<pre>'.print_r($slow_request_test, TRUE).'</pre>');
       $response = \Drupal::service('http_client')->request('GET',
         $url, [
           'headers' => $client_headers,
@@ -580,7 +561,6 @@ class ExportContent {
           'body' => json_encode($json),
         ]
       );
-      \Drupal::logger('sended')->notice('<pre>'.print_r(Json::decode($response->getBody()->getContents()), TRUE).'</pre>');
       return self::EXPORTED;
     }
   }

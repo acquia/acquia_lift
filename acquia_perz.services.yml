@@ -39,4 +39,7 @@ services:
 
   acquia_perz.tracker:
     class: Drupal\acquia_perz\ExportTracker
-    arguments: [ '@database' ]
+    arguments: [
+      '@database',
+      '@entity_type.manager'
+    ]

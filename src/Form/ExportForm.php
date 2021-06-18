@@ -111,10 +111,6 @@ class ExportForm extends FormBase {
       '#type' => 'submit',
       '#value' => t('Rescan content'),
     ];
-    $form['rescan_content_bulk'] = [
-      '#type' => 'submit',
-      '#value' => t('Rescan content (bulk)'),
-    ];
     $form['purge_content'] = [
       '#type' => 'submit',
       '#value' => t('Purge content'),
@@ -122,10 +118,6 @@ class ExportForm extends FormBase {
     $form['export_content'] = [
       '#type' => 'submit',
       '#value' => t('Export content'),
-    ];
-    $form['export_content_bulk'] = [
-      '#type' => 'submit',
-      '#value' => t('Export content (bulk)'),
     ];
 
     return $form;
@@ -137,18 +129,10 @@ class ExportForm extends FormBase {
   public function submitForm(array &$form, FormStateInterface $form_state) {
     $triggered_button = $form_state->getTriggeringElement()['#parents'][0];
     if ($triggered_button === 'rescan_content') {
-      $this->exportQueue->rescanContent();
-      \Drupal::messenger()->addMessage('All content has been rescanned and added to the Queue.');
-    }
-    if ($triggered_button === 'rescan_content_bulk') {
       $this->exportQueue->rescanContentBulk();
       \Drupal::messenger()->addMessage('All content has been rescanned and added to the Queue.');
     }
     elseif ($triggered_button === 'export_content') {
-      $this->exportQueue->exportQueueItems();
-      \Drupal::messenger()->addMessage('All content has been exported from the Queue.');
-    }
-    elseif ($triggered_button === 'export_content_bulk') {
       $this->exportQueue->exportBulkQueueItems();
       \Drupal::messenger()->addMessage('All content has been exported from the Queue.');
     }

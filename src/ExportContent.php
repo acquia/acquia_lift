@@ -267,7 +267,6 @@ class ExportContent {
     if ($taxonomy_relations) {
       $result['relations'] = $taxonomy_relations;
     }
-    \Drupal::logger('ttt')->notice('<pre>'.print_r($result, TRUE).'</pre>');
     return $result;
   }
 
@@ -551,6 +550,16 @@ class ExportContent {
     }
   }
 
+  /**
+   * Returns array of related taxonomy term fields and their corresponding term
+   * uuids; only taxonomies that are checked on Entity settings form.
+   *
+   * @param \Drupal\Core\Entity\EntityInterface $entity
+   *
+   * @return array
+   * @throws \Drupal\Component\Plugin\Exception\InvalidPluginDefinitionException
+   * @throws \Drupal\Component\Plugin\Exception\PluginNotFoundException
+   */
   protected function getEntityTaxonomyRelations(EntityInterface $entity) {
     $relations = [];
     $entity_type_id = $entity->getEntityTypeId();

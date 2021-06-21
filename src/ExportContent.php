@@ -5,13 +5,14 @@ namespace Drupal\acquia_perz;
 use Drupal\Core\Config\ImmutableConfig;
 use Drupal\Core\Entity\ContentEntityInterface;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
+use Drupal\Core\Entity\EntityFieldManagerInterface;
 use Drupal\Core\Datetime\DateFormatterInterface;
 use Drupal\Component\Uuid\UuidInterface;
 use Drupal\Core\Render\RendererInterface;
 use Drupal\Core\Entity\EntityInterface;
+use Drupal\field\Entity\FieldConfig;
 use Drupal\Component\Datetime\TimeInterface;
 use GuzzleHttp\Exception\TransferException;
-use Drupal\Component\Serialization\Json;
 use GuzzleHttp\ClientInterface;
 
 /**
@@ -72,6 +73,11 @@ class ExportContent {
   protected $entityTypeManager;
 
   /**
+   * @var \Drupal\Core\Entity\EntityFieldManagerInterface
+   */
+  protected $entityFieldManager;
+
+  /**
    * The renderer.
    *
    * @var \Drupal\Core\Render\RendererInterface
@@ -114,6 +120,8 @@ class ExportContent {
    *   The acquia perz cis settings.
    * @param \Drupal\Core\Entity\EntityTypeManagerInterface $entity_type_manager
    *   The entity type manager.
+   * @param \Drupal\Core\Entity\EntityFieldManagerInterface $entity_field_manager
+   *   The entity type manager.
    * @param \Drupal\Core\Render\RendererInterface $renderer
    *   The renderer.
    * @param \Drupal\Component\Uuid\UuidInterface $uuid_generator
@@ -123,13 +131,14 @@ class ExportContent {
    * @param \Drupal\Component\Datetime\TimeInterface $time
    *   The time service.
    */
-  public function __construct(ClientInterface $http_client, ExportQueue $export_queue, ExportTracker $export_tracker, ImmutableConfig $entity_settings, ImmutableConfig $cis_settings, EntityTypeManagerInterface $entity_type_manager, RendererInterface $renderer, UuidInterface $uuid_generator, DateFormatterInterface $date_formatter, TimeInterface $time) {
+  public function __construct(ClientInterface $http_client, ExportQueue $export_queue, ExportTracker $export_tracker, ImmutableConfig $entity_settings, ImmutableConfig $cis_settings, EntityTypeManagerInterface $entity_type_manager, EntityFieldManagerInterface $entity_field_manager, RendererInterface $renderer, UuidInterface $uuid_generator, DateFormatterInterface $date_formatter, TimeInterface $time) {
     $this->httpClient = $http_client;
     $this->exportQueue = $export_queue;
     $this->exportTracker = $export_tracker;
     $this->entitySettings = $entity_settings;
     $this->cisSettings = $cis_settings;
     $this->entityTypeManager = $entity_type_manager;
+    $this->entityFieldManager = $entity_field_manager;
     $this->renderer = $renderer;
     $this->uuidGenerator = $uuid_generator;
     $this->dateFormatter = $date_formatter;
@@ -243,7 +252,7 @@ class ExportContent {
       ->getViewBuilder($entity->getEntityTypeId())
       ->view($entity, $view_mode, $langcode);
     $rendered_data = $this->renderer->renderPlain($elements);
-    return [
+    $result = [
       'content_uuid' => $entity->uuid(),
       'account_id' => $this->cisSettings->get('cis.account_id'),
       'content_type' => $entity->getEntityTypeId(),
@@ -254,6 +263,12 @@ class ExportContent {
       'updated' => $this->dateFormatter->format($this->time->getCurrentTime(), 'custom', 'Y-m-d\TH:i:s'),
       'rendered_data' => $rendered_data,
     ];
+    $taxonomy_relations = $this->getEntityTaxonomyRelations($entity);
+    if ($taxonomy_relations) {
+      $result['relations'] = $taxonomy_relations;
+    }
+    \Drupal::logger('ttt')->notice('<pre>'.print_r($result, TRUE).'</pre>');
+    return $result;
   }
 
   /**
@@ -312,7 +327,8 @@ class ExportContent {
         }
       }
       else {
-        $payload[] = $this->getEntityVariation($entity, $view_mode, $langcode);
+        $translation = $entity->getTranslation($langcode);
+        $payload[] = $this->getEntityVariation($translation, $view_mode, $langcode);
       }
     }
     return $payload;
@@ -437,36 +453,6 @@ class ExportContent {
   }
 
   /**
-   * Export entity by view mode.
-   *
-   * @param \Drupal\Core\Entity\EntityInterface $entity
-   *   The current entity.
-   * @param string $view_mode
-   *   The view mode.
-   * @param string $langcode
-   *   The language code.
-   */
-  protected function exportEntityByViewMode(EntityInterface $entity, $view_mode, $langcode) {
-    $elements = $this->entityTypeManager
-      ->getViewBuilder($entity->getEntityTypeId())
-      ->view($entity, $view_mode, $langcode);
-    $rendered_data = $this->renderer->renderPlain($elements);
-    $uuid = $entity->uuid();
-    $data = [
-      'account_id' => $this->cisSettings->get('cis.account_id'),
-      'content_type' => $entity->getEntityTypeId(),
-      'view_mode' => $view_mode,
-      'language' => $langcode,
-      'number_view' => 0,
-      'label' => $entity->label(),
-      'updated' => $this->dateFormatter->format($this->time->getCurrentTime(), 'custom', 'Y-m-d\TH:i:s'),
-      'rendered_data' => $rendered_data,
-    ];
-    $slow_mode = \Drupal::config('acquia_perz.settings')->get('cis.ins_upd_slow_endpoint');
-    return $this->send('PUT', $uuid, $data, $slow_mode);
-  }
-
-  /**
    * Send bulk request to CIS.
    * @param string $method
    *  The sending method.
@@ -563,6 +549,49 @@ class ExportContent {
       );
       return self::EXPORTED;
     }
+  }
+
+  protected function getEntityTaxonomyRelations(EntityInterface $entity) {
+    $relations = [];
+    $entity_type_id = $entity->getEntityTypeId();
+    $bundle = $entity->bundle();
+    $view_modes = $this->entitySettings->get('view_modes');
+    $available_taxonomies = [];
+    if (isset($view_modes['taxonomy_term'])) {
+      $available_taxonomies = array_keys($view_modes['taxonomy_term']);
+    }
+    $fields = $this->entityFieldManager
+      ->getFieldDefinitions($entity_type_id, $bundle);
+    foreach ($fields as $field) {
+      if ($field instanceof FieldConfig
+        && $field->getType() === 'entity_reference'
+        && $field->getSetting('handler') === 'default:taxonomy_term'
+      ) {
+        $field_name = $field->getName();
+        $settings = $field->getSetting('handler_settings');
+        $field_taxonomies = $settings['target_bundles'];
+        // Check if field contains at least one available taxonomy.
+        if (count(array_intersect($available_taxonomies, $field_taxonomies)) == 0) {
+          continue;
+        }
+        $terms = $entity->get($field_name)->getValue();
+        foreach ($terms as $term) {
+          $term_entity = $this->entityTypeManager
+            ->getStorage('taxonomy_term')
+            ->load($term['target_id']);
+          $term_uuid = $term_entity->uuid();
+          if (in_array($term_entity->bundle(), $available_taxonomies)) {
+            if (isset($relations[$field_name])) {
+              $relations[$field_name][] = $term_uuid;
+            }
+            else {
+              $relations[$field_name] = [$term_uuid];
+            }
+          }
+        }
+      }
+    }
+    return $relations;
   }
 
 }

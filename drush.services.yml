@@ -1,0 +1,7 @@
+services:
+
+  acquia_perz.commands.queue:
+    class: Drupal\acquia_perz\Commands\QueueCommands
+    arguments: ['@acquia_perz.export_queue']
+    tags:
+      - { name: drush.command }

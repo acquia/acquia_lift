@@ -53,10 +53,28 @@ class CISSettingsForm extends ConfigFormBase {
       '#default_value' => $cis_settings['environment'],
       '#required' => TRUE,
     ];
+    $form['cis']['origin'] = [
+      '#type' => 'textfield',
+      '#title' => $this->t('Origin'),
+      '#default_value' => $cis_settings['origin'],
+      '#required' => TRUE,
+    ];
     $form['cis']['api_key'] = [
       '#type' => 'textfield',
       '#title' => $this->t('API Key'),
       '#default_value' => $cis_settings['api_key'],
+      '#required' => TRUE,
+    ];
+    $form['cis']['endpoint_timeout'] = [
+      '#type' => 'textfield',
+      '#title' => $this->t('Endpoint timeout (seconds)'),
+      '#default_value' => $cis_settings['endpoint_timeout'],
+      '#required' => TRUE,
+    ];
+    $form['cis']['queue_bulk_max_size'] = [
+      '#type' => 'textfield',
+      '#title' => $this->t('Queue bulk max size'),
+      '#default_value' => $cis_settings['queue_bulk_max_size'],
       '#required' => TRUE,
     ];
     $form['cis']['ins_upd_slow_endpoint'] = [

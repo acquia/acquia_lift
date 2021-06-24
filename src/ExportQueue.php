@@ -28,7 +28,13 @@ class ExportQueue {
 
   const FAILED = 'failed';
 
-  const BULK_MAX_SIZE = 3;
+  /**
+   * The acquia perz cis settings.
+   *
+   * @var \Drupal\Core\Config\ImmutableConfig
+   * @see \Drupal\acquia_perz\Form\CISSettingsForm
+   */
+  protected $cisSettings;
 
   /**
    * The export tracker service.
@@ -85,6 +91,7 @@ class ExportQueue {
    */
   public function __construct(ExportTracker $export_tracker,
                               ImmutableConfig $entity_settings,
+                              ImmutableConfig $cis_settings,
                               RendererInterface $renderer,
                               EntityTypeManagerInterface $entity_type_manager,
                               QueueFactory $queue_factory,
@@ -92,6 +99,7 @@ class ExportQueue {
                               MessengerInterface $messenger) {
     $this->exportTracker = $export_tracker;
     $this->entitySettings = $entity_settings;
+    $this->cisSettings = $cis_settings;
     $this->renderer = $renderer;
     $this->entityTypeManager = $entity_type_manager;
     $this->queue = $queue_factory->get('acquia_perz_content_export');
@@ -136,7 +144,7 @@ class ExportQueue {
   /**
    * Remove all the export queue items.
    */
-  public function purgeQueues() {
+  public function purgeQueue() {
     $this->queue->deleteQueue();
   }
 
@@ -144,6 +152,7 @@ class ExportQueue {
    * Rescan content and add it to the queue (bulk).
    */
   public function rescanContentBulk() {
+    $queue_bulk_max_size = $this->cisSettings->get('cis.queue_bulk_max_size', 20);
     $batch = [
       'title' => $this->t("Rescan Content Bulk Process"),
       'operations' => [],
@@ -157,13 +166,12 @@ class ExportQueue {
         $entity = $this->entityTypeManager
           ->getStorage($entity_type_id)
           ->load($entity_id);
-        $entity_uuid = $entity->uuid();
         $bulk[] = [
           'entity_type_id' => $entity_type_id,
           'entity_id' => $entity_id,
           'entity_uuid' => $entity->uuid(),
         ];
-        if (count($bulk) === self::BULK_MAX_SIZE) {
+        if (count($bulk) === $queue_bulk_max_size) {
           $batch['operations'][] = [
             [$this, 'rescanBatchBulkProcess'],
             [$bulk]

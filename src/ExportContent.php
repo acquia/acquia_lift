@@ -486,13 +486,13 @@ class ExportContent {
       $url = $this->cisSettings->get('cis.endpoint');
       $query_string = http_build_query([
         'environment' => $this->cisSettings->get('cis.environment'),
-        'origin' => 'abcd',
+        'origin' => $this->cisSettings->get('cis.origin'),
       ]);
       $url .= "?{$query_string}";
       $response = $this->httpClient->request('PUT',
         $url, [
           'headers' => $client_headers,
-          'timeout' => 2,
+          'timeout' => $this->cisSettings->get('cis.endpoint_timeout', 2),
           'body' => json_encode($json),
         ]
       );

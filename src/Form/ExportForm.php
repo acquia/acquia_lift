@@ -137,7 +137,7 @@ class ExportForm extends FormBase {
       \Drupal::messenger()->addMessage('All content has been exported from the Queue.');
     }
     elseif ($triggered_button === 'purge_content') {
-      $this->exportQueue->purgeQueues();
+      $this->exportQueue->purgeQueue();
       \Drupal::messenger()->addMessage('All content has been purged from the Queue.');
     }
 

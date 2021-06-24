@@ -31,6 +31,7 @@ services:
     arguments: [
       '@acquia_perz.tracker',
       '@acquia_perz.entity_settings',
+      '@acquia_perz.cis_settings',
       '@renderer',
       '@entity_type.manager',
       '@queue',

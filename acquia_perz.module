@@ -6,7 +6,6 @@ use Drupal\Core\Entity\EntityInterface;
  * Implements hook_entity_insert().
  */
 function acquia_perz_entity_insert(EntityInterface $entity) {
-  \Drupal::logger('en-ins')->notice('<pre>'.print_r('yes0', TRUE).'</pre>');
   \Drupal::getContainer()
     ->get('acquia_perz.export_content')
     ->exportEntity($entity);

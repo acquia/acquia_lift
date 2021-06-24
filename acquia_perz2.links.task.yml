@@ -1,0 +1,5 @@
+acquia_perz2.settings:
+  title: Settings
+  route_name: acquia_perz2.admin_settings_form
+  base_route: acquia_perz2.admin_settings_form
+

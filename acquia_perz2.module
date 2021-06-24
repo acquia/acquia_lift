@@ -1,0 +1,101 @@
+<?php
+
+use Drupal\Component\Serialization\Json;
+use Drupal\Core\Cache\CacheBackendInterface;
+use Drupal\Core\Database\Query\AlterableInterface;
+
+/**
+ * Implements hook_page_attachments().
+ */
+function acquia_perz2_page_attachments_alter(array &$attachments) {
+  return;
+  // Check that rest endpoints exist.
+  if (\Drupal::service('router.admin_context')->isAdminRoute()) {
+    return;
+  }
+
+  //$current_path = \Drupal::service('path.current')->getPath();
+  //\Drupal::logger('page_load')->notice('<pre>'.print_r($current_path, TRUE).'</pre>');
+
+  $all_uuids_url = \Drupal::config('acquia_perz2.settings')->get('all_uuids_decision_endpoint');
+  $uuids_slots_url = \Drupal::config('acquia_perz2.settings')->get('uuids_slots_decision_endpoint');
+  if (empty($all_uuids_url) || empty($uuids_slots_url)) {
+    return;
+  }
+  $entity_type_id = 'node';
+  $username = 'admin';
+  $password = 'admin';
+  $client_headers = [
+    'Accept' => 'application/haljson',
+    'Content-Type' => 'application/haljson',
+    'Authorization' => 'Basic ' . base64_encode("$username:$password"),
+  ];
+  $response = \Drupal::service('http_client')->request('GET',
+    $all_uuids_url, [
+      'headers' => $client_headers,
+    ]
+  );
+
+  $uuids = Json::decode($response->getBody()->getContents());
+  $entity_repository = \Drupal::service('entity.repository');
+  $uuid_content_items = [];
+
+  $rendered_entities_cache_backend = \Drupal::service('cache.acquia_perz2.rendered_entities');
+
+  foreach ($uuids as $uuid) {
+    $entity = $entity_repository->loadEntityByUuid($entity_type_id, $uuid);
+    $entity_id = $entity->id();
+    $cache_item_name = "{$entity_type_id}__{$entity_id}";
+    $cached_rendered_entity = $rendered_entities_cache_backend->get($cache_item_name);
+    if ($cached_rendered_entity === FALSE) {
+      \Drupal::logger($cache_item_name)->notice('<pre>'.print_r('not_in_cache', TRUE).'</pre>');
+      $elements = \Drupal::service('entity_type.manager')
+        ->getViewBuilder($entity_type_id)
+        ->view($entity);
+      $rendered_entity = \Drupal::service('renderer')
+        ->renderPlain($elements);
+      $rendered_entities_cache_backend->set(
+        $cache_item_name,
+        $rendered_entity,
+        CacheBackendInterface::CACHE_PERMANENT,
+        [
+          "{$entity_type_id}:{$entity_id}"
+        ]
+      );
+    }
+    else {
+      \Drupal::logger($cache_item_name)->notice('<pre>'.print_r('IN_cache', TRUE).'</pre>');
+      $rendered_entity = $cached_rendered_entity;
+    }
+    $uuid_content_items[$uuid] = $rendered_entity;
+    $attachments['#cache']['tags'][] = "{$entity_type_id}:{$entity_id}";
+  }
+  $attachments['#attached']['library'][] = 'acquia_perz2/drupal.acquia_perz2.preload_data';
+  $attachments['#attached']['drupalSettings']['uuidsSlotsUrl'] = $uuids_slots_url;
+  $attachments['#attached']['drupalSettings']['decisionContent'] = [
+    $entity_type_id => $uuid_content_items,
+  ];
+}
+
+/**
+ * Implements hook_query_random_alter().
+ */
+function acquia_perz2_query_random_alter(AlterableInterface $query) {
+  $query->orderRandom();
+}
+
+/**
+ * Implements hook_query_perz_metric_order_alter().
+ */
+function acquia_perz2_query_perz_metric_order_alter(AlterableInterface $query) {
+  $entity_type_id = $query->getMetaData('entity_type_id');
+  $entity_id_column = $query->getMetaData('entity_id_column');
+  $sort_order = $query->getMetaData('sort_order');
+  $tables = $query->getTables();
+  if (!empty($tables['base_table'])) {
+    $query->join('acquia_perz2_entity_counter', 'm', "base_table.{$entity_id_column} = m.entity_id");
+    $query->condition('m.entity_type_id', $entity_type_id);
+    $query->orderBy('m.count', $sort_order);
+  }
+}
+

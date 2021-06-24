@@ -1,21 +1,21 @@
 <?php
 
-namespace Drupal\acquia_perz\Commands;
+namespace Drupal\acquia_perz2\Commands;
 
 use Drupal\Component\Uuid\Uuid;
 use Drush\Commands\DrushCommands;
 
 /**
- * Class AcquiaPerzMetricCommands.
+ * Class MetricCommands.
  *
- * @package Drupal\acquia_perz\Commands
+ * @package Drupal\acquia_perz2\Commands
  */
-class AcquiaPerzMetricCommands extends DrushCommands {
+class MetricCommands extends DrushCommands {
 
-  const ENTITY_VIEWS_COUNTER_TABLE = 'acquia_perz_entity_counter';
+  const ENTITY_VIEWS_COUNTER_TABLE = 'acquia_perz2_entity_counter';
 
   /**
-   * AcquiaPerzMetricCommands constructor.
+   * MetricCommands constructor.
    */
   public function __construct() {
   }
@@ -26,11 +26,8 @@ class AcquiaPerzMetricCommands extends DrushCommands {
    * @param string $entity_type_id
    *   The entity type id.
    *
-   * @command acquia:perz-metric-import-all
-   * @aliases apm-ia
-   *
-   * @return false|string
-   *   The json output if successful or false.
+   * @command acquia:perz2-metric-import-all
+   * @aliases ap2-mia
    *
    * @throws \Exception
    */
@@ -69,11 +66,8 @@ class AcquiaPerzMetricCommands extends DrushCommands {
    * @param string $entity_type_id
    *   The entity type id.
    *
-   * @command acquia:perz-metric-import-single
-   * @aliases apm-is
-   *
-   * @return false|string
-   *   The json output if successful or false.
+   * @command acquia:perz2-metric-import-single
+   * @aliases ap2-mis
    *
    * @throws \Exception
    */

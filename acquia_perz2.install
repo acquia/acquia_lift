@@ -13,19 +13,19 @@ use Drupal\block\Entity\Block;
 /**
  * Implements hook_install().
  */
-function acquia_perz_install() {
+function acquia_perz2_install() {
   // Create Perz graphQL server.
-  if (empty(Server::load('acquia_perz_search_content'))) {
+  if (empty(Server::load('acquia_perz2_search_content'))) {
     $graphql_server = Server::create();
-    $graphql_server->set('label', 'Acquia Perz - Search Content');
-    $graphql_server->set('name', 'acquia_perz_search_content');
+    $graphql_server->set('label', 'acquia perz2 - Search Content');
+    $graphql_server->set('name', 'acquia_perz2_search_content');
     $graphql_server->set('schema', 'search_content');
     $graphql_server->set('endpoint', '/ap/search-content');
     $graphql_server->save();
   }
   // Create "Ac Perz - All uuids by entity type" rest endpoint
   // (for testing purposes).
-  $all_uuids_rest_id = 'acquia_perz_all_uuids_endpoint';
+  $all_uuids_rest_id = 'acquia_perz2_all_uuids_endpoint';
   $all_uuids_rest = RestResourceConfig::load($all_uuids_rest_id);
   if (empty($all_uuids_rest)) {
     RestResourceConfig::create([
@@ -38,9 +38,9 @@ function acquia_perz_install() {
       ],
     ])->save();
   }
-  // Create "Acquia Perz: Uuids - Slots" rest endpoint
+  // Create "acquia perz2: Uuids - Slots" rest endpoint
   // (for testing purposes).
-  $slots_uuids_rest_id = 'acquia_perz_uuids_slots_endpoint';
+  $slots_uuids_rest_id = 'acquia_perz2_uuids_slots_endpoint';
   $slots_uuids_rest = RestResourceConfig::load($slots_uuids_rest_id);
   if (empty($slots_uuids_rest)) {
     RestResourceConfig::create([
@@ -53,9 +53,9 @@ function acquia_perz_install() {
       ],
     ])->save();
   }
-  // Create "Acquia Perz: Views Count" rest endpoint
+  // Create "acquia perz2: Views Count" rest endpoint
   // (for testing purposes).
-  $views_count_rest_id = 'acquia_perz_views_count_endpoint';
+  $views_count_rest_id = 'acquia_perz2_views_count_endpoint';
   $views_count_rest = RestResourceConfig::load($views_count_rest_id);
   if (empty($views_count_rest)) {
     RestResourceConfig::create([
@@ -155,9 +155,9 @@ function acquia_perz_install() {
 
   // Set config settings.
   $host = \Drupal::request()->getSchemeAndHttpHost();
-  $perz_settings = \Drupal::configFactory()->getEditable('acquia_perz.settings');
-  $perz_settings->set('all_uuids_decision_endpoint', $host . '/api/acquia-perz/all-uuids/node');
-  $perz_settings->set('uuids_slots_decision_endpoint', $host . '/api/acquia-perz/uuids-slots/node');
+  $perz_settings = \Drupal::configFactory()->getEditable('acquia_perz2.settings');
+  $perz_settings->set('all_uuids_decision_endpoint', $host . '/api/acquia-perz2/all-uuids/node');
+  $perz_settings->set('uuids_slots_decision_endpoint', $host . '/api/acquia-perz2/uuids-slots/node');
   $perz_settings->set('slot1_id', 'block-' . $slot1_id);
   $perz_settings->set('slot2_id', 'block-' . $slot2_id);
   $perz_settings->set('slot3_id', 'block-' . $slot3_id);
@@ -167,24 +167,24 @@ function acquia_perz_install() {
 /**
  * Implements hook_uninstall().
  */
-function acquia_perz_uninstall() {
+function acquia_perz2_uninstall() {
   // Delete Perz graphQL server.
-  $graphql_server = Server::load('acquia_perz_search_content');
+  $graphql_server = Server::load('acquia_perz2_search_content');
   if ($graphql_server) {
     $graphql_server->delete();
   }
   // Delete "Ac Perz - All uuids by entity type" rest endpoint.
-  $all_uuids_rest = RestResourceConfig::load('acquia_perz_all_uuids_endpoint');
+  $all_uuids_rest = RestResourceConfig::load('acquia_perz2_all_uuids_endpoint');
   if ($all_uuids_rest) {
     $all_uuids_rest->delete();
   }
-  // Delete "Acquia Perz: Uuids - Slots" rest endpoint.
-  $slots_uuids_rest = RestResourceConfig::load('acquia_perz_uuids_slots_endpoint');
+  // Delete "acquia perz2: Uuids - Slots" rest endpoint.
+  $slots_uuids_rest = RestResourceConfig::load('acquia_perz2_uuids_slots_endpoint');
   if ($slots_uuids_rest) {
     $slots_uuids_rest->delete();
   }
-  // Delete "Acquia Perz: Views Count" rest endpoint.
-  $views_count_rest = RestResourceConfig::load('acquia_perz_views_count_endpoint');
+  // Delete "acquia perz2: Views Count" rest endpoint.
+  $views_count_rest = RestResourceConfig::load('acquia_perz2_views_count_endpoint');
   if ($views_count_rest) {
     $views_count_rest->delete();
   }
@@ -215,7 +215,7 @@ function acquia_perz_uninstall() {
   $slot3_block->delete();
 
   // Delete settings.
-  $perz_settings = \Drupal::configFactory()->getEditable('acquia_perz.settings');
+  $perz_settings = \Drupal::configFactory()->getEditable('acquia_perz2.settings');
   $perz_settings->delete();
 
 }
@@ -223,8 +223,8 @@ function acquia_perz_uninstall() {
 /**
  * Implements hook_schema().
  */
-function acquia_perz_schema() {
-  $schema['acquia_perz_entity_counter'] = [
+function acquia_perz2_schema() {
+  $schema['acquia_perz2_entity_counter'] = [
     'description' => 'Access statistics for entities.',
     'fields' => [
       'entity_type_id' => [

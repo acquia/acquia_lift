@@ -1,6 +1,6 @@
 <?php
 
-namespace Drupal\acquia_perz\Plugin\GraphQL\DataProducer\Entity;
+namespace Drupal\acquia_perz2\Plugin\GraphQL\DataProducer\Entity;
 
 use Drupal\Core\Cache\RefinableCacheableDependencyInterface;
 use Drupal\Core\Entity\EntityTypeManagerInterface;

@@ -1,6 +1,6 @@
 <?php
 
-namespace Drupal\acquia_perz\Form;
+namespace Drupal\acquia_perz2\Form;
 
 use Drupal\Core\Form\ConfigFormBase;
 use Drupal\Core\Form\FormStateInterface;
@@ -14,14 +14,14 @@ class SettingsForm extends ConfigFormBase {
    * {@inheritdoc}
    */
   public function getFormId() {
-    return 'acquia_perz_settings_form';
+    return 'acquia_perz2_settings_form';
   }
 
   /**
    * {@inheritdoc}
    */
   protected function getEditableConfigNames() {
-    return ['acquia_perz.settings'];
+    return ['acquia_perz2.settings'];
   }
 
   /**
@@ -29,7 +29,7 @@ class SettingsForm extends ConfigFormBase {
    */
   public function buildForm(array $form, FormStateInterface $form_state) {
     $settings = $this
-      ->config('acquia_perz.settings');
+      ->config('acquia_perz2.settings');
 
     $form['all_uuids_decision_endpoint'] = [
       '#type' => 'textfield',
@@ -69,7 +69,7 @@ class SettingsForm extends ConfigFormBase {
    * {@inheritdoc}
    */
   public function submitForm(array &$form, FormStateInterface $form_state) {
-    $settings = $this->config('acquia_perz.settings');
+    $settings = $this->config('acquia_perz2.settings');
     $values = $form_state->getValues();
     $settings->set('all_uuids_decision_endpoint', trim($values['all_uuids_decision_endpoint']));
     $settings->set('uuids_slots_decision_endpoint', trim($values['uuids_slots_decision_endpoint']));

@@ -1,6 +1,6 @@
 <?php
 
-namespace Drupal\acquia_perz\Plugin\GraphQL\DataProducer\Site;
+namespace Drupal\acquia_perz2\Plugin\GraphQL\DataProducer\Site;
 
 use Drupal\Core\Cache\RefinableCacheableDependencyInterface;
 use Drupal\graphql\Plugin\GraphQL\DataProducer\DataProducerPluginBase;

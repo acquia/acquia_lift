@@ -1,0 +1,7 @@
+services:
+  cache.acquia_perz2.rendered_entities:
+    class: Drupal\Core\Cache\CacheBackendInterface
+    tags:
+      - { name: cache.bin }
+    factory: cache_factory:get
+    arguments: [ap2_rendered_entities]

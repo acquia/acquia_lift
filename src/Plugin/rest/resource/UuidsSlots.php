@@ -1,6 +1,6 @@
 <?php
 
-namespace Drupal\acquia_perz\Plugin\rest\resource;
+namespace Drupal\acquia_perz2\Plugin\rest\resource;
 
 use Drupal\rest\Plugin\ResourceBase;
 use Drupal\rest\ResourceResponse;
@@ -9,10 +9,10 @@ use Drupal\rest\ResourceResponse;
  * Annotation for get method
  *
  * @RestResource(
- *   id = "acquia_perz_uuids_slots_endpoint",
- *   label = @Translation("Acquia Perz: Uuids - Slots"),
+ *   id = "acquia_perz2_uuids_slots_endpoint",
+ *   label = @Translation("acquia perz2: Uuids - Slots"),
  *   uri_paths = {
- *     "canonical" = "/api/acquia-perz/uuids-slots/{entity_type_id}"
+ *     "canonical" = "/api/acquia-perz2/uuids-slots/{entity_type_id}"
  *   }
  * )
  */
@@ -38,9 +38,9 @@ class UuidsSlots extends ResourceBase {
     foreach ($items as $item) {
       $uuids[] = $item->uuid();
     }
-    $slot1_id = \Drupal::config('acquia_perz.settings')->get('slot1_id');
-    $slot2_id = \Drupal::config('acquia_perz.settings')->get('slot2_id');
-    $slot3_id = \Drupal::config('acquia_perz.settings')->get('slot3_id');
+    $slot1_id = \Drupal::config('acquia_perz2.settings')->get('slot1_id');
+    $slot2_id = \Drupal::config('acquia_perz2.settings')->get('slot2_id');
+    $slot3_id = \Drupal::config('acquia_perz2.settings')->get('slot3_id');
     $uuids_slots = [];
     if (!empty($slot1_id)) {
       $uuids_slots[$uuids[0]] = $slot1_id;

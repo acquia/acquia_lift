@@ -1,6 +1,6 @@
 <?php
 
-namespace Drupal\acquia_perz\Plugin\rest\resource;
+namespace Drupal\acquia_perz2\Plugin\rest\resource;
 
 use Drupal\rest\Plugin\ResourceBase;
 use Drupal\rest\ResourceResponse;
@@ -9,10 +9,10 @@ use Drupal\rest\ResourceResponse;
  * Annotation for get method
  *
  * @RestResource(
- *   id = "acquia_perz_all_uuids_endpoint",
- *   label = @Translation("Acquia Perz: All uuids by entity type"),
+ *   id = "acquia_perz2_all_uuids_endpoint",
+ *   label = @Translation("acquia perz2: All uuids by entity type"),
  *   uri_paths = {
- *     "canonical" = "/api/acquia-perz/all-uuids/{entity_type_id}"
+ *     "canonical" = "/api/acquia-perz2/all-uuids/{entity_type_id}"
  *   }
  * )
  */

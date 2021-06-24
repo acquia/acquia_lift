@@ -1,0 +1,5 @@
+acquia_perz2.settings:
+  title: 'Acquia Personalization (Perz) (option2)'
+  description: 'Provides integration with Decision API via GraphQL endpoints.'
+  route_name: acquia_perz2.admin_settings_form
+  parent: 'system.admin_config_services'

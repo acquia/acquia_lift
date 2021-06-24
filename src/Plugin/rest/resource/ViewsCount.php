@@ -1,6 +1,6 @@
 <?php
 
-namespace Drupal\acquia_perz\Plugin\rest\resource;
+namespace Drupal\acquia_perz2\Plugin\rest\resource;
 
 use Drupal\rest\Plugin\ResourceBase;
 use Drupal\rest\ResourceResponse;
@@ -10,16 +10,16 @@ use Drupal\Component\Uuid\Uuid;
  * Annotation for get method
  *
  * @RestResource(
- *   id = "acquia_perz_views_count_endpoint",
- *   label = @Translation("Acquia Perz: Views Count"),
+ *   id = "acquia_perz2_views_count_endpoint",
+ *   label = @Translation("acquia perz2: Views Count"),
  *   uri_paths = {
- *     "canonical" = "/api/acquia-perz/views-count/{entity_type_id}/{arg}"
+ *     "canonical" = "/api/acquia-perz2/views-count/{entity_type_id}/{arg}"
  *   }
  * )
  */
 class ViewsCount extends ResourceBase {
 
-  const ENTITY_VIEWS_COUNTER_TABLE = 'acquia_perz_entity_counter';
+  const ENTITY_VIEWS_COUNTER_TABLE = 'acquia_perz2_entity_counter';
 
   /**
    *

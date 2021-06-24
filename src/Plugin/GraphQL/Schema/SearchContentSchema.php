@@ -1,6 +1,6 @@
 <?php
 
-namespace Drupal\acquia_perz\Plugin\GraphQL\Schema;
+namespace Drupal\acquia_perz2\Plugin\GraphQL\Schema;
 
 use Drupal\graphql\GraphQL\ResolverBuilder;
 use Drupal\graphql\GraphQL\ResolverRegistry;

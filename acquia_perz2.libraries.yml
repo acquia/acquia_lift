@@ -1,7 +1,7 @@
-drupal.acquia_perz.preload_data:
+drupal.acquia_perz2.preload_data:
   version: VERSION
   js:
-    js/acquia_perz.preload_data.js: {}
+    js/acquia_perz2.preload_data.js: {}
   dependencies:
     - core/drupal
     - core/jquery

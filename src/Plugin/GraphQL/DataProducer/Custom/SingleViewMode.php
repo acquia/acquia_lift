@@ -1,6 +1,6 @@
 <?php
 
-namespace Drupal\acquia_perz\Plugin\GraphQL\DataProducer\Custom;
+namespace Drupal\acquia_perz2\Plugin\GraphQL\DataProducer\Custom;
 
 use Drupal\Core\Cache\RefinableCacheableDependencyInterface;
 use Drupal\graphql\Plugin\GraphQL\DataProducer\DataProducerPluginBase;
@@ -116,7 +116,7 @@ class SingleViewMode extends DataProducerPluginBase implements ContainerFactoryP
       ->getViewBuilder($entity_type)
       ->view($entity, $view_mode, $context_language);
 
-    $preview_image_style_id = 'acquia_perz_preview_image';
+    $preview_image_style_id = 'acquia_perz2_preview_image';
     $uri = '';
     $preview_image_url = NULL;
     if ($entity->hasField('field_image')) {

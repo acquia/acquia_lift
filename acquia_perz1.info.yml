@@ -5,7 +5,7 @@ type: module
 core_version_requirement: ^8.8 || ^9
 php: 7.0
 
-configure: acquia_perz.admin_settings_form
+configure: acquia_perz1.admin_settings_form
 
 dependencies:
   - drupal:node

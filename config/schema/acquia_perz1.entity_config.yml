@@ -1,5 +1,5 @@
 # Schema for the configuration files of the Acquia Perz module.
-acquia_perz.entity_config:
+acquia_perz1.entity_config:
   type: config_object
   label: 'Acquia Perz entity config'
   mapping:

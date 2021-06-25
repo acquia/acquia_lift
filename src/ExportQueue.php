@@ -1,6 +1,6 @@
 <?php
 
-namespace Drupal\acquia_perz;
+namespace Drupal\acquia_perz1;
 
 use Drupal\Core\DependencyInjection\DependencySerializationTrait;
 use Drupal\Core\Messenger\MessengerInterface;
@@ -12,7 +12,7 @@ use Drupal\Core\Config\ImmutableConfig;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\Core\Render\RendererInterface;
 use GuzzleHttp\Exception\TransferException;
-use Drupal\acquia_perz\ExportTracker;
+use Drupal\acquia_perz1\ExportTracker;
 
 /**
  * Implements an Export Queue for CIS.
@@ -32,14 +32,14 @@ class ExportQueue {
    * The acquia perz cis settings.
    *
    * @var \Drupal\Core\Config\ImmutableConfig
-   * @see \Drupal\acquia_perz\Form\CISSettingsForm
+   * @see \Drupal\acquia_perz1\Form\CISSettingsForm
    */
   protected $cisSettings;
 
   /**
    * The export tracker service.
    *
-   * @var \Drupal\acquia_perz\ExportTracker
+   * @var \Drupal\acquia_perz1\ExportTracker
    */
   private $exportTracker;
 
@@ -47,7 +47,7 @@ class ExportQueue {
    * The acquia perz entity settings.
    *
    * @var \Drupal\Core\Config\ImmutableConfig
-   * @see \Drupal\acquia_perz\Form\ContentPublishingForm
+   * @see \Drupal\acquia_perz1\Form\ContentPublishingForm
    */
   protected $entitySettings;
 
@@ -102,7 +102,7 @@ class ExportQueue {
     $this->cisSettings = $cis_settings;
     $this->renderer = $renderer;
     $this->entityTypeManager = $entity_type_manager;
-    $this->queue = $queue_factory->get('acquia_perz_content_export');
+    $this->queue = $queue_factory->get('acquia_perz1_content_export');
     $this->queueManager = $queue_manager;
     $this->messenger = $messenger;
   }
@@ -201,12 +201,12 @@ class ExportQueue {
    */
   protected function getRescannedEntities($entity_type_id, $bundles) {
     // Check only bundles with at least one view mode activated
-    // besides 'acquia_perz_preview_image' view mode.
+    // besides 'acquia_perz1_preview_image' view mode.
     $available_bundles = [];
     foreach ($bundles as $bundle => $view_modes) {
       $view_modes = array_keys($view_modes);
       if (count($view_modes) === 1
-        && in_array('acquia_perz_preview_image', $view_modes)) {
+        && in_array('acquia_perz1_preview_image', $view_modes)) {
         continue;
       }
       $available_bundles[] = $bundle;
@@ -316,7 +316,7 @@ class ExportQueue {
    *   The context array.
    */
   public function exportBulkBatchProcess(&$context) {
-    $queue_worker = $this->queueManager->createInstance('acquia_perz_content_export_bulk');
+    $queue_worker = $this->queueManager->createInstance('acquia_perz1_content_export_bulk');
 
     // Get a queued item.
     if ($item = $this->queue->claimItem()) {

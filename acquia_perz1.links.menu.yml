@@ -1,5 +1,5 @@
-acquia_perz.settings:
+acquia_perz1.settings:
   title: 'Acquia Personalization (Perz) (option1)'
   description: 'Publishes personalized content for use with Content Index Service.'
-  route_name: acquia_perz.admin_settings_form
+  route_name: acquia_perz1.admin_settings_form
   parent: 'system.admin_config_services'

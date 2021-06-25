@@ -1,20 +1,20 @@
 <?php
 
-namespace Drupal\acquia_perz\Plugin\QueueWorker;
+namespace Drupal\acquia_perz1\Plugin\QueueWorker;
 
 use Drupal\Core\Config\ConfigFactoryInterface;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\Core\Plugin\ContainerFactoryPluginInterface;
 use Drupal\Core\Queue\QueueWorkerBase;
 use Symfony\Component\DependencyInjection\ContainerInterface;
-use Drupal\acquia_perz\ExportContent;
+use Drupal\acquia_perz1\ExportContent;
 use Drupal\Core\Queue\SuspendQueueException;
 
 /**
  * Content export queue worker.
  *
  * @QueueWorker(
- *   id = "acquia_perz_content_export",
+ *   id = "acquia_perz1_content_export",
  *   title = "Queue Worker to export entities to CIS."
  * )
  */
@@ -29,7 +29,7 @@ class ContentExportQueueWorker extends QueueWorkerBase implements ContainerFacto
   /**
    * Publishing actions.
    *
-   * @var \Drupal\acquia_perz\ExportContent
+   * @var \Drupal\acquia_perz1\ExportContent
    */
   protected $exportContent;
 
@@ -50,7 +50,7 @@ class ContentExportQueueWorker extends QueueWorkerBase implements ContainerFacto
   /**
    * ContentExportQueueWorker constructor.
    *
-   * @param \Drupal\acquia_perz\ExportContent $export_content
+   * @param \Drupal\acquia_perz1\ExportContent $export_content
    *   The publishing actions service.
    * @param \Drupal\Core\Entity\EntityTypeManagerInterface $entity_type_manager
    *   The entity type manager.
@@ -78,7 +78,7 @@ class ContentExportQueueWorker extends QueueWorkerBase implements ContainerFacto
    */
   public static function create(ContainerInterface $container, array $configuration, $plugin_id, $plugin_definition) {
     return new static(
-      $container->get('acquia_perz.export_content'),
+      $container->get('acquia_perz1.export_content'),
       $container->get('entity_type.manager'),
       $container->get('config.factory'),
       $configuration,

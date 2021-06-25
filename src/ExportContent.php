@@ -1,6 +1,6 @@
 <?php
 
-namespace Drupal\acquia_perz;
+namespace Drupal\acquia_perz1;
 
 use Drupal\Core\Config\ImmutableConfig;
 use Drupal\Core\Entity\ContentEntityInterface;
@@ -18,7 +18,7 @@ use GuzzleHttp\ClientInterface;
 /**
  * Contains helper methods for managing Content Index Service exports.
  *
- * @package Drupal\acquia_perz
+ * @package Drupal\acquia_perz1
  */
 class ExportContent {
 
@@ -38,14 +38,14 @@ class ExportContent {
   /**
    * The export queue service.
    *
-   * @var \Drupal\acquia_perz\ExportQueue
+   * @var \Drupal\acquia_perz1\ExportQueue
    */
   protected $exportQueue;
 
   /**
    * The export tracker service.
    *
-   * @var \Drupal\acquia_perz\ExportTracker
+   * @var \Drupal\acquia_perz1\ExportTracker
    */
   protected $exportTracker;
 
@@ -53,7 +53,7 @@ class ExportContent {
    * The acquia perz entity settings.
    *
    * @var \Drupal\Core\Config\ImmutableConfig
-   * @see \Drupal\acquia_perz\Form\ContentPublishingForm
+   * @see \Drupal\acquia_perz1\Form\ContentPublishingForm
    */
   protected $entitySettings;
 
@@ -61,7 +61,7 @@ class ExportContent {
    * The acquia perz cis settings.
    *
    * @var \Drupal\Core\Config\ImmutableConfig
-   * @see \Drupal\acquia_perz\Form\CISSettingsForm
+   * @see \Drupal\acquia_perz1\Form\CISSettingsForm
    */
   protected $cisSettings;
 
@@ -110,9 +110,9 @@ class ExportContent {
    *
    * @param \GuzzleHttp\ClientInterface $http_client
    *   The http client service.
-   * @param \Drupal\acquia_perz\ExportQueue $export_queue
+   * @param \Drupal\acquia_perz1\ExportQueue $export_queue
    *   The Export Queue service.
-   * @param \Drupal\acquia_perz\ExportTracker $export_tracker
+   * @param \Drupal\acquia_perz1\ExportTracker $export_tracker
    *   The Export Tracker service.
    * @param \Drupal\Core\Config\ImmutableConfig $entity_settings
    *   The acquia perz entity settings.
@@ -171,7 +171,7 @@ class ExportContent {
     $entity_uuid = $entity->uuid();
     $entity_payload = $this->getEntityPayload($entity_type_id, $entity_id, $langcode);
     try {
-      $slow_mode = \Drupal::config('acquia_perz.settings')->get('cis.ins_upd_slow_endpoint');
+      $slow_mode = \Drupal::config('acquia_perz1.settings')->get('cis.ins_upd_slow_endpoint');
       $this->sendBulk($entity_payload, $slow_mode);
       $this->exportTracker->export(
         $entity_type_id,
@@ -224,7 +224,7 @@ class ExportContent {
         $this->getEntityPayload($entity_type_id, $entity_id, $langcode)
       );
     }
-    $slow_mode = \Drupal::config('acquia_perz.settings')->get('cis.ins_upd_slow_endpoint');
+    $slow_mode = \Drupal::config('acquia_perz1.settings')->get('cis.ins_upd_slow_endpoint');
     $this->sendBulk($entities_payload, $slow_mode);
     // Track export for each entity and its languages.
     foreach ($entities as $entity_item) {
@@ -285,7 +285,7 @@ class ExportContent {
    */
   public function exportEntityById($entity_type_id, $entity_id, $langcode = 'all') {
     $entity_payload = $this->getEntityPayload($entity_type_id, $entity_id, $langcode);
-    $slow_mode = \Drupal::config('acquia_perz.settings')->get('cis.ins_upd_slow_endpoint');
+    $slow_mode = \Drupal::config('acquia_perz1.settings')->get('cis.ins_upd_slow_endpoint');
     $this->sendBulk($entity_payload, $slow_mode);
     // @TODO tracking.
     return self::EXPORTED;
@@ -315,7 +315,7 @@ class ExportContent {
     foreach (array_keys($view_modes) as $view_mode) {
       // The preview image field setting is saved along side the view modes.
       // Don't process it as one.
-      if ($view_mode == 'acquia_perz_preview_image') {
+      if ($view_mode == 'acquia_perz1_preview_image') {
         continue;
       }
       if ($langcode === 'all') {
@@ -345,7 +345,7 @@ class ExportContent {
     $langcode = $entity->language()->getId();
     $entity_payload = $this->getEntityPayload($entity_type_id, $entity_id, $langcode);
     try {
-      $slow_mode = \Drupal::config('acquia_perz.settings')->get('cis.delete_entity_slow_endpoint');
+      $slow_mode = \Drupal::config('acquia_perz1.settings')->get('cis.delete_entity_slow_endpoint');
       $this->send('DELETE', $entity_payload, $slow_mode);
       //$this->exportTracker->delete($entity_type_id, $entity_id, $entity_uuid);
     }
@@ -383,7 +383,7 @@ class ExportContent {
    */
   public function deleteEntityById($entity_type_id, $entity_id, $entity_uuid) {
     $entity_payload = $this->getEntityPayload($entity_type_id, $entity_id);
-    $slow_mode = \Drupal::config('acquia_perz.settings')->get('cis.delete_entity_slow_endpoint');
+    $slow_mode = \Drupal::config('acquia_perz1.settings')->get('cis.delete_entity_slow_endpoint');
     $this->send('DELETE', $entity_payload, $slow_mode);
     /*$this->exportTracker->delete(
       $entity_type,
@@ -405,7 +405,7 @@ class ExportContent {
     $entity_id = $translation->id();
     $entity_payload = $this->getEntityPayload($entity_type_id, $entity_id, $langcode);
     try {
-      $slow_mode = \Drupal::config('acquia_perz.settings')->get('cis.delete_translation_slow_endpoint');
+      $slow_mode = \Drupal::config('acquia_perz1.settings')->get('cis.delete_translation_slow_endpoint');
       $this->send('DELETE', $entity_payload, $slow_mode);
       //$this->exportTracker->delete($entity_type, $entity_id, $entity_uuid, $langcode);
     }
@@ -446,7 +446,7 @@ class ExportContent {
    */
   public function deleteTranslationById($entity_type_id, $entity_id, $entity_uuid, $langcode) {
     $entity_payload = $this->getEntityPayload($entity_type_id, $entity_id, $langcode);
-    $slow_mode = \Drupal::config('acquia_perz.settings')->get('cis.delete_translation_slow_endpoint');
+    $slow_mode = \Drupal::config('acquia_perz1.settings')->get('cis.delete_translation_slow_endpoint');
     $this->send('DELETE', $entity_payload, $slow_mode);
     //$this->exportTracker->delete($entity_type, $entity_id, $entity_uuid);
   }

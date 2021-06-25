@@ -1,28 +1,28 @@
 <?php
 
-namespace Drupal\acquia_perz\Commands;
+namespace Drupal\acquia_perz1\Commands;
 
 use Drush\Commands\DrushCommands;
-use Drupal\acquia_perz\ExportQueue;
+use Drupal\acquia_perz1\ExportQueue;
 
 /**
  * Class QueueCommands.
  *
- * @package Drupal\acquia_perz\Commands
+ * @package Drupal\acquia_perz1\Commands
  */
 class QueueCommands extends DrushCommands {
 
   /**
    * The export queue service.
    *
-   * @var \Drupal\acquia_perz\ExportQueue
+   * @var \Drupal\acquia_perz1\ExportQueue
    */
   protected $exportQueue;
 
   /**
    * QueueCommands constructor.
    *
-   * @param \Drupal\acquia_perz\ExportQueue $export_queue
+   * @param \Drupal\acquia_perz1\ExportQueue $export_queue
    *   The export queue.
    */
   public function __construct(ExportQueue $export_queue) {

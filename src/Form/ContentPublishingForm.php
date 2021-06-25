@@ -1,6 +1,6 @@
 <?php
 
-namespace Drupal\acquia_perz\Form;
+namespace Drupal\acquia_perz1\Form;
 
 use Drupal\Core\Config\ConfigFactoryInterface;
 use Drupal\Core\Entity\EntityFieldManagerInterface;
@@ -16,14 +16,14 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
 /**
  * Class ContentPublishingForm.
  *
- * @package Drupal\acquia_perz\Form
+ * @package Drupal\acquia_perz1\Form
  */
 class ContentPublishingForm extends ConfigFormBase {
 
   /**
    * Holds the setting configuration ID.
    */
-  public const CONFIG_NAME = 'acquia_perz.entity_config';
+  public const CONFIG_NAME = 'acquia_perz1.entity_config';
 
   /**
    * The module handler service.
@@ -93,7 +93,7 @@ class ContentPublishingForm extends ConfigFormBase {
    * {@inheritdoc}
    */
   public function getFormId() {
-    return 'acquia_perz_entity_config';
+    return 'acquia_perz1_entity_config';
   }
 
   /**
@@ -109,9 +109,9 @@ class ContentPublishingForm extends ConfigFormBase {
       $acquia_publisher_view_modes = $this
         ->config('acquia_lift_publisher.entity_config')
         ->get('view_modes');
-      $acquia_perz_view_modes = $config->get('view_modes');
+      $acquia_perz1_view_modes = $config->get('view_modes');
       if (!empty($acquia_publisher_view_modes)
-        && $acquia_publisher_view_modes !== $acquia_perz_view_modes) {
+        && $acquia_publisher_view_modes !== $acquia_perz1_view_modes) {
         $form['migrate_configuration'] = [
           '#type' => 'submit',
           '#value' => $this->t('Migrate configuration'),
@@ -163,9 +163,9 @@ class ContentPublishingForm extends ConfigFormBase {
           '#title' => $view_mode->label(),
           '#default_value' => $config->get("view_modes.$entity_type_id.{$bundle->id()}.$short_name"),
         ];
-        if (empty($form['options'][$entity_type_id][$bundle->id()]['acquia_perz_preview_image'])) {
+        if (empty($form['options'][$entity_type_id][$bundle->id()]['acquia_perz1_preview_image'])) {
           $this->setImageSelectorElement($form['options'][$entity_type_id][$bundle->id()], $entity_type_id, $bundle->id());
-          $form['options'][$entity_type_id][$bundle->id()]['acquia_perz_preview_image']['#default_value'] = $config->get("view_modes.$entity_type_id.{$bundle->id()}.acquia_perz_preview_image");
+          $form['options'][$entity_type_id][$bundle->id()]['acquia_perz1_preview_image']['#default_value'] = $config->get("view_modes.$entity_type_id.{$bundle->id()}.acquia_perz1_preview_image");
         }
       }
     }
@@ -233,7 +233,7 @@ class ContentPublishingForm extends ConfigFormBase {
     // Find image fields.
     $image_fields = $this->collectImageFields($entity_type_id, $bundle);
     if (!empty($image_fields)) {
-      $form['acquia_perz_preview_image'] = [
+      $form['acquia_perz1_preview_image'] = [
         '#type' => 'select',
         '#title' => $this->t("Select bundle's preview image field."),
         '#options' => $image_fields,

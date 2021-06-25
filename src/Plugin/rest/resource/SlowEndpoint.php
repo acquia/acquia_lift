@@ -1,13 +1,13 @@
 <?php
 
-namespace Drupal\acquia_perz\Plugin\rest\resource;
+namespace Drupal\acquia_perz1\Plugin\rest\resource;
 
 use Drupal\rest\Plugin\ResourceBase;
 use Drupal\rest\ResourceResponse;
 
 /**
  * @RestResource(
- *   id = "acquia_perz_slow_endpoint",
+ *   id = "acquia_perz1_slow_endpoint",
  *   label = @Translation("Acquia Perz - Slow Endpoint for testing timeouts"),
  *   uri_paths = {
  *     "canonical" = "/api/slow_endpoint"

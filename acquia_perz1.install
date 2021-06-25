@@ -11,10 +11,10 @@ use Drupal\rest\RestResourceConfigInterface;
 /**
  * Implements hook_install().
  */
-function acquia_perz_install() {
+function acquia_perz1_install() {
   // Create "Acquia Perz - Slow Endpoint for testing timeouts" rest endpoint
   // (for testing purposes).
-  $slow_endpoint_rest_id = 'acquia_perz_slow_endpoint';
+  $slow_endpoint_rest_id = 'acquia_perz1_slow_endpoint';
   $slow_endpoint_rest = RestResourceConfig::load($slow_endpoint_rest_id);
   if (empty($slow_endpoint_rest)) {
     RestResourceConfig::create([
@@ -32,9 +32,9 @@ function acquia_perz_install() {
 /**
  * Implements hook_uninstall().
  */
-function acquia_perz_uninstall() {
+function acquia_perz1_uninstall() {
   // Delete "Acquia Perz - Slow Endpoint for testing timeouts" rest endpoint.
-  $slow_endpoint_rest = RestResourceConfig::load('acquia_perz_slow_endpoint');
+  $slow_endpoint_rest = RestResourceConfig::load('acquia_perz1_slow_endpoint');
   if ($slow_endpoint_rest) {
     $slow_endpoint_rest->delete();
   }
@@ -43,9 +43,9 @@ function acquia_perz_uninstall() {
 /**
  * Implements hook_schema().
  */
-function acquia_perz_schema() {
+function acquia_perz1_schema() {
   $schema = [];
-  $schema['acquia_perz_export_tracking'] = [
+  $schema['acquia_perz1_export_tracking'] = [
     'description' => 'Table for tracking which entities have been exported to CIS.',
     'fields' => [
       'entity_type' => [

@@ -1,6 +1,6 @@
 <?php
 
-namespace Drupal\acquia_perz\Form;
+namespace Drupal\acquia_perz1\Form;
 
 use Drupal\Core\Form\ConfigFormBase;
 use Drupal\Core\Form\FormStateInterface;
@@ -14,14 +14,14 @@ class CISSettingsForm extends ConfigFormBase {
    * {@inheritdoc}
    */
   public function getFormId() {
-    return 'acquia_perz_cis_settings';
+    return 'acquia_perz1_cis_settings';
   }
 
   /**
    * {@inheritdoc}
    */
   protected function getEditableConfigNames() {
-    return ['acquia_perz.settings'];
+    return ['acquia_perz1.settings'];
   }
 
   /**
@@ -29,7 +29,7 @@ class CISSettingsForm extends ConfigFormBase {
    */
   public function buildForm(array $form, FormStateInterface $form_state) {
     $settings = $this
-      ->config('acquia_perz.settings');
+      ->config('acquia_perz1.settings');
     $cis_settings = $settings->get('cis');
 
     $form['cis'] = [
@@ -99,7 +99,7 @@ class CISSettingsForm extends ConfigFormBase {
    * {@inheritdoc}
    */
   public function submitForm(array &$form, FormStateInterface $form_state) {
-    $settings = $this->config('acquia_perz.settings');
+    $settings = $this->config('acquia_perz1.settings');
     $values = $form_state->getValues()['cis'];
     $settings->set('cis.endpoint', trim($values['endpoint']));
     $settings->set('cis.account_id', trim($values['account_id']));

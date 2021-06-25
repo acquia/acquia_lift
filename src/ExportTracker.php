@@ -1,6 +1,6 @@
 <?php
 
-namespace Drupal\acquia_perz;
+namespace Drupal\acquia_perz1;
 
 use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\Core\Database\Connection;
@@ -23,7 +23,7 @@ class ExportTracker {
   /**
    * The name of the tracking table.
    */
-  const EXPORT_TRACKING_TABLE = 'acquia_perz_export_tracking';
+  const EXPORT_TRACKING_TABLE = 'acquia_perz1_export_tracking';
 
   /**
    * The entity type manager.

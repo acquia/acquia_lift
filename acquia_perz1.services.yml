@@ -1,24 +1,24 @@
 services:
-  acquia_perz.entity_settings:
+  acquia_perz1.entity_settings:
     class: Drupal\Core\Config\ImmutableConfig
     factory: config.factory:get
     arguments:
-      - 'acquia_perz.entity_config'
+      - 'acquia_perz1.entity_config'
 
-  acquia_perz.cis_settings:
+  acquia_perz1.cis_settings:
     class: Drupal\Core\Config\ImmutableConfig
     factory: config.factory:get
     arguments:
-      - 'acquia_perz.settings'
+      - 'acquia_perz1.settings'
 
-  acquia_perz.export_content:
-    class: Drupal\acquia_perz\ExportContent
+  acquia_perz1.export_content:
+    class: Drupal\acquia_perz1\ExportContent
     arguments:
       - '@http_client'
-      - '@acquia_perz.export_queue'
-      - '@acquia_perz.tracker'
-      - '@acquia_perz.entity_settings'
-      - '@acquia_perz.cis_settings'
+      - '@acquia_perz1.export_queue'
+      - '@acquia_perz1.tracker'
+      - '@acquia_perz1.entity_settings'
+      - '@acquia_perz1.cis_settings'
       - '@entity_type.manager'
       - '@entity_field.manager'
       - '@renderer'
@@ -26,12 +26,12 @@ services:
       - '@date.formatter'
       - '@datetime.time'
 
-  acquia_perz.export_queue:
-    class: Drupal\acquia_perz\ExportQueue
+  acquia_perz1.export_queue:
+    class: Drupal\acquia_perz1\ExportQueue
     arguments: [
-      '@acquia_perz.tracker',
-      '@acquia_perz.entity_settings',
-      '@acquia_perz.cis_settings',
+      '@acquia_perz1.tracker',
+      '@acquia_perz1.entity_settings',
+      '@acquia_perz1.cis_settings',
       '@renderer',
       '@entity_type.manager',
       '@queue',
@@ -39,8 +39,8 @@ services:
       '@messenger'
     ]
 
-  acquia_perz.tracker:
-    class: Drupal\acquia_perz\ExportTracker
+  acquia_perz1.tracker:
+    class: Drupal\acquia_perz1\ExportTracker
     arguments: [
       '@database',
       '@entity_type.manager'

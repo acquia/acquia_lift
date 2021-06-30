@@ -1,0 +1,7 @@
+cis:
+  api_key: '1234'
+  account_id: 'AMD'
+  endpoint: 'http://docker.for.mac.localhost:8080/v1/contents'
+  origin: 'abcd'
+  environment: 'dev'
+  endpoint_timeout: 2

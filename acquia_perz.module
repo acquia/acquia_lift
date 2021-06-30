@@ -1,0 +1,31 @@
+<?php
+
+use Drupal\Core\Entity\EntityInterface;
+
+/**
+ * Implements hook_entity_insert().
+ */
+function acquia_perz_entity_insert(EntityInterface $entity) {
+
+}
+
+/**
+ * Implements hook_entity_update().
+ */
+function acquia_perz_entity_update(EntityInterface $entity) {
+
+}
+
+/**
+ * Implements hook_entity_predelete().
+ */
+function acquia_perz_entity_delete(EntityInterface $entity) {
+
+}
+
+/**
+ * Implements hook_entity_translation_predelete().
+ */
+function acquia_perz_entity_translation_delete(EntityInterface $translation) {
+
+}

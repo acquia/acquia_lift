@@ -1,0 +1,48 @@
+schema {
+  query: Query
+}
+
+type Query {
+  entity_variations(
+    entity_type_id: String!
+    entity_uuid: String!
+  ): [EntityVariation!]!
+  discover_entities(page: Int! = 0): DiscoverEntities
+}
+
+# Entity variations endpoint
+type EntityVariation {
+  content_uuid: String!
+  label: String!
+  account_id: String!
+  content_type: String!
+  view_mode: String!
+  language: String!
+  updated: String!
+  rendered_data: String!
+  relations: [Relation!]
+}
+
+type Relation {
+  field: String!
+  terms: [String!]
+}
+
+# Discover entities endpoint
+type DiscoverEntities {
+  page_info: PageInfo
+  items: [EntityItem]
+}
+
+type EntityItem {
+  entity_type_id: String!
+  entity_uuid: String!
+}
+
+type PageInfo {
+  total_count: Int!
+  current_page_count: Int!
+  current_page: Int!
+  next_page: Int
+  prev_page: Int
+}

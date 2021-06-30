@@ -1,0 +1,12 @@
+name: Acquia Personalization (Perz) (option3)
+description: Provides integration with Content Index Engine for personalization and visitor data collection (option 3).
+package: Acquia Lift
+type: module
+core_version_requirement: ^8.8 || ^9
+php: 7.0
+
+configure: acquia_perz.admin_settings_form
+
+dependencies:
+  - drupal:node
+  - drupal:taxonomy

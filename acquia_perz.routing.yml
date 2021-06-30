@@ -1,0 +1,21 @@
+acquia_perz.admin_settings_form:
+  path: 'admin/config/services/acquia-perz'
+  defaults:
+    _form: '\Drupal\acquia_perz\Form\ContentPublishingForm'
+    _title: 'Acquia Personalization Settings'
+  requirements:
+    _permission: 'administer acquia perz'
+acquia_perz.cis_settings_form:
+  path: 'admin/config/services/acquia-perz/cis'
+  defaults:
+    _form: '\Drupal\acquia_perz\Form\CISSettingsForm'
+    _title: 'Content Index Service'
+  requirements:
+    _permission: 'administer acquia perz'
+acquia_perz.export_form:
+  path: 'admin/config/services/acquia-perz/export'
+  defaults:
+    _form: '\Drupal\acquia_perz\Form\ExportForm'
+    _title: 'Export'
+  requirements:
+    _permission: 'administer acquia perz'

@@ -13,6 +13,7 @@ use Drupal\Core\Config\ImmutableConfig;
 use Drupal\Core\Database\Connection;
 use Drupal\Core\Entity\EntityRepositoryInterface;
 use Drupal\Core\Entity\ContentEntityType;
+use Drupal\Core\Config\ConfigFactoryInterface;
 
 /**
  * @DataProducer(
@@ -63,12 +64,12 @@ class QueryDiscoverEntities extends DataProducerPluginBase implements ContainerF
   protected $database;
 
   /**
-   * The acquia perz entity settings.
+   * The acquia perz entity config.
    *
    * @var \Drupal\Core\Config\ImmutableConfig
    * @see \Drupal\acquia_perz\Form\ContentPublishingForm
    */
-  protected $entitySettings;
+  protected $entityConfig;
 
   /**
    * The CIS settings.
@@ -88,8 +89,7 @@ class QueryDiscoverEntities extends DataProducerPluginBase implements ContainerF
       $configuration,
       $plugin_id,
       $plugin_definition,
-      $container->get('acquia_perz.entity_settings'),
-      $container->get('acquia_perz.cis_settings'),
+      $container->get('config.factory'),
       $container->get('entity_type.manager'),
       $container->get('entity_field.manager'),
       $container->get('entity_type.bundle.info'),
@@ -127,8 +127,7 @@ class QueryDiscoverEntities extends DataProducerPluginBase implements ContainerF
     array $configuration,
     $pluginId,
     $pluginDefinition,
-    ImmutableConfig $entity_settings,
-    ImmutableConfig $cis_settings,
+    ConfigFactoryInterface $config_factory,
     EntityTypeManagerInterface $entity_type_manager,
     EntityFieldManagerInterface $entity_field_manager,
     EntityTypeBundleInfoInterface $entity_type_bundle_info,
@@ -136,8 +135,8 @@ class QueryDiscoverEntities extends DataProducerPluginBase implements ContainerF
     Connection $database
   ) {
     parent::__construct($configuration, $pluginId, $pluginDefinition);
-    $this->entitySettings = $entity_settings;
-    $this->cisSettings = $cis_settings;
+    $this->entityConfig = $config_factory->get('acquia_perz.entity_config');
+    $this->cisSettings = $config_factory->get('acquia_perz.settings');
     $this->entityTypeManager = $entity_type_manager;
     $this->entityFieldManager = $entity_field_manager;
     $this->entityTypeBundleInfo = $entity_type_bundle_info;
@@ -158,7 +157,7 @@ class QueryDiscoverEntities extends DataProducerPluginBase implements ContainerF
   public function resolve($page, RefinableCacheableDependencyInterface $metadata) {
     $entity_items = [];
     // Number of entities that can be present on one page.
-    $page_max_size = 3;
+    $page_max_size = $this->cisSettings->get('cis.discovery_enpoint_page_size', 10);
     // Global offset for entities of all available
     // entity types.
     // It will be updated within each iteration.
@@ -167,7 +166,7 @@ class QueryDiscoverEntities extends DataProducerPluginBase implements ContainerF
     // entity types.
     // It will be updated within each iteration.
     $limit = $page_max_size;
-    $entity_types = $this->entitySettings->get('view_modes');
+    $entity_types = $this->entityConfig->get('view_modes');
     if (empty($entity_types)) {
       throw new \Exception("No entity types are available for the export.");
     }
@@ -197,13 +196,15 @@ class QueryDiscoverEntities extends DataProducerPluginBase implements ContainerF
         $this->getEntitiesUuids(
           $entity_type_id,
           $bundles,
+          $offset,
           $limit,
-          $offset
         ),
         $entity_items
       );
-      // Update global limit and offset.
-      $offset = ($offset > $limit) ? $offset - $limit : 0;
+
+      // Update global offset and limit.
+      $offset = ($offset > $et_all_entities_count) ?
+        $offset - $et_all_entities_count : 0;
       $limit = $limit - $et_left_entities_count;
 
       // Stop searching new entities if limit is
@@ -215,8 +216,10 @@ class QueryDiscoverEntities extends DataProducerPluginBase implements ContainerF
       $metadata->addCacheTags($entity_type->getListCacheTags());
       $metadata->addCacheContexts($entity_type->getListCacheContexts());
     }
-    $metadata->addCacheTags($this->entitySettings->getCacheTags());
-    $metadata->addCacheContexts($this->entitySettings->getCacheContexts());
+    $metadata->addCacheTags($this->entityConfig->getCacheTags());
+    $metadata->addCacheContexts($this->entityConfig->getCacheContexts());
+    $metadata->addCacheTags($this->cisSettings->getCacheTags());
+    $metadata->addCacheContexts($this->cisSettings->getCacheContexts());
 
     // Calculate Page info payload.
     $total_count = $this->getTotalCount($entity_types);
@@ -239,8 +242,8 @@ class QueryDiscoverEntities extends DataProducerPluginBase implements ContainerF
     ];
   }
 
-  protected function getEntitiesUuids($entity_type_id, $bundles, $current_limit, $offset) {
-    $entity_ids = $this->getEntitiesIds($entity_type_id, $bundles, $current_limit, $offset);
+  protected function getEntitiesUuids($entity_type_id, $bundles, $offset, $limit) {
+    $entity_ids = $this->getEntitiesIds($entity_type_id, $bundles, $offset, $limit);
     $entity_type = $this->entityTypeManager
       ->getStorage($entity_type_id)
       ->getEntityType();
@@ -255,61 +258,19 @@ class QueryDiscoverEntities extends DataProducerPluginBase implements ContainerF
     return $entity_items;
   }
 
-  protected function getCountByEntityTypeId($entity_type_id, $bundles, $offset = NULL, $limit = NULL) {
-    $available_bundles = [];
-    foreach ($bundles as $bundle => $view_modes) {
-      $view_modes = array_keys($view_modes);
-      if (count($view_modes) === 1
-        && in_array('acquia_perz_preview_image', $view_modes)) {
-        continue;
-      }
-      $available_bundles[] = $bundle;
-    }
-    // Skip entity type without activated bundles.
-    if (empty($available_bundles)) {
-      return [];
-    }
-    $bundle_property_name = $this
-      ->entityTypeManager
-      ->getStorage($entity_type_id)
-      ->getEntityType()
-      ->getKey('bundle');
-    $query = $this
-      ->entityTypeManager
-      ->getStorage($entity_type_id)
-      ->getQuery();
-    // For single-bundle entity types like 'user'
-    // we don't use bundle related property.
-    if (!empty($bundle_property_name)) {
-      $query = $query->condition($bundle_property_name, $available_bundles, 'IN');
-    }
-    if ($offset && $limit) {
-      $query->range($offset, $limit);
-    }
-    return $query->count()->execute();
-  }
-
-  protected function getTotalCount($entity_types) {
-    $total_count = 0;
-    foreach ($entity_types as $entity_type_id => $bundles) {
-      $total_count += $this->getCountByEntityTypeId($entity_type_id, $bundles);
-    }
-    return $total_count;
-  }
-
   /**
-   * Returns entity ids by entity type id and passed bundles.
+   * Returns entity query.
    *
    * @param string $entity_type_id
    *  The entity type id.
    * @param array $bundles
    *  List of bundles of entity type.
-   * @param integer $current_page
-   *  List of bundles of entity type.
-   * @param integer $bundles
-   *  List of bundles of entity type.
+   * @param integer $offset
+   *  The query offset.
+   * @param integer $limit
+   *  The query limit.
    */
-  protected function getEntitiesIds($entity_type_id, $bundles, $limit, $offset) {
+  protected function getEntitiesQuery($entity_type_id, $bundles, $offset = NULL, $limit = NULL) {
     // Check only bundles with at least one view mode activated
     // besides 'acquia_perz_preview_image' view mode.
     $available_bundles = [];
@@ -339,8 +300,63 @@ class QueryDiscoverEntities extends DataProducerPluginBase implements ContainerF
     if (!empty($bundle_property_name)) {
       $query = $query->condition($bundle_property_name, $available_bundles, 'IN');
     }
-    $query->range($offset, $limit);
+    if ($entity_type_id === 'user') {
+      $query = $query->condition('uid', 0, '<>');
+    }
+    if ($offset !== NULL && $limit !== NULL) {
+      $query->range($offset, $limit);
+    }
+
+    return $query;
+  }
+
+  /**
+   * Returns entity ids by entity type id and passed bundles.
+   *
+   * @param string $entity_type_id
+   *  The entity type id.
+   * @param array $bundles
+   *  List of bundles of entity type.
+   * @param integer $offset
+   *  The query offset.
+   * @param integer $limit
+   *  The query limit.
+   */
+  protected function getEntitiesIds($entity_type_id, $bundles, $offset = NULL, $limit = NULL) {
+    $query = $this->getEntitiesQuery($entity_type_id, $bundles, $offset, $limit);
     return array_values($query->execute());
+  }
+
+  /**
+   * Returns entities query count.
+   *
+   * @param string $entity_type_id
+   *  The entity type id.
+   * @param array $bundles
+   *  List of bundles of entity type.
+   * @param integer $offset
+   *  The query offset.
+   * @param integer $limit
+   *  The query limit.
+   *
+   * @return integer
+   */
+  protected function getCountByEntityTypeId($entity_type_id, $bundles, $offset = NULL, $limit = NULL) {
+    $query = $this->getEntitiesQuery($entity_type_id, $bundles, $offset, $limit);
+    return $query->count()->execute();
+  }
+
+  /**
+   * @param array $entity_types
+   *
+   * @return integer
+   */
+  protected function getTotalCount($entity_types) {
+    $total_count = 0;
+    foreach ($entity_types as $entity_type_id => $bundles) {
+      $total_count += $this->getCountByEntityTypeId($entity_type_id, $bundles);
+    }
+    return $total_count;
   }
 
   /**

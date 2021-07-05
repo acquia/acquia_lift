@@ -31,7 +31,6 @@ class CISSettingsForm extends ConfigFormBase {
     $settings = $this
       ->config('acquia_perz.settings');
     $cis_settings = $settings->get('cis');
-
     $form['cis'] = [
       '#tree' => TRUE,
     ];
@@ -65,6 +64,12 @@ class CISSettingsForm extends ConfigFormBase {
       '#default_value' => $cis_settings['api_key'],
       '#required' => TRUE,
     ];
+    $form['cis']['discovery_enpoint_page_size'] = [
+      '#type' => 'textfield',
+      '#title' => $this->t('Discovery endpoint: page size'),
+      '#default_value' => $cis_settings['discovery_enpoint_page_size'],
+      '#required' => TRUE,
+    ];
     return parent::buildForm($form, $form_state);
   }
 
@@ -79,6 +84,7 @@ class CISSettingsForm extends ConfigFormBase {
     $settings->set('cis.environment', trim($values['environment']));
     $settings->set('cis.api_key', trim($values['api_key']));
     $settings->set('cis.origin', trim($values['origin']));
+    $settings->set('cis.discovery_enpoint_page_size', trim($values['discovery_enpoint_page_size']));
     $settings->save();
     parent::submitForm($form, $form_state);
   }

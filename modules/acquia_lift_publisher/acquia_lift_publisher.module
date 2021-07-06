@@ -15,14 +15,14 @@ use Drupal\Core\Entity\EntityInterface;
  * Implements hook_entity_insert().
  */
 function acquia_lift_publisher_entity_insert(EntityInterface $entity) {
-  _acquia_lift_publisher_trigger_queue($entity);
+//  _acquia_lift_publisher_trigger_queue($entity);
 }
 
 /**
  * Implements hook_entity_update().
  */
 function acquia_lift_publisher_entity_update(EntityInterface $entity) {
-  _acquia_lift_publisher_trigger_queue($entity);
+//  _acquia_lift_publisher_trigger_queue($entity);
 }
 
 /**

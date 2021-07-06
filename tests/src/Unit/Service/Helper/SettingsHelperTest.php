@@ -2,6 +2,11 @@
 
 namespace Drupal\Tests\acquia_lift\Unit\Service\Helper;
 
+use Drupal\Core\DependencyInjection\ContainerBuilder;
+use Prophecy\Argument;
+use Drupal\Core\Http\ClientFactory;
+use GuzzleHttp\Client;
+use Psr\Http\Message\ResponseInterface;
 use Drupal\Tests\UnitTestCase;
 use Drupal\acquia_lift\Service\Helper\SettingsHelper;
 use Drupal\Tests\acquia_lift\Unit\Traits\SettingsDataTrait;
@@ -16,6 +21,9 @@ class SettingsHelperTest extends UnitTestCase {
 
   use SettingsDataTrait;
 
+  /**
+   *
+   */
   protected function setUp() {
     parent::setUp();
   }
@@ -26,7 +34,7 @@ class SettingsHelperTest extends UnitTestCase {
    * @covers ::isInvalidCredentialAccountId
    *
    * @param string $setting
-   * @param boolean $expected
+   * @param bool $expected
    *
    * @dataProvider providerTestIsInvalidCredentialAccountId
    */
@@ -57,7 +65,7 @@ class SettingsHelperTest extends UnitTestCase {
    * @covers ::isInvalidCredentialSiteId
    *
    * @param string $setting
-   * @param boolean $expected
+   * @param bool $expected
    *
    * @dataProvider providerTestIsInvalidCredentialSiteId
    */
@@ -87,7 +95,7 @@ class SettingsHelperTest extends UnitTestCase {
    * @covers ::isInvalidCredentialAssetsUrl
    *
    * @param string $setting
-   * @param boolean $expected
+   * @param bool $expected
    *
    * @dataProvider providerTestIsInvalidCredentialAssetsUrl
    */
@@ -117,7 +125,7 @@ class SettingsHelperTest extends UnitTestCase {
    * @covers ::isInvalidCredentialDecisionApiUrl
    *
    * @param string $setting
-   * @param boolean $expected
+   * @param bool $expected
    *
    * @dataProvider providerTestIsInvalidCredentialDecisionApiUrl
    */
@@ -147,7 +155,7 @@ class SettingsHelperTest extends UnitTestCase {
    * @covers ::isInvalidCredentialOauthUrl
    *
    * @param string $setting
-   * @param boolean $expected
+   * @param bool $expected
    *
    * @dataProvider providerTestIsInvalidCredentialOauthUrl
    */
@@ -177,7 +185,7 @@ class SettingsHelperTest extends UnitTestCase {
    * @covers ::isInvalidCredential
    *
    * @param array $full_settings
-   * @param boolean $expected
+   * @param bool $expected
    *
    * @dataProvider providerTestIsInvalidCredential
    */
@@ -215,7 +223,7 @@ class SettingsHelperTest extends UnitTestCase {
    * @covers ::isValidContentReplacementMode
    *
    * @param string $test_value
-   * @param boolean $expected
+   * @param bool $expected
    *
    * @dataProvider providerTestIsValidContentReplacementMode
    */
@@ -245,7 +253,7 @@ class SettingsHelperTest extends UnitTestCase {
    * @covers ::getUdfLimitsForType
    *
    * @param string $test_value
-   * @param boolean $expected
+   * @param bool $expected
    *
    * @dataProvider providerTestGetUdfLimitsForType
    */
@@ -286,19 +294,21 @@ class SettingsHelperTest extends UnitTestCase {
    * @covers ::pingUri
    *
    * @param string $test_value
-   * @param boolean $expected
+   *   The Test Value
+   * @param bool $expected
+   *  Expected Value
    *
    * @dataProvider providerTestPingUri
    */
-  public function testPingUri($test_value, $expected) {
-    $response = $this->prophesize(\Psr\Http\Message\ResponseInterface::class);
+  public function testPingUri(string $test_value, bool $expected) {
+    $response = $this->prophesize(ResponseInterface::class);
     $response->getStatusCode()->willReturn($expected['statusCode']);
     $response->getReasonPhrase()->willReturn($expected['reasonPhrase']);
-    $client = $this->prophesize(\GuzzleHttp\Client::class);
-    $client->get($test_value[1], ['http_errors' => false])->willReturn($response->reveal());
-    $clientFactory = $this->prophesize(\Drupal\Core\Http\ClientFactory::class);
-    $clientFactory->fromOptions(\Prophecy\Argument::any())->willReturn($client->reveal());
-    $container = $this->prophesize(\Drupal\Core\DependencyInjection\ContainerBuilder::class);
+    $client = $this->prophesize(Client::class);
+    $client->get($test_value[1], ['http_errors' => FALSE])->willReturn($response->reveal());
+    $clientFactory = $this->prophesize(ClientFactory::class);
+    $clientFactory->fromOptions(Argument::any())->willReturn($client->reveal());
+    $container = $this->prophesize(ContainerBuilder::class);
     $container->get('http_client_factory')->willReturn($clientFactory->reveal());
     \Drupal::setContainer($container->reveal());
 
@@ -327,4 +337,5 @@ class SettingsHelperTest extends UnitTestCase {
 
     return $data;
   }
+
 }

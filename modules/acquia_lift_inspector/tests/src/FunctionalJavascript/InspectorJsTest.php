@@ -1,9 +1,5 @@
 <?php
 
-/**
- * @file
- */
-
 namespace Drupal\Tests\acquia_lift_inspector\FunctionalJavascript;
 
 use Drupal\acquia_lift\Tests\SettingsDataTrait;
@@ -47,7 +43,7 @@ class InspectorJsTest extends JavascriptTestBase {
    * @return array
    *   A valid credential settings array.
    */
-  private function getActualJSCredentialSettings() {
+  private function getActualJsCredentialSettings() {
     return [
       'account_id' => 'AccountId1',
       'site_id' => 'SiteId1',
@@ -72,7 +68,7 @@ class InspectorJsTest extends JavascriptTestBase {
     $this->setValidSettings();
     // Set an actual JS lift.js file in the settings for the inspector to work.
     $settings = $this->config('acquia_lift.settings');
-    $settings->set('credential', $this->getActualJSCredentialSettings());
+    $settings->set('credential', $this->getActualJsCredentialSettings());
     $settings->save();
 
     // Check if Acquia Lift Link is available on the node that we created.

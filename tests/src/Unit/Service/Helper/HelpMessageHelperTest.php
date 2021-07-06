@@ -2,8 +2,8 @@
 
 namespace Drupal\Tests\acquia_lift\Unit\Service\Helper;
 
-use Drupal\Tests\UnitTestCase;
 use Drupal\acquia_lift\Service\Helper\HelpMessageHelper;
+use Drupal\Tests\UnitTestCase;
 
 /**
  * HelpMessageHelper Test.
@@ -12,17 +12,20 @@ use Drupal\acquia_lift\Service\Helper\HelpMessageHelper;
  * @group acquia_lift
  */
 class HelpMessageHelperTest extends UnitTestCase {
+
   /**
    * Tests the getMessage() method - AdminSettingsForm.
    *
-   * @covers ::getMessage
-   *
    * @param string $route_name
+   *   The Route Name.
    * @param string $has_message
+   *   If route has a message.
+   *
+   * @covers ::getMessage
    *
    * @dataProvider providerRouteNames
    */
-  public function testGetMessageAdminSettingsFormNoApiUrl($route_name, $has_message) {
+  public function testGetMessageAdminSettingsFormNoApiUrl(string $route_name, string $has_message) {
     $help_message_helper = new HelpMessageHelper();
     $help_message_helper->setStringTranslation($this->getStringTranslationStub());
     $message = $help_message_helper->getMessage($route_name);
@@ -46,4 +49,5 @@ class HelpMessageHelperTest extends UnitTestCase {
 
     return $data;
   }
+
 }

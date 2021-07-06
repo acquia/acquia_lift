@@ -2,8 +2,8 @@
 
 namespace Drupal\Tests\acquia_lift\Unit\Service\Helper;
 
-use Drupal\Tests\UnitTestCase;
 use Drupal\acquia_lift\Service\Helper\PathMatcher;
+use Drupal\Tests\UnitTestCase;
 
 /**
  * PathMatcher Test.
@@ -92,4 +92,5 @@ class PathMatcherTest extends UnitTestCase {
     $is_matched = $pathMatcher->match('A_PATH', 'A_PATTERN');
     $this->assertTrue($is_matched);
   }
+
 }

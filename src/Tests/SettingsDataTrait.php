@@ -6,6 +6,7 @@ namespace Drupal\acquia_lift\Tests;
  * Settings Data Trait.
  */
 trait SettingsDataTrait {
+
   /**
    * Set valid settings.
    *
@@ -54,7 +55,7 @@ trait SettingsDataTrait {
    */
   private function getValidIdentitySettings() {
     return [
-//      'capture_identity' => FALSE,
+    // 'capture_identity' => FALSE,
       'identity_parameter' => 'my_identity_parameter',
       'identity_type_parameter' => 'my_identity_type_parameter',
       'default_identity_type' => 'my_default_identity_type',
@@ -86,13 +87,13 @@ trait SettingsDataTrait {
       'person_udf1' => [
         'id' => 'person_udf1',
         'value' => 'field_tags',
-        'type' => 'taxonomy'
+        'type' => 'taxonomy',
       ],
       'person_udf2' => [
         'id' => 'person_udf2',
         'value' => 'field_people',
-        'type' => 'taxonomy'
-      ]
+        'type' => 'taxonomy',
+      ],
     ];
   }
 
@@ -105,10 +106,9 @@ trait SettingsDataTrait {
   private function getValidUdfPersonMappingsFormData() {
     return [
       'person_udf1' => 'field_tags',
-      'person_udf2' => 'field_people'
+      'person_udf2' => 'field_people',
     ];
   }
-
 
   /**
    * Get a valid udf touch mappings settings array.
@@ -121,12 +121,12 @@ trait SettingsDataTrait {
       'touch_udf1' => [
         'id' => 'touch_udf1',
         'value' => 'field_country',
-        'type' => 'taxonomy'
+        'type' => 'taxonomy',
       ],
       'touch_udf2' => [
         'id' => 'touch_udf2',
         'value' => 'field_people',
-        'type' => 'taxonomy'
+        'type' => 'taxonomy',
       ],
     ];
   }
@@ -140,10 +140,9 @@ trait SettingsDataTrait {
   private function getValidUdfTouchMappingsFormData() {
     return [
       'touch_udf1' => 'field_country',
-      'touch_udf2' => 'field_people'
+      'touch_udf2' => 'field_people',
     ];
   }
-
 
   /**
    * Get a valid udf event mappings settings array.
@@ -156,12 +155,12 @@ trait SettingsDataTrait {
       'event_udf1' => [
         'id' => 'event_udf1',
         'value' => 'field_country',
-        'type' => 'taxonomy'
+        'type' => 'taxonomy',
       ],
       'event_udf2' => [
         'id' => 'event_udf2',
         'value' => 'field_tags',
-        'type' => 'taxonomy'
+        'type' => 'taxonomy',
       ],
     ];
   }
@@ -175,7 +174,7 @@ trait SettingsDataTrait {
   private function getValidUdfEventMappingsFormData() {
     return [
       'event_udf1' => 'field_country',
-      'event_udf2' => 'field_tags'
+      'event_udf2' => 'field_tags',
     ];
   }
 
@@ -221,4 +220,5 @@ trait SettingsDataTrait {
     }
     return $post_form_settings;
   }
+
 }

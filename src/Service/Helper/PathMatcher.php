@@ -5,6 +5,9 @@ namespace Drupal\acquia_lift\Service\Helper;
 use Drupal\Core\Path\AliasManagerInterface;
 use Drupal\Core\Path\PathMatcherInterface;
 
+/**
+ * Defines the Path Matcher class.
+ */
 class PathMatcher {
   /**
    * Alias manager.
@@ -34,14 +37,14 @@ class PathMatcher {
   }
 
   /**
-   * Determine if the path falls into one of the allowed paths (in terms of path patterns).
+   * Determine if the path falls into one of the allowed paths patterns.
    *
    * @param string $path
    *   The actual path that's being matched by.
    * @param string $path_patterns
    *   The path patterns that the path is being matched to.
    *
-   * @return boolean
+   * @return bool
    *   True if should attach.
    */
   public function match($path, $path_patterns) {
@@ -60,4 +63,5 @@ class PathMatcher {
 
     return FALSE;
   }
+
 }

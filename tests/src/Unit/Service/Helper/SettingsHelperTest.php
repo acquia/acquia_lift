@@ -293,14 +293,14 @@ class SettingsHelperTest extends UnitTestCase {
    *
    * @covers ::pingUri
    *
-   * @param string $test_value
+   * @param array $test_value
    *   The Test Value
-   * @param bool $expected
+   * @param array $expected
    *  Expected Value
    *
    * @dataProvider providerTestPingUri
    */
-  public function testPingUri(string $test_value, bool $expected) {
+  public function testPingUri(array $test_value, array $expected) {
     $response = $this->prophesize(ResponseInterface::class);
     $response->getStatusCode()->willReturn($expected['statusCode']);
     $response->getReasonPhrase()->willReturn($expected['reasonPhrase']);

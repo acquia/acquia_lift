@@ -33,7 +33,7 @@ class HelpMessageHelperTest extends UnitTestCase {
       $this->assertEquals('You can find more info in <a href="https://docs.acquia.com/lift" target="_blank">Documentation</a>.', $message->render());
     }
     else {
-      $this->assertNull($message);
+      $this->assertNull($message->render());
     }
   }
 

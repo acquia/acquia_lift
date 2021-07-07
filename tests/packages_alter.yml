@@ -1,0 +1,4 @@
+---
+drupal/acquia_contenthub:
+  version: 1.x
+  version_dev: 1.x-dev

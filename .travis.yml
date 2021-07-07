@@ -1,7 +1,12 @@
 ---
 language: php
 
-php: "7.2"
+os: linux
+dist: bionic
+
+version: ~> 1.0
+
+php: "7.3"
 
 addons:
   chrome: stable
@@ -10,36 +15,25 @@ cache:
   directories:
     - "$HOME/.composer/cache"
     - "$HOME/.drush/cache"
+    - "$HOME/.rvm"
     - "${TMPDIR:-/tmp}/phpstan/cache"
 
 env:
   global:
     - ORCA_SUT_NAME=drupal/acquia_lift
     - ORCA_SUT_BRANCH=8.x-3.x
-    - ORCA_VERSION=dev-master
-    - ORCA_TELEMETRY_ENABLE=TRUE
+    - ORCA_VERSION=^3
+    - ORCA_PACKAGES_CONFIG_ALTER=../acquia_lift/tests/packages_alter.yml
 
 matrix:
   fast_finish: true
   include:
-    - { name: "Static code analysis", env: ORCA_JOB=STATIC_CODE_ANALYSIS }
-    - { name: "Deprecated code scan", env: ORCA_JOB=DEPRECATED_CODE_SCAN }
-    - { name: "Isolated test w/ recommended package versions", env: ORCA_JOB=ISOLATED_RECOMMENDED }
-    - { name: "Integrated test w/ recommended package versions", env: ORCA_JOB=INTEGRATED_RECOMMENDED }
-    - { name: "Integrated test w/ recommended package versions & previous minor release of Drupal core", env: ORCA_JOB=CORE_PREVIOUS }
-    - { name: "Isolated test w/ dev package versions", env: ORCA_JOB=ISOLATED_DEV }
-    - { name: "Integrated test w/ dev package versions", env: ORCA_JOB=INTEGRATED_DEV }
-    - { name: "Integrated test w/ dev package versions & next minor dev version of Drupal core", env: ORCA_JOB=CORE_NEXT }
-  allow_failures:
-    - env: ORCA_JOB=ISOLATED_DEV
-    - env: ORCA_JOB=INTEGRATED_DEV
-    - env: ORCA_JOB=CORE_NEXT
-    # Temporary allowances.
-    - env: ORCA_JOB=STATIC_CODE_ANALYSIS
-    - env: ORCA_JOB=DEPRECATED_CODE_SCAN
+    ## We only test against Drupal 8 and static code analysis since 8.x-3.x will never support Drupal 9.
+    - { env: ORCA_JOB=STATIC_CODE_ANALYSIS, name: "Static code analysis" }
+    - { env: ORCA_JOB=INTEGRATED_TEST_ON_LATEST_LTS, name: "Integrated test on latest LTS Drupal core version" }
 
 before_install:
-  - composer self-update 1.10.16
+  - nvm use 12.13.1
   - composer create-project --no-dev acquia/orca ../orca "$ORCA_VERSION"
   - ../orca/bin/travis/before_install.sh
 

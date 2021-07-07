@@ -65,6 +65,9 @@ class SettingsTest extends WebTestBase {
     $this->drupalLogin($this->admin_user);
   }
 
+  /**
+   *
+   */
   public function testConfigurationLinks() {
     // Check if Configure link is available on 'Extend' page.
     // Requires 'administer modules' permission.
@@ -77,6 +80,9 @@ class SettingsTest extends WebTestBase {
     $this->assertRaw('admin/config/services/acquia-lift', '[testConfigurationLinks]: Configure link from Status Reports page to Acquia Lift Settings page exists.');
   }
 
+  /**
+   *
+   */
   public function testAdminSettingsForm() {
     // Check for setting page's presence.
     $this->drupalGet('admin/config/services/acquia-lift');
@@ -95,7 +101,7 @@ class SettingsTest extends WebTestBase {
     // Remove 'content_origin' from credential settings, because it is defined in advanced form.
     unset($credential_settings['content_origin']);
 
-    $edit =[];
+    $edit = [];
     $edit += $this->convertToPostFormSettings($credential_settings, 'credential');
     $edit += $this->convertToPostFormSettings($identity_settings, 'identity');
     $edit += $this->convertToPostFormSettings($field_mappings_settings, 'field_mappings');
@@ -130,6 +136,9 @@ class SettingsTest extends WebTestBase {
     $this->assertRaw('oauth_url_1/authorize', '[testMetatagsAndScriptTag]: oauth_url metatag value is loaded on the node page with cleaned-up value.');
   }
 
+  /**
+   *
+   */
   public function testMetatagsAndScriptTag() {
     $this->setValidSettings();
 
@@ -151,4 +160,5 @@ class SettingsTest extends WebTestBase {
     $this->assertRaw('AssetsUrl1', '[testMetatagsAndScriptTag]: With valid settings, Lift\'s JavaScript is loaded on the home page.');
     $this->assertRaw('async', '[testMetatagsAndScriptTag]: With valid settings, Lift\'s JavaScript is async-loaded on the home page.');
   }
+
 }

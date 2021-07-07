@@ -6,6 +6,7 @@ namespace Drupal\Tests\acquia_lift\Unit\Traits;
  * Settings Data Trait.
  */
 trait SettingsDataTrait {
+
   /**
    * Get a valid credential settings array.
    *
@@ -64,13 +65,13 @@ trait SettingsDataTrait {
       'person_udf1' => [
         'id' => 'person_udf1',
         'value' => 'field_tags',
-        'type' => 'taxonomy'
+        'type' => 'taxonomy',
       ],
       'person_udf2' => [
         'id' => 'person_udf2',
         'value' => 'field_people',
-        'type' => 'taxonomy'
-      ]
+        'type' => 'taxonomy',
+      ],
     ];
   }
 
@@ -85,13 +86,13 @@ trait SettingsDataTrait {
       'touch_udf1' => [
         'id' => 'touch_udf1',
         'value' => 'field_country',
-        'type' => 'taxonomy'
+        'type' => 'taxonomy',
       ],
       'touch_udf2' => [
         'id' => 'touch_udf2',
         'value' => 'field_people',
-        'type' => 'taxonomy'
-      ]
+        'type' => 'taxonomy',
+      ],
     ];
   }
 
@@ -106,13 +107,13 @@ trait SettingsDataTrait {
       'event_udf1' => [
         'id' => 'event_udf1',
         'value' => 'field_country',
-        'type' => 'taxonomy'
+        'type' => 'taxonomy',
       ],
       'event_udf2' => [
         'id' => 'event_udf2',
         'value' => 'field_tags',
-        'type' => 'taxonomy'
-      ]
+        'type' => 'taxonomy',
+      ],
     ];
   }
 
@@ -141,4 +142,5 @@ trait SettingsDataTrait {
       'content_origin' => '08c93130-2e45-45f6-af6d-7c02de8cd90c',
     ];
   }
+
 }

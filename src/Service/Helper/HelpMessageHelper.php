@@ -4,9 +4,13 @@ namespace Drupal\acquia_lift\Service\Helper;
 
 use Drupal\Core\StringTranslation\StringTranslationTrait;
 
+/**
+ * Defines the Help Message class.
+ */
 class HelpMessageHelper {
 
   use StringTranslationTrait;
+
   /**
    * Get help message (by route name).
    *
@@ -16,12 +20,13 @@ class HelpMessageHelper {
    * @return \Drupal\Core\StringTranslation\TranslatableMarkup
    *   The help message.
    */
-  public function getMessage($route_name) {
+  public function getMessage(string $route_name) {
     switch ($route_name) {
       case 'help.page.acquia_lift':
       case 'acquia_lift.admin_settings_form':
         return $this->t('You can find more info in <a href="https://docs.acquia.com/lift" target="_blank">Documentation</a>.');
     }
-    return;
+    return $this->t('');
   }
+
 }

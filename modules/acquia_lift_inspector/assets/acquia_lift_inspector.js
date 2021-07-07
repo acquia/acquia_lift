@@ -153,8 +153,8 @@
         hide: { effect: 'fadeOut', duration: 200 },
         dialogClass: 'lift-inspector-dialog',
         minWidth: 900,
-        create: function(event, ui) {$(dialogContainerSelector).addClass(dialogActiveClassName);},
-        beforeClose: function(event, ui) {$(dialogContainerSelector).removeClass(dialogActiveClassName);}
+        create: function (event, ui) {$(dialogContainerSelector).addClass(dialogActiveClassName);},
+        beforeClose: function (event, ui) {$(dialogContainerSelector).removeClass(dialogActiveClassName);}
       }).showModal();
     }
   };

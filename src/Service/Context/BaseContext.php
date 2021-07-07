@@ -2,6 +2,9 @@
 
 namespace Drupal\acquia_lift\Service\Context;
 
+/**
+ *
+ */
 abstract class BaseContext implements ContextInterface {
 
   /**
@@ -22,9 +25,10 @@ abstract class BaseContext implements ContextInterface {
    * Get the render array for a single meta tag.
    *
    * @param string $name
-   *   The name for the meta tag
+   *   The name for the meta tag.
    * @param string $content
-   *   The content for the meta tag
+   *   The content for the meta tag.
+   *
    * @return array
    *   The render array
    */

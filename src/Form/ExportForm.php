@@ -24,20 +24,6 @@ class ExportForm extends FormBase {
   protected $entityTypeManager;
 
   /**
-   * The Export Queue Service.
-   *
-   * @var \Drupal\acquia_perz\ExportQueue
-   */
-  protected $exportQueue;
-
-  /**
-   * The queue object.
-   *
-   * @var \Drupal\Core\Queue\QueueFactory
-   */
-  protected $queueFactory;
-
-  /**
    * The database object.
    *
    * @var \Drupal\Core\Database\Connection
@@ -45,31 +31,15 @@ class ExportForm extends FormBase {
   protected $database;
 
   /**
-   * The CronInterface object.
-   *
-   * @var \Drupal\Core\CronInterface
-   */
-  protected $cron;
-
-  /**
    * Constructor.
    * @param \Drupal\Core\Entity\EntityTypeManagerInterface $entity_type_manager
    *   Entity type manager service.
-   * @param \Drupal\acquia_perz\ExportQueue $export_queue
-   *   Export Queue service.
-   * @param \Drupal\Core\Queue\QueueFactory $queue_factory
-   *   Queue factory service to get new/existing queues for use.
    * @param \Drupal\Core\Database\Connection $database
    *   The database connection to be used.
-   * @param Drupal\Core\CronInterface $cron
-   *   The cron service.
    */
-  public function __construct(EntityTypeManagerInterface $entity_type_manager, ExportQueue $export_queue, QueueFactory $queue_factory, Connection $database, CronInterface $cron) {
+  public function __construct(EntityTypeManagerInterface $entity_type_manager, Connection $database) {
     $this->entityTypeManager = $entity_type_manager;
-    $this->exportQueue = $export_queue;
-    $this->queueFactory = $queue_factory;
     $this->database = $database;
-    $this->cron = $cron;
   }
 
   /**
@@ -78,10 +48,7 @@ class ExportForm extends FormBase {
   public static function create(ContainerInterface $container) {
     $form = new static(
       $container->get('entity_type.manager'),
-      $container->get('acquia_perz.export_queue'),
-      $container->get('queue'),
-      $container->get('database'),
-      $container->get('cron')
+      $container->get('database')
     );
     $form->setMessenger($container->get('messenger'));
     return $form;

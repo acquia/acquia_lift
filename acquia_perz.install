@@ -1,0 +1,61 @@
+<?php
+
+/**
+ * @file
+ */
+
+use Drupal\graphql\Entity\Server;
+use Drupal\user\Entity\Role;
+use Drupal\user\RoleInterface;
+
+/**
+ * Implements hook_install().
+ */
+function acquia_perz_install() {
+  // Create Perz graphQL server.
+  if (empty(Server::load('perz'))) {
+    $graphql_server = Server::create();
+    $graphql_server->set('label', 'Perz');
+    $graphql_server->set('name', 'perz');
+    $graphql_server->set('schema', 'export_entities');
+    $graphql_server->set('endpoint', '/perz3');
+    $graphql_server->save();
+  }
+
+  $graphql_permission_name = "execute {$graphql_server->id()} arbitrary graphql requests";
+  $anonymous_role = Role::load(RoleInterface::ANONYMOUS_ID);
+  $anonymous_role->grantPermission($graphql_permission_name);
+  $anonymous_role->save();
+  $authenticated_role = Role::load(RoleInterface::AUTHENTICATED_ID);
+  $authenticated_role->grantPermission($graphql_permission_name);
+  $authenticated_role->save();
+}
+
+/**
+ * Implements hook_uninstall().
+ */
+function acquia_perz_uninstall() {
+  // Revoke graphql perz endpoint permission.
+  $graphql_server = Server::load('perz');
+  $graphql_permission_name = "execute {$graphql_server->id()} arbitrary graphql requests";
+  $anonymous_role = Role::load(RoleInterface::ANONYMOUS_ID);
+  $anonymous_role->revokePermission($graphql_permission_name);
+  $anonymous_role->save();
+  $authenticated_role = Role::load(RoleInterface::AUTHENTICATED_ID);
+  $authenticated_role->revokePermission($graphql_permission_name);
+  $authenticated_role->save();
+
+  // Delete Perz graphQL server.
+  if ($graphql_server) {
+    $graphql_server->delete();
+  }
+
+  // Delete entity config.
+  $perz_entity_config = \Drupal::configFactory()->getEditable('acquia_perz.entity_config');
+  $perz_entity_config->delete();
+
+  // Delete perz cis settings.
+  $perz_cis_settings = \Drupal::configFactory()->getEditable('acquia_perz.settings');
+  $perz_cis_settings->delete();
+
+}

@@ -1,0 +1,4 @@
+---
+drupal/acquia_lift:
+  version: 4.x
+  version_dev: 4.x-dev

@@ -10,19 +10,30 @@
  */
 
 use Drupal\Core\Entity\EntityInterface;
+use Drupal\acquia_lift_publisher\Form\ContentPublishingForm;
 
 /**
  * Implements hook_entity_insert().
  */
 function acquia_lift_publisher_entity_insert(EntityInterface $entity) {
-//  _acquia_lift_publisher_trigger_queue($entity);
+  $push_setting_field = ContentPublishingForm::$pushSettingField;
+  $export_content_immediately_field = ContentPublishingForm::$exportContentImmediatelyField;
+  if (Drupal::config($push_setting_field, TRUE) === TRUE
+    && Drupal::config($export_content_immediately_field, TRUE) === TRUE) {
+    _acquia_lift_publisher_trigger_queue($entity);
+  }
 }
 
 /**
  * Implements hook_entity_update().
  */
 function acquia_lift_publisher_entity_update(EntityInterface $entity) {
-//  _acquia_lift_publisher_trigger_queue($entity);
+  $push_setting_field = ContentPublishingForm::$pushSettingField;
+  $export_content_immediately_field = ContentPublishingForm::$exportContentImmediatelyField;
+  if (Drupal::config($push_setting_field, TRUE) === TRUE
+    && Drupal::config($export_content_immediately_field, TRUE) === TRUE) {
+    _acquia_lift_publisher_trigger_queue($entity);
+  }
 }
 
 /**

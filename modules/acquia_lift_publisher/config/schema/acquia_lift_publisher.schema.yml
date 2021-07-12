@@ -20,3 +20,6 @@ acquia_lift_publisher.entity_config:
     personalized_content_only:
       type: boolean
       label: 'Push personalizing content only'
+    export_content_immediately:
+      type: boolean
+      label: 'Export content immediately'

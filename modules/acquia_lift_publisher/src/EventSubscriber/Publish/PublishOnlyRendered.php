@@ -73,10 +73,12 @@ class PublishOnlyRendered implements EventSubscriberInterface {
     // set for the entity in question, the entity is qualified to be processed.
     if (empty($this->getEntityViewModesSettingValue($entity))) {
       $event->setEligibility(FALSE);
+      $event->stopPropagation();
       return;
     }
 
-    $cdfs = $this->commonActions->getEntityCdf($entity);
+    $entities = [];
+    $cdfs = $this->commonActions->getEntityCdf($entity, $entities, TRUE, FALSE);
     foreach ($cdfs as $cdf) {
       if ($cdf->getType() !== 'rendered_entity') {
         continue;
@@ -85,11 +87,13 @@ class PublishOnlyRendered implements EventSubscriberInterface {
       $source_uuid = $this->getCdfEntityAttributeValue($cdf, 'source_entity');
       if ($source_uuid === $entity->uuid()) {
         $event->setEligibility(TRUE);
+        $event->setCalculateDependencies(FALSE);
         return;
       }
     }
 
     $event->setEligibility(FALSE);
+    $event->stopPropagation();
   }
 
   /**

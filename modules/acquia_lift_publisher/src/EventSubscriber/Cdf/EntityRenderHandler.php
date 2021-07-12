@@ -2,8 +2,8 @@
 
 namespace Drupal\acquia_lift_publisher\EventSubscriber\Cdf;
 
-use Acquia\ContentHubClient\CDFAttribute;
 use Acquia\ContentHubClient\CDF\CDFObject;
+use Acquia\ContentHubClient\CDFAttribute;
 use Drupal\acquia_contenthub\AcquiaContentHubEvents;
 use Drupal\acquia_contenthub\Client\ClientFactory;
 use Drupal\acquia_contenthub\Event\CreateCdfEntityEvent;
@@ -13,19 +13,19 @@ use Drupal\Component\Uuid\UuidInterface;
 use Drupal\Core\Block\BlockManagerInterface;
 use Drupal\Core\Config\ImmutableConfig;
 use Drupal\Core\Entity\ContentEntityInterface;
+use Drupal\Core\Entity\EntityInterface;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
-use Drupal\Core\Language\LanguageManager;
 use Drupal\Core\Language\LanguageDefault;
 use Drupal\Core\Language\LanguageInterface;
+use Drupal\Core\Language\LanguageManager;
 use Drupal\Core\Render\Element;
 use Drupal\Core\Render\RendererInterface;
 use Drupal\Core\Session\AccountSwitcherInterface;
 use Drupal\Core\StringTranslation\TranslationManager;
-use Drupal\image\Entity\ImageStyle;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 
 /**
- * Class EntityRenderHandler.
+ * Entity Render Handler event subscriber.
  *
  * @package Drupal\acquia_lift_publisher\EventSubscriber\Cdf
  */
@@ -111,7 +111,7 @@ class EntityRenderHandler implements EventSubscriberInterface {
   protected $translationManager;
 
   /**
-   * EntityRenderHandler constructor.
+   * Entity Render Handler constructor.
    *
    * @param \Drupal\Core\Session\AccountSwitcherInterface $account_switcher
    *   The account switcher.
@@ -127,6 +127,10 @@ class EntityRenderHandler implements EventSubscriberInterface {
    *   The UUID generator.
    * @param \Drupal\acquia_contenthub\Client\ClientFactory $client_factory
    *   The client factory.
+   * @param \Drupal\Core\Language\LanguageManager\LanguageDefault $language_default
+   *   The language default.
+   * @param \Drupal\Core\StringTranslation\TranslationManager $translation_manager
+   *   The translation manager.
    */
   public function __construct(AccountSwitcherInterface $account_switcher, ImmutableConfig $config, RendererInterface $renderer, EntityTypeManagerInterface $entity_type_manager, BlockManagerInterface $block_manager, UuidInterface $uuid_generator, ClientFactory $client_factory, LanguageDefault $language_default, TranslationManager $translation_manager) {
     $this->accountSwitcher = $account_switcher;
@@ -246,20 +250,19 @@ class EntityRenderHandler implements EventSubscriberInterface {
   /**
    * Build a preview image attribute source.
    *
-   * @param $view_modes
+   * @param array $view_modes
    *   View modes available to check.
-   * @param $preview_view_mode
+   * @param string $preview_view_mode
    *   View mode that represents the preview image.
-   * @param $style
+   * @param string $style
    *   Image style for the preview image.
-   * @param $translation
+   * @param \Drupal\Core\Entity\EntityInterface $translation
    *   Translation to use to build the source.
    *
    * @return string|null
    *   The source string returned or nothing.
    */
-  protected function buildPreviewImageAttributeSource($view_modes, $preview_view_mode, $style, $translation) {
-
+  protected function buildPreviewImageAttributeSource(array $view_modes, $preview_view_mode, $style, EntityInterface $translation) {
     // Does the view mode exist?
     if (empty($view_modes[$preview_view_mode])) {
       return NULL;
@@ -272,7 +275,13 @@ class EntityRenderHandler implements EventSubscriberInterface {
     }
 
     // Can we get a source url for the image style using the view mode?
-    $src = ImageStyle::load($style)->buildUrl($preview_image->entity->getFileUri());
+    $src = $this->entityTypeManager
+      ->getStorage('image_style')
+      ->load($style)
+      ->buildUrl($preview_image
+        ->entity
+        ->getFileUri()
+      );
     if (empty($src)) {
       return NULL;
     }
@@ -547,7 +556,7 @@ class EntityRenderHandler implements EventSubscriberInterface {
    */
   protected function storageWarmUp(array $data, $source_uuid) {
     foreach ($data as $entity_info) {
-      // Ensure we discard any result that does not match exactly the source_uuid.
+      // Ensure we discard result that does not match exactly the source_uuid.
       if ($this->getAttributeValue($entity_info['attributes'], 'source_entity') === $source_uuid) {
         $this->setStorageItem(
           $source_uuid,

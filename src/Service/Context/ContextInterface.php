@@ -2,14 +2,17 @@
 
 namespace Drupal\acquia_lift\Service\Context;
 
+/**
+ * The Context interface.
+ */
 interface ContextInterface {
 
   /**
    * Populate page by context.
    *
-   * @param &$page
+   * @param array &$page
    *   The page that is to be populated.
    */
-  public function populate(&$page);
+  public function populate(array &$page);
 
 }

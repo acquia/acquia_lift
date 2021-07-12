@@ -31,7 +31,7 @@ class PublishOnlyRendered implements EventSubscriberInterface {
   private $commonActions;
 
   /**
-   * PublishOnlyRendered constructor.
+   * Constructor of Publish Only Rendered test.
    *
    * @param \Drupal\acquia_contenthub\ContentHubCommonActions $common_actions
    *   The Content Hub common actions service.
@@ -48,8 +48,14 @@ class PublishOnlyRendered implements EventSubscriberInterface {
    */
   public static function getSubscribedEvents() {
     return [
-      ContentHubPublisherEvents::ENQUEUE_CANDIDATE_ENTITY => ['onEnqueueCandidateEntity', 99],
-      AcquiaContentHubEvents::PRUNE_PUBLISH_CDF_ENTITIES => ['onPrunePublishCdfEntities', 1000],
+      ContentHubPublisherEvents::ENQUEUE_CANDIDATE_ENTITY => [
+        'onEnqueueCandidateEntity',
+        99,
+      ],
+      AcquiaContentHubEvents::PRUNE_PUBLISH_CDF_ENTITIES => [
+        'onPrunePublishCdfEntities',
+        1000,
+      ],
     ];
   }
 
@@ -63,14 +69,15 @@ class PublishOnlyRendered implements EventSubscriberInterface {
    *
    * @throws \Exception
    */
-  public function onEnqueueCandidateEntity(ContentHubEntityEligibilityEvent $event): void {
+  public function onEnqueueCandidateEntity(ContentHubEntityEligibilityEvent $event) {
     if (!$this->personalizedContentPushIsActive()) {
       return;
     }
 
     $entity = $event->getEntity();
-    // If the entity view configuration on Acquia Lift Publisher settings page is
-    // set for the entity in question, the entity is qualified to be processed.
+    // If the entity view configuration on Acquia Lift Publisher settings
+    // page is set for the entity in question, the entity is qualified
+    // to be processed.
     if (empty($this->getEntityViewModesSettingValue($entity))) {
       $event->setEligibility(FALSE);
       $event->stopPropagation();

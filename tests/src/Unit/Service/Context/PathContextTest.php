@@ -2,12 +2,12 @@
 
 namespace Drupal\Tests\acquia_lift\Unit\Service\Context;
 
-use Drupal\Tests\UnitTestCase;
 use Drupal\acquia_lift\Service\Context\PathContext;
 use Drupal\Tests\acquia_lift\Unit\Traits\SettingsDataTrait;
+use Drupal\Tests\UnitTestCase;
 
 /**
- * PathContextTest Test.
+ * Tests Path context.
  *
  * @coversDefaultClass Drupal\acquia_lift\Service\Context\PathContext
  * @group acquia_lift
@@ -92,15 +92,18 @@ class PathContextTest extends UnitTestCase {
   /**
    * Tests the shouldAttach() method.
    *
-   * @covers ::shouldAttach
-   *
-   * @param boolean $set_invalid_credential
-   * @param boolean $do_match_pattern
+   * @param bool $set_invalid_credential
+   *   Set invalid credential flag.
+   * @param bool $do_match_pattern
+   *   Do match pattern flag.
    * @param array $expect_should_attach
+   *   Expect should attach.
+   *
+   * @covers ::shouldAttach
    *
    * @dataProvider providerTestShouldAttach
    */
-  public function testShouldAttach($set_invalid_credential, $do_match_pattern, $expect_should_attach) {
+  public function testShouldAttach($set_invalid_credential, $do_match_pattern, array $expect_should_attach) {
     $credential_settings = $this->getValidCredentialSettings();
 
     if ($set_invalid_credential) {
@@ -154,20 +157,25 @@ class PathContextTest extends UnitTestCase {
   }
 
   /**
-   * Tests the populate() method, populateHtmlHead() sub method, "set identity and identity type" sub routine.
+   * Tests methods, "set identity and identity type" sub routine.
+   *
+   * @param string $query_parameter_string
+   *   The query parameter string.
+   * @param bool $capture_identity
+   *   The capture identity flag.
+   * @param bool $do_set_user
+   *   The do set user flag.
+   * @param array $expect_cache
+   *   The expect cache array.
+   * @param array $expect_html_head
+   *   The expect html head array.
    *
    * @covers ::setContextIdentityByUser
    * @covers ::populate
    *
-   * @param string $query_parameter_string
-   * @param boolean $capture_identity
-   * @param boolean $do_set_user
-   * @param array $expect_cache
-   * @param array $expect_html_head
-   *
    * @dataProvider providerTestPopulateHtmlHeadIdentities
    */
-  public function testPopulateHtmlHeadIdentities($query_parameter_string, $capture_identity, $do_set_user, $expect_cache, $expect_html_head) {
+  public function testPopulateHtmlHeadIdentities($query_parameter_string, $capture_identity, $do_set_user, array $expect_cache, array $expect_html_head) {
     $this->requestStack->expects($this->once())
       ->method('getCurrentRequest')
       ->willReturn($this->request);
@@ -221,39 +229,45 @@ class PathContextTest extends UnitTestCase {
       'url.query_args:my_identity_type_parameter',
     ];
     $expect_html_head_empty = NULL;
-    $expect_identity_of_full_query_string = [[
+    $expect_identity_of_full_query_string = [
       [
-        '#type' => 'html_tag',
-        '#tag' => 'meta',
-        '#attributes' => [
-          'itemprop' => 'acquia_lift:identity:query_identity_type',
-          'content' => 'query_identity',
+        [
+          '#type' => 'html_tag',
+          '#tag' => 'meta',
+          '#attributes' => [
+            'itemprop' => 'acquia_lift:identity:query_identity_type',
+            'content' => 'query_identity',
+          ],
         ],
+        'identity:query_identity_type',
       ],
-      'identity:query_identity_type',
-    ]];
-    $expect_identity_of_partial_query_string = [[
+    ];
+    $expect_identity_of_partial_query_string = [
       [
-        '#type' => 'html_tag',
-        '#tag' => 'meta',
-        '#attributes' => [
-          'itemprop' => 'acquia_lift:identity:my_default_identity_type',
-          'content' => 'query_identity',
+        [
+          '#type' => 'html_tag',
+          '#tag' => 'meta',
+          '#attributes' => [
+            'itemprop' => 'acquia_lift:identity:my_default_identity_type',
+            'content' => 'query_identity',
+          ],
         ],
+        'identity:my_default_identity_type',
       ],
-      'identity:my_default_identity_type',
-    ]];
-    $expect_identity_of_user = [[
+    ];
+    $expect_identity_of_user = [
       [
-        '#type' => 'html_tag',
-        '#tag' => 'meta',
-        '#attributes' => [
-          'itemprop' => 'acquia_lift:identity:email',
-          'content' => 'a_user_email',
+        [
+          '#type' => 'html_tag',
+          '#tag' => 'meta',
+          '#attributes' => [
+            'itemprop' => 'acquia_lift:identity:email',
+            'content' => 'a_user_email',
+          ],
         ],
+        'identity:email',
       ],
-      'identity:email',
-    ]];
+    ];
 
     $expect_identity_of_full_query_string_and_user = array_merge($expect_identity_of_full_query_string, $expect_identity_of_user);
 
@@ -313,15 +327,18 @@ class PathContextTest extends UnitTestCase {
   /**
    * Tests the populate() method, "set identity and identity type" sub routine.
    *
-   * @covers ::populate
-   *
-   * @param integer $expect_set_cache
    * @param array $identity_settings
+   *   The identity settings array.
+   * @param int $expect_set_cache
+   *   The expect set cache.
    * @param array $expect_cache_context
+   *   The expect cache context array.
+   *
+   * @covers ::populate
    *
    * @dataProvider providerTestPopulateCache
    */
-  public function testPopulateCache($identity_settings, $expect_set_cache, $expect_cache_context) {
+  public function testPopulateCache(array $identity_settings, $expect_set_cache, array $expect_cache_context) {
     $this->requestStack->expects($this->exactly($expect_set_cache))
       ->method('getCurrentRequest')
       ->willReturn($this->request);

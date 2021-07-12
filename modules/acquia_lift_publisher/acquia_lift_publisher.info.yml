@@ -8,4 +8,4 @@ configure: acquia_lift_publisher.entity_config_form
 
 dependencies:
   - drupal:image
-  - acquia_contenthub_publisher
+  - drupal:acquia_contenthub_publisher

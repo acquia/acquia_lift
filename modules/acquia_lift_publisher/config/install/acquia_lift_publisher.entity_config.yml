@@ -1,3 +1,4 @@
 view_modes: {  }
 render_role: anonymous
 personalized_content_only: true
+export_content_immediately: true

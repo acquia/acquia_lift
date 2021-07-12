@@ -2,11 +2,12 @@
 
 namespace Drupal\Tests\acquia_lift_publisher\Functional\Form;
 
+use Drupal\Core\StringTranslation\StringTranslationTrait;
 use Drupal\Core\Url;
 use Drupal\Tests\BrowserTestBase;
 
 /**
- * Class EntityViewModeConfigurationFormTest.
+ * Tests for Entity View Mode Configuration Form.
  *
  * @covers \Drupal\acquia_lift_publisher\Form\EntityViewModeConfigurationForm
  *
@@ -15,6 +16,8 @@ use Drupal\Tests\BrowserTestBase;
  * @package Drupal\Tests\acquia_lift_publisher\Functional
  */
 class EntityViewModeConfigurationFormTest extends BrowserTestBase {
+
+  use StringTranslationTrait;
 
   /**
    * {@inheritdoc}
@@ -54,8 +57,8 @@ class EntityViewModeConfigurationFormTest extends BrowserTestBase {
     ]);
     $this->notAdminUser = $this->drupalCreateUser([]);
 
-    $this->drupalCreateContentType(['type' => 'page', 'name' => t('Basic page')]);
-    $this->drupalCreateContentType(['type' => 'article', 'name' => t('Article')]);
+    $this->drupalCreateContentType(['type' => 'page', 'name' => $this->t('Basic page')]);
+    $this->drupalCreateContentType(['type' => 'article', 'name' => $this->t('Article')]);
   }
 
   /**

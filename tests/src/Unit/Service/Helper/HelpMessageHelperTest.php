@@ -2,8 +2,8 @@
 
 namespace Drupal\Tests\acquia_lift\Unit\Service\Helper;
 
-use Drupal\Tests\UnitTestCase;
 use Drupal\acquia_lift\Service\Helper\HelpMessageHelper;
+use Drupal\Tests\UnitTestCase;
 
 /**
  * HelpMessageHelper Test.
@@ -12,14 +12,16 @@ use Drupal\acquia_lift\Service\Helper\HelpMessageHelper;
  * @group acquia_lift
  */
 class HelpMessageHelperTest extends UnitTestCase {
+
   /**
    * Tests the getMessage() method - AdminSettingsForm.
    *
-   * @covers ::getMessage
-   *
    * @param string $route_name
+   *   The route name.
    * @param string $has_message
+   *   Has message flag.
    *
+   * @covers ::getMessage
    * @dataProvider providerRouteNames
    */
   public function testGetMessageAdminSettingsFormNoApiUrl($route_name, $has_message) {
@@ -39,11 +41,10 @@ class HelpMessageHelperTest extends UnitTestCase {
    */
   public function providerRouteNames() {
     $data = [];
-
     $data['help page, has message'] = ['help.page.acquia_lift', TRUE];
     $data['admin settings form, has message'] = ['acquia_lift.admin_settings_form', TRUE];
     $data['admin settings form, has no message'] = ['acquia_contenthub.admin_settings_form', FALSE];
-
     return $data;
   }
+
 }

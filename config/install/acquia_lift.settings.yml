@@ -21,6 +21,6 @@ visibility:
 advanced:
   bootstrap_mode: 'auto'
   content_replacement_mode: 'trusted'
-  cdf_version: 1
+  cdf_version: 2
   content_origins: ''
 langcode: en

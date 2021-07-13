@@ -511,7 +511,7 @@ class AdminSettingsForm extends ConfigFormBase {
     if (!empty($values['decision_api_url'])) {
       $standardized_decision_api_url = 'https://' . $this->cleanUrl($values['decision_api_url']);
       $settings->set('credential.decision_api_url', $standardized_decision_api_url);
-      $this->checkConnection('Decision API', $standardized_decision_api_url, '/admin/ping', 403);
+      $this->checkConnection('Decision API', $standardized_decision_api_url, '/admin/ping');
     }
   }
 

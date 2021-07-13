@@ -62,4 +62,16 @@ class ContentPublishingActions {
     $this->exportQueue->processQueueItems();
   }
 
+  /**
+   * Returns publisher setting value by its name.
+   *
+   * @param $field_name
+   * @param null $default_value
+   *
+   * @return array|mixed|null
+   */
+  public function getPublicationsFieldValue($field_name, $default_value = NULL) {
+    return $this->publisherSettings->get($field_name) ?? $default_value;
+  }
+
 }

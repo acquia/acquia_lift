@@ -294,13 +294,13 @@ class ContentPublishingForm extends ConfigFormBase {
     $form['sync_settings'][$push_setting_field] = [
       '#type' => 'checkbox',
       '#title' => $this->t('Push personalizing content only'),
-      '#description' => $this->t('Check this option if this site is used for pushing content to Acquia Lift; uncheck this option if this site is used for pushing content to both Acquia Lift and Content Hub. (default on)'),
+      '#description' => $this->t('Check this option if this site is used for pushing content to Acquia Lift. Disable this option if this site is used for pushing content to both Acquia Lift and Content Hub. (Default is enabled)'),
       '#default_value' => $config->get($push_setting_field) ?? TRUE,
     ];
     $form['sync_settings'][$export_content_immediately_field] = [
       '#type' => 'checkbox',
       '#title' => $this->t('Export Content Immediately'),
-      '#description' => $this->t('Check this option to exporting content immediately'),
+      '#description' => $this->t('Check this option if the export queue should be run immediately after saving content. Disable this option if the export queue is being run separately. (Default is enabled)'),
       '#default_value' => $config->get($export_content_immediately_field) ?? TRUE,
       '#states' => [
         'visible' => [

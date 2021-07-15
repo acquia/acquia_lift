@@ -33,6 +33,13 @@ class ContentPublishingForm extends ConfigFormBase {
   public static $pushSettingField = 'personalized_content_only';
 
   /**
+   * Holds form field name of Export content immediately.
+   *
+   * @var string
+   */
+  public static $exportContentImmediatelyField = 'export_content_immediately';
+
+  /**
    * The entity type manager.
    *
    * @var \Drupal\Core\Entity\EntityTypeManagerInterface
@@ -217,6 +224,7 @@ class ContentPublishingForm extends ConfigFormBase {
     $config->set('view_modes', $options);
     $config->set('render_role', $form_state->getValue('render_role'));
     $config->set(static::$pushSettingField, $form_state->getValue(static::$pushSettingField));
+    $config->set(static::$exportContentImmediatelyField, $form_state->getValue(static::$exportContentImmediatelyField));
     $config->save();
 
     parent::submitForm($form, $form_state);
@@ -281,12 +289,24 @@ class ContentPublishingForm extends ConfigFormBase {
       '#type' => 'fieldset',
       '#title' => $this->t('Synchronization'),
     ];
-
-    $form['sync_settings'][static::$pushSettingField] = [
+    $push_setting_field = static::$pushSettingField;
+    $export_content_immediately_field = static::$exportContentImmediatelyField;
+    $form['sync_settings'][$push_setting_field] = [
       '#type' => 'checkbox',
-      '#title' => $this->t('Push personalizing content only'),
-      '#description' => $this->t('Check this option if this site is used for pushing content to Acquia Lift; uncheck this option if this site is used for pushing content to both Acquia Lift and Content Hub. (default on)'),
-      '#default_value' => $config->get(static::$pushSettingField) ?? TRUE,
+      '#title' => $this->t('Push personalization content only'),
+      '#description' => $this->t('Check this option if this site is used for pushing content to Acquia Lift. Disable this option if this site is used for pushing content to both Acquia Lift and Content Hub. (Default is enabled)'),
+      '#default_value' => $config->get($push_setting_field) ?? TRUE,
+    ];
+    $form['sync_settings'][$export_content_immediately_field] = [
+      '#type' => 'checkbox',
+      '#title' => $this->t('Export content immediately'),
+      '#description' => $this->t('Check this option if the export queue should be run immediately after saving content. Disable this option if the export queue is being run separately. (Default is enabled)'),
+      '#default_value' => $config->get($export_content_immediately_field) ?? TRUE,
+      '#states' => [
+        'visible' => [
+          ":input[name='{$push_setting_field}']" => ['checked' => TRUE],
+        ],
+      ],
     ];
   }
 

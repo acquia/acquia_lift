@@ -165,8 +165,11 @@ class EntityRenderHandler implements EventSubscriberInterface {
       return;
     }
     if ($view_modes = $this->getEntityViewModesSettingValue($entity)) {
-      $document = $this->clientFactory->getClient()
-        ->getEntities([$entity->uuid()]);
+      $client = $this->clientFactory->getClient();
+      if (!is_object($client)) {
+        return;
+      }
+      $document = $client->getEntities([$entity->uuid()]);
       $remote_entity = $document->hasEntity($entity->uuid()) ? $document->getCDFEntity($entity->uuid()) : FALSE;
 
       $default_lang = $this->languageDefault->get();

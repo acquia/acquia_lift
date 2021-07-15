@@ -119,9 +119,14 @@ class ContentPublishingFormTest extends BrowserTestBase {
       'The role to use when rendering entities for personalization.'
     );
 
-    $session->elementTextContains('css', '#edit-sync-settings', 'Push personalizing content only');
+    $session->elementTextContains('css', '#edit-sync-settings', 'Push personalization content only');
     $session->elementTextContains('css', '#edit-sync-settings',
-      'Check this option if this site is used for pushing content to Acquia Lift; uncheck this option if this site is used for pushing content to both Acquia Lift and Content Hub. (default on)'
+      'Check this option if this site is used for pushing content to Acquia Lift. Disable this option if this site is used for pushing content to both Acquia Lift and Content Hub. (Default is enabled)'
+    );
+
+    $session->elementTextContains('css', '#edit-sync-settings', 'Export content immediately');
+    $session->elementTextContains('css', '#edit-sync-settings',
+      'Check this option if the export queue should be run immediately after saving content. Disable this option if the export queue is being run separately. (Default is enabled)'
     );
 
     // Initial configuration values.

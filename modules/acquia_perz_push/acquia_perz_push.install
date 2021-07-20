@@ -1,0 +1,97 @@
+<?php
+
+/**
+ * @file
+ * Acquia Perz - module install file.
+ */
+
+use Drupal\rest\Entity\RestResourceConfig;
+use Drupal\rest\RestResourceConfigInterface;
+
+/**
+ * Implements hook_install().
+ */
+function acquia_perz_push_install() {
+  // Create "Acquia Perz - Slow Endpoint for testing timeouts" rest endpoint
+  // (for testing purposes).
+  $slow_endpoint_rest_id = 'acquia_perz_push_slow_endpoint';
+  $slow_endpoint_rest = RestResourceConfig::load($slow_endpoint_rest_id);
+  if (empty($slow_endpoint_rest)) {
+    RestResourceConfig::create([
+      'id' => $slow_endpoint_rest_id,
+      'granularity' => RestResourceConfigInterface::RESOURCE_GRANULARITY,
+      'configuration' => [
+        'methods' => ['GET'],
+        'formats' => ['json'],
+        'authentication' => ['basic_auth'],
+      ],
+    ])->save();
+  }
+}
+
+/**
+ * Implements hook_uninstall().
+ */
+function acquia_perz_push_uninstall() {
+  // Delete "Acquia Perz - Slow Endpoint for testing timeouts" rest endpoint.
+  $slow_endpoint_rest = RestResourceConfig::load('acquia_perz_push_slow_endpoint');
+  if ($slow_endpoint_rest) {
+    $slow_endpoint_rest->delete();
+  }
+}
+
+/**
+ * Implements hook_schema().
+ */
+function acquia_perz_push_schema() {
+  $schema = [];
+  $schema['acquia_perz_push_export_tracking'] = [
+    'description' => 'Table for tracking which entities have been exported to CIS.',
+    'fields' => [
+      'entity_type' => [
+        'type' => 'varchar',
+        'length' => 32,
+        'not null' => TRUE,
+        'default' => '',
+      ],
+      'entity_id' => [
+        'type' => 'varchar_ascii',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+      ],
+      'entity_uuid' => [
+        'type' => 'char',
+        'length' => 36,
+        'not null' => TRUE,
+        'default' => '',
+      ],
+      'langcode' => [
+        'description' => 'The {language}.langcode of the exported entity.',
+        'type' => 'varchar_ascii',
+        'length' => 12,
+        'not null' => TRUE,
+        'default' => '',
+      ],
+      'status' => [
+        'description' => 'The status of an exported entity.',
+        'type' => 'varchar',
+        'default' => '',
+        'not null' => TRUE,
+        'length' => 36,
+      ],
+      'modified' => [
+        'description' => "The entity's modified value.",
+        'type' => 'varchar',
+        'default' => '',
+        'not null' => TRUE,
+        'length' => 36,
+      ],
+    ],
+    'unique keys' => [
+      'entity' => ['entity_type', 'entity_id', 'langcode'],
+      'entity_uuid' => ['entity_uuid', 'langcode'],
+    ],
+  ];
+  return $schema;
+}

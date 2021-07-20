@@ -1,0 +1,11 @@
+name: Acquia Personalization (Perz) Push
+description: Provides integration with Content Index Engine for personalization and visitor data collection.
+package: Acquia Perz
+type: module
+core_version_requirement: ^8.8 || ^9
+php: 7.0
+
+configure: acquia_perz_push.admin_settings_form
+
+dependencies:
+  - drupal:acquia_perz

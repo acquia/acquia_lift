@@ -1,0 +1,39 @@
+<?php
+
+use Drupal\Core\Entity\EntityInterface;
+
+/**
+ * Implements hook_entity_insert().
+ */
+function acquia_perz_push_entity_insert(EntityInterface $entity) {
+  \Drupal::getContainer()
+    ->get('acquia_perz_push.export_content')
+    ->exportEntity($entity);
+}
+
+/**
+ * Implements hook_entity_update().
+ */
+function acquia_perz_push_entity_update(EntityInterface $entity) {
+  \Drupal::getContainer()
+    ->get('acquia_perz_push.export_content')
+    ->exportEntity($entity);
+}
+
+/**
+ * Implements hook_entity_predelete().
+ */
+function acquia_perz_push_entity_delete(EntityInterface $entity) {
+  \Drupal::getContainer()
+    ->get('acquia_perz_push.export_content')
+    ->deleteEntity($entity);
+}
+
+/**
+ * Implements hook_entity_translation_predelete().
+ */
+function acquia_perz_push_entity_translation_delete(EntityInterface $translation) {
+  \Drupal::getContainer()
+    ->get('acquia_perz_push.export_content')
+    ->deleteTranslation($translation);
+}

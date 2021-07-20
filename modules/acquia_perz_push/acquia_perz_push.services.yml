@@ -1,0 +1,49 @@
+services:
+  acquia_perz_push.perz_http_client:
+    class: Acquia\PerzApiPhp\PerzApiPhpClient
+    factory: [ '@acquia_perz_push.perz_http_client_factory', 'fromOptions' ]
+
+  acquia_perz_push.perz_http_client_factory:
+    class: Drupal\acquia_perz_push\PerzApiPhpClientFactory
+    arguments: [ '@http_handler_stack' ]
+
+  acquia_perz_push.cis_settings:
+    class: Drupal\Core\Config\ImmutableConfig
+    factory: config.factory:get
+    arguments:
+      - 'acquia_perz_push.settings'
+
+  acquia_perz_push.export_content:
+    class: Drupal\acquia_perz_push\ExportContent
+    arguments:
+      - '@acquia_perz_push.perz_http_client'
+      - '@acquia_perz_push.export_queue'
+      - '@acquia_perz_push.tracker'
+      - '@acquia_perz.entity_settings'
+      - '@acquia_perz_push.cis_settings'
+      - '@entity_type.manager'
+      - '@entity_field.manager'
+      - '@renderer'
+      - '@uuid'
+      - '@date.formatter'
+      - '@datetime.time'
+
+  acquia_perz_push.export_queue:
+    class: Drupal\acquia_perz_push\ExportQueue
+    arguments: [
+      '@acquia_perz_push.tracker',
+      '@acquia_perz.entity_settings',
+      '@acquia_perz_push.cis_settings',
+      '@renderer',
+      '@entity_type.manager',
+      '@queue',
+      '@plugin.manager.queue_worker',
+      '@messenger'
+    ]
+
+  acquia_perz_push.tracker:
+    class: Drupal\acquia_perz_push\ExportTracker
+    arguments: [
+      '@database',
+      '@entity_type.manager'
+    ]

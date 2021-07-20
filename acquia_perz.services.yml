@@ -10,16 +10,3 @@ services:
     factory: config.factory:get
     arguments:
       - 'acquia_perz.settings'
-
-  acquia_perz.export_content:
-    class: Drupal\acquia_perz\ExportContent
-    arguments:
-      - '@http_client'
-      - '@acquia_perz.entity_settings'
-      - '@acquia_perz.cis_settings'
-      - '@entity_type.manager'
-      - '@entity_field.manager'
-      - '@renderer'
-      - '@uuid'
-      - '@date.formatter'
-      - '@datetime.time'

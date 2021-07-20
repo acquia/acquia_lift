@@ -1,0 +1,5 @@
+acquia_perz_push.settings:
+  title: 'Acquia Personalization (Perz) Push'
+  description: 'Publishes personalized content for use with Content Index Service.'
+  route_name: acquia_perz_push.settings_form
+  parent: 'system.admin_config_services'

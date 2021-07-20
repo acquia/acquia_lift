@@ -50,6 +50,7 @@ abstract class PerzGraphQLTestBase extends KernelTestBase {
     'taxonomy',
     'typed_data',
     'graphql',
+    'image',
     'acquia_perz',
   ];
 
@@ -62,15 +63,14 @@ abstract class PerzGraphQLTestBase extends KernelTestBase {
     $this->installSchema('system', 'sequences');
     $this->installSchema('node', 'node_access');
     $this->installSchema('user', ['users_data']);
-    $this->installEntitySchema('user');
-    $this->installEntitySchema('node');
-    $this->installEntitySchema('block_content');
     $this->installConfig('filter');
     $this->installConfig('node');
     $this->installConfig('graphql');
-    $this->installConfig(['acquia_perz']);
+    $this->installConfig('image');
+    $this->installConfig('acquia_perz');
     $this->installEntitySchema('node');
     $this->installEntitySchema('user');
+    $this->installEntitySchema('block_content');
     $this->installEntitySchema('taxonomy_term');
     $this->installEntitySchema('graphql_server');
   }

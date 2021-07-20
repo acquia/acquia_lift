@@ -1,0 +1,11 @@
+acquia_perz_push.cis:
+  title: Content Index Service
+  route_name: acquia_perz_push.settings_form
+  base_route: acquia_perz_push.settings_form
+  weight: 1
+
+acquia_perz_push.export:
+  title: Export
+  route_name: acquia_perz_push.export_form
+  base_route: acquia_perz_push.settings_form
+  weight: 2

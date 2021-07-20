@@ -1,0 +1,14 @@
+acquia_perz_push.settings_form:
+  path: 'admin/config/services/acquia-perz-push/settings'
+  defaults:
+    _form: '\Drupal\acquia_perz_push\Form\SettingsForm'
+    _title: 'Settings'
+  requirements:
+    _permission: 'administer acquia perz push'
+acquia_perz_push.export_form:
+  path: 'admin/config/services/acquia-perz-push/export'
+  defaults:
+    _form: '\Drupal\acquia_perz_push\Form\ExportForm'
+    _title: 'Export'
+  requirements:
+    _permission: 'administer acquia perz push'

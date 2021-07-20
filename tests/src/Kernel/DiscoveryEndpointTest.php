@@ -12,11 +12,6 @@ class DiscoveryEndpointTest extends PerzGraphQLTestBase {
   /**
    * {@inheritdoc}
    */
-  protected $strictConfigSchema = FALSE;
-
-  /**
-   * {@inheritdoc}
-   */
   protected $graphQLQuery = <<<GQL
     query discoverEntities(\$page: Int! = 0) {
       discover_entities(page: \$page) {

@@ -25,5 +25,16 @@ function acquia_lift_requirements($phase) {
     'value' => t('Incomplete or invalid credential'),
   ];
 
+  $args = [':upgrade' => 'https://docs.acquia.com/personalization/migration/#switching-to-personalization-4'];
+  $msg = (strtotime('1 October 2021') > time()) ?
+    t('Acquia Lift 3.x version will reach EOL at 2021-10-01. <a href=":upgrade">Upgrade</a> to 8.x-4.x or newer.', $args) :
+    t('Acquia Lift 3.x version reached EOL at 2021-10-01. <a href=":upgrade">Upgrade</a> to 8.x-4.x or newer.', $args);
+  $requirements['acquia_lift_eol'] = [
+    'title' => t('Acquia Lift module'),
+    'value' => t('The 8.x-3.x version is deprecated!'),
+    'description' => $msg,
+    'severity' => REQUIREMENT_WARNING,
+  ];
+
   return $requirements;
 }

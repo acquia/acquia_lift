@@ -29,3 +29,24 @@ function acquia_lift_uninstall() {
     variable_del($var);
   }
 }
+
+/**
+ * Implements hook_requirements().
+ */
+function acquia_lift_requirements($phase) {
+  $requirements = [];
+  if ($phase !== 'runtime') {
+    return $requirements;
+  }
+  $args = ['@upgrade' => 'https://docs.acquia.com/personalization/migration/#switching-to-personalization-4'];
+  $msg = (strtotime('30 September 2021') > time()) ?
+    t('Acquia Lift 3.x version will reach EOL at 2021-09-30. <a href="@upgrade">Upgrade</a> to 7.x-4.x or newer.', $args) :
+    t('Acquia Lift 3.x version reached EOL at 2021-10-01. <a href="@upgrade">Upgrade</a> to 7.x-4.x or newer.', $args);
+  $requirements['acquia_lift_eol'] = [
+    'title' => t('Acquia Lift module'),
+    'value' => $msg,
+    'description' => t('The 7.x-3.x version is deprecated!'),
+    'severity' => REQUIREMENT_WARNING,
+  ];
+  return $requirements;
+}

@@ -147,14 +147,6 @@ function _acquia_lift_admin_build_credential_form(&$form, &$form_state) {
     '#field_prefix' => 'https://',
     '#default_value' => _acquia_lift_admin_clean_url(variable_get('acquia_lift_decision_api_url', '')),
   );
-  $form['acquia_lift_oauth_url'] = array(
-    '#type' => 'textfield',
-    '#title' => t('Authentication URL'),
-    '#description' => t('Your Lift Authentication API\'s URL.  Unless explicitly instructed, leave empty to use default URL.'),
-    '#field_prefix' => 'https://',
-    '#field_suffix' => '/authorize',
-    '#default_value' => _acquia_lift_admin_clean_url(_acquia_lift_admin_remove_authorize_suffix(variable_get('acquia_lift_oauth_url', ''))),
-  );
   return $form;
 }
 
@@ -270,17 +262,16 @@ function _acquia_lift_admin_build_advanced_confirmation_form(&$form, &$form_stat
     '#type' => 'radios',
     '#title' => t('Content replacement mode'),
     '#description' => t('The default, site-wide setting for <a href="@docs-link" target="_blank">content replacement mode</a>.', array(
-      '@docs-link' => 'https://docs.acquia.com/lift/drupal/3/config/trusted',
+      '@docs-link' => 'https://docs.acquia.com/personalization/personalize/config/modes/',
     )),
-    '#default_value' => variable_get('acquia_lift_content_replacement_mode', 'untrusted'),
+    '#default_value' => variable_get('acquia_lift_content_replacement_mode', 'trusted'),
     '#options' => [
       'trusted' => t('Trusted'),
-      'untrusted' => t('Untrusted'),
       'customized' => t('Customized')
     ],
   ];
   $form['acquia_lift_content_origin'] = array(
-    '#type' => 'textfield',
+    '#type' => 'textarea',
     '#title' => t('Content Hub Origin Site UUID'),
     '#description' => t('Show content in Experience Builder content list from only one origin site, specified by its Content Hub Site UUID. Leave empty to show content from all sites.'),
     '#default_value' => variable_get('acquia_lift_content_origin'),
@@ -313,12 +304,6 @@ function acquia_lift_admin_form_validate($form, &$form_state) {
   if (!empty($form_state['values']['acquia_lift_decision_api_url']) && !valid_url($form_state['values']['acquia_lift_decision_api_url'])) {
     form_set_error('acquia_lift_decision_api_url', t('Decision API URL is an invalid URL.'));
   }
-  if (!empty($form_state['values']['acquia_lift_oauth_url']) && !valid_url($form_state['values']['acquia_lift_oauth_url'])) {
-    form_set_error('acquia_lift_oauth_url', t('Authentication URL is an invalid URL.'));
-  }
-  if (!empty($form_state['values']['acquia_lift_content_origin']) && !(bool) preg_match('/^[0-9a-f]{8}-([0-9a-f]{4}-){3}[0-9a-f]{12}$/', $form_state['values']['acquia_lift_content_origin'])) {
-    form_set_error('acquia_lift_content_origin', t('Content Hub Origin Site UUID is not a valid UUID.'));
-  }
 }
 
 /**
@@ -347,7 +332,6 @@ function acquia_lift_admin_form_submit($form, &$form_state) {
   // Enforce https and clean up the urls
   $assets_url = $form_state['values']['acquia_lift_assets_url'];
   $decision_api_url = $form_state['values']['acquia_lift_decision_api_url'];
-  $oauth_url = $form_state['values']['acquia_lift_oauth_url'];
   if (!empty($assets_url)) {
     $assets_url = 'https://' . _acquia_lift_admin_clean_url($assets_url);
     _acquia_lift_ping('Assets', $assets_url);
@@ -356,13 +340,8 @@ function acquia_lift_admin_form_submit($form, &$form_state) {
     $decision_api_url = 'https://' . _acquia_lift_admin_clean_url($decision_api_url);
     _acquia_lift_ping('Decision API', $decision_api_url);
   }
-  if (!empty($oauth_url)) {
-    $oauth_url = 'https://' . _acquia_lift_admin_remove_authorize_suffix(_acquia_lift_admin_clean_url($oauth_url)) . '/authorize';
-    _acquia_lift_ping('Authentication', $oauth_url);
-  }
   variable_set('acquia_lift_assets_url', $assets_url);
   variable_set('acquia_lift_decision_api_url', $decision_api_url);
-  variable_set('acquia_lift_oauth_url', $oauth_url);
 
   // The rest of the variables are set as is.
   $standard_variables = array(
@@ -400,18 +379,6 @@ function _acquia_lift_admin_clean_url($url) {
     '~^https?://~',
   ];
   return preg_replace($searchFor, '', $url);
-}
-
-/**
- * Remove the "/authorize" suffix, if any.
- *
- * @param string $url
- *   URL.
- * @return string
- *   URL, but with "/authorize" removed.
- */
-function _acquia_lift_admin_remove_authorize_suffix($url) {
-  return preg_replace('~/authorize$~', '', $url);
 }
 
 /**

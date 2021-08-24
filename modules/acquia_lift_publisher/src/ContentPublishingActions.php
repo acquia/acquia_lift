@@ -65,12 +65,16 @@ class ContentPublishingActions {
   /**
    * Returns publisher setting value by its name.
    *
-   * @param $field_name
-   * @param null $default_value
+   * @param string $field_name
+   *   The Field Name.
+   * @param string|null $default_value
+   *   Default value for the field.
    *
    * @return array|mixed|null
+   *   The publisher setting value.
+   *
    */
-  public function getPublicationsFieldValue($field_name, $default_value = NULL) {
+  public function getPublicationsFieldValue(string $field_name, string $default_value = NULL) {
     return $this->publisherSettings->get($field_name) ?? $default_value;
   }
 

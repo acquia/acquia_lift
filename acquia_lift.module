@@ -16,6 +16,13 @@ use Drupal\Core\Access\AccessResult;
  * Implements hook_help().
  */
 function acquia_lift_help($route_name) {
+  if ($route_name == 'acquia_lift.admin_settings_form') {
+    module_load_include('install', 'acquia_lift');
+    $reqs = acquia_lift_requirements('runtime');
+    if (!empty($reqs['acquia_lift_eol']) && !empty($reqs['acquia_lift_eol']['description'])) {
+      \Drupal::messenger()->addMessage($reqs['acquia_lift_eol']['description'], 'warning');
+    }
+  }
   return \Drupal::service('acquia_lift.service.helper.help_message_helper')->getMessage($route_name);
 }
 

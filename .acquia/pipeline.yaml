@@ -51,10 +51,10 @@ pre_build:
     - args: --env ORCA_JOB=DEPRECATED_CODE_SCAN --env ALLOWED_FAILURE=true
       <<: *orca_steps
   isolated_test_w_recommended_version:
-    - args: --env ORCA_JOB=ISOLATED_RECOMMENDED
+    - args: --env ORCA_JOB=ISOLATED_TEST_ON_CURRENT
       <<: *orca_steps
   integrated_test_w_recommended_version:
-    - args: --env ORCA_JOB=INTEGRATED_RECOMMENDED
+    - args: --env ORCA_JOB=INTEGRATED_TEST_ON_CURRENT
       <<: *orca_steps
   integrated_test_w_recommended_version_and_previous_minor_core:
     - args: --env ORCA_JOB=CORE_PREVIOUS

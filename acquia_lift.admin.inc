@@ -137,7 +137,7 @@ function _acquia_lift_admin_build_credential_form(&$form, &$form_state) {
     '#title' => t('Assets URL'),
     '#description' => t('Your Lift application\'s assets URL.  It determines which version of the Lift application is being used.'),
     '#field_prefix' => 'https://',
-    '#default_value' => _acquia_lift_admin_clean_url(variable_get('acquia_lift_assets_url', '')),
+    '#default_value' => _acquia_lift_admin_clean_url(variable_get('acquia_lift_assets_url', 'https://builder.lift.acquia.com')),
     '#required' => TRUE,
   );
   $form['acquia_lift_decision_api_url'] = array(
@@ -258,6 +258,9 @@ function _acquia_lift_admin_build_advanced_confirmation_form(&$form, &$form_stat
       'manual' => t('Manual')
     ],
   ];
+  if (variable_get('acquia_lift_content_replacement_mode') == 'untrusted') {
+    variable_set('acquia_lift_content_replacement_mode', 'trusted');
+  }
   $form['acquia_lift_content_replacement_mode'] = [
     '#type' => 'radios',
     '#title' => t('Content replacement mode'),

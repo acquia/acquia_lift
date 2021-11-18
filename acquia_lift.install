@@ -38,4 +38,7 @@ function acquia_lift_update_7400() {
   if (variable_get('acquia_lift_content_replacement_mode') == 'untrusted') {
     variable_set('acquia_lift_content_replacement_mode', 'trusted');
   }
+  if (variable_get('acquia_lift_assets_url') == 'https://liftasseturl.acquia.com') {
+    variable_set('acquia_lift_assets_url', 'https://builder.lift.acquia.com');
+  }
 }

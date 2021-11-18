@@ -242,19 +242,21 @@ function acquia_lift_get_udfs($type) {
 
 function acquia_lift_get_grouped_context_options() {
   module_load_include('inc', 'acquia_lift', 'acquia_lift.context');
-  $context_options = _acquia_lift_get_context_options();
-  foreach ($context_options as $context_type => $options) {
-    foreach ($options as $code => $info) {
-      $option_name = $context_type . ACQUIA_LIFT_ADMIN_SEPARATOR . $code;
-      if (isset($info['group'])) {
-        $group = $info['group'];
-        if (!isset($groups[$group])) {
-          $groups[$group] = array();
+  $groups = array();
+  if ($context_options = _acquia_lift_get_context_options()) {
+    foreach ($context_options as $context_type => $options) {
+      foreach ($options as $code => $info) {
+        $option_name = $context_type . ACQUIA_LIFT_ADMIN_SEPARATOR . $code;
+        if (isset($info['group'])) {
+          $group = $info['group'];
+          if (!isset($groups[$group])) {
+            $groups[$group] = array();
+          }
+          $groups[$group][$option_name] = $info['name'];
         }
-        $groups[$group][$option_name] = $info['name'];
-      }
-      else {
-        $groups['Miscellaneous'][$option_name] = $info['name'];
+        else {
+          $groups['Miscellaneous'][$option_name] = $info['name'];
+        }
       }
     }
   }

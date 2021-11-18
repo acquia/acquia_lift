@@ -96,7 +96,6 @@ function acquia_lift_page_build(&$page) {
 
   $assets_url = variable_get('acquia_lift_assets_url');
   $decision_api_url = variable_get('acquia_lift_decision_api_url', '');
-  $oauth_url = variable_get('acquia_lift_oauth_url', '');
 
   // Add the credentials and configuration for the Lift Experience Builder.
   _acquia_lift_add_meta_tag('account_id', variable_get('acquia_lift_account_id'));
@@ -105,13 +104,17 @@ function acquia_lift_page_build(&$page) {
   if (!empty($decision_api_url)) {
     _acquia_lift_add_meta_tag('liftDecisionAPIURL', variable_get('acquia_lift_decision_api_url'));
   }
-  if (!empty($oauth_url)) {
-    _acquia_lift_add_meta_tag('authEndpoint', variable_get('acquia_lift_oauth_url'));
-  }
   _acquia_lift_add_meta_tag('bootstrapMode', variable_get('acquia_lift_bootstrap_mode', 'auto'));
-  _acquia_lift_add_meta_tag('contentReplacementMode', variable_get('acquia_lift_content_replacement_mode', 'untrusted'));
   _acquia_lift_add_meta_tag('contentOrigin', variable_get('acquia_lift_content_origin', ''));
+  _acquia_lift_add_meta_tag('contentReplacementMode', variable_get('acquia_lift_content_replacement_mode', 'trusted'));
   _acquia_lift_add_meta_tag('userAccess', variable_get('acquia_lift_user_access', ''));
+  if (!empty(variable_get('acquia_lift_content_origin', ''))) {
+    $content_origins = array_map('trim', explode("\n", trim(variable_get('acquia_lift_content_origin'))));
+    $content_origins = implode(',', $content_origins);
+    if (!empty($content_origins)) {
+      _acquia_lift_add_meta_tag('contentOrigin',  $content_origins);
+    }
+  }
 
   // If there are querystring parameters present corresponding to the configured
   // identity params, we add the identity and identity type to the meta tags.

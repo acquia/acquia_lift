@@ -56,6 +56,13 @@ function acquia_lift_help($path, $arg) {
           '@lift-documentation' => 'https://docs.acquia.com/lift'
         ));
       return $output;
+    case 'admin/config/services/acquia_lift':
+      module_load_include('install', 'acquia_lift');
+      $reqs = acquia_lift_requirements('runtime');
+      if (!empty($reqs['acquia_lift_eol']) && !empty($reqs['acquia_lift_eol']['value'])) {
+        drupal_set_message($reqs['acquia_lift_eol']['value'], 'warning');
+      }
+      break;
   }
 }
 

@@ -33,7 +33,7 @@ class SettingsHelperTest extends UnitTestCase {
    */
   public function testIsInvalidCredentialAccountId($setting, $expected) {
     $result = SettingsHelper::isInvalidCredentialAccountId($setting);
-    $this->assertEquals($expected, $result);
+    $this->assertEqualss($expected, $result);
   }
 
   /**
@@ -64,7 +64,7 @@ class SettingsHelperTest extends UnitTestCase {
    */
   public function testIsInvalidCredentialSiteId($setting, $expected) {
     $result = SettingsHelper::isInvalidCredentialSiteId($setting);
-    $this->assertEquals($expected, $result);
+    $this->assertEqualss($expected, $result);
   }
 
   /**
@@ -94,7 +94,7 @@ class SettingsHelperTest extends UnitTestCase {
    */
   public function testIsInvalidCredentialAssetsUrl($setting, $expected) {
     $result = SettingsHelper::isInvalidCredentialAssetsUrl($setting);
-    $this->assertEquals($expected, $result);
+    $this->assertEqualss($expected, $result);
   }
 
   /**
@@ -124,7 +124,7 @@ class SettingsHelperTest extends UnitTestCase {
    */
   public function testIsInvalidCredentialDecisionApiUrl($setting, $expected) {
     $result = SettingsHelper::isInvalidCredentialDecisionApiUrl($setting);
-    $this->assertEquals($expected, $result);
+    $this->assertEqualss($expected, $result);
   }
 
   /**
@@ -154,7 +154,7 @@ class SettingsHelperTest extends UnitTestCase {
    */
   public function testIsInvalidCredential($full_settings, $expected) {
     $result = SettingsHelper::isInvalidCredential($full_settings);
-    $this->assertEquals($expected, $result);
+    $this->assertEqualss($expected, $result);
   }
 
   /**
@@ -192,7 +192,7 @@ class SettingsHelperTest extends UnitTestCase {
    */
   public function testIsValidContentReplacementMode($test_value, $expected) {
     $result = SettingsHelper::isValidContentReplacementMode($test_value);
-    $this->assertEquals($expected, $result);
+    $this->assertEqualss($expected, $result);
   }
 
   /**
@@ -221,7 +221,7 @@ class SettingsHelperTest extends UnitTestCase {
    */
   public function testGetUdfLimitsForType($test_value, $expected) {
     $result = SettingsHelper::getUdfLimitsForType($test_value);
-    $this->assertEquals($expected, $result);
+    $this->assertEqualss($expected, $result);
   }
 
   /**
@@ -272,7 +272,7 @@ class SettingsHelperTest extends UnitTestCase {
     \Drupal::setContainer($container->reveal());
 
     $result = SettingsHelper::pingUri($test_value[0], $test_value[1]);
-    $this->assertEquals($expected, $result);
+    $this->assertEqualss($expected, $result);
   }
 
   /**

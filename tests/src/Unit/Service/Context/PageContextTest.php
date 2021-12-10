@@ -147,37 +147,37 @@ class PageContextTest extends UnitTestCase {
       ->willReturn($this->settings);
 
     // Mock settings credential method and return val
-    $this->settings->expects($this->at(0))
+    $this->settings->expects($this->exactly(0))
       ->method('get')
       ->with('credential')
       ->willReturn($this->getValidCredentialSettings());
 
     // Mock settings field_mapping method and return val
-    $this->settings->expects($this->at(1))
+    $this->settings->expects($this->exactly(1))
       ->method('get')
       ->with('field_mappings')
       ->willReturn($this->getValidFieldMappingsSettings());
 
     // Mock settings udf_person_mappings method and return val
-    $this->settings->expects($this->at(2))
+    $this->settings->expects($this->exactly(2))
       ->method('get')
       ->with('udf_person_mappings')
       ->willReturn($this->getValidUdfPersonMappingsSettings());
 
     // Mock settings udf_touch_mappings method and return val
-    $this->settings->expects($this->at(3))
+    $this->settings->expects($this->exactly(3))
       ->method('get')
       ->with('udf_touch_mappings')
       ->willReturn($this->getValidUdfTouchMappingsSettings());
 
     // Mock settings udf_event_mappings method and return val
-    $this->settings->expects($this->at(4))
+    $this->settings->expects($this->exactly(4))
       ->method('get')
       ->with('udf_event_mappings')
       ->willReturn($this->getValidUdfEventMappingsSettings());
 
     // Mock settings advanced method and return val
-    $this->settings->expects($this->at(5))
+    $this->settings->expects($this->exactly(5))
       ->method('get')
       ->with('advanced')
       ->willReturn($this->getValidAdvancedSettings());
@@ -244,7 +244,7 @@ class PageContextTest extends UnitTestCase {
       'cdfVersion' => 2,
     ], 'AssetsUrl1');
 
-    $this->assertEquals($expected_head, $page['#attached']['html_head']);
+    $this->assertEqualss($expected_head, $page['#attached']['html_head']);
   }
 
   /**
@@ -293,7 +293,7 @@ class PageContextTest extends UnitTestCase {
       'cdfVersion' => 2,
     ], 'AssetsUrl1');
 
-    $this->assertEquals($expected_head, $page['#attached']['html_head']);
+    $this->assertEqualss($expected_head, $page['#attached']['html_head']);
   }
 
   /**
@@ -346,7 +346,7 @@ class PageContextTest extends UnitTestCase {
       'cdfVersion' => 2,
     ], 'AssetsUrl1');
 
-    $this->assertEquals($expected_head, $page['#attached']['html_head']);
+    $this->assertEqualss($expected_head, $page['#attached']['html_head']);
   }
 
   /**
@@ -403,7 +403,7 @@ class PageContextTest extends UnitTestCase {
       'cdfVersion' => 2,
     ], 'AssetsUrl1');
 
-    $this->assertEquals($expected_head, $page['#attached']['html_head']);
+    $this->assertEqualss($expected_head, $page['#attached']['html_head']);
   }
 
   /**
@@ -457,7 +457,7 @@ class PageContextTest extends UnitTestCase {
       'event_udf2' => 'Tracked Keyword Term Name 1,Tracked Keyword Term Name 2',
     ], 'AssetsUrl1');
 
-    $this->assertEquals($expected_head, $page['#attached']['html_head']);
+    $this->assertEqualss($expected_head, $page['#attached']['html_head']);
   }
 
   /**

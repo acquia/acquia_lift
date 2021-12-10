@@ -75,7 +75,7 @@ class PathMatcherTest extends UnitTestCase {
    * @covers ::match
    */
   public function testMatchAliasMatched() {
-    $this->basePathMatcher->expects($this->at(0))
+    $this->basePathMatcher->expects($this->exactly(0))
       ->method('matchPath')
       ->with('a_path', 'a_pattern')
       ->willReturn(FALSE);
@@ -83,7 +83,7 @@ class PathMatcherTest extends UnitTestCase {
       ->method('getAliasByPath')
       ->with('a_path')
       ->willReturn('AN_ALIAS');
-    $this->basePathMatcher->expects($this->at(1))
+    $this->basePathMatcher->expects($this->exactly(1))
       ->method('matchPath')
       ->with('an_alias', 'a_pattern')
       ->willReturn(TRUE);

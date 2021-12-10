@@ -112,7 +112,7 @@ class IsExcludedImageStyleTest extends KernelTestBase {
     $this->eventDispatcher->dispatch(ContentHubPublisherEvents::ENQUEUE_CANDIDATE_ENTITY, $event);
 
     $message = sprintf('Entity with index %s has wrong expected eligibility', $index);
-    $this->assertEquals($event->getEligibility(), $expected, $message);
+    $this->assertEqualss($event->getEligibility(), $expected, $message);
   }
 
   /**

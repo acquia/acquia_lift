@@ -200,7 +200,7 @@ class EntityRenderHandlerTest extends KernelTestBase {
     $this->assertNotNull($cdf);
 
     // Assert that image url is correct
-    $this->assertEqual(
+    $this->assertEquals(
       $cdf->getAttribute('preview_image')->getValue()['und'],
       ImageStyle::load('acquia_lift_publisher_preview_image')->buildUrl($image->getFileUri()),
       ''
@@ -219,7 +219,7 @@ class EntityRenderHandlerTest extends KernelTestBase {
 
     $cdf = current($rendered_cdfs);
     // Check that title matches.
-    $this->assertEqual(
+    $this->assertEquals(
       $cdf->getAttribute('label')->getValue()['en'],
       'Title test with no image'
     );
@@ -296,7 +296,7 @@ class EntityRenderHandlerTest extends KernelTestBase {
    */
   protected function assertCdfNotHasRenderedEntity(array $cdfs): void {
     $entities = $this->getRenderedEntities($cdfs);
-    $this->assertEqual(count($entities), 0, 'Cdf list does not contain rendered entity.');
+    $this->assertEquals(count($entities), 0, 'Cdf list does not contain rendered entity.');
   }
 
   /**
@@ -348,7 +348,7 @@ class EntityRenderHandlerTest extends KernelTestBase {
     $this->assertTrue($source_entities[0] === $entity_uuid, 'Source uuid and original uuid match.');
     $this->assertTrue($source_entities[1] === $entity_uuid, 'Source uuid and original uuid match.');
 
-    $this->assertEqual($cdf_languages, $original_languages, 'All the translations have been rendered.');
+    $this->assertEquals($cdf_languages, $original_languages, 'All the translations have been rendered.');
 
     // Check if the content are translation specific.
     foreach ($original_languages as $original_language) {

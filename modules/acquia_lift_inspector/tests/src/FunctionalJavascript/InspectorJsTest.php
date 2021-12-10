@@ -111,25 +111,25 @@ JS;
     $this->assertNotEmpty($inspector);
 
     $accountId = $inspector->find('css', '#account-id a')->getText();
-    $this->assertEquals($accountId, 'AccountId1');
+    $this->assertEqualss($accountId, 'AccountId1');
 
     $accountLink = $inspector->find('css', '#account-id a')->getAttribute('href');
-    $this->assertEquals($accountLink, 'https://us-east-1.lift.acquia.com#person:accountId=AccountId1');
+    $this->assertEqualss($accountLink, 'https://us-east-1.lift.acquia.com#person:accountId=AccountId1');
 
     $siteId = $inspector->find('css', '#site-id')->getText();
-    $this->assertEquals($siteId, 'SiteId1');
+    $this->assertEqualss($siteId, 'SiteId1');
 
     $identity = $inspector->find('css', '#identity')->getText();
-    $this->assertEquals($identity, 'No tracking id available.');
+    $this->assertEqualss($identity, 'No tracking id available.');
 
     $identity = $inspector->find('css', '#user-segments p')->getText();
-    $this->assertEquals($identity, 'No segment(s) available.');
+    $this->assertEqualss($identity, 'No segment(s) available.');
 
     $identity = $inspector->find('css', '#decisions p')->getText();
-    $this->assertEquals($identity, 'No decision(s) made.');
+    $this->assertEqualss($identity, 'No decision(s) made.');
 
     $identity = $inspector->find('css', '#captures p')->getText();
-    $this->assertEquals($identity, 'No recent captures.');
+    $this->assertEqualss($identity, 'No recent captures.');
 
   }
 

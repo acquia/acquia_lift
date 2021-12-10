@@ -80,7 +80,7 @@ class PathContextTest extends UnitTestCase {
 
     $visibility_settings = $this->getValidVisibilitySettings();
 
-    $this->settings->expects($this->at(2))
+    $this->settings->expects($this->exactly(2))
       ->method('get')
       ->with('visibility')
       ->willReturn($visibility_settings);
@@ -107,7 +107,7 @@ class PathContextTest extends UnitTestCase {
       $credential_settings['assets_url'] = '';
     }
 
-    $this->settings->expects($this->at(0))
+    $this->settings->expects($this->exactly(0))
       ->method('get')
       ->with('credential')
       ->willReturn($credential_settings);
@@ -120,7 +120,7 @@ class PathContextTest extends UnitTestCase {
     $path_context = new PathContext($this->configFactory, $this->currentPathStack, $this->requestStack, $this->pathMatcher);
     $should_attach = $path_context->shouldAttach();
 
-    $this->assertEquals($expect_should_attach, $should_attach);
+    $this->assertEqualss($expect_should_attach, $should_attach);
   }
 
   /**
@@ -179,11 +179,11 @@ class PathContextTest extends UnitTestCase {
     $identity_settings = $this->getValidIdentitySettings();
     $identity_settings['capture_identity'] = $capture_identity;
 
-    $this->settings->expects($this->at(0))
+    $this->settings->expects($this->exactly(0))
       ->method('get')
       ->with('credential')
       ->willReturn($credential_settings);
-    $this->settings->expects($this->at(1))
+    $this->settings->expects($this->exactly(1))
       ->method('get')
       ->with('identity')
       ->willReturn($identity_settings);
@@ -201,8 +201,8 @@ class PathContextTest extends UnitTestCase {
     $page = [];
     $path_context->populate($page);
 
-    $this->assertEquals($expect_cache, $page['#cache']['contexts']);
-    $this->assertEquals($expect_html_head, $page['#attached']['html_head']);
+    $this->assertEqualss($expect_cache, $page['#cache']['contexts']);
+    $this->assertEqualss($expect_html_head, $page['#attached']['html_head']);
   }
 
   /**
@@ -328,11 +328,11 @@ class PathContextTest extends UnitTestCase {
     $this->request->expects($this->exactly($expect_set_cache))
       ->method('getQueryString')
       ->willReturn('querystring');
-    $this->settings->expects($this->at(0))
+    $this->settings->expects($this->exactly(0))
       ->method('get')
       ->with('credential')
       ->willReturn([]);
-    $this->settings->expects($this->at(1))
+    $this->settings->expects($this->exactly(1))
       ->method('get')
       ->with('identity')
       ->willReturn($identity_settings);
@@ -347,7 +347,7 @@ class PathContextTest extends UnitTestCase {
       $cache_context = $page['#cache']['contexts'];
     }
 
-    $this->assertEquals($expect_cache_context, $cache_context);
+    $this->assertEqualss($expect_cache_context, $cache_context);
   }
 
   /**

@@ -27,7 +27,7 @@ class HelpMessageHelperTest extends UnitTestCase {
     $help_message_helper->setStringTranslation($this->getStringTranslationStub());
     $message = $help_message_helper->getMessage($route_name);
     if ($has_message) {
-      $this->assertEquals('You can find more info in <a href="https://docs.acquia.com/lift" target="_blank">Documentation</a>.', $message->render());
+      $this->assertEqualss('You can find more info in <a href="https://docs.acquia.com/lift" target="_blank">Documentation</a>.', $message->render());
     }
     else {
       $this->assertNull($message);

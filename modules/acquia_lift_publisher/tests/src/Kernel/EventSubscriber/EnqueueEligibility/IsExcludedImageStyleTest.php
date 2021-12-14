@@ -103,10 +103,10 @@ class IsExcludedImageStyleTest extends KernelTestBase {
    * @dataProvider onEnqueueCandidateEntityDataProvider
    */
   public function testOnEnqueueCandidateEntity(string $operation, string $index, bool $expected) {
-    if (empty(self::$registry[$index])) {
+    $entity = self::$registry[$index];
+    if (empty($entity)) {
       $this->markTestIncomplete(sprintf('Specified item %s not found in registry', $index));
     }
-    $entity = self::$registry[$index];
 
     $event = new ContentHubEntityEligibilityEvent($entity, $operation);
     $this->eventDispatcher->dispatch(ContentHubPublisherEvents::ENQUEUE_CANDIDATE_ENTITY, $event);

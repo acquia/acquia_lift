@@ -41,7 +41,7 @@ class IsExcludedImageStyleTest extends KernelTestBase {
     'acquia_lift_publisher',
   ];
 
-  protected static $registry = [];
+  private static $registry = [];
 
   /**
    * Event dispatcher.

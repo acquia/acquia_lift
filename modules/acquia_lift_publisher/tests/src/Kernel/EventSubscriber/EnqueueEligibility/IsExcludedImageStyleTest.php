@@ -125,7 +125,7 @@ class IsExcludedImageStyleTest extends KernelTestBase {
 
     /** @var \Drupal\taxonomy\Entity\Vocabulary $vocabulary */
     $vocabulary = $this->createVocabulary();
-    self::$registry = [
+    IsExcludedImageStyleTest::$registry = [
       'node' => $this->createNode(),
       'term' => $this->createTerm($vocabulary),
       'eligible_image_style' => $this->imageStyleStorage->load('large'),

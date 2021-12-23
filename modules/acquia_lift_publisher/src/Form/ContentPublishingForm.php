@@ -107,7 +107,7 @@ class ContentPublishingForm extends ConfigFormBase {
    * {@inheritdoc}
    */
   protected function getEditableConfigNames() {
-    return [self::CONFIG_NAME];
+    return [ContentPublishingForm::CONFIG_NAME];
   }
 
   /**

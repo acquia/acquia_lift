@@ -11,6 +11,7 @@ use Drupal\Core\Form\ConfigFormBase;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Entity\FieldableEntityInterface;
 use Drupal\Core\Url;
+use phpDocumentor\Reflection\Types\Static_;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 
 /**
@@ -107,7 +108,7 @@ class ContentPublishingForm extends ConfigFormBase {
    * {@inheritdoc}
    */
   protected function getEditableConfigNames() {
-    return [ContentPublishingForm::CONFIG_NAME];
+    return [static::CONFIG_NAME];
   }
 
   /**

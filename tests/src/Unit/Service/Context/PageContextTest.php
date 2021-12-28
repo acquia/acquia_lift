@@ -244,7 +244,7 @@ class PageContextTest extends UnitTestCase {
       'cdfVersion' => 2,
     ], 'AssetsUrl1');
 
-    $this->assertEqualss($expected_head, $page['#attached']['html_head']);
+    $this->assertEquals($expected_head, $page['#attached']['html_head']);
   }
 
   /**
@@ -293,7 +293,7 @@ class PageContextTest extends UnitTestCase {
       'cdfVersion' => 2,
     ], 'AssetsUrl1');
 
-    $this->assertEqualss($expected_head, $page['#attached']['html_head']);
+    $this->assertEquals($expected_head, $page['#attached']['html_head']);
   }
 
   /**
@@ -346,7 +346,7 @@ class PageContextTest extends UnitTestCase {
       'cdfVersion' => 2,
     ], 'AssetsUrl1');
 
-    $this->assertEqualss($expected_head, $page['#attached']['html_head']);
+    $this->assertEquals($expected_head, $page['#attached']['html_head']);
   }
 
   /**
@@ -403,7 +403,7 @@ class PageContextTest extends UnitTestCase {
       'cdfVersion' => 2,
     ], 'AssetsUrl1');
 
-    $this->assertEqualss($expected_head, $page['#attached']['html_head']);
+    $this->assertEquals($expected_head, $page['#attached']['html_head']);
   }
 
   /**
@@ -457,7 +457,7 @@ class PageContextTest extends UnitTestCase {
       'event_udf2' => 'Tracked Keyword Term Name 1,Tracked Keyword Term Name 2',
     ], 'AssetsUrl1');
 
-    $this->assertEqualss($expected_head, $page['#attached']['html_head']);
+    $this->assertEquals($expected_head, $page['#attached']['html_head']);
   }
 
   /**

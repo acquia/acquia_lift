@@ -120,7 +120,7 @@ class PathContextTest extends UnitTestCase {
     $path_context = new PathContext($this->configFactory, $this->currentPathStack, $this->requestStack, $this->pathMatcher);
     $should_attach = $path_context->shouldAttach();
 
-    $this->assertEqualss($expect_should_attach, $should_attach);
+    $this->assertEquals($expect_should_attach, $should_attach);
   }
 
   /**
@@ -201,8 +201,8 @@ class PathContextTest extends UnitTestCase {
     $page = [];
     $path_context->populate($page);
 
-    $this->assertEqualss($expect_cache, $page['#cache']['contexts']);
-    $this->assertEqualss($expect_html_head, $page['#attached']['html_head']);
+    $this->assertEquals($expect_cache, $page['#cache']['contexts']);
+    $this->assertEquals($expect_html_head, $page['#attached']['html_head']);
   }
 
   /**
@@ -347,7 +347,7 @@ class PathContextTest extends UnitTestCase {
       $cache_context = $page['#cache']['contexts'];
     }
 
-    $this->assertEqualss($expect_cache_context, $cache_context);
+    $this->assertEquals($expect_cache_context, $cache_context);
   }
 
   /**

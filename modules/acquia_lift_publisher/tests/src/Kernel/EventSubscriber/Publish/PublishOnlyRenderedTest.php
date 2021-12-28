@@ -236,7 +236,7 @@ class PublishOnlyRenderedTest extends KernelTestBase {
     usort($expected, $sorter);
     usort($pruned, $sorter);
 
-    $this->assertEqualss($expected, array_values($pruned), 'The CDF document contains only the rendered entities, its source entity and the source entity tags.');
+    $this->assertEquals($expected, array_values($pruned), 'The CDF document contains only the rendered entities, its source entity and the source entity tags.');
   }
 
   /**

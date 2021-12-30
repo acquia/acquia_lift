@@ -2,17 +2,19 @@
 
 namespace Drupal\acquia_lift\Service\Context;
 
-use Drupal\Core\Cache\CacheableDependencyInterface;
-use Symfony\Component\HttpFoundation\RequestStack;
-use Drupal\Core\Config\ConfigFactoryInterface;
-use Drupal\Core\Path\CurrentPathStack;
-use Drupal\Component\Utility\UrlHelper;
-use Drupal\Component\Utility\Html;
-use Drupal\user\UserInterface;
 use Drupal\acquia_lift\Service\Helper\PathMatcher;
 use Drupal\acquia_lift\Service\Helper\SettingsHelper;
+use Drupal\Component\Utility\Html;
+use Drupal\Component\Utility\UrlHelper;
+use Drupal\Core\Cache\CacheableDependencyInterface;
+use Drupal\Core\Config\ConfigFactoryInterface;
+use Drupal\Core\Path\CurrentPathStack;
+use Drupal\user\UserInterface;
+use Symfony\Component\HttpFoundation\RequestStack;
 
-
+/**
+ * The PathContext class.
+ */
 class PathContext extends BaseContext implements CacheableDependencyInterface {
 
   /**
@@ -84,7 +86,7 @@ class PathContext extends BaseContext implements CacheableDependencyInterface {
   /**
    * Should attach.
    *
-   * @return boolean
+   * @return bool
    *   True if should attach.
    */
   public function shouldAttach() {
@@ -108,14 +110,15 @@ class PathContext extends BaseContext implements CacheableDependencyInterface {
    * @param \Symfony\Component\HttpFoundation\RequestStack $request_stack
    *   The request stack.
    */
-  private function setContextIdentityByRequest($request_stack) {
+  private function setContextIdentityByRequest(RequestStack $request_stack) {
     // Stop, if there is no "identity parameter".
     $identity_parameter = $this->identitySettings['identity_parameter'];
     if (empty($identity_parameter)) {
       return;
     }
 
-    // Set cache contexts. This is done as long as the identity parameter is set.
+    // Set cache contexts.
+    // This is done as long as the identity parameter is set.
     $identity_type_parameter = $this->identitySettings['identity_type_parameter'];
     $query_names = [$identity_parameter, $identity_type_parameter];
     $this->setContextCacheByQueryNames($query_names);
@@ -148,7 +151,7 @@ class PathContext extends BaseContext implements CacheableDependencyInterface {
    * @param array $query_names
    *   The query names.
    */
-  private function setContextCacheByQueryNames($query_names) {
+  private function setContextCacheByQueryNames(array $query_names) {
     foreach ($query_names as $query_name) {
       if (empty($query_name)) {
         continue;

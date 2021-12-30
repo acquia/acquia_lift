@@ -6,7 +6,7 @@ use Drupal\Core\Url;
 use Drupal\Tests\BrowserTestBase;
 
 /**
- * Class EntityViewModeConfigurationFormTest.
+ * The EntityViewModeConfigurationFormTest class.
  *
  * @covers \Drupal\acquia_lift_publisher\Form\EntityViewModeConfigurationForm
  *

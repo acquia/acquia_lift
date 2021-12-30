@@ -2,6 +2,9 @@
 
 namespace Drupal\acquia_lift\Service\Context;
 
+/**
+ *
+ */
 interface ContextInterface {
 
   /**

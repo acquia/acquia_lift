@@ -7,15 +7,14 @@ use Drupal\Core\Config\ConfigFactoryInterface;
 use Drupal\Core\Entity\EntityFieldManagerInterface;
 use Drupal\Core\Entity\EntityInterface;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
+use Drupal\Core\Entity\FieldableEntityInterface;
 use Drupal\Core\Form\ConfigFormBase;
 use Drupal\Core\Form\FormStateInterface;
-use Drupal\Core\Entity\FieldableEntityInterface;
 use Drupal\Core\Url;
-use phpDocumentor\Reflection\Types\Static_;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 
 /**
- * Class ContentPublishingForm.
+ * The ContentPublishingForm class.
  *
  * @package Drupal\acquia_lift_publisher\Form
  */

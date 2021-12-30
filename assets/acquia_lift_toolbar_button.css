@@ -2,9 +2,9 @@
  * Toolbar tab icon.
  */
 .toolbar-bar .toolbar-icon-acquia-lift:before {
-    background-image: url(../images/rocket.svg);
+  background-image: url(../images/rocket.svg);
 }
 .toolbar-bar .toolbar-icon-acquia-lift:active:before,
 .toolbar-bar .toolbar-icon-acquia-lift.active:before {
-    background-image: url(../images/rocket.svg);
+  background-image: url(../images/rocket.svg);
 }

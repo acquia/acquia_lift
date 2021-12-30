@@ -2,8 +2,8 @@
 
 namespace Drupal\acquia_lift_publisher\EventSubscriber\Cdf;
 
-use Acquia\ContentHubClient\CDFAttribute;
 use Acquia\ContentHubClient\CDF\CDFObject;
+use Acquia\ContentHubClient\CDFAttribute;
 use Drupal\acquia_contenthub\AcquiaContentHubEvents;
 use Drupal\acquia_contenthub\Client\ClientFactory;
 use Drupal\acquia_contenthub\Event\CreateCdfEntityEvent;
@@ -14,9 +14,9 @@ use Drupal\Core\Block\BlockManagerInterface;
 use Drupal\Core\Config\ImmutableConfig;
 use Drupal\Core\Entity\ContentEntityInterface;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
-use Drupal\Core\Language\LanguageManager;
 use Drupal\Core\Language\LanguageDefault;
 use Drupal\Core\Language\LanguageInterface;
+use Drupal\Core\Language\LanguageManager;
 use Drupal\Core\Render\Element;
 use Drupal\Core\Render\RendererInterface;
 use Drupal\Core\Session\AccountSwitcherInterface;

@@ -2,9 +2,9 @@
 
 namespace Drupal\Tests\acquia_lift\Unit\Service\Context;
 
-use Drupal\Tests\UnitTestCase;
 use Drupal\acquia_lift\Service\Context\PathContext;
 use Drupal\Tests\acquia_lift\Unit\Traits\SettingsDataTrait;
+use Drupal\Tests\UnitTestCase;
 
 /**
  * PathContextTest Test.
@@ -94,8 +94,8 @@ class PathContextTest extends UnitTestCase {
    *
    * @covers ::shouldAttach
    *
-   * @param boolean $set_invalid_credential
-   * @param boolean $do_match_pattern
+   * @param bool $set_invalid_credential
+   * @param bool $do_match_pattern
    * @param array $expect_should_attach
    *
    * @dataProvider providerTestShouldAttach
@@ -160,8 +160,8 @@ class PathContextTest extends UnitTestCase {
    * @covers ::populate
    *
    * @param string $query_parameter_string
-   * @param boolean $capture_identity
-   * @param boolean $do_set_user
+   * @param bool $capture_identity
+   * @param bool $do_set_user
    * @param array $expect_cache
    * @param array $expect_html_head
    *
@@ -231,7 +231,8 @@ class PathContextTest extends UnitTestCase {
         ],
       ],
       'identity:query_identity_type',
-    ]];
+    ],
+    ];
     $expect_identity_of_partial_query_string = [[
       [
         '#type' => 'html_tag',
@@ -242,7 +243,8 @@ class PathContextTest extends UnitTestCase {
         ],
       ],
       'identity:my_default_identity_type',
-    ]];
+    ],
+    ];
     $expect_identity_of_user = [[
       [
         '#type' => 'html_tag',
@@ -253,7 +255,8 @@ class PathContextTest extends UnitTestCase {
         ],
       ],
       'identity:email',
-    ]];
+    ],
+    ];
 
     $expect_identity_of_full_query_string_and_user = array_merge($expect_identity_of_full_query_string, $expect_identity_of_user);
 
@@ -315,7 +318,7 @@ class PathContextTest extends UnitTestCase {
    *
    * @covers ::populate
    *
-   * @param integer $expect_set_cache
+   * @param int $expect_set_cache
    * @param array $identity_settings
    * @param array $expect_cache_context
    *

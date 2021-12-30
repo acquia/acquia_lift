@@ -28,7 +28,7 @@ use Drupal\Tests\user\Traits\UserCreationTrait;
 use Prophecy\Argument;
 
 /**
- * Class EntityRenderHandlerTest.
+ * The EntityRenderHandlerTest class.
  *
  * @coversDefaultClass \Drupal\acquia_lift_publisher\EventSubscriber\Cdf\EntityRenderHandler
  *
@@ -100,7 +100,15 @@ class EntityRenderHandlerTest extends KernelTestBase {
     $this->installEntitySchema('user');
     $this->installSchema('system', 'sequences');
     $this->installSchema('file', 'file_usage');
-    $this->installConfig([ 'node', 'block_content', 'user', 'file', 'image', 'filter', 'acquia_lift_publisher']);
+    $this->installConfig([
+      'node',
+      'block_content',
+      'user',
+      'file',
+      'image',
+      'filter',
+      'acquia_lift_publisher',
+    ]);
 
     $this->blockType = BlockContentType::create([
       'id' => $this->randomMachineName(),
@@ -199,7 +207,7 @@ class EntityRenderHandlerTest extends KernelTestBase {
     $cdf = current($cdfs);
     $this->assertNotNull($cdf);
 
-    // Assert that image url is correct
+    // Assert that image url is correct.
     $this->assertEquals(
       $cdf->getAttribute('preview_image')->getValue()['und'],
       ImageStyle::load('acquia_lift_publisher_preview_image')->buildUrl($image->getFileUri()),
@@ -293,6 +301,7 @@ class EntityRenderHandlerTest extends KernelTestBase {
    * Asserts that cdf list doesn't have a rendered entity.
    *
    * @param \Acquia\ContentHubClient\CDF\CDFObject[] $cdfs
+   *   The array of CDF objects.
    */
   protected function assertCdfNotHasRenderedEntity(array $cdfs): void {
     $entities = $this->getRenderedEntities($cdfs);

@@ -4,8 +4,8 @@ namespace Drupal\Tests\acquia_lift\Functional;
 
 use Drupal\Component\Render\FormattableMarkup;
 use Drupal\Core\StringTranslation\TranslatableMarkup;
-use Drupal\Tests\acquia_lift\Unit\Traits\SettingsDataTrait;
 use Drupal\Tests\acquia_lift\Unit\Traits\FixturesDataTrait;
+use Drupal\Tests\acquia_lift\Unit\Traits\SettingsDataTrait;
 use Drupal\Tests\BrowserTestBase;
 
 /**
@@ -79,7 +79,8 @@ class SettingsTest extends BrowserTestBase {
     $this->drupalGet('admin/modules');
     $this->assertSession()->responseContains('admin/config/services/acquia-lift', '[testConfigurationLinks]: Configure link from Extend page to Acquia Lift Settings page exists.');
 
-    // Check if Configure link is available on 'Status Reports' page. NOTE: Link is only shown without a configured Acquia Lift credential.
+    // Check if Configure link is available on 'Status Reports' page.
+    // NOTE: Link is only shown without a configured Acquia Lift credential.
     // Requires 'administer site configuration' permission.
     $this->drupalGet('admin/reports/status');
     $this->assertSession()->responseContains('admin/config/services/acquia-lift', '[testConfigurationLinks]: Configure link from Status Reports page to Acquia Lift Settings page exists.');
@@ -100,7 +101,7 @@ class SettingsTest extends BrowserTestBase {
     $visibility_settings = $this->getValidVisibilitySettings();
     $advanced_settings = $this->getValidAdvancedSettings();
 
-    $edit =[];
+    $edit = [];
     $edit += $this->convertToPostFormSettings($credential_settings, 'credential');
     $edit += $this->convertToPostFormSettings($identity_settings, 'identity');
     $edit += $this->convertToPostFormSettings($field_mappings_settings, 'field_mappings');
@@ -121,7 +122,8 @@ class SettingsTest extends BrowserTestBase {
     $this->assertSession()->pageTextContains(t('Acquia Lift module could not reach the specified Assets URL.'));
     $this->assertSession()->pageTextContains(t('Acquia Lift module could not reach the specified Decision API URL.'));
 
-    // Assert all other fields. Also count the asserted fields to make sure all are asserted.
+    // Assert all other fields.
+    // Also count the asserted fields to make sure all are asserted.
     foreach ($edit as $name => $value) {
       $this->assertSession()->fieldValueEquals($name, $value, new FormattableMarkup('"@name" setting was saved into DB.', ['@name' => $name]));
     }
@@ -150,7 +152,7 @@ class SettingsTest extends BrowserTestBase {
     $this->assertSession()->responseContains('AssetsUrl1', '[testMetatagsAndScriptTag]: With valid settings, Lift\'s JavaScript is loaded on the home page.');
     $this->assertSession()->responseContains('async', '[testMetatagsAndScriptTag]: With valid settings, Lift\'s JavaScript is async-loaded on the home page.');
 
-    // Update settings to include content_origins
+    // Update settings to include content_origins.
     $this->drupalGet('admin/config/services/acquia-lift');
 
     // Get all the valid settings, and massage them into form $edit array.
@@ -163,7 +165,7 @@ class SettingsTest extends BrowserTestBase {
     $visibility_settings = $this->getValidVisibilitySettings();
     $advanced_settings = $this->getValidAdvancedSettings("2a14f4d4-650e-47c2-a55f-25f29949b38e\r\n1b5bd833-b479-4d30-8ac2-331499acca9a\r\n81fbe311-c638-4ced-9db6-5a30889c925e\r\n5245d03d-32d5-4506-bc86-081022c7ae80\r\n");
 
-    $edit =[];
+    $edit = [];
     $edit += $this->convertToPostFormSettings($credential_settings, 'credential');
     $edit += $this->convertToPostFormSettings($identity_settings, 'identity');
     $edit += $this->convertToPostFormSettings($field_mappings_settings, 'field_mappings');
@@ -192,4 +194,5 @@ class SettingsTest extends BrowserTestBase {
     $this->assertSession()->responseContains('AssetsUrl1', '[testMetatagsAndScriptTag]: With valid settings, Lift\'s JavaScript is loaded on the home page.');
     $this->assertSession()->responseContains('async', '[testMetatagsAndScriptTag]: With valid settings, Lift\'s JavaScript is async-loaded on the home page.');
   }
+
 }

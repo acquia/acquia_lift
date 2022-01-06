@@ -4,8 +4,8 @@ namespace Drupal\Tests\acquia_lift\Functional;
 
 use Drupal\Component\Render\FormattableMarkup;
 use Drupal\Core\StringTranslation\TranslatableMarkup;
-use Drupal\Tests\acquia_lift\Unit\Traits\SettingsDataTrait;
 use Drupal\Tests\acquia_lift\Unit\Traits\FixturesDataTrait;
+use Drupal\Tests\acquia_lift\Unit\Traits\SettingsDataTrait;
 use Drupal\Tests\BrowserTestBase;
 
 /**
@@ -58,15 +58,15 @@ class SettingsTest extends BrowserTestBase {
     $vocabulary1 = $this->createVocabulary();
     $vocabulary2 = $this->createVocabulary();
 
-    $term_v1_t1 = $this->createTerm($vocabulary1);
-    $term_v1_t2 = $this->createTerm($vocabulary1);
-    $term_v2_t1 = $this->createTerm($vocabulary2);
-    $term_v2_t2 = $this->createTerm($vocabulary2);
-    $term_v2_t3 = $this->createTerm($vocabulary2);
+    $this->createTerm($vocabulary1);
+    $this->createTerm($vocabulary1);
+    $this->createTerm($vocabulary2);
+    $this->createTerm($vocabulary2);
+    $this->createTerm($vocabulary2);
 
-    $field_country = $this->createFieldWithStorage('field_country', 'node', 'article', [$vocabulary1->id() => $vocabulary1->id()], ['target_type' => 'taxonomy_term'], 'entity_reference');
-    $field_people = $this->createFieldWithStorage('field_people', 'node', 'article', [$vocabulary2->id() => $vocabulary2->id()], ['target_type' => 'taxonomy_term'], 'entity_reference');
-    $field_tags = $this->createFieldWithStorage('field_tags', 'node', 'article', [$vocabulary2->id() => $vocabulary2->id()], ['target_type' => 'taxonomy_term'], 'entity_reference');
+    $this->createFieldWithStorage('field_country', 'node', 'article', [$vocabulary1->id() => $vocabulary1->id()], ['target_type' => 'taxonomy_term'], 'entity_reference');
+    $this->createFieldWithStorage('field_people', 'node', 'article', [$vocabulary2->id() => $vocabulary2->id()], ['target_type' => 'taxonomy_term'], 'entity_reference');
+    $this->createFieldWithStorage('field_tags', 'node', 'article', [$vocabulary2->id() => $vocabulary2->id()], ['target_type' => 'taxonomy_term'], 'entity_reference');
 
     // User to set up acquia_lift.
     $this->admin_user = $this->drupalCreateUser($permissions);
@@ -79,7 +79,8 @@ class SettingsTest extends BrowserTestBase {
     $this->drupalGet('admin/modules');
     $this->assertRaw('admin/config/services/acquia-lift', '[testConfigurationLinks]: Configure link from Extend page to Acquia Lift Settings page exists.');
 
-    // Check if Configure link is available on 'Status Reports' page. NOTE: Link is only shown without a configured Acquia Lift credential.
+    // Check if Configure link is available on 'Status Reports' page. NOTE
+    // Link is only shown without a configured Acquia Lift credential.
     // Requires 'administer site configuration' permission.
     $this->drupalGet('admin/reports/status');
     $this->assertRaw('admin/config/services/acquia-lift', '[testConfigurationLinks]: Configure link from Status Reports page to Acquia Lift Settings page exists.');
@@ -88,7 +89,7 @@ class SettingsTest extends BrowserTestBase {
   public function testAdminSettingsForm() {
     // Check for setting page's presence.
     $this->drupalGet('admin/config/services/acquia-lift');
-    $this->assertRaw(t('Acquia Lift Settings'), '[testAdminSettingsForm]: Settings page displayed.');
+    $this->assertRaw($this->t('Acquia Lift Settings'), '[testAdminSettingsForm]: Settings page displayed.');
 
     // Get all the valid settings, and massage them into form $edit array.
     $credential_settings = $this->getValidCredentialSettings();
@@ -100,7 +101,7 @@ class SettingsTest extends BrowserTestBase {
     $visibility_settings = $this->getValidVisibilitySettings();
     $advanced_settings = $this->getValidAdvancedSettings();
 
-    $edit =[];
+    $edit = [];
     $edit += $this->convertToPostFormSettings($credential_settings, 'credential');
     $edit += $this->convertToPostFormSettings($identity_settings, 'identity');
     $edit += $this->convertToPostFormSettings($field_mappings_settings, 'field_mappings');
@@ -116,11 +117,12 @@ class SettingsTest extends BrowserTestBase {
     $this->drupalPostForm('admin/config/services/acquia-lift', $edit, new TranslatableMarkup('Save configuration'));
 
     // Assert error messages are set for required fields and unreachable URLs.
-    $this->assertText(t('The Acquia Lift module requires a valid Account ID, Site ID, and Assets URL to complete activation.'));
-    $this->assertText(t('Acquia Lift module could not reach the specified Assets URL.'));
-    $this->assertText(t('Acquia Lift module could not reach the specified Decision API URL.'));
+    $this->assertText($this->t('The Acquia Lift module requires a valid Account ID, Site ID, and Assets URL to complete activation.'));
+    $this->assertText($this->t('Acquia Lift module could not reach the specified Assets URL.'));
+    $this->assertText($this->t('Acquia Lift module could not reach the specified Decision API URL.'));
 
-    // Assert all other fields. Also count the asserted fields to make sure all are asserted.
+    // Assert all other fields. Also count the asserted
+    // Fields to make sure all are asserted.
     foreach ($edit as $name => $value) {
       $this->assertFieldByName($name, $value, new FormattableMarkup('"@name" setting was saved into DB.', ['@name' => $name]));
     }
@@ -149,7 +151,7 @@ class SettingsTest extends BrowserTestBase {
     $this->assertRaw('AssetsUrl1', '[testMetatagsAndScriptTag]: With valid settings, Lift\'s JavaScript is loaded on the home page.');
     $this->assertRaw('async', '[testMetatagsAndScriptTag]: With valid settings, Lift\'s JavaScript is async-loaded on the home page.');
 
-    // Update settings to include content_origins
+    // Update settings to include content_origins.
     $this->drupalGet('admin/config/services/acquia-lift');
 
     // Get all the valid settings, and massage them into form $edit array.
@@ -162,7 +164,7 @@ class SettingsTest extends BrowserTestBase {
     $visibility_settings = $this->getValidVisibilitySettings();
     $advanced_settings = $this->getValidAdvancedSettings("2a14f4d4-650e-47c2-a55f-25f29949b38e\r\n1b5bd833-b479-4d30-8ac2-331499acca9a\r\n81fbe311-c638-4ced-9db6-5a30889c925e\r\n5245d03d-32d5-4506-bc86-081022c7ae80\r\n");
 
-    $edit =[];
+    $edit = [];
     $edit += $this->convertToPostFormSettings($credential_settings, 'credential');
     $edit += $this->convertToPostFormSettings($identity_settings, 'identity');
     $edit += $this->convertToPostFormSettings($field_mappings_settings, 'field_mappings');
@@ -190,4 +192,5 @@ class SettingsTest extends BrowserTestBase {
     $this->assertRaw('AssetsUrl1', '[testMetatagsAndScriptTag]: With valid settings, Lift\'s JavaScript is loaded on the home page.');
     $this->assertRaw('async', '[testMetatagsAndScriptTag]: With valid settings, Lift\'s JavaScript is async-loaded on the home page.');
   }
+
 }

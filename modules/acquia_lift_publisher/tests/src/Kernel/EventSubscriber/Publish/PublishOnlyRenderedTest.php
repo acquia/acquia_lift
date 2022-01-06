@@ -23,7 +23,6 @@ use PHPUnit\Framework\AssertionFailedError;
 use Prophecy\Argument;
 
 /**
- * Class PublishOnlyRenderedTest.
  *
  * @group acquia_lift_publisher
  *

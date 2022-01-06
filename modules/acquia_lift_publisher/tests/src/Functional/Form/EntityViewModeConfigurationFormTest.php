@@ -6,7 +6,6 @@ use Drupal\Core\Url;
 use Drupal\Tests\BrowserTestBase;
 
 /**
- * Class EntityViewModeConfigurationFormTest.
  *
  * @covers \Drupal\acquia_lift_publisher\Form\EntityViewModeConfigurationForm
  *
@@ -54,8 +53,8 @@ class EntityViewModeConfigurationFormTest extends BrowserTestBase {
     ]);
     $this->notAdminUser = $this->drupalCreateUser([]);
 
-    $this->drupalCreateContentType(['type' => 'page', 'name' => t('Basic page')]);
-    $this->drupalCreateContentType(['type' => 'article', 'name' => t('Article')]);
+    $this->drupalCreateContentType(['type' => 'page', 'name' => $this->t('Basic page')]);
+    $this->drupalCreateContentType(['type' => 'article', 'name' => $this->t('Article')]);
   }
 
   /**

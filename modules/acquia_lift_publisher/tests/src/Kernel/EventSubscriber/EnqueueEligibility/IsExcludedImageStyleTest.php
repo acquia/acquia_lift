@@ -10,7 +10,6 @@ use Drupal\Tests\node\Traits\NodeCreationTrait;
 use Drupal\Tests\taxonomy\Traits\TaxonomyTestTrait;
 
 /**
- * Class IsExcludedImageStyleTest.
  *
  * @group acquia_lift_publisher
  *

@@ -21,10 +21,6 @@ class SettingsHelperTest extends UnitTestCase {
 
   use SettingsDataTrait;
 
-  protected function setUp() {
-    parent::setUp();
-  }
-
   /**
    * Tests the isInvalidCredentialAccountId() method.
    *

@@ -184,10 +184,10 @@ class AdminSettingsForm extends ConfigFormBase {
       '#group' => 'data_collection_settings',
     ];
     // $form['capture_identity'] = [
-    //      '#type' => 'checkbox',
-    //      '#title' => $this->t('Capture identity on login / register'),
-    //      '#default_value' => $identity_settings['capture_identity'],
-    //    ];
+    // '#type' => 'checkbox',
+    // '#title' => $this->t('Capture identity on login / register'),
+    // '#default_value' => $identity_settings['capture_identity'],
+    // ];
     $form['identity_parameter'] = [
       '#type' => 'textfield',
       '#title' => $this->t('Identity Parameter'),

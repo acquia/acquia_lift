@@ -55,6 +55,13 @@ class PathContextTest extends UnitTestCase {
   private $request;
 
   /**
+   * The visibility setting.
+   *
+   * @var array|string[]
+   */
+  protected $visibilitySettings;
+
+  /**
    * {@inheritdoc}
    */
   public function setUp() {
@@ -78,12 +85,7 @@ class PathContextTest extends UnitTestCase {
       ->with('acquia_lift.settings')
       ->willReturn($this->settings);
 
-    $visibility_settings = $this->getValidVisibilitySettings();
-
-    $this->settings->expects($this->at(2))
-      ->method('get')
-      ->with('visibility')
-      ->willReturn($visibility_settings);
+    $this->visibilitySettings = $this->getValidVisibilitySettings();
     $this->currentPathStack->expects($this->once())
       ->method('getPath')
       ->willReturn('my_current_path');
@@ -110,10 +112,12 @@ class PathContextTest extends UnitTestCase {
       $credential_settings['assets_url'] = '';
     }
 
-    $this->settings->expects($this->at(0))
+    $this->settings->expects($this->any())
       ->method('get')
-      ->with('credential')
-      ->willReturn($credential_settings);
+      ->willReturnMap([
+        ['visibility', $this->visibilitySettings],
+        ['credential', $credential_settings],
+      ]);
 
     $this->pathMatcher->expects($this->any())
       ->method('match')
@@ -189,14 +193,13 @@ class PathContextTest extends UnitTestCase {
     $identity_settings = $this->getValidIdentitySettings();
     $identity_settings['capture_identity'] = $capture_identity;
 
-    $this->settings->expects($this->at(0))
+    $this->settings->expects($this->any())
       ->method('get')
-      ->with('credential')
-      ->willReturn($credential_settings);
-    $this->settings->expects($this->at(1))
-      ->method('get')
-      ->with('identity')
-      ->willReturn($identity_settings);
+      ->willReturnMap([
+        ['visibility', $this->visibilitySettings],
+        ['credential', $credential_settings],
+        ['identity', $identity_settings],
+      ]);
 
     $path_context = new PathContext($this->configFactory, $this->currentPathStack, $this->requestStack, $this->pathMatcher);
 
@@ -344,14 +347,13 @@ class PathContextTest extends UnitTestCase {
     $this->request->expects($this->exactly($expect_set_cache))
       ->method('getQueryString')
       ->willReturn('querystring');
-    $this->settings->expects($this->at(0))
+    $this->settings->expects($this->any())
       ->method('get')
-      ->with('credential')
-      ->willReturn([]);
-    $this->settings->expects($this->at(1))
-      ->method('get')
-      ->with('identity')
-      ->willReturn($identity_settings);
+      ->willReturnMap([
+        ['visibility', $this->visibilitySettings],
+        ['credential', []],
+        ['identity', $identity_settings],
+      ]);
 
     $path_context = new PathContext($this->configFactory, $this->currentPathStack, $this->requestStack, $this->pathMatcher);
 

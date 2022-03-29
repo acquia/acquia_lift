@@ -64,7 +64,7 @@ class LiftLinkTest extends BrowserTestBase {
     // Assert that the Acquia Lift link ID is present in the HTML.
     // This also verifies if the specific render cache is cleared.
     $this->drupalGet($node->toUrl());
-    $this->assertRaw('id="openLiftLink"');
+    $this->assertSession()->responseContains('id="openLiftLink"');
 
   }
 
@@ -86,12 +86,12 @@ class LiftLinkTest extends BrowserTestBase {
 
     // Assert that the Acquia Lift link ID is not present in the HTML.
     $this->drupalGet($node->toUrl());
-    $this->assertNoRaw('id="openLiftLink"');
+    $this->assertSession()->responseNotContains('id="openLiftLink"');
     // These contexts should be set.
     $this->assertCacheContext('url.path');
     $this->assertCacheContext('user');
     // These tags should be set.
-    $this->assertCacheTag('config:acquia_lift.settings');
+    $this->assertSession()->responseHeaderContains('X-Drupal-Cache-Tags', 'config:acquia_lift.settings');
 
     // Set valid settings.
     $this->setValidSettings();
@@ -99,10 +99,10 @@ class LiftLinkTest extends BrowserTestBase {
     // Assert that the Acquia Lift link ID is present in the HTML.
     // This also verifies if the specific render cache is cleared.
     $this->drupalGet($node->toUrl());
-    $this->assertRaw('id="openLiftLink"');
+    $this->assertSession()->responseContains('id="openLiftLink"');
 
     // These tags should be set.
-    $this->assertCacheTag('config:acquia_lift.settings');
+    $this->assertSession()->responseHeaderContains('X-Drupal-Cache-Tags', 'config:acquia_lift.settings');
     // These contexts should be set.
     $this->assertCacheContext('url.path');
     $this->assertCacheContext('user');
@@ -124,13 +124,13 @@ class LiftLinkTest extends BrowserTestBase {
     $node = $this->drupalCreateNode();
     $this->drupalGet($node->toUrl());
     // Assert that the Acquia Lift link ID is not present in the HTML.
-    $this->assertNoRaw('id="openLiftLink"');
+    $this->assertSession()->responseNotContains('id="openLiftLink"');
 
     // Set valid settings.
     $this->setValidSettings();
     $this->drupalGet($node->toUrl());
     // Assert that the Acquia Lift link ID is not present in the HTML.
-    $this->assertNoRaw('id="openLiftLink"');
+    $this->assertSession()->responseNotContains('id="openLiftLink"');
   }
 
   public function testLinkNotInToolbarInAdminPages() {
@@ -147,13 +147,13 @@ class LiftLinkTest extends BrowserTestBase {
     // Check if Acquia Lift Link is available on the node that we created.
     $this->drupalGet('/admin');
     // Assert that the Acquia Lift link ID is not present in the HTML.
-    $this->assertNoRaw('id="openLiftLink"');
+    $this->assertSession()->responseNotContains('id="openLiftLink"');
 
     // Set valid settings.
     $this->setValidSettings();
     $this->drupalGet('/admin');
     // Assert that the Acquia Lift link ID is not present in the HTML.
-    $this->assertNoRaw('id="openLiftLink"');
+    $this->assertSession()->responseNotContains('id="openLiftLink"');
   }
 
 }

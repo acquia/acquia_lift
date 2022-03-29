@@ -83,7 +83,7 @@ class ContentPublishingFormTest extends BrowserTestBase {
     $this->drupalLogin($user);
     $session = $this->getSession();
     $this->drupalGet(Url::fromRoute('acquia_lift_publisher.entity_config_form'));
-    $this->assertEqual($session->getStatusCode(), $expected, $message);
+    $this->assertEquals($expected, $session->getStatusCode(), $message);
   }
 
   /**
@@ -139,8 +139,8 @@ class ContentPublishingFormTest extends BrowserTestBase {
     $this->getSession()->reload();
     $session->fieldExists($preview_image);
 
-    $this->drupalPostForm(
-      $url,
+    $this->drupalGet($url);
+    $this->submitForm(
       [
         $view_mode_field => TRUE,
         $preview_image => 'image',

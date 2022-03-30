@@ -26,7 +26,7 @@ env:
     - ORCA_SUT_NAME=drupal/acquia_lift
     - ORCA_SUT_BRANCH=8.x-4.x
     - ORCA_VERSION=^3
-    - ORCA_TELEMETRY_ENABLE=TRUE
+    - ORCA_PACKAGES_CONFIG_ALTER=../acquia_lift/.travis/packages_alter.yml
 
 matrix:
   fast_finish: true

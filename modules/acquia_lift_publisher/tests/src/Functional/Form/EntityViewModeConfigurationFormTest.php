@@ -2,6 +2,7 @@
 
 namespace Drupal\Tests\acquia_lift_publisher\Functional\Form;
 
+use Drupal\Core\StringTranslation\StringTranslationTrait;
 use Drupal\Core\Url;
 use Drupal\Tests\BrowserTestBase;
 
@@ -14,6 +15,8 @@ use Drupal\Tests\BrowserTestBase;
  * @package Drupal\Tests\acquia_lift_publisher\Functional
  */
 class EntityViewModeConfigurationFormTest extends BrowserTestBase {
+
+  use StringTranslationTrait;
 
   /**
    * {@inheritdoc}

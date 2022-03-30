@@ -2,6 +2,7 @@
 
 namespace Drupal\Tests\acquia_lift\Functional;
 
+use Drupal\Core\StringTranslation\StringTranslationTrait;
 use Drupal\Core\StringTranslation\TranslatableMarkup;
 use Drupal\Tests\acquia_lift\Unit\Traits\FixturesDataTrait;
 use Drupal\Tests\acquia_lift\Unit\Traits\SettingsDataTrait;
@@ -16,6 +17,7 @@ class SettingsTest extends BrowserTestBase {
 
   use SettingsDataTrait;
   use FixturesDataTrait;
+  use StringTranslationTrait;
 
   /**
    * Modules to enable.

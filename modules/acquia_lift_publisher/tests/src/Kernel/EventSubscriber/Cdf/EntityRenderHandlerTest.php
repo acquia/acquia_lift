@@ -202,7 +202,7 @@ class EntityRenderHandlerTest extends KernelTestBase {
     // Assert that image url is correct.
     $this->assertEquals(
       ImageStyle::load('acquia_lift_publisher_preview_image')->buildUrl($image->getFileUri()),
-      $cdf->getAttribute('preview_image')->getValue()['LANGUAGE_NONE'],
+      $cdf->getAttribute('preview_image')->getValue()['und'],
       ''
     );
 

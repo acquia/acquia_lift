@@ -9,7 +9,7 @@ use Drupal\Tests\UnitTestCase;
 /**
  * Acquia lift PathContextTest Test.
  *
- * @coversDefaultClass Drupal\acquia_lift\Service\Context\PathContext
+ * @coversDefaultClass \Drupal\acquia_lift\Service\Context\PathContext
  * @group acquia_lift
  */
 class PathContextTest extends UnitTestCase {
@@ -117,6 +117,7 @@ class PathContextTest extends UnitTestCase {
       ->willReturnMap([
         ['visibility', $this->visibilitySettings],
         ['credential', $credential_settings],
+        ['identity', $this->getValidIdentitySettings()]
       ]);
 
     $this->pathMatcher->expects($this->any())

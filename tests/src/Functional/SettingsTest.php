@@ -2,7 +2,6 @@
 
 namespace Drupal\Tests\acquia_lift\Functional;
 
-use Drupal\Component\Render\FormattableMarkup;
 use Drupal\Core\StringTranslation\TranslatableMarkup;
 use Drupal\Tests\acquia_lift\Unit\Traits\FixturesDataTrait;
 use Drupal\Tests\acquia_lift\Unit\Traits\SettingsDataTrait;

@@ -117,7 +117,7 @@ class PathContextTest extends UnitTestCase {
       ->willReturnMap([
         ['visibility', $this->visibilitySettings],
         ['credential', $credential_settings],
-        ['identity', $this->getValidIdentitySettings()]
+        ['identity', $this->getValidIdentitySettings()],
       ]);
 
     $this->pathMatcher->expects($this->any())

@@ -29,7 +29,7 @@ use Prophecy\Argument;
 
 /**
  * Entity Render Handler Test.
- 
+ *
  * @coversDefaultClass \Drupal\acquia_lift_publisher\EventSubscriber\Cdf\EntityRenderHandler
  *
  * @group acquia_lift_publisher
@@ -199,7 +199,7 @@ class EntityRenderHandlerTest extends KernelTestBase {
     $cdf = current($cdfs);
     $this->assertNotNull($cdf);
 
-    // Assert that image url is correct
+    // Assert that image url is correct.
     $this->assertEquals(
       ImageStyle::load('acquia_lift_publisher_preview_image')->buildUrl($image->getFileUri()),
       $cdf->getAttribute('preview_image')->getValue()['LANGUAGE_NONE'],

@@ -112,6 +112,14 @@ class PathContextTest extends UnitTestCase {
       $credential_settings['assets_url'] = '';
     }
 
+    $this->requestStack->expects($this->once())
+      ->method('getCurrentRequest')
+      ->willReturn($this->request);
+
+    $this->request->expects($this->once())
+      ->method('getQueryString')
+      ->willReturn('');
+
     $this->settings->expects($this->any())
       ->method('get')
       ->willReturnMap([

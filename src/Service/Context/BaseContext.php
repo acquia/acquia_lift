@@ -46,10 +46,10 @@ abstract class BaseContext implements ContextInterface {
   /**
    * Populate page's HTML head.
    *
-   * @param array &$html_head
+   * @param array|null &$html_head
    *   The page's HTML head that is to be populated.
    */
-  protected function populateHtmlHead(array &$html_head) {
+  protected function populateHtmlHead(?array &$html_head) {
     // Attach Lift's metatags.
     foreach ($this->htmlHeadContexts as $name => $context) {
       $renderArray = $this->getMetaTagRenderArray($name, $context);

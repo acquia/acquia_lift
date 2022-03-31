@@ -89,7 +89,6 @@ class PublishOnlyRendered implements EventSubscriberInterface {
       $source_uuid = $this->getCdfEntityAttributeValue($cdf, 'source_entity');
       if ($source_uuid === $entity->uuid()) {
         $event->setEligibility(TRUE);
-        $event->setCalculateDependencies(FALSE);
         return;
       }
     }

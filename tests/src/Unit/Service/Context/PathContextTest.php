@@ -98,14 +98,14 @@ class PathContextTest extends UnitTestCase {
    *   The set_invalid_credential.
    * @param bool $do_match_pattern
    *   The do_match_pattern.
-   * @param array $expect_should_attach
+   * @param bool $expect_should_attach
    *   The expect_should_attach.
    *
    * @covers ::shouldAttach
    *
    * @dataProvider providerTestShouldAttach
    */
-  public function testShouldAttach($set_invalid_credential, $do_match_pattern, array $expect_should_attach) {
+  public function testShouldAttach(bool $set_invalid_credential, bool $do_match_pattern, bool $expect_should_attach) {
     $credential_settings = $this->getValidCredentialSettings();
 
     if ($set_invalid_credential) {
@@ -174,7 +174,7 @@ class PathContextTest extends UnitTestCase {
    *   The do_set_user.
    * @param array $expect_cache
    *   The expect_cache.
-   * @param array $expect_html_head
+   * @param array|null $expect_html_head
    *   The expect_html_head.
    *
    * @covers ::setContextIdentityByUser
@@ -182,7 +182,7 @@ class PathContextTest extends UnitTestCase {
    *
    * @dataProvider providerTestPopulateHtmlHeadIdentities
    */
-  public function testPopulateHtmlHeadIdentities($query_parameter_string, $capture_identity, $do_set_user, array $expect_cache, array $expect_html_head) {
+  public function testPopulateHtmlHeadIdentities(string $query_parameter_string, bool $capture_identity, bool $do_set_user, array $expect_cache, ?array $expect_html_head) {
     $this->requestStack->expects($this->once())
       ->method('getCurrentRequest')
       ->willReturn($this->request);

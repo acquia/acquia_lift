@@ -87,6 +87,8 @@ class PublishOnlyRenderedTest extends KernelTestBase {
       ->willReturn($client->reveal());
     $client_factory->getSettings()
       ->willReturn($settings->reveal());
+    $client_factory->isConfigurationSet()
+      ->willReturn(TRUE);
 
     $container->set('acquia_contenthub.client.factory', $client_factory->reveal());
 

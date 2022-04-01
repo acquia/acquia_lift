@@ -45,7 +45,7 @@ class IsExcludedImageStyleTest extends KernelTestBase {
   /**
    * Event dispatcher.
    *
-   * @var \Symfony\Component\EventDispatcher\EventDispatcher
+   * @var \Symfony\Contracts\EventDispatcher\Event
    */
   protected $eventDispatcher;
 

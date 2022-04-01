@@ -3,4 +3,4 @@ drupal/acquia_lift:
   version_dev: "4.x-dev"
 drupal/acquia_contenthub:
   version: "^2"
-  version_dev: "2.x-dev"
+  version_dev: "^2.x-dev"

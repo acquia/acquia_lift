@@ -3,6 +3,9 @@
     "type": "drupal-module",
     "description": "Provides integration to the Acquia Lift service for personalization and visitor data collection.",
     "license": "GPL-2.0-or-later",
+    "require-dev": {
+        "drupal/acquia_contenthub": "^2.31"
+    },
     "extra": {
         "branch-alias": {
             "dev-8.x-4.x": "4.x-dev"

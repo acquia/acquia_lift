@@ -1,0 +1,105 @@
+# Example Acquia CI configuration.
+#
+# The configuration files in the .acquia directory will cover ORCA integration for most packages almost
+# without modification. Use as follows:
+#
+# 1. Copy the .acquia directory to your package root:
+#
+#    $ cp -R example/.acquia ../my_package/.acquia
+#
+# 2. Change the ENV values for your package. No other changes are
+#    strictly necessary for a basic integration.
+#
+# 3. Review the other comments in the file for additional configuration options.
+#
+# 4. Strip the (now unnecessary) comments:
+#
+#    $ sed -i'.bak' -e '/^[[:blank:]]*#/d;s/#.*//' Dockerfile.ci && rm Dockerfile.ci.bak
+#
+# 5. Make necessary changes in /my_package/.acquia/pipeline.yaml
+#
+# For advanced needs,
+# @see https://github.com/acquia/orca/blob/main/docs/advanced-usage.md
+
+# This is a PHP's official Debian buster-based Docker image.
+# The image is build from https://github.com/acquia/devops-orca-container
+ARG BASE_IMAGE=devops-orca-container:latest
+
+# Jfrog is used by default in REPO_LOCATION
+# Solving dockerhub rate limiting and improving security scanning
+ARG REPO_LOCATION
+FROM ${REPO_LOCATION}${BASE_IMAGE}
+
+ENV CI=true
+ENV CHROMEDRIVER_VERSION 93.0.4577.63
+ENV CHROMEDRIVER_DIR /chromedriver
+ENV DEBIAN_FRONTEND=noninteractive
+#Set the working directory, usually acquia/project_name
+# @todo change to your repo name!
+ENV CI_WORKSPACE=/acquia/acquia_lift
+# Provide your package's name.
+# @todo change to your package name!
+ENV ORCA_SUT_NAME=drupal/acquia_lift
+# Specify the name of the nearest Git version branch, e.g., 1.x or 8.x-1.x.
+# This may be the destination branch of a pull request or the nearest
+# ancestor of a topic branch.
+# @todo change to your branch!
+ENV ORCA_SUT_BRANCH=8.x-3.x
+# Specify the version of ORCA to use. Use dev-master to track the latest
+# release, dev-develop to track Dev/HEAD, or any other Composer version
+# string.
+# @see https://getcomposer.org/doc/articles/versions.md
+ENV ORCA_VERSION=^3
+# If you want to completely replace the list of packages ORCA installs in
+# fixtures and runs tests on, you can specify your own packages file at
+# runtime by uncommenting the following line. Acceptable values are any
+# valid path to a YAML file relative to ORCA itself, e.g.,
+# ../example/tests/packages.yml.
+#
+# @see https://github.com/acquia/orca/blob/develop/config/packages.yml
+# ENV ORCA_PACKAGES_CONFIG=../orca/example/tests/packages.yml
+#
+# If your package isn't in in ORCA's packages.yml or conflicts with details
+# that are, you can modify the active packages configuration at runtime by
+# uncommenting the following line and specifying your own alter file.
+# @see https://github.com/acquia/orca/blob/master/docs/advanced-usage.md#ORCA_PACKAGES_CONFIG_ALTER
+# @todo remove, or point to your own to register your pacakge.
+# ENV ORCA_PACKAGES_CONFIG_ALTER=../orca/example/tests/packages_alter.yml
+#
+# If your package is a Drupal installation profile, uncomment the following
+# line and specify its machine name.
+# @see https://github.com/acquia/orca/blob/master/docs/advanced-usage.md#ORCA_FIXTURE_PROFILE
+# ENV ORCA_FIXTURE_PROFILE=example
+#
+# If your package is a Composer project template or requires a different
+# one to test with, uncomment the following line and specify its Packagist
+# name. This is recommended if your package is not meant to support Acquia
+# CMS, which is included in acquia/drupal-recommended-project.
+# @see https://github.com/acquia/orca/blob/main/docs/advanced-usage.md#ORCA_FIXTURE_PROJECT_TEMPLATE
+# @see https://github.com/acquia/orca/blob/main/docs/faq.md#why-do-i-get-version-conflicts-with-drupalacquia_cms
+# ENV ORCA_FIXTURE_PROJECT_TEMPLATE=acquia/drupal-minimal-project
+#
+# Change the PHP Code Sniffer standard used for static analysis. Acceptable
+# values are "AcquiaPHP", "AcquiaDrupalStrict", and
+# "AcquiaDrupalTransitional". Defaults to "AcquiaDrupalTransitional".
+# @see https://github.com/acquia/orca/blob/main/docs/advanced-usage.md#ORCA_PHPCS_STANDARD
+# ENV ORCA_PHPCS_STANDARD=AcquiaDrupalTransitional
+#
+# Enable Nightwatch.js testing. Acceptable values are "TRUE" and "FALSE".
+# ENV ORCA_ENABLE_NIGHTWATCH=TRUE
+#
+# To enable telemetry with Amplitude on cron runs, uncomment the following
+# line and set ORCA_AMPLITUDE_API_KEY in your Travis CI repository settings:
+# @see https://github.com/acquia/orca/blob/main/docs/advanced-usage.md#ORCA_TELEMETRY_ENABLE
+# @see https://github.com/acquia/orca/blob/main/docs/advanced-usage.md#ORCA_AMPLITUDE_API_KEY
+# ENV ORCA_TELEMETRY_ENABLE=TRUE
+
+# Increase PHP memory limit to avoid memory exhausted issue during site install.
+RUN echo 'memory_limit = 2048M' >> /usr/local/etc/php/conf.d/docker-php-memlimit.ini
+
+#
+# Set Working Directory.
+#
+WORKDIR $CI_WORKSPACE
+
+COPY . ./

@@ -1,0 +1,225 @@
+# Example Acquia CI configuration.
+#
+# The configuration files in the .acquia directory will cover ORCA integration for most packages almost
+# without modification. Use as follows:
+#
+# 1. Copy the .acquia directory to your package root:
+#
+#    $ cp -R example/.acquia ../my_package/.acquia
+#
+# 2. Change the team and service values for your package and change environment_image.build_args.secrets as necessary.
+#    No other changes are strictly necessary for a basic integration.
+#
+# 3. Review the other comments in the file for additional configuration options.
+#
+# 4. Strip the (now unnecessary) comments:
+#
+#    $ sed -i'.bak' -e '/^[[:blank:]]*#/d;s/#.*//' pipeline.yaml && rm pipeline.yaml.bak
+#
+# 5. Make necessary changes in /my_package/.acquia/Dockerfile.ci
+#
+# For advanced needs,
+# @see https://github.com/acquia/orca/blob/main/docs/advanced-usage.md
+
+---
+type: default
+team: dit
+group: drupal-cloud
+service: acquia_lift
+
+# The environment container image is used to prepare code versions
+# and tooling for tests during pre, post and build stages.
+environment_image:
+  file: ".acquia/Dockerfile.ci"
+  context: "."
+  build_args:
+    - secrets:
+        - type: vault
+          key: SSH_KEY
+          value: GIT_SSH_KEY
+          path: secret/pipeline-default/GIT_SSH_KEY
+
+_orca_steps: &orca_steps
+  steps:
+    # The following operations should happen on the RAM disk:
+    # 1. All PHP code that gets executed during tests. (Because most PHP
+    #    code will only be executed once, making PHP's built-in OPCache
+    #    ineffective. Acquia CI does not handle massive disk I/O
+    #    concurrency well, and that is exactly what happens when executing
+    #    multiple test jobs each testing a PHP application with many files
+    #    on disk: just Drupal core alone already requires a significant
+    #    number of files to be read from disk.
+    # 2. SQLite database. The SQLite database lives on disk. Executing
+    #    Drupal test suites tends to trigger many database queries, which
+    #    in turn result in disk I/O.
+    #    When not paying attention to these points, ORCA test suites can
+    #    easily be significantly slower on Acquia CI than on TravisCI
+    #    (which has a different disk I/O model). But when taken into
+    #    account, ORCA on Acquia CI tends to *FAST*!
+    #    If you were to run out of space on the RAM disk, simply file a
+    #    DEVOPS ticket to bump the memory limit for your project; they will
+    #    provision you more.
+    # @see https://docs.docker.com/storage/tmpfs/
+    # @see https://github.com/acquia/devops-pipeline/pull/275
+    - setup_ramfs:
+      - cp -ar /acquia /ramfs  &&  df -hT
+    - before_install:
+      - ../orca/bin/ci/before_install.sh
+    - |
+      cd /ramfs${CI_WORKSPACE}
+      # Switch to PHP8. The version will depend on the version(s) installed in your Dockerfile.
+      # The template provides version 8.0.
+      if [ "$JENKINS_PHP_VERSION" = 8.0 ]; then
+        update-alternatives --install /usr/local/bin/php php /usr/bin/php8.0 80
+        php -v
+      fi
+    # Create the test fixture and place the SUT.
+    - install:
+      - cd /ramfs${CI_WORKSPACE}
+      - ../orca/bin/ci/install.sh
+
+    # TODO: We need ORCA patch to do this when it requires acquia/blt or just always.
+    - |
+      cd /ramfs${CI_WORKSPACE}
+      [ -d "../orca-build" ] && composer config allow-plugins true --working-dir=../orca-build -n || exit 0
+
+    # TODO: Remove after https://backlog.acquia.com/browse/ORCA-353
+      #|
+      #cd /ramfs${CI_WORKSPACE}
+      #if [ -d "../orca-build" ]; then
+      #  composer require drupal/media_acquiadam:^2.0 drupal/token:^1.10 --working-dir=../orca-build
+      #fi
+    # Display details about the fixture.
+    - before_script:
+      - cd /ramfs${CI_WORKSPACE}
+      - ../orca/bin/ci/before_script.sh
+    # Run the test script.
+    - script:
+      - cd /ramfs${CI_WORKSPACE}
+      - ../orca/bin/ci/script.sh
+    - |
+      if [ "$ORCA_COVERAGE_ENABLE" = true ]; then
+        cd /ramfs${CI_WORKSPACE}
+        php .acquia/fixup-xml-paths.php /acquia/acquia_lift/clover.xml
+        php .acquia/fixup-xml-paths.php /acquia/acquia_lift/junit.xml
+      fi
+    # DEBUG: when disk I/O-constrained, this output will prove invaluable.
+    #-
+      #- df -hT && du -sh /ramfs
+      #- find / -type f -mmin -15 | grep -v '^/sys' | grep -v '^/proc' | grep -v '^/usr' | grep -v '^/var/cache' | grep -v '^/var/lib' | grep -v '^/ramfs'
+_orca_job: &orca_job
+  <<: *orca_steps
+_orca_job_allow_failures: &orca_job_allow_failures
+  - ignore_failures: true
+    <<: *orca_steps
+# -- Continuous Integration --
+# Pre-build runs after building the environment image, and relies on it to
+# run its sub-stages' steps inside of the environment container.
+pre_build:
+  static_code_analysis:
+    - args: --env ORCA_JOB=STATIC_CODE_ANALYSIS
+      <<: *orca_job
+  integrated_test_on_oldest_supported:
+    - args: --env ORCA_JOB=INTEGRATED_TEST_ON_OLDEST_SUPPORTED
+      <<: *orca_job
+  integrated_test_on_latest_lts:
+    - args: --env ORCA_JOB=INTEGRATED_TEST_ON_LATEST_LTS
+      <<: *orca_job
+  integrated_test_on_prev_minor:
+    - args: --env ORCA_JOB=INTEGRATED_TEST_ON_PREVIOUS_MINOR
+      <<: *orca_job
+  integrated_test_from_prev_minor:
+    - args: --env ORCA_JOB=INTEGRATED_UPGRADE_TEST_FROM_PREVIOUS_MINOR
+      <<: *orca_job
+  isolated_test_on_current:
+    - args: --env ORCA_JOB=ISOLATED_TEST_ON_CURRENT --env ORCA_COVERAGE_ENABLE=true --env ORCA_COVERAGE_CLOVER=/acquia/acquia_lift/clover.xml --env ORCA_JUNIT_LOG=/acquia/acquia_lift/junit.xml
+      ca_data: /acquia
+      <<: *orca_job
+  integrated_test_on_current:
+    - args: --env ORCA_JOB=INTEGRATED_TEST_ON_CURRENT
+      <<: *orca_job
+  integrated_test_to_next_minor:
+    - args: --env ORCA_JOB=INTEGRATED_UPGRADE_TEST_TO_NEXT_MINOR
+      <<: *orca_job
+  integrated_test_to_next_minor_dev:
+    - args: --env ORCA_JOB=INTEGRATED_UPGRADE_TEST_TO_NEXT_MINOR_DEV
+      <<: *orca_job
+  isolated_test_on_current_dev:
+    - args: --env ORCA_JOB=ISOLATED_TEST_ON_CURRENT_DEV
+      <<: *orca_job
+  integrated_test_on_current_dev:
+    - args: --env ORCA_JOB=INTEGRATED_TEST_ON_CURRENT_DEV
+      <<: *orca_job
+  strict_deprecated_code_scan:
+    - args: --env ORCA_JOB=STRICT_DEPRECATED_CODE_SCAN
+      <<: *orca_job
+  isolated_test_on_next_minor:
+    - args: --env ORCA_JOB=ISOLATED_TEST_ON_NEXT_MINOR
+      <<: *orca_job
+  isolated_test_on_next_minor_dev:
+    - args: --env ORCA_JOB=ISOLATED_TEST_ON_NEXT_MINOR_DEV
+      <<: *orca_job
+  integrated_test_on_next_minor:
+    - args: --env ORCA_JOB=INTEGRATED_TEST_ON_NEXT_MINOR
+      <<: *orca_job
+  integrated_test_on_next_minor_dev:
+    - args: --env ORCA_JOB=INTEGRATED_TEST_ON_NEXT_MINOR_DEV
+      <<: *orca_job
+  isolated_test_on_current_php8:
+    - args: --env ORCA_JOB=ISOLATED_TEST_ON_CURRENT --env JENKINS_PHP_VERSION=8.0
+      <<: *orca_job
+  deprecated_code_scan_with_contrib:
+    - args: --env ORCA_JOB=DEPRECATED_CODE_SCAN_W_CONTRIB
+      <<: *orca_job
+  loose_deprecated_code_scan:
+    - args: --env ORCA_JOB=LOOSE_DEPRECATED_CODE_SCAN
+      <<: *orca_job
+  # Uncomment the following four jobs to enable the corresponding tests once
+  # the next major version of Drupal core has an alpha release or earlier.
+  # Until then it's wasteful to use CI jobs on them, even if they exit early.
+  # isolated_test_on_next_major_latest_minor_beta_later
+  #   - args: --env ORCA_JOB=ISOLATED_TEST_ON_NEXT_MAJOR_LATEST_MINOR_BETA_OR_LATER
+  #     <<: *orca_job
+  # integrated_test_on_next_major_latest_minor_beta_later
+  #   - args: --env ORCA_JOB=INTEGRATED_TEST_ON_NEXT_MAJOR_LATEST_MINOR_BETA_OR_LATER
+  #     <<: *orca_job
+  # isolated_test_on_next_major_latest_minor_dev
+  #   - args: --env ORCA_JOB=ISOLATED_TEST_ON_NEXT_MAJOR_LATEST_MINOR_DEV
+  #     <<: *orca_job
+  # integrated_test_on_next_major_latest_minor_dev
+  #   - args: --env ORCA_JOB=INTEGRATED_TEST_ON_NEXT_MAJOR_LATEST_MINOR_DEV
+  #     <<: *orca_job
+  isolated_upgrade_test_to_next_major_dev:
+    - args: --env ORCA_JOB=ISOLATED_UPGRADE_TEST_TO_NEXT_MAJOR_DEV
+      <<: *orca_job
+  isolated_upgrade_test_to_next_major_beta_later:
+    - args: --env ORCA_JOB=ISOLATED_UPGRADE_TEST_TO_NEXT_MAJOR_BETA_OR_LATER
+      <<: *orca_job
+
+  # Jobs using Nightwatch tests MUST specify `--shm-size=2g`.
+  # @see https://stackoverflow.com/a/68557764
+  # a_job_using_nightwatch_tests:
+  #   - args: --env ORCA_JOB=SOMETHING --env ORCA_ENABLE_NIGHTWATCH=TRUE --shm-size=2g
+  #     <<: *orca_job
+
+# -- VeraCode automated security scanning --
+# Set 'required' to true to enable code security analysis
+  security_composition_analysis:
+    required: false
+
+# -- SonarQube automated reporting to https://sonarqube.ais.acquia.io --
+# Set the project_key and 'required' to true to enable SonarQube analysis
+  code_analysis:
+    required: false
+    project_key: acquia.drupal-cloud.acquia_lift:acquia_lift
+
+# -- Slack Bot Integration --
+# Set your_team_channel name
+# notify:
+#   channel: your_team_channel
+#   on_success: change
+#   on_failure: always
+# -- Optional --
+#  on_branch:
+#    - main
+#    - DEVOPS-12

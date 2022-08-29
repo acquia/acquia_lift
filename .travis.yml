@@ -24,6 +24,7 @@ env:
     - ORCA_SUT_BRANCH=8.x-4.x
     - ORCA_VERSION=~3.22.2
     - ORCA_TELEMETRY_ENABLE=TRUE
+    - ORCA_PACKAGES_CONFIG_ALTER=../acquia_lift/.acquia/packages_alter.yaml
 
 matrix:
   fast_finish: true

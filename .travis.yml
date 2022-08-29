@@ -1,6 +1,11 @@
 ---
 language: php
 
+os: linux
+dist: focal
+
+version: ~> 1.0
+
 php: "7.4"
 
 addons:
@@ -35,7 +40,6 @@ matrix:
     - env: ORCA_JOB=STATIC_CODE_ANALYSIS
 
 before_install:
-  - composer self-update 1.10.16
   - composer create-project --no-dev acquia/orca ../orca "$ORCA_VERSION"
   - ../orca/bin/travis/before_install.sh
 

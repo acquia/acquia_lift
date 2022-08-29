@@ -33,7 +33,7 @@ ARG REPO_LOCATION
 # release, dev-develop to track Dev/HEAD, or any other Composer version
 # string.
 # @see https://getcomposer.org/doc/articles/versions.md
-ARG ORCA_VERSION=dev-wip
+ARG ORCA_VERSION=2.9.1
 
 FROM ${REPO_LOCATION}${BASE_IMAGE}
 

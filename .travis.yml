@@ -15,13 +15,14 @@ cache:
   directories:
     - "$HOME/.composer/cache"
     - "$HOME/.drush/cache"
+    - "$HOME/.rvm"
     - "${TMPDIR:-/tmp}/phpstan/cache"
 
 env:
   global:
     - ORCA_SUT_NAME=drupal/acquia_lift
     - ORCA_SUT_BRANCH=8.x-4.x
-    - ORCA_VERSION=2.9.1
+    - ORCA_VERSION=~3.22.2
     - ORCA_TELEMETRY_ENABLE=TRUE
 
 matrix:

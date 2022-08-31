@@ -1,7 +1,12 @@
 ---
 language: php
 
-php: "7.2"
+os: linux
+dist: focal
+
+version: ~> 1.0
+
+php: "7.4"
 
 addons:
   chrome: stable
@@ -10,32 +15,37 @@ cache:
   directories:
     - "$HOME/.composer/cache"
     - "$HOME/.drush/cache"
+    - "$HOME/.rvm"
     - "${TMPDIR:-/tmp}/phpstan/cache"
 
 env:
   global:
     - ORCA_SUT_NAME=drupal/acquia_lift
     - ORCA_SUT_BRANCH=8.x-4.x
-    - ORCA_VERSION=2.9.1
+    - ORCA_VERSION=~3.22.2
     - ORCA_TELEMETRY_ENABLE=TRUE
+    - ORCA_PACKAGES_CONFIG_ALTER=../acquia_lift/.acquia/packages_alter.yaml
 
 matrix:
   fast_finish: true
   include:
     - { name: "Static code analysis", env: ORCA_JOB=STATIC_CODE_ANALYSIS }
-    - { name: "Deprecated code scan", env: ORCA_JOB=DEPRECATED_CODE_SCAN }
-    - { name: "Isolated test w/ recommended package versions", env: ORCA_JOB=ISOLATED_RECOMMENDED }
-    - { name: "Integrated test w/ recommended package versions", env: ORCA_JOB=INTEGRATED_RECOMMENDED }
-    - { name: "Integrated test w/ recommended package versions & previous minor release of Drupal core", env: ORCA_JOB=CORE_PREVIOUS }
-    - { name: "Isolated test w/ dev package versions", env: ORCA_JOB=ISOLATED_DEV }
-    - { name: "Integrated test w/ dev package versions", env: ORCA_JOB=INTEGRATED_DEV }
-    - { name: "Integrated test w/ dev package versions & next minor dev version of Drupal core", env: ORCA_JOB=CORE_NEXT }
-    - { name: "D9 readiness test", php: "7.3", env: ORCA_JOB=D9_READINESS }
+    - { name: "Deprecated code scan", env: ORCA_JOB=LOOSE_DEPRECATED_CODE_SCAN }
+    - { name: "Isolated test w/ recommended package versions", env: ORCA_JOB=ISOLATED_TEST_ON_CURRENT }
+    - { name: "Integrated test w/ recommended package versions", env: ORCA_JOB=INTEGRATED_TEST_ON_CURRENT }
+    - { name: "Integrated test w/ recommended package versions & previous minor release of Drupal core", env: ORCA_JOB=INTEGRATED_TEST_ON_PREVIOUS_MINOR }
+    - { name: "Isolated test w/ dev package versions", env: ORCA_JOB=ISOLATED_TEST_ON_CURRENT_DEV }
+    - { name: "Integrated test w/ dev package versions", env: ORCA_JOB=INTEGRATED_TEST_ON_CURRENT_DEV }
+    - { name: "Integrated test w/ dev package versions & next minor dev version of Drupal core", env: ORCA_JOB=INTEGRATED_TEST_ON_NEXT_MINOR_DEV }
   allow_failures:
     - env: ORCA_JOB=STATIC_CODE_ANALYSIS
+    - env: ORCA_JOB=LOOSE_DEPRECATED_CODE_SCAN
+    - env: ORCA_JOB=ISOLATED_TEST_ON_CURRENT_DEV
+    - env: ORCA_JOB=INTEGRATED_TEST_ON_CURRENT_DEV
+    - env: ORCA_JOB=INTEGRATED_TEST_ON_NEXT_MINOR
+    - env: ORCA_JOB=INTEGRATED_TEST_ON_NEXT_MINOR_DEV
 
 before_install:
-  - composer self-update 1.10.16
   - composer create-project --no-dev acquia/orca ../orca "$ORCA_VERSION"
   - ../orca/bin/travis/before_install.sh
 

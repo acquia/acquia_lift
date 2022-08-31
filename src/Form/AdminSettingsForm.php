@@ -401,10 +401,10 @@ class AdminSettingsForm extends ConfigFormBase {
     $form['content_replacement_mode'] = [
       '#type' => 'radios',
       '#title' => $this->t('Content replacement mode'),
-      '#description' => $this->t('The default, site-wide setting for <a href="https://docs.acquia.com/lift/exp-builder/config/modes/" target="_blank">content replacement mode</a>.'),
+      '#description' => $this->t('The default, site-wide setting for content replacement mode.'),
       '#default_value' => $advanced_settings['content_replacement_mode'],
       '#options' => [
-        'trusted' => t('Trusted'),
+        'trusted' => t('Trusted (default, recommended)'),
         'customized' => t('Customized')
       ],
     ];

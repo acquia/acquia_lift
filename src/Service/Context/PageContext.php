@@ -3,10 +3,10 @@
 namespace Drupal\acquia_lift\Service\Context;
 
 use Drupal\acquia_lift\Service\Helper\SettingsHelper;
-use Drupal\Core\Controller\TitleResolverInterface;
-use Drupal\Core\Language\LanguageManagerInterface;
 use Drupal\Core\Config\ConfigFactoryInterface;
+use Drupal\Core\Controller\TitleResolverInterface;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
+use Drupal\Core\Language\LanguageManagerInterface;
 use Drupal\Core\Routing\RouteMatchInterface;
 use Drupal\node\NodeInterface;
 use Symfony\Component\HttpFoundation\Request;

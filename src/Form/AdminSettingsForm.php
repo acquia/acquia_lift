@@ -2,13 +2,13 @@
 
 namespace Drupal\acquia_lift\Form;
 
-use Symfony\Component\DependencyInjection\ContainerInterface;
+use Drupal\acquia_lift\Service\Helper\SettingsHelper;
 use Drupal\Core\Config\Config;
 use Drupal\Core\Entity\EntityFieldManagerInterface;
 use Drupal\Core\Form\ConfigFormBase;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Url;
-use Drupal\acquia_lift\Service\Helper\SettingsHelper;
+use Symfony\Component\DependencyInjection\ContainerInterface;
 
 /**
  * Defines a form that configures settings.

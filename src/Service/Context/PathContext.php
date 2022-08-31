@@ -13,7 +13,7 @@ use Drupal\user\UserInterface;
 use Symfony\Component\HttpFoundation\RequestStack;
 
 /**
- * Path Context extension of Lift Contexts
+ * Path Context extension of Lift Contexts.
  */
 class PathContext extends BaseContext implements CacheableDependencyInterface {
 

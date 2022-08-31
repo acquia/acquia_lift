@@ -11,7 +11,7 @@
  */
 function acquia_lift_publisher_install() {
   $state = \Drupal::state();
-  $entity_config_state = $state->get('acquia_contenthub_update_8201_entity_type_config', []);
+  $entity_config_state = $state->get('acquia_contenthub_update_82001_entity_type_config', []);
   if (empty($entity_config_state)) {
     return;
   }
@@ -39,7 +39,7 @@ function acquia_lift_publisher_install() {
     $entity_config->set('render_role', $render_role);
   }
   $entity_config->save();
-  $state->delete('acquia_contenthub_update_8201_entity_type_config');
+  $state->delete('acquia_contenthub_update_82001_entity_type_config');
 }
 
 /**

@@ -2,8 +2,8 @@
 
 namespace Drupal\acquia_lift_publisher\EventSubscriber\Cdf;
 
-use Acquia\ContentHubClient\CDFAttribute;
 use Acquia\ContentHubClient\CDF\CDFObject;
+use Acquia\ContentHubClient\CDFAttribute;
 use Drupal\acquia_contenthub\AcquiaContentHubEvents;
 use Drupal\acquia_contenthub\Client\ClientFactory;
 use Drupal\acquia_contenthub\Event\CreateCdfEntityEvent;

@@ -2,15 +2,15 @@
 
 namespace Drupal\Tests\acquia_lift\Unit\Service\Helper;
 
+use Drupal\acquia_lift\Service\Helper\SettingsHelper;
+use Drupal\Core\DependencyInjection\ContainerBuilder;
+use Drupal\Core\Http\ClientFactory;
+use Drupal\Tests\acquia_lift\Unit\Traits\SettingsDataTrait;
+use Drupal\Tests\UnitTestCase;
+use GuzzleHttp\Client;
+use Prophecy\Argument;
 use Prophecy\PhpUnit\ProphecyTrait;
 use Psr\Http\Message\ResponseInterface;
-use GuzzleHttp\Client;
-use Drupal\Core\Http\ClientFactory;
-use Prophecy\Argument;
-use Drupal\Core\DependencyInjection\ContainerBuilder;
-use Drupal\Tests\UnitTestCase;
-use Drupal\acquia_lift\Service\Helper\SettingsHelper;
-use Drupal\Tests\acquia_lift\Unit\Traits\SettingsDataTrait;
 
 /**
  * SettingsHelper Test.

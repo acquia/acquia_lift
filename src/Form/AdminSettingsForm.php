@@ -314,7 +314,7 @@ class AdminSettingsForm extends ConfigFormBase {
     for ($i = 1; $i < $udf_limit + 1; $i++) {
       $form[$type . '_udf' . $i] = [
         '#type' => 'select',
-        '#title' => $this->t('User Profile @type Field @number', ['@number' => $i, '@type' => ucfirst($type)]),
+        '#title' => $this->t('User Profile @type Field @number', ['@number' => $i, '@type' => ucfirst($type)]), // phpcs:ignore
         '#empty_value' => '',
         '#options' => $field_names,
         '#default_value' => $field_mappings_settings[$type . '_udf' . $i]['value'] ?? '',
@@ -407,7 +407,7 @@ class AdminSettingsForm extends ConfigFormBase {
       '#default_value' => $advanced_settings['content_replacement_mode'],
       '#options' => [
         'trusted' => t('Trusted (default, recommended)'),
-        'customized' => t('Customized')
+        'customized' => t('Customized'),
       ],
     ];
     $form['cdf_version'] = [

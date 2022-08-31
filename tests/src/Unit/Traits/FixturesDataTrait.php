@@ -3,10 +3,10 @@
 namespace Drupal\Tests\acquia_lift\Unit\Traits;
 
 use Drupal\Core\Language\LanguageInterface;
-use Drupal\taxonomy\Entity\Vocabulary;
-use Drupal\taxonomy\Entity\Term;
-use Drupal\field\Entity\FieldStorageConfig;
 use Drupal\field\Entity\FieldConfig;
+use Drupal\field\Entity\FieldStorageConfig;
+use Drupal\taxonomy\Entity\Term;
+use Drupal\taxonomy\Entity\Vocabulary;
 
 /**
  * Fixtures Data Trait.

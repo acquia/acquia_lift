@@ -2,16 +2,16 @@
 
 namespace Drupal\acquia_lift\Service\Context;
 
-use Symfony\Component\HttpFoundation\Request;
-use Symfony\Component\HttpFoundation\RequestStack;
-use Symfony\Component\Routing\Route;
+use Drupal\acquia_lift\Service\Helper\SettingsHelper;
 use Drupal\Core\Controller\TitleResolverInterface;
 use Drupal\Core\Language\LanguageManagerInterface;
 use Drupal\Core\Config\ConfigFactoryInterface;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\Core\Routing\RouteMatchInterface;
 use Drupal\node\NodeInterface;
-use Drupal\acquia_lift\Service\Helper\SettingsHelper;
+use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\RequestStack;
+use Symfony\Component\Routing\Route;
 
 /**
  * Page Context extending the Lift Context class.
@@ -94,7 +94,7 @@ class PageContext extends BaseContext {
    *
    * @var array
    */
-  private static $CREDENTIAL_MAPPING = [
+  private static $credentialMapping = [
     'account_id' => 'account_id',
     'site_id' => 'site_id',
     'assets_url' => 'liftAssetsURL',
@@ -215,7 +215,7 @@ class PageContext extends BaseContext {
    *   Credential settings array.
    */
   private function setContextCredential(array $credential_settings) {
-    foreach (self::$CREDENTIAL_MAPPING as $credential_key => $tag_name) {
+    foreach (self::$credentialMapping as $credential_key => $tag_name) {
       if (isset($credential_settings[$credential_key])) {
         $this->htmlHeadContexts[$tag_name] = $credential_settings[$credential_key];
       }

@@ -48,8 +48,10 @@ class PublishOnlyRendered implements EventSubscriberInterface {
    */
   public static function getSubscribedEvents() {
     return [
+      // phpcs:disable
       ContentHubPublisherEvents::ENQUEUE_CANDIDATE_ENTITY => ['onEnqueueCandidateEntity', 99],
       AcquiaContentHubEvents::PRUNE_PUBLISH_CDF_ENTITIES => ['onPrunePublishCdfEntities', 1000],
+      // phpcs:enable
     ];
   }
 

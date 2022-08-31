@@ -2,7 +2,6 @@
 
 namespace Drupal\Tests\acquia_lift_publisher\Kernel\EventSubscriber\Publish;
 
-use Prophecy\PhpUnit\ProphecyTrait;
 use Acquia\ContentHubClient\CDF\CDFObject;
 use Acquia\ContentHubClient\CDFAttribute;
 use Acquia\ContentHubClient\CDFDocument;
@@ -22,6 +21,7 @@ use Drupal\Tests\node\Traits\NodeCreationTrait;
 use Drupal\Tests\RandomGeneratorTrait;
 use PHPUnit\Framework\AssertionFailedError;
 use Prophecy\Argument;
+use Prophecy\PhpUnit\ProphecyTrait;
 
 /**
  * Tests the Publish Only Rendered content.

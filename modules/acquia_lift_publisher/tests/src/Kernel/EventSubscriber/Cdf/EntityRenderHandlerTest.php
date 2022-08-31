@@ -2,7 +2,6 @@
 
 namespace Drupal\Tests\acquia_lift_publisher\Kernel\EventSubscriber\Cdf;
 
-use Prophecy\PhpUnit\ProphecyTrait;
 use Acquia\ContentHubClient\CDFDocument;
 use Acquia\ContentHubClient\ContentHubClient;
 use Acquia\ContentHubClient\Settings;
@@ -27,6 +26,7 @@ use Drupal\Tests\RandomGeneratorTrait;
 use Drupal\Tests\TestFileCreationTrait;
 use Drupal\Tests\user\Traits\UserCreationTrait;
 use Prophecy\Argument;
+use Prophecy\PhpUnit\ProphecyTrait;
 
 /**
  * Tests EntityRenderHandler.

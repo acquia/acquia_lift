@@ -117,6 +117,7 @@ class SettingsHelper {
    * @return bool
    *   True if is an invalid credential Decision API URL.
    */
+  // phpcs:ignore
   public static function isInvalidCredentialDecisionAPIUrl($decision_api_url) {
     if (!empty($decision_api_url) && !UrlHelper::isValid($decision_api_url)) {
       return TRUE;

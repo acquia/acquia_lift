@@ -2,8 +2,8 @@
 
 namespace Drupal\Tests\acquia_lift\Unit\Service\Helper;
 
-use Drupal\Tests\UnitTestCase;
 use Drupal\acquia_lift\Service\Helper\HelpMessageHelper;
+use Drupal\Tests\UnitTestCase;
 
 /**
  * HelpMessageHelper Test.

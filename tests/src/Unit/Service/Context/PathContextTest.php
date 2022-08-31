@@ -245,39 +245,45 @@ class PathContextTest extends UnitTestCase {
       'url.query_args:my_identity_type_parameter',
     ];
     $expect_html_head_empty = NULL;
-    $expect_identity_of_full_query_string = [[
+    $expect_identity_of_full_query_string = [
       [
-        '#type' => 'html_tag',
-        '#tag' => 'meta',
-        '#attributes' => [
-          'itemprop' => 'acquia_lift:identity:query_identity_type',
-          'content' => 'query_identity',
+        [
+          '#type' => 'html_tag',
+          '#tag' => 'meta',
+          '#attributes' => [
+            'itemprop' => 'acquia_lift:identity:query_identity_type',
+            'content' => 'query_identity',
+          ],
         ],
+        'identity:query_identity_type',
       ],
-      'identity:query_identity_type',
-    ]];
-    $expect_identity_of_partial_query_string = [[
+    ];
+    $expect_identity_of_partial_query_string = [
       [
-        '#type' => 'html_tag',
-        '#tag' => 'meta',
-        '#attributes' => [
-          'itemprop' => 'acquia_lift:identity:my_default_identity_type',
-          'content' => 'query_identity',
+        [
+          '#type' => 'html_tag',
+          '#tag' => 'meta',
+          '#attributes' => [
+            'itemprop' => 'acquia_lift:identity:my_default_identity_type',
+            'content' => 'query_identity',
+          ],
         ],
+        'identity:my_default_identity_type',
       ],
-      'identity:my_default_identity_type',
-    ]];
-    $expect_identity_of_user = [[
+    ];
+    $expect_identity_of_user = [
       [
-        '#type' => 'html_tag',
-        '#tag' => 'meta',
-        '#attributes' => [
-          'itemprop' => 'acquia_lift:identity:email',
-          'content' => 'a_user_email',
+        [
+          '#type' => 'html_tag',
+          '#tag' => 'meta',
+          '#attributes' => [
+            'itemprop' => 'acquia_lift:identity:email',
+            'content' => 'a_user_email',
+          ],
         ],
+        'identity:email',
       ],
-      'identity:email',
-    ]];
+    ];
 
     $expect_identity_of_full_query_string_and_user = array_merge($expect_identity_of_full_query_string, $expect_identity_of_user);
 
@@ -348,7 +354,7 @@ class PathContextTest extends UnitTestCase {
    *
    * @dataProvider providerTestPopulateCache
    */
-  public function testPopulateCache($identity_settings, $expect_set_cache, $expect_cache_context) {
+  public function testPopulateCache(array $identity_settings, $expect_set_cache, array $expect_cache_context) {
     $this->requestStack->expects($this->exactly($expect_set_cache))
       ->method('getCurrentRequest')
       ->willReturn($this->request);

@@ -21,18 +21,19 @@
   border-radius: 0;
 }
 
-#lift-inspector, #lift-inspector div{
+#lift-inspector,
+#lift-inspector div {
   position: relative;
-  display:block;
-  float:none;
-  margin:0;
-  padding:0;
+  display: block;
+  float: none;
+  margin: 0;
+  padding: 0;
 }
 
 #lift-inspector {
   background: #018dc7;
-  font-size:100%;
-  padding:15px;
+  font-size: 100%;
+  padding: 15px;
 }
 
 #lift-inspector p,
@@ -41,39 +42,40 @@
 #lift-inspector h1,
 #lift-inspector h2,
 #lift-inspector h3,
-#lift-inspector pre
-{
-  float:none;
-  display:block;
+#lift-inspector pre {
+  float: none;
+  display: block;
   position: relative;
   font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
   font-size: inherit;
-  font-style:normal;
+  font-style: normal;
   line-height: 1.5;
   vertical-align: baseline;
-  font-weight:normal;
-  border:0;
+  font-weight: normal;
+  border: 0;
   text-decoration: none;
   text-transform: none;
   text-rendering: optimizeLegibility;
-  margin:0;
-  padding:0;
-  width:auto;
-  height:auto;
-  background:transparent;
+  margin: 0;
+  padding: 0;
+  width: auto;
+  height: auto;
+  background: transparent;
 }
 
 #lift-inspector h1 {
-  font-size:26px;
+  font-size: 26px;
 }
 
-#lift-inspector h1, #lift-inspector h2, #lift-inspector h3 {
-  margin:0.5em;
+#lift-inspector h1,
+#lift-inspector h2,
+#lift-inspector h3 {
+  margin: 0.5em;
 }
 
 #lift-inspector h2 {
   color: #fff;
-  font-size:22px;
+  font-size: 22px;
 }
 
 #lift-inspector h3 {
@@ -97,11 +99,11 @@
 
 #lift-inspector label {
   text-transform: uppercase;
-  font-weight:bold;
+  font-weight: bold;
 }
 
 #lift-inspector .lift-inspector-wrapper label:after {
-  content: ':';
+  content: ': ';
 }
 
 #lift-inspector pre {
@@ -130,28 +132,28 @@
   width: 100%;
   white-space: nowrap;
   vertical-align: middle;
-  overflow:scroll;
+  overflow: scroll;
 }
 
 #lift-inspector .lastdecision-item-wrapper .item-details:after {
-     display: block;
-    position: absolute;
-    top: 0;
-    right: 0;
-    bottom: 0;
-    width: 3rem;
-    background: linear-gradient(to right,rgba(255,255,255,0),#333333);
-    content: '';
+  display: block;
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 3rem;
+  background: linear-gradient(to right,rgba(255,255,255,0),#333333);
+  content: '';
 }
 
 #lift-inspector .lift-inspector-wrapper .item-wrapper .inline-wrap:hover:after {
-  display:none;
+  display: none;
 }
 
 #lift-inspector .lift-inspector-wrapper .inline-wrap pre {
   vertical-align: middle;
-  display:inline;
-  width:100%;
+  display: inline;
+  width: 100%;
 }
 
 #lift-inspector .lift-inspector-wrapper .inline-wrap label.inline-pre {
@@ -180,16 +182,16 @@
 #lift-inspector .lift-inspector-wrapper #account-details div {
   padding: 5px 15px;
   vertical-align: top;
-  width:32%;
+  width: 32%;
 }
 @media (max-width: 760px) {
   #lift-inspector .lift-inspector-wrapper #account-details div,
   #lift-inspector .lift-inspector-wrapper {
-    display:block;
-    width:95%;
+    display: block;
+    width: 95%;
   }
-  #lift-inspector .lift-inspector-wrapper #account-details{
-    width:100%;
+  #lift-inspector .lift-inspector-wrapper #account-details {
+    width: 100%;
     display: block;
   }
 }

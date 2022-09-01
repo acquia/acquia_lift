@@ -5,7 +5,7 @@ acquia-lift-toolbar-button:
   js:
     assets/acquia_lift_toolbar_button.js: {}
   dependencies:
-    - core/jquery.once
+    - core/once
     - core/drupal
 
 acquia-lift-toolbar:

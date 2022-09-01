@@ -2,7 +2,6 @@
 
 namespace Drupal\Tests\acquia_lift\Functional;
 
-use Drupal\Component\Render\FormattableMarkup;
 use Drupal\Core\StringTranslation\TranslatableMarkup;
 use Drupal\Tests\acquia_lift\Unit\Traits\SettingsDataTrait;
 use Drupal\Tests\acquia_lift\Unit\Traits\FixturesDataTrait;
@@ -23,7 +22,7 @@ class SettingsTest extends BrowserTestBase {
    *
    * @var array
    */
-  public static $modules = ['node', 'taxonomy', 'acquia_lift'];
+  protected static $modules = ['node', 'taxonomy', 'acquia_lift'];
 
   /**
    * {@inheritdoc}
@@ -33,7 +32,7 @@ class SettingsTest extends BrowserTestBase {
   /**
    * {@inheritdoc}
    */
-  protected function setUp() {
+  protected function setUp(): void {
     parent::setUp();
 
     $permissions = [
@@ -73,22 +72,29 @@ class SettingsTest extends BrowserTestBase {
     $this->drupalLogin($this->admin_user);
   }
 
+  /**
+   * Test configuration links.
+   */
   public function testConfigurationLinks() {
     // Check if Configure link is available on 'Extend' page.
     // Requires 'administer modules' permission.
     $this->drupalGet('admin/modules');
-    $this->assertRaw('admin/config/services/acquia-lift', '[testConfigurationLinks]: Configure link from Extend page to Acquia Lift Settings page exists.');
+    $this->assertSession()->responseContains('admin/config/services/acquia-lift');
 
-    // Check if Configure link is available on 'Status Reports' page. NOTE: Link is only shown without a configured Acquia Lift credential.
+    // Check if Configure link is available on 'Status Reports' page.
+    // NOTE: Link is only shown without a configured Acquia Lift credential.
     // Requires 'administer site configuration' permission.
     $this->drupalGet('admin/reports/status');
-    $this->assertRaw('admin/config/services/acquia-lift', '[testConfigurationLinks]: Configure link from Status Reports page to Acquia Lift Settings page exists.');
+    $this->assertSession()->responseContains('admin/config/services/acquia-lift');
   }
 
+  /**
+   * Test admin settings form.
+   */
   public function testAdminSettingsForm() {
     // Check for setting page's presence.
     $this->drupalGet('admin/config/services/acquia-lift');
-    $this->assertRaw(t('Acquia Lift Settings'), '[testAdminSettingsForm]: Settings page displayed.');
+    $this->assertSession()->responseContains(t('Acquia Lift Settings'));
 
     // Get all the valid settings, and massage them into form $edit array.
     $credential_settings = $this->getValidCredentialSettings();
@@ -100,7 +106,7 @@ class SettingsTest extends BrowserTestBase {
     $visibility_settings = $this->getValidVisibilitySettings();
     $advanced_settings = $this->getValidAdvancedSettings();
 
-    $edit =[];
+    $edit = [];
     $edit += $this->convertToPostFormSettings($credential_settings, 'credential');
     $edit += $this->convertToPostFormSettings($identity_settings, 'identity');
     $edit += $this->convertToPostFormSettings($field_mappings_settings, 'field_mappings');
@@ -111,45 +117,50 @@ class SettingsTest extends BrowserTestBase {
     $edit += $this->convertToPostFormSettings($advanced_settings, 'advanced');
     $edit_settings_count = count($edit);
     $expect_settings_count = 21;
+    $this->drupalGet('admin/config/services/acquia-lift');
 
     // Post the edits.
-    $this->drupalPostForm('admin/config/services/acquia-lift', $edit, new TranslatableMarkup('Save configuration'));
+    $this->submitForm($edit, new TranslatableMarkup('Save configuration'));
 
     // Assert error messages are set for required fields and unreachable URLs.
-    $this->assertText(t('The Acquia Lift module requires a valid Account ID, Site ID, and Assets URL to complete activation.'));
-    $this->assertText(t('Acquia Lift module could not reach the specified Assets URL.'));
-    $this->assertText(t('Acquia Lift module could not reach the specified Decision API URL.'));
+    $this->assertSession()->pageTextContains(t('The Acquia Lift module requires a valid Account ID, Site ID, and Assets URL to complete activation.'));
+    $this->assertSession()->pageTextContains(t('Acquia Lift module could not reach the specified Assets URL.'));
+    $this->assertSession()->pageTextContains(t('Acquia Lift module could not reach the specified Decision API URL.'));
 
-    // Assert all other fields. Also count the asserted fields to make sure all are asserted.
+    // Assert all other fields.
+    // Also count the asserted fields to make sure all are asserted.
     foreach ($edit as $name => $value) {
-      $this->assertFieldByName($name, $value, new FormattableMarkup('"@name" setting was saved into DB.', ['@name' => $name]));
+      $this->assertSession()->fieldValueEquals($name, $value);
     }
-    $this->assertEqual($expect_settings_count, $edit_settings_count, 'The exact numbers of settings that were asserted should be ' . $expect_settings_count . '.');
+    $this->assertEquals($expect_settings_count, $edit_settings_count, 'The exact numbers of settings that were asserted should be ' . $expect_settings_count . '.');
 
     // Assert metatags are loaded in the header.
     $this->drupalGet('node/90210');
   }
 
+  /**
+   * Test Metatags and Script Tag.
+   */
   public function testMetatagsAndScriptTag() {
     $this->setValidSettings();
 
     // Assert metatags are loaded in the header.
     $this->drupalGet('node/90210', ['query' => ['my_identity_parameter' => 'an_identity']]);
-    $this->assertRaw('an_identity', '[testMetatagsAndScriptTag]: identity metatag value is loaded on the node page.');
-    $this->assertRaw('acquia_lift:page_type', '[testMetatagsAndScriptTag]: page_type metatag is loaded on the node page.');
-    $this->assertRaw('node page', '[testMetatagsAndScriptTag]: page_type metatag value is loaded on the node page.');
-    $this->assertRaw('acquia_lift:account_id', '[testMetatagsAndScriptTag]: account_id metatag is loaded on the node page.');
-    $this->assertRaw('AccountId1', '[testMetatagsAndScriptTag]: account_id metatag value is loaded on the node page.');
-    $this->assertRaw('acquia_lift:bootstrapMode', '[testMetatagsAndScriptTag]: bootstrap mode metatag is loaded on the node page.');
-    $this->assertRaw('manual', '[testMetatagsAndScriptTag]: bootstrap mode metatag value is loaded on the node page.');
-    $this->assertRaw('acquia_lift:contentReplacementMode', '[testMetatagsAndScriptTag]: content replacement mode metatag is loaded on the node page.');
-    $this->assertRaw('customized', '[testMetatagsAndScriptTag]: content replacement mode metatag value is loaded on the node page.');
-    $this->assertNoRaw('acquia_lift:content_origins', 'acquia_lift:content_origins is not set when setting no present.');
+    $this->assertSession()->responseContains('an_identity');
+    $this->assertSession()->responseContains('acquia_lift:page_type');
+    $this->assertSession()->responseContains('node page');
+    $this->assertSession()->responseContains('acquia_lift:account_id');
+    $this->assertSession()->responseContains('AccountId1');
+    $this->assertSession()->responseContains('acquia_lift:bootstrapMode');
+    $this->assertSession()->responseContains('manual');
+    $this->assertSession()->responseContains('acquia_lift:contentReplacementMode');
+    $this->assertSession()->responseContains('customized');
+    $this->assertSession()->responseNotContains('acquia_lift:content_origins');
     // Assert Lift JavaScript tag is async-loaded on the page.
-    $this->assertRaw('AssetsUrl1', '[testMetatagsAndScriptTag]: With valid settings, Lift\'s JavaScript is loaded on the home page.');
-    $this->assertRaw('async', '[testMetatagsAndScriptTag]: With valid settings, Lift\'s JavaScript is async-loaded on the home page.');
+    $this->assertSession()->responseContains('AssetsUrl1');
+    $this->assertSession()->responseContains('async');
 
-    // Update settings to include content_origins
+    // Update settings to include content_origins.
     $this->drupalGet('admin/config/services/acquia-lift');
 
     // Get all the valid settings, and massage them into form $edit array.
@@ -162,7 +173,7 @@ class SettingsTest extends BrowserTestBase {
     $visibility_settings = $this->getValidVisibilitySettings();
     $advanced_settings = $this->getValidAdvancedSettings("2a14f4d4-650e-47c2-a55f-25f29949b38e\r\n1b5bd833-b479-4d30-8ac2-331499acca9a\r\n81fbe311-c638-4ced-9db6-5a30889c925e\r\n5245d03d-32d5-4506-bc86-081022c7ae80\r\n");
 
-    $edit =[];
+    $edit = [];
     $edit += $this->convertToPostFormSettings($credential_settings, 'credential');
     $edit += $this->convertToPostFormSettings($identity_settings, 'identity');
     $edit += $this->convertToPostFormSettings($field_mappings_settings, 'field_mappings');
@@ -171,23 +182,25 @@ class SettingsTest extends BrowserTestBase {
     $edit += $this->convertToPostFormSettings($udf_event_settings, 'udf_event_mappings');
     $edit += $this->convertToPostFormSettings($visibility_settings, 'visibility');
     $edit += $this->convertToPostFormSettings($advanced_settings, 'advanced');
+    $this->drupalGet('admin/config/services/acquia-lift');
 
     // Post the edits.
-    $this->drupalPostForm('admin/config/services/acquia-lift', $edit, new TranslatableMarkup('Save configuration'));
+    $this->submitForm($edit, new TranslatableMarkup('Save configuration'));
 
     $this->drupalGet('node/90210', ['query' => ['my_identity_parameter' => 'an_identity']]);
-    $this->assertRaw('an_identity', '[testMetatagsAndScriptTag]: identity metatag value is loaded on the node page.');
-    $this->assertRaw('acquia_lift:page_type', '[testMetatagsAndScriptTag]: page_type metatag is loaded on the node page.');
-    $this->assertRaw('node page', '[testMetatagsAndScriptTag]: page_type metatag value is loaded on the node page.');
-    $this->assertRaw('acquia_lift:account_id', '[testMetatagsAndScriptTag]: account_id metatag is loaded on the node page.');
-    $this->assertRaw('AccountId1', '[testMetatagsAndScriptTag]: account_id metatag value is loaded on the node page.');
-    $this->assertRaw('acquia_lift:bootstrapMode', '[testMetatagsAndScriptTag]: bootstrap mode metatag is loaded on the node page.');
-    $this->assertRaw('manual', '[testMetatagsAndScriptTag]: bootstrap mode metatag value is loaded on the node page.');
-    $this->assertRaw('acquia_lift:contentReplacementMode', '[testMetatagsAndScriptTag]: content replacement mode metatag is loaded on the node page.');
-    $this->assertRaw('customized', '[testMetatagsAndScriptTag]: content replacement mode metatag value is loaded on the node page.');
-    $this->assertRaw('<meta itemprop="acquia_lift:content_origins" content="2a14f4d4-650e-47c2-a55f-25f29949b38e,1b5bd833-b479-4d30-8ac2-331499acca9a,81fbe311-c638-4ced-9db6-5a30889c925e,5245d03d-32d5-4506-bc86-081022c7ae80"', 'acquia_lift:content_origins is set.');
+    $this->assertSession()->responseContains('an_identity');
+    $this->assertSession()->responseContains('acquia_lift:page_type');
+    $this->assertSession()->responseContains('node page');
+    $this->assertSession()->responseContains('acquia_lift:account_id');
+    $this->assertSession()->responseContains('AccountId1');
+    $this->assertSession()->responseContains('acquia_lift:bootstrapMode');
+    $this->assertSession()->responseContains('manual');
+    $this->assertSession()->responseContains('acquia_lift:contentReplacementMode');
+    $this->assertSession()->responseContains('customized');
+    $this->assertSession()->responseContains('<meta itemprop="acquia_lift:content_origins" content="2a14f4d4-650e-47c2-a55f-25f29949b38e,1b5bd833-b479-4d30-8ac2-331499acca9a,81fbe311-c638-4ced-9db6-5a30889c925e,5245d03d-32d5-4506-bc86-081022c7ae80"');
     // Assert Lift JavaScript tag is async-loaded on the page.
-    $this->assertRaw('AssetsUrl1', '[testMetatagsAndScriptTag]: With valid settings, Lift\'s JavaScript is loaded on the home page.');
-    $this->assertRaw('async', '[testMetatagsAndScriptTag]: With valid settings, Lift\'s JavaScript is async-loaded on the home page.');
+    $this->assertSession()->responseContains('AssetsUrl1');
+    $this->assertSession()->responseContains('async');
   }
+
 }

@@ -8,17 +8,20 @@ use Drupal\acquia_lift\Service\Helper\HelpMessageHelper;
 /**
  * HelpMessageHelper Test.
  *
- * @coversDefaultClass Drupal\acquia_lift\Service\Helper\HelpMessageHelper
+ * @coversDefaultClass \Drupal\acquia_lift\Service\Helper\HelpMessageHelper
  * @group acquia_lift
  */
 class HelpMessageHelperTest extends UnitTestCase {
+
   /**
    * Tests the getMessage() method - AdminSettingsForm.
    *
-   * @covers ::getMessage
-   *
    * @param string $route_name
+   *   The Route Name.
    * @param string $has_message
+   *   Checks for a message.
+   *
+   * @covers ::getMessage
    *
    * @dataProvider providerRouteNames
    */
@@ -46,4 +49,5 @@ class HelpMessageHelperTest extends UnitTestCase {
 
     return $data;
   }
+
 }

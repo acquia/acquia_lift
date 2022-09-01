@@ -2,14 +2,14 @@
 
 namespace Drupal\Tests\acquia_lift\Unit\Service\Context;
 
-use Drupal\Tests\UnitTestCase;
 use Drupal\acquia_lift\Service\Context\PageContext;
 use Drupal\Tests\acquia_lift\Unit\Traits\SettingsDataTrait;
+use Drupal\Tests\UnitTestCase;
 
 /**
- * PageContextTest Test.
+ * Tests Page Contexts.
  *
- * @coversDefaultClass Drupal\acquia_lift\Service\Context\PageContext
+ * @coversDefaultClass \Drupal\acquia_lift\Service\Context\PageContext
  * @group acquia_lift
  */
 class PageContextTest extends UnitTestCase {
@@ -17,16 +17,22 @@ class PageContextTest extends UnitTestCase {
   use SettingsDataTrait;
 
   /**
+   * Drupal Config Factory.
+   *
    * @var \Drupal\Core\Config\ConfigFactoryInterface|\PHPUnit\Framework\MockObject\MockObject
    */
   private $configFactory;
 
   /**
+   * Lift Settings.
+   *
    * @var \Drupal\Core\Config\ImmutableConfig|\PHPUnit\Framework\MockObject\MockObject
    */
   private $settings;
 
   /**
+   * Drupal Entity Type Manager.
+   *
    * @var \Drupal\Core\Entity\EntityTypeManagerInterface|\PHPUnit\Framework\MockObject\MockObject
    */
   private $entityTypeManager;
@@ -83,14 +89,14 @@ class PageContextTest extends UnitTestCase {
   /**
    * Language manager interface.
    *
-   * @var Drupal\Core\Language\LanguageManagerInterface|\PHPUnit\Framework\MockObject\MockObject
+   * @var \Drupal\Core\Language\LanguageManagerInterface|\PHPUnit\Framework\MockObject\MockObject
    */
   private $language;
 
   /**
    * Language Interface.
    *
-   * @var Drupal\Core\Language\LanguageInterface|\PHPUnit\Framework\MockObject\MockObject
+   * @var \Drupal\Core\Language\LanguageInterface|\PHPUnit\Framework\MockObject\MockObject
    */
   private $languageInterface;
 
@@ -100,110 +106,86 @@ class PageContextTest extends UnitTestCase {
   public function setUp() {
     parent::setUp();
 
-    // Get config factory mock
+    // Get config factory mock.
     $this->configFactory = $this->createMock('Drupal\Core\Config\ConfigFactoryInterface');
 
-    // Get settings mock
+    // Get settings mock.
     $this->settings = $this->getMockBuilder('Drupal\Core\Config\ImmutableConfig')
       ->disableOriginalConstructor()
       ->getMock();
 
-    // Get entity manager mock
+    // Get entity manager mock.
     $this->entityTypeManager = $this->createMock('Drupal\Core\Entity\EntityTypeManagerInterface');
 
-    // Get taxonomy term mock
+    // Get taxonomy term mock.
     $this->taxonomyTermStorage = $this->createMock('Drupal\taxonomy\TermStorageInterface');
 
-    // Get request class mocks
+    // Get request class mocks.
     $this->requestStack = $this->createMock('Symfony\Component\HttpFoundation\RequestStack');
     $this->request = $this->createMock('Symfony\Component\HttpFoundation\Request');
     $this->requestParameterBag = $this->createMock('Symfony\Component\HttpFoundation\ParameterBag');
 
-    // Get route mocks
+    // Get route mocks.
     $this->routeMatch = $this->createMock('Drupal\Core\Routing\RouteMatchInterface');
     $this->route = $this->getMockBuilder('Symfony\Component\Routing\Route')
       ->disableOriginalConstructor()
       ->getMock();
 
-    // Get title resolver mock
+    // Get title resolver mock.
     $this->titleResolver = $this->createMock('Drupal\Core\Controller\TitleResolverInterface');
 
-    // Get language mock
+    // Get language mock.
     $this->language = $this->createMock('Drupal\Core\Language\LanguageManagerInterface');
 
-    // Get language object mock
+    // Get language object mock.
     $this->languageInterface = $this->createMock('Drupal\Core\Language\LanguageInterface');
 
-    // Mock method and return val
+    // Mock method and return val.
     $this->languageInterface
       ->expects($this->any())
       ->method('getId')
       ->willReturn('fr');
 
-    // Mock config factory
+    // Mock config factory.
     $this->configFactory->expects($this->once())
       ->method('get')
       ->with('acquia_lift.settings')
       ->willReturn($this->settings);
 
-    // Mock settings credential method and return val
-    $this->settings->expects($this->at(0))
+    // Mock settings credential method and return val.
+    $this->settings->expects($this->exactly(6))
       ->method('get')
-      ->with('credential')
-      ->willReturn($this->getValidCredentialSettings());
+      ->willReturnMap([
+        ['credential', $this->getValidCredentialSettings()],
+        ['field_mappings', $this->getValidFieldMappingsSettings()],
+        ['udf_person_mappings', $this->getValidUdfPersonMappingsSettings()],
+        ['udf_touch_mappings', $this->getValidUdfTouchMappingsSettings()],
+        ['udf_event_mappings', $this->getValidUdfEventMappingsSettings()],
+        ['advanced', $this->getValidAdvancedSettings()],
+      ]);
 
-    // Mock settings field_mapping method and return val
-    $this->settings->expects($this->at(1))
-      ->method('get')
-      ->with('field_mappings')
-      ->willReturn($this->getValidFieldMappingsSettings());
-
-    // Mock settings udf_person_mappings method and return val
-    $this->settings->expects($this->at(2))
-      ->method('get')
-      ->with('udf_person_mappings')
-      ->willReturn($this->getValidUdfPersonMappingsSettings());
-
-    // Mock settings udf_touch_mappings method and return val
-    $this->settings->expects($this->at(3))
-      ->method('get')
-      ->with('udf_touch_mappings')
-      ->willReturn($this->getValidUdfTouchMappingsSettings());
-
-    // Mock settings udf_event_mappings method and return val
-    $this->settings->expects($this->at(4))
-      ->method('get')
-      ->with('udf_event_mappings')
-      ->willReturn($this->getValidUdfEventMappingsSettings());
-
-    // Mock settings advanced method and return val
-    $this->settings->expects($this->at(5))
-      ->method('get')
-      ->with('advanced')
-      ->willReturn($this->getValidAdvancedSettings());
-
-    // Mock entity type manager getStorage method and return val
+    // Mock entity type manager getStorage method and return val.
     $this->entityTypeManager->expects($this->once())
       ->method('getStorage')
       ->with('taxonomy_term')
       ->willReturn($this->taxonomyTermStorage);
 
-    // Mock request stack's getCurrentRequest method and return val
+    // Mock request stack's getCurrentRequest method and return val.
     $this->requestStack->expects($this->once())
       ->method('getCurrentRequest')
       ->willReturn($this->request);
 
-    // Set param bag
+    // Set param bag.
     $this->request->attributes = $this->requestParameterBag;
 
-    // Mock routeMatch getRouteObject method and return val
+    // Mock routeMatch getRouteObject method and return val.
     $this->routeMatch->expects($this->once())
       ->method('getRouteObject')
       ->willReturn($this->route);
   }
 
   /**
-   * Tests the populate() method, populateHtmlHead() sub method, credential configuration.
+   * Tests the populate(), populateHtmlHead() sub method, and credentials.
    *
    * @covers ::populate
    */
@@ -213,7 +195,7 @@ class PageContextTest extends UnitTestCase {
       ->with('node')
       ->willReturn(FALSE);
 
-    // Language mock
+    // Language mock.
     $this->language
       ->expects($this->any())
       ->method('getCurrentLanguage')
@@ -262,7 +244,7 @@ class PageContextTest extends UnitTestCase {
       ->with('node')
       ->willReturn($this->getNode());
 
-    // Language mock
+    // Language mock.
     $this->language
       ->expects($this->any())
       ->method('getCurrentLanguage')
@@ -297,7 +279,7 @@ class PageContextTest extends UnitTestCase {
   }
 
   /**
-   * Tests the populate() method, populateHtmlHead() sub method, with a Node and simple title.
+   * Tests the populate(), populateHtmlHead() method with Node and simple title.
    *
    * @covers ::populate
    */
@@ -315,7 +297,7 @@ class PageContextTest extends UnitTestCase {
       ->with($this->request, $this->route)
       ->willReturn('My Title from Title Resolver');
 
-    // Language mock
+    // Language mock.
     $this->language
       ->expects($this->any())
       ->method('getCurrentLanguage')
@@ -350,7 +332,7 @@ class PageContextTest extends UnitTestCase {
   }
 
   /**
-   * Tests the populate() method, populateHtmlHead() sub method, with a Node and array title.
+   * Tests the populate(), populateHtmlHead() methods with a Node and title.
    *
    * @covers ::populate
    */
@@ -371,8 +353,7 @@ class PageContextTest extends UnitTestCase {
         '#allowed_tags' => ['br'],
       ]);
 
-
-    // Language mock
+    // Language mock.
     $this->language
       ->expects($this->any())
       ->method('getCurrentLanguage')
@@ -407,7 +388,7 @@ class PageContextTest extends UnitTestCase {
   }
 
   /**
-   * Tests the populate() method, populateHtmlHead() sub method, with a Node and fields.
+   * Tests the populate(), populateHtmlHead() sub method, with Node and fields.
    *
    * @covers ::populate
    */
@@ -422,7 +403,7 @@ class PageContextTest extends UnitTestCase {
       ->willReturn($this->getNode());
     $this->populateHtmlHeadWithNodeAndFieldsSetUpFields();
 
-    // Language mock
+    // Language mock.
     $this->language
       ->expects($this->any())
       ->method('getCurrentLanguage')
@@ -464,9 +445,12 @@ class PageContextTest extends UnitTestCase {
    * Get Term.
    *
    * @param string $name
+   *   The Taxonomy Term.
    * @param string $vocabulary_id
+   *   The Vocabulary ID.
    *
-   * @return Drupal\taxonomy\TermInterface|\PHPUnit\Framework\MockObject\MockObject
+   * @return \Drupal\taxonomy\TermInterface|\PHPUnit\Framework\MockObject\MockObject
+   *   The Taxonomy Entity.
    */
   private function getTerm($name = 'Term Name', $vocabulary_id = 'untracked_vocabulary_id') {
     $term = $this->createMock('Drupal\taxonomy\TermInterface');
@@ -482,9 +466,11 @@ class PageContextTest extends UnitTestCase {
   /**
    * Get Node.
    *
-   * @param integer $id
+   * @param int $id
+   *   The node ID.
    *
-   * @return Drupal\node\NodeInterface|\PHPUnit\Framework\MockObject\MockObject
+   * @return \Drupal\node\NodeInterface|\PHPUnit\Framework\MockObject\MockObject
+   *   The Node.
    */
   private function getNode($id = 90210) {
     $field_country = $this->createMock('Drupal\Core\Field\BaseFieldDefinition');
@@ -533,7 +519,7 @@ class PageContextTest extends UnitTestCase {
   }
 
   /**
-   * testPopulateHtmlHeadWithNodeAndFields(), sub routine "setup fields".
+   * Tests testPopulateHtmlHeadWithNodeAndFields(), sub routine "setup fields".
    */
   private function populateHtmlHeadWithNodeAndFieldsSetUpFields() {
     $tracked_content_term_1 = $this->getTerm('Tracked Content Term Name 1', 'tracked_content_vocabulary');
@@ -558,13 +544,14 @@ class PageContextTest extends UnitTestCase {
    * To render array.
    *
    * @param array $pageContextConfig
-   *   The page context config
+   *   The page context config.
    * @param string $assetsUrl
-   *   The assets URL
+   *   The assets URL.
+   *
    * @return array
-   *   The render array
+   *   The render array.
    */
-  private function toRenderArray($pageContextConfig, $assetsUrl) {
+  private function toRenderArray(array $pageContextConfig, $assetsUrl) {
     $renderArray = [];
 
     foreach ($pageContextConfig as $name => $content) {
@@ -586,7 +573,7 @@ class PageContextTest extends UnitTestCase {
         '#tag' => 'script',
         '#attributes' => [
           'src' => $assetsUrl . '/lift.js',
-          'async' => true,
+          'async' => TRUE,
         ],
       ],
       'acquia_lift_javascript',
@@ -594,4 +581,5 @@ class PageContextTest extends UnitTestCase {
 
     return $renderArray;
   }
+
 }

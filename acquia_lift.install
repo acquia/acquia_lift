@@ -1,5 +1,10 @@
 <?php
 
+/**
+ * @file
+ * Install, update, and uninstall functions for the Acquia Lift module.
+ */
+
 use Drupal\acquia_lift\Service\Helper\SettingsHelper;
 use Drupal\Core\Url;
 

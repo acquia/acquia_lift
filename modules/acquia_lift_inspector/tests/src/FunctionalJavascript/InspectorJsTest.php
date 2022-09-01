@@ -1,9 +1,5 @@
 <?php
 
-/**
- * @file
- */
-
 namespace Drupal\Tests\acquia_lift_inspector\FunctionalJavascript;
 
 use Drupal\Tests\acquia_lift\Unit\Traits\SettingsDataTrait;
@@ -25,7 +21,7 @@ class InspectorJsTest extends WebDriverTestBase {
   /**
    * {@inheritdoc}
    */
-  public static $modules = [
+  protected static $modules = [
     'acquia_lift',
     'acquia_lift_inspector',
   ];
@@ -38,7 +34,7 @@ class InspectorJsTest extends WebDriverTestBase {
   /**
    * {@inheritdoc}
    */
-  public function setUp() {
+  public function setUp(): void {
     parent::setUp();
 
     // Ensure an `article` node type exists.

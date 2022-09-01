@@ -12,6 +12,7 @@ use Drupal\field\Entity\FieldConfig;
  * Fixtures Data Trait.
  */
 trait FixturesDataTrait {
+
   /**
    * Returns a new vocabulary with random properties.
    */
@@ -40,7 +41,7 @@ trait FixturesDataTrait {
    * @return \Drupal\taxonomy\Entity\Term
    *   The new taxonomy term object.
    */
-  private function createTerm(Vocabulary $vocabulary, $values = []) {
+  private function createTerm(Vocabulary $vocabulary, array $values = []) {
     $filter_formats = filter_formats();
     $format = array_pop($filter_formats);
     $term = Term::create($values + [
@@ -73,7 +74,7 @@ trait FixturesDataTrait {
    * @param string $storage_type
    *   The field storage's type.
    */
-  private function createFieldWithStorage($field_name, $entity_type, $bundle, $target_bundles, $storage_settings, $storage_type) {
+  private function createFieldWithStorage($field_name, $entity_type, $bundle, array $target_bundles, array $storage_settings, $storage_type) {
     $field_storage = FieldStorageConfig::create([
       'field_name' => $field_name,
       'entity_type' => $entity_type,
@@ -96,4 +97,5 @@ trait FixturesDataTrait {
     ]);
     $field->save();
   }
+
 }

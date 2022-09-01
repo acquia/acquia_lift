@@ -2,7 +2,6 @@
 
 namespace Drupal\acquia_lift\Form;
 
-use Exception;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Drupal\Core\Config\Config;
 use Drupal\Core\Entity\EntityFieldManagerInterface;
@@ -64,7 +63,7 @@ class AdminSettingsForm extends ConfigFormBase {
   public static function create(ContainerInterface $container) {
     // MessengerInterface was introduced by Drupal 8.5.
     // This code is for backwards-compatibility to 8.4 and below.
-    $messenger = $container->has('messenger') ? $container->get('messenger') : null;
+    $messenger = $container->has('messenger') ? $container->get('messenger') : NULL;
 
     return new static(
       $container->get('entity_field.manager'),
@@ -134,21 +133,21 @@ class AdminSettingsForm extends ConfigFormBase {
     $form['account_id'] = [
       '#type' => 'textfield',
       '#title' => $this->t('Account ID'),
-      '#description' => $this->t('Your Lift subscription\'s account ID.'),
+      '#description' => $this->t("Your Lift subscription's account ID."),
       '#default_value' => $credential_settings['account_id'],
       '#required' => TRUE,
     ];
     $form['site_id'] = [
       '#type' => 'textfield',
       '#title' => $this->t('Site ID'),
-      '#description' => $this->t('Current site\'s site ID. WARNING: different sites must use different value here, even between a staging and a production of the same site.'),
+      '#description' => $this->t("Current site's site ID. WARNING: different sites must use different value here, even between a staging and a production of the same site."),
       '#default_value' => $credential_settings['site_id'],
       '#required' => TRUE,
     ];
     $form['assets_url'] = [
       '#type' => 'textfield',
       '#title' => $this->t('Assets URL'),
-      '#description' => $this->t('Your Lift application\'s assets URL. It determines which version of the Lift application is being used.'),
+      '#description' => $this->t("Your Lift application's assets URL. It determines which version of the Lift application is being used."),
       '#field_prefix' => 'https://',
       '#default_value' => $this->cleanUrl($credential_settings['assets_url']),
       '#required' => TRUE,
@@ -156,7 +155,7 @@ class AdminSettingsForm extends ConfigFormBase {
     $form['decision_api_url'] = [
       '#type' => 'textfield',
       '#title' => $this->t('Decision API URL'),
-      '#description' => $this->t('Your Lift Decision API\'s URL.'),
+      '#description' => $this->t("Your Lift Decision API\'s URL."),
       '#field_prefix' => 'https://',
       '#default_value' => !empty($credential_settings['decision_api_url']) ? $this->cleanUrl($credential_settings['decision_api_url']) : 'us-east-1-decisionapi.lift.acquia.com',
       '#required' => TRUE,
@@ -184,11 +183,13 @@ class AdminSettingsForm extends ConfigFormBase {
       '#tree' => TRUE,
       '#group' => 'data_collection_settings',
     ];
-//    $form['capture_identity'] = [
-//      '#type' => 'checkbox',
-//      '#title' => $this->t('Capture identity on login / register'),
-//      '#default_value' => $identity_settings['capture_identity'],
-//    ];
+    // phpcs:disable
+    // $form['capture_identity'] = [
+    //      '#type' => 'checkbox',
+    //      '#title' => $this->t('Capture identity on login / register'),
+    //      '#default_value' => $identity_settings['capture_identity'],
+    //    ];
+    // phpcs:enable
     $form['identity_parameter'] = [
       '#type' => 'textfield',
       '#title' => $this->t('Identity Parameter'),
@@ -200,7 +201,7 @@ class AdminSettingsForm extends ConfigFormBase {
     $form['identity_type_parameter'] = [
       '#type' => 'textfield',
       '#title' => $this->t('Identity Type Parameter'),
-      '#description' => $this->t('The URL link parameter that corresponds to a Lift Profile Manager identifier type (one of the pre-defined ones or a new one you\'ve created). Example using <strong>@identity_type_parameter_display_value</strong>: ?@identity_parameter_display_value=jdoe01&<strong><ins>@identity_type_parameter_display_value</ins></strong>=@default_identity_type_default_value', [
+      '#description' => $this->t("The URL link parameter that corresponds to a Lift Profile Manager identifier type (one of the pre-defined ones or a new one you've created). Example using <strong>@identity_type_parameter_display_value</strong>: ?@identity_parameter_display_value=jdoe01&<strong><ins>@identity_type_parameter_display_value</ins></strong>=@default_identity_type_default_value", [
         '@identity_parameter_display_value' => $identity_parameter_display_value,
         '@identity_type_parameter_display_value' => $identity_type_parameter_display_value,
         '@default_identity_type_default_value' => $default_identity_type_default_value,
@@ -285,12 +286,13 @@ class AdminSettingsForm extends ConfigFormBase {
    *
    * @return array
    *   UDF mappings form.
-   * @throws Exception
+   *
+   * @throws \Exception
    *   An exception if the type given is not supported.
    */
   private function buildUdfMappingsForm($type = 'person') {
     if ($type !== 'person' && $type !== 'touch' && $type !== 'event') {
-      throw new Exception('This Udf Field type is not supported');
+      throw new \Exception('This Udf Field type is not supported');
     }
 
     $field_mappings_settings = $this->config('acquia_lift.settings')->get('udf_' . $type . '_mappings');
@@ -315,7 +317,7 @@ class AdminSettingsForm extends ConfigFormBase {
         '#title' => $this->t('User Profile @type Field @number', ['@number' => $i, '@type' => ucfirst($type)]),
         '#empty_value' => '',
         '#options' => $field_names,
-        '#default_value' => isset($field_mappings_settings[$type . '_udf' . $i]['value']) ? $field_mappings_settings[$type . '_udf' . $i]['value'] : '',
+        '#default_value' => $field_mappings_settings[$type . '_udf' . $i]['value'] ?? '',
       ];
     }
 
@@ -395,7 +397,7 @@ class AdminSettingsForm extends ConfigFormBase {
       '#default_value' => $advanced_settings['bootstrap_mode'],
       '#options' => [
         'auto' => $this->t('Auto'),
-        'manual' => $this->t('Manual')
+        'manual' => $this->t('Manual'),
       ],
     ];
     $form['content_replacement_mode'] = [
@@ -411,17 +413,17 @@ class AdminSettingsForm extends ConfigFormBase {
     $form['cdf_version'] = [
       '#type' => 'radios',
       '#title' => $this->t('CDF version'),
-      '#description' =>  $this->t('The default, site-wide setting for CDF version.'),
-      '#default_value' => isset($advanced_settings['cdf_version']) ? $advanced_settings['cdf_version'] : SettingsHelper::CDF_VERSION_DEFAULT,
+      '#description' => $this->t('The default, site-wide setting for CDF version.'),
+      '#default_value' => $advanced_settings['cdf_version'] ?? SettingsHelper::CDF_VERSION_DEFAULT,
       '#options' => [
         1 => $this->t('Version 1'),
-        2 => $this->t('Version 2')
+        2 => $this->t('Version 2'),
       ],
     ];
     $form['content_origins'] = [
       '#type' => 'textarea',
       '#title' => $this->t('Origin Site UUIDs'),
-      '#description' =>  $this->t('Please leave this blank! This is an optional field and should be empty unless recommended otherwise by Acquia. Origins or Sources entered in this field will only be utilized during Personalization configuration & execution. Enter one origin site UUID per line.'),
+      '#description' => $this->t('Please leave this blank! This is an optional field and should be empty unless recommended otherwise by Acquia. Origins or Sources entered in this field will only be utilized during Personalization configuration & execution. Enter one origin site UUID per line.'),
       '#default_value' => $advanced_settings['content_origins'],
     ];
 
@@ -461,6 +463,14 @@ class AdminSettingsForm extends ConfigFormBase {
     parent::submitForm($form, $form_state);
   }
 
+  /**
+   * Validate Credential values.
+   *
+   * @param array $form
+   *   Drupal form.
+   * @param \Drupal\Core\Form\FormStateInterface $form_state
+   *   Form State.
+   */
   private function validateCredentialValues(array &$form, FormStateInterface $form_state) {
     $values = $form_state->getValues();
 
@@ -501,9 +511,9 @@ class AdminSettingsForm extends ConfigFormBase {
     $standardized_assets_url = 'https://' . $this->cleanUrl($values['assets_url']);
     $settings->set('credential.assets_url', $standardized_assets_url);
     $standardized_assets_url_parts = parse_url($standardized_assets_url);
-    $standardized_assets_url_scheme = isset($standardized_assets_url_parts['scheme']) ? $standardized_assets_url_parts['scheme'] : '';
-    $standardized_assets_url_host = isset($standardized_assets_url_parts['host']) ? $standardized_assets_url_parts['host'] : '';
-    $standardized_assets_url_path = isset($standardized_assets_url_parts['path']) ? $standardized_assets_url_parts['path'] : '';
+    $standardized_assets_url_scheme = $standardized_assets_url_parts['scheme'] ?? '';
+    $standardized_assets_url_host = $standardized_assets_url_parts['host'] ?? '';
+    $standardized_assets_url_path = $standardized_assets_url_parts['path'] ?? '';
     $this->checkConnection('Assets', $standardized_assets_url_scheme . '://' . $standardized_assets_url_host, $standardized_assets_url_path . '/lift.js');
 
     // If present, set Decision API URL, also check its connection.
@@ -516,12 +526,15 @@ class AdminSettingsForm extends ConfigFormBase {
   }
 
   /**
-   * Clean up URL. Remove the:
+   * Clean up URL.
+   *
+   * This removes the:
    *   1) Protocol "http://" and "http://".
    *   2) Leading and trailing slashes and space characters.
    *
    * @param string $url
    *   URL.
+   *
    * @return string
    *   URL, but cleaned up.
    */
@@ -539,6 +552,7 @@ class AdminSettingsForm extends ConfigFormBase {
    *
    * @param string $url
    *   URL.
+   *
    * @return string
    *   URL, but with "/authorize" removed.
    */
@@ -555,7 +569,7 @@ class AdminSettingsForm extends ConfigFormBase {
    *   Base URI.
    * @param string $path
    *   Path to "ping" end point.
-   * @param integer $expected_status_code
+   * @param int $expected_status_code
    *   Expected status code.
    */
   private function checkConnection($name, $base_uri, $path, $expected_status_code = 200) {
@@ -582,7 +596,7 @@ class AdminSettingsForm extends ConfigFormBase {
    *   Identity values.
    */
   private function setIdentityValues(Config $settings, array $values) {
-    //$settings->set('identity.capture_identity', trim($values['capture_identity']));
+    // phpcs:ignore $settings->set('identity.capture_identity', trim($values['capture_identity']));
     $settings->set('identity.identity_parameter', trim($values['identity_parameter']));
     $settings->set('identity.identity_type_parameter', trim($values['identity_type_parameter']));
     $settings->set('identity.default_identity_type', trim($values['default_identity_type']));
@@ -612,12 +626,12 @@ class AdminSettingsForm extends ConfigFormBase {
    * @param string $type
    *   The type of UDF field. Can be person, touch or event.
    *
-   * @throws Exception
+   * @throws \Exception
    *   An exception if the type given is not supported.
    */
   private function setUdfMappingsValues(Config $settings, array $values, $type = 'person') {
     if ($type !== 'person' && $type !== 'touch' && $type !== 'event') {
-      throw new Exception('This Udf Field type is not supported');
+      throw new \Exception('This Udf Field type is not supported');
     }
     $mappings = [];
     foreach ($values as $value_id => $value) {
@@ -627,7 +641,7 @@ class AdminSettingsForm extends ConfigFormBase {
       $mappings[$value_id] = [
         'id' => $value_id,
         'value' => $value,
-        'type' => 'taxonomy'
+        'type' => 'taxonomy',
       ];
     }
     $settings->set('udf_' . $type . '_mappings', $mappings);
@@ -649,9 +663,9 @@ class AdminSettingsForm extends ConfigFormBase {
    * Sets the advanced values.
    *
    * @param \Drupal\Core\Config\Config $settings
-   *   Acquia Lift config settings
+   *   Acquia Lift config settings.
    * @param array $values
-   *   Advanced values
+   *   Advanced values.
    */
   private function setAdvancedValues(Config $settings, array $values) {
     $settings->set('advanced.bootstrap_mode', $values['bootstrap_mode']);
@@ -672,4 +686,5 @@ class AdminSettingsForm extends ConfigFormBase {
     $messengerFunctionName = 'add' . ucwords($type);
     $this->messenger->$messengerFunctionName($message);
   }
+
 }

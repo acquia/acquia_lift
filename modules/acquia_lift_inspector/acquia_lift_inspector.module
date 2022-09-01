@@ -24,7 +24,7 @@ function acquia_lift_inspector_help($route_name) {
  * Implements hook_page_attachments().
  */
 function acquia_lift_inspector_page_attachments(array &$page) {
-  // Create and attach settings and library only when path context agrees on attaching.
+  // Create and attach settings/library when path context agrees on attaching.
   $path_context = \Drupal::service('acquia_lift.service.context.path_context');
   if (!$path_context->shouldAttach()) {
     return;
@@ -34,7 +34,7 @@ function acquia_lift_inspector_page_attachments(array &$page) {
   $config = \Drupal::config('acquia_lift.settings');
   $decision_api_url = $config->get('credential.decision_api_url');
 
-  // @TODO: find out how we can utilize an API method from the decision API to
+  // @todo find out how we can utilize an API method from the decision API to
   // get this information.
   switch ($decision_api_url) {
     case "https://eu-central-1-decisionapi.lift.acquia.com":

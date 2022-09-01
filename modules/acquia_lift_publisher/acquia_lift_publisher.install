@@ -1,8 +1,7 @@
 <?php
 
 /**
- * @defgroup updates-8.6.x-acquia-lift-publisher rendering view modes.
- * @{
+ * @file
  * Update functions for configured view modules on rendered entities.
  */
 
@@ -41,8 +40,3 @@ function acquia_lift_publisher_install() {
   $entity_config->save();
   $state->delete('acquia_contenthub_update_82001_entity_type_config');
 }
-
-/**
- * @} End of "addtogroup updates-8.6.x-acquia-lift-publisher rendering view modes.
- */
-

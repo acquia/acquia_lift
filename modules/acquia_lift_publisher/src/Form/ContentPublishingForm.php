@@ -14,7 +14,7 @@ use Drupal\Core\Url;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 
 /**
- * Class ContentPublishingForm.
+ * Content Publish Form.
  *
  * @package Drupal\acquia_lift_publisher\Form
  */

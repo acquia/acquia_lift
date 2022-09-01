@@ -2,7 +2,12 @@
 
 namespace Drupal\Tests\acquia_lift\Unit\Service\Helper;
 
-use Exception;
+use Prophecy\PhpUnit\ProphecyTrait;
+use Psr\Http\Message\ResponseInterface;
+use GuzzleHttp\Client;
+use Drupal\Core\Http\ClientFactory;
+use Prophecy\Argument;
+use Drupal\Core\DependencyInjection\ContainerBuilder;
 use Drupal\Tests\UnitTestCase;
 use Drupal\acquia_lift\Service\Helper\SettingsHelper;
 use Drupal\Tests\acquia_lift\Unit\Traits\SettingsDataTrait;
@@ -10,24 +15,30 @@ use Drupal\Tests\acquia_lift\Unit\Traits\SettingsDataTrait;
 /**
  * SettingsHelper Test.
  *
- * @coversDefaultClass Drupal\acquia_lift\Service\Helper\SettingsHelper
+ * @coversDefaultClass \Drupal\acquia_lift\Service\Helper\SettingsHelper
  * @group acquia_lift
  */
 class SettingsHelperTest extends UnitTestCase {
 
+  use ProphecyTrait;
   use SettingsDataTrait;
 
-  protected function setUp() {
+  /**
+   * {@inheritdoc}
+   */
+  protected function setUp(): void {
     parent::setUp();
   }
 
   /**
    * Tests the isInvalidCredentialAccountId() method.
    *
-   * @covers ::isInvalidCredentialAccountId
-   *
    * @param string $setting
-   * @param boolean $expected
+   *   Test Value.
+   * @param bool $expected
+   *   Expected Value.
+   *
+   * @covers ::isInvalidCredentialAccountId
    *
    * @dataProvider providerTestIsInvalidCredentialAccountId
    */
@@ -55,10 +66,12 @@ class SettingsHelperTest extends UnitTestCase {
   /**
    * Tests the isInvalidCredentialSiteId() method.
    *
-   * @covers ::isInvalidCredentialSiteId
-   *
    * @param string $setting
-   * @param boolean $expected
+   *   Test Value.
+   * @param bool $expected
+   *   Expected Value.
+   *
+   * @covers ::isInvalidCredentialSiteId
    *
    * @dataProvider providerTestIsInvalidCredentialSiteId
    */
@@ -85,10 +98,12 @@ class SettingsHelperTest extends UnitTestCase {
   /**
    * Tests the isInvalidCredentialAssetsUrl() method.
    *
-   * @covers ::isInvalidCredentialAssetsUrl
-   *
    * @param string $setting
-   * @param boolean $expected
+   *   Test Value.
+   * @param bool $expected
+   *   Expected Value.
+   *
+   * @covers ::isInvalidCredentialAssetsUrl
    *
    * @dataProvider providerTestIsInvalidCredentialAssetsUrl
    */
@@ -115,10 +130,12 @@ class SettingsHelperTest extends UnitTestCase {
   /**
    * Tests the isInvalidCredentialDecisionApiUrl() method.
    *
-   * @covers ::isInvalidCredentialDecisionApiUrl
-   *
    * @param string $setting
-   * @param boolean $expected
+   *   Test Value.
+   * @param bool $expected
+   *   Expected Value.
+   *
+   * @covers ::isInvalidCredentialDecisionApiUrl
    *
    * @dataProvider providerTestIsInvalidCredentialDecisionApiUrl
    */
@@ -145,10 +162,12 @@ class SettingsHelperTest extends UnitTestCase {
   /**
    * Tests the isInvalidCredential() method.
    *
-   * @covers ::isInvalidCredential
+   * @param string $full_settings
+   *   Test Value.
+   * @param bool $expected
+   *   Expected Value.
    *
-   * @param array $full_settings
-   * @param boolean $expected
+   * @covers ::isInvalidCredential
    *
    * @dataProvider providerTestIsInvalidCredential
    */
@@ -183,10 +202,12 @@ class SettingsHelperTest extends UnitTestCase {
   /**
    * Tests the isValidContentReplacementMode() method.
    *
-   * @covers ::isValidContentReplacementMode
-   *
    * @param string $test_value
-   * @param boolean $expected
+   *   Test Value.
+   * @param bool $expected
+   *   Expected Value.
+   *
+   * @covers ::isValidContentReplacementMode
    *
    * @dataProvider providerTestIsValidContentReplacementMode
    */
@@ -212,10 +233,12 @@ class SettingsHelperTest extends UnitTestCase {
   /**
    * Tests the getUdfLimitsForType() method.
    *
-   * @covers ::getUdfLimitsForType
-   *
    * @param string $test_value
-   * @param boolean $expected
+   *   Test Value.
+   * @param bool $expected
+   *   Expected Value.
+   *
+   * @covers ::getUdfLimitsForType
    *
    * @dataProvider providerTestGetUdfLimitsForType
    */
@@ -243,7 +266,7 @@ class SettingsHelperTest extends UnitTestCase {
    * @covers ::getUdfLimitsForType
    */
   public function testGetUdfLimitsForTypeExpectedException() {
-    $this->expectException(Exception::class);
+    $this->expectException(\Exception::class);
     $this->expectExceptionCode(0);
     $this->expectExceptionMessage('This UDF Field type is not supported.');
     SettingsHelper::getUdfLimitsForType('non_exist');
@@ -252,22 +275,24 @@ class SettingsHelperTest extends UnitTestCase {
   /**
    * Tests the pingUri() method.
    *
-   * @covers ::pingUri
-   *
    * @param string $test_value
-   * @param boolean $expected
+   *   Test Value.
+   * @param bool $expected
+   *   Expected Value.
+   *
+   * @covers ::pingUri
    *
    * @dataProvider providerTestPingUri
    */
   public function testPingUri($test_value, $expected) {
-    $response = $this->prophesize(\Psr\Http\Message\ResponseInterface::class);
+    $response = $this->prophesize(ResponseInterface::class);
     $response->getStatusCode()->willReturn($expected['statusCode']);
     $response->getReasonPhrase()->willReturn($expected['reasonPhrase']);
-    $client = $this->prophesize(\GuzzleHttp\Client::class);
-    $client->get($test_value[1], ['http_errors' => false])->willReturn($response->reveal());
-    $clientFactory = $this->prophesize(\Drupal\Core\Http\ClientFactory::class);
-    $clientFactory->fromOptions(\Prophecy\Argument::any())->willReturn($client->reveal());
-    $container = $this->prophesize(\Drupal\Core\DependencyInjection\ContainerBuilder::class);
+    $client = $this->prophesize(Client::class);
+    $client->get($test_value[1], ['http_errors' => FALSE])->willReturn($response->reveal());
+    $clientFactory = $this->prophesize(ClientFactory::class);
+    $clientFactory->fromOptions(Argument::any())->willReturn($client->reveal());
+    $container = $this->prophesize(ContainerBuilder::class);
     $container->get('http_client_factory')->willReturn($clientFactory->reveal());
     \Drupal::setContainer($container->reveal());
 
@@ -296,4 +321,5 @@ class SettingsHelperTest extends UnitTestCase {
 
     return $data;
   }
+
 }

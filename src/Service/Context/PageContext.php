@@ -13,6 +13,9 @@ use Drupal\Core\Routing\RouteMatchInterface;
 use Drupal\node\NodeInterface;
 use Drupal\acquia_lift\Service\Helper\SettingsHelper;
 
+/**
+ * Page Context extending the Lift Context class.
+ */
 class PageContext extends BaseContext {
 
   /**
@@ -76,7 +79,7 @@ class PageContext extends BaseContext {
     'content_uuid' => '',
     'published_date' => '',
     'persona' => '',
-    'engagement_score' => SELF::ENGAGEMENT_SCORE_DEFAULT,
+    'engagement_score' => self::ENGAGEMENT_SCORE_DEFAULT,
   ];
 
   /**
@@ -135,11 +138,11 @@ class PageContext extends BaseContext {
     // Set taxonomyTermStorage.
     $this->taxonomyTermStorage = $entity_type_manager->getStorage('taxonomy_term');
 
-    // Set page context
+    // Set page context.
     $request = $request_stack->getCurrentRequest();
     $route = $route_match->getRouteObject();
 
-    // Set node context
+    // Set node context.
     $this->setContextByNode($request);
 
     // Set base data (title + language)
@@ -159,7 +162,7 @@ class PageContext extends BaseContext {
     }
 
     $node = $request->attributes->get('node');
-    if (empty($node) || ! $node instanceof NodeInterface) {
+    if (empty($node) || !$node instanceof NodeInterface) {
       return;
     }
 
@@ -211,8 +214,8 @@ class PageContext extends BaseContext {
    * @param array $credential_settings
    *   Credential settings array.
    */
-  private function setContextCredential($credential_settings) {
-    foreach (SELF::$CREDENTIAL_MAPPING as $credential_key => $tag_name) {
+  private function setContextCredential(array $credential_settings) {
+    foreach (self::$CREDENTIAL_MAPPING as $credential_key => $tag_name) {
       if (isset($credential_settings[$credential_key])) {
         $this->htmlHeadContexts[$tag_name] = $credential_settings[$credential_key];
       }
@@ -225,10 +228,10 @@ class PageContext extends BaseContext {
    * @param array $advanced_settings
    *   Advanced settings array.
    */
-  private function setContextAdvanced($advanced_settings) {
-    $bootstrap_mode = isset($advanced_settings['bootstrap_mode']) ? $advanced_settings['bootstrap_mode'] : 'auto';
+  private function setContextAdvanced(array $advanced_settings) {
+    $bootstrap_mode = $advanced_settings['bootstrap_mode'] ?? 'auto';
     $replacement_mode = $advanced_settings['content_replacement_mode'];
-    $cdf_version = isset($advanced_settings['cdf_version']) ? $advanced_settings['cdf_version'] : SettingsHelper::CDF_VERSION_DEFAULT;
+    $cdf_version = $advanced_settings['cdf_version'] ?? SettingsHelper::CDF_VERSION_DEFAULT;
     if (SettingsHelper::isValidBootstrapMode($bootstrap_mode)) {
       $this->htmlHeadContexts['bootstrapMode'] = $bootstrap_mode;
     }
@@ -288,6 +291,7 @@ class PageContext extends BaseContext {
    *
    * @param \Drupal\node\NodeInterface $node
    *   Node.
+   *
    * @return array
    *   Node's available Fields' Vocabularies names.
    */
@@ -295,13 +299,13 @@ class PageContext extends BaseContext {
     $available_field_vocabulary_names = [];
     $available_field_vocabulary_fields = [];
 
-    // Regular field mapping
+    // Regular field mapping.
     foreach ($this->fieldMappings as $page_context_name => $field_name) {
-      if(!isset($node->{$field_name})) {
+      if (!isset($node->{$field_name})) {
         continue;
       }
       // Add this field to the list of fields to parse with their corresponding
-      // page context name;
+      // page context name;.
       if (!isset($available_field_vocabulary_fields[$field_name])) {
         $available_field_vocabulary_fields[$field_name] = [];
       }
@@ -311,18 +315,18 @@ class PageContext extends BaseContext {
     // id's so we can merge them without conflict.
     $udf_mappings = array_merge($this->udfPersonMappings, $this->udfTouchMappings, $this->udfEventMappings);
     foreach ($udf_mappings as $page_context_name => $properties) {
-      if(!isset($node->{$properties['value']})) {
+      if (!isset($node->{$properties['value']})) {
         continue;
       }
       // Add this field to the list of fields to parse with their corresponding
-      // page context name;
+      // page context name;.
       if (!isset($available_field_vocabulary_fields[$properties['value']])) {
         $available_field_vocabulary_fields[$properties['value']] = [];
       }
       $available_field_vocabulary_fields[$properties['value']][] = $page_context_name;
     }
 
-    foreach($available_field_vocabulary_fields as $field_name => $page_contexts) {
+    foreach ($available_field_vocabulary_fields as $field_name => $page_contexts) {
       $field_handler_settings = $node->{$field_name}->getSetting('handler_settings');
       $vocabulary_names = array_key_exists('target_bundles', $field_handler_settings) ? $field_handler_settings['target_bundles'] : [];
       foreach ($page_contexts as $page_context_name) {
@@ -338,13 +342,14 @@ class PageContext extends BaseContext {
    *
    * @param \Drupal\node\NodeInterface $node
    *   Node.
+   *
    * @return array
    *   Vocabularies' Term names.
    */
   private function getVocabularyTermNames(NodeInterface $node) {
     // Find the node's terms.
     $terms = $this->taxonomyTermStorage->getNodeTerms([$node->id()]);
-    $node_terms = isset($terms[$node->id()]) ? $terms[$node->id()] : [];
+    $node_terms = $terms[$node->id()] ?? [];
 
     // Find the term names.
     $vocabulary_term_names = [];
@@ -363,10 +368,11 @@ class PageContext extends BaseContext {
    *   Vocabulary names.
    * @param array $vocabulary_term_names
    *   Vocabulary Term names.
+   *
    * @return array
    *   Field Term names.
    */
-  private function getFieldTermNames($vocabulary_names, $vocabulary_term_names) {
+  private function getFieldTermNames(array $vocabulary_names, array $vocabulary_term_names) {
     $field_term_names = [];
     foreach ($vocabulary_names as $vocabulary_name) {
       if (!isset($vocabulary_term_names[$vocabulary_name])) {
@@ -388,8 +394,8 @@ class PageContext extends BaseContext {
       [
         '#tag' => 'script',
         '#attributes' => [
-          'src' => $this->assetsUrl . '/' . SELF::LIFT_JS_FILENAME,
-          'async' => true,
+          'src' => $this->assetsUrl . '/' . self::LIFT_JS_FILENAME,
+          'async' => TRUE,
         ],
       ],
       'acquia_lift_javascript',

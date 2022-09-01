@@ -1,7 +1,8 @@
 <?php
 
 /**
- * Drupal Module: Acquia Lift
+ * @file
+ * Drupal Module: Acquia Lift.
  *
  * Acquia Lift lets you track customers' behavior throughout their buying
  * journey — from anonymous visitor through to loyal customer. Acquia Lift
@@ -10,7 +11,6 @@
  * adaptively segments customers in real-time, letting you deliver personalized
  * content that furthers your website visitors' engagement with your brand.
  */
-use Drupal\Core\Access\AccessResult;
 
 /**
  * Implements hook_help().
@@ -23,7 +23,7 @@ function acquia_lift_help($route_name) {
  * Implements hook_page_attachments().
  */
 function acquia_lift_page_attachments(array &$page) {
-  // Create and attach settings and library only when path context agrees on attaching.
+  // Create and attach settings/library when path context agrees on attaching.
   $path_context = \Drupal::service('acquia_lift.service.context.path_context');
   if (!$path_context->shouldAttach()) {
     return;
@@ -48,7 +48,7 @@ function acquia_lift_page_attachments(array &$page) {
  */
 function acquia_lift_toolbar() {
   $user = \Drupal::currentUser();
-  // show link only when path context agrees on attaching.
+  // Show link only when path context agrees on attaching.
   /** @var \Drupal\acquia_lift\Service\Context\PathContext $path_context */
   $path_context = \Drupal::service('acquia_lift.service.context.path_context');
 
@@ -57,8 +57,8 @@ function acquia_lift_toolbar() {
   $items['acquia_lift'] = [
     '#cache' => [
       'keys' => ['toolbar'],
-      'contexts' => ['user.permissions', 'url.path']
-    ]
+      'contexts' => ['user.permissions', 'url.path'],
+    ],
   ];
 
   // Clear the cache of this render array if the output of the $path_context
@@ -75,8 +75,8 @@ function acquia_lift_toolbar() {
         '#attributes' => [
           'title' => t('Acquia Lift'),
           'class' => ['toolbar-icon', 'toolbar-icon-acquia-lift'],
-          // This particular id will make sure the JS behavior is attached to the
-          // link.
+          // This particular id will make sure the JS
+          // behavior is attached to the link.
           'id' => ['openLiftLink'],
           'aria-pressed' => 'false',
         ],

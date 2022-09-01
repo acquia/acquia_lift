@@ -54,7 +54,7 @@ class ContentPublishingFormTest extends BrowserTestBase {
   /**
    * {@inheritdoc}
    */
-  protected function setUp() {
+  protected function setUp(): void {
     parent::setUp();
 
     $this->user = $this->createUser([], 'user1');
@@ -83,7 +83,7 @@ class ContentPublishingFormTest extends BrowserTestBase {
     $this->drupalLogin($user);
     $session = $this->getSession();
     $this->drupalGet(Url::fromRoute('acquia_lift_publisher.entity_config_form'));
-    $this->assertEqual($session->getStatusCode(), $expected, $message);
+    $this->assertEquals($session->getStatusCode(), $expected, $message);
   }
 
   /**
@@ -138,17 +138,14 @@ class ContentPublishingFormTest extends BrowserTestBase {
     $this->createImageField('image', 'article');
     $this->getSession()->reload();
     $session->fieldExists($preview_image);
+    $this->drupalGet($url);
 
-    $this->drupalPostForm(
-      $url,
-      [
-        $view_mode_field => TRUE,
-        $preview_image => 'image',
-        $render_role => 'authenticated',
-        $synchronization => FALSE,
-      ],
-      'Save configuration'
-    );
+    $this->submitForm([
+      $view_mode_field => TRUE,
+      $preview_image => 'image',
+      $render_role => 'authenticated',
+      $synchronization => FALSE,
+    ], 'Save configuration');
 
     $session->checkboxChecked($view_mode_field);
     $session->fieldValueEquals($preview_image, 'image');

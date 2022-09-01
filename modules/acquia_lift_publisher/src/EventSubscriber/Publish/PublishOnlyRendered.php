@@ -69,8 +69,8 @@ class PublishOnlyRendered implements EventSubscriberInterface {
     }
 
     $entity = $event->getEntity();
-    // If the entity view configuration on Acquia Lift Publisher settings page is
-    // set for the entity in question, the entity is qualified to be processed.
+    // If the entity view configuration on Publisher settings page is set for
+    // the entity in question, the entity is qualified to be processed.
     if (empty($this->getEntityViewModesSettingValue($entity))) {
       $event->setEligibility(FALSE);
       $event->stopPropagation();

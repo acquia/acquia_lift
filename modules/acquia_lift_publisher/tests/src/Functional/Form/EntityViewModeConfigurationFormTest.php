@@ -6,7 +6,7 @@ use Drupal\Core\Url;
 use Drupal\Tests\BrowserTestBase;
 
 /**
- * Class EntityViewModeConfigurationFormTest.
+ * Test for the EntityViewModeConfigurationForm.
  *
  * @covers \Drupal\acquia_lift_publisher\Form\EntityViewModeConfigurationForm
  *
@@ -35,11 +35,15 @@ class EntityViewModeConfigurationFormTest extends BrowserTestBase {
   ];
 
   /**
+   * The Admin User.
+   *
    * @var \Drupal\user\Entity\User
    */
   private $adminUser;
 
   /**
+   * The Non-Admin user.
+   *
    * @var \Drupal\user\Entity\User
    */
   private $notAdminUser;
@@ -47,7 +51,7 @@ class EntityViewModeConfigurationFormTest extends BrowserTestBase {
   /**
    * {@inheritdoc}
    */
-  protected function setUp() {
+  protected function setUp(): void {
     parent::setUp();
     $this->adminUser = $this->drupalCreateUser([
       'administer acquia lift',

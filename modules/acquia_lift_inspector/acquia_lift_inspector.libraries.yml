@@ -9,4 +9,3 @@ acquia-lift-inspector:
     - core/drupal
     - core/drupal.dialog
     - core/js-cookie
-    - core/internal.underscore

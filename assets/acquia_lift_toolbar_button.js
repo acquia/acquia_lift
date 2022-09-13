@@ -3,7 +3,7 @@
  * Contains the definition of the behavior openAcquiaLiftExperienceBuilder.
  */
 
-(function ($, Drupal) {
+(function ($, Drupal, once) {
 
   'use strict';
 
@@ -26,10 +26,9 @@
    */
   Drupal.behaviors.acquiaLiftOpenExperienceBuilder = {
     attach: function (context, settings) {
-      $(context)
+      $(once('acquia-lift-open-experience-builder',context))
         .find('.toolbar .toolbar-bar #openLiftLink')
-        .once('acquia-lift-open-experience-builder')
         .on('click', openExperienceBuilder);
     }
   };
-})(jQuery, Drupal);
+})(jQuery, Drupal, once);

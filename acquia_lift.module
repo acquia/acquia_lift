@@ -22,7 +22,12 @@ function acquia_lift_help($route_name) {
 /**
  * Implements hook_page_attachments().
  */
-function acquia_lift_page_attachments(array &$page) {
+function acquia_lift_page_attachments_alter(array &$page) {
+  // If for some reason we aren't on a page, return because WSOD will occur.
+  if (!$page) {
+    return;
+  }
+
   // Create and attach settings/library when path context agrees on attaching.
   $path_context = \Drupal::service('acquia_lift.service.context.path_context');
   if (!$path_context->shouldAttach()) {

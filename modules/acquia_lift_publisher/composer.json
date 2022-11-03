@@ -4,7 +4,7 @@
     "description": "Publishes personalized content for use with Acquia Lift.",
     "license": "GPL-2.0-or-later",
     "require": {
-        "drupal/acquia_contenthub": "~2"
+        "drupal/acquia_contenthub": "^2.36"
     },
     "extra": {
         "branch-alias": {

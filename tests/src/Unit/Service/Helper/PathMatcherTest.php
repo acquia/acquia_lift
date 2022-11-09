@@ -30,7 +30,7 @@ class PathMatcherTest extends UnitTestCase {
   /**
    * {@inheritdoc}
    */
-  public function setUp() {
+  public function setUp(): void {
     parent::setUp();
 
     $this->aliasManager = $this->createMock('Drupal\path_alias\AliasManagerInterface');

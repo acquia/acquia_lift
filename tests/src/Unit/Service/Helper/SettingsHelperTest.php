@@ -270,7 +270,7 @@ class SettingsHelperTest extends UnitTestCase {
    *
    * @param string $test_value
    *   Test Value.
-   * @param bool $expected
+   * @param array $expected
    *   Expected Value.
    *
    * @covers ::pingUri

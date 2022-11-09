@@ -2,8 +2,8 @@
 
 namespace Drupal\Tests\acquia_lift_inspector\FunctionalJavascript;
 
-use Drupal\Tests\acquia_lift\Unit\Traits\SettingsDataTrait;
 use Drupal\FunctionalJavascriptTests\WebDriverTestBase;
+use Drupal\Tests\acquia_lift\Unit\Traits\SettingsDataTrait;
 use Drupal\Tests\node\Traits\ContentTypeCreationTrait;
 use Drupal\Tests\node\Traits\NodeCreationTrait;
 
@@ -48,7 +48,7 @@ class InspectorJsTest extends WebDriverTestBase {
    * @return array
    *   A valid credential settings array.
    */
-  private function getActualJSCredentialSettings() {
+  private function getActualJsCredentialSettings() {
     return [
       'account_id' => 'AccountId1',
       'site_id' => 'SiteId1',
@@ -72,7 +72,7 @@ class InspectorJsTest extends WebDriverTestBase {
     $this->setValidSettings();
     // Set an actual JS lift.js file in the settings for the inspector to work.
     $settings = $this->config('acquia_lift.settings');
-    $settings->set('credential', $this->getActualJSCredentialSettings());
+    $settings->set('credential', $this->getActualJsCredentialSettings());
     $settings->save();
 
     // Check if Acquia Lift Link is available on the node that we created.

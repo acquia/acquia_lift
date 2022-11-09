@@ -2,15 +2,15 @@
 
 namespace Drupal\Tests\acquia_lift\Unit\Service\Helper;
 
+use Drupal\acquia_lift\Service\Helper\SettingsHelper;
+use Drupal\Core\DependencyInjection\ContainerBuilder;
+use Drupal\Core\Http\ClientFactory;
+use Drupal\Tests\acquia_lift\Unit\Traits\SettingsDataTrait;
+use Drupal\Tests\UnitTestCase;
+use GuzzleHttp\Client;
+use Prophecy\Argument;
 use Prophecy\PhpUnit\ProphecyTrait;
 use Psr\Http\Message\ResponseInterface;
-use GuzzleHttp\Client;
-use Drupal\Core\Http\ClientFactory;
-use Prophecy\Argument;
-use Drupal\Core\DependencyInjection\ContainerBuilder;
-use Drupal\Tests\UnitTestCase;
-use Drupal\acquia_lift\Service\Helper\SettingsHelper;
-use Drupal\Tests\acquia_lift\Unit\Traits\SettingsDataTrait;
 
 /**
  * SettingsHelper Test.
@@ -22,13 +22,6 @@ class SettingsHelperTest extends UnitTestCase {
 
   use ProphecyTrait;
   use SettingsDataTrait;
-
-  /**
-   * {@inheritdoc}
-   */
-  protected function setUp(): void {
-    parent::setUp();
-  }
 
   /**
    * Tests the isInvalidCredentialAccountId() method.
@@ -277,14 +270,14 @@ class SettingsHelperTest extends UnitTestCase {
    *
    * @param string $test_value
    *   Test Value.
-   * @param bool $expected
+   * @param array $expected
    *   Expected Value.
    *
    * @covers ::pingUri
    *
    * @dataProvider providerTestPingUri
    */
-  public function testPingUri($test_value, $expected) {
+  public function testPingUri(string $test_value, array $expected) {
     $response = $this->prophesize(ResponseInterface::class);
     $response->getStatusCode()->willReturn($expected['statusCode']);
     $response->getReasonPhrase()->willReturn($expected['reasonPhrase']);

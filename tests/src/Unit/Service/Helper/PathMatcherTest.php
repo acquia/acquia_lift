@@ -8,10 +8,11 @@ use Drupal\Tests\UnitTestCase;
 /**
  * PathMatcher Test.
  *
- * @coversDefaultClass Drupal\acquia_lift\Service\Helper\PathMatcher
+ * @coversDefaultClass \Drupal\acquia_lift\Service\Helper\PathMatcher
  * @group acquia_lift
  */
 class PathMatcherTest extends UnitTestCase {
+
   /**
    * Alias manager.
    *

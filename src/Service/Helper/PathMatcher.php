@@ -2,8 +2,8 @@
 
 namespace Drupal\acquia_lift\Service\Helper;
 
-use Drupal\path_alias\AliasManagerInterface;
 use Drupal\Core\Path\PathMatcherInterface;
+use Drupal\path_alias\AliasManagerInterface;
 
 /**
  * Path Matcher Helper.

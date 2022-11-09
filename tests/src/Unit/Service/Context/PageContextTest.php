@@ -103,7 +103,7 @@ class PageContextTest extends UnitTestCase {
   /**
    * {@inheritdoc}
    */
-  public function setUp() {
+  public function setUp(): void {
     parent::setUp();
 
     // Get config factory mock.

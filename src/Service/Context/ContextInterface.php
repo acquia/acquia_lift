@@ -13,6 +13,6 @@ interface ContextInterface {
    * @param array &$page
    *   The page that is to be populated.
    */
-  public function populate(&$page);
+  public function populate(array &$page);
 
 }

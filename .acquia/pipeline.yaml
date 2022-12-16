@@ -212,7 +212,7 @@ pre_build:
 # Set the project_key and 'required' to true to enable SonarQube analysis
   code_analysis:
     required: false
-    project_key: acquia.drupal-cloud.acquia_lift:acquia_lift
+    project_key: acquia.drupal-cloud.dit:acquia_lift
 
 # -- Slack Bot Integration --
 # Set your_team_channel name
